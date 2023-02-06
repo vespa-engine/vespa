@@ -44,8 +44,7 @@ public:
     explicit StringTokenizer(vespalib::stringref source)
         : StringTokenizer(source, ",")
     {}
-    StringTokenizer(vespalib::stringref source,
-                             vespalib::stringref separators)
+    StringTokenizer(vespalib::stringref source, vespalib::stringref separators)
         : StringTokenizer(source, separators, " \t\f\r\n")
     {}
     StringTokenizer(vespalib::stringref source,

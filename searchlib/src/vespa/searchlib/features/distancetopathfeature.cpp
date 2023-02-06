@@ -49,7 +49,7 @@ DistanceToPathExecutor::execute(uint32_t docId)
             double len = std::sqrt(len2);
 
             // For each document location, do
-            for (long loc : _intBuf) {
+            for (auto loc : _intBuf) {
                 int32_t x = 0, y = 0;
                 vespalib::geo::ZCurve::decode(loc, &x, &y);
 
@@ -108,7 +108,7 @@ DistanceToPathBlueprint::visitDumpFeatures(const search::fef::IIndexEnvironment 
 search::fef::Blueprint::UP
 DistanceToPathBlueprint::createInstance() const
 {
-    return Blueprint::UP(new DistanceToPathBlueprint());
+    return std::make_unique<DistanceToPathBlueprint>();
 }
 
 bool
@@ -133,11 +133,10 @@ DistanceToPathBlueprint::createExecutor(const search::fef::IQueryEnvironment &en
     if (pro.found()) {
         vespalib::stringref str = pro.getAt(0);
         uint32_t len = str.size();
-        if (str[0] == '(' && len > 1 && str[len - 1] == ')') {
+        if ((len > 1) && (str[0] == '(') && (str[len - 1] == ')')) {
             str = str.substr(1, len - 1); // remove braces
             vespalib::StringTokenizer tokenizer(str);
-            len = tokenizer.size() - 1;
-            for (uint32_t i = 0; i < len; i += 2) {
+            for (uint32_t i = 0; (i + 2) <= tokenizer.size(); i += 2) {
                 auto x = util::strToNum<double>(tokenizer[i]);
                 auto y = util::strToNum<double>(tokenizer[i + 1]);
                 path.emplace_back(x, y);

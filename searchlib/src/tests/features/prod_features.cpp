@@ -828,13 +828,12 @@ struct AirPort {
 };
 
 std::pair<int32_t, int32_t> toXY(const AirPort &p) {
-    return std::make_pair((int)(p.lng * 1.0e6),
-                          (int)(p.lat * 1.0e6));
+    return std::make_pair(int(p.lng * 1.0e6), int(p.lat * 1.0e6));
 }
 
 GeoLocation toGL(const AirPort &p) {
-    int32_t x = (int)(p.lng * 1.0e6);
-    int32_t y = (int)(p.lat * 1.0e6);
+    auto x = int(p.lng * 1.0e6);
+    auto y = int(p.lat * 1.0e6);
     GeoLocation::Point gp{x, y};
     return GeoLocation{gp};
 }
@@ -1054,6 +1053,8 @@ Test::testDistanceToPath()
         pos.emplace_back(0, 0);
 
         // invalid path
+        assertDistanceToPath(pos, "");
+        assertDistanceToPath(pos, "()");
         assertDistanceToPath(pos, "a");
         assertDistanceToPath(pos, "(");
         assertDistanceToPath(pos, "(a");
