@@ -4,7 +4,7 @@
 
 namespace proton {
 
-AttributeCollectionSpec::AttributeCollectionSpec(AttributeList && attributes, uint32_t docIdLimit, SerialNum currentSerialNum)
+AttributeCollectionSpec::AttributeCollectionSpec(AttributeList && attributes, uint32_t docIdLimit, std::optional<SerialNum> currentSerialNum)
     : _attributes(std::move(attributes)),
       _docIdLimit(docIdLimit),
       _currentSerialNum(currentSerialNum)

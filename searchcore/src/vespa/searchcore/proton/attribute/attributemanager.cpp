@@ -3,6 +3,7 @@
 #include "attributemanager.h"
 #include "attribute_directory.h"
 #include "attribute_factory.h"
+#include "attribute_manager_reconfig.h"
 #include "attribute_type_matcher.h"
 #include "attributedisklayout.h"
 #include "flushableattribute.h"
@@ -210,7 +211,7 @@ AttributeManager::addNewAttributes(const Spec &newSpec,
 {
     for (auto &aspec : toBeAdded) {
         LOG(debug, "Creating initializer for attribute vector '%s': docIdLimit=%u, serialNumber=%" PRIu64,
-                   aspec.getName().c_str(), newSpec.getDocIdLimit(), newSpec.getCurrentSerialNum());
+            aspec.getName().c_str(), newSpec.getDocIdLimit(), newSpec.getCurrentSerialNum().value_or(0));
 
         auto initializer = std::make_unique<AttributeInitializer>(_diskLayout->createAttributeDir(aspec.getName()),
                                                                   _documentSubDbName, std::move(aspec), newSpec.getCurrentSerialNum(),
@@ -324,11 +325,17 @@ AttributeManager::addAttribute(AttributeSpec && spec, uint64_t serialNum)
 }
 
 void
-AttributeManager::addInitializedAttributes(const std::vector<AttributeInitializerResult> &attributes)
+AttributeManager::addInitializedAttributes(const std::vector<AttributeInitializerResult> &attributes, std::optional<uint32_t> docid_limit, std::optional<SerialNum> serial_num)
 {
     for (const auto &result : attributes) {
         assert(result);
         auto attr = result.getAttribute();
+        if (docid_limit.has_value()) {
+            AttributeManager::padAttribute(*attr, docid_limit.value());
+        }
+        if (serial_num.has_value()) {
+            attr->setCreateSerialNum(serial_num.value());
+        }
         attr->setInterlock(_interlock);
         auto shrinker = allocShrinker(attr, _attributeFieldWriter, *_diskLayout);
         addAttribute(AttributeWrap::normalAttribute(std::move(attr)), shrinker);
@@ -484,13 +491,20 @@ AttributeManager::createContext() const
     return std::make_unique<AttributeContext>(*this);
 }
 
-proton::IAttributeManager::SP
-AttributeManager::create(Spec && spec) const
+std::unique_ptr<AttributeManagerReconfig>
+AttributeManager::prepare_create(Spec&& spec) const
 {
-    SequentialAttributesInitializer initializer(spec.getDocIdLimit());
-    proton::AttributeManager::SP result = std::make_shared<AttributeManager>(*this, std::move(spec), initializer);
-    result->addInitializedAttributes(initializer.getInitializedAttributes());
-    return result;
+    auto initializer = std::make_unique<SequentialAttributesInitializer>(spec.getDocIdLimit());
+    auto result = std::make_shared<AttributeManager>(*this, std::move(spec), *initializer);
+    return std::make_unique<AttributeManagerReconfig>(std::move(result), std::move(initializer));
+}
+
+proton::IAttributeManager::SP
+AttributeManager::create(Spec&& spec) const
+{
+    assert(spec.getCurrentSerialNum().has_value());
+    auto prepared_result = prepare_create(std::move(spec));
+    return prepared_result->create(std::nullopt, std::nullopt);
 }
 
 std::vector<IFlushTarget::SP>

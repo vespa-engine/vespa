@@ -5,6 +5,7 @@
 #include <vespa/searchlib/common/serialnum.h>
 #include <vespa/vespalib/stllike/string.h>
 #include <memory>
+#include <optional>
 
 namespace search { class AttributeVector; }
 namespace search::attribute { class Config; }
@@ -23,7 +24,7 @@ struct IAttributeFactory
     virtual AttributeVectorSP create(const vespalib::string &name,
                                      const search::attribute::Config &cfg) const = 0;
     virtual void setupEmpty(const AttributeVectorSP &vec,
-                            search::SerialNum serialNum) const = 0;
+                            std::optional<search::SerialNum> serialNum) const = 0;
 };
 
 } // namespace proton

@@ -95,7 +95,7 @@ struct Fixture
     vespalib::ThreadStackExecutor _executor;
     Fixture();
     ~Fixture();
-    std::unique_ptr<AttributeInitializer> createInitializer(AttributeSpec && spec, SerialNum serialNum);
+    std::unique_ptr<AttributeInitializer> createInitializer(AttributeSpec && spec, std::optional<SerialNum> serialNum);
 };
 
 Fixture::Fixture()
@@ -109,7 +109,7 @@ Fixture::Fixture()
 Fixture::~Fixture() = default;
 
 std::unique_ptr<AttributeInitializer>
-Fixture::createInitializer(AttributeSpec &&spec, SerialNum serialNum)
+Fixture::createInitializer(AttributeSpec &&spec, std::optional<SerialNum> serialNum)
 {
     return std::make_unique<AttributeInitializer>(_diskLayout->createAttributeDir(spec.getName()), "test.subdb", std::move(spec), serialNum, _factory, _executor);
 }
@@ -239,6 +239,15 @@ TEST("require that transient memory usage is reported for attribute load without
     Fixture f;
     auto avi = f.createInitializer({"a", int32_wset}, 5);
     EXPECT_EQUAL(0u, avi->get_transient_memory_usage());
+}
+
+TEST("require that saved attribute is ignored when serial num is not set")
+{
+    saveAttr("a", int32_sv, 10, 2);
+    Fixture f;
+    auto av = f.createInitializer({"a", int32_sv}, std::nullopt)->init().getAttribute();
+    EXPECT_EQUAL(0u, av->getCreateSerialNum());
+    EXPECT_EQUAL(1u, av->getNumDocs());
 }
 
 }
