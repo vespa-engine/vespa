@@ -3,6 +3,7 @@ package com.yahoo.vespa.athenz.identityprovider.client;
 
 import com.yahoo.security.SignatureUtils;
 import com.yahoo.vespa.athenz.api.AthenzService;
+import com.yahoo.vespa.athenz.identityprovider.api.ClusterType;
 import com.yahoo.vespa.athenz.identityprovider.api.IdentityType;
 import com.yahoo.vespa.athenz.identityprovider.api.SignedIdentityDocument;
 import com.yahoo.vespa.athenz.identityprovider.api.VespaUniqueInstanceId;
@@ -34,11 +35,14 @@ public class IdentityDocumentSigner {
                                     Instant createdAt,
                                     Set<String> ipAddresses,
                                     IdentityType identityType,
+                                    ClusterType clusterType,
                                     PrivateKey privateKey) {
         try {
             Signature signer = SignatureUtils.createSigner(privateKey);
             signer.initSign(privateKey);
-            writeToSigner(signer, providerUniqueId, providerService, configServerHostname, instanceHostname, createdAt, ipAddresses, identityType);
+            writeToSigner(
+                    signer, providerUniqueId, providerService, configServerHostname, instanceHostname, createdAt,
+                    ipAddresses, identityType, clusterType);
             byte[] signature = signer.sign();
             return Base64.getEncoder().encodeToString(signature);
         } catch (GeneralSecurityException e) {
@@ -50,7 +54,9 @@ public class IdentityDocumentSigner {
         try {
             Signature signer = SignatureUtils.createVerifier(publicKey);
             signer.initVerify(publicKey);
-            writeToSigner(signer, doc.providerUniqueId(), doc.providerService(), doc.configServerHostname(), doc.instanceHostname(), doc.createdAt(), doc.ipAddresses(), doc.identityType());
+            writeToSigner(
+                    signer, doc.providerUniqueId(), doc.providerService(), doc.configServerHostname(),
+                    doc.instanceHostname(), doc.createdAt(), doc.ipAddresses(), doc.identityType(), doc.clusterType());
             return signer.verify(Base64.getDecoder().decode(doc.signature()));
         } catch (GeneralSecurityException e) {
             throw new RuntimeException(e);
@@ -64,7 +70,8 @@ public class IdentityDocumentSigner {
                                       String instanceHostname,
                                       Instant createdAt,
                                       Set<String> ipAddresses,
-                                      IdentityType identityType) throws SignatureException {
+                                      IdentityType identityType,
+                                      ClusterType clusterType) throws SignatureException {
         signer.update(providerUniqueId.asDottedString().getBytes(UTF_8));
         signer.update(providerService.getFullName().getBytes(UTF_8));
         signer.update(configServerHostname.getBytes(UTF_8));
@@ -76,5 +83,6 @@ public class IdentityDocumentSigner {
             signer.update(ipAddress.getBytes(UTF_8));
         }
         signer.update(identityType.id().getBytes(UTF_8));
+        if (clusterType != null) signer.update(clusterType.toConfigValue().getBytes(UTF_8));
     }
 }

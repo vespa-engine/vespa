@@ -7,6 +7,7 @@ import java.util.Arrays;
  * @author bjorncs
  */
 public enum Capability {
+    NONE("vespa.none"), // placeholder for no capabilities
     CONTENT__CLUSTER_CONTROLLER__INTERNAL_STATE_API("vespa.content.cluster_controller.internal_state_api"),
     CONTENT__DOCUMENT_API("vespa.content.document_api"),
     CONTENT__METRICS_API("vespa.content.metrics_api"),

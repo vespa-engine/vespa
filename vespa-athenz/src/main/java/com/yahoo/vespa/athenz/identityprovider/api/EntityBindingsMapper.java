@@ -14,6 +14,7 @@ import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.util.Optional;
 
 import static com.yahoo.vespa.athenz.identityprovider.api.VespaUniqueInstanceId.fromDottedString;
 
@@ -38,16 +39,17 @@ public class EntityBindingsMapper {
 
     public static SignedIdentityDocument toSignedIdentityDocument(SignedIdentityDocumentEntity entity) {
         return new SignedIdentityDocument(
-                entity.signature,
-                entity.signingKeyVersion,
-                fromDottedString(entity.providerUniqueId),
-                new AthenzService(entity.providerService),
-                entity.documentVersion,
-                entity.configServerHostname,
-                entity.instanceHostname,
-                entity.createdAt,
-                entity.ipAddresses,
-                IdentityType.fromId(entity.identityType));
+                entity.signature(),
+                entity.signingKeyVersion(),
+                fromDottedString(entity.providerUniqueId()),
+                new AthenzService(entity.providerService()),
+                entity.documentVersion(),
+                entity.configServerHostname(),
+                entity.instanceHostname(),
+                entity.createdAt(),
+                entity.ipAddresses(),
+                IdentityType.fromId(entity.identityType()),
+                ClusterType.from(entity.clusterType()));
     }
 
     public static SignedIdentityDocumentEntity toSignedIdentityDocumentEntity(SignedIdentityDocument model) {
@@ -61,7 +63,8 @@ public class EntityBindingsMapper {
                 model.instanceHostname(),
                 model.createdAt(),
                 model.ipAddresses(),
-                model.identityType().id());
+                model.identityType().id(),
+                Optional.ofNullable(model.clusterType()).map(ClusterType::toConfigValue).orElse(null));
     }
 
     public static SignedIdentityDocument readSignedIdentityDocumentFromFile(Path file) {

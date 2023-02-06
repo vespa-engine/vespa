@@ -14,7 +14,6 @@ import com.yahoo.vespa.athenz.client.zts.ZtsClientException;
 import com.yahoo.vespa.athenz.identity.ServiceIdentityProvider;
 import com.yahoo.vespa.athenz.identityprovider.api.EntityBindingsMapper;
 import com.yahoo.vespa.athenz.identityprovider.api.IdentityDocumentClient;
-import com.yahoo.vespa.athenz.identityprovider.api.SignedIdentityDocument;
 import com.yahoo.vespa.athenz.identityprovider.client.CsrGenerator;
 import com.yahoo.vespa.athenz.identityprovider.client.DefaultIdentityDocumentClient;
 import com.yahoo.vespa.athenz.tls.AthenzIdentityVerifier;
@@ -180,9 +179,9 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
 
     private void registerIdentity(NodeAgentContext context, ContainerPath privateKeyFile, ContainerPath certificateFile, ContainerPath identityDocumentFile) {
         KeyPair keyPair = KeyUtils.generateKeypair(KeyAlgorithm.RSA);
-        SignedIdentityDocument signedIdentityDocument = identityDocumentClient.getNodeIdentityDocument(context.hostname().value());
+        var doc = identityDocumentClient.getNodeIdentityDocument(context.hostname().value());
         Pkcs10Csr csr = csrGenerator.generateInstanceCsr(
-                context.identity(), signedIdentityDocument.providerUniqueId(), signedIdentityDocument.ipAddresses(), keyPair);
+                context.identity(), doc.providerUniqueId(), doc.ipAddresses(), doc.clusterType(), keyPair);
 
         // Set up a hostname verified for zts if this is configured to use the config server (internal zts) apis
         HostnameVerifier ztsHostNameVerifier = useInternalZts
@@ -193,19 +192,19 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
                     ztsClient.registerInstance(
                             configserverIdentity,
                             context.identity(),
-                            EntityBindingsMapper.toAttestationData(signedIdentityDocument),
+                            EntityBindingsMapper.toAttestationData(doc),
                             csr);
-            EntityBindingsMapper.writeSignedIdentityDocumentToFile(identityDocumentFile, signedIdentityDocument);
+            EntityBindingsMapper.writeSignedIdentityDocumentToFile(identityDocumentFile, doc);
             writePrivateKeyAndCertificate(privateKeyFile, keyPair.getPrivate(), certificateFile, instanceIdentity.certificate());
             context.log(logger, "Instance successfully registered and credentials written to file");
         }
     }
 
     private void refreshIdentity(NodeAgentContext context, ContainerPath privateKeyFile, ContainerPath certificateFile, ContainerPath identityDocumentFile) {
-        SignedIdentityDocument identityDocument = EntityBindingsMapper.readSignedIdentityDocumentFromFile(identityDocumentFile);
+        var doc = EntityBindingsMapper.readSignedIdentityDocumentFromFile(identityDocumentFile);
         KeyPair keyPair = KeyUtils.generateKeypair(KeyAlgorithm.RSA);
         Pkcs10Csr csr = csrGenerator.generateInstanceCsr(
-                context.identity(), identityDocument.providerUniqueId(), identityDocument.ipAddresses(), keyPair);
+                context.identity(), doc.providerUniqueId(), doc.ipAddresses(), doc.clusterType(), keyPair);
 
         SSLContext containerIdentitySslContext = new SslContextBuilder().withKeyStore(privateKeyFile, certificateFile)
                                                                         .withTrustStore(ztsTrustStorePath)
@@ -221,7 +220,7 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
                         ztsClient.refreshInstance(
                                 configserverIdentity,
                                 context.identity(),
-                                identityDocument.providerUniqueId().asDottedString(),
+                                doc.providerUniqueId().asDottedString(),
                                 csr);
                 writePrivateKeyAndCertificate(privateKeyFile, keyPair.getPrivate(), certificateFile, instanceIdentity.certificate());
                 context.log(logger, "Instance successfully refreshed and credentials written to file");
