@@ -12,7 +12,7 @@ LOG_SETUP(".distributor.callback");
 namespace storage::distributor {
 
 Operation::Operation()
-    : _startTime(0)
+    : _startTime()
 {
 }
 
@@ -21,16 +21,20 @@ Operation::~Operation() = default;
 std::string
 Operation::getStatus() const
 {
-    return vespalib::make_string("%s (started %s)",
-                                 getName(), _startTime.toString().c_str());
+    return vespalib::make_string("%s (started %s)", getName(), vespalib::to_string(_startTime).c_str());
 }
 
 void
-Operation::start(DistributorStripeMessageSender& sender,
-                 framework::MilliSecTime startTime)
+Operation::start(DistributorStripeMessageSender& sender, vespalib::system_time startTime)
 {
     _startTime = startTime;
     onStart(sender);
+}
+
+void
+Operation::start(DistributorStripeMessageSender& sender)
+{
+    start(sender, vespalib::system_time());
 }
 
 void

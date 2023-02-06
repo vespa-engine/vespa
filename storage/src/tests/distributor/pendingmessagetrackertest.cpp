@@ -175,7 +175,7 @@ TEST_F(PendingMessageTrackerTest, simple) {
         EXPECT_THAT(ost.str(), HasSubstr(
                 "<b>Bucket(BucketSpace(0x0000000000000001), BucketId(0x40000000000004d2))</b>\n"
                 "<ul>\n"
-                "<li><i>Node 0</i>: <b>1970-01-01 00:00:01</b> "
+                "<li><i>Node 0</i>: <b>1970-01-01 00:00:01.000 UTC</b> "
                 "Remove(BucketId(0x40000000000004d2), priority=127)</li>\n"
                 "</ul>\n"));
     }
@@ -248,17 +248,17 @@ TEST_F(PendingMessageTrackerTest, multiple_messages) {
         EXPECT_THAT(ost.str(), HasSubstr(
                 "<b>Bucket(BucketSpace(0x0000000000000001), BucketId(0x40000000000004d2))</b>\n"
                 "<ul>\n"
-                "<li><i>Node 0</i>: <b>1970-01-01 00:00:01</b> Remove(BucketId(0x40000000000004d2), priority=127)</li>\n"
-                "<li><i>Node 0</i>: <b>1970-01-01 00:00:01</b> Remove(BucketId(0x40000000000004d2), priority=127)</li>\n"
-                "<li><i>Node 1</i>: <b>1970-01-01 00:00:01</b> Remove(BucketId(0x40000000000004d2), priority=127)</li>\n"
-                "<li><i>Node 1</i>: <b>1970-01-01 00:00:01</b> Remove(BucketId(0x40000000000004d2), priority=127)</li>\n"
+                "<li><i>Node 0</i>: <b>1970-01-01 00:00:01.000 UTC</b> Remove(BucketId(0x40000000000004d2), priority=127)</li>\n"
+                "<li><i>Node 0</i>: <b>1970-01-01 00:00:01.000 UTC</b> Remove(BucketId(0x40000000000004d2), priority=127)</li>\n"
+                "<li><i>Node 1</i>: <b>1970-01-01 00:00:01.000 UTC</b> Remove(BucketId(0x40000000000004d2), priority=127)</li>\n"
+                "<li><i>Node 1</i>: <b>1970-01-01 00:00:01.000 UTC</b> Remove(BucketId(0x40000000000004d2), priority=127)</li>\n"
                 "</ul>\n"
                 "<b>Bucket(BucketSpace(0x0000000000000001), BucketId(0x40000000000011d7))</b>\n"
                 "<ul>\n"
-                "<li><i>Node 0</i>: <b>1970-01-01 00:00:01</b> Remove(BucketId(0x40000000000011d7), priority=127)</li>\n"
-                "<li><i>Node 0</i>: <b>1970-01-01 00:00:01</b> Remove(BucketId(0x40000000000011d7), priority=127)</li>\n"
-                "<li><i>Node 1</i>: <b>1970-01-01 00:00:01</b> Remove(BucketId(0x40000000000011d7), priority=127)</li>\n"
-                "<li><i>Node 1</i>: <b>1970-01-01 00:00:01</b> Remove(BucketId(0x40000000000011d7), priority=127)</li>\n"
+                "<li><i>Node 0</i>: <b>1970-01-01 00:00:01.000 UTC</b> Remove(BucketId(0x40000000000011d7), priority=127)</li>\n"
+                "<li><i>Node 0</i>: <b>1970-01-01 00:00:01.000 UTC</b> Remove(BucketId(0x40000000000011d7), priority=127)</li>\n"
+                "<li><i>Node 1</i>: <b>1970-01-01 00:00:01.000 UTC</b> Remove(BucketId(0x40000000000011d7), priority=127)</li>\n"
+                "<li><i>Node 1</i>: <b>1970-01-01 00:00:01.000 UTC</b> Remove(BucketId(0x40000000000011d7), priority=127)</li>\n"
                 "</ul>\n"));
     }
     {
@@ -268,40 +268,19 @@ TEST_F(PendingMessageTrackerTest, multiple_messages) {
         EXPECT_THAT(ost.str(), HasSubstr(
                 "<b>Node 0 (pending count: 4)</b>\n"
                 "<ul>\n"
-                "<li><i>Node 0</i>: <b>1970-01-01 00:00:01</b> Remove(BucketId(0x40000000000004d2), priority=127)</li>\n"
-                "<li><i>Node 0</i>: <b>1970-01-01 00:00:01</b> Remove(BucketId(0x40000000000004d2), priority=127)</li>\n"
-                "<li><i>Node 0</i>: <b>1970-01-01 00:00:01</b> Remove(BucketId(0x40000000000011d7), priority=127)</li>\n"
-                "<li><i>Node 0</i>: <b>1970-01-01 00:00:01</b> Remove(BucketId(0x40000000000011d7), priority=127)</li>\n"
+                "<li><i>Node 0</i>: <b>1970-01-01 00:00:01.000 UTC</b> Remove(BucketId(0x40000000000004d2), priority=127)</li>\n"
+                "<li><i>Node 0</i>: <b>1970-01-01 00:00:01.000 UTC</b> Remove(BucketId(0x40000000000004d2), priority=127)</li>\n"
+                "<li><i>Node 0</i>: <b>1970-01-01 00:00:01.000 UTC</b> Remove(BucketId(0x40000000000011d7), priority=127)</li>\n"
+                "<li><i>Node 0</i>: <b>1970-01-01 00:00:01.000 UTC</b> Remove(BucketId(0x40000000000011d7), priority=127)</li>\n"
                 "</ul>\n"
                 "<b>Node 1 (pending count: 4)</b>\n"
                 "<ul>\n"
-                "<li><i>Node 1</i>: <b>1970-01-01 00:00:01</b> Remove(BucketId(0x40000000000004d2), priority=127)</li>\n"
-                "<li><i>Node 1</i>: <b>1970-01-01 00:00:01</b> Remove(BucketId(0x40000000000004d2), priority=127)</li>\n"
-                "<li><i>Node 1</i>: <b>1970-01-01 00:00:01</b> Remove(BucketId(0x40000000000011d7), priority=127)</li>\n"
-                "<li><i>Node 1</i>: <b>1970-01-01 00:00:01</b> Remove(BucketId(0x40000000000011d7), priority=127)</li>\n"
+                "<li><i>Node 1</i>: <b>1970-01-01 00:00:01.000 UTC</b> Remove(BucketId(0x40000000000004d2), priority=127)</li>\n"
+                "<li><i>Node 1</i>: <b>1970-01-01 00:00:01.000 UTC</b> Remove(BucketId(0x40000000000004d2), priority=127)</li>\n"
+                "<li><i>Node 1</i>: <b>1970-01-01 00:00:01.000 UTC</b> Remove(BucketId(0x40000000000011d7), priority=127)</li>\n"
+                "<li><i>Node 1</i>: <b>1970-01-01 00:00:01.000 UTC</b> Remove(BucketId(0x40000000000011d7), priority=127)</li>\n"
                 "</ul>\n"));
     }
-}
-
-namespace {
-
-template <typename T>
-std::string setToString(const std::set<T>& s)
-{
-    std::ostringstream ost;
-    ost << '{';
-    for (typename std::set<T>::const_iterator i(s.begin()), e(s.end());
-         i != e; ++i)
-    {
-        if (i != s.begin()) {
-            ost << ',';
-        }
-        ost << *i;
-    }
-    ost << '}';
-    return ost.str();
-}
-
 }
 
 namespace {
@@ -443,7 +422,7 @@ TEST_F(PendingMessageTrackerTest, busy_reply_marks_node_as_busy) {
 TEST_F(PendingMessageTrackerTest, busy_node_duration_can_be_adjusted) {
     Fixture f;
     auto cmd = f.sendPut(RequestBuilder().toNode(0));
-    f.tracker().setNodeBusyDuration(std::chrono::seconds(10));
+    f.tracker().setNodeBusyDuration(10s);
     f.sendPutReply(*cmd, RequestBuilder(), api::ReturnCode(api::ReturnCode::BUSY));
     EXPECT_TRUE(f.tracker().getNodeInfo().isBusy(0));
     f.clock().addSecondsToTime(11);

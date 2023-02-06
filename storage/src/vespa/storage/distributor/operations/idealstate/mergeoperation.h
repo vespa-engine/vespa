@@ -20,7 +20,7 @@ class MergeOperation : public IdealStateOperation
 protected:
     bool sourceOnlyCopyChangedDuringMerge(const BucketDatabase::Entry&) const;
 
-    framework::SecondTime _sentMessageTime;
+    vespalib::steady_time _sentMessageTime;
     std::vector<api::MergeBucketCommand::Node> _mnodes;
     std::unique_ptr<RemoveBucketOperation> _removeOperation;
     BucketInfo _infoBefore;
@@ -30,7 +30,7 @@ public:
 
     MergeOperation(const BucketAndNodes& nodes, uint16_t maxNodes = 16)
         : IdealStateOperation(nodes),
-          _sentMessageTime(0),
+          _sentMessageTime(),
           _limiter(maxNodes)
     {}
 

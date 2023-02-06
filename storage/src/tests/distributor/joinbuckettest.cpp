@@ -46,7 +46,7 @@ TEST_F(JoinOperationTest, simple) {
                               document::BucketId(33, 0x100000001)));
 
     op.setIdealStateManager(&getIdealStateManager());
-    op.start(_sender, framework::MilliSecTime(0));
+    op.start(_sender);
 
     checkSourceBucketsAndSendReply(op, 0, {{33, 1}, {33, 0x100000001}});
 
@@ -103,7 +103,7 @@ TEST_F(JoinOperationTest, send_sparse_joins_to_nodes_without_both_source_buckets
                               document::BucketId(33, 0x100000001)));
 
     op.setIdealStateManager(&getIdealStateManager());
-    op.start(_sender, framework::MilliSecTime(0));
+    op.start(_sender);
 
     ASSERT_NO_FATAL_FAILURE(checkSourceBucketsAndSendReply(op, 0, {{33, 1}, {33, 0x100000001}}));
     ASSERT_NO_FATAL_FAILURE(checkSourceBucketsAndSendReply(op, 1, {{33, 1}, {33, 1}}));

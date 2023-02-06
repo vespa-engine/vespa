@@ -67,9 +67,13 @@ public:
     framework::SecondTime getTimeInSeconds() const override {
         return getTimeInMicros().getSeconds();
     }
-    framework::MonotonicTimePoint getMonotonicTime() const override {
+    vespalib::system_time getSystemTime() const override {
         // For simplicity, assume fake monotonic time follows fake wall clock.
-        return MonotonicTimePoint(std::chrono::microseconds(getTimeInMicros().getTime()));
+        return vespalib::system_time(std::chrono::microseconds(getTimeInMicros().getTime()));
+    }
+    vespalib::steady_time getMonotonicTime() const override {
+        // For simplicity, assume fake monotonic time follows fake wall clock.
+        return vespalib::steady_time(std::chrono::microseconds(getTimeInMicros().getTime()));
     }
 };
 
