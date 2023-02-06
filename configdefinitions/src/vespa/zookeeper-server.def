@@ -44,7 +44,8 @@ server[].retired bool default=false
 trustEmptySnapshot bool default=true
 
 dynamicReconfiguration bool default=false
-snapshotMethod string default="gz"
+# Set the snapshot compression method: "gz" for GZIP or "snappy" for Snappy. Any other value disables compression.
+snapshotMethod string default=""
 
 # Uses default Vespa mTLS config if empty string
 vespaTlsConfigFile string default=""
