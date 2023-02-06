@@ -9,6 +9,8 @@ namespace document::select::util {
 // Note: these parsers are all pure, reentrant and without locking.
 bool
 parse_hex_i64(const char* str, size_t len, int64_t& out) {
+    // Legacy parser parses hex numbers as u64 rather than i64 (then implicitly
+    // converts), so we do the same thing here to avoid change of semantics.
     uint64_t val = out;
     auto res = std::from_chars(str, str+len, val, 16);
     out = val;
