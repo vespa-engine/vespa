@@ -2,6 +2,7 @@
 #pragma once
 
 #include <vespa/searchcore/proton/attribute/i_attribute_manager.h>
+#include <vespa/searchcore/proton/attribute/attribute_manager_reconfig.h>
 #include <vespa/searchcore/proton/attribute/imported_attributes_repo.h>
 #include <vespa/searchlib/test/mock_attribute_manager.h>
 #include <vespa/vespalib/util/hdr_abort.h>
@@ -48,6 +49,9 @@ public:
     }
     search::attribute::IAttributeContext::UP createContext() const override {
         return _mock.createContext();
+    }
+    std::unique_ptr<AttributeManagerReconfig> prepare_create(AttributeCollectionSpec&&) const override {
+        return {};
     }
     IAttributeManager::SP create(AttributeCollectionSpec &&) const override {
         return IAttributeManager::SP();

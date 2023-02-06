@@ -58,11 +58,13 @@ IReprocessingInitializer::UP
 FastAccessDocSubDBConfigurer::reconfigure(const DocumentDBConfig &newConfig,
                                           const DocumentDBConfig &oldConfig,
                                           AttributeCollectionSpec && attrSpec,
-                                          const DocumentSubDBReconfig& prepared_reconfig)
+                                          const DocumentSubDBReconfig& prepared_reconfig,
+                                          search::SerialNum serial_num)
 {
     (void) prepared_reconfig;
     FastAccessFeedView::SP oldView = _feedView.get();
-    search::SerialNum currentSerialNum = attrSpec.getCurrentSerialNum();
+    auto& attr_spec_serial_num = attrSpec.getCurrentSerialNum();
+    assert(!attr_spec_serial_num.has_value() || attr_spec_serial_num.value() == serial_num);
     IAttributeWriter::SP writer = _factory->create(oldView->getAttributeWriter(), std::move(attrSpec));
     reconfigureFeedView(*oldView, newConfig.getSchemaSP(), newConfig.getDocumentTypeRepoSP(), writer);
 
@@ -75,7 +77,7 @@ FastAccessDocSubDBConfigurer::reconfigure(const DocumentDBConfig &newConfig,
     return std::make_unique<AttributeReprocessingInitializer>
         (ARIConfig(writer->getAttributeManager(), *newConfig.getSchemaSP()),
          ARIConfig(oldView->getAttributeWriter()->getAttributeManager(), *oldConfig.getSchemaSP()),
-         inspector, oldIndexschemaInspector, _subDbName, currentSerialNum);
+         inspector, oldIndexschemaInspector, _subDbName, serial_num);
 }
 
 } // namespace proton

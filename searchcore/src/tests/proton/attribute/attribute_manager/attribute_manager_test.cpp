@@ -2,6 +2,7 @@
 
 #include <vespa/searchcore/proton/attribute/attribute_collection_spec_factory.h>
 #include <vespa/searchcore/proton/attribute/attribute_manager_initializer.h>
+#include <vespa/searchcore/proton/attribute/attribute_manager_reconfig.h>
 #include <vespa/searchcore/proton/attribute/attribute_writer.h>
 #include <vespa/searchcore/proton/attribute/attributemanager.h>
 #include <vespa/searchcore/proton/attribute/exclusive_attribute_read_accessor.h>
@@ -222,7 +223,7 @@ SequentialAttributeManager::SequentialAttributeManager(const AttributeManager &c
     : initializer(newSpec.getDocIdLimit()),
       mgr(currMgr, std::move(newSpec), initializer)
 {
-    mgr.addInitializedAttributes(initializer.getInitializedAttributes());
+    mgr.addInitializedAttributes(initializer.getInitializedAttributes(), std::nullopt, std::nullopt);
 }
 SequentialAttributeManager::~SequentialAttributeManager() = default;
 
@@ -875,6 +876,36 @@ TEST_F("transient resource usage is zero in steady state", Fixture)
     auto usage = f._m.get_transient_resource_usage();
     EXPECT_EQUAL(0u, usage.disk());
     EXPECT_EQUAL(0u, usage.memory());
+}
+
+TEST_F("late create serial number is set on new attributes", Fixture)
+{
+    auto am1 = f.make_manager();
+    am1->addAttribute({"a1", INT32_SINGLE}, 4);
+    auto a1 = am1->getAttribute("a1")->getSP();
+    uint32_t docid = 0;
+    a1->addDoc(docid);
+    EXPECT_EQUAL(1u, docid);
+    a1->clearDoc(docid);
+    a1->commit(CommitParam(5));
+    AttrSpecList new_spec;
+    new_spec.emplace_back("a1", INT32_SINGLE);
+    new_spec.emplace_back("a2", INT32_SINGLE);
+    // late serial number
+    auto am2 = am1->prepare_create(AttrMgrSpec(std::move(new_spec), 10, std::nullopt))->create(14, 20);
+    auto am3 = std::dynamic_pointer_cast<AttributeManager>(am2);
+    EXPECT_TRUE(a1 == am3->getAttribute("a1")->getSP());
+    auto a2 = am3->getAttribute("a2")->getSP();
+    TEST_DO(assertCreateSerialNum(*am3, "a1", 4));
+    TEST_DO(assertCreateSerialNum(*am3, "a2", 20));
+    TEST_DO(assertShrinkTargetSerial(*am3, "a1", 3));
+    TEST_DO(assertShrinkTargetSerial(*am3, "a2", 19));
+    EXPECT_EQUAL(0u, am3->getFlushedSerialNum("a1"));
+    EXPECT_EQUAL(0u, am3->getFlushedSerialNum("a2"));
+    EXPECT_EQUAL(2u, a1->getNumDocs());
+    EXPECT_EQUAL(2u, a1->getCommittedDocIdLimit());
+    EXPECT_EQUAL(14u, a2->getNumDocs());
+    EXPECT_EQUAL(14u, a2->getCommittedDocIdLimit());
 }
 
 TEST_MAIN()

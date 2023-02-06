@@ -16,7 +16,7 @@ public:
     AttributeFactory();
 
     AttributeVectorSP create(const vespalib::string &name, const search::attribute::Config &cfg) const override;
-    void setupEmpty(const AttributeVectorSP &vec, search::SerialNum serialNum) const override;
+    void setupEmpty(const AttributeVectorSP &vec, std::optional<search::SerialNum> serialNum) const override;
 };
 
 }

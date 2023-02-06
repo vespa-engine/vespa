@@ -21,7 +21,7 @@ protected:
 
 public:
     static void considerPadAttribute(search::AttributeVector &attribute,
-                                     search::SerialNum currentSerialNum,
+                                     std::optional<search::SerialNum> currentSerialNum,
                                      uint32_t newDocIdLimit);
 
     AttributesInitializerBase();

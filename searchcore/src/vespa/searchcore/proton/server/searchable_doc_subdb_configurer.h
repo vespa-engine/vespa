@@ -84,7 +84,8 @@ public:
                      const DocumentDBConfig &oldConfig,
                      const ReconfigParams &params,
                      IDocumentDBReferenceResolver &resolver,
-                     const DocumentSubDBReconfig& prepared_reconfig);
+                     const DocumentSubDBReconfig& prepared_reconfig,
+                     search::SerialNum serial_num);
 
     IReprocessingInitializer::UP
     reconfigure(const DocumentDBConfig &newConfig,
@@ -92,7 +93,8 @@ public:
                 AttributeCollectionSpec && attrSpec,
                 const ReconfigParams &params,
                 IDocumentDBReferenceResolver &resolver,
-                const DocumentSubDBReconfig& prepared_reconfig);
+                const DocumentSubDBReconfig& prepared_reconfig,
+                search::SerialNum serial_num);
 };
 
 } // namespace proton

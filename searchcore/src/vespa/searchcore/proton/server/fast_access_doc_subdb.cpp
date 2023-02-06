@@ -102,7 +102,7 @@ FastAccessDocSubDB::setupAttributeManager(AttributeManager::SP attrMgrResult)
 
 
 std::unique_ptr<AttributeCollectionSpec>
-FastAccessDocSubDB::createAttributeSpec(const AttributesConfig &attrCfg, const AllocStrategy& alloc_strategy, SerialNum serialNum) const
+FastAccessDocSubDB::createAttributeSpec(const AttributesConfig &attrCfg, const AllocStrategy& alloc_strategy, std::optional<SerialNum> serialNum) const
 {
     uint32_t docIdLimit(_dms->getCommittedDocIdLimit());
     AttributeCollectionSpecFactory factory(alloc_strategy, _fastAccessAttributesOnly);
@@ -270,7 +270,7 @@ FastAccessDocSubDB::applyConfig(const DocumentDBConfig &newConfigSnapshot, const
         std::unique_ptr<AttributeCollectionSpec> attrSpec =
             createAttributeSpec(newConfigSnapshot.getAttributesConfig(), alloc_strategy, serialNum);
         IReprocessingInitializer::UP initializer =
-            _configurer.reconfigure(newConfigSnapshot, oldConfigSnapshot, std::move(*attrSpec), prepared_reconfig);
+            _configurer.reconfigure(newConfigSnapshot, oldConfigSnapshot, std::move(*attrSpec), prepared_reconfig, serialNum);
         if (initializer->hasReprocessors()) {
             tasks.push_back(IReprocessingTask::SP(createReprocessingTask(*initializer,
                     newConfigSnapshot.getDocumentTypeRepoSP()).release()));
