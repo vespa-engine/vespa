@@ -82,6 +82,15 @@ public:
     void setup_match_features();
     void setup_summary();
     void setup_dump();
+
+    // explicitly disallow re-using the search iterator tree (for now)
+    //
+    // Iterators with internal state that limits the number of hits
+    // produced may not match a document during second phase ranking
+    // that was matched during first phase ranking. Note that the
+    // inverse may also happen; matching a document during second
+    // phase matching that was not matched during first phase ranking.
+    constexpr bool allow_reuse_search() const noexcept { return false; }
 };
 
 class AttributeOperationTask {

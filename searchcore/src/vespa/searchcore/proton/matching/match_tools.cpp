@@ -84,8 +84,9 @@ MatchTools::setup(std::unique_ptr<RankProgram> rank_program, ExecutionProfiler *
         HandleRecorder::Binder bind(recorder);
         _rank_program->setup(*_match_data, _queryEnv, _featureOverrides, profiler);
     }
-    bool can_reuse_search = (_search && !_search_has_changed &&
-            contains_all(_used_handles, recorder.get_handles()));
+    bool can_reuse_search = (allow_reuse_search() &&
+                             _search && !_search_has_changed &&
+                             contains_all(_used_handles, recorder.get_handles()));
     if (!can_reuse_search) {
         recorder.tag_match_data(*_match_data);
         _match_data->set_termwise_limit(termwise_limit);
