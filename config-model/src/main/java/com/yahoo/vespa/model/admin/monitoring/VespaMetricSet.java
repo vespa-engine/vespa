@@ -325,13 +325,6 @@ public class VespaMetricSet {
         return metrics;
     }
 
-    private static void addSearchNodeExecutorMetrics(Set<Metric> metrics, String prefix) {
-        addMetric(metrics, prefix + ".queuesize", List.of("max", "sum", "count"));
-        addMetric(metrics, prefix + ".accepted.rate");
-        addMetric(metrics, prefix + ".wakeups.rate");
-        addMetric(metrics, prefix + ".utilization", List.of("max", "sum", "count"));
-    }
-
     private static Set<Metric> getSearchNodeMetrics() {
         Set<Metric> metrics = new LinkedHashSet<>();
 
