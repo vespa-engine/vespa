@@ -51,7 +51,7 @@ public class CsrGenerator {
                                 instanceIdentity.getDomainName().replace(".", "-"),
                                 dnsSuffix))
                 .addSubjectAlternativeName(DNS, getIdentitySAN(instanceId));
-        if (clusterType != null) pkcs10CsrBuilder.addSubjectAlternativeName(URI, "vespa://cluster-type/%s".formatted(clusterType.toConfigValue()));
+        if (clusterType != null) pkcs10CsrBuilder.addSubjectAlternativeName(URI, clusterType.asCertificateSanUri().toString());
         ipAddresses.forEach(ip ->  pkcs10CsrBuilder.addSubjectAlternativeName(new SubjectAlternativeName(IP, ip)));
         return pkcs10CsrBuilder.build();
     }
@@ -65,7 +65,7 @@ public class CsrGenerator {
         var b = Pkcs10CsrBuilder.fromKeypair(principal, keyPair, SHA256_WITH_RSA)
                 .addSubjectAlternativeName(DNS, getIdentitySAN(instanceId))
                 .addSubjectAlternativeName(EMAIL, String.format("%s.%s@%s", identity.getDomainName(), identity.getName(), dnsSuffix));
-        if (clusterType != null) b.addSubjectAlternativeName(URI, "vespa://cluster-type/%s".formatted(clusterType.toConfigValue()));
+        if (clusterType != null) b.addSubjectAlternativeName(URI, clusterType.asCertificateSanUri().toString());
         return b.build();
     }
 

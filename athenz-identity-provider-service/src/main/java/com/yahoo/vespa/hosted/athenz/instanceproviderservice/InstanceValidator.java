@@ -8,6 +8,7 @@ import com.yahoo.config.model.api.ServiceInfo;
 import com.yahoo.config.model.api.SuperModelProvider;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.vespa.athenz.api.AthenzService;
+import com.yahoo.vespa.athenz.identityprovider.api.ClusterType;
 import com.yahoo.vespa.athenz.identityprovider.api.EntityBindingsMapper;
 import com.yahoo.vespa.athenz.identityprovider.api.SignedIdentityDocument;
 import com.yahoo.vespa.athenz.identityprovider.api.VespaUniqueInstanceId;
@@ -191,7 +192,7 @@ public class InstanceValidator {
         }
         var clusterType = node.allocation().map(a -> a.membership().cluster().type()).orElse(null);
         Set<URI> allowedUris = clusterType != null
-                ? Set.of(URI.create("vespa://cluster-type/%s".formatted(clusterType.name()))) : Set.of();
+                ? Set.of(ClusterType.from(clusterType.name()).asCertificateSanUri()) : Set.of();
         if (!allowedUris.containsAll(requestedUris)) {
             Supplier<String> msg = () -> "Illegal SAN URIs: expected '%s' found '%s'".formatted(allowedUris, requestedUris);
             throw new ValidationException(Level.WARNING, msg);

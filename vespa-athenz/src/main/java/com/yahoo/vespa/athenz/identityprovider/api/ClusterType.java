@@ -2,6 +2,8 @@
 
 package com.yahoo.vespa.athenz.identityprovider.api;
 
+import java.net.URI;
+
 /**
  * Vespa cluster type
  *
@@ -31,6 +33,8 @@ public enum ClusterType {
             case COMBINED -> "combined";
         };
     }
+
+    public URI asCertificateSanUri() { return URI.create("vespa://cluster-type/%s".formatted(toConfigValue())); }
 
 }
 
