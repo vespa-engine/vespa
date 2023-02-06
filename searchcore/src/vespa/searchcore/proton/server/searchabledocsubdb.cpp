@@ -154,7 +154,7 @@ SearchableDocSubDB::applyConfig(const DocumentDBConfig &newConfigSnapshot, const
         std::unique_ptr<AttributeCollectionSpec> attrSpec =
             createAttributeSpec(newConfigSnapshot.getAttributesConfig(), alloc_strategy, serialNum);
         IReprocessingInitializer::UP initializer =
-            _configurer.reconfigure(newConfigSnapshot, oldConfigSnapshot, std::move(*attrSpec), params, resolver, prepared_reconfig, serialNum);
+            _configurer.reconfigure(newConfigSnapshot, oldConfigSnapshot, std::move(*attrSpec), params, resolver, prepared_reconfig);
         if (initializer && initializer->hasReprocessors()) {
             tasks.emplace_back(createReprocessingTask(*initializer, newConfigSnapshot.getDocumentTypeRepoSP()));
         }
@@ -163,7 +163,7 @@ SearchableDocSubDB::applyConfig(const DocumentDBConfig &newConfigSnapshot, const
             reconfigureAttributeMetrics(*newMgr, *oldMgr);
         }
     } else {
-        _configurer.reconfigure(newConfigSnapshot, oldConfigSnapshot, params, resolver, prepared_reconfig, serialNum);
+        _configurer.reconfigure(newConfigSnapshot, oldConfigSnapshot, params, resolver, prepared_reconfig);
     }
     syncViews();
     return tasks;

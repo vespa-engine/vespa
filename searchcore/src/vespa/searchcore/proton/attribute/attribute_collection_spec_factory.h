@@ -5,7 +5,6 @@
 #include "attribute_collection_spec.h"
 #include <vespa/searchcore/proton/common/alloc_strategy.h>
 #include <vespa/searchlib/common/serialnum.h>
-#include <optional>
 
 namespace vespa::config::search::internal { class InternalAttributesType; };
 
@@ -27,7 +26,7 @@ public:
     AttributeCollectionSpecFactory(const AllocStrategy& alloc_strategy, bool fastAccessOnly);
     ~AttributeCollectionSpecFactory();
 
-    std::unique_ptr<AttributeCollectionSpec> create(const AttributesConfig &attrCfg, uint32_t docIdLimit, std::optional<search::SerialNum> serialNum) const;
+    std::unique_ptr<AttributeCollectionSpec> create(const AttributesConfig &attrCfg, uint32_t docIdLimit, search::SerialNum serialNum) const;
 };
 
 } // namespace proton

@@ -8,7 +8,7 @@ namespace proton {
 
 void
 AttributesInitializerBase::considerPadAttribute(search::AttributeVector &attribute,
-                                                std::optional<search::SerialNum> currentSerialNum,
+                                                search::SerialNum currentSerialNum,
                                                 uint32_t newDocIdLimit)
 {
     /*
@@ -32,8 +32,7 @@ AttributesInitializerBase::considerPadAttribute(search::AttributeVector &attribu
      * 1, since a replay of a non-corrupted transaction log should
      * grow the attribute as needed.
      */
-    if (!currentSerialNum.has_value() ||
-        attribute.getStatus().getLastSyncToken() < currentSerialNum.value()) {
+    if (attribute.getStatus().getLastSyncToken() < currentSerialNum) {
         AttributeManager::padAttribute(attribute, newDocIdLimit);
         attribute.commit();
         assert(newDocIdLimit <= attribute.getNumDocs());

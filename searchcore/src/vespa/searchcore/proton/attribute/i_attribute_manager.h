@@ -21,7 +21,6 @@ namespace vespalib {
 
 namespace proton {
 
-class AttributeManagerReconfig;
 class ImportedAttributesRepo;
 
 /**
@@ -36,8 +35,6 @@ struct IAttributeManager : public search::IAttributeManager
     using OnDone = std::shared_ptr<vespalib::IDestructorCallback>;
     using IAttributeFunctor = search::attribute::IAttributeFunctor;
     using IConstAttributeFunctor = search::attribute::IConstAttributeFunctor;
-
-    virtual std::unique_ptr<AttributeManagerReconfig> prepare_create(AttributeCollectionSpec&& spec) const = 0;
 
     /**
      * Create a new attribute manager based on the content of the current one and

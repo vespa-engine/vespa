@@ -19,11 +19,9 @@ AttributeFactory::create(const vespalib::string &name, const search::attribute::
 }
 
 void
-AttributeFactory::setupEmpty(const AttributeVector::SP &vec, std::optional<search::SerialNum> serialNum) const
+AttributeFactory::setupEmpty(const AttributeVector::SP &vec, search::SerialNum serialNum) const
 {
-    if (serialNum.has_value()) {
-        vec->setCreateSerialNum(serialNum.value());
-    }
+    vec->setCreateSerialNum(serialNum);
     vec->addReservedDoc();
 }
 

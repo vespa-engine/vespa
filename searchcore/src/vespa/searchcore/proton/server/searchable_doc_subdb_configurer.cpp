@@ -158,12 +158,11 @@ reconfigure(const DocumentDBConfig &newConfig,
             const DocumentDBConfig &oldConfig,
             const ReconfigParams &params,
             IDocumentDBReferenceResolver &resolver,
-            const DocumentSubDBReconfig& prepared_reconfig,
-            search::SerialNum serial_num)
+            const DocumentSubDBReconfig& prepared_reconfig)
 {
     assert(!params.shouldAttributeManagerChange());
     AttributeCollectionSpec attrSpec(AttributeCollectionSpec::AttributeList(), 0, 0);
-    reconfigure(newConfig, oldConfig, std::move(attrSpec), params, resolver, prepared_reconfig, serial_num);
+    reconfigure(newConfig, oldConfig, std::move(attrSpec), params, resolver, prepared_reconfig);
 }
 
 namespace {
@@ -196,14 +195,12 @@ SearchableDocSubDBConfigurer::reconfigure(const DocumentDBConfig &newConfig,
                                           AttributeCollectionSpec && attrSpec,
                                           const ReconfigParams &params,
                                           IDocumentDBReferenceResolver &resolver,
-                                          const DocumentSubDBReconfig& prepared_reconfig,
-                                          search::SerialNum serial_num)
+                                          const DocumentSubDBReconfig& prepared_reconfig)
 {
     bool shouldMatchViewChange = prepared_reconfig.has_matchers_changed();
     bool shouldSearchViewChange = false;
     bool shouldFeedViewChange = params.shouldSchemaChange();
-    auto& attr_spec_serial_num = attrSpec.getCurrentSerialNum();
-    assert(!attr_spec_serial_num.has_value() || attr_spec_serial_num.value() == serial_num);
+    search::SerialNum currentSerialNum = attrSpec.getCurrentSerialNum();
     SearchView::SP searchView = _searchView.get();
     auto matchers = prepared_reconfig.matchers();
     IReprocessingInitializer::UP initializer;
@@ -222,7 +219,7 @@ SearchableDocSubDBConfigurer::reconfigure(const DocumentDBConfig &newConfig,
         attrWriter = newAttrWriter;
         shouldFeedViewChange = true;
         initializer = createAttributeReprocessingInitializer(newConfig, newAttrMgr, oldConfig, oldAttrMgr,
-                                                             _subDbName, serial_num);
+                                                             _subDbName, currentSerialNum);
     } else if (params.shouldAttributeWriterChange()) {
         attrWriter = std::make_shared<AttributeWriter>(attrMgr);
         shouldFeedViewChange = true;
