@@ -14,8 +14,7 @@ public class TenantParametersTest {
 
     @Test
     public void parameters_can_be_converted_to_json_and_back() {
-        TenantParameters params = new TenantParameters("host", "ip",
-                                                       WireguardKey.from(dummyKey));
+        TenantParameters params = new TenantParameters("host", WireguardKey.from(dummyKey));
         TenantParameters params2 = TenantParameters.fromJson(params.toJson());
         assertEquals(params, params2);
     }

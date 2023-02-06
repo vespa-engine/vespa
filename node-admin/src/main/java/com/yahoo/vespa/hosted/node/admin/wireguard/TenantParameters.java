@@ -10,14 +10,13 @@ import com.yahoo.slime.SlimeUtils;
  *
  * @author gjoranv
  */
-public record TenantParameters(String hostname, String ip, WireguardKey publicKey) {
+public record TenantParameters(String hostname, WireguardKey publicKey) {
 
     public static TenantParameters fromJson(String json) {
         Slime slime = SlimeUtils.jsonToSlime(json);
         Cursor root = slime.get();
         return new TenantParameters(
                 root.field("hostname").asString(),
-                root.field("ip").asString(),
                 WireguardKey.from(root.field("publicKey").asString())
         );
     }
@@ -26,7 +25,6 @@ public record TenantParameters(String hostname, String ip, WireguardKey publicKe
         Slime slime = new Slime();
         Cursor cursor = slime.setObject();
         cursor.setString("hostname", hostname);
-        cursor.setString("ip", ip);
         cursor.setString("publicKey", publicKey.value());
         return SlimeUtils.toJson(slime);
     }
