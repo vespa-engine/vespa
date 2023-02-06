@@ -19,7 +19,7 @@ import java.util.stream.Collectors;
  */
 public class PublicDimensionsProcessor implements MetricsProcessor {
 
-    private final Set<DimensionId> blocklistDimensions = getBlocklistDimensions();
+    private final Set<DimensionId> blocklistDimensions = BlocklistDimensions.getAll();
 
     @Override
     public void process(MetricsPacket.Builder builder) {
@@ -28,14 +28,4 @@ public class PublicDimensionsProcessor implements MetricsProcessor {
         builder.retainDimensions(dimensionsToRetain);
     }
 
-    static Set<DimensionId> getBlocklistDimensions() {
-        return toDimensionIds(BlocklistDimensions.blocklistDimensions);
-    }
-
-    static Set<DimensionId> toDimensionIds(Collection<String> dimensionNames) {
-        return dimensionNames.stream()
-                .map(DimensionId::toDimensionId)
-                .collect(Collectors.toCollection(LinkedHashSet::new));
-
-    }
 }
