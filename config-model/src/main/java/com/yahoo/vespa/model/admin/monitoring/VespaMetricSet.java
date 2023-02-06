@@ -325,17 +325,6 @@ public class VespaMetricSet {
         return metrics;
     }
 
-    private static void addSearchNodeExecutorMetrics(Set<Metric> metrics, String prefix) {
-        addMetric(metrics, prefix + ".queuesize.max");
-        addMetric(metrics, prefix + ".queuesize.sum");
-        addMetric(metrics, prefix + ".queuesize.count");
-        addMetric(metrics, prefix + ".accepted.rate");
-        addMetric(metrics, prefix + ".wakeups.rate");
-        addMetric(metrics, prefix + ".utilization.max");
-        addMetric(metrics, prefix + ".utilization.sum");
-        addMetric(metrics, prefix + ".utilization.count");
-    }
-
     private static Set<Metric> getSearchNodeMetrics() {
         Set<Metric> metrics = new LinkedHashSet<>();
 
@@ -361,13 +350,34 @@ public class VespaMetricSet {
         addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_SEARCH_PROTOCOL_DOCSUM_REQUESTED_DOCUMENTS.count());
 
         // Executors shared between all document dbs
-        addSearchNodeExecutorMetrics(metrics, "content.proton.executor.proton");
-        addSearchNodeExecutorMetrics(metrics, "content.proton.executor.flush");
-        addSearchNodeExecutorMetrics(metrics, "content.proton.executor.match");
-        addSearchNodeExecutorMetrics(metrics, "content.proton.executor.docsum");
-        addSearchNodeExecutorMetrics(metrics, "content.proton.executor.shared");
-        addSearchNodeExecutorMetrics(metrics, "content.proton.executor.warmup");
-        addSearchNodeExecutorMetrics(metrics, "content.proton.executor.field_writer");
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_EXECUTOR_PROTON_QUEUESIZE, EnumSet.of(max, sum, count));
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_EXECUTOR_PROTON_ACCEPTED.rate());
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_EXECUTOR_PROTON_WAKEUPS.rate());
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_EXECUTOR_PROTON_UTILIZATION, EnumSet.of(max, sum, count));
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_EXECUTOR_FLUSH_QUEUESIZE, EnumSet.of(max, sum, count));
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_EXECUTOR_FLUSH_ACCEPTED.rate());
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_EXECUTOR_FLUSH_WAKEUPS.rate());
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_EXECUTOR_FLUSH_UTILIZATION, EnumSet.of(max, sum, count));
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_EXECUTOR_MATCH_QUEUESIZE, EnumSet.of(max, sum, count));
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_EXECUTOR_MATCH_ACCEPTED.rate());
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_EXECUTOR_MATCH_WAKEUPS.rate());
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_EXECUTOR_MATCH_UTILIZATION, EnumSet.of(max, sum, count));
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_EXECUTOR_DOCSUM_QUEUESIZE, EnumSet.of(max, sum, count));
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_EXECUTOR_DOCSUM_ACCEPTED.rate());
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_EXECUTOR_DOCSUM_WAKEUPS.rate());
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_EXECUTOR_DOCSUM_UTILIZATION, EnumSet.of(max, sum, count));
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_EXECUTOR_SHARED_QUEUESIZE, EnumSet.of(max, sum, count));
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_EXECUTOR_SHARED_ACCEPTED.rate());
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_EXECUTOR_SHARED_WAKEUPS.rate());
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_EXECUTOR_SHARED_UTILIZATION, EnumSet.of(max, sum, count));
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_EXECUTOR_WARMUP_QUEUESIZE, EnumSet.of(max, sum, count));
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_EXECUTOR_WARMUP_ACCEPTED.rate());
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_EXECUTOR_WARMUP_WAKEUPS.rate());
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_EXECUTOR_WARMUP_UTILIZATION, EnumSet.of(max, sum, count));
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_EXECUTOR_FIELD_WRITER_QUEUESIZE, EnumSet.of(max, sum, count));
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_EXECUTOR_FIELD_WRITER_ACCEPTED.rate());
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_EXECUTOR_FIELD_WRITER_WAKEUPS.rate());
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_EXECUTOR_FIELD_WRITER_UTILIZATION, EnumSet.of(max, sum, count));
 
         // jobs
         addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_JOB_TOTAL.average());
@@ -381,129 +391,146 @@ public class VespaMetricSet {
         addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_JOB_REMOVED_DOCUMENTS_PRUNE.average());
 
         // Threading service (per document db)
-        addSearchNodeExecutorMetrics(metrics, "content.proton.documentdb.threading_service.master");
-        addSearchNodeExecutorMetrics(metrics, "content.proton.documentdb.threading_service.index");
-        addSearchNodeExecutorMetrics(metrics, "content.proton.documentdb.threading_service.summary");
-        addSearchNodeExecutorMetrics(metrics, "content.proton.documentdb.threading_service.index_field_inverter");
-        addSearchNodeExecutorMetrics(metrics, "content.proton.documentdb.threading_service.index_field_writer");
-        addSearchNodeExecutorMetrics(metrics, "content.proton.documentdb.threading_service.attribute_field_writer");
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_THREADING_SERVICE_MASTER_QUEUESIZE, EnumSet.of(max, sum, count));
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_THREADING_SERVICE_MASTER_ACCEPTED.rate());
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_THREADING_SERVICE_MASTER_WAKEUPS.rate());
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_THREADING_SERVICE_MASTER_UTILIZATION, EnumSet.of(max, sum, count));
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_THREADING_SERVICE_INDEX_QUEUESIZE, EnumSet.of(max, sum, count));
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_THREADING_SERVICE_INDEX_ACCEPTED.rate());
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_THREADING_SERVICE_INDEX_WAKEUPS.rate());
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_THREADING_SERVICE_INDEX_UTILIZATION, EnumSet.of(max, sum, count));
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_THREADING_SERVICE_SUMMARY_QUEUESIZE, EnumSet.of(max, sum, count));
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_THREADING_SERVICE_SUMMARY_ACCEPTED.rate());
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_THREADING_SERVICE_SUMMARY_WAKEUPS.rate());
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_THREADING_SERVICE_SUMMARY_UTILIZATION, EnumSet.of(max, sum, count));
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_THREADING_SERVICE_INDEX_FIELD_INVERTER_QUEUESIZE, EnumSet.of(max, sum, count));
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_THREADING_SERVICE_INDEX_FIELD_INVERTER_ACCEPTED.rate());
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_THREADING_SERVICE_INDEX_FIELD_INVERTER_WAKEUPS.rate());
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_THREADING_SERVICE_INDEX_FIELD_INVERTER_UTILIZATION, EnumSet.of(max, sum, count));
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_THREADING_SERVICE_INDEX_FIELD_WRITER_QUEUESIZE, EnumSet.of(max, sum, count));
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_THREADING_SERVICE_INDEX_FIELD_WRITER_ACCEPTED.rate());
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_THREADING_SERVICE_INDEX_FIELD_WRITER_WAKEUPS.rate());
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_THREADING_SERVICE_INDEX_FIELD_WRITER_UTILIZATION, EnumSet.of(max, sum, count));
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_THREADING_SERVICE_ATTRIBUTE_FIELD_WRITER_QUEUESIZE, EnumSet.of(max, sum, count));
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_THREADING_SERVICE_ATTRIBUTE_FIELD_WRITER_ACCEPTED.rate());
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_THREADING_SERVICE_ATTRIBUTE_FIELD_WRITER_WAKEUPS.rate());
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_THREADING_SERVICE_ATTRIBUTE_FIELD_WRITER_UTILIZATION, EnumSet.of(max, sum, count));
 
         // lid space
-        addMetric(metrics, "content.proton.documentdb.ready.lid_space.lid_bloat_factor.average");
-        addMetric(metrics, "content.proton.documentdb.notready.lid_space.lid_bloat_factor.average");
-        addMetric(metrics, "content.proton.documentdb.removed.lid_space.lid_bloat_factor.average");
-        addMetric(metrics, "content.proton.documentdb.ready.lid_space.lid_fragmentation_factor.average");
-        addMetric(metrics, "content.proton.documentdb.notready.lid_space.lid_fragmentation_factor.average");
-        addMetric(metrics, "content.proton.documentdb.removed.lid_space.lid_fragmentation_factor.average");
-        addMetric(metrics, "content.proton.documentdb.ready.lid_space.lid_limit.last");
-        addMetric(metrics, "content.proton.documentdb.notready.lid_space.lid_limit.last");
-        addMetric(metrics, "content.proton.documentdb.removed.lid_space.lid_limit.last");
-        addMetric(metrics, "content.proton.documentdb.ready.lid_space.highest_used_lid.last");
-        addMetric(metrics, "content.proton.documentdb.notready.lid_space.highest_used_lid.last");
-        addMetric(metrics, "content.proton.documentdb.removed.lid_space.highest_used_lid.last");
-        addMetric(metrics, "content.proton.documentdb.ready.lid_space.used_lids.last");
-        addMetric(metrics, "content.proton.documentdb.notready.lid_space.used_lids.last");
-        addMetric(metrics, "content.proton.documentdb.removed.lid_space.used_lids.last");
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_READY_LID_SPACE_LID_BLOAT_FACTOR.average());
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_READY_LID_SPACE_LID_FRAGMENTATION_FACTOR.average());
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_READY_LID_SPACE_LID_LIMIT.last());
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_READY_LID_SPACE_HIGHEST_USED_LID.last());
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_READY_LID_SPACE_USED_LIDS.last());
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_NOTREADY_LID_SPACE_LID_BLOAT_FACTOR.average());
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_NOTREADY_LID_SPACE_LID_FRAGMENTATION_FACTOR.average());
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_NOTREADY_LID_SPACE_LID_LIMIT.last());
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_NOTREADY_LID_SPACE_HIGHEST_USED_LID.last());
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_NOTREADY_LID_SPACE_USED_LIDS.last());
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_REMOVED_LID_SPACE_LID_BLOAT_FACTOR.average());
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_REMOVED_LID_SPACE_LID_FRAGMENTATION_FACTOR.average());
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_REMOVED_LID_SPACE_LID_LIMIT.last());
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_REMOVED_LID_SPACE_HIGHEST_USED_LID.last());
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_REMOVED_LID_SPACE_USED_LIDS.last());
 
         // bucket move
-        addMetric(metrics, "content.proton.documentdb.bucket_move.buckets_pending.last");
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_BUCKET_MOVE_BUCKETS_PENDING.last());
 
         // resource usage
-        addMetric(metrics, "content.proton.resource_usage.disk.average");
-        addMetric(metrics, "content.proton.resource_usage.disk_usage.total.max");
-        addMetric(metrics, "content.proton.resource_usage.disk_usage.total_utilization.max");
-        addMetric(metrics, "content.proton.resource_usage.disk_usage.transient.max");
-        addMetric(metrics, "content.proton.resource_usage.memory.average");
-        addMetric(metrics, "content.proton.resource_usage.memory_usage.total.max");
-        addMetric(metrics, "content.proton.resource_usage.memory_usage.total_utilization.max");
-        addMetric(metrics, "content.proton.resource_usage.memory_usage.transient.max");
-        addMetric(metrics, "content.proton.resource_usage.memory_mappings.max");
-        addMetric(metrics, "content.proton.resource_usage.open_file_descriptors.max");
-        addMetric(metrics, "content.proton.resource_usage.feeding_blocked.max");
-        addMetric(metrics, "content.proton.resource_usage.malloc_arena.max");
-        addMetric(metrics, "content.proton.documentdb.attribute.resource_usage.address_space.max");
-        addMetric(metrics, "content.proton.documentdb.attribute.resource_usage.feeding_blocked.max");
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_RESOURCE_USAGE_DISK.average());
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_RESOURCE_USAGE_DISK_USAGE_TOTAL.max());
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_RESOURCE_USAGE_DISK_USAGE_TOTAL_UTILIZATION.max());
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_RESOURCE_USAGE_DISK_USAGE_TRANSIENT.max());
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_RESOURCE_USAGE_MEMORY.average());
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_RESOURCE_USAGE_MEMORY_USAGE_TOTAL.max());
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_RESOURCE_USAGE_MEMORY_USAGE_TOTAL_UTILIZATION.max());
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_RESOURCE_USAGE_MEMORY_USAGE_TRANSIENT.max());
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_RESOURCE_USAGE_MEMORY_MAPPINGS.max());
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_RESOURCE_USAGE_OPEN_FILE_DESCRIPTORS.max());
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_RESOURCE_USAGE_FEEDING_BLOCKED.max());
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_RESOURCE_USAGE_MALLOC_ARENA.max());
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_ATTRIBUTE_RESOURCE_USAGE_ADDRESS_SPACE.max());
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_ATTRIBUTE_RESOURCE_USAGE_FEEDING_BLOCKED.max());
 
         // CPU util
-        addMetric(metrics, "content.proton.resource_usage.cpu_util.setup", List.of("max", "sum", "count"));
-        addMetric(metrics, "content.proton.resource_usage.cpu_util.read", List.of("max", "sum", "count"));
-        addMetric(metrics, "content.proton.resource_usage.cpu_util.write", List.of("max", "sum", "count"));
-        addMetric(metrics, "content.proton.resource_usage.cpu_util.compact", List.of("max", "sum", "count"));
-        addMetric(metrics, "content.proton.resource_usage.cpu_util.other", List.of("max", "sum", "count"));
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_RESOURCE_USAGE_CPU_UTIL_SETUP, EnumSet.of(max, sum, count));
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_RESOURCE_USAGE_CPU_UTIL_READ, EnumSet.of(max, sum, count));
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_RESOURCE_USAGE_CPU_UTIL_WRITE, EnumSet.of(max, sum, count));
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_RESOURCE_USAGE_CPU_UTIL_COMPACT, EnumSet.of(max, sum, count));
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_RESOURCE_USAGE_CPU_UTIL_OTHER, EnumSet.of(max, sum, count));
 
         // transaction log
-        addMetric(metrics, "content.proton.transactionlog.entries.average");
-        addMetric(metrics, "content.proton.transactionlog.disk_usage.average");
-        addMetric(metrics, "content.proton.transactionlog.replay_time.last");
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_TRANSACTIONLOG_ENTRIES.average());
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_TRANSACTIONLOG_DISK_USAGE.average());
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_TRANSACTIONLOG_REPLAY_TIME.last());
 
         // document store
-        addMetric(metrics, "content.proton.documentdb.ready.document_store.disk_usage.average");
-        addMetric(metrics, "content.proton.documentdb.ready.document_store.disk_bloat.average");
-        addMetric(metrics, "content.proton.documentdb.ready.document_store.max_bucket_spread.average");
-        addMetric(metrics, "content.proton.documentdb.ready.document_store.memory_usage.allocated_bytes.average");
-        addMetric(metrics, "content.proton.documentdb.ready.document_store.memory_usage.used_bytes.average");
-        addMetric(metrics, "content.proton.documentdb.ready.document_store.memory_usage.dead_bytes.average");
-        addMetric(metrics, "content.proton.documentdb.ready.document_store.memory_usage.onhold_bytes.average");
-        addMetric(metrics, "content.proton.documentdb.notready.document_store.disk_usage.average");
-        addMetric(metrics, "content.proton.documentdb.notready.document_store.disk_bloat.average");
-        addMetric(metrics, "content.proton.documentdb.notready.document_store.max_bucket_spread.average");
-        addMetric(metrics, "content.proton.documentdb.notready.document_store.memory_usage.allocated_bytes.average");
-        addMetric(metrics, "content.proton.documentdb.notready.document_store.memory_usage.used_bytes.average");
-        addMetric(metrics, "content.proton.documentdb.notready.document_store.memory_usage.dead_bytes.average");
-        addMetric(metrics, "content.proton.documentdb.notready.document_store.memory_usage.onhold_bytes.average");
-        addMetric(metrics, "content.proton.documentdb.removed.document_store.disk_usage.average");
-        addMetric(metrics, "content.proton.documentdb.removed.document_store.disk_bloat.average");
-        addMetric(metrics, "content.proton.documentdb.removed.document_store.max_bucket_spread.average");
-        addMetric(metrics, "content.proton.documentdb.removed.document_store.memory_usage.allocated_bytes.average");
-        addMetric(metrics, "content.proton.documentdb.removed.document_store.memory_usage.used_bytes.average");
-        addMetric(metrics, "content.proton.documentdb.removed.document_store.memory_usage.dead_bytes.average");
-        addMetric(metrics, "content.proton.documentdb.removed.document_store.memory_usage.onhold_bytes.average");
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_READY_DOCUMENT_STORE_DISK_USAGE.average());
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_READY_DOCUMENT_STORE_DISK_BLOAT.average());
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_READY_DOCUMENT_STORE_MAX_BUCKET_SPREAD.average());
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_READY_DOCUMENT_STORE_MEMORY_USAGE_ALLOCATED_BYTES.average());
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_READY_DOCUMENT_STORE_MEMORY_USAGE_USED_BYTES.average());
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_READY_DOCUMENT_STORE_MEMORY_USAGE_ONHOLD_BYTES.average());
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_NOTREADY_DOCUMENT_STORE_DISK_USAGE.average());
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_NOTREADY_DOCUMENT_STORE_DISK_BLOAT.average());
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_NOTREADY_DOCUMENT_STORE_MAX_BUCKET_SPREAD.average());
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_NOTREADY_DOCUMENT_STORE_MEMORY_USAGE_ALLOCATED_BYTES.average());
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_NOTREADY_DOCUMENT_STORE_MEMORY_USAGE_USED_BYTES.average());
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_NOTREADY_DOCUMENT_STORE_MEMORY_USAGE_DEAD_BYTES.average());
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_NOTREADY_DOCUMENT_STORE_MEMORY_USAGE_ONHOLD_BYTES.average());
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_REMOVED_DOCUMENT_STORE_DISK_USAGE.average());
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_REMOVED_DOCUMENT_STORE_DISK_BLOAT.average());
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_REMOVED_DOCUMENT_STORE_MAX_BUCKET_SPREAD.average());
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_REMOVED_DOCUMENT_STORE_MEMORY_USAGE_ALLOCATED_BYTES.average());
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_REMOVED_DOCUMENT_STORE_MEMORY_USAGE_USED_BYTES.average());
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_REMOVED_DOCUMENT_STORE_MEMORY_USAGE_DEAD_BYTES.average());
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_REMOVED_DOCUMENT_STORE_MEMORY_USAGE_ONHOLD_BYTES.average());
 
         // document store cache
-        addMetric(metrics, "content.proton.documentdb.ready.document_store.cache.memory_usage.average");
-        addMetric(metrics, "content.proton.documentdb.ready.document_store.cache.hit_rate.average");
-        addMetric(metrics, "content.proton.documentdb.ready.document_store.cache.lookups.rate");
-        addMetric(metrics, "content.proton.documentdb.ready.document_store.cache.invalidations.rate");
-        addMetric(metrics, "content.proton.documentdb.notready.document_store.cache.memory_usage.average");
-        addMetric(metrics, "content.proton.documentdb.notready.document_store.cache.hit_rate.average");
-        addMetric(metrics, "content.proton.documentdb.notready.document_store.cache.lookups.rate");
-        addMetric(metrics, "content.proton.documentdb.notready.document_store.cache.invalidations.rate");
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_READY_DOCUMENT_STORE_CACHE_MEMORY_USAGE.average());
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_READY_DOCUMENT_STORE_CACHE_HIT_RATE.average());
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_READY_DOCUMENT_STORE_CACHE_LOOKUPS.rate());
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_READY_DOCUMENT_STORE_CACHE_INVALIDATIONS.rate());
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_NOTREADY_DOCUMENT_STORE_CACHE_MEMORY_USAGE.average());
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_NOTREADY_DOCUMENT_STORE_CACHE_HIT_RATE.average());
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_NOTREADY_DOCUMENT_STORE_CACHE_LOOKUPS.rate());
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_NOTREADY_DOCUMENT_STORE_CACHE_INVALIDATIONS.rate());
 
         // attribute
-        addMetric(metrics, "content.proton.documentdb.ready.attribute.memory_usage.allocated_bytes.average");
-        addMetric(metrics, "content.proton.documentdb.ready.attribute.memory_usage.used_bytes.average");
-        addMetric(metrics, "content.proton.documentdb.ready.attribute.memory_usage.dead_bytes.average");
-        addMetric(metrics, "content.proton.documentdb.ready.attribute.memory_usage.onhold_bytes.average");
-        addMetric(metrics, "content.proton.documentdb.notready.attribute.memory_usage.allocated_bytes.average");
-        addMetric(metrics, "content.proton.documentdb.notready.attribute.memory_usage.used_bytes.average");
-        addMetric(metrics, "content.proton.documentdb.notready.attribute.memory_usage.dead_bytes.average");
-        addMetric(metrics, "content.proton.documentdb.notready.attribute.memory_usage.onhold_bytes.average");
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_READY_ATTRIBUTE_MEMORY_USAGE_ALLOCATED_BYTES.average());
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_READY_ATTRIBUTE_MEMORY_USAGE_USED_BYTES.average());
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_READY_ATTRIBUTE_MEMORY_USAGE_DEAD_BYTES.average());
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_READY_ATTRIBUTE_MEMORY_USAGE_ONHOLD_BYTES.average());
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_NOTREADY_ATTRIBUTE_MEMORY_USAGE_ALLOCATED_BYTES.average());
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_NOTREADY_ATTRIBUTE_MEMORY_USAGE_USED_BYTES.average());
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_NOTREADY_ATTRIBUTE_MEMORY_USAGE_DEAD_BYTES.average());
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_NOTREADY_ATTRIBUTE_MEMORY_USAGE_ONHOLD_BYTES.average());
 
         // index
-        addMetric(metrics, "content.proton.documentdb.index.memory_usage.allocated_bytes.average");
-        addMetric(metrics, "content.proton.documentdb.index.memory_usage.used_bytes.average");
-        addMetric(metrics, "content.proton.documentdb.index.memory_usage.dead_bytes.average");
-        addMetric(metrics, "content.proton.documentdb.index.memory_usage.onhold_bytes.average");
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_INDEX_MEMORY_USAGE_ALLOCATED_BYTES.average());
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_INDEX_MEMORY_USAGE_USED_BYTES.average());
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_INDEX_MEMORY_USAGE_DEAD_BYTES.average());
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_INDEX_MEMORY_USAGE_ONHOLD_BYTES.average());
 
         // matching
-        addMetric(metrics, "content.proton.documentdb.matching.queries.rate");
-        addMetric(metrics, "content.proton.documentdb.matching.soft_doomed_queries.rate");
-        addMetric(metrics, "content.proton.documentdb.matching.query_latency", List.of("max", "sum", "count"));
-        addMetric(metrics, "content.proton.documentdb.matching.query_setup_time", List.of("max", "sum", "count"));
-        addMetric(metrics, "content.proton.documentdb.matching.docs_matched", List.of("rate", "count"));
-        addMetric(metrics, "content.proton.documentdb.matching.rank_profile.queries.rate");
-        addMetric(metrics, "content.proton.documentdb.matching.rank_profile.soft_doomed_queries.rate");
-        addMetric(metrics, "content.proton.documentdb.matching.rank_profile.soft_doom_factor", List.of("min", "max", "sum", "count"));
-        addMetric(metrics, "content.proton.documentdb.matching.rank_profile.query_latency", List.of("max", "sum", "count"));
-        addMetric(metrics, "content.proton.documentdb.matching.rank_profile.query_setup_time", List.of("max", "sum", "count"));
-        addMetric(metrics, "content.proton.documentdb.matching.rank_profile.grouping_time", List.of("max", "sum", "count"));
-        addMetric(metrics, "content.proton.documentdb.matching.rank_profile.rerank_time", List.of("max", "sum", "count"));
-        addMetric(metrics, "content.proton.documentdb.matching.rank_profile.docs_matched", List.of("rate", "count"));
-        addMetric(metrics, "content.proton.documentdb.matching.rank_profile.limited_queries.rate");
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_MATCHING_QUERIES.rate());
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_MATCHING_SOFT_DOOMED_QUERIES.rate());
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_MATCHING_QUERY_LATENCY, EnumSet.of(max, sum, count));
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_MATCHING_QUERY_SETUP_TIME, EnumSet.of(max, sum, count));
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_MATCHING_DOCS_MATCHED, EnumSet.of(rate, count));
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_MATCHING_RANK_PROFILE_QUERIES.rate());
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_MATCHING_RANK_PROFILE_SOFT_DOOMED_QUERIES.rate());
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_MATCHING_RANK_PROFILE_SOFT_DOOM_FACTOR, EnumSet.of(min, max, sum, count));
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_MATCHING_RANK_PROFILE_QUERY_LATENCY, EnumSet.of(max, sum, count));
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_MATCHING_RANK_PROFILE_QUERY_SETUP_TIME, EnumSet.of(max, sum, count));
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_MATCHING_RANK_PROFILE_GROUPING_TIME, EnumSet.of(max, sum, count));
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_MATCHING_RANK_PROFILE_RERANK_TIME, EnumSet.of(max, sum, count));
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_MATCHING_RANK_PROFILE_DOCS_MATCHED, EnumSet.of(rate, count));
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_MATCHING_RANK_PROFILE_LIMITED_QUERIES.rate());
 
         // feeding
-        addMetric(metrics, "content.proton.documentdb.feeding.commit.operations", List.of("max", "sum", "count", "rate"));
-        addMetric(metrics, "content.proton.documentdb.feeding.commit.latency", List.of("max", "sum", "count"));
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_FEEDING_COMMIT_OPERATIONS, EnumSet.of(max, sum, count, rate));
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_FEEDING_COMMIT_LATENCY, EnumSet.of(max, sum, count));
 
         return metrics;
     }

@@ -5,10 +5,14 @@ package com.yahoo.metrics;
  */
 public enum Unit {
 
+    AREA(BaseUnit.AREA),
     BINARY(BaseUnit.BINARY),
+    BUCKET(BaseUnit.BUCKET),
     BYTE(BaseUnit.BYTE),
     CONNECTION(BaseUnit.CONNECTION),
     DOCUMENT(BaseUnit.DOCUMENT),
+    DOCUMENTID(BaseUnit.DOCUMENTID),
+    FILE(BaseUnit.FILE),
     FRACTION(BaseUnit.FRACTION),
     HIT(BaseUnit.HIT),
     HIT_PER_QUERY(BaseUnit.HIT, BaseUnit.QUERY),
@@ -20,12 +24,15 @@ public enum Unit {
     OPERATION_PER_SECOND(BaseUnit.OPERATION, BaseUnit.SECOND),
     QUERY(BaseUnit.QUERY),
     QUERY_PER_SECOND(BaseUnit.QUERY, BaseUnit.SECOND),
+    RECORD(BaseUnit.RECORD),
     REQUEST(BaseUnit.REQUEST),
     RESPONSE(BaseUnit.RESPONSE),
     SCORE(BaseUnit.SCORE),
     SECOND(BaseUnit.SECOND),
+    TASK(BaseUnit.TASK),
     THREAD(BaseUnit.THREAD),
-    VERSION(BaseUnit.VERSION);
+    VERSION(BaseUnit.VERSION),
+    WAKEUP(BaseUnit.WAKEUP);
 
 
     private final BaseUnit unit;
@@ -54,10 +61,14 @@ public enum Unit {
 
     private enum BaseUnit {
 
+        AREA("area"),
         BINARY("binary"),
+        BUCKET("bucket"),
         BYTE("byte"),
         CONNECTION("connection"),
         DOCUMENT("document"),
+        DOCUMENTID("documentid"),
+        FILE("file"),
         FRACTION("fraction"),
         HIT("hit"),
         ITEM("item"),
@@ -66,12 +77,15 @@ public enum Unit {
         NODE("node"),
         OPERATION("operation"),
         QUERY("query"),
+        RECORD("record"),
         REQUEST("request"),
         RESPONSE("response"),
         SCORE("score"),
         SECOND("second", "s"),
+        TASK("task"),
         THREAD("thread"),
-        VERSION("version");
+        VERSION("version"),
+        WAKEUP("wakeup");
 
         private final String fullName;
         private final String shortName;
