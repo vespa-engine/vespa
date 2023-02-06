@@ -131,8 +131,7 @@ clean:
 	rmdir -p $(BIN) $(SHARE)/man/man1 > /dev/null 2>&1 || true
 
 test: ci
-	mkdir -p mytmp
-	TMPDIR=`/bin/pwd`/mytmp go test ./...
+	mkdir -p $(CURDIR)/tmp && TMPDIR=$(CURDIR)/tmp go test ./...
 
 checkfmt:
 	@sh -c "test -z $$(gofmt -l .)" || { echo "one or more files need to be formatted: try make fmt to fix this automatically"; exit 1; }
