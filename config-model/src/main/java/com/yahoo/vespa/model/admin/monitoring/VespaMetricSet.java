@@ -2,7 +2,9 @@
 package com.yahoo.vespa.model.admin.monitoring;
 
 import com.yahoo.metrics.ContainerMetrics;
+import com.yahoo.metrics.DistributorMetrics;
 import com.yahoo.metrics.SearchNodeMetrics;
+import com.yahoo.metrics.StorageMetrics;
 import com.yahoo.metrics.Suffix;
 
 import java.util.Collections;
@@ -541,8 +543,8 @@ public class VespaMetricSet {
         // TODO: For the purpose of this file and likely elsewhere, all but the last aggregate specifier,
         // TODO: such as 'average' and 'sum' in the metric names below are just confusing and can be mentally
         // TODO: disregarded when considering metric names. Consider cleaning up for Vespa 9.
-        addMetric(metrics, "vds.datastored.alldisks.buckets.average");
-        addMetric(metrics, "vds.datastored.alldisks.docs.average");
+        addMetric(metrics, StorageMetrics.VDS_DATASTORED_ALLDISKS_BUCKETS.average());
+        addMetric(metrics, StorageMetrics.VDS_DATASTORED_ALLDISKS_DOCS.average());
         addMetric(metrics, "vds.datastored.alldisks.bytes.average");
         addMetric(metrics, "vds.visitor.allthreads.averagevisitorlifetime", List.of("max", "sum", "count"));
         addMetric(metrics, "vds.visitor.allthreads.averagequeuewait", List.of("max", "sum", "count"));
@@ -604,8 +606,8 @@ public class VespaMetricSet {
     }
     private static Set<Metric> getDistributorMetrics() {
         Set<Metric> metrics = new LinkedHashSet<>();
-        addMetric(metrics, "vds.idealstate.buckets_rechecking.average");
-        addMetric(metrics, "vds.idealstate.idealstate_diff.average");
+        addMetric(metrics, DistributorMetrics.VDS_IDEALSTATE_BUCKETS_RECHECKING.average());
+        addMetric(metrics, DistributorMetrics.VDS_IDEALSTATE_IDEALSTATE_DIFF.average());
         addMetric(metrics, "vds.idealstate.buckets_toofewcopies.average");
         addMetric(metrics, "vds.idealstate.buckets_toomanycopies.average");
         addMetric(metrics, "vds.idealstate.buckets.average");
