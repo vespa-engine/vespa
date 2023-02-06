@@ -1378,9 +1378,7 @@ std::string StateCheckersTest::testGarbageCollection(
     configure_stripe(cfg);
     // Insert after stripe configuration to avoid GC timestamp being implicitly reset
     BucketDatabase::Entry e(document::BucketId(17, 0));
-    e.getBucketInfo().addNode(BucketCopy(prevTimestamp, 0,
-                                         api::BucketInfo(3,3,3)),
-                              toVector((uint16_t)0));
+    e.getBucketInfo().addNode(BucketCopy(prevTimestamp, 0, api::BucketInfo(3,3,3)), toVector((uint16_t)0));
     e.getBucketInfo().setLastGarbageCollectionTime(prevTimestamp);
     getBucketDatabase().update(e);
 
@@ -1389,8 +1387,7 @@ std::string StateCheckersTest::testGarbageCollection(
                             getDistributorBucketSpace(), statsTracker,
                             makeDocumentBucket(e.getBucketId()));
     getClock().setAbsoluteTimeInSeconds(nowTimestamp);
-    return testStateChecker(checker, c, false, PendingMessage(),
-                            includePriority, includeSchedulingPri);
+    return testStateChecker(checker, c, false, PendingMessage(), includePriority, includeSchedulingPri);
 }
 
 TEST_F(StateCheckersTest, garbage_collection) {
@@ -1749,7 +1746,7 @@ TEST_F(StateCheckersTest, stats_updates_for_maximum_time_since_gc_run) {
           .last_gc_at_time({17, 0}, 100)
           .runFor({17, 0});
 
-    EXPECT_EQ(runner.stats().max_observed_time_since_last_gc().count(), 1900);
+    EXPECT_EQ(runner.stats().max_observed_time_since_last_gc(), 1900s);
 }
 
 }

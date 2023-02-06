@@ -67,7 +67,7 @@ private:
     size_t _requestsCurrentlyProcessing;
     ServiceLayerComponent _component;
     std::shared_ptr<BucketManagerMetrics> _metrics;
-    framework::Thread::UP _thread;
+    std::unique_ptr<framework::Thread> _thread;
     std::chrono::milliseconds _simulated_processing_delay;
 
     class ScopedQueueDispatchGuard {

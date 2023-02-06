@@ -32,7 +32,7 @@ struct MyApp : public TickingThread {
     std::vector<Context>  _context;
     TickingThreadPool::UP _threadPool;
 
-    MyApp(int threadCount, bool doCritOverlapTest = false);
+    explicit MyApp(int threadCount, bool doCritOverlapTest = false);
     ~MyApp() override;
 
     void start(ThreadPool& p) { _threadPool->start(p); }
@@ -56,37 +56,30 @@ struct MyApp : public TickingThread {
         return ThreadWaitInfo::NO_MORE_CRITICAL_WORK_KNOWN;
     }
     uint64_t getMinCritTick() {
-        uint64_t min = std::numeric_limits<uint64_t>().max();
-        for (uint32_t i=0; i<_context.size(); ++i) {
-            min = std::min(min, load_relaxed(_context[i]._critTickCount));
+        uint64_t min = std::numeric_limits<uint64_t>::max();
+        for (auto & c : _context) {
+            min = std::min(min, load_relaxed(c._critTickCount));
         }
         return min;
     }
-    uint64_t getMinNonCritTick() {
-        uint64_t min = std::numeric_limits<uint64_t>().max();
-        for (uint32_t i=0; i<_context.size(); ++i) {
-            min = std::min(min, load_relaxed(_context[i]._critTickCount));
-        }
-        return min;
-    }
-    uint64_t getTotalCritTicks() const noexcept {
+    [[nodiscard]] uint64_t getTotalCritTicks() const noexcept {
         uint64_t total = 0;
-        for (uint32_t i=0; i<_context.size(); ++i) {
-            total += load_relaxed(_context[i]._critTickCount);
+        for (const auto & i : _context) {
+            total += load_relaxed(i._critTickCount);
         }
         return total;
     }
-    uint64_t getTotalNonCritTicks() const noexcept {
+    [[nodiscard]] uint64_t getTotalNonCritTicks() const noexcept {
         uint64_t total = 0;
-        for (uint32_t i=0; i<_context.size(); ++i) {
-            total += load_relaxed(_context[i]._nonCritTickCount);
+        for (const auto & c : _context) {
+            total += load_relaxed(c._nonCritTickCount);
         }
         return total;
     }
-    uint64_t getTotalTicks() const noexcept {
+    [[nodiscard]] uint64_t getTotalTicks() const noexcept {
         return getTotalCritTicks() + getTotalNonCritTicks();
     }
-    bool hasCritOverlap() const noexcept { return load_relaxed(_critOverlap); }
+    [[nodiscard]] bool hasCritOverlap() const noexcept { return load_relaxed(_critOverlap); }
 };
 
 MyApp::MyApp(int threadCount, bool doCritOverlapTest)
@@ -215,7 +208,7 @@ RealClock clock;
 void printTaskInfo(const std::string& task, const char* action) {
     vespalib::string msg = vespalib::make_string(
             "%" PRIu64 ": %s %s\n",
-            clock.getTimeInMicros().getTime(),
+            vespalib::count_us(clock.getSystemTime().time_since_epoch()),
             task.c_str(),
             action);
     // std::cerr << msg;
@@ -229,15 +222,15 @@ struct BroadcastApp : public TickingThread {
 
     // Set a huge wait time by default to ensure we have to notify
     BroadcastApp();
-    ~BroadcastApp();
+    ~BroadcastApp() override;
 
     void start(ThreadPool& p) { _threadPool->start(p); }
 
     ThreadWaitInfo doCriticalTick(ThreadIndex) override {
         if (!_queue.empty()) {
-            for (uint32_t i=0; i<_queue.size(); ++i) {
-                printTaskInfo(_queue[i], "activating");
-                _active.push_back(_queue[i]);
+            for (const auto & task : _queue) {
+                printTaskInfo(task, "activating");
+                _active.push_back(task);
             }
             _queue.clear();
             return ThreadWaitInfo::MORE_WORK_ENQUEUED;
@@ -246,9 +239,9 @@ struct BroadcastApp : public TickingThread {
     }
     ThreadWaitInfo doNonCriticalTick(ThreadIndex) override {
         if (!_active.empty()) {
-            for (uint32_t i=0; i<_active.size(); ++i) {
-                printTaskInfo(_active[i], "processing");
-                _processed.push_back(_active[i]);
+            for (const auto & task : _active) {
+                printTaskInfo(task, "processing");
+                _processed.push_back(task);
             }
             _active.clear();
         }

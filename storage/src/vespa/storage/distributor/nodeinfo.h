@@ -8,8 +8,11 @@
 #pragma once
 
 #include <vector>
-#include <vespa/storageframework/generic/clock/time.h>
+#include <vespa/vespalib/util/time.h>
 
+namespace storage::framework{
+    struct Clock;
+}
 namespace storage::distributor {
 
 class NodeInfo {
@@ -20,7 +23,7 @@ public:
 
     bool isBusy(uint16_t idx) const;
 
-    void setBusy(uint16_t idx, framework::MonotonicDuration for_duration);
+    void setBusy(uint16_t idx, vespalib::duration for_duration);
 
     void incPending(uint16_t idx);
 
@@ -33,7 +36,7 @@ private:
         SingleNodeInfo() : _pending(0), _busyUntilTime() {}
 
         uint32_t _pending;
-        mutable framework::MonotonicTimePoint _busyUntilTime;
+        mutable vespalib::steady_time _busyUntilTime;
     };
 
     mutable std::vector<SingleNodeInfo> _nodes;
