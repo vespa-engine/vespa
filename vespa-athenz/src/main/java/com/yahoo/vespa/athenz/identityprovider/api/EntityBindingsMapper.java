@@ -49,7 +49,7 @@ public class EntityBindingsMapper {
                 entity.createdAt(),
                 entity.ipAddresses(),
                 IdentityType.fromId(entity.identityType()),
-                ClusterType.from(entity.clusterType()));
+                Optional.ofNullable(entity.clusterType()).map(ClusterType::from).orElse(null));
     }
 
     public static SignedIdentityDocumentEntity toSignedIdentityDocumentEntity(SignedIdentityDocument model) {
