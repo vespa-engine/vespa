@@ -1,6 +1,8 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "tickingthread.h"
 #include "threadpool.h"
+#include "runnable.h"
+#include "thread.h"
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <cassert>
 
@@ -37,7 +39,7 @@ public:
                         TickingThread& ticker,
                         uint32_t threadIndex) noexcept
         : _monitor(m), _cond(cond), _tickingThread(ticker),
-          _threadIndex(threadIndex), _wantToFreeze(false), _frozen(false) {}
+          _threadIndex(threadIndex), _wantToFreeze(false), _frozen(false), _state('n') {}
 
     /**
      * Call to freeze this thread. Returns then the thread has done executing
@@ -62,7 +64,7 @@ public:
         _cond.notify_all();
     }
 
-    char getState() const { return _state; }
+    [[nodiscard]] char getState() const { return _state; }
 
 private:
     void run(ThreadHandle& handle) override {

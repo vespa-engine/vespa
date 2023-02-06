@@ -12,7 +12,6 @@
  */
 #pragma once
 
-#include <vespa/storageframework/generic/clock/time.h>
 #include <vespa/vespalib/stllike/string.h>
 
 namespace metrics {

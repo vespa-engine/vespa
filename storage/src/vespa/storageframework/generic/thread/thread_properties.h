@@ -1,8 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/storageframework/generic/clock/time.h>
-#include <cstdint>
+#include <vespa/vespalib/util/time.h>
 
 namespace storage::framework {
 
@@ -37,11 +36,11 @@ public:
                      vespalib::duration maxProcessTime,
                      int ticksBeforeWait);
 
-    vespalib::duration getMaxProcessTime() const { return _maxProcessTime; }
-    vespalib::duration getWaitTime() const { return _waitTime; }
-    int getTicksBeforeWait() const { return _ticksBeforeWait; }
+    [[nodiscard]] vespalib::duration getMaxProcessTime() const { return _maxProcessTime; }
+    [[nodiscard]] vespalib::duration getWaitTime() const { return _waitTime; }
+    [[nodiscard]] int getTicksBeforeWait() const { return _ticksBeforeWait; }
 
-    vespalib::duration getMaxCycleTime() const {
+    [[nodiscard]] vespalib::duration getMaxCycleTime() const {
         return std::max(_maxProcessTime, _waitTime);
     }
 };

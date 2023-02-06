@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "statusmetricconsumer.h"
+#include <vespa/storageframework/generic/clock/clock.h>
 #include <boost/lexical_cast.hpp>
 #include <vespa/metrics/jsonwriter.h>
 #include <vespa/metrics/textwriter.h>

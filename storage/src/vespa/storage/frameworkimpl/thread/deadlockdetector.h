@@ -17,6 +17,8 @@
 #include <vespa/storage/common/servicelayercomponent.h>
 #include <vespa/storageframework/generic/status/htmlstatusreporter.h>
 #include <vespa/storageframework/generic/thread/threadpool.h>
+#include <vespa/storageframework/generic/thread/runnable.h>
+#include <vespa/storageframework/generic/thread/thread.h>
 #include <atomic>
 #include <map>
 

@@ -16,6 +16,7 @@
 #include <vespa/storage/storageserver/rpc/storage_api_rpc_service.h>
 #include <vespa/storageapi/message/state.h>
 #include <vespa/storageframework/generic/clock/timer.h>
+#include <vespa/storageframework/generic/thread/thread.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/document/bucket/fixed_bucket_spaces.h>
@@ -686,7 +687,7 @@ void
 CommunicationManager::run(framework::ThreadHandle& thread)
 {
     while (!thread.interrupted()) {
-        thread.registerTick();
+        thread.registerTick(framework::UNKNOWN_CYCLE);
         std::shared_ptr<api::StorageMessage> msg;
         if (_eventQueue.getNext(msg, 100ms)) {
             process(msg);

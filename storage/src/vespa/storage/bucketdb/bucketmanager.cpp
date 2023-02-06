@@ -11,6 +11,7 @@
 #include <vespa/storage/storageutil/distributorstatecache.h>
 #include <vespa/storageframework/generic/status/htmlstatusreporter.h>
 #include <vespa/storageframework/generic/status/xmlstatusreporter.h>
+#include <vespa/storageframework/generic/thread/thread.h>
 #include <vespa/storageframework/generic/clock/timer.h>
 #include <vespa/storageapi/message/persistence.h>
 #include <vespa/storageapi/message/state.h>

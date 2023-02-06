@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
+#include <vespa/storageframework/generic/thread/runnable.h>
 #include <vespa/storage/common/content_bucket_space_repo.h>
 #include <vespa/storage/common/storagecomponent.h>
 #include <vespa/storage/common/servicelayercomponent.h>
@@ -32,7 +33,7 @@ public:
     ModifiedBucketChecker(ServiceLayerComponentRegister& compReg,
                           spi::PersistenceProvider& provide,
                           const config::ConfigUri& configUri);
-    ~ModifiedBucketChecker();
+    ~ModifiedBucketChecker() override;
 
     void configure(std::unique_ptr<vespa::config::content::core::StorServerConfig>) override;
 
@@ -63,7 +64,7 @@ private:
         size_t _idx;
     public:
         using UP = std::unique_ptr<CyclicBucketSpaceIterator>;
-        CyclicBucketSpaceIterator(const ContentBucketSpaceRepo::BucketSpaces &bucketSpaces);
+        explicit CyclicBucketSpaceIterator(ContentBucketSpaceRepo::BucketSpaces bucketSpaces);
         document::BucketSpace next() {
             return _bucketSpaces[(_idx++)%_bucketSpaces.size()];
         }
@@ -86,7 +87,7 @@ private:
 
     spi::PersistenceProvider              & _provider;
     ServiceLayerComponent::UP               _component;
-    framework::Thread::UP                   _thread;
+    std::unique_ptr<framework::Thread>      _thread;
     std::unique_ptr<config::ConfigFetcher>  _configFetcher;
     std::mutex                              _monitor;
     std::condition_variable                 _cond;

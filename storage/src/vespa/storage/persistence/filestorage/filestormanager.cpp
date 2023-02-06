@@ -2,6 +2,7 @@
 
 #include "filestormanager.h"
 #include "filestorhandlerimpl.h"
+#include <vespa/storageframework/generic/thread/thread.h>
 #include <vespa/storage/bucketdb/minimumusedbitstracker.h>
 #include <vespa/storage/common/bucketmessages.h>
 #include <vespa/storage/common/content_bucket_space_repo.h>

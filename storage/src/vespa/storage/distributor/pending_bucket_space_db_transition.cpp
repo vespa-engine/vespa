@@ -5,6 +5,7 @@
 #include "pending_bucket_space_db_transition.h"
 #include "pendingclusterstate.h"
 #include "stripe_access_guard.h"
+#include <vespa/storageframework/generic/clock/time.h>
 #include <vespa/vdslib/distribution/distribution.h>
 #include <vespa/vdslib/state/clusterstate.h>
 #include <algorithm>

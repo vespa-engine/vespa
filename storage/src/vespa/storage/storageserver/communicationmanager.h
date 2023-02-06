@@ -17,6 +17,7 @@
 #include <vespa/storage/common/storagecomponent.h>
 #include <vespa/storage/config/config-stor-communicationmanager.h>
 #include <vespa/storageframework/generic/metric/metricupdatehook.h>
+#include <vespa/storageframework/generic/thread/runnable.h>
 #include <vespa/storageapi/mbusprot/storagecommand.h>
 #include <vespa/storageapi/mbusprot/storagereply.h>
 #include <vespa/messagebus/imessagehandler.h>
@@ -115,7 +116,7 @@ private:
     config::ConfigUri     _configUri;
     std::atomic<bool>     _closed;
     DocumentApiConverter  _docApiConverter;
-    framework::Thread::UP _thread;
+    std::unique_ptr<framework::Thread> _thread;
 
     void updateMetrics(const MetricLockGuard &) override;
 

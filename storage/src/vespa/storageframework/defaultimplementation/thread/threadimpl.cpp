@@ -86,6 +86,11 @@ ThreadImpl::get_live_thread_stack_trace() const
 }
 
 void
+ThreadImpl::registerTick(CycleType cycleType) {
+    registerTick(cycleType, _pool.getClock().getMonotonicTime());
+}
+
+void
 ThreadImpl::registerTick(CycleType cycleType, vespalib::steady_time now)
 {
     if (now.time_since_epoch() == vespalib::duration::zero()) now = _pool.getClock().getMonotonicTime();

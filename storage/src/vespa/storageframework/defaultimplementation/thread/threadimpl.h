@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include <vespa/storageframework/generic/thread/threadpool.h>
+#include <vespa/storageframework/generic/thread/thread.h>
 #include <vespa/vespalib/util/cpu_usage.h>
 #include <vespa/vespalib/util/document_runnable.h>
 #include <array>
@@ -17,7 +17,7 @@ class ThreadImpl final : public Thread
 {
     struct BackendThread : public document::Runnable {
         ThreadImpl& _impl;
-        BackendThread(ThreadImpl& impl) : _impl(impl) {}
+        explicit BackendThread(ThreadImpl& impl) : _impl(impl) {}
         void run() override { _impl.run(); }
     };
 
@@ -71,6 +71,7 @@ public:
     vespalib::string get_live_thread_stack_trace() const override;
 
     void registerTick(CycleType, vespalib::steady_time) override;
+    void registerTick(CycleType cycleType) override;
     vespalib::duration getWaitTime() const override {
         return _properties.getWaitTime();
     }
