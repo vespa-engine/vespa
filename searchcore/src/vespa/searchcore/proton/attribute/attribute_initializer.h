@@ -6,7 +6,6 @@
 #include "attribute_initializer_result.h"
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/searchlib/common/serialnum.h>
-#include <optional>
 
 namespace search::attribute { class AttributeHeader; }
 namespace vespalib { class Executor; }
@@ -29,7 +28,7 @@ private:
     std::shared_ptr<AttributeDirectory> _attrDir;
     const vespalib::string          _documentSubDbName;
     const AttributeSpec             _spec;
-    const std::optional<uint64_t>   _currentSerialNum;
+    const uint64_t                  _currentSerialNum;
     const IAttributeFactory        &_factory;
     vespalib::Executor             &_shared_executor;
     std::unique_ptr<const search::attribute::AttributeHeader> _header;
@@ -48,12 +47,12 @@ private:
 
 public:
     AttributeInitializer(const std::shared_ptr<AttributeDirectory> &attrDir, const vespalib::string &documentSubDbName,
-                         AttributeSpec && spec, std::optional<uint64_t> currentSerialNum, const IAttributeFactory &factory,
+                         AttributeSpec && spec, uint64_t currentSerialNum, const IAttributeFactory &factory,
                          vespalib::Executor& shared_executor);
     ~AttributeInitializer();
 
     AttributeInitializerResult init() const;
-    const std::optional<uint64_t>& getCurrentSerialNum() const noexcept { return _currentSerialNum; }
+    uint64_t getCurrentSerialNum() const { return _currentSerialNum; }
     size_t get_transient_memory_usage() const;
 };
 
