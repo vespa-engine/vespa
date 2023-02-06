@@ -33,7 +33,7 @@ all: test checkfmt install
 #
 # $ make dist-homebrew
 --dist-homebrew: dist-version
-	brew bump-formula-pr --version $(VERSION) --no-browse vespa-cli
+	brew bump-formula-pr --version $(VERSION) --no-audit --no-browse vespa-cli
 
 dist-homebrew:
 	go run cond_make.go --dist-homebrew
