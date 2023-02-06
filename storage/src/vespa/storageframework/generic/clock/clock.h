@@ -23,12 +23,11 @@ struct Clock {
 
     virtual ~Clock() = default;
 
-    virtual MicroSecTime getTimeInMicros() const = 0;
-    virtual SecondTime getTimeInSeconds() const = 0;
+    [[nodiscard]] virtual SecondTime getTimeInSeconds() const = 0;
 
     // Time point resolution is intentionally not defined here.
-    virtual vespalib::steady_time getMonotonicTime() const = 0;
-    virtual vespalib::system_time getSystemTime() const = 0;
+    [[nodiscard]] virtual vespalib::steady_time getMonotonicTime() const = 0;
+    [[nodiscard]] virtual vespalib::system_time getSystemTime() const = 0;
 };
 
 }

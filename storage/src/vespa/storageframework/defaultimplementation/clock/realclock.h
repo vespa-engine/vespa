@@ -14,7 +14,6 @@
 namespace storage::framework::defaultimplementation {
 
 struct RealClock : public Clock {
-    MicroSecTime getTimeInMicros() const override;
     SecondTime getTimeInSeconds() const override;
     vespalib::steady_time getMonotonicTime() const override;
     vespalib::system_time getSystemTime() const override;

@@ -1,11 +1,9 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <chrono>
 #include <unordered_map>
-#include <iosfwd>
-#include <stdint.h>
 #include <vespa/document/bucket/bucketspace.h>
+#include <vespa/vespalib/util/time.h>
 
 namespace storage::distributor {
 
@@ -53,7 +51,7 @@ public:
 private:
     PerNodeStats         _node_stats;
     NodeMaintenanceStats _total_stats;
-    std::chrono::seconds _max_observed_time_since_last_gc;
+    vespalib::duration   _max_observed_time_since_last_gc;
 
     static const NodeMaintenanceStats _emptyNodeMaintenanceStats;
 
@@ -86,7 +84,7 @@ public:
         ++_total_stats.total;
     }
 
-    void update_observed_time_since_last_gc(std::chrono::seconds time_since_gc) noexcept {
+    void update_observed_time_since_last_gc(vespalib::duration time_since_gc) noexcept {
         _max_observed_time_since_last_gc = std::max(time_since_gc, _max_observed_time_since_last_gc);
     }
 
@@ -116,7 +114,7 @@ public:
         return _total_stats;
     }
 
-    std::chrono::seconds max_observed_time_since_last_gc() const noexcept {
+    vespalib::duration max_observed_time_since_last_gc() const noexcept {
         return _max_observed_time_since_last_gc;
     }
 

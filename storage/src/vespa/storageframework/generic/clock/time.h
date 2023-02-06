@@ -34,10 +34,6 @@ vespalib::string getTimeString(uint64_t microSecondTime, TimeFormat format);
 // TODO deprecate framework time point and duration classes in favor of
 // using std::chrono.
 
-// As this class can't include clock, this utility function can be used in
-// header implementation to get actual time.
-uint64_t getRawMicroTime(const Clock&);
-
 /**
  * Class containing common functionality for the various time instances. Try to
  * make time instances as easy to use as possible, without creating risk of
@@ -54,8 +50,6 @@ protected:
 
 public:
     [[nodiscard]] uint64_t getTime() const { return _time; }
-    void setTime(uint64_t t) { _time = t; }
-    [[nodiscard]] bool isSet() const { return (_time != 0); }
 
     Type& operator-=(const Type& o) { _time -= o._time; return static_cast<Type&>(*this); }
     Type& operator+=(const Type& o) { _time += o._time; return static_cast<Type&>(*this); }
@@ -72,29 +66,14 @@ public:
     }
 
     static Type max() { return Type(std::numeric_limits<uint64_t>::max()); }
-    static Type min() { return Type(0); }
 
 };
-
-template<typename Type, typename Number>
-Type& operator/(Type& type, Number n) {
-    type.setTime(type.getTime() / n);
-    return type;
-}
-
-template<typename Type, typename Number>
-Type& operator*(Type& type, Number n) {
-    type.setTime(type.getTime() * n);
-    return type;
-}
 
 template<typename Type, int MPU>
 std::ostream& operator<<(std::ostream& out, const Time<Type, MPU>& t);
 
 template<typename Type, int MPU>
 vespalib::asciistream& operator<<(vespalib::asciistream& out, const Time<Type, MPU>& t);
-
-struct MicroSecTime;
 
 /**
  * \class storage::framework::SecondTime
@@ -108,8 +87,6 @@ struct MicroSecTime;
  */
 struct SecondTime : public Time<SecondTime, 1000000> {
     explicit SecondTime(uint64_t t = 0) : Time<SecondTime, 1000000>(t) {}
-    explicit SecondTime(const Clock& clock)
-        : Time<SecondTime, 1000000>(getRawMicroTime(clock) / 1000000) {}
 };
 
 /**
@@ -124,24 +101,8 @@ struct SecondTime : public Time<SecondTime, 1000000> {
  */
 struct MicroSecTime : public Time<MicroSecTime, 1> {
     explicit MicroSecTime(uint64_t t = 0) : Time<MicroSecTime, 1>(t) {}
-    explicit MicroSecTime(const Clock& clock)
-        : Time<MicroSecTime, 1>(getRawMicroTime(clock)) {}
 
     [[nodiscard]] SecondTime getSeconds() const { return SecondTime(getTime() / 1000000); }
 };
-
-inline MicroSecTime
-operator + (MicroSecTime a, MicroSecTime b) {
-    MicroSecTime result(a);
-    result += b;
-    return result;
-}
-
-inline MicroSecTime
-operator - (MicroSecTime a, MicroSecTime b) {
-    MicroSecTime result(a);
-    result -= b;
-    return result;
-}
 
 }

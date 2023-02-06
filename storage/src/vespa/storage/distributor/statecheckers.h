@@ -88,7 +88,7 @@ public:
     const char* getName() const noexcept override { return "GarbageCollection"; }
 private:
     static bool garbage_collection_disabled(const Context& c) noexcept;
-    static bool needs_garbage_collection(const Context& c, std::chrono::seconds time_since_epoch);
+    static bool needs_garbage_collection(const Context& c, vespalib::duration time_since_epoch);
 };
 
 }

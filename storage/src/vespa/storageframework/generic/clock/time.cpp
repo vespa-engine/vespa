@@ -74,12 +74,6 @@ getTimeString(uint64_t microSecondTime, TimeFormat format)
     return ost.str();
 }
 
-uint64_t
-getRawMicroTime(const Clock& clock)
-{
-    return clock.getTimeInMicros().getTime();
-}
-
 template std::ostream& operator<< <MicroSecTime, 1>(std::ostream&, const Time<MicroSecTime, 1> &);
 template std::ostream& operator<< <SecondTime, 1000000>(std::ostream&, const Time<SecondTime, 1000000> &);
 

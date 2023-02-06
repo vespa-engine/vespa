@@ -212,7 +212,7 @@ PendingClusterState::requestNode(BucketSpaceAndNode bucketSpaceAndNode)
 
 PendingClusterState::Summary::Summary(const std::string& prevClusterState,
                                       const std::string& newClusterState,
-                                      uint32_t processingTime)
+                                      vespalib::duration processingTime)
     : _prevClusterState(prevClusterState),
       _newClusterState(newClusterState),
       _processingTime(processingTime)
@@ -306,7 +306,7 @@ PendingClusterState::getSummary() const
 {
     return Summary(getPrevClusterStateBundleString(),
                    getNewClusterStateBundleString(),
-                   (_clock.getTimeInMicros().getTime() - _creationTimestamp));
+                   std::chrono::microseconds(vespalib::count_us(_clock.getSystemTime().time_since_epoch()) - _creationTimestamp));
 }
 
 PendingBucketSpaceDbTransition&
