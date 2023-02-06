@@ -158,11 +158,12 @@ reconfigure(const DocumentDBConfig &newConfig,
             const DocumentDBConfig &oldConfig,
             const ReconfigParams &params,
             IDocumentDBReferenceResolver &resolver,
-            const DocumentSubDBReconfig& prepared_reconfig)
+            const DocumentSubDBReconfig& prepared_reconfig,
+            search::SerialNum serial_num)
 {
     assert(!params.shouldAttributeManagerChange());
     AttributeCollectionSpec attrSpec(AttributeCollectionSpec::AttributeList(), 0, 0);
-    reconfigure(newConfig, oldConfig, std::move(attrSpec), params, resolver, prepared_reconfig);
+    reconfigure(newConfig, oldConfig, std::move(attrSpec), params, resolver, prepared_reconfig, serial_num);
 }
 
 namespace {
@@ -195,18 +196,20 @@ SearchableDocSubDBConfigurer::reconfigure(const DocumentDBConfig &newConfig,
                                           AttributeCollectionSpec && attrSpec,
                                           const ReconfigParams &params,
                                           IDocumentDBReferenceResolver &resolver,
-                                          const DocumentSubDBReconfig& prepared_reconfig)
+                                          const DocumentSubDBReconfig& prepared_reconfig,
+                                          search::SerialNum serial_num)
 {
     bool shouldMatchViewChange = prepared_reconfig.has_matchers_changed();
     bool shouldSearchViewChange = false;
     bool shouldFeedViewChange = params.shouldSchemaChange();
-    search::SerialNum currentSerialNum = attrSpec.getCurrentSerialNum();
     SearchView::SP searchView = _searchView.get();
     auto matchers = prepared_reconfig.matchers();
     IReprocessingInitializer::UP initializer;
     IAttributeManager::SP attrMgr = searchView->getAttributeManager();
     IAttributeWriter::SP attrWriter = _feedView.get()->getAttributeWriter();
     if (params.shouldAttributeManagerChange()) {
+        auto attr_spec_serial_num = attrSpec.getCurrentSerialNum();
+        assert(!attr_spec_serial_num.has_value() || attr_spec_serial_num.value() == serial_num);
         IAttributeManager::SP newAttrMgr = attrMgr->create(std::move(attrSpec));
         newAttrMgr->setImportedAttributes(resolver.resolve(*newAttrMgr, *attrMgr,
                                                            searchView->getDocumentMetaStore(),
@@ -219,7 +222,7 @@ SearchableDocSubDBConfigurer::reconfigure(const DocumentDBConfig &newConfig,
         attrWriter = newAttrWriter;
         shouldFeedViewChange = true;
         initializer = createAttributeReprocessingInitializer(newConfig, newAttrMgr, oldConfig, oldAttrMgr,
-                                                             _subDbName, currentSerialNum);
+                                                             _subDbName, serial_num);
     } else if (params.shouldAttributeWriterChange()) {
         attrWriter = std::make_shared<AttributeWriter>(attrMgr);
         shouldFeedViewChange = true;

@@ -209,11 +209,12 @@ void
 AttributeInitializer::setupEmptyAttribute(AttributeVectorSP &attr, search::SerialNum serialNum,
                                           const AttributeHeader &header) const
 {
-    if (header.getCreateSerialNum() > _currentSerialNum) {
-        logAttributeTooNew(header, _currentSerialNum);
+    assert(_currentSerialNum.has_value());
+    if (header.getCreateSerialNum() > _currentSerialNum.value()) {
+        logAttributeTooNew(header, _currentSerialNum.value());
     }
-    if (serialNum < _currentSerialNum) {
-        logAttributeTooOld(header, serialNum, _currentSerialNum);
+    if (serialNum < _currentSerialNum.value()) {
+        logAttributeTooOld(header, serialNum, _currentSerialNum.value());
     }
     if (!headerTypeOK(header, attr->getConfig())) {
         logAttributeWrongType(attr, header);
@@ -234,7 +235,7 @@ AttributeInitializer::createAndSetupEmptyAttribute() const
 AttributeInitializer::AttributeInitializer(const std::shared_ptr<AttributeDirectory> &attrDir,
                                            const vespalib::string &documentSubDbName,
                                            AttributeSpec && spec,
-                                           uint64_t currentSerialNum,
+                                           std::optional<uint64_t> currentSerialNum,
                                            const IAttributeFactory &factory,
                                            vespalib::Executor& shared_executor)
     : _attrDir(attrDir),
@@ -246,7 +247,9 @@ AttributeInitializer::AttributeInitializer(const std::shared_ptr<AttributeDirect
       _header(),
       _header_ok(false)
 {
-    readHeader();
+    if (_currentSerialNum.has_value()) {
+        readHeader();
+    }
 }
 
 AttributeInitializer::~AttributeInitializer() = default;

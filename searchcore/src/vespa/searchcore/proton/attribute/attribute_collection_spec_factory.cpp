@@ -20,7 +20,7 @@ AttributeCollectionSpecFactory::~AttributeCollectionSpecFactory() = default;
 std::unique_ptr<AttributeCollectionSpec>
 AttributeCollectionSpecFactory::create(const AttributesConfig &attrCfg,
                                        uint32_t docIdLimit,
-                                       search::SerialNum serialNum) const
+                                       std::optional<search::SerialNum> serialNum) const
 {
     AttributeCollectionSpec::AttributeList attrs;
     // Amortize memory spike cost over N docs
