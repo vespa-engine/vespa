@@ -287,20 +287,6 @@ public class Flags {
             "Takes effect on redeployment",
             APPLICATION_ID);
 
-    public static final UnboundListFlag<String> FILE_DISTRIBUTION_ACCEPTED_COMPRESSION_TYPES = defineListFlag(
-            "file-distribution-accepted-compression-types", List.of("gzip", "lz4", "zstd"), String.class,
-            List.of("hmusum"), "2022-07-05", "2023-02-15",
-            "´List of accepted compression types used when asking for a file reference. Valid values: gzip, lz4, zstd",
-            "Takes effect on restart of service",
-            APPLICATION_ID);
-
-    public static final UnboundListFlag<String> FILE_DISTRIBUTION_COMPRESSION_TYPES_TO_SERVE = defineListFlag(
-            "file-distribution-compression-types-to-use", List.of("zstd", "lz4", "gzip"), String.class,
-            List.of("hmusum"), "2022-07-05", "2023-02-15",
-            "List of compression types to use (in preferred order), matched with accepted compression types when serving file references. Valid values: gzip, lz4, zstd",
-            "Takes effect on restart of service",
-            APPLICATION_ID);
-
     public static final UnboundStringFlag LOG_FILE_COMPRESSION_ALGORITHM = defineStringFlag(
             "log-file-compression-algorithm", "",
             List.of("arnej"), "2022-06-14", "2024-12-31",
