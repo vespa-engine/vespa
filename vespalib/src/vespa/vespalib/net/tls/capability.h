@@ -25,7 +25,8 @@ private:
     // must be possible to change arbitrarily internally across versions.
     // Changes must be reflected in capabilities_test.cpp
     enum class Id : uint32_t {
-        ContentStorageApi = 0, // Must start at zero
+        None = 0, // Must start at zero
+        ContentStorageApi,
         ContentDocumentApi,
         ContentSearchApi,
         ContentProtonAdminApi,
@@ -70,6 +71,13 @@ public:
     string to_string() const;
 
     static std::optional<Capability> find_capability(const string& cap_name) noexcept;
+
+    // The "none" capability is a sentinel value to allow mTLS handshakes to go through
+    // but where no access is granted to any capability-checked API. Non-capability-checked
+    // APIs may still be accessed if this capability is granted.
+    constexpr static Capability none() noexcept {
+        return Capability(Id::None);
+    }
 
     constexpr static Capability content_storage_api() noexcept {
         return Capability(Id::ContentStorageApi);

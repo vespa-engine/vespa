@@ -38,6 +38,7 @@ TEST("CapabilitySet instances are equality comparable") {
 }
 
 TEST("Can get underlying name of all Capability instances") {
+    EXPECT_EQUAL(Capability::none().name(),                     "vespa.none"sv);
     EXPECT_EQUAL(Capability::content_storage_api().name(),      "vespa.content.storage_api"sv);
     EXPECT_EQUAL(Capability::content_document_api().name(),     "vespa.content.document_api"sv);
     EXPECT_EQUAL(Capability::content_search_api().name(),       "vespa.content.search_api"sv);
@@ -71,6 +72,7 @@ void check_capability_set_mapping(const std::string& name, CapabilitySet expecte
 }
 
 TEST("All known capabilities can be looked up by name") {
+    check_capability_mapping("vespa.none",                     Capability::none());
     check_capability_mapping("vespa.content.storage_api",      Capability::content_storage_api());
     check_capability_mapping("vespa.content.document_api",     Capability::content_document_api());
     check_capability_mapping("vespa.content.search_api",       Capability::content_search_api());
@@ -149,11 +151,14 @@ TEST("Default-constructed CapabilitySet has no capabilities") {
     EXPECT_EQUAL(caps.count(), 0u);
     EXPECT_TRUE(caps.empty());
     EXPECT_FALSE(caps.contains(Capability::content_storage_api()));
+    // "none" is a special sentinel, it does not imply an empty capability set
+    EXPECT_FALSE(caps.contains(Capability::none()));
 }
 
 TEST("CapabilitySet can be created with all capabilities") {
     auto caps = CapabilitySet::make_with_all_capabilities();
     EXPECT_EQUAL(caps.count(), CapabilitySet::max_count());
+    EXPECT_TRUE(caps.contains(Capability::none()));
     EXPECT_TRUE(caps.contains(Capability::content_storage_api()));
     EXPECT_TRUE(caps.contains(Capability::content_metrics_api()));
     // ... we just assume the rest are present as well.

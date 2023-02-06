@@ -13,6 +13,7 @@ using namespace std::string_view_literals;
 
 // Important: must match 1-1 with CapabilityId values!
 constexpr std::array<std::string_view, Capability::max_value_count()> capability_names = {
+    "vespa.none"sv,
     "vespa.content.storage_api"sv,
     "vespa.content.document_api"sv,
     "vespa.content.search_api"sv,
@@ -39,6 +40,7 @@ string Capability::to_string() const {
 
 std::optional<Capability> Capability::find_capability(const string& cap_name) noexcept {
     static const hash_map<string, Capability> name_to_cap({
+        {"vespa.none",                                          none()},
         {"vespa.content.storage_api",                           content_storage_api()},
         {"vespa.content.document_api",                          content_document_api()},
         {"vespa.content.search_api",                            content_search_api()},

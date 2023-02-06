@@ -61,7 +61,7 @@ public:
 
     ~PolicyConfiguredCertificateVerifier() override;
 
-    VerificationResult verify(const PeerCredentials& peer_creds) const override;
+    [[nodiscard]] VerificationResult verify(const PeerCredentials& peer_creds) const override;
 };
 
 PolicyConfiguredCertificateVerifier::PolicyConfiguredCertificateVerifier(AuthorizedPeers authorized_peers) noexcept
