@@ -123,7 +123,7 @@ public:
 
     AttributeVectorSP addAttribute(AttributeSpec && spec, uint64_t serialNum);
 
-    void addInitializedAttributes(const std::vector<AttributeInitializerResult> &attributes);
+    void addInitializedAttributes(const std::vector<AttributeInitializerResult> &attributes, std::optional<uint32_t> docid_limit, std::optional<SerialNum> serial_num);
 
     void addExtraAttribute(const AttributeVectorSP &attribute);
 
@@ -151,6 +151,7 @@ public:
 
     // Implements proton::IAttributeManager
 
+    std::unique_ptr<AttributeManagerReconfig> prepare_create(Spec && spec) const override;
     proton::IAttributeManager::SP create(Spec && spec) const override;
 
     std::vector<IFlushTargetSP> getFlushTargets() const override;
