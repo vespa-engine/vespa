@@ -217,7 +217,7 @@ VisitorManagerTest::getSession(uint32_t n)
     // Wait until we have started the visitor
     const std::vector<TestVisitorMessageSession*>& sessions(_messageSessionFactory->_visitorSessions);
     framework::defaultimplementation::RealClock clock;
-    framework::MilliSecTime endTime(clock.getTimeInMillis() + framework::MilliSecTime(30 * 1000));
+    vespalib::steady_time endTime = clock.getMonotonicTime() + 30s;
     while (true) {
         {
             std::lock_guard lock(_messageSessionFactory->_accessLock);
@@ -225,9 +225,8 @@ VisitorManagerTest::getSession(uint32_t n)
                 return *sessions[n];
             }
         }
-        if (clock.getTimeInMillis() > endTime) {
-            throw vespalib::IllegalStateException(
-                    "Timed out waiting for visitor session", VESPA_STRLOC);
+        if (clock.getMonotonicTime() > endTime) {
+            throw vespalib::IllegalStateException("Timed out waiting for visitor session", VESPA_STRLOC);
         }
         std::this_thread::sleep_for(10ms);
     }
@@ -255,12 +254,10 @@ VisitorManagerTest::getMessagesAndReply(
 
             switch (session.sentMessages[i]->getType()) {
             case documentapi::DocumentProtocol::MESSAGE_PUTDOCUMENT:
-                docs.push_back(static_cast<documentapi::PutDocumentMessage&>(
-                                       *session.sentMessages[i]).getDocumentSP());
+                docs.push_back(static_cast<documentapi::PutDocumentMessage&>(*session.sentMessages[i]).getDocumentSP());
                 break;
             case documentapi::DocumentProtocol::MESSAGE_REMOVEDOCUMENT:
-                docIds.push_back(static_cast<documentapi::RemoveDocumentMessage&>(
-                                       *session.sentMessages[i]).getDocumentId());
+                docIds.push_back(static_cast<documentapi::RemoveDocumentMessage&>(*session.sentMessages[i]).getDocumentId());
                 break;
             default:
                 break;
@@ -355,10 +352,7 @@ TEST_F(VisitorManagerTest, normal_usage) {
     getMessagesAndReply(1, getSession(0), docs, docIds);
 
     // All data has been replied to, expecting to get a create visitor reply
-    ASSERT_NO_FATAL_FAILURE(
-            verifyCreateVisitorReply(api::ReturnCode::OK,
-                                     int(docs.size()),
-                                     getTotalSerializedSize(docs)));
+    ASSERT_NO_FATAL_FAILURE(verifyCreateVisitorReply(api::ReturnCode::OK, int(docs.size()), getTotalSerializedSize(docs)));
 
     EXPECT_EQ(1u, getMatchingDocuments(docs));
     EXPECT_FALSE(_manager->hasPendingMessageState());
