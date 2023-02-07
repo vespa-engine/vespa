@@ -77,7 +77,7 @@ StateManager::StateManager(StorageComponentRegister& compReg,
       _requested_almost_immediate_node_state_replies(false)
 {
     _nodeState->setMinUsedBits(58);
-    _nodeState->setStartTimestamp(_component.getClock().getSystemTime());
+    _nodeState->setStartTimestamp(vespalib::count_s(_component.getClock().getSystemTime().time_since_epoch()));
     _component.registerStatusPage(*this);
     _component.registerMetric(*_metrics);
 }
@@ -426,7 +426,6 @@ StateManager::onGetNodeState(const api::GetNodeStateCommand::SP& cmd)
 
 void
 StateManager::mark_controller_as_having_observed_explicit_node_state(const std::unique_lock<std::mutex> &, uint16_t controller_index) {
-    LOG(info, "mark_controller_as_having_observed_explicit_node_state(%d)", controller_index);
     _controllers_observed_explicit_node_state.emplace(controller_index);
 }
 

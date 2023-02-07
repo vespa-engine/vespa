@@ -29,7 +29,7 @@ NodeState::NodeState()
       _capacity(1.0),
       _initProgress(0.0),
       _minUsedBits(16),
-      _startTimestamp()
+      _startTimestamp(0)
 {
     setState(State::UP);
 }
@@ -42,7 +42,7 @@ NodeState::NodeState(const NodeType& type, const State& state,
       _capacity(1.0),
       _initProgress(0.0),
       _minUsedBits(16),
-      _startTimestamp()
+      _startTimestamp(0)
 {
     setState(state);
     if (type == NodeType::STORAGE) {
@@ -57,7 +57,7 @@ NodeState::NodeState(vespalib::stringref serialized, const NodeType* type)
       _capacity(1.0),
       _initProgress(0.0),
       _minUsedBits(16),
-      _startTimestamp()
+      _startTimestamp(0)
 {
 
     vespalib::StringTokenizer st(serialized, " \t\f\r\n");
@@ -106,7 +106,7 @@ NodeState::NodeState(vespalib::stringref serialized, const NodeType* type)
             case 't':
                 if (key.size() > 1) break;
                 try {
-                    setStartTimestamp(vespalib::system_time(std::chrono::seconds(boost::lexical_cast<uint64_t>(value))));
+                    setStartTimestamp(boost::lexical_cast<uint64_t>(value));
                 } catch (...) {
                     throw IllegalArgumentException("Illegal start timestamp '" + value + "'. Start timestamp must be"
                                                    " 0 or positive long.", VESPA_STRLOC);
@@ -167,8 +167,8 @@ NodeState::serialize(vespalib::asciistream & out, vespalib::stringref prefix,
     if (*_state == State::INITIALIZING) {
         out << sep << prefix << "i:" << _initProgress;
     }
-    if (_startTimestamp != vespalib::system_time()) {
-        out << sep << prefix << "t:" << vespalib::count_s(_startTimestamp.time_since_epoch());
+    if (_startTimestamp != 0u) {
+        out << sep << prefix << "t:" << _startTimestamp;
     }
     if (includeDescription && ! _description.empty()) {
         out << sep << prefix << "m:"
@@ -229,7 +229,7 @@ NodeState::setInitProgress(vespalib::Double initProgress)
 }
 
 void
-NodeState::setStartTimestamp(vespalib::system_time startTimestamp)
+NodeState::setStartTimestamp(uint64_t startTimestamp)
 {
     _startTimestamp = startTimestamp;
 }
@@ -253,8 +253,8 @@ NodeState::print(std::ostream& out, bool verbose, const std::string& indent) con
     if (*_state == State::INITIALIZING) {
         out << ", init progress " << _initProgress;
     }
-    if (_startTimestamp != vespalib::system_time()) {
-        out << ", start timestamp " << vespalib::to_string(_startTimestamp);
+    if (_startTimestamp != 0) {
+        out << ", start timestamp " << _startTimestamp;
     }
     if (!_description.empty()) {
         out << ": " << _description;
@@ -334,8 +334,8 @@ NodeState::getTextualDifference(const NodeState& other) const {
         }
     }
     if (_startTimestamp != other._startTimestamp) {
-        source << ", start timestamp " << vespalib::to_string(_startTimestamp);
-        target << ", start timestamp " << vespalib::to_string(other._startTimestamp);
+        source << ", start timestamp " << _startTimestamp;
+        target << ", start timestamp " << other._startTimestamp;
     }
 
     if (source.str().length() < 2 || target.str().length() < 2) {
