@@ -62,6 +62,19 @@ to_string(system_time time) {
     return to_string(time.time_since_epoch());
 }
 
+steady_time saturated_add(steady_time time, duration diff) {
+    auto td = time.time_since_epoch();
+    using dur_t = decltype(td);
+    using val_t = dur_t::rep;
+    val_t a = td.count();
+    val_t b = std::chrono::duration_cast<dur_t>(diff).count();
+    val_t res;
+    if (__builtin_add_overflow(a, b, &res)) {
+        return (b > 0) ? steady_time::max() : steady_time::min();
+    }
+    return steady_time(dur_t(res));
+}
+
 Timer::~Timer() = default;
 
 void

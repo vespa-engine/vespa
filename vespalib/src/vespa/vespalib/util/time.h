@@ -73,6 +73,8 @@ constexpr duration from_timespec(const timespec & ts) {
 
 vespalib::string to_string(system_time time);
 
+steady_time saturated_add(steady_time time, duration diff);
+
 /**
  * Simple utility class used to measure how much time has elapsed
  * since it was constructed.
