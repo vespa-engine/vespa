@@ -13,6 +13,7 @@
 #include "state.h"
 #include <vespa/document/util/printable.h>
 #include <vespa/vespalib/objects/floatingpointtype.h>
+#include <vespa/vespalib/util/time.h>
 #include <memory>
 
 namespace storage::lib {
@@ -25,7 +26,7 @@ class NodeState : public document::Printable
     vespalib::Double _capacity;
     vespalib::Double _initProgress;
     uint32_t _minUsedBits;
-    uint64_t _startTimestamp;
+    vespalib::system_time _startTimestamp;
 
 public:
     using CSP = std::shared_ptr<const NodeState>;
@@ -43,8 +44,8 @@ public:
               vespalib::stringref description = "",
               double capacity = 1.0);
     /** Set type if you want to verify that content fit with the given type. */
-    NodeState(vespalib::stringref serialized, const NodeType* nodeType = 0);
-    ~NodeState();
+    explicit NodeState(vespalib::stringref serialized, const NodeType* nodeType = nullptr);
+    ~NodeState() override;
 
     /**
      * Setting prefix to something implies using this function to write a
@@ -54,26 +55,27 @@ public:
     void serialize(vespalib::asciistream & out, vespalib::stringref prefix = "",
                    bool includeDescription = true) const;
 
-    const State& getState() const { return *_state; }
-    vespalib::Double getCapacity() const { return _capacity; }
-    uint32_t getMinUsedBits() const { return _minUsedBits; }
-    vespalib::Double getInitProgress() const { return _initProgress; }
-    const vespalib::string& getDescription() const { return _description; }
-    uint64_t getStartTimestamp() const { return _startTimestamp; }
+    [[nodiscard]] const State& getState() const { return *_state; }
+    [[nodiscard]] vespalib::Double getCapacity() const { return _capacity; }
+    [[nodiscard]] uint32_t getMinUsedBits() const { return _minUsedBits; }
+    [[nodiscard]] vespalib::Double getInitProgress() const { return _initProgress; }
+    [[nodiscard]] const vespalib::string& getDescription() const { return _description; }
+    [[nodiscard]] vespalib::system_time getStartTimestamp() const { return _startTimestamp; }
 
     void setState(const State& state);
     void setCapacity(vespalib::Double capacity);
     void setMinUsedBits(uint32_t usedBits);
     void setInitProgress(vespalib::Double initProgress);
-    void setStartTimestamp(uint64_t startTimestamp);
+    void setStartTimestamp(vespalib::system_time startTimestamp);
     void setDescription(vespalib::stringref desc) { _description = desc; }
 
     void print(std::ostream& out, bool verbose,
                const std::string& indent) const override;
     bool operator==(const NodeState& other) const;
-    bool operator!=(const NodeState& other) const
-        { return !(operator==(other)); }
-    bool similarTo(const NodeState& other) const;
+    bool operator!=(const NodeState& other) const {
+        return !(operator==(other));
+    }
+    [[nodiscard]] bool similarTo(const NodeState& other) const;
 
     /**
      * Verify that the contents of this object fits with the given nodetype.
