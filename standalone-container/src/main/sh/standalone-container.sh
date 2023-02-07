@@ -134,7 +134,7 @@ StartCommand() {
     export VESPA_SERVICE_NAME="$service"
 
     if true; then
-        ${VESPA_HOME}/libexec/vespa/script-utils run-standalone-container "${jvm_arguments[@]}" &
+        ${VESPA_HOME}/libexec/vespa/vespa-wrapper run-standalone-container "${jvm_arguments[@]}" &
         echo $! > "$pidfile"
         return
     fi

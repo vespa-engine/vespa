@@ -35,7 +35,7 @@ consider_fallback () {
 read_conf_file () {
     deffile="$VESPA_HOME/conf/vespa/default-env.txt"
     if [ -f "${deffile}" ]; then
-        eval $(${VESPA_HOME}/libexec/vespa/script-utils export-env)
+        eval $(${VESPA_HOME}/libexec/vespa/vespa-wrapper export-env)
     fi
 }
 
@@ -329,7 +329,7 @@ use_configserver_if_needed () {
 }
 
 getJavaOptionsIPV46() {
-    if ${VESPA_HOME}/libexec/vespa/script-utils ipv6-only; then
+    if ${VESPA_HOME}/libexec/vespa/vespa-wrapper ipv6-only; then
         echo " -Djava.net.preferIPv6Addresses=true"
     fi
 }
