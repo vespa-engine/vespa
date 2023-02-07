@@ -68,9 +68,6 @@
 #pragma once
 
 #include "managedcomponent.h"
-#include <vespa/storageframework/generic/thread/runnable.h>
-#include <vespa/storageframework/generic/thread/thread.h>
-#include <vespa/storageframework/generic/clock/clock.h>
 #include <vespa/vespalib/util/cpu_usage.h>
 #include <atomic>
 #include <optional>
@@ -78,6 +75,8 @@
 namespace storage::framework {
 
 struct ComponentRegister;
+struct Runnable;
+class Thread;
 
 class Component : private ManagedComponent
 {
@@ -152,11 +151,11 @@ public:
      * If max process time is not set, deadlock detector cannot detect deadlocks
      * in this thread. (Thus one is not required to call registerTick())
      */
-    Thread::UP startThread(Runnable&,
-                           vespalib::duration maxProcessTime = vespalib::duration::zero(),
-                           vespalib::duration waitTime = vespalib::duration::zero(),
-                           int ticksBeforeWait = 1,
-                           std::optional<vespalib::CpuUsage::Category> cpu_category = std::nullopt) const;
+    std::unique_ptr<Thread> startThread(Runnable&,
+                                        vespalib::duration maxProcessTime = vespalib::duration::zero(),
+                                        vespalib::duration waitTime = vespalib::duration::zero(),
+                                        int ticksBeforeWait = 1,
+                                        std::optional<vespalib::CpuUsage::Category> cpu_category = std::nullopt) const;
 
     void requestShutdown(vespalib::stringref reason);
 

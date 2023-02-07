@@ -18,6 +18,7 @@
 #include <vespa/storage/common/storagelink.h>
 #include <vespa/storage/common/storagecomponent.h>
 #include <vespa/storageframework/generic/status/htmlstatusreporter.h>
+#include <vespa/storageframework/generic/thread/runnable.h>
 #include <vespa/storageapi/message/state.h>
 #include <vespa/storageapi/messageapi/storagemessage.h>
 #include <vespa/vespalib/objects/floatingpointtype.h>
@@ -65,7 +66,7 @@ class StateManager : public NodeStateUpdater,
     std::deque<TimeSysStatePair>              _systemStateHistory;
     uint32_t                                  _systemStateHistorySize;
     std::unique_ptr<HostInfo>                 _hostInfo;
-    framework::Thread::UP                     _thread;
+    std::unique_ptr<framework::Thread>        _thread;
     // Controllers that have observed a GetNodeState response sent _after_
     // immediately_send_get_node_state_replies() has been invoked.
     std::unordered_set<uint16_t>              _controllers_observed_explicit_node_state;

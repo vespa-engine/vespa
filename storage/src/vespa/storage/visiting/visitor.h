@@ -15,6 +15,7 @@
 #include "memory_bounded_trace.h"
 #include <vespa/storageapi/messageapi/storagemessage.h>
 #include <vespa/storageapi/message/visitor.h>
+#include <vespa/storageframework/generic/clock/time.h>
 #include <vespa/storage/common/storagecomponent.h>
 #include <vespa/storage/common/visitorfactory.h>
 #include <vespa/documentapi/messagebus/messages/documentmessage.h>
@@ -38,9 +39,7 @@ namespace documentapi {
 
 namespace storage {
 
-namespace spi {
-    class DocEntry;
-}
+namespace spi { class DocEntry; }
 
 namespace api {
     class ReturnCode;

@@ -3,7 +3,7 @@
 
 #include <vespa/vdslib/state/nodetype.h>
 #include <vespa/storage/distributor/distributormessagesender.h>
-#include <vespa/storageframework/generic/clock/time.h>
+#include <vespa/vespalib/util/time.h>
 
 namespace storage {
 
@@ -50,7 +50,7 @@ public:
     [[nodiscard]] virtual std::string getStatus() const;
 
     [[nodiscard]] virtual std::string toString() const {
-        return std::string(getName());
+        return getName();
     }
 
     /**

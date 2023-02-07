@@ -4,6 +4,8 @@
 #include "componentregister.h"
 #include <vespa/storageframework/generic/metric/metricregistrator.h>
 #include <vespa/storageframework/generic/thread/threadpool.h>
+#include <vespa/storageframework/generic/thread/thread.h>
+
 #include <cassert>
 
 namespace storage::framework {
@@ -78,7 +80,7 @@ Component::getThreadPool() const
 }
 
 // Helper functions for components wanting to start a single thread.
-Thread::UP
+std::unique_ptr<Thread>
 Component::startThread(Runnable& runnable, vespalib::duration waitTime, vespalib::duration maxProcessTime,
                        int ticksBeforeWait, std::optional<vespalib::CpuUsage::Category> cpu_category) const
 {

@@ -12,7 +12,6 @@
 #include <vespa/storage/common/message_guard.h>
 #include <vespa/storageapi/message/bucket.h>
 #include <vespa/storageapi/messageapi/messagehandler.h>
-#include <vespa/storageframework/generic/clock/timer.h>
 #include <vespa/storageframework/generic/status/statusreporter.h>
 #include <vespa/vdslib/state/clusterstate.h>
 #include <atomic>

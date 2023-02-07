@@ -7,6 +7,7 @@
 #include "testvisitor.h"
 #include "recoveryvisitor.h"
 #include "reindexing_visitor.h"
+#include <vespa/storageframework/generic/thread/thread.h>
 #include <vespa/config/subscription/configuri.h>
 #include <vespa/config/common/exceptions.h>
 #include <vespa/config/helper/configfetcher.hpp>
@@ -23,7 +24,7 @@ namespace storage {
 VisitorManager::VisitorManager(const config::ConfigUri & configUri,
                                StorageComponentRegister& componentRegister,
                                VisitorMessageSessionFactory& messageSF,
-                               const VisitorFactory::Map& externalFactories,
+                               VisitorFactory::Map externalFactories,
                                bool defer_manager_thread_start)
     : StorageLink("Visitor Manager"),
       framework::HtmlStatusReporter("visitorman", "Visitor Manager"),
@@ -43,12 +44,12 @@ VisitorManager::VisitorManager(const config::ConfigUri & configUri,
       _component(componentRegister, "visitormanager"),
       _visitorQueue(_component.getClock()),
       _recentlyDeletedVisitors(),
-      _recentlyDeletedMaxTime(5 * 1000 * 1000),
+      _recentlyDeletedMaxTime(5s),
       _statusLock(),
       _statusCond(),
       _statusRequest(),
       _enforceQueueUse(false),
-      _visitorFactories(externalFactories)
+      _visitorFactories(std::move(externalFactories))
 {
     _configFetcher->subscribe<vespa::config::content::core::StorVisitorConfig>(configUri.getConfigId(), this);
     _configFetcher->start();
@@ -524,11 +525,11 @@ VisitorManager::closed(api::VisitorId id)
                      "same visitor. This was not intended.");
         return;
     }
-    framework::MicroSecTime time(_component.getClock().getTimeInMicros());
-    _recentlyDeletedVisitors.emplace_back(it->second, time);
+    vespalib::steady_time now(_component.getClock().getMonotonicTime());
+    _recentlyDeletedVisitors.emplace_back(it->second, now);
     _nameToId.erase(it->second);
     usedIds.erase(it);
-    while ((_recentlyDeletedVisitors.front().second + _recentlyDeletedMaxTime) < time) {
+    while ((_recentlyDeletedVisitors.front().second + _recentlyDeletedMaxTime) < now) {
         _recentlyDeletedVisitors.pop_front();
     }
 
@@ -653,9 +654,9 @@ VisitorManager::reportHtmlStatus(std::ostream& out,
     std::sort(_statusRequest.begin(), _statusRequest.end(), StatusReqSorter());
 
     // Create output
-    for (uint32_t i=0; i<_statusRequest.size(); ++i) {
-        out << "<h2>" << _statusRequest[i]->getSortToken()
-            << "</h2>\n" << _statusRequest[i]->getStatus() << "\n";
+    for (const auto & request : _statusRequest) {
+        out << "<h2>" << request->getSortToken()
+            << "</h2>\n" << request->getStatus() << "\n";
     }
     _statusRequest.clear();
 }

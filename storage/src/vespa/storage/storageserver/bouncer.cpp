@@ -3,6 +3,7 @@
 #include "bouncer.h"
 #include "bouncer_metrics.h"
 #include "config_logging.h"
+#include <vespa/storageframework/generic/clock/clock.h>
 #include <vespa/vdslib/state/cluster_state_bundle.h>
 #include <vespa/vdslib/state/clusterstate.h>
 #include <vespa/persistence/spi/bucket_limits.h>

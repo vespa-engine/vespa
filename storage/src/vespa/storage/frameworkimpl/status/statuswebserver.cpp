@@ -1,7 +1,9 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "statuswebserver.h"
-#include <vespa/storageframework/storageframework.h>
+#include <vespa/storageframework/generic/component/component.h>
+#include <vespa/storageframework/generic/status/htmlstatusreporter.h>
+#include <vespa/storageframework/generic/status/statusreportermap.h>
 #include <vespa/vespalib/util/host_name.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/size_literals.h>

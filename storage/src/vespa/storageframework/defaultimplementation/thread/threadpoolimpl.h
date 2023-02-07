@@ -6,6 +6,9 @@
 
 class FastOS_ThreadPool;
 
+namespace storage::framework {
+    struct Clock;
+}
 namespace storage::framework::defaultimplementation {
 
 class ThreadImpl;
@@ -22,9 +25,9 @@ public:
     ThreadPoolImpl(Clock&);
     ~ThreadPoolImpl() override;
 
-    Thread::UP startThread(Runnable&, vespalib::stringref id, vespalib::duration waitTime,
-                           vespalib::duration maxProcessTime, int ticksBeforeWait,
-                           std::optional<vespalib::CpuUsage::Category> cpu_category) override;
+    std::unique_ptr<Thread> startThread(Runnable&, vespalib::stringref id, vespalib::duration waitTime,
+                                        vespalib::duration maxProcessTime, int ticksBeforeWait,
+                                        std::optional<vespalib::CpuUsage::Category> cpu_category) override;
     void visitThreads(ThreadVisitor&) const override;
     void unregisterThread(ThreadImpl&);
     FastOS_ThreadPool& getThreadPool() { return *_backendThreadPool; }

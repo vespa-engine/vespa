@@ -2,6 +2,7 @@
 
 #include "persistencethread.h"
 #include "persistencehandler.h"
+#include <vespa/storageframework/generic/thread/thread.h>
 #include <thread>
 
 #include <vespa/log/log.h>

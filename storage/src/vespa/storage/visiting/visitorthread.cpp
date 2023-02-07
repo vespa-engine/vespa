@@ -2,6 +2,8 @@
 
 #include "visitorthread.h"
 #include "messages.h"
+#include <vespa/storageframework/generic/thread/thread.h>
+#include <vespa/storageframework/generic/clock/clock.h>
 #include <vespa/document/base/exceptions.h>
 #include <vespa/document/select/bodyfielddetector.h>
 #include <vespa/document/select/parser.h>

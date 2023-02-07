@@ -10,7 +10,7 @@
  */
 #pragma once
 
-#include <vespa/storageframework/generic/clock/time.h>
+#include <vespa/vespalib/util/time.h>
 
 namespace metrics {
     class Metric;

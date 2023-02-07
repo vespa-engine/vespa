@@ -5,6 +5,7 @@
 #include <vespa/storage/bucketdb/storbucketdb.h>
 #include <vespa/storage/common/content_bucket_space_repo.h>
 #include <vespa/storageframework/generic/thread/thread.h>
+#include <vespa/storageframework/generic/clock/clock.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 
 #include <vespa/log/bufferedlogger.h>
@@ -252,15 +253,9 @@ namespace {
     struct ThreadStatusWriter : public DeadLockDetector::ThreadVisitor {
         ThreadTable& _table;
         vespalib::steady_time _time;
-        vespalib::duration _processSlack;
-        vespalib::duration _waitSlack;
 
-        ThreadStatusWriter(ThreadTable& table,
-                           vespalib::steady_time time,
-                           vespalib::duration processSlack,
-                           vespalib::duration waitSlack)
-            : _table(table), _time(time),
-              _processSlack(processSlack), _waitSlack(waitSlack) {}
+        ThreadStatusWriter(ThreadTable& table, vespalib::steady_time time)
+            : _table(table), _time(time) {}
 
         template<typename T>
         vespalib::string toS(const T& val) {
@@ -293,8 +288,7 @@ DeadLockDetector::reportHtmlStatus(std::ostream& os,
     out << "<h2>Overview of latest thread ticks</h2>\n";
     ThreadTable threads;
     std::lock_guard guard(_lock);
-    ThreadStatusWriter writer(threads, _component->getClock().getMonotonicTime(),
-                              getProcessSlack(), getWaitSlack());
+    ThreadStatusWriter writer(threads, _component->getClock().getMonotonicTime());
     visitThreads(writer);
     std::ostringstream ost;
     threads._table.print(ost);

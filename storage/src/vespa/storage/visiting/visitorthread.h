@@ -19,6 +19,7 @@
 #include <vespa/storage/persistence/messages.h>
 #include <vespa/storage/common/storagecomponent.h>
 #include <vespa/storageframework/generic/metric/metricupdatehook.h>
+#include <vespa/storageframework/generic/thread/runnable.h>
 #include <vespa/storageapi/messageapi/messagehandler.h>
 #include <vespa/metrics/metrictimer.h>
 #include <vespa/vespalib/util/document_runnable.h>
@@ -86,7 +87,7 @@ class VisitorThread : public framework::Runnable,
     framework::MilliSecTime _defaultVisitorInfoTimeout;
     std::atomic<uint32_t> _timeBetweenTicks;
     StorageComponent _component;
-    framework::Thread::UP _thread;
+    std::unique_ptr<framework::Thread> _thread;
     VisitorMessageSessionFactory& _messageSessionFactory;
     VisitorFactory::Map& _visitorFactories;
 

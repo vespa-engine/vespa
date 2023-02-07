@@ -1,7 +1,8 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "componentregisterimpl.h"
-#include <vespa/storageframework/storageframework.h>
+#include <vespa/storageframework/generic/status/statusreporter.h>
+#include <vespa/storageframework/generic/metric/metricupdatehook.h>
 #include <vespa/metrics/metricmanager.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <cassert>

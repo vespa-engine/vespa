@@ -2,6 +2,8 @@
 
 #include "statemanager.h"
 #include "storagemetricsset.h"
+#include <vespa/storageframework/generic/clock/clock.h>
+#include <vespa/storageframework/generic/thread/thread.h>
 #include <vespa/defaults.h>
 #include <vespa/document/bucket/fixed_bucket_spaces.h>
 #include <vespa/metrics/jsonwriter.h>
@@ -473,7 +475,7 @@ void
 StateManager::run(framework::ThreadHandle& thread)
 {
     while (true) {
-        thread.registerTick();
+        thread.registerTick(framework::UNKNOWN_CYCLE);
         if (thread.interrupted()) {
             break;
         }

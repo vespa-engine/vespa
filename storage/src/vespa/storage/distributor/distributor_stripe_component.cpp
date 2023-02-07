@@ -5,6 +5,7 @@
 #include "distributor_bucket_space.h"
 #include "pendingmessagetracker.h"
 #include "storage_node_up_states.h"
+#include <vespa/storageframework/generic/clock/clock.h>
 #include <vespa/document/select/parser.h>
 #include <vespa/vdslib/state/cluster_state_bundle.h>
 #include <vespa/vdslib/state/clusterstate.h>
