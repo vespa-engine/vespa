@@ -440,7 +440,9 @@ StripeBucketDBUpdater::handleSingleBucketInfoFailure(
         req.targetNode, repl->getResult().toString().c_str());
 
     if (req.bucket.getBucketId() != document::BucketId(0)) {
-        _delayedRequests.emplace_back(_node_ctx.clock().getMonotonicTime() + 100ms, req);
+        framework::MilliSecTime sendTime(_node_ctx.clock());
+        sendTime += framework::MilliSecTime(100);
+        _delayedRequests.emplace_back(sendTime, req);
     }
 }
 
@@ -450,7 +452,7 @@ StripeBucketDBUpdater::resendDelayedMessages()
     if (_delayedRequests.empty()) {
         return; // Don't fetch time if not needed
     }
-    vespalib::steady_time currentTime(_node_ctx.clock().getMonotonicTime());
+    framework::MilliSecTime currentTime(_node_ctx.clock());
     while (!_delayedRequests.empty()
            && currentTime >= _delayedRequests.front().first)
     {
@@ -642,7 +644,7 @@ void
 StripeBucketDBUpdater::report_delayed_single_bucket_requests(vespalib::xml::XmlOutputStream& xos) const
 {
     for (const auto& entry : _delayedRequests) {
-        entry.second.print_xml_tag(xos, XmlAttribute("resendtimestamp", vespalib::count_ms(vespalib::to_utc(entry.first).time_since_epoch())));
+        entry.second.print_xml_tag(xos, XmlAttribute("resendtimestamp", entry.first.getTime()));
     }
 }
 

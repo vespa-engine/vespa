@@ -10,6 +10,7 @@
 #include <vespa/vdslib/distribution/distribution.h>
 #include <vespa/vespalib/util/xmlstream.hpp>
 #include <vespa/vespalib/stllike/hash_map.hpp>
+#include <climits>
 
 #include <vespa/log/bufferedlogger.h>
 LOG_SETUP(".pendingclusterstate");
@@ -249,7 +250,9 @@ PendingClusterState::onRequestBucketInfoReply(const std::shared_ptr<api::Request
 
     api::ReturnCode result(reply->getResult());
     if (!result.success()) {
-        _delayedRequests.emplace_back(_clock.getMonotonicTime() + 100ms, bucketSpaceAndNode);
+        framework::MilliSecTime resendTime(_clock);
+        resendTime += framework::MilliSecTime(100);
+        _delayedRequests.emplace_back(resendTime, bucketSpaceAndNode);
         _sentMessages.erase(iter);
         update_reply_failure_statistics(result, bucketSpaceAndNode);
         return true;
@@ -270,9 +273,9 @@ PendingClusterState::onRequestBucketInfoReply(const std::shared_ptr<api::Request
 void
 PendingClusterState::resendDelayedMessages() {
     if (_delayedRequests.empty()) return; // Don't fetch time if not needed
-    vespalib::steady_time currentTime = _clock.getMonotonicTime();
+    framework::MilliSecTime currentTime(_clock);
     while (!_delayedRequests.empty()
-           && (currentTime >= _delayedRequests.front().first))
+           && currentTime >= _delayedRequests.front().first)
     {
         requestNode(_delayedRequests.front().second);
         _delayedRequests.pop_front();

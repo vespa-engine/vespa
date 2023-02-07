@@ -57,7 +57,7 @@ private:
 
     struct MessageInfo {
         api::VisitorId id;
-        vespalib::system_time timestamp;
+        time_t timestamp;
         vespalib::duration timeout;
         std::string destination;
     };
@@ -168,7 +168,9 @@ private:
      * by the formula: fixed + variable * ((255 - priority) / 255)
      */
     uint32_t maximumConcurrent(const api::CreateVisitorCommand& cmd) const {
-        return _maxFixedConcurrentVisitors + static_cast<uint32_t>(_maxVariableConcurrentVisitors * ((255.0 - cmd.getPriority()) / 255.0));
+        return _maxFixedConcurrentVisitors + static_cast<uint32_t>(
+                _maxVariableConcurrentVisitors
+                    * ((255.0 - cmd.getPriority()) / 255.0));
     }
 
     void updateMetrics(const MetricLockGuard &) override;

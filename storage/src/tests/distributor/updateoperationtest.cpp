@@ -1,5 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <tests/common/dummystoragelink.h>
 #include <tests/distributor/distributor_stripe_test_util.h>
 #include <vespa/config/helper/configgetter.hpp>
 #include <vespa/document/repo/documenttyperepo.h>
@@ -90,7 +91,7 @@ TEST_F(UpdateOperationTest, simple) {
 
     std::shared_ptr<UpdateOperation> cb(sendUpdate("0=1/2/3"));
     DistributorMessageSenderStub sender;
-    cb->start(sender);
+    cb->start(sender, framework::MilliSecTime(0));
 
     ASSERT_EQ("Update => 0", sender.getCommands(true));
 
@@ -109,7 +110,7 @@ TEST_F(UpdateOperationTest, not_found) {
 
     std::shared_ptr<UpdateOperation> cb(sendUpdate("0=1/2/3"));
     DistributorMessageSenderStub sender;
-    cb->start(sender);
+    cb->start(sender, framework::MilliSecTime(0));
 
     ASSERT_EQ("Update => 0", sender.getCommands(true));
 
@@ -124,7 +125,7 @@ TEST_F(UpdateOperationTest, multi_node) {
     setup_stripe(2, 2, "distributor:1 storage:2");
     std::shared_ptr<UpdateOperation> cb(sendUpdate("0=1/2/3,1=1/2/3"));
     DistributorMessageSenderStub sender;
-    cb->start(sender);
+    cb->start(sender, framework::MilliSecTime(0));
 
     ASSERT_EQ("Update => 0,Update => 1", sender.getCommands(true));
 
@@ -148,7 +149,7 @@ TEST_F(UpdateOperationTest, multi_node_inconsistent_timestamp) {
     setup_stripe(2, 2, "distributor:1 storage:2");
     std::shared_ptr<UpdateOperation> cb(sendUpdate("0=1/2/3,1=1/2/3"));
     DistributorMessageSenderStub sender;
-    cb->start(sender);
+    cb->start(sender, framework::MilliSecTime(0));
 
     ASSERT_EQ("Update => 0,Update => 1", sender.getCommands(true));
 
@@ -168,7 +169,7 @@ TEST_F(UpdateOperationTest, test_and_set_failures_increment_tas_metric) {
     setup_stripe(2, 2, "distributor:1 storage:1");
     std::shared_ptr<UpdateOperation> cb(sendUpdate("0=1/2/3"));
     DistributorMessageSenderStub sender;
-    cb->start(sender);
+    cb->start(sender, framework::MilliSecTime(0));
     ASSERT_EQ("Update => 0", sender.getCommands(true));
     api::ReturnCode result(api::ReturnCode::TEST_AND_SET_CONDITION_FAILED, "bork bork");
     replyToMessage(*cb, sender, 0, 1234, api::BucketInfo(), result);
@@ -197,7 +198,7 @@ TEST_F(UpdateOperationTest, create_if_missing_update_sentinel_timestamp_is_treat
     setup_stripe(2, 2, "distributor:1 storage:2");
     std::shared_ptr<UpdateOperation> cb(sendUpdate("0=1/2/3,1=1/2/3", true));
     DistributorMessageSenderStub sender;
-    cb->start(sender);
+    cb->start(sender, framework::MilliSecTime(0));
 
     ASSERT_EQ("Update => 0,Update => 1", sender.getCommands(true));
 
@@ -219,7 +220,7 @@ TEST_F(UpdateOperationTest, inconsistent_create_if_missing_updates_picks_largest
     setup_stripe(2, 3, "distributor:1 storage:3");
     std::shared_ptr<UpdateOperation> cb(sendUpdate("0=1/2/3,1=1/2/3,2=1/2/3", true));
     DistributorMessageSenderStub sender;
-    cb->start(sender);
+    cb->start(sender, framework::MilliSecTime(0));
 
     ASSERT_EQ("Update => 0,Update => 1,Update => 2", sender.getCommands(true));
     replyToMessage(*cb, sender, 0, 100); // Newly created
