@@ -108,9 +108,10 @@ private:
     friend struct StateManagerTest;
 
     void notifyStateListeners();
-    bool sendGetNodeStateReplies(
-            vespalib::steady_time olderThanTime = vespalib::steady_time::max(),
-            uint16_t index = 0xffff);
+    bool sendGetNodeStateReplies();
+    bool sendGetNodeStateReplies(vespalib::steady_time olderThanTime);
+    bool sendGetNodeStateReplies(uint16_t nodeIndex);
+    bool sendGetNodeStateReplies(vespalib::steady_time olderThanTime, uint16_t nodeIndex);
     void mark_controller_as_having_observed_explicit_node_state(const std::unique_lock<std::mutex> &, uint16_t controller_index);
 
     lib::Node thisNode() const;

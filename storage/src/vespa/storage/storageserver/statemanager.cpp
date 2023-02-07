@@ -390,32 +390,28 @@ StateManager::onGetNodeState(const api::GetNodeStateCommand::SP& cmd)
 {
     bool sentReply = false;
     if (cmd->getSourceIndex() != 0xffff) {
-        sentReply = sendGetNodeStateReplies(vespalib::steady_time::max(), cmd->getSourceIndex());
+        sentReply = sendGetNodeStateReplies(cmd->getSourceIndex());
     }
     std::shared_ptr<api::GetNodeStateReply> reply;
     {
         std::unique_lock guard(_stateLock);
         const bool is_up_to_date = (_controllers_observed_explicit_node_state.find(cmd->getSourceIndex())
                                     != _controllers_observed_explicit_node_state.end());
-        if (cmd->getExpectedState() != nullptr
+        if ((cmd->getExpectedState() != nullptr)
             && (*cmd->getExpectedState() == *_nodeState || sentReply)
             && is_up_to_date)
         {
             vespalib::duration timeout = cmd->getTimeout();
-            LOG(debug, "Received get node state request with timeout of "
-                       "%f seconds. Scheduling to be answered in "
-                       "%f seconds unless a node state change "
-                       "happens before that time.",
+            if (timeout == vespalib::duration::max()) timeout = 24h; //balder: Dirty temporary hack
+
+            LOG(debug, "Received get node state request with timeout of %f seconds. Scheduling to be answered in "
+                       "%f seconds unless a node state change happens before that time.",
                 vespalib::to_s(timeout), vespalib::to_s(timeout)*0.8);
-            TimeStateCmdPair pair(_component.getClock().getMonotonicTime() + timeout, cmd);
-            _queuedStateRequests.emplace_back(std::move(pair));
+            _queuedStateRequests.emplace_back(_component.getClock().getMonotonicTime() + timeout, cmd);
         } else {
-            LOG(debug, "Answered get node state request right away since it "
-                       "thought we were in node state %s, while our actual "
-                       "node state is currently %s and we didn't just reply to "
-                       "existing request.",
-                cmd->getExpectedState() == nullptr ? "unknown"
-                        : cmd->getExpectedState()->toString().c_str(),
+            LOG(debug, "Answered get node state request right away since it thought we were in node state %s, while "
+                       "our actual node state is currently %s and we didn't just reply to existing request.",
+                cmd->getExpectedState() == nullptr ? "unknown": cmd->getExpectedState()->toString().c_str(),
                 _nodeState->toString().c_str());
             reply = std::make_shared<api::GetNodeStateReply>(*cmd, *_nodeState);
             mark_controller_as_having_observed_explicit_node_state(guard, cmd->getSourceIndex());
@@ -497,6 +493,18 @@ StateManager::tick() {
     }
 }
 
+bool
+StateManager::sendGetNodeStateReplies() {
+    return sendGetNodeStateReplies(0xffff);
+}
+bool
+StateManager::sendGetNodeStateReplies(vespalib::steady_time olderThanTime) {
+    return sendGetNodeStateReplies(olderThanTime, 0xffff);
+}
+bool
+StateManager::sendGetNodeStateReplies(uint16_t nodeIndex) {
+    return sendGetNodeStateReplies(vespalib::steady_time::max(), nodeIndex);
+}
 bool
 StateManager::sendGetNodeStateReplies(vespalib::steady_time olderThanTime, uint16_t node)
 {
