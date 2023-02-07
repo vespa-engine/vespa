@@ -8,8 +8,9 @@
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <sstream>
-
+#include <cmath>
 #include <vespa/log/log.h>
+
 LOG_SETUP(".vdslib.nodestate");
 
 namespace storage::lib {
@@ -18,16 +19,16 @@ NodeState::NodeState(const NodeState &) = default;
 NodeState & NodeState::operator = (const NodeState &) = default;
 NodeState::NodeState(NodeState &&) noexcept = default;
 NodeState & NodeState::operator = (NodeState &&) noexcept = default;
-NodeState::~NodeState() = default;
+NodeState::~NodeState() { }
 
 NodeState::NodeState()
-    : _type(nullptr),
-      _state(nullptr),
+    : _type(0),
+      _state(0),
       _description(""),
       _capacity(1.0),
       _initProgress(0.0),
       _minUsedBits(16),
-      _startTimestamp()
+      _startTimestamp(0)
 {
     setState(State::UP);
 }
@@ -35,12 +36,12 @@ NodeState::NodeState()
 NodeState::NodeState(const NodeType& type, const State& state,
                      vespalib::stringref description, double capacity)
     : _type(&type),
-      _state(nullptr),
+      _state(0),
       _description(description),
       _capacity(1.0),
       _initProgress(0.0),
       _minUsedBits(16),
-      _startTimestamp()
+      _startTimestamp(0)
 {
     setState(state);
     if (type == NodeType::STORAGE) {
@@ -55,24 +56,25 @@ NodeState::NodeState(vespalib::stringref serialized, const NodeType* type)
       _capacity(1.0),
       _initProgress(0.0),
       _minUsedBits(16),
-      _startTimestamp()
+      _startTimestamp(0)
 {
 
     vespalib::StringTokenizer st(serialized, " \t\f\r\n");
     st.removeEmptyTokens();
-    for (auto it : st)
+    for (vespalib::StringTokenizer::Iterator it = st.begin();
+         it != st.end(); ++it)
     {
-        std::string::size_type index = it.find(':');
+        std::string::size_type index = it->find(':');
         if (index == std::string::npos) {
             throw vespalib::IllegalArgumentException(
-                    "Token " + it + " does not contain ':': " + serialized,
+                    "Token " + *it + " does not contain ':': " + serialized,
                     VESPA_STRLOC);
         }
-        std::string key = it.substr(0, index);
-        std::string value = it.substr(index + 1);
-        if (!key.empty()) switch (key[0]) {
+        std::string key = it->substr(0, index);
+        std::string value = it->substr(index + 1);
+        if (key.size() > 0) switch (key[0]) {
             case 'b':
-                if (_type != nullptr && *type != NodeType::STORAGE) break;
+                if (_type != 0 && *type != NodeType::STORAGE) break;
                 if (key.size() > 1) break;
                 try{
                     setMinUsedBits(boost::lexical_cast<uint32_t>(value));
@@ -89,7 +91,7 @@ NodeState::NodeState(vespalib::stringref serialized, const NodeType* type)
                 continue;
             case 'c':
                 if (key.size() > 1) break;
-                if (_type != nullptr && *type != NodeType::STORAGE) break;
+                if (_type != 0 && *type != NodeType::STORAGE) break;
                 try{
                     setCapacity(boost::lexical_cast<double>(value));
                 } catch (...) {
@@ -113,7 +115,7 @@ NodeState::NodeState(vespalib::stringref serialized, const NodeType* type)
             case 't':
                 if (key.size() > 1) break;
                 try{
-                    setStartTimestamp(vespalib::system_time(std::chrono::seconds(boost::lexical_cast<uint64_t>(value))));
+                    setStartTimestamp(boost::lexical_cast<uint64_t>(value));
                 } catch (...) {
                     throw vespalib::IllegalArgumentException(
                             "Illegal start timestamp '" + value + "'. Start "
@@ -163,7 +165,7 @@ NodeState::serialize(vespalib::asciistream & out, vespalib::stringref prefix,
     SeparatorPrinter sep;
     // Always give node state if not part of a system state
     // to prevent empty serialization
-    if (*_state != State::UP || prefix.empty()) {
+    if (*_state != State::UP || prefix.size() == 0) {
         out << sep << prefix << "s:";
         out << _state->serialize();
     }
@@ -176,8 +178,8 @@ NodeState::serialize(vespalib::asciistream & out, vespalib::stringref prefix,
     if (*_state == State::INITIALIZING) {
         out << sep << prefix << "i:" << _initProgress;
     }
-    if (_startTimestamp != vespalib::system_time()) {
-        out << sep << prefix << "t:" << vespalib::count_s(_startTimestamp.time_since_epoch());
+    if (_startTimestamp != 0) {
+        out << sep << prefix << "t:" << _startTimestamp;
     }
     if (includeDescription && ! _description.empty()) {
         out << sep << prefix << "m:"
@@ -188,7 +190,7 @@ NodeState::serialize(vespalib::asciistream & out, vespalib::stringref prefix,
 void
 NodeState::setState(const State& state)
 {
-    if (_type != nullptr) {
+    if (_type != 0) {
         // We don't know whether you want to store reported, wanted or
         // current node state, so we must accept any.
         if (!state.validReportedNodeState(*_type)
@@ -223,7 +225,7 @@ NodeState::setCapacity(vespalib::Double capacity)
                 "must be a positive floating point number";
         throw vespalib::IllegalArgumentException(ost.str(), VESPA_STRLOC);
     }
-    if (_type != nullptr && *_type != NodeType::STORAGE) {
+    if (_type != 0 && *_type != NodeType::STORAGE) {
         throw vespalib::IllegalArgumentException(
                 "Capacity only make sense for storage nodes.", VESPA_STRLOC);
     }
@@ -243,7 +245,7 @@ NodeState::setInitProgress(vespalib::Double initProgress)
 }
 
 void
-NodeState::setStartTimestamp(vespalib::system_time startTimestamp)
+NodeState::setStartTimestamp(uint64_t startTimestamp)
 {
     _startTimestamp = startTimestamp;
 }
@@ -268,10 +270,10 @@ NodeState::print(std::ostream& out, bool verbose,
     if (*_state == State::INITIALIZING) {
         out << ", init progress " << _initProgress;
     }
-    if (_startTimestamp != vespalib::system_time()) {
-        out << ", start timestamp " << vespalib::to_string(_startTimestamp);
+    if (_startTimestamp != 0) {
+        out << ", start timestamp " << _startTimestamp;
     }
-    if (!_description.empty()) {
+    if (_description.size() > 0) {
         out << ": " << _description;
     }
 }
@@ -315,7 +317,7 @@ NodeState::similarTo(const NodeState& other) const
 void
 NodeState::verifySupportForNodeType(const NodeType& type) const
 {
-    if (_type != nullptr && *_type == type) return;
+    if (_type != 0 && *_type == type) return;
     if (!_state->validReportedNodeState(type)
         && !_state->validWantedNodeState(type))
     {
@@ -355,8 +357,8 @@ NodeState::getTextualDifference(const NodeState& other) const {
         }
     }
     if (_startTimestamp != other._startTimestamp) {
-        source << ", start timestamp " << vespalib::to_string(_startTimestamp);
-        target << ", start timestamp " << vespalib::to_string(other._startTimestamp);
+        source << ", start timestamp " << _startTimestamp;
+        target << ", start timestamp " << other._startTimestamp;
     }
 
     if (source.str().length() < 2 || target.str().length() < 2) {
