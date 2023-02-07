@@ -61,9 +61,6 @@ public:
     }
 
     framework::MicroSecTime getTimeInMicros() const override ;
-    framework::MilliSecTime getTimeInMillis() const override {
-        return getTimeInMicros().getMillis();
-    }
     framework::SecondTime getTimeInSeconds() const override {
         return getTimeInMicros().getSeconds();
     }

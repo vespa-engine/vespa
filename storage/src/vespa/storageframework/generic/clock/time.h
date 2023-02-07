@@ -95,7 +95,6 @@ template<typename Type, int MPU>
 vespalib::asciistream& operator<<(vespalib::asciistream& out, const Time<Type, MPU>& t);
 
 struct MicroSecTime;
-struct MilliSecTime;
 
 /**
  * \class storage::framework::SecondTime
@@ -114,24 +113,6 @@ struct SecondTime : public Time<SecondTime, 1000000> {
 };
 
 /**
- * \class storage::framework::MilliSecTime
- * \ingroup clock
- *
- * \brief Wrapper class for a timestamp in milliseconds.
- *
- * To prevent errors where one passes time in one granularity to a function
- * requiring time in another granularity. This little wrapper class exist to
- * make sure that will conflict in types
- */
-struct MilliSecTime : public Time<MilliSecTime, 1000> {
-    explicit MilliSecTime(uint64_t t = 0) : Time<MilliSecTime, 1000>(t) {}
-    explicit MilliSecTime(const Clock& clock)
-        : Time<MilliSecTime, 1000>(getRawMicroTime(clock) / 1000) {}
-
-    [[nodiscard]] MicroSecTime getMicros() const;
-};
-
-/**
  * \class storage::framework::MicroSecTime
  * \ingroup clock
  *
@@ -146,24 +127,12 @@ struct MicroSecTime : public Time<MicroSecTime, 1> {
     explicit MicroSecTime(const Clock& clock)
         : Time<MicroSecTime, 1>(getRawMicroTime(clock)) {}
 
-    [[nodiscard]] MilliSecTime getMillis() const { return MilliSecTime(getTime() / 1000); }
     [[nodiscard]] SecondTime getSeconds() const { return SecondTime(getTime() / 1000000); }
 };
-
-inline MicroSecTime MilliSecTime::getMicros() const {
-    return MicroSecTime(getTime() * 1000);
-}
 
 inline MicroSecTime
 operator + (MicroSecTime a, MicroSecTime b) {
     MicroSecTime result(a);
-    result += b;
-    return result;
-}
-
-inline MilliSecTime
-operator + (MilliSecTime a, MilliSecTime b) {
-    MilliSecTime result(a);
     result += b;
     return result;
 }

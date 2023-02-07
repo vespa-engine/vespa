@@ -7,8 +7,7 @@
 #include <cassert>
 #include <sstream>
 
-namespace storage {
-namespace framework {
+namespace storage::framework {
 
 namespace {
     void detectUnit(uint64_t& val, const char* unit, uint64_t size,
@@ -17,7 +16,7 @@ namespace {
             uint64_t value = val / size;
             vespalib::string unitname = unit;
             if (value != 1) unitname += "s";
-            units.push_back(std::make_pair(value, unitname));
+            units.emplace_back(value, unitname);
             val -= value * size;
         }
     }
@@ -41,7 +40,7 @@ getTimeString(uint64_t microSecondTime, TimeFormat format)
             if (vals.empty()) { ost << "0 seconds"; }
         }
         if (vals.empty()) {
-            return vespalib::string(ost.str().c_str());
+            return ost.str();
         }
         ost << vals[0].first << " " << vals[0].second;
         for (uint32_t i=1; i<vals.size(); ++i) {
@@ -52,7 +51,7 @@ getTimeString(uint64_t microSecondTime, TimeFormat format)
             }
             ost << vals[i].first << " " << vals[i].second;
         }
-        return vespalib::string(ost.str().c_str());
+        return ost.str();
     }
     time_t secondTime = microSecondTime / 1000000;
     struct tm datestruct;
@@ -72,7 +71,7 @@ getTimeString(uint64_t microSecondTime, TimeFormat format)
     } else if (format == DATETIME_WITH_MICROS) {
         ost << '.' << std::setw(6) << micros;
     }
-    return vespalib::string(ost.str().c_str());
+    return ost.str();
 }
 
 uint64_t
@@ -82,11 +81,9 @@ getRawMicroTime(const Clock& clock)
 }
 
 template std::ostream& operator<< <MicroSecTime, 1>(std::ostream&, const Time<MicroSecTime, 1> &);
-template std::ostream& operator<< <MilliSecTime, 1000>(std::ostream&, const Time<MilliSecTime, 1000> &);
 template std::ostream& operator<< <SecondTime, 1000000>(std::ostream&, const Time<SecondTime, 1000000> &);
 
 template vespalib::asciistream& operator<< <MicroSecTime, 1>(vespalib::asciistream &, const Time<MicroSecTime, 1> &);
-template vespalib::asciistream& operator<< <MilliSecTime, 1000>(vespalib::asciistream &, const Time<MilliSecTime, 1000> &);
+template vespalib::asciistream& operator<< <SecondTime, 1000000>(vespalib::asciistream &, const Time<SecondTime, 1000000> &);
 
-} // framework
-} // storage
+}

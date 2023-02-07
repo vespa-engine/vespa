@@ -89,7 +89,8 @@ VisitorThread::VisitorThread(uint32_t threadIndex,
       _defaultPendingMessages(0),
       _defaultDocBlockSize(0),
       _visitorMemoryUsageLimit(UINT32_MAX),
-      _defaultDocBlockTimeout(180000),
+      _defaultDocBlockTimeout(180s),
+      _defaultVisitorInfoTimeout(60s),
       _timeBetweenTicks(1000),
       _component(componentRegister, getThreadName(threadIndex)),
       _messageSessionFactory(messageSessionFac),
@@ -280,11 +281,11 @@ VisitorThread::tick()
 void
 VisitorThread::close()
 {
-    framework::MicroSecTime closeTime(_component.getClock().getTimeInMicros());
+    vespalib::steady_time closeTime = _component.getClock().getMonotonicTime();
 
     Visitor& v = *_currentlyRunningVisitor->second;
 
-    _metrics.averageVisitorLifeTime.addValue((closeTime - v.getStartTime()).getMillis().getTime());
+    _metrics.averageVisitorLifeTime.addValue(vespalib::count_ms(closeTime - v.getStartTime()));
     v.finalize();
     _messageSender.closed(_currentlyRunningVisitor->first);
     if (v.failed()) {
@@ -508,8 +509,7 @@ VisitorThread::onCreateVisitor(
                            _messageSender,
                            std::move(messageSession),
                            documentPriority);
-            visitor->attach(cmd, *controlAddress, *dataAddress,
-                            framework::MilliSecTime(vespalib::count_ms(cmd->getTimeout())));
+            visitor->attach(cmd, *controlAddress, *dataAddress, cmd->getTimeout());
         } catch (std::exception& e) {
             // We don't handle exceptions from this code, as we've
             // added visitor to internal structs we'll end up calling
@@ -575,8 +575,8 @@ VisitorThread::onInternal(const std::shared_ptr<api::InternalCommand>& cmd)
                             _defaultPendingMessages,
                             _defaultDocBlockSize,
                             _visitorMemoryUsageLimit,
-                            _defaultDocBlockTimeout.getTime(),
-                            _defaultVisitorInfoTimeout.getTime(),
+                            vespalib::count_ms(_defaultDocBlockTimeout),
+                            vespalib::count_ms(_defaultVisitorInfoTimeout),
                             config.disconnectedvisitortimeout,
                             config.ignorenonexistingvisitortimelimit,
                             config.defaultparalleliterators,
@@ -588,14 +588,13 @@ VisitorThread::onInternal(const std::shared_ptr<api::InternalCommand>& cmd)
                    );
             }
             _disconnectedVisitorTimeout = config.disconnectedvisitortimeout;
-            _ignoreNonExistingVisitorTimeLimit
-                    = config.ignorenonexistingvisitortimelimit;
+            _ignoreNonExistingVisitorTimeLimit = config.ignorenonexistingvisitortimelimit;
             _defaultParallelIterators = config.defaultparalleliterators;
             _defaultPendingMessages = config.defaultpendingmessages;
             _defaultDocBlockSize = config.defaultdocblocksize;
             _visitorMemoryUsageLimit = config.visitorMemoryUsageLimit;
-            _defaultDocBlockTimeout.setTime(config.defaultdocblocktimeout);
-            _defaultVisitorInfoTimeout.setTime(config.defaultinfotimeout);
+            _defaultDocBlockTimeout = std::chrono::milliseconds(config.defaultdocblocktimeout);
+            _defaultVisitorInfoTimeout = std::chrono::milliseconds(config.defaultinfotimeout);
             if (_defaultParallelIterators < 1) {
                 LOG(config, "Cannot use value of defaultParallelIterators < 1");
                 _defaultParallelIterators = 1;
@@ -608,9 +607,9 @@ VisitorThread::onInternal(const std::shared_ptr<api::InternalCommand>& cmd)
                 LOG(config, "Refusing to use default block size less than 1k");
                 _defaultDocBlockSize = 1024;
             }
-            if (_defaultDocBlockTimeout.getTime() < 1) {
+            if (_defaultDocBlockTimeout < 1ms) {
                 LOG(config, "Cannot use value of defaultDocBlockTimeout < 1");
-                _defaultDocBlockTimeout.setTime(1);
+                _defaultDocBlockTimeout = 1ms;
             }
             break;
         }
@@ -710,7 +709,7 @@ VisitorThread::getStatus(vespalib::asciistream& out,
             << "<tr><td>Default DocBlock size</td><td>"
             << _defaultDocBlockSize << "</td></tr>\n"
             << "<tr><td>Default DocBlock timeout (ms)</td><td>"
-            << _defaultDocBlockTimeout.getTime() << "</td></tr>\n"
+            << vespalib::count_ms(_defaultDocBlockTimeout) << "</td></tr>\n"
             << "<tr><td>Visitor memory usage limit</td><td>"
             << _visitorMemoryUsageLimit << "</td></tr>\n"
             << "</table>\n";

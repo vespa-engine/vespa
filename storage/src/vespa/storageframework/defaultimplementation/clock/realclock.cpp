@@ -12,14 +12,6 @@ RealClock::getTimeInMicros() const {
     return MicroSecTime(mytime.tv_sec * 1000000llu + mytime.tv_usec);
 }
 
-MilliSecTime
-RealClock::getTimeInMillis() const {
-    struct timeval mytime;
-    gettimeofday(&mytime, 0);
-    return MilliSecTime(
-            mytime.tv_sec * 1000llu + mytime.tv_usec / 1000);
-}
-
 SecondTime
 RealClock::getTimeInSeconds() const {
     struct timeval mytime;
