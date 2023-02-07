@@ -213,7 +213,7 @@ Visitor::sendMessage(documentapi::DocumentMessage::UP cmd)
 
     cmd->setPriority(_documentPriority);
 
-    vespalib::steady_time time =_component.getClock().getMonotonicTime();
+    vespalib::steady_time time = _component.getClock().getMonotonicTime();
 
     if ((time + _docBlockTimeout) > _timeToDie) {
         cmd->setTimeRemaining((_timeToDie > time) ? _timeToDie - time : vespalib::duration::zero());

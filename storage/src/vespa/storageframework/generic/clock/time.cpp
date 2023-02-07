@@ -40,7 +40,7 @@ getTimeString(uint64_t microSecondTime, TimeFormat format)
             if (vals.empty()) { ost << "0 seconds"; }
         }
         if (vals.empty()) {
-            return ost.str().c_str();
+            return ost.str();
         }
         ost << vals[0].first << " " << vals[0].second;
         for (uint32_t i=1; i<vals.size(); ++i) {
@@ -51,7 +51,7 @@ getTimeString(uint64_t microSecondTime, TimeFormat format)
             }
             ost << vals[i].first << " " << vals[i].second;
         }
-        return ost.str().c_str();
+        return ost.str();
     }
     time_t secondTime = microSecondTime / 1000000;
     struct tm datestruct;
@@ -71,7 +71,7 @@ getTimeString(uint64_t microSecondTime, TimeFormat format)
     } else if (format == DATETIME_WITH_MICROS) {
         ost << '.' << std::setw(6) << micros;
     }
-    return ost.str().c_str();
+    return ost.str();
 }
 
 uint64_t
