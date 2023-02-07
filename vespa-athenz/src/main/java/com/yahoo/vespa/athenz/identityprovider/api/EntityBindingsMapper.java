@@ -25,7 +25,7 @@ import static com.yahoo.vespa.athenz.identityprovider.api.VespaUniqueInstanceId.
  */
 public class EntityBindingsMapper {
 
-    private static final ObjectMapper mapper = new ObjectMapper().registerModule(new JavaTimeModule());
+    static final ObjectMapper mapper = new ObjectMapper().registerModule(new JavaTimeModule());
 
     private EntityBindingsMapper() {}
 
@@ -35,6 +35,14 @@ public class EntityBindingsMapper {
         } catch (JsonProcessingException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    public static SignedIdentityDocument fromInputStream(InputStream in) throws IOException {
+        return EntityBindingsMapper.toSignedIdentityDocument(mapper.readValue(in, SignedIdentityDocumentEntity.class));
+    }
+
+    public static SignedIdentityDocument fromString(String json) throws IOException {
+        return EntityBindingsMapper.toSignedIdentityDocument(mapper.readValue(json, SignedIdentityDocumentEntity.class));
     }
 
     public static SignedIdentityDocument toSignedIdentityDocument(SignedIdentityDocumentEntity entity) {
@@ -49,7 +57,8 @@ public class EntityBindingsMapper {
                 entity.createdAt(),
                 entity.ipAddresses(),
                 IdentityType.fromId(entity.identityType()),
-                Optional.ofNullable(entity.clusterType()).map(ClusterType::from).orElse(null));
+                Optional.ofNullable(entity.clusterType()).map(ClusterType::from).orElse(null),
+                entity.unknownAttributes());
     }
 
     public static SignedIdentityDocumentEntity toSignedIdentityDocumentEntity(SignedIdentityDocument model) {
@@ -64,13 +73,13 @@ public class EntityBindingsMapper {
                 model.createdAt(),
                 model.ipAddresses(),
                 model.identityType().id(),
-                Optional.ofNullable(model.clusterType()).map(ClusterType::toConfigValue).orElse(null));
+                Optional.ofNullable(model.clusterType()).map(ClusterType::toConfigValue).orElse(null),
+                model.unknownAttributes());
     }
 
     public static SignedIdentityDocument readSignedIdentityDocumentFromFile(Path file) {
         try (InputStream inputStream = Files.newInputStream(file)) {
-            SignedIdentityDocumentEntity entity = mapper.readValue(inputStream, SignedIdentityDocumentEntity.class);
-            return EntityBindingsMapper.toSignedIdentityDocument(entity);
+            return fromInputStream(inputStream);
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
