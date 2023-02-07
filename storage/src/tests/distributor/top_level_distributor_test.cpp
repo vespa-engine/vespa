@@ -6,6 +6,8 @@
 #include <vespa/storageapi/message/visitor.h>
 #include <vespa/storageapi/message/removelocation.h>
 #include <vespa/storageframework/defaultimplementation/thread/threadpoolimpl.h>
+#include <vespa/storageframework/generic/thread/runnable.h>
+#include <vespa/storageframework/generic/thread/thread.h>
 #include <tests/distributor/top_level_distributor_test_util.h>
 #include <vespa/document/bucket/fixed_bucket_spaces.h>
 #include <vespa/document/test/make_document_bucket.h>
