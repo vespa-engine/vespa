@@ -4,7 +4,6 @@
 #include <vespa/config/helper/configgetter.h>
 #include <vespa/config/helper/configgetter.hpp>
 #include <vespa/document/config/documenttypes_config_fwd.h>
-#include <vespa/document/config/config-documenttypes.h>
 #include <vespa/document/fieldset/fieldsets.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/document/fieldvalue/stringfieldvalue.h>
@@ -62,7 +61,7 @@ struct GetOperationTest : Test, DistributorStripeTestUtil {
                 getDistributorBucketSpace().getBucketDatabase().acquire_read_guard(),
                 msg, metrics().gets,
                 consistency);
-        op->start(_sender, framework::MilliSecTime(0));
+        op->start(_sender);
     }
 
     static constexpr uint32_t LastCommand = UINT32_MAX;

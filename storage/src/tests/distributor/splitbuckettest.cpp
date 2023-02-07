@@ -65,7 +65,7 @@ TEST_F(SplitOperationTest, simple) {
                       splitByteSize);
 
     op.setIdealStateManager(&getIdealStateManager());
-    op.start(_sender, framework::MilliSecTime(0));
+    op.start(_sender);
 
     {
         ASSERT_EQ(1, _sender.commands().size());
@@ -134,7 +134,7 @@ TEST_F(SplitOperationTest, multi_node_failure) {
                       splitByteSize);
 
     op.setIdealStateManager(&getIdealStateManager());
-    op.start(_sender, framework::MilliSecTime(0));
+    op.start(_sender);
 
     {
         ASSERT_EQ(2, _sender.commands().size());
@@ -218,7 +218,7 @@ TEST_F(SplitOperationTest, copy_trusted_status_not_carried_over_after_split) {
                       splitByteSize);
 
     op.setIdealStateManager(&getIdealStateManager());
-    op.start(_sender, framework::MilliSecTime(0));
+    op.start(_sender);
 
     ASSERT_EQ(3, _sender.commands().size());
 

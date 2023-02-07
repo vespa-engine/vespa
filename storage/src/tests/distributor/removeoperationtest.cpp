@@ -1,6 +1,5 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <iomanip>
 #include <tests/distributor/distributor_stripe_test_util.h>
 #include <vespa/document/test/make_document_bucket.h>
 #include <vespa/storage/distributor/top_level_distributor.h>
@@ -41,7 +40,7 @@ struct RemoveOperationTest : Test, DistributorStripeTestUtil {
                 msg,
                 metrics().removes);
 
-        op->start(_sender, framework::MilliSecTime(0));
+        op->start(_sender);
     }
 
     void replyToMessage(RemoveOperation& callback,
@@ -55,7 +54,7 @@ struct RemoveOperationTest : Test, DistributorStripeTestUtil {
         std::shared_ptr<api::StorageMessage> msg2  = _sender.command(index);
         auto* removec = dynamic_cast<api::RemoveCommand*>(msg2.get());
         std::unique_ptr<api::StorageReply> reply(removec->makeReply());
-        auto* removeR = static_cast<api::RemoveReply*>(reply.get());
+        auto* removeR = dynamic_cast<api::RemoveReply*>(reply.get());
         removeR->setOldTimestamp(oldTimestamp);
         callback.onReceive(_sender, std::shared_ptr<api::StorageReply>(reply.release()));
     }
