@@ -7,6 +7,9 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+/**
+ * @author mpolden
+ */
 public class LoadBalancersV1ApiTest {
 
     private RestApiTester tester;
@@ -22,11 +25,19 @@ public class LoadBalancersV1ApiTest {
     }
 
     @Test
-    public void test_load_balancers() throws Exception {
+    public void load_balancers() throws Exception {
         tester.assertFile(new Request("http://localhost:8080/loadbalancers/v1"), "load-balancers.json");
         tester.assertFile(new Request("http://localhost:8080/loadbalancers/v1/"), "load-balancers.json");
         tester.assertFile(new Request("http://localhost:8080/loadbalancers/v1/?application=tenant4.application4.instance4"), "load-balancers-single.json");
         tester.assertResponse(new Request("http://localhost:8080/loadbalancers/v1/?application=tenant.nonexistent.default"), "{\"loadBalancers\":[]}");
+    }
+
+    @Test
+    public void set_state() throws Exception {
+        tester.assertResponse(new Request("http://localhost:8080/loadbalancers/v1/state/removable/tenant42:application42:instance42:id42", "", Request.Method.PUT),
+                              404, "{\"error-code\":\"NOT_FOUND\",\"message\":\"load balancer tenant42:application42:instance42:id42 does not exist\"}");
+        tester.assertResponse(new Request("http://localhost:8080/loadbalancers/v1/state/removable/tenant4:application4:instance4:id4", "", Request.Method.PUT),
+                              "{\"message\":\"Moved load balancer tenant4:application4:instance4:id4 to removable\"}");
     }
 
 }
