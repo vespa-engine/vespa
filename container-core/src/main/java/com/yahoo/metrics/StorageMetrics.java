@@ -1,5 +1,6 @@
 package com.yahoo.metrics;
 
+import java.util.EnumSet;
 import java.util.List;
 
 /**
@@ -65,7 +66,16 @@ public enum StorageMetrics implements VespaMetrics {
     VDS_FILESTOR_ALLTHREADS_DELETEBUCKETS_COUNT("vds.filestor.allthreads.deletebuckets.count", Unit.OPERATION, "Number of requests processed."),
     VDS_FILESTOR_ALLTHREADS_DELETEBUCKETS_FAILED("vds.filestor.allthreads.deletebuckets.failed", Unit.OPERATION, "Number of failed requests."),
     VDS_FILESTOR_ALLTHREADS_DELETEBUCKETS_LATENCY("vds.filestor.allthreads.deletebuckets.latency", Unit.MILLISECOND, "Latency of successful requests."),
-    VDS_FILESTOR_ALLTHREADS_SETBUCKETSTATES_COUNT("vds.filestor.allthreads.setbucketstates.count", Unit.OPERATION, "Number of requests processed.");
+    VDS_FILESTOR_ALLTHREADS_SETBUCKETSTATES_COUNT("vds.filestor.allthreads.setbucketstates.count", Unit.OPERATION, "Number of requests processed."),
+
+    VDS_MERGETHROTTLER_AVERAGEQUEUEWAITINGTIME("vds.mergethrottler.averagequeuewaitingtime", Unit.MILLISECOND, "Time merges spent in the throttler queue"),
+    VDS_MERGETHROTTLER_QUEUESIZE("vds.mergethrottler.queuesize", Unit.INSTANCE, "Length of merge queue"),
+    VDS_MERGETHROTTLER_ACTIVE_WINDOW_SIZE("vds.mergethrottler.active_window_size", Unit.INSTANCE, "Number of merges active within the pending window size"),
+    VDS_MERGETHROTTLER_BOUNCED_DUE_TO_BACK_PRESSURE("vds.mergethrottler.bounced_due_to_back_pressure", Unit.INSTANCE, "Number of merges bounced due to resource exhaustion back-pressure"),
+    VDS_MERGETHROTTLER_LOCALLYEXECUTEDMERGES_OK("vds.mergethrottler.locallyexecutedmerges.ok", Unit.INSTANCE, "The number of successful merges for 'locallyexecutedmerges'"),
+    VDS_MERGETHROTTLER_MERGECHAINS_OK("vds.mergethrottler.mergechains.ok", Unit.INSTANCE, "The number of successful merges for 'mergechains'"),
+    VDS_MERGETHROTTLER_MERGECHAINS_FAILURES_BUSY("vds.mergethrottler.mergechains.failures.busy", Unit.INSTANCE, "The number of merges that failed because the storage node was busy"),
+    VDS_MERGETHROTTLER_MERGECHAINS_FAILURES_TOTAL("vds.mergethrottler.mergechains.failures.total", Unit.INSTANCE, "Sum of all failures");
 
     private final String name;
     private final Unit unit;
