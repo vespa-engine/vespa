@@ -23,6 +23,8 @@
 #include <vespa/log/log.h>
 LOG_SETUP(".state.manager");
 
+using vespalib::make_string_short::fmt;
+
 namespace storage {
 
 namespace {
@@ -109,19 +111,16 @@ StateManager::onClose()
 }
 
 void
-StateManager::print(std::ostream& out, bool verbose,
-              const std::string& indent) const
+StateManager::print(std::ostream& out, bool, const std::string& ) const
 {
-    (void) verbose; (void) indent;
     out << "StateManager()";
 }
 
 void
 StateManager::reportHtmlStatus(std::ostream& out,
-                               const framework::HttpUrlPath& path) const
+                               const framework::HttpUrlPath&) const
 {
     using vespalib::xml_content_escaped;
-    (void) path;
     {
         std::lock_guard lock(_stateLock);
         const auto& baseLineClusterState = _systemState->getBaselineClusterState();
@@ -129,8 +128,7 @@ StateManager::reportHtmlStatus(std::ostream& out,
             << "<code>" << xml_content_escaped(baseLineClusterState->toString(true)) << "</code>\n"
             << "<h1>Current node state</h1>\n"
             << "<code>" << baseLineClusterState->getNodeState(lib::Node(
-                        _component.getNodeType(), _component.getIndex())
-                                                     ).toString(true)
+                        _component.getNodeType(), _component.getIndex())).toString(true)
             << "</code>\n"
             << "<h1>Reported node state</h1>\n"
             << "<code>" << xml_content_escaped(_nodeState->toString(true)) << "</code>\n"
@@ -225,9 +223,7 @@ StateManager::setReportedNodeState(const lib::NodeState& state)
 {
     std::lock_guard lock(_stateLock);
     if (!_grabbedExternalLock) {
-        LOG(error,
-            "Cannot set reported node state without first having "
-            "grabbed external lock");
+        LOG(error, "Cannot set reported node state without first having grabbed external lock");
         assert(false);
     }
     LOG(debug, "Adjusting reported node state to %s -> %s",
@@ -322,10 +318,9 @@ considerInsertDerivedTransition(const lib::State &currentBaseline,
     bool considerDerivedTransition = ((currentDerived != newDerived) &&
             ((currentDerived != currentBaseline) || (newDerived != newBaseline)));
     if (considerDerivedTransition && (transitions.find(bucketSpace) == transitions.end())) {
-        transitions[bucketSpace] = vespalib::make_string("%s space: '%s' to '%s'",
-                                                         document::FixedBucketSpaces::to_string(bucketSpace).data(),
-                                                         currentDerived.getName().c_str(),
-                                                         newDerived.getName().c_str());
+        transitions[bucketSpace] = fmt("%s space: '%s' to '%s'",
+                                       document::FixedBucketSpaces::to_string(bucketSpace).data(),
+                                       currentDerived.getName().c_str(), newDerived.getName().c_str());
     }
 }
 
@@ -373,21 +368,17 @@ transitionsToString(const BucketSpaceToTransitionString &transitions)
 }
 
 void
-StateManager::logNodeClusterStateTransition(
-        const ClusterStateBundle& currentState,
-        const ClusterStateBundle& newState) const
+StateManager::logNodeClusterStateTransition(const ClusterStateBundle& currentState,
+                                            const ClusterStateBundle& newState) const
 {
     lib::Node self(thisNode());
     const lib::State& before(currentState.getBaselineClusterState()->getNodeState(self).getState());
     const lib::State& after(newState.getBaselineClusterState()->getNodeState(self).getState());
     auto derivedTransitions = calculateDerivedClusterStateTransitions(currentState, newState, self);
     if ((before != after) || !derivedTransitions.empty()) {
-        LOG(info, "Transitioning from baseline state '%s' to '%s' %s"
-                  "(cluster state version %u)",
-            before.getName().c_str(),
-            after.getName().c_str(),
-            transitionsToString(derivedTransitions).c_str(),
-            newState.getVersion());
+        LOG(info, "Transitioning from baseline state '%s' to '%s' %s (cluster state version %u)",
+            before.getName().c_str(), after.getName().c_str(),
+            transitionsToString(derivedTransitions).c_str(), newState.getVersion());
     }
 }
 
@@ -415,10 +406,12 @@ StateManager::onGetNodeState(const api::GetNodeStateCommand::SP& cmd)
                 vespalib::to_s(timeout), vespalib::to_s(timeout)*0.8);
             _queuedStateRequests.emplace_back(_component.getClock().getMonotonicTime() + timeout, cmd);
         } else {
-            LOG(debug, "Answered get node state request right away since it thought we were in node state %s, while "
-                       "our actual node state is currently %s and we didn't just reply to existing request.",
+            LOG(debug, "Answered get node state(sourceindex=%x) is%s up-to-date request right away since it thought we "
+                       "were in node state %s, while our actual node state is currently %s and we didn't just reply to "
+                       "existing request. %lu queued requests",
+                cmd->getSourceIndex(), is_up_to_date ? "" : " NOT",
                 cmd->getExpectedState() == nullptr ? "unknown": cmd->getExpectedState()->toString().c_str(),
-                _nodeState->toString().c_str());
+                _nodeState->toString().c_str(), _queuedStateRequests.size());
             reply = std::make_shared<api::GetNodeStateReply>(*cmd, *_nodeState);
             mark_controller_as_having_observed_explicit_node_state(guard, cmd->getSourceIndex());
             guard.unlock();
@@ -433,6 +426,7 @@ StateManager::onGetNodeState(const api::GetNodeStateCommand::SP& cmd)
 
 void
 StateManager::mark_controller_as_having_observed_explicit_node_state(const std::unique_lock<std::mutex> &, uint16_t controller_index) {
+    LOG(info, "mark_controller_as_having_observed_explicit_node_state(%d)", controller_index);
     _controllers_observed_explicit_node_state.emplace(controller_index);
 }
 
@@ -447,8 +441,7 @@ StateManager::setClusterStateBundle(const ClusterStateBundle& c)
 }
 
 bool
-StateManager::onSetSystemState(
-        const std::shared_ptr<api::SetSystemStateCommand>& cmd)
+StateManager::onSetSystemState(const std::shared_ptr<api::SetSystemStateCommand>& cmd)
 {
     setClusterStateBundle(cmd->getClusterStateBundle());
     sendUp(std::make_shared<api::SetSystemStateReply>(*cmd));
@@ -456,8 +449,7 @@ StateManager::onSetSystemState(
 }
 
 bool
-StateManager::onActivateClusterStateVersion(
-        const std::shared_ptr<api::ActivateClusterStateVersionCommand>& cmd)
+StateManager::onActivateClusterStateVersion(const std::shared_ptr<api::ActivateClusterStateVersionCommand>& cmd)
 {
     auto reply = std::make_shared<api::ActivateClusterStateVersionReply>(*cmd);
     {
