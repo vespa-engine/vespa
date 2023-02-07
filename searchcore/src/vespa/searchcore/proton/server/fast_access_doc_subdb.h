@@ -3,6 +3,7 @@
 
 #include "fast_access_doc_subdb_configurer.h"
 #include "storeonlydocsubdb.h"
+#include <vespa/config-attributes.h>
 #include <vespa/searchcore/proton/attribute/attributemanager.h>
 #include <vespa/searchcore/proton/common/docid_limit.h>
 #include <vespa/searchcore/proton/metrics/attribute_metrics.h>

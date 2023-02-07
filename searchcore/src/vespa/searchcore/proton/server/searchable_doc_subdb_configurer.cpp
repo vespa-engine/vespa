@@ -4,6 +4,7 @@
 #include "document_subdb_reconfig.h"
 #include "reconfig_params.h"
 #include <vespa/searchcore/proton/matching/matcher.h>
+#include <vespa/searchcore/proton/attribute/attribute_manager_reconfig.h>
 #include <vespa/searchcore/proton/attribute/attribute_writer.h>
 #include <vespa/searchcore/proton/attribute/imported_attributes_repo.h>
 #include <vespa/searchcore/proton/common/document_type_inspector.h>
@@ -141,30 +142,24 @@ SearchableDocSubDBConfigurer::reconfigureIndexSearchable()
 }
 
 std::unique_ptr<DocumentSubDBReconfig>
-SearchableDocSubDBConfigurer::prepare_reconfig(const DocumentDBConfig& new_config_snapshot, const DocumentDBConfig& old_config_snapshot, const ReconfigParams& reconfig_params, std::optional<search::SerialNum> serial_num)
+SearchableDocSubDBConfigurer::prepare_reconfig(const DocumentDBConfig& new_config_snapshot,
+                                               const DocumentDBConfig& old_config_snapshot,
+                                               AttributeCollectionSpec&& attr_spec,
+                                               const ReconfigParams& reconfig_params,
+                                               std::optional<search::SerialNum> serial_num)
 {
     (void) old_config_snapshot;
     (void) serial_num;
     auto old_matchers = _searchView.get()->getMatchers();
-    auto reconfig = std::make_unique<DocumentSubDBReconfig>(std::move(old_matchers));
+    auto old_attribute_manager = _searchView.get()->getAttributeManager();
+    auto reconfig = std::make_unique<DocumentSubDBReconfig>(std::move(old_matchers), old_attribute_manager);
     if (reconfig_params.shouldMatchersChange()) {
         reconfig->set_matchers(createMatchers(new_config_snapshot));
     }
+    if (reconfig_params.shouldAttributeManagerChange()) {
+        reconfig->set_attribute_manager_reconfig(old_attribute_manager->prepare_create(std::move(attr_spec)));
+    }
     return reconfig;
-}
-
-void
-SearchableDocSubDBConfigurer::
-reconfigure(const DocumentDBConfig &newConfig,
-            const DocumentDBConfig &oldConfig,
-            const ReconfigParams &params,
-            IDocumentDBReferenceResolver &resolver,
-            const DocumentSubDBReconfig& prepared_reconfig,
-            search::SerialNum serial_num)
-{
-    assert(!params.shouldAttributeManagerChange());
-    AttributeCollectionSpec attrSpec(AttributeCollectionSpec::AttributeList(), 0, 0);
-    reconfigure(newConfig, oldConfig, std::move(attrSpec), params, resolver, prepared_reconfig, serial_num);
 }
 
 namespace {
@@ -194,7 +189,6 @@ createAttributeReprocessingInitializer(const DocumentDBConfig &newConfig,
 IReprocessingInitializer::UP
 SearchableDocSubDBConfigurer::reconfigure(const DocumentDBConfig &newConfig,
                                           const DocumentDBConfig &oldConfig,
-                                          AttributeCollectionSpec && attrSpec,
                                           const ReconfigParams &params,
                                           IDocumentDBReferenceResolver &resolver,
                                           const DocumentSubDBReconfig& prepared_reconfig,
@@ -208,10 +202,8 @@ SearchableDocSubDBConfigurer::reconfigure(const DocumentDBConfig &newConfig,
     IReprocessingInitializer::UP initializer;
     IAttributeManager::SP attrMgr = searchView->getAttributeManager();
     IAttributeWriter::SP attrWriter = _feedView.get()->getAttributeWriter();
-    if (params.shouldAttributeManagerChange()) {
-        auto attr_spec_serial_num = attrSpec.getCurrentSerialNum();
-        assert(!attr_spec_serial_num.has_value() || attr_spec_serial_num.value() == serial_num);
-        IAttributeManager::SP newAttrMgr = attrMgr->create(std::move(attrSpec));
+    if (prepared_reconfig.has_attribute_manager_changed()) {
+        auto newAttrMgr = prepared_reconfig.attribute_manager();
         newAttrMgr->setImportedAttributes(resolver.resolve(*newAttrMgr, *attrMgr,
                                                            searchView->getDocumentMetaStore(),
                                                            newConfig.getMaintenanceConfigSP()->getVisibilityDelay()));

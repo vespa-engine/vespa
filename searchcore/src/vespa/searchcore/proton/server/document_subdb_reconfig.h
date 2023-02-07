@@ -6,6 +6,8 @@
 
 namespace proton {
 
+struct IAttributeManager;
+class IAttributeManagerReconfig;
 class Matchers;
 
 /**
@@ -15,9 +17,12 @@ class DocumentSubDBReconfig {
 private:
     std::shared_ptr<Matchers> _old_matchers;
     std::shared_ptr<Matchers> _new_matchers;
+    std::shared_ptr<IAttributeManager> _old_attribute_manager;
+    std::shared_ptr<IAttributeManager> _new_attribute_manager;
+    std::unique_ptr<IAttributeManagerReconfig> _attribute_manager_reconfig;
 
 public:
-    DocumentSubDBReconfig(std::shared_ptr<Matchers> matchers_in);
+    DocumentSubDBReconfig(std::shared_ptr<Matchers> matchers_in, std::shared_ptr<IAttributeManager> attribute_manager_in);
     ~DocumentSubDBReconfig();
 
     void set_matchers(std::shared_ptr<Matchers> value) {
@@ -26,7 +31,12 @@ public:
     bool has_matchers_changed() const noexcept {
         return _old_matchers != _new_matchers;
     }
-    std::shared_ptr<Matchers> matchers() const { return _new_matchers; }
+    std::shared_ptr<Matchers> matchers() const noexcept { return _new_matchers; }
+    bool has_attribute_manager_changed() const noexcept {
+        return _old_attribute_manager != _new_attribute_manager;
+    }
+    std::shared_ptr<IAttributeManager> attribute_manager() const noexcept { return _new_attribute_manager; }
+    void set_attribute_manager_reconfig(std::unique_ptr<IAttributeManagerReconfig> attribute_manager_reconfig);
 
     void complete(uint32_t docid_limit, search::SerialNum serial_num);
 };

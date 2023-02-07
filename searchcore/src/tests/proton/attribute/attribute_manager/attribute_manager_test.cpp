@@ -867,7 +867,7 @@ TEST_F("require that shrink flushtarget is handed over to new attribute manager"
     am1->addAttribute({"a1", INT32_SINGLE}, 4);
     AttrSpecList newSpec;
     newSpec.emplace_back("a1", INT32_SINGLE);
-    auto am2 = am1->create(AttrMgrSpec(std::move(newSpec), 5, 20));
+    auto am2 = am1->prepare_create(AttrMgrSpec(std::move(newSpec), 5, 20))->create(5, 20);
     auto am3 = std::dynamic_pointer_cast<AttributeManager>(am2);
     TEST_DO(assertShrinkTargetSerial(*am3, "a1", 3));
     EXPECT_EQUAL(am1->getShrinker("a1"), am3->getShrinker("a1"));
