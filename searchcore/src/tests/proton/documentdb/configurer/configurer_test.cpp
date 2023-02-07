@@ -246,7 +246,7 @@ Fixture::reconfigure(const DocumentDBConfig& new_config_snapshot,
                      IDocumentDBReferenceResolver& resolver,
                      SerialNum serial_num)
 {
-    auto prepared_reconfig = _configurer->prepare_reconfig(new_config_snapshot, old_config_snapshot, reconfig_params);
+    auto prepared_reconfig = _configurer->prepare_reconfig(new_config_snapshot, old_config_snapshot, reconfig_params, serial_num);
     _configurer->reconfigure(new_config_snapshot, old_config_snapshot, reconfig_params, resolver, *prepared_reconfig, serial_num);
 }
 
@@ -258,7 +258,7 @@ Fixture::reconfigure(const DocumentDBConfig& new_config_snapshot,
                      IDocumentDBReferenceResolver& resolver,
                      SerialNum serial_num)
 {
-    auto prepared_reconfig = _configurer->prepare_reconfig(new_config_snapshot, old_config_snapshot, reconfig_params);
+    auto prepared_reconfig = _configurer->prepare_reconfig(new_config_snapshot, old_config_snapshot, reconfig_params, serial_num);
     return _configurer->reconfigure(new_config_snapshot, old_config_snapshot, std::move(attr_spec), reconfig_params, resolver, *prepared_reconfig, serial_num);
 }
 
@@ -341,7 +341,7 @@ FastAccessFixture::reconfigure(const DocumentDBConfig& new_config_snapshot,
                                SerialNum serial_num)
 {
     ReconfigParams reconfig_params{CCR()};
-    auto prepared_reconfig = _configurer.prepare_reconfig(new_config_snapshot, old_config_snapshot, reconfig_params);
+    auto prepared_reconfig = _configurer.prepare_reconfig(new_config_snapshot, old_config_snapshot, reconfig_params, serial_num);
     return _configurer.reconfigure(new_config_snapshot, old_config_snapshot, std::move(attr_spec), *prepared_reconfig, serial_num);
 }
 

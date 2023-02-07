@@ -7,6 +7,7 @@
 #include <vespa/searchlib/util/searchable_stats.h>
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/util/idestructorcallback.h>
+#include <optional>
 
 namespace search::index { class Schema; }
 
@@ -80,7 +81,7 @@ public:
     virtual void initViews(const DocumentDBConfig &configSnapshot) = 0;
 
     virtual std::unique_ptr<const DocumentSubDBReconfig>
-    prepare_reconfig(const DocumentDBConfig& new_config_snapshot, const DocumentDBConfig& old_config_snapshot, const ReconfigParams& reconfig_params) = 0;
+    prepare_reconfig(const DocumentDBConfig& new_config_snapshot, const DocumentDBConfig& old_config_snapshot, const ReconfigParams& reconfig_params, std::optional<SerialNum> serial_num) = 0;
     virtual IReprocessingTask::List
     applyConfig(const DocumentDBConfig &newConfigSnapshot, const DocumentDBConfig &oldConfigSnapshot,
                 SerialNum serialNum, const ReconfigParams &params, IDocumentDBReferenceResolver &resolver, const DocumentSubDBReconfig& prepared_reconfig) = 0;

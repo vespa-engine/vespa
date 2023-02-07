@@ -52,7 +52,7 @@ struct DummyDocumentSubDb : public IDocumentSubDB
     }
     void setup(const DocumentSubDbInitializerResult &) override {}
     void initViews(const DocumentDBConfig &) override {}
-    std::unique_ptr<const DocumentSubDBReconfig> prepare_reconfig(const DocumentDBConfig&, const DocumentDBConfig&, const ReconfigParams&) override {
+    std::unique_ptr<const DocumentSubDBReconfig> prepare_reconfig(const DocumentDBConfig&, const DocumentDBConfig&, const ReconfigParams&, std::optional<SerialNum>) override {
         return std::make_unique<const DocumentSubDBReconfig>(std::shared_ptr<Matchers>());
     }
     IReprocessingTask::List applyConfig(const DocumentDBConfig &, const DocumentDBConfig &,

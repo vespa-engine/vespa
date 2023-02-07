@@ -9,6 +9,7 @@
 #include <vespa/vespalib/util/varholder.h>
 #include <vespa/vespalib/util/idestructorcallback.h>
 #include <mutex>
+#include <optional>
 
 namespace vespalib {
     class Clock;
@@ -137,7 +138,7 @@ public:
 
     void pruneRemovedFields(SerialNum serialNum);
 
-    std::unique_ptr<DocumentDBReconfig> prepare_reconfig(const DocumentDBConfig& new_config_snapshot, const DocumentDBConfig& old_config_snapshot, const ReconfigParams& reconfig_params);
+    std::unique_ptr<DocumentDBReconfig> prepare_reconfig(const DocumentDBConfig& new_config_snapshot, const DocumentDBConfig& old_config_snapshot, const ReconfigParams& reconfig_params, std::optional<SerialNum> serial_num);
     void applyConfig(const DocumentDBConfig &newConfigSnapshot, const DocumentDBConfig &oldConfigSnapshot,
                      SerialNum serialNum, const ReconfigParams &params, IDocumentDBReferenceResolver &resolver, const DocumentDBReconfig& prepared_reconfig);
 
