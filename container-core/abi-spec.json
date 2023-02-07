@@ -538,6 +538,7 @@
     ],
     "methods" : [
       "public void <init>(int)",
+      "public void <init>()",
       "public void render(java.io.OutputStream)"
     ],
     "fields" : [ ]

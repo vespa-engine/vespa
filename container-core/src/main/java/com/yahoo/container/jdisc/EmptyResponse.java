@@ -15,6 +15,11 @@ public class EmptyResponse extends HttpResponse {
         super(status);
     }
 
+    public EmptyResponse() {
+        this(200);
+    }
+
+    @Override
     public void render(OutputStream outputStream) throws IOException {
         // NOP
     }
