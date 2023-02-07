@@ -327,10 +327,20 @@ AttributeManager::addAttribute(AttributeSpec && spec, uint64_t serialNum)
 void
 AttributeManager::addInitializedAttributes(const std::vector<AttributeInitializerResult> &attributes, uint32_t docid_limit, SerialNum serial_num)
 {
+    /*
+     * Called (indirectly) by
+     * DocumentSubDBCollection::complete_prepare_reconfig to complete
+     * setup of new attribute manager.
+     */
     for (const auto &result : attributes) {
         assert(result);
         auto attr = result.getAttribute();
         if (attr->getCreateSerialNum() == 0) {
+            /*
+             * The attribute vector is empty (not loaded from disk)
+             * and has been added as part of live reconfig. Make it
+             * ready for use by setting size and create serial num.
+             */
             AttributeManager::padAttribute(*attr, docid_limit);
             attr->setCreateSerialNum(serial_num);
         }
