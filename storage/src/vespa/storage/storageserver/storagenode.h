@@ -78,7 +78,7 @@ public:
     virtual const lib::NodeType& getNodeType() const = 0;
     bool attemptedStopped() const;
     void notifyDoneInitializing() override;
-    void waitUntilInitialized(uint32_t timeoutSeconds = 15);
+    void waitUntilInitialized(vespalib::duration timeout = 15s);
     void updateMetrics(const MetricLockGuard & guard) override;
 
     /** Updates the document type repo. */

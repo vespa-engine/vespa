@@ -37,7 +37,7 @@ namespace {
 
     void writePidFile(const vespalib::string& pidfile)
     {
-        int rv = -1;
+        ssize_t rv = -1;
         vespalib::string mypid = vespalib::make_string("%d\n", getpid());
         size_t lastSlash = pidfile.rfind('/');
         if (lastSlash != vespalib::string::npos) {
@@ -372,7 +372,7 @@ StorageNode::shutdown()
         _chain->flush();
     }
 
-    if (_pidFile != "") {
+    if ( !_pidFile.empty() ) {
         LOG(debug, "Removing pid file");
         removePidFile(_pidFile);
     }
@@ -510,10 +510,8 @@ StorageNode::updateMetrics(const MetricLockGuard &) {
 }
 
 void
-StorageNode::waitUntilInitialized(uint32_t timeout) {
-    framework::defaultimplementation::RealClock clock;
-    framework::MilliSecTime endTime(
-            clock.getTimeInMillis() + framework::MilliSecTime(1000 * timeout));
+StorageNode::waitUntilInitialized(vespalib::duration timeout) {
+    vespalib::steady_time doom = vespalib::steady_clock::now() + timeout;
     while (true) {
         {
             NodeStateUpdater::Lock::SP lock(_component->getStateUpdater().grabStateChangeLock());
@@ -521,10 +519,9 @@ StorageNode::waitUntilInitialized(uint32_t timeout) {
             if (nodeState.getState() == lib::State::UP) break;
         }
         std::this_thread::sleep_for(10ms);
-        if (clock.getTimeInMillis() >= endTime) {
+        if (vespalib::steady_clock::now() >= doom) {
             std::ostringstream ost;
-            ost << "Storage server not initialized after waiting timeout of "
-                << timeout << " seconds.";
+            ost << "Storage server not initialized after waiting timeout of " << timeout << " seconds.";
             throw vespalib::IllegalStateException(ost.str(), VESPA_STRLOC);
         }
     }
