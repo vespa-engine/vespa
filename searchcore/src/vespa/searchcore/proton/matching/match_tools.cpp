@@ -231,7 +231,7 @@ MatchToolsFactory(QueryLimiter               & queryLimiter,
         _match_limiter = std::make_unique<NoMatchPhaseLimiter>();
     }
     trace.addEvent(4, "Complete query setup");
-    if (root_trace.shouldTrace(4)) {
+    if (trace.hasTrace()) {
         vespalib::slime::ObjectInserter inserter(root_trace.createCursor("query_setup"), "traces");
         vespalib::slime::inject(trace.getTraces(), inserter);
     }

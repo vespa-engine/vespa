@@ -292,7 +292,7 @@ Query::handle_global_filter(Blueprint& blueprint, uint32_t docid_limit,
             trace->addEvent(5, vespalib::make_string("Calculate global filter (estimated_hit_ratio (%f) <= upper_limit (%f))",
                                                      estimated_hit_ratio, global_filter_upper_limit));
         }
-        global_filter = GlobalFilter::create(blueprint, docid_limit, thread_bundle);
+        global_filter = GlobalFilter::create(blueprint, docid_limit, thread_bundle, trace);
         if (!global_filter->is_active() && trace && trace->shouldTrace(5)) {
             trace->addEvent(5, "Global filter matches everything");
         }
