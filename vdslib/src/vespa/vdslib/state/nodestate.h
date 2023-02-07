@@ -13,7 +13,6 @@
 #include "state.h"
 #include <vespa/document/util/printable.h>
 #include <vespa/vespalib/objects/floatingpointtype.h>
-#include <vespa/vespalib/util/time.h>
 #include <memory>
 
 namespace storage::lib {
@@ -26,7 +25,7 @@ class NodeState : public document::Printable
     vespalib::Double _capacity;
     vespalib::Double _initProgress;
     uint32_t _minUsedBits;
-    vespalib::system_time _startTimestamp;
+    uint64_t _startTimestamp;
 
 public:
     using CSP = std::shared_ptr<const NodeState>;
@@ -60,17 +59,16 @@ public:
     [[nodiscard]] uint32_t getMinUsedBits() const { return _minUsedBits; }
     [[nodiscard]] vespalib::Double getInitProgress() const { return _initProgress; }
     [[nodiscard]] const vespalib::string& getDescription() const { return _description; }
-    [[nodiscard]] vespalib::system_time getStartTimestamp() const { return _startTimestamp; }
+    [[nodiscard]] uint64_t getStartTimestamp() const { return _startTimestamp; }
 
     void setState(const State& state);
     void setCapacity(vespalib::Double capacity);
     void setMinUsedBits(uint32_t usedBits);
     void setInitProgress(vespalib::Double initProgress);
-    void setStartTimestamp(vespalib::system_time startTimestamp);
+    void setStartTimestamp(uint64_t startTimestamp);
     void setDescription(vespalib::stringref desc) { _description = desc; }
 
-    void print(std::ostream& out, bool verbose,
-               const std::string& indent) const override;
+    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
     bool operator==(const NodeState& other) const;
     bool operator!=(const NodeState& other) const {
         return !(operator==(other));
@@ -84,9 +82,7 @@ public:
      * @throws vespalib::IllegalStateException if not fitting.
      */
     void verifySupportForNodeType(const NodeType& type) const;
-
     std::string getTextualDifference(const NodeState& other) const;
-
 };
 
 }
