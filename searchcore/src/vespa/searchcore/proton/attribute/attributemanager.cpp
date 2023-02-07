@@ -325,16 +325,24 @@ AttributeManager::addAttribute(AttributeSpec && spec, uint64_t serialNum)
 }
 
 void
-AttributeManager::addInitializedAttributes(const std::vector<AttributeInitializerResult> &attributes, std::optional<uint32_t> docid_limit, std::optional<SerialNum> serial_num)
+AttributeManager::addInitializedAttributes(const std::vector<AttributeInitializerResult> &attributes, uint32_t docid_limit, SerialNum serial_num)
 {
+    /*
+     * Called (indirectly) by
+     * DocumentSubDBCollection::complete_prepare_reconfig to complete
+     * setup of new attribute manager.
+     */
     for (const auto &result : attributes) {
         assert(result);
         auto attr = result.getAttribute();
-        if (docid_limit.has_value()) {
-            AttributeManager::padAttribute(*attr, docid_limit.value());
-        }
-        if (serial_num.has_value()) {
-            attr->setCreateSerialNum(serial_num.value());
+        if (attr->getCreateSerialNum() == 0) {
+            /*
+             * The attribute vector is empty (not loaded from disk)
+             * and has been added as part of live reconfig. Make it
+             * ready for use by setting size and create serial num.
+             */
+            AttributeManager::padAttribute(*attr, docid_limit);
+            attr->setCreateSerialNum(serial_num);
         }
         attr->setInterlock(_interlock);
         auto shrinker = allocShrinker(attr, _attributeFieldWriter, *_diskLayout);
@@ -503,8 +511,10 @@ proton::IAttributeManager::SP
 AttributeManager::create(Spec&& spec) const
 {
     assert(spec.getCurrentSerialNum().has_value());
+    auto docid_limit = spec.getDocIdLimit();
+    auto serial_num = spec.getCurrentSerialNum().value();
     auto prepared_result = prepare_create(std::move(spec));
-    return prepared_result->create(std::nullopt, std::nullopt);
+    return prepared_result->create(docid_limit, serial_num);
 }
 
 std::vector<IFlushTarget::SP>

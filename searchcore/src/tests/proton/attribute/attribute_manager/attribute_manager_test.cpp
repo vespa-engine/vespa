@@ -214,6 +214,8 @@ struct Fixture : public BaseFixture, public AttributeManagerFixture
 struct SequentialAttributeManager
 {
     SequentialAttributesInitializer initializer;
+    uint32_t                 docid_limit;
+    SerialNum                serial_num;
     proton::AttributeManager mgr;
     SequentialAttributeManager(const AttributeManager &currMgr, AttrMgrSpec && newSpec);
     ~SequentialAttributeManager();
@@ -221,9 +223,11 @@ struct SequentialAttributeManager
 
 SequentialAttributeManager::SequentialAttributeManager(const AttributeManager &currMgr, AttrMgrSpec && newSpec)
     : initializer(newSpec.getDocIdLimit()),
+      docid_limit(newSpec.getDocIdLimit()),
+      serial_num(newSpec.getCurrentSerialNum().value_or(0)),
       mgr(currMgr, std::move(newSpec), initializer)
 {
-    mgr.addInitializedAttributes(initializer.getInitializedAttributes(), std::nullopt, std::nullopt);
+    mgr.addInitializedAttributes(initializer.getInitializedAttributes(), docid_limit, serial_num);
 }
 SequentialAttributeManager::~SequentialAttributeManager() = default;
 

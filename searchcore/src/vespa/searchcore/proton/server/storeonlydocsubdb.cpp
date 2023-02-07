@@ -405,13 +405,20 @@ StoreOnlyDocSubDB::getSubDbName() const {
     return vespalib::make_string("%s.%s", _owner.getName().c_str(), _subName.c_str());
 }
 
-std::unique_ptr<const DocumentSubDBReconfig>
-StoreOnlyDocSubDB::prepare_reconfig(const DocumentDBConfig& new_config_snapshot, const DocumentDBConfig& old_config_snapshot, const ReconfigParams& reconfig_params)
+std::unique_ptr<DocumentSubDBReconfig>
+StoreOnlyDocSubDB::prepare_reconfig(const DocumentDBConfig& new_config_snapshot, const DocumentDBConfig& old_config_snapshot, const ReconfigParams& reconfig_params, std::optional<SerialNum> serial_num)
 {
     (void) new_config_snapshot;
     (void) old_config_snapshot;
     (void) reconfig_params;
-    return std::make_unique<const DocumentSubDBReconfig>(std::shared_ptr<Matchers>());
+    (void) serial_num;
+    return std::make_unique<DocumentSubDBReconfig>(std::shared_ptr<Matchers>());
+}
+
+void
+StoreOnlyDocSubDB::complete_prepare_reconfig(DocumentSubDBReconfig& prepared_reconfig, SerialNum serial_num)
+{
+    prepared_reconfig.complete(_dms->getCommittedDocIdLimit(), serial_num);
 }
 
 IReprocessingTask::List

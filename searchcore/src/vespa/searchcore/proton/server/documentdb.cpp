@@ -349,7 +349,7 @@ DocumentDB::initFinish(DocumentDBConfig::SP configSnapshot)
 }
 
 std::unique_ptr<DocumentDBReconfig>
-DocumentDB::prepare_reconfig(const DocumentDBConfig& new_config_snapshot)
+DocumentDB::prepare_reconfig(const DocumentDBConfig& new_config_snapshot, std::optional<SerialNum> serial_num)
 {
     auto active_config_snapshot = getActiveConfig();
     auto cmpres = active_config_snapshot->compare(new_config_snapshot);
@@ -357,7 +357,7 @@ DocumentDB::prepare_reconfig(const DocumentDBConfig& new_config_snapshot)
         cmpres.importedFieldsChanged = true;
     }
     const ReconfigParams reconfig_params(cmpres);
-    return _subDBs.prepare_reconfig(new_config_snapshot, *active_config_snapshot, reconfig_params);
+    return _subDBs.prepare_reconfig(new_config_snapshot, *active_config_snapshot, reconfig_params, serial_num);
 }
 
 void
@@ -423,7 +423,7 @@ DocumentDB::applySubDBConfig(const DocumentDBConfig &newConfigSnapshot,
 }
 
 void
-DocumentDB::applyConfig(DocumentDBConfig::SP configSnapshot, SerialNum serialNum, std::unique_ptr<const DocumentDBReconfig> prepared_reconfig)
+DocumentDB::applyConfig(DocumentDBConfig::SP configSnapshot, SerialNum serialNum, std::unique_ptr<DocumentDBReconfig> prepared_reconfig)
 {
     // Always called by executor thread:
     // Called by performReconfig() by executor thread during normal
@@ -472,6 +472,7 @@ DocumentDB::applyConfig(DocumentDBConfig::SP configSnapshot, SerialNum serialNum
         bool elidedConfigSave = equalReplayConfig && tlsReplayDone;
         forceCommitAndWait(*_feedView.get(), elidedConfigSave ? serialNum : serialNum - 1, std::move(commit_result));
     }
+    _subDBs.complete_prepare_reconfig(*prepared_reconfig, serialNum);
     if (params.shouldMaintenanceControllerChange()) {
         _maintenanceController.killJobs();
     }
@@ -796,7 +797,7 @@ DocumentDB::reconfigure(DocumentDBConfig::SP snapshot)
     assert(active_snapshot);
     assert(_state.getAllowReconfig());
     snapshot = DocumentDBConfig::makeDelayedAttributeAspectConfig(snapshot, *active_snapshot);
-    auto prepared_reconfig = prepare_reconfig(*snapshot);
+    auto prepared_reconfig = prepare_reconfig(*snapshot, std::nullopt);
     masterExecute([this, snapshot, prepared_reconfig = std::move(prepared_reconfig)]() mutable { performReconfig(snapshot, std::move(prepared_reconfig)); });
     // Wait for config to be applied, or for document db close
     std::unique_lock<std::mutex> guard(_configMutex);
@@ -835,7 +836,7 @@ DocumentDB::enterApplyLiveConfigState()
         (void) _state.enterApplyLiveConfigState();
     }
     auto new_config_snapshot = _pendingConfigSnapshot.get();
-    auto prepared_reconfig = prepare_reconfig(*new_config_snapshot);
+    auto prepared_reconfig = prepare_reconfig(*new_config_snapshot, std::nullopt);
     masterExecute([this, new_config_snapshot, prepared_reconfig = std::move(prepared_reconfig)]() mutable
                   {
                       performReconfig(std::move(new_config_snapshot), std::move(prepared_reconfig));
@@ -896,7 +897,7 @@ DocumentDB::replayConfig(search::SerialNum serialNum)
     configSnapshot = DocumentDBConfigScout::scout(configSnapshot, *_pendingConfigSnapshot.get());
     // Ignore configs that are not relevant during replay of transaction log
     configSnapshot = DocumentDBConfig::makeReplayConfig(configSnapshot);
-    auto prepared_reconfig = prepare_reconfig(*configSnapshot);
+    auto prepared_reconfig = prepare_reconfig(*configSnapshot, serialNum);
     applyConfig(configSnapshot, serialNum, std::move(prepared_reconfig));
     LOG(info, "DocumentDB(%s): Replayed config with serialNum=%" PRIu64,
               _docTypeName.toString().c_str(), serialNum);

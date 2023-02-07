@@ -140,10 +140,11 @@ SearchableDocSubDBConfigurer::reconfigureIndexSearchable()
     reconfigureMatchView(indexManager->getSearchable());
 }
 
-std::unique_ptr<const DocumentSubDBReconfig>
-SearchableDocSubDBConfigurer::prepare_reconfig(const DocumentDBConfig& new_config_snapshot, const DocumentDBConfig& old_config_snapshot, const ReconfigParams& reconfig_params)
+std::unique_ptr<DocumentSubDBReconfig>
+SearchableDocSubDBConfigurer::prepare_reconfig(const DocumentDBConfig& new_config_snapshot, const DocumentDBConfig& old_config_snapshot, const ReconfigParams& reconfig_params, std::optional<search::SerialNum> serial_num)
 {
     (void) old_config_snapshot;
+    (void) serial_num;
     auto old_matchers = _searchView.get()->getMatchers();
     auto reconfig = std::make_unique<DocumentSubDBReconfig>(std::move(old_matchers));
     if (reconfig_params.shouldMatchersChange()) {

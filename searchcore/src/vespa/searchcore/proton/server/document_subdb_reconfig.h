@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
+#include <vespa/searchlib/common/serialnum.h>
 #include <memory>
 
 namespace proton {
@@ -26,7 +27,8 @@ public:
         return _old_matchers != _new_matchers;
     }
     std::shared_ptr<Matchers> matchers() const { return _new_matchers; }
+
+    void complete(uint32_t docid_limit, search::SerialNum serial_num);
 };
 
 }
-

@@ -251,11 +251,18 @@ DocumentSubDBCollection::pruneRemovedFields(SerialNum serialNum)
 }
 
 std::unique_ptr<DocumentDBReconfig>
-DocumentSubDBCollection::prepare_reconfig(const DocumentDBConfig& new_config_snapshot, const DocumentDBConfig& old_config_snapshot, const ReconfigParams& reconfig_params)
+DocumentSubDBCollection::prepare_reconfig(const DocumentDBConfig& new_config_snapshot, const DocumentDBConfig& old_config_snapshot, const ReconfigParams& reconfig_params, std::optional<SerialNum> serial_num)
 {
-    auto ready_reconfig = getReadySubDB()->prepare_reconfig(new_config_snapshot, old_config_snapshot, reconfig_params);
-    auto not_ready_reconfig = getNotReadySubDB()->prepare_reconfig(new_config_snapshot, old_config_snapshot, reconfig_params);
+    auto ready_reconfig = getReadySubDB()->prepare_reconfig(new_config_snapshot, old_config_snapshot, reconfig_params, serial_num);
+    auto not_ready_reconfig = getNotReadySubDB()->prepare_reconfig(new_config_snapshot, old_config_snapshot, reconfig_params, serial_num);
     return std::make_unique<DocumentDBReconfig>(std::move(ready_reconfig), std::move(not_ready_reconfig));
+}
+
+void
+DocumentSubDBCollection::complete_prepare_reconfig(DocumentDBReconfig& prepared_reconfig, SerialNum serial_num)
+{
+    getReadySubDB()->complete_prepare_reconfig(prepared_reconfig.ready_reconfig(), serial_num);
+    getNotReadySubDB()->complete_prepare_reconfig(prepared_reconfig.not_ready_reconfig(), serial_num);
 }
 
 void
@@ -271,7 +278,7 @@ DocumentSubDBCollection::applyConfig(const DocumentDBConfig &newConfigSnapshot,
     _reprocessingRunner.addTasks(tasks);
     tasks = getNotReadySubDB()->applyConfig(newConfigSnapshot, oldConfigSnapshot, serialNum, params, resolver, prepared_reconfig.not_ready_reconfig());
     _reprocessingRunner.addTasks(tasks);
-    auto removed_reconfig = getRemSubDB()->prepare_reconfig(newConfigSnapshot, oldConfigSnapshot, params);
+    auto removed_reconfig = getRemSubDB()->prepare_reconfig(newConfigSnapshot, oldConfigSnapshot, params, serialNum);
     tasks = getRemSubDB()->applyConfig(newConfigSnapshot, oldConfigSnapshot, serialNum, params, resolver, *removed_reconfig);
     removed_reconfig.reset();
     _reprocessingRunner.addTasks(tasks);
