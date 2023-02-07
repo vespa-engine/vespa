@@ -403,12 +403,9 @@ bool BucketManager::onRequestBucketInfo(
     BucketSpace bucketSpace(cmd->getBucketSpace());
     api::RequestBucketInfoReply::EntryVector info;
     if (!cmd->getBuckets().empty()) {
-        typedef std::map<document::BucketId,
-                         StorBucketDatabase::WrappedEntry> BucketMap;
-        for (auto i : cmd->getBuckets()) {
-            BucketMap entries(_component.getBucketDatabase(bucketSpace).getAll(i, "BucketManager::onRequestBucketInfo"));
-            for (auto & entrie : entries) {
-                info.emplace_back(entrie.first, entrie.second->getBucketInfo());
+        for (auto bucketId : cmd->getBuckets()) {
+            for (auto & entry : _component.getBucketDatabase(bucketSpace).getAll(bucketId, "BucketManager::onRequestBucketInfo")) {
+                info.emplace_back(entry.first, entry.second->getBucketInfo());
             }
         }
     } else {
