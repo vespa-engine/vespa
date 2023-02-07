@@ -182,7 +182,7 @@ struct MetricsUpdater {
 
     void add(const MetricsUpdater& rhs) noexcept {
         auto& d = count;
-        auto& s = rhs.count;
+        const auto& s = rhs.count;
         d.buckets += s.buckets;
         d.docs    += s.docs;
         d.bytes   += s.bytes;
@@ -209,7 +209,7 @@ BucketManager::updateMetrics(bool updateDocCount)
 
     if (!updateDocCount || _doneInitialized) {
         MetricsUpdater total;
-        for (auto& space : _component.getBucketSpaceRepo()) {
+        for (const auto& space : _component.getBucketSpaceRepo()) {
             MetricsUpdater m;
             auto guard = space.second->bucketDatabase().acquire_read_guard();
             guard->for_each(std::ref(m));
@@ -238,7 +238,7 @@ BucketManager::updateMetrics(bool updateDocCount)
 }
 
 void BucketManager::update_bucket_db_memory_usage_metrics() {
-    for (auto& space : _component.getBucketSpaceRepo()) {
+    for (const auto& space : _component.getBucketSpaceRepo()) {
         auto bm = _metrics->bucket_spaces.find(space.first);
         bm->second->bucket_db_metrics.memory_usage.update(space.second->bucketDatabase().detailed_memory_usage());
     }
@@ -342,7 +342,7 @@ BucketManager::reportStatus(std::ostream& out,
         using vespalib::xml::XmlAttribute;
 
         xmlReporter << vespalib::xml::XmlTag("buckets");
-        for (auto& space : _component.getBucketSpaceRepo()) {
+        for (const auto& space : _component.getBucketSpaceRepo()) {
             xmlReporter << XmlTag("bucket-space")
                         << XmlAttribute("name", document::FixedBucketSpaces::to_string(space.first));
             BucketDBDumper dumper(xmlReporter.getStream());
@@ -404,7 +404,7 @@ bool BucketManager::onRequestBucketInfo(
     api::RequestBucketInfoReply::EntryVector info;
     if (!cmd->getBuckets().empty()) {
         for (auto bucketId : cmd->getBuckets()) {
-            for (auto & entry : _component.getBucketDatabase(bucketSpace).getAll(bucketId, "BucketManager::onRequestBucketInfo")) {
+            for (const auto & entry : _component.getBucketDatabase(bucketSpace).getAll(bucketId, "BucketManager::onRequestBucketInfo")) {
                 info.emplace_back(entry.first, entry.second->getBucketInfo());
             }
         }
@@ -457,7 +457,7 @@ BucketManager::leaveQueueProtectedSection(ScopedQueueDispatchGuard& queueGuard)
     // may alter the relevant state.
     --_requestsCurrentlyProcessing;
     if (_requestsCurrentlyProcessing == 0) {
-        for (auto& qr : _queuedReplies) {
+        for (const auto& qr : _queuedReplies) {
             sendUp(qr);
         }
         _queuedReplies.clear();
@@ -494,7 +494,7 @@ BucketManager::processRequestBucketInfoCommands(document::BucketSpace bucketSpac
         reqs.size(), bucketSpace.toString().c_str(), clusterState->toString().c_str(), our_hash.c_str());
 
     std::lock_guard clusterStateGuard(_clusterStateLock);
-    for (auto & req : std::ranges::reverse_view(reqs)) {
+    for (const auto & req : std::ranges::reverse_view(reqs)) {
         // Currently small requests should not be forwarded to worker thread
         assert(req->hasSystemState());
         const auto their_hash = req->getDistributionHash();
@@ -547,7 +547,7 @@ BucketManager::processRequestBucketInfoCommands(document::BucketSpace bucketSpac
 
     std::ostringstream distrList;
     std::unordered_map<uint16_t, api::RequestBucketInfoReply::EntryVector> result;
-    for (auto& nodeAndCmd : requests) {
+    for (const auto& nodeAndCmd : requests) {
         result[nodeAndCmd.first];
         if (LOG_WOULD_LOG(debug)) {
             distrList << ' ' << nodeAndCmd.first;
@@ -576,7 +576,7 @@ BucketManager::processRequestBucketInfoCommands(document::BucketSpace bucketSpac
                         "BucketManager::processRequestBucketInfoCommands-2");
     }
     _metrics->fullBucketInfoLatency.addValue(runStartTime.getElapsedTimeAsDouble());
-    for (auto& nodeAndCmd : requests) {
+    for (const auto& nodeAndCmd : requests) {
         auto reply(std::make_shared<api::RequestBucketInfoReply>(*nodeAndCmd.second));
         reply->getBucketInfo().swap(result[nodeAndCmd.first]);
         sendUp(reply);
