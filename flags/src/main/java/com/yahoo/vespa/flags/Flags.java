@@ -311,7 +311,7 @@ public class Flags {
 
     public static final UnboundBooleanFlag CLEANUP_TENANT_ROLES = defineFeatureFlag(
             "cleanup-tenant-roles", true,
-            List.of("olaa"), "2022-08-10", "2023-02-07",
+            List.of("olaa"), "2022-08-10", "2023-02-14",
             "Determines whether old tenant roles should be deleted",
             "Takes effect next maintenance run"
     );
@@ -346,7 +346,7 @@ public class Flags {
 
     public static final UnboundBooleanFlag ENABLED_MAIL_VERIFICATION = defineFeatureFlag(
             "enabled-mail-verification", true,
-            List.of("olaa"), "2022-10-28", "2023-02-07",
+            List.of("olaa"), "2022-10-28", "2023-02-14",
             "Enable mail verification",
             "Takes effect immediately");
 
