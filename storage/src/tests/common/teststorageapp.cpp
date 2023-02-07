@@ -192,7 +192,7 @@ api::Timestamp
 TestDistributorApp::generate_unique_timestamp()
 {
     std::lock_guard guard(_accessLock);
-    uint64_t timeNow(getClock().getTimeInSeconds().getTime());
+    uint64_t timeNow(vespalib::count_s(getClock().getSystemTime().time_since_epoch()));
     if (timeNow == _lastUniqueTimestampRequested) {
         ++_uniqueTimestampCounter;
     } else {

@@ -86,7 +86,7 @@ DistributorNode::createChain(IStorageChainBuilder &builder)
     // TODO: All components in this chain should use a common thread instead of
     // each having its own configfetcher.
     StorageLink::UP chain;
-    if (_retrievedCommunicationManager.get()) {
+    if (_retrievedCommunicationManager) {
         builder.add(std::move(_retrievedCommunicationManager));
     } else {
         auto communication_manager = std::make_unique<CommunicationManager>(dcr, _configUri);
@@ -139,7 +139,7 @@ DistributorNode::generate_unique_timestamp()
 ResumeGuard
 DistributorNode::pause()
 {
-    return ResumeGuard();
+    return {};
 }
 
 } // storage

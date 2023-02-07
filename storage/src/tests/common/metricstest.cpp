@@ -12,7 +12,6 @@
 #include <tests/common/dummystoragelink.h>
 #include <vespa/metrics/metricmanager.h>
 #include <vespa/config/common/exceptions.h>
-#include <vespa/vespalib/stllike/hash_map.hpp>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <gmock/gmock.h>
 #include <filesystem>
@@ -38,9 +37,7 @@ struct MetricsTest : public Test {
     std::shared_ptr<VisitorMetrics> _visitorMetrics;
 
     void createSnapshotForPeriod(std::chrono::seconds secs) const;
-    void assertMetricLastValue(const std::string& name,
-                               int interval,
-                               uint64_t expected) const;
+    void assertMetricLastValue(const std::string& name, int interval, uint64_t expected) const;
 
     MetricsTest();
     ~MetricsTest() override;
@@ -55,8 +52,8 @@ namespace {
     {
         framework::Clock& _clock;
         explicit MetricClock(framework::Clock& c) : _clock(c) {}
-        [[nodiscard]] time_t getTime() const override { return _clock.getTimeInSeconds().getTime(); }
-        time_t getTimeInMilliSecs() const override { return vespalib::count_ms(_clock.getMonotonicTime().time_since_epoch()); }
+        [[nodiscard]] time_t getTime() const override { return vespalib::count_s(_clock.getMonotonicTime().time_since_epoch()); }
+        [[nodiscard]] time_t getTimeInMilliSecs() const override { return vespalib::count_ms(_clock.getMonotonicTime().time_since_epoch()); }
     };
 }
 
@@ -192,7 +189,7 @@ void MetricsTest::createFakeLoad()
     }
     _clock->addSecondsToTime(60);
     _metricManager->timeChangedNotification();
-    while (uint64_t(_metricManager->getLastProcessedTime()) < _clock->getTimeInSeconds().getTime()) {
+    while (int64_t(_metricManager->getLastProcessedTime()) < vespalib::count_s(_clock->getMonotonicTime().time_since_epoch())) {
         std::this_thread::sleep_for(5ms);
         _metricManager->timeChangedNotification();
     }
@@ -242,10 +239,7 @@ TEST_F(MetricsTest, snapshot_presenting) {
     for (uint32_t i=0; i<6; ++i) {
         _clock->addSecondsToTime(60);
         _metricManager->timeChangedNotification();
-        while (
-            uint64_t(_metricManager->getLastProcessedTime())
-                    < _clock->getTimeInSeconds().getTime())
-        {
+        while (int64_t(_metricManager->getLastProcessedTime()) < vespalib::count_s(_clock->getMonotonicTime().time_since_epoch())) {
             std::this_thread::sleep_for(1ms);
         }
     }
@@ -305,9 +299,7 @@ MetricsTest::createSnapshotForPeriod(std::chrono::seconds secs) const
 {
     _clock->addSecondsToTime(secs.count());
     _metricManager->timeChangedNotification();
-    while (uint64_t(_metricManager->getLastProcessedTime())
-           < _clock->getTimeInSeconds().getTime())
-    {
+    while (int64_t(_metricManager->getLastProcessedTime()) < vespalib::count_s(_clock->getMonotonicTime().time_since_epoch())) {
         std::this_thread::sleep_for(100ms);
     }
 }
