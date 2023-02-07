@@ -8,16 +8,12 @@ namespace storage::framework::defaultimplementation {
 
 TEST(TimeTest, testBasics)
 {
-    SecondTime timeSec(1);
 
-    MilliSecTime timeMillis = timeSec.getMillis();
+    MilliSecTime timeMillis(1000);
     EXPECT_EQ(uint64_t(1000), timeMillis.getTime());
-    EXPECT_EQ(timeSec, timeMillis.getSeconds());
 
-    MicroSecTime timeMicros = timeSec.getMicros();
-    EXPECT_EQ(timeSec.getMicros(), timeMillis.getMicros());
+    MicroSecTime timeMicros = timeMillis.getMicros();
     EXPECT_EQ(timeMillis, timeMicros.getMillis());
-    EXPECT_EQ(timeSec, timeMicros.getSeconds());
 
     MicroSecTime timeMicros2 = timeMicros;
     EXPECT_EQ(timeMicros2, timeMicros);
@@ -32,7 +28,6 @@ TEST(TimeTest, testBasics)
     MilliSecTime timeMillis2 = timeMicros2.getMillis();
     EXPECT_GT(timeMillis2, timeMillis);
     EXPECT_EQ(uint64_t(1050), timeMillis2.getTime());
-    EXPECT_EQ(timeSec, timeMillis2.getSeconds());
 }
 
 TEST(TimeTest, testCreatedFromClock)
@@ -40,7 +35,6 @@ TEST(TimeTest, testCreatedFromClock)
     defaultimplementation::FakeClock clock;
     clock.setAbsoluteTimeInSeconds(600);
 
-    EXPECT_EQ(SecondTime(600), SecondTime(clock));
     EXPECT_EQ(MilliSecTime(600 * 1000), MilliSecTime(clock));
     EXPECT_EQ(MicroSecTime(600 * 1000 * 1000), MicroSecTime(clock));
 }
@@ -51,7 +45,6 @@ TEST(TimeTest, canAssignMicrosecondResolutionTimeToFakeClock)
     clock.setAbsoluteTimeInMicroSeconds(1234567); // 1.234567 seconds
 
     // All non-microsec time points must necessarily be truncated.
-    EXPECT_EQ(SecondTime(1), SecondTime(clock));
     EXPECT_EQ(MilliSecTime(1234), MilliSecTime(clock));
     EXPECT_EQ(MicroSecTime(1234567), MicroSecTime(clock));
 }
