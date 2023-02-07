@@ -8,11 +8,11 @@
         <models>
           <model name="mul">
             <intraop-threads>2</intraop-threads>
+            <gpu-device>0</gpu-device>
           </model>
           <model name="non-existent-model">
             <interop-threads>400</interop-threads>
             <execution-mode>parallel</execution-mode>
-            <gpu-device>0</gpu-device>
           </model>
         </models>
       </onnx>

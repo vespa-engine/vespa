@@ -52,7 +52,8 @@ public class FileDistributedOnnxModels {
                 if (model.getStatelessIntraOpThreads().isPresent())
                     modelBuilder.stateless_intraop_threads(model.getStatelessIntraOpThreads().get());
                 if (model.getGpuDevice().isPresent()) {
-                    modelBuilder.gpu_device(model.getGpuDevice().get());
+                    modelBuilder.gpu_device(model.getGpuDevice().get().deviceNumber());
+                    modelBuilder.gpu_device_required(model.getGpuDevice().get().required());
                 }
                 builder.model(modelBuilder);
             }
