@@ -6,3 +6,4 @@ share/
 mytestapp/
 mytestapp-cache/
 mytmp/
+!Makefile

@@ -127,7 +127,7 @@ manpages: install
 
 clean:
 	rm -rf $(DIST)
-	rm -f $(BIN)/vespa $(BIN)/script-utils $(SHARE)/man/man1/vespa.1 $(SHARE)/man/man1/vespa-*.1
+	rm -f $(BIN)/vespa $(BIN)/vespa-wrapper $(SHARE)/man/man1/vespa.1 $(SHARE)/man/man1/vespa-*.1
 	rmdir -p $(BIN) $(SHARE)/man/man1 > /dev/null 2>&1 || true
 
 test: ci
