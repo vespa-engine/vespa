@@ -29,7 +29,9 @@ StateReporter::StateReporter(
     _component.registerStatusPage(*this);
 }
 
-StateReporter::~StateReporter() = default;
+StateReporter::~StateReporter()
+{
+}
 
 vespalib::string
 StateReporter::getReportContentType(
@@ -82,7 +84,7 @@ StateReporter::getMetrics(const vespalib::string &consumer)
 
     snapshot.reset(0);
     _manager.getMetricSnapshot(guard, interval).addToSnapshot(
-            snapshot, vespalib::count_s(_component.getClock().getSystemTime().time_since_epoch()));
+            snapshot, _component.getClock().getTimeInSeconds().getTime());
 
     vespalib::asciistream json;
     vespalib::JsonStream stream(json);
@@ -104,7 +106,7 @@ StateReporter::getHealth() const
     lib::NodeState cns(*_component.getStateUpdater().getCurrentNodeState());
     bool up = cns.getState().oneOf("u");
     std::string message = up ? "" : "Node state: " + cns.toString(true);
-    return { up, message };
+    return vespalib::HealthProducer::Health(up, message);
 }
 
 void

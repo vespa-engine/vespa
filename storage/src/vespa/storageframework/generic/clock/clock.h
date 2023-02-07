@@ -28,8 +28,7 @@ struct Clock {
     virtual SecondTime getTimeInSeconds() const = 0;
 
     // Time point resolution is intentionally not defined here.
-    virtual vespalib::steady_time getMonotonicTime() const = 0;
-    virtual vespalib::system_time getSystemTime() const = 0;
+    virtual MonotonicTimePoint getMonotonicTime() const = 0;
 };
 
 }

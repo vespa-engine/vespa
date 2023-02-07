@@ -126,10 +126,10 @@ VisitorThread::shutdown()
             if (event._message.get()) {
                 if (!event._message->getType().isReply()
                     && (event._message->getType() != api::MessageType::INTERNAL
-                        || dynamic_cast<const api::InternalCommand&>(*event._message).getType() != PropagateVisitorConfig::ID))
+                        || static_cast<const api::InternalCommand&>(*event._message).getType() != PropagateVisitorConfig::ID))
                 {
                     std::shared_ptr<api::StorageReply> reply(
-                            dynamic_cast<api::StorageCommand&>(*event._message).makeReply());
+                            static_cast<api::StorageCommand&>(*event._message).makeReply());
                     reply->setResult(api::ReturnCode(api::ReturnCode::ABORTED, "Shutting down storage node."));
                     _messageSender.send(reply);
                 }
@@ -197,7 +197,7 @@ VisitorThread::run(framework::ThreadHandle& thread)
             // disappear when no visiting is done)
             if (entry._message.get() &&
                 (entry._message->getType() != api::MessageType::INTERNAL
-                 || dynamic_cast<api::InternalCommand&>(*entry._message).getType() != PropagateVisitorConfig::ID))
+                 || static_cast<api::InternalCommand&>(*entry._message).getType() != PropagateVisitorConfig::ID))
             {
                 entry._timer.stop(_metrics.averageQueueWaitingTime);
             }
@@ -290,7 +290,7 @@ VisitorThread::close()
     } else {
         _metrics.completedVisitors.inc(1);
     }
-    vespalib::steady_time currentTime(_component.getClock().getMonotonicTime());
+    framework::SecondTime currentTime(_component.getClock().getTimeInSeconds());
     trimRecentlyCompletedList(currentTime);
     _recentlyCompleted.emplace_back(_currentlyRunningVisitor->first, currentTime);
     _visitors.erase(_currentlyRunningVisitor);
@@ -298,9 +298,9 @@ VisitorThread::close()
 }
 
 void
-VisitorThread::trimRecentlyCompletedList(vespalib::steady_time currentTime)
+VisitorThread::trimRecentlyCompletedList(framework::SecondTime currentTime)
 {
-    vespalib::steady_time recentLimit(currentTime - 30s);
+    framework::SecondTime recentLimit(currentTime - framework::SecondTime(30));
     // Dump all elements that aren't recent anymore
     while (!_recentlyCompleted.empty()
            && _recentlyCompleted.front().second < recentLimit)
@@ -313,7 +313,8 @@ void
 VisitorThread::handleNonExistingVisitorCall(const Event& entry, ReturnCode& code)
 {
     // Get current time. Set the time that is the oldest still recent.
-    trimRecentlyCompletedList(_component.getClock().getMonotonicTime());
+    framework::SecondTime currentTime(_component.getClock().getTimeInSeconds());
+    trimRecentlyCompletedList(currentTime);
 
     // Go through all recent visitors. Ignore request if recent
     for (const auto& e : _recentlyCompleted) {
@@ -343,7 +344,7 @@ VisitorThread::createVisitor(vespalib::stringref libName,
     auto it = _visitorFactories.find(str);
     if (it == _visitorFactories.end()) {
         error << "Visitor library " << str << " not found.";
-        return {};
+        return std::shared_ptr<Visitor>();
     }
 
     auto libIter = _libs.find(str);
@@ -362,7 +363,7 @@ VisitorThread::createVisitor(vespalib::stringref libName,
     } catch (std::exception& e) {
         error << "Failed to create visitor instance of type " << libName
               << ": " << e.what();
-        return {};
+        return std::shared_ptr<Visitor>();
     }
 }
 
@@ -689,7 +690,7 @@ VisitorThread::getStatus(vespalib::asciistream& out,
         }
         for (const auto& cv : _recentlyCompleted) {
             out << "<li> Visitor " << cv.first << " done at "
-                << vespalib::to_string(vespalib::to_utc(cv.second)) << "\n";
+                << cv.second.getTime() << "\n";
         }
         out << "</ul>\n";
         out << "<h3>Current queue size: " << _queue.size() << "</h3>\n";
@@ -735,10 +736,12 @@ VisitorThread::getStatus(vespalib::asciistream& out,
         if (_visitors.empty()) {
             out << "None\n";
         }
-        for (const auto & v : _visitors) {
-            out << "<a href=\"?visitor=" << v.first
+        for (VisitorMap::const_iterator it = _visitors.begin();
+             it != _visitors.end(); ++it)
+        {
+            out << "<a href=\"?visitor=" << it->first
                 << (verbose ? "&verbose" : "") << "\">Visitor "
-                << v.first << "</a><br>\n";
+                << it->first << "</a><br>\n";
         }
     }
 }

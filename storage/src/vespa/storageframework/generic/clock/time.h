@@ -10,8 +10,8 @@ namespace vespalib {
 
 namespace storage::framework {
 
-using MonotonicTimePoint = vespalib::steady_time;
-using MonotonicDuration = vespalib::duration;
+using MonotonicTimePoint = std::chrono::steady_clock::time_point;
+using MonotonicDuration = std::chrono::steady_clock::duration;
 
 struct Clock;
 
@@ -111,6 +111,9 @@ struct SecondTime : public Time<SecondTime, 1000000> {
     explicit SecondTime(uint64_t t = 0) : Time<SecondTime, 1000000>(t) {}
     explicit SecondTime(const Clock& clock)
         : Time<SecondTime, 1000000>(getRawMicroTime(clock) / 1000000) {}
+
+    [[nodiscard]] MilliSecTime getMillis() const;
+    [[nodiscard]] MicroSecTime getMicros() const;
 };
 
 /**
@@ -128,6 +131,7 @@ struct MilliSecTime : public Time<MilliSecTime, 1000> {
     explicit MilliSecTime(const Clock& clock)
         : Time<MilliSecTime, 1000>(getRawMicroTime(clock) / 1000) {}
 
+    [[nodiscard]] SecondTime getSeconds() const { return SecondTime(getTime() / 1000); }
     [[nodiscard]] MicroSecTime getMicros() const;
 };
 
@@ -150,6 +154,14 @@ struct MicroSecTime : public Time<MicroSecTime, 1> {
     [[nodiscard]] SecondTime getSeconds() const { return SecondTime(getTime() / 1000000); }
 };
 
+inline MilliSecTime SecondTime::getMillis() const {
+    return MilliSecTime(getTime() * 1000);
+}
+
+inline MicroSecTime SecondTime::getMicros() const {
+    return MicroSecTime(getTime() * 1000 * 1000);
+}
+
 inline MicroSecTime MilliSecTime::getMicros() const {
     return MicroSecTime(getTime() * 1000);
 }
@@ -168,9 +180,23 @@ operator + (MilliSecTime a, MilliSecTime b) {
     return result;
 }
 
+inline SecondTime
+operator + (SecondTime a, SecondTime b) {
+    SecondTime result(a);
+    result += b;
+    return result;
+}
+
 inline MicroSecTime
 operator - (MicroSecTime a, MicroSecTime b) {
     MicroSecTime result(a);
+    result -= b;
+    return result;
+}
+
+inline SecondTime
+operator - (SecondTime a, SecondTime b) {
+    SecondTime result(a);
     result -= b;
     return result;
 }

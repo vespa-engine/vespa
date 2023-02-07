@@ -372,7 +372,7 @@ StorageNode::shutdown()
         _chain->flush();
     }
 
-    if ( !_pidFile.empty() ) {
+    if (_pidFile != "") {
         LOG(debug, "Removing pid file");
         removePidFile(_pidFile);
     }
@@ -510,8 +510,10 @@ StorageNode::updateMetrics(const MetricLockGuard &) {
 }
 
 void
-StorageNode::waitUntilInitialized(vespalib::duration timeout) {
-    vespalib::steady_time doom = vespalib::steady_clock::now();
+StorageNode::waitUntilInitialized(uint32_t timeout) {
+    framework::defaultimplementation::RealClock clock;
+    framework::MilliSecTime endTime(
+            clock.getTimeInMillis() + framework::MilliSecTime(1000 * timeout));
     while (true) {
         {
             NodeStateUpdater::Lock::SP lock(_component->getStateUpdater().grabStateChangeLock());
@@ -519,7 +521,7 @@ StorageNode::waitUntilInitialized(vespalib::duration timeout) {
             if (nodeState.getState() == lib::State::UP) break;
         }
         std::this_thread::sleep_for(10ms);
-        if (vespalib::steady_clock::now() >= doom) {
+        if (clock.getTimeInMillis() >= endTime) {
             std::ostringstream ost;
             ost << "Storage server not initialized after waiting timeout of "
                 << timeout << " seconds.";

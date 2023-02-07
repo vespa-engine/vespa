@@ -13,9 +13,9 @@ class ThrottlingOperationStarter : public OperationStarter, public PendingWindow
     class ThrottlingOperation : public Operation
     {
     public:
-        ThrottlingOperation(Operation::SP operation,
+        ThrottlingOperation(const Operation::SP& operation,
                             ThrottlingOperationStarter& operationStarter)
-            : _operation(std::move(operation)),
+            : _operation(operation),
               _operationStarter(operationStarter)
         {}
 
@@ -30,20 +30,23 @@ class ThrottlingOperationStarter : public OperationStarter, public PendingWindow
         void onClose(DistributorStripeMessageSender& sender) override {
             _operation->onClose(sender);
         }
-        [[nodiscard]] const char* getName() const noexcept override {
+        const char* getName() const noexcept override {
             return _operation->getName();
         }
-        [[nodiscard]] std::string getStatus() const override {
+        std::string getStatus() const override {
             return _operation->getStatus();
         }
-        [[nodiscard]] std::string toString() const override {
+        std::string toString() const override {
             return _operation->toString();
         }
-        void start(DistributorStripeMessageSender& sender, vespalib::system_time startTime) override {
+        void start(DistributorStripeMessageSender& sender, framework::MilliSecTime startTime) override {
             _operation->start(sender, startTime);
         }
         void receive(DistributorStripeMessageSender& sender, const std::shared_ptr<api::StorageReply> & msg) override {
             _operation->receive(sender, msg);
+        }
+        framework::MilliSecTime getStartTime() const {
+            return _operation->getStartTime();
         }
         void onStart(DistributorStripeMessageSender&) override {
             // Should never be called directly on the throttled operation
@@ -58,7 +61,7 @@ class ThrottlingOperationStarter : public OperationStarter, public PendingWindow
 
     OperationStarter& _starterImpl;
 public:
-    explicit ThrottlingOperationStarter(OperationStarter& starterImpl)
+    ThrottlingOperationStarter(OperationStarter& starterImpl)
         : _starterImpl(starterImpl),
           _minPending(0),
           _maxPending(UINT32_MAX),
@@ -68,9 +71,9 @@ public:
 
     bool start(const std::shared_ptr<Operation>& operation, Priority priority) override;
 
-    [[nodiscard]] bool may_allow_operation_with_priority(Priority priority) const noexcept override;
+    bool may_allow_operation_with_priority(Priority priority) const noexcept override;
 
-    [[nodiscard]] bool canStart(uint32_t currentOperationCount, Priority priority) const;
+    bool canStart(uint32_t currentOperationCount, Priority priority) const;
 
     void setMaxPendingRange(uint32_t minPending, uint32_t maxPending) {
         _minPending = minPending;

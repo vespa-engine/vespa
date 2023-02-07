@@ -45,25 +45,24 @@ public:
         onReceive(sender, msg);
     }
 
-    [[nodiscard]] virtual const char* getName() const noexcept = 0;
+    virtual const char* getName() const noexcept = 0;
 
-    [[nodiscard]] virtual std::string getStatus() const;
+    virtual std::string getStatus() const;
 
-    [[nodiscard]] virtual std::string toString() const {
+    virtual std::string toString() const {
         return std::string(getName());
     }
 
     /**
        Starts the callback, sending any messages etc. Sets _startTime to current time
     */
-    virtual void start(DistributorStripeMessageSender& sender, vespalib::system_time startTime);
-    void start(DistributorStripeMessageSender& sender);
+    virtual void start(DistributorStripeMessageSender& sender, framework::MilliSecTime startTime);
 
     /**
      * Returns true if we are blocked to start this operation given
      * the pending messages.
      */
-    [[nodiscard]] virtual bool isBlocked(const DistributorStripeOperationContext&, const OperationSequencer&) const {
+    virtual bool isBlocked(const DistributorStripeOperationContext&, const OperationSequencer&) const {
         return false;
     }
 
@@ -76,6 +75,11 @@ public:
      * Called by throttling operation starter if operation was throttled
      */
     virtual void on_throttled();
+
+    /**
+       Returns the timestamp on which the first message was sent from this callback.
+    */
+    framework::MilliSecTime getStartTime() const { return _startTime; }
 
     /**
         Transfers message settings such as priority, timeout, etc. from one message to another.
@@ -93,7 +97,7 @@ private:
                            const std::shared_ptr<api::StorageReply> & msg) = 0;
 
 protected:
-    vespalib::system_time _startTime;
+    framework::MilliSecTime _startTime;
 };
 
 }

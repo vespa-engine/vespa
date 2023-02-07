@@ -35,7 +35,7 @@ TEST_F(StatOperationTest, bucket_info) {
             std::make_shared<api::StatBucketCommand>(
                     makeDocumentBucket(document::BucketId(16, 5)), ""));
 
-    op.start(_sender);
+    op.start(_sender, framework::MilliSecTime(0));
 
     ASSERT_EQ("Statbucket => 0,Statbucket => 1", _sender.getCommands(true));
 
@@ -76,7 +76,7 @@ TEST_F(StatOperationTest, bucket_list) {
             getIdealStateManager(),
             node_context().node_index(),
             msg);
-    op.start(_sender);
+    op.start(_sender, framework::MilliSecTime(0));
 
     ASSERT_EQ(1, _sender.replies().size());
 

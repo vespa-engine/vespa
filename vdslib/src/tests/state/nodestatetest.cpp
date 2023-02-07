@@ -20,7 +20,7 @@ TEST(NodeStateTest, test_parsing)
     {
         NodeState ns = NodeState("t:4");
         EXPECT_EQ(std::string("s:u t:4"), ns.toString());
-        EXPECT_EQ(4s, ns.getStartTimestamp().time_since_epoch());
+        EXPECT_EQ(uint64_t(4), ns.getStartTimestamp());
     }
     {
         NodeState ns = NodeState("s:u c:2.4 b:12");

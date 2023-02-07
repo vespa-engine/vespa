@@ -531,7 +531,8 @@ TopLevelDistributor::on_cluster_state_bundle_activated(const lib::ClusterStateBu
     }
     if (has_bucket_ownership_transfer && _maintenance_safe_time_delay.count() > 0) {
         OwnershipTransferSafeTimePointCalculator safe_time_calc(_maintenance_safe_time_delay);
-        const auto now = _component.getClock().getSystemTime();
+        using TimePoint = OwnershipTransferSafeTimePointCalculator::TimePoint;
+        const auto now = TimePoint(std::chrono::milliseconds(_component.getClock().getTimeInMillis().getTime()));
         _maintenance_safe_time_point = safe_time_calc.safeTimePoint(now);
         // All stripes are in a waiting pattern and will observe this on their next tick.
         // Memory visibility enforced by all stripes being held under a mutex by our caller.

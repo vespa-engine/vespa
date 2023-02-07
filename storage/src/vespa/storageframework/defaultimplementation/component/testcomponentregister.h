@@ -21,14 +21,14 @@ namespace storage::framework::defaultimplementation {
 
 class TestComponentRegister {
     ComponentRegisterImpl::UP _compReg;
-    FakeClock                 _clock;
-    ThreadPoolImpl            _threadPool;
+    FakeClock _clock;
+    ThreadPoolImpl _threadPool;
 
 public:
-    explicit TestComponentRegister(ComponentRegisterImpl::UP compReg);
-    virtual ~TestComponentRegister();
+    TestComponentRegister(ComponentRegisterImpl::UP compReg);
+    ~TestComponentRegister();
 
-    virtual ComponentRegisterImpl& getComponentRegister() { return *_compReg; }
+    ComponentRegisterImpl& getComponentRegister() { return *_compReg; }
     FakeClock& getClock() { return _clock; }
     ThreadPoolImpl& getThreadPoolImpl() { return _threadPool; }
     FastOS_ThreadPool& getThreadPool() { return _threadPool.getThreadPool(); }

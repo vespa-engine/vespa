@@ -187,8 +187,9 @@ VisitorManager::configure(std::unique_ptr<vespa::config::content::core::StorVisi
         for (int32_t i=0; i<config->visitorthreads; ++i) {
             _visitorThread.emplace_back(
                     // Naked new due to a lot of private inheritance in VisitorThread and VisitorManager
-                    std::shared_ptr<VisitorThread>(new VisitorThread(i, _componentRegister, _messageSessionFactory,
-                                                                     _visitorFactories, *_metrics->threads[i], *this)),
+                    std::shared_ptr<VisitorThread>(
+                            new VisitorThread(i, _componentRegister, _messageSessionFactory,
+                                              _visitorFactories, *_metrics->threads[i], *this)),
                     std::map<api::VisitorId, std::string>());
         }
     }
@@ -449,7 +450,8 @@ VisitorManager::processReply(const std::shared_ptr<api::StorageReply>& reply)
 }
 
 void
-VisitorManager::send(const std::shared_ptr<api::StorageCommand>& cmd, Visitor& visitor)
+VisitorManager::send(const std::shared_ptr<api::StorageCommand>& cmd,
+                     Visitor& visitor)
 {
     assert(cmd->getType() == api::MessageType::INTERNAL);
     // Only add to internal state if not destroy iterator command, as
@@ -458,7 +460,7 @@ VisitorManager::send(const std::shared_ptr<api::StorageCommand>& cmd, Visitor& v
     if (static_cast<const api::InternalCommand&>(*cmd).getType() != DestroyIteratorCommand::ID) {
         MessageInfo inf;
         inf.id = visitor.getVisitorId();
-        inf.timestamp = _component.getClock().getSystemTime();
+        inf.timestamp = _component.getClock().getTimeInSeconds().getTime();
         inf.timeout = cmd->getTimeout();
 
         if (cmd->getAddress()) {
@@ -621,7 +623,7 @@ VisitorManager::reportHtmlStatus(std::ostream& out,
                     out << "<tr>"
                         << "<td>" << entry.first << "</td>"
                         << "<td>" << entry.second.id << "</td>"
-                        << "<td>" << vespalib::to_string(entry.second.timestamp) << "</td>"
+                        << "<td>" << entry.second.timestamp << "</td>"
                         << "<td>" << vespalib::count_ms(entry.second.timeout) << "</td>"
                         << "<td>" << xml_content_escaped(entry.second.destination) << "</td>"
                         << "</tr>\n";
