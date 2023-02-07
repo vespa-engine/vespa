@@ -47,7 +47,7 @@ protected:
     std::unique_ptr<TestVisitorMessageSessionFactory> _messageSessionFactory;
     std::unique_ptr<TestServiceLayerApp> _node;
     std::unique_ptr<DummyStorageLink> _top;
-    VisitorManager* _manager{};
+    VisitorManager* _manager;
 
     VisitorManagerTest() : _node(), _top(), _manager(nullptr) {}
     ~VisitorManagerTest() override;
@@ -312,9 +312,9 @@ VisitorManagerTest::verifyCreateVisitorReply(
 uint32_t
 VisitorManagerTest::getMatchingDocuments(std::vector<document::Document::SP >& docs) {
     uint32_t equalCount = 0;
-    for (auto & doc : docs) {
-        for (auto & _document : _documents) {
-            if (doc->getId() == _document->getId() && *doc == *_document) {
+    for (const auto & doc : docs) {
+        for (const auto & document : _documents) {
+            if (doc->getId() == document->getId() && *doc == *document) {
                 equalCount++;
             }
         }

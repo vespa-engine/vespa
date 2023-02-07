@@ -654,7 +654,7 @@ VisitorManager::reportHtmlStatus(std::ostream& out,
     std::sort(_statusRequest.begin(), _statusRequest.end(), StatusReqSorter());
 
     // Create output
-    for (auto & request : _statusRequest) {
+    for (const auto & request : _statusRequest) {
         out << "<h2>" << request->getSortToken()
             << "</h2>\n" << request->getStatus() << "\n";
     }
