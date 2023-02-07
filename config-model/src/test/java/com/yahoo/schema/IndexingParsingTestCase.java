@@ -2,9 +2,13 @@
 package com.yahoo.schema;
 
 import com.yahoo.schema.parser.ParseException;
+import com.yahoo.yolean.Exceptions;
 import org.junit.jupiter.api.Test;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * Tests that indexing statements are parsed correctly.
@@ -22,10 +26,9 @@ public class IndexingParsingTestCase extends AbstractSchemaTestCase {
     void requireThatParseExceptionPositionIsCorrect() throws Exception {
         try {
             ApplicationBuilder.buildFromFile("src/test/examples/indexing_invalid_expression.sd");
-        } catch (ParseException e) {
-            if (!e.getMessage().contains("at line 5, column 57.")) {
-                throw e;
-            }
+            fail();
+        } catch (IllegalArgumentException e) {
+            assertTrue(Exceptions.toMessageString(e).contains("at line 5, column 57."));
         }
     }
 

@@ -10,6 +10,7 @@ import java.io.File;
 import java.io.FileReader;
 import java.util.List;
 
+import com.yahoo.yolean.Exceptions;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -131,24 +132,24 @@ public class IntermediateCollectionTestCase {
         var collection = new IntermediateCollection();
         var ex = assertThrows(IllegalArgumentException.class, () ->
                 collection.addSchemaFromReader(readerOf("src/test/cfg/application/sdfilenametest/schemas/notmusic.sd")));
-        assertEquals("The file containing schema 'music' must be named 'music.sd', was 'notmusic.sd'",
+        assertEquals("The file containing schema 'music' must be named 'music.sd', but is 'notmusic.sd'",
                 ex.getMessage());
     }
 
     @Test
     void bad_parse_throws() throws Exception {
         var collection = new IntermediateCollection();
-        var ex = assertThrows(ParseException.class, () ->
+        var ex1 = assertThrows(IllegalArgumentException.class, () ->
                 collection.addSchemaFromFile("src/test/examples/badparse.sd"));
-        assertTrue(ex.getMessage().startsWith("Failed parsing schema from src/test/examples/badparse.sd: Encountered"));
-        ex = assertThrows(ParseException.class, () ->
+        assertTrue(Exceptions.toMessageString(ex1).startsWith("Failed parsing schema from 'src/test/examples/badparse.sd': Encountered"), ex1.getMessage());
+        var ex2 = assertThrows(IllegalArgumentException.class, () ->
                 collection.addSchemaFromReader(readerOf("src/test/examples/badparse.sd")));
-        assertTrue(ex.getMessage().startsWith("Failed parsing schema from src/test/examples/badparse.sd: Encountered"));
+        assertTrue(Exceptions.toMessageString(ex2).startsWith("Failed parsing schema from 'src/test/examples/badparse.sd': Encountered"), ex2.getMessage());
         collection.addSchemaFromFile("src/test/derived/rankprofilemodularity/test.sd");
         collection.addRankProfileFile("test", "src/test/derived/rankprofilemodularity/test/outside_schema1.profile");
-        ex = assertThrows(ParseException.class, () ->
+        var ex3 = assertThrows(ParseException.class, () ->
                 collection.addRankProfileFile("test", "src/test/examples/badparse.sd"));
-        assertTrue(ex.getMessage().startsWith("Failed parsing rank-profile from src/test/examples/badparse.sd: Encountered"));
+        assertTrue(Exceptions.toMessageString(ex3).startsWith("Failed parsing rank-profile from 'src/test/examples/badparse.sd': Encountered"), ex3.getMessage());
     }
 
     @Test
