@@ -2,6 +2,7 @@
 package com.yahoo.vespa.model.admin.monitoring;
 import com.yahoo.metrics.ContainerMetrics;
 import com.yahoo.metrics.SearchNodeMetrics;
+import com.yahoo.metrics.StorageMetrics;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -39,10 +40,10 @@ public class AutoscalingMetrics {
         metrics.add(SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_MATCHING_QUERIES.rate()); // content
 
         // Write rate
-        metrics.add("feed.http-requests.rate"); // container
-        metrics.add("vds.filestor.allthreads.put.count.rate"); // content
-        metrics.add("vds.filestor.allthreads.remove.count.rate"); // content
-        metrics.add("vds.filestor.allthreads.update.count.rate"); // content
+        metrics.add(ContainerMetrics.FEED_HTTP_REQUESTS.rate()); // container
+        metrics.add(StorageMetrics.VDS_FILESTOR_ALLTHREADS_PUT_COUNT.rate()); // content
+        metrics.add(StorageMetrics.VDS_FILESTOR_ALLTHREADS_REMOVE_COUNT.rate()); // content
+        metrics.add(StorageMetrics.VDS_FILESTOR_ALLTHREADS_UPDATE_COUNT.rate()); // content
 
         return new MetricSet("autoscaling", toMetrics(metrics));
     }

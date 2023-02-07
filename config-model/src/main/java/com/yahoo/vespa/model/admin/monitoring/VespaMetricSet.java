@@ -540,68 +540,69 @@ public class VespaMetricSet {
     private static Set<Metric> getStorageMetrics() {
         Set<Metric> metrics = new LinkedHashSet<>();
 
-        // TODO: For the purpose of this file and likely elsewhere, all but the last aggregate specifier,
-        // TODO: such as 'average' and 'sum' in the metric names below are just confusing and can be mentally
-        // TODO: disregarded when considering metric names. Consider cleaning up for Vespa 9.
+        // TODO - Vespa 9: For the purpose of this file and likely elsewhere, all but the last aggregate specifier,
+        // TODO - Vespa 9: such as 'average' and 'sum' in the metric names below are just confusing and can be mentally
+        // TODO - Vespa 9: disregarded when considering metric names. Clean up for Vespa 9.
         addMetric(metrics, StorageMetrics.VDS_DATASTORED_ALLDISKS_BUCKETS.average());
         addMetric(metrics, StorageMetrics.VDS_DATASTORED_ALLDISKS_DOCS.average());
-        addMetric(metrics, "vds.datastored.alldisks.bytes.average");
-        addMetric(metrics, "vds.visitor.allthreads.averagevisitorlifetime", List.of("max", "sum", "count"));
-        addMetric(metrics, "vds.visitor.allthreads.averagequeuewait", List.of("max", "sum", "count"));
-        addMetric(metrics, "vds.visitor.allthreads.queuesize", List.of("max", "sum", "count"));
-        addMetric(metrics, "vds.visitor.allthreads.completed.rate");
-        addMetric(metrics, "vds.visitor.allthreads.created.rate");
-        addMetric(metrics, "vds.visitor.allthreads.failed.rate");
-        addMetric(metrics, "vds.visitor.allthreads.averagemessagesendtime", List.of("max", "sum", "count"));
-        addMetric(metrics, "vds.visitor.allthreads.averageprocessingtime", List.of("max", "sum", "count"));
+        addMetric(metrics, StorageMetrics.VDS_DATASTORED_ALLDISKS_BYTES.average());
+        addMetric(metrics, StorageMetrics.VDS_VISITOR_ALLTHREADS_AVERAGEVISITORLIFETIME, EnumSet.of(max, sum, count));
+        addMetric(metrics, StorageMetrics.VDS_VISITOR_ALLTHREADS_AVERAGEQUEUEWAIT, EnumSet.of(max, sum, count));
+        addMetric(metrics, StorageMetrics.VDS_VISITOR_ALLTHREADS_QUEUESIZE, EnumSet.of(max, sum, count));
+        addMetric(metrics, StorageMetrics.VDS_VISITOR_ALLTHREADS_COMPLETED.rate());
+        addMetric(metrics, StorageMetrics.VDS_VISITOR_ALLTHREADS_CREATED.rate());
+        addMetric(metrics, StorageMetrics.VDS_VISITOR_ALLTHREADS_FAILED.rate());
+        addMetric(metrics, StorageMetrics.VDS_VISITOR_ALLTHREADS_AVERAGEMESSAGESENDTIME, EnumSet.of(max, sum, count));
+        addMetric(metrics, StorageMetrics.VDS_VISITOR_ALLTHREADS_AVERAGEPROCESSINGTIME, EnumSet.of(max, sum, count));
 
-        addMetric(metrics, "vds.filestor.queuesize", List.of("max", "sum", "count"));
-        addMetric(metrics, "vds.filestor.averagequeuewait", List.of("max", "sum", "count"));
-        addMetric(metrics, "vds.filestor.active_operations.size", List.of("max", "sum", "count"));
-        addMetric(metrics, "vds.filestor.active_operations.latency", List.of("max", "sum", "count"));
-        addMetric(metrics, "vds.filestor.throttle_window_size", List.of("max", "sum", "count"));
-        addMetric(metrics, "vds.filestor.throttle_waiting_threads", List.of("max", "sum", "count"));
-        addMetric(metrics, "vds.filestor.throttle_active_tokens", List.of("max", "sum", "count"));
-        addMetric(metrics, "vds.filestor.allthreads.mergemetadatareadlatency", List.of("max", "sum", "count"));
-        addMetric(metrics, "vds.filestor.allthreads.mergedatareadlatency", List.of("max", "sum", "count"));
-        addMetric(metrics, "vds.filestor.allthreads.mergedatawritelatency", List.of("max", "sum", "count"));
-        addMetric(metrics, "vds.filestor.allthreads.put_latency", List.of("max", "sum", "count"));
-        addMetric(metrics, "vds.filestor.allthreads.remove_latency", List.of("max", "sum", "count"));
-        addMetric(metrics, "vds.filestor.allstripes.throttled_rpc_direct_dispatches.rate");
-        addMetric(metrics, "vds.filestor.allstripes.throttled_persistence_thread_polls.rate");
-        addMetric(metrics, "vds.filestor.allstripes.timeouts_waiting_for_throttle_token.rate");
-        
-        addMetric(metrics, "vds.filestor.allthreads.put.count.rate");
-        addMetric(metrics, "vds.filestor.allthreads.put.failed.rate");
-        addMetric(metrics, "vds.filestor.allthreads.put.test_and_set_failed.rate");
-        addMetric(metrics, "vds.filestor.allthreads.put.latency", List.of("max", "sum", "count"));
-        addMetric(metrics, "vds.filestor.allthreads.put.request_size", List.of("max", "sum", "count"));
-        addMetric(metrics, "vds.filestor.allthreads.remove.count.rate");
-        addMetric(metrics, "vds.filestor.allthreads.remove.failed.rate");
-        addMetric(metrics, "vds.filestor.allthreads.remove.test_and_set_failed.rate");
-        addMetric(metrics, "vds.filestor.allthreads.remove.latency", List.of("max", "sum", "count"));
-        addMetric(metrics, "vds.filestor.allthreads.remove.request_size", List.of("max", "sum", "count"));
-        addMetric(metrics, "vds.filestor.allthreads.get.count.rate");
-        addMetric(metrics, "vds.filestor.allthreads.get.failed.rate");
-        addMetric(metrics, "vds.filestor.allthreads.get.latency", List.of("max", "sum", "count"));
-        addMetric(metrics, "vds.filestor.allthreads.get.request_size", List.of("max", "sum", "count"));
-        addMetric(metrics, "vds.filestor.allthreads.update.count.rate");
-        addMetric(metrics, "vds.filestor.allthreads.update.failed.rate");
-        addMetric(metrics, "vds.filestor.allthreads.update.test_and_set_failed.rate");
-        addMetric(metrics, "vds.filestor.allthreads.update.latency", List.of("max", "sum", "count"));
-        addMetric(metrics, "vds.filestor.allthreads.update.request_size", List.of("max", "sum", "count"));
-        addMetric(metrics, "vds.filestor.allthreads.createiterator.latency", List.of("max", "sum", "count"));
-        addMetric(metrics, "vds.filestor.allthreads.createiterator.count.rate");
-        addMetric(metrics, "vds.filestor.allthreads.visit.count.rate");
-        addMetric(metrics, "vds.filestor.allthreads.visit.latency", List.of("max", "sum", "count"));
-        addMetric(metrics, "vds.filestor.allthreads.remove_location.count.rate");
-        addMetric(metrics, "vds.filestor.allthreads.remove_location.latency", List.of("max", "sum", "count"));
-        addMetric(metrics, "vds.filestor.allthreads.splitbuckets.count.rate");
-        addMetric(metrics, "vds.filestor.allthreads.joinbuckets.count.rate");
-        addMetric(metrics, "vds.filestor.allthreads.deletebuckets.count.rate");
-        addMetric(metrics, "vds.filestor.allthreads.deletebuckets.failed.rate");
-        addMetric(metrics, "vds.filestor.allthreads.deletebuckets.latency", List.of("max", "sum", "count"));
-        addMetric(metrics, "vds.filestor.allthreads.setbucketstates.count.rate");
+        addMetric(metrics, StorageMetrics.VDS_FILESTOR_QUEUESIZE, EnumSet.of(max, sum, count));
+        addMetric(metrics, StorageMetrics.VDS_FILESTOR_AVERAGEQUEUEWAIT, EnumSet.of(max, sum, count));
+        addMetric(metrics, StorageMetrics.VDS_FILESTOR_ACTIVE_OPERATIONS_SIZE, EnumSet.of(max, sum, count));
+        addMetric(metrics, StorageMetrics.VDS_FILESTOR_ACTIVE_OPERATIONS_LATENCY, EnumSet.of(max, sum, count));
+        addMetric(metrics, StorageMetrics.VDS_FILESTOR_THROTTLE_WINDOW_SIZE, EnumSet.of(max, sum, count));
+        addMetric(metrics, StorageMetrics.VDS_FILESTOR_THROTTLE_WAITING_THREADS, EnumSet.of(max, sum, count));
+        addMetric(metrics, StorageMetrics.VDS_FILESTOR_THROTTLE_ACTIVE_TOKENS, EnumSet.of(max, sum, count));
+        addMetric(metrics, StorageMetrics.VDS_FILESTOR_ALLTHREADS_MERGEMETADATAREADLATENCY, EnumSet.of(max, sum, count));
+        addMetric(metrics, StorageMetrics.VDS_FILESTOR_ALLTHREADS_MERGEDATAREADLATENCY, EnumSet.of(max, sum, count));
+        addMetric(metrics, StorageMetrics.VDS_FILESTOR_ALLTHREADS_MERGEDATAWRITELATENCY, EnumSet.of(max, sum, count));
+        addMetric(metrics, StorageMetrics.VDS_FILESTOR_ALLTHREADS_MERGE_PUT_LATENCY, EnumSet.of(max, sum, count));
+        addMetric(metrics, StorageMetrics.VDS_FILESTOR_ALLTHREADS_MERGE_REMOVE_LATENCY, EnumSet.of(max, sum, count));
+        addMetric(metrics, StorageMetrics.VDS_FILESTOR_ALLSTRIPES_THROTTLED_RPC_DIRECT_DISPATCHES.rate());
+        addMetric(metrics, StorageMetrics.VDS_FILESTOR_ALLSTRIPES_THROTTLED_PERSISTENCE_THREAD_POLLS.rate());
+        addMetric(metrics, StorageMetrics.VDS_FILESTOR_ALLSTRIPES_TIMEOUTS_WAITING_FOR_THROTTLE_TOKEN.rate());
+
+        addMetric(metrics, StorageMetrics.VDS_FILESTOR_ALLTHREADS_PUT_COUNT.rate());
+        addMetric(metrics, StorageMetrics.VDS_FILESTOR_ALLTHREADS_PUT_FAILED.rate());
+        addMetric(metrics, StorageMetrics.VDS_FILESTOR_ALLTHREADS_PUT_TEST_AND_SET_FAILED.rate());
+        addMetric(metrics, StorageMetrics.VDS_FILESTOR_ALLTHREADS_PUT_LATENCY, EnumSet.of(max, sum, count));
+        addMetric(metrics, StorageMetrics.VDS_FILESTOR_ALLTHREADS_PUT_REQUEST_SIZE, EnumSet.of(max, sum, count));
+        addMetric(metrics, StorageMetrics.VDS_FILESTOR_ALLTHREADS_REMOVE_COUNT.rate());
+        addMetric(metrics, StorageMetrics.VDS_FILESTOR_ALLTHREADS_REMOVE_FAILED.rate());
+        addMetric(metrics, StorageMetrics.VDS_FILESTOR_ALLTHREADS_REMOVE_TEST_AND_SET_FAILED.rate());
+        addMetric(metrics, StorageMetrics.VDS_FILESTOR_ALLTHREADS_REMOVE_LATENCY, EnumSet.of(max, sum, count));
+        addMetric(metrics, StorageMetrics.VDS_FILESTOR_ALLTHREADS_REMOVE_REQUEST_SIZE, EnumSet.of(max, sum, count));
+        addMetric(metrics, StorageMetrics.VDS_FILESTOR_ALLTHREADS_GET_COUNT.rate());
+        addMetric(metrics, StorageMetrics.VDS_FILESTOR_ALLTHREADS_GET_FAILED.rate());
+        addMetric(metrics, StorageMetrics.VDS_FILESTOR_ALLTHREADS_GET_LATENCY, EnumSet.of(max, sum, count));
+        addMetric(metrics, StorageMetrics.VDS_FILESTOR_ALLTHREADS_GET_REQUEST_SIZE, EnumSet.of(max, sum, count));
+        addMetric(metrics, StorageMetrics.VDS_FILESTOR_ALLTHREADS_UPDATE_COUNT.rate());
+        addMetric(metrics, StorageMetrics.VDS_FILESTOR_ALLTHREADS_UPDATE_FAILED.rate());
+        addMetric(metrics, StorageMetrics.VDS_FILESTOR_ALLTHREADS_UPDATE_TEST_AND_SET_FAILED.rate());
+        addMetric(metrics, StorageMetrics.VDS_FILESTOR_ALLTHREADS_UPDATE_LATENCY, EnumSet.of(max, sum, count));
+        addMetric(metrics, StorageMetrics.VDS_FILESTOR_ALLTHREADS_UPDATE_REQUEST_SIZE, EnumSet.of(max, sum, count));
+        addMetric(metrics, StorageMetrics.VDS_FILESTOR_ALLTHREADS_CREATEITERATOR_COUNT.rate());
+        addMetric(metrics, StorageMetrics.VDS_FILESTOR_ALLTHREADS_CREATEITERATOR_LATENCY, EnumSet.of(max, sum, count));
+        addMetric(metrics, StorageMetrics.VDS_FILESTOR_ALLTHREADS_VISIT_COUNT.rate());
+        addMetric(metrics, StorageMetrics.VDS_FILESTOR_ALLTHREADS_VISIT_LATENCY, EnumSet.of(max, sum, count));
+        addMetric(metrics, StorageMetrics.VDS_FILESTOR_ALLTHREADS_REMOVE_LOCATION_COUNT.rate());
+        addMetric(metrics, StorageMetrics.VDS_FILESTOR_ALLTHREADS_REMOVE_LOCATION_LATENCY, EnumSet.of(max, sum, count));
+        addMetric(metrics, StorageMetrics.VDS_FILESTOR_ALLTHREADS_SPLITBUCKETS_COUNT.rate());
+        addMetric(metrics, StorageMetrics.VDS_FILESTOR_ALLTHREADS_JOINBUCKETS_COUNT.rate());
+        addMetric(metrics, StorageMetrics.VDS_FILESTOR_ALLTHREADS_DELETEBUCKETS_COUNT.rate());
+        addMetric(metrics, StorageMetrics.VDS_FILESTOR_ALLTHREADS_DELETEBUCKETS_FAILED.rate());
+        addMetric(metrics, StorageMetrics.VDS_FILESTOR_ALLTHREADS_DELETEBUCKETS_LATENCY, EnumSet.of(max, sum, count));
+        addMetric(metrics, StorageMetrics.VDS_FILESTOR_ALLTHREADS_SETBUCKETSTATES_COUNT.rate());
+
         return metrics;
     }
     private static Set<Metric> getDistributorMetrics() {
@@ -710,6 +711,10 @@ public class VespaMetricSet {
     }
 
     private static void addMetric(Set<Metric> metrics, SearchNodeMetrics metric, EnumSet<Suffix> suffixes) {
+        suffixes.forEach(suffix -> metrics.add(new Metric(metric.baseName() + "." + suffix.suffix())));
+    }
+
+    private static void addMetric(Set<Metric> metrics, StorageMetrics metric, EnumSet<Suffix> suffixes) {
         suffixes.forEach(suffix -> metrics.add(new Metric(metric.baseName() + "." + suffix.suffix())));
     }
 
