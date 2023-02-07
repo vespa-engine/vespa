@@ -88,7 +88,7 @@ public final class FunctionNode extends CompositeNode {
     @Override
     public Value evaluate(Context context) {
         if (arguments.expressions().size() == 0)
-            return DoubleValue.zero.function(function ,DoubleValue.zero);
+            return DoubleValue.zero.function(function, DoubleValue.zero);
 
         Value argument1 = arguments.expressions().get(0).evaluate(context);
         if (arguments.expressions().size() == 1)
