@@ -8,6 +8,7 @@ import com.yahoo.restapi.ErrorResponse;
 import com.yahoo.restapi.Path;
 import com.yahoo.restapi.StringResponse;
 import com.yahoo.vespa.hosted.controller.config.WellKnownFolderConfig;
+import com.yahoo.yolean.Exceptions;
 
 
 /**
@@ -25,16 +26,21 @@ public class WellKnownApiHandler extends ThreadedHttpRequestHandler {
 
     @Override
     public HttpResponse handle(HttpRequest request) {
-        switch (request.getMethod()) {
-            case GET: return get(request);
-            default: return ErrorResponse.methodNotAllowed("Method '" + request.getMethod() + "' is not supported");
-        }
+        return switch (request.getMethod()) {
+            case GET -> get(request);
+            default -> ErrorResponse.methodNotAllowed("Method '" + request.getMethod() + "' is not supported");
+        };
     }
 
     private HttpResponse get(HttpRequest request) {
-        Path path = new Path(request.getUri());
-        if (path.matches("/.well-known/security.txt")) return securityTxt();
-        return ErrorResponse.notFoundError("Nothing at " + path);
+        try {
+            Path path = new Path(request.getUri());
+            if (path.matches("/.well-known/security.txt")) return securityTxt();
+            return ErrorResponse.notFoundError("Nothing at " + path);
+        }
+        catch (IllegalArgumentException e) {
+            return ErrorResponse.badRequest(Exceptions.toMessageString(e));
+        }
     }
 
     private HttpResponse securityTxt() {
