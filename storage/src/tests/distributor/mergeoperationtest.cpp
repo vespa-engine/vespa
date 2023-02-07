@@ -71,7 +71,7 @@ MergeOperationTest::setup_simple_merge_op(const std::vector<uint16_t>& nodes, Pr
     auto op = std::make_shared<MergeOperation>(BucketAndNodes(makeDocumentBucket(document::BucketId(16, 1)), nodes));
     op->setIdealStateManager(&getIdealStateManager());
     op->setPriority(merge_pri);
-    op->start(_sender, framework::MilliSecTime(0));
+    op->start(_sender);
     return op;
 }
 
@@ -291,7 +291,7 @@ TEST_F(MergeOperationTest, do_not_remove_copies_with_pending_messages) {
     MergeOperation op(BucketAndNodes(makeDocumentBucket(bucket),
                                      toVector<uint16_t>(0, 1, 2)));
     op.setIdealStateManager(&getIdealStateManager());
-    op.start(_sender, framework::MilliSecTime(0));
+    op.start(_sender);
 
     std::string merge("MergeBucketCommand(BucketId(0x4000000000000001), to time 10000000, "
                       "cluster state version: 0, nodes: [0, 2, 1 (source only)], chain: [], "
@@ -352,7 +352,7 @@ TEST_F(MergeOperationTest, allow_deleting_active_source_only_replica) {
     MergeOperation op(BucketAndNodes(makeDocumentBucket(document::BucketId(16, 1)),
                                      toVector<uint16_t>(0, 1, 2)));
     op.setIdealStateManager(&getIdealStateManager());
-    op.start(_sender, framework::MilliSecTime(0));
+    op.start(_sender);
 
     std::string merge(
             "MergeBucketCommand(BucketId(0x4000000000000001), to time "
@@ -501,7 +501,7 @@ TEST_F(MergeOperationTest, missing_replica_is_included_in_limited_node_list) {
     const uint16_t max_merge_size = 2;
     MergeOperation op(BucketAndNodes(makeDocumentBucket(document::BucketId(16, 1)), toVector<uint16_t>(0, 1, 2, 3)), max_merge_size);
     op.setIdealStateManager(&getIdealStateManager());
-    op.start(_sender, framework::MilliSecTime(0));
+    op.start(_sender);
 
     // Must include missing node 0 and not just 2 existing replicas
     EXPECT_EQ("MergeBucketCommand(BucketId(0x4000000000000001), to time 10000000, "

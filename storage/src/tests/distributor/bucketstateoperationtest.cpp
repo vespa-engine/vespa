@@ -43,7 +43,7 @@ TEST_F(BucketStateOperationTest, activate_single_node) {
     SetBucketStateOperation op(dummy_cluster_context, bucketAndNodes, active);
 
     op.setIdealStateManager(&getIdealStateManager());
-    op.start(_sender, framework::MilliSecTime(0));
+    op.start(_sender);
 
     ASSERT_EQ(1, _sender.commands().size());
 
@@ -79,7 +79,7 @@ TEST_F(BucketStateOperationTest, activate_and_deactivate_nodes) {
     SetBucketStateOperation op(dummy_cluster_context, bucketAndNodes, active);
 
     op.setIdealStateManager(&getIdealStateManager());
-    op.start(_sender, framework::MilliSecTime(0));
+    op.start(_sender);
 
     ASSERT_EQ(1, _sender.commands().size());
     {
@@ -135,7 +135,7 @@ TEST_F(BucketStateOperationTest, do_not_deactivate_if_activate_fails) {
     SetBucketStateOperation op(dummy_cluster_context, bucketAndNodes, active);
 
     op.setIdealStateManager(&getIdealStateManager());
-    op.start(_sender, framework::MilliSecTime(0));
+    op.start(_sender);
 
     ASSERT_EQ(1, _sender.commands().size());
     {
@@ -178,7 +178,7 @@ TEST_F(BucketStateOperationTest, bucket_db_not_updated_on_failure) {
     SetBucketStateOperation op(dummy_cluster_context, bucketAndNodes, active);
 
     op.setIdealStateManager(&getIdealStateManager());
-    op.start(_sender, framework::MilliSecTime(0));
+    op.start(_sender);
 
     ASSERT_EQ(1, _sender.commands().size());
 
