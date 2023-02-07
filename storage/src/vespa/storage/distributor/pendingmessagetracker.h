@@ -68,13 +68,7 @@ public:
         virtual bool check(uint32_t messageType, uint16_t node, uint8_t priority) = 0;
     };
 
-    /**
-     * Time point represented as the millisecond interval from the framework
-     * clock's epoch to a given point in time. Note that it'd be more
-     * semantically correct to use std::chrono::time_point, but it is bound
-     * to specific chrono clock types, their epochs and duration resolution.
-     */
-    using TimePoint = std::chrono::milliseconds;
+    using TimePoint = vespalib::system_time;
 
     PendingMessageTracker(framework::ComponentRegister&, uint32_t stripe_index);
     ~PendingMessageTracker() override;
@@ -119,8 +113,8 @@ public:
      */
     std::vector<uint64_t> clearMessagesForNode(uint16_t node);
 
-    void setNodeBusyDuration(std::chrono::seconds secs) noexcept {
-        _nodeBusyDuration = secs;
+    void setNodeBusyDuration(vespalib::duration duration) noexcept {
+        _nodeBusyDuration = duration;
     }
 
     void run_once_no_pending_for_bucket(const document::Bucket& bucket, std::unique_ptr<DeferredTask> task);
@@ -136,7 +130,7 @@ private:
 
         MessageEntry(TimePoint timeStamp, uint32_t msgType, uint32_t priority,
                      uint64_t msgId, document::Bucket bucket, uint16_t nodeIdx) noexcept;
-        vespalib::string toHtml() const;
+        [[nodiscard]] vespalib::string toHtml() const;
     };
 
     struct MessageIdKey : boost::multi_index::member<MessageEntry, uint64_t, &MessageEntry::msgId> {};
@@ -187,7 +181,7 @@ private:
     Messages              _messages;
     framework::Component  _component;
     NodeInfo              _nodeInfo;
-    std::chrono::seconds  _nodeBusyDuration;
+    vespalib::duration    _nodeBusyDuration;
     DeferredBucketTaskMap _deferred_read_tasks;
 
     // Since distributor is currently single-threaded, this will only
