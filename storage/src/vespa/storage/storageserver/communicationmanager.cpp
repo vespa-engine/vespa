@@ -55,7 +55,7 @@ vespalib::string getNodeId(StorageComponent& sc) {
     return ost.str();
 }
 
-vespalib::duration TEN_MINUTES = 600s;
+constexpr vespalib::duration STALE_PROTOCOL_LIFETIME = 1h;
 
 }
 
@@ -694,7 +694,7 @@ CommunicationManager::run(framework::ThreadHandle& thread)
         std::lock_guard<std::mutex> guard(_earlierGenerationsLock);
         for (auto it(_earlierGenerations.begin());
              !_earlierGenerations.empty() &&
-             ((it->first + TEN_MINUTES) < _component.getClock().getMonotonicTime());
+             ((it->first + STALE_PROTOCOL_LIFETIME) < _component.getClock().getMonotonicTime());
              it = _earlierGenerations.begin())
         {
             _earlierGenerations.erase(it);
@@ -709,9 +709,8 @@ CommunicationManager::updateMetrics(const MetricLockGuard &)
 }
 
 void
-CommunicationManager::print(std::ostream& out, bool verbose, const std::string& indent) const
+CommunicationManager::print(std::ostream& out, bool , const std::string& ) const
 {
-    (void) verbose; (void) indent;
     out << "CommunicationManager";
 }
 
