@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.application.api.xml;
 
+import com.yahoo.config.application.api.Bcp;
 import com.yahoo.config.application.api.DeploymentInstanceSpec;
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.application.api.DeploymentSpec.DeclaredTest;
@@ -46,7 +47,6 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -54,6 +54,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.OptionalDouble;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Stream;
@@ -161,6 +162,7 @@ public class DeploymentSpecXmlReader {
                                   stringAttribute(athenzServiceAttribute, root).map(AthenzService::from),
                                   stringAttribute(cloudAccountAttribute, root).map(CloudAccount::from),
                                   applicationEndpoints,
+                                  readBcp(root),
                                   xmlForm,
                                   deprecatedElements);
     }
@@ -228,6 +230,7 @@ public class DeploymentSpecXmlReader {
                                                              notifications,
                                                              endpoints,
                                                              zoneEndpoints,
+                                                             readBcp(instanceElement),
                                                              now))
                      .toList();
     }
@@ -453,6 +456,24 @@ public class DeploymentSpecXmlReader {
         });
         endpoints.addAll(endpointsById.values());
         validateAndConsolidate(endpointsByZone, zoneEndpoints);
+    }
+
+    static Bcp readBcp(Element element) {
+        Element bcpElement = XML.getChild(element, "bcp");
+        if (bcpElement == null) return Bcp.empty();
+
+        List<Bcp.Group> groups = new ArrayList<>();
+        for (Element groupElement : XML.getChildren(bcpElement, "group")) {
+            List<Bcp.RegionMember> regions = new ArrayList<>();
+            for (Element regionElement : XML.getChildren(groupElement, "region")) {
+                RegionName region = RegionName.from(XML.getValue(regionElement));
+                double fraction = toDouble(XML.attribute("fraction", regionElement).orElse(null), "fraction").orElse(1.0);
+                regions.add(new Bcp.RegionMember(region, fraction));
+            }
+            Duration deadline = XML.attribute("deadline", groupElement).map(value -> toDuration(value, "deadline")).orElse(Duration.ZERO);
+            groups.add(new Bcp.Group(regions, deadline));
+        }
+        return new Bcp(groups);
     }
 
     static void validateAndConsolidate(Map<String, Map<RegionName, List<ZoneEndpoint>>> in, Map<ClusterSpec.Id, Map<ZoneId, ZoneEndpoint>> out) {
@@ -711,6 +732,39 @@ public class DeploymentSpecXmlReader {
                      .map(Element.class::cast)
                      .flatMap(element -> stringAttribute(attributeName, element).stream())
                      .findFirst();
+    }
+
+    /**
+     * Returns a string consisting of a number followed by "m" or "M" to a duration of that number of minutes,
+     * or zero duration if null of blank.
+     */
+    private static Duration toDuration(String minutesSpec, String sourceDescription) {
+        try {
+            if (minutesSpec == null || minutesSpec.isBlank()) return Duration.ZERO;
+            minutesSpec = minutesSpec.trim().toLowerCase();
+            if ( ! minutesSpec.endsWith("m"))
+                throw new IllegalArgumentException("Must end by 'm'");
+            try {
+                return Duration.ofMinutes(Integer.parseInt(minutesSpec.substring(0, minutesSpec.length() - 1)));
+            }
+            catch (NumberFormatException e) {
+                throw new IllegalArgumentException("Must be an integer number of minutes followed by 'm'");
+            }
+        }
+        catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("Illegal " + sourceDescription + " '" + minutesSpec + "'", e);
+        }
+    }
+
+    private static OptionalDouble toDouble(String value, String sourceDescription) {
+        try {
+            if (value == null || value.isBlank()) return OptionalDouble.empty();
+            return OptionalDouble.of(Double.parseDouble(value));
+        }
+        catch (NumberFormatException e) {
+            throw new IllegalArgumentException("Illegal " + sourceDescription + " '" + value + "': " +
+                                               "Must be a number between 0.0 and 1.0");
+        }
     }
 
     private static void illegal(String message) {
