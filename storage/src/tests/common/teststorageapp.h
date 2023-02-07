@@ -68,7 +68,7 @@ public:
     TestStorageApp(StorageComponentRegisterImpl::UP compReg,
                    const lib::NodeType&, NodeIndex = NodeIndex(0xffff),
                    vespalib::stringref configId = "");
-    ~TestStorageApp();
+    ~TestStorageApp() override;
 
     // Set functions, to be able to modify content while running.
     void setDistribution(Redundancy, NodeCount);
@@ -77,15 +77,12 @@ public:
 
     // Utility functions for getting a hold of currently used bits. Practical
     // to avoid adding extra components in the tests.
-    StorageComponentRegisterImpl& getComponentRegister() { return _compReg; }
+    StorageComponentRegisterImpl& getComponentRegister() override { return _compReg; }
     document::TestDocMan& getTestDocMan() { return _docMan; }
-    std::shared_ptr<const document::DocumentTypeRepo> getTypeRepo()
-        { return _compReg.getTypeRepo(); }
-    const document::BucketIdFactory& getBucketIdFactory()
-        { return _compReg.getBucketIdFactory(); }
+    std::shared_ptr<const document::DocumentTypeRepo> getTypeRepo() { return _compReg.getTypeRepo(); }
+    const document::BucketIdFactory& getBucketIdFactory() { return _compReg.getBucketIdFactory(); }
     TestNodeStateUpdater& getStateUpdater() { return _nodeStateUpdater; }
-    std::shared_ptr<lib::Distribution> & getDistribution()
-        { return _compReg.getDistribution(); }
+    std::shared_ptr<lib::Distribution> & getDistribution() { return _compReg.getDistribution(); }
     TestNodeStateUpdater& getNodeStateUpdater() { return _nodeStateUpdater; }
     uint16_t getIndex() const { return _compReg.getIndex(); }
     const NodeIdentity& node_identity() const noexcept { return _node_identity; }
@@ -95,9 +92,6 @@ public:
     DoneInitializeHandler& getDoneInitializeHandler() { return *this; }
     void notifyDoneInitializing() override { _initialized = true; }
     bool isInitialized() const { return _initialized; }
-    void waitUntilInitialized(
-            StorageBucketDBInitializer* initializer = 0,
-            framework::SecondTime timeout = framework::SecondTime(30));
 
 private:
     // Storage server interface implementation (until we can remove it)
@@ -116,14 +110,14 @@ class TestServiceLayerApp : public TestStorageApp
     HostInfo _host_info;
 
 public:
-    TestServiceLayerApp(vespalib::stringref configId);
-    TestServiceLayerApp(NodeIndex = NodeIndex(0xffff), vespalib::stringref configId = "");
-    ~TestServiceLayerApp();
+    explicit TestServiceLayerApp(vespalib::stringref configId);
+    explicit TestServiceLayerApp(NodeIndex = NodeIndex(0xffff), vespalib::stringref configId = "");
+    ~TestServiceLayerApp() override;
 
     void setupDummyPersistence();
     void setPersistenceProvider(PersistenceProviderUP);
 
-    ServiceLayerComponentRegisterImpl& getComponentRegister() { return _compReg; }
+    ServiceLayerComponentRegisterImpl& getComponentRegister() override { return _compReg; }
     HostInfo &get_host_info() noexcept { return _host_info; }
 
     spi::PersistenceProvider& getPersistenceProvider();
@@ -153,7 +147,7 @@ public:
     explicit TestDistributorApp(NodeIndex index, vespalib::stringref configId = "");
     ~TestDistributorApp() override;
 
-    DistributorComponentRegisterImpl& getComponentRegister() {
+    DistributorComponentRegisterImpl& getComponentRegister() override {
         return _compReg;
     }
 
