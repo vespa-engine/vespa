@@ -12,5 +12,12 @@ DocumentSubDBReconfig::DocumentSubDBReconfig(std::shared_ptr<Matchers> matchers_
 
 DocumentSubDBReconfig::~DocumentSubDBReconfig() = default;
 
+void
+DocumentSubDBReconfig::complete(uint32_t docid_limit, search::SerialNum serial_num)
+{
+    (void) docid_limit;
+    (void) serial_num;
+}
+
 }
 

@@ -156,7 +156,7 @@ private:
     void applySubDBConfig(const DocumentDBConfig &newConfigSnapshot,
                           SerialNum serialNum, const ReconfigParams &params,
                           const DocumentDBReconfig& prepared_reconfig);
-    void applyConfig(DocumentDBConfigSP configSnapshot, SerialNum serialNum, std::unique_ptr<const DocumentDBReconfig> prepared_reconfig);
+    void applyConfig(DocumentDBConfigSP configSnapshot, SerialNum serialNum, std::unique_ptr<DocumentDBReconfig> prepared_reconfig);
 
     /**
      * Save initial config if we don't have any saved config snapshots.

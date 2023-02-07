@@ -45,14 +45,14 @@ FastAccessDocSubDBConfigurer::FastAccessDocSubDBConfigurer(FeedViewVarHolder &fe
 
 FastAccessDocSubDBConfigurer::~FastAccessDocSubDBConfigurer() = default;
 
-std::unique_ptr<const DocumentSubDBReconfig>
+std::unique_ptr<DocumentSubDBReconfig>
 FastAccessDocSubDBConfigurer::prepare_reconfig(const DocumentDBConfig& new_config_snapshot, const DocumentDBConfig& old_config_snapshot, const ReconfigParams& reconfig_params, std::optional<search::SerialNum> serial_num)
 {
     (void) new_config_snapshot;
     (void) old_config_snapshot;
     (void) reconfig_params;
     (void) serial_num;
-    return std::make_unique<const DocumentSubDBReconfig>(std::shared_ptr<Matchers>());
+    return std::make_unique<DocumentSubDBReconfig>(std::shared_ptr<Matchers>());
 }
 
 IReprocessingInitializer::UP

@@ -17,7 +17,7 @@ AttributeManagerReconfig::AttributeManagerReconfig(std::shared_ptr<AttributeMana
 AttributeManagerReconfig::~AttributeManagerReconfig() = default;
 
 std::shared_ptr<AttributeManager>
-AttributeManagerReconfig::create(std::optional<uint32_t> docid_limit, std::optional<search::SerialNum> serial_num)
+AttributeManagerReconfig::create(uint32_t docid_limit, search::SerialNum serial_num)
 {
     assert(_mgr);
     _mgr->addInitializedAttributes(_initializer->getInitializedAttributes(), docid_limit, serial_num);

@@ -259,6 +259,13 @@ DocumentSubDBCollection::prepare_reconfig(const DocumentDBConfig& new_config_sna
 }
 
 void
+DocumentSubDBCollection::complete_prepare_reconfig(DocumentDBReconfig& prepared_reconfig, SerialNum serial_num)
+{
+    getReadySubDB()->complete_prepare_reconfig(prepared_reconfig.ready_reconfig(), serial_num);
+    getNotReadySubDB()->complete_prepare_reconfig(prepared_reconfig.not_ready_reconfig(), serial_num);
+}
+
+void
 DocumentSubDBCollection::applyConfig(const DocumentDBConfig &newConfigSnapshot,
                                      const DocumentDBConfig &oldConfigSnapshot,
                                      SerialNum serialNum,

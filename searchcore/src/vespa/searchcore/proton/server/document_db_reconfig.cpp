@@ -5,8 +5,8 @@
 
 namespace proton {
 
-DocumentDBReconfig::DocumentDBReconfig(std::unique_ptr<const DocumentSubDBReconfig> ready_reconfig_in,
-                                       std::unique_ptr<const DocumentSubDBReconfig> not_ready_reconfig_in)
+DocumentDBReconfig::DocumentDBReconfig(std::unique_ptr<DocumentSubDBReconfig> ready_reconfig_in,
+                                       std::unique_ptr<DocumentSubDBReconfig> not_ready_reconfig_in)
     : _ready_reconfig(std::move(ready_reconfig_in)),
       _not_ready_reconfig(std::move(not_ready_reconfig_in))
 {

@@ -243,7 +243,7 @@ FastAccessDocSubDB::initViews(const DocumentDBConfig &configSnapshot)
     }
 }
 
-std::unique_ptr<const DocumentSubDBReconfig>
+std::unique_ptr<DocumentSubDBReconfig>
 FastAccessDocSubDB::prepare_reconfig(const DocumentDBConfig& new_config_snapshot, const DocumentDBConfig& old_config_snapshot, const ReconfigParams& reconfig_params, std::optional<SerialNum> serial_num)
 {
     return _configurer.prepare_reconfig(new_config_snapshot, old_config_snapshot, reconfig_params, serial_num);

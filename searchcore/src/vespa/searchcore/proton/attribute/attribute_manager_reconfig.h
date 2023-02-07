@@ -22,7 +22,7 @@ public:
     AttributeManagerReconfig(std::shared_ptr<AttributeManager> mgr,
                              std::unique_ptr<SequentialAttributesInitializer> initializer);
     ~AttributeManagerReconfig();
-    std::shared_ptr<AttributeManager> create(std::optional<uint32_t> docid_limit, std::optional<search::SerialNum> serial_num);
+    std::shared_ptr<AttributeManager> create(uint32_t docid_limit, search::SerialNum serial_num);
 };
 
 }

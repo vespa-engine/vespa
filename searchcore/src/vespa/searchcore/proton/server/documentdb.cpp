@@ -423,7 +423,7 @@ DocumentDB::applySubDBConfig(const DocumentDBConfig &newConfigSnapshot,
 }
 
 void
-DocumentDB::applyConfig(DocumentDBConfig::SP configSnapshot, SerialNum serialNum, std::unique_ptr<const DocumentDBReconfig> prepared_reconfig)
+DocumentDB::applyConfig(DocumentDBConfig::SP configSnapshot, SerialNum serialNum, std::unique_ptr<DocumentDBReconfig> prepared_reconfig)
 {
     // Always called by executor thread:
     // Called by performReconfig() by executor thread during normal
@@ -472,6 +472,7 @@ DocumentDB::applyConfig(DocumentDBConfig::SP configSnapshot, SerialNum serialNum
         bool elidedConfigSave = equalReplayConfig && tlsReplayDone;
         forceCommitAndWait(*_feedView.get(), elidedConfigSave ? serialNum : serialNum - 1, std::move(commit_result));
     }
+    _subDBs.complete_prepare_reconfig(*prepared_reconfig, serialNum);
     if (params.shouldMaintenanceControllerChange()) {
         _maintenanceController.killJobs();
     }
