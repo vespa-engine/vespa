@@ -279,8 +279,8 @@ void BucketManager::updateMinUsedBits()
 // Responsible for sending on messages that was previously queued
 void BucketManager::run(framework::ThreadHandle& thread)
 {
-    const int64_t CHECK_MINUSEDBITS_INTERVAL = 1000*30;
-    framework::MilliSecTime timeToCheckMinUsedBits(0);
+    constexpr vespalib::duration CHECK_MINUSEDBITS_INTERVAL = 30s;
+    vespalib::steady_time timeToCheckMinUsedBits = vespalib::steady_time::min();
     while (!thread.interrupted()) {
         bool didWork = false;
         BucketInfoRequestMap infoReqs;
@@ -305,10 +305,9 @@ void BucketManager::run(framework::ThreadHandle& thread)
                 thread.registerTick(framework::PROCESS_CYCLE);
             }
         }
-        if (timeToCheckMinUsedBits < _component.getClock().getTimeInMillis()) {
+        if (timeToCheckMinUsedBits < _component.getClock().getMonotonicTime()) {
             updateMinUsedBits();
-            timeToCheckMinUsedBits = _component.getClock().getTimeInMillis();
-            timeToCheckMinUsedBits += framework::MilliSecTime(CHECK_MINUSEDBITS_INTERVAL);
+            timeToCheckMinUsedBits = _component.getClock().getMonotonicTime() + CHECK_MINUSEDBITS_INTERVAL;
         }
     }
 }
