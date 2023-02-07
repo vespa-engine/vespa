@@ -12,6 +12,8 @@
 #include <vespa/log/log.h>
 LOG_SETUP(".vdslib.nodestate");
 
+using vespalib::IllegalArgumentException;
+
 namespace storage::lib {
 
 NodeState::NodeState(const NodeState &) = default;
@@ -60,27 +62,23 @@ NodeState::NodeState(vespalib::stringref serialized, const NodeType* type)
 
     vespalib::StringTokenizer st(serialized, " \t\f\r\n");
     st.removeEmptyTokens();
-    for (auto it : st)
+    for (auto token : st)
     {
-        std::string::size_type index = it.find(':');
+        std::string::size_type index = token.find(':');
         if (index == std::string::npos) {
-            throw vespalib::IllegalArgumentException(
-                    "Token " + it + " does not contain ':': " + serialized,
-                    VESPA_STRLOC);
+            throw IllegalArgumentException("Token " + token + " does not contain ':': " + serialized, VESPA_STRLOC);
         }
-        std::string key = it.substr(0, index);
-        std::string value = it.substr(index + 1);
+        std::string key = token.substr(0, index);
+        std::string value = token.substr(index + 1);
         if (!key.empty()) switch (key[0]) {
             case 'b':
                 if (_type != nullptr && *type != NodeType::STORAGE) break;
                 if (key.size() > 1) break;
-                try{
+                try {
                     setMinUsedBits(boost::lexical_cast<uint32_t>(value));
                 } catch (...) {
-                    throw vespalib::IllegalArgumentException(
-                            "Illegal used bits '" + value + "'. Used bits "
-                            "must be a positive integer ",
-                            VESPA_STRLOC);
+                    throw IllegalArgumentException("Illegal used bits '" + value + "'. Used bits must be a positive"
+                                                   " integer ", VESPA_STRLOC);
                 }
                 continue;
             case 's':
@@ -90,35 +88,29 @@ NodeState::NodeState(vespalib::stringref serialized, const NodeType* type)
             case 'c':
                 if (key.size() > 1) break;
                 if (_type != nullptr && *type != NodeType::STORAGE) break;
-                try{
+                try {
                     setCapacity(boost::lexical_cast<double>(value));
                 } catch (...) {
-                    throw vespalib::IllegalArgumentException(
-                            "Illegal capacity '" + value + "'. Capacity must be"
-                            "a positive floating point number", VESPA_STRLOC);
+                    throw IllegalArgumentException("Illegal capacity '" + value + "'. Capacity must be a positive"
+                                                   " floating point number", VESPA_STRLOC);
                 }
                 continue;
             case 'i':
                 if (key.size() > 1) break;
-                try{
+                try {
                     setInitProgress(boost::lexical_cast<double>(value));
                 } catch (...) {
-                    throw vespalib::IllegalArgumentException(
-                            "Illegal init progress '" + value + "'. Init "
-                            "progress must be a floating point number from 0.0 "
-                            "to 1.0",
-                            VESPA_STRLOC);
+                    throw IllegalArgumentException("Illegal init progress '" + value + "'. Init progress must be a"
+                                                   " floating point number from 0.0 to 1.0", VESPA_STRLOC);
                 }
                 continue;
             case 't':
                 if (key.size() > 1) break;
-                try{
+                try {
                     setStartTimestamp(vespalib::system_time(std::chrono::seconds(boost::lexical_cast<uint64_t>(value))));
                 } catch (...) {
-                    throw vespalib::IllegalArgumentException(
-                            "Illegal start timestamp '" + value + "'. Start "
-                            "timestamp must be 0 or positive long.",
-                            VESPA_STRLOC);
+                    throw IllegalArgumentException("Illegal start timestamp '" + value + "'. Start timestamp must be"
+                                                   " 0 or positive long.", VESPA_STRLOC);
                 }
                 continue;
             case 'm':
@@ -194,9 +186,7 @@ NodeState::setState(const State& state)
         if (!state.validReportedNodeState(*_type)
             && !state.validWantedNodeState(*_type))
         {
-            throw vespalib::IllegalArgumentException(
-                    state.toString(true) + " is not a legal "
-                    + _type->toString() + " state", VESPA_STRLOC);
+            throw IllegalArgumentException(state.toString(true) + " is not a legal " + _type->toString() + " state", VESPA_STRLOC);
         }
     }
     _state = &state;
@@ -206,9 +196,8 @@ void
 NodeState::setMinUsedBits(uint32_t usedBits) {
     if (usedBits < 1 || usedBits > 58) {
         std::ostringstream ost;
-        ost << "Illegal used bits '" << usedBits << "'. Minimum used bits"
-                "must be an integer > 0 and < 59.";
-        throw vespalib::IllegalArgumentException(ost.str(), VESPA_STRLOC);
+        ost << "Illegal used bits '" << usedBits << "'. Minimum used bits must be an integer > 0 and < 59.";
+        throw IllegalArgumentException(ost.str(), VESPA_STRLOC);
     }
 
     _minUsedBits = usedBits;
@@ -219,13 +208,11 @@ NodeState::setCapacity(vespalib::Double capacity)
 {
     if (capacity < 0) {
         std::ostringstream ost;
-        ost << "Illegal capacity '" << capacity << "'. Capacity "
-                "must be a positive floating point number";
-        throw vespalib::IllegalArgumentException(ost.str(), VESPA_STRLOC);
+        ost << "Illegal capacity '" << capacity << "'. Capacity must be a positive floating point number";
+        throw IllegalArgumentException(ost.str(), VESPA_STRLOC);
     }
     if (_type != nullptr && *_type != NodeType::STORAGE) {
-        throw vespalib::IllegalArgumentException(
-                "Capacity only make sense for storage nodes.", VESPA_STRLOC);
+        throw IllegalArgumentException("Capacity only make sense for storage nodes.", VESPA_STRLOC);
     }
     _capacity = capacity;
 }
@@ -237,7 +224,7 @@ NodeState::setInitProgress(vespalib::Double initProgress)
         std::ostringstream ost;
         ost << "Illegal init progress '" << initProgress << "'. Init progress "
                "must be a floating point number from 0.0 to 1.0";
-        throw vespalib::IllegalArgumentException(ost.str(), VESPA_STRLOC);
+        throw IllegalArgumentException(ost.str(), VESPA_STRLOC);
     }
     _initProgress = initProgress;
 }
@@ -249,8 +236,7 @@ NodeState::setStartTimestamp(vespalib::system_time startTimestamp)
 }
 
 void
-NodeState::print(std::ostream& out, bool verbose,
-                 const std::string& indent) const
+NodeState::print(std::ostream& out, bool verbose, const std::string& indent) const
 {
     if (!verbose) {
         vespalib::asciistream tmp;
@@ -283,8 +269,7 @@ NodeState::operator==(const NodeState& other) const
         _capacity != other._capacity ||
         _minUsedBits != other._minUsedBits ||
         _startTimestamp != other._startTimestamp ||
-        (*_state == State::INITIALIZING
-            && _initProgress != other._initProgress))
+        (*_state == State::INITIALIZING && (_initProgress != other._initProgress)))
     {
         return false;
     }
@@ -316,16 +301,11 @@ void
 NodeState::verifySupportForNodeType(const NodeType& type) const
 {
     if (_type != nullptr && *_type == type) return;
-    if (!_state->validReportedNodeState(type)
-        && !_state->validWantedNodeState(type))
-    {
-        throw vespalib::IllegalArgumentException("State " + _state->toString()
-                + " does not fit a node of type " + type.toString(),
-                VESPA_STRLOC);
+    if (!_state->validReportedNodeState(type) && !_state->validWantedNodeState(type)) {
+        throw IllegalArgumentException("State " + _state->toString() + " does not fit a node of type " + type.toString(), VESPA_STRLOC);
     }
     if (type == NodeType::DISTRIBUTOR && _capacity != 1.0) {
-        throw vespalib::IllegalArgumentException("Capacity should not be "
-                "set for a distributor node.", VESPA_STRLOC);
+        throw IllegalArgumentException("Capacity should not be set for a distributor node.", VESPA_STRLOC);
     }
 }
 
