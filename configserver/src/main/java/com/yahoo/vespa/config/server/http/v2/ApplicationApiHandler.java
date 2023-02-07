@@ -89,8 +89,8 @@ public class ApplicationApiHandler extends SessionHandler {
                 PartItem appPackagePart = parts.get(MULTIPART_APPLICATION_PACKAGE);
                 compressedStream = createFromCompressedStream(appPackagePart.data(), appPackagePart.contentType(), maxApplicationPackageSize);
             } catch (IOException e) {
-                log.log(Level.WARNING, "Unable to parse multipart in deploy", e);
-                throw new BadRequestException("Request contains invalid data");
+                log.log(Level.WARNING, "Unable to parse multipart in deploy from tenant '" + tenantName.value() + "'", e);
+                throw new BadRequestException("Deploy request from '" + tenantName.value() + "' contains invalid data: " + e.getMessage());
             }
         } else {
             prepareParams = PrepareParams.fromHttpRequest(request, tenantName, zookeeperBarrierTimeout);
