@@ -72,9 +72,6 @@ class CommunicationManager final
       public MessageDispatcher
 {
 private:
-    CommunicationManager(const CommunicationManager&);
-    CommunicationManager& operator=(const CommunicationManager&);
-
     StorageComponent _component;
     CommunicationManagerMetrics _metrics;
 
@@ -85,7 +82,7 @@ private:
     Queue _eventQueue;
     // XXX: Should perhaps use a configsubscriber and poll from StorageComponent ?
     std::unique_ptr<config::ConfigFetcher> _configFetcher;
-    using EarlierProtocol = std::pair<framework::SecondTime, mbus::IProtocol::SP>;
+    using EarlierProtocol = std::pair<vespalib::steady_time , mbus::IProtocol::SP>;
     using EarlierProtocols = std::vector<EarlierProtocol>;
     std::mutex       _earlierGenerationsLock;
     EarlierProtocols _earlierGenerations;
@@ -126,6 +123,8 @@ private:
     friend struct CommunicationManagerTest;
 
 public:
+    CommunicationManager(const CommunicationManager&) = delete;
+    CommunicationManager& operator=(const CommunicationManager&) = delete;
     CommunicationManager(StorageComponentRegister& compReg,
                          const config::ConfigUri & configUri);
     ~CommunicationManager() override;
