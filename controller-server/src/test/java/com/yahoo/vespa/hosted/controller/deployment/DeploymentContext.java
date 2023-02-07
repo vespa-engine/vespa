@@ -15,6 +15,7 @@ import com.yahoo.security.KeyUtils;
 import com.yahoo.security.SignatureAlgorithm;
 import com.yahoo.security.X509CertificateBuilder;
 import com.yahoo.vespa.hosted.controller.Application;
+import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
@@ -52,6 +53,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
+import java.util.OptionalLong;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Supplier;
@@ -196,8 +198,9 @@ public class DeploymentContext {
         Application application = application();
         assertTrue(application.revisions().last().isPresent(), "Application package submitted");
         assertFalse(application.instances().values().stream()
-                                                                     .anyMatch(instance -> instance.deployments().values().stream()
-                                                                                                   .anyMatch(deployment -> deployment.revision().equals(lastSubmission))), "Submission is not already deployed");
+                               .anyMatch(instance -> instance.deployments().values().stream()
+                                                     .anyMatch(deployment -> deployment.revision().equals(lastSubmission))),
+                    "Submission is not already deployed");
         completeRollout(application.deploymentSpec().instances().size() > 1);
         for (var instance : application().instances().values()) {
             assertFalse(instance.change().hasTargets());

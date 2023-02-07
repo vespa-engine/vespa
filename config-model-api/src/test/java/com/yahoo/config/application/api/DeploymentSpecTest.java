@@ -106,16 +106,16 @@ public class DeploymentSpecTest {
 
     @Test
     public void minimalProductionSpec() {
-        StringReader r = new StringReader(
-                "<deployment version='1.0'>" +
-                "   <instance id='default'>" +
-                "      <prod>" +
-                "         <region active='false'>us-east1</region>" +
-                "         <region active='true'>us-west1</region>" +
-                "      </prod>" +
-                "   </instance>" +
-                "</deployment>"
-        );
+        StringReader r = new StringReader( """
+                <deployment version='1.0'>
+                   <instance id='default'>
+                      <prod>
+                         <region active='false'>us-east1</region>
+                         <region active='true'>us-west1</region>
+                      </prod>
+                   </instance>
+                </deployment>
+            """);
 
         DeploymentSpec spec = DeploymentSpec.fromXml(r);
         assertEquals(1, spec.steps().size());

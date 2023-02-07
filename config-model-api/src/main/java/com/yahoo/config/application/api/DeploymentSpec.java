@@ -18,9 +18,7 @@ import java.time.Duration;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -47,6 +45,7 @@ public class DeploymentSpec {
                                                                   Optional.empty(),
                                                                   Optional.empty(),
                                                                   List.of(),
+                                                                  Bcp.empty(),
                                                                   "<deployment version='1.0'/>",
                                                                   List.of());
 
@@ -58,6 +57,7 @@ public class DeploymentSpec {
     private final Optional<AthenzService> athenzService;
     private final Optional<CloudAccount> cloudAccount;
     private final List<Endpoint> endpoints;
+    private final Bcp bcp;
     private final List<DeprecatedElement> deprecatedElements;
 
     private final String xmlForm;
@@ -68,6 +68,7 @@ public class DeploymentSpec {
                           Optional<AthenzService> athenzService,
                           Optional<CloudAccount> cloudAccount,
                           List<Endpoint> endpoints,
+                          Bcp bcp,
                           String xmlForm,
                           List<DeprecatedElement> deprecatedElements) {
         this.steps = List.copyOf(Objects.requireNonNull(steps));
@@ -77,11 +78,13 @@ public class DeploymentSpec {
         this.cloudAccount = Objects.requireNonNull(cloudAccount);
         this.xmlForm = Objects.requireNonNull(xmlForm);
         this.endpoints = List.copyOf(Objects.requireNonNull(endpoints));
+        this.bcp = Objects.requireNonNull(bcp);
         this.deprecatedElements = List.copyOf(Objects.requireNonNull(deprecatedElements));
         validateTotalDelay(steps);
         validateUpgradePoliciesOfIncreasingConservativeness(steps);
         validateAthenz();
         validateApplicationEndpoints();
+        validateBcp();
     }
 
     /** Throw an IllegalArgumentException if the total delay exceeds 24 hours */
@@ -158,13 +161,16 @@ public class DeploymentSpec {
         }
     }
 
+    private void validateBcp() {
+        for (var instance : instances())
+            instance.validateBcp(instance.bcp().orElse(bcp()));
+    }
+
     /** Returns the major version this application is pinned to, or empty (default) to allow all major versions */
     public Optional<Integer> majorVersion() { return majorVersion; }
 
     /** Returns the deployment steps of this in the order they will be performed */
-    public List<Step> steps() {
-        return steps;
-    }
+    public List<Step> steps() { return steps; }
 
     /** Returns the Athenz domain set on the root tag, if any */
     public Optional<AthenzDomain> athenzDomain() { return athenzDomain; }
@@ -198,6 +204,9 @@ public class DeploymentSpec {
         return instance(instance).flatMap(spec -> spec.zoneEndpoint(zone, cluster))
                                  .orElse(ZoneEndpoint.defaultEndpoint);
     }
+
+    /** Returns the default BCP spec for instances, or Bcp.empty() if none are defined. */
+    public Bcp bcp() { return bcp; }
 
     /** Returns the XML form of this spec, or null if it was not created by fromXml, nor is empty */
     public String xmlForm() { return xmlForm; }

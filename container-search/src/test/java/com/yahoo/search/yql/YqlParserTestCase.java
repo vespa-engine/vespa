@@ -241,6 +241,11 @@ public class YqlParserTestCase {
     }
 
     @Test
+    void testNonEquality() {
+        assertParse("select foo from bar where !(price = 500)", "-price:500");
+    }
+
+    @Test
     void testNegativeLessThan() {
         assertParse("select foo from bar where price < -500", "price:<-500");
         assertParse("select foo from bar where -500 < price", "price:>-500");
