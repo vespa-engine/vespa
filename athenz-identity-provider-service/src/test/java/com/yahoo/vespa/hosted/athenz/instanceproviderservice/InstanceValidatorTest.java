@@ -222,7 +222,7 @@ public class InstanceValidatorTest {
         var signature = new IdentityDocumentSigner()
                 .generateSignature(
                         vespaUniqueInstanceId, domainService, "localhost", "localhost", clock, Set.of(),
-                        IdentityType.NODE, clusterType, keyProvider.getPrivateKey(0));
+                        IdentityType.NODE, keyProvider.getPrivateKey(0));
         SignedIdentityDocument signedIdentityDocument = new SignedIdentityDocument(
                 signature, 0, vespaUniqueInstanceId, domainService, 0, "localhost", "localhost",
                 clock, Collections.emptySet(), IdentityType.NODE, clusterType);

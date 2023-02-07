@@ -17,6 +17,7 @@ import java.util.HashSet;
 
 import static com.yahoo.vespa.athenz.identityprovider.api.IdentityType.TENANT;
 import static com.yahoo.vespa.athenz.identityprovider.api.SignedIdentityDocument.DEFAULT_DOCUMENT_VERSION;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -41,7 +42,7 @@ public class IdentityDocumentSignerTest {
         IdentityDocumentSigner signer = new IdentityDocumentSigner();
         String signature =
                 signer.generateSignature(id, providerService, configserverHostname, instanceHostname, createdAt,
-                                         ipAddresses, identityType, clusterType, keyPair.getPrivate());
+                                         ipAddresses, identityType, keyPair.getPrivate());
 
         SignedIdentityDocument signedIdentityDocument = new SignedIdentityDocument(
                 signature, KEY_VERSION, id, providerService, DEFAULT_DOCUMENT_VERSION, configserverHostname,
@@ -51,17 +52,21 @@ public class IdentityDocumentSignerTest {
     }
 
     @Test
-    void handles_missing_cluster_type() {
+    void ignores_cluster_type() {
         IdentityDocumentSigner signer = new IdentityDocumentSigner();
         String signature =
                 signer.generateSignature(id, providerService, configserverHostname, instanceHostname, createdAt,
-                                         ipAddresses, identityType, /*clusterType*/null, keyPair.getPrivate());
+                                         ipAddresses, identityType, keyPair.getPrivate());
 
-        SignedIdentityDocument signedIdentityDocument = new SignedIdentityDocument(
+        var docWithoutClusterType = new SignedIdentityDocument(
                 signature, KEY_VERSION, id, providerService, DEFAULT_DOCUMENT_VERSION, configserverHostname,
-                instanceHostname, createdAt, ipAddresses, identityType, /*clusterType*/null);
+                instanceHostname, createdAt, ipAddresses, identityType, null);
+        var docWithClusterType = new SignedIdentityDocument(
+                signature, KEY_VERSION, id, providerService, DEFAULT_DOCUMENT_VERSION, configserverHostname,
+                instanceHostname, createdAt, ipAddresses, identityType, clusterType);
 
-        assertTrue(signer.hasValidSignature(signedIdentityDocument, keyPair.getPublic()));
+        assertTrue(signer.hasValidSignature(docWithoutClusterType, keyPair.getPublic()));
+        assertEquals(docWithClusterType.signature(), docWithoutClusterType.signature());
     }
 
 }
