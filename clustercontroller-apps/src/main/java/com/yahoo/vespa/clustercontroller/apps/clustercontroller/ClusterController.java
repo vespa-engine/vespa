@@ -1,8 +1,8 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.apps.clustercontroller;
 
-import com.yahoo.component.annotation.Inject;
 import com.yahoo.component.AbstractComponent;
+import com.yahoo.component.annotation.Inject;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.vespa.clustercontroller.apputil.communication.http.JDiscMetricWrapper;
 import com.yahoo.vespa.clustercontroller.core.FleetController;
@@ -10,13 +10,10 @@ import com.yahoo.vespa.clustercontroller.core.FleetControllerOptions;
 import com.yahoo.vespa.clustercontroller.core.RemoteClusterControllerTaskScheduler;
 import com.yahoo.vespa.clustercontroller.core.restapiv2.ClusterControllerStateRestAPI;
 import com.yahoo.vespa.clustercontroller.core.status.StatusHandler;
-import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.zookeeper.VespaZooKeeperServer;
-
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.TreeMap;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
@@ -49,7 +46,6 @@ public class ClusterController extends AbstractComponent
     public void setOptions(FleetControllerOptions options, Metric metricImpl) throws Exception {
         referents.incrementAndGet();
         metricWrapper.updateMetricImplementation(metricImpl);
-        verifyThatZooKeeperWorks(options);
         synchronized (controllers) {
             FleetController controller = controllers.get(options.clusterName());
             if (controller == null) {
@@ -99,8 +95,6 @@ public class ClusterController extends AbstractComponent
         }
     }
 
-    FleetController getController(String name) { return controllers.get(name); }
-
     @Override
     public StatusHandler.ContainerStatusPageServer get(String cluster) {
         return status.get(cluster);
@@ -113,18 +107,6 @@ public class ClusterController extends AbstractComponent
 
     void shutdownController(FleetController controller) throws Exception {
         controller.shutdown();
-    }
-
-    /**
-     * Block until we are connected to zookeeper server
-     */
-    private void verifyThatZooKeeperWorks(FleetControllerOptions options) throws Exception {
-        if (options.zooKeeperServerAddress() != null && !"".equals(options.zooKeeperServerAddress())) {
-            try (Curator curator = Curator.create(options.zooKeeperServerAddress())) {
-                if ( ! curator.framework().blockUntilConnected(600, TimeUnit.SECONDS))
-                    com.yahoo.protect.Process.logAndDie("Failed to connect to ZK, dying and restarting container");
-            }
-        }
     }
 
 }

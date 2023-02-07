@@ -4,7 +4,9 @@ package com.yahoo.vespa.zookeeper;
 import java.nio.file.Path;
 
 /**
- * Interface for a component that starts/stops a ZooKeeper server.
+ * Interface for a component that starts/stops a ZooKeeper server. Implementations should make sure
+ * that the server is up and accepts connection (typically by returning from constructor only after
+ * writing a node to ZooKeeper successfully).
  *
  * @author hmusum
  */

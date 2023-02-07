@@ -9,6 +9,9 @@ import java.nio.file.Path;
 import java.time.Duration;
 
 /**
+ * ZooKeeper server. Guarantees that the server is up by writing a node to ZooKeeper successfully before
+ * returning from constructor.
+ *
  * @author Ulf Lilleengen
  * @author Harald Musum
  */

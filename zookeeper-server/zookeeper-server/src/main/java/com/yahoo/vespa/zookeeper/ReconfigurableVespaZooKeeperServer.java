@@ -12,6 +12,8 @@ import java.time.Duration;
  * Starts or reconfigures zookeeper cluster.
  * The QuorumPeer conditionally created here is owned by the Reconfigurer;
  * when it already has a peer, that peer is used here in case start or shutdown is required.
+ * Guarantees that server is up by writing a node to ZooKeeper successfully before
+ * returning from constructor.
  *
  * @author hmusum
  */
