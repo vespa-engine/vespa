@@ -9,6 +9,7 @@ import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.TenantName;
+import com.yahoo.config.provision.WireguardKey;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.ObjectTraverser;
 import com.yahoo.slime.SlimeUtils;
@@ -240,6 +241,8 @@ public class NodePatcher {
                 return value.type() == Type.NIX ? node.withoutSwitchHostname() : node.withSwitchHostname(value.asString());
             case "trustStore":
                 return nodeWithTrustStore(node, value);
+            case "wireguardPubkey":
+                return node.withWireguardPubkey(SlimeUtils.optionalString(value).map(WireguardKey::new).orElse(null));
             default :
                 throw new IllegalArgumentException("Could not apply field '" + name + "' on a node: No such modifiable field");
         }

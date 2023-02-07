@@ -454,6 +454,13 @@ public final class Node implements Nodelike {
                         Optional.ofNullable(exclusiveTo), switchHostname, trustStoreItems, cloudAccount, wireguardPubKey);
     }
 
+    public Node withWireguardPubkey(WireguardKey wireguardPubkey) {
+        return new Node(id, ipConfig, hostname, parentHostname, flavor, status, state,
+                allocation, history, type, reports, modelName, reservedTo, exclusiveToApplicationId,
+                exclusiveToClusterType, switchHostname, trustStoreItems, cloudAccount,
+                Optional.ofNullable(wireguardPubkey));
+    }
+
     /** Returns a copy of this node with switch hostname set to given value */
     public Node withSwitchHostname(String switchHostname) {
         return new Node(id, ipConfig, hostname, parentHostname, flavor, status, state,
