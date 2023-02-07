@@ -69,7 +69,7 @@ public class IdentityDocumentGenerator {
             var clusterType = ClusterType.from(allocation.membership().cluster().type().name());
             String signature = signer.generateSignature(
                     providerUniqueId, providerService, configServerHostname,
-                    node.hostname(), createdAt, ips, identityType, clusterType, privateKey);
+                    node.hostname(), createdAt, ips, identityType, privateKey);
             return new SignedIdentityDocument(
                     signature, athenzProviderServiceConfig.secretVersion(), providerUniqueId, providerService,
                     SignedIdentityDocument.DEFAULT_DOCUMENT_VERSION, configServerHostname, node.hostname(),
