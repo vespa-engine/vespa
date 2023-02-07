@@ -9,21 +9,23 @@
 #include <vespa/metrics/metricset.h>
 #include <vespa/metrics/metrictimer.h>
 #include <vespa/metrics/valuemetric.h>
-#include <vespa/storageapi/messageapi/storagemessage.h>
 #include <vespa/vdslib/state/cluster_state_bundle.h>
 #include <vespa/vdslib/state/clusterstate.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/string_escape.h>
 #include <vespa/vespalib/util/stringfmt.h>
-
 #include <fstream>
-#include <unistd.h>
+#include <ranges>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".state.manager");
 
 namespace storage {
+
+namespace {
+    constexpr vespalib::duration MAX_TIMEOUT = 600s;
+}
 
 struct StateManager::StateManagerMetrics : metrics::MetricSet {
     metrics::DoubleAverageMetric invoke_state_listeners_latency;
@@ -71,7 +73,7 @@ StateManager::StateManager(StorageComponentRegister& compReg,
       _requested_almost_immediate_node_state_replies(false)
 {
     _nodeState->setMinUsedBits(58);
-    _nodeState->setStartTimestamp(_component.getClock().getTimeInSeconds().getTime());
+    _nodeState->setStartTimestamp(_component.getClock().getSystemTime());
     _component.registerStatusPage(*this);
     _component.registerMetric(*_metrics);
 }
@@ -135,9 +137,9 @@ StateManager::reportHtmlStatus(std::ostream& out,
             << "<h1>System state history</h1>\n"
             << "<table border=\"1\"><tr>"
             << "<th>Received at time</th><th>State</th></tr>\n";
-        for (auto it = _systemStateHistory.rbegin(); it != _systemStateHistory.rend(); ++it) {
-            out << "<tr><td>" << it->first << "</td><td>"
-                << xml_content_escaped(it->second->getBaselineClusterState()->toString()) << "</td></tr>\n";
+        for (const auto & it : std::ranges::reverse_view(_systemStateHistory)) {
+            out << "<tr><td>" << vespalib::to_string(vespalib::to_utc(it.first)) << "</td><td>"
+                << xml_content_escaped(it.second->getBaselineClusterState()->toString()) << "</td></tr>\n";
         }
         out << "</table>\n";
     }
@@ -146,7 +148,7 @@ StateManager::reportHtmlStatus(std::ostream& out,
 lib::Node
 StateManager::thisNode() const
 {
-    return lib::Node(_component.getNodeType(), _component.getIndex());
+    return { _component.getNodeType(), _component.getIndex() };
 }
 
 lib::NodeState::CSP
@@ -298,7 +300,7 @@ StateManager::enableNextClusterState()
         _reported_host_info_cluster_state_version = _systemState->getVersion();
     } // else: reported version updated upon explicit activation edge
     _nextSystemState.reset();
-    _systemStateHistory.emplace_back(_component.getClock().getTimeInMillis(), _systemState);
+    _systemStateHistory.emplace_back(_component.getClock().getMonotonicTime(), _systemState);
 }
 
 namespace {
@@ -392,36 +394,28 @@ StateManager::onGetNodeState(const api::GetNodeStateCommand::SP& cmd)
 {
     bool sentReply = false;
     if (cmd->getSourceIndex() != 0xffff) {
-        sentReply = sendGetNodeStateReplies(framework::MilliSecTime(0),
-                                            cmd->getSourceIndex());
+        sentReply = sendGetNodeStateReplies(cmd->getSourceIndex());
     }
     std::shared_ptr<api::GetNodeStateReply> reply;
     {
         std::unique_lock guard(_stateLock);
         const bool is_up_to_date = (_controllers_observed_explicit_node_state.find(cmd->getSourceIndex())
                                     != _controllers_observed_explicit_node_state.end());
-        if (cmd->getExpectedState() != nullptr
+        if ((cmd->getExpectedState() != nullptr)
             && (*cmd->getExpectedState() == *_nodeState || sentReply)
             && is_up_to_date)
         {
-            int64_t msTimeout = vespalib::count_ms(cmd->getTimeout());
-            LOG(debug, "Received get node state request with timeout of "
-                       "%" PRId64 " milliseconds. Scheduling to be answered in "
-                       "%" PRId64 " milliseconds unless a node state change "
-                       "happens before that time.",
-                msTimeout, msTimeout * 800 / 1000);
-            TimeStateCmdPair pair(
-                    _component.getClock().getTimeInMillis()
-                    + framework::MilliSecTime(msTimeout * 800 / 1000),
-                    cmd);
-            _queuedStateRequests.emplace_back(std::move(pair));
+            vespalib::duration timeout = cmd->getTimeout();
+            if (timeout == vespalib::duration::max()) timeout = MAX_TIMEOUT;
+
+            LOG(debug, "Received get node state request with timeout of %f seconds. Scheduling to be answered in "
+                       "%f seconds unless a node state change happens before that time.",
+                vespalib::to_s(timeout), vespalib::to_s(timeout)*0.8);
+            _queuedStateRequests.emplace_back(_component.getClock().getMonotonicTime() + timeout, cmd);
         } else {
-            LOG(debug, "Answered get node state request right away since it "
-                       "thought we were in node state %s, while our actual "
-                       "node state is currently %s and we didn't just reply to "
-                       "existing request.",
-                cmd->getExpectedState() == nullptr ? "unknown"
-                        : cmd->getExpectedState()->toString().c_str(),
+            LOG(debug, "Answered get node state request right away since it thought we were in node state %s, while "
+                       "our actual node state is currently %s and we didn't just reply to existing request.",
+                cmd->getExpectedState() == nullptr ? "unknown": cmd->getExpectedState()->toString().c_str(),
                 _nodeState->toString().c_str());
             reply = std::make_shared<api::GetNodeStateReply>(*cmd, *_nodeState);
             mark_controller_as_having_observed_explicit_node_state(guard, cmd->getSourceIndex());
@@ -497,13 +491,26 @@ StateManager::tick() {
     bool almost_immediate_replies = _requested_almost_immediate_node_state_replies.load(std::memory_order_relaxed);
     if (almost_immediate_replies) {
         _requested_almost_immediate_node_state_replies.store(false, std::memory_order_relaxed);
+        sendGetNodeStateReplies();
+    } else {
+        sendGetNodeStateReplies(_component.getClock().getMonotonicTime());
     }
-    framework::MilliSecTime time(almost_immediate_replies ? framework::MilliSecTime(0) : _component.getClock().getTimeInMillis());
-    sendGetNodeStateReplies(time);
 }
 
 bool
-StateManager::sendGetNodeStateReplies(framework::MilliSecTime olderThanTime, uint16_t node)
+StateManager::sendGetNodeStateReplies() {
+    return sendGetNodeStateReplies(0xffff);
+}
+bool
+StateManager::sendGetNodeStateReplies(vespalib::steady_time olderThanTime) {
+    return sendGetNodeStateReplies(olderThanTime, 0xffff);
+}
+bool
+StateManager::sendGetNodeStateReplies(uint16_t nodeIndex) {
+    return sendGetNodeStateReplies(vespalib::steady_time::max(), nodeIndex);
+}
+bool
+StateManager::sendGetNodeStateReplies(vespalib::steady_time olderThanTime, uint16_t node)
 {
     std::vector<std::shared_ptr<api::GetNodeStateReply>> replies;
     {
@@ -511,9 +518,8 @@ StateManager::sendGetNodeStateReplies(framework::MilliSecTime olderThanTime, uin
         for (auto it = _queuedStateRequests.begin(); it != _queuedStateRequests.end();) {
             if (node != 0xffff && node != it->second->getSourceIndex()) {
                 ++it;
-            } else if (!olderThanTime.isSet() || it->first < olderThanTime) {
-                LOG(debug, "Sending reply to msg with id %" PRIu64,
-                    it->second->getMsgId());
+            } else if (it->first < olderThanTime) {
+                LOG(debug, "Sending reply to msg with id %" PRIu64, it->second->getMsgId());
 
                 replies.emplace_back(std::make_shared<api::GetNodeStateReply>(*it->second, *_nodeState));
                 auto eraseIt = it++;

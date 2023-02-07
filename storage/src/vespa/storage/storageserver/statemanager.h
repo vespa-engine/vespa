@@ -42,8 +42,8 @@ class StateManager : public NodeStateUpdater,
                      private vespalib::JsonStreamTypes
 {
     using ClusterStateBundle = lib::ClusterStateBundle;
-    using TimeStateCmdPair   = std::pair<framework::MilliSecTime, api::GetNodeStateCommand::SP>;
-    using TimeSysStatePair   = std::pair<framework::MilliSecTime, std::shared_ptr<const ClusterStateBundle>>;
+    using TimeStateCmdPair   = std::pair<vespalib::steady_time, api::GetNodeStateCommand::SP>;
+    using TimeSysStatePair   = std::pair<vespalib::steady_time, std::shared_ptr<const ClusterStateBundle>>;
 
     struct StateManagerMetrics;
 
@@ -108,9 +108,10 @@ private:
     friend struct StateManagerTest;
 
     void notifyStateListeners();
-    bool sendGetNodeStateReplies(
-            framework::MilliSecTime olderThanTime = framework::MilliSecTime(0),
-            uint16_t index = 0xffff);
+    bool sendGetNodeStateReplies();
+    bool sendGetNodeStateReplies(vespalib::steady_time olderThanTime);
+    bool sendGetNodeStateReplies(uint16_t nodeIndex);
+    bool sendGetNodeStateReplies(vespalib::steady_time olderThanTime, uint16_t nodeIndex);
     void mark_controller_as_having_observed_explicit_node_state(const std::unique_lock<std::mutex> &, uint16_t controller_index);
 
     lib::Node thisNode() const;
