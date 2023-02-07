@@ -22,6 +22,10 @@ using lib::Node;
 using lib::NodeType;
 using lib::NodeState;
 
+namespace {
+    constexpr vespalib::duration MAX_TIMEOUT = 3600s;
+}
+
 PendingClusterState::PendingClusterState(
         const framework::Clock& clock,
         const ClusterInformation::CSP& clusterInfo,
@@ -160,10 +164,8 @@ PendingClusterState::iAmDown() const
 void
 PendingClusterState::requestNodes()
 {
-    LOG(debug,
-        "New system state: Old state was %s, new state is %s",
-        getPrevClusterStateBundleString().c_str(),
-        getNewClusterStateBundleString().c_str());
+    LOG(debug, "New system state: Old state was %s, new state is %s",
+        getPrevClusterStateBundleString().c_str(), getNewClusterStateBundleString().c_str());
 
     requestBucketInfoFromStorageNodesWithChangedState();
 }
@@ -188,10 +190,8 @@ PendingClusterState::requestNode(BucketSpaceAndNode bucketSpaceAndNode)
     vespalib::string distributionHash = distribution.getNodeGraph().getDistributionConfigHash();
 
     LOG(debug,
-        "Requesting bucket info for bucket space %" PRIu64 " node %d with cluster state '%s' "
-        "and distribution hash '%s'",
-        bucketSpaceAndNode.bucketSpace.getId(),
-        bucketSpaceAndNode.node,
+        "Requesting bucket info for bucket space %" PRIu64 " node %d with cluster state '%s' and distribution hash '%s'",
+        bucketSpaceAndNode.bucketSpace.getId(), bucketSpaceAndNode.node,
         _newClusterStateBundle.getDerivedClusterState(bucketSpaceAndNode.bucketSpace)->toString().c_str(),
         distributionHash.c_str());
 
@@ -202,7 +202,7 @@ PendingClusterState::requestNode(BucketSpaceAndNode bucketSpaceAndNode)
                     distributionHash);
 
     cmd->setPriority(api::StorageMessage::HIGH);
-    cmd->setTimeout(vespalib::duration::max());
+    cmd->setTimeout(MAX_TIMEOUT);
 
     _sentMessages.emplace(cmd->getMsgId(), bucketSpaceAndNode);
 

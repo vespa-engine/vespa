@@ -14,7 +14,7 @@ public:
                    uint32_t maxBits, uint32_t splitCount, uint32_t splitSize);
     SplitOperation(const SplitOperation&) = delete;
     SplitOperation& operator=(const SplitOperation&) = delete;
-    ~SplitOperation();
+    ~SplitOperation() override;
 
     void onStart(DistributorStripeMessageSender& sender) override;
     void onReceive(DistributorStripeMessageSender& sender, const std::shared_ptr<api::StorageReply>&) override;

@@ -93,6 +93,7 @@ private:
                            const std::shared_ptr<api::StorageReply> & msg) = 0;
 
 protected:
+    static constexpr vespalib::duration MAX_TIMEOUT = 3600s;
     vespalib::system_time _startTime;
 };
 
