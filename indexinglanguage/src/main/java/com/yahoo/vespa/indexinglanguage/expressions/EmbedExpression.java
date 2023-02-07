@@ -66,6 +66,7 @@ public class EmbedExpression extends Expression  {
 
     @Override
     protected void doExecute(ExecutionContext context) {
+        if (context.getValue() == null) return;
         Tensor output;
         if (context.getValue().getDataType() == DataType.STRING) {
             output = embedSingleValue(context);

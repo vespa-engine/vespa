@@ -189,6 +189,8 @@ public class ScriptTestCase {
                            "input text", "[105, 110, 112, 117]");
         testEmbedStatement("input myText | embed 'emb1' | attribute 'myTensor'", embedder,
                            "input text", "[105, 110, 112, 117]");
+        testEmbedStatement("input myText | embed 'emb1' | attribute 'myTensor'", embedder,
+                           null, null);
 
         Map<String, Embedder> embedders = Map.of(
                 "emb1", new MockEmbedder("myDocument.myTensor"),
@@ -200,9 +202,9 @@ public class ScriptTestCase {
                            "my input", "[110.0, 122.0, 33.0, 106.0]");
 
         assertThrows(() -> testEmbedStatement("input myText | embed | attribute 'myTensor'", embedders, "input text", "[105, 110, 112, 117]"),
-                "Multiple embedders are provided but no embedder id is given. Valid embedders are emb1,emb2");
+                     "Multiple embedders are provided but no embedder id is given. Valid embedders are emb1,emb2");
         assertThrows(() -> testEmbedStatement("input myText | embed emb3 | attribute 'myTensor'", embedders, "input text", "[105, 110, 112, 117]"),
-                "Can't find embedder 'emb3'. Valid embedders are emb1,emb2");
+                     "Can't find embedder 'emb3'. Valid embedders are emb1,emb2");
     }
 
     private void testEmbedStatement(String expressionString, Map<String, Embedder> embedders, String input, String expected) {
@@ -224,9 +226,14 @@ public class ScriptTestCase {
 
             ExecutionContext context = new ExecutionContext(adapter);
             expression.execute(context);
-            assertTrue(adapter.values.containsKey("myTensor"));
-            assertEquals(Tensor.from(tensorType, expected),
-                         ((TensorFieldValue) adapter.values.get("myTensor")).getTensor().get());
+            if (input == null) {
+                assertFalse(adapter.values.containsKey("myTensor"));
+            }
+            else {
+                assertTrue(adapter.values.containsKey("myTensor"));
+                assertEquals(Tensor.from(tensorType, expected),
+                             ((TensorFieldValue) adapter.values.get("myTensor")).getTensor().get());
+            }
         }
         catch (ParseException e) {
             throw new IllegalArgumentException(e);
