@@ -62,8 +62,7 @@ NodeState::NodeState(vespalib::stringref serialized, const NodeType* type)
 
     vespalib::StringTokenizer st(serialized, " \t\f\r\n");
     st.removeEmptyTokens();
-    for (auto token : st)
-    {
+    for (auto token : st) {
         std::string::size_type index = token.find(':');
         if (index == std::string::npos) {
             throw IllegalArgumentException("Token " + token + " does not contain ':': " + serialized, VESPA_STRLOC);

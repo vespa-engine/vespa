@@ -23,6 +23,10 @@ LOG_SETUP(".state.manager");
 
 namespace storage {
 
+namespace {
+    constexpr vespalib::duration MAX_TIMEOUT = 600s;
+}
+
 struct StateManager::StateManagerMetrics : metrics::MetricSet {
     metrics::DoubleAverageMetric invoke_state_listeners_latency;
 
@@ -402,7 +406,7 @@ StateManager::onGetNodeState(const api::GetNodeStateCommand::SP& cmd)
             && is_up_to_date)
         {
             vespalib::duration timeout = cmd->getTimeout();
-            if (timeout == vespalib::duration::max()) timeout = 24h; //balder: Dirty temporary hack
+            if (timeout == vespalib::duration::max()) timeout = MAX_TIMEOUT;
 
             LOG(debug, "Received get node state request with timeout of %f seconds. Scheduling to be answered in "
                        "%f seconds unless a node state change happens before that time.",
