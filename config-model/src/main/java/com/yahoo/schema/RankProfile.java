@@ -1020,6 +1020,11 @@ public class RankProfile implements Cloneable {
             recorder.transform(globalPhaseRanking.function().getBody(), context);
             for (String input : needInputs) {
                 System.err.println("need input => " + input);
+                try {
+                    addMatchFeatures(new FeatureList(input));
+                } catch (com.yahoo.searchlib.rankingexpression.parser.ParseException e) {
+                    throw new IllegalArgumentException("invalid input in global-phase expression: "+input);
+                }
             }
         }
     }
