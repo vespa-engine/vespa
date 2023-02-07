@@ -5,6 +5,7 @@
 #include <cinttypes>
 #include <thread>
 #include <atomic>
+#include <iostream>
 
 using namespace vespalib;
 
@@ -81,6 +82,27 @@ TEST(TimeTest, timeout_is_relative_to_frequency) {
     EXPECT_EQ(20ms, adjustTimeoutByHz(20ms, 1000));
     EXPECT_EQ(200ms, adjustTimeoutByHz(20ms, 100));
     EXPECT_EQ(2000ms, adjustTimeoutByHz(20ms, 10));
+}
+
+TEST(TimeTest, print_limits) {
+    std::cerr << "steady_time::min().time_since_epoch(): " << steady_time::min().time_since_epoch() << "\n";
+    std::cerr << "steady_time::max().time_since_epoch(): " << steady_time::max().time_since_epoch() << "\n";
+    std::cerr << "duration::min(): " << duration::min() << "\n";
+    std::cerr << "duration::max(): " << duration::max() << "\n";
+}
+
+TEST(TimeTest, saturated_add_without_overflow) {
+    steady_time time_10ms(10ms);
+    steady_time time_20ms(20ms);
+    EXPECT_EQ(saturated_add(time_10ms, 10ms), time_20ms);
+    EXPECT_EQ(saturated_add(time_20ms, -10ms), time_10ms);
+}
+
+TEST(TimeTest, saturated_add_with_overflow) {
+    steady_time future(1000000000s);
+    steady_time  past(-1000000000s);
+    EXPECT_EQ(saturated_add(future, duration::max()), steady_time::max());
+    EXPECT_EQ(saturated_add(past, duration::min()), steady_time::min());
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()
