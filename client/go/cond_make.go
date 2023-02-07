@@ -196,7 +196,7 @@ func releaseToHomebrew(target string) error {
 	defer checkoutRef(prevBranch)
 	_, stderr, err := runCmd("make", "--", target)
 	if err != nil {
-		if strings.Contains(stderr, "Error: These pull requests may be duplicates:") {
+		if strings.Contains(stderr, "Duplicate PRs should not be opened") {
 			return nil // fine, pull request already created
 		}
 	}
