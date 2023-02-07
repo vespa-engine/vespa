@@ -23,7 +23,7 @@ using lib::NodeType;
 using lib::NodeState;
 
 namespace {
-    constexpr vespalib::duration MAX_TIMEOUT=3600s;
+    constexpr vespalib::duration MAX_TIMEOUT = 3600s;
 }
 
 PendingClusterState::PendingClusterState(

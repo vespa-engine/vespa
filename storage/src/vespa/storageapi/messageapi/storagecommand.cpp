@@ -7,7 +7,7 @@
 namespace storage::api {
 
 namespace {
-    constexpr vespalib::duration MAX_TIMEOUT=3600s;
+    constexpr vespalib::duration MAX_TIMEOUT = 3600s;
 }
 
 StorageCommand::StorageCommand(const StorageCommand& other)
@@ -19,8 +19,6 @@ StorageCommand::StorageCommand(const StorageCommand& other)
 
 StorageCommand::StorageCommand(const MessageType& type, Priority p)
     : StorageMessage(type, generateMsgId()),
-        // Default timeout one hour. Set from mbus message. Some internal
-        // use want unlimited timeout, (such as readbucketinfo, repair bucket, etc.)
       _timeout(MAX_TIMEOUT),
       _sourceIndex(0xFFFF)
 {
