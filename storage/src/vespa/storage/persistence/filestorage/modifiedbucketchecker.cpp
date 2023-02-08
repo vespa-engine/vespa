@@ -8,6 +8,7 @@
 #include <vespa/config/subscription/configuri.h>
 #include <vespa/config/helper/configfetcher.hpp>
 #include <algorithm>
+#include <unistd.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".persistence.filestor.modifiedbucketchecker");
