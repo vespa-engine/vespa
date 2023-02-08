@@ -139,7 +139,7 @@ std::unique_ptr<DocumentSubDBReconfig>
 SearchableDocSubDB::prepare_reconfig(const DocumentDBConfig& new_config_snapshot, const DocumentDBConfig& old_config_snapshot, const ReconfigParams& reconfig_params, std::optional<SerialNum> serial_num)
 {
     auto alloc_strategy = new_config_snapshot.get_alloc_config().make_alloc_strategy(_subDbType);
-    AttributeCollectionSpecFactory attr_spec_factory(alloc_strategy, get_fast_access_attributes_only());
+    AttributeCollectionSpecFactory attr_spec_factory(alloc_strategy, has_fast_access_attributes_only());
     auto docid_limit = _dms->getCommittedDocIdLimit();
     return _configurer.prepare_reconfig(new_config_snapshot, old_config_snapshot, attr_spec_factory, reconfig_params, docid_limit, serial_num);
 }

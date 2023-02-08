@@ -99,7 +99,7 @@ protected:
     IReprocessingTask::UP createReprocessingTask(IReprocessingInitializer &initializer,
                                                  const std::shared_ptr<const document::DocumentTypeRepo> &docTypeRepo) const;
 
-    bool get_fast_access_attributes_only() const noexcept { return _fastAccessAttributesOnly; }
+    bool has_fast_access_attributes_only() const noexcept { return _fastAccessAttributesOnly; }
 
 public:
     FastAccessDocSubDB(const Config &cfg, const Context &ctx);
