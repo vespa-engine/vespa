@@ -109,7 +109,7 @@ UpdateBucketDatabaseProcessor::process_entry(BucketDatabase::Entry &entry) const
     // distributor has run GC on it, we just have to assume this and set the
     // timestamp to the current time to avoid duplicate work.
     if (entry->getLastGarbageCollectionTime() == 0) {
-        entry->setLastGarbageCollectionTime(_clock.getTimeInSeconds().getTime());
+        entry->setLastGarbageCollectionTime(vespalib::count_s(_clock.getSystemTime().time_since_epoch()));
     }
     entry->addNodes(_changed_nodes, _ideal_nodes);
     if (_reset_trusted) {

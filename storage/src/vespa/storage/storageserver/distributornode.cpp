@@ -111,7 +111,7 @@ DistributorNode::createChain(IStorageChainBuilder &builder)
 api::Timestamp
 DistributorNode::generate_unique_timestamp()
 {
-    uint64_t now_seconds = _component->getClock().getTimeInSeconds().getTime();
+    uint64_t now_seconds = vespalib::count_s(_component->getClock().getSystemTime().time_since_epoch());
     std::lock_guard lock(_timestamp_mutex);
     // We explicitly handle a seemingly decreased wall clock time, as multiple threads may
     // race with each other over a second change edge. In this case, pretend an earlier

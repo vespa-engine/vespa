@@ -312,7 +312,7 @@ Bouncer::onDown(const std::shared_ptr<api::StorageMessage>& msg)
     uint64_t timestamp = extractMutationTimestampIfAny(*msg);
     if (timestamp != 0) {
         timestamp /= 1000000;
-        uint64_t currentTime = _component.getClock().getTimeInSeconds().getTime();
+        uint64_t currentTime = vespalib::count_s(_component.getClock().getSystemTime().time_since_epoch());
         if (timestamp > currentTime + maxClockSkewInSeconds) {
             rejectCommandWithTooHighClockSkew(*msg, maxClockSkewInSeconds);
             return true;

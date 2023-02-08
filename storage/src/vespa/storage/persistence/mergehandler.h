@@ -26,6 +26,8 @@ namespace vespalib { class ISequencedTaskExecutor; }
 namespace document { class Document; }
 namespace storage {
 
+namespace framework { struct Clock; }
+
 namespace spi {
     struct PersistenceProvider;
     class Context;

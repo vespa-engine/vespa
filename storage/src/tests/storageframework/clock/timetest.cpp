@@ -12,10 +12,10 @@ TEST(TimeTest, testBasics)
 
     MicroSecTime timeMicros2 = timeMicros;
     EXPECT_EQ(timeMicros2, timeMicros);
-    timeMicros2 += MicroSecTime(25000);
+    timeMicros2 = MicroSecTime(timeMicros.getTime() + 25000);
     EXPECT_GT(timeMicros2, timeMicros);
     EXPECT_LT(timeMicros, timeMicros2);
-    timeMicros2 -= MicroSecTime(30000);
+    timeMicros2 = MicroSecTime(timeMicros2.getTime() - 30000);
     EXPECT_LT(timeMicros2, timeMicros);
     EXPECT_GT(timeMicros, timeMicros2);
 }

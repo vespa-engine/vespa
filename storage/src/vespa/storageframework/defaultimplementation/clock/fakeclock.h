@@ -60,9 +60,7 @@ public:
     }
 
     int64_t getTimeInMicros() const;
-    framework::SecondTime getTimeInSeconds() const override {
-        return SecondTime(vespalib::count_s(getSystemTime().time_since_epoch()));
-    }
+
     vespalib::system_time getSystemTime() const override {
         // For simplicity, assume fake monotonic time follows fake wall clock.
         return vespalib::system_time(std::chrono::microseconds(getTimeInMicros()));

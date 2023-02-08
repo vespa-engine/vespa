@@ -5,11 +5,11 @@
 
 namespace storage::distributor {
 
-OwnershipTransferSafeTimePointCalculator::TimePoint
-OwnershipTransferSafeTimePointCalculator::safeTimePoint(TimePoint now) const
+vespalib::system_time
+OwnershipTransferSafeTimePointCalculator::safeTimePoint(vespalib::system_time now) const
 {
     if (_max_cluster_clock_skew.count() == 0) {
-        return TimePoint{};
+        return {};
     }
     // Rationale: distributors always generate time stamps by taking
     // the current second and adding a synthetic microsecond counter.
@@ -26,7 +26,7 @@ OwnershipTransferSafeTimePointCalculator::safeTimePoint(TimePoint now) const
     // the same whole second as another distributor already has done for
     // any of the buckets a node now owns.
     auto now_sec = std::chrono::duration_cast<std::chrono::seconds>(now.time_since_epoch());
-    return TimePoint(now_sec + std::chrono::seconds(1) + _max_cluster_clock_skew);
+    return vespalib::system_time(now_sec + std::chrono::seconds(1) + _max_cluster_clock_skew);
 }
 
 }

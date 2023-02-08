@@ -14,7 +14,7 @@ namespace storage::framework {
 
 class MilliSecTimer {
     const Clock* _clock;
-    MonotonicTimePoint _startTime;
+    vespalib::steady_time _startTime;
 
 public:
     explicit MilliSecTimer(const Clock& clock)
@@ -26,7 +26,7 @@ public:
     MilliSecTimer(const MilliSecTimer&) = default;
     MilliSecTimer& operator=(const MilliSecTimer&) = default;
 
-    [[nodiscard]] MonotonicDuration getElapsedTime() const {
+    [[nodiscard]] vespalib::duration getElapsedTime() const {
         return _clock->getMonotonicTime() - _startTime;
     }
 
