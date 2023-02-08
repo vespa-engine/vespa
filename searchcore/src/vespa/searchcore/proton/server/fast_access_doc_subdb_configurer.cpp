@@ -1,10 +1,12 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "fast_access_doc_subdb_configurer.h"
+#include "fast_access_feed_view.h"
 #include "document_subdb_reconfig.h"
 #include "documentdbconfig.h"
 #include "reconfig_params.h"
 #include <vespa/searchcore/proton/attribute/attributemanager.h>
+#include <vespa/searchcore/proton/attribute/attribute_collection_spec_factory.h>
 #include <vespa/searchcore/proton/attribute/attribute_manager_reconfig.h>
 #include <vespa/searchcore/proton/attribute/attribute_writer.h>
 #include <vespa/searchcore/proton/common/document_type_inspector.h>
@@ -20,9 +22,9 @@ using ARIConfig = AttributeReprocessingInitializer::Config;
 
 void
 FastAccessDocSubDBConfigurer::reconfigureFeedView(FastAccessFeedView & curr,
-                                                  Schema::SP schema,
+                                                  std::shared_ptr<Schema> schema,
                                                   std::shared_ptr<const DocumentTypeRepo> repo,
-                                                  IAttributeWriter::SP writer)
+                                                  std::shared_ptr<IAttributeWriter> writer)
 {
     _feedView.set(std::make_shared<FastAccessFeedView>(
             StoreOnlyFeedView::Context(curr.getSummaryAdapter(),
@@ -48,8 +50,9 @@ FastAccessDocSubDBConfigurer::~FastAccessDocSubDBConfigurer() = default;
 std::unique_ptr<DocumentSubDBReconfig>
 FastAccessDocSubDBConfigurer::prepare_reconfig(const DocumentDBConfig& new_config_snapshot,
                                                const DocumentDBConfig& old_config_snapshot,
-                                               AttributeCollectionSpec && attr_spec,
+                                               const AttributeCollectionSpecFactory& attr_spec_factory,
                                                const ReconfigParams& reconfig_params,
+                                               uint32_t docid_limit,
                                                std::optional<search::SerialNum> serial_num)
 {
     (void) new_config_snapshot;
@@ -59,7 +62,8 @@ FastAccessDocSubDBConfigurer::prepare_reconfig(const DocumentDBConfig& new_confi
     auto old_attribute_manager = old_attribute_writer->getAttributeManager();
     auto reconfig = std::make_unique<DocumentSubDBReconfig>(std::shared_ptr<Matchers>(), old_attribute_manager);
     if (reconfig_params.shouldAttributeManagerChange()) {
-        reconfig->set_attribute_manager_reconfig(old_attribute_manager->prepare_create(std::move(attr_spec)));
+        auto attr_spec = attr_spec_factory.create(new_config_snapshot.getAttributesConfig(), docid_limit, serial_num);
+        reconfig->set_attribute_manager_reconfig(old_attribute_manager->prepare_create(std::move(*attr_spec)));
     }
     return reconfig;
 }
@@ -70,7 +74,7 @@ FastAccessDocSubDBConfigurer::reconfigure(const DocumentDBConfig &newConfig,
                                           const DocumentSubDBReconfig& prepared_reconfig,
                                           search::SerialNum serial_num)
 {
-    FastAccessFeedView::SP oldView = _feedView.get();
+    std::shared_ptr<FastAccessFeedView> oldView = _feedView.get();
     auto writer = std::make_shared<AttributeWriter>(prepared_reconfig.attribute_manager());
     reconfigureFeedView(*oldView, newConfig.getSchemaSP(), newConfig.getDocumentTypeRepoSP(), writer);
 

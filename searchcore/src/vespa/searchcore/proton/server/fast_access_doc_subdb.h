@@ -1,8 +1,8 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include "fast_access_doc_subdb_configurer.h"
 #include "storeonlydocsubdb.h"
+#include "fast_access_doc_subdb_configurer.h"
 #include <vespa/config-attributes.h>
 #include <vespa/searchcore/proton/attribute/attributemanager.h>
 #include <vespa/searchcore/proton/common/docid_limit.h>
@@ -82,7 +82,7 @@ private:
                                       std::shared_ptr<AttributeManager::SP> attrMgrResult) const;
 
     void setupAttributeManager(AttributeManager::SP attrMgrResult);
-    void initFeedView(IAttributeWriter::SP writer, const DocumentDBConfig &configSnapshot);
+    void initFeedView(std::shared_ptr<IAttributeWriter> writer, const DocumentDBConfig &configSnapshot);
 
 protected:
     using Parent = StoreOnlyDocSubDB;
@@ -92,13 +92,14 @@ protected:
     std::shared_ptr<search::attribute::Interlock> _attribute_interlock;
     DocIdLimit           _docIdLimit;
 
-    std::unique_ptr<AttributeCollectionSpec> createAttributeSpec(const AttributesConfig &attrCfg, const AllocStrategy& alloc_strategy, std::optional<SerialNum> serialNum) const;
     AttributeManager::SP getAndResetInitAttributeManager();
     virtual IFlushTargetList getFlushTargetsInternal() override;
     void reconfigureAttributeMetrics(const IAttributeManager &newMgr, const IAttributeManager &oldMgr);
 
     IReprocessingTask::UP createReprocessingTask(IReprocessingInitializer &initializer,
                                                  const std::shared_ptr<const document::DocumentTypeRepo> &docTypeRepo) const;
+
+    bool get_fast_access_attributes_only() const noexcept { return _fastAccessAttributesOnly; }
 
 public:
     FastAccessDocSubDB(const Config &cfg, const Context &ctx);

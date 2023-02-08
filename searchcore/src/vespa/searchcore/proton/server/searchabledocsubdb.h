@@ -8,6 +8,7 @@
 #include "summaryadapter.h"
 #include "igetserialnum.h"
 #include "document_db_flush_config.h"
+#include <vespa/config-rank-profiles.h>
 #include <vespa/eval/eval/value_cache/constant_tensor_loader.h>
 #include <vespa/eval/eval/value_cache/constant_value_cache.h>
 #include <vespa/searchcore/proton/attribute/attributemanager.h>
