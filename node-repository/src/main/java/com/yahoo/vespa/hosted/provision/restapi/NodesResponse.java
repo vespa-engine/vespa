@@ -16,7 +16,6 @@ import com.yahoo.vespa.flags.FetchVector;
 import com.yahoo.vespa.flags.PermanentFlags;
 import com.yahoo.vespa.flags.StringFlag;
 import com.yahoo.vespa.hosted.provision.Node;
-import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.Address;
 import com.yahoo.vespa.hosted.provision.node.Allocation;
@@ -107,17 +106,11 @@ class NodesResponse extends SlimeJsonResponse {
     /** Outputs the nodes in the given states to a node array */
     private void nodesToSlime(Set<Node.State> states, Cursor parentObject) {
         Cursor nodeArray = parentObject.setArray("nodes");
-        NodeList nodes = nodeRepository.nodes().list()
-                                       .state(states)
-                                       .sortedBy(Comparator.comparing(Node::hostname));
-        toSlime(nodes, nodeArray);
-    }
-
-    private void toSlime(NodeList nodes, Cursor array) {
-        for (Node node : nodes) {
-            if ( ! filter.test(node)) continue;
-            toSlime(node, recursive, array.addObject());
-        }
+        nodeRepository.nodes().list()
+                      .state(states)
+                      .matching(filter)
+                      .sortedBy(Comparator.comparing(Node::hostname))
+                      .forEach(node -> toSlime(node, recursive, nodeArray.addObject()));
     }
 
     private void nodeToSlime(String hostname, Cursor object) {

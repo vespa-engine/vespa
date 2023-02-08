@@ -55,17 +55,11 @@ public class ConfigServerApiHandler extends AuditLoggingRequestHandler {
     @Override
     public HttpResponse auditAndHandle(HttpRequest request) {
         try {
-            switch (request.getMethod()) {
-                case GET:
-                    return get(request);
-                case POST:
-                case PUT:
-                case DELETE:
-                case PATCH:
-                    return proxy(request);
-                default:
-                    return ErrorResponse.methodNotAllowed("Method '" + request.getMethod() + "' is unsupported");
-            }
+            return switch (request.getMethod()) {
+                case GET -> get(request);
+                case POST, PUT, DELETE, PATCH -> proxy(request);
+                default -> ErrorResponse.methodNotAllowed("Method '" + request.getMethod() + "' is unsupported");
+            };
         } catch (IllegalArgumentException e) {
             return ErrorResponse.badRequest(Exceptions.toMessageString(e));
         } catch (RuntimeException e) {

@@ -2,7 +2,6 @@
 package com.yahoo.vespa.hosted.controller.restapi.deployment;
 
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.SystemName;
 import com.yahoo.slime.ArrayTraverser;
 import com.yahoo.slime.SlimeUtils;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
@@ -51,18 +50,16 @@ public class Badges {
     }
 
     static String colorOf(Run run, Optional<RunStatus> previous) {
-        switch (run.status()) {
-            case running: switch (previous.orElse(RunStatus.success)) {
-                case success: return "url(#run-on-success)";
-                case aborted:
-                case noTests: return "url(#run-on-warning)";
-                default: return "url(#run-on-failure)";
-            }
-            case success: return success;
-            case aborted:
-            case noTests: return warning;
-            default: return failure;
-        }
+        return switch (run.status()) {
+            case running -> switch (previous.orElse(RunStatus.success)) {
+                case success -> "url(#run-on-success)";
+                case aborted, noTests -> "url(#run-on-warning)";
+                default -> "url(#run-on-failure)";
+            };
+            case success -> success;
+            case aborted, noTests -> warning;
+            default -> failure;
+        };
     }
 
     static String nameOf(JobType type) {

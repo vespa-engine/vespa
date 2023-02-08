@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.controller.restapi.user;
 import com.yahoo.component.annotation.Inject;
 import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.TenantName;
+import com.yahoo.container.jdisc.EmptyResponse;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.ThreadedHttpRequestHandler;
@@ -37,7 +38,6 @@ import com.yahoo.vespa.hosted.controller.api.role.SimplePrincipal;
 import com.yahoo.vespa.hosted.controller.api.role.TenantRole;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.restapi.ErrorResponses;
-import com.yahoo.vespa.hosted.controller.restapi.application.EmptyResponse;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 import com.yahoo.yolean.Exceptions;
 
