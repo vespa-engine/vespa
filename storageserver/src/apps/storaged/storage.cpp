@@ -121,7 +121,9 @@ namespace {
     void killHandler(int sig) {
         if (_G_signalCount == 0) {
             _G_signalCount++;
-            if (sigtramp == nullptr) _exit(EXIT_FAILURE);
+            if (sigtramp == nullptr) {
+                std::_Exit(EXIT_FAILURE);
+            }
             // note: this is not totally safe, sigtramp is not protected by a lock
             sigtramp->handleSignal(sig);
         } else if (_G_signalCount > 2) {
