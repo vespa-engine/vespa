@@ -31,7 +31,7 @@ public:
     using OutdatedNodes = dbtransition::OutdatedNodes;
     using OutdatedNodesMap = dbtransition::OutdatedNodesMap;
     struct Summary {
-        Summary(const std::string& prevClusterState, const std::string& newClusterState, vespalib::duration processingTime);
+        Summary(std::string prevClusterState, std::string newClusterState, vespalib::duration processingTime);
         Summary(const Summary &);
         Summary & operator = (const Summary &);
         Summary(Summary &&) noexcept = default;
