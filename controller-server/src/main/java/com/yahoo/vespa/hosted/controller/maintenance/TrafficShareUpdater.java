@@ -66,6 +66,8 @@ public class TrafficShareUpdater extends ControllerMaintainer {
         double successFactor = asSuccessFactor(attempts, failures);
         if ( successFactor == 0 )
             log.log(Level.WARNING, "Could not update traffic share on any applications", lastException);
+        else if ( successFactor < 0.9 )
+            log.log(Level.FINE, "Could not update traffic share on any applications", lastException);
         return successFactor;
     }
 
