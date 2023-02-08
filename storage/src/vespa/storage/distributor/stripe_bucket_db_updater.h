@@ -145,7 +145,7 @@ private:
     void mergeBucketInfoWithDatabase(const std::shared_ptr<api::RequestBucketInfoReply>& repl,
                                      const BucketRequest& req);
     static void convertBucketInfoToBucketList(const std::shared_ptr<api::RequestBucketInfoReply>& repl,
-                                       uint16_t targetNode, BucketListMerger::BucketList& newList);
+                                              uint16_t targetNode, BucketListMerger::BucketList& newList);
     void sendRequestBucketInfo(uint16_t node, const document::Bucket& bucket,
                                const std::shared_ptr<MergeReplyGuard>& mergeReplystatic );
     static void addBucketInfoForNode(const BucketDatabase::Entry& e, uint16_t node,
