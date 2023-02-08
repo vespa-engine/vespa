@@ -214,7 +214,10 @@ public class RankSetupValidator extends Validator {
                 if (line.startsWith("debug\t")) continue;
                 try {
                     LogMessage logMessage = LogMessage.parseNativeFormat(line);
-                    message.append(logMessage.getLevel()).append(": ").append(logMessage.getPayload()).append("\n");
+                    message.append(logMessage.getLevel())
+			    .append(": ")
+			    .append(logMessage.getPayload().replace("\\n", "\n\t"))
+			    .append("\n");
                 } catch (InvalidLogFormatException e) {
                     message.append(line).append("\n");
                 }

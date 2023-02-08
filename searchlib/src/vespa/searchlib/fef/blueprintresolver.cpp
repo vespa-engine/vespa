@@ -139,6 +139,9 @@ struct Compiler : public Blueprint::DependencyHandler {
             } else {
                 msg = fmt("invalid %s: %s\n%s", describe(feature_name).c_str(), reason.c_str(), trace.c_str());
             }
+            if (msg.rbegin()[0] == '\n') {
+                msg.pop_back();
+            }
             errors.emplace_back(msg);
         }
         probe_stack();
