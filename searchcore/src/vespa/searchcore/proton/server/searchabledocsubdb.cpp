@@ -6,6 +6,7 @@
 #include "document_subdb_reconfig.h"
 #include "reconfig_params.h"
 #include "i_document_subdb_owner.h"
+#include <vespa/searchcore/proton/attribute/attribute_collection_spec_factory.h>
 #include <vespa/searchcore/proton/attribute/attribute_writer.h>
 #include <vespa/searchcore/proton/common/alloc_config.h>
 #include <vespa/searchcore/proton/flushengine/threadedflushtarget.h>
@@ -13,6 +14,8 @@
 #include <vespa/searchcore/proton/index/index_writer.h>
 #include <vespa/searchcore/proton/reference/document_db_reference.h>
 #include <vespa/searchcore/proton/reference/gid_to_lid_change_handler.h>
+#include <vespa/searchcore/proton/reference/i_document_db_reference_resolver.h>
+#include <vespa/searchcore/proton/reprocessing/i_reprocessing_initializer.h>
 #include <vespa/searchlib/fef/indexproperties.h>
 #include <vespa/searchlib/fef/properties.h>
 #include <vespa/eval/eval/fast_value.h>
@@ -136,8 +139,9 @@ std::unique_ptr<DocumentSubDBReconfig>
 SearchableDocSubDB::prepare_reconfig(const DocumentDBConfig& new_config_snapshot, const DocumentDBConfig& old_config_snapshot, const ReconfigParams& reconfig_params, std::optional<SerialNum> serial_num)
 {
     auto alloc_strategy = new_config_snapshot.get_alloc_config().make_alloc_strategy(_subDbType);
-    auto attr_spec = createAttributeSpec(new_config_snapshot.getAttributesConfig(), alloc_strategy, serial_num);
-    return _configurer.prepare_reconfig(new_config_snapshot, old_config_snapshot, std::move(*attr_spec), reconfig_params, serial_num);
+    AttributeCollectionSpecFactory attr_spec_factory(alloc_strategy, has_fast_access_attributes_only());
+    auto docid_limit = _dms->getCommittedDocIdLimit();
+    return _configurer.prepare_reconfig(new_config_snapshot, old_config_snapshot, attr_spec_factory, reconfig_params, docid_limit, serial_num);
 }
 
 IReprocessingTask::List

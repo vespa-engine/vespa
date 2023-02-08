@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "attribute_collection_spec_factory.h"
+#include "attribute_collection_spec.h"
 #include <vespa/searchlib/attribute/configconverter.h>
 #include <vespa/searchcommon/attribute/config.h>
 

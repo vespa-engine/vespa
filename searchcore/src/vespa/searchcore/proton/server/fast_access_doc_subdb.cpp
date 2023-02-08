@@ -101,14 +101,6 @@ FastAccessDocSubDB::setupAttributeManager(AttributeManager::SP attrMgrResult)
 }
 
 
-std::unique_ptr<AttributeCollectionSpec>
-FastAccessDocSubDB::createAttributeSpec(const AttributesConfig &attrCfg, const AllocStrategy& alloc_strategy, std::optional<SerialNum> serialNum) const
-{
-    uint32_t docIdLimit(_dms->getCommittedDocIdLimit());
-    AttributeCollectionSpecFactory factory(alloc_strategy, _fastAccessAttributesOnly);
-    return factory.create(attrCfg, docIdLimit, serialNum);
-}
-
 void
 FastAccessDocSubDB::initFeedView(IAttributeWriter::SP writer, const DocumentDBConfig &configSnapshot)
 {
@@ -246,8 +238,9 @@ std::unique_ptr<DocumentSubDBReconfig>
 FastAccessDocSubDB::prepare_reconfig(const DocumentDBConfig& new_config_snapshot, const DocumentDBConfig& old_config_snapshot, const ReconfigParams& reconfig_params, std::optional<SerialNum> serial_num)
 {
     auto alloc_strategy = new_config_snapshot.get_alloc_config().make_alloc_strategy(_subDbType);
-    auto attr_spec = createAttributeSpec(new_config_snapshot.getAttributesConfig(), alloc_strategy, serial_num);
-    return _configurer.prepare_reconfig(new_config_snapshot, old_config_snapshot, std::move(*attr_spec), reconfig_params, serial_num);
+    AttributeCollectionSpecFactory attr_spec_factory(alloc_strategy, _fastAccessAttributesOnly);
+    auto docid_limit = _dms->getCommittedDocIdLimit();
+    return _configurer.prepare_reconfig(new_config_snapshot, old_config_snapshot, attr_spec_factory, reconfig_params, docid_limit, serial_num);
 }
 
 IReprocessingTask::List

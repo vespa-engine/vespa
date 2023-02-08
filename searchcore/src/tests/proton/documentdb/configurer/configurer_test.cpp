@@ -2,23 +2,33 @@
 
 #include <vespa/vespalib/testkit/testapp.h>
 
+#include <vespa/config-summary.h>
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/document/repo/documenttyperepo.h>
+#include <vespa/eval/eval/value_cache/constant_value.h>
+#include <vespa/searchcore/proton/attribute/attribute_collection_spec_factory.h>
 #include <vespa/searchcore/proton/attribute/attribute_writer.h>
 #include <vespa/searchcore/proton/attribute/attributemanager.h>
 #include <vespa/searchcore/proton/attribute/imported_attributes_repo.h>
 #include <vespa/searchcore/proton/bucketdb/bucket_db_owner.h>
+#include <vespa/searchcore/proton/common/docid_limit.h>
+#include <vespa/searchcore/proton/common/pendinglidtracker.h>
 #include <vespa/searchcore/proton/docsummary/summarymanager.h>
+#include <vespa/searchcore/proton/documentmetastore/documentmetastorecontext.h>
 #include <vespa/searchcore/proton/index/index_writer.h>
 #include <vespa/searchcore/proton/index/indexmanager.h>
 #include <vespa/searchcore/proton/matching/querylimiter.h>
+#include <vespa/searchcore/proton/matching/ranking_assets_repo.h>
 #include <vespa/searchcore/proton/matching/sessionmanager.h>
 #include <vespa/searchcore/proton/reference/dummy_gid_to_lid_change_handler.h>
+#include <vespa/searchcore/proton/reference/i_document_db_reference_resolver.h>
 #include <vespa/searchcore/proton/reprocessing/attribute_reprocessing_initializer.h>
 #include <vespa/searchcore/proton/server/document_subdb_reconfig.h>
 #include <vespa/searchcore/proton/server/fast_access_doc_subdb_configurer.h>
 #include <vespa/searchcore/proton/server/reconfig_params.h>
 #include <vespa/searchcore/proton/server/searchable_doc_subdb_configurer.h>
+#include <vespa/searchcore/proton/server/searchview.h>
+#include <vespa/searchcore/proton/server/searchable_feed_view.h>
 #include <vespa/searchcore/proton/server/summaryadapter.h>
 #include <vespa/searchcore/proton/test/documentdb_config_builder.h>
 #include <vespa/searchcore/proton/test/mock_gid_to_lid_change_handler.h>
@@ -27,6 +37,7 @@
 #include <vespa/searchlib/attribute/interlock.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/searchlib/transactionlog/nosyncproxy.h>
+#include <vespa/searchsummary/config/config-juniperrc.h>
 #include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/util/testclock.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
@@ -79,8 +90,8 @@ createRepo()
 
 struct ViewPtrs
 {
-    SearchView::SP sv;
-    SearchableFeedView::SP fv;
+    std::shared_ptr<SearchView> sv;
+    std::shared_ptr<SearchableFeedView> fv;
     ~ViewPtrs();
 };
 
@@ -91,7 +102,7 @@ struct ViewSet
     IndexManagerDummyReconfigurer _reconfigurer;
     DummyFileHeaderContext        _fileHeaderContext;
     TransportAndExecutorService   _service;
-    SearchableFeedView::SerialNum serialNum;
+    SerialNum                     serialNum;
     std::shared_ptr<const DocumentTypeRepo> repo;
     DocTypeName _docTypeName;
     DocIdLimit _docIdLimit;
@@ -99,8 +110,8 @@ struct ViewSet
     ISummaryManager::SP _summaryMgr;
     proton::IDocumentMetaStoreContext::SP _dmsc;
     std::shared_ptr<IGidToLidChangeHandler> _gidToLidChangeHandler;
-    VarHolder<SearchView::SP> searchView;
-    VarHolder<SearchableFeedView::SP> feedView;
+    VarHolder<std::shared_ptr<SearchView>> searchView;
+    VarHolder<std::shared_ptr<SearchableFeedView>> feedView;
     HwInfo _hwInfo;
     ViewSet();
     ~ViewSet();
@@ -169,9 +180,9 @@ struct Fixture
                      SerialNum serial_num);
     IReprocessingInitializer::UP reconfigure(const DocumentDBConfig& new_config_snapshot,
                                              const DocumentDBConfig& old_config_snapshot,
-                                             AttributeCollectionSpec&& attr_spec,
                                              const ReconfigParams& reconfig_params,
                                              IDocumentDBReferenceResolver& resolver,
+                                             uint32_t docid_limit,
                                              SerialNum serial_num);
 };
 
@@ -247,8 +258,8 @@ Fixture::reconfigure(const DocumentDBConfig& new_config_snapshot,
 {
     EXPECT_FALSE(reconfig_params.shouldAttributeManagerChange());
     uint32_t docid_limit = 1;
-    AttributeCollectionSpec attr_spec(AttributeCollectionSpec::AttributeList(), docid_limit, serial_num);
-    auto prepared_reconfig = _configurer->prepare_reconfig(new_config_snapshot, old_config_snapshot, std::move(attr_spec), reconfig_params, serial_num);
+    AttributeCollectionSpecFactory attr_spec_factory(AllocStrategy(), false);
+    auto prepared_reconfig = _configurer->prepare_reconfig(new_config_snapshot, old_config_snapshot, attr_spec_factory, reconfig_params, docid_limit, serial_num);
     prepared_reconfig->complete(docid_limit, serial_num);
     _configurer->reconfigure(new_config_snapshot, old_config_snapshot, reconfig_params, resolver, *prepared_reconfig, serial_num);
 }
@@ -256,13 +267,13 @@ Fixture::reconfigure(const DocumentDBConfig& new_config_snapshot,
 IReprocessingInitializer::UP
 Fixture::reconfigure(const DocumentDBConfig& new_config_snapshot,
                      const DocumentDBConfig& old_config_snapshot,
-                     AttributeCollectionSpec&& attr_spec,
                      const ReconfigParams& reconfig_params,
                      IDocumentDBReferenceResolver& resolver,
+                     uint32_t docid_limit,
                      SerialNum serial_num)
 {
-    auto docid_limit = attr_spec.getDocIdLimit();
-    auto prepared_reconfig = _configurer->prepare_reconfig(new_config_snapshot, old_config_snapshot, std::move(attr_spec), reconfig_params, serial_num);
+    AttributeCollectionSpecFactory attr_spec_factory(AllocStrategy(), false);
+    auto prepared_reconfig = _configurer->prepare_reconfig(new_config_snapshot, old_config_snapshot, attr_spec_factory, reconfig_params, docid_limit, serial_num);
     prepared_reconfig->complete(docid_limit, serial_num);
     return _configurer->reconfigure(new_config_snapshot, old_config_snapshot, reconfig_params, resolver, *prepared_reconfig, serial_num);
 }
@@ -335,19 +346,19 @@ struct FastAccessFixture
     IReprocessingInitializer::UP
     reconfigure(const DocumentDBConfig& new_config_snapshot,
                 const DocumentDBConfig& old_config_snapshot,
-                AttributeCollectionSpec&& attr_spec,
+                uint32_t docid_limit,
                 SerialNum serial_num);
 };
 
 IReprocessingInitializer::UP
 FastAccessFixture::reconfigure(const DocumentDBConfig& new_config_snapshot,
                                const DocumentDBConfig& old_config_snapshot,
-                               AttributeCollectionSpec&& attr_spec,
+                               uint32_t docid_limit,
                                SerialNum serial_num)
 {
     ReconfigParams reconfig_params{CCR()};
-    auto docid_limit = attr_spec.getDocIdLimit();
-    auto prepared_reconfig = _configurer.prepare_reconfig(new_config_snapshot, old_config_snapshot, std::move(attr_spec), reconfig_params, serial_num);
+    AttributeCollectionSpecFactory attr_spec_factory(AllocStrategy(), true);
+    auto prepared_reconfig = _configurer.prepare_reconfig(new_config_snapshot, old_config_snapshot, attr_spec_factory, reconfig_params, docid_limit, serial_num);
     prepared_reconfig->complete(docid_limit, serial_num);
     return _configurer.reconfigure(new_config_snapshot, old_config_snapshot, *prepared_reconfig, serial_num);
 }
@@ -516,8 +527,7 @@ TEST_F("require that we can reconfigure attribute manager", Fixture)
     // Use new config snapshot == old config snapshot (only relevant for reprocessing)
     SerialNum reconfig_serial_num = 0;
     f.reconfigure(*createConfig(), *createConfig(),
-                  AttributeCollectionSpec(AttributeCollectionSpec::AttributeList(), 1, reconfig_serial_num),
-                  params, f._resolver, reconfig_serial_num);
+                  params, f._resolver, 1, reconfig_serial_num);
 
     ViewPtrs n = f._views.getViewPtrs();
     { // verify search view
@@ -555,8 +565,7 @@ checkAttributeWriterChangeOnRepoChange(Fixture &f, bool docTypeRepoChanged)
     // Use new config snapshot == old config snapshot (only relevant for reprocessing)
     SerialNum reconfig_serial_num = 0;
     f.reconfigure(*createConfig(), *createConfig(),
-                  AttributeCollectionSpec(AttributeCollectionSpec::AttributeList(), 1, reconfig_serial_num),
-                  params, f._resolver, reconfig_serial_num);
+                  params, f._resolver, 1, reconfig_serial_num);
     auto newAttributeWriter = getAttributeWriter(f);
     if (docTypeRepoChanged) {
         EXPECT_NOT_EQUAL(oldAttributeWriter, newAttributeWriter);
@@ -577,8 +586,7 @@ TEST_F("require that reconfigure returns reprocessing initializer when changing 
     SerialNum reconfig_serial_num = 0;
     IReprocessingInitializer::UP init =
         f.reconfigure(*createConfig(), *createConfig(),
-                      AttributeCollectionSpec(AttributeCollectionSpec::AttributeList(), 1, reconfig_serial_num),
-                      params, f._resolver, reconfig_serial_num);
+                      params, f._resolver, 1, reconfig_serial_num);
 
     EXPECT_TRUE(init.get() != nullptr);
     EXPECT_TRUE((dynamic_cast<AttributeReprocessingInitializer *>(init.get())) != nullptr);
@@ -589,8 +597,7 @@ TEST_F("require that we can reconfigure attribute writer", FastAccessFixture)
 {
     FastAccessFeedView::SP o = f._view._feedView.get();
     SerialNum reconfig_serial_num = 0;
-    f.reconfigure(*createConfig(), *createConfig(),
-                  AttributeCollectionSpec(AttributeCollectionSpec::AttributeList(), 1, reconfig_serial_num), reconfig_serial_num);
+    f.reconfigure(*createConfig(), *createConfig(), 1, reconfig_serial_num);
     FastAccessFeedView::SP n = f._view._feedView.get();
 
     FastAccessFeedViewComparer cmp(o, n);
@@ -603,8 +610,7 @@ TEST_F("require that we can reconfigure attribute writer", FastAccessFixture)
 TEST_F("require that reconfigure returns reprocessing initializer", FastAccessFixture)
 {
     SerialNum reconfig_serial_num = 0;
-    IReprocessingInitializer::UP init = f.reconfigure(*createConfig(), *createConfig(),
-                                                      AttributeCollectionSpec(AttributeCollectionSpec::AttributeList(), 1, reconfig_serial_num), reconfig_serial_num);
+    auto init = f.reconfigure(*createConfig(), *createConfig(), 1, reconfig_serial_num);
 
     EXPECT_TRUE(init.get() != nullptr);
     EXPECT_TRUE((dynamic_cast<AttributeReprocessingInitializer *>(init.get())) != nullptr);

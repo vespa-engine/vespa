@@ -2,7 +2,6 @@
 
 #pragma once
 
-#include "attribute_collection_spec.h"
 #include "exclusive_attribute_read_accessor.h"
 #include "i_attribute_factory.h"
 #include <vespa/searchcommon/attribute/i_attribute_functor.h>
@@ -21,6 +20,7 @@ namespace vespalib {
 
 namespace proton {
 
+class AttributeCollectionSpec;
 class IAttributeManagerReconfig;
 class ImportedAttributesRepo;
 

@@ -2,10 +2,8 @@
 
 #pragma once
 
-#include "attribute_collection_spec.h"
-#include "i_attribute_factory.h"
 #include "i_attribute_manager.h"
-#include "i_attribute_initializer_registry.h"
+#include "attribute_collection_spec.h"
 #include <set>
 #include <vespa/searchlib/common/tunefileinfo.h>
 #include <vespa/vespalib/stllike/hash_map.h>
@@ -21,8 +19,13 @@ namespace vespalib { class ThreadExecutor; }
 
 namespace proton {
 
+class AttributeCollectionSpec;
 class AttributeDiskLayout;
+class AttributeInitializerResult;
+class AttributeSpec;
 class FlushableAttribute;
+struct IAttributeFactory;
+struct IAttributeInitializerRegistry;
 class ShrinkLidSpaceFlushTarget;
 
 /**
@@ -81,7 +84,7 @@ private:
     vespalib::string _documentSubDbName;
     const search::TuneFileAttributes _tuneFileAttributes;
     const search::common::FileHeaderContext &_fileHeaderContext;
-    IAttributeFactory::SP _factory;
+    std::shared_ptr<IAttributeFactory> _factory;
     std::shared_ptr<search::attribute::Interlock> _interlock;
     vespalib::ISequencedTaskExecutor &_attributeFieldWriter;
     vespalib::Executor& _shared_executor;
@@ -114,7 +117,7 @@ public:
                      std::shared_ptr<search::attribute::Interlock> interlock,
                      vespalib::ISequencedTaskExecutor &attributeFieldWriter,
                      vespalib::Executor& shared_executor,
-                     IAttributeFactory::SP factory,
+                     std::shared_ptr<IAttributeFactory> factory,
                      const HwInfo &hwInfo);
 
     AttributeManager(const AttributeManager &currMgr, Spec && newSpec,
@@ -165,7 +168,7 @@ public:
 
     void pruneRemovedFields(search::SerialNum serialNum) override;
 
-    const IAttributeFactory::SP &getFactory() const override { return _factory; }
+    const std::shared_ptr<IAttributeFactory> &getFactory() const override { return _factory; }
 
     vespalib::ISequencedTaskExecutor &getAttributeFieldWriter() const override;
 
