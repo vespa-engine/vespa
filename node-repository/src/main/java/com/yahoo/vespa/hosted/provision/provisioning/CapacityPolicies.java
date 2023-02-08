@@ -69,9 +69,13 @@ public class CapacityPolicies {
         if (required || exclusive) return target;  // Cannot downsize if resources are required, or exclusively allocated
         if (target.isUnspecified()) return target; // Cannot be modified
 
-        // Dev does not cap the cpu or network of containers since usage is spotty: Allocate just a small amount exclusively
-        if (zone.environment() == Environment.dev && zone.cloud().allowHostSharing())
+        if (zone.environment() == Environment.dev && zone.cloud().allowHostSharing()) {
+            // Dev does not cap the cpu or network of containers since usage is spotty: Allocate just a small amount exclusively
             target = target.withVcpu(0.1).withBandwidthGbps(0.1);
+
+            // Allocate without GPU in dev
+            target = target.with(NodeResources.GpuResources.zero());
+        }
 
         // Allow slow storage in zones which are not performance sensitive
         if (zone.system().isCd() || zone.environment() == Environment.dev || zone.environment() == Environment.test)

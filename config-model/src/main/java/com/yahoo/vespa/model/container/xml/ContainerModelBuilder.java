@@ -207,9 +207,6 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         addConfiguredComponents(deployState, cluster, spec);
         addSecretStore(cluster, spec, deployState);
 
-        addModelEvaluation(spec, cluster, context);
-        addModelEvaluationBundles(cluster);
-
         addProcessing(deployState, spec, cluster, context);
         addSearch(deployState, spec, cluster, context);
         addDocproc(deployState, spec, cluster);
@@ -224,6 +221,9 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
         addAccessLogs(deployState, cluster, spec);
         addNodes(cluster, spec, context);
+
+        addModelEvaluation(spec, cluster, context); // NOTE: Must be done after addNodes
+        addModelEvaluationBundles(cluster);
 
         addServerProviders(deployState, spec, cluster);
 
@@ -685,7 +685,13 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
             onnxModel.setStatelessExecutionMode(getStringValue(modelElement, "execution-mode", null));
             onnxModel.setStatelessInterOpThreads(getIntValue(modelElement, "interop-threads", -1));
             onnxModel.setStatelessIntraOpThreads(getIntValue(modelElement, "intraop-threads", -1));
-            onnxModel.setGpuDevice(getIntValue(modelElement, "gpu-device", -1));
+            Element gpuDeviceElement = XML.getChild(modelElement, "gpu-device");
+            if (gpuDeviceElement != null) {
+                int gpuDevice = Integer.parseInt(gpuDeviceElement.getTextContent());
+                Capacity capacity = context.getDeployState().provisioned().all().get(cluster.id());
+                boolean gpuProvisioned = capacity != null && !capacity.minResources().nodeResources().gpuResources().isZero();
+                onnxModel.setGpuDevice(gpuDevice, gpuProvisioned);
+            }
         }
 
         cluster.setModelEvaluation(new ContainerModelEvaluation(cluster, profiles));

@@ -24,7 +24,7 @@ public class OnnxModel extends DistributableResource {
     private String  statelessExecutionMode = null;
     private Integer statelessInterOpThreads = null;
     private Integer statelessIntraOpThreads = null;
-    private Integer gpuDevice = null;
+    private GpuDevice gpuDevice = null;
 
     public OnnxModel(String name) {
         super(name);
@@ -114,9 +114,9 @@ public class OnnxModel extends DistributableResource {
         }
     }
 
-    public void setGpuDevice(int deviceNumber) {
+    public void setGpuDevice(int deviceNumber, boolean required) {
         if (deviceNumber >= 0) {
-            this.gpuDevice = deviceNumber;
+            this.gpuDevice = new GpuDevice(deviceNumber, required);
         }
     }
 
@@ -124,8 +124,16 @@ public class OnnxModel extends DistributableResource {
         return Optional.ofNullable(statelessIntraOpThreads);
     }
 
-    public Optional<Integer> getGpuDevice() {
+    public Optional<GpuDevice> getGpuDevice() {
         return Optional.ofNullable(gpuDevice);
+    }
+
+    public record GpuDevice(int deviceNumber, boolean required) {
+
+        public GpuDevice {
+            if (deviceNumber < 0) throw new IllegalArgumentException("deviceNumber cannot be negative, got " + deviceNumber);
+        }
+
     }
 
 }
