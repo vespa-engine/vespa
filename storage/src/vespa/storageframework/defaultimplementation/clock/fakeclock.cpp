@@ -3,20 +3,20 @@
 
 namespace storage::framework::defaultimplementation {
 
-FakeClock::FakeClock(Mode m, framework::MicroSecTime startTime)
+FakeClock::FakeClock(Mode m, vespalib::duration startTime)
     : _mode(m),
       _absoluteTime(startTime),
       _cycleCount(0)
 {
 }
 
-framework::MicroSecTime
+int64_t
 FakeClock::getTimeInMicros() const {
     std::lock_guard guard(_lock);
-    if (_mode == FAKE_ABSOLUTE) return _absoluteTime;
-    MicroSecTime tmp(_absoluteTime);
-    tmp += framework::MicroSecTime(1000000 * _cycleCount++);
-    return tmp;
+    if (_mode == FAKE_ABSOLUTE) return vespalib::count_us(_absoluteTime);
+    vespalib::duration tmp(_absoluteTime);
+    tmp += std::chrono::seconds(_cycleCount++);
+    return vespalib::count_us(tmp);
 }
 
 }

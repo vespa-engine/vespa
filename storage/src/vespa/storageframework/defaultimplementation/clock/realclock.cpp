@@ -5,17 +5,10 @@
 
 namespace storage::framework::defaultimplementation {
 
-MicroSecTime
-RealClock::getTimeInMicros() const {
-    struct timeval mytime;
-    gettimeofday(&mytime, 0);
-    return MicroSecTime(mytime.tv_sec * 1000000llu + mytime.tv_usec);
-}
-
 SecondTime
 RealClock::getTimeInSeconds() const {
     struct timeval mytime;
-    gettimeofday(&mytime, 0);
+    gettimeofday(&mytime, nullptr);
     return SecondTime(mytime.tv_sec);
 }
 

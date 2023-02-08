@@ -6,13 +6,14 @@
 #include "clusterinformation.h"
 #include <vespa/storageapi/message/bucket.h>
 #include <vespa/storageapi/message/state.h>
-#include <vespa/storageframework/generic/clock/clock.h>
 #include <vespa/vdslib/state/cluster_state_bundle.h>
 #include <vespa/vespalib/util/xmlserializable.h>
 #include <vespa/vespalib/stllike/hash_map.h>
 #include "outdated_nodes_map.h"
 #include <unordered_map>
 #include <deque>
+
+namespace storage::framework { struct Clock; }
 
 namespace storage::distributor {
 
@@ -30,16 +31,16 @@ public:
     using OutdatedNodes = dbtransition::OutdatedNodes;
     using OutdatedNodesMap = dbtransition::OutdatedNodesMap;
     struct Summary {
-        Summary(const std::string& prevClusterState, const std::string& newClusterState, uint32_t processingTime);
+        Summary(std::string prevClusterState, std::string newClusterState, vespalib::duration processingTime);
         Summary(const Summary &);
         Summary & operator = (const Summary &);
-        Summary(Summary &&) = default;
-        Summary & operator = (Summary &&) = default;
+        Summary(Summary &&) noexcept = default;
+        Summary & operator = (Summary &&) noexcept = default;
         ~Summary();
 
         std::string _prevClusterState;
         std::string _newClusterState;
-        uint32_t _processingTime;
+        vespalib::duration _processingTime;
     };
 
     static std::unique_ptr<PendingClusterState> createForClusterStateChange(

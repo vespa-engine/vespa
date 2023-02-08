@@ -2,20 +2,21 @@
 
 #include "bucketgctimecalculator.h"
 
+using vespalib::count_s;
+
 namespace storage::distributor {
 
 bool
 BucketGcTimeCalculator::shouldGc(const document::BucketId& b,
-                                 std::chrono::seconds currentTime,
-                                 std::chrono::seconds lastRunAt) const
+                                 vespalib::duration currentTime,
+                                 vespalib::duration lastRunAt) const
 {
-    if (_checkInterval.count() == 0) {
+    if (count_s(_checkInterval) == 0) {
         return false;
     }
-    std::chrono::seconds gcPoint(_hasher.hash(b) % _checkInterval.count());
-    std::chrono::seconds currentPeriodStart(currentTime
-                                            - (currentTime % _checkInterval));
-    std::chrono::seconds newestValid(currentPeriodStart + gcPoint);
+    std::chrono::seconds gcPoint(_hasher.hash(b) % count_s(_checkInterval));
+    vespalib::duration currentPeriodStart(currentTime - (currentTime % _checkInterval));
+    vespalib::duration newestValid(currentPeriodStart + gcPoint);
 
     // Should GC have been started in current period?
     if (currentTime >= newestValid && lastRunAt < newestValid) {

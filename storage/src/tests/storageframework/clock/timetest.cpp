@@ -8,7 +8,6 @@ namespace storage::framework::defaultimplementation {
 
 TEST(TimeTest, testBasics)
 {
-
     MicroSecTime timeMicros(1000*1000);
 
     MicroSecTime timeMicros2 = timeMicros;
@@ -26,7 +25,8 @@ TEST(TimeTest, testCreatedFromClock)
     defaultimplementation::FakeClock clock;
     clock.setAbsoluteTimeInSeconds(600);
 
-    EXPECT_EQ(MicroSecTime(600 * 1000 * 1000), MicroSecTime(clock));
+    EXPECT_EQ(vespalib::system_time(600s), clock.getSystemTime());
+    EXPECT_EQ(vespalib::steady_time(600s), clock.getMonotonicTime());
 }
 
 TEST(TimeTest, canAssignMicrosecondResolutionTimeToFakeClock)
@@ -34,8 +34,9 @@ TEST(TimeTest, canAssignMicrosecondResolutionTimeToFakeClock)
     defaultimplementation::FakeClock clock;
     clock.setAbsoluteTimeInMicroSeconds(1234567); // 1.234567 seconds
 
+    EXPECT_EQ(vespalib::system_time(1234567us), clock.getSystemTime());
+    EXPECT_EQ(vespalib::steady_time(1234567us), clock.getMonotonicTime());
     // All non-microsec time points must necessarily be truncated.
-    EXPECT_EQ(MicroSecTime(1234567), MicroSecTime(clock));
 }
 
 }
