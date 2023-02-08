@@ -47,7 +47,7 @@ protected:
     std::unique_ptr<TestVisitorMessageSessionFactory> _messageSessionFactory;
     std::unique_ptr<TestServiceLayerApp> _node;
     std::unique_ptr<DummyStorageLink> _top;
-    VisitorManager* _manager{};
+    VisitorManager* _manager;
 
     VisitorManagerTest() : _node(), _top(), _manager(nullptr) {}
     ~VisitorManagerTest() override;
