@@ -29,17 +29,6 @@ public interface LoadBalancerService {
      */
     LoadBalancerInstance configure(LoadBalancerSpec spec, boolean force);
 
-    /**
-     * Create a load balancer from the given specification. Implementations are expected to be idempotent
-     *
-     * @param spec        Load balancer specification
-     * @param force       Whether reconfiguration should be forced (e.g. allow configuring an empty set of reals on a
-     *                    pre-existing load balancer).
-     * @return The provisioned load balancer instance
-     */
-    // TODO jonmv: remove
-    default LoadBalancerInstance create(LoadBalancerSpec spec, boolean force) { provision(spec); return configure(spec, force); }
-
     /** Permanently remove given load balancer */
     void remove(LoadBalancer loadBalancer);
 
