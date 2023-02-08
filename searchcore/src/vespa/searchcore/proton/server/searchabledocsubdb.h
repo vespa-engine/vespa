@@ -11,7 +11,6 @@
 #include <vespa/config-rank-profiles.h>
 #include <vespa/eval/eval/value_cache/constant_tensor_loader.h>
 #include <vespa/eval/eval/value_cache/constant_value_cache.h>
-#include <vespa/searchcore/proton/attribute/attributemanager.h>
 #include <vespa/searchcore/proton/common/doctypename.h>
 #include <vespa/searchcore/proton/docsummary/summarymanager.h>
 #include <vespa/searchcore/proton/documentmetastore/documentmetastorecontext.h>
@@ -110,11 +109,11 @@ public:
 
     void clearViews() override;
 
-    proton::IAttributeManager::SP getAttributeManager() const override {
+    std::shared_ptr<IAttributeManager> getAttributeManager() const override {
         return _rSearchView.get()->getAttributeManager();
     }
 
-    const searchcorespi::IIndexManager::SP &getIndexManager() const override {
+    const std::shared_ptr<searchcorespi::IIndexManager>& getIndexManager() const override {
         return _indexMgr;
     }
 

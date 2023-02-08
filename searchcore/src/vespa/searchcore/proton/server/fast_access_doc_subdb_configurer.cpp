@@ -5,10 +5,10 @@
 #include "document_subdb_reconfig.h"
 #include "documentdbconfig.h"
 #include "reconfig_params.h"
-#include <vespa/searchcore/proton/attribute/attributemanager.h>
+#include <vespa/searchcore/proton/attribute/attribute_collection_spec.h>
 #include <vespa/searchcore/proton/attribute/attribute_collection_spec_factory.h>
-#include <vespa/searchcore/proton/attribute/attribute_manager_reconfig.h>
 #include <vespa/searchcore/proton/attribute/attribute_writer.h>
+#include <vespa/searchcore/proton/attribute/i_attribute_manager_reconfig.h>
 #include <vespa/searchcore/proton/common/document_type_inspector.h>
 #include <vespa/searchcore/proton/common/indexschema_inspector.h>
 #include <vespa/searchcore/proton/reprocessing/attribute_reprocessing_initializer.h>

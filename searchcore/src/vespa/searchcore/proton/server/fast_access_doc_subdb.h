@@ -4,7 +4,6 @@
 #include "storeonlydocsubdb.h"
 #include "fast_access_doc_subdb_configurer.h"
 #include <vespa/config-attributes.h>
-#include <vespa/searchcore/proton/attribute/attributemanager.h>
 #include <vespa/searchcore/proton/common/docid_limit.h>
 #include <vespa/searchcore/proton/metrics/attribute_metrics.h>
 #include <vespa/searchcore/proton/metrics/metricswireservice.h>
@@ -12,6 +11,8 @@
 namespace search::attribute { class Interlock; }
 
 namespace proton {
+
+class AttributeManager;
 
 /**
  * The fast-access sub database keeps fast-access attribute fields in memory
@@ -69,7 +70,7 @@ private:
 
     const bool                    _hasAttributes;
     const bool                    _fastAccessAttributesOnly;
-    AttributeManager::SP          _initAttrMgr;
+    std::shared_ptr<AttributeManager> _initAttrMgr;
     Configurer::FeedViewVarHolder _fastAccessFeedView;
     Configurer                    _configurer;
     AttributeMetrics             &_subAttributeMetrics;
@@ -79,9 +80,9 @@ private:
                                       SerialNum configSerialNum,
                                       std::shared_ptr<initializer::InitializerTask> documentMetaStoreInitTask,
                                       DocumentMetaStore::SP documentMetaStore,
-                                      std::shared_ptr<AttributeManager::SP> attrMgrResult) const;
+                                      std::shared_ptr<std::shared_ptr<AttributeManager>> attrMgrResult) const;
 
-    void setupAttributeManager(AttributeManager::SP attrMgrResult);
+    void setupAttributeManager(std::shared_ptr<AttributeManager> attrMgrResult);
     void initFeedView(std::shared_ptr<IAttributeWriter> writer, const DocumentDBConfig &configSnapshot);
 
 protected:
@@ -92,7 +93,7 @@ protected:
     std::shared_ptr<search::attribute::Interlock> _attribute_interlock;
     DocIdLimit           _docIdLimit;
 
-    AttributeManager::SP getAndResetInitAttributeManager();
+    std::shared_ptr<AttributeManager> getAndResetInitAttributeManager();
     virtual IFlushTargetList getFlushTargetsInternal() override;
     void reconfigureAttributeMetrics(const IAttributeManager &newMgr, const IAttributeManager &oldMgr);
 
@@ -118,7 +119,7 @@ public:
     applyConfig(const DocumentDBConfig &newConfigSnapshot, const DocumentDBConfig &oldConfigSnapshot,
                 SerialNum serialNum, const ReconfigParams &params, IDocumentDBReferenceResolver &resolver, const DocumentSubDBReconfig& prepared_reconfig) override;
 
-    proton::IAttributeManager::SP getAttributeManager() const override;
+    std::shared_ptr<IAttributeManager> getAttributeManager() const override;
     IDocumentRetriever::UP getDocumentRetriever() override;
     void onReplayDone() override;
     void onReprocessDone(SerialNum serialNum) override;
