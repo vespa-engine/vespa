@@ -15,7 +15,6 @@
 #include <vespa/searchcore/proton/matching/sessionmanager.h>
 #include <vespa/searchcore/proton/reference/dummy_gid_to_lid_change_handler.h>
 #include <vespa/searchcore/proton/reprocessing/attribute_reprocessing_initializer.h>
-#include <vespa/searchcore/proton/server/attribute_writer_factory.h>
 #include <vespa/searchcore/proton/server/document_subdb_reconfig.h>
 #include <vespa/searchcore/proton/server/fast_access_doc_subdb_configurer.h>
 #include <vespa/searchcore/proton/server/reconfig_params.h>
@@ -246,7 +245,11 @@ Fixture::reconfigure(const DocumentDBConfig& new_config_snapshot,
                      IDocumentDBReferenceResolver& resolver,
                      SerialNum serial_num)
 {
-    auto prepared_reconfig = _configurer->prepare_reconfig(new_config_snapshot, old_config_snapshot, reconfig_params, serial_num);
+    EXPECT_FALSE(reconfig_params.shouldAttributeManagerChange());
+    uint32_t docid_limit = 1;
+    AttributeCollectionSpec attr_spec(AttributeCollectionSpec::AttributeList(), docid_limit, serial_num);
+    auto prepared_reconfig = _configurer->prepare_reconfig(new_config_snapshot, old_config_snapshot, std::move(attr_spec), reconfig_params, serial_num);
+    prepared_reconfig->complete(docid_limit, serial_num);
     _configurer->reconfigure(new_config_snapshot, old_config_snapshot, reconfig_params, resolver, *prepared_reconfig, serial_num);
 }
 
@@ -258,8 +261,10 @@ Fixture::reconfigure(const DocumentDBConfig& new_config_snapshot,
                      IDocumentDBReferenceResolver& resolver,
                      SerialNum serial_num)
 {
-    auto prepared_reconfig = _configurer->prepare_reconfig(new_config_snapshot, old_config_snapshot, reconfig_params, serial_num);
-    return _configurer->reconfigure(new_config_snapshot, old_config_snapshot, std::move(attr_spec), reconfig_params, resolver, *prepared_reconfig, serial_num);
+    auto docid_limit = attr_spec.getDocIdLimit();
+    auto prepared_reconfig = _configurer->prepare_reconfig(new_config_snapshot, old_config_snapshot, std::move(attr_spec), reconfig_params, serial_num);
+    prepared_reconfig->complete(docid_limit, serial_num);
+    return _configurer->reconfigure(new_config_snapshot, old_config_snapshot, reconfig_params, resolver, *prepared_reconfig, serial_num);
 }
 
 using MySummaryAdapter = test::MockSummaryAdapter;
@@ -318,7 +323,7 @@ struct FastAccessFixture
     FastAccessFixture()
         : _service(1),
           _view(_service.write()),
-          _configurer(_view._feedView, std::make_unique<AttributeWriterFactory>(), "test")
+          _configurer(_view._feedView, "test")
     {
         std::filesystem::remove_all(std::filesystem::path(BASE_DIR));
         std::filesystem::create_directory(std::filesystem::path(BASE_DIR));
@@ -341,8 +346,10 @@ FastAccessFixture::reconfigure(const DocumentDBConfig& new_config_snapshot,
                                SerialNum serial_num)
 {
     ReconfigParams reconfig_params{CCR()};
-    auto prepared_reconfig = _configurer.prepare_reconfig(new_config_snapshot, old_config_snapshot, reconfig_params, serial_num);
-    return _configurer.reconfigure(new_config_snapshot, old_config_snapshot, std::move(attr_spec), *prepared_reconfig, serial_num);
+    auto docid_limit = attr_spec.getDocIdLimit();
+    auto prepared_reconfig = _configurer.prepare_reconfig(new_config_snapshot, old_config_snapshot, std::move(attr_spec), reconfig_params, serial_num);
+    prepared_reconfig->complete(docid_limit, serial_num);
+    return _configurer.reconfigure(new_config_snapshot, old_config_snapshot, *prepared_reconfig, serial_num);
 }
 
 DocumentDBConfig::SP

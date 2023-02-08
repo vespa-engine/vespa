@@ -78,19 +78,16 @@ public:
 
     void reconfigureIndexSearchable();
 
-    std::unique_ptr<DocumentSubDBReconfig> prepare_reconfig(const DocumentDBConfig& new_config_snapshot, const DocumentDBConfig& old_config_snapshot, const ReconfigParams& reconfig_params, std::optional<search::SerialNum> serial_num);
-
-    void reconfigure(const DocumentDBConfig &newConfig,
-                     const DocumentDBConfig &oldConfig,
-                     const ReconfigParams &params,
-                     IDocumentDBReferenceResolver &resolver,
-                     const DocumentSubDBReconfig& prepared_reconfig,
-                     search::SerialNum serial_num);
+    std::unique_ptr<DocumentSubDBReconfig>
+    prepare_reconfig(const DocumentDBConfig& new_config_snapshot,
+                     const DocumentDBConfig& old_config_snapshot,
+                     AttributeCollectionSpec&& attr_spec,
+                     const ReconfigParams& reconfig_params,
+                     std::optional<search::SerialNum> serial_num);
 
     IReprocessingInitializer::UP
     reconfigure(const DocumentDBConfig &newConfig,
                 const DocumentDBConfig &oldConfig,
-                AttributeCollectionSpec && attrSpec,
                 const ReconfigParams &params,
                 IDocumentDBReferenceResolver &resolver,
                 const DocumentSubDBReconfig& prepared_reconfig,

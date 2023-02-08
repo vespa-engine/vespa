@@ -21,7 +21,7 @@ namespace vespalib {
 
 namespace proton {
 
-class AttributeManagerReconfig;
+class IAttributeManagerReconfig;
 class ImportedAttributesRepo;
 
 /**
@@ -37,13 +37,11 @@ struct IAttributeManager : public search::IAttributeManager
     using IAttributeFunctor = search::attribute::IAttributeFunctor;
     using IConstAttributeFunctor = search::attribute::IConstAttributeFunctor;
 
-    virtual std::unique_ptr<AttributeManagerReconfig> prepare_create(AttributeCollectionSpec&& spec) const = 0;
-
     /**
-     * Create a new attribute manager based on the content of the current one and
+     * Prepare to create a new attribute manager based on the content of the current one and
      * the given attribute collection spec.
      */
-    virtual IAttributeManager::SP create(AttributeCollectionSpec && spec) const = 0;
+    virtual std::unique_ptr<IAttributeManagerReconfig> prepare_create(AttributeCollectionSpec&& spec) const = 0;
 
     /**
      * Return the list of flush targets for this attribute manager.

@@ -499,22 +499,12 @@ AttributeManager::createContext() const
     return std::make_unique<AttributeContext>(*this);
 }
 
-std::unique_ptr<AttributeManagerReconfig>
+std::unique_ptr<IAttributeManagerReconfig>
 AttributeManager::prepare_create(Spec&& spec) const
 {
     auto initializer = std::make_unique<SequentialAttributesInitializer>(spec.getDocIdLimit());
     auto result = std::make_shared<AttributeManager>(*this, std::move(spec), *initializer);
     return std::make_unique<AttributeManagerReconfig>(std::move(result), std::move(initializer));
-}
-
-proton::IAttributeManager::SP
-AttributeManager::create(Spec&& spec) const
-{
-    assert(spec.getCurrentSerialNum().has_value());
-    auto docid_limit = spec.getDocIdLimit();
-    auto serial_num = spec.getCurrentSerialNum().value();
-    auto prepared_result = prepare_create(std::move(spec));
-    return prepared_result->create(docid_limit, serial_num);
 }
 
 std::vector<IFlushTarget::SP>

@@ -16,7 +16,7 @@ AttributeManagerReconfig::AttributeManagerReconfig(std::shared_ptr<AttributeMana
 
 AttributeManagerReconfig::~AttributeManagerReconfig() = default;
 
-std::shared_ptr<AttributeManager>
+std::shared_ptr<IAttributeManager>
 AttributeManagerReconfig::create(uint32_t docid_limit, search::SerialNum serial_num)
 {
     assert(_mgr);

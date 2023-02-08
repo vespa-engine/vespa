@@ -135,7 +135,9 @@ reconfigureMatchingMetrics(const RankProfilesConfig &cfg)
 std::unique_ptr<DocumentSubDBReconfig>
 SearchableDocSubDB::prepare_reconfig(const DocumentDBConfig& new_config_snapshot, const DocumentDBConfig& old_config_snapshot, const ReconfigParams& reconfig_params, std::optional<SerialNum> serial_num)
 {
-    return _configurer.prepare_reconfig(new_config_snapshot, old_config_snapshot, reconfig_params, serial_num);
+    auto alloc_strategy = new_config_snapshot.get_alloc_config().make_alloc_strategy(_subDbType);
+    auto attr_spec = createAttributeSpec(new_config_snapshot.getAttributesConfig(), alloc_strategy, serial_num);
+    return _configurer.prepare_reconfig(new_config_snapshot, old_config_snapshot, std::move(*attr_spec), reconfig_params, serial_num);
 }
 
 IReprocessingTask::List
@@ -146,15 +148,13 @@ SearchableDocSubDB::applyConfig(const DocumentDBConfig &newConfigSnapshot, const
     StoreOnlyDocSubDB::reconfigure(newConfigSnapshot.getStoreConfig(), alloc_strategy);
     IReprocessingTask::List tasks;
     applyFlushConfig(newConfigSnapshot.getMaintenanceConfigSP()->getFlushConfig());
-    if (params.shouldMatchersChange() && _addMetrics) {
+    if (prepared_reconfig.has_matchers_changed() && _addMetrics) {
         reconfigureMatchingMetrics(newConfigSnapshot.getRankProfilesConfig());
     }
-    if (params.shouldAttributeManagerChange()) {
+    if (prepared_reconfig.has_attribute_manager_changed()) {
         proton::IAttributeManager::SP oldMgr = getAttributeManager();
-        std::unique_ptr<AttributeCollectionSpec> attrSpec =
-            createAttributeSpec(newConfigSnapshot.getAttributesConfig(), alloc_strategy, serialNum);
         IReprocessingInitializer::UP initializer =
-            _configurer.reconfigure(newConfigSnapshot, oldConfigSnapshot, std::move(*attrSpec), params, resolver, prepared_reconfig, serialNum);
+            _configurer.reconfigure(newConfigSnapshot, oldConfigSnapshot, params, resolver, prepared_reconfig, serialNum);
         if (initializer && initializer->hasReprocessors()) {
             tasks.emplace_back(createReprocessingTask(*initializer, newConfigSnapshot.getDocumentTypeRepoSP()));
         }

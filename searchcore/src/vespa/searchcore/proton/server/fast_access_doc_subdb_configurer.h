@@ -1,12 +1,14 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include "searchable_doc_subdb_configurer.h"
 #include "fast_access_feed_view.h"
-#include "i_attribute_writer_factory.h"
 #include <vespa/searchcore/proton/reprocessing/i_reprocessing_initializer.h>
+#include <vespa/vespalib/util/varholder.h>
 
 namespace proton {
+
+class DocumentSubDBReconfig;
+class ReconfigParams;
 
 /**
  * Class used to reconfig the feed view used in a fast-access sub database
@@ -19,7 +21,6 @@ public:
 
 private:
     FeedViewVarHolder           &_feedView;
-    IAttributeWriterFactory::UP _factory;
     vespalib::string             _subDbName;
 
     void reconfigureFeedView(FastAccessFeedView & curr,
@@ -29,15 +30,18 @@ private:
 
 public:
     FastAccessDocSubDBConfigurer(FeedViewVarHolder &feedView,
-                                 IAttributeWriterFactory::UP factory,
                                  const vespalib::string &subDbName);
     ~FastAccessDocSubDBConfigurer();
 
-    std::unique_ptr<DocumentSubDBReconfig> prepare_reconfig(const DocumentDBConfig& new_config_snapshot, const DocumentDBConfig& old_config_snapshot, const ReconfigParams& reconfig_params, std::optional<search::SerialNum> serial_num);
+    std::unique_ptr<DocumentSubDBReconfig>
+    prepare_reconfig(const DocumentDBConfig& new_config_snapshot,
+                     const DocumentDBConfig& old_config_snapshot,
+                     AttributeCollectionSpec&& attr_spec,
+                     const ReconfigParams& reconfig_params,
+                     std::optional<search::SerialNum> serial_num);
 
     IReprocessingInitializer::UP reconfigure(const DocumentDBConfig &newConfig,
                                              const DocumentDBConfig &oldConfig,
-                                             AttributeCollectionSpec && attrSpec,
                                              const DocumentSubDBReconfig& prepared_reconfig,
                                              search::SerialNum serial_num);
 };

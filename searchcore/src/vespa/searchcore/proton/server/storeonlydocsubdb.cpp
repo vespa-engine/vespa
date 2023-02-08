@@ -412,7 +412,7 @@ StoreOnlyDocSubDB::prepare_reconfig(const DocumentDBConfig& new_config_snapshot,
     (void) old_config_snapshot;
     (void) reconfig_params;
     (void) serial_num;
-    return std::make_unique<DocumentSubDBReconfig>(std::shared_ptr<Matchers>());
+    return std::make_unique<DocumentSubDBReconfig>(std::shared_ptr<Matchers>(), std::shared_ptr<IAttributeManager>());
 }
 
 void

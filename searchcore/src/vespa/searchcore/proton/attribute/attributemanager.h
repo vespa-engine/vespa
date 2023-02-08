@@ -151,8 +151,7 @@ public:
 
     // Implements proton::IAttributeManager
 
-    std::unique_ptr<AttributeManagerReconfig> prepare_create(Spec && spec) const override;
-    proton::IAttributeManager::SP create(Spec && spec) const override;
+    std::unique_ptr<IAttributeManagerReconfig> prepare_create(Spec&& spec) const override;
 
     std::vector<IFlushTargetSP> getFlushTargets() const override;
 

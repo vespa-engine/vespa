@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "fast_access_doc_subdb.h"
-#include "attribute_writer_factory.h"
 #include "document_subdb_reconfig.h"
 #include "emptysearchview.h"
 #include "fast_access_document_retriever.h"
@@ -11,6 +10,7 @@
 #include <vespa/searchcore/proton/attribute/attribute_collection_spec_factory.h>
 #include <vespa/searchcore/proton/attribute/attribute_factory.h>
 #include <vespa/searchcore/proton/attribute/attribute_manager_initializer.h>
+#include <vespa/searchcore/proton/attribute/attribute_writer.h>
 #include <vespa/searchcore/proton/attribute/filter_attribute_manager.h>
 #include <vespa/searchcore/proton/common/alloc_config.h>
 #include <vespa/searchcore/proton/reprocessing/attribute_reprocessing_initializer.h>
@@ -198,7 +198,6 @@ FastAccessDocSubDB::FastAccessDocSubDB(const Config &cfg, const Context &ctx)
       _initAttrMgr(),
       _fastAccessFeedView(),
       _configurer(_fastAccessFeedView,
-                  std::make_unique<AttributeWriterFactory>(),
                   getSubDbName()),
       _subAttributeMetrics(ctx._subAttributeMetrics),
       _addMetrics(cfg._addMetrics),
@@ -246,7 +245,9 @@ FastAccessDocSubDB::initViews(const DocumentDBConfig &configSnapshot)
 std::unique_ptr<DocumentSubDBReconfig>
 FastAccessDocSubDB::prepare_reconfig(const DocumentDBConfig& new_config_snapshot, const DocumentDBConfig& old_config_snapshot, const ReconfigParams& reconfig_params, std::optional<SerialNum> serial_num)
 {
-    return _configurer.prepare_reconfig(new_config_snapshot, old_config_snapshot, reconfig_params, serial_num);
+    auto alloc_strategy = new_config_snapshot.get_alloc_config().make_alloc_strategy(_subDbType);
+    auto attr_spec = createAttributeSpec(new_config_snapshot.getAttributesConfig(), alloc_strategy, serial_num);
+    return _configurer.prepare_reconfig(new_config_snapshot, old_config_snapshot, std::move(*attr_spec), reconfig_params, serial_num);
 }
 
 IReprocessingTask::List
@@ -267,10 +268,8 @@ FastAccessDocSubDB::applyConfig(const DocumentDBConfig &newConfigSnapshot, const
         params.shouldAttributeWriterChange() ||
         newConfigSnapshot.getDocumentTypeRepoSP().get() != oldConfigSnapshot.getDocumentTypeRepoSP().get()) {
         proton::IAttributeManager::SP oldMgr = extractAttributeManager(_fastAccessFeedView.get());
-        std::unique_ptr<AttributeCollectionSpec> attrSpec =
-            createAttributeSpec(newConfigSnapshot.getAttributesConfig(), alloc_strategy, serialNum);
         IReprocessingInitializer::UP initializer =
-            _configurer.reconfigure(newConfigSnapshot, oldConfigSnapshot, std::move(*attrSpec), prepared_reconfig, serialNum);
+            _configurer.reconfigure(newConfigSnapshot, oldConfigSnapshot, prepared_reconfig, serialNum);
         if (initializer->hasReprocessors()) {
             tasks.push_back(IReprocessingTask::SP(createReprocessingTask(*initializer,
                     newConfigSnapshot.getDocumentTypeRepoSP()).release()));
