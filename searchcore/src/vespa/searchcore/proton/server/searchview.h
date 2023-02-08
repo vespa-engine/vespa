@@ -16,30 +16,30 @@ public:
     using InternalDocsumReply = std::pair<std::unique_ptr<DocsumReply>, bool>;
     using SP = std::shared_ptr<SearchView>;
 
-    static std::shared_ptr<SearchView> create(ISummaryManager::ISummarySetup::SP summarySetup, MatchView::SP matchView);
+    static std::shared_ptr<SearchView> create(std::shared_ptr<ISummaryManager::ISummarySetup> summarySetup, std::shared_ptr<MatchView> matchView);
     SearchView(const SearchView &) = delete;
     SearchView(SearchView &&) = delete;
     SearchView &operator=(const SearchView &) = delete;
     SearchView &operator=(SearchView &&) = delete;
     ~SearchView() override;
 
-    const ISummaryManager::ISummarySetup::SP & getSummarySetup() const { return _summarySetup; }
-    const MatchView::SP & getMatchView() const { return _matchView; }
-    const Matchers::SP  & getMatchers()  const { return _matchView->getMatchers(); }
-    const IndexSearchable::SP   & getIndexSearchable()  const { return _matchView->getIndexSearchable(); }
-    const IAttributeManager::SP & getAttributeManager() const { return _matchView->getAttributeManager(); }
-    SessionManager & getSessionManager()    const { return _matchView->getSessionManager(); }
-    const IDocumentMetaStoreContext::SP & getDocumentMetaStore() const { return _matchView->getDocumentMetaStore(); }
-    DocIdLimit &getDocIdLimit() const { return _matchView->getDocIdLimit(); }
+    const std::shared_ptr<ISummaryManager::ISummarySetup>& getSummarySetup() const noexcept { return _summarySetup; }
+    const std::shared_ptr<MatchView>& getMatchView() const noexcept { return _matchView; }
+    const std::shared_ptr<Matchers>& getMatchers() const noexcept { return _matchView->getMatchers(); }
+    const std::shared_ptr<IndexSearchable>& getIndexSearchable() const noexcept { return _matchView->getIndexSearchable(); }
+    const std::shared_ptr<IAttributeManager>& getAttributeManager() const noexcept { return _matchView->getAttributeManager(); }
+    SessionManager & getSessionManager() const noexcept { return _matchView->getSessionManager(); }
+    const std::shared_ptr<IDocumentMetaStoreContext>& getDocumentMetaStore() const noexcept { return _matchView->getDocumentMetaStore(); }
+    DocIdLimit &getDocIdLimit() const noexcept { return _matchView->getDocIdLimit(); }
     matching::MatchingStats getMatcherStats(const vespalib::string &rankProfile) const { return _matchView->getMatcherStats(rankProfile); }
 
     std::unique_ptr<DocsumReply> getDocsums(const DocsumRequest & req) override;
     std::unique_ptr<SearchReply> match(const SearchRequest &req, vespalib::ThreadBundle &threadBundle) const override;
 private:
-    SearchView(ISummaryManager::ISummarySetup::SP summarySetup, MatchView::SP matchView);
+    SearchView(std::shared_ptr<ISummaryManager::ISummarySetup> summarySetup, std::shared_ptr<MatchView> matchView);
     InternalDocsumReply getDocsumsInternal(const DocsumRequest & req);
-    ISummaryManager::ISummarySetup::SP _summarySetup;
-    MatchView::SP                      _matchView;
+    std::shared_ptr<ISummaryManager::ISummarySetup> _summarySetup;
+    std::shared_ptr<MatchView>                      _matchView;
 };
 
 } // namespace proton

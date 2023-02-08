@@ -2,6 +2,7 @@
 
 #include "matchview.h"
 #include "searchcontext.h"
+#include <vespa/searchcore/proton/attribute/i_attribute_manager.h>
 #include <vespa/searchcore/proton/matching/matcher.h>
 #include <vespa/searchlib/engine/searchrequest.h>
 #include <vespa/searchlib/engine/searchreply.h>
@@ -34,8 +35,8 @@ using matching::Matcher;
 using matching::SessionManager;
 
 MatchView::MatchView(Matchers::SP matchers,
-                     IndexSearchable::SP indexSearchable,
-                     IAttributeManager::SP attrMgr,
+                     std::shared_ptr<IndexSearchable> indexSearchable,
+                     std::shared_ptr<IAttributeManager> attrMgr,
                      SessionManager & sessionMgr,
                      IDocumentMetaStoreContext::SP metaStore,
                      DocIdLimit &docIdLimit)

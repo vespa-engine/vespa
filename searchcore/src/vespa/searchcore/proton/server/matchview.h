@@ -3,27 +3,32 @@
 #pragma once
 
 #include "matchers.h"
-#include <vespa/searchcore/proton/attribute/attributemanager.h>
 #include <vespa/searchcore/proton/common/docid_limit.h>
-#include <vespa/searchcore/proton/documentmetastore/documentmetastorecontext.h>
+#include <vespa/searchcore/proton/documentmetastore/i_document_meta_store_context.h>
 #include <vespa/searchcore/proton/matching/match_context.h>
 #include <vespa/searchcore/proton/summaryengine/isearchhandler.h>
-#include <vespa/searchcorespi/index/indexsearchable.h>
+
+namespace searchcorespi { class IndexSearchable; }
 
 namespace proton {
 
 namespace matching {
-    class SessionManager;
-    class Matcher;
+
+class MatchContext;
+class Matcher;
+class SessionManager;
+
 }
+
+struct IAttributeManager;
 
 class MatchView {
     using SessionManager = matching::SessionManager;
-    Matchers::SP                         _matchers;
-    searchcorespi::IndexSearchable::SP   _indexSearchable;
-    IAttributeManager::SP                _attrMgr;
+    std::shared_ptr<Matchers>           _matchers;
+    std::shared_ptr<searchcorespi::IndexSearchable> _indexSearchable;
+    std::shared_ptr<IAttributeManager>   _attrMgr;
     SessionManager                     & _sessionMgr;
-    IDocumentMetaStoreContext::SP        _metaStore;
+    std::shared_ptr<IDocumentMetaStoreContext> _metaStore;
     DocIdLimit                          &_docIdLimit;
 
     size_t getNumDocs() const {
@@ -35,20 +40,20 @@ public:
     MatchView(const MatchView &) = delete;
     MatchView & operator = (const MatchView &) = delete;
 
-    MatchView(Matchers::SP matchers,
-              searchcorespi::IndexSearchable::SP indexSearchable,
-              IAttributeManager::SP attrMgr,
+    MatchView(std::shared_ptr<Matchers> matchers,
+              std::shared_ptr<searchcorespi::IndexSearchable> indexSearchable,
+              std::shared_ptr<IAttributeManager> attrMgr,
               SessionManager & sessionMgr,
-              IDocumentMetaStoreContext::SP metaStore,
+              std::shared_ptr<IDocumentMetaStoreContext> metaStore,
               DocIdLimit &docIdLimit);
     ~MatchView();
 
-    const Matchers::SP & getMatchers() const { return _matchers; }
-    const searchcorespi::IndexSearchable::SP & getIndexSearchable() const { return _indexSearchable; }
-    const IAttributeManager::SP & getAttributeManager() const { return _attrMgr; }
-    SessionManager & getSessionManager() const { return _sessionMgr; }
-    const IDocumentMetaStoreContext::SP & getDocumentMetaStore() const { return _metaStore; }
-    DocIdLimit & getDocIdLimit() const { return _docIdLimit; }
+    const std::shared_ptr<Matchers>& getMatchers() const noexcept { return _matchers; }
+    const std::shared_ptr<searchcorespi::IndexSearchable>& getIndexSearchable() const noexcept { return _indexSearchable; }
+    const std::shared_ptr<IAttributeManager>& getAttributeManager() const noexcept { return _attrMgr; }
+    SessionManager & getSessionManager() const noexcept { return _sessionMgr; }
+    const std::shared_ptr<IDocumentMetaStoreContext>& getDocumentMetaStore() const noexcept { return _metaStore; }
+    DocIdLimit & getDocIdLimit() const noexcept { return _docIdLimit; }
 
     // Throws on error.
     std::shared_ptr<matching::Matcher> getMatcher(const vespalib::string & rankProfile) const;
@@ -58,7 +63,7 @@ public:
         return _matchers->getStats(rankProfile);
     }
 
-    matching::MatchContext::UP createContext() const;
+    std::unique_ptr<matching::MatchContext> createContext() const;
 
     std::unique_ptr<search::engine::SearchReply>
     match(std::shared_ptr<const ISearchHandler> searchHandler,

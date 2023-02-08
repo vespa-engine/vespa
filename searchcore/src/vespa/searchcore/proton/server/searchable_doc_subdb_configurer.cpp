@@ -7,9 +7,10 @@
 #include "searchview.h"
 #include <vespa/config-rank-profiles.h>
 #include <vespa/searchcore/proton/matching/matcher.h>
+#include <vespa/searchcore/proton/attribute/attribute_collection_spec.h>
 #include <vespa/searchcore/proton/attribute/attribute_collection_spec_factory.h>
-#include <vespa/searchcore/proton/attribute/attribute_manager_reconfig.h>
 #include <vespa/searchcore/proton/attribute/attribute_writer.h>
+#include <vespa/searchcore/proton/attribute/i_attribute_manager_reconfig.h>
 #include <vespa/searchcore/proton/attribute/imported_attributes_repo.h>
 #include <vespa/searchcore/proton/common/document_type_inspector.h>
 #include <vespa/searchcore/proton/common/indexschema_inspector.h>

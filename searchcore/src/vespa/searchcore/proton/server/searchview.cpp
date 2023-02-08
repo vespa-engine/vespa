@@ -3,6 +3,7 @@
 #include "searchview.h"
 #include <vespa/searchcore/proton/docsummary/docsumcontext.h>
 #include <vespa/searchlib/engine/searchreply.h>
+#include <vespa/searchlib/queryeval/begin_and_end_id.h>
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/util/issue.h>
 
@@ -77,7 +78,7 @@ hasAnyLidsMoved(const DocsumRequest & request,
 /**
  * Create empty docsum reply
  **/
-DocsumReply::UP
+std::unique_ptr<DocsumReply>
 createEmptyReply(const DocsumRequest &)
 {
     return std::make_unique<DocsumReply>();
@@ -86,10 +87,10 @@ createEmptyReply(const DocsumRequest &)
 }
 
 std::shared_ptr<SearchView>
-SearchView::create(ISummaryManager::ISummarySetup::SP summarySetup, MatchView::SP matchView) {
+SearchView::create(std::shared_ptr<ISummaryManager::ISummarySetup> summarySetup, std::shared_ptr<MatchView> matchView) {
     return std::shared_ptr<SearchView>( new SearchView(std::move(summarySetup), std::move(matchView)));
 }
-SearchView::SearchView(ISummaryManager::ISummarySetup::SP summarySetup, MatchView::SP matchView)
+SearchView::SearchView(std::shared_ptr<ISummaryManager::ISummarySetup> summarySetup, std::shared_ptr<MatchView> matchView)
     : ISearchHandler(),
       _summarySetup(std::move(summarySetup)),
       _matchView(std::move(matchView))
@@ -97,7 +98,7 @@ SearchView::SearchView(ISummaryManager::ISummarySetup::SP summarySetup, MatchVie
 
 SearchView::~SearchView() = default;
 
-DocsumReply::UP
+std::unique_ptr<DocsumReply>
 SearchView::getDocsums(const DocsumRequest & req)
 {
     LOG(spam, "getDocsums(): resultClass(%s), numHits(%zu)", req.resultClassName.c_str(), req.hits.size());
@@ -117,14 +118,14 @@ SearchView::getDocsums(const DocsumRequest & req)
 SearchView::InternalDocsumReply
 SearchView::getDocsumsInternal(const DocsumRequest & req)
 {
-    IDocumentMetaStoreContext::IReadGuard::UP readGuard = _matchView->getDocumentMetaStore()->getReadGuard();
+    auto readGuard = _matchView->getDocumentMetaStore()->getReadGuard();
     const search::IDocumentMetaStore & metaStore = readGuard->get();
     uint32_t numUsedLids = metaStore.getNumUsedLids();
     uint64_t startGeneration = readGuard->get().getCurrentGeneration();
 
     convertGidsToLids(req, metaStore, _matchView->getDocIdLimit().get());
-    IDocsumStore::UP store(_summarySetup->createDocsumStore());
-    MatchContext::UP mctx = _matchView->createContext();
+    auto store(_summarySetup->createDocsumStore());
+    auto mctx = _matchView->createContext();
     auto ctx = std::make_unique<DocsumContext>(req, _summarySetup->getDocsumWriter(), *store, _matchView->getMatcher(req.ranking),
                                                mctx->getSearchContext(), mctx->getAttributeContext(),
                                                *_summarySetup->getAttributeManager(), getSessionManager());
