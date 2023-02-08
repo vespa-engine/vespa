@@ -28,6 +28,15 @@ public class SharedLoadBalancerService implements LoadBalancerService {
     }
 
     @Override
+    public LoadBalancerInstance provision(LoadBalancerSpec spec) {
+        return create(spec, false);
+    }
+
+    @Override
+    public LoadBalancerInstance configure(LoadBalancerSpec spec, boolean force) {
+        return create(spec, force);
+    }
+
     public LoadBalancerInstance create(LoadBalancerSpec spec, boolean force) {
         if ( ! spec.settings().isPublicEndpoint())
             throw new IllegalArgumentException("non-public endpoints is not supported with " + getClass());
