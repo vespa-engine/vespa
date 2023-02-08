@@ -61,12 +61,16 @@ DataTypeNotFoundException::DataTypeNotFoundException(const vespalib::string& nam
 {
 }
 
+DataTypeNotFoundException::~DataTypeNotFoundException() = default;
+
 AnnotationTypeNotFoundException::AnnotationTypeNotFoundException(
         int id, const vespalib::string& location)
     : Exception(vespalib::make_string("Data type with id %d not found", id),
                 location, 1)
 {
 }
+
+AnnotationTypeNotFoundException::~AnnotationTypeNotFoundException() = default;
 
 FieldNotFoundException::
 FieldNotFoundException(const vespalib::string& fieldName,

@@ -22,7 +22,7 @@ public:
     InvalidDataTypeException(const DataType &actual,
                              const DataType &wanted,
                              const vespalib::string & location);
-    virtual ~InvalidDataTypeException();
+    ~InvalidDataTypeException() override;
 
     const DataType& getActualDataType() const { return _actual; }
     const DataType& getExpectedDataType() const { return _expected; }
@@ -48,7 +48,7 @@ public:
     InvalidDataTypeConversionException(const DataType &actual,
                                        const DataType &wanted,
                                        const vespalib::string & location);
-    virtual ~InvalidDataTypeConversionException() throw();
+    ~InvalidDataTypeConversionException() override;
 
     const DataType& getActualDataType() const { return _actual; }
     const DataType& getExpectedDataType() const { return _expected; }
@@ -93,6 +93,7 @@ class DataTypeNotFoundException : public vespalib::Exception
 public:
     DataTypeNotFoundException(int id, const vespalib::string& location);
     DataTypeNotFoundException(const vespalib::string& name, const vespalib::string& location);
+    ~DataTypeNotFoundException() override;
 
     VESPA_DEFINE_EXCEPTION_SPINE(DataTypeNotFoundException);
 };
@@ -107,6 +108,7 @@ class AnnotationTypeNotFoundException : public vespalib::Exception
 {
 public:
     AnnotationTypeNotFoundException(int id, const vespalib::string& location);
+    ~AnnotationTypeNotFoundException() override;
 
     VESPA_DEFINE_EXCEPTION_SPINE(AnnotationTypeNotFoundException);
 };
