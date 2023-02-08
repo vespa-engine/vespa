@@ -358,7 +358,7 @@ public class Flags {
             ZONE_ID, NODE_TYPE, HOSTNAME);
 
     public static final UnboundStringFlag ZOOKEEPER_SNAPSHOT_METHOD = defineStringFlag(
-            "zookeeper-snapshot-method", "gz",
+            "zookeeper-snapshot-method", "",
             List.of("mpolden"), "2023-02-01", "2023-05-01",
             "ZooKeeper snapshot compression method. Valid values are '', 'gz' and 'snappy'",
             "Takes effect on node restart");
