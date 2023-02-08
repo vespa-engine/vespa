@@ -1,7 +1,9 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.schema.expressiontransforms;
 
+import com.yahoo.schema.FeatureNames;
 import com.yahoo.schema.RankProfile;
+import com.yahoo.searchlib.rankingexpression.Reference;
 import com.yahoo.searchlib.rankingexpression.rule.CompositeNode;
 import com.yahoo.searchlib.rankingexpression.rule.ConstantNode;
 import com.yahoo.searchlib.rankingexpression.rule.ExpressionNode;
@@ -38,8 +40,9 @@ public class InputRecorder extends ExpressionTransformer<RankProfileTransformCon
     }
 
     private void handle(ReferenceNode feature, RankProfileTransformContext context) {
-        String name = feature.getName();
-        var args = feature.getArguments();
+        Reference ref = feature.reference();
+        String name = ref.name();
+        var args = ref.arguments();
         if (args.size() == 0) {
             var f = context.rankProfile().getFunctions().get(name);
             if (f != null && f.function().arguments().size() == 0) {
@@ -50,18 +53,20 @@ public class InputRecorder extends ExpressionTransformer<RankProfileTransformCon
             return;
         }
         if (args.size() == 1) {
-            if ("value".equals(name)) {
-                transform(args.expressions().get(0), context);
-                return;
-            }
-            if ("attribute".equals(name) || "query".equals(name)) {
+            if (FeatureNames.isAttributeFeature(ref)) {
                 neededInputs.add(feature.toString());
                 return;
             }
-            if ("constant".equals(name)) {
+            if (FeatureNames.isQueryFeature(ref)) {
+                // get rid of this later, we should be able
+                // to get it from the query
+                neededInputs.add(feature.toString());
+                return;
+            }
+            if (FeatureNames.isConstantFeature(ref)) {
                 var allConstants = context.rankProfile().constants();
-                if (allConstants.containsKey(feature.reference())) {
-                    neededInputs.add(feature.toString());
+                if (allConstants.containsKey(ref)) {
+                    // assumes we have the constant available during evaluation without any more wiring
                     return;
                 }
                 throw new IllegalArgumentException("unknown constant: " + feature);
