@@ -12,8 +12,8 @@ private:
 public:
     MsgException(const MsgException &x) : std::exception(), _string(x._string) {}
     MsgException(const char *s) : _string(s) {}
-    ~MsgException() throw() {} // nothing to do
-    const char *what() const throw() override { return _string; }
+    ~MsgException() override = default;
+    const char *what() const noexcept override { return _string; }
 };
 
 class InputBuf

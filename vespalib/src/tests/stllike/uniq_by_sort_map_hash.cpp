@@ -28,7 +28,7 @@ public:
     };
     RoundRobinAllocator() { }
     template<typename _Tp1>
-    RoundRobinAllocator(const RoundRobinAllocator<_Tp1>&) throw() { }
+    RoundRobinAllocator(const RoundRobinAllocator<_Tp1>&) noexcept { }
 
     void construct(pointer p, const T& val) { new(static_cast<void*>(p)) T(val); }
     void destroy(pointer p) {
@@ -49,7 +49,7 @@ public:
             _r += n;
         }
     }
-    size_type max_size() const throw() { return _sz; }
+    size_type max_size() const noexcept { return _sz; }
 
 private:
     static size_t _r;

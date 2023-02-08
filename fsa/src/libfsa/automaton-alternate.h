@@ -436,14 +436,14 @@ private:
       struct rebind
       { using other = MMapArenaAllocator<_Tp1>; };
 
-    MMapArenaAllocator() throw(): _chunks(), _size(0) { }
+    MMapArenaAllocator() noexcept : _chunks(), _size(0) { }
 
-    MMapArenaAllocator(const MMapArenaAllocator&) throw(): _chunks(), _size(0) { }
+    MMapArenaAllocator(const MMapArenaAllocator&) noexcept : _chunks(), _size(0) { }
 
     template<typename _Tp1>
-      MMapArenaAllocator(const MMapArenaAllocator<_Tp1>&) throw(): _chunks(), _size(0) { }
+      MMapArenaAllocator(const MMapArenaAllocator<_Tp1>&) noexcept : _chunks(), _size(0) { }
 
-    ~MMapArenaAllocator() throw() { release(); }
+    ~MMapArenaAllocator() noexcept { release(); }
 
     pointer
     address(reference __x) const { return &__x; }
@@ -489,7 +489,7 @@ private:
     }
 
     size_type
-    max_size() const throw()
+    max_size() const noexcept
     { return _CAPACITY / sizeof(_Tp); }
 
     void
