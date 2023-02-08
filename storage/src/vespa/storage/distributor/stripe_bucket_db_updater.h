@@ -144,12 +144,12 @@ private:
                                        const BucketRequest& req);
     void mergeBucketInfoWithDatabase(const std::shared_ptr<api::RequestBucketInfoReply>& repl,
                                      const BucketRequest& req);
-    void convertBucketInfoToBucketList(const std::shared_ptr<api::RequestBucketInfoReply>& repl,
+    static void convertBucketInfoToBucketList(const std::shared_ptr<api::RequestBucketInfoReply>& repl,
                                        uint16_t targetNode, BucketListMerger::BucketList& newList);
     void sendRequestBucketInfo(uint16_t node, const document::Bucket& bucket,
-                               const std::shared_ptr<MergeReplyGuard>& mergeReply);
-    void addBucketInfoForNode(const BucketDatabase::Entry& e, uint16_t node,
-                              BucketListMerger::BucketList& existing) const;
+                               const std::shared_ptr<MergeReplyGuard>& mergeReplystatic );
+    static void addBucketInfoForNode(const BucketDatabase::Entry& e, uint16_t node,
+                                     BucketListMerger::BucketList& existing);
     void clearReadOnlyBucketRepoDatabases();
     /**
      * Adds all buckets contained in the bucket database
@@ -197,7 +197,7 @@ private:
         ~MergingNodeRemover() override;
 
         Result merge(BucketDatabase::Merger&) override;
-        void logRemove(const document::BucketId& bucketId, const char* msg) const;
+        static void logRemove(const document::BucketId& bucketId, const char* msg) ;
         bool distributorOwnsBucket(const document::BucketId&) const;
 
         const std::vector<BucketDatabase::Entry>& getNonOwnedEntries() const noexcept {

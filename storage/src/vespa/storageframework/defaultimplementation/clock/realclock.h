@@ -14,7 +14,6 @@
 namespace storage::framework::defaultimplementation {
 
 struct RealClock : public Clock {
-    SecondTime getTimeInSeconds() const override;
     vespalib::steady_time getMonotonicTime() const override;
     vespalib::system_time getSystemTime() const override;
 };

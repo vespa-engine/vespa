@@ -13,17 +13,12 @@
 
 #pragma once
 
-#include "time.h"
-#include <memory>
+#include <vespa/vespalib/util/time.h>
 
 namespace storage::framework {
 
 struct Clock {
-    using UP = std::unique_ptr<Clock>;
-
     virtual ~Clock() = default;
-
-    [[nodiscard]] virtual SecondTime getTimeInSeconds() const = 0;
 
     // Time point resolution is intentionally not defined here.
     [[nodiscard]] virtual vespalib::steady_time getMonotonicTime() const = 0;

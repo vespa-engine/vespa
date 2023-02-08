@@ -848,11 +848,7 @@ DistributorStripe::enable_cluster_state_bundle(const lib::ClusterStateBundle& ne
     // TODO STRIPE replace legacy func
     enableClusterStateBundle(new_state);
     if (has_bucket_ownership_change) {
-        using TimePoint = OwnershipTransferSafeTimePointCalculator::TimePoint;
-        // Note: this assumes that std::chrono::system_clock and the framework
-        // system clock have the same epoch, which should be a reasonable
-        // assumption.
-        TimePoint now = _component.getClock().getSystemTime();
+        vespalib::system_time now = _component.getClock().getSystemTime();
         _externalOperationHandler.rejectFeedBeforeTimeReached(_ownershipSafeTimeCalc->safeTimePoint(now));
     }
     _bucketDBUpdater.handle_activated_cluster_state_bundle(); // Triggers resending of queued requests

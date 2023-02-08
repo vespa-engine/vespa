@@ -3,24 +3,10 @@
 #include <vespa/storage/distributor/ownership_transfer_safe_time_point_calculator.h>
 #include <vespa/vespalib/gtest/gtest.h>
 
-namespace std::chrono {
-
-template <typename Clock, typename Duration>
-std::ostream& operator<<(std::ostream& os,
-                         std::chrono::time_point<Clock, Duration> t)
-{
-    os << std::chrono::duration_cast<std::chrono::milliseconds>(
-            t.time_since_epoch()).count() << "ms";
-    return os;
-}
-
-}
-
 namespace storage::distributor {
 
 using CalcType = OwnershipTransferSafeTimePointCalculator;
-using Clock = CalcType::Clock;
-using TimePoint = CalcType::TimePoint;
+using TimePoint = vespalib::system_time;
 
 using namespace std::literals::chrono_literals;
 

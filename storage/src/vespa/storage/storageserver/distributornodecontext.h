@@ -25,8 +25,7 @@ struct DistributorNodeContext : public StorageNodeContext {
      * You can provide your own clock implementation. Useful in testing where
      * you want to fake the clock.
      */
-    DistributorNodeContext(
-            framework::Clock::UP clock = framework::Clock::UP(new RealClock));
+    DistributorNodeContext(std::unique_ptr<framework::Clock> clock);
 
     /**
      * Get the actual component register. Available as the actual type as the

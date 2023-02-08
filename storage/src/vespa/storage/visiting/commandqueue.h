@@ -87,8 +87,6 @@ public:
           _cached_size(0)
     {}
 
-    const framework::Clock& getTimer() const { return _clock; }
-
     iterator begin() { return _commands.begin(); }
     iterator end() { return _commands.end(); }
 

@@ -4,7 +4,6 @@
 #include "crypto_uuid_generator.h"
 #include "top_level_distributor.h"
 #include "distributor_bucket_space.h"
-#include "distributor_bucket_space_repo.h"
 #include "externaloperationhandler.h"
 #include "operation_sequencer.h"
 #include <vespa/document/base/documentid.h>
@@ -18,7 +17,6 @@
 #include <vespa/storage/distributor/operations/external/statbucketlistoperation.h>
 #include <vespa/storage/distributor/operations/external/statbucketoperation.h>
 #include <vespa/storage/distributor/operations/external/twophaseupdateoperation.h>
-#include <vespa/storage/distributor/operations/external/updateoperation.h>
 #include <vespa/storage/distributor/operations/external/visitoroperation.h>
 #include <vespa/storageapi/message/persistence.h>
 #include <vespa/storageapi/message/removelocation.h>
@@ -127,7 +125,7 @@ ExternalOperationHandler::makeSafeTimeRejectionResult(TimePoint unsafeTime)
 bool
 ExternalOperationHandler::checkSafeTimeReached(api::StorageCommand& cmd)
 {
-    const auto now = TimePoint(std::chrono::seconds(_node_ctx.clock().getTimeInSeconds().getTime()));
+    vespalib::system_time now = _node_ctx.clock().getSystemTime();
     if (now < _rejectFeedBeforeTimeReached) {
         api::StorageReply::UP reply(cmd.makeReply());
         reply->setResult(makeSafeTimeRejectionResult(now));
@@ -431,7 +429,7 @@ std::shared_ptr<Operation> ExternalOperationHandler::try_generate_get_operation(
             bounce_with_wrong_distribution(*cmd, *snapshot.context().default_active_cluster_state());
             metrics.locked()->failures.wrongdistributor.inc();
         }
-        return std::shared_ptr<Operation>();
+        return {};
     }
     // The snapshot is aware of whether stale reads are enabled, so we don't have to check that here.
     const auto* space_repo = snapshot.bucket_space_repo();

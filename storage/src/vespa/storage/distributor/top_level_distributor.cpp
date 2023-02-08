@@ -145,9 +145,8 @@ TopLevelDistributor::onOpen()
         _threadPool.start(_component.getThreadPool());
         start_stripe_pool();
     } else {
-        LOG(warning, "Not starting distributor thread as it's configured to "
-                     "run. Unless you are just running a test tool, this is a "
-                     "fatal error.");
+        LOG(warning, "Not starting distributor thread as it's configured to run. Unless you are just running a "
+                     "test tool, this is a fatal error.");
     }
 }
 
@@ -313,8 +312,7 @@ TopLevelDistributor::storageDistributionChanged()
         _next_distribution = _component.getDistribution();
     } else {
         LOG(debug, "Got distribution change, but the distribution %s was the same as before: %s",
-            _component.getDistribution()->toString().c_str(),
-            _distribution->toString().c_str());
+            _component.getDistribution()->toString().c_str(), _distribution->toString().c_str());
     }
 }
 
@@ -457,15 +455,14 @@ TopLevelDistributor::enable_next_config_if_changed()
 void
 TopLevelDistributor::un_inhibit_maintenance_if_safe_time_passed()
 {
-    if (_maintenance_safe_time_point.time_since_epoch().count() != 0) {
-        using TimePoint = OwnershipTransferSafeTimePointCalculator::TimePoint;
-        const auto now = TimePoint(std::chrono::seconds(_component.clock().getTimeInSeconds().getTime()));
+    if (vespalib::count_s(_maintenance_safe_time_point.time_since_epoch()) != 0) {
+        const auto now = _component.clock().getSystemTime();
         if (now >= _maintenance_safe_time_point) {
             // Thread safe. Relaxed store is fine; stripes will eventually observe new flag status.
             for (auto& stripe : _stripes) {
                 stripe->inhibit_non_activation_maintenance_operations(false);
             }
-            _maintenance_safe_time_point = TimePoint{};
+            _maintenance_safe_time_point = {};
             LOG(debug, "Marked all stripes as no longer inhibiting non-activation maintenance operations");
         }
     }

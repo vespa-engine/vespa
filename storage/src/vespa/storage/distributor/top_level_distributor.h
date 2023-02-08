@@ -208,11 +208,11 @@ private:
     mutable std::vector<std::shared_ptr<DistributorStatus>> _fetched_status_requests;
     mutable std::mutex                   _stripe_scan_notify_mutex;
     std::vector<StripeScanStats>         _stripe_scan_stats; // Indices are 1-1 with _stripes entries
-    std::chrono::steady_clock::time_point _last_host_info_send_time;
-    std::chrono::milliseconds            _host_info_send_delay;
+    vespalib::steady_time                _last_host_info_send_time;
+    vespalib::duration                   _host_info_send_delay;
     // Ideally this would use steady_clock, but for now let's use the same semantics as
     // feed blocking during safe time periods.
-    std::chrono::system_clock::time_point _maintenance_safe_time_point;
+    vespalib::system_time                _maintenance_safe_time_point;
     std::chrono::seconds                 _maintenance_safe_time_delay;
     framework::ThreadWaitInfo            _tickResult;
     MetricUpdateHook                     _metricUpdateHook;

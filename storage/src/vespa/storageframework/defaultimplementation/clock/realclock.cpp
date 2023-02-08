@@ -5,13 +5,6 @@
 
 namespace storage::framework::defaultimplementation {
 
-SecondTime
-RealClock::getTimeInSeconds() const {
-    struct timeval mytime;
-    gettimeofday(&mytime, nullptr);
-    return SecondTime(mytime.tv_sec);
-}
-
 vespalib::steady_time
 RealClock::getMonotonicTime() const {
     return vespalib::steady_clock::now();

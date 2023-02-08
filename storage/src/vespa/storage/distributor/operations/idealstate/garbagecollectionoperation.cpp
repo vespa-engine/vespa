@@ -242,8 +242,7 @@ void GarbageCollectionOperation::on_metadata_read_phase_done(DistributorStripeMe
 void GarbageCollectionOperation::update_last_gc_timestamp_in_db() {
     BucketDatabase::Entry dbentry = _bucketSpace->getBucketDatabase().get(getBucketId());
     if (dbentry.valid()) {
-        dbentry->setLastGarbageCollectionTime(
-                _manager->node_context().clock().getTimeInSeconds().getTime());
+        dbentry->setLastGarbageCollectionTime(vespalib::count_s(_manager->node_context().clock().getSystemTime().time_since_epoch()));
         LOG(debug, "GC(%s): Tagging bucket completed at time %u",
             getBucket().toString().c_str(), dbentry->getLastGarbageCollectionTime());
         _bucketSpace->getBucketDatabase().update(dbentry);
