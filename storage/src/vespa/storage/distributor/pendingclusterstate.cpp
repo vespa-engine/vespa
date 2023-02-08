@@ -306,7 +306,7 @@ PendingClusterState::getSummary() const
 {
     return Summary(getPrevClusterStateBundleString(),
                    getNewClusterStateBundleString(),
-                   std::chrono::microseconds(vespalib::count_us(_clock.getSystemTime().time_since_epoch()) - _creationTimestamp));
+                   _clock.getSystemTime().time_since_epoch() - std::chrono::microseconds(_creationTimestamp));
 }
 
 PendingBucketSpaceDbTransition&
