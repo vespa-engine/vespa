@@ -14,9 +14,6 @@ import com.yahoo.slime.Inspector;
 import com.yahoo.slime.ObjectTraverser;
 import com.yahoo.slime.SlimeUtils;
 import com.yahoo.slime.Type;
-import com.yahoo.vespa.flags.BooleanFlag;
-import com.yahoo.vespa.flags.FlagSource;
-import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.hosted.provision.LockedNodeList;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
@@ -68,13 +65,11 @@ public class NodePatcher {
     private final NodeRepository nodeRepository;
     private final NodeFlavors nodeFlavors;
     private final Clock clock;
-    private final BooleanFlag recursiveWantToDeprovision;
 
-    public NodePatcher(NodeFlavors nodeFlavors, NodeRepository nodeRepository, FlagSource flagSource) {
+    public NodePatcher(NodeFlavors nodeFlavors, NodeRepository nodeRepository) {
         this.nodeRepository = nodeRepository;
         this.nodeFlavors = nodeFlavors;
         this.clock = nodeRepository.clock();
-        this.recursiveWantToDeprovision = Flags.RECURSIVE_WANT_TO_DEPROVISION.bindTo(flagSource);
     }
 
     /**
@@ -200,7 +195,6 @@ public class NodePatcher {
                 // These needs to be handled as one, because certain combinations are not allowed.
                 return node.withWantToRetire(asOptionalBoolean(root.field(WANT_TO_RETIRE)).orElseGet(node.status()::wantToRetire),
                                              asOptionalBoolean(root.field(WANT_TO_DEPROVISION))
-                                                     .filter(want -> recursiveWantToDeprovision.value() || !applyingAsChild)
                                                      .orElseGet(node.status()::wantToDeprovision),
                                              asOptionalBoolean(root.field(WANT_TO_REBUILD))
                                                      .filter(want -> !applyingAsChild)
