@@ -32,6 +32,8 @@
     },
     {
       "url":"http://localhost:8080/nodes/v2/stats/"
-    }
-  ]
+    },
+    {
+      "url":"http://localhost:8080/nodes/v2/wireguard/"
+    }  ]
 }
