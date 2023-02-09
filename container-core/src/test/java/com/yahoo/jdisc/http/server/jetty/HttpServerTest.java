@@ -174,11 +174,9 @@ public class HttpServerTest {
                 .expectStatusCode(is(BAD_REQUEST)).expectContent(containsString("Bad Host: multiple headers"));
         assertTrue(driver.close());
         var aggregator = ResponseMetricAggregator.getBean(driver.server());
-        var metrics = aggregator.takeStatistics();
-        long badRequestResponses = metrics.stream()
-                .filter(m -> m.dimensions.statusCode == 400 && m.dimensions.method.equals("GET"))
-                .count();
-        assertEquals(1, badRequestResponses, metrics::toString);
+        var metric = waitForStatistics(aggregator);
+        assertEquals(400, metric.dimensions.statusCode);
+        assertEquals("GET", metric.dimensions.method);
     }
 
     @Test
