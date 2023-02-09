@@ -190,6 +190,7 @@ class NodesResponse extends SlimeJsonResponse {
         if (!node.cloudAccount().isUnspecified()) {
             object.setString("cloudAccount", node.cloudAccount().value());
         }
+        node.wireguardPubKey().ifPresent(key -> object.setString("wireguardPubkey", key.value()));
     }
 
     private Version resolveVersionFlag(StringFlag flag, Node node, Allocation allocation) {

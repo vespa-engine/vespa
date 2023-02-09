@@ -520,7 +520,7 @@ public class NodeRepositoryNode {
                ", exclusiveToClusterType='" + exclusiveToClusterType + '\'' +
                ", switchHostname='" + switchHostname + '\'' +
                ", cloudAccount='" + cloudAccount + '\'' +
-                ", wireguardPubKey='" + wireguardPubKey + '\'' +
+               ", wireguardPubKey='" + wireguardPubKey + '\'' +
                '}';
     }
 
