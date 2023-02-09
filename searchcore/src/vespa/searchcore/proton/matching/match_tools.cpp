@@ -36,6 +36,8 @@ using search::fef::Properties;
 using search::fef::RankSetup;
 using search::fef::IIndexEnvironment;
 
+using namespace vespalib::literals;
+
 bool contains_all(const HandleRecorder::HandleMap &old_map,
                   const HandleRecorder::HandleMap &new_map)
 {
@@ -187,10 +189,7 @@ MatchToolsFactory(QueryLimiter               & queryLimiter,
       _diversityParams(),
       _valid(false)
 {
-    search::engine::Trace trace(root_trace.getRelativeTime(), root_trace.getLevel());
-    trace.match_profile_depth(root_trace.match_profile_depth());
-    trace.first_phase_profile_depth(root_trace.first_phase_profile_depth());
-    trace.second_phase_profile_depth(root_trace.second_phase_profile_depth());
+    auto trace = root_trace.make_trace();
     trace.addEvent(4, "Start query setup");
     _query.setWhiteListBlueprint(metaStore.createWhiteListBlueprint());
     trace.addEvent(5, "Deserialize and build query tree");
@@ -231,10 +230,7 @@ MatchToolsFactory(QueryLimiter               & queryLimiter,
         _match_limiter = std::make_unique<NoMatchPhaseLimiter>();
     }
     trace.addEvent(4, "Complete query setup");
-    if (trace.hasTrace()) {
-        vespalib::slime::ObjectInserter inserter(root_trace.createCursor("query_setup"), "traces");
-        vespalib::slime::inject(trace.getTraces(), inserter);
-    }
+    root_trace.make_inserter("query_setup"_ssv).handle_nested(trace);
 }
 
 MatchToolsFactory::~MatchToolsFactory() = default;

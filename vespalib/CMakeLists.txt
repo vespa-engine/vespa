@@ -200,6 +200,7 @@ vespa_define_module(
     src/tests/util/mmap_file_allocator_factory
     src/tests/util/rcuvector
     src/tests/util/size_literals
+    src/tests/util/static_string
     src/tests/util/string_escape
     src/tests/valgrind
     src/tests/visit_ranges
