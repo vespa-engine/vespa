@@ -251,11 +251,11 @@ DocumentSubDBCollection::pruneRemovedFields(SerialNum serialNum)
 }
 
 std::unique_ptr<DocumentDBReconfig>
-DocumentSubDBCollection::prepare_reconfig(const DocumentDBConfig& new_config_snapshot, const DocumentDBConfig& old_config_snapshot, const ReconfigParams& reconfig_params, std::optional<SerialNum> serial_num)
+DocumentSubDBCollection::prepare_reconfig(const DocumentDBConfig& new_config_snapshot, const ReconfigParams& reconfig_params, std::optional<SerialNum> serial_num)
 {
     auto start_time = vespalib::steady_clock::now();
-    auto ready_reconfig = getReadySubDB()->prepare_reconfig(new_config_snapshot, old_config_snapshot, reconfig_params, serial_num);
-    auto not_ready_reconfig = getNotReadySubDB()->prepare_reconfig(new_config_snapshot, old_config_snapshot, reconfig_params, serial_num);
+    auto ready_reconfig = getReadySubDB()->prepare_reconfig(new_config_snapshot, reconfig_params, serial_num);
+    auto not_ready_reconfig = getNotReadySubDB()->prepare_reconfig(new_config_snapshot, reconfig_params, serial_num);
     return std::make_unique<DocumentDBReconfig>(start_time, std::move(ready_reconfig), std::move(not_ready_reconfig));
 }
 
@@ -279,7 +279,7 @@ DocumentSubDBCollection::applyConfig(const DocumentDBConfig &newConfigSnapshot,
     _reprocessingRunner.addTasks(tasks);
     tasks = getNotReadySubDB()->applyConfig(newConfigSnapshot, oldConfigSnapshot, serialNum, params, resolver, prepared_reconfig.not_ready_reconfig());
     _reprocessingRunner.addTasks(tasks);
-    auto removed_reconfig = getRemSubDB()->prepare_reconfig(newConfigSnapshot, oldConfigSnapshot, params, serialNum);
+    auto removed_reconfig = getRemSubDB()->prepare_reconfig(newConfigSnapshot, params, serialNum);
     tasks = getRemSubDB()->applyConfig(newConfigSnapshot, oldConfigSnapshot, serialNum, params, resolver, *removed_reconfig);
     removed_reconfig.reset();
     _reprocessingRunner.addTasks(tasks);
