@@ -26,7 +26,7 @@ import java.util.Optional;
 import static com.yahoo.yolean.Exceptions.uncheck;
 
 /**
- * Request handler wrapper that enforced required capabilities as specified by underlying {@link CapabilityRequiringRequestHandler}.
+ * Request handler wrapper that enforces required capabilities as specified by underlying {@link CapabilityRequiringRequestHandler}.
  *
  * @author bjorncs
  */
