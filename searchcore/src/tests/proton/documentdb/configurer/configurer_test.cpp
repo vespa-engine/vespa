@@ -259,7 +259,7 @@ Fixture::reconfigure(const DocumentDBConfig& new_config_snapshot,
     EXPECT_FALSE(reconfig_params.shouldAttributeManagerChange());
     uint32_t docid_limit = 1;
     AttributeCollectionSpecFactory attr_spec_factory(AllocStrategy(), false);
-    auto prepared_reconfig = _configurer->prepare_reconfig(new_config_snapshot, old_config_snapshot, attr_spec_factory, reconfig_params, docid_limit, serial_num);
+    auto prepared_reconfig = _configurer->prepare_reconfig(new_config_snapshot, attr_spec_factory, reconfig_params, docid_limit, serial_num);
     prepared_reconfig->complete(docid_limit, serial_num);
     _configurer->reconfigure(new_config_snapshot, old_config_snapshot, reconfig_params, resolver, *prepared_reconfig, serial_num);
 }
@@ -273,7 +273,7 @@ Fixture::reconfigure(const DocumentDBConfig& new_config_snapshot,
                      SerialNum serial_num)
 {
     AttributeCollectionSpecFactory attr_spec_factory(AllocStrategy(), false);
-    auto prepared_reconfig = _configurer->prepare_reconfig(new_config_snapshot, old_config_snapshot, attr_spec_factory, reconfig_params, docid_limit, serial_num);
+    auto prepared_reconfig = _configurer->prepare_reconfig(new_config_snapshot, attr_spec_factory, reconfig_params, docid_limit, serial_num);
     prepared_reconfig->complete(docid_limit, serial_num);
     return _configurer->reconfigure(new_config_snapshot, old_config_snapshot, reconfig_params, resolver, *prepared_reconfig, serial_num);
 }
@@ -358,7 +358,7 @@ FastAccessFixture::reconfigure(const DocumentDBConfig& new_config_snapshot,
 {
     ReconfigParams reconfig_params{CCR()};
     AttributeCollectionSpecFactory attr_spec_factory(AllocStrategy(), true);
-    auto prepared_reconfig = _configurer.prepare_reconfig(new_config_snapshot, old_config_snapshot, attr_spec_factory, reconfig_params, docid_limit, serial_num);
+    auto prepared_reconfig = _configurer.prepare_reconfig(new_config_snapshot, attr_spec_factory, reconfig_params, docid_limit, serial_num);
     prepared_reconfig->complete(docid_limit, serial_num);
     return _configurer.reconfigure(new_config_snapshot, old_config_snapshot, *prepared_reconfig, serial_num);
 }

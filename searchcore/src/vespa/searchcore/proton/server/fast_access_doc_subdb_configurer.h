@@ -46,7 +46,6 @@ public:
 
     std::unique_ptr<DocumentSubDBReconfig>
     prepare_reconfig(const DocumentDBConfig& new_config_snapshot,
-                     const DocumentDBConfig& old_config_snapshot,
                      const AttributeCollectionSpecFactory& attr_spec_factory,
                      const ReconfigParams& reconfig_params,
                      uint32_t docid_limit,

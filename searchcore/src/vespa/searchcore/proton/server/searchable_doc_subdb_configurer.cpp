@@ -148,14 +148,11 @@ SearchableDocSubDBConfigurer::reconfigureIndexSearchable()
 
 std::unique_ptr<DocumentSubDBReconfig>
 SearchableDocSubDBConfigurer::prepare_reconfig(const DocumentDBConfig& new_config_snapshot,
-                                               const DocumentDBConfig& old_config_snapshot,
                                                const AttributeCollectionSpecFactory& attr_spec_factory,
                                                const ReconfigParams& reconfig_params,
                                                uint32_t docid_limit,
                                                std::optional<search::SerialNum> serial_num)
 {
-    (void) old_config_snapshot;
-    (void) serial_num;
     auto old_matchers = _searchView.get()->getMatchers();
     auto old_attribute_manager = _searchView.get()->getAttributeManager();
     auto reconfig = std::make_unique<DocumentSubDBReconfig>(std::move(old_matchers), old_attribute_manager);

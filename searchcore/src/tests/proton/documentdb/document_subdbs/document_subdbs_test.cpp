@@ -379,7 +379,7 @@ struct FixtureBase
         cmpResult.documentTypeRepoChanged = true;
         MyDocumentDBReferenceResolver resolver;
         ReconfigParams reconfig_params(cmpResult);
-        auto prepared_reconfig = _subDb.prepare_reconfig(*newCfg->_cfg, *_snapshot->_cfg, reconfig_params, serialNum);
+        auto prepared_reconfig = _subDb.prepare_reconfig(*newCfg->_cfg, reconfig_params, serialNum);
         _subDb.complete_prepare_reconfig(*prepared_reconfig, serialNum);
         auto tasks = _subDb.applyConfig(*newCfg->_cfg, *_snapshot->_cfg,
                                         serialNum, reconfig_params, resolver, *prepared_reconfig);

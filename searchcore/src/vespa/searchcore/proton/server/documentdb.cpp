@@ -357,7 +357,7 @@ DocumentDB::prepare_reconfig(const DocumentDBConfig& new_config_snapshot, std::o
         cmpres.importedFieldsChanged = true;
     }
     const ReconfigParams reconfig_params(cmpres);
-    return _subDBs.prepare_reconfig(new_config_snapshot, *active_config_snapshot, reconfig_params, serial_num);
+    return _subDBs.prepare_reconfig(new_config_snapshot, reconfig_params, serial_num);
 }
 
 void

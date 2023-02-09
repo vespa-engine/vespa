@@ -49,15 +49,11 @@ FastAccessDocSubDBConfigurer::~FastAccessDocSubDBConfigurer() = default;
 
 std::unique_ptr<DocumentSubDBReconfig>
 FastAccessDocSubDBConfigurer::prepare_reconfig(const DocumentDBConfig& new_config_snapshot,
-                                               const DocumentDBConfig& old_config_snapshot,
                                                const AttributeCollectionSpecFactory& attr_spec_factory,
                                                const ReconfigParams& reconfig_params,
                                                uint32_t docid_limit,
                                                std::optional<search::SerialNum> serial_num)
 {
-    (void) new_config_snapshot;
-    (void) old_config_snapshot;
-    (void) serial_num;
     auto old_attribute_writer = _feedView.get()->getAttributeWriter();
     auto old_attribute_manager = old_attribute_writer->getAttributeManager();
     auto reconfig = std::make_unique<DocumentSubDBReconfig>(std::shared_ptr<Matchers>(), old_attribute_manager);
