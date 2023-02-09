@@ -280,13 +280,6 @@ public class LoadBalancerProvisioner {
         return Optional.empty();
     }
 
-    /** Returns the nodes allocated to the given load balanced cluster */
-    private NodeList nodesOf(ClusterSpec.Id loadBalancedCluster, ApplicationId application) {
-        NodeList nodes = nodeRepository.nodes().list(Node.State.reserved, Node.State.active)
-                                       .owner(application);
-        return loadBalancedClustersOf(nodes).getOrDefault(loadBalancedCluster, NodeList.of());
-    }
-
     /** Returns the load balanced clusters of given application and their nodes */
     private Map<ClusterSpec.Id, NodeList> loadBalancedClustersOf(NodeList nodes) {
         if (nodes.stream().anyMatch(node -> node.type() == NodeType.config)) {
