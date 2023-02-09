@@ -101,7 +101,7 @@ public class OnnxEvaluator {
                 return createSession(modelPath, environment, options, false);
             }
             if (isCudaError(e)) {
-                throw new IllegalArgumentException("GPU device is requested, but CUDA initialization failed", e);
+                throw new IllegalArgumentException("GPU device is required, but CUDA initialization failed", e);
             }
             throw new RuntimeException("ONNX Runtime exception", e);
         }
