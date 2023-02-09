@@ -41,7 +41,6 @@ public class LoadBalancerSerializerTest {
                                                 Optional.of(new LoadBalancerInstance(
                                                         Optional.of(DomainName.of("lb-host")),
                                                         Optional.empty(),
-                                                        Optional.empty(),
                                                         Optional.of(new DnsZone("zone-id-1")),
                                                         Set.of(4080, 4443),
                                                         Set.of("10.2.3.4/24"),
@@ -75,7 +74,6 @@ public class LoadBalancerSerializerTest {
                                                 Optional.of(new LoadBalancerInstance(
                                                         Optional.empty(),
                                                         Optional.of("1.2.3.4"),
-                                                        Optional.of("4.3.2.1"),
                                                         Optional.of(new DnsZone("zone-id-1")),
                                                         Set.of(4443),
                                                         Set.of("10.2.3.4/24", "12.3.2.1/30"),

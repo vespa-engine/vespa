@@ -20,7 +20,6 @@ public class LoadBalancerInstance {
 
     private final Optional<DomainName> hostname;
     private final Optional<String> ipAddress;
-    private final Optional<String> privateServiceIpAddress;
     private final Optional<DnsZone> dnsZone;
     private final Set<Integer> ports;
     private final Set<String> networks;
@@ -29,12 +28,11 @@ public class LoadBalancerInstance {
     private final Optional<PrivateServiceId> serviceId;
     private final CloudAccount cloudAccount;
 
-    public LoadBalancerInstance(Optional<DomainName> hostname, Optional<String> ipAddress, Optional<String> privateServiceIpAddress,
+    public LoadBalancerInstance(Optional<DomainName> hostname, Optional<String> ipAddress,
                                 Optional<DnsZone> dnsZone, Set<Integer> ports, Set<String> networks, Set<Real> reals,
                                 ZoneEndpoint settings, Optional<PrivateServiceId> serviceId, CloudAccount cloudAccount) {
         this.hostname = Objects.requireNonNull(hostname, "hostname must be non-null");
         this.ipAddress = Objects.requireNonNull(ipAddress, "ip must be non-null");
-        this.privateServiceIpAddress = Objects.requireNonNull(privateServiceIpAddress, "private service ip must be non-null");
         this.dnsZone = Objects.requireNonNull(dnsZone, "dnsZone must be non-null");
         this.ports = ImmutableSortedSet.copyOf(requirePorts(ports));
         this.networks = ImmutableSortedSet.copyOf(Objects.requireNonNull(networks, "networks must be non-null"));
@@ -57,11 +55,6 @@ public class LoadBalancerInstance {
     /** IP address of this (public) load balancer */
     public Optional<String> ipAddress() {
         return ipAddress;
-    }
-
-    /** IP address of this (private) load balancer */
-    public Optional<String> privateServiceIpAddress() {
-        return privateServiceIpAddress;
     }
 
     /** ID of the DNS zone associated with this */
@@ -111,7 +104,7 @@ public class LoadBalancerInstance {
     }
 
     public LoadBalancerInstance withServiceId(Optional<PrivateServiceId> serviceId) {
-        return new LoadBalancerInstance(hostname, ipAddress, privateServiceIpAddress, dnsZone, ports, networks, reals, settings, serviceId, cloudAccount);
+        return new LoadBalancerInstance(hostname, ipAddress, dnsZone, ports, networks, reals, settings, serviceId, cloudAccount);
     }
 
 }
