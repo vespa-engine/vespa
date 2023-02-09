@@ -97,8 +97,8 @@ public class LoadBalancerInstance {
         return new LoadBalancerInstance(hostname, ipAddress, dnsZone, ports, networks, reals, settings, serviceId, cloudAccount);
     }
 
-    public LoadBalancerInstance withSettings(ZoneEndpoint settings) {
-        return new LoadBalancerInstance(hostname, ipAddress, dnsZone, ports, networks, reals, settings, serviceId, cloudAccount);
+    public LoadBalancerInstance withServiceId(PrivateServiceId serviceId) {
+        return new LoadBalancerInstance(hostname, ipAddress, dnsZone, ports, networks, reals, settings, Optional.of(serviceId), cloudAccount);
     }
 
     private static Set<Integer> requirePorts(Set<Integer> ports) {
