@@ -40,7 +40,7 @@ public class Method {
     private String[] returnName;
     private String[] returnDesc;
 
-    private RequestAccessFilter filter = RequestAccessFilter.ALLOW_ALL;
+    private RequestAccessFilter filter = RequireCapabilitiesFilter.unclassified();
 
     private static final String undocumented = "???";
 

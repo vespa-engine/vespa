@@ -8,6 +8,9 @@ import java.util.Arrays;
  */
 public enum Capability implements ToCapabilitySet {
     NONE("vespa.none"), // placeholder for no capabilities
+    HTTP_UNCLASSIFIED("vespa.http.unclassified"),
+    RESTAPI_UNCLASSIFIED("vespa.restapi.unclassified"),
+    RPC_UNCLASSIFIED("vespa.rpc.unclassified"),
     CONTENT__CLUSTER_CONTROLLER__INTERNAL_STATE_API("vespa.content.cluster_controller.internal_state_api"),
     CONTENT__DOCUMENT_API("vespa.content.document_api"),
     CONTENT__METRICS_API("vespa.content.metrics_api"),
