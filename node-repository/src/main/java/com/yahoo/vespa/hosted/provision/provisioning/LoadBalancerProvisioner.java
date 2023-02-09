@@ -250,7 +250,9 @@ public class LoadBalancerProvisioner {
 
         log.log(Level.INFO, () -> "Provisioning instance for " + id);
         try {
-            return Optional.of(service.provision(new LoadBalancerSpec(id.application(), id.cluster(), reals, settings, cloudAccount)));
+            return Optional.of(service.provision(new LoadBalancerSpec(id.application(), id.cluster(), reals, settings, cloudAccount))
+                                      // Provisioning a private endpoint service requires hard resources to be ready, so we delay it until activation.
+                                      .withServiceId(currentLoadBalancer.flatMap(LoadBalancer::instance).flatMap(LoadBalancerInstance::serviceId)));
         } catch (Exception e) {
             log.log(Level.WARNING, e, () -> "Could not provision " + id + ". The operation will be retried on next deployment");
         }
@@ -278,13 +280,6 @@ public class LoadBalancerProvisioner {
                                             reals + ". The operation will be retried on next deployment");
         }
         return Optional.empty();
-    }
-
-    /** Returns the nodes allocated to the given load balanced cluster */
-    private NodeList nodesOf(ClusterSpec.Id loadBalancedCluster, ApplicationId application) {
-        NodeList nodes = nodeRepository.nodes().list(Node.State.reserved, Node.State.active)
-                                       .owner(application);
-        return loadBalancedClustersOf(nodes).getOrDefault(loadBalancedCluster, NodeList.of());
     }
 
     /** Returns the load balanced clusters of given application and their nodes */
