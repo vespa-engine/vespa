@@ -17,6 +17,7 @@ import com.yahoo.messagebus.Reply;
 import com.yahoo.messagebus.Trace;
 import com.yahoo.messagebus.TraceNode;
 import com.yahoo.messagebus.routing.Route;
+import com.yahoo.security.tls.Capability;
 import com.yahoo.slime.BinaryFormat;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Inspector;
@@ -43,7 +44,8 @@ public class RPCSendV2 extends RPCSend {
     @Override
     protected Method buildMethod() {
 
-        Method method = new Method(METHOD_NAME, METHOD_PARAMS, METHOD_RETURN, this);
+        Method method = new Method(METHOD_NAME, METHOD_PARAMS, METHOD_RETURN, this)
+                .requireCapabilities(Capability.CONTAINER__DOCUMENT_API);
         method.methodDesc("Send a message bus request and get a reply back.");
         method.paramDesc(0, "header_encoding", "Encoding type of header.")
                 .paramDesc(1, "header_decodedSize", "Number of bytes after header decoding.")

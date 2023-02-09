@@ -11,6 +11,7 @@ import com.yahoo.jrt.ErrorCode;
 import com.yahoo.jrt.Method;
 import com.yahoo.jrt.Request;
 import com.yahoo.jrt.StringValue;
+import com.yahoo.security.tls.Capability;
 
 import java.time.Instant;
 import java.util.List;
@@ -53,38 +54,45 @@ public class RpcServer {
         // Add/replace this method first to increase likelihood of getting extra metrics and global dimensions
         connector.addMethod(
                 new Method("setExtraMetrics", "s", "", this::setExtraMetrics)
+                        .requireCapabilities(Capability.METRICSPROXY__MANAGEMENT_API)
                         .methodDesc("Set extra metrics that will be added to output from getMetricsForYamas.")
                         .paramDesc(0, "metricsJson", "The metrics in json format"));
 
         connector.addMethod(
                 new Method("purgeExtraMetrics", "", "", this::purgeExtraMetrics)
+                        .requireCapabilities(Capability.METRICSPROXY__MANAGEMENT_API)
                         .methodDesc("Purge metrics and dimensions populated by setExtraMetrics"));
 
         connector.addMethod(
                 new Method("getMetricsById", "s", "s", this::getMetricsById)
+                        .requireCapabilities(Capability.METRICSPROXY__METRICS_API)
                         .methodDesc("Get Vespa metrics for the service with the given Id")
                         .paramDesc(0, "id", "The id of the service")
                         .returnDesc(0, "ret", "Vespa metrics"));
 
         connector.addMethod(
                 new Method("getServices", "", "s", this::getServices)
+                        .requireCapabilities(Capability.METRICSPROXY__METRICS_API)
                         .methodDesc("Get Vespa services monitored by this metrics proxy")
                         .returnDesc(0, "ret", "Vespa metrics"));
 
         connector.addMethod(
                 new Method("getMetricsForYamas", "s", "s", this::getMetricsForYamas)
+                        .requireCapabilities(Capability.METRICSPROXY__METRICS_API)
                         .methodDesc("Get JSON formatted Vespa metrics for a given service name or 'all'")
                         .paramDesc(0, "service", "The vespa service name, or 'all'")
                         .returnDesc(0, "ret", "Vespa metrics"));
 
         connector.addMethod(
                 new Method("getHealthMetricsForYamas", "s", "s", this::getHealthMetricsForYamas)
+                        .requireCapabilities(Capability.METRICSPROXY__METRICS_API)
                         .methodDesc("Get JSON formatted Health check for a given service name or 'all'")
                         .paramDesc(0, "service", "The vespa service name")
                         .returnDesc(0, "ret", "Vespa metrics"));
 
         connector.addMethod(
                 new Method("getAllMetricNamesForService", "ss", "s", this::getAllMetricNamesForService)
+                        .requireCapabilities(Capability.METRICSPROXY__METRICS_API)
                         .methodDesc("Get metric names known for service ")
                         .paramDesc(0, "service", "The vespa service name'")
                         .paramDesc(1, "consumer", "The consumer'")

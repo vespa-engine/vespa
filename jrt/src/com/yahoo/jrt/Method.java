@@ -2,6 +2,9 @@
 package com.yahoo.jrt;
 
 
+import com.yahoo.security.tls.Capability;
+import com.yahoo.security.tls.CapabilitySet;
+
 /**
  * <p>A Method encapsulates the reflective information about a single RPC
  * method.</p>
@@ -150,6 +153,12 @@ public class Method {
     }
 
     public Method requestAccessFilter(RequestAccessFilter filter) { this.filter = filter; return this; }
+    public Method requireCapabilities(Capability... capabilities) { return requireCapabilities(CapabilitySet.from(capabilities)); }
+    public Method requireCapabilities(CapabilitySet capabilities) {
+        if (filter != null) throw new IllegalStateException();
+        filter = new RequireCapabilitiesFilter(capabilities);
+        return this;
+    }
 
     public RequestAccessFilter requestAccessFilter() { return filter; }
 

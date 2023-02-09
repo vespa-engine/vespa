@@ -43,6 +43,7 @@ import com.yahoo.jrt.slobrok.api.Register;
 import com.yahoo.jrt.slobrok.api.SlobrokList;
 import com.yahoo.messagebus.network.rpc.SlobrokConfigSubscriber;
 import com.yahoo.net.HostName;
+import com.yahoo.security.tls.Capability;
 import com.yahoo.vespa.config.ConfigKey;
 import com.yahoo.yolean.Exceptions;
 import com.yahoo.yolean.UncheckedInterruptedException;
@@ -176,7 +177,8 @@ public final class ConfiguredApplication implements Application {
     private synchronized void setupRpc(QrConfig cfg) {
         if (!cfg.rpc().enabled()) return;
         supervisor = new Supervisor(new Transport("configured-application")).setDropEmptyBuffers(true);
-        supervisor.addMethod(new Method("prepareStop", "d", "", this::prepareStop));
+        supervisor.addMethod(new Method("prepareStop", "d", "", this::prepareStop)
+                                     .requireCapabilities(Capability.CONTAINER__MANAGEMENT_API));
         listenRpc(cfg);
     }
 
