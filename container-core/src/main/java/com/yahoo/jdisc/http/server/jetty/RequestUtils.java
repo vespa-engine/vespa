@@ -13,9 +13,11 @@ import org.eclipse.jetty.server.SecureRequestCustomizer;
  */
 public class RequestUtils {
     public static final String JDISC_REQUEST_X509CERT = "jdisc.request.X509Certificate";
+    public static final String JDISC_REQUEST_SSLSESSION = "jdisc.request.SSLSession";
     public static final String JDISC_REQUEST_CHAIN = "jdisc.request.chain";
     public static final String JDISC_RESPONSE_CHAIN = "jdisc.response.chain";
     public static final String SERVLET_REQUEST_X509CERT = SecureRequestCustomizer.JAKARTA_SERVLET_REQUEST_X_509_CERTIFICATE;
+    public static final String JETTY_REQUEST_SSLSESSION = new SecureRequestCustomizer().getSslSessionAttribute();
 
     // The local port as reported by servlet spec. This will be influenced by Host header and similar mechanisms.
     // The request URI uses the local listen port as the URI is used for handler routing/bindings.

@@ -2,6 +2,8 @@
 
 package com.yahoo.jdisc.handler;
 
+import java.util.Optional;
+
 public interface DelegatedRequestHandler extends RequestHandler {
     RequestHandler getDelegate();
 
@@ -12,4 +14,24 @@ public interface DelegatedRequestHandler extends RequestHandler {
         }
         return delegate;
     }
+
+    /** Find delegated request handler recursively */
+    static RequestHandler resolve(RequestHandler h) {
+        if (h instanceof DelegatedRequestHandler dh) return dh.getDelegateRecursive();
+        return h;
+    }
+
+    /**
+     * Find delegated request handler of specified type recursively
+     * Note that the returned handler may not be the innermost handler.
+     */
+    static <T extends RequestHandler> Optional<T> resolve(Class<T> type, RequestHandler h) {
+        T candidate = type.isInstance(h) ? type.cast(h) : null;
+        while (h instanceof DelegatedRequestHandler) {
+            h = ((DelegatedRequestHandler) h).getDelegate();
+            if (type.isInstance(h)) candidate = type.cast(h);
+        }
+        return Optional.ofNullable(candidate);
+    }
+
 }
