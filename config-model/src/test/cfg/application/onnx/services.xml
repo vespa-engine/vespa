@@ -17,8 +17,10 @@
         </models>
       </onnx>
     </model-evaluation>
-    <nodes>
-      <node hostalias="node1" />
+    <nodes count="2">
+      <resources vcpu="4" memory="16Gb" disk="125Gb">
+        <gpu count="1" memory="16Gb"/>
+      </resources>
     </nodes>
   </container>
 
@@ -27,9 +29,6 @@
     <documents>
       <document mode="index" type="test"/>
     </documents>
-    <nodes>
-      <node distribution-key="0" hostalias="node1" />
-    </nodes>
   </content>
 
 </services>

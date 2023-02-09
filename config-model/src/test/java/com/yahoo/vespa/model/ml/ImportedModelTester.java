@@ -44,12 +44,15 @@ public class ImportedModelTester {
     private final DeployState deployState;
 
     public ImportedModelTester(String modelName, Path applicationDir) {
+        this(modelName, applicationDir, new DeployState.Builder());
+    }
+
+    public ImportedModelTester(String modelName, Path applicationDir, DeployState.Builder deployStateBuilder) {
         this.modelName = modelName;
         this.applicationDir = applicationDir;
-        deployState = new DeployState.Builder()
-                .applicationPackage(ApplicationPackageTester.create(applicationDir.toString()).app())
-                .modelImporters(importers)
-                .build();
+        deployState = deployStateBuilder.applicationPackage(ApplicationPackageTester.create(applicationDir.toString()).app())
+                                        .modelImporters(importers)
+                                        .build();
     }
 
     public VespaModel createVespaModel() {
