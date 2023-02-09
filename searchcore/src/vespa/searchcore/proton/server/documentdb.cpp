@@ -458,8 +458,9 @@ DocumentDB::applyConfig(DocumentDBConfig::SP configSnapshot, SerialNum serialNum
     auto replay_config = DocumentDBConfig::makeReplayConfig(configSnapshot);
     bool equalReplayConfig = (*replay_config == *DocumentDBConfig::makeReplayConfig(_activeConfigSnapshot));
     bool tlsReplayDone = _feedHandler->getTransactionLogReplayDone();
+    bool save_config = !equalReplayConfig && tlsReplayDone;
     FeedHandler::CommitResult commit_result;
-    if (!equalReplayConfig && tlsReplayDone) {
+    if (save_config) {
         sync(_feedHandler->getSerialNum());
         serialNum = _feedHandler->inc_serial_num();
         _config_store->saveConfig(*replay_config, serialNum);
@@ -469,8 +470,8 @@ DocumentDB::applyConfig(DocumentDBConfig::SP configSnapshot, SerialNum serialNum
         commit_result = _feedHandler->storeOperationSync(op);
         sync(op.getSerialNum());
     }
-    bool elidedConfigSave = equalReplayConfig && tlsReplayDone;
     {
+        bool elidedConfigSave = equalReplayConfig && tlsReplayDone;
         forceCommitAndWait(*_feedView.get(), elidedConfigSave ? serialNum : serialNum - 1, std::move(commit_result));
     }
     _subDBs.complete_prepare_reconfig(*prepared_reconfig, serialNum);
@@ -519,7 +520,7 @@ DocumentDB::applyConfig(DocumentDBConfig::SP configSnapshot, SerialNum serialNum
     auto end_time = vespalib::steady_clock::now();
     auto state_string = DDBState::getStateString(_state.getState());
     auto config_state_string = DDBState::getConfigStateString(_state.getConfigState());
-    vespalib::string saved_string(elidedConfigSave ? "no" : "yes");
+    vespalib::string saved_string(save_config ? "yes" : "no");
     LOG(info, "DocumentDB(%s): Applied config, state=%s, config_state=%s, saved=%s, serialNum=%" PRIu64 ", %.3fs of %.3fs in write thread",
         _docTypeName.toString().c_str(),
         state_string.c_str(),
