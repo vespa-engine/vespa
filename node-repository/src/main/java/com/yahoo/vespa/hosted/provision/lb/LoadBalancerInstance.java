@@ -61,7 +61,7 @@ public class LoadBalancerInstance {
 
     /** IP address of this (private) load balancer */
     public Optional<String> privateServiceIpAddress() {
-        return ipAddress;
+        return privateServiceIpAddress;
     }
 
     /** ID of the DNS zone associated with this */
