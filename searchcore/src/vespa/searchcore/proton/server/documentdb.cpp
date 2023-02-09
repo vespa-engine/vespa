@@ -435,6 +435,7 @@ DocumentDB::applyConfig(DocumentDBConfig::SP configSnapshot, SerialNum serialNum
         return;
     }
 
+    auto start_time = vespalib::steady_clock::now();
     DocumentDBConfig::ComparisonResult cmpres;
     Schema::SP oldSchema;
     int64_t generation = configSnapshot->getGeneration();
@@ -468,8 +469,8 @@ DocumentDB::applyConfig(DocumentDBConfig::SP configSnapshot, SerialNum serialNum
         commit_result = _feedHandler->storeOperationSync(op);
         sync(op.getSerialNum());
     }
+    bool elidedConfigSave = equalReplayConfig && tlsReplayDone;
     {
-        bool elidedConfigSave = equalReplayConfig && tlsReplayDone;
         forceCommitAndWait(*_feedView.get(), elidedConfigSave ? serialNum : serialNum - 1, std::move(commit_result));
     }
     _subDBs.complete_prepare_reconfig(*prepared_reconfig, serialNum);
@@ -513,6 +514,20 @@ DocumentDB::applyConfig(DocumentDBConfig::SP configSnapshot, SerialNum serialNum
     if (_subDBs.getReprocessingRunner().empty()) {
         _subDBs.pruneRemovedFields(serialNum);
     }
+    auto prepare_start_time = prepared_reconfig->start_time();
+    prepared_reconfig.reset();
+    auto end_time = vespalib::steady_clock::now();
+    auto state_string = DDBState::getStateString(_state.getState());
+    auto config_state_string = DDBState::getConfigStateString(_state.getConfigState());
+    vespalib::string saved_string(elidedConfigSave ? "no" : "yes");
+    LOG(info, "DocumentDB(%s): Applied config, state=%s, config_state=%s, saved=%s, serialNum=%" PRIu64 ", %.3fs of %.3fs in write thread",
+        _docTypeName.toString().c_str(),
+        state_string.c_str(),
+        config_state_string.c_str(),
+        saved_string.c_str(),
+        serialNum,
+        vespalib::to_s(end_time - start_time),
+        vespalib::to_s(end_time - prepare_start_time));
 }
 
 void

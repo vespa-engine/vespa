@@ -5,9 +5,11 @@
 
 namespace proton {
 
-DocumentDBReconfig::DocumentDBReconfig(std::unique_ptr<DocumentSubDBReconfig> ready_reconfig_in,
+DocumentDBReconfig::DocumentDBReconfig(vespalib::steady_time start_time,
+                                       std::unique_ptr<DocumentSubDBReconfig> ready_reconfig_in,
                                        std::unique_ptr<DocumentSubDBReconfig> not_ready_reconfig_in)
-    : _ready_reconfig(std::move(ready_reconfig_in)),
+    : _start_time(start_time),
+      _ready_reconfig(std::move(ready_reconfig_in)),
       _not_ready_reconfig(std::move(not_ready_reconfig_in))
 {
 }

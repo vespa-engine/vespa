@@ -253,9 +253,10 @@ DocumentSubDBCollection::pruneRemovedFields(SerialNum serialNum)
 std::unique_ptr<DocumentDBReconfig>
 DocumentSubDBCollection::prepare_reconfig(const DocumentDBConfig& new_config_snapshot, const DocumentDBConfig& old_config_snapshot, const ReconfigParams& reconfig_params, std::optional<SerialNum> serial_num)
 {
+    auto start_time = vespalib::steady_clock::now();
     auto ready_reconfig = getReadySubDB()->prepare_reconfig(new_config_snapshot, old_config_snapshot, reconfig_params, serial_num);
     auto not_ready_reconfig = getNotReadySubDB()->prepare_reconfig(new_config_snapshot, old_config_snapshot, reconfig_params, serial_num);
-    return std::make_unique<DocumentDBReconfig>(std::move(ready_reconfig), std::move(not_ready_reconfig));
+    return std::make_unique<DocumentDBReconfig>(start_time, std::move(ready_reconfig), std::move(not_ready_reconfig));
 }
 
 void
