@@ -110,4 +110,8 @@ public class LoadBalancerInstance {
         return ports;
     }
 
+    public LoadBalancerInstance withServiceId(Optional<PrivateServiceId> serviceId) {
+        return new LoadBalancerInstance(hostname, ipAddress, privateServiceIpAddress, dnsZone, ports, networks, reals, settings, serviceId, cloudAccount);
+    }
+
 }
