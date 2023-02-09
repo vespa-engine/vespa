@@ -227,7 +227,7 @@ public class LoadBalancerProvisionerTest {
         var combinedId = ClusterSpec.Id.from("container1");
         var nodes = prepare(app1, clusterRequest(ClusterSpec.Type.combined, ClusterSpec.Id.from("content1"), Optional.of(combinedId), ZoneEndpoint.defaultEndpoint));
         assertEquals(1, lbs.get().size());
-        assertEquals("Prepare provisions load balancer wihtout reserved nodes", 0, lbs.get().get(0).instance().get().reals().size());
+        assertEquals("Prepare provisions load balancer without reserved nodes", 0, lbs.get().get(0).instance().get().reals().size());
         tester.activate(app1, nodes);
         assertEquals("Activate configures load balancer with reserved nodes", 2, lbs.get().get(0).instance().get().reals().size());
         assertSame(LoadBalancer.State.active, lbs.get().get(0).state());
