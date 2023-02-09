@@ -28,6 +28,7 @@ import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -134,7 +135,7 @@ public class ApplicationBuilder {
         this.properties = properties;
         this.documentsOnly = documentsOnly;
         var list = new ArrayList<>(applicationPackage.getSchemas());
-        list.sort((a, b) -> a.getName().compareTo(b.getName()));
+        list.sort(Comparator.comparing(NamedReader::getName));
         for (NamedReader reader : list) {
             addSchema(reader);
         }
