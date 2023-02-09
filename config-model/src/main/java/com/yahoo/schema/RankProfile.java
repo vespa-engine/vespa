@@ -15,6 +15,7 @@ import com.yahoo.schema.document.ImmutableSDField;
 import com.yahoo.schema.document.SDDocumentType;
 import com.yahoo.schema.expressiontransforms.ExpressionTransforms;
 import com.yahoo.schema.expressiontransforms.RankProfileTransformContext;
+import com.yahoo.schema.expressiontransforms.InputRecorder;
 import com.yahoo.schema.parser.ParseException;
 import com.yahoo.searchlib.rankingexpression.ExpressionFunction;
 import com.yahoo.searchlib.rankingexpression.FeatureList;
@@ -876,7 +877,7 @@ public class RankProfile implements Cloneable {
         }
     }
 
-    private  Map<String, RankingExpressionFunction> gatherAllFunctions() {
+    private Map<String, RankingExpressionFunction> gatherAllFunctions() {
         if (functions.isEmpty() && inherited().isEmpty()) return Map.of();
         if (inherited().isEmpty()) return Collections.unmodifiableMap(new LinkedHashMap<>(functions));
 
@@ -1006,6 +1007,25 @@ public class RankProfile implements Cloneable {
         // TODO: This merges all functions from inherited profiles too and erases inheritance information. Not good.
         functions = compileFunctions(this::getFunctions, queryProfiles, featureTypes, importedModels, inlineFunctions, expressionTransforms);
         allFunctionsCached = null;
+
+        if (globalPhaseRanking != null) {
+            var context = new RankProfileTransformContext(this,
+                                                          queryProfiles,
+                                                          featureTypes,
+                                                          importedModels,
+                                                          constants(),
+                                                          inlineFunctions);
+            var needInputs = new HashSet<String>();
+            var recorder = new InputRecorder(needInputs);
+            recorder.transform(globalPhaseRanking.function().getBody(), context);
+            for (String input : needInputs) {
+                try {
+                    addMatchFeatures(new FeatureList(input));
+                } catch (com.yahoo.searchlib.rankingexpression.parser.ParseException e) {
+                    throw new IllegalArgumentException("invalid input in global-phase expression: "+input);
+                }
+            }
+        }
     }
 
     private void checkNameCollisions(Map<String, RankingExpressionFunction> functions, Map<Reference, Constant> constants) {
@@ -1102,7 +1122,7 @@ public class RankProfile implements Cloneable {
             for (FieldDescription field : queryProfileType.declaredFields().values()) {
                 TensorType type = field.getType().asTensorType();
                 Optional<Reference> feature = Reference.simple(field.getName());
-                if ( feature.isEmpty() || ! feature.get().name().equals("query")) continue;
+                if (feature.isEmpty() || ! feature.get().name().equals("query")) continue;
                 if (featureTypes.containsKey(feature.get())) continue; // Explicit feature types (from inputs) overrides
 
                 TensorType existingType = context.getType(feature.get());
