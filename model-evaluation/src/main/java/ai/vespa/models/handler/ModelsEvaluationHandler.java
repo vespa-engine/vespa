@@ -4,6 +4,8 @@ package ai.vespa.models.handler;
 import ai.vespa.models.evaluation.FunctionEvaluator;
 import ai.vespa.models.evaluation.Model;
 import ai.vespa.models.evaluation.ModelsEvaluator;
+import com.yahoo.component.annotation.Inject;
+import com.yahoo.component.provider.ComponentRegistry;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.ThreadedHttpRequestHandler;
@@ -39,9 +41,19 @@ public class ModelsEvaluationHandler extends ThreadedHttpRequestHandler {
 
     private final ModelsEvaluator modelsEvaluator;
 
+    @Inject
+    public ModelsEvaluationHandler(ComponentRegistry<ModelsEvaluator> registry,
+                                   Executor executor)
+    {
+        this(registry.getComponent(ModelsEvaluator.class.getName()), executor);
+    }
+
     public ModelsEvaluationHandler(ModelsEvaluator modelsEvaluator, Executor executor) {
         super(executor);
         this.modelsEvaluator = modelsEvaluator;
+        if (modelsEvaluator == null) {
+            throw new IllegalArgumentException("missing ModelsEvaluator");
+        }
     }
 
     @Override
