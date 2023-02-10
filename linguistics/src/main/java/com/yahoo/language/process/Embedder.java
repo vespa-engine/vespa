@@ -42,6 +42,17 @@ public interface Embedder {
     List<Integer> embed(String text, Context context);
 
     /**
+     * Converts the list of token id's into a text. The opposite operation of embed.
+     *
+     * @param tokens the list of tokens to decode to a string
+     * @param context the context which specifies the language used to select a model
+     * @return the string formed by decoding the tokens back to their string repreesentation
+     */
+    default String decode(List<Integer> tokens, Context context) {
+        throw new UnsupportedOperationException("Decode is not implemented");
+    }
+
+    /**
      * Converts text into tokens in a tensor.
      * The information contained in the embedding may depend on the tensor type.
      *

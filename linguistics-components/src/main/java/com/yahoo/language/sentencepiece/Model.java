@@ -7,6 +7,8 @@ import sentencepiece.SentencepieceModel;
 
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * A SentencePiece model
@@ -20,6 +22,8 @@ final class Model {
     final float minScore;
     final float maxScore;
     final Trie tokens = new Trie();
+    final Map<Integer, Token> tokenId2Token = new HashMap<>();
+
 
     Model(Language language, Path path) {
         try {
@@ -30,7 +34,10 @@ final class Model {
             float maxScore = Float.MIN_VALUE;
             for (int i = 0; i < sp.getPiecesCount(); i++) {
                 var piece = sp.getPieces(i);
-                tokens.add(toTokenType(piece.getType()), i, piece.getPiece(), piece.getScore());
+                var type = toTokenType(piece.getType());
+                var word = piece.getPiece();
+                tokens.add(type, i, word, piece.getScore());
+                tokenId2Token.put(i, new Token(word, type));
                 minScore = Math.min(piece.getScore(), minScore);
                 maxScore = Math.max(piece.getScore(), maxScore);
             }
@@ -48,7 +55,7 @@ final class Model {
             case NORMAL : return TokenType.text;
             case CONTROL : return TokenType.control;
             case UNUSED : return TokenType.unused;
-            default : throw new IllegalArgumentException("Unknkown token type " + type);
+            default : throw new IllegalArgumentException("Unknown token type " + type);
         }
     }
 
@@ -56,5 +63,7 @@ final class Model {
     public String toString() {
         return "SentencePiece model for " + language + ": '" + source + "'";
     }
+
+    record Token(String text, TokenType type) { }
 
 }
