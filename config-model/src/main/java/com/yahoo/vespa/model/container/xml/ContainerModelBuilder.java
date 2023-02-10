@@ -1056,7 +1056,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         cluster.addComponent(searchHandler);
 
         // Add as child to SearchHandler to get the correct chains config.
-        searchHandler.addComponent(Component.fromClassAndBundle(SearchHandler.EXECUTION_FACTORY_CLASS, PlatformBundles.SEARCH_AND_DOCPROC_BUNDLE));
+        searchHandler.addComponent(Component.fromClassAndBundle(SearchHandler.EXECUTION_FACTORY, PlatformBundles.SEARCH_AND_DOCPROC_BUNDLE));
     }
 
     private List<BindingPattern> serverBindings(DeployState deployState, ConfigModelContext context, Element searchElement, BindingPattern... defaultBindings) {
