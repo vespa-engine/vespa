@@ -55,8 +55,6 @@
 #include <malloc.h>
 #endif
 
-#include <vespa/searchlib/aggregation/forcelink.hpp>
-#include <vespa/searchlib/expression/forcelink.hpp>
 #include <sstream>
 
 #include <vespa/log/log.h>
@@ -473,7 +471,9 @@ Proton::~Proton()
         _diskMemUsageSampler->notifier().removeDiskMemUsageListener(_memoryFlushConfigUpdater.get());
     }
     _sessionPruneHandle.reset();
-    _diskMemUsageSampler->close();
+    if (_diskMemUsageSampler) {
+        _diskMemUsageSampler->close();
+    }
     _scheduler.reset();
     _executor.shutdown();
     _executor.sync();
