@@ -6,7 +6,7 @@ import com.yahoo.jrt.Method;
 import com.yahoo.jrt.Request;
 import com.yahoo.jrt.StringValue;
 import com.yahoo.jrt.Supervisor;
-import java.util.logging.Level;
+import com.yahoo.security.tls.Capability;
 import com.yahoo.text.Utf8;
 import com.yahoo.vespa.defaults.Defaults;
 import net.jpountz.xxhash.XXHashFactory;
@@ -27,6 +27,7 @@ import java.nio.file.Files;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static com.yahoo.vespa.config.UrlDownloader.DOES_NOT_EXIST;
@@ -50,6 +51,7 @@ class UrlDownloadRpcServer {
 
     UrlDownloadRpcServer(Supervisor supervisor) {
         supervisor.addMethod(new Method("url.waitFor", "s", "s", this::download)
+                                    .requireCapabilities(Capability.CONFIGPROXY__FILEDISTRIBUTION_API)
                                     .methodDesc("get path to url download")
                                     .paramDesc(0, "url", "url")
                                     .returnDesc(0, "path", "path to file"));

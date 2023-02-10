@@ -16,6 +16,7 @@ import com.yahoo.jrt.Target;
 import com.yahoo.jrt.TargetWatcher;
 import com.yahoo.jrt.Task;
 import com.yahoo.jrt.Transport;
+import com.yahoo.security.tls.Capability;
 
 import java.time.Duration;
 import java.util.ArrayList;
@@ -137,6 +138,7 @@ public class Slobrok {
                                          rpc_register(req);
                                      }
                                  })
+                      .requireCapabilities(Capability.SLOBROK__API)
                       .methodDesc("Register a rpcserver")
                       .paramDesc(0, "name", "RpcServer name")
                       .paramDesc(1, "spec", "The connection specification"));
@@ -146,6 +148,7 @@ public class Slobrok {
                                          rpc_unregister(req);
                                      }
                                  })
+                      .requireCapabilities(Capability.SLOBROK__API)
                       .methodDesc("Unregister a rpcserver")
                       .paramDesc(0, "name", "RpcServer name")
                       .paramDesc(1, "spec", "The connection specification"));
@@ -156,6 +159,7 @@ public class Slobrok {
                                          rpc_fetchIncremental(req);
                                      }
                                  })
+                      .requireCapabilities(Capability.SLOBROK__API)
                       .methodDesc("Fetch or update mirror of name to spec map")
                       .paramDesc(0, "gencnt", "generation already known by client")
                       .paramDesc(1, "timeout", "How many milliseconds to wait for changes"

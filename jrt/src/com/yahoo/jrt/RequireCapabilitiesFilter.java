@@ -10,6 +10,9 @@ import com.yahoo.security.tls.MissingCapabilitiesException;
  */
 public class RequireCapabilitiesFilter implements RequestAccessFilter {
 
+    private static final RequireCapabilitiesFilter UNCLASSIFIED =
+            new RequireCapabilitiesFilter(Capability.RPC_UNCLASSIFIED);
+
     private final CapabilitySet requiredCapabilities;
 
     public RequireCapabilitiesFilter(CapabilitySet requiredCapabilities) {
@@ -19,6 +22,8 @@ public class RequireCapabilitiesFilter implements RequestAccessFilter {
     public RequireCapabilitiesFilter(Capability... requiredCapabilities) {
         this(CapabilitySet.from(requiredCapabilities));
     }
+
+    public static RequireCapabilitiesFilter unclassified() { return UNCLASSIFIED; }
 
     @Override
     public boolean allow(Request r) {

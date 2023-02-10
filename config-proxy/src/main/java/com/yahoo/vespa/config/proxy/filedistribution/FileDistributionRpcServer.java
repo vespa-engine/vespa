@@ -10,6 +10,7 @@ import com.yahoo.jrt.StringArray;
 import com.yahoo.jrt.StringValue;
 import com.yahoo.jrt.Supervisor;
 import com.yahoo.net.HostName;
+import com.yahoo.security.tls.Capability;
 import com.yahoo.vespa.filedistribution.FileDownloader;
 import com.yahoo.vespa.filedistribution.FileReferenceDownload;
 
@@ -21,7 +22,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
 
 /**
  * An RPC server that handles file distribution requests.
@@ -55,14 +55,17 @@ class FileDistributionRpcServer {
     private void declareMethods() {
         // Legacy method, needs to be the same name as used in filedistributor
         supervisor.addMethod(new Method("waitFor", "s", "s", this::getFile)
+                                     .requireCapabilities(Capability.CONFIGPROXY__FILEDISTRIBUTION_API)
                                      .methodDesc("get path to file reference")
                                      .paramDesc(0, "file reference", "file reference")
                                      .returnDesc(0, "path", "path to file"));
         supervisor.addMethod(new Method("filedistribution.getFile", "s", "s", this::getFile)
+                                     .requireCapabilities(Capability.CONFIGPROXY__FILEDISTRIBUTION_API)
                                      .methodDesc("get path to file reference")
                                      .paramDesc(0, "file reference", "file reference")
                                      .returnDesc(0, "path", "path to file"));
         supervisor.addMethod(new Method("filedistribution.getActiveFileReferencesStatus", "", "SD", this::getActiveFileReferencesStatus)
+                                     .requireCapabilities(Capability.CONFIGPROXY__FILEDISTRIBUTION_API)
                                      .methodDesc("download status for file references")
                                      .returnDesc(0, "file references", "array of file references")
                                      .returnDesc(1, "download status", "percentage downloaded of each file reference in above array"));

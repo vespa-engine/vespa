@@ -5,9 +5,10 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumSet;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
@@ -16,31 +17,30 @@ import java.util.stream.Collectors;
 /**
  * @author bjorncs
  */
-public class CapabilitySet {
-    public enum Predefined {
-        CONTENT_NODE("vespa.content_node",
-                Capability.CONTENT__STORAGE_API, Capability.CONTENT__DOCUMENT_API, Capability.SLOBROK__API),
-        CONTAINER_NODE("vespa.container_node",
-                Capability.CONTENT__DOCUMENT_API, Capability.CONTENT__SEARCH_API, Capability.SLOBROK__API),
-        TELEMETRY("vespa.telemetry",
-                Capability.CONTENT__STATUS_PAGES, Capability.CONTENT__METRICS_API),
-        CLUSTER_CONTROLLER_NODE("vespa.cluster_controller_node",
-                Capability.CONTENT__CLUSTER_CONTROLLER__INTERNAL_STATE_API, Capability.SLOBROK__API),
-        CONFIG_SERVER("vespa.config_server"),
-        ;
+public class CapabilitySet implements ToCapabilitySet {
 
-        private final String name;
-        private final CapabilitySet set;
+    private static final Map<String, CapabilitySet> PREDEFINED = new HashMap<>();
 
-        Predefined(String name, Capability... caps) {
-            this.name = name;
-            this.set = caps.length == 0 ? CapabilitySet.none() : CapabilitySet.from(caps); }
+    /* Predefined capability sets */
+    public static final CapabilitySet CONTENT_NODE = predefined(
+            "vespa.content_node",
+            Capability.CONTENT__STORAGE_API, Capability.CONTENT__DOCUMENT_API, Capability.SLOBROK__API);
+    public static final CapabilitySet CONTAINER_NODE = predefined(
+            "vespa.container_node",
+            Capability.CONTENT__DOCUMENT_API, Capability.CONTENT__SEARCH_API, Capability.SLOBROK__API);
+    public static final CapabilitySet TELEMETRY = predefined(
+            "vespa.telemetry",
+            Capability.CONTENT__STATUS_PAGES, Capability.CONTENT__METRICS_API);
+    public static final CapabilitySet CLUSTER_CONTROLLER_NODE = predefined(
+            "vespa.cluster_controller_node",
+            Capability.CONTENT__CLUSTER_CONTROLLER__INTERNAL_STATE_API, Capability.SLOBROK__API);
+    public static final CapabilitySet CONFIG_SERVER = predefined(
+            "vespa.config_server");
 
-        public static Optional<Predefined> fromName(String name) {
-            return Arrays.stream(values()).filter(p -> p.name.equals(name)).findAny();
-        }
-
-        public CapabilitySet capabilities() { return set; }
+    private static CapabilitySet predefined(String name, ToCapabilitySet... capabilities) {
+        var instance = CapabilitySet.from(capabilities);
+        PREDEFINED.put(name, instance);
+        return instance;
     }
 
     private static final CapabilitySet ALL_CAPABILITIES = new CapabilitySet(EnumSet.allOf(Capability.class));
@@ -50,11 +50,13 @@ public class CapabilitySet {
 
     private CapabilitySet(EnumSet<Capability> caps) { this.caps = caps; }
 
+    @Override public CapabilitySet toCapabilitySet() { return this; }
+
     public static CapabilitySet fromNames(Collection<String> names) {
         EnumSet<Capability> caps = EnumSet.noneOf(Capability.class);
         for (String name : names) {
-            Predefined predefined = Predefined.fromName(name).orElse(null);
-            if (predefined != null) caps.addAll(predefined.set.caps);
+            var predefined = PREDEFINED.get(name);
+            if (predefined != null) caps.addAll(predefined.caps);
             else caps.add(Capability.fromName(name));
         }
         return new CapabilitySet(caps);
@@ -64,6 +66,10 @@ public class CapabilitySet {
         EnumSet<Capability> union = EnumSet.noneOf(Capability.class);
         capSets.forEach(cs -> union.addAll(cs.caps));
         return new CapabilitySet(union);
+    }
+
+    public static CapabilitySet from(ToCapabilitySet... capabilities) {
+        return CapabilitySet.unionOf(Arrays.stream(capabilities).map(ToCapabilitySet::toCapabilitySet).toList());
     }
 
     public static CapabilitySet from(EnumSet<Capability> caps) { return new CapabilitySet(EnumSet.copyOf(caps)); }

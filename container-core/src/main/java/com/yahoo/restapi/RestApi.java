@@ -7,7 +7,13 @@ import com.yahoo.container.jdisc.AclMapping;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.RequestHandlerSpec;
+import com.yahoo.container.jdisc.RequestView;
+import com.yahoo.jdisc.http.HttpRequest.Method;
+import com.yahoo.security.tls.Capability;
+import com.yahoo.security.tls.CapabilitySet;
+import com.yahoo.security.tls.ConnectionAuthContext;
 
+import javax.net.ssl.SSLSession;
 import java.io.InputStream;
 import java.security.Principal;
 import java.util.List;
@@ -32,6 +38,9 @@ public interface RestApi {
     /** @see com.yahoo.container.jdisc.HttpRequestHandler#requestHandlerSpec() */
     RequestHandlerSpec requestHandlerSpec();
 
+    /** @see com.yahoo.container.jdisc.utils.CapabilityRequiringRequestHandler */
+    CapabilitySet requiredCapabilities(RequestView req);
+
     interface Builder {
         Builder setObjectMapper(ObjectMapper mapper);
         Builder setDefaultRoute(RouteBuilder route);
@@ -50,11 +59,15 @@ public interface RestApi {
         /** Disables mappers listed in {@link RestApiMappers#DEFAULT_RESPONSE_MAPPERS} */
         Builder disableDefaultResponseMappers();
         Builder disableDefaultAclMapping();
+        Builder requiredCapabilities(Capability... capabilities);
+        Builder requiredCapabilities(CapabilitySet capabilities);
         RestApi build();
     }
 
     interface RouteBuilder {
         RouteBuilder name(String name);
+        RouteBuilder requiredCapabilities(Capability... capabilities);
+        RouteBuilder requiredCapabilities(CapabilitySet capabilities);
         RouteBuilder addFilter(Filter filter);
 
         // GET
@@ -115,6 +128,8 @@ public interface RestApi {
     @FunctionalInterface interface Filter { HttpResponse filterRequest(FilterContext context); }
 
     interface HandlerConfigBuilder {
+        HandlerConfigBuilder withRequiredCapabilities(Capability... capabilities);
+        HandlerConfigBuilder withRequiredCapabilities(CapabilitySet capabilities);
         HandlerConfigBuilder withReadAclAction();
         HandlerConfigBuilder withWriteAclAction();
         HandlerConfigBuilder withCustomAclAction(AclMapping.Action action);
@@ -122,6 +137,7 @@ public interface RestApi {
 
     interface RequestContext {
         HttpRequest request();
+        Method method();
         PathParameters pathParameters();
         QueryParameters queryParameters();
         Headers headers();
@@ -135,6 +151,8 @@ public interface RestApi {
         AclMapping.Action aclAction();
         Optional<Principal> userPrincipal();
         Principal userPrincipalOrThrow();
+        Optional<SSLSession> sslSession();
+        Optional<ConnectionAuthContext> connectionAuthContext();
 
         interface Parameters {
             Optional<String> getString(String name);

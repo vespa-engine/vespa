@@ -7,6 +7,7 @@ import com.yahoo.jrt.Int32Value;
 import com.yahoo.jrt.Method;
 import com.yahoo.jrt.Request;
 import com.yahoo.jrt.Supervisor;
+import com.yahoo.security.tls.Capability;
 import net.jpountz.xxhash.StreamingXXHash64;
 import net.jpountz.xxhash.XXHashFactory;
 import java.io.File;
@@ -170,6 +171,7 @@ public class FileReceiver {
     private List<Method> receiveFileMethod() {
         List<Method> methods = new ArrayList<>();
         methods.add(new Method(RECEIVE_META_METHOD, "sssl*", "ii", this::receiveFileMeta)
+                .requireCapabilities(Capability.CLIENT__FILERECEIVER_API)
                 .paramDesc(0, "filereference", "file reference to download")
                 .paramDesc(1, "filename", "filename")
                 .paramDesc(2, "type", "'file' or 'compressed'")
@@ -178,12 +180,14 @@ public class FileReceiver {
                 .returnDesc(0, "ret", "0 if success, 1 otherwise")
                 .returnDesc(1, "session-id", "Session id to be used for this transfer"));
         methods.add(new Method(RECEIVE_PART_METHOD, "siix", "i", this::receiveFilePart)
+                .requireCapabilities(Capability.CLIENT__FILERECEIVER_API)
                 .paramDesc(0, "filereference", "file reference to download")
                 .paramDesc(1, "session-id", "Session id to be used for this transfer")
                 .paramDesc(2, "partid", "relative part number starting at zero")
                 .paramDesc(3, "data", "bytes in this part")
                 .returnDesc(0, "ret", "0 if success, 1 otherwise"));
         methods.add(new Method(RECEIVE_EOF_METHOD, "silis", "i", this::receiveFileEof)
+                .requireCapabilities(Capability.CLIENT__FILERECEIVER_API)
                 .paramDesc(0, "filereference", "file reference to download")
                 .paramDesc(1, "session-id", "Session id to be used for this transfer")
                 .paramDesc(2, "crc-code", "crc code (xxhash64)")

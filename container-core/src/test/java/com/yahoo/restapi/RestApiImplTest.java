@@ -7,6 +7,7 @@ import com.yahoo.container.jdisc.HttpRequestBuilder;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.RequestHandlerSpec;
 import com.yahoo.container.jdisc.RequestView;
+import com.yahoo.security.tls.Capability;
 import com.yahoo.test.json.JsonTestHelper;
 import com.yahoo.yolean.Exceptions;
 import org.junit.jupiter.api.Test;
@@ -19,6 +20,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static com.yahoo.jdisc.http.HttpRequest.Method;
 import static com.yahoo.restapi.RestApi.handlerConfig;
@@ -136,6 +138,26 @@ class RestApiImplTest {
         assertRequestHandlerSpecAclMapping(spec, AclMapping.Action.WRITE, Method.POST, "/api2");
     }
 
+    @Test
+    void resolves_correct_capabilities() {
+        var restApi = RestApi.builder()
+                .requiredCapabilities(Capability.CONTENT__METRICS_API)
+                .addRoute(route("/api1")
+                                  .requiredCapabilities(Capability.CONTENT__SEARCH_API)
+                                  .get(ctx -> new MessageResponse(ctx.aclAction().name()),
+                                       handlerConfig().withRequiredCapabilities(Capability.SLOBROK__API))
+                                  .post(ctx -> new MessageResponse(ctx.aclAction().name())))
+                .addRoute(route("/api2")
+                                  .get(ctx -> new MessageResponse(ctx.aclAction().name()))
+                                  .post(ctx -> new MessageResponse(ctx.aclAction().name()),
+                                        handlerConfig().withRequiredCapabilities(Capability.CONTENT__DOCUMENT_API)))
+                .build();
+        assertRequiredCapability(restApi, Method.GET, "/api1", Capability.SLOBROK__API);
+        assertRequiredCapability(restApi, Method.POST, "/api1", Capability.CONTENT__SEARCH_API);
+        assertRequiredCapability(restApi, Method.GET, "/api2", Capability.CONTENT__METRICS_API);
+        assertRequiredCapability(restApi, Method.POST, "/api2", Capability.CONTENT__DOCUMENT_API);
+    }
+
     private static void verifyJsonResponse(
             RestApi restApi, Method method, String path, String requestContent, int expectedStatusCode,
             String expectedJson) {
@@ -164,15 +186,22 @@ class RestApiImplTest {
 
     private static void assertRequestHandlerSpecAclMapping(
             RequestHandlerSpec spec, AclMapping.Action expectedAction, Method method, String uriPath) {
-        RequestView requestView = new RequestView() {
-            @Override public Method method() { return method; }
-            @Override public URI uri() { return URI.create("http://localhost" + uriPath); }
-        };
-        assertEquals(expectedAction, spec.aclMapping().get(requestView));
+        assertEquals(expectedAction, spec.aclMapping().get(new View(method, uriPath)));
+    }
+
+    private static void assertRequiredCapability(RestApi api, Method method, String uriPath, Capability capability) {
+        assertEquals(Set.of(capability), api.requiredCapabilities(new View(method, uriPath)).asSet());
     }
 
     public static class TestEntity {
         @JsonProperty("mystring") public String stringValue;
         @JsonProperty("myinstant") public Instant instantValue;
+    }
+
+    private static class View implements RequestView {
+        final Method method; final String path;
+        View(Method m, String path) { this.method = m; this.path = path;}
+        @Override public Method method() { return method; }
+        @Override public URI uri() { return URI.create("http://localhost" + path); }
     }
 }

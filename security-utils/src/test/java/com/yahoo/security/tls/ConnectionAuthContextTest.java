@@ -46,7 +46,7 @@ class ConnectionAuthContextTest {
 
     private static ConnectionAuthContext createConnectionAuthContext() {
         return new ConnectionAuthContext(
-                List.of(createCertificate()), CapabilitySet.Predefined.CONTAINER_NODE.capabilities(), Set.of(),
+                List.of(createCertificate()), CapabilitySet.CONTAINER_NODE, Set.of(),
                 CapabilityMode.ENFORCE);
     }
 

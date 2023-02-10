@@ -521,7 +521,9 @@
     ],
     "methods" : [
       "public abstract com.yahoo.jdisc.handler.RequestHandler getDelegate()",
-      "public com.yahoo.jdisc.handler.RequestHandler getDelegateRecursive()"
+      "public com.yahoo.jdisc.handler.RequestHandler getDelegateRecursive()",
+      "public static com.yahoo.jdisc.handler.RequestHandler resolve(com.yahoo.jdisc.handler.RequestHandler)",
+      "public static java.util.Optional resolve(java.lang.Class, com.yahoo.jdisc.handler.RequestHandler)"
     ],
     "fields" : [ ]
   },

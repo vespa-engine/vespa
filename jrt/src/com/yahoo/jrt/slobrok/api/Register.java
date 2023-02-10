@@ -14,6 +14,7 @@ import com.yahoo.jrt.Target;
 import com.yahoo.jrt.Task;
 import com.yahoo.jrt.TransportThread;
 import com.yahoo.jrt.Values;
+import com.yahoo.security.tls.Capability;
 
 import java.time.Duration;
 import java.util.ArrayList;
@@ -97,6 +98,7 @@ public class Register {
                                         handleRpcList(req);
                                     }
                                 })
+            .requireCapabilities(Capability.CLIENT__SLOBROK_API)
             .methodDesc("List rpcserver names")
             .returnDesc(0, "names",
                         "The rpcserver names this server wants to serve");
@@ -107,6 +109,7 @@ public class Register {
                                          handleRpcUnreg(req);
                                      }
                                  })
+            .requireCapabilities(Capability.CLIENT__SLOBROK_API)
             .methodDesc("Notify a server about removed registration")
             .paramDesc(0, "name", "RpcServer name");
         orb.addMethod(m_unreg);

@@ -3,16 +3,20 @@ package com.yahoo.restapi;
 
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
+import com.yahoo.container.jdisc.RequestView;
 import com.yahoo.container.jdisc.ThreadedHttpRequestHandler;
 import com.yahoo.container.jdisc.RequestHandlerSpec;
+import com.yahoo.container.jdisc.utils.CapabilityRequiringRequestHandler;
 import com.yahoo.jdisc.Metric;
+import com.yahoo.security.tls.CapabilitySet;
 
 import java.util.concurrent.Executor;
 
 /**
  * @author bjorncs
  */
-public abstract class RestApiRequestHandler<T extends RestApiRequestHandler<T>> extends ThreadedHttpRequestHandler {
+public abstract class RestApiRequestHandler<T extends RestApiRequestHandler<T>> extends ThreadedHttpRequestHandler
+        implements CapabilityRequiringRequestHandler {
 
     private final RestApi restApi;
 
@@ -50,6 +54,7 @@ public abstract class RestApiRequestHandler<T extends RestApiRequestHandler<T>> 
 
     @Override public final HttpResponse handle(HttpRequest request) { return restApi.handleRequest(request); }
     @Override public RequestHandlerSpec requestHandlerSpec() { return restApi.requestHandlerSpec(); }
+    @Override public CapabilitySet requiredCapabilities(RequestView req) { return restApi.requiredCapabilities(req); }
 
     public RestApi restApi() { return restApi; }
 }

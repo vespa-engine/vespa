@@ -6,14 +6,29 @@ import java.util.Arrays;
 /**
  * @author bjorncs
  */
-public enum Capability {
+public enum Capability implements ToCapabilitySet {
     NONE("vespa.none"), // placeholder for no capabilities
+    HTTP_UNCLASSIFIED("vespa.http.unclassified"),
+    RESTAPI_UNCLASSIFIED("vespa.restapi.unclassified"),
+    RPC_UNCLASSIFIED("vespa.rpc.unclassified"),
+    CLIENT__FILERECEIVER_API("vespa.client.filereceiver_api"),
+    CLIENT__SLOBROK_API("vespa.client.slobrok_api"),
+    CONFIGPROXY__CONFIG_API("vespa.configproxy.config_api"),
+    CONFIGPROXY__MANAGEMENT_API("vespa.configproxy.management_api"),
+    CONFIGPROXY__FILEDISTRIBUTION_API("vespa.configproxy.filedistribution_api"),
+    CONFIGSERVER__CONFIG_API("vespa.configserver.config_api"),
+    CONFIGSERVER__FILEDISTRIBUTION_API("vespa.configserver.filedistribution_api"),
+    CONTAINER__DOCUMENT_API("vespa.container.document_api"),
+    CONTAINER__MANAGEMENT_API("vespa.container.management_api"),
     CONTENT__CLUSTER_CONTROLLER__INTERNAL_STATE_API("vespa.content.cluster_controller.internal_state_api"),
     CONTENT__DOCUMENT_API("vespa.content.document_api"),
     CONTENT__METRICS_API("vespa.content.metrics_api"),
     CONTENT__SEARCH_API("vespa.content.search_api"),
     CONTENT__STATUS_PAGES("vespa.content.status_pages"),
     CONTENT__STORAGE_API("vespa.content.storage_api"),
+    LOGSERVER_API("vespa.logserver.api"),
+    METRICSPROXY__MANAGEMENT_API("vespa.metricsproxy.management_api"),
+    METRICSPROXY__METRICS_API("vespa.metricsproxy.metrics_api"),
     SLOBROK__API("vespa.slobrok.api"),
     ;
 
@@ -22,6 +37,8 @@ public enum Capability {
     Capability(String name) { this.name = name; }
 
     public String asString() { return name; }
+
+    @Override public CapabilitySet toCapabilitySet() { return CapabilitySet.from(this); }
 
     public static Capability fromName(String name) {
         return Arrays.stream(values())
