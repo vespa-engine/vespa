@@ -7,7 +7,7 @@ import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.ThreadedHttpRequestHandler;
-import com.yahoo.io.IOUtils;
+import com.yahoo.container.jdisc.secretstore.SecretStore;
 import com.yahoo.restapi.ErrorResponse;
 import com.yahoo.restapi.MessageResponse;
 import com.yahoo.restapi.Path;
@@ -22,6 +22,7 @@ import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobId;
 import com.yahoo.vespa.hosted.controller.auditlog.AuditLoggingRequestHandler;
+import com.yahoo.vespa.hosted.controller.config.CoreDumpTokenResealingConfig;
 import com.yahoo.vespa.hosted.controller.maintenance.ControllerMaintenance;
 import com.yahoo.vespa.hosted.controller.maintenance.Upgrader;
 import com.yahoo.vespa.hosted.controller.restapi.ErrorResponses;
@@ -29,15 +30,15 @@ import com.yahoo.vespa.hosted.controller.support.access.SupportAccess;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion.Confidence;
 import com.yahoo.yolean.Exceptions;
 
-import java.io.IOException;
 import java.io.InputStream;
-import java.io.UncheckedIOException;
 import java.security.Principal;
 import java.security.cert.X509Certificate;
 import java.time.Instant;
 import java.util.Optional;
 import java.util.Scanner;
-import java.util.function.Function;
+
+import static com.yahoo.vespa.hosted.controller.restapi.controller.RequestUtils.requireField;
+import static com.yahoo.vespa.hosted.controller.restapi.controller.RequestUtils.toJsonBytes;
 
 /**
  * This implements the controller/v1 API which provides operators with information about,
@@ -50,11 +51,19 @@ public class ControllerApiHandler extends AuditLoggingRequestHandler {
 
     private final ControllerMaintenance maintenance;
     private final Controller controller;
+    private final SecretStore secretStore;
+    private final CoreDumpTokenResealingConfig tokenResealingConfig;
 
-    public ControllerApiHandler(ThreadedHttpRequestHandler.Context parentCtx, Controller controller, ControllerMaintenance maintenance) {
+    public ControllerApiHandler(ThreadedHttpRequestHandler.Context parentCtx,
+                                Controller controller,
+                                ControllerMaintenance maintenance,
+                                SecretStore secretStore,
+                                CoreDumpTokenResealingConfig tokenResealingConfig) {
         super(parentCtx, controller.auditLogger());
         this.controller = controller;
         this.maintenance = maintenance;
+        this.secretStore = secretStore;
+        this.tokenResealingConfig = tokenResealingConfig;
     }
 
     @Override
@@ -92,6 +101,7 @@ public class ControllerApiHandler extends AuditLoggingRequestHandler {
         if (path.matches("/controller/v1/jobs/upgrader/confidence/{version}")) return overrideConfidence(request, path.get("version"));
         if (path.matches("/controller/v1/access/requests/{user}")) return approveMembership(request, path.get("user"));
         if (path.matches("/controller/v1/access/grants/{user}")) return grantAccess(request, path.get("user"));
+        if (path.matches("/controller/v1/access/cores/reseal")) return DecryptionTokenResealer.handleResealRequest(request, tokenResealingConfig.resealingPrivateKeyName(), secretStore);
         return notFound(path);
     }
 
@@ -127,12 +137,6 @@ public class ControllerApiHandler extends AuditLoggingRequestHandler {
         return new MessageResponse(
                 jobId.map(id -> Text.format("Operator %s granted access and job %s triggered", principal.getName(), id.type().jobName()))
                         .orElseGet(() -> Text.format("Operator %s granted access and job trigger queued", principal.getName())));
-    }
-
-    private <T> T requireField(Inspector inspector, String field, Function<String, T> mapper) {
-        return SlimeUtils.optionalString(inspector.field(field))
-                .map(mapper::apply)
-                .orElseThrow(() -> new IllegalArgumentException("Expected field \"" + field + "\" in request"));
     }
 
     private HttpResponse delete(HttpRequest request) {
@@ -186,14 +190,6 @@ public class ControllerApiHandler extends AuditLoggingRequestHandler {
             return scanner.next();
         }
         return "";
-    }
-
-    private static byte[] toJsonBytes(InputStream jsonStream) {
-        try {
-            return IOUtils.readBytes(jsonStream, 1000 * 1000);
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
     }
 
     private static Principal requireUserPrincipal(HttpRequest request) {
