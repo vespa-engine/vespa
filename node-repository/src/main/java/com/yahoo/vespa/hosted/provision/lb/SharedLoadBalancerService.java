@@ -42,7 +42,6 @@ public class SharedLoadBalancerService implements LoadBalancerService {
         return new LoadBalancerInstance(Optional.of(DomainName.of(vipHostname)),
                                         Optional.empty(),
                                         Optional.empty(),
-                                        Optional.empty(),
                                         Set.of(4443),
                                         Set.of(),
                                         spec.reals(),
