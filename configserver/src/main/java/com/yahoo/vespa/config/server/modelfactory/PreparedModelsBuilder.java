@@ -45,7 +45,6 @@ import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
 
 /**
  * @author bratseth
@@ -59,7 +58,7 @@ public class PreparedModelsBuilder extends ModelsBuilder<PreparedModelsBuilder.P
     private final List<ContainerEndpoint> containerEndpoints;
     private final Optional<EndpointCertificateSecrets> endpointCertificateSecrets;
     private final ConfigDefinitionRepo configDefinitionRepo;
-    private final HostValidator<ApplicationId> hostValidator;
+    private final HostValidator hostValidator;
     private final PrepareParams params;
     private final FileRegistry fileRegistry;
     private final Optional<ApplicationSet> currentActiveApplicationSet;
@@ -76,7 +75,7 @@ public class PreparedModelsBuilder extends ModelsBuilder<PreparedModelsBuilder.P
                                  ExecutorService executor,
                                  HostProvisionerProvider hostProvisionerProvider,
                                  Curator curator,
-                                 HostValidator<ApplicationId> hostValidator,
+                                 HostValidator hostValidator,
                                  DeployLogger deployLogger,
                                  PrepareParams params,
                                  Optional<ApplicationSet> currentActiveApplicationSet,
@@ -171,7 +170,7 @@ public class PreparedModelsBuilder extends ModelsBuilder<PreparedModelsBuilder.P
         }
     }
 
-    private void validateModelHosts(HostValidator<ApplicationId> hostValidator, ApplicationId applicationId, Model model) {
+    private void validateModelHosts(HostValidator hostValidator, ApplicationId applicationId, Model model) {
         // Will retry here, since hosts used might not be in sync on all config servers (we wait for 2/3 servers
         // to respond to deployments and deletions).
         Instant end = Instant.now().plus(Duration.ofSeconds(1));

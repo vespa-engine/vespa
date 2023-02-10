@@ -126,7 +126,7 @@ public class SessionPreparer {
      * @param activeApplicationSet        set of currently active applications.
      * @return the config change actions that must be done to handle the activation of the models prepared.
      */
-    public PrepareResult prepare(HostValidator<ApplicationId> hostValidator, DeployLogger logger, PrepareParams params,
+    public PrepareResult prepare(HostValidator hostValidator, DeployLogger logger, PrepareParams params,
                                  Optional<ApplicationSet> activeApplicationSet, Instant now, File serverDbSessionDir,
                                  ApplicationPackage applicationPackage, SessionZooKeeperClient sessionZooKeeperClient) {
         ApplicationId applicationId = params.getApplicationId();
@@ -181,7 +181,7 @@ public class SessionPreparer {
         private final PreparedModelsBuilder preparedModelsBuilder;
         private final FileRegistry fileRegistry;
 
-        Preparation(HostValidator<ApplicationId> hostValidator, DeployLogger logger, PrepareParams params,
+        Preparation(HostValidator hostValidator, DeployLogger logger, PrepareParams params,
                     Optional<ApplicationSet> currentActiveApplicationSet, Path tenantPath,
                     File serverDbSessionDir, ApplicationPackage applicationPackage,
                     SessionZooKeeperClient sessionZooKeeperClient) {
