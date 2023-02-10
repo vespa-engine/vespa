@@ -22,10 +22,12 @@ import static com.yahoo.container.bundle.BundleInstantiationSpecification.fromSe
  */
 class SearchHandler extends ProcessingHandler<SearchChains> {
 
-    static final String HANDLER_CLASS = com.yahoo.search.handler.SearchHandler.class.getName();
-    static final String EXECUTION_FACTORY_CLASS = com.yahoo.search.searchchain.ExecutionFactory.class.getName();
+    static final Class<?> SEARCH_HANDLER = com.yahoo.search.handler.SearchHandler.class;
+    static final Class<?> EXECUTION_FACTORY = com.yahoo.search.searchchain.ExecutionFactory.class;
+    static final String HANDLER_CLASSNAME = SEARCH_HANDLER.getName();
+    static final String EXECUTION_FACTORY_CLASSNAME = EXECUTION_FACTORY.getName();
 
-    static final BundleInstantiationSpecification HANDLER_SPEC = fromSearchAndDocproc(HANDLER_CLASS);
+    static final BundleInstantiationSpecification HANDLER_SPEC = fromSearchAndDocproc(HANDLER_CLASSNAME);
     static final BindingPattern DEFAULT_BINDING = bindingPattern(Optional.empty());
 
     SearchHandler(ApplicationContainerCluster cluster,

@@ -84,7 +84,7 @@ public class SearchBuilderTest extends ContainerModelBuilderTestBase {
 
         var discBindingsConfig = root.getConfig(JdiscBindingsConfig.class, "default");
         assertEquals(SearchHandler.DEFAULT_BINDING.patternString(), discBindingsConfig.handlers(myHandler).serverBindings(0));
-        assertNull(discBindingsConfig.handlers(SearchHandler.HANDLER_CLASS));
+        assertNull(discBindingsConfig.handlers(SearchHandler.HANDLER_CLASSNAME));
     }
 
     @Test
@@ -188,11 +188,11 @@ public class SearchBuilderTest extends ContainerModelBuilderTestBase {
     void search_handler_has_dedicated_threadpool() {
         createBasicSearchModel();
 
-        Handler searchHandler = getHandler("default", SearchHandler.HANDLER_CLASS);
+        Handler searchHandler = getHandler("default", SearchHandler.HANDLER_CLASSNAME);
         assertTrue(searchHandler.getInjectedComponentIds().contains("threadpool@search-handler"));
 
         ContainerThreadpoolConfig config = root.getConfig(
-                ContainerThreadpoolConfig.class, "default/component/" + SearchHandler.HANDLER_CLASS + "/threadpool@search-handler");
+                ContainerThreadpoolConfig.class, "default/component/" + SearchHandler.HANDLER_CLASSNAME + "/threadpool@search-handler");
         assertEquals(-2, config.maxThreads());
         assertEquals(-2, config.minThreads());
         assertEquals(-40, config.queueSize());
@@ -213,7 +213,7 @@ public class SearchBuilderTest extends ContainerModelBuilderTestBase {
                 "</container>");
         createModel(root, clusterElem);
         ContainerThreadpoolConfig config = root.getConfig(
-                ContainerThreadpoolConfig.class, "default/component/" + SearchHandler.HANDLER_CLASS + "/threadpool@search-handler");
+                ContainerThreadpoolConfig.class, "default/component/" + SearchHandler.HANDLER_CLASSNAME + "/threadpool@search-handler");
         assertEquals(100, config.maxThreads());
         assertEquals(80, config.minThreads());
         assertEquals(10, config.queueSize());
@@ -222,8 +222,8 @@ public class SearchBuilderTest extends ContainerModelBuilderTestBase {
     @Test
     void ExecutionFactory_gets_same_chains_config_as_SearchHandler() {
         createBasicSearchModel();
-        Component<?, ?> executionFactory = ((SearchHandler) getComponent("default", SearchHandler.HANDLER_CLASS))
-                .getChildren().get(SearchHandler.EXECUTION_FACTORY_CLASS);
+        Component<?, ?> executionFactory = ((SearchHandler) getComponent("default", SearchHandler.HANDLER_CLASSNAME))
+                .getChildren().get(SearchHandler.EXECUTION_FACTORY_CLASSNAME);
 
         ChainsConfig executionFactoryChainsConfig = root.getConfig(ChainsConfig.class, executionFactory.getConfigId());
         assertEquals(chainsConfig(), executionFactoryChainsConfig);
