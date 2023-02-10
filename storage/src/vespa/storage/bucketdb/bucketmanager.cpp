@@ -494,7 +494,8 @@ BucketManager::processRequestBucketInfoCommands(document::BucketSpace bucketSpac
         reqs.size(), bucketSpace.toString().c_str(), clusterState->toString().c_str(), our_hash.c_str());
 
     std::lock_guard clusterStateGuard(_clusterStateLock);
-    for (const auto & req : std::ranges::reverse_view(reqs)) {
+    for (auto it = reqs.rbegin(); it != reqs.rend(); it++) {
+        const auto & req = *it;
         // Currently small requests should not be forwarded to worker thread
         assert(req->hasSystemState());
         const auto their_hash = req->getDistributionHash();
