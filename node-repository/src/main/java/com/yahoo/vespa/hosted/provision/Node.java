@@ -58,7 +58,7 @@ public final class Node implements Nodelike {
     private final List<TrustStoreItem> trustStoreItems;
     private final CloudAccount cloudAccount;
 
-    /** Only set for enclave nodes */
+    /** Only set for configservers and exclave nodes */
     private final Optional<WireguardKey> wireguardPubKey;
 
     /** Record of the last event of each type happening to this node */
