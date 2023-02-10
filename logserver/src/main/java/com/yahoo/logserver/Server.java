@@ -8,7 +8,6 @@ import com.yahoo.log.LogSetup;
 import com.yahoo.log.event.Event;
 import com.yahoo.logserver.handlers.HandlerThread;
 import com.yahoo.logserver.handlers.LogHandler;
-import com.yahoo.security.tls.Capability;
 import com.yahoo.yolean.system.CatchSignals;
 
 import java.util.HashMap;
@@ -109,8 +108,7 @@ public class Server implements Runnable {
         registerPluginLoader(new BuiltinPluginLoader());
 
         rpcServer = new RpcServer(rpcListenPort);
-        rpcServer.addMethod(new ArchiveLogMessagesMethod(dispatch).methodDefinition()
-                                    .requireCapabilities(Capability.LOGSERVER_API));
+        rpcServer.addMethod(new ArchiveLogMessagesMethod(dispatch).methodDefinition());
     }
 
     /**
