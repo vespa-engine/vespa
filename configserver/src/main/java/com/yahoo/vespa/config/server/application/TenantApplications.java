@@ -402,8 +402,6 @@ public class TenantApplications implements RequestHandler, HostValidator {
         configActivationListener.verifyHostsAreAvailable(applicationId, newHosts);
     }
 
-    public HostValidator getHostValidator() { return this; }
-
     public ApplicationId getApplicationIdForHostName(String hostname) {
         return hostRegistry.getKeyForHost(hostname);
     }

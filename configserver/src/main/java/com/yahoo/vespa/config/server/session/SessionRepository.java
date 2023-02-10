@@ -13,7 +13,6 @@ import com.yahoo.config.model.api.ConfigDefinitionRepo;
 import com.yahoo.config.model.application.provider.DeployData;
 import com.yahoo.config.model.application.provider.FilesApplicationPackage;
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.Tags;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.container.jdisc.secretstore.SecretStore;
@@ -243,7 +242,7 @@ public class SessionRepository {
                 ? Optional.empty()
                 : Optional.of(sessionZooKeeperClient.createPrepareWaiter());
         Optional<ApplicationSet> activeApplicationSet = getActiveApplicationSet(params.getApplicationId());
-        ConfigChangeActions actions = sessionPreparer.prepare(applicationRepo.getHostValidator(), logger, params,
+        ConfigChangeActions actions = sessionPreparer.prepare(applicationRepo, logger, params,
                                                               activeApplicationSet, now, getSessionAppDir(sessionId),
                                                               session.getApplicationPackage(), sessionZooKeeperClient)
                 .getConfigChangeActions();
