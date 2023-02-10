@@ -75,13 +75,7 @@ public class Nodes {
     /** Read and write all nodes to make sure they are stored in the latest version of the serialized format */
     public void rewrite() {
         Instant start = clock.instant();
-        int nodesWritten = 0;
-        Map<Node.State, NodeList> nodes = list().groupingBy(Node::state);
-        for (var kv : nodes.entrySet()) {
-            // TODO(mpolden): This should take the lock before writing
-            db.writeTo(kv.getKey(), kv.getValue().asList(), Agent.system, Optional.empty());
-            nodesWritten += kv.getValue().size();
-        }
+        int nodesWritten = performOn(list(), this::write).size();
         Instant end = clock.instant();
         log.log(Level.INFO, String.format("Rewrote %d nodes in %s", nodesWritten, Duration.between(start, end)));
     }
@@ -689,7 +683,7 @@ public class Nodes {
     }
 
     /**
-     * Performs an operation requiring locking on all nodes matching some filter.
+     * Performs an operation requiring locking on all given nodes.
      *
      * @param action the action to perform
      * @return the set of nodes on which the action was performed, as they became as a result of the operation
@@ -707,7 +701,7 @@ public class Nodes {
                 unallocatedNodes.add(node);
         }
 
-        // perform operation while holding locks
+        // Perform operation while holding appropriate lock
         List<Node> resultingNodes = new ArrayList<>();
         try (Mutex lock = lockUnallocated()) {
             for (Node node : unallocatedNodes) {
