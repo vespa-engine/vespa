@@ -7,6 +7,8 @@ import sentencepiece.SentencepieceModel;
 
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * A SentencePiece model
@@ -20,6 +22,7 @@ final class Model {
     final float minScore;
     final float maxScore;
     final Trie tokens = new Trie();
+    final Map<Integer, String> tokenId2Token = new HashMap<>();
 
     Model(Language language, Path path) {
         try {
@@ -31,6 +34,7 @@ final class Model {
             for (int i = 0; i < sp.getPiecesCount(); i++) {
                 var piece = sp.getPieces(i);
                 tokens.add(toTokenType(piece.getType()), i, piece.getPiece(), piece.getScore());
+                tokenId2Token.put(i, piece.getPiece());
                 minScore = Math.min(piece.getScore(), minScore);
                 maxScore = Math.max(piece.getScore(), maxScore);
             }
@@ -48,7 +52,7 @@ final class Model {
             case NORMAL : return TokenType.text;
             case CONTROL : return TokenType.control;
             case UNUSED : return TokenType.unused;
-            default : throw new IllegalArgumentException("Unknkown token type " + type);
+            default : throw new IllegalArgumentException("Unknown token type " + type);
         }
     }
 

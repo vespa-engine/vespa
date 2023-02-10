@@ -89,6 +89,20 @@ public class SentencePieceEmbedder implements Segmenter, Embedder {
     }
 
     /**
+     * Converts the list of token id's into a text. The opposite operation of embed.
+     *
+     * @param tokens the list of tokens to decode to a string
+     * @param context the context which specifies the language used to select a model
+     * @return the string formed by decoding the tokens back to their string repreesentation
+     */
+    @Override
+    public String decode(List<Integer> tokens, Embedder.Context context) {
+        Model model = resolveModelFrom(context.getLanguage());
+        String normalized = tokens.stream().map(model.tokenId2Token::get).collect(Collectors.joining());
+        return denormalize(normalized);
+    }
+
+    /**
      * <p>Embeds text into a tensor.</p>
      *
      * <p>If the tensor type is indexed 1-d (bound or unbound) this will return a tensor containing the token ids in the order
@@ -135,6 +149,11 @@ public class SentencePieceEmbedder implements Segmenter, Embedder {
             }
         }
         return b.toString();
+    }
+
+    public String denormalize(String s) {
+        String result = s.replace(SentencePieceAlgorithm.spaceSymbol, ' ');
+        return result.charAt(0) == ' ' ? result.substring(1) : result;  // Skip first space
     }
 
     public static final class Builder {

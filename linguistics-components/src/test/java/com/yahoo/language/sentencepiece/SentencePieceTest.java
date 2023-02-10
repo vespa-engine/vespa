@@ -45,6 +45,14 @@ public class SentencePieceTest {
     }
 
     @Test
+    public void testEnglishDecoding() {
+        var tester = new EmbedderTester(new SentencePieceEmbedder.Builder("src/test/models/sentencepiece/en.wiki.bpe.vs10000.model").build());
+        tester.assertDecoded("this is a sentence");
+        tester.assertDecoded("hello, world!");
+        tester.assertDecoded(")(/&#(small)/ \"in quotes\")");
+    }
+
+    @Test
     public void testNoCollapse() {
         var builder = new SentencePieceEmbedder.Builder()
                 .addDefaultModel(new File("src/test/models/sentencepiece/en.wiki.bpe.vs10000.model").toPath())
