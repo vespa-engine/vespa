@@ -3,9 +3,12 @@
   [
     {
       "hostname":"cfg1.yahoo.com",
-      "ipAddresses":["127.0.201.1","::201:1"]},
+      "wireguardPubkey":"lololololololololololololololololololololoo=",
+      "ipAddresses":["127.0.201.1","::201:1"]
+    },
     {
       "hostname":"cfg2.yahoo.com",
+      "wireguardPubkey":"olololololololololololololololololololololo=",
       "ipAddresses":["127.0.202.1","::202:1"]
     }
   ]
