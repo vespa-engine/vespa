@@ -38,7 +38,7 @@ public class CapabilitySet implements ToCapabilitySet {
             "vespa.config_server");
 
     private static CapabilitySet predefined(String name, ToCapabilitySet... capabilities) {
-        var instance = CapabilitySet.from(capabilities);
+        var instance = CapabilitySet.of(capabilities);
         PREDEFINED.put(name, instance);
         return instance;
     }
@@ -68,13 +68,13 @@ public class CapabilitySet implements ToCapabilitySet {
         return new CapabilitySet(union);
     }
 
-    public static CapabilitySet from(ToCapabilitySet... capabilities) {
+    public static CapabilitySet of(ToCapabilitySet... capabilities) {
         return CapabilitySet.unionOf(Arrays.stream(capabilities).map(ToCapabilitySet::toCapabilitySet).toList());
     }
 
-    public static CapabilitySet from(EnumSet<Capability> caps) { return new CapabilitySet(EnumSet.copyOf(caps)); }
-    public static CapabilitySet from(Collection<Capability> caps) { return new CapabilitySet(EnumSet.copyOf(caps)); }
-    public static CapabilitySet from(Capability... caps) { return new CapabilitySet(EnumSet.copyOf(List.of(caps))); }
+    public static CapabilitySet of(EnumSet<Capability> caps) { return new CapabilitySet(EnumSet.copyOf(caps)); }
+    public static CapabilitySet of(Collection<Capability> caps) { return new CapabilitySet(EnumSet.copyOf(caps)); }
+    public static CapabilitySet of(Capability... caps) { return new CapabilitySet(EnumSet.copyOf(List.of(caps))); }
     public static CapabilitySet all() { return ALL_CAPABILITIES; }
     public static CapabilitySet none() { return NO_CAPABILITIES; }
 

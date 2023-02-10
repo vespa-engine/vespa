@@ -38,7 +38,7 @@ public enum Capability implements ToCapabilitySet {
 
     public String asString() { return name; }
 
-    @Override public CapabilitySet toCapabilitySet() { return CapabilitySet.from(this); }
+    @Override public CapabilitySet toCapabilitySet() { return CapabilitySet.of(this); }
 
     public static Capability fromName(String name) {
         return Arrays.stream(values())

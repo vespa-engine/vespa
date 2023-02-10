@@ -28,13 +28,13 @@ class ConnectionAuthContextTest {
     void fails_on_missing_capabilities() {
         ConnectionAuthContext ctx = createConnectionAuthContext();
         assertThrows(MissingCapabilitiesException.class,
-                () -> ctx.verifyCapabilities(CapabilitySet.from(Capability.CONTENT__STATUS_PAGES)));
+                () -> ctx.verifyCapabilities(CapabilitySet.of(Capability.CONTENT__STATUS_PAGES)));
     }
 
     @Test
     void creates_correct_error_message() {
         ConnectionAuthContext ctx = createConnectionAuthContext();
-        CapabilitySet requiredCaps = CapabilitySet.from(Capability.CONTENT__STATUS_PAGES);
+        CapabilitySet requiredCaps = CapabilitySet.of(Capability.CONTENT__STATUS_PAGES);
         String expectedMessage = """
                 Permission denied for 'myaction' on 'myresource'. Peer 'mypeer' with [CN='myidentity'].
                 Requires capabilities [vespa.content.status_pages] but peer has
