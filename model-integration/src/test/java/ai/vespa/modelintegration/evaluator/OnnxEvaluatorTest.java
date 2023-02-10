@@ -10,6 +10,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assume.assumeTrue;
 
 /**
@@ -81,6 +82,73 @@ public class OnnxEvaluatorTest {
 
         // ONNX Runtime 1.8.0 does not support much of bfloat16 yet
         // assertEvaluate("cast_bfloat16_float.onnx", "tensor<float>(d0[1]):[1]", "tensor<bfloat16>(d0[1]):[1]");
+    }
+
+    @Test
+    public void testNotIdentifiers() {
+        assumeTrue(OnnxEvaluator.isRuntimeAvailable());
+        OnnxEvaluator evaluator = new OnnxEvaluator("src/test/models/onnx/badnames.onnx");
+        var inputInfo = evaluator.getInputInfo();
+        var outputInfo = evaluator.getOutputInfo();
+        for (var entry : inputInfo.entrySet()) {
+            System.out.println("wants input: " + entry.getKey() + " with type " + entry.getValue());
+        }
+        for (var entry : outputInfo.entrySet()) {
+            System.out.println("will produce output: " + entry.getKey() + " with type " + entry.getValue());
+        }
+
+        assertEquals(3, inputInfo.size());
+        assertTrue(inputInfo.containsKey("first_input"));
+        assertTrue(inputInfo.containsKey("second_input_0"));
+        assertTrue(inputInfo.containsKey("third_input"));
+
+        assertEquals(3, outputInfo.size());
+        assertTrue(outputInfo.containsKey("path_to_output_0"));
+        assertTrue(outputInfo.containsKey("path_to_output_1"));
+        assertTrue(outputInfo.containsKey("path_to_output_2"));
+
+        Map<String, Tensor> inputs = new HashMap<>();
+        inputs.put("first_input", Tensor.from("tensor(d0[2]):[2,3]"));
+        inputs.put("second_input_0", Tensor.from("tensor(d0[2]):[4,5]"));
+        inputs.put("third_input", Tensor.from("tensor(d0[2]):[6,7]"));
+
+        Tensor result;
+        result = evaluator.evaluate(inputs, "path_to_output_0");
+        System.out.println("got result: " + result);
+        assertTrue(result != null);
+
+        result = evaluator.evaluate(inputs, "path_to_output_1");
+        System.out.println("got result: " + result);
+        assertTrue(result != null);
+
+        result = evaluator.evaluate(inputs, "path_to_output_2");
+        System.out.println("got result: " + result);
+        assertTrue(result != null);
+
+        var allResults = evaluator.evaluate(inputs);
+        assertTrue(allResults != null);
+        for (var entry : allResults.entrySet()) {
+            System.out.println("produced output: " + entry.getKey() + " with type " + entry.getValue());
+        }
+        assertEquals(3, allResults.size());
+        assertTrue(allResults.containsKey("path_to_output_0"));
+        assertTrue(allResults.containsKey("path_to_output_1"));
+        assertTrue(allResults.containsKey("path_to_output_2"));
+
+        // we can also get output by onnx-internal name
+        result = evaluator.evaluate(inputs, "path/to/output:0");
+        System.out.println("got result: " + result);
+        assertTrue(result != null);
+
+        // we can also send input by onnx-internal name
+        inputs.remove("second_input_0");
+        inputs.put("second/input:0", Tensor.from("tensor(d0[2]):[8,9]"));
+        allResults = evaluator.evaluate(inputs);
+        assertTrue(allResults != null);
+        for (var entry : allResults.entrySet()) {
+            System.out.println("produced output: " + entry.getKey() + " with type " + entry.getValue());
+        }
+        assertEquals(3, allResults.size());
     }
 
     private void assertEvaluate(String model, String output, String... input) {
