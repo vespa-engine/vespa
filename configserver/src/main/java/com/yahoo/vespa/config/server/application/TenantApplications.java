@@ -57,7 +57,7 @@ import static java.util.stream.Collectors.toSet;
  * @author Ulf Lilleengen
  * @author jonmv
  */
-public class TenantApplications implements RequestHandler, HostValidator<ApplicationId> {
+public class TenantApplications implements RequestHandler, HostValidator {
 
     private static final Logger log = Logger.getLogger(TenantApplications.class.getName());
 
@@ -400,10 +400,6 @@ public class TenantApplications implements RequestHandler, HostValidator<Applica
     public void verifyHosts(ApplicationId applicationId, Collection<String> newHosts) {
         hostRegistry.verifyHosts(applicationId, newHosts);
         configActivationListener.verifyHostsAreAvailable(applicationId, newHosts);
-    }
-
-    public HostValidator<ApplicationId> getHostValidator() {
-        return this;
     }
 
     public ApplicationId getApplicationIdForHostName(String hostname) {
