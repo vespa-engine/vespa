@@ -45,7 +45,7 @@ func (a *ApplicationContainer) getQrStartCfg() *QrStartConfig {
 	backticks := util.BackTicksForwardStderr
 	data, err := backticks.Run("vespa-get-config", args...)
 	if err != nil {
-		trace.Trace("could not get qr-start config:", err)
+		util.JustExitMsg("could not get qr-start config: " + err.Error())
 	} else {
 		codec := json.NewDecoder(strings.NewReader(data))
 		err = codec.Decode(&parsedJson)
