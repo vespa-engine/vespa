@@ -37,20 +37,6 @@ TEST("CapabilitySet instances are equality comparable") {
     EXPECT_NOT_EQUAL(set_1, empty);
 }
 
-TEST("Can get underlying name of all Capability instances") {
-    EXPECT_EQUAL(Capability::none().name(),                     "vespa.none"sv);
-    EXPECT_EQUAL(Capability::content_storage_api().name(),      "vespa.content.storage_api"sv);
-    EXPECT_EQUAL(Capability::content_document_api().name(),     "vespa.content.document_api"sv);
-    EXPECT_EQUAL(Capability::content_search_api().name(),       "vespa.content.search_api"sv);
-    EXPECT_EQUAL(Capability::content_proton_admin_api().name(), "vespa.content.proton_admin_api"sv);
-    EXPECT_EQUAL(Capability::slobrok_api().name(),              "vespa.slobrok.api"sv);
-    EXPECT_EQUAL(Capability::config_sentinel_api().name(),      "vespa.config.sentinel_api"sv);
-    EXPECT_EQUAL(Capability::content_status_pages().name(),     "vespa.content.status_pages"sv);
-    EXPECT_EQUAL(Capability::content_metrics_api().name(),      "vespa.content.metrics_api"sv);
-    EXPECT_EQUAL(Capability::content_cluster_controller_internal_state_api().name(),
-                 "vespa.content.cluster_controller.internal_state_api"sv);
-}
-
 TEST("Capability instances can be stringified") {
     EXPECT_EQUAL(Capability::content_storage_api().to_string(), "Capability(vespa.content.storage_api)");
 }
@@ -61,6 +47,7 @@ void check_capability_mapping(const std::string& name, Capability expected) {
     auto cap = Capability::find_capability(name);
     ASSERT_TRUE(cap.has_value());
     EXPECT_EQUAL(*cap, expected);
+    EXPECT_EQUAL(name, cap->name());
 }
 
 void check_capability_set_mapping(const std::string& name, CapabilitySet expected) {
@@ -71,8 +58,23 @@ void check_capability_set_mapping(const std::string& name, CapabilitySet expecte
 
 }
 
-TEST("All known capabilities can be looked up by name") {
+TEST("All known capabilities can be looked up by name, and resolve back to same name") {
     check_capability_mapping("vespa.none",                     Capability::none());
+    check_capability_mapping("vespa.http.unclassified",        Capability::http_unclassified());
+    check_capability_mapping("vespa.restapi.unclassified",     Capability::restapi_unclassified());
+    check_capability_mapping("vespa.rpc.unclassified",         Capability::rpc_unclassified());
+    check_capability_mapping("vespa.client.filereceiver_api",  Capability::client_filereceiver_api());
+    check_capability_mapping("vespa.client.slobrok_api",       Capability::client_slobrok_api());
+    check_capability_mapping("vespa.configproxy.config_api",   Capability::configproxy_config_api());
+    check_capability_mapping("vespa.configproxy.management_api",
+                             Capability::configproxy_management_api());
+    check_capability_mapping("vespa.configproxy.filedistribution_api",
+                             Capability::configproxy_filedistribution_api());
+    check_capability_mapping("vespa.configserver.config_api",  Capability::configserver_config_api());
+    check_capability_mapping("vespa.configserver.filedistribution_api",
+                             Capability::configserver_filedistribution_api());
+    check_capability_mapping("vespa.container.document_api",   Capability::container_document_api());
+    check_capability_mapping("vespa.container.management_api", Capability::container_management_api());
     check_capability_mapping("vespa.content.storage_api",      Capability::content_storage_api());
     check_capability_mapping("vespa.content.document_api",     Capability::content_document_api());
     check_capability_mapping("vespa.content.search_api",       Capability::content_search_api());
@@ -83,6 +85,10 @@ TEST("All known capabilities can be looked up by name") {
     check_capability_mapping("vespa.content.metrics_api",      Capability::content_metrics_api());
     check_capability_mapping("vespa.content.cluster_controller.internal_state_api",
                              Capability::content_cluster_controller_internal_state_api());
+    check_capability_mapping("vespa.logserver.api",            Capability::logserver_api());
+    check_capability_mapping("vespa.metricsproxy.management_api",
+                             Capability::metricsproxy_management_api());
+    check_capability_mapping("vespa.metricsproxy.metrics_api", Capability::metricsproxy_metrics_api());
 }
 
 TEST("Unknown capability name returns nullopt") {
