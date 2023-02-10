@@ -8,12 +8,15 @@
 #include <vespa/searchlib/queryeval/global_filter.h>
 #include <vespa/searchlib/queryeval/intermediate_blueprints.h>
 #include <vespa/searchlib/queryeval/leaf_blueprints.h>
+#include <vespa/searchlib/engine/trace.h>
+#include <vespa/vespalib/data/slime/slime.h>
 
 #include <gmock/gmock.h>
 #include <vector>
 
 using namespace testing;
 using namespace search::queryeval;
+using namespace search::engine;
 
 using search::BitVector;
 using vespalib::RequireFailedException;
@@ -215,6 +218,17 @@ TEST(GlobalFilterTest, global_filter_not_matching_any_document_becomes_empty) {
     fprintf(stderr, "empty global filter class name: %s\n", class_name.c_str());
     EXPECT_TRUE(class_name.find("EmptyFilter") < class_name.size());
     verify(*filter, 1000, 100);
+}
+
+TEST(GlobalFilterTest, global_filter_with_profiling_and_tracing) {
+    SimpleThreadBundle thread_bundle(4);
+    auto blueprint = create_blueprint();
+    RelativeTime my_time(std::make_unique<SteadyClock>());
+    Trace trace(my_time, 7);
+    trace.match_profile_depth(64);
+    auto filter = GlobalFilter::create(*blueprint, 100, thread_bundle, &trace);
+    verify(*filter);
+    fprintf(stderr, "trace: %s\n", trace.getSlime().toString().c_str());
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()

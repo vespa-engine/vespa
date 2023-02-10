@@ -420,15 +420,12 @@ MatchThread::MatchThread(size_t thread_id_in,
     match_time_s(0.0),
     wait_time_s(0.0),
     match_with_ranking(mtf.has_first_phase_rank() && mp.save_rank_scores()),
-    trace(std::make_unique<Trace>(parent_trace.getRelativeTime(), parent_trace.getLevel())),
+    trace(parent_trace.make_trace_up()),
     match_profiler(),
     first_phase_profiler(),
     second_phase_profiler(),
     my_issues()
 {
-    trace->match_profile_depth(parent_trace.match_profile_depth());
-    trace->first_phase_profile_depth(parent_trace.first_phase_profile_depth());
-    trace->second_phase_profile_depth(parent_trace.second_phase_profile_depth());
     if (trace->getLevel() > 0) {
         if (int32_t depth = trace->match_profile_depth(); depth != 0) {
             match_profiler = std::make_unique<vespalib::ExecutionProfiler>(depth);

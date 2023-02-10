@@ -3,11 +3,13 @@
 #pragma once
 
 #include <vespa/vespalib/stllike/string.h>
+#include <vespa/vespalib/util/static_string.h>
 #include <vespa/vespalib/util/time.h>
 #include <memory>
 
 namespace vespalib { class Slime; }
 namespace vespalib::slime { struct Cursor; }
+namespace vespalib::slime { struct Inserter; }
 
 namespace search::engine {
 
@@ -46,14 +48,36 @@ private:
     std::unique_ptr<Clock>  _clock;
 };
 
+class Trace;
+
+// Helper class used to inject subtraces back into a parent trace
+class LazyTraceInserter
+{
+private:
+    Trace &_parent;
+    vespalib::stringref _name;
+    vespalib::slime::Cursor *_entry;
+    std::unique_ptr<vespalib::slime::Inserter> _thread_inserter;
+    vespalib::slime::Cursor &get_entry();
+    vespalib::slime::Inserter &get_thread_inserter();
+public:
+    LazyTraceInserter(search::engine::Trace &parent, vespalib::StaticStringView name) noexcept;
+    ~LazyTraceInserter();
+    void handle_nested(const search::engine::Trace &nested_trace);
+    void handle_thread(const search::engine::Trace &thread_trace);
+};
+
 /**
  * Used for adding traces to a request. Acquire a new Cursor for everytime you want to trace something.
  * Note that it is not thread safe. All use of any cursor aquired must be thread safe.
  */
 class Trace
 {
+private:
+    struct ctor_tag {};
 public:
     using Cursor = vespalib::slime::Cursor;
+    Trace(const Trace &parent, ctor_tag);
     Trace(const RelativeTime & relativeTime, uint32_t traceLevel);
     ~Trace();
 
@@ -102,7 +126,9 @@ public:
     int32_t match_profile_depth() const { return _match_profile_depth; }
     int32_t first_phase_profile_depth() const { return _first_phase_profile_depth; }
     int32_t second_phase_profile_depth() const { return _second_phase_profile_depth; }
-    const RelativeTime & getRelativeTime() const { return _relativeTime; }
+    Trace make_trace() const { return Trace(*this, ctor_tag()); }
+    std::unique_ptr<Trace> make_trace_up() const { return std::make_unique<Trace>(*this, ctor_tag()); }
+    LazyTraceInserter make_inserter(vespalib::StaticStringView name) { return {*this, name}; }
 private:
     vespalib::Slime & slime() const {
         if (!hasTrace()) {
