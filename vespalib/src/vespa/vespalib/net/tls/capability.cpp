@@ -14,6 +14,18 @@ using namespace std::string_view_literals;
 // Important: must match 1-1 with CapabilityId values!
 constexpr std::array<std::string_view, Capability::max_value_count()> capability_names = {
     "vespa.none"sv,
+    "vespa.http.unclassified"sv,
+    "vespa.restapi.unclassified"sv,
+    "vespa.rpc.unclassified"sv,
+    "vespa.client.filereceiver_api"sv,
+    "vespa.client.slobrok_api"sv,
+    "vespa.configproxy.config_api"sv,
+    "vespa.configproxy.management_api"sv,
+    "vespa.configproxy.filedistribution_api"sv,
+    "vespa.configserver.config_api"sv,
+    "vespa.configserver.filedistribution_api"sv,
+    "vespa.container.document_api"sv,
+    "vespa.container.management_api"sv,
     "vespa.content.storage_api"sv,
     "vespa.content.document_api"sv,
     "vespa.content.search_api"sv,
@@ -23,6 +35,9 @@ constexpr std::array<std::string_view, Capability::max_value_count()> capability
     "vespa.config.sentinel_api"sv,
     "vespa.content.status_pages"sv,
     "vespa.content.metrics_api"sv,
+    "vespa.logserver.api"sv,
+    "vespa.metricsproxy.management_api"sv,
+    "vespa.metricsproxy.metrics_api"sv,
 };
 
 } // anon ns
@@ -41,6 +56,18 @@ string Capability::to_string() const {
 std::optional<Capability> Capability::find_capability(const string& cap_name) noexcept {
     static const hash_map<string, Capability> name_to_cap({
         {"vespa.none",                                          none()},
+        {"vespa.http.unclassified",                             http_unclassified()},
+        {"vespa.restapi.unclassified",                          restapi_unclassified()},
+        {"vespa.rpc.unclassified",                              rpc_unclassified()},
+        {"vespa.client.filereceiver_api",                       client_filereceiver_api()},
+        {"vespa.client.slobrok_api",                            client_slobrok_api()},
+        {"vespa.configproxy.config_api",                        configproxy_config_api()},
+        {"vespa.configproxy.management_api",                    configproxy_management_api()},
+        {"vespa.configproxy.filedistribution_api",              configproxy_filedistribution_api()},
+        {"vespa.configserver.config_api",                       configserver_config_api()},
+        {"vespa.configserver.filedistribution_api",             configserver_filedistribution_api()},
+        {"vespa.container.document_api",                        container_document_api()},
+        {"vespa.container.management_api",                      container_management_api()},
         {"vespa.content.storage_api",                           content_storage_api()},
         {"vespa.content.document_api",                          content_document_api()},
         {"vespa.content.search_api",                            content_search_api()},
@@ -50,6 +77,9 @@ std::optional<Capability> Capability::find_capability(const string& cap_name) no
         {"vespa.config.sentinel_api",                           config_sentinel_api()},
         {"vespa.content.status_pages",                          content_status_pages()},
         {"vespa.content.metrics_api",                           content_metrics_api()},
+        {"vespa.logserver.api",                                 logserver_api()},
+        {"vespa.metricsproxy.management_api",                   metricsproxy_management_api()},
+        {"vespa.metricsproxy.metrics_api",                      metricsproxy_metrics_api()},
     });
     auto iter = name_to_cap.find(cap_name);
     return (iter != name_to_cap.end()) ? std::optional<Capability>(iter->second) : std::nullopt;

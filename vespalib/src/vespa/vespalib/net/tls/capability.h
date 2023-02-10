@@ -26,6 +26,18 @@ private:
     // Changes must be reflected in capabilities_test.cpp
     enum class Id : uint32_t {
         None = 0, // Must start at zero
+        HttpUnclassified,
+        RestApiUnclassified,
+        RpcUnclassified,
+        ClientFilereceiverApi,
+        ClientSlobrokApi,
+        ConfigproxyConfigApi,
+        ConfigproxyManagementApi,
+        ConfigproxyFiledistributionApi,
+        ConfigserverConfigApi,
+        ConfigserverFiledistributionApi,
+        ContainerDocumentApi,
+        ContainerManagementApi,
         ContentStorageApi,
         ContentDocumentApi,
         ContentSearchApi,
@@ -35,12 +47,15 @@ private:
         ConfigSentinelApi,
         ContentStatusPages,
         ContentMetricsApi,
+        LogserverApi,
+        MetricsproxyManagementApi,
+        MetricsproxyMetricsApi,
         // When adding a capability ID to the end, max_value_count() MUST be updated
     };
 public:
     constexpr static size_t max_value_count() noexcept {
         // This must refer to the highest possible CapabilityId enum value.
-        return static_cast<size_t>(Id::ContentMetricsApi) + 1;
+        return static_cast<size_t>(Id::MetricsproxyMetricsApi) + 1;
     }
 private:
     Id _cap_id;
@@ -79,6 +94,54 @@ public:
         return Capability(Id::None);
     }
 
+    constexpr static Capability http_unclassified() noexcept {
+        return Capability(Id::HttpUnclassified);
+    }
+
+    constexpr static Capability restapi_unclassified() noexcept {
+        return Capability(Id::RestApiUnclassified);
+    }
+
+    constexpr static Capability rpc_unclassified() noexcept {
+        return Capability(Id::RpcUnclassified);
+    }
+
+    constexpr static Capability client_filereceiver_api() noexcept {
+        return Capability(Id::ClientFilereceiverApi);
+    }
+
+    constexpr static Capability client_slobrok_api() noexcept {
+        return Capability(Id::ClientSlobrokApi);
+    }
+
+    constexpr static Capability configproxy_config_api() noexcept {
+        return Capability(Id::ConfigproxyConfigApi);
+    }
+
+    constexpr static Capability configproxy_management_api() noexcept {
+        return Capability(Id::ConfigproxyManagementApi);
+    }
+
+    constexpr static Capability configproxy_filedistribution_api() noexcept {
+        return Capability(Id::ConfigproxyFiledistributionApi);
+    }
+
+    constexpr static Capability configserver_config_api() noexcept {
+        return Capability(Id::ConfigserverConfigApi);
+    }
+
+    constexpr static Capability configserver_filedistribution_api() noexcept {
+        return Capability(Id::ConfigserverFiledistributionApi);
+    }
+
+    constexpr static Capability container_document_api() noexcept {
+        return Capability(Id::ContainerDocumentApi);
+    }
+
+    constexpr static Capability container_management_api() noexcept {
+        return Capability(Id::ContainerManagementApi);
+    }
+
     constexpr static Capability content_storage_api() noexcept {
         return Capability(Id::ContentStorageApi);
     }
@@ -113,6 +176,18 @@ public:
 
     constexpr static Capability content_metrics_api() noexcept {
         return Capability(Id::ContentMetricsApi);
+    }
+
+    constexpr static Capability logserver_api() noexcept {
+        return Capability(Id::LogserverApi);
+    }
+
+    constexpr static Capability metricsproxy_management_api() noexcept {
+        return Capability(Id::MetricsproxyManagementApi);
+    }
+
+    constexpr static Capability metricsproxy_metrics_api() noexcept {
+        return Capability(Id::MetricsproxyMetricsApi);
     }
 
 };
