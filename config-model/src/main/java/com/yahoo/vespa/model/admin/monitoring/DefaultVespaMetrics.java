@@ -2,6 +2,7 @@
 package com.yahoo.vespa.model.admin.monitoring;
 
 import com.yahoo.metrics.ContainerMetrics;
+import com.yahoo.metrics.SearchNodeMetrics;
 
 import com.google.common.collect.ImmutableSet;
 
@@ -25,7 +26,7 @@ public class DefaultVespaMetrics {
                 );
 
         Set<Metric> defaultContentMetrics =
-                ImmutableSet.of(new Metric("content.proton.resource_usage.feeding_blocked.last")
+                ImmutableSet.of(new Metric(SearchNodeMetrics.CONTENT_PROTON_RESOURCE_USAGE_FEEDING_BLOCKED.last())
                 );
 
         Set<Metric> defaultMetrics = ImmutableSet.<Metric>builder()
