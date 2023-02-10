@@ -102,26 +102,16 @@ static_assert(receiver_of<WaitingFor<std::unique_ptr<int>>, std::unique_ptr<int>
 
 // concept indicating that F is a function that starts an async
 // operation with T as result. The result will eventually be delivered
-// to the WaitingFor<T> passed to the function.
+// to the WaitingFor<T> passed to the function. This function has
+// optional support for symmetric transfer to switch to another
+// coroutine as a side-effect of starting the async operation. This
+// also enables the function to change the operation form async to
+// sync by setting the value directly in the function and returning
+// wf.mu()
 template <typename F, typename T>
-concept start_async_op = requires(F &&f, std::decay_t<F> cpy, WaitingFor<T> wf) {
-    std::decay_t<F>(std::forward<F>(f));
-    { cpy(std::move(wf)) } -> std::same_as<void>;
-};
-
-// concept indicating that F is a function that starts an async
-// operation with T as result. The result will eventually be delivered
-// to the WaitingFor<T> passed to the function. This variant will use
-// symmetric transfer to switch to another coroutine as a side-effect
-// of starting the async operation (and thus suspending the
-// coroutine). This also enables the function to change the operation
-// form async to sync by setting the value directly in the function
-// and returning wf.mu()
-template <typename F, typename T>
-concept maybe_start_async_op = requires(F &&f, std::decay_t<F> cpy, WaitingFor<T> wf) {
-    std::decay_t<F>(std::forward<F>(f));
-    { cpy(std::move(wf)) } -> std::same_as<std::coroutine_handle<>>;
-};
+concept start_async_op = requires(F &&f) { std::decay_t<F>(std::forward<F>(f)); } &&
+(requires(std::decay_t<F> cpy, WaitingFor<T> wf) { { cpy(std::move(wf)) } -> std::same_as<void>; } ||
+ requires(std::decay_t<F> cpy, WaitingFor<T> wf) { { cpy(std::move(wf)) } -> std::same_as<std::coroutine_handle<>>; });
 
 // Create a custom awaiter that will return a value of type T when the
 // coroutine is resumed. The operation waited upon is represented by
@@ -133,7 +123,7 @@ concept maybe_start_async_op = requires(F &&f, std::decay_t<F> cpy, WaitingFor<T
 // await_resume must return T by value, since the awaiter containing
 // the result is a temporary object.
 template <typename T, typename F>
-requires start_async_op<F,T> || maybe_start_async_op<F,T>
+requires start_async_op<F,T>
 auto wait_for(F &&on_suspend) {
     struct awaiter final : PromiseState<T> {
         using PromiseState<T>::result;
