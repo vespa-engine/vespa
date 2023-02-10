@@ -65,6 +65,7 @@ public class NodesV2ApiTest {
         assertFile(new Request("http://localhost:8080/nodes/v2/node/host2.yahoo.com"), "node2.json");
         assertFile(new Request("http://localhost:8080/nodes/v2/stats"), "stats.json");
         assertFile(new Request("http://localhost:8080/nodes/v2/maintenance/"), "maintenance.json");
+        assertFile(new Request("http://localhost:8080/nodes/v2/wireguard/"), "wireguard.json");
 
         // GET with filters
         assertFile(new Request("http://localhost:8080/nodes/v2/node/?recursive=true&hostname=host6.yahoo.com%20host2.yahoo.com"), "application2-nodes.json");

@@ -19,6 +19,7 @@ import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.TenantName;
+import com.yahoo.config.provision.WireguardKey;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.config.provision.ZoneEndpoint;
 import com.yahoo.config.provision.ZoneEndpoint.AccessType;
@@ -166,8 +167,10 @@ public class MockNodeRepository extends NodeRepository {
                 flavors.getFlavorOrThrow("arm64"), NodeType.host).cloudAccount(defaultCloudAccount).build());
 
         // Config servers
-        nodes.add(Node.create("cfg1", ipConfig(201), "cfg1.yahoo.com", flavors.getFlavorOrThrow("default"), NodeType.config).build());
-        nodes.add(Node.create("cfg2", ipConfig(202), "cfg2.yahoo.com", flavors.getFlavorOrThrow("default"), NodeType.config).build());
+        nodes.add(Node.create("cfg1", ipConfig(201), "cfg1.yahoo.com", flavors.getFlavorOrThrow("default"), NodeType.config)
+                          .wireguardPubKey(WireguardKey.from("lololololololololololololololololololololoo=")).build());
+        nodes.add(Node.create("cfg2", ipConfig(202), "cfg2.yahoo.com", flavors.getFlavorOrThrow("default"), NodeType.config)
+                          .wireguardPubKey(WireguardKey.from("olololololololololololololololololololololo=")).build());
 
         // Ready all nodes, except 7 and 55
         nodes = nodes().addNodes(nodes, Agent.system);

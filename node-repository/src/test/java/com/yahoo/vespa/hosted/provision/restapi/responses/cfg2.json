@@ -116,5 +116,6 @@
     "127.0.202.1",
     "::202:1"
   ],
-  "additionalIpAddresses": []
+  "additionalIpAddresses": [],
+  "wireguardPubkey":"olololololololololololololololololololololo="
 }
