@@ -160,7 +160,9 @@ private:
         std::vector<uint32_t> nodes;
         nodes.reserve(_nodes.size());
         for (uint32_t i = 0; i < _nodes.size(); ++i) {
-            nodes.push_back(i);
+            if (_nodes[i].count > 0) {
+                nodes.push_back(i);
+            }
         }
         std::sort(nodes.begin(), nodes.end(),
                   [&](const auto &a, const auto &b) {

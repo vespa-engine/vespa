@@ -214,4 +214,22 @@ TEST(ExecutionProfilerTest, with_name_mapping) {
     EXPECT_TRUE(find_path(slime, {{"fox", 3}}));
 }
 
+TEST(ExecutionProfilerTest, flat_profiling_does_not_report_tasks_with_count_0) {
+    Profiler profiler(-2);
+    {
+        profiler.resolve("foo");
+        profiler.resolve("bar");
+        profiler.start(profiler.resolve("baz"));
+        profiler.complete();
+    }
+    Slime slime;
+    profiler.report(slime.setObject());
+    fprintf(stderr, "%s\n", slime.toString().c_str());
+    EXPECT_EQ(slime["profiler"].asString().make_string(), "flat");
+    EXPECT_EQ(slime["topn"].asLong(), 2);
+    EXPECT_EQ(slime["roots"].entries(), 1);
+    EXPECT_EQ(slime["roots"][0]["name"].asString().make_stringref(), "baz");
+    EXPECT_EQ(slime["roots"][0]["count"].asLong(), 1);
+}
+
 GTEST_MAIN_RUN_ALL_TESTS()
