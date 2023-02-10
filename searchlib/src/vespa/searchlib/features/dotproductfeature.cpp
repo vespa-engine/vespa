@@ -155,7 +155,6 @@ DotProductExecutorByEnum::execute(uint32_t docId) {
 
 class SingleDotProductExecutorByEnum final : public fef::FeatureExecutor {
 public:
-    using IWeightedSeEnumReadView = attribute::IWeightedSetEnumReadView;
     SingleDotProductExecutorByEnum(const IWeightedSetEnumReadView * weighted_set_enum_read_view, EnumHandle key, feature_t value)
         : _weighted_set_enum_read_view(weighted_set_enum_read_view),
           _key(key),
