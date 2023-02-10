@@ -12,8 +12,10 @@ import com.yahoo.document.DocumentPut;
 import com.yahoo.document.DocumentUpdate;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.concurrent.SystemTimer;
+import com.yahoo.metrics.ContainerMetrics;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * A document processor to call - an item on a {@link com.yahoo.docproc.CallStack}.
@@ -24,9 +26,10 @@ import java.util.List;
 public class Call implements Cloneable {
 
     private final DocumentProcessor processor;
-    private final String docCounterName;
-    private final String procTimeCounterName;
+    private final String PROC_TIME_METRIC_NAME = ContainerMetrics.DOCPROC_PROC_TIME.baseName();
+    private final String PROC_DOC_COUNT_METRIC_NAME = ContainerMetrics.DOCPROC_DOCUMENTS.baseName();
     private final Metric metric;
+    private final Metric.Context metricContext;
 
     public Call(DocumentProcessor processor) {
         this(processor, new NullMetric());
@@ -45,12 +48,11 @@ public class Call implements Cloneable {
         this.processor = processor;
         if (chainName == null)
             chainName = "";
-        chainName = chainName.replaceAll("[^\\p{Alnum}]", "_");
-        docCounterName = "docprocessor_" + chainName + "_" +
-                         getDocumentProcessorId().stringValue().replaceAll("[^\\p{Alnum}]", "_") + "_documents";
-        procTimeCounterName = "docprocessor_" + chainName + "_" +
-                              getDocumentProcessorId().stringValue().replaceAll("[^\\p{Alnum}]", "_") + "_proctime";
         this.metric = metric;
+        this.metricContext = metric.createContext(Map.of(
+                "chain", chainName,
+                "docproc", getDocumentProcessorId().stringValue()
+        ));
     }
 
     @Override
@@ -165,11 +167,11 @@ public class Call implements Cloneable {
     }
 
     private void incrementDocs(long increment) {
-        metric.add(docCounterName, increment, null);
+        metric.add(PROC_DOC_COUNT_METRIC_NAME, increment, metricContext);
     }
 
     private void incrementProcTime(long increment) {
-        metric.add(procTimeCounterName, increment, null);
+        metric.add(PROC_TIME_METRIC_NAME, increment, metricContext);
     }
 
 }
