@@ -383,6 +383,21 @@ public class NodesV2ApiTest {
     }
 
     @Test
+    public void patch_wireguard_pubkey() throws IOException {
+        assertFile(new Request("http://localhost:8080/nodes/v2/node/host4.yahoo.com"), "node4.json");
+
+        tester.assertResponse(new Request("http://localhost:8080/nodes/v2/node/host4.yahoo.com",
+                        Utf8.toBytes("{\"wireguardPubkey\": \"not a wg key\"}"), Request.Method.PATCH), 400,
+                "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Could not set field 'wireguardPubkey': Wireguard key must match '^[A-Za-z0-9+/]{42}[AEIMQUYcgkosw480]=$', but got: 'not a wg key'\"}");
+
+        assertResponse(new Request("http://localhost:8080/nodes/v2/node/host4.yahoo.com",
+                        Utf8.toBytes("{\"wireguardPubkey\": \"lololololololololololololololololololololoo=\"}"), Request.Method.PATCH),
+                "{\"message\":\"Updated host4.yahoo.com\"}");
+
+        assertFile(new Request("http://localhost:8080/nodes/v2/node/host4.yahoo.com"), "node4-wg.json");
+    }
+
+        @Test
     public void post_controller_node() throws Exception {
         String data = "[{\"hostname\":\"controller1.yahoo.com\", \"id\":\"fake-controller1.yahoo.com\"," +
                       createIpAddresses("127.0.0.1") +
