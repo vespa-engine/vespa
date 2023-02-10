@@ -117,7 +117,6 @@ private:
     mutable std::mutex                      _configMutex;  // protects _active* below.
     mutable std::condition_variable         _configCV;
     DocumentDBConfigSP                      _activeConfigSnapshot;
-    int64_t                                 _activeConfigSnapshotGeneration;
     const bool                              _validateAndSanitizeDocStore;
     vespalib::Gate                          _initGate;
 
@@ -145,7 +144,7 @@ private:
     DocumentDBMetricsUpdater                         _metricsUpdater;
 
     void registerReference();
-    void setActiveConfig(DocumentDBConfigSP config, int64_t generation);
+    void setActiveConfig(DocumentDBConfigSP config);
     DocumentDBConfigSP getActiveConfig() const;
     void internalInit();
     void initManagers();

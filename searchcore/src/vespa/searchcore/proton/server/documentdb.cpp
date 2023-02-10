@@ -198,7 +198,6 @@ DocumentDB::DocumentDB(const vespalib::string &baseDir,
       _configMutex(),
       _configCV(),
       _activeConfigSnapshot(),
-      _activeConfigSnapshotGeneration(0),
       _validateAndSanitizeDocStore(protonCfg.validateAndSanitizeDocstore == vespa::config::search::core::ProtonConfig::ValidateAndSanitizeDocstore::YES),
       _initGate(),
       _clusterStateHandler(_writeService.master()),
@@ -269,14 +268,11 @@ DocumentDB::registerReference()
 }
 
 void
-DocumentDB::setActiveConfig(DocumentDBConfig::SP config, int64_t generation) {
+DocumentDB::setActiveConfig(DocumentDBConfig::SP config)
+{
     lock_guard guard(_configMutex);
     registerReference();
-    assert(generation >= config->getGeneration());
     _activeConfigSnapshot = std::move(config);
-    if (_activeConfigSnapshotGeneration < generation) {
-        _activeConfigSnapshotGeneration = generation;
-    }
     _configCV.notify_all();
 }
 
@@ -343,8 +339,7 @@ DocumentDB::initFinish(DocumentDBConfig::SP configSnapshot)
     syncFeedView();
     // Check that feed view has been activated.
     assert(_feedView.get());
-    int64_t generation = configSnapshot->getGeneration();
-    setActiveConfig(std::move(configSnapshot), generation);
+    setActiveConfig(std::move(configSnapshot));
     startTransactionLogReplay();
 }
 
@@ -438,7 +433,6 @@ DocumentDB::applyConfig(DocumentDBConfig::SP configSnapshot, SerialNum serialNum
     auto start_time = vespalib::steady_clock::now();
     DocumentDBConfig::ComparisonResult cmpres;
     Schema::SP oldSchema;
-    int64_t generation = configSnapshot->getGeneration();
     {
         lock_guard guard(_configMutex);
         assert(_activeConfigSnapshot.get());
@@ -507,7 +501,7 @@ DocumentDB::applyConfig(DocumentDBConfig::SP configSnapshot, SerialNum serialNum
         }
         _state.clearDelayedConfig();
     }
-    setActiveConfig(configSnapshot, generation);
+    setActiveConfig(configSnapshot);
     if (params.shouldMaintenanceControllerChange() || _maintenanceController.getPaused()) {
         forwardMaintenanceConfig();
     }
@@ -817,7 +811,7 @@ DocumentDB::reconfigure(DocumentDBConfig::SP snapshot)
     masterExecute([this, snapshot, prepared_reconfig = std::move(prepared_reconfig)]() mutable { performReconfig(snapshot, std::move(prepared_reconfig)); });
     // Wait for config to be applied, or for document db close
     std::unique_lock<std::mutex> guard(_configMutex);
-    while ((_activeConfigSnapshotGeneration < snapshot->getGeneration()) && !_state.getClosed()) {
+    while ((_activeConfigSnapshot->getGeneration() < snapshot->getGeneration()) && !_state.getClosed()) {
         _configCV.wait(guard);
     }
 }
@@ -922,7 +916,7 @@ DocumentDB::replayConfig(search::SerialNum serialNum)
 int64_t
 DocumentDB::getActiveGeneration() const {
     lock_guard guard(_configMutex);
-    return _activeConfigSnapshotGeneration;
+    return _activeConfigSnapshot ? _activeConfigSnapshot->getGeneration() : 0;
 }
 
 void
