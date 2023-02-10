@@ -66,5 +66,4 @@ public class EmbedderTester {
         assertEquals(input, result);
     }
 
-
 }

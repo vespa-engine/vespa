@@ -22,7 +22,8 @@ final class Model {
     final float minScore;
     final float maxScore;
     final Trie tokens = new Trie();
-    final Map<Integer, String> tokenId2Token = new HashMap<>();
+    final Map<Integer, Token> tokenId2Token = new HashMap<>();
+
 
     Model(Language language, Path path) {
         try {
@@ -33,8 +34,10 @@ final class Model {
             float maxScore = Float.MIN_VALUE;
             for (int i = 0; i < sp.getPiecesCount(); i++) {
                 var piece = sp.getPieces(i);
-                tokens.add(toTokenType(piece.getType()), i, piece.getPiece(), piece.getScore());
-                tokenId2Token.put(i, piece.getPiece());
+                var type = toTokenType(piece.getType());
+                var word = piece.getPiece();
+                tokens.add(type, i, word, piece.getScore());
+                tokenId2Token.put(i, new Token(word, type));
                 minScore = Math.min(piece.getScore(), minScore);
                 maxScore = Math.max(piece.getScore(), maxScore);
             }
@@ -60,5 +63,7 @@ final class Model {
     public String toString() {
         return "SentencePiece model for " + language + ": '" + source + "'";
     }
+
+    record Token(String text, TokenType type) { }
 
 }

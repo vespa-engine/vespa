@@ -3,10 +3,13 @@
 package com.yahoo.language.sentencepiece;
 
 import com.yahoo.language.Language;
+import com.yahoo.language.process.Embedder;
 import com.yahoo.language.tools.EmbedderTester;
 import org.junit.Test;
 
 import java.io.File;
+
+import static org.junit.Assert.assertEquals;
 
 /**
  * @author bratseth
@@ -50,6 +53,15 @@ public class SentencePieceTest {
         tester.assertDecoded("this is a sentence");
         tester.assertDecoded("hello, world!");
         tester.assertDecoded(")(/&#(small)/ \"in quotes\")");
+    }
+
+    @Test
+    public void testSkipControl() {
+        var embedder = new SentencePieceEmbedder.Builder("src/test/models/sentencepiece/en.wiki.bpe.vs10000.model").build();
+        var context = new Embedder.Context("test");
+        var tokens = embedder.embed("<s>hello</s>, world!", context);
+        assertEquals("<s>hello</s>, world!", embedder.decode(tokens, context, false));
+        assertEquals("hello, world!", embedder.decode(tokens, context, true));
     }
 
     @Test
