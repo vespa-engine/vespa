@@ -27,8 +27,8 @@ public class Component<CHILD extends AbstractConfigProducer<?>, MODEL extends Co
     }
 
     /** Returns a component that uses its class name as id. */
-    public static Component<?,?> fromClassAndBundle(String className, String bundle) {
-        return new Component<>(new ComponentModel(className, null, bundle));
+    public static Component<?,?> fromClassAndBundle(Class<?> clazz, String bundle) {
+        return new Component<>(new ComponentModel(clazz.getName(), null, bundle));
     }
 
     public ComponentId getGlobalComponentId() {
