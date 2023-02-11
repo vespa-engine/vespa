@@ -2,6 +2,7 @@
 
 #include "time.h"
 #include <vespa/vespalib/stllike/asciistream.h>
+#include <ostream>
 
 namespace storage::framework {
 
