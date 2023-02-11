@@ -92,3 +92,21 @@ Timer::waitAtLeast(duration dur, bool busyWait) {
 }
 
 }
+
+#if defined(_LIBCPP_VERSION) && _LIBCPP_VERSION < 160000
+
+// Temporary workaround until libc++ supports stream operators for duration
+
+#include <ostream>
+
+namespace std::chrono {
+
+ostream&
+operator<<(ostream& os, const nanoseconds& value)
+{
+    os << value.count() << "ns";
+    return os;
+}
+
+}
+#endif
