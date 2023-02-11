@@ -16,17 +16,17 @@ using namespace instruction;
 namespace {
 
 template <typename T, size_t N>
-ConstArrayRef<T> as_car(std::array<T, N> &array) {
+ConstArrayRef<T> as_car(std::array<T, N> &array) noexcept {
     return {array.data(), array.size()};
 }
 
 template <typename T, size_t N>
-ConstArrayRef<const T *> as_ccar(std::array<T *, N> &array) {
+ConstArrayRef<const T *> as_ccar(std::array<T *, N> &array) noexcept {
     return {array.data(), array.size()};
 }
 
 template <typename T>
-ConstArrayRef<T> as_car(T &value) {
+ConstArrayRef<T> as_car(T &value) noexcept {
     return {&value, 1};
 }
 
@@ -61,6 +61,9 @@ double my_sparse_112_dot_product_fallback(const Value::Index &a_idx, const Value
     return result;
 }
 
+template <typename CT>
+double my_fast_sparse_112_dot_product(const FastAddrMap *a_map, const FastAddrMap *b_map, const FastAddrMap *c_map,
+                                      const CT *a_cells, const CT *b_cells, const CT *c_cells) __attribute__((noinline));
 template <typename CT>
 double my_fast_sparse_112_dot_product(const FastAddrMap *a_map, const FastAddrMap *b_map, const FastAddrMap *c_map,
                                       const CT *a_cells, const CT *b_cells, const CT *c_cells)
