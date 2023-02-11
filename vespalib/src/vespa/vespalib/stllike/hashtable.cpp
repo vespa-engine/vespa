@@ -19,7 +19,7 @@ static const unsigned long __stl_prime_list[] =
 namespace vespalib {
 
 size_t
-hashtable_base::getModulo(size_t newSize, const unsigned long * list, size_t sz)
+hashtable_base::getModulo(size_t newSize, const unsigned long * list, size_t sz) noexcept
 {
     const unsigned long* first = list;
     const unsigned long* last = list + sz;
@@ -28,7 +28,7 @@ hashtable_base::getModulo(size_t newSize, const unsigned long * list, size_t sz)
 }
 
 size_t
-hashtable_base::getModuloStl(size_t size)
+hashtable_base::getModuloStl(size_t size) noexcept
 {
     return getModulo(size, __stl_prime_list, sizeof(__stl_prime_list)/sizeof(__stl_prime_list[0]));
 }

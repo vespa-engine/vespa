@@ -31,13 +31,13 @@ public:
     hash_map(size_t reserveSize, H hasher, EQ equality);
     hash_map(std::initializer_list<value_type> input);
     ~hash_map() noexcept;
-    iterator begin()                         { return _ht.begin(); }
-    iterator end()                           { return _ht.end(); }
-    const_iterator begin()             const { return _ht.begin(); }
-    const_iterator end()               const { return _ht.end(); }
-    size_t capacity()                  const { return _ht.capacity(); }
-    size_t size()                      const { return _ht.size(); }
-    bool empty()                       const { return _ht.empty(); }
+    constexpr iterator begin()                         noexcept { return _ht.begin(); }
+    constexpr iterator end()                           noexcept { return _ht.end(); }
+    constexpr const_iterator begin()             const noexcept { return _ht.begin(); }
+    constexpr const_iterator end()               const noexcept { return _ht.end(); }
+    constexpr size_t capacity()                  const noexcept { return _ht.capacity(); }
+    constexpr size_t size()                      const noexcept { return _ht.size(); }
+    constexpr bool empty()                       const noexcept { return _ht.empty(); }
     insert_result insert(const value_type & value) { return _ht.insert(value); }
     insert_result insert(value_type &&value) { return _ht.insert(std::move(value)); }
     template <typename InputIt>
@@ -51,17 +51,17 @@ public:
     void erase(const K & key);
     void erase(iterator it)                     { return erase(it->first); }
     void erase(const_iterator it)               { return erase(it->first); }
-    iterator find(const K & key)                { return _ht.find(key); }
-    size_t count(const K & key)           const { return _ht.find(key) != _ht.end() ? 1 : 0; }
-    bool contains(const K & key)          const { return _ht.find(key) != end(); }
-    const_iterator find(const K & key)    const { return _ht.find(key); }
+    constexpr iterator find(const K & key)         noexcept { return _ht.find(key); }
+    constexpr size_t count(const K & key)    const noexcept { return _ht.find(key) != _ht.end() ? 1 : 0; }
+    constexpr bool contains(const K & key)   const noexcept { return _ht.find(key) != end(); }
+    const_iterator find(const K & key)       const noexcept { return _ht.find(key); }
 
     template< typename AltKey >
     const_iterator find(const AltKey & key) const {
         return _ht.template find<AltKey>(key);
     }
     template< typename AltKey>
-    iterator find(const AltKey & key) {
+    iterator find(const AltKey & key) noexcept {
         return _ht.template find<AltKey>(key);
     }
 

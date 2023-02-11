@@ -31,7 +31,23 @@ using storage::spi::test::equal;
 
 namespace storage::spi::dummy {
 
-BucketContent::BucketContent()
+namespace {
+
+std::string asString(const std::vector<BucketEntry> &) __attribute__((noinline));
+
+std::string
+asString(const std::vector<BucketEntry> & v) {
+    vespalib::asciistream ost;
+    for (const auto & e : v) {
+        ost << e.entry->toString() << "\n";
+    }
+
+    return ost.str();
+}
+
+}
+
+BucketContent::BucketContent() noexcept
     : _entries(),
       _gidMap(),
       _info(),
@@ -300,16 +316,18 @@ DummyPersistence::initialize() {
     return Result();
 }
 
-#define DUMMYPERSISTENCE_VERIFY_INITIALIZED \
-    if (!_initialized) {                    \
-        LOG(error, "initialize() must always be called first in order to trigger lazy initialization."); \
-        abort(); \
+void
+DummyPersistence::verifyInitialized() const noexcept {
+    if (!_initialized) {
+        LOG(error, "initialize() must always be called first in order to trigger lazy initialization.");
+        abort();
     }
+}
 
 BucketIdListResult
 DummyPersistence::listBuckets(BucketSpace bucketSpace) const
 {
-    DUMMYPERSISTENCE_VERIFY_INITIALIZED;
+    verifyInitialized();
     LOG(debug, "listBuckets()");
     std::lock_guard lock(_monitor);
     BucketIdListResult::List list;
@@ -373,7 +391,7 @@ DummyPersistence::setClusterState(BucketSpace bucketSpace, const ClusterState& c
 void
 DummyPersistence::setActiveStateAsync(const Bucket& b, BucketInfo::ActiveState newState, OperationComplete::UP onComplete)
 {
-    DUMMYPERSISTENCE_VERIFY_INITIALIZED;
+    verifyInitialized();
     LOG(debug, "setCurrentState(%s, %s)",
         b.toString().c_str(),
         newState == BucketInfo::ACTIVE ? "ACTIVE" : "INACTIVE");
@@ -395,7 +413,7 @@ DummyPersistence::setActiveStateAsync(const Bucket& b, BucketInfo::ActiveState n
 BucketInfoResult
 DummyPersistence::getBucketInfo(const Bucket& b) const
 {
-    DUMMYPERSISTENCE_VERIFY_INITIALIZED;
+    verifyInitialized();
     assert(b.getBucketSpace() == FixedBucketSpaces::default_space());
     BucketContentGuard::UP bc(acquireBucketWithLock(b));
     if (!bc.get()) {
@@ -415,7 +433,7 @@ DummyPersistence::getBucketInfo(const Bucket& b) const
 void
 DummyPersistence::putAsync(const Bucket& b, Timestamp t, Document::SP doc, OperationComplete::UP onComplete)
 {
-    DUMMYPERSISTENCE_VERIFY_INITIALIZED;
+    verifyInitialized();
     LOG(debug, "put(%s, %" PRIu64 ", %s)",
         b.toString().c_str(), uint64_t(t), doc->getId().toString().c_str());
     assert(b.getBucketSpace() == FixedBucketSpaces::default_space());
@@ -478,7 +496,7 @@ DummyPersistence::updateAsync(const Bucket& bucket, Timestamp ts, DocumentUpdate
 void
 DummyPersistence::removeAsync(const Bucket& b, std::vector<spi::IdAndTimestamp> ids, OperationComplete::UP onComplete)
 {
-    DUMMYPERSISTENCE_VERIFY_INITIALIZED;
+    verifyInitialized();
     assert(b.getBucketSpace() == FixedBucketSpaces::default_space());
     BucketContentGuard::UP bc(acquireBucketWithLock(b));
 
@@ -514,7 +532,7 @@ DummyPersistence::removeAsync(const Bucket& b, std::vector<spi::IdAndTimestamp> 
 GetResult
 DummyPersistence::get(const Bucket& b, const FieldSet& fieldSet, const DocumentId& did, Context&) const
 {
-    DUMMYPERSISTENCE_VERIFY_INITIALIZED;
+    verifyInitialized();
     LOG(debug, "get(%s, %s)",
         b.toString().c_str(),
         did.toString().c_str());
@@ -542,7 +560,7 @@ DummyPersistence::get(const Bucket& b, const FieldSet& fieldSet, const DocumentI
 CreateIteratorResult
 DummyPersistence::createIterator(const Bucket &b, FieldSetSP fs, const Selection &s, IncludedVersions v, Context &)
 {
-    DUMMYPERSISTENCE_VERIFY_INITIALIZED;
+    verifyInitialized();
     LOG(debug, "createIterator(%s)", b.toString().c_str());
     assert(b.getBucketSpace() == FixedBucketSpaces::default_space());
     std::unique_ptr<document::select::Node> docSelection;
@@ -628,7 +646,7 @@ DummyPersistence::createIterator(const Bucket &b, FieldSetSP fs, const Selection
 IterateResult
 DummyPersistence::iterate(IteratorId id, uint64_t maxByteSize) const
 {
-    DUMMYPERSISTENCE_VERIFY_INITIALIZED;
+    verifyInitialized();
     LOG(debug, "iterate(%" PRIu64 ", %" PRIu64 ")", uint64_t(id), maxByteSize);
     Iterator* it;
     {
@@ -691,7 +709,7 @@ DummyPersistence::iterate(IteratorId id, uint64_t maxByteSize) const
 Result
 DummyPersistence::destroyIterator(IteratorId id)
 {
-    DUMMYPERSISTENCE_VERIFY_INITIALIZED;
+    verifyInitialized();
     LOG(debug, "destroyIterator(%" PRIu64 ")", uint64_t(id));
     std::lock_guard lock(_monitor);
     if (_iterators.find(id) != _iterators.end()) {
@@ -703,11 +721,11 @@ DummyPersistence::destroyIterator(IteratorId id)
 void
 DummyPersistence::createBucketAsync(const Bucket& b, OperationComplete::UP onComplete) noexcept
 {
-    DUMMYPERSISTENCE_VERIFY_INITIALIZED;
+    verifyInitialized();
     LOG(debug, "createBucket(%s)", b.toString().c_str());
     assert(b.getBucketSpace() == FixedBucketSpaces::default_space());
     std::lock_guard lock(_monitor);
-    if (_content.find(b) == _content.end()) {
+    if (find(b) == _content.end()) {
         _content[b] = std::make_shared<BucketContent>();
     } else {
         assert(!_content[b]->_inUse);
@@ -719,7 +737,7 @@ DummyPersistence::createBucketAsync(const Bucket& b, OperationComplete::UP onCom
 void
 DummyPersistence::deleteBucketAsync(const Bucket& b, OperationComplete::UP onComplete) noexcept
 {
-    DUMMYPERSISTENCE_VERIFY_INITIALIZED;
+    verifyInitialized();
     LOG(debug, "deleteBucket(%s)", b.toString().c_str());
     assert(b.getBucketSpace() == FixedBucketSpaces::default_space());
     std::lock_guard lock(_monitor);
@@ -733,7 +751,7 @@ DummyPersistence::deleteBucketAsync(const Bucket& b, OperationComplete::UP onCom
 Result
 DummyPersistence::split(const Bucket& source, const Bucket& target1, const Bucket& target2)
 {
-    DUMMYPERSISTENCE_VERIFY_INITIALIZED;
+    verifyInitialized();
     LOG(debug, "split(%s -> %s, %s)",
         source.toString().c_str(),
         target1.toString().c_str(),
@@ -788,7 +806,7 @@ DummyPersistence::split(const Bucket& source, const Bucket& target1, const Bucke
 Result
 DummyPersistence::join(const Bucket& source1, const Bucket& source2, const Bucket& target)
 {
-    DUMMYPERSISTENCE_VERIFY_INITIALIZED;
+    verifyInitialized();
     LOG(debug, "join(%s, %s -> %s)",
         source1.toString().c_str(),
         source2.toString().c_str(),
@@ -854,32 +872,22 @@ DummyPersistence::register_executor(std::shared_ptr<BucketExecutor> executor)
 std::string
 DummyPersistence::dumpBucket(const Bucket& b) const
 {
-    DUMMYPERSISTENCE_VERIFY_INITIALIZED;
+    verifyInitialized();
     LOG(spam, "dumpBucket(%s)", b.toString().c_str());
     assert(b.getBucketSpace() == FixedBucketSpaces::default_space());
     std::lock_guard lock(_monitor);
-    Content::const_iterator it(_content.find(b));
-    if (it == _content.end()) {
-        return "DOESN'T EXIST";
-    } else {
-        vespalib::asciistream ost;
-        for (uint32_t i=0; i<it->second->_entries.size(); ++i) {
-            const DocEntry& entry(*it->second->_entries[i].entry);
-            ost << entry.toString() << "\n";
-        }
-
-        return ost.str();
-    }
+    auto it = find(b);
+    return (it != _content.end()) ? asString(it->second->_entries) : "DOESN'T EXIST";
 }
 
 bool
 DummyPersistence::isActive(const Bucket& b) const
 {
-    DUMMYPERSISTENCE_VERIFY_INITIALIZED;
+    verifyInitialized();
     assert(b.getBucketSpace() == FixedBucketSpaces::default_space());
     std::lock_guard lock(_monitor);
     LOG(spam, "isActive(%s)", b.toString().c_str());
-    Content::const_iterator it(_content.find(b));
+    auto it(find(b));
     if (it == _content.end()) {
         return false;
     }
@@ -897,7 +905,7 @@ DummyPersistence::acquireBucketWithLock(const Bucket& b, LockMode lock_mode) con
     assert(b.getBucketSpace() == FixedBucketSpaces::default_space());
     std::lock_guard lock(_monitor);
     DummyPersistence& ncp(const_cast<DummyPersistence&>(*this));
-    Content::iterator it(ncp._content.find(b));
+    auto it(ncp.find(b));
     if (it == ncp._content.end()) {
         return BucketContentGuard::UP();
     }
@@ -933,9 +941,14 @@ void
 DummyPersistence::internal_create_bucket(const Bucket& b)
 {
     std::lock_guard lock(_monitor);
-    if (_content.find(b) == _content.end()) {
+    if (find(b) == _content.end()) {
         _content[b] = std::make_shared<BucketContent>();
     }
+}
+
+DummyPersistence::Content::const_iterator
+DummyPersistence::find(const Bucket & bucket) const {
+    return _content.find(bucket);
 }
 
 }

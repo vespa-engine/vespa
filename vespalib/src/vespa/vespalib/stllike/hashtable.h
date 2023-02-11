@@ -62,9 +62,9 @@ public:
     class prime_modulator
     {
     public:
-        prime_modulator(next_t sizeOfHashTable) : _modulo(sizeOfHashTable) { }
-        next_t modulo(next_t hash) const { return hash % _modulo; }
-        next_t getTableSize() const { return _modulo; }
+        prime_modulator(next_t sizeOfHashTable) noexcept : _modulo(sizeOfHashTable) { }
+        next_t modulo(next_t hash) const noexcept { return hash % _modulo; }
+        next_t getTableSize() const noexcept { return _modulo; }
         static next_t selectHashTableSize(size_t sz) { return hashtable_base::getModuloStl(sz); }
     private:
         next_t _modulo;
@@ -76,15 +76,15 @@ public:
     class and_modulator
     {
     public:
-        and_modulator(next_t sizeOfHashTable) : _mask(sizeOfHashTable-1) { }
-        next_t modulo(next_t hash) const { return hash & _mask; }
-        next_t getTableSize() const { return _mask + 1; }
-        static next_t selectHashTableSize(size_t sz) { return hashtable_base::getModuloSimple(sz); }
+        and_modulator(next_t sizeOfHashTable) noexcept : _mask(sizeOfHashTable-1) { }
+        next_t modulo(next_t hash) const noexcept { return hash & _mask; }
+        next_t getTableSize() const noexcept { return _mask + 1; }
+        static next_t selectHashTableSize(size_t sz) noexcept { return hashtable_base::getModuloSimple(sz); }
     private:
         next_t _mask;
     };
-    static size_t getModuloStl(size_t size);
-    static size_t getModuloSimple(size_t size) {
+    static size_t getModuloStl(size_t size) noexcept;
+    static size_t getModuloSimple(size_t size) noexcept {
         return std::max(size_t(8), roundUp2inN(size));
     }
 protected:
@@ -96,7 +96,7 @@ protected:
         }
     };
 private:
-    static size_t getModulo(size_t newSize, const unsigned long * list, size_t sz);
+    static size_t getModulo(size_t newSize, const unsigned long * list, size_t sz) noexcept;
 };
 
 template<typename V>
@@ -104,20 +104,20 @@ class hash_node {
 public:
     using next_t=hashtable_base::next_t;
     enum {npos=-1u, invalid=-2u};
-    hash_node() noexcept
+    constexpr hash_node() noexcept
         : _next(invalid)
     {}
-    hash_node(const V & node, next_t next=npos) noexcept(std::is_nothrow_copy_constructible_v<V>)
+    constexpr hash_node(const V & node, next_t next=npos) noexcept(std::is_nothrow_copy_constructible_v<V>)
         : _next(next)
     {
         new (_node) V(node);
     }
-    hash_node(V &&node, next_t next=npos) noexcept
+    constexpr hash_node(V &&node, next_t next=npos) noexcept
         : _next(next)
     {
         new (_node) V(std::move(node));
     }
-    hash_node(hash_node && rhs) noexcept
+    constexpr hash_node(hash_node && rhs) noexcept
         : _next(rhs._next)
     {
         if (rhs.valid()) {
@@ -134,7 +134,7 @@ public:
         }
         return *this;
     }
-    hash_node(const hash_node & rhs) noexcept(std::is_nothrow_copy_constructible_v<V>)
+    constexpr hash_node(const hash_node & rhs) noexcept(std::is_nothrow_copy_constructible_v<V>)
         : _next(rhs._next)
     {
         if (rhs.valid()) {
@@ -154,20 +154,20 @@ public:
     ~hash_node() noexcept {
         destruct();
     }
-    bool operator == (const hash_node & rhs) const noexcept {
+    constexpr bool operator == (const hash_node & rhs) const noexcept {
         return (_next == rhs._next) && (!valid() || (getValue() == rhs.getValue()));
     }
     V & getValue()             noexcept { return *reinterpret_cast<V *>(_node); }
-    const V & getValue() const noexcept { return *reinterpret_cast<const V *>(_node); }
-    next_t getNext()     const noexcept { return _next; }
+    constexpr const V & getValue() const noexcept { return *reinterpret_cast<const V *>(_node); }
+    constexpr next_t getNext()     const noexcept { return _next; }
     void setNext(next_t next)  noexcept { _next = next; }
     void invalidate()          noexcept {
         destruct();
         _next = invalid;
     }
     void terminate()           noexcept { _next = npos; }
-    bool valid()         const noexcept { return _next != invalid; }
-    bool hasNext()       const noexcept { return valid() && (_next != npos); }
+    constexpr bool valid()         const noexcept { return _next != invalid; }
+    constexpr bool hasNext()       const noexcept { return valid() && (_next != npos); }
 private:
     void destruct() noexcept {
         if constexpr (!can_skip_destruction<V>) {
@@ -198,32 +198,32 @@ public:
         using pointer = Value*;
         using iterator_category = std::forward_iterator_tag;
 
-        iterator(hashtable * hash) : _current(0), _hashTable(hash) {
+        constexpr iterator(hashtable * hash) noexcept : _current(0), _hashTable(hash) {
             if (! _hashTable->_nodes[_current].valid()) {
                 advanceToNextValidHash();
             }
         }
-        iterator(hashtable * hash, next_t pos) : _current(pos), _hashTable(hash) { }
-        static iterator end(hashtable *hash) { return iterator(hash, hash->initializedSize()); }
+        constexpr iterator(hashtable * hash, next_t pos) noexcept : _current(pos), _hashTable(hash) { }
+        constexpr static iterator end(hashtable *hash) noexcept { return iterator(hash, hash->initializedSize()); }
 
-        Value & operator * ()  const { return _hashTable->get(_current); }
-        Value * operator -> () const { return & _hashTable->get(_current); }
-        iterator & operator ++ () {
+        constexpr Value & operator * ()  const noexcept { return _hashTable->get(_current); }
+        constexpr Value * operator -> () const noexcept { return & _hashTable->get(_current); }
+        iterator & operator ++ () noexcept {
             advanceToNextValidHash();
             return *this;
         }
-        iterator operator ++ (int) {
+        iterator operator ++ (int) noexcept {
             iterator prev = *this;
             ++(*this);
             return prev;
         }
-        bool operator==(const iterator& rhs) const { return (_current == rhs._current); }
-        bool operator!=(const iterator& rhs) const { return (_current != rhs._current); }
+        constexpr bool operator==(const iterator& rhs) const noexcept { return (_current == rhs._current); }
+        constexpr bool operator!=(const iterator& rhs) const noexcept { return (_current != rhs._current); }
         /// Carefull about this one. Only used by lrucache.
-        next_t getInternalIndex() const  { return _current; }
-        void setInternalIndex(next_t n)  { _current = n; }
+        constexpr next_t getInternalIndex() const noexcept  { return _current; }
+        void setInternalIndex(next_t n)  noexcept { _current = n; }
     private:
-        void advanceToNextValidHash() {
+        void advanceToNextValidHash() noexcept {
             ++_current;
             while ((_current < _hashTable->initializedSize()) && ! _hashTable->_nodes[_current].valid()) {
                 ++_current;
@@ -242,31 +242,31 @@ public:
         using pointer = const Value*;
         using iterator_category = std::forward_iterator_tag;
 
-        const_iterator(const hashtable * hash) : _current(0), _hashTable(hash) {
+        constexpr const_iterator(const hashtable * hash) noexcept : _current(0), _hashTable(hash) {
             if (! _hashTable->_nodes[_current].valid()) {
                 advanceToNextValidHash();
             }
         }
-        const_iterator(const hashtable * hash, next_t pos) : _current(pos), _hashTable(hash) { }
-        const_iterator(const iterator &i) :  _current(i._current), _hashTable(i._hashTable) {}
-        static const_iterator end(const hashtable *hash) { return const_iterator(hash, hash->initializedSize()); }
+        constexpr const_iterator(const hashtable * hash, next_t pos) noexcept : _current(pos), _hashTable(hash) { }
+        constexpr const_iterator(const iterator &i) noexcept :  _current(i._current), _hashTable(i._hashTable) {}
+        static constexpr const_iterator end(const hashtable *hash) noexcept { return const_iterator(hash, hash->initializedSize()); }
 
-        const Value & operator * ()  const { return _hashTable->get(_current); }
-        const Value * operator -> () const { return & _hashTable->get(_current); }
-        const_iterator & operator ++ () {
+        constexpr const Value & operator * ()  const noexcept { return _hashTable->get(_current); }
+        constexpr const Value * operator -> () const noexcept { return & _hashTable->get(_current); }
+        const_iterator & operator ++ () noexcept {
             advanceToNextValidHash();
             return *this;
         }
-        const_iterator operator ++ (int) {
+        const_iterator operator ++ (int) noexcept {
             const_iterator prev = *this;
             ++(*this);
             return prev;
         }
-        bool operator==(const const_iterator& rhs) const { return (_current == rhs._current); }
-        bool operator!=(const const_iterator& rhs) const { return (_current != rhs._current); }
-        next_t getInternalIndex() const  { return _current; }
+        constexpr bool operator==(const const_iterator& rhs) const { return (_current == rhs._current); }
+        constexpr bool operator!=(const const_iterator& rhs) const { return (_current != rhs._current); }
+        constexpr next_t getInternalIndex() const  { return _current; }
     private:
-        void advanceToNextValidHash() {
+        void advanceToNextValidHash() noexcept {
             ++_current;
             while ((_current < _hashTable->initializedSize()) && ! _hashTable->_nodes[_current].valid()) {
                 ++_current;
@@ -285,20 +285,20 @@ public:
     hashtable(size_t reservedSpace);
     hashtable(size_t reservedSpace, const Hash & hasher, const Equal & equal);
     virtual ~hashtable();
-    iterator begin()             { return iterator(this); }
-    iterator end()               { return iterator::end(this); }
-    const_iterator begin() const { return const_iterator(this); }
-    const_iterator end()   const { return const_iterator::end(this); }
-    size_t capacity()      const { return _nodes.capacity(); }
-    size_t size()          const { return _count; }
-    bool empty()           const { return _count == 0; }
+    constexpr iterator begin()             noexcept { return iterator(this); }
+    constexpr iterator end()               noexcept { return iterator::end(this); }
+    constexpr const_iterator begin() const noexcept { return const_iterator(this); }
+    constexpr const_iterator end()   const noexcept { return const_iterator::end(this); }
+    constexpr size_t capacity()      const noexcept { return _nodes.capacity(); }
+    constexpr size_t size()          const noexcept { return _count; }
+    constexpr bool empty()           const noexcept { return _count == 0; }
     template< typename AltKey>
-    iterator find(const AltKey & key);
-    iterator find(const Key & key);
+    iterator find(const AltKey & key) noexcept;
+    iterator find(const Key & key) noexcept;
 
     template< typename AltKey>
-    const_iterator find(const AltKey & key) const;
-    const_iterator find(const Key & key) const;
+    const_iterator find(const AltKey & key) const noexcept;
+    const_iterator find(const Key & key) const noexcept;
     template <typename V>
     insert_result insert(V && node) {
         return insert_internal(std::forward<V>(node));
@@ -338,12 +338,12 @@ protected:
     insert_result insert_internal(V && node);
     /// These two methods are only for the ones that know what they are doing.
     /// valid input here are stuff returned from iterator.getInternalIndex.
-    Value & getByInternalIndex(size_t index)             { return _nodes[index].getValue(); }
-    const Value & getByInternalIndex(size_t index) const { return _nodes[index].getValue(); }
+    Value & getByInternalIndex(size_t index)             noexcept { return _nodes[index].getValue(); }
+    constexpr const Value & getByInternalIndex(size_t index) const noexcept { return _nodes[index].getValue(); }
     template <typename MoveHandler>
     void erase(MoveHandler & moveHandler, next_t h, const const_iterator & key);
     template<typename K>
-    next_t hash(const K & key) const { return modulator(_hasher(key)); }
+    constexpr next_t hash(const K & key) const noexcept { return modulator(_hasher(key)); }
 private:
     Modulator   _modulator;
     size_t      _count;
@@ -351,11 +351,11 @@ private:
     Hash        _hasher;
     Equal       _equal;
     KeyExtract  _keyExtractor;
-    Value & get(size_t index)             { return _nodes[index].getValue(); }
-    const Value & get(size_t index) const { return _nodes[index].getValue(); }
-    next_t modulator(next_t key) const { return _modulator.modulo(key); }
-    next_t getTableSize() const { return _modulator.getTableSize(); }
-    size_t initializedSize() const { return _nodes.size(); }
+    Value & get(size_t index)             noexcept { return _nodes[index].getValue(); }
+    constexpr const Value & get(size_t index) const noexcept { return _nodes[index].getValue(); }
+    constexpr next_t modulator(next_t key) const noexcept { return _modulator.modulo(key); }
+    constexpr next_t getTableSize() const noexcept { return _modulator.getTableSize(); }
+    constexpr size_t initializedSize() const noexcept { return _nodes.size(); }
     template <typename MoveHandler>
     void move(MoveHandler & moveHandler, next_t from, next_t to) {
         _nodes[to] = std::move(_nodes[from]);
