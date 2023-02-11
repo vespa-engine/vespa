@@ -68,7 +68,7 @@ hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator>::~hashtable() = defaul
 
 template< typename Key, typename Value, typename Hash, typename Equal, typename KeyExtract, typename Modulator >
 typename hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator>::iterator
-hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator>::find(const Key & key)
+hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator>::find(const Key & key) noexcept
 {
     next_t h = hash(key);
     if (__builtin_expect(_nodes[h].valid(), true)) {
@@ -84,7 +84,7 @@ hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator>::find(const Key & key)
 
 template< typename Key, typename Value, typename Hash, typename Equal, typename KeyExtract, typename Modulator >
 typename hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator>::const_iterator
-hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator>::find(const Key & key) const
+hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator>::find(const Key & key) const noexcept
 {
     next_t h = hash(key);
     if (__builtin_expect(_nodes[h].valid(), true)) {
@@ -101,7 +101,7 @@ hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator>::find(const Key & key)
 template< typename Key, typename Value, typename Hash, typename Equal, typename KeyExtract, typename Modulator >
 template< typename AltKey>
 typename hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator>::iterator
-hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator>::find(const AltKey & key)
+hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator>::find(const AltKey & key) noexcept
 {
     next_t h = hash(key);
     if (__builtin_expect(_nodes[h].valid(), true)) {
@@ -118,7 +118,7 @@ hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator>::find(const AltKey & k
 template< typename Key, typename Value, typename Hash, typename Equal, typename KeyExtract, typename Modulator >
 template< typename AltKey>
 typename hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator>::const_iterator
-hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator>::find(const AltKey & key) const
+hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator>::find(const AltKey & key) const noexcept
 {
     next_t h = hash(key);
     if (__builtin_expect(_nodes[h].valid(), true)) {
