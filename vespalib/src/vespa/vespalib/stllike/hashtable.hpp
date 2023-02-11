@@ -83,22 +83,6 @@ hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator>::find(const Key & key)
 }
 
 template< typename Key, typename Value, typename Hash, typename Equal, typename KeyExtract, typename Modulator >
-typename hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator>::const_iterator
-hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator>::find(const Key & key) const noexcept
-{
-    next_t h = hash(key);
-    if (__builtin_expect(_nodes[h].valid(), true)) {
-        do {
-            if (__builtin_expect(_equal(_keyExtractor(_nodes[h].getValue()), key), true)) {
-                return const_iterator(this, h);
-            }
-            h = _nodes[h].getNext();
-        } while (h != Node::npos);
-    }
-    return end();
-}
-
-template< typename Key, typename Value, typename Hash, typename Equal, typename KeyExtract, typename Modulator >
 template< typename AltKey>
 typename hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator>::iterator
 hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator>::find(const AltKey & key) noexcept
@@ -108,23 +92,6 @@ hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator>::find(const AltKey & k
         do {
             if (__builtin_expect(_equal(_keyExtractor(_nodes[h].getValue()), key), true)) {
                 return iterator(this, h);
-            }
-            h = _nodes[h].getNext();
-        } while (h != Node::npos);
-    }
-    return end();
-}
-
-template< typename Key, typename Value, typename Hash, typename Equal, typename KeyExtract, typename Modulator >
-template< typename AltKey>
-typename hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator>::const_iterator
-hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator>::find(const AltKey & key) const noexcept
-{
-    next_t h = hash(key);
-    if (__builtin_expect(_nodes[h].valid(), true)) {
-        do {
-            if (__builtin_expect(_equal(_keyExtractor(_nodes[h].getValue()), key), true)) {
-                return const_iterator(this, h);
             }
             h = _nodes[h].getNext();
         } while (h != Node::npos);
