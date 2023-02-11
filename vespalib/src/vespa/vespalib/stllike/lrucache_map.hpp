@@ -266,6 +266,12 @@ lrucache_map<P>::operator [] (const K & key)
 }
 
 template< typename P >
+bool
+lrucache_map<P>::hasKey(const K & key) const {
+    return HashTable::find(key) != HashTable::end();
+}
+
+template< typename P >
 typename P::Value *
 lrucache_map<P>::findAndRef(const K & key)
 {

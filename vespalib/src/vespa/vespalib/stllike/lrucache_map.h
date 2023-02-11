@@ -11,8 +11,8 @@ namespace vespalib {
 
 struct LinkedValueBase {
     static const uint32_t npos = static_cast<uint32_t>(-1);
-    LinkedValueBase() : _prev(npos), _next(npos) { }
-    LinkedValueBase(uint32_t prev, uint32_t next) : _prev(prev), _next(next) { }
+    constexpr LinkedValueBase() noexcept : _prev(npos), _next(npos) { }
+    constexpr LinkedValueBase(uint32_t prev, uint32_t next) noexcept : _prev(prev), _next(next) { }
     uint32_t _prev;
     uint32_t _next;
 };
@@ -20,9 +20,9 @@ struct LinkedValueBase {
 template<typename V>
 struct LinkedValue : public LinkedValueBase
 {
-    LinkedValue() {}
-    LinkedValue(const V & v) : LinkedValueBase(), _value(v) { }
-    LinkedValue(V && v) : LinkedValueBase(), _value(std::move(v)) { }
+    constexpr LinkedValue() noexcept {}
+    constexpr LinkedValue(const V & v) noexcept : LinkedValueBase(), _value(v) { }
+    constexpr LinkedValue(V && v) noexcept : LinkedValueBase(), _value(std::move(v)) { }
     V _value;
 };
 
@@ -151,7 +151,7 @@ public:
      * Tell if an object with given key exists in the cache.
      * Does not alter the LRU list.
      */
-    bool hasKey(const K & key) const { return HashTable::find(key) != HashTable::end(); }
+    bool hasKey(const K & key) const __attribute__((noinline));
 
     /**
      * Called when an object is inserted, to see if the LRU should be removed.
