@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "parse_utils.h"
+#include <vespa/vespalib/locale/c.h>
 #include <charconv>
 #include <limits>
 
@@ -23,6 +24,17 @@ parse_i64(const char* str, size_t len, int64_t& out) {
 }
 bool
 parse_double(const char* str, size_t len, double& out) {
+#if defined(_LIBCPP_VERSION) && _LIBCPP_VERSION < 160000
+    // Temporary workaround that also handles underflow (cf. issue 3081)
+    // until libc++ supports std::from_chars for double
+    char *str_end = const_cast<char*>(str) + len;
+    double out0 = vespalib::locale::c::strtod_au(str, &str_end);
+    if (str_end != str + len) {
+        return false;
+    }
+    out = out0;
+    return true;
+#else
     auto res = std::from_chars(str, str+len, out);
     if (res.ec == std::errc::result_out_of_range) {
         out = (str[0] == '-')
@@ -31,6 +43,7 @@ parse_double(const char* str, size_t len, double& out) {
         return true;
     }
     return (res.ec == std::errc()) && (res.ptr == str+len);
+#endif
 }
 
 }
