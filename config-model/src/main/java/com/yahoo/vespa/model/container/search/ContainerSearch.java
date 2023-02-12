@@ -7,6 +7,7 @@ import com.yahoo.search.config.IndexInfoConfig;
 import com.yahoo.search.config.SchemaInfoConfig;
 import com.yahoo.search.pagetemplates.PageTemplatesConfig;
 import com.yahoo.search.query.profile.config.QueryProfilesConfig;
+import com.yahoo.search.ranking.RankingExpressionEvaluatorFactory;
 import com.yahoo.schema.derived.SchemaInfo;
 import com.yahoo.vespa.configdefinition.IlscriptsConfig;
 import com.yahoo.vespa.model.container.ApplicationContainerCluster;
@@ -56,6 +57,8 @@ public class ContainerSearch extends ContainerSubsystem<SearchChains>
         owningCluster.addComponent(Component.fromClassAndBundle(CompiledQueryProfileRegistry.class, SEARCH_AND_DOCPROC_BUNDLE));
         owningCluster.addComponent(Component.fromClassAndBundle(com.yahoo.search.schema.SchemaInfo.class, SEARCH_AND_DOCPROC_BUNDLE));
         owningCluster.addComponent(Component.fromClassAndBundle(SearchStatusExtension.class, SEARCH_AND_DOCPROC_BUNDLE));
+        owningCluster.addComponent(Component.fromClassAndBundle(RankingExpressionEvaluatorFactory.class, SEARCH_AND_DOCPROC_BUNDLE));
+        owningCluster.addComponent(Component.fromClassAndBundle(com.yahoo.search.ranking.GlobalPhaseHelper.class, SEARCH_AND_DOCPROC_BUNDLE));
         cluster.addSearchAndDocprocBundles();
     }
 
@@ -68,9 +71,16 @@ public class ContainerSearch extends ContainerSubsystem<SearchChains>
     /** Adds a Dispatcher component to the owning container cluster for each search cluster */
     private void initializeDispatchers(Collection<SearchCluster> searchClusters) {
         for (SearchCluster searchCluster : searchClusters) {
-            if ( ! ( searchCluster instanceof IndexedSearchCluster)) continue;
-            var dispatcher = new DispatcherComponent((IndexedSearchCluster)searchCluster);
-            owningCluster.addComponent(dispatcher);
+            if (searchCluster instanceof IndexedSearchCluster indexed) {
+                var dispatcher = new DispatcherComponent(indexed);
+                owningCluster.addComponent(dispatcher);
+                for (var documentDb : indexed.getDocumentDbs()) {
+                    var factory = new RankingExpressionEvaluatorProxyComponent(documentDb);
+                    if (! owningCluster.getComponentsMap().containsKey(factory.getComponentId())) {
+                        owningCluster.addComponent(factory);
+                    }
+                }
+            }
         }
     }
 
