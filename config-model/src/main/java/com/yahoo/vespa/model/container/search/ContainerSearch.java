@@ -16,6 +16,8 @@ import com.yahoo.vespa.model.container.search.searchchain.SearchChains;
 import com.yahoo.vespa.model.search.SearchCluster;
 import com.yahoo.vespa.model.search.IndexedSearchCluster;
 import com.yahoo.vespa.model.search.StreamingSearchCluster;
+import com.yahoo.search.query.profile.compiled.CompiledQueryProfileRegistry;
+import com.yahoo.search.handler.observability.SearchStatusExtension;
 
 import java.util.Collection;
 import java.util.LinkedList;
@@ -38,9 +40,7 @@ public class ContainerSearch extends ContainerSubsystem<SearchChains>
         PageTemplatesConfig.Producer,
         SchemaInfoConfig.Producer {
 
-    public static final String QUERY_PROFILE_REGISTRY_CLASS = "com.yahoo.search.query.profile.compiled.CompiledQueryProfileRegistry";
-    private static final String SEARCH_STATUS_EXTENSION_CLASS = "com.yahoo.search.handler.observability.SearchStatusExtension";
-    private static final String SCHEMA_INFO_CLASS = "com.yahoo.search.schema.SchemaInfo";
+    public static final String QUERY_PROFILE_REGISTRY_CLASS = CompiledQueryProfileRegistry.class.getName();
 
     private final ApplicationContainerCluster owningCluster;
     private final List<SearchCluster> searchClusters = new LinkedList<>();
@@ -53,9 +53,9 @@ public class ContainerSearch extends ContainerSubsystem<SearchChains>
         super(chains);
         this.owningCluster = cluster;
 
-        owningCluster.addComponent(Component.fromClassAndBundle(QUERY_PROFILE_REGISTRY_CLASS, SEARCH_AND_DOCPROC_BUNDLE));
-        owningCluster.addComponent(Component.fromClassAndBundle(SCHEMA_INFO_CLASS, SEARCH_AND_DOCPROC_BUNDLE));
-        owningCluster.addComponent(Component.fromClassAndBundle(SEARCH_STATUS_EXTENSION_CLASS, SEARCH_AND_DOCPROC_BUNDLE));
+        owningCluster.addComponent(Component.fromClassAndBundle(CompiledQueryProfileRegistry.class, SEARCH_AND_DOCPROC_BUNDLE));
+        owningCluster.addComponent(Component.fromClassAndBundle(com.yahoo.search.schema.SchemaInfo.class, SEARCH_AND_DOCPROC_BUNDLE));
+        owningCluster.addComponent(Component.fromClassAndBundle(SearchStatusExtension.class, SEARCH_AND_DOCPROC_BUNDLE));
         cluster.addSearchAndDocprocBundles();
     }
 
