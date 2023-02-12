@@ -164,16 +164,7 @@ hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator>::force_insert(Value &&
     if (!_nodes[h].valid()) [[likely]] {
         _nodes[h] = std::move(value);
         _count++;
-    } else {
-        force_insert_cold(std::move(value), h);
-    }
-}
-
-template <typename Key, typename Value, typename Hash, typename Equal, typename KeyExtract, typename Modulator>
-void
-hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator>::force_insert_cold(Value && value, next_t h)
-{
-    if (_nodes.size() < _nodes.capacity()) [[likely]] {
+    } else if (_nodes.size() < _nodes.capacity()) [[likely]] {
         const next_t p(_nodes[h].getNext());
         const next_t newIdx(_nodes.size());
         _nodes[h].setNext(newIdx);
