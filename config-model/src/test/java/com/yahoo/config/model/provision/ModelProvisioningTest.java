@@ -155,11 +155,10 @@ public class ModelProvisioningTest {
         assertEquals(45, qrsStartConfig.jvm().heapSizeAsPercentageOfPhysicalMemory());
         
         HostSystem hostSystem = model.hostSystem();
-        assertNotNull(hostSystem.getHostByHostname("myhost0"));
-        assertNotNull(hostSystem.getHostByHostname("myhost1"));
-        assertNotNull(hostSystem.getHostByHostname("myhost2"));
-        assertNotNull(hostSystem.getHostByHostname("myhost3"));
-        assertNull(hostSystem.getHostByHostname("Nope"));
+        assertTrue(hostNameExists(hostSystem, "myhost0"));
+        assertTrue(hostNameExists(hostSystem, "myhost1"));
+        assertTrue(hostNameExists(hostSystem, "myhost2"));
+        assertFalse(hostNameExists(hostSystem, "Nope"));
     }
 
     @Test
@@ -2568,6 +2567,10 @@ public class ModelProvisioningTest {
 
     private static void assertProvisioned(int nodeCount, ClusterSpec.Id id, ClusterSpec.Type type, VespaModel model) {
         assertProvisioned(nodeCount, id, null, type, model);
+    }
+
+    private static boolean hostNameExists(HostSystem hostSystem, String hostname) {
+        return hostSystem.getHosts().stream().map(HostResource::getHost).anyMatch(host -> host.getHostname().equals(hostname));
     }
 
     record TestLogger(List<LogMessage> msgs) implements DeployLogger {

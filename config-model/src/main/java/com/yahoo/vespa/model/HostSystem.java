@@ -9,8 +9,6 @@ import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.ProvisionLogger;
-import com.yahoo.net.HostName;
-
 import java.net.UnknownHostException;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -72,27 +70,6 @@ public class HostSystem extends AbstractConfigProducer<Host> {
         }
     }
 
-    /**
-     * Returns the host with the given hostname.
-     *
-     * @param name the hostname of the host
-     * @return the host with the given hostname, or null if no such host
-     */
-    public HostResource getHostByHostname(String name) {
-        String localhost = "localhost";
-        HostResource hostResource = hostname2host.get(name);
-        if (hostResource == null) {
-            // Create a new HostResource if this is the host this code is running on (as it is when running tests)
-            if (HostName.getLocalhost().equals(name)) {
-                if (! getChildren().containsKey(localhost)) {
-                    new Host(this, localhost);
-                }
-                hostResource = new HostResource(getChildren().get(localhost));
-            }
-        }
-        return hostResource;
-    }
-
     @Override
     public String toString() {
         return "hosts [" + hostname2host.values().stream()
@@ -120,6 +97,11 @@ public class HostSystem extends AbstractConfigProducer<Host> {
         return hostname2host.values().stream()
                 .filter(host -> !host.getHost().runsConfigServer())
                 .toList();
+    }
+
+    /** Returns the hosts in this system */
+    public List<HostResource> getAllHosts() {
+        return hostname2host.values().stream().toList();
     }
 
     public void dumpPortAllocations() {
