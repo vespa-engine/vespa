@@ -122,13 +122,19 @@ public class FunctionEvaluator {
     private void evaluateOnnxModels() {
         for (Map.Entry<String, OnnxModel> entry : context().onnxModels().entrySet()) {
             String onnxFeature = entry.getKey();
+            String outputName = function.getName(); // Function name is output of model (sometimes)
+            int idx = onnxFeature.indexOf(").");
+            if (idx > 0 && idx + 2 < onnxFeature.length()) {
+                // explicitly specified as onnx(modelname).outputname ; pick the last part
+                outputName = onnxFeature.substring(idx+2);
+            }
             OnnxModel onnxModel = entry.getValue();
             if (context.get(onnxFeature).equals(context.defaultValue())) {
                 Map<String, Tensor> inputs = new HashMap<>();
                 for (Map.Entry<String, TensorType> input: onnxModel.inputs().entrySet()) {
                     inputs.put(input.getKey(), context.get(input.getKey()).asTensor());
                 }
-                Tensor result = onnxModel.evaluate(inputs, function.getName());  // Function name is output of model
+                Tensor result = onnxModel.evaluate(inputs, outputName);
                 context.put(onnxFeature, new TensorValue(result));
             }
         }
