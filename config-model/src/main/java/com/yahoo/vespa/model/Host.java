@@ -24,11 +24,11 @@ public final class Host extends AbstractConfigProducer<AbstractConfigProducer<?>
      * @param parent   parent AbstractConfigProducer in the config model.
      * @param hostname hostname for this host.
      */
-    public Host(AbstractConfigProducer parent, String hostname) {
+    public Host(AbstractConfigProducer<?> parent, String hostname) {
         this(parent, hostname, false);
     }
 
-    private Host(AbstractConfigProducer parent, String hostname, boolean runsConfigServer) {
+    private Host(AbstractConfigProducer<?> parent, String hostname, boolean runsConfigServer) {
         super(parent, hostname);
         Objects.requireNonNull(hostname, "The host name of a host cannot be null");
         this.runsConfigServer = runsConfigServer;
@@ -37,19 +37,11 @@ public final class Host extends AbstractConfigProducer<AbstractConfigProducer<?>
             ((HostSystem)parent).checkName(hostname);
     }
 
-    public static Host createConfigServerHost(AbstractConfigProducer parent, String hostname) {
-        return new Host(parent, hostname, true);
+    public static Host createConfigServerHost(HostSystem hostSystem, String hostname) {
+        return new Host(hostSystem, hostname, true);
     }
-    public static Host createHost(AbstractConfigProducer parent, String hostname) {
-        return new Host(parent, hostname, false);
-    }
-
-    // For testing
-    Host(AbstractConfigProducer parent) {
-        super(parent, "testhost");
-        hostname = "testhost";
-        configSentinel = null;
-        runsConfigServer = false;
+    public static Host createHost(HostSystem hostSystem, String hostname) {
+        return new Host(hostSystem, hostname, false);
     }
 
     public String getHostname() {

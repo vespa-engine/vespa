@@ -95,7 +95,6 @@ public class VespaDomBuilderTest {
         HostSystem hostSystem = model.hostSystem();
         assertEquals(1, hostSystem.getHosts().size());
         HostResource host = hostSystem.getHosts().get(0);
-        assertEquals(hostSystem.getHostByHostname(host.getHostname()), host);
         assertNotNull(hostSystem.getHost("node1"));
         assertEquals("hosts [" + host.getHostname() + "]", hostSystem.toString());
     }

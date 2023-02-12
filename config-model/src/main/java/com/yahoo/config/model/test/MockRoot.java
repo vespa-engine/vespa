@@ -4,22 +4,14 @@ package com.yahoo.config.model.test;
 import com.yahoo.config.ConfigInstance;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.DeployLogger;
-import com.yahoo.config.model.ConfigModelContext;
 import com.yahoo.config.model.ConfigModelRepo;
-import com.yahoo.config.model.api.HostProvisioner;
-import com.yahoo.config.model.builder.xml.XmlHelper;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.config.model.producer.AbstractConfigProducerRoot;
-import com.yahoo.text.XML;
 import com.yahoo.vespa.model.ConfigProducer;
 import com.yahoo.vespa.model.HostSystem;
 import com.yahoo.vespa.model.admin.Admin;
-import com.yahoo.vespa.model.builder.xml.dom.DomAdminV2Builder;
 import com.yahoo.vespa.model.filedistribution.FileDistributionConfigProducer;
-import org.w3c.dom.Document;
-import java.io.StringReader;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Set;
 
@@ -34,13 +26,9 @@ import java.util.Set;
 public class MockRoot extends AbstractConfigProducerRoot {
 
     private final HostSystem hostSystem;
-
     private final DeployState deployState;
-    private Admin admin;
 
-    public MockRoot() {
-        this("");
-    }
+    public MockRoot() { this(""); }
 
     public MockRoot(String rootConfigId) {
         this(rootConfigId, new MockApplicationPackage.Builder().build());
@@ -48,10 +36,6 @@ public class MockRoot extends AbstractConfigProducerRoot {
 
     public MockRoot(String rootConfigId, ApplicationPackage applicationPackage) {
         this(rootConfigId, new DeployState.Builder().applicationPackage(applicationPackage).build());
-    }
-    public MockRoot(String rootConfigId, ApplicationPackage applicationPackage, HostProvisioner provisioner) {
-        this(rootConfigId, new DeployState.Builder().applicationPackage(applicationPackage)
-                                                    .modelHostProvisioner(provisioner).build());
     }
 
     public MockRoot(String rootConfigId, DeployState deployState) {
@@ -126,24 +110,8 @@ public class MockRoot extends AbstractConfigProducerRoot {
         super.addChild(abstractConfigProducer);
     }
 
-    public final void setAdmin(String xml) {
-        String servicesXml =
-                "<?xml version='1.0' encoding='utf-8' ?>" +
-                "<services>" + xml + "</services>";
-
-        Document doc = XmlHelper.getDocument(new StringReader(servicesXml));
-        setAdmin(new DomAdminV2Builder(ConfigModelContext.ApplicationType.DEFAULT, false, new ArrayList<>())
-                         .build(deployState, this, XML.getChildren(doc.getDocumentElement(), "admin").get(0)));
-    }
-
-    public final void setAdmin(Admin admin) {
-        this.admin = admin;
-    }
-
     @Override
-    public final Admin getAdmin() {
-        return admin;
-    }
+    public final Admin getAdmin() { return null; }
 
     public DeployLogger deployLogger() {
         return deployState.getDeployLogger();
