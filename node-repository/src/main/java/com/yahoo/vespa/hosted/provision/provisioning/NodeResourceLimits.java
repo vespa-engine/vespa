@@ -62,7 +62,7 @@ public class NodeResourceLimits {
     }
 
     private double minAdvertisedVcpu(ClusterSpec cluster) {
-        if (zone().environment().isProduction() && ! zone().system().isCd() && nodeRepository.exclusiveAllocation(cluster)) return 2;
+        if (zone().environment().isProduction() && nodeRepository.exclusiveAllocation(cluster)) return 2;
         if (zone().environment().isProduction() && cluster.type().isContent()) return 1.0;
         if (zone().environment() == Environment.dev && ! nodeRepository.exclusiveAllocation(cluster)) return 0.1;
         if (cluster.type() == ClusterSpec.Type.admin) return 0.1;
