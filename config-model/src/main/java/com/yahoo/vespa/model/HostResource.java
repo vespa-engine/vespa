@@ -37,7 +37,7 @@ public class HostResource implements Comparable<HostResource> {
      * @param host {@link com.yahoo.vespa.model.Host} object to bind to.
      */
     public HostResource(Host host) {
-        this(host, new HostSpec(host.getHostname(), List.of(), Optional.empty()));
+        this(host, new HostSpec(host.getHostname(), Optional.empty()));
     }
 
     public HostResource(Host host, HostSpec spec) {

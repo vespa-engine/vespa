@@ -105,7 +105,7 @@ public class NodeResourceChangeValidatorTest {
 
         @Override
         public HostSpec allocateHost(String alias) {
-            return new HostSpec(alias, List.of(), Optional.empty());
+            return new HostSpec(alias, Optional.empty());
         }
 
         @Override
