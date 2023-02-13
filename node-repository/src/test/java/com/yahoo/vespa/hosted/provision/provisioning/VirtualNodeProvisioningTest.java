@@ -364,7 +364,7 @@ public class VirtualNodeProvisioningTest {
     @Test
     public void application_deployment_with_exclusive_app_first() {
         NodeResources hostResources = new NodeResources(10, 40, 1000, 10);
-        NodeResources nodeResources = new NodeResources(1, 4, 100, 1);
+        NodeResources nodeResources = new NodeResources(2, 4, 100, 1);
         ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east"))).build();
         tester.makeReadyHosts(4, hostResources).activateTenantHosts();
         ApplicationId application1 = ProvisioningTester.applicationId("app1");
@@ -383,7 +383,7 @@ public class VirtualNodeProvisioningTest {
     @Test
     public void application_deployment_with_exclusive_app_last() {
         NodeResources hostResources = new NodeResources(10, 40, 1000, 10);
-        NodeResources nodeResources = new NodeResources(1, 4, 100, 1);
+        NodeResources nodeResources = new NodeResources(2, 4, 100, 1);
         ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east"))).build();
         tester.makeReadyHosts(4, hostResources).activateTenantHosts();
         ApplicationId application1 = ProvisioningTester.applicationId("app1");
@@ -402,7 +402,7 @@ public class VirtualNodeProvisioningTest {
     @Test
     public void application_deployment_change_to_exclusive_and_back() {
         NodeResources hostResources = new NodeResources(10, 40, 1000, 10);
-        NodeResources nodeResources = new NodeResources(1, 4, 100, 1);
+        NodeResources nodeResources = new NodeResources(2, 4, 100, 1);
         ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east"))).build();
         tester.makeReadyHosts(4, hostResources).activateTenantHosts();
 
@@ -429,7 +429,7 @@ public class VirtualNodeProvisioningTest {
         ApplicationId application2 = ApplicationId.from("tenant2", "app2", "default");
         ApplicationId application3 = ApplicationId.from("tenant1", "app3", "default");
         NodeResources hostResources = new NodeResources(10, 40, 1000, 10);
-        NodeResources nodeResources = new NodeResources(1, 4, 100, 1);
+        NodeResources nodeResources = new NodeResources(2, 4, 100, 1);
         ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east"))).build();
         tester.makeReadyHosts(4, hostResources).activateTenantHosts();
 
@@ -444,7 +444,7 @@ public class VirtualNodeProvisioningTest {
         catch (Exception e) {
             assertEquals("No room for 3 nodes as 2 of 4 hosts are exclusive",
                          "Could not satisfy request for 3 nodes with " +
-                         "[vcpu: 1.0, memory: 4.0 Gb, disk 100.0 Gb, bandwidth: 1.0 Gbps, architecture: x86_64] " +
+                         "[vcpu: 2.0, memory: 4.0 Gb, disk 100.0 Gb, bandwidth: 1.0 Gbps, architecture: x86_64] " +
                          "in tenant2.app2 container cluster 'my-container' 6.39: " +
                          "Node allocation failure on group 0: " +
                          "Not enough suitable nodes available due to host exclusivity constraints",
