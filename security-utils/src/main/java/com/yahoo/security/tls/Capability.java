@@ -29,6 +29,8 @@ public enum Capability implements ToCapabilitySet {
     LOGSERVER_API("vespa.logserver.api"),
     METRICSPROXY__MANAGEMENT_API("vespa.metricsproxy.management_api"),
     METRICSPROXY__METRICS_API("vespa.metricsproxy.metrics_api"),
+    SENTINEL__CONNECTIVITY_CHECK("vespa.sentinel.connectivity_check"),
+    SENTINEL__MANAGEMENT_API("vespa.sentinel.management_api"),
     SLOBROK__API("vespa.slobrok.api"),
     ;
 
