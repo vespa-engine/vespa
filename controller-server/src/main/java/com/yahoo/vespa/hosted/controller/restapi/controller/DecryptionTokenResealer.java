@@ -29,11 +29,16 @@ class DecryptionTokenResealer {
         if (!expectedKeyName.equals(keyName)) {
             throw new IllegalArgumentException("Token is not generated for the expected key");
         }
+        int keyVersion;
         try {
-            return Integer.parseUnsignedInt(components[1]);
+            keyVersion = Integer.parseInt(components[1]);
         } catch (IllegalArgumentException e) {
-            throw new IllegalArgumentException("Key version is not a valid unsigned integer");
+            throw new IllegalArgumentException("Key version is not a valid integer");
         }
+        if (keyVersion < 0) {
+            throw new IllegalArgumentException("Key version is out of range");
+        }
+        return keyVersion;
     }
 
     /**

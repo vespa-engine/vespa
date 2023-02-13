@@ -282,12 +282,17 @@ public class ControllerApiTest extends ControllerContainerTest {
         tester.assertResponse(
                 () -> operatorRequest("http://localhost:8080/controller/v1/access/cores/reseal",
                         requestJsonOf(createResealingRequestData("a-really-cool-key.123asdf")), Request.Method.POST),
-                "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Key version is not a valid unsigned integer\"}",
+                "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Key version is not a valid integer\"}",
                 400);
         tester.assertResponse(
                 () -> operatorRequest("http://localhost:8080/controller/v1/access/cores/reseal",
                         requestJsonOf(createResealingRequestData("a-really-cool-key.-123")), Request.Method.POST),
-                "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Key version is not a valid unsigned integer\"}",
+                "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Key version is out of range\"}",
+                400);
+        tester.assertResponse(
+                () -> operatorRequest("http://localhost:8080/controller/v1/access/cores/reseal",
+                        requestJsonOf(createResealingRequestData("a-really-cool-key.%d".formatted((long)Integer.MAX_VALUE + 1))), Request.Method.POST),
+                "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Key version is not a valid integer\"}",
                 400);
     }
 
