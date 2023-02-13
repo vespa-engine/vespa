@@ -33,6 +33,7 @@ public class Cluster {
     private final boolean required;
     private final Autoscaling suggested;
     private final Autoscaling target;
+    private final BcpGroupInfo bcpGroupInfo;
 
     /** The maxScalingEvents last scaling events of this, sorted by increasing time (newest last) */
     private final List<ScalingEvent> scalingEvents;
@@ -45,6 +46,7 @@ public class Cluster {
                    boolean required,
                    Autoscaling suggested,
                    Autoscaling target,
+                   BcpGroupInfo bcpGroupInfo,
                    List<ScalingEvent> scalingEvents) {
         this.id = Objects.requireNonNull(id);
         this.exclusive = exclusive;
@@ -58,6 +60,7 @@ public class Cluster {
             this.target = Autoscaling.empty();
         else
             this.target = target;
+        this.bcpGroupInfo = Objects.requireNonNull(bcpGroupInfo);
         this.scalingEvents = List.copyOf(scalingEvents);
     }
 
@@ -77,7 +80,7 @@ public class Cluster {
 
     /**
      * Returns whether the resources of this cluster are required to be within the specified min and max.
-     * Otherwise they may be adjusted by capacity policies.
+     * Otherwise, they may be adjusted by capacity policies.
      */
     public boolean required() { return required; }
 
@@ -102,6 +105,9 @@ public class Cluster {
         return true;
     }
 
+    /** Returns info about the BCP group of clusters this belongs to. */
+    public BcpGroupInfo bcpGroupInfo() { return bcpGroupInfo; }
+
     /** Returns the recent scaling events in this cluster */
     public List<ScalingEvent> scalingEvents() { return scalingEvents; }
 
@@ -113,15 +119,19 @@ public class Cluster {
     public Cluster withConfiguration(boolean exclusive, Capacity capacity) {
         return new Cluster(id, exclusive,
                            capacity.minResources(), capacity.maxResources(), capacity.groupSize(), capacity.isRequired(),
-                           suggested, target, scalingEvents);
+                           suggested, target, bcpGroupInfo, scalingEvents);
     }
 
     public Cluster withSuggested(Autoscaling suggested) {
-        return new Cluster(id, exclusive, min, max, groupSize, required, suggested, target, scalingEvents);
+        return new Cluster(id, exclusive, min, max, groupSize, required, suggested, target, bcpGroupInfo, scalingEvents);
     }
 
     public Cluster withTarget(Autoscaling target) {
-        return new Cluster(id, exclusive, min, max, groupSize, required, suggested, target, scalingEvents);
+        return new Cluster(id, exclusive, min, max, groupSize, required, suggested, target, bcpGroupInfo, scalingEvents);
+    }
+
+    public Cluster with(BcpGroupInfo bcpGroupInfo) {
+        return new Cluster(id, exclusive, min, max, groupSize, required, suggested, target, bcpGroupInfo, scalingEvents);
     }
 
     /** Add or update (based on "at" time) a scaling event */
@@ -135,7 +145,7 @@ public class Cluster {
             scalingEvents.add(scalingEvent);
 
         prune(scalingEvents);
-        return new Cluster(id, exclusive, min, max, groupSize, required, suggested, target, scalingEvents);
+        return new Cluster(id, exclusive, min, max, groupSize, required, suggested, target, bcpGroupInfo, scalingEvents);
     }
 
     @Override
@@ -167,7 +177,7 @@ public class Cluster {
     public static Cluster create(ClusterSpec.Id id, boolean exclusive, Capacity requested) {
         return new Cluster(id, exclusive,
                            requested.minResources(), requested.maxResources(), requested.groupSize(), requested.isRequired(),
-                           Autoscaling.empty(), Autoscaling.empty(), List.of());
+                           Autoscaling.empty(), Autoscaling.empty(), BcpGroupInfo.empty(), List.of());
     }
 
     /** The predicted time it will take to rescale this cluster. */

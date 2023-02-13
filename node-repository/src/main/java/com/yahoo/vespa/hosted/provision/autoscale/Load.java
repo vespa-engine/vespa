@@ -30,6 +30,10 @@ public class Load {
     public double memory() { return memory; }
     public double disk() { return disk; }
 
+    public Load withCpu(double cpu) { return new Load(cpu, memory, disk); }
+    public Load withMemory(double memory) { return new Load(cpu, memory, disk); }
+    public Load withDisk(double disk) { return new Load(cpu, memory, disk); }
+
     public Load add(Load other) {
         return join(other, (a, b) -> a + b);
     }

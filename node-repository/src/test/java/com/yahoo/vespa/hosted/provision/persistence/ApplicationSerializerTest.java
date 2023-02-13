@@ -8,6 +8,7 @@ import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.vespa.hosted.provision.applications.Application;
 import com.yahoo.vespa.hosted.provision.applications.Cluster;
+import com.yahoo.vespa.hosted.provision.applications.BcpGroupInfo;
 import com.yahoo.vespa.hosted.provision.applications.ScalingEvent;
 import com.yahoo.vespa.hosted.provision.applications.Status;
 import com.yahoo.vespa.hosted.provision.autoscale.Autoscaling;
@@ -39,6 +40,7 @@ public class ApplicationSerializerTest {
                                  true,
                                  Autoscaling.empty(),
                                  Autoscaling.empty(),
+                                 BcpGroupInfo.empty(),
                                  List.of()));
         var minResources = new NodeResources(1, 2, 3, 4);
         clusters.add(new Cluster(ClusterSpec.Id.from("c2"),
@@ -61,6 +63,7 @@ public class ApplicationSerializerTest {
                                                  Instant.ofEpochMilli(5678L),
                                                  Load.zero(),
                                                  Load.one()),
+                                 new BcpGroupInfo(0.1, 0.2, 0.3),
                                  List.of(new ScalingEvent(new ClusterResources(10, 5, minResources),
                                                           new ClusterResources(12, 6, minResources),
                                                           7L,
@@ -90,6 +93,7 @@ public class ApplicationSerializerTest {
             assertEquals(originalCluster.required(), serializedCluster.required());
             assertEquals(originalCluster.suggested(), serializedCluster.suggested());
             assertEquals(originalCluster.target(), serializedCluster.target());
+            assertEquals(originalCluster.bcpGroupInfo(), serializedCluster.bcpGroupInfo());
             assertEquals(originalCluster.scalingEvents(), serializedCluster.scalingEvents());
         }
     }
