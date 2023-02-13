@@ -303,13 +303,6 @@ public class Flags {
             APPLICATION_ID,HOSTNAME,NODE_TYPE,TENANT_ID,VESPA_VERSION
     );
 
-    public static final UnboundBooleanFlag CLEANUP_TENANT_ROLES = defineFeatureFlag(
-            "cleanup-tenant-roles", true,
-            List.of("olaa"), "2022-08-10", "2023-02-14",
-            "Determines whether old tenant roles should be deleted",
-            "Takes effect next maintenance run"
-    );
-
     public static final UnboundBooleanFlag RESTRICT_DATA_PLANE_BINDINGS = defineFeatureFlag(
             "restrict-data-plane-bindings", false,
             List.of("mortent"), "2022-09-08", "2023-05-01",
@@ -337,12 +330,6 @@ public class Flags {
             "Set up a WireGuard endpoint on config servers",
             "Takes effect on configserver restart",
             HOSTNAME);
-
-    public static final UnboundBooleanFlag ENABLED_MAIL_VERIFICATION = defineFeatureFlag(
-            "enabled-mail-verification", true,
-            List.of("olaa"), "2022-10-28", "2023-02-14",
-            "Enable mail verification",
-            "Takes effect immediately");
 
     public static final UnboundStringFlag CORE_ENCRYPTION_PUBLIC_KEY_ID = defineStringFlag(
             "core-encryption-public-key-id", "",
