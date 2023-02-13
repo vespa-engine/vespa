@@ -30,7 +30,7 @@ public class SingleNodeProvisioner implements HostProvisioner {
 
     public SingleNodeProvisioner() {
         host = new Host(HostName.getLocalhost());
-        this.hostSpec = new HostSpec(host.hostname(), host.aliases(), Optional.empty());
+        this.hostSpec = new HostSpec(host.hostname(), Optional.empty());
     }
 
     public SingleNodeProvisioner(Flavor flavor) {

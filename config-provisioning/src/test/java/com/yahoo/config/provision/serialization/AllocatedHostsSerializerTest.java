@@ -37,8 +37,8 @@ public class AllocatedHostsSerializerTest {
     @Test
     void testAllocatedHostsSerialization() throws IOException {
         Set<HostSpec> hosts = new LinkedHashSet<>();
-        hosts.add(new HostSpec("empty", List.of(), Optional.empty()));
-        hosts.add(new HostSpec("with-aliases", List.of("alias1", "alias2"), Optional.empty()));
+        hosts.add(new HostSpec("empty", Optional.empty()));
+        hosts.add(new HostSpec("with-aliases", Optional.empty()));
         hosts.add(new HostSpec("allocated",
                                smallSlowDiskSpeedNode,
                                bigSlowDiskSpeedNode,

@@ -160,8 +160,8 @@ public class ZooKeeperClientTest {
         Path app = Path.fromString("/1");
         ZooKeeperClient zooKeeperClient = new ZooKeeperClient(zk, logger, app);
         zooKeeperClient.initialize();
-        HostSpec host1 = new HostSpec("host1.yahoo.com", Collections.emptyList(), Optional.empty());
-        HostSpec host2 = new HostSpec("host2.yahoo.com", Collections.emptyList(), Optional.empty());
+        HostSpec host1 = new HostSpec("host1.yahoo.com", Optional.empty());
+        HostSpec host2 = new HostSpec("host2.yahoo.com", Optional.empty());
         ImmutableSet<HostSpec> hosts = ImmutableSet.of(host1, host2);
         zooKeeperClient.write(AllocatedHosts.withHosts(hosts));
         Path hostsPath = app.append(ZKApplicationPackage.allocatedHostsNode);

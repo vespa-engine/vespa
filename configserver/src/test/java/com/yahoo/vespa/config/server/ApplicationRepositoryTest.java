@@ -65,7 +65,6 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -562,9 +561,7 @@ public class ApplicationRepositoryTest {
         AllocatedHosts info = session.getAllocatedHosts();
         assertNotNull(info);
         assertEquals(1, info.getHosts().size());
-        assertTrue(info.getHosts().contains(new HostSpec("mytesthost2",
-                                                         Collections.emptyList(),
-                                                         Optional.empty())));
+        assertTrue(info.getHosts().contains(new HostSpec("mytesthost2", Optional.empty())));
         Optional<NetworkPorts> portsCopy = info.getHosts().iterator().next().networkPorts();
         assertTrue(portsCopy.isPresent());
         assertEquals(list, portsCopy.get().allocations());

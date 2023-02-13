@@ -151,7 +151,7 @@ public class InMemoryProvisioner implements HostProvisioner {
         List<Host> defaultHosts = freeNodes.get(defaultHostResources);
         if (defaultHosts.isEmpty()) throw new IllegalArgumentException("No more hosts with default resources available");
         Host newHost = freeNodes.removeValue(defaultHostResources, 0);
-        return new HostSpec(newHost.hostname(), List.of(alias), Optional.empty());
+        return new HostSpec(newHost.hostname(), Optional.empty());
     }
 
     @Override
