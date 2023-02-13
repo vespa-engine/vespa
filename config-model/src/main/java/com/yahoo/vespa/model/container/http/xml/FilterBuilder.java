@@ -2,7 +2,7 @@
 package com.yahoo.vespa.model.container.http.xml;
 
 import com.yahoo.config.model.deploy.DeployState;
-import com.yahoo.config.model.producer.AbstractConfigProducer;
+import com.yahoo.config.model.producer.TreeConfigProducer;
 import com.yahoo.text.XML;
 import com.yahoo.vespa.model.builder.xml.dom.DomComponentBuilder;
 import com.yahoo.vespa.model.builder.xml.dom.VespaDomBuilder;
@@ -18,7 +18,7 @@ import org.w3c.dom.Element;
 public class FilterBuilder extends VespaDomBuilder.DomConfigProducerBuilder<Filter> {
 
     @Override
-    protected Filter doBuild(DeployState deployState, AbstractConfigProducer ancestor, Element filterElement) {
+    protected Filter doBuild(DeployState deployState, TreeConfigProducer ancestor, Element filterElement) {
         ChainedComponentModelBuilder modelBuilder = new ChainedComponentModelBuilder(filterElement);
         Filter filter =  new Filter(modelBuilder.build());
         DomComponentBuilder.addChildren(deployState, ancestor, filterElement, filter);

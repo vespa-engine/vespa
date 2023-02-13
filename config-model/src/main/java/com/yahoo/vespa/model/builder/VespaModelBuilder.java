@@ -4,7 +4,7 @@ package com.yahoo.vespa.model.builder;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.ConfigModelRepo;
 import com.yahoo.config.model.deploy.DeployState;
-import com.yahoo.config.model.producer.AbstractConfigProducer;
+import com.yahoo.config.model.producer.TreeConfigProducer;
 import com.yahoo.config.model.ApplicationConfigProducerRoot;
 
 /**
@@ -14,7 +14,7 @@ import com.yahoo.config.model.ApplicationConfigProducerRoot;
  */
 public abstract class VespaModelBuilder {
 
-    public abstract ApplicationConfigProducerRoot getRoot(String name, DeployState deployState, AbstractConfigProducer parent);
+    public abstract ApplicationConfigProducerRoot getRoot(String name, DeployState deployState, TreeConfigProducer parent);
 
     /**
      * Processing that requires access across plugins
@@ -22,6 +22,6 @@ public abstract class VespaModelBuilder {
      * @param producerRoot the root producer.
      * @param configModelRepo a {@link com.yahoo.config.model.ConfigModelRepo instance}
      */
-    public abstract void postProc(DeployState deployState, AbstractConfigProducer producerRoot, ConfigModelRepo configModelRepo);
+    public abstract void postProc(DeployState deployState, TreeConfigProducer producerRoot, ConfigModelRepo configModelRepo);
 
 }

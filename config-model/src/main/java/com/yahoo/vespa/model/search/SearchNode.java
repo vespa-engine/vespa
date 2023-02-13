@@ -4,7 +4,7 @@ package com.yahoo.vespa.model.search;
 import com.yahoo.cloud.config.filedistribution.FiledistributorrpcConfig;
 import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.deploy.DeployState;
-import com.yahoo.config.model.producer.AbstractConfigProducer;
+import com.yahoo.config.model.producer.TreeConfigProducer;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.metrics.MetricsmanagerConfig;
 import com.yahoo.searchlib.TranslogserverConfig;
@@ -94,7 +94,7 @@ public class SearchNode extends AbstractService implements
         }
 
         @Override
-        protected SearchNode doBuild(DeployState deployState, AbstractConfigProducer<?> ancestor, Element producerSpec) {
+        protected SearchNode doBuild(DeployState deployState, TreeConfigProducer<?> ancestor, Element producerSpec) {
             return SearchNode.create(ancestor, name, contentNode.getDistributionKey(), nodeSpec, clusterName, contentNode,
                                      flushOnShutdown, tuning, resourceLimits, deployState.isHosted(),
                                      fractionOfMemoryReserved, deployState.featureFlags());
@@ -102,7 +102,7 @@ public class SearchNode extends AbstractService implements
 
     }
 
-    public static SearchNode create(AbstractConfigProducer<?> parent, String name, int distributionKey, NodeSpec nodeSpec,
+    public static SearchNode create(TreeConfigProducer<?> parent, String name, int distributionKey, NodeSpec nodeSpec,
                                     String clusterName, AbstractService serviceLayerService, boolean flushOnShutdown,
                                     Optional<Tuning> tuning, Optional<ResourceLimits> resourceLimits, boolean isHostedVespa,
                                     double fractionOfMemoryReserved, ModelContext.FeatureFlags featureFlags) {
@@ -117,7 +117,7 @@ public class SearchNode extends AbstractService implements
         return node;
     }
 
-    private SearchNode(AbstractConfigProducer<?> parent, String name, int distributionKey, NodeSpec nodeSpec,
+    private SearchNode(TreeConfigProducer<?> parent, String name, int distributionKey, NodeSpec nodeSpec,
                        String clusterName, AbstractService serviceLayerService, boolean flushOnShutdown,
                        Optional<Tuning> tuning, Optional<ResourceLimits> resourceLimits, boolean isHostedVespa,
                        double fractionOfMemoryReserved) {

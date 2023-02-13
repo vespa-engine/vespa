@@ -9,7 +9,7 @@ import com.yahoo.vespa.config.search.RankProfilesConfig;
 import com.yahoo.prelude.fastsearch.DocumentdbInfoConfig;
 import com.yahoo.search.config.IndexInfoConfig;
 import com.yahoo.vespa.configdefinition.IlscriptsConfig;
-import com.yahoo.config.model.producer.AbstractConfigProducer;
+import com.yahoo.config.model.producer.TreeConfigProducer;
 
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -21,7 +21,7 @@ import java.util.Map;
  *
  * @author arnej27959
  */
-public abstract class SearchCluster extends AbstractConfigProducer<SearchCluster>
+public abstract class SearchCluster extends TreeConfigProducer<SearchCluster>
         implements
         DocumentdbInfoConfig.Producer,
         IndexInfoConfig.Producer,
@@ -34,7 +34,7 @@ public abstract class SearchCluster extends AbstractConfigProducer<SearchCluster
     private Double visibilityDelay = 0.0;
     private final Map<String, SchemaInfo> schemas = new LinkedHashMap<>();
 
-    public SearchCluster(AbstractConfigProducer<?> parent, String clusterName, int index) {
+    public SearchCluster(TreeConfigProducer<?> parent, String clusterName, int index) {
         super(parent, "cluster." + clusterName);
         this.clusterName = clusterName;
         this.index = index;

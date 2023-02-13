@@ -4,7 +4,7 @@ package com.yahoo.vespa.model.container.http;
 import com.yahoo.component.ComponentId;
 import com.yahoo.component.ComponentSpecification;
 import com.yahoo.component.chain.model.ChainSpecification;
-import com.yahoo.config.model.producer.AbstractConfigProducer;
+import com.yahoo.config.model.producer.TreeConfigProducer;
 import com.yahoo.vespa.model.container.component.SimpleComponent;
 import com.yahoo.vespa.model.container.component.chain.Chains;
 
@@ -15,7 +15,7 @@ import java.util.Set;
  */
 public class FilterChains extends Chains<HttpFilterChain>  {
 
-    public FilterChains(AbstractConfigProducer<?> parent) {
+    public FilterChains(TreeConfigProducer<?> parent) {
         super(parent, "filters");
 
         addChild(new SimpleComponent("com.yahoo.container.http.filter.FilterChainRepository"));

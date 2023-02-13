@@ -6,7 +6,7 @@ import com.yahoo.component.ComponentSpecification;
 import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.api.container.ContainerServiceType;
 import com.yahoo.config.model.deploy.DeployState;
-import com.yahoo.config.model.producer.AbstractConfigProducer;
+import com.yahoo.config.model.producer.TreeConfigProducer;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.container.bundle.BundleInstantiationSpecification;
 import com.yahoo.container.di.config.PlatformBundlesConfig;
@@ -50,7 +50,7 @@ public class ClusterControllerContainer extends Container implements
 
     private final Set<String> bundles = new TreeSet<>(); // Ensure stable ordering
 
-    public ClusterControllerContainer(AbstractConfigProducer<?> parent,
+    public ClusterControllerContainer(TreeConfigProducer<?> parent,
                                       int index,
                                       boolean runStandaloneZooKeeper,
                                       DeployState deployState,

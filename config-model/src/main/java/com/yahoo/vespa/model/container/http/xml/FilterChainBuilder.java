@@ -3,7 +3,7 @@ package com.yahoo.vespa.model.container.http.xml;
 
 import com.yahoo.component.chain.model.ChainSpecification;
 import com.yahoo.config.model.deploy.DeployState;
-import com.yahoo.config.model.producer.AbstractConfigProducer;
+import com.yahoo.config.model.producer.TreeConfigProducer;
 import com.yahoo.vespa.model.builder.xml.dom.chains.DomChainBuilderBase;
 import com.yahoo.vespa.model.container.http.Filter;
 import com.yahoo.vespa.model.container.http.HttpFilterChain;
@@ -27,7 +27,7 @@ public class FilterChainBuilder extends DomChainBuilderBase<Filter, HttpFilterCh
     }
 
     @Override
-    protected HttpFilterChain buildChain(DeployState deployState, AbstractConfigProducer<?> ancestor, Element producerSpec, ChainSpecification specWithoutInnerComponents) {
+    protected HttpFilterChain buildChain(DeployState deployState, TreeConfigProducer<?> ancestor, Element producerSpec, ChainSpecification specWithoutInnerComponents) {
         return new HttpFilterChain(specWithoutInnerComponents, HttpFilterChain.Type.USER);
     }
 }

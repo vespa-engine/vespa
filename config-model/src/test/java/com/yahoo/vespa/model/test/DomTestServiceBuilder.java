@@ -2,7 +2,7 @@
 package com.yahoo.vespa.model.test;
 
 import com.yahoo.config.model.deploy.DeployState;
-import com.yahoo.config.model.producer.AbstractConfigProducer;
+import com.yahoo.config.model.producer.TreeConfigProducer;
 import com.yahoo.vespa.model.builder.xml.dom.VespaDomBuilder;
 import org.w3c.dom.Element;
 
@@ -20,7 +20,7 @@ public class DomTestServiceBuilder {
         }
 
         @Override
-        protected SimpleService doBuild(DeployState deployState, AbstractConfigProducer parent, Element spec) {
+        protected SimpleService doBuild(DeployState deployState, TreeConfigProducer parent, Element spec) {
             return new SimpleService(parent, "simpleservice." + i);
         }
     }
@@ -33,7 +33,7 @@ public class DomTestServiceBuilder {
         }
 
         @Override
-        protected ApiService doBuild(DeployState deployState, AbstractConfigProducer parent, Element spec) {
+        protected ApiService doBuild(DeployState deployState, TreeConfigProducer parent, Element spec) {
             return new ApiService(parent, "apiservice." + i);
         }
     }
@@ -46,7 +46,7 @@ public class DomTestServiceBuilder {
         }
 
         @Override
-        protected ParentService doBuild(DeployState deployState, AbstractConfigProducer parent, Element spec) {
+        protected ParentService doBuild(DeployState deployState, TreeConfigProducer parent, Element spec) {
             return new ParentService(parent, "parentservice." + i, spec);
         }
     }

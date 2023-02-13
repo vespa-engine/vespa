@@ -9,7 +9,7 @@ import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.builder.xml.ConfigModelBuilder;
 import com.yahoo.config.model.builder.xml.ConfigModelId;
 import com.yahoo.config.model.deploy.DeployState;
-import com.yahoo.config.model.producer.AbstractConfigProducer;
+import com.yahoo.config.model.producer.TreeConfigProducer;
 import com.yahoo.vespa.model.admin.Admin;
 import com.yahoo.vespa.model.builder.xml.dom.DomAdminV2Builder;
 import com.yahoo.vespa.model.builder.xml.dom.DomAdminV4Builder;
@@ -80,7 +80,7 @@ public class AdminModel extends ConfigModel {
                 new BuilderV4().doBuild(model, adminElement, modelContext);
                 return;
             }
-            AbstractConfigProducer<?> parent = modelContext.getParentProducer();
+            TreeConfigProducer<?> parent = modelContext.getParentProducer();
             ModelContext.Properties properties = modelContext.getDeployState().getProperties();
             DomAdminV2Builder domBuilder = new DomAdminV2Builder(modelContext.getApplicationType(),
                                                                  properties.multitenant(),
@@ -109,7 +109,7 @@ public class AdminModel extends ConfigModel {
 
         @Override
         public void doBuild(AdminModel model, Element adminElement, ConfigModelContext modelContext) {
-            AbstractConfigProducer<?> parent = modelContext.getParentProducer();
+            TreeConfigProducer<?> parent = modelContext.getParentProducer();
             ModelContext.Properties properties = modelContext.getDeployState().getProperties();
             DomAdminV4Builder domBuilder = new DomAdminV4Builder(modelContext,
                                                                  properties.multitenant(),

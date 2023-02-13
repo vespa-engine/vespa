@@ -4,7 +4,7 @@ package com.yahoo.vespa.model.builder.xml.dom;
 import com.yahoo.config.model.ConfigModelContext;
 import com.yahoo.config.model.api.ConfigServerSpec;
 import com.yahoo.config.model.deploy.DeployState;
-import com.yahoo.config.model.producer.AbstractConfigProducer;
+import com.yahoo.config.model.producer.TreeConfigProducer;
 import com.yahoo.text.XML;
 import com.yahoo.vespa.model.SimpleConfigProducer;
 import com.yahoo.vespa.model.admin.Admin;
@@ -76,7 +76,7 @@ public class DomAdminV2Builder extends DomAdminBuilderBase {
     }
 
     private ClusterControllerContainerCluster addConfiguredClusterControllers(DeployState deployState,
-                                                                              AbstractConfigProducer<?> parent,
+                                                                              TreeConfigProducer<?> parent,
                                                                               Element admin) {
         Element controllersElements = XML.getChild(admin, "cluster-controllers");
         if (controllersElements == null) return null;
@@ -104,7 +104,7 @@ public class DomAdminV2Builder extends DomAdminBuilderBase {
         return cluster;
     }
 
-    private List<Configserver> getConfigServers(DeployState deployState, AbstractConfigProducer<?> parent, Element adminE) {
+    private List<Configserver> getConfigServers(DeployState deployState, TreeConfigProducer<?> parent, Element adminE) {
         Element configserversE = XML.getChild(adminE, "configservers");
         if (configserversE == null) {
             Element adminserver = XML.getChild(adminE, "adminserver");
@@ -126,7 +126,7 @@ public class DomAdminV2Builder extends DomAdminBuilderBase {
     }
 
     /** Fallback when no config server is specified */
-    private List<Configserver> createSingleConfigServer(DeployState deployState, AbstractConfigProducer<?> parent) {
+    private List<Configserver> createSingleConfigServer(DeployState deployState, TreeConfigProducer<?> parent) {
         SimpleConfigProducer<?> configServers = new SimpleConfigProducer<>(parent, "configservers");
         Configserver configServer = new Configserver(configServers, "configserver", Configserver.defaultRpcPort);
         configServer.setHostResource(parent.hostSystem().getHost(Container.SINGLENODE_CONTAINER_SERVICESPEC));
@@ -134,14 +134,14 @@ public class DomAdminV2Builder extends DomAdminBuilderBase {
         return List.of(configServer);
     }
 
-    private List<Slobrok> getSlobroks(DeployState deployState, AbstractConfigProducer<?> parent, Element slobroksE) {
+    private List<Slobrok> getSlobroks(DeployState deployState, TreeConfigProducer<?> parent, Element slobroksE) {
         List<Slobrok> slobroks = new ArrayList<>();
         if (slobroksE != null)
             slobroks = getExplicitSlobrokSetup(deployState, parent, slobroksE);
         return slobroks;
     }
 
-    private List<Slobrok> getExplicitSlobrokSetup(DeployState deployState, AbstractConfigProducer<?> parent, Element slobroksE) {
+    private List<Slobrok> getExplicitSlobrokSetup(DeployState deployState, TreeConfigProducer<?> parent, Element slobroksE) {
         List<Slobrok> slobroks = new ArrayList<>();
         int i = 0;
         for (Element e : XML.getChildren(slobroksE, "slobrok"))
@@ -154,7 +154,7 @@ public class DomAdminV2Builder extends DomAdminBuilderBase {
         }
 
         @Override
-        protected Logserver doBuild(DeployState deployState, AbstractConfigProducer<?> parent, Element producerSpec) {
+        protected Logserver doBuild(DeployState deployState, TreeConfigProducer<?> parent, Element producerSpec) {
             return new Logserver(parent);
         }
     }
@@ -173,7 +173,7 @@ public class DomAdminV2Builder extends DomAdminBuilderBase {
         }
 
         @Override
-        protected Configserver doBuild(DeployState deployState, AbstractConfigProducer<?> parent, Element spec) {
+        protected Configserver doBuild(DeployState deployState, TreeConfigProducer<?> parent, Element spec) {
             var configServer = new Configserver(parent, "configserver." + i, rpcPort);
             configServer.setProp("index", i);
             return configServer;
@@ -189,7 +189,7 @@ public class DomAdminV2Builder extends DomAdminBuilderBase {
         }
 
         @Override
-        protected Slobrok doBuild(DeployState deployState, AbstractConfigProducer<?> parent, Element spec) {
+        protected Slobrok doBuild(DeployState deployState, TreeConfigProducer<?> parent, Element spec) {
             return new Slobrok(parent, i, deployState.featureFlags());
         }
 
@@ -205,7 +205,7 @@ public class DomAdminV2Builder extends DomAdminBuilderBase {
         }
 
         @Override
-        protected ClusterControllerContainer doBuild(DeployState deployState, AbstractConfigProducer<?> parent, Element spec) {
+        protected ClusterControllerContainer doBuild(DeployState deployState, TreeConfigProducer<?> parent, Element spec) {
             return new ClusterControllerContainer(parent, i, runStandaloneZooKeeper, deployState, false);
         }
     }

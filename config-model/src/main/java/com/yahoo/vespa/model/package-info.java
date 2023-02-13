@@ -8,18 +8,18 @@
     href="#plugin_loading">plugin loading</a> and currently
     instantiates one {@link com.yahoo.config.model.ApplicationConfigProducerRoot Vespa}
     object. VespaModel is the root node in a tree of {@link
-com.yahoo.config.model.producer.AbstractConfigProducer
-    AbstractConfigProducers} that is built from the structure of the
+com.yahoo.config.model.producer.TreeConfigProducer
+    TreeConfigProducers} that is built from the structure of the
     user's specification. In a future version, the VespaModel can
     contain multiple Vespa instances, each built from a separate user
     specification (currently called 'services.xml').
     </p>
 
-    <p>Each AbstractConfigProducer in the tree represents an actual
+    <p>Each TreeConfigProducer in the tree represents an actual
     service or another logical unit in the Vespa system. An example of
     a logical unit is a cluster that holds a set of services. Each
-    child class of {@link com.yahoo.config.model.producer.AbstractConfigProducer
-    AbstractConfigProducer} can contain hard-wired config that should
+    child class of {@link com.yahoo.config.model.producer.TreeConfigProducer
+    TreeConfigProducer} can contain hard-wired config that should
     be delivered to the Vespa unit it represents, and its children. It
     can also keep track of the status of the unit.
     </p>
@@ -83,7 +83,7 @@ com.yahoo.config.model.producer.AbstractConfigProducer
     could look like this:
     VespaModel.getConfig(builder, &quot;grandchild_0&quot;).
     This triggers a call to the {@link
-    com.yahoo.config.model.producer.AbstractConfigProducer#cascadeConfig(com.yahoo.config.ConfigInstance.Builder)}) AbstractConfigProducer.cascadeConfig} method for
+    com.yahoo.config.model.producer.TreeConfigProducer#cascadeConfig(com.yahoo.config.ConfigInstance.Builder)}) TreeConfigProducer.cascadeConfig} method for
     grandchild_0 which calls the same method in child_0, and finally
     in the VespaModel root node, where the {@link
     com.yahoo.vespa.model.VespaModel#getConfig(com.yahoo.config.ConfigInstance.Builder,String)
@@ -120,8 +120,8 @@ com.yahoo.config.model.builder.xml.ConfigModelBuilder ConfigModelBuilder}. The
     <ul>
 
     <li>The constructors of all child classes of {@link
-com.yahoo.config.model.producer.AbstractConfigProducer
-    AbstractConfigProducer} should throw a new 'RuntimeException' upon
+com.yahoo.config.model.producer.TreeConfigProducer
+    TreeConfigProducer} should throw a new 'RuntimeException' upon
     errors in xml or other initialization problems. This allows the
     exception to be nested upwards, adding valuable information from
     each level in the ConfigProducer tree to the error message output

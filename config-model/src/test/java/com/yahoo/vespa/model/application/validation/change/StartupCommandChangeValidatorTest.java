@@ -2,7 +2,7 @@
 package com.yahoo.vespa.model.application.validation.change;
 
 import com.yahoo.config.model.api.ConfigChangeAction;
-import com.yahoo.config.model.producer.AbstractConfigProducer;
+import com.yahoo.config.model.producer.TreeConfigProducer;
 import com.yahoo.config.model.producer.AbstractConfigProducerRoot;
 import com.yahoo.config.model.test.MockRoot;
 import com.yahoo.vespa.model.AbstractService;
@@ -52,7 +52,7 @@ public class StartupCommandChangeValidatorTest {
         return validator.findServicesWithChangedStartupCommand(currentModel, nextModel).toList();
     }
 
-    private static MockRoot createRootWithChildren(AbstractConfigProducer<?>... children) {
+    private static MockRoot createRootWithChildren(TreeConfigProducer<?>... children) {
         MockRoot root = new MockRoot();
         Arrays.asList(children).forEach(root::addChild);
         root.freezeModelTopology();

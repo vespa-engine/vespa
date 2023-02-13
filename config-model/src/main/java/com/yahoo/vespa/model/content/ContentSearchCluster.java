@@ -3,7 +3,7 @@ package com.yahoo.vespa.model.content;
 
 import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.deploy.DeployState;
-import com.yahoo.config.model.producer.AbstractConfigProducer;
+import com.yahoo.config.model.producer.TreeConfigProducer;
 import com.yahoo.documentmodel.NewDocumentType;
 import com.yahoo.schema.Schema;
 import com.yahoo.schema.derived.SchemaInfo;
@@ -39,7 +39,7 @@ import java.util.stream.Collectors;
  * Encapsulates the various options for search in a content model.
  * Wraps a search cluster from com.yahoo.vespa.model.search.
  */
-public class ContentSearchCluster extends AbstractConfigProducer<SearchCluster> implements
+public class ContentSearchCluster extends TreeConfigProducer<SearchCluster> implements
         ProtonConfig.Producer,
         DispatchNodesConfig.Producer,
         DispatchConfig.Producer
@@ -94,7 +94,7 @@ public class ContentSearchCluster extends AbstractConfigProducer<SearchCluster> 
         }
 
         @Override
-        protected ContentSearchCluster doBuild(DeployState deployState, AbstractConfigProducer<?> ancestor, Element producerSpec) {
+        protected ContentSearchCluster doBuild(DeployState deployState, TreeConfigProducer<?> ancestor, Element producerSpec) {
             ModelElement clusterElem = new ModelElement(producerSpec);
             String clusterName = ContentCluster.getClusterId(clusterElem);
             Boolean flushOnShutdownElem = clusterElem.childAsBoolean("engine.proton.flush-on-shutdown");
@@ -195,7 +195,7 @@ public class ContentSearchCluster extends AbstractConfigProducer<SearchCluster> 
         }
     }
 
-    private ContentSearchCluster(AbstractConfigProducer<?> parent,
+    private ContentSearchCluster(TreeConfigProducer<?> parent,
                                  String clusterName,
                                  ModelContext.FeatureFlags featureFlags,
                                  Map<String, NewDocumentType> documentDefinitions,
@@ -267,7 +267,7 @@ public class ContentSearchCluster extends AbstractConfigProducer<SearchCluster> 
     }
 
     public void addSearchNode(DeployState deployState, ContentNode node, StorageGroup parentGroup, ModelElement element) {
-        AbstractConfigProducer<?> parent = hasIndexedCluster() ? getIndexed() : this;
+        TreeConfigProducer<?> parent = hasIndexedCluster() ? getIndexed() : this;
 
         NodeSpec spec = getNextSearchNodeSpec(parentGroup);
         SearchNode searchNode;

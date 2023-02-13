@@ -2,7 +2,7 @@
 package com.yahoo.vespa.model.content;
 
 import com.yahoo.config.model.deploy.DeployState;
-import com.yahoo.config.model.producer.AbstractConfigProducer;
+import com.yahoo.config.model.producer.TreeConfigProducer;
 import com.yahoo.config.model.producer.AbstractConfigProducerRoot;
 import com.yahoo.vespa.config.content.FleetcontrollerConfig;
 import com.yahoo.vespa.model.VespaModel;
@@ -16,7 +16,7 @@ import org.w3c.dom.Element;
  *
  * TODO: Author
  */
-public class ClusterControllerConfig extends AbstractConfigProducer<ClusterControllerConfig> implements FleetcontrollerConfig.Producer {
+public class ClusterControllerConfig extends TreeConfigProducer<ClusterControllerConfig> implements FleetcontrollerConfig.Producer {
 
     public static class Builder extends VespaDomBuilder.DomConfigProducerBuilder<ClusterControllerConfig> {
         private final String clusterName;
@@ -30,7 +30,7 @@ public class ClusterControllerConfig extends AbstractConfigProducer<ClusterContr
         }
 
         @Override
-        protected ClusterControllerConfig doBuild(DeployState deployState, AbstractConfigProducer<?> ancestor, Element producerSpec) {
+        protected ClusterControllerConfig doBuild(DeployState deployState, TreeConfigProducer<?> ancestor, Element producerSpec) {
             ModelElement tuning = null;
 
             ModelElement clusterTuning = clusterElement.child("tuning");
@@ -75,7 +75,7 @@ public class ClusterControllerConfig extends AbstractConfigProducer<ClusterContr
     private final ResourceLimits resourceLimits;
 
     // TODO refactor; too many args
-    private ClusterControllerConfig(AbstractConfigProducer<?> parent,
+    private ClusterControllerConfig(TreeConfigProducer<?> parent,
                                     String clusterName,
                                     Duration initProgressTime,
                                     Duration transitionTime,

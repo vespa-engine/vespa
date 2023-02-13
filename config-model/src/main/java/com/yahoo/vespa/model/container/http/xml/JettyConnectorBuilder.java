@@ -4,7 +4,7 @@ package com.yahoo.vespa.model.container.http.xml;
 import com.yahoo.component.ComponentId;
 import com.yahoo.config.model.builder.xml.XmlHelper;
 import com.yahoo.config.model.deploy.DeployState;
-import com.yahoo.config.model.producer.AbstractConfigProducer;
+import com.yahoo.config.model.producer.TreeConfigProducer;
 import com.yahoo.text.XML;
 import com.yahoo.vespa.model.builder.xml.dom.ModelElement;
 import com.yahoo.vespa.model.builder.xml.dom.VespaDomBuilder;
@@ -26,7 +26,7 @@ import java.util.Optional;
 public class JettyConnectorBuilder extends VespaDomBuilder.DomConfigProducerBuilder<ConnectorFactory>  {
 
     @Override
-    protected ConnectorFactory doBuild(DeployState deployState, AbstractConfigProducer<?> ancestor, Element serverSpec) {
+    protected ConnectorFactory doBuild(DeployState deployState, TreeConfigProducer<?> ancestor, Element serverSpec) {
         String name = XmlHelper.getIdString(serverSpec);
         int port = HttpBuilder.readPort(new ModelElement(serverSpec), deployState.isHosted());
         ConnectorFactory.Builder builder = new ConnectorFactory.Builder(name, port);

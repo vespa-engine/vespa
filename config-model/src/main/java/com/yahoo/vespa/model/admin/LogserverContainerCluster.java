@@ -2,7 +2,7 @@
 package com.yahoo.vespa.model.admin;
 
 import com.yahoo.config.model.deploy.DeployState;
-import com.yahoo.config.model.producer.AbstractConfigProducer;
+import com.yahoo.config.model.producer.TreeConfigProducer;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.search.config.QrStartConfig;
 import com.yahoo.vespa.model.container.ContainerCluster;
@@ -16,7 +16,7 @@ import java.util.Optional;
  */
 public class LogserverContainerCluster extends ContainerCluster<LogserverContainer> {
 
-    public LogserverContainerCluster(AbstractConfigProducer<?> parent, String name, DeployState deployState) {
+    public LogserverContainerCluster(TreeConfigProducer<?> parent, String name, DeployState deployState) {
         super(parent, name, name, deployState, true);
 
         addDefaultHandlersWithVip();

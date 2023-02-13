@@ -4,7 +4,7 @@ package com.yahoo.config.model;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.deploy.DeployState;
-import com.yahoo.config.model.producer.AbstractConfigProducer;
+import com.yahoo.config.model.producer.TreeConfigProducer;
 import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.config.model.test.MockRoot;
 import org.junit.jupiter.api.Test;
@@ -34,7 +34,7 @@ public class ConfigModelContextTest {
         ctx = ConfigModelContext.create(root.getDeployState(), null, null, root, id);
         assertEquals(id, ctx.getProducerId());
         assertEquals(root, ctx.getParentProducer());
-        AbstractConfigProducer newRoot = new MockRoot("bar");
+        TreeConfigProducer newRoot = new MockRoot("bar");
         ctx = ctx.withParent(newRoot);
         assertEquals(id, ctx.getProducerId());
         assertNotEquals(root, ctx.getParentProducer());

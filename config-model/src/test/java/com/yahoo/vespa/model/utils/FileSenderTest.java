@@ -7,7 +7,7 @@ import com.yahoo.config.ModelReference;
 import com.yahoo.config.UrlReference;
 import com.yahoo.config.application.api.FileRegistry;
 import com.yahoo.config.model.application.provider.BaseDeployLogger;
-import com.yahoo.config.model.producer.AbstractConfigProducer;
+import com.yahoo.config.model.producer.TreeConfigProducer;
 import com.yahoo.config.model.producer.UserConfigRepo;
 import com.yahoo.config.model.test.MockRoot;
 import com.yahoo.vespa.config.ConfigDefinition;
@@ -250,7 +250,7 @@ public class FileSenderTest {
 
 
     private static class TestService extends AbstractService {
-        public TestService(AbstractConfigProducer<?> parent, String name) {
+        public TestService(TreeConfigProducer<?> parent, String name) {
             super(parent, name);
         }
 

@@ -2,7 +2,7 @@
 package com.yahoo.vespa.model.test;
 
 import com.yahoo.test.StandardConfig.Builder;
-import com.yahoo.config.model.producer.AbstractConfigProducer;
+import com.yahoo.config.model.producer.TreeConfigProducer;
 import com.yahoo.vespa.model.AbstractService;
 import com.yahoo.vespa.model.PortAllocBridge;
 import org.w3c.dom.Element;
@@ -21,7 +21,7 @@ public class ParentService extends AbstractService implements com.yahoo.test.Sta
      * @param name       Service name
      * @param config     The xml config Element for this Service
      */
-    public ParentService(AbstractConfigProducer parent, String name,
+    public ParentService(TreeConfigProducer parent, String name,
                          Element config)
     {
         super(parent, name);

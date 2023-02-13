@@ -4,7 +4,7 @@ package com.yahoo.vespa.model.builder.xml.dom;
 import com.yahoo.config.model.ConfigModelContext.ApplicationType;
 import com.yahoo.config.model.api.ConfigServerSpec;
 import com.yahoo.config.model.deploy.DeployState;
-import com.yahoo.config.model.producer.AbstractConfigProducer;
+import com.yahoo.config.model.producer.TreeConfigProducer;
 import com.yahoo.container.logging.LevelsModSpec;
 import com.yahoo.text.XML;
 import com.yahoo.vespa.model.Host;
@@ -47,7 +47,7 @@ public abstract class DomAdminBuilderBase extends VespaDomBuilder.DomConfigProdu
         this.configServerSpecs = configServerSpecs;
     }
 
-    List<Configserver> getConfigServersFromSpec(DeployState deployState, AbstractConfigProducer<?> parent) {
+    List<Configserver> getConfigServersFromSpec(DeployState deployState, TreeConfigProducer<?> parent) {
         List<Configserver> configservers = new ArrayList<>();
         for (ConfigServerSpec spec : configServerSpecs) {
             HostSystem hostSystem = parent.hostSystem();
@@ -63,7 +63,7 @@ public abstract class DomAdminBuilderBase extends VespaDomBuilder.DomConfigProdu
     }
 
     @Override
-    protected Admin doBuild(DeployState deployState, AbstractConfigProducer<?> parent, Element adminElement) {
+    protected Admin doBuild(DeployState deployState, TreeConfigProducer<?> parent, Element adminElement) {
         Monitoring monitoring = getMonitoring(XML.getChild(adminElement,"monitoring"), deployState.isHosted());
         Metrics metrics = new MetricsBuilder(applicationType, PredefinedMetricSets.get())
                                   .buildMetrics(XML.getChild(adminElement, "metrics"));

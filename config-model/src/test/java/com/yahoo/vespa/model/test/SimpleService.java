@@ -2,7 +2,7 @@
 package com.yahoo.vespa.model.test;
 
 import com.yahoo.test.StandardConfig.Builder;
-import com.yahoo.config.model.producer.AbstractConfigProducer;
+import com.yahoo.config.model.producer.TreeConfigProducer;
 import com.yahoo.vespa.model.AbstractService;
 import com.yahoo.vespa.model.PortAllocBridge;
 
@@ -23,7 +23,7 @@ public class SimpleService extends AbstractService implements com.yahoo.test.Sta
      * @param parent     The parent ConfigProducer.
      * @param name       Service name
      */
-    public SimpleService(AbstractConfigProducer parent, String name) {
+    public SimpleService(TreeConfigProducer parent, String name) {
         super(parent, name);
         portsMeta.on(0).tag("base")
             .on(1).tag("base")

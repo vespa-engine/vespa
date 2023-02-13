@@ -4,7 +4,7 @@ package com.yahoo.vespa.model.container.component;
 import com.yahoo.collections.Pair;
 import com.yahoo.component.ComponentId;
 import com.yahoo.component.ComponentSpecification;
-import com.yahoo.config.model.producer.AbstractConfigProducer;
+import com.yahoo.config.model.producer.TreeConfigProducer;
 import com.yahoo.osgi.provider.model.ComponentModel;
 
 import java.util.HashSet;
@@ -15,8 +15,8 @@ import java.util.Set;
  * @author gjoranv
  * @author Tony Vaagenes
  */
-public class Component<CHILD extends AbstractConfigProducer<?>, MODEL extends ComponentModel>
-        extends AbstractConfigProducer<CHILD> implements Comparable<Component<?, ?>> {
+public class Component<CHILD extends TreeConfigProducer<?>, MODEL extends ComponentModel>
+        extends TreeConfigProducer<CHILD> implements Comparable<Component<?, ?>> {
 
     public final MODEL model;
     final Set<Pair<String, Component>> injectedComponents = new LinkedHashSet<>();

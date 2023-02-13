@@ -10,7 +10,7 @@ import com.yahoo.config.docproc.DocprocConfig;
 import com.yahoo.config.docproc.SchemamappingConfig;
 import com.yahoo.config.model.ApplicationConfigProducerRoot;
 import com.yahoo.config.model.deploy.DeployState;
-import com.yahoo.config.model.producer.AbstractConfigProducer;
+import com.yahoo.config.model.producer.TreeConfigProducer;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.container.ComponentsConfig;
@@ -83,7 +83,7 @@ import static com.yahoo.vespa.model.container.component.chain.ProcessingHandler.
  * @author Tony Vaagenes
  */
 public abstract class ContainerCluster<CONTAINER extends Container>
-        extends AbstractConfigProducer<AbstractConfigProducer<?>>
+        extends TreeConfigProducer<TreeConfigProducer<?>>
         implements
         ComponentsConfig.Producer,
         JdiscBindingsConfig.Producer,
@@ -166,10 +166,10 @@ public abstract class ContainerCluster<CONTAINER extends Container>
     private boolean clientsLegacyMode;
     private List<Client> clients = List.of();
 
-    public ContainerCluster(AbstractConfigProducer<?> parent, String configSubId, String clusterId, DeployState deployState, boolean zooKeeperLocalhostAffinity) {
+    public ContainerCluster(TreeConfigProducer<?> parent, String configSubId, String clusterId, DeployState deployState, boolean zooKeeperLocalhostAffinity) {
         this(parent, configSubId, clusterId, deployState, zooKeeperLocalhostAffinity, 1);
     }
-    public ContainerCluster(AbstractConfigProducer<?> parent, String configSubId, String clusterId, DeployState deployState, boolean zooKeeperLocalhostAffinity, int defaultPoolNumThreads) {
+    public ContainerCluster(TreeConfigProducer<?> parent, String configSubId, String clusterId, DeployState deployState, boolean zooKeeperLocalhostAffinity, int defaultPoolNumThreads) {
         super(parent, configSubId);
         this.name = clusterId;
         this.isHostedVespa = stateIsHosted(deployState);
@@ -422,13 +422,13 @@ public abstract class ContainerCluster<CONTAINER extends Container>
         return Collections.unmodifiableCollection(allComponents);
     }
 
-    private void recursivelyFindAllComponents(Collection<Component<?, ?>> allComponents, AbstractConfigProducer<?> current) {
-        for (AbstractConfigProducer<?> child: current.getChildren().values()) {
+    private void recursivelyFindAllComponents(Collection<Component<?, ?>> allComponents, TreeConfigProducer<?> current) {
+        for (var child: current.getChildren().values()) {
             if (child instanceof Component)
                 allComponents.add((Component<?, ?>) child);
 
-            if (!(child instanceof Container))
-                recursivelyFindAllComponents(allComponents, child);
+            if (child instanceof TreeConfigProducer t && !(child instanceof Container))
+                recursivelyFindAllComponents(allComponents, t);
         }
     }
 

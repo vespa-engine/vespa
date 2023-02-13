@@ -2,7 +2,7 @@
 package com.yahoo.vespa.model.builder.xml.dom.chains.docproc;
 
 import com.yahoo.config.model.deploy.DeployState;
-import com.yahoo.config.model.producer.AbstractConfigProducer;
+import com.yahoo.config.model.producer.TreeConfigProducer;
 import com.yahoo.vespa.model.builder.xml.dom.chains.ComponentsBuilder.ComponentType;
 import com.yahoo.vespa.model.builder.xml.dom.chains.DomChainsBuilder;
 import com.yahoo.vespa.model.container.docproc.DocprocChain;
@@ -24,12 +24,12 @@ public class DomDocprocChainsBuilder  extends DomChainsBuilder<DocumentProcessor
     }
 
     @Override
-    protected DocprocChains newChainsInstance(AbstractConfigProducer<?> parent) {
+    protected DocprocChains newChainsInstance(TreeConfigProducer<?> parent) {
         return new DocprocChains(parent, "docprocchains");
     }
 
     @Override
-    protected DocprocChainsBuilder readChains(DeployState deployState, AbstractConfigProducer<?> ancestor, List<Element> docprocChainsElements,
+    protected DocprocChainsBuilder readChains(DeployState deployState, TreeConfigProducer<?> ancestor, List<Element> docprocChainsElements,
                                               Map<String, ComponentType<?>> outerComponentTypeByComponentName) {
         return new DocprocChainsBuilder(deployState, ancestor, docprocChainsElements, outerComponentTypeByComponentName);
     }

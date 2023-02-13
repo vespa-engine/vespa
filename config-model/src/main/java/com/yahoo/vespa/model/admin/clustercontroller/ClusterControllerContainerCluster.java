@@ -3,7 +3,7 @@ package com.yahoo.vespa.model.admin.clustercontroller;
 
 import com.yahoo.config.model.api.Reindexing;
 import com.yahoo.config.model.deploy.DeployState;
-import com.yahoo.config.model.producer.AbstractConfigProducer;
+import com.yahoo.config.model.producer.TreeConfigProducer;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.search.config.QrStartConfig;
 import com.yahoo.vespa.model.container.ContainerCluster;
@@ -27,7 +27,7 @@ public class ClusterControllerContainerCluster extends ContainerCluster<ClusterC
     private final ReindexingContext reindexingContext;
 
     public ClusterControllerContainerCluster(
-            AbstractConfigProducer<?> parent, String subId, String name, DeployState deployState) {
+            TreeConfigProducer<?> parent, String subId, String name, DeployState deployState) {
         super(parent, subId, name, deployState, false);
         addDefaultHandlersWithVip();
         this.reindexingContext = createReindexingContext(deployState);

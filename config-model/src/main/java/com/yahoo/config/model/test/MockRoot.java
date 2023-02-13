@@ -6,7 +6,8 @@ import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.ConfigModelRepo;
 import com.yahoo.config.model.deploy.DeployState;
-import com.yahoo.config.model.producer.AbstractConfigProducer;
+import com.yahoo.config.model.producer.AnyConfigProducer;
+import com.yahoo.config.model.producer.TreeConfigProducer;
 import com.yahoo.config.model.producer.AbstractConfigProducerRoot;
 import com.yahoo.vespa.model.ConfigProducer;
 import com.yahoo.vespa.model.HostSystem;
@@ -95,7 +96,7 @@ public class MockRoot extends AbstractConfigProducerRoot {
 
     public HostSystem hostSystem() { return hostSystem; }
 
-    public void addDescendant(String configId, AbstractConfigProducer<?> descendant) {
+    public void addDescendant(String configId, AnyConfigProducer descendant) {
         if (id2producer.containsKey(configId)) {
             throw new RuntimeException
                     ("Config ID '" + configId + "' cannot be reserved by an instance of class '" +
@@ -106,7 +107,7 @@ public class MockRoot extends AbstractConfigProducerRoot {
     }
 
     @Override
-    public void addChild(AbstractConfigProducer<?> abstractConfigProducer) {
+    public void addChild(TreeConfigProducer<?> abstractConfigProducer) {
         super.addChild(abstractConfigProducer);
     }
 

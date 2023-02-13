@@ -4,7 +4,8 @@ package com.yahoo.vespa.model.container;
 import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.api.container.ContainerServiceType;
 import com.yahoo.config.model.deploy.DeployState;
-import com.yahoo.config.model.producer.AbstractConfigProducer;
+import com.yahoo.config.model.producer.AnyConfigProducer;
+import com.yahoo.config.model.producer.TreeConfigProducer;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.container.ComponentsConfig;
 import com.yahoo.container.QrConfig;
@@ -62,7 +63,7 @@ public abstract class Container extends AbstractService implements
     /** The cluster this container belongs to, or null if it is not added to any cluster */
     private ContainerCluster<?> owner = null;
 
-    protected final AbstractConfigProducer<?> parent;
+    protected final TreeConfigProducer<?> parent;
     private final String name;
     private boolean requireSpecificPorts = true;
 
@@ -81,11 +82,11 @@ public abstract class Container extends AbstractService implements
 
     private final JettyHttpServer defaultHttpServer;
 
-    protected Container(AbstractConfigProducer<?> parent, String name, int index, DeployState deployState) {
+    protected Container(TreeConfigProducer<?> parent, String name, int index, DeployState deployState) {
         this(parent, name, false, index, deployState);
     }
 
-    protected Container(AbstractConfigProducer<?> parent, String name, boolean retired, int index, DeployState deployState) {
+    protected Container(TreeConfigProducer<?> parent, String name, boolean retired, int index, DeployState deployState) {
         super(parent, name);
         this.name = name;
         this.parent = parent;
@@ -345,18 +346,20 @@ public abstract class Container extends AbstractService implements
         return Collections.unmodifiableCollection(allComponents);
     }
 
-    private void addAllEnabledComponents(Collection<Component<?, ?>> allComponents, AbstractConfigProducer<?> current) {
-        for (AbstractConfigProducer<?> child: current.getChildren().values()) {
+    private void addAllEnabledComponents(Collection<Component<?, ?>> allComponents, TreeConfigProducer<?> current) {
+        for (var child: current.getChildren().values()) {
             if ( ! httpServerEnabled() && isHttpServer(child)) continue;
 
             if (child instanceof Component)
                 allComponents.add((Component<?, ?>) child);
 
-            addAllEnabledComponents(allComponents, child);
+            if (child instanceof TreeConfigProducer t) {
+                addAllEnabledComponents(allComponents, t);
+            }
         }
     }
 
-    private boolean isHttpServer(AbstractConfigProducer<?> component) {
+    private boolean isHttpServer(AnyConfigProducer component) {
         return component instanceof JettyHttpServer;
     }
 
@@ -400,7 +403,7 @@ public abstract class Container extends AbstractService implements
         return Optional.ofNullable(containerClusterOrNull(parent));
     }
 
-    private static ContainerCluster containerClusterOrNull(AbstractConfigProducer producer) {
+    private static ContainerCluster containerClusterOrNull(TreeConfigProducer producer) {
         return producer instanceof ContainerCluster<?> ? (ContainerCluster<?>) producer : null;
     }
 
