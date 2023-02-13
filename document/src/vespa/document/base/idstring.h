@@ -25,40 +25,40 @@ public:
     explicit IdString(vespalib::stringref ns);
     IdString();
 
-    vespalib::stringref getNamespace() const { return getComponent(0); }
-    bool hasDocType() const { return size(1) != 0; }
-    vespalib::stringref getDocType() const  { return getComponent(1); }
-    LocationType getLocation() const  { return _location; }
-    bool hasNumber() const  { return _has_number; }
-    uint64_t getNumber() const  { return _location; }
-    bool hasGroup() const  { return _groupOffset != 0; }
-    vespalib::stringref getGroup() const  {
-        return vespalib::stringref(getRawId().c_str() + _groupOffset, offset(3) - _groupOffset - 1);
+    [[nodiscard]] vespalib::stringref getNamespace() const { return getComponent(0); }
+    [[nodiscard]] bool hasDocType() const { return size(1) != 0; }
+    [[nodiscard]] vespalib::stringref getDocType() const  { return getComponent(1); }
+    [[nodiscard]] LocationType getLocation() const  { return _location; }
+    [[nodiscard]] bool hasNumber() const  { return _has_number; }
+    [[nodiscard]] uint64_t getNumber() const  { return _location; }
+    [[nodiscard]] bool hasGroup() const  { return _groupOffset != 0; }
+    [[nodiscard]] vespalib::stringref getGroup() const  {
+        return {getRawId().c_str() + _groupOffset, size_t(offset(3) - _groupOffset - 1)};
     }
-    vespalib::stringref getNamespaceSpecific() const {
-        return vespalib::stringref(_rawId.c_str() + offset(3), _rawId.size() - offset(3));
+    [[nodiscard]] vespalib::stringref getNamespaceSpecific() const {
+        return {_rawId.c_str() + offset(3), _rawId.size() - offset(3)};
     }
 
     bool operator==(const IdString& other) const
         { return toString() == other.toString(); }
 
-    const vespalib::string & toString() const { return _rawId; }
+    [[nodiscard]] const vespalib::string & toString() const { return _rawId; }
 
 private:
-    uint16_t offset(uint32_t index) const { return _offsets[index]; }
-    uint16_t size(uint32_t index) const { return std::max(0, int(offset(index+1)) - int(offset(index)) - 1); }
-    vespalib::stringref getComponent(size_t index) const { return vespalib::stringref(_rawId.c_str() + offset(index), size(index)); }
-    const vespalib::string & getRawId() const { return _rawId; }
+    [[nodiscard]] uint16_t offset(uint32_t index) const { return _offsets[index]; }
+    [[nodiscard]] uint16_t size(uint32_t index) const { return std::max(0, int(offset(index+1)) - int(offset(index)) - 1); }
+    [[nodiscard]] vespalib::stringref getComponent(size_t index) const { return {_rawId.c_str() + offset(index), size(index)}; }
+    [[nodiscard]] const vespalib::string & getRawId() const { return _rawId; }
 
     class Offsets {
     public:
-        Offsets() = default;
-        uint16_t compute(vespalib::stringref id);
+        Offsets() noexcept = default;
+        VESPA_DLL_LOCAL uint16_t compute(vespalib::stringref id);
         uint16_t operator [] (size_t i) const { return _offsets[i]; }
         static const Offsets DefaultID;
     private:
         static constexpr uint32_t MAX_COMPONENTS = 4;
-        Offsets(vespalib::stringref id);
+        VESPA_DLL_LOCAL explicit Offsets(vespalib::stringref id) noexcept;
         uint16_t _offsets[MAX_COMPONENTS];
     };
 
