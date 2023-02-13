@@ -3,13 +3,13 @@ package com.yahoo.vespa.hosted.provision.provisioning;
 
 import ai.vespa.http.DomainName;
 import com.google.common.collect.Iterators;
+import com.yahoo.config.provision.IntRange;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostSpec;
-import com.yahoo.config.provision.IntRange;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.ZoneEndpoint;
@@ -42,6 +42,7 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertThrows;
@@ -56,7 +57,7 @@ public class LoadBalancerProvisionerTest {
     private final ApplicationId app1 = ApplicationId.from("tenant1", "application1", "default");
     private final ApplicationId app2 = ApplicationId.from("tenant2", "application2", "default");
     private final ApplicationId infraApp1 = ApplicationId.from("vespa", "tenant-host", "default");
-    private final NodeResources nodeResources = new NodeResources(2, 4, 10, 0.3);
+    private final NodeResources nodeResources = new NodeResources(1, 4, 10, 0.3);
 
     private final InMemoryFlagSource flagSource = new InMemoryFlagSource();
     private final ProvisioningTester tester = new ProvisioningTester.Builder().flagSource(flagSource).build();

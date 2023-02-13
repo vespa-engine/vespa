@@ -1,13 +1,15 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.autoscale;
 
+import com.yahoo.config.provision.IntRange;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
-import com.yahoo.config.provision.IntRange;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeResources.DiskSpeed;
+import static com.yahoo.config.provision.NodeResources.DiskSpeed.fast;
+import static com.yahoo.config.provision.NodeResources.DiskSpeed.slow;
 import com.yahoo.config.provision.NodeResources.StorageType;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.Zone;
@@ -17,8 +19,6 @@ import org.junit.Test;
 import java.time.Duration;
 import java.util.Optional;
 
-import static com.yahoo.config.provision.NodeResources.DiskSpeed.fast;
-import static com.yahoo.config.provision.NodeResources.DiskSpeed.slow;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -773,7 +773,7 @@ public class AutoscalingTest {
 
     @Test
     public void test_changing_exclusivity() {
-        var min = new ClusterResources( 2, 1, new NodeResources(  3,    4,  100, 1));
+        var min = new ClusterResources( 2, 1, new NodeResources(  1,    4,  100, 1));
         var max = new ClusterResources(20, 1, new NodeResources(100, 1000, 1000, 1));
         var fixture = AutoscalingTester.fixture()
                                        .awsProdSetup(true)
@@ -782,20 +782,20 @@ public class AutoscalingTest {
                                        .initialResources(Optional.empty())
                                        .build();
         fixture.tester().assertResources("Initial deployment at minimum",
-                                         2, 1, 4, 8, 100,
+                                         2, 1, 2, 4, 100,
                                          fixture.currentResources().advertisedResources());
 
         fixture.tester().deploy(fixture.applicationId(), clusterSpec(false), fixture.capacity());
         fixture.loader().applyLoad(new Load(0.1, 0.1, 0.1), 100);
         fixture.tester().assertResources("With non-exclusive nodes, a better solution is " +
-                                         "50% more nodes with less cpu and memory",
-                                         3, 1, 3, 4, 100.0,
+                                         "50% more nodes with half the cpu",
+                                         3, 1, 1.1, 4, 100.0,
                                          fixture.autoscale());
 
         fixture.tester().deploy(fixture.applicationId(), clusterSpec(true), fixture.capacity());
         fixture.loader().applyLoad(new Load(0.1, 0.1, 0.1), 100);
         fixture.tester().assertResources("Reverts to the initial resources",
-                                         2, 1, 4, 8, 100,
+                                         2, 1, 2, 4, 100,
                                          fixture.currentResources().advertisedResources());
     }
 

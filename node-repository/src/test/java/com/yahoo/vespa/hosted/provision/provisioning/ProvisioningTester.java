@@ -129,7 +129,7 @@ public class ProvisioningTester {
     public static FlavorsConfig createConfig() {
         FlavorConfigBuilder b = new FlavorConfigBuilder();
         b.addFlavor("default", 2., 40., 100, 10, Flavor.Type.BARE_METAL).cost(3);
-        b.addFlavor("small", 2., 20., 50, 5, Flavor.Type.BARE_METAL).cost(2);
+        b.addFlavor("small", 1., 20., 50, 5, Flavor.Type.BARE_METAL).cost(2);
         b.addFlavor("dockerSmall", 1., 10., 10, 1, Flavor.Type.DOCKER_CONTAINER).cost(1);
         b.addFlavor("dockerLarge", 2., 10., 20, 1, Flavor.Type.DOCKER_CONTAINER).cost(3);
         b.addFlavor("v-4-8-100", 4., 80., 100, 10, Flavor.Type.VIRTUAL_MACHINE).cost(4);
