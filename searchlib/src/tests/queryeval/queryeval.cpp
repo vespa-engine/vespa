@@ -85,7 +85,7 @@ std::unique_ptr<sourceselector::Iterator> selector() {
 //-----------------------------------------------------------------------------
 
 void testMultiSearch(SearchIterator & search) {
-    MultiSearch & ms = dynamic_cast<MultiSearch &>(search);
+    auto & ms = dynamic_cast<MultiSearch &>(search);
     ms.initRange(3, 309);
     EXPECT_EQUAL(2u, ms.getDocId());
     EXPECT_EQUAL(309u, ms.getEndId());
@@ -123,12 +123,12 @@ TEST("test that strict AND.andWith steals filter and places it correctly based o
     ch.emplace_back(new TrueSearch(tfmd));
     ch.emplace_back(new TrueSearch(tfmd));
     SearchIterator::UP search(AndSearch::create({ch[0], ch[1]}, true));
-    static_cast<AndSearch &>(*search).estimate(7);
+    dynamic_cast<AndSearch &>(*search).estimate(7);
     auto filter = std::make_unique<TrueSearch>(tfmd);
     SearchIterator * filterP = filter.get();
 
     EXPECT_TRUE(nullptr == search->andWith(std::move(filter), 8).get());
-    const MultiSearch::Children & andChildren = static_cast<MultiSearch &>(*search).getChildren();
+    const auto & andChildren = dynamic_cast<MultiSearch &>(*search).getChildren();
     EXPECT_EQUAL(3u, andChildren.size());
     EXPECT_EQUAL(ch[0], andChildren[0].get());
     EXPECT_EQUAL(filterP, andChildren[1].get());
@@ -147,8 +147,8 @@ TEST("test that strict AND.andWith steals filter and places it correctly based o
 class NonStrictTrueSearch : public TrueSearch
 {
 public:
-    NonStrictTrueSearch(TermFieldMatchData & tfmd) : TrueSearch(tfmd) { }
-    Trinary is_strict() const override { return Trinary::False; }
+    explicit NonStrictTrueSearch(TermFieldMatchData & tfmd) : TrueSearch(tfmd) { }
+    [[nodiscard]] Trinary is_strict() const override { return Trinary::False; }
 };
 
 TEST("test that strict AND.andWith does not place non-strict iterator first") {
@@ -157,11 +157,11 @@ TEST("test that strict AND.andWith does not place non-strict iterator first") {
     ch.emplace_back(new TrueSearch(tfmd));
     ch.emplace_back(new TrueSearch(tfmd));
     SearchIterator::UP search(AndSearch::create({ch[0], ch[1]}, true));
-    static_cast<AndSearch &>(*search).estimate(7);
+    dynamic_cast<AndSearch &>(*search).estimate(7);
     auto filter = std::make_unique<NonStrictTrueSearch>(tfmd);
     SearchIterator * filterP = filter.get();
     EXPECT_TRUE(nullptr == search->andWith(std::move(filter), 6).get());
-    const MultiSearch::Children & andChildren = static_cast<MultiSearch &>(*search).getChildren();
+    const auto & andChildren = dynamic_cast<MultiSearch &>(*search).getChildren();
     EXPECT_EQUAL(3u, andChildren.size());
     EXPECT_EQUAL(ch[0], andChildren[0].get());
     EXPECT_EQUAL(filterP, andChildren[1].get());
@@ -288,7 +288,7 @@ TEST("testOr") {
 class TestInsertRemoveSearch : public MultiSearch
 {
 public:
-    TestInsertRemoveSearch(ChildrenIterators children) :
+    explicit TestInsertRemoveSearch(ChildrenIterators children) :
         MultiSearch(std::move(children)),
         _accumRemove(0),
         _accumInsert(0)
@@ -338,7 +338,7 @@ TEST("testMultiSearch") {
 class DummySingleValueBitNumericAttributeBlueprint : public SimpleLeafBlueprint
 {
 public:
-    DummySingleValueBitNumericAttributeBlueprint(const SimpleResult & result) :
+    explicit DummySingleValueBitNumericAttributeBlueprint(const SimpleResult & result) :
         SimpleLeafBlueprint(FieldSpecBaseList()),
         _a("a", search::GrowStrategy(), false),
         _sc(),
@@ -601,14 +601,7 @@ getExpectedSlime() {
 }
 
 TEST("testDump") {
-#ifdef __clang__
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wshadow"
-#endif
-    using Source = SourceBlenderSearch::Child;
-#ifdef __clang__
-#pragma clang diagnostic pop
-#endif
+    using SBChild = SourceBlenderSearch::Child;
 
     SearchIterator::UP search = AndSearch::create( {
                 AndNotSearch::create(search2("+", "-"), true),
@@ -618,9 +611,9 @@ TEST("testDump") {
                 new ONearSearch(search2("onear_a", "onear_b"), TermFieldMatchDataArray(), 10, true),
                 OrSearch::create(search2("or_a", "or_b"), false),
                 RankSearch::create(search2("rank_a", "rank_b"),false),
-                SourceBlenderSearch::create(selector(), Collect<Source, SourceBlenderSearch::Children>()
-                                            .add(Source(simple("blend_a"), 2))
-                                            .add(Source(simple("blend_b"), 4)),
+                SourceBlenderSearch::create(selector(), Collect<SBChild, SourceBlenderSearch::Children>()
+                                            .add(SBChild(simple("blend_a"), 2))
+                                            .add(SBChild(simple("blend_b"), 4)),
                                             true) }, true);
     vespalib::string sas = search->asString();
     EXPECT_TRUE(sas.size() > 50);
