@@ -50,7 +50,7 @@ TEST("stop before start") {
         thread.start();
         thread.join();
     }
-    EXPECT_TRUE(agent.started);
+    EXPECT_TRUE(!agent.started);
     EXPECT_EQUAL(0, agent.loopCnt);
 }
 
