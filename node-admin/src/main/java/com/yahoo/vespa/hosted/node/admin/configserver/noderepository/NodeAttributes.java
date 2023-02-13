@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.node.admin.configserver.noderepository;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.DockerImage;
+import com.yahoo.config.provision.WireguardKey;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.reports.BaseReport;
 
 import java.time.Instant;
@@ -32,6 +33,7 @@ public class NodeAttributes {
     private Optional<Version> currentOsVersion = Optional.empty();
     private Optional<Instant> currentFirmwareCheck = Optional.empty();
     private List<TrustStoreItem> trustStore = List.of();
+    private Optional<WireguardKey> wireguardPubkey = Optional.empty();
     /** The list of reports to patch. A null value is used to remove the report. */
     private Map<String, JsonNode> reports = new TreeMap<>();
 
@@ -73,6 +75,16 @@ public class NodeAttributes {
 
     public NodeAttributes withCurrentFirmwareCheck(Instant currentFirmwareCheck) {
         this.currentFirmwareCheck = Optional.of(currentFirmwareCheck);
+        return this;
+    }
+
+    public NodeAttributes withTrustStore(List<TrustStoreItem> trustStore) {
+        this.trustStore = List.copyOf(trustStore);
+        return this;
+    }
+
+    public NodeAttributes withWireguardPubkey(WireguardKey wireguardPubkey) {
+        this.wireguardPubkey = Optional.of(wireguardPubkey);
         return this;
     }
 
@@ -119,6 +131,12 @@ public class NodeAttributes {
         return currentFirmwareCheck;
     }
 
+    public List<TrustStoreItem> getTrustStore() {
+        return trustStore;
+    }
+
+    public Optional<WireguardKey> getWireguardPubkey() { return wireguardPubkey; }
+
     public Map<String, JsonNode> getReports() {
         return reports;
     }
@@ -130,7 +148,7 @@ public class NodeAttributes {
     @Override
     public int hashCode() {
         return Objects.hash(hostId, restartGeneration, rebootGeneration, dockerImage, vespaVersion, currentOsVersion,
-                            currentFirmwareCheck, reports);
+                            currentFirmwareCheck, trustStore, wireguardPubkey, reports);
     }
 
     public boolean isEmpty() {
@@ -150,17 +168,9 @@ public class NodeAttributes {
                 && Objects.equals(vespaVersion, other.vespaVersion)
                 && Objects.equals(currentOsVersion, other.currentOsVersion)
                 && Objects.equals(currentFirmwareCheck, other.currentFirmwareCheck)
-                && Objects.equals(reports, other.reports)
-                && Objects.equals(trustStore, other.trustStore);
-    }
-
-    public NodeAttributes withTrustStore(List<TrustStoreItem> trustStore) {
-        this.trustStore = List.copyOf(trustStore);
-        return this;
-    }
-
-    public List<TrustStoreItem> getTrustStore() {
-        return trustStore;
+                && Objects.equals(trustStore, other.trustStore)
+                && Objects.equals(wireguardPubkey, other.wireguardPubkey)
+                && Objects.equals(reports, other.reports);
     }
 
     @Override
@@ -172,8 +182,9 @@ public class NodeAttributes {
                          vespaVersion.map(ver -> "vespaVersion=" + ver.toFullString()),
                          currentOsVersion.map(ver -> "currentOsVersion=" + ver.toFullString()),
                          currentFirmwareCheck.map(at -> "currentFirmwareCheck=" + at),
-                         Optional.ofNullable(reports.isEmpty() ? null : "reports=" + reports),
-                         Optional.ofNullable(trustStore.isEmpty() ? null : "trustStore=" + trustStore))
+                         Optional.ofNullable(trustStore.isEmpty() ? null : "trustStore=" + trustStore),
+                         Optional.ofNullable(wireguardPubkey.isEmpty() ? null : "wireguardPubkey=" + wireguardPubkey),
+                         Optional.ofNullable(reports.isEmpty() ? null : "reports=" + reports))
                 .filter(Optional::isPresent)
                 .map(Optional::get)
                 .collect(Collectors.joining(", ", "{", "}"));
