@@ -5,8 +5,8 @@
 #include <vespa/document/bucket/bucketid.h>
 #include <vespa/vespalib/util/md5.h>
 #include <vespa/vespalib/util/stringfmt.h>
-#include <cerrno>
 #include <cstring>
+#include <charconv>
 
 using vespalib::string;
 using vespalib::stringref;
@@ -114,15 +114,14 @@ union LocationUnion {
 };
 
 uint64_t
-parseNumber(stringref number) {
-    char* errPos = nullptr;
-    errno = 0;
-    uint64_t n = strtoul(number.data(), &errPos, 10);
-    if (*errPos) [[unlikely]]{
-        throw IdParseException("'n'-value must be a 64-bit number. It was " + number, VESPA_STRLOC);
+parseNumber(stringref s) {
+    uint64_t n(0);
+    auto res = std::from_chars(s.data(), s.data() + s.size(), n, 10);
+    if (res.ptr != s.data() + s.size()) [[unlikely]]{
+        throw IdParseException("'n'-value must be a 64-bit number. It was " + s, VESPA_STRLOC);
     }
-    if (errno == ERANGE) [[unlikely]] {
-        throw IdParseException("'n'-value out of range (" + number + ")", VESPA_STRLOC);
+    if (res.ec == std::errc::result_out_of_range) [[unlikely]] {
+        throw IdParseException("'n'-value out of range (" + s + ")", VESPA_STRLOC);
     }
     return n;
 }
