@@ -7,14 +7,14 @@ namespace vespalib {
 
 template <uint32_t StackSize>
 void
-small_string<StackSize>::append_from_reserved(size_type sz) {
+small_string<StackSize>::append_from_reserved(size_type sz) noexcept {
     assert(size() + sz <= capacity());
     _resize(size() + sz);
 }
 
 template <uint32_t StackSize>
 void
-small_string<StackSize>::_reserveBytes(size_type newBufferSize) {
+small_string<StackSize>::_reserveBytes(size_type newBufferSize) noexcept {
     if (isAllocated()) {
          _buf = (char *) realloc(_buf, newBufferSize);
     } else {
@@ -28,14 +28,14 @@ small_string<StackSize>::_reserveBytes(size_type newBufferSize) {
 
 template <uint32_t StackSize>
 small_string<StackSize>&
-small_string<StackSize>::replace (size_t p1, size_t n1, const small_string& s, size_t p2, size_t n2 ) {
+small_string<StackSize>::replace (size_t p1, size_t n1, const small_string& s, size_t p2, size_t n2 ) noexcept {
     assert(s.size() >= (p2+n2));
     return replace(p1, n1, s.c_str()+p2, n2);
 }
 
 template <uint32_t StackSize>
 small_string<StackSize>&
-small_string<StackSize>::replace (size_t p1, size_t n1, const char *s, size_t n2 ) {
+small_string<StackSize>::replace (size_t p1, size_t n1, const char *s, size_t n2 ) noexcept {
     assert (size() >= (p1 + n1));
     const size_t newSz = n2 + size() - n1;
     if (n1 < n2) {
@@ -50,7 +50,7 @@ small_string<StackSize>::replace (size_t p1, size_t n1, const char *s, size_t n2
 
 template <uint32_t StackSize>
 typename small_string<StackSize>::size_type
-small_string<StackSize>::rfind(const char * s, size_type e) const {
+small_string<StackSize>::rfind(const char * s, size_type e) const noexcept {
     size_type n = strlen(s);
     if (n <= size()) {
         size_type sz = std::min(size()-n, e);
@@ -85,7 +85,7 @@ small_string<StackSize>::assign(const void * s, size_type sz) noexcept {
 }
 
 template <uint32_t StackSize>
-void small_string<StackSize>::assign_slower(const void * s, size_type sz)
+void small_string<StackSize>::assign_slower(const void * s, size_type sz) noexcept
 {   
     reset();
     append(s, sz);
@@ -101,7 +101,7 @@ void small_string<StackSize>::init_slower(const void *s) noexcept
 }
 
 template <uint32_t StackSize>
-void small_string<StackSize>::appendAlloc(const void * s, size_type addSz)
+void small_string<StackSize>::appendAlloc(const void * s, size_type addSz) noexcept
 {   
     size_type newBufferSize = roundUp2inN(_sz+addSz+1);
     char * buf = (char *) malloc(newBufferSize);
@@ -118,7 +118,7 @@ void small_string<StackSize>::appendAlloc(const void * s, size_type addSz)
 
 template <uint32_t StackSize>
 small_string<StackSize> &
-small_string<StackSize>::insert(size_type start, const void * v, size_type sz)
+small_string<StackSize>::insert(size_type start, const void * v, size_type sz) noexcept
 {
     if (start < size()) {
         if ((static_cast<const char *>(v)+sz < c_str()) || (c_str()+size() < v)) {
@@ -143,7 +143,7 @@ small_string<StackSize>::insert(size_type start, const void * v, size_type sz)
 
 template <uint32_t StackSize>
 small_string<StackSize> &
-small_string<StackSize>::append(const void * s, size_type addSz)
+small_string<StackSize>::append(const void * s, size_type addSz) noexcept
 {
     if (needAlloc(addSz)) {
         appendAlloc(s, addSz);
@@ -158,7 +158,7 @@ small_string<StackSize>::append(const void * s, size_type addSz)
 
 template<uint32_t StackSize>
 small_string<StackSize>
-operator + (const small_string<StackSize> & a, const small_string<StackSize> & b)
+operator + (const small_string<StackSize> & a, const small_string<StackSize> & b) noexcept
 {   
     small_string<StackSize> t(a);
     t += b;
@@ -167,7 +167,7 @@ operator + (const small_string<StackSize> & a, const small_string<StackSize> & b
 
 template<uint32_t StackSize>
 small_string<StackSize>
-operator + (const small_string<StackSize> & a, stringref b)
+operator + (const small_string<StackSize> & a, stringref b) noexcept
 {
     small_string<StackSize> t(a);
     t += b;
@@ -176,7 +176,7 @@ operator + (const small_string<StackSize> & a, stringref b)
 
 template<uint32_t StackSize>
 small_string<StackSize>
-operator + (stringref a, const small_string<StackSize> & b)
+operator + (stringref a, const small_string<StackSize> & b) noexcept
 {
     small_string<StackSize> t(a);
     t += b;
@@ -185,7 +185,7 @@ operator + (stringref a, const small_string<StackSize> & b)
 
 template<uint32_t StackSize>
 small_string<StackSize>
-operator + (const small_string<StackSize> & a, const char * b)
+operator + (const small_string<StackSize> & a, const char * b) noexcept
 {
     small_string<StackSize> t(a);
     t += b;
@@ -194,7 +194,7 @@ operator + (const small_string<StackSize> & a, const char * b)
 
 template<uint32_t StackSize>
 small_string<StackSize>
-operator + (const char * a, const small_string<StackSize> & b)
+operator + (const char * a, const small_string<StackSize> & b) noexcept
 {
     small_string<StackSize> t(a);
     t += b;
