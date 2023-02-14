@@ -128,13 +128,12 @@ class SingletonManager {
 
         }
 
-        private static final Instant PENDING = Instant.ofEpochMilli(-1);
+        private static final Instant EMPTY = Instant.ofEpochMilli(-1);
         private static final Instant INVALID = Instant.ofEpochMilli(-2);
-        private static final Instant CLOSING = Instant.ofEpochMilli(-3);
 
         final BlockingDeque<Task> tasks = new LinkedBlockingDeque<>();
         final Deque<SingletonWorker> singletons = new ArrayDeque<>(2);
-        final AtomicReference<Instant> doom = new AtomicReference<>(PENDING);
+        final AtomicReference<Instant> doom = new AtomicReference<>(EMPTY);
         final AtomicBoolean shutdown = new AtomicBoolean();
         final Thread worker;
         final String id;
@@ -162,10 +161,9 @@ class SingletonManager {
                 logger.log(WARNING, "Failed closing " + lock + ", already closed", e);
             }
             catch (Exception e) {
-                logger.log(WARNING, "Failed closing " + lock + ", will retry", e);
-                return;
+                logger.log(WARNING, "Failed closing " + lock + ", will let it expire", e);
             }
-            doom.set(PENDING);
+            doom.set(EMPTY);
             lock = null;
         }
 
@@ -278,15 +276,12 @@ class SingletonManager {
          * If lock is held, or acquired, ping the ZK cluster to extend our deadline.
          */
         private void renewLease() {
-            if (doom.compareAndSet(INVALID, CLOSING)) {
-                logger.log(INFO, "Lease invalidated");
-            }
-            if (doom.get() == CLOSING) {
-                logger.log(INFO, "Must close the lock before attempting to renew lease");
-                return; // Skip to updateStatus, deactivation, and release the lock.
-            }
             // Witness value to detect if invalidation occurs between here and successful ping.
             Instant ourDoom = doom.get();
+            if (ourDoom == INVALID) {
+                logger.log(INFO, "Lease invalidated");
+                return; // Skip to updateStatus, deactivation, and release the lock.
+            }
             Instant start = clock.instant();
             if (lock == null) try {
                 lock = curator.lock(path.append("lock"), tickTimeout);
@@ -332,8 +327,7 @@ class SingletonManager {
          * If activation fails, we release the lock, so a different container may acquire it.
          */
         private void updateStatus() {
-            Instant ourDoom = doom.get();
-            boolean shouldBeActive = ourDoom.isAfter(Instant.EPOCH) && ! clock.instant().isAfter(ourDoom);
+            boolean shouldBeActive = doom.get().isAfter(clock.instant());
             if ( ! active && shouldBeActive) {
                 try {
                     active = true;
@@ -345,7 +339,7 @@ class SingletonManager {
                 }
             }
             if ( ! shouldBeActive) {
-                logger.log(FINE, () -> "Doom value is " + doom);
+                logger.log(FINE, () -> "Doom value is " + doom.get());
                 if (active) {
                     try {
                         if ( ! singletons.isEmpty()) metrics.deactivation(singletons.peek()::deactivate);
