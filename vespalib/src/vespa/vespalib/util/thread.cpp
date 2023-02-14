@@ -9,51 +9,40 @@ namespace vespalib {
 
 __thread Thread *Thread::_currentThread = nullptr;
 
-Thread::Proxy::Proxy(Thread &parent, Runnable &target, init_fun_t init_fun_in)
-    : thread(parent), runnable(target), init_fun(std::move(init_fun_in)),
-      start(), started(), cancel(false)
-{ }
-
 void
-Thread::Proxy::Run(FastOS_ThreadInterface *, void *)
+Thread::run()
 {
     assert(_currentThread == nullptr);
-    _currentThread = &thread;
-    start.await();
-    if (!cancel) {
-        started.countDown();
-        init_fun(runnable);
+    _currentThread = this;
+    _start.await();
+    if (!stopped()) {
+        _init_fun(_runnable);
     }
-    assert(_currentThread == &thread);
+    assert(_currentThread == this);
     _currentThread = nullptr;
 }
 
-Thread::Proxy::~Proxy() = default;
-
 Thread::Thread(Runnable &runnable, init_fun_t init_fun_in)
-    : _proxy(*this, runnable, std::move(init_fun_in)),
-      _pool(1),
-      _lock(),
-      _cond(),
-      _stopped(false),
-      _woken(false)
+  : _runnable(runnable),
+    _init_fun(std::move(init_fun_in)),
+    _start(),
+    _lock(),
+    _cond(),
+    _stopped(false),
+    _woken(false),
+    _thread(&Thread::run, this)
 {
-    FastOS_ThreadInterface *thread = _pool.NewThread(&_proxy);
-    assert(thread != nullptr);
-    (void)thread;
 }
 
 Thread::~Thread()
 {
-    _proxy.cancel = true;
-    _proxy.start.countDown();
+    stop().start();
 }
 
 void
 Thread::start()
 {
-    _proxy.start.countDown();
-    _proxy.started.await();
+    _start.countDown();
 }
 
 Thread &
@@ -68,7 +57,9 @@ Thread::stop()
 void
 Thread::join()
 {
-    _pool.Close();
+    if (_thread.joinable()) {
+        _thread.join();
+    }
 }
 
 bool
