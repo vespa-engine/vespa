@@ -7,6 +7,7 @@ import com.yahoo.config.ConfigInstance;
 import com.yahoo.test.RestartConfig;
 import com.yahoo.test.SimpletypesConfig;
 import com.yahoo.config.model.api.ConfigChangeAction;
+import com.yahoo.config.model.producer.AnyConfigProducer;
 import com.yahoo.config.model.producer.TreeConfigProducer;
 import com.yahoo.config.model.producer.AbstractConfigProducerRoot;
 import com.yahoo.config.model.test.MockRoot;
@@ -252,7 +253,7 @@ public class ConfigValueChangeValidatorTest {
         @Override public void allocatePorts(int start, PortAllocBridge from) { }
     }
 
-    private static class SimpleConfigProducer extends TreeConfigProducer<TreeConfigProducer<?>>
+    private static class SimpleConfigProducer extends TreeConfigProducer<AnyConfigProducer>
             implements RestartConfig.Producer {
         public final int value;
 
