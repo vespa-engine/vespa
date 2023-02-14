@@ -404,6 +404,17 @@ nearest neighbor search used for low-level benchmarking.
 %endif
 %else
 %setup -q
+file_to_patch=/opt/rh/gcc-toolset-12/root/usr/include/c++/12/bits/stl_vector.h
+if test -f $file_to_patch
+then
+  if grep -qs '_M_realloc_insert(iterator __position, const value_type& __x) __attribute((noinline))' $file_to_patch
+  then
+    :
+  else
+    patch $file_to_patch < dist/patch.stl_vector.h.diff
+  fi
+fi
+
 echo '%{version}' > VERSION
 case '%{version}' in
     *.0)
