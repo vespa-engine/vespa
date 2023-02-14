@@ -20,7 +20,7 @@ public class RequireCapabilitiesFilter implements RequestAccessFilter {
     }
 
     public RequireCapabilitiesFilter(Capability... requiredCapabilities) {
-        this(CapabilitySet.from(requiredCapabilities));
+        this(CapabilitySet.of(requiredCapabilities));
     }
 
     public static RequireCapabilitiesFilter unclassified() { return UNCLASSIFIED; }

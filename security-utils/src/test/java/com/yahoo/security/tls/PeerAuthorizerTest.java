@@ -149,7 +149,7 @@ public class PeerAuthorizerTest {
     }
 
     private static PeerPolicy createPolicy(String name, List<Capability> caps, List<RequiredPeerCredential> creds) {
-        return new PeerPolicy(name, Optional.empty(), CapabilitySet.from(caps), creds);
+        return new PeerPolicy(name, Optional.empty(), CapabilitySet.of(caps), creds);
     }
 
     private static void assertAuthorized(ConnectionAuthContext result) {

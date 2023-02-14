@@ -154,7 +154,7 @@ public class Method {
     }
 
     public Method requestAccessFilter(RequestAccessFilter filter) { verifyNoFilterAssigned(); this.filter = filter; return this; }
-    public Method requireCapabilities(Capability... capabilities) { return requireCapabilities(CapabilitySet.from(capabilities)); }
+    public Method requireCapabilities(Capability... capabilities) { return requireCapabilities(CapabilitySet.of(capabilities)); }
     public Method requireCapabilities(CapabilitySet capabilities) {
         verifyNoFilterAssigned();
         filter = new RequireCapabilitiesFilter(capabilities);
