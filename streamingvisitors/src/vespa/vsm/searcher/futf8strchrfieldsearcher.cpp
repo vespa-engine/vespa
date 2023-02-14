@@ -99,18 +99,14 @@ FUTF8StrChrFieldSearcher::lfoldua(const char * toFold, size_t sz, char * folded,
 namespace {
 
 #ifdef __x86_64__
-inline const char * advance(const char * n, const v16qi zero)
+constexpr v16qi G_zero  = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+inline const char * advance(const char * n)
 {
     uint32_t charMap = 0;
     unsigned zeroCountSum = 0;
     do { // find first '\0' character (the end of the word)
-#ifdef __clang__
         v16qi tmpCurrent = __builtin_ia32_lddqu(n+zeroCountSum);
-        v16qi tmp0       = tmpCurrent == zero;
-#else
-        v16qi tmpCurrent = __builtin_ia32_loaddqu(n+zeroCountSum);
-        v16qi tmp0       = __builtin_ia32_pcmpeqb128(tmpCurrent, reinterpret_cast<v16qi>(zero));
-#endif
+        v16qi tmp0       = tmpCurrent == G_zero;
         charMap = __builtin_ia32_pmovmskb128(tmp0); // 1 in charMap equals to '\0' in input buffer
         zeroCountSum += 16;
     } while (!charMap);
@@ -121,13 +117,8 @@ inline const char * advance(const char * n, const v16qi zero)
     int sum = zeroCountSum - 16 + charCount + zeroCounter;
     if (!zeroMap) { // only '\0' in last 16 bytes (no new word found)
         do { // find first word character (the next word)
-#ifdef __clang__
             v16qi tmpCurrent = __builtin_ia32_lddqu(n+zeroCountSum);
-            tmpCurrent  = tmpCurrent > zero;
-#else
-            v16qi tmpCurrent = __builtin_ia32_loaddqu(n+zeroCountSum);
-            tmpCurrent  = __builtin_ia32_pcmpgtb128(tmpCurrent, reinterpret_cast<v16qi>(zero));
-#endif
+            tmpCurrent  = tmpCurrent > G_zero;
             zeroMap = __builtin_ia32_pmovmskb128(tmpCurrent); // 1 in zeroMap equals to word character in input buffer
             zeroCountSum += 16;
         } while(!zeroMap);
@@ -157,9 +148,6 @@ inline const char* advance(const char* n)
 
 size_t FUTF8StrChrFieldSearcher::match(const char *folded, size_t sz, QueryTerm & qt)
 {
-#ifdef __x86_64__
-  const v16qi G_zero  = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-#endif
   termcount_t words(0);
   const char * term;
   termsize_t tsz = qt.term(term);
@@ -177,11 +165,7 @@ size_t FUTF8StrChrFieldSearcher::match(const char *folded, size_t sz, QueryTerm 
       addHit(qt, words);
     }
     words++;
-#ifdef __x86_64__
-    n = advance(n, G_zero);
-#else
     n = advance(n);
-#endif
   }
   return words;
 }
@@ -189,9 +173,6 @@ size_t FUTF8StrChrFieldSearcher::match(const char *folded, size_t sz, QueryTerm 
 size_t FUTF8StrChrFieldSearcher::match(const char *folded, size_t sz, size_t mintsz, QueryTerm ** qtl, size_t qtlSize)
 {
   (void) mintsz;
-#ifdef __x86_64__
-  const v16qi G_zero  = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-#endif
   termcount_t words(0);
   const char * n = folded;
   const char *e = n + sz;
@@ -211,11 +192,7 @@ size_t FUTF8StrChrFieldSearcher::match(const char *folded, size_t sz, size_t min
       }
     }
     words++;
-#ifdef __x86_64__
-    n = advance(n, G_zero);
-#else
     n = advance(n);
-#endif
   }
   return words;
 }
