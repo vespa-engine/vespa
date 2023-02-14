@@ -2,6 +2,7 @@
 package com.yahoo.vespa.model;
 
 import com.yahoo.cloud.config.SentinelConfig;
+import com.yahoo.config.model.producer.AnyConfigProducer;
 import com.yahoo.config.model.producer.TreeConfigProducer;
 
 import java.util.Objects;
@@ -12,7 +13,7 @@ import java.util.Objects;
  *
  * @author gjoranv
  */
-public final class Host extends TreeConfigProducer<TreeConfigProducer<?>> implements SentinelConfig.Producer, Comparable<Host> {
+public final class Host extends TreeConfigProducer<AnyConfigProducer> implements SentinelConfig.Producer, Comparable<Host> {
 
     private ConfigSentinel configSentinel = null;
     private final String hostname;
@@ -28,7 +29,7 @@ public final class Host extends TreeConfigProducer<TreeConfigProducer<?>> implem
         this(parent, hostname, false);
     }
 
-    private Host(TreeConfigProducer<?> parent, String hostname, boolean runsConfigServer) {
+    private Host(TreeConfigProducer<? super Host> parent, String hostname, boolean runsConfigServer) {
         super(parent, hostname);
         Objects.requireNonNull(hostname, "The host name of a host cannot be null");
         this.runsConfigServer = runsConfigServer;
