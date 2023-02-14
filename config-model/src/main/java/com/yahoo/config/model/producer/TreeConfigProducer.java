@@ -124,15 +124,6 @@ public abstract class TreeConfigProducer<CHILD extends AnyConfigProducer>
 
     protected void addDescendantService(Service s) { descendantServices.add(s); }
 
-    public void dump(PrintStream out) {
-        for (ConfigProducer c : getChildren().values()) {
-            out.println("id: " + c.getConfigId());
-            if (c.getChildren().size() > 0) {
-                c.dump(out);
-            }
-        }
-    }
-
     void setupConfigId(String parentConfigId) {
         super.setupConfigId(parentConfigId);
         setupChildConfigIds(getConfigIdPrefix());
