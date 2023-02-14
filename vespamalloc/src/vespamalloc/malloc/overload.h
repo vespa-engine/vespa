@@ -15,10 +15,7 @@ public:
         vespamalloc::createAllocator();
     }
 private:
-#ifdef __clang__
-    [[maybe_unused]]
-#endif
-    unsigned _initialized;
+    [[maybe_unused]] unsigned _initialized;
 };
 
 static CreateAllocator _CreateAllocator __attribute__ ((init_priority (543)));
