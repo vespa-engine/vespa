@@ -6,12 +6,13 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.yahoo.component.annotation.Inject;
 import com.yahoo.collections.Tuple2;
 import com.yahoo.component.Vtag;
+import com.yahoo.component.annotation.Inject;
 import com.yahoo.component.provider.ComponentRegistry;
 import com.yahoo.container.core.ApplicationMetadataConfig;
-import com.yahoo.container.logging.LevelsModSpec;
+import com.yahoo.container.jdisc.RequestView;
+import com.yahoo.container.jdisc.utils.CapabilityRequiringRequestHandler;
 import com.yahoo.jdisc.Request;
 import com.yahoo.jdisc.Response;
 import com.yahoo.jdisc.Timer;
@@ -21,6 +22,7 @@ import com.yahoo.jdisc.handler.ContentChannel;
 import com.yahoo.jdisc.handler.ResponseDispatch;
 import com.yahoo.jdisc.handler.ResponseHandler;
 import com.yahoo.jdisc.http.HttpHeaders;
+import com.yahoo.security.tls.Capability;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
@@ -40,7 +42,7 @@ import static com.yahoo.container.jdisc.state.JsonUtil.sanitizeDouble;
  *
  * @author Simon Thoresen Hult
  */
-public class StateHandler extends AbstractRequestHandler {
+public class StateHandler extends AbstractRequestHandler implements CapabilityRequiringRequestHandler {
 
     private static final ObjectMapper jsonMapper = new ObjectMapper();
 
@@ -65,6 +67,8 @@ public class StateHandler extends AbstractRequestHandler {
         this.config = buildConfigJson(config);
         snapshotProvider = getSnapshotProviderOrThrow(snapshotProviders);
     }
+
+    @Override public Capability requiredCapability(RequestView __) { return Capability.CONTAINER__STATE_API; }
 
     static SnapshotProvider getSnapshotProviderOrThrow(ComponentRegistry<SnapshotProvider> preprocessors) {
         List<SnapshotProvider> allPreprocessors = preprocessors.allComponents();

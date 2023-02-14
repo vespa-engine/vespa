@@ -7,8 +7,11 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
+import com.yahoo.container.jdisc.RequestView;
 import com.yahoo.container.jdisc.ThreadedHttpRequestHandler;
+import com.yahoo.container.jdisc.utils.CapabilityRequiringRequestHandler;
 import com.yahoo.restapi.Path;
+import com.yahoo.security.tls.Capability;
 
 import java.net.URI;
 import java.time.Duration;
@@ -26,7 +29,7 @@ import static java.util.logging.Level.WARNING;
 /**
  * @author gjoranv
  */
-public abstract class HttpHandlerBase extends ThreadedHttpRequestHandler {
+public abstract class HttpHandlerBase extends ThreadedHttpRequestHandler implements CapabilityRequiringRequestHandler {
 
     private static final ObjectMapper jsonMapper = new ObjectMapper();
     private final Duration defaultTimeout;
@@ -41,6 +44,8 @@ public abstract class HttpHandlerBase extends ThreadedHttpRequestHandler {
     }
 
     protected abstract Optional<HttpResponse> doHandle(URI requestUri, Path apiPath, String consumer);
+
+    @Override public Capability requiredCapability(RequestView __) { return Capability.METRICSPROXY__METRICS_API; }
 
     @Override
     public Duration getTimeout() {
