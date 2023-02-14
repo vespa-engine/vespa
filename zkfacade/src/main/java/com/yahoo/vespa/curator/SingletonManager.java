@@ -139,6 +139,7 @@ class SingletonManager {
         final Path path;
         final MetricHelper metrics;
         Lock lock = null;
+        Lock toClose = null;
         boolean active;
 
         Janitor(String id) {
@@ -153,13 +154,19 @@ class SingletonManager {
 
         public void unlock() {
             doom.set(null);
-            if (lock != null) try {
+            if (lock != null) toClose = lock;
+            lock = null;
+            if (toClose != null) try {
                 logger.log(INFO, "Relinquishing lease for " + id);
-                lock.close();
-                lock = null;
+                toClose.close();
+                toClose = null;
+            }
+            catch (IllegalMonitorStateException e) {
+                toClose = null;
+                logger.log(WARNING, "Failed closing " + lock + ", already closed", e);
             }
             catch (Exception e) {
-                logger.log(WARNING, "Failed closing " + lock, e);
+                logger.log(WARNING, "Failed closing " + lock + ", will retry", e);
             }
         }
 
@@ -272,6 +279,10 @@ class SingletonManager {
          * If lock is held, or acquired, ping the ZK cluster to extend our deadline.
          */
         private void renewLease() {
+            if (toClose != null) {
+                logger.log(INFO, "Need to close the old lock before attempting a new one");
+                return;
+            }
             if (doom.get() == INVALID) {
                 logger.log(INFO, "Lease invalidated");
                 doom.set(null);
