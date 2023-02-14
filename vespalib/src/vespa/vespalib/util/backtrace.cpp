@@ -1,11 +1,9 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/vespalib/util/backtrace.h>
-#include <vespa/vespalib/util/memory.h>
 #include <vespa/vespalib/util/classname.h>
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/stllike/asciistream.h>
-#include <vespa/fastos/backtrace.h>
 #include <execinfo.h>
 #include <csignal>
 
@@ -49,7 +47,7 @@ demangleBacktraceLine(const vespalib::string& line)
 
 int
 vespalib::getStackTraceFrames(void** framesOut, int maxFrames) {
-    return FastOS_backtrace(framesOut, maxFrames);
+    return backtrace(framesOut, maxFrames);
 }
 
 vespalib::string
@@ -69,12 +67,8 @@ vespalib::getStackTrace(int ignoreTop, void* const* stack, int size)
 
 vespalib::string
 vespalib::getStackTrace(int ignoreTop) {
-#ifdef __i386__
-    ignoreTop += 2;
-#else
     ignoreTop += 1;
-#endif
     void* stack[25];
-    int size = FastOS_backtrace(stack, 25);
+    int size = backtrace(stack, 25);
     return getStackTrace(ignoreTop, stack, size);
 }

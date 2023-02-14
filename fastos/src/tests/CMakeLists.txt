@@ -27,13 +27,6 @@ vespa_add_executable(fastos_threadtest_app TEST
     fastos
 )
 vespa_add_test(NAME fastos_threadtest_app NO_VALGRIND COMMAND fastos_threadtest_app)
-vespa_add_executable(fastos_backtracetest_app TEST
-    SOURCES
-    backtracetest.cpp
-    DEPENDS
-    fastos
-)
-vespa_add_test(NAME fastos_backtracetest_app NO_VALGRIND COMMAND fastos_backtracetest_app)
 vespa_add_executable(fastos_typetest_app TEST
     SOURCES
     typetest.cpp
