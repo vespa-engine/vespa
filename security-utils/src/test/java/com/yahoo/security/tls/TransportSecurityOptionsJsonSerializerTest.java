@@ -49,7 +49,7 @@ public class TransportSecurityOptionsJsonSerializerTest {
                                                 RequiredPeerCredential.of(SAN_DNS, "*.suffix.com"),
                                                 RequiredPeerCredential.of(SAN_URI, "myscheme://resource/path/"))),
                                         new PeerPolicy("node", Optional.empty(),
-                                                CapabilitySet.from(Capability.SLOBROK__API),
+                                                CapabilitySet.of(Capability.SLOBROK__API),
                                                 Collections.singletonList(RequiredPeerCredential.of(CN, "hostname")))))))
                 .build();
 

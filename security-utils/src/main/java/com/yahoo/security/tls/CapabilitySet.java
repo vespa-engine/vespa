@@ -21,24 +21,36 @@ public class CapabilitySet implements ToCapabilitySet {
 
     private static final Map<String, CapabilitySet> PREDEFINED = new HashMap<>();
 
+    private static final CapabilitySet SHARED_CAPABILITIES_APP_NODE = CapabilitySet.of(
+            Capability.LOGSERVER_API, Capability.CONFIGSERVER__CONFIG_API,
+            Capability.CONFIGSERVER__FILEDISTRIBUTION_API, Capability.CONFIGPROXY__CONFIG_API,
+            Capability.CONFIGPROXY__FILEDISTRIBUTION_API, Capability.SENTINEL__CONNECTIVITY_CHECK);
+
     /* Predefined capability sets */
-    public static final CapabilitySet CONTENT_NODE = predefined(
-            "vespa.content_node",
-            Capability.CONTENT__STORAGE_API, Capability.CONTENT__DOCUMENT_API, Capability.SLOBROK__API);
-    public static final CapabilitySet CONTAINER_NODE = predefined(
-            "vespa.container_node",
-            Capability.CONTENT__DOCUMENT_API, Capability.CONTENT__SEARCH_API, Capability.SLOBROK__API);
+    public static final CapabilitySet ALL = predefined(
+            "vespa.all", Capability.values());
     public static final CapabilitySet TELEMETRY = predefined(
             "vespa.telemetry",
             Capability.CONTENT__STATUS_PAGES, Capability.CONTENT__METRICS_API);
+    public static final CapabilitySet CONTENT_NODE = predefined(
+            "vespa.content_node",
+            Capability.CONTENT__STORAGE_API, Capability.CONTENT__DOCUMENT_API, Capability.CONTAINER__DOCUMENT_API,
+            SHARED_CAPABILITIES_APP_NODE);
+    public static final CapabilitySet CONTAINER_NODE = predefined(
+            "vespa.container_node",
+            Capability.CONTENT__DOCUMENT_API, Capability.CONTENT__SEARCH_API, SHARED_CAPABILITIES_APP_NODE);
     public static final CapabilitySet CLUSTER_CONTROLLER_NODE = predefined(
             "vespa.cluster_controller_node",
-            Capability.CONTENT__CLUSTER_CONTROLLER__INTERNAL_STATE_API, Capability.SLOBROK__API);
-    public static final CapabilitySet CONFIG_SERVER = predefined(
-            "vespa.config_server");
+            Capability.CONTENT__CLUSTER_CONTROLLER__INTERNAL_STATE_API, Capability.SLOBROK__API,
+            Capability.CLIENT__SLOBROK_API, Capability.CONTAINER__DOCUMENT_API, SHARED_CAPABILITIES_APP_NODE);
+    public static final CapabilitySet LOGSERVER_NODE = predefined(
+            "vespa.logserver_node", SHARED_CAPABILITIES_APP_NODE);
+    public static final CapabilitySet CONFIGSERVER_NODE = predefined(
+            "vespa.config_server_node",
+            Capability.CLIENT__FILERECEIVER_API, Capability.CONTAINER__MANAGEMENT_API, TELEMETRY);
 
     private static CapabilitySet predefined(String name, ToCapabilitySet... capabilities) {
-        var instance = CapabilitySet.from(capabilities);
+        var instance = CapabilitySet.of(capabilities);
         PREDEFINED.put(name, instance);
         return instance;
     }
@@ -68,13 +80,13 @@ public class CapabilitySet implements ToCapabilitySet {
         return new CapabilitySet(union);
     }
 
-    public static CapabilitySet from(ToCapabilitySet... capabilities) {
+    public static CapabilitySet of(ToCapabilitySet... capabilities) {
         return CapabilitySet.unionOf(Arrays.stream(capabilities).map(ToCapabilitySet::toCapabilitySet).toList());
     }
 
-    public static CapabilitySet from(EnumSet<Capability> caps) { return new CapabilitySet(EnumSet.copyOf(caps)); }
-    public static CapabilitySet from(Collection<Capability> caps) { return new CapabilitySet(EnumSet.copyOf(caps)); }
-    public static CapabilitySet from(Capability... caps) { return new CapabilitySet(EnumSet.copyOf(List.of(caps))); }
+    public static CapabilitySet of(EnumSet<Capability> caps) { return new CapabilitySet(EnumSet.copyOf(caps)); }
+    public static CapabilitySet of(Collection<Capability> caps) { return new CapabilitySet(EnumSet.copyOf(caps)); }
+    public static CapabilitySet of(Capability... caps) { return new CapabilitySet(EnumSet.copyOf(List.of(caps))); }
     public static CapabilitySet all() { return ALL_CAPABILITIES; }
     public static CapabilitySet none() { return NO_CAPABILITIES; }
 
