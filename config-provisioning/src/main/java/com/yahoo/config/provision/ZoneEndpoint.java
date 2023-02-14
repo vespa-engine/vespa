@@ -20,8 +20,6 @@ public class ZoneEndpoint {
     private final List<AllowedUrn> allowedUrns;
 
     public ZoneEndpoint(boolean isPublicEndpoint, boolean isPrivateEndpoint, List<AllowedUrn> allowedUrns) {
-        if ( ! allowedUrns.isEmpty() && ! isPrivateEndpoint)
-            throw new IllegalArgumentException("cannot list allowed urns, without also enabling private visibility");
         this.isPublicEndpoint = isPublicEndpoint;
         this.isPrivateEndpoint = isPrivateEndpoint;
         this.allowedUrns = List.copyOf(allowedUrns);
