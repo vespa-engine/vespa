@@ -29,6 +29,10 @@
 
 using fastos::File_RW_Ops;
 
+int FastOS_UNIX_File::GetLastOSError() {
+    return errno;
+}
+
 ssize_t
 FastOS_UNIX_File::Read(void *buffer, size_t len)
 {
@@ -52,7 +56,7 @@ FastOS_UNIX_File::SetPosition(int64_t desiredPosition)
 
 
 int64_t
-FastOS_UNIX_File::GetPosition(void)
+FastOS_UNIX_File::GetPosition()
 {
     return lseek(_filedes, 0, SEEK_CUR);
 }
@@ -79,7 +83,7 @@ FastOS_UNIX_File::Stat(const char *filename, FastOS_StatInfo *statInfo)
 {
     bool rc = false;
 
-    struct stat stbuf;
+    struct stat stbuf{};
     int lstatres;
 
     do {
@@ -129,7 +133,7 @@ int FastOS_UNIX_File::GetMaximumPathLength(const char *pathName)
 }
 
 std::string
-FastOS_UNIX_File::getCurrentDirectory(void)
+FastOS_UNIX_File::getCurrentDirectory()
 {
     std::string res;
     int maxPathLen = FastOS_File::GetMaximumPathLength(".");
@@ -222,7 +226,6 @@ FastOS_UNIX_File::Open(unsigned int openFlags, const char *filename)
             break;
 
         default:
-            file = nullptr;
             fprintf(stderr, "Invalid open-flags %08X\n", openFlags);
             abort();
         }
@@ -248,7 +251,7 @@ FastOS_UNIX_File::Open(unsigned int openFlags, const char *filename)
             _openFlags = openFlags;
             if (_mmapEnabled) {
                 int64_t filesize = GetSize();
-                size_t mlen = static_cast<size_t>(filesize);
+                auto mlen = static_cast<size_t>(filesize);
                 if ((static_cast<int64_t>(mlen) == filesize) && (mlen > 0)) {
                     void *mbase = mmap(nullptr, mlen, PROT_READ, MAP_SHARED | _mmapFlags, _filedes, 0);
                     if (mbase == MAP_FAILED) {
@@ -295,7 +298,7 @@ void FastOS_UNIX_File::dropFromCache() const
 
 
 bool
-FastOS_UNIX_File::Close(void)
+FastOS_UNIX_File::Close()
 {
     bool ok = true;
 
@@ -325,10 +328,10 @@ FastOS_UNIX_File::Close(void)
 
 
 int64_t
-FastOS_UNIX_File::GetSize(void)
+FastOS_UNIX_File::GetSize()
 {
     int64_t fileSize=-1;
-    struct stat stbuf;
+    struct stat stbuf{};
 
     assert(IsOpened());
 
@@ -343,14 +346,12 @@ FastOS_UNIX_File::GetSize(void)
 
 
 time_t
-FastOS_UNIX_File::GetModificationTime(void)
+FastOS_UNIX_File::GetModificationTime()
 {
-    struct stat stbuf;
-    int res;
-
+    struct stat stbuf{};
     assert(IsOpened());
 
-    res = fstat(_filedes, &stbuf);
+    int res = fstat(_filedes, &stbuf);
     assert(res == 0);
     (void) res;
 
@@ -366,7 +367,7 @@ FastOS_UNIX_File::Delete(const char *name)
 
 
 bool
-FastOS_UNIX_File::Delete(void)
+FastOS_UNIX_File::Delete()
 {
     assert( ! IsOpened());
 
@@ -379,7 +380,7 @@ bool FastOS_UNIX_File::Rename (const char *currentFileName, const char *newFileN
 
     // Enforce documentation. If the destination file exists,
     // fail Rename.
-    FastOS_StatInfo statInfo;
+    FastOS_StatInfo statInfo{};
     if (!FastOS_File::Stat(newFileName, &statInfo)) {
         rc = (rename(currentFileName, newFileName) == 0);
     } else {
@@ -427,6 +428,7 @@ FastOS_UNIX_File::TranslateError (const int osError)
     case EPERM:      return ERR_PERM;       // Not owner
     case ENODEV:     return ERR_NODEV;      // No such device
     case ENXIO:      return ERR_NXIO;       // Device not configured
+    default:         break;
     }
 
     if (osError == ENFILE)
@@ -449,16 +451,13 @@ FastOS_UNIX_File::getErrorString(const int osError)
 
 int64_t FastOS_UNIX_File::GetFreeDiskSpace (const char *path)
 {
-    int64_t freeSpace = -1;
-
-    struct statfs statBuf;
-    int statVal = -1;
-    statVal = statfs(path, &statBuf);
+    struct statfs statBuf{};
+    int statVal = statfs(path, &statBuf);
     if (statVal == 0) {
-        freeSpace = int64_t(statBuf.f_bavail) * int64_t(statBuf.f_bsize);
+        return int64_t(statBuf.f_bavail) * int64_t(statBuf.f_bsize);
     }
 
-    return freeSpace;
+    return -1;
 }
 
 int
@@ -507,7 +506,7 @@ FastOS_UNIX_DirectoryScan::FastOS_UNIX_DirectoryScan(const char *searchPath)
 }
 
 
-FastOS_UNIX_DirectoryScan::~FastOS_UNIX_DirectoryScan(void)
+FastOS_UNIX_DirectoryScan::~FastOS_UNIX_DirectoryScan()
 {
     if (_dir != nullptr) {
         closedir(_dir);
@@ -518,25 +517,23 @@ FastOS_UNIX_DirectoryScan::~FastOS_UNIX_DirectoryScan(void)
 
 
 bool
-FastOS_UNIX_DirectoryScan::ReadNext(void)
+FastOS_UNIX_DirectoryScan::ReadNext()
 {
-    bool rc = false;
-
     _statRun = false;
 
     if (_dir != nullptr) {
         _dp = readdir(_dir);
-        rc = _dp != nullptr;
+        return (_dp != nullptr);
     }
 
-    return rc;
+    return false;
 }
 
 
 void
-FastOS_UNIX_DirectoryScan::DoStat(void)
+FastOS_UNIX_DirectoryScan::DoStat()
 {
-    struct stat stbuf;
+    struct stat stbuf{};
 
     assert(_dp != nullptr);
 
@@ -556,7 +553,7 @@ FastOS_UNIX_DirectoryScan::DoStat(void)
 
 
 bool
-FastOS_UNIX_DirectoryScan::IsDirectory(void)
+FastOS_UNIX_DirectoryScan::IsDirectory()
 {
     if (!_statRun) {
         DoStat();
@@ -567,7 +564,7 @@ FastOS_UNIX_DirectoryScan::IsDirectory(void)
 
 
 bool
-FastOS_UNIX_DirectoryScan::IsRegular(void)
+FastOS_UNIX_DirectoryScan::IsRegular()
 {
     if (!_statRun) {
         DoStat();
@@ -578,7 +575,7 @@ FastOS_UNIX_DirectoryScan::IsRegular(void)
 
 
 const char *
-FastOS_UNIX_DirectoryScan::GetName(void)
+FastOS_UNIX_DirectoryScan::GetName()
 {
     assert(_dp != nullptr);
 
@@ -587,7 +584,7 @@ FastOS_UNIX_DirectoryScan::GetName(void)
 
 
 bool
-FastOS_UNIX_DirectoryScan::IsValidScan(void) const
+FastOS_UNIX_DirectoryScan::IsValidScan() const
 {
     return _dir != nullptr;
 }

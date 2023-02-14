@@ -25,7 +25,7 @@ protected:
 
 public:
     FastOS_Linux_File (const char *filename = nullptr);
-    ~FastOS_Linux_File ();
+    ~FastOS_Linux_File () override;
     bool GetDirectIORestrictions(size_t &memoryAlignment, size_t &transferGranularity, size_t &transferMaximum) override;
     bool DirectIOPadding(int64_t offset, size_t length, size_t &padBefore, size_t &padAfter) override;
     void EnableDirectIO() override;
@@ -49,8 +49,8 @@ private:
     ssize_t ReadBufInternal(void *buffer, size_t length, int64_t readOffset);
     ssize_t readInternal(int fh, void *buffer, size_t length, int64_t readOffset);
     ssize_t readInternal(int fh, void *buffer, size_t length);
-    ssize_t writeInternal(int fh, const void *buffer, size_t length, int64_t writeOffset);
-    ssize_t writeInternal(int fh, const void *buffer, size_t length);
+    static ssize_t writeInternal(int fh, const void *buffer, size_t length, int64_t writeOffset);
+    static ssize_t writeInternal(int fh, const void *buffer, size_t length);
 
     static const size_t _directIOFileAlign;
     static const size_t _directIOMemAlign;
