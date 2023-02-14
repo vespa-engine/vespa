@@ -7,11 +7,11 @@ import com.yahoo.config.model.producer.TreeConfigProducer;
 import com.yahoo.vespa.model.ConfigProxy;
 import com.yahoo.vespa.model.Host;
 
-public class FileDistributionConfigProvider extends TreeConfigProducer<AnyConfigProducer> implements FiledistributorrpcConfig.Producer {
+public class FileDistributionConfigProvider extends AnyConfigProducer implements FiledistributorrpcConfig.Producer {
 
     private final Host host;
 
-    public FileDistributionConfigProvider(TreeConfigProducer<AnyConfigProducer> parent, Host host) {
+    public FileDistributionConfigProvider(FileDistributionConfigProducer parent, Host host) {
         super(parent, host.getHostname());
         this.host = host;
     }

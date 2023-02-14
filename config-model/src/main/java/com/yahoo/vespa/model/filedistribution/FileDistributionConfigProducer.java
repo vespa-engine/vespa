@@ -13,7 +13,7 @@ import java.util.Map;
  *
  * @author hmusum
  */
-public class FileDistributionConfigProducer extends TreeConfigProducer<AnyConfigProducer> {
+public class FileDistributionConfigProducer extends TreeConfigProducer<FileDistributionConfigProvider> {
 
     private final Map<Host, FileDistributionConfigProvider> fileDistributionConfigProviders = new IdentityHashMap<>();
 
@@ -21,7 +21,7 @@ public class FileDistributionConfigProducer extends TreeConfigProducer<AnyConfig
         super(parent, "filedistribution");
     }
 
-    public void addFileDistributionConfigProducer(Host host, FileDistributionConfigProvider fileDistributionConfigProvider) {
+    public void addProvider(Host host, FileDistributionConfigProvider fileDistributionConfigProvider) {
         fileDistributionConfigProviders.put(host, fileDistributionConfigProvider);
     }
 
