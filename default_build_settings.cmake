@@ -138,7 +138,7 @@ function(vespa_use_default_build_settings)
           # Temporary workaround for https://gcc.gnu.org/bugzilla/show_bug.cgi?id=108599
           set(DEFAULT_VESPA_CPU_ARCH_FLAGS "-march=ivybridge")
         else()
-          set(DEFAULT_VESPA_CPU_ARCH_FLAGS "-mtune=intel")
+          set(DEFAULT_VESPA_CPU_ARCH_FLAGS "-msse3 -mcx16 -mtune=intel")
         endif()
       endif()
     elseif(CMAKE_SYSTEM_PROCESSOR STREQUAL "aarch64")
