@@ -124,9 +124,9 @@ public class StreamingSearchCluster extends SearchCluster implements
             derivedConfig.getSummaries().getConfig(builder);
     }
 
-    private class AttributesProducer extends TreeConfigProducer<AttributesProducer> implements AttributesConfig.Producer {
+    private class AttributesProducer extends AnyConfigProducer implements AttributesConfig.Producer {
 
-        AttributesProducer(TreeConfigProducer<?> parent, String docType) {
+        AttributesProducer(TreeConfigProducer<AnyConfigProducer> parent, String docType) {
             super(parent, docType);
         }
 
