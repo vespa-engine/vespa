@@ -3,6 +3,7 @@ package com.yahoo.vespa.model.content;
 
 import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.deploy.DeployState;
+import com.yahoo.config.model.producer.AnyConfigProducer;
 import com.yahoo.config.model.producer.TreeConfigProducer;
 import com.yahoo.documentmodel.NewDocumentType;
 import com.yahoo.schema.Schema;
@@ -39,7 +40,7 @@ import java.util.stream.Collectors;
  * Encapsulates the various options for search in a content model.
  * Wraps a search cluster from com.yahoo.vespa.model.search.
  */
-public class ContentSearchCluster extends TreeConfigProducer<SearchCluster> implements
+public class ContentSearchCluster extends TreeConfigProducer<AnyConfigProducer> implements
         ProtonConfig.Producer,
         DispatchNodesConfig.Producer,
         DispatchConfig.Producer
@@ -77,7 +78,7 @@ public class ContentSearchCluster extends TreeConfigProducer<SearchCluster> impl
     /** Whether the nodes of this cluster also hosts a container cluster in a hosted system */
     private final double fractionOfMemoryReserved;
 
-    public static class Builder extends VespaDomBuilder.DomConfigProducerBuilder<ContentSearchCluster> {
+    public static class Builder extends VespaDomBuilder.DomConfigProducerBuilderBase<ContentSearchCluster> {
 
         private final Map<String, NewDocumentType> documentDefinitions;
         private final Set<NewDocumentType> globallyDistributedDocuments;
@@ -94,7 +95,7 @@ public class ContentSearchCluster extends TreeConfigProducer<SearchCluster> impl
         }
 
         @Override
-        protected ContentSearchCluster doBuild(DeployState deployState, TreeConfigProducer<?> ancestor, Element producerSpec) {
+        protected ContentSearchCluster doBuild(DeployState deployState, TreeConfigProducer<AnyConfigProducer> ancestor, Element producerSpec) {
             ModelElement clusterElem = new ModelElement(producerSpec);
             String clusterName = ContentCluster.getClusterId(clusterElem);
             Boolean flushOnShutdownElem = clusterElem.childAsBoolean("engine.proton.flush-on-shutdown");
@@ -267,7 +268,7 @@ public class ContentSearchCluster extends TreeConfigProducer<SearchCluster> impl
     }
 
     public void addSearchNode(DeployState deployState, ContentNode node, StorageGroup parentGroup, ModelElement element) {
-        TreeConfigProducer<?> parent = hasIndexedCluster() ? getIndexed() : this;
+        TreeConfigProducer<AnyConfigProducer> parent = hasIndexedCluster() ? getIndexed() : this;
 
         NodeSpec spec = getNextSearchNodeSpec(parentGroup);
         SearchNode searchNode;

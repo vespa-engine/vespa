@@ -107,7 +107,7 @@ public class MockRoot extends AbstractConfigProducerRoot {
     }
 
     @Override
-    public void addChild(TreeConfigProducer<?> abstractConfigProducer) {
+    public void addChild(AnyConfigProducer abstractConfigProducer) {
         super.addChild(abstractConfigProducer);
     }
 

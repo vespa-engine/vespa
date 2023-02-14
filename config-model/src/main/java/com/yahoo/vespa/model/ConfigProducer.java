@@ -27,17 +27,24 @@ public interface ConfigProducer extends com.yahoo.config.ConfigInstance.Producer
     UserConfigRepo getUserConfigs();
     
     /** Returns this ConfigProducer's children (only 1st level) */
-    Map<String,? extends ConfigProducer> getChildren();
+    default Map<String,? extends ConfigProducer> getChildren() { return Map.of(); }
 
     /** Returns a List of all Services that are descendants to this ConfigProducer */
     List<Service> getDescendantServices();
 
     /**
-     * Dump the three of config producers to the specified stream.
+     * Dump the tree of config producers to the specified stream.
      * 
      * @param out The stream to print to, e.g. System.out
      */
-    void dump(PrintStream out);
+    default void dump(PrintStream out) {
+        for (ConfigProducer c : getChildren().values()) {
+            out.println("id: " + c.getConfigId());
+            if (c.getChildren().size() > 0) {
+                c.dump(out);
+            }
+        }
+    }
 
     /**
      * Build config from this and all parent ConfigProducers,

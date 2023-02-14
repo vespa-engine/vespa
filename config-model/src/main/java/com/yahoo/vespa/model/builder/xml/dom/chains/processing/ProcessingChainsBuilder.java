@@ -2,6 +2,7 @@
 package com.yahoo.vespa.model.builder.xml.dom.chains.processing;
 
 import com.yahoo.config.model.deploy.DeployState;
+import com.yahoo.config.model.producer.AnyConfigProducer;
 import com.yahoo.config.model.producer.TreeConfigProducer;
 import com.yahoo.vespa.model.builder.xml.dom.chains.ChainsBuilder;
 import com.yahoo.vespa.model.builder.xml.dom.chains.ComponentsBuilder;
@@ -29,7 +30,7 @@ public class ProcessingChainsBuilder extends ChainsBuilder<Processor, Processing
                 put("chain", DomProcessingChainBuilder.class);
             }});
 
-    public ProcessingChainsBuilder(DeployState deployState, TreeConfigProducer<?> ancestor, List<Element> processingChainsElements,
+    public ProcessingChainsBuilder(DeployState deployState, TreeConfigProducer<AnyConfigProducer> ancestor, List<Element> processingChainsElements,
                                    Map<String, ComponentsBuilder.ComponentType<?>> outerSearcherTypeByComponentName) {
         super(deployState, ancestor, processingChainsElements, outerSearcherTypeByComponentName, chainType2builderClass);
     }

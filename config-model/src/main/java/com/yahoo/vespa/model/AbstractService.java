@@ -4,6 +4,7 @@ package com.yahoo.vespa.model;
 import com.yahoo.config.model.api.PortInfo;
 import com.yahoo.config.model.api.ServiceInfo;
 import com.yahoo.config.model.deploy.DeployState;
+import com.yahoo.config.model.producer.AnyConfigProducer;
 import com.yahoo.config.model.producer.TreeConfigProducer;
 import com.yahoo.vespa.defaults.Defaults;
 
@@ -27,7 +28,7 @@ import static com.yahoo.text.Lowercase.toLowerCase;
  *
  * @author gjoranv
  */
-public abstract class AbstractService extends TreeConfigProducer<TreeConfigProducer<?>> implements Service {
+public abstract class AbstractService extends TreeConfigProducer<AnyConfigProducer> implements Service {
 
     // The physical host this Service runs on.
     private HostResource hostResource = null;

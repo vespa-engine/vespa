@@ -2,6 +2,7 @@
 package com.yahoo.vespa.model.builder.xml.dom.chains.docproc;
 
 import com.yahoo.config.model.deploy.DeployState;
+import com.yahoo.config.model.producer.AnyConfigProducer;
 import com.yahoo.config.model.producer.TreeConfigProducer;
 import com.yahoo.vespa.model.builder.xml.dom.chains.ChainsBuilder;
 import com.yahoo.vespa.model.builder.xml.dom.chains.ComponentsBuilder;
@@ -29,7 +30,7 @@ public class DocprocChainsBuilder extends ChainsBuilder<DocumentProcessor, Docpr
                 put("chain", DomDocprocChainBuilder.class);
             }});
 
-    public DocprocChainsBuilder(DeployState deployState, TreeConfigProducer<?> ancestor, List<Element> docprocChainsElements,
+    public DocprocChainsBuilder(DeployState deployState, TreeConfigProducer<AnyConfigProducer> ancestor, List<Element> docprocChainsElements,
                                 Map<String, ComponentsBuilder.ComponentType<?>> outerSearcherTypeByComponentName) {
         super(deployState, ancestor, docprocChainsElements, outerSearcherTypeByComponentName, chainType2builderClass);
     }

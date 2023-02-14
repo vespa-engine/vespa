@@ -6,6 +6,7 @@ import com.yahoo.cloud.config.ZookeepersConfig;
 import com.yahoo.cloud.config.log.LogdConfig;
 import com.yahoo.config.model.ConfigModelContext.ApplicationType;
 import com.yahoo.config.model.deploy.DeployState;
+import com.yahoo.config.model.producer.AnyConfigProducer;
 import com.yahoo.config.model.producer.TreeConfigProducer;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.vespa.model.AbstractService;
@@ -38,7 +39,7 @@ import static com.yahoo.vespa.model.admin.monitoring.MetricSet.empty;
  *
  * @author gjoranv
  */
-public class Admin extends TreeConfigProducer<Admin> implements Serializable {
+public class Admin extends TreeConfigProducer<AnyConfigProducer> implements Serializable {
 
     private static final long serialVersionUID = 1L;
 

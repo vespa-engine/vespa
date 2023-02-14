@@ -8,7 +8,7 @@ import com.yahoo.config.model.producer.TreeConfigProducer;
  */
 public class ComponentGroup <CHILD extends Component<?, ?>> extends ConfigProducerGroup<CHILD> {
 
-    public ComponentGroup(TreeConfigProducer parent, String subId) {
+    public ComponentGroup(TreeConfigProducer<? super ConfigProducerGroup> parent, String subId) {
         super(parent, subId);
     }
 

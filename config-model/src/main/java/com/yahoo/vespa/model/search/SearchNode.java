@@ -4,6 +4,7 @@ package com.yahoo.vespa.model.search;
 import com.yahoo.cloud.config.filedistribution.FiledistributorrpcConfig;
 import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.deploy.DeployState;
+import com.yahoo.config.model.producer.AnyConfigProducer;
 import com.yahoo.config.model.producer.TreeConfigProducer;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.metrics.MetricsmanagerConfig;
@@ -69,7 +70,7 @@ public class SearchNode extends AbstractService implements
     private final Optional<ResourceLimits> resourceLimits;
     private final double fractionOfMemoryReserved;
 
-    public static class Builder extends VespaDomBuilder.DomConfigProducerBuilder<SearchNode> {
+    public static class Builder extends VespaDomBuilder.DomConfigProducerBuilderBase<SearchNode> {
 
         private final String name;
         private final NodeSpec nodeSpec;
@@ -94,7 +95,7 @@ public class SearchNode extends AbstractService implements
         }
 
         @Override
-        protected SearchNode doBuild(DeployState deployState, TreeConfigProducer<?> ancestor, Element producerSpec) {
+        protected SearchNode doBuild(DeployState deployState, TreeConfigProducer<AnyConfigProducer> ancestor, Element producerSpec) {
             return SearchNode.create(ancestor, name, contentNode.getDistributionKey(), nodeSpec, clusterName, contentNode,
                                      flushOnShutdown, tuning, resourceLimits, deployState.isHosted(),
                                      fractionOfMemoryReserved, deployState.featureFlags());

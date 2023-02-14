@@ -25,7 +25,7 @@ public class DocprocChains extends Chains<DocprocChain> {
 
     private final ProcessingHandler<DocprocChains> docprocHandler;
 
-    public DocprocChains(TreeConfigProducer<?> parent, String subId) {
+    public DocprocChains(TreeConfigProducer<? super Chains> parent, String subId) {
         super(parent, subId);
         docprocHandler = new ProcessingHandler<>(
                 this,

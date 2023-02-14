@@ -24,7 +24,7 @@ public final class Host extends TreeConfigProducer<TreeConfigProducer<?>> implem
      * @param parent   parent TreeConfigProducer in the config model.
      * @param hostname hostname for this host.
      */
-    public Host(TreeConfigProducer<?> parent, String hostname) {
+    public Host(TreeConfigProducer<? super Host> parent, String hostname) {
         this(parent, hostname, false);
     }
 

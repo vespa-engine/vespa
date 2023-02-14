@@ -6,6 +6,7 @@ import com.yahoo.vespa.config.content.core.StorDistributormanagerConfig;
 import com.yahoo.vespa.config.content.core.StorServerConfig;
 import com.yahoo.document.select.DocumentSelector;
 import com.yahoo.document.select.parser.ParseException;
+import com.yahoo.config.model.producer.AnyConfigProducer;
 import com.yahoo.config.model.producer.TreeConfigProducer;
 import com.yahoo.metrics.MetricsmanagerConfig;
 import com.yahoo.vespa.model.builder.xml.dom.ModelElement;
@@ -32,7 +33,7 @@ public class DistributorCluster extends TreeConfigProducer<Distributor> implemen
     private final GcOptions gc;
     private final boolean hasIndexedDocumentType;
     private final int maxActivationInhibitedOutOfSyncGroups;
-    public static class Builder extends VespaDomBuilder.DomConfigProducerBuilder<DistributorCluster> {
+    public static class Builder extends VespaDomBuilder.DomConfigProducerBuilderBase<DistributorCluster> {
 
         ContentCluster parent;
 
@@ -86,7 +87,7 @@ public class DistributorCluster extends TreeConfigProducer<Distributor> implemen
         }
 
         @Override
-        protected DistributorCluster doBuild(DeployState deployState, TreeConfigProducer<?> ancestor, Element producerSpec) {
+        protected DistributorCluster doBuild(DeployState deployState, TreeConfigProducer<AnyConfigProducer> ancestor, Element producerSpec) {
             final ModelElement clusterElement = new ModelElement(producerSpec);
             final ModelElement documentsNode = clusterElement.child("documents");
             final GcOptions gc = parseGcOptions(documentsNode);

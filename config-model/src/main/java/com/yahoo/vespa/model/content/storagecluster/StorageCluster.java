@@ -9,6 +9,7 @@ import com.yahoo.vespa.config.content.StorFilestorConfig;
 import com.yahoo.vespa.config.content.core.StorServerConfig;
 import com.yahoo.vespa.config.content.PersistenceConfig;
 import com.yahoo.metrics.MetricsmanagerConfig;
+import com.yahoo.config.model.producer.AnyConfigProducer;
 import com.yahoo.config.model.producer.TreeConfigProducer;
 import com.yahoo.vespa.model.builder.xml.dom.VespaDomBuilder;
 import com.yahoo.vespa.model.content.cluster.ContentCluster;
@@ -28,9 +29,9 @@ public class StorageCluster extends TreeConfigProducer<StorageNode>
         PersistenceConfig.Producer,
         MetricsmanagerConfig.Producer
 {
-    public static class Builder extends VespaDomBuilder.DomConfigProducerBuilder<StorageCluster> {
+    public static class Builder extends VespaDomBuilder.DomConfigProducerBuilderBase<StorageCluster> {
         @Override
-        protected StorageCluster doBuild(DeployState deployState, TreeConfigProducer<?> ancestor, Element producerSpec) {
+        protected StorageCluster doBuild(DeployState deployState, TreeConfigProducer<AnyConfigProducer> ancestor, Element producerSpec) {
             final ModelElement clusterElem = new ModelElement(producerSpec);
             final ContentCluster cluster = (ContentCluster)ancestor;
 

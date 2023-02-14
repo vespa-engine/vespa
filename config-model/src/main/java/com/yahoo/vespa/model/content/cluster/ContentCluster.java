@@ -5,6 +5,7 @@ import com.google.common.base.Preconditions;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.ConfigModelContext;
 import com.yahoo.config.model.deploy.DeployState;
+import com.yahoo.config.model.producer.AnyConfigProducer;
 import com.yahoo.config.model.producer.TreeConfigProducer;
 import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.ClusterSpec;
@@ -69,7 +70,7 @@ import java.util.logging.Level;
  * @author mostly somebody unknown
  * @author bratseth
  */
-public class ContentCluster extends TreeConfigProducer<TreeConfigProducer<?>> implements
+public class ContentCluster extends TreeConfigProducer<AnyConfigProducer> implements
                                                            DistributionConfig.Producer,
                                                            StorDistributionConfig.Producer,
                                                            StorDistributormanagerConfig.Producer,

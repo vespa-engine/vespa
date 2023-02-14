@@ -3,6 +3,7 @@ package com.yahoo.vespa.model.builder.xml.dom.chains.search;
 
 import com.yahoo.component.chain.model.ChainSpecification;
 import com.yahoo.config.model.deploy.DeployState;
+import com.yahoo.config.model.producer.AnyConfigProducer;
 import com.yahoo.config.model.producer.TreeConfigProducer;
 import com.yahoo.config.model.builder.xml.XmlHelper;
 import com.yahoo.vespa.model.builder.xml.dom.chains.ComponentsBuilder;
@@ -20,7 +21,7 @@ public class DomSourceBuilder extends DomGenericTargetBuilder<Source> {
         super(outerSearcherTypeByComponentName);
     }
 
-    protected Source buildChain(DeployState deployState, TreeConfigProducer<?> ancestor, Element producerSpec, ChainSpecification specWithoutInnerComponents) {
+    protected Source buildChain(DeployState deployState, TreeConfigProducer<AnyConfigProducer> ancestor, Element producerSpec, ChainSpecification specWithoutInnerComponents) {
         Source.GroupOption groupOption =
                 XmlHelper.isReference(producerSpec) ?
                         Source.GroupOption.participant :

@@ -4,6 +4,7 @@ package com.yahoo.vespa.model.builder.xml.dom;
 import com.yahoo.config.model.ConfigModelContext.ApplicationType;
 import com.yahoo.config.model.api.ConfigServerSpec;
 import com.yahoo.config.model.deploy.DeployState;
+import com.yahoo.config.model.producer.AnyConfigProducer;
 import com.yahoo.config.model.producer.TreeConfigProducer;
 import com.yahoo.container.logging.LevelsModSpec;
 import com.yahoo.text.XML;
@@ -33,7 +34,7 @@ import java.util.Optional;
  * @author Ulf Lilleengen
  * @author Vegard Havdal
  */
-public abstract class DomAdminBuilderBase extends VespaDomBuilder.DomConfigProducerBuilder<Admin> {
+public abstract class DomAdminBuilderBase extends VespaDomBuilder.DomConfigProducerBuilderBase<Admin> {
 
     private final ApplicationType applicationType;
     protected final List<ConfigServerSpec> configServerSpecs;
@@ -47,7 +48,7 @@ public abstract class DomAdminBuilderBase extends VespaDomBuilder.DomConfigProdu
         this.configServerSpecs = configServerSpecs;
     }
 
-    List<Configserver> getConfigServersFromSpec(DeployState deployState, TreeConfigProducer<?> parent) {
+    List<Configserver> getConfigServersFromSpec(DeployState deployState, TreeConfigProducer<AnyConfigProducer> parent) {
         List<Configserver> configservers = new ArrayList<>();
         for (ConfigServerSpec spec : configServerSpecs) {
             HostSystem hostSystem = parent.hostSystem();
@@ -63,7 +64,7 @@ public abstract class DomAdminBuilderBase extends VespaDomBuilder.DomConfigProdu
     }
 
     @Override
-    protected Admin doBuild(DeployState deployState, TreeConfigProducer<?> parent, Element adminElement) {
+    protected Admin doBuild(DeployState deployState, TreeConfigProducer<AnyConfigProducer> parent, Element adminElement) {
         Monitoring monitoring = getMonitoring(XML.getChild(adminElement,"monitoring"), deployState.isHosted());
         Metrics metrics = new MetricsBuilder(applicationType, PredefinedMetricSets.get())
                                   .buildMetrics(XML.getChild(adminElement, "metrics"));

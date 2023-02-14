@@ -2,6 +2,7 @@
 package com.yahoo.vespa.model.container.http.xml;
 
 import com.yahoo.config.model.deploy.DeployState;
+import com.yahoo.config.model.producer.AnyConfigProducer;
 import com.yahoo.config.model.producer.TreeConfigProducer;
 import com.yahoo.vespa.model.builder.xml.dom.chains.ChainsBuilder;
 import com.yahoo.vespa.model.builder.xml.dom.chains.ComponentsBuilder;
@@ -35,14 +36,14 @@ public class FilterChainsBuilder extends DomChainsBuilder<Filter, HttpFilterChai
     }
 
     @Override
-    protected FilterChains newChainsInstance(TreeConfigProducer<?> parent) {
+    protected FilterChains newChainsInstance(TreeConfigProducer<AnyConfigProducer> parent) {
         return new FilterChains(parent);
     }
 
     @Override
     protected ChainsBuilder<Filter, HttpFilterChain> readChains(
             DeployState deployState,
-            TreeConfigProducer<?> ancestor,
+            TreeConfigProducer<AnyConfigProducer> ancestor,
             List<Element> allChainsElems, Map<String, ComponentsBuilder.ComponentType<?>> outerComponentTypeByComponentName) {
 
         return new ChainsBuilder<>(deployState, ancestor, allChainsElems, outerComponentTypeByComponentName, chainType2BuilderClass);

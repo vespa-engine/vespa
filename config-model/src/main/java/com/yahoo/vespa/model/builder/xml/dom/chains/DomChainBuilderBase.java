@@ -3,6 +3,7 @@ package com.yahoo.vespa.model.builder.xml.dom.chains;
 
 import com.yahoo.component.chain.model.ChainSpecification;
 import com.yahoo.config.model.deploy.DeployState;
+import com.yahoo.config.model.producer.AnyConfigProducer;
 import com.yahoo.config.model.producer.TreeConfigProducer;
 import com.yahoo.vespa.model.builder.xml.dom.VespaDomBuilder;
 import com.yahoo.vespa.model.container.component.chain.Chain;
@@ -17,7 +18,7 @@ import java.util.Map;
  * @author Tony Vaagenes
  */
 public abstract class DomChainBuilderBase<COMPONENT extends ChainedComponent<?>, CHAIN extends Chain<COMPONENT>>
-        extends VespaDomBuilder.DomConfigProducerBuilder<CHAIN> {
+    extends VespaDomBuilder.DomConfigProducerBuilderBase<CHAIN> {
 
     private final Collection<ComponentsBuilder.ComponentType<COMPONENT>> allowedComponentTypes;
     protected final Map<String, ComponentsBuilder.ComponentType<?>> outerComponentTypeByComponentName;
@@ -28,7 +29,7 @@ public abstract class DomChainBuilderBase<COMPONENT extends ChainedComponent<?>,
         this.outerComponentTypeByComponentName = outerComponentTypeByComponentName;
     }
 
-    public final CHAIN doBuild(DeployState deployState, TreeConfigProducer<?> ancestor, Element producerSpec) {
+    public final CHAIN doBuild(DeployState deployState, TreeConfigProducer<AnyConfigProducer> ancestor, Element producerSpec) {
         ComponentsBuilder<COMPONENT> componentsBuilder =
                 new ComponentsBuilder<>(deployState, ancestor, allowedComponentTypes, List.of(producerSpec), outerComponentTypeByComponentName);
         ChainSpecification specWithoutInnerComponents =
@@ -46,6 +47,6 @@ public abstract class DomChainBuilderBase<COMPONENT extends ChainedComponent<?>,
         }
     }
 
-    protected abstract CHAIN buildChain(DeployState deployState, TreeConfigProducer<?> ancestor, Element producerSpec,
+    protected abstract CHAIN buildChain(DeployState deployState, TreeConfigProducer<AnyConfigProducer> ancestor, Element producerSpec,
                                         ChainSpecification specWithoutInnerComponents);
 }

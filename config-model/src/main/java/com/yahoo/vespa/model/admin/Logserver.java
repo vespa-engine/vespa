@@ -19,7 +19,7 @@ public class Logserver extends AbstractService {
     private static final String logArchiveDir = "$ROOT/logs/vespa/logarchive";
     private String compressionType = "gzip";
 
-    public Logserver(TreeConfigProducer parent) {
+    public Logserver(TreeConfigProducer<? super Logserver> parent) {
         super(parent, "logserver");
         portsMeta.on(0).tag("logtp").tag("rpc");
         portsMeta.on(1).tag("unused");

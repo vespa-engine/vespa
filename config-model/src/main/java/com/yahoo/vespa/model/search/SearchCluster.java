@@ -9,6 +9,7 @@ import com.yahoo.vespa.config.search.RankProfilesConfig;
 import com.yahoo.prelude.fastsearch.DocumentdbInfoConfig;
 import com.yahoo.search.config.IndexInfoConfig;
 import com.yahoo.vespa.configdefinition.IlscriptsConfig;
+import com.yahoo.config.model.producer.AnyConfigProducer;
 import com.yahoo.config.model.producer.TreeConfigProducer;
 
 import java.util.Collections;
@@ -21,7 +22,7 @@ import java.util.Map;
  *
  * @author arnej27959
  */
-public abstract class SearchCluster extends TreeConfigProducer<SearchCluster>
+public abstract class SearchCluster extends TreeConfigProducer<AnyConfigProducer>
         implements
         DocumentdbInfoConfig.Producer,
         IndexInfoConfig.Producer,

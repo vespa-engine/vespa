@@ -10,6 +10,7 @@ import com.yahoo.config.docproc.DocprocConfig;
 import com.yahoo.config.docproc.SchemamappingConfig;
 import com.yahoo.config.model.ApplicationConfigProducerRoot;
 import com.yahoo.config.model.deploy.DeployState;
+import com.yahoo.config.model.producer.AnyConfigProducer;
 import com.yahoo.config.model.producer.TreeConfigProducer;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Zone;
@@ -83,7 +84,7 @@ import static com.yahoo.vespa.model.container.component.chain.ProcessingHandler.
  * @author Tony Vaagenes
  */
 public abstract class ContainerCluster<CONTAINER extends Container>
-        extends TreeConfigProducer<TreeConfigProducer<?>>
+        extends TreeConfigProducer<AnyConfigProducer>
         implements
         ComponentsConfig.Producer,
         JdiscBindingsConfig.Producer,
@@ -426,7 +427,7 @@ public abstract class ContainerCluster<CONTAINER extends Container>
         for (var child: current.getChildren().values()) {
             if (child instanceof Component)
                 allComponents.add((Component<?, ?>) child);
-
+            
             if (child instanceof TreeConfigProducer t && !(child instanceof Container))
                 recursivelyFindAllComponents(allComponents, t);
         }

@@ -16,7 +16,7 @@ public class ProcessingChains extends Chains<ProcessingChain> {
     public static final BindingPattern[] defaultBindings = new BindingPattern[]{SystemBindingPattern.fromHttpPath("/processing/*")};
 
 
-    public ProcessingChains(TreeConfigProducer parent, String subId) {
+    public ProcessingChains(TreeConfigProducer<? super Chains> parent, String subId) {
         super(parent, subId);
     }
 

@@ -2,6 +2,7 @@
 package com.yahoo.vespa.model.search;
 
 import com.yahoo.config.model.deploy.DeployState;
+import com.yahoo.config.model.producer.AnyConfigProducer;
 import com.yahoo.config.model.producer.TreeConfigProducer;
 import com.yahoo.prelude.fastsearch.DocumentdbInfoConfig;
 import com.yahoo.schema.Schema;
@@ -34,7 +35,7 @@ public class StreamingSearchCluster extends SearchCluster implements
     private final String docTypeName;
     private DerivedConfiguration derivedConfig = null;
 
-    public StreamingSearchCluster(TreeConfigProducer<SearchCluster> parent,
+    public StreamingSearchCluster(TreeConfigProducer<AnyConfigProducer> parent,
                                   String clusterName,
                                   int index,
                                   String docTypeName,
@@ -123,9 +124,9 @@ public class StreamingSearchCluster extends SearchCluster implements
             derivedConfig.getSummaries().getConfig(builder);
     }
 
-    private class AttributesProducer extends TreeConfigProducer<AttributesProducer> implements AttributesConfig.Producer {
+    private class AttributesProducer extends AnyConfigProducer implements AttributesConfig.Producer {
 
-        AttributesProducer(TreeConfigProducer<?> parent, String docType) {
+        AttributesProducer(TreeConfigProducer<AnyConfigProducer> parent, String docType) {
             super(parent, docType);
         }
 
