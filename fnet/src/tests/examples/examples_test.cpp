@@ -3,7 +3,8 @@
 #include <vespa/vespalib/process/process.h>
 #include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/util/stringfmt.h>
-#include <vespa/vespalib/util/thread.h>
+#include <vespa/vespalib/util/time.h>
+#include <thread>
 #include <atomic>
 #include <csignal>
 
@@ -42,7 +43,7 @@ bool run_with_retry(const vespalib::string &cmd) {
     for (size_t retry = 0; retry < 60; ++retry) {
         if (retry > 0) {
             fprintf(stderr, "retrying command in 500ms...\n");
-            vespalib::Thread::sleep(500);
+            std::this_thread::sleep_for(500ms);
         }
         vespalib::string output;
         Process proc(cmd, true);

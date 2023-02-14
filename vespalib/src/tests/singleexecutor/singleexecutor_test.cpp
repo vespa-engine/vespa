@@ -5,6 +5,7 @@
 #include <vespa/vespalib/util/singleexecutor.h>
 #include <vespa/vespalib/util/lambdatask.h>
 #include <vespa/vespalib/util/alloc.h>
+#include <vespa/vespalib/util/gate.h>
 #include <atomic>
 
 using namespace vespalib;

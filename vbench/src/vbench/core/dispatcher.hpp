@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/vespalib/util/thread.h>
+#include <vespa/vespalib/util/time.h>
 
 namespace vbench {
 
@@ -22,7 +23,7 @@ Dispatcher<T>::waitForThreads(size_t threads, size_t pollCnt) const
 {
     for (size_t i = 0; i < pollCnt; ++i) {
         if (i != 0) {
-            vespalib::Thread::sleep(20);
+            std::this_thread::sleep_for(20ms);
         }
         {
             std::lock_guard guard(_lock);

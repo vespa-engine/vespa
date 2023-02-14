@@ -26,7 +26,7 @@ private:
         using UP = std::unique_ptr<InputChain>;
         std::vector<Tagger::UP>           taggers;
         Generator::UP                     generator;
-        std::unique_ptr<vespalib::Thread> thread;
+        vespalib::Thread                  thread;
     };
     NativeFactory                _factory;
     std::vector<Analyzer::UP>    _analyzers;
