@@ -63,7 +63,7 @@ public class ControllerContainerTest {
                    </rotations>
                  </config>
                  <config name="vespa.hosted.controller.config.core-dump-token-resealing">
-                   <resealingPrivateKeyName>a-really-cool-key</resealingPrivateKeyName>
+                   <resealingPrivateKeyName>a.really.cool.key</resealingPrivateKeyName>
                  </config>
                
                  <accesslog type='disabled'/>

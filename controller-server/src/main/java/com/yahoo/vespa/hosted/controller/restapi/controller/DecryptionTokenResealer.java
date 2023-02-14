@@ -21,17 +21,18 @@ import static com.yahoo.vespa.hosted.controller.restapi.controller.RequestUtils.
 class DecryptionTokenResealer {
 
     private static int checkKeyNameAndExtractVersion(KeyId tokenKeyId, String expectedKeyName) {
-        String[] components = tokenKeyId.asString().split("\\.");
-        if (components.length != 2) {
+        String keyStr = tokenKeyId.asString();
+        int versionSepIdx = keyStr.lastIndexOf('.');
+        if (versionSepIdx == -1) {
             throw new IllegalArgumentException("Key ID is not of the form 'name.version'");
         }
-        String keyName = components[0];
+        String keyName = keyStr.substring(0, versionSepIdx);
         if (!expectedKeyName.equals(keyName)) {
             throw new IllegalArgumentException("Token is not generated for the expected key");
         }
         int keyVersion;
         try {
-            keyVersion = Integer.parseInt(components[1]);
+            keyVersion = Integer.parseInt(keyStr.substring(versionSepIdx + 1));
         } catch (IllegalArgumentException e) {
             throw new IllegalArgumentException("Key version is not a valid integer");
         }
