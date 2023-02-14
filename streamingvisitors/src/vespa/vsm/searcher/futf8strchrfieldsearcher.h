@@ -11,7 +11,7 @@ public:
     std::unique_ptr<FieldSearcher> duplicate() const override;
     FUTF8StrChrFieldSearcher();
     FUTF8StrChrFieldSearcher(FieldIdT fId);
-    ~FUTF8StrChrFieldSearcher();
+    ~FUTF8StrChrFieldSearcher() override;
     static bool ansiFold(const char * toFold, size_t sz, char * folded);
     static bool lfoldaa(const char * toFold, size_t sz, char * folded, size_t & unalignedStart);
     static bool lfoldua(const char * toFold, size_t sz, char * folded, size_t & alignedStart);

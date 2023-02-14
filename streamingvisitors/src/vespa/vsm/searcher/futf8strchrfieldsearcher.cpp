@@ -27,7 +27,7 @@ FUTF8StrChrFieldSearcher::FUTF8StrChrFieldSearcher(FieldIdT fId)
     : UTF8StrChrFieldSearcher(fId),
       _folded(4_Ki)
 { }
-FUTF8StrChrFieldSearcher::~FUTF8StrChrFieldSearcher() {}
+FUTF8StrChrFieldSearcher::~FUTF8StrChrFieldSearcher() = default;
 
 bool
 FUTF8StrChrFieldSearcher::ansiFold(const char * toFold, size_t sz, char * folded)
@@ -104,7 +104,6 @@ inline const char * advance(const char * n, const v16qi zero)
     uint32_t charMap = 0;
     unsigned zeroCountSum = 0;
     do { // find first '\0' character (the end of the word)
-#ifndef __INTEL_COMPILER
 #ifdef __clang__
         v16qi tmpCurrent = __builtin_ia32_lddqu(n+zeroCountSum);
         v16qi tmp0       = tmpCurrent == zero;
@@ -113,10 +112,6 @@ inline const char * advance(const char * n, const v16qi zero)
         v16qi tmp0       = __builtin_ia32_pcmpeqb128(tmpCurrent, reinterpret_cast<v16qi>(zero));
 #endif
         charMap = __builtin_ia32_pmovmskb128(tmp0); // 1 in charMap equals to '\0' in input buffer
-#else
-#   warning "Intel's icc compiler does not like __builtin_ia32_xxxxx"
-    LOG_ABORT("should not be reached");
-#endif
         zeroCountSum += 16;
     } while (!charMap);
     int charCount = Optimized::lsbIdx(charMap); // number of word characters in last 16 bytes
@@ -126,7 +121,6 @@ inline const char * advance(const char * n, const v16qi zero)
     int sum = zeroCountSum - 16 + charCount + zeroCounter;
     if (!zeroMap) { // only '\0' in last 16 bytes (no new word found)
         do { // find first word character (the next word)
-#ifndef __INTEL_COMPILER
 #ifdef __clang__
             v16qi tmpCurrent = __builtin_ia32_lddqu(n+zeroCountSum);
             tmpCurrent  = tmpCurrent > zero;
@@ -135,10 +129,6 @@ inline const char * advance(const char * n, const v16qi zero)
             tmpCurrent  = __builtin_ia32_pcmpgtb128(tmpCurrent, reinterpret_cast<v16qi>(zero));
 #endif
             zeroMap = __builtin_ia32_pmovmskb128(tmpCurrent); // 1 in zeroMap equals to word character in input buffer
-#else
-#   warning "Intel's icc compiler does not like __builtin_ia32_xxxxx"
-    LOG_ABORT("should not be reached");
-#endif
             zeroCountSum += 16;
         } while(!zeroMap);
         zeroCounter = Optimized::lsbIdx(zeroMap);
@@ -168,7 +158,7 @@ inline const char* advance(const char* n)
 size_t FUTF8StrChrFieldSearcher::match(const char *folded, size_t sz, QueryTerm & qt)
 {
 #ifdef __x86_64__
-  const v16qi _G_zero  = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+  const v16qi G_zero  = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 #endif
   termcount_t words(0);
   const char * term;
@@ -181,32 +171,14 @@ size_t FUTF8StrChrFieldSearcher::match(const char *folded, size_t sz, QueryTerm 
   while (true) {
     if (n>=e) break;
 
-#if 0
-    v16qi current = __builtin_ia32_loaddqu(n);
-    current = __builtin_ia32_pcmpeqb128(current, _qtlFast[0]);
-    unsigned eqMap = __builtin_ia32_pmovmskb128(current);
-    unsigned neqMap = ~eqMap;
-    unsigned numEq = Optimized::lsbIdx(neqMap);
-    /* if (eqMap)*/ {
-      if (numEq >= 16) {
-        const char *tt = term+16;
-        const char *p = n+16;
-        while ( (*tt == *p) && (tt < et)) { tt++; p++; numEq++; }
-      }
-      if ((numEq >= tsz) && (prefix() || qt.isPrefix() || !n[tsz])) {
-        addHit(qt, words);
-      }
-    }
-#else
     const char *tt = term;
     while ((tt < et) && (*tt == *n)) { tt++; n++; }
     if ((tt == et) && (prefix() || qt.isPrefix() || !*n)) {
       addHit(qt, words);
     }
-#endif
     words++;
 #ifdef __x86_64__
-    n = advance(n, _G_zero);
+    n = advance(n, G_zero);
 #else
     n = advance(n);
 #endif
@@ -218,7 +190,7 @@ size_t FUTF8StrChrFieldSearcher::match(const char *folded, size_t sz, size_t min
 {
   (void) mintsz;
 #ifdef __x86_64__
-  const v16qi _G_zero  = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+  const v16qi G_zero  = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 #endif
   termcount_t words(0);
   const char * n = folded;
@@ -226,28 +198,6 @@ size_t FUTF8StrChrFieldSearcher::match(const char *folded, size_t sz, size_t min
   while (!*n) n++;
   for( ; ; ) {
     if (n>=e) break;
-#if 0
-    v16qi current = __builtin_ia32_loaddqu(n);
-    for(size_t i=0; i < qtlSize; i++) {
-      v16qi tmpEq = __builtin_ia32_pcmpeqb128(current, _qtlFast[i]);
-      unsigned eqMap = __builtin_ia32_pmovmskb128(tmpEq);
-      /* if (eqMap) */ {
-        QueryTerm & qt = *qtl[i];
-        unsigned neqMap = ~eqMap;
-        unsigned numEq = Optimized::lsbIdx(neqMap);
-        termsize_t tsz = qt.termLen();
-        if (numEq >= 16) {
-          const char *tt = qt.term() + 16;
-          const char *et=tt+tsz;
-          const char *p = n+16;
-          while ( (*tt == *p) && (tt < et)) { tt++; p++; numEq++; }
-        }
-        if ((numEq >= tsz) && (prefix() || qt.isPrefix() || !n[tsz])) {
-          addHit(qt, words);
-        }
-      }
-    }
-#else
     for(QueryTerm ** it=qtl, ** mt=qtl+qtlSize; it != mt; it++) {
       QueryTerm & qt = **it;
       const char * term;
@@ -260,10 +210,9 @@ size_t FUTF8StrChrFieldSearcher::match(const char *folded, size_t sz, size_t min
         addHit(qt, words);
       }
     }
-#endif
     words++;
 #ifdef __x86_64__
-    n = advance(n, _G_zero);
+    n = advance(n, G_zero);
 #else
     n = advance(n);
 #endif
