@@ -7,6 +7,7 @@ import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
+import com.yahoo.config.provision.WireguardKey;
 import com.yahoo.config.provision.host.FlavorOverrides;
 import com.yahoo.vespa.hosted.node.admin.configserver.ConfigServerApi;
 import com.yahoo.vespa.hosted.node.admin.configserver.ConfigServerApiImpl;
@@ -24,7 +25,10 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * Tests the NodeRepository class used for talking to the node repository. It uses a mock from the node repository
@@ -128,12 +132,21 @@ public class RealNodeRepositoryTest {
 
     @Test
     void testUpdateNodeAttributes() {
-        String hostname = "host4.yahoo.com";
+        var hostname = "host4.yahoo.com";
+        var dockerImage = "registry.example.com/repo/image-1:6.2.3";
+        var wireguardKey = WireguardKey.from("111122223333444455556666777788889999000042c=");
+
         nodeRepositoryApi.updateNodeAttributes(
                 hostname,
                 new NodeAttributes()
                         .withRestartGeneration(1)
-                        .withDockerImage(DockerImage.fromString("registry.example.com/repo/image-1:6.2.3")));
+                        .withDockerImage(DockerImage.fromString(dockerImage))
+                        .withWireguardPubkey(wireguardKey));
+
+        NodeSpec hostSpec = nodeRepositoryApi.getOptionalNode(hostname).orElseThrow();
+        assertEquals(1, hostSpec.currentRestartGeneration().orElseThrow());
+        assertEquals(dockerImage, hostSpec.currentDockerImage().orElseThrow().asString());
+        assertEquals(wireguardKey.value(), hostSpec.wireguardPubkey().orElseThrow().value());
     }
 
     @Test

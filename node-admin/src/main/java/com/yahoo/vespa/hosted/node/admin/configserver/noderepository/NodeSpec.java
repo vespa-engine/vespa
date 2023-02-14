@@ -7,6 +7,7 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
+import com.yahoo.config.provision.WireguardKey;
 import com.yahoo.vespa.hosted.node.admin.task.util.file.DiskSize;
 
 import java.net.URI;
@@ -70,6 +71,8 @@ public class NodeSpec {
 
     private final List<TrustStoreItem> trustStore;
 
+    private final Optional<WireguardKey> wireguardPubkey;
+
     private final boolean wantToRebuild;
 
     public NodeSpec(
@@ -104,6 +107,7 @@ public class NodeSpec {
             Optional<URI> archiveUri,
             Optional<ApplicationId> exclusiveTo,
             List<TrustStoreItem> trustStore,
+            Optional<WireguardKey> wireguardPubkey,
             boolean wantToRebuild) {
 
         if (state == NodeState.active) {
@@ -146,6 +150,7 @@ public class NodeSpec {
         this.archiveUri = Objects.requireNonNull(archiveUri);
         this.exclusiveTo = Objects.requireNonNull(exclusiveTo);
         this.trustStore = Objects.requireNonNull(trustStore);
+        this.wireguardPubkey = Objects.requireNonNull(wireguardPubkey);
         this.wantToRebuild = wantToRebuild;
     }
 
@@ -296,6 +301,8 @@ public class NodeSpec {
         return trustStore;
     }
 
+    public Optional<WireguardKey> wireguardPubkey() { return wireguardPubkey; }
+
     public boolean wantToRebuild() {
         return wantToRebuild;
     }
@@ -336,6 +343,7 @@ public class NodeSpec {
                 Objects.equals(archiveUri, that.archiveUri) &&
                 Objects.equals(exclusiveTo, that.exclusiveTo) &&
                 Objects.equals(trustStore, that.trustStore) &&
+                Objects.equals(wireguardPubkey, that.wireguardPubkey) &&
                 Objects.equals(wantToRebuild, that.wantToRebuild);
     }
 
@@ -373,6 +381,7 @@ public class NodeSpec {
                 archiveUri,
                 exclusiveTo,
                 trustStore,
+                wireguardPubkey,
                 wantToRebuild);
     }
 
@@ -410,6 +419,7 @@ public class NodeSpec {
                 + " archiveUri=" + archiveUri
                 + " exclusiveTo=" + exclusiveTo
                 + " trustStore=" + trustStore
+                + " wireguardPubkey=" + wireguardPubkey
                 + " wantToRebuild=" + wantToRebuild
                 + " }";
     }
@@ -446,6 +456,7 @@ public class NodeSpec {
         private Optional<URI> archiveUri = Optional.empty();
         private Optional<ApplicationId> exclusiveTo = Optional.empty();
         private List<TrustStoreItem> trustStore = List.of();
+        private Optional<WireguardKey> wireguardPubkey = Optional.empty();
         private boolean wantToRebuild = false;
 
         public Builder() {}
@@ -481,6 +492,7 @@ public class NodeSpec {
             node.archiveUri.ifPresent(this::archiveUri);
             node.exclusiveTo.ifPresent(this::exclusiveTo);
             trustStore(node.trustStore);
+            node.wireguardPubkey.ifPresent(this::wireguardPubkey);
             wantToRebuild(node.wantToRebuild);
         }
 
@@ -664,6 +676,11 @@ public class NodeSpec {
             return this;
         }
 
+        public Builder wireguardPubkey(WireguardKey wireguardKey) {
+            wireguardPubkey = Optional.of(wireguardKey);
+            return this;
+        }
+
         public Builder wantToRebuild(boolean wantToRebuild) {
             this.wantToRebuild = wantToRebuild;
             return this;
@@ -677,6 +694,7 @@ public class NodeSpec {
             attributes.getRestartGeneration().ifPresent(this::currentRestartGeneration);
             // Always replace entire trust store
             trustStore(attributes.getTrustStore());
+            attributes.getWireguardPubkey().ifPresent(this::wireguardPubkey);
             this.reports.updateFromRawMap(attributes.getReports());
 
             return this;
@@ -790,7 +808,8 @@ public class NodeSpec {
                                 wantedRebootGeneration, currentRebootGeneration,
                                 wantedFirmwareCheck, currentFirmwareCheck, modelName,
                                 resources, realResources, ipAddresses, additionalIpAddresses,
-                                reports, events, parentHostname, archiveUri, exclusiveTo, trustStore, wantToRebuild);
+                                reports, events, parentHostname, archiveUri, exclusiveTo, trustStore,
+                                wireguardPubkey, wantToRebuild);
         }
 
 
