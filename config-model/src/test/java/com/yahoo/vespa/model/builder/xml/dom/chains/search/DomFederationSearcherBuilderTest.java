@@ -61,7 +61,7 @@ public class DomFederationSearcherBuilderTest extends DomBuilderTest {
 
         String targetSelectorId = "my-id@federation-id";
 
-        TreeConfigProducer<?> targetSelector = searcher.getChildren().get(targetSelectorId);
+        var targetSelector = searcher.getChildren().get(targetSelectorId);
         assertNotNull(targetSelector, "No target selector child found");
 
         FederationConfig.Builder builder = new FederationConfig.Builder();

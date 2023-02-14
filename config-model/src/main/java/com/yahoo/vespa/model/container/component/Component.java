@@ -4,6 +4,7 @@ package com.yahoo.vespa.model.container.component;
 import com.yahoo.collections.Pair;
 import com.yahoo.component.ComponentId;
 import com.yahoo.component.ComponentSpecification;
+import com.yahoo.config.model.producer.AnyConfigProducer;
 import com.yahoo.config.model.producer.TreeConfigProducer;
 import com.yahoo.osgi.provider.model.ComponentModel;
 
@@ -15,8 +16,8 @@ import java.util.Set;
  * @author gjoranv
  * @author Tony Vaagenes
  */
-public class Component<CHILD extends TreeConfigProducer<?>, MODEL extends ComponentModel>
-        extends TreeConfigProducer<CHILD> implements Comparable<Component<?, ?>> {
+public class Component<CCHILD extends AnyConfigProducer, MODEL extends ComponentModel>
+        extends TreeConfigProducer<CCHILD> implements Comparable<Component<?, ?>> {
 
     public final MODEL model;
     final Set<Pair<String, Component>> injectedComponents = new LinkedHashSet<>();
@@ -51,7 +52,7 @@ public class Component<CHILD extends TreeConfigProducer<?>, MODEL extends Compon
         injectedComponents.add(new Pair<>(name, component));
     }
 
-    public void addComponent(CHILD child) {
+    public void addComponent(CCHILD child) {
         addChild(child);
     }
 

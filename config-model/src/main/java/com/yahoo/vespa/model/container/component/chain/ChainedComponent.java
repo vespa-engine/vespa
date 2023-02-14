@@ -3,6 +3,7 @@ package com.yahoo.vespa.model.container.component.chain;
 
 import com.yahoo.component.ComponentId;
 import com.yahoo.component.chain.model.ChainedComponentModel;
+import com.yahoo.config.model.producer.AnyConfigProducer;
 import com.yahoo.config.model.producer.TreeConfigProducer;
 import com.yahoo.vespa.model.container.component.Component;
 
@@ -13,7 +14,7 @@ import com.yahoo.vespa.model.container.component.Component;
  *
  * Base class for all ChainedComponent config producers.
  */
-public class ChainedComponent<T extends ChainedComponentModel> extends Component<TreeConfigProducer<?>, T> {
+public class ChainedComponent<T extends ChainedComponentModel> extends Component<AnyConfigProducer, T> {
 
     public ChainedComponent(T model) {
         super(model);
