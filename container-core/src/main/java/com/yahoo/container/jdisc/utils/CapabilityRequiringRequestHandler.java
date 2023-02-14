@@ -11,9 +11,9 @@ import com.yahoo.security.tls.CapabilitySet;
  * @author bjorncs
  */
 public interface CapabilityRequiringRequestHandler extends RequestHandler {
+    Capability DEFAULT_REQUIRED_CAPABILITY = Capability.HTTP_UNCLASSIFIED;
 
-    CapabilitySet DEFAULT_REQUIRED_CAPABILITIES = CapabilitySet.of(Capability.HTTP_UNCLASSIFIED);
-
-    default CapabilitySet requiredCapabilities(RequestView req) { return DEFAULT_REQUIRED_CAPABILITIES; }
+    default CapabilitySet requiredCapabilities(RequestView req) { return requiredCapability(req).toCapabilitySet(); }
+    default Capability requiredCapability(RequestView req) { return DEFAULT_REQUIRED_CAPABILITY; }
 
 }

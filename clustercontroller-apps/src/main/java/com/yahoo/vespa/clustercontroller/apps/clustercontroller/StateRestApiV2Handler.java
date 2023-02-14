@@ -1,9 +1,11 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.apps.clustercontroller;
 
-import com.yahoo.component.annotation.Inject;
 import com.yahoo.cloud.config.ClusterInfoConfig;
-import java.util.logging.Level;
+import com.yahoo.component.annotation.Inject;
+import com.yahoo.container.jdisc.RequestView;
+import com.yahoo.container.jdisc.utils.CapabilityRequiringRequestHandler;
+import com.yahoo.security.tls.Capability;
 import com.yahoo.vespa.clustercontroller.apputil.communication.http.JDiscHttpRequestHandler;
 import com.yahoo.vespa.clustercontroller.core.restapiv2.ClusterControllerStateRestAPI;
 import com.yahoo.vespa.clustercontroller.utils.staterestapi.server.RestApiHandler;
@@ -12,9 +14,10 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public class StateRestApiV2Handler extends JDiscHttpRequestHandler {
+public class StateRestApiV2Handler extends JDiscHttpRequestHandler implements CapabilityRequiringRequestHandler {
 
     private static final Logger log = Logger.getLogger(StateRestApiV2Handler.class.getName());
 
@@ -24,6 +27,8 @@ public class StateRestApiV2Handler extends JDiscHttpRequestHandler {
     {
         this(new ClusterControllerStateRestAPI(cc, getClusterControllerSockets(config)), "/cluster/v2", ctx);
     }
+
+    @Override public Capability requiredCapability(RequestView __) { return Capability.CLUSTER_CONTROLLER__STATE; }
 
     private StateRestApiV2Handler(ClusterControllerStateRestAPI restApi, String pathPrefix,
                                   JDiscHttpRequestHandler.Context ctx)

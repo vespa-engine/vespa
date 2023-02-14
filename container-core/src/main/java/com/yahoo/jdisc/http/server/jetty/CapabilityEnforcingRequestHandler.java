@@ -42,7 +42,7 @@ class CapabilityEnforcingRequestHandler implements DelegatedRequestHandler {
                 DelegatedRequestHandler.resolve(CapabilityRequiringRequestHandler.class, wrapped).orElse(null);
         var requiredCapabilities = capabilityRequiringHandler != null
                 ? capabilityRequiringHandler.requiredCapabilities(new View(req))
-                : CapabilityRequiringRequestHandler.DEFAULT_REQUIRED_CAPABILITIES;
+                : CapabilityRequiringRequestHandler.DEFAULT_REQUIRED_CAPABILITY.toCapabilitySet();
         var authCtx = Optional.ofNullable(req.context().get(RequestUtils.JDISC_REQUEST_SSLSESSION))
                 .flatMap(s -> TransportSecurityUtils.getConnectionAuthContext((SSLSession) s))
                 .orElse(null);

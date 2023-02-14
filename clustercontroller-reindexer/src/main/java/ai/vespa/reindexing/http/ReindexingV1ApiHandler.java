@@ -3,16 +3,19 @@ package ai.vespa.reindexing.http;
 
 import ai.vespa.reindexing.Reindexing;
 import ai.vespa.reindexing.ReindexingCurator;
-import com.yahoo.component.annotation.Inject;
 import com.yahoo.cloud.config.ZookeepersConfig;
+import com.yahoo.component.annotation.Inject;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
+import com.yahoo.container.jdisc.RequestView;
 import com.yahoo.container.jdisc.ThreadedHttpRequestHandler;
+import com.yahoo.container.jdisc.utils.CapabilityRequiringRequestHandler;
 import com.yahoo.document.DocumentTypeManager;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.restapi.ErrorResponse;
 import com.yahoo.restapi.Path;
 import com.yahoo.restapi.SlimeJsonResponse;
+import com.yahoo.security.tls.Capability;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Slime;
 import com.yahoo.vespa.config.content.reindexing.ReindexingConfig;
@@ -30,7 +33,7 @@ import static com.yahoo.jdisc.http.HttpRequest.Method.GET;
  *
  * @author jonmv
  */
-public class ReindexingV1ApiHandler extends ThreadedHttpRequestHandler {
+public class ReindexingV1ApiHandler extends ThreadedHttpRequestHandler implements CapabilityRequiringRequestHandler {
 
     private final ReindexingCurator database;
     private final List<String> clusterNames;
@@ -52,6 +55,8 @@ public class ReindexingV1ApiHandler extends ThreadedHttpRequestHandler {
         this.database = database;
         this.clusterNames = List.copyOf(clusterNames);
     }
+
+    @Override public Capability requiredCapability(RequestView __) { return Capability.CLUSTER_CONTROLLER__REINDEXING; }
 
     @Override
     public HttpResponse handle(HttpRequest request) {
