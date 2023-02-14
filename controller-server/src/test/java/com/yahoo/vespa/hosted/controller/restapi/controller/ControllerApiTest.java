@@ -220,11 +220,11 @@ public class ControllerApiTest extends ControllerContainerTest {
 
     @Test
     void decryption_token_reseal_request_succeeds_when_matching_versioned_key_found() {
-        var reqData = createResealingRequestData("a-really-cool-key.123"); // Must match key name in config
+        var reqData = createResealingRequestData("a.really.cool.key.123"); // Must match key name in config
         var secret = hex(reqData.originalSecretSharedKey.secretKey().getEncoded());
 
         var secretStore = (SecretStoreMock)tester.controller().secretStore();
-        secretStore.setSecret("a-really-cool-key", KeyUtils.toBase58EncodedX25519PrivateKey((XECPrivateKey)reqData.originalReceiverKeyPair.getPrivate()), 123);
+        secretStore.setSecret("a.really.cool.key", KeyUtils.toBase58EncodedX25519PrivateKey((XECPrivateKey)reqData.originalReceiverKeyPair.getPrivate()), 123);
 
         tester.assertResponse(
                 () -> operatorRequest("http://localhost:8080/controller/v1/access/cores/reseal", requestJsonOf(reqData), Request.Method.POST),
@@ -238,7 +238,7 @@ public class ControllerApiTest extends ControllerContainerTest {
 
     @Test
     void decryption_token_reseal_request_fails_when_unexpected_key_name_is_supplied() {
-        var reqData = createResealingRequestData("a-really-cool-but-non-existing-key.123");
+        var reqData = createResealingRequestData("a.really.cool.but.non.existing.key.123");
         tester.assertResponse(
                 () -> operatorRequest("http://localhost:8080/controller/v1/access/cores/reseal", requestJsonOf(reqData), Request.Method.POST),
                 "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Token is not generated for the expected key\"}",
@@ -247,10 +247,10 @@ public class ControllerApiTest extends ControllerContainerTest {
 
     @Test
     void secret_key_lookup_does_not_use_key_id_provided_in_user_supplied_token() {
-        var reqData = createResealingRequestData("a-sneaky-key.123");
+        var reqData = createResealingRequestData("a.sneaky.key.123");
         var secretStore = (SecretStoreMock)tester.controller().secretStore();
         // Token key ID is technically valid, but should not be used. Only config should be obeyed.
-        secretStore.setSecret("a-sneaky-key", KeyUtils.toBase58EncodedX25519PrivateKey((XECPrivateKey)reqData.originalReceiverKeyPair.getPrivate()), 123);
+        secretStore.setSecret("a.sneaky.key", KeyUtils.toBase58EncodedX25519PrivateKey((XECPrivateKey)reqData.originalReceiverKeyPair.getPrivate()), 123);
 
         tester.assertResponse(
                 () -> operatorRequest("http://localhost:8080/controller/v1/access/cores/reseal", requestJsonOf(reqData), Request.Method.POST),
@@ -281,17 +281,22 @@ public class ControllerApiTest extends ControllerContainerTest {
                 400);
         tester.assertResponse(
                 () -> operatorRequest("http://localhost:8080/controller/v1/access/cores/reseal",
-                        requestJsonOf(createResealingRequestData("a-really-cool-key.123asdf")), Request.Method.POST),
+                        requestJsonOf(createResealingRequestData("a.really.cool.key.123asdf")), Request.Method.POST),
                 "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Key version is not a valid integer\"}",
                 400);
         tester.assertResponse(
                 () -> operatorRequest("http://localhost:8080/controller/v1/access/cores/reseal",
-                        requestJsonOf(createResealingRequestData("a-really-cool-key.-123")), Request.Method.POST),
+                        requestJsonOf(createResealingRequestData("a.really.cool.key.")), Request.Method.POST),
+                "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Key version is not a valid integer\"}",
+                400);
+        tester.assertResponse(
+                () -> operatorRequest("http://localhost:8080/controller/v1/access/cores/reseal",
+                        requestJsonOf(createResealingRequestData("a.really.cool.key.-123")), Request.Method.POST),
                 "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Key version is out of range\"}",
                 400);
         tester.assertResponse(
                 () -> operatorRequest("http://localhost:8080/controller/v1/access/cores/reseal",
-                        requestJsonOf(createResealingRequestData("a-really-cool-key.%d".formatted((long)Integer.MAX_VALUE + 1))), Request.Method.POST),
+                        requestJsonOf(createResealingRequestData("a.really.cool.key.%d".formatted((long)Integer.MAX_VALUE + 1))), Request.Method.POST),
                 "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Key version is not a valid integer\"}",
                 400);
     }
