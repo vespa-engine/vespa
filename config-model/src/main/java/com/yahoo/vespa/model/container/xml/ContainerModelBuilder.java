@@ -24,7 +24,7 @@ import com.yahoo.config.model.application.provider.IncludeDirs;
 import com.yahoo.config.model.builder.xml.ConfigModelBuilder;
 import com.yahoo.config.model.builder.xml.ConfigModelId;
 import com.yahoo.config.model.deploy.DeployState;
-import com.yahoo.config.model.producer.AbstractConfigProducer;
+import com.yahoo.config.model.producer.TreeConfigProducer;
 import com.yahoo.config.provision.AthenzDomain;
 import com.yahoo.config.provision.AthenzService;
 import com.yahoo.config.provision.Capacity;
@@ -193,7 +193,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     private ApplicationContainerCluster createContainerCluster(Element spec, ConfigModelContext modelContext) {
         return new VespaDomBuilder.DomConfigProducerBuilder<ApplicationContainerCluster>() {
             @Override
-            protected ApplicationContainerCluster doBuild(DeployState deployState, AbstractConfigProducer<?> ancestor, Element producerSpec) {
+            protected ApplicationContainerCluster doBuild(DeployState deployState, TreeConfigProducer<?> ancestor, Element producerSpec) {
                 return new ApplicationContainerCluster(ancestor, modelContext.getProducerId(),
                                                        modelContext.getProducerId(), deployState);
             }

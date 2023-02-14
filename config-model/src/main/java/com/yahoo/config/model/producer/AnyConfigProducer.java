@@ -14,15 +14,11 @@ import com.yahoo.vespa.config.GenericConfig;
 import com.yahoo.vespa.model.ConfigProducer;
 import com.yahoo.vespa.model.HostSystem;
 import com.yahoo.vespa.model.Service;
-import com.yahoo.vespa.model.SimpleConfigProducer;
 import com.yahoo.vespa.model.admin.Admin;
 import com.yahoo.vespa.model.admin.monitoring.Monitoring;
-import com.yahoo.vespa.model.utils.FreezableMap;
-import java.io.PrintStream;
+
 import java.io.Serializable;
-import java.util.ArrayList;
 import java.util.Collections;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
@@ -33,35 +29,32 @@ import java.util.logging.Logger;
  * Config producers constructs and returns config instances on request.
  *
  * @author gjoranv
+ * @author arnej
  */
-public abstract class AbstractConfigProducer<CHILD extends AbstractConfigProducer<?>>
+public abstract class AnyConfigProducer
         implements ConfigProducer, ConfigInstance.Producer, Serializable {
 
     private static final long serialVersionUID = 1L;
-    public static final Logger log = Logger.getLogger(AbstractConfigProducer.class.getPackage().toString());
+    public static final Logger log = Logger.getLogger(AnyConfigProducer.class.getPackage().toString());
     private final String subId;
     private String configId = null;
 
-    private final List<Service> descendantServices = new ArrayList<>();
-
-    private AbstractConfigProducer parent = null;
+    private TreeConfigProducer parent = null;
 
     private UserConfigRepo userConfigs = new UserConfigRepo();
-
-    private final FreezableMap<String, CHILD> childrenBySubId = new FreezableMap<>(LinkedHashMap.class);
 
     protected static boolean stateIsHosted(DeployState deployState) {
         return (deployState != null) && deployState.isHosted();
     }
 
     /**
-     * Creates a new AbstractConfigProducer with the given parent and subId.
+     * Creates a new AnyConfigProducer with the given parent and subId.
      * This constructor will add the resulting producer to the children of parent.
      *
      * @param parent the parent of this ConfigProducer
      * @param subId  the fragment of the config id for the producer
      */
-    public AbstractConfigProducer(AbstractConfigProducer parent, String subId) {
+    public AnyConfigProducer(TreeConfigProducer parent, String subId) {
         this(subId);
         if (parent != null) {
             parent.addChild(this);
@@ -74,7 +67,7 @@ public abstract class AbstractConfigProducer<CHILD extends AbstractConfigProduce
             parent.removeChild(this);
     }
 
-    protected final void setParent(AbstractConfigProducer<?> parent) {
+    protected final void setParent(TreeConfigProducer parent) {
         this.parent = parent;
         computeConfigId();
     }
@@ -83,63 +76,15 @@ public abstract class AbstractConfigProducer<CHILD extends AbstractConfigProduce
 
     /**
      * Create an config producer with a configId only. Used e.g. to create root nodes, and producers
-     * that are given children after construction using {@link #addChild(AbstractConfigProducer)}.
+     * that are given parents after construction using {@link TreeConfigProducer#addChild(AnyConfigProducer)}.
      *
      * @param subId The sub configId. Note that this can be prefixed when calling addChild with this producer as arg.
      */
-    public AbstractConfigProducer(String subId) {
+    public AnyConfigProducer(String subId) {
         if (subId.indexOf('/') != -1) {
             throw new IllegalArgumentException("A subId might not contain '/' : '" + subId + "'");
         }
         this.subId = subId;
-    }
-
-    /**
-     * Adds a child to this config producer.
-     *
-     * @param child the child config producer to add
-     */
-    protected void addChild(CHILD child) {
-        if (child == null) {
-            throw new IllegalArgumentException("Trying to add null child for: " + this);
-        }
-        if (child instanceof AbstractConfigProducerRoot) {
-            throw new IllegalArgumentException("Child cannot be a root node: " + child);
-        }
-
-        child.setParent(this);
-        if (childrenBySubId.get(child.getSubId()) != null) {
-            throw new IllegalArgumentException("Multiple services/instances of the id '" + child.getSubId() + "' under the service/instance " +
-                                               errorMsgClassName() + " '" + subId + "'. (This is commonly caused by service/node index " +
-                                               "collisions in the config.)." +
-                                               "\nExisting instance: " + childrenBySubId.get(child.getSubId()) +
-                                               "\nAttempted to add:  " + child);
-        }
-        childrenBySubId.put(child.getSubId(), child);
-
-        if (child instanceof Service) {
-            addDescendantService((Service)child);
-        }
-    }
-
-    public void removeChild(CHILD child) {
-        if (child.getParent() != this)
-            throw new IllegalArgumentException("Could not remove " + child  + ": Expected its parent to be " +
-                                               this + ", but was " + child.getParent());
-
-        if (child instanceof Service)
-            descendantServices.remove(child);
-
-        childrenBySubId.remove(child.getSubId());
-        child.setParent(null);
-    }
-
-    /**
-     * Helper to provide an error message on collisions of sub ids (ignore SimpleConfigProducer, use the parent in that case)
-     */
-    private String errorMsgClassName() {
-        if (getClass().equals(SimpleConfigProducer.class)) return parent.getClass().getSimpleName();
-        return getClass().getSimpleName();
     }
 
     /**
@@ -163,6 +108,10 @@ public abstract class AbstractConfigProducer<CHILD extends AbstractConfigProduce
         return configId;
     }
 
+    protected final String currentConfigId() {
+        return configId;
+    }
+
     /**
      * Sets the config id for this producer. Will also add this
      * service to the root node, so the new config id will be picked
@@ -175,30 +124,6 @@ public abstract class AbstractConfigProducer<CHILD extends AbstractConfigProduce
         if (!isVespa() && (getVespa() != null))
             getVespa().addDescendant(this);
     }
-
-    /** Returns this ConfigProducer's children (only 1st level) */
-    public Map<String, CHILD> getChildren() { return Collections.unmodifiableMap(childrenBySubId); }
-
-    @Beta
-    public <J extends AbstractConfigProducer<?>> List<J> getChildrenByTypeRecursive(Class<J> type) {
-        List<J> validChildren = new ArrayList<>();
-
-        if (this.getClass().equals(type)) {
-            validChildren.add(type.cast(this));
-        }
-
-        Map<String, ? extends AbstractConfigProducer<?>> children = this.getChildren();
-        for (AbstractConfigProducer<?> child : children.values()) {
-            validChildren.addAll(child.getChildrenByTypeRecursive(type));
-        }
-
-        return Collections.unmodifiableList(validChildren);
-    }
-
-    /** Returns a list of all the children of this who are instances of Service */
-    public List<Service> getDescendantServices() { return Collections.unmodifiableList(descendantServices); }
-
-    protected void addDescendantService(Service s) { descendantServices.add(s); }
 
     @Override
     public final boolean cascadeConfig(ConfigInstance.Builder builder) {
@@ -271,7 +196,11 @@ public abstract class AbstractConfigProducer<CHILD extends AbstractConfigProduce
      */
     private ApplicationConfigProducerRoot getVespa() {
         if (isRoot()) return null;
-        return isVespa() ? (ApplicationConfigProducerRoot)this : parent.getVespa();
+        if (isVespa()) {
+            return (ApplicationConfigProducerRoot)this;
+        } else {
+            return getParent().getVespa();
+        }
     }
 
     private boolean isRoot() {
@@ -279,19 +208,10 @@ public abstract class AbstractConfigProducer<CHILD extends AbstractConfigProduce
     }
 
     private boolean isVespa() {
-       return ((this instanceof ApplicationConfigProducerRoot) && parent.isRoot());
+        return ((this instanceof ApplicationConfigProducerRoot) && getParent().isRoot());
     }
 
-    public AbstractConfigProducer getParent() { return parent; }
-
-    public void dump(PrintStream out) {
-        for (ConfigProducer c : getChildren().values()) {
-            out.println("id: " + c.getConfigId());
-            if (c.getChildren().size() > 0) {
-                c.dump(out);
-            }
-        }
-    }
+    public AnyConfigProducer getParent() { return parent; }
 
     void setupConfigId(String parentConfigId) {
         if (this instanceof AbstractConfigProducerRoot) {
@@ -301,15 +221,6 @@ public abstract class AbstractConfigProducer<CHILD extends AbstractConfigProduce
             addConfigId(configId);
         }
         computeConfigId();
-        setupChildConfigIds(getConfigIdPrefix());
-    }
-
-    private String getConfigIdPrefix() {
-        if (this instanceof AbstractConfigProducerRoot || this instanceof ApplicationConfigProducerRoot) {
-            return "";
-        }
-        if (configId == null) return null;
-        return configId + "/";
     }
 
     private void computeConfigId() {
@@ -328,7 +239,7 @@ public abstract class AbstractConfigProducer<CHILD extends AbstractConfigProduce
         }
     }
 
-    private static ClassLoader findInheritedClassLoader(Class clazz, String producerName) {
+    protected static ClassLoader findInheritedClassLoader(Class clazz, String producerName) {
         Class<?>[] interfazes = clazz.getInterfaces();
         for (Class interfaze : interfazes) {
             if (producerName.equals(interfaze.getName())) {
@@ -341,51 +252,11 @@ public abstract class AbstractConfigProducer<CHILD extends AbstractConfigProduce
     }
 
     protected ClassLoader getConfigClassLoader(String producerName) {
-        ClassLoader classLoader = findInheritedClassLoader(getClass(), producerName);
-        if (classLoader != null)
-            return classLoader;
-
-        // TODO: Make logic correct, so that the deepest child will be the one winning.
-        for (AbstractConfigProducer child : childrenBySubId.values()) {
-            ClassLoader loader = child.getConfigClassLoader(producerName);
-            if (loader != null) {
-                return loader;
-            }
-        }
-        return null;
-    }
-
-    private void setupChildConfigIds(String currentConfigId) {
-        for (AbstractConfigProducer child : childrenBySubId.values()) {
-            child.setupConfigId(currentConfigId);
-        }
-    }
-
-    void aggregateDescendantServices() {
-        for (AbstractConfigProducer child : childrenBySubId.values()) {
-            child.aggregateDescendantServices();
-            descendantServices.addAll(child.descendantServices);
-        }
-    }
-
-    void freeze() {
-        childrenBySubId.freeze();
-        for (AbstractConfigProducer child : childrenBySubId.values()) {
-            child.freeze();
-        }
+        return findInheritedClassLoader(getClass(), producerName);
     }
 
     public void mergeUserConfigs(UserConfigRepo newRepo) {
         userConfigs.merge(newRepo);
-    }
-
-    @Override
-    public void validate() throws Exception {
-        assert (childrenBySubId.isFrozen());
-
-        for (AbstractConfigProducer<?> child : childrenBySubId.values()) {
-            child.validate();
-        }
     }
 
     // TODO: Make producers depend on AdminModel instead
@@ -401,4 +272,13 @@ public abstract class AbstractConfigProducer<CHILD extends AbstractConfigProduce
         }
         return null;
     }
+
+    // NOPs for all config producers without children; overridden in TreeConfigProducer
+    void aggregateDescendantServices() { }
+    public List<Service> getDescendantServices() { return List.of(); }
+    <J extends AnyConfigProducer> List<J> getChildrenByTypeRecursive(Class<J> type) { return List.of(); }
+    void freeze() { }
+    @Override
+    public void validate() throws Exception { }
+
 }

@@ -5,7 +5,7 @@ import com.yahoo.cloud.config.ZookeeperServerConfig;
 import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.api.container.ContainerServiceType;
 import com.yahoo.config.model.deploy.DeployState;
-import com.yahoo.config.model.producer.AbstractConfigProducer;
+import com.yahoo.config.model.producer.TreeConfigProducer;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.search.config.QrStartConfig;
@@ -28,11 +28,11 @@ public final class ApplicationContainer extends Container implements
 
     private final boolean isHostedVespa;
 
-    public ApplicationContainer(AbstractConfigProducer<?> parent, String name, int index, DeployState deployState) {
+    public ApplicationContainer(TreeConfigProducer<?> parent, String name, int index, DeployState deployState) {
         this(parent, name, false, index, deployState);
     }
 
-    public ApplicationContainer(AbstractConfigProducer<?> parent, String name, boolean retired, int index, DeployState deployState) {
+    public ApplicationContainer(TreeConfigProducer<?> parent, String name, boolean retired, int index, DeployState deployState) {
         super(parent, name, retired, index, deployState);
         this.isHostedVespa = deployState.isHosted();
 

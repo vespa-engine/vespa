@@ -5,7 +5,7 @@ import com.google.common.base.Preconditions;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.ConfigModelContext;
 import com.yahoo.config.model.deploy.DeployState;
-import com.yahoo.config.model.producer.AbstractConfigProducer;
+import com.yahoo.config.model.producer.TreeConfigProducer;
 import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
@@ -69,7 +69,7 @@ import java.util.logging.Level;
  * @author mostly somebody unknown
  * @author bratseth
  */
-public class ContentCluster extends AbstractConfigProducer<AbstractConfigProducer<?>> implements
+public class ContentCluster extends TreeConfigProducer<TreeConfigProducer<?>> implements
                                                            DistributionConfig.Producer,
                                                            StorDistributionConfig.Producer,
                                                            StorDistributormanagerConfig.Producer,
@@ -344,7 +344,7 @@ public class ContentCluster extends AbstractConfigProducer<AbstractConfigProduce
             return admin.getClusterControllers();
         }
 
-        private ClusterControllerContainerCluster createClusterControllers(AbstractConfigProducer<?> parent,
+        private ClusterControllerContainerCluster createClusterControllers(TreeConfigProducer<?> parent,
                                                                            Collection<HostResource> hosts,
                                                                            String name,
                                                                            boolean runStandaloneZooKeeper,
@@ -385,7 +385,7 @@ public class ContentCluster extends AbstractConfigProducer<AbstractConfigProduce
 
     }
 
-    private ContentCluster(AbstractConfigProducer<?> parent, String clusterId,
+    private ContentCluster(TreeConfigProducer<?> parent, String clusterId,
                            Map<String, NewDocumentType> documentDefinitions,
                            Set<NewDocumentType> globallyDistributedDocuments,
                            String routingSelection, Zone zone, boolean isHosted) {

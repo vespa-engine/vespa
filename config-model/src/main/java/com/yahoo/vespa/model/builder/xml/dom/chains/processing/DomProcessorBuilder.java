@@ -4,7 +4,7 @@ package com.yahoo.vespa.model.builder.xml.dom.chains.processing;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.vespa.model.builder.xml.dom.chains.ChainedComponentModelBuilder;
 import com.yahoo.vespa.model.container.processing.Processor;
-import com.yahoo.config.model.producer.AbstractConfigProducer;
+import com.yahoo.config.model.producer.TreeConfigProducer;
 import com.yahoo.vespa.model.builder.xml.dom.VespaDomBuilder;
 import org.w3c.dom.Element;
 
@@ -17,7 +17,7 @@ import org.w3c.dom.Element;
 public class DomProcessorBuilder extends VespaDomBuilder.DomConfigProducerBuilder<Processor> {
 
     @Override
-    protected Processor doBuild(DeployState deployState, AbstractConfigProducer ancestor, Element processorElement) {
+    protected Processor doBuild(DeployState deployState, TreeConfigProducer ancestor, Element processorElement) {
         ChainedComponentModelBuilder modelBuilder = new ChainedComponentModelBuilder(processorElement);
         return new Processor(modelBuilder.build());
     }

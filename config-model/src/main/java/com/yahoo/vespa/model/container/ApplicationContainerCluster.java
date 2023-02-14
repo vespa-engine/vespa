@@ -13,7 +13,7 @@ import com.yahoo.config.model.api.ApplicationClusterInfo;
 import com.yahoo.config.model.api.ContainerEndpoint;
 import com.yahoo.config.model.api.Model;
 import com.yahoo.config.model.deploy.DeployState;
-import com.yahoo.config.model.producer.AbstractConfigProducer;
+import com.yahoo.config.model.producer.TreeConfigProducer;
 import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostSpec;
@@ -97,7 +97,7 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
 
     private List<ApplicationClusterEndpoint> endpointList = List.of();
 
-    public ApplicationContainerCluster(AbstractConfigProducer<?> parent, String configSubId, String clusterId, DeployState deployState) {
+    public ApplicationContainerCluster(TreeConfigProducer<?> parent, String configSubId, String clusterId, DeployState deployState) {
         super(parent, configSubId, clusterId, deployState, true, 10);
         this.tlsClientAuthority = deployState.tlsClientAuthority();
         previousHosts = Collections.unmodifiableSet(deployState.getPreviousModel().stream()

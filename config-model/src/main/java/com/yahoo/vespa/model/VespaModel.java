@@ -23,7 +23,8 @@ import com.yahoo.config.model.api.HostInfo;
 import com.yahoo.config.model.api.Model;
 import com.yahoo.config.model.api.Provisioned;
 import com.yahoo.config.model.deploy.DeployState;
-import com.yahoo.config.model.producer.AbstractConfigProducer;
+import com.yahoo.config.model.producer.AnyConfigProducer;
+import com.yahoo.config.model.producer.TreeConfigProducer;
 import com.yahoo.config.model.producer.AbstractConfigProducerRoot;
 import com.yahoo.config.model.producer.UserConfigRepo;
 import com.yahoo.config.provision.AllocatedHosts;
@@ -591,7 +592,7 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Mode
      * @param configId   the id to register with, not necessarily equal to descendant.getConfigId().
      * @param descendant The configProducer descendant to add
      */
-    public void addDescendant(String configId, AbstractConfigProducer<?> descendant) {
+    public void addDescendant(String configId, AnyConfigProducer descendant) {
         if (id2producer.containsKey(configId)) {
             throw new RuntimeException
                     ("Config ID '" + configId + "' cannot be reserved by an instance of class '" +

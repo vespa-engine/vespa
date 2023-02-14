@@ -6,7 +6,7 @@ import com.yahoo.cloud.config.ZookeeperServerConfig;
 import com.yahoo.cloud.config.ZookeepersConfig;
 import com.yahoo.config.model.api.Model;
 import com.yahoo.config.model.deploy.DeployState;
-import com.yahoo.config.model.producer.AbstractConfigProducer;
+import com.yahoo.config.model.producer.TreeConfigProducer;
 import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.vespa.model.Service;
@@ -27,7 +27,7 @@ import java.util.stream.Collectors;
  *
  * @author Ulf Lilleengen
  */
-public class ClusterControllerCluster extends AbstractConfigProducer<ClusterControllerContainerCluster> implements
+public class ClusterControllerCluster extends TreeConfigProducer<ClusterControllerContainerCluster> implements
         ZookeeperServerConfig.Producer,
         ZookeepersConfig.Producer {
 
@@ -35,7 +35,7 @@ public class ClusterControllerCluster extends AbstractConfigProducer<ClusterCont
     private ClusterControllerContainerCluster containerCluster = null;
     private final Set<String> previousHosts;
 
-    public ClusterControllerCluster(AbstractConfigProducer<?> parent, String subId, DeployState deployState) {
+    public ClusterControllerCluster(TreeConfigProducer<?> parent, String subId, DeployState deployState) {
         super(parent, subId);
         this.previousHosts = Collections.unmodifiableSet(deployState.getPreviousModel().stream()
                                                                     .map(Model::allocatedHosts)

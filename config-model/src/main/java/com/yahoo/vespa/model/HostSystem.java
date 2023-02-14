@@ -3,7 +3,7 @@ package com.yahoo.vespa.model;
 
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.api.HostProvisioner;
-import com.yahoo.config.model.producer.AbstractConfigProducer;
+import com.yahoo.config.model.producer.TreeConfigProducer;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.ClusterSpec;
@@ -29,7 +29,7 @@ import static java.util.logging.Level.FINE;
  *
  * @author gjoranv
  */
-public class HostSystem extends AbstractConfigProducer<Host> {
+public class HostSystem extends TreeConfigProducer<Host> {
 
     private static final Logger log = Logger.getLogger(HostSystem.class.getName());
     private static final boolean doCheckIp;
@@ -45,7 +45,7 @@ public class HostSystem extends AbstractConfigProducer<Host> {
         doCheckIp = ! checkIpProperty.equalsIgnoreCase("false");
     }
 
-    public HostSystem(AbstractConfigProducer<?> parent, String name, HostProvisioner provisioner, DeployLogger deployLogger, boolean isHosted) {
+    public HostSystem(TreeConfigProducer<?> parent, String name, HostProvisioner provisioner, DeployLogger deployLogger, boolean isHosted) {
         super(parent, name);
         this.provisioner = provisioner;
         this.deployLogger = deployLogger;

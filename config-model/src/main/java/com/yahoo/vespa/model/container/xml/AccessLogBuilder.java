@@ -2,7 +2,7 @@
 package com.yahoo.vespa.model.container.xml;
 
 import com.yahoo.config.model.deploy.DeployState;
-import com.yahoo.config.model.producer.AbstractConfigProducer;
+import com.yahoo.config.model.producer.TreeConfigProducer;
 import com.yahoo.vespa.model.builder.xml.dom.VespaDomBuilder;
 import com.yahoo.vespa.model.container.ContainerCluster;
 import com.yahoo.vespa.model.container.component.AccessLogComponent;
@@ -50,7 +50,7 @@ public class AccessLogBuilder {
         }
 
         @Override
-        protected AccessLogComponent doBuild(DeployState deployState, AbstractConfigProducer<?> ancestor, Element spec) {
+        protected AccessLogComponent doBuild(DeployState deployState, TreeConfigProducer<?> ancestor, Element spec) {
             String fallback = deployState.featureFlags().logFileCompressionAlgorithm("zstd");
             return new AccessLogComponent(
                     accessLogType,

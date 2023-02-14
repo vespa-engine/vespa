@@ -2,7 +2,7 @@
 package com.yahoo.vespa.model.container.search.searchchain;
 
 import com.yahoo.component.chain.model.ChainedComponentModel;
-import com.yahoo.config.model.producer.AbstractConfigProducer;
+import com.yahoo.config.model.producer.TreeConfigProducer;
 import com.yahoo.vespa.model.container.component.chain.ChainedComponent;
 
 /**
@@ -16,7 +16,7 @@ public class Searcher<T extends ChainedComponentModel> extends ChainedComponent<
     }
 
     protected SearchChains getSearchChains() {
-        AbstractConfigProducer ancestor = getParent();
+        var ancestor = getParent();
         while (!(ancestor instanceof SearchChains)) {
             ancestor = ancestor.getParent();
         }

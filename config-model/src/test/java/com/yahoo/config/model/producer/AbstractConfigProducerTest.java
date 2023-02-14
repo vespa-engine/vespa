@@ -41,7 +41,7 @@ public class AbstractConfigProducerTest {
         assertEquals(1337, config.logserver().rpcport());
     }
 
-    private static class MockLogdProducer extends AbstractConfigProducer implements LogdConfig.Producer {
+    private static class MockLogdProducer extends TreeConfigProducer implements LogdConfig.Producer {
 
         public MockLogdProducer(String subId) {
             super(subId);
@@ -53,7 +53,7 @@ public class AbstractConfigProducerTest {
         }
     }
 
-    private static abstract class MockLogdSuperClass extends AbstractConfigProducer implements LogdConfig.Producer {
+    private static abstract class MockLogdSuperClass extends TreeConfigProducer implements LogdConfig.Producer {
 
         public MockLogdSuperClass(String subId) {
             super(subId);

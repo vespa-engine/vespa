@@ -2,7 +2,7 @@
 package com.yahoo.vespa.model;
 
 import com.yahoo.config.model.ApplicationConfigProducerRoot;
-import com.yahoo.config.model.producer.AbstractConfigProducer;
+import com.yahoo.config.model.producer.TreeConfigProducer;
 
 /**
  * This is a placeholder config producer that makes global configuration available through a single identifier. This
@@ -10,7 +10,7 @@ import com.yahoo.config.model.producer.AbstractConfigProducer;
  *
  * @author Simon Thoresen Hult
  */
-public class Client extends AbstractConfigProducer {
+public class Client extends TreeConfigProducer {
 
     /**
      * Constructs a client config producer that is added as a child to
@@ -18,7 +18,7 @@ public class Client extends AbstractConfigProducer {
      *
      * @param parent The parent config producer.
      */
-    public Client(AbstractConfigProducer parent) {
+    public Client(TreeConfigProducer parent) {
         super(parent, "client");
     }
 

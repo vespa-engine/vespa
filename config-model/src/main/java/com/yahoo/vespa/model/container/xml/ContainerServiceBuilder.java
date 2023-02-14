@@ -2,7 +2,7 @@
 package com.yahoo.vespa.model.container.xml;
 
 import com.yahoo.config.model.deploy.DeployState;
-import com.yahoo.config.model.producer.AbstractConfigProducer;
+import com.yahoo.config.model.producer.TreeConfigProducer;
 import com.yahoo.vespa.model.builder.xml.dom.VespaDomBuilder;
 import com.yahoo.vespa.model.container.ApplicationContainer;
 import org.w3c.dom.Element;
@@ -21,7 +21,7 @@ public class ContainerServiceBuilder extends VespaDomBuilder.DomConfigProducerBu
     }
 
     @Override
-    protected ApplicationContainer doBuild(DeployState deployState, AbstractConfigProducer<?> parent, Element nodeElem) {
+    protected ApplicationContainer doBuild(DeployState deployState, TreeConfigProducer<?> parent, Element nodeElem) {
         return new ApplicationContainer(parent, id, index, deployState);
     }
 

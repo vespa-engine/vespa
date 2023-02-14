@@ -1,7 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.test;
 
-import com.yahoo.config.model.producer.AbstractConfigProducer;
+import com.yahoo.config.model.producer.TreeConfigProducer;
 import com.yahoo.vespa.model.AbstractService;
 import com.yahoo.vespa.model.PortAllocBridge;
 
@@ -22,7 +22,7 @@ public class ApiService extends AbstractService implements com.yahoo.test.Standa
      * @param parent   The parent ConfigProducer.
      * @param name     Service name
      */
-    public ApiService(AbstractConfigProducer<?> parent, String name) {
+    public ApiService(TreeConfigProducer<?> parent, String name) {
         super(parent, name);
     }
 

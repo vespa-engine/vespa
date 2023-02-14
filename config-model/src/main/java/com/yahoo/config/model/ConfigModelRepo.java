@@ -9,7 +9,7 @@ import com.yahoo.config.model.builder.xml.XmlHelper;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.graph.ModelGraphBuilder;
 import com.yahoo.config.model.graph.ModelNode;
-import com.yahoo.config.model.producer.AbstractConfigProducer;
+import com.yahoo.config.model.producer.TreeConfigProducer;
 import com.yahoo.config.model.provision.HostsXmlProvisioner;
 import com.yahoo.text.XML;
 import com.yahoo.vespa.model.VespaModel;
@@ -172,7 +172,7 @@ public class ConfigModelRepo implements ConfigModelRepoAdder, Serializable, Iter
                              ApplicationType applicationType,
                              DeployState deployState,
                              VespaModel vespaModel,
-                             AbstractConfigProducer parent,
+                             TreeConfigProducer parent,
                              List<Element> elements) {
         for (Element servicesElement : elements) {
             ConfigModel model = buildModel(node, applicationType, deployState, vespaModel, parent, servicesElement);
@@ -185,7 +185,7 @@ public class ConfigModelRepo implements ConfigModelRepoAdder, Serializable, Iter
                                    ApplicationType applicationType,
                                    DeployState deployState,
                                    VespaModel vespaModel,
-                                   AbstractConfigProducer parent,
+                                   TreeConfigProducer parent,
                                    Element servicesElement) {
         ConfigModelBuilder builder = node.builder;
         ConfigModelContext context = ConfigModelContext.create(applicationType, deployState, vespaModel, this, parent, getIdString(servicesElement));

@@ -7,7 +7,7 @@ import com.yahoo.config.ConfigInstance;
 import com.yahoo.test.RestartConfig;
 import com.yahoo.test.SimpletypesConfig;
 import com.yahoo.config.model.api.ConfigChangeAction;
-import com.yahoo.config.model.producer.AbstractConfigProducer;
+import com.yahoo.config.model.producer.TreeConfigProducer;
 import com.yahoo.config.model.producer.AbstractConfigProducerRoot;
 import com.yahoo.config.model.test.MockRoot;
 import com.yahoo.vespa.model.AbstractService;
@@ -229,7 +229,7 @@ public class ConfigValueChangeValidatorTest {
                 "</config>\n";
     }
 
-    private static MockRoot createRootWithChildren(AbstractConfigProducer<?>... children) {
+    private static MockRoot createRootWithChildren(TreeConfigProducer<?>... children) {
         MockRoot root = new MockRoot();
         List.of(children).forEach(root::addChild);
         root.freezeModelTopology();
@@ -252,7 +252,7 @@ public class ConfigValueChangeValidatorTest {
         @Override public void allocatePorts(int start, PortAllocBridge from) { }
     }
 
-    private static class SimpleConfigProducer extends AbstractConfigProducer<AbstractConfigProducer<?>>
+    private static class SimpleConfigProducer extends TreeConfigProducer<TreeConfigProducer<?>>
             implements RestartConfig.Producer {
         public final int value;
 
@@ -266,7 +266,7 @@ public class ConfigValueChangeValidatorTest {
             builder.value(value);
         }
 
-        public SimpleConfigProducer withChildren(AbstractConfigProducer<?>... producer) {
+        public SimpleConfigProducer withChildren(TreeConfigProducer<?>... producer) {
             List.of(producer).forEach(this::addChild);
             return this;
         }

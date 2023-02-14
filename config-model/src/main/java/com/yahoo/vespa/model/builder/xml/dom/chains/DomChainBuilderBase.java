@@ -3,7 +3,7 @@ package com.yahoo.vespa.model.builder.xml.dom.chains;
 
 import com.yahoo.component.chain.model.ChainSpecification;
 import com.yahoo.config.model.deploy.DeployState;
-import com.yahoo.config.model.producer.AbstractConfigProducer;
+import com.yahoo.config.model.producer.TreeConfigProducer;
 import com.yahoo.vespa.model.builder.xml.dom.VespaDomBuilder;
 import com.yahoo.vespa.model.container.component.chain.Chain;
 import com.yahoo.vespa.model.container.component.chain.ChainedComponent;
@@ -28,7 +28,7 @@ public abstract class DomChainBuilderBase<COMPONENT extends ChainedComponent<?>,
         this.outerComponentTypeByComponentName = outerComponentTypeByComponentName;
     }
 
-    public final CHAIN doBuild(DeployState deployState, AbstractConfigProducer<?> ancestor, Element producerSpec) {
+    public final CHAIN doBuild(DeployState deployState, TreeConfigProducer<?> ancestor, Element producerSpec) {
         ComponentsBuilder<COMPONENT> componentsBuilder =
                 new ComponentsBuilder<>(deployState, ancestor, allowedComponentTypes, List.of(producerSpec), outerComponentTypeByComponentName);
         ChainSpecification specWithoutInnerComponents =
@@ -46,6 +46,6 @@ public abstract class DomChainBuilderBase<COMPONENT extends ChainedComponent<?>,
         }
     }
 
-    protected abstract CHAIN buildChain(DeployState deployState, AbstractConfigProducer<?> ancestor, Element producerSpec,
+    protected abstract CHAIN buildChain(DeployState deployState, TreeConfigProducer<?> ancestor, Element producerSpec,
                                         ChainSpecification specWithoutInnerComponents);
 }

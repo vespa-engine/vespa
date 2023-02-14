@@ -4,7 +4,7 @@ package com.yahoo.vespa.model.admin;
 import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.api.container.ContainerServiceType;
 import com.yahoo.config.model.deploy.DeployState;
-import com.yahoo.config.model.producer.AbstractConfigProducer;
+import com.yahoo.config.model.producer.TreeConfigProducer;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.vespa.model.container.Container;
 import com.yahoo.vespa.model.container.component.AccessLogComponent;
@@ -17,7 +17,7 @@ import java.util.Optional;
  */
 public class LogserverContainer extends Container {
 
-    public LogserverContainer(AbstractConfigProducer<?> parent, DeployState deployState) {
+    public LogserverContainer(TreeConfigProducer<?> parent, DeployState deployState) {
         super(parent, "" + 0, 0, deployState);
         if (deployState.isHosted() && deployState.getProperties().applicationId().instance().isTester()) useDynamicPorts();
         LogserverContainerCluster cluster = (LogserverContainerCluster) parent;

@@ -4,7 +4,7 @@ package com.yahoo.vespa.model;
 import com.yahoo.config.model.api.PortInfo;
 import com.yahoo.config.model.api.ServiceInfo;
 import com.yahoo.config.model.deploy.DeployState;
-import com.yahoo.config.model.producer.AbstractConfigProducer;
+import com.yahoo.config.model.producer.TreeConfigProducer;
 import com.yahoo.vespa.defaults.Defaults;
 
 import java.util.Collection;
@@ -27,7 +27,7 @@ import static com.yahoo.text.Lowercase.toLowerCase;
  *
  * @author gjoranv
  */
-public abstract class AbstractService extends AbstractConfigProducer<AbstractConfigProducer<?>> implements Service {
+public abstract class AbstractService extends TreeConfigProducer<TreeConfigProducer<?>> implements Service {
 
     // The physical host this Service runs on.
     private HostResource hostResource = null;
@@ -78,13 +78,13 @@ public abstract class AbstractService extends AbstractConfigProducer<AbstractCon
 
     /**
      * Preferred constructor when building from XML. Use this if you are building
-     * in doBuild() in an AbstractConfigProducerBuilder.
+     * in doBuild() in an TreeConfigProducerBuilder.
      * build() will call initService() in that case, after setting hostalias and baseport.
      *
      * @param parent the parent config producer in the model tree
      * @param name   the name of this service
      */
-    public AbstractService(AbstractConfigProducer<?> parent, String name) {
+    public AbstractService(TreeConfigProducer<?> parent, String name) {
         super(parent, name);
         environmentVariables.put("VESPA_SILENCE_CORE_ON_OOM", true);
     }

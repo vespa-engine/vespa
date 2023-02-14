@@ -2,7 +2,7 @@
 package com.yahoo.vespa.model.builder.xml.dom.chains;
 
 import com.yahoo.config.model.deploy.DeployState;
-import com.yahoo.config.model.producer.AbstractConfigProducer;
+import com.yahoo.config.model.producer.TreeConfigProducer;
 import com.yahoo.vespa.model.builder.xml.dom.VespaDomBuilder;
 import com.yahoo.vespa.model.builder.xml.dom.chains.ComponentsBuilder.ComponentType;
 import com.yahoo.vespa.model.container.component.chain.Chain;
@@ -31,10 +31,10 @@ class DomChainsBuilder<COMPONENT extends ChainedComponent<?>, CHAIN extends Chai
         this.allowedComponentTypes = new ArrayList<>(allowedComponentTypes);
     }
 
-    protected abstract CHAINS newChainsInstance(AbstractConfigProducer<?> parent);
+    protected abstract CHAINS newChainsInstance(TreeConfigProducer<?> parent);
 
     @Override
-    protected final CHAINS doBuild(DeployState deployState, AbstractConfigProducer<?> parent, Element chainsElement) {
+    protected final CHAINS doBuild(DeployState deployState, TreeConfigProducer<?> parent, Element chainsElement) {
         CHAINS chains = newChainsInstance(parent);
 
         List<Element> allChainElements = allChainElements(deployState, chainsElement);
@@ -56,12 +56,12 @@ class DomChainsBuilder<COMPONENT extends ChainedComponent<?>, CHAIN extends Chai
         return chainsElements;
     }
 
-    private ComponentsBuilder<COMPONENT> readOuterComponents(DeployState deployState, AbstractConfigProducer<?> ancestor, List<Element> chainsElems) {
+    private ComponentsBuilder<COMPONENT> readOuterComponents(DeployState deployState, TreeConfigProducer<?> ancestor, List<Element> chainsElems) {
         return new ComponentsBuilder<>(deployState, ancestor, allowedComponentTypes, chainsElems, null);
     }
 
     protected abstract
-    ChainsBuilder<COMPONENT, CHAIN> readChains(DeployState deployState, AbstractConfigProducer<?> ancestor, List<Element> allChainsElems,
+    ChainsBuilder<COMPONENT, CHAIN> readChains(DeployState deployState, TreeConfigProducer<?> ancestor, List<Element> allChainsElems,
                                                Map<String, ComponentsBuilder.ComponentType<?>> outerComponentTypeByComponentName);
 
     private void addOuterComponents(CHAINS chains, ComponentsBuilder<COMPONENT> outerComponentsBuilder) {

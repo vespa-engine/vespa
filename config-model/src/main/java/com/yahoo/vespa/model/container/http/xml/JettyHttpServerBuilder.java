@@ -2,7 +2,7 @@
 package com.yahoo.vespa.model.container.http.xml;
 
 import com.yahoo.config.model.deploy.DeployState;
-import com.yahoo.config.model.producer.AbstractConfigProducer;
+import com.yahoo.config.model.producer.TreeConfigProducer;
 import com.yahoo.text.XML;
 import com.yahoo.vespa.model.builder.xml.dom.VespaDomBuilder;
 import com.yahoo.vespa.model.container.ContainerCluster;
@@ -22,7 +22,7 @@ public class JettyHttpServerBuilder extends VespaDomBuilder.DomConfigProducerBui
     }
 
     @Override
-    protected JettyHttpServer doBuild(DeployState deployState, AbstractConfigProducer<?> ancestor, Element http) {
+    protected JettyHttpServer doBuild(DeployState deployState, TreeConfigProducer<?> ancestor, Element http) {
         JettyHttpServer jettyHttpServer = new JettyHttpServer("jdisc-jetty", cluster, deployState);
         for (Element serverSpec: XML.getChildren(http, "server")) {
             ConnectorFactory connectorFactory = new JettyConnectorBuilder().build(deployState, ancestor, serverSpec);

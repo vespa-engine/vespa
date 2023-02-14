@@ -10,7 +10,7 @@ import com.yahoo.config.model.admin.AdminModel;
 import com.yahoo.config.model.builder.xml.ConfigModelBuilder;
 import com.yahoo.config.model.builder.xml.ConfigModelId;
 import com.yahoo.config.model.deploy.DeployState;
-import com.yahoo.config.model.producer.AbstractConfigProducer;
+import com.yahoo.config.model.producer.TreeConfigProducer;
 import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.vespa.model.AbstractService;
 import com.yahoo.vespa.model.HostResource;
@@ -165,7 +165,7 @@ public class ModelAmendingTestCase {
     /** To test that we can amend hosts with an additional service */
     private static class AmendedService extends AbstractService {
 
-        public AmendedService(AbstractConfigProducer parent) {
+        public AmendedService(TreeConfigProducer parent) {
             super(parent, "testservice");
         }
 
