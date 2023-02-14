@@ -51,6 +51,7 @@ import com.yahoo.vespa.config.util.ConfigUtils;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.mock.MockCurator;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
+import com.yahoo.vespa.flags.PermanentFlags;
 import com.yahoo.vespa.model.VespaModelFactory;
 import org.junit.Before;
 import org.junit.Rule;
@@ -104,6 +105,7 @@ public class ApplicationRepositoryTest {
     private Curator curator;
     private ConfigserverConfig configserverConfig;
     private FileDirectory fileDirectory;
+    private InMemoryFlagSource flagSource;
 
     @Rule
     public TemporaryFolder temporaryFolder = new TemporaryFolder();
@@ -121,7 +123,7 @@ public class ApplicationRepositoryTest {
                 .configDefinitionsDir(temporaryFolder.newFolder().getAbsolutePath())
                 .fileReferencesDir(temporaryFolder.newFolder().getAbsolutePath())
                 .build();
-        InMemoryFlagSource flagSource = new InMemoryFlagSource();
+        flagSource = new InMemoryFlagSource();
         fileDirectory = new FileDirectory(configserverConfig);
         tenantRepository = new TestTenantRepository.Builder()
                 .withClock(clock)
@@ -142,6 +144,7 @@ public class ApplicationRepositoryTest {
                 .withOrchestrator(orchestrator)
                 .withLogRetriever(new MockLogRetriever())
                 .withClock(clock)
+                .withFlagSource(flagSource)
                 .build();
         timeoutBudget = new TimeoutBudget(clock, Duration.ofSeconds(60));
     }
@@ -400,14 +403,20 @@ public class ApplicationRepositoryTest {
 
     @Test
     public void testDeletingInactiveSessions() throws IOException {
+        long sessionLifeTime = 60;
+        flagSource = flagSource.withLongFlag(PermanentFlags.CONFIG_SERVER_SESSION_EXPIRY_TIME.id(), sessionLifeTime * 2);
         File serverdb = temporaryFolder.newFolder("serverdb");
-        ConfigserverConfig configserverConfig =
+        configserverConfig =
                 new ConfigserverConfig(new ConfigserverConfig.Builder()
                                                .configServerDBDir(serverdb.getAbsolutePath())
                                                .configDefinitionsDir(temporaryFolder.newFolder("configdefinitions").getAbsolutePath())
                                                .fileReferencesDir(temporaryFolder.newFolder("filedistribution").getAbsolutePath())
-                                               .sessionLifetime(60));
-        DeployTester tester = new DeployTester.Builder(temporaryFolder).configserverConfig(configserverConfig).clock(clock).build();
+                                               .sessionLifetime(sessionLifeTime));
+        DeployTester tester = new DeployTester.Builder(temporaryFolder)
+                .configserverConfig(configserverConfig)
+                .clock(clock)
+                .flagSource(flagSource)
+                .build();
         tester.deployApp("src/test/apps/app"); // session 2 (numbering starts at 2)
 
         clock.advance(Duration.ofSeconds(10));
