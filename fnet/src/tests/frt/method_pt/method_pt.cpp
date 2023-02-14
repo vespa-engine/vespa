@@ -32,7 +32,7 @@ public:
   /**
    * Destructor.  No cleanup needed for base class.
    */
-  virtual ~MediumA(void) { }
+  virtual ~MediumA() = default;
 
   virtual void foo() = 0;
 };
@@ -45,18 +45,14 @@ public:
   /**
    * Destructor.  No cleanup needed for base class.
    */
-  virtual ~MediumB(void) { }
+  virtual ~MediumB() = default;
 
   virtual void bar() = 0;
 };
 
 //-------------------------------------------------------------
 
-#ifdef __clang__
 #define UNUSED_MEMBER [[maybe_unused]]
-#else
-#define UNUSED_MEMBER
-#endif
 
 class ComplexA
 {
@@ -70,7 +66,7 @@ public:
   /**
    * Destructor.  No cleanup needed for base class.
    */
-  virtual ~ComplexA(void) { }
+  virtual ~ComplexA() = default;
 
   ComplexA() : _fill1(1), _fill2(2), _fill3(3) {}
   virtual void foo() {}
@@ -89,7 +85,7 @@ public:
   /**
    * Destructor.  No cleanup needed for base class.
    */
-  virtual ~ComplexB(void) { }
+  virtual ~ComplexB() = default;
 
   ComplexB() : _fill1(1), _fill2(2), _fill3(3) {}
   virtual void bar() {}
@@ -184,7 +180,7 @@ void finiTest() {
 
 
 TEST("method pt") {
-  FRT_RPCRequest *req = _supervisor->AllocRPCRequest();
+  FRT_RPCRequest *req = FRT_Supervisor::AllocRPCRequest();
   req->SetMethodName("simpleMethod");
   _target->InvokeSync(req, 60.0);
   EXPECT_TRUE(!req->IsError());
@@ -192,7 +188,7 @@ TEST("method pt") {
   //-------------------------------- MEDIUM
 
   req->SubRef();
-  req = _supervisor->AllocRPCRequest();
+  req = FRT_Supervisor::AllocRPCRequest();
   req->SetMethodName("mediumMethod");
   _target->InvokeSync(req, 60.0);
   EXPECT_TRUE(!req->IsError());
@@ -200,7 +196,7 @@ TEST("method pt") {
   //-------------------------------- COMPLEX
 
   req->SubRef();
-  req = _supervisor->AllocRPCRequest();
+  req = FRT_Supervisor::AllocRPCRequest();
   req->SetMethodName("complexMethod");
   _target->InvokeSync(req, 60.0);
   EXPECT_TRUE(!req->IsError());
