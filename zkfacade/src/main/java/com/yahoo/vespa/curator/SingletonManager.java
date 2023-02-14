@@ -157,11 +157,8 @@ class SingletonManager {
                 logger.log(INFO, "Relinquishing lease for " + id);
                 lock.close();
             }
-            catch (IllegalMonitorStateException e) {
-                logger.log(WARNING, "Failed closing " + lock + ", already closed", e);
-            }
             catch (Exception e) {
-                logger.log(WARNING, "Failed closing " + lock + ", will let it expire", e);
+                logger.log(WARNING, "Failed closing " + lock, e);
             }
             doom.set(EMPTY);
             lock = null;
