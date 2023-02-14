@@ -79,10 +79,10 @@ public class Loader {
         return Duration.between(initialTime, fixture.tester().clock().instant());
     }
 
-    public void applyCpuLoad(double cpuLoad, int measurements) {
-        addCpuMeasurements((float)cpuLoad, measurements);
-        fixture.tester().clock().advance(samplingInterval.negated().multipliedBy(measurements));
-        addQueryRateMeasurements(measurements, t -> t == 0 ? 200.0 : 100.0); // Query traffic only
+    public Duration applyCpuLoad(double cpuLoad, int measurements) {
+        Duration duration = addCpuMeasurements((float)cpuLoad, measurements);
+        fixture.tester().clock().advance(duration.negated());
+        return addQueryRateMeasurements(measurements, t -> t == 0 ? 200.0 : 100.0); // Query traffic only
     }
 
     public void applyMemLoad(double memLoad, int measurements) {

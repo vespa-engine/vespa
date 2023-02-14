@@ -21,6 +21,7 @@ import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.applications.Application;
 import com.yahoo.vespa.hosted.provision.applications.Cluster;
+import com.yahoo.vespa.hosted.provision.applications.BcpGroupInfo;
 import com.yahoo.vespa.hosted.provision.autoscale.awsnodes.AwsHostResourcesCalculatorImpl;
 import com.yahoo.vespa.hosted.provision.autoscale.awsnodes.AwsNodeTypes;
 import com.yahoo.vespa.hosted.provision.provisioning.HostResourcesCalculator;
@@ -129,6 +130,12 @@ public class Fixture {
         var application = application();
         application = application.with(application.status().withCurrentReadShare(currentReadShare)
                                                   .withMaxReadShare(maxReadShare));
+        tester.nodeRepository().applications().put(application, tester.nodeRepository().applications().lock(applicationId));
+    }
+
+    public void store(BcpGroupInfo bcpGroupInfo) {
+        var application = application();
+        application = application.with(application.cluster(clusterId()).get().with(bcpGroupInfo));
         tester.nodeRepository().applications().put(application, tester.nodeRepository().applications().lock(applicationId));
     }
 

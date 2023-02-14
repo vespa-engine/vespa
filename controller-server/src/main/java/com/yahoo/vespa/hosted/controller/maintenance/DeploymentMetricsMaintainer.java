@@ -25,8 +25,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * Retrieve deployment metrics such as QPS and document count from the metric service and
- * update applications with this info.
+ * Retrieves deployment metrics such as QPS and document count from the metric service and
+ * updates applications with this info.
  *
  * @author smorgrav
  * @author mpolden
