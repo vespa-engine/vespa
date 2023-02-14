@@ -5,6 +5,7 @@ import com.yahoo.config.FileReference;
 import com.yahoo.config.ModelReference;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.application.api.FileRegistry;
+import com.yahoo.config.model.producer.AnyConfigProducer;
 import com.yahoo.config.model.producer.TreeConfigProducer;
 import com.yahoo.config.model.producer.UserConfigRepo;
 import com.yahoo.path.Path;
@@ -40,7 +41,7 @@ public class FileSender implements Serializable {
     /**
      * Sends all user configured files for a producer to all given services.
      */
-    public <PRODUCER extends TreeConfigProducer<?>> void sendUserConfiguredFiles(PRODUCER producer) {
+    public <PRODUCER extends AnyConfigProducer> void sendUserConfiguredFiles(PRODUCER producer) {
         if (services.isEmpty()) return;
 
         UserConfigRepo userConfigs = producer.getUserConfigs();
