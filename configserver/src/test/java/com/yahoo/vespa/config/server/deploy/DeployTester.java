@@ -293,7 +293,8 @@ public class DeployTester {
                     .withFileDistributionFactory(new MockFileDistributionFactory(configserverConfig))
                     .withMetrics(Optional.ofNullable(metrics).orElse(Metrics.createTestMetrics()))
                     .withModelFactoryRegistry((new ModelFactoryRegistry(modelFactories)))
-                    .withZone(zone);
+                    .withZone(zone)
+                    .withFlagSource(flagSource);
 
             if (configserverConfig.hostedVespa()) builder.withHostProvisionerProvider(HostProvisionerProvider.withProvisioner(provisioner, true));
 

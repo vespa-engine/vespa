@@ -321,6 +321,15 @@ public class PermanentFlags {
             "Takes effect on next redeployment",
             APPLICATION_ID);
 
+    public static final UnboundLongFlag CONFIG_SERVER_SESSION_EXPIRY_TIME = defineLongFlag(
+            // TODO: Lower to 3600, which is default session expiry time
+            "config-server-session-expiry-time", 3600 * 2,
+            "Expiry time in seconds for remote sessions (session in ZooKeeper). Default should be equal to session lifetime, " +
+            "but can be lowered if there are incidents/bugs where one needs to delete sessions",
+            "Takes effect immediately",
+            ZONE_ID
+    );
+
     private PermanentFlags() {}
 
     private static UnboundBooleanFlag defineFeatureFlag(
