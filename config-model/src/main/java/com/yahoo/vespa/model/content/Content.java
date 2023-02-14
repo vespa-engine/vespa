@@ -295,7 +295,7 @@ public class Content extends ConfigModel {
             }
             throw new IllegalStateException("ApplicationConfigProducerRoot " + root + " with bad type for " + DOCPROC_RESERVED_NAME + ": " + current.getClass());
         }
-        
+
         /** Create a new container cluster for indexing and add it to the Vespa model */
         private void createImplicitIndexingCluster(IndexedSearchCluster cluster,
                                                    Content content,
