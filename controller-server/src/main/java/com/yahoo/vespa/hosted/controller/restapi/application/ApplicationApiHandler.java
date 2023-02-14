@@ -1993,8 +1993,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
                 }
                 Cursor endpointsArray = serviceObject.setArray("endpoints");
                 controller.serviceRegistry().vpcEndpointService()
-                          .getConnections(new ClusterId(id, lb.cluster()),
-                                          controller.applications().decideCloudAccountOf(id, controller.applications().requireApplication(TenantAndApplicationId.from(tenantName, applicationName)).deploymentSpec()))
+                          .getConnections(new ClusterId(id, lb.cluster()), lb.cloudAccount())
                         .forEach(endpoint -> {
                             Cursor endpointObject = endpointsArray.addObject();
                             endpointObject.setString("endpointId", endpoint.endpointId());
