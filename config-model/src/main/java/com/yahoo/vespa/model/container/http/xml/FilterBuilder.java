@@ -16,7 +16,7 @@ import org.w3c.dom.Element;
  * @author Tony Vaagenes
  * @author gjoranv
  */
-public class FilterBuilder extends VespaDomBuilder.DomConfigProducerBuilder<Filter, AnyConfigProducer> {
+public class FilterBuilder extends VespaDomBuilder.DomConfigProducerBuilderBase<Filter> {
 
     @Override
     protected Filter doBuild(DeployState deployState, TreeConfigProducer<AnyConfigProducer> ancestor, Element filterElement) {

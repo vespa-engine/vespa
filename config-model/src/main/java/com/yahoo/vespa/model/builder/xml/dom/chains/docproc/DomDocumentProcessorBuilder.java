@@ -13,7 +13,7 @@ import org.w3c.dom.Element;
  *
  * @author gjoranv
  */
-public class DomDocumentProcessorBuilder extends VespaDomBuilder.DomConfigProducerBuilder<DocumentProcessor, AnyConfigProducer> {
+public class DomDocumentProcessorBuilder extends VespaDomBuilder.DomConfigProducerBuilderBase<DocumentProcessor> {
 
     @Override
     protected DocumentProcessor doBuild(DeployState deployState, TreeConfigProducer<AnyConfigProducer> ancestor, Element documentProcessorElement) {

@@ -78,7 +78,7 @@ public class ContentSearchCluster extends TreeConfigProducer<AnyConfigProducer> 
     /** Whether the nodes of this cluster also hosts a container cluster in a hosted system */
     private final double fractionOfMemoryReserved;
 
-    public static class Builder extends VespaDomBuilder.DomConfigProducerBuilder<ContentSearchCluster, AnyConfigProducer> {
+    public static class Builder extends VespaDomBuilder.DomConfigProducerBuilderBase<ContentSearchCluster> {
 
         private final Map<String, NewDocumentType> documentDefinitions;
         private final Set<NewDocumentType> globallyDistributedDocuments;

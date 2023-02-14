@@ -17,9 +17,9 @@ import org.w3c.dom.Element;
  *
  * TODO: Author
  */
-public class ClusterControllerConfig extends TreeConfigProducer<ClusterControllerConfig> implements FleetcontrollerConfig.Producer {
+public class ClusterControllerConfig extends AnyConfigProducer implements FleetcontrollerConfig.Producer {
 
-    public static class Builder extends VespaDomBuilder.DomConfigProducerBuilder<ClusterControllerConfig, AnyConfigProducer> {
+    public static class Builder extends VespaDomBuilder.DomConfigProducerBuilderBase<ClusterControllerConfig> {
         private final String clusterName;
         private final ModelElement clusterElement;
         private final ResourceLimits resourceLimits;

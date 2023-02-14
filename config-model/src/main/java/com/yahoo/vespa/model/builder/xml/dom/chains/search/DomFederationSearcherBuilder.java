@@ -27,7 +27,7 @@ import java.util.Optional;
  *
  * @author Tony Vaagenes
  */
-public class DomFederationSearcherBuilder extends VespaDomBuilder.DomConfigProducerBuilder<Searcher<?>, AnyConfigProducer> {
+public class DomFederationSearcherBuilder extends VespaDomBuilder.DomConfigProducerBuilderBase<Searcher<?>> {
 
     static class FederationSearcherModelBuilder extends GenericChainedComponentModelBuilder {
 

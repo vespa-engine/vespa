@@ -34,7 +34,7 @@ import java.util.Optional;
  * @author Ulf Lilleengen
  * @author Vegard Havdal
  */
-public abstract class DomAdminBuilderBase extends VespaDomBuilder.DomConfigProducerBuilder<Admin, AnyConfigProducer> {
+public abstract class DomAdminBuilderBase extends VespaDomBuilder.DomConfigProducerBuilderBase<Admin> {
 
     private final ApplicationType applicationType;
     protected final List<ConfigServerSpec> configServerSpecs;

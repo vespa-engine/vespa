@@ -49,15 +49,15 @@ public class ComponentsBuilder<T extends ChainedComponent<?>> {
 
         final String name;
 
-        private final Class<? extends VespaDomBuilder.DomConfigProducerBuilder<T, AnyConfigProducer> > builderClass;
+        private final Class<? extends VespaDomBuilder.DomConfigProducerBuilderBase<T> > builderClass;
 
-        private ComponentType(String name, Class<? extends VespaDomBuilder.DomConfigProducerBuilder<T, AnyConfigProducer> > builderClass) {
+        private ComponentType(String name, Class<? extends VespaDomBuilder.DomConfigProducerBuilderBase<T> > builderClass) {
             this.name = name;
             this.builderClass = builderClass;
             values.add(this);
         }
 
-        public VespaDomBuilder.DomConfigProducerBuilder<T, AnyConfigProducer > createBuilder() {
+        public VespaDomBuilder.DomConfigProducerBuilderBase<T > createBuilder() {
             return DomBuilderCreator.create(builderClass);
         }
     }

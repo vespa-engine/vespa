@@ -24,7 +24,7 @@ import java.util.Optional;
  * @author Einar M R Rosenvinge
  * @author mortent
  */
-public class JettyConnectorBuilder extends VespaDomBuilder.DomConfigProducerBuilder<ConnectorFactory, AnyConfigProducer>  {
+public class JettyConnectorBuilder extends VespaDomBuilder.DomConfigProducerBuilderBase<ConnectorFactory>  {
 
     @Override
     protected ConnectorFactory doBuild(DeployState deployState, TreeConfigProducer<AnyConfigProducer> ancestor, Element serverSpec) {

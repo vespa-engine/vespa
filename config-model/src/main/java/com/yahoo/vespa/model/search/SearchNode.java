@@ -70,7 +70,7 @@ public class SearchNode extends AbstractService implements
     private final Optional<ResourceLimits> resourceLimits;
     private final double fractionOfMemoryReserved;
 
-    public static class Builder extends VespaDomBuilder.DomConfigProducerBuilder<SearchNode, AnyConfigProducer> {
+    public static class Builder extends VespaDomBuilder.DomConfigProducerBuilderBase<SearchNode> {
 
         private final String name;
         private final NodeSpec nodeSpec;

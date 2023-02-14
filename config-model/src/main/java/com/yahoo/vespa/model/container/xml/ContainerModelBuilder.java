@@ -192,7 +192,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     }
 
     private ApplicationContainerCluster createContainerCluster(Element spec, ConfigModelContext modelContext) {
-        return new VespaDomBuilder.DomConfigProducerBuilder<ApplicationContainerCluster, AnyConfigProducer>() {
+        return new VespaDomBuilder.DomConfigProducerBuilderBase<ApplicationContainerCluster>() {
             @Override
             protected ApplicationContainerCluster doBuild(DeployState deployState, TreeConfigProducer<AnyConfigProducer> ancestor, Element producerSpec) {
                 return new ApplicationContainerCluster(ancestor, modelContext.getProducerId(),

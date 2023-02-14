@@ -28,7 +28,7 @@ import java.util.logging.Level;
  * @author Tony Vaagenes
  * @author gjoranv
  */
-public class HttpBuilder extends VespaDomBuilder.DomConfigProducerBuilder<Http, AnyConfigProducer> {
+public class HttpBuilder extends VespaDomBuilder.DomConfigProducerBuilderBase<Http> {
 
     static final String REQUEST_CHAIN_TAG_NAME = "request-chain";
     static final String RESPONSE_CHAIN_TAG_NAME = "response-chain";

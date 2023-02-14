@@ -14,7 +14,7 @@ import org.w3c.dom.Element;
 /**
  * @author Einar M R Rosenvinge
  */
-public class JettyHttpServerBuilder extends VespaDomBuilder.DomConfigProducerBuilder<JettyHttpServer, AnyConfigProducer> {
+public class JettyHttpServerBuilder extends VespaDomBuilder.DomConfigProducerBuilderBase<JettyHttpServer> {
 
     private final ContainerCluster<?> cluster;
 

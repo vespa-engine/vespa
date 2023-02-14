@@ -13,7 +13,7 @@ import org.w3c.dom.Element;
  *
  * @author geirst
  */
-public class DomSearchTuningBuilder extends VespaDomBuilder.DomConfigProducerBuilder<Tuning, AnyConfigProducer> {
+public class DomSearchTuningBuilder extends VespaDomBuilder.DomConfigProducerBuilderBase<Tuning> {
 
     @Override
     protected Tuning doBuild(DeployState deployState, TreeConfigProducer<AnyConfigProducer> parent, Element spec) {

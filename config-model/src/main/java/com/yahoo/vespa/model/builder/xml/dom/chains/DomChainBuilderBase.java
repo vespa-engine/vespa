@@ -18,7 +18,7 @@ import java.util.Map;
  * @author Tony Vaagenes
  */
 public abstract class DomChainBuilderBase<COMPONENT extends ChainedComponent<?>, CHAIN extends Chain<COMPONENT>>
-    extends VespaDomBuilder.DomConfigProducerBuilder<CHAIN, AnyConfigProducer> {
+    extends VespaDomBuilder.DomConfigProducerBuilderBase<CHAIN> {
 
     private final Collection<ComponentsBuilder.ComponentType<COMPONENT>> allowedComponentTypes;
     protected final Map<String, ComponentsBuilder.ComponentType<?>> outerComponentTypeByComponentName;

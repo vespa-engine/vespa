@@ -15,7 +15,7 @@ import org.w3c.dom.Element;
  * @author  bratseth
  * @since   5.1.6
  */
-public class DomProcessorBuilder extends VespaDomBuilder.DomConfigProducerBuilder<Processor, AnyConfigProducer> {
+public class DomProcessorBuilder extends VespaDomBuilder.DomConfigProducerBuilderBase<Processor> {
 
     @Override
     protected Processor doBuild(DeployState deployState, TreeConfigProducer<AnyConfigProducer> ancestor, Element processorElement) {

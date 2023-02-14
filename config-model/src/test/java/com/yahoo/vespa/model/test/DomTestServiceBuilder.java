@@ -13,7 +13,7 @@ import org.w3c.dom.Element;
 public class DomTestServiceBuilder {
 
 
-    static class SimpleServiceBuilder extends VespaDomBuilder.DomConfigProducerBuilder<SimpleService, AnyConfigProducer> {
+    static class SimpleServiceBuilder extends VespaDomBuilder.DomConfigProducerBuilderBase<SimpleService> {
         int i;
 
         public SimpleServiceBuilder(int i) {
@@ -26,7 +26,7 @@ public class DomTestServiceBuilder {
         }
     }
 
-    static class ApiServiceBuilder extends VespaDomBuilder.DomConfigProducerBuilder<ApiService, AnyConfigProducer> {
+    static class ApiServiceBuilder extends VespaDomBuilder.DomConfigProducerBuilderBase<ApiService> {
         int i;
 
         public ApiServiceBuilder(int i) {
@@ -39,7 +39,7 @@ public class DomTestServiceBuilder {
         }
     }
 
-    static class ParentServiceBuilder extends VespaDomBuilder.DomConfigProducerBuilder<ParentService, AnyConfigProducer> {
+    static class ParentServiceBuilder extends VespaDomBuilder.DomConfigProducerBuilderBase<ParentService> {
         int i;
 
         public ParentServiceBuilder(int i) {

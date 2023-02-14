@@ -11,7 +11,7 @@ import org.w3c.dom.Element;
 /**
  * @author Tony Vaagenes
  */
-public class ContainerServiceBuilder extends VespaDomBuilder.DomConfigProducerBuilder<ApplicationContainer, AnyConfigProducer> {
+public class ContainerServiceBuilder extends VespaDomBuilder.DomConfigProducerBuilderBase<ApplicationContainer> {
 
     private final String id;
     private final int index;

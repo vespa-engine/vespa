@@ -28,7 +28,7 @@ import static java.util.logging.Level.INFO;
 /**
  * @author gjoranv
  */
-public class DomHandlerBuilder extends VespaDomBuilder.DomConfigProducerBuilder<Handler, AnyConfigProducer> {
+public class DomHandlerBuilder extends VespaDomBuilder.DomConfigProducerBuilderBase<Handler> {
 
     private static final Set<BindingPattern> reservedBindings =
             Set.of(METRICS_V2_HANDLER_BINDING_1,

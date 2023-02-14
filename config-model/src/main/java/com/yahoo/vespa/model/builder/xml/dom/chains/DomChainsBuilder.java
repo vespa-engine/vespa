@@ -23,7 +23,7 @@ import java.util.Map;
  */
 public abstract
 class DomChainsBuilder<COMPONENT extends ChainedComponent<?>, CHAIN extends Chain<COMPONENT>, CHAINS extends Chains<CHAIN>>
-    extends VespaDomBuilder.DomConfigProducerBuilder<CHAINS, AnyConfigProducer>
+    extends VespaDomBuilder.DomConfigProducerBuilderBase<CHAINS>
 {
 
     private final Collection<ComponentType<COMPONENT>> allowedComponentTypes;

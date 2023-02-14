@@ -15,7 +15,7 @@ import com.yahoo.vespa.model.admin.Slobrok;
 import com.yahoo.vespa.model.admin.clustercontroller.ClusterControllerCluster;
 import com.yahoo.vespa.model.admin.clustercontroller.ClusterControllerContainer;
 import com.yahoo.vespa.model.admin.clustercontroller.ClusterControllerContainerCluster;
-import com.yahoo.vespa.model.builder.xml.dom.VespaDomBuilder.DomConfigProducerBuilder;
+import com.yahoo.vespa.model.builder.xml.dom.VespaDomBuilder.DomConfigProducerBuilderBase;
 import com.yahoo.vespa.model.container.Container;
 import org.w3c.dom.Element;
 import java.util.ArrayList;
@@ -150,7 +150,7 @@ public class DomAdminV2Builder extends DomAdminBuilderBase {
         return slobroks;
     }
 
-    private static class LogserverBuilder extends DomConfigProducerBuilder<Logserver, AnyConfigProducer> {
+    private static class LogserverBuilder extends DomConfigProducerBuilderBase<Logserver> {
         public LogserverBuilder() {
         }
 
@@ -160,7 +160,7 @@ public class DomAdminV2Builder extends DomAdminBuilderBase {
         }
     }
 
-    private static class ConfigserverBuilder extends DomConfigProducerBuilder<Configserver, AnyConfigProducer> {
+    private static class ConfigserverBuilder extends DomConfigProducerBuilderBase<Configserver> {
         private final int i;
         private final int rpcPort;
 
@@ -181,7 +181,7 @@ public class DomAdminV2Builder extends DomAdminBuilderBase {
         }
     }
 
-    private static class SlobrokBuilder extends DomConfigProducerBuilder<Slobrok, AnyConfigProducer> {
+    private static class SlobrokBuilder extends DomConfigProducerBuilderBase<Slobrok> {
 
         int i;
 
@@ -196,7 +196,7 @@ public class DomAdminV2Builder extends DomAdminBuilderBase {
 
     }
 
-    private static class ClusterControllerBuilder extends DomConfigProducerBuilder<ClusterControllerContainer, AnyConfigProducer> {
+    private static class ClusterControllerBuilder extends DomConfigProducerBuilderBase<ClusterControllerContainer> {
         int i;
         boolean runStandaloneZooKeeper;
 

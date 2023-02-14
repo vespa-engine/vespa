@@ -41,7 +41,7 @@ public class AccessLogBuilder {
         }
     }
 
-    private static class DomBuilder extends VespaDomBuilder.DomConfigProducerBuilder<AccessLogComponent, AnyConfigProducer> {
+    private static class DomBuilder extends VespaDomBuilder.DomConfigProducerBuilderBase<AccessLogComponent> {
         private final AccessLogType accessLogType;
         private final boolean isHostedVespa;
 

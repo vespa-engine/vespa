@@ -33,7 +33,7 @@ public class DistributorCluster extends TreeConfigProducer<Distributor> implemen
     private final GcOptions gc;
     private final boolean hasIndexedDocumentType;
     private final int maxActivationInhibitedOutOfSyncGroups;
-    public static class Builder extends VespaDomBuilder.DomConfigProducerBuilder<DistributorCluster, AnyConfigProducer> {
+    public static class Builder extends VespaDomBuilder.DomConfigProducerBuilderBase<DistributorCluster> {
 
         ContentCluster parent;
 

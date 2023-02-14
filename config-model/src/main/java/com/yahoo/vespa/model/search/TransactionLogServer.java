@@ -25,7 +25,7 @@ public class TransactionLogServer extends AbstractService  {
         setProp("clustertype", "search");
     }
 
-    public static class Builder extends VespaDomBuilder.DomConfigProducerBuilder<TransactionLogServer, AnyConfigProducer> {
+    public static class Builder extends VespaDomBuilder.DomConfigProducerBuilderBase<TransactionLogServer> {
 
         private final String clusterName;
         private final Boolean useFsync;

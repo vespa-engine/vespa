@@ -29,7 +29,7 @@ public class StorageCluster extends TreeConfigProducer<StorageNode>
         PersistenceConfig.Producer,
         MetricsmanagerConfig.Producer
 {
-    public static class Builder extends VespaDomBuilder.DomConfigProducerBuilder<StorageCluster, AnyConfigProducer> {
+    public static class Builder extends VespaDomBuilder.DomConfigProducerBuilderBase<StorageCluster> {
         @Override
         protected StorageCluster doBuild(DeployState deployState, TreeConfigProducer<AnyConfigProducer> ancestor, Element producerSpec) {
             final ModelElement clusterElem = new ModelElement(producerSpec);

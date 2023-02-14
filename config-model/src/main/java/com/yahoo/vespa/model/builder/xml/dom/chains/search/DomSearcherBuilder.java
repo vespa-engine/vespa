@@ -14,7 +14,7 @@ import org.w3c.dom.Element;
  * Builds a Searcher from XML.
  * @author Tony Vaagenes
  */
-public class DomSearcherBuilder extends VespaDomBuilder.DomConfigProducerBuilder<Searcher<?>, AnyConfigProducer> {
+public class DomSearcherBuilder extends VespaDomBuilder.DomConfigProducerBuilderBase<Searcher<?>> {
 
     @Override
     protected Searcher<ChainedComponentModel> doBuild(DeployState deployState, TreeConfigProducer<AnyConfigProducer> ancestor, Element searcherElement) {
