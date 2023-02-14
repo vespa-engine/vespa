@@ -12,7 +12,7 @@ import com.yahoo.security.tls.CapabilitySet;
  */
 public interface CapabilityRequiringRequestHandler extends RequestHandler {
 
-    CapabilitySet DEFAULT_REQUIRED_CAPABILITIES = CapabilitySet.of(Capability.HTTP_UNCLASSIFIED);
+    CapabilitySet DEFAULT_REQUIRED_CAPABILITIES = CapabilitySet.from(Capability.HTTP_UNCLASSIFIED);
 
     default CapabilitySet requiredCapabilities(RequestView req) { return DEFAULT_REQUIRED_CAPABILITIES; }
 

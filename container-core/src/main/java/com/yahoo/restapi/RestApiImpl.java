@@ -269,7 +269,7 @@ class RestApiImpl implements RestApi {
         @Override public Builder disableDefaultAclMapping() { this.disableDefaultAclMapping = true; return this; }
 
         @Override public Builder requiredCapabilities(Capability... capabilities) {
-            return requiredCapabilities(CapabilitySet.of(capabilities));
+            return requiredCapabilities(CapabilitySet.from(capabilities));
         }
         @Override public Builder requiredCapabilities(CapabilitySet capabilities) {
             if (requiredCapabilities != null) throw new IllegalStateException("Capabilities already set");
@@ -293,7 +293,7 @@ class RestApiImpl implements RestApi {
         @Override public RestApi.RouteBuilder name(String name) { this.name = name; return this; }
 
         @Override public RestApi.RouteBuilder requiredCapabilities(Capability... capabilities) {
-            return requiredCapabilities(CapabilitySet.of(capabilities));
+            return requiredCapabilities(CapabilitySet.from(capabilities));
         }
         @Override public RestApi.RouteBuilder requiredCapabilities(CapabilitySet capabilities) {
             if (requiredCapabilities != null) throw new IllegalStateException("Capabilities already set");
@@ -396,7 +396,7 @@ class RestApiImpl implements RestApi {
         private CapabilitySet requiredCapabilities;
 
         @Override public HandlerConfigBuilder withRequiredCapabilities(Capability... capabilities) {
-            return withRequiredCapabilities(CapabilitySet.of(capabilities));
+            return withRequiredCapabilities(CapabilitySet.from(capabilities));
         }
         @Override public HandlerConfigBuilder withRequiredCapabilities(CapabilitySet capabilities) {
             if (requiredCapabilities != null) throw new IllegalStateException("Capabilities already set");
