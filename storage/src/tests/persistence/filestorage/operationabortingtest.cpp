@@ -296,8 +296,7 @@ TEST_F(OperationAbortingTest, wait_for_current_operation_completion_for_aborted_
     auto abortCmd = makeAbortCmd(abortSet);
 
     SendTask sendTask(abortCmd, *_queueBarrier, c.top);
-    vespalib::Thread thread(sendTask, test_thread);
-    thread.start();
+    auto thread = vespalib::Thread::start(sendTask, test_thread);
 
     LOG(debug, "waiting for threads to reach barriers");
     _queueBarrier->await();
@@ -306,7 +305,6 @@ TEST_F(OperationAbortingTest, wait_for_current_operation_completion_for_aborted_
     LOG(debug, "waiting on completion barrier");
     _completionBarrier->await();
 
-    thread.stop();
     thread.join();
 
     // If waiting works, put reply shall always be ordered before the internal

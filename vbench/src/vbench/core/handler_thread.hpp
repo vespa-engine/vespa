@@ -28,10 +28,10 @@ HandlerThread<T>::HandlerThread(Handler<T> &next, init_fun_t init_fun)
       _cond(),
       _queue(),
       _next(next),
-      _thread(*this, init_fun),
+      _thread(),
       _done(false)
 {
-    _thread.start();
+    _thread = vespalib::Thread::start(*this, init_fun);
 }
 
 template <typename T>

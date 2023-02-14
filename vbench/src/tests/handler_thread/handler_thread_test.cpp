@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vbench/test/all.h>
+#include <vespa/vespalib/util/time.h>
 
 using namespace vbench;
 
@@ -9,7 +10,7 @@ struct MyHandler : Handler<int> {
     ~MyHandler() override;
     void handle(std::unique_ptr<int> value) override {
         values.push_back(*value);
-        vespalib::Thread::sleep(10); // for improved coverage
+        std::this_thread::sleep_for(10ms);
     }
 };
 

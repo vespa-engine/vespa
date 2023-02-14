@@ -8,7 +8,6 @@
 #include <vbench/http/http_connection_pool.h>
 #include <vespa/vespalib/util/runnable.h>
 #include <vespa/vespalib/util/thread.h>
-#include <vespa/vespalib/util/joinable.h>
 
 namespace vbench {
 
@@ -18,8 +17,7 @@ namespace vbench {
  * internal thread that will stop when the request provider starts
  * handing out empty requests.
  **/
-class Worker : public vespalib::Runnable,
-               public vespalib::Joinable
+class Worker : public vespalib::Runnable
 {
 private:
     vespalib::Thread    _thread;
@@ -33,7 +31,7 @@ public:
     using UP = std::unique_ptr<Worker>;
     Worker(Provider<Request> &provider, Handler<Request> &next,
            HttpConnectionPool &pool, Timer &timer);
-    void join() override { _thread.join(); }
+    void join() { _thread.join(); }
 };
 
 } // namespace vbench

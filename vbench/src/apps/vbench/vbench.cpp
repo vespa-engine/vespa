@@ -44,8 +44,7 @@ int run(const std::string &cfg_name) {
     VBench vbench(cfg);
     NotifyDone notify(done);
     vespalib::RunnablePair runBoth(vbench, notify);
-    vespalib::Thread thread(runBoth, vbench_thread);
-    thread.start();
+    auto thread = vespalib::Thread::start(runBoth, vbench_thread);
     while (!SIG::INT.check() && !SIG::TERM.check() && !done.await(1s)) {}
     if (!done.await(vespalib::duration::zero())) {
         vbench.abort();

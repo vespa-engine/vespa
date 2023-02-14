@@ -4,30 +4,8 @@
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/size_literals.h>
 #include <regex>
-#include <vespa/fastos/thread.h>
 
 namespace vespalib {
-
-namespace {
-
-struct FastOSTestThreadRunner : FastOS_Runnable {
-    TestThreadEntry &entry;
-    FastOSTestThreadRunner(TestThreadEntry &entry_in) : entry(entry_in) {}
-    bool DeleteOnCompletion() const override { return true; }
-    void Run(FastOS_ThreadInterface *, void *) override { entry.threadEntry(); }
-};
-
-struct FastOSTestThreadFactory : TestThreadFactory {
-    FastOS_ThreadPool threadPool;
-    FastOSTestThreadFactory() : threadPool() {}
-    void createThread(TestThreadEntry &entry) override {
-        threadPool.NewThread(new FastOSTestThreadRunner(entry), 0);
-    }
-};
-
-} // namespace vespalib::<unnamed>
-
-__thread TestThreadFactory *TestThreadFactory::factory = 0;
 
 void
 TestThreadWrapper::threadEntry()
@@ -96,8 +74,6 @@ const char *lookup_subset_pattern(const std::string &name) {
 void
 TestHook::runAll()
 {
-    FastOSTestThreadFactory threadFactory;
-    TestThreadFactory::factory = &threadFactory;
     std::string name = TestMaster::master.getName();
     std::regex pattern(lookup_subset_pattern(name));
     size_t testsPassed = 0;
@@ -134,7 +110,6 @@ TestHook::runAll()
         fprintf(stderr, "%s: Warn:  test summary --- %zu test(s) ignored\n",
                 name.c_str(), testsIgnored);
     }
-    TestThreadFactory::factory = 0;
 }
 
 } // namespace vespalib

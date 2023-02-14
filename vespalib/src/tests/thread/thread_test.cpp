@@ -2,56 +2,48 @@
 
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/vespalib/util/thread.h>
-#include <thread>
 
 using namespace vespalib;
 
 VESPA_THREAD_STACK_TAG(test_agent_thread);
 
 struct Agent : public Runnable {
-    bool started;
-    int loopCnt;
-    Agent() : started(false), loopCnt(0) {}
+    bool was_run;
+    Agent() : was_run(false) {}
     void run() override {
-        started = true;
-        Thread &thread = Thread::currentThread();
-        while (thread.slumber(60.0)) {
-            ++loopCnt;
-        }
+        was_run = true;
     }
 };
 
-TEST("thread never started") {
-    Agent agent;
-    {
-        Thread thread(agent, test_agent_thread);
-    }
-    EXPECT_TRUE(!agent.started);
-    EXPECT_EQUAL(0, agent.loopCnt);
+void my_fun(bool *was_run) {
+    *was_run = true;
 }
 
-TEST("normal operation") {
+TEST("run vespalib::Runnable with init function") {
     Agent agent;
     {
-        Thread thread(agent, test_agent_thread);
-        thread.start();
-        std::this_thread::sleep_for(20ms);
-        thread.stop().join();
+        auto thread = Thread::start(agent, test_agent_thread);
     }
-    EXPECT_TRUE(agent.started);
-    EXPECT_EQUAL(0, agent.loopCnt);
+    EXPECT_TRUE(agent.was_run);
 }
 
-TEST("stop before start") {
-    Agent agent;
+TEST("run custom function") {
+    bool was_run = false;
     {
-        Thread thread(agent, test_agent_thread);
-        thread.stop();
-        thread.start();
+        auto thread = Thread::start(my_fun, &was_run);
+    }
+    EXPECT_TRUE(was_run);
+}
+
+TEST("join multiple times (including destructor)") {
+    bool was_run = false;
+    {
+        auto thread = Thread::start(my_fun, &was_run);
+        thread.join();
+        thread.join();
         thread.join();
     }
-    EXPECT_TRUE(!agent.started);
-    EXPECT_EQUAL(0, agent.loopCnt);
+    EXPECT_TRUE(was_run);
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }

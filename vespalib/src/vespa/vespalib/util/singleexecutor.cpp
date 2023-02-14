@@ -19,7 +19,8 @@ SingleExecutor::SingleExecutor(init_fun_t func, uint32_t reservedQueueSize, bool
       _mutex(),
       _consumerCondition(),
       _producerCondition(),
-      _thread(*this, func),
+      _thread(),
+      _stopped(false),
       _idleTracker(steady_clock::now()),
       _threadIdleTracker(),
       _wakeupCount(0),
@@ -37,13 +38,13 @@ SingleExecutor::SingleExecutor(init_fun_t func, uint32_t reservedQueueSize, bool
     if ( ! isQueueSizeHard) {
         _overflow = std::make_unique<ArrayQueue<Task::UP>>();
     }
-    _thread.start();
+    _thread = Thread::start(*this, func);
 }
 
 SingleExecutor::~SingleExecutor() {
     shutdown();
     sync();
-    _thread.stop();
+    stop();
     _consumerCondition.notify_one();
     _thread.join();
 }
@@ -140,7 +141,7 @@ SingleExecutor::shutdown() {
 
 void
 SingleExecutor::run() {
-    while (!_thread.stopped()) {
+    while (!stopped()) {
         drain_tasks();
         _producerCondition.notify_all();
         _wakeupConsumerAt.store(_wp.load(std::memory_order_relaxed) + get_watermark(), std::memory_order_relaxed);

@@ -15,7 +15,7 @@ VESPA_THREAD_STACK_TAG(config_fetcher_thread);
 
 ConfigFetcher::ConfigFetcher(std::shared_ptr<IConfigContext> context)
     : _poller(std::make_unique<ConfigPoller>(std::move(context))),
-      _thread(std::make_unique<vespalib::Thread>(*_poller, config_fetcher_thread)),
+      _thread(std::make_unique<vespalib::Thread>()),
       _closed(false),
       _started(false)
 {
@@ -36,7 +36,7 @@ ConfigFetcher::start()
             throw ConfigTimeoutException("ConfigFetcher::start timed out getting initial config");
         }
         LOG(debug, "Starting fetcher thread...");
-        _thread->start();
+        *_thread = vespalib::Thread::start(*_poller, config_fetcher_thread);
         _started = true;
         LOG(debug, "Fetcher thread started");
     }

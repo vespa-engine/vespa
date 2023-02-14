@@ -4,6 +4,7 @@
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/box.h>
 #include <vespa/vespalib/util/small_vector.h>
+#include <vespa/vespalib/util/gate.h>
 #include <thread>
 #include <forward_list>
 

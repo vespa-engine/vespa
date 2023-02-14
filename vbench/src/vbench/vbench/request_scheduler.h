@@ -7,7 +7,8 @@
 #include <vbench/core/time_queue.h>
 #include <vbench/core/dispatcher.h>
 #include <vbench/core/handler_thread.h>
-#include <vespa/vespalib/util/active.h>
+#include <mutex>
+#include <condition_variable>
 
 namespace vbench {
 
@@ -17,8 +18,7 @@ namespace vbench {
  * with.
  **/
 class RequestScheduler : public Handler<Request>,
-                         public vespalib::Runnable,
-                         public vespalib::Active
+                         public vespalib::Runnable
 {
 private:
     Timer                   _timer;
@@ -29,7 +29,10 @@ private:
     vespalib::Thread        _thread;
     HttpConnectionPool      _connectionPool;
     std::vector<Worker::UP> _workers;
-
+    std::mutex              _lock;
+    std::condition_variable _cond;
+    bool                    _may_slumber;
+    
     void run() override;
 public:
     using UP = std::unique_ptr<RequestScheduler>;
@@ -37,9 +40,9 @@ public:
     RequestScheduler(CryptoEngine::SP crypto, Handler<Request> &next, size_t numWorkers);
     void abort();
     void handle(Request::UP request) override;
-    void start() override;
-    RequestScheduler &stop() override;
-    void join() override;
+    void start();
+    RequestScheduler &stop();
+    void join();
 };
 
 } // namespace vbench
