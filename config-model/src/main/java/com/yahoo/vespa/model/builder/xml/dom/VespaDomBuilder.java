@@ -84,7 +84,8 @@ public class VespaDomBuilder extends VespaModelBuilder {
      * Base class for builders of producers using DOM. The purpose is to always
      * include hostalias, baseport and user config overrides generically.
      *
-     * @param <T> an {@link com.yahoo.config.model.producer.TreeConfigProducer}
+     * @param <T> the type of producer to build
+     * @param <P> the child type held by the parent of the new producer, usually AnyConfigProducer
      */
     public static abstract class DomConfigProducerBuilder<T extends AnyConfigProducer, P extends AnyConfigProducer>
     {
@@ -170,13 +171,18 @@ public class VespaDomBuilder extends VespaModelBuilder {
         }
     }
 
+    // helper in the usual case where P is AnyConfigProducer
+    public static abstract class DomConfigProducerBuilderBase<T extends AnyConfigProducer>
+        extends DomConfigProducerBuilder<T, AnyConfigProducer>
+    {}
+
     /**
      * The SimpleConfigProducer is the producer for elements such as container.
      * Must support overrides for that too, hence this builder
      *
      * @author vegardh
      */
-    static class DomSimpleConfigProducerBuilder extends DomConfigProducerBuilder<SimpleConfigProducer<AnyConfigProducer>, AnyConfigProducer> {
+    static class DomSimpleConfigProducerBuilder extends DomConfigProducerBuilderBase<SimpleConfigProducer<AnyConfigProducer>> {
 
         private final String configId;
 
@@ -191,7 +197,7 @@ public class VespaDomBuilder extends VespaModelBuilder {
         }
     }
 
-    public static class DomRootBuilder extends VespaDomBuilder.DomConfigProducerBuilder<ApplicationConfigProducerRoot, AnyConfigProducer> {
+    public static class DomRootBuilder extends VespaDomBuilder.DomConfigProducerBuilderBase<ApplicationConfigProducerRoot> {
         private final String name;
 
         /**
