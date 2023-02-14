@@ -202,16 +202,20 @@ CompactionJob::run()
     }
     if (remove_batch_is_ongoing()) {
         // Note that we don't set the job as blocked as the decision to un-block it is not driven externally.
-        LOG(info, "%s: Lid space compaction is disabled while remove batch (delete buckets) is ongoing",
-            _handler->getName().c_str());
-        _is_disabled = true;
+        if (!_is_disabled) {
+            LOG(info, "%s: Lid space compaction is disabled while remove batch (delete buckets) is ongoing",
+                _handler->getName().c_str());
+            _is_disabled = true;
+        }
         return true;
     }
     if (remove_is_ongoing()) {
         // Note that we don't set the job as blocked as the decision to un-block it is not driven externally.
-        LOG(info, "%s: Lid space compaction is disabled while remove operations are ongoing",
-            _handler->getName().c_str());
-        _is_disabled = true;
+        if (!_is_disabled) {
+            LOG(info, "%s: Lid space compaction is disabled while remove operations are ongoing",
+                _handler->getName().c_str());
+            _is_disabled = true;
+        }
         return true;
     }
     if (_is_disabled) {
@@ -306,7 +310,7 @@ CompactionJob::notifyClusterStateChanged(const std::shared_ptr<IBucketStateCalcu
             LOG(info, "%s: Lid space compaction is un-blocked as node is no longer retired", _handler->getName().c_str());
             unBlock(BlockedReason::CLUSTER_STATE);
         }
-    } else {
+    } else if (!isBlocked(BlockedReason::CLUSTER_STATE)) {
         LOG(info, "%s: Lid space compaction is blocked as node is retired", _handler->getName().c_str());
         setBlocked(BlockedReason::CLUSTER_STATE);
     }
