@@ -126,6 +126,8 @@ public enum ContainerMetrics implements VespaMetrics {
     DOCUMENTS_TARGET_TOTAL("documents_target_total", Unit.DOCUMENT, "The target number of total documents to be evaluated when when all data is in sync"),
     JDISC_RENDER_LATENCY("jdisc.render.latency", Unit.NANOSECOND, "The time used by the container to render responses"),
     QUERY_ITEM_COUNT("query_item_count", Unit.ITEM, "The number of query items (terms, phrases, etc)"),
+    DOCPROC_PROC_TIME("docproc.proctime", Unit.MILLISECOND, "Time spent processing document"),
+    DOCPROC_DOCUMENTS("docproc.documents", Unit.DOCUMENT, "Number of processed documents"),
     
     TOTAL_HITS_PER_QUERY("totalhits_per_query", Unit.HIT_PER_QUERY, "The total number of documents found to match queries"),
     EMPTY_RESULTS("empty_results", Unit.OPERATION, "Number of queries matching no documents"),
