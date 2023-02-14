@@ -61,8 +61,11 @@ BuildRequires: glibc-langpack-en
 %endif
 %if 0%{?el9}
 %global _centos_stream %(grep -qs '^NAME="CentOS Stream"' /etc/os-release && echo 1 || echo 0)
-BuildRequires: gcc-c++
-BuildRequires: libatomic
+BuildRequires: gcc-toolset-12-gcc-c++
+BuildRequires: gcc-toolset-12-binutils
+BuildRequires: gcc-toolset-12-libasan-devel
+BuildRequires: gcc-toolset-12-libatomic-devel
+%define _devtoolset_enable /opt/rh/gcc-toolset-12/enable
 BuildRequires: pybind11-devel
 BuildRequires: python3-pytest
 BuildRequires: python3-devel
@@ -106,7 +109,7 @@ BuildRequires: openssl-devel
 BuildRequires: vespa-lz4-devel >= 1.9.4-1
 BuildRequires: vespa-onnxruntime-devel = 1.13.1
 BuildRequires: vespa-libzstd-devel >= 1.5.2-1
-BuildRequires: protobuf-devel
+BuildRequires: vespa-protobuf-devel = 3.21.7
 BuildRequires: llvm-devel
 BuildRequires: boost-devel >= 1.75
 BuildRequires: gtest-devel
@@ -290,7 +293,7 @@ Requires: vespa-protobuf = 3.21.7
 %endif
 %if 0%{?el9}
 Requires: llvm-libs
-Requires: protobuf
+Requires: vespa-protobuf = 3.21.7
 %endif
 %if 0%{?fedora}
 Requires: protobuf
