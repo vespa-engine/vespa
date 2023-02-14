@@ -354,7 +354,7 @@ public class SessionRepository {
     }
 
     public int deleteExpiredRemoteSessions(Clock clock) {
-        Duration expiryTime = sessionLifetime.multipliedBy(2);
+        Duration expiryTime = Duration.ofSeconds(PermanentFlags.CONFIG_SERVER_SESSION_EXPIRY_TIME.bindTo(flagSource).value());
         List<Long> remoteSessionsFromZooKeeper = getRemoteSessionsFromZooKeeper();
         log.log(Level.FINE, () -> "Remote sessions for tenant " + tenantName + ": " + remoteSessionsFromZooKeeper);
 
