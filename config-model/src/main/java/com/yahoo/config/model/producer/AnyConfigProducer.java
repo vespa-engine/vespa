@@ -14,15 +14,11 @@ import com.yahoo.vespa.config.GenericConfig;
 import com.yahoo.vespa.model.ConfigProducer;
 import com.yahoo.vespa.model.HostSystem;
 import com.yahoo.vespa.model.Service;
-import com.yahoo.vespa.model.SimpleConfigProducer;
 import com.yahoo.vespa.model.admin.Admin;
 import com.yahoo.vespa.model.admin.monitoring.Monitoring;
-import com.yahoo.vespa.model.utils.FreezableMap;
-import java.io.PrintStream;
+
 import java.io.Serializable;
-import java.util.ArrayList;
 import java.util.Collections;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
@@ -33,6 +29,7 @@ import java.util.logging.Logger;
  * Config producers constructs and returns config instances on request.
  *
  * @author gjoranv
+ * @author arnej
  */
 public abstract class AnyConfigProducer
         implements ConfigProducer, ConfigInstance.Producer, Serializable {
@@ -41,8 +38,6 @@ public abstract class AnyConfigProducer
     public static final Logger log = Logger.getLogger(AnyConfigProducer.class.getPackage().toString());
     private final String subId;
     private String configId = null;
-
-    private final List<Service> descendantServices = new ArrayList<>();
 
     private TreeConfigProducer parent = null;
 
@@ -90,14 +85,6 @@ public abstract class AnyConfigProducer
             throw new IllegalArgumentException("A subId might not contain '/' : '" + subId + "'");
         }
         this.subId = subId;
-    }
-
-    /**
-     * Helper to provide an error message on collisions of sub ids (ignore SimpleConfigProducer, use the parent in that case)
-     */
-    protected String errorMsgClassName() {
-        if (getClass().equals(SimpleConfigProducer.class)) return parent.getClass().getSimpleName();
-        return getClass().getSimpleName();
     }
 
     /**

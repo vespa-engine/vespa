@@ -2,21 +2,10 @@
 package com.yahoo.config.model.producer;
 
 import com.yahoo.api.annotations.Beta;
-import com.yahoo.config.ConfigInstance;
 import com.yahoo.config.model.ApplicationConfigProducerRoot;
-import com.yahoo.config.model.deploy.DeployState;
-import com.yahoo.config.subscription.ConfigInstanceUtil;
-import com.yahoo.vespa.config.ConfigDefinitionKey;
-import com.yahoo.vespa.config.ConfigPayload;
-import com.yahoo.vespa.config.ConfigPayloadBuilder;
-import com.yahoo.vespa.config.ConfigTransformer;
-import com.yahoo.vespa.config.GenericConfig;
 import com.yahoo.vespa.model.ConfigProducer;
-import com.yahoo.vespa.model.HostSystem;
 import com.yahoo.vespa.model.Service;
 import com.yahoo.vespa.model.SimpleConfigProducer;
-import com.yahoo.vespa.model.admin.Admin;
-import com.yahoo.vespa.model.admin.monitoring.Monitoring;
 import com.yahoo.vespa.model.utils.FreezableMap;
 import java.io.PrintStream;
 import java.io.Serializable;
@@ -29,10 +18,11 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * Superclass for all config producers with children.
+ * Superclass for all producers with children.
  * Config producers constructs and returns config instances on request.
  *
  * @author gjoranv
+ * @author arnej
  */
 public abstract class TreeConfigProducer<CHILD extends AnyConfigProducer>
     extends AnyConfigProducer
@@ -60,6 +50,14 @@ public abstract class TreeConfigProducer<CHILD extends AnyConfigProducer>
      */
     public TreeConfigProducer(String subId) {
         super(subId);
+    }
+
+    /**
+     * Helper to provide an error message on collisions of sub ids (ignore SimpleConfigProducer, use the parent in that case)
+     */
+    private String errorMsgClassName() {
+        if (getClass().equals(SimpleConfigProducer.class)) return getParent().getClass().getSimpleName();
+        return getClass().getSimpleName();
     }
 
     /**
