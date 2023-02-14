@@ -50,7 +50,7 @@ import java.util.Set;
  *
  * @author gjoranv
  */
-public class ApplicationConfigProducerRoot extends TreeConfigProducer<TreeConfigProducer<?>> implements CommonConfigsProducer {
+public class ApplicationConfigProducerRoot extends TreeConfigProducer<AnyConfigProducer> implements CommonConfigsProducer {
 
     private final DocumentModel documentModel;
     private Routing routing = null;
@@ -69,7 +69,8 @@ public class ApplicationConfigProducerRoot extends TreeConfigProducer<TreeConfig
      * @param name   the name, used as configId
      * @param documentModel DocumentModel to serve global document config from.
      */
-    public ApplicationConfigProducerRoot(TreeConfigProducer parent, String name, DocumentModel documentModel, Version vespaVersion, ApplicationId applicationId) {
+    public ApplicationConfigProducerRoot(TreeConfigProducer<AnyConfigProducer> parent,
+                                         String name, DocumentModel documentModel, Version vespaVersion, ApplicationId applicationId) {
         super(parent, name);
         this.documentModel = documentModel;
         this.vespaVersion = vespaVersion;

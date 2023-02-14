@@ -2,6 +2,7 @@
 package com.yahoo.vespa.model.admin;
 
 import com.yahoo.config.model.ApplicationConfigProducerRoot;
+import com.yahoo.config.model.producer.AnyConfigProducer;
 import com.yahoo.config.model.producer.TreeConfigProducer;
 
 /**
@@ -11,9 +12,9 @@ import com.yahoo.config.model.producer.TreeConfigProducer;
  * @author gjoranv
  * @since 5.0.8
  */
-public class ModelConfigProvider extends TreeConfigProducer {
+public class ModelConfigProvider extends TreeConfigProducer<AnyConfigProducer> {
 
-    public ModelConfigProvider(TreeConfigProducer<?> parent) {
+    public ModelConfigProvider(TreeConfigProducer<AnyConfigProducer> parent) {
         super(parent, "model");
     }
 }

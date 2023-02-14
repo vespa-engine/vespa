@@ -7,6 +7,7 @@ import com.yahoo.config.model.ApplicationConfigProducerRoot;
 import com.yahoo.config.model.ConfigModelRepo;
 import com.yahoo.config.model.builder.xml.XmlHelper;
 import com.yahoo.config.model.deploy.DeployState;
+import com.yahoo.config.model.producer.AnyConfigProducer;
 import com.yahoo.config.model.producer.TreeConfigProducer;
 import com.yahoo.config.model.producer.UserConfigRepo;
 import com.yahoo.text.XML;
@@ -61,7 +62,7 @@ public class VespaDomBuilder extends VespaModelBuilder {
 
 
     @Override
-    public ApplicationConfigProducerRoot getRoot(String name, DeployState deployState, TreeConfigProducer parent) {
+    public ApplicationConfigProducerRoot getRoot(String name, DeployState deployState, TreeConfigProducer<AnyConfigProducer> parent) {
         try {
             return new DomRootBuilder(name).
                     build(deployState, parent, XmlHelper.getDocument(deployState.getApplicationPackage().getServices(), "services.xml")
@@ -85,10 +86,11 @@ public class VespaDomBuilder extends VespaModelBuilder {
      *
      * @param <T> an {@link com.yahoo.config.model.producer.TreeConfigProducer}
      */
-    public static abstract class DomConfigProducerBuilder<T extends TreeConfigProducer<?>> {
+    public static abstract class DomConfigProducerBuilder<T extends AnyConfigProducer, P extends AnyConfigProducer>
+    {
 
         // TODO: find good way to provide access to app package
-        public final T build(DeployState deployState, TreeConfigProducer<?> ancestor, Element producerSpec) {
+        public final T build(DeployState deployState, TreeConfigProducer<P> ancestor, Element producerSpec) {
             T t = doBuild(deployState, ancestor, producerSpec);
 
             if (t instanceof AbstractService) {
@@ -100,9 +102,9 @@ public class VespaDomBuilder extends VespaModelBuilder {
             return t;
         }
 
-        protected abstract T doBuild(DeployState deployState, TreeConfigProducer<?> ancestor, Element producerSpec);
+        protected abstract T doBuild(DeployState deployState, TreeConfigProducer<P> ancestor, Element producerSpec);
 
-        private void initializeProducer(TreeConfigProducer<?> child, DeployState deployState, Element producerSpec) {
+        private void initializeProducer(AnyConfigProducer child, DeployState deployState, Element producerSpec) {
             UserConfigRepo userConfigs = UserConfigBuilder.build(producerSpec, deployState, deployState.getDeployLogger());
             // TODO: must be made to work:
             //userConfigs.applyWarnings(child);
@@ -174,7 +176,7 @@ public class VespaDomBuilder extends VespaModelBuilder {
      *
      * @author vegardh
      */
-    static class DomSimpleConfigProducerBuilder extends DomConfigProducerBuilder<SimpleConfigProducer<?>> {
+    static class DomSimpleConfigProducerBuilder extends DomConfigProducerBuilder<SimpleConfigProducer<AnyConfigProducer>, AnyConfigProducer> {
 
         private final String configId;
 
@@ -183,13 +185,13 @@ public class VespaDomBuilder extends VespaModelBuilder {
         }
 
         @Override
-        protected SimpleConfigProducer<?> doBuild(DeployState deployState, TreeConfigProducer<?> parent,
+        protected SimpleConfigProducer<AnyConfigProducer> doBuild(DeployState deployState, TreeConfigProducer<AnyConfigProducer> parent,
                                                   Element producerSpec) {
             return new SimpleConfigProducer<>(parent, configId);
         }
     }
 
-    public static class DomRootBuilder extends VespaDomBuilder.DomConfigProducerBuilder<ApplicationConfigProducerRoot> {
+    public static class DomRootBuilder extends VespaDomBuilder.DomConfigProducerBuilder<ApplicationConfigProducerRoot, AnyConfigProducer> {
         private final String name;
 
         /**
@@ -200,7 +202,7 @@ public class VespaDomBuilder extends VespaModelBuilder {
         }
 
         @Override
-        protected ApplicationConfigProducerRoot doBuild(DeployState deployState, TreeConfigProducer<?> parent, Element producerSpec) {
+        protected ApplicationConfigProducerRoot doBuild(DeployState deployState, TreeConfigProducer<AnyConfigProducer> parent, Element producerSpec) {
             ApplicationConfigProducerRoot root = new ApplicationConfigProducerRoot(parent,
                                                                                    name,
                                                                                    deployState.getDocumentModel(),
@@ -242,7 +244,7 @@ public class VespaDomBuilder extends VespaModelBuilder {
      * @param root root config producer
      * @param configModelRepo a {@link ConfigModelRepo}
      */
-    public void postProc(DeployState deployState, TreeConfigProducer root, ConfigModelRepo configModelRepo) {
+    public void postProc(DeployState deployState, TreeConfigProducer<AnyConfigProducer> root, ConfigModelRepo configModelRepo) {
         setContentSearchClusterIndexes(configModelRepo);
         createDocprocMBusServersAndClients(configModelRepo);
         if (deployState.isHosted()) validateContainerClusterIds(configModelRepo);

@@ -20,7 +20,7 @@ public class ConfigProducerGroup<CHILD extends TreeConfigProducer<?>> extends Tr
 
     private final Map<ComponentId, CHILD> producerById = new LinkedHashMap<>();
 
-    public ConfigProducerGroup(TreeConfigProducer parent, String subId) {
+    public ConfigProducerGroup(TreeConfigProducer<? super ConfigProducerGroup> parent, String subId) {
         super(parent, subId);
     }
 

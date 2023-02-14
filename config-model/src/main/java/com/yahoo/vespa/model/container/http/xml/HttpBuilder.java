@@ -28,14 +28,14 @@ import java.util.logging.Level;
  * @author Tony Vaagenes
  * @author gjoranv
  */
-public class HttpBuilder extends VespaDomBuilder.DomConfigProducerBuilder<Http> {
+public class HttpBuilder extends VespaDomBuilder.DomConfigProducerBuilder<Http, AnyConfigProducer> {
 
     static final String REQUEST_CHAIN_TAG_NAME = "request-chain";
     static final String RESPONSE_CHAIN_TAG_NAME = "response-chain";
     static final List<String> VALID_FILTER_CHAIN_TAG_NAMES = List.of(REQUEST_CHAIN_TAG_NAME, RESPONSE_CHAIN_TAG_NAME);
 
     @Override
-    protected Http doBuild(DeployState deployState, TreeConfigProducer<?> ancestor, Element spec) {
+    protected Http doBuild(DeployState deployState, TreeConfigProducer<AnyConfigProducer> ancestor, Element spec) {
         FilterChains filterChains;
         List<FilterBinding> bindings = new ArrayList<>();
         AccessControl accessControl = null;

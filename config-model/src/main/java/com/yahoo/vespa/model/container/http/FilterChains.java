@@ -15,7 +15,7 @@ import java.util.Set;
  */
 public class FilterChains extends Chains<HttpFilterChain>  {
 
-    public FilterChains(TreeConfigProducer<?> parent) {
+    public FilterChains(TreeConfigProducer<? super Chains> parent) {
         super(parent, "filters");
 
         addChild(new SimpleComponent("com.yahoo.container.http.filter.FilterChainRepository"));

@@ -2,6 +2,7 @@
 package com.yahoo.vespa.model;
 
 import com.yahoo.config.model.ApplicationConfigProducerRoot;
+import com.yahoo.config.model.producer.AnyConfigProducer;
 import com.yahoo.config.model.producer.TreeConfigProducer;
 
 /**
@@ -10,7 +11,7 @@ import com.yahoo.config.model.producer.TreeConfigProducer;
  *
  * @author Simon Thoresen Hult
  */
-public class Client extends TreeConfigProducer {
+public class Client extends TreeConfigProducer<AnyConfigProducer> {
 
     /**
      * Constructs a client config producer that is added as a child to
@@ -18,7 +19,7 @@ public class Client extends TreeConfigProducer {
      *
      * @param parent The parent config producer.
      */
-    public Client(TreeConfigProducer parent) {
+    public Client(TreeConfigProducer<? super Client> parent) {
         super(parent, "client");
     }
 

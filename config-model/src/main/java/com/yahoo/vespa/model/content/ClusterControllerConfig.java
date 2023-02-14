@@ -2,6 +2,7 @@
 package com.yahoo.vespa.model.content;
 
 import com.yahoo.config.model.deploy.DeployState;
+import com.yahoo.config.model.producer.AnyConfigProducer;
 import com.yahoo.config.model.producer.TreeConfigProducer;
 import com.yahoo.config.model.producer.AbstractConfigProducerRoot;
 import com.yahoo.vespa.config.content.FleetcontrollerConfig;
@@ -18,7 +19,7 @@ import org.w3c.dom.Element;
  */
 public class ClusterControllerConfig extends TreeConfigProducer<ClusterControllerConfig> implements FleetcontrollerConfig.Producer {
 
-    public static class Builder extends VespaDomBuilder.DomConfigProducerBuilder<ClusterControllerConfig> {
+    public static class Builder extends VespaDomBuilder.DomConfigProducerBuilder<ClusterControllerConfig, AnyConfigProducer> {
         private final String clusterName;
         private final ModelElement clusterElement;
         private final ResourceLimits resourceLimits;
@@ -30,7 +31,7 @@ public class ClusterControllerConfig extends TreeConfigProducer<ClusterControlle
         }
 
         @Override
-        protected ClusterControllerConfig doBuild(DeployState deployState, TreeConfigProducer<?> ancestor, Element producerSpec) {
+        protected ClusterControllerConfig doBuild(DeployState deployState, TreeConfigProducer<AnyConfigProducer> ancestor, Element producerSpec) {
             ModelElement tuning = null;
 
             ModelElement clusterTuning = clusterElement.child("tuning");

@@ -353,7 +353,7 @@ public abstract class Container extends AbstractService implements
             if (child instanceof Component)
                 allComponents.add((Component<?, ?>) child);
 
-            if (child instanceof TreeConfigProducer t) {
+            if (child instanceof TreeConfigProducer<?> t) {
                 addAllEnabledComponents(allComponents, t);
             }
         }
@@ -403,7 +403,7 @@ public abstract class Container extends AbstractService implements
         return Optional.ofNullable(containerClusterOrNull(parent));
     }
 
-    private static ContainerCluster containerClusterOrNull(TreeConfigProducer producer) {
+    private static ContainerCluster containerClusterOrNull(AnyConfigProducer producer) {
         return producer instanceof ContainerCluster<?> ? (ContainerCluster<?>) producer : null;
     }
 

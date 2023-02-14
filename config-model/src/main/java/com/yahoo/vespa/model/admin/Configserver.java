@@ -23,7 +23,7 @@ public class Configserver extends AbstractService {
 
     private final int rpcPort;
 
-    public Configserver(TreeConfigProducer parent, String name, int rpcPort) {
+    public Configserver(TreeConfigProducer<? super Configserver> parent, String name, int rpcPort) {
         super(parent, name);
         this.rpcPort = rpcPort;
         portsMeta.on(0).tag("rpc").tag("config");
