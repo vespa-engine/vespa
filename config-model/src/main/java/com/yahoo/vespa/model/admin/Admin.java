@@ -88,7 +88,7 @@ public class Admin extends TreeConfigProducer<AnyConfigProducer> implements Seri
     private final FileDistributionConfigProducer fileDistribution;
     private final boolean multitenant;
 
-    public Admin(TreeConfigProducer<?> parent,
+    public Admin(TreeConfigProducer<AnyConfigProducer> parent,
                  Monitoring monitoring,
                  Metrics metrics,
                  boolean multitenant,

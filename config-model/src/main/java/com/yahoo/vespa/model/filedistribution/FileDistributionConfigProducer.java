@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.filedistribution;
 
+import com.yahoo.config.model.producer.AnyConfigProducer;
 import com.yahoo.config.model.producer.TreeConfigProducer;
 import com.yahoo.vespa.model.Host;
 
@@ -12,11 +13,11 @@ import java.util.Map;
  *
  * @author hmusum
  */
-public class FileDistributionConfigProducer extends TreeConfigProducer<TreeConfigProducer<?>> {
+public class FileDistributionConfigProducer extends TreeConfigProducer<AnyConfigProducer> {
 
     private final Map<Host, FileDistributionConfigProvider> fileDistributionConfigProviders = new IdentityHashMap<>();
 
-    public FileDistributionConfigProducer(TreeConfigProducer<?> parent) {
+    public FileDistributionConfigProducer(TreeConfigProducer<AnyConfigProducer> parent) {
         super(parent, "filedistribution");
     }
 
