@@ -146,7 +146,7 @@ public class DecryptTool implements Tool {
 
     private static SecretSharedKey secretFromInteractiveResealing(ToolInvocation invocation, String inputArg,
                                                                   String outputArg, SealedSharedKey sealedSharedKey) throws IOException {
-        if (!CliUtils.useStdIo(outputArg) || !CliUtils.useStdIo(inputArg)) {
+        if (CliUtils.useStdIo(outputArg) || CliUtils.useStdIo(inputArg)) {
             throw new IllegalArgumentException("Interactive token resealing not available with redirected I/O");
         }
         var session = SharedKeyResealingSession.newEphemeralSession();

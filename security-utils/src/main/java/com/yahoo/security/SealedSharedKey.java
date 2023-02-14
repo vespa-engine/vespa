@@ -2,6 +2,10 @@
 package com.yahoo.security;
 
 import java.nio.ByteBuffer;
+import java.util.Arrays;
+import java.util.Objects;
+
+import static com.yahoo.security.ArrayUtils.hex;
 
 /**
  * A SealedSharedKey represents the public part of a secure one-way ephemeral key exchange.
@@ -95,6 +99,37 @@ public record SealedSharedKey(int version, KeyId keyId, byte[] enc, byte[] ciphe
         if (tokenString.length() > MAX_TOKEN_STRING_LENGTH) {
             throw new IllegalArgumentException("Token string is too long to possibly be a valid token");
         }
+    }
+
+    // Friendlier toString() with hex dump of enc/ciphertext fields
+    @Override
+    public String toString() {
+        return "SealedSharedKey{" +
+                "version=" + version +
+                ", keyId=" + keyId +
+                ", enc=" + hex(enc) +
+                ", ciphertext=" + hex(ciphertext) +
+                '}';
+    }
+
+    // Explicitly generated equals() and hashCode() to use _contents_ of
+    // enc/ciphertext arrays, and not just their refs.
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        SealedSharedKey that = (SealedSharedKey) o;
+        return version == that.version && keyId.equals(that.keyId) &&
+                Arrays.equals(enc, that.enc) &&
+                Arrays.equals(ciphertext, that.ciphertext);
+    }
+
+    @Override
+    public int hashCode() {
+        int result = Objects.hash(version, keyId);
+        result = 31 * result + Arrays.hashCode(enc);
+        result = 31 * result + Arrays.hashCode(ciphertext);
+        return result;
     }
 
 }
