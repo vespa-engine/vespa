@@ -360,7 +360,7 @@ public class SessionRepository {
 
         int deleted = 0;
         // Avoid deleting too many in one run
-        int deleteMax = (int) Math.min(1000, Math.max(10, remoteSessionsFromZooKeeper.size() * 0.01));
+        int deleteMax = (int) Math.min(1000, Math.max(50, remoteSessionsFromZooKeeper.size() * 0.05));
         for (long sessionId : remoteSessionsFromZooKeeper) {
             Session session = remoteSessionCache.get(sessionId);
             if (session == null)
