@@ -234,17 +234,7 @@ void* __libc_malloc(size_t sz)                       __THROW __attribute__((leaf
 void* __libc_realloc(void* ptr, size_t sz)           __THROW __attribute__((leaf, malloc, alloc_size(2))) ALIAS("realloc");
 void* __libc_reallocarray(void* ptr, size_t nemb, size_t sz) __THROW __attribute__((leaf, malloc, alloc_size(2,3))) ALIAS("reallocarray");
 void* __libc_calloc(size_t n, size_t sz)             __THROW __attribute__((leaf, malloc, alloc_size(1,2))) ALIAS("calloc");
-void cfree(void *)                                   __THROW __attribute__((leaf)) ALIAS("free");
 void  __libc_free(void* ptr)                         __THROW __attribute__((leaf)) ALIAS("free");
-#ifdef __clang__
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wignored-attributes"
-void  __libc_cfree(void* ptr)                        __THROW __attribute__((leaf)) ALIAS("cfree");
-#pragma clang diagnostic pop
-#else
-void  __libc_cfree(void* ptr)                        __THROW __attribute__((leaf)) ALIAS("cfree");
-#endif
-
 size_t  __libc_malloc_usable_size(void *ptr)         __THROW  ALIAS("malloc_usable_size");
 
 #if __GLIBC_PREREQ(2, 34)
