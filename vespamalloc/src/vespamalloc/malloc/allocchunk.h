@@ -74,7 +74,7 @@ class AFListBase
 {
 public:
     using HeadPtr = TaggedPtr;
-    using AtomicHeadPtr = std::atomic<TaggedPtr>;
+    using AtomicHeadPtr = AtomicTaggedPtr;
 
     AFListBase() noexcept : _next(nullptr) { }
     void setNext(AFListBase * csl) noexcept { _next = csl; }
