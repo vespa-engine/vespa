@@ -71,7 +71,7 @@ public class Cluster {
 
     @Override
     public String toString() {
-        return "cluster '" + id + "'";
+        return id.toString();
     }
 
     public static class ScalingEvent {

@@ -4,19 +4,29 @@ package com.yahoo.vespa.hosted.controller.maintenance;
 import com.yahoo.component.Version;
 import com.yahoo.config.application.api.xml.DeploymentSpecXmlReader;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.config.provision.IntRange;
+import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.ClusterMetrics;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
+import com.yahoo.vespa.hosted.controller.api.integration.configserver.Application;
+import com.yahoo.vespa.hosted.controller.api.integration.configserver.Cluster;
+import com.yahoo.vespa.hosted.controller.api.integration.configserver.Load;
 import com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentContext;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
 import com.yahoo.vespa.hosted.controller.integration.NodeRepositoryMock;
 import org.junit.jupiter.api.Test;
 
+import java.time.Clock;
 import java.time.Duration;
+import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -45,7 +55,7 @@ public class BcpGroupUpdaterTest {
         // One zone
         context.runJob(DeploymentContext.productionApNortheast1, new ApplicationPackage(new byte[0]), version);
         setQpsMetric(50.0, context.application().id().defaultInstance(), prod1, tester);
-        setBcpMetrics(1.5, 0.1, 0.45, context.instanceId(), prod1, "cluster1", updater);
+        setBcpMetrics(1.5, 0.1, 0.45, context.instanceId(), prod1, "cluster1", tester);
         deploymentMetricsMaintainer.maintain();
         assertEquals(1.0, updater.maintain(), 0.0000001);
         assertTrafficFraction(1.0, 1.0, context.instanceId(), prod1, tester);
@@ -55,7 +65,7 @@ public class BcpGroupUpdaterTest {
         context.runJob(DeploymentContext.productionUsEast3, new ApplicationPackage(new byte[0]), version);
         setQpsMetric(60.0, context.application().id().defaultInstance(), prod1, tester);
         setQpsMetric(20.0, context.application().id().defaultInstance(), prod2, tester);
-        setBcpMetrics(100.0, 0.1, 0.45, context.instanceId(), prod1, "cluster1", updater);
+        setBcpMetrics(100.0, 0.1, 0.45, context.instanceId(), prod1, "cluster1", tester);
         deploymentMetricsMaintainer.maintain();
         assertEquals(1.0, updater.maintain(), 0.0000001);
         assertTrafficFraction(0.75, 1.0, context.instanceId(), prod1, tester);
@@ -64,7 +74,7 @@ public class BcpGroupUpdaterTest {
                              "Have no values from the other region (prod2) yet");
         assertBcpGroupInfo(100.0, 0.1, 0.45,
                            context.instanceId(), prod2, "cluster1", tester);
-        setBcpMetrics(50.0, 0.2, 0.5, context.instanceId(), prod2, "cluster1", updater);
+        setBcpMetrics(50.0, 0.2, 0.5, context.instanceId(), prod2, "cluster1", tester);
         assertEquals(1.0, updater.maintain(), 0.0000001);
         assertBcpGroupInfo(50.0, 0.2, 0.5,
                            context.instanceId(), prod1, "cluster1", tester);
@@ -220,17 +230,17 @@ public class BcpGroupUpdaterTest {
         assertTrafficFraction(0.30, 0.30 + 0.5 * 50 / 200.0 / 1.5 + 0.5 * 40 / 200.0 / 2.5, context.instanceId(), eu1, tester);
 
         // BCP group info (missing ap* regions for cluster1, and full for cluster2)
-        setBcpMetrics(100, 0.1, 0.1, context.instanceId(), us1, "cluster1", updater);
-        setBcpMetrics(100, 0.1, 0.1, context.instanceId(), us2, "cluster1", updater);
-        setBcpMetrics(300, 0.3, 0.3, context.instanceId(), us3, "cluster1", updater);
-        setBcpMetrics(100, 0.1, 0.1, context.instanceId(), eu1, "cluster1", updater);
+        setBcpMetrics(100, 0.1, 0.1, context.instanceId(), us1, "cluster1", tester);
+        setBcpMetrics(100, 0.1, 0.1, context.instanceId(), us2, "cluster1", tester);
+        setBcpMetrics(300, 0.3, 0.3, context.instanceId(), us3, "cluster1", tester);
+        setBcpMetrics(100, 0.1, 0.1, context.instanceId(), eu1, "cluster1", tester);
 
-        setBcpMetrics(100, 0.1, 0.1, context.instanceId(), ap1, "cluster2", updater);
-        setBcpMetrics(200, 0.2, 0.2, context.instanceId(), ap2, "cluster2", updater);
-        setBcpMetrics(100, 0.1, 0.1, context.instanceId(), us1, "cluster2", updater);
-        setBcpMetrics(100, 0.1, 0.1, context.instanceId(), us2, "cluster2", updater);
-        setBcpMetrics(300, 0.3, 0.3, context.instanceId(), us3, "cluster2", updater);
-        setBcpMetrics(100, 0.1, 0.1, context.instanceId(), eu1, "cluster2", updater);
+        setBcpMetrics(100, 0.1, 0.1, context.instanceId(), ap1, "cluster2", tester);
+        setBcpMetrics(200, 0.2, 0.2, context.instanceId(), ap2, "cluster2", tester);
+        setBcpMetrics(100, 0.1, 0.1, context.instanceId(), us1, "cluster2", tester);
+        setBcpMetrics(100, 0.1, 0.1, context.instanceId(), us2, "cluster2", tester);
+        setBcpMetrics(300, 0.3, 0.3, context.instanceId(), us3, "cluster2", tester);
+        setBcpMetrics(100, 0.1, 0.1, context.instanceId(), eu1, "cluster2", tester);
 
         assertEquals(1.0, updater.maintain(), 0.0000001);
 
@@ -262,10 +272,29 @@ public class BcpGroupUpdaterTest {
     }
 
     private void setBcpMetrics(double queryRate, double growthRateHeadroom, double cpuCostPerQuery,
-                               ApplicationId application, ZoneId zone, String clusterId, BcpGroupUpdater maintainer) {
-        var applicationMetrics = maintainer.metrics.computeIfAbsent(application, __ -> new BcpGroupUpdater.ApplicationClusterDeploymentMetrics());
-        var clusterMetrics = applicationMetrics.clusterDeploymentMetrics.computeIfAbsent(new ClusterSpec.Id(clusterId), __ -> new BcpGroupUpdater.ClusterDeploymentMetrics(Map.of()));
-        clusterMetrics.put(zone.region(), new BcpGroupUpdater.DeploymentMetrics(queryRate, growthRateHeadroom, cpuCostPerQuery));
+                               ApplicationId applicationId, ZoneId zone, String clusterId, DeploymentTester tester) {
+        var application = tester.controller().applications().deploymentInfo().computeIfAbsent(new DeploymentId(applicationId, zone),
+                                                                                              __ -> new Application(applicationId, List.of()));
+        // ALl this is to pass Cluster.Autoscaling.Metrics - everything else is ignored
+        var id = new ClusterSpec.Id(clusterId);
+        var resources = new ClusterResources(10, 1, new NodeResources(10, 100, 1000, 0.1));
+        var autoscaling = new Cluster.Autoscaling("ignored",
+                                                  "ignored",
+                                                  Optional.empty(),
+                                                  Clock.systemUTC().instant(),
+                                                  Load.zero(),
+                                                  Load.zero(),
+                                                  new Cluster.Autoscaling.Metrics(queryRate, growthRateHeadroom, cpuCostPerQuery));
+        application.clusters().put(id, new Cluster(id,
+                                                   ClusterSpec.Type.container,
+                                                   resources,
+                                                   resources,
+                                                   IntRange.empty(),
+                                                   resources,
+                                                   autoscaling,
+                                                   Cluster.Autoscaling.empty(),
+                                                   List.of(),
+                                                   Duration.ofHours(1)));
     }
 
     private void assertBcpGroupInfo(double queryRate, double growthRateHeadroom, double cpuCostPerQuery,

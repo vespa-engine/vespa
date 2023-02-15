@@ -43,6 +43,9 @@
       "name": "DeploymentExpirer"
     },
     {
+      "name": "DeploymentInfoMaintainer"
+    },
+    {
       "name": "DeploymentIssueReporter"
     },
     {

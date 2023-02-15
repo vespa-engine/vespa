@@ -43,9 +43,6 @@ public class BcpGroupUpdater extends ControllerMaintainer {
     private final ApplicationController applications;
     private final NodeRepository nodeRepository;
 
-    /** BCP group info for each application. It is not critical to update this often so stored in memory only. */
-    final Map<ApplicationId, ApplicationClusterDeploymentMetrics> metrics = new ConcurrentHashMap<>(); // TODO: Make private
-
     public BcpGroupUpdater(Controller controller, Duration duration) {
         super(controller, duration);
         this.applications = controller.applications();
@@ -57,6 +54,7 @@ public class BcpGroupUpdater extends ControllerMaintainer {
         Exception lastException = null;
         int attempts = 0;
         int failures = 0;
+        var metrics = collectClusterMetrics();
         for (var application : applications.asList()) {
             for (var instance : application.instances().values()) {
                 for (var deployment : instance.productionDeployments().values()) {
@@ -66,7 +64,7 @@ public class BcpGroupUpdater extends ControllerMaintainer {
                         var bcpGroups = BcpGroup.groupsFrom(instance, application.deploymentSpec());
                         var patch = new ApplicationPatch();
                         addTrafficShare(deployment, bcpGroups, patch);
-                        addBcpGroupInfo(instance, deployment.zone().region(), bcpGroups, patch);
+                        addBcpGroupInfo(deployment.zone().region(), metrics.get(instance.id()), bcpGroups, patch);
                         nodeRepository.patchApplication(deployment.zone(), instance.id(), patch);
                     }
                     catch (Exception e) {
@@ -105,17 +103,32 @@ public class BcpGroupUpdater extends ControllerMaintainer {
         patch.maxReadShare = maxReadShare;
     }
 
-    /** Adds bcp group info to the given patch, for any clusters where we have information. */
-    private void addBcpGroupInfo(Instance instance, RegionName regionToUpdate, List<BcpGroup> bcpGroups, ApplicationPatch patch) {
+    private Map<ApplicationId, Map<ClusterSpec.Id, ClusterDeploymentMetrics>> collectClusterMetrics() {
+        Map<ApplicationId, Map<ClusterSpec.Id, ClusterDeploymentMetrics>> metrics = new HashMap<>();
+        for (var deploymentEntry : new HashMap<>(controller().applications().deploymentInfo()).entrySet()) {
+            if ( ! deploymentEntry.getKey().zoneId().environment().isProduction()) continue;
+            var appEntry = metrics.computeIfAbsent(deploymentEntry.getKey().applicationId(), __ -> new HashMap<>());
+            for (var clusterEntry : deploymentEntry.getValue().clusters().entrySet()) {
+                var clusterMetrics = appEntry.computeIfAbsent(clusterEntry.getKey(), __ -> new ClusterDeploymentMetrics());
+                clusterMetrics.put(deploymentEntry.getKey().zoneId().region(),
+                                   new DeploymentMetrics(clusterEntry.getValue().target().metrics().queryRate(),
+                                                         clusterEntry.getValue().target().metrics().growthRateHeadroom(),
+                                                         clusterEntry.getValue().target().metrics().cpuCostPerQuery()));
+            }
+        }
+        return metrics;
+    }
 
-        var applicationMetrics = metrics.get(instance.id());
-        if (applicationMetrics == null) return;
-        for (var clusterEntry : applicationMetrics.clusterDeploymentMetrics.entrySet()) {
-            addClusterBcpGroupInfo(clusterEntry.getKey(), clusterEntry.getValue(), instance, regionToUpdate, bcpGroups, patch);
+    /** Adds bcp group info to the given patch, for any clusters where we have information. */
+    private void addBcpGroupInfo(RegionName regionToUpdate, Map<ClusterSpec.Id, ClusterDeploymentMetrics> metrics,
+                                 List<BcpGroup> bcpGroups, ApplicationPatch patch) {
+        if (metrics == null) return;
+        for (var clusterEntry : metrics.entrySet()) {
+            addClusterBcpGroupInfo(clusterEntry.getKey(), clusterEntry.getValue(), regionToUpdate, bcpGroups, patch);
         }
     }
 
-    private void addClusterBcpGroupInfo(ClusterSpec.Id id, ClusterDeploymentMetrics metrics, Instance instance,
+    private void addClusterBcpGroupInfo(ClusterSpec.Id id, ClusterDeploymentMetrics metrics,
                                         RegionName regionToUpdate, List<BcpGroup> bcpGroups, ApplicationPatch patch) {
         var weightedSumOfMaxMetrics = DeploymentMetrics.empty();
         double sumOfCompleteMemberships = 0;
@@ -208,15 +221,15 @@ public class BcpGroupUpdater extends ControllerMaintainer {
 
     }
 
-    static class ApplicationClusterDeploymentMetrics {
-
-        final Map<ClusterSpec.Id, ClusterDeploymentMetrics> clusterDeploymentMetrics = new ConcurrentHashMap<>(); // TODO: Make private
-
-    }
+    record ApplicationClusterKey(ApplicationId application, ClusterSpec.Id cluster) { }
 
     static class ClusterDeploymentMetrics {
 
         private final Map<RegionName, DeploymentMetrics> deploymentMetrics;
+
+        public ClusterDeploymentMetrics() {
+            this.deploymentMetrics = new ConcurrentHashMap<>();
+        }
 
         public ClusterDeploymentMetrics(Map<RegionName, DeploymentMetrics> deploymentMetrics) {
             this.deploymentMetrics = new ConcurrentHashMap<>(deploymentMetrics);
