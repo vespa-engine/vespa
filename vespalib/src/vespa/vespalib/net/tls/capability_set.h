@@ -42,19 +42,19 @@ public:
     constexpr CapabilitySet() noexcept = default;
     constexpr ~CapabilitySet() = default;
 
-    string to_string() const;
+    [[nodiscard]] string to_string() const;
 
-    bool operator==(const CapabilitySet& rhs) const noexcept {
+    [[nodiscard]] bool operator==(const CapabilitySet& rhs) const noexcept {
         return (_capability_mask == rhs._capability_mask);
     }
 
     [[nodiscard]] bool empty() const noexcept {
         return _capability_mask.none();
     }
-    size_t count() const noexcept {
+    [[nodiscard]] size_t count() const noexcept {
         return _capability_mask.count();
     }
-    constexpr static size_t max_count() noexcept {
+    [[nodiscard]] constexpr static size_t max_count() noexcept {
         return Capability::max_value_count();
     }
 
@@ -70,6 +70,10 @@ public:
     }
     void add_all(const CapabilitySet& cap_set) noexcept {
         _capability_mask |= cap_set._capability_mask;
+    }
+
+    [[nodiscard]] CapabilitySet union_of(const CapabilitySet& cap_set) const noexcept {
+        return CapabilitySet(_capability_mask | cap_set._capability_mask);
     }
 
     template <typename Func>
@@ -91,9 +95,9 @@ public:
      */
     [[nodiscard]] bool resolve_and_add(const string& set_or_cap_name) noexcept;
 
-    static std::optional<CapabilitySet> find_capability_set(const string& cap_set_name) noexcept;
+    [[nodiscard]] static std::optional<CapabilitySet> find_capability_set(const string& cap_set_name) noexcept;
 
-    static CapabilitySet of(std::initializer_list<Capability> caps) noexcept {
+    [[nodiscard]] static CapabilitySet of(std::initializer_list<Capability> caps) noexcept {
         CapabilitySet set;
         for (const auto& cap : caps) {
             set._capability_mask |= cap_as_bit_set(cap);
@@ -101,14 +105,18 @@ public:
         return set;
     }
 
-    static CapabilitySet content_node() noexcept;
-    static CapabilitySet container_node() noexcept;
-    static CapabilitySet telemetry() noexcept;
-    static CapabilitySet cluster_controller_node() noexcept;
-    static CapabilitySet config_server() noexcept;
+    [[nodiscard]] static CapabilitySet all() noexcept;
+    [[nodiscard]] static CapabilitySet content_node() noexcept;
+    [[nodiscard]] static CapabilitySet container_node() noexcept;
+    [[nodiscard]] static CapabilitySet telemetry() noexcept;
+    [[nodiscard]] static CapabilitySet cluster_controller_node() noexcept;
+    [[nodiscard]] static CapabilitySet logserver_node() noexcept;
+    [[nodiscard]] static CapabilitySet config_server() noexcept;
 
-    static CapabilitySet make_with_all_capabilities() noexcept;
-    static CapabilitySet make_empty() noexcept { return CapabilitySet(); };
+    [[nodiscard]] static CapabilitySet make_with_all_capabilities() noexcept;
+    [[nodiscard]] static constexpr CapabilitySet make_empty() noexcept { return {}; };
+
+    [[nodiscard]] static CapabilitySet shared_app_node_capabilities() noexcept;
 };
 
 std::ostream& operator<<(std::ostream&, const CapabilitySet& cap_set);

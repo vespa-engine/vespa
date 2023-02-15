@@ -31,6 +31,9 @@ private:
         RpcUnclassified,
         ClientFilereceiverApi,
         ClientSlobrokApi,
+        ClusterControllerReindexing,
+        ClusterControllerState,
+        ClusterControllerStatus,
         ConfigproxyConfigApi,
         ConfigproxyManagementApi,
         ConfigproxyFiledistributionApi,
@@ -38,24 +41,27 @@ private:
         ConfigserverFiledistributionApi,
         ContainerDocumentApi,
         ContainerManagementApi,
-        ContentStorageApi,
-        ContentDocumentApi,
-        ContentSearchApi,
-        ContentProtonAdminApi,
+        ContainerStateApi,
         ContentClusterControllerInternalStateApi,
-        SlobrokApi,
-        ConfigSentinelApi,
-        ContentStatusPages,
+        ContentDocumentApi,
         ContentMetricsApi,
+        ContentProtonAdminApi,
+        ContentSearchApi,
+        ContentStatusPages,
+        ContentStorageApi,
         LogserverApi,
         MetricsproxyManagementApi,
         MetricsproxyMetricsApi,
+        SentinelConnectivityCheck,
+        SentinelInspectServices,
+        SentinelManagementApi,
+        SlobrokApi,
         // When adding a capability ID to the end, max_value_count() MUST be updated
     };
 public:
     constexpr static size_t max_value_count() noexcept {
         // This must refer to the highest possible CapabilityId enum value.
-        return static_cast<size_t>(Id::MetricsproxyMetricsApi) + 1;
+        return static_cast<size_t>(Id::SlobrokApi) + 1;
     }
 private:
     Id _cap_id;
@@ -114,6 +120,18 @@ public:
         return Capability(Id::ClientSlobrokApi);
     }
 
+    constexpr static Capability cluster_controller_reindexing() noexcept {
+        return Capability(Id::ClusterControllerReindexing);
+    }
+
+    constexpr static Capability cluster_controller_state() noexcept {
+        return Capability(Id::ClusterControllerState);
+    }
+
+    constexpr static Capability cluster_controller_status() noexcept {
+        return Capability(Id::ClusterControllerStatus);
+    }
+
     constexpr static Capability configproxy_config_api() noexcept {
         return Capability(Id::ConfigproxyConfigApi);
     }
@@ -142,6 +160,10 @@ public:
         return Capability(Id::ContainerManagementApi);
     }
 
+    constexpr static Capability container_state_api() noexcept {
+        return Capability(Id::ContainerStateApi);
+    }
+
     constexpr static Capability content_storage_api() noexcept {
         return Capability(Id::ContentStorageApi);
     }
@@ -166,10 +188,6 @@ public:
         return Capability(Id::SlobrokApi);
     }
 
-    constexpr static Capability config_sentinel_api() noexcept {
-        return Capability(Id::ConfigSentinelApi);
-    }
-
     constexpr static Capability content_status_pages() noexcept {
         return Capability(Id::ContentStatusPages);
     }
@@ -188,6 +206,18 @@ public:
 
     constexpr static Capability metricsproxy_metrics_api() noexcept {
         return Capability(Id::MetricsproxyMetricsApi);
+    }
+
+    constexpr static Capability sentinel_connectivity_check() noexcept {
+        return Capability(Id::SentinelConnectivityCheck);
+    }
+
+    constexpr static Capability sentinel_inspect_services() noexcept {
+        return Capability(Id::SentinelInspectServices);
+    }
+
+    constexpr static Capability sentinel_management_api() noexcept {
+        return Capability(Id::SentinelManagementApi);
     }
 
 };
