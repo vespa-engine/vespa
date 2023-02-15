@@ -54,7 +54,7 @@ public class AdminTestCase {
         // Verify configIds
         Set<String> configIds = vespaModel.getConfigIds();
         String localhost = HostName.getLocalhost();
-        String localhostConfigId = "hosts/" + localhost;
+        String localhostConfigId = "hosts/" + localhost + "/sentinel";
         assertTrue(configIds.contains(localhostConfigId));
         assertTrue(configIds.contains("admin/logserver"));
         assertTrue(configIds.contains("admin/configservers/configserver.0"));
@@ -118,7 +118,7 @@ public class AdminTestCase {
         // Verify configIds
         Set<String> configIds = vespaModel.getConfigIds();
         String localhost = HostName.getLocalhost();
-        String localhostConfigId = "hosts/" + localhost;
+        String localhostConfigId = "hosts/" + localhost + "/sentinel";
         assertTrue(configIds.contains(localhostConfigId));
         assertTrue(configIds.contains("admin/logserver"));
         assertTrue(configIds.contains("admin/configservers/configserver.0"));
@@ -158,7 +158,7 @@ public class AdminTestCase {
                 .build();
         TestRoot root = new TestDriver().buildModel(state);
         String localhost = HostName.getLocalhost();
-        SentinelConfig config = root.getConfig(SentinelConfig.class, "hosts/" + localhost);
+        SentinelConfig config = root.getConfig(SentinelConfig.class, "hosts/" + localhost + "/sentinel");
         assertEquals("quux", config.application().tenant());
         assertEquals("foo", config.application().name());
         assertEquals("dev", config.application().environment());

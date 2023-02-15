@@ -71,12 +71,12 @@ public class DedicatedAdminV4Test {
         VespaModel model = createModel(hosts, services);
         assertEquals(3, model.getHosts().size());
 
-        assertHostContainsServices(model, "hosts/myhost0", "slobrok", "logd",
+        assertHostContainsServices(model, "hosts/myhost0/sentinel", "slobrok", "logd",
                 METRICS_PROXY_CONTAINER.serviceName);
-        assertHostContainsServices(model, "hosts/myhost1", "slobrok", "logd",
+        assertHostContainsServices(model, "hosts/myhost1/sentinel", "slobrok", "logd",
                 METRICS_PROXY_CONTAINER.serviceName);
         // Note: A logserver container is always added on logserver host
-        assertHostContainsServices(model, "hosts/myhost2", "logserver", "logd",
+        assertHostContainsServices(model, "hosts/myhost2/sentinel", "logserver", "logd",
                 METRICS_PROXY_CONTAINER.serviceName, LOGSERVER_CONTAINER.serviceName);
 
         Monitoring monitoring = model.getAdmin().getMonitoring();
@@ -129,13 +129,13 @@ public class DedicatedAdminV4Test {
         assertEquals(4, model.getHosts().size());
 
         // 4 slobroks, 2 per cluster where possible
-        assertHostContainsServices(model, "hosts/myhost0", "slobrok", "logd", "logserver",
+        assertHostContainsServices(model, "hosts/myhost0/sentinel", "slobrok", "logd", "logserver",
                 METRICS_PROXY_CONTAINER.serviceName, CONTAINER.serviceName);
-        assertHostContainsServices(model, "hosts/myhost1", "slobrok", "logd",
+        assertHostContainsServices(model, "hosts/myhost1/sentinel", "slobrok", "logd",
                 METRICS_PROXY_CONTAINER.serviceName, CONTAINER.serviceName);
-        assertHostContainsServices(model, "hosts/myhost2", "slobrok", "logd",
+        assertHostContainsServices(model, "hosts/myhost2/sentinel", "slobrok", "logd",
                 METRICS_PROXY_CONTAINER.serviceName, CONTAINER.serviceName);
-        assertHostContainsServices(model, "hosts/myhost3", "slobrok", "logd",
+        assertHostContainsServices(model, "hosts/myhost3/sentinel", "slobrok", "logd",
                 METRICS_PROXY_CONTAINER.serviceName, CONTAINER.serviceName);
     }
 
@@ -154,12 +154,12 @@ public class DedicatedAdminV4Test {
         VespaModel model = createModel(hosts, services);
         assertEquals(3, model.getHosts().size());
 
-        assertHostContainsServices(model, "hosts/myhost0", "logd", "logforwarder", "slobrok",
+        assertHostContainsServices(model, "hosts/myhost0/sentinel", "logd", "logforwarder", "slobrok",
                 METRICS_PROXY_CONTAINER.serviceName);
-        assertHostContainsServices(model, "hosts/myhost1", "logd", "logforwarder", "slobrok",
+        assertHostContainsServices(model, "hosts/myhost1/sentinel", "logd", "logforwarder", "slobrok",
                 METRICS_PROXY_CONTAINER.serviceName);
         // Note: A logserver container is always added on logserver host
-        assertHostContainsServices(model, "hosts/myhost2", "logd", "logforwarder", "logserver",
+        assertHostContainsServices(model, "hosts/myhost2/sentinel", "logd", "logforwarder", "logserver",
                 METRICS_PROXY_CONTAINER.serviceName, LOGSERVER_CONTAINER.serviceName);
 
         Set<String> configIds = model.getConfigIds();
@@ -206,17 +206,17 @@ public class DedicatedAdminV4Test {
                 .properties(new TestProperties().setHostedVespa(true)));
         assertEquals(1, model.getHosts().size());
         // Should create a logserver container on the same node as logserver
-        assertHostContainsServices(model, "hosts/myhost0", "slobrok", "logd", "logserver",
+        assertHostContainsServices(model, "hosts/myhost0/sentinel", "slobrok", "logd", "logserver",
                 METRICS_PROXY_CONTAINER.serviceName, LOGSERVER_CONTAINER.serviceName);
     }
 
-    private Set<String> serviceNames(VespaModel model, String hostname) {
-        SentinelConfig config = model.getConfig(SentinelConfig.class, hostname);
+    private Set<String> serviceNames(VespaModel model, String sentinelConfigId) {
+        SentinelConfig config = model.getConfig(SentinelConfig.class, sentinelConfigId);
         return config.service().stream().map(SentinelConfig.Service::name).collect(Collectors.toSet());
     }
 
-    private void assertHostContainsServices(VespaModel model, String hostname, String... expectedServices) {
-        Set<String> serviceNames = serviceNames(model, hostname);
+    private void assertHostContainsServices(VespaModel model, String sentinelConfigId, String... expectedServices) {
+        Set<String> serviceNames = serviceNames(model, sentinelConfigId);
         assertEquals(expectedServices.length, serviceNames.size());
         for (String serviceName : expectedServices) {
             assertTrue(serviceNames.contains(serviceName));

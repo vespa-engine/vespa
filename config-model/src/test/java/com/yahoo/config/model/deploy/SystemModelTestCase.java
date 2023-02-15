@@ -81,7 +81,7 @@ public class SystemModelTestCase {
         // Verify configIds from vespaModel
         assertTrue(12 <= vespaModel.getConfigIds().size());
         String localhost = HostName.getLocalhost();
-        String localhostConfigId = "hosts/" + localhost;
+        String localhostConfigId = "hosts/" + localhost + "/sentinel";
         Set<String> configIds = vespaModel.getConfigIds();
         assertTrue(configIds.contains("client"));
         assertTrue(configIds.contains(localhostConfigId));

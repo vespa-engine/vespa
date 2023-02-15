@@ -268,11 +268,9 @@ public class Admin extends TreeConfigProducer<AnyConfigProducer> implements Seri
         }
     }
 
-    private void addConfigSentinel(DeployState deployState, HostResource host)
-    {
+    private void addConfigSentinel(DeployState deployState, HostResource host) {
         ConfigSentinel configSentinel = new ConfigSentinel(host.getHost(), deployState.getProperties().applicationId(), deployState.zone());
         addAndInitializeService(deployState, host, configSentinel);
-        host.getHost().setConfigSentinel(configSentinel);
     }
 
     private void addLogForwarder(DeployState deployState, HostResource host) {

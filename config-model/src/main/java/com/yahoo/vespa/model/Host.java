@@ -1,10 +1,8 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model;
 
-import com.yahoo.cloud.config.SentinelConfig;
 import com.yahoo.config.model.producer.AnyConfigProducer;
 import com.yahoo.config.model.producer.TreeConfigProducer;
-
 import java.util.Objects;
 
 /**
@@ -13,9 +11,8 @@ import java.util.Objects;
  *
  * @author gjoranv
  */
-public final class Host extends TreeConfigProducer<AnyConfigProducer> implements SentinelConfig.Producer, Comparable<Host> {
+public final class Host extends TreeConfigProducer<AnyConfigProducer> implements Comparable<Host> {
 
-    private ConfigSentinel configSentinel = null;
     private final String hostname;
     private final boolean runsConfigServer;
 
@@ -56,19 +53,6 @@ public final class Host extends TreeConfigProducer<AnyConfigProducer> implements
     /** Returns the string representation of this Host object. */
     public String toString() {
         return "host '" + getHostname() + "'";
-    }
-
-    @Override
-    public void getConfig(SentinelConfig.Builder builder) {
-        // TODO (MAJOR_RELEASE): This shouldn't really be here, but we need to make sure users can upgrade if we change sentinel to use hosts/<hostname>/sentinel instead of hosts/<hostname>
-        // as config id. We should probably wait for a major release
-        if (configSentinel != null) {
-            configSentinel.getConfig(builder);
-        }
-    }
-
-    public void setConfigSentinel(ConfigSentinel configSentinel) {
-        this.configSentinel = configSentinel;
     }
 
     @Override
