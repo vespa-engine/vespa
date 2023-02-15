@@ -84,7 +84,7 @@ public class ChangeRequest {
         private ChangeRequestSource changeRequestSource;
         private List<String> impactedSwitches;
         private List<String> impactedHosts;
-        private Approval approval;
+        private Approval approval = Approval.OTHER;
         private Impact impact;
 
 
