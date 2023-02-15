@@ -158,12 +158,12 @@ public class IP {
             if (node.parentHostname().isPresent() == existingNode.parentHostname().isPresent()) return false; // Not a parent-child node
             if (node.parentHostname().isEmpty()) return canAssignIpOf(node, existingNode);
             if (!node.parentHostname().get().equals(existingNode.hostname())) return false; // Wrong host
-            switch (node.type()) {
-                case proxy: return existingNode.type() == proxyhost;
-                case config: return existingNode.type() == confighost;
-                case controller: return existingNode.type() == controllerhost;
-            }
-            return false;
+            return switch (node.type()) {
+                case proxy -> existingNode.type() == proxyhost;
+                case config -> existingNode.type() == confighost;
+                case controller -> existingNode.type() == controllerhost;
+                default -> false;
+            };
         }
 
         public static Node verify(Node node, LockedNodeList allNodes) {
