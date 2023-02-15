@@ -5,7 +5,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
@@ -24,7 +24,7 @@ public class ApplicationPatch {
     public Double maxReadShare;
 
     @JsonProperty("clusters")
-    public Map<String, ClusterPatch> clusters = new HashMap<>();
+    public Map<String, ClusterPatch> clusters = new LinkedHashMap<>();
 
     public static class ClusterPatch {
 
@@ -48,7 +48,9 @@ public class ApplicationPatch {
         @JsonProperty("cpuCostPerQuery")
         public Double cpuCostPerQuery;
 
-        public BcpGroupInfo(double queryRate, double growthRateHeadroom, double cpuCostPerQuery) {
+        public BcpGroupInfo(@JsonProperty("queryRate")double queryRate,
+                            @JsonProperty("growthRateHeadroom")double growthRateHeadroom,
+                            @JsonProperty("cpuCostPerQuery")double cpuCostPerQuery) {
             this.queryRate = queryRate;
             this.growthRateHeadroom = growthRateHeadroom;
             this.cpuCostPerQuery = cpuCostPerQuery;

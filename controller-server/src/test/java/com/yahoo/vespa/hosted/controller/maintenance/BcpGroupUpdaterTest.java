@@ -219,11 +219,19 @@ public class BcpGroupUpdaterTest {
         assertTrafficFraction(0.20, 0.20 + 30 / 200.0 / 2.5, context.instanceId(), us3, tester);
         assertTrafficFraction(0.30, 0.30 + 0.5 * 50 / 200.0 / 1.5 + 0.5 * 40 / 200.0 / 2.5, context.instanceId(), eu1, tester);
 
-        // Partial group info (missing from ap*)
+        // BCP group info (missing ap* regions for cluster1, and full for cluster2)
         setBcpMetrics(100, 0.1, 0.1, context.instanceId(), us1, "cluster1", updater);
         setBcpMetrics(100, 0.1, 0.1, context.instanceId(), us2, "cluster1", updater);
         setBcpMetrics(300, 0.3, 0.3, context.instanceId(), us3, "cluster1", updater);
         setBcpMetrics(100, 0.1, 0.1, context.instanceId(), eu1, "cluster1", updater);
+
+        setBcpMetrics(100, 0.1, 0.1, context.instanceId(), ap1, "cluster2", updater);
+        setBcpMetrics(200, 0.2, 0.2, context.instanceId(), ap2, "cluster2", updater);
+        setBcpMetrics(100, 0.1, 0.1, context.instanceId(), us1, "cluster2", updater);
+        setBcpMetrics(100, 0.1, 0.1, context.instanceId(), us2, "cluster2", updater);
+        setBcpMetrics(300, 0.3, 0.3, context.instanceId(), us3, "cluster2", updater);
+        setBcpMetrics(100, 0.1, 0.1, context.instanceId(), eu1, "cluster2", updater);
+
         assertEquals(1.0, updater.maintain(), 0.0000001);
 
         assertNoBcpGroupInfo(context.instanceId(), ap1, "cluster1", tester, "No info in ap");
@@ -233,21 +241,12 @@ public class BcpGroupUpdaterTest {
         assertBcpGroupInfo(100.0, 0.1, 0.1, context.instanceId(), us3, "cluster1", tester);
         assertBcpGroupInfo(300.0, 0.3, 0.3, context.instanceId(), eu1, "cluster1", tester);
 
-        // Full BCP group info
-        setBcpMetrics(100, 0.1, 0.1, context.instanceId(), ap1, "cluster1", updater);
-        setBcpMetrics(200, 0.2, 0.2, context.instanceId(), ap2, "cluster1", updater);
-        setBcpMetrics(100, 0.1, 0.1, context.instanceId(), us1, "cluster1", updater);
-        setBcpMetrics(100, 0.1, 0.1, context.instanceId(), us2, "cluster1", updater);
-        setBcpMetrics(300, 0.3, 0.3, context.instanceId(), us3, "cluster1", updater);
-        setBcpMetrics(100, 0.1, 0.1, context.instanceId(), eu1, "cluster1", updater);
-        assertEquals(1.0, updater.maintain(), 0.0000001);
-
-        assertBcpGroupInfo(200.0, 0.2, 0.2, context.instanceId(), ap1, "cluster1", tester);
-        assertBcpGroupInfo(100.0, 0.1, 0.1, context.instanceId(), ap2, "cluster1", tester);
-        assertBcpGroupInfo(300.0, 0.3, 0.3, context.instanceId(), us1, "cluster1", tester);
-        assertBcpGroupInfo(300.0, 0.3, 0.3, context.instanceId(), us2, "cluster1", tester);
-        assertBcpGroupInfo(100.0, 0.1, 0.1, context.instanceId(), us3, "cluster1", tester);
-        assertBcpGroupInfo((200 + 300) / 2.0, (0.2 + 0.3) / 2.0, (0.2 + 0.3) / 2.0, context.instanceId(), eu1, "cluster1", tester);
+        assertBcpGroupInfo(200.0, 0.2, 0.2, context.instanceId(), ap1, "cluster2", tester);
+        assertBcpGroupInfo(100.0, 0.1, 0.1, context.instanceId(), ap2, "cluster2", tester);
+        assertBcpGroupInfo(300.0, 0.3, 0.3, context.instanceId(), us1, "cluster2", tester);
+        assertBcpGroupInfo(300.0, 0.3, 0.3, context.instanceId(), us2, "cluster2", tester);
+        assertBcpGroupInfo(100.0, 0.1, 0.1, context.instanceId(), us3, "cluster2", tester);
+        assertBcpGroupInfo((200 + 300) / 2.0, (0.2 + 0.3) / 2.0, (0.2 + 0.3) / 2.0, context.instanceId(), eu1, "cluster2", tester);
     }
 
     private void setQpsMetric(double qps, ApplicationId application, ZoneId zone, DeploymentTester tester) {

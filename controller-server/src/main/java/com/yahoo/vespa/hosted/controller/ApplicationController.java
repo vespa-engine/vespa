@@ -93,6 +93,7 @@ import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
@@ -144,6 +145,7 @@ public class ApplicationController {
     private final ListFlag<String> incompatibleVersions;
     private final BillingController billingController;
     private final ListFlag<String> cloudAccountsFlag;
+    private final Map<DeploymentId, com.yahoo.vespa.hosted.controller.api.integration.configserver.Application> deploymentInfo = new ConcurrentHashMap<>();
 
     ApplicationController(Controller controller, CuratorDb curator, AccessControl accessControl, Clock clock,
                           FlagSource flagSource, BillingController billingController) {
@@ -204,6 +206,15 @@ public class ApplicationController {
     public Optional<Instance> getInstance(ApplicationId id) {
         return getApplication(TenantAndApplicationId.from(id)).flatMap(application -> application.get(id.instance()));
     }
+
+    /**
+     * Returns in-memory info for the given deployment pulled from the node repo.
+     * Info on any existing deployment can be missing if it has not yet been fetched since this instance was started.
+     * This is kept up to date by DeploymentInfoMaintainer.
+     * Accessing this is thread safe.
+     */
+    // TODO: Replace the wire level Application by a DeploymentInfo class in the model
+    public Map<DeploymentId, com.yahoo.vespa.hosted.controller.api.integration.configserver.Application> deploymentInfo() { return deploymentInfo; }
 
     /**
      * Triggers reindexing for the given document types in the given clusters, for the given application.

@@ -168,6 +168,7 @@ public class ResourceMeterMaintainer extends ControllerMaintainer {
 
     private Stream<Map.Entry<ClusterId, List<Cluster.ScalingEvent>>> mapDeploymentToClusterScalingEvent(DeploymentId deploymentId) {
         try {
+            // TODO: get Application from controller.applications().deploymentInfo()
             return nodeRepository.getApplication(deploymentId.zoneId(), deploymentId.applicationId())
                     .clusters().entrySet().stream()
                     .map(cluster -> Map.entry(new ClusterId(deploymentId, cluster.getKey()), cluster.getValue().scalingEvents()));

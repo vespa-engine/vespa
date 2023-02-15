@@ -38,7 +38,7 @@ import java.util.stream.Stream;
  *
  * Maintains status and execution of Vespa CMRs.
  *
- * Currently this retires all affected tenant hosts if zone capacity allows it.
+ * Currently, this retires all affected tenant hosts if zone capacity allows it.
  *
  * @author olaa
  */
