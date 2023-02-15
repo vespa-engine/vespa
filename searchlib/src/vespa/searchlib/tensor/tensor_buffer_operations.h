@@ -80,7 +80,8 @@ class TensorBufferOperations
         return get_num_subspaces(get_num_subspaces_and_flag(buf));
     }
 public:
-    size_t get_array_size(uint32_t num_subspaces) const noexcept {
+    // Size (in bytes) used to serialize tensor with num_subspaces.
+    size_t get_buffer_size(uint32_t num_subspaces) const noexcept {
         auto cells_mem_size = get_cells_mem_size(num_subspaces);
         auto aligner = select_aligner(cells_mem_size);
         return get_cells_offset(num_subspaces, aligner) + aligner.align(cells_mem_size);

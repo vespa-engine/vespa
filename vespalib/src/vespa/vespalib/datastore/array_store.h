@@ -144,6 +144,8 @@ public:
     bool has_free_lists_enabled() const { return _store.has_free_lists_enabled(); }
     bool has_held_buffers() const noexcept { return _store.has_held_buffers(); }
 
+    const TypeMapper& get_mapper() const noexcept { return _mapper; }
+
     static ArrayStoreConfig optimizedConfigForHugePage(uint32_t maxSmallArrayTypeId,
                                                        size_t hugePageSize,
                                                        size_t smallPageSize,

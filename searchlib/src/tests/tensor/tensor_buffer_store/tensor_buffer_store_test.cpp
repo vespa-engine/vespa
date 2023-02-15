@@ -6,6 +6,8 @@
 #include <vespa/eval/eval/value.h>
 #include <vespa/eval/eval/value_codec.h>
 #include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/stllike/asciistream.h>
+#include <vespa/vespalib/stllike/hash_set.h>
 
 using search::tensor::TensorBufferStore;
 using vespalib::datastore::EntryRef;
@@ -175,6 +177,35 @@ TEST_F(TensorBufferStoreTest, get_vectors)
     }
     EXPECT_EQ((std::vector<double>{4.5, 5.5, 6.5, 7.5}), values);
     EXPECT_EQ(0, _store.get_vectors(EntryRef()).subspaces());
+}
+
+TEST_F(TensorBufferStoreTest, buffer_handles_range_of_subspaces)
+{
+    auto offset_bits = TensorBufferStore::get_offset_bits();
+    TensorBufferStore store(_tensor_type, {}, 400);
+    std::vector<EntryRef> refs;
+    vespalib::hash_set<uint32_t> buffers;
+    TensorSpec tensor_spec(tensor_type_spec);
+    for (uint32_t x = 0; x < 400; ++x) {
+        vespalib::asciistream x_stream;
+        x_stream << x;
+        vespalib::string x_as_string = x_stream.str();
+        tensor_spec.add({{"x", x_as_string.c_str()}}, x + 1.5);
+        auto tensor = value_from_spec(tensor_spec, FastValueBuilderFactory::get());
+        EXPECT_EQ(_tensor_type, tensor->type());
+        auto ref = store.store_tensor(*tensor);
+        refs.emplace_back(ref);
+        auto buffer_id = ref.buffer_id(offset_bits);
+        buffers.insert(buffer_id);
+    }
+    EXPECT_EQ(156u, buffers.size());
+    uint32_t x = 0;
+    for (auto ref : refs) {
+        auto tensor = store.get_tensor(ref);
+        ++x;
+        EXPECT_EQ(x, tensor->index().size());
+        EXPECT_EQ(x, store.get_vectors(ref).subspaces());
+    }
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()

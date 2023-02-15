@@ -78,7 +78,7 @@ TensorBufferOperationsTest::get_array_sizes(uint32_t max_subspaces)
 {
     std::vector<size_t> array_sizes;
     for (uint32_t num_subspaces = 0; num_subspaces < max_subspaces; ++num_subspaces) {
-        array_sizes.emplace_back(_ops.get_array_size(num_subspaces));
+        array_sizes.emplace_back(_ops.get_buffer_size(num_subspaces));
     }
     return array_sizes;
 }
@@ -88,7 +88,7 @@ TensorBufferOperationsTest::store_tensor(const Value& tensor)
 {
     EXPECT_EQ(_tensor_type, tensor.type());
     uint32_t num_subspaces = tensor.index().size();
-    auto array_size = _ops.get_array_size(num_subspaces);
+    auto array_size = _ops.get_buffer_size(num_subspaces);
     std::vector<char> buf;
     buf.resize(array_size);
     _ops.store_tensor(buf, tensor);
