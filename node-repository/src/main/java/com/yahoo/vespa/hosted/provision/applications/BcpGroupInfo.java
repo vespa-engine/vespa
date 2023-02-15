@@ -27,7 +27,7 @@ public class BcpGroupInfo {
         this.cpuCostPerQuery = cpuCostPerQuery;
     }
 
-    /** Returns the average query rate (queries/second) of the other clusters in the group this belongs to. */
+    /** Returns the max peak query rate (queries/second) of the other clusters in the group this belongs to. */
     public double queryRate() { return queryRate; }
 
     /** Returns the average growth rate headroom of the other clusters in the group this belongs to. */

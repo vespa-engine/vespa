@@ -1,6 +1,8 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.slime;
 
+import java.util.function.Consumer;
+
 /**
  * Interface for read-only access to any value or object that is part
  * of a Slime. You can access meta-data such as validity and actual
@@ -16,6 +18,9 @@ public interface Inspector {
 
     /** check if this inspector is valid */
     boolean valid();
+
+    /** Invoke the given consumer with this value if it is valid */
+    void ifValid(Consumer<Inspector> consumer);
 
     /** return an enum describing value type */
     Type type();

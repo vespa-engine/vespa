@@ -32,6 +32,7 @@ public class DeploymentMetricsResponse extends SlimeJsonResponse {
             aggregator.aggregateDocumentCount().ifPresent(documentCount -> metrics.setDouble("documentCount", documentCount));
             aggregator.aggregateQueryLatency().ifPresent(queryLatency -> metrics.setDouble("queryLatency",queryLatency));
             aggregator.aggregateFeedLatency().ifPresent(feedLatency -> metrics.setDouble("feedLatency", feedLatency));
+
             aggregator.memoryUsage().ifPresent(memory -> {
                 metrics.setDouble("memoryUtil", memory.util());
                 metrics.setDouble("memoryFeedBlockLimit", memory.feedBlockLimit());

@@ -7,7 +7,12 @@ import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.zone.ZoneId;
+import com.yahoo.vespa.hosted.controller.api.integration.noderepository.ApplicationPatch;
 
+import javax.ws.rs.HeaderParam;
+import javax.ws.rs.POST;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
 import java.net.URI;
 import java.util.List;
 import java.util.Map;
@@ -38,8 +43,7 @@ public interface NodeRepository {
     Application getApplication(ZoneId zone, ApplicationId application);
 
     /** Update application */
-    void patchApplication(ZoneId zone, ApplicationId application,
-                          double currentReadShare, double maxReadShare);
+    void patchApplication(ZoneId zone, ApplicationId application, ApplicationPatch patch);
 
     /** Get node statistics such as cost and load from given zone */
     NodeRepoStats getStats(ZoneId zone);

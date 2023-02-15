@@ -80,6 +80,7 @@ public class ApplicationSerializer {
         autoscalingObject.setLong("at", autoscaling.at().toEpochMilli());
         toSlime(autoscaling.peak(), autoscalingObject.setObject("peak"));
         toSlime(autoscaling.ideal(), autoscalingObject.setObject("ideal"));
+        toSlime(autoscaling.metrics(), autoscalingObject.setObject("metrics"));
     }
 
     private static void toSlime(ClusterResources resources, Cursor clusterResourcesObject) {
@@ -93,10 +94,16 @@ public class ApplicationSerializer {
         range.to().ifPresent(to -> rangeObject.setLong("to", range.to().getAsInt()));
     }
 
-    private static void toSlime(Load load, Cursor utilizationObject) {
-        utilizationObject.setDouble("cpu", load.cpu());
-        utilizationObject.setDouble("memory", load.memory());
-        utilizationObject.setDouble("disk", load.disk());
+    private static void toSlime(Load load, Cursor loadObject) {
+        loadObject.setDouble("cpu", load.cpu());
+        loadObject.setDouble("memory", load.memory());
+        loadObject.setDouble("disk", load.disk());
+    }
+
+    private static void toSlime(Autoscaling.Metrics metrics, Cursor metricsObject) {
+        metricsObject.setDouble("queryRate", metrics.queryRate());
+        metricsObject.setDouble("growthRateHeadroom", metrics.growthRateHeadroom());
+        metricsObject.setDouble("cpuCostPerQuery", metrics.cpuCostPerQuery());
     }
 
     private static void scalingEventsToSlime(List<ScalingEvent> scalingEvents, Cursor scalingEventsArray) {

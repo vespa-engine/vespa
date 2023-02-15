@@ -64,10 +64,10 @@ public class ApplicationSerializer {
     private static final String groupsKey = "groups";
     private static final String nodeResourcesKey = "resources";
     private static final String scalingEventsKey = "scalingEvents";
-    private static final String autoscalingStatusObjectKey = "autoscalingStatusObject";
     private static final String descriptionKey = "description";
     private static final String peakKey = "peak";
     private static final String idealKey = "ideal";
+    private static final String metricsKey = "metrics";
     private static final String cpuKey = "cpu";
     private static final String memoryKey = "memory";
     private static final String diskKey = "disk";
@@ -146,8 +146,8 @@ public class ApplicationSerializer {
                            clusterResourcesFromSlime(clusterObject.field(maxResourcesKey)),
                            intRangeFromSlime(clusterObject.field(groupSizeKey)),
                            clusterObject.field(requiredKey).asBool(),
-                           autoscalingFromSlime(clusterObject.field(suggestedKey), clusterObject.field("nonExisting")),
-                           autoscalingFromSlime(clusterObject.field(targetKey), clusterObject.field(autoscalingStatusObjectKey)),
+                           autoscalingFromSlime(clusterObject.field(suggestedKey)),
+                           autoscalingFromSlime(clusterObject.field(targetKey)),
                            bcpGroupInfoFromSlime(clusterObject.field(bcpGroupInfoKey)),
                            scalingEventsFromSlime(clusterObject.field(scalingEventsKey)));
     }
@@ -159,6 +159,7 @@ public class ApplicationSerializer {
         autoscalingObject.setLong(atKey, autoscaling.at().toEpochMilli());
         toSlime(autoscaling.peak(), autoscalingObject.setObject(peakKey));
         toSlime(autoscaling.ideal(), autoscalingObject.setObject(idealKey));
+        toSlime(autoscaling.metrics(), autoscalingObject.setObject(metricsKey));
     }
 
     private static void toSlime(ClusterResources resources, Cursor clusterResourcesObject) {
@@ -200,34 +201,28 @@ public class ApplicationSerializer {
                         loadObject.field(diskKey).asDouble());
     }
 
-    private static Autoscaling autoscalingFromSlime(Inspector autoscalingObject,
-                                                    Inspector legacyAutoscalingStatusObject) {
+    private static void toSlime(Autoscaling.Metrics metrics, Cursor metricsObject) {
+        metricsObject.setDouble(queryRateKey, metrics.queryRate());
+        metricsObject.setDouble(growthRateHeadroomKey, metrics.growthRateHeadroom());
+        metricsObject.setDouble(cpuCostPerQueryKey, metrics.cpuCostPerQuery());
+    }
+
+    private static Autoscaling.Metrics metricsFromSlime(Inspector metricsObject) {
+        return new Autoscaling.Metrics(metricsObject.field(queryRateKey).asDouble(),
+                                       metricsObject.field(growthRateHeadroomKey).asDouble(),
+                                       metricsObject.field(cpuCostPerQueryKey).asDouble());
+    }
+
+    private static Autoscaling autoscalingFromSlime(Inspector autoscalingObject) {
         if ( ! autoscalingObject.valid()) return Autoscaling.empty();
-
-        if ( ! autoscalingObject.field(atKey).valid()) { // TODO: Remove after January 2023
-            return new Autoscaling(fromAutoscalingStatusCode(legacyAutoscalingStatusObject.field(statusKey).asString()),
-                                   legacyAutoscalingStatusObject.field(descriptionKey).asString(),
-                                   optionalClusterResourcesFromSlime(autoscalingObject),
-                                   Instant.EPOCH,
-                                   Load.zero(),
-                                   Load.zero());
-        }
-
-        if (legacyAutoscalingStatusObject.valid()) {  // TODO: Remove after January 2023
-            return new Autoscaling(fromAutoscalingStatusCode(legacyAutoscalingStatusObject.field(statusKey).asString()),
-                                   legacyAutoscalingStatusObject.field(descriptionKey).asString(),
-                                   optionalClusterResourcesFromSlime(autoscalingObject.field(resourcesKey)),
-                                   Instant.ofEpochMilli(autoscalingObject.field(atKey).asLong()),
-                                   loadFromSlime(autoscalingObject.field(peakKey)),
-                                   loadFromSlime(autoscalingObject.field(idealKey)));
-        }
 
         return new Autoscaling(fromAutoscalingStatusCode(autoscalingObject.field(statusKey).asString()),
                                autoscalingObject.field(descriptionKey).asString(),
                                optionalClusterResourcesFromSlime(autoscalingObject.field(resourcesKey)),
                                Instant.ofEpochMilli(autoscalingObject.field(atKey).asLong()),
                                loadFromSlime(autoscalingObject.field(peakKey)),
-                               loadFromSlime(autoscalingObject.field(idealKey)));
+                               loadFromSlime(autoscalingObject.field(idealKey)),
+                               metricsFromSlime(autoscalingObject.field(metricsKey)));
     }
 
     private static void toSlime(BcpGroupInfo bcpGroupInfo, Cursor bcpGroupInfoObject) {

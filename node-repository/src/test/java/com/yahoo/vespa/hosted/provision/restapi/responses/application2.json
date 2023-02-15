@@ -56,6 +56,11 @@
           "cpu" : 0.0,
           "memory" : 0.0,
           "disk" : 0.0
+        },
+        "metrics" : {
+          "queryRate" : 0.0,
+          "growthRateHeadroom" : 0.0,
+          "cpuCostPerQuery" : 0.0
         }
       },
       "scalingEvents" : [

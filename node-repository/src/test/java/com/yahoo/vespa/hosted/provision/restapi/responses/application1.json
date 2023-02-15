@@ -69,6 +69,11 @@
           "cpu" : 0.0,
           "memory" : 0.0,
           "disk" : 0.0
+        },
+        "metrics" : {
+          "queryRate" : 0.0,
+          "growthRateHeadroom" : 0.0,
+          "cpuCostPerQuery" : 0.0
         }
       },
       "target" : {
@@ -89,14 +94,19 @@
         },
         "at" : 123,
         "peak" : {
-          "cpu" : 0.0,
-          "memory" : 0.0,
-          "disk" : 0.0
+          "cpu" : 0.1,
+          "memory" : 0.2,
+          "disk" : 0.3
         },
         "ideal" : {
-          "cpu" : 0.0,
-          "memory" : 0.0,
-          "disk" : 0.0
+          "cpu" : 0.4,
+          "memory" : 0.5,
+          "disk" : 0.6
+        },
+        "metrics" : {
+          "queryRate" : 0.7,
+          "growthRateHeadroom" : 0.8,
+          "cpuCostPerQuery" : 0.9
         }
       },
       "scalingEvents" : [
