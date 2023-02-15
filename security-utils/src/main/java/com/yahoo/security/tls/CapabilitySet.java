@@ -21,17 +21,20 @@ public class CapabilitySet implements ToCapabilitySet {
 
     private static final Map<String, CapabilitySet> PREDEFINED = new HashMap<>();
 
-    private static final CapabilitySet SHARED_CAPABILITIES_APP_NODE = CapabilitySet.of(
-            Capability.LOGSERVER_API, Capability.CONFIGSERVER__CONFIG_API,
-            Capability.CONFIGSERVER__FILEDISTRIBUTION_API, Capability.CONFIGPROXY__CONFIG_API,
-            Capability.CONFIGPROXY__FILEDISTRIBUTION_API, Capability.SENTINEL__CONNECTIVITY_CHECK);
 
     /* Predefined capability sets */
     public static final CapabilitySet ALL = predefined(
             "vespa.all", Capability.values());
     public static final CapabilitySet TELEMETRY = predefined(
             "vespa.telemetry",
-            Capability.CONTENT__STATUS_PAGES, Capability.CONTENT__METRICS_API);
+            Capability.CONTENT__STATUS_PAGES, Capability.CONTENT__METRICS_API, Capability.CONTAINER__STATE_API,
+            Capability.METRICSPROXY__METRICS_API, Capability.SENTINEL__CONNECTIVITY_CHECK);
+
+    private static final CapabilitySet SHARED_CAPABILITIES_APP_NODE = CapabilitySet.of(
+            Capability.LOGSERVER_API, Capability.CONFIGSERVER__CONFIG_API,
+            Capability.CONFIGSERVER__FILEDISTRIBUTION_API, Capability.CONFIGPROXY__CONFIG_API,
+            Capability.CONFIGPROXY__FILEDISTRIBUTION_API, TELEMETRY);
+
     public static final CapabilitySet CONTENT_NODE = predefined(
             "vespa.content_node",
             Capability.CONTENT__STORAGE_API, Capability.CONTENT__DOCUMENT_API, Capability.CONTAINER__DOCUMENT_API,
@@ -47,7 +50,8 @@ public class CapabilitySet implements ToCapabilitySet {
             "vespa.logserver_node", SHARED_CAPABILITIES_APP_NODE);
     public static final CapabilitySet CONFIGSERVER_NODE = predefined(
             "vespa.config_server_node",
-            Capability.CLIENT__FILERECEIVER_API, Capability.CONTAINER__MANAGEMENT_API, TELEMETRY);
+            Capability.CLIENT__FILERECEIVER_API, Capability.CONTAINER__MANAGEMENT_API, Capability.SLOBROK__API,
+            Capability.CLUSTER_CONTROLLER__REINDEXING, Capability.CLUSTER_CONTROLLER__STATE, TELEMETRY);
 
     private static CapabilitySet predefined(String name, ToCapabilitySet... capabilities) {
         var instance = CapabilitySet.of(capabilities);
