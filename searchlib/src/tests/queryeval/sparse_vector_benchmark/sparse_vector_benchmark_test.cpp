@@ -34,10 +34,7 @@ struct Writer {
     void write(const char *data, size_t size) const {
         fwrite(data, 1, size, file);
     }
-    void fmt(const char *format, ...) const
-#ifdef __GNUC__
-        __attribute__ ((format (printf,2,3)))
-#endif
+    void fmt(const char *format, ...) const __attribute__ ((format (printf,2,3)))
     {
         va_list ap;
         va_start(ap, format);

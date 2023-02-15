@@ -75,7 +75,7 @@ protected:
      * class. The @ref setup method is used to tailor a blueprint
      * object for a specific set of parameters.
      **/
-    Blueprint(vespalib::stringref baseName);
+    explicit Blueprint(vespalib::stringref baseName);
 
     using IAttributeVector = attribute::IAttributeVector;
     /**
@@ -117,11 +117,7 @@ protected:
      * @return false
      * @param format printf-style format string
      **/
-    bool fail(const char *format, ...)
-#ifdef __GNUC__
-        __attribute__ ((format (printf,2,3)))
-#endif
-        ;
+    bool fail(const char *format, ...) __attribute__ ((format (printf,2,3)));
 
     /**
      * Used to store a reference to the attribute during prepareSharedState

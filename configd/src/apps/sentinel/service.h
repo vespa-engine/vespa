@@ -32,7 +32,7 @@ private:
     vespalib::duration _restartPenalty;
     vespalib::steady_time _last_start;
 
-    void runChild() __attribute__((noreturn));
+    [[noreturn]] void runChild();
     void setState(ServiceState state);
     void runCommand(const std::string & command);
     const char *stateName(ServiceState state) const;

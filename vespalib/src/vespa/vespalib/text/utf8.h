@@ -152,8 +152,7 @@ public:
 
 protected:
 
-    static void throwX(const char *msg, unsigned int number)
-        __attribute__((__noreturn__));
+    [[noreturn]] static void throwX(const char *msg, unsigned int number);
 
     enum {
         low_7bits_mask = 0x7F,

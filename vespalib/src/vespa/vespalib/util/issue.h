@@ -63,12 +63,7 @@ public:
     static Binding listen(Handler &handler);
     static void report(vespalib::string msg);
     static void report(const std::exception &e);
-    static void report(const char *format, ...)
-#ifdef __GNUC__
-        // Add printf format checks with gcc
-        __attribute__ ((format (printf,1,2)))
-#endif
-    ;
+    static void report(const char *format, ...) __attribute__ ((format (printf,1,2)));
 };
 
 }
