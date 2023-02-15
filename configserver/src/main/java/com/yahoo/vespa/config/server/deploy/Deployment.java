@@ -6,6 +6,7 @@ import com.yahoo.config.FileReference;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.provision.ActivationContext;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.ApplicationLockException;
 import com.yahoo.config.provision.ApplicationTransaction;
 import com.yahoo.config.provision.HostFilter;
 import com.yahoo.config.provision.HostSpec;
@@ -114,8 +115,6 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
             deleteSession();
             throw e;
         }
-
-        waitForResourcesOrTimeout(params, session, provisioner);
     }
 
     /** Activates this. If it is not already prepared, this will call prepare first. */
@@ -126,6 +125,8 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
         validateSessionStatus(session);
 
         PrepareParams params = this.params.get();
+        waitForResourcesOrTimeout(params, session, provisioner);
+
         ApplicationId applicationId = session.getApplicationId();
         try (ActionTimer timer = applicationRepository.timerFor(applicationId, "deployment.activateMillis")) {
             TimeoutBudget timeoutBudget = params.getTimeoutBudget();
@@ -289,20 +290,19 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
 
         Set<HostSpec> preparedHosts = session.getAllocatedHosts().getHosts();
         ActivationContext context = new ActivationContext(session.getSessionId());
-        ProvisionLock lock = new ProvisionLock(session.getApplicationId(), () -> {});
-        AtomicReference<TransientException> lastException = new AtomicReference<>();
+        AtomicReference<Exception> lastException = new AtomicReference<>();
 
         while (true) {
             params.getTimeoutBudget().assertNotTimedOut(
                     () -> "Timeout exceeded while waiting for application resources of '" + session.getApplicationId() + "'" +
                             Optional.ofNullable(lastException.get()).map(e -> ". Last exception: " + e.getMessage()).orElse(""));
 
-            try {
+            try (ProvisionLock lock = provisioner.get().lock(session.getApplicationId())) {
                 // Call to activate to make sure that everything is ready, but do not commit the transaction
                 ApplicationTransaction transaction = new ApplicationTransaction(lock, new NestedTransaction());
                 provisioner.get().activate(preparedHosts, context, transaction);
                 return;
-            } catch (TransientException e) {
+            } catch (ApplicationLockException | TransientException e) {
                 lastException.set(e);
                 try {
                     Thread.sleep(durationBetweenResourceReadyChecks.toMillis());
