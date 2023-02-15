@@ -296,7 +296,7 @@ TEST_F(OperationAbortingTest, wait_for_current_operation_completion_for_aborted_
     auto abortCmd = makeAbortCmd(abortSet);
 
     SendTask sendTask(abortCmd, *_queueBarrier, c.top);
-    auto thread = vespalib::Thread::start(sendTask, test_thread);
+    auto thread = vespalib::thread::start(sendTask, test_thread);
 
     LOG(debug, "waiting for threads to reach barriers");
     _queueBarrier->await();

@@ -5,8 +5,7 @@
 #include <vespa/config/helper/ifetchercallback.h>
 #include <vespa/config/subscription/sourcespec.h>
 #include <atomic>
-
-namespace vespalib { class Thread; }
+#include <thread>
 
 namespace config {
 
@@ -31,7 +30,7 @@ public:
     int64_t getGeneration() const;
 private:
     std::unique_ptr<ConfigPoller> _poller;
-    std::unique_ptr<vespalib::Thread> _thread;
+    std::thread _thread;
     std::atomic<bool> _closed;
     std::atomic<bool> _started;
 };

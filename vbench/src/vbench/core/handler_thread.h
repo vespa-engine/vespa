@@ -26,7 +26,7 @@ private:
     std::condition_variable                    _cond;
     vespalib::ArrayQueue<std::unique_ptr<T> >  _queue;
     Handler<T>                                &_next;
-    vespalib::Thread                           _thread;
+    std::thread                                _thread;
     bool                                       _done;
 
     void run() override;

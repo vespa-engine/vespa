@@ -113,7 +113,7 @@ public:
 private:
     struct Worker : Runnable {
         using UP = std::unique_ptr<Worker>;
-        Thread thread;
+        std::thread thread;
         Signal &signal;
         Runnable::UP hook;
         Worker(Signal &s, init_fun_t init_fun, Runnable::UP h);
@@ -136,4 +136,3 @@ public:
 };
 
 } // namespace vespalib
-

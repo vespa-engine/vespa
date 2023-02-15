@@ -25,7 +25,7 @@ SimpleConfigurer::start()
     if (!_retriever->isClosed()) {
         LOG(debug, "Polling for config");
         runConfigure();
-        _thread = vespalib::Thread::start(*this, simple_configurer_thread);
+        _thread = vespalib::thread::start(*this, simple_configurer_thread);
         _started = true;
     }
 }
@@ -38,9 +38,11 @@ SimpleConfigurer::~SimpleConfigurer()
 void
 SimpleConfigurer::close()
 {
-    _retriever->close();
-    if (_started)
-        _thread.join();
+    if (!_retriever->isClosed()) {
+        _retriever->close();
+        if (_started)
+            _thread.join();
+    }
 }
 
 void

@@ -2,33 +2,13 @@
 
 #include "thread.h"
 
-namespace vespalib {
+namespace vespalib::thread {
 
-Thread &
-Thread::operator=(Thread &&rhs) noexcept
-{
-    // may call std::terminate
-    _thread = std::move(rhs._thread);
-    return *this;
+std::thread start(Runnable &runnable, Runnable::init_fun_t init_fun_in) {
+    return std::thread([&runnable, init_fun = std::move(init_fun_in)]()
+                       {
+                           init_fun(runnable);
+                       });
 }
 
-void
-Thread::join()
-{
-    if (_thread.joinable()) {
-        _thread.join();
-    }
 }
-
-Thread::~Thread()
-{
-    join();
-}
-
-Thread
-Thread::start(Runnable &runnable, Runnable::init_fun_t init_fun)
-{
-    return start([&runnable, init_fun](){ init_fun(runnable); });
-}
-
-} // namespace vespalib

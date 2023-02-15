@@ -70,7 +70,7 @@ private:
     std::mutex                  _mutex;
     std::condition_variable     _consumerCondition;
     std::condition_variable     _producerCondition;
-    vespalib::Thread            _thread;
+    std::thread                 _thread;
     std::atomic<bool>           _stopped;
     ExecutorIdleTracker         _idleTracker;
     ThreadIdleTracker           _threadIdleTracker;

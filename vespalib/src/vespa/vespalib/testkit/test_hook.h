@@ -78,10 +78,9 @@ protected:
         Barrier barrier(num_threads);
         std::vector<FixtureUP> fixtures;
         std::vector<ThreadUP> threads;
-        std::vector<Thread> thread_handles;
+        ThreadPool pool;
         threads.reserve(num_threads);
         fixtures.reserve(num_threads);
-        thread_handles.reserve(num_threads - 1);
         for (size_t i = 0; i < num_threads; ++i) {
             FixtureUP fixture_up(new T(fixture));
             fixture_up->thread_id = i;
@@ -90,10 +89,11 @@ protected:
             fixtures.push_back(std::move(fixture_up));
         }
         for (size_t i = 1; i < num_threads; ++i) {
-            thread_handles.push_back(Thread::start([&target = *threads[i]](){ target.threadEntry(); }));
+            pool.start([&target = *threads[i]](){ target.threadEntry(); });
         }
         threads[0]->threadEntry();
         latch.await();
+        pool.join();
         bool result = true;
         for (size_t i = 0; i < num_threads; ++i) {
             result = result && threads[i]->getResult();

@@ -46,7 +46,7 @@ private:
 
     SimpleConfigRetriever::UP _retriever;
     SimpleConfigurable * const _configurable;
-    vespalib::Thread _thread;
+    std::thread _thread;
     std::atomic<bool> _started;
 };
 
