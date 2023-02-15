@@ -337,8 +337,8 @@ public class NodeList extends AbstractFilteringList<Node, NodeList> {
         // otherwise fall back to the address/hostname pool.
         if (host.ipConfig().pool().ipSet().isEmpty()) {
             Set<String> allHostnames = cache().keySet();
-            return (int) host.ipConfig().pool().getAddressList().stream()
-                             .filter(address -> !allHostnames.contains(address.hostname()))
+            return (int) host.ipConfig().pool().hostnames().stream()
+                             .filter(hostname -> !allHostnames.contains(hostname.value()))
                              .count();
         }
         Set<String> allIps = ipCache.updateAndGet(old ->

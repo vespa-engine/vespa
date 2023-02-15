@@ -7,6 +7,7 @@ import com.yahoo.config.provision.ApplicationLockException;
 import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.HostFilter;
+import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
@@ -33,7 +34,6 @@ import com.yahoo.vespa.hosted.provision.NodeMutex;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.applications.Application;
 import com.yahoo.vespa.hosted.provision.autoscale.Load;
-import com.yahoo.vespa.hosted.provision.node.Address;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.IP;
 import com.yahoo.vespa.hosted.provision.node.filter.ApplicationFilter;
@@ -281,12 +281,12 @@ public class NodesV2ApiHandler extends ThreadedHttpRequestHandler {
         Set<String> ipAddressPool = new HashSet<>();
         inspector.field("additionalIpAddresses").traverse((ArrayTraverser) (i, item) -> ipAddressPool.add(item.asString()));
 
-        List<Address> addressPool = new ArrayList<>();
+        List<HostName> hostnames = new ArrayList<>();
         inspector.field("additionalHostnames").traverse((ArrayTraverser) (i, item) ->
-                addressPool.add(new Address(item.asString())));
+                hostnames.add(HostName.of(item.asString())));
 
         Node.Builder builder = Node.create(inspector.field("id").asString(),
-                                           IP.Config.of(ipAddresses, ipAddressPool, addressPool),
+                                           IP.Config.of(ipAddresses, ipAddressPool, hostnames),
                                            inspector.field("hostname").asString(),
                                            flavorFromSlime(inspector),
                                            nodeTypeFromSlime(inspector.field("type")))
