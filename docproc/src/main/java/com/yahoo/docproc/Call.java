@@ -154,8 +154,8 @@ public class Call implements Cloneable {
             schemaMapProcessing(processing);
             long startTime = SystemTimer.INSTANCE.milliTime();
             DocumentProcessor.Progress retval = processor.process(processing);
-            incrementProcTime(SystemTimer.INSTANCE.milliTime() - startTime);
-            incrementDocs(numDocs);
+            long procTime = SystemTimer.INSTANCE.milliTime() - startTime;
+            updateMetrics(procTime, numDocs);
             return retval;
         } finally {
             unwrapSchemaMapping(processing);
@@ -166,12 +166,9 @@ public class Call implements Cloneable {
         return "call to class " + processor.getClass().getName() + " (id: " + getDocumentProcessorId() + ")";
     }
 
-    private void incrementDocs(long increment) {
-        metric.add(PROC_DOC_COUNT_METRIC_NAME, increment, metricContext);
-    }
-
-    private void incrementProcTime(long increment) {
-        metric.add(PROC_TIME_METRIC_NAME, increment, metricContext);
+    private void updateMetrics(long procTime, long documentCount) {
+        metric.set(PROC_DOC_COUNT_METRIC_NAME, documentCount, metricContext);
+        metric.set(PROC_TIME_METRIC_NAME, procTime, metricContext);
     }
 
 }
