@@ -4,14 +4,14 @@
 namespace vespamalloc {
 
 
-void AFListBase::linkInList(AtomicHeadPtr & head, AFListBase * list)
+void AFListBase::linkInList(AtomicHeadPtr & head, AFListBase * list) noexcept
 {
     AFListBase * tail;
     for (tail = list; tail->_next != nullptr ;tail = tail->_next) { }
     linkIn(head, list, tail);
 }
 
-void AFListBase::linkIn(AtomicHeadPtr & head, AFListBase * csl, AFListBase * tail)
+void AFListBase::linkIn(AtomicHeadPtr & head, AFListBase * csl, AFListBase * tail) noexcept
 {
     HeadPtr oldHead = head.load(std::memory_order_relaxed);
     HeadPtr newHead(csl, oldHead._tag + 1);
@@ -22,10 +22,10 @@ void AFListBase::linkIn(AtomicHeadPtr & head, AFListBase * csl, AFListBase * tai
     }
 }
 
-AFListBase * AFListBase::linkOut(AtomicHeadPtr & head)
+AFListBase * AFListBase::linkOut(AtomicHeadPtr & head) noexcept
 {
     HeadPtr oldHead = head.load(std::memory_order_relaxed);
-    AFListBase *csl = static_cast<AFListBase *>(oldHead._ptr);
+    auto *csl = static_cast<AFListBase *>(oldHead._ptr);
     if (csl == nullptr) {
         return nullptr;
     }
