@@ -3,16 +3,15 @@ package com.yahoo.vespa.hosted.provision.testutils;
 
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.Cloud;
 import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.HostEvent;
+import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.NodeAllocationException;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.hosted.provision.Node;
-import com.yahoo.vespa.hosted.provision.node.Address;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.IP;
 import com.yahoo.vespa.hosted.provision.provisioning.FatalProvisioningException;
@@ -28,7 +27,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 /**
@@ -80,7 +78,7 @@ public class MockHostProvisioner implements HostProvisioner {
                                           hostType,
                                           sharing == HostSharing.exclusive ? Optional.of(applicationId) : Optional.empty(),
                                           Optional.empty(),
-                                          createAddressesForHost(hostType, hostFlavor, index),
+                                          createHostnames(hostType, hostFlavor, index),
                                           resources,
                                           osVersion,
                                           cloudAccount));
@@ -175,14 +173,14 @@ public class MockHostProvisioner implements HostProvisioner {
         return flavor.resources().compatibleWith(resourcesToVerify);
     }
 
-    private List<Address> createAddressesForHost(NodeType hostType, Flavor flavor, int hostIndex) {
+    private List<HostName> createHostnames(NodeType hostType, Flavor flavor, int hostIndex) {
         long numAddresses = Math.max(2, Math.round(flavor.resources().bandwidthGbps()));
         return IntStream.range(1, (int) numAddresses)
                         .mapToObj(i -> {
                             String hostname = hostType == NodeType.host
                                     ? "host" + hostIndex + "-" + i
                                     : hostType.childNodeType().name() + i;
-                            return new Address(hostname);
+                            return HostName.of(hostname);
                         })
                         .toList();
     }

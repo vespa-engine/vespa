@@ -6,6 +6,7 @@ import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.DockerImage;
+import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.TenantName;
@@ -19,7 +20,6 @@ import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeMutex;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
-import com.yahoo.vespa.hosted.provision.node.Address;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.Allocation;
 import com.yahoo.vespa.hosted.provision.node.IP;
@@ -244,12 +244,15 @@ public class NodePatcher {
 
     private Node applyIpconfigField(Node node, String name, Inspector value, LockedNodeList nodes) {
         switch (name) {
-            case "ipAddresses":
+            case "ipAddresses" -> {
                 return IP.Config.verify(node.with(node.ipConfig().withPrimary(asStringSet(value))), nodes);
-            case "additionalIpAddresses":
+            }
+            case "additionalIpAddresses" -> {
                 return IP.Config.verify(node.with(node.ipConfig().withPool(node.ipConfig().pool().withIpAddresses(asStringSet(value)))), nodes);
-            case "additionalHostnames":
-                return IP.Config.verify(node.with(node.ipConfig().withPool(node.ipConfig().pool().withAddresses(asAddressList(value)))), nodes);
+            }
+            case "additionalHostnames" -> {
+                return IP.Config.verify(node.with(node.ipConfig().withPool(node.ipConfig().pool().withHostnames(asHostnames(value)))), nodes);
+            }
         }
         throw new IllegalArgumentException("Could not apply field '" + name + "' on a node: No such modifiable field");
     }
@@ -316,20 +319,19 @@ public class NodePatcher {
         return strings;
     }
 
-    private List<Address> asAddressList(Inspector field) {
+    private List<HostName> asHostnames(Inspector field) {
         if ( ! field.type().equals(Type.ARRAY))
             throw new IllegalArgumentException("Expected an ARRAY value, got a " + field.type());
 
-        List<Address> addresses = new ArrayList<>(field.entries());
+        List<HostName> hostnames = new ArrayList<>(field.entries());
         for (int i = 0; i < field.entries(); i++) {
             Inspector entry = field.entry(i);
             if ( ! entry.type().equals(Type.STRING))
                 throw new IllegalArgumentException("Expected a STRING value, got a " + entry.type());
-            Address address = new Address(entry.asString());
-            addresses.add(address);
+            hostnames.add(HostName.of(entry.asString()));
         }
 
-        return addresses;
+        return hostnames;
     }
 
     private Node patchRequiredDiskSpeed(Node node, String value) {

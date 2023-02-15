@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.provision.node;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.net.InetAddresses;
 import com.google.common.primitives.UnsignedBytes;
+import com.yahoo.config.provision.HostName;
 import com.yahoo.vespa.hosted.provision.LockedNodeList;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
@@ -70,8 +71,8 @@ public class IP {
             return new Config(primary, Set.of(), List.of());
         }
 
-        public static Config of(Set<String> primary, Set<String> ipPool, List<Address> addressPool) {
-            return new Config(primary, ipPool, addressPool);
+        public static Config of(Set<String> primary, Set<String> ipPool, List<HostName> hostnames) {
+            return new Config(primary, ipPool, hostnames);
         }
 
         /** LEGACY TEST CONSTRUCTOR - use of() variants and/or the with- methods. */
@@ -80,10 +81,10 @@ public class IP {
         }
 
         /** DO NOT USE: Public for NodeSerializer. */
-        public Config(Set<String> primary, Set<String> pool, List<Address> addresses) {
+        public Config(Set<String> primary, Set<String> pool, List<HostName> hostnames) {
             this.primary = ImmutableSet.copyOf(Objects.requireNonNull(primary, "primary must be non-null"));
             this.pool = Pool.of(Objects.requireNonNull(pool, "pool must be non-null"),
-                                Objects.requireNonNull(addresses, "addresses must be non-null"));
+                                Objects.requireNonNull(hostnames, "addresses must be non-null"));
         }
 
         /** The primary addresses of this. These addresses are used when communicating with the node itself */
@@ -98,12 +99,12 @@ public class IP {
 
         /** Returns a copy of this with pool set to given value */
         public Config withPool(Pool pool) {
-            return new Config(primary, pool.ipSet(), pool.getAddressList());
+            return new Config(primary, pool.ipSet(), pool.hostnames());
         }
 
         /** Returns a copy of this with pool set to given value */
         public Config withPrimary(Set<String> primary) {
-            return new Config(primary, pool.ipSet(), pool.getAddressList());
+            return new Config(primary, pool.ipSet(), pool.hostnames());
         }
 
         @Override
@@ -249,7 +250,7 @@ public class IP {
     public static class Pool {
 
         private final IpAddresses ipAddresses;
-        private final List<Address> addresses;
+        private final List<HostName> hostnames;
 
         /** Creates an empty pool. */
         public static Pool of() {
@@ -257,14 +258,14 @@ public class IP {
         }
 
         /** Create a new pool containing given ipAddresses */
-        public static Pool of(Set<String> ipAddresses, List<Address> addresses) {
+        public static Pool of(Set<String> ipAddresses, List<HostName> hostnames) {
             IpAddresses ips = IpAddresses.of(ipAddresses);
-            return new Pool(ips, addresses);
+            return new Pool(ips, hostnames);
         }
 
-        private Pool(IpAddresses ipAddresses, List<Address> addresses) {
+        private Pool(IpAddresses ipAddresses, List<HostName> hostnames) {
             this.ipAddresses = Objects.requireNonNull(ipAddresses, "ipAddresses must be non-null");
-            this.addresses = Objects.requireNonNull(addresses, "addresses must be non-null");
+            this.hostnames = Objects.requireNonNull(hostnames, "hostnames must be non-null");
         }
 
         /**
@@ -276,14 +277,13 @@ public class IP {
         public Optional<Allocation> findAllocation(LockedNodeList nodes, NameResolver resolver, boolean hasPtr) {
             if (ipAddresses.asSet().isEmpty()) {
                 // IP addresses have not yet been resolved and should be done later.
-                return findUnusedAddressStream(nodes)
-                        .map(Allocation::ofAddress)
-                        .findFirst();
+                return findUnusedHostnames(nodes).map(Allocation::ofHostname)
+                                                 .findFirst();
             }
 
             if (!hasPtr) {
                 // Without PTR records (reverse IP mapping): Ensure only forward resolving from hostnames.
-                return findUnusedAddressStream(nodes).findFirst().map(address -> Allocation.fromAddress(address, resolver, ipAddresses.protocol));
+                return findUnusedHostnames(nodes).findFirst().map(address -> Allocation.fromHostname(address, resolver, ipAddresses.protocol));
             }
 
             if (ipAddresses.protocol == IpAddresses.Protocol.ipv4) {
@@ -319,9 +319,9 @@ public class IP {
             return Collections.unmodifiableSet(unusedAddresses);
         }
 
-        private Stream<Address> findUnusedAddressStream(NodeList nodes) {
-            Set<String> hostnames = nodes.stream().map(Node::hostname).collect(Collectors.toSet());
-            return addresses.stream().filter(address -> !hostnames.contains(address.hostname()));
+        private Stream<HostName> findUnusedHostnames(NodeList nodes) {
+            Set<String> usedHostnames = nodes.stream().map(Node::hostname).collect(Collectors.toSet());
+            return hostnames.stream().filter(hostname -> !usedHostnames.contains(hostname.value()));
         }
 
         public IpAddresses.Protocol getProtocol() {
@@ -333,16 +333,16 @@ public class IP {
             return ipAddresses.asSet();
         }
 
-        public List<Address> getAddressList() {
-            return addresses;
+        public List<HostName> hostnames() {
+            return hostnames;
         }
 
         public Pool withIpAddresses(Set<String> ipAddresses) {
-            return Pool.of(ipAddresses, addresses);
+            return Pool.of(ipAddresses, hostnames);
         }
 
-        public Pool withAddresses(List<Address> addresses) {
-            return Pool.of(ipAddresses.ipAddresses, addresses);
+        public Pool withHostnames(List<HostName> hostnames) {
+            return Pool.of(ipAddresses.asSet(), hostnames);
         }
 
         @Override
@@ -350,12 +350,12 @@ public class IP {
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
             Pool pool = (Pool) o;
-            return ipAddresses.equals(pool.ipAddresses) && addresses.equals(pool.addresses);
+            return ipAddresses.equals(pool.ipAddresses) && hostnames.equals(pool.hostnames);
         }
 
         @Override
         public int hashCode() {
-            return Objects.hash(ipAddresses, addresses);
+            return Objects.hash(ipAddresses, hostnames);
         }
 
     }
@@ -427,22 +427,22 @@ public class IP {
             return new Allocation(hostname4, Optional.of(addresses.get(0)), Optional.empty());
         }
 
-        private static Allocation fromAddress(Address address, NameResolver resolver, IpAddresses.Protocol protocol) {
+        private static Allocation fromHostname(HostName hostname, NameResolver resolver, IpAddresses.Protocol protocol) {
             // Resolve both A and AAAA to verify they match the protocol and to avoid surprises later on.
 
-            Optional<String> ipv4Address = resolveOptional(address.hostname(), resolver, RecordType.A);
+            Optional<String> ipv4Address = resolveOptional(hostname.value(), resolver, RecordType.A);
             if (protocol != IpAddresses.Protocol.ipv6 && ipv4Address.isEmpty())
-                throw new IllegalArgumentException(protocol.description + " hostname " + address.hostname() + " did not resolve to an IPv4 address");
+                throw new IllegalArgumentException(protocol.description + " hostname " + hostname.value() + " did not resolve to an IPv4 address");
             if (protocol == IpAddresses.Protocol.ipv6 && ipv4Address.isPresent())
-                throw new IllegalArgumentException(protocol.description + " hostname " + address.hostname() + " has an IPv4 address: " + ipv4Address.get());
+                throw new IllegalArgumentException(protocol.description + " hostname " + hostname.value() + " has an IPv4 address: " + ipv4Address.get());
 
-            Optional<String> ipv6Address = resolveOptional(address.hostname(), resolver, RecordType.AAAA);
+            Optional<String> ipv6Address = resolveOptional(hostname.value(), resolver, RecordType.AAAA);
             if (protocol != IpAddresses.Protocol.ipv4 && ipv6Address.isEmpty())
-                throw new IllegalArgumentException(protocol.description + " hostname " + address.hostname() + " did not resolve to an IPv6 address");
+                throw new IllegalArgumentException(protocol.description + " hostname " + hostname.value() + " did not resolve to an IPv6 address");
             if (protocol == IpAddresses.Protocol.ipv4 && ipv6Address.isPresent())
-                throw new IllegalArgumentException(protocol.description + " hostname " + address.hostname() + " has an IPv6 address: " + ipv6Address.get());
+                throw new IllegalArgumentException(protocol.description + " hostname " + hostname.value() + " has an IPv6 address: " + ipv6Address.get());
 
-            return new Allocation(address.hostname(), ipv4Address, ipv6Address);
+            return new Allocation(hostname.value(), ipv4Address, ipv6Address);
         }
 
         private static Optional<String> resolveOptional(String hostname, NameResolver resolver, RecordType recordType) {
@@ -454,8 +454,8 @@ public class IP {
             };
         }
 
-        private static Allocation ofAddress(Address address) {
-            return new Allocation(address.hostname(), Optional.empty(), Optional.empty());
+        private static Allocation ofHostname(HostName hostName) {
+            return new Allocation(hostName.value(), Optional.empty(), Optional.empty());
         }
 
         /** Hostname pointing to the IP addresses in this */
