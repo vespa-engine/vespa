@@ -1,8 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.deploy;
 
-import com.google.common.base.Supplier;
-import com.google.common.base.Suppliers;
 import com.yahoo.concurrent.UncheckedTimeoutException;
 import com.yahoo.config.FileReference;
 import com.yahoo.config.application.api.DeployLogger;
@@ -29,11 +27,14 @@ import com.yahoo.vespa.config.server.session.PrepareParams;
 import com.yahoo.vespa.config.server.session.Session;
 import com.yahoo.vespa.config.server.session.SessionRepository;
 import com.yahoo.vespa.config.server.tenant.Tenant;
+import com.yahoo.yolean.concurrent.Memoized;
+
 import java.time.Clock;
 import java.time.Duration;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -263,7 +264,7 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
 
         // Use supplier because we shouldn't/can't create this before validateSessionStatus() for prepared deployments,
         // memoize because we want to create this once for unprepared deployments
-        return Suppliers.memoize(() -> {
+        return new Memoized<>(() -> {
             TimeoutBudget timeoutBudget = new TimeoutBudget(clock, timeout);
 
             PrepareParams.Builder params = new PrepareParams.Builder()
