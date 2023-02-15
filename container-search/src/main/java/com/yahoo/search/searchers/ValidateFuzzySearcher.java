@@ -2,6 +2,8 @@
 package com.yahoo.search.searchers;
 
 import com.yahoo.prelude.query.FuzzyItem;
+import com.yahoo.prelude.Index;
+import com.yahoo.prelude.IndexFacts;
 import com.yahoo.prelude.query.Item;
 import com.yahoo.prelude.query.ToolBox;
 import com.yahoo.search.Query;
@@ -26,24 +28,17 @@ import java.util.Set;
 @Before(GroupingExecutor.COMPONENT_NAME) // Must happen before query.prepare()
 public class ValidateFuzzySearcher extends Searcher {
 
-    private final Set<String> validAttributes = new HashSet<>();
-
-    public ValidateFuzzySearcher(AttributesConfig attributesConfig) {
-        for (AttributesConfig.Attribute a : attributesConfig.attribute()) {
-            if (a.datatype() == AttributesConfig.Attribute.Datatype.STRING) {
-                validAttributes.add(a.name());
-            }
-        }
+    public ValidateFuzzySearcher() {
     }
 
     @Override
     public Result search(Query query, Execution execution) {
-        Optional<ErrorMessage> e = validate(query);
+        Optional<ErrorMessage> e = validate(query, execution.context().getIndexFacts().newSession(query));
         return e.isEmpty() ? execution.search(query) : new Result(query, e.get());
     }
 
-    private Optional<ErrorMessage> validate(Query query) {
-        FuzzyVisitor visitor = new FuzzyVisitor(query.getRanking().getProperties(), validAttributes, query);
+    private Optional<ErrorMessage> validate(Query query, IndexFacts.Session indexFacts) {
+        FuzzyVisitor visitor = new FuzzyVisitor(indexFacts);
         ToolBox.visit(visitor, query.getModel().getQueryTree().getRoot());
         return visitor.errorMessage;
     }
@@ -52,12 +47,10 @@ public class ValidateFuzzySearcher extends Searcher {
 
         public Optional<ErrorMessage> errorMessage = Optional.empty();
 
-        private final Set<String> validAttributes;
-        private final Query query;
+        private final IndexFacts.Session indexFacts;
 
-        public FuzzyVisitor(RankProperties rankProperties, Set<String> validAttributes, Query query) {
-            this.validAttributes = validAttributes;
-            this.query = query;
+        public FuzzyVisitor(IndexFacts.Session indexFacts) {
+            this.indexFacts = indexFacts;
         }
 
         @Override
@@ -72,7 +65,9 @@ public class ValidateFuzzySearcher extends Searcher {
 
         /** Returns an error message if this is invalid, or null if it is valid */
         private String validate(FuzzyItem item) {
-            if (!validAttributes.contains(item.getIndexName())) {
+            String indexName = item.getIndexName();
+            Index index = getIndexFromUnionOfDocumentTypes(indexName);
+            if (!index.isAttribute() || !index.isString()) {
                 return item + " field is not a string attribute";
             }
             if (item.getPrefixLength() < 0) {
@@ -85,6 +80,10 @@ public class ValidateFuzzySearcher extends Searcher {
                 return item + " fuzzy query must be non-empty";
             }
             return null;
+        }
+
+        private Index getIndexFromUnionOfDocumentTypes(String indexName) {
+            return indexFacts.getIndex(indexName);
         }
 
         @Override

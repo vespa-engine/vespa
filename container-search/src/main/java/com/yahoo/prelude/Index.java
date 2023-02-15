@@ -46,7 +46,9 @@ public class Index {
     private boolean normalize = false;
     private boolean literalBoost = false;
     private boolean numerical = false;
+    private boolean string = false;
     private boolean predicate = false;
+
     private long predicateUpperBound = Long.MAX_VALUE;
     private long predicateLowerBound = Long.MIN_VALUE;
 
@@ -67,6 +69,8 @@ public class Index {
 
     /** All the commands added to this, including those converted to fields above */
     private final List<String> allCommands = new java.util.ArrayList<>();
+
+    private static final String CMD_STRING = "string";
 
     public Index(String name) {
         this.name = name;
@@ -175,6 +179,8 @@ public class Index {
             setPhraseSegmenting(true);
         } else if (command.startsWith("phrase-segmenting ")) {
             setPhraseSegmenting(Boolean.parseBoolean(command.substring("phrase-segmenting ".length())));
+        } else if (command.equals(CMD_STRING)) {
+            setString(true);
         } else {
             commands.add(command);
         }
@@ -295,6 +301,10 @@ public class Index {
     public void setNumerical(boolean numerical) { this.numerical = numerical; }
 
     public boolean isNumerical() { return numerical; }
+
+    public void setString(boolean string) { this.string = string; }
+
+    public boolean isString() { return string; }
 
     public void setPredicate(boolean isPredicate) { this.predicate = isPredicate; }
 

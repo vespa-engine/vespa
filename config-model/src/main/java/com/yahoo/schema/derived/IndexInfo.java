@@ -52,6 +52,7 @@ public class IndexInfo extends Derived implements IndexInfoConfig.Producer {
     private static final String CMD_PREDICATE = "predicate";
     private static final String CMD_PREDICATE_BOUNDS = "predicate-bounds";
     private static final String CMD_NUMERICAL = "numerical";
+    private static final String CMD_STRING = "string";
     private static final String CMD_PHRASE_SEGMENTING = "phrase-segmenting";
     private final Set<IndexCommand> commands = new java.util.LinkedHashSet<>();
     private final Map<String, String> aliases = new java.util.LinkedHashMap<>();
@@ -166,6 +167,9 @@ public class IndexInfo extends Derived implements IndexInfoConfig.Producer {
         if (field.getDataType().getPrimitiveType() instanceof NumericDataType) {
             addIndexCommand(field, CMD_NUMERICAL);
         }
+        if (isTypeOrNested(field, DataType.STRING)) {
+            addIndexCommand(field, CMD_STRING);
+        }
 
         // Explicit commands
         for (String command : field.getQueryCommands()) {
@@ -274,6 +278,10 @@ public class IndexInfo extends Derived implements IndexInfoConfig.Producer {
         commands.add(new IndexCommand(indexName, command));
     }
 
+    private static void addIndexCommand(IndexInfoConfig.Indexinfo.Builder iiB, String indexName, String command) {
+        iiB.command(new IndexInfoConfig.Indexinfo.Command.Builder().indexname(indexName).command(command));
+    }
+
     private void addIndexAlias(String alias, String indexName) {
         aliases.put(alias, indexName);
     }
@@ -329,6 +337,7 @@ public class IndexInfo extends Derived implements IndexInfoConfig.Producer {
         boolean anyLowerCasing = false;
         boolean anyStemming = false;
         boolean anyNormalizing = false;
+        boolean anyString = false;
         String phraseSegmentingCommand = null;
         String stemmingCommand = null;
         Matching fieldSetMatching = fieldSet.getMatching(); // null if no explicit matching
@@ -349,6 +358,9 @@ public class IndexInfo extends Derived implements IndexInfoConfig.Producer {
             }
             if (field.getNormalizing().doRemoveAccents()) {
                 anyNormalizing = true;
+            }
+            if (isTypeOrNested(field, DataType.STRING)) {
+                anyString = true;
             }
             if (fieldSetMatching == null && field.getMatching().getType() != Matching.defaultType) {
                 fieldSetMatching = field.getMatching();
@@ -416,6 +428,9 @@ public class IndexInfo extends Derived implements IndexInfoConfig.Producer {
                 new IndexInfoConfig.Indexinfo.Command.Builder()
                     .indexname(fieldSet.getName())
                     .command(CMD_INDEX));
+        }
+        if (anyString) {
+            addIndexCommand(iiB, fieldSet.getName(), CMD_STRING);
         }
         if (fieldSetMatching != null) {
             // Explicit matching set on fieldset
