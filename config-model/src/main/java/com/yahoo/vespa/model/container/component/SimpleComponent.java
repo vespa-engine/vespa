@@ -3,6 +3,7 @@ package com.yahoo.vespa.model.container.component;
 
 import com.yahoo.container.bundle.BundleInstantiationSpecification;
 import com.yahoo.osgi.provider.model.ComponentModel;
+import com.yahoo.config.model.producer.AnyConfigProducer;
 import com.yahoo.config.model.producer.TreeConfigProducer;
 
 /**
@@ -10,7 +11,7 @@ import com.yahoo.config.model.producer.TreeConfigProducer;
  *
  * @author gjoranv
  */
-public class SimpleComponent extends Component<TreeConfigProducer<?>, ComponentModel> {
+public class SimpleComponent extends Component<AnyConfigProducer, ComponentModel> {
 
     public SimpleComponent(ComponentModel model) {
         super(model);

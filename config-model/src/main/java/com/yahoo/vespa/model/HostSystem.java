@@ -3,6 +3,7 @@ package com.yahoo.vespa.model;
 
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.api.HostProvisioner;
+import com.yahoo.config.model.producer.AnyConfigProducer;
 import com.yahoo.config.model.producer.TreeConfigProducer;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterMembership;
@@ -45,7 +46,7 @@ public class HostSystem extends TreeConfigProducer<Host> {
         doCheckIp = ! checkIpProperty.equalsIgnoreCase("false");
     }
 
-    public HostSystem(TreeConfigProducer<?> parent, String name, HostProvisioner provisioner, DeployLogger deployLogger, boolean isHosted) {
+    public HostSystem(TreeConfigProducer<AnyConfigProducer> parent, String name, HostProvisioner provisioner, DeployLogger deployLogger, boolean isHosted) {
         super(parent, name);
         this.provisioner = provisioner;
         this.deployLogger = deployLogger;

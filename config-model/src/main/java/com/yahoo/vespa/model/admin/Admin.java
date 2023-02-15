@@ -88,7 +88,7 @@ public class Admin extends TreeConfigProducer<AnyConfigProducer> implements Seri
     private final FileDistributionConfigProducer fileDistribution;
     private final boolean multitenant;
 
-    public Admin(TreeConfigProducer<?> parent,
+    public Admin(TreeConfigProducer<AnyConfigProducer> parent,
                  Monitoring monitoring,
                  Metrics metrics,
                  boolean multitenant,
@@ -293,8 +293,8 @@ public class Admin extends TreeConfigProducer<AnyConfigProducer> implements Seri
     }
 
     private void addFileDistribution(HostResource host) {
-        FileDistributionConfigProvider configProvider = new FileDistributionConfigProvider(fileDistribution, host.getHost());
-        fileDistribution.addFileDistributionConfigProducer(host.getHost(), configProvider);
+        var configProvider = new FileDistributionConfigProvider(fileDistribution, host.getHost());
+        fileDistribution.addProvider(host.getHost(), configProvider);
     }
 
     // If not configured by user: Use default setup: max 3 slobroks, 1 on the default configserver host

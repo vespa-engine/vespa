@@ -2,6 +2,7 @@
 package com.yahoo.vespa.model.container.http;
 
 import com.yahoo.component.provider.ComponentRegistry;
+import com.yahoo.config.model.producer.AnyConfigProducer;
 import com.yahoo.config.model.producer.TreeConfigProducer;
 import com.yahoo.jdisc.http.ServerConfig;
 import com.yahoo.vespa.model.container.component.chain.ChainedComponent;
@@ -17,7 +18,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
  * @author Tony Vaagenes
  * @author bjorncs
  */
-public class Http extends TreeConfigProducer<TreeConfigProducer<?>> implements ServerConfig.Producer {
+public class Http extends TreeConfigProducer<AnyConfigProducer> implements ServerConfig.Producer {
 
     private final FilterChains filterChains;
     private final List<FilterBinding> bindings = new CopyOnWriteArrayList<>();
