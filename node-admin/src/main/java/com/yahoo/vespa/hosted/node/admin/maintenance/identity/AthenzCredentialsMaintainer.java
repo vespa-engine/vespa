@@ -14,6 +14,7 @@ import com.yahoo.vespa.athenz.client.zts.ZtsClientException;
 import com.yahoo.vespa.athenz.identity.ServiceIdentityProvider;
 import com.yahoo.vespa.athenz.identityprovider.api.EntityBindingsMapper;
 import com.yahoo.vespa.athenz.identityprovider.api.IdentityDocumentClient;
+import com.yahoo.vespa.athenz.identityprovider.api.SignedIdentityDocument;
 import com.yahoo.vespa.athenz.identityprovider.client.CsrGenerator;
 import com.yahoo.vespa.athenz.identityprovider.client.DefaultIdentityDocumentClient;
 import com.yahoo.vespa.athenz.tls.AthenzIdentityVerifier;
@@ -113,7 +114,12 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
             X509Certificate certificate = readCertificateFromFile(certificateFile);
             Instant now = clock.instant();
             Instant expiry = certificate.getNotAfter().toInstant();
-            if (isCertificateExpired(expiry, now)) {
+            var doc = EntityBindingsMapper.readSignedIdentityDocumentFromFile(identityDocumentFile);
+            if (doc.outdated()) {
+                context.log(logger, "Identity document is outdated (version=%d)", doc.documentVersion());
+                registerIdentity(context, privateKeyFile, certificateFile, identityDocumentFile);
+                return true;
+            } else if (isCertificateExpired(expiry, now)) {
                 context.log(logger, "Certificate has expired (expiry=%s)", expiry.toString());
                 registerIdentity(context, privateKeyFile, certificateFile, identityDocumentFile);
                 return true;
@@ -129,7 +135,7 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
                     return false;
                 } else {
                     lastRefreshAttempt.put(context.containerName(), now);
-                    refreshIdentity(context, privateKeyFile, certificateFile, identityDocumentFile);
+                    refreshIdentity(context, privateKeyFile, certificateFile, identityDocumentFile, doc);
                     return true;
                 }
             }
@@ -200,8 +206,8 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
         }
     }
 
-    private void refreshIdentity(NodeAgentContext context, ContainerPath privateKeyFile, ContainerPath certificateFile, ContainerPath identityDocumentFile) {
-        var doc = EntityBindingsMapper.readSignedIdentityDocumentFromFile(identityDocumentFile);
+    private void refreshIdentity(NodeAgentContext context, ContainerPath privateKeyFile, ContainerPath certificateFile,
+                                 ContainerPath identityDocumentFile, SignedIdentityDocument doc) {
         KeyPair keyPair = KeyUtils.generateKeypair(KeyAlgorithm.RSA);
         Pkcs10Csr csr = csrGenerator.generateInstanceCsr(
                 context.identity(), doc.providerUniqueId(), doc.ipAddresses(), doc.clusterType(), keyPair);

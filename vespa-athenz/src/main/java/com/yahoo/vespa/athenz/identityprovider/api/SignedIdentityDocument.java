@@ -33,4 +33,6 @@ public record SignedIdentityDocument(String signature, int signingKeyVersion, Ve
 
     public static final int DEFAULT_DOCUMENT_VERSION = 2;
 
+    public boolean outdated() { return documentVersion < DEFAULT_DOCUMENT_VERSION; }
+
 }
