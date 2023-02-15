@@ -31,4 +31,43 @@ public class ReferenceTestCase {
         assertEquals("foo", new Reference("foo", new Arguments(), null).toString());
     }
 
+    @Test
+    public void testFromString() {
+        Reference ref = Reference.fromIdentifier("foo_bar_1");
+        assertFalse(ref.isSimple());
+        assertTrue(ref.isIdentifier());
+        assertEquals(0, ref.arguments().size());
+        assertEquals(null, ref.output());
+        assertEquals("foo_bar_1", ref.toString());
+
+        ref = Reference.simple("foo_1", "bar_2");
+        assertTrue(ref.isSimple());
+        assertFalse(ref.isIdentifier());
+        assertEquals(1, ref.arguments().size());
+        assertTrue(ref.simpleArgument().isPresent());
+        assertEquals(null, ref.output());
+        assertEquals("foo_1(bar_2)", ref.toString());
+
+        assertFalse(Reference.simple("foo").isPresent());
+        assertFalse(Reference.simple("foo()").isPresent());
+        assertTrue(Reference.simple("x(y)").isPresent());
+
+        ref = Reference.simple("foo_1(bar_2)").orElseThrow();
+        assertTrue(ref.isSimple());
+        assertFalse(ref.isIdentifier());
+        assertEquals(1, ref.arguments().size());
+        assertTrue(ref.simpleArgument().isPresent());
+        assertEquals("bar_2", ref.simpleArgument().get());
+        assertEquals(null, ref.output());
+        assertEquals("foo_1(bar_2)", ref.toString());
+
+        ref = Reference.simple("foo_1(bar_2).baz_3").orElseThrow();
+        assertTrue(ref.isSimple());
+        assertFalse(ref.isIdentifier());
+        assertEquals(1, ref.arguments().size());
+        assertTrue(ref.simpleArgument().isPresent());
+        assertEquals("baz_3", ref.output());
+        assertEquals("foo_1(bar_2).baz_3", ref.toString());
+    }
+
 }
