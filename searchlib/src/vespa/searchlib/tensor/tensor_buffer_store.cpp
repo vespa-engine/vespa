@@ -26,6 +26,8 @@ namespace {
 
 constexpr float ALLOC_GROW_FACTOR = 0.2;
 
+constexpr double mapper_grow_factor = 1.02;
+
 }
 
 TensorBufferStore::TensorBufferStore(const ValueType& tensor_type, std::shared_ptr<MemoryAllocator> allocator, uint32_t max_small_subspaces_type_id)
@@ -33,11 +35,11 @@ TensorBufferStore::TensorBufferStore(const ValueType& tensor_type, std::shared_p
       _tensor_type(tensor_type),
       _ops(_tensor_type),
       _array_store(ArrayStoreType::optimizedConfigForHugePage(max_small_subspaces_type_id,
-                                                              TensorBufferTypeMapper(max_small_subspaces_type_id, &_ops),
+                                                              TensorBufferTypeMapper(max_small_subspaces_type_id, mapper_grow_factor, &_ops),
                                                               MemoryAllocator::HUGEPAGE_SIZE,
                                                               MemoryAllocator::PAGE_SIZE,
                                                               8_Ki, ALLOC_GROW_FACTOR),
-                   std::move(allocator), TensorBufferTypeMapper(max_small_subspaces_type_id, &_ops))
+                   std::move(allocator), TensorBufferTypeMapper(max_small_subspaces_type_id, mapper_grow_factor, &_ops))
 {
 }
 
@@ -81,7 +83,11 @@ EntryRef
 TensorBufferStore::store_tensor(const Value &tensor)
 {
     uint32_t num_subspaces = tensor.index().size();
-    auto array_size = _ops.get_array_size(num_subspaces);
+    auto buffer_size = _ops.get_buffer_size(num_subspaces);
+    auto& mapper = _array_store.get_mapper();
+    auto type_id = mapper.get_type_id(buffer_size);
+    auto array_size = (type_id != 0) ? mapper.get_array_size(type_id) : buffer_size;
+    assert(array_size >= buffer_size);
     auto ref = _array_store.allocate(array_size);
     auto buf = _array_store.get_writable(ref);
     _ops.store_tensor(buf, tensor);

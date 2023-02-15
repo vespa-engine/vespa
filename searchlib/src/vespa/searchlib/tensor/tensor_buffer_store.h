@@ -44,6 +44,9 @@ public:
         auto buf = _array_store.get(ref);
         return _ops.get_vectors(buf);
     }
+
+    // Used by unit test
+    static constexpr uint32_t get_offset_bits() noexcept { return RefType::offset_bits; }
 };
 
 }

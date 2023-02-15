@@ -110,7 +110,7 @@ TensorBufferOperations::store_tensor(ArrayRef<char> buf, const vespalib::eval::V
     auto cells_start_offset = aligner.align(labels_end_offset);
     auto cells_end_offset = cells_start_offset + cells_mem_size;
     auto store_end = aligner.align(cells_end_offset);
-    assert(store_end == get_array_size(num_subspaces));
+    assert(store_end == get_buffer_size(num_subspaces));
     assert(buf.size() >= store_end);
     *reinterpret_cast<uint32_t*>(buf.data()) = num_subspaces;
     auto labels = reinterpret_cast<string_id*>(buf.data() + get_labels_offset());
@@ -137,8 +137,8 @@ TensorBufferOperations::store_tensor(ArrayRef<char> buf, const vespalib::eval::V
     if (cells_mem_size > 0) {
         memcpy(buf.data() + cells_start_offset, cells.data, cells_mem_size);
     }
-    if (cells_end_offset != store_end) {
-        memset(buf.data() + cells_end_offset, 0, store_end - cells_end_offset);
+    if (cells_end_offset != buf.size()) {
+        memset(buf.data() + cells_end_offset, 0, buf.size() - cells_end_offset);
     }
 }
 
@@ -146,7 +146,7 @@ std::unique_ptr<vespalib::eval::Value>
 TensorBufferOperations::make_fast_view(ConstArrayRef<char> buf, const vespalib::eval::ValueType& tensor_type) const
 {
     auto num_subspaces = get_num_subspaces(buf);
-    assert(buf.size() >= get_array_size(num_subspaces));
+    assert(buf.size() >= get_buffer_size(num_subspaces));
     ConstArrayRef<string_id> labels(reinterpret_cast<const string_id*>(buf.data() + get_labels_offset()), num_subspaces * _num_mapped_dimensions);
     auto cells_size = num_subspaces * _subspace_type.size();
     auto cells_mem_size = num_subspaces * _subspace_type.mem_size(); // Size measured in bytes
@@ -185,7 +185,7 @@ void
 TensorBufferOperations::encode_stored_tensor(ConstArrayRef<char> buf, const vespalib::eval::ValueType& tensor_type, vespalib::nbostream& target) const
 {
     auto num_subspaces = get_num_subspaces(buf);
-    assert(buf.size() >= get_array_size(num_subspaces));
+    assert(buf.size() >= get_buffer_size(num_subspaces));
     ConstArrayRef<string_id> labels(reinterpret_cast<const string_id*>(buf.data() + get_labels_offset()), num_subspaces * _num_mapped_dimensions);
     auto cells_size = num_subspaces * _subspace_type.size();
     auto cells_mem_size = num_subspaces * _subspace_type.mem_size(); // Size measured in bytes
