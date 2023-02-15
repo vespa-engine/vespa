@@ -122,10 +122,6 @@ public:
      */
     size_type rfind(const char * s, size_type e=npos) const noexcept;
     [[nodiscard]] int compare(stringref s) const noexcept { return compare(s.data(), s.size()); }
-    int compare(const char *s, size_type sz) const noexcept {
-        int diff(memcmp(_s, s, std::min(sz, size())));
-        return (diff != 0) ? diff : (size() - sz);
-    }
 
     /**
      * Returns true iff input string is a prefix of this string.
@@ -139,30 +135,28 @@ public:
 
     const char & operator [] (size_t i) const noexcept { return _s[i]; }
     operator std::string () const { return {_s, _sz}; }
-    bool operator  <        (const char * s) const noexcept { return compare(s, strlen(s)) < 0; }
-    bool operator  < (const std::string & s) const noexcept { return compare(s.data(), s.size()) < 0; }
-    bool operator  <           (stringref s) const noexcept { return compare(s.data(), s.size()) < 0; }
-    bool operator <=        (const char * s) const noexcept { return compare(s, strlen(s)) <= 0; }
-    bool operator <= (const std::string & s) const noexcept { return compare(s.data(), s.size()) <= 0; }
-    bool operator <=           (stringref s) const noexcept { return compare(s.data(), s.size()) <= 0; }
-    bool operator !=        (const char * s) const noexcept { return compare(s, strlen(s)) != 0; }
-    bool operator != (const std::string & s) const noexcept { return compare(s.data(), s.size()) != 0; }
-    bool operator !=           (stringref s) const noexcept { return compare(s.data(), s.size()) != 0; }
-    bool operator ==        (const char * s) const noexcept { return compare(s, strlen(s)) == 0; }
-    bool operator == (const std::string & s) const noexcept { return compare(s.data(), s.size()) == 0; }
-    bool operator ==           (stringref s) const noexcept { return compare(s.data(), s.size()) == 0; }
-    bool operator >=        (const char * s) const noexcept { return compare(s, strlen(s)) >= 0; }
-    bool operator >= (const std::string & s) const noexcept { return compare(s.data(), s.size()) >= 0; }
-    bool operator >=           (stringref s) const noexcept { return compare(s.data(), s.size()) >= 0; }
-    bool operator  >        (const char * s) const noexcept { return compare(s, strlen(s)) > 0; }
-    bool operator  > (const std::string & s) const noexcept { return compare(s.data(), s.size()) > 0; }
-    bool operator  >           (stringref s) const noexcept { return compare(s.data(), s.size()) > 0; }
+    std::strong_ordering operator <=>(const char * s) const noexcept { return strong_compare(s, strlen(s)); }
+    std::strong_ordering operator <=>(const std::string & s) const noexcept { return strong_compare(s.data(), s.size()); }
+    std::strong_ordering operator <=>(stringref s) const noexcept { return strong_compare(s.data(), s.size()); }
+    bool operator ==(const char * s) const noexcept { return strong_compare(s, strlen(s)) == std::strong_ordering::equal; }
+    bool operator ==(const std::string & s) const noexcept { return strong_compare(s.data(), s.size()) == std::strong_ordering::equal; }
+    bool operator ==(stringref s) const noexcept { return strong_compare(s.data(), s.size()) == std::strong_ordering::equal; }
+    friend std::ostream & operator << (std::ostream & os, stringref v);
 private:
+    std::strong_ordering strong_compare(const char *s, size_type sz) const noexcept {
+        int res = compare(s, sz);
+        return (res < 0)
+            ? std::strong_ordering::less
+            : (res > 0)
+                ? std::strong_ordering::greater
+                : std::strong_ordering::equal;
+    }
+    int compare(const char *s, size_type sz) const noexcept {
+        int diff(memcmp(_s, s, std::min(sz, size())));
+        return (diff != 0) ? diff : (size() - sz);
+    }
     const char *_s;
     size_type   _sz;
-    friend bool operator == (const std::string & a, stringref b) noexcept { return b == a; }
-    friend bool operator != (const std::string & a, stringref b) noexcept { return b != a; }
-    friend std::ostream & operator << (std::ostream & os, stringref v);
 };
 
 
@@ -488,30 +482,14 @@ public:
     small_string& replace ( size_t p1, size_t n1, size_t n2, char c );
     */
 
-    bool operator  <         (const char * s) const noexcept { return compare(s, strlen(s)) < 0; }
-    bool operator  <  (const std::string & s) const noexcept { return compare(s.data(), s.size()) < 0; }
-    bool operator  < (const small_string & s) const noexcept { return compare(s.data(), s.size()) < 0; }
-    bool operator  <            (stringref s) const noexcept { return compare(s.data(), s.size()) < 0; }
-    bool operator <=         (const char * s) const noexcept { return compare(s, strlen(s)) <= 0; }
-    bool operator <=  (const std::string & s) const noexcept { return compare(s.data(), s.size()) <= 0; }
-    bool operator <= (const small_string & s) const noexcept { return compare(s.data(), s.size()) <= 0; }
-    bool operator <=            (stringref s) const noexcept { return compare(s.data(), s.size()) <= 0; }
-    bool operator ==         (const char * s) const noexcept { return compare(s, strlen(s)) == 0; }
-    bool operator ==  (const std::string & s) const noexcept { return compare(s.data(), s.size()) == 0; }
-    bool operator == (const small_string & s) const noexcept { return compare(s.data(), s.size()) == 0; }
-    bool operator ==            (stringref s) const noexcept { return compare(s.data(), s.size()) == 0; }
-    bool operator !=         (const char * s) const noexcept { return compare(s, strlen(s)) != 0; }
-    bool operator !=  (const std::string & s) const noexcept { return compare(s.data(), s.size()) != 0; }
-    bool operator != (const small_string & s) const noexcept { return compare(s.data(), s.size()) != 0; }
-    bool operator !=            (stringref s) const noexcept { return compare(s.data(), s.size()) != 0; }
-    bool operator >=         (const char * s) const noexcept { return compare(s, strlen(s)) >= 0; }
-    bool operator >=  (const std::string & s) const noexcept { return compare(s.data(), s.size()) >= 0; }
-    bool operator >= (const small_string & s) const noexcept { return compare(s.data(), s.size()) >= 0; }
-    bool operator >=            (stringref s) const noexcept { return compare(s.data(), s.size()) >= 0; }
-    bool operator  >         (const char * s) const noexcept { return compare(s, strlen(s)) > 0; }
-    bool operator  >  (const std::string & s) const noexcept { return compare(s.data(), s.size()) > 0; }
-    bool operator  > (const small_string & s) const noexcept { return compare(s.data(), s.size()) > 0; }
-    bool operator  >            (stringref s) const noexcept { return compare(s.data(), s.size()) > 0; }
+    std::strong_ordering operator <=>(const char * s) const noexcept { return strong_compare(s, strlen(s)); }
+    std::strong_ordering operator <=>(const std::string & s) const noexcept { return strong_compare(s.data(), s.size()); }
+    std::strong_ordering operator <=>(const small_string & s) const noexcept { return strong_compare(s.data(), s.size()); }
+    std::strong_ordering operator <=>(stringref s) const noexcept { return strong_compare(s.data(), s.size()); }
+    bool operator ==(const char * s) const noexcept { return strong_compare(s, strlen(s)) == std::strong_ordering::equal; }
+    bool operator ==(const std::string & s) const noexcept { return strong_compare(s.data(), s.size()) == std::strong_ordering::equal; }
+    bool operator ==(const small_string & s) const noexcept { return strong_compare(s.data(), s.size()) == std::strong_ordering::equal; }
+    bool operator ==(stringref s) const noexcept { return strong_compare(s.data(), s.size()) == std::strong_ordering::equal; }
 
     template<typename T> bool operator != (const T& s) const noexcept { return ! operator == (s); }
 
@@ -568,6 +546,14 @@ public:
         return sizeof(small_string) - StackSize + size();
     }
 private:
+    std::strong_ordering strong_compare(const char *s, size_type sz) const noexcept {
+        int res = compare(s, sz);
+        return (res < 0)
+               ? std::strong_ordering::less
+               : (res > 0)
+                 ? std::strong_ordering::greater
+                 : std::strong_ordering::equal;
+    }
     void assign_slower(const void * s, size_type sz) noexcept __attribute((noinline));
     void init_slower(const void *s) noexcept __attribute((noinline));
     void _reserveBytes(size_type newBufferSize) noexcept;
@@ -655,29 +641,6 @@ operator + (const small_string<StackSize> & a, const char * b) noexcept;
 template<uint32_t StackSize>
 small_string<StackSize>
 operator + (const char * a, const small_string<StackSize> & b) noexcept;
-
-#if __cplusplus < 201709L || (!defined(__clang__) && __GNUC__ == 13)
-template<typename T, uint32_t StackSize>
-bool
-operator == (const T& a, const small_string<StackSize>& b) noexcept
-{
-    return b == a;
-}
-
-template<typename T, uint32_t StackSize>
-bool
-operator != (const T& a, const small_string<StackSize>& b) noexcept
-{
-    return b != a;
-}
-#endif
-
-template<typename T, uint32_t StackSize>
-bool
-operator < (const T& a, const small_string<StackSize>& b) noexcept
-{
-    return b > a;
-}
 
 string operator + (stringref a, stringref b) noexcept;
 string operator + (const char * a, stringref b) noexcept;
