@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.DockerImage;
+import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.WireguardKey;
@@ -14,7 +15,10 @@ import com.yahoo.vespa.hosted.node.admin.configserver.HttpException;
 import com.yahoo.vespa.hosted.node.admin.configserver.StandardConfigServerResponse;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.bindings.GetAclResponse;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.bindings.GetNodesResponse;
+import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.bindings.GetWireguardResponse;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.bindings.NodeRepositoryNode;
+import com.yahoo.vespa.hosted.node.admin.task.util.network.VersionedIpAddress;
+import com.yahoo.vespa.hosted.node.admin.wireguard.ConfigserverPeer;
 
 import java.net.URI;
 import java.time.Instant;
@@ -122,6 +126,15 @@ public class RealNodeRepository implements NodeRepository {
                                                  trustedUdpPorts.get(hostname),
                                                  trustedNodes.get(hostname),
                                                  trustedNetworks.get(hostname))));
+    }
+
+    @Override
+    public List<ConfigserverPeer> getConfigserverPeers() {
+        GetWireguardResponse nodeResponse = configServerApi.get("/nodes/v2/wireguard",
+                                                                GetWireguardResponse.class);
+        return nodeResponse.configservers.stream()
+                .map(RealNodeRepository::createConfigserverPeer)
+                .toList();
     }
 
     @Override
@@ -323,6 +336,12 @@ public class RealNodeRepository implements NodeRepository {
         node.reports = reports == null || reports.isEmpty() ? null : new TreeMap<>(reports);
 
         return node;
+    }
+
+    private static ConfigserverPeer createConfigserverPeer(GetWireguardResponse.Configserver configServer) {
+        return new ConfigserverPeer(HostName.of(configServer.hostname),
+                                    configServer.ipAddresses.stream().map(VersionedIpAddress::from).toList(),
+                                    WireguardKey.from(configServer.wireguardPubkey));
     }
 
 }

@@ -8,6 +8,7 @@ import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeAttribu
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeRepository;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeState;
+import com.yahoo.vespa.hosted.node.admin.wireguard.ConfigserverPeer;
 
 import java.util.List;
 import java.util.Map;
@@ -44,6 +45,11 @@ public class NodeRepoMock implements NodeRepository {
     @Override
     public Map<String, Acl> getAcls(String hostname) {
         return aclByHostname;
+    }
+
+    @Override
+    public List<ConfigserverPeer> getConfigserverPeers() {
+        throw new UnsupportedOperationException();
     }
 
     @Override
