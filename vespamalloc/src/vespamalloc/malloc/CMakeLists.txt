@@ -72,5 +72,6 @@ vespa_add_library(vespamalloc_mmap OBJECT
 vespa_add_library(vespamalloc_load_as_huge OBJECT
     SOURCES
     load_as_huge.cpp
+    independent_non_inlined_memcpy.cpp
     DEPENDS
 )

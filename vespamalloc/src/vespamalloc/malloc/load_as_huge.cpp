@@ -1,5 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include "independent_non_inlined_memcpy.h"
 #include <cstdio>
 #include <cerrno>
 #include <cassert>
@@ -28,24 +29,6 @@ mmap_huge(size_t sz) {
 
 size_t round_huge_down(size_t v) { return v & ~(HUGEPAGE_SIZE - 1); }
 size_t round_huge_up(size_t v) { return round_huge_down(v + (HUGEPAGE_SIZE - 1)); }
-
-#ifdef __clang__
-void
-non_optimized_non_inlined_memcpy(void *dest_in, const void *src_in, size_t n) __attribute__((noinline, optnone)) ;
-#else
-void
-non_optimized_non_inlined_memcpy(void *dest_in, const void *src_in, size_t n) __attribute__((noinline, optimize(1))) ;
-#endif
-
-// Simple memcpy replacement to avoid calling code in other dso.
-void
-non_optimized_non_inlined_memcpy(void *dest_in, const void *src_in, size_t n) {
-    char *dest = static_cast<char *>(dest_in);
-    const char *src = static_cast<const char *>(src_in);
-    for (size_t i(0); i < n ; i++) {
-        dest[i] = src[i];
-    }
-}
 
 /**
  * Make a large mapping if code is larger than HUGEPAGE_SIZE and copies the content of the various segments.
@@ -83,7 +66,7 @@ remap_segments(size_t base_vaddr, const Elf64_Phdr * segments, size_t count) {
         if (madvise(dest, sz, MADV_HUGEPAGE) != 0) {
             fprintf(stderr, "load_as_huge.cpp:remap_segments => madvise(%p, %ld, MADV_HUGEPAGE) FAILED, errno= %d = %s\n", dest, sz, errno, strerror(errno));
         }
-        non_optimized_non_inlined_memcpy(dest, reinterpret_cast<void*>(vaddr), sz);
+        vespamalloc::independent_non_inlined_memcpy(dest, reinterpret_cast<void*>(vaddr), sz);
         int prot = PROT_READ;
         if (segments[i].p_flags & PF_X) prot|= PROT_EXEC;
         if (segments[i].p_flags & PF_W) prot|= PROT_WRITE;
