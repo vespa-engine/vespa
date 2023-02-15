@@ -17,19 +17,14 @@ private:
     vespalib::string _message;
 public:
     UnwindMessage(const vespalib::string &msg);
-    UnwindMessage(UnwindMessage &&rhs);
+    UnwindMessage(UnwindMessage &&rhs) noexcept ;
     UnwindMessage(const UnwindMessage &) = delete;
     UnwindMessage &operator=(const UnwindMessage &) = delete;
     UnwindMessage &operator=(UnwindMessage &&) = delete;
     ~UnwindMessage();
 };
 
-extern UnwindMessage unwind_msg(const char *fmt, ...)
-#ifdef __GNUC__
-        // Add printf format checks with gcc
-        __attribute__ ((format (printf,1,2)))
-#endif
-    ;
+extern UnwindMessage unwind_msg(const char *fmt, ...) __attribute__ ((format (printf,1,2)));
 
 // make an unwind message with a hopefully unique name on the stack
 #define UNWIND_MSG(...) auto VESPA_CAT(unwindMessageOnLine, __LINE__) = unwind_msg(__VA_ARGS__)

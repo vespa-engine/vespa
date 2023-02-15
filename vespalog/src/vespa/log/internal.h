@@ -4,14 +4,9 @@
 #include <string>
 #include <cstdlib>
 
-#if !__GNUC__ && !defined(__attribute__)
-#define __attribute__(x)
-#endif
-
 namespace ns_log {
 
-void throwInvalid(const char *fmt, ...)
-    __attribute__((format(printf, 1, 2))) __attribute__((noreturn));
+[[noreturn]] void throwInvalid(const char *fmt, ...) __attribute__((format(printf, 1, 2)));
 
 class InvalidLogException {
 private:
@@ -20,10 +15,9 @@ private:
 public:
     InvalidLogException& operator = (const InvalidLogException&) = delete;
     InvalidLogException(const InvalidLogException &x) = default;
-    InvalidLogException(const char *s) : _what(s) {}
+    explicit InvalidLogException(const char *s) : _what(s) {}
     ~InvalidLogException() = default;
-    const char *what() const { return _what.c_str(); }
+    [[nodiscard]] const char *what() const { return _what.c_str(); }
 };
 
 } // end namespace ns_log
-

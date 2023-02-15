@@ -11,7 +11,7 @@ UnwindMessage::UnwindMessage(const vespalib::string &msg)
 {
 }
 
-UnwindMessage::UnwindMessage(UnwindMessage &&rhs)
+UnwindMessage::UnwindMessage(UnwindMessage &&rhs) noexcept
     : _num_active(std::uncaught_exceptions()),
       _message(rhs._message)
 {

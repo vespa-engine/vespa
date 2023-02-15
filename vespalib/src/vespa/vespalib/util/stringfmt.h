@@ -9,20 +9,10 @@ namespace vespalib {
 
 extern vespalib::string make_string_va(const char *fmt, va_list ap);
 
-extern vespalib::string make_string(const char *fmt, ...)
-#ifdef __GNUC__
-        // Add printf format checks with gcc
-        __attribute__ ((format (printf,1,2)))
-#endif
-    ;
+extern vespalib::string make_string(const char *fmt, ...) __attribute__ ((format (printf,1,2)));
 
 namespace make_string_short {
-extern vespalib::string fmt(const char *format, ...)
-#ifdef __GNUC__
-        // Add printf format checks with gcc
-        __attribute__ ((format (printf,1,2)))
-#endif
-    ;
+extern vespalib::string fmt(const char *format, ...) __attribute__ ((format (printf,1,2)));
 } // namespace vespalib::make_string_short
 
 } // namespace vespalib

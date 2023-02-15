@@ -23,8 +23,7 @@ vespalib::string calculateContentXxhash64(const StringVector & fileContents);
 bool isGenerationNewer(int64_t newGen, int64_t oldGen);
 
 // Helper for throwing invalid config exception
-void throwInvalid(const char *fmt, ...)
-    __attribute__((format(printf, 1, 2))) __attribute__((noreturn));
+[[noreturn]] void throwInvalid(const char *fmt, ...) __attribute__((format(printf, 1, 2)));
 
 typedef std::shared_ptr<const vespalib::Slime> SlimePtr;
 

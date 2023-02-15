@@ -252,17 +252,9 @@ inline bool Logger::wants(LogLevel level)
     return _logLevels[level] == CHARS_TO_UINT(' ', ' ', 'O', 'N');
 }
 
-#define LOG_noreturn __attribute__((__noreturn__))
+[[noreturn]] extern void log_assert_fail(const char *assertion, const char *file, uint32_t line);
 
-extern void log_assert_fail(const char *assertion,
-                            const char *file,
-                            uint32_t line) LOG_noreturn;
-
-extern void log_abort(const char *message,
-                      const char *file,
-                      uint32_t line) LOG_noreturn;
-
-#undef LOG_noreturn
+[[noreturn]] extern void log_abort(const char *message, const char *file, uint32_t line);
 
 } // end namespace log
 

@@ -31,10 +31,7 @@ struct Writer {
         file = fopen(file_name.c_str(), "w");
         ASSERT_TRUE(file != nullptr);
     }
-    void fmt(const char *format, ...) const
-#ifdef __GNUC__
-        __attribute__ ((format (printf,2,3)))
-#endif
+    void fmt(const char *format, ...) const __attribute__((format(printf,2,3)))
     {
         va_list ap;
         va_start(ap, format);
