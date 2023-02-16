@@ -4,14 +4,13 @@ import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.WireguardKey;
 import com.yahoo.vespa.hosted.node.admin.task.util.network.VersionedIpAddress;
 
-import java.util.Collection;
 import java.util.List;
 
 /**
  * @author gjoranv
  */
 public record ConfigserverPeer(HostName hostname,
-                               Collection<VersionedIpAddress> ipAddresses,
+                               List<VersionedIpAddress> ipAddresses,
                                WireguardKey publicKey) {
 
     public ConfigserverPeer {
