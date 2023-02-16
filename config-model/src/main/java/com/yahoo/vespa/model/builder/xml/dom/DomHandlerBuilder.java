@@ -38,7 +38,7 @@ public class DomHandlerBuilder extends VespaDomBuilder.DomConfigProducerBuilderB
                    VIP_HANDLER_BINDING);
 
     private final ApplicationContainerCluster cluster;
-    private OptionalInt portBindingOverride;
+    private final OptionalInt portBindingOverride;
 
     public DomHandlerBuilder(ApplicationContainerCluster cluster) {
         this(cluster, OptionalInt.empty());

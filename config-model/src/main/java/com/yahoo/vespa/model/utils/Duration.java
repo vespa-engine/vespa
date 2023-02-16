@@ -20,8 +20,9 @@ import java.util.regex.Pattern;
  * Default is seconds.
  */
 public class Duration {
-    private static Pattern pattern = Pattern.compile("([0-9\\.]+)\\s*([a-z]+)?");
-    private static Map<String, Integer> unitMultiplier = new HashMap<>();
+
+    private static final Pattern pattern = Pattern.compile("([0-9\\.]+)\\s*([a-z]+)?");
+    private static final Map<String, Integer> unitMultiplier = new HashMap<>();
     static {
         unitMultiplier.put("s", 1000);
         unitMultiplier.put("d", 1000 * 3600 * 24);
