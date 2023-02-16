@@ -239,8 +239,8 @@ public class RetiredExpirerTest {
         MockNameResolver nameResolver = (MockNameResolver) tester.nodeRepository().nameResolver();
         String ipv4 = "127.0.1.4";
         nameResolver.addRecord(retiredNode.hostname(), ipv4);
-        Node node = Node.create(retiredNode.hostname(), new IP.Config(Set.of(ipv4), Set.of()), retiredNode.hostname(),
-                    tester.asFlavor("default", NodeType.config), NodeType.config).build();
+        Node node = Node.create(retiredNode.hostname(), IP.Config.of(Set.of(ipv4), Set.of()), retiredNode.hostname(),
+                                tester.asFlavor("default", NodeType.config), NodeType.config).build();
         var nodes = List.of(node);
         nodes = nodeRepository.nodes().addNodes(nodes, Agent.system);
         nodes = nodeRepository.nodes().deallocate(nodes, Agent.system, getClass().getSimpleName());

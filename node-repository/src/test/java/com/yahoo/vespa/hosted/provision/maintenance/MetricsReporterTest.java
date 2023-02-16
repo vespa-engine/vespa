@@ -186,7 +186,7 @@ public class MetricsReporterTest {
         // Allow 4 containers
         Set<String> ipAddressPool = Set.of("::2", "::3", "::4", "::5");
 
-        Node dockerHost = Node.create("node-id-1", new IP.Config(Set.of("::1"), ipAddressPool), "dockerHost",
+        Node dockerHost = Node.create("node-id-1", IP.Config.of(Set.of("::1"), ipAddressPool), "dockerHost",
                                       nodeFlavors.getFlavorOrThrow("host"), NodeType.host).build();
         nodeRepository.nodes().addNodes(List.of(dockerHost), Agent.system);
         nodeRepository.nodes().deallocateRecursively("dockerHost", Agent.system, getClass().getSimpleName());

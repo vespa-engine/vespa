@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.node;
 
-import com.google.common.collect.ImmutableSet;
 import com.google.common.net.InetAddresses;
 import com.google.common.primitives.UnsignedBytes;
 import com.yahoo.config.provision.HostName;
@@ -32,7 +31,7 @@ import static com.yahoo.config.provision.NodeType.proxyhost;
  *
  * @author mpolden
  */
-public class IP {
+public record IP() {
 
     /** Comparator for sorting IP addresses by their natural order */
     public static final Comparator<InetAddress> NATURAL_ORDER = (ip1, ip2) -> {
@@ -60,31 +59,26 @@ public class IP {
     };
 
     /** IP configuration of a node */
-    public static class Config {
+    public record Config(Set<String> primary, Pool pool) {
 
         public static final Config EMPTY = Config.ofEmptyPool(Set.of());
 
-        private final Set<String> primary;
-        private final Pool pool;
-
         public static Config ofEmptyPool(Set<String> primary) {
-            return new Config(primary, Set.of(), List.of());
+            return new Config(primary, Pool.EMPTY);
         }
 
         public static Config of(Set<String> primary, Set<String> ipPool, List<HostName> hostnames) {
-            return new Config(primary, ipPool, hostnames);
+            return new Config(primary, new Pool(IpAddresses.of(ipPool), hostnames));
         }
 
-        /** LEGACY TEST CONSTRUCTOR - use of() variants and/or the with- methods. */
-        public Config(Set<String> primary, Set<String> pool) {
-            this(primary, pool, List.of());
+        public static Config of(Set<String> primary, Set<String> pool) {
+            return of(primary, pool, List.of());
         }
 
         /** DO NOT USE: Public for NodeSerializer. */
-        public Config(Set<String> primary, Set<String> pool, List<HostName> hostnames) {
-            this.primary = ImmutableSet.copyOf(Objects.requireNonNull(primary, "primary must be non-null"));
-            this.pool = Pool.of(Objects.requireNonNull(pool, "pool must be non-null"),
-                                Objects.requireNonNull(hostnames, "addresses must be non-null"));
+        public Config(Set<String> primary, Pool pool) {
+            this.primary = Collections.unmodifiableSet(new LinkedHashSet<>(Objects.requireNonNull(primary, "primary must be non-null")));
+            this.pool = Objects.requireNonNull(pool, "pool must be non-null");
         }
 
         /** The primary addresses of this. These addresses are used when communicating with the node itself */
@@ -99,31 +93,12 @@ public class IP {
 
         /** Returns a copy of this with pool set to given value */
         public Config withPool(Pool pool) {
-            return new Config(primary, pool.ipSet(), pool.hostnames());
+            return new Config(primary, pool);
         }
 
         /** Returns a copy of this with pool set to given value */
         public Config withPrimary(Set<String> primary) {
-            return new Config(primary, pool.ipSet(), pool.hostnames());
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-            Config config = (Config) o;
-            return primary.equals(config.primary) &&
-                   pool.equals(config.pool);
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(primary, pool);
-        }
-
-        @Override
-        public String toString() {
-            return String.format("ip config primary=%s pool=%s", primary, pool.ipSet());
+            return new Config(primary, pool);
         }
 
         /**
@@ -141,8 +116,8 @@ public class IP {
                     var addresses = new HashSet<>(node.ipConfig().primary());
                     var otherAddresses = new HashSet<>(other.ipConfig().primary());
                     if (node.type().isHost()) { // Addresses of a host can never overlap with any other nodes
-                        addresses.addAll(node.ipConfig().pool().ipSet());
-                        otherAddresses.addAll(other.ipConfig().pool().ipSet());
+                        addresses.addAll(node.ipConfig().pool().asSet());
+                        otherAddresses.addAll(other.ipConfig().pool().asSet());
                     }
                     otherAddresses.retainAll(addresses);
                     if (!otherAddresses.isEmpty())
@@ -174,23 +149,11 @@ public class IP {
     }
 
     /** A list of IP addresses and their protocol */
-    public static class IpAddresses {
+    record IpAddresses(Set<String> addresses, Protocol protocol) {
 
-        private final Set<String> ipAddresses;
-        private final Protocol protocol;
-
-        private IpAddresses(Set<String> ipAddresses, Protocol protocol) {
-            this.ipAddresses = ImmutableSet.copyOf(Objects.requireNonNull(ipAddresses, "addresses must be non-null"));
+        public IpAddresses(Set<String> addresses, Protocol protocol) {
+            this.addresses = Collections.unmodifiableSet(new LinkedHashSet<>(Objects.requireNonNull(addresses, "addresses must be non-null")));
             this.protocol = Objects.requireNonNull(protocol, "type must be non-null");
-        }
-
-        public Set<String> asSet() {
-            return ipAddresses;
-        }
-
-        /** The protocol of addresses in this */
-        public Protocol protocol() {
-            return protocol;
         }
 
         /** Create addresses of the given set */
@@ -217,6 +180,7 @@ public class IP {
         }
 
         public enum Protocol {
+
             dualStack("dual-stack"),
             ipv4("IPv4-only"),
             ipv6("IPv6-only");
@@ -225,21 +189,8 @@ public class IP {
 
             Protocol(String description) { this.description = description; }
 
-            public String getDescription() { return description; }
         }
 
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-            IpAddresses that = (IpAddresses) o;
-            return ipAddresses.equals(that.ipAddresses) && protocol == that.protocol;
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(ipAddresses, protocol);
-        }
     }
 
     /**
@@ -247,15 +198,9 @@ public class IP {
      *
      * Addresses in this are available for use by Linux containers.
      */
-    public static class Pool {
+    public record Pool(IpAddresses ipAddresses, List<HostName> hostnames) {
 
-        private final IpAddresses ipAddresses;
-        private final List<HostName> hostnames;
-
-        /** Creates an empty pool. */
-        public static Pool of() {
-            return of(Set.of(), List.of());
-        }
+        public static final Pool EMPTY = new Pool(IpAddresses.of(Set.of()), List.of());
 
         /** Create a new pool containing given ipAddresses */
         public static Pool of(Set<String> ipAddresses, List<HostName> hostnames) {
@@ -263,9 +208,13 @@ public class IP {
             return new Pool(ips, hostnames);
         }
 
-        private Pool(IpAddresses ipAddresses, List<HostName> hostnames) {
+        public Pool(IpAddresses ipAddresses, List<HostName> hostnames) {
             this.ipAddresses = Objects.requireNonNull(ipAddresses, "ipAddresses must be non-null");
-            this.hostnames = Objects.requireNonNull(hostnames, "hostnames must be non-null");
+            this.hostnames = List.copyOf(Objects.requireNonNull(hostnames, "hostnames must be non-null"));
+        }
+
+        public Set<String> asSet() {
+            return ipAddresses.addresses;
         }
 
         /**
@@ -275,7 +224,7 @@ public class IP {
          * @return an allocation from the pool, if any can be made
          */
         public Optional<Allocation> findAllocation(LockedNodeList nodes, NameResolver resolver, boolean hasPtr) {
-            if (ipAddresses.asSet().isEmpty()) {
+            if (ipAddresses.addresses.isEmpty()) {
                 // IP addresses have not yet been resolved and should be done later.
                 return findUnusedHostnames(nodes).map(Allocation::ofHostname)
                                                  .findFirst();
@@ -313,8 +262,8 @@ public class IP {
          * @param nodes a list of all nodes in the repository
          */
         public Set<String> findUnusedIpAddresses(NodeList nodes) {
-            var unusedAddresses = new LinkedHashSet<>(ipSet());
-            nodes.matching(node -> node.ipConfig().primary().stream().anyMatch(ip -> ipSet().contains(ip)))
+            Set<String> unusedAddresses = new LinkedHashSet<>(asSet());
+            nodes.matching(node -> node.ipConfig().primary().stream().anyMatch(ip -> asSet().contains(ip)))
                  .forEach(node -> unusedAddresses.removeAll(node.ipConfig().primary()));
             return Collections.unmodifiableSet(unusedAddresses);
         }
@@ -324,53 +273,23 @@ public class IP {
             return hostnames.stream().filter(hostname -> !usedHostnames.contains(hostname.value()));
         }
 
-        public IpAddresses.Protocol getProtocol() {
-            return ipAddresses.protocol;
-        }
-
-        /** Returns the IP addresses in this pool as a set */
-        public Set<String> ipSet() {
-            return ipAddresses.asSet();
-        }
-
-        public List<HostName> hostnames() {
-            return hostnames;
-        }
-
         public Pool withIpAddresses(Set<String> ipAddresses) {
             return Pool.of(ipAddresses, hostnames);
         }
 
         public Pool withHostnames(List<HostName> hostnames) {
-            return Pool.of(ipAddresses.asSet(), hostnames);
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-            Pool pool = (Pool) o;
-            return ipAddresses.equals(pool.ipAddresses) && hostnames.equals(pool.hostnames);
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(ipAddresses, hostnames);
+            return Pool.of(ipAddresses.addresses, hostnames);
         }
 
     }
 
     /** An address allocation from a pool */
-    public static class Allocation {
+    public record Allocation(String hostname, Optional<String> ipv4Address, Optional<String> ipv6Address) {
 
-        private final String hostname;
-        private final Optional<String> ipv4Address;
-        private final Optional<String> ipv6Address;
-
-        private Allocation(String hostname, Optional<String> ipv4Address, Optional<String> ipv6Address) {
-            this.hostname = Objects.requireNonNull(hostname, "hostname must be non-null");
-            this.ipv4Address = Objects.requireNonNull(ipv4Address, "ipv4Address must be non-null");
-            this.ipv6Address = Objects.requireNonNull(ipv6Address, "ipv6Address must be non-null");
+        public Allocation {
+            Objects.requireNonNull(hostname, "hostname must be non-null");
+            Objects.requireNonNull(ipv4Address, "ipv4Address must be non-null");
+            Objects.requireNonNull(ipv6Address, "ipv6Address must be non-null");
         }
 
         /**
@@ -458,33 +377,10 @@ public class IP {
             return new Allocation(hostName.value(), Optional.empty(), Optional.empty());
         }
 
-        /** Hostname pointing to the IP addresses in this */
-        public String hostname() {
-            return hostname;
-        }
-
-        /** IPv4 address of this allocation */
-        public Optional<String> ipv4Address() {
-            return ipv4Address;
-        }
-
-        /** IPv6 address of this allocation */
-        public Optional<String> ipv6Address() {
-            return ipv6Address;
-        }
-
         /** All IP addresses in this */
         public Set<String> addresses() {
-            ImmutableSet.Builder<String> builder = ImmutableSet.builder();
-            ipv4Address.ifPresent(builder::add);
-            ipv6Address.ifPresent(builder::add);
-            return builder.build();
-        }
-
-        @Override
-        public String toString() {
-            return String.format("Address allocation [hostname=%s, IPv4=%s, IPv6=%s]",
-                    hostname, ipv4Address.orElse("<none>"), ipv6Address.orElse("<none>"));
+            return Stream.concat(ipv4Address.stream(), ipv6Address.stream())
+                         .collect(Collectors.toUnmodifiableSet());
         }
 
     }

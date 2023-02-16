@@ -249,7 +249,7 @@ public class NodeSerializerTest {
     @Test
     public void serialize_parent_hostname() {
         final String parentHostname = "parent.yahoo.com";
-        Node node = Node.create("myId", new IP.Config(Set.of("127.0.0.1"), Set.of()), "myHostname", nodeFlavors.getFlavorOrThrow("default"), NodeType.tenant)
+        Node node = Node.create("myId", IP.Config.of(Set.of("127.0.0.1"), Set.of()), "myHostname", nodeFlavors.getFlavorOrThrow("default"), NodeType.tenant)
                 .parentHostname(parentHostname)
                 .build();
 
@@ -274,14 +274,12 @@ public class NodeSerializerTest {
                 Set.of("::1", "::2", "::3"),
                 List.of(HostName.of("a"), HostName.of("b"), HostName.of("c")))));
         Node copy = nodeSerializer.fromJson(nodeSerializer.toJson(node));
-        assertEquals(node.ipConfig().pool().ipSet(), copy.ipConfig().pool().ipSet());
-        assertEquals(Set.copyOf(node.ipConfig().pool().hostnames()), Set.copyOf(copy.ipConfig().pool().hostnames()));
+        assertEquals(node.ipConfig(), copy.ipConfig());
 
         // Test round-trip without address pool (handle empty pool)
         node = createNode();
         copy = nodeSerializer.fromJson(nodeSerializer.toJson(node));
-        assertEquals(node.ipConfig().pool().ipSet(), copy.ipConfig().pool().ipSet());
-        assertEquals(Set.copyOf(node.ipConfig().pool().hostnames()), Set.copyOf(copy.ipConfig().pool().hostnames()));
+        assertEquals(node.ipConfig(), copy.ipConfig());
     }
 
     @Test
@@ -529,7 +527,7 @@ public class NodeSerializerTest {
 
     private Node createNode() {
         return Node.create("myId",
-                           new IP.Config(Set.of("127.0.0.1"), Set.of()),
+                           IP.Config.of(Set.of("127.0.0.1"), Set.of()),
                            "myHostname",
                            nodeFlavors.getFlavorOrThrow("default"),
                            NodeType.tenant).build();

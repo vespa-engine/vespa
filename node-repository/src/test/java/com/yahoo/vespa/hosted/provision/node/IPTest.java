@@ -193,12 +193,12 @@ public class IPTest {
         }
 
         IP.Pool pool = node.ipConfig().pool();
-        assertNotEquals(dualStack, pool.getProtocol() == IP.IpAddresses.Protocol.ipv4);
+        assertNotEquals(dualStack, pool.ipAddresses().protocol() == IP.IpAddresses.Protocol.ipv4);
         return pool;
     }
 
     private static Node createNode(Set<String> ipAddresses) {
-        return Node.create("id1", new IP.Config(Set.of("127.0.0.1"), ipAddresses),
+        return Node.create("id1", IP.Config.of(Set.of("127.0.0.1"), ipAddresses),
                            "host1", nodeFlavors.getFlavorOrThrow("default"), NodeType.host).build();
     }
 
