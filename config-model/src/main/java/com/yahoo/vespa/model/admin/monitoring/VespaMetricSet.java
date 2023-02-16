@@ -10,7 +10,6 @@ import com.yahoo.metrics.Suffix;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.LinkedHashSet;
-import java.util.List;
 import java.util.Set;
 
 import static com.yahoo.metrics.Suffix.average;
@@ -18,10 +17,10 @@ import static com.yahoo.metrics.Suffix.count;
 import static com.yahoo.metrics.Suffix.last;
 import static com.yahoo.metrics.Suffix.max;
 import static com.yahoo.metrics.Suffix.min;
-import static com.yahoo.metrics.Suffix.sum;
-import static com.yahoo.metrics.Suffix.rate;
 import static com.yahoo.metrics.Suffix.ninety_five_percentile;
 import static com.yahoo.metrics.Suffix.ninety_nine_percentile;
+import static com.yahoo.metrics.Suffix.rate;
+import static com.yahoo.metrics.Suffix.sum;
 import static com.yahoo.vespa.model.admin.monitoring.DefaultVespaMetrics.defaultVespaMetricSet;
 import static java.util.Collections.singleton;
 
@@ -236,6 +235,9 @@ public class VespaMetricSet {
         addMetric(metrics, ContainerMetrics.SERVER_REJECTED_REQUESTS, EnumSet.of(rate, count));             // TODO: Remove on Vespa 9. Use jdisc.thread_pool.rejected_tasks.
         addMetric(metrics, ContainerMetrics.SERVER_THREAD_POOL_SIZE, EnumSet.of(max, last));                // TODO: Remove on Vespa 9. Use jdisc.thread_pool.rejected_tasks.
         addMetric(metrics, ContainerMetrics.SERVER_ACTIVE_THREADS, EnumSet.of(min, max, sum, count, last)); // TODO: Remove on Vespa 9. Use jdisc.thread_pool.rejected_tasks.
+
+        addMetric(metrics, ContainerMetrics.JDISC_TLS_CAPABILITY_CHECKS_SUCCEEDED.rate());
+        addMetric(metrics, ContainerMetrics.JDISC_TLS_CAPABILITY_CHECKS_FAILED.rate());
 
         return metrics;
     }

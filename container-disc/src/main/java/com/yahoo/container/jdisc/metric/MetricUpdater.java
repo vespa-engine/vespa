@@ -7,6 +7,7 @@ import com.yahoo.jdisc.Metric;
 import com.yahoo.jdisc.statistics.ContainerWatchdogMetrics;
 import com.yahoo.metrics.ContainerMetrics;
 import com.yahoo.nativec.NativeHeap;
+import com.yahoo.security.tls.TlsMetrics;
 
 import java.lang.management.BufferPoolMXBean;
 import java.lang.management.ManagementFactory;
@@ -103,6 +104,7 @@ public class MetricUpdater extends AbstractComponent {
         private final GarbageCollectionMetrics garbageCollectionMetrics;
         private final JrtMetrics jrtMetrics;
         private final ThreadMXBean threadMXBean = ManagementFactory.getThreadMXBean();
+        private TlsMetrics.Snapshot tlsMetricsSnapshot = TlsMetrics.Snapshot.EMPTY;
 
         public UpdaterTask(Metric metric, ContainerWatchdogMetrics containerWatchdogMetrics) {
             this.metric = metric;
@@ -142,6 +144,14 @@ public class MetricUpdater extends AbstractComponent {
             metric.set("jdisc.jvm", Runtime.version().feature(), ctx);
         }
 
+        private void tlsMetrics() {
+            var newSnapshot = TlsMetrics.instance().snapshot();
+            var diff = newSnapshot.changesSince(tlsMetricsSnapshot);
+            metric.add(ContainerMetrics.JDISC_TLS_CAPABILITY_CHECKS_SUCCEEDED.baseName(), diff.capabilityChecksSucceeded(), null);
+            metric.add(ContainerMetrics.JDISC_TLS_CAPABILITY_CHECKS_FAILED.baseName(), diff.capabilityChecksFailed(), null);
+            tlsMetricsSnapshot = newSnapshot;
+        }
+
         @Override
         public void run() {
             long freeMemory = runtime.freeMemory();
@@ -160,6 +170,7 @@ public class MetricUpdater extends AbstractComponent {
             garbageCollectionMetrics.emitMetrics(metric);
             jrtMetrics.emitMetrics();
             jvmDetails();
+            tlsMetrics();
         }
     }
 

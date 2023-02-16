@@ -33,7 +33,7 @@ public class CapabilitySet implements ToCapabilitySet {
     private static final CapabilitySet SHARED_CAPABILITIES_APP_NODE = CapabilitySet.of(
             Capability.LOGSERVER_API, Capability.CONFIGSERVER__CONFIG_API,
             Capability.CONFIGSERVER__FILEDISTRIBUTION_API, Capability.CONFIGPROXY__CONFIG_API,
-            Capability.CONFIGPROXY__FILEDISTRIBUTION_API, TELEMETRY);
+            Capability.CONFIGPROXY__FILEDISTRIBUTION_API, Capability.SLOBROK__API, TELEMETRY);
 
     public static final CapabilitySet CONTENT_NODE = predefined(
             "vespa.content_node",
@@ -44,7 +44,7 @@ public class CapabilitySet implements ToCapabilitySet {
             Capability.CONTENT__DOCUMENT_API, Capability.CONTENT__SEARCH_API, SHARED_CAPABILITIES_APP_NODE);
     public static final CapabilitySet CLUSTER_CONTROLLER_NODE = predefined(
             "vespa.cluster_controller_node",
-            Capability.CONTENT__CLUSTER_CONTROLLER__INTERNAL_STATE_API, Capability.SLOBROK__API,
+            Capability.CONTENT__CLUSTER_CONTROLLER__INTERNAL_STATE_API,
             Capability.CLIENT__SLOBROK_API, Capability.CONTAINER__DOCUMENT_API, SHARED_CAPABILITIES_APP_NODE);
     public static final CapabilitySet LOGSERVER_NODE = predefined(
             "vespa.logserver_node", SHARED_CAPABILITIES_APP_NODE);

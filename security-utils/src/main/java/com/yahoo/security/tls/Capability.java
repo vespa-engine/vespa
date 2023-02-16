@@ -27,6 +27,7 @@ public enum Capability implements ToCapabilitySet {
     CONTENT__CLUSTER_CONTROLLER__INTERNAL_STATE_API("vespa.content.cluster_controller.internal_state_api"),
     CONTENT__DOCUMENT_API("vespa.content.document_api"),
     CONTENT__METRICS_API("vespa.content.metrics_api"),
+    CONTENT__PROTON_ADMIN_API("vespa.content.proton_admin_api"),
     CONTENT__SEARCH_API("vespa.content.search_api"),
     CONTENT__STATUS_PAGES("vespa.content.status_pages"),
     CONTENT__STORAGE_API("vespa.content.storage_api"),
@@ -34,6 +35,7 @@ public enum Capability implements ToCapabilitySet {
     METRICSPROXY__MANAGEMENT_API("vespa.metricsproxy.management_api"),
     METRICSPROXY__METRICS_API("vespa.metricsproxy.metrics_api"),
     SENTINEL__CONNECTIVITY_CHECK("vespa.sentinel.connectivity_check"),
+    SENTINEL__INSPECT_SERVICES("vespa.sentinel.inspect_services"),
     SENTINEL__MANAGEMENT_API("vespa.sentinel.management_api"),
     SLOBROK__API("vespa.slobrok.api"),
     ;
