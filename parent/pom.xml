@@ -1093,6 +1093,16 @@
                 <artifactId>json</artifactId>
                 <version>${org.json.version}</version>
             </dependency>
+            <dependency>
+                <groupId>com.google.errorprone</groupId>
+                <artifactId>error_prone_annotations</artifactId>
+                <version>2.18.0</version>
+            </dependency>
+            <dependency>
+                <groupId>org.checkerframework</groupId>
+                <artifactId>checker-qual</artifactId>
+                <version>3.30.0</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
