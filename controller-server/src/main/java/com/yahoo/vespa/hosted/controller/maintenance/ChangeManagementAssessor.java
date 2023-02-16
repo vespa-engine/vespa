@@ -30,7 +30,6 @@ public class ChangeManagementAssessor {
     }
 
     Assessment assessmentInner(List<String> impactedHostnames, List<Node> allNodes, ZoneId zone) {
-
         List<String> impactedParentHosts = toParentHosts(impactedHostnames, allNodes);
         // Group impacted application nodes by parent host
         Map<Node, List<Node>> prParentHost = allNodes.stream()
@@ -53,10 +52,7 @@ public class ChangeManagementAssessor {
                 .map(node -> node.hostname())
                 .toList();
 
-        boolean allHostsReplacable = tenantHosts.isEmpty() || nodeRepository.isReplaceable(
-                zone,
-                tenantHosts
-        );
+        boolean allHostsReplacable = tenantHosts.isEmpty() || nodeRepository.isReplaceable(zone, tenantHosts);
 
         // Report assessment pr cluster
         var clusterAssessments = prCluster.entrySet().stream().map((entry) -> {

@@ -19,6 +19,9 @@
       "name": "AwsOsUpgrader"
     },
     {
+      "name": "BcpGroupUpdater"
+    },
+    {
       "name": "BillingDatabaseMaintainer"
     },
     {
@@ -38,6 +41,9 @@
     },
     {
       "name": "DeploymentExpirer"
+    },
+    {
+      "name": "DeploymentInfoMaintainer"
     },
     {
       "name": "DeploymentIssueReporter"
@@ -101,9 +107,6 @@
     },
     {
       "name": "TenantRoleMaintainer"
-    },
-    {
-      "name": "TrafficShareUpdater"
     },
     {
       "name": "Upgrader"

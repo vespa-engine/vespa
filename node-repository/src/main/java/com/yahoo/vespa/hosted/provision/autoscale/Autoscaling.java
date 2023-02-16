@@ -1,6 +1,7 @@
 package com.yahoo.vespa.hosted.provision.autoscale;
 
 import com.yahoo.config.provision.ClusterResources;
+import io.questdb.Metrics;
 
 import java.time.Instant;
 import java.util.Objects;
@@ -19,15 +20,17 @@ public class Autoscaling {
     private final Instant at;
     private final Load peak;
     private final Load ideal;
+    private final Metrics metrics;
 
     public Autoscaling(Status status, String description, Optional<ClusterResources> resources, Instant at,
-                       Load peak, Load ideal) {
+                       Load peak, Load ideal, Metrics metrics) {
         this.status = status;
         this.description = description;
         this.resources = resources;
         this.at = at;
         this.peak = peak;
         this.ideal = ideal;
+        this.metrics = metrics;
     }
 
     public Status status() { return status; }
@@ -48,8 +51,10 @@ public class Autoscaling {
     /** Returns the ideal load the cluster in question should have. */
     public Load ideal() { return ideal; }
 
+    public Metrics metrics() { return metrics; }
+
     public Autoscaling with(Status status, String description) {
-        return new Autoscaling(status, description, resources, at, peak, ideal);
+        return new Autoscaling(status, description, resources, at, peak, ideal, metrics);
     }
 
     /** Converts this autoscaling into an ideal one at the completion of it. */
@@ -59,7 +64,8 @@ public class Autoscaling {
                                Optional.empty(),
                                at,
                                peak,
-                               ideal);
+                               ideal,
+                               metrics);
     }
 
     public boolean isEmpty() { return this.equals(empty()); }
@@ -73,12 +79,13 @@ public class Autoscaling {
         if ( ! this.at.equals(other.at)) return false;
         if ( ! this.peak.equals(other.peak)) return false;
         if ( ! this.ideal.equals(other.ideal)) return false;
+        if ( ! this.metrics.equals(other.metrics)) return false;
         return true;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(status, description, at, peak, ideal);
+        return Objects.hash(status, description, at, peak, ideal, metrics);
     }
 
     @Override
@@ -93,7 +100,8 @@ public class Autoscaling {
                                Optional.empty(),
                                Instant.EPOCH,
                                Load.zero(),
-                               Load.zero());
+                               Load.zero(),
+                               Metrics.zero());
     }
 
     /** Creates an autoscaling conclusion which does not change the current allocation for a specified reason. */
@@ -103,7 +111,8 @@ public class Autoscaling {
                                Optional.empty(),
                                clusterModel.at(),
                                clusterModel.peakLoad(),
-                               clusterModel.idealLoad());
+                               clusterModel.idealLoad(),
+                               clusterModel.metrics());
     }
 
     /** Creates an autoscaling conclusion to scale. */
@@ -113,7 +122,8 @@ public class Autoscaling {
                                Optional.of(target),
                                clusterModel.at(),
                                clusterModel.peakLoad(),
-                               clusterModel.idealLoad());
+                               clusterModel.idealLoad(),
+                               clusterModel.metrics());
     }
 
     public enum Status {
@@ -133,6 +143,15 @@ public class Autoscaling {
         /** Rescaling of this cluster has been scheduled */
         rescaling
 
-    };
+    }
+
+    // Used to create BcpGroupInfo
+    public record Metrics(double queryRate, double growthRateHeadroom, double cpuCostPerQuery) {
+
+        public static Metrics zero() {
+            return new Metrics(0, 0, 0);
+        }
+
+    }
 
 }

@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.controller.integration;
 import com.yahoo.collections.Pair;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
@@ -18,6 +19,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.configserver.NodeFilter
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.NodeRepoStats;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.NodeRepository;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.TargetVersions;
+import com.yahoo.vespa.hosted.controller.api.integration.noderepository.ApplicationPatch;
 
 import java.net.URI;
 import java.util.List;
@@ -38,6 +40,7 @@ public class NodeRepositoryMock implements NodeRepository {
     private final Map<ZoneId, Map<ApplicationId, Application>> applications = new ConcurrentHashMap<>();
     private final Map<ZoneId, TargetVersions> targetVersions = new ConcurrentHashMap<>();
     private final Map<DeploymentId, Pair<Double, Double>> trafficFractions = new ConcurrentHashMap<>();
+    private final Map<DeploymentClusterId, BcpGroupInfo> bcpGroupInfos = new ConcurrentHashMap<>();
     private final Map<ZoneId, Map<TenantName, URI>> archiveUris = new ConcurrentHashMap<>();
 
     private boolean allowPatching = true;
@@ -90,9 +93,16 @@ public class NodeRepositoryMock implements NodeRepository {
     }
 
     @Override
-    public void patchApplication(ZoneId zone, ApplicationId application,
-                                 double currentReadShare, double maxReadShare) {
-        trafficFractions.put(new DeploymentId(application, zone), new Pair<>(currentReadShare, maxReadShare));
+    public void patchApplication(ZoneId zone, ApplicationId application, ApplicationPatch applicationPatch) {
+        trafficFractions.put(new DeploymentId(application, zone),
+                             new Pair<>(applicationPatch.currentReadShare, applicationPatch.maxReadShare));
+        if (applicationPatch.clusters != null) {
+            for (var cluster : applicationPatch.clusters.entrySet())
+                bcpGroupInfos.put(new DeploymentClusterId(new DeploymentId(application, zone), new ClusterSpec.Id(cluster.getKey())),
+                                  new BcpGroupInfo(cluster.getValue().bcpGroupInfo.queryRate,
+                                                   cluster.getValue().bcpGroupInfo.growthRateHeadroom,
+                                                   cluster.getValue().bcpGroupInfo.cpuCostPerQuery));
+        }
     }
 
     @Override
@@ -229,6 +239,10 @@ public class NodeRepositoryMock implements NodeRepository {
         return trafficFractions.get(new DeploymentId(application, zone));
     }
 
+    public BcpGroupInfo getBcpGroupInfo(ApplicationId application, ZoneId zone, ClusterSpec.Id cluster) {
+        return bcpGroupInfos.get(new DeploymentClusterId(new DeploymentId(application, zone), cluster));
+    }
+
     /** Remove given nodes from zone */
     public void removeNodes(ZoneId zone, List<Node> nodes) {
         nodes.forEach(node -> nodeRepository.get(zone).remove(node.hostname()));
@@ -338,5 +352,9 @@ public class NodeRepositoryMock implements NodeRepository {
         }
         putNodes(zone, nodes.stream().map(patcher).toList());
     }
+
+    public record DeploymentClusterId(DeploymentId deploymentId, ClusterSpec.Id clusterId) {}
+
+    public record BcpGroupInfo(double queryRate, double growthRateHeadroom, double cpuCostPerQuery) {}
 
 }

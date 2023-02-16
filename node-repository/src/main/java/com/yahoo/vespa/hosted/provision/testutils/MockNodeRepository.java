@@ -216,14 +216,16 @@ public class MockNodeRepository extends NodeRepository {
                                                                                            new NodeResources(3, 20, 100, 1))),
                                                           clock().instant(),
                                                           Load.zero(),
-                                                          Load.zero()));
+                                                          Load.zero(),
+                                                          Autoscaling.Metrics.zero()));
         cluster1 = cluster1.withTarget(new Autoscaling(Autoscaling.Status.unavailable,
                                                        "",
                                                        Optional.of(new ClusterResources(4, 1,
                                                                                         new NodeResources(3, 16, 100, 1))),
                                                        clock().instant(),
-                                                       Load.zero(),
-                                                       Load.zero()));
+                                                       new Load(0.1, 0.2, 0.3),
+                                                       new Load(0.4, 0.5, 0.6),
+                                                       new Autoscaling.Metrics(0.7, 0.8, 0.9)));
         try (Mutex lock = applications().lock(app1Id)) {
             applications().put(app1.with(cluster1), lock);
         }

@@ -25,8 +25,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * Retrieves deployment metrics such as QPS and document count from the metric service and
- * updates applications with this info.
+ * Retrieves deployment metrics such as QPS and document count over the config server API
+ * and updates application objects in the controller with this info.
  *
  * @author smorgrav
  * @author mpolden

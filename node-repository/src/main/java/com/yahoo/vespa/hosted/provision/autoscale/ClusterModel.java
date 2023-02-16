@@ -126,14 +126,6 @@ public class ClusterModel {
         return adjustment;
     }
 
-    public OptionalDouble cpuCostPerQuery() {
-        if (averageQueryRate().isEmpty()) return OptionalDouble.empty();
-        // TODO: Query rate should generally be sampled at the time where we see the peak resource usage
-        int fanOut = clusterSpec.type().isContainer() ? 1 : groupSize();
-        return OptionalDouble.of(peakLoad().cpu()  * queryCpuFraction() * fanOut * nodes.not().retired().first().get().resources().vcpu()
-                                 / averageQueryRate().getAsDouble() / groupCount());
-    }
-
     public boolean isStable(NodeRepository nodeRepository) {
         // An autoscaling decision was recently made
         if (hasScaledIn(Duration.ofMinutes(5)))
@@ -216,8 +208,22 @@ public class ClusterModel {
         return ideal;
     }
 
+    public Autoscaling.Metrics metrics() {
+        return new Autoscaling.Metrics(averageQueryRate().orElse(0),
+                                       growthRateHeadroom(),
+                                       cpuCostPerQuery().orElse(0));
+    }
+
     /** Returns the instant this model was created. */
     public Instant at() { return at;}
+
+    private OptionalDouble cpuCostPerQuery() {
+        if (averageQueryRate().isEmpty()) return OptionalDouble.empty();
+        // TODO: Query rate should generally be sampled at the time where we see the peak resource usage
+        int fanOut = clusterSpec.type().isContainer() ? 1 : groupSize();
+        return OptionalDouble.of(peakLoad().cpu()  * queryCpuFraction() * fanOut * nodes.not().retired().first().get().resources().vcpu()
+                                 / averageQueryRate().getAsDouble() / groupCount());
+    }
 
     private Load adjustQueryDependentIdealLoadByBcpGroupInfo(Load ideal) {
         double currentClusterTotalVcpuPerGroup = nodes.not().retired().first().get().resources().vcpu() * groupSize();

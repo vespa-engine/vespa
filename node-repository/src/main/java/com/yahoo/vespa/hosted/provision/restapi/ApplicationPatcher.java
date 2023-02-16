@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.provision.restapi;
 
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.io.IOUtils;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.SlimeUtils;
@@ -9,11 +10,14 @@ import com.yahoo.slime.Type;
 import com.yahoo.transaction.Mutex;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.applications.Application;
+import com.yahoo.vespa.hosted.provision.applications.BcpGroupInfo;
+import com.yahoo.vespa.hosted.provision.applications.Cluster;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.time.Duration;
+import java.util.Optional;
 
 /**
  * A class which can take a partial JSON node/v2 application JSON structure and apply it to an application object.
@@ -47,13 +51,9 @@ public class ApplicationPatcher implements AutoCloseable {
 
     /** Applies the json to the application and returns it. */
     public Application apply() {
-        inspector.traverse((String name, Inspector value) -> {
-            try {
-                application = applyField(application, name, value);
-            } catch (IllegalArgumentException e) {
-                throw new IllegalArgumentException("Could not set field '" + name + "'", e);
-            }
-        });
+        inspector.field("currentReadShare").ifValid(v -> application = application.with(application.status().withCurrentReadShare(asDouble(v))));
+        inspector.field("maxReadShare").ifValid(v -> application = application.with(application.status().withMaxReadShare(asDouble(v))));
+        inspector.field("clusters").ifValid(cluster -> application = applyClustersField(cluster));
         return application;
     }
 
@@ -67,13 +67,20 @@ public class ApplicationPatcher implements AutoCloseable {
         lock.close();
     }
 
-    private Application applyField(Application application, String name, Inspector value) {
-        return switch (name) {
-            case "currentReadShare" -> application.with(application.status().withCurrentReadShare(asDouble(value)));
-            case "maxReadShare" -> application.with(application.status().withMaxReadShare(asDouble(value)));
-            default -> throw new IllegalArgumentException("Could not apply field '" + name +
-                                                          "' on an application: No such modifiable field");
-        };
+    private Application applyClustersField(Inspector clusters) {
+        clusters.traverse((String key, Inspector cluster) -> application = applyClusterField(key, cluster));
+        return application;
+    }
+
+    private Application applyClusterField(String id, Inspector clusterObject) {
+        Optional<Cluster> cluster = application.cluster(ClusterSpec.Id.from(id));
+        if (cluster.isEmpty()) return application;
+        Inspector bcpGroupInfoObject = clusterObject.field("bcpGroupInfo");
+        if ( ! bcpGroupInfoObject.valid()) return application;
+        double queryRate = bcpGroupInfoObject.field("queryRate").asDouble();
+        double growthRateHeadroom = bcpGroupInfoObject.field("growthRateHeadroom").asDouble();
+        double cpuCostPerQuery = bcpGroupInfoObject.field("cpuCostPerQuery").asDouble();
+        return application.with(cluster.get().with(new BcpGroupInfo(queryRate, growthRateHeadroom, cpuCostPerQuery)));
     }
 
     private Double asDouble(Inspector field) {

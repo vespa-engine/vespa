@@ -20,7 +20,7 @@ public class Application {
 
     public Application(ApplicationId id, Collection<Cluster> clusters) {
         this.id = id;
-        this.clusters = clusters.stream().collect(Collectors.toUnmodifiableMap(c -> c.id(), c -> c));
+        this.clusters = clusters.stream().collect(Collectors.toMap(c -> c.id(), c -> c));
     }
 
     public ApplicationId id() { return id; }

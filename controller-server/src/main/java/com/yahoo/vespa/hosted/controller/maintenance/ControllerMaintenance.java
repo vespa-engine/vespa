@@ -46,6 +46,7 @@ public class ControllerMaintenance extends AbstractComponent {
         maintainers.add(osUpgradeScheduler);
         maintainers.addAll(osUpgraders(controller, intervals.osUpgrader));
         maintainers.add(new DeploymentExpirer(controller, intervals.defaultInterval));
+        maintainers.add(new DeploymentInfoMaintainer(controller, intervals.deploymentInfoMaintainer));
         maintainers.add(new DeploymentUpgrader(controller, intervals.defaultInterval));
         maintainers.add(new DeploymentIssueReporter(controller, controller.serviceRegistry().deploymentIssues(), intervals.defaultInterval));
         maintainers.add(new MetricsReporter(controller, metric, athenzClientFactory.createZmsClient()));
@@ -67,7 +68,7 @@ public class ControllerMaintenance extends AbstractComponent {
         maintainers.add(new HostInfoUpdater(controller, intervals.hostInfoUpdater));
         maintainers.add(new ReindexingTriggerer(controller, intervals.reindexingTriggerer));
         maintainers.add(new EndpointCertificateMaintainer(controller, intervals.endpointCertificateMaintainer));
-        maintainers.add(new TrafficShareUpdater(controller, intervals.trafficFractionUpdater));
+        maintainers.add(new BcpGroupUpdater(controller, intervals.trafficFractionUpdater));
         maintainers.add(new ArchiveUriUpdater(controller, intervals.archiveUriUpdater));
         maintainers.add(new ArchiveAccessMaintainer(controller, metric, intervals.archiveAccessMaintainer));
         maintainers.add(new TenantRoleMaintainer(controller, intervals.tenantRoleMaintainer));
@@ -109,6 +110,7 @@ public class ControllerMaintenance extends AbstractComponent {
         private final SystemName system;
 
         private final Duration defaultInterval;
+        private final Duration deploymentInfoMaintainer;
         private final Duration outstandingChangeDeployer;
         private final Duration versionStatusUpdater;
         private final Duration readyJobsTrigger;
@@ -143,6 +145,7 @@ public class ControllerMaintenance extends AbstractComponent {
         public Intervals(SystemName system) {
             this.system = Objects.requireNonNull(system);
             this.defaultInterval = duration(system.isCd() ? 1 : 5, MINUTES);
+            this.deploymentInfoMaintainer = duration(system.isCd() ? 1 : 10, MINUTES);
             this.outstandingChangeDeployer = duration(3, MINUTES);
             this.versionStatusUpdater = duration(3, MINUTES);
             this.readyJobsTrigger = duration(1, MINUTES);
