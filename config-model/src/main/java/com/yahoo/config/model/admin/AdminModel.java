@@ -20,6 +20,7 @@ import org.w3c.dom.Element;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.logging.Level;
 
 /**
  * Config model adaptor of the Admin class.
@@ -51,7 +52,7 @@ public class AdminModel extends ConfigModel {
         if (admin == null) return;
         if (admin.getClusterControllers() != null) admin.getClusterControllers().prepare(deployState);
         if (admin.getMetricsProxyCluster() != null) admin.getMetricsProxyCluster().prepare(deployState);
-        admin.getLogServerContainerCluster().ifPresent((ContainerCluster cc) -> cc.prepare(deployState));
+        admin.getLogServerContainerCluster().ifPresent((ContainerCluster<?> cc) -> cc.prepare(deployState));
     }
 
     private void verifyClusterControllersOnlyDefinedForContent(ConfigModelRepo configModelRepo) {
@@ -110,6 +111,12 @@ public class AdminModel extends ConfigModel {
 
         @Override
         public void doBuild(AdminModel model, Element adminElement, ConfigModelContext modelContext) {
+            // TODO: Remove in Vespa 9
+            if ("3.0".equals(adminElement.getAttribute("version")))
+                modelContext.getDeployState().getDeployLogger()
+                            .logApplicationPackage(Level.WARNING, "admin model version 3.0 is deprecated and support will removed in Vespa 9, " +
+                                    "please use version 4.0 or remove the element completely. See https://cloud.vespa.ai/en/reference/services#ignored-elements");
+
             TreeConfigProducer<AnyConfigProducer> parent = modelContext.getParentProducer();
             ModelContext.Properties properties = modelContext.getDeployState().getProperties();
             DomAdminV4Builder domBuilder = new DomAdminV4Builder(modelContext,
