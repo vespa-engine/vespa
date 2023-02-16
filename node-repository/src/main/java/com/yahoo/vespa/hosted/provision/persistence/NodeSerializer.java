@@ -167,7 +167,7 @@ public class NodeSerializer {
         object.setString(hostnameKey, node.hostname());
         object.setString(stateKey, toString(node.state()));
         toSlime(node.ipConfig().primary(), object.setArray(ipAddressesKey));
-        toSlime(node.ipConfig().pool().ipSet(), object.setArray(ipAddressPoolKey));
+        toSlime(node.ipConfig().pool().asSet(), object.setArray(ipAddressPoolKey));
         toSlime(node.ipConfig().pool().hostnames(), object);
         object.setString(idKey, node.id());
         node.parentHostname().ifPresent(hostname -> object.setString(parentHostnameKey, hostname));
@@ -277,9 +277,9 @@ public class NodeSerializer {
     private Node nodeFromSlime(Inspector object) {
         Flavor flavor = flavorFromSlime(object);
         return new Node(object.field(idKey).asString(),
-                        new IP.Config(ipAddressesFromSlime(object, ipAddressesKey),
-                                      ipAddressesFromSlime(object, ipAddressPoolKey),
-                                      hostnamesFromSlime(object)),
+                        IP.Config.of(ipAddressesFromSlime(object, ipAddressesKey),
+                                     ipAddressesFromSlime(object, ipAddressPoolKey),
+                                     hostnamesFromSlime(object)),
                         object.field(hostnameKey).asString(),
                         SlimeUtils.optionalString(object.field(parentHostnameKey)),
                         flavor,
