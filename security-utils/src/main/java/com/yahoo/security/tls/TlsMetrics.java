@@ -10,27 +10,27 @@ import java.util.concurrent.atomic.AtomicLong;
 public class TlsMetrics {
     private static final TlsMetrics instance = new TlsMetrics();
 
-    private final AtomicLong capabilitiesSucceeded = new AtomicLong(0);
-    private final AtomicLong capabilitiesFailed = new AtomicLong(0);
+    private final AtomicLong capabilityChecksSucceeded = new AtomicLong(0);
+    private final AtomicLong capabilityChecksFailed = new AtomicLong(0);
 
     private TlsMetrics() {}
 
     public static TlsMetrics instance() { return instance; }
 
-    void incrementCapabilitiesSucceeded() { capabilitiesSucceeded.incrementAndGet(); }
-    void incrementCapabilitiesFailed() { capabilitiesFailed.incrementAndGet(); }
+    void incrementCapabilitiesSucceeded() { capabilityChecksSucceeded.incrementAndGet(); }
+    void incrementCapabilitiesFailed() { capabilityChecksFailed.incrementAndGet(); }
     public Snapshot snapshot() { return new Snapshot(this); }
 
-    public record Snapshot(long capabilitiesSucceeded, long capabilitiesFailed) {
+    public record Snapshot(long capabilityChecksSucceeded, long capabilityChecksFailed) {
         public static final Snapshot EMPTY = new Snapshot(0, 0);
-        private Snapshot(TlsMetrics m) { this(m.capabilitiesSucceeded.get(), m.capabilitiesFailed.get()); }
+        private Snapshot(TlsMetrics m) { this(m.capabilityChecksSucceeded.get(), m.capabilityChecksFailed.get()); }
         public Diff changesSince(Snapshot previous) { return new Diff(this, previous); }
     }
 
-    public record Diff(long capabilitiesSucceeded, long capabilitiesFailed) {
+    public record Diff(long capabilityChecksSucceeded, long capabilityChecksFailed) {
         private Diff(Snapshot current, Snapshot previous) {
-            this(current.capabilitiesSucceeded - previous.capabilitiesSucceeded,
-                 current.capabilitiesFailed - previous.capabilitiesFailed);
+            this(current.capabilityChecksSucceeded - previous.capabilityChecksSucceeded,
+                 current.capabilityChecksFailed - previous.capabilityChecksFailed);
         }
     }
 }

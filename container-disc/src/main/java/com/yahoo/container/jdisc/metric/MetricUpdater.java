@@ -147,8 +147,8 @@ public class MetricUpdater extends AbstractComponent {
         private void tlsMetrics() {
             var newSnapshot = TlsMetrics.instance().snapshot();
             var diff = newSnapshot.changesSince(tlsMetricsSnapshot);
-            metric.set(ContainerMetrics.JDISC_TLS_CAPABILITIES_SUCCEEDED.baseName(), diff.capabilitiesSucceeded(), null);
-            metric.set(ContainerMetrics.JDISC_TLS_CAPABILITIES_FAILED.baseName(), diff.capabilitiesFailed(), null);
+            metric.add(ContainerMetrics.JDISC_TLS_CAPABILITY_CHECKS_SUCCEEDED.baseName(), diff.capabilityChecksSucceeded(), null);
+            metric.add(ContainerMetrics.JDISC_TLS_CAPABILITY_CHECKS_FAILED.baseName(), diff.capabilityChecksFailed(), null);
             tlsMetricsSnapshot = newSnapshot;
         }
 
@@ -170,6 +170,7 @@ public class MetricUpdater extends AbstractComponent {
             garbageCollectionMetrics.emitMetrics(metric);
             jrtMetrics.emitMetrics();
             jvmDetails();
+            tlsMetrics();
         }
     }
 

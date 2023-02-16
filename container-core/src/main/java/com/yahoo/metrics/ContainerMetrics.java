@@ -60,8 +60,8 @@ public enum ContainerMetrics implements VespaMetrics {
     JDISC_HTTP_FILTERING_RESPONSE_UNHANDLED("jdisc.http.filtering.response.unhandled", Unit.REQUEST, "Number of filtering responses unhandled"),
     JDISC_HTTP_HANDLER_UNHANDLED_EXCEPTIONS("jdisc.http.handler.unhandled_exceptions", Unit.REQUEST, "Number of unhandled exceptions in handler"),
 
-    JDISC_TLS_CAPABILITIES_SUCCEEDED("jdisc.tls.capabilities.succeeded", Unit.OPERATION, "Number of TLS capability checks succeeded"),
-    JDISC_TLS_CAPABILITIES_FAILED("jdisc.tls.capabilities.failed", Unit.OPERATION, "Number of TLS capability checks failed"),
+    JDISC_TLS_CAPABILITY_CHECKS_SUCCEEDED("jdisc.tls.capability_checks.succeeded", Unit.OPERATION, "Number of TLS capability checks succeeded"),
+    JDISC_TLS_CAPABILITY_CHECKS_FAILED("jdisc.tls.capability_checks.failed", Unit.OPERATION, "Number of TLS capability checks failed"),
 
     JETTY_THREADPOOL_MAX_THREADS("jdisc.http.jetty.threadpool.thread.max", Unit.THREAD, "Configured maximum number of threads"),
     JETTY_THREADPOOL_MIN_THREADS("jdisc.http.jetty.threadpool.thread.min", Unit.THREAD, "Configured minimum number of threads"),

@@ -236,8 +236,8 @@ public class VespaMetricSet {
         addMetric(metrics, ContainerMetrics.SERVER_THREAD_POOL_SIZE, EnumSet.of(max, last));                // TODO: Remove on Vespa 9. Use jdisc.thread_pool.rejected_tasks.
         addMetric(metrics, ContainerMetrics.SERVER_ACTIVE_THREADS, EnumSet.of(min, max, sum, count, last)); // TODO: Remove on Vespa 9. Use jdisc.thread_pool.rejected_tasks.
 
-        addMetric(metrics, ContainerMetrics.JDISC_TLS_CAPABILITIES_SUCCEEDED.rate());
-        addMetric(metrics, ContainerMetrics.JDISC_TLS_CAPABILITIES_FAILED.rate());
+        addMetric(metrics, ContainerMetrics.JDISC_TLS_CAPABILITY_CHECKS_SUCCEEDED.rate());
+        addMetric(metrics, ContainerMetrics.JDISC_TLS_CAPABILITY_CHECKS_FAILED.rate());
 
         return metrics;
     }
