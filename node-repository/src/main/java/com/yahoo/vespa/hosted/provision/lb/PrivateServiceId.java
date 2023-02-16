@@ -11,7 +11,7 @@ import java.util.regex.Pattern;
  */
 public class PrivateServiceId extends PatternedStringWrapper<PrivateServiceId> {
 
-    static final Pattern pattern = Pattern.compile("[a-z0-9._-]{1,63}");
+    static final Pattern pattern = Pattern.compile("[a-zA-Z0-9/._-]{1,255}");
 
     private PrivateServiceId(String value) {
         super(value, pattern, "Private service ID");
