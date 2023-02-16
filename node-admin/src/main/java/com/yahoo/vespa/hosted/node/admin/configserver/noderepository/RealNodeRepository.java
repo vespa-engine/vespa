@@ -22,6 +22,7 @@ import com.yahoo.vespa.hosted.node.admin.wireguard.ConfigserverPeer;
 
 import java.net.URI;
 import java.time.Instant;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -134,6 +135,7 @@ public class RealNodeRepository implements NodeRepository {
                                                                 GetWireguardResponse.class);
         return nodeResponse.configservers.stream()
                 .map(RealNodeRepository::createConfigserverPeer)
+                .sorted(Comparator.comparing(ConfigserverPeer::hostname))
                 .toList();
     }
 
