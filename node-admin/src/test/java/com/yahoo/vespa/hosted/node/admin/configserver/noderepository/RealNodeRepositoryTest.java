@@ -11,6 +11,8 @@ import com.yahoo.config.provision.WireguardKey;
 import com.yahoo.config.provision.host.FlavorOverrides;
 import com.yahoo.vespa.hosted.node.admin.configserver.ConfigServerApi;
 import com.yahoo.vespa.hosted.node.admin.configserver.ConfigServerApiImpl;
+import com.yahoo.vespa.hosted.node.admin.task.util.network.VersionedIpAddress;
+import com.yahoo.vespa.hosted.node.admin.wireguard.ConfigserverPeer;
 import com.yahoo.vespa.hosted.provision.restapi.NodesV2ApiHandler;
 import com.yahoo.vespa.hosted.provision.testutils.ContainerConfig;
 import org.junit.jupiter.api.AfterEach;
@@ -194,6 +196,32 @@ public class RealNodeRepositoryTest {
         NodeSpec nodeSpec = nodeRepositoryApi.getOptionalNode("host123-1.domain.tld").orElseThrow();
         assertEquals(nodeResources, nodeSpec.resources());
         assertEquals(NodeType.config, nodeSpec.type());
+    }
+
+    @Test
+    void wireguard_peer_config_for_configservers_can_be_retrieved() {
+        List<ConfigserverPeer> cfgPeers =  nodeRepositoryApi.getConfigserverPeers();
+        assertEquals(2, cfgPeers.size());
+
+        var cfg1 = cfgPeers.get(0);
+        assertEquals("cfg1.yahoo.com", cfg1.hostname().value());
+        assertEquals(2, cfg1.ipAddresses().size());
+        assertIp(cfg1.ipAddresses().get(0), "127.0.201.1", 4);
+        assertIp(cfg1.ipAddresses().get(1), "::201:1", 6);
+        assertEquals("lololololololololololololololololololololoo=", cfg1.publicKey().value());
+
+        var cfg2 = cfgPeers.get(1);
+        assertEquals("cfg2.yahoo.com", cfg2.hostname().value());
+        assertEquals(2, cfg1.ipAddresses().size());
+        assertIp(cfg2.ipAddresses().get(0), "127.0.202.1", 4);
+        assertIp(cfg2.ipAddresses().get(1), "::202:1", 6);
+        assertEquals("olololololololololololololololololololololo=", cfg2.publicKey().value());
+
+    }
+
+    private void assertIp(VersionedIpAddress ip, String expectedIp, int expectedVersion) {
+        assertEquals(expectedIp, ip.asString());
+        assertEquals(expectedVersion, ip.version().version());
     }
 
 }
