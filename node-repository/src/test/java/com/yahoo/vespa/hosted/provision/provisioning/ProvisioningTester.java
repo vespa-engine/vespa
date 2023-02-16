@@ -201,7 +201,7 @@ public class ProvisioningTester {
             try (var lock = nodeRepository.nodes().lockAndGetRequired(prepared.hostname())) {
                 Node node = lock.node();
                 if (node.ipConfig().primary().isEmpty()) {
-                    node = node.with(new IP.Config(Set.of("::" + 0 + ":0"), Set.of()));
+                    node = node.with(IP.Config.of(Set.of("::" + 0 + ":0"), Set.of()));
                     nodeRepository.nodes().write(node, lock);
                 }
                 if (node.parentHostname().isEmpty()) continue;
@@ -209,7 +209,7 @@ public class ProvisioningTester {
                 if (parent.state() == Node.State.active) continue;
                 NestedTransaction t = new NestedTransaction();
                 if (parent.ipConfig().primary().isEmpty())
-                    parent = parent.with(new IP.Config(Set.of("::" + 0 + ":0"), Set.of("::" + 0 + ":2")));
+                    parent = parent.with(IP.Config.of(Set.of("::" + 0 + ":0"), Set.of("::" + 0 + ":2")));
                 nodeRepository.nodes().activate(List.of(parent), t);
                 t.commit();
             }
@@ -447,7 +447,7 @@ public class ProvisioningTester {
                     nameResolver.addRecord(nodeHostname, ipv4Addr);
                 }
             }
-            Node.Builder builder = Node.create(hostname, new IP.Config(hostIps, ipAddressPool), hostname, flavor, type);
+            Node.Builder builder = Node.create(hostname, IP.Config.of(hostIps, ipAddressPool), hostname, flavor, type);
             reservedTo.ifPresent(builder::reservedTo);
             nodes.add(builder.build());
         }
@@ -464,8 +464,8 @@ public class ProvisioningTester {
             String ipv4 = "127.0.1." + i;
 
             nameResolver.addRecord(hostname, ipv4);
-            Node node = Node.create(hostname, new IP.Config(Set.of(ipv4), Set.of()), hostname,
-                    nodeFlavors.getFlavorOrThrow(flavor), NodeType.config).build();
+            Node node = Node.create(hostname, IP.Config.of(Set.of(ipv4), Set.of()), hostname,
+                                    nodeFlavors.getFlavorOrThrow(flavor), NodeType.config).build();
             nodes.add(node);
         }
 
@@ -532,7 +532,7 @@ public class ProvisioningTester {
         List<Node> nodes = new ArrayList<>(count);
         for (int i = startIndex; i < count + startIndex; i++) {
             String hostname = nodeNamer.apply(i);
-            IP.Config ipConfig = new IP.Config(nodeRepository.nameResolver().resolveAll(hostname), Set.of());
+            IP.Config ipConfig = IP.Config.of(nodeRepository.nameResolver().resolveAll(hostname), Set.of());
             Node node = Node.create("node-id", ipConfig, hostname, new Flavor(resources), nodeType)
                             .parentHostname(parentHostname)
                             .build();

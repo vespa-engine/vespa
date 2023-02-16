@@ -9,6 +9,7 @@ import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.NetworkPorts;
 import com.yahoo.config.provision.NodeFlavors;
@@ -23,7 +24,6 @@ import com.yahoo.test.ManualClock;
 import com.yahoo.text.Utf8;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.Node.State;
-import com.yahoo.vespa.hosted.provision.node.Address;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.Generation;
 import com.yahoo.vespa.hosted.provision.node.History;
@@ -249,7 +249,7 @@ public class NodeSerializerTest {
     @Test
     public void serialize_parent_hostname() {
         final String parentHostname = "parent.yahoo.com";
-        Node node = Node.create("myId", new IP.Config(Set.of("127.0.0.1"), Set.of()), "myHostname", nodeFlavors.getFlavorOrThrow("default"), NodeType.tenant)
+        Node node = Node.create("myId", IP.Config.of(Set.of("127.0.0.1"), Set.of()), "myHostname", nodeFlavors.getFlavorOrThrow("default"), NodeType.tenant)
                 .parentHostname(parentHostname)
                 .build();
 
@@ -272,16 +272,14 @@ public class NodeSerializerTest {
         // Test round-trip with address pool
         node = node.with(node.ipConfig().withPool(IP.Pool.of(
                 Set.of("::1", "::2", "::3"),
-                List.of(new Address("a"), new Address("b"), new Address("c")))));
+                List.of(HostName.of("a"), HostName.of("b"), HostName.of("c")))));
         Node copy = nodeSerializer.fromJson(nodeSerializer.toJson(node));
-        assertEquals(node.ipConfig().pool().ipSet(), copy.ipConfig().pool().ipSet());
-        assertEquals(Set.copyOf(node.ipConfig().pool().getAddressList()), Set.copyOf(copy.ipConfig().pool().getAddressList()));
+        assertEquals(node.ipConfig(), copy.ipConfig());
 
         // Test round-trip without address pool (handle empty pool)
         node = createNode();
         copy = nodeSerializer.fromJson(nodeSerializer.toJson(node));
-        assertEquals(node.ipConfig().pool().ipSet(), copy.ipConfig().pool().ipSet());
-        assertEquals(Set.copyOf(node.ipConfig().pool().getAddressList()), Set.copyOf(copy.ipConfig().pool().getAddressList()));
+        assertEquals(node.ipConfig(), copy.ipConfig());
     }
 
     @Test
@@ -529,7 +527,7 @@ public class NodeSerializerTest {
 
     private Node createNode() {
         return Node.create("myId",
-                           new IP.Config(Set.of("127.0.0.1"), Set.of()),
+                           IP.Config.of(Set.of("127.0.0.1"), Set.of()),
                            "myHostname",
                            nodeFlavors.getFlavorOrThrow("default"),
                            NodeType.tenant).build();

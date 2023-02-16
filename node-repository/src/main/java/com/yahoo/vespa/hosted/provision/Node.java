@@ -116,11 +116,11 @@ public final class Node implements Nodelike {
 
         if (state == State.ready && type.isHost()) {
             requireNonEmpty(ipConfig.primary(), "A " + type + " must have at least one primary IP address in state " + state);
-            requireNonEmpty(ipConfig.pool().ipSet(), "A " + type + " must have a non-empty IP address pool in state " + state);
+            requireNonEmpty(ipConfig.pool().asSet(), "A " + type + " must have a non-empty IP address pool in state " + state);
         }
 
         if (parentHostname.isPresent()) {
-            if (!ipConfig.pool().ipSet().isEmpty()) throw new IllegalArgumentException("A child node cannot have an IP address pool");
+            if (!ipConfig.pool().asSet().isEmpty()) throw new IllegalArgumentException("A child node cannot have an IP address pool");
             if (modelName.isPresent()) throw new IllegalArgumentException("A child node cannot have model name set");
             if (switchHostname.isPresent()) throw new IllegalArgumentException("A child node cannot have switch hostname set");
             if (status.wantToRebuild()) throw new IllegalArgumentException("A child node cannot be rebuilt");

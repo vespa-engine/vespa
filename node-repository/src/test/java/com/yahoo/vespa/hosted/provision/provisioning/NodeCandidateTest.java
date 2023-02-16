@@ -146,7 +146,7 @@ public class NodeCandidateTest {
                 .parentHostname(hostname + "parent")
                 .ipConfigWithEmptyPool(Set.of("::1")).build();
         Node parent = Node.create(hostname + "parent", hostname, new Flavor(totalHostResources), Node.State.ready, NodeType.host)
-                          .ipConfig(new IP.Config(Set.of("::1"), Set.of("::2")))
+                          .ipConfig(IP.Config.of(Set.of("::1"), Set.of("::2")))
                           .build();
         return new NodeCandidate.ConcreteNodeCandidate(node, totalHostResources.subtract(allocatedHostResources), Optional.of(parent),
                                                        false, exclusiveSwitch, false, true, false);
