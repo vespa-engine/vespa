@@ -3,11 +3,11 @@
 #pragma once
 
 #include "isequencedtaskexecutor.h"
+#include "thread.h"
 #include <vespa/vespalib/util/executor_idle_tracking.h>
 #include <vespa/vespalib/util/arrayqueue.hpp>
 #include <vespa/vespalib/util/gate.h>
 #include <vespa/vespalib/util/eventbarrier.hpp>
-#include <vespa/fastos/thread.h>
 #include <mutex>
 #include <condition_variable>
 #include <optional>
@@ -113,14 +113,12 @@ private:
     /**
      * Stuff related to worker thread startup and shutdown.
      **/
-    struct ThreadTools : FastOS_Runnable {
-        static constexpr size_t STACK_SIZE = (256 * 1024);
+    struct ThreadTools {
         AdaptiveSequencedExecutor &parent;
-        std::unique_ptr<FastOS_ThreadPool> pool;
+        ThreadPool pool;
         Gate allow_worker_exit;
         ThreadTools(AdaptiveSequencedExecutor &parent_in);
         ~ThreadTools();
-        void Run(FastOS_ThreadInterface *, void *) override;
         void start(size_t num_threads);
         void close();
     };
