@@ -116,12 +116,9 @@ public class CapacityPolicies {
             return versioned(clusterSpec, Map.of(new Version(0), smallestExclusiveResources()));
         }
         // TODO (hmusum): Go back to 1.14 Gb memory when bug in resource limits for admin nodes
-        // have been fixed
-        if (architecture == Architecture.arm64) {
-            return versioned(clusterSpec, Map.of(new Version(0), new NodeResources(0.25, 1.14, 10, 0.3),
-                                                 new Version(8, 127, 11), new NodeResources(0.25, 1.5, 10, 0.3)));
-        }
-        return versioned(clusterSpec, Map.of(new Version(0), new NodeResources(0.25, 1.14, 10, 0.3)));
+        // has been fixed
+        return versioned(clusterSpec, Map.of(new Version(0), new NodeResources(0.25, 1.14, 10, 0.3),
+                                             new Version(8, 127, 11), new NodeResources(0.25, 1.5, 10, 0.3)));
     }
 
     private Architecture adminClusterArchitecture(ApplicationId instance) {
