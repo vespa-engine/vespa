@@ -208,14 +208,14 @@ public class RealNodeRepositoryTest {
         assertEquals(2, cfg1.ipAddresses().size());
         assertIp(cfg1.ipAddresses().get(0), "127.0.201.1", 4);
         assertIp(cfg1.ipAddresses().get(1), "::201:1", 6);
-        assertEquals("lololololololololololololololololololololoo=", cfg1.publicKey().value());
+        assertEquals("lololololololololololololololololololololoo=", cfg1.publicKey().get().value());
 
         var cfg2 = cfgPeers.get(1);
         assertEquals("cfg2.yahoo.com", cfg2.hostname().value());
         assertEquals(2, cfg1.ipAddresses().size());
         assertIp(cfg2.ipAddresses().get(0), "127.0.202.1", 4);
         assertIp(cfg2.ipAddresses().get(1), "::202:1", 6);
-        assertEquals("olololololololololololololololololololololo=", cfg2.publicKey().value());
+        assertEquals("olololololololololololololololololololololo=", cfg2.publicKey().get().value());
 
     }
 
