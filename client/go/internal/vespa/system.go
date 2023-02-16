@@ -13,7 +13,7 @@ var PublicSystem = System{
 // PublicCDSystem represents the CD variant of the Vespa Cloud system.
 var PublicCDSystem = System{
 	Name:        "publiccd",
-	URL:         "https://api-ctl.cd.vespa-cloud.com:4443",
+	URL:         "https://api-internal.cd.vespa-cloud.com:4443",
 	ConsoleURL:  "https://console.cd.vespa-cloud.com",
 	DefaultZone: ZoneID{Environment: "dev", Region: "aws-us-east-1c"},
 }
