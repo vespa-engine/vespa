@@ -2,18 +2,20 @@
 package com.yahoo.vespa.model.builder.xml.dom;
 
 import com.yahoo.config.application.Xml;
+import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.model.ConfigModelContext;
 import com.yahoo.config.model.builder.xml.ConfigModelBuilder;
 import com.yahoo.config.model.builder.xml.ConfigModelId;
-import com.yahoo.messagebus.routing.*;
+import com.yahoo.messagebus.routing.ApplicationSpec;
+import com.yahoo.messagebus.routing.HopSpec;
+import com.yahoo.messagebus.routing.RouteSpec;
+import com.yahoo.messagebus.routing.RoutingSpec;
+import com.yahoo.messagebus.routing.RoutingTableSpec;
 import com.yahoo.text.XML;
-import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.vespa.model.routing.Routing;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
-
-import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -29,7 +31,7 @@ public class DomRoutingBuilder extends ConfigModelBuilder<Routing> {
 
     @Override
     public List<ConfigModelId> handlesElements() {
-        return Arrays.asList(ConfigModelId.fromName("routing"));
+        return List.of(ConfigModelId.fromName("routing"));
     }
 
     // Overrides ConfigModelBuilder.
@@ -71,7 +73,7 @@ public class DomRoutingBuilder extends ConfigModelBuilder<Routing> {
      * @param element The element to base the route config on.
      */
     private static void addRoutingTable(RoutingSpec routing, Element element) {
-        boolean verify = element.hasAttribute("verify") ? Boolean.valueOf(element.getAttribute("verify")) : true;
+        boolean verify = shouldVerify(element);
         RoutingTableSpec table = new RoutingTableSpec(element.getAttribute("protocol"), verify);
 
         NodeList children = element.getChildNodes();
@@ -94,7 +96,7 @@ public class DomRoutingBuilder extends ConfigModelBuilder<Routing> {
      * @return The corresponding route spec.
      */
     private static RouteSpec createRouteSpec(Element element) {
-        boolean verify = element.hasAttribute("verify") ? Boolean.valueOf(element.getAttribute("verify")) : true;
+        boolean verify = shouldVerify(element);
         RouteSpec route = new RouteSpec(element.getAttribute("name"), verify);
         String hops = element.getAttribute("hops");
         int from = 0;
@@ -123,9 +125,9 @@ public class DomRoutingBuilder extends ConfigModelBuilder<Routing> {
      * @return The corresponding hop spec.
      */
     private static HopSpec createHopSpec(Element element) {
-        boolean verify = element.hasAttribute("verify") ? Boolean.valueOf(element.getAttribute("verify")) : true;
+        boolean verify = shouldVerify(element);
         HopSpec hop = new HopSpec(element.getAttribute("name"), element.getAttribute("selector"), verify);
-        if (Boolean.valueOf(element.getAttribute("ignore-result"))) {
+        if (Boolean.parseBoolean(element.getAttribute("ignore-result"))) {
             hop.setIgnoreResult(true);
         }
         NodeList children = element.getElementsByTagName("recipient");
@@ -134,5 +136,9 @@ public class DomRoutingBuilder extends ConfigModelBuilder<Routing> {
             hop.addRecipient(node.getAttribute("session"));
         }
         return hop;
+    }
+
+    private static boolean shouldVerify(Element element) {
+        return !element.hasAttribute("verify") || Boolean.parseBoolean(element.getAttribute("verify"));
     }
 }
