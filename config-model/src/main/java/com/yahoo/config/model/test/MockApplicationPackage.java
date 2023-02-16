@@ -215,13 +215,6 @@ public class MockApplicationPackage implements ApplicationPackage {
         return new MockApplicationPackage.Builder().withHosts(emptyHosts).withServices(emptyServices).build();
     }
 
-    public static ApplicationPackage fromSearchDefinitionDirectory(String dir) {
-        return new MockApplicationPackage.Builder()
-                       .withEmptyHosts()
-                       .withEmptyServices()
-                       .withSchemaDir(dir).build();
-    }
-
     // TODO: It might work to just merge this and the above
     public static ApplicationPackage fromSearchDefinitionAndRootDirectory(String dir) {
         return new MockApplicationPackage.Builder()

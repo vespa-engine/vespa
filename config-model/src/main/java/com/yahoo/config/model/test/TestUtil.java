@@ -4,8 +4,6 @@ package com.yahoo.config.model.test;
 import com.yahoo.collections.CollectionUtil;
 import com.yahoo.config.model.builder.xml.XmlHelper;
 import org.w3c.dom.Element;
-import org.xml.sax.InputSource;
-
 import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -35,7 +33,4 @@ public class TestUtil {
         return String.join("\n", lines);
     }
 
-    private static InputSource inputSource(String str) {
-        return new InputSource(new StringReader(str));
-    }
 }

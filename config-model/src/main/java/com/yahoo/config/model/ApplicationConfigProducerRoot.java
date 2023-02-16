@@ -102,21 +102,6 @@ public class ApplicationConfigProducerRoot extends TreeConfigProducer<AnyConfigP
     }
 
     /**
-     * Returns the Service with the given id, or null if no such
-     * configId exists or if it belongs to a non-Service ConfigProducer.
-     *
-     * @param configId The configId, e.g. "search.0/tld.0"
-     * @return Service with the given configId
-     */
-    public Service getService(String configId) {
-        ConfigProducer cp = getConfigProducer(configId);
-        if (cp == null || !(cp instanceof Service)) {
-            return null;
-        }
-        return (Service) cp;
-    }
-
-    /**
      * Adds the descendant (at any depth level), so it can be looked up
      * on configId in the Map.
      *
