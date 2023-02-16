@@ -343,7 +343,7 @@ public class RealNodeRepository implements NodeRepository {
     private static ConfigserverPeer createConfigserverPeer(GetWireguardResponse.Configserver configServer) {
         return new ConfigserverPeer(HostName.of(configServer.hostname),
                                     configServer.ipAddresses.stream().map(VersionedIpAddress::from).toList(),
-                                    WireguardKey.from(configServer.wireguardPubkey));
+                                    configServer.wireguardKey());
     }
 
 }
