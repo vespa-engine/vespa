@@ -134,14 +134,8 @@ struct Compiler : public Blueprint::DependencyHandler {
             failed_set.insert(feature_name);
             auto trace = make_trace(skip_self);
             vespalib::string msg;
-            if (trace.empty()) {
-                msg = fmt("invalid %s: %s", describe(feature_name).c_str(), reason.c_str());
-            } else {
-                msg = fmt("invalid %s: %s\n%s", describe(feature_name).c_str(), reason.c_str(), trace.c_str());
-            }
-            if (msg.rbegin()[0] == '\n') {
-                msg.pop_back();
-            }
+            msg = fmt("invalid %s: %s\n%s", describe(feature_name).c_str(), reason.c_str(), trace.c_str());
+            msg.chomp();
             errors.emplace_back(msg);
         }
         probe_stack();
