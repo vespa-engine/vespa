@@ -38,7 +38,7 @@ public class UserConfigBuilder {
         ConfigDefinitionKey key = DomConfigPayloadBuilder.parseConfigName(element);
 
         Optional<ConfigDefinition> def = configDefinitionStore.getConfigDefinition(key);
-        if ( ! def.isPresent()) { // TODO: Fail instead of warn
+        if (def.isEmpty()) { // TODO: Fail instead of warn
             logger.logApplicationPackage(Level.WARNING, "Unable to find config definition '" + key.asFileName() +
                                          "'. Please ensure that the name is spelled correctly, and that the def file is included in a bundle.");
         }

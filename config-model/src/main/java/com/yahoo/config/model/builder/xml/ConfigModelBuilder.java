@@ -88,10 +88,9 @@ public abstract class ConfigModelBuilder<MODEL extends ConfigModel> extends Abst
 
     @Override
     public boolean equals(Object other) {
-        if (!(other instanceof ConfigModelBuilder)) {
+        if (!(other instanceof ConfigModelBuilder<?> otherBuilder)) {
             return false;
         }
-        ConfigModelBuilder<?> otherBuilder = (ConfigModelBuilder<?>) other;
         List<ConfigModelId> thisIds = this.handlesElements();
         List<ConfigModelId> otherIds = otherBuilder.handlesElements();
         if (thisIds.size() != otherIds.size()) {

@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.model.producer;
 
-import com.yahoo.api.annotations.Beta;
 import com.yahoo.config.ConfigInstance;
 import com.yahoo.config.model.ApplicationConfigProducerRoot;
 import com.yahoo.config.model.deploy.DeployState;
@@ -16,11 +15,8 @@ import com.yahoo.vespa.model.HostSystem;
 import com.yahoo.vespa.model.Service;
 import com.yahoo.vespa.model.admin.Admin;
 import com.yahoo.vespa.model.admin.monitoring.Monitoring;
-
 import java.io.Serializable;
-import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 

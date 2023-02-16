@@ -1,12 +1,11 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.builder;
 
-import com.yahoo.config.application.api.DeployLogger;
+import com.yahoo.config.model.ApplicationConfigProducerRoot;
 import com.yahoo.config.model.ConfigModelRepo;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AnyConfigProducer;
 import com.yahoo.config.model.producer.TreeConfigProducer;
-import com.yahoo.config.model.ApplicationConfigProducerRoot;
 
 /**
  * Base class for classes capable of building vespa model.

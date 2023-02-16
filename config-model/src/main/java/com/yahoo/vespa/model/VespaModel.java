@@ -24,7 +24,6 @@ import com.yahoo.config.model.api.Model;
 import com.yahoo.config.model.api.Provisioned;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AnyConfigProducer;
-import com.yahoo.config.model.producer.TreeConfigProducer;
 import com.yahoo.config.model.producer.AbstractConfigProducerRoot;
 import com.yahoo.config.model.producer.UserConfigRepo;
 import com.yahoo.config.provision.AllocatedHosts;

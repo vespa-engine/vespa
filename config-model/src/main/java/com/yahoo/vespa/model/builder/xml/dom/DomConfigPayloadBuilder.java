@@ -2,7 +2,6 @@
 package com.yahoo.vespa.model.builder.xml.dom;
 
 import com.yahoo.collections.Tuple2;
-import com.yahoo.config.ConfigurationRuntimeException;
 import com.yahoo.config.FileReference;
 import com.yahoo.config.ModelReference;
 import com.yahoo.config.UrlReference;

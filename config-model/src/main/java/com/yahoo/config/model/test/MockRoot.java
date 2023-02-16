@@ -7,7 +7,6 @@ import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.ConfigModelRepo;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AnyConfigProducer;
-import com.yahoo.config.model.producer.TreeConfigProducer;
 import com.yahoo.config.model.producer.AbstractConfigProducerRoot;
 import com.yahoo.vespa.model.ConfigProducer;
 import com.yahoo.vespa.model.HostSystem;

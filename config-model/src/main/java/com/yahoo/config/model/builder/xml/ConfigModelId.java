@@ -42,8 +42,7 @@ public class ConfigModelId implements Comparable<ConfigModelId> {
 
     @Override
     public boolean equals(Object object) {
-        if (!(object instanceof ConfigModelId)) return false;
-        ConfigModelId other = (ConfigModelId)object;
+        if (!(object instanceof ConfigModelId other)) return false;
         return this.name.equals(other.name) && this.version.equals(other.version);
     }
 

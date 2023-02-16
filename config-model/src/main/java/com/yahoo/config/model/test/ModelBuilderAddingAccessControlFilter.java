@@ -45,8 +45,7 @@ public class ModelBuilderAddingAccessControlFilter
     }
 
     private static void addFilterToContainerCluster(ContainerModel containerModel) {
-        if (!(containerModel.getCluster() instanceof ApplicationContainerCluster)) return;
-        ApplicationContainerCluster cluster = (ApplicationContainerCluster) containerModel.getCluster();
+        if (!(containerModel.getCluster() instanceof ApplicationContainerCluster cluster)) return;
         Http http = cluster.getHttp();
         if (http.getAccessControl().isPresent()) {
             Chain<Filter> chain = http.getFilterChains()

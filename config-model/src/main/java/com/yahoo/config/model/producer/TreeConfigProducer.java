@@ -3,19 +3,14 @@ package com.yahoo.config.model.producer;
 
 import com.yahoo.api.annotations.Beta;
 import com.yahoo.config.model.ApplicationConfigProducerRoot;
-import com.yahoo.vespa.model.ConfigProducer;
 import com.yahoo.vespa.model.Service;
 import com.yahoo.vespa.model.SimpleConfigProducer;
 import com.yahoo.vespa.model.utils.FreezableMap;
-import java.io.PrintStream;
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * Superclass for all producers with children.
