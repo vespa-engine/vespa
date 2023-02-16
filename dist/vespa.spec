@@ -49,7 +49,6 @@ BuildRequires: epel-release
 %global _centos_stream %(grep -qs '^NAME="CentOS Stream"' /etc/os-release && echo 1 || echo 0)
 BuildRequires: gcc-toolset-12-gcc-c++
 BuildRequires: gcc-toolset-12-binutils
-BuildRequires: gcc-toolset-12-libasan-devel
 BuildRequires: gcc-toolset-12-libatomic-devel
 %define _devtoolset_enable /opt/rh/gcc-toolset-12/enable
 BuildRequires: maven
@@ -63,7 +62,6 @@ BuildRequires: glibc-langpack-en
 %global _centos_stream %(grep -qs '^NAME="CentOS Stream"' /etc/os-release && echo 1 || echo 0)
 BuildRequires: gcc-toolset-12-gcc-c++
 BuildRequires: gcc-toolset-12-binutils
-BuildRequires: gcc-toolset-12-libasan-devel
 BuildRequires: gcc-toolset-12-libatomic-devel
 %define _devtoolset_enable /opt/rh/gcc-toolset-12/enable
 BuildRequires: pybind11-devel
@@ -73,8 +71,6 @@ BuildRequires: glibc-langpack-en
 %endif
 %if 0%{?fedora}
 BuildRequires: gcc-c++
-BuildRequires: libasan
-BuildRequires: libasan-static
 BuildRequires: libatomic
 BuildRequires: pybind11-devel
 BuildRequires: python3-pytest
