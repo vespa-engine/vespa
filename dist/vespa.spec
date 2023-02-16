@@ -411,7 +411,12 @@ then
   then
     :
   else
-    patch $file_to_patch < dist/patch.stl_vector.h.diff
+    if test -w $file_to_patch
+    then
+      patch $file_to_patch < dist/patch.stl_vector.h.diff
+    else
+      echo "Failed patching $file_to_patch since it is not writable for me"
+    fi
   fi
 fi
 
