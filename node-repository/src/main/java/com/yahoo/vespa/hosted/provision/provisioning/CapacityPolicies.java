@@ -9,7 +9,6 @@ import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.NodeResources;
-import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.flags.PermanentFlags;
 import com.yahoo.vespa.flags.StringFlag;
@@ -116,10 +115,11 @@ public class CapacityPolicies {
         if (nodeRepository.exclusiveAllocation(clusterSpec)) {
             return versioned(clusterSpec, Map.of(new Version(0), smallestExclusiveResources()));
         }
-        // Note: Seems like we need more memory for cluster controllers on arm64, trying out in cd
-        if (architecture == Architecture.arm64 && zone.system() == SystemName.cd) {
+        // TODO (hmusum): Go back to 1.14 Gb memory when bug in resource limits for admin nodes
+        // have been fixed
+        if (architecture == Architecture.arm64) {
             return versioned(clusterSpec, Map.of(new Version(0), new NodeResources(0.25, 1.14, 10, 0.3),
-                                                 new Version(8, 125, 23), new NodeResources(0.25, 1.5, 10, 0.3)));
+                                                 new Version(8, 127, 11), new NodeResources(0.25, 1.5, 10, 0.3)));
         }
         return versioned(clusterSpec, Map.of(new Version(0), new NodeResources(0.25, 1.14, 10, 0.3)));
     }
