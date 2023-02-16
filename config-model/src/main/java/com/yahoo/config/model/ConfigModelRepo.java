@@ -132,8 +132,6 @@ public class ConfigModelRepo implements ConfigModelRepoAdder, Serializable, Iter
                 // Top level config, mainly to be used by the Vespa team.
                 continue;
             }
-            if ((tagName.equals("clients")) && deployState.isHosted())
-                throw new IllegalArgumentException("<" + tagName + "> is not allowed when running Vespa in a hosted environment");
 
             String tagVersion = servicesElement.getAttribute("version");
             ConfigModelId xmlId = ConfigModelId.fromNameAndVersion(tagName, tagVersion);
