@@ -25,4 +25,7 @@ else()
 endif()
 
 set_target_properties(vespa_ann_benchmark PROPERTIES CXX_VISIBILITY_PRESET "hidden")
+
+configure_file(setup.py.in setup.py @ONLY)
+
 vespa_install_script(setup.py libexec/vespa_ann_benchmark)

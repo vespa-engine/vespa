@@ -12,7 +12,7 @@ class PreBuiltExt(build_ext):
         print("Using prebuilt extension library")
         libdir="lib.%s-%s-%s" % (sys.platform, platform.machine(), distutils.sysconfig.get_python_version())
         subprocess.run(["mkdir", "-p", "build/%s" % libdir])
-        subprocess.run(["cp", "-p", "vespa_ann_benchmark.*.so build/%s" % libdir])
+        subprocess.run(["cp", "-p", "@PYTHON_MODULE_PREFIX@vespa_ann_benchmark@PYTHON_MODULE_EXTENSION@", "build/%s" % libdir])
 
 setup(
   name="vespa_ann_benchmark",
