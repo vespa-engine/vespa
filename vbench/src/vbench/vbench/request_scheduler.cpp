@@ -71,7 +71,7 @@ void
 RequestScheduler::start()
 {
     _timer.reset();
-    _thread = vespalib::Thread::start(*this, vbench_request_scheduler_thread);
+    _thread = vespalib::thread::start(*this, vbench_request_scheduler_thread);
 }
 
 RequestScheduler &

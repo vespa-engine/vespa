@@ -100,7 +100,7 @@ VBench::run()
 {
     _scheduler->start();
     for (size_t i = 0; i < _inputs.size(); ++i) {
-        _inputs[i]->thread = vespalib::Thread::start(*_inputs[i]->generator, vbench_inputchain_generator);
+        _inputs[i]->thread = vespalib::thread::start(*_inputs[i]->generator, vbench_inputchain_generator);
     }
     for (size_t i = 0; i < _inputs.size(); ++i) {
         _inputs[i]->thread.join();

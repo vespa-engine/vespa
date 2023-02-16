@@ -30,7 +30,7 @@ Worker::Worker(Provider<Request> &provider, Handler<Request> &next,
       _pool(pool),
       _timer(timer)
 {
-    _thread = vespalib::Thread::start(*this, vbench_worker_thread);
+    _thread = vespalib::thread::start(*this, vbench_worker_thread);
 }
 
 } // namespace vbench

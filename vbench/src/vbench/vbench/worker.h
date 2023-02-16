@@ -20,7 +20,7 @@ namespace vbench {
 class Worker : public vespalib::Runnable
 {
 private:
-    vespalib::Thread    _thread;
+    std::thread         _thread;
     Provider<Request>  &_provider;
     Handler<Request>   &_next;
     HttpConnectionPool &_pool;

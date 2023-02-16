@@ -26,7 +26,7 @@ private:
     TimeQueue<Request>      _queue;
     DroppedTagger           _droppedTagger;
     Dispatcher<Request>     _dispatcher;
-    vespalib::Thread        _thread;
+    std::thread             _thread;
     HttpConnectionPool      _connectionPool;
     std::vector<Worker::UP> _workers;
     std::mutex              _lock;

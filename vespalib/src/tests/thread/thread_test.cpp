@@ -19,30 +19,33 @@ void my_fun(bool *was_run) {
     *was_run = true;
 }
 
+Runnable::init_fun_t wrap(Runnable::init_fun_t init, bool *init_called) {
+    return [=](Runnable &target)
+           {
+               *init_called = true;
+               return init(target);
+           };
+}
+
 TEST("run vespalib::Runnable with init function") {
     Agent agent;
-    {
-        auto thread = Thread::start(agent, test_agent_thread);
-    }
+    bool init_called = false;
+    auto thread = thread::start(agent, wrap(test_agent_thread, &init_called));
+    thread.join();
+    EXPECT_TRUE(init_called);
     EXPECT_TRUE(agent.was_run);
 }
 
-TEST("run custom function") {
+TEST("use thread pool to run multiple things") {
+    Agent agent;
+    bool init_called = false;
     bool was_run = false;
-    {
-        auto thread = Thread::start(my_fun, &was_run);
-    }
-    EXPECT_TRUE(was_run);
-}
-
-TEST("join multiple times (including destructor)") {
-    bool was_run = false;
-    {
-        auto thread = Thread::start(my_fun, &was_run);
-        thread.join();
-        thread.join();
-        thread.join();
-    }
+    ThreadPool pool;
+    pool.start(my_fun, &was_run);
+    pool.start(agent, wrap(test_agent_thread, &init_called));
+    pool.join();
+    EXPECT_TRUE(init_called);
+    EXPECT_TRUE(agent.was_run);
     EXPECT_TRUE(was_run);
 }
 

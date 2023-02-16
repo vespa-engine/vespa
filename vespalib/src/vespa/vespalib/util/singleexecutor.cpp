@@ -38,7 +38,7 @@ SingleExecutor::SingleExecutor(init_fun_t func, uint32_t reservedQueueSize, bool
     if ( ! isQueueSizeHard) {
         _overflow = std::make_unique<ArrayQueue<Task::UP>>();
     }
-    _thread = Thread::start(*this, func);
+    _thread = thread::start(*this, func);
 }
 
 SingleExecutor::~SingleExecutor() {

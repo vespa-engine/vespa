@@ -10,14 +10,14 @@ SlobrokServer::SlobrokServer(ConfigShim &shim)
     : _env(shim),
       _thread()
 {
-    _thread = vespalib::Thread::start(*this, slobrok_server_thread);
+    _thread = vespalib::thread::start(*this, slobrok_server_thread);
 }
 
 SlobrokServer::SlobrokServer(uint32_t port)
     : _env(ConfigShim(port)),
       _thread()
 {
-    _thread = vespalib::Thread::start(*this, slobrok_server_thread);
+    _thread = vespalib::thread::start(*this, slobrok_server_thread);
 }
 
 

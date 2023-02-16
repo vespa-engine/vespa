@@ -182,7 +182,7 @@ SimpleThreadBundle::Worker::Worker(Signal &s, Runnable::init_fun_t init_fun, Run
     signal(s),
     hook(std::move(h))
 {
-    thread = Thread::start(*this, std::move(init_fun));
+    thread = thread::start(*this, std::move(init_fun));
 }
 
 void
