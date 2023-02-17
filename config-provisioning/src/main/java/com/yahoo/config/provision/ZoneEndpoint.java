@@ -12,6 +12,13 @@ import java.util.Objects;
  */
 public class ZoneEndpoint {
 
+    /**
+     * Endpoint service generation.
+     * Bump this to provision new services, whenever we change regional endpoint names.
+     * This will cause new endpoint services to be provisioned, with new domain names.
+     * TODO: store a list of endpoint services in the node repo, and wire them all to and through the controller.
+     */
+    public static final int generation = 0;
     public static final ZoneEndpoint defaultEndpoint = new ZoneEndpoint(true, false, List.of());
     public static final ZoneEndpoint privateEndpoint = new ZoneEndpoint(false, false, List.of());
 
