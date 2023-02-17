@@ -9,7 +9,7 @@ import java.net.InetAddress;
 /**
  * @author gjoranv
  */
-public class VersionedIpAddress {
+public class VersionedIpAddress implements Comparable<VersionedIpAddress> {
 
     private final InetAddress address;
     private final IPVersion version;
@@ -44,6 +44,12 @@ public class VersionedIpAddress {
         } else {
             throw new IllegalArgumentException("Unknown IP version for " + InetAddresses.toAddrString(address) + " of class " + address.getClass().getName());
         }
+    }
+
+    @Override
+    public int compareTo(VersionedIpAddress o) {
+        int version = version().compareTo(o.version());
+        return (version != 0) ? version : asString().compareTo(o.asString());
     }
 
 }
