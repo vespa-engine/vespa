@@ -136,7 +136,7 @@ public class RealNodeRepository implements NodeRepository {
 
         return response.nodes.stream()
                 .map(RealNodeRepository::createTenantPeer)
-                .sorted(Comparator.comparing(ConfigserverPeer::hostname))
+                .sorted()
                 .toList();
     }
 

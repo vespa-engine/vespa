@@ -224,7 +224,7 @@ public class RealNodeRepositoryTest {
                             "::101:1", "127.0.101.1",
                             "000011112222333344445555666677778888999900c=");
 
-        assertWireguardPeer(exclavePeers.get(0), "host3.yahoo.com",
+        assertWireguardPeer(exclavePeers.get(1), "host3.yahoo.com",
                             "::3:1", "127.0.3.1",
                             "333344445555666677778888999900001111222211c=");
     }
