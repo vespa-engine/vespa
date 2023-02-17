@@ -252,7 +252,7 @@ public class LoadBalancerProvisioner {
         try {
             return Optional.of(service.provision(new LoadBalancerSpec(id.application(), id.cluster(), reals, settings, cloudAccount))
                                       // Provisioning a private endpoint service requires hard resources to be ready, so we delay it until activation.
-                                      .withServiceId(currentLoadBalancer.flatMap(LoadBalancer::instance).flatMap(LoadBalancerInstance::serviceId)));
+                                      .withServiceIds(currentLoadBalancer.flatMap(LoadBalancer::instance).map(LoadBalancerInstance::serviceIds).orElse(List.of())));
         } catch (Exception e) {
             log.log(Level.WARNING, e, () -> "Could not provision " + id + ". The operation will be retried on next deployment");
         }
@@ -274,7 +274,8 @@ public class LoadBalancerProvisioner {
         log.log(Level.INFO, () -> "Configuring instance for " + id + ", targeting: " + reals);
         try {
             return Optional.of(service.configure(new LoadBalancerSpec(id.application(), id.cluster(), reals, zoneEndpoint, cloudAccount),
-                                                 shouldDeactivateRouting || currentLoadBalancer.state() != LoadBalancer.State.active));
+                                                 shouldDeactivateRouting || currentLoadBalancer.state() != LoadBalancer.State.active)
+                                      .withServiceIds(currentLoadBalancer.instance().map(LoadBalancerInstance::serviceIds).orElse(List.of())));
         } catch (Exception e) {
             log.log(Level.WARNING, e, () -> "Could not (re)configure " + id + ", targeting: " +
                                             reals + ". The operation will be retried on next deployment");

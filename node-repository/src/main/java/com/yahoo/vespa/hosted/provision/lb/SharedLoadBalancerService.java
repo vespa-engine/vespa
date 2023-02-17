@@ -5,6 +5,7 @@ import ai.vespa.http.DomainName;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.NodeType;
 
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -46,7 +47,7 @@ public class SharedLoadBalancerService implements LoadBalancerService {
                                         Set.of(),
                                         spec.reals(),
                                         spec.settings(),
-                                        Optional.empty(),
+                                        List.of(),
                                         spec.cloudAccount());
     }
 

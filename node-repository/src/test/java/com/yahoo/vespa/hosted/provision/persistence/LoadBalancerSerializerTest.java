@@ -2,7 +2,6 @@
 package com.yahoo.vespa.hosted.provision.persistence;
 
 import ai.vespa.http.DomainName;
-import com.google.common.collect.ImmutableSet;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.ClusterSpec;
@@ -51,7 +50,7 @@ public class LoadBalancerSerializerTest {
                                                                                  "127.0.0.2",
                                                                                  4080)),
                                                         new ZoneEndpoint(false, true, List.of(new AllowedUrn(AccessType.awsPrivateLink, "123"))),
-                                                        Optional.of(PrivateServiceId.of("foo")),
+                                                        List.of(PrivateServiceId.of("foo"), PrivateServiceId.of("bar")),
                                                         CloudAccount.from("012345678912"))),
                                                 LoadBalancer.State.active,
                                                 now);
@@ -66,7 +65,7 @@ public class LoadBalancerSerializerTest {
             assertEquals(loadBalancer.changedAt().truncatedTo(MILLIS), serialized.changedAt());
             assertEquals(loadBalancer.instance().get().reals(), serialized.instance().get().reals());
             assertEquals(loadBalancer.instance().get().settings(), serialized.instance().get().settings());
-            assertEquals(loadBalancer.instance().get().serviceId(), serialized.instance().get().serviceId());
+            assertEquals(loadBalancer.instance().get().serviceIds(), serialized.instance().get().serviceIds());
             assertEquals(loadBalancer.instance().get().cloudAccount(), serialized.instance().get().cloudAccount());
         }
         {
@@ -79,7 +78,7 @@ public class LoadBalancerSerializerTest {
                                                         Set.of("10.2.3.4/24", "12.3.2.1/30"),
                                                         Set.of(),
                                                         new ZoneEndpoint(true, false, List.of()),
-                                                        Optional.empty(),
+                                                        List.of(),
                                                         CloudAccount.from("012345678912"))),
                                                 LoadBalancer.State.active,
                                                 now);
@@ -94,7 +93,7 @@ public class LoadBalancerSerializerTest {
             assertEquals(loadBalancer.changedAt().truncatedTo(MILLIS), serialized.changedAt());
             assertEquals(loadBalancer.instance().get().reals(), serialized.instance().get().reals());
             assertEquals(loadBalancer.instance().get().settings(), serialized.instance().get().settings());
-            assertEquals(loadBalancer.instance().get().serviceId(), serialized.instance().get().serviceId());
+            assertEquals(loadBalancer.instance().get().serviceIds(), serialized.instance().get().serviceIds());
             assertEquals(loadBalancer.instance().get().cloudAccount(), serialized.instance().get().cloudAccount());
         }
     }
