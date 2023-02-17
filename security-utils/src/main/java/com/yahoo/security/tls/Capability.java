@@ -2,6 +2,7 @@
 package com.yahoo.security.tls;
 
 import java.util.Arrays;
+import java.util.Optional;
 
 /**
  * @author bjorncs
@@ -48,11 +49,6 @@ public enum Capability implements ToCapabilitySet {
 
     @Override public CapabilitySet toCapabilitySet() { return CapabilitySet.of(this); }
 
-    public static Capability fromName(String name) {
-        return Arrays.stream(values())
-                .filter(c -> c.name.equals(name))
-                .findAny().orElseThrow(() ->
-                        new IllegalArgumentException("Cannot find predefined capability set with name '" + name + "'"));
-    }
+    public static Optional<Capability> fromName(String n) { return Arrays.stream(values()).filter(c -> c.name.equals(n)).findAny(); }
 
 }

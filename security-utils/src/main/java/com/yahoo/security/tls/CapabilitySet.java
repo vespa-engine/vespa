@@ -12,12 +12,15 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 /**
  * @author bjorncs
  */
 public class CapabilitySet implements ToCapabilitySet {
+
+    private static final Logger log = Logger.getLogger(CapabilitySet.class.getName());
 
     private static final Map<String, CapabilitySet> PREDEFINED = new HashMap<>();
 
@@ -71,9 +74,11 @@ public class CapabilitySet implements ToCapabilitySet {
     public static CapabilitySet fromNames(Collection<String> names) {
         EnumSet<Capability> caps = EnumSet.noneOf(Capability.class);
         for (String name : names) {
-            var predefined = PREDEFINED.get(name);
-            if (predefined != null) caps.addAll(predefined.caps);
-            else caps.add(Capability.fromName(name));
+            var predefinedSet = PREDEFINED.get(name);
+            var capability = Capability.fromName(name).orElse(null);
+            if (capability != null) caps.add(capability);
+            else if (predefinedSet != null) caps.addAll(predefinedSet.caps);
+            else log.warning("Cannot find capability or capability set with name '%s'".formatted(name));
         }
         return new CapabilitySet(caps);
     }
