@@ -12,17 +12,17 @@ import java.util.Optional;
  *
  * @author gjoranv
  */
-public record ConfigserverPeer(HostName hostname,
-                               List<VersionedIpAddress> ipAddresses,
-                               Optional<WireguardKey> publicKey) implements Comparable<ConfigserverPeer> {
+public record WireguardPeer(HostName hostname,
+                            List<VersionedIpAddress> ipAddresses,
+                            Optional<WireguardKey> publicKey) implements Comparable<WireguardPeer> {
 
-    public ConfigserverPeer {
+    public WireguardPeer {
         if (ipAddresses.isEmpty()) throw new IllegalArgumentException("No IP addresses for peer node " + hostname.value());
         ipAddresses = ipAddresses.stream().sorted().toList();
     }
 
     @Override
-    public int compareTo(ConfigserverPeer o) {
+    public int compareTo(WireguardPeer o) {
         return hostname.value().compareTo(o.hostname.value());
     }
 

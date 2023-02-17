@@ -17,7 +17,7 @@ public class WireguardPeerTest {
 
     @Test
     void peers_are_sorted_by_hostname_ascending() {
-        List<ConfigserverPeer> peers = Stream.of(
+        List<WireguardPeer> peers = Stream.of(
                 peer("b"),
                 peer("a"),
                 peer("c")
@@ -28,7 +28,7 @@ public class WireguardPeerTest {
         assertEquals("c", peers.get(2).hostname().value());
     }
 
-    private static ConfigserverPeer peer(String hostname) {
-        return new ConfigserverPeer(HostName.of(hostname), List.of(VersionedIpAddress.from("::1:1")), Optional.empty());
+    private static WireguardPeer peer(String hostname) {
+        return new WireguardPeer(HostName.of(hostname), List.of(VersionedIpAddress.from("::1:1")), Optional.empty());
     }
 }

@@ -12,7 +12,7 @@ import com.yahoo.config.provision.host.FlavorOverrides;
 import com.yahoo.vespa.hosted.node.admin.configserver.ConfigServerApi;
 import com.yahoo.vespa.hosted.node.admin.configserver.ConfigServerApiImpl;
 import com.yahoo.vespa.hosted.node.admin.task.util.network.VersionedIpAddress;
-import com.yahoo.vespa.hosted.node.admin.wireguard.ConfigserverPeer;
+import com.yahoo.vespa.hosted.node.admin.wireguard.WireguardPeer;
 import com.yahoo.vespa.hosted.provision.restapi.NodesV2ApiHandler;
 import com.yahoo.vespa.hosted.provision.testutils.ContainerConfig;
 import org.junit.jupiter.api.AfterEach;
@@ -203,7 +203,7 @@ public class RealNodeRepositoryTest {
 
         //// Configservers ////
 
-        List<ConfigserverPeer> cfgPeers =  nodeRepositoryApi.getConfigserverPeers();
+        List<WireguardPeer> cfgPeers =  nodeRepositoryApi.getConfigserverPeers();
         assertEquals(2, cfgPeers.size());
 
         assertWireguardPeer(cfgPeers.get(0), "cfg1.yahoo.com",
@@ -216,7 +216,7 @@ public class RealNodeRepositoryTest {
 
         //// Exclave nodes ////
 
-        List<ConfigserverPeer> exclavePeers =  nodeRepositoryApi.getExclavePeers();
+        List<WireguardPeer> exclavePeers =  nodeRepositoryApi.getExclavePeers();
         System.out.println(exclavePeers);
         assertEquals(2, exclavePeers.size());
 
@@ -229,7 +229,7 @@ public class RealNodeRepositoryTest {
                             "333344445555666677778888999900001111222211c=");
     }
 
-    private void assertWireguardPeer(ConfigserverPeer peer, String hostname, String ipv6, String ipv4, String publicKey) {
+    private void assertWireguardPeer(WireguardPeer peer, String hostname, String ipv6, String ipv4, String publicKey) {
         assertEquals(hostname, peer.hostname().value());
         assertEquals(2, peer.ipAddresses().size());
         assertIp(peer.ipAddresses().get(0), ipv6, 6);

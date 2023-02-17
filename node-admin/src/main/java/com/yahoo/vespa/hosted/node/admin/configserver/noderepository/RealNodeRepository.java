@@ -18,7 +18,7 @@ import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.bindings.Ge
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.bindings.GetWireguardResponse;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.bindings.NodeRepositoryNode;
 import com.yahoo.vespa.hosted.node.admin.task.util.network.VersionedIpAddress;
-import com.yahoo.vespa.hosted.node.admin.wireguard.ConfigserverPeer;
+import com.yahoo.vespa.hosted.node.admin.wireguard.WireguardPeer;
 
 import java.net.URI;
 import java.time.Instant;
@@ -130,7 +130,7 @@ public class RealNodeRepository implements NodeRepository {
     }
 
     @Override
-    public List<ConfigserverPeer> getExclavePeers() {
+    public List<WireguardPeer> getExclavePeers() {
         String path = "/nodes/v2/node/?recursive=true&enclave=true";
         final GetNodesResponse response = configServerApi.get(path, GetNodesResponse.class);
 
@@ -141,11 +141,11 @@ public class RealNodeRepository implements NodeRepository {
     }
 
     @Override
-    public List<ConfigserverPeer> getConfigserverPeers() {
+    public List<WireguardPeer> getConfigserverPeers() {
         GetWireguardResponse response = configServerApi.get("/nodes/v2/wireguard", GetWireguardResponse.class);
         return response.configservers.stream()
                 .map(RealNodeRepository::createConfigserverPeer)
-                .sorted(Comparator.comparing(ConfigserverPeer::hostname))
+                .sorted(Comparator.comparing(WireguardPeer::hostname))
                 .toList();
     }
 
@@ -350,16 +350,16 @@ public class RealNodeRepository implements NodeRepository {
         return node;
     }
 
-    private static ConfigserverPeer createTenantPeer(NodeRepositoryNode node) {
-        return new ConfigserverPeer(HostName.of(node.hostname),
-                                    node.ipAddresses.stream().map(VersionedIpAddress::from).toList(),
-                                    node.wireguardKey());
+    private static WireguardPeer createTenantPeer(NodeRepositoryNode node) {
+        return new WireguardPeer(HostName.of(node.hostname),
+                                 node.ipAddresses.stream().map(VersionedIpAddress::from).toList(),
+                                 node.wireguardKey());
     }
 
-    private static ConfigserverPeer createConfigserverPeer(GetWireguardResponse.Configserver configServer) {
-        return new ConfigserverPeer(HostName.of(configServer.hostname),
-                                    configServer.ipAddresses.stream().map(VersionedIpAddress::from).toList(),
-                                    configServer.wireguardKey());
+    private static WireguardPeer createConfigserverPeer(GetWireguardResponse.Configserver configServer) {
+        return new WireguardPeer(HostName.of(configServer.hostname),
+                                 configServer.ipAddresses.stream().map(VersionedIpAddress::from).toList(),
+                                 configServer.wireguardKey());
     }
 
 }
