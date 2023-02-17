@@ -217,7 +217,6 @@ public class RealNodeRepositoryTest {
         //// Exclave nodes ////
 
         List<WireguardPeer> exclavePeers =  nodeRepositoryApi.getExclavePeers();
-        System.out.println(exclavePeers);
         assertEquals(2, exclavePeers.size());
 
         assertWireguardPeer(exclavePeers.get(0), "dockerhost2.yahoo.com",
