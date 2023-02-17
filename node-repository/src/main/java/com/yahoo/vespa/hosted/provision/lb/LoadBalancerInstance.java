@@ -40,7 +40,7 @@ public class LoadBalancerInstance {
         this.networks = ImmutableSortedSet.copyOf(Objects.requireNonNull(networks, "networks must be non-null"));
         this.reals = ImmutableSortedSet.copyOf(Objects.requireNonNull(reals, "targets must be non-null"));
         this.settings = Objects.requireNonNull(settings, "settings must be non-null");
-        this.serviceIds = Objects.requireNonNull(serviceIds, "private service id must be non-null");
+        this.serviceIds = List.copyOf(Objects.requireNonNull(serviceIds, "private service id must be non-null"));
         this.cloudAccount = Objects.requireNonNull(cloudAccount, "cloudAccount must be non-null");
 
         if (hostname.isEmpty() == ipAddress.isEmpty()) {
