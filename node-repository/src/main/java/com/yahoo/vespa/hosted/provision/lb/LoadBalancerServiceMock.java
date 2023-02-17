@@ -9,6 +9,7 @@ import com.yahoo.config.provision.ZoneEndpoint;
 
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -60,7 +61,7 @@ public class LoadBalancerServiceMock implements LoadBalancerService {
                 ImmutableSet.of("10.2.3.0/24", "10.4.5.0/24"),
                 spec.reals(),
                 spec.settings(),
-                spec.settings().isPrivateEndpoint() ? Optional.of(PrivateServiceId.of("service")) : Optional.empty(),
+                spec.settings().isPrivateEndpoint() ? List.of(PrivateServiceId.of("service")) : List.of(),
                 spec.cloudAccount());
         instances.put(id, instance);
         return instance;
@@ -82,7 +83,7 @@ public class LoadBalancerServiceMock implements LoadBalancerService {
                 ImmutableSet.of("10.2.3.0/24", "10.4.5.0/24"),
                 spec.reals(),
                 spec.settings(),
-                spec.settings().isPrivateEndpoint() ? Optional.of(PrivateServiceId.of("service")) : Optional.empty(),
+                spec.settings().isPrivateEndpoint() ? List.of(PrivateServiceId.of("service")) : List.of(),
                 spec.cloudAccount());
         instances.put(id, instance);
         return instance;

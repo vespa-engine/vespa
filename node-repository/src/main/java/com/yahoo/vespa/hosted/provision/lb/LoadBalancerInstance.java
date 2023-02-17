@@ -6,6 +6,8 @@ import com.google.common.collect.ImmutableSortedSet;
 import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.ZoneEndpoint;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -25,12 +27,12 @@ public class LoadBalancerInstance {
     private final Set<String> networks;
     private final Set<Real> reals;
     private final ZoneEndpoint settings;
-    private final Optional<PrivateServiceId> serviceId;
+    private final List<PrivateServiceId> serviceIds;
     private final CloudAccount cloudAccount;
 
     public LoadBalancerInstance(Optional<DomainName> hostname, Optional<String> ipAddress,
                                 Optional<DnsZone> dnsZone, Set<Integer> ports, Set<String> networks, Set<Real> reals,
-                                ZoneEndpoint settings, Optional<PrivateServiceId> serviceId, CloudAccount cloudAccount) {
+                                ZoneEndpoint settings, List<PrivateServiceId> serviceIds, CloudAccount cloudAccount) {
         this.hostname = Objects.requireNonNull(hostname, "hostname must be non-null");
         this.ipAddress = Objects.requireNonNull(ipAddress, "ip must be non-null");
         this.dnsZone = Objects.requireNonNull(dnsZone, "dnsZone must be non-null");
@@ -38,7 +40,7 @@ public class LoadBalancerInstance {
         this.networks = ImmutableSortedSet.copyOf(Objects.requireNonNull(networks, "networks must be non-null"));
         this.reals = ImmutableSortedSet.copyOf(Objects.requireNonNull(reals, "targets must be non-null"));
         this.settings = Objects.requireNonNull(settings, "settings must be non-null");
-        this.serviceId = Objects.requireNonNull(serviceId, "private service id must be non-null");
+        this.serviceIds = Objects.requireNonNull(serviceIds, "private service id must be non-null");
         this.cloudAccount = Objects.requireNonNull(cloudAccount, "cloudAccount must be non-null");
 
         if (hostname.isEmpty() == ipAddress.isEmpty()) {
@@ -83,8 +85,13 @@ public class LoadBalancerInstance {
     }
 
     /** ID of any private endpoint service configured for this load balancer. */
+    // TODO jonmv: remove
     public Optional<PrivateServiceId> serviceId() {
-        return serviceId;
+        return serviceIds.isEmpty() ? Optional.empty() : Optional.of(serviceIds.get(serviceIds.size() - 1));
+    }
+
+    public List<PrivateServiceId> serviceIds() {
+        return serviceIds;
     }
 
     /** Cloud account of this load balancer */
@@ -103,8 +110,11 @@ public class LoadBalancerInstance {
         return ports;
     }
 
-    public LoadBalancerInstance withServiceId(Optional<PrivateServiceId> serviceId) {
-        return new LoadBalancerInstance(hostname, ipAddress, dnsZone, ports, networks, reals, settings, serviceId, cloudAccount);
+    /** Prepends the given service IDs, possibly replacing those we have in this. */
+    public LoadBalancerInstance withServiceIds(List<PrivateServiceId> serviceIds) {
+        List<PrivateServiceId> ids = new ArrayList<>(serviceIds());
+        for (PrivateServiceId id : this.serviceIds) if ( ! ids.contains(id)) ids.add(id);
+        return new LoadBalancerInstance(hostname, ipAddress, dnsZone, ports, networks, reals, settings, ids, cloudAccount);
     }
 
 }
