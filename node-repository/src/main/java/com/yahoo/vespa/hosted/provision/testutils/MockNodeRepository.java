@@ -110,7 +110,8 @@ public class MockNodeRepository extends NodeRepository {
                           .cloudAccount(defaultCloudAccount).build());
         // Emulate node in tenant account
         nodes.add(Node.create("node3", ipConfig(3), "host3.yahoo.com", resources(0.5, 48, 500, 1, fast, local), NodeType.tenant)
-                              .cloudAccount(tenantAccount).build());
+                          .wireguardPubKey(WireguardKey.from("333344445555666677778888999900001111222211c="))
+                          .cloudAccount(tenantAccount).build());
         Node node4 = Node.create("node4", ipConfig(4), "host4.yahoo.com", resources(1, 4, 100, 1, fast, local), NodeType.tenant)
                 .parentHostname("dockerhost1.yahoo.com")
                 .status(Status.initial()
@@ -156,7 +157,9 @@ public class MockNodeRepository extends NodeRepository {
                              flavors.getFlavorOrThrow("large"), NodeType.host).cloudAccount(defaultCloudAccount).build());
         // Emulate host in tenant account
         nodes.add(Node.create("dockerhost2", ipConfig(101, 1, 3), "dockerhost2.yahoo.com",
-                             flavors.getFlavorOrThrow("large"), NodeType.host).cloudAccount(tenantAccount).build());
+                              flavors.getFlavorOrThrow("large"), NodeType.host)
+                          .wireguardPubKey(WireguardKey.from("000011112222333344445555666677778888999900c="))
+                          .cloudAccount(tenantAccount).build());
         nodes.add(Node.create("dockerhost3", ipConfig(102, 1, 3), "dockerhost3.yahoo.com",
                              flavors.getFlavorOrThrow("large"), NodeType.host).cloudAccount(defaultCloudAccount).build());
         nodes.add(Node.create("dockerhost4", ipConfig(103, 1, 3), "dockerhost4.yahoo.com",

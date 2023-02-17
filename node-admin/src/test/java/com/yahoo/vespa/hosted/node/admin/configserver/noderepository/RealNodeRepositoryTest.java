@@ -12,7 +12,7 @@ import com.yahoo.config.provision.host.FlavorOverrides;
 import com.yahoo.vespa.hosted.node.admin.configserver.ConfigServerApi;
 import com.yahoo.vespa.hosted.node.admin.configserver.ConfigServerApiImpl;
 import com.yahoo.vespa.hosted.node.admin.task.util.network.VersionedIpAddress;
-import com.yahoo.vespa.hosted.node.admin.wireguard.ConfigserverPeer;
+import com.yahoo.vespa.hosted.node.admin.wireguard.WireguardPeer;
 import com.yahoo.vespa.hosted.provision.restapi.NodesV2ApiHandler;
 import com.yahoo.vespa.hosted.provision.testutils.ContainerConfig;
 import org.junit.jupiter.api.AfterEach;
@@ -199,24 +199,41 @@ public class RealNodeRepositoryTest {
     }
 
     @Test
-    void wireguard_peer_config_for_configservers_can_be_retrieved() {
-        List<ConfigserverPeer> cfgPeers =  nodeRepositoryApi.getConfigserverPeers();
+    void wireguard_peer_config_can_be_retrieved_for_configservers_and_exclave_nodes() {
+
+        //// Configservers ////
+
+        List<WireguardPeer> cfgPeers =  nodeRepositoryApi.getConfigserverPeers();
         assertEquals(2, cfgPeers.size());
 
-        var cfg1 = cfgPeers.get(0);
-        assertEquals("cfg1.yahoo.com", cfg1.hostname().value());
-        assertEquals(2, cfg1.ipAddresses().size());
-        assertIp(cfg1.ipAddresses().get(0), "127.0.201.1", 4);
-        assertIp(cfg1.ipAddresses().get(1), "::201:1", 6);
-        assertEquals("lololololololololololololololololololololoo=", cfg1.publicKey().get().value());
+        assertWireguardPeer(cfgPeers.get(0), "cfg1.yahoo.com",
+                            "::201:1", "127.0.201.1",
+                            "lololololololololololololololololololololoo=");
 
-        var cfg2 = cfgPeers.get(1);
-        assertEquals("cfg2.yahoo.com", cfg2.hostname().value());
-        assertEquals(2, cfg1.ipAddresses().size());
-        assertIp(cfg2.ipAddresses().get(0), "127.0.202.1", 4);
-        assertIp(cfg2.ipAddresses().get(1), "::202:1", 6);
-        assertEquals("olololololololololololololololololololololo=", cfg2.publicKey().get().value());
+        assertWireguardPeer(cfgPeers.get(1), "cfg2.yahoo.com",
+                            "::202:1", "127.0.202.1",
+                            "olololololololololololololololololololololo=");
 
+        //// Exclave nodes ////
+
+        List<WireguardPeer> exclavePeers =  nodeRepositoryApi.getExclavePeers();
+        assertEquals(2, exclavePeers.size());
+
+        assertWireguardPeer(exclavePeers.get(0), "dockerhost2.yahoo.com",
+                            "::101:1", "127.0.101.1",
+                            "000011112222333344445555666677778888999900c=");
+
+        assertWireguardPeer(exclavePeers.get(1), "host3.yahoo.com",
+                            "::3:1", "127.0.3.1",
+                            "333344445555666677778888999900001111222211c=");
+    }
+
+    private void assertWireguardPeer(WireguardPeer peer, String hostname, String ipv6, String ipv4, String publicKey) {
+        assertEquals(hostname, peer.hostname().value());
+        assertEquals(2, peer.ipAddresses().size());
+        assertIp(peer.ipAddresses().get(0), ipv6, 6);
+        assertIp(peer.ipAddresses().get(1), ipv4, 4);
+        assertEquals(publicKey, peer.publicKey().get().value());
     }
 
     private void assertIp(VersionedIpAddress ip, String expectedIp, int expectedVersion) {
