@@ -96,8 +96,9 @@ public:
 
         GroupList groups() const { return _children; }
         void addChild(Group * child);
-        uint32_t getAggrSize()    const { return _packedLength & 0x0f; }
-        uint32_t getOrderBySize() const { return (_packedLength >> 6) & 0x03; }
+        uint32_t getAggrSize()    const { return _packedLength & 0xffff; }
+        uint32_t getExprSize()    const { return (_packedLength >> 16) & 0x0f; }
+        uint32_t getOrderBySize() const { return (_packedLength >> 20) & 0x0f; }
         uint32_t getChildrenSize()   const { return _childrenLength; }
         uint32_t getExpr(uint32_t i) const { return getAggrSize() + i; }
         int32_t getOrderBy(uint32_t i) const {
@@ -107,7 +108,6 @@ public:
 
         const AggregationResult & getAggregationResult(size_t i) const { return static_cast<const AggregationResult &>(*_aggregationResults[i]); }
         AggregationResult & getAggregationResult(size_t i) { return static_cast<AggregationResult &>(*_aggregationResults[i]); }
-        uint32_t getExprSize()    const { return (_packedLength >> 4) & 0x03; }
         const Group & getChild(size_t i) const { return *_children[i]; }
 
         template <typename Doc>
@@ -116,9 +116,9 @@ public:
 
         using  ExpressionVector = ExpressionNode::CP *;
         using GroupHash = vespalib::hash_set<uint32_t, GroupHasher, GroupEqual >;
-        void setAggrSize(uint32_t v)    { _packedLength = (_packedLength & ~0x0f) | v; }
-        void setExprSize(uint32_t v)    { _packedLength = (_packedLength & ~0x30) | (v << 4); }
-        void setOrderBySize(uint32_t v) { _packedLength = (_packedLength & ~0xc0) | (v << 6); }
+        void setAggrSize(uint32_t v);
+        void setExprSize(uint32_t v);
+        void setOrderBySize(uint32_t v);
         void setChildrenSize(uint32_t v) { _childrenLength = v; }
         AggregationResult * getAggr(size_t i) { return static_cast<AggregationResult *>(_aggregationResults[i].get()); }
         const AggregationResult & getAggr(size_t i) const { return static_cast<const AggregationResult &>(*_aggregationResults[i]); }
@@ -147,9 +147,9 @@ public:
             size_t     _allChildren;            // Keep real number of children.
         }                _childInfo;
         uint32_t         _childrenLength;
-        uint32_t         _tag;             // Opaque tag used to identify the group by the client.
-        uint8_t          _packedLength;    // Length of aggr and expr vectors.
-        uint8_t          _orderBy[2];           // How this group is ranked, negative means reverse rank.
+        uint32_t         _tag;                  // Opaque tag used to identify the group by the client.
+        uint32_t         _packedLength;         // Length of aggr and expr vectors.
+        uint8_t          _orderBy[4];           // How this group is ranked, negative means reverse rank.
     };
 private:
     ResultNode::CP   _id;                   // the label of this group, separating it from other groups
