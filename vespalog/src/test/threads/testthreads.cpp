@@ -1,5 +1,4 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/thread.h>
 #include <vespa/log/bufferedlogger.h>
 #include <array>
 #include <iostream>
@@ -10,6 +9,7 @@
 #include <unistd.h>
 #include <sys/stat.h>
 #include <cstdlib>
+#include <vector>
 
 using std::string;
 using namespace std::chrono_literals;
@@ -17,28 +17,28 @@ using namespace std::chrono;
 
 LOG_SETUP(".threadtest");
 
-class FileThread : public FastOS_Runnable
+class FileThread
 {
     std::atomic<bool> _done;
     string _file;
 public:
     FileThread(string file) : _done(false), _file(file) {}
-    void Run(FastOS_ThreadInterface *thread, void *arg) override;
+    void entry();
     void stop() { _done.store(true, std::memory_order_relaxed); }
 };
 
-class LoggerThread : public FastOS_Runnable
+class LoggerThread
 {
     std::atomic<bool> _done;
 public:
     std::atomic<bool> _useLogBuffer;
     LoggerThread() : _done(false), _useLogBuffer(false) {}
-    void Run(FastOS_ThreadInterface *thread, void *arg) override;
+    void entry();
     void stop() { _done.store(true, std::memory_order_relaxed); }
 };
 
 void
-FileThread::Run(FastOS_ThreadInterface *, void *)
+FileThread::entry()
 {
     unlink(_file.c_str());
     while (!_done.load(std::memory_order_relaxed)) {
@@ -63,7 +63,7 @@ FileThread::Run(FastOS_ThreadInterface *, void *)
 
 
 void
-LoggerThread::Run(FastOS_ThreadInterface *, void *)
+LoggerThread::entry()
 {
     int counter = 0;
     while (!_done.load(std::memory_order_relaxed)) {
@@ -89,11 +89,12 @@ public:
     }
 };
 
+
 int
 ThreadTester::Main()
 {
     std::cerr << "Testing that logging is threadsafe. 5 sec test.\n";
-    FastOS_ThreadPool pool;
+    std::vector<std::thread> threads;
 
     const int numWriters = 30;
     const int numLoggers = 10;
@@ -105,11 +106,11 @@ ThreadTester::Main()
         char filename[100];
         snprintf(filename, sizeof(filename), "empty.%d", i);
         writers[i] = std::make_unique<FileThread>(filename);
-        pool.NewThread(writers[i].get());
+        threads.emplace_back([obj = writers[i].get()](){ obj->entry(); });
     }
     for (int i = 0; i < numLoggers; i++) {
         loggers[i] = std::make_unique<LoggerThread>();
-        pool.NewThread(loggers[i].get());
+        threads.emplace_back([obj = loggers[i].get()](){ obj->entry(); });
     }
 
     steady_clock::time_point start = steady_clock::now();
@@ -136,7 +137,9 @@ ThreadTester::Main()
         writers[i]->stop();
     }
 
-    pool.Close();
+    for (auto &thread: threads) {
+        thread.join();
+    }
 
     return 0;
 }

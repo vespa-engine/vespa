@@ -1,19 +1,16 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "shutdownguard.h"
 #include <unistd.h>
-#include <thread>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".vespalib.shutdownguard");
 
 namespace vespalib {
 
-namespace {
-enum { STACK_SIZE = (1u << 16) };
-}
-void ShutdownGuard::Run(FastOS_ThreadInterface *, void *)
+void
+ShutdownGuard::run()
 {
-    while (_dieAtTime > steady_clock::now() && ! GetThread()->GetBreakFlag()) {
+    while (_dieAtTime > steady_clock::now() && !_cancel.load(std::memory_order_relaxed)) {
         std::this_thread::sleep_for(5ms);
     }
     if (_dieAtTime <= steady_clock::now()) {
@@ -22,19 +19,17 @@ void ShutdownGuard::Run(FastOS_ThreadInterface *, void *)
     }
 }
 
-ShutdownGuard::ShutdownGuard(duration millis) :
-    FastOS_Runnable(),
-    _pool(1),
+ShutdownGuard::ShutdownGuard(duration millis)
+  : _thread(),
     _dieAtTime(steady_clock::now() + millis)
 {
-    _pool.NewThread(this);
+    _thread = std::thread(&ShutdownGuard::run, this);
 }
 
 ShutdownGuard::~ShutdownGuard()
 {
-    GetThread()->SetBreakFlag();
-    GetThread()->Join();
-    _pool.Close();
+    _cancel = true;
+    _thread.join();
 }
 
 }

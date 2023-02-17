@@ -54,29 +54,20 @@ AdaptiveSequencedExecutor::Self::~Self()
 
 AdaptiveSequencedExecutor::ThreadTools::ThreadTools(AdaptiveSequencedExecutor &parent_in)
     : parent(parent_in),
-      pool(std::make_unique<FastOS_ThreadPool>()),
+      pool(),
       allow_worker_exit()
 {
 }
 
 AdaptiveSequencedExecutor::ThreadTools::~ThreadTools()
 {
-    assert(pool->isClosed());
-}
-
-void
-AdaptiveSequencedExecutor::ThreadTools::Run(FastOS_ThreadInterface *, void *)
-{
-    parent.worker_main();
 }
 
 void
 AdaptiveSequencedExecutor::ThreadTools::start(size_t num_threads)
 {
     for (size_t i = 0; i < num_threads; ++i) {
-        FastOS_ThreadInterface *thread = pool->NewThread(this);
-        assert(thread != nullptr);
-        (void)thread;
+        pool.start([this](){ parent.worker_main(); });
     }
 }
 
@@ -84,7 +75,7 @@ void
 AdaptiveSequencedExecutor::ThreadTools::close()
 {
     allow_worker_exit.countDown();
-    pool->Close();
+    pool.join();
 }
 
 //-----------------------------------------------------------------------------

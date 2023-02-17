@@ -2,7 +2,8 @@
 #pragma once
 
 #include <vespa/vespalib/util/time.h>
-#include <vespa/fastos/thread.h>
+#include <thread>
+#include <atomic>
 
 namespace vespalib {
 
@@ -13,12 +14,13 @@ namespace vespalib {
  * termination.
  * A separate shutdown thread will perform the actual _exit() call.
  **/
-class ShutdownGuard : public FastOS_Runnable
+class ShutdownGuard
 {
-    FastOS_ThreadPool _pool;
-    steady_time       _dieAtTime;
+    std::thread _thread;
+    steady_time _dieAtTime;
+    std::atomic<bool> _cancel;
 
-    void Run(FastOS_ThreadInterface *, void *) override;
+    void run();
 
 public:
     /**
