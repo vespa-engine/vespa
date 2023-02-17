@@ -30,7 +30,7 @@ class Grouping;
  *
  * Total: 50 bytes
  */
-class Group : public vespalib::Identifiable
+class Group final : public vespalib::Identifiable
 {
 public:
     using ResultNode = expression::ResultNode;
@@ -56,8 +56,6 @@ public:
     };
 
     using GroupingLevelList = std::vector<GroupingLevel>;
-
-private:
 
     class Value {
     public:
@@ -153,7 +151,7 @@ private:
         uint8_t          _packedLength;    // Length of aggr and expr vectors.
         uint8_t          _orderBy[2];           // How this group is ranked, negative means reverse rank.
     };
-
+private:
     ResultNode::CP   _id;                   // the label of this group, separating it from other groups
     RawRank          _rank;                 // The default rank taken from the highest hit relevance.
     Value            _aggr;
