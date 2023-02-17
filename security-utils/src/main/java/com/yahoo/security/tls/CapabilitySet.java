@@ -54,7 +54,8 @@ public class CapabilitySet implements ToCapabilitySet {
     public static final CapabilitySet CONFIGSERVER_NODE = predefined(
             "vespa.config_server_node",
             Capability.CLIENT__FILERECEIVER_API, Capability.CONTAINER__MANAGEMENT_API, Capability.SLOBROK__API,
-            Capability.CLUSTER_CONTROLLER__REINDEXING, Capability.CLUSTER_CONTROLLER__STATE, TELEMETRY);
+            Capability.CLUSTER_CONTROLLER__REINDEXING, Capability.CLUSTER_CONTROLLER__STATE, Capability.LOGSERVER_API,
+            TELEMETRY);
 
     private static CapabilitySet predefined(String name, ToCapabilitySet... capabilities) {
         var instance = CapabilitySet.of(capabilities);
