@@ -10,6 +10,7 @@
 #include <vespa/vespalib/component/vtag.h>
 #include <vespa/vespalib/net/connection_auth_context.h>
 #include <vespa/vespalib/net/crypto_engine.h>
+#include <vespa/vespalib/net/tls/statistics.h>
 #include <vespa/config/subscription/configuri.h>
 #include <vespa/config/helper/configfetcher.hpp>
 #include <functional>
@@ -203,6 +204,7 @@ StatusWebServer::handlePage(const framework::HttpUrlPath& urlpath, vespalib::Por
             if (auth_ctx.capabilities().contains_all(reporter->required_capabilities())) {
                 invoke_reporter(*reporter, urlpath, request);
             } else {
+                vespalib::net::tls::CapabilityStatistics::get().inc_status_capability_checks_failed();
                 // TODO should print peer address as well; not currently exposed
                 LOG(warning, "Peer with %s denied status page access to '%s' due to insufficient "
                              "credentials (had %s, needed %s)",

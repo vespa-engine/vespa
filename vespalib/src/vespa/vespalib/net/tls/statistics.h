@@ -55,12 +55,12 @@ struct ConnectionStatistics {
         uint64_t invalid_peer_credentials = 0;
         uint64_t broken_tls_connections   = 0;
 
-        Snapshot subtract(const Snapshot& rhs) const noexcept;
+        [[nodiscard]] Snapshot subtract(const Snapshot& rhs) const noexcept;
     };
 
-    // Acquires a snapshot of statistics that is expected to be reasonably up to date.
+    // Acquires a snapshot of statistics that is expected to be reasonably up-to-date.
     // Thread safe.
-    Snapshot snapshot() const noexcept;
+    [[nodiscard]] Snapshot snapshot() const noexcept;
 
     static ConnectionStatistics client_stats;
     static ConnectionStatistics server_stats;
@@ -85,15 +85,42 @@ struct ConfigStatistics {
         uint64_t successful_config_reloads = 0;
         uint64_t failed_config_reloads     = 0;
 
-        Snapshot subtract(const Snapshot& rhs) const noexcept;
+        [[nodiscard]] Snapshot subtract(const Snapshot& rhs) const noexcept;
     };
 
-    // Acquires a snapshot of statistics that is expected to be reasonably up to date.
+    // Acquires a snapshot of statistics that is expected to be reasonably up-to-date.
     // Thread safe.
-    Snapshot snapshot() const noexcept;
+    [[nodiscard]] Snapshot snapshot() const noexcept;
 
     static ConfigStatistics instance;
     static ConfigStatistics& get() noexcept { return instance; }
+};
+
+struct CapabilityStatistics {
+    std::atomic<uint64_t> rpc_capability_checks_failed    = 0;
+    std::atomic<uint64_t> status_capability_checks_failed = 0;
+
+    void inc_rpc_capability_checks_failed() noexcept {
+        rpc_capability_checks_failed.fetch_add(1, std::memory_order_relaxed);
+    }
+
+    void inc_status_capability_checks_failed() noexcept {
+        status_capability_checks_failed.fetch_add(1, std::memory_order_relaxed);
+    }
+
+    struct Snapshot {
+        uint64_t rpc_capability_checks_failed    = 0;
+        uint64_t status_capability_checks_failed = 0;
+
+        [[nodiscard]] Snapshot subtract(const Snapshot& rhs) const noexcept;
+    };
+
+    // Acquires a snapshot of statistics that is expected to be reasonably up-to-date.
+    // Thread safe.
+    [[nodiscard]] Snapshot snapshot() const noexcept;
+
+    static CapabilityStatistics instance;
+    static CapabilityStatistics& get() noexcept { return instance; }
 };
 
 }

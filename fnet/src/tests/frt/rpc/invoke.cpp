@@ -2,6 +2,7 @@
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/vespalib/net/socket_spec.h>
 #include <vespa/vespalib/net/tls/capability_env_config.h>
+#include <vespa/vespalib/net/tls/statistics.h>
 #include <vespa/vespalib/util/benchmark_timer.h>
 #include <vespa/vespalib/util/latch.h>
 #include <vespa/fnet/frt/supervisor.h>
@@ -16,6 +17,7 @@
 
 using vespalib::SocketSpec;
 using vespalib::BenchmarkTimer;
+using vespalib::net::tls::CapabilityStatistics;
 using namespace vespalib::net::tls;
 
 constexpr double timeout = 60.0;
@@ -486,6 +488,7 @@ TEST_F("request allowed by access filter invokes server method as usual", Fixtur
 }
 
 TEST_F("capability checking filter is enforced under mTLS unless overridden by env var", Fixture()) {
+    const auto cap_stats_before = CapabilityStatistics::get().snapshot();
     MyReq req("capabilityRestricted"); // Requires content node cap set; disallowed
     f1.target().InvokeSync(req.borrow(), timeout);
     auto cap_mode = capability_enforcement_mode_from_env();
@@ -494,6 +497,9 @@ TEST_F("capability checking filter is enforced under mTLS unless overridden by e
         // Default authz rule does not give required capabilities; must fail.
         EXPECT_EQUAL(req.get().GetErrorCode(), FRTE_RPC_PERMISSION_DENIED);
         EXPECT_FALSE(f1.server_instance().restricted_method_was_invoked());
+        // Permission denied should bump capability check failure statistic
+        const auto cap_stats = CapabilityStatistics::get().snapshot().subtract(cap_stats_before);
+        EXPECT_EQUAL(cap_stats.rpc_capability_checks_failed, 1u);
     } else {
         // Either no mTLS configured (implicit full capability set) or capabilities not enforced.
         ASSERT_FALSE(req.get().IsError());
@@ -502,11 +508,15 @@ TEST_F("capability checking filter is enforced under mTLS unless overridden by e
 }
 
 TEST_F("access is allowed by capability filter when peer is granted the required capability", Fixture()) {
+    const auto cap_stats_before = CapabilityStatistics::get().snapshot();
     MyReq req("capabilityAllowed"); // Requires telemetry cap set; allowed
     f1.target().InvokeSync(req.borrow(), timeout);
     // Should always be allowed, regardless of mTLS mode or capability enforcement
     ASSERT_FALSE(req.get().IsError());
     EXPECT_TRUE(f1.server_instance().restricted_method_was_invoked());
+    // Should _not_ bump capability check failure statistic
+    const auto cap_stats = CapabilityStatistics::get().snapshot().subtract(cap_stats_before);
+    EXPECT_EQUAL(cap_stats.rpc_capability_checks_failed, 0u);
 }
 
 TEST_F("access is allowed by capability filter when required capability set is empty", Fixture()) {

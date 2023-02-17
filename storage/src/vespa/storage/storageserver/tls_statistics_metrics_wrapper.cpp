@@ -27,9 +27,14 @@ TlsStatisticsMetricsWrapper::TlsStatisticsMetricsWrapper(metrics::MetricSet* own
               "connections broken due to failures during frame encoding or decoding", this),
       failed_tls_config_reloads("failed-tls-config-reloads", {}, "Number of times "
               "background reloading of TLS config has failed", this),
+      rpc_capability_checks_failed("rpc-capability-checks-failed", {},
+              "Number of RPC operations that failed to due one or more missing capabilities", this),
+      status_capability_checks_failed("status-capability-checks-failed", {},
+              "Number of status page operations that failed to due one or more missing capabilities", this),
       last_client_stats_snapshot(),
       last_server_stats_snapshot(),
-      last_config_stats_snapshot()
+      last_config_stats_snapshot(),
+      last_capability_stats_snapshot()
 {}
 
 TlsStatisticsMetricsWrapper::~TlsStatisticsMetricsWrapper() = default;
@@ -60,9 +65,16 @@ void TlsStatisticsMetricsWrapper::update_metrics_with_snapshot_delta() {
 
     failed_tls_config_reloads.set(config_delta.failed_config_reloads);
 
+    auto capability_current = vespalib::net::tls::CapabilityStatistics::get().snapshot();
+    auto capability_delta = capability_current.subtract(last_capability_stats_snapshot);
+
+    rpc_capability_checks_failed.set(capability_delta.rpc_capability_checks_failed);
+    status_capability_checks_failed.set(capability_delta.status_capability_checks_failed);
+
     last_server_stats_snapshot = server_current;
     last_client_stats_snapshot = client_current;
     last_config_stats_snapshot = config_current;
+    last_capability_stats_snapshot = capability_current;
 }
 
 }
