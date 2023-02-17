@@ -66,6 +66,12 @@
                 <version>${guava.version}</version>
             </dependency>
             <dependency>
+                <!-- Only listed because it's a dependency of Guava -->
+                <groupId>com.google.errorprone</groupId>
+                <artifactId>error_prone_annotations</artifactId>
+                <version>${error-prone-annotations.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>com.google.inject</groupId>
                 <artifactId>guice</artifactId>
                 <version>${guice.version}</version>
@@ -234,6 +240,7 @@
 
     <properties>
         <aopalliance.version>1.0</aopalliance.version>
+        <error-prone-annotations.version>2.18.0</error-prone-annotations.version>
         <guava.version>27.1-jre</guava.version>
         <guice.version>4.2.3</guice.version>
         <jackson2.version>2.13.4</jackson2.version>
