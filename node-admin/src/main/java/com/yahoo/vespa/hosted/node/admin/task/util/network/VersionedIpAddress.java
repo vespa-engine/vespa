@@ -27,6 +27,11 @@ public class VersionedIpAddress implements Comparable<VersionedIpAddress> {
         return InetAddresses.toAddrString(address);
     }
 
+    public String asEndpoint(int port) {
+        var format = (version == IPVersion.IPv6) ? "[%s]:%d" : "%s:%d";
+        return String.format(format, asString(), port);
+    }
+
     public static VersionedIpAddress from(InetAddress address) {
         return new VersionedIpAddress(address);
     }
