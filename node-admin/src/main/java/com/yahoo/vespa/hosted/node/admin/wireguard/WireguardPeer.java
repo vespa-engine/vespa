@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * A wireguard peer.
+ * A wireguard peer. Sorted by hostname. IP addresses are sorted by version, IPv6 first.
  *
  * @author gjoranv
  */

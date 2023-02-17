@@ -7,6 +7,9 @@ import java.net.Inet6Address;
 import java.net.InetAddress;
 
 /**
+ * Encapsulates an IP address and its version along with some convenience methods.
+ * Sorted by version (IPv6 first), then by address.
+ *
  * @author gjoranv
  */
 public class VersionedIpAddress implements Comparable<VersionedIpAddress> {
