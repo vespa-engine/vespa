@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.autoscale;
 
+import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Flavor;
@@ -155,6 +156,7 @@ public class AllocatableClusterResources {
     }
 
     public static Optional<AllocatableClusterResources> from(ClusterResources wantedResources,
+                                                             ApplicationId applicationId,
                                                              ClusterSpec clusterSpec,
                                                              Limits applicationLimits,
                                                              List<NodeResources> availableRealHostResources,
@@ -164,15 +166,15 @@ public class AllocatableClusterResources {
         if (! exclusive) {
             // We decide resources: Add overhead to what we'll request (advertised) to make sure real becomes (at least) cappedNodeResources
             var advertisedResources = nodeRepository.resourcesCalculator().realToRequest(wantedResources.nodeResources(), exclusive);
-            advertisedResources = systemLimits.enlargeToLegal(advertisedResources, clusterSpec, exclusive); // Ask for something legal
+            advertisedResources = systemLimits.enlargeToLegal(advertisedResources, applicationId, clusterSpec, exclusive); // Ask for something legal
             advertisedResources = applicationLimits.cap(advertisedResources); // Overrides other conditions, even if it will then fail
             var realResources = nodeRepository.resourcesCalculator().requestToReal(advertisedResources, exclusive); // What we'll really get
-            if ( ! systemLimits.isWithinRealLimits(realResources, clusterSpec) && advertisedResources.storageType() == NodeResources.StorageType.any) {
+            if ( ! systemLimits.isWithinRealLimits(realResources, applicationId, clusterSpec) && advertisedResources.storageType() == NodeResources.StorageType.any) {
                 // Since local disk resreves some of the storage, try to constrain to remote disk
                 advertisedResources = advertisedResources.with(NodeResources.StorageType.remote);
                 realResources = nodeRepository.resourcesCalculator().requestToReal(advertisedResources, exclusive);
             }
-            if ( ! systemLimits.isWithinRealLimits(realResources, clusterSpec))
+            if ( ! systemLimits.isWithinRealLimits(realResources, applicationId, clusterSpec))
                 return Optional.empty();
             if (anySatisfies(realResources, availableRealHostResources))
                 return Optional.of(new AllocatableClusterResources(wantedResources.with(realResources),
@@ -192,7 +194,7 @@ public class AllocatableClusterResources {
 
                 // Adjust where we don't need exact match to the flavor
                 if (flavor.resources().storageType() == NodeResources.StorageType.remote) {
-                    double diskGb = systemLimits.enlargeToLegal(cappedWantedResources, clusterSpec, exclusive).diskGb();
+                    double diskGb = systemLimits.enlargeToLegal(cappedWantedResources, applicationId, clusterSpec, exclusive).diskGb();
                     advertisedResources = advertisedResources.withDiskGb(diskGb);
                     realResources = realResources.withDiskGb(diskGb);
                 }
@@ -202,7 +204,7 @@ public class AllocatableClusterResources {
                 }
 
                 if ( ! between(applicationLimits.min().nodeResources(), applicationLimits.max().nodeResources(), advertisedResources)) continue;
-                if ( ! systemLimits.isWithinRealLimits(realResources, clusterSpec)) continue;
+                if ( ! systemLimits.isWithinRealLimits(realResources, applicationId, clusterSpec)) continue;
                 var candidate = new AllocatableClusterResources(wantedResources.with(realResources),
                                                                 advertisedResources,
                                                                 wantedResources,
