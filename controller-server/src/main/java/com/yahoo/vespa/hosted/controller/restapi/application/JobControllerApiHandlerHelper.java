@@ -218,7 +218,7 @@ class JobControllerApiHandlerHelper {
         Cursor responseObject = slime.setObject();
         Optional<Run> run = jobs.last(id, type).flatMap(last -> jobs.active(last.id()));
         if (run.isPresent()) {
-            jobs.abort(run.get().id(), "aborted by " + request.getJDiscRequest().getUserPrincipal());
+            jobs.abort(run.get().id(), "aborted by " + request.getJDiscRequest().getUserPrincipal().getName());
             responseObject.setString("message", "Aborting " + run.get().id());
         }
         else
