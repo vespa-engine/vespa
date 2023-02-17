@@ -249,12 +249,15 @@
   },
   "com.yahoo.container.handler.LogHandler" : {
     "superClass" : "com.yahoo.container.jdisc.ThreadedHttpRequestHandler",
-    "interfaces" : [ ],
+    "interfaces" : [
+      "com.yahoo.container.jdisc.utils.CapabilityRequiringRequestHandler"
+    ],
     "attributes" : [
       "public"
     ],
     "methods" : [
       "public void <init>(java.util.concurrent.Executor, com.yahoo.container.core.LogHandlerConfig)",
+      "public com.yahoo.security.tls.Capability requiredCapability(com.yahoo.container.jdisc.RequestView)",
       "public com.yahoo.container.jdisc.AsyncHttpResponse handle(com.yahoo.container.jdisc.HttpRequest)",
       "public bridge synthetic com.yahoo.container.jdisc.HttpResponse handle(com.yahoo.container.jdisc.HttpRequest)"
     ],
