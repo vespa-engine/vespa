@@ -11,6 +11,7 @@ add_custom_command(OUTPUT ${GODIR}/bin/vespa ${GODIR}/bin/vespa-wrapper
 
 add_custom_target(client_go_binaries ALL DEPENDS ${GODIR}/bin/vespa ${GODIR}/bin/vespa-wrapper)
 
+install(PROGRAMS ${GODIR}/bin/vespa DESTINATION bin)
 install(PROGRAMS ${GODIR}/bin/vespa-wrapper DESTINATION libexec/vespa)
 
 install_symlink(libexec/vespa/vespa-wrapper bin/vespa-logfmt)
