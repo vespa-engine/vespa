@@ -29,9 +29,6 @@ type visitArgs struct {
 	jsonLines      bool
 	pretty         bool
 	quietMode      bool
-	chunkTime      string
-	timeoutTime    string
-	streamFlag     bool
 	chunkCount     int
 }
 
@@ -68,7 +65,9 @@ $ vespa visit --content-cluster search # get documents from cluster named "searc
 			if !result.Success {
 				return fmt.Errorf("visit failed: %s", result.Message)
 			}
-			fmt.Fprintln(os.Stderr, "sum of 'documentCount':", totalDocCount)
+			if !vArgs.quietMode {
+				fmt.Fprintln(os.Stderr, "[debug] sum of 'documentCount':", totalDocCount)
+			}
 			return nil
 		},
 	}
@@ -78,10 +77,7 @@ $ vespa visit --content-cluster search # get documents from cluster named "searc
 	cmd.Flags().BoolVar(&vArgs.jsonLines, "json-lines", false, `output documents as JSON lines`)
 	cmd.Flags().BoolVar(&vArgs.makeFeed, "make-feed", false, `output JSON array suitable for vespa-feeder`)
 	cmd.Flags().BoolVar(&vArgs.pretty, "pretty-json", false, `format pretty JSON`)
-	cmd.Flags().IntVar(&vArgs.chunkCount, "chunk-count", 0, `chunk by count`)
-	cmd.Flags().BoolVar(&vArgs.streamFlag, "stream", false, `use streaming mode`)
-	cmd.Flags().StringVar(&vArgs.chunkTime, "chunk-time", "", `chunk by time`)
-	cmd.Flags().StringVar(&vArgs.timeoutTime, "timeout-time", "", `per-chunk timeout`)
+	cmd.Flags().IntVar(&vArgs.chunkCount, "chunk-count", 1000, `chunk by count`)
 	return cmd
 }
 
@@ -206,7 +202,7 @@ func runVisit(vArgs visitArgs, service *vespa.Service) (res util.OperationResult
 			dumpDocuments(vvo.Documents, false, vArgs.pretty)
 		}
 		if !vArgs.quietMode {
-			fmt.Fprintln(os.Stderr, "got", len(vvo.Documents), "documents")
+			fmt.Fprintln(os.Stderr, "[debug] got", len(vvo.Documents), "documents")
 		}
 		totalDocuments += len(vvo.Documents)
 		continuationToken = vvo.Continuation
@@ -228,15 +224,6 @@ func runOneVisit(vArgs visitArgs, service *vespa.Service, contToken string) (*Ve
 	}
 	if contToken != "" {
 		urlPath = urlPath + "&continuation=" + contToken
-	}
-	if vArgs.streamFlag {
-		urlPath = urlPath + "&stream=true"
-	}
-	if vArgs.chunkTime != "" {
-		urlPath = urlPath + "&timeChunk=" + vArgs.chunkTime
-	}
-	if vArgs.timeoutTime != "" {
-		urlPath = urlPath + "&timeout=" + vArgs.timeoutTime
 	}
 	if vArgs.chunkCount > 0 {
 		urlPath = urlPath + fmt.Sprintf("&wantedDocumentCount=%d", vArgs.chunkCount)
