@@ -92,6 +92,9 @@ public class VespaMetricSet {
         addMetric(metrics, "vds.server.network.server.insecure-connections-established");
         addMetric(metrics, "vds.server.network.tls-connections-broken");
         addMetric(metrics, "vds.server.network.failed-tls-config-reloads");
+        // C++ capability metrics
+        addMetric(metrics, "vds.server.network.rpc-capability-checks-failed");
+        addMetric(metrics, "vds.server.network.status-capability-checks-failed");
 
         // C++ Fnet metrics
         addMetric(metrics, "vds.server.fnet.num-connections");
