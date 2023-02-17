@@ -29,6 +29,7 @@ import com.yahoo.vespa.model.container.http.Http;
 import com.yahoo.vespa.model.container.http.JettyHttpServer;
 import com.yahoo.vespa.model.filedistribution.FileDistributionConfigProducer;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -38,6 +39,7 @@ import java.util.Optional;
 
 import static com.yahoo.container.QrConfig.Filedistributor;
 import static com.yahoo.container.QrConfig.Rpc;
+import static com.yahoo.vespa.defaults.Defaults.getDefaults;
 
 /**
  * Note about components: In general, all components should belong to the cluster and not the container. However,
@@ -385,6 +387,12 @@ public abstract class Container extends AbstractService implements
         if (clusterName != null)
             dimensions.put("clustername", clusterName);
         return dimensions;
+    }
+
+    protected String prepareStopCommand(Duration timeout) {
+        long rpcTimeoutSeconds = timeout.toSeconds() + 10;
+        String rpcParams = "-t " + rpcTimeoutSeconds + " tcp/localhost:" + getRpcPort() + " prepareStop d:" + timeout.toSeconds();
+        return getDefaults().underVespaHome("bin/vespa-rpc-invoke") + " " + rpcParams;
     }
 
     private boolean messageBusEnabled() {
