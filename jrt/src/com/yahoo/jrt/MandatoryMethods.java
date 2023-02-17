@@ -2,6 +2,8 @@
 package com.yahoo.jrt;
 
 
+import com.yahoo.security.tls.CapabilitySet;
+
 import java.util.Collection;
 
 
@@ -15,6 +17,7 @@ class MandatoryMethods {
         Method m;
         //---------------------------------------------------------------------
         m = new Method("frt.rpc.ping", "", "", this::ping);
+        m.requireCapabilities(CapabilitySet.none());
         m.methodDesc("Method that may be used to "
                      + "check if the server is online");
         parent.addMethod(m);
