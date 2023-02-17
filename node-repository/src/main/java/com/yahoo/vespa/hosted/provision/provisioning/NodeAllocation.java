@@ -131,7 +131,7 @@ class NodeAllocation {
                 }
             }
             else if (! saturated() && hasCompatibleResources(candidate)) {
-                if (! nodeResourceLimits.isWithinRealLimits(candidate, cluster)) {
+                if (! nodeResourceLimits.isWithinRealLimits(candidate, application, cluster)) {
                     ++rejectedDueToInsufficientRealResources;
                     continue;
                 }
@@ -163,7 +163,7 @@ class NodeAllocation {
             boolean alreadyRetired = candidate.allocation().map(a -> a.membership().retired()).orElse(false);
             return alreadyRetired ? Retirement.alreadyRetired : Retirement.none;
         }
-        if ( ! nodeResourceLimits.isWithinRealLimits(candidate, cluster)) return Retirement.outsideRealLimits;
+        if ( ! nodeResourceLimits.isWithinRealLimits(candidate, application, cluster)) return Retirement.outsideRealLimits;
         if (violatesParentHostPolicy(candidate)) return Retirement.violatesParentHostPolicy;
         if ( ! hasCompatibleResources(candidate)) return Retirement.incompatibleResources;
         if (candidate.wantToRetire()) return Retirement.hardRequest;
