@@ -250,6 +250,7 @@ func (c *CLI) configureCommands() {
 	rootCmd.AddCommand(statusCmd)                   // status
 	rootCmd.AddCommand(newTestCmd(c))               // test
 	rootCmd.AddCommand(newVersionCmd(c))            // version
+	rootCmd.AddCommand(newVisitCmd(c))              // visit
 }
 
 func (c *CLI) printErr(err error, hints ...string) {
