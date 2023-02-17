@@ -214,13 +214,34 @@ func runVisit(vArgs visitArgs, service *vespa.Service) (res util.OperationResult
 	return
 }
 
+func quoteArgForUrl(arg string) string {
+	var buf strings.Builder
+	buf.Grow(len(arg))
+	for _, r := range arg {
+		switch {
+		case 'a' <= r && r <= 'z':
+			buf.WriteRune(r)
+		case 'A' <= r && r <= 'Z':
+			buf.WriteRune(r)
+		case '0' <= r && r <= '9':
+			buf.WriteRune(r)
+		case r <= ' ' || r > '~':
+			buf.WriteRune('+')
+		default:
+			s := fmt.Sprintf("%s%02X", "%", r)
+			buf.WriteString(s)
+		}
+	}
+	return buf.String()
+}
+
 func runOneVisit(vArgs visitArgs, service *vespa.Service, contToken string) (*VespaVisitOutput, util.OperationResult) {
-	urlPath := service.BaseURL + "/document/v1/?cluster=" + vArgs.contentCluster
+	urlPath := service.BaseURL + "/document/v1/?cluster=" + quoteArgForUrl(vArgs.contentCluster)
 	if vArgs.fieldSet != "" {
-		urlPath = urlPath + "&fieldSet=" + vArgs.fieldSet
+		urlPath = urlPath + "&fieldSet=" + quoteArgForUrl(vArgs.fieldSet)
 	}
 	if vArgs.selection != "" {
-		urlPath = urlPath + "&selection=" + vArgs.selection
+		urlPath = urlPath + "&selection=" + quoteArgForUrl(vArgs.selection)
 	}
 	if contToken != "" {
 		urlPath = urlPath + "&continuation=" + contToken
