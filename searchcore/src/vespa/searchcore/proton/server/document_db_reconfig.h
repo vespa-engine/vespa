@@ -12,15 +12,17 @@ class DocumentSubDBReconfig;
  * Class representing the result of the prepare step of a DocumentDB reconfig.
  *
  * The reconfig is performed in three steps:
- * Prepare:
+ * 1) Prepare:
  * Based on the config that is changed, new components are instantiated in each subdb.
- * This can be costly and is handled by helper threads from the shared executor pool.
+ * This can be costly and is done by the proton reconfigure thread.
  *
- * Complete prepare:
- * Docid limit and serial number are used to complete prepared reconfig.
+ * 2) Complete prepare:
+ * Docid limit and serial number are used to complete the prepared reconfig.
+ * This is done by the DocumentDB master write thread.
  *
- * Apply:
- * The new components are swapped with the old ones in the DocumentDB master write thread.
+ * 3) Apply:
+ * The new components are swapped with the old ones.
+ * This is done by the DocumentDB master write thread.
  */
 class DocumentDBReconfig {
 private:
