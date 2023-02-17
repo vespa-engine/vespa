@@ -15,12 +15,13 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
-import java.util.stream.Collectors;
 
 public class Group extends Identifiable {
 
     public static final int classId = registerClass(0x4000 + 90, Group.class);
     private static final ObjectPredicate REF_LOCATOR = new RefLocator();
+    private static final int MAX_AGGREGATIONS = 0x10000; // Backend limitation
+    private static final int MAX_ORDERBY_EXPRESSIONS = 8; // Backend limitation
     private List<Integer> orderByIdx = List.of();
     private List<ExpressionNode> orderByExp = List.of();
     private List<AggregationResult> aggregationResults = List.of();
@@ -274,6 +275,9 @@ public class Group extends Identifiable {
      * @return this, to allow chaining
      */
     public Group addAggregationResult(AggregationResult result) {
+        if (aggregationResults.size() >= MAX_AGGREGATIONS) {
+            throw new IllegalArgumentException("You have reached the limit for number of aggregations of " + MAX_AGGREGATIONS);
+        }
         aggregationResults = add(aggregationResults, result);
         return this;
     }
@@ -288,6 +292,9 @@ public class Group extends Identifiable {
      * @return this, to allow chaining
      */
     public Group addOrderBy(ExpressionNode exp, boolean asc) {
+        if (orderByExp.size() >= MAX_ORDERBY_EXPRESSIONS) {
+            throw new IllegalArgumentException("You have reached the limit for number of orderby expressions of " + MAX_ORDERBY_EXPRESSIONS);
+        }
         if (exp instanceof AggregationResult) {
             exp = new AggregationRefNode((AggregationResult)exp);
         }
