@@ -130,10 +130,20 @@ public class RealNodeRepository implements NodeRepository {
     }
 
     @Override
+    public List<ConfigserverPeer> getExclavePeers() {
+        String path = "/nodes/v2/node/?recursive=true&enclave=true";
+        final GetNodesResponse response = configServerApi.get(path, GetNodesResponse.class);
+
+        return response.nodes.stream()
+                .map(RealNodeRepository::createTenantPeer)
+                .sorted(Comparator.comparing(ConfigserverPeer::hostname))
+                .toList();
+    }
+
+    @Override
     public List<ConfigserverPeer> getConfigserverPeers() {
-        GetWireguardResponse nodeResponse = configServerApi.get("/nodes/v2/wireguard",
-                                                                GetWireguardResponse.class);
-        return nodeResponse.configservers.stream()
+        GetWireguardResponse response = configServerApi.get("/nodes/v2/wireguard", GetWireguardResponse.class);
+        return response.configservers.stream()
                 .map(RealNodeRepository::createConfigserverPeer)
                 .sorted(Comparator.comparing(ConfigserverPeer::hostname))
                 .toList();
@@ -338,6 +348,12 @@ public class RealNodeRepository implements NodeRepository {
         node.reports = reports == null || reports.isEmpty() ? null : new TreeMap<>(reports);
 
         return node;
+    }
+
+    private static ConfigserverPeer createTenantPeer(NodeRepositoryNode node) {
+        return new ConfigserverPeer(HostName.of(node.hostname),
+                                    node.ipAddresses.stream().map(VersionedIpAddress::from).toList(),
+                                    node.wireguardKey());
     }
 
     private static ConfigserverPeer createConfigserverPeer(GetWireguardResponse.Configserver configServer) {

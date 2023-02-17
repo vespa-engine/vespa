@@ -8,6 +8,8 @@ import java.util.List;
 import java.util.Optional;
 
 /**
+ * A wireguard peer.
+ *
  * @author gjoranv
  */
 public record ConfigserverPeer(HostName hostname,
@@ -15,8 +17,8 @@ public record ConfigserverPeer(HostName hostname,
                                Optional<WireguardKey> publicKey) {
 
     public ConfigserverPeer {
-        if (ipAddresses.isEmpty()) throw new IllegalArgumentException("No IP addresses for configserver " + hostname.value());
-        ipAddresses = List.copyOf(ipAddresses);
+        if (ipAddresses.isEmpty()) throw new IllegalArgumentException("No IP addresses for peer node " + hostname.value());
+        ipAddresses = ipAddresses.stream().sorted().toList();
     }
 
 }

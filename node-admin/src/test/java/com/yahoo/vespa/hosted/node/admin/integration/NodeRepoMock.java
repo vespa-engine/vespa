@@ -48,6 +48,11 @@ public class NodeRepoMock implements NodeRepository {
     }
 
     @Override
+    public List<ConfigserverPeer> getExclavePeers() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public List<ConfigserverPeer> getConfigserverPeers() {
         throw new UnsupportedOperationException();
     }

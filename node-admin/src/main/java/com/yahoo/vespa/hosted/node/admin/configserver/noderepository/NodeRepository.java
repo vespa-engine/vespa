@@ -24,6 +24,8 @@ public interface NodeRepository {
 
     Map<String, Acl> getAcls(String hostname);
 
+    List<ConfigserverPeer> getExclavePeers();
+
     List<ConfigserverPeer> getConfigserverPeers();
 
     void updateNodeAttributes(String hostName, NodeAttributes nodeAttributes);
