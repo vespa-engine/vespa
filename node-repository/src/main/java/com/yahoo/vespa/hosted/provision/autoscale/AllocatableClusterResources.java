@@ -38,7 +38,7 @@ public class AllocatableClusterResources {
                                        NodeRepository nodeRepository) {
         this.nodes = requested.nodes();
         this.groups = requested.groups();
-        this.realResources = nodeRepository.resourcesCalculator().requestToReal(requested.nodeResources(), nodeRepository.exclusiveAllocation(clusterSpec));
+        this.realResources = nodeRepository.resourcesCalculator().requestToReal(requested.nodeResources(), nodeRepository.exclusiveAllocation(clusterSpec), false);
         this.advertisedResources = requested.nodeResources();
         this.clusterSpec = clusterSpec;
         this.fulfilment = 1;
@@ -165,24 +165,32 @@ public class AllocatableClusterResources {
         boolean exclusive = nodeRepository.exclusiveAllocation(clusterSpec);
         if (! exclusive) {
             // We decide resources: Add overhead to what we'll request (advertised) to make sure real becomes (at least) cappedNodeResources
-            var advertisedResources = nodeRepository.resourcesCalculator().realToRequest(wantedResources.nodeResources(), exclusive);
-            advertisedResources = systemLimits.enlargeToLegal(advertisedResources, applicationId, clusterSpec, exclusive); // Ask for something legal
-            advertisedResources = applicationLimits.cap(advertisedResources); // Overrides other conditions, even if it will then fail
-            var realResources = nodeRepository.resourcesCalculator().requestToReal(advertisedResources, exclusive); // What we'll really get
-            if ( ! systemLimits.isWithinRealLimits(realResources, applicationId, clusterSpec) && advertisedResources.storageType() == NodeResources.StorageType.any) {
-                // Since local disk resreves some of the storage, try to constrain to remote disk
-                advertisedResources = advertisedResources.with(NodeResources.StorageType.remote);
-                realResources = nodeRepository.resourcesCalculator().requestToReal(advertisedResources, exclusive);
+            var allocatableResources = calculateAllocatableResources(wantedResources,
+                                                                     nodeRepository,
+                                                                     applicationId,
+                                                                     clusterSpec,
+                                                                     applicationLimits,
+                                                                     exclusive,
+                                                                     true);
+
+            var worstCaseRealResources = nodeRepository.resourcesCalculator().requestToReal(allocatableResources.advertisedResources,
+                                                                                            exclusive,
+                                                                                            false);
+            if ( ! systemLimits.isWithinRealLimits(worstCaseRealResources, applicationId, clusterSpec)) {
+                allocatableResources = calculateAllocatableResources(wantedResources,
+                                                                     nodeRepository,
+                                                                     applicationId,
+                                                                     clusterSpec,
+                                                                     applicationLimits,
+                                                                     exclusive,
+                                                                     false);
             }
-            if ( ! systemLimits.isWithinRealLimits(realResources, applicationId, clusterSpec))
+
+            if ( ! systemLimits.isWithinRealLimits(allocatableResources.realResources, applicationId, clusterSpec))
                 return Optional.empty();
-            if (anySatisfies(realResources, availableRealHostResources))
-                return Optional.of(new AllocatableClusterResources(wantedResources.with(realResources),
-                                                                   advertisedResources,
-                                                                   wantedResources,
-                                                                   clusterSpec));
-            else
+            if ( ! anySatisfies(allocatableResources.realResources, availableRealHostResources))
                 return Optional.empty();
+            return Optional.of(allocatableResources);
         }
         else { // Return the cheapest flavor satisfying the requested resources, if any
             NodeResources cappedWantedResources = applicationLimits.cap(wantedResources.nodeResources());
@@ -190,7 +198,7 @@ public class AllocatableClusterResources {
             for (Flavor flavor : nodeRepository.flavors().getFlavors()) {
                 // Flavor decide resources: Real resources are the worst case real resources we'll get if we ask for these advertised resources
                 NodeResources advertisedResources = nodeRepository.resourcesCalculator().advertisedResourcesOf(flavor);
-                NodeResources realResources = nodeRepository.resourcesCalculator().requestToReal(advertisedResources, exclusive);
+                NodeResources realResources = nodeRepository.resourcesCalculator().requestToReal(advertisedResources, exclusive, false);
 
                 // Adjust where we don't need exact match to the flavor
                 if (flavor.resources().storageType() == NodeResources.StorageType.remote) {
@@ -215,6 +223,30 @@ public class AllocatableClusterResources {
             }
             return best;
         }
+    }
+
+    private static AllocatableClusterResources calculateAllocatableResources(ClusterResources wantedResources,
+                                                                             NodeRepository nodeRepository,
+                                                                             ApplicationId applicationId,
+                                                                             ClusterSpec clusterSpec,
+                                                                             Limits applicationLimits,
+                                                                             boolean exclusive,
+                                                                             boolean bestCase) {
+        var systemLimits = new NodeResourceLimits(nodeRepository);
+        var advertisedResources = nodeRepository.resourcesCalculator().realToRequest(wantedResources.nodeResources(), exclusive, bestCase);
+        advertisedResources = systemLimits.enlargeToLegal(advertisedResources, applicationId, clusterSpec, exclusive); // Ask for something legal
+        advertisedResources = applicationLimits.cap(advertisedResources); // Overrides other conditions, even if it will then fail
+        var realResources = nodeRepository.resourcesCalculator().requestToReal(advertisedResources, exclusive, bestCase); // What we'll really get
+        if ( ! systemLimits.isWithinRealLimits(realResources, applicationId, clusterSpec)
+             && advertisedResources.storageType() == NodeResources.StorageType.any) {
+            // Since local disk reserves some of the storage, try to constrain to remote disk
+            advertisedResources = advertisedResources.with(NodeResources.StorageType.remote);
+            realResources = nodeRepository.resourcesCalculator().requestToReal(advertisedResources, exclusive, bestCase);
+        }
+        return new AllocatableClusterResources(wantedResources.with(realResources),
+                                               advertisedResources,
+                                               wantedResources,
+                                               clusterSpec);
     }
 
     /** Returns true if the given resources could be allocated on any of the given host flavors */
