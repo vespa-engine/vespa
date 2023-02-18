@@ -110,7 +110,6 @@ public class MockNodeRepository extends NodeRepository {
                           .cloudAccount(defaultCloudAccount).build());
         // Emulate node in tenant account
         nodes.add(Node.create("node3", ipConfig(3), "host3.yahoo.com", resources(0.5, 48, 500, 1, fast, local), NodeType.tenant)
-                          .wireguardPubKey(WireguardKey.from("333344445555666677778888999900001111222211c="))
                           .cloudAccount(tenantAccount).build());
         Node node4 = Node.create("node4", ipConfig(4), "host4.yahoo.com", resources(1, 4, 100, 1, fast, local), NodeType.tenant)
                 .parentHostname("dockerhost1.yahoo.com")
@@ -173,7 +172,7 @@ public class MockNodeRepository extends NodeRepository {
         nodes.add(Node.create("cfg1", ipConfig(201), "cfg1.yahoo.com", flavors.getFlavorOrThrow("default"), NodeType.config)
                           .wireguardPubKey(WireguardKey.from("lololololololololololololololololololololoo=")).build());
         nodes.add(Node.create("cfg2", ipConfig(202), "cfg2.yahoo.com", flavors.getFlavorOrThrow("default"), NodeType.config)
-                          .wireguardPubKey(WireguardKey.from("olololololololololololololololololololololo=")).build());
+                          .build());
 
         // Ready all nodes, except 7 and 55
         nodes = nodes().addNodes(nodes, Agent.system);

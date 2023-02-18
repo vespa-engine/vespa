@@ -204,28 +204,24 @@ public class RealNodeRepositoryTest {
         //// Configservers ////
 
         List<WireguardPeer> cfgPeers =  nodeRepositoryApi.getConfigserverPeers();
-        assertEquals(2, cfgPeers.size());
+
+        // cfg2 does not have a wg public key, so should not be included
+        assertEquals(1, cfgPeers.size());
 
         assertWireguardPeer(cfgPeers.get(0), "cfg1.yahoo.com",
                             "::201:1", "127.0.201.1",
                             "lololololololololololololololololololololoo=");
 
-        assertWireguardPeer(cfgPeers.get(1), "cfg2.yahoo.com",
-                            "::202:1", "127.0.202.1",
-                            "olololololololololololololololololololololo=");
-
         //// Exclave nodes ////
 
         List<WireguardPeer> exclavePeers =  nodeRepositoryApi.getExclavePeers();
-        assertEquals(2, exclavePeers.size());
+
+        // host3 does not have a wg public key, so should not be included
+        assertEquals(1, exclavePeers.size());
 
         assertWireguardPeer(exclavePeers.get(0), "dockerhost2.yahoo.com",
                             "::101:1", "127.0.101.1",
                             "000011112222333344445555666677778888999900c=");
-
-        assertWireguardPeer(exclavePeers.get(1), "host3.yahoo.com",
-                            "::3:1", "127.0.3.1",
-                            "333344445555666677778888999900001111222211c=");
     }
 
     private void assertWireguardPeer(WireguardPeer peer, String hostname, String ipv6, String ipv4, String publicKey) {
@@ -233,7 +229,7 @@ public class RealNodeRepositoryTest {
         assertEquals(2, peer.ipAddresses().size());
         assertIp(peer.ipAddresses().get(0), ipv6, 6);
         assertIp(peer.ipAddresses().get(1), ipv4, 4);
-        assertEquals(publicKey, peer.publicKey().get().value());
+        assertEquals(publicKey, peer.publicKey().value());
     }
 
     private void assertIp(VersionedIpAddress ip, String expectedIp, int expectedVersion) {

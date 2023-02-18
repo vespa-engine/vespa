@@ -4,10 +4,8 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.yahoo.config.provision.WireguardKey;
 
 import java.util.List;
-import java.util.Optional;
 
 /**
  * A response from the /nodes/v2/wireguard api.
@@ -44,10 +42,6 @@ public class GetWireguardResponse {
             this.hostname = hostname;
             this.ipAddresses = ipAddresses;
             this.wireguardPubkey = wireguardPubkey;
-        }
-
-        public Optional<WireguardKey> wireguardKey() {
-            return (wireguardPubkey == null || wireguardPubkey.isEmpty()) ? Optional.empty() : Optional.of(new WireguardKey(wireguardPubkey));
         }
     }
 
