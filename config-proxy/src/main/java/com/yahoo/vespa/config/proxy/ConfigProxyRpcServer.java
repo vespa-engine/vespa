@@ -13,6 +13,7 @@ import com.yahoo.jrt.Supervisor;
 import com.yahoo.jrt.Target;
 import com.yahoo.jrt.TargetWatcher;
 import com.yahoo.security.tls.Capability;
+import com.yahoo.security.tls.CapabilitySet;
 import com.yahoo.vespa.config.JRTMethods;
 import com.yahoo.vespa.config.RawConfig;
 import com.yahoo.vespa.config.protocol.JRTServerConfigRequest;
@@ -82,6 +83,7 @@ public class ConfigProxyRpcServer implements Runnable, TargetWatcher {
                                      .requireCapabilities(Capability.CONFIGPROXY__CONFIG_API));
         supervisor.addMethod(new Method("ping", "", "i",
                 this::ping)
+                .requireCapabilities(CapabilitySet.none())
                 .methodDesc("ping")
                 .returnDesc(0, "ret code", "return code, 0 is OK"));
         supervisor.addMethod(new Method("listCachedConfig", "", "S",
