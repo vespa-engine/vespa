@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.provision.provisioning;
 
 import com.yahoo.config.provision.TenantName;
+import com.yahoo.config.provision.Zone;
 import com.yahoo.lang.CachedSupplier;
 import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.provision.Node;
@@ -30,10 +31,12 @@ public class ArchiveUris {
 
     private final CuratorDb db;
     private final CachedSupplier<Map<TenantName, String>> archiveUris;
+    private final Zone zone;
 
-    public ArchiveUris(CuratorDb db) {
+    public ArchiveUris(CuratorDb db, Zone zone) {
         this.db = db;
         this.archiveUris = new CachedSupplier<>(db::readArchiveUris, cacheTtl);
+        this.zone = zone;
     }
 
     /** Returns the current archive URI for each tenant */
@@ -42,12 +45,14 @@ public class ArchiveUris {
     }
 
     /** Returns the archive URI to use for given tenant */
-    public Optional<String> archiveUriFor(TenantName tenant) {
+    private Optional<String> archiveUriFor(TenantName tenant) {
         return Optional.ofNullable(archiveUris.get().get(tenant));
     }
 
     /** Returns the archive URI to use for given node */
     public Optional<String> archiveUriFor(Node node) {
+        if (node.cloudAccount().isEnclave(zone)) return Optional.empty(); // TODO (freva): Implement for exclave
+
         return node.allocation().map(Allocation::owner)
                 .flatMap(app -> archiveUriFor(app.tenant())
                         .map(uri -> {

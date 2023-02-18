@@ -1,8 +1,8 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision;
 
-import com.yahoo.component.annotation.Inject;
 import com.yahoo.component.AbstractComponent;
+import com.yahoo.component.annotation.Inject;
 import com.yahoo.concurrent.maintenance.JobControl;
 import com.yahoo.config.provision.ApplicationTransaction;
 import com.yahoo.config.provision.ClusterSpec;
@@ -134,7 +134,7 @@ public class NodeRepository extends AbstractComponent {
         this.infrastructureVersions = new InfrastructureVersions(db);
         this.firmwareChecks = new FirmwareChecks(db, clock);
         this.containerImages = new ContainerImages(containerImage, tenantContainerImage, tenantGpuContainerImage);
-        this.archiveUris = new ArchiveUris(db);
+        this.archiveUris = new ArchiveUris(db, zone);
         this.jobControl = new JobControl(new JobControlFlags(db, flagSource));
         this.loadBalancers = new LoadBalancers(db);
         this.metricsDb = metricsDb;
