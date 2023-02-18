@@ -229,7 +229,7 @@ public class RealNodeRepositoryTest {
         assertEquals(2, peer.ipAddresses().size());
         assertIp(peer.ipAddresses().get(0), ipv6, 6);
         assertIp(peer.ipAddresses().get(1), ipv4, 4);
-        assertEquals(publicKey, peer.publicKey().get().value());
+        assertEquals(publicKey, peer.publicKey().value());
     }
 
     private void assertIp(VersionedIpAddress ip, String expectedIp, int expectedVersion) {

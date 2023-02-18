@@ -1,7 +1,9 @@
 package com.yahoo.config.provision;
 
 import ai.vespa.validation.PatternedStringWrapper;
+import com.google.common.io.CharStreams;
 
+import java.util.UUID;
 import java.util.regex.Pattern;
 
 /**
@@ -26,5 +28,10 @@ public class WireguardKey extends PatternedStringWrapper<WireguardKey> {
     @Override
     public String toString() {
         return "Wireguard key '" + value() + "'";
+    }
+
+    public static WireguardKey generateRandomForTesting() {
+        var str = UUID.randomUUID().toString().replace("-", "");
+        return new WireguardKey(str + "12345678900=");
     }
 }

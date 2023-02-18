@@ -354,13 +354,13 @@ public class RealNodeRepository implements NodeRepository {
     private static WireguardPeer createTenantPeer(NodeRepositoryNode node) {
         return new WireguardPeer(HostName.of(node.hostname),
                                  node.ipAddresses.stream().map(VersionedIpAddress::from).toList(),
-                                 node.wireguardKey());
+                                 WireguardKey.from(node.wireguardPubkey));
     }
 
     private static WireguardPeer createConfigserverPeer(GetWireguardResponse.Configserver configServer) {
         return new WireguardPeer(HostName.of(configServer.hostname),
                                  configServer.ipAddresses.stream().map(VersionedIpAddress::from).toList(),
-                                 configServer.wireguardKey());
+                                 WireguardKey.from(configServer.wireguardPubkey));
     }
 
 }
