@@ -29,8 +29,6 @@ public class ModelIdResolver {
         models.put("flan-t5-base-decoder",  "https://data.vespa.oath.cloud/onnx_models/flan-t5-base-decoder-model.onnx");
         models.put("flan-t5-large-encoder", "https://data.vespa.oath.cloud/onnx_models/flan-t5-large-encoder-model.onnx");
         models.put("flan-t5-large-decoder", "https://data.vespa.oath.cloud/onnx_models/flan-t5-large-decoder-model.onnx");
-        models.put("flan-t5-xl-encoder",    "https://data.vespa.oath.cloud/onnx_models/flan-t5-xl-encoder-model.onnx");
-        models.put("flan-t5-xl-decoder",    "https://data.vespa.oath.cloud/onnx_models/flan-t5-xl-decoder-model.onnx");
         return Collections.unmodifiableMap(models);
     }
 
