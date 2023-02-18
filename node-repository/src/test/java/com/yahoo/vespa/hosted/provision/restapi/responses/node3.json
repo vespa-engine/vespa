@@ -50,6 +50,5 @@
     "::3:1"
   ],
   "additionalIpAddresses": [],
-  "cloudAccount": "777888999000",
-  "wireguardPubkey":"333344445555666677778888999900001111222211c="
+  "cloudAccount": "777888999000"
 }

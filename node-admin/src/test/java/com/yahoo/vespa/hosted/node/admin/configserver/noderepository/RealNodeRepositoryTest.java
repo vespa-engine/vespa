@@ -204,6 +204,7 @@ public class RealNodeRepositoryTest {
         //// Configservers ////
 
         List<WireguardPeer> cfgPeers =  nodeRepositoryApi.getConfigserverPeers();
+
         // cfg2 does not have a wg public key, so should not be included
         assertEquals(1, cfgPeers.size());
 
@@ -214,15 +215,13 @@ public class RealNodeRepositoryTest {
         //// Exclave nodes ////
 
         List<WireguardPeer> exclavePeers =  nodeRepositoryApi.getExclavePeers();
-        assertEquals(2, exclavePeers.size());
+
+        // host3 does not have a wg public key, so should not be included
+        assertEquals(1, exclavePeers.size());
 
         assertWireguardPeer(exclavePeers.get(0), "dockerhost2.yahoo.com",
                             "::101:1", "127.0.101.1",
                             "000011112222333344445555666677778888999900c=");
-
-        assertWireguardPeer(exclavePeers.get(1), "host3.yahoo.com",
-                            "::3:1", "127.0.3.1",
-                            "333344445555666677778888999900001111222211c=");
     }
 
     private void assertWireguardPeer(WireguardPeer peer, String hostname, String ipv6, String ipv4, String publicKey) {

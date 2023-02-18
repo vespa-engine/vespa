@@ -135,6 +135,7 @@ public class RealNodeRepository implements NodeRepository {
         final GetNodesResponse response = configServerApi.get(path, GetNodesResponse.class);
 
         return response.nodes.stream()
+                .filter(node -> node.wireguardPubkey != null && ! node.wireguardPubkey.isEmpty())
                 .map(RealNodeRepository::createTenantPeer)
                 .sorted()
                 .toList();
