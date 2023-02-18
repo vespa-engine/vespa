@@ -1,0 +1,32 @@
+namespace=llm
+
+# SentencePiece tokenizer
+tokenizerModel      model
+tokenizerMaxTokens  int default=1000
+
+#
+# The encoder model
+#
+encoderModel                    model
+encoderModelInputIdsName        string default=input_ids
+encoderModelAttentionMaskName   string default=attention_mask
+encoderModelOutputName          string default=last_hidden_state
+
+encoderOnnxExecutionMode enum { parallel, sequential } default=sequential
+encoderOnnxInterOpThreads int default=1
+encoderOnnxIntraOpThreads int default=-4  # n=number of threads -> n<0: CPUs/(-n), n==0: CPUs, n>0: n
+# enable GPU?
+
+#
+# The decoder model
+#
+decoderModel                        model
+decoderModelInputIdsName            string default=input_ids
+decoderModelAttentionMaskName       string default=encoder_attention_mask
+decoderModelEncoderHiddenStateName  string default=encoder_hidden_states
+decoderModelOutputName              string default=logits
+
+decoderOnnxExecutionMode enum { parallel, sequential } default=sequential
+decoderOnnxInterOpThreads int default=1
+decoderOnnxIntraOpThreads int default=-4  # n=number of threads -> n<0: CPUs/(-n), n==0: CPUs, n>0: n
+# enable GPU?
