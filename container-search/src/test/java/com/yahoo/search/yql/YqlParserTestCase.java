@@ -976,16 +976,9 @@ public class YqlParserTestCase {
         assertEquals(4, terms.size());
         for (IndexedItem term : terms) {
             switch (term.getIndexedString()) {
-                case "a":
-                case "c":
-                    assertFalse(((Item) term).isRanked());
-                    break;
-                case "b":
-                case "d":
-                    assertTrue(((Item) term).isRanked());
-                    break;
-                default:
-                    fail();
+                case "a", "c" -> assertFalse(((Item) term).isRanked());
+                case "b", "d" -> assertTrue(((Item) term).isRanked());
+                default -> fail();
             }
         }
     }
