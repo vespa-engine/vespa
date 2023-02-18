@@ -173,7 +173,7 @@ public class MockNodeRepository extends NodeRepository {
         nodes.add(Node.create("cfg1", ipConfig(201), "cfg1.yahoo.com", flavors.getFlavorOrThrow("default"), NodeType.config)
                           .wireguardPubKey(WireguardKey.from("lololololololololololololololololololololoo=")).build());
         nodes.add(Node.create("cfg2", ipConfig(202), "cfg2.yahoo.com", flavors.getFlavorOrThrow("default"), NodeType.config)
-                          .wireguardPubKey(WireguardKey.from("olololololololololololololololololololololo=")).build());
+                          .build());
 
         // Ready all nodes, except 7 and 55
         nodes = nodes().addNodes(nodes, Agent.system);

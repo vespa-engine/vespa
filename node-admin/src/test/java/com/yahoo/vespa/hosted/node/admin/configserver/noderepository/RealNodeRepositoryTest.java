@@ -204,15 +204,12 @@ public class RealNodeRepositoryTest {
         //// Configservers ////
 
         List<WireguardPeer> cfgPeers =  nodeRepositoryApi.getConfigserverPeers();
-        assertEquals(2, cfgPeers.size());
+        // cfg2 does not have a wg public key, so should not be included
+        assertEquals(1, cfgPeers.size());
 
         assertWireguardPeer(cfgPeers.get(0), "cfg1.yahoo.com",
                             "::201:1", "127.0.201.1",
                             "lololololololololololololololololololololoo=");
-
-        assertWireguardPeer(cfgPeers.get(1), "cfg2.yahoo.com",
-                            "::202:1", "127.0.202.1",
-                            "olololololololololololololololololololololo=");
 
         //// Exclave nodes ////
 
