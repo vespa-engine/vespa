@@ -68,7 +68,10 @@ public class Autoscaling {
                                metrics);
     }
 
-    public boolean isEmpty() { return this.equals(empty()); }
+    /** Returns true if no measurements was used in creating this instance. */
+    public boolean isEmpty() {
+        return peak.equals(Load.zero());
+    }
 
     @Override
     public boolean equals(Object o) {
