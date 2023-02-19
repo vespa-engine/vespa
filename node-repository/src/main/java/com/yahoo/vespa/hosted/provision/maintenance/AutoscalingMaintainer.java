@@ -75,18 +75,17 @@ public class AutoscalingMaintainer extends NodeRepositoryMaintainer {
             var autoscaling = autoscaler.autoscale(application.get(), updatedCluster, clusterNodes);
 
             // 1. Update cluster info
-            updatedCluster = updateCompletion(cluster.get(), clusterNodes);
             if ( ! autoscaling.isEmpty()) // Ignore empties we'll get from servers recently started
                 updatedCluster = updatedCluster.withTarget(autoscaling);
             applications().put(application.get().with(updatedCluster), lock);
 
-            var current = new AllocatableClusterResources(clusterNodes, nodeRepository()).advertisedResources();
+            var current = new AllocatableClusterResources(clusterNodes.not().retired(), nodeRepository()).advertisedResources();
             if (autoscaling.resources().isPresent() && !current.equals(autoscaling.resources().get())) {
                 // 2. Also autoscale
                 try (MaintenanceDeployment deployment = new MaintenanceDeployment(applicationId, deployer, metric, nodeRepository())) {
                     if (deployment.isValid()) {
                         deployment.activate();
-                        logAutoscaling(current, autoscaling.resources().get(), applicationId, clusterNodes);
+                        logAutoscaling(current, autoscaling.resources().get(), applicationId, clusterNodes.not().retired());
                     }
                 }
             }
