@@ -127,10 +127,6 @@ public class ClusterModel {
     }
 
     public boolean isStable(NodeRepository nodeRepository) {
-        // An autoscaling decision was recently made
-        if (hasScaledIn(Duration.ofMinutes(5)))
-            return false;
-
         // The cluster is processing recent changes
         if (nodes.stream().anyMatch(node -> node.status().wantToRetire() ||
                                             node.allocation().get().membership().retired() ||
@@ -270,14 +266,14 @@ public class ClusterModel {
     /** The number of nodes this cluster has, or will have if not deployed yet. */
     // TODO: Make this the deployed, not current count
     private int nodeCount() {
-        if ( ! nodes.isEmpty()) return (int)nodes.stream().count();
+        if ( ! nodes.isEmpty()) return (int)nodes.not().retired().stream().count();
         return cluster.minResources().nodes();
     }
 
     /** The number of groups this cluster has, or will have if not deployed yet. */
     // TODO: Make this the deployed, not current count
     private int groupCount() {
-        if ( ! nodes.isEmpty()) return (int)nodes.stream().mapToInt(node -> node.allocation().get().membership().cluster().group().get().index()).distinct().count();
+        if ( ! nodes.isEmpty()) return (int)nodes.not().retired().stream().mapToInt(node -> node.allocation().get().membership().cluster().group().get().index()).distinct().count();
         return cluster.minResources().groups();
     }
 

@@ -67,27 +67,31 @@ public class AutoscalingMaintainer extends NodeRepositoryMaintainer {
         try (var lock = nodeRepository().applications().lock(applicationId)) {
             Optional<Application> application = nodeRepository().applications().get(applicationId);
             if (application.isEmpty()) return;
-            Optional<Cluster> cluster = application.get().cluster(clusterId);
-            if (cluster.isEmpty()) return;
+            if (application.get().cluster(clusterId).isEmpty()) return;
+            Cluster cluster = application.get().cluster(clusterId).get();
 
             NodeList clusterNodes = nodeRepository().nodes().list(Node.State.active).owner(applicationId).cluster(clusterId);
-            Cluster updatedCluster = updateCompletion(cluster.get(), clusterNodes);
-            var autoscaling = autoscaler.autoscale(application.get(), updatedCluster, clusterNodes);
+            cluster = updateCompletion(cluster, clusterNodes);
 
-            // 1. Update cluster info
-            updatedCluster = updateCompletion(cluster.get(), clusterNodes);
-            if ( ! autoscaling.isEmpty()) // Ignore empties we'll get from servers recently started
-                updatedCluster = updatedCluster.withTarget(autoscaling);
-            applications().put(application.get().with(updatedCluster), lock);
+            var current = new AllocatableClusterResources(clusterNodes.not().retired(), nodeRepository()).advertisedResources();
 
-            var current = new AllocatableClusterResources(clusterNodes, nodeRepository()).advertisedResources();
-            if (autoscaling.resources().isPresent() && !current.equals(autoscaling.resources().get())) {
-                // 2. Also autoscale
+            // Autoscale unless an autoscaling is already in progress
+            Autoscaling autoscaling = null;
+            if (cluster.target().resources().isEmpty() || current.equals(cluster.target().resources().get())) {
+                autoscaling = autoscaler.autoscale(application.get(), cluster, clusterNodes);
+                if ( ! autoscaling.isEmpty()) // Ignore empties we'll get from servers recently started
+                    cluster = cluster.withTarget(autoscaling);
+            }
+
+            // Always store updates
+            applications().put(application.get().with(cluster), lock);
+
+            // Attempt to perform the autoscaling immediately, and log it regardless
+            if (autoscaling != null && autoscaling.resources().isPresent() && !current.equals(autoscaling.resources().get())) {
                 try (MaintenanceDeployment deployment = new MaintenanceDeployment(applicationId, deployer, metric, nodeRepository())) {
-                    if (deployment.isValid()) {
+                    if (deployment.isValid())
                         deployment.activate();
-                        logAutoscaling(current, autoscaling.resources().get(), applicationId, clusterNodes);
-                    }
+                    logAutoscaling(current, autoscaling.resources().get(), applicationId, clusterNodes.not().retired());
                 }
             }
         }
@@ -123,7 +127,7 @@ public class AutoscalingMaintainer extends NodeRepositoryMaintainer {
     }
 
     private void logAutoscaling(ClusterResources from, ClusterResources to, ApplicationId application, NodeList clusterNodes) {
-        log.info("Autoscaled " + application + " " + clusterNodes.clusterSpec() + ":" +
+        log.info("Autoscaling " + application + " " + clusterNodes.clusterSpec() + ":" +
                  "\nfrom " + toString(from) + "\nto   " + toString(to));
     }
 

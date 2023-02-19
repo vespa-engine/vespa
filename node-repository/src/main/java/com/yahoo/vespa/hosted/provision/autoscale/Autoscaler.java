@@ -57,7 +57,7 @@ public class Autoscaler {
     private Autoscaling autoscale(Application application, Cluster cluster, NodeList clusterNodes, Limits limits) {
         ClusterModel clusterModel = new ClusterModel(nodeRepository.zone(),
                                                      application,
-                                                     clusterNodes.clusterSpec(),
+                                                     clusterNodes.not().retired().clusterSpec(),
                                                      cluster,
                                                      clusterNodes,
                                                      nodeRepository.metricsDb(),
@@ -70,7 +70,7 @@ public class Autoscaler {
         if ( ! clusterModel.isStable(nodeRepository))
             return Autoscaling.dontScale(Status.waiting, "Cluster change in progress", clusterModel);
 
-        var currentAllocation = new AllocatableClusterResources(clusterNodes, nodeRepository);
+        var currentAllocation = new AllocatableClusterResources(clusterNodes.not().retired(), nodeRepository);
         Optional<AllocatableClusterResources> bestAllocation =
                 allocationOptimizer.findBestAllocation(clusterModel.loadAdjustment(), currentAllocation, clusterModel, limits);
         if (bestAllocation.isEmpty())
