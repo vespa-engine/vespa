@@ -127,10 +127,6 @@ public class ClusterModel {
     }
 
     public boolean isStable(NodeRepository nodeRepository) {
-        // An autoscaling decision was recently made
-        if (hasScaledIn(Duration.ofMinutes(5)))
-            return false;
-
         // The cluster is processing recent changes
         if (nodes.stream().anyMatch(node -> node.status().wantToRetire() ||
                                             node.allocation().get().membership().retired() ||
