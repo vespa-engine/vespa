@@ -7,6 +7,8 @@ import java.util.List;
  */
 public enum SearchNodeMetrics implements VespaMetrics {
 
+    CONTENT_PROTON_CONFIG_GENERATION("content.proton.config_generation", Unit.VERSION, "The oldest config generation used by this search node"),
+
     CONTENT_PROTON_DOCUMENTDB_DOCUMENTS_TOTAL("content.proton.documentdb.documents.total", Unit.DOCUMENT, "The total number of documents in this documents db (ready + not-ready)"),
     CONTENT_PROTON_DOCUMENTDB_DOCUMENTS_READY("content.proton.documentdb.documents.ready", Unit.DOCUMENT, "The number of ready documents in this document db"),
     CONTENT_PROTON_DOCUMENTDB_DOCUMENTS_ACTIVE("content.proton.documentdb.documents.active", Unit.DOCUMENT, "The number of active / searchable documents in this document db"),
