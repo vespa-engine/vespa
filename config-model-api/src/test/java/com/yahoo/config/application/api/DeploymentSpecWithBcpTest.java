@@ -6,6 +6,7 @@ import org.junit.Test;
 
 import java.io.StringReader;
 import java.time.Duration;
+import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
@@ -100,7 +101,9 @@ public class DeploymentSpecWithBcpTest {
                    </bcp>
                 </deployment>
             """);
+
         var spec = DeploymentSpec.fromXml(r);
+
         var betaBcp = spec.requireInstance("beta").bcp().orElse(spec.bcp());
         assertEquals(1, betaBcp.groups().size());
         var betaGroup = betaBcp.groups().get(0);
@@ -241,6 +244,164 @@ public class DeploymentSpecWithBcpTest {
         }
     }
 
+    @Test
+    public void endpointsDefinedInBcp() {
+        StringReader r = new StringReader("""
+                <deployment version='1.0'>
+                   <instance id='beta'>
+                      <prod>
+                         <region>us-east1</region>
+                         <region>us-east2</region>
+                      </prod>
+                      <bcp>
+                         <group>
+                            <endpoint id="foo" container-id="bar"/>
+                            <region>us-east1</region>
+                            <region>us-east2</region>
+                         </group>
+                      </bcp>
+                   </instance>
+                   <instance id='main'>
+                      <prod>
+                         <region>us-east1</region>
+                         <region>us-east2</region>
+                         <region>us-central1</region>
+                         <region>us-west1</region>
+                         <region>us-west2</region>
+                      </prod>
+                     <bcp>
+                       <group>
+                          <endpoint id="east" container-id="bar"/>
+                          <region>us-east1</region>
+                          <region>us-east2</region>
+                          <region fraction="0.3">us-central1</region>
+                       </group>
+                       <group>
+                          <endpoint id="west" container-id="bar"/>
+                          <region>us-west1</region>
+                          <region>us-west2</region>
+                          <region fraction="0.7">us-central1</region>
+                       </group>
+                     </bcp>
+                   </instance>
+                </deployment>
+            """);
+
+        var spec = DeploymentSpec.fromXml(r);
+
+        var betaEndpoints = spec.requireInstance("beta").endpoints();
+        assertEquals(1, betaEndpoints.size());
+        assertEquals("foo", betaEndpoints.get(0).endpointId());
+        assertEquals("bar", betaEndpoints.get(0).containerId());
+        assertEquals(List.of(RegionName.from("us-east1"), RegionName.from("us-east2")),
+                     betaEndpoints.get(0).regions());
+
+        var mainEndpoints = spec.requireInstance("main").endpoints();
+        assertEquals(2, mainEndpoints.size());
+        assertEquals("east", mainEndpoints.get(0).endpointId());
+        assertEquals(List.of(RegionName.from("us-east1"), RegionName.from("us-east2"), RegionName.from("us-central1")),
+                     mainEndpoints.get(0).regions());
+        assertEquals("west", mainEndpoints.get(1).endpointId());
+        assertEquals(List.of(RegionName.from("us-west1"), RegionName.from("us-west2"), RegionName.from("us-central1")),
+                     mainEndpoints.get(1).regions());
+    }
+
+    @Test
+    public void endpointsDefinedInBcpImplicitInstance() {
+        StringReader r = new StringReader("""
+                <deployment version='1.0'>
+                   <prod>
+                      <region>us-east1</region>
+                      <region>us-east2</region>
+                      <region>us-central1</region>
+                      <region>us-west1</region>
+                      <region>us-west2</region>
+                   </prod>
+                  <bcp>
+                    <group>
+                       <endpoint id="east" container-id="bar"/>
+                       <region>us-east1</region>
+                       <region>us-east2</region>
+                       <region fraction="0.3">us-central1</region>
+                    </group>
+                    <group>
+                       <endpoint id="west" container-id="bar"/>
+                       <region>us-west1</region>
+                       <region>us-west2</region>
+                       <region fraction="0.7">us-central1</region>
+                    </group>
+                  </bcp>
+                </deployment>
+            """);
+
+        var spec = DeploymentSpec.fromXml(r);
+
+        var mainEndpoints = spec.requireInstance("default").endpoints();
+        assertEquals(2, mainEndpoints.size());
+        assertEquals("east", mainEndpoints.get(0).endpointId());
+        assertEquals(List.of(RegionName.from("us-east1"), RegionName.from("us-east2"), RegionName.from("us-central1")),
+                     mainEndpoints.get(0).regions());
+        assertEquals("west", mainEndpoints.get(1).endpointId());
+        assertEquals(List.of(RegionName.from("us-west1"), RegionName.from("us-west2"), RegionName.from("us-central1")),
+                     mainEndpoints.get(1).regions());
+    }
+
+    @Test
+    public void endpontsDefinedInBcpValidation1() {
+        StringReader r = new StringReader("""
+                <deployment version='1.0'>
+                   <instance id='beta'>
+                      <prod>
+                         <region>us-east1</region>
+                         <region>us-east2</region>
+                      </prod>
+                   </instance>
+                   <bcp>
+                      <group>
+                         <endpoint id="foo" container-id="bar"/>
+                         <region>us-east1</region>
+                         <region>us-east2</region>
+                      </group>
+                   </bcp>
+                </deployment>
+            """);
+        try {
+            DeploymentSpec.fromXml(r);
+        }
+        catch (IllegalArgumentException e) {
+            assertEquals("The default <bcp> element at the root cannot define endpoints", Exceptions.toMessageString(e));
+        }
+    }
+
+    @Test
+    public void endpontsDefinedInBcpValidation2() {
+        StringReader r = new StringReader("""
+                <deployment version='1.0'>
+                   <instance id='beta'>
+                      <prod>
+                         <region>us-east1</region>
+                         <region>us-east2</region>
+                      </prod>
+                      <bcp>
+                         <group>
+                            <region>us-east1</region>
+                            <region>us-east2</region>
+                            <endpoint id="foo" container-id="bar">
+                               <region>us-east1</region>
+                            </endpoint>
+                         </group>
+                      </bcp>
+                   </instance>
+                </deployment>
+            """);
+        try {
+            DeploymentSpec.fromXml(r);
+        }
+        catch (IllegalArgumentException e) {
+            assertEquals("Endpoints in <group> cannot contain <region> children", Exceptions.toMessageString(e));
+        }
+
+    }
     private void assertTwoRegions(DeploymentSpec spec) {
         var bcp = spec.requireInstance("default").bcp().orElse(spec.bcp());
         assertEquals(1, bcp.groups().size());
