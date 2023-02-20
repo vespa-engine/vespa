@@ -65,6 +65,7 @@ CapabilitySet CapabilitySet::content_node() noexcept {
 
 CapabilitySet CapabilitySet::container_node() noexcept {
     return CapabilitySet::of({Capability::content_document_api(),
+                              Capability::container_document_api(),
                               Capability::content_search_api()})
             .union_of(shared_app_node_capabilities());
 }
