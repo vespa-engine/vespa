@@ -23,6 +23,7 @@ class MandatoryMethods {
         parent.addMethod(m);
         //---------------------------------------------------------------------
         m = new Method("frt.rpc.getMethodList", "", "SSS", this::getMethodList);
+        m.requireCapabilities(CapabilitySet.none());
         m.methodDesc("Obtain a list of all available methods");
         m.returnDesc(0, "names",  "Method names");
         m.returnDesc(1, "params", "Method parameter types");
@@ -30,6 +31,7 @@ class MandatoryMethods {
         parent.addMethod(m);
         //---------------------------------------------------------------------
         m = new Method("frt.rpc.getMethodInfo", "s", "sssSSSS", this::getMethodInfo);
+        m.requireCapabilities(CapabilitySet.none());
         m.methodDesc("Obtain detailed information about a single method");
         m.paramDesc (0, "methodName",  "The method we want information about");
         m.returnDesc(0, "desc",        "Description of what the method does");

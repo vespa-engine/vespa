@@ -29,6 +29,7 @@ import com.yahoo.messagebus.network.NetworkOwner;
 import com.yahoo.messagebus.routing.Hop;
 import com.yahoo.messagebus.routing.Route;
 import com.yahoo.messagebus.routing.RoutingNode;
+import com.yahoo.security.tls.CapabilitySet;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -100,6 +101,7 @@ public class RPCNetwork implements Network, MethodHandler {
         servicePool = new RPCServicePool(this, 4096);
 
         Method method = new Method("mbus.getVersion", "", "s", this);
+        method.requireCapabilities(CapabilitySet.none());
         method.methodDesc("Retrieves the message bus version.");
         method.returnDesc(0, "version", "The message bus version.");
         orb.addMethod(method);
