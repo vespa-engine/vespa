@@ -309,7 +309,7 @@ public class AthenzFacade implements AccessControl {
     }
 
     private boolean lookupAccess(AccessTuple t) {
-        boolean result = zmsClient.hasAccess(AthenzResourceName.fromString(t.resource), t.action, t.identity);
+        boolean result = ztsClient.hasAccess(AthenzResourceName.fromString(t.resource), t.action, t.identity);
         log("getAccess(action=%s, resource=%s, principal=%s) = %b", t.action, t.resource, t.identity, result);
         return result;
     }

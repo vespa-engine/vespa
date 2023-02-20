@@ -5,6 +5,7 @@ import com.yahoo.security.Pkcs10Csr;
 import com.yahoo.vespa.athenz.api.AthenzAccessToken;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
+import com.yahoo.vespa.athenz.api.AthenzResourceName;
 import com.yahoo.vespa.athenz.api.AthenzRole;
 import com.yahoo.vespa.athenz.api.AwsRole;
 import com.yahoo.vespa.athenz.api.AwsTemporaryCredentials;
@@ -94,6 +95,11 @@ public class ZtsClientMock implements ZtsClient {
 
     @Override
     public AwsTemporaryCredentials getAwsTemporaryCredentials(AthenzDomain athenzDomain, AwsRole awsRole, Duration duration, String externalId) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public boolean hasAccess(AthenzResourceName resource, String action, AthenzIdentity identity) {
         throw new UnsupportedOperationException();
     }
 
