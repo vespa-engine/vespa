@@ -19,6 +19,7 @@
 #include <vespa/vespalib/util/signalhandler.h>
 #include <iostream>
 #include <thread>
+#include <vespa/fastos/thread.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP("vespa-transactionlog-inspect");

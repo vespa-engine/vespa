@@ -10,7 +10,6 @@
 
 #include "filestorhandler.h"
 #include "service_layer_host_info_reporter.h"
-#include <vespa/vespalib/util/document_runnable.h>
 #include <vespa/vespalib/util/isequencedtaskexecutor.h>
 #include <vespa/document/bucket/bucketid.h>
 #include <vespa/persistence/spi/bucketexecutor.h>

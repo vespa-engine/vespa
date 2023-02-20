@@ -254,7 +254,7 @@ App::startAndRun(FastOS_ThreadPool & threadPool, FNET_Transport & transport, int
             spiProton->createNode();
             EV_STARTED("servicelayer");
         } else {
-            proton.getMetricManager().init(identityUri, threadPool);
+            proton.getMetricManager().init(identityUri);
         }
         EV_STARTED("proton");
         while (!(SIG::INT.check() || SIG::TERM.check() || (spiProton && spiProton->getNode().attemptedStopped()))) {

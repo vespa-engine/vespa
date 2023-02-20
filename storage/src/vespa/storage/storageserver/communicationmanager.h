@@ -23,7 +23,6 @@
 #include <vespa/messagebus/imessagehandler.h>
 #include <vespa/messagebus/ireplyhandler.h>
 #include <vespa/config/helper/ifetchercallback.h>
-#include <vespa/vespalib/util/document_runnable.h>
 #include <vespa/config/subscription/configuri.h>
 #include <vespa/config-bucketspaces.h>
 #include <map>

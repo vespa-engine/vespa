@@ -4,7 +4,6 @@
 
 #include <vespa/storageframework/generic/thread/thread.h>
 #include <vespa/vespalib/util/cpu_usage.h>
-#include <vespa/vespalib/util/document_runnable.h>
 #include <array>
 #include <atomic>
 #include <optional>
@@ -15,12 +14,6 @@ struct ThreadPoolImpl;
 
 class ThreadImpl final : public Thread
 {
-    struct BackendThread : public document::Runnable {
-        ThreadImpl& _impl;
-        explicit BackendThread(ThreadImpl& impl) : _impl(impl) {}
-        void run() override { _impl.run(); }
-    };
-
     /**
      * Internal data race free implementation of tick data that maps to and
      * from ThreadTickData. We hide the atomicity of this since atomic vars
@@ -52,7 +45,7 @@ class ThreadImpl final : public Thread
     std::atomic<uint32_t> _tickDataPtr;
     std::atomic<bool> _interrupted;
     bool _joined;
-    BackendThread _thread;
+    std::thread _thread;
     std::optional<vespalib::CpuUsage::Category> _cpu_category;
 
     void run();

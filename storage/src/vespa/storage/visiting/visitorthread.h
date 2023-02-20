@@ -22,7 +22,6 @@
 #include <vespa/storageframework/generic/thread/runnable.h>
 #include <vespa/storageapi/messageapi/messagehandler.h>
 #include <vespa/metrics/metrictimer.h>
-#include <vespa/vespalib/util/document_runnable.h>
 #include <atomic>
 #include <deque>
 

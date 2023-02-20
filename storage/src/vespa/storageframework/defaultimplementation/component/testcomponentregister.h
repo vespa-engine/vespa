@@ -31,7 +31,6 @@ public:
     virtual ComponentRegisterImpl& getComponentRegister() { return *_compReg; }
     FakeClock& getClock() { return _clock; }
     ThreadPoolImpl& getThreadPoolImpl() { return _threadPool; }
-    FastOS_ThreadPool& getThreadPool() { return _threadPool.getThreadPool(); }
 };
 
 }

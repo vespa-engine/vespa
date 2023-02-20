@@ -28,11 +28,11 @@ ThreadImpl::ThreadImpl(ThreadPoolImpl& pool,
       _tickDataPtr(0),
       _interrupted(false),
       _joined(false),
-      _thread(*this),
+      _thread(),
       _cpu_category(cpu_category)
 {
     _tickData[load_relaxed(_tickDataPtr)]._lastTick = pool.getClock().getMonotonicTime();
-    _thread.start(_pool.getThreadPool());
+    _thread = std::thread([this](){run();});
 }
 
 ThreadImpl::~ThreadImpl()
@@ -70,19 +70,21 @@ void
 ThreadImpl::interrupt()
 {
     _interrupted.store(true, std::memory_order_relaxed);
-    _thread.stop();
 }
 
 void
 ThreadImpl::join()
 {
-    _thread.join();
+    if (_thread.joinable()) {
+        _thread.join();
+    }
 }
 
 vespalib::string
 ThreadImpl::get_live_thread_stack_trace() const
 {
-    return vespalib::SignalHandler::get_cross_thread_stack_trace(_thread.native_thread_id());
+    auto native_handle = const_cast<std::thread&>(_thread).native_handle();
+    return vespalib::SignalHandler::get_cross_thread_stack_trace(native_handle);
 }
 
 void

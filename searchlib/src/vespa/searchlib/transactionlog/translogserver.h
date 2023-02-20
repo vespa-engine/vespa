@@ -2,7 +2,6 @@
 #pragma once
 
 #include "domainconfig.h"
-#include <vespa/vespalib/util/document_runnable.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
 #include <vespa/document/util/queue.h>
 #include <vespa/fnet/frt/invokable.h>
@@ -18,7 +17,7 @@ namespace search::transactionlog {
 class TransLogServerExplorer;
 class Domain;
 
-class TransLogServer : private FRT_Invokable, public document::Runnable, public WriterFactory
+class TransLogServer : private FRT_Invokable, public WriterFactory
 {
 public:
     friend class TransLogServerExplorer;
@@ -36,8 +35,8 @@ public:
     TransLogServer & setDomainConfig(const DomainConfig & cfg);
 
 private:
-    bool onStop() override;
-    void run() override;
+    void request_stop();
+    void run();
     void exportRPC(FRT_Supervisor & supervisor);
     void relayToThreadRPC(FRT_RPCRequest *req);
 
@@ -63,11 +62,13 @@ private:
     using ReadGuard = std::shared_lock<std::shared_mutex>;
     using WriteGuard = std::unique_lock<std::shared_mutex>;
 
+    bool running() const { return !_closed.load(std::memory_order_relaxed); }
+    
     vespalib::string                    _name;
     vespalib::string                    _baseDir;
     DomainConfig                        _domainConfig;
     vespalib::ThreadStackExecutor       _executor;
-    std::unique_ptr<FastOS_ThreadPool>  _threadPool;
+    std::thread                         _thread;
     std::unique_ptr<FRT_Supervisor>     _supervisor;
     DomainList                          _domains;
     mutable std::shared_mutex           _domainMutex;;          // Protects _domains

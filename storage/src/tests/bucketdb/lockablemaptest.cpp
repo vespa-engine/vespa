@@ -1,6 +1,5 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/util/document_runnable.h>
 #include <vespa/storage/bucketdb/btree_lockable_map.hpp>
 #include <vespa/storage/bucketdb/striped_btree_lockable_map.hpp>
 #include <vespa/vespalib/datastore/buffer_type.hpp>

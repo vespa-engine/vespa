@@ -533,17 +533,18 @@ TEST_F(FileStorManagerTest, handler_priority) {
     ASSERT_EQ(75, filestorHandler.getNextMessage(stripeId).msg->getPriority());
 }
 
-class MessagePusherThread : public document::Runnable {
+class MessagePusherThread {
 public:
     FileStorHandler& _handler;
     Document::SP _doc;
     std::atomic<bool> _done;
     std::atomic<bool> _threadDone;
-
+    std::thread _thread;
+    
     MessagePusherThread(FileStorHandler& handler, Document::SP doc);
-    ~MessagePusherThread() override;
+    ~MessagePusherThread();
 
-    void run() override {
+    void run() {
         while (!_done) {
             document::BucketIdFactory factory;
             document::BucketId bucket(16, factory.getBucketId(_doc->getId()).getRawId());
@@ -558,11 +559,16 @@ public:
 };
 
 MessagePusherThread::MessagePusherThread(FileStorHandler& handler, Document::SP doc)
-    : _handler(handler), _doc(std::move(doc)), _done(false), _threadDone(false)
-{}
-MessagePusherThread::~MessagePusherThread() = default;
+  : _handler(handler), _doc(std::move(doc)), _done(false), _threadDone(false), _thread()
+{
+    _thread = std::thread([this](){run();});
+}
+MessagePusherThread::~MessagePusherThread()
+{
+    _thread.join();
+}
 
-class MessageFetchingThread : public document::Runnable {
+class MessageFetchingThread {
 public:
     const uint32_t _threadId;
     FileStorHandler& _handler;
@@ -571,13 +577,17 @@ public:
     std::atomic<bool> _done;
     std::atomic<bool> _failed;
     std::atomic<bool> _threadDone;
-
+    std::thread _thread;
+    
     explicit MessageFetchingThread(FileStorHandler& handler)
         : _threadId(0), _handler(handler), _config(0), _fetchedCount(0), _done(false),
-          _failed(false), _threadDone(false)
-    {}
-
-    void run() override {
+          _failed(false), _threadDone(false), _thread()
+    {
+        _thread = std::thread([this](){run();});
+    }
+    ~MessageFetchingThread();
+    
+    void run() {
         while (!_done) {
             FileStorHandler::LockedMessage msg = _handler.getNextMessage(_threadId);
             if (msg.msg.get()) {
@@ -596,6 +606,10 @@ public:
         _threadDone = true;
     };
 };
+MessageFetchingThread::~MessageFetchingThread()
+{
+    _thread.join();
+}
 
 TEST_F(FileStorManagerTest, handler_paused_multi_thread) {
     FileStorHandlerComponents c(*this);
@@ -606,12 +620,8 @@ TEST_F(FileStorManagerTest, handler_paused_multi_thread) {
 
     Document::SP doc(createDocument(content, "id:footype:testdoctype1:n=1234:bar").release());
 
-    FastOS_ThreadPool pool;
     MessagePusherThread pushthread(filestorHandler, doc);
-    pushthread.start(pool);
-
     MessageFetchingThread thread(filestorHandler);
-    thread.start(pool);
 
     for (uint32_t i = 0; i < 50; ++i) {
         std::this_thread::sleep_for(2ms);

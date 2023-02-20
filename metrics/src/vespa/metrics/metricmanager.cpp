@@ -82,7 +82,9 @@ MetricManager::MetricManager(std::unique_ptr<Timer> timer)
       _snapshotHookLatency("snapshothooklatency", {}, "Time in ms used to update a single snapshot hook", &_metricManagerMetrics),
       _resetLatency("resetlatency", {}, "Time in ms used to reset all metrics.", &_metricManagerMetrics),
       _snapshotLatency("snapshotlatency", {}, "Time in ms used to take a snapshot", &_metricManagerMetrics),
-      _sleepTimes("sleeptime", {}, "Time in ms worker thread is sleeping", &_metricManagerMetrics)
+      _sleepTimes("sleeptime", {}, "Time in ms worker thread is sleeping", &_metricManagerMetrics),
+      _stop_requested(false),
+      _thread()
 {
     registerMetric(getMetricLock(), _metricManagerMetrics);
 }
@@ -95,15 +97,14 @@ MetricManager::~MetricManager()
 void
 MetricManager::stop()
 {
-    if (!running()) {
-        return; // Let stop() be idempotent.
-    }
-    Runnable::stop();
+    request_stop();
     {
         MetricLockGuard sync(_waiter);
         _cond.notify_all();
     }
-    join();
+    if (_thread.joinable()) {
+        _thread.join();
+    }
 }
 
 void
@@ -161,7 +162,7 @@ MetricManager::isInitialized() const {
 }
 
 void
-MetricManager::init(const config::ConfigUri & uri, FastOS_ThreadPool& pool, bool startThread)
+MetricManager::init(const config::ConfigUri & uri, bool startThread)
 {
     if (isInitialized()) {
         throw vespalib::IllegalStateException(
@@ -175,7 +176,7 @@ MetricManager::init(const config::ConfigUri & uri, FastOS_ThreadPool& pool, bool
     configure(getMetricLock(), _configHandle->getConfig());
     LOG(debug, "Starting worker thread, waiting for first iteration to complete.");
     if (startThread) {
-        Runnable::start(pool);
+        _thread = std::thread([this](){run();});
         // Wait for first iteration to have completed, such that it is safe
         // to access snapshots afterwards.
         MetricLockGuard sync(_waiter);
@@ -763,7 +764,7 @@ MetricManager::run()
     }
     // Ensure correct time for first snapshot
     _snapshots[0]->getSnapshot().setToTime(currentTime);
-    while (!stopping()) {
+    while (!stop_requested()) {
         currentTime = _timer->getTime();
         time_t next = tick(sync, currentTime);
         if (currentTime < next) {

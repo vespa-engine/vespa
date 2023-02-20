@@ -15,8 +15,7 @@ using vespalib::IllegalStateException;
 namespace storage::framework::defaultimplementation {
 
 ThreadPoolImpl::ThreadPoolImpl(Clock& clock)
-    : _backendThreadPool(std::make_unique<FastOS_ThreadPool>()),
-      _clock(clock),
+    : _clock(clock),
       _stopping(false)
 { }
 
@@ -44,7 +43,6 @@ ThreadPoolImpl::~ThreadPoolImpl()
         }
         std::this_thread::sleep_for(10ms);
     }
-    _backendThreadPool->Close();
 }
 
 Thread::UP

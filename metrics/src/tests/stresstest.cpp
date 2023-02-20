@@ -74,25 +74,29 @@ OuterMetricSet::OuterMetricSet(MetricSet* owner)
 
 OuterMetricSet::~OuterMetricSet() = default;
 
-struct Hammer : public document::Runnable {
+struct Hammer {
     using UP = std::unique_ptr<Hammer>;
 
     OuterMetricSet& _metrics;
-
-    Hammer(OuterMetricSet& metrics,FastOS_ThreadPool& threadPool)
-        : _metrics(metrics)
+    std::atomic<bool> _stop_requested;
+    std::thread _thread;
+    
+    Hammer(OuterMetricSet& metrics)
+      : _metrics(metrics),
+        _stop_requested(false),
+        _thread()
     {
-        start(threadPool);
+        _thread = std::thread([this](){run();});
     }
     ~Hammer() {
-        stop();
-        join();
+        _stop_requested = true;
+        _thread.join();
         //std::cerr << "Loadgiver thread joined\n";
     }
 
-    void run() override {
+    void run() {
         uint64_t i = 0;
-        while (running()) {
+        while (!_stop_requested.load(std::memory_order_relaxed)) {
             ++i;
             setMetrics(i, _metrics._inner1);
             setMetrics(i + 3, _metrics._inner2);
@@ -114,10 +118,9 @@ TEST(StressTest, test_stress)
     OuterMetricSet metrics;
 
     LOG(info, "Starting load givers");
-    FastOS_ThreadPool threadPool;
     std::vector<Hammer::UP> hammers;
     for (uint32_t i=0; i<10; ++i) {
-        hammers.push_back(std::make_unique<Hammer>(metrics, threadPool));
+        hammers.push_back(std::make_unique<Hammer>(metrics));
     }
     LOG(info, "Waiting to let loadgivers hammer a while");
     std::this_thread::sleep_for(5s);

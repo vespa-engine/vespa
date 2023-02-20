@@ -176,7 +176,6 @@ TEST_F(SnapshotTest, test_snapshot_two_days)
     TestMetricSet set("test");
 
     FakeTimer* timer;
-    FastOS_ThreadPool threadPool;
     MetricManager mm(
             std::unique_ptr<MetricManager::Timer>(timer = new FakeTimer));
     {
@@ -185,7 +184,7 @@ TEST_F(SnapshotTest, test_snapshot_two_days)
     }
     mm.init(config::ConfigUri("raw:consumer[1]\n"
                               "consumer[0].name \"log\""),
-            threadPool, false);
+            false);
     tick(mm, timer->_timeInSecs * 1000);
 
     for (uint32_t days=0; days<2; ++days) {
