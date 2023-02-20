@@ -41,6 +41,7 @@ struct ContentProtonMetrics : metrics::MetricSet
         ~SessionCacheMetrics() override;
     };
 
+    metrics::LongValueMetric configGeneration;
     TransLogServerMetrics transactionLog;
     ResourceUsageMetrics resourceUsage;
     ProtonExecutorMetrics executor;

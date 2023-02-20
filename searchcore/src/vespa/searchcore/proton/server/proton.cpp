@@ -796,6 +796,7 @@ Proton::updateMetrics(const metrics::MetricLockGuard &)
 {
     {
         ContentProtonMetrics &metrics = _metricsEngine->root();
+        metrics.configGeneration.set(getConfigGeneration());
         auto tls = _tls->getTransLogServer();
         if (tls) {
             metrics.transactionLog.update(tls->getDomainStats());

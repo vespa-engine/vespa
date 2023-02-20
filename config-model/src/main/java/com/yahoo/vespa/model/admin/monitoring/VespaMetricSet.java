@@ -337,6 +337,8 @@ public class VespaMetricSet {
     private static Set<Metric> getSearchNodeMetrics() {
         Set<Metric> metrics = new LinkedHashSet<>();
 
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_CONFIG_GENERATION.last());
+
         addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_DOCUMENTS_TOTAL.last());
         addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_DOCUMENTS_READY.last());
         addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_DOCUMENTS_ACTIVE.last());

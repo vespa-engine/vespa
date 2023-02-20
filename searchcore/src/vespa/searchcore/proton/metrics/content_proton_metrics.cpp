@@ -29,6 +29,7 @@ ContentProtonMetrics::ProtonExecutorMetrics::~ProtonExecutorMetrics() = default;
 
 ContentProtonMetrics::ContentProtonMetrics()
     : metrics::MetricSet("content.proton", {}, "Search engine metrics", nullptr),
+      configGeneration("config.generation", {}, "The oldest config generation used by this process", this),
       transactionLog(this),
       resourceUsage(this),
       executor(this),
