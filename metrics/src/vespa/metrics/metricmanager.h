@@ -55,6 +55,7 @@
 #include <vespa/config/subscription/configuri.h>
 #include <map>
 #include <list>
+#include <thread>
 
 template class vespalib::hash_set<metrics::Metric::String>;
 

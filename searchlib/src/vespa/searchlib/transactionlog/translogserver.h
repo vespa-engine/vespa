@@ -7,6 +7,7 @@
 #include <vespa/fnet/frt/invokable.h>
 #include <shared_mutex>
 #include <atomic>
+#include <thread>
 
 class FRT_Supervisor;
 class FNET_Transport;
