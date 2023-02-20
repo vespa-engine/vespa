@@ -112,8 +112,8 @@ public class NodesV2ApiTest {
         // POST duplicate node
         tester.assertResponse(new Request("http://localhost:8080/nodes/v2/node",
                                          ("[" + asNodeJson("host8.yahoo.com", "default", "127.0.254.8") + "]").getBytes(StandardCharsets.UTF_8),
-                                         Request.Method.POST), 400,
-                             "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Cannot add provisioned host host8.yahoo.com: A node with this name already exists\"}");
+                                         Request.Method.POST), 500,
+                             "{\"error-code\":\"INTERNAL_SERVER_ERROR\",\"message\":\"Cannot add provisioned host host8.yahoo.com: A node with this name already exists\"}");
 
         // DELETE a provisioned node
         assertResponse(new Request("http://localhost:8080/nodes/v2/node/host9.yahoo.com",
