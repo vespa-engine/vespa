@@ -13,6 +13,7 @@ import com.yahoo.vespa.athenz.api.NToken;
 import com.yahoo.vespa.athenz.api.ZToken;
 import com.yahoo.vespa.athenz.client.ErrorHandler;
 import com.yahoo.vespa.athenz.client.common.ClientBase;
+import com.yahoo.vespa.athenz.client.zms.bindings.AccessResponseEntity;
 import com.yahoo.vespa.athenz.client.zts.bindings.AccessTokenResponseEntity;
 import com.yahoo.vespa.athenz.client.zts.bindings.AwsTemporaryCredentialsResponseEntity;
 import com.yahoo.vespa.athenz.client.zts.bindings.IdentityRefreshRequestEntity;
@@ -218,6 +219,19 @@ public class DefaultZtsClient extends ClientBase implements ZtsClient {
         return execute(request, response -> {
             AwsTemporaryCredentialsResponseEntity entity = readEntity(response, AwsTemporaryCredentialsResponseEntity.class);
             return entity.credentials();
+        });
+    }
+
+    @Override
+    public boolean hasAccess(AthenzResourceName resource, String action, AthenzIdentity identity) {
+        URI uri = ztsUrl.resolve(String.format("access/%s/%s?principal=%s",
+                                               action, resource.toResourceNameString(), identity.getFullName()));
+        HttpUriRequest request = RequestBuilder.get()
+                .setUri(uri)
+                .build();
+        return execute(request, response -> {
+            AccessResponseEntity result = readEntity(response, AccessResponseEntity.class);
+            return result.granted;
         });
     }
 

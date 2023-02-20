@@ -5,10 +5,12 @@ import com.yahoo.security.Pkcs10Csr;
 import com.yahoo.vespa.athenz.api.AthenzAccessToken;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
+import com.yahoo.vespa.athenz.api.AthenzResourceName;
 import com.yahoo.vespa.athenz.api.AthenzRole;
 import com.yahoo.vespa.athenz.api.AwsRole;
 import com.yahoo.vespa.athenz.api.AwsTemporaryCredentials;
 import com.yahoo.vespa.athenz.api.ZToken;
+import com.yahoo.vespa.athenz.client.zms.ZmsClient;
 import com.yahoo.vespa.athenz.client.zts.Identity;
 import com.yahoo.vespa.athenz.client.zts.InstanceIdentity;
 import com.yahoo.vespa.athenz.client.zts.ZtsClient;
@@ -17,6 +19,7 @@ import java.security.KeyPair;
 import java.security.cert.X509Certificate;
 import java.time.Duration;
 import java.util.List;
+import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -27,9 +30,14 @@ public class ZtsClientMock implements ZtsClient {
     private static final Logger log = Logger.getLogger(ZtsClientMock.class.getName());
 
     private final AthenzDbMock athenz;
+    private final Optional<ZmsClient> zmsClient;
 
     public ZtsClientMock(AthenzDbMock athenz) {
+        this(athenz, null);
+    }
+    public ZtsClientMock(AthenzDbMock athenz, ZmsClient zmsClient) {
         this.athenz = athenz;
+        this.zmsClient = Optional.ofNullable(zmsClient);
     }
 
     @Override
@@ -95,6 +103,12 @@ public class ZtsClientMock implements ZtsClient {
     @Override
     public AwsTemporaryCredentials getAwsTemporaryCredentials(AthenzDomain athenzDomain, AwsRole awsRole, Duration duration, String externalId) {
         throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public boolean hasAccess(AthenzResourceName resource, String action, AthenzIdentity identity) {
+        return zmsClient.orElseThrow(UnsupportedOperationException::new)
+                .hasAccess(resource, action, identity);
     }
 
     @Override

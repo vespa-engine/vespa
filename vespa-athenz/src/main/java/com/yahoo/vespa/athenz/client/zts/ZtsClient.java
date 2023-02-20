@@ -5,6 +5,7 @@ import com.yahoo.security.Pkcs10Csr;
 import com.yahoo.vespa.athenz.api.AthenzAccessToken;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
+import com.yahoo.vespa.athenz.api.AthenzResourceName;
 import com.yahoo.vespa.athenz.api.AthenzRole;
 import com.yahoo.vespa.athenz.api.AwsRole;
 import com.yahoo.vespa.athenz.api.AwsTemporaryCredentials;
@@ -187,5 +188,16 @@ public interface ZtsClient extends AutoCloseable {
      */
     AwsTemporaryCredentials getAwsTemporaryCredentials(AthenzDomain athenzDomain, AwsRole awsRole, Duration duration, String externalId);
 
+    /**
+     * Check access to resource for a given principal
+     *
+     * @param resource The resource to verify access to
+     * @param action Action to verify
+     * @param identity Principal that requests access
+     * @return <code>true</code> if access is allowed, <code>false</code> otherwise
+     */
+    boolean hasAccess(AthenzResourceName resource, String action, AthenzIdentity identity);
+
     void close();
+
 }

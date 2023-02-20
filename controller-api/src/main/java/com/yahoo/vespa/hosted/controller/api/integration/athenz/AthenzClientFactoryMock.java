@@ -39,7 +39,7 @@ public class AthenzClientFactoryMock extends AbstractComponent implements Athenz
 
     @Override
     public ZtsClient createZtsClient() {
-        return new ZtsClientMock(athenz);
+        return new ZtsClientMock(athenz, createZmsClient());
     }
 
 }
