@@ -22,11 +22,7 @@ public class HostPorts {
     public final static int BASE_PORT = 19100;
     final static int MAX_PORTS = 799;
 
-    private DeployLogger deployLogger = new DeployLogger() {
-        public void log(Level level, String message) {
-            System.err.println("deploy log["+level+"]: "+message);
-        }
-    };
+    private DeployLogger deployLogger = (level, message) -> System.err.println("deploy log["+level+"]: "+message);
 
     private final Map<Integer, NetworkPortRequestor> portDB = new LinkedHashMap<>();
 
@@ -98,7 +94,7 @@ public class HostPorts {
 
     /** Allocate a specific port number for a service */
     public int requireNetworkPort(int port, NetworkPortRequestor service, String suffix) {
-        reservePort(service, port, suffix);
+        reservePort(service, port);
         String servType = service.getServiceType();
         String configId = service.getConfigId();
         portFinder.use(new NetworkPorts.Allocation(port, servType, configId, suffix));
@@ -119,18 +115,13 @@ public class HostPorts {
         return requireNetworkPort(port, service, suffix);
     }
 
-    /** Convenience method to allocate a preferred or required port number for a service */
-    public int wantNetworkPort(int port, NetworkPortRequestor service, String suffix, boolean forceRequired) {
-        return forceRequired ? requireNetworkPort(port, service, suffix) : wantNetworkPort(port, service, suffix);
-    }
-
     /** Allocate a dynamic port number for a service */
     public int allocateNetworkPort(NetworkPortRequestor service, String suffix) {
         String servType = service.getServiceType();
         String configId = service.getConfigId();
         int fallback = nextAvailableNetworkPort();
         int port = portFinder.findPort(new NetworkPorts.Allocation(fallback, servType, configId, suffix), hostname);
-        reservePort(service, port, suffix);
+        reservePort(service, port);
         portFinder.use(new NetworkPorts.Allocation(port, servType, configId, suffix));
         return port;
     }
@@ -161,7 +152,7 @@ public class HostPorts {
      * @param service the service that wishes to reserve the port.
      * @param port the port to be reserved.
      */
-    void reservePort(NetworkPortRequestor service, int port, String suffix) {
+    void reservePort(NetworkPortRequestor service, int port) {
         if (portDB.containsKey(port)) {
             portAlreadyReserved(service, port);
         }

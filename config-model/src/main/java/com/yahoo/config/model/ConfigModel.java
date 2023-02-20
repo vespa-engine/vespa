@@ -51,7 +51,7 @@ public abstract class ConfigModel {
      *
      * @param configModelRepo The ConfigModelRepo of the system model
      */
-    public void prepare(ConfigModelRepo configModelRepo, DeployState deployState) { return; }
+    public void prepare(ConfigModelRepo configModelRepo, DeployState deployState) { }
 
     /**
      * <p>Returns whether this model must be maintained in memory for serving config requests.

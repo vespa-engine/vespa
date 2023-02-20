@@ -21,7 +21,6 @@ import java.util.List;
  * xml string and returns a config producer that can be use to test getConfig.
  *
  * @author Ulf Lilleengen
- * @since 5.1.20
  */
 @Beta
 public class TestDriver {
