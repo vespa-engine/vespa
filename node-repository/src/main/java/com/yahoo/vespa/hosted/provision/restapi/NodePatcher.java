@@ -100,7 +100,8 @@ public class NodePatcher {
                                               "currentRestartGeneration",
                                               "reports",
                                               "trustStore",
-                                              "vespaVersion"));
+                                              "vespaVersion",
+                                              "wireguardPubkey"));
             if (!disallowedFields.isEmpty()) {
                 throw new IllegalArgumentException("Patching fields not supported: " + disallowedFields);
             }
