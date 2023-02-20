@@ -30,6 +30,18 @@
           </endpoint>
           <endpoint container-id="bar" />
       </endpoints>
+      <bcp>
+          <group deadline="60m">
+              <endpoint id="foo" container-id="baz"/>
+              <region>us-west-1</region>
+              <region fraction="0.5">us-central-1</region>
+          </group>
+          <group>
+              <region>us-north-1</region>
+              <region>us-south-2</region>
+              <region fraction="0.5">us-central-1</region>
+          </group>
+      </bcp>
     </instance>
 
     <delay hours='2'/>

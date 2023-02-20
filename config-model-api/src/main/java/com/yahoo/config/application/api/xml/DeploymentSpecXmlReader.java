@@ -46,8 +46,10 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -136,8 +138,10 @@ public class DeploymentSpecXmlReader {
 
         List<Step> steps = new ArrayList<>();
         List<Endpoint> applicationEndpoints = new ArrayList<>();
+        Bcp defaultBcp;
         if ( ! containsTag(instanceTag, root)) { // deployment spec skipping explicit instance -> "default" instance
             steps.addAll(readInstanceContent("default", root, new HashMap<>(), root));
+            defaultBcp = Bcp.empty();
         }
         else {
             if (XML.getChildren(root).stream().anyMatch(child -> child.getTagName().equals(prodTag)))
@@ -154,6 +158,7 @@ public class DeploymentSpecXmlReader {
                 }
             }
             readEndpoints(root, Optional.empty(), steps, applicationEndpoints, Map.of());
+            defaultBcp = readBcp(root, Optional.empty(), steps, List.of(), Map.of());
         }
 
         return new DeploymentSpec(steps,
@@ -162,7 +167,7 @@ public class DeploymentSpecXmlReader {
                                   stringAttribute(athenzServiceAttribute, root).map(AthenzService::from),
                                   stringAttribute(cloudAccountAttribute, root).map(CloudAccount::from),
                                   applicationEndpoints,
-                                  readBcp(root),
+                                  defaultBcp,
                                   xmlForm,
                                   deprecatedElements);
     }
@@ -210,6 +215,8 @@ public class DeploymentSpecXmlReader {
         List<Endpoint> endpoints = new ArrayList<>();
         Map<ClusterSpec.Id, Map<ZoneId, ZoneEndpoint>> zoneEndpoints = new LinkedHashMap<>();
         readEndpoints(instanceElement, Optional.of(instanceNameString), steps, endpoints, zoneEndpoints);
+        Bcp bcp = readBcp(instanceElement, Optional.of(instanceNameString), steps, endpoints, zoneEndpoints);
+        validateEndpoints(endpoints);
 
         // Build and return instances with these values
         Instant now = clock.instant();
@@ -230,9 +237,17 @@ public class DeploymentSpecXmlReader {
                                                              notifications,
                                                              endpoints,
                                                              zoneEndpoints,
-                                                             readBcp(instanceElement),
+                                                             bcp,
                                                              now))
                      .toList();
+    }
+
+    private void validateEndpoints(List<Endpoint> endpoints) {
+        Set<String> endpointIds = new HashSet<>();
+        for (Endpoint endpoint : endpoints) {
+            if ( ! endpointIds.add(endpoint.endpointId()))
+                illegal("Endpoint id '" + endpoint.endpointId() + "' is specified multiple times");
+        }
     }
 
     private List<Step> readSteps(Element stepTag, Map<String, String> prodAttributes, Element parentTag) {
@@ -329,140 +344,161 @@ public class DeploymentSpecXmlReader {
         if (endpointsElement == null) return;
 
         Endpoint.Level level = instance.isEmpty() ? Endpoint.Level.application : Endpoint.Level.instance;
-        Map<String, Endpoint> endpointsById = new LinkedHashMap<>();
         Map<String, Map<RegionName, List<ZoneEndpoint>>> endpointsByZone = new LinkedHashMap<>();
-        XML.getChildren(endpointsElement, endpointTag).stream() // Read zone settings first.
-                .sorted(comparingInt(endpoint -> getZoneEndpointType(endpoint, level).isPresent() ? 0 : 1))
-                .forEach(endpointElement -> {
-            String containerId = requireStringAttribute("container-id", endpointElement);
-            Optional<String> endpointId = stringAttribute("id", endpointElement);
-            Optional<String> zoneEndpointType = getZoneEndpointType(endpointElement, level);
-            String msgPrefix = (level == Endpoint.Level.application ? "Application-level" : "Instance-level") +
-                               " endpoint '" + endpointId.orElse(Endpoint.DEFAULT_ID) + "': ";
-
-            if (zoneEndpointType.isPresent() && endpointId.isPresent())
-                illegal(msgPrefix + "cannot declare 'id' with type 'zone' or 'private'");
-
-            String invalidChild = level == Endpoint.Level.application ? "region" : "instance";
-            if ( ! XML.getChildren(endpointElement, invalidChild).isEmpty())
-                illegal(msgPrefix + "invalid element '" + invalidChild + "'");
-
-            boolean enabled = XML.attribute("enabled", endpointElement)
-                                 .map(value -> {
-                                     if (zoneEndpointType.isEmpty() || ! zoneEndpointType.get().equals("zone"))
-                                         illegal(msgPrefix + "only endpoints of type 'zone' can specify 'enabled'");
-
-                                     return switch (value) {
-                                         case "true" -> true;
-                                         case "false" -> false;
-                                         default -> throw new IllegalArgumentException(msgPrefix + "invalid 'enabled' value; must be 'true' or 'false'");
-                                     };
-                                 }).orElse(true);
-
-            List<AllowedUrn> allowedUrns = new ArrayList<>();
-            for (var allow : XML.getChildren(endpointElement, "allow")) {
-                if (zoneEndpointType.isEmpty() || ! zoneEndpointType.get().equals("private"))
-                    illegal(msgPrefix + "only endpoints of type 'private' can specify 'allow' children");
-
-                switch (requireStringAttribute("with", allow)) {
-                    case "aws-private-link" -> allowedUrns.add(new AllowedUrn(AccessType.awsPrivateLink, requireStringAttribute("arn", allow)));
-                    case "gcp-service-connect" -> allowedUrns.add(new AllowedUrn(AccessType.gcpServiceConnect, requireStringAttribute("project", allow)));
-                    default -> illegal("Private endpoint for container-id '" + containerId + "': " +
-                                       "invalid attribute 'with': '" + requireStringAttribute("with", allow) + "'");
-                }
-            }
-
-            List<Endpoint.Target> targets = new ArrayList<>();
-            if (level == Endpoint.Level.application) {
-                Optional<String> endpointRegion = stringAttribute("region", endpointElement);
-                int weightSum = 0;
-                for (var instanceElement : XML.getChildren(endpointElement, "instance")) {
-                    String instanceName = instanceElement.getTextContent();
-                    if (instanceName == null || instanceName.isBlank()) illegal(msgPrefix + "empty 'instance' element");
-                    Optional<String> instanceRegion = stringAttribute("region", instanceElement);
-                    if (endpointRegion.isPresent() == instanceRegion.isPresent())
-                        illegal(msgPrefix + "'region' attribute must be declared on either <endpoint> or <instance> tag");
-                    String weightFromAttribute = requireStringAttribute("weight", instanceElement);
-                    int weight;
-                    try {
-                        weight = Integer.parseInt(weightFromAttribute);
-                    } catch (NumberFormatException e) {
-                        throw new IllegalArgumentException(msgPrefix + "invalid weight value '" + weightFromAttribute + "'");
-                    }
-                    weightSum += weight;
-                    targets.add(new Endpoint.Target(RegionName.from(endpointRegion.orElseGet(instanceRegion::get)),
-                                                    InstanceName.from(instanceName),
-                                                    weight));
-                }
-                if (weightSum == 0) illegal(msgPrefix + "sum of all weights must be positive, got " + weightSum);
-            } else {
-                if (stringAttribute("region", endpointElement).isPresent()) illegal(msgPrefix + "invalid 'region' attribute");
-                Set<RegionName> regions = new LinkedHashSet<>();
-                for (var regionElement : XML.getChildren(endpointElement, "region")) {
-                    String region = regionElement.getTextContent();
-                    if (region == null || region.isBlank())
-                        illegal(msgPrefix + "empty 'region' element");
-                    if (   zoneEndpointType.isEmpty()
-                        && Stream.of(RegionName.from(region), null)
-                                 .map(endpointsByZone.getOrDefault(containerId, new HashMap<>())::get)
-                                 .flatMap(maybeEndpoints -> maybeEndpoints == null ? Stream.empty() : maybeEndpoints.stream())
-                                 .anyMatch(endpoint -> ! endpoint.isPublicEndpoint()))
-                        illegal(msgPrefix + "targets zone endpoint in '" + region + "' with 'enabled' set to 'false'");
-                    if ( ! regions.add(RegionName.from(region)))
-                        illegal(msgPrefix + "duplicate 'region' element: '" + region + "'");
-                }
-
-                if (zoneEndpointType.isPresent()) {
-                    if (regions.isEmpty()) regions.add(null);
-                    ZoneEndpoint endpoint = switch (zoneEndpointType.get()) {
-                        case "zone" -> new ZoneEndpoint(enabled, false, List.of());
-                        case "private" -> new ZoneEndpoint(true, true, allowedUrns); // Doesn't turn off public visibility.
-                        default -> throw new IllegalArgumentException("unsupported zone endpoint type '" + zoneEndpointType.get() + "'");
-                    };
-                    for (RegionName region : regions) endpointsByZone.computeIfAbsent(containerId, __ -> new LinkedHashMap<>())
-                                                                     .computeIfAbsent(region, __ -> new ArrayList<>())
-                                                                     .add(endpoint);
-                }
-                else {
-                    if (regions.isEmpty()) {
-                        // No explicit targets given for instance level endpoint. Include all declared, enabled regions by default
-                        List<RegionName> declared =
-                                steps.stream()
-                                     .filter(step -> step.concerns(Environment.prod))
-                                     .flatMap(step -> step.zones().stream())
-                                     .flatMap(zone -> zone.region().stream())
-                                     .toList();
-                        if (declared.isEmpty()) illegal(msgPrefix + "no declared regions to target");
-
-                        declared.stream().filter(region -> Stream.of(region, null)
-                                                                 .map(endpointsByZone.getOrDefault(containerId, new HashMap<>())::get)
-                                                                 .flatMap(maybeEndpoints -> maybeEndpoints == null ? Stream.empty() : maybeEndpoints.stream())
-                                                                 .allMatch(ZoneEndpoint::isPublicEndpoint))
-                                .forEach(regions::add);
-                    }
-                    if (regions.isEmpty()) illegal(msgPrefix + "all eligible zone endpoints have 'enabled' set to 'false'");
-                    InstanceName instanceName = instance.map(InstanceName::from).get();
-                    for (RegionName region : regions) targets.add(new Target(region, instanceName, 1));
-                }
-            }
-
-            if (zoneEndpointType.isEmpty()) {
-                Endpoint endpoint = new Endpoint(endpointId.orElse(Endpoint.DEFAULT_ID), containerId, level, targets);
-                if (endpointsById.containsKey(endpoint.endpointId())) {
-                    illegal("Endpoint ID '" + endpoint.endpointId() + "' is specified multiple times");
-                }
-                endpointsById.put(endpoint.endpointId(), endpoint);
-            }
-        });
-        endpoints.addAll(endpointsById.values());
+        for (Element endpointElement : XML.getChildren(endpointsElement, endpointTag).stream() // Read zone settings first.
+                .sorted(comparingInt(endpoint -> getZoneEndpointType(endpoint, level).isPresent() ? 0 : 1)).toList()) {
+            Optional<Endpoint> endpoint = readEndpoint(parent, endpointElement, level, instance, steps, List.of(), endpointsByZone);
+            endpoint.ifPresent(e -> endpoints.add(e));
+        }
         validateAndConsolidate(endpointsByZone, zoneEndpoints);
     }
 
-    static Bcp readBcp(Element element) {
-        Element bcpElement = XML.getChild(element, "bcp");
+    /**
+     * @param parentElement
+     * @param endpointElement
+     * @param level decide what this method is reading TODO: Split into different methods instead
+     * @param instance the instance this applies to, or empty if it does not apply to an instance (application endpoints)
+     * @param steps
+     * @param forRegions the regions this applies to (for bcp), or empty (otherwise) to read this from "region" subelements
+     * @param endpointsByZone a map containing any zone endpoints read by this
+     * @return the endpoint read, unless it is added to endspointsByZone instead *sob*
+     */
+    static Optional<Endpoint> readEndpoint(Element parentElement,
+                                           Element endpointElement,
+                                           Endpoint.Level level,
+                                           Optional<String> instance,
+                                           List<Step> steps,
+                                           Collection<RegionName> forRegions,
+                                           Map<String, Map<RegionName, List<ZoneEndpoint>>> endpointsByZone) {
+        String containerId = requireStringAttribute("container-id", endpointElement);
+        Optional<String> endpointId = stringAttribute("id", endpointElement);
+        Optional<String> zoneEndpointType = getZoneEndpointType(endpointElement, level);
+        String msgPrefix = (level == Endpoint.Level.application ? "Application-level" : "Instance-level") +
+                           " endpoint '" + endpointId.orElse(Endpoint.DEFAULT_ID) + "': ";
+
+        if (zoneEndpointType.isPresent() && endpointId.isPresent())
+            illegal(msgPrefix + "cannot declare 'id' with type 'zone' or 'private'");
+
+        String invalidChild = level == Endpoint.Level.application ? "region" : "instance";
+        if ( ! XML.getChildren(endpointElement, invalidChild).isEmpty())
+            illegal(msgPrefix + "invalid element '" + invalidChild + "'");
+
+        boolean enabled = XML.attribute("enabled", endpointElement)
+                             .map(value -> {
+                                 if (zoneEndpointType.isEmpty() || ! zoneEndpointType.get().equals("zone"))
+                                     illegal(msgPrefix + "only endpoints of type 'zone' can specify 'enabled'");
+
+                                 return switch (value) {
+                                     case "true" -> true;
+                                     case "false" -> false;
+                                     default -> throw new IllegalArgumentException(msgPrefix + "invalid 'enabled' value; must be 'true' or 'false'");
+                                 };
+                             }).orElse(true);
+
+        List<AllowedUrn> allowedUrns = new ArrayList<>();
+        for (var allow : XML.getChildren(endpointElement, "allow")) {
+            if (zoneEndpointType.isEmpty() || ! zoneEndpointType.get().equals("private"))
+                illegal(msgPrefix + "only endpoints of type 'private' can specify 'allow' children");
+
+            switch (requireStringAttribute("with", allow)) {
+                case "aws-private-link" -> allowedUrns.add(new AllowedUrn(AccessType.awsPrivateLink, requireStringAttribute("arn", allow)));
+                case "gcp-service-connect" -> allowedUrns.add(new AllowedUrn(AccessType.gcpServiceConnect, requireStringAttribute("project", allow)));
+                default -> illegal("Private endpoint for container-id '" + containerId + "': " +
+                                   "invalid attribute 'with': '" + requireStringAttribute("with", allow) + "'");
+            }
+        }
+
+        List<Endpoint.Target> targets = new ArrayList<>();
+        if (level == Endpoint.Level.application) {
+            if ( ! forRegions.isEmpty()) throw new IllegalStateException("Illegal combination");
+            Optional<String> endpointRegion = stringAttribute("region", endpointElement);
+            int weightSum = 0;
+            for (var instanceElement : XML.getChildren(endpointElement, "instance")) {
+                String instanceName = instanceElement.getTextContent();
+                if (instanceName == null || instanceName.isBlank()) illegal(msgPrefix + "empty 'instance' element");
+                Optional<String> instanceRegion = stringAttribute("region", instanceElement);
+                if (endpointRegion.isPresent() == instanceRegion.isPresent())
+                    illegal(msgPrefix + "'region' attribute must be declared on either <endpoint> or <instance> tag");
+                String weightFromAttribute = requireStringAttribute("weight", instanceElement);
+                int weight;
+                try {
+                    weight = Integer.parseInt(weightFromAttribute);
+                } catch (NumberFormatException e) {
+                    throw new IllegalArgumentException(msgPrefix + "invalid weight value '" + weightFromAttribute + "'");
+                }
+                weightSum += weight;
+                targets.add(new Endpoint.Target(RegionName.from(endpointRegion.orElseGet(instanceRegion::get)),
+                                                InstanceName.from(instanceName),
+                                                weight));
+            }
+            if (weightSum == 0) illegal(msgPrefix + "sum of all weights must be positive, got " + weightSum);
+        } else {
+            if (stringAttribute("region", endpointElement).isPresent()) illegal(msgPrefix + "invalid 'region' attribute");
+
+            Set<RegionName> regions = new LinkedHashSet<>(forRegions);
+            List<Element> regionElements = XML.getChildren(endpointElement, "region");
+            if ( ! regions.isEmpty() && ! regionElements.isEmpty())
+                illegal("Endpoints in <" + parentElement.getTagName() + "> cannot contain <region> children");
+            for (var regionElement : XML.getChildren(endpointElement, "region")) {
+                String region = regionElement.getTextContent();
+                if (region == null || region.isBlank())
+                    illegal(msgPrefix + "empty 'region' element");
+                if (   zoneEndpointType.isEmpty()
+                       && Stream.of(RegionName.from(region), null)
+                                .map(endpointsByZone.getOrDefault(containerId, new HashMap<>())::get)
+                                .flatMap(maybeEndpoints -> maybeEndpoints == null ? Stream.empty() : maybeEndpoints.stream())
+                                .anyMatch(endpoint -> ! endpoint.isPublicEndpoint()))
+                    illegal(msgPrefix + "targets zone endpoint in '" + region + "' with 'enabled' set to 'false'");
+                if ( ! regions.add(RegionName.from(region)))
+                    illegal(msgPrefix + "duplicate 'region' element: '" + region + "'");
+            }
+
+            if (zoneEndpointType.isPresent()) {
+                if (regions.isEmpty()) regions.add(null);
+                ZoneEndpoint endpoint = switch (zoneEndpointType.get()) {
+                    case "zone" -> new ZoneEndpoint(enabled, false, List.of());
+                    case "private" -> new ZoneEndpoint(true, true, allowedUrns); // Doesn't turn off public visibility.
+                    default -> throw new IllegalArgumentException("unsupported zone endpoint type '" + zoneEndpointType.get() + "'");
+                };
+                for (RegionName region : regions) endpointsByZone.computeIfAbsent(containerId, __ -> new LinkedHashMap<>())
+                                                                 .computeIfAbsent(region, __ -> new ArrayList<>())
+                                                                 .add(endpoint);
+            }
+            else {
+                if (regions.isEmpty()) {
+                    // No explicit targets given for instance level endpoint. Include all declared, enabled regions by default
+                    List<RegionName> declared =
+                            steps.stream()
+                                 .filter(step -> step.concerns(Environment.prod))
+                                 .flatMap(step -> step.zones().stream())
+                                 .flatMap(zone -> zone.region().stream())
+                                 .toList();
+                    if (declared.isEmpty()) illegal(msgPrefix + "no declared regions to target");
+
+                    declared.stream().filter(region -> Stream.of(region, null)
+                                                             .map(endpointsByZone.getOrDefault(containerId, new HashMap<>())::get)
+                                                             .flatMap(maybeEndpoints -> maybeEndpoints == null ? Stream.empty() : maybeEndpoints.stream())
+                                                             .allMatch(ZoneEndpoint::isPublicEndpoint))
+                            .forEach(regions::add);
+                }
+                if (regions.isEmpty()) illegal(msgPrefix + "all eligible zone endpoints have 'enabled' set to 'false'");
+                InstanceName instanceName = instance.map(InstanceName::from).get();
+                for (RegionName region : regions) targets.add(new Target(region, instanceName, 1));
+            }
+        }
+
+        if (zoneEndpointType.isEmpty())
+            return Optional.of(new Endpoint(endpointId.orElse(Endpoint.DEFAULT_ID), containerId, level, targets));
+        return Optional.empty();
+    }
+
+    static Bcp readBcp(Element parent, Optional<String> instance, List<Step> steps,
+                       List<Endpoint> endpoints, Map<ClusterSpec.Id, Map<ZoneId, ZoneEndpoint>> zoneEndpoints) {
+        Element bcpElement = XML.getChild(parent, "bcp");
         if (bcpElement == null) return Bcp.empty();
 
         List<Bcp.Group> groups = new ArrayList<>();
+        Map<String, Map<RegionName, List<ZoneEndpoint>>> endpointsByZone = new LinkedHashMap<>();
         for (Element groupElement : XML.getChildren(bcpElement, "group")) {
             List<Bcp.RegionMember> regions = new ArrayList<>();
             for (Element regionElement : XML.getChildren(groupElement, "region")) {
@@ -470,9 +506,22 @@ public class DeploymentSpecXmlReader {
                 double fraction = toDouble(XML.attribute("fraction", regionElement).orElse(null), "fraction").orElse(1.0);
                 regions.add(new Bcp.RegionMember(region, fraction));
             }
+            for (Element endpointElement : XML.getChildren(groupElement, "endpoint")) {
+                if (instance.isEmpty()) illegal("The default <bcp> element at the root cannot define endpoints");
+                Optional<Endpoint> endpoint = readEndpoint(groupElement,
+                                                           endpointElement,
+                                                           Endpoint.Level.instance,
+                                                           instance,
+                                                           steps,
+                                                           regions.stream().map(r -> r.region()).toList(),
+                                                           endpointsByZone);
+                endpoint.ifPresent(e -> endpoints.add(e));
+            }
+
             Duration deadline = XML.attribute("deadline", groupElement).map(value -> toDuration(value, "deadline")).orElse(Duration.ZERO);
-            groups.add(new Bcp.Group(regions, deadline));
+            groups.add(new Bcp.Group(regions, endpoints, deadline));
         }
+        validateAndConsolidate(endpointsByZone, zoneEndpoints);
         return new Bcp(groups);
     }
 

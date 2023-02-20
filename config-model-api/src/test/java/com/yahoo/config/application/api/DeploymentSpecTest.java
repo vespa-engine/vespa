@@ -1294,22 +1294,22 @@ public class DeploymentSpecTest {
     @Test
     public void invalidEndpoints() {
         assertInvalidEndpoints("<endpoint id='FOO' container-id='qrs'/>",
-                               "Endpoint ID must be all lowercase, alphanumeric, with no consecutive dashes, of length 1 to 12, and begin with a character; but got 'FOO'");
+                               "Endpoint id must be all lowercase, alphanumeric, with no consecutive dashes, of length 1 to 12, and begin with a character; but got 'FOO'");
         assertInvalidEndpoints("<endpoint id='123' container-id='qrs'/>",
-                               "Endpoint ID must be all lowercase, alphanumeric, with no consecutive dashes, of length 1 to 12, and begin with a character; but got '123'");
+                               "Endpoint id must be all lowercase, alphanumeric, with no consecutive dashes, of length 1 to 12, and begin with a character; but got '123'");
         assertInvalidEndpoints("<endpoint id='foo!' container-id='qrs'/>",
-                               "Endpoint ID must be all lowercase, alphanumeric, with no consecutive dashes, of length 1 to 12, and begin with a character; but got 'foo!'");
+                               "Endpoint id must be all lowercase, alphanumeric, with no consecutive dashes, of length 1 to 12, and begin with a character; but got 'foo!'");
         assertInvalidEndpoints("<endpoint id='foo.bar' container-id='qrs'/>",
-                               "Endpoint ID must be all lowercase, alphanumeric, with no consecutive dashes, of length 1 to 12, and begin with a character; but got 'foo.bar'");
+                               "Endpoint id must be all lowercase, alphanumeric, with no consecutive dashes, of length 1 to 12, and begin with a character; but got 'foo.bar'");
         assertInvalidEndpoints("<endpoint id='foo--bar' container-id='qrs'/>",
-                               "Endpoint ID must be all lowercase, alphanumeric, with no consecutive dashes, of length 1 to 12, and begin with a character; but got 'foo--bar'");
+                               "Endpoint id must be all lowercase, alphanumeric, with no consecutive dashes, of length 1 to 12, and begin with a character; but got 'foo--bar'");
         assertInvalidEndpoints("<endpoint id='foo-' container-id='qrs'/>",
-                               "Endpoint ID must be all lowercase, alphanumeric, with no consecutive dashes, of length 1 to 12, and begin with a character; but got 'foo-'");
+                               "Endpoint id must be all lowercase, alphanumeric, with no consecutive dashes, of length 1 to 12, and begin with a character; but got 'foo-'");
         assertInvalidEndpoints("<endpoint id='foooooooooooo' container-id='qrs'/>",
-                               "Endpoint ID must be all lowercase, alphanumeric, with no consecutive dashes, of length 1 to 12, and begin with a character; but got 'foooooooooooo'");
+                               "Endpoint id must be all lowercase, alphanumeric, with no consecutive dashes, of length 1 to 12, and begin with a character; but got 'foooooooooooo'");
 
         assertInvalidEndpoints("<endpoint id='foo' container-id='qrs'/><endpoint id='foo' container-id='qrs'/>",
-                               "Endpoint ID 'foo' is specified multiple times");
+                               "Endpoint id 'foo' is specified multiple times");
         assertInvalidEndpoints("<endpoint id='default' type='zone' container-id='foo' />",
                                "Instance-level endpoint 'default': cannot declare 'id' with type 'zone' or 'private'");
         assertInvalidEndpoints("<endpoint id='default' type='private' container-id='foo' />",

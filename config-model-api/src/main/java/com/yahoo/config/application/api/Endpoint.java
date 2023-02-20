@@ -45,7 +45,7 @@ public class Endpoint {
         this.level = Objects.requireNonNull(level, "level must be non-null");
         this.targets = List.copyOf(Objects.requireNonNull(targets, "targets must be non-null"));
         if (endpointId().length() > endpointMaxLength || !endpointPattern.matcher(endpointId()).matches()) {
-            throw new IllegalArgumentException("Endpoint ID must be all lowercase, alphanumeric, with no consecutive dashes, " +
+            throw new IllegalArgumentException("Endpoint id must be all lowercase, alphanumeric, with no consecutive dashes, " +
                                                "of length 1 to 12, and begin with a character; but got '" + endpointId() + "'");
         }
         if (targets.isEmpty()) throw new IllegalArgumentException("targets must be non-empty");
