@@ -203,7 +203,7 @@ public class RealNodeRepositoryTest {
 
         //// Configservers ////
 
-        List<WireguardPeer> cfgPeers =  nodeRepositoryApi.getConfigserverPeers();
+        List<WireguardPeer> cfgPeers =  nodeRepositoryApi.getConfigserverPeers().peers();
 
         // cfg2 does not have a wg public key, so should not be included
         assertEquals(1, cfgPeers.size());
@@ -214,7 +214,7 @@ public class RealNodeRepositoryTest {
 
         //// Exclave nodes ////
 
-        List<WireguardPeer> exclavePeers =  nodeRepositoryApi.getExclavePeers();
+        List<WireguardPeer> exclavePeers =  nodeRepositoryApi.getExclavePeers().peers();
 
         // host3 does not have a wg public key, so should not be included
         assertEquals(1, exclavePeers.size());

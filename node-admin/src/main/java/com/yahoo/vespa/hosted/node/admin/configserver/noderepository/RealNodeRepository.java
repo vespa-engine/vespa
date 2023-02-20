@@ -19,6 +19,7 @@ import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.bindings.Ge
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.bindings.NodeRepositoryNode;
 import com.yahoo.vespa.hosted.node.admin.task.util.network.VersionedIpAddress;
 import com.yahoo.vespa.hosted.node.admin.wireguard.WireguardPeer;
+import com.yahoo.vespa.hosted.node.admin.wireguard.WireguardPeerList;
 
 import java.net.URI;
 import java.time.Instant;
@@ -130,24 +131,28 @@ public class RealNodeRepository implements NodeRepository {
     }
 
     @Override
-    public List<WireguardPeer> getExclavePeers() {
+    public WireguardPeerList getExclavePeers() {
         String path = "/nodes/v2/node/?recursive=true&enclave=true";
         final GetNodesResponse response = configServerApi.get(path, GetNodesResponse.class);
 
-        return response.nodes.stream()
-                .filter(node -> node.wireguardPubkey != null && ! node.wireguardPubkey.isEmpty())
-                .map(RealNodeRepository::createTenantPeer)
-                .sorted()
-                .toList();
+        return WireguardPeerList.tenantPeersFrom(
+                response.nodes.stream()
+                        .filter(node -> node.wireguardPubkey != null && ! node.wireguardPubkey.isEmpty())
+                        .map(RealNodeRepository::createTenantPeer)
+                        .sorted()
+                        .toList()
+        );
     }
 
     @Override
-    public List<WireguardPeer> getConfigserverPeers() {
+    public WireguardPeerList getConfigserverPeers() {
         GetWireguardResponse response = configServerApi.get("/nodes/v2/wireguard", GetWireguardResponse.class);
-        return response.configservers.stream()
-                .map(RealNodeRepository::createConfigserverPeer)
-                .sorted(Comparator.comparing(WireguardPeer::hostname))
-                .toList();
+        return WireguardPeerList.configserverPeersFrom(
+                response.configservers.stream()
+                        .map(RealNodeRepository::createConfigserverPeer)
+                        .sorted(Comparator.comparing(WireguardPeer::hostname))
+                        .toList()
+        );
     }
 
     @Override

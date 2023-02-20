@@ -9,6 +9,7 @@ import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeReposit
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeState;
 import com.yahoo.vespa.hosted.node.admin.wireguard.WireguardPeer;
+import com.yahoo.vespa.hosted.node.admin.wireguard.WireguardPeerList;
 
 import java.util.List;
 import java.util.Map;
@@ -47,12 +48,12 @@ public class NodeRepoMock implements NodeRepository {
     }
 
     @Override
-    public List<WireguardPeer> getExclavePeers() {
+    public WireguardPeerList getExclavePeers() {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public List<WireguardPeer> getConfigserverPeers() {
+    public WireguardPeerList getConfigserverPeers() {
         throw new UnsupportedOperationException();
     }
 
