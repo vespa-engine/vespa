@@ -93,7 +93,8 @@ CapabilitySet CapabilitySet::config_server() noexcept {
                               Capability::container_management_api(),
                               Capability::slobrok_api(),
                               Capability::cluster_controller_reindexing(),
-                              Capability::cluster_controller_state()})
+                              Capability::cluster_controller_state(),
+                              Capability::logserver_api()})
             .union_of(telemetry());
 }
 
