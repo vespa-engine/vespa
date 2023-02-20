@@ -162,7 +162,8 @@ public class MetricsResponse {
         generation { // application config generation active on the node
 
             @Override
-            public List<String> metricResponseNames() { return List.of("application_generation"); }
+            public List<String> metricResponseNames() { return List.of("application_generation",
+                                                                       "content.proton.config.generation"); }
 
             @Override
             double computeFinal(ListMap<String, Double> values) {

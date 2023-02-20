@@ -11,7 +11,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.OptionalDouble;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
 
 import static com.yahoo.vespa.hosted.provision.autoscale.ClusterModel.warmupDuration;
 
@@ -98,7 +97,6 @@ public class NodeTimeseries {
     }
 
     private boolean onAtLeastGeneration(long generation, NodeMetricSnapshot snapshot) {
-        if (snapshot.generation() < 0) return true; // Content nodes do not yet send generation
         return snapshot.generation() >= generation;
     }
 
