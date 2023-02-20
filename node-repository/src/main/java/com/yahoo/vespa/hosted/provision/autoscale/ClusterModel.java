@@ -119,7 +119,7 @@ public class ClusterModel {
 
     /** Returns the relative load adjustment that should be made to this cluster given available measurements. */
     public Load loadAdjustment() {
-        if (nodeTimeseries().isEmpty()) return Load.one();
+        if (nodeTimeseries().measurementsPerNode() < 0.5) return Load.one(); // Don't change based on very little data
         Load adjustment = peakLoad().divide(idealLoad());
         if (! safeToScaleDown())
             adjustment = adjustment.map(v -> v < 1 ? 1 : v);

@@ -28,10 +28,10 @@ public class ClusterNodesTimeseries {
     public ClusterNodesTimeseries(Duration period, Cluster cluster, NodeList clusterNodes, MetricsDb db) {
         this.clusterNodes = clusterNodes;
 
-        // See warmupSeconds*4 into the past to see any generation change in it
+        // See warmupDuration*4 into the past to see any generation change in it.
         // If none can be detected we assume the node is new/was down.
         // If either this is the case, or there is a generation change, we ignore
-        // the first warmupWindow metrics
+        // the first warmupWindow metrics.
         var timeseries = db.getNodeTimeseries(period.plus(warmupDuration.multipliedBy(4)), clusterNodes);
         if (cluster.lastScalingEvent().isPresent()) {
             long currentGeneration = cluster.lastScalingEvent().get().generation();
@@ -52,41 +52,14 @@ public class ClusterNodesTimeseries {
     }
 
     /** Returns the average number of measurements per node */
-    public int measurementsPerNode() {
+    public double measurementsPerNode() {
         if (clusterNodes.size() == 0) return 0;
         int measurementCount = timeseries.stream().mapToInt(m -> m.size()).sum();
-        return measurementCount / clusterNodes.size();
+        return (double)measurementCount / clusterNodes.size();
     }
 
     /** Returns the number of nodes measured in this */
     public int nodesMeasured() { return timeseries.size(); }
-
-    /** Returns the average load after the given instant */
-    public Load averageLoad() {
-        Load total = Load.zero();
-        int count = 0;
-        for (var nodeTimeseries : timeseries) {
-            for (var snapshot : nodeTimeseries.asList()) {
-                total = total.add(snapshot.load());
-                count++;
-            }
-        }
-        return total.divide(count);
-    }
-
-    /** Returns average of the latest load reading from each node */
-    public Load currentLoad() {
-        Load total = Load.zero();
-        int count = 0;
-        for (var nodeTimeseries : timeseries) {
-            Optional<NodeMetricSnapshot> last = nodeTimeseries.last();
-            if (last.isEmpty()) continue;
-
-            total = total.add(last.get().load());
-            count++;
-        }
-        return total.divide(count);
-    }
 
     /**
      * Returns the "peak load" in this: Which is for each load dimension,
