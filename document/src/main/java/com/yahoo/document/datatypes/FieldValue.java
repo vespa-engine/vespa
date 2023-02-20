@@ -37,6 +37,7 @@ public abstract class FieldValue extends Identifiable implements Comparable<Fiel
      *
      * @return XML representation of field in a &lt;value&gt; element
      */
+    @Deprecated
     public String toXml() {
         XmlStream xml = new XmlStream();
         xml.setIndent("  ");
@@ -58,6 +59,7 @@ public abstract class FieldValue extends Identifiable implements Comparable<Fiel
         serialize(DocumentSerializerFactory.create6(buf));
     }
 
+    @Deprecated
     public abstract void printXml(XmlStream xml);
 
     public abstract void clear();

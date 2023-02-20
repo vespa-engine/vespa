@@ -1,7 +1,8 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.container.xml.document;
 
-import com.yahoo.config.model.producer.AbstractConfigProducer;
+import com.yahoo.config.model.producer.AnyConfigProducer;
+import com.yahoo.config.model.producer.TreeConfigProducer;
 import com.yahoo.container.bundle.BundleInstantiationSpecification;
 import com.yahoo.osgi.provider.model.ComponentModel;
 import com.yahoo.text.XML;
@@ -30,7 +31,7 @@ public class DocumentFactoryBuilder {
             String pkg = clazz.substring(0, clazz.lastIndexOf('.'));
             String concDocFactory=pkg+"."+CONCRETE_DOC_FACTORY_CLASS;
             String bundle = e.getAttribute("bundle");
-            Component<AbstractConfigProducer<?>, ComponentModel> component = new Component<>(
+            Component<AnyConfigProducer, ComponentModel> component = new Component<>(
                     new ComponentModel(BundleInstantiationSpecification.fromStrings(concDocFactory, concDocFactory, bundle)));
             if (!cluster.getComponentsMap().containsKey(component.getComponentId())) cluster.addComponent(component);
             types.put(type, concDocFactory);

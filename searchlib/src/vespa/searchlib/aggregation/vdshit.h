@@ -10,8 +10,8 @@ namespace search::aggregation {
 class VdsHit : public Hit
 {
 public:
-    typedef vespalib::Array<uint8_t> Summary;
-    typedef vespalib::string DocId;
+    using Summary = vespalib::Array<uint8_t>;
+    using DocId = vespalib::string;
     DECLARE_IDENTIFIABLE_NS2(search, aggregation, VdsHit);
     DECLARE_NBO_SERIALIZE;
     VdsHit() : Hit(), _docId(), _summary() {}

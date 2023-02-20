@@ -5,7 +5,8 @@ import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.vespa.config.content.core.StorDistributormanagerConfig;
 import com.yahoo.vespa.config.content.core.StorServerConfig;
-import com.yahoo.config.model.producer.AbstractConfigProducer;
+import com.yahoo.config.model.producer.AnyConfigProducer;
+import com.yahoo.config.model.producer.TreeConfigProducer;
 import com.yahoo.vespa.model.builder.xml.dom.ModelElement;
 import com.yahoo.vespa.model.builder.xml.dom.VespaDomBuilder;
 import com.yahoo.vespa.model.content.engines.PersistenceEngine;
@@ -19,7 +20,7 @@ public class Distributor extends ContentNode implements StorDistributormanagerCo
 
     PersistenceEngine provider;
 
-    public static class Builder extends VespaDomBuilder.DomConfigProducerBuilder<Distributor> {
+    public static class Builder extends VespaDomBuilder.DomConfigProducerBuilder<Distributor, Distributor> {
         ModelElement clusterXml;
         PersistenceEngine persistenceProvider;
 
@@ -29,7 +30,7 @@ public class Distributor extends ContentNode implements StorDistributormanagerCo
         }
 
         @Override
-        protected Distributor doBuild(DeployState deployState, AbstractConfigProducer ancestor, Element producerSpec) {
+        protected Distributor doBuild(DeployState deployState, TreeConfigProducer<Distributor> ancestor, Element producerSpec) {
             return new Distributor(deployState.getProperties(), (DistributorCluster)ancestor, new ModelElement(producerSpec).integerAttribute("distribution-key"),
                                    clusterXml.integerAttribute("distributor-base-port"), persistenceProvider);
         }

@@ -23,6 +23,8 @@ class LogMessage {
 
 public:
     LogMessage();
+    LogMessage(LogMessage &&) noexcept;
+    LogMessage & operator=(LogMessage &&) noexcept;
     LogMessage(int64_t time_nanos_in,
                const std::string& hostname_in,
                int32_t process_id_in,

@@ -1,7 +1,9 @@
 package com.yahoo.vespa.hosted.controller.tenant;
 
+import com.amazonaws.arn.Arn;
 import com.yahoo.text.Text;
 
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -10,7 +12,6 @@ import java.util.stream.Collectors;
 
 public class ArchiveAccess {
 
-    private static final Pattern VALID_AWS_ARCHIVE_ACCESS_ROLE_PATTERN = Pattern.compile("arn:aws:iam::\\d{12}:.+");
     private static final Pattern VALID_GCP_ARCHIVE_ACCESS_MEMBER_PATTERN = Pattern.compile("(?<prefix>[a-zA-Z]+):.+");
 
     private static final Set<String> gcpMemberPrefixes = Set.of("user", "serviceAccount", "group", "domain");
@@ -56,13 +57,24 @@ public class ArchiveAccess {
         return new ArchiveAccess(awsRole(), Optional.empty());
     }
 
-    private void validateAWSIAMRole(String role) {
-        if (!VALID_AWS_ARCHIVE_ACCESS_ROLE_PATTERN.matcher(role).matches()) {
-            throw new IllegalArgumentException(Text.format("Invalid archive access role '%s': Must match expected pattern: '%s'",
-                    awsRole.get(), VALID_AWS_ARCHIVE_ACCESS_ROLE_PATTERN.pattern()));
-        }
+    private static final Pattern ACCOUNT_ID_PATTERN = Pattern.compile("\\d{12}");
+    private static void validateAWSIAMRole(String role) {
         if (role.length() > 100) {
             throw new IllegalArgumentException("Invalid archive access role too long, must be 100 or less characters");
+        }
+        try {
+            var arn = Arn.fromString(role);
+            if (!arn.getPartition().equals("aws")) throw new IllegalArgumentException("Partition must be 'aws'");
+            if (!arn.getService().equals("iam")) throw new IllegalArgumentException("Service must be 'iam'");
+            var resourceType = arn.getResource().getResourceType();
+            if (resourceType == null) throw new IllegalArgumentException("Missing resource type - must be 'role' or 'user'");
+            if (!List.of("user", "role").contains(resourceType))
+                throw new IllegalArgumentException("Invalid resource type - must be either a 'role' or 'user'");
+            var accountId = arn.getAccountId();
+            if (!ACCOUNT_ID_PATTERN.matcher(accountId).matches())
+                throw new IllegalArgumentException("Account id must be a 12-digit number");
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException(Text.format("Invalid archive access IAM role '%s': %s", role, e.getMessage()));
         }
     }
 

@@ -53,6 +53,8 @@ class ParsedRankProfile extends ParsedBlock {
     private final Map<Reference, RankProfile.Constant> constants = new LinkedHashMap<>();
     private final Map<Reference, RankProfile.Input> inputs = new LinkedHashMap<>();
     private final List<OnnxModel> onnxModels = new ArrayList<>();
+    private Integer globalPhaseRerankCount = null;
+    private String globalPhaseExpression = null;
 
     ParsedRankProfile(String name) {
         super(name, "rank-profile");
@@ -77,6 +79,8 @@ class ParsedRankProfile extends ParsedBlock {
     List<ParsedRankFunction> getFunctions() { return List.copyOf(functions.values()); }
     List<MutateOperation> getMutateOperations() { return List.copyOf(mutateOperations); }
     List<String> getInherited() { return List.copyOf(inherited); }
+    Optional<Integer> getGlobalPhaseRerankCount() { return Optional.ofNullable(this.globalPhaseRerankCount); }
+    Optional<String> getGlobalPhaseExpression() { return Optional.ofNullable(this.globalPhaseExpression); }
 
     Map<String, Boolean> getFieldsWithRankFilter() { return Collections.unmodifiableMap(fieldsRankFilter); }
     Map<String, Integer> getFieldsWithRankWeight() { return Collections.unmodifiableMap(fieldsRankWeight); }
@@ -197,11 +201,21 @@ class ParsedRankProfile extends ParsedBlock {
         this.secondPhaseExpression = expression;
     }
 
+    void setGlobalPhaseExpression(String expression) {
+        verifyThat(globalPhaseExpression == null, "already has global-phase expression");
+        this.globalPhaseExpression = expression;
+    }
+
+    void setGlobalPhaseRerankCount(int count) {
+        verifyThat(globalPhaseRerankCount == null, "already has global-phase rerank-count");
+        this.globalPhaseRerankCount = count;
+    }
+
     void setStrict(boolean strict) {
         verifyThat(this.strict == null, "already has strict");
         this.strict = strict;
     }
-  
+
     void setTermwiseLimit(double limit) {
         verifyThat(termwiseLimit == null, "already has termwise-limit");
         this.termwiseLimit = limit;

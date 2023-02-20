@@ -82,7 +82,7 @@ public class HostRequestHandler extends RestApiRequestHandler<HostRequestHandler
                             serviceInstance.getServiceCluster().serviceType().s(),
                             serviceInstance.configId().s(),
                             serviceInstance.serviceStatus().name()))
-                    .collect(Collectors.toList());
+                    .toList();
 
             return new GetHostResponse(
                     host.getHostName().s(),

@@ -12,7 +12,6 @@ import org.apache.hc.client5.http.classic.methods.HttpGet;
 import org.apache.hc.client5.http.config.RequestConfig;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpResponse;
-import org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManager;
 import org.apache.hc.core5.http.io.entity.EntityUtils;
 import org.apache.hc.core5.util.Timeout;
 
@@ -28,13 +27,11 @@ public class ClusterProtonMetricsRetriever {
     private static final Logger log = Logger.getLogger(ClusterProtonMetricsRetriever.class.getName());
 
     private static final CloseableHttpClient httpClient = VespaHttpClientBuilder
-                                                            .create(PoolingHttpClientConnectionManager::new)
-                                                            .setDefaultRequestConfig(
-                                                                    RequestConfig.custom()
-                                                                                 .setConnectTimeout(Timeout.ofSeconds(10))
-                                                                                 .setResponseTimeout(Timeout.ofSeconds(10))
-                                                                                 .build())
-                                                            .build();
+            .custom()
+            .connectTimeout(Timeout.ofSeconds(10))
+            .apacheBuilder()
+            .setDefaultRequestConfig(RequestConfig.custom().setResponseTimeout(Timeout.ofSeconds(10)).build())
+            .build();
 
 
     public Map<String, ProtonMetricsAggregator> requestMetricsGroupedByCluster(Collection<URI> hosts) {
@@ -100,6 +97,7 @@ public class ClusterProtonMetricsRetriever {
         aggregator.addAll(metrics.field("values"));
     }
 
+    @SuppressWarnings("deprecation")
     private static Slime doMetricsRequest(URI hostURI) {
         HttpGet get = new HttpGet(hostURI);
         try (CloseableHttpResponse response = httpClient.execute(get)) {

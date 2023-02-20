@@ -1,0 +1,30 @@
+--- /opt/rh/gcc-toolset-12/root/usr/include/c++/12/bits/stl_vector.h	2022-09-14 17:00:12.000000000 +0000
++++ ./stl_vector.h	2023-02-10 13:24:44.885703192 +0000
+@@ -1814,10 +1814,10 @@
+ #if __cplusplus < 201103L
+       // Called by insert(p,x)
+       void
+-      _M_insert_aux(iterator __position, const value_type& __x);
++      _M_insert_aux(iterator __position, const value_type& __x) __attribute((noinline));
+ 
+       void
+-      _M_realloc_insert(iterator __position, const value_type& __x);
++      _M_realloc_insert(iterator __position, const value_type& __x) __attribute((noinline));
+ #else
+       // A value_type object constructed with _Alloc_traits::construct()
+       // and destroyed with _Alloc_traits::destroy().
+@@ -1860,12 +1860,12 @@
+       template<typename _Arg>
+ 	_GLIBCXX20_CONSTEXPR
+ 	void
+-	_M_insert_aux(iterator __position, _Arg&& __arg);
++	_M_insert_aux(iterator __position, _Arg&& __arg) __attribute((noinline));
+ 
+       template<typename... _Args>
+ 	_GLIBCXX20_CONSTEXPR
+ 	void
+-	_M_realloc_insert(iterator __position, _Args&&... __args);
++	_M_realloc_insert(iterator __position, _Args&&... __args) __attribute((noinline));
+ 
+       // Either move-construct at the end, or forward to _M_insert_aux.
+       _GLIBCXX20_CONSTEXPR

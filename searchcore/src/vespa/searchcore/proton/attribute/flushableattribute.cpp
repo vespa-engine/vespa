@@ -178,6 +178,12 @@ FlushableAttribute::FlushableAttribute(AttributeVectorSP attr,
 
 FlushableAttribute::~FlushableAttribute() = default;
 
+TransientResourceUsage
+FlushableAttribute::get_transient_resource_usage() const
+{
+    return _attrDir->get_transient_resource_usage();
+}
+
 IFlushTarget::SerialNum
 FlushableAttribute::getFlushedSerialNum() const
 {

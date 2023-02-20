@@ -18,8 +18,8 @@ public:
     /**
      * Convenience typedef.
      */
-    typedef std::unique_ptr<GetDocumentMessage> UP;
-    typedef std::shared_ptr<GetDocumentMessage> SP;
+    using UP = std::unique_ptr<GetDocumentMessage>;
+    using SP = std::shared_ptr<GetDocumentMessage>;
 
     /**
      * Constructs a new message for deserialization.

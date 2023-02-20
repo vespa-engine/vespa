@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.schema.processing;
 
-import com.google.common.collect.ImmutableSet;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.schema.RankProfile;
 import com.yahoo.schema.RankProfileRegistry;
@@ -9,8 +8,10 @@ import com.yahoo.schema.Schema;
 import com.yahoo.searchlib.rankingexpression.parser.RankingExpressionParserConstants;
 import com.yahoo.vespa.model.container.search.QueryProfiles;
 
+import java.util.Arrays;
 import java.util.Set;
 import java.util.logging.Level;
+import java.util.stream.Collectors;
 
 /**
  * Issues a warning if some function has a reserved name. This is not necessarily
@@ -20,7 +21,7 @@ import java.util.logging.Level;
  */
 public class ReservedFunctionNames extends Processor {
 
-    private static Set<String> reservedNames = getReservedNames();
+    private static final Set<String> reservedNames = getReservedNames();
 
     public ReservedFunctionNames(Schema schema, DeployLogger deployLogger, RankProfileRegistry rankProfileRegistry, QueryProfiles queryProfiles) {
         super(schema, deployLogger, rankProfileRegistry, queryProfiles);
@@ -44,13 +45,9 @@ public class ReservedFunctionNames extends Processor {
         }
     }
 
-    private static ImmutableSet<String> getReservedNames() {
-        ImmutableSet.Builder<String> names = ImmutableSet.builder();
-        for (String token : RankingExpressionParserConstants.tokenImage) {
-            String tokenWithoutQuotes = token.substring(1, token.length()-1);
-            names.add(tokenWithoutQuotes);
-        }
-        return names.build();
+    private static Set<String> getReservedNames() {
+        return Arrays.stream(RankingExpressionParserConstants.tokenImage)
+                .map(token -> token.substring(1, token.length()-1)).collect(Collectors.toUnmodifiableSet());
     }
 
 }

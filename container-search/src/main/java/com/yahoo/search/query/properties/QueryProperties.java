@@ -16,6 +16,8 @@ import com.yahoo.search.query.profile.compiled.CompiledQueryProfileRegistry;
 import com.yahoo.search.query.profile.types.ConversionContext;
 import com.yahoo.search.query.profile.types.FieldDescription;
 import com.yahoo.search.query.profile.types.QueryProfileType;
+import com.yahoo.search.query.profiling.Profiling;
+import com.yahoo.search.query.profiling.ProfilingParams;
 import com.yahoo.search.query.ranking.Diversity;
 import com.yahoo.search.query.ranking.MatchPhase;
 import com.yahoo.search.query.ranking.Matching;
@@ -303,7 +305,7 @@ public class QueryProperties extends Properties {
                 }
                 else if (key.size() == 3 && key.get(1).equals(Presentation.FORMAT)) {
                     if (key.last().equals(Presentation.TENSORS))
-                        query.getPresentation().setTensorShortForm(asString(value, "short"));
+                        query.getPresentation().setTensorFormat(asString(value, "short")); // TODO: Switch default to short-value on Vespa 9
                     else
                         throwIllegalParameter(key.last(), Presentation.FORMAT);
                 }
@@ -321,6 +323,15 @@ public class QueryProperties extends Properties {
                     query.getTrace().setTimestamps(asBoolean(value, false));
                 if (key.last().equals(Trace.QUERY))
                     query.getTrace().setQuery(asBoolean(value, true));
+            }
+            else if ((key.size() == 4) &&
+                    key.get(0).equals(Trace.TRACE) &&
+                    key.get(1).equals(Trace.PROFILING) &&
+                    key.get(3).equals(ProfilingParams.DEPTH)) {
+                var params = getProfilingParams(query.getTrace().getProfiling(), key.get(2));
+                if (params != null) {
+                    params.setDepth(asInteger(value, 0));
+                }
             }
             else if (key.first().equals(Select.SELECT)) {
                 if (key.size() == 1) {
@@ -362,6 +373,17 @@ public class QueryProperties extends Properties {
             else
                 throw new IllegalInputException("Could not set '" + key + "' to '" + value + "'", e);
         }
+    }
+
+    private static ProfilingParams getProfilingParams(Profiling prof, String name) {
+        if (name.equals(Profiling.MATCHING)) {
+            return prof.getMatching();
+        } else if (name.equals(Profiling.FIRST_PHASE_RANKING)) {
+            return prof.getFirstPhaseRanking();
+        } else if (name.equals(Profiling.SECOND_PHASE_RANKING)) {
+            return prof.getSecondPhaseRanking();
+        }
+        return null;
     }
 
     @Override

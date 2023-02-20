@@ -41,7 +41,7 @@ class DistributorNode
     constexpr static uint32_t SanityCheckMaxWallClockSecondSkew = 120;
 
 public:
-    typedef std::unique_ptr<DistributorNode> UP;
+    using UP = std::unique_ptr<DistributorNode>;
 
     DistributorNode(const config::ConfigUri & configUri,
                     DistributorNodeContext&,

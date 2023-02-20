@@ -330,7 +330,7 @@ public abstract class IntermediateOperation {
     TensorType.Value resultValueType() {
         return TensorType.Value.largestOf(inputs.stream()
                                                 .map(input -> input.type().get().type().valueType())
-                                                .collect(Collectors.toList()));
+                                                .toList());
     }
 
     public abstract IntermediateOperation withInputs(List<IntermediateOperation> inputs);

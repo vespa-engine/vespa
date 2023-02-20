@@ -61,12 +61,12 @@ HnswIndexLoader<ReaderType, type>::load_next()
     if (++_nodeid < _num_nodes) {
         return true;
     } else {
-        _graph.node_refs.ensure_size(std::max(_num_nodes, 1u));
-        _graph.node_refs_size.store(std::max(_num_nodes, 1u), std::memory_order_release);
-        _graph.trim_node_refs_size();
-        auto entry_node_ref = _graph.get_node_ref(_entry_nodeid);
-        _graph.set_entry_node({_entry_nodeid, entry_node_ref, _entry_level});
-        _id_mapping.on_load(_graph.node_refs.make_read_view(_graph.node_refs.size()));
+        _graph.nodes.ensure_size(std::max(_num_nodes, 1u));
+        _graph.nodes_size.store(std::max(_num_nodes, 1u), std::memory_order_release);
+        _graph.trim_nodes_size();
+        auto entry_levels_ref = _graph.get_levels_ref(_entry_nodeid);
+        _graph.set_entry_node({_entry_nodeid, entry_levels_ref, _entry_level});
+        _id_mapping.on_load(_graph.nodes.make_read_view(_graph.size()));
         _complete = true;
         return false;
     }

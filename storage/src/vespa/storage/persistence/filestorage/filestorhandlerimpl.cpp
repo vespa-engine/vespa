@@ -76,7 +76,7 @@ FileStorHandlerImpl::FileStorHandlerImpl(uint32_t numThreads, uint32_t numStripe
     }
 
     // Add update hook, so we will get callbacks each 5 seconds to update metrics.
-    _component.registerMetricUpdateHook(*this, framework::SecondTime(5));
+    _component.registerMetricUpdateHook(*this, 5s);
 }
 
 FileStorHandlerImpl::~FileStorHandlerImpl()
@@ -420,10 +420,7 @@ FileStorHandlerImpl::Stripe::lock(const document::Bucket &bucket, api::LockingRe
         _cond->wait_for(guard, 100ms);
     }
 
-    auto locker = std::make_shared<BucketLock>(guard, *this, bucket, 255, api::MessageType::INTERNAL_ID, 0, lockReq);
-    guard.unlock();
-    _cond->notify_all();
-    return locker;
+    return std::make_shared<BucketLock>(guard, *this, bucket, 255, api::MessageType::INTERNAL_ID, 0, lockReq);
 }
 
 namespace {
@@ -1013,7 +1010,7 @@ FileStorHandlerImpl::Stripe::get_next_async_message(monitor_guard& guard)
     while ((iter != end) && operationIsInhibited(guard, iter->_bucket, *iter->_command)) {
         ++iter;
     }
-    if ((iter != end) && AsyncHandler::is_async_message(iter->_command->getType().getId())) {
+    if ((iter != end) && AsyncHandler::is_async_unconditional_message(*(iter->_command))) {
         // This is executed in the context of an RPC thread, so only do a _non-blocking_
         // poll of the throttle policy.
         auto throttle_token = _owner.operation_throttler().try_acquire_one();
@@ -1106,7 +1103,7 @@ FileStorHandlerImpl::Stripe::schedule(MessageEntry messageEntry)
         _queue->emplace_back(std::move(messageEntry));
         update_cached_queue_size(guard);
     }
-    _cond->notify_all();
+    _cond->notify_one();
     return true;
 }
 
@@ -1121,7 +1118,7 @@ FileStorHandlerImpl::Stripe::schedule_and_get_next_async_message(MessageEntry en
         if (guard.owns_lock()) {
             guard.unlock();
         }
-        _cond->notify_all();
+        _cond->notify_one();
     }
     return lockedMessage;
 }
@@ -1165,8 +1162,9 @@ FileStorHandlerImpl::Stripe::release(const document::Bucket & bucket,
     assert(iter != _lockedBuckets.end());
     auto& entry = iter->second;
     Clock::time_point start_time;
+    bool wasExclusive = (reqOfReleasedLock == api::LockingRequirements::Exclusive);
 
-    if (reqOfReleasedLock == api::LockingRequirements::Exclusive) {
+    if (wasExclusive) {
         assert(entry._exclusiveLock);
         assert(entry._exclusiveLock->msgId == lockMsgId);
         if (was_active_merge) {
@@ -1188,7 +1186,13 @@ FileStorHandlerImpl::Stripe::release(const document::Bucket & bucket,
     if (!entry._exclusiveLock && entry._sharedLocks.empty()) {
         _lockedBuckets.erase(iter); // No more locks held
     }
-    _cond->notify_all();
+    bool emptySharedLocks = entry._sharedLocks.empty();
+    guard.unlock();
+    if (wasExclusive) {
+        _cond->notify_all();
+    } else if (emptySharedLocks) {
+        _cond->notify_one();
+    }
 }
 
 void

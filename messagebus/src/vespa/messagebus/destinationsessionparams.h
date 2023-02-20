@@ -18,6 +18,7 @@ class DestinationSessionParams {
 private:
     string           _name;
     bool             _broadcastName;
+    bool             _defer_registration;
     IMessageHandler *_handler;
 
 public:
@@ -48,6 +49,8 @@ public:
      */
     bool getBroadcastName() const { return _broadcastName; }
 
+    [[nodiscard]] bool defer_registration() const noexcept { return _defer_registration; }
+
     /**
      * Sets whether or not to broadcast the name of this session on the network.
      *
@@ -55,6 +58,11 @@ public:
      * @return This, to allow chaining.
      */
     DestinationSessionParams &setBroadcastName(bool broadcastName) { _broadcastName = broadcastName; return *this; }
+
+    DestinationSessionParams& defer_registration(bool defer) noexcept {
+        _defer_registration = defer;
+        return *this;
+    }
 
     /**
      * Returns the handler to receive incoming messages. If you call this method without first assigning a

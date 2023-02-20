@@ -1,9 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.collections;
 
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
-
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -48,21 +45,13 @@ public class ListMap<K, V> {
 
     /** Puts an element into this. Multiple elements at the same position are added to the list at this key */
     public void put(K key, V value) {
-        List<V> list = map.get(key);
-        if (list == null) {
-            list = new ArrayList<>();
-            map.put(key, list);
-        }
+        List<V> list = map.computeIfAbsent(key, k -> new ArrayList<>());
         list.add(value);
     }
 
     /** Put a key without adding a new value, such that there is an empty list of values if no values are already added */
     public void put(K key) {
-        List<V> list = map.get(key);
-        if (list == null) {
-            list = new ArrayList<>();
-            map.put(key, list);
-        }
+        map.computeIfAbsent(key, k -> new ArrayList<>());
     }
 
     /** Put this map in the state where it has just the given value of the given key */
@@ -110,7 +99,7 @@ public class ListMap<K, V> {
      */
     public List<V> get(K key) {
         List<V> list = map.get(key);
-        if (list == null) return ImmutableList.of();;
+        if (list == null) return List.of();;
         return list;
     }
 
@@ -137,8 +126,8 @@ public class ListMap<K, V> {
         frozen = true;
 
         for (Map.Entry<K,List<V>> entry : map.entrySet())
-            entry.setValue(ImmutableList.copyOf(entry.getValue()));
-        this.map = ImmutableMap.copyOf(this.map);
+            entry.setValue(List.copyOf(entry.getValue()));
+        this.map = Map.copyOf(this.map);
     }
 
     /** Returns whether this allows changes */

@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.application.container.impl;
 
-import com.google.common.collect.Lists;
 import com.yahoo.container.standalone.StandaloneContainerApplication;
 import com.yahoo.jdisc.application.OsgiFramework;
 import com.yahoo.jdisc.application.OsgiHeader;
@@ -51,15 +50,15 @@ import java.util.jar.JarFile;
  */
 public final class ClassLoaderOsgiFramework implements OsgiFramework {
 
-    private BundleContextImpl bundleContextImpl = new BundleContextImpl();
-    private SystemBundleImpl systemBundleImpl = new SystemBundleImpl();
-    private BundleWiringImpl bundleWiringImpl = new BundleWiringImpl();
+    private final BundleContextImpl bundleContextImpl = new BundleContextImpl();
+    private final SystemBundleImpl systemBundleImpl = new SystemBundleImpl();
+    private final BundleWiringImpl bundleWiringImpl = new BundleWiringImpl();
 
-    private List<URL> bundleLocations = new ArrayList<>();
-    private List<Bundle> bundleList = Lists.newArrayList(systemBundleImpl);
+    private final List<URL> bundleLocations = new ArrayList<>();
+    private final List<Bundle> bundleList = new ArrayList<>(List.of(systemBundleImpl));
     private ClassLoader classLoader = null;
 
-    private AtomicInteger nextBundleId = new AtomicInteger(1);
+    private final AtomicInteger nextBundleId = new AtomicInteger(1);
 
     @Override
     public List<Bundle> installBundle(String bundleLocation) {

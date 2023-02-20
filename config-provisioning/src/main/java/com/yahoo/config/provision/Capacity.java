@@ -15,12 +15,19 @@ public final class Capacity {
 
     /** Resources should stay between these values, inclusive */
     private final ClusterResources min, max;
+    private final IntRange groupSize;
     private final boolean required;
     private final boolean canFail;
     private final NodeType type;
     private final Optional<CloudAccount> cloudAccount;
 
-    private Capacity(ClusterResources min, ClusterResources max, boolean required, boolean canFail, NodeType type, Optional<CloudAccount> cloudAccount) {
+    private Capacity(ClusterResources min,
+                     ClusterResources max,
+                     IntRange groupSize,
+                     boolean required,
+                     boolean canFail,
+                     NodeType type,
+                     Optional<CloudAccount> cloudAccount) {
         validate(min);
         validate(max);
         if (max.smallerThan(min))
@@ -30,6 +37,7 @@ public final class Capacity {
             throw new IllegalArgumentException("Capacity range does not allow GPU, got min " + min + " and max " + max);
         this.min = min;
         this.max = max;
+        this.groupSize = groupSize;
         this.required = required;
         this.canFail = canFail;
         this.type = type;
@@ -45,6 +53,7 @@ public final class Capacity {
 
     public ClusterResources minResources() { return min; }
     public ClusterResources maxResources() { return max; }
+    public IntRange groupSize() { return groupSize; }
 
     /** Returns whether the requested number of nodes must be met exactly for a request for this to succeed */
     public boolean isRequired() { return required; }
@@ -69,7 +78,11 @@ public final class Capacity {
     }
 
     public Capacity withLimits(ClusterResources min, ClusterResources max) {
-        return new Capacity(min, max, required, canFail, type, cloudAccount);
+        return withLimits(min, max, IntRange.empty());
+    }
+
+    public Capacity withLimits(ClusterResources min, ClusterResources max, IntRange groupSize) {
+        return new Capacity(min, max, groupSize, required, canFail, type, cloudAccount);
     }
 
     @Override
@@ -85,29 +98,34 @@ public final class Capacity {
 
     /** Create a non-required, failable capacity request */
     public static Capacity from(ClusterResources min, ClusterResources max) {
-        return from(min, max, false, true);
+        return from(min, max, IntRange.empty(), false, true, Optional.empty());
     }
 
     public static Capacity from(ClusterResources resources, boolean required, boolean canFail) {
         return from(resources, required, canFail, NodeType.tenant);
     }
 
-    // TODO(mpolden): Remove when config models < 7.590 are gone
+    // TODO: Remove after February 2023
     public static Capacity from(ClusterResources min, ClusterResources max, boolean required, boolean canFail) {
-        return from(min, max, required, canFail, Optional.empty());
+        return new Capacity(min, max, IntRange.empty(), required, canFail, NodeType.tenant, Optional.empty());
     }
 
+    // TODO: Remove after February 2023
     public static Capacity from(ClusterResources min, ClusterResources max, boolean required, boolean canFail, Optional<CloudAccount> cloudAccount) {
-        return new Capacity(min, max, required, canFail, NodeType.tenant, cloudAccount);
+        return new Capacity(min, max, IntRange.empty(), required, canFail, NodeType.tenant, cloudAccount);
+    }
+
+    public static Capacity from(ClusterResources min, ClusterResources max, IntRange groupSize, boolean required, boolean canFail, Optional<CloudAccount> cloudAccount) {
+        return new Capacity(min, max, groupSize, required, canFail, NodeType.tenant, cloudAccount);
     }
 
     /** Creates this from a node type */
     public static Capacity fromRequiredNodeType(NodeType type) {
-        return from(new ClusterResources(0, 0, NodeResources.unspecified()), true, false, type);
+        return from(new ClusterResources(0, 1, NodeResources.unspecified()), true, false, type);
     }
 
     private static Capacity from(ClusterResources resources, boolean required, boolean canFail, NodeType type) {
-        return new Capacity(resources, resources, required, canFail, type, Optional.empty());
+        return new Capacity(resources, resources, IntRange.empty(), required, canFail, type, Optional.empty());
     }
 
 }

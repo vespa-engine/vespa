@@ -19,7 +19,7 @@ struct Rpc : FRT_Invokable {
     FNET_Transport    transport;
     FRT_Supervisor    orb;
     Rpc(CryptoEngine::SP crypto, size_t num_threads, bool drop_empty)
-        : thread_pool(128_Ki), transport(fnet::TransportConfig(num_threads).crypto(std::move(crypto)).drop_empty_buffers(drop_empty)), orb(&transport) {}
+        : thread_pool(), transport(fnet::TransportConfig(num_threads).crypto(std::move(crypto)).drop_empty_buffers(drop_empty)), orb(&transport) {}
     void start() {
         ASSERT_TRUE(transport.Start(&thread_pool));
     }
@@ -137,7 +137,6 @@ void perform_test(size_t thread_id, Client &client, Result &result, bool vital =
 }
 
 CryptoEngine::SP null_crypto = std::make_shared<NullCryptoEngine>();
-CryptoEngine::SP xor_crypto = std::make_shared<XorCryptoEngine>();
 CryptoEngine::SP tls_crypto = std::make_shared<vespalib::TlsCryptoEngine>(vespalib::test::make_tls_options_for_testing());
 namespace {
     uint32_t getNumThreads() {
@@ -148,9 +147,6 @@ namespace {
 TEST_MT_FFF("parallel rpc with 1/1 transport threads and num_cores user threads (no encryption)",
             getNumThreads(), Server(null_crypto, 1), Client(null_crypto, 1, f1), Result(num_threads)) { perform_test(thread_id, f2, f3); }
 
-TEST_MT_FFF("parallel rpc with 1/1 transport threads and num_cores user threads (xor encryption)",
-            getNumThreads(), Server(xor_crypto, 1), Client(xor_crypto, 1, f1), Result(num_threads)) { perform_test(thread_id, f2, f3); }
-
 TEST_MT_FFF("parallel rpc with 1/1 transport threads and num_cores user threads (tls encryption)",
             getNumThreads(), Server(tls_crypto, 1), Client(tls_crypto, 1, f1), Result(num_threads)) { perform_test(thread_id, f2, f3); }
 
@@ -159,9 +155,6 @@ TEST_MT_FFF("parallel rpc with 1/1 transport threads and num_cores user threads 
 
 TEST_MT_FFF("parallel rpc with 8/8 transport threads and num_cores user threads (no encryption)",
             getNumThreads(), Server(null_crypto, 8), Client(null_crypto, 8, f1), Result(num_threads)) { perform_test(thread_id, f2, f3, true); }
-
-TEST_MT_FFF("parallel rpc with 8/8 transport threads and num_cores user threads (xor encryption)",
-            getNumThreads(), Server(xor_crypto, 8), Client(xor_crypto, 8, f1), Result(num_threads)) { perform_test(thread_id, f2, f3); }
 
 TEST_MT_FFF("parallel rpc with 8/8 transport threads and num_cores user threads (tls encryption)",
             getNumThreads(), Server(tls_crypto, 8), Client(tls_crypto, 8, f1), Result(num_threads)) { perform_test(thread_id, f2, f3, true); }

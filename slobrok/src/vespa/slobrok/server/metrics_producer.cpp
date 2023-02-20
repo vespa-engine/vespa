@@ -40,6 +40,7 @@ class MetricSnapshot
 private:
     vespalib::Slime _data;
     vespalib::slime::Cursor& _metrics;
+    vespalib::slime::Cursor& _snapshot;
     vespalib::slime::Cursor& _values;
     double _snapLen;
 
@@ -55,12 +56,12 @@ public:
 MetricSnapshot::MetricSnapshot(uint32_t prevTime, uint32_t currTime)
     : _data(),
       _metrics(_data.setObject()),
+      _snapshot(_metrics.setObject("snapshot")),
       _values(_metrics.setArray("values")),
       _snapLen(currTime - prevTime)
 {
-    vespalib::slime::Cursor& snapshot = _metrics.setObject("snapshot");
-    snapshot.setLong("from", prevTime);
-    snapshot.setLong("to",   currTime);
+    _snapshot.setLong("from", prevTime);
+    _snapshot.setLong("to",   currTime);
     if (_snapLen < 1.0) {
         _snapLen = 1.0;
     }
@@ -96,6 +97,9 @@ makeSnapshot(const RPCHooks::Metrics &prev, const RPCHooks::Metrics &curr,
     snapshot.addCount("slobrok.requests.admin",
              "count of administrative requests received",
              curr.adminReqs - prev.adminReqs);
+    snapshot.addCount("slobrok.missing.consensus",
+             "number of seconds without full consensus with all other brokers",
+             curr.missingConsensusTime);
     return snapshot.asString();
 }
 

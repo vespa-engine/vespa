@@ -6,9 +6,12 @@ import com.yahoo.config.application.api.xml.DeploymentSpecXmlReader;
 import com.yahoo.config.provision.AthenzDomain;
 import com.yahoo.config.provision.AthenzService;
 import com.yahoo.config.provision.CloudAccount;
+import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.RegionName;
+import com.yahoo.config.provision.ZoneEndpoint;
+import com.yahoo.config.provision.zone.ZoneId;
 
 import java.io.Reader;
 import java.time.Duration;
@@ -16,6 +19,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -42,17 +46,19 @@ public class DeploymentSpec {
                                                                   Optional.empty(),
                                                                   Optional.empty(),
                                                                   List.of(),
+                                                                  Bcp.empty(),
                                                                   "<deployment version='1.0'/>",
                                                                   List.of());
 
     private final List<Step> steps;
 
-    // Attributes which can be set on the root tag and which must be available outside of any particular instance
+    // Attributes which can be set on the root tag and which must be available outside any particular instance
     private final Optional<Integer> majorVersion;
     private final Optional<AthenzDomain> athenzDomain;
     private final Optional<AthenzService> athenzService;
     private final Optional<CloudAccount> cloudAccount;
     private final List<Endpoint> endpoints;
+    private final Bcp bcp;
     private final List<DeprecatedElement> deprecatedElements;
 
     private final String xmlForm;
@@ -63,6 +69,7 @@ public class DeploymentSpec {
                           Optional<AthenzService> athenzService,
                           Optional<CloudAccount> cloudAccount,
                           List<Endpoint> endpoints,
+                          Bcp bcp,
                           String xmlForm,
                           List<DeprecatedElement> deprecatedElements) {
         this.steps = List.copyOf(Objects.requireNonNull(steps));
@@ -72,11 +79,13 @@ public class DeploymentSpec {
         this.cloudAccount = Objects.requireNonNull(cloudAccount);
         this.xmlForm = Objects.requireNonNull(xmlForm);
         this.endpoints = List.copyOf(Objects.requireNonNull(endpoints));
+        this.bcp = Objects.requireNonNull(bcp);
         this.deprecatedElements = List.copyOf(Objects.requireNonNull(deprecatedElements));
         validateTotalDelay(steps);
         validateUpgradePoliciesOfIncreasingConservativeness(steps);
         validateAthenz();
         validateApplicationEndpoints();
+        validateBcp();
     }
 
     /** Throw an IllegalArgumentException if the total delay exceeds 24 hours */
@@ -145,17 +154,24 @@ public class DeploymentSpec {
                     illegal(prefix + "targets undeclared region '" + target.region() +
                             "' in instance '" + target.instance() + "'");
                 }
+                if (instance.get().zoneEndpoint(ZoneId.from(Environment.prod, target.region()), ClusterSpec.Id.from(endpoint.containerId()))
+                            .map(zoneEndpoint -> ! zoneEndpoint.isPublicEndpoint()).orElse(false))
+                    illegal(prefix + "targets '" + target.region().value() + "' in '" + target.instance().value() +
+                            "', but its zone endpoint has 'enabled' set to 'false'");
             }
         }
+    }
+
+    private void validateBcp() {
+        for (var instance : instances())
+            instance.validateBcp(instance.bcp().orElse(bcp()));
     }
 
     /** Returns the major version this application is pinned to, or empty (default) to allow all major versions */
     public Optional<Integer> majorVersion() { return majorVersion; }
 
     /** Returns the deployment steps of this in the order they will be performed */
-    public List<Step> steps() {
-        return steps;
-    }
+    public List<Step> steps() { return steps; }
 
     /** Returns the Athenz domain set on the root tag, if any */
     public Optional<AthenzDomain> athenzDomain() { return athenzDomain; }
@@ -174,6 +190,28 @@ public class DeploymentSpec {
 
     /** Cloud account set on the deployment root; see discussion for {@link #athenzService}. */
     public Optional<CloudAccount> cloudAccount() { return cloudAccount; }
+
+    /**
+     * Returns the most specific zone endpoint, where specificity is given, in decreasing order:
+     * 1. The given instance has declared a zone endpoint for the cluster, for the given region.
+     * 2. The given instance has declared a universal zone endpoint for the cluster.
+     * 3. The application has declared a zone endpoint for the cluster, for the given region.
+     * 4. The application has declared a universal zone endpoint for the cluster.
+     * 5. None of the above apply, and the default of a publicly visible endpoint is used.
+     */
+    public ZoneEndpoint zoneEndpoint(InstanceName instance, ZoneId zone, ClusterSpec.Id cluster) {
+        // TODO: look up endpoints from <dev> tag, or so, if we're to support non-prod settings.
+        if (   zone.environment().isTest()
+            && instances().stream()
+                          .anyMatch(spec -> spec.zoneEndpoints().getOrDefault(cluster, Map.of()).values().stream()
+                                                .anyMatch(endpoint -> ! endpoint.isPublicEndpoint()))) return ZoneEndpoint.privateEndpoint;
+        if (zone.environment() != Environment.prod) return ZoneEndpoint.defaultEndpoint;
+        return instance(instance).flatMap(spec -> spec.zoneEndpoint(zone, cluster))
+                                 .orElse(ZoneEndpoint.defaultEndpoint);
+    }
+
+    /** Returns the default BCP spec for instances, or Bcp.empty() if none are defined. */
+    public Bcp bcp() { return bcp; }
 
     /** Returns the XML form of this spec, or null if it was not created by fromXml, nor is empty */
     public String xmlForm() { return xmlForm; }
@@ -222,7 +260,7 @@ public class DeploymentSpec {
     private static List<DeploymentInstanceSpec> instances(List<DeploymentSpec.Step> steps) {
         return steps.stream()
                     .flatMap(DeploymentSpec::flatten)
-                    .collect(Collectors.toList());
+                    .toList();
     }
 
     private static Stream<DeploymentInstanceSpec> flatten(Step step) {

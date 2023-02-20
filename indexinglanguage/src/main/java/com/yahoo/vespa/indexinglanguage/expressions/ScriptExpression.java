@@ -15,6 +15,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -37,10 +38,20 @@ public final class ScriptExpression extends ExpressionList<StatementExpression> 
     @Override
     protected void doExecute(ExecutionContext context) {
         FieldValue input = context.getValue();
-        for (Expression exp : this) {
-            context.setValue(input).execute(exp);
+        for (StatementExpression statement : this) {
+            if (context.isComplete() ||
+                (statement.getInputFields().isEmpty() || containsAtLeastOneInputFrom(statement.getInputFields(), context))) {
+                context.setValue(input).execute(statement);
+            }
         }
         context.setValue(input);
+    }
+
+    private boolean containsAtLeastOneInputFrom(List<String> inputFields, ExecutionContext context) {
+        for (String inputField : inputFields)
+            if (context.getInputValue(inputField) != null)
+                return true;
+        return false;
     }
 
     @Override
@@ -60,7 +71,7 @@ public final class ScriptExpression extends ExpressionList<StatementExpression> 
                 prev = next;
             } else if (next != null && !prev.isAssignableFrom(next)) {
                 throw new VerificationException(ScriptExpression.class, "Statements require conflicting input types, " +
-                                                      prev.getName() + " vs " + next.getName() + ".");
+                                                                        prev.getName() + " vs " + next.getName() + ".");
             }
         }
         return prev;
@@ -102,4 +113,5 @@ public final class ScriptExpression extends ExpressionList<StatementExpression> 
     public static ScriptExpression newInstance(ScriptParserContext config) throws ParseException {
         return ScriptParser.parseScript(config);
     }
+
 }

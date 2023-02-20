@@ -1,6 +1,6 @@
 {
   "nodes": [
-    @include(node6.json),
-    @include(node2.json)
+    @include(node2.json),
+    @include(node6.json)
   ]
 }

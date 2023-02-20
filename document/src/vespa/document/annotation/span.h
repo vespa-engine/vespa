@@ -12,7 +12,7 @@ class Span : public SpanNode {
     int32_t _length;
 
 public:
-    typedef std::unique_ptr<Span> UP;
+    using UP = std::unique_ptr<Span>;
 
     Span(int32_t from_pos=0, int32_t len=0) noexcept : _from(from_pos), _length(len) {}
 

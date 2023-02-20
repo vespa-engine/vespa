@@ -26,7 +26,6 @@ import java.util.logging.Logger;
 
 import static ai.vespa.metricsproxy.metric.model.processing.MetricsProcessor.applyProcessors;
 import static java.util.logging.Level.FINE;
-import static java.util.stream.Collectors.toList;
 
 /**
  * Retrieves metrics from a single Vespa node over http. To avoid unnecessary load on metrics
@@ -41,8 +40,6 @@ import static java.util.stream.Collectors.toList;
 public class NodeMetricsClient {
 
     private static final Logger log = Logger.getLogger(NodeMetricsClient.class.getName());
-
-    private static final int MAX_DIMENSIONS = 10;
 
     final Node node;
     private final CloseableHttpAsyncClient httpClient;
@@ -90,7 +87,7 @@ public class NodeMetricsClient {
         var metrics = processAndBuild(GenericJsonUtil.toMetricsPackets(respons),
                 new ServiceIdDimensionProcessor(),
                 new ClusterIdDimensionProcessor(),
-                new PublicDimensionsProcessor(MAX_DIMENSIONS));
+                new PublicDimensionsProcessor());
         snapshotsRetrieved.incrementAndGet();
         log.log(FINE, () -> "Successfully retrieved " + metrics.size() + " metrics packets from " + metricsUri);
         snapshots.put(consumer, new Snapshot(Instant.now(clock), metrics));
@@ -101,7 +98,7 @@ public class NodeMetricsClient {
         return builders.stream()
                     .map(builder -> applyProcessors(builder, processors))
                     .map(MetricsPacket.Builder::build)
-                    .collect(toList());
+                    .toList();
     }
 
     long snapshotsRetrieved() {

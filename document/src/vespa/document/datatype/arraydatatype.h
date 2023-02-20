@@ -16,15 +16,16 @@ public:
     explicit ArrayDataType(const DataType &nestedType);
     ArrayDataType(const ArrayDataType &o) = delete;
     ArrayDataType &operator=(const ArrayDataType &rhs) = delete;
+    ~ArrayDataType() override;
 
     ArrayDataType(const DataType &nestedType, int32_t id);
 
-    std::unique_ptr<FieldValue> createFieldValue() const override;
+    [[nodiscard]] std::unique_ptr<FieldValue> createFieldValue() const override;
     void print(std::ostream&, bool verbose, const std::string& indent) const override;
-    bool equals(const DataType& other) const noexcept override;
+    [[nodiscard]] bool equals(const DataType& other) const noexcept override;
     void onBuildFieldPath(FieldPath & path, vespalib::stringref remainFieldName) const override;
 
-    bool isArray() const noexcept override { return true; }
+    [[nodiscard]] bool isArray() const noexcept override { return true; }
 };
 
 } // document

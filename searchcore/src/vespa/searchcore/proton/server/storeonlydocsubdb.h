@@ -196,13 +196,16 @@ public:
                       const IndexConfig & indexCfg) const override;
 
     void setup(const DocumentSubDbInitializerResult &initResult) override;
-    void initViews(const DocumentDBConfig &configSnapshot, const std::shared_ptr<matching::SessionManager> &sessionManager) override;
+    void initViews(const DocumentDBConfig &configSnapshot) override;
 
     void validateDocStore(FeedHandler & feedHandler, SerialNum serialNum) const override;
 
+    std::unique_ptr<DocumentSubDBReconfig>
+    prepare_reconfig(const DocumentDBConfig& new_config_snapshot, const ReconfigParams& reconfig_params, std::optional<SerialNum> serial_num) override;
+    void complete_prepare_reconfig(DocumentSubDBReconfig& prepared_reconfig, SerialNum serial_num) override;
     IReprocessingTask::List
     applyConfig(const DocumentDBConfig &newConfigSnapshot, const DocumentDBConfig &oldConfigSnapshot,
-                SerialNum serialNum, const ReconfigParams &params, IDocumentDBReferenceResolver &resolver) override;
+                SerialNum serialNum, const ReconfigParams &params, IDocumentDBReferenceResolver &resolver, const DocumentSubDBReconfig &prepared_reconfig) override;
     void setBucketStateCalculator(const std::shared_ptr<IBucketStateCalculator> &calc, OnDone onDone) override;
 
     ISearchHandler::SP getSearchView() const override { return _iSearchView.get(); }
@@ -236,6 +239,7 @@ public:
     PendingLidTrackerBase & getUncommittedLidsTracker() override { return *_pendingLidsForCommit; }
     vespalib::datastore::CompactionStrategy computeCompactionStrategy(vespalib::datastore::CompactionStrategy strategy) const;
     bool isNodeRetired() const { return _nodeRetired; }
+    TransientResourceUsage get_transient_resource_usage() const override;
 
 };
 

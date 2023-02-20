@@ -49,7 +49,7 @@ public class SuspensionReasons {
 
     /** An ordered list of all messages, typically useful for testing. */
     public List<String> getMessagesInOrder() {
-        return reasons.values().stream().flatMap(Collection::stream).sorted().collect(Collectors.toList());
+        return reasons.values().stream().flatMap(Collection::stream).sorted().toList();
     }
 
     public SuspensionReasons mergeWith(SuspensionReasons that) {

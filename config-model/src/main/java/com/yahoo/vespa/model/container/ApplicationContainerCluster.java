@@ -13,7 +13,7 @@ import com.yahoo.config.model.api.ApplicationClusterInfo;
 import com.yahoo.config.model.api.ContainerEndpoint;
 import com.yahoo.config.model.api.Model;
 import com.yahoo.config.model.deploy.DeployState;
-import com.yahoo.config.model.producer.AbstractConfigProducer;
+import com.yahoo.config.model.producer.TreeConfigProducer;
 import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostSpec;
@@ -38,7 +38,6 @@ import com.yahoo.vespa.model.container.component.Handler;
 import com.yahoo.vespa.model.container.component.SystemBindingPattern;
 import com.yahoo.vespa.model.container.configserver.ConfigserverCluster;
 import com.yahoo.vespa.model.utils.FileSender;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -98,7 +97,7 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
 
     private List<ApplicationClusterEndpoint> endpointList = List.of();
 
-    public ApplicationContainerCluster(AbstractConfigProducer<?> parent, String configSubId, String clusterId, DeployState deployState) {
+    public ApplicationContainerCluster(TreeConfigProducer<?> parent, String configSubId, String clusterId, DeployState deployState) {
         super(parent, configSubId, clusterId, deployState, true, 10);
         this.tlsClientAuthority = deployState.tlsClientAuthority();
         previousHosts = Collections.unmodifiableSet(deployState.getPreviousModel().stream()
@@ -113,7 +112,7 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
         addSimpleComponent("com.yahoo.container.jdisc.SecretStoreProvider");
         addSimpleComponent("com.yahoo.container.jdisc.CertificateStoreProvider");
         addSimpleComponent("com.yahoo.container.jdisc.AthenzIdentityProviderProvider");
-        addSimpleComponent(com.yahoo.container.core.documentapi.DocumentAccessProvider.class.getName());
+        addSimpleComponent("com.yahoo.container.core.documentapi.DocumentAccessProvider");
         addSimpleComponent(DOCUMENT_TYPE_MANAGER_CLASS);
 
         addMetricsHandlers();
@@ -125,11 +124,19 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
                 : defaultHeapSizePercentageOfTotalNodeMemory;
     }
 
+    private void wireLogctlSpecs() {
+        getAdmin().ifPresent(admin -> {
+            for (var c : getContainers()) {
+                c.setLogctlSpecs(admin.getLogctlSpecs());
+            }});
+    }
+
     @Override
     protected void doPrepare(DeployState deployState) {
         addAndSendApplicationBundles(deployState);
         sendUserConfiguredFiles(deployState);
         createEndpointList(deployState);
+        wireLogctlSpecs();
     }
 
     private void addAndSendApplicationBundles(DeployState deployState) {
@@ -198,7 +205,7 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
         List<String> hosts = getContainers().stream()
                 .map(AbstractService::getHostName)
                 .sorted()
-                .collect(Collectors.toList());
+                .toList();
 
         for (String suffix : deployState.getProperties().zoneDnsSuffixes()) {
             ApplicationClusterEndpoint.DnsName l4Name = ApplicationClusterEndpoint.DnsName.sharedL4NameFrom(
@@ -307,8 +314,8 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
                                    ! previousHosts.contains(container.getHostName()))
                          .retired(container.isRetired());
             builder.server(serverBuilder);
-            builder.dynamicReconfiguration(true);
         }
+        builder.dynamicReconfiguration(true);
     }
 
     @Override

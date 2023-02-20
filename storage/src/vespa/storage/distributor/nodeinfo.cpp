@@ -16,7 +16,7 @@ bool NodeInfo::isBusy(uint16_t idx) const {
     const SingleNodeInfo& info = getNode(idx);
     if (info._busyUntilTime.time_since_epoch().count() != 0) {
         if (_clock.getMonotonicTime() > info._busyUntilTime) {
-            info._busyUntilTime = framework::MonotonicTimePoint{};
+            info._busyUntilTime = vespalib::steady_time();
         } else {
             return true;
         }
@@ -25,7 +25,7 @@ bool NodeInfo::isBusy(uint16_t idx) const {
     return false;
 }
 
-void NodeInfo::setBusy(uint16_t idx, framework::MonotonicDuration for_duration) {
+void NodeInfo::setBusy(uint16_t idx, vespalib::duration for_duration) {
     getNode(idx)._busyUntilTime = _clock.getMonotonicTime() + for_duration;
 }
 

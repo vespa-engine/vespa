@@ -10,6 +10,7 @@
 #include "unique_store_builder.hpp"
 #include "unique_store_dictionary.hpp"
 #include "unique_store_enumerator.hpp"
+#include "unique_store_remapper.hpp"
 #include <atomic>
 #include <algorithm>
 

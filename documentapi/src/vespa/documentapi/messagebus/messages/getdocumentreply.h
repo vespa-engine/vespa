@@ -17,8 +17,8 @@ public:
     /**
      * Convenience typedef.
      */
-    typedef std::unique_ptr<GetDocumentReply> UP;
-    typedef std::shared_ptr<GetDocumentReply> SP;
+    using UP = std::unique_ptr<GetDocumentReply>;
+    using SP = std::shared_ptr<GetDocumentReply>;
 
     /**
      * Constructs a new reply for deserialization.

@@ -23,7 +23,7 @@ class RequestStatusPage : public api::InternalCommand {
                             // in which results should be sorted on status page.
                             // (Used by filestor threads)
 public:
-    static const uint32_t ID = 2100;
+    static constexpr uint32_t ID = 2100;
 
     RequestStatusPage(const framework::HttpUrlPath& path);
     ~RequestStatusPage();
@@ -46,7 +46,7 @@ class RequestStatusPageReply : public api::InternalReply {
     std::string _status;
     std::string _sortToken;
 public:
-    static const uint32_t ID = 2101;
+    static constexpr uint32_t ID = 2101;
 
     RequestStatusPageReply(const RequestStatusPage& cmd, const std::string& status);
     ~RequestStatusPageReply();

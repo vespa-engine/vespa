@@ -1,30 +1,23 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.athenz.identityprovider.api.bindings;
 
+import com.fasterxml.jackson.annotation.JsonAnyGetter;
+import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.time.Instant;
-import java.util.Objects;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Set;
 
 /**
  * @author bjorncs
  */
-@JsonIgnoreProperties(ignoreUnknown = true)
-public class SignedIdentityDocumentEntity {
-
-    @JsonProperty("signature") public final String signature;
-    @JsonProperty("signing-key-version") public final int signingKeyVersion;
-    @JsonProperty("provider-unique-id") public final String providerUniqueId; // String representation
-    @JsonProperty("provider-service") public final String providerService;
-    @JsonProperty("document-version") public final int documentVersion;
-    @JsonProperty("configserver-hostname") public final String configServerHostname;
-    @JsonProperty("instance-hostname") public final String instanceHostname;
-    @JsonProperty("created-at") public final Instant createdAt;
-    @JsonProperty("ip-addresses") public final Set<String> ipAddresses;
-    @JsonProperty("identity-type") public final String identityType;
+public record SignedIdentityDocumentEntity(
+        String signature, int signingKeyVersion, String providerUniqueId, String providerService, int documentVersion,
+        String configServerHostname, String instanceHostname, Instant createdAt, Set<String> ipAddresses,
+        String identityType, String clusterType, Map<String, Object> unknownAttributes) {
 
     @JsonCreator
     public SignedIdentityDocumentEntity(@JsonProperty("signature") String signature,
@@ -36,54 +29,23 @@ public class SignedIdentityDocumentEntity {
                                         @JsonProperty("instance-hostname") String instanceHostname,
                                         @JsonProperty("created-at") Instant createdAt,
                                         @JsonProperty("ip-addresses") Set<String> ipAddresses,
-                                        @JsonProperty("identity-type") String identityType) {
-        this.signature = signature;
-        this.signingKeyVersion = signingKeyVersion;
-        this.providerUniqueId = providerUniqueId;
-        this.providerService = providerService;
-        this.documentVersion = documentVersion;
-        this.configServerHostname = configServerHostname;
-        this.instanceHostname = instanceHostname;
-        this.createdAt = createdAt;
-        this.ipAddresses = ipAddresses;
-        this.identityType = identityType;
+                                        @JsonProperty("identity-type") String identityType,
+                                        @JsonProperty("cluster-type") String clusterType) {
+        this(signature, signingKeyVersion, providerUniqueId, providerService, documentVersion, configServerHostname,
+             instanceHostname, createdAt, ipAddresses, identityType, clusterType, new HashMap<>());
     }
 
-    @Override
-    public String toString() {
-        return "SignedIdentityDocumentEntity{" +
-                ", signature='" + signature + '\'' +
-                ", signingKeyVersion=" + signingKeyVersion +
-                ", providerUniqueId='" + providerUniqueId + '\'' +
-                ", providerService='" + providerService + '\'' +
-                ", documentVersion=" + documentVersion +
-                ", configServerHostname='" + configServerHostname + '\'' +
-                ", instanceHostname='" + instanceHostname + '\'' +
-                ", createdAt=" + createdAt +
-                ", ipAddresses=" + ipAddresses +
-                ", identityType=" + identityType +
-                '}';
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        SignedIdentityDocumentEntity that = (SignedIdentityDocumentEntity) o;
-        return signingKeyVersion == that.signingKeyVersion &&
-                documentVersion == that.documentVersion &&
-                Objects.equals(signature, that.signature) &&
-                Objects.equals(providerUniqueId, that.providerUniqueId) &&
-                Objects.equals(providerService, that.providerService) &&
-                Objects.equals(configServerHostname, that.configServerHostname) &&
-                Objects.equals(instanceHostname, that.instanceHostname) &&
-                Objects.equals(createdAt, that.createdAt) &&
-                Objects.equals(ipAddresses, that.ipAddresses) &&
-                Objects.equals(identityType, that.identityType);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(signature, signingKeyVersion, providerUniqueId, providerService, documentVersion, configServerHostname, instanceHostname, createdAt, ipAddresses, identityType);
-    }
+    @JsonProperty("signature") @Override public String signature() { return signature; }
+    @JsonProperty("signing-key-version") @Override public int signingKeyVersion() { return signingKeyVersion; }
+    @JsonProperty("provider-unique-id") @Override public String providerUniqueId() { return providerUniqueId; }
+    @JsonProperty("provider-service") @Override public String providerService() { return providerService; }
+    @JsonProperty("document-version") @Override public int documentVersion() { return documentVersion; }
+    @JsonProperty("configserver-hostname") @Override public String configServerHostname() { return configServerHostname; }
+    @JsonProperty("instance-hostname") @Override public String instanceHostname() { return instanceHostname; }
+    @JsonProperty("created-at") @Override public Instant createdAt() { return createdAt; }
+    @JsonProperty("ip-addresses") @Override public Set<String> ipAddresses() { return ipAddresses; }
+    @JsonProperty("identity-type") @Override public String identityType() { return identityType; }
+    @JsonProperty("cluster-type") @Override public String clusterType() { return clusterType; }
+    @JsonAnyGetter @Override public Map<String, Object> unknownAttributes() { return unknownAttributes; }
+    @JsonAnySetter public void set(String name, Object value) { unknownAttributes.put(name, value); }
 }

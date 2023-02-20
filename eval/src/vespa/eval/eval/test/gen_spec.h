@@ -16,7 +16,7 @@ using Sequence = std::function<double(size_t)>;
 
 // Sequence counting up from 1 (default)
 // bias (starting point) can be adjusted
-// bias = 1.5 -> 1.5, 2.5, 3.5 ... 
+// bias = 1.5 -> 1.5, 2.5, 3.5 ...
 Sequence N(double bias = 1.0);
 
 // Sequence of numbers ax + b (where x is the index)
@@ -56,16 +56,12 @@ private:
     size_t                        _size;
     std::vector<vespalib::string> _dict;
 public:
-    DimSpec(const vespalib::string &name, size_t size) noexcept
-        : _name(name), _size(size), _dict()
-    {
-        assert(_size);
-    }
-    DimSpec(const vespalib::string &name, std::vector<vespalib::string> dict) noexcept
-        : _name(name), _size(), _dict(std::move(dict))
-    {
-        assert(!_size);
-    }
+    DimSpec(const vespalib::string &name, size_t size) noexcept;
+    DimSpec(const vespalib::string &name, std::vector<vespalib::string> dict) noexcept;
+    DimSpec(DimSpec &&) noexcept;
+    DimSpec & operator=(DimSpec &&) noexcept;
+    DimSpec & operator=(const DimSpec &);
+    DimSpec(const DimSpec &);
     ~DimSpec();
     static std::vector<vespalib::string> make_dict(size_t size, size_t stride, const vespalib::string &prefix);
     ValueType::Dimension type() const {
@@ -103,9 +99,9 @@ private:
     seq_t _seq;
 
 public:
-    GenSpec() : _dims(), _cells(CellType::DOUBLE), _seq(N()) {}
-    GenSpec(double bias) : _dims(), _cells(CellType::DOUBLE), _seq(N(bias)) {}
-    GenSpec(std::vector<DimSpec> dims_in) : _dims(std::move(dims_in)), _cells(CellType::DOUBLE), _seq(N()) {}
+    GenSpec() noexcept : _dims(), _cells(CellType::DOUBLE), _seq(N()) {}
+    GenSpec(double bias) noexcept : _dims(), _cells(CellType::DOUBLE), _seq(N(bias)) {}
+    GenSpec(std::vector<DimSpec> dims_in) noexcept : _dims(std::move(dims_in)), _cells(CellType::DOUBLE), _seq(N()) {}
 
     // Make a GenSpec object from a textual description
     // (dimension names must be single characters a-z)
@@ -114,9 +110,9 @@ public:
     // 'a2_1b3_2c5_1' -> GenSpec().map("a", 2).map("b", 3, 2).map("c", 5);
     static GenSpec from_desc(const vespalib::string &desc);
 
-    GenSpec(GenSpec &&other);
+    GenSpec(GenSpec &&other) noexcept;
     GenSpec(const GenSpec &other);
-    GenSpec &operator=(GenSpec &&other);
+    GenSpec &operator=(GenSpec &&other) noexcept;
     GenSpec &operator=(const GenSpec &other);
     ~GenSpec();
     const std::vector<DimSpec> &dims() const { return _dims; }

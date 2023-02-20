@@ -10,7 +10,6 @@ import com.yahoo.tensor.evaluation.EvaluationContext;
 import com.yahoo.tensor.evaluation.Name;
 import com.yahoo.tensor.evaluation.TypeContext;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -32,7 +31,7 @@ public abstract class DynamicTensor<NAMETYPE extends Name> extends PrimitiveTens
     public TensorType type(TypeContext<NAMETYPE> context) { return type; }
 
     @Override
-    public List<TensorFunction<NAMETYPE>> arguments() { return Collections.emptyList(); }
+    public List<TensorFunction<NAMETYPE>> arguments() { return List.of(); }
 
     @Override
     public TensorFunction<NAMETYPE> withArguments(List<TensorFunction<NAMETYPE>> arguments) {

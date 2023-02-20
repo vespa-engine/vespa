@@ -38,7 +38,7 @@ struct ProgramOptions {
     class LifetimeToken {
         ProgramOptions& o;
     public:
-        typedef std::unique_ptr<LifetimeToken> UP;
+        using UP = std::unique_ptr<LifetimeToken>;
         LifetimeToken(ProgramOptions& op) : o(op) {}
         ~LifetimeToken() { o.clear(); }
     };
@@ -200,8 +200,8 @@ template<> inline const char* getTypeName<float>() { return "float"; }
 template<> inline const char* getTypeName<double>() { return "double"; }
 
 struct ProgramOptions::OptionParser {
-    typedef std::unique_ptr<OptionParser> UP;
-    typedef std::shared_ptr<OptionParser> SP;
+    using UP = std::unique_ptr<OptionParser>;
+    using SP = std::shared_ptr<OptionParser>;
 
     std::vector<std::string> _names;
     std::vector<std::string> _hiddenNames;
@@ -310,7 +310,7 @@ struct ProgramOptions::StringOptionParser : public OptionParser {
 };
 
 struct ProgramOptions::MapOptionParser : public OptionParser {
-    typedef std::map<std::string, std::string> MapType;
+    using MapType = std::map<std::string, std::string>;
     std::map<std::string, std::string>& _value;
 
     MapOptionParser(const std::string& nameList,

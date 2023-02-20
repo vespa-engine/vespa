@@ -12,8 +12,8 @@ namespace {
 using vespalib::eval::ValueType;
 using vespalib::eval::CellType;
 
-typedef std::map<AttributesConfig::Attribute::Datatype, BasicType::Type> DataTypeMap;
-typedef std::map<AttributesConfig::Attribute::Collectiontype, CollectionType::Type> CollectionTypeMap;
+using DataTypeMap = std::map<AttributesConfig::Attribute::Datatype, BasicType::Type>;
+using CollectionTypeMap = std::map<AttributesConfig::Attribute::Collectiontype, CollectionType::Type>;
 
 DataTypeMap
 getDataTypeMap()

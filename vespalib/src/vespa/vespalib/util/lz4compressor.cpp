@@ -13,7 +13,7 @@ namespace vespalib::compression {
 size_t LZ4Compressor::adjustProcessLen(uint16_t, size_t len)   const { return LZ4_compressBound(len); }
 
 bool
-LZ4Compressor::process(const CompressionConfig& config, const void * inputV, size_t inputLen, void * outputV, size_t & outputLenV)
+LZ4Compressor::process(CompressionConfig config, const void * inputV, size_t inputLen, void * outputV, size_t & outputLenV)
 {
     const char * input(static_cast<const char *>(inputV));
     char * output(static_cast<char *>(outputV));

@@ -4,6 +4,8 @@ package ai.vespa.models.handler;
 import ai.vespa.models.evaluation.FunctionEvaluator;
 import ai.vespa.models.evaluation.Model;
 import ai.vespa.models.evaluation.ModelsEvaluator;
+import com.yahoo.component.annotation.Inject;
+import com.yahoo.component.provider.ComponentRegistry;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.ThreadedHttpRequestHandler;
@@ -20,7 +22,10 @@ import java.io.OutputStream;
 import java.net.URI;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.Executor;
@@ -36,9 +41,19 @@ public class ModelsEvaluationHandler extends ThreadedHttpRequestHandler {
 
     private final ModelsEvaluator modelsEvaluator;
 
+    @Inject
+    public ModelsEvaluationHandler(ComponentRegistry<ModelsEvaluator> registry,
+                                   Executor executor)
+    {
+        this(registry.getComponent(ModelsEvaluator.class.getName()), executor);
+    }
+
     public ModelsEvaluationHandler(ModelsEvaluator modelsEvaluator, Executor executor) {
         super(executor);
         this.modelsEvaluator = modelsEvaluator;
+        if (modelsEvaluator == null) {
+            throw new IllegalArgumentException("missing ModelsEvaluator");
+        }
     }
 
     @Override
@@ -88,23 +103,22 @@ public class ModelsEvaluationHandler extends ThreadedHttpRequestHandler {
             }
         }
         Tensor result = evaluator.evaluate();
-
-        Optional<String> format = property(request, "format.tensors");
-        if (format.isPresent() && format.get().equalsIgnoreCase("long")) {
-            return new Response(200, JsonFormat.encode(result));
-        }
-        else if (format.isPresent() && format.get().equalsIgnoreCase("string")) {
-            return new Response(200, result.toString().getBytes(StandardCharsets.UTF_8));
-        }
-        return new Response(200, JsonFormat.encodeShortForm(result));
+        return switch (property(request, "format.tensors").orElse("short").toLowerCase()) {
+            case "short"        -> new Response(200, JsonFormat.encode(result, true,  false));
+            case "long"         -> new Response(200, JsonFormat.encode(result, false, false));
+            case "short-value"  -> new Response(200, JsonFormat.encode(result, true,  true));
+            case "long-value"   -> new Response(200, JsonFormat.encode(result, false, true));
+            case "string"       -> new Response(200, result.toString(true, true).getBytes(StandardCharsets.UTF_8));
+            case "string-long " -> new Response(200, result.toString(true, false ).getBytes(StandardCharsets.UTF_8));
+            default             -> new ErrorResponse(400, "Unknown tensor format '" + property(request, "format.tensors") + "'");
+        };
     }
 
     private HttpResponse listAllModels(HttpRequest request) {
         Slime slime = new Slime();
         Cursor root = slime.setObject();
-        for (String modelName: modelsEvaluator.models().keySet()) {
-            root.setString(modelName, baseUrl(request) + modelName);
-        }
+        modelsEvaluator.models().keySet().stream().sorted()
+                .forEach(name -> root.setString(name, baseUrl(request) + name));
         return new Response(200, com.yahoo.slime.JsonFormat.toJsonBytes(slime));
     }
 
@@ -135,10 +149,13 @@ public class ModelsEvaluationHandler extends ThreadedHttpRequestHandler {
         cursor.setString("info", baseUrl(request) + model.name() + "/" + compactedFunction);
         cursor.setString("eval", baseUrl(request) + model.name() + "/" + compactedFunction + "/" + EVALUATE);
         Cursor bindings = cursor.setArray("arguments");
-        for (Map.Entry<String, TensorType> argument : evaluator.function().argumentTypes().entrySet()) {
+        var argTypes = evaluator.function().argumentTypes();
+        List<String> argNames = new ArrayList<>(argTypes.keySet());
+        Collections.sort(argNames);
+        for (String name : argNames) {
             Cursor binding = bindings.addObject();
-            binding.setString("name", argument.getKey());
-            binding.setString("type", argument.getValue().toString());
+            binding.setString("name", name);
+            binding.setString("type", argTypes.get(name).toString());
         }
     }
 

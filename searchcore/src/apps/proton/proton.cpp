@@ -20,7 +20,7 @@
 #include <vespa/log/log.h>
 LOG_SETUP("proton");
 
-typedef vespalib::SignalHandler SIG;
+using SIG = vespalib::SignalHandler;
 using vespa::config::search::core::ProtonConfig;
 
 struct Params
@@ -283,7 +283,7 @@ App::main(int argc, char **argv)
     try {
         setupSignals();
         setup_fadvise();
-        FastOS_ThreadPool threadPool(128_Ki);
+        FastOS_ThreadPool threadPool;
         Transport transport(buildTransportConfig(), threadPool);
         startAndRun(threadPool, transport.transport(), argc, argv);
     } catch (const vespalib::InvalidCommandLineArgumentsException &e) {

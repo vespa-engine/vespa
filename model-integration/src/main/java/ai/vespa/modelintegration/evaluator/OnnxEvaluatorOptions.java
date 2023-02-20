@@ -2,7 +2,6 @@
 
 package ai.vespa.modelintegration.evaluator;
 
-import ai.onnxruntime.OrtEnvironment;
 import ai.onnxruntime.OrtException;
 import ai.onnxruntime.OrtSession;
 
@@ -17,6 +16,8 @@ public class OnnxEvaluatorOptions {
     private OrtSession.SessionOptions.ExecutionMode executionMode;
     private int interOpThreads;
     private int intraOpThreads;
+    private int gpuDeviceNumber;
+    private boolean gpuDeviceRequired;
 
     public OnnxEvaluatorOptions() {
         // Defaults:
@@ -24,14 +25,19 @@ public class OnnxEvaluatorOptions {
         executionMode = OrtSession.SessionOptions.ExecutionMode.SEQUENTIAL;
         interOpThreads = 1;
         intraOpThreads = Math.max(1, (int) Math.ceil(((double) Runtime.getRuntime().availableProcessors()) / 4));
+        gpuDeviceNumber = -1;
+        gpuDeviceRequired = false;
     }
 
-    public OrtSession.SessionOptions getOptions() throws OrtException {
+    public OrtSession.SessionOptions getOptions(boolean loadCuda) throws OrtException {
         OrtSession.SessionOptions options = new OrtSession.SessionOptions();
         options.setOptimizationLevel(optimizationLevel);
         options.setExecutionMode(executionMode);
         options.setInterOpNumThreads(interOpThreads);
         options.setIntraOpNumThreads(intraOpThreads);
+        if (loadCuda) {
+            options.addCUDA(gpuDeviceNumber);
+        }
         return options;
     }
 
@@ -53,6 +59,19 @@ public class OnnxEvaluatorOptions {
         if (threads >= 0) {
             intraOpThreads = threads;
         }
+    }
+
+    public void setGpuDevice(int deviceNumber, boolean required) {
+        this.gpuDeviceNumber = deviceNumber;
+        this.gpuDeviceRequired = required;
+    }
+
+    public boolean requestingGpu() {
+        return gpuDeviceNumber > -1;
+    }
+
+    public boolean gpuDeviceRequired() {
+        return gpuDeviceRequired;
     }
 
 }

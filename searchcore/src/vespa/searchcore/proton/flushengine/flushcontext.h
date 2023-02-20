@@ -20,8 +20,8 @@ private:
     search::SerialNum              _lastSerial;
 
 public:
-    typedef std::shared_ptr<FlushContext> SP;
-    typedef std::vector<SP> List;
+    using SP = std::shared_ptr<FlushContext>;
+    using List = std::vector<SP>;
     FlushContext(const FlushContext &) = delete;
     FlushContext & operator = (const FlushContext &) = delete;
 
@@ -33,6 +33,12 @@ public:
      * @return the name created.
      */
     static vespalib::string createName(const IFlushHandler & handler, const IFlushTarget & target);
+
+    /**
+     * Create a combined name of the handler name and the target name.
+     */
+    static vespalib::string create_name(const vespalib::string& handler_name,
+                                        const vespalib::string& target_name);
 
     /**
      * Constructs a new instance of this class.

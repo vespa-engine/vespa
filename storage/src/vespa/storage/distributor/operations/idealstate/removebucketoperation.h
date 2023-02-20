@@ -14,6 +14,7 @@ public:
     RemoveBucketOperation(const ClusterContext &cluster_context, const BucketAndNodes& nodes)
         : IdealStateOperation(nodes), _tracker(cluster_context)
     {}
+    ~RemoveBucketOperation() override;
 
     /**
        Sends messages, returns true if we are done (sent nothing).
@@ -28,8 +29,8 @@ public:
     bool onReceiveInternal(const std::shared_ptr<api::StorageReply> &);
 
     void onReceive(DistributorStripeMessageSender& sender, const std::shared_ptr<api::StorageReply> &) override;
-    const char* getName() const override { return "remove"; };
-    Type getType() const override { return DELETE_BUCKET; }
+    const char* getName() const noexcept override { return "remove"; };
+    Type getType() const noexcept override { return DELETE_BUCKET; }
     bool shouldBlockThisOperation(uint32_t, uint16_t, uint8_t) const  override;
 protected:
     MessageTracker _tracker;

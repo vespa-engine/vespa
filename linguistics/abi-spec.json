@@ -372,6 +372,7 @@
       "public java.util.Map asMap()",
       "public java.util.Map asMap(java.lang.String)",
       "public abstract java.util.List embed(java.lang.String, com.yahoo.language.process.Embedder$Context)",
+      "public java.lang.String decode(java.util.List, com.yahoo.language.process.Embedder$Context)",
       "public abstract com.yahoo.tensor.Tensor embed(java.lang.String, com.yahoo.language.process.Embedder$Context, com.yahoo.tensor.TensorType)"
     ],
     "fields" : [

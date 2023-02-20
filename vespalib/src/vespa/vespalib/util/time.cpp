@@ -62,6 +62,19 @@ to_string(system_time time) {
     return to_string(time.time_since_epoch());
 }
 
+steady_time saturated_add(steady_time time, duration diff) {
+    auto td = time.time_since_epoch();
+    using dur_t = decltype(td);
+    using val_t = dur_t::rep;
+    val_t a = td.count();
+    val_t b = std::chrono::duration_cast<dur_t>(diff).count();
+    val_t res;
+    if (__builtin_add_overflow(a, b, &res)) {
+        return (b > 0) ? steady_time::max() : steady_time::min();
+    }
+    return steady_time(dur_t(res));
+}
+
 Timer::~Timer() = default;
 
 void
@@ -80,36 +93,20 @@ Timer::waitAtLeast(duration dur, bool busyWait) {
 
 }
 
-#ifndef __clang__
+#if defined(_LIBCPP_VERSION) && _LIBCPP_VERSION < 160000
+
+// Temporary workaround until libc++ supports stream operators for duration
+
+#include <ostream>
 
 namespace std::chrono {
 
-/*
- * This is a hack to avoid the slow clock computations on RHEL7/CentOS 7 due to using systemcalls.
- * This brings cost down from 550-560ns to 18-19ns on a Intel Haswell 2680 cpu.
- * We are providing the symbols here so they will take precedence over the ones in the standard library.
- * We rely on the linker do handle correct symbol resolution.
- * TODO: Once we are off the ancient platforms like Centos 7/ Rhel 7 we can drop this workaround.
-*/
-
-inline namespace _V2 {
-
-system_clock::time_point
-system_clock::now() noexcept {
-    timespec tp;
-    clock_gettime(CLOCK_REALTIME, &tp);
-    return time_point(duration(chrono::seconds(tp.tv_sec)
-                               + chrono::nanoseconds(tp.tv_nsec)));
+ostream&
+operator<<(ostream& os, const nanoseconds& value)
+{
+    os << value.count() << "ns";
+    return os;
 }
 
-steady_clock::time_point
-steady_clock::now() noexcept {
-    timespec tp;
-    clock_gettime(CLOCK_MONOTONIC, &tp);
-    return time_point(duration(chrono::seconds(tp.tv_sec)
-                               + chrono::nanoseconds(tp.tv_nsec)));
-}
-
-}
 }
 #endif

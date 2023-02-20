@@ -5,18 +5,24 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.DockerImage;
+import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
+import com.yahoo.config.provision.WireguardKey;
 import com.yahoo.config.provision.host.FlavorOverrides;
 import com.yahoo.vespa.hosted.node.admin.configserver.ConfigServerApi;
 import com.yahoo.vespa.hosted.node.admin.configserver.HttpException;
 import com.yahoo.vespa.hosted.node.admin.configserver.StandardConfigServerResponse;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.bindings.GetAclResponse;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.bindings.GetNodesResponse;
+import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.bindings.GetWireguardResponse;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.bindings.NodeRepositoryNode;
+import com.yahoo.vespa.hosted.node.admin.task.util.network.VersionedIpAddress;
+import com.yahoo.vespa.hosted.node.admin.wireguard.WireguardPeer;
 
 import java.net.URI;
 import java.time.Instant;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -45,7 +51,7 @@ public class RealNodeRepository implements NodeRepository {
     public void addNodes(List<AddNode> nodes) {
         List<NodeRepositoryNode> nodesToPost = nodes.stream()
                 .map(RealNodeRepository::nodeRepositoryNodeFromAddNode)
-                .collect(Collectors.toList());
+                .toList();
 
         configServerApi.post("/nodes/v2/node", nodesToPost, StandardConfigServerResponse.class)
                        .throwOnError("Failed to add nodes");
@@ -58,7 +64,7 @@ public class RealNodeRepository implements NodeRepository {
 
         return nodesForHost.nodes.stream()
                 .map(RealNodeRepository::createNodeSpec)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Override
@@ -91,6 +97,12 @@ public class RealNodeRepository implements NodeRepository {
                         GetAclResponse.Port::getTrustedBy,
                         Collectors.mapping(port -> port.port, Collectors.toSet())));
 
+        // Group UDP ports by container hostname that trusts them
+        Map<String, Set<Integer>> trustedUdpPorts = response.trustedUdpPorts.stream()
+                .collect(Collectors.groupingBy(
+                        GetAclResponse.Port::getTrustedBy,
+                        Collectors.mapping(port -> port.port, Collectors.toSet())));
+
         // Group node ip-addresses by container hostname that trusts them
         Map<String, Set<Acl.Node>> trustedNodes = response.trustedNodes.stream()
                 .collect(Collectors.groupingBy(
@@ -106,13 +118,36 @@ public class RealNodeRepository implements NodeRepository {
 
 
         // For each hostname create an ACL
-        return Stream.of(trustedNodes.keySet(), trustedPorts.keySet(), trustedNetworks.keySet())
+        return Stream.of(trustedNodes.keySet(), trustedPorts.keySet(), trustedUdpPorts.keySet(), trustedNetworks.keySet())
                      .flatMap(Set::stream)
                      .distinct()
                      .collect(Collectors.toMap(
                              Function.identity(),
-                             hostname -> new Acl(trustedPorts.get(hostname), trustedNodes.get(hostname),
+                             hostname -> new Acl(trustedPorts.get(hostname),
+                                                 trustedUdpPorts.get(hostname),
+                                                 trustedNodes.get(hostname),
                                                  trustedNetworks.get(hostname))));
+    }
+
+    @Override
+    public List<WireguardPeer> getExclavePeers() {
+        String path = "/nodes/v2/node/?recursive=true&enclave=true";
+        final GetNodesResponse response = configServerApi.get(path, GetNodesResponse.class);
+
+        return response.nodes.stream()
+                .filter(node -> node.wireguardPubkey != null && ! node.wireguardPubkey.isEmpty())
+                .map(RealNodeRepository::createTenantPeer)
+                .sorted()
+                .toList();
+    }
+
+    @Override
+    public List<WireguardPeer> getConfigserverPeers() {
+        GetWireguardResponse response = configServerApi.get("/nodes/v2/wireguard", GetWireguardResponse.class);
+        return response.configservers.stream()
+                .map(RealNodeRepository::createConfigserverPeer)
+                .sorted(Comparator.comparing(WireguardPeer::hostname))
+                .toList();
     }
 
     @Override
@@ -133,6 +168,14 @@ public class RealNodeRepository implements NodeRepository {
         response.throwOnError("Failed to set node state");
     }
 
+    @Override
+    public void reboot(String hostname) {
+        String uri = "/nodes/v2/command/reboot?hostname=" + hostname;
+        StandardConfigServerResponse response = configServerApi.post(uri, Optional.empty(), StandardConfigServerResponse.class);
+        logger.info(response.message);
+        response.throwOnError("Failed to reboot " + hostname);
+    }
+
     private static NodeSpec createNodeSpec(NodeRepositoryNode node) {
         Objects.requireNonNull(node.type, "Unknown node type");
         NodeType nodeType = NodeType.valueOf(node.type);
@@ -149,7 +192,7 @@ public class RealNodeRepository implements NodeRepository {
 
         List<TrustStoreItem> trustStore = Optional.ofNullable(node.trustStore).orElse(List.of()).stream()
                 .map(item -> new TrustStoreItem(item.fingerprint, Instant.ofEpochMilli(item.expiry)))
-                .collect(Collectors.toList());
+                .toList();
 
 
         return new NodeSpec(
@@ -184,6 +227,7 @@ public class RealNodeRepository implements NodeRepository {
                 Optional.ofNullable(node.archiveUri).map(URI::create),
                 Optional.ofNullable(node.exclusiveTo).map(ApplicationId::fromSerializedForm),
                 trustStore,
+                Optional.ofNullable(node.wireguardPubkey).map(WireguardKey::from),
                 node.wantToRebuild);
     }
 
@@ -195,7 +239,13 @@ public class RealNodeRepository implements NodeRepository {
                 nodeResources.bandwidthGbps,
                 diskSpeedFromString(nodeResources.diskSpeed),
                 storageTypeFromString(nodeResources.storageType),
-                architectureFromString(nodeResources.architecture));
+                architectureFromString(nodeResources.architecture),
+                gpuResourcesFrom(nodeResources));
+    }
+
+    private static NodeResources.GpuResources gpuResourcesFrom(NodeRepositoryNode.NodeResources nodeResources) {
+        if (nodeResources.gpuCount == null || nodeResources.gpuMemoryGb == null) return NodeResources.GpuResources.zero();
+        return new NodeResources.GpuResources(nodeResources.gpuCount, nodeResources.gpuMemoryGb);
     }
 
     private static NodeResources.DiskSpeed diskSpeedFromString(String diskSpeed) {
@@ -233,7 +283,6 @@ public class RealNodeRepository implements NodeRepository {
             case fast -> "fast";
             case slow -> "slow";
             case any -> "any";
-            default -> throw new IllegalArgumentException("Unknown disk speed '" + diskSpeed.name() + "'");
         };
     }
 
@@ -242,7 +291,6 @@ public class RealNodeRepository implements NodeRepository {
             case remote -> "remote";
             case local -> "local";
             case any -> "any";
-            default -> throw new IllegalArgumentException("Unknown storage type '" + storageType.name() + "'");
         };
     }
 
@@ -251,7 +299,6 @@ public class RealNodeRepository implements NodeRepository {
             case arm64 -> "arm64";
             case x86_64 -> "x86_64";
             case any -> "any";
-            default -> throw new IllegalArgumentException("Unknown architecture '" + architecture.name() + "'");
         };
     }
 
@@ -274,6 +321,10 @@ public class RealNodeRepository implements NodeRepository {
             node.resources.diskSpeed = toString(resources.diskSpeed());
             node.resources.storageType = toString(resources.storageType());
             node.resources.architecture = toString(resources.architecture());
+            if (!resources.gpuResources().isZero()) {
+                node.resources.gpuCount = resources.gpuResources().count();
+                node.resources.gpuMemoryGb = resources.gpuResources().memoryGb();
+            }
         });
         node.type = addNode.nodeType.name();
         node.ipAddresses = addNode.ipAddresses;
@@ -292,11 +343,24 @@ public class RealNodeRepository implements NodeRepository {
         node.currentFirmwareCheck = nodeAttributes.getCurrentFirmwareCheck().map(Instant::toEpochMilli).orElse(null);
         node.trustStore = nodeAttributes.getTrustStore().stream()
                 .map(item -> new NodeRepositoryNode.TrustStoreItem(item.fingerprint(), item.expiry().toEpochMilli()))
-                .collect(Collectors.toList());
+                .toList();
+        node.wireguardPubkey = nodeAttributes.getWireguardPubkey().map(WireguardKey::value).orElse(null);
         Map<String, JsonNode> reports = nodeAttributes.getReports();
         node.reports = reports == null || reports.isEmpty() ? null : new TreeMap<>(reports);
 
         return node;
+    }
+
+    private static WireguardPeer createTenantPeer(NodeRepositoryNode node) {
+        return new WireguardPeer(HostName.of(node.hostname),
+                                 node.ipAddresses.stream().map(VersionedIpAddress::from).toList(),
+                                 WireguardKey.from(node.wireguardPubkey));
+    }
+
+    private static WireguardPeer createConfigserverPeer(GetWireguardResponse.Configserver configServer) {
+        return new WireguardPeer(HostName.of(configServer.hostname),
+                                 configServer.ipAddresses.stream().map(VersionedIpAddress::from).toList(),
+                                 WireguardKey.from(configServer.wireguardPubkey));
     }
 
 }

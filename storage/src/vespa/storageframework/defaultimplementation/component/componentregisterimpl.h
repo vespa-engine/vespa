@@ -35,7 +35,7 @@ namespace metrics {
 namespace storage::framework::defaultimplementation {
 
 struct ShutdownListener {
-    virtual ~ShutdownListener() {}
+    virtual ~ShutdownListener() = default;
     virtual void requestShutdown(vespalib::stringref reason) = 0;
 };
 
@@ -51,16 +51,15 @@ class ComponentRegisterImpl : public virtual ComponentRegister,
     metrics::MetricManager* _metricManager;
     Clock* _clock;
     ThreadPool* _threadPool;
-    UpgradeFlags _upgradeFlag;
     ShutdownListener* _shutdownListener;
 
 public:
-    typedef std::unique_ptr<ComponentRegisterImpl> UP;
+    using UP = std::unique_ptr<ComponentRegisterImpl>;
 
     ComponentRegisterImpl();
     ~ComponentRegisterImpl() override;
 
-    bool hasMetricManager() const { return (_metricManager != 0); }
+    [[nodiscard]] bool hasMetricManager() const { return (_metricManager != nullptr); }
     metrics::MetricManager& getMetricManager() { return *_metricManager; }
 
     void registerComponent(ManagedComponent&) override;
@@ -69,13 +68,12 @@ public:
     void setMetricManager(metrics::MetricManager&);
     void setClock(Clock&);
     void setThreadPool(ThreadPool&);
-    void setUpgradeFlag(UpgradeFlags flag);
 
     const StatusReporter* getStatusReporter(vespalib::stringref id) override;
     std::vector<const StatusReporter*> getStatusReporters() override;
 
     void registerMetric(metrics::Metric&) override;
-    void registerUpdateHook(vespalib::stringref name, MetricUpdateHook& hook, SecondTime period) override;
+    void registerUpdateHook(vespalib::stringref name, MetricUpdateHook& hook, vespalib::duration period) override;
     void registerShutdownListener(ShutdownListener&);
 
 };

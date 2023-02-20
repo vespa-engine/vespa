@@ -54,6 +54,10 @@
       <classifier>no_aop</classifier>
     </dependency>
     <dependency>
+      <groupId>net.java.dev.jna</groupId>
+      <artifactId>jna</artifactId>
+    </dependency>
+    <dependency>
       <groupId>commons-logging</groupId>
       <artifactId>commons-logging</artifactId>
     </dependency>
@@ -80,6 +84,17 @@
     </dependency>
     <dependency>
       <groupId>com.yahoo.vespa</groupId>
+      <artifactId>container-onnxruntime</artifactId>
+      <version>${project.version}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>com.microsoft.onnxruntime</groupId>
+          <artifactId>onnxruntime</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>com.yahoo.vespa</groupId>
       <artifactId>container-disc</artifactId>
       <version>${project.version}</version>
       <exclusions>
@@ -94,8 +109,8 @@
 
         <!-- START JETTY embedded jars -->
         <exclusion>
-          <groupId>org.eclipse.jetty.alpn</groupId>
-          <artifactId>alpn-api</artifactId>
+          <groupId>org.eclipse.jetty.http2</groupId>
+          <artifactId>http2-common</artifactId>
         </exclusion>
         <exclusion>
           <groupId>org.eclipse.jetty.http2</groupId>
@@ -107,11 +122,19 @@
         </exclusion>
         <exclusion>
           <groupId>org.eclipse.jetty</groupId>
+          <artifactId>jetty-alpn-server</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.eclipse.jetty</groupId>
           <artifactId>jetty-client</artifactId>
         </exclusion>
         <exclusion>
           <groupId>org.eclipse.jetty</groupId>
-          <artifactId>jetty-continuation</artifactId>
+          <artifactId>jetty-http</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.eclipse.jetty</groupId>
+          <artifactId>jetty-io</artifactId>
         </exclusion>
         <exclusion>
           <groupId>org.eclipse.jetty</groupId>
@@ -127,7 +150,11 @@
         </exclusion>
         <exclusion>
           <groupId>org.eclipse.jetty</groupId>
-          <artifactId>jetty-servlets</artifactId>
+          <artifactId>jetty-util</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.eclipse.jetty.toolchain</groupId>
+          <artifactId>jetty-jakarta-servlet-api</artifactId>
         </exclusion>
         <!-- END JETTY embedded jars -->
       </exclusions>
@@ -146,14 +173,6 @@
         <exclusion>
           <groupId>org.apache.commons</groupId>
           <artifactId>commons-exec</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>net.java.dev.jna</groupId>
-          <artifactId>jna</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>io.airlift</groupId>
-          <artifactId>aircompressor</artifactId>
         </exclusion>
         <exclusion>
           <groupId>net.openhft</groupId>

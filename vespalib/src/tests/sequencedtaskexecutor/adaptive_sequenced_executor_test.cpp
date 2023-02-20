@@ -160,7 +160,7 @@ vespalib::string makeAltComponentId(Fixture &f)
     char altComponentId[20];
     ISequencedTaskExecutor::ExecutorId executorId0 = f._threads.getExecutorIdFromName(ZERO);
     for (tryCnt = 1; tryCnt < 100; ++tryCnt) {
-        sprintf(altComponentId, "%d", tryCnt);
+        snprintf(altComponentId, sizeof(altComponentId), "%d", tryCnt);
         if (f._threads.getExecutorIdFromName(altComponentId) == executorId0) {
             break;
         }

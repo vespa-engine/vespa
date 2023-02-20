@@ -12,7 +12,7 @@ namespace vespalib::datastore::test {
  */
 struct BufferStats
 {
-    // elements 
+    // elements
     size_t _used;
     size_t _hold;
     size_t _dead;
@@ -25,7 +25,7 @@ struct BufferStats
     BufferStats &dead(size_t val) { _dead += val; return *this; }
     BufferStats &extra_used(size_t val) { _extra_used += val; return *this; }
     BufferStats &extra_hold(size_t val) { _extra_hold += val; return *this; }
-    
+
     BufferStats &hold_to_dead(size_t val) {
         dec_hold(val);
         _dead += val;

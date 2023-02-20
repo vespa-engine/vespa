@@ -13,7 +13,7 @@ BIN ?= $(PREFIX)/bin
 SHARE ?= $(PREFIX)/share
 DIST ?= $(CURDIR)/dist
 
-GO_FLAGS := -ldflags "-X github.com/vespa-engine/vespa/client/go/build.Version=$(VERSION)"
+GO_FLAGS := -ldflags "-X github.com/vespa-engine/vespa/client/go/internal/cli/build.Version=$(VERSION)"
 GIT_ROOT := $(shell git rev-parse --show-toplevel)
 DIST_TARGETS := dist-mac dist-mac-arm64 dist-linux dist-linux-arm64 dist-win32 dist-win64
 
@@ -33,7 +33,7 @@ all: test checkfmt install
 #
 # $ make dist-homebrew
 --dist-homebrew: dist-version
-	brew bump-formula-pr --version $(VERSION) --no-browse vespa-cli
+	brew bump-formula-pr --version $(VERSION) --no-audit --no-browse vespa-cli
 
 dist-homebrew:
 	go run cond_make.go --dist-homebrew
@@ -127,12 +127,11 @@ manpages: install
 
 clean:
 	rm -rf $(DIST)
-	rm -f $(BIN)/vespa $(BIN)/script-utils $(SHARE)/man/man1/vespa.1 $(SHARE)/man/man1/vespa-*.1
+	rm -f $(BIN)/vespa $(BIN)/vespa-wrapper $(SHARE)/man/man1/vespa.1 $(SHARE)/man/man1/vespa-*.1
 	rmdir -p $(BIN) $(SHARE)/man/man1 > /dev/null 2>&1 || true
 
 test: ci
-	mkdir -p mytmp
-	TMPDIR=`/bin/pwd`/mytmp go test ./...
+	mkdir -p $(CURDIR)/tmp && TMPDIR=$(CURDIR)/tmp go test ./...
 
 checkfmt:
 	@sh -c "test -z $$(gofmt -l .)" || { echo "one or more files need to be formatted: try make fmt to fix this automatically"; exit 1; }

@@ -34,18 +34,20 @@ import com.yahoo.vespa.model.test.utils.VespaModelCreatorWithMockPkg;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.xml.sax.SAXException;
-
 import java.io.File;
 import java.io.IOException;
 import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.logging.Level;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author gjoranv
@@ -290,16 +292,6 @@ public class VespaModelTestCase {
                 .withServices("<services version='1.0'><container version='1.0'><search /></container></services>")
                 .build());
         assertEquals(1, model.hostSystem().getHosts().size());
-        assertEquals(1, model.getContainerClusters().size());
-    }
-
-    @Test
-    void testPermanentServices() throws IOException, SAXException {
-        ApplicationPackage app = MockApplicationPackage.createEmpty();
-        DeployState.Builder builder = new DeployState.Builder().applicationPackage(app);
-        VespaModel model = new VespaModel(new NullConfigModelRegistry(), builder.build());
-        assertTrue(model.getContainerClusters().isEmpty());
-        model = new VespaModel(new NullConfigModelRegistry(), builder.permanentApplicationPackage(Optional.of(FilesApplicationPackage.fromFile(new File(TESTDIR, "app_permanent")))).build());
         assertEquals(1, model.getContainerClusters().size());
     }
 

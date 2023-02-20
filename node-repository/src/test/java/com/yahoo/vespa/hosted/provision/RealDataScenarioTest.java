@@ -48,7 +48,6 @@ import java.util.function.Consumer;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import static com.yahoo.config.provision.NodeResources.DiskSpeed.any;
@@ -120,7 +119,7 @@ public class RealDataScenarioTest {
         List<HostSpec> hostSpecs = IntStream.range(0, capacities.length)
                                             .mapToObj(i -> tester.provisioner().prepare(app, specs[i], capacities[i], log::log))
                                             .flatMap(Collection::stream)
-                                            .collect(Collectors.toList());
+                                            .toList();
         NestedTransaction transaction = new NestedTransaction();
         tester.provisioner().activate(hostSpecs, new ActivationContext(0), new ApplicationTransaction(new ProvisionLock(app, () -> {}), transaction));
         transaction.commit();
@@ -142,7 +141,7 @@ public class RealDataScenarioTest {
         Consumer<String> consumer = input -> {
             if (state.get() != null) {
                 String json = input.substring(input.indexOf("{\""), input.lastIndexOf('}') + 1);
-                Node node = nodeSerializer.fromJson(state.get(), json.getBytes(UTF_8));
+                Node node = nodeSerializer.fromJson(json.getBytes(UTF_8));
                 nodeRepository.database().addNodesInState(List.of(node), state.get(), Agent.system);
                 state.set(null);
             } else {

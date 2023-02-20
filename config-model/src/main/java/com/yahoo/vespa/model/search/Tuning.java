@@ -1,7 +1,8 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.search;
 
-import com.yahoo.config.model.producer.AbstractConfigProducer;
+import com.yahoo.config.model.producer.AnyConfigProducer;
+import com.yahoo.config.model.producer.TreeConfigProducer;
 import com.yahoo.vespa.config.search.core.ProtonConfig;
 import com.yahoo.vespa.model.content.DispatchTuning;
 
@@ -13,7 +14,7 @@ import static com.yahoo.text.Lowercase.toLowerCase;
  *
  * @author geirst
  */
-public class Tuning extends AbstractConfigProducer<Tuning> implements ProtonConfig.Producer {
+public class Tuning extends AnyConfigProducer implements ProtonConfig.Producer {
 
     public static class SearchNode implements ProtonConfig.Producer {
 
@@ -396,7 +397,7 @@ public class Tuning extends AbstractConfigProducer<Tuning> implements ProtonConf
     public DispatchTuning dispatch = DispatchTuning.empty;
     public SearchNode searchNode;
 
-    public Tuning(AbstractConfigProducer<?> parent) {
+    public Tuning(TreeConfigProducer<AnyConfigProducer> parent) {
         super(parent, "tuning");
     }
 

@@ -3,7 +3,7 @@
 
 #include <vespa/vdslib/state/nodetype.h>
 #include <vespa/storage/distributor/distributormessagesender.h>
-#include <vespa/storageframework/generic/clock/time.h>
+#include <vespa/vespalib/util/time.h>
 
 namespace storage {
 
@@ -23,7 +23,7 @@ class OperationSequencer;
 class Operation
 {
 public:
-    typedef std::shared_ptr<Operation> SP;
+    using SP = std::shared_ptr<Operation>;
 
     Operation();
 
@@ -45,24 +45,25 @@ public:
         onReceive(sender, msg);
     }
 
-    virtual const char* getName() const = 0;
+    [[nodiscard]] virtual const char* getName() const noexcept = 0;
 
-    virtual std::string getStatus() const;
+    [[nodiscard]] virtual std::string getStatus() const;
 
-    virtual std::string toString() const {
-        return std::string(getName());
+    [[nodiscard]] virtual std::string toString() const {
+        return getName();
     }
 
     /**
        Starts the callback, sending any messages etc. Sets _startTime to current time
     */
-    virtual void start(DistributorStripeMessageSender& sender, framework::MilliSecTime startTime);
+    virtual void start(DistributorStripeMessageSender& sender, vespalib::system_time startTime);
+    void start(DistributorStripeMessageSender& sender);
 
     /**
      * Returns true if we are blocked to start this operation given
      * the pending messages.
      */
-    virtual bool isBlocked(const DistributorStripeOperationContext&, const OperationSequencer&) const {
+    [[nodiscard]] virtual bool isBlocked(const DistributorStripeOperationContext&, const OperationSequencer&) const {
         return false;
     }
 
@@ -75,11 +76,6 @@ public:
      * Called by throttling operation starter if operation was throttled
      */
     virtual void on_throttled();
-
-    /**
-       Returns the timestamp on which the first message was sent from this callback.
-    */
-    framework::MilliSecTime getStartTime() const { return _startTime; }
 
     /**
         Transfers message settings such as priority, timeout, etc. from one message to another.
@@ -97,7 +93,8 @@ private:
                            const std::shared_ptr<api::StorageReply> & msg) = 0;
 
 protected:
-    framework::MilliSecTime _startTime;
+    static constexpr vespalib::duration MAX_TIMEOUT = 3600s;
+    vespalib::system_time _startTime;
 };
 
 }

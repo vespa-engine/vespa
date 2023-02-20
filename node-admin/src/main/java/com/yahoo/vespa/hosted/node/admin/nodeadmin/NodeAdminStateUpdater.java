@@ -175,6 +175,6 @@ public class NodeAdminStateUpdater {
                              .stream()
                              .filter(node -> node.state() == NodeState.active)
                              .map(NodeSpec::hostname)
-                             .collect(Collectors.toList());
+                             .toList();
     }
 }

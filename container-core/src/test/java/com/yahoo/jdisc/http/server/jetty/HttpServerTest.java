@@ -11,6 +11,7 @@ import com.yahoo.jdisc.References;
 import com.yahoo.jdisc.Request;
 import com.yahoo.jdisc.Response;
 import com.yahoo.jdisc.application.BindingSetSelector;
+import com.yahoo.jdisc.application.MetricConsumer;
 import com.yahoo.jdisc.handler.AbstractRequestHandler;
 import com.yahoo.jdisc.handler.CompletionHandler;
 import com.yahoo.jdisc.handler.ContentChannel;
@@ -38,7 +39,6 @@ import org.apache.hc.client5.http.impl.async.CloseableHttpAsyncClient;
 import org.apache.hc.core5.http.ConnectionClosedException;
 import org.apache.hc.core5.http.ContentType;
 import org.assertj.core.api.Assertions;
-import org.eclipse.jetty.server.handler.AbstractHandlerContainer;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -65,6 +65,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 
+import static com.yahoo.jdisc.Response.Status.BAD_REQUEST;
 import static com.yahoo.jdisc.Response.Status.GATEWAY_TIMEOUT;
 import static com.yahoo.jdisc.Response.Status.INTERNAL_SERVER_ERROR;
 import static com.yahoo.jdisc.Response.Status.NOT_FOUND;
@@ -161,6 +162,24 @@ public class HttpServerTest {
     }
 
     @Test
+    void requireThatMultipleHostHeadersReturns400() throws Exception {
+        var metricConsumer = new MetricConsumerMock();
+        JettyTestDriver driver = JettyTestDriver.newConfiguredInstance(
+                mockRequestHandler(),
+                new ServerConfig.Builder(),
+                new ConnectorConfig.Builder(),
+                binder -> binder.bind(MetricConsumer.class).toInstance(metricConsumer.mockitoMock()));
+        driver.client()
+                .newGet("/status.html").addHeader("Host", "localhost").addHeader("Host", "vespa.ai").execute()
+                .expectStatusCode(is(BAD_REQUEST)).expectContent(containsString("Bad Host: multiple headers"));
+        assertTrue(driver.close());
+        var aggregator = ResponseMetricAggregator.getBean(driver.server());
+        var metric = waitForStatistics(aggregator);
+        assertEquals(400, metric.dimensions.statusCode);
+        assertEquals("GET", metric.dimensions.method);
+    }
+
+    @Test
     void requireThatAccessLogIsCalledForRequestRejectedByJetty() throws Exception {
         BlockingQueueRequestLog requestLogMock = new BlockingQueueRequestLog();
         final JettyTestDriver driver = JettyTestDriver.newConfiguredInstance(
@@ -186,9 +205,10 @@ public class HttpServerTest {
     @Test
     void requireThatServerCanEchoCompressed() throws Exception {
         final JettyTestDriver driver = JettyTestDriver.newInstance(new EchoRequestHandler());
-        SimpleHttpClient client = driver.newClient(true);
-        client.get("/status.html")
-                .expectStatusCode(is(OK));
+        try (SimpleHttpClient client = driver.newClient(true)) {
+            client.get("/status.html")
+                    .expectStatusCode(is(OK));
+        }
         assertTrue(driver.close());
     }
 
@@ -532,9 +552,9 @@ public class HttpServerTest {
                 .withTrustStore(certificateFile)
                 .build();
 
-        new SimpleHttpClient(trustStoreOnlyCtx, driver.server().getListenPort(), false)
-                .get("/dummy.html")
-                .expectStatusCode(is(UNAUTHORIZED));
+        try (var c = new SimpleHttpClient(trustStoreOnlyCtx, driver.server().getListenPort(), false)) {
+            c.get("/dummy.html").expectStatusCode(is(UNAUTHORIZED));
+        }
 
         assertTrue(driver.close());
     }
@@ -550,9 +570,9 @@ public class HttpServerTest {
                 .withTrustStore(certificateFile)
                 .build();
 
-        new SimpleHttpClient(trustStoreOnlyCtx, driver.server().getListenPort(), false)
-                .get("/status.html")
-                .expectStatusCode(is(OK));
+        try (var c = new SimpleHttpClient(trustStoreOnlyCtx, driver.server().getListenPort(), false)) {
+            c.get("/status.html").expectStatusCode(is(OK));
+        }
 
         assertTrue(driver.close());
     }
@@ -583,11 +603,9 @@ public class HttpServerTest {
     void requireThatResponseStatsAreCollected() throws Exception {
         RequestTypeHandler handler = new RequestTypeHandler();
         JettyTestDriver driver = JettyTestDriver.newInstance(handler);
-        HttpResponseStatisticsCollector statisticsCollector = ((AbstractHandlerContainer) driver.server().server().getHandler())
-                .getChildHandlerByClass(HttpResponseStatisticsCollector.class);
-
+        var statisticsCollector = ResponseMetricAggregator.getBean(driver.server());;
         {
-            List<HttpResponseStatisticsCollector.StatisticsEntry> stats = statisticsCollector.takeStatistics();
+            List<ResponseMetricAggregator.StatisticsEntry> stats = statisticsCollector.takeStatistics();
             assertEquals(0, stats.size());
         }
 
@@ -621,9 +639,9 @@ public class HttpServerTest {
         assertTrue(driver.close());
     }
 
-    private HttpResponseStatisticsCollector.StatisticsEntry waitForStatistics(HttpResponseStatisticsCollector
+    private ResponseMetricAggregator.StatisticsEntry waitForStatistics(ResponseMetricAggregator
                                                                                       statisticsCollector) {
-        List<HttpResponseStatisticsCollector.StatisticsEntry> entries = Collections.emptyList();
+        List<ResponseMetricAggregator.StatisticsEntry> entries = Collections.emptyList();
         int tries = 0;
         while (entries.isEmpty() && tries < 10000) {
             entries = statisticsCollector.takeStatistics();

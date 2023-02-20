@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.document.datatypes;
 
-import com.google.common.collect.ImmutableList;
 import com.yahoo.collections.CollectionComparator;
 import com.yahoo.document.DataType;
 import com.yahoo.document.Field;
@@ -16,6 +15,7 @@ import com.yahoo.vespa.objects.Ids;
 
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
@@ -142,9 +142,9 @@ public class StringFieldValue extends FieldValue {
      */
     public Collection<SpanTree> getSpanTrees() {
         if (spanTrees == null) {
-            return ImmutableList.of();
+            return List.of();
         }
-        return ImmutableList.copyOf(spanTrees.values());
+        return List.copyOf(spanTrees.values());
     }
 
     /** Returns the map of spantrees. Might be null. */
@@ -218,6 +218,7 @@ public class StringFieldValue extends FieldValue {
      * @param xml the stream to print to
      */
     @Override
+    @Deprecated
     public void printXml(XmlStream xml) {
         XmlSerializationHelper.printStringXml(this, xml);
         //TODO: add spanTree printing
@@ -236,9 +237,8 @@ public class StringFieldValue extends FieldValue {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof StringFieldValue)) return false;
+        if (!(o instanceof StringFieldValue that)) return false;
         if (!super.equals(o)) return false;
-        StringFieldValue that = (StringFieldValue) o;
         if (!Objects.equals(spanTrees, that.spanTrees)) return false;
         if (!Objects.equals(value, that.value)) return false;
         return true;

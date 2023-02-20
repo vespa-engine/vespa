@@ -2,11 +2,13 @@
 package com.yahoo.vespa.hosted.provision.provisioning;
 
 import com.yahoo.config.provision.TenantName;
+import com.yahoo.config.provision.Zone;
 import com.yahoo.lang.CachedSupplier;
 import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.node.Allocation;
-import com.yahoo.vespa.hosted.provision.persistence.CuratorDatabaseClient;
+import com.yahoo.vespa.hosted.provision.persistence.CuratorDb;
+
 import java.time.Duration;
 import java.util.Map;
 import java.util.Optional;
@@ -27,12 +29,14 @@ public class ArchiveUris {
     private static final Pattern validUriPattern = Pattern.compile("[a-z0-9]+://(?:(?:[a-z0-9]+(?:[-_][a-z0-9.]+)*)+/)+");
     private static final Duration cacheTtl = Duration.ofMinutes(1);
 
-    private final CuratorDatabaseClient db;
+    private final CuratorDb db;
     private final CachedSupplier<Map<TenantName, String>> archiveUris;
+    private final Zone zone;
 
-    public ArchiveUris(CuratorDatabaseClient db) {
+    public ArchiveUris(CuratorDb db, Zone zone) {
         this.db = db;
         this.archiveUris = new CachedSupplier<>(db::readArchiveUris, cacheTtl);
+        this.zone = zone;
     }
 
     /** Returns the current archive URI for each tenant */
@@ -41,18 +45,21 @@ public class ArchiveUris {
     }
 
     /** Returns the archive URI to use for given tenant */
-    public Optional<String> archiveUriFor(TenantName tenant) {
+    private Optional<String> archiveUriFor(TenantName tenant) {
         return Optional.ofNullable(archiveUris.get().get(tenant));
     }
 
     /** Returns the archive URI to use for given node */
     public Optional<String> archiveUriFor(Node node) {
+        if (node.cloudAccount().isEnclave(zone)) return Optional.empty(); // TODO (freva): Implement for exclave
+
         return node.allocation().map(Allocation::owner)
                 .flatMap(app -> archiveUriFor(app.tenant())
                         .map(uri -> {
                             StringBuilder sb = new StringBuilder(100).append(uri)
                                     .append(app.application().value()).append('/')
-                                    .append(app.instance().value()).append('/');
+                                    .append(app.instance().value()).append('/')
+                                    .append(node.allocation().get().membership().cluster().id().value()).append('/');
 
                             for (char c: node.hostname().toCharArray()) {
                                 if (c == '.') break;

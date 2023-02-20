@@ -20,11 +20,13 @@ struct StartMetrics {
     Gauge   sentinel_totalRestarts;
     Gauge   sentinel_running;
     Gauge   sentinel_uptime;
+    vespalib::steady_time lastRestartTime;
 
     StartMetrics();
     ~StartMetrics();
 
     void maybeLog();
+    void incRestartsCounter();
 };
 
 }

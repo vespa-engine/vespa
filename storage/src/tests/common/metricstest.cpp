@@ -12,7 +12,6 @@
 #include <tests/common/dummystoragelink.h>
 #include <vespa/metrics/metricmanager.h>
 #include <vespa/config/common/exceptions.h>
-#include <vespa/vespalib/stllike/hash_map.hpp>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <gmock/gmock.h>
 #include <filesystem>
@@ -37,10 +36,8 @@ struct MetricsTest : public Test {
     std::shared_ptr<BucketManagerMetrics> _bucketManagerMetrics;
     std::shared_ptr<VisitorMetrics> _visitorMetrics;
 
-    void createSnapshotForPeriod(std::chrono::seconds secs);
-    void assertMetricLastValue(const std::string& name,
-                               int interval,
-                               uint64_t expected);
+    void createSnapshotForPeriod(std::chrono::seconds secs) const;
+    void assertMetricLastValue(const std::string& name, int interval, uint64_t expected) const;
 
     MetricsTest();
     ~MetricsTest() override;
@@ -55,8 +52,8 @@ namespace {
     {
         framework::Clock& _clock;
         explicit MetricClock(framework::Clock& c) : _clock(c) {}
-        time_t getTime() const override { return _clock.getTimeInSeconds().getTime(); }
-        time_t getTimeInMilliSecs() const override { return _clock.getTimeInMillis().getTime(); }
+        [[nodiscard]] time_t getTime() const override { return vespalib::count_s(_clock.getMonotonicTime().time_since_epoch()); }
+        [[nodiscard]] time_t getTimeInMilliSecs() const override { return vespalib::count_ms(_clock.getMonotonicTime().time_since_epoch()); }
     };
 }
 
@@ -137,8 +134,8 @@ void MetricsTest::createFakeLoad()
         disk.queueSize.addValue(4 * n);
         disk.averageQueueWaitingTime.addValue(10 * n);
         disk.pendingMerges.addValue(4 * n);
-        for (uint32_t j=0; j<disk.threads.size(); ++j) {
-            FileStorThreadMetrics& thread(*disk.threads[j]);
+        for (const auto & metric : disk.threads) {
+            FileStorThreadMetrics& thread(*metric);
             thread.operations.inc(120 * n);
             thread.failedOperations.inc(2 * n);
 
@@ -180,8 +177,8 @@ void MetricsTest::createFakeLoad()
             thread.merge_handler_metrics.mergeAverageDataReceivedNeeded.addValue(0.8);
         }
     }
-    for (uint32_t i=0; i<_visitorMetrics->threads.size(); ++i) {
-        VisitorThreadMetrics& thread(*_visitorMetrics->threads[i]);
+    for (const auto & metric : _visitorMetrics->threads) {
+        VisitorThreadMetrics& thread(*metric);
         thread.queueSize.addValue(2);
         thread.averageQueueWaitingTime.addValue(10);
         thread.averageVisitorLifeTime.addValue(1000);
@@ -192,9 +189,7 @@ void MetricsTest::createFakeLoad()
     }
     _clock->addSecondsToTime(60);
     _metricManager->timeChangedNotification();
-    while (uint64_t(_metricManager->getLastProcessedTime())
-                < _clock->getTimeInSeconds().getTime())
-    {
+    while (int64_t(_metricManager->getLastProcessedTime()) < vespalib::count_s(_clock->getMonotonicTime().time_since_epoch())) {
         std::this_thread::sleep_for(5ms);
         _metricManager->timeChangedNotification();
     }
@@ -244,10 +239,7 @@ TEST_F(MetricsTest, snapshot_presenting) {
     for (uint32_t i=0; i<6; ++i) {
         _clock->addSecondsToTime(60);
         _metricManager->timeChangedNotification();
-        while (
-            uint64_t(_metricManager->getLastProcessedTime())
-                    < _clock->getTimeInSeconds().getTime())
-        {
+        while (int64_t(_metricManager->getLastProcessedTime()) < vespalib::count_s(_clock->getMonotonicTime().time_since_epoch())) {
             std::this_thread::sleep_for(1ms);
         }
     }
@@ -284,9 +276,7 @@ TEST_F(MetricsTest, html_metrics_report) {
 }
 
 void
-MetricsTest::assertMetricLastValue(const std::string& name,
-                                   int interval,
-                                   uint64_t expected)
+MetricsTest::assertMetricLastValue(const std::string& name, int interval, uint64_t expected) const
 {
     std::ostringstream path;
     path << "metrics?interval=" << interval
@@ -305,13 +295,11 @@ MetricsTest::assertMetricLastValue(const std::string& name,
 using namespace std::chrono_literals;
 
 void
-MetricsTest::createSnapshotForPeriod(std::chrono::seconds secs)
+MetricsTest::createSnapshotForPeriod(std::chrono::seconds secs) const
 {
     _clock->addSecondsToTime(secs.count());
     _metricManager->timeChangedNotification();
-    while (uint64_t(_metricManager->getLastProcessedTime())
-           < _clock->getTimeInSeconds().getTime())
-    {
+    while (int64_t(_metricManager->getLastProcessedTime()) < vespalib::count_s(_clock->getMonotonicTime().time_since_epoch())) {
         std::this_thread::sleep_for(100ms);
     }
 }

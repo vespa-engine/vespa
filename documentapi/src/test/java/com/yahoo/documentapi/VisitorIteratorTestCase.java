@@ -6,11 +6,12 @@ import com.yahoo.document.BucketId;
 import com.yahoo.document.BucketIdFactory;
 import org.junit.Test;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
-import java.util.Vector;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -287,7 +288,7 @@ public class VisitorIteratorTestCase {
         // keeping some in the active set and some in pending
         int pendingTotal = buckets / 8;
         int activeTotal = buckets / 8;
-        Vector<VisitorIterator.BucketProgress> trackedBuckets = new Vector<VisitorIterator.BucketProgress>();
+        List<VisitorIterator.BucketProgress> trackedBuckets = new ArrayList<>();
 
         // Pre-fetch, since otherwise we'd reuse pending buckets
         for (int i = 0; i < pendingTotal + activeTotal; ++i) {
@@ -760,8 +761,8 @@ public class VisitorIteratorTestCase {
         assertTrue(bk4.compareTo(bk3) > 0);
         ProgressToken.BucketKeyWrapper bk5 = new ProgressToken.BucketKeyWrapper(0x7FFFFFFFFFFFFFFFL);
         ProgressToken.BucketKeyWrapper bk6 = new ProgressToken.BucketKeyWrapper(0x8000000000000000L);
-        assertTrue(bk5.compareTo(bk2) == 0);
-        assertTrue(bk6.compareTo(bk3) == 0);
+        assertEquals(0, bk5.compareTo(bk2));
+        assertEquals(0, bk6.compareTo(bk3));
     }
 
     private void doTestBucketKeyGeneration(int db) {
@@ -1384,16 +1385,17 @@ public class VisitorIteratorTestCase {
 
     @Test
     public void testImportProgressWithOutdatedDistribution() throws ParseException {
-        String input = "VDS bucket progress file\n" +
-                "10\n" +
-                "503\n" +
-                "500\n" +
-                "1024\n" +
-                "28000000000000be:0\n" +
-                "28000000000002be:0\n" +
-                "28000000000001be:0\n";
+        String input = """
+                VDS bucket progress file
+                10
+                503
+                500
+                1024
+                28000000000000be:0
+                28000000000002be:0
+                28000000000001be:0
+                """;
 
-        int db = 12;
         BucketIdFactory idFactory = new BucketIdFactory();
         ProgressToken p = new ProgressToken(input);
         assertEquals(10, p.getDistributionBitCount());
@@ -1426,14 +1428,15 @@ public class VisitorIteratorTestCase {
     public void testImportInconsistentProgressIncrease() throws ParseException {
         // Bucket progress "file" that upon time of changing from 4 to 7
         // distribution bits and writing the progress had an active bucket
-        String input = "VDS bucket progress file\n" +
-                "7\n" +
-                "32\n" +
-                "24\n" +
-                "128\n" +
-                "100000000000000c:0\n";
+        String input = """
+                VDS bucket progress file
+                7
+                32
+                24
+                128
+                100000000000000c:0
+                """;
         // Now we're at 8 distribution bits
-        int db = 8;
         BucketIdFactory idFactory = new BucketIdFactory();
         ProgressToken p = new ProgressToken(input);
         assertEquals(7, p.getDistributionBitCount());
@@ -1472,12 +1475,14 @@ public class VisitorIteratorTestCase {
     public void testImportInconsistentProgressDecrease() throws ParseException {
         // Bucket progress "file" that upon time of changing from 4 to 7
         // distribution bits and writing the progress had an active bucket
-        String input = "VDS bucket progress file\n" +
-                "7\n" +
-                "32\n" +
-                "24\n" +
-                "128\n" +
-                "100000000000000c:0\n";
+        String input = """
+                VDS bucket progress file
+                7
+                32
+                24
+                128
+                100000000000000c:0
+                """;
         BucketIdFactory idFactory = new BucketIdFactory();
         ProgressToken p = new ProgressToken(input);
 
@@ -1553,8 +1558,15 @@ public class VisitorIteratorTestCase {
         // Try to pass a known document selection to an unknown docsel iterator
         boolean caughtIt = false;
         try {
-            ProgressToken p = new ProgressToken("VDS bucket progress file\n16\n3\n1\n3\n"
-                    + "8000000000001f49:0\n8000000000001a85:0\n");
+            ProgressToken p = new ProgressToken("""
+                    VDS bucket progress file
+                    16
+                    3
+                    1
+                    3
+                    8000000000001f49:0
+                    8000000000001a85:0
+                    """);
 
             VisitorIterator.createFromDocumentSelection("id.group != \"yahoo.com\"", idFactory, 16, p);
         }
@@ -1566,14 +1578,16 @@ public class VisitorIteratorTestCase {
         // Now try it the other way around
         caughtIt = false;
         try {
-            ProgressToken p = new ProgressToken("VDS bucket progress file\n" +
-                    "10\n" +
-                    "503\n" +
-                    "500\n" +
-                    "1024\n" +
-                    "28000000000000be:0\n" +
-                    "28000000000002be:0\n" +
-                    "28000000000001be:0\n");
+            ProgressToken p = new ProgressToken("""
+                    VDS bucket progress file
+                    10
+                    503
+                    500
+                    1024
+                    28000000000000be:0
+                    28000000000002be:0
+                    28000000000001be:0
+                    """);
 
             VisitorIterator.createFromDocumentSelection("id.group=\"yahoo.com\" or id.user=555", idFactory, 16, p);
         }
@@ -1645,13 +1659,14 @@ public class VisitorIteratorTestCase {
     public void testMalformedProgressFile() {
         boolean caughtIt = false;
         try {
-            new ProgressToken("VDS bucket progress file\n" +
-                    "10\n" +
-                    "503\n" +
-                    "500\n" +
-                    "1024\n" +
-                    "28000000000000be:0\n" +
-                    "28000000000002be:");
+            new ProgressToken("""
+                    VDS bucket progress file
+                    10
+                    503
+                    500
+                    1024
+                    28000000000000be:0
+                    28000000000002be:""");
         } catch (IllegalArgumentException e) {
             caughtIt = true;
         }
@@ -1662,9 +1677,11 @@ public class VisitorIteratorTestCase {
     public void testFailOnTooFewLinesInFile() {
         boolean caughtIt = false;
         try {
-            new ProgressToken("VDS bucket progress file\n" +
-                    "10\n" +
-                    "503\n");
+            new ProgressToken("""
+                    VDS bucket progress file
+                    10
+                    503
+                    """);
         } catch (IllegalArgumentException e) {
             caughtIt = true;
         }
@@ -1675,13 +1692,14 @@ public class VisitorIteratorTestCase {
     public void testUnknownFirstHeaderLine() {
         boolean caughtIt = false;
         try {
-            new ProgressToken("Smurf Time 3000\n" +
-                    "10\n" +
-                    "503\n" +
-                    "500\n" +
-                    "1024\n" +
-                    "28000000000000be:0\n" +
-                    "28000000000002be:0");
+            new ProgressToken("""
+                    Smurf Time 3000
+                    10
+                    503
+                    500
+                    1024
+                    28000000000000be:0
+                    28000000000002be:0""");
         } catch (IllegalArgumentException e) {
             caughtIt = true;
         }
@@ -1690,14 +1708,16 @@ public class VisitorIteratorTestCase {
 
     @Test
     public void testBinaryProgressSerialization() {
-        String input = "VDS bucket progress file (48.828125% completed)\n" +
-                "10\n" +
-                "503\n" +
-                "500\n" +
-                "1024\n" +
-                "28000000000000be:0\n" +
-                "28000000000002be:0\n" +
-                "28000000000001be:0\n";
+        String input = """
+                VDS bucket progress file (48.828125% completed)
+                10
+                503
+                500
+                1024
+                28000000000000be:0
+                28000000000002be:0
+                28000000000001be:0
+                """;
         ProgressToken p = new ProgressToken(input);
         byte[] buf = p.serialize();
         ProgressToken p2 = new ProgressToken(buf);

@@ -21,31 +21,37 @@
 // Used to use anonymous namespaces, but they fail miserably in gdb 5.3
 
 #define LOG_SETUP(...)                          \
-static ns_log::Logger logger(__VA_ARGS__)  // NOLINT
+static ns_log::Logger ns_log_logger(__VA_ARGS__)  // NOLINT
 
-#define LOG_SETUP_INDIRECT(x, id)               \
-static ns_log::Logger *logger=NULL;             \
-static bool logInitialised = false;             \
-static const char *logName = x;                 \
+#define LOG_SETUP_INDIRECT(x, id)                   \
+static ns_log::Logger *ns_log_indirect_logger=NULL; \
+static bool logInitialised = false;                 \
+static const char *logName = x;                     \
 static const char *indirectRcsId = id
 
+#define LOG_WOULD_LOG(level) ns_log_logger.wants(ns_log::Logger::level)
+#define LOG_WOULD_VLOG(level) ns_log_logger.wants(level)
+#define LOG_INDIRECT_WOULD_LOG(levelName) \
+    ns_log_indirect_logger->wants(ns_log::Logger::levelName)
 
 #define LOG_RCSID(x)                                            \
-static int log_dummmy __attribute__((unused)) = logger.setRcsId(x)
-
+static int log_dummmy __attribute__((unused)) = ns_log_logger.setRcsId(x)
 
 // Define LOG if not using log buffer. Otherwise log buffer will define them
 #ifndef VESPA_LOG_USELOGBUFFERFORREGULARLOG
-#define LOG(level, ...)                                                       \
-do {                                                                          \
-    if (__builtin_expect(logger.wants(ns_log::Logger::level), false)) {       \
-        logger.doLog(ns_log::Logger::level, __FILE__, __LINE__, __VA_ARGS__); \
-    }                                                                         \
+#define LOG(level, ...)                                       \
+do {                                                          \
+    if (__builtin_expect(LOG_WOULD_LOG(level), false)) {      \
+        ns_log_logger.doLog(ns_log::Logger::level,            \
+                            __FILE__, __LINE__, __VA_ARGS__); \
+    }                                                         \
 } while (false)
+
 #define VLOG(level, ...)                                      \
 do {                                                          \
-    if (__builtin_expect(logger.wants(level), false)) {                                \
-        logger.doLog(level, __FILE__, __LINE__, __VA_ARGS__); \
+    if (__builtin_expect(LOG_WOULD_VLOG(level), false)) {     \
+        ns_log_logger.doLog(level,                            \
+                            __FILE__, __LINE__, __VA_ARGS__); \
     }                                                         \
 } while (false)
 #endif
@@ -53,84 +59,85 @@ do {                                                          \
 // Must use placement new in the following definition, since the variable
 // "logger" must be a valid logger object DURING the construction of the
 // logger object itself.
-#define LOG_INDIRECT_MUST                                                       \
-    if (!logInitialised) {                                                      \
-        logInitialised = true;                                                  \
-        logger = static_cast<Logger *>(malloc(sizeof *logger));                 \
-        new (logger) Logger(logName, indirectRcsId);                            \
-    }
-#define LOG_INDIRECT(level, ...)                                                \
-do {                                                                            \
-    LOG_INDIRECT_MUST                                                           \
-    if (logger->wants(ns_log::Logger::level)) {                                 \
-        logger->doLog(ns_log::Logger::level, __FILE__, __LINE__, __VA_ARGS__);  \
-    }                                                                           \
+#define LOG_INDIRECT(level, ...)                                        \
+do {                                                                    \
+    if (!logInitialised) {                                              \
+        logInitialised = true;                                          \
+        ns_log_indirect_logger =                                        \
+                static_cast<Logger *>(                                  \
+                        malloc(sizeof *ns_log_indirect_logger));        \
+        new (ns_log_indirect_logger) Logger(logName, indirectRcsId);    \
+    }                                                                   \
+    if (LOG_INDIRECT_WOULD_LOG(level)) {                                \
+        ns_log_indirect_logger->doLog(ns_log::Logger::level,            \
+                                      __FILE__, __LINE__, __VA_ARGS__); \
+    }                                                                   \
 } while (false)
 
-#define LOG_WOULD_LOG(level) logger.wants(ns_log::Logger::level)
-#define LOG_WOULD_VLOG(level) logger.wants(level)
 
-#define EV_STARTING(name)                       \
-do {                                            \
-    if (logger.wants(ns_log::Logger::event)) {  \
-        logger.doEventStarting(name);           \
-    }                                           \
+#define EV_STARTING(name)                    \
+do {                                         \
+    if (LOG_WOULD_LOG(event)) {              \
+        ns_log_logger.doEventStarting(name); \
+    }                                        \
 } while (false)
 
-#define EV_STOPPING(name,why)                   \
-do {                                            \
-    if (logger.wants(ns_log::Logger::event)) {  \
-        logger.doEventStopping(name, why);      \
-    }                                           \
+#define EV_STOPPING(name,why)                     \
+do {                                              \
+    if (LOG_WOULD_LOG(event)) {                   \
+        ns_log_logger.doEventStopping(name, why); \
+    }                                             \
 } while (false)
 
 #define EV_STARTED(name)                        \
 do {                                            \
-    if (logger.wants(ns_log::Logger::event)) {  \
-        logger.doEventStarted(name);            \
+    if (LOG_WOULD_LOG(event)) {                 \
+        ns_log_logger.doEventStarted(name);     \
     }                                           \
 } while (false)
 
-#define EV_STOPPED(name,pid,exitcode)                   \
-do {                                                    \
-    if (logger.wants(ns_log::Logger::event)) {          \
-        logger.doEventStopped(name, pid, exitcode);     \
-    }                                                   \
-} while (false)
-
-#define EV_CRASH(name,pid,signal)               \
+#define EV_STOPPED(name,pid,exitcode)           \
 do {                                            \
-    if (logger.wants(ns_log::Logger::event)) {  \
-        logger.doEventCrash(name, pid, signal); \
+    if (LOG_WOULD_LOG(event)) {                 \
+        ns_log_logger.doEventStopped(name, pid, \
+                                     exitcode); \
     }                                           \
 } while (false)
 
-#define EV_PROGRESS(name, ...)                          \
-do {                                                    \
-    if (logger.wants(ns_log::Logger::event)) {          \
-        logger.doEventProgress(name, __VA_ARGS__);      \
-    }                                                   \
+#define EV_CRASH(name,pid,signal)                      \
+do {                                                   \
+    if (LOG_WOULD_LOG(event)) {                        \
+        ns_log_logger.doEventCrash(name, pid, signal); \
+    }                                                  \
 } while (false)
 
-#define EV_COUNT(name,value)                    \
-do {                                            \
-    if (logger.wants(ns_log::Logger::event)) {  \
-        logger.doEventCount(name, value);       \
-    }                                           \
+#define EV_PROGRESS(name, ...)                      \
+do {                                                \
+    if (LOG_WOULD_LOG(event)) {                     \
+        ns_log_logger.doEventProgress(name,         \
+                                      __VA_ARGS__); \
+    }                                               \
 } while (false)
 
-#define EV_VALUE(name,value)                    \
-do {                                            \
-    if (logger.wants(ns_log::Logger::event)) {  \
-        logger.doEventValue(name, value);       \
-    }                                           \
+#define EV_COUNT(name,value)                     \
+    do {                                         \
+    if (LOG_WOULD_LOG(event)) {                  \
+        ns_log_logger.doEventCount(name, value); \
+    }                                            \
 } while (false)
 
-#define EV_STATE(name,value)                   \
-do {                                            \
-    if (logger.wants(ns_log::Logger::event)) {  \
-        logger.doEventState(name, value);      \
-    }                                           \
+#define EV_VALUE(name,value)                     \
+do {                                             \
+    if (LOG_WOULD_LOG(event)) {                  \
+        ns_log_logger.doEventValue(name, value); \
+    }                                            \
+} while (false)
+
+#define EV_STATE(name,value)                     \
+do {                                             \
+    if (LOG_WOULD_LOG(event)) {                  \
+        ns_log_logger.doEventState(name, value); \
+    }                                            \
 } while (false)
 
 namespace ns_log {
@@ -228,6 +235,9 @@ public:
 
     // Only for unit testing
     void setTimer(std::unique_ptr<Timer> timer) { _timer = std::move(timer); }
+
+    // Only for internal use
+    static LogTarget *getCurrentTarget();
 };
 
 
@@ -242,17 +252,9 @@ inline bool Logger::wants(LogLevel level)
     return _logLevels[level] == CHARS_TO_UINT(' ', ' ', 'O', 'N');
 }
 
-#define LOG_noreturn __attribute__((__noreturn__))
+[[noreturn]] extern void log_assert_fail(const char *assertion, const char *file, uint32_t line);
 
-extern void log_assert_fail(const char *assertion,
-                            const char *file,
-                            uint32_t line) LOG_noreturn;
-
-extern void log_abort(const char *message,
-                      const char *file,
-                      uint32_t line) LOG_noreturn;
-
-#undef LOG_noreturn
+[[noreturn]] extern void log_abort(const char *message, const char *file, uint32_t line);
 
 } // end namespace log
 

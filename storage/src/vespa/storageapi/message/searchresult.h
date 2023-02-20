@@ -4,8 +4,7 @@
 #include "visitor.h"
 #include <vespa/vdslib/container/searchresult.h>
 
-namespace storage {
-namespace api {
+namespace storage::api {
 
 /**
  * @class SearchResultCommand
@@ -33,5 +32,4 @@ public:
     DECLARE_STORAGEREPLY(SearchResultReply, onSearchResultReply)
 };
 
-} // api
-} // storage
+}

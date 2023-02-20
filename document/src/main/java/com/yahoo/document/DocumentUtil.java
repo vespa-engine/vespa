@@ -6,6 +6,7 @@ package com.yahoo.document;
  * @author Einar M Rosenvinge
  * @since 5.1.9
  */
+@Deprecated(forRemoval = true)
 public class DocumentUtil {
     /**
      * A convenience method that can be used to calculate a max pending queue size given

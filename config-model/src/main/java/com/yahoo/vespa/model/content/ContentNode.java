@@ -6,7 +6,7 @@ import com.yahoo.metrics.MetricsmanagerConfig;
 import com.yahoo.vespa.config.content.core.StorCommunicationmanagerConfig;
 import com.yahoo.vespa.config.content.core.StorServerConfig;
 import com.yahoo.vespa.config.content.core.StorStatusConfig;
-import com.yahoo.config.model.producer.AbstractConfigProducer;
+import com.yahoo.config.model.producer.TreeConfigProducer;
 import com.yahoo.vespa.model.AbstractService;
 import com.yahoo.vespa.model.PortAllocBridge;
 import com.yahoo.vespa.model.application.validation.RestartConfigs;
@@ -27,7 +27,7 @@ public abstract class ContentNode extends AbstractService
     private final int rpc_num_targets;
     private final int rpc_events_before_wakeup;
 
-    public ContentNode(ModelContext.FeatureFlags featureFlags, AbstractConfigProducer<?> parent, String clusterName, String rootDirectory, int distributionKey) {
+    public ContentNode(ModelContext.FeatureFlags featureFlags, TreeConfigProducer<?> parent, String clusterName, String rootDirectory, int distributionKey) {
         super(parent, "" + distributionKey);
         this.distributionKey = distributionKey;
         this.rootDirectory = rootDirectory;

@@ -6,8 +6,7 @@ ContainerCluster = element container {
     ContainerServices &    
     DocumentBinding* &
     NodesOfContainerCluster? &
-    ClientAuthorize? &
-    LoadBalancer?
+    ClientAuthorize?
 }
 
 ContainerServices =
@@ -104,7 +103,12 @@ ModelEvaluation = element model-evaluation {
                 attribute name { string } &
                 element intraop-threads { xsd:nonNegativeInteger }? &
                 element interop-threads { xsd:nonNegativeInteger }? &
-                element execution-mode { string "sequential" | string "parallel" }?
+                element execution-mode { string "sequential" | string "parallel" }? &
+                element gpu-device {
+                  # TODO(mpolden): Remove this after 2023-02-01
+                  attribute required { xsd:boolean }? &
+                  xsd:nonNegativeInteger
+                }?
             }*
         }?
     }?
@@ -187,7 +191,50 @@ DocprocInContainer = element document-processing {
 ChainInDocprocInContainerCluster = element chain {
     DocprocChainV3Contents
 }
+SchemaMapping = element map {
+  element field {
+    attribute doctype { text }?,
+    attribute in-document { text },
+    attribute in-processor { text }
+  }+
+}
 
+# TODO Here we need a thorough cleaning
+DocprocClusterAttributes = attribute compressdocuments { xsd:boolean }? &
+  attribute numnodesperclient { xsd:positiveInteger }? & # TODO: Remove in Vespa 9
+  attribute preferlocalnode { xsd:boolean }? & # TODO: Remove in Vespa 9
+  attribute maxmessagesinqueue { xsd:nonNegativeInteger }? &
+  attribute maxqueuebytesize { xsd:string { minLength = "1" } }? &  # TODO: Remove in Vespa 9
+  attribute maxqueuewait { xsd:positiveInteger }? &
+  attribute maxconcurrentfactor { xsd:double { minExclusive = "0.0" maxExclusive = "1.0" } }? &
+  attribute documentexpansionfactor { xsd:double { minExclusive = "0.0" } }? &
+  attribute containercorememory { xsd:nonNegativeInteger }?
+
+
+DocprocChainV3Contents = attribute name { xsd:NCName }? &
+        ComponentId &
+        SchemaMapping? &
+        DocprocChainInheritance &
+        attribute documentprocessors { text }? &
+        DocumentProcessorV3* &
+        Phase* &
+        GenericConfig*
+
+
+DocprocChainInheritance =
+    attribute inherits { text }? &
+    attribute excludes { text }? &
+    element inherits {
+        element docprocchain { ComponentSpec }* &
+        element exclude { ComponentSpec }*
+    }?
+
+DocumentProcessorV3 =
+    element documentprocessor {
+        BundleSpec &
+        SchemaMapping? &
+        GenericSearcherOrDocumentProcessor
+    }
 
 
 # PROCESSING:
@@ -231,10 +278,10 @@ HttpClientApi = element http-client-api {
 # NODES:
 
 NodesOfContainerCluster = element nodes {
-    attribute jvm-options { text }? &
-    attribute jvm-gc-options { text }? &
+    attribute jvm-options { text }? & # Remove in Vespa 9
+    attribute jvm-gc-options { text }? & # Remove in Vespa 9
     attribute preload { text }? &
-    attribute allocated-memory { text }? &
+    attribute allocated-memory { text }? &  # Remove in Vespa 9
     attribute cpu-socket-affinity { xsd:boolean }? &
     element jvm {
         attribute options { text }? &
@@ -268,16 +315,6 @@ NodesOfContainerCluster = element nodes {
       }+
     )
 }
-
-LoadBalancer = element load-balancer {
-    element private-access {
-        element allow-urn {
-            xsd:string
-        }*
-    }?
-}
-
-
 
 #DOCUMENT BINDINGS:
 

@@ -1,8 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.container.xml;
 
-import com.google.common.collect.ImmutableList;
-import com.yahoo.component.ComponentId;
+import com.yahoo.config.provision.IntRange;
 import com.yahoo.component.ComponentSpecification;
 import com.yahoo.component.Version;
 import com.yahoo.component.chain.dependencies.Dependencies;
@@ -13,8 +12,9 @@ import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.application.api.DeploymentInstanceSpec;
 import com.yahoo.config.application.api.DeploymentSpec;
+import com.yahoo.config.provision.ZoneEndpoint;
+import com.yahoo.config.application.api.xml.DeploymentSpecXmlReader;
 import com.yahoo.config.model.ConfigModelContext;
-import com.yahoo.config.model.ConfigModelContext.ApplicationType;
 import com.yahoo.config.model.api.ApplicationClusterEndpoint;
 import com.yahoo.config.model.api.ConfigServerSpec;
 import com.yahoo.config.model.api.ContainerEndpoint;
@@ -24,7 +24,8 @@ import com.yahoo.config.model.application.provider.IncludeDirs;
 import com.yahoo.config.model.builder.xml.ConfigModelBuilder;
 import com.yahoo.config.model.builder.xml.ConfigModelId;
 import com.yahoo.config.model.deploy.DeployState;
-import com.yahoo.config.model.producer.AbstractConfigProducer;
+import com.yahoo.config.model.producer.AnyConfigProducer;
+import com.yahoo.config.model.producer.TreeConfigProducer;
 import com.yahoo.config.provision.AthenzDomain;
 import com.yahoo.config.provision.AthenzService;
 import com.yahoo.config.provision.Capacity;
@@ -32,12 +33,14 @@ import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostName;
-import com.yahoo.config.provision.LoadBalancerSettings;
+import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.Zone;
+import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.container.bundle.BundleInstantiationSpecification;
 import com.yahoo.container.logging.FileConnectionLog;
+import com.yahoo.io.IOUtils;
 import com.yahoo.osgi.provider.model.ComponentModel;
 import com.yahoo.path.Path;
 import com.yahoo.schema.OnnxModel;
@@ -77,7 +80,6 @@ import com.yahoo.vespa.model.container.component.Handler;
 import com.yahoo.vespa.model.container.component.SimpleComponent;
 import com.yahoo.vespa.model.container.component.SystemBindingPattern;
 import com.yahoo.vespa.model.container.component.UserBindingPattern;
-import com.yahoo.vespa.model.container.component.chain.Chain;
 import com.yahoo.vespa.model.container.docproc.ContainerDocproc;
 import com.yahoo.vespa.model.container.docproc.DocprocChains;
 import com.yahoo.vespa.model.container.http.AccessControl;
@@ -90,6 +92,7 @@ import com.yahoo.vespa.model.container.http.Http;
 import com.yahoo.vespa.model.container.http.JettyHttpServer;
 import com.yahoo.vespa.model.container.http.ssl.HostedSslConnectorFactory;
 import com.yahoo.vespa.model.container.http.xml.HttpBuilder;
+import com.yahoo.vespa.model.container.http.HttpFilterChain;
 import com.yahoo.vespa.model.container.processing.ProcessingChains;
 import com.yahoo.vespa.model.container.search.ContainerSearch;
 import com.yahoo.vespa.model.container.search.PageTemplates;
@@ -100,9 +103,8 @@ import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 
 import java.io.IOException;
-import java.io.InputStream;
+import java.io.Reader;
 import java.net.URI;
-import java.nio.charset.StandardCharsets;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -119,6 +121,7 @@ import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static com.yahoo.vespa.model.container.ContainerCluster.VIP_HANDLER_BINDING;
 import static java.util.logging.Level.WARNING;
@@ -154,7 +157,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     private final boolean httpServerEnabled;
     protected DeployLogger log;
 
-    public static final List<ConfigModelId> configModelIds = ImmutableList.of(ConfigModelId.fromName(CONTAINER_TAG));
+    public static final List<ConfigModelId> configModelIds = List.of(ConfigModelId.fromName(CONTAINER_TAG));
 
     private static final String xmlRendererId = RendererRegistry.xmlRendererId.getName();
     private static final String jsonRendererId = RendererRegistry.jsonRendererId.getName();
@@ -189,9 +192,9 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     }
 
     private ApplicationContainerCluster createContainerCluster(Element spec, ConfigModelContext modelContext) {
-        return new VespaDomBuilder.DomConfigProducerBuilder<ApplicationContainerCluster>() {
+        return new VespaDomBuilder.DomConfigProducerBuilderBase<ApplicationContainerCluster>() {
             @Override
-            protected ApplicationContainerCluster doBuild(DeployState deployState, AbstractConfigProducer ancestor, Element producerSpec) {
+            protected ApplicationContainerCluster doBuild(DeployState deployState, TreeConfigProducer<AnyConfigProducer> ancestor, Element producerSpec) {
                 return new ApplicationContainerCluster(ancestor, modelContext.getProducerId(),
                                                        modelContext.getProducerId(), deployState);
             }
@@ -205,9 +208,6 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         addConfiguredComponents(deployState, cluster, spec);
         addSecretStore(cluster, spec, deployState);
 
-        addModelEvaluation(spec, cluster, context);
-        addModelEvaluationBundles(cluster);
-
         addProcessing(deployState, spec, cluster, context);
         addSearch(deployState, spec, cluster, context);
         addDocproc(deployState, spec, cluster);
@@ -217,11 +217,14 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         addStatusHandlers(cluster, context.getDeployState().isHosted());
         addUserHandlers(deployState, cluster, spec, context);
 
-        addClients(deployState, spec, cluster, context);
+        addClients(deployState, spec, cluster);
         addHttp(deployState, spec, cluster, context);
 
         addAccessLogs(deployState, cluster, spec);
         addNodes(cluster, spec, context);
+
+        addModelEvaluation(spec, cluster, context); // NOTE: Must be done after addNodes
+        addModelEvaluationBundles(cluster);
 
         addServerProviders(deployState, spec, cluster);
 
@@ -380,7 +383,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                 // Only consider global endpoints.
                 .filter(endpoint -> endpoint.scope() == ApplicationClusterEndpoint.Scope.global)
                 .flatMap(endpoint -> endpoint.names().stream())
-                .collect(Collectors.toCollection(() -> new LinkedHashSet<>()));
+                .collect(Collectors.toCollection(LinkedHashSet::new));
 
         // Build the comma delimited list of endpoints this container should be known as.
         // Confusingly called 'rotations' for legacy reasons.
@@ -454,16 +457,16 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
             addHostedImplicitHttpIfNotPresent(deployState, cluster);
             addHostedImplicitAccessControlIfNotPresent(deployState, cluster);
             addDefaultConnectorHostedFilterBinding(cluster);
-            addAdditionalHostedConnector(deployState, cluster, context);
+            addAdditionalHostedConnector(deployState, cluster);
             addCloudDataPlaneFilter(deployState, cluster);
         }
     }
 
     private static void addCloudDataPlaneFilter(DeployState deployState, ApplicationContainerCluster cluster) {
-        if (!deployState.isHosted() || !deployState.zone().system().isPublic() || !deployState.featureFlags().enableDataPlaneFilter()) return;
+        if (!deployState.isHosted() || !deployState.zone().system().isPublic()) return;
 
         // Setup secure filter chain
-        var secureChain = new Chain<Filter>(FilterChains.emptyChainSpec(ComponentId.fromString("cloud-data-plane-secure")));
+        var secureChain = new HttpFilterChain("cloud-data-plane-secure", HttpFilterChain.Type.SYSTEM);
         secureChain.addInnerComponent(new CloudDataPlaneFilter(cluster, cluster.clientsLegacyMode()));
         cluster.getHttp().getFilterChains().add(secureChain);
         // Set cloud data plane filter as default request filter chain for data plane connector
@@ -472,7 +475,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                 .setDefaultRequestFilterChain(secureChain.getComponentId());
 
         // Setup insecure filter chain
-        var insecureChain = new Chain<Filter>(FilterChains.emptyChainSpec(ComponentId.fromString("cloud-data-plane-insecure")));
+        var insecureChain = new HttpFilterChain("cloud-data-plane-insecure", HttpFilterChain.Type.SYSTEM);
         insecureChain.addInnerComponent(new Filter(
                 new ChainedComponentModel(
                         new BundleInstantiationSpecification(
@@ -491,8 +494,8 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
     }
 
-    protected void addClients(DeployState deployState, Element spec, ApplicationContainerCluster cluster, ConfigModelContext context) {
-        if (!deployState.isHosted() || !deployState.zone().system().isPublic() || !deployState.featureFlags().enableDataPlaneFilter()) return;
+    protected void addClients(DeployState deployState, Element spec, ApplicationContainerCluster cluster) {
+        if (!deployState.isHosted() || !deployState.zone().system().isPublic()) return;
 
         List<Client> clients;
         Element clientsElement = XML.getChild(spec, "clients");
@@ -505,14 +508,19 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
             legacyMode = true;
         } else {
             clients = XML.getChildren(clientsElement, "client").stream()
-                    .map(this::getCLient)
+                    .map(this::getClient)
                     .toList();
         }
+
+        List<X509Certificate> operatorAndTesterCertificates = deployState.getProperties().operatorCertificates();
+        if(!operatorAndTesterCertificates.isEmpty())
+            clients = Stream.concat(clients.stream(), Stream.of(Client.internalClient(operatorAndTesterCertificates))).toList();
         cluster.setClients(legacyMode, clients);
     }
 
-    private Client getCLient(Element clientElement) {
+    private Client getClient(Element clientElement) {
         String id = XML.attribute("id", clientElement).orElseThrow();
+        if (id.startsWith("_")) throw new IllegalArgumentException("Invalid client id '%s', id cannot start with '_'".formatted(id));
         List<String> permissions = XML.attribute("permissions", clientElement)
                 .map(p -> p.split(",")).stream()
                 .flatMap(Arrays::stream)
@@ -521,6 +529,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         List<X509Certificate> x509Certificates = XML.getChildren(clientElement, "certificate").stream()
                 .map(certElem -> Path.fromString(certElem.getAttribute("file")))
                 .map(path -> app.getFile(path))
+                .filter(ApplicationFile::exists)
                 .map(this::getCertificates)
                 .flatMap(Collection::stream)
                 .toList();
@@ -528,11 +537,16 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     }
 
     private List<X509Certificate> getCertificates(ApplicationFile file) {
+        if (!file.exists()) return List.of();
         try {
-            InputStream inputStream = file.createInputStream();
-            byte[] bytes = inputStream.readAllBytes();
-            inputStream.close();
-            return X509CertificateUtils.certificateListFromPem(new String(bytes, StandardCharsets.UTF_8));
+            Reader reader = file.createReader();
+            String certPem = IOUtils.readAll(reader);
+            reader.close();
+            List<X509Certificate> x509Certificates = X509CertificateUtils.certificateListFromPem(certPem);
+            if (x509Certificates.isEmpty()) {
+                throw new IllegalArgumentException("File %s does not contain any certificates.".formatted(file.getPath().getRelative()));
+            }
+            return x509Certificates;
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -543,7 +557,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                 .ifPresent(accessControl -> accessControl.configureDefaultHostedConnector(cluster.getHttp()));                                 ;
     }
 
-    private void addAdditionalHostedConnector(DeployState deployState, ApplicationContainerCluster cluster, ConfigModelContext context) {
+    private void addAdditionalHostedConnector(DeployState deployState, ApplicationContainerCluster cluster) {
         JettyHttpServer server = cluster.getHttp().getHttpServer().get();
         String serverName = server.getComponentId().getName();
 
@@ -553,12 +567,10 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         boolean proxyProtocolMixedMode = deployState.getProperties().featureFlags().enableProxyProtocolMixedMode();
         if (deployState.endpointCertificateSecrets().isPresent()) {
             boolean authorizeClient = deployState.zone().system().isPublic();
-            List<X509Certificate> clientCertificates = deployState.featureFlags().enableDataPlaneFilter()
-                    ? getClientCertificates(cluster)
-                    : deployState.tlsClientAuthority().map(X509CertificateUtils::certificateListFromPem).orElse(List.of());
+            List<X509Certificate> clientCertificates = getClientCertificates(cluster);
             if (authorizeClient && clientCertificates.isEmpty()) {
                 throw new IllegalArgumentException("Client certificate authority security/clients.pem is missing - " +
-                                                   "see: https://cloud.vespa.ai/en/security-model#data-plane");
+                                                   "see: https://cloud.vespa.ai/en/security/guide#data-plane");
             }
             EndpointCertificateSecrets endpointCertificateSecrets = deployState.endpointCertificateSecrets().get();
 
@@ -569,7 +581,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
             connectorFactory = authorizeClient
                     ? HostedSslConnectorFactory.withProvidedCertificateAndTruststore(
-                    serverName, endpointCertificateSecrets, getTlsClientAuthorities(clientCertificates, deployState), tlsCiphersOverride, proxyProtocolMixedMode, HOSTED_VESPA_DATAPLANE_PORT)
+                    serverName, endpointCertificateSecrets, X509CertificateUtils.toPem(clientCertificates), tlsCiphersOverride, proxyProtocolMixedMode, HOSTED_VESPA_DATAPLANE_PORT)
                     : HostedSslConnectorFactory.withProvidedCertificate(
                     serverName, endpointCertificateSecrets, enforceHandshakeClientAuth, tlsCiphersOverride, proxyProtocolMixedMode, HOSTED_VESPA_DATAPLANE_PORT);
         } else {
@@ -579,7 +591,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         server.addConnector(connectorFactory);
     }
 
-    // Returns the client certificates defined in
+    // Returns the client certificates of the clients defined for an application cluster
     private List<X509Certificate> getClientCertificates(ApplicationContainerCluster cluster) {
         return cluster.getClients()
                 .stream()
@@ -588,20 +600,8 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                 .toList();
     }
 
-    /*
-    Return trusted certificates as a PEM encoded string containing the concatenation of
-    trusted certs from the application package and all operator certificates.
-     */
-    String getTlsClientAuthorities(List<X509Certificate> applicationCertificates, DeployState deployState) {
-        ArrayList<X509Certificate> x509Certificates = new ArrayList<>(applicationCertificates);
-        x509Certificates.addAll(deployState.getProperties().operatorCertificates());
-        return X509CertificateUtils.toPem(x509Certificates);
-    }
-
     private static boolean isHostedTenantApplication(ConfigModelContext context) {
-        var deployState = context.getDeployState();
-        boolean isTesterApplication = deployState.getProperties().applicationId().instance().isTester();
-        return deployState.isHosted() && context.getApplicationType() == ApplicationType.DEFAULT && !isTesterApplication;
+        return context.getDeployState().isHostedTenantApplication(context.getApplicationType());
     }
 
     private static void addHostedImplicitHttpIfNotPresent(DeployState deployState, ApplicationContainerCluster cluster) {
@@ -686,6 +686,13 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
             onnxModel.setStatelessExecutionMode(getStringValue(modelElement, "execution-mode", null));
             onnxModel.setStatelessInterOpThreads(getIntValue(modelElement, "interop-threads", -1));
             onnxModel.setStatelessIntraOpThreads(getIntValue(modelElement, "intraop-threads", -1));
+            Element gpuDeviceElement = XML.getChild(modelElement, "gpu-device");
+            if (gpuDeviceElement != null) {
+                int gpuDevice = Integer.parseInt(gpuDeviceElement.getTextContent());
+                boolean hasGpu = cluster.getContainers().stream().anyMatch(container -> container.getHostResource() != null &&
+                                                                                        !container.getHostResource().realResources().gpuResources().isZero());
+                onnxModel.setGpuDevice(gpuDevice, hasGpu);
+            }
         }
 
         cluster.setModelEvaluation(new ContainerModelEvaluation(cluster, profiles));
@@ -707,6 +714,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
          * in the model-evaluation bundle that could be used by customer code. */
         cluster.addPlatformBundle(ContainerModelEvaluation.MODEL_EVALUATION_BUNDLE_FILE);
         cluster.addPlatformBundle(ContainerModelEvaluation.MODEL_INTEGRATION_BUNDLE_FILE);
+        cluster.addPlatformBundle(ContainerModelEvaluation.ONNXRUNTIME_BUNDLE_FILE);
     }
 
     private void addProcessing(DeployState deployState, Element spec, ApplicationContainerCluster cluster, ConfigModelContext context) {
@@ -724,7 +732,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         SearchChains searchChains = new DomSearchChainsBuilder()
                                             .build(deployState, containerCluster, producerSpec);
 
-        ContainerSearch containerSearch = new ContainerSearch(containerCluster, searchChains, new ContainerSearch.Options());
+        ContainerSearch containerSearch = new ContainerSearch(containerCluster, searchChains);
 
         applyApplicationPackageDirectoryConfigs(deployState.getApplicationPackage(), containerSearch);
         containerSearch.setQueryProfiles(deployState.getQueryProfiles());
@@ -769,11 +777,10 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         return new JvmGcOptions(context.getDeployState(), jvmGCOptions).build();
     }
 
-    private static String getJvmOptions(ApplicationContainerCluster cluster,
-                                        Element nodesElement,
+    private static String getJvmOptions(Element nodesElement,
                                         DeployState deployState,
                                         boolean legacyOptions) {
-        return new JvmOptions(cluster, nodesElement, deployState, legacyOptions).build();
+        return new JvmOptions(nodesElement, deployState, legacyOptions).build();
     }
 
     private static String extractAttribute(Element element, String attrName) {
@@ -794,19 +801,31 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
     private void extractJvmFromLegacyNodesTag(List<ApplicationContainer> nodes, ApplicationContainerCluster cluster,
                                               Element nodesElement, ConfigModelContext context) {
-        applyNodesTagJvmArgs(nodes, getJvmOptions(cluster, nodesElement, context.getDeployState(), true));
+        applyNodesTagJvmArgs(nodes, getJvmOptions(nodesElement, context.getDeployState(), true));
 
         if (cluster.getJvmGCOptions().isEmpty()) {
             String jvmGCOptions = extractAttribute(nodesElement, VespaDomBuilder.JVM_GC_OPTIONS);
+
+            if (jvmGCOptions != null && !jvmGCOptions.isEmpty()) {
+                DeployLogger logger = context.getDeployState().getDeployLogger();
+                logger.logApplicationPackage(WARNING, "'jvm-gc-options' is deprecated and will be removed in Vespa 9." +
+                        " Please merge into 'gc-options' in 'jvm' element." +
+                        " See https://docs.vespa.ai/en/reference/services-container.html#jvm");
+            }
+
             cluster.setJvmGCOptions(buildJvmGCOptions(context, jvmGCOptions));
         }
 
-        applyMemoryPercentage(cluster, nodesElement.getAttribute(VespaDomBuilder.Allocated_MEMORY_ATTRIB_NAME));
+        if (applyMemoryPercentage(cluster, nodesElement.getAttribute(VespaDomBuilder.Allocated_MEMORY_ATTRIB_NAME)))
+            context.getDeployState().getDeployLogger()
+                   .logApplicationPackage(WARNING, "'allocated-memory' is deprecated and will be removed in Vespa 9." +
+                           " Please merge into 'allocated-memory' in 'jvm' element." +
+                           " See https://docs.vespa.ai/en/reference/services-container.html#jvm");
     }
 
     private void extractJvmTag(List<ApplicationContainer> nodes, ApplicationContainerCluster cluster,
                                Element nodesElement, Element jvmElement, ConfigModelContext context) {
-        applyNodesTagJvmArgs(nodes, getJvmOptions(cluster, nodesElement, context.getDeployState(), false));
+        applyNodesTagJvmArgs(nodes, getJvmOptions(nodesElement, context.getDeployState(), false));
         applyMemoryPercentage(cluster, jvmElement.getAttribute(VespaDomBuilder.Allocated_MEMORY_ATTRIB_NAME));
         String jvmGCOptions = extractAttribute(jvmElement, VespaDomBuilder.GC_OPTIONS);
         cluster.setJvmGCOptions(buildJvmGCOptions(context, jvmGCOptions));
@@ -840,11 +859,14 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         }
     }
 
-    private LoadBalancerSettings loadBalancerSettings(Element loadBalancerElement) {
-        List<String> allowedUrnElements = XML.getChildren(XML.getChild(loadBalancerElement, "private-access"),
-                                                          "allowed-urn")
-                                             .stream().map(XML::getValue).toList();
-        return new LoadBalancerSettings(allowedUrnElements);
+    private ZoneEndpoint zoneEndpoint(ConfigModelContext context, ClusterSpec.Id cluster) {
+        InstanceName instance = context.properties().applicationId().instance();
+        ZoneId zone = ZoneId.from(context.properties().zone().environment(),
+                                  context.properties().zone().region());
+        DeploymentSpec spec = context.getApplicationPackage().getDeployment()
+                                     .map(new DeploymentSpecXmlReader(false)::read)
+                                     .orElse(DeploymentSpec.empty);
+        return spec.zoneEndpoint(instance, zone, cluster);
     }
 
     private static Map<String, String> getEnvironmentVariables(Element environmentVariables) {
@@ -877,8 +899,8 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
             return createNodesFromNodeList(context.getDeployState(), cluster, nodesElement);
     }
     
-    private static void applyMemoryPercentage(ApplicationContainerCluster cluster, String memoryPercentage) {
-        if (memoryPercentage == null || memoryPercentage.isEmpty()) return;
+    private static boolean applyMemoryPercentage(ApplicationContainerCluster cluster, String memoryPercentage) {
+        if (memoryPercentage == null || memoryPercentage.isEmpty()) return false;
         memoryPercentage = memoryPercentage.trim();
 
         if ( ! memoryPercentage.endsWith("%"))
@@ -893,6 +915,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
             throw new IllegalArgumentException("The memory percentage given for nodes in " + cluster +
                                                " must be an integer percentage ending by the '%' sign");
         }
+        return true;
     }
 
     /** Allocate a container cluster without a nodes tag */
@@ -912,6 +935,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
             ClusterResources resources = new ClusterResources(nodeCount, 1, NodeResources.unspecified());
             Capacity capacity = Capacity.from(resources,
                                               resources,
+                                              IntRange.empty(),
                                               false,
                                               !deployState.getProperties().isBootstrap(),
                                               context.getDeployState().getProperties().cloudAccount());
@@ -931,15 +955,21 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     }
 
     private List<ApplicationContainer> createNodesFromNodeCount(ApplicationContainerCluster cluster, Element containerElement, Element nodesElement, ConfigModelContext context) {
-        NodesSpecification nodesSpecification = NodesSpecification.from(new ModelElement(nodesElement), context);
-        LoadBalancerSettings loadBalancerSettings = loadBalancerSettings(XML.getChild(containerElement, "load-balancer"));
-        Map<HostResource, ClusterMembership> hosts = nodesSpecification.provision(cluster.getRoot().hostSystem(),
-                                                                                  ClusterSpec.Type.container,
-                                                                                  ClusterSpec.Id.from(cluster.getName()),
-                                                                                  loadBalancerSettings,
-                                                                                  log,
-                                                                                  getZooKeeper(containerElement) != null);
-        return createNodesFromHosts(hosts, cluster, context.getDeployState());
+        try {
+            NodesSpecification nodesSpecification = NodesSpecification.from(new ModelElement(nodesElement), context);
+            ClusterSpec.Id clusterId = ClusterSpec.Id.from(cluster.name());
+            ZoneEndpoint zoneEndpoint = zoneEndpoint(context, clusterId);
+            Map<HostResource, ClusterMembership> hosts = nodesSpecification.provision(cluster.getRoot().hostSystem(),
+                                                                                      ClusterSpec.Type.container,
+                                                                                      clusterId,
+                                                                                      zoneEndpoint,
+                                                                                      log,
+                                                                                      getZooKeeper(containerElement) != null);
+            return createNodesFromHosts(hosts, cluster, context.getDeployState());
+        }
+        catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("In " + cluster, e);
+        }
     }
 
     private List<ApplicationContainer> createNodesFromNodeType(ApplicationContainerCluster cluster, Element nodesElement, ConfigModelContext context) {
@@ -1027,7 +1057,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         cluster.addComponent(searchHandler);
 
         // Add as child to SearchHandler to get the correct chains config.
-        searchHandler.addComponent(Component.fromClassAndBundle(SearchHandler.EXECUTION_FACTORY_CLASS, PlatformBundles.SEARCH_AND_DOCPROC_BUNDLE));
+        searchHandler.addComponent(Component.fromClassAndBundle(SearchHandler.EXECUTION_FACTORY, PlatformBundles.SEARCH_AND_DOCPROC_BUNDLE));
     }
 
     private List<BindingPattern> serverBindings(DeployState deployState, ConfigModelContext context, Element searchElement, BindingPattern... defaultBindings) {
@@ -1118,7 +1148,8 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
     private static void validateAndAddConfiguredComponents(DeployState deployState,
                                                            ContainerCluster<? extends Container> cluster,
-                                                           Element spec, String componentName,
+                                                           Element spec,
+                                                           String componentName,
                                                            Consumer<Element> elementValidator) {
         for (Element node : XML.getChildren(spec, componentName)) {
             elementValidator.accept(node); // throws exception here if something is wrong
@@ -1195,14 +1226,12 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         // debug port will not be available in hosted, don't allow
         private static final Pattern invalidInHostedatttern = Pattern.compile("-Xrunjdwp:transport=.*");
 
-        private final ContainerCluster<?> cluster;
         private final Element nodesElement;
         private final DeployLogger logger;
         private final boolean legacyOptions;
         private final boolean isHosted;
 
-        public JvmOptions(ContainerCluster<?> cluster, Element nodesElement, DeployState deployState, boolean legacyOptions) {
-            this.cluster = cluster;
+        public JvmOptions(Element nodesElement, DeployState deployState, boolean legacyOptions) {
             this.nodesElement = nodesElement;
             this.logger = deployState.getDeployLogger();
             this.legacyOptions = legacyOptions;
@@ -1226,7 +1255,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
             if (nodesElement.hasAttribute(VespaDomBuilder.JVM_OPTIONS)) {
                 jvmOptions = nodesElement.getAttribute(VespaDomBuilder.JVM_OPTIONS);
                 if (! jvmOptions.isEmpty())
-                    logger.logApplicationPackage(WARNING, "'jvm-options' is deprecated and will be removed in Vespa 8." +
+                    logger.logApplicationPackage(WARNING, "'jvm-options' is deprecated and will be removed in Vespa 9." +
                             " Please merge 'jvm-options' into 'options' or 'gc-options' in 'jvm' element." +
                             " See https://docs.vespa.ai/en/reference/services-container.html#jvm");
             }
@@ -1244,13 +1273,12 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                                                 .filter(option -> !option.isEmpty())
                                                 .filter(option -> !Pattern.matches(validPattern.pattern(), option))
                                                 .sorted()
-                                                .collect(Collectors.toList());
+                                                .collect(Collectors.toCollection(ArrayList::new));
             if (isHosted)
                 invalidOptions.addAll(Arrays.stream(optionList)
-                                            .filter(option -> !option.isEmpty())
-                                            .filter(option -> Pattern.matches(invalidInHostedatttern.pattern(), option))
-                                            .sorted()
-                                            .collect(Collectors.toList()));
+                        .filter(option -> !option.isEmpty())
+                        .filter(option -> Pattern.matches(invalidInHostedatttern.pattern(), option))
+                        .sorted().toList());
 
             if (invalidOptions.isEmpty()) return;
 
@@ -1292,18 +1320,12 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                 options = jvmGcOptions;
                 String[] optionList = options.split(" ");
                 List<String> invalidOptions = Arrays.stream(optionList)
-                                                    .filter(option -> !option.isEmpty())
-                                                    .filter(option -> !Pattern.matches(validPattern.pattern(), option))
-                                                    .collect(Collectors.toList());
-
-                if (isHosted) {
-                    // CMS GC options cannot be used in hosted, CMS is unsupported in JDK 17
-                    invalidOptions.addAll(Arrays.stream(optionList)
-                                                .filter(option -> !option.isEmpty())
-                                                .filter(option -> Pattern.matches(invalidCMSPattern.pattern(), option) ||
-                                                        option.equals("-XX:+UseConcMarkSweepGC"))
-                                                .collect(Collectors.toList()));
-                }
+                        .filter(option -> !option.isEmpty())
+                        .filter(option -> !Pattern.matches(validPattern.pattern(), option)
+                                || Pattern.matches(invalidCMSPattern.pattern(), option)
+                                || option.equals("-XX:+UseConcMarkSweepGC"))
+                        .sorted()
+                        .toList();
 
                 logOrFailInvalidOptions(invalidOptions);
             }
@@ -1317,7 +1339,6 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         private void logOrFailInvalidOptions(List<String> options) {
             if (options.isEmpty()) return;
 
-            Collections.sort(options);
             String message = "Invalid or misplaced JVM GC options in services.xml: " +
                     String.join(",", options) + "." +
                     " See https://docs.vespa.ai/en/reference/services-container.html#jvm";

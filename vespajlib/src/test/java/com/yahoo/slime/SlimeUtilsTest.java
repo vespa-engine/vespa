@@ -107,7 +107,7 @@ public class SlimeUtilsTest {
         assertEquals(0, SlimeUtils.entriesStream(inspector.field("object")).count());
 
         assertEquals(List.of(1L, 2L, 4L, 3L, 0L),
-                     SlimeUtils.entriesStream(inspector.field("list")).map(Inspector::asLong).collect(Collectors.toList()));
+                     SlimeUtils.entriesStream(inspector.field("list")).map(Inspector::asLong).toList());
     }
 
 }

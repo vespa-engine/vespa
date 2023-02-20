@@ -2,7 +2,7 @@
 package com.yahoo.vespa.model.admin;
 
 import com.yahoo.cloud.config.LogforwarderConfig;
-import com.yahoo.config.model.producer.AbstractConfigProducer;
+import com.yahoo.config.model.producer.TreeConfigProducer;
 import com.yahoo.vespa.model.AbstractService;
 import com.yahoo.vespa.model.PortAllocBridge;
 import java.util.Optional;
@@ -41,7 +41,7 @@ public class LogForwarder extends AbstractService implements LogforwarderConfig.
      * Creates a new LogForwarder instance.
      */
     // TODO: Use proper types?
-    public LogForwarder(AbstractConfigProducer parent, Config config) {
+    public LogForwarder(TreeConfigProducer<? super LogForwarder> parent, Config config) {
         super(parent, "logforwarder");
         this.config = config;
         setProp("clustertype", "hosts");

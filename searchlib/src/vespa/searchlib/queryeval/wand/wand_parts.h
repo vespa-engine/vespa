@@ -20,14 +20,14 @@ namespace search::queryeval::wand {
 //-----------------------------------------------------------------------------
 
 struct Term;
-typedef std::vector<Term> Terms;
-typedef int64_t score_t;
-typedef uint32_t docid_t;
-typedef uint16_t ref_t;
+using Terms = std::vector<Term>;
+using score_t = int64_t;
+using docid_t = uint32_t;
+using ref_t = uint16_t;
 
-typedef IDocumentWeightAttribute Attr;
-typedef Attr::LookupResult AttrDictEntry;
-typedef std::vector<AttrDictEntry> AttrDictEntries;
+using Attr = IDocumentWeightAttribute;
+using AttrDictEntry = Attr::LookupResult;
+using AttrDictEntries = std::vector<AttrDictEntry>;
 
 //-----------------------------------------------------------------------------
 

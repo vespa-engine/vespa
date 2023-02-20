@@ -970,9 +970,13 @@ void fill_api_apply_diff_vector(std::vector<api::ApplyBucketDiffCommand::Entry>&
         dest._docName = proto_entry.document_id();
         // TODO consider making buffers std::strings instead to avoid explicit zeroing-on-resize overhead
         dest._headerBlob.resize(proto_entry.header_blob().size());
-        memcpy(dest._headerBlob.data(), proto_entry.header_blob().data(), proto_entry.header_blob().size());
+        if (proto_entry.header_blob().size() > 0) {
+            memcpy(dest._headerBlob.data(), proto_entry.header_blob().data(), proto_entry.header_blob().size());
+        }
         dest._bodyBlob.resize(proto_entry.body_blob().size());
-        memcpy(dest._bodyBlob.data(), proto_entry.body_blob().data(), proto_entry.body_blob().size());
+        if (proto_entry.body_blob().size() > 0) {
+            memcpy(dest._bodyBlob.data(), proto_entry.body_blob().data(), proto_entry.body_blob().size());
+        }
     }
 }
 

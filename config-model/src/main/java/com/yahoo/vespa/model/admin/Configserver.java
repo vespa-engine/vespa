@@ -1,7 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.admin;
 
-import com.yahoo.config.model.producer.AbstractConfigProducer;
+import com.yahoo.config.model.producer.TreeConfigProducer;
 import com.yahoo.vespa.model.AbstractService;
 import com.yahoo.vespa.model.PortAllocBridge;
 
@@ -23,7 +23,7 @@ public class Configserver extends AbstractService {
 
     private final int rpcPort;
 
-    public Configserver(AbstractConfigProducer parent, String name, int rpcPort) {
+    public Configserver(TreeConfigProducer<? super Configserver> parent, String name, int rpcPort) {
         super(parent, name);
         this.rpcPort = rpcPort;
         portsMeta.on(0).tag("rpc").tag("config");

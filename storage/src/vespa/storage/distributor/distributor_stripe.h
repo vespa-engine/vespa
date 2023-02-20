@@ -21,6 +21,8 @@
 #include <vespa/storageapi/message/state.h>
 #include <vespa/storageframework/generic/metric/metricupdatehook.h>
 #include <vespa/storageframework/generic/thread/tickingthread.h>
+#include <vespa/storageframework/generic/clock/timer.h>
+
 #include <atomic>
 #include <mutex>
 #include <queue>

@@ -2,6 +2,9 @@
 package com.yahoo.jrt;
 
 
+import com.yahoo.security.tls.Capability;
+import com.yahoo.security.tls.CapabilitySet;
+
 /**
  * <p>A Method encapsulates the reflective information about a single RPC
  * method.</p>
@@ -40,7 +43,8 @@ public class Method {
     private String[] returnName;
     private String[] returnDesc;
 
-    private RequestAccessFilter filter = RequestAccessFilter.ALLOW_ALL;
+    private static final RequireCapabilitiesFilter defaultFilter = RequireCapabilitiesFilter.unclassified();
+    private RequestAccessFilter filter = defaultFilter;
 
     private static final String undocumented = "???";
 
@@ -149,7 +153,15 @@ public class Method {
         return this;
     }
 
-    public Method requestAccessFilter(RequestAccessFilter filter) { this.filter = filter; return this; }
+    public Method requestAccessFilter(RequestAccessFilter filter) { verifyNoFilterAssigned(); this.filter = filter; return this; }
+    public Method requireCapabilities(Capability... capabilities) { return requireCapabilities(CapabilitySet.of(capabilities)); }
+    public Method requireCapabilities(CapabilitySet capabilities) {
+        verifyNoFilterAssigned();
+        filter = new RequireCapabilitiesFilter(capabilities);
+        return this;
+    }
+
+    private void verifyNoFilterAssigned() { if (filter != null && filter != defaultFilter) throw new IllegalStateException(); }
 
     public RequestAccessFilter requestAccessFilter() { return filter; }
 

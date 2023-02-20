@@ -3,8 +3,12 @@
 #pragma once
 
 #include "i_match_loop_communicator.h"
-#include <vespa/searchlib/fef/rank_program.h>
+#include <vespa/searchlib/fef/featureexecutor.h>
 #include <vespa/searchlib/queryeval/searchiterator.h>
+
+namespace search::fef {
+    class RankProgram;
+}
 
 namespace proton::matching {
 

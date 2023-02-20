@@ -50,6 +50,9 @@ public class OnnxModelConfigGenerator extends Processor {
             if (profile.getSecondPhaseRanking() != null) {
                 process(profile.getSecondPhaseRanking().getRoot(), profile);
             }
+            if (profile.getGlobalPhaseRanking() != null) {
+                process(profile.getGlobalPhaseRanking().getRoot(), profile);
+            }
             for (Map.Entry<String, RankProfile.RankingExpressionFunction> function : profile.getFunctions().entrySet()) {
                 process(function.getValue().function().getBody().getRoot(), profile);
             }

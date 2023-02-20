@@ -2,12 +2,15 @@
 
 #pragma once
 
-#include <vespa/vespalib/stllike/string.h>
-#include <vespa/vespalib/util/time.h>
+#include <vespa/searchcore/proton/common/i_transient_resource_usage_provider.h>
 #include <vespa/searchlib/common/indexmetainfo.h>
 #include <vespa/searchlib/common/serialnum.h>
-#include <mutex>
+#include <vespa/vespalib/stllike/string.h>
+#include <vespa/vespalib/util/time.h>
 #include <condition_variable>
+#include <mutex>
+#include <optional>
+#include <unordered_map>
 
 namespace proton {
 
@@ -24,6 +27,10 @@ public:
     using SerialNum = search::SerialNum;
 
 private:
+    // Keeps track of the disk size (in bytes) for attribute snapshots.
+    // The disk size is calculated and set when a snapshot is marked as valid.
+    using SnapshotDiskSizes = std::unordered_map<SerialNum, std::optional<uint64_t>>;
+
     std::weak_ptr<AttributeDiskLayout> _diskLayout;
     const vespalib::string  _name;
     vespalib::system_time    _lastFlushTime;
@@ -31,9 +38,10 @@ private:
     mutable std::mutex      _mutex;
     std::condition_variable _cv;
     search::IndexMetaInfo   _snapInfo;
+    SnapshotDiskSizes       _disk_sizes;
 
     void saveSnapInfo();
-    vespalib::string getSnapshotDir(SerialNum serialNum);
+    vespalib::string getSnapshotDir(SerialNum serialNum) const;
     void setLastFlushTime(vespalib::system_time lastFlushTime);
     void createInvalidSnapshot(SerialNum serialNum);
     void markValidSnapshot(SerialNum serialNum);
@@ -83,6 +91,7 @@ public:
     vespalib::system_time getLastFlushTime() const;
     bool empty() const;
     vespalib::string getAttributeFileName(SerialNum serialNum);
+    TransientResourceUsage get_transient_resource_usage() const;
 };
 
 } // namespace proton

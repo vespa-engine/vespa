@@ -34,8 +34,8 @@ using proton::matching::RankingConstants;
 using proton::matching::RankingExpressions;
 using proton::matching::OnnxModels;
 
-typedef DocumentDBConfigHelper DBCM;
-typedef DocumentDBConfig::DocumenttypesConfigSP DocumenttypesConfigSP;
+using DBCM = DocumentDBConfigHelper;
+using DocumenttypesConfigSP = DocumentDBConfig::DocumenttypesConfigSP;
 using vespalib::nbostream;
 
 vespalib::string myId("myconfigid");

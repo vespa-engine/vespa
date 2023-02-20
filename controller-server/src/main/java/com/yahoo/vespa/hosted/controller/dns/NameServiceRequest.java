@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.controller.dns;
 
 import com.yahoo.vespa.hosted.controller.api.integration.dns.NameService;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordName;
+import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 
 import java.util.Optional;
 
@@ -13,7 +14,11 @@ import java.util.Optional;
  */
 public interface NameServiceRequest {
 
-    Optional<RecordName> name();
+    /** The record name this request pertains to. */
+    RecordName name();
+
+    /** The application owning this request */
+    Optional<TenantAndApplicationId> owner();
 
     /** Send this to given name service */
     void dispatchTo(NameService nameService);

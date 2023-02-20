@@ -60,10 +60,10 @@ using vespalib::eval::ValueType;
 
 namespace search {
 
-typedef AttributeVector::SP AttributePtr;
-typedef AttributeVector::WeightedInt WeightedInt;
-typedef AttributeVector::WeightedFloat WeightedFloat;
-typedef AttributeVector::WeightedString WeightedString;
+using AttributePtr = AttributeVector::SP;
+using WeightedInt = AttributeVector::WeightedInt;
+using WeightedFloat = AttributeVector::WeightedFloat;
+using WeightedString = AttributeVector::WeightedString;
 
 std::unique_ptr<DocumentTypeRepo>
 makeDocumentTypeRepo()

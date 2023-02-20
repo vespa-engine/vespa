@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.testutils;
 
+import com.yahoo.config.provision.IntRange;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ActivationContext;
 import com.yahoo.config.provision.ApplicationId;
@@ -18,7 +19,11 @@ import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.TenantName;
+import com.yahoo.config.provision.WireguardKey;
 import com.yahoo.config.provision.Zone;
+import com.yahoo.config.provision.ZoneEndpoint;
+import com.yahoo.config.provision.ZoneEndpoint.AccessType;
+import com.yahoo.config.provision.ZoneEndpoint.AllowedUrn;
 import com.yahoo.transaction.Mutex;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.curator.mock.MockCurator;
@@ -28,6 +33,8 @@ import com.yahoo.vespa.hosted.provision.NodeMutex;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.applications.Application;
 import com.yahoo.vespa.hosted.provision.applications.Cluster;
+import com.yahoo.vespa.hosted.provision.autoscale.Autoscaling;
+import com.yahoo.vespa.hosted.provision.autoscale.Load;
 import com.yahoo.vespa.hosted.provision.autoscale.MemoryMetricsDb;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.IP;
@@ -58,6 +65,7 @@ import static com.yahoo.config.provision.NodeResources.StorageType.remote;
  * Instantiated by DI.
  */
 public class MockNodeRepository extends NodeRepository {
+
     public static final CloudAccount tenantAccount = CloudAccount.from("777888999000");
 
     private final NodeFlavors flavors;
@@ -77,6 +85,7 @@ public class MockNodeRepository extends NodeRepository {
               zone,
               new MockNameResolver().mockAnyLookup(),
               DockerImage.fromString("docker-registry.domain.tld:8080/dist/vespa"),
+              Optional.empty(),
               Optional.empty(),
               new InMemoryFlagSource(),
               new MemoryMetricsDb(Clock.fixed(Instant.ofEpochMilli(123), ZoneId.of("Z"))),
@@ -101,7 +110,7 @@ public class MockNodeRepository extends NodeRepository {
                           .cloudAccount(defaultCloudAccount).build());
         // Emulate node in tenant account
         nodes.add(Node.create("node3", ipConfig(3), "host3.yahoo.com", resources(0.5, 48, 500, 1, fast, local), NodeType.tenant)
-                              .cloudAccount(tenantAccount).build());
+                          .cloudAccount(tenantAccount).build());
         Node node4 = Node.create("node4", ipConfig(4), "host4.yahoo.com", resources(1, 4, 100, 1, fast, local), NodeType.tenant)
                 .parentHostname("dockerhost1.yahoo.com")
                 .status(Status.initial()
@@ -147,7 +156,9 @@ public class MockNodeRepository extends NodeRepository {
                              flavors.getFlavorOrThrow("large"), NodeType.host).cloudAccount(defaultCloudAccount).build());
         // Emulate host in tenant account
         nodes.add(Node.create("dockerhost2", ipConfig(101, 1, 3), "dockerhost2.yahoo.com",
-                             flavors.getFlavorOrThrow("large"), NodeType.host).cloudAccount(tenantAccount).build());
+                              flavors.getFlavorOrThrow("large"), NodeType.host)
+                          .wireguardPubKey(WireguardKey.from("000011112222333344445555666677778888999900c="))
+                          .cloudAccount(tenantAccount).build());
         nodes.add(Node.create("dockerhost3", ipConfig(102, 1, 3), "dockerhost3.yahoo.com",
                              flavors.getFlavorOrThrow("large"), NodeType.host).cloudAccount(defaultCloudAccount).build());
         nodes.add(Node.create("dockerhost4", ipConfig(103, 1, 3), "dockerhost4.yahoo.com",
@@ -158,8 +169,10 @@ public class MockNodeRepository extends NodeRepository {
                 flavors.getFlavorOrThrow("arm64"), NodeType.host).cloudAccount(defaultCloudAccount).build());
 
         // Config servers
-        nodes.add(Node.create("cfg1", ipConfig(201), "cfg1.yahoo.com", flavors.getFlavorOrThrow("default"), NodeType.config).build());
-        nodes.add(Node.create("cfg2", ipConfig(202), "cfg2.yahoo.com", flavors.getFlavorOrThrow("default"), NodeType.config).build());
+        nodes.add(Node.create("cfg1", ipConfig(201), "cfg1.yahoo.com", flavors.getFlavorOrThrow("default"), NodeType.config)
+                          .wireguardPubKey(WireguardKey.from("lololololololololololololololololololololoo=")).build());
+        nodes.add(Node.create("cfg2", ipConfig(202), "cfg2.yahoo.com", flavors.getFlavorOrThrow("default"), NodeType.config)
+                          .build());
 
         // Ready all nodes, except 7 and 55
         nodes = nodes().addNodes(nodes, Agent.system);
@@ -184,19 +197,37 @@ public class MockNodeRepository extends NodeRepository {
         activate(provisioner.prepare(zoneApp, zoneCluster, Capacity.fromRequiredNodeType(NodeType.host), null), zoneApp, provisioner);
 
         ApplicationId app1Id = ApplicationId.from(TenantName.from("tenant1"), ApplicationName.from("application1"), InstanceName.from("instance1"));
-        ClusterSpec cluster1Id = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("id1")).vespaVersion("6.42").build();
+        ClusterSpec cluster1Id = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("id1"))
+                                            .vespaVersion("6.42")
+                                            .loadBalancerSettings(new ZoneEndpoint(false, true, List.of(new AllowedUrn(AccessType.awsPrivateLink, "arne"))))
+                                            .build();
         activate(provisioner.prepare(app1Id,
                                      cluster1Id,
                                      Capacity.from(new ClusterResources(2, 1, new NodeResources(2, 8, 50, 1)),
-                                                   new ClusterResources(8, 2, new NodeResources(4, 16, 1000, 1)), false, true),
+                                                   new ClusterResources(8, 2, new NodeResources(4, 16, 1000, 1)),
+                                                   IntRange.empty(),
+                                                   false,
+                                                   true,
+                                                   Optional.empty()),
                                 null), app1Id, provisioner);
         Application app1 = applications().get(app1Id).get();
         Cluster cluster1 = app1.cluster(cluster1Id.id()).get();
-        cluster1 = cluster1.withSuggested(Optional.of(new Cluster.Suggestion(new ClusterResources(6, 2,
-                                                                                                  new NodeResources(3, 20, 100, 1)),
-                                                                             clock().instant())));
-        cluster1 = cluster1.withTarget(Optional.of(new ClusterResources(4, 1,
-                                                                        new NodeResources(3, 16, 100, 1))));
+        cluster1 = cluster1.withSuggested(new Autoscaling(Autoscaling.Status.unavailable,
+                                                          "",
+                                                          Optional.of(new ClusterResources(6, 2,
+                                                                                           new NodeResources(3, 20, 100, 1))),
+                                                          clock().instant(),
+                                                          Load.zero(),
+                                                          Load.zero(),
+                                                          Autoscaling.Metrics.zero()));
+        cluster1 = cluster1.withTarget(new Autoscaling(Autoscaling.Status.unavailable,
+                                                       "",
+                                                       Optional.of(new ClusterResources(4, 1,
+                                                                                        new NodeResources(3, 16, 100, 1))),
+                                                       clock().instant(),
+                                                       new Load(0.1, 0.2, 0.3),
+                                                       new Load(0.4, 0.5, 0.6),
+                                                       new Autoscaling.Metrics(0.7, 0.8, 0.9)));
         try (Mutex lock = applications().lock(app1Id)) {
             applications().put(app1.with(cluster1), lock);
         }

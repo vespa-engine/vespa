@@ -47,30 +47,23 @@ BuildRequires: epel-release
 %endif
 %if 0%{?el8}
 %global _centos_stream %(grep -qs '^NAME="CentOS Stream"' /etc/os-release && echo 1 || echo 0)
-%if 0%{?_centos_stream}
-BuildRequires: gcc-toolset-11-gcc-c++
-BuildRequires: gcc-toolset-11-binutils
-BuildRequires: gcc-toolset-11-libasan-devel
-BuildRequires: gcc-toolset-11-libatomic-devel
-%define _devtoolset_enable /opt/rh/gcc-toolset-11/enable
-%else
-BuildRequires: gcc-toolset-11-gcc-c++
-BuildRequires: gcc-toolset-11-binutils
-BuildRequires: gcc-toolset-11-libasan-devel
-BuildRequires: gcc-toolset-11-libatomic-devel
-%define _devtoolset_enable /opt/rh/gcc-toolset-11/enable
-%endif
+BuildRequires: gcc-toolset-12-gcc-c++
+BuildRequires: gcc-toolset-12-binutils
+BuildRequires: gcc-toolset-12-libatomic-devel
+%define _devtoolset_enable /opt/rh/gcc-toolset-12/enable
 BuildRequires: maven
 BuildRequires: maven-openjdk17
-BuildRequires: pybind11-devel
+BuildRequires: vespa-pybind11-devel
 BuildRequires: python3-pytest
 BuildRequires: python36-devel
 BuildRequires: glibc-langpack-en
 %endif
 %if 0%{?el9}
 %global _centos_stream %(grep -qs '^NAME="CentOS Stream"' /etc/os-release && echo 1 || echo 0)
-BuildRequires: gcc-c++
-BuildRequires: libatomic
+BuildRequires: gcc-toolset-12-gcc-c++
+BuildRequires: gcc-toolset-12-binutils
+BuildRequires: gcc-toolset-12-libatomic-devel
+%define _devtoolset_enable /opt/rh/gcc-toolset-12/enable
 BuildRequires: pybind11-devel
 BuildRequires: python3-pytest
 BuildRequires: python3-devel
@@ -78,8 +71,6 @@ BuildRequires: glibc-langpack-en
 %endif
 %if 0%{?fedora}
 BuildRequires: gcc-c++
-BuildRequires: libasan
-BuildRequires: libasan-static
 BuildRequires: libatomic
 BuildRequires: pybind11-devel
 BuildRequires: python3-pytest
@@ -102,7 +93,7 @@ BuildRequires: vespa-openssl-devel >= 1.1.1o-1
 BuildRequires: vespa-gtest = 1.11.0
 %define _use_vespa_gtest 1
 BuildRequires: vespa-lz4-devel >= 1.9.4-1
-BuildRequires: vespa-onnxruntime-devel = 1.12.1
+BuildRequires: vespa-onnxruntime-devel = 1.13.1
 BuildRequires: vespa-protobuf-devel = 3.21.7
 BuildRequires: vespa-libzstd-devel >= 1.5.2-1
 %endif
@@ -112,9 +103,9 @@ BuildRequires: maven
 BuildRequires: maven-openjdk17
 BuildRequires: openssl-devel
 BuildRequires: vespa-lz4-devel >= 1.9.4-1
-BuildRequires: vespa-onnxruntime-devel = 1.12.1
+BuildRequires: vespa-onnxruntime-devel = 1.13.1
 BuildRequires: vespa-libzstd-devel >= 1.5.2-1
-BuildRequires: protobuf-devel
+BuildRequires: vespa-protobuf-devel = 3.21.7
 BuildRequires: llvm-devel
 BuildRequires: boost-devel >= 1.75
 BuildRequires: gtest-devel
@@ -133,7 +124,7 @@ BuildRequires: maven-openjdk17
 %endif
 BuildRequires: openssl-devel
 BuildRequires: vespa-lz4-devel >= 1.9.4-1
-BuildRequires: vespa-onnxruntime-devel = 1.12.1
+BuildRequires: vespa-onnxruntime-devel = 1.13.1
 BuildRequires: vespa-libzstd-devel >= 1.5.2-1
 BuildRequires: protobuf-devel
 BuildRequires: llvm-devel
@@ -183,23 +174,6 @@ Requires: libcgroup-tools
 %endif
 Requires: numactl
 BuildRequires: perl
-BuildRequires: perl-Carp
-BuildRequires: perl-Data-Dumper
-BuildRequires: perl-Digest-MD5
-BuildRequires: perl-Env
-BuildRequires: perl-Exporter
-BuildRequires: perl-File-Path
-BuildRequires: perl-File-Temp
-BuildRequires: perl-Getopt-Long
-BuildRequires: perl-IO-Socket-IP
-BuildRequires: perl-JSON
-BuildRequires: perl-libwww-perl
-BuildRequires: perl-LWP-Protocol-https
-%if ! 0%{?amzn2022} && ! 0%{?el9}
-BuildRequires: perl-Net-INET6Glue
-%endif
-BuildRequires: perl-Pod-Usage
-BuildRequires: perl-URI
 BuildRequires: valgrind
 BuildRequires: perf
 %if 0%{?amzn2022}
@@ -315,13 +289,13 @@ Requires: vespa-protobuf = 3.21.7
 %endif
 %if 0%{?el9}
 Requires: llvm-libs
-Requires: protobuf
+Requires: vespa-protobuf = 3.21.7
 %endif
 %if 0%{?fedora}
 Requires: protobuf
 Requires: llvm-libs
 %endif
-Requires: vespa-onnxruntime = 1.12.1
+Requires: vespa-onnxruntime = 1.13.1
 
 %description libs
 
@@ -426,6 +400,22 @@ nearest neighbor search used for low-level benchmarking.
 %endif
 %else
 %setup -q
+file_to_patch=/opt/rh/gcc-toolset-12/root/usr/include/c++/12/bits/stl_vector.h
+if test -f $file_to_patch
+then
+  if grep -qs '_M_realloc_insert(iterator __position, const value_type& __x) __attribute((noinline))' $file_to_patch
+  then
+    :
+  else
+    if test -w $file_to_patch
+    then
+      patch $file_to_patch < dist/patch.stl_vector.h.diff
+    else
+      echo "Failed patching $file_to_patch since it is not writable for me"
+    fi
+  fi
+fi
+
 echo '%{version}' > VERSION
 case '%{version}' in
     *.0)
@@ -595,7 +585,6 @@ fi
 %{_prefix}/include
 %dir %{_prefix}/lib
 %dir %{_prefix}/lib/jars
-%{_prefix}/lib/jars/application-preprocessor-jar-with-dependencies.jar
 %{_prefix}/lib/jars/athenz-identity-provider-service-jar-with-dependencies.jar
 %{_prefix}/lib/jars/cloud-tenant-cd-jar-with-dependencies.jar
 %{_prefix}/lib/jars/clustercontroller-apps-jar-with-dependencies.jar
@@ -607,7 +596,6 @@ fi
 %{_prefix}/lib/jars/configserver-flags-jar-with-dependencies.jar
 %{_prefix}/lib/jars/configserver-jar-with-dependencies.jar
 %{_prefix}/lib/jars/document.jar
-%{_prefix}/lib/jars/filedistribution-jar-with-dependencies.jar
 %{_prefix}/lib/jars/http-client-jar-with-dependencies.jar
 %{_prefix}/lib/jars/logserver-jar-with-dependencies.jar
 %{_prefix}/lib/jars/metrics-proxy-jar-with-dependencies.jar
@@ -617,7 +605,6 @@ fi
 %{_prefix}/lib/jars/searchlib.jar
 %{_prefix}/lib/jars/service-monitor-jar-with-dependencies.jar
 %{_prefix}/lib/jars/tenant-cd-api-jar-with-dependencies.jar
-%{_prefix}/lib/jars/vespa_feed_perf-jar-with-dependencies.jar
 %{_prefix}/lib/jars/vespa-osgi-testrunner-jar-with-dependencies.jar
 %{_prefix}/lib/jars/vespa-testrunner-components.jar
 %{_prefix}/lib/jars/vespa-testrunner-components-jar-with-dependencies.jar
@@ -626,7 +613,7 @@ fi
 %{_prefix}/libexec
 %exclude %{_prefix}/libexec/vespa_ann_benchmark
 %exclude %{_prefix}/libexec/vespa/common-env.sh
-%exclude %{_prefix}/libexec/vespa/script-utils
+%exclude %{_prefix}/libexec/vespa/vespa-wrapper
 %exclude %{_prefix}/libexec/vespa/find-pid
 %exclude %{_prefix}/libexec/vespa/node-admin.sh
 %exclude %{_prefix}/libexec/vespa/standalone-container.sh
@@ -688,11 +675,10 @@ fi
 %{_prefix}/jdk
 %dir %{_prefix}/lib
 %dir %{_prefix}/lib/jars
-%{_prefix}/lib/jars/security-tools-jar-with-dependencies.jar
 %dir %{_prefix}/libexec
 %dir %{_prefix}/libexec/vespa
 %{_prefix}/libexec/vespa/common-env.sh
-%{_prefix}/libexec/vespa/script-utils
+%{_prefix}/libexec/vespa/vespa-wrapper
 %{_prefix}/libexec/vespa/find-pid
 %{_prefix}/libexec/vespa/vespa-curl-wrapper
 
@@ -770,6 +756,7 @@ fi
 %dir %{_prefix}
 %dir %{_prefix}/lib
 %dir %{_prefix}/lib/jars
+%{_prefix}/lib/jars/airlift-zstd.jar
 %{_prefix}/lib/jars/application-model-jar-with-dependencies.jar
 %{_prefix}/lib/jars/bc*-jdk18on-*.jar
 %{_prefix}/lib/jars/config-bundle-jar-with-dependencies.jar
@@ -779,6 +766,7 @@ fi
 %{_prefix}/lib/jars/config-provisioning-jar-with-dependencies.jar
 %{_prefix}/lib/jars/container-apache-http-client-bundle-jar-with-dependencies.jar
 %{_prefix}/lib/jars/container-disc-jar-with-dependencies.jar
+%{_prefix}/lib/jars/container-onnxruntime.jar
 %{_prefix}/lib/jars/container-search-and-docproc-jar-with-dependencies.jar
 %{_prefix}/lib/jars/container-spifly.jar
 %{_prefix}/lib/jars/docprocs-jar-with-dependencies.jar
@@ -789,6 +777,7 @@ fi
 %{_prefix}/lib/jars/jdisc-cloud-aws-jar-with-dependencies.jar
 %{_prefix}/lib/jars/jdisc_core-jar-with-dependencies.jar
 %{_prefix}/lib/jars/jdisc-security-filters-jar-with-dependencies.jar
+%{_prefix}/lib/jars/jna-*.jar
 %{_prefix}/lib/jars/linguistics-components-jar-with-dependencies.jar
 %{_prefix}/lib/jars/model-evaluation-jar-with-dependencies.jar
 %{_prefix}/lib/jars/model-integration-jar-with-dependencies.jar

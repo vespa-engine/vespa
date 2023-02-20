@@ -136,7 +136,7 @@ public class History {
      * This returns a copy of this history with all application level events removed and the log unchanged.
      */
     private History withoutApplicationEvents() {
-        return new History(events().stream().filter(e -> ! e.type().isApplicationLevel()).collect(Collectors.toList()), log);
+        return new History(events().stream().filter(e -> ! e.type().isApplicationLevel()).toList(), log);
     }
 
     /** Returns the empty history */

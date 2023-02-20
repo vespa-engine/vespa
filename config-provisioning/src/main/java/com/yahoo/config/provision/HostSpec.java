@@ -38,7 +38,8 @@ public class HostSpec implements Comparable<HostSpec> {
              Optional.empty(), Optional.empty(), networkPorts, Optional.empty());
     }
 
-    // TODO: Remove usage
+    // TODO: Remove when oldest model in use is 8.124
+    @Deprecated
     public HostSpec(String hostname, List<String> ignored, Optional<NetworkPorts> networkPorts) {
         this(hostname,
              NodeResources.unspecified(), NodeResources.unspecified(), NodeResources.unspecified(),

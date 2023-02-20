@@ -4,24 +4,15 @@ package com.yahoo.config.model.test;
 import com.yahoo.config.ConfigInstance;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.DeployLogger;
-import com.yahoo.config.model.ConfigModelContext;
 import com.yahoo.config.model.ConfigModelRepo;
-import com.yahoo.config.model.api.HostProvisioner;
-import com.yahoo.config.model.builder.xml.XmlHelper;
 import com.yahoo.config.model.deploy.DeployState;
-import com.yahoo.config.model.producer.AbstractConfigProducer;
+import com.yahoo.config.model.producer.AnyConfigProducer;
+import com.yahoo.config.model.producer.TreeConfigProducer;
 import com.yahoo.config.model.producer.AbstractConfigProducerRoot;
-import com.yahoo.text.XML;
 import com.yahoo.vespa.model.ConfigProducer;
 import com.yahoo.vespa.model.HostSystem;
 import com.yahoo.vespa.model.admin.Admin;
-import com.yahoo.vespa.model.builder.xml.dom.DomAdminV2Builder;
 import com.yahoo.vespa.model.filedistribution.FileDistributionConfigProducer;
-import com.yahoo.vespa.model.filedistribution.FileReferencesRepository;
-import org.w3c.dom.Document;
-
-import java.io.StringReader;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Set;
 
@@ -35,17 +26,10 @@ import java.util.Set;
 // TODO: mockRoot instances can probably be replaced by VespaModel.createIncomplete
 public class MockRoot extends AbstractConfigProducerRoot {
 
-    private static final long serialVersionUID = 1L;
-
     private final HostSystem hostSystem;
-
     private final DeployState deployState;
-    private final FileReferencesRepository fileReferencesRepository;
-    private Admin admin;
 
-    public MockRoot() {
-        this("");
-    }
+    public MockRoot() { this(""); }
 
     public MockRoot(String rootConfigId) {
         this(rootConfigId, new MockApplicationPackage.Builder().build());
@@ -54,16 +38,11 @@ public class MockRoot extends AbstractConfigProducerRoot {
     public MockRoot(String rootConfigId, ApplicationPackage applicationPackage) {
         this(rootConfigId, new DeployState.Builder().applicationPackage(applicationPackage).build());
     }
-    public MockRoot(String rootConfigId, ApplicationPackage applicationPackage, HostProvisioner provisioner) {
-        this(rootConfigId, new DeployState.Builder().applicationPackage(applicationPackage)
-                                                    .modelHostProvisioner(provisioner).build());
-    }
 
     public MockRoot(String rootConfigId, DeployState deployState) {
         super(rootConfigId);
         hostSystem = new HostSystem(this, "hostsystem", deployState.getProvisioner(), deployState.getDeployLogger(), deployState.isHosted());
         this.deployState = deployState;
-        fileReferencesRepository = new FileReferencesRepository(deployState.getFileRegistry());
     }
 
     public FileDistributionConfigProducer getFileDistributionConfigProducer() {
@@ -89,7 +68,6 @@ public class MockRoot extends AbstractConfigProducerRoot {
         return builder;
     }
 
-    @SuppressWarnings("unchecked")
     public <T extends ConfigInstance> T getConfig(Class<T> configClass, String configId) {
         try {
             ConfigInstance.Builder builder = getConfig(getBuilder(configClass).getDeclaredConstructor().newInstance(), configId);
@@ -116,11 +94,9 @@ public class MockRoot extends AbstractConfigProducerRoot {
         return deployState;
     }
 
-    public FileReferencesRepository fileReferencesRepository() { return fileReferencesRepository; }
-
     public HostSystem hostSystem() { return hostSystem; }
 
-    public void addDescendant(String configId, AbstractConfigProducer<?> descendant) {
+    public void addDescendant(String configId, AnyConfigProducer descendant) {
         if (id2producer.containsKey(configId)) {
             throw new RuntimeException
                     ("Config ID '" + configId + "' cannot be reserved by an instance of class '" +
@@ -131,28 +107,12 @@ public class MockRoot extends AbstractConfigProducerRoot {
     }
 
     @Override
-    public void addChild(AbstractConfigProducer<?> abstractConfigProducer) {
+    public void addChild(AnyConfigProducer abstractConfigProducer) {
         super.addChild(abstractConfigProducer);
     }
 
-    public final void setAdmin(String xml) {
-        String servicesXml =
-                "<?xml version='1.0' encoding='utf-8' ?>" +
-                "<services>" + xml + "</services>";
-
-        Document doc = XmlHelper.getDocument(new StringReader(servicesXml));
-        setAdmin(new DomAdminV2Builder(ConfigModelContext.ApplicationType.DEFAULT, false, new ArrayList<>())
-                         .build(deployState, this, XML.getChildren(doc.getDocumentElement(), "admin").get(0)));
-    }
-
-    public final void setAdmin(Admin admin) {
-        this.admin = admin;
-    }
-
     @Override
-    public final Admin getAdmin() {
-        return admin;
-    }
+    public final Admin getAdmin() { return null; }
 
     public DeployLogger deployLogger() {
         return deployState.getDeployLogger();

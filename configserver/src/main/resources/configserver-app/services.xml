@@ -11,9 +11,7 @@
 
     <component id="com.yahoo.vespa.config.server.ConfigServerBootstrap" bundle="configserver" />
     <component id="com.yahoo.vespa.config.server.monitoring.Metrics" bundle="configserver" />
-    <component id="com.yahoo.vespa.zookeeper.ReconfigurableVespaZooKeeperServer" bundle="zookeeper-server" />
-    <component id="com.yahoo.vespa.zookeeper.Reconfigurer" bundle="zookeeper-server" />
-    <component id="com.yahoo.vespa.zookeeper.VespaZooKeeperAdminImpl" bundle="zookeeper-server" />
+    <component id="com.yahoo.vespa.zookeeper.ConfigServerZooKeeperServer" bundle="zookeeper-server" />
     <component id="com.yahoo.vespa.config.server.rpc.RpcServer" bundle="configserver" />
     <component id="com.yahoo.vespa.config.server.ConfigServerDB" bundle="configserver" />
     <component id="com.yahoo.vespa.config.server.filedistribution.FileDistributionFactory" bundle="configserver" />
@@ -26,7 +24,6 @@
     <component id="com.yahoo.vespa.config.server.deploy.InfraDeployerProvider" bundle="configserver" />
     <component id="com.yahoo.vespa.curator.Curator" bundle="configserver" />
     <component id="com.yahoo.vespa.config.server.tenant.TenantRepository" bundle="configserver" />
-    <component id="com.yahoo.vespa.config.server.application.PermanentApplicationPackage" bundle="configserver" />
     <component id="com.yahoo.vespa.config.server.host.HostRegistry" bundle="configserver" />
     <component id="com.yahoo.vespa.config.server.ApplicationRepository" bundle="configserver" />
     <component id="com.yahoo.vespa.config.server.version.VersionState" bundle="configserver" />

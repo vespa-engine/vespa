@@ -181,11 +181,11 @@ public abstract class NodeCandidate implements Nodelike, Comparable<NodeCandidat
             if ( ! lessThanHalfTheHost(this) && lessThanHalfTheHost(other)) return 1;
         }
 
-        // Prefer host with least skew
+        // Prefer host with the least skew
         int hostPriority = hostPriority(other);
         if (hostPriority != 0) return hostPriority;
 
-        // Prefer node with cheapest flavor
+        // Prefer node with the cheapest flavor
         if (this.flavor().cost() < other.flavor().cost()) return -1;
         if (other.flavor().cost() < this.flavor().cost()) return 1;
 
@@ -199,7 +199,7 @@ public abstract class NodeCandidate implements Nodelike, Comparable<NodeCandidat
             return Integer.compare(this.allocation().get().membership().index(),
                                    other.allocation().get().membership().index());
 
-        // Prefer host with latest OS version
+        // Prefer host with the latest OS version
         Version thisHostOsVersion = this.parent.flatMap(host -> host.status().osVersion().current()).orElse(Version.emptyVersion);
         Version otherHostOsVersion = other.parent.flatMap(host -> host.status().osVersion().current()).orElse(Version.emptyVersion);
         if (thisHostOsVersion.isAfter(otherHostOsVersion)) return -1;
@@ -267,8 +267,9 @@ public abstract class NodeCandidate implements Nodelike, Comparable<NodeCandidat
                                                Node parent,
                                                boolean violatesSpares,
                                                LockedNodeList allNodes,
-                                               NameResolver nameResolver) {
-        return new VirtualNodeCandidate(resources, freeParentCapacity, parent, violatesSpares, true, allNodes, nameResolver);
+                                               NameResolver nameResolver,
+                                               boolean hasPtrRecord) {
+        return new VirtualNodeCandidate(resources, freeParentCapacity, parent, violatesSpares, true, allNodes, nameResolver, hasPtrRecord);
     }
 
     public static NodeCandidate createNewExclusiveChild(Node node, Node parent) {
@@ -366,6 +367,7 @@ public abstract class NodeCandidate implements Nodelike, Comparable<NodeCandidat
         /** Needed to construct the node */
         private final LockedNodeList allNodes;
         private final NameResolver nameResolver;
+        private final boolean hasPtrRecord;
 
         private VirtualNodeCandidate(NodeResources resources,
                                      NodeResources freeParentCapacity,
@@ -373,11 +375,13 @@ public abstract class NodeCandidate implements Nodelike, Comparable<NodeCandidat
                                      boolean violatesSpares,
                                      boolean exclusiveSwitch,
                                      LockedNodeList allNodes,
-                                     NameResolver nameResolver) {
+                                     NameResolver nameResolver,
+                                     boolean hasPtrRecord) {
             super(freeParentCapacity, Optional.of(parent), violatesSpares, exclusiveSwitch, false, true, false);
             this.resources = resources;
             this.allNodes = allNodes;
             this.nameResolver = nameResolver;
+            this.hasPtrRecord = hasPtrRecord;
         }
 
         @Override
@@ -416,7 +420,7 @@ public abstract class NodeCandidate implements Nodelike, Comparable<NodeCandidat
         public NodeCandidate withNode() {
             Optional<IP.Allocation> allocation;
             try {
-                allocation = parent.get().ipConfig().pool().findAllocation(allNodes, nameResolver);
+                allocation = parent.get().ipConfig().pool().findAllocation(allNodes, nameResolver, hasPtrRecord);
                 if (allocation.isEmpty()) return new InvalidNodeCandidate(resources, freeParentCapacity, parent.get(),
                                                                           "No addresses available on parent host");
             } catch (Exception e) {
@@ -440,7 +444,7 @@ public abstract class NodeCandidate implements Nodelike, Comparable<NodeCandidat
 
         @Override
         public NodeCandidate withExclusiveSwitch(boolean exclusiveSwitch) {
-            return new VirtualNodeCandidate(resources, freeParentCapacity, parent.get(), violatesSpares, exclusiveSwitch, allNodes, nameResolver);
+            return new VirtualNodeCandidate(resources, freeParentCapacity, parent.get(), violatesSpares, exclusiveSwitch, allNodes, nameResolver, hasPtrRecord);
         }
 
         @Override

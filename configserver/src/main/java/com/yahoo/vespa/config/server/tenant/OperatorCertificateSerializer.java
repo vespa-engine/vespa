@@ -32,6 +32,6 @@ public class OperatorCertificateSerializer {
         return SlimeUtils.entriesStream(object.field(certificateField))
                 .map(Inspector::asString)
                 .map(X509CertificateUtils::fromPem)
-                .collect(Collectors.toList());
+                .toList();
     }
 }

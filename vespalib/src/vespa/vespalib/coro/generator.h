@@ -24,51 +24,54 @@ namespace vespalib::coro {
  * make it easier for compilers to perform HALO, code inlining and
  * even constant folding.
  **/
-template <typename T, typename ValueType = std::remove_cvref<T>>
+template <typename R, typename V = void>
 class [[nodiscard]] Generator {
 public:
-    using value_type = ValueType;
-    using Pointer = std::add_pointer_t<T>;
+    // these are from the std::generator proposal (P2502R2)
+    using value_type = std::conditional_t<std::is_void_v<V>, std::remove_cvref_t<R>, V>;
+    using ref_type   = std::conditional_t<std::is_void_v<V>, R &&, R>;
+    using yield_type = std::conditional_t<std::is_reference_v<ref_type>, ref_type, const ref_type &>;
+    using cref_yield = const std::remove_reference_t<yield_type> &;
+    using ptr_type   = std::add_pointer_t<yield_type>;
+    using cpy_type   = std::remove_cvref_t<yield_type>;
+    static constexpr bool extra_yield = std::is_rvalue_reference_v<yield_type> && std::constructible_from<cpy_type, cref_yield>;
 
     class promise_type;
     using Handle = std::coroutine_handle<promise_type>;
 
     class promise_type {
     private:
-        Pointer _ptr;
+        ptr_type _state;
+
+        struct copy_awaiter : std::suspend_always {
+            copy_awaiter(const cpy_type &value, ptr_type &ptr)
+              : value_cpy(value)
+            {
+                ptr = std::addressof(value_cpy);
+            }
+            copy_awaiter(copy_awaiter&&) = delete;
+            copy_awaiter(const copy_awaiter&) = delete;
+            cpy_type value_cpy;
+        };
 
     public:
         promise_type(promise_type &&) = delete;
         promise_type(const promise_type &) = delete;
-        promise_type() noexcept : _ptr(nullptr) {}
-        Generator<T> get_return_object() { return Generator(Handle::from_promise(*this)); }
+        promise_type() noexcept : _state() {}
+        Generator get_return_object() { return Generator(Handle::from_promise(*this)); }
         std::suspend_always initial_suspend() noexcept { return {}; }
         std::suspend_always final_suspend() noexcept { return {}; }
-        std::suspend_always yield_value(T &&value) noexcept {
-            _ptr = &value;
+        std::suspend_always yield_value(yield_type value) noexcept {
+            _state = std::addressof(value);
             return {};
         }
-        auto yield_value(const T &value)
-            noexcept(std::is_nothrow_constructible_v<T, const T &>)
-            requires(!std::is_reference_v<T> && std::copy_constructible<T>)
-        {
-            struct awaiter : std::suspend_always {
-                awaiter(const T &value_in, Pointer &ptr)
-                  noexcept(std::is_nothrow_constructible_v<T, const T &>)
-                  : value_cpy(value_in)
-                {
-                    ptr = std::addressof(value_cpy);
-                }
-                awaiter(awaiter&&) = delete;
-                awaiter(const awaiter&) = delete;
-                T value_cpy;
-            };
-            return awaiter(value, _ptr);
+        auto yield_value(cref_yield value) requires extra_yield {
+            return copy_awaiter(value, _state);
         }
         void return_void() noexcept {}
         void unhandled_exception() { throw; }
-        T &&result() noexcept {
-            return std::forward<T>(*_ptr);
+        ref_type result() noexcept {
+            return static_cast<ref_type>(*_state);
         }
         template<typename U> U &&await_transform(U &&value) = delete;
     };
@@ -87,7 +90,7 @@ public:
         }
         using iterator_concept = std::input_iterator_tag;
         using difference_type = std::ptrdiff_t;
-        using value_type = std::remove_cvref_t<T>;
+        using value_type = Generator::value_type;
         bool operator==(std::default_sentinel_t) const {
             return _handle.done();
         }
@@ -98,14 +101,14 @@ public:
         void operator++(int) {
             operator++();
         }
-        decltype(auto) operator*() const {
-            return std::forward<T>(_handle.promise().result());
+        ref_type operator*() const {
+            return _handle.promise().result();
         }
     };
-    
+
 private:
     Handle _handle;
-    
+
 public:
     Generator(const Generator &) = delete;
     Generator &operator=(const Generator &) = delete;

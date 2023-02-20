@@ -5,7 +5,6 @@ import com.yahoo.component.annotation.Inject;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.container.jdisc.ContainerMbusConfig;
 import com.yahoo.document.DocumentTypeManager;
-import com.yahoo.document.DocumentUtil;
 import com.yahoo.documentapi.messagebus.protocol.DocumentProtocol;
 import com.yahoo.documentapi.messagebus.protocol.DocumentProtocolPoliciesConfig;
 import com.yahoo.jdisc.ReferencedResource;
@@ -109,31 +108,11 @@ public final class SessionCache extends AbstractComponent {
                                                            Protocol protocol) {
         MessageBusParams mbusParams = new MessageBusParams().addProtocol(protocol);
 
-        int maxPendingSize = DocumentUtil
-                .calculateMaxPendingSize(mbusConfig.maxConcurrentFactor(), mbusConfig.documentExpansionFactor(),
-                        mbusConfig.containerCoreMemory());
-        logSystemInfo(mbusConfig, maxPendingSize);
-
         mbusParams.setMaxPendingCount(mbusConfig.maxpendingcount());
-        mbusParams.setMaxPendingSize(maxPendingSize);
 
         MessageBus bus = new MessageBus(net, mbusParams);
         new ConfigAgent(messagebusConfig, bus); // Configure the wrapped MessageBus with a routing table.
         return new SharedMessageBus(bus);
-    }
-
-    private static void logSystemInfo(ContainerMbusConfig containerMbusConfig, long maxPendingSize) {
-        log.log(Level.FINE,
-                "Running with maximum heap size of " + (Runtime.getRuntime().maxMemory() / 1024L / 1024L) + " MB");
-        log.log(Level.CONFIG,
-                "Amount of memory reserved for container core: " + containerMbusConfig.containerCoreMemory() + " MB.");
-        log.log(Level.CONFIG,
-                "Running with document expansion factor " + containerMbusConfig.documentExpansionFactor() + "");
-
-        String msgLimit =
-                (containerMbusConfig.maxpendingcount() == 0) ? "unlimited" : "" + containerMbusConfig.maxpendingcount();
-        log.log(Level.CONFIG, ("Starting message bus with max " + msgLimit + " pending messages and max " +
-                (((double) (maxPendingSize / 1024L)) / 1024.0d) + " pending megabytes."));
     }
 
     ReferencedResource<SharedIntermediateSession> retainIntermediate(final IntermediateSessionParams p) {

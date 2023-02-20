@@ -4,6 +4,7 @@
 #include "statistics.h"
 #include "tls_crypto_socket.h"
 #include "protocol_snooping.h"
+#include "crypto_codec_adapter.h"
 #include <vespa/vespalib/data/smart_buffer.h>
 #include <vespa/vespalib/net/connection_auth_context.h>
 #include <vespa/vespalib/util/size_literals.h>
@@ -52,7 +53,8 @@ public:
             }
             if (looksLikeTlsToMe(src.data)) {
                 CryptoSocket::UP &self = _self; // need copy due to self destruction
-                auto tls_socket = _factory->create_tls_server_crypto_socket(std::move(_socket));
+                auto tls_codec = _factory->create_tls_server_crypto_codec(_socket);
+                auto tls_socket = std::make_unique<net::tls::CryptoCodecAdapter>(std::move(_socket), std::move(tls_codec));
                 tls_socket->inject_read_data(src.data, src.size);
                 self = std::move(tls_socket);
                 return self->handshake();

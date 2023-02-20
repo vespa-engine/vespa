@@ -6,6 +6,7 @@
 #include <vespa/storageapi/messageapi/storagereply.h>
 #include <vespa/storageapi/message/bucket.h>
 #include <vespa/storageframework/generic/clock/timer.h>
+#include <vespa/storageframework/generic/clock/time.h>
 
 #include <vector>
 #include <deque>

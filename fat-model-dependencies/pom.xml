@@ -32,6 +32,14 @@
           <groupId>javax.xml.bind</groupId>
           <artifactId>jaxb-api</artifactId>
         </exclusion>
+        <exclusion>
+          <groupId>com.fasterxml.jackson.datatype</groupId>
+          <artifactId>*</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>com.fasterxml.jackson.core</groupId>
+          <artifactId>*</artifactId>
+        </exclusion>
       </exclusions>
     </dependency>
     <dependency>
@@ -43,6 +51,12 @@
       <groupId>com.yahoo.vespa</groupId>
       <artifactId>config-application-package</artifactId>
       <version>${project.version}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>com.fasterxml.jackson.core</groupId>
+          <artifactId>*</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>com.yahoo.vespa</groupId>
@@ -62,6 +76,10 @@
           <groupId>com.yahoo.vespa</groupId>
           <artifactId>config-lib</artifactId>
         </exclusion>
+        <exclusion>
+          <groupId>com.fasterxml.jackson.core</groupId>
+          <artifactId>*</artifactId>
+        </exclusion>
       </exclusions>
     </dependency>
     <dependency>
@@ -75,9 +93,8 @@
       <version>${project.version}</version>
       <exclusions>
         <exclusion>
-          <!-- OPTIMIZATION: very large (60 MB) and not needed for config generation -->
-          <groupId>com.microsoft.onnxruntime</groupId>
-          <artifactId>onnxruntime</artifactId>
+          <groupId>ai.djl.huggingface</groupId>
+          <artifactId>tokenizers</artifactId>
         </exclusion>
       </exclusions>
     </dependency>
@@ -141,6 +158,30 @@
           <groupId>com.yahoo.vespa</groupId>
           <artifactId>opennlp-linguistics</artifactId>
         </exclusion>
+        <exclusion>
+          <groupId>org.eclipse.jetty</groupId>
+          <artifactId>*</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.eclipse.jetty.alpn</groupId>
+          <artifactId>*</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.eclipse.jetty.http2</groupId>
+          <artifactId>*</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.eclipse.jetty.toolchain</groupId>
+          <artifactId>*</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.bouncycastle</groupId>
+          <artifactId>*</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>com.fasterxml.jackson.core</groupId>
+          <artifactId>*</artifactId>
+        </exclusion>
       </exclusions>
     </dependency>
     <dependency>
@@ -182,6 +223,10 @@
           <!-- OPTIMIZATION: large (4 MB) and only used for query dispatch TDistribution-->
           <groupId>org.apache.commons</groupId>
           <artifactId>commons-math3</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>com.fasterxml.jackson.core</groupId>
+          <artifactId>*</artifactId>
         </exclusion>
       </exclusions>
     </dependency>

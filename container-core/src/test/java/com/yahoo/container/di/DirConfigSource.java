@@ -13,6 +13,8 @@ import java.nio.file.Files;
 import java.util.HashSet;
 import java.util.Set;
 
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 /**
  * @author Tony Vaagenes
  * @author gjoranv
@@ -49,7 +51,7 @@ class DirConfigSource {
     synchronized void awaitConfigChecked(long millis) throws InterruptedException {
          long remaining, doom = System.currentTimeMillis() + millis;
          while ( ! doubleChecked && (remaining = doom - System.currentTimeMillis()) > 0) wait(remaining);
-        Assertions.assertTrue(doubleChecked, "no config was checked more than once during " + millis + " millis");
+        assertTrue(doubleChecked, "some config should be checked more than once during " + millis + " millis; checked ones: " + checked);
     }
 
     ConfigSource configSource() {

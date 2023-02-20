@@ -33,8 +33,8 @@ class DocumentRouteSelectorPolicy : public mbus::IRoutingPolicy,
                                     public config::IFetcherCallback<messagebus::protocol::DocumentrouteselectorpolicyConfig>
 {
 private:
-    typedef std::shared_ptr<document::select::Node> SelectorPtr;
-    typedef std::map<string, SelectorPtr> ConfigMap;
+    using SelectorPtr = std::shared_ptr<document::select::Node>;
+    using ConfigMap = std::map<string, SelectorPtr>;
 
     const document::DocumentTypeRepo      &_repo;
     mutable std::mutex                     _lock;

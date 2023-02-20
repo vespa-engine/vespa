@@ -6,11 +6,6 @@
 
 namespace vespalib::slime {
 
-extern std::string strfmt(const char *fmt, ...)
-#ifdef __GNUC__
-        __attribute__ ((format (printf,1,2))) // Add printf format checks with gcc
-        __attribute__((nonnull(1))) // Format string can never be null
-#endif
-    ;
+extern std::string strfmt(const char *fmt, ...) __attribute__((format (printf,1,2), nonnull(1)));
 
 } // namespace vespalib::slime

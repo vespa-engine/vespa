@@ -811,7 +811,7 @@ WriteableFileChunk::readIdxHeader(FastOS_FileInterface & idxFile)
 void
 WriteableFileChunk::writeDataHeader(const FileHeaderContext &fileHeaderContext)
 {
-    typedef FileHeader::Tag Tag;
+    using Tag = FileHeader::Tag;
     FileHeader h(FileSettings::DIRECTIO_ALIGNMENT);
     assert(_dataFile.IsOpened());
     assert(_dataFile.IsWriteMode());
@@ -825,7 +825,7 @@ WriteableFileChunk::writeDataHeader(const FileHeaderContext &fileHeaderContext)
 uint64_t
 WriteableFileChunk::writeIdxHeader(const FileHeaderContext &fileHeaderContext, uint32_t docIdLimit, FastOS_FileInterface &file)
 {
-    typedef FileHeader::Tag Tag;
+    using Tag = FileHeader::Tag;
     FileHeader h;
     assert(file.IsOpened());
     assert(file.IsWriteMode());

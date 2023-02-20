@@ -65,7 +65,7 @@ public class GenericJsonUtil {
             var genericMetricsList = packets.stream()
                     .filter(packet -> ! (packet.metrics().isEmpty() && packet.dimensions().isEmpty()))
                     .map(packet -> new GenericMetrics(packet.metrics(), packet.dimensions()))
-                    .collect(toList());
+                    .toList();
             var genericService = packets.stream().findFirst()
                     .map(firstPacket -> new GenericService(serviceId.id,
                                                            firstPacket.timestamp,

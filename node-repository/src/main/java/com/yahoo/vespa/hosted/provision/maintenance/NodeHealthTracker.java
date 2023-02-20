@@ -96,7 +96,8 @@ public class NodeHealthTracker extends NodeRepositoryMaintainer {
 
     /** Get node by given hostname and application. The applicationLock must be held when calling this */
     private Optional<Node> getNode(String hostname, ApplicationId application, @SuppressWarnings("unused") Mutex applicationLock) {
-        return nodeRepository().nodes().node(hostname, Node.State.active)
+        return nodeRepository().nodes().node(hostname)
+                               .filter(node -> node.state() == Node.State.active)
                                .filter(node -> node.allocation().isPresent())
                                .filter(node -> node.allocation().get().owner().equals(application));
     }

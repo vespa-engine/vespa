@@ -37,11 +37,11 @@ using search::fef::TermFieldMatchData;
 using search::queryeval::SearchIterator;
 
 using SearchContextPtr = std::unique_ptr<SearchContext>;
-typedef std::unique_ptr<search::queryeval::SearchIterator> SearchBasePtr;
+using SearchBasePtr = std::unique_ptr<search::queryeval::SearchIterator>;
 
 struct BitVectorTest
 {
-    typedef AttributeVector::SP AttributePtr;
+    using AttributePtr = AttributeVector::SP;
 
     BitVectorTest() { }
 
@@ -477,8 +477,8 @@ BitVectorTest::test(BasicType bt,
     if (dwa != nullptr) {
         search::IDocumentWeightAttribute::LookupResult lres = 
             dwa->lookup(getSearchStr<VectorType>(), dwa->get_dictionary_snapshot());
-        typedef search::queryeval::DocumentWeightSearchIterator DWSI;
-        typedef search::queryeval::SearchIterator SI;
+        using DWSI = search::queryeval::DocumentWeightSearchIterator;
+        using SI = search::queryeval::SearchIterator;
         TermFieldMatchData md;
         SI::UP dwsi(new DWSI(md, *dwa, lres));
         if (!enableOnlyBitVector) {

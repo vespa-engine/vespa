@@ -7,6 +7,8 @@
 #include <vespa/searchlib/queryeval/blueprint.h>
 #include <vespa/searchlib/queryeval/same_element_blueprint.h>
 
+namespace search::queryeval { class FieldSpec; }
+
 namespace proton::matching {
 
 class SameElementBuilder
@@ -17,7 +19,7 @@ private:
     std::unique_ptr<search::queryeval::SameElementBlueprint> _result;
 public:
     SameElementBuilder(const search::queryeval::IRequestContext &requestContext, ISearchContext &context,
-                       const vespalib::string &struct_field_name, bool expensive);
+                       const search::queryeval::FieldSpec &field, bool expensive);
     void add_child(search::query::Node &node);
     search::queryeval::Blueprint::UP build();
 };

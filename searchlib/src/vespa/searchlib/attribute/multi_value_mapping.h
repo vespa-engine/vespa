@@ -54,14 +54,21 @@ public:
 
     void doneLoadFromMultiValue() { _store.setInitializing(false); }
 
-    void compactWorst(CompactionSpec compactionSpec, const CompactionStrategy& compaction_strategy) override;
-private:
-    virtual bool has_held_buffers() const noexcept override;
-
-public:
     vespalib::AddressSpace getAddressSpaceUsage() const override;
     vespalib::MemoryUsage getArrayStoreMemoryUsage() const override;
+    vespalib::MemoryUsage update_stat(const CompactionStrategy& compaction_strategy);
+    bool consider_compact(const CompactionStrategy &compactionStrategy) {
+        if (_store.consider_compact()) {
+            compact_worst(compactionStrategy);
+            return true;
+        }
+        return false;
+    }
+    void compact_worst(const CompactionStrategy& compaction_strategy);
     bool has_free_lists_enabled() const { return _store.has_free_lists_enabled(); }
+    // Set compaction spec. Only used by unit tests.
+    void set_compaction_spec(vespalib::datastore::CompactionSpec compaction_spec) noexcept { _store.set_compaction_spec(compaction_spec); }
+
 
     static vespalib::datastore::ArrayStoreConfig optimizedConfigForHugePage(size_t maxSmallArraySize,
                                                                   size_t hugePageSize,

@@ -2,9 +2,9 @@
 package com.yahoo.vespa.model.container.http;
 
 import com.yahoo.component.provider.ComponentRegistry;
-import com.yahoo.config.model.producer.AbstractConfigProducer;
+import com.yahoo.config.model.producer.AnyConfigProducer;
+import com.yahoo.config.model.producer.TreeConfigProducer;
 import com.yahoo.jdisc.http.ServerConfig;
-import com.yahoo.vespa.model.container.component.chain.Chain;
 import com.yahoo.vespa.model.container.component.chain.ChainedComponent;
 
 import java.util.Collection;
@@ -18,7 +18,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
  * @author Tony Vaagenes
  * @author bjorncs
  */
-public class Http extends AbstractConfigProducer<AbstractConfigProducer<?>> implements ServerConfig.Producer {
+public class Http extends TreeConfigProducer<AnyConfigProducer> implements ServerConfig.Producer {
 
     private final FilterChains filterChains;
     private final List<FilterBinding> bindings = new CopyOnWriteArrayList<>();
@@ -99,7 +99,7 @@ public class Http extends AbstractConfigProducer<AbstractConfigProducer<?>> impl
             throw new IllegalArgumentException("Null FilterChains are not allowed when there are filter bindings");
 
         ComponentRegistry<ChainedComponent<?>> filters = filterChains.componentsRegistry();
-        ComponentRegistry<Chain<Filter>> chains = filterChains.allChains();
+        var chains = filterChains.allChains();
 
         for (FilterBinding binding: bindings) {
             if (filters.getComponent(binding.chainId()) == null && chains.getComponent(binding.chainId()) == null)

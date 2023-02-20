@@ -66,6 +66,7 @@ public class Node {
     private final boolean down;
     private final Optional<TenantName> reservedTo;
     private final Optional<ApplicationId> exclusiveTo;
+    private final Optional<ClusterType> exclusiveToClusterType;
     private final Map<String, String> reports;
     private final List<Event> history;
     private final Set<String> ipAddresses;
@@ -83,7 +84,7 @@ public class Node {
                  long wantedRebootGeneration, int cost, int failCount, Optional<String> flavor, String clusterId,
                  ClusterType clusterType, String group, int index, boolean retired, boolean wantToRetire, boolean wantToDeprovision,
                  boolean wantToRebuild, boolean down, Optional<TenantName> reservedTo, Optional<ApplicationId> exclusiveTo,
-                 DockerImage wantedDockerImage, DockerImage currentDockerImage, Map<String, String> reports,
+                 DockerImage wantedDockerImage, DockerImage currentDockerImage, Optional<ClusterType> exclusiveToClusterType, Map<String, String> reports,
                  List<Event> history, Set<String> ipAddresses, Set<String> additionalIpAddresses,
                  Set<String> additionalHostnames, Optional<String> switchHostname,
                  Optional<String> modelName, Environment environment) {
@@ -118,6 +119,7 @@ public class Node {
         this.wantToRetire = wantToRetire;
         this.wantToDeprovision = wantToDeprovision;
         this.reservedTo = Objects.requireNonNull(reservedTo, "reservedTo must be non-null");
+        this.exclusiveToClusterType = Objects.requireNonNull(exclusiveToClusterType, "exclusiveToClusterType");
         this.exclusiveTo = Objects.requireNonNull(exclusiveTo, "exclusiveTo must be non-null");
         this.wantedDockerImage = Objects.requireNonNull(wantedDockerImage, "wantedDockerImage must be non-null");
         this.currentDockerImage = Objects.requireNonNull(currentDockerImage, "currentDockerImage must be non-null");
@@ -300,6 +302,9 @@ public class Node {
 
     /** The application this has been provisioned exclusively for, if any */
     public Optional<ApplicationId> exclusiveTo() { return exclusiveTo; }
+
+    /** The cluster type this has been provisioned exclusively for, if any */
+    public Optional<ClusterType> exclusiveToClusterType() { return exclusiveToClusterType; }
 
     /** Returns the reports of this node. Key is the report ID. Value is untyped, but is typically a JSON string */
     public Map<String, String> reports() {
@@ -487,6 +492,7 @@ public class Node {
         private boolean down = false;
         private Optional<TenantName> reservedTo = Optional.empty();
         private Optional<ApplicationId> exclusiveTo = Optional.empty();
+        private Optional<ClusterType> exclusiveToClusterType = Optional.empty();
         private Map<String, String> reports = Map.of();
         private List<Event> history = List.of();
         private Set<String> ipAddresses = Set.of();
@@ -535,6 +541,7 @@ public class Node {
             this.down = node.down;
             this.reservedTo = node.reservedTo;
             this.exclusiveTo = node.exclusiveTo;
+            this.exclusiveToClusterType = node.exclusiveToClusterType;
             this.reports = node.reports;
             this.history = node.history;
             this.ipAddresses = node.ipAddresses;
@@ -733,6 +740,11 @@ public class Node {
             return this;
         }
 
+        public Builder exclusiveToClusterType(ClusterType exclusiveToClusterType) {
+            this.exclusiveToClusterType = Optional.of(exclusiveToClusterType);
+            return this;
+        }
+
         public Builder history(List<Event> history) {
             this.history = history;
             return this;
@@ -779,7 +791,7 @@ public class Node {
                             suspendedSince, restartGeneration, wantedRestartGeneration, rebootGeneration,
                             wantedRebootGeneration, cost, failCount, flavor, clusterId, clusterType, group, index, retired,
                             wantToRetire, wantToDeprovision, wantToRebuild, down, reservedTo, exclusiveTo, wantedDockerImage,
-                            currentDockerImage, reports, history, ipAddresses, additionalIpAddresses,
+                            currentDockerImage, exclusiveToClusterType, reports, history, ipAddresses, additionalIpAddresses,
                             additionalHostnames, switchHostname, modelName, environment);
         }
 

@@ -22,8 +22,8 @@ public:
 
     void onStart(DistributorStripeMessageSender& sender) override;
     void onReceive(DistributorStripeMessageSender& sender, const std::shared_ptr<api::StorageReply> &) override;
-    const char* getName() const override { return "garbagecollection"; };
-    Type getType() const override { return GARBAGE_COLLECTION; }
+    const char* getName() const noexcept override { return "garbagecollection"; };
+    Type getType() const noexcept override { return GARBAGE_COLLECTION; }
     bool shouldBlockThisOperation(uint32_t, uint16_t, uint8_t) const override;
     bool is_two_phase() const noexcept {
         return ((_phase == Phase::ReadMetadataPhase) || (_phase == Phase::WriteRemovesPhase));

@@ -52,10 +52,10 @@ public class BadgeApiHandler extends ThreadedHttpRequestHandler {
     public HttpResponse handle(HttpRequest request) {
         Method method = request.getMethod();
         try {
-            switch (method) {
-                case GET: return get(request);
-                default: return ErrorResponse.methodNotAllowed("Method '" + method + "' is unsupported");
-            }
+            return switch (method) {
+                case GET -> get(request);
+                default -> ErrorResponse.methodNotAllowed("Method '" + method + "' is unsupported");
+            };
         } catch (IllegalArgumentException|IllegalStateException e) {
             return ErrorResponse.badRequest(Exceptions.toMessageString(e));
         } catch (RuntimeException e) {

@@ -828,13 +828,12 @@ struct AirPort {
 };
 
 std::pair<int32_t, int32_t> toXY(const AirPort &p) {
-    return std::make_pair((int)(p.lng * 1.0e6),
-                          (int)(p.lat * 1.0e6));
+    return std::make_pair(int(p.lng * 1.0e6), int(p.lat * 1.0e6));
 }
 
 GeoLocation toGL(const AirPort &p) {
-    int32_t x = (int)(p.lng * 1.0e6);
-    int32_t y = (int)(p.lat * 1.0e6);
+    auto x = int(p.lng * 1.0e6);
+    auto y = int(p.lat * 1.0e6);
     GeoLocation::Point gp{x, y};
     return GeoLocation{gp};
 }
@@ -1054,6 +1053,8 @@ Test::testDistanceToPath()
         pos.emplace_back(0, 0);
 
         // invalid path
+        assertDistanceToPath(pos, "");
+        assertDistanceToPath(pos, "()");
         assertDistanceToPath(pos, "a");
         assertDistanceToPath(pos, "(");
         assertDistanceToPath(pos, "(a");
@@ -1717,6 +1718,17 @@ Test::testMatches()
         EXPECT_TRUE(ft.execute(RankResult().addScore("matches(foo,2)", 0)));
         EXPECT_TRUE(ft.execute(RankResult().addScore("matches(foo,3)", 0)));
     }
+    { // Test executor for virtual fields
+        FtFeatureTest ft(_factory, StringList().add("matches(foo)"));
+        ft.getIndexEnv().getBuilder().addField(FieldType::VIRTUAL, CollectionType::ARRAY, "foo");
+        ASSERT_TRUE(ft.getQueryEnv().getBuilder().add_virtual_node("foo") != nullptr); // query term 0 hits in foo
+        ASSERT_TRUE(ft.setup());
+
+        auto mdb = ft.createMatchDataBuilder();
+        mdb->setWeight("foo", 0, 100);
+        mdb->apply(1);
+        EXPECT_TRUE(ft.execute(RankResult().addScore("matches(foo)", 1)));
+    }
 }
 
 bool
@@ -2037,7 +2049,7 @@ Test::testRankingExpression()
 vespalib::string
 Test::getExpression(const vespalib::string &parameter) const
 {
-    typedef search::fef::FeatureNameBuilder FNB;
+    using FNB = search::fef::FeatureNameBuilder;
     return FNB().baseName("rankingExpression").parameter(parameter).buildName();
 }
 
@@ -2148,7 +2160,7 @@ Test::testTermDistance()
     }
 
     { // test executor
-        typedef TermDistanceCalculator::Result Result;
+        using Result = TermDistanceCalculator::Result;
         const uint32_t UV = TermDistanceCalculator::UNDEFINED_VALUE;
 
         EXPECT_TRUE(assertTermDistance(Result(), "a b", "x x"));

@@ -41,7 +41,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.OptionalInt;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import static com.yahoo.config.model.api.ApplicationClusterEndpoint.RoutingMethod.exclusive;
 import static com.yahoo.config.model.api.ApplicationClusterEndpoint.RoutingMethod.shared;
@@ -337,7 +336,7 @@ public class ContainerClusterTest {
         cluster.getConfig(configBuilder);
         CuratorConfig config = configBuilder.build();
         assertEquals(List.of("host-c1", "host-c2"),
-                config.server().stream().map(CuratorConfig.Server::hostname).collect(Collectors.toList()));
+                config.server().stream().map(CuratorConfig.Server::hostname).toList());
         assertTrue(config.zookeeperLocalhostAffinity());
         assertEquals(30, config.zookeeperSessionTimeoutSeconds());
     }
@@ -360,7 +359,7 @@ public class ContainerClusterTest {
         cluster.getConfig(configBuilder);
         assertEquals(0, configBuilder.build().myid());
         assertEquals(List.of("host-c1", "host-c2", "host-c3"),
-                configBuilder.build().server().stream().map(ZookeeperServerConfig.Server::hostname).collect(Collectors.toList()));
+                configBuilder.build().server().stream().map(ZookeeperServerConfig.Server::hostname).toList());
 
     }
 
@@ -440,11 +439,11 @@ public class ContainerClusterTest {
         cluster.doPrepare(state);
         List<ApplicationClusterEndpoint> endpoints = cluster.endpoints();
 
-        assertNames(List.of(), endpoints.stream().filter(e -> e.routingMethod() == shared).collect(Collectors.toList()));
-        assertNames(expectedSharedL4Names, endpoints.stream().filter(e -> e.routingMethod() == sharedLayer4).collect(Collectors.toList()));
+        assertNames(List.of(), endpoints.stream().filter(e -> e.routingMethod() == shared).toList());
+        assertNames(expectedSharedL4Names, endpoints.stream().filter(e -> e.routingMethod() == sharedLayer4).toList());
 
         List<ContainerEndpoint> endpointsWithWeight =
-                globalEndpoints.stream().filter(endpoint -> endpoint.weight().isPresent()).collect(Collectors.toList());
+                globalEndpoints.stream().filter(endpoint -> endpoint.weight().isPresent()).toList();
         endpointsWithWeight.stream()
                 .filter(ce -> ce.weight().isPresent())
                 .forEach(ce -> assertTrue(endpointsMatch(ce, endpoints)));
@@ -474,7 +473,7 @@ public class ContainerClusterTest {
         cluster.getConfig(bundleBuilder);
         List<String> installedBundles = bundleBuilder.build().bundlePaths();
 
-        expectedBundleNames.forEach(b -> assertTrue(installedBundles.stream().filter(p -> p.endsWith(b)).count() > 0));
+        expectedBundleNames.forEach(b -> assertTrue(installedBundles.stream().anyMatch(p -> p.endsWith(b))));
     }
 
     private static ApplicationContainerCluster newClusterWithSearch(MockRoot root) {
@@ -486,7 +485,7 @@ public class ContainerClusterTest {
         if (isCombinedCluster)
             cluster.setHostClusterId("test-content-cluster");
         cluster.setMemoryPercentage(memoryPercentage);
-        cluster.setSearch(new ContainerSearch(cluster, new SearchChains(cluster, "search-chain"), new ContainerSearch.Options()));
+        cluster.setSearch(new ContainerSearch(cluster, new SearchChains(cluster, "search-chain")));
         return cluster;
     }
 

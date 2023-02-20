@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.tensor.functions;
 
-import com.google.common.collect.ImmutableList;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.tensor.evaluation.Name;
 
@@ -23,7 +22,7 @@ public class Softmax<NAMETYPE extends Name> extends CompositeTensorFunction<NAME
     }
 
     public static TensorType outputType(TensorType inputType, String dimension) {
-        return Reduce.outputType(inputType, ImmutableList.of(dimension));
+        return Reduce.outputType(inputType, List.of(dimension));
     }
 
     @Override

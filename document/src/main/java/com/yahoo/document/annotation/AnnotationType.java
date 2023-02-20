@@ -1,12 +1,11 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.document.annotation;
 
-import com.google.common.collect.ImmutableList;
 import com.yahoo.collections.MD5;
 import com.yahoo.document.DataType;
 
 import java.util.Collection;
-import java.util.Collections;
+import java.util.List;
 
 /**
  * An AnnotationType describes a certain type of annotations; they are
@@ -124,9 +123,9 @@ public class AnnotationType implements Comparable<AnnotationType> {
 
     public Collection<AnnotationType> getInheritedTypes() {
         if (superType == null) {
-            return ImmutableList.of();
+            return List.of();
         }
-        return ImmutableList.of(superType);
+        return List.of(superType);
     }
 
     public boolean inherits(AnnotationType type) {
@@ -138,9 +137,7 @@ public class AnnotationType implements Comparable<AnnotationType> {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof AnnotationType)) return false;
-
-        AnnotationType that = (AnnotationType) o;
+        if (!(o instanceof AnnotationType that)) return false;
 
         return name.equals(that.name);
     }

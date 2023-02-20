@@ -20,39 +20,38 @@ namespace vespalib {
 class stringref
 {
 public:
-    typedef const char * const_iterator;
-    typedef size_t size_type;
-    static const size_type npos = static_cast<size_type>(-1);
-    stringref() : _s(""), _sz(0) { }
+    using const_iterator = const char *;
+    using size_type = size_t;
+    static constexpr size_type npos = static_cast<size_type>(-1);
+    constexpr stringref() noexcept : _s(""), _sz(0) { }
     stringref(const char * s) noexcept : _s(s), _sz(strlen(s)) { }
-    stringref(const char * s, size_type sz) noexcept : _s(s), _sz(sz) { }
-    stringref(const std::string & s) noexcept : _s(s.c_str()), _sz(s.size()) { }
+    constexpr stringref(const char * s, size_type sz) noexcept : _s(s), _sz(sz) { }
+    constexpr stringref(const std::string & s) noexcept : _s(s.c_str()), _sz(s.size()) { }
     stringref(const stringref &) noexcept = default;
     stringref & operator =(const stringref &) noexcept = default;
     stringref(stringref &&) noexcept = default;
     stringref & operator =(stringref &&) noexcept = default;
 
     /**
-     * return a pointer to the data held, or NULL.
+     * return a pointer to the data held, or nullptr.
      * Note that the data may not be zero terminated, and a default
-     * constructed stringref will give a NULL pointer back.  If you
+     * constructed stringref will give a nullptr pointer back.  If you
      * need to make sure data() gives a valid zero-terminated string
      * you should make a string from the stringref.
      **/
-    const char * data() const { return _s; }
-
-    size_type      size() const { return _sz; }
-    size_type    length() const { return size(); }
-    bool          empty() const { return _sz == 0; }
-    const char *  begin() const { return data(); }
-    const char *    end() const { return begin() + size(); }
-    const char * rbegin() const { return end() - 1; }
-    const char *   rend() const { return begin() - 1; }
-    stringref substr(size_type start, size_type sz=npos) const {
+    [[nodiscard]] const char *   data() const noexcept { return _s; }
+    [[nodiscard]] size_type      size() const noexcept { return _sz; }
+    [[nodiscard]] size_type    length() const noexcept { return size(); }
+    [[nodiscard]] bool          empty() const noexcept { return _sz == 0; }
+    [[nodiscard]] const char *  begin() const noexcept { return data(); }
+    [[nodiscard]] const char *    end() const noexcept { return begin() + size(); }
+    [[nodiscard]] const char * rbegin() const noexcept { return end() - 1; }
+    [[nodiscard]] const char *   rend() const noexcept { return begin() - 1; }
+    [[nodiscard]] stringref substr(size_type start, size_type sz=npos) const noexcept {
         if (start < size()) {
-            return stringref(data() + start, std::min(sz, size()-start));
+            return {data() + start, std::min(sz, size()-start)};
         }
-        return stringref();
+        return {};
     }
 
     /**
@@ -63,10 +62,10 @@ public:
      * @return index from the start of the string at which the character
      *     was found, or npos if the character could not be located
      */
-    size_type find(const char * s, size_type start=0) const {
+    size_type find(const char * s, size_type start=0) const noexcept {
         const char *buf = begin()+start;
         const char *found = (const char *)strstr(buf, s);
-        return (found != NULL) ? (found - begin()) : (size_type)npos;
+        return (found != nullptr) ? (found - begin()) : (size_type)npos;
     }
     /**
      * Find the first occurrence of a string, searching from @c start
@@ -76,7 +75,7 @@ public:
      * @return index from the start of the string at which the character
      *     was found, or npos if the character could not be located
      */
-    size_type find(stringref s, size_type start=0) const;
+    [[nodiscard]] size_type find(stringref s, size_type start=0) const noexcept;
     /**
      * Find the first occurrence of a character, searching from @c start
      *
@@ -85,10 +84,10 @@ public:
      * @return index from the start of the string at which the character
      *     was found, or npos if the character could not be located
      */
-    size_type find(char c, size_type start=0) const {
+    [[nodiscard]] size_type find(char c, size_type start=0) const noexcept {
         const char *buf = begin()+start;
         const char *found = (const char *)memchr(buf, c, _sz-start);
-        return (found != NULL) ? (found - begin()) : (size_type)npos;
+        return (found != nullptr) ? (found - begin()) : (size_type)npos;
     }
     /**
      * Find the last occurrence of a substring, starting at e and
@@ -99,7 +98,7 @@ public:
      * @return index from the start of the string at which the substring
      *     was found, or npos if the substring could not be located
      */
-    size_type rfind(char c, size_type e=npos) const {
+    [[nodiscard]] size_type rfind(char c, size_type e=npos) const noexcept {
         if (!empty()) {
             const char *b = begin();
             for (size_type i(std::min(size()-1, e) + 1); i > 0;) {
@@ -121,12 +120,8 @@ public:
      * @return index from the start of the string at which the substring
      *     was found, or npos if the substring could not be located
      */
-    size_type rfind(const char * s, size_type e=npos) const;
-    int compare(stringref s) const noexcept { return compare(s.data(), s.size()); }
-    int compare(const char *s, size_type sz) const noexcept {
-        int diff(memcmp(_s, s, std::min(sz, size())));
-        return (diff != 0) ? diff : (size() - sz);
-    }
+    size_type rfind(const char * s, size_type e=npos) const noexcept;
+    [[nodiscard]] int compare(stringref s) const noexcept { return compare(s.data(), s.size()); }
 
     /**
      * Returns true iff input string is a prefix of this string.
@@ -138,32 +133,30 @@ public:
         return (memcmp(data(), prefix.data(), prefix.size()) == 0);
     }
 
-    const char & operator [] (size_t i) const { return _s[i]; }
-    operator std::string () const { return std::string(_s, _sz); }
-    bool operator  <        (const char * s) const noexcept { return compare(s, strlen(s)) < 0; }
-    bool operator  < (const std::string & s) const noexcept { return compare(s.data(), s.size()) < 0; }
-    bool operator  <           (stringref s) const noexcept { return compare(s.data(), s.size()) < 0; }
-    bool operator <=        (const char * s) const noexcept { return compare(s, strlen(s)) <= 0; }
-    bool operator <= (const std::string & s) const noexcept { return compare(s.data(), s.size()) <= 0; }
-    bool operator <=           (stringref s) const noexcept { return compare(s.data(), s.size()) <= 0; }
-    bool operator !=        (const char * s) const noexcept { return compare(s, strlen(s)) != 0; }
-    bool operator != (const std::string & s) const noexcept { return compare(s.data(), s.size()) != 0; }
-    bool operator !=           (stringref s) const noexcept { return compare(s.data(), s.size()) != 0; }
-    bool operator ==        (const char * s) const noexcept { return compare(s, strlen(s)) == 0; }
-    bool operator == (const std::string & s) const noexcept { return compare(s.data(), s.size()) == 0; }
-    bool operator ==           (stringref s) const noexcept { return compare(s.data(), s.size()) == 0; }
-    bool operator >=        (const char * s) const noexcept { return compare(s, strlen(s)) >= 0; }
-    bool operator >= (const std::string & s) const noexcept { return compare(s.data(), s.size()) >= 0; }
-    bool operator >=           (stringref s) const noexcept { return compare(s.data(), s.size()) >= 0; }
-    bool operator  >        (const char * s) const noexcept { return compare(s, strlen(s)) > 0; }
-    bool operator  > (const std::string & s) const noexcept { return compare(s.data(), s.size()) > 0; }
-    bool operator  >           (stringref s) const noexcept { return compare(s.data(), s.size()) > 0; }
+    const char & operator [] (size_t i) const noexcept { return _s[i]; }
+    operator std::string () const { return {_s, _sz}; }
+    std::strong_ordering operator <=>(const char * s) const noexcept { return strong_compare(s, strlen(s)); }
+    std::strong_ordering operator <=>(const std::string & s) const noexcept { return strong_compare(s.data(), s.size()); }
+    std::strong_ordering operator <=>(stringref s) const noexcept { return strong_compare(s.data(), s.size()); }
+    bool operator ==(const char * s) const noexcept { return strong_compare(s, strlen(s)) == std::strong_ordering::equal; }
+    bool operator ==(const std::string & s) const noexcept { return strong_compare(s.data(), s.size()) == std::strong_ordering::equal; }
+    bool operator ==(stringref s) const noexcept { return strong_compare(s.data(), s.size()) == std::strong_ordering::equal; }
+    friend std::ostream & operator << (std::ostream & os, stringref v);
 private:
+    std::strong_ordering strong_compare(const char *s, size_type sz) const noexcept {
+        int res = compare(s, sz);
+        return (res < 0)
+            ? std::strong_ordering::less
+            : (res > 0)
+                ? std::strong_ordering::greater
+                : std::strong_ordering::equal;
+    }
+    int compare(const char *s, size_type sz) const noexcept {
+        int diff(memcmp(_s, s, std::min(sz, size())));
+        return (diff != 0) ? diff : (size() - sz);
+    }
     const char *_s;
     size_type   _sz;
-    friend bool operator == (const std::string & a, stringref b) { return b == a; }
-    friend bool operator != (const std::string & a, stringref b) { return b != a; }
-    friend std::ostream & operator << (std::ostream & os, stringref v);
 };
 
 
@@ -183,13 +176,13 @@ template <uint32_t StackSize>
 class small_string
 {
 public:
-    typedef size_t size_type;
-    typedef char * iterator;
-    typedef const char * const_iterator;
-    typedef char * reverse_iterator;
-    typedef const char * const_reverse_iterator;
-    static const size_type npos = static_cast<size_type>(-1);
-    small_string() noexcept : _buf(_stack), _sz(0), _bufferSize(StackSize) { _stack[0] = '\0'; }
+    using size_type = size_t;
+    using iterator = char *;
+    using const_iterator = const char *;
+    using reverse_iterator = char *;
+    using const_reverse_iterator = const char *;
+    static constexpr size_type npos = static_cast<size_type>(-1);
+    constexpr small_string() noexcept : _buf(_stack), _sz(0), _bufferSize(StackSize) { _stack[0] = '\0'; }
     small_string(const char * s) noexcept : _buf(_stack), _sz(s ? strlen(s) : 0) { init(s); }
     small_string(const void * s, size_type sz) noexcept : _buf(_stack), _sz(sz) { init(s); }
     small_string(stringref s) noexcept : _buf(_stack), _sz(s.size()) { init(s.data()); }
@@ -205,7 +198,7 @@ public:
     {
         init(rhs.data()+pos);
     }
-    small_string(size_type sz, char c)
+    small_string(size_type sz, char c) noexcept
         : _buf(_stack), _sz(0), _bufferSize(StackSize)
     {
         reserve(sz);
@@ -215,7 +208,7 @@ public:
     }
 
     template<typename Iterator>
-    small_string(Iterator s, Iterator e);
+    small_string(Iterator s, Iterator e) noexcept;
 
     ~small_string() {
         if (__builtin_expect(isAllocated(), false)) {
@@ -246,14 +239,14 @@ public:
         std::swap(*this, rhs);
     }
     operator std::string () const { return std::string(c_str(), size()); }
-    operator stringref () const { return stringref(c_str(), size()); }
-    char at(size_t i) const { return buffer()[i]; }
-    char & at(size_t i) { return buffer()[i]; }
-    const char & operator [] (size_t i) const { return buffer()[i]; }
-    char & operator [] (size_t i) { return buffer()[i]; }
+    operator stringref () const noexcept { return stringref(c_str(), size()); }
+    [[nodiscard]] char at(size_t i) const noexcept { return buffer()[i]; }
+    char & at(size_t i) noexcept { return buffer()[i]; }
+    const char & operator [] (size_t i) const noexcept { return buffer()[i]; }
+    char & operator [] (size_t i) noexcept { return buffer()[i]; }
 
     /** if there is a newline at the end of the string, remove it and return true */
-    bool chomp() {
+    bool chomp() noexcept {
         if (size() > 0 && *rbegin() == '\n') {
             _resize(size() - 1);
             return true;
@@ -264,7 +257,7 @@ public:
     /**
      * Remove the last character of the string
      */
-    void pop_back() {
+    void pop_back() noexcept {
       _resize(size() - 1);
     }
 
@@ -287,7 +280,7 @@ public:
      * @return index from the start of the string at which the substring
      *     was found, or npos if the substring could not be located
      */
-    size_type rfind(const char * s, size_type e=npos) const;
+    size_type rfind(const char * s, size_type e=npos) const noexcept;
 
     /**
      * Find the last occurrence of a character, starting at e and
@@ -298,7 +291,7 @@ public:
      * @return index from the start of the string at which the character
      *     was found, or npos if the character could not be located
      */
-    size_type rfind(char c, size_type e=npos) const {
+    [[nodiscard]] size_type rfind(char c, size_type e=npos) const noexcept {
         size_type sz = std::min(size()-1, e)+1;
         const char *b = buffer();
         while (sz-- > 0) {
@@ -308,10 +301,14 @@ public:
         }
         return npos;
     }
-    size_type find_last_of(char c, size_type e=npos) const { return rfind(c, e); }
-    size_type find_first_of(char c, size_type start=0) const { return find(c, start); }
+    [[nodiscard]] size_type find_last_of(char c, size_type e=npos) const noexcept {
+        return rfind(c, e);
+    }
+    [[nodiscard]] size_type find_first_of(char c, size_type start=0) const noexcept {
+        return find(c, start);
+    }
 
-    size_type find_first_not_of(char c, size_type start=0) const {
+    [[nodiscard]] size_type find_first_not_of(char c, size_type start=0) const noexcept {
         size_t p(start);
         const char *buf = buffer();
         for(size_t m(size()); (p < m) && (buf[p] == c); p++);
@@ -326,7 +323,9 @@ public:
      * @return index from the start of the string at which the substring
      *     was found, or npos if the substring could not be located
      */
-    size_type find(const small_string & s, size_type start=0) const { return find(s.c_str(), start); }
+    [[nodiscard]] size_type find(const small_string & s, size_type start=0) const noexcept {
+        return find(s.c_str(), start);
+    }
 
     /**
      * Find the first occurrence of a substring, searching from @c start
@@ -336,10 +335,10 @@ public:
      * @return index from the start of the string at which the substring
      *     was found, or npos if the substring could not be located
      */
-    size_type find(const char * s, size_type start=0) const {
+    size_type find(const char * s, size_type start=0) const noexcept {
         const char *buf = buffer()+start;
         const char *found = strstr(buf, s);
-        return (found != NULL) ? (found - buffer()) : (size_type)npos;
+        return (found != nullptr) ? (found - buffer()) : (size_type)npos;
     }
 
     /**
@@ -350,10 +349,10 @@ public:
      * @return index from the start of the string at which the character
      *     was found, or npos if the character could not be located
      */
-    size_type find(char c, size_type start=0) const {
+    [[nodiscard]] size_type find(char c, size_type start=0) const noexcept {
         const char *buf = buffer()+start;
         const char *found = (const char *)memchr(buf, c, _sz-start);
-        return (found != NULL) ? (found - buffer()) : (size_type)npos;
+        return (found != nullptr) ? (found - buffer()) : (size_type)npos;
     }
     small_string & assign(const char * s) noexcept { return assign(s, strlen(s)); }
     small_string & assign(const void * s, size_type sz) noexcept;
@@ -364,18 +363,18 @@ public:
         if (data() != rhs.data()) assign(rhs.data(), rhs.size());
         return *this;
     }
-    small_string & push_back(char c)              { return append(&c, 1); }
-    small_string & append(char c)                 { return append(&c, 1); }
-    small_string & append(const char * s)         { return append(s, strlen(s)); }
-    small_string & append(stringref s)           { return append(s.data(), s.size()); }
-    small_string & append(const std::string & s)  { return append(s.data(), s.size()); }
-    small_string & append(const small_string & s) { return append(s.data(), s.size()); }
-    small_string & append(const void * s, size_type sz);
-    small_string & operator += (char c)                 { return append(c); }
-    small_string & operator += (const char * s)         { return append(s); }
-    small_string & operator += (stringref s)           { return append(s); }
-    small_string & operator += (const std::string & s)  { return append(s); }
-    small_string & operator += (const small_string & s) { return append(s); }
+    small_string & push_back(char c)              noexcept { return append(&c, 1); }
+    small_string & append(char c)                 noexcept { return append(&c, 1); }
+    small_string & append(const char * s)         noexcept { return append(s, strlen(s)); }
+    small_string & append(stringref s)            noexcept { return append(s.data(), s.size()); }
+    small_string & append(const std::string & s)  noexcept { return append(s.data(), s.size()); }
+    small_string & append(const small_string & s) noexcept { return append(s.data(), s.size()); }
+    small_string & append(const void * s, size_type sz) noexcept;
+    small_string & operator += (char c)                 noexcept { return append(c); }
+    small_string & operator += (const char * s)         noexcept { return append(s); }
+    small_string & operator += (stringref s)            noexcept { return append(s); }
+    small_string & operator += (const std::string & s)  noexcept { return append(s); }
+    small_string & operator += (const small_string & s) noexcept { return append(s); }
 
     /**
      * Return a new string comprised of the contents of a sub-range of this
@@ -386,7 +385,7 @@ public:
      *     end of the string, only the remaining part will be returned.
      * @return a substring of *this
      */
-    small_string substr(size_type start, size_type sz=npos) const {
+    [[nodiscard]] small_string substr(size_type start, size_type sz=npos) const noexcept {
         if (start < size()) {
             const char *s = c_str();
             return small_string(s + start, std::min(sz, size()-start));
@@ -394,15 +393,15 @@ public:
         return small_string();
     }
 
-    small_string & insert(iterator p, const_iterator f, const_iterator l) { return insert(p-c_str(), f, l-f); }
-    small_string & insert(size_type start, stringref v) { return insert(start, v.data(), v.size()); }
-    small_string & insert(size_type start, const void * v, size_type sz);
+    small_string & insert(iterator p, const_iterator f, const_iterator l) noexcept { return insert(p-c_str(), f, l-f); }
+    small_string & insert(size_type start, stringref v) noexcept { return insert(start, v.data(), v.size()); }
+    small_string & insert(size_type start, const void * v, size_type sz) noexcept;
 
     /**
      * Erases the content of the string, leaving it zero-length.
      * Does not alter string capacity.
      */
-    void clear() {
+    void clear() noexcept {
         _sz = 0;
         buffer()[0] = 0;
     }
@@ -412,7 +411,7 @@ public:
      * leaving it zero-length. Capacity is reset to the original small
      * string stack size
      */
-    void reset() {
+    void reset() noexcept {
         if (isAllocated()) {
             free(buffer());
             _bufferSize = StackSize;
@@ -420,19 +419,19 @@ public:
         }
         clear();
     }
-    const_iterator begin() const { return buffer(); }
-    const_iterator   end() const { return buffer() + size(); }
-    iterator begin() { return buffer(); }
-    iterator   end() { return buffer() + size(); }
-    const_reverse_iterator rbegin() const { return end() - 1; }
-    const_reverse_iterator   rend() const { return begin() - 1; }
-    reverse_iterator rbegin() { return end() - 1; }
-    reverse_iterator   rend() { return begin() - 1; }
-    const char * c_str() const { return buffer(); }
-    const char * data() const { return buffer(); }
-    size_type size()     const { return _sz; }
-    size_type length()   const { return size(); }
-    bool empty()         const { return _sz == 0; }
+    [[nodiscard]] const_iterator begin() const noexcept { return buffer(); }
+    [[nodiscard]] const_iterator   end() const noexcept { return buffer() + size(); }
+    iterator begin() noexcept { return buffer(); }
+    iterator   end() noexcept { return buffer() + size(); }
+    [[nodiscard]] const_reverse_iterator rbegin() const noexcept { return end() - 1; }
+    [[nodiscard]] const_reverse_iterator   rend() const noexcept { return begin() - 1; }
+    reverse_iterator rbegin() noexcept { return end() - 1; }
+    reverse_iterator   rend() noexcept { return begin() - 1; }
+    [[nodiscard]] const char * c_str() const noexcept { return buffer(); }
+    [[nodiscard]] const char * data()  const noexcept { return buffer(); }
+    [[nodiscard]] size_type size()     const noexcept { return _sz; }
+    [[nodiscard]] size_type length()   const noexcept { return size(); }
+    [[nodiscard]] bool empty()         const noexcept { return _sz == 0; }
 
     /**
      * at position p1, replace n1 characters with the contents of s
@@ -441,7 +440,7 @@ public:
      * @param n1 how many old characters should be replaced, cannot go outside old string
      * @param s  new replacement content
      **/
-    small_string& replace (size_t p1, size_t n1, const small_string& s ) {
+    small_string& replace (size_t p1, size_t n1, const small_string& s ) noexcept {
         return replace(p1, n1, s.c_str(), s.size());
     }
 
@@ -455,7 +454,7 @@ public:
      * @param p2 position in s where replacement content starts
      * @param n2 how many new characters to use
      **/
-    small_string& replace (size_t p1, size_t n1, const small_string& s, size_t p2, size_t n2);
+    small_string& replace (size_t p1, size_t n1, const small_string& s, size_t p2, size_t n2) noexcept;
 
     /**
      * at position p1, replace n1 characters with
@@ -466,7 +465,7 @@ public:
      * @param s  pointer to new content
      * @param n2 how many new characters to use
      **/
-    small_string& replace (size_t p1, size_t n1, const char *s, size_t n2);
+    small_string& replace (size_t p1, size_t n1, const char *s, size_t n2) noexcept;
 
     /**
      * at position p1, replace n1 characters with the contents of s
@@ -475,7 +474,7 @@ public:
      * @param n1 how many old characters should be replaced, cannot go outside old string
      * @param s  pointer to new replacement content
      **/
-    small_string& replace (size_t p1, size_t n1, const char* s ) {
+    small_string& replace (size_t p1, size_t n1, const char* s ) noexcept {
         return replace(p1, n1, s, strlen(s));
     }
 
@@ -483,40 +482,24 @@ public:
     small_string& replace ( size_t p1, size_t n1, size_t n2, char c );
     */
 
-    bool operator  <         (const char * s) const noexcept { return compare(s, strlen(s)) < 0; }
-    bool operator  <  (const std::string & s) const noexcept { return compare(s.data(), s.size()) < 0; }
-    bool operator  < (const small_string & s) const noexcept { return compare(s.data(), s.size()) < 0; }
-    bool operator  <            (stringref s) const noexcept { return compare(s.data(), s.size()) < 0; }
-    bool operator <=         (const char * s) const noexcept { return compare(s, strlen(s)) <= 0; }
-    bool operator <=  (const std::string & s) const noexcept { return compare(s.data(), s.size()) <= 0; }
-    bool operator <= (const small_string & s) const noexcept { return compare(s.data(), s.size()) <= 0; }
-    bool operator <=            (stringref s) const noexcept { return compare(s.data(), s.size()) <= 0; }
-    bool operator ==         (const char * s) const noexcept { return compare(s, strlen(s)) == 0; }
-    bool operator ==  (const std::string & s) const noexcept { return compare(s.data(), s.size()) == 0; }
-    bool operator == (const small_string & s) const noexcept { return compare(s.data(), s.size()) == 0; }
-    bool operator ==            (stringref s) const noexcept { return compare(s.data(), s.size()) == 0; }
-    bool operator !=         (const char * s) const noexcept { return compare(s, strlen(s)) != 0; }
-    bool operator !=  (const std::string & s) const noexcept { return compare(s.data(), s.size()) != 0; }
-    bool operator != (const small_string & s) const noexcept { return compare(s.data(), s.size()) != 0; }
-    bool operator !=            (stringref s) const noexcept { return compare(s.data(), s.size()) != 0; }
-    bool operator >=         (const char * s) const noexcept { return compare(s, strlen(s)) >= 0; }
-    bool operator >=  (const std::string & s) const noexcept { return compare(s.data(), s.size()) >= 0; }
-    bool operator >= (const small_string & s) const noexcept { return compare(s.data(), s.size()) >= 0; }
-    bool operator >=            (stringref s) const noexcept { return compare(s.data(), s.size()) >= 0; }
-    bool operator  >         (const char * s) const noexcept { return compare(s, strlen(s)) > 0; }
-    bool operator  >  (const std::string & s) const noexcept { return compare(s.data(), s.size()) > 0; }
-    bool operator  > (const small_string & s) const noexcept { return compare(s.data(), s.size()) > 0; }
-    bool operator  >            (stringref s) const noexcept { return compare(s.data(), s.size()) > 0; }
+    std::strong_ordering operator <=>(const char * s) const noexcept { return strong_compare(s, strlen(s)); }
+    std::strong_ordering operator <=>(const std::string & s) const noexcept { return strong_compare(s.data(), s.size()); }
+    std::strong_ordering operator <=>(const small_string & s) const noexcept { return strong_compare(s.data(), s.size()); }
+    std::strong_ordering operator <=>(stringref s) const noexcept { return strong_compare(s.data(), s.size()); }
+    bool operator ==(const char * s) const noexcept { return strong_compare(s, strlen(s)) == std::strong_ordering::equal; }
+    bool operator ==(const std::string & s) const noexcept { return strong_compare(s.data(), s.size()) == std::strong_ordering::equal; }
+    bool operator ==(const small_string & s) const noexcept { return strong_compare(s.data(), s.size()) == std::strong_ordering::equal; }
+    bool operator ==(stringref s) const noexcept { return strong_compare(s.data(), s.size()) == std::strong_ordering::equal; }
 
     template<typename T> bool operator != (const T& s) const noexcept { return ! operator == (s); }
 
-    int compare(const small_string & s) const noexcept { return compare(s.c_str(), s.size()); }
+    [[nodiscard]] int compare(const small_string & s) const noexcept { return compare(s.c_str(), s.size()); }
     int compare(const char *s, size_t sz) const noexcept {
         int diff(memcmp(buffer(), s, std::min(sz, size())));
         return (diff != 0) ? diff : (size() - sz);
     }
 
-    size_type capacity() const { return _bufferSize - 1; }
+    [[nodiscard]] size_type capacity() const noexcept { return _bufferSize - 1; }
 
     /**
      * Make string exactly newSz in length removing characters at
@@ -526,7 +509,7 @@ public:
      * @param c default character to use when initializing uninitialized memory.
      */
 
-    void resize(size_type newSz, char padding = '\0') {
+    void resize(size_type newSz, char padding = '\0') noexcept {
         if (newSz > capacity()) {
             reserve(newSz);
         }
@@ -543,7 +526,7 @@ public:
      *
      * @param newSz new size of string.
      */
-    void append_from_reserved(size_type sz);
+    void append_from_reserved(size_type sz) noexcept;
 
     /**
      * Ensure string has at least newCapacity characters of available
@@ -552,21 +535,29 @@ public:
      *
      * @param newCapacity new minimum capacity of string
      */
-    void reserve(size_type newCapacity) {
+    void reserve(size_type newCapacity) noexcept {
         reserveBytes(newCapacity + 1);
     }
 
-    size_t count_allocated_memory() const {
+    [[nodiscard]] size_t count_allocated_memory() const noexcept {
         return sizeof(small_string) + (isAllocated() ? _bufferSize : 0);
     }
-    size_t count_used_memory() const {
+    [[nodiscard]] size_t count_used_memory() const noexcept {
         return sizeof(small_string) - StackSize + size();
     }
 private:
-    void assign_slower(const void * s, size_type sz) __attribute((noinline));
+    std::strong_ordering strong_compare(const char *s, size_type sz) const noexcept {
+        int res = compare(s, sz);
+        return (res < 0)
+               ? std::strong_ordering::less
+               : (res > 0)
+                 ? std::strong_ordering::greater
+                 : std::strong_ordering::equal;
+    }
+    void assign_slower(const void * s, size_type sz) noexcept __attribute((noinline));
     void init_slower(const void *s) noexcept __attribute((noinline));
-    void _reserveBytes(size_type newBufferSize);
-    void reserveBytes(size_type newBufferSize) {
+    void _reserveBytes(size_type newBufferSize) noexcept;
+    void reserveBytes(size_type newBufferSize) noexcept {
         if (newBufferSize > _bufferSize) {
             _reserveBytes(newBufferSize);
         }
@@ -585,12 +576,12 @@ private:
             rhs._stack[0] = 0;
         }
     }
-    typedef uint32_t isize_type;
-    bool needAlloc(isize_type add) const { return (add + _sz + 1) > _bufferSize; }
-    bool isAllocated() const { return _buf != _stack; }
-    char * buffer() { return _buf; }
-    const char * buffer() const { return _buf; }
-    VESPA_DLL_LOCAL void appendAlloc(const void * s, size_type sz) __attribute__((noinline));
+    using isize_type = uint32_t;
+    [[nodiscard]] bool needAlloc(isize_type add) const noexcept { return (add + _sz + 1) > _bufferSize; }
+    [[nodiscard]] bool isAllocated() const noexcept { return _buf != _stack; }
+    char * buffer() noexcept { return _buf; }
+    [[nodiscard]] const char * buffer() const noexcept { return _buf; }
+    VESPA_DLL_LOCAL void appendAlloc(const void * s, size_type sz) noexcept __attribute__((noinline));
     void init(const void *s) noexcept {
         if (__builtin_expect(_sz < StackSize, true)) {
             _bufferSize = StackSize;
@@ -602,7 +593,7 @@ private:
             init_slower(s);
         }
     }
-    void _resize(size_type newSz) {
+    void _resize(size_type newSz) noexcept {
         _sz = newSz;
         *end() = '\0';
     }
@@ -618,7 +609,7 @@ private:
 
 template <uint32_t StackSize>
 template<typename Iterator>
-small_string<StackSize>::small_string(Iterator s, Iterator e) :
+small_string<StackSize>::small_string(Iterator s, Iterator e) noexcept :
     _buf(_stack),
     _sz(0),
     _bufferSize(StackSize)
@@ -629,70 +620,44 @@ small_string<StackSize>::small_string(Iterator s, Iterator e) :
     }
 }
 
-template <uint32_t StackSize>
-const size_t small_string<StackSize>::npos;
-
-typedef small_string<48> string;
+using string = small_string<48>;
 
 template<uint32_t StackSize>
 small_string<StackSize>
-operator + (const small_string<StackSize> & a, const small_string<StackSize> & b);
+operator + (const small_string<StackSize> & a, const small_string<StackSize> & b) noexcept;
 
 template<uint32_t StackSize>
 small_string<StackSize>
-operator + (const small_string<StackSize> & a, stringref b);
+operator + (const small_string<StackSize> & a, stringref b) noexcept;
 
 template<uint32_t StackSize>
 small_string<StackSize>
-operator + (stringref a, const small_string<StackSize> & b);
+operator + (stringref a, const small_string<StackSize> & b) noexcept;
 
 template<uint32_t StackSize>
 small_string<StackSize>
-operator + (const small_string<StackSize> & a, const char * b);
+operator + (const small_string<StackSize> & a, const char * b) noexcept;
 
 template<uint32_t StackSize>
 small_string<StackSize>
-operator + (const char * a, const small_string<StackSize> & b);
+operator + (const char * a, const small_string<StackSize> & b) noexcept;
 
-#if __cplusplus < 201709L
-template<typename T, uint32_t StackSize>
-bool
-operator == (const T& a, const small_string<StackSize>& b) noexcept
-{
-    return b == a;
-}
+string operator + (stringref a, stringref b) noexcept;
+string operator + (const char * a, stringref b) noexcept;
+string operator + (stringref a, const char * b) noexcept;
 
-template<typename T, uint32_t StackSize>
-bool
-operator != (const T& a, const small_string<StackSize>& b) noexcept
-{
-    return b != a;
-}
-#endif
-
-template<typename T, uint32_t StackSize>
-bool
-operator < (const T& a, const small_string<StackSize>& b) noexcept
-{
-    return b > a;
-}
-
-string operator + (stringref a, stringref b);
-string operator + (const char * a, stringref b);
-string operator + (stringref a, const char * b);
-
-inline bool contains(stringref text, stringref key) {
+inline bool contains(stringref text, stringref key) noexcept {
     return text.find(key) != stringref::npos;
 }
 
-inline bool starts_with(stringref text, stringref key) {
+inline bool starts_with(stringref text, stringref key) noexcept {
     if (text.size() >= key.size()) {
         return memcmp(text.begin(), key.begin(), key.size()) == 0;
     }
     return false;
 }
 
-inline bool ends_with(stringref text, stringref key) {
+inline bool ends_with(stringref text, stringref key) noexcept {
     if (text.size() >= key.size()) {
         return memcmp(text.end()-key.size(), key.begin(), key.size()) == 0;
     }
@@ -700,7 +665,7 @@ inline bool ends_with(stringref text, stringref key) {
 }
 
 // returns a reference to a shared empty string
-const string &empty_string();
+const string &empty_string() noexcept;
 
 /**
  * Utility function to format an unsigned integer into a new

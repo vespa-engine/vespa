@@ -16,20 +16,14 @@ namespace vbench {
 
 // define which string class to use
 #if USE_VESPA_STRING
-typedef vespalib::string string;
+using string = vespalib::string;
 #else
-typedef std::string string;
+using string = std::string;
 #endif
 
-extern string strfmt(const char *fmt, ...)
-#ifdef __GNUC__
-        // Add printf format checks with gcc
-        __attribute__ ((format (printf,1,2)))
-#endif
-    ;
+extern string strfmt(const char *fmt, ...) __attribute__ ((format (printf,1,2)));
 
-extern size_t splitstr(const string &str, const string &sep,
-                       std::vector<string> &dst);
+extern size_t splitstr(const string &str, const string &sep, std::vector<string> &dst);
 
 } // namespace vbench
 

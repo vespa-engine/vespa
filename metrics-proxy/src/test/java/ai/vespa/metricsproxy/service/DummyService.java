@@ -20,10 +20,10 @@ public class DummyService extends VespaService {
     }
 
     @Override
-    public void consumeMetrics(MetricsParser.Consumer consumer) {
+    public void consumeMetrics(MetricsParser.Collector consumer) {
         long timestamp = System.currentTimeMillis() / 1000;
-        consumer.consume(new Metric(MetricId.toMetricId(METRIC_1), 5 * num + 1, timestamp));
-        consumer.consume(new Metric(MetricId.toMetricId(METRIC_2), 1.3 * num + 1.05, timestamp));
+        consumer.accept(new Metric(MetricId.toMetricId(METRIC_1), 5 * num + 1, timestamp));
+        consumer.accept(new Metric(MetricId.toMetricId(METRIC_2), 1.3 * num + 1.05, timestamp));
     }
 
 }

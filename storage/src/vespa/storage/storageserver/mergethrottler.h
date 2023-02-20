@@ -8,10 +8,11 @@
 #pragma once
 
 #include <vespa/storage/config/config-stor-server.h>
+#include <vespa/storage/common/message_guard.h>
 #include <vespa/storage/common/storagelink.h>
 #include <vespa/storage/common/storagecomponent.h>
-#include <vespa/storage/distributor/messageguard.h>
 #include <vespa/storageframework/generic/status/htmlstatusreporter.h>
+#include <vespa/storageframework/generic/thread/runnable.h>
 #include <vespa/storageapi/message/bucket.h>
 #include <vespa/document/bucket/bucket.h>
 #include <vespa/vespalib/util/document_runnable.h>
@@ -178,7 +179,7 @@ private:
     std::vector<api::StorageMessage::SP> _messagesUp;
     std::unique_ptr<Metrics> _metrics;
     StorageComponent _component;
-    framework::Thread::UP _thread;
+    std::unique_ptr<framework::Thread> _thread;
     RendezvousState _rendezvous;
     mutable std::chrono::steady_clock::time_point _throttle_until_time;
     std::chrono::steady_clock::duration _backpressure_duration;

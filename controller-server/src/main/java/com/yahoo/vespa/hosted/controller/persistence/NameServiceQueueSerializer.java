@@ -10,6 +10,7 @@ import com.yahoo.slime.SlimeUtils;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.Record;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordData;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordName;
+import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.dns.CreateRecord;
 import com.yahoo.vespa.hosted.controller.dns.CreateRecords;
 import com.yahoo.vespa.hosted.controller.dns.NameServiceQueue;
@@ -17,6 +18,7 @@ import com.yahoo.vespa.hosted.controller.dns.NameServiceRequest;
 import com.yahoo.vespa.hosted.controller.dns.RemoveRecords;
 
 import java.util.ArrayList;
+import java.util.Optional;
 
 /**
  * Serializer for {@link com.yahoo.vespa.hosted.controller.dns.NameServiceQueue}.
@@ -38,6 +40,7 @@ public class NameServiceQueueSerializer {
     private static final String typeField = "type";
     private static final String nameField = "name";
     private static final String dataField = "data";
+    private static final String ownerField = "owner";
 
     public Slime toSlime(NameServiceQueue queue) {
         var slime = new Slime();
@@ -46,6 +49,8 @@ public class NameServiceQueueSerializer {
 
         for (var request : queue.requests()) {
             var object = array.addObject();
+
+            request.owner().ifPresent(owner -> object.setString(ownerField, owner.serialized()));
 
             if (request instanceof CreateRecords) toSlime(object, (CreateRecords) request);
             else if (request instanceof CreateRecord) toSlime(object, (CreateRecord) request);
@@ -61,11 +66,12 @@ public class NameServiceQueueSerializer {
         var items = new ArrayList<NameServiceRequest>();
         var root = slime.get();
         root.field(requestsField).traverse((ArrayTraverser) (i, object) -> {
+            Optional<TenantAndApplicationId> owner = SlimeUtils.optionalString(object.field(ownerField)).map(TenantAndApplicationId::fromSerialized);
             var request = Request.valueOf(object.field(requestType).asString());
             switch (request) {
-                case createRecords -> items.add(createRecordsFromSlime(object));
-                case createRecord -> items.add(createRecordFromSlime(object));
-                case removeRecords -> items.add(removeRecordsFromSlime(object));
+                case createRecords -> items.add(createRecordsFromSlime(object, owner));
+                case createRecord -> items.add(createRecordFromSlime(object, owner));
+                case removeRecords -> items.add(removeRecordsFromSlime(object, owner));
                 default -> throw new IllegalArgumentException("No serialization defined for request " + request);
             }
         });
@@ -86,7 +92,7 @@ public class NameServiceQueueSerializer {
     private void toSlime(Cursor object, RemoveRecords removeRecords) {
         object.setString(requestType, Request.removeRecords.name());
         object.setString(typeField, removeRecords.type().name());
-        removeRecords.name().ifPresent(name -> object.setString(nameField, name.asString()));
+        object.setString(nameField, removeRecords.name().asString());
         removeRecords.data().ifPresent(data -> object.setString(dataField, data.asString()));
     }
 
@@ -96,21 +102,21 @@ public class NameServiceQueueSerializer {
         object.setString(dataField, record.data().asString());
     }
 
-    private CreateRecords createRecordsFromSlime(Inspector object) {
+    private CreateRecords createRecordsFromSlime(Inspector object, Optional<TenantAndApplicationId> owner) {
         var records = new ArrayList<Record>();
         object.field(recordsField).traverse((ArrayTraverser) (i, recordObject) -> records.add(recordFromSlime(recordObject)));
-        return new CreateRecords(records);
+        return new CreateRecords(owner, records);
     }
 
-    private CreateRecord createRecordFromSlime(Inspector object) {
-        return new CreateRecord(recordFromSlime(object));
+    private CreateRecord createRecordFromSlime(Inspector object, Optional<TenantAndApplicationId> owner) {
+        return new CreateRecord(owner, recordFromSlime(object));
     }
 
-    private RemoveRecords removeRecordsFromSlime(Inspector object) {
+    private RemoveRecords removeRecordsFromSlime(Inspector object, Optional<TenantAndApplicationId> owner) {
         var type = Record.Type.valueOf(object.field(typeField).asString());
-        var name = SlimeUtils.optionalString(object.field(nameField)).map(RecordName::from);
+        var name = RecordName.from(object.field(nameField).asString());
         var data = SlimeUtils.optionalString(object.field(dataField)).map(RecordData::from);
-        return new RemoveRecords(type, name, data);
+        return new RemoveRecords(owner, type, name, data);
     }
 
     private Record recordFromSlime(Inspector object) {

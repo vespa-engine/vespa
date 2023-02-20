@@ -9,7 +9,10 @@ import java.util.Set;
  */
 public interface EnclaveAccessService {
 
-    /** Ensures the given enclave accounts have access to resources they require to function. */
-    void allowAccessFor(Set<CloudAccount> accounts);
+    /**
+     * Ensures the given enclave accounts have access to resources they require to function.
+     * @return the degree to which the run was successful - a number between 0 (no success), to 1 (complete success)
+     */
+    double allowAccessFor(Set<CloudAccount> accounts);
 
 }

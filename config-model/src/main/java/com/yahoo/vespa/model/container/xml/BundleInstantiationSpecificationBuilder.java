@@ -40,7 +40,7 @@ public class BundleInstantiationSpecificationBuilder {
 
     private static void validate(BundleInstantiationSpecification instSpec) {
         List<String> forbiddenClasses = Arrays.asList(
-                SearchHandler.HANDLER_CLASS,
+                SearchHandler.HANDLER_CLASSNAME,
                 PROCESSING_HANDLER_CLASS);
 
         for (String forbiddenClass: forbiddenClasses) {

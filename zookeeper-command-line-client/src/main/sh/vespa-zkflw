@@ -78,5 +78,5 @@ export ROOT
 # END environment bootstrap section
 
 java -cp ${VESPA_HOME}/lib/jars/zookeeper-command-line-client-jar-with-dependencies.jar \
-     -Dlog4j.configuration="log4j-vespa.properties" -Xms32m -Xmx512m \
+     -Dlogback.configurationFile="logback-vespa.xml" -Xms32m -Xmx512m \
      com.yahoo.vespa.zookeeper.cli.FourLetterWordMain "$@"

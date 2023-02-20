@@ -2,7 +2,9 @@
 
 #include "documentsubdbcollection.h"
 #include "combiningfeedview.h"
+#include "document_db_reconfig.h"
 #include "document_subdb_collection_initializer.h"
+#include "document_subdb_reconfig.h"
 #include "i_document_subdb_owner.h"
 #include "maintenancecontroller.h"
 #include "searchabledocsubdb.h"
@@ -12,7 +14,6 @@
 #include <vespa/vespalib/util/lambdatask.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
 
-using proton::matching::SessionManager;
 using search::GrowStrategy;
 using search::SerialNum;
 using search::index::Schema;
@@ -83,7 +84,7 @@ DocumentSubDBCollection::DocumentSubDBCollection(
 DocumentSubDBCollection::~DocumentSubDBCollection()
 {
     size_t numThreads = std::min(_subDBs.size(), static_cast<size_t>(_hwInfo.cpu().cores()));
-    vespalib::ThreadStackExecutor closePool(numThreads, 0x20000);
+    vespalib::ThreadStackExecutor closePool(numThreads);
     while (!_subDBs.empty()) {
         closePool.execute(makeLambdaTask([subDB=_subDBs.back()]() { delete subDB; }));
         _subDBs.pop_back();
@@ -184,11 +185,10 @@ DocumentSubDBCollection::createInitializer(const DocumentDBConfig &configSnapsho
 
 
 void
-DocumentSubDBCollection::initViews(const DocumentDBConfig &configSnapshot,
-                                   const SessionManager::SP &sessionManager)
+DocumentSubDBCollection::initViews(const DocumentDBConfig &configSnapshot)
 {
     for (auto subDb : _subDBs) {
-        subDb->initViews(configSnapshot, sessionManager);
+        subDb->initViews(configSnapshot);
     }
 }
 
@@ -250,20 +250,39 @@ DocumentSubDBCollection::pruneRemovedFields(SerialNum serialNum)
     }
 }
 
+std::unique_ptr<DocumentDBReconfig>
+DocumentSubDBCollection::prepare_reconfig(const DocumentDBConfig& new_config_snapshot, const ReconfigParams& reconfig_params, std::optional<SerialNum> serial_num)
+{
+    auto start_time = vespalib::steady_clock::now();
+    auto ready_reconfig = getReadySubDB()->prepare_reconfig(new_config_snapshot, reconfig_params, serial_num);
+    auto not_ready_reconfig = getNotReadySubDB()->prepare_reconfig(new_config_snapshot, reconfig_params, serial_num);
+    return std::make_unique<DocumentDBReconfig>(start_time, std::move(ready_reconfig), std::move(not_ready_reconfig));
+}
+
+void
+DocumentSubDBCollection::complete_prepare_reconfig(DocumentDBReconfig& prepared_reconfig, SerialNum serial_num)
+{
+    getReadySubDB()->complete_prepare_reconfig(prepared_reconfig.ready_reconfig(), serial_num);
+    getNotReadySubDB()->complete_prepare_reconfig(prepared_reconfig.not_ready_reconfig(), serial_num);
+}
 
 void
 DocumentSubDBCollection::applyConfig(const DocumentDBConfig &newConfigSnapshot,
                                      const DocumentDBConfig &oldConfigSnapshot,
                                      SerialNum serialNum,
                                      const ReconfigParams &params,
-                                     IDocumentDBReferenceResolver &resolver)
+                                     IDocumentDBReferenceResolver &resolver,
+                                     const DocumentDBReconfig& prepared_reconfig)
 {
     _reprocessingRunner.reset();
-    for (auto subDb : _subDBs) {
-        IReprocessingTask::List tasks;
-        tasks = subDb->applyConfig(newConfigSnapshot, oldConfigSnapshot, serialNum, params, resolver);
-        _reprocessingRunner.addTasks(tasks);
-    }
+    auto tasks = getReadySubDB()->applyConfig(newConfigSnapshot, oldConfigSnapshot, serialNum, params, resolver, prepared_reconfig.ready_reconfig());
+    _reprocessingRunner.addTasks(tasks);
+    tasks = getNotReadySubDB()->applyConfig(newConfigSnapshot, oldConfigSnapshot, serialNum, params, resolver, prepared_reconfig.not_ready_reconfig());
+    _reprocessingRunner.addTasks(tasks);
+    auto removed_reconfig = getRemSubDB()->prepare_reconfig(newConfigSnapshot, params, serialNum);
+    tasks = getRemSubDB()->applyConfig(newConfigSnapshot, oldConfigSnapshot, serialNum, params, resolver, *removed_reconfig);
+    removed_reconfig.reset();
+    _reprocessingRunner.addTasks(tasks);
 }
 
 IFeedView::SP

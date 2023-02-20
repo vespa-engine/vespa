@@ -4,11 +4,11 @@
 namespace search {
 
 /// Type of general unsigned 8 bit data.
-typedef unsigned char byte;
+using byte = unsigned char;
 /// The type of the local documentId.
-typedef unsigned DocumentIdT;
+using DocumentIdT = unsigned;
 /// How time type. Used to represent seconds since 1970.
-typedef unsigned TimeT;
+using TimeT = unsigned;
 /// This is a 16 byte vector used in SSE2 integer operations.
 typedef char v16qi __attribute__ ((__vector_size__(16)));
 /// This is a 2 element uint64_t vector used in SSE2 integer operations.

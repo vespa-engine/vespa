@@ -47,4 +47,5 @@ public final class HexEncodeExpression extends Expression {
     public int hashCode() {
         return getClass().hashCode();
     }
+
 }

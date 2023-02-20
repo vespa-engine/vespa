@@ -27,7 +27,7 @@ public class Enforcer {
     public boolean allows(Role role, Action action, URI resource) {
         List<Policy> matchingPolicies = role.definition().policies().stream()
                 .filter(policy -> policy.evaluate(action, resource, role.context, system))
-                .collect(Collectors.toList());
+                .toList();
         logger.log(Level.FINE, "Matching policies for " +
                                "role: " + role.definition().name() + ", "+
                                "action " + action.name() + ", " +

@@ -25,60 +25,39 @@ namespace slime { struct Cursor; }
 class ExecutionProfiler {
 public:
     using TaskId = uint32_t;
-    using NameMapper = std::function<vespalib::string(const vespalib::string &)>;
-private:
-    using NodeId = uint32_t;
-    using Edges = vespalib::hash_map<TaskId, NodeId>;
-    struct Node {
-        TaskId task;
-        size_t count;
-        duration total_time;
-        Edges children;
-        Node(TaskId task_in) noexcept
-          : task(task_in),
-            count(0),
-            total_time(),
-            children() {}
-    };
-    struct Frame {
-        NodeId node;
-        steady_time start;
-        Frame(NodeId node_in) noexcept
-          : node(node_in), start(steady_clock::now()) {}
-    };
     struct ReportContext;
+    struct Impl {
+        virtual ~Impl() = default;
+        virtual void track_start(TaskId task) = 0;
+        virtual void track_complete() = 0;
+        virtual void report(slime::Cursor &obj, ReportContext &ctx) const = 0;
+    };
+    using NameMapper = std::function<vespalib::string(const vespalib::string &)>;
 
+private:
+    size_t _level;
     size_t _max_depth;
     std::vector<vespalib::string> _names;
     vespalib::hash_map<vespalib::string,size_t> _name_map;
-    std::vector<Node> _nodes;
-    Edges _roots;
-    std::vector<Frame> _state;
-    size_t _level;
-
-    duration get_children_time(const Edges &edges) const;
-    std::vector<NodeId> get_sorted_children(const Edges &edges) const;
-    void render_node(slime::Cursor &obj, NodeId node, ReportContext &ctx) const;
-    void render_children(slime::Cursor &arr, const Edges &edges, ReportContext &ctx) const;
-
-    void track_start(TaskId task);
-    void track_complete();
+    std::unique_ptr<Impl> _impl;
 
 public:
-    ExecutionProfiler(size_t max_depth);
+    ExecutionProfiler(int32_t profile_depth);
     ~ExecutionProfiler();
     TaskId resolve(const vespalib::string &name);
+    const vespalib::string &name_of(TaskId task) const { return _names[task]; }
     void start(TaskId task) {
         if (++_level <= _max_depth) {
-            track_start(task);
+            _impl->track_start(task);
         }
     }
     void complete() {
         if (--_level < _max_depth) {
-            track_complete();
+            _impl->track_complete();
         }
     }
-    void report(slime::Cursor &obj, const NameMapper & = [](const vespalib::string &name) noexcept { return name; }) const;
+    void report(slime::Cursor &obj, const NameMapper &name_mapper =
+                [](const vespalib::string &name) noexcept { return name; }) const;
 };
 
 }

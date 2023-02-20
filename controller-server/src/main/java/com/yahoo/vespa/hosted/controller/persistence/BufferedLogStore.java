@@ -16,6 +16,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -62,7 +63,7 @@ public class BufferedLogStore {
             return; // Max size exceeded — store no more.
 
         byte[] emptyChunk = "[]".getBytes();
-        byte[] lastChunk = buffer.readLog(id, type, lastChunkId).orElse(emptyChunk);
+        byte[] lastChunk = buffer.readLog(id, type, lastChunkId).filter(chunk -> chunk.length > 0).orElse(emptyChunk);
 
         long sizeLowerBound = lastChunk.length;
         Map<Step, List<LogEntry>> log = logSerializer.fromJson(lastChunk, -1);
@@ -126,7 +127,7 @@ public class BufferedLogStore {
         return logSerializer.fromJson(Arrays.stream(chunkIds, firstChunk, chunkIds.length)
                                             .mapToObj(chunkId -> buffer.readLog(id, type, chunkId))
                                             .flatMap(Optional::stream)
-                                            .collect(Collectors.toList()),
+                                            .toList(),
                                       after);
     }
 

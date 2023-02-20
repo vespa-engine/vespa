@@ -47,7 +47,7 @@ struct RpcTask : public vespalib::Executor::Task {
 }
 
 TransLogClient::TransLogClient(FNET_Transport & transport, const vespalib::string & rpcTarget) :
-    _executor(std::make_unique<vespalib::ThreadStackExecutor>(1, 128_Ki, translogclient_rpc_callback)),
+    _executor(std::make_unique<vespalib::ThreadStackExecutor>(1, translogclient_rpc_callback)),
     _rpcTarget(rpcTarget),
     _sessions(),
     _supervisor(std::make_unique<FRT_Supervisor>(&transport)),

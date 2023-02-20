@@ -56,7 +56,6 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
 
-import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.toMap;
 
 /**
@@ -115,8 +114,8 @@ public class RoutingController {
         for (var policy : routingPolicies.read(deployment)) {
             if (!policy.status().isActive()) continue;
             RoutingMethod routingMethod = controller.zoneRegistry().routingMethod(policy.id().zone());
-            endpoints.addAll(policy.zoneEndpointsIn(controller.system(), routingMethod, controller.zoneRegistry()));
-            endpoints.add(policy.regionEndpointIn(controller.system(), routingMethod, controller.zoneRegistry()));
+            endpoints.addAll(policy.zoneEndpointsIn(controller.system(), routingMethod));
+            endpoints.add(policy.regionEndpointIn(controller.system(), routingMethod));
         }
         return EndpointList.copyOf(endpoints);
     }
@@ -143,9 +142,9 @@ public class RoutingController {
                 List<DeploymentId> deployments = spec.zones().stream()
                                                      .filter(zone -> zone.concerns(Environment.prod))
                                                      .map(zone -> new DeploymentId(instance, ZoneId.from(Environment.prod, zone.region().get())))
-                                                     .collect(Collectors.toList());
+                                                     .toList();
                 RoutingId routingId = RoutingId.of(instance, EndpointId.defaultId());
-                endpoints.addAll(computeGlobalEndpoints(routingId, ClusterSpec.Id.from(clusterId), deployments, deploymentSpec));
+                endpoints.addAll(computeGlobalEndpoints(routingId, ClusterSpec.Id.from(clusterId), deployments));
             });
             // Add endpoints declared with current syntax
             spec.endpoints().forEach(declaredEndpoint -> {
@@ -153,8 +152,8 @@ public class RoutingController {
                 List<DeploymentId> deployments = declaredEndpoint.regions().stream()
                                                                  .map(region -> new DeploymentId(instance,
                                                                                                  ZoneId.from(Environment.prod, region)))
-                                                                 .collect(Collectors.toList());
-                endpoints.addAll(computeGlobalEndpoints(routingId, ClusterSpec.Id.from(declaredEndpoint.containerId()), deployments, deploymentSpec));
+                                                                 .toList();
+                endpoints.addAll(computeGlobalEndpoints(routingId, ClusterSpec.Id.from(declaredEndpoint.containerId()), deployments));
             });
         }
         // Add application endpoints
@@ -275,7 +274,8 @@ public class RoutingController {
             for (var endpoint : rotationEndpoints) {
                 controller.nameServiceForwarder().createRecord(
                         new Record(Record.Type.CNAME, RecordName.from(endpoint.dnsName()), RecordData.fqdn(rotation.name())),
-                        Priority.normal);
+                        Priority.normal,
+                        Optional.of(application.get().id()));
                 List<String> names = List.of(endpoint.dnsName(),
                                              // Include rotation ID as a valid name of this container endpoint
                                              // (required by global routing health checks)
@@ -312,10 +312,12 @@ public class RoutingController {
                                            .orElseThrow(() -> new IllegalArgumentException("No VIP configured for zone " + targetZone));
             controller.nameServiceForwarder().createRecord(
                     new Record(Record.Type.CNAME, RecordName.from(endpoint.dnsName()), RecordData.fqdn(vipHostname)),
-                    Priority.normal);
+                    Priority.normal,
+                    Optional.of(application.get().id()));
             controller.nameServiceForwarder().createRecord(
                     new Record(Record.Type.CNAME, RecordName.from(endpoint.legacyRegionalDnsName()), RecordData.fqdn(vipHostname)),
-                    Priority.normal);
+                    Priority.normal,
+                    Optional.of(application.get().id()));
         }
         Map<ClusterSpec.Id, EndpointList> applicationEndpointsByCluster = applicationEndpoints.groupingBy(Endpoint::cluster);
         for (var kv : applicationEndpointsByCluster.entrySet()) {
@@ -345,14 +347,15 @@ public class RoutingController {
         for (var rotation : instance.rotations()) {
             var deployments = rotation.regions().stream()
                                       .map(region -> new DeploymentId(instance.id(), ZoneId.from(Environment.prod, region)))
-                                      .collect(Collectors.toList());
+                                      .toList();
             endpointsToRemove.addAll(computeGlobalEndpoints(RoutingId.of(instance.id(), rotation.endpointId()),
-                                                            rotation.clusterId(), deployments, application.deploymentSpec()));
+                                                            rotation.clusterId(), deployments));
         }
         endpointsToRemove.forEach(endpoint -> controller.nameServiceForwarder()
                                                         .removeRecords(Record.Type.CNAME,
                                                                        RecordName.from(endpoint.dnsName()),
-                                                                       Priority.normal));
+                                                                       Priority.normal,
+                                                                       Optional.of(application.id())));
     }
 
     /**
@@ -392,7 +395,7 @@ public class RoutingController {
     }
 
     /** Compute global endpoints for given routing ID, application and deployments */
-    private List<Endpoint> computeGlobalEndpoints(RoutingId routingId, ClusterSpec.Id cluster, List<DeploymentId> deployments, DeploymentSpec deploymentSpec) {
+    private List<Endpoint> computeGlobalEndpoints(RoutingId routingId, ClusterSpec.Id cluster, List<DeploymentId> deployments) {
         var endpoints = new ArrayList<Endpoint>();
         var directMethods = 0;
         var availableRoutingMethods = routingMethodsOfAll(deployments);

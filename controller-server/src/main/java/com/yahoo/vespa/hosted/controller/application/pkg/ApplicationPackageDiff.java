@@ -42,7 +42,7 @@ public class ApplicationPackageDiff {
                 .flatMap(contents -> contents.keySet().stream())
                 .sorted()
                 .distinct()
-                .collect(Collectors.toList());
+                .toList();
         for (String file : files) {
             if (sb.length() > maxTotalDiffSize)
                 sb.append("--- ").append(file).append('\n').append("Diff skipped: Total diff size >").append(maxTotalDiffSize).append("B)\n\n");

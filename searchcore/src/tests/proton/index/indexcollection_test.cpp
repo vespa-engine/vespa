@@ -5,7 +5,6 @@
 #include <vespa/searchlib/query/tree/simplequery.h>
 #include <vespa/searchcorespi/index/warmupindexcollection.h>
 #include <vespa/vespalib/gtest/gtest.h>
-#include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
 #include <vespa/vespalib/util/testclock.h>
 #include <vespa/log/log.h>
@@ -97,7 +96,7 @@ public:
           _source1(std::make_shared<MockIndexSearchable>(FieldLengthInfo(3, 5))),
           _source2(std::make_shared<MockIndexSearchable>(FieldLengthInfo(7, 11))),
           _fusion_source(std::make_shared<FakeIndexSearchable>()),
-          _executor(1, 128_Ki),
+          _executor(1),
           _warmup(std::make_shared<FakeIndexSearchable>())
     {}
     ~IndexCollectionTest() = default;

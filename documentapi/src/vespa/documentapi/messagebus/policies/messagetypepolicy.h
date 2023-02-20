@@ -29,8 +29,8 @@ class MessageTypePolicy : public mbus::IRoutingPolicy,
                           public config::IFetcherCallback<vespa::config::content::MessagetyperouteselectorpolicyConfig>
 {
 private:
-    typedef vespalib::PtrHolder<policy::MessageTypeMap> MessageTypeHolder;
-    typedef vespalib::PtrHolder<mbus::Route> RouteHolder;
+    using MessageTypeHolder = vespalib::PtrHolder<policy::MessageTypeMap>;
+    using RouteHolder = vespalib::PtrHolder<mbus::Route>;
 
     MessageTypeHolder     _map;
     RouteHolder           _defaultRoute;

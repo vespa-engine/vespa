@@ -15,7 +15,7 @@ private:
 public:
     DECLARE_IDENTIFIABLE_ABSTRACT_NS2(search, aggregation, Hit);
     DECLARE_NBO_SERIALIZE;
-    typedef std::unique_ptr<Hit> UP;
+    using UP = std::unique_ptr<Hit>;
 
     Hit() : _rank() {}
     Hit(RawRank rank) : _rank(rank) {}

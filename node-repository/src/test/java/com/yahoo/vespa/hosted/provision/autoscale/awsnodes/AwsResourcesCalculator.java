@@ -2,6 +2,8 @@
 package com.yahoo.vespa.hosted.provision.autoscale.awsnodes;
 
 import com.yahoo.config.provision.NodeResources;
+import com.yahoo.config.provision.NodeType;
+import com.yahoo.config.provision.Zone;
 
 /**
  * Calculations and logic on node resources common to provision-service and host-admin (at least).
@@ -10,8 +12,12 @@ import com.yahoo.config.provision.NodeResources;
  */
 public class AwsResourcesCalculator {
 
+    private final ReservedSpacePolicyImpl reservedSpacePolicy;
     private final double hostMemory = 0.6;
-    private final double hostDiskOverhead = 1;
+
+    public AwsResourcesCalculator() {
+        this.reservedSpacePolicy = new ReservedSpacePolicyImpl();
+    }
 
     /** The real resources of a parent host node in the node repository, given the real resources of the flavor. */
     public NodeResources realResourcesOfParentHost(NodeResources realResourcesOfFlavor) {
@@ -52,6 +58,7 @@ public class AwsResourcesCalculator {
      */
     public double diskOverhead(VespaFlavor flavor, NodeResources resources, boolean real, boolean exclusive) {
         if ( flavor.realResources().storageType() != NodeResources.StorageType.local) return 0;
+        double hostDiskOverhead = reservedSpacePolicy.getPartitionSizeInBase2Gb(NodeType.host, ! exclusive);
         double diskShare = resources.diskGb() /
                            ( flavor.advertisedResources().diskGb() - ( real ? hostDiskOverhead : 0) );
         return hostDiskOverhead * diskShare;

@@ -75,8 +75,8 @@ std::vector<uint32_t> local_enum(const std::vector<vespalib::string> &strings) {
 std::vector<Handle> resolve_strings(const std::vector<vespalib::string> &strings) {
     std::vector<Handle> handles;
     handles.reserve(strings.size());
-    for (size_t i = 0; i < strings.size(); ++i) {
-        handles.emplace_back(strings[i]);
+    for (const auto & string : strings) {
+        handles.emplace_back(string);
     }
     return handles;
 }
@@ -84,8 +84,8 @@ std::vector<Handle> resolve_strings(const std::vector<vespalib::string> &strings
 std::vector<vespalib::string> get_strings(const std::vector<Handle> &handles) {
     std::vector<vespalib::string> strings;
     strings.reserve(handles.size());
-    for (size_t i = 0; i < handles.size(); ++i) {
-        strings.push_back(handles[i].as_string());
+    for (const auto & handle : handles) {
+        strings.push_back(handle.as_string());
     }
     return strings;
 }
@@ -116,7 +116,7 @@ std::unique_ptr<StringIdVector> make_weak_handles(const Handles &handles) {
 //-----------------------------------------------------------------------------
 
 struct Avg : Rendezvous<double, double> {
-    Avg(size_t n) : Rendezvous<double, double>(n) {}
+    explicit Avg(size_t n) : Rendezvous<double, double>(n) {}
     void mingle() override {
         double sum = 0;
         for (size_t i = 0; i < size(); ++i) {
@@ -131,7 +131,7 @@ struct Avg : Rendezvous<double, double> {
 };
 
 struct Vote : Rendezvous<bool, bool> {
-    Vote(size_t n) : Rendezvous<bool, bool>(n) {}
+    explicit Vote(size_t n) : Rendezvous<bool, bool>(n) {}
     void mingle() override {
         size_t true_cnt = 0;
         size_t false_cnt = 0;
@@ -147,7 +147,7 @@ struct Vote : Rendezvous<bool, bool> {
             out(i) = result;
         }
     }
-    size_t num_threads() const { return size(); }
+    [[nodiscard]] size_t num_threads() const { return size(); }
     bool operator()(bool flag) { return rendezvous(flag); }
 };
 
@@ -170,7 +170,7 @@ struct Fixture {
     std::vector<vespalib::string> direct_work;
     steady_time start_time;
     std::map<vespalib::string,double> time_ms;
-    Fixture(size_t num_threads)
+    explicit Fixture(size_t num_threads)
         : avg(num_threads), vote(num_threads), work(make_strings(work_size)), direct_work(make_direct_strings(work_size)), start_time(steady_clock::now()) {}
     ~Fixture() {
         if (verbose) {
@@ -180,7 +180,7 @@ struct Fixture {
             }
         }
     }
-    bool has_budget() {
+    [[nodiscard]] bool has_budget() const {
         return to_s(steady_clock::now() - start_time) < budget;
     }
     template <typename F>
@@ -417,16 +417,13 @@ TEST("require that handle/string can be obtained from string_id") {
     EXPECT_EQUAL(Handle::string_from_id(b.id()), vespalib::string("str"));
 }
 
+void verifySelfAssignment(Handle & a, const Handle &b) {
+    a = b;
+}
+
 TEST("require that handle can be self-assigned") {
     Handle a("foo");
-#ifdef __clang__
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wself-assign-overloaded"
-#endif
-    a = a;
-#ifdef __clang__
-#pragma clang diagnostic pop
-#endif
+    verifySelfAssignment(a, a);
     EXPECT_EQUAL(a.as_string(), vespalib::string("foo"));
 }
 

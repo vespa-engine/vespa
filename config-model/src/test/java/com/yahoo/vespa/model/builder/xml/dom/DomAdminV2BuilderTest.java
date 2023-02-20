@@ -9,6 +9,7 @@ import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.config.model.test.MockRoot;
 import com.yahoo.text.XML;
+import com.yahoo.vespa.model.HostResource;
 import com.yahoo.vespa.model.admin.Admin;
 import com.yahoo.vespa.model.admin.Configserver;
 import com.yahoo.vespa.model.admin.Slobrok;
@@ -20,7 +21,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author hmusum
@@ -115,7 +119,7 @@ public class DomAdminV2BuilderTest extends DomBuilderTest {
         Admin admin = buildAdmin(servicesMultitenantAdminOnly(), true, configServerSpecs);
         assertEquals(3, admin.getConfigservers().size());
         assertEquals(1, admin.getSlobroks().size());
-        assertNotNull(admin.hostSystem().getHostByHostname("test1"));
+        assertTrue(admin.hostSystem().getAllHosts().stream().map(HostResource::getHost).anyMatch(host -> host.getHostname().equals("test1")));
         for (Configserver configserver : admin.getConfigservers()) {
             for (Slobrok slobrok : admin.getSlobroks()) {
                 assertNotEquals(configserver.getHostName(), slobrok.getHostName());

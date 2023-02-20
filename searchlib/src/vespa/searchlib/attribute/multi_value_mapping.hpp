@@ -32,20 +32,22 @@ MultiValueMapping<EntryT,RefT>::set(uint32_t docId, ConstArrayRef values)
 }
 
 template <typename EntryT, typename RefT>
-void
-MultiValueMapping<EntryT,RefT>::compactWorst(CompactionSpec compaction_spec, const CompactionStrategy& compaction_strategy)
+vespalib::MemoryUsage
+MultiValueMapping<EntryT,RefT>::update_stat(const CompactionStrategy& compaction_strategy)
 {
-    vespalib::datastore::ICompactionContext::UP compactionContext(_store.compactWorst(compaction_spec, compaction_strategy));
-    if (compactionContext) {
-        compactionContext->compact(vespalib::ArrayRef<AtomicEntryRef>(&_indices[0], _indices.size()));
-    }
+    auto retval = _store.update_stat(compaction_strategy);
+    retval.merge(_indices.getMemoryUsage());
+    return retval;
 }
 
 template <typename EntryT, typename RefT>
-bool
-MultiValueMapping<EntryT,RefT>::has_held_buffers() const noexcept
+void
+MultiValueMapping<EntryT,RefT>::compact_worst(const CompactionStrategy& compaction_strategy)
 {
-    return _store.has_held_buffers();
+    vespalib::datastore::ICompactionContext::UP compactionContext(_store.compact_worst(compaction_strategy));
+    if (compactionContext) {
+        compactionContext->compact(vespalib::ArrayRef<AtomicEntryRef>(&_indices[0], _indices.size()));
+    }
 }
 
 template <typename EntryT, typename RefT>

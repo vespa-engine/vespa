@@ -62,7 +62,7 @@ public class NodeFlavors {
     }
 
     private static Collection<Flavor> toFlavors(FlavorsConfig config) {
-        return config.flavor().stream().map(Flavor::new).collect(Collectors.toList());
+        return config.flavor().stream().map(Flavor::new).toList();
     }
 
     @Override

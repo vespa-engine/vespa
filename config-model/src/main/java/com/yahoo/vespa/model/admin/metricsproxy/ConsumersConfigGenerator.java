@@ -40,7 +40,7 @@ class ConsumersConfigGenerator {
 
         return allConsumers.values().stream()
                 .map(ConsumersConfigGenerator::toConsumerBuilder)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     /*

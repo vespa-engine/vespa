@@ -4,11 +4,9 @@ package ai.vespa.metricsproxy.service;
 import ai.vespa.metricsproxy.core.MonitoringConfig;
 import ai.vespa.metricsproxy.metric.model.DimensionId;
 import ai.vespa.metricsproxy.service.VespaServicesConfig.Service;
-import com.google.common.annotations.VisibleForTesting;
 import com.yahoo.component.annotation.Inject;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
@@ -39,7 +37,6 @@ public class VespaServices {
         updateServices(services);
     }
 
-    @VisibleForTesting
     public VespaServices(List<VespaService> services) {
         this.services = services;
         sentinel = null;
@@ -74,7 +71,7 @@ public class VespaServices {
      * @return A list of VespaService objects
      */
     public List<VespaService> getVespaServices() {
-        return Collections.unmodifiableList(services);
+        return List.copyOf(services);
     }
 
     /**

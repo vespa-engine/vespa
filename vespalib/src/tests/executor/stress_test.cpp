@@ -105,7 +105,7 @@ Test::Main()
         fprintf(stderr, "calibrating task size...\n");
         uint32_t taskSize = calibrate(ms_per_task);
         fprintf(stderr, "calibrated task size: %u\n", taskSize);
-        ThreadStackExecutor executor(threads, 128000, 5000 + threads);
+        ThreadStackExecutor executor(threads, 5000 + threads);
         {
             Gate gate;
             CountDownLatch latch(threads);

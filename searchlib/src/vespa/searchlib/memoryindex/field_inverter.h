@@ -97,7 +97,7 @@ private:
 
     class ElemInfo {
     public:
-        int32_t _weight;
+        const int32_t _weight;
         uint32_t _len;
         uint32_t _field_length;
 
@@ -161,7 +161,7 @@ private:
 
     using UInt32Vector = std::vector<uint32_t, vespalib::allocator_large<uint32_t>>;
     // Current field state.
-    uint32_t                       _fieldId;   // current field id
+    const uint32_t                 _fieldId;   // current field id
     uint32_t                       _elem;      // current element
     uint32_t                       _wpos;      // current word pos
     uint32_t                       _docId;
@@ -247,6 +247,8 @@ private:
 public:
     VESPA_DLL_LOCAL void
     processAnnotations(const document::StringFieldValue &value);
+
+    void push_documents_internal();
 
 private:
     void processNormalDocTextField(const document::StringFieldValue &field);

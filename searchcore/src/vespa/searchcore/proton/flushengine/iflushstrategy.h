@@ -6,7 +6,10 @@
 
 namespace proton {
 
-namespace flushengine { class TlsStatsMap; }
+namespace flushengine {
+class ActiveFlushStats;
+class TlsStatsMap;
+}
 
 /**
  * This class represents a strategy used by the FlushEngine to make decisions on
@@ -14,7 +17,7 @@ namespace flushengine { class TlsStatsMap; }
  */
 class IFlushStrategy {
 public:
-    typedef std::shared_ptr<IFlushStrategy> SP;
+    using SP = std::shared_ptr<IFlushStrategy>;
 
     IFlushStrategy(const IFlushStrategy &) = delete;
     IFlushStrategy & operator = (const IFlushStrategy &) = delete;
@@ -25,11 +28,13 @@ public:
      * Takes an input of targets that are candidates for flush and returns
      * a list of targets sorted according to priority strategy.
      * @param targetList The list of possible flush targets.
-     * @param lastSerial is the last serialnumber known by flushengine.
+     * @param tlsStatsMap Statistics per domain in the TLS. A domain matches a flush handler.
+     * @parma active_flushes Statistics of active (ongoing) flushes per flush handler.
      * @return A prioritized list of targets to flush.
      */
-    virtual FlushContext::List getFlushTargets(const FlushContext::List & targetList,
-                                               const flushengine::TlsStatsMap & tlsStatsMap) const = 0;
+    virtual FlushContext::List getFlushTargets(const FlushContext::List& targetList,
+                                               const flushengine::TlsStatsMap& tlsStatsMap,
+                                               const flushengine::ActiveFlushStats& active_flushes) const = 0;
 protected:
     IFlushStrategy() = default;
 };

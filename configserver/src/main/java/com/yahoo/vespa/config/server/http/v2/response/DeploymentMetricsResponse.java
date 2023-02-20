@@ -32,6 +32,7 @@ public class DeploymentMetricsResponse extends SlimeJsonResponse {
             aggregator.aggregateDocumentCount().ifPresent(documentCount -> metrics.setDouble("documentCount", documentCount));
             aggregator.aggregateQueryLatency().ifPresent(queryLatency -> metrics.setDouble("queryLatency",queryLatency));
             aggregator.aggregateFeedLatency().ifPresent(feedLatency -> metrics.setDouble("feedLatency", feedLatency));
+
             aggregator.memoryUsage().ifPresent(memory -> {
                 metrics.setDouble("memoryUtil", memory.util());
                 metrics.setDouble("memoryFeedBlockLimit", memory.feedBlockLimit());
@@ -39,11 +40,6 @@ public class DeploymentMetricsResponse extends SlimeJsonResponse {
             aggregator.diskUsage().ifPresent(disk -> {
                 metrics.setDouble("diskUtil", disk.util());
                 metrics.setDouble("diskFeedBlockLimit", disk.feedBlockLimit());
-            });
-
-            aggregator.reindexingProgress().ifPresent(reindexingProgress -> {
-                Cursor progressObject = cluster.setObject("reindexingProgress");
-                reindexingProgress.forEach(progressObject::setDouble);
             });
         }
     }

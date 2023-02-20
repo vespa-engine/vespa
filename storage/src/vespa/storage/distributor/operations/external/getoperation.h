@@ -12,16 +12,13 @@
 
 namespace document { class Document; }
 
-namespace storage {
+namespace storage::api { class GetCommand; }
 
-namespace api { class GetCommand; }
-
-class PersistenceOperationMetricSet;
-
-namespace distributor {
+namespace storage::distributor {
 
 class DistributorNodeContext;
 class DistributorBucketSpace;
+class PersistenceOperationMetricSet;
 
 class GetOperation  : public Operation
 {
@@ -36,11 +33,11 @@ public:
     void onClose(DistributorStripeMessageSender& sender) override;
     void onStart(DistributorStripeMessageSender& sender) override;
     void onReceive(DistributorStripeMessageSender& sender, const std::shared_ptr<api::StorageReply> & msg) override;
-    const char* getName() const override { return "get"; }
+    const char* getName() const noexcept override { return "get"; }
     std::string getStatus() const override { return ""; }
 
-    bool all_bucket_metadata_initially_consistent() const;
-    bool any_replicas_failed() const noexcept {
+    [[nodiscard]] bool all_bucket_metadata_initially_consistent() const noexcept;
+    [[nodiscard]] bool any_replicas_failed() const noexcept {
         return _any_replicas_failed;
     }
 
@@ -66,12 +63,12 @@ private:
     class GroupId {
     public:
         // Node should be set only if bucket is incomplete
-        GroupId(const document::BucketId& id, uint32_t checksum, int node);
+        GroupId(const document::BucketId& id, uint32_t checksum, int node) noexcept;
 
-        bool operator<(const GroupId& other) const;
-        bool operator==(const GroupId& other) const;
-        const document::BucketId& getBucketId() const { return _id; }
-        int getNode() const { return _node; }
+        bool operator<(const GroupId& other) const noexcept;
+        bool operator==(const GroupId& other) const noexcept;
+        const document::BucketId& getBucketId() const noexcept { return _id; }
+        int getNode() const noexcept { return _node; }
     private:
         document::BucketId _id;
         uint32_t _checksum;
@@ -128,5 +125,4 @@ private:
     void update_internal_metrics();
 };
 
-}
 }

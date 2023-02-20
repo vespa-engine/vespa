@@ -17,15 +17,13 @@ template <typename KeyT,
 class BTreeRootBase
 {
 protected:
-    typedef KeyT  KeyType;
-    typedef DataT DataType;
-    typedef AggrT AggregatedType;
-    typedef BTreeRootBase<KeyT, DataT, AggrT, INTERNAL_SLOTS, LEAF_SLOTS>
-    BTreeRootBaseType;
-    typedef BTreeInternalNode<KeyT, AggrT, INTERNAL_SLOTS> InternalNodeType;
-    typedef BTreeLeafNode<KeyT, DataT, AggrT, LEAF_SLOTS>  LeafNodeType;
-    typedef BTreeNodeAllocator<KeyT, DataT, AggrT,
-                               INTERNAL_SLOTS, LEAF_SLOTS> NodeAllocatorType;
+    using KeyType = KeyT;
+    using DataType = DataT;
+    using AggregatedType = AggrT;
+    using BTreeRootBaseType = BTreeRootBase<KeyT, DataT, AggrT, INTERNAL_SLOTS, LEAF_SLOTS>;
+    using InternalNodeType = BTreeInternalNode<KeyT, AggrT, INTERNAL_SLOTS>;
+    using LeafNodeType = BTreeLeafNode<KeyT, DataT, AggrT, LEAF_SLOTS>;
+    using NodeAllocatorType = BTreeNodeAllocator<KeyT, DataT, AggrT, INTERNAL_SLOTS, LEAF_SLOTS>;
 
     BTreeNode::Ref  _root;
     std::atomic<uint32_t> _frozenRoot;
@@ -56,7 +54,7 @@ public:
         // entry for _root is owned by new copy of BTreeRootBase.
         _root = BTreeNode::Ref();
     }
-    
+
     void setRoots(BTreeNode::Ref newRoot) {
         _root = newRoot;
         _frozenRoot = newRoot.ref();

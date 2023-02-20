@@ -22,6 +22,8 @@ import java.util.Optional;
 import java.util.regex.Pattern;
 
 /**
+ * File registry for one application package
+ *
  * @author Tony Vaagenes
  */
 public class FileDBRegistry implements FileRegistry {
@@ -105,16 +107,14 @@ public class FileDBRegistry implements FileRegistry {
     }
 
     @Override
-    public FileReference addBlob(String blobName, ByteBuffer blob) {
+    public synchronized FileReference addBlob(String blobName, ByteBuffer blob) {
         String relativePath = blobToRelativeFile(blobName);
-        synchronized (this) {
-            Optional<FileReference> cachedReference = Optional.ofNullable(fileReferenceCache.get(blobName));
-            return cachedReference.orElseGet(() -> {
-                FileReference newRef = manager.addBlob(blob, Path.fromString(relativePath));
-                fileReferenceCache.put(blobName, newRef);
-                return newRef;
-            });
-        }
+        Optional<FileReference> cachedReference = Optional.ofNullable(fileReferenceCache.get(blobName));
+        return cachedReference.orElseGet(() -> {
+            FileReference newRef = manager.addBlob(blob, Path.fromString(relativePath));
+            fileReferenceCache.put(blobName, newRef);
+            return newRef;
+        });
     }
 
     @Override
@@ -126,6 +126,7 @@ public class FileDBRegistry implements FileRegistry {
         return entries;
     }
 
+    // Used for testing only
     synchronized Map<String, FileReference> getMap() {
         return ImmutableMap.copyOf(fileReferenceCache);
     }

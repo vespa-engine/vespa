@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "statusmetricconsumer.h"
+#include <vespa/storageframework/generic/clock/clock.h>
 #include <boost/lexical_cast.hpp>
 #include <vespa/metrics/jsonwriter.h>
 #include <vespa/metrics/textwriter.h>
@@ -15,31 +16,19 @@ LOG_SETUP(".status.metricreporter");
 
 namespace storage {
 
-StatusMetricConsumer::StatusMetricConsumer(
-        StorageComponentRegister& compReg, metrics::MetricManager& manager,
-        const std::string& name)
+StatusMetricConsumer::StatusMetricConsumer(StorageComponentRegister& compReg, metrics::MetricManager& manager, const std::string& name)
     : framework::StatusReporter("metrics", "Performance metrics"),
       _manager(manager),
       _component(compReg, "statusmetricsconsumer"),
       _name(name),
-      _lock(),
-      _startTime(_component.getClock().getTimeInSeconds()),
-      _processedTime(0)
+      _lock()
 {
     LOG(debug, "Started metrics consumer");
     setlocale(LC_NUMERIC, "");
-    _component.registerMetricUpdateHook(*this, framework::SecondTime(3600));
     _component.registerStatusPage(*this);
 }
 
 StatusMetricConsumer::~StatusMetricConsumer() = default;
-
-void
-StatusMetricConsumer::updateMetrics(const MetricLockGuard & guard)
-{
-    metrics::MemoryConsumption::UP mc(_manager.getMemoryConsumption(guard));
-    // TODO is this hook needed anymore?
-}
 
 vespalib::string
 StatusMetricConsumer::getReportContentType(const framework::HttpUrlPath& path) const
@@ -77,7 +66,7 @@ StatusMetricConsumer::reportStatus(std::ostream& out,
     } else {
         LOG(debug, "Not calling update hooks as dontcallupdatehooks option has been given");
     }
-    framework::SecondTime currentTime(_component.getClock().getTimeInSeconds());
+    int64_t currentTimeS(vespalib::count_s(_component.getClock().getMonotonicTime().time_since_epoch()));
     bool xml = (path.getAttribute("format") == "xml");
     bool json = (path.getAttribute("format") == "json");
 
@@ -89,7 +78,7 @@ StatusMetricConsumer::reportStatus(std::ostream& out,
 
     if (path.hasAttribute("task") && path.getAttribute("task") == "reset") {
         std::lock_guard guard(_lock);
-        _manager.reset(currentTime.getTime());
+        _manager.reset(currentTimeS);
     }
 
     if (path.hasAttribute("interval")) {
@@ -100,7 +89,7 @@ StatusMetricConsumer::reportStatus(std::ostream& out,
         const metrics::MetricSnapshot* snapshot;
         if (interval == -2) {
             snapshot = &_manager.getActiveMetrics(metricLock);
-            _manager.getActiveMetrics(metricLock).setToTime(currentTime.getTime());
+            _manager.getActiveMetrics(metricLock).setToTime(currentTimeS);
         } else if (interval == -1) {
             // "Prime" the metric structure by first fetching the set of active
             // metrics (complete with structure) and resetting these. This
@@ -112,19 +101,17 @@ StatusMetricConsumer::reportStatus(std::ostream& out,
                     _manager.getActiveMetrics(metricLock).getMetrics(),
                     copyUnset);
             generated->reset(0);
-            _manager.getTotalMetricSnapshot(metricLock).addToSnapshot(*generated, currentTime.getTime());
-            _manager.getActiveMetrics(metricLock).addToSnapshot(*generated, currentTime.getTime());
+            _manager.getTotalMetricSnapshot(metricLock).addToSnapshot(*generated, currentTimeS);
+            _manager.getActiveMetrics(metricLock).addToSnapshot(*generated, currentTimeS);
             generated->setFromTime(_manager.getTotalMetricSnapshot(metricLock).getFromTime());
             snapshot = generated.get();
         } else if (interval == 0) {
             if (copyUnset) {
                 generated = std::make_unique<metrics::MetricSnapshot>(
-                        _manager.getTotalMetricSnapshot(metricLock).getName(),
-                        0,
-                        _manager.getActiveMetrics(metricLock).getMetrics(),
-                        true);
+                        _manager.getTotalMetricSnapshot(metricLock).getName(), 0,
+                        _manager.getActiveMetrics(metricLock).getMetrics(), true);
                 generated->reset(0);
-                _manager.getTotalMetricSnapshot(metricLock).addToSnapshot(*generated, currentTime.getTime());
+                _manager.getTotalMetricSnapshot(metricLock).addToSnapshot(*generated, currentTimeS);
                 snapshot = generated.get();
             } else {
                 snapshot = &_manager.getTotalMetricSnapshot(metricLock);
@@ -136,7 +123,7 @@ StatusMetricConsumer::reportStatus(std::ostream& out,
                         _manager.getActiveMetrics(metricLock).getMetrics(), true);
                 generated->reset(0);
                 _manager.getMetricSnapshot(metricLock, interval, temporarySnap)
-                        .addToSnapshot(*generated, currentTime.getTime());
+                        .addToSnapshot(*generated, currentTimeS);
                 snapshot = generated.get();
             } else {
                 snapshot = &_manager.getMetricSnapshot(metricLock, interval, temporarySnap);

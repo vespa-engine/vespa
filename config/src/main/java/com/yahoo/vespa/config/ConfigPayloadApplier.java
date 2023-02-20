@@ -8,9 +8,7 @@ import com.yahoo.config.ModelReference;
 import com.yahoo.config.UrlReference;
 import com.yahoo.slime.ArrayTraverser;
 import com.yahoo.slime.Inspector;
-import com.yahoo.slime.ObjectTraverser;
 import com.yahoo.slime.Type;
-
 import java.io.File;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
@@ -18,12 +16,12 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.nio.file.Path;
+import java.util.ArrayDeque;
+import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
-import java.util.Stack;
 import java.util.logging.Logger;
 
 import static java.util.logging.Level.INFO;
@@ -44,7 +42,7 @@ public class ConfigPayloadApplier<T extends ConfigInstance.Builder> {
     private final ConfigInstance.Builder rootBuilder;
     private final ConfigTransformer.PathAcquirer pathAcquirer;
     private final UrlDownloader urlDownloader;
-    private final Stack<NamedBuilder> stack = new Stack<>();
+    private final Deque<NamedBuilder> stack = new ArrayDeque<>();
 
     public ConfigPayloadApplier(T builder) {
         this(builder, new IdentityPathAcquirer(), null);
@@ -60,6 +58,8 @@ public class ConfigPayloadApplier<T extends ConfigInstance.Builder> {
         stack.push(new NamedBuilder(rootBuilder));
         try {
             handleValue(payload.getSlime().get());
+        } catch (FileReferenceDoesNotExistException e) {
+            throw e;
         } catch (Exception e) {
             throw new RuntimeException("Not able to create config builder for payload '" + payload.toString() + "'", e);
         }
@@ -67,27 +67,17 @@ public class ConfigPayloadApplier<T extends ConfigInstance.Builder> {
 
     private void handleValue(Inspector inspector) {
         switch (inspector.type()) {
-            case NIX:
-            case BOOL:
-            case LONG:
-            case DOUBLE:
-            case STRING:
-            case DATA:
-                handleLeafValue(inspector);
-                break;
-            case ARRAY:
-                handleARRAY(inspector);
-                break;
-            case OBJECT:
-                handleOBJECT(inspector);
-                break;
-            default:
+            case NIX, BOOL, LONG, DOUBLE, STRING, DATA -> handleLeafValue(inspector);
+            case ARRAY -> handleARRAY(inspector);
+            case OBJECT -> handleOBJECT(inspector);
+            default -> {
                 assert false : "Should not be reached";
+            }
         }
     }
 
     private void handleARRAY(Inspector inspector) {
-        inspector.traverse((ArrayTraverser)(int index, Inspector value) -> handleArrayEntry(index, value));
+        inspector.traverse((ArrayTraverser) this::handleArrayEntry);
     }
 
     private void handleArrayEntry(int idx, Inspector inspector) {
@@ -108,11 +98,11 @@ public class ConfigPayloadApplier<T extends ConfigInstance.Builder> {
     }
 
     private void handleOBJECT(Inspector inspector) {
-        inspector.traverse((String name, Inspector value) -> handleObjectEntry(name, value));
+        inspector.traverse(this::handleObjectEntry);
         NamedBuilder builder = stack.pop();
 
         // Need to set e.g struct(Struct.Builder) here
-        if ( ! stack.empty()) {
+        if ( ! stack.isEmpty()) {
             try {
                 invokeSetter(stack.peek().builder, builder.peekName(), builder.builder);
             } catch (Exception e) {
@@ -165,7 +155,7 @@ public class ConfigPayloadApplier<T extends ConfigInstance.Builder> {
             throw new RuntimeException("Missing map builder (this should never happen): " + stack.peek());
         setMapLeafValue(name, builder.builder());
         stack.push(builder);
-        inspector.traverse((ObjectTraverser) (key, value) -> handleObjectEntry(key, value));
+        inspector.traverse(this::handleObjectEntry);
         stack.pop();
     }
 
@@ -296,18 +286,24 @@ public class ConfigPayloadApplier<T extends ConfigInstance.Builder> {
 
     private Object getValueFromInspector(Inspector inspector) {
         switch (inspector.type()) {
-            case STRING:
+            case STRING -> {
                 return inspector.asString();
-            case LONG:
+            }
+            case LONG -> {
                 return String.valueOf(inspector.asLong());
-            case DOUBLE:
+            }
+            case DOUBLE -> {
                 return String.valueOf(inspector.asDouble());
-            case NIX:
+            }
+            case NIX -> {
                 return null;
-            case BOOL:
+            }
+            case BOOL -> {
                 return String.valueOf(inspector.asBool());
-            case DATA:
+            }
+            case DATA -> {
                 return String.valueOf(inspector.asData());
+            }
         }
         throw new IllegalArgumentException("Unhandled type " + inspector.type());
     }
@@ -372,7 +368,7 @@ public class ConfigPayloadApplier<T extends ConfigInstance.Builder> {
         return name.substring(0, 1).toUpperCase() + name.substring(1);
     }
 
-    private Constructor<?> lookupBuilderForStruct(String structName, String name, Class<?> currentClass) {
+    private Constructor<?> lookupBuilderForStruct(String structName, Class<?> currentClass) {
         String currentClassName = currentClass.getName();
         Class<?> structClass = getInnerClass(currentClass, currentClassName + "$" + structName);
         if (structClass == null) {
@@ -420,7 +416,7 @@ public class ConfigPayloadApplier<T extends ConfigInstance.Builder> {
         String key = constructorCacheKey(structName, name, currentClass);
         Constructor<?> constructor = constructorCache.get(key);
         if (constructor == null) {
-            constructor = lookupBuilderForStruct(structName, name, currentClass);
+            constructor = lookupBuilderForStruct(structName, currentClass);
             if (constructor == null) return null;
             constructorCache.put(key, constructor);
         }
@@ -437,7 +433,7 @@ public class ConfigPayloadApplier<T extends ConfigInstance.Builder> {
     private static class NamedBuilder {
 
         private final ConfigBuilder builder;
-        private final Stack<String> names = new Stack<>(); // if empty, the builder is the root builder
+        private final Deque<String> names = new ArrayDeque<>(); // if empty, the builder is the root builder
 
         NamedBuilder(ConfigBuilder builder) {
             this.builder = builder;
@@ -456,7 +452,7 @@ public class ConfigPayloadApplier<T extends ConfigInstance.Builder> {
             return names.peek();
         }
 
-        Stack<String> nameStack() {
+        Deque<String> nameStack() {
             return names;
         }
 

@@ -18,7 +18,7 @@ private:
     std::atomic<search::SerialNum> _current;
 
 public:
-    typedef std::unique_ptr<TlsReplayProgress> UP;
+    using UP = std::unique_ptr<TlsReplayProgress>;
 
     TlsReplayProgress(const vespalib::string &domainName,
                       search::SerialNum first,

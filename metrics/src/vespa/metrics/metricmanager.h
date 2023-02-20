@@ -76,7 +76,7 @@ public:
      * to is a metric set.
      */
     struct ConsumerSpec : public vespalib::Printable {
-        typedef std::shared_ptr<ConsumerSpec> SP;
+        using SP = std::shared_ptr<ConsumerSpec>;
 
         vespalib::hash_set<Metric::String> includedMetrics;
         ConsumerSpec(ConsumerSpec &&) noexcept = default;
@@ -104,7 +104,6 @@ private:
     std::list<UpdateHook*> _snapshotUpdateHooks;
     mutable std::mutex _waiter;
     mutable std::condition_variable _cond;
-    typedef std::pair<uint32_t, time_t> PeriodTimePair;
     std::vector<MetricSnapshotSet::SP> _snapshots;
     MetricSnapshot::SP _totalMetrics;
     std::unique_ptr<Timer> _timer;
@@ -195,8 +194,7 @@ public:
      * of consumers. readConfig() will start a config subscription. It should
      * not be called multiple times.
      */
-    void init(const config::ConfigUri & uri, FastOS_ThreadPool&,
-              bool startThread = true);
+    void init(const config::ConfigUri & uri, FastOS_ThreadPool&, bool startThread = true);
 
     /**
      * Visit a given snapshot for a given consumer. (Empty consumer name means
@@ -289,7 +287,7 @@ private:
 
     void handleMetricsAltered(const MetricLockGuard & guard);
 
-    typedef std::pair<uint32_t, std::string> SnapSpec;
+    using SnapSpec = std::pair<uint32_t, std::string>;
     static std::vector<SnapSpec> createSnapshotPeriods( const MetricsmanagerConfig& config);
     void assertMetricLockLocked(const MetricLockGuard& g) const;
 };

@@ -44,6 +44,9 @@ public class NodeAclResponse extends SlimeJsonResponse {
 
         Cursor trustedPortsArray = object.setArray("trustedPorts");
         acls.forEach(nodeAcl -> toSlime(nodeAcl.trustedPorts(), nodeAcl, trustedPortsArray));
+
+        Cursor trustedUdpPortsArray = object.setArray("trustedUdpPorts");
+        acls.forEach(nodeAcl -> toSlime(nodeAcl.trustedUdpPorts(), nodeAcl, trustedUdpPortsArray));
     }
 
     private void toSlime(NodeAcl nodeAcl, Cursor array) {

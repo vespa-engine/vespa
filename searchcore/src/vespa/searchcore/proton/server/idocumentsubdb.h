@@ -7,6 +7,7 @@
 #include <vespa/searchlib/util/searchable_stats.h>
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/util/idestructorcallback.h>
+#include <optional>
 
 namespace search::index { class Schema; }
 
@@ -25,14 +26,11 @@ namespace proton {
 namespace matching { class SessionManager; }
 
 class DocumentDBConfig;
+class DocumentSubDBReconfig;
 class DocumentSubDbInitializer;
 class DocumentSubDbInitializerResult;
 class FeedHandler;
-struct IAttributeManager;
-struct IBucketStateCalculator;
-struct IDocumentDBReferenceResolver;
 class IDocumentDBReference;
-struct IDocumentMetaStoreContext;
 class IDocumentRetriever;
 class IFeedView;
 class IIndexWriter;
@@ -40,9 +38,14 @@ class IReplayConfig;
 class ISearchHandler;
 class ISummaryAdapter;
 class ISummaryManager;
+class PendingLidTrackerBase;
 class ReconfigParams;
 class RemoveDocumentsOperation;
-class PendingLidTrackerBase;
+class TransientResourceUsage;
+struct IAttributeManager;
+struct IBucketStateCalculator;
+struct IDocumentDBReferenceResolver;
+struct IDocumentMetaStoreContext;
 
 /**
  * Interface for a document sub database that handles a subset of the documents that belong to a
@@ -62,6 +65,7 @@ public:
     using IFlushTargetList = std::vector<std::shared_ptr<searchcorespi::IFlushTarget>>;
     using IndexConfig = index::IndexConfig;
     using OnDone = std::shared_ptr<vespalib::IDestructorCallback>;
+    using SessionManager = matching::SessionManager;
 public:
     IDocumentSubDB() { }
     virtual ~IDocumentSubDB() { }
@@ -74,11 +78,14 @@ public:
 
     // Called by master thread
     virtual void setup(const DocumentSubDbInitializerResult &initResult) = 0;
-    virtual void initViews(const DocumentDBConfig &configSnapshot, const std::shared_ptr<matching::SessionManager> &sessionManager) = 0;
+    virtual void initViews(const DocumentDBConfig &configSnapshot) = 0;
 
+    virtual std::unique_ptr<DocumentSubDBReconfig>
+    prepare_reconfig(const DocumentDBConfig& new_config_snapshot, const ReconfigParams& reconfig_params, std::optional<SerialNum> serial_num) = 0;
+    virtual void complete_prepare_reconfig(DocumentSubDBReconfig& prepared_reconfig, SerialNum serial_num) = 0;
     virtual IReprocessingTask::List
     applyConfig(const DocumentDBConfig &newConfigSnapshot, const DocumentDBConfig &oldConfigSnapshot,
-                SerialNum serialNum, const ReconfigParams &params, IDocumentDBReferenceResolver &resolver) = 0;
+                SerialNum serialNum, const ReconfigParams &params, IDocumentDBReferenceResolver &resolver, const DocumentSubDBReconfig& prepared_reconfig) = 0;
     virtual void setBucketStateCalculator(const std::shared_ptr<IBucketStateCalculator> &calc, OnDone) = 0;
 
     virtual std::shared_ptr<ISearchHandler> getSearchView() const = 0;
@@ -123,6 +130,7 @@ public:
     virtual void tearDownReferences(IDocumentDBReferenceResolver &resolver) = 0;
     virtual void validateDocStore(FeedHandler &op, SerialNum serialNum) const = 0;
     virtual PendingLidTrackerBase & getUncommittedLidsTracker() = 0;
+    virtual TransientResourceUsage get_transient_resource_usage() const = 0;
 };
 
 } // namespace proton

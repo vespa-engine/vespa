@@ -8,7 +8,8 @@ import com.yahoo.config.model.ConfigModelInstanceFactory;
 import com.yahoo.config.model.ConfigModelRepo;
 import com.yahoo.config.model.api.ConfigModelPlugin;
 import com.yahoo.config.model.deploy.DeployState;
-import com.yahoo.config.model.producer.AbstractConfigProducer;
+import com.yahoo.config.model.producer.AnyConfigProducer;
+import com.yahoo.config.model.producer.TreeConfigProducer;
 import com.yahoo.vespa.model.VespaModel;
 import org.w3c.dom.Element;
 
@@ -55,7 +56,7 @@ public abstract class ConfigModelBuilder<MODEL extends ConfigModel> extends Abst
      * @param spec the XML element this is constructed from
      */
     public final MODEL build(DeployState deployState, VespaModel vespaModel, ConfigModelRepo configModelRepo,
-                             AbstractConfigProducer<?> parent, Element spec) {
+                             TreeConfigProducer<AnyConfigProducer> parent, Element spec) {
         ConfigModelContext context = ConfigModelContext.create(deployState, vespaModel, configModelRepo, parent, getIdString(spec));
         return build(new DefaultModelInstanceFactory(), spec, context);
     }

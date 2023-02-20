@@ -38,12 +38,13 @@ public class FunctionEvaluator {
     public FunctionEvaluator bind(String name, Tensor value) {
         if (evaluated)
             throw new IllegalStateException("Cannot bind a new value in a used evaluator");
-        TensorType requiredType = function.argumentTypes().get(name);
+        TensorType requiredType = function.getArgumentType(name);
         if (requiredType == null)
             throw new IllegalArgumentException("'" + name + "' is not a valid argument in " + function +
-                                               ". Expected arguments: " + function.argumentTypes().entrySet().stream()
-                                                                                  .map(e -> e.getKey() + ": " + e.getValue())
-                                                                                  .collect(Collectors.joining(", ")));
+                                               ". Expected arguments: " +
+                    function.argumentTypes().entrySet().stream().sorted(Map.Entry.comparingByKey())
+                            .map(e -> e.getKey() + ": " + e.getValue())
+                            .collect(Collectors.joining(", ")));
         if ( ! value.type().isAssignableTo(requiredType))
             throw new IllegalArgumentException("'" + name + "' must be of type " + requiredType + ", not " + value.type());
         context.put(name, new TensorValue(value));
@@ -101,9 +102,8 @@ public class FunctionEvaluator {
     }
 
     public Tensor evaluate() {
-        for (Map.Entry<String, TensorType> argument : function.argumentTypes().entrySet()) {
-            checkArgument(argument.getKey(), argument.getValue());
-        }
+        function.argumentTypes().entrySet().stream().sorted(Map.Entry.comparingByKey())
+                .forEach(argument -> checkArgument(argument.getKey(), argument.getValue()));
         evaluated = true;
         evaluateOnnxModels();
         return function.getBody().evaluate(context).asTensor();
@@ -122,13 +122,19 @@ public class FunctionEvaluator {
     private void evaluateOnnxModels() {
         for (Map.Entry<String, OnnxModel> entry : context().onnxModels().entrySet()) {
             String onnxFeature = entry.getKey();
+            String outputName = function.getName(); // Function name is output of model (sometimes)
+            int idx = onnxFeature.indexOf(").");
+            if (idx > 0 && idx + 2 < onnxFeature.length()) {
+                // explicitly specified as onnx(modelname).outputname ; pick the last part
+                outputName = onnxFeature.substring(idx+2);
+            }
             OnnxModel onnxModel = entry.getValue();
             if (context.get(onnxFeature).equals(context.defaultValue())) {
                 Map<String, Tensor> inputs = new HashMap<>();
                 for (Map.Entry<String, TensorType> input: onnxModel.inputs().entrySet()) {
                     inputs.put(input.getKey(), context.get(input.getKey()).asTensor());
                 }
-                Tensor result = onnxModel.evaluate(inputs, function.getName());  // Function name is output of model
+                Tensor result = onnxModel.evaluate(inputs, outputName);
                 context.put(onnxFeature, new TensorValue(result));
             }
         }

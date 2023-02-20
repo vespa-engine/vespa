@@ -24,8 +24,8 @@ public:
     /**
      * Convenience typedefs.
      */
-    typedef std::unique_ptr<StaticThrottlePolicy> UP;
-    typedef std::shared_ptr<StaticThrottlePolicy> SP;
+    using UP = std::unique_ptr<StaticThrottlePolicy>;
+    using SP = std::shared_ptr<StaticThrottlePolicy>;
 
     /**
      * Constructs a new instance of this policy and sets the appropriate default values of member data.

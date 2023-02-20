@@ -15,7 +15,7 @@ namespace document {
 class RawFieldValue final : public LiteralFieldValue<RawFieldValue, DataType::T_RAW>
 {
 public:
-    typedef LiteralFieldValue<RawFieldValue, DataType::T_RAW> Parent;
+    using Parent = LiteralFieldValue<RawFieldValue, DataType::T_RAW>;
 
     RawFieldValue()
         : Parent(Type::RAW) { }

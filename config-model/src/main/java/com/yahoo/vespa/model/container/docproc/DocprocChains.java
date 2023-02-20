@@ -2,7 +2,7 @@
 package com.yahoo.vespa.model.container.docproc;
 
 import com.yahoo.component.ComponentId;
-import com.yahoo.config.model.producer.AbstractConfigProducer;
+import com.yahoo.config.model.producer.TreeConfigProducer;
 import com.yahoo.container.bundle.BundleInstantiationSpecification;
 import com.yahoo.container.jdisc.config.SessionConfig;
 import com.yahoo.docproc.jdisc.observability.DocprocsStatusExtension;
@@ -25,7 +25,7 @@ public class DocprocChains extends Chains<DocprocChain> {
 
     private final ProcessingHandler<DocprocChains> docprocHandler;
 
-    public DocprocChains(AbstractConfigProducer<?> parent, String subId) {
+    public DocprocChains(TreeConfigProducer<? super Chains> parent, String subId) {
         super(parent, subId);
         docprocHandler = new ProcessingHandler<>(
                 this,

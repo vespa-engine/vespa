@@ -19,10 +19,10 @@ public:
     Vector<T> & a(T v) { this->push_back(v); return *this; }
 };
 
-typedef Vector<ucs4_t> UCS4V;
-typedef Vector<size_t> SizeV;
-typedef UTF8StringFieldSearcherBase SFSB;
-typedef FUTF8StrChrFieldSearcher FSFS;
+using UCS4V = Vector<ucs4_t>;
+using SizeV = Vector<size_t>;
+using SFSB = UTF8StringFieldSearcherBase;
+using FSFS = FUTF8StrChrFieldSearcher;
 
 class TextUtilTest : public vespalib::TestApp
 {

@@ -18,9 +18,7 @@ RoutingSpec getRouting() {
         .addTable(RoutingTableSpec("Simple")
                   .addHop(HopSpec("pxy", "test/pxy/session"))
                   .addHop(HopSpec("dst", "test/dst/session"))
-                  .addRoute(RouteSpec("test")
-                            .addHop("pxy")
-                            .addHop("dst")));
+                  .addRoute(RouteSpec("test").addHop("pxy").addHop("dst")));
 }
 
 int
@@ -47,47 +45,47 @@ Test::Main()
     ASSERT_TRUE(pxyNet.waitSlobrok("test/dst/session"));
 
     // send message on client
-    ss->send(SimpleMessage::UP(new SimpleMessage("test message")), "test");
+    ss->send(std::make_unique<SimpleMessage>("test message"), "test");
 
     // check message on proxy
     Message::UP msg = pxy.getMessage();
-    ASSERT_TRUE(msg.get() != 0);
+    ASSERT_TRUE(msg);
     EXPECT_TRUE(msg->getProtocol() == SimpleProtocol::NAME);
     EXPECT_TRUE(msg->getType() == SimpleProtocol::MESSAGE);
-    EXPECT_TRUE(static_cast<SimpleMessage&>(*msg).getValue() == "test message");
+    EXPECT_TRUE(dynamic_cast<SimpleMessage&>(*msg).getValue() == "test message");
 
     // forward message on proxy
-    static_cast<SimpleMessage&>(*msg).setValue("test message pxy");
+    dynamic_cast<SimpleMessage&>(*msg).setValue("test message pxy");
     is->forward(std::move(msg));
 
     // check message on server
     msg = dst.getMessage();
-    ASSERT_TRUE(msg.get() != 0);
+    ASSERT_TRUE(msg);
     EXPECT_TRUE(msg->getProtocol() == SimpleProtocol::NAME);
     EXPECT_TRUE(msg->getType() == SimpleProtocol::MESSAGE);
-    EXPECT_TRUE(static_cast<SimpleMessage&>(*msg).getValue() == "test message pxy");
+    EXPECT_TRUE(dynamic_cast<SimpleMessage&>(*msg).getValue() == "test message pxy");
 
     // send reply on server
-    SimpleReply::UP sr(new SimpleReply("test reply"));
+    auto sr = std::make_unique<SimpleReply>("test reply");
     msg->swapState(*sr);
     ds->reply(Reply::UP(sr.release()));
 
     // check reply on proxy
     Reply::UP reply = pxy.getReply();
-    ASSERT_TRUE(reply.get() != 0);
+    ASSERT_TRUE(reply);
     EXPECT_TRUE(reply->getProtocol() == SimpleProtocol::NAME);
     EXPECT_TRUE(reply->getType() == SimpleProtocol::REPLY);
-    EXPECT_TRUE(static_cast<SimpleReply&>(*reply).getValue() == "test reply");
+    EXPECT_TRUE(dynamic_cast<SimpleReply&>(*reply).getValue() == "test reply");
 
     // forward reply on proxy
-    static_cast<SimpleReply&>(*reply).setValue("test reply pxy");
+    dynamic_cast<SimpleReply&>(*reply).setValue("test reply pxy");
     is->forward(std::move(reply));
 
     // check reply on client
     reply = src.getReply();
-    ASSERT_TRUE(reply.get() != 0);
+    ASSERT_TRUE(reply);
     EXPECT_TRUE(reply->getProtocol() == SimpleProtocol::NAME);
     EXPECT_TRUE(reply->getType() == SimpleProtocol::REPLY);
-    EXPECT_TRUE(static_cast<SimpleReply&>(*reply).getValue() == "test reply pxy");
+    EXPECT_TRUE(dynamic_cast<SimpleReply&>(*reply).getValue() == "test reply pxy");
     TEST_DONE();
 }

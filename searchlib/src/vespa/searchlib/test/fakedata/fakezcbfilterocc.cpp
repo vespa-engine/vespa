@@ -65,8 +65,8 @@ FakeZcbFilterOcc::FakeZcbFilterOcc(const FakeWord &fw)
     uint32_t lastDocId = 0u;
 
 
-    typedef FakeWord FW;
-    typedef FW::DocWordFeatureList DWFL;
+    using FW = FakeWord;
+    using DWFL = FW::DocWordFeatureList;
 
     DWFL::const_iterator d(fw._postings.begin());
     DWFL::const_iterator de(fw._postings.end());

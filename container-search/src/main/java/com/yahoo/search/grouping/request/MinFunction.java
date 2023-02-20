@@ -31,7 +31,7 @@ public class MinFunction extends FunctionNode {
     public MinFunction copy() {
         return new MinFunction(getLabel(),
                                getLevelOrNull(),
-                               args().stream().map(arg -> arg.copy()).collect(Collectors.toList()));
+                               args().stream().map(arg -> arg.copy()).toList());
     }
 
     /**

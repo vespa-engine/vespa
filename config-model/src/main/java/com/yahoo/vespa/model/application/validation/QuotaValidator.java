@@ -76,7 +76,7 @@ public class QuotaValidator extends Validator {
                 })
                 .map(Map.Entry::getKey)
                 .map(ClusterSpec.Id::value)
-                .collect(Collectors.toList());
+                .toList();
 
         if (!invalidClusters.isEmpty()) {
             var clusterNames = String.join(", ", invalidClusters);

@@ -33,6 +33,11 @@ else()
     set(C_WARN_OPTS "-Winline ${C_WARN_OPTS}")
 endif()
 if (VESPA_USE_SANITIZER)
+  if (VESPA_USE_SANITIZER STREQUAL "address" AND CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 12.0)
+    # Turn off maybe uninitialized and restrict warnings when compiling with
+    # address sanitizer on gcc 12 or newer.
+    set(C_WARN_OPTS "${C_WARN_OPTS} -Wno-maybe-uninitialized -Wno-restrict")
+  endif()
   if (VESPA_USE_SANITIZER STREQUAL "thread" AND CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 12.0)
     # Turn off warning about std::atomic_thread_fence not being supported by
     # address sanitizer.
@@ -65,10 +70,26 @@ else()
   set(VESPA_STDCXX_FS_LIB "stdc++fs")
 endif()
 
+# Detect uring shared library.
+if(EXISTS "/usr/${CMAKE_INSTALL_LIBDIR}/liburing.so")
+  set(VESPA_URING_LIB "uring")
+  message("-- liburing found")
+else()
+  set(VESPA_URING_LIB "")
+  message("-- liburing not found")
+endif()
+
 if(VESPA_OS_DISTRO_COMBINED STREQUAL "debian 10")
   unset(VESPA_XXHASH_DEFINE)
 else()
   set(VESPA_XXHASH_DEFINE "-DXXH_INLINE_ALL")
+endif()
+
+# Disable dangling reference and overloaded virtual warnings when using gcc 13
+if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+  if (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL "13")
+    set(CXX_SPECIFIC_WARN_OPTS "${CXX_SPECIFIC_WARN_OPTS} -Wno-dangling-reference -Wno-overloaded-virtual")
+  endif()
 endif()
 
 if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND VESPA_USE_LTO)
@@ -81,6 +102,10 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g -O3 -fno-omit-frame-pointer ${C_WARN_OPTS
 # AddressSanitizer/ThreadSanitizer work for both GCC and Clang
 if (VESPA_USE_SANITIZER)
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fsanitize=${VESPA_USE_SANITIZER}")
+    if (VESPA_USE_SANITIZER STREQUAL "undefined")
+        # Many false positives when checking vptr due to limited visibility
+        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fno-sanitize=vptr")
+    endif()
 endif()
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CMAKE_C_FLAGS} ${CXX_SPECIFIC_WARN_OPTS} -std=c++2a -fdiagnostics-color=auto ${EXTRA_CXX_FLAGS}")
 if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "AppleClang")

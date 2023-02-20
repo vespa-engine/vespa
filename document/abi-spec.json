@@ -3138,54 +3138,6 @@
     ],
     "fields" : [ ]
   },
-  "com.yahoo.document.serialization.XmlDocumentWriter" : {
-    "superClass" : "java.lang.Object",
-    "interfaces" : [
-      "com.yahoo.document.serialization.DocumentWriter"
-    ],
-    "attributes" : [
-      "public",
-      "final"
-    ],
-    "methods" : [
-      "public static com.yahoo.document.serialization.XmlDocumentWriter createWriter(java.lang.String)",
-      "public void <init>()",
-      "public void write(com.yahoo.vespa.objects.FieldBase, com.yahoo.document.datatypes.FieldValue)",
-      "public void write(com.yahoo.vespa.objects.FieldBase, com.yahoo.document.Document)",
-      "public void write(com.yahoo.vespa.objects.FieldBase, com.yahoo.document.datatypes.Array)",
-      "public void write(com.yahoo.vespa.objects.FieldBase, com.yahoo.document.datatypes.MapFieldValue)",
-      "public void write(com.yahoo.vespa.objects.FieldBase, com.yahoo.document.datatypes.ByteFieldValue)",
-      "public void write(com.yahoo.vespa.objects.FieldBase, com.yahoo.document.datatypes.BoolFieldValue)",
-      "public void write(com.yahoo.vespa.objects.FieldBase, com.yahoo.document.datatypes.CollectionFieldValue)",
-      "public void write(com.yahoo.vespa.objects.FieldBase, com.yahoo.document.datatypes.DoubleFieldValue)",
-      "public void write(com.yahoo.vespa.objects.FieldBase, com.yahoo.document.datatypes.FloatFieldValue)",
-      "public void write(com.yahoo.vespa.objects.FieldBase, com.yahoo.document.datatypes.IntegerFieldValue)",
-      "public void write(com.yahoo.vespa.objects.FieldBase, com.yahoo.document.datatypes.LongFieldValue)",
-      "public void write(com.yahoo.vespa.objects.FieldBase, com.yahoo.document.datatypes.Raw)",
-      "public void write(com.yahoo.vespa.objects.FieldBase, com.yahoo.document.datatypes.PredicateFieldValue)",
-      "public void write(com.yahoo.vespa.objects.FieldBase, com.yahoo.document.datatypes.StringFieldValue)",
-      "public void write(com.yahoo.vespa.objects.FieldBase, com.yahoo.document.datatypes.TensorFieldValue)",
-      "public void write(com.yahoo.vespa.objects.FieldBase, com.yahoo.document.datatypes.ReferenceFieldValue)",
-      "public void write(com.yahoo.vespa.objects.FieldBase, com.yahoo.document.datatypes.Struct)",
-      "public void write(com.yahoo.vespa.objects.FieldBase, com.yahoo.document.datatypes.StructuredFieldValue)",
-      "public void write(com.yahoo.vespa.objects.FieldBase, com.yahoo.document.datatypes.WeightedSet)",
-      "public void write(com.yahoo.vespa.objects.FieldBase, com.yahoo.document.annotation.AnnotationReference)",
-      "public com.yahoo.vespa.objects.Serializer putByte(com.yahoo.vespa.objects.FieldBase, byte)",
-      "public com.yahoo.vespa.objects.Serializer putShort(com.yahoo.vespa.objects.FieldBase, short)",
-      "public com.yahoo.vespa.objects.Serializer putInt(com.yahoo.vespa.objects.FieldBase, int)",
-      "public com.yahoo.vespa.objects.Serializer putLong(com.yahoo.vespa.objects.FieldBase, long)",
-      "public com.yahoo.vespa.objects.Serializer putFloat(com.yahoo.vespa.objects.FieldBase, float)",
-      "public com.yahoo.vespa.objects.Serializer putDouble(com.yahoo.vespa.objects.FieldBase, double)",
-      "public com.yahoo.vespa.objects.Serializer put(com.yahoo.vespa.objects.FieldBase, byte[])",
-      "public com.yahoo.vespa.objects.Serializer put(com.yahoo.vespa.objects.FieldBase, java.nio.ByteBuffer)",
-      "public com.yahoo.vespa.objects.Serializer put(com.yahoo.vespa.objects.FieldBase, java.lang.String)",
-      "public void write(com.yahoo.document.Document)",
-      "public void write(com.yahoo.document.DocumentId)",
-      "public void write(com.yahoo.document.DocumentType)",
-      "public java.lang.String lastRendered()"
-    ],
-    "fields" : [ ]
-  },
   "com.yahoo.document.serialization.XmlSerializationHelper" : {
     "superClass" : "java.lang.Object",
     "interfaces" : [ ],

@@ -43,25 +43,31 @@
           "architecture":"x86_64"
         }
       },
-      "utilization" : {
-        "cpu" : 0.0,
-        "idealCpu": 0.1394913986537023,
-        "currentCpu": 0.0,
-        "peakCpu": 0.0,
-        "memory" : 0.0,
-        "idealMemory": 0.325,
-        "currentMemory": 0.0,
-        "peakMemory": 0.0,
-        "disk" : 0.0,
-        "idealDisk": 0.3,
-        "currentDisk": 0.0,
-        "peakDisk": 0.0
+      "target" : {
+        "status" : "unavailable",
+        "description" : "",
+        "at" : 0,
+        "peak" : {
+          "cpu" : 0.0,
+          "memory" : 0.0,
+          "disk" : 0.0
+        },
+        "ideal" : {
+          "cpu" : 0.0,
+          "memory" : 0.0,
+          "disk" : 0.0
+        },
+        "metrics" : {
+          "queryRate" : 0.0,
+          "growthRateHeadroom" : 0.0,
+          "cpuCostPerQuery" : 0.0
+        }
       },
       "scalingEvents" : [
         {
           "from": {
             "nodes": 0,
-            "groups": 0,
+            "groups": 1,
             "resources": {
               "vcpu" : 0.0,
               "memoryGb": 0.0,
@@ -88,11 +94,7 @@
           "at" : 123
         }
       ],
-      "autoscalingStatusCode": "unavailable",
-      "autoscalingStatus" : "",
-      "scalingDuration": 43200000,
-      "maxQueryGrowthRate": 0.1,
-      "currentQueryFractionOfMax": 0.5
+      "scalingDuration": 43200000
     }
   }
 }

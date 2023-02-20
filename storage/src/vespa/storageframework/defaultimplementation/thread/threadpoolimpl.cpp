@@ -3,7 +3,6 @@
 #include "threadpoolimpl.h"
 #include "threadimpl.h"
 #include <vespa/vespalib/util/exceptions.h>
-#include <vespa/vespalib/util/size_literals.h>
 #include <cassert>
 #include <thread>
 
@@ -16,7 +15,7 @@ using vespalib::IllegalStateException;
 namespace storage::framework::defaultimplementation {
 
 ThreadPoolImpl::ThreadPoolImpl(Clock& clock)
-    : _backendThreadPool(512_Ki),
+    : _backendThreadPool(std::make_unique<FastOS_ThreadPool>()),
       _clock(clock),
       _stopping(false)
 { }
@@ -45,7 +44,7 @@ ThreadPoolImpl::~ThreadPoolImpl()
         }
         std::this_thread::sleep_for(10ms);
     }
-    _backendThreadPool.Close();
+    _backendThreadPool->Close();
 }
 
 Thread::UP

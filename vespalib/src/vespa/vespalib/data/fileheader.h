@@ -142,7 +142,7 @@ public:
 private:
     static const Tag EMPTY;
 
-    typedef std::map<vespalib::string, Tag> TagMap;
+    using TagMap = std::map<vespalib::string, Tag>;
     TagMap _tags;
 
 public:

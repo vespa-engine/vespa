@@ -76,7 +76,7 @@ public:
         return str;
     }
 };
-typedef std::unique_ptr<Operator> Operator_UP;
+using Operator_UP = std::unique_ptr<Operator>;
 
 //-----------------------------------------------------------------------------
 

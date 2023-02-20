@@ -56,7 +56,7 @@ public class ContentClusterBuilder {
     public ContentClusterBuilder docTypes(String ... docTypes) {
         this.docTypes = Arrays.asList(docTypes).stream().
                 map(type -> DocType.index(type)).
-                collect(Collectors.toList());
+                toList();
         return this;
     }
 

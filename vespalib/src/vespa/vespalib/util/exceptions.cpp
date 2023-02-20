@@ -51,7 +51,9 @@ ExceptionWithPayload::ExceptionWithPayload(vespalib::stringref msg, Anything::UP
       _msg(msg),
       _payload(std::move(payload))
 { }
-ExceptionWithPayload::~ExceptionWithPayload() {}
+ExceptionWithPayload::ExceptionWithPayload(ExceptionWithPayload &&) noexcept = default;
+ExceptionWithPayload & ExceptionWithPayload::operator = (ExceptionWithPayload &&) noexcept = default;
+ExceptionWithPayload::~ExceptionWithPayload() = default;
 
 SilenceUncaughtException::SilenceUncaughtException(const std::exception & e) :
     _oldTerminate(std::set_terminate(silent_terminate))
@@ -95,6 +97,8 @@ PortListenException::PortListenException(int port, vespalib::stringref protocol,
 {
 }
 
+PortListenException::PortListenException(PortListenException &&) noexcept = default;
+PortListenException & PortListenException::operator = (PortListenException &&) noexcept = default;
 PortListenException::PortListenException(const PortListenException &) = default;
 PortListenException & PortListenException::operator = (const PortListenException &) = default;
 
@@ -116,6 +120,11 @@ IoException::IoException(stringref msg, Type type,
       _type(type)
 {
 }
+
+IoException::IoException(const IoException &) = default;
+IoException::IoException(IoException &&) noexcept = default;
+IoException & IoException::operator =(IoException &&) noexcept = default;
+IoException::~IoException() = default;
 
 string
 IoException::createMessage(stringref msg, Type type)

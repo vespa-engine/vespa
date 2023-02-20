@@ -21,8 +21,8 @@ public:
     Vector<T> & add(T v) { this->push_back(v); return *this; }
 };
 
-typedef Vector<std::string>  StringList;
-typedef Vector<std::pair<std::string, int32_t> > WeightedStringList;
+using StringList = Vector<std::string>;
+using WeightedStringList = Vector<std::pair<std::string, int32_t> >;
 
 
 class TestDocument : public vsm::Document

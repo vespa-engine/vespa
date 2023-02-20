@@ -1,7 +1,5 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#pragma GCC diagnostic ignored "-Winline"
-
 #include <vespa/searchlib/queryeval/simpleresult.h>
 #include <vespa/searchlib/queryeval/emptysearch.h>
 #include <vespa/searchlib/queryeval/full_search.h>
@@ -209,9 +207,8 @@ struct Combine {
     using factory_fun = std::function<std::unique_ptr<SearchIterator>(const Blueprint::Children &, bool, Constraint)>;
     factory_fun fun;
     Blueprint::Children list;
-    Combine(factory_fun fun_in, const Children &child_list) : fun(fun_in), list() {
-        child_list.apply(*this);
-    }
+    Combine(factory_fun fun_in, const Children &child_list);
+    ~Combine();
     void addChild(std::unique_ptr<Blueprint> child) {
         list.push_back(std::move(child));
     }
@@ -219,6 +216,14 @@ struct Combine {
         return fun(list, strict, constraint);
     }
 };
+
+Combine::Combine(factory_fun fun_in, const Children &child_list)
+    : fun(fun_in), list()
+{
+    child_list.apply(*this);
+}
+
+Combine::~Combine() = default;
 
 // enable Make-ing source blender
 struct SourceBlenderAdapter {
@@ -265,7 +270,8 @@ struct EquivAdapter {
 struct WeightedSetTermAdapter {
     FieldSpec field;
     WeightedSetTermBlueprint blueprint;
-    WeightedSetTermAdapter() : field("foo", 3, 7), blueprint(field) {}
+    WeightedSetTermAdapter();
+    ~WeightedSetTermAdapter();
     void addChild(std::unique_ptr<Blueprint> child) {
         blueprint.addTerm(std::move(child), 100);
     }
@@ -274,11 +280,15 @@ struct WeightedSetTermAdapter {
     }
 };
 
+WeightedSetTermAdapter::WeightedSetTermAdapter() : field("foo", 3, 7), blueprint(field) {}
+WeightedSetTermAdapter::~WeightedSetTermAdapter() = default;
+
 // enable Make-ing dot product
 struct DotProductAdapter {
     FieldSpec field;
     DotProductBlueprint blueprint;
-    DotProductAdapter() : field("foo", 3, 7), blueprint(field) {}
+    DotProductAdapter();
+    ~DotProductAdapter();
     void addChild(std::unique_ptr<Blueprint> child) {
         auto child_field = blueprint.getNextChildField(field);
         auto term = std::make_unique<LeafProxy>(child_field, std::move(child));
@@ -288,6 +298,9 @@ struct DotProductAdapter {
         return blueprint.createFilterSearch(strict, constraint);
     }
 };
+
+DotProductAdapter::DotProductAdapter() : field("foo", 3, 7), blueprint(field) {}
+DotProductAdapter::~DotProductAdapter() = default;
 
 // enable Make-ing parallel weak and
 struct ParallelWeakAndAdapter {
@@ -306,8 +319,10 @@ struct ParallelWeakAndAdapter {
 
 // enable Make-ing same element
 struct SameElementAdapter {
+    FieldSpec field;
     SameElementBlueprint blueprint;
-    SameElementAdapter() : blueprint("foo", false) {}
+    SameElementAdapter();
+    ~SameElementAdapter();
     void addChild(std::unique_ptr<Blueprint> child) {
         auto child_field = blueprint.getNextChildField("foo", 3);
         auto term = std::make_unique<LeafProxy>(child_field, std::move(child));
@@ -317,6 +332,9 @@ struct SameElementAdapter {
         return blueprint.createFilterSearch(strict, constraint);
     }
 };
+
+SameElementAdapter::SameElementAdapter() : field("foo", 5, 11), blueprint(field, false) {}
+SameElementAdapter::~SameElementAdapter() = default;
 
 // Make a specific intermediate-ish blueprint that you can add
 // children to. Satisfies the FilterFactory concept.

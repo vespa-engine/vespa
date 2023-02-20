@@ -8,31 +8,16 @@ namespace storage::framework::defaultimplementation {
 
 TEST(TimeTest, testBasics)
 {
-    SecondTime timeSec(1);
-
-    MilliSecTime timeMillis = timeSec.getMillis();
-    EXPECT_EQ(uint64_t(1000), timeMillis.getTime());
-    EXPECT_EQ(timeSec, timeMillis.getSeconds());
-
-    MicroSecTime timeMicros = timeSec.getMicros();
-    EXPECT_EQ(timeSec.getMicros(), timeMillis.getMicros());
-    EXPECT_EQ(timeMillis, timeMicros.getMillis());
-    EXPECT_EQ(timeSec, timeMicros.getSeconds());
+    MicroSecTime timeMicros(1000*1000);
 
     MicroSecTime timeMicros2 = timeMicros;
     EXPECT_EQ(timeMicros2, timeMicros);
-    timeMicros2 += MicroSecTime(25000);
+    timeMicros2 = MicroSecTime(timeMicros.getTime() + 25000);
     EXPECT_GT(timeMicros2, timeMicros);
     EXPECT_LT(timeMicros, timeMicros2);
-    timeMicros2 -= MicroSecTime(30000);
+    timeMicros2 = MicroSecTime(timeMicros2.getTime() - 30000);
     EXPECT_LT(timeMicros2, timeMicros);
     EXPECT_GT(timeMicros, timeMicros2);
-    timeMicros2 += MicroSecTime(55000);
-
-    MilliSecTime timeMillis2 = timeMicros2.getMillis();
-    EXPECT_GT(timeMillis2, timeMillis);
-    EXPECT_EQ(uint64_t(1050), timeMillis2.getTime());
-    EXPECT_EQ(timeSec, timeMillis2.getSeconds());
 }
 
 TEST(TimeTest, testCreatedFromClock)
@@ -40,9 +25,8 @@ TEST(TimeTest, testCreatedFromClock)
     defaultimplementation::FakeClock clock;
     clock.setAbsoluteTimeInSeconds(600);
 
-    EXPECT_EQ(SecondTime(600), SecondTime(clock));
-    EXPECT_EQ(MilliSecTime(600 * 1000), MilliSecTime(clock));
-    EXPECT_EQ(MicroSecTime(600 * 1000 * 1000), MicroSecTime(clock));
+    EXPECT_EQ(vespalib::system_time(600s), clock.getSystemTime());
+    EXPECT_EQ(vespalib::steady_time(600s), clock.getMonotonicTime());
 }
 
 TEST(TimeTest, canAssignMicrosecondResolutionTimeToFakeClock)
@@ -50,10 +34,9 @@ TEST(TimeTest, canAssignMicrosecondResolutionTimeToFakeClock)
     defaultimplementation::FakeClock clock;
     clock.setAbsoluteTimeInMicroSeconds(1234567); // 1.234567 seconds
 
+    EXPECT_EQ(vespalib::system_time(1234567us), clock.getSystemTime());
+    EXPECT_EQ(vespalib::steady_time(1234567us), clock.getMonotonicTime());
     // All non-microsec time points must necessarily be truncated.
-    EXPECT_EQ(SecondTime(1), SecondTime(clock));
-    EXPECT_EQ(MilliSecTime(1234), MilliSecTime(clock));
-    EXPECT_EQ(MicroSecTime(1234567), MicroSecTime(clock));
 }
 
 }

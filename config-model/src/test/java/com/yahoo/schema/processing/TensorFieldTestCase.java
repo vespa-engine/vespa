@@ -35,7 +35,7 @@ public class TensorFieldTestCase {
         }
         catch (IllegalArgumentException e) {
             assertEquals("For schema 'test', field 'f1': A tensor of type 'tensor(x{})' does not support having an 'index'. " +
-                    "Currently, only tensors with 1 indexed dimension supports that.",
+                    "Currently, only tensors with 1 indexed dimension or 1 mapped + 1 indexed dimension support that.",
                     e.getMessage());
         }
     }
@@ -83,6 +83,12 @@ public class TensorFieldTestCase {
     void hnsw_index_gets_default_parameters_if_not_specified() throws ParseException {
         assertHnswIndexParams("", 16, 200);
         assertHnswIndexParams("index: hnsw", 16, 200);
+    }
+
+    @Test
+    void tensor_with_one_mapped_and_one_indexed_dimension_can_have_hnsw_index() throws ParseException {
+        assertHnswIndexParams("tensor(x{},y[64])", "", 16, 200);
+        assertHnswIndexParams("tensor(x[64],y{})", "", 16, 200);
     }
 
     @Test
@@ -157,7 +163,11 @@ public class TensorFieldTestCase {
     }
 
     private void assertHnswIndexParams(String indexSpec, int maxLinksPerNode, int neighborsToExploreAtInsert) throws ParseException {
-        var sd = getSdWithIndexSpec(indexSpec);
+        assertHnswIndexParams("tensor(x[64])", indexSpec, maxLinksPerNode, neighborsToExploreAtInsert);
+    }
+
+    private void assertHnswIndexParams(String tensorType, String indexSpec, int maxLinksPerNode, int neighborsToExploreAtInsert) throws ParseException {
+        var sd = getSdWithIndexSpec(tensorType, indexSpec);
         var search = createFromString(sd).getSchema();
         var attr = search.getAttribute("t1");
         var params = attr.hnswIndexParams();
@@ -166,8 +176,8 @@ public class TensorFieldTestCase {
         assertEquals(neighborsToExploreAtInsert, params.get().neighborsToExploreAtInsert());
     }
 
-    private String getSdWithIndexSpec(String indexSpec) {
-        return getSd(joinLines("field t1 type tensor(x[64]) {",
+    private String getSdWithIndexSpec(String tensorType, String indexSpec) {
+        return getSd(joinLines("field t1 type " + tensorType + " {",
                 "  indexing: attribute | index",
                 "  " + indexSpec,
                 "}"));

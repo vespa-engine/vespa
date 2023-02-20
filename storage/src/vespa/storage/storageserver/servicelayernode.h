@@ -37,7 +37,7 @@ class ServiceLayerNode
     bool _init_has_been_called;
 
 public:
-    typedef std::unique_ptr<ServiceLayerNode> UP;
+    using UP = std::unique_ptr<ServiceLayerNode>;
 
     ServiceLayerNode(const config::ConfigUri & configUri,
                      ServiceLayerNodeContext& context,

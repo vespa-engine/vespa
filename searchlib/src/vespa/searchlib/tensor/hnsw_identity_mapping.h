@@ -8,6 +8,8 @@
 #include <cstdint>
 #include <cassert>
 
+namespace vespalib::datastore { class CompactionStrategy; }
+
 namespace search::tensor {
 
 class HnswSimpleNode;
@@ -38,6 +40,9 @@ public:
     void reclaim_memory(generation_t oldest_used_gen) { (void) oldest_used_gen; };
     void on_load(vespalib::ConstArrayRef<HnswSimpleNode> nodes) { (void) nodes; }
     vespalib::MemoryUsage memory_usage() const { return vespalib::MemoryUsage(); }
+    vespalib::MemoryUsage update_stat(const vespalib::datastore::CompactionStrategy&) { return vespalib::MemoryUsage(); }
+    static bool consider_compact() noexcept { return false; }
+    static void compact_worst(const vespalib::datastore::CompactionStrategy&) {}
 };
 
 }

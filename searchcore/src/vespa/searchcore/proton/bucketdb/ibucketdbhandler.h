@@ -15,7 +15,7 @@ namespace proton::bucketdb {
 class IBucketDBHandler
 {
 public:
-    typedef document::BucketId BucketId;
+    using BucketId = document::BucketId;
 
     IBucketDBHandler() { }
 

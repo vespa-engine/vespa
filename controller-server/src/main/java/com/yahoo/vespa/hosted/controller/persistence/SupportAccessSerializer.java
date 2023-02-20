@@ -68,14 +68,14 @@ public class SupportAccessSerializer {
 
         List<SupportAccessGrant> inactiveGrants = supportAccess.grantHistory().stream()
                 .filter(grant -> currentTime.isAfter(grant.certificate().getNotAfter().toInstant()))
-                .collect(Collectors.toList());
+                .toList();
 
         serializeHistoricEvents(root, supportAccess.changeHistory(), inactiveGrants);
 
         // Active grants should show up in the grant section
         List<SupportAccessGrant> activeGrants = supportAccess.grantHistory().stream()
                 .filter(grant -> currentTime.isBefore(grant.certificate().getNotAfter().toInstant()))
-                .collect(Collectors.toList());
+                .toList();
         serializeGrants(root, activeGrants, false);
         return slime;
     }
@@ -124,7 +124,7 @@ public class SupportAccessSerializer {
                                 inspector.field(requestorFieldName).asString(),
                                 X509CertificateUtils.fromPem(inspector.field(certificateFieldName).asString())
                         ))
-                .collect(Collectors.toUnmodifiableList());
+                .toList();
 
         List<SupportAccessChange> changeHistory = SlimeUtils.entriesStream(slime.get().field(historyFieldName))
                 .map(inspector ->
@@ -133,7 +133,7 @@ public class SupportAccessSerializer {
                                 Instant.parse(inspector.field(atFieldName).asString()),
                                 inspector.field(byFieldName).asString())
                 )
-                .collect(Collectors.toUnmodifiableList());
+                .toList();
 
         return new SupportAccess(changeHistory, grantHistory);
     }

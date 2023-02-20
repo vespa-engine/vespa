@@ -21,18 +21,16 @@ private:
 
     LogTarget *_target;
     RejectFilter _rejectFilter;
-    void makeMessage(Logger::LogLevel l, char *msg);
     void makeMessage(const char *tmf, const char *hsf, const char *pdf,
                      const char *svf, const char *cmf, Logger::LogLevel l,
                      char *msg);
     void sendMessage(const char *msg);
 
-    LLParser(const LLParser &);
-    LLParser& operator = (const LLParser &);
-
 public:
     void doInput(char *line);
     LLParser();
+    LLParser(const LLParser & ) = delete;
+    LLParser& operator = (const LLParser &) = delete;
     ~LLParser();
     void setService(const char *s) { _defService = s; }
     void setComponent(const char *c) { _defComponent = c; }

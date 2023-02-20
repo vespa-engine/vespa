@@ -28,16 +28,12 @@ public:
     explicit SocketHandle(int sockfd) : _fd(sockfd) {}
     SocketHandle(const SocketHandle &) = delete;
     SocketHandle &operator=(const SocketHandle &) = delete;
-    SocketHandle(SocketHandle &&rhs) : _fd(rhs.release()) {}
-    SocketHandle &operator=(SocketHandle &&rhs) {
-        maybe_close(_fd);
-        _fd = rhs.release();
-        return *this;
-    }
-    ~SocketHandle() { maybe_close(_fd); }
-    bool valid() const { return (_fd >= 0); }
-    operator bool() const { return valid(); }
-    int get() const { return _fd; }
+    SocketHandle(SocketHandle &&rhs) noexcept;
+    SocketHandle &operator=(SocketHandle &&rhs) noexcept;
+    ~SocketHandle();
+    [[nodiscard]] bool valid() const { return (_fd >= 0); }
+    explicit operator bool() const { return valid(); }
+    [[nodiscard]] int get() const { return _fd; }
     int release() {
         int old_fd = _fd;
         _fd = -1;
@@ -60,7 +56,7 @@ public:
     SocketHandle accept();
     void shutdown();
     int half_close();
-    int get_so_error() const;
+    [[nodiscard]] int get_so_error() const;
 };
 
 } // namespace vespalib

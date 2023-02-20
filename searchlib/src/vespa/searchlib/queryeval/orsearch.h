@@ -13,7 +13,7 @@ namespace search::queryeval {
 class OrSearch : public MultiSearch
 {
 public:
-    typedef MultiSearch::Children Children;
+    using Children = MultiSearch::Children;
 
     static SearchIterator::UP create(ChildrenIterators children, bool strict);
     static SearchIterator::UP create(ChildrenIterators children, bool strict, const UnpackInfo & unpackInfo);

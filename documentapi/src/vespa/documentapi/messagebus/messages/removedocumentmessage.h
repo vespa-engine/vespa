@@ -18,8 +18,8 @@ public:
     /**
      * Convenience typedef.
      */
-    typedef std::unique_ptr<RemoveDocumentMessage> UP;
-    typedef std::shared_ptr<RemoveDocumentMessage> SP;
+    using UP = std::unique_ptr<RemoveDocumentMessage>;
+    using SP = std::shared_ptr<RemoveDocumentMessage>;
 
     /**
      * Constructs a new remove document message with no content.

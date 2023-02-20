@@ -6,6 +6,7 @@ import com.yahoo.document.DataType;
 import com.yahoo.document.DocumentType;
 import com.yahoo.document.Field;
 import com.yahoo.document.TensorDataType;
+import com.yahoo.document.datatypes.Array;
 import com.yahoo.document.datatypes.StringFieldValue;
 import com.yahoo.document.datatypes.TensorFieldValue;
 import com.yahoo.language.process.Embedder;
@@ -13,6 +14,7 @@ import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -33,7 +35,7 @@ public class EmbedExpression extends Expression  {
     private TensorType targetType;
 
     public EmbedExpression(Map<String, Embedder> embedders, String embedderId) {
-        super(DataType.STRING);
+        super(null);
         this.embedderId = embedderId;
 
         boolean embedderIdProvided = embedderId != null && embedderId.length() > 0;
@@ -43,14 +45,14 @@ public class EmbedExpression extends Expression  {
         }
         else if (embedders.size() > 1 && ! embedderIdProvided) {
             this.embedder = new Embedder.FailingEmbedder("Multiple embedders are provided but no embedder id is given. " +
-                    "Valid embedders are " + validEmbedders(embedders));
+                                                         "Valid embedders are " + validEmbedders(embedders));
         }
         else if (embedders.size() == 1 && ! embedderIdProvided) {
             this.embedder = embedders.entrySet().stream().findFirst().get().getValue();
         }
         else if ( ! embedders.containsKey(embedderId)) {
             this.embedder = new Embedder.FailingEmbedder("Can't find embedder '" + embedderId + "'. " +
-                    "Valid embedders are " + validEmbedders(embedders));
+                                                         "Valid embedders are " + validEmbedders(embedders));
         } else  {
             this.embedder = embedders.get(embedderId);
         }
@@ -64,11 +66,49 @@ public class EmbedExpression extends Expression  {
 
     @Override
     protected void doExecute(ExecutionContext context) {
-        StringFieldValue input = (StringFieldValue) context.getValue();
-        Tensor tensor = embedder.embed(input.getString(),
-                                       new Embedder.Context(destination).setLanguage(context.getLanguage()),
-                                       targetType);
-        context.setValue(new TensorFieldValue(tensor));
+        if (context.getValue() == null) return;
+        Tensor output;
+        if (context.getValue().getDataType() == DataType.STRING) {
+            output = embedSingleValue(context);
+        }
+        else if (context.getValue().getDataType() instanceof ArrayDataType &&
+                 ((ArrayDataType)context.getValue().getDataType()).getNestedType() == DataType.STRING) {
+            output = embedArrayValue(context);
+        }
+        else {
+            throw new IllegalArgumentException("Embedding can only be done on string or string array fields, not " +
+                                               context.getValue().getDataType());
+        }
+        context.setValue(new TensorFieldValue(output));
+    }
+
+    private Tensor embedSingleValue(ExecutionContext context) {
+        StringFieldValue input = (StringFieldValue)context.getValue();
+        return embed(input.getString(), targetType, context);
+    }
+
+    @SuppressWarnings("unchecked")
+    private Tensor embedArrayValue(ExecutionContext context) {
+        var input = (Array<StringFieldValue>)context.getValue();
+        var builder = Tensor.Builder.of(targetType);
+        for (int i = 0; i < input.size(); i++) {
+            Tensor tensor = embed(input.get(i).getString(), targetType.indexedSubtype(), context);
+            for (Iterator<Tensor.Cell> cells = tensor.cellIterator(); cells.hasNext(); ) {
+                Tensor.Cell cell = cells.next();
+                builder.cell()
+                       .label(targetType.mappedSubtype().dimensions().get(0).name(), i)
+                       .label(targetType.indexedSubtype().dimensions().get(0).name(), cell.getKey().label(0))
+                       .value(cell.getValue());
+            }
+        }
+        return builder.build();
+    }
+
+    private Tensor embed(String input, TensorType targetType, ExecutionContext context) {
+        return embedder.embed(input,
+                              new Embedder.Context(destination).setLanguage(context.getLanguage()),
+                              targetType);
+
     }
 
     @Override
@@ -78,6 +118,9 @@ public class EmbedExpression extends Expression  {
             throw new VerificationException(this, "No output field in this statement: " +
                                                   "Don't know what tensor type to embed into.");
         targetType = toTargetTensor(context.getInputType(this, outputField));
+        if ( ! validTarget(targetType))
+            throw new VerificationException(this, "The embedding target field must either be a dense 1d tensor, " +
+                                                  "an array of dense 1d tensors, or a mixed 2d tensor");
         context.setValueType(createdOutputType());
     }
 
@@ -94,6 +137,14 @@ public class EmbedExpression extends Expression  {
 
     }
 
+    private boolean validTarget(TensorType target) {
+        if (target.dimensions().size() == 1 && target.indexedSubtype().rank() == 1)
+            return true;
+        if (target.dimensions().size() == 2 && target.indexedSubtype().rank() == 1 && target.mappedSubtype().rank() == 1)
+            return true;
+        return false;
+    }
+
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
@@ -105,7 +156,7 @@ public class EmbedExpression extends Expression  {
     }
 
     @Override
-    public int hashCode() { return 1; }
+    public int hashCode() { return 98857339; }
 
     @Override
     public boolean equals(Object o) { return o instanceof EmbedExpression; }

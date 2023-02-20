@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchlib.ranking.features.fieldmatch.test;
 
-import com.google.common.collect.ImmutableList;
 import com.yahoo.searchlib.ranking.features.fieldmatch.Field;
 import com.yahoo.searchlib.ranking.features.fieldmatch.FieldMatchMetrics;
 import com.yahoo.searchlib.ranking.features.fieldmatch.FieldMatchMetricsComputer;
@@ -10,6 +9,7 @@ import com.yahoo.searchlib.ranking.features.fieldmatch.QueryTerm;
 import com.yahoo.searchlib.ranking.features.fieldmatch.Query;
 import org.junit.Test;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
@@ -776,9 +776,9 @@ public class FieldMatchMetricsTestCase {
     }
 
     private Field toField(String fieldString) {
-        if (fieldString.length() == 0) return new Field(ImmutableList.of());
+        if (fieldString.length() == 0) return new Field(List.of());
 
-        ImmutableList.Builder<Field.Term> terms = new ImmutableList.Builder<>();
+        List<Field.Term> terms = new ArrayList<>();
         for (String termString : fieldString.split(" ")) {
             String[] colonSplit = termString.split(":");
             if (colonSplit.length > 1)
@@ -786,7 +786,7 @@ public class FieldMatchMetricsTestCase {
             else
                 terms.add(new Field.Term(colonSplit[0]));
         }
-        return new Field(terms.build());
+        return new Field(List.copyOf(terms));
     }
 
 }

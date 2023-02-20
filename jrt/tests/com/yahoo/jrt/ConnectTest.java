@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jrt;
 
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 public class ConnectTest {
@@ -25,12 +24,12 @@ public class ConnectTest {
         target.close();
 
         for (int i = 0; i < 100; i++) {
-            if (!target.isClosed()) {
+            if (target.isClosed()) {
                 break;
             }
             try { Thread.sleep(100); } catch (InterruptedException e) {}
         }
-        assertFalse(target.isClosed());
+        assertTrue(target.isClosed());
 
         acceptor.shutdown().join();
         client.transport().shutdown().join();

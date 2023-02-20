@@ -49,14 +49,14 @@
       <version>${project.version}</version>
     </dependency>
     <dependency>
-      <groupId>org.bouncycastle</groupId>
-      <artifactId>bcpkix-jdk18on</artifactId>
-      <scope>compile</scope>
+      <groupId>com.yahoo.vespa</groupId>
+      <artifactId>container-apache-http-client-bundle</artifactId>
+      <version>${project.version}</version>
+      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>org.slf4j</groupId>
-      <artifactId>slf4j-api</artifactId>
-      <scope>compile</scope>
+      <artifactId>slf4j-jdk14</artifactId>
     </dependency>
     <dependency>
       <groupId>org.junit.jupiter</groupId>
@@ -68,52 +68,34 @@
       <artifactId>junit-jupiter-engine</artifactId>
       <scope>test</scope>
     </dependency>
-    <dependency>
-      <groupId>com.yahoo.vespa</groupId>
-      <artifactId>container-apache-http-client-bundle</artifactId>
-      <version>${project.version}</version>
-      <scope>compile</scope>
-    </dependency>
   </dependencies>
   <build>
     <plugins>
-      <plugin>
-        <groupId>com.yahoo.vespa</groupId>
-        <artifactId>bundle-plugin</artifactId>
-        <extensions>true</extensions>
-      </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>
       </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-shade-plugin</artifactId>
-        <configuration>
-          <finalName>${project.artifactId}-jar-with-dependencies</finalName>
-          <createDependencyReducedPom>false</createDependencyReducedPom>
-        </configuration>
+        <artifactId>maven-install-plugin</artifactId>
+        <configuration><skip>true</skip></configuration>
+      </plugin>
+      <plugin>
+        <groupId>com.yahoo.vespa</groupId>
+        <artifactId>bundle-plugin</artifactId>
         <executions>
           <execution>
             <phase>package</phase>
-            <goals>
-              <goal>shade</goal>
-            </goals>
+            <goals><goal>assemble-fat-jar</goal></goals>
           </execution>
         </executions>
-      </plugin>      <plugin>
+      </plugin>
+      <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-plugin</artifactId>
         <configuration>
           <redirectTestOutputToFile>${test.hide}</redirectTestOutputToFile>
           <forkMode>once</forkMode>
-        </configuration>
-      </plugin>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-install-plugin</artifactId>
-        <configuration>
-          <updateReleaseInfo>true</updateReleaseInfo>
         </configuration>
       </plugin>
     </plugins>

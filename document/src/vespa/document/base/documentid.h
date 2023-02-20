@@ -31,7 +31,7 @@ class DocumentType;
 class DocumentId
 {
 public:
-    typedef std::unique_ptr<DocumentId> UP;
+    using UP = std::unique_ptr<DocumentId>;
 
     DocumentId();
     DocumentId(vespalib::nbostream & os);

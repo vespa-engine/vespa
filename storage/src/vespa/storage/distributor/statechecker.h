@@ -37,7 +37,7 @@ class NodeMaintenanceStatsTracker;
  */
 class StateChecker {
 public:
-    typedef std::shared_ptr<StateChecker> SP;
+    using SP = std::shared_ptr<StateChecker>;
 
     /**
      * Context object used when generating operations and metrics for a
@@ -49,48 +49,46 @@ public:
                 const DistributorStripeOperationContext& op_ctx_in,
                 const DistributorBucketSpace &distributorBucketSpace,
                 NodeMaintenanceStatsTracker&,
-                const document::Bucket &bucket_);
+                const document::Bucket& bucket_);
         ~Context();
-        Context(const Context &) = delete;
-        Context & operator =(const Context &) = delete;
+        Context(const Context&) = delete;
+        Context& operator=(const Context&) = delete;
 
 
         // Per bucket
-        document::Bucket   bucket;
-        document::BucketId siblingBucket;
-
-        BucketDatabase::Entry entry;
-        BucketDatabase::Entry siblingEntry;
+        document::Bucket                   bucket;
+        document::BucketId                 siblingBucket;
+        BucketDatabase::Entry              entry;
+        BucketDatabase::Entry              siblingEntry;
         std::vector<BucketDatabase::Entry> entries;
 
         // Common
-        const lib::ClusterState& systemState;
-        const lib::ClusterState* pending_cluster_state; // nullptr if no state is pending.
+        const lib::ClusterState&        systemState;
+        const lib::ClusterState*        pending_cluster_state; // nullptr if no state is pending.
         const DistributorConfiguration& distributorConfig;
-        const lib::Distribution& distribution;
-
-        BucketGcTimeCalculator gcTimeCalculator;
+        const lib::Distribution&        distribution;
+        BucketGcTimeCalculator          gcTimeCalculator;
 
         // Separate ideal state into ordered sequence and unordered set, as we
         // need to both know the actual order (activation prioritization etc) as
         // well as have the ability to quickly check if a node is in an ideal
         // location.
-        std::vector<uint16_t> idealState;
+        std::vector<uint16_t>        idealState;
         std::unordered_set<uint16_t> unorderedIdealState;
 
-        const DistributorNodeContext& node_ctx;
+        const DistributorNodeContext&            node_ctx;
         const DistributorStripeOperationContext& op_ctx;
-        const BucketDatabase& db;
-        NodeMaintenanceStatsTracker& stats;
-        const bool merges_inhibited_in_bucket_space;
+        const BucketDatabase&                    db;
+        NodeMaintenanceStatsTracker&             stats;
+        const bool                               merges_inhibited_in_bucket_space;
 
-        const BucketDatabase::Entry& getSiblingEntry() const {
+        const BucketDatabase::Entry& getSiblingEntry() const noexcept {
             return siblingEntry;
         }
 
-        document::Bucket getBucket() const { return bucket; }
-        document::BucketId getBucketId() const { return bucket.getBucketId(); }
-        document::BucketSpace getBucketSpace() const { return bucket.getBucketSpace(); }
+        document::Bucket getBucket() const noexcept { return bucket; }
+        document::BucketId getBucketId() const noexcept { return bucket.getBucketId(); }
+        document::BucketSpace getBucketSpace() const noexcept { return bucket.getBucketSpace(); }
 
         std::string toString() const;
     };
@@ -151,7 +149,7 @@ public:
     /**
      * Returns the name of this state checker.
      */
-    virtual const char* getName() const = 0;
+    virtual const char* getName() const noexcept = 0;
 };
 
 }

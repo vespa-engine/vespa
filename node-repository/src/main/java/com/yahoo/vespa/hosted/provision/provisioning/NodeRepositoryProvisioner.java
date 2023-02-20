@@ -88,36 +88,37 @@ public class NodeRepositoryProvisioner implements Provisioner {
 
         if (cluster.group().isPresent()) throw new IllegalArgumentException("Node requests cannot specify a group");
 
-        nodeResourceLimits.ensureWithinAdvertisedLimits("Min", requested.minResources().nodeResources(), cluster);
-        nodeResourceLimits.ensureWithinAdvertisedLimits("Max", requested.maxResources().nodeResources(), cluster);
+        nodeResourceLimits.ensureWithinAdvertisedLimits("Min", requested.minResources().nodeResources(), application, cluster);
+        nodeResourceLimits.ensureWithinAdvertisedLimits("Max", requested.maxResources().nodeResources(), application, cluster);
 
         int groups;
         NodeResources resources;
         NodeSpec nodeSpec;
         if (requested.type() == NodeType.tenant) {
-            boolean exclusive = capacityPolicies.decideExclusivity(requested, cluster.isExclusive());
-            Capacity actual = capacityPolicies.applyOn(requested, application, exclusive);
+            cluster = capacityPolicies.decideExclusivity(requested, cluster);
+            Capacity actual = capacityPolicies.applyOn(requested, application, cluster.isExclusive());
             ClusterResources target = decideTargetResources(application, cluster, actual);
-            ensureRedundancy(target.nodes(), cluster, actual.canFail(), application);
+            validate(actual, target, cluster, application);
             logIfDownscaled(requested.minResources().nodes(), actual.minResources().nodes(), cluster, logger);
 
             groups = target.groups();
-            resources = getNodeResources(cluster, target.nodeResources(), application, exclusive);
-            nodeSpec = NodeSpec.from(target.nodes(), resources, exclusive, actual.canFail(),
+            resources = getNodeResources(cluster, target.nodeResources(), application);
+            nodeSpec = NodeSpec.from(target.nodes(), resources, cluster.isExclusive(), actual.canFail(),
                                      requested.cloudAccount().orElse(nodeRepository.zone().cloud().account()));
         }
         else {
             groups = 1; // type request with multiple groups is not supported
-            resources = getNodeResources(cluster, requested.minResources().nodeResources(), application, true);
+            cluster = cluster.withExclusivity(true);
+            resources = getNodeResources(cluster, requested.minResources().nodeResources(), application);
             nodeSpec = NodeSpec.from(requested.type(), nodeRepository.zone().cloud().account());
         }
         return asSortedHosts(preparer.prepare(application, cluster, nodeSpec, groups),
                              requireCompatibleResources(resources, cluster));
     }
 
-    private NodeResources getNodeResources(ClusterSpec cluster, NodeResources nodeResources, ApplicationId applicationId, boolean exclusive) {
+    private NodeResources getNodeResources(ClusterSpec cluster, NodeResources nodeResources, ApplicationId applicationId) {
         return nodeResources.isUnspecified()
-                ? capacityPolicies.defaultNodeResources(cluster, applicationId, exclusive)
+                ? capacityPolicies.defaultNodeResources(cluster, applicationId)
                 : nodeResources;
     }
 
@@ -153,7 +154,7 @@ public class NodeRepositoryProvisioner implements Provisioner {
                               .withCluster(clusterSpec.id(), clusterSpec.isExclusive(), requested);
             nodeRepository.applications().put(application, lock);
             var cluster = application.cluster(clusterSpec.id()).get();
-            return cluster.targetResources().orElseGet(() -> currentResources(application, clusterSpec, cluster, requested));
+            return cluster.target().resources().orElseGet(() -> currentResources(application, clusterSpec, cluster, requested));
         }
     }
 
@@ -178,8 +179,7 @@ public class NodeRepositoryProvisioner implements Provisioner {
     private ClusterResources initialResourcesFrom(Capacity requested, ClusterSpec clusterSpec, ApplicationId applicationId) {
         var initial = requested.minResources();
         if (initial.nodeResources().isUnspecified())
-            initial = initial.with(capacityPolicies.defaultNodeResources(clusterSpec, applicationId,
-                                                                         capacityPolicies.decideExclusivity(requested, clusterSpec.isExclusive())));
+            initial = initial.with(capacityPolicies.defaultNodeResources(clusterSpec, applicationId));
         return initial;
     }
 
@@ -204,18 +204,17 @@ public class NodeRepositoryProvisioner implements Provisioner {
                                   .advertisedResources();
     }
 
-    /**
-     * Throw if the node count is 1 for container and content clusters and we're in a production zone
-     *
-     * @throws IllegalArgumentException if only one node is requested and we can fail
-     */
-    private void ensureRedundancy(int nodeCount, ClusterSpec cluster, boolean canFail, ApplicationId application) {
-        if (! application.instance().isTester() &&
-            canFail &&
-            nodeCount == 1 &&
-            requiresRedundancy(cluster.type()) &&
-            zone.environment().isProduction())
-            throw new IllegalArgumentException("Deployments to prod require at least 2 nodes per cluster for redundancy. Not fulfilled for " + cluster);
+    private void validate(Capacity actual, ClusterResources target, ClusterSpec cluster, ApplicationId application) {
+        if ( ! actual.canFail()) return;
+
+        if (! application.instance().isTester() && zone.environment().isProduction() &&
+            requiresRedundancy(cluster.type()) && target.nodes() == 1)
+            throw new IllegalArgumentException("In " + cluster +
+                                               ": Deployments to prod require at least 2 nodes per cluster for redundancy.");
+
+        if ( ! actual.groupSize().includes(target.nodes() / target.groups()))
+            throw new IllegalArgumentException("In " + cluster + ": Group size with " + target +
+                                               " is not within allowed group size " + actual.groupSize());
     }
 
     private static boolean requiresRedundancy(ClusterSpec.Type clusterType) {
@@ -268,8 +267,7 @@ public class NodeRepositoryProvisioner implements Provisioner {
     private IllegalArgumentException newNoAllocationPossible(ClusterSpec spec, Limits limits) {
         StringBuilder message = new StringBuilder("No allocation possible within ").append(limits);
 
-        boolean exclusiveHosts = spec.isExclusive() || ! nodeRepository.zone().cloud().allowHostSharing();
-        if (exclusiveHosts)
+        if (nodeRepository.exclusiveAllocation(spec))
             message.append(". Nearest allowed node resources: ").append(findNearestNodeResources(limits));
 
         return new IllegalArgumentException(message.toString());

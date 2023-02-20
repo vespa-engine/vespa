@@ -24,7 +24,7 @@ public class ApplicationData {
 
     public Application toApplication() {
         return new Application(ApplicationId.fromFullString(id),
-                               clusters.entrySet().stream().map(e -> e.getValue().toCluster(e.getKey())).collect(Collectors.toList()));
+                               clusters.entrySet().stream().map(e -> e.getValue().toCluster(e.getKey())).toList());
     }
 
 }

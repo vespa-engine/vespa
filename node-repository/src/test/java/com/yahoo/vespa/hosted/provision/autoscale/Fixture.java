@@ -21,15 +21,14 @@ import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.applications.Application;
 import com.yahoo.vespa.hosted.provision.applications.Cluster;
+import com.yahoo.vespa.hosted.provision.applications.BcpGroupInfo;
 import com.yahoo.vespa.hosted.provision.autoscale.awsnodes.AwsHostResourcesCalculatorImpl;
 import com.yahoo.vespa.hosted.provision.autoscale.awsnodes.AwsNodeTypes;
 import com.yahoo.vespa.hosted.provision.provisioning.HostResourcesCalculator;
-
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 /**
  * Fixture for autoscaling tests.
@@ -95,17 +94,17 @@ public class Fixture {
     public Loader loader() { return loader; }
 
     /** Autoscale within the deployed capacity of this. */
-    public Autoscaler.Advice autoscale() {
+    public Autoscaling autoscale() {
         return autoscale(capacity);
     }
 
     /** Autoscale within the given capacity. */
-    public Autoscaler.Advice autoscale(Capacity capacity) {
+    public Autoscaling autoscale(Capacity capacity) {
         return tester().autoscale(applicationId, clusterSpec, capacity);
     }
 
     /** Compute an autoscaling suggestion for this. */
-    public Autoscaler.Advice suggest() {
+    public Autoscaling suggest() {
         return tester().suggest(applicationId, clusterSpec.id(), capacity.minResources(), capacity.maxResources());
     }
 
@@ -131,6 +130,12 @@ public class Fixture {
         var application = application();
         application = application.with(application.status().withCurrentReadShare(currentReadShare)
                                                   .withMaxReadShare(maxReadShare));
+        tester.nodeRepository().applications().put(application, tester.nodeRepository().applications().lock(applicationId));
+    }
+
+    public void store(BcpGroupInfo bcpGroupInfo) {
+        var application = application();
+        application = application.with(application.cluster(clusterId()).get().with(bcpGroupInfo));
         tester.nodeRepository().applications().put(application, tester.nodeRepository().applications().lock(applicationId));
     }
 
@@ -189,14 +194,18 @@ public class Fixture {
         }
 
         public Fixture.Builder awsProdSetup(boolean allowHostSharing) {
-             return this.awsHostFlavors()
-                        .awsResourceCalculator()
-                        .zone(new Zone(Cloud.builder().dynamicProvisioning(true)
-                                                      .allowHostSharing(allowHostSharing)
-                                            .build(),
-                                       SystemName.Public,
-                                       Environment.prod,
-                                       RegionName.from("aws-eu-west-1a")));
+            return awsSetup(allowHostSharing, Environment.prod);
+        }
+
+        public Fixture.Builder awsSetup(boolean allowHostSharing, Environment environment) {
+            return this.awsHostFlavors()
+                       .awsResourceCalculator()
+                       .zone(new Zone(Cloud.builder().dynamicProvisioning(true)
+                                           .allowHostSharing(allowHostSharing)
+                                           .build(),
+                                      SystemName.Public,
+                                      environment,
+                                      RegionName.from("aws-eu-west-1a")));
         }
 
         public Fixture.Builder vespaVersion(Version version) {
@@ -205,7 +214,7 @@ public class Fixture {
         }
 
         public Fixture.Builder hostFlavors(NodeResources ... hostResources) {
-            this.hostFlavors = Arrays.stream(hostResources).map(r -> new Flavor(r)).collect(Collectors.toList());
+            this.hostFlavors = Arrays.stream(hostResources).map(r -> new Flavor(r)).toList();
             return this;
         }
 
@@ -235,14 +244,14 @@ public class Fixture {
             return this;
         }
 
-        public Fixture.Builder hostSharingFlag() {
-            var resources = new HostResources(8.0, 32.0, 100.0, 10.0, "fast", "local", null, 6, "x86_64");
-            flagSource.withJacksonFlag(PermanentFlags.SHARED_HOST.id(), new SharedHost(List.of(resources), null), SharedHost.class);
+        public Fixture.Builder hostCount(int hostCount) {
+            this.hostCount = hostCount;
             return this;
         }
 
-        public Fixture.Builder hostCount(int hostCount) {
-            this.hostCount = hostCount;
+        public Fixture.Builder hostSharingFlag() {
+            var resources = new HostResources(8.0, 32.0, 100.0, 10.0, "fast", "local", null, 6, "x86_64");
+            flagSource.withJacksonFlag(PermanentFlags.SHARED_HOST.id(), new SharedHost(List.of(resources)), SharedHost.class);
             return this;
         }
 

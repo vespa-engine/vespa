@@ -2,58 +2,42 @@
 
 #pragma once
 
-#include "gate.h"
 #include "runnable.h"
-#include "active.h"
-#include <vespa/fastos/thread.h>
-#include <atomic>
+#include <thread>
+#include <concepts>
 
 namespace vespalib {
 
+namespace thread {
+[[nodiscard]] std::thread start(Runnable &runnable, Runnable::init_fun_t init_fun);
+}
+
 /**
- * Abstraction of the concept of running a single thread.
+ * Keeps track of multiple running threads. Calling join will join all
+ * currently running threads. All threads must be joined before
+ * destructing the pool itself. This class is not thread safe.
  **/
-class Thread : public Active
-{
+class ThreadPool {
 private:
-    using init_fun_t = Runnable::init_fun_t;
-    enum { STACK_SIZE = 256*1024 };
-    static __thread Thread *_currentThread;
-
-    struct Proxy : FastOS_Runnable {
-        Thread         &thread;
-        Runnable       &runnable;
-        init_fun_t      init_fun;
-        vespalib::Gate  start;
-        vespalib::Gate  started;
-        bool            cancel;
-
-        Proxy(Thread &parent, Runnable &target, init_fun_t init_fun_in);
-        ~Proxy() override;
-
-        void Run(FastOS_ThreadInterface *thisThread, void *arguments) override;
-    };
-
-    Proxy                   _proxy;
-    FastOS_ThreadPool       _pool;
-    std::mutex              _lock;
-    std::condition_variable _cond;
-    std::atomic<bool>       _stopped;
-    bool                    _woken;
-
+    std::vector<std::thread> _threads;
 public:
-    Thread(Runnable &runnable, init_fun_t init_fun_in);
-    ~Thread() override;
-    void start() override;
-    Thread &stop() override;
-    void join() override;
-    [[nodiscard]] bool stopped() const noexcept {
-        return _stopped.load(std::memory_order_relaxed);
+    ThreadPool() noexcept : _threads() {}
+    void start(Runnable &runnable, Runnable::init_fun_t init_fun) {
+        _threads.reserve(_threads.size() + 1);
+        _threads.push_back(thread::start(runnable, std::move(init_fun)));
     }
-    bool slumber(double s);
-    static Thread &currentThread();
-    static void sleep(size_t ms);
+    template<typename F, typename... Args>
+    requires std::invocable<F,Args...>
+    void start(F &&f, Args && ... args) {
+        _threads.reserve(_threads.size() + 1);
+        _threads.emplace_back(std::forward<F>(f), std::forward<Args>(args)...);
+    };
+    void join() {
+        for (auto &thread: _threads) {
+            thread.join();
+        }
+        _threads.clear();
+    }
 };
 
-} // namespace vespalib
-
+}

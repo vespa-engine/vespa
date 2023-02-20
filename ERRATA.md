@@ -2,6 +2,66 @@
 
 ## Errata
 
+### 2023-02-09: Rare edge case may cause memory corruption on content nodes when searching an HNSW index together with an index field and using multiple threads per query
+
+Affected version range: **8.78.54** (first release with documented support for the
+feature triggering the bug) up to **8.116.25** (first release with a complete fix).
+
+#### Brief
+
+In early November 2022 Vespa-8.78.54 officially added support for multi-threaded
+evaluation of filters in combination with the `nearestNeighbor` query operator.
+This feature caused a subtle change in behavior that could trigger a long present,
+latent bug in boundary condition handling in low-level bit vector code. This bug
+allowed for memory corruptions to take place during query evaluation when a
+particular set of conditions was satisfied. This was fixed in Vespa-8.116.25 on
+2023-01-25. It is highly advised to update to a version that is at least as recent
+as this.
+
+Using multiple threads per query is not enabled by default.
+
+Due to the many conditions required to trigger this bug, the Vespa team has only
+confirmed observations of this particular bug on one single application.
+
+#### Details
+
+Vespa supports efficient multi-threaded query evaluation where the internal
+document space is partitioned across multiple threads, and data structures
+are dynamically chosen based on the underlying matching document data.
+When evaluating an `OR` clause where the field was an index and the term was
+present in more than 3% of the documents, Vespa uses a posting list represented
+as a bit vector. When this bit vector had no overlap with the partition a
+particular query thread was responsible for, erroneous boundary-tagging code
+would potentially set some bits in an 8-byte area that did not belong to the
+bitvector.
+
+This could happen if the following conditions were met:
+
+ 1. You need to have one or more index fields.
+ 2. You need to query at least one indexed term that is present in more than 3%
+    of the documents.
+ 3. You need to have an HNSW index that is searched with the `nearestNeighbor`
+    operator in the same query as searching the index field.
+ 4. You need to have configured multiple threads per query.
+ 5. The ratio of new documents—not counting updates—in the memory index to total
+    number of documents, must be larger than 1 / number of threads per search.
+
+Depending on what these 8 bytes were originally used for, memory corruption could
+manifest itself in many ways. Most commonly, the observed effect would be random;
+otherwise unexplainable crashes in indirectly affected code, caused by segmentation
+faults due to corrupted pointers or assertion failures caused by broken invariants.
+
+If memory was corrupted prior to being written to disk, it's possible that corrupted
+data has become persistent in the cluster. If you suspect this to be the case, the
+most robust solution is to re-feed your document set after upgrading to a Vespa
+version containing the fix.
+
+If corrupted data was written to the transaction log, it's possible that the content
+nodes containing a replica of the corrupted document enter a crash loop since they
+can never successfully replay the log upon startup. Wiping the index on the affected
+nodes and re-feeding after upgrading Vespa is the suggested remediation.
+
+
 ### 2021-01-06: Data loss during data migration
 This bug was introduced more than 10 years ago and remained unobserved until very recently. Fixed in Vespa-7.306.16.
 

@@ -10,7 +10,7 @@ using namespace vbench;
 
 VESPA_THREAD_STACK_TAG(vbench_thread);
 
-typedef vespalib::SignalHandler SIG;
+using SIG = vespalib::SignalHandler;
 
 struct NotifyDone : public vespalib::Runnable {
     vespalib::Gate &done;
@@ -44,13 +44,13 @@ int run(const std::string &cfg_name) {
     VBench vbench(cfg);
     NotifyDone notify(done);
     vespalib::RunnablePair runBoth(vbench, notify);
-    vespalib::Thread thread(runBoth, vbench_thread);
-    thread.start();
+    auto thread = vespalib::thread::start(runBoth, vbench_thread);
     while (!SIG::INT.check() && !SIG::TERM.check() && !done.await(1s)) {}
     if (!done.await(vespalib::duration::zero())) {
         vbench.abort();
         done.await();
     }
+    thread.join();
     if (vbench.tainted()) {
         fprintf(stderr, "vbench failed: %s\n",
                 vbench.tainted().reason().c_str());

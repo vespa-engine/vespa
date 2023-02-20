@@ -262,12 +262,6 @@ StorageMessage::StorageMessage(const StorageMessage& other, Id id) noexcept
 
 StorageMessage::~StorageMessage() = default;
 
-void
-StorageMessage::setNewMsgId() noexcept
-{
-    _msgId = generateMsgId();
-}
-
 vespalib::string
 StorageMessage::getSummary() const {
     return toString();

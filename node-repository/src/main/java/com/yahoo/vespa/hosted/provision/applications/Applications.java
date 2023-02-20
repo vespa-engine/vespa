@@ -6,7 +6,7 @@ import com.yahoo.config.provision.ApplicationLockException;
 import com.yahoo.config.provision.ApplicationTransaction;
 import com.yahoo.transaction.Mutex;
 import com.yahoo.transaction.NestedTransaction;
-import com.yahoo.vespa.hosted.provision.persistence.CuratorDatabaseClient;
+import com.yahoo.vespa.hosted.provision.persistence.CuratorDb;
 
 import java.time.Duration;
 import java.util.List;
@@ -21,9 +21,9 @@ import java.util.Optional;
  */
 public class Applications {
 
-    private final CuratorDatabaseClient db;
+    private final CuratorDb db;
 
-    public Applications(CuratorDatabaseClient db) {
+    public Applications(CuratorDb db) {
         this.db = db;
         // read and write all to make sure they are stored in the latest version of the serialized format
         for (ApplicationId id : ids()) {

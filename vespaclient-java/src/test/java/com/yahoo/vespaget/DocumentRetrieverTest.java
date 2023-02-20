@@ -108,7 +108,7 @@ public class DocumentRetrieverTest {
 
     private void assertContainsDocument(String documentId) {
         assertTrue(outContent.toString().contains(String.format(
-                "<document documenttype=\"document\" documentid=\"%s\"/>", documentId)));
+                "{\"id\":\"%s\"", documentId)));
     }
 
     private DocumentRetriever createDocumentRetriever(ClientParameters params) {
@@ -240,7 +240,7 @@ public class DocumentRetrieverTest {
     }
 
     @Test
-    void testEmtpyClusterList() throws DocumentRetrieverException {
+    void testEmptyClusterList() throws DocumentRetrieverException {
         Throwable exception = assertThrows(DocumentRetrieverException.class, () -> {
 
             ClientParameters params = createParameters()

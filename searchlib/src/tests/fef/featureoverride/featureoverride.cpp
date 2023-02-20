@@ -25,7 +25,7 @@ using vespalib::eval::FastValueBuilderFactory;
 using vespalib::make_string_short::fmt;
 
 
-typedef Blueprint::SP       BPSP;
+using BPSP = Blueprint::SP;
 
 struct Fixture
 {
@@ -245,8 +245,11 @@ struct MyIssues : Issue::Handler {
     std::vector<vespalib::string> list;
     Issue::Binding capture;
     MyIssues() : list(), capture(Issue::listen(*this)) {}
+    ~MyIssues() override;
     void handle(const Issue &issue) override { list.push_back(issue.message()); }
 };
+
+MyIssues::~MyIssues() = default;
 
 //-----------------------------------------------------------------------------
 

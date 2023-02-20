@@ -6,7 +6,6 @@ import java.util.List;
 import java.util.stream.Stream;
 
 import static java.util.Comparator.reverseOrder;
-import static java.util.stream.Collectors.toList;
 
 /**
  * Steps that make up a deployment job. See {@link JobProfile} for preset profiles.
@@ -90,7 +89,7 @@ public enum Step {
                                                           pre.allPrerequisites(among).stream()))
                             .sorted(reverseOrder())
                             .distinct()
-                            .collect(toList());
+                            .toList();
     }
 
 

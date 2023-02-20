@@ -105,7 +105,7 @@ TestJob::TestJob(TestLog::UP log, InitializerTask::SP root)
     : _log(std::move(log)),
       _root(std::move(root))
 { }
-TestJob::~TestJob() {}
+TestJob::~TestJob() = default;
 
 
 struct Fixture
@@ -114,14 +114,15 @@ struct Fixture
     TaskRunner _taskRunner;
 
     Fixture(uint32_t numThreads = 1)
-        : _executor(numThreads, 128_Ki),
+        : _executor(numThreads),
           _taskRunner(_executor)
-    {
-    }
+    { }
+    ~Fixture();
 
     void run(const InitializerTask::SP &task) { _taskRunner.runTask(task); }
 };
 
+Fixture::~Fixture() = default;
 
 TEST_F("1 thread, 2 dependees, 1 depender", Fixture(1))
 {

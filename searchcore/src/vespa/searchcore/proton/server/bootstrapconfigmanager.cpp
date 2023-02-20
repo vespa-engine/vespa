@@ -54,8 +54,8 @@ BootstrapConfigManager::getConfig() const
 void
 BootstrapConfigManager::update(const ConfigSnapshot & snapshot)
 {
-    typedef BootstrapConfig::ProtonConfigSP ProtonConfigSP;
-    typedef BootstrapConfig::DocumenttypesConfigSP DocumenttypesConfigSP;
+    using ProtonConfigSP = BootstrapConfig::ProtonConfigSP;
+    using DocumenttypesConfigSP = BootstrapConfig::DocumenttypesConfigSP;
 
     ProtonConfigSP newProtonConfig;
     BootstrapConfig::FiledistributorrpcConfigSP newFiledistRpcConfSP;

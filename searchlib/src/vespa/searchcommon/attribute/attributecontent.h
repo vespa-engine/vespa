@@ -152,15 +152,15 @@ public:
     }
 };
 
-typedef AttributeContent<double>       FloatContent;
-typedef AttributeContent<const char *> ConstCharContent;
-typedef AttributeContent<IAttributeVector::largeint_t> IntegerContent;
-typedef AttributeContent<IAttributeVector::EnumHandle> EnumContent;
-typedef AttributeContent<IAttributeVector::WeightedInt>       WeightedIntegerContent;
-typedef AttributeContent<IAttributeVector::WeightedFloat>     WeightedFloatContent;
-typedef AttributeContent<IAttributeVector::WeightedConstChar> WeightedConstCharContent;
-typedef AttributeContent<IAttributeVector::WeightedString>    WeightedStringContent;
-typedef AttributeContent<IAttributeVector::WeightedEnum>      WeightedEnumContent;
-typedef IAttributeVector::EnumHandle EnumHandle;
+using FloatContent = AttributeContent<double>;
+using ConstCharContent = AttributeContent<const char *>;
+using IntegerContent = AttributeContent<IAttributeVector::largeint_t>;
+using EnumContent = AttributeContent<IAttributeVector::EnumHandle>;
+using WeightedIntegerContent = AttributeContent<IAttributeVector::WeightedInt>;
+using WeightedFloatContent = AttributeContent<IAttributeVector::WeightedFloat>;
+using WeightedConstCharContent = AttributeContent<IAttributeVector::WeightedConstChar>;
+using WeightedStringContent = AttributeContent<IAttributeVector::WeightedString>;
+using WeightedEnumContent = AttributeContent<IAttributeVector::WeightedEnum>;
+using EnumHandle = IAttributeVector::EnumHandle;
 
 }

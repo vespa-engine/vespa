@@ -37,7 +37,7 @@ public class ExpressionTestCase {
         assertExpression(IfThenExpression.class, "if (1 < 2) { 3 }");
         assertExpression(IfThenExpression.class, "if (1 < 2) { 3 } else { 4 }");
         assertExpression(IndexExpression.class, "index");
-        assertExpression(InputExpression.class, "input");
+        assertExpression(InputExpression.class, "input foo");
         assertExpression(InputExpression.class, "input field1");
         assertExpression(JoinExpression.class, "join '1'");
         assertExpression(LowerCaseExpression.class, "lowercase");
@@ -81,6 +81,7 @@ public class ExpressionTestCase {
         assertExpression(ToWsetExpression.class, "to_wset remove_if_zero create_if_non_existent");
         assertExpression(TrimExpression.class, "trim");
         assertExpression(ZCurveExpression.class, "zcurve");
+        assertExpression(ChoiceExpression.class, "input foo || \"\"");
     }
 
     private static void assertExpression(Class expectedClass, String str) throws ParseException {

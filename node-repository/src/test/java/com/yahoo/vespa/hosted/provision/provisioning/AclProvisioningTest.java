@@ -110,6 +110,7 @@ public class AclProvisioningTest {
                    Set.of("10.2.3.0/24", "10.4.5.0/24"),
                    List.of(nodeAcl));
         assertEquals(Set.of(22, 4443), nodeAcl.trustedPorts());
+        assertEquals(Set.of(51820), nodeAcl.trustedUdpPorts());
     }
 
     @Test
@@ -132,6 +133,7 @@ public class AclProvisioningTest {
         // Trusted nodes is all config servers and all proxy nodes
         assertAcls(trustedNodesOf(List.of(proxyNodes.asList(), configServers.asList())), List.of(nodeAcl));
         assertEquals(Set.of(22, 443, 4443), nodeAcl.trustedPorts());
+        assertEquals(Set.of(), nodeAcl.trustedUdpPorts());
     }
 
     @Test
@@ -171,6 +173,7 @@ public class AclProvisioningTest {
         NodeAcl controllerAcl = controllers.get(0).acl(tester.nodeRepository().nodes().list(), tester.nodeRepository().loadBalancers());
         assertAcls(trustedNodesOf(List.of(controllers)), Set.of("10.2.3.0/24", "10.4.5.0/24"), List.of(controllerAcl));
         assertEquals(Set.of(22, 4443, 443), controllerAcl.trustedPorts());
+        assertEquals(Set.of(), controllerAcl.trustedUdpPorts());
     }
 
     @Test
@@ -196,11 +199,16 @@ public class AclProvisioningTest {
 
         // ACL for nodes with allocation trust their respective load balancer networks, if any
         for (var host : hosts) {
-            var acls = tester.nodeRepository().getChildAcls(host);
+            List<NodeAcl> acls = tester.nodeRepository().getChildAcls(host);
             assertEquals(2, acls.size());
-            assertEquals(Set.of(), acls.get(0).trustedNetworks());
-            assertEquals(application, acls.get(1).node().allocation().get().owner());
-            assertEquals(lbNetworks, acls.get(1).trustedNetworks());
+            for (var acl : acls) {
+                if (acl.node().allocation().isPresent()) {
+                    assertEquals(lbNetworks, acl.trustedNetworks());
+                    assertEquals(application, acl.node().allocation().get().owner());
+                } else {
+                    assertEquals(Set.of(), acl.trustedNetworks());
+                }
+            }
         }
     }
 
@@ -245,12 +253,12 @@ public class AclProvisioningTest {
                 .flatMap(List::stream)
                 .distinct()
                 .sorted(Comparator.comparing(TrustedNode::hostname))
-                .collect(Collectors.toList());
+                .toList();
         List<TrustedNode> actualTrustedNodes = actual.stream()
                 .flatMap(acl -> acl.trustedNodes().stream())
                 .distinct()
                 .sorted(Comparator.comparing(TrustedNode::hostname))
-                .collect(Collectors.toList());
+                .toList();
         assertEquals(expectedTrustedNodes, actualTrustedNodes);
 
         Set<String> actualTrustedNetworks = actual.stream()

@@ -45,4 +45,5 @@ public final class TrimExpression extends Expression {
     public int hashCode() {
         return getClass().hashCode();
     }
+
 }

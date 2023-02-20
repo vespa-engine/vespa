@@ -21,6 +21,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
 
+import static ai.vespa.feed.client.FeedClientBuilder.Compression.auto;
+import static ai.vespa.feed.client.FeedClientBuilder.Compression.none;
 import static java.util.Objects.requireNonNull;
 
 /**
@@ -37,8 +39,8 @@ public class FeedClientBuilderImpl implements FeedClientBuilder {
     final Map<String, Supplier<String>> requestHeaders = new HashMap<>();
     SSLContext sslContext;
     HostnameVerifier hostnameVerifier;
-    int connectionsPerEndpoint = 4;
-    int maxStreamsPerConnection = 4096;
+    int connectionsPerEndpoint = 8;
+    int maxStreamsPerConnection = 32;
     FeedClient.RetryStrategy retryStrategy = defaultRetryStrategy;
     FeedClient.CircuitBreaker circuitBreaker = new GracePeriodCircuitBreaker(Duration.ofSeconds(10));
     Path certificateFile;
@@ -50,6 +52,7 @@ public class FeedClientBuilderImpl implements FeedClientBuilder {
     boolean benchmark = true;
     boolean dryrun = false;
     boolean speedTest = false;
+    Compression compression = auto;
     URI proxy;
 
 
@@ -172,7 +175,7 @@ public class FeedClientBuilderImpl implements FeedClientBuilder {
     }
 
     @Override
-    public FeedClientBuilder setSpeedTest(boolean enabled) {
+    public FeedClientBuilderImpl setSpeedTest(boolean enabled) {
         this.speedTest = enabled;
         return this;
     }
@@ -194,7 +197,17 @@ public class FeedClientBuilderImpl implements FeedClientBuilder {
         return this;
     }
 
-    @Override public FeedClientBuilder setProxy(URI uri) { this.proxy = uri; return this; }
+    @Override
+    public FeedClientBuilderImpl setProxy(URI uri) {
+        this.proxy = uri;
+        return this;
+    }
+
+    @Override
+    public FeedClientBuilderImpl setCompression(Compression compression) {
+        this.compression = requireNonNull(compression);
+        return this;
+    }
 
     /** Constructs instance of {@link ai.vespa.feed.client.FeedClient} from builder configuration */
     @Override

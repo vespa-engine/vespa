@@ -99,13 +99,8 @@ public final class ForEachExpression extends CompositeExpression {
 
     @Override
     public boolean equals(Object obj) {
-        if (!(obj instanceof ForEachExpression)) {
-            return false;
-        }
-        ForEachExpression rhs = (ForEachExpression)obj;
-        if (!exp.equals(rhs.exp)) {
-            return false;
-        }
+        if (!(obj instanceof ForEachExpression rhs)) return false;
+        if (!exp.equals(rhs.exp)) return false;
         return true;
     }
 
@@ -141,4 +136,5 @@ public final class ForEachExpression extends CompositeExpression {
     public void selectMembers(ObjectPredicate predicate, ObjectOperation operation) {
         select(exp, predicate, operation);
     }
+
 }

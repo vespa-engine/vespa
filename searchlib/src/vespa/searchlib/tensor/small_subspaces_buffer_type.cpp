@@ -43,7 +43,9 @@ SmallSubspacesBufferType::destroyElements(void *buffer, ElemCount numElems)
 void
 SmallSubspacesBufferType::fallbackCopy(void *newBuffer, const void *oldBuffer, ElemCount numElems)
 {
-    memcpy(newBuffer, oldBuffer, numElems);
+    if (numElems > 0) {
+        memcpy(newBuffer, oldBuffer, numElems);
+    }
     const char *elem = static_cast<const char *>(oldBuffer);
     while (numElems >= getArraySize()) {
         _ops.copied_labels(unconstify(vespalib::ConstArrayRef<char>(elem, getArraySize())));

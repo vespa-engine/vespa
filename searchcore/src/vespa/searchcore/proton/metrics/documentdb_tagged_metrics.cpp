@@ -2,7 +2,6 @@
 
 #include "documentdb_tagged_metrics.h"
 #include <vespa/vespalib/util/stringfmt.h>
-#include <vespa/vespalib/util/exceptions.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.metrics.documentdb_tagged_metrics");
@@ -222,15 +221,6 @@ DocumentDBTaggedMetrics::MatchingMetrics::RankProfileMetrics::update(const metri
     }
 }
 
-DocumentDBTaggedMetrics::SessionCacheMetrics::SessionCacheMetrics(metrics::MetricSet *parent)
-    : metrics::MetricSet("session_cache", {}, "Metrics for session caches (search / grouping requests)", parent),
-      search("search", this),
-      grouping("grouping", this)
-{
-}
-
-DocumentDBTaggedMetrics::SessionCacheMetrics::~SessionCacheMetrics() = default;
-
 DocumentDBTaggedMetrics::DocumentsMetrics::DocumentsMetrics(metrics::MetricSet *parent)
     : metrics::MetricSet("documents", {}, "Metrics for various document counts in this document db", parent),
       active("active", {}, "The number of active / searchable documents in this document db", this),
@@ -259,7 +249,6 @@ DocumentDBTaggedMetrics::DocumentDBTaggedMetrics(const vespalib::string &docType
       removed("removed", this),
       threadingService("threading_service", this),
       matching(this),
-      sessionCache(this),
       documents(this),
       bucketMove(this),
       feeding(this),

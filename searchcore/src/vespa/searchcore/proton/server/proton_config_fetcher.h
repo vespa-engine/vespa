@@ -49,7 +49,7 @@ public:
     void Run(FastOS_ThreadInterface * thread, void *arg) override;
 
 private:
-    typedef std::map<DocTypeName, std::shared_ptr<DocumentDBConfigManager>> DBManagerMap;
+    using DBManagerMap = std::map<DocTypeName, std::shared_ptr<DocumentDBConfigManager>>;
     using OldDocumentTypeRepo = std::pair<vespalib::steady_time, std::shared_ptr<const document::DocumentTypeRepo>>;
     using lock_guard = std::lock_guard<std::mutex>;
 

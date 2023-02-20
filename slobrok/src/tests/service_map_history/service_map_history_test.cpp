@@ -14,7 +14,7 @@ using Map = std::map<vespalib::string, vespalib::string>;
 struct Dumper : ServiceMapHistory::DiffCompletionHandler {
     std::unique_ptr<MapDiff> got = {};
     void handle(MapDiff diff) override {
-        got = std::make_unique<MapDiff>(diff);
+        got = std::make_unique<MapDiff>(std::move(diff));
     }
 };
 
@@ -22,7 +22,7 @@ MapDiff diffGen(ServiceMapHistory &history, uint32_t gen) {
     Dumper dumper;
     history.asyncGenerationDiff(&dumper, GenCnt(gen));
     EXPECT_TRUE(dumper.got);
-    return *dumper.got;
+    return std::move(*dumper.got);
 }
 
 Map dump(ServiceMapHistory &history) {
@@ -60,7 +60,7 @@ TEST(ServiceMapHistoryTest, empty_inspection) {
         empty2.asyncGenerationDiff(&dumper, gen);
     }
     EXPECT_TRUE(dumper.got);
-    auto diff1 = *dumper.got;
+    auto diff1 = std::move(*dumper.got);
     EXPECT_FALSE(diff1.is_full_dump());
     EXPECT_EQ(diff1.fromGen, gen);
     EXPECT_TRUE(diff1.removed.empty());
@@ -140,7 +140,7 @@ TEST(ServiceMapHistoryTest, full_inspection) {
         EXPECT_FALSE(dumper.got);
     }
     EXPECT_TRUE(dumper.got);
-    auto diff1 = *dumper.got;
+    auto diff1 = std::move(*dumper.got);
     EXPECT_EQ(diff1.fromGen, GenCnt(1987));
     EXPECT_TRUE(diff1.removed.empty());
     EXPECT_TRUE(diff1.updated.empty());
@@ -162,7 +162,7 @@ public:
         got_updates = diff.updated.size();
     }
 
-    ~MockListener();
+    ~MockListener() override;
 };
 
 MockListener::~MockListener() = default;

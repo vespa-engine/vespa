@@ -39,6 +39,7 @@ public class DistributorTest {
 
         StorServerConfig.Builder builder = new StorServerConfig.Builder();
         parse("<content id=\"foofighters\"><documents/>\n" +
+                "  <redundancy>3</redundancy>" +
                 "  <group>" +
                 "     <node distribution-key=\"0\" hostalias=\"mockhost\"/>" +
                 "  </group>" +
@@ -54,6 +55,7 @@ public class DistributorTest {
     void testRevertDefaultOffForSearch() {
         StorDistributormanagerConfig.Builder builder = new StorDistributormanagerConfig.Builder();
         parse("<cluster id=\"storage\">\n" +
+                "  <redundancy>3</redundancy>" +
                 "  <documents/>" +
                 "  <group>" +
                 "     <node distribution-key=\"0\" hostalias=\"mockhost\"/>" +
@@ -67,6 +69,7 @@ public class DistributorTest {
     void testSplitAndJoin() {
         StorDistributormanagerConfig.Builder builder = new StorDistributormanagerConfig.Builder();
         parse("<cluster id=\"storage\">\n" +
+                "  <redundancy>3</redundancy>" +
                 "  <documents/>" +
                 "    <tuning>\n" +
                 "      <bucket-splitting max-documents=\"2K\" max-size=\"25M\" minimum-bits=\"8\" />\n" +
@@ -90,6 +93,7 @@ public class DistributorTest {
     void testThatGroupsAreCountedInWhenComputingSplitBits() {
         StorDistributormanagerConfig.Builder builder = new StorDistributormanagerConfig.Builder();
         ContentCluster cluster = parseCluster("<cluster id=\"storage\">\n" +
+                "  <redundancy>3</redundancy>" +
                 "  <documents/>" +
                 "    <tuning>" +
                 "      <distribution type=\"legacy\"/>" +
@@ -146,6 +150,7 @@ public class DistributorTest {
     void testMaxMergesPerNode() {
         StorDistributormanagerConfig.Builder builder = new StorDistributormanagerConfig.Builder();
         DistributorCluster dcluster = parse("<content id=\"storage\">\n" +
+                "  <redundancy>3</redundancy>" +
                 "  <documents/>" +
                 "  <group>" +
                 "     <node distribution-key=\"0\" hostalias=\"mockhost\"/>" +
@@ -157,6 +162,7 @@ public class DistributorTest {
 
         builder = new StorDistributormanagerConfig.Builder();
         dcluster = parse("<content id=\"storage\">\n" +
+                "  <redundancy>3</redundancy>" +
                 "  <documents/>" +
                 "  <tuning>\n" +
                 "    <merges max-nodes-per-merge=\"4\"/>\n" +
@@ -174,6 +180,7 @@ public class DistributorTest {
     void testGarbageCollectionSetExplicitly() {
         StorDistributormanagerConfig.Builder builder = new StorDistributormanagerConfig.Builder();
         parse("<cluster id=\"storage\">\n" +
+                "  <redundancy>3</redundancy>" +
                 "  <documents garbage-collection=\"true\">\n" +
                 "    <document type=\"music\"/>\n" +
                 "  </documents>\n" +
@@ -191,6 +198,7 @@ public class DistributorTest {
     void testGarbageCollectionInterval() {
         StorDistributormanagerConfig.Builder builder = new StorDistributormanagerConfig.Builder();
         parse("<cluster id=\"storage\">\n" +
+                "  <redundancy>3</redundancy>" +
                 "  <documents garbage-collection=\"true\" garbage-collection-interval=\"30\">\n" +
                 "    <document type=\"music\"/>\n" +
                 "  </documents>\n" +
@@ -207,6 +215,7 @@ public class DistributorTest {
     void testGarbageCollectionOffByDefault() {
         StorDistributormanagerConfig.Builder builder = new StorDistributormanagerConfig.Builder();
         parse("<cluster id=\"storage\">\n" +
+                "  <redundancy>3</redundancy>" +
                 "  <documents>\n" +
                 "    <document type=\"music\"/>\n" +
                 "  </documents>\n" +
@@ -224,6 +233,7 @@ public class DistributorTest {
     void testComplexGarbageCollectionSelectionForIndexedSearch() {
         StorDistributormanagerConfig.Builder builder = new StorDistributormanagerConfig.Builder();
         parse("<cluster id=\"foo\">\n" +
+                "  <redundancy>3</redundancy>" +
                 "  <documents garbage-collection=\"true\" selection=\"true\">" +
                 "    <document type=\"music\" selection=\"music.year &lt; now()\"/>\n" +
                 "    <document type=\"movies\" selection=\"movies.year &lt; now() - 1200\"/>\n" +
@@ -244,6 +254,7 @@ public class DistributorTest {
     void testGarbageCollectionDisabledIfForced() {
         StorDistributormanagerConfig.Builder builder = new StorDistributormanagerConfig.Builder();
         parse("<cluster id=\"foo\">\n" +
+                "  <redundancy>3</redundancy>" +
                 "  <documents selection=\"true\" garbage-collection=\"false\" garbage-collection-interval=\"30\">\n" +
                 "    <document type=\"music\" selection=\"music.year &lt; now()\"/>\n" +
                 "    <document type=\"movies\" selection=\"movies.year &lt; now() - 1200\"/>\n" +
@@ -263,6 +274,7 @@ public class DistributorTest {
         StorCommunicationmanagerConfig.Builder builder = new StorCommunicationmanagerConfig.Builder();
         DistributorCluster cluster =
                 parse("<cluster id=\"storage\" distributor-base-port=\"14065\">" +
+                        "  <redundancy>3</redundancy>" +
                         "  <documents/>" +
                         "  <group>" +
                         "     <node distribution-key=\"0\" hostalias=\"mockhost\"/>" +
@@ -279,6 +291,7 @@ public class DistributorTest {
         StorCommunicationmanagerConfig.Builder builder = new StorCommunicationmanagerConfig.Builder();
         DistributorCluster cluster =
                 parse("<cluster id=\"storage\">" +
+                        "  <redundancy>3</redundancy>" +
                         "  <documents/>" +
                         "  <group>" +
                         "     <node distribution-key=\"0\" hostalias=\"mockhost\"/>" +
@@ -298,6 +311,7 @@ public class DistributorTest {
 
     private String generateXmlForDocTypes(DocType... docTypes) {
         return "<content id='storage'>\n" +
+               "  <redundancy>3</redundancy>" +
                 DocType.listToXml(docTypes) +
                "\n</content>";
     }

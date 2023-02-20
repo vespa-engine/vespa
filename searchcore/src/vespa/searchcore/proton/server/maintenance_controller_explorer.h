@@ -16,7 +16,8 @@ private:
     std::vector<MaintenanceJobRunner::SP> _jobs;
 
 public:
-    MaintenanceControllerExplorer(std::vector<MaintenanceJobRunner::SP> jobs);
+    explicit MaintenanceControllerExplorer(std::vector<MaintenanceJobRunner::SP> jobs);
+    ~MaintenanceControllerExplorer() override;
 
     void get_state(const vespalib::slime::Inserter &inserter, bool full) const override;
 };

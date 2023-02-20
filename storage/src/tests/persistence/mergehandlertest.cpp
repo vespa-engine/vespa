@@ -876,7 +876,7 @@ TEST_F(MergeHandlerTest, merge_bucket_spi_failures) {
         { PersistenceProviderWrapper::FAIL_CREATE_ITERATOR, "create iterator" },
         { PersistenceProviderWrapper::FAIL_ITERATE, "iterate" },
     };
-    typedef ExpectedExceptionSpec* ExceptionIterator;
+    using ExceptionIterator = ExpectedExceptionSpec*;
     ExceptionIterator last = exceptions + sizeof(exceptions)/sizeof(exceptions[0]);
 
     for (ExceptionIterator it = exceptions; it != last; ++it) {
@@ -907,7 +907,7 @@ TEST_F(MergeHandlerTest, get_bucket_diff_spi_failures) {
         { PersistenceProviderWrapper::FAIL_ITERATE, "iterate" },
     };
 
-    typedef ExpectedExceptionSpec* ExceptionIterator;
+    using ExceptionIterator = ExpectedExceptionSpec*;
     ExceptionIterator last = exceptions + sizeof(exceptions)/sizeof(exceptions[0]);
 
     for (ExceptionIterator it = exceptions; it != last; ++it) {
@@ -941,7 +941,7 @@ TEST_F(MergeHandlerTest, apply_bucket_diff_spi_failures) {
         { PersistenceProviderWrapper::FAIL_REMOVE, "Failed remove" },
     };
 
-    typedef ExpectedExceptionSpec* ExceptionIterator;
+    using ExceptionIterator = ExpectedExceptionSpec*;
     ExceptionIterator last = exceptions + sizeof(exceptions)/sizeof(exceptions[0]);
 
     for (ExceptionIterator it = exceptions; it != last; ++it) {
@@ -1006,7 +1006,7 @@ TEST_F(MergeHandlerTest, get_bucket_diff_reply_spi_failures) {
         { PersistenceProviderWrapper::FAIL_ITERATE, "iterate" },
     };
 
-    typedef ExpectedExceptionSpec* ExceptionIterator;
+    using ExceptionIterator = ExpectedExceptionSpec*;
     ExceptionIterator last = exceptions + sizeof(exceptions)/sizeof(exceptions[0]);
 
     for (ExceptionIterator it = exceptions; it != last; ++it) {
@@ -1109,7 +1109,7 @@ TEST_F(MergeHandlerTest, apply_bucket_diff_reply_spi_failures) {
             { PersistenceProviderWrapper::FAIL_REMOVE, "Failed remove" },
         };
 
-        typedef ExpectedExceptionSpec* ExceptionIterator;
+        using ExceptionIterator = ExpectedExceptionSpec*;
         ExceptionIterator last = exceptions + sizeof(exceptions)/sizeof(exceptions[0]);
 
         for (ExceptionIterator it = exceptions; it != last; ++it) {

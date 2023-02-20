@@ -52,10 +52,26 @@ QueryEnvironmentBuilder::addAttributeNode(const vespalib::string &attrName)
     if (info == nullptr || info->type() != FieldType::ATTRIBUTE) {
         return nullptr;
     }
+    return add_node(*info);
+}
+
+SimpleTermData *
+QueryEnvironmentBuilder::add_virtual_node(const vespalib::string &virtual_field)
+{
+    const auto *info = _queryEnv.getIndexEnv()->getFieldByName(virtual_field);
+    if (info == nullptr || info->type() != FieldType::VIRTUAL) {
+        return nullptr;
+    }
+    return add_node(*info);
+}
+
+SimpleTermData *
+QueryEnvironmentBuilder::add_node(const FieldInfo &info)
+{
     _queryEnv.getTerms().push_back(SimpleTermData());
     SimpleTermData &td = _queryEnv.getTerms().back();
     td.setWeight(search::query::Weight(100));
-    SimpleTermFieldData &tfd = td.addField(info->id());
+    SimpleTermFieldData &tfd = td.addField(info.id());
     tfd.setHandle(_layout.allocTermField(tfd.getFieldId()));
     return &td;
 }

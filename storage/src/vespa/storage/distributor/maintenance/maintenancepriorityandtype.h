@@ -11,21 +11,21 @@ class MaintenancePriorityAndType
     MaintenancePriority _priority;
     MaintenanceOperation::Type _type;
 public:
-    MaintenancePriorityAndType(MaintenancePriority pri,
-                               MaintenanceOperation::Type type)
+    constexpr MaintenancePriorityAndType(MaintenancePriority pri,
+                                         MaintenanceOperation::Type type) noexcept
         : _priority(pri),
           _type(type)
     {}
 
-    const MaintenancePriority& getPriority() const {
+    constexpr MaintenancePriority getPriority() const noexcept {
         return _priority;
     }
 
-    MaintenanceOperation::Type getType() const {
+    constexpr MaintenanceOperation::Type getType() const noexcept {
         return _type;
     }
 
-    bool requiresMaintenance() const {
+    constexpr bool requiresMaintenance() const noexcept {
         return (_priority.getPriority()
                 != MaintenancePriority::NO_MAINTENANCE_NEEDED);
     }

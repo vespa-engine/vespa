@@ -26,7 +26,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -122,17 +121,16 @@ public class OsVersionsTest {
         // Activate target
         for (int i = 0; i < totalNodes; i += maxActiveUpgrades) {
             versions.resumeUpgradeOf(NodeType.host, true);
-            var nodes = hostNodes.get();
-            var nodesUpgrading = nodes.changingOsVersion();
+            NodeList nodes = hostNodes.get();
+            NodeList nodesUpgrading = nodes.changingOsVersion();
             assertEquals("Target is changed for a subset of nodes", maxActiveUpgrades, nodesUpgrading.size());
             assertEquals("Wanted version is set for nodes upgrading", version1,
                          minVersion(nodesUpgrading, OsVersion::wanted));
-            var nodesOnLowestVersion = nodes.asList().stream()
-                                            .sorted(Comparator.comparing(node -> node.status().osVersion().current().orElse(Version.emptyVersion)))
-                                            .collect(Collectors.toList())
-                                            .subList(0, maxActiveUpgrades);
+            NodeList nodesOnLowestVersion = nodes.sortedBy(Comparator.comparing(node -> node.status().osVersion().current().orElse(Version.emptyVersion)))
+                                                 .first(maxActiveUpgrades);
             assertEquals("Nodes on lowest version are told to upgrade",
-                         nodesUpgrading.asList(), nodesOnLowestVersion);
+                         nodesUpgrading.hostnames(),
+                         nodesOnLowestVersion.hostnames());
             completeReprovisionOf(nodesUpgrading.asList());
         }
 
@@ -181,8 +179,15 @@ public class OsVersionsTest {
         versions.setTarget(NodeType.host, version1, false);
         versions.resumeUpgradeOf(NodeType.host, true);
 
-        // One host is deprovisioning
+        // First batch of hosts starts deprovisioning
         assertEquals(maxActiveUpgrades, hostNodes.get().deprovisioning().size());
+
+        // Deprovisioning is rescheduled if some other agent resets wantToRetire/wantToDeprovision
+        Node host0 = hostNodes.get().deprovisioning().first().get();
+        tester.patchNode(host0, (h) -> h.withWantToRetire(false, false, Agent.system,
+                                                          tester.nodeRepository().clock().instant()));
+        versions.resumeUpgradeOf(NodeType.host, true);
+        assertTrue(hostNodes.get().deprovisioning().node(host0.hostname()).isPresent());
 
         // Nothing happens on next resume as first batch has not completed upgrade
         versions.resumeUpgradeOf(NodeType.host, true);
@@ -543,7 +548,7 @@ public class OsVersionsTest {
         return nodes.stream()
                     .map(Node::hostname)
                     .flatMap(hostname -> tester.nodeRepository().nodes().node(hostname).stream())
-                    .collect(Collectors.toList());
+                    .toList();
 
     }
 

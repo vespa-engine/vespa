@@ -4,7 +4,7 @@
 # Resolve symlink (if any) and normalize path
 program=$(readlink -f "$0")
 program_dir=$(dirname "$program")
-jarfile=$(readlink -f "$program_dir"/../../../target/vespaclient-java-jar-with-dependencies.jar)
+jarfile=$(readlink -f "$program_dir"/../../../target/vespaclient-java-fat-with-provided.jar)
 
 if ! test -e "$jarfile"
 then

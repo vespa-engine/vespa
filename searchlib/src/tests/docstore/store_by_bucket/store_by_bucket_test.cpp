@@ -57,6 +57,7 @@ public:
         _lastBucketId = bucketId;
         EXPECT_EQUAL(0, memcmp(buffer, createPayload(bucketId).c_str(), sz));
     }
+    ~VerifyBucketOrder() override;
 private:
     uint32_t _lastLid;
     BucketId _lastBucketId;
@@ -64,11 +65,13 @@ private:
     vespalib::hash_set<uint64_t> _uniqueBucket;
 };
 
+VerifyBucketOrder::~VerifyBucketOrder() = default;
+
 TEST("require that StoreByBucket gives bucket by bucket and ordered within")
 {
     std::mutex backing_lock;
     vespalib::MemoryDataStore backing(vespalib::alloc::Alloc::alloc(256), &backing_lock);
-    vespalib::ThreadStackExecutor executor(8, 128_Ki);
+    vespalib::ThreadStackExecutor executor(8);
     StoreByBucket sbb(backing, executor, CompressionConfig::LZ4);
     for (size_t i(1); i <=500; i++) {
         add(sbb, i);

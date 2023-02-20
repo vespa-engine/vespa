@@ -46,18 +46,13 @@ public class ChangeManagementApiHandler extends AuditLoggingRequestHandler {
     @Override
     public HttpResponse auditAndHandle(HttpRequest request) {
         try {
-            switch (request.getMethod()) {
-                case GET:
-                    return get(request);
-                case POST:
-                    return post(request);
-                case PATCH:
-                    return patch(request);
-                case DELETE:
-                    return delete(request);
-                default:
-                    return ErrorResponse.methodNotAllowed("Method '" + request.getMethod() + "' is unsupported");
-            }
+            return switch (request.getMethod()) {
+                case GET -> get(request);
+                case POST -> post(request);
+                case PATCH -> patch(request);
+                case DELETE -> delete(request);
+                default -> ErrorResponse.methodNotAllowed("Method '" + request.getMethod() + "' is unsupported");
+            };
         } catch (IllegalArgumentException e) {
             return ErrorResponse.badRequest(Exceptions.toMessageString(e));
         } catch (RuntimeException e) {
@@ -295,7 +290,7 @@ public class ChangeManagementApiHandler extends AuditLoggingRequestHandler {
                 .flatMap(zone -> controller.serviceRegistry().configServer().nodeRepository().list(zone, NodeFilter.all()).stream())
                 .filter(node -> node.switchHostname().map(switches::contains).orElse(false))
                 .map(node -> node.hostname().value())
-                .collect(Collectors.toList());
+                .toList();
     }
 
     private List<ZoneId> getProdZones() {

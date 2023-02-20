@@ -8,7 +8,7 @@ namespace search {
 
 /**
  * search::PartialBitVector is a bitvector that is only represents 1 part
- * of the full space. All operations concerning the whole vector while only
+ * of the full space. All operations concerning the whole vector will only
  * be conducted on this smaller area.
  */
 class PartialBitVector : public BitVector

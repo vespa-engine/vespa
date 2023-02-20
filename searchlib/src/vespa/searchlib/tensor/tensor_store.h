@@ -27,7 +27,7 @@ class TensorStore : public vespalib::datastore::ICompactable
 {
 public:
     using EntryRef = vespalib::datastore::EntryRef;
-    typedef vespalib::GenerationHandler::generation_t generation_t;
+    using generation_t = vespalib::GenerationHandler::generation_t;
 
 protected:
     vespalib::datastore::DataStoreBase& _store;

@@ -79,8 +79,7 @@ vespalib::string quoteString(const vespalib::string &str)
 
 } // namespace <unnamed>
 
-namespace search {
-namespace fef {
+namespace search::fef {
 
 FeatureNameBuilder::FeatureNameBuilder()
     : _baseName(),
@@ -89,9 +88,7 @@ FeatureNameBuilder::FeatureNameBuilder()
 {
 }
 
-FeatureNameBuilder::~FeatureNameBuilder()
-{
-}
+FeatureNameBuilder::~FeatureNameBuilder() = default;
 
 FeatureNameBuilder &
 FeatureNameBuilder::baseName(const vespalib::string &str)
@@ -154,5 +151,4 @@ FeatureNameBuilder::buildName() const
     return ret;
 }
 
-} // namespace fef
-} // namespace search
+}

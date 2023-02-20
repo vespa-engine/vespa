@@ -53,7 +53,7 @@ bool
 FRT_Supervisor::Listen(int port)
 {
     char spec[32];
-    sprintf(spec, "tcp/%d", port);
+    snprintf(spec, sizeof(spec), "tcp/%d", port);
     return Listen(spec);
 }
 
@@ -88,7 +88,7 @@ FRT_Target *
 FRT_Supervisor::GetTarget(int port)
 {
     char spec[64];
-    sprintf(spec, "tcp/localhost:%d", port);
+    snprintf(spec, sizeof(spec), "tcp/localhost:%d", port);
     return GetTarget(spec);
 }
 
@@ -291,7 +291,7 @@ FRT_Supervisor::SchedulerPtr::SchedulerPtr(FNET_TransportThread *transport_threa
 namespace fnet::frt {
 
 StandaloneFRT::StandaloneFRT(const TransportConfig &config)
-    : _threadPool(std::make_unique<FastOS_ThreadPool>(1024*128)),
+    : _threadPool(std::make_unique<FastOS_ThreadPool>()),
       _transport(std::make_unique<FNET_Transport>(config)),
       _supervisor(std::make_unique<FRT_Supervisor>(_transport.get()))
 {

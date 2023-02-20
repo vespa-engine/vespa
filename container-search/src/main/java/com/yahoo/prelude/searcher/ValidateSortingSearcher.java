@@ -83,15 +83,15 @@ public class ValidateSortingSearcher extends Searcher {
     }
 
     private static Sorting.UcaSorter.Strength config2Strength(AttributesConfig.Attribute.Sortstrength.Enum s) {
-        if(s == AttributesConfig.Attribute.Sortstrength.PRIMARY) {
+        if (s == AttributesConfig.Attribute.Sortstrength.PRIMARY) {
             return Sorting.UcaSorter.Strength.PRIMARY;
-        } else if(s == AttributesConfig.Attribute.Sortstrength.SECONDARY) {
+        } else if (s == AttributesConfig.Attribute.Sortstrength.SECONDARY) {
             return Sorting.UcaSorter.Strength.SECONDARY;
-        } else if(s == AttributesConfig.Attribute.Sortstrength.TERTIARY) {
+        } else if (s == AttributesConfig.Attribute.Sortstrength.TERTIARY) {
             return Sorting.UcaSorter.Strength.TERTIARY;
-        } else if(s == AttributesConfig.Attribute.Sortstrength.QUATERNARY) {
+        } else if (s == AttributesConfig.Attribute.Sortstrength.QUATERNARY) {
             return Sorting.UcaSorter.Strength.QUATERNARY;
-        } else if(s == AttributesConfig.Attribute.Sortstrength.IDENTICAL) {
+        } else if (s == AttributesConfig.Attribute.Sortstrength.IDENTICAL) {
             return Sorting.UcaSorter.Strength.IDENTICAL;
         }
         return Sorting.UcaSorter.Strength.PRIMARY;
@@ -117,73 +117,69 @@ public class ValidateSortingSearcher extends Searcher {
         for (Sorting.FieldOrder f : l) {
             String name = f.getFieldName();
             if ("[rank]".equals(name) || "[docid]".equals(name)) {
-                // built-in constants - ok
-            } else if ("[relevance]".equals(name)) {
-                // built-in constant '[relevance]' must map to '[rank]'
-                f.getSorter().setName("[rank]");
-            } else if ("[relevancy]".equals(name)) {
-                // built-in constant '[relevancy]' must map to '[rank]'
+                // built-in constants
+            } else if ("[relevance]".equals(name) || "[relevancy]".equals(name)) { // aliases
                 f.getSorter().setName("[rank]");
             } else if (names.containsKey(name)) {
                 AttributesConfig.Attribute attrConfig = names.get(name);
-                if (attrConfig != null) {
-                    if (f.getSortOrder() == Sorting.Order.UNDEFINED) {
-                        f.setAscending(attrConfig.sortascending());
-                    }
-                    if (f.getSorter().getClass().equals(Sorting.AttributeSorter.class)) {
-                        // This indicates that it shall use default.
-                        if ((attrConfig.datatype() == AttributesConfig.Attribute.Datatype.STRING)) {
-                            if (attrConfig.sortfunction() == AttributesConfig.Attribute.Sortfunction.UCA) {
-                                String locale = attrConfig.sortlocale();
-                                if (locale == null || locale.isEmpty()) {
-                                    locale = queryLocale;
-                                }
-                                // can only use UcaSorter if we have knowledge about wanted locale
-                                if (locale != null) {
-                                    f.setSorter(new Sorting.UcaSorter(name, locale, Sorting.UcaSorter.Strength.UNDEFINED));
-                                } else {
-                                    // wanted UCA but no locale known, so use lowercase as fallback
-                                    f.setSorter(new Sorting.LowerCaseSorter(name));
-                                }
-                            } else if (attrConfig.sortfunction() == AttributesConfig.Attribute.Sortfunction.LOWERCASE) {
-                                f.setSorter(new Sorting.LowerCaseSorter(name));
-                            } else if (attrConfig.sortfunction() == AttributesConfig.Attribute.Sortfunction.RAW) {
-                                f.setSorter(new Sorting.RawSorter(name));
+                if (attrConfig == null)
+                    return ErrorMessage.createInvalidQueryParameter("Cluster '" + getClusterName() +
+                                                                    "' has no attribute config for field '" + name + "'");
+                if (f.getSortOrder() == Sorting.Order.UNDEFINED) {
+                    f.setAscending(attrConfig.sortascending());
+                }
+                if (f.getSorter().getClass().equals(Sorting.AttributeSorter.class)) {
+                    // This indicates that it shall use default.
+                    if ((attrConfig.datatype() == AttributesConfig.Attribute.Datatype.STRING)) {
+                        if (attrConfig.sortfunction() == AttributesConfig.Attribute.Sortfunction.UCA) {
+                            String locale = attrConfig.sortlocale();
+                            if (locale == null || locale.isEmpty()) {
+                                locale = queryLocale;
+                            }
+                            // can only use UcaSorter if we have knowledge about wanted locale
+                            if (locale != null) {
+                                f.setSorter(new Sorting.UcaSorter(name, locale, Sorting.UcaSorter.Strength.UNDEFINED));
                             } else {
-                                // default if no config found for this string attribute
+                                // wanted UCA but no locale known, so use lowercase as fallback
                                 f.setSorter(new Sorting.LowerCaseSorter(name));
                             }
+                        } else if (attrConfig.sortfunction() == AttributesConfig.Attribute.Sortfunction.LOWERCASE) {
+                            f.setSorter(new Sorting.LowerCaseSorter(name));
+                        } else if (attrConfig.sortfunction() == AttributesConfig.Attribute.Sortfunction.RAW) {
+                            f.setSorter(new Sorting.RawSorter(name));
+                        } else {
+                            // default if no config found for this string attribute
+                            f.setSorter(new Sorting.LowerCaseSorter(name));
                         }
                     }
-                    if (f.getSorter() instanceof Sorting.UcaSorter sorter) {
-                        String locale = sorter.getLocale();
+                }
+                if (f.getSorter() instanceof Sorting.UcaSorter sorter) {
+                    String locale = sorter.getLocale();
 
-                        if (locale == null || locale.isEmpty()) {
-                            // first fallback
-                            locale = attrConfig.sortlocale();
-                        }
-                        if (locale == null || locale.isEmpty()) {
-                            // second fallback
-                            locale = queryLocale;
-                        }
-                        // final fallback
-                        if (locale == null || locale.isEmpty()) {
-                            locale = "en_US";
-                        }
-
-                        Sorting.UcaSorter.Strength strength = sorter.getStrength();
-                        if (sorter.getStrength() == Sorting.UcaSorter.Strength.UNDEFINED) {
-                            strength = config2Strength(attrConfig.sortstrength());
-                        }
-                        if ((sorter.getStrength() == Sorting.UcaSorter.Strength.UNDEFINED) || (sorter.getLocale() == null) || sorter.getLocale().isEmpty()) {
-                            sorter.setLocale(locale, strength);
-                        }
+                    if (locale == null || locale.isEmpty()) {
+                        // first fallback
+                        locale = attrConfig.sortlocale();
                     }
-                } else {
-                    return ErrorMessage.createInvalidQueryParameter("The cluster " + getClusterName() + " has attribute config for field: " + name);
+                    if (locale == null || locale.isEmpty()) {
+                        // second fallback
+                        locale = queryLocale;
+                    }
+                    // final fallback
+                    if (locale == null || locale.isEmpty()) {
+                        locale = "en_US";
+                    }
+
+                    Sorting.UcaSorter.Strength strength = sorter.getStrength();
+                    if (sorter.getStrength() == Sorting.UcaSorter.Strength.UNDEFINED) {
+                        strength = config2Strength(attrConfig.sortstrength());
+                    }
+                    if ((sorter.getStrength() == Sorting.UcaSorter.Strength.UNDEFINED) || (sorter.getLocale() == null) || sorter.getLocale().isEmpty()) {
+                        sorter.setLocale(locale, strength);
+                    }
                 }
             } else {
-                return ErrorMessage.createInvalidQueryParameter("The cluster " + getClusterName() + " has no sortable attribute named: " + name);
+                return ErrorMessage.createInvalidQueryParameter("Cluster '" + getClusterName() +
+                                                                "' has no sortable attribute named '" + name + "'");
             }
         }
         return null;

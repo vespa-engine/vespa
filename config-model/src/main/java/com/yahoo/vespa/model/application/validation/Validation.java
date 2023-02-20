@@ -10,9 +10,10 @@ import com.yahoo.config.model.api.ValidationParameters;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.vespa.model.VespaModel;
+import com.yahoo.vespa.model.application.validation.change.CertificateRemovalChangeValidator;
 import com.yahoo.vespa.model.application.validation.change.ChangeValidator;
 import com.yahoo.vespa.model.application.validation.change.CloudAccountChangeValidator;
-import com.yahoo.vespa.model.application.validation.change.ClusterSizeReductionValidator;
+import com.yahoo.vespa.model.application.validation.change.ResourcesReductionValidator;
 import com.yahoo.vespa.model.application.validation.change.ConfigValueChangeValidator;
 import com.yahoo.vespa.model.application.validation.change.ContainerRestartValidator;
 import com.yahoo.vespa.model.application.validation.change.ContentClusterRemovalValidator;
@@ -22,10 +23,9 @@ import com.yahoo.vespa.model.application.validation.change.IndexedSearchClusterC
 import com.yahoo.vespa.model.application.validation.change.IndexingModeChangeValidator;
 import com.yahoo.vespa.model.application.validation.change.NodeResourceChangeValidator;
 import com.yahoo.vespa.model.application.validation.change.RedundancyIncreaseValidator;
-import com.yahoo.vespa.model.application.validation.change.ResourcesReductionValidator;
 import com.yahoo.vespa.model.application.validation.change.StartupCommandChangeValidator;
 import com.yahoo.vespa.model.application.validation.change.StreamingSearchClusterChangeValidator;
-import com.yahoo.vespa.model.application.validation.first.RedundancyOnFirstDeploymentValidator;
+import com.yahoo.vespa.model.application.validation.first.RedundancyValidator;
 
 import java.time.Instant;
 import java.util.Arrays;
@@ -41,7 +41,6 @@ import java.util.stream.Collectors;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.mapping;
 import static java.util.stream.Collectors.toCollection;
-import static java.util.stream.Collectors.toList;
 
 /**
  * Executor of validators. This defines the right order of validator execution.
@@ -86,6 +85,9 @@ public class Validation {
         new CloudWatchValidator().validate(model, deployState);
         new QuotaValidator().validate(model, deployState);
         new UriBindingsValidator().validate(model, deployState);
+        new CloudDataPlaneFilterValidator().validate(model, deployState);
+        new AccessControlFilterExcludeValidator().validate(model, deployState);
+        new CloudUserFilterValidator().validate(model, deployState);
 
         additionalValidators.forEach(v -> v.validate(model, deployState));
 
@@ -95,8 +97,7 @@ public class Validation {
         } else {
             Optional<Model> currentActiveModel = deployState.getPreviousModel();
             if (currentActiveModel.isPresent() && (currentActiveModel.get() instanceof VespaModel)) {
-                result = validateChanges((VespaModel) currentActiveModel.get(), model,
-                                         deployState.validationOverrides(), deployState.getDeployLogger(), deployState.now());
+                result = validateChanges((VespaModel) currentActiveModel.get(), model, deployState);
                 deferConfigChangesForClustersToBeRestarted(result, model);
             }
         }
@@ -104,39 +105,40 @@ public class Validation {
     }
 
     private static List<ConfigChangeAction> validateChanges(VespaModel currentModel, VespaModel nextModel,
-                                                            ValidationOverrides overrides, DeployLogger logger,
-                                                            Instant now) {
+                                                            DeployState deployState) {
         ChangeValidator[] validators = new ChangeValidator[] {
                 new IndexingModeChangeValidator(),
                 new GlobalDocumentChangeValidator(),
                 new IndexedSearchClusterChangeValidator(),
                 new StreamingSearchClusterChangeValidator(),
-                new ConfigValueChangeValidator(logger),
+                new ConfigValueChangeValidator(),
                 new StartupCommandChangeValidator(),
                 new ContentTypeRemovalValidator(),
                 new ContentClusterRemovalValidator(),
-                new ClusterSizeReductionValidator(),
+                new ResourcesReductionValidator(),
                 new ResourcesReductionValidator(),
                 new ContainerRestartValidator(),
                 new NodeResourceChangeValidator(),
                 new RedundancyIncreaseValidator(),
-                new CloudAccountChangeValidator()
+                new CloudAccountChangeValidator(),
+                new CertificateRemovalChangeValidator(),
+                new RedundancyValidator()
         };
         List<ConfigChangeAction> actions = Arrays.stream(validators)
-                                                 .flatMap(v -> v.validate(currentModel, nextModel, overrides, now).stream())
-                                                 .collect(toList());
+                                                 .flatMap(v -> v.validate(currentModel, nextModel, deployState).stream())
+                                                 .toList();
 
         Map<ValidationId, Collection<String>> disallowableActions = actions.stream()
                                                                            .filter(action -> action.validationId().isPresent())
                                                                            .collect(groupingBy(action -> action.validationId().orElseThrow(),
                                                                                                mapping(ConfigChangeAction::getMessage,
                                                                                                        toCollection(LinkedHashSet::new))));
-        overrides.invalid(disallowableActions, now);
+        deployState.validationOverrides().invalid(disallowableActions, deployState.now());
         return actions;
     }
 
     private static void validateFirstTimeDeployment(VespaModel model, DeployState deployState) {
-        new RedundancyOnFirstDeploymentValidator().validate(model, deployState);
+        new RedundancyValidator().validate(model, deployState);
     }
 
     private static void deferConfigChangesForClustersToBeRestarted(List<ConfigChangeAction> actions, VespaModel model) {

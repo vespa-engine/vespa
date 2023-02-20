@@ -15,19 +15,19 @@ private:
     uint32_t _num_samples;
 
 public:
-    FieldLengthInfo()
+    FieldLengthInfo() noexcept
         : FieldLengthInfo(0.0, 0)
     {
     }
 
-    FieldLengthInfo(double average_field_length, uint32_t num_samples)
+    FieldLengthInfo(double average_field_length, uint32_t num_samples) noexcept
         : _average_field_length(average_field_length),
           _num_samples(num_samples)
     {
     }
 
-    double get_average_field_length() const { return _average_field_length; }
-    uint32_t get_num_samples() const { return _num_samples; }
+    [[nodiscard]] double get_average_field_length() const noexcept { return _average_field_length; }
+    [[nodiscard]] uint32_t get_num_samples() const noexcept { return _num_samples; }
 };
 
 }

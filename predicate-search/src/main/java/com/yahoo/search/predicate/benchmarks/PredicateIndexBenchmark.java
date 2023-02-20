@@ -43,7 +43,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.yahoo.search.predicate.benchmarks.PredicateIndexBenchmark.BenchmarkArguments.Algorithm;
 import static com.yahoo.search.predicate.benchmarks.PredicateIndexBenchmark.BenchmarkArguments.Format;
-import static java.util.stream.Collectors.toList;
 
 /**
  * A benchmark that tests the indexing and search performance.
@@ -187,7 +186,7 @@ public class PredicateIndexBenchmark {
             runners.add(new QueryRunner(shuffledQueries, index.searcher()));
         }
         long start = System.currentTimeMillis();
-        List<Future<ResultMetrics>> futureResults = runners.stream().map(executor::submit).collect(toList());
+        List<Future<ResultMetrics>> futureResults = runners.stream().map(executor::submit).toList();
         waitAndShutdown(runtime, executor);
         long searchTime = System.currentTimeMillis() - start;
         getResult(futureResults).writeMetrics(output, searchTime);

@@ -20,7 +20,13 @@ FlushContext::FlushContext(
 
 vespalib::string
 FlushContext::createName(const IFlushHandler & handler, const IFlushTarget & target) {
-    return (handler.getName() + "." + target.getName());
+    return create_name(handler.getName(), target.getName());
+}
+
+vespalib::string
+FlushContext::create_name(const vespalib::string& handler_name,
+                          const vespalib::string& target_name) {
+    return (handler_name + "." + target_name);
 }
 
 FlushContext::~FlushContext()

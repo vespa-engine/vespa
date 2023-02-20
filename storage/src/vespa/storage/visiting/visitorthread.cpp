@@ -2,6 +2,8 @@
 
 #include "visitorthread.h"
 #include "messages.h"
+#include <vespa/storageframework/generic/thread/thread.h>
+#include <vespa/storageframework/generic/clock/clock.h>
 #include <vespa/document/base/exceptions.h>
 #include <vespa/document/select/bodyfielddetector.h>
 #include <vespa/document/select/parser.h>
@@ -11,7 +13,6 @@
 #include <vespa/storage/config/config-stor-server.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/exceptions.h>
-#include <locale>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".visitor.thread");
@@ -88,14 +89,15 @@ VisitorThread::VisitorThread(uint32_t threadIndex,
       _defaultPendingMessages(0),
       _defaultDocBlockSize(0),
       _visitorMemoryUsageLimit(UINT32_MAX),
-      _defaultDocBlockTimeout(180000),
+      _defaultDocBlockTimeout(180s),
+      _defaultVisitorInfoTimeout(60s),
       _timeBetweenTicks(1000),
       _component(componentRegister, getThreadName(threadIndex)),
       _messageSessionFactory(messageSessionFac),
       _visitorFactories(visitorFactories)
 {
     _thread = _component.startThread(*this, 30s, 1s, 1, vespalib::CpuUsage::Category::READ);
-    _component.registerMetricUpdateHook(*this, framework::SecondTime(5));
+    _component.registerMetricUpdateHook(*this, 5s);
 }
 
 VisitorThread::~VisitorThread()
@@ -127,10 +129,10 @@ VisitorThread::shutdown()
             if (event._message.get()) {
                 if (!event._message->getType().isReply()
                     && (event._message->getType() != api::MessageType::INTERNAL
-                        || static_cast<const api::InternalCommand&>(*event._message).getType() != PropagateVisitorConfig::ID))
+                        || dynamic_cast<const api::InternalCommand&>(*event._message).getType() != PropagateVisitorConfig::ID))
                 {
                     std::shared_ptr<api::StorageReply> reply(
-                            static_cast<api::StorageCommand&>(*event._message).makeReply());
+                            dynamic_cast<api::StorageCommand&>(*event._message).makeReply());
                     reply->setResult(api::ReturnCode(api::ReturnCode::ABORTED, "Shutting down storage node."));
                     _messageSender.send(reply);
                 }
@@ -198,7 +200,7 @@ VisitorThread::run(framework::ThreadHandle& thread)
             // disappear when no visiting is done)
             if (entry._message.get() &&
                 (entry._message->getType() != api::MessageType::INTERNAL
-                 || static_cast<api::InternalCommand&>(*entry._message).getType() != PropagateVisitorConfig::ID))
+                 || dynamic_cast<api::InternalCommand&>(*entry._message).getType() != PropagateVisitorConfig::ID))
             {
                 entry._timer.stop(_metrics.averageQueueWaitingTime);
             }
@@ -279,11 +281,11 @@ VisitorThread::tick()
 void
 VisitorThread::close()
 {
-    framework::MicroSecTime closeTime(_component.getClock().getTimeInMicros());
+    vespalib::steady_time closeTime = _component.getClock().getMonotonicTime();
 
     Visitor& v = *_currentlyRunningVisitor->second;
 
-    _metrics.averageVisitorLifeTime.addValue((closeTime - v.getStartTime()).getMillis().getTime());
+    _metrics.averageVisitorLifeTime.addValue(vespalib::count_ms(closeTime - v.getStartTime()));
     v.finalize();
     _messageSender.closed(_currentlyRunningVisitor->first);
     if (v.failed()) {
@@ -291,7 +293,7 @@ VisitorThread::close()
     } else {
         _metrics.completedVisitors.inc(1);
     }
-    framework::SecondTime currentTime(_component.getClock().getTimeInSeconds());
+    vespalib::steady_time currentTime(_component.getClock().getMonotonicTime());
     trimRecentlyCompletedList(currentTime);
     _recentlyCompleted.emplace_back(_currentlyRunningVisitor->first, currentTime);
     _visitors.erase(_currentlyRunningVisitor);
@@ -299,9 +301,9 @@ VisitorThread::close()
 }
 
 void
-VisitorThread::trimRecentlyCompletedList(framework::SecondTime currentTime)
+VisitorThread::trimRecentlyCompletedList(vespalib::steady_time currentTime)
 {
-    framework::SecondTime recentLimit(currentTime - framework::SecondTime(30));
+    vespalib::steady_time recentLimit(currentTime - 30s);
     // Dump all elements that aren't recent anymore
     while (!_recentlyCompleted.empty()
            && _recentlyCompleted.front().second < recentLimit)
@@ -314,8 +316,7 @@ void
 VisitorThread::handleNonExistingVisitorCall(const Event& entry, ReturnCode& code)
 {
     // Get current time. Set the time that is the oldest still recent.
-    framework::SecondTime currentTime(_component.getClock().getTimeInSeconds());
-    trimRecentlyCompletedList(currentTime);
+    trimRecentlyCompletedList(_component.getClock().getMonotonicTime());
 
     // Go through all recent visitors. Ignore request if recent
     for (const auto& e : _recentlyCompleted) {
@@ -345,7 +346,7 @@ VisitorThread::createVisitor(vespalib::stringref libName,
     auto it = _visitorFactories.find(str);
     if (it == _visitorFactories.end()) {
         error << "Visitor library " << str << " not found.";
-        return std::shared_ptr<Visitor>();
+        return {};
     }
 
     auto libIter = _libs.find(str);
@@ -364,7 +365,7 @@ VisitorThread::createVisitor(vespalib::stringref libName,
     } catch (std::exception& e) {
         error << "Failed to create visitor instance of type " << libName
               << ": " << e.what();
-        return std::shared_ptr<Visitor>();
+        return {};
     }
 }
 
@@ -508,8 +509,7 @@ VisitorThread::onCreateVisitor(
                            _messageSender,
                            std::move(messageSession),
                            documentPriority);
-            visitor->attach(cmd, *controlAddress, *dataAddress,
-                            framework::MilliSecTime(vespalib::count_ms(cmd->getTimeout())));
+            visitor->attach(cmd, *controlAddress, *dataAddress, cmd->getTimeout());
         } catch (std::exception& e) {
             // We don't handle exceptions from this code, as we've
             // added visitor to internal structs we'll end up calling
@@ -575,8 +575,8 @@ VisitorThread::onInternal(const std::shared_ptr<api::InternalCommand>& cmd)
                             _defaultPendingMessages,
                             _defaultDocBlockSize,
                             _visitorMemoryUsageLimit,
-                            _defaultDocBlockTimeout.getTime(),
-                            _defaultVisitorInfoTimeout.getTime(),
+                            vespalib::count_ms(_defaultDocBlockTimeout),
+                            vespalib::count_ms(_defaultVisitorInfoTimeout),
                             config.disconnectedvisitortimeout,
                             config.ignorenonexistingvisitortimelimit,
                             config.defaultparalleliterators,
@@ -588,14 +588,13 @@ VisitorThread::onInternal(const std::shared_ptr<api::InternalCommand>& cmd)
                    );
             }
             _disconnectedVisitorTimeout = config.disconnectedvisitortimeout;
-            _ignoreNonExistingVisitorTimeLimit
-                    = config.ignorenonexistingvisitortimelimit;
+            _ignoreNonExistingVisitorTimeLimit = config.ignorenonexistingvisitortimelimit;
             _defaultParallelIterators = config.defaultparalleliterators;
             _defaultPendingMessages = config.defaultpendingmessages;
             _defaultDocBlockSize = config.defaultdocblocksize;
             _visitorMemoryUsageLimit = config.visitorMemoryUsageLimit;
-            _defaultDocBlockTimeout.setTime(config.defaultdocblocktimeout);
-            _defaultVisitorInfoTimeout.setTime(config.defaultinfotimeout);
+            _defaultDocBlockTimeout = std::chrono::milliseconds(config.defaultdocblocktimeout);
+            _defaultVisitorInfoTimeout = std::chrono::milliseconds(config.defaultinfotimeout);
             if (_defaultParallelIterators < 1) {
                 LOG(config, "Cannot use value of defaultParallelIterators < 1");
                 _defaultParallelIterators = 1;
@@ -608,9 +607,9 @@ VisitorThread::onInternal(const std::shared_ptr<api::InternalCommand>& cmd)
                 LOG(config, "Refusing to use default block size less than 1k");
                 _defaultDocBlockSize = 1024;
             }
-            if (_defaultDocBlockTimeout.getTime() < 1) {
+            if (_defaultDocBlockTimeout < 1ms) {
                 LOG(config, "Cannot use value of defaultDocBlockTimeout < 1");
-                _defaultDocBlockTimeout.setTime(1);
+                _defaultDocBlockTimeout = 1ms;
             }
             break;
         }
@@ -691,7 +690,7 @@ VisitorThread::getStatus(vespalib::asciistream& out,
         }
         for (const auto& cv : _recentlyCompleted) {
             out << "<li> Visitor " << cv.first << " done at "
-                << cv.second.getTime() << "\n";
+                << vespalib::to_string(vespalib::to_utc(cv.second)) << "\n";
         }
         out << "</ul>\n";
         out << "<h3>Current queue size: " << _queue.size() << "</h3>\n";
@@ -710,7 +709,7 @@ VisitorThread::getStatus(vespalib::asciistream& out,
             << "<tr><td>Default DocBlock size</td><td>"
             << _defaultDocBlockSize << "</td></tr>\n"
             << "<tr><td>Default DocBlock timeout (ms)</td><td>"
-            << _defaultDocBlockTimeout.getTime() << "</td></tr>\n"
+            << vespalib::count_ms(_defaultDocBlockTimeout) << "</td></tr>\n"
             << "<tr><td>Visitor memory usage limit</td><td>"
             << _visitorMemoryUsageLimit << "</td></tr>\n"
             << "</table>\n";
@@ -737,12 +736,10 @@ VisitorThread::getStatus(vespalib::asciistream& out,
         if (_visitors.empty()) {
             out << "None\n";
         }
-        for (VisitorMap::const_iterator it = _visitors.begin();
-             it != _visitors.end(); ++it)
-        {
-            out << "<a href=\"?visitor=" << it->first
+        for (const auto & v : _visitors) {
+            out << "<a href=\"?visitor=" << v.first
                 << (verbose ? "&verbose" : "") << "\">Visitor "
-                << it->first << "</a><br>\n";
+                << v.first << "</a><br>\n";
         }
     }
 }

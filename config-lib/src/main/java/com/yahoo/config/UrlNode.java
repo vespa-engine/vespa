@@ -56,7 +56,7 @@ public class UrlNode extends LeafNode<File> {
     }
 
     public static List<UrlReference> toUrlReferences(List<UrlNode> urlNodes) {
-        return urlNodes.stream().map(UrlNode::getUrlReference).collect(Collectors.toList());
+        return urlNodes.stream().map(UrlNode::getUrlReference).toList();
     }
 
     public static Map<String, UrlReference> toUrlReferenceMap(Map<String, UrlNode> urlNodeMap) {

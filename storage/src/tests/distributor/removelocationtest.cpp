@@ -35,7 +35,7 @@ struct RemoveLocationOperationTest : Test, DistributorStripeTestUtil {
                 msg,
                 metrics().removelocations);
 
-        op->start(_sender, framework::MilliSecTime(0));
+        op->start(_sender);
     }
 };
 

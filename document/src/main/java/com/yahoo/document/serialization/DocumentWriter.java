@@ -6,18 +6,15 @@ import com.yahoo.document.DocumentId;
 import com.yahoo.document.DocumentType;
 
 /**
- * @author <a href="mailto:ravishar@yahoo-inc.com">ravishar</a>
+ * @author ravishar
  */
 public interface DocumentWriter extends FieldWriter {
-    /**
-     * write out a document
-     *
-     * @param document
-     *            document to be written
-     */
+
+    /** Writes a document. */
     void write(Document document);
 
     void write(DocumentId id);
 
     void write(DocumentType type);
+
 }

@@ -13,8 +13,8 @@ using vespalib::make_string;
 
 namespace search::queryeval {
 
-typedef ParallelWeakAndSearch::MatchParams MatchParams;
-typedef ParallelWeakAndSearch::RankParams RankParams;
+using MatchParams = ParallelWeakAndSearch::MatchParams;
+using RankParams = ParallelWeakAndSearch::RankParams;
 
 namespace wand {
 
@@ -133,7 +133,7 @@ createWand(const wand::Terms &terms,
            const ParallelWeakAndSearch::MatchParams &matchParams,
            ParallelWeakAndSearch::RankParams &&rankParams)
 {
-    typedef ParallelWeakAndSearchImpl<VectorizedIteratorTerms, FutureHeap, PastHeap, IS_STRICT> WandType;
+    using WandType = ParallelWeakAndSearchImpl<VectorizedIteratorTerms, FutureHeap, PastHeap, IS_STRICT>;
     if (should_monitor_wand()) {
         wand::Terms termsWithMonitoring = insertMonitoringSearchIterator(terms);
         MonitoringSearchIterator::UP monitoringIterator =

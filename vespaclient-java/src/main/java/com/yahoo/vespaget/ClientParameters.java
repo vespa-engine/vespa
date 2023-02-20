@@ -5,7 +5,7 @@ import com.yahoo.documentapi.messagebus.protocol.DocumentProtocol;
 
 import java.util.Iterator;
 /**
- * This class contains the the program parameters.
+ * This class contains the program parameters.
  *
  * @author bjorncs
  */
@@ -37,13 +37,17 @@ public class ClientParameters {
     public final DocumentProtocol.Priority priority;
     // If full documents are printed, they will be printed as JSON (instead of XML)
     public final boolean jsonOutput;
-
+    // Output JSON tensors in short form
+    public final boolean tensorShortForm;
+    // Output JSON tensorvalues directly
+    public final boolean tensorDirectValues;
 
     private ClientParameters(
             boolean help, Iterator<String> documentIds, boolean printIdsOnly,
             String fieldSet, String route, String cluster, String configId,
             boolean showDocSize, double timeout, boolean noRetry, int traceLevel,
-            DocumentProtocol.Priority priority, boolean jsonOutput) {
+            DocumentProtocol.Priority priority, boolean jsonOutput, boolean tensorShortForm,
+            boolean tensorDirectValues) {
 
         this.help = help;
         this.documentIds = documentIds;
@@ -58,6 +62,8 @@ public class ClientParameters {
         this.traceLevel = traceLevel;
         this.priority = priority;
         this.jsonOutput = jsonOutput;
+        this.tensorShortForm = tensorShortForm;
+        this.tensorDirectValues = tensorDirectValues;
     }
 
     public static class Builder {
@@ -73,7 +79,9 @@ public class ClientParameters {
         private boolean noRetry;
         private int traceLevel;
         private DocumentProtocol.Priority priority;
-        private boolean jsonOutput;
+        private boolean jsonOutput = true;
+        private boolean tensorShortForm;
+        private boolean tensorDirectValues;
 
         public Builder setHelp(boolean help) {
             this.help = help;
@@ -140,10 +148,20 @@ public class ClientParameters {
             return this;
         }
 
+        public Builder setTensorShortForm(boolean tensorShortForm) {
+            this.tensorShortForm = tensorShortForm;
+            return this;
+        }
+
+        public Builder setTensorDirectValues(boolean tensorDirectValues) {
+            this.tensorDirectValues = tensorDirectValues;
+            return this;
+        }
+
         public ClientParameters build() {
             return new ClientParameters(
                     help, documentIds, printIdsOnly, fieldSet, route, cluster, configId,
-                    showDocSize, timeout, noRetry, traceLevel, priority, jsonOutput);
+                    showDocSize, timeout, noRetry, traceLevel, priority, jsonOutput, tensorShortForm, tensorDirectValues);
         }
     }
 

@@ -12,7 +12,7 @@ namespace proton {
  */
 struct IReprocessingReader
 {
-    typedef std::shared_ptr<IReprocessingReader> SP;
+    using SP = std::shared_ptr<IReprocessingReader>;
 
     virtual ~IReprocessingReader() = default;
 

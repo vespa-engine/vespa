@@ -34,12 +34,12 @@ public abstract class OsUpgrader {
     abstract void disableUpgrade(NodeType type);
 
     /** Returns the number of upgrade slots available for given target */
-    final int upgradeSlots(OsVersionTarget target, NodeList activeNodes) {
-        if (!activeNodes.stream().allMatch(node -> node.type() == target.nodeType())) {
+    final int upgradeSlots(OsVersionTarget target, NodeList candidates) {
+        if (!candidates.stream().allMatch(node -> node.type() == target.nodeType())) {
             throw new IllegalArgumentException("All node types must type of OS version target " + target.nodeType());
         }
         int max = target.nodeType() == NodeType.host ? maxActiveUpgrades.value() : 1;
-        int upgrading = activeNodes.changingOsVersionTo(target.version()).size();
+        int upgrading = candidates.changingOsVersionTo(target.version()).size();
         return Math.max(0, max - upgrading);
     }
 

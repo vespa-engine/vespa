@@ -250,7 +250,7 @@ public class LinguisticsAnnotatorTestCase {
         final List<Token> tokens;
 
         public MyTokenizer(List<? extends Token> tokens, Map<String, String> replacementTerms) {
-            this.tokens = tokens.stream().map(token -> replace(token, replacementTerms)).collect(Collectors.toList());
+            this.tokens = tokens.stream().map(token -> replace(token, replacementTerms)).toList();
         }
 
         private Token replace(Token token, Map<String, String> replacementTerms) {

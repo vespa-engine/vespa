@@ -7,7 +7,7 @@
 
 template <typename T, size_t VLEN>
 static double hw_l2_sq_dist(const T * af, const T * bf, size_t sz)
-{   
+{
     constexpr const size_t OpsPerV = VLEN/sizeof(T);
     typedef T V __attribute__ ((vector_size (VLEN), aligned(VLEN)));
 
@@ -17,7 +17,7 @@ static double hw_l2_sq_dist(const T * af, const T * bf, size_t sz)
     V tmp_diff;
     V tmp_squa;
     V tmp_sum;
-    memset(&tmp_sum, 0, sizeof(tmp_sum)); 
+    memset(&tmp_sum, 0, sizeof(tmp_sum));
 
     const size_t numOps = sz/OpsPerV;
     for (size_t i = 0; i < numOps; ++i) {

@@ -3,6 +3,8 @@
 #include <vespa/vespalib/geo/zcurve.h>
 #include <vespa/vespalib/util/priority_queue.h>
 #include <vespa/vespalib/util/fiddle.h>
+#include <algorithm>
+#include <limits>
 
 namespace vespalib::geo {
 
@@ -16,10 +18,10 @@ private:
             return (a.error() > b.error());
         }
     };
-    typedef ZCurve::Area Area;
-    typedef ZCurve::Range Range;
-    typedef ZCurve::RangeVector RangeVector;
-    typedef PriorityQueue<Area, MaxAreaErrorCmp, LeftArrayHeap> Queue;
+    using Area = ZCurve::Area;
+    using Range = ZCurve::Range;
+    using RangeVector = ZCurve::RangeVector;
+    using Queue = PriorityQueue<Area, MaxAreaErrorCmp, LeftArrayHeap>;
 
     Queue   _queue;
     int64_t _total_estimate;
@@ -30,7 +32,7 @@ public:
     int64_t total_estimate() const { return _total_estimate; }
 
     void put(Area area) {
-        _total_estimate += area.estimate();
+        _total_estimate += std::min(area.estimate(), std::numeric_limits<int64_t>::max() - _total_estimate);
         _queue.push(std::move(area));
     }
 
@@ -59,8 +61,8 @@ public:
 class ZAreaSplitter
 {
 private:
-    typedef ZCurve::Area Area;
-    typedef ZCurve::RangeVector RangeVector;
+    using Area = ZCurve::Area;
+    using RangeVector = ZCurve::RangeVector;
 
     ZAreaQueue _queue;
 
@@ -130,8 +132,15 @@ ZCurve::RangeVector
 ZCurve::find_ranges(int min_x, int min_y,
                     int max_x, int max_y)
 {
-    int64_t total_size = ((max_x - min_x + 1L) * (max_y - min_y + 1L));
-    int64_t estimate_target = (total_size * 4);
+    uint64_t x_size = (static_cast<int64_t>(max_x) - min_x + 1);
+    uint64_t y_size = (static_cast<int64_t>(max_y) - min_y + 1);
+    uint64_t total_size = (x_size > std::numeric_limits<uint32_t>::max() &&
+                           y_size > std::numeric_limits<uint32_t>::max()) ?
+                          std::numeric_limits<uint64_t>::max() :
+                          (x_size * y_size);
+    int64_t estimate_target = (total_size > std::numeric_limits<int64_t>::max() / 4) ?
+                              std::numeric_limits<int64_t>::max() :
+                              (total_size * 4);
     ZAreaSplitter splitter(min_x, min_y, max_x, max_y);
     while (splitter.total_estimate() > estimate_target && splitter.num_ranges() < 42) {
         splitter.split_worst();

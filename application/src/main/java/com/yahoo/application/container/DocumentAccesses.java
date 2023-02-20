@@ -10,8 +10,6 @@ import com.yahoo.schema.derived.Deriver;
 import java.io.File;
 import java.util.stream.Stream;
 
-import static java.util.stream.Collectors.toList;
-
 /**
  * Utility for working with  a {@link LocalDocumentAccess} for unit testing components which require a {@link DocumentAccess}.
  *
@@ -37,7 +35,7 @@ public class DocumentAccesses {
             throw new IllegalArgumentException("No schema files found under " + schemaDirectory);
         DocumentmanagerConfig config = Deriver.getDocumentManagerConfig(Stream.of(schemasFiles)
                                                                               .map(File::toString)
-                                                                              .collect(toList())).build();
+                                                                              .toList()).build();
         return new LocalDocumentAccess(new DocumentAccessParams().setDocumentmanagerConfig(config));
     }
 

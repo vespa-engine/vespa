@@ -19,6 +19,7 @@ import com.yahoo.vespa.config.server.http.Utils;
 import com.yahoo.vespa.config.server.http.v2.response.SessionPrepareAndActivateResponse;
 import com.yahoo.vespa.config.server.session.PrepareParams;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
+import com.yahoo.yolean.Exceptions;
 import org.apache.hc.core5.http.ContentType;
 
 import java.io.IOException;
@@ -89,8 +90,10 @@ public class ApplicationApiHandler extends SessionHandler {
                 PartItem appPackagePart = parts.get(MULTIPART_APPLICATION_PACKAGE);
                 compressedStream = createFromCompressedStream(appPackagePart.data(), appPackagePart.contentType(), maxApplicationPackageSize);
             } catch (IOException e) {
-                log.log(Level.WARNING, "Unable to parse multipart in deploy", e);
-                throw new BadRequestException("Request contains invalid data");
+                // Multipart exception happens when controller abandons the request due to other exceptions while deploying.
+                log.log(e instanceof MultiPartFormParser.MultiPartException ? Level.INFO : Level.WARNING,
+                        "Unable to parse multipart in deploy from tenant '" + tenantName.value() + "': " + Exceptions.toMessageString(e));
+                throw new BadRequestException("Deploy request from '" + tenantName.value() + "' contains invalid data: " + e.getMessage());
             }
         } else {
             prepareParams = PrepareParams.fromHttpRequest(request, tenantName, zookeeperBarrierTimeout);

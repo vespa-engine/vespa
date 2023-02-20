@@ -35,6 +35,8 @@ VisitorOperation::BucketInfo::print(vespalib::asciistream & out) const
     out << ")";
 }
 
+VisitorOperation::BucketInfo::~BucketInfo() = default;
+
 vespalib::string
 VisitorOperation::BucketInfo::toString() const
 {

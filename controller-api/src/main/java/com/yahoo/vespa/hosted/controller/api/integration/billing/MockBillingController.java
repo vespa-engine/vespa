@@ -42,7 +42,7 @@ public class MockBillingController implements BillingController {
     public List<TenantName> tenantsWithPlan(List<TenantName> tenants, PlanId planId) {
         return tenants.stream()
                 .filter(t -> plans.getOrDefault(t, PlanId.from("trial")).equals(planId))
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Override
@@ -74,6 +74,11 @@ public class MockBillingController implements BillingController {
                         endTime
                 ));
         return billId;
+    }
+
+    @Override
+    public Bill.Id createBillForPeriod(TenantName tenant, LocalDate startDate, LocalDate endDate, String agent) {
+        return createBillForPeriod(tenant, startDate.atStartOfDay(ZoneOffset.UTC), endDate.plusDays(1).atStartOfDay(ZoneOffset.UTC), agent);
     }
 
     @Override
@@ -156,7 +161,7 @@ public class MockBillingController implements BillingController {
 
     @Override
     public List<Bill> getBills() {
-        return committedBills.values().stream().flatMap(Collection::stream).collect(Collectors.toList());
+        return committedBills.values().stream().flatMap(Collection::stream).toList();
     }
 
     @Override

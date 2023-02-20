@@ -2,6 +2,7 @@
 package com.yahoo.container.handler.threadpool;
 
 import com.yahoo.jdisc.Metric;
+import com.yahoo.metrics.ContainerMetrics;
 
 import java.util.Map;
 
@@ -23,29 +24,37 @@ class ThreadPoolMetric {
     }
 
     void reportRejectRequest() {
-        metric.add("serverRejectedRequests", 1L, defaultContext);
-        metric.add("jdisc.thread_pool.rejected_tasks", 1L, defaultContext);
+        metric.add(ContainerMetrics.SERVER_REJECTED_REQUESTS.baseName(), 1L, defaultContext);
+        metric.add(ContainerMetrics.JDISC_THREAD_POOL_REJECTED_TASKS.baseName(), 1L, defaultContext);
     }
 
     void reportThreadPoolSize(long size) {
-        metric.set("serverThreadPoolSize", size, defaultContext);
-        metric.set("jdisc.thread_pool.size", size, defaultContext);
+        metric.set(ContainerMetrics.SERVER_THREAD_POOL_SIZE.baseName(), size, defaultContext);
+        metric.set(ContainerMetrics.JDISC_THREAD_POOL_SIZE.baseName(), size, defaultContext);
     }
 
-    void reportMaxAllowedThreadPoolSize(long size) { metric.set("jdisc.thread_pool.max_allowed_size", size, defaultContext); }
+    void reportMaxAllowedThreadPoolSize(long size) {
+        metric.set(ContainerMetrics.JDISC_THREAD_POOL_MAX_ALLOWED_SIZE.baseName(), size, defaultContext);
+    }
 
     void reportActiveThreads(long threads) {
-        metric.set("serverActiveThreads", threads, defaultContext);
-        metric.set("jdisc.thread_pool.active_threads", threads, defaultContext);
+        metric.set(ContainerMetrics.SERVER_ACTIVE_THREADS.baseName(), threads, defaultContext);
+        metric.set(ContainerMetrics.JDISC_THREAD_POOL_ACTIVE_THREADS.baseName(), threads, defaultContext);
     }
 
-    void reportWorkQueueCapacity(long capacity) { metric.set("jdisc.thread_pool.work_queue.capacity", capacity, defaultContext); }
-    void reportWorkQueueSize(long size) { metric.set("jdisc.thread_pool.work_queue.size", size, defaultContext); }
+    void reportWorkQueueCapacity(long capacity) {
+        metric.set(ContainerMetrics.JDISC_THREAD_POOL_WORK_QUEUE_CAPACITY.baseName(), capacity, defaultContext);
+    }
+
+    void reportWorkQueueSize(long size) {
+        metric.set(ContainerMetrics.JDISC_THREAD_POOL_WORK_QUEUE_SIZE.baseName(), size, defaultContext);
+    }
+
     void reportUnhandledException(Throwable t) {
         Metric.Context ctx = metric.createContext(Map.of(
                 THREAD_POOL_NAME_DIMENSION, threadPoolName,
                 "exception", t.getClass().getSimpleName()));
-        metric.set("jdisc.thread_pool.unhandled_exceptions", 1L, ctx);
+        metric.set(ContainerMetrics.JDISC_THREAD_POOL_UNHANDLED_EXCEPTIONS.baseName(), 1L, ctx);
     }
 
 }

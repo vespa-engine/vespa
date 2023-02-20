@@ -39,33 +39,37 @@ namespace search::tensor {
  * TODO: Add details on how to handle removes.
  */
 
+namespace internal {
+struct PreparedAddNode {
+    using Links = std::vector<std::pair<uint32_t, vespalib::datastore::EntryRef>>;
+    std::vector<Links> connections;
+
+    PreparedAddNode() noexcept;
+    explicit PreparedAddNode(std::vector<Links>&& connections_in) noexcept;
+    ~PreparedAddNode();
+    PreparedAddNode(PreparedAddNode&& other) noexcept;
+};
+
+struct PreparedFirstAddDoc : public PrepareResult {};
+
+struct PreparedAddDoc : public PrepareResult {
+    using ReadGuard = vespalib::GenerationHandler::Guard;
+    uint32_t docid;
+    ReadGuard read_guard;
+    std::vector<PreparedAddNode> nodes;
+    PreparedAddDoc(uint32_t docid_in, ReadGuard read_guard_in) noexcept;
+    ~PreparedAddDoc();
+    PreparedAddDoc(PreparedAddDoc&& other) noexcept;
+};
+}
 template <HnswIndexType type>
 class HnswIndex : public NearestNeighborIndex {
 public:
-    class HnswIndexCompactionSpec {
-        CompactionSpec _level_arrays;
-        CompactionSpec _link_arrays;
-
-    public:
-        HnswIndexCompactionSpec()
-            : _level_arrays(),
-              _link_arrays()
-        {
-        }
-        HnswIndexCompactionSpec(CompactionSpec level_arrays_, CompactionSpec link_arrays_)
-            : _level_arrays(level_arrays_),
-              _link_arrays(link_arrays_)
-        {
-        }
-        CompactionSpec level_arrays() const noexcept { return _level_arrays; }
-        CompactionSpec link_arrays() const noexcept { return _link_arrays; }
-    };
-
     uint32_t get_docid(uint32_t nodeid) const {
         if constexpr (NodeType::identity_mapping) {
             return nodeid;
         } else {
-            return _graph.node_refs.acquire_elem_ref(nodeid).acquire_docid();
+            return _graph.nodes.acquire_elem_ref(nodeid).acquire_docid();
         }
     }
 
@@ -76,9 +80,9 @@ protected:
     using GraphType = HnswGraph<type>;
     using NodeType = typename GraphType::NodeType;
     using AtomicEntryRef = vespalib::datastore::AtomicEntryRef;
-    using NodeStore = typename GraphType::NodeStore;
+    using LevelArrayStore = typename GraphType::LevelArrayStore;
 
-    using LinkStore = typename GraphType::LinkStore;
+    using LinkArrayStore = typename GraphType::LinkArrayStore;
     using LinkArrayRef = typename GraphType::LinkArrayRef;
     using LinkArray = std::vector<uint32_t, vespalib::allocator_large<uint32_t>>;
 
@@ -94,13 +98,16 @@ protected:
         }
     }
 
+    // Clamp level generator member function max_level() return value
+    // Chosen value is based on class comment for InvLogLevelGenerator.
+    static constexpr uint32_t max_max_level = 29;
+
     GraphType _graph;
     const DocVectorAccess& _vectors;
     DistanceFunction::UP _distance_func;
     RandomLevelGenerator::UP _level_generator;
     IdMapping _id_mapping; // mapping from docid to nodeid vector
     HnswIndexConfig _cfg;
-    HnswIndexCompactionSpec _compaction_spec;
 
     uint32_t max_links_for_level(uint32_t level) const;
     void add_link_to(uint32_t nodeid, uint32_t level, const LinkArrayRef& old_links, uint32_t new_link) {
@@ -133,20 +140,20 @@ protected:
     void mutual_reconnect(const LinkArrayRef &cluster, uint32_t level);
     void remove_link_to(uint32_t remove_from, uint32_t remove_id, uint32_t level);
 
-    inline TypedCells get_vector(uint32_t nodeid) const {
+    TypedCells get_vector(uint32_t nodeid) const {
         if constexpr (NodeType::identity_mapping) {
             return _vectors.get_vector(nodeid, 0);
         } else {
-            auto& ref = _graph.node_refs.acquire_elem_ref(nodeid);
+            auto& ref = _graph.nodes.acquire_elem_ref(nodeid);
             uint32_t docid = ref.acquire_docid();
             uint32_t subspace = ref.acquire_subspace();
             return _vectors.get_vector(docid, subspace);
         }
     }
-    inline TypedCells get_vector(uint32_t docid, uint32_t subspace) const {
+    TypedCells get_vector(uint32_t docid, uint32_t subspace) const {
         return _vectors.get_vector(docid, subspace);
     }
-    inline VectorBundle get_vector_by_docid(uint32_t docid) const {
+    VectorBundle get_vectors(uint32_t docid) const {
         return _vectors.get_vectors(docid);
     }
 
@@ -171,43 +178,12 @@ protected:
                                          const GlobalFilter *filter, uint32_t explore_k,
                                          double distance_threshold) const;
 
-    struct PreparedAddNode {
-        using Links = std::vector<std::pair<uint32_t, vespalib::datastore::EntryRef>>;
-        std::vector<Links> connections;
-
-        PreparedAddNode() noexcept
-            : connections()
-        {
-        }
-        PreparedAddNode(std::vector<Links>&& connections_in) noexcept
-            : connections(std::move(connections_in))
-        {
-        }
-        ~PreparedAddNode() = default;
-        PreparedAddNode(PreparedAddNode&& other) noexcept = default;
-    };
-
-    struct PreparedFirstAddDoc : public PrepareResult {};
-
-    struct PreparedAddDoc : public PrepareResult {
-        using ReadGuard = vespalib::GenerationHandler::Guard;
-        uint32_t docid;
-        ReadGuard read_guard;
-        std::vector<PreparedAddNode> nodes;
-        PreparedAddDoc(uint32_t docid_in, ReadGuard read_guard_in)
-          : docid(docid_in),
-            read_guard(std::move(read_guard_in)),
-            nodes()
-        {}
-        ~PreparedAddDoc() = default;
-        PreparedAddDoc(PreparedAddDoc&& other) = default;
-    };
-    PreparedAddDoc internal_prepare_add(uint32_t docid, VectorBundle input_vectors,
+    internal::PreparedAddDoc internal_prepare_add(uint32_t docid, VectorBundle input_vectors,
                                         vespalib::GenerationHandler::Guard read_guard) const;
-    void internal_prepare_add_node(HnswIndex::PreparedAddDoc& op, TypedCells input_vector, const typename GraphType::EntryNode& entry) const;
-    LinkArray filter_valid_nodeids(uint32_t level, const typename PreparedAddNode::Links &neighbors, uint32_t self_nodeid);
-    void internal_complete_add(uint32_t docid, PreparedAddDoc &op);
-    void internal_complete_add_node(uint32_t nodeid, uint32_t docid, uint32_t subspace, PreparedAddNode &prepared_node);
+    void internal_prepare_add_node(internal::PreparedAddDoc& op, TypedCells input_vector, const typename GraphType::EntryNode& entry) const;
+    LinkArray filter_valid_nodeids(uint32_t level, const internal::PreparedAddNode::Links &neighbors, uint32_t self_nodeid);
+    void internal_complete_add(uint32_t docid, internal::PreparedAddDoc &op);
+    void internal_complete_add_node(uint32_t nodeid, uint32_t docid, uint32_t subspace, internal::PreparedAddNode &prepared_node);
 public:
     HnswIndex(const DocVectorAccess& vectors, DistanceFunction::UP distance_func,
               RandomLevelGenerator::UP level_generator, const HnswIndexConfig& cfg);
@@ -225,10 +201,8 @@ public:
     void remove_document(uint32_t docid) override;
     void assign_generation(generation_t current_gen) override;
     void reclaim_memory(generation_t oldest_used_gen) override;
-    void compact_level_arrays(CompactionSpec compaction_spec, const CompactionStrategy& compaction_strategy);
-    void compact_link_arrays(CompactionSpec compaction_spec, const CompactionStrategy& compaction_strategy);
-    bool consider_compact_level_arrays(const CompactionStrategy& compaction_strategy);
-    bool consider_compact_link_arrays(const CompactionStrategy& compaction_strategy);
+    void compact_level_arrays(const CompactionStrategy& compaction_strategy);
+    void compact_link_arrays(const CompactionStrategy& compaction_strategy);
     bool consider_compact(const CompactionStrategy& compaction_strategy) override;
     vespalib::MemoryUsage update_stat(const CompactionStrategy& compaction_strategy) override;
     vespalib::MemoryUsage memory_usage() const override;
@@ -259,8 +233,8 @@ public:
     GraphType& get_graph() { return _graph; }
     IdMapping& get_id_mapping() { return _id_mapping; }
 
-    static vespalib::datastore::ArrayStoreConfig make_default_node_store_config();
-    static vespalib::datastore::ArrayStoreConfig make_default_link_store_config();
+    static vespalib::datastore::ArrayStoreConfig make_default_level_array_store_config();
+    static vespalib::datastore::ArrayStoreConfig make_default_link_array_store_config();
 };
 
 }

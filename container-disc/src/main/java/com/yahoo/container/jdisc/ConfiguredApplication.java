@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.container.jdisc;
 
-import com.google.common.util.concurrent.AtomicDouble;
 import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
@@ -44,6 +43,7 @@ import com.yahoo.jrt.slobrok.api.Register;
 import com.yahoo.jrt.slobrok.api.SlobrokList;
 import com.yahoo.messagebus.network.rpc.SlobrokConfigSubscriber;
 import com.yahoo.net.HostName;
+import com.yahoo.security.tls.Capability;
 import com.yahoo.vespa.config.ConfigKey;
 import com.yahoo.yolean.Exceptions;
 import com.yahoo.yolean.UncheckedInterruptedException;
@@ -58,7 +58,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Phaser;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -79,8 +78,8 @@ public final class ConfiguredApplication implements Application {
     private final String configId;
     private final OsgiFramework osgiFramework;
     private final com.yahoo.jdisc.Timer timerSingleton;
-    private final AtomicBoolean dumpHeapOnShutdownTimeout = new AtomicBoolean(false);
-    private final AtomicDouble shutdownTimeoutS = new AtomicDouble(50.0);
+    private volatile boolean dumpHeapOnShutdownTimeout = false;
+    private volatile double shutdownTimeoutS = 50.0;
     // Subscriber that is used when this is not a standalone-container. Subscribes
     // to config to make sure that container will be registered in slobrok (by {@link com.yahoo.jrt.slobrok.api.Register})
     // if slobrok config changes (typically slobroks moving to other nodes)
@@ -178,7 +177,8 @@ public final class ConfiguredApplication implements Application {
     private synchronized void setupRpc(QrConfig cfg) {
         if (!cfg.rpc().enabled()) return;
         supervisor = new Supervisor(new Transport("configured-application")).setDropEmptyBuffers(true);
-        supervisor.addMethod(new Method("prepareStop", "d", "", this::prepareStop));
+        supervisor.addMethod(new Method("prepareStop", "d", "", this::prepareStop)
+                                     .requireCapabilities(Capability.CONTAINER__MANAGEMENT_API));
         listenRpc(cfg);
     }
 
@@ -286,8 +286,8 @@ public final class ConfiguredApplication implements Application {
     }
 
     private void reconfigure(QrConfig.Shutdown shutdown) {
-        dumpHeapOnShutdownTimeout.set(shutdown.dumpHeapOnTimeout());
-        shutdownTimeoutS.set(shutdown.timeout());
+        dumpHeapOnShutdownTimeout = shutdown.dumpHeapOnTimeout();
+        shutdownTimeoutS = shutdown.timeout();
     }
 
     private void initializeAndActivateContainer(ContainerBuilder builder, Runnable cleanupTask) {
@@ -429,7 +429,7 @@ public final class ConfiguredApplication implements Application {
     @Override
     public void stop() {
         log.info("Stop: Initiated");
-        shutdownDeadline.schedule((long)(shutdownTimeoutS.get() * 1000), dumpHeapOnShutdownTimeout.get());
+        shutdownDeadline.schedule((long)(shutdownTimeoutS * 1000), dumpHeapOnShutdownTimeout);
         stopServersAndAwaitTermination();
         log.info("Stop: Finished");
     }
@@ -438,7 +438,7 @@ public final class ConfiguredApplication implements Application {
         log.info("PrepareStop: Initiated");
         long timeoutMillis = (long) (request.parameters().get(0).asDouble() * 1000);
         try (ShutdownDeadline ignored =
-                     new ShutdownDeadline(configId).schedule(timeoutMillis, dumpHeapOnShutdownTimeout.get())) {
+                     new ShutdownDeadline(configId).schedule(timeoutMillis, dumpHeapOnShutdownTimeout)) {
             stopServersAndAwaitTermination();
             log.info("PrepareStop: Finished");
         } catch (Exception e) {

@@ -2,8 +2,6 @@ import {
   ACTION,
   reducer,
 } from 'app/pages/querybuilder/context/query-builder-provider';
-import parameters from 'app/pages/querybuilder/context/parameters';
-import { cloneDeep, omitBy } from 'lodash';
 
 const state = reducer();
 
@@ -193,7 +191,7 @@ test('set query', () => {
   error('POST', '{"yql":"test}', 'Unexpected end of JSON input');
 
   msg =
-    "Property 'ranking' cannot have a value, supported children: features,freshness,listFeatures,location,matchPhase,matching,profile,properties,queryCache,rerankCount,sorting";
+    "Property 'ranking' cannot have a value, supported children: features,freshness,listFeatures,location,matchPhase,matching,profile,properties,queryCache,rerankCount,softtimeout,sorting";
   error('POST', '{"ranking":123}', msg);
   error('GET', 'ranking=123', msg);
 

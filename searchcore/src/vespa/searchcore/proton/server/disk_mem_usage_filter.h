@@ -24,7 +24,6 @@ namespace proton {
 class DiskMemUsageFilter : public IResourceWriteFilter,
                            public IDiskMemUsageNotifier {
 public:
-    using space_info = std::filesystem::space_info;
     using Mutex = std::mutex;
     using Guard = std::lock_guard<Mutex>;
 
@@ -39,6 +38,12 @@ public:
             : _memoryLimit(memoryLimit_in),
               _diskLimit(diskLimit_in)
         { }
+        bool operator == (const Config & rhs) const noexcept {
+            return (_memoryLimit == rhs._memoryLimit) && (_diskLimit == rhs._diskLimit);
+        }
+        bool operator != (const Config & rhs) const noexcept {
+            return ! (*this == rhs);
+        }
     };
 
 private:
@@ -66,7 +71,7 @@ public:
     DiskMemUsageFilter(const HwInfo &hwInfo);
     ~DiskMemUsageFilter() override;
     void set_resource_usage(const TransientResourceUsage& transient_usage, vespalib::ProcessMemoryStats memoryStats, uint64_t diskUsedSizeBytes);
-    void setConfig(Config config);
+    [[nodiscard]] bool setConfig(Config config);
     vespalib::ProcessMemoryStats getMemoryStats() const;
     uint64_t getDiskUsedSize() const;
     TransientResourceUsage get_transient_resource_usage() const;

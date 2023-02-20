@@ -28,8 +28,8 @@ IdealStateOperation::IdealStateOperation(const BucketAndNodes& bucketAndNodes)
     : _manager(nullptr),
       _bucketSpace(nullptr),
       _bucketAndNodes(bucketAndNodes),
-      _ok(true),
-      _priority(255)
+      _priority(255),
+      _ok(true)
 {
 }
 
@@ -111,7 +111,7 @@ IdealStateOperation::on_throttled()
 }
 
 uint32_t
-IdealStateOperation::memorySize() const
+IdealStateOperation::memorySize() const noexcept
 {
    return sizeof(*this) + _detailedReason.size();
 }

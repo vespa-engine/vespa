@@ -16,7 +16,7 @@ public:
     BitEncode64();
     ~BitEncode64() override;
 
-    typedef bitcompression::EncodeContext64<bigEndian> EC;
+    using EC = bitcompression::EncodeContext64<bigEndian>;
 
     void writeComprBuffer() {
         _cbuf.writeComprBuffer(true);

@@ -9,7 +9,7 @@ namespace proton::test {
 
 struct DocumentMetaStoreContextObserver : public IDocumentMetaStoreContext
 {
-    typedef std::shared_ptr<DocumentMetaStoreContextObserver> SP;
+    using SP = std::shared_ptr<DocumentMetaStoreContextObserver>;
 
     IDocumentMetaStoreContext &_context;
     DocumentMetaStoreObserver::SP _observer;

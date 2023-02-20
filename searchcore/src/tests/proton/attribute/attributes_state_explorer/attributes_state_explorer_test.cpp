@@ -86,7 +86,7 @@ struct AttributesStateExplorerTest : public ::testing::Test
 
 };
 
-typedef std::vector<vespalib::string> StringVector;
+using StringVector = std::vector<vespalib::string>;
 
 TEST_F(AttributesStateExplorerTest, require_that_attributes_are_exposed_as_children_names)
 {

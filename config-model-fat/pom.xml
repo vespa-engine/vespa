@@ -75,17 +75,19 @@
                   * @PublicApi - they are not allowed to change behaviour and must be binary compatible between minor releases
              -->
             <Import-Package>
+              com.google.inject, <!-- must use @Inject exported from container -->
+              com.fasterxml.*, <!-- expands to all Jackson packages by Felix plugin -->
               com.yahoo.component,
               com.yahoo.component.provider,
               com.yahoo.config,
               com.yahoo.config.application.api,
+              com.yahoo.config.application.api.xml,
               com.yahoo.config.model.api,
               com.yahoo.config.model.api.container,
               com.yahoo.config.provision,
-              ai.vespa.rankingexpression.importer.configmodelview,
+              com.yahoo.config.provision.zone,
               com.yahoo.io.reader,
               com.yahoo.path,
-              com.google.inject, <!-- must use @Inject exported from container -->
               javax.crypto.interfaces,
               javax.crypto.spec,
               javax.crypto,
@@ -101,6 +103,7 @@
               javax.xml.parsers,
               javax.xml.transform,
               javax.xml.xpath,
+              org.bouncycastle.*, <!-- expands to all BC packages by Felix plugin -->
               org.w3c.dom.bootstrap,
               org.w3c.dom.ls,
               org.w3c.dom,
@@ -141,6 +144,7 @@
                     <i>com.yahoo.vespa:fat-model-dependencies:*:*</i>
 
                     <!-- Vespa artifacts embedded -->
+                    <i>com.yahoo.vespa:airlift-zstd:*:*</i>
                     <i>com.yahoo.vespa:annotations:*:*</i>
                     <i>com.yahoo.vespa:component:*:*</i>
                     <i>com.yahoo.vespa:config:*:*</i>
@@ -188,13 +192,6 @@
 
                     <!-- 3rd party artifacts embedded -->
                     <i>aopalliance:aopalliance:*:*</i>
-                    <i>biz.aQute.bnd:biz.aQute.bnd.util:*:*</i>
-                    <i>biz.aQute.bnd:biz.aQute.bndlib:*:*</i>
-                    <i>com.fasterxml.jackson.core:jackson-annotations:*:*</i>
-                    <i>com.fasterxml.jackson.core:jackson-core:*:*</i>
-                    <i>com.fasterxml.jackson.core:jackson-databind:*:*</i>
-                    <i>com.fasterxml.jackson.datatype:jackson-datatype-jdk8:*:*</i>
-                    <i>com.fasterxml.jackson.datatype:jackson-datatype-jsr310:*:*</i>
                     <i>com.google.errorprone:error_prone_annotations:*:*</i>
                     <i>com.google.guava:failureaccess:*:*</i>
                     <i>com.google.guava:guava:*:*</i>
@@ -205,35 +202,13 @@
                     <i>com.sun.xml.bind:jaxb-core:*:*</i>
                     <i>com.sun.xml.bind:jaxb-impl:*:*</i>
                     <i>com.thaiopensource:jing:*:*</i>
-                    <i>io.airlift:aircompressor:*:*</i>
                     <i>io.prometheus:simpleclient:*:*</i>
                     <i>io.prometheus:simpleclient_common:*:*</i>
                     <i>javax.inject:javax.inject:*:*</i>
-                    <i>javax.servlet:javax.servlet-api:*:*</i>
                     <i>net.openhft:zero-allocation-hashing:*:*</i>
                     <i>org.antlr:antlr-runtime:*:*</i>
                     <i>org.antlr:antlr4-runtime:*:*</i>
                     <i>org.apache.felix:org.apache.felix.framework:*:*</i>
-                    <i>org.bouncycastle:bcpkix-jdk18on:*:*</i>
-                    <i>org.bouncycastle:bcprov-jdk18on:*:*</i>
-                    <i>org.bouncycastle:bcutil-jdk18on:*:*</i>
-                    <i>org.eclipse.jetty:jetty-alpn-java-server:*:*</i>
-                    <i>org.eclipse.jetty:jetty-alpn-server:*:*</i>
-                    <i>org.eclipse.jetty:jetty-client:*:*</i>
-                    <i>org.eclipse.jetty:jetty-continuation:*:*</i>
-                    <i>org.eclipse.jetty:jetty-http:*:*</i>
-                    <i>org.eclipse.jetty:jetty-io:*:*</i>
-                    <i>org.eclipse.jetty:jetty-jmx:*:*</i>
-                    <i>org.eclipse.jetty:jetty-security:*:*</i>
-                    <i>org.eclipse.jetty:jetty-server:*:*</i>
-                    <i>org.eclipse.jetty:jetty-servlet:*:*</i>
-                    <i>org.eclipse.jetty:jetty-servlets:*:*</i>
-                    <i>org.eclipse.jetty:jetty-util:*:*</i>
-                    <i>org.eclipse.jetty:jetty-util-ajax:*:*</i>
-                    <i>org.eclipse.jetty.alpn:alpn-api:*:*</i>
-                    <i>org.eclipse.jetty.http2:http2-common:*:*</i>
-                    <i>org.eclipse.jetty.http2:http2-hpack:*:*</i>
-                    <i>org.eclipse.jetty.http2:http2-server:*:*</i>
                     <i>org.hdrhistogram:HdrHistogram:*:*</i>
                     <i>org.lz4:lz4-java:*:*</i>
                     <i>org.slf4j:jcl-over-slf4j:*:*</i>

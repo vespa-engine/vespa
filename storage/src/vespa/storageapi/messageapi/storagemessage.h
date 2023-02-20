@@ -29,9 +29,9 @@ namespace vespalib { class asciistream; }
  * Adds a messagehandler callback and some utilities
  */
 #define DECLARE_POINTER_TYPEDEFS(message) \
-    typedef std::unique_ptr<message> UP; \
-    typedef std::shared_ptr<message> SP; \
-    typedef std::shared_ptr<const message> CSP;
+    using UP = std::unique_ptr<message>; \
+    using SP = std::shared_ptr<message>; \
+    using CSP = std::shared_ptr<const message>;
 
 #define DECLARE_STORAGEREPLY(reply, callback) \
 public: \
@@ -339,8 +339,8 @@ class StorageMessage : public vespalib::Printable
     friend class StorageMessageTest; // Used for testing only
 public:
     DECLARE_POINTER_TYPEDEFS(StorageMessage);
-    typedef uint64_t Id;
-    typedef uint8_t Priority;
+    using Id = uint64_t;
+    using Priority = uint8_t;
 
     enum LegacyPriorityValues {
         LOW = 225,
@@ -374,9 +374,6 @@ public:
     ~StorageMessage() override;
 
     Id getMsgId() const noexcept { return _msgId; }
-
-    /** Method used by storage commands to set a new id. */
-    void setNewMsgId() noexcept;
 
     /**
      * Set the id of this message. Typically used to set the id to a
@@ -429,6 +426,7 @@ public:
      * method in the MessageHandler interface.
      */
     virtual bool callHandler(MessageHandler&, const StorageMessage::SP&) const = 0;
+    virtual bool hasTestAndSetCondition() const noexcept { return false; }
 
     mbus::Trace && steal_trace() noexcept { return std::move(_trace); }
     mbus::Trace& getTrace() noexcept { return _trace; }

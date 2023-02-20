@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/searchcore/proton/documentmetastore/lid_allocator.h>
+#include <vespa/searchlib/fef/matchdata.h>
 #include <vespa/searchlib/queryeval/searchiterator.h>
 #include <vespa/searchlib/queryeval/simpleresult.h>
 #include <vespa/vespalib/util/generationholder.h>
@@ -8,7 +9,9 @@
 #include <vespa/vespalib/gtest/gtest.h>
 #include <iostream>
 
+using search::fef::MatchData;
 using search::queryeval::Blueprint;
+using search::queryeval::SearchIterator;
 using search::queryeval::SimpleResult;
 using vespalib::GenerationHolder;
 using vespalib::Timer;
@@ -99,19 +102,25 @@ protected:
         return result;
     }
 
-    SimpleResult get_active_lids_in_search_iterator(uint32_t docid_limit) {
+    SimpleResult get_active_lids_in_search_iterator(uint32_t docid_limit, bool filter) {
         auto blueprint = _allocator.createWhiteListBlueprint();
         blueprint->setDocIdLimit(docid_limit);
-        auto iterator = blueprint->createFilterSearch(true, search::queryeval::Blueprint::FilterConstraint::UPPER_BOUND);
+        std::unique_ptr<SearchIterator> iterator;
+        MatchData md(MatchData::params());
+        if (filter) {
+            iterator = blueprint->createFilterSearch(true, Blueprint::FilterConstraint::UPPER_BOUND);
+        } else {
+            iterator = blueprint->createSearch(md, true);
+        }
         SimpleResult res;
         res.search(*iterator, docid_limit);
         return res;
     }
 
-    Trinary search_iterator_matches_any(uint32_t docid_limit) {
+    Trinary filter_search_iterator_matches_any(uint32_t docid_limit) {
         auto blueprint = _allocator.createWhiteListBlueprint();
         blueprint->setDocIdLimit(docid_limit);
-        auto iterator = blueprint->createFilterSearch(true, search::queryeval::Blueprint::FilterConstraint::UPPER_BOUND);
+        auto iterator = blueprint->createFilterSearch(true, Blueprint::FilterConstraint::UPPER_BOUND);
         return iterator->matches_any();
     }
 
@@ -146,16 +155,18 @@ TEST_F(LidAllocatorTest, active_lids_are_available_in_search_iterator)
 {
     register_lids({ 1, 2, 3, 4 });
     activate_lids({ 1, 2, 4 }, true);
-    EXPECT_EQ(Trinary::Undefined, search_iterator_matches_any(5));
-    EXPECT_EQ(SimpleResult({1, 2, 4}), get_active_lids_in_search_iterator(5));
+    EXPECT_EQ(Trinary::Undefined, filter_search_iterator_matches_any(5));
+    EXPECT_EQ(SimpleResult({1, 2, 4}), get_active_lids_in_search_iterator(5, true));
+    EXPECT_EQ(SimpleResult({1, 2, 4}), get_active_lids_in_search_iterator(5, false));
 }
 
-TEST_F(LidAllocatorTest, search_iterator_matches_all_when_all_lids_are_active)
+TEST_F(LidAllocatorTest, filter_search_iterator_matches_all_when_all_lids_are_active)
 {
     register_lids({ 1, 2, 3, 4 });
     activate_lids({ 1, 2, 3, 4 }, true);
-    EXPECT_EQ(Trinary::True, search_iterator_matches_any(5));
-    EXPECT_EQ(SimpleResult({1, 2, 3, 4}), get_active_lids_in_search_iterator(5));
+    EXPECT_EQ(Trinary::True, filter_search_iterator_matches_any(6));
+    EXPECT_EQ(SimpleResult({1, 2, 3, 4, 5}), get_active_lids_in_search_iterator(6, true));
+    EXPECT_EQ(SimpleResult({1, 2, 3, 4}), get_active_lids_in_search_iterator(6, false));
 }
 
 class LidAllocatorPerformanceTest : public LidAllocatorTest,

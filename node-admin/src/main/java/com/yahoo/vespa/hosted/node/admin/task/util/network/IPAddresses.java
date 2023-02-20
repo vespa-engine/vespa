@@ -47,7 +47,7 @@ public interface IPAddresses {
         return Stream.of(getAddresses(hostname))
                 .filter(inetAddress -> isOfType(inetAddress, ipVersion))
                 .map(InetAddresses::toAddrString)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     /**
@@ -62,7 +62,7 @@ public interface IPAddresses {
                 .map(Inet6Address.class::cast)
                 .filter(inetAddress -> !inetAddress.isLinkLocalAddress())
                 .filter(inetAddress -> !inetAddress.isSiteLocalAddress())
-                .collect(Collectors.toList());
+                .toList();
 
         if (ipv6addresses.size() <= 1) return ipv6addresses.stream().findFirst();
 
@@ -92,13 +92,13 @@ public interface IPAddresses {
                 .filter(Inet4Address.class::isInstance)
                 .filter(inetAddress -> !inetAddress.isLoopbackAddress())
                 .map(Inet4Address.class::cast)
-                .collect(Collectors.toList());
+                .toList();
 
         if (ipv4Addresses.size() <= 1) return ipv4Addresses.stream().findFirst();
 
         List<Inet4Address> siteLocalIPv4Addresses = ipv4Addresses.stream()
                 .filter(InetAddress::isSiteLocalAddress)
-                .collect(Collectors.toList());
+                .toList();
 
         if (siteLocalIPv4Addresses.size() == 1) return Optional.of(siteLocalIPv4Addresses.get(0));
 

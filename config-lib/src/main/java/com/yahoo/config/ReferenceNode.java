@@ -68,7 +68,7 @@ public class ReferenceNode extends LeafNode<String> {
         if (value == null) {
             return value;
         }
-        StringBuffer buffer = new StringBuffer(value.trim());
+        StringBuilder buffer = new StringBuilder(value.trim());
         if (buffer.length() > 0 && buffer.charAt(0) == '"') {
             buffer.deleteCharAt(0);
         }

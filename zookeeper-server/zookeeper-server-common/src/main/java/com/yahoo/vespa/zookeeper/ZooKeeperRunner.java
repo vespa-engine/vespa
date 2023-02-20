@@ -4,7 +4,9 @@ package com.yahoo.vespa.zookeeper;
 import com.yahoo.cloud.config.ZookeeperServerConfig;
 import com.yahoo.concurrent.DaemonThreadFactory;
 import com.yahoo.protect.Process;
+import com.yahoo.yolean.Exceptions;
 
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Duration;
@@ -69,6 +71,8 @@ public class ZooKeeperRunner implements Runnable {
                 log.log(Level.INFO, "Starting ZooKeeper server with " + path.toFile().getAbsolutePath() +
                                     ". Trying to establish ZooKeeper quorum (members: " +
                                     zookeeperServerHostnames(zookeeperServerConfig) + ", attempt "  + attempt + ")");
+                log.log(Level.INFO, "Current content of zookeeper config file at '" + path + "':\n" +
+                                    Exceptions.uncheck(() -> Files.readString(path)));
                 startServer(path); // Will block in a real implementation of VespaZooKeeperServer
                 return;
             } catch (RuntimeException e) {

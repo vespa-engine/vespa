@@ -58,8 +58,7 @@ public class DocumentProcessingTask implements Runnable {
             try {
                 processings.addAll(requestContext.getProcessings());
             } catch (Exception e) {
-                //deserialization failed:
-                log.log(Level.WARNING, "Deserialization of message failed.", e);
+                log.log(Level.WARNING, "Deserialization of message failed", e);
                 requestContext.processingFailed(e);
                 return;
             }

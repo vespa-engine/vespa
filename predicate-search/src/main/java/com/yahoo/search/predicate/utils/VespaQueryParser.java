@@ -12,7 +12,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.BiConsumer;
 
-import static java.util.stream.Collectors.toList;
 
 /**
  * Parses query file containing Vespa queries using the deprecated predicate format (query properties - not YQL).
@@ -29,7 +28,7 @@ public class VespaQueryParser {
             List<PredicateQuery> queries = reader.lines()
                     .limit(maxQueryCount)
                     .map(VespaQueryParser::parseQueryFromQueryProperties)
-                    .collect(toList());
+                    .toList();
             return queries;
         }
     }

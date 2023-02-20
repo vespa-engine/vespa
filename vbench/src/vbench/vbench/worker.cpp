@@ -24,13 +24,13 @@ Worker::run()
 
 Worker::Worker(Provider<Request> &provider, Handler<Request> &next,
                HttpConnectionPool &pool, Timer &timer)
-    : _thread(*this, vbench_worker_thread),
+    : _thread(),
       _provider(provider),
       _next(next),
       _pool(pool),
       _timer(timer)
 {
-    _thread.start();
+    _thread = vespalib::thread::start(*this, vbench_worker_thread);
 }
 
 } // namespace vbench

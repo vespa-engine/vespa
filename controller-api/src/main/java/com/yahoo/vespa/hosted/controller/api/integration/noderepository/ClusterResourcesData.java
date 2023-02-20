@@ -23,6 +23,7 @@ public class ClusterResourcesData {
     public NodeResources resources;
 
     public ClusterResources toClusterResources() {
+        if (resources == null) return null; // TODO: Compatibility, remove after January 2023
         return new ClusterResources(nodes, groups, resources.toNodeResources());
     }
 

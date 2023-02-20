@@ -4,6 +4,7 @@ package com.yahoo.yolean;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.Optional;
+import java.util.function.Function;
 
 /**
  * Helper methods for handling exceptions
@@ -127,6 +128,14 @@ public class Exceptions {
     }
 
     @FunctionalInterface public interface RunnableThrowingInterruptedException { void run() throws InterruptedException; }
+
+    /**
+     * Wraps any IOException thrown from a function in an UncheckedIOException.
+     */
+    public static <T, R> Function<T, R> uncheck(FunctionThrowingIOException<T, R> function) {
+        return t -> uncheck(() -> function.map(t));
+    }
+    @FunctionalInterface public interface FunctionThrowingIOException<T, R> { R map(T t) throws IOException; }
 
     /**
      * Wraps any IOException thrown from a supplier in an UncheckedIOException.

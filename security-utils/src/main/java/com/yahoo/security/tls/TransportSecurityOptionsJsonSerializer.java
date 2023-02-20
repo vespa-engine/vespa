@@ -18,7 +18,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
-import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
 
 /**
@@ -111,7 +110,7 @@ class TransportSecurityOptionsJsonSerializer {
     private static List<RequiredPeerCredential> toRequestPeerCredentials(List<RequiredCredential> requiredCredentials) {
         return requiredCredentials.stream()
                 .map(TransportSecurityOptionsJsonSerializer::toRequiredPeerCredential)
-                .collect(toList());
+                .toList();
     }
 
     private static RequiredPeerCredential toRequiredPeerCredential(RequiredCredential requiredCredential) {

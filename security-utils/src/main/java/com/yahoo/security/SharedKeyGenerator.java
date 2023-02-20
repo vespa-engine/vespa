@@ -7,6 +7,7 @@ import com.yahoo.security.hpke.Hpke;
 import com.yahoo.security.hpke.Kdf;
 import com.yahoo.security.hpke.Kem;
 import org.bouncycastle.crypto.engines.AESEngine;
+import org.bouncycastle.crypto.modes.ChaCha20Poly1305;
 import org.bouncycastle.crypto.modes.GCMBlockCipher;
 import org.bouncycastle.crypto.params.AEADParameters;
 import org.bouncycastle.crypto.params.KeyParameter;
@@ -20,6 +21,8 @@ import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.interfaces.XECPrivateKey;
 import java.security.interfaces.XECPublicKey;
+
+import static com.yahoo.security.ArrayUtils.toUtf8Bytes;
 
 /**
  * Implements both the sender and receiver sides of a secure, anonymous one-way
@@ -40,13 +43,17 @@ import java.security.interfaces.XECPublicKey;
  */
 public class SharedKeyGenerator {
 
-    private static final int    AES_GCM_KEY_BITS      = 128;
-    private static final int    AES_GCM_AUTH_TAG_BITS = 128;
-    private static final String AES_GCM_ALGO_SPEC     = "AES/GCM/NoPadding";
+    private static final int AES_GCM_KEY_BITS      = 128;
+    private static final int AES_GCM_AUTH_TAG_BITS = 128;
+
+    private static final int CHACHA20_POLY1305_KEY_BITS       = 256;
+    private static final int CHACHA20_POLY1305_AUTH_TAG_BITS  = 128;
+    private static final byte[] CHACHA20_POLY1305_KDF_CONTEXT = toUtf8Bytes("ChaCha20Poly1305 key expansion");
+
     private static final byte[] EMPTY_BYTES           = new byte[0];
     private static final SecureRandom SHARED_CSPRNG   = new SecureRandom();
     // Since the HPKE ciphersuite is not provided in the token, we must be very explicit about what it always is
-    private static final Ciphersuite HPKE_CIPHERSUITE = Ciphersuite.of(Kem.dHKemX25519HkdfSha256(), Kdf.hkdfSha256(), Aead.aesGcm128());
+    private static final Ciphersuite HPKE_CIPHERSUITE = Ciphersuite.of(Kem.dHKemX25519HkdfSha256(), Kdf.hkdfSha256(), Aead.aes128Gcm());
     private static final Hpke HPKE = Hpke.of(HPKE_CIPHERSUITE);
 
     private static SecretKey generateRandomSecretAesKey() {
@@ -61,7 +68,7 @@ public class SharedKeyGenerator {
 
     public static SecretSharedKey generateForReceiverPublicKey(PublicKey receiverPublicKey, KeyId keyId) {
         var secretKey = generateRandomSecretAesKey();
-        return internalSealSecretKeyForReceiver(secretKey, receiverPublicKey, keyId);
+        return internalSealSecretKeyForReceiver(SealedSharedKey.CURRENT_TOKEN_VERSION, secretKey, receiverPublicKey, keyId);
     }
 
     public static SecretSharedKey fromSealedKey(SealedSharedKey sealedKey, PrivateKey receiverPrivateKey) {
@@ -71,13 +78,15 @@ public class SharedKeyGenerator {
     }
 
     public static SecretSharedKey reseal(SecretSharedKey secret, PublicKey receiverPublicKey, KeyId keyId) {
-        return internalSealSecretKeyForReceiver(secret.secretKey(), receiverPublicKey, keyId);
+        // The resealed token must inherit the token version of the original token, or the receiver will
+        // end up trying to decrypt with the wrong parameters and/or cipher.
+        return internalSealSecretKeyForReceiver(secret.sealedSharedKey().tokenVersion(), secret.secretKey(), receiverPublicKey, keyId);
     }
 
-    private static SecretSharedKey internalSealSecretKeyForReceiver(SecretKey secretKey, PublicKey receiverPublicKey, KeyId keyId) {
+    private static SecretSharedKey internalSealSecretKeyForReceiver(int tokenVersion, SecretKey secretKey, PublicKey receiverPublicKey, KeyId keyId) {
         // We protect the integrity of the key ID by passing it as AAD.
         var sealed = HPKE.sealBase((XECPublicKey) receiverPublicKey, EMPTY_BYTES, keyId.asBytes(), secretKey.getEncoded());
-        var sealedSharedKey = new SealedSharedKey(keyId, sealed.enc(), sealed.ciphertext());
+        var sealedSharedKey = new SealedSharedKey(tokenVersion, keyId, sealed.enc(), sealed.ciphertext());
         return new SecretSharedKey(secretKey, sealedSharedKey);
     }
 
@@ -88,6 +97,7 @@ public class SharedKeyGenerator {
     // token recipient (which would be the case if the IV were deterministically derived
     // from the recipient key and ephemeral ECDH public key), as that would preclude
     // support for delegated key forwarding.
+    // Both AES GCM and ChaCha20Poly1305 use a 96-bit user-supplied IV.
     private static final byte[] FIXED_96BIT_IV_FOR_SINGLE_USE_KEY = new byte[] {
             'h','e','r','e','B','d','r','a','g','o','n','s' // Nothing up my sleeve!
     };
@@ -100,12 +110,24 @@ public class SharedKeyGenerator {
         return AeadCipher.of(cipher);
     }
 
+    private static AeadCipher makeChaCha20Poly1305Cipher(SecretSharedKey secretSharedKey, boolean forEncryption) {
+        // ChaCha20Poly1305 uses 256-bit keys, but our shared secret keys are 128 bit.
+        // Deterministically derive a longer key from the existing key using a KDF.
+        var expandedKey = HKDF.unsaltedExtractedFrom(secretSharedKey.secretKey().getEncoded())
+                .expand(CHACHA20_POLY1305_KEY_BITS / 8, CHACHA20_POLY1305_KDF_CONTEXT);
+        var aeadParams = new AEADParameters(new KeyParameter(expandedKey), CHACHA20_POLY1305_AUTH_TAG_BITS,
+                                            FIXED_96BIT_IV_FOR_SINGLE_USE_KEY);
+        var cipher = new ChaCha20Poly1305();
+        cipher.init(forEncryption, aeadParams);
+        return AeadCipher.of(new ChaCha20Poly1305AeadBlockCipherAdapter(cipher));
+    }
+
     /**
      * Creates an AES-GCM cipher that can be used to encrypt arbitrary plaintext.
      *
      * The given secret key MUST NOT be used to encrypt more than one plaintext.
      */
-    public static AeadCipher makeAesGcmEncryptionCipher(SecretSharedKey secretSharedKey) {
+    static AeadCipher makeAesGcmEncryptionCipher(SecretSharedKey secretSharedKey) {
         return makeAesGcmCipher(secretSharedKey, true);
     }
 
@@ -113,8 +135,25 @@ public class SharedKeyGenerator {
      * Creates an AES-GCM cipher that can be used to decrypt ciphertext that was previously
      * encrypted with the given secret key.
      */
-    public static AeadCipher makeAesGcmDecryptionCipher(SecretSharedKey secretSharedKey) {
+    static AeadCipher makeAesGcmDecryptionCipher(SecretSharedKey secretSharedKey) {
         return makeAesGcmCipher(secretSharedKey, false);
+    }
+
+    /**
+     * Creates a ChaCha20-Poly1305 cipher that can be used to encrypt arbitrary plaintext.
+     *
+     * The given secret key MUST NOT be used to encrypt more than one plaintext.
+     */
+    static AeadCipher makeChaCha20Poly1305EncryptionCipher(SecretSharedKey secretSharedKey) {
+        return makeChaCha20Poly1305Cipher(secretSharedKey, true);
+    }
+
+    /**
+     * Creates a ChaCha20-Poly1305 cipher that can be used to decrypt ciphertext that was previously
+     * encrypted with the given secret key.
+     */
+    static AeadCipher makeChaCha20Poly1305DecryptionCipher(SecretSharedKey secretSharedKey) {
+        return makeChaCha20Poly1305Cipher(secretSharedKey, false);
     }
 
 }

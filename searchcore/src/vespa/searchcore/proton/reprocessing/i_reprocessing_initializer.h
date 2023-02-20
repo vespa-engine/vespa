@@ -11,7 +11,7 @@ namespace proton {
  */
 struct IReprocessingInitializer
 {
-    typedef std::unique_ptr<IReprocessingInitializer> UP;
+    using UP = std::unique_ptr<IReprocessingInitializer>;
 
     virtual ~IReprocessingInitializer() {}
 

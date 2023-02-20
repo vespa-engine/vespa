@@ -2,18 +2,15 @@
 package ai.vespa.metricsproxy.metric.model;
 
 import ai.vespa.metricsproxy.metric.Metric;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSet;
 import org.junit.Test;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static ai.vespa.metricsproxy.metric.model.ConsumerId.toConsumerId;
 import static ai.vespa.metricsproxy.metric.model.MetricId.toMetricId;
 import static ai.vespa.metricsproxy.metric.model.ServiceId.toServiceId;
-import static java.util.Collections.singleton;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -45,8 +42,8 @@ public class MetricsPacketTest {
         MetricsPacket packet = new MetricsPacket.Builder(toServiceId("foo"))
                 .statusCode(0)
                 .statusMessage("")
-                .addConsumers(singleton(DUPLICATE_CONSUMER))
-                .addConsumers(singleton(DUPLICATE_CONSUMER))
+                .addConsumers(Set.of(DUPLICATE_CONSUMER))
+                .addConsumers(Set.of(DUPLICATE_CONSUMER))
                 .build();
         assertEquals(1, packet.consumers().size());
     }
@@ -57,17 +54,17 @@ public class MetricsPacketTest {
         var builder = new MetricsPacket.Builder(toServiceId("foo"))
                 .statusCode(0)
                 .statusMessage("")
-                .addConsumers(singleton(consumer));
+                .addConsumers(Set.of(consumer));
         assertTrue(builder.hasConsumer(consumer));
     }
 
     @Test
     public void builder_can_retain_subset_of_metrics() {
         MetricsPacket packet = new MetricsPacket.Builder(toServiceId("foo"))
-                .putMetrics(ImmutableList.of(
+                .putMetrics(List.of(
                         new Metric(toMetricId("remove"), 1),
                         new Metric(toMetricId("keep"), 2)))
-                .retainMetrics(ImmutableSet.of(toMetricId("keep"), toMetricId("non-existent")))
+                .retainMetrics(Set.of(toMetricId("keep"), toMetricId("non-existent")))
                 .build();
 
         assertFalse("should not contain 'remove'", packet.metrics().containsKey(toMetricId("remove")));
@@ -86,14 +83,14 @@ public class MetricsPacketTest {
         MetricId THREE_ID        = toMetricId(THREE);
         MetricId NON_EXISTENT_ID = toMetricId(NON_EXISTENT);
 
-        Map<MetricId, List<MetricId>> outputNamesById = ImmutableMap.of(
-                ONE_ID,          ImmutableList.of(ONE_ID),
-                TWO_ID,          ImmutableList.of(TWO_ID, toMetricId("dos")),
-                THREE_ID,        ImmutableList.of(toMetricId("3")),
-                NON_EXISTENT_ID, ImmutableList.of(NON_EXISTENT_ID));
+        Map<MetricId, List<MetricId>> outputNamesById = Map.of(
+                ONE_ID,          List.of(ONE_ID),
+                TWO_ID,          List.of(TWO_ID, toMetricId("dos")),
+                THREE_ID,        List.of(toMetricId("3")),
+                NON_EXISTENT_ID, List.of(NON_EXISTENT_ID));
 
         MetricsPacket packet = new MetricsPacket.Builder(toServiceId("foo"))
-                .putMetrics(ImmutableList.of(
+                .putMetrics(List.of(
                         new Metric(ONE_ID, 1),
                         new Metric(TWO_ID, 2),
                         new Metric(THREE_ID, 3)))

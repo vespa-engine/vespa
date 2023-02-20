@@ -18,8 +18,9 @@ public:
     static const vespalib::string multi_value;
     static const vespalib::string tensor_store;
     static const vespalib::string shared_string_repo;
-    static const vespalib::string hnsw_node_store;
-    static const vespalib::string hnsw_link_store;
+    static const vespalib::string hnsw_levels_store;
+    static const vespalib::string hnsw_links_store;
+    static const vespalib::string hnsw_nodeid_mapping;
 };
 
 }

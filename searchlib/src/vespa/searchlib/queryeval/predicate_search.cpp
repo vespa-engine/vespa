@@ -11,11 +11,11 @@ using std::vector;
 using namespace search::predicate;
 
 namespace search {
+    using predicate::MIN_INTERVAL;
+    using predicate::MAX_INTERVAL;
+}
 
-using predicate::MIN_INTERVAL;
-using predicate::MAX_INTERVAL;
-
-namespace queryeval {
+namespace search::queryeval {
 
 namespace {
 
@@ -162,7 +162,8 @@ PredicateSearch::~PredicateSearch()
     delete [] _subquery_markers;
 }
 
-bool PredicateSearch::advanceOneTo(uint32_t doc_id, size_t index) {
+bool
+PredicateSearch::advanceOneTo(uint32_t doc_id, size_t index) {
     size_t i = _sorted_indexes[index];
     if (__builtin_expect(_posting_lists[i]->next(doc_id - 1), true)) {
         _doc_ids[i] = _posting_lists[i]->getDocId();
@@ -174,13 +175,15 @@ bool PredicateSearch::advanceOneTo(uint32_t doc_id, size_t index) {
 
 namespace {
 template <typename CompareType>
-void sort_indexes(uint16_t *indexes, size_t size, CompareType *values) {
+void
+sort_indexes(uint16_t *indexes, size_t size, CompareType *values) {
     std::sort(indexes, indexes + size,
               [&] (uint16_t a, uint16_t b) { return values[a] < values[b]; });
 }
 }  // namespace
 
-void PredicateSearch::advanceAllTo(uint32_t doc_id) {
+void
+PredicateSearch::advanceAllTo(uint32_t doc_id) {
     size_t i = 0;
     size_t completed_count = 0;
     for (; i < _sorted_indexes.size() && _doc_ids[_sorted_indexes[i]] < doc_id; ++i) {
@@ -190,13 +193,10 @@ void PredicateSearch::advanceAllTo(uint32_t doc_id) {
     }
     if (__builtin_expect((i > 0) && ! _sorted_indexes.empty(), true)) {
         sort_indexes(&_sorted_indexes[0], i, &_doc_ids[0]);
-        std::merge(
-                _sorted_indexes.begin(), _sorted_indexes.begin() + i,
-                _sorted_indexes.begin() + i, _sorted_indexes.end(),
-                _sorted_indexes_merge_buffer.begin(),
-                [&] (uint16_t a, uint16_t b) {
-                    return _doc_ids[a] < _doc_ids[b];
-                });
+        std::merge(_sorted_indexes.begin(), _sorted_indexes.begin() + i,
+                   _sorted_indexes.begin() + i, _sorted_indexes.end(),
+                   _sorted_indexes_merge_buffer.begin(),
+                   [&] (uint16_t a, uint16_t b) { return _doc_ids[a] < _doc_ids[b]; });
         _sorted_indexes.swap(_sorted_indexes_merge_buffer);
         // After sorting and merging the completed indexes are at the end.
         _sorted_indexes.resize(_sorted_indexes.size() - completed_count);
@@ -206,11 +206,13 @@ void PredicateSearch::advanceAllTo(uint32_t doc_id) {
 
 
 namespace {
-bool isNotInterval(uint32_t begin, uint32_t end) {
+bool
+isNotInterval(uint32_t begin, uint32_t end) {
     return begin > end;
 }
 
-void markSubquery(uint32_t begin, uint32_t end, uint64_t subquery, uint64_t *subquery_markers, bool * visited) {
+void
+markSubquery(uint32_t begin, uint32_t end, uint64_t subquery, uint64_t *subquery_markers, bool * visited) {
     if (visited[begin]) {
         visited[end] = true;
         subquery_markers[end] |= subquery;
@@ -218,8 +220,10 @@ void markSubquery(uint32_t begin, uint32_t end, uint64_t subquery, uint64_t *sub
 }
 
 // Returns the semantic interval end - or UINT32_MAX if no interval cover is possible
-uint32_t addInterval(uint32_t interval, uint64_t subquery,
-                     uint64_t *subquery_markers, bool * visited, uint32_t highest_end_seen) {
+uint32_t
+addInterval(uint32_t interval, uint64_t subquery, uint64_t *subquery_markers,
+            bool * visited, uint32_t highest_end_seen)
+{
     uint32_t begin = interval >> 16;
     uint32_t end = interval & 0xffff;
 
@@ -234,14 +238,10 @@ uint32_t addInterval(uint32_t interval, uint64_t subquery,
         return end;
     }
 }
-void restoreSortedOrder(size_t first, size_t last,
-                        vector<uint16_t> &indexes,
-                        const vector<uint32_t> &intervals) __attribute__((noinline));
 
 // One step of insertion sort: First element is moved to correct position.
-void restoreSortedOrder(size_t first, size_t last,
-                        vector<uint16_t> &indexes,
-                        const vector<uint32_t> &intervals) {
+void
+restoreSortedOrder(size_t first, size_t last, vector<uint16_t> &indexes, const vector<uint32_t> &intervals) {
     uint32_t interval_to_move = intervals[indexes[first]];
     uint16_t index_to_move = indexes[first];
     while (++first < last && interval_to_move > intervals[indexes[first]]) {
@@ -252,7 +252,8 @@ void restoreSortedOrder(size_t first, size_t last,
 
 }  // namespace
 
-bool PredicateSearch::evaluateHit(uint32_t doc_id, uint32_t k) {
+bool
+PredicateSearch::evaluateHit(uint32_t doc_id, uint32_t k) {
     size_t candidates = sortIntervals(doc_id, k);
 
     size_t interval_end = _interval_range_vector[doc_id];
@@ -264,8 +265,8 @@ bool PredicateSearch::evaluateHit(uint32_t doc_id, uint32_t k) {
     uint32_t highest_end_seen = 1;
     for (size_t i = 0; i < candidates; ) {
         size_t index = _sorted_indexes[i];
-        uint32_t last_end_seen = addInterval(
-                _intervals[index], _subqueries[index], _subquery_markers, _visited, highest_end_seen);
+        uint32_t last_end_seen = addInterval(_intervals[index], _subqueries[index],
+                                             _subquery_markers, _visited, highest_end_seen);
         if (last_end_seen == UINT32_MAX) {
             return false;
         }
@@ -280,7 +281,8 @@ bool PredicateSearch::evaluateHit(uint32_t doc_id, uint32_t k) {
     return _subquery_markers[interval_end] != 0;
 }
 
-size_t PredicateSearch::sortIntervals(uint32_t doc_id, uint32_t k) {
+size_t
+PredicateSearch::sortIntervals(uint32_t doc_id, uint32_t k) {
     size_t candidates = k + 1;
     for (size_t i = candidates; i < _sorted_indexes.size(); ++i) {
         if (_doc_ids[_sorted_indexes[i]] == doc_id) {
@@ -296,7 +298,8 @@ size_t PredicateSearch::sortIntervals(uint32_t doc_id, uint32_t k) {
     return candidates;
 }
 
-void PredicateSearch::skipMinFeature(uint32_t doc_id_in)
+void
+PredicateSearch::skipMinFeature(uint32_t doc_id_in)
 {
     uint32_t doc_id;
     for (doc_id = _skip->next(); doc_id < doc_id_in; doc_id = _skip->next());
@@ -308,7 +311,8 @@ void PredicateSearch::skipMinFeature(uint32_t doc_id_in)
     }
 }
 
-void PredicateSearch::doSeek(uint32_t doc_id) {
+void
+PredicateSearch::doSeek(uint32_t doc_id) {
     skipMinFeature(doc_id);
     while (!_sorted_indexes.empty() && ! isAtEnd()) {
         uint32_t doc_id_0 = _doc_ids[_sorted_indexes[0]];
@@ -328,15 +332,14 @@ void PredicateSearch::doSeek(uint32_t doc_id) {
     setAtEnd();
 }
 
-void PredicateSearch::doUnpack(uint32_t doc_id) {
+void
+PredicateSearch::doUnpack(uint32_t doc_id) {
     if (doc_id == getDocId()) {
         if (_termFieldMatchData) {
             auto end = _interval_range_vector[doc_id];
-            _termFieldMatchData
-                ->setSubqueries(doc_id, _subquery_markers[end]);
+            _termFieldMatchData->setSubqueries(doc_id, _subquery_markers[end]);
         }
     }
 }
 
-}  // namespace search::queryeval
-}  // namespace search
+}

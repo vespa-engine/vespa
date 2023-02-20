@@ -3,9 +3,11 @@
 #include "proton.h"
 #include "disk_mem_usage_sampler.h"
 #include "document_db_explorer.h"
+#include "documentdbconfig.h"
 #include "fileconfigmanager.h"
 #include "flushhandlerproxy.h"
 #include "hw_info_explorer.h"
+#include "initialize_threads_calculator.h"
 #include "memoryflush.h"
 #include "persistencehandlerproxy.h"
 #include "prepare_restart_handler.h"
@@ -15,7 +17,6 @@
 #include "resource_usage_explorer.h"
 #include "searchhandlerproxy.h"
 #include "simpleflush.h"
-#include "documentdbconfig.h"
 
 #include <vespa/document/base/exceptions.h>
 #include <vespa/document/datatype/documenttype.h>
@@ -32,6 +33,8 @@
 #include <vespa/searchcore/proton/persistenceengine/persistenceengine.h>
 #include <vespa/searchcore/proton/reference/document_db_reference_registry.h>
 #include <vespa/searchcore/proton/summaryengine/summaryengine.h>
+#include <vespa/searchcore/proton/matching/session_manager_explorer.h>
+#include <vespa/searchcore/proton/common/scheduled_forward_executor.h>
 #include <vespa/searchlib/attribute/interlock.h>
 #include <vespa/searchlib/common/packets.h>
 #include <vespa/searchlib/transactionlog/trans_log_server_explorer.h>
@@ -52,8 +55,6 @@
 #include <malloc.h>
 #endif
 
-#include <vespa/searchlib/aggregation/forcelink.hpp>
-#include <vespa/searchlib/expression/forcelink.hpp>
 #include <sstream>
 
 #include <vespa/log/log.h>
@@ -145,8 +146,8 @@ struct MetricsUpdateHook : metrics::UpdateHook
 
 const vespalib::string CUSTOM_COMPONENT_API_PATH = "/state/v1/custom/component";
 
-VESPA_THREAD_STACK_TAG(proton_initialize_executor)
-VESPA_THREAD_STACK_TAG(proton_close_executor)
+VESPA_THREAD_STACK_TAG(proton_close_executor);
+VESPA_THREAD_STACK_TAG(proton_executor);
 
 void ensureWritableDir(const vespalib::string &dirName) {
     auto filename = dirName + "/tmp.filesystem.probe";
@@ -176,7 +177,7 @@ void
 Proton::ProtonFileHeaderContext::addTags(vespalib::GenericHeader &header,
         const vespalib::string &name) const
 {
-    typedef vespalib::GenericHeader::Tag Tag;
+    using Tag = vespalib::GenericHeader::Tag;
 
     search::FileHeaderTk::addVersionTags(header);
     header.putTag(Tag("fileName", name));
@@ -249,14 +250,17 @@ Proton::Proton(FastOS_ThreadPool & threadPool, FNET_Transport & transport, const
       _stateServer(),
       // This executor can only have 1 thread as it is used for
       // serializing startup.
-      _executor(1, 128_Ki),
+      _executor(1, CpuUsage::wrap(proton_executor, CpuCategory::SETUP)),
       _protonDiskLayout(),
       _protonConfigurer(_executor, *this, _protonDiskLayout),
       _protonConfigFetcher(_transport, configUri, _protonConfigurer, subscribeTimeout),
       _shared_service(),
+      _sessionManager(),
+      _scheduler(),
       _compile_cache_executor_binding(),
       _queryLimiter(),
       _distributionKey(-1),
+      _numThreadsPerSearch(1),
       _isInitializing(true),
       _abortInit(false),
       _initStarted(false),
@@ -290,23 +294,24 @@ Proton::init(const BootstrapConfig::SP & configSnapshot)
     ensureWritableDir(protonConfig.basedir);
     const HwInfo & hwInfo = configSnapshot->getHwInfo();
     _hw_info = hwInfo;
+    _numThreadsPerSearch = std::min(hwInfo.cpu().cores(), uint32_t(protonConfig.numthreadspersearch));
 
     setBucketCheckSumType(protonConfig);
     setFS4Compression(protonConfig);
-    _diskMemUsageSampler = std::make_unique<DiskMemUsageSampler>(_transport, protonConfig.basedir,
-                                                                 diskMemUsageSamplerConfig(protonConfig, hwInfo));
+    _diskMemUsageSampler = std::make_unique<DiskMemUsageSampler>(protonConfig.basedir, hwInfo);
 
     _tls = std::make_unique<TLS>(_configUri.createWithNewId(protonConfig.tlsconfigid), _fileHeaderContext);
     _metricsEngine->addMetricsHook(*_metricsHook);
     _fileHeaderContext.setClusterName(protonConfig.clustername, protonConfig.basedir);
     _matchEngine = std::make_unique<MatchEngine>(protonConfig.numsearcherthreads,
-                                                 protonConfig.numthreadspersearch,
+                                                 getNumThreadsPerSearch(),
                                                  protonConfig.distributionkey,
                                                  protonConfig.search.async);
     _matchEngine->set_issue_forwarding(protonConfig.forwardIssues);
     _distributionKey = protonConfig.distributionkey;
     _summaryEngine = std::make_unique<SummaryEngine>(protonConfig.numsummarythreads, protonConfig.docsum.async);
     _summaryEngine->set_issue_forwarding(protonConfig.forwardIssues);
+    _sessionManager = std::make_unique<matching::SessionManager>(protonConfig.grouping.sessionmanager.maxentries);
 
     IFlushStrategy::SP strategy;
     const ProtonConfig::Flush & flush(protonConfig.flush);
@@ -342,17 +347,17 @@ Proton::init(const BootstrapConfig::SP & configSnapshot)
                                                              protonConfig.visit.ignoremaxbytes);
     _shared_service = std::make_unique<SharedThreadingService>(
             SharedThreadingServiceConfig::make(protonConfig, hwInfo.cpu()), _transport, *_persistenceEngine);
+    _scheduler = std::make_unique<ScheduledForwardExecutor>(_transport, _shared_service->shared());
+    _diskMemUsageSampler->setConfig(diskMemUsageSamplerConfig(protonConfig, hwInfo), *_scheduler);
 
     vespalib::string fileConfigId;
     _compile_cache_executor_binding = vespalib::eval::CompileCache::bind(_shared_service->shared_raw());
-    InitializeThreads initializeThreads;
-    if (protonConfig.initialize.threads > 0) {
-        initializeThreads = std::make_shared<vespalib::ThreadStackExecutor>(protonConfig.initialize.threads, 128_Ki,
-                                                                            CpuUsage::wrap(proton_initialize_executor, CpuCategory::SETUP));
-        _initDocumentDbsInSequence = (protonConfig.initialize.threads == 1);
-    }
-    _protonConfigurer.applyInitialConfig(initializeThreads);
-    initializeThreads.reset();
+
+    InitializeThreadsCalculator calc(protonConfig.basedir, protonConfig.initialize.threads);
+    LOG(info, "Start initializing components: threads=%u, configured=%u",
+        calc.num_threads(), protonConfig.initialize.threads);
+    _initDocumentDbsInSequence = (calc.num_threads() == 1);
+    _protonConfigurer.applyInitialConfig(calc.threads());
 
     _prepareRestartHandler = std::make_unique<PrepareRestartHandler>(*_flushEngine);
     RPCHooks::Params rpcParams(*this, protonConfig.rpcport, _configUri, protonConfig.slobrokconfigid,
@@ -361,6 +366,8 @@ Proton::init(const BootstrapConfig::SP & configSnapshot)
     _metricsEngine->addExternalMetrics(_rpcHooks->proto_rpc_adapter_metrics());
 
     waitForInitDone();
+    LOG(info, "Done initializing components");
+    calc.init_done();
 
     _metricsEngine->start(_configUri);
     _stateServer = std::make_unique<vespalib::StateServer>(protonConfig.httpport, _healthAdapter,
@@ -373,6 +380,8 @@ Proton::init(const BootstrapConfig::SP & configSnapshot)
     _rpcHooks->set_online();
 
     _flushEngine->start();
+    vespalib::duration pruneSessionsInterval = vespalib::from_s(protonConfig.grouping.sessionmanager.pruning.interval);
+    _sessionPruneHandle = _scheduler->scheduleAtFixedRate(makeLambdaTask([&]() { _sessionManager->pruneTimedOutSessions(vespalib::steady_clock::now()); }), pruneSessionsInterval, pruneSessionsInterval);
     _isInitializing = false;
     _protonConfigurer.setAllowReconfig(true);
     _initComplete = true;
@@ -398,7 +407,7 @@ Proton::applyConfig(const BootstrapConfig::SP & configSnapshot)
                             protonConfig.search.memory.limiter.minhits);
     const std::shared_ptr<const DocumentTypeRepo> repo = configSnapshot->getDocumentTypeRepoSP();
 
-    _diskMemUsageSampler->setConfig(diskMemUsageSamplerConfig(protonConfig, configSnapshot->getHwInfo()));
+    _diskMemUsageSampler->setConfig(diskMemUsageSamplerConfig(protonConfig, configSnapshot->getHwInfo()), *_scheduler);
     if (_memoryFlushConfigUpdater) {
         _memoryFlushConfigUpdater->setConfig(protonConfig.flush.memory);
         _flushEngine->kick();
@@ -461,6 +470,11 @@ Proton::~Proton()
     if (_memoryFlushConfigUpdater) {
         _diskMemUsageSampler->notifier().removeDiskMemUsageListener(_memoryFlushConfigUpdater.get());
     }
+    _sessionPruneHandle.reset();
+    if (_diskMemUsageSampler) {
+        _diskMemUsageSampler->close();
+    }
+    _scheduler.reset();
     _executor.shutdown();
     _executor.sync();
     _rpcHooks.reset();
@@ -481,10 +495,11 @@ Proton::~Proton()
             }
         }
 
-        vespalib::ThreadStackExecutor closePool(std::min(_documentDBMap.size(), numCores), 0x20000,
+        vespalib::ThreadStackExecutor closePool(std::min(_documentDBMap.size(), numCores),
                                                 CpuUsage::wrap(proton_close_executor, CpuCategory::SETUP));
         closeDocumentDBs(closePool);
     }
+    _sessionManager.reset();
     _documentDBMap.clear();
     _persistenceEngine.reset();
     _tls.reset();
@@ -620,7 +635,7 @@ Proton::addDocumentDB(const document::DocumentType &docType,
         // If configured value for initialize threads was 0, or we
         // are performing a reconfig after startup has completed, then use
         // 1 thread per document type.
-        initializeThreads = std::make_shared<vespalib::ThreadStackExecutor>(1, 128_Ki);
+        initializeThreads = std::make_shared<vespalib::ThreadStackExecutor>(1);
     }
     auto ret = DocumentDB::create(config.basedir + "/documents",
                                   documentDBConfig,
@@ -764,6 +779,16 @@ updateExecutorMetrics(ExecutorMetrics &metrics, const vespalib::ExecutorStats &s
     metrics.update(stats);
 }
 
+void
+updateSessionCacheMetrics(ContentProtonMetrics &metrics, proton::matching::SessionManager &sessionManager)
+{
+    auto searchStats = sessionManager.getSearchStats();
+    metrics.sessionCache.search.update(searchStats);
+
+    auto groupingStats = sessionManager.getGroupingStats();
+    metrics.sessionCache.grouping.update(groupingStats);
+}
+
 }
 
 void
@@ -810,6 +835,7 @@ Proton::updateMetrics(const metrics::MetricLockGuard &)
         metrics.resourceUsage.cpu_util.write.set(cpu_util[CpuCategory::WRITE]);
         metrics.resourceUsage.cpu_util.compact.set(cpu_util[CpuCategory::COMPACT]);
         metrics.resourceUsage.cpu_util.other.set(cpu_util[CpuCategory::OTHER]);
+        updateSessionCacheMetrics(metrics, session_manager());
     }
     {
         ContentProtonMetrics::ProtonExecutorMetrics &metrics = _metricsEngine->root().executor;
@@ -829,6 +855,7 @@ Proton::updateMetrics(const metrics::MetricLockGuard &)
             metrics.field_writer.update(_shared_service->field_writer().getStats());
         }
     }
+
 }
 
 void
@@ -915,6 +942,8 @@ const vespalib::string TLS_NAME = "tls";
 const vespalib::string RESOURCE_USAGE = "resourceusage";
 const vespalib::string THREAD_POOLS = "threadpools";
 const vespalib::string HW_INFO = "hwinfo";
+const vespalib::string SESSION = "session";
+
 
 struct StateExplorerProxy : vespalib::StateExplorer {
     const StateExplorer &explorer;
@@ -925,7 +954,7 @@ struct StateExplorerProxy : vespalib::StateExplorer {
 };
 
 struct DocumentDBMapExplorer : vespalib::StateExplorer {
-    typedef std::map<DocTypeName, DocumentDB::SP> DocumentDBMap;
+    using DocumentDBMap = std::map<DocTypeName, DocumentDB::SP>;
     const DocumentDBMap &documentDBMap;
     std::shared_mutex &mutex;
     DocumentDBMapExplorer(const DocumentDBMap &documentDBMap_in, std::shared_mutex &mutex_in)
@@ -959,7 +988,7 @@ Proton::get_state(const vespalib::slime::Inserter &, bool) const
 std::vector<vespalib::string>
 Proton::get_children_names() const
 {
-    return {DOCUMENT_DB, THREAD_POOLS, MATCH_ENGINE, FLUSH_ENGINE, TLS_NAME, HW_INFO, RESOURCE_USAGE};
+    return {DOCUMENT_DB, THREAD_POOLS, MATCH_ENGINE, FLUSH_ENGINE, TLS_NAME, HW_INFO, RESOURCE_USAGE, SESSION};
 }
 
 std::unique_ptr<vespalib::StateExplorer>
@@ -987,6 +1016,8 @@ Proton::get_child(vespalib::stringref name) const
 
     } else if (name == HW_INFO) {
         return std::make_unique<HwInfoExplorer>(_hw_info);
+    } else if (name == SESSION) {
+        return std::make_unique<matching::SessionManagerExplorer>(*_sessionManager);
     }
     return {};
 }
@@ -995,6 +1026,11 @@ std::shared_ptr<IDocumentDBReferenceRegistry>
 Proton::getDocumentDBReferenceRegistry() const
 {
     return _documentDBReferenceRegistry;
+}
+
+matching::SessionManager &
+Proton::session_manager() {
+    return *_sessionManager;
 }
 
 storage::spi::PersistenceProvider &

@@ -35,7 +35,7 @@ public class FileWriterTest {
                 .withGroupId(group)
                 .onlyIfFileDoesNotAlreadyExist();
         assertTrue(writer.converge(context));
-        verify(context, times(1)).recordSystemModification(any(), eq("Creating file " + path));
+        verify(context, times(1)).recordSystemModification(any(), eq("Creating file " + path + " with permissions rwxr-xr-x"));
 
         UnixPath unixPath = new UnixPath(path);
         assertEquals(content, unixPath.readUtf8File());

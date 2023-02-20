@@ -13,7 +13,7 @@ namespace proton {
  * executor thread.
  */
 struct PacketWrapper {
-    typedef std::shared_ptr<PacketWrapper> SP;
+    using SP = std::shared_ptr<PacketWrapper>;
 
     const search::transactionlog::Packet &packet;
     TlsReplayProgress *progress;

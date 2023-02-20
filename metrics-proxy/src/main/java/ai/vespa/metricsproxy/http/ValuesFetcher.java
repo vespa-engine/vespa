@@ -45,7 +45,7 @@ public class ValuesFetcher {
         return metricsManager.getMetrics(vespaServices.getVespaServices(), Instant.now(), consumer)
                 .stream()
                 .filter(metricsPacket -> metricsPacket.consumers().contains(consumer))
-                .collect(Collectors.toList());
+                .toList();
     }
 
     public MetricsPacket.Builder[] fetchMetricsAsBuilders(String requestedConsumer) throws JsonRenderingException {
@@ -54,7 +54,7 @@ public class ValuesFetcher {
         List<MetricsPacket.Builder> builders = metricsManager.getMetricsAsBuilders(vespaServices.getVespaServices(), Instant.now(), consumer)
                 .stream()
                 .filter(builder -> builder.hasConsumer(consumer))
-                .collect(Collectors.toList());
+                .toList();
         return builders.toArray(new MetricsPacket.Builder[builders.size()]);
     }
 

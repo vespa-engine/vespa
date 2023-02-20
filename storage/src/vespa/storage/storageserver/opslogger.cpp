@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "opslogger.h"
+#include <vespa/storageframework/generic/clock/clock.h>
 #include <vespa/storageapi/message/persistence.h>
 #include <vespa/config/helper/configfetcher.hpp>
 #include <vespa/config/subscription/configuri.h>
@@ -77,7 +78,7 @@ OpsLogger::onPutReply(const std::shared_ptr<api::PutReply>& msg)
 {
     if (_targetFile == nullptr) return false;
     std::ostringstream ost;
-    ost << _component.getClock().getTimeInSeconds().getTime()
+    ost << vespalib::to_string(_component.getClock().getSystemTime())
         << "\tPUT\t" << msg->getDocumentId() << "\t"
         << msg->getResult() << "\n";
     {
@@ -94,7 +95,7 @@ OpsLogger::onUpdateReply(const std::shared_ptr<api::UpdateReply>& msg)
 {
     if (_targetFile == nullptr) return false;
     std::ostringstream ost;
-    ost << _component.getClock().getTimeInSeconds().getTime()
+    ost << vespalib::to_string(_component.getClock().getSystemTime())
         << "\tUPDATE\t" << msg->getDocumentId() << "\t"
         << msg->getResult() << "\n";
     {
@@ -111,7 +112,7 @@ OpsLogger::onRemoveReply(const std::shared_ptr<api::RemoveReply>& msg)
 {
     if (_targetFile == nullptr) return false;
     std::ostringstream ost;
-    ost << _component.getClock().getTimeInSeconds().getTime()
+    ost << vespalib::to_string(_component.getClock().getSystemTime())
         << "\tREMOVE\t" << msg->getDocumentId() << "\t"
         << msg->getResult() << "\n";
     {
@@ -128,7 +129,7 @@ OpsLogger::onGetReply(const std::shared_ptr<api::GetReply>& msg)
 {
     if (_targetFile == nullptr) return false;
     std::ostringstream ost;
-    ost << _component.getClock().getTimeInSeconds().getTime()
+    ost << vespalib::to_string(_component.getClock().getSystemTime())
         << "\tGET\t" << msg->getDocumentId() << "\t"
         << msg->getResult() << "\n";
     {

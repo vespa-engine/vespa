@@ -167,7 +167,7 @@ public class ClusterControllerClientImpl implements ClusterControllerClient {
                                //  * if host 2 responds, it will redirect to master if necessary; otherwise
                                //  * if host 3 responds, it may redirect to master if necessary (if they're up
                                //    after all), but more likely there's no quorum and this will fail too.
-                               : HostStrategy.ordered(hosts.stream().map(ClusterControllerClientImpl::toUrl).collect(Collectors.toList()));
+                               : HostStrategy.ordered(hosts.stream().map(ClusterControllerClientImpl::toUrl).toList());
     }
 
     static URI toUrl(HostName host) {

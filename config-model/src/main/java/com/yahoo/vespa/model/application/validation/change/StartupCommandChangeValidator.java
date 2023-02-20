@@ -2,17 +2,15 @@
 package com.yahoo.vespa.model.application.validation.change;
 
 import com.yahoo.config.model.api.ConfigChangeAction;
+import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AbstractConfigProducerRoot;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.vespa.model.Service;
 import com.yahoo.vespa.model.VespaModel;
-import com.yahoo.config.application.api.ValidationOverrides;
 
-import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -24,9 +22,8 @@ import java.util.stream.Stream;
 public class StartupCommandChangeValidator implements ChangeValidator {
 
     @Override
-    public List<ConfigChangeAction> validate(VespaModel currentModel, VespaModel nextModel,
-                                             ValidationOverrides overrides, Instant now) {
-        return findServicesWithChangedStartupCommand(currentModel, nextModel).collect(Collectors.toList());
+    public List<ConfigChangeAction> validate(VespaModel currentModel, VespaModel nextModel, DeployState deployState) {
+        return findServicesWithChangedStartupCommand(currentModel, nextModel).toList();
     }
 
     public Stream<ConfigChangeAction> findServicesWithChangedStartupCommand(AbstractConfigProducerRoot currentModel,

@@ -309,7 +309,7 @@ public class StandaloneContainerApplication implements Application {
             throw new RuntimeException("No jdisc element found under services.");
         } else {
             List<String> nameAndId = jDiscElements.stream().map(e -> e.getNodeName() + " id='" + e.getAttribute("id") + "'")
-                    .collect(Collectors.toList());
+                    .toList();
             throw new RuntimeException("Found multiple JDisc elements: " + String.join(", ", nameAndId));
         }
     }

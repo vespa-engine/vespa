@@ -28,7 +28,7 @@ NativeFieldMatchExecutorSharedState::NativeFieldMatchExecutorSharedState(const I
         if (qtTmp.termData()->getWeight().percent() != 0) // only consider query terms with contribution
         {
             MyQueryTerm qt(qtTmp);
-            typedef search::fef::ITermFieldRangeAdapter FRA;
+            using FRA = search::fef::ITermFieldRangeAdapter;
             uint32_t totalFieldWeight = 0;
             for (FRA iter(*qt.termData()); iter.valid(); iter.next()) {
                 const ITermFieldData& tfd = iter.get();

@@ -9,6 +9,11 @@ using namespace document;
 
 namespace storage {
 
+ConfigurableBucketResolver::ConfigurableBucketResolver(BucketSpaceMapping type_to_space) noexcept
+    : _type_to_space(std::move(type_to_space))
+{}
+ConfigurableBucketResolver::~ConfigurableBucketResolver() = default;
+
 document::Bucket ConfigurableBucketResolver::bucketFromId(const DocumentId& id) const {
     if (!id.hasDocType()) {
         // Legacy document ids without document type maps to default bucket space

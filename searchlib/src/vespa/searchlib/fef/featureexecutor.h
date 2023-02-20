@@ -2,7 +2,6 @@
 
 #pragma once
 
-#include "handle.h"
 #include "matchdata.h"
 #include "number_or_object.h"
 #include <vespa/vespalib/util/arrayref.h>
@@ -92,9 +91,6 @@ public:
     };
 
 private:
-    FeatureExecutor(const FeatureExecutor &);
-    FeatureExecutor &operator=(const FeatureExecutor &);
-
     Inputs  _inputs;
     Outputs _outputs;
 
@@ -116,6 +112,8 @@ public:
      * inputs nor outputs.
      **/
     FeatureExecutor();
+    FeatureExecutor(const FeatureExecutor &) = delete;
+    FeatureExecutor &operator=(const FeatureExecutor &) = delete;
 
     /**
     * Obtain the fully qualified name of the concrete class for this object.

@@ -12,7 +12,6 @@ import java.nio.file.NoSuchFileException;
 import java.nio.file.NotDirectoryException;
 import java.nio.file.OpenOption;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
 import java.nio.file.attribute.FileAttribute;
@@ -45,7 +44,7 @@ public class UnixPath {
     private final Path path;
 
     public UnixPath(Path path) { this.path = path; }
-    public UnixPath(String path) { this(Paths.get(path)); }
+    public UnixPath(String path) { this(Path.of(path)); }
 
     public Path toPath() { return path; }
     public UnixPath resolve(String relativeOrAbsolutePath) { return new UnixPath(path.resolve(relativeOrAbsolutePath)); }

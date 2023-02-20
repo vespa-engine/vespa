@@ -1,20 +1,19 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.rankingexpression.importer;
 
-import com.google.common.collect.ImmutableMap;
 import ai.vespa.rankingexpression.importer.configmodelview.ImportedMlFunction;
 import ai.vespa.rankingexpression.importer.configmodelview.ImportedMlModel;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.io.IOUtils;
 import com.yahoo.searchlib.rankingexpression.RankingExpression;
 import com.yahoo.searchlib.rankingexpression.parser.ParseException;
+import com.yahoo.stream.CustomCollectors;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -73,7 +72,7 @@ public class ImportedModel implements ImportedMlModel {
     public String toString() { return "imported model '" + name + "' from " + source; }
 
     /** Returns an immutable map of the inputs of this */
-    public Map<String, TensorType> inputs() { return Collections.unmodifiableMap(inputs); }
+    public Map<String, TensorType> inputs() { return Map.copyOf(inputs); }
 
     @Override
     public Optional<String> inputTypeSpec(String input) {
@@ -121,7 +120,7 @@ public class ImportedModel implements ImportedMlModel {
      * which are not Inputs/Placeholders or Variables (which instead become respectively inputs and constants).
      * Note that only nodes recursively referenced by a placeholder/input are added.
      */
-    public Map<String, RankingExpression> expressions() { return Collections.unmodifiableMap(expressions); }
+    public Map<String, RankingExpression> expressions() { return Map.copyOf(expressions); }
 
     /**
      * Returns an immutable map of the functions that are part of this model.
@@ -130,7 +129,7 @@ public class ImportedModel implements ImportedMlModel {
     public Map<String, String> functions() { return asExpressionStrings(functions); }
 
     /** Returns an immutable map of the signatures of this */
-    public Map<String, Signature> signatures() { return Collections.unmodifiableMap(signatures); }
+    public Map<String, Signature> signatures() { return Map.copyOf(signatures); }
 
     /** Returns the given signature. If it does not already exist it is added to this. */
     public Signature signature(String name) {
@@ -270,30 +269,29 @@ public class ImportedModel implements ImportedMlModel {
          * Returns an immutable map of the inputs (evaluation context) of this. This is a map from input name
          * in this signature to input name in the owning model
          */
-        public Map<String, String> inputs() { return Collections.unmodifiableMap(inputs); }
+        public Map<String, String> inputs() { return Map.copyOf(inputs); }
 
         /** Returns the name and type of all inputs in this signature as an immutable map */
         Map<String, TensorType> inputMap() {
-            ImmutableMap.Builder<String, TensorType> inputs = new ImmutableMap.Builder<>();
             // Note: We're naming inputs by their actual name (used in the expression, given by what the input maps *to*
             // in the model, as these are the names which must actually be bound, if we are to avoid creating an
             // "input mapping" to accommodate this complexity
-            for (Map.Entry<String, String> inputEntry : inputs().entrySet())
-                inputs.put(inputEntry.getValue(), owner().inputs().get(inputEntry.getValue()));
-            return inputs.build();
+            return Map.copyOf(inputs.entrySet()
+                    .stream()
+                    .collect(CustomCollectors.toLinkedMap(Map.Entry::getValue, e -> owner().inputs.get(e.getValue()))));
         }
 
         /** Returns the type of the input this input references */
         public TensorType inputArgument(String inputName) { return owner().inputs().get(inputs.get(inputName)); }
 
         /** Returns an immutable list of the expression names of this */
-        public Map<String, String> outputs() { return Collections.unmodifiableMap(outputs); }
+        public Map<String, String> outputs() { return Map.copyOf(outputs); }
 
         /**
          * Returns an immutable list of the outputs of this which could not be imported,
          * with a string detailing the reason for each
          */
-        public Map<String, String> skippedOutputs() { return Collections.unmodifiableMap(skippedOutputs); }
+        public Map<String, String> skippedOutputs() { return Map.copyOf(skippedOutputs); }
 
         /** Returns the expression this output references as an imported function */
         public ImportedMlFunction outputFunction(String outputName, String functionName) {

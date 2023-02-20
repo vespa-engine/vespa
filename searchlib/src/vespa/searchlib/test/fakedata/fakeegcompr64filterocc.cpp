@@ -155,8 +155,8 @@ setupT(const FakeWord &fw)
     unsigned int l4SkipCnt = 0;
 
 
-    typedef FakeWord FW;
-    typedef FW::DocWordFeatureList DWFL;
+    using FW = FakeWord;
+    using DWFL = FW::DocWordFeatureList;
 
     DWFL::const_iterator d(fw._postings.begin());
     DWFL::const_iterator de(fw._postings.end());
@@ -599,8 +599,8 @@ private:
     FakeFilterOccEGCompressed64ArrayIterator&
     operator=(const FakeFilterOccEGCompressed64ArrayIterator &other);
 
-    typedef BitEncode64<bigEndian> EC;
-    typedef BitDecode64<bigEndian> DC;
+    using EC = BitEncode64<bigEndian>;
+    using DC = BitDecode64<bigEndian>;
 
 public:
     DC       _docIdBits;
@@ -814,7 +814,7 @@ private:
     FakeFilterOccEGCompressed64SkipArrayIterator&
     operator=(const FakeFilterOccEGCompressed64SkipArrayIterator &other);
 
-    typedef bitcompression::EncodeContext64BE EC;
+    using EC = bitcompression::EncodeContext64BE;
 
 public:
     BitDecode64BEDocIds _docIdBits;
@@ -1467,7 +1467,7 @@ createIterator(const fef::TermFieldMatchDataArray &matchData) const
     assert(docIdBits.getBitOffset() == 0);
     assert(docIdBits.getOffset() == 0);
 
-    typedef bitcompression::EncodeContext64BE EC;
+    using EC = bitcompression::EncodeContext64BE;
 
     uint32_t myResidue = 0;
     UC64_FILTEROCC_READ_RESIDUE(docIdBits._val,

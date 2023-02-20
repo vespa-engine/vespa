@@ -92,19 +92,19 @@ struct TransportFixture : FNET_IPacketHandler, FNET_IConnectionCleanupHandler {
     FNET_Transport transport;
     Gate conn_lost;
     Gate conn_deleted;
-    TransportFixture() : streamer(nullptr), pool(128_Ki), transport(),
+    TransportFixture() : streamer(nullptr), pool(), transport(),
                          conn_lost(), conn_deleted()
     {
         transport.Start(&pool);
     }
     TransportFixture(AsyncResolver::HostResolver::SP host_resolver)
-        : streamer(nullptr), pool(128_Ki), transport(fnet::TransportConfig().resolver(make_resolver(std::move(host_resolver)))),
+        : streamer(nullptr), pool(), transport(fnet::TransportConfig().resolver(make_resolver(std::move(host_resolver)))),
           conn_lost(), conn_deleted()
     {
         transport.Start(&pool);
     }
     TransportFixture(CryptoEngine::SP crypto)
-        : streamer(nullptr), pool(128_Ki), transport(fnet::TransportConfig().crypto(std::move(crypto))),
+        : streamer(nullptr), pool(), transport(fnet::TransportConfig().crypto(std::move(crypto))),
           conn_lost(), conn_deleted()
     {
         transport.Start(&pool);

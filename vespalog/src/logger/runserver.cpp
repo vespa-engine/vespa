@@ -110,7 +110,7 @@ PidFile::writePid()
         std::_Exit(1);
     }
     char buf[100];
-    sprintf(buf, "%d\n", getpid());
+    snprintf(buf, sizeof(buf), "%d\n", getpid());
     int l = strlen(buf);
     ssize_t didw = write(_fd, buf, l);
     if (didw != l) {
@@ -211,7 +211,7 @@ int loop(const char *svc, char * const * run)
     {
         torun += " (pid ";
         char buf[20];
-        sprintf(buf, "%d", (int)child);
+        snprintf(buf, sizeof(buf), "%d", (int)child);
         torun += buf;
         torun += ")";
     }
@@ -318,8 +318,8 @@ int loop(const char *svc, char * const * run)
         if (unhandledsig && child != 0) {
             LOG(debug, "got signal %d, sending to pid %d",
                 (int)lastsig, (int)child);
-            char why[256];
-            sprintf(why, "got signal %d", (int)lastsig);
+            char why[32];
+            snprintf(why, sizeof(why), "got signal %d", (int)lastsig);
             EV_STOPPING(torun.c_str(), why);
             kill(child, lastsig);
             unhandledsig = 0;

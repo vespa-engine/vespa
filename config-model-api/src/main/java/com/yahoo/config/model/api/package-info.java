@@ -3,4 +3,3 @@
 package com.yahoo.config.model.api;
 
 import com.yahoo.osgi.annotation.ExportPackage;
-import com.yahoo.api.annotations.PublicApi;

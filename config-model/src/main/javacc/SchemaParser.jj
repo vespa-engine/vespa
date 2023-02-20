@@ -279,6 +279,7 @@ TOKEN :
 | < MAXHITS: "max-hits" >
 | < FIRSTPHASE: "first-phase" >
 | < SECONDPHASE: "second-phase" >
+| < GLOBALPHASE: "global-phase" >
 | < MACRO: "macro" >
 | < INLINE: "inline" >
 | < ARITY: "arity" >
@@ -1706,6 +1707,7 @@ void rankProfileItem(ParsedSchema schema, ParsedRankProfile profile) : { }
       | rankFeatures(profile)
       | rankProperties(profile)
       | secondPhase(profile)
+      | globalPhase(profile)
       | inputs(profile)
       | constants(schema, profile)
       | matchFeatures(profile)
@@ -1922,6 +1924,34 @@ void secondPhaseItem(ParsedRankProfile profile) :
     | (<RERANKCOUNT> <COLON> rerankCount = integer()) { profile.setRerankCount(rerankCount); }
     )
 }
+
+/**
+ * Consumes the global-phase block of a rank profile.
+ *
+ * @param profile The rank profile to modify.
+ */
+void globalPhase(ParsedRankProfile profile) : { }
+{
+    <GLOBALPHASE> lbrace() (globalPhaseItem(profile) (<NL>)*)* <RBRACE>
+}
+
+/**
+ * Consumes a statement for a global-phase block.
+ *
+ * @param profile The rank profile to modify.
+ */
+void globalPhaseItem(ParsedRankProfile profile) :
+{
+    String expression;
+    int rerankCount;
+}
+{
+    ( expression = expression()                       { profile.setGlobalPhaseExpression(expression); }
+    | (<RERANKCOUNT> <COLON> rerankCount = integer()) { profile.setGlobalPhaseRerankCount(rerankCount); }
+    )
+}
+
+
 
 /** Consumes an inputs block of a rank profile. */
 void inputs(ParsedRankProfile profile) :
@@ -2519,7 +2549,7 @@ String expression() :
     ( <EXPRESSION_SL> { exp = token.image.substring(token.image.indexOf(":") + 1); } |
       <EXPRESSION_ML> { exp = token.image.substring(token.image.indexOf("{") + 1,
                                                     token.image.lastIndexOf("}")); } )
-    { return exp; }
+    { return exp.trim(); }
 }
 
 String identifierWithDash() :
@@ -2555,6 +2585,7 @@ String identifier() : { }
       | <CONSTANT>
       | <CONSTANTS>
       | <CONTEXT>
+      | <GLOBALPHASE>
       | <CREATEIFNONEXISTENT>
       | <DENSEPOSTINGLISTTHRESHOLD>
       | <DESCENDING>

@@ -4,6 +4,7 @@
 #include "docstorevalidator.h"
 #include "document_subdb_initializer.h"
 #include "document_subdb_initializer_result.h"
+#include "document_subdb_reconfig.h"
 #include "emptysearchview.h"
 #include "i_document_subdb_owner.h"
 #include "minimal_document_retriever.h"
@@ -18,7 +19,6 @@
 #include <vespa/searchcore/proton/flushengine/shrink_lid_space_flush_target.h>
 #include <vespa/searchcore/proton/flushengine/threadedflushtarget.h>
 #include <vespa/searchcore/proton/index/index_writer.h>
-#include <vespa/searchcore/proton/matching/sessionmanager.h>
 #include <vespa/searchcore/proton/reference/dummy_gid_to_lid_change_handler.h>
 #include <vespa/searchlib/attribute/configconverter.h>
 #include <vespa/searchlib/common/flush_token.h>
@@ -39,7 +39,6 @@ using search::SerialNum;
 using vespalib::IllegalStateException;
 using vespalib::ThreadStackExecutorBase;
 using proton::matching::MatchingStats;
-using proton::matching::SessionManager;
 using vespalib::GenericHeader;
 using search::common::FileHeaderContext;
 using proton::initializer::InitializerTask;
@@ -356,7 +355,7 @@ StoreOnlyDocSubDB::getFeedViewPersistentParams()
 }
 
 void
-StoreOnlyDocSubDB::initViews(const DocumentDBConfig &configSnapshot, const SessionManager::SP &sessionManager)
+StoreOnlyDocSubDB::initViews(const DocumentDBConfig &configSnapshot)
 {
     assert(_writeService.master().isCurrentThread());
     _iSearchView.set(std::make_shared<EmptySearchView>());
@@ -364,7 +363,6 @@ StoreOnlyDocSubDB::initViews(const DocumentDBConfig &configSnapshot, const Sessi
         std::lock_guard<std::mutex> guard(_configMutex);
         initFeedView(configSnapshot);
     }
-    (void) sessionManager;
 }
 
 void
@@ -407,14 +405,30 @@ StoreOnlyDocSubDB::getSubDbName() const {
     return vespalib::make_string("%s.%s", _owner.getName().c_str(), _subName.c_str());
 }
 
+std::unique_ptr<DocumentSubDBReconfig>
+StoreOnlyDocSubDB::prepare_reconfig(const DocumentDBConfig& new_config_snapshot, const ReconfigParams& reconfig_params, std::optional<SerialNum> serial_num)
+{
+    (void) new_config_snapshot;
+    (void) reconfig_params;
+    (void) serial_num;
+    return std::make_unique<DocumentSubDBReconfig>(std::shared_ptr<Matchers>(), std::shared_ptr<IAttributeManager>());
+}
+
+void
+StoreOnlyDocSubDB::complete_prepare_reconfig(DocumentSubDBReconfig& prepared_reconfig, SerialNum serial_num)
+{
+    prepared_reconfig.complete(_dms->getCommittedDocIdLimit(), serial_num);
+}
+
 IReprocessingTask::List
 StoreOnlyDocSubDB::applyConfig(const DocumentDBConfig &newConfigSnapshot, const DocumentDBConfig &oldConfigSnapshot,
-                               SerialNum serialNum, const ReconfigParams &params, IDocumentDBReferenceResolver &resolver)
+                               SerialNum serialNum, const ReconfigParams &params, IDocumentDBReferenceResolver &resolver, const DocumentSubDBReconfig& prepared_reconfig)
 {
     (void) oldConfigSnapshot;
     (void) serialNum;
     (void) params;
     (void) resolver;
+    (void) prepared_reconfig;
     assert(_writeService.master().isCurrentThread());
     AllocStrategy alloc_strategy = newConfigSnapshot.get_alloc_config().make_alloc_strategy(_subDbType);
     reconfigure(newConfigSnapshot.getStoreConfig(), alloc_strategy);
@@ -580,9 +594,15 @@ StoreOnlySubDBFileHeaderContext::
 addTags(vespalib::GenericHeader &header, const vespalib::string &name) const
 {
     _parentFileHeaderContext.addTags(header, name);
-    typedef GenericHeader::Tag Tag;
+    using Tag = GenericHeader::Tag;
     header.putTag(Tag("documentType", _docTypeName.toString()));
     header.putTag(Tag("subDB", _subDB));
+}
+
+TransientResourceUsage
+StoreOnlyDocSubDB::get_transient_resource_usage() const
+{
+    return _dmsFlushTarget->get_transient_resource_usage();
 }
 
 } // namespace proton

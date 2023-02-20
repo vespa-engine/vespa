@@ -34,11 +34,18 @@ public abstract class YumCommand<T extends YumCommand<T>> {
             PACKAGE_NAME_BUILDERS_GENERATOR = builder -> List.of(
             builder::setName, builder::setEpoch, builder::setVersion, builder::setRelease, builder::setArchitecture);
 
+    private List<String> disabledRepos = List.of();
     private List<String> enabledRepos = List.of();
     private final Terminal terminal;
 
     protected YumCommand(Terminal terminal) {
         this.terminal = terminal;
+    }
+
+    /** Disables the given repos for this command */
+    public T disableRepo(String... repo) {
+        disabledRepos = List.of(repo);
+        return getThis();
     }
 
     /** Enables the given repos for this command */
@@ -51,6 +58,7 @@ public abstract class YumCommand<T extends YumCommand<T>> {
 
     protected void addParametersToCommandLine(CommandLine commandLine) {
         commandLine.add("--assumeyes");
+        disabledRepos.forEach(repo -> commandLine.add("--disablerepo=" + repo));
         enabledRepos.forEach(repo -> commandLine.add("--enablerepo=" + repo));
     }
 
@@ -103,7 +111,7 @@ public abstract class YumCommand<T extends YumCommand<T>> {
             CommandLine commandLine = terminal.newCommandLine(context);
             commandLine.add("yum", yumCommand.name());
             addParametersToCommandLine(commandLine);
-            commandLine.add(packages.stream().map(pkg -> pkg.toName()).collect(Collectors.toList()));
+            commandLine.add(packages.stream().map(pkg -> pkg.toName()).toList());
 
             // There's no way to figure out whether a yum command would have been a no-op.
             // Therefore, run the command and parse the output to decide.

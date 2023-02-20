@@ -32,7 +32,7 @@ namespace storage::distributor {
  *   bucket spaces.
  */
 class DistributorBucketSpace {
-    std::unique_ptr<BucketDatabase>  _bucketDatabase;
+    std::unique_ptr<BucketDatabase>          _bucketDatabase;
     std::shared_ptr<const lib::ClusterState> _clusterState;
     std::shared_ptr<const lib::Distribution> _distribution;
     uint16_t                                 _node_index;

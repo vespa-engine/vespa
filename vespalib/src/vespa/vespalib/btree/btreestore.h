@@ -21,34 +21,32 @@ template <typename KeyT,
 class BTreeStore
 {
 public:
-    typedef KeyT KeyType;
-    typedef DataT DataType;
-    typedef AggrT AggregatedType;
-    typedef datastore::DataStoreT<datastore::EntryRefT<22> > DataStoreType;
-    typedef DataStoreType::RefType RefType;
-    typedef BTreeKeyData<KeyT, DataT> KeyDataType;
+    using KeyType = KeyT;
+    using DataType = DataT;
+    using AggregatedType = AggrT;
+    using DataStoreType = datastore::DataStoreT<datastore::EntryRefT<22> >;
+    using RefType = DataStoreType::RefType;
+    using KeyDataType = BTreeKeyData<KeyT, DataT>;
 
-    typedef BTreeRoot<KeyT, DataT, AggrT, CompareT, TraitsT, AggrCalcT> BTreeType;
-    typedef BTreeInternalNode<KeyT, AggrT,
-                              TraitsT::INTERNAL_SLOTS> InternalNodeType;
-    typedef BTreeLeafNode<KeyT, DataT, AggrT, TraitsT::LEAF_SLOTS>
-    LeafNodeType;
-    typedef datastore::Handle<BTreeType> BTreeTypeRefPair;
-    typedef datastore::Handle<KeyDataType> KeyDataTypeRefPair;
-    typedef typename InternalNodeType::RefPair InternalNodeTypeRefPair;
-    typedef typename LeafNodeType::RefPair LeafNodeTypeRefPair;
-    typedef vespalib::GenerationHandler::generation_t generation_t;
-    typedef BTreeNodeAllocator<KeyT, DataT, AggrT,
-                               TraitsT::INTERNAL_SLOTS,
-                               TraitsT::LEAF_SLOTS> NodeAllocatorType;
-    typedef typename BTreeType::Iterator Iterator;
-    typedef typename BTreeType::ConstIterator ConstIterator;
-    typedef const KeyDataType * AddIter;
-    typedef const KeyType * RemoveIter;
-    typedef BTreeBuilder<KeyT, DataT, AggrT,
-                         TraitsT::INTERNAL_SLOTS,
-                         TraitsT::LEAF_SLOTS,
-                         AggrCalcT> Builder;
+    using BTreeType = BTreeRoot<KeyT, DataT, AggrT, CompareT, TraitsT, AggrCalcT>;
+    using InternalNodeType = BTreeInternalNode<KeyT, AggrT, TraitsT::INTERNAL_SLOTS>;
+    using LeafNodeType = BTreeLeafNode<KeyT, DataT, AggrT, TraitsT::LEAF_SLOTS>;
+    using BTreeTypeRefPair = datastore::Handle<BTreeType>;
+    using KeyDataTypeRefPair = datastore::Handle<KeyDataType>;
+    using InternalNodeTypeRefPair = typename InternalNodeType::RefPair;
+    using LeafNodeTypeRefPair = typename LeafNodeType::RefPair;
+    using generation_t = vespalib::GenerationHandler::generation_t;
+    using NodeAllocatorType = BTreeNodeAllocator<KeyT, DataT, AggrT,
+                                                 TraitsT::INTERNAL_SLOTS,
+                                                 TraitsT::LEAF_SLOTS>;
+    using Iterator = typename BTreeType::Iterator;
+    using ConstIterator = typename BTreeType::ConstIterator;
+    using AddIter = const KeyDataType *;
+    using RemoveIter = const KeyType *;
+    using Builder = BTreeBuilder<KeyT, DataT, AggrT,
+                                 TraitsT::INTERNAL_SLOTS,
+                                 TraitsT::LEAF_SLOTS,
+                                 AggrCalcT>;
     using CompactionSpec = datastore::CompactionSpec;
     using CompactionStrategy = datastore::CompactionStrategy;
     using EntryRef = datastore::EntryRef;
@@ -57,7 +55,7 @@ public:
     using BufferState = datastore::BufferState;
 
     static constexpr uint32_t clusterLimit = 8;
-    
+
     enum BufferTypes
     {
         BUFFERTYPE_ARRAY1 = 0,
@@ -211,13 +209,13 @@ public:
     applyNewArray(EntryRef &ref,
                   AddIter aOrg,
                   AddIter ae);
-    
+
     void
     applyNewTree(EntryRef &ref,
                  AddIter a,
                  AddIter ae,
                  CompareT comp);
-    
+
     void
     applyNew(EntryRef &ref,
              AddIter a,

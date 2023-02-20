@@ -6,13 +6,14 @@
 #include <vespa/searchlib/common/bitvector.h>
 #include <vespa/searchlib/common/feature.h>
 #include <vespa/searchlib/fef/matchdata.h>
+#include <vespa/searchlib/queryeval/global_filter.h>
 #include <vespa/searchlib/queryeval/nearest_neighbor_iterator.h>
 #include <vespa/searchlib/queryeval/nns_index_iterator.h>
 #include <vespa/searchlib/queryeval/simpleresult.h>
-#include <vespa/searchlib/queryeval/global_filter.h>
 #include <vespa/searchlib/tensor/dense_tensor_attribute.h>
 #include <vespa/searchlib/tensor/distance_calculator.h>
 #include <vespa/searchlib/tensor/distance_function_factory.h>
+#include <vespa/searchlib/tensor/serialized_fast_value_attribute.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/test/insertion_operators.h>
 #include <vespa/vespalib/util/stringfmt.h>
@@ -29,6 +30,8 @@ using search::feature_t;
 using search::tensor::DenseTensorAttribute;
 using search::tensor::DistanceCalculator;
 using search::tensor::DistanceFunction;
+using search::tensor::SerializedFastValueAttribute;
+using search::tensor::TensorAttribute;
 using vespalib::eval::CellType;
 using vespalib::eval::SimpleValue;
 using vespalib::eval::TensorSpec;
@@ -38,8 +41,13 @@ using vespalib::eval::ValueType;
 using namespace search::fef;
 using namespace search::queryeval;
 
+using BasicType = search::attribute::BasicType;
+using CollectionType = search::attribute::CollectionType;
+using Config = search::attribute::Config;
+
 vespalib::string denseSpecDouble("tensor(x[2])");
 vespalib::string denseSpecFloat("tensor<float>(x[2])");
+vespalib::string mixed_spec("tensor(m{},x[2])");
 
 DistanceFunction::UP euclid_d = search::tensor::make_distance_function(DistanceMetric::Euclidean, CellType::DOUBLE);
 DistanceFunction::UP euclid_f = search::tensor::make_distance_function(DistanceMetric::Euclidean, CellType::FLOAT);
@@ -49,42 +57,44 @@ std::unique_ptr<Value> createTensor(const TensorSpec &spec) {
 }
 
 std::unique_ptr<Value> createTensor(const vespalib::string& type_spec, double v1, double v2) {
-    return createTensor(TensorSpec(type_spec).add({{"x", 0}}, v1)
-                                             .add({{"x", 1}}, v2));
+    auto type = vespalib::eval::ValueType::from_spec(type_spec);
+    if (type.is_dense()) {
+        return createTensor(TensorSpec(type_spec).add({{"x", 0}}, v1)
+                                                 .add({{"x", 1}}, v2));
+    } else {
+        return createTensor(TensorSpec(type_spec).add({{"m", "a"},{"x", 0}}, v1)
+                                                 .add({{"m", "a"},{"x", 1}}, v2));
+    }
 }
 
-struct Fixture
-{
-    using BasicType = search::attribute::BasicType;
-    using CollectionType = search::attribute::CollectionType;
-    using Config = search::attribute::Config;
+std::shared_ptr<TensorAttribute> make_attr(const vespalib::string& name, const Config& cfg) {
+    if (cfg.tensorType().is_dense()) {
+        return std::make_shared<DenseTensorAttribute>(name, cfg);
+    } else {
+        return std::make_shared<SerializedFastValueAttribute>(name, cfg);
+    }
+}
 
+struct Fixture {
     Config _cfg;
     vespalib::string _name;
     vespalib::string _typeSpec;
-    std::shared_ptr<DenseTensorAttribute> _tensorAttr;
-    std::shared_ptr<AttributeVector> _attr;
+    std::shared_ptr<TensorAttribute> _attr;
     std::shared_ptr<GlobalFilter> _global_filter;
 
     Fixture(const vespalib::string &typeSpec)
         : _cfg(BasicType::TENSOR, CollectionType::SINGLE),
           _name("test"),
           _typeSpec(typeSpec),
-          _tensorAttr(),
           _attr(),
           _global_filter(GlobalFilter::create())
     {
         _cfg.setTensorType(ValueType::from_spec(typeSpec));
-        _tensorAttr = makeAttr();
-        _attr = _tensorAttr;
+        _attr = make_attr(_name, _cfg);
         _attr->addReservedDoc();
     }
 
     ~Fixture() {}
-
-    std::shared_ptr<DenseTensorAttribute> makeAttr() {
-        return std::make_shared<DenseTensorAttribute>(_name, _cfg);
-    }
 
     void ensureSpace(uint32_t docId) {
         while (_attr->getNumDocs() <= docId) {
@@ -101,7 +111,7 @@ struct Fixture
 
     void setTensor(uint32_t docId, const Value &tensor) {
         ensureSpace(docId);
-        _tensorAttr->setTensor(docId, tensor);
+        _attr->setTensor(docId, tensor);
         _attr->commit();
     }
 
@@ -123,7 +133,7 @@ template <bool strict>
 SimpleResult find_matches(Fixture &env, const Value &qtv, double threshold = std::numeric_limits<double>::max()) {
     auto md = MatchData::makeTestInstance(2, 2);
     auto &tfmd = *(md->resolveTermField(0));
-    auto &attr = *(env._tensorAttr);
+    auto &attr = *(env._attr);
     DistanceCalculator dist_calc(attr, qtv, env.dist_fun());
     NearestNeighborDistanceHeap dh(2);
     dh.set_distance_threshold(env.dist_fun().convert_threshold(threshold));
@@ -172,12 +182,45 @@ verify_iterator_returns_expected_results(const vespalib::string& attribute_tenso
     EXPECT_EQ(result, far_thr4_exp);
     result = find_matches<false>(fixture, *farTensor, 4.0);
     EXPECT_EQ(result, far_thr4_exp);
-
 }
 
-TEST(NnsIndexIteratorTest, require_that_iterator_returns_expected_results) {
-    verify_iterator_returns_expected_results(denseSpecDouble, denseSpecDouble);
-    verify_iterator_returns_expected_results(denseSpecFloat, denseSpecFloat);
+struct TestParam {
+    vespalib::string attribute_tensor_type_spec;
+    vespalib::string query_tensor_type_spec;
+    TestParam(const vespalib::string& attribute_tensor_type_spec_in,
+              const vespalib::string& query_tensor_type_spec_in) noexcept
+        : attribute_tensor_type_spec(attribute_tensor_type_spec_in),
+          query_tensor_type_spec(query_tensor_type_spec_in)
+    {}
+    TestParam(const TestParam &) noexcept;
+    TestParam & operator=(TestParam &) noexcept = delete;
+    TestParam(TestParam &&) noexcept = default;
+    TestParam & operator=(TestParam &&) noexcept = default;
+    ~TestParam();
+};
+
+TestParam::TestParam(const TestParam &) noexcept = default;
+TestParam::~TestParam() = default;
+
+std::ostream& operator<<(std::ostream& os, const TestParam& param)
+{
+    os << "{" << param.attribute_tensor_type_spec << ", " << param.query_tensor_type_spec << "}";
+    return os;
+}
+
+struct NnsIndexIteratorParameterizedTest : public ::testing::TestWithParam<TestParam> {};
+
+INSTANTIATE_TEST_SUITE_P(NnsTestSuite,
+                         NnsIndexIteratorParameterizedTest,
+                         ::testing::Values(
+                                 TestParam(denseSpecDouble, denseSpecDouble),
+                                 TestParam(denseSpecFloat, denseSpecFloat),
+                                 TestParam(mixed_spec, denseSpecDouble)
+                         ));
+
+TEST_P(NnsIndexIteratorParameterizedTest, require_that_iterator_returns_expected_results) {
+    auto param = GetParam();
+    verify_iterator_returns_expected_results(param.attribute_tensor_type_spec, param.query_tensor_type_spec);
 }
 
 void
@@ -207,16 +250,16 @@ verify_iterator_returns_filtered_results(const vespalib::string& attribute_tenso
     EXPECT_EQ(result, farExpect);
 }
 
-TEST(NnsIndexIteratorTest, require_that_iterator_returns_filtered_results) {
-    verify_iterator_returns_filtered_results(denseSpecDouble, denseSpecDouble);
-    verify_iterator_returns_filtered_results(denseSpecFloat, denseSpecFloat);
+TEST_P(NnsIndexIteratorParameterizedTest, require_that_iterator_returns_filtered_results) {
+    auto param = GetParam();
+    verify_iterator_returns_filtered_results(param.attribute_tensor_type_spec, param.query_tensor_type_spec);
 }
 
 template <bool strict>
 std::vector<feature_t> get_rawscores(Fixture &env, const Value &qtv) {
     auto md = MatchData::makeTestInstance(2, 2);
     auto &tfmd = *(md->resolveTermField(0));
-    auto &attr = *(env._tensorAttr);
+    auto &attr = *(env._attr);
     DistanceCalculator dist_calc(attr, qtv, env.dist_fun());
     NearestNeighborDistanceHeap dh(2);
     auto dummy_filter = GlobalFilter::create();
@@ -261,9 +304,29 @@ verify_iterator_sets_expected_rawscore(const vespalib::string& attribute_tensor_
     }
 }
 
-TEST(NnsIndexIteratorTest, require_that_iterator_sets_expected_rawscore) {
-    verify_iterator_sets_expected_rawscore(denseSpecDouble, denseSpecDouble);
-    verify_iterator_sets_expected_rawscore(denseSpecFloat, denseSpecFloat);
+TEST_P(NnsIndexIteratorParameterizedTest, require_that_iterator_sets_expected_rawscore) {
+    auto param = GetParam();
+    verify_iterator_sets_expected_rawscore(param.attribute_tensor_type_spec, param.query_tensor_type_spec);
+}
+
+void expect_match(SearchIterator& itr, uint32_t docid) {
+    bool match = itr.seek(docid);
+    EXPECT_TRUE(match);
+    EXPECT_FALSE(itr.isAtEnd());
+    EXPECT_EQ(docid, itr.getDocId());
+}
+
+void expect_not_match(SearchIterator& itr, uint32_t curr_docid, uint32_t exp_next_docid) {
+    bool match = itr.seek(curr_docid);
+    EXPECT_FALSE(match);
+    EXPECT_FALSE(itr.isAtEnd());
+    EXPECT_EQ(exp_next_docid, itr.getDocId());
+}
+
+void expect_at_end(SearchIterator& itr, uint32_t docid) {
+    bool match = itr.seek(docid);
+    EXPECT_FALSE(match);
+    EXPECT_TRUE(itr.isAtEnd());
 }
 
 TEST(NnsIndexIteratorTest, require_that_iterator_works_as_expected) {
@@ -271,65 +334,29 @@ TEST(NnsIndexIteratorTest, require_that_iterator_works_as_expected) {
     auto md = MatchData::makeTestInstance(2, 2);
     auto &tfmd = *(md->resolveTermField(0));
     auto search = NnsIndexIterator::create(tfmd, hits, *euclid_d);
-    uint32_t docid = 1;
     search->initFullRange();
-    bool match = search->seek(docid);
-    EXPECT_FALSE(match);
-    EXPECT_FALSE(search->isAtEnd());
-    EXPECT_EQ(2u, search->getDocId());
-    docid = 2;
-    match = search->seek(docid);
-    EXPECT_TRUE(match);
-    EXPECT_FALSE(search->isAtEnd());
-    EXPECT_EQ(docid, search->getDocId());
-    search->unpack(docid);
+    expect_not_match(*search, 1, 2);
+    expect_match(*search, 2);
+    search->unpack(2);
     EXPECT_NEAR(1.0/(1.0+2.0), tfmd.getRawScore(), EPS);
 
-    docid = 3;
-    match = search->seek(docid);
-    EXPECT_TRUE(match);
-    EXPECT_FALSE(search->isAtEnd());
-    EXPECT_EQ(docid, search->getDocId());
-    search->unpack(docid);
+    expect_match(*search, 3);
+    search->unpack(3);
     EXPECT_NEAR(1.0/(1.0+3.0), tfmd.getRawScore(), EPS);
 
-    docid = 4;
-    match = search->seek(docid);
-    EXPECT_FALSE(match);
-    EXPECT_FALSE(search->isAtEnd());
-    EXPECT_EQ(5u, search->getDocId());
-
-    docid = 6;
-    match = search->seek(docid);
-    EXPECT_FALSE(match);
-    EXPECT_FALSE(search->isAtEnd());
-    EXPECT_EQ(8u, search->getDocId());
-    docid = 8;
-    search->unpack(docid);
+    expect_not_match(*search, 4, 5);
+    expect_not_match(*search, 6, 8);
+    search->unpack(8);
     EXPECT_NEAR(1.0/(1.0+4.0), tfmd.getRawScore(), EPS);
-    docid = 9;
-    match = search->seek(docid);
-    EXPECT_TRUE(match);
-    EXPECT_FALSE(search->isAtEnd());
-    docid = 10;
-    match = search->seek(docid);
-    EXPECT_FALSE(match);
-    EXPECT_TRUE(search->isAtEnd());
 
-    docid = 4;
-    search->initRange(docid, 7);
-    match = search->seek(docid);
-    EXPECT_FALSE(match);
-    EXPECT_FALSE(search->isAtEnd());
-    EXPECT_EQ(5u, search->getDocId());
-    docid = 5;
-    search->unpack(docid);
+    expect_match(*search, 9);
+    expect_at_end(*search, 10);
+
+    search->initRange(4, 7);
+    expect_not_match(*search, 4, 5);
+    search->unpack(5);
     EXPECT_NEAR(1.0/(1.0+1.0), tfmd.getRawScore(), EPS);
-    EXPECT_FALSE(search->isAtEnd());
-    docid = 6;
-    match = search->seek(docid);
-    EXPECT_FALSE(match);
-    EXPECT_TRUE(search->isAtEnd());
+    expect_at_end(*search, 6);
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()

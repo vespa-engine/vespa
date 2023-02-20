@@ -7,7 +7,7 @@ namespace search::fef {
 void
 PhraseSplitterQueryEnv::considerTerm(uint32_t termIdx, const ITermData &term, uint32_t fieldId)
 {
-    typedef search::fef::ITermFieldRangeAdapter FRA;
+    using FRA = search::fef::ITermFieldRangeAdapter;
 
     for (FRA iter(term); iter.valid(); iter.next()) {
         if (iter.get().getFieldId() == fieldId) {
@@ -21,7 +21,7 @@ PhraseSplitterQueryEnv::considerTerm(uint32_t termIdx, const ITermData &term, ui
                 prototype.addField(fieldId);
                 _phrase_terms.push_back(PhraseTerm(term, _terms.size(), h));
                 for (uint32_t i = 0; i < term.getPhraseLength(); ++i) {
-                    _terms.push_back(prototype);
+                    _terms.emplace_back(prototype);
                     _termIdxMap.push_back(TermIdx(_terms.size() - 1, true));
                 }
                 return;

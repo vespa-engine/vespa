@@ -18,7 +18,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 /**
  * Serialisation of {@link LogEntry} objects. Not all fields are stored!
@@ -72,7 +71,7 @@ class LogSerializer {
     Map<Step, List<LogEntry>> fromJson(List<byte[]> logJsons, long after) {
         return fromSlime(logJsons.stream()
                                  .map(SlimeUtils::jsonToSlime)
-                                 .collect(Collectors.toList()),
+                                 .toList(),
                          after);
     }
 
@@ -98,25 +97,24 @@ class LogSerializer {
     }
 
     static String valueOf(Type type) {
-        switch (type) {
-            case debug: return "debug";
-            case info: return "info";
-            case warning: return "warning";
-            case error: return "error";
-            case html: return "html";
-            default: throw new AssertionError("Unexpected log entry type '" + type + "'!");
-        }
+        return switch (type) {
+            case debug -> "debug";
+            case info -> "info";
+            case warning -> "warning";
+            case error -> "error";
+            case html -> "html";
+        };
     }
 
     static Type typeOf(String type) {
-        switch (type) {
-            case "debug": return Type.debug;
-            case "info": return Type.info;
-            case "warning": return Type.warning;
-            case "error": return Type.error;
-            case "html": return Type.html;
-            default: throw new IllegalArgumentException("Unknown log entry type '" + type + "'!");
-        }
+        return switch (type) {
+            case "debug" -> Type.debug;
+            case "info" -> Type.info;
+            case "warning" -> Type.warning;
+            case "error" -> Type.error;
+            case "html" -> Type.html;
+            default -> throw new IllegalArgumentException("Unknown log entry type '" + type + "'!");
+        };
     }
 
 }

@@ -1,7 +1,8 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.search;
 
-import com.yahoo.config.model.producer.AbstractConfigProducer;
+import com.yahoo.config.model.producer.AnyConfigProducer;
+import com.yahoo.config.model.producer.TreeConfigProducer;
 import com.yahoo.search.config.IndexInfoConfig;
 import com.yahoo.search.config.SchemaInfoConfig;
 import com.yahoo.schema.derived.DerivedConfiguration;
@@ -21,7 +22,7 @@ import com.yahoo.vespa.configdefinition.IlscriptsConfig;
  *
  * @author geirst
  */
-public class DocumentDatabase extends AbstractConfigProducer<DocumentDatabase> implements
+public class DocumentDatabase extends AnyConfigProducer implements
         IndexInfoConfig.Producer,
         IlscriptsConfig.Producer,
         AttributesConfig.Producer,
@@ -38,7 +39,7 @@ public class DocumentDatabase extends AbstractConfigProducer<DocumentDatabase> i
     private final String schemaName;
     private final DerivedConfiguration derivedCfg;
 
-    public DocumentDatabase(AbstractConfigProducer<?> parent, String schemaName, DerivedConfiguration derivedCfg) {
+    public DocumentDatabase(TreeConfigProducer<AnyConfigProducer> parent, String schemaName, DerivedConfiguration derivedCfg) {
         super(parent, schemaName);
         this.schemaName = schemaName;
         this.derivedCfg = derivedCfg;

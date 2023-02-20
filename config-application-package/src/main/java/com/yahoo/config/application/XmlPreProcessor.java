@@ -43,15 +43,6 @@ public class XmlPreProcessor {
     private final Tags tags;
     private final List<PreProcessor> chain;
 
-    // TODO: Remove after November 2022
-    public XmlPreProcessor(File applicationDir,
-                           File xmlInput,
-                           InstanceName instance,
-                           Environment environment,
-                           RegionName region) throws IOException {
-        this(applicationDir, new FileReader(xmlInput), instance, environment, region, Tags.empty());
-    }
-
     public XmlPreProcessor(File applicationDir,
                            File xmlInput,
                            InstanceName instance,

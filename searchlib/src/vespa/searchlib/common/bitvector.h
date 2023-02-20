@@ -8,6 +8,7 @@
 #include <vespa/vespalib/util/atomic.h>
 #include <vespa/fastos/types.h>
 #include <algorithm>
+#include <cassert>
 
 namespace vespalib {
     class nbostream;
@@ -27,10 +28,10 @@ public:
     using UP = std::unique_ptr<BitVector>;
     class Range {
     public:
-        Range(Index start_in, Index end_in) : _start(start_in), _end(end_in) {}
-        Index start() const { return _start; }
-        Index end() const { return _end; }
-        bool validNonZero() const { return _end > _start; }
+        Range(Index start_in, Index end_in) noexcept : _start(start_in), _end(end_in) {}
+        [[nodiscard]] Index start() const noexcept { return _start; }
+        [[nodiscard]] Index end() const noexcept { return _end; }
+        [[nodiscard]] bool validNonZero() const noexcept { return _end > _start; }
     private:
         Index _start;
         Index _end;
@@ -41,6 +42,7 @@ public:
     bool operator == (const BitVector &right) const;
     const void * getStart() const { return _words; }
     void * getStart() { return _words; }
+    Range range() const noexcept { return {getStartIndex(), size()}; }
     Index size() const { return vespalib::atomic::load_ref_relaxed(_sz); }
     Index sizeBytes() const { return numBytes(getActiveSize()); }
     bool testBit(Index idx) const {
@@ -134,22 +136,37 @@ public:
     }
 
     void setSize(Index sz) {
-        setBit(sz);  // Need to place the new stop sign first
+        set_bit_no_range_check(sz);  // Need to place the new stop sign first
         std::atomic_thread_fence(std::memory_order_release);
         if (sz > _sz) {
             // Can only remove the old stopsign if it is ahead of the new.
-            clearBit(_sz);
+            clear_bit_no_range_check(_sz);
         }
         vespalib::atomic::store_ref_release(_sz, sz);
     }
+    void set_bit_no_range_check(Index idx) {
+        store_unchecked(_words[wordNum(idx)], _words[wordNum(idx)] | mask(idx));
+    }
+    void clear_bit_no_range_check(Index idx) {
+        store_unchecked(_words[wordNum(idx)], _words[wordNum(idx)] & ~ mask(idx));
+    }
+    void flip_bit_no_range_check(Index idx) {
+        store_unchecked(_words[wordNum(idx)], _words[wordNum(idx)] ^ mask(idx));
+    }
+    void range_check(Index idx) const {
+        assert(!_enable_range_check || (idx >= _startOffset && idx < _sz));
+    }
     void setBit(Index idx) {
-        store(_words[wordNum(idx)], _words[wordNum(idx)] | mask(idx));
+        range_check(idx);
+        set_bit_no_range_check(idx);
     }
     void clearBit(Index idx) {
-        store(_words[wordNum(idx)], _words[wordNum(idx)] & ~ mask(idx));
+        range_check(idx);
+        clear_bit_no_range_check(idx);
     }
     void flipBit(Index idx) {
-        store(_words[wordNum(idx)], _words[wordNum(idx)] ^ mask(idx));
+        range_check(idx);
+        flip_bit_no_range_check(idx);
     }
 
     void andWith(const BitVector &right);
@@ -187,6 +204,14 @@ public:
             incNumBits();
         }
     }
+
+    void clear_bit_and_maintain_count_no_range_check(Index idx) {
+        if (testBit(idx)) {
+            clear_bit_no_range_check(idx);
+            decNumBits();
+        }
+    }
+
     /**
      * Clears a bit and maintains count of number of bits set.
      * @param idx
@@ -251,6 +276,7 @@ public:
     static UP create(const BitVector & org, Index start, Index end);
     static UP create(Index numberOfElements);
     static UP create(const BitVector & rhs);
+    static void consider_enable_range_check();
 protected:
     using Alloc = vespalib::alloc::Alloc;
     VESPA_DLL_LOCAL BitVector(void * buf, Index start, Index end);
@@ -276,8 +302,11 @@ protected:
     static Alloc allocatePaddedAndAligned(Index start, Index end, Index capacity, const Alloc* init_alloc = nullptr);
 
 private:
-    Word load(const Word &word) const { return vespalib::atomic::load_ref_relaxed(word); }
-    void store(Word &word, Word value) { return vespalib::atomic::store_ref_relaxed(word, value); }
+    static Word load(const Word &word) { return vespalib::atomic::load_ref_relaxed(word); }
+    VESPA_DLL_LOCAL void store(Word &word, Word value);
+    static void store_unchecked(Word &word, Word value) {
+        return vespalib::atomic::store_ref_relaxed(word, value);
+    }
     friend PartialBitVector;
     const Word * getWordIndex(Index index) const { return static_cast<const Word *>(getStart()) + wordNum(index); }
     Word * getWordIndex(Index index) { return static_cast<Word *>(getStart()) + wordNum(index); }
@@ -291,7 +320,7 @@ private:
         return (end >= start) ? (numWords(end) - wordNum(start)) : 0;
     }
     static Index invalidCount() { return std::numeric_limits<Index>::max(); }
-    void setGuardBit() { setBit(size()); }
+    void setGuardBit() { set_bit_no_range_check(size()); }
     void incNumBits() {
         if ( isValidCount() ) {
             _numTrueBits.store(_numTrueBits.load(std::memory_order_relaxed) + 1, std::memory_order_relaxed);
@@ -305,8 +334,8 @@ private:
     }
     VESPA_DLL_LOCAL void repairEnds();
     Range sanitize(Range range) const {
-        return Range(std::max(range.start(), getStartIndex()),
-                     std::min(range.end(), size()));
+        return {std::max(range.start(), getStartIndex()),
+                std::min(range.end(), size())};
     }
     Index count() const;
     bool hasTrueBitsInternal() const;
@@ -360,6 +389,7 @@ private:
     Index          _startOffset;  // This is the official start
     Index          _sz;           // This is the official end.
     mutable std::atomic<Index>  _numTrueBits;
+    static bool _enable_range_check;
 
 protected:
     friend vespalib::nbostream &

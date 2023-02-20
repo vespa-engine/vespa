@@ -14,8 +14,8 @@ public:
     /**
      * Convenience typedef.
      */
-    typedef std::unique_ptr<FeedReply> UP;
-    typedef std::shared_ptr<FeedReply> SP;
+    using UP = std::unique_ptr<FeedReply>;
+    using SP = std::shared_ptr<FeedReply>;
 
     /**
      * Constructs a new reply for deserialization.

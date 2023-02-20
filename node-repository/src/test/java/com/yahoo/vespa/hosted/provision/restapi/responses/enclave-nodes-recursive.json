@@ -1,6 +1,6 @@
 {
   "nodes": [
-    @include(node3.json),
-    @include(docker-node2.json)
+    @include(docker-node2.json),
+    @include(node3.json)
   ]
 }

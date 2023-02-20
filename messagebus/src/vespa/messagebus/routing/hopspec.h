@@ -31,6 +31,10 @@ public:
      * @param selector A string that represents the selector for this hop.
      */
     HopSpec(const string &name, const string &selector);
+    HopSpec(const HopSpec & rhs);
+    HopSpec & operator=(const HopSpec & rhs);
+    HopSpec(HopSpec && rhs) noexcept;
+    HopSpec & operator=(HopSpec && rhs) noexcept;
     ~HopSpec();
 
     /**
@@ -38,28 +42,21 @@ public:
      *
      * @return The name.
      */
-    const string &getName() const { return _name; }
+    [[nodiscard]] const string &getName() const { return _name; }
 
     /**
      * Returns the string selector that resolves the recipients of this hop.
      *
      * @return The selector.
      */
-    const string &getSelector() const { return _selector; }
-
-    /**
-     * Returns whether or not there are any recipients that the selector can choose from.
-     *
-     * @return True if there is at least one recipient.
-     */
-    bool hasRecipients() const { return !_recipients.empty(); }
+    [[nodiscard]] const string &getSelector() const { return _selector; }
 
     /**
      * Returns the number of recipients that the selector can choose from.
      *
      * @return The number of recipients.
      */
-    uint32_t getNumRecipients() const { return _recipients.size(); }
+    [[nodiscard]] uint32_t getNumRecipients() const { return _recipients.size(); }
 
     /**
      * Returns the recipients at the given index.
@@ -67,7 +64,7 @@ public:
      * @param i The index of the recipient to return.
      * @return The recipient at the given index.
      */
-    const string &getRecipient(uint32_t i) const { return _recipients[i]; }
+    [[nodiscard]] const string &getRecipient(uint32_t i) const { return _recipients[i]; }
 
     /**
      * Adds the given recipient to this.
@@ -75,46 +72,15 @@ public:
      * @param recipient The recipient to add.
      * @return This, to allow chaining.
      */
-    HopSpec &addRecipient(const string &recipient) { _recipients.push_back(recipient); return *this; }
-
-    /**
-     * Adds the given recipients to this.
-     *
-     * @param recipients The recipients to add.
-     * @return This, to allow chaining.
-     */
-    HopSpec &addRecipients(const std::vector<string> &recipients);
-
-    /**
-     * Sets the recipient at the given index.
-     *
-     * @param i The index at which to set the recipient.
-     * @param recipient The recipient to set.
-     * @return This, to allow chaining.
-     */
-    HopSpec &setRecipient(uint32_t i, const string &recipient) { _recipients[i] = recipient; return *this; }
-
-    /**
-     * Removes the recipient at the given index.
-     *
-     * @param i The index of the recipient to remove.
-     * @return The removed recipient.
-     */
-    string removeRecipient(uint32_t i);
-
-    /**
-     * Clears the list of recipients that the selector may choose from.
-     *
-     * @return This, to allow chaining.
-     */
-    HopSpec &clearRecipients() { _recipients.clear(); return *this; }
+    HopSpec & addRecipient(const string &recipient) &;
+    HopSpec && addRecipient(const string &recipient) &&;
 
     /**
      * Returns whether or not to ignore the result when routing through this hop.
      *
      * @return True to ignore the result.
      */
-    bool getIgnoreResult() const { return _ignoreResult; }
+    [[nodiscard]] bool getIgnoreResult() const { return _ignoreResult; }
 
     /**
      * Sets whether or not to ignore the result when routing through this hop.
@@ -122,7 +88,10 @@ public:
      * @param ignoreResult Whether or not to ignore the result.
      * @return This, to allow chaining.
      */
-    HopSpec &setIgnoreResult(bool ignoreResult);
+    HopSpec &setIgnoreResult(bool ignoreResult) {
+        _ignoreResult = ignoreResult;
+        return *this;
+    }
 
     /**
      * Appends the content of this to the given config string.
@@ -137,7 +106,7 @@ public:
      *
      * @return The string.
      */
-    string toString() const;
+    [[nodiscard]] string toString() const;
 
     /**
      * Implements the equality operator.

@@ -10,8 +10,8 @@ class SingleResultNode : public ResultNode
 public:
     virtual ~SingleResultNode() { }
     DECLARE_ABSTRACT_RESULTNODE(SingleResultNode);
-    typedef vespalib::IdentifiablePtr<SingleResultNode> CP;
-    typedef std::unique_ptr<SingleResultNode> UP;
+    using CP = vespalib::IdentifiablePtr<SingleResultNode>;
+    using UP = std::unique_ptr<SingleResultNode>;
     virtual SingleResultNode *clone() const override = 0;
 
     virtual void min(const ResultNode & b) = 0;

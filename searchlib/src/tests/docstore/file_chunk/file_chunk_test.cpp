@@ -74,7 +74,7 @@ struct FixtureBase {
 
     explicit FixtureBase(const vespalib::string &baseName, bool dirCleanup = true)
         : dir(baseName),
-          executor(1, 0x10000),
+          executor(1),
           serialNum(1),
           tuneFile(),
           fileHeaderCtx(),

@@ -4,7 +4,8 @@ package com.yahoo.vespa.model.search;
 import com.yahoo.config.ConfigInstance;
 import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.deploy.DeployState;
-import com.yahoo.config.model.producer.AbstractConfigProducer;
+import com.yahoo.config.model.producer.AnyConfigProducer;
+import com.yahoo.config.model.producer.TreeConfigProducer;
 import com.yahoo.prelude.fastsearch.DocumentdbInfoConfig;
 import com.yahoo.search.config.IndexInfoConfig;
 import com.yahoo.search.config.SchemaInfoConfig;
@@ -73,7 +74,7 @@ public class IndexedSearchCluster extends SearchCluster
         return routingSelector;
     }
 
-    public IndexedSearchCluster(AbstractConfigProducer<SearchCluster> parent, String clusterName, int index, ModelContext.FeatureFlags featureFlags) {
+    public IndexedSearchCluster(TreeConfigProducer<AnyConfigProducer> parent, String clusterName, int index, ModelContext.FeatureFlags featureFlags) {
         super(parent, clusterName, index);
         documentDbsConfigProducer = new MultipleDocumentDatabasesConfigProducer(this, documentDbs);
         rootDispatch =  new DispatchGroup(this);
@@ -351,7 +352,7 @@ public class IndexedSearchCluster extends SearchCluster
      * which is the parent to this. This avoids building the config multiple times.
      */
     public static class MultipleDocumentDatabasesConfigProducer
-            extends AbstractConfigProducer<MultipleDocumentDatabasesConfigProducer>
+            extends TreeConfigProducer<MultipleDocumentDatabasesConfigProducer>
             implements AttributesConfig.Producer,
                        IndexInfoConfig.Producer,
                        IlscriptsConfig.Producer,
@@ -359,7 +360,7 @@ public class IndexedSearchCluster extends SearchCluster
                        RankProfilesConfig.Producer {
         private final List<DocumentDatabase> docDbs;
 
-        private MultipleDocumentDatabasesConfigProducer(AbstractConfigProducer<?> parent, List<DocumentDatabase> docDbs) {
+        private MultipleDocumentDatabasesConfigProducer(TreeConfigProducer<?> parent, List<DocumentDatabase> docDbs) {
             super(parent, "union");
             this.docDbs = docDbs;
         }

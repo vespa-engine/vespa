@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.container.plugin.classanalysis;
 
-import com.google.common.collect.ImmutableList;
 import com.yahoo.container.plugin.classanalysis.sampleclasses.Base;
 import com.yahoo.container.plugin.classanalysis.sampleclasses.ClassAnnotation;
 import com.yahoo.container.plugin.classanalysis.sampleclasses.InvisibleAnnotation;
@@ -25,6 +24,7 @@ import java.awt.image.ImagingOpException;
 import java.awt.image.Kernel;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import static com.yahoo.container.plugin.classanalysis.TestUtilities.analyzeClass;
 import static com.yahoo.container.plugin.classanalysis.TestUtilities.classFile;
@@ -176,7 +176,7 @@ public class AnalyzeClassTest {
     @Test
     void switch_statements_are_analyzed() {
         var referencedClasses = analyzeClass(SwitchStatement.class).getReferencedClasses();
-        assertTrue(referencedClasses.contains(name(ImmutableList.class)));
+        assertTrue(referencedClasses.contains(name(List.class)));
         assertTrue(referencedClasses.contains(name(IllegalArgumentException.class)));
     }
 
@@ -184,9 +184,9 @@ public class AnalyzeClassTest {
     void records_are_analyzed() {
         var referencedClasses = analyzeClass(RecordWithOverride.class).getReferencedClasses();
         assertTrue(referencedClasses.containsAll(List.of(
-                name(java.util.List.class),
+                name(List.class),
                 name(Byte.class),
-                name(ImmutableList.class),
+                name(String.class),
                 name(IllegalArgumentException.class)
         )));
 

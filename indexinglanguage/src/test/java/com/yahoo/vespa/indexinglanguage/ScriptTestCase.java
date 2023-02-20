@@ -68,7 +68,7 @@ public class ScriptTestCase {
             exp.verify(input);
             fail();
         } catch (VerificationException e) {
-            assertTrue(e.getExpressionType().equals(ScriptExpression.class));
+            assertEquals(e.getExpressionType(), ScriptExpression.class);
             assertEquals("Expected any input, got null.", e.getMessage());
         }
     }
@@ -181,35 +181,43 @@ public class ScriptTestCase {
         Expression.fromString(exp, new SimpleLinguistics(), Embedder.throwsOnUse.asMap());
 
         Map<String, Embedder> embedder = Map.of(
-                "emb1", new MockEmbedder("myDocument.myTensor", "[1,2,0,0]")
+                "emb1", new MockEmbedder("myDocument.myTensor")
         );
-        testEmbedStatement("input myText | embed | attribute 'myTensor'", embedder, "[1,2,0,0]");
-        testEmbedStatement("input myText | embed emb1 | attribute 'myTensor'", embedder, "[1,2,0,0]");
-        testEmbedStatement("input myText | embed 'emb1' | attribute 'myTensor'", embedder, "[1,2,0,0]");
+        testEmbedStatement("input myText | embed | attribute 'myTensor'", embedder,
+                           "input text", "[105, 110, 112, 117]");
+        testEmbedStatement("input myText | embed emb1 | attribute 'myTensor'", embedder,
+                           "input text", "[105, 110, 112, 117]");
+        testEmbedStatement("input myText | embed 'emb1' | attribute 'myTensor'", embedder,
+                           "input text", "[105, 110, 112, 117]");
+        testEmbedStatement("input myText | embed 'emb1' | attribute 'myTensor'", embedder,
+                           null, null);
 
         Map<String, Embedder> embedders = Map.of(
-                "emb1", new MockEmbedder("myDocument.myTensor", "[1,2,0,0]"),
-                "emb2", new MockEmbedder("myDocument.myTensor", "[3,4,5,0]")
+                "emb1", new MockEmbedder("myDocument.myTensor"),
+                "emb2", new MockEmbedder("myDocument.myTensor", 1)
         );
-        testEmbedStatement("input myText | embed emb1 | attribute 'myTensor'", embedders, "[1,2,0,0]");
-        testEmbedStatement("input myText | embed emb2 | attribute 'myTensor'", embedders, "[3,4,5,0]");
+        testEmbedStatement("input myText | embed emb1 | attribute 'myTensor'", embedders,
+                           "my input", "[109.0, 121.0, 32.0, 105.0]");
+        testEmbedStatement("input myText | embed emb2 | attribute 'myTensor'", embedders,
+                           "my input", "[110.0, 122.0, 33.0, 106.0]");
 
-        assertThrows(() -> testEmbedStatement("input myText | embed | attribute 'myTensor'", embedders, "[3,4,5,0]"),
-                "Multiple embedders are provided but no embedder id is given. Valid embedders are emb1,emb2");
-        assertThrows(() -> testEmbedStatement("input myText | embed emb3 | attribute 'myTensor'", embedders, "[3,4,5,0]"),
-                "Can't find embedder 'emb3'. Valid embedders are emb1,emb2");
+        assertThrows(() -> testEmbedStatement("input myText | embed | attribute 'myTensor'", embedders, "input text", "[105, 110, 112, 117]"),
+                     "Multiple embedders are provided but no embedder id is given. Valid embedders are emb1,emb2");
+        assertThrows(() -> testEmbedStatement("input myText | embed emb3 | attribute 'myTensor'", embedders, "input text", "[105, 110, 112, 117]"),
+                     "Can't find embedder 'emb3'. Valid embedders are emb1,emb2");
     }
 
-    private void testEmbedStatement(String exp, Map<String, Embedder> embedders, String expected) {
+    private void testEmbedStatement(String expressionString, Map<String, Embedder> embedders, String input, String expected) {
         try {
-            var expression = Expression.fromString(exp, new SimpleLinguistics(), embedders);
+            var expression = Expression.fromString(expressionString, new SimpleLinguistics(), embedders);
             TensorType tensorType = TensorType.fromSpec("tensor(d[4])");
 
             SimpleTestAdapter adapter = new SimpleTestAdapter();
             adapter.createField(new Field("myText", DataType.STRING));
             var tensorField = new Field("myTensor", new TensorDataType(tensorType));
             adapter.createField(tensorField);
-            adapter.setValue("myText", new StringFieldValue("input text"));
+            if (input != null)
+                adapter.setValue("myText", new StringFieldValue(input));
             expression.setStatementOutput(new DocumentType("myDocument"), tensorField);
 
             // Necessary to resolve output type
@@ -217,12 +225,17 @@ public class ScriptTestCase {
             assertEquals(TensorDataType.class, expression.verify(verificationContext).getClass());
 
             ExecutionContext context = new ExecutionContext(adapter);
-            context.setValue(new StringFieldValue("input text"));
             expression.execute(context);
-            assertTrue(adapter.values.containsKey("myTensor"));
-            assertEquals(Tensor.from(tensorType, expected),
-                    ((TensorFieldValue)adapter.values.get("myTensor")).getTensor().get());
-        } catch (ParseException e) {
+            if (input == null) {
+                assertFalse(adapter.values.containsKey("myTensor"));
+            }
+            else {
+                assertTrue(adapter.values.containsKey("myTensor"));
+                assertEquals(Tensor.from(tensorType, expected),
+                             ((TensorFieldValue) adapter.values.get("myTensor")).getTensor().get());
+            }
+        }
+        catch (ParseException e) {
             throw new IllegalArgumentException(e);
         }
     }
@@ -230,7 +243,7 @@ public class ScriptTestCase {
     @SuppressWarnings("unchecked")
     @Test
     public void testArrayEmbed() throws ParseException {
-        Map<String, Embedder> embedders = Map.of("emb1", new MockEmbedder("myDocument.myTensorArray", "[7,3,0,0]"));
+        Map<String, Embedder> embedders = Map.of("emb1", new MockEmbedder("myDocument.myTensorArray"));
 
         TensorType tensorType = TensorType.fromSpec("tensor(d[4])");
         var expression = Expression.fromString("input myTextArray | for_each { embed } | attribute 'myTensorArray'",
@@ -258,18 +271,57 @@ public class ScriptTestCase {
         expression.execute(context);
         assertTrue(adapter.values.containsKey("myTensorArray"));
         var tensorArray = (Array<TensorFieldValue>)adapter.values.get("myTensorArray");
-        assertEquals(Tensor.from(tensorType, "[7,3,0,0]"), tensorArray.get(0).getTensor().get());
-        assertEquals(Tensor.from(tensorType, "[7,3,0,0]"), tensorArray.get(1).getTensor().get());
+        assertEquals(Tensor.from(tensorType, "[102, 105, 114, 115]"), tensorArray.get(0).getTensor().get());
+        assertEquals(Tensor.from(tensorType, "[115, 101,  99, 111]"), tensorArray.get(1).getTensor().get());
     }
 
+    @Test
+    public void testArrayEmbedToSparseTensor() throws ParseException {
+        Map<String, Embedder> embedders = Map.of("emb1", new MockEmbedder("myDocument.mySparseTensor"));
+
+        TensorType tensorType = TensorType.fromSpec("tensor(passage{}, d[4])");
+        var expression = Expression.fromString("input myTextArray | embed | attribute 'mySparseTensor'",
+                                               new SimpleLinguistics(),
+                                               embedders);
+
+        SimpleTestAdapter adapter = new SimpleTestAdapter();
+        adapter.createField(new Field("myTextArray", new ArrayDataType(DataType.STRING)));
+
+        var tensorField = new Field("mySparseTensor", new TensorDataType(tensorType));
+        adapter.createField(tensorField);
+
+        var array = new Array<StringFieldValue>(new ArrayDataType(DataType.STRING));
+        array.add(new StringFieldValue("first"));
+        array.add(new StringFieldValue("second"));
+        adapter.setValue("myTextArray", array);
+        expression.setStatementOutput(new DocumentType("myDocument"), tensorField);
+
+        // Necessary to resolve output type
+        VerificationContext verificationContext = new VerificationContext(adapter);
+        assertEquals(new TensorDataType(tensorType), expression.verify(verificationContext));
+
+        ExecutionContext context = new ExecutionContext(adapter);
+        context.setValue(array);
+        expression.execute(context);
+        assertTrue(adapter.values.containsKey("mySparseTensor"));
+        var sparseTensor = (TensorFieldValue)adapter.values.get("mySparseTensor");
+        assertEquals(Tensor.from(tensorType, "{ '0':[102, 105, 114, 115], '1':[115, 101,  99, 111]}"),
+                     sparseTensor.getTensor().get());
+    }
+
+    // An embedder which returns the char value of each letter in the input. */
     private static class MockEmbedder implements Embedder {
 
         private final String expectedDestination;
-        private final String tensorString;
+        private final int addition;
 
-        public MockEmbedder(String expectedDestination, String tensorString) {
+        public MockEmbedder(String expectedDestination) {
+            this(expectedDestination, 0);
+        }
+
+        public MockEmbedder(String expectedDestination, int addition) {
             this.expectedDestination = expectedDestination;
-            this.tensorString = tensorString;
+            this.addition = addition;
         }
 
         @Override
@@ -280,7 +332,10 @@ public class ScriptTestCase {
         @Override
         public Tensor embed(String text, Embedder.Context context, TensorType tensorType) {
             assertEquals(expectedDestination, context.getDestination());
-            return Tensor.from(tensorType, tensorString);
+            var b = Tensor.Builder.of(tensorType);
+            for (int i = 0; i < tensorType.dimensions().get(0).size().get(); i++)
+                b.cell(i < text.length() ? text.charAt(i) + addition : 0, i);
+            return b.build();
         }
 
     }

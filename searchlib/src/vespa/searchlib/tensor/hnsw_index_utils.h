@@ -15,14 +15,14 @@ namespace search::tensor {
  */
 struct HnswTraversalCandidate {
     uint32_t nodeid;
-    vespalib::datastore::EntryRef node_ref;
+    vespalib::datastore::EntryRef levels_ref;
     double distance;
     HnswTraversalCandidate(uint32_t nodeid_in, double distance_in) noexcept
-      : nodeid(nodeid_in), node_ref(), distance(distance_in) {}
-    HnswTraversalCandidate(uint32_t nodeid_in, vespalib::datastore::EntryRef node_ref_in, double distance_in) noexcept
-      : nodeid(nodeid_in), node_ref(node_ref_in), distance(distance_in) {}
-    HnswTraversalCandidate(uint32_t nodeid_in, uint32_t docid_in, vespalib::datastore::EntryRef node_ref_in, double distance_in) noexcept
-      : nodeid(nodeid_in), node_ref(node_ref_in), distance(distance_in)
+      : nodeid(nodeid_in), levels_ref(), distance(distance_in) {}
+    HnswTraversalCandidate(uint32_t nodeid_in, vespalib::datastore::EntryRef levels_ref_in, double distance_in) noexcept
+      : nodeid(nodeid_in), levels_ref(levels_ref_in), distance(distance_in) {}
+    HnswTraversalCandidate(uint32_t nodeid_in, uint32_t docid_in, vespalib::datastore::EntryRef levels_ref_in, double distance_in) noexcept
+      : nodeid(nodeid_in), levels_ref(levels_ref_in), distance(distance_in)
     {
         (void) docid_in;
     }
@@ -35,8 +35,8 @@ struct HnswTraversalCandidate {
 struct HnswCandidate : public HnswTraversalCandidate {
     uint32_t docid;
 
-    HnswCandidate(uint32_t nodeid_in, uint32_t docid_in, vespalib::datastore::EntryRef node_ref_in, double distance_in) noexcept
-        : HnswTraversalCandidate(nodeid_in, docid_in, node_ref_in, distance_in),
+    HnswCandidate(uint32_t nodeid_in, uint32_t docid_in, vespalib::datastore::EntryRef levels_ref_in, double distance_in) noexcept
+        : HnswTraversalCandidate(nodeid_in, docid_in, levels_ref_in, distance_in),
           docid(docid_in)
     {
     }

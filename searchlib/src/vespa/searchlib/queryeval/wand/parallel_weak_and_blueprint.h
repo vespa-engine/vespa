@@ -19,7 +19,7 @@ const uint32_t DEFAULT_PARALLEL_WAND_SCORES_ADJUST_FREQUENCY = 4;
 class ParallelWeakAndBlueprint : public ComplexLeafBlueprint
 {
 private:
-    typedef wand::score_t score_t;
+    using score_t = wand::score_t;
 
     const FieldSpec                    _field;
     mutable SharedWeakAndPriorityQueue _scores;

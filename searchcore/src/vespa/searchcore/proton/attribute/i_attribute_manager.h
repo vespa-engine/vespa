@@ -2,10 +2,10 @@
 
 #pragma once
 
-#include "attribute_collection_spec.h"
 #include "exclusive_attribute_read_accessor.h"
 #include "i_attribute_factory.h"
 #include <vespa/searchcommon/attribute/i_attribute_functor.h>
+#include <vespa/searchcore/proton/common/i_transient_resource_usage_provider.h>
 #include <vespa/searchcorespi/flush/iflushtarget.h>
 #include <vespa/searchlib/attribute/iattributemanager.h>
 #include <vespa/searchlib/common/serialnum.h>
@@ -20,6 +20,8 @@ namespace vespalib {
 
 namespace proton {
 
+class AttributeCollectionSpec;
+class IAttributeManagerReconfig;
 class ImportedAttributesRepo;
 
 /**
@@ -36,10 +38,10 @@ struct IAttributeManager : public search::IAttributeManager
     using IConstAttributeFunctor = search::attribute::IConstAttributeFunctor;
 
     /**
-     * Create a new attribute manager based on the content of the current one and
+     * Prepare to create a new attribute manager based on the content of the current one and
      * the given attribute collection spec.
      */
-    virtual IAttributeManager::SP create(AttributeCollectionSpec && spec) const = 0;
+    virtual std::unique_ptr<IAttributeManagerReconfig> prepare_create(AttributeCollectionSpec&& spec) const = 0;
 
     /**
      * Return the list of flush targets for this attribute manager.
@@ -105,6 +107,8 @@ struct IAttributeManager : public search::IAttributeManager
     virtual void setImportedAttributes(std::unique_ptr<ImportedAttributesRepo> attributes) = 0;
 
     virtual const ImportedAttributesRepo *getImportedAttributes() const = 0;
+
+    virtual TransientResourceUsage get_transient_resource_usage() const = 0;
 };
 
 } // namespace proton

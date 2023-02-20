@@ -3,17 +3,23 @@ package com.yahoo.config.application.api;
 
 import com.yahoo.config.provision.AthenzService;
 import com.yahoo.config.provision.CloudAccount;
+import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.Tags;
+import com.yahoo.config.provision.ZoneEndpoint;
+import com.yahoo.config.provision.zone.ZoneId;
 
 import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -26,7 +32,6 @@ import static ai.vespa.validation.Validation.requireInRange;
 import static com.yahoo.config.application.api.DeploymentSpec.RevisionChange.whenClear;
 import static com.yahoo.config.application.api.DeploymentSpec.RevisionTarget.next;
 import static com.yahoo.config.provision.Environment.prod;
-import static java.util.stream.Collectors.toList;
 
 /**
  * The deployment spec for an application instance
@@ -55,6 +60,8 @@ public class DeploymentInstanceSpec extends DeploymentSpec.Steps {
     private final Optional<CloudAccount> cloudAccount;
     private final Notifications notifications;
     private final List<Endpoint> endpoints;
+    private final Map<ClusterSpec.Id, Map<ZoneId, ZoneEndpoint>> zoneEndpoints;
+    private final Bcp bcp;
 
     public DeploymentInstanceSpec(InstanceName name,
                                   Tags tags,
@@ -70,6 +77,8 @@ public class DeploymentInstanceSpec extends DeploymentSpec.Steps {
                                   Optional<CloudAccount> cloudAccount,
                                   Notifications notifications,
                                   List<Endpoint> endpoints,
+                                  Map<ClusterSpec.Id, Map<ZoneId, ZoneEndpoint>> zoneEndpoints,
+                                  Bcp bcp,
                                   Instant now) {
         super(steps);
         this.name = Objects.requireNonNull(name);
@@ -91,8 +100,12 @@ public class DeploymentInstanceSpec extends DeploymentSpec.Steps {
         this.cloudAccount = Objects.requireNonNull(cloudAccount);
         this.notifications = Objects.requireNonNull(notifications);
         this.endpoints = List.copyOf(Objects.requireNonNull(endpoints));
+        Map<ClusterSpec.Id, Map<ZoneId, ZoneEndpoint>> zoneEndpointsCopy =  new HashMap<>();
+        for (var entry : zoneEndpoints.entrySet()) zoneEndpointsCopy.put(entry.getKey(), Collections.unmodifiableMap(new HashMap<>(entry.getValue())));
+        this.zoneEndpoints = Collections.unmodifiableMap(zoneEndpointsCopy);
+        this.bcp = Objects.requireNonNull(bcp);
         validateZones(new HashSet<>(), new HashSet<>(), this);
-        validateEndpoints(steps(), globalServiceId, this.endpoints);
+        validateEndpoints(globalServiceId, this.endpoints);
         validateChangeBlockers(changeBlockers, now);
     }
 
@@ -134,24 +147,40 @@ public class DeploymentInstanceSpec extends DeploymentSpec.Steps {
     }
 
     /** Throw an IllegalArgumentException if an endpoint refers to a region that is not declared in 'prod' */
-    private void validateEndpoints(List<DeploymentSpec.Step> steps, Optional<String> globalServiceId, List<Endpoint> endpoints) {
+    private void validateEndpoints(Optional<String> globalServiceId, List<Endpoint> endpoints) {
         if (globalServiceId.isPresent() && ! endpoints.isEmpty()) {
             throw new IllegalArgumentException("Providing both 'endpoints' and 'global-service-id'. Use only 'endpoints'.");
         }
 
-        var stepZones = steps.stream()
-                             .flatMap(s -> s.zones().stream())
-                             .flatMap(z -> z.region().stream())
-                             .collect(Collectors.toSet());
-
+        var regions = prodRegions();
         for (var endpoint : endpoints){
             for (var endpointRegion : endpoint.regions()) {
-                if (! stepZones.contains(endpointRegion)) {
+                if (! regions.contains(endpointRegion)) {
                     throw new IllegalArgumentException("Region used in endpoint that is not declared in 'prod': " + endpointRegion);
                 }
             }
         }
     }
+
+    /** Validates the given BCP instance (which is owned by this, or if none, a default) against this instance. */
+    void validateBcp(Bcp bcp) {
+        if (bcp.isEmpty()) return;
+        if ( ! prodRegions().equals(bcp.regions()))
+            throw new IllegalArgumentException("BCP and deployment mismatch in " + this + ": " +
+                                               "A <bcp> element must place all deployed production regions in " +
+                                               "at least one group, and declare no extra regions. " +
+                                               "Deployed regions: " + prodRegions() +
+                                               ". BCP regions: " + bcp.regions());
+}
+    /** Returns the production regions the steps of this specifies a deployment to. */
+    private Set<RegionName> prodRegions() {
+        return steps().stream()
+                      .flatMap(s -> s.zones().stream())
+                      .filter(zone -> zone.environment().isProduction())
+                      .flatMap(z -> z.region().stream())
+                      .collect(Collectors.toSet());
+     }
+
 
     private void validateChangeBlockers(List<DeploymentSpec.ChangeBlocker> changeBlockers, Instant now) {
         // Find all possible dates an upgrade block window can start
@@ -246,9 +275,31 @@ public class DeploymentInstanceSpec extends DeploymentSpec.Steps {
     /** Returns the rotations configuration of these instances */
     public List<Endpoint> endpoints() { return endpoints; }
 
+    /** Returns the BCP spec declared in this specified instance, or BcpSpec.empty() if none. */
+    public Bcp bcp() { return bcp; }
+
     /** Returns whether this instance deploys to the given zone, either implicitly or explicitly */
     public boolean deploysTo(Environment environment, RegionName region) {
         return zones().stream().anyMatch(zone -> zone.concerns(environment, Optional.of(region)));
+    }
+
+    /** Returns the zone endpoint specified for the given region, or empty. */
+    Optional<ZoneEndpoint> zoneEndpoint(ZoneId zone, ClusterSpec.Id cluster) {
+        return Optional.ofNullable(zoneEndpoints.get(cluster))
+                       .filter(__ -> deploysTo(zone.environment(), zone.region()))
+                       .map(zoneEndpoints -> zoneEndpoints.get(zoneEndpoints.containsKey(zone) ? zone : null));
+    }
+
+    /** Returns the zone endpoint data for this instance. */
+    Map<ClusterSpec.Id, Map<ZoneId, ZoneEndpoint>> zoneEndpoints() {
+        return zoneEndpoints;
+    }
+
+    /** The zone endpoints in the given zone, possibly default values. */
+    public Map<ClusterSpec.Id, ZoneEndpoint> zoneEndpoints(ZoneId zone) {
+        return zoneEndpoints.keySet().stream()
+                            .collect(Collectors.toMap(cluster -> cluster,
+                                                      cluster -> zoneEndpoint(zone, cluster).orElse(ZoneEndpoint.defaultEndpoint)));
     }
 
     @Override

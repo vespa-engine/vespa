@@ -79,7 +79,7 @@ class PageDict4PageParams
 {
 public:
     using Counts = index::PostingListCounts;
-    typedef PageDict4StartOffset StartOffset;
+    using StartOffset = PageDict4StartOffset;
 
     static uint32_t getPageByteSize()      { return 4096; }
     static uint32_t getPageBitSize()       { return getPageByteSize() * 8; }
@@ -114,8 +114,8 @@ public:
 
 class PageDict4SSWriter : public PageDict4PageParams
 {
-    typedef PostingListCountFileEncodeContext EC;
-    typedef EC SSEC;
+    using EC = PostingListCountFileEncodeContext;
+    using SSEC = EC;
 
 private:
     EC &_eL6;           // L6 stream
@@ -177,8 +177,8 @@ public:
 
 class PageDict4SPWriter : public PageDict4PageParams
 {
-    typedef PostingListCountFileEncodeContext EC;
-    typedef PageDict4SSWriter SSWriter;
+    using EC = PostingListCountFileEncodeContext;
+    using SSWriter = PageDict4SSWriter;
 
 private:
     EC _eL3;            // L3 stream
@@ -293,8 +293,8 @@ public:
 class PageDict4PWriter : public PageDict4PageParams
 {
 public:
-    typedef PageDict4SPWriter SPWriter;
-    typedef PostingListCountFileEncodeContext EC;
+    using SPWriter = PageDict4SPWriter;
+    using EC = PostingListCountFileEncodeContext;
 
 private:
     EC _eCounts;    // counts stream (sparse counts)
@@ -372,7 +372,7 @@ class PageDict4SSLookupRes
 {
 public:
     using Counts = index::PostingListCounts;
-    typedef PageDict4StartOffset StartOffset;
+    using StartOffset = PageDict4StartOffset;
 
     vespalib::string _l6Word;   // last L6 word before key
     vespalib::string _lastWord; // L6 or overflow word >= key
@@ -398,8 +398,8 @@ public:
 
 class PageDict4SSReader : public PageDict4PageParams
 {
-    typedef PostingListCountFileEncodeContext EC;
-    typedef PostingListCountFileDecodeContext DC;
+    using EC = PostingListCountFileEncodeContext;
+    using DC = PostingListCountFileDecodeContext;
 public:
     class L7Entry
     {
@@ -472,7 +472,7 @@ public:
     uint64_t _ssFileBitLen; // File size in bits
     uint32_t _ssStartOffset;    // Header size in bits
 
-    typedef std::vector<L7Entry> L7Vector;
+    using L7Vector = std::vector<L7Entry>;
     L7Vector _l7;// Uncompressed skip list for sparse sparse file
 
     DC _ssd;    // used to store compression parameters
@@ -485,7 +485,7 @@ public:
     uint32_t _pFirstPageNum;
     uint32_t _pFirstPageOffset;
 
-    typedef std::vector<OverflowRef> OverflowVector;
+    using OverflowVector = std::vector<OverflowRef>;
     OverflowVector _overflows;
 
     PageDict4SSReader(ComprBuffer &cb,
@@ -506,9 +506,9 @@ public:
 
 class PageDict4SPLookupRes : public PageDict4PageParams
 {
-    typedef PostingListCountFileEncodeContext EC;
-    typedef PostingListCountFileDecodeContext DC;
-    typedef PageDict4SSReader SSReader;
+    using EC = PostingListCountFileEncodeContext;
+    using DC = PostingListCountFileDecodeContext;
+    using SSReader = PageDict4SSReader;
 
 public:
     vespalib::string _l3Word;
@@ -537,9 +537,9 @@ public:
 class PageDict4PLookupRes : public PageDict4PageParams
 {
 public:
-    typedef PostingListCountFileEncodeContext EC;
-    typedef PostingListCountFileDecodeContext DC;
-    typedef PageDict4SSReader SSReader;
+    using EC = PostingListCountFileEncodeContext;
+    using DC = PostingListCountFileDecodeContext;
+    using SSReader = PageDict4SSReader;
 
 public:
     Counts _counts;
@@ -566,9 +566,9 @@ public:
 class PageDict4Reader : public PageDict4PageParams
 {
 public:
-    typedef PostingListCountFileDecodeContext DC;
-    typedef PostingListCountFileEncodeContext EC;
-    typedef PageDict4SSReader SSReader;
+    using DC = PostingListCountFileDecodeContext;
+    using EC = PostingListCountFileEncodeContext;
+    using SSReader = PageDict4SSReader;
 
     DC &_pd;
     uint32_t _countsResidue;
@@ -576,7 +576,7 @@ public:
     uint64_t _pFileBitLen;
     StartOffset _startOffset;
     bool _overflowPage;
-    typedef std::vector<Counts> PCV;
+    using PCV = std::vector<Counts>;
     struct L1SkipCheck
     {
         uint32_t    wordOffset;
@@ -675,7 +675,7 @@ public:
     PCV _counts;
     PCV::const_iterator _cc;
     PCV::const_iterator _ce;
-    typedef std::vector<char> WV;
+    using WV = std::vector<char>;
     WV _words;
     WV::const_iterator _wc;
     WV::const_iterator _we;

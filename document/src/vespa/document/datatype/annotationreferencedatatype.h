@@ -11,11 +11,12 @@ class AnnotationReferenceDataType final : public DataType {
     const AnnotationType *_type;
 
 public:
-    typedef std::shared_ptr<AnnotationReferenceDataType> SP;
+    using SP = std::shared_ptr<AnnotationReferenceDataType>;
 
     AnnotationReferenceDataType(const AnnotationType &type, int id);
     AnnotationReferenceDataType(const AnnotationReferenceDataType &) = delete;
     AnnotationReferenceDataType & operator=(const AnnotationReferenceDataType &) = delete;
+    ~AnnotationReferenceDataType() override;
     const AnnotationType &getAnnotationType() const;
     void print(std::ostream &out, bool verbose, const std::string &indent) const override;
     std::unique_ptr<FieldValue> createFieldValue() const override;

@@ -5,6 +5,7 @@
 #include <vespa/storage/common/bucket_stripe_utils.h>
 #include <vespa/storage/common/i_storage_chain_builder.h>
 #include <vespa/storage/common/storagelink.h>
+#include <vespa/storageframework/defaultimplementation/clock/realclock.h>
 #include <thread>
 
 #include <vespa/log/log.h>
@@ -14,7 +15,7 @@ namespace storage {
 
 DistributorProcess::DistributorProcess(const config::ConfigUri & configUri)
     : Process(configUri),
-      _context(),
+      _context(std::make_unique<framework::defaultimplementation::RealClock>()),
       _num_distributor_stripes(0), // TODO STRIPE: change default when legacy single stripe mode is removed
       _node(),
       _distributorConfigHandler(),

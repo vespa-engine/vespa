@@ -42,7 +42,7 @@ enum SslHandshakeFailure {
             "CONNECTION_CLOSED",
             e -> e.getCause() instanceof EofException
                     && e.getCause().getCause() instanceof IOException
-                    && e.getCause().getCause().getMessage().equals("Broken pipe"));
+                    && "Broken pipe".equals(e.getCause().getCause().getMessage()));
 
     private final String metricName;
     private final String failureType;

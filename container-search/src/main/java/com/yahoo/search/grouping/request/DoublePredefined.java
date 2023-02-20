@@ -35,7 +35,7 @@ public class DoublePredefined extends PredefinedFunction {
                                     args().stream().skip(1)
                                                    .map(DoubleBucket.class::cast)
                                                    .map(arg -> arg.copy())
-                                                   .collect(Collectors.toList()));
+                                                   .toList());
     }
 
     @Override

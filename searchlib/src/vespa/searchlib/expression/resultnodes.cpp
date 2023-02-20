@@ -39,6 +39,35 @@ IMPLEMENT_RESULTNODE(Int64ResultNode,            IntegerResultNode);
 IMPLEMENT_RESULTNODE(EnumResultNode,             IntegerResultNode);
 IMPLEMENT_RESULTNODE(FloatResultNode,            NumericResultNode);
 
+namespace {
+
+const vespalib::string TRUE = "true";
+const vespalib::string FALSE = "false";
+
+size_t hashBuf(const void *s, size_t sz)
+{
+    size_t result(0);
+    const size_t * value = static_cast<const size_t *>(s);
+    for(size_t i(0), m(sz/sizeof(size_t)); i < m; i++) {
+        result ^= value[i];
+    }
+    unsigned left(sz%sizeof(size_t));
+    if (left) {
+        size_t lastValue(0);
+        memcpy(&lastValue, static_cast<const char *>(s)+sz-left, left);
+        result ^= lastValue;
+    }
+    return result;
+}
+
+template <typename T>
+int cmpNum(T a, T b) {
+    return a < b ? -1 : a > b ? 1 : 0;
+}
+
+}
+
+
 void ResultNode::sort() {}
 
 void ResultNode::reverse() {}
@@ -210,22 +239,18 @@ RawResultNode::add(const ResultNode & b)
 void
 RawResultNode::min(const ResultNode & b)
 {
-    char buf[32];
-    ConstBufferRef s(b.getString(BufferRef(buf, sizeof(buf))));
-
-    if (memcmp(&_value[0], s.data(), std::min(s.size(), _value.size())) > 0)  {
-        setBuffer(s.data(), s.size());
+    int res = cmp(b);
+    if (res > 0) {
+        set(b);
     }
 }
 
 void
 RawResultNode::max(const ResultNode & b)
 {
-    char buf[32];
-    ConstBufferRef s(b.getString(BufferRef(buf, sizeof(buf))));
-
-    if (memcmp(&_value[0], s.data(), std::min(s.size(), _value.size())) < 0)  {
-        setBuffer(s.data(), s.size());
+    int res = cmp(b);
+    if (res < 0) {
+        set(b);
     }
 }
 
@@ -311,26 +336,6 @@ StringResultNode & StringResultNode::append(const ResultNode & rhs)
     return *this;
 }
 
-namespace {
-
-size_t hashBuf(const void *s, size_t sz)
-{
-    size_t result(0);
-    const size_t * value = static_cast<const size_t *>(s);
-    for(size_t i(0), m(sz/sizeof(size_t)); i < m; i++) {
-        result ^= value[i];
-    }
-    unsigned left(sz%sizeof(size_t));
-    if (left) {
-        size_t lastValue(0);
-        memcpy(&lastValue, static_cast<const char *>(s)+sz-left, left);
-        result ^= lastValue;
-    }
-    return result;
-}
-
-}
-
 size_t StringResultNode::hash() const { return hashBuf(_value.c_str(),  _value.size()); }
 
 size_t
@@ -349,7 +354,7 @@ RawResultNode::onGetInteger(size_t index) const
         uint8_t _bytes[8];
     } nbo;
     nbo._int64 = 0;
-    memcpy(nbo._bytes, &_value[0], std::min(sizeof(nbo._bytes), _value.size()));
+    memcpy(nbo._bytes, _value.data(), std::min(sizeof(nbo._bytes), _value.size()));
     return nbo::n2h(nbo._int64);
 }
 
@@ -361,7 +366,7 @@ double  RawResultNode::onGetFloat(size_t index) const
         uint8_t _bytes[8];
     } nbo;
     nbo._double = 0;
-    memcpy(nbo._bytes, &_value[0], std::min(sizeof(nbo._bytes), _value.size()));
+    memcpy(nbo._bytes, _value.data(), std::min(sizeof(nbo._bytes), _value.size()));
     return nbo::n2h(nbo._double);
 }
 
@@ -382,21 +387,25 @@ int RawResultNode::onCmp(const Identifiable & b) const
         return -1;
     } else {
         const RawResultNode & rb( static_cast<const RawResultNode &>(b) );
-        int result = memcmp(&_value[0], &rb._value[0], std::min(_value.size(), rb._value.size()));
+        size_t min_sz = std::min(_value.size(), rb._value.size());
+        if (min_sz == 0) {
+            return cmpNum(_value.size(), rb._value.size());
+        }
+        int result = memcmp(_value.data(), rb._value.data(), min_sz);
         if (result == 0) {
-            result = _value.size() < rb._value.size() ? -1 : _value.size() > rb._value.size() ? 1 : 0;
+            return cmpNum(_value.size(), rb._value.size());
         }
         return result;
     }
 }
 
-size_t RawResultNode::hash() const { return hashBuf(&_value[0], _value.size()); }
+size_t RawResultNode::hash() const { return hashBuf(_value.data(), _value.size()); }
 
 size_t
 RawResultNode::hash(const void * buf) const
 {
     const std::vector<uint8_t> & s = *static_cast<const std::vector<uint8_t> *>(buf);
-    return hashBuf(&s[0], s.size());
+    return hashBuf(s.data(), s.size());
 }
 
 Deserializer &
@@ -429,19 +438,14 @@ void
 RawResultNode::setBuffer(const void *buf, size_t sz)
 {
     _value.resize(sz + 1);
-    memcpy(&_value[0], buf, sz);
+    memcpy(_value.data(), buf, sz);
     _value.back() = 0;
     _value.resize(sz);
 }
 
-namespace {
-    const vespalib::string TRUE = "true";
-    const vespalib::string FALSE = "false";
-}
-
 ResultNode::ConstBufferRef
 RawResultNode::onGetString(size_t, BufferRef ) const {
-    return ConstBufferRef(&_value[0], _value.size());
+    return ConstBufferRef(_value.data(), _value.size());
 }
 
 ResultNode::ConstBufferRef

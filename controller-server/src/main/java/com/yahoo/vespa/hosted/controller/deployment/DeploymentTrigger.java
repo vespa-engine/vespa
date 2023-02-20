@@ -40,7 +40,6 @@ import java.util.stream.Collectors;
 
 import static java.util.Comparator.comparing;
 import static java.util.stream.Collectors.groupingBy;
-import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 
 /**
@@ -153,7 +152,7 @@ public class DeploymentTrigger {
                 .collect(groupingBy(Job::applicationId))
                 .values().stream()
                 .flatMap(List::stream)
-                .collect(Collectors.toUnmodifiableList());
+                .toList();
 
         // Map of test jobs, a list for each job type. Jobs in each list are sorted by priority.
         Map<JobType, List<Job>> sortedTestJobsByType = testJobs.stream()
@@ -284,7 +283,7 @@ public class DeploymentTrigger {
                 }
                 newList = newList.stream()
                         .filter(entry -> !(entry.jobId().equals(requiredEntry.jobId()) && entry.requiredRun() < requiredEntry.requiredRun()))
-                        .collect(toList());
+                        .toList();
                 controller.curator().writeRetriggerEntries(newList);
             }
             controller.jobController().abort(run.id(), "force re-triggered");
@@ -367,7 +366,7 @@ public class DeploymentTrigger {
                    .filter(status -> ! hasExceededQuota(status.application().id().tenant()))
                    .map(this::computeReadyJobs)
                    .flatMap(Collection::stream)
-                   .collect(toList());
+                   .toList();
     }
 
     /** Finds the next step to trigger for the given application, if any, and returns these as a list. */
@@ -452,12 +451,11 @@ public class DeploymentTrigger {
         Predicate<RevisionId> revisionFilter = spec.revisionTarget() == DeploymentSpec.RevisionTarget.next
                                                ? failing -> status.application().require(instance).change().revision().get().compareTo(failing) == 0
                                                : failing -> revision.compareTo(failing) > 0;
-        switch (spec.revisionChange()) {
-            case whenClear:   return ! isChangingRevision;
-            case whenFailing: return ! isChangingRevision || status.hasFailures(revisionFilter);
-            case always:      return true;
-            default:          throw new IllegalStateException("Unknown revision upgrade policy");
-        }
+        return switch (spec.revisionChange()) {
+            case whenClear -> ! isChangingRevision;
+            case whenFailing -> ! isChangingRevision || status.hasFailures(revisionFilter);
+            case always -> true;
+        };
     }
 
     private Instance withRemainingChange(Instance instance, Change change, DeploymentStatus status, boolean allowOutdatedPlatform) {

@@ -15,8 +15,8 @@ public:
     /**
      * Convenience typedef.
      */
-    typedef std::unique_ptr<FeedMessage> UP;
-    typedef std::shared_ptr<FeedMessage> SP;
+    using UP = std::unique_ptr<FeedMessage>;
+    using SP = std::shared_ptr<FeedMessage>;
 
 public:
     /**

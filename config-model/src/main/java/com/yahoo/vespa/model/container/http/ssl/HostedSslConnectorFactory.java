@@ -92,9 +92,9 @@ public class HostedSslConnectorFactory extends ConnectorFactory {
         connectorBuilder.ssl.enabledProtocols(List.of("TLSv1.2"));
 
         if (!tlsCiphersOverride.isEmpty()) {
-            connectorBuilder.ssl.enabledCipherSuites(tlsCiphersOverride.stream().sorted().collect(Collectors.toList()));
+            connectorBuilder.ssl.enabledCipherSuites(tlsCiphersOverride.stream().sorted().toList());
         } else {
-            connectorBuilder.ssl.enabledCipherSuites(TlsContext.ALLOWED_CIPHER_SUITES.stream().sorted().collect(Collectors.toList()));
+            connectorBuilder.ssl.enabledCipherSuites(TlsContext.ALLOWED_CIPHER_SUITES.stream().sorted().toList());
         }
 
         connectorBuilder

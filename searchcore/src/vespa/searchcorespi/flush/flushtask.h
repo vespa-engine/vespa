@@ -9,7 +9,7 @@ namespace searchcorespi {
 class FlushTask : public vespalib::Executor::Task
 {
 public:
-    typedef std::unique_ptr<FlushTask> UP;
+    using UP = std::unique_ptr<FlushTask>;
     
     virtual search::SerialNum getFlushSerial() const = 0;
 };

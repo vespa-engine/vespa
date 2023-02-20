@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "statereporter.h"
+#include <vespa/storageframework/generic/clock/clock.h>
 #include <vespa/metrics/jsonwriter.h>
 #include <vespa/metrics/metricmanager.h>
 #include <vespa/storage/common/nodestateupdater.h>
@@ -29,9 +30,7 @@ StateReporter::StateReporter(
     _component.registerStatusPage(*this);
 }
 
-StateReporter::~StateReporter()
-{
-}
+StateReporter::~StateReporter() = default;
 
 vespalib::string
 StateReporter::getReportContentType(
@@ -84,7 +83,7 @@ StateReporter::getMetrics(const vespalib::string &consumer)
 
     snapshot.reset(0);
     _manager.getMetricSnapshot(guard, interval).addToSnapshot(
-            snapshot, _component.getClock().getTimeInSeconds().getTime());
+            snapshot, vespalib::count_s(_component.getClock().getSystemTime().time_since_epoch()));
 
     vespalib::asciistream json;
     vespalib::JsonStream stream(json);
@@ -106,7 +105,7 @@ StateReporter::getHealth() const
     lib::NodeState cns(*_component.getStateUpdater().getCurrentNodeState());
     bool up = cns.getState().oneOf("u");
     std::string message = up ? "" : "Node state: " + cns.toString(true);
-    return vespalib::HealthProducer::Health(up, message);
+    return { up, message };
 }
 
 void

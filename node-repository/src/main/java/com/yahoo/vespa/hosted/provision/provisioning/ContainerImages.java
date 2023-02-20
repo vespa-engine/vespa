@@ -12,7 +12,7 @@ import java.util.Optional;
  * This class decides the container image to use for a given node. Two sources are considered, in the following order:
  *
  * 1. Requested image (from node allocation, this is set by either a feature flag or through services.xml)
- * 2. Default image, specified in the node repository config file
+ * 2. Default image for the node type/configuration, specified in the node repository config file.
  *
  * Independent of source, the registry part of the image is rewritten to match the one set in the node repository config
  * file.
@@ -24,10 +24,12 @@ public class ContainerImages {
 
     private final DockerImage defaultImage;
     private final Optional<DockerImage> tenantImage;
+    private final Optional<DockerImage> tenantGpuImage;
 
-    public ContainerImages(DockerImage defaultImage, Optional<DockerImage> tenantContainerImage) {
+    public ContainerImages(DockerImage defaultImage, Optional<DockerImage> tenantContainerImage, Optional<DockerImage> tenantGpuImage) {
         this.defaultImage = Objects.requireNonNull(defaultImage);
         this.tenantImage = Objects.requireNonNull(tenantContainerImage);
+        this.tenantGpuImage = Objects.requireNonNull(tenantGpuImage);
     }
 
     /** Returns the container image to use for given node */
@@ -39,7 +41,11 @@ public class ContainerImages {
         if (requestedImage.isPresent()) {
             image = requestedImage.get();
         } else if (nodeType == NodeType.tenant) {
-            image = tenantImage.orElse(defaultImage);
+            if (!node.resources().gpuResources().isZero()) {
+                image = tenantGpuImage.orElseThrow(() -> new IllegalArgumentException(node + " has GPU resources, but there is no GPU container image available"));
+            } else {
+                image = tenantImage.orElse(defaultImage);
+            }
         } else {
             image = defaultImage;
         }

@@ -167,7 +167,7 @@ public class AttributeFields extends Derived implements AttributesConfig.Produce
         String structPrefix = baseFieldName + ".";
         return attributes().stream()
                 .filter(attribute -> attribute.getName().startsWith(structPrefix))
-                .collect(Collectors.toList());
+                .toList();
     }
 
     public String toString() {

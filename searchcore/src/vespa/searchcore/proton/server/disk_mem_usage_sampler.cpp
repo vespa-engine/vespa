@@ -1,8 +1,9 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "disk_mem_usage_sampler.h"
-#include <vespa/searchcore/proton/common/scheduledexecutor.h>
+#include <vespa/searchcore/proton/common/i_scheduled_executor.h>
 #include <vespa/vespalib/util/lambdatask.h>
+#include <vespa/vespalib/util/size_literals.h>
 #include <vespa/searchcore/proton/common/i_transient_resource_usage_provider.h>
 #include <filesystem>
 
@@ -10,40 +11,45 @@ using vespalib::makeLambdaTask;
 
 namespace proton {
 
-DiskMemUsageSampler::DiskMemUsageSampler(FNET_Transport & transport, const std::string &path_in, const Config &config)
-    : _filter(config.hwInfo),
+DiskMemUsageSampler::DiskMemUsageSampler(const std::string &path_in, const HwInfo &hwInfo)
+    : _filter(hwInfo),
       _path(path_in),
       _sampleInterval(60s),
-      _lastSampleTime(vespalib::steady_clock::now()),
-      _periodicTimer(std::make_unique<ScheduledExecutor>(transport)),
+      _lastSampleTime(),
       _lock(),
-      _transient_usage_providers()
+      _transient_usage_providers(),
+      _periodicHandle()
 {
-    setConfig(config);
 }
 
-DiskMemUsageSampler::~DiskMemUsageSampler()
-{
-    _periodicTimer.reset();
+DiskMemUsageSampler::~DiskMemUsageSampler() = default;
+
+void
+DiskMemUsageSampler::close() {
+    _periodicHandle.reset();
+}
+
+bool
+DiskMemUsageSampler::timeToSampleAgain() const noexcept {
+    return vespalib::steady_clock::now() >= (_lastSampleTime + _sampleInterval);
 }
 
 void
-DiskMemUsageSampler::setConfig(const Config &config)
+DiskMemUsageSampler::setConfig(const Config &config, IScheduledExecutor & executor)
 {
-    _periodicTimer->reset();
-    _filter.setConfig(config.filterConfig);
+    bool wasChanged = _filter.setConfig(config.filterConfig);
+    if (_periodicHandle && (_sampleInterval == config.sampleInterval) && !wasChanged) {
+        return;
+    }
+    _periodicHandle.reset();
     _sampleInterval = config.sampleInterval;
     sampleAndReportUsage();
-    _lastSampleTime = vespalib::steady_clock::now();
     vespalib::duration maxInterval = std::min(vespalib::duration(1s), _sampleInterval);
-    _periodicTimer->scheduleAtFixedRate(makeLambdaTask([this]() {
-                                            if (_filter.acceptWriteOperation() && (vespalib::steady_clock::now() < (_lastSampleTime + _sampleInterval))) {
-                                                return;
-                                            }
-                                            sampleAndReportUsage();
-                                            _lastSampleTime = vespalib::steady_clock::now();
-                                        }),
-                                        maxInterval, maxInterval);
+    _periodicHandle = executor.scheduleAtFixedRate(makeLambdaTask([this]() {
+        if (!_filter.acceptWriteOperation() || timeToSampleAgain()) {
+            sampleAndReportUsage();
+        }
+    }), maxInterval, maxInterval);
 }
 
 void
@@ -59,11 +65,16 @@ DiskMemUsageSampler::sampleAndReportUsage()
     vespalib::ProcessMemoryStats memoryStats = sampleMemoryUsage();
     uint64_t diskUsage = sampleDiskUsage();
     _filter.set_resource_usage(transientUsage, memoryStats, diskUsage);
+    _lastSampleTime = vespalib::steady_clock::now();
 }
 
 namespace {
 
 namespace fs = std::filesystem;
+
+// Disk usage for symbolic links and directories
+constexpr uint64_t symlink_disk_usage = 4_Ki;
+constexpr uint64_t directory_disk_usage = 4_Ki;
 
 uint64_t
 sampleDiskUsageOnFileSystem(const fs::path &path, const HwInfo::Disk &disk)
@@ -80,16 +91,19 @@ sampleDiskUsageOnFileSystem(const fs::path &path, const HwInfo::Disk &disk)
 uint64_t
 attemptSampleDirectoryDiskUsageOnce(const fs::path &path)
 {
-    uint64_t result = 0;
-    for (const auto &elem : fs::recursive_directory_iterator(path,
-                                                             fs::directory_options::skip_permission_denied)) {
-        if (fs::is_regular_file(elem.path()) && !fs::is_symlink(elem.path())) {
+    uint64_t result = directory_disk_usage;
+    for (const auto &elem : fs::recursive_directory_iterator(path, fs::directory_options::skip_permission_denied)) {
+        if (elem.is_symlink()) {
+            result += symlink_disk_usage;
+        } else if (elem.is_regular_file()) {
             std::error_code fsize_err;
-            const auto size = fs::file_size(elem.path(), fsize_err);
+            const auto size = elem.file_size(fsize_err);
             // Errors here typically happens when a file is removed while doing the directory scan. Ignore them.
             if (!fsize_err) {
                 result += size;
             }
+        } else if (elem.is_directory()) {
+            result += directory_disk_usage;
         }
     }
     return result;

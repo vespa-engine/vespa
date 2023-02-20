@@ -21,8 +21,8 @@ public:
         // empty
     }
 
-    bool setupRouting(const RoutingSpec &spec) override {
-        _routing = spec;
+    bool setupRouting(RoutingSpec spec) override {
+        _routing = std::move(spec);
         return true;
     }
 
@@ -222,7 +222,7 @@ Test::testConfigGeneration()
                .addTable(RoutingTableSpec("mytable1"))
                .addTable(RoutingTableSpec("mytable2")
                          .addHop(HopSpec("myhop1", "myselector1"))
-                         .addHop(HopSpec("myhop2", "myselector2").setIgnoreResult(true))
+                         .addHop(std::move(HopSpec("myhop2", "myselector2").setIgnoreResult(true)))
                          .addHop(HopSpec("myhop1", "myselector3")
                                  .addRecipient("myrecipient1")
                                  .addRecipient("myrecipient2"))

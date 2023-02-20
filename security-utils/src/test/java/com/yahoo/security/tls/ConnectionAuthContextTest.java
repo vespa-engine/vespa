@@ -28,17 +28,16 @@ class ConnectionAuthContextTest {
     void fails_on_missing_capabilities() {
         ConnectionAuthContext ctx = createConnectionAuthContext();
         assertThrows(MissingCapabilitiesException.class,
-                () -> ctx.verifyCapabilities(CapabilitySet.from(Capability.CONTENT__STATUS_PAGES)));
+                () -> ctx.verifyCapabilities(CapabilitySet.of(Capability.CONTENT__STATUS_PAGES)));
     }
 
     @Test
     void creates_correct_error_message() {
         ConnectionAuthContext ctx = createConnectionAuthContext();
-        CapabilitySet requiredCaps = CapabilitySet.from(Capability.CONTENT__STATUS_PAGES);
+        CapabilitySet requiredCaps = CapabilitySet.of(Capability.CONTENT__STATUS_PAGES);
         String expectedMessage = """
                 Permission denied for 'myaction' on 'myresource'. Peer 'mypeer' with [CN='myidentity'].
-                Requires capabilities [vespa.content.status_pages] but peer has
-                [vespa.content.document_api, vespa.content.search_api, vespa.slobrok.api].
+                Requires capabilities [vespa.content.status_pages] but peer has [vespa.logserver.api].
                 """;
         String actualMessage = ctx.createPermissionDeniedErrorMessage(requiredCaps, "myaction", "myresource", "mypeer");
         assertThat(actualMessage).isEqualToIgnoringWhitespace(expectedMessage);
@@ -46,7 +45,7 @@ class ConnectionAuthContextTest {
 
     private static ConnectionAuthContext createConnectionAuthContext() {
         return new ConnectionAuthContext(
-                List.of(createCertificate()), CapabilitySet.Predefined.CONTAINER_NODE.capabilities(), Set.of(),
+                List.of(createCertificate()), CapabilitySet.of(Capability.LOGSERVER_API), Set.of(),
                 CapabilityMode.ENFORCE);
     }
 

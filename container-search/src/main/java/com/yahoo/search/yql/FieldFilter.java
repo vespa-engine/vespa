@@ -29,6 +29,9 @@ public class FieldFilter extends Searcher {
 
     public static final CompoundName FIELD_FILTER_DISABLE = new CompoundName("FieldFilter.disable");
 
+    /** Fields that should be kept even if not explicitly requested */
+    private static final Set<String> syntheticFields = Set.of("matchfeatures", "rankfeatures", "summaryfeatures");
+
     @Override
     public Result search(Query query, Execution execution) {
         Result result = execution.search(query);
@@ -43,16 +46,18 @@ public class FieldFilter extends Searcher {
     }
 
     private void filter(Result result) {
-        Set<String> requestedFields;
-
         if (result.getQuery().properties().getBoolean(FIELD_FILTER_DISABLE)) return;
         if (result.getQuery().getPresentation().getSummaryFields().isEmpty()) return;
 
-        requestedFields = result.getQuery().getPresentation().getSummaryFields();
         for (Iterator<Hit> i = result.hits().unorderedDeepIterator(); i.hasNext();) {
             Hit h = i.next();
             if (h.isMeta()) continue;
-            h.fieldKeys().retainAll(requestedFields);
+            for (var fields = h.fieldIterator(); fields.hasNext(); ) {
+                var field = fields.next();
+                if ( ! result.getQuery().getPresentation().getSummaryFields().contains(field.getKey()) &&
+                     ! syntheticFields.contains(field.getKey()))
+                    fields.remove();
+            }
         }
     }
 

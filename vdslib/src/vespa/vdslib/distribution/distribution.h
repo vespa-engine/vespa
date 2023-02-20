@@ -26,8 +26,8 @@ class NodeState;
 
 class Distribution : public document::Printable {
 public:
-    typedef std::shared_ptr<Distribution> SP;
-    typedef std::unique_ptr<Distribution> UP;
+    using SP = std::shared_ptr<Distribution>;
+    using UP = std::unique_ptr<Distribution>;
     using DistributionConfig = const vespa::config::content::internal::InternalStorDistributionType;
     using DistributionConfigBuilder = vespa::config::content::internal::InternalStorDistributionType;
 
@@ -166,7 +166,7 @@ public:
      * Utility function used by distributor to split copies into groups to
      * handle active per group feature.
      */
-    typedef std::vector<uint16_t> IndexList;
+    using IndexList = std::vector<uint16_t>;
     std::vector<IndexList> splitNodesIntoLeafGroups(IndexList nodes) const;
 
     static bool allDistributorsDown(const Group&, const ClusterState&);

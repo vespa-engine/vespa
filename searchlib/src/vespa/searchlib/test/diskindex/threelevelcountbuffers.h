@@ -10,7 +10,7 @@ namespace search::diskindex {
 class ThreeLevelCountWriteBuffers
 {
 public:
-    typedef search::bitcompression::PostingListCountFileEncodeContext EC;
+    using EC = search::bitcompression::PostingListCountFileEncodeContext;
     EC &_sse;
     EC &_spe;
     EC &_pe;
@@ -39,8 +39,8 @@ public:
 class ThreeLevelCountReadBuffers
 {
 public:
-    typedef search::bitcompression::PostingListCountFileEncodeContext EC;
-    typedef search::bitcompression::PostingListCountFileDecodeContext DC;
+    using EC = search::bitcompression::PostingListCountFileEncodeContext;
+    using DC = search::bitcompression::PostingListCountFileDecodeContext;
     DC &_ssd;
     DC &_spd;
     DC &_pd;

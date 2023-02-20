@@ -8,6 +8,7 @@ import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 
 import java.time.Clock;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.logging.Level;
 
 /**
@@ -22,11 +23,15 @@ public class NameServiceDispatcher extends ControllerMaintainer {
     private final CuratorDb db;
     private final NameService nameService;
 
-    public NameServiceDispatcher(Controller controller, Duration interval) {
+    NameServiceDispatcher(Controller controller, NameService nameService, Duration interval) {
         super(controller, interval);
         this.clock = controller.clock();
         this.db = controller.curator();
-        this.nameService = controller.serviceRegistry().nameService();
+        this.nameService = nameService;
+    }
+
+    public NameServiceDispatcher(Controller controller, Duration interval) {
+        this(controller, controller.serviceRegistry().nameService(), interval);
     }
 
     @Override
@@ -34,22 +39,27 @@ public class NameServiceDispatcher extends ControllerMaintainer {
         // Dispatch 1 request per second on average. Note that this is not entirely accurate because a NameService
         // implementation may need to perform multiple API-specific requests to execute a single NameServiceRequest
         int requestCount = trueIntervalInSeconds();
+        final NameServiceQueue initial;
         try (var lock = db.lockNameServiceQueue()) {
-            var queue = db.readNameServiceQueue();
-            var instant = clock.instant();
-            var remaining = queue.dispatchTo(nameService, requestCount);
-            if (queue.equals(remaining)) return 1.0; // Queue unchanged
-
-            var dispatched = queue.first(requestCount);
-            if (!dispatched.requests().isEmpty()) {
-                Level logLevel = controller().system().isCd() ? Level.INFO : Level.FINE;
-                log.log(logLevel, "Dispatched name service request(s) in " +
-                                  Duration.between(instant, clock.instant()) +
-                                  ": " + dispatched.requests());
-            }
-            db.writeNameServiceQueue(remaining);
+            initial = db.readNameServiceQueue();
         }
-        return 1.0;
+        if (initial.requests().isEmpty() || requestCount == 0) return 1.0;
+
+        Instant instant = clock.instant();
+        NameServiceQueue remaining = initial.dispatchTo(nameService, requestCount);
+        NameServiceQueue dispatched = initial.without(remaining);
+
+        if (!dispatched.requests().isEmpty()) {
+            Level logLevel = controller().system().isCd() ? Level.INFO : Level.FINE;
+            log.log(logLevel, () -> "Dispatched name service request(s) in " +
+                                    Duration.between(instant, clock.instant()) +
+                                    ": " + dispatched);
+        }
+
+        try (var lock = db.lockNameServiceQueue()) {
+            db.writeNameServiceQueue(db.readNameServiceQueue().replace(initial, remaining));
+        }
+        return dispatched.requests().size() / (double) Math.min(requestCount, initial.requests().size());
     }
 
     /** The true interval at which this runs in this cluster */

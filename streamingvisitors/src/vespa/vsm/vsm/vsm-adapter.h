@@ -53,7 +53,7 @@ public:
         VsmsummaryConfig::Fieldmap::Command   _command;
 
     public:
-        FieldSpec();
+        FieldSpec() noexcept;
         ~FieldSpec();
         const vespalib::string & getOutputName() const { return _outputName; }
         void setOutputName(const vespalib::string & name) { _outputName = name; }
@@ -84,11 +84,10 @@ public:
 
     // inherit doc from IDocsumEnvironment
     const search::IAttributeManager * getAttributeManager() const override { return nullptr; }
-    vespalib::string lookupIndex(const vespalib::string&) const override { return ""; }
     const juniper::Juniper * getJuniper() const override { return _juniper.get(); }
 };
 
-typedef std::shared_ptr<DocsumTools> DocsumToolsPtr;
+using DocsumToolsPtr = std::shared_ptr<DocsumTools>;
 
 class VSMConfigSnapshot {
 private:

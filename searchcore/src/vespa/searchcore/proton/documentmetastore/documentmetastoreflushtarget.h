@@ -10,10 +10,11 @@ namespace search::common { class FileHeaderContext; }
 
 namespace proton {
 
-class ITlsSyncer;
-class AttributeDiskLayout;
 class AttributeDirectory;
+class AttributeDiskLayout;
 class DocumentMetaStore;
+class ITlsSyncer;
+class TransientResourceUsage;
 
 /**
  * Implementation of IFlushTarget interface for document meta store.
@@ -40,7 +41,7 @@ private:
     std::shared_ptr<AttributeDirectory> _dmsDir;
 
 public:
-    typedef std::shared_ptr<DocumentMetaStoreFlushTarget> SP;
+    using SP = std::shared_ptr<DocumentMetaStoreFlushTarget>;
 
     /**
      * Creates a new instance using the given attribute vector and the
@@ -53,6 +54,8 @@ public:
     ~DocumentMetaStoreFlushTarget() override;
 
     void setCleanUpAfterFlush(bool cleanUp) { _cleanUpAfterFlush = cleanUp; }
+
+    TransientResourceUsage get_transient_resource_usage() const;
 
     MemoryGain getApproxMemoryGain() const override;
     DiskGain getApproxDiskGain() const override;

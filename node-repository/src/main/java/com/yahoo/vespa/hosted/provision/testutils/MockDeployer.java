@@ -232,7 +232,7 @@ public class MockDeployer implements Deployer {
             return clusterContexts.stream()
                     .map(clusterContext -> clusterContext.prepare(provisioner))
                     .flatMap(List::stream)
-                    .collect(Collectors.toList());
+                    .toList();
         }
 
     }

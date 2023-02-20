@@ -2,8 +2,6 @@
 package com.yahoo.feedhandler;
 
 import com.yahoo.clientmetrics.RouteMetricSet;
-import com.yahoo.container.jdisc.HttpRequest;
-import com.yahoo.container.protect.Error;
 import com.yahoo.feedapi.FeedContext;
 import com.yahoo.feedapi.Feeder;
 import com.yahoo.feedapi.JsonFeeder;
@@ -11,6 +9,8 @@ import com.yahoo.feedapi.MessagePropertyProcessor;
 import com.yahoo.feedapi.SimpleFeedAccess;
 import com.yahoo.feedapi.SingleSender;
 import com.yahoo.feedapi.XMLFeeder;
+import com.yahoo.messagebus.Error;
+import com.yahoo.messagebus.ErrorCode;
 
 import java.util.List;
 
@@ -33,7 +33,7 @@ public final class VespaFeedHandler extends VespaFeedHandlerBase {
         return new VespaFeedHandler(context);
     }
 
-    public FeedResponse handle(HttpRequest request, RouteMetricSet.ProgressCallback callback, int numThreads) {
+    public FeedResponse handle(InputStreamRequest request, RouteMetricSet.ProgressCallback callback, int numThreads) {
         MessagePropertyProcessor.PropertySetter properties = getPropertyProcessor().buildPropertySetter(request);
 
         String route = properties.getRoute().toString();
@@ -57,15 +57,15 @@ public final class VespaFeedHandler extends VespaFeedHandlerBase {
         long millis = getTimeoutMillis(request);
         boolean completed = sender.waitForPending(millis);
         if (!completed) {
-            response.addError(Error.TIMEOUT, "Timed out after " + millis + " ms waiting for responses");
+            response.addError(new Error(ErrorCode.TIMEOUT, "Timed out after " + millis + " ms waiting for responses"));
         }
         response.done();
         return response;
 
     }
 
-    private Feeder createFeeder(SimpleFeedAccess sender, HttpRequest request) {
-        if ( ! Boolean.valueOf(request.getProperty(JSON_INPUT))) {
+    private Feeder createFeeder(SimpleFeedAccess sender, InputStreamRequest request) {
+        if ( ! Boolean.parseBoolean(request.getProperty(JSON_INPUT))) {
             return new XMLFeeder(getDocumentTypeManager(), sender, getRequestInputStream(request));
         }
         return new JsonFeeder(getDocumentTypeManager(), sender, getRequestInputStream(request));

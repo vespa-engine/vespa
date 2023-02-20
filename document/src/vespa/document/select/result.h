@@ -19,6 +19,7 @@
 
 #include <vespa/vespalib/util/hdr_abort.h>
 #include <vespa/document/util/printable.h>
+#include <cstdint>
 
 namespace document::select {
 
@@ -27,6 +28,10 @@ public:
     static Result Invalid;
     static Result False;
     static Result True;
+
+    // Singletons are not copyable
+    Result(const Result&) = delete;
+    Result& operator=(const Result&) = delete;
 
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 
@@ -62,9 +67,6 @@ public:
 
 private:
     Result();
-    // Singletons are not copyable
-    Result(const Result&) = delete;
-    Result& operator=(const Result&) = delete;
 };
 
 }

@@ -48,7 +48,7 @@ public class HealthMonitorManagerTest {
     public void infrastructureApplication() {
         ProxyHostApplication proxyHostApplication = new ProxyHostApplication();
         when(duperModel.isSupportedInfraApplication(proxyHostApplication.getApplicationId())).thenReturn(true);
-        List<HostName> hostnames = Stream.of("proxyhost1", "proxyhost2").map(HostName::of).collect(Collectors.toList());
+        List<HostName> hostnames = Stream.of("proxyhost1", "proxyhost2").map(HostName::of).toList();
         ApplicationInfo proxyHostApplicationInfo = proxyHostApplication.makeApplicationInfo(hostnames);
 
         manager.applicationActivated(proxyHostApplicationInfo);

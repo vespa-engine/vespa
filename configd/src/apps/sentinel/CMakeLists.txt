@@ -7,6 +7,7 @@ vespa_add_executable(configd_config-sentinel_app
     connectivity.cpp
     env.cpp
     line-splitter.cpp
+    logctl.cpp
     manager.cpp
     metrics.cpp
     model-owner.cpp

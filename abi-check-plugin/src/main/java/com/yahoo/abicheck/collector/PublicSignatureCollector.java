@@ -71,7 +71,7 @@ public class PublicSignatureCollector extends ClassVisitor {
     if (isVisibleMember(access)) {
       Type method = Type.getMethodType(descriptor);
       List<String> argumentTypes = Arrays.stream(method.getArgumentTypes()).map(Type::getClassName)
-          .collect(Collectors.toList());
+          .toList();
       currentMethods
           .add(describeMethod(name, access, method.getReturnType().getClassName(), argumentTypes));
     }

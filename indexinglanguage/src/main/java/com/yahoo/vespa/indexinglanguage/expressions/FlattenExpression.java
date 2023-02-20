@@ -46,11 +46,7 @@ public final class FlattenExpression extends Expression {
                 str = input.getString().substring(span.getFrom(), span.getTo());
             }
             Integer pos = span.getTo();
-            List<String> entry = map.get(pos);
-            if (entry == null) {
-                entry = new LinkedList<>();
-                map.put(pos, entry);
-            }
+            List<String> entry = map.computeIfAbsent(pos, k -> new LinkedList<>());
             entry.add(str);
         }
         String inputVal = String.valueOf(input);
@@ -92,4 +88,5 @@ public final class FlattenExpression extends Expression {
     public int hashCode() {
         return getClass().hashCode();
     }
+
 }

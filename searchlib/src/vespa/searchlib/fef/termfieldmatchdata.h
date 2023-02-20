@@ -8,7 +8,6 @@
 #include <cstring>
 #include <limits>
 
-class MatchDataHeapTest;
 
 namespace search::fef {
 
@@ -20,8 +19,8 @@ class TermMatchDataMerger;
 class TermFieldMatchData
 {
 public:
-    typedef const TermFieldMatchDataPosition * PositionsIterator;
-    typedef TermFieldMatchDataPosition * MutablePositionsIterator;
+    using PositionsIterator = const TermFieldMatchDataPosition *;
+    using MutablePositionsIterator = TermFieldMatchDataPosition *;
     struct Positions {
         TermFieldMatchDataPosition *_positions;
         uint16_t                    _maxElementLength;
@@ -68,9 +67,6 @@ private:
     uint16_t _fieldLength;
 
     Features  _data;
-
-    friend class ::MatchDataHeapTest;
-
 public:
     PositionsIterator begin() const { return allocated() ? getMultiple() : getFixed(); }
     PositionsIterator end() const { return allocated() ? getMultiple() + _sz : empty() ? getFixed() : getFixed()+1; }

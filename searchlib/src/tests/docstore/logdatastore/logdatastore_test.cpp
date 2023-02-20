@@ -212,7 +212,7 @@ TEST("test that DirectIOPadding works accordng to spec") {
 
 void verifyGrowing(const LogDataStore::Config & config, uint32_t minFiles, uint32_t maxFiles) {
     DirectoryHandler tmpDir("growing");
-    vespalib::ThreadStackExecutor executor(4, 128_Ki);
+    vespalib::ThreadStackExecutor executor(4);
     DummyFileHeaderContext fileHeaderContext;
     MyTlSyncer tlSyncer;
     {
@@ -283,7 +283,7 @@ void fetchAndTest(IDataStore & datastore, uint32_t lid, const void *a, size_t sz
 TEST("testTruncatedIdxFile"){
     LogDataStore::Config config;
     DummyFileHeaderContext fileHeaderContext;
-    vespalib::ThreadStackExecutor executor(1, 128_Ki);
+    vespalib::ThreadStackExecutor executor(1);
     MyTlSyncer tlSyncer;
     {
         // Files comes from the 'growing test'.
@@ -311,7 +311,7 @@ TEST("testTruncatedIdxFile"){
 TEST("testThatEmptyIdxFilesAndDanglingDatFilesAreRemoved") {
     LogDataStore::Config config;
     DummyFileHeaderContext fileHeaderContext;
-    vespalib::ThreadStackExecutor executor(1, 128_Ki);
+    vespalib::ThreadStackExecutor executor(1);
     MyTlSyncer tlSyncer;
     LogDataStore datastore(executor, "dangling-test", config,
                            GrowStrategy(), TuneFileSummary(),
@@ -324,7 +324,7 @@ TEST("testThatEmptyIdxFilesAndDanglingDatFilesAreRemoved") {
 TEST("testThatIncompleteCompactedFilesAreRemoved") {
     LogDataStore::Config config;
     DummyFileHeaderContext fileHeaderContext;
-    vespalib::ThreadStackExecutor executor(1, 128_Ki);
+    vespalib::ThreadStackExecutor executor(1);
     MyTlSyncer tlSyncer;
     LogDataStore datastore(executor, "incompletecompact-test", config,
                            GrowStrategy(), TuneFileSummary(),
@@ -344,7 +344,7 @@ public:
         _myDir("visitcache"),
         _config(),
         _fileHeaderContext(),
-        _executor(1, 128_Ki),
+        _executor(1),
         _tlSyncer(),
         _datastore(_executor, _myDir.getDir(), _config, GrowStrategy(),
                    TuneFileSummary(), _fileHeaderContext, _tlSyncer, nullptr)
@@ -528,12 +528,11 @@ VisitCacheStore::VerifyVisitor::~VerifyVisitor() {
 VisitCacheStore::VisitCacheStore(UpdateStrategy strategy) :
     _myDir("visitcache"),
     _repo(makeDocTypeRepoConfig()),
-    _config(DocumentStore::Config(CompressionConfig::LZ4, 1000000, 0)
-                    .allowVisitCaching(true).updateStrategy(strategy),
+    _config(DocumentStore::Config(CompressionConfig::LZ4, 1000000, 0).updateStrategy(strategy),
             LogDataStore::Config().setMaxFileSize(50000).setMaxBucketSpread(3.0)
                     .setFileConfig(WriteableFileChunk::Config(CompressionConfig(), 16_Ki))),
     _fileHeaderContext(),
-    _executor(1, 128_Ki),
+    _executor(1),
     _tlSyncer(),
     _datastore(std::make_unique<LogDocumentStore>(_executor, _myDir.getDir(), _config, GrowStrategy(),
                                                   TuneFileSummary(), _fileHeaderContext, _tlSyncer, nullptr)),
@@ -675,7 +674,7 @@ TEST("testWriteRead") {
     {
         std::filesystem::create_directory(std::filesystem::path("empty"));
         DummyFileHeaderContext fileHeaderContext;
-        vespalib::ThreadStackExecutor executor(1, 128_Ki);
+        vespalib::ThreadStackExecutor executor(1);
         MyTlSyncer tlSyncer;
         LogDataStore datastore(executor, "empty", config, GrowStrategy(),
                                TuneFileSummary(), fileHeaderContext, tlSyncer, nullptr);
@@ -711,7 +710,7 @@ TEST("testWriteRead") {
     }
     {
         DummyFileHeaderContext fileHeaderContext;
-        vespalib::ThreadStackExecutor executor(1, 128_Ki);
+        vespalib::ThreadStackExecutor executor(1);
         MyTlSyncer tlSyncer;
         LogDataStore datastore(executor, "empty", config,
                                GrowStrategy(), TuneFileSummary(),
@@ -762,7 +761,7 @@ TEST("requireThatFlushTimeIsAvailableAfterFlush") {
     vespalib::system_time before(vespalib::system_clock::now());
     DummyFileHeaderContext fileHeaderContext;
     LogDataStore::Config config;
-    vespalib::ThreadStackExecutor executor(1, 128_Ki);
+    vespalib::ThreadStackExecutor executor(1);
     MyTlSyncer tlSyncer;
     LogDataStore store(executor, testDir.getDir(), config, GrowStrategy(),
                        TuneFileSummary(), fileHeaderContext, tlSyncer, nullptr);
@@ -849,7 +848,7 @@ struct Fixture {
     Fixture(const vespalib::string &dirName = "tmp",
             bool dirCleanup = true,
             size_t maxFileSize = 4_Ki * 2)
-        : executor(1, 0x20000),
+        : executor(1),
           dir(dirName),
           serialNum(0),
           fileHeaderCtx(),

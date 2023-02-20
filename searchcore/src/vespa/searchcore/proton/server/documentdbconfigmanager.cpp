@@ -100,7 +100,7 @@ DocumentDBMaintenanceConfig::SP
 buildMaintenanceConfig(const BootstrapConfig::SP &bootstrapConfig,
                        const vespalib::string &docTypeName)
 {
-    typedef ProtonConfig::Documentdb DdbConfig;
+    using DdbConfig = ProtonConfig::Documentdb;
     ProtonConfig &proton(bootstrapConfig->getProtonConfig());
 
     vespalib::duration visibilityDelay = vespalib::duration::zero();
@@ -126,7 +126,6 @@ buildMaintenanceConfig(const BootstrapConfig::SP &bootstrapConfig,
             DocumentDBPruneConfig(pruneRemovedDocumentsInterval,
                                   pruneRemovedDocumentsAge),
             DocumentDBHeartBeatConfig(),
-            vespalib::from_s(proton.grouping.sessionmanager.pruning.interval),
             visibilityDelay,
             DocumentDBLidSpaceCompactionConfig(
                     vespalib::from_s(proton.lidspacecompaction.interval),
@@ -176,7 +175,6 @@ getStoreConfig(const ProtonConfig::Summary::Cache & cache, const HwInfo & hwInfo
                       ? (hwInfo.memory().sizeBytes()*std::min(INT64_C(50), -cache.maxbytes))/100l
                       : cache.maxbytes;
     return DocumentStore::Config(deriveCompression(cache.compression), maxBytes, cache.initialentries)
-            .allowVisitCaching(cache.allowvisitcaching)
             .updateStrategy(derive(cache.updateStrategy));
 }
 

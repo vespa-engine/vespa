@@ -3,8 +3,8 @@ package com.yahoo.document.restapi.resource;
 
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
-import com.yahoo.component.annotation.Inject;
 import com.yahoo.cloud.config.ClusterListConfig;
+import com.yahoo.component.annotation.Inject;
 import com.yahoo.concurrent.DaemonThreadFactory;
 import com.yahoo.concurrent.SystemTimer;
 import com.yahoo.container.core.HandlerMetricContextUtil;
@@ -449,7 +449,8 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
     }
 
     private ContentChannel postDocument(HttpRequest request, DocumentPath path, ResponseHandler rawHandler) {
-        ResponseHandler handler = new MeasuringResponseHandler(rawHandler, com.yahoo.documentapi.metrics.DocumentOperationType.PUT, clock.instant());
+        ResponseHandler handler = new MeasuringResponseHandler(
+                request, rawHandler, com.yahoo.documentapi.metrics.DocumentOperationType.PUT, clock.instant());
         if (getProperty(request, DRY_RUN, booleanParser).orElse(false)) {
             handleFeedOperation(path, true, handler, new com.yahoo.documentapi.Response(-1));
             return ignoredContent;
@@ -462,7 +463,7 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
                 DocumentOperationParameters parameters = parametersFromRequest(request, ROUTE)
                         .withResponseHandler(response -> {
                             outstanding.decrementAndGet();
-                            updatePutMetrics(response.outcome());
+                            updatePutMetrics(response.outcome(), latencyOf(request));
                             handleFeedOperation(path, put.fullyApplied(), handler, response);
                         });
                 return () -> dispatchOperation(() -> asyncSession.put((DocumentPut)put.operation(), parameters));
@@ -471,7 +472,8 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
     }
 
     private ContentChannel putDocument(HttpRequest request, DocumentPath path, ResponseHandler rawHandler) {
-        ResponseHandler handler = new MeasuringResponseHandler(rawHandler, com.yahoo.documentapi.metrics.DocumentOperationType.UPDATE, clock.instant());
+        ResponseHandler handler = new MeasuringResponseHandler(
+                request, rawHandler, com.yahoo.documentapi.metrics.DocumentOperationType.UPDATE, clock.instant());
         if (getProperty(request, DRY_RUN, booleanParser).orElse(false)) {
             handleFeedOperation(path, true, handler, new com.yahoo.documentapi.Response(-1));
             return ignoredContent;
@@ -486,7 +488,7 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
                 DocumentOperationParameters parameters = parametersFromRequest(request, ROUTE)
                         .withResponseHandler(response -> {
                             outstanding.decrementAndGet();
-                            updateUpdateMetrics(response.outcome(), update.getCreateIfNonExistent());
+                            updateUpdateMetrics(response.outcome(), latencyOf(request), update.getCreateIfNonExistent());
                             handleFeedOperation(path, parsed.fullyApplied(), handler, response);
                         });
                 return () -> dispatchOperation(() -> asyncSession.update(update, parameters));
@@ -495,7 +497,8 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
     }
 
     private ContentChannel deleteDocument(HttpRequest request, DocumentPath path, ResponseHandler rawHandler) {
-        ResponseHandler handler = new MeasuringResponseHandler(rawHandler, com.yahoo.documentapi.metrics.DocumentOperationType.REMOVE, clock.instant());
+        ResponseHandler handler = new MeasuringResponseHandler(
+                request, rawHandler, com.yahoo.documentapi.metrics.DocumentOperationType.REMOVE, clock.instant());
         if (getProperty(request, DRY_RUN, booleanParser).orElse(false)) {
             handleFeedOperation(path, true, handler, new com.yahoo.documentapi.Response(-1));
             return ignoredContent;
@@ -507,7 +510,7 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
             DocumentOperationParameters parameters = parametersFromRequest(request, ROUTE)
                     .withResponseHandler(response -> {
                         outstanding.decrementAndGet();
-                        updateRemoveMetrics(response.outcome());
+                        updateRemoveMetrics(response.outcome(), latencyOf(request));
                         handleFeedOperation(path, true, handler, response);
                     });
             return () -> dispatchOperation(() -> asyncSession.remove(remove, parameters));
@@ -746,14 +749,25 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
         private boolean tensorShortForm() {
             if (request != null &&
                 request.parameters().containsKey("format.tensors") &&
-                request.parameters().get("format.tensors").contains("long")) {
+                ( request.parameters().get("format.tensors").contains("long")
+                  || request.parameters().get("format.tensors").contains("long-value"))) {
                 return false;
             }
             return true;  // default
         }
 
+        private boolean tensorDirectValues() {
+            if (request != null &&
+                request.parameters().containsKey("format.tensors") &&
+                ( request.parameters().get("format.tensors").contains("short-value")
+                  || request.parameters().get("format.tensors").contains("long-value"))) {
+                return true;
+            }
+            return false;  // TODO: Flip default on Vespa 9
+        }
+
         synchronized void writeSingleDocument(Document document) throws IOException {
-            new JsonWriter(json, tensorShortForm()).writeFields(document);
+            new JsonWriter(json, tensorShortForm(), tensorDirectValues()).writeFields(document);
         }
 
         synchronized void writeDocumentsArrayStart() throws IOException {
@@ -772,7 +786,7 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
             ByteArrayOutputStream myOut = new ByteArrayOutputStream(1);
             myOut.write(','); // Prepend rather than append, to avoid double memory copying.
             try (JsonGenerator myJson = jsonFactory.createGenerator(myOut)) {
-                new JsonWriter(myJson, tensorShortForm()).write(document);
+                new JsonWriter(myJson, tensorShortForm(), tensorDirectValues()).write(document);
             }
             docs.add(myOut);
 
@@ -1025,7 +1039,7 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
         }
     }
 
-    static class DocumentOperationParser {
+    class DocumentOperationParser {
 
         private final DocumentTypeManager manager;
 
@@ -1042,7 +1056,12 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
         }
 
         private ParsedDocumentOperation parse(InputStream inputStream, String docId, DocumentOperationType operation) {
-            return new JsonReader(manager, inputStream, jsonFactory).readSingleDocument(operation, docId);
+            try {
+                return new JsonReader(manager, inputStream, jsonFactory).readSingleDocument(operation, docId);
+            } catch (IllegalArgumentException e) {
+                incrementMetricParseError();
+                throw e;
+            }
         }
 
     }
@@ -1090,32 +1109,59 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
         handle(path, null, handler, response, (document, jsonResponse) -> jsonResponse.commit(Response.Status.OK, fullyApplied));
     }
 
-    private void updatePutMetrics(Outcome outcome) {
+    private static double latencyOf(HttpRequest r) { return (System.nanoTime() - r.relativeCreatedAtNanoTime()) / 1e+9d; }
+
+    private void updatePutMetrics(Outcome outcome, double latency) {
+        incrementMetricNumOperations(); incrementMetricNumPuts(); sampleLatency(latency);
         switch (outcome) {
-            case SUCCESS -> metric.add(MetricNames.SUCCEEDED, 1, null);
-            case CONDITION_FAILED -> metric.add(MetricNames.CONDITION_NOT_MET, 1, null);
-            default -> metric.add(MetricNames.FAILED, 1, null);
+            case SUCCESS -> incrementMetricSucceeded();
+            case NOT_FOUND -> incrementMetricNotFound();
+            case CONDITION_FAILED -> incrementMetricConditionNotMet();
+            case TIMEOUT -> { incrementMetricFailedTimeout(); incrementMetricFailed();}
+            case INSUFFICIENT_STORAGE -> { incrementMetricFailedInsufficientStorage(); incrementMetricFailed(); }
+            case ERROR -> { incrementMetricFailedUnknown(); incrementMetricFailed(); }
         }
     }
 
-    private void updateUpdateMetrics(Outcome outcome, boolean create) {
+    private void updateUpdateMetrics(Outcome outcome, double latency, boolean create) {
         if (create && outcome == Outcome.NOT_FOUND) outcome = Outcome.SUCCESS; // >_<
+        incrementMetricNumOperations(); incrementMetricNumUpdates(); sampleLatency(latency);
         switch (outcome) {
-            case SUCCESS -> metric.add(MetricNames.SUCCEEDED, 1, null);
-            case NOT_FOUND -> metric.add(MetricNames.NOT_FOUND, 1, null);
-            case CONDITION_FAILED -> metric.add(MetricNames.CONDITION_NOT_MET, 1, null);
-            default -> metric.add(MetricNames.FAILED, 1, null);
+            case SUCCESS -> incrementMetricSucceeded();
+            case NOT_FOUND -> incrementMetricNotFound();
+            case CONDITION_FAILED -> incrementMetricConditionNotMet();
+            case TIMEOUT -> { incrementMetricFailedTimeout(); incrementMetricFailed();}
+            case INSUFFICIENT_STORAGE -> { incrementMetricFailedInsufficientStorage(); incrementMetricFailed(); }
+            case ERROR -> { incrementMetricFailedUnknown(); incrementMetricFailed(); }
         }
     }
 
-    private void updateRemoveMetrics(Outcome outcome) {
+    private void updateRemoveMetrics(Outcome outcome, double latency) {
+        incrementMetricNumOperations(); incrementMetricNumRemoves(); sampleLatency(latency);
         switch (outcome) {
-            case SUCCESS:
-            case NOT_FOUND: metric.add(MetricNames.SUCCEEDED, 1, null); break;
-            case CONDITION_FAILED: metric.add(MetricNames.CONDITION_NOT_MET, 1, null); break;
-            default: metric.add(MetricNames.FAILED, 1, null); break;
+            case SUCCESS,NOT_FOUND -> incrementMetricSucceeded();
+            case CONDITION_FAILED -> incrementMetricConditionNotMet();
+            case TIMEOUT -> { incrementMetricFailedTimeout(); incrementMetricFailed();}
+            case INSUFFICIENT_STORAGE -> { incrementMetricFailedInsufficientStorage(); incrementMetricFailed(); }
+            case ERROR -> { incrementMetricFailedUnknown(); incrementMetricFailed(); }
         }
     }
+
+    private void sampleLatency(double latency) { setMetric(MetricNames.LATENCY, latency); }
+    private void incrementMetricNumOperations() { incrementMetric(MetricNames.NUM_OPERATIONS); }
+    private void incrementMetricNumPuts() { incrementMetric(MetricNames.NUM_PUTS); }
+    private void incrementMetricNumRemoves() { incrementMetric(MetricNames.NUM_REMOVES); }
+    private void incrementMetricNumUpdates() { incrementMetric(MetricNames.NUM_UPDATES); }
+    private void incrementMetricFailed() { incrementMetric(MetricNames.FAILED); }
+    private void incrementMetricConditionNotMet() { incrementMetric(MetricNames.CONDITION_NOT_MET); }
+    private void incrementMetricSucceeded() { incrementMetric(MetricNames.SUCCEEDED); }
+    private void incrementMetricNotFound() { incrementMetric(MetricNames.NOT_FOUND); }
+    private void incrementMetricParseError() { incrementMetric(MetricNames.PARSE_ERROR); }
+    private void incrementMetricFailedUnknown() { incrementMetric(MetricNames.FAILED_UNKNOWN); }
+    private void incrementMetricFailedTimeout() { incrementMetric(MetricNames.FAILED_TIMEOUT); }
+    private void incrementMetricFailedInsufficientStorage() { incrementMetric(MetricNames.FAILED_INSUFFICIENT_STORAGE); }
+    private void incrementMetric(String n) { metric.add(n, 1, null); }
+    private void setMetric(String n, Number v) { metric.set(n, v, null); }
 
     // ------------------------------------------------- Visits ------------------------------------------------
 
@@ -1438,8 +1484,13 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
         private final ResponseHandler delegate;
         private final com.yahoo.documentapi.metrics.DocumentOperationType type;
         private final Instant start;
+        private final HttpRequest request;
 
-        private MeasuringResponseHandler(ResponseHandler delegate, com.yahoo.documentapi.metrics.DocumentOperationType type, Instant start) {
+        private MeasuringResponseHandler(HttpRequest request,
+                                         ResponseHandler delegate,
+                                         com.yahoo.documentapi.metrics.DocumentOperationType type,
+                                         Instant start) {
+            this.request = request;
             this.delegate = delegate;
             this.type = type;
             this.start = start;
@@ -1447,15 +1498,25 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
 
         @Override
         public ContentChannel handleResponse(Response response) {
-            var statusCodeGroup = response.getStatus() / 100;
-            // Status code 412 - condition not met - is considered OK
-            if (statusCodeGroup == 2 || response.getStatus() == 412)
-                metrics.reportSuccessful(type, start);
-            else if (statusCodeGroup == 4)
-                metrics.reportFailure(type, DocumentOperationStatus.REQUEST_ERROR);
-            else if (statusCodeGroup == 5)
-                metrics.reportFailure(type, DocumentOperationStatus.SERVER_ERROR);
+            switch (response.getStatus()) {
+                case 200 -> report(DocumentOperationStatus.OK);
+                case 400 -> report(DocumentOperationStatus.REQUEST_ERROR);
+                case 404 -> report(DocumentOperationStatus.NOT_FOUND);
+                case 412 -> report(DocumentOperationStatus.CONDITION_FAILED);
+                case 429 -> report(DocumentOperationStatus.TOO_MANY_REQUESTS);
+                case 500,502,503,504,507 -> report(DocumentOperationStatus.SERVER_ERROR);
+                default -> throw new IllegalStateException("Unexpected status code '%s'".formatted(response.getStatus()));
+            }
+            metrics.reportHttpRequest(clientVersion());
             return delegate.handleResponse(response);
+        }
+
+        private void report(DocumentOperationStatus... status) { metrics.report(type, start, status); }
+
+        private String clientVersion() {
+            return Optional.ofNullable(request.headers().get(Headers.CLIENT_VERSION))
+                    .filter(l -> !l.isEmpty()).map(l -> l.get(0))
+                    .orElse("unknown");
         }
 
     }

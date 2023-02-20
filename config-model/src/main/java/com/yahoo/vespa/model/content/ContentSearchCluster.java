@@ -3,7 +3,8 @@ package com.yahoo.vespa.model.content;
 
 import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.deploy.DeployState;
-import com.yahoo.config.model.producer.AbstractConfigProducer;
+import com.yahoo.config.model.producer.AnyConfigProducer;
+import com.yahoo.config.model.producer.TreeConfigProducer;
 import com.yahoo.documentmodel.NewDocumentType;
 import com.yahoo.schema.Schema;
 import com.yahoo.schema.derived.SchemaInfo;
@@ -35,13 +36,11 @@ import java.util.TreeMap;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
-import static java.util.stream.Collectors.toList;
-
 /**
  * Encapsulates the various options for search in a content model.
  * Wraps a search cluster from com.yahoo.vespa.model.search.
  */
-public class ContentSearchCluster extends AbstractConfigProducer<SearchCluster> implements
+public class ContentSearchCluster extends TreeConfigProducer<AnyConfigProducer> implements
         ProtonConfig.Producer,
         DispatchNodesConfig.Producer,
         DispatchConfig.Producer
@@ -79,7 +78,7 @@ public class ContentSearchCluster extends AbstractConfigProducer<SearchCluster> 
     /** Whether the nodes of this cluster also hosts a container cluster in a hosted system */
     private final double fractionOfMemoryReserved;
 
-    public static class Builder extends VespaDomBuilder.DomConfigProducerBuilder<ContentSearchCluster> {
+    public static class Builder extends VespaDomBuilder.DomConfigProducerBuilderBase<ContentSearchCluster> {
 
         private final Map<String, NewDocumentType> documentDefinitions;
         private final Set<NewDocumentType> globallyDistributedDocuments;
@@ -96,7 +95,7 @@ public class ContentSearchCluster extends AbstractConfigProducer<SearchCluster> 
         }
 
         @Override
-        protected ContentSearchCluster doBuild(DeployState deployState, AbstractConfigProducer<?> ancestor, Element producerSpec) {
+        protected ContentSearchCluster doBuild(DeployState deployState, TreeConfigProducer<AnyConfigProducer> ancestor, Element producerSpec) {
             ModelElement clusterElem = new ModelElement(producerSpec);
             String clusterName = ContentCluster.getClusterId(clusterElem);
             Boolean flushOnShutdownElem = clusterElem.childAsBoolean("engine.proton.flush-on-shutdown");
@@ -197,7 +196,7 @@ public class ContentSearchCluster extends AbstractConfigProducer<SearchCluster> 
         }
     }
 
-    private ContentSearchCluster(AbstractConfigProducer<?> parent,
+    private ContentSearchCluster(TreeConfigProducer<?> parent,
                                  String clusterName,
                                  ModelContext.FeatureFlags featureFlags,
                                  Map<String, NewDocumentType> documentDefinitions,
@@ -269,7 +268,7 @@ public class ContentSearchCluster extends AbstractConfigProducer<SearchCluster> 
     }
 
     public void addSearchNode(DeployState deployState, ContentNode node, StorageGroup parentGroup, ModelElement element) {
-        AbstractConfigProducer<?> parent = hasIndexedCluster() ? getIndexed() : this;
+        TreeConfigProducer<AnyConfigProducer> parent = hasIndexedCluster() ? getIndexed() : this;
 
         NodeSpec spec = getNextSearchNodeSpec(parentGroup);
         SearchNode searchNode;
@@ -345,7 +344,7 @@ public class ContentSearchCluster extends AbstractConfigProducer<SearchCluster> 
         return getClusters().values().stream()
                 .filter(StreamingSearchCluster.class::isInstance)
                 .map(StreamingSearchCluster.class::cast)
-                .collect(toList());
+                .toList();
     }
 
     public List<NewDocumentType> getDocumentTypesWithStreamingCluster() { return documentTypes(this::hasIndexingModeStreaming); }
@@ -355,7 +354,7 @@ public class ContentSearchCluster extends AbstractConfigProducer<SearchCluster> 
     private List<NewDocumentType> documentTypes(Predicate<NewDocumentType> filter) {
         return documentDefinitions.values().stream()
                 .filter(filter)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     private boolean hasIndexingModeStreaming(NewDocumentType type) {

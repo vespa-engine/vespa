@@ -63,27 +63,22 @@
   <build>
     <plugins>
       <plugin>
-        <artifactId>maven-assembly-plugin</artifactId>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-install-plugin</artifactId>
+        <configuration><skip>true</skip></configuration>
+      </plugin>
+      <plugin>
+        <groupId>com.yahoo.vespa</groupId>
+        <artifactId>bundle-plugin</artifactId>
+        <executions>
+          <execution>
+            <phase>package</phase>
+            <goals><goal>assemble-fat-jar</goal></goals>
+          </execution>
+        </executions>
         <configuration>
-           <archive>
-             <manifest>
-               <mainClass>com.yahoo.vespa.zookeeper.cli.Main</mainClass>
-             </manifest>
-           </archive>
-           <descriptorRefs>
-             <descriptorRef>jar-with-dependencies</descriptorRef>
-           </descriptorRefs>
-         </configuration>
-         <executions>
-           <execution>
-             <id>make-assembly</id>
-             <phase>package</phase>
-             <!-- append to the packaging phase. -->
-             <goals>
-               <goal>single</goal>
-             </goals>
-           </execution>
-         </executions>
+          <mainClass>com.yahoo.vespa.zookeeper.cli.Main</mainClass>
+        </configuration>
       </plugin>
     </plugins>
   </build>

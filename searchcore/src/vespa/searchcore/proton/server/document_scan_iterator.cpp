@@ -7,7 +7,7 @@ using search::DocumentMetaData;
 
 namespace proton {
 
-typedef IDocumentMetaStore::Iterator Iterator;
+using Iterator = IDocumentMetaStore::Iterator;
 
 DocumentScanIterator::DocumentScanIterator(const IDocumentMetaStore &metaStore)
     : _metaStore(metaStore),

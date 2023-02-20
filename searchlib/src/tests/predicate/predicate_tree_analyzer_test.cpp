@@ -19,7 +19,7 @@ using std::map;
 using std::string;
 
 namespace {
-typedef PredicateSlimeBuilder Builder;
+using Builder = PredicateSlimeBuilder;
 
 TEST("require that minfeature is 1 for simple term") {
     auto slime(Builder().feature("foo").value("bar").build());

@@ -13,6 +13,8 @@ VersionedRPCNetwork::VersionedRPCNetwork(const RPCNetworkParams &params) :
     _version(vespalib::Vtag::currentVersion)
 {}
 
+VersionedRPCNetwork::~VersionedRPCNetwork() = default;
+
 void
 VersionedRPCNetwork::setVersion(const vespalib::Version &version)
 {

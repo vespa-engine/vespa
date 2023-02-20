@@ -49,8 +49,7 @@ public:
                              const vespalib::Clock & clock,
                              vespalib::ISequencedTaskExecutor& field_writer,
                              vespalib::InvokeService * invokeService,
-                             const ThreadingServiceConfig& cfg,
-                             uint32_t stackSize = 128 * 1024);
+                             const ThreadingServiceConfig& cfg);
     ~ExecutorThreadingService() override;
 
     void blocking_master_execute(vespalib::Executor::Task::UP task) override;

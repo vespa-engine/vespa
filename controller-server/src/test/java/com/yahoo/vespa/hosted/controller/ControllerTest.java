@@ -20,7 +20,9 @@ import com.yahoo.config.provision.zone.RoutingMethod;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.path.Path;
 import com.yahoo.vespa.flags.PermanentFlags;
+import com.yahoo.vespa.hosted.controller.api.application.v4.model.DeploymentData;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
+import com.yahoo.vespa.hosted.controller.api.integration.billing.Quota;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateMetadata;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ContainerEndpoint;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
@@ -38,7 +40,6 @@ import com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentContext;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
-import com.yahoo.vespa.hosted.controller.deployment.RunStatus;
 import com.yahoo.vespa.hosted.controller.deployment.Submission;
 import com.yahoo.vespa.hosted.controller.integration.ZoneApiMock;
 import com.yahoo.vespa.hosted.controller.notification.Notification;
@@ -54,6 +55,7 @@ import com.yahoo.vespa.hosted.controller.versions.VespaVersion.Confidence;
 import com.yahoo.vespa.hosted.rotation.config.RotationsConfig;
 import org.junit.jupiter.api.Test;
 
+import java.io.InputStream;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Collection;
@@ -1018,7 +1020,7 @@ public class ControllerTest {
                 new Record(Record.Type.ALIAS,
                         RecordName.from("application.tenant.us-east-3-w.vespa.oath.cloud"),
                         new WeightedAliasTarget(HostName.of("lb-0--tenant.application.default--prod.us-east-3"),
-                                "dns-zone-1", ZoneId.from("prod.us-east-3"), 1).pack()),
+                                "dns-zone-1", "prod.us-east-3", 1).pack()),
 
                 // The 'east' global endpoint, pointing to the weighted record for zone 2's region
                 new Record(Record.Type.ALIAS,
@@ -1116,6 +1118,94 @@ public class ControllerTest {
     }
 
     @Test
+    void testZoneEndpointChanges() {
+        DeploymentContext app = tester.newDeploymentContext();
+        // Set up app with default settings.
+        app.submit(ApplicationPackageBuilder.fromDeploymentXml("""
+                                                               <deployment>
+                                                                 <prod>
+                                                                   <region>us-east-3</region>
+                                                                 </prod>
+                                                               </deployment>"""));
+
+        assertEquals("zone-endpoint-change: application 'tenant.application' has a public endpoint for cluster 'foo' in 'us-east-3', but the new deployment spec disables this",
+                     assertThrows(IllegalArgumentException.class,
+                                  () -> app.submit(ApplicationPackageBuilder.fromDeploymentXml("""
+                                                                                               <deployment>
+                                                                                                 <prod>
+                                                                                                   <region>us-east-3</region>
+                                                                                                 </prod>
+                                                                                                 <endpoints>
+                                                                                                   <endpoint type='zone' container-id='foo' enabled='false' />
+                                                                                                 </endpoints>
+                                                                                               </deployment>""")))
+                             .getMessage());
+
+        // Disabling endpoints is OK with override.
+        app.submit(ApplicationPackageBuilder.fromDeploymentXml("""
+                                                               <deployment>
+                                                                 <prod>
+                                                                   <region>us-east-3</region>
+                                                                 </prod>
+                                                                 <endpoints>
+                                                                   <endpoint type='zone' container-id='foo' enabled='false' />
+                                                                 </endpoints>
+                                                               </deployment>""",
+                                                               ValidationId.zoneEndpointChange));
+
+        // Enabling endpoints again is OK, as is adding a private endpoint with some URN.
+        app.submit(ApplicationPackageBuilder.fromDeploymentXml("""
+                                                               <deployment>
+                                                                 <prod>
+                                                                   <region>us-east-3</region>
+                                                                 </prod>
+                                                                 <endpoints>
+                                                                   <endpoint type='private' container-id='foo'>
+                                                                     <allow with='aws-private-link' arn='yarn' />
+                                                                   </endpoint>
+                                                                 </endpoints>
+                                                               </deployment>""",
+                                                               ValidationId.zoneEndpointChange));
+
+        // Changing URNs is guarded.
+        assertEquals("zone-endpoint-change: application 'tenant.application' allows access to cluster 'foo' in 'us-east-3' to " +
+                     "['yarn' through 'aws-private-link'], but does not include all these in the new deployment spec. " +
+                     "Deploying with the new settings will allow access to ['yarn' through 'gcp-service-connect']",
+                     assertThrows(IllegalArgumentException.class,
+                                  () -> app.submit(ApplicationPackageBuilder.fromDeploymentXml("""
+                                                                                               <deployment>
+                                                                                                 <prod>
+                                                                                                   <region>us-east-3</region>
+                                                                                                 </prod>
+                                                                                                 <endpoints>
+                                                                                                   <endpoint type='private' container-id='foo'>
+                                                                                                     <allow with='gcp-service-connect' project='yarn' />
+                                                                                                   </endpoint>
+                                                                                                 </endpoints>
+                                                                                               </deployment>""")))
+                             .getMessage());
+
+        // Changing cluster, effectively removing old URNs, is also guarded.
+        assertEquals("zone-endpoint-change: application 'tenant.application' allows access to cluster 'foo' in 'us-east-3' to " +
+                     "['yarn' through 'aws-private-link'], but does not include all these in the new deployment spec. " +
+                     "Deploying with the new settings will allow access to no one",
+                     assertThrows(IllegalArgumentException.class,
+                                  () -> app.submit(ApplicationPackageBuilder.fromDeploymentXml("""
+                                                                                               <deployment>
+                                                                                                 <prod>
+                                                                                                   <region>us-east-3</region>
+                                                                                                 </prod>
+                                                                                                 <endpoints>
+                                                                                                   <endpoint type='private' container-id='bar'>
+                                                                                                     <allow with='aws-private-link' arn='yarn' />
+                                                                                                   </endpoint>
+                                                                                                 </endpoints>
+                                                                                               </deployment>""")))
+                             .getMessage());
+    }
+
+
+        @Test
     void testReadableApplications() {
         var db = new MockCuratorDb(tester.controller().system());
         var tester = new DeploymentTester(new ControllerTester(db));
@@ -1397,6 +1487,19 @@ public class ControllerTest {
         } catch (IllegalArgumentException e) {
             assertTrue(e.getMessage().contains("Element 'prod' contains attribute 'global-service-id' deprecated since major version 7"));
         }
+    }
+
+    @Test
+    void testDeactivateDeploymentUnknownByController() {
+        DeploymentContext context = tester.newDeploymentContext();
+        DeploymentId deployment = context.deploymentIdIn(ZoneId.from("prod", "us-west-1"));
+        DeploymentData deploymentData = new DeploymentData(deployment.applicationId(), deployment.zoneId(), InputStream::nullInputStream, Version.fromString("6.1"),
+                                                           Set.of(), Optional::empty, Optional.empty(), Optional.empty(),
+                                                           Quota::unlimited, List.of(), List.of(), Optional::empty, false);
+        tester.configServer().deploy(deploymentData);
+        assertTrue(tester.configServer().application(deployment.applicationId(), deployment.zoneId()).isPresent());
+        tester.controller().applications().deactivate(deployment.applicationId(), deployment.zoneId());
+        assertFalse(tester.configServer().application(deployment.applicationId(), deployment.zoneId()).isPresent());
     }
 
 }

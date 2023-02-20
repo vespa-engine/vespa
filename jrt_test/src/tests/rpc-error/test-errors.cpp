@@ -12,6 +12,8 @@ private:
     FRT_Target     *target;
 
 public:
+    TestErrors();
+    ~TestErrors() override;
     void init(const char *spec) {
 	    client = & server.supervisor();
         target = client->GetTarget(spec);
@@ -31,6 +33,8 @@ public:
     int Main() override;
 };
 
+TestErrors::TestErrors() = default;
+TestErrors::~TestErrors() = default;
 
 void
 TestErrors::testNoError()

@@ -121,13 +121,15 @@ FNET_TransportThread::PostEvent(FNET_ControlPacket *cpacket,
         std::unique_lock<std::mutex> guard(_lock);
         if (IsShutDown()) {
             guard.unlock();
-            SafeDiscardEvent(cpacket, context);
+            DiscardEvent(cpacket, context);
             return false;
         }
         _queue.QueuePacket_NoLock(cpacket, context);
         qLen = _queue.GetPacketCnt_NoLock();
     }
-    if (qLen == getConfig()._events_before_wakeup) {
+    if ((qLen == getConfig()._events_before_wakeup) ||
+        (cpacket->GetCommand() == FNET_ControlPacket::FNET_CMD_EXECUTE))
+    {
         _selector.wakeup();
     }
     return true;
@@ -151,13 +153,6 @@ FNET_TransportThread::DiscardEvent(FNET_ControlPacket *cpacket,
     }
 }
 
-void
-FNET_TransportThread::SafeDiscardEvent(FNET_ControlPacket *cpacket,
-                                       FNET_Context context)
-{
-    std::lock_guard guard(_pseudo_thread); // be the thread
-    DiscardEvent(cpacket, context);
-}
 
 void
 FNET_TransportThread::handle_add_cmd(FNET_IOComponent *ioc)
@@ -245,7 +240,6 @@ FNET_TransportThread::FNET_TransportThread(FNET_Transport &owner_in)
       _lock(),
       _shutdownLock(),
       _shutdownCond(),
-      _pseudo_thread(),
       _started(false),
       _shutdown(false),
       _finished(false),
@@ -262,8 +256,6 @@ FNET_TransportThread::~FNET_TransportThread()
     }
     if (_started.load() && !is_finished()) {
         LOG(error, "Transport: delete called on active object!");
-    } else {
-        std::lock_guard guard(_pseudo_thread);
     }
 }
 
@@ -622,7 +614,6 @@ FNET_TransportThread::Main()
 void
 FNET_TransportThread::Run(FastOS_ThreadInterface *thisThread, void *)
 {
-    std::lock_guard guard(_pseudo_thread); // be the thread
     if (!InitEventLoop()) {
         LOG(warning, "Transport: Run: Could not init event loop");
         return;

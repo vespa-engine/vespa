@@ -5,8 +5,8 @@ import com.yahoo.component.Version;
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.SystemName;
-import com.yahoo.config.provision.Tags;
+import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.security.KeyUtils;
 import com.yahoo.slime.SlimeUtils;
@@ -23,6 +23,7 @@ import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentActivity;
 import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
+import com.yahoo.vespa.hosted.controller.application.EndpointId;
 import com.yahoo.vespa.hosted.controller.application.QuotaUsage;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentContext;
@@ -40,6 +41,7 @@ import java.security.PublicKey;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -47,6 +49,7 @@ import java.util.OptionalDouble;
 import java.util.OptionalInt;
 import java.util.OptionalLong;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -68,7 +71,6 @@ public class ApplicationSerializerTest {
                                                                                      "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEFELzPyinTfQ/sZnTmRp5E4Ve/sbE\n" +
                                                                                      "pDhJeqczkyFcT2PysJ5sZwm7rKPEeXDOhzTPCyRvbUqc2SGdWbKUGGa/Yw==\n" +
                                                                                      "-----END PUBLIC KEY-----\n");
-
 
     @Test
     void testSerialization() throws Exception {
@@ -130,14 +132,12 @@ public class ApplicationSerializerTest {
                 Map.of(new JobId(id1, DeploymentContext.productionUsEast3), List.of(applicationVersion2)));
         List<Instance> instances =
                 List.of(new Instance(id1,
-                                     Tags.fromString("tag1 tag2"),
                                      deployments,
                                      Map.of(DeploymentContext.systemTest, Instant.ofEpochMilli(333)),
-                                     List.of(AssignedRotation.fromStrings("foo", "default", "my-rotation", Set.of("us-west-1"))),
+                                     List.of(rotation("foo", "default", "my-rotation", Set.of("us-west-1"))),
                                      rotationStatus,
                                      Change.of(new Version("6.1"))),
                         new Instance(id3,
-                                     Tags.empty(),
                                      List.of(),
                                      Map.of(),
                                      List.of(),
@@ -180,9 +180,6 @@ public class ApplicationSerializerTest {
         assertEquals(original.revisions().withPackage(), serialized.revisions().withPackage());
         assertEquals(original.revisions().production(), serialized.revisions().production());
         assertEquals(original.revisions().development(), serialized.revisions().development());
-
-        assertEquals(original.require(id1.instance()).tags(), serialized.require(id1.instance()).tags());
-        assertEquals(original.require(id3.instance()).tags(), serialized.require(id3.instance()).tags());
 
         assertEquals(original.deploymentSpec().xmlForm(), serialized.deploymentSpec().xmlForm());
         assertEquals(original.validationOverrides().xmlForm(), serialized.validationOverrides().xmlForm());
@@ -234,6 +231,15 @@ public class ApplicationSerializerTest {
         byte[] applicationJson = Files.readAllBytes(testData.resolve("complete-application.json"));
         APPLICATION_SERIALIZER.fromSlime(applicationJson);
         // ok if no error
+    }
+
+    private static AssignedRotation rotation(String clusterId, String endpointId, String rotationId, Collection<String> regions) {
+        return new AssignedRotation(
+                new ClusterSpec.Id(clusterId),
+                EndpointId.of(endpointId),
+                new RotationId(rotationId),
+                regions.stream().map(RegionName::from).collect(Collectors.toSet())
+        );
     }
 
 }

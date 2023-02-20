@@ -133,6 +133,7 @@ public class DocumentRetriever {
         return msg;
     }
 
+    @SuppressWarnings("deprecation")
     private void printReply(Reply reply) {
         Trace trace = reply.getTrace();
         if (!trace.getRoot().isEmpty()) {
@@ -168,7 +169,7 @@ public class DocumentRetriever {
             System.out.println(document.getId());
         } else {
             if (params.jsonOutput) {
-                System.out.print(Utf8.toString(JsonWriter.toByteArray(document)));
+                System.out.print(Utf8.toString(JsonWriter.toByteArray(document, params.tensorShortForm, params.tensorDirectValues)));
             } else {
                 System.out.print(document.toXML("  "));
             }

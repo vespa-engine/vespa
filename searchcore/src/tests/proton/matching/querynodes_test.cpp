@@ -112,7 +112,7 @@ public:
         return SearchType::create(std::move(_children), _strict).release();
     }
 };
-typedef Create<OrSearch>     MyOr;
+using MyOr = Create<OrSearch>;
 
 class ISourceSelectorDummy : public ISourceSelector
 {
@@ -130,7 +130,7 @@ public:
 ISourceSelector::SourceStore ISourceSelectorDummy::_sourceStoreDummy("foo");
 
 
-typedef uint32_t SourceId;
+using SourceId = uint32_t;
 class Blender {
     bool _strict;
     SourceBlenderSearch::Children _children;
@@ -212,9 +212,9 @@ public:
     template <typename Tag> string getIteratorAsString();
 };
 
-typedef QueryBuilder<ProtonNodeTypes> QB;
+using QB = QueryBuilder<ProtonNodeTypes>;
 struct Phrase { void addToBuilder(QB& b) { b.addPhrase(2, view, id, weight); }};
-struct SameElement { void addToBuilder(QB& b) { b.addSameElement(2, view); }};
+struct SameElement { void addToBuilder(QB& b) { b.addSameElement(2, view, id, weight); }};
 struct Near   { void addToBuilder(QB& b) { b.addNear(2, distance); } };
 struct ONear  { void addToBuilder(QB& b) { b.addONear(2, distance); } };
 struct Or     { void addToBuilder(QB& b) { b.addOr(2); } };
@@ -301,7 +301,7 @@ SearchIterator *getParent<SameElement>(SearchIterator *a, SearchIterator *b) {
     // we only check how many term/field combinations
     // are below the SameElement parent:
     // two terms searching in one index field
-    return new SameElementSearch(nullptr, std::move(children), true);
+    return new SameElementSearch(tmd, nullptr, std::move(children), true);
 }
 
 template <>

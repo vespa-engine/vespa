@@ -1,9 +1,9 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "pendingmessagetracker.h"
+#include <vespa/storageframework/generic/clock/clock.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <map>
-#include <algorithm>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".pendingmessages");
@@ -15,7 +15,7 @@ PendingMessageTracker::PendingMessageTracker(framework::ComponentRegister& cr, u
                                     vespalib::make_string("Pending messages to storage nodes (stripe %u)", stripe_index)),
       _component(cr, "pendingmessagetracker"),
       _nodeInfo(_component.getClock()),
-      _nodeBusyDuration(60),
+      _nodeBusyDuration(60s),
       _deferred_read_tasks(),
       _lock()
 {
@@ -38,7 +38,7 @@ vespalib::string
 PendingMessageTracker::MessageEntry::toHtml() const {
     vespalib::asciistream ss;
     ss << "<li><i>Node " << nodeIdx << "</i>: "
-       << "<b>" << framework::MilliSecTime(timeStamp.count()).toString() << "</b> "
+       << "<b>" << vespalib::to_string(timeStamp) << "</b> "
        << api::MessageType::get(api::MessageType::Id(msgType)).getName() << "(" <<  bucket.getBucketId() <<  ", priority=" << priority << ")</li>\n";
     return ss.str();
 }
@@ -46,7 +46,7 @@ PendingMessageTracker::MessageEntry::toHtml() const {
 PendingMessageTracker::TimePoint
 PendingMessageTracker::currentTime() const
 {
-    return TimePoint(_component.getClock().getTimeInMillis().getTime());
+    return _component.getClock().getSystemTime();
 }
 
 namespace {

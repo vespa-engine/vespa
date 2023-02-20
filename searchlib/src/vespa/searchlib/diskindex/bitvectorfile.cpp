@@ -88,7 +88,7 @@ void
 BitVectorFileWrite::makeDatHeader(const FileHeaderContext &fileHeaderContext)
 {
     vespalib::FileHeader h(FileSettings::DIRECTIO_ALIGNMENT);
-    typedef vespalib::GenericHeader::Tag Tag;
+    using Tag = vespalib::GenericHeader::Tag;
     fileHeaderContext.addTags(h, _datFile->GetFileName());
     h.putTag(Tag("docIdLimit", _docIdLimit));
     h.putTag(Tag("numKeys", _numKeys));
@@ -105,7 +105,7 @@ void
 BitVectorFileWrite::updateDatHeader(uint64_t fileBitSize)
 {
     vespalib::FileHeader h(FileSettings::DIRECTIO_ALIGNMENT);
-    typedef vespalib::GenericHeader::Tag Tag;
+    using Tag = vespalib::GenericHeader::Tag;
     readHeader(h, _datFile->GetFileName());
     FileHeaderContext::setFreezeTime(h);
     h.putTag(Tag("numKeys", _numKeys));

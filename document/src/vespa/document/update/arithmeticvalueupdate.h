@@ -37,7 +37,7 @@ private:
 
     ACCEPT_UPDATE_VISITOR;
 public:
-    typedef std::unique_ptr<ArithmeticValueUpdate> UP;
+    using UP = std::unique_ptr<ArithmeticValueUpdate>;
 
     /**
      * The default constructor requires initial values for all member variables.

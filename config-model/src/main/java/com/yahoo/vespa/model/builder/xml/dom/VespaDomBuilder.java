@@ -1,12 +1,14 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.builder.xml.dom;
 
+import ai.vespa.validation.Validation;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.ApplicationConfigProducerRoot;
 import com.yahoo.config.model.ConfigModelRepo;
 import com.yahoo.config.model.builder.xml.XmlHelper;
 import com.yahoo.config.model.deploy.DeployState;
-import com.yahoo.config.model.producer.AbstractConfigProducer;
+import com.yahoo.config.model.producer.AnyConfigProducer;
+import com.yahoo.config.model.producer.TreeConfigProducer;
 import com.yahoo.config.model.producer.UserConfigRepo;
 import com.yahoo.text.XML;
 import com.yahoo.vespa.model.AbstractService;
@@ -22,8 +24,15 @@ import com.yahoo.vespa.model.container.docproc.ContainerDocproc;
 import com.yahoo.vespa.model.content.Content;
 import com.yahoo.vespa.model.search.SearchCluster;
 import org.w3c.dom.Element;
+
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.Map;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.Pattern;
 
 /**
  * Builds Vespa model components using the w3c dom api
@@ -43,15 +52,17 @@ public class VespaDomBuilder extends VespaModelBuilder {
     public static final String VESPAMALLOC = "vespamalloc";            // Intended for vespa engineers
     public static final String VESPAMALLOC_DEBUG = "vespamalloc-debug"; // Intended for vespa engineers
     public static final String VESPAMALLOC_DEBUG_STACKTRACE = "vespamalloc-debug-stacktrace"; // Intended for vespa engineers
-    private static final String CPU_SOCKET_ATTRIB_NAME = "cpu-socket";
     public static final String CPU_SOCKET_AFFINITY_ATTRIB_NAME = "cpu-socket-affinity";
     public static final String Allocated_MEMORY_ATTRIB_NAME = "allocated-memory";
+
+    private static final String CPU_SOCKET_ATTRIB_NAME = "cpu-socket";
+    private static final Pattern clusterPattern = Pattern.compile("([a-z0-9]|[a-z0-9][a-z0-9_-]{0,61}[a-z0-9])");
 
     public static final Logger log = Logger.getLogger(VespaDomBuilder.class.getPackage().toString());
 
 
     @Override
-    public ApplicationConfigProducerRoot getRoot(String name, DeployState deployState, AbstractConfigProducer parent) {
+    public ApplicationConfigProducerRoot getRoot(String name, DeployState deployState, TreeConfigProducer<AnyConfigProducer> parent) {
         try {
             return new DomRootBuilder(name).
                     build(deployState, parent, XmlHelper.getDocument(deployState.getApplicationPackage().getServices(), "services.xml")
@@ -73,12 +84,14 @@ public class VespaDomBuilder extends VespaModelBuilder {
      * Base class for builders of producers using DOM. The purpose is to always
      * include hostalias, baseport and user config overrides generically.
      *
-     * @param <T> an {@link com.yahoo.config.model.producer.AbstractConfigProducer}
+     * @param <T> the type of producer to build
+     * @param <P> the child type held by the parent of the new producer, usually AnyConfigProducer
      */
-    public static abstract class DomConfigProducerBuilder<T extends AbstractConfigProducer<?>> {
+    public static abstract class DomConfigProducerBuilder<T extends AnyConfigProducer, P extends AnyConfigProducer>
+    {
 
         // TODO: find good way to provide access to app package
-        public final T build(DeployState deployState, AbstractConfigProducer<?> ancestor, Element producerSpec) {
+        public final T build(DeployState deployState, TreeConfigProducer<P> ancestor, Element producerSpec) {
             T t = doBuild(deployState, ancestor, producerSpec);
 
             if (t instanceof AbstractService) {
@@ -90,9 +103,9 @@ public class VespaDomBuilder extends VespaModelBuilder {
             return t;
         }
 
-        protected abstract T doBuild(DeployState deployState, AbstractConfigProducer<?> ancestor, Element producerSpec);
+        protected abstract T doBuild(DeployState deployState, TreeConfigProducer<P> ancestor, Element producerSpec);
 
-        private void initializeProducer(AbstractConfigProducer<?> child, DeployState deployState, Element producerSpec) {
+        private void initializeProducer(AnyConfigProducer child, DeployState deployState, Element producerSpec) {
             UserConfigRepo userConfigs = UserConfigBuilder.build(producerSpec, deployState, deployState.getDeployLogger());
             // TODO: must be made to work:
             //userConfigs.applyWarnings(child);
@@ -158,13 +171,18 @@ public class VespaDomBuilder extends VespaModelBuilder {
         }
     }
 
+    // helper in the usual case where P is AnyConfigProducer
+    public static abstract class DomConfigProducerBuilderBase<T extends AnyConfigProducer>
+        extends DomConfigProducerBuilder<T, AnyConfigProducer>
+    {}
+
     /**
      * The SimpleConfigProducer is the producer for elements such as container.
      * Must support overrides for that too, hence this builder
      *
      * @author vegardh
      */
-    static class DomSimpleConfigProducerBuilder extends DomConfigProducerBuilder<SimpleConfigProducer<?>> {
+    static class DomSimpleConfigProducerBuilder extends DomConfigProducerBuilderBase<SimpleConfigProducer<AnyConfigProducer>> {
 
         private final String configId;
 
@@ -173,13 +191,13 @@ public class VespaDomBuilder extends VespaModelBuilder {
         }
 
         @Override
-        protected SimpleConfigProducer<?> doBuild(DeployState deployState, AbstractConfigProducer<?> parent,
+        protected SimpleConfigProducer<AnyConfigProducer> doBuild(DeployState deployState, TreeConfigProducer<AnyConfigProducer> parent,
                                                   Element producerSpec) {
             return new SimpleConfigProducer<>(parent, configId);
         }
     }
 
-    public static class DomRootBuilder extends VespaDomBuilder.DomConfigProducerBuilder<ApplicationConfigProducerRoot> {
+    public static class DomRootBuilder extends VespaDomBuilder.DomConfigProducerBuilderBase<ApplicationConfigProducerRoot> {
         private final String name;
 
         /**
@@ -190,7 +208,7 @@ public class VespaDomBuilder extends VespaModelBuilder {
         }
 
         @Override
-        protected ApplicationConfigProducerRoot doBuild(DeployState deployState, AbstractConfigProducer<?> parent, Element producerSpec) {
+        protected ApplicationConfigProducerRoot doBuild(DeployState deployState, TreeConfigProducer<AnyConfigProducer> parent, Element producerSpec) {
             ApplicationConfigProducerRoot root = new ApplicationConfigProducerRoot(parent,
                                                                                    name,
                                                                                    deployState.getDocumentModel(),
@@ -232,13 +250,14 @@ public class VespaDomBuilder extends VespaModelBuilder {
      * @param root root config producer
      * @param configModelRepo a {@link ConfigModelRepo}
      */
-    public void postProc(DeployLogger deployLogger, AbstractConfigProducer root, ConfigModelRepo configModelRepo) {
+    public void postProc(DeployState deployState, TreeConfigProducer<AnyConfigProducer> root, ConfigModelRepo configModelRepo) {
         setContentSearchClusterIndexes(configModelRepo);
         createDocprocMBusServersAndClients(configModelRepo);
+        if (deployState.isHosted()) validateContainerClusterIds(configModelRepo);
     }
 
     private void createDocprocMBusServersAndClients(ConfigModelRepo pc) {
-        for (ContainerCluster cluster: ContainerModel.containerClusters(pc)) {
+        for (ContainerCluster<?> cluster: ContainerModel.containerClusters(pc)) {
             addServerAndClientsForChains(cluster.getDocproc());
         }
     }
@@ -246,6 +265,19 @@ public class VespaDomBuilder extends VespaModelBuilder {
     private void addServerAndClientsForChains(ContainerDocproc docproc) {
         if (docproc != null)
             docproc.getChains().addServersAndClientsForChains();
+    }
+
+    private void validateContainerClusterIds(ConfigModelRepo pc) {
+        Map<String, String> normalizedClusterIds = new LinkedHashMap<>();
+        for (ContainerCluster<?> cluster: ContainerModel.containerClusters(pc)) {
+            if (cluster.getHttp() == null) continue;
+            String name = cluster.getName();
+            Validation.requireMatch(name, "container cluster name", clusterPattern);
+            String clashing = normalizedClusterIds.put(name.replaceAll("_", "-"), name);
+            if (clashing != null) throw new IllegalArgumentException("container clusters '" + clashing + "' and '" + name +
+                                                                     "' have clashing endpoint names, when '_' is replaced " +
+                                                                     "with '-' to form valid domain names");
+        }
     }
 
     /**

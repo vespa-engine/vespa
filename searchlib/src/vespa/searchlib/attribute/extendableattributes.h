@@ -13,19 +13,19 @@ namespace search {
 
 // Translates the actual value type to the type required by IExtendAttribute.
 template <typename T> struct AddValueType {
-    typedef int64_t Type;
+    using Type = int64_t;
 };
 template <> struct AddValueType<double> {
-    typedef double Type;
+    using Type = double;
 };
 
 //******************** CollectionType::SINGLE ********************//
 
 template <typename T> struct AttributeTemplate {
-    typedef search::IntegerAttributeTemplate<T> Type;
+    using Type = search::IntegerAttributeTemplate<T>;
 };
 template <> struct AttributeTemplate<double> {
-    typedef search::FloatingPointAttributeTemplate<double> Type;
+    using Type = search::FloatingPointAttributeTemplate<double>;
 };
 
 template <typename T>
@@ -84,9 +84,9 @@ class MultiExtAttribute
       public attribute::IMultiValueAttribute
 {
 protected:
-    typedef typename MultiExtAttribute<T>::NumDirectAttrVec Super;
-    typedef typename Super::Config Config;
-    typedef typename Super::BasicType BasicType;
+    using Super = typename MultiExtAttribute<T>::NumDirectAttrVec;
+    using Config = typename Super::Config;
+    using BasicType = typename Super::BasicType;
     using QueryTermSimpleUP = AttributeVector::QueryTermSimpleUP;
 
     MultiExtAttribute(const vespalib::string &name, const attribute::CollectionType &ctype);

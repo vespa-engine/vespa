@@ -224,12 +224,6 @@ TEST_MT_FFF("require that encrypted async socket io works with NullCryptoEngine"
     TEST_DO(verify_crypto_socket(f1, f2, (thread_id == 0)));
 }
 
-TEST_MT_FFF("require that encrypted async socket io works with XorCryptoEngine",
-            2, SocketPair(), XorCryptoEngine(), TimeBomb(60))
-{
-    TEST_DO(verify_crypto_socket(f1, f2, (thread_id == 0)));
-}
-
 TEST_MT_FFF("require that encrypted async socket io works with TlsCryptoEngine",
             2, SocketPair(), TlsCryptoEngine(make_tls_options_for_testing()), TimeBomb(60))
 {

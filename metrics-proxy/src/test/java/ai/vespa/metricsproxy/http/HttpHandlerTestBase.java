@@ -17,7 +17,6 @@ import ai.vespa.metricsproxy.service.DownService;
 import ai.vespa.metricsproxy.service.DummyService;
 import ai.vespa.metricsproxy.service.VespaService;
 import ai.vespa.metricsproxy.service.VespaServices;
-import com.google.common.collect.ImmutableList;
 import com.yahoo.container.jdisc.RequestHandlerTestDriver;
 
 import java.time.Instant;
@@ -33,10 +32,9 @@ import static ai.vespa.metricsproxy.service.DummyService.METRIC_1;
  *
  * @author gjoranv
  */
-@SuppressWarnings("UnstableApiUsage")
 public class HttpHandlerTestBase {
 
-    protected static final List<VespaService> testServices = ImmutableList.of(
+    protected static final List<VespaService> testServices = List.of(
             new DummyService(0, ""),
             new DummyService(1, ""),
             new DownService(HealthMetric.getDown("No response")));
@@ -55,10 +53,10 @@ public class HttpHandlerTestBase {
 
     protected static MetricsManager getMetricsManager() {
         MetricsManager metricsManager = TestUtil.createMetricsManager(vespaServices, getMetricsConsumers(), getApplicationDimensions(), getNodeDimensions());
-        metricsManager.setExtraMetrics(ImmutableList.of(
+        metricsManager.setExtraMetrics(List.of(
                 new MetricsPacket.Builder(VESPA_NODE_SERVICE_ID)
                         .timestamp(Instant.now().getEpochSecond())
-                        .putMetrics(ImmutableList.of(new Metric(MetricId.toMetricId(CPU_METRIC), 12.345)))));
+                        .putMetrics(List.of(new Metric(MetricId.toMetricId(CPU_METRIC), 12.345)))));
         return metricsManager;
     }
 

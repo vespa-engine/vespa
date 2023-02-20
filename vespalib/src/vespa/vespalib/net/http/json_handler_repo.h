@@ -24,8 +24,8 @@ class JsonHandlerRepo : public JsonGetHandler
 {
 public:
     struct Token {
-        typedef std::unique_ptr<Token> UP;
-        virtual ~Token() {}
+        using UP = std::unique_ptr<Token>;
+        virtual ~Token() = default;
     };
 
 private:
@@ -53,7 +53,7 @@ private:
     };
 
     struct State {
-        typedef std::shared_ptr<State> SP;
+        using SP = std::shared_ptr<State>;
         std::mutex lock;
         size_t seq;
         std::vector<Hook> hooks;
@@ -78,14 +78,13 @@ private:
     std::shared_ptr<State> _state;
 
 public:
-    JsonHandlerRepo() : _state(std::make_shared<State>()) {}
-    Token::UP bind(vespalib::stringref path_prefix,
-                   const JsonGetHandler &get_handler);
+    JsonHandlerRepo();
+    ~JsonHandlerRepo();
+    Token::UP bind(vespalib::stringref path_prefix, const JsonGetHandler &get_handler);
     Token::UP add_root_resource(vespalib::stringref path);
-    std::vector<vespalib::string> get_root_resources() const;
-    vespalib::string get(const vespalib::string &host,
-                         const vespalib::string &path,
-                         const std::map<vespalib::string,vespalib::string> &params) const override;
+    [[nodiscard]] std::vector<vespalib::string> get_root_resources() const;
+    [[nodiscard]] vespalib::string get(const vespalib::string &host, const vespalib::string &path,
+                                       const std::map<vespalib::string,vespalib::string> &params) const override;
 };
 
 } // namespace vespalib

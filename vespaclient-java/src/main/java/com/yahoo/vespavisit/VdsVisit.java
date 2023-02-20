@@ -348,6 +348,13 @@ public class VdsVisit {
                         FixedBucketSpaces.defaultSpace(), FixedBucketSpaces.globalSpace(), FixedBucketSpaces.defaultSpace()))
                 .build());
 
+        // TODO Vespa 9: replace with --longtensors ?
+        options.addOption(Option.builder()
+                .longOpt("shorttensors")
+                .desc("Output JSON tensors in short form. Will be the default on Vespa 9")
+                .hasArg(false)
+                .build());
+
         return options;
     }
 
@@ -362,7 +369,9 @@ public class VdsVisit {
         private boolean abortOnClusterDown = false;
         private int processTime = 0;
         private int fullTimeout = 7 * 24 * 60 * 60 * 1000;
-        private boolean jsonOutput = false;
+        private boolean jsonOutput = true;
+        private boolean tensorShortForm = false; // TODO Vespa 9: change default to true
+        private boolean tensorDirectValues = false; // TODO Vespa 9: change default to true
 
         public VisitorParameters getVisitorParameters() {
             return visitorParameters;
@@ -431,16 +440,33 @@ public class VdsVisit {
         public void setJsonOutput(boolean jsonOutput) {
             this.jsonOutput = jsonOutput;
         }
+
+        public boolean tensorShortForm() {
+            return tensorShortForm;
+        }
+
+        public void setTensorShortForm(boolean tensorShortForm) {
+            this.tensorShortForm = tensorShortForm;
+        }
+
+        public boolean tensorDirectValues() {
+            return tensorDirectValues;
+        }
+
+        public void setTensorDirectValues(boolean tensorDirectValues) {
+            this.tensorDirectValues = tensorDirectValues;
+        }
+
     }
 
     protected static class ArgumentParser {
-        private Options options;
+        private final Options options;
 
         public ArgumentParser(Options options) {
             this.options = options;
         }
 
-        public VdsVisitParameters parse(String args[]) throws org.apache.commons.cli.ParseException {
+        public VdsVisitParameters parse(String[] args) throws org.apache.commons.cli.ParseException {
             VdsVisitParameters allParams = new VdsVisitParameters();
             VisitorParameters params = new VisitorParameters("");
             CommandLineParser parser = new DefaultParser();
@@ -552,6 +578,12 @@ public class VdsVisit {
                 StaticThrottlePolicy throttlePolicy = new StaticThrottlePolicy();
                 throttlePolicy.setMaxPendingCount(((Number)line.getParsedOptionValue("maxpendingsuperbuckets")).intValue());
                 params.setThrottlePolicy(throttlePolicy);
+            }
+            if (line.hasOption("shorttensors")) {
+                allParams.setTensorShortForm(true);
+            }
+            if (line.hasOption("tensorvalues")) {
+                allParams.setTensorDirectValues(true);
             }
 
             boolean jsonOutput = line.hasOption("jsonoutput");
@@ -723,7 +755,9 @@ public class VdsVisit {
                 params.getStatisticsParts() != null,
                 params.getAbortOnClusterDown(),
                 params.getProcessTime(),
-                params.jsonOutput);
+                params.jsonOutput,
+                params.tensorShortForm,
+                params.tensorDirectValues);
 
         if (visitorParameters.getResumeFileName() != null) {
             handler.setProgressFileName(visitorParameters.getResumeFileName());

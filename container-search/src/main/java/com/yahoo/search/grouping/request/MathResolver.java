@@ -1,9 +1,10 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.grouping.request;
 
+import java.util.ArrayDeque;
+import java.util.Deque;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Stack;
 
 /**
  * This is a helper class for resolving arithmetic operations over {@link GroupingExpression} objects. To resolve an
@@ -25,7 +26,7 @@ public class MathResolver {
         private final int pre;
         private final String image;
 
-        private Type(int pre, String image) {
+        Type(int pre, String image) {
             this.pre = pre;
             this.image = image;
         }
@@ -57,7 +58,7 @@ public class MathResolver {
         if (items.size() == 1) {
             return items.remove(0).exp; // optimize common case
         }
-        Stack<Item> stack = new Stack<>();
+        Deque<Item> stack = new ArrayDeque<>();
         stack.push(items.remove(0));
         while (!items.isEmpty()) {
             Item item = items.remove(0);
@@ -69,30 +70,19 @@ public class MathResolver {
         while (stack.size() > 1) {
             pop(stack);
         }
-        return stack.remove(0).exp;
+        return stack.pop().exp;
     }
 
-    private void pop(Stack<Item> stack) {
+    private void pop(Deque<Item> stack) {
         Item rhs = stack.pop();
         Item lhs = stack.peek();
         switch (rhs.type) {
-        case ADD:
-            lhs.exp = new AddFunction(lhs.exp, rhs.exp);
-            break;
-        case DIV:
-            lhs.exp = new DivFunction(lhs.exp, rhs.exp);
-            break;
-        case MOD:
-            lhs.exp = new ModFunction(lhs.exp, rhs.exp);
-            break;
-        case MUL:
-            lhs.exp = new MulFunction(lhs.exp, rhs.exp);
-            break;
-        case SUB:
-            lhs.exp = new SubFunction(lhs.exp, rhs.exp);
-            break;
-        default:
-            throw new UnsupportedOperationException("Operator " + rhs.type + " not supported.");
+            case ADD -> lhs.exp = new AddFunction(lhs.exp, rhs.exp);
+            case DIV -> lhs.exp = new DivFunction(lhs.exp, rhs.exp);
+            case MOD -> lhs.exp = new ModFunction(lhs.exp, rhs.exp);
+            case MUL -> lhs.exp = new MulFunction(lhs.exp, rhs.exp);
+            case SUB -> lhs.exp = new SubFunction(lhs.exp, rhs.exp);
+            default -> throw new UnsupportedOperationException("Operator " + rhs.type + " not supported.");
         }
     }
 

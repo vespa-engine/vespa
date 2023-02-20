@@ -13,7 +13,6 @@ import com.yahoo.config.model.application.provider.MockFileRegistry;
 import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.HostSpec;
-import com.yahoo.config.provision.Tags;
 import com.yahoo.path.Path;
 import com.yahoo.text.Utf8;
 import com.yahoo.vespa.config.server.zookeeper.ZKApplicationPackage;
@@ -60,7 +59,6 @@ public class ZooKeeperClientTest {
         ApplicationPackage app = FilesApplicationPackage.fromFileWithDeployData(new File("src/test/apps/zkfeed"),
                                                                                 new DeployData("/bar/baz",
                                                                                                ApplicationId.from("default", "appName", "default"),
-                                                                                               Tags.fromString("tag1 tag2"),
                                                                                                1345L,
                                                                                                true,
                                                                                                3L,
@@ -123,7 +121,6 @@ public class ZooKeeperClientTest {
         assertTrue(metaData.getChecksum().length() > 0);
         assertTrue(metaData.isInternalRedeploy());
         assertEquals("/bar/baz", metaData.getDeployPath());
-        assertEquals(Tags.fromString("tag1 tag2"), metaData.getTags());
         assertEquals(1345, metaData.getDeployTimestamp().longValue());
         assertEquals(3, metaData.getGeneration().longValue());
         assertEquals(2, metaData.getPreviousActiveGeneration());
@@ -163,8 +160,8 @@ public class ZooKeeperClientTest {
         Path app = Path.fromString("/1");
         ZooKeeperClient zooKeeperClient = new ZooKeeperClient(zk, logger, app);
         zooKeeperClient.initialize();
-        HostSpec host1 = new HostSpec("host1.yahoo.com", Collections.emptyList(), Optional.empty());
-        HostSpec host2 = new HostSpec("host2.yahoo.com", Collections.emptyList(), Optional.empty());
+        HostSpec host1 = new HostSpec("host1.yahoo.com", Optional.empty());
+        HostSpec host2 = new HostSpec("host2.yahoo.com", Optional.empty());
         ImmutableSet<HostSpec> hosts = ImmutableSet.of(host1, host2);
         zooKeeperClient.write(AllocatedHosts.withHosts(hosts));
         Path hostsPath = app.append(ZKApplicationPackage.allocatedHostsNode);

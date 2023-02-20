@@ -58,7 +58,7 @@ public final class Node implements Nodelike {
     private final List<TrustStoreItem> trustStoreItems;
     private final CloudAccount cloudAccount;
 
-    /** Only set for enclave nodes */
+    /** Only set for configservers and exclave nodes */
     private final Optional<WireguardKey> wireguardPubKey;
 
     /** Record of the last event of each type happening to this node */
@@ -116,13 +116,14 @@ public final class Node implements Nodelike {
 
         if (state == State.ready && type.isHost()) {
             requireNonEmpty(ipConfig.primary(), "A " + type + " must have at least one primary IP address in state " + state);
-            requireNonEmpty(ipConfig.pool().ipSet(), "A " + type + " must have a non-empty IP address pool in state " + state);
+            requireNonEmpty(ipConfig.pool().asSet(), "A " + type + " must have a non-empty IP address pool in state " + state);
         }
 
         if (parentHostname.isPresent()) {
-            if (!ipConfig.pool().ipSet().isEmpty()) throw new IllegalArgumentException("A child node cannot have an IP address pool");
+            if (!ipConfig.pool().asSet().isEmpty()) throw new IllegalArgumentException("A child node cannot have an IP address pool");
             if (modelName.isPresent()) throw new IllegalArgumentException("A child node cannot have model name set");
             if (switchHostname.isPresent()) throw new IllegalArgumentException("A child node cannot have switch hostname set");
+            if (status.wantToRebuild()) throw new IllegalArgumentException("A child node cannot be rebuilt");
         }
 
         if (type != NodeType.host && reservedTo.isPresent())
@@ -451,6 +452,13 @@ public final class Node implements Nodelike {
         return new Node(id, ipConfig, hostname, parentHostname, flavor, status, state,
                         allocation, history, type, reports, modelName, reservedTo, exclusiveToApplicationId,
                         Optional.ofNullable(exclusiveTo), switchHostname, trustStoreItems, cloudAccount, wireguardPubKey);
+    }
+
+    public Node withWireguardPubkey(WireguardKey wireguardPubkey) {
+        return new Node(id, ipConfig, hostname, parentHostname, flavor, status, state,
+                allocation, history, type, reports, modelName, reservedTo, exclusiveToApplicationId,
+                exclusiveToClusterType, switchHostname, trustStoreItems, cloudAccount,
+                Optional.ofNullable(wireguardPubkey));
     }
 
     /** Returns a copy of this node with switch hostname set to given value */

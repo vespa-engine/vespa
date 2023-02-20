@@ -15,12 +15,10 @@
   <version>8-SNAPSHOT</version>
   <packaging>container-plugin</packaging>
   <dependencies>
-    <dependency>
-      <groupId>junit</groupId>
-      <artifactId>junit</artifactId>
-      <scope>test</scope>
-    </dependency>
-
+    <!--
+      Note: model-integration is included in config-model.
+      Exclude all dependencies here which are not needed there in fat-model-dependencies.
+    -->
     <dependency>
       <groupId>com.yahoo.vespa</groupId>
       <artifactId>annotations</artifactId>
@@ -30,6 +28,13 @@
     <dependency>
       <groupId>com.yahoo.vespa</groupId>
       <artifactId>config-model-api</artifactId>
+      <version>${project.version}</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <!-- required for bundle-plugin to generate import-package statements for Java's standard library + misc 3party -->
+      <groupId>com.yahoo.vespa</groupId>
+      <artifactId>jdisc_core</artifactId>
       <version>${project.version}</version>
       <scope>provided</scope>
     </dependency>
@@ -57,20 +62,52 @@
       <version>${project.version}</version>
       <scope>provided</scope>
     </dependency>
-
     <dependency>
-      <groupId>com.google.guava</groupId>
-      <artifactId>guava</artifactId>
+      <groupId>com.yahoo.vespa</groupId>
+      <artifactId>container-onnxruntime</artifactId>
+      <version>${project.version}</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>net.java.dev.jna</groupId>
+      <artifactId>jna</artifactId>
       <scope>provided</scope>
     </dependency>
 
     <dependency>
-      <groupId>com.microsoft.onnxruntime</groupId>
-      <artifactId>onnxruntime</artifactId>
-    </dependency>
-    <dependency>
       <groupId>com.google.protobuf</groupId>
       <artifactId>protobuf-java</artifactId>
+    </dependency>
+
+     <dependency>
+      <groupId>ai.djl.huggingface</groupId>
+      <artifactId>tokenizers</artifactId>
+      <version>0.20.0</version>
+       <exclusions>
+         <exclusion>
+           <groupId>com.google.code.gson</groupId>
+           <artifactId>gson</artifactId>
+         </exclusion>
+         <exclusion>
+           <groupId>net.java.dev.jna</groupId>
+           <artifactId>jna</artifactId>
+         </exclusion>
+         <exclusion>
+           <groupId>org.slf4j</groupId>
+           <artifactId>slf4j-api</artifactId>
+         </exclusion>
+       </exclusions>
+    </dependency>
+
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.google.guava</groupId>
+      <artifactId>guava</artifactId>
+      <scope>test</scope>
     </dependency>
   </dependencies>
   <build>

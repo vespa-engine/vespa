@@ -420,8 +420,8 @@ StressFixture::StressFixture()
       stop_read(false),
       read_area(1000),
       generation_handler(),
-      writer(1, 128_Ki),
-      readers(4, 128_Ki)
+      writer(1),
+      readers(4)
 {
     arr.ensure_size(read_area, AtomicIntWrapper(0));
 }

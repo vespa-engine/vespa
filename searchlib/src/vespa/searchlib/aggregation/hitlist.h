@@ -13,8 +13,8 @@ class HitList : public expression::ResultNode
 public:
 private:
     using ResultNode = expression::ResultNode;
-    typedef std::vector<FS4Hit> Fs4V;
-    typedef std::vector<VdsHit> VdsV;
+    using Fs4V = std::vector<FS4Hit>;
+    using VdsV = std::vector<VdsHit>;
     std::vector<FS4Hit>         _fs4hits;
     std::vector<VdsHit>         _vdshits;
 

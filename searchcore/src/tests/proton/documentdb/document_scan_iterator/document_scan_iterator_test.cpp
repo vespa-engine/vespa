@@ -13,10 +13,10 @@ using namespace search;
 
 using vespalib::make_string;
 
-typedef DocumentMetaStore::Result DMSResult;
-typedef DocumentMetaStore::Timestamp Timestamp;
-typedef std::set<uint32_t> LidSet;
-typedef std::vector<uint32_t> LidVector;
+using DMSResult = DocumentMetaStore::Result;
+using Timestamp = DocumentMetaStore::Timestamp;
+using LidSet = std::set<uint32_t>;
+using LidVector = std::vector<uint32_t>;
 
 struct Fixture
 {

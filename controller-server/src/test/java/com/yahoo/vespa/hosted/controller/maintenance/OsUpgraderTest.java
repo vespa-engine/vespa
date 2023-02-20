@@ -58,7 +58,7 @@ public class OsUpgraderTest {
         // Bootstrap system
         List<ZoneId> nonControllerZones = Stream.of(zone1, zone2, zone3, zone4, zone5)
                 .map(ZoneApi::getVirtualId)
-                .collect(Collectors.toList());
+                .toList();
         tester.configServer().bootstrap(nonControllerZones, List.of(SystemApplication.tenantHost));
         tester.configServer().addNodes(List.of(zone0.getVirtualId()), List.of(SystemApplication.controllerHost));
 
@@ -181,7 +181,7 @@ public class OsUpgraderTest {
         return tester.controller().osVersionStatus().versions().entrySet().stream()
                      .filter(entry -> entry.getKey().version().equals(version))
                      .flatMap(entry -> entry.getValue().stream())
-                     .collect(Collectors.toList());
+                     .toList();
     }
 
     private void assertCurrent(Version version, SystemApplication application, ZoneApi... zones) {
@@ -210,7 +210,7 @@ public class OsUpgraderTest {
         return nodeRepository().list(zone.getVirtualId(), NodeFilter.all().applications(application.id()))
                                .stream()
                                .filter(node -> OsUpgrader.canUpgrade(node, false))
-                               .collect(Collectors.toList());
+                               .toList();
     }
 
     private Node failNodeIn(ZoneApi zone, SystemApplication application) {
@@ -266,7 +266,7 @@ public class OsUpgraderTest {
     }
 
     private OsUpgrader osUpgrader(UpgradePolicy upgradePolicy, CloudName cloud, boolean dynamicProvisioning) {
-        var zones = upgradePolicy.steps().stream().map(Step::zones).flatMap(Collection::stream).collect(Collectors.toList());
+        var zones = upgradePolicy.steps().stream().map(Step::zones).flatMap(Collection::stream).toList();
         tester.zoneRegistry()
               .setZones(zones)
               .setOsUpgradePolicy(cloud, upgradePolicy);

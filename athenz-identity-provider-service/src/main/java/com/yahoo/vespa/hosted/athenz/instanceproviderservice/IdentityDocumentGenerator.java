@@ -5,6 +5,7 @@ import com.yahoo.component.annotation.Inject;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.net.HostName;
 import com.yahoo.vespa.athenz.api.AthenzService;
+import com.yahoo.vespa.athenz.identityprovider.api.ClusterType;
 import com.yahoo.vespa.athenz.identityprovider.api.IdentityType;
 import com.yahoo.vespa.athenz.identityprovider.api.SignedIdentityDocument;
 import com.yahoo.vespa.athenz.identityprovider.api.VespaUniqueInstanceId;
@@ -65,21 +66,14 @@ public class IdentityDocumentGenerator {
 
             String configServerHostname = HostName.getLocalhost();
             Instant createdAt = Instant.now();
+            var clusterType = ClusterType.from(allocation.membership().cluster().type().name());
             String signature = signer.generateSignature(
                     providerUniqueId, providerService, configServerHostname,
                     node.hostname(), createdAt, ips, identityType, privateKey);
-
             return new SignedIdentityDocument(
-                    signature,
-                    athenzProviderServiceConfig.secretVersion(),
-                    providerUniqueId,
-                    providerService,
-                    SignedIdentityDocument.DEFAULT_DOCUMENT_VERSION,
-                    configServerHostname,
-                    node.hostname(),
-                    createdAt,
-                    ips,
-                    identityType);
+                    signature, athenzProviderServiceConfig.secretVersion(), providerUniqueId, providerService,
+                    SignedIdentityDocument.DEFAULT_DOCUMENT_VERSION, configServerHostname, node.hostname(),
+                    createdAt, ips, identityType, clusterType);
         } catch (Exception e) {
             throw new RuntimeException("Exception generating identity document: " + e.getMessage(), e);
         }

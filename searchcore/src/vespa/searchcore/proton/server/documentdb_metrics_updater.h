@@ -8,8 +8,6 @@
 
 namespace proton {
 
-namespace matching { class SessionManager; }
-
 class AttributeUsageFilter;
 class DDBState;
 class DocumentDBJobTrackers;
@@ -35,7 +33,6 @@ private:
     const DocumentSubDBCollection &_subDBs;
     ExecutorThreadingService      &_writeService;
     DocumentDBJobTrackers         &_jobTrackers;
-    matching::SessionManager      &_sessionManager;
     const AttributeUsageFilter    &_writeFilter;
     FeedHandler                   &_feed_handler;
     // Last updated document store cache statistics. Necessary due to metrics implementation is upside down.
@@ -49,7 +46,6 @@ public:
     DocumentDBMetricsUpdater(const DocumentSubDBCollection &subDBs,
                              ExecutorThreadingService &writeService,
                              DocumentDBJobTrackers &jobTrackers,
-                             matching::SessionManager &sessionManager,
                              const AttributeUsageFilter &writeFilter,
                              FeedHandler& feed_handler);
     ~DocumentDBMetricsUpdater();

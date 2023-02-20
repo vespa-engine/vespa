@@ -142,7 +142,7 @@ public class NodeRebooterTest {
 
     /** Returns the subset of the given nodes which have the given current reboot generation */
     private List<Node> withCurrentRebootGeneration(long generation, List<Node> nodes) {
-        return nodes.stream().filter(n -> n.status().reboot().current() == generation).collect(Collectors.toList());
+        return nodes.stream().filter(n -> n.status().reboot().current() == generation).toList();
     }
 
     private static ProvisioningTester createTester(Duration rebootInterval, InMemoryFlagSource flagSource) {

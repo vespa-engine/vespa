@@ -45,6 +45,7 @@ class VespaLogHandler extends StreamHandler {
     /**
      * Publish a log record into the Vespa log target.
      */
+    @Override
     public synchronized void publish(LogRecord record) {
         Level level = record.getLevel();
         String component = record.getLoggerName();

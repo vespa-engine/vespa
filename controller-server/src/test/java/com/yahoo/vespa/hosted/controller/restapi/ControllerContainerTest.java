@@ -62,6 +62,9 @@ public class ControllerContainerTest {
                      <item key="rotation-id-5">rotation-fqdn-5</item>
                    </rotations>
                  </config>
+                 <config name="vespa.hosted.controller.config.core-dump-token-resealing">
+                   <resealingPrivateKeyName>a.really.cool.key</resealingPrivateKeyName>
+                 </config>
                
                  <accesslog type='disabled'/>
                
@@ -76,6 +79,7 @@ public class ControllerContainerTest {
                  <component id='com.yahoo.vespa.hosted.controller.maintenance.ControllerMaintenance'/>
                  <component id='com.yahoo.vespa.hosted.controller.api.integration.stubs.MockMavenRepository'/>
                  <component id='com.yahoo.vespa.hosted.controller.api.integration.stubs.MockUserManagement'/>
+                 <component id='com.yahoo.vespa.hosted.controller.integration.SecretStoreMock'/>
                
                  <handler id='com.yahoo.vespa.hosted.controller.restapi.deployment.DeploymentApiHandler'>
                    <binding>http://localhost/deployment/v1/*</binding>

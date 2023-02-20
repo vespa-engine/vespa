@@ -13,7 +13,6 @@
 #include <vespa/messagebus/routing/routingspec.h>
 #include <vespa/messagebus/testlib/simplemessage.h>
 #include <vespa/messagebus/testlib/simpleprotocol.h>
-#include <vespa/messagebus/testlib/simplereply.h>
 #include <vespa/messagebus/testlib/slobrok.h>
 #include <vespa/messagebus/testlib/testserver.h>
 #include <vespa/vespalib/testkit/testapp.h>
@@ -29,7 +28,7 @@ struct DelayedHandler : public IMessageHandler
     DelayedHandler(MessageBus &mb, uint32_t d) : session(), delay(d) {
         session = mb.createDestinationSession("session", true, *this);
     }
-    ~DelayedHandler() {
+    ~DelayedHandler() override {
         session.reset();
     }
     void handleMessage(Message::UP msg) override {
@@ -243,7 +242,7 @@ Test::testIllegalRoute()
         while (srcQ.size() > 0) {
             Routable::UP routable = srcQ.dequeue();
             ASSERT_TRUE(routable->isReply());
-            Reply::UP r(static_cast<Reply*>(routable.release()));
+            Reply::UP r(dynamic_cast<Reply*>(routable.release()));
             EXPECT_EQUAL(1u, r->getNumErrors());
             EXPECT_EQUAL((uint32_t)ErrorCode::NO_ADDRESS_FOR_SERVICE, r->getError(0).getCode());
             string trace = r->getTrace().toString();
@@ -275,7 +274,7 @@ Test::testNoServices()
         while (srcQ.size() > 0) {
             Routable::UP routable = srcQ.dequeue();
             ASSERT_TRUE(routable->isReply());
-            Reply::UP r(static_cast<Reply*>(routable.release()));
+            Reply::UP r(dynamic_cast<Reply*>(routable.release()));
             EXPECT_TRUE(r->getNumErrors() == 1);
             EXPECT_TRUE(r->getError(0).getCode() == ErrorCode::NO_ADDRESS_FOR_SERVICE);
             string trace = r->getTrace().toString();

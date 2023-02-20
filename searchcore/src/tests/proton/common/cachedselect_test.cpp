@@ -70,7 +70,7 @@ using SessionUP = std::unique_ptr<CachedSelect::Session>;
 extern template class SingleValueNumericPostingAttribute<IntPostingAttribute>;
 #endif
 
-typedef SingleValueNumericPostingAttribute<IntEnumAttribute> SvIntAttr;
+using SvIntAttr = SingleValueNumericPostingAttribute<IntEnumAttribute>;
 
 namespace {
 
@@ -232,12 +232,12 @@ public:
 class MyDB
 {
 public:
-    typedef std::unique_ptr<MyDB> UP;
+    using UP = std::unique_ptr<MyDB>;
 
     const DocumentTypeRepo &_repo;
     MyAttributeManager &_amgr;
-    typedef std::map<string, uint32_t> DocIdToLid;
-    typedef std::map<uint32_t, Document::SP> LidToDocSP;
+    using DocIdToLid = std::map<string, uint32_t>;
+    using LidToDocSP = std::map<uint32_t, Document::SP>;
     DocIdToLid _docIdToLid;
     LidToDocSP _lidToDocSP;
 

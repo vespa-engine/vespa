@@ -22,7 +22,6 @@ import com.yahoo.vespa.config.server.ApplicationRepository;
 import com.yahoo.vespa.config.server.MockProvisioner;
 import com.yahoo.vespa.config.server.application.ApplicationSet;
 import com.yahoo.vespa.config.server.application.OrchestratorMock;
-import com.yahoo.vespa.config.server.filedistribution.FileDirectory;
 import com.yahoo.vespa.config.server.filedistribution.MockFileDistributionFactory;
 import com.yahoo.vespa.config.server.http.InvalidApplicationException;
 import com.yahoo.vespa.config.server.modelfactory.ModelFactoryRegistry;
@@ -98,8 +97,7 @@ public class SessionRepositoryTest {
                 .withConfigserverConfig(configserverConfig)
                 .withCurator(curator)
                 .withFlagSource(flagSource)
-                .withFileDistributionFactory(
-                        new MockFileDistributionFactory(configserverConfig, new FileDirectory(configserverConfig, flagSource)))
+                .withFileDistributionFactory(new MockFileDistributionFactory(configserverConfig))
                 .withModelFactoryRegistry(modelFactoryRegistry)
                 .build();
         tenantRepository.addTenant(SessionRepositoryTest.tenantName);

@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
+#include <cstdint>
 #include <map>
 #include <vector>
 #include <string>
@@ -164,7 +165,7 @@ struct ClientStatus
      * @param status The status to insert
      **/
     void AddRequestStatus(uint32_t status);
-    
+
     /**
      * Merge the info held by 'status' into the info held by this
      * struct. Note that the error flag and error messages are ignored. If

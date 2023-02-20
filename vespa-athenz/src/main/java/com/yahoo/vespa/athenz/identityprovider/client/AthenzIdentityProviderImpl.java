@@ -4,17 +4,18 @@ package com.yahoo.vespa.athenz.identityprovider.client;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
-import com.yahoo.component.annotation.Inject;
 import com.yahoo.component.AbstractComponent;
+import com.yahoo.component.annotation.Inject;
 import com.yahoo.container.core.identity.IdentityConfig;
 import com.yahoo.container.jdisc.athenz.AthenzIdentityProvider;
 import com.yahoo.container.jdisc.athenz.AthenzIdentityProviderException;
 import com.yahoo.jdisc.Metric;
+import com.yahoo.metrics.ContainerMetrics;
 import com.yahoo.security.KeyStoreBuilder;
+import com.yahoo.security.MutableX509KeyManager;
 import com.yahoo.security.Pkcs10Csr;
 import com.yahoo.security.SslContextBuilder;
 import com.yahoo.security.X509CertificateWithKey;
-import com.yahoo.security.MutableX509KeyManager;
 import com.yahoo.vespa.athenz.api.AthenzAccessToken;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.vespa.athenz.api.AthenzRole;
@@ -47,7 +48,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
 
 import static com.yahoo.security.KeyStoreType.PKCS12;
 
@@ -75,7 +75,7 @@ public final class AthenzIdentityProviderImpl extends AbstractComponent implemen
     private static final Path CLIENT_TRUST_STORE = Paths.get("/opt/yahoo/share/ssl/certs/yahoo_certificate_bundle.pem");
     private static final Path ATHENZ_TRUST_STORE = Paths.get("/opt/yahoo/share/ssl/certs/athenz_certificate_bundle.pem");
 
-    public static final String CERTIFICATE_EXPIRY_METRIC_NAME = "athenz-tenant-cert.expiry.seconds";
+    public static final String CERTIFICATE_EXPIRY_METRIC_NAME = ContainerMetrics.ATHENZ_TENANT_CERT_EXPIRY_SECONDS.baseName();
 
     private volatile AthenzCredentials credentials;
     private final Metric metric;
@@ -253,7 +253,7 @@ public final class AthenzIdentityProviderImpl extends AbstractComponent implemen
         try {
             List<AthenzRole> roleList = roles.stream()
                     .map(roleName -> new AthenzRole(domain, roleName))
-                    .collect(Collectors.toList());
+                    .toList();
             return roleSpecificAccessTokenCache.get(roleList).value();
         } catch (Exception e) {
             throw new AthenzIdentityProviderException("Could not retrieve access token: " + e.getMessage(), e);
@@ -298,7 +298,9 @@ public final class AthenzIdentityProviderImpl extends AbstractComponent implemen
     }
 
     private X509Certificate requestRoleCertificate(AthenzRole role) {
-        Pkcs10Csr csr = csrGenerator.generateRoleCsr(identity, role, credentials.getIdentityDocument().providerUniqueId(), credentials.getKeyPair());
+        var doc = credentials.getIdentityDocument();
+        Pkcs10Csr csr = csrGenerator.generateRoleCsr(
+                identity, role, doc.providerUniqueId(), doc.clusterType(), credentials.getKeyPair());
         try (ZtsClient client = createZtsClient()) {
             X509Certificate roleCertificate = client.getRoleCertificate(role, csr);
             updateRoleKeyManager(role, roleCertificate);

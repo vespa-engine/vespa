@@ -199,7 +199,7 @@ void Loops<H>::fiddle(T *begin, T *end, C cmp, T *first, T *last) {
 //-----------------------------------------------------------------------------
 
 struct Benchmark {
-    typedef std::unique_ptr<Benchmark> UP;
+    using UP = std::unique_ptr<Benchmark>;
     virtual ~Benchmark() {}
     virtual std::string legend() const = 0;
     virtual double fiddle(size_t heapSize, size_t cnt, size_t loop, bool adjust) = 0;

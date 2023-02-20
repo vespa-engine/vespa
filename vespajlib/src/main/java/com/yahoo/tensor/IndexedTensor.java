@@ -1,19 +1,16 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.tensor;
 
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.DoubleBinaryOperator;
 
 /**
  * An indexed (dense) tensor.
@@ -202,7 +199,7 @@ public abstract class IndexedTensor implements Tensor {
     @Override
     public Map<TensorAddress, Double> cells() {
         if (dimensionSizes.dimensions() == 0)
-            return Collections.singletonMap(TensorAddress.of(), get(0));
+            return Map.of(TensorAddress.of(), get(0));
 
         ImmutableMap.Builder<TensorAddress, Double> builder = new ImmutableMap.Builder<>();
         Indexes indexes = Indexes.of(dimensionSizes, dimensionSizes, size());
@@ -574,7 +571,7 @@ public abstract class IndexedTensor implements Tensor {
                 throw new IllegalArgumentException("Wrong number of indexes (" + indexes.length + ") for " + type);
 
             if (indexes.length == 0) {
-                firstDimension = Collections.singletonList(value);
+                firstDimension = List.of(value);
                 return this;
             }
 
@@ -767,7 +764,7 @@ public abstract class IndexedTensor implements Tensor {
     private final static class LazyCell extends Tensor.Cell {
 
         private double value;
-        private Indexes indexes;
+        private final Indexes indexes;
 
         private LazyCell(Indexes indexes, Double value) {
             super(null, value);
@@ -919,10 +916,9 @@ public abstract class IndexedTensor implements Tensor {
 
         /** Returns an immutable list containing a copy of the indexes in this */
         public List<Long> toList() {
-            ImmutableList.Builder<Long> builder = new ImmutableList.Builder<>();
-            for (long index : indexes)
-                builder.add(index);
-            return builder.build();
+            ArrayList<Long> list = new ArrayList<>(indexes.length);
+            for(long index : indexes) { list.add(index); }
+            return List.copyOf(list);
         }
 
         @Override

@@ -15,7 +15,7 @@ namespace vespalib {
  * connections is controlled by the use_tls_when_client flag given to
  * the constructor.
  **/
-class MaybeTlsCryptoEngine : public CryptoEngine
+class MaybeTlsCryptoEngine : public AbstractTlsCryptoEngine
 {
 private:
     std::shared_ptr<NullCryptoEngine> _null_engine;
@@ -29,6 +29,8 @@ public:
           _tls_engine(std::move(tls_engine)),
           _use_tls_when_client(use_tls_when_client) {}
     ~MaybeTlsCryptoEngine() override;
+    std::unique_ptr<CryptoCodec> create_tls_client_crypto_codec(const SocketHandle &socket, const SocketSpec &spec) override;
+    std::unique_ptr<CryptoCodec> create_tls_server_crypto_codec(const SocketHandle &socket) override;
     bool use_tls_when_client() const override { return _use_tls_when_client; }
     bool always_use_tls_when_server() const override { return false; }
     CryptoSocket::UP create_client_crypto_socket(SocketHandle socket, const SocketSpec &spec) override;

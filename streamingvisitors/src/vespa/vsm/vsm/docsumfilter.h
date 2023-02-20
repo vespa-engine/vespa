@@ -67,6 +67,7 @@ public:
 
     search::docsummary::DocsumStoreFieldValue get_summary_field(uint32_t entry_idx, const Document& doc);
     void insert_summary_field(uint32_t entry_idx, const Document& doc, vespalib::slime::Inserter& inserter);
+    bool has_flatten_juniper_command(uint32_t entry_idx) const;
     FieldModifier* get_field_modifier(uint32_t entry_idx);
 };
 

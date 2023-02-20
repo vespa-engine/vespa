@@ -21,6 +21,9 @@ StringSearchContext::StringSearchContext(const AttributeVector& to_be_searched, 
 {
 }
 
+StringSearchContext::StringSearchContext(StringSearchContext &&) noexcept = default;
+StringSearchContext::~StringSearchContext() = default;
+
 const QueryTermUCS4*
 StringSearchContext::queryTerm() const
 {

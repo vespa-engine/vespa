@@ -14,9 +14,9 @@ import com.yahoo.vespa.hosted.provision.node.History;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Predicate;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
 
 /**
  * This moves expired failed nodes:
@@ -74,7 +74,7 @@ public class FailedExpirer extends NodeRepositoryMaintainer {
 
         recycleIf(node -> node.allocation().isEmpty(), remainingNodes, allNodes);
         recycleIf(node -> !node.allocation().get().membership().cluster().isStateful() &&
-                node.history().hasEventBefore(History.Event.Type.failed, clock().instant().minus(statelessExpiry)),
+                          node.history().hasEventBefore(History.Event.Type.failed, clock().instant().minus(statelessExpiry)),
                   remainingNodes,
                   allNodes);
         recycleIf(node -> node.allocation().get().membership().cluster().isStateful() &&
@@ -86,7 +86,7 @@ public class FailedExpirer extends NodeRepositoryMaintainer {
 
     /** Recycle the nodes matching condition, and remove those nodes from the nodes list. */
     private void recycleIf(Predicate<Node> condition, List<Node> failedNodes, NodeList allNodes) {
-        List<Node> nodesToRecycle = failedNodes.stream().filter(condition).collect(Collectors.toList());
+        List<Node> nodesToRecycle = failedNodes.stream().filter(condition).toList();
         failedNodes.removeAll(nodesToRecycle);
         recycle(nodesToRecycle, allNodes);
     }
@@ -95,18 +95,20 @@ public class FailedExpirer extends NodeRepositoryMaintainer {
     private void recycle(List<Node> nodes, NodeList allNodes) {
         List<Node> nodesToRecycle = new ArrayList<>();
         for (Node candidate : nodes) {
-            if (broken(candidate, allNodes)) {
-                List<String> unparkedChildren = !candidate.type().isHost() ? List.of() :
+            Optional<String> reason = shouldPark(candidate, allNodes);
+            if (reason.isPresent()) {
+                List<String> unparkedChildren = candidate.type().isHost() ?
                                                 allNodes.childrenOf(candidate)
-                                                        .not().state(Node.State.parked)
-                                                        .mapToList(Node::hostname);
+                                                        .not()
+                                                        .state(Node.State.parked)
+                                                        .mapToList(Node::hostname) :
+                                                List.of();
 
                 if (unparkedChildren.isEmpty()) {
                     nodeRepository.nodes().park(candidate.hostname(), true, Agent.FailedExpirer,
-                                                "Parked by FailedExpirer due to hardware issue or high fail count");
+                                                "Parked by FailedExpirer due to " + reason.get());
                 } else {
-                    log.info(String.format("Expired failed node %s with hardware issue was not parked because of " +
-                                           "unparked children: %s",
+                    log.info(String.format("Expired failed node %s was not parked because of unparked children: %s",
                                            candidate.hostname(), String.join(", ", unparkedChildren)));
                 }
             } else {
@@ -116,10 +118,17 @@ public class FailedExpirer extends NodeRepositoryMaintainer {
         nodeRepository.nodes().deallocate(nodesToRecycle, Agent.FailedExpirer, "Expired by FailedExpirer");
     }
 
-    /** Returns whether node is broken and cannot be recycled */
-    private boolean broken(Node node, NodeList allNodes) {
-        return NodeFailer.hasHardwareIssue(node, allNodes) ||
-               (node.type().isHost() && node.status().failCount() >= maxAllowedFailures);
+    /** Returns whether the node should be parked instead of recycled */
+    private Optional<String> shouldPark(Node node, NodeList allNodes) {
+        if (NodeFailer.hasHardwareIssue(node, allNodes))
+            return Optional.of("has hardware issues");
+        if (node.type().isHost() && node.status().failCount() >= maxAllowedFailures)
+            return Optional.of("has failed too many times");
+        if (node.status().wantToDeprovision())
+            return Optional.of("want to deprovision");
+        if (node.status().wantToRetire())
+            return Optional.of("want to retire");
+        return Optional.empty();
     }
 
 }

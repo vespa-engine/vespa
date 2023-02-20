@@ -630,7 +630,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
         // GET to get reindexing status
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1/environment/prod/region/us-central-1/reindexing", GET)
                         .userIdentity(USER_ID),
-                "{\"enabled\":true,\"clusters\":[{\"name\":\"cluster\",\"pending\":[{\"type\":\"type\",\"requiredGeneration\":100}],\"ready\":[{\"type\":\"type\",\"readyAtMillis\":345,\"startedAtMillis\":456,\"endedAtMillis\":567,\"state\":\"failed\",\"message\":\"(＃｀д´)ﾉ\",\"progress\":0.1,\"speed\":1.0}]}]}");
+                "{\"enabled\":true,\"clusters\":[{\"name\":\"cluster\",\"pending\":[{\"type\":\"type\",\"requiredGeneration\":100}],\"ready\":[{\"type\":\"type\",\"readyAtMillis\":345,\"startedAtMillis\":456,\"endedAtMillis\":567,\"state\":\"failed\",\"message\":\"(＃｀д´)ﾉ\",\"progress\":0.1,\"speed\":1.0,\"cause\":\"test reindexing\"}]}]}");
 
         // POST to request a service dump
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1/environment/prod/region/us-central-1/node/host-tenant1.application1.instance1-prod.us-central-1/service-dump", POST)
@@ -697,6 +697,11 @@ public class ApplicationApiTest extends ControllerContainerTest {
                         .userIdentity(USER_ID),
                 new File("suspended.json"));
 
+        // GET private service info
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1/environment/prod/region/us-central-1/private-services", GET)
+                                      .userIdentity(USER_ID),
+                              """
+                              {"privateServices":[{"cluster":"default","serviceId":"service","type":"unknown","allowedUrns":[{"type":"aws-private-link","urn":"arne"}],"endpoints":[{"endpointId":"endpoint-1","state":"available"}]}]}""");
 
         // GET service/state/v1
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1/environment/prod/region/us-central-1/service/storagenode/host.com/state/v1/?foo=bar", GET)
@@ -1282,7 +1287,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
 
         // Create legacy tenant name containing underscores
         tester.controller().curator().writeTenant(new AthenzTenant(TenantName.from("my_tenant"), ATHENZ_TENANT_DOMAIN,
-                new Property("property1"), Optional.empty(), Optional.empty(), Instant.EPOCH, LastLoginInfo.EMPTY));
+                new Property("property1"), Optional.empty(), Optional.empty(), Instant.EPOCH, LastLoginInfo.EMPTY, Instant.EPOCH));
 
         // POST (add) a Athenz tenant with dashes duplicates existing one with underscores
         tester.assertResponse(request("/application/v4/tenant/my-tenant", POST)

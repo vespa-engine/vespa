@@ -386,7 +386,7 @@ main(int argc, char **argv)
     ns_log::Logger::fakePid = true;
     ns_log::BufferedLogger::instance().setMaxCacheSize(10);
     uint64_t timer;
-    logger.setTimer(std::unique_ptr<ns_log::Timer>(new ns_log::TestTimer(timer)));
+    ns_log_logger.setTimer(std::unique_ptr<ns_log::Timer>(new ns_log::TestTimer(timer)));
     ns_log::BufferedLogger::instance().setTimer(std::unique_ptr<ns_log::Timer>(new ns_log::TestTimer(timer)));
 
     reset(timer);

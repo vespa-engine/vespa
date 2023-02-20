@@ -56,7 +56,6 @@ public class ModelContextImpl implements ModelContext {
 
     private final ApplicationPackage applicationPackage;
     private final Optional<Model> previousModel;
-    private final Optional<ApplicationPackage> permanentApplicationPackage;
     private final DeployLogger deployLogger;
     private final ConfigDefinitionRepo configDefinitionRepo;
     private final FileRegistry fileRegistry;
@@ -83,7 +82,6 @@ public class ModelContextImpl implements ModelContext {
 
     public ModelContextImpl(ApplicationPackage applicationPackage,
                             Optional<Model> previousModel,
-                            Optional<ApplicationPackage> permanentApplicationPackage,
                             DeployLogger deployLogger,
                             ConfigDefinitionRepo configDefinitionRepo,
                             FileRegistry fileRegistry,
@@ -98,7 +96,6 @@ public class ModelContextImpl implements ModelContext {
                             Version wantedNodeVespaVersion) {
         this.applicationPackage = applicationPackage;
         this.previousModel = previousModel;
-        this.permanentApplicationPackage = permanentApplicationPackage;
         this.deployLogger = deployLogger;
         this.configDefinitionRepo = configDefinitionRepo;
         this.fileRegistry = fileRegistry;
@@ -118,9 +115,6 @@ public class ModelContextImpl implements ModelContext {
 
     @Override
     public Optional<Model> previousModel() { return previousModel; }
-
-    @Override
-    public Optional<ApplicationPackage> permanentApplicationPackage() { return permanentApplicationPackage; }
 
     /**
      * Returns the host provisioner to use, or empty to use the default provisioner,
@@ -199,7 +193,6 @@ public class ModelContextImpl implements ModelContext {
         private final boolean enableProxyProtocolMixedMode;
         private final boolean sharedStringRepoNoReclaim;
         private final String logFileCompressionAlgorithm;
-        private final boolean useTwoPhaseDocumentGc;
         private final int mbus_network_threads;
         private final int mbus_java_num_targets;
         private final int mbus_java_events_before_wakeup;
@@ -209,8 +202,6 @@ public class ModelContextImpl implements ModelContext {
         private final int rpc_events_before_wakeup;
         private final boolean useRestrictedDataPlaneBindings;
         private final int heapPercentage;
-        private final boolean useOldJdiscContainerStartup;
-        private final boolean enableDataPlaneFilter;
 
         public FeatureFlags(FlagSource source, ApplicationId appId, Version version) {
             this.defaultTermwiseLimit = flagValue(source, appId, version, Flags.DEFAULT_TERM_WISE_LIMIT);
@@ -245,7 +236,6 @@ public class ModelContextImpl implements ModelContext {
             this.enableProxyProtocolMixedMode = flagValue(source, appId, version, Flags.ENABLE_PROXY_PROTOCOL_MIXED_MODE);
             this.sharedStringRepoNoReclaim = flagValue(source, appId, version, Flags.SHARED_STRING_REPO_NO_RECLAIM);
             this.logFileCompressionAlgorithm = flagValue(source, appId, version, Flags.LOG_FILE_COMPRESSION_ALGORITHM);
-            this.useTwoPhaseDocumentGc = flagValue(source, appId, version, Flags.USE_TWO_PHASE_DOCUMENT_GC);
             this.mbus_java_num_targets = flagValue(source, appId, version, Flags.MBUS_JAVA_NUM_TARGETS);
             this.mbus_java_events_before_wakeup = flagValue(source, appId, version, Flags.MBUS_JAVA_EVENTS_BEFORE_WAKEUP);
             this.mbus_cpp_num_targets = flagValue(source, appId, version, Flags.MBUS_CPP_NUM_TARGETS);
@@ -256,11 +246,8 @@ public class ModelContextImpl implements ModelContext {
             this.queryDispatchWarmup = flagValue(source, appId, version, PermanentFlags.QUERY_DISPATCH_WARMUP);
             this.useRestrictedDataPlaneBindings = flagValue(source, appId, version, Flags.RESTRICT_DATA_PLANE_BINDINGS);
             this.heapPercentage = flagValue(source, appId, version, PermanentFlags.HEAP_SIZE_PERCENTAGE);
-            this.useOldJdiscContainerStartup = flagValue(source, appId, version, Flags.USE_OLD_JDISC_CONTAINER_STARTUP);
-            this.enableDataPlaneFilter = flagValue(source, appId, version, Flags.ENABLE_DATAPLANE_FILTER);
         }
 
-        @Override public boolean useOldJdiscContainerStartup() { return useOldJdiscContainerStartup; }
         @Override public int heapSizePercentage() { return heapPercentage; }
         @Override public String queryDispatchPolicy() { return queryDispatchPolicy; }
         @Override public double queryDispatchWarmup() { return queryDispatchWarmup; }
@@ -310,9 +297,7 @@ public class ModelContextImpl implements ModelContext {
             }
             return defVal;
         }
-        @Override public boolean useTwoPhaseDocumentGc() { return useTwoPhaseDocumentGc; }
         @Override public boolean useRestrictedDataPlaneBindings() { return useRestrictedDataPlaneBindings; }
-        @Override public boolean enableDataPlaneFilter() { return enableDataPlaneFilter; }
 
         private static <V> V flagValue(FlagSource source, ApplicationId appId, Version vespaVersion, UnboundFlag<? extends V, ?, ?> flag) {
             return flag.bindTo(source)
@@ -381,6 +366,7 @@ public class ModelContextImpl implements ModelContext {
         private final List<String> zoneDnsSuffixes;
         private final List<String> environmentVariables;
         private final Optional<CloudAccount> cloudAccount;
+        private final boolean allowUserFilters;
 
         public Properties(ApplicationId applicationId,
                           Version modelVersion,
@@ -425,6 +411,8 @@ public class ModelContextImpl implements ModelContext {
             this.environmentVariables = PermanentFlags.ENVIRONMENT_VARIABLES.bindTo(flagSource)
                     .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
             this.cloudAccount = cloudAccount;
+            this.allowUserFilters = PermanentFlags.ALLOW_USER_FILTERS.bindTo(flagSource)
+                    .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
         }
 
         @Override public ModelContext.FeatureFlags featureFlags() { return featureFlags; }
@@ -513,6 +501,8 @@ public class ModelContextImpl implements ModelContext {
         public Optional<CloudAccount> cloudAccount() {
             return cloudAccount;
         }
+
+        @Override public boolean allowUserFilters() { return allowUserFilters; }
 
     }
 

@@ -25,7 +25,7 @@ public:
     template <typename T>
     class ValueAndIndex {
     public:
-        typedef T ValueType;
+        using ValueType = T;
         ValueAndIndex(T value, uint32_t index) noexcept : _value(value), _index(index) { }
         T getValue() const { return _value; }
         uint32_t getIndex() const { return _index; }

@@ -5,7 +5,7 @@
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/document/fieldvalue/stringfieldvalue.h>
-#include <boost/random.hpp>
+#include <vespa/vespalib/util/rand48.h>
 #include <sstream>
 
 namespace document {
@@ -62,13 +62,13 @@ TestDocMan::TestDocMan()
       _typeCfg(&_test_repo.getTypeConfig())
 { }
 
-TestDocMan::~TestDocMan() { }
+TestDocMan::~TestDocMan() = default;
 
 void
 TestDocMan::setTypeRepo(const std::shared_ptr<const DocumentTypeRepo> &repo)
 {
     _repo = repo;
-    _typeCfg = NULL;
+    _typeCfg = nullptr;
 }
 
 Document::UP
@@ -77,8 +77,7 @@ TestDocMan::createDocument(
         const std::string& id,
         const std::string& type) const
 {
-    const DocumentType *type_ptr = 0;
-    type_ptr = _repo->getDocumentType(type);
+    const DocumentType *type_ptr = _repo->getDocumentType(type);
     assert(type_ptr);
     Document::UP doc(new Document(*type_ptr, DocumentId(id)));
     doc->setValue(doc->getField("content"), StringFieldValue(content.c_str()));
@@ -96,11 +95,11 @@ Document::UP
 TestDocMan::createRandomDocumentAtLocation(
                 int location, int seed, int maxContentSize) const
 {
-    boost::rand48 rnd(seed);
+    vespalib::Rand48 rnd(seed);
     std::ostringstream id;
-    id << "id:mail:testdoctype1:n=" << location << ":" << (rnd() % 0x10000)
+    id << "id:mail:testdoctype1:n=" << location << ":" << (rnd.lrand48() % 0x10000)
        << ".html";
-    return createDocument(generateRandomContent(rnd() % maxContentSize),
+    return createDocument(generateRandomContent(rnd.lrand48() % maxContentSize),
                           id.str(), "testdoctype1");
 }
 
@@ -108,27 +107,26 @@ Document::UP
 TestDocMan::createRandomDocumentAtLocation(
         int location, int seed, int minContentSize, int maxContentSize) const
 {
-    boost::rand48 rnd(seed);
+    vespalib::Rand48 rnd(seed);
     std::ostringstream id;
-    id << "id:mail:testdoctype1:n=" << location << ":" << (rnd() % 0x10000)
+    id << "id:mail:testdoctype1:n=" << location << ":" << (rnd.lrand48() % 0x10000)
        << ".html";
 
-    int size = maxContentSize > minContentSize ?
-               rnd() % (maxContentSize - minContentSize) + minContentSize :
-               minContentSize;
+    int size = maxContentSize > minContentSize
+            ? rnd.lrand48() % (maxContentSize - minContentSize) + minContentSize
+            : minContentSize;
     return
         createDocument(generateRandomContent(size), id.str(), "testdoctype1");
 }
 
 Document::UP
-TestDocMan::createRandomDocument(
-        const std::string& type, int seed, int maxContentSize) const
+TestDocMan::createRandomDocument(const std::string& type, int seed, int maxContentSize) const
 {
-    boost::rand48 rnd(seed);
+    vespalib::Rand48 rnd(seed);
     std::ostringstream id;
-    id << "id:mail:" << type << ":n=" << (rnd() % 0xFFFF);
-    id << ":" << (rnd() % 256) << ".html";
-    return createDocument(generateRandomContent(rnd() % maxContentSize), id.str(), type);
+    id << "id:mail:" << type << ":n=" << (rnd.lrand48() % 0xFFFF);
+    id << ":" << (rnd.lrand48() % 256) << ".html";
+    return createDocument(generateRandomContent(rnd.lrand48() % maxContentSize), id.str(), type);
 }
 
 std::string

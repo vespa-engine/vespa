@@ -9,6 +9,7 @@ import com.yahoo.search.config.IndexInfoConfig;
 import com.yahoo.search.config.SchemaInfoConfig;
 import com.yahoo.tensor.TensorType;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -122,7 +123,14 @@ public class SchemaInfo {
         }
 
         private static List<Schema> keep(Set<String> names, Collection<Schema> schemas) {
-            return schemas.stream().filter(schema -> names.contains(schema.name())).collect(Collectors.toList());
+            return schemas.stream().filter(schema -> names.contains(schema.name())).toList();
+        }
+
+        private List<RankProfile> profilesNamed(String name) {
+            return schemas.stream()
+                          .filter(schema -> schema.rankProfiles().containsKey(name))
+                          .map(schema -> schema.rankProfiles().get(name))
+                          .toList();
         }
 
         /**
@@ -132,23 +140,27 @@ public class SchemaInfo {
          * @param rankFeature the rank feature name, a string on the form "query(name)"
          * @param rankProfile the name of the rank profile in which to locate the input declaration
          * @return the type of the declared input, or null if it is not declared or the rank profile is not found
-         * @throws IllegalArgumentException if the feature is declared in this rank profile in multiple schemas
+         * @throws IllegalArgumentException if the given rank profile does not exist in any schema, or the
+         *         feature is declared in this rank profile in multiple schemas
          *         of this session with conflicting types
          */
         public TensorType rankProfileInput(String rankFeature, String rankProfile) {
+            if (schemas.isEmpty()) return null; // no matching schemas - validated elsewhere
+            List<RankProfile> profiles = profilesNamed(rankProfile);
+            if (profiles.isEmpty())
+                throw new IllegalArgumentException("No profile named '" + rankProfile + "' exists in schemas [" +
+                                                   schemas.stream().map(Schema::name).collect(Collectors.joining(", ")) + "]");
             TensorType foundType = null;
-            Schema declaringSchema = null;
-            for (Schema schema : schemas) {
-                RankProfile profile = schema.rankProfiles().get(rankProfile);
-                if (profile == null) continue;
+            RankProfile declaringProfile = null;
+            for (RankProfile profile : profiles) {
                 TensorType newlyFoundType = profile.inputs().get(rankFeature);
                 if (newlyFoundType == null) continue;
                 if (foundType != null && ! newlyFoundType.equals(foundType))
                     throw new IllegalArgumentException("Conflicting input type declarations for '" + rankFeature + "': " +
-                                                       "Declared as " + foundType + " in " + profile + " in " + declaringSchema +
-                                                       ", and as " + newlyFoundType + " in " + profile + " in " + schema);
+                                                       "Declared as " + foundType + " in " + declaringProfile +
+                                                       ", and as " + newlyFoundType + " in " + profile);
                 foundType = newlyFoundType;
-                declaringSchema = schema;
+                declaringProfile = profile;
             }
             return foundType;
         }

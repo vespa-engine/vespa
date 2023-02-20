@@ -85,7 +85,7 @@ public class Path {
      *
      * Returns whether this path matches the given template string.
      * If the given template has placeholders, their values (accessible by get) are reset by calling this,
-     * whether or not the path matches the given template.
+     * whether the path matches the given template.
      *
      * This will NOT match empty path elements.
      *

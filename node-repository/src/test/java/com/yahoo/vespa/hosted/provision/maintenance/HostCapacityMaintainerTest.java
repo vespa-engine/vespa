@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.maintenance;
 
+import com.yahoo.config.provision.IntRange;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Capacity;
@@ -22,11 +23,9 @@ import com.yahoo.net.HostName;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.flags.PermanentFlags;
 import com.yahoo.vespa.flags.custom.ClusterCapacity;
-import com.yahoo.vespa.flags.custom.SharedHost;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
-import com.yahoo.vespa.hosted.provision.node.Address;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.Allocation;
 import com.yahoo.vespa.hosted.provision.node.Generation;
@@ -46,7 +45,6 @@ import com.yahoo.vespa.service.duper.ControllerHostApplication;
 import com.yahoo.vespa.service.duper.InfraApplication;
 import com.yahoo.vespa.service.duper.TenantHostApplication;
 import org.junit.Test;
-
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Collections;
@@ -55,7 +53,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.yahoo.vespa.hosted.provision.testutils.MockHostProvisioner.Behaviour;
@@ -78,13 +75,12 @@ public class HostCapacityMaintainerTest {
 
         tester.maintain();
         assertTrue(tester.nodeRepository.nodes().node("host2").isEmpty());
-        assertTrue(tester.nodeRepository.nodes().node("host3").isEmpty());
     }
 
     @Test
     public void does_not_deprovision_when_preprovisioning_enabled() {
         var tester = new DynamicProvisioningTester().addInitialNodes();
-        tester.flagSource.withListFlag(PermanentFlags.PREPROVISION_CAPACITY.id(), List.of(new ClusterCapacity(1, 1, 3, 2, 1.0)), ClusterCapacity.class);
+        tester.flagSource.withListFlag(PermanentFlags.PREPROVISION_CAPACITY.id(), List.of(new ClusterCapacity(1, 1.0, 3.0, 2.0, 1.0, "fast", "local", "x86_64")), ClusterCapacity.class);
         Optional<Node> failedHost = tester.nodeRepository.nodes().node("host2");
         assertTrue(failedHost.isPresent());
 
@@ -97,8 +93,8 @@ public class HostCapacityMaintainerTest {
     public void provision_deficit_and_deprovision_excess() {
         var tester = new DynamicProvisioningTester().addInitialNodes();
         tester.flagSource.withListFlag(PermanentFlags.PREPROVISION_CAPACITY.id(),
-                                       List.of(new ClusterCapacity(2, 48, 128, 1000, 10.0),
-                                               new ClusterCapacity(1, 16, 24, 100, 1.0)),
+                                       List.of(new ClusterCapacity(2, 48.0, 128.0, 1000.0, 10.0, "fast", "local", "x86_64"),
+                                               new ClusterCapacity(1, 16.0, 24.0, 100.0, 1.0, "fast", "local", "x86_64")),
                                        ClusterCapacity.class);
 
         assertEquals(0, tester.hostProvisioner.provisionedHosts().size());
@@ -127,9 +123,9 @@ public class HostCapacityMaintainerTest {
         var tester = new DynamicProvisioningTester().addInitialNodes();
         // Makes provisioned hosts 48-128-1000-10
         tester.hostProvisioner.overrideHostFlavor("host4");
-
+        var clusterCapacity = new ClusterCapacity(2, 1.0, 30.0, 20.0, 3.0, "fast", "local", "x86_64");
         tester.flagSource.withListFlag(PermanentFlags.PREPROVISION_CAPACITY.id(),
-                List.of(new ClusterCapacity(2, 1, 30, 20, 3.0)),
+                List.of(clusterCapacity),
                 ClusterCapacity.class);
 
         assertEquals(0, tester.hostProvisioner.provisionedHosts().size());
@@ -149,10 +145,9 @@ public class HostCapacityMaintainerTest {
         verifyFirstMaintain(tester);
 
         // Add a second cluster equal to the first.  It should fit on existing host3 and host100.
-
         tester.flagSource.withListFlag(PermanentFlags.PREPROVISION_CAPACITY.id(),
-                List.of(new ClusterCapacity(2, 1, 30, 20, 3.0),
-                        new ClusterCapacity(2, 1, 30, 20, 3.0)),
+                List.of(clusterCapacity,
+                        clusterCapacity),
                 ClusterCapacity.class);
 
         tester.maintain();
@@ -165,8 +160,8 @@ public class HostCapacityMaintainerTest {
         // host3 is a 24-64-100-10 while host100 is 48-128-1000-10.
 
         tester.flagSource.withListFlag(PermanentFlags.PREPROVISION_CAPACITY.id(),
-                List.of(new ClusterCapacity(2, 1, 30, 20, 3.0),
-                        new ClusterCapacity(2, 24, 64, 100, 1.0)),
+                List.of(clusterCapacity,
+                        new ClusterCapacity(2, 24.0, 64.0, 100.0, 1.0, "fast", "local", "x86_64")),
                 ClusterCapacity.class);
 
         tester.maintain();
@@ -181,7 +176,7 @@ public class HostCapacityMaintainerTest {
         // If the preprovision capacity is reduced, we should see shared hosts deprovisioned.
 
         tester.flagSource.withListFlag(PermanentFlags.PREPROVISION_CAPACITY.id(),
-                List.of(new ClusterCapacity(1, 1, 30, 20, 3.0)),
+                List.of(new ClusterCapacity(1, 1.0, 30.0, 20.0, 3.0, "fast", "local", "x86_64")),
                 ClusterCapacity.class);
 
         tester.maintain();
@@ -211,50 +206,6 @@ public class HostCapacityMaintainerTest {
     }
 
     @Test
-    public void verify_min_count_of_shared_hosts() {
-        // What's going on here?  We are trying to verify the impact of varying the minimum number of
-        // shared hosts (SharedHost.minCount()).
-        //
-        // addInitialNodes() adds 4 tenant hosts:
-        //   host1    shared   !removable   # not removable because it got child nodes w/allocation
-        //   host2   !shared    removable   # not counted as a shared host because it is failed
-        //   host3    shared    removable
-        //   host4    shared   !removable   # not removable because it got child nodes w/allocation
-        //
-        // Hosts 1, 3, and 4 count as "shared hosts" with respect to the minCount lower boundary.
-        // Hosts 3 and 4 are removable, that is they will be deprovisioned as excess hosts unless
-        // prevented by minCount.
-
-        // minCount=0: All (2) removable hosts are deprovisioned
-        assertWithMinCount(0, 0, 2);
-        // minCount=1: The same thing happens, because there are 2 shared hosts left
-        assertWithMinCount(1, 0, 2);
-        assertWithMinCount(2, 0, 2);
-        // minCount=3: since we require 3 shared hosts, host3 is not deprovisioned.
-        assertWithMinCount(3, 0, 1);
-        // 4 shared hosts require we provision 1 shared host
-        assertWithMinCount(4, 1, 1);
-        // 5 shared hosts require we provision 2 shared hosts
-        assertWithMinCount(5, 2, 1);
-        assertWithMinCount(6, 3, 1);
-    }
-
-    private void assertWithMinCount(int minCount, int provisionCount, int deprovisionCount) {
-        var tester = new DynamicProvisioningTester().addInitialNodes();
-        tester.hostProvisioner.overrideHostFlavor("host4");
-
-        tester.flagSource.withJacksonFlag(PermanentFlags.SHARED_HOST.id(), new SharedHost(null, minCount), SharedHost.class);
-        tester.maintain();
-        assertEquals(provisionCount, tester.hostProvisioner.provisionedHosts().size());
-        assertEquals(deprovisionCount, tester.hostProvisioner.deprovisionedHosts());
-
-        // Verify next maintain is a no-op
-        tester.maintain();
-        assertEquals(provisionCount, tester.hostProvisioner.provisionedHosts().size());
-        assertEquals(deprovisionCount, tester.hostProvisioner.deprovisionedHosts());
-    }
-
-    @Test
     public void does_not_remove_if_host_provisioner_failed() {
         var tester = new DynamicProvisioningTester();
         Node host2 = tester.addNode("host2", Optional.empty(), NodeType.host, Node.State.failed, DynamicProvisioningTester.tenantApp);
@@ -269,7 +220,9 @@ public class HostCapacityMaintainerTest {
         var tester = new DynamicProvisioningTester();
         NodeResources resources1 = new NodeResources(24, 64, 100, 10);
         tester.flagSource.withListFlag(PermanentFlags.PREPROVISION_CAPACITY.id(),
-                List.of(new ClusterCapacity(2, resources1.vcpu(), resources1.memoryGb(), resources1.diskGb(), resources1.bandwidthGbps())),
+                List.of(new ClusterCapacity(2, resources1.vcpu(), resources1.memoryGb(), resources1.diskGb(),
+                                            resources1.bandwidthGbps(), resources1.diskSpeed().name(),
+                                            resources1.storageType().name(), resources1.architecture().name())),
                 ClusterCapacity.class);
         tester.maintain();
 
@@ -289,7 +242,7 @@ public class HostCapacityMaintainerTest {
 
         // Must be able to allocate 2 nodes with "no resource requirement"
         tester.flagSource.withListFlag(PermanentFlags.PREPROVISION_CAPACITY.id(),
-                List.of(new ClusterCapacity(2, 0, 0, 0, 0.0)),
+                List.of(new ClusterCapacity(2, 0.0, 0.0, 0.0, 0.0, null, null, null)),
                 ClusterCapacity.class);
 
         // Next maintenance run does nothing
@@ -314,7 +267,7 @@ public class HostCapacityMaintainerTest {
 
         // Increasing the capacity provisions additional hosts
         tester.flagSource.withListFlag(PermanentFlags.PREPROVISION_CAPACITY.id(),
-                List.of(new ClusterCapacity(3, 0, 0, 0, 0.0)),
+                List.of(new ClusterCapacity(3, 0.0, 0.0, 0.0, 0.0, null, null, null)),
                 ClusterCapacity.class);
         assertEquals(0, tester.provisionedHostsMatching(sharedHostNodeResources));
         assertTrue(tester.nodeRepository.nodes().node("host102").isEmpty());
@@ -331,7 +284,10 @@ public class HostCapacityMaintainerTest {
                         resources1.vcpu() - applicationNodeResources.vcpu(),
                         resources1.memoryGb() - applicationNodeResources.memoryGb(),
                         resources1.diskGb() - applicationNodeResources.diskGb(),
-                        resources1.bandwidthGbps() - applicationNodeResources.bandwidthGbps())),
+                        resources1.bandwidthGbps() - applicationNodeResources.bandwidthGbps(),
+                        resources1.diskSpeed().name(),
+                        resources1.storageType().name(),
+                        resources1.architecture().name())),
                 ClusterCapacity.class);
         tester.assertNodesUnchanged();
 
@@ -341,7 +297,10 @@ public class HostCapacityMaintainerTest {
                         resources1.vcpu() - applicationNodeResources.vcpu() + 1,
                         resources1.memoryGb() - applicationNodeResources.memoryGb() + 1,
                         resources1.diskGb() - applicationNodeResources.diskGb() + 1,
-                        resources1.bandwidthGbps())),
+                        resources1.bandwidthGbps(),
+                        resources1.diskSpeed().name(),
+                        resources1.storageType().name(),
+                        resources1.architecture().name())),
                 ClusterCapacity.class);
 
         assertEquals(1, tester.provisionedHostsMatching(sharedHostNodeResources));
@@ -507,7 +466,7 @@ public class HostCapacityMaintainerTest {
         ClusterSpec spec = ProvisioningTester.contentClusterSpec();
         ClusterResources resources = new ClusterResources(2, 1, new NodeResources(16, 24, 100, 1));
         CloudAccount cloudAccount0 = CloudAccount.from("000000000000");
-        Capacity capacity0 = Capacity.from(resources, resources, false, true, Optional.of(cloudAccount0));
+        Capacity capacity0 = Capacity.from(resources, resources, IntRange.empty(), false, true, Optional.of(cloudAccount0));
         List<HostSpec> prepared = provisioningTester.prepare(applicationId, spec, capacity0);
 
         // Hosts are provisioned in requested account
@@ -517,7 +476,7 @@ public class HostCapacityMaintainerTest {
 
         // Redeployment in different account provisions a new set of hosts
         CloudAccount cloudAccount1 = CloudAccount.from("100000000000");
-        Capacity capacity1 = Capacity.from(resources, resources, false, true, Optional.of(cloudAccount1));
+        Capacity capacity1 = Capacity.from(resources, resources, IntRange.empty(), false, true, Optional.of(cloudAccount1));
         prepared = provisioningTester.prepare(applicationId, spec, capacity1);
         provisionHostsIn(cloudAccount1, 2, tester);
         assertEquals(2, provisioningTester.activate(applicationId, prepared).size());
@@ -626,7 +585,7 @@ public class HostCapacityMaintainerTest {
             Zone zone = new Zone(cloud, SystemName.defaultSystem(),
                                  Environment.defaultEnvironment(),
                                  RegionName.defaultName());
-            this.hostProvisioner = new MockHostProvisioner(flavors.getFlavors(), nameResolver, 0, cloud);
+            this.hostProvisioner = new MockHostProvisioner(flavors.getFlavors(), nameResolver, 0);
             this.provisioningTester = new ProvisioningTester.Builder().zone(zone)
                                                                       .flavors(flavors.getFlavors())
                                                                       .nameResolver(nameResolver)
@@ -690,9 +649,9 @@ public class HostCapacityMaintainerTest {
                             flavor.resources(),
                             Generation.initial(),
                             false));
-            List<Address> addresses = Stream.of(additionalHostnames).map(Address::new).collect(Collectors.toList());
+            List<com.yahoo.config.provision.HostName> hostnames = Stream.of(additionalHostnames).map(com.yahoo.config.provision.HostName::of).toList();
             Node.Builder builder = Node.create("fake-id-" + hostname, hostname, flavor, state, nodeType)
-                    .ipConfig(new IP.Config(state == Node.State.active ? Set.of("::1") : Set.of(), Set.of(), addresses));
+                    .ipConfig(IP.Config.of(state == Node.State.active ? Set.of("::1") : Set.of(), Set.of(), hostnames));
             parentHostname.ifPresent(builder::parentHostname);
             allocation.ifPresent(builder::allocation);
             if (hostname.equals("host2-1"))

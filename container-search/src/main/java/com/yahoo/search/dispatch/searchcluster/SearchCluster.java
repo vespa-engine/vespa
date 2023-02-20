@@ -173,11 +173,15 @@ public class SearchCluster implements NodeManager<Node> {
     }
 
     public boolean hasInformationAboutAllNodes() {
-        return groups().stream().allMatch(g -> g.nodes().stream().allMatch(node -> node.isWorking() != null));
+        return groups().stream().allMatch(group -> group.nodes().stream().allMatch(node -> node.isWorking() != null));
+    }
+
+    public long nonWorkingNodeCount() {
+        return groups().stream().flatMap(group -> group.nodes().stream()).filter(node -> node.isWorking() == Boolean.FALSE).count();
     }
 
     private boolean hasWorkingNodes() {
-        return groups().stream().anyMatch(g -> g.nodes().stream().anyMatch(node -> node.isWorking() != Boolean.FALSE));
+        return groups().stream().anyMatch(group -> group.nodes().stream().anyMatch(node -> node.isWorking() != Boolean.FALSE));
     }
 
     private boolean usesLocalCorpusIn(Node node) {
@@ -252,11 +256,15 @@ public class SearchCluster implements NodeManager<Node> {
                     if (node.isWorking() != Boolean.TRUE)
                         unresponsive.append('\n').append(node);
                 }
-                log.warning("Cluster " + clusterId + ": " + group + " has reduced coverage: " +
-                            "Active documents: " + group.activeDocuments() + "/" + medianDocuments + ", " +
-                            "Target active documents: " + group.targetActiveDocuments() + ", " +
-                            "working nodes: " + group.workingNodes() + "/" + group.nodes().size() +
-                            ", unresponsive nodes: " + (unresponsive.toString().isEmpty() ? " none" : unresponsive));
+                String message = "Cluster " + clusterId + ": " + group + " has reduced coverage: " +
+                                 "Active documents: " + group.activeDocuments() + "/" + medianDocuments + ", " +
+                                 "Target active documents: " + group.targetActiveDocuments() + ", " +
+                                 "working nodes: " + group.workingNodes() + "/" + group.nodes().size() +
+                                 ", unresponsive nodes: " + (unresponsive.toString().isEmpty() ? " none" : unresponsive);
+                if (nonWorkingNodeCount() == 1) // That is normal
+                    log.info(message);
+                else
+                    log.warning(message);
             }
         }
     }

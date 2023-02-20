@@ -1,7 +1,9 @@
 package com.yahoo.config.provision;
 
 import ai.vespa.validation.PatternedStringWrapper;
+import com.google.common.io.CharStreams;
 
+import java.util.UUID;
 import java.util.regex.Pattern;
 
 /**
@@ -12,7 +14,7 @@ import java.util.regex.Pattern;
  */
 public class WireguardKey extends PatternedStringWrapper<WireguardKey> {
 
-    // See https://lists.zx2c4.com/pipermail/wireguard/2020-December/006222.html
+    // See https://stackoverflow.com/questions/74438436/how-to-validate-a-wireguard-public-key
     private static final Pattern pattern = Pattern.compile("^[A-Za-z0-9+/]{42}[AEIMQUYcgkosw480]=$");
 
     public WireguardKey(String value) {
@@ -26,5 +28,10 @@ public class WireguardKey extends PatternedStringWrapper<WireguardKey> {
     @Override
     public String toString() {
         return "Wireguard key '" + value() + "'";
+    }
+
+    public static WireguardKey generateRandomForTesting() {
+        var str = UUID.randomUUID().toString().replace("-", "");
+        return new WireguardKey(str + "12345678900=");
     }
 }

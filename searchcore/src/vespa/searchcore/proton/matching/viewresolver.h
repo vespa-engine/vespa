@@ -20,7 +20,7 @@ namespace proton::matching {
 class ViewResolver
 {
 private:
-    typedef std::map<vespalib::string, std::vector<vespalib::string> > Map;
+    using Map = std::map<vespalib::string, std::vector<vespalib::string> >;
     Map _map;
 
 public:

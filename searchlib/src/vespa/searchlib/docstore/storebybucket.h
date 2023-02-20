@@ -24,7 +24,7 @@ class StoreByBucket
     using ConstBufferRef = vespalib::ConstBufferRef;
     using CompressionConfig = vespalib::compression::CompressionConfig;
 public:
-    StoreByBucket(MemoryDataStore & backingMemory, Executor & executor, const CompressionConfig & compression) noexcept;
+    StoreByBucket(MemoryDataStore & backingMemory, Executor & executor, CompressionConfig compression) noexcept;
     //TODO Putting the below move constructor into cpp file fails for some unknown reason. Needs to be resolved.
     StoreByBucket(StoreByBucket &&) noexcept = default;
     StoreByBucket(const StoreByBucket &) = delete;

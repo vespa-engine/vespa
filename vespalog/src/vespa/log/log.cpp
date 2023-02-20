@@ -175,19 +175,19 @@ Logger::Logger(const char *name, const char *rcsId)
 
 Logger::~Logger()
 {
-  _numInstances--;
-  if (_numInstances == 1) {
-    if (logger != nullptr) {
-      logger->~Logger();
-      free(logger);
-      logger = nullptr;
+    _numInstances--;
+    if (_numInstances == 1) {
+        if (ns_log_indirect_logger != nullptr) {
+            ns_log_indirect_logger->~Logger();
+            free(ns_log_indirect_logger);
+            ns_log_indirect_logger = nullptr;
+        }
+    } else if (_numInstances == 0) {
+        delete _controlFile;
+        logInitialised = false;
+        delete _target;
+        _target = nullptr;
     }
-  } else if (_numInstances == 0) {
-    delete _controlFile;
-    logInitialised = false;
-    delete _target;
-    _target = nullptr;
-  }
 }
 
 
@@ -208,7 +208,7 @@ Logger::setRcsId(const char *id)
     }
 
     assert(size_t(len + 8) < sizeof(_rcsId));
-    sprintf(_rcsId, "(%.*s): ", (int)(end - start), start);
+    snprintf(_rcsId, sizeof(_rcsId), "(%.*s): ", (int)(end - start), start);
     LOG(spam, "rcs id was set to '%s'", _rcsId);
     return 0;
 }
@@ -404,6 +404,15 @@ void
 Logger::doEventState(const char *name, const char *value)
 {
     doLog(event, "", 0, "state/1 name=\"%s\" value=\"%s\"", name, value);
+}
+
+LogTarget *
+Logger::getCurrentTarget()
+{
+    if (_target == nullptr) {
+        throwInvalid("No current log target");
+    }
+    return _target;
 }
 
 } // end namespace ns_log

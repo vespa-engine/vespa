@@ -10,12 +10,15 @@ import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.hosted.provision.node.ClusterId;
 
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.EnumSet;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -30,13 +33,22 @@ import static java.util.stream.Collectors.collectingAndThen;
  */
 public class NodeList extends AbstractFilteringList<Node, NodeList> {
 
+    private static final NodeList EMPTY = new NodeList(List.of(), false);
+
+    /**
+     * A lazily populated cache of parent-child relationships. This exists to improve the speed of parent<->child
+     * lookup which is a frequent operation
+     */
+    private final AtomicReference<Map<String, NodeFamily>> nodeCache = new AtomicReference<>(null);
+    private final AtomicReference<Set<String>> ipCache = new AtomicReference<>(null);
+
     protected NodeList(List<Node> nodes, boolean negate) {
         super(nodes, negate, NodeList::new);
     }
 
     /** Returns the node with the given hostname from this list, or empty if it is not present  */
     public Optional<Node> node(String hostname) {
-        return matching(node -> node.hostname().equals(hostname)).first();
+        return get(hostname).map(NodeFamily::node);
     }
 
     /** Returns the subset of nodes which are retired */
@@ -189,7 +201,9 @@ public class NodeList extends AbstractFilteringList<Node, NodeList> {
 
     /** Returns the child nodes of the given parent node */
     public NodeList childrenOf(String hostname) {
-        return matching(node -> node.hasParent(hostname));
+        NodeList children = get(hostname).map(NodeFamily::children).map(NodeList::copyOf).orElse(EMPTY);
+        // Fallback, in case the parent itself is not in this list
+        return children.isEmpty() ? matching(node -> node.hasParent(hostname)) : children;
     }
 
     public NodeList childrenOf(Node parent) {
@@ -221,22 +235,19 @@ public class NodeList extends AbstractFilteringList<Node, NodeList> {
     public NodeList parentsOf(NodeList children) {
         return children.stream()
                        .map(this::parentOf)
-                       .filter(Optional::isPresent)
                        .flatMap(Optional::stream)
                        .collect(collectingAndThen(Collectors.toList(), NodeList::copyOf));
+    }
+
+    /** Returns the parent node of the given child node */
+    public Optional<Node> parentOf(Node child) {
+        return child.parentHostname().flatMap(this::get).map(NodeFamily::node);
     }
 
     /** Returns the nodes contained in the group identified by given index */
     public NodeList group(int index) {
         return matching(n -> n.allocation().isPresent() &&
                              n.allocation().get().membership().cluster().group().equals(Optional.of(ClusterSpec.Group.from(index))));
-    }
-
-    /** Returns the parent node of the given child node */
-    public Optional<Node> parentOf(Node child) {
-        return child.parentHostname()
-                    .flatMap(parentHostname -> stream().filter(node -> node.hostname().equals(parentHostname))
-                                                       .findFirst());
     }
 
     /** Returns the hostnames of nodes in this */
@@ -316,6 +327,28 @@ public class NodeList extends AbstractFilteringList<Node, NodeList> {
         });
     }
 
+    /**
+     * Returns the number of unused IP addresses in the pool, assuming any and all unaccounted for hostnames
+     * in the pool are resolved to exactly 1 IP address (or 2 if dual-stack).
+     */
+    public int eventuallyUnusedIpAddressCount(Node host) {
+        // The count in this method relies on the size of the IP address pool if that's non-empty,
+        // otherwise fall back to the address/hostname pool.
+        if (host.ipConfig().pool().asSet().isEmpty()) {
+            Set<String> allHostnames = cache().keySet();
+            return (int) host.ipConfig().pool().hostnames().stream()
+                             .filter(hostname -> !allHostnames.contains(hostname.value()))
+                             .count();
+        }
+        Set<String> allIps = ipCache.updateAndGet(old ->
+            old != null ? old : stream().flatMap(node -> node.ipConfig().primary().stream())
+                                        .collect(Collectors.toUnmodifiableSet())
+        );
+        return (int) host.ipConfig().pool().asSet().stream()
+                         .filter(address -> !allIps.contains(address))
+                         .count();
+    }
+
     private void ensureSingleCluster() {
         if (isEmpty()) return;
 
@@ -336,6 +369,7 @@ public class NodeList extends AbstractFilteringList<Node, NodeList> {
     }
 
     public static NodeList copyOf(List<Node> nodes) {
+        if (nodes.isEmpty()) return EMPTY;
         return new NodeList(nodes, false);
     }
 
@@ -353,5 +387,37 @@ public class NodeList extends AbstractFilteringList<Node, NodeList> {
         if ( ! (other instanceof NodeList)) return false;
         return this.asList().equals(((NodeList) other).asList());
     }
+
+    /** Get node family, by given hostname */
+    private Optional<NodeFamily> get(String hostname) {
+        return Optional.ofNullable(cache().get(hostname));
+    }
+
+    private Map<String, NodeFamily> cache() {
+        return nodeCache.updateAndGet((oldValue) -> {
+            if (oldValue != null) {
+                return oldValue;
+            }
+            Map<String, NodeFamily> newValue = new HashMap<>();
+            for (var node : this) {
+                NodeFamily family;
+                if (node.parentHostname().isEmpty()) {
+                    family = new NodeFamily(node, new ArrayList<>());
+                    for (var child : this) {
+                        if (child.hasParent(node.hostname())) {
+                            family.children.add(child);
+                        }
+                    }
+                } else {
+                    family = new NodeFamily(node, List.of());
+                }
+                newValue.put(node.hostname(), family);
+            }
+            return newValue;
+        });
+    }
+
+    /** A node and its children, if any */
+    private record NodeFamily(Node node, List<Node> children) {}
 
 }

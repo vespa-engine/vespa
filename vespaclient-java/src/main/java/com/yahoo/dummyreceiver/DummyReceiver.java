@@ -71,7 +71,6 @@ public class DummyReceiver implements MessageHandler {
         params.setRPCNetworkParams(new RPCNetworkParams().setIdentity(new Identity(name)));
         params.setDocumentManagerConfigId("client");
         params.getMessageBusParams().setMaxPendingCount(0);
-        params.getMessageBusParams().setMaxPendingSize(0);
         da = new MessageBusDocumentAccess(params);
         queue = new LinkedBlockingDeque<>();
         session = da.getMessageBus().createDestinationSession("default", true, this);
@@ -79,6 +78,7 @@ public class DummyReceiver implements MessageHandler {
         System.out.println("Registered listener at " + name + "/default with 0 max pending and sleep time of " + sleepTime);
     }
 
+    @SuppressWarnings("deprecation")
     public void handleMessage(Message message) {
         long messageCount = this.messageCount.incrementAndGet();
         if ( silentNum == 0 ) {

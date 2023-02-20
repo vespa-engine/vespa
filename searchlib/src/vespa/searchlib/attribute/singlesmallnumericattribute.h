@@ -15,19 +15,19 @@ class GrowStrategy;
 class SingleValueSmallNumericAttribute : public IntegerAttributeTemplate<int8_t>
 {
 private:
-    typedef IntegerAttributeTemplate<int8_t> B;
-    typedef B::BaseType      T;
-    typedef B::DocId         DocId;
-    typedef B::EnumHandle    EnumHandle;
-    typedef B::largeint_t    largeint_t;
-    typedef B::Weighted      Weighted;
-    typedef B::WeightedInt   WeightedInt;
-    typedef B::WeightedFloat WeightedFloat;
-    typedef B::WeightedEnum  WeightedEnum;
-    typedef B::generation_t generation_t;
+    using B = IntegerAttributeTemplate<int8_t>;
+    using T = B::BaseType;
+    using DocId = B::DocId;
+    using EnumHandle = B::EnumHandle;
+    using largeint_t = B::largeint_t;
+    using Weighted = B::Weighted;
+    using WeightedInt = B::WeightedInt;
+    using WeightedFloat = B::WeightedFloat;
+    using WeightedEnum = B::WeightedEnum;
+    using generation_t = B::generation_t;
 
 protected:
-    typedef uint32_t Word;  // Large enough to contain numDocs.
+    using Word = uint32_t;  // Large enough to contain numDocs.
 private:
     Word _valueMask;            // 0x01, 0x03 or 0x0f
     uint32_t _valueShiftShift;  // 0x00, 0x01 or 0x02

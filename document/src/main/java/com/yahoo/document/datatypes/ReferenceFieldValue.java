@@ -88,6 +88,7 @@ public class ReferenceFieldValue extends FieldValue {
     }
 
     @Override
+    @Deprecated
     public void printXml(XmlStream xml) { }
 
     @Override

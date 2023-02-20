@@ -139,7 +139,7 @@ struct GarbageCollectionOperationTest : Test, DistributorStripeTestUtil {
 
 TEST_F(GarbageCollectionOperationTest, simple_legacy) {
     auto op = create_op();
-    op->start(_sender, framework::MilliSecTime(0));
+    op->start(_sender);
     EXPECT_FALSE(op->is_two_phase());
 
     ASSERT_EQ(2, _sender.commands().size());
@@ -158,7 +158,7 @@ TEST_F(GarbageCollectionOperationTest, simple_legacy) {
 
 TEST_F(GarbageCollectionOperationTest, replica_bucket_info_not_added_to_db_until_all_replies_received) {
     auto op = create_op();
-    op->start(_sender, framework::MilliSecTime(0));
+    op->start(_sender);
     ASSERT_EQ(2, _sender.commands().size());
     EXPECT_EQ(0u, gc_removed_documents_metric());
 
@@ -175,7 +175,7 @@ TEST_F(GarbageCollectionOperationTest, replica_bucket_info_not_added_to_db_until
 
 TEST_F(GarbageCollectionOperationTest, gc_bucket_info_does_not_overwrite_later_sequenced_bucket_info_writes) {
     auto op = create_op();
-    op->start(_sender, framework::MilliSecTime(0));
+    op->start(_sender);
     ASSERT_EQ(2, _sender.commands().size());
 
     reply_to_nth_request(*op, 0, 1234, 0);
@@ -195,20 +195,20 @@ TEST_F(GarbageCollectionOperationTest, two_phase_gc_requires_config_enabling_and
 
     // Config enabled, but only 1 node says it supports two-phase RemoveLocation
     auto op = create_op();
-    op->start(_sender, framework::MilliSecTime(0));
+    op->start(_sender);
     EXPECT_FALSE(op->is_two_phase());
 
     // Node 0 suddenly upgraded...!
     set_node_supported_features(0, with_two_phase);
     op = create_op();
-    op->start(_sender, framework::MilliSecTime(0));
+    op->start(_sender);
     EXPECT_TRUE(op->is_two_phase());
 
     // But doesn't matter if two-phase GC is config-disabled
     config_enable_two_phase_gc(false);
 
     op = create_op();
-    op->start(_sender, framework::MilliSecTime(0));
+    op->start(_sender);
     EXPECT_FALSE(op->is_two_phase());
 }
 
@@ -216,7 +216,7 @@ TEST_F(GarbageCollectionOperationTest, first_phase_sends_enumerate_only_remove_l
     enable_two_phase_gc();
     auto op = create_op();
     op->setPriority(getConfig().getMaintenancePriorities().garbageCollection);
-    op->start(_sender, framework::MilliSecTime(0));
+    op->start(_sender);
     ASSERT_EQ(2, _sender.commands().size());
 
     for (int i : {0, 1}) {
@@ -229,7 +229,7 @@ TEST_F(GarbageCollectionOperationTest, first_phase_sends_enumerate_only_remove_l
 TEST_F(GarbageCollectionOperationTest, second_phase_sends_highest_timestamped_union_of_returned_entries_with_feed_pri) {
     enable_two_phase_gc();
     auto op = create_op();
-    op->start(_sender, framework::MilliSecTime(0));
+    op->start(_sender);
     ASSERT_EQ(2, _sender.commands().size());
 
     auto r1 = make_remove_location_reply(*_sender.command(0));
@@ -256,7 +256,7 @@ TEST_F(GarbageCollectionOperationTest, second_phase_sends_highest_timestamped_un
 TEST_F(GarbageCollectionOperationTest, no_second_phase_if_first_phase_has_no_results) {
     enable_two_phase_gc();
     auto op = create_op();
-    op->start(_sender, framework::MilliSecTime(0));
+    op->start(_sender);
     ASSERT_EQ(2, _sender.commands().size());
 
     auto r1 = make_remove_location_reply(*_sender.command(0));
@@ -272,7 +272,7 @@ TEST_F(GarbageCollectionOperationTest, no_second_phase_if_first_phase_has_no_res
 TEST_F(GarbageCollectionOperationTest, db_metrics_and_timestamp_are_updated_on_second_phase_completion) {
     enable_two_phase_gc();
     auto op = create_op();
-    op->start(_sender, framework::MilliSecTime(0));
+    op->start(_sender);
     ASSERT_EQ(2, _sender.commands().size());
 
     auto r1 = make_remove_location_reply(*_sender.command(0));
@@ -314,7 +314,7 @@ struct GarbageCollectionOperationPhase1FailureTest : GarbageCollectionOperationT
 
         enable_two_phase_gc();
         _op = create_op();
-        _op->start(_sender, framework::MilliSecTime(0));
+        _op->start(_sender);
         ASSERT_EQ(2, _sender.commands().size());
 
         _r1 = make_remove_location_reply(*_sender.command(0));
@@ -367,7 +367,7 @@ TEST_F(GarbageCollectionOperationPhase1FailureTest, no_second_phase_if_bucket_in
 TEST_F(GarbageCollectionOperationTest, document_level_write_locks_are_checked_and_held_if_acquired) {
     enable_two_phase_gc();
     auto op = create_op();
-    op->start(_sender, framework::MilliSecTime(0));
+    op->start(_sender);
     ASSERT_EQ(2, _sender.commands().size());
 
     auto r1 = make_remove_location_reply(*_sender.command(0));

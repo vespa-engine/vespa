@@ -43,7 +43,7 @@ using namespace search::fef::test;
 using search::feature_t;
 using vespalib::make_string_short::fmt;
 
-typedef FeatureNameBuilder FNB;
+using FNB = FeatureNameBuilder;
 
 //-----------------------------------------------------------------------------
 // DumpFeatureVisitor
@@ -785,7 +785,7 @@ RankSetupTest::testFeatureDump()
 void
 RankSetupTest::checkFeatures(std::map<vespalib::string, feature_t> &exp, std::map<vespalib::string, feature_t> &actual)
 {
-    typedef std::map<vespalib::string, feature_t>::const_iterator ITR;
+    using ITR = std::map<vespalib::string, feature_t>::const_iterator;
     if (!EXPECT_EQUAL(exp.size(), actual.size())) {
         return;
     }

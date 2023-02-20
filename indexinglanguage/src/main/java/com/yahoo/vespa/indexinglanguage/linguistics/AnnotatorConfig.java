@@ -97,10 +97,9 @@ public class AnnotatorConfig implements Cloneable {
 
     @Override
     public boolean equals(Object obj) {
-        if (!(obj instanceof AnnotatorConfig)) {
+        if (!(obj instanceof AnnotatorConfig rhs)) {
             return false;
         }
-        AnnotatorConfig rhs = (AnnotatorConfig)obj;
         if (!language.equals(rhs.language)) {
             return false;
         }

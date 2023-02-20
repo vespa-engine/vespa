@@ -2,7 +2,6 @@
 include "containercluster.rnc"
 include "common.rnc"
 include "container.rnc"
-include "docproc.rnc"
 include "searchchains.rnc"
 
 start = SearchInContainer | DocprocInContainer | ProcessingInContainer | Components

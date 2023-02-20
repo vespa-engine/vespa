@@ -28,9 +28,9 @@ class NodeState : public document::Printable
     uint64_t _startTimestamp;
 
 public:
-    typedef std::shared_ptr<const NodeState> CSP;
-    typedef std::shared_ptr<NodeState> SP;
-    typedef std::unique_ptr<NodeState> UP;
+    using CSP = std::shared_ptr<const NodeState>;
+    using SP = std::shared_ptr<NodeState>;
+    using UP = std::unique_ptr<NodeState>;
 
     static double getListingBucketsInitProgressLimit() { return 0.01; }
 
@@ -43,8 +43,8 @@ public:
               vespalib::stringref description = "",
               double capacity = 1.0);
     /** Set type if you want to verify that content fit with the given type. */
-    NodeState(vespalib::stringref serialized, const NodeType* nodeType = 0);
-    ~NodeState();
+    explicit NodeState(vespalib::stringref serialized, const NodeType* nodeType = nullptr);
+    ~NodeState() override;
 
     /**
      * Setting prefix to something implies using this function to write a
@@ -54,12 +54,12 @@ public:
     void serialize(vespalib::asciistream & out, vespalib::stringref prefix = "",
                    bool includeDescription = true) const;
 
-    const State& getState() const { return *_state; }
-    vespalib::Double getCapacity() const { return _capacity; }
-    uint32_t getMinUsedBits() const { return _minUsedBits; }
-    vespalib::Double getInitProgress() const { return _initProgress; }
-    const vespalib::string& getDescription() const { return _description; }
-    uint64_t getStartTimestamp() const { return _startTimestamp; }
+    [[nodiscard]] const State& getState() const { return *_state; }
+    [[nodiscard]] vespalib::Double getCapacity() const { return _capacity; }
+    [[nodiscard]] uint32_t getMinUsedBits() const { return _minUsedBits; }
+    [[nodiscard]] vespalib::Double getInitProgress() const { return _initProgress; }
+    [[nodiscard]] const vespalib::string& getDescription() const { return _description; }
+    [[nodiscard]] uint64_t getStartTimestamp() const { return _startTimestamp; }
 
     void setState(const State& state);
     void setCapacity(vespalib::Double capacity);
@@ -68,12 +68,12 @@ public:
     void setStartTimestamp(uint64_t startTimestamp);
     void setDescription(vespalib::stringref desc) { _description = desc; }
 
-    void print(std::ostream& out, bool verbose,
-               const std::string& indent) const override;
+    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
     bool operator==(const NodeState& other) const;
-    bool operator!=(const NodeState& other) const
-        { return !(operator==(other)); }
-    bool similarTo(const NodeState& other) const;
+    bool operator!=(const NodeState& other) const {
+        return !(operator==(other));
+    }
+    [[nodiscard]] bool similarTo(const NodeState& other) const;
 
     /**
      * Verify that the contents of this object fits with the given nodetype.
@@ -82,9 +82,7 @@ public:
      * @throws vespalib::IllegalStateException if not fitting.
      */
     void verifySupportForNodeType(const NodeType& type) const;
-
     std::string getTextualDifference(const NodeState& other) const;
-
 };
 
 }

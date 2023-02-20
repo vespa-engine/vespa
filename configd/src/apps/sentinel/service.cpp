@@ -2,6 +2,7 @@
 
 #include "service.h"
 #include "output-connection.h"
+#include "logctl.h"
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/signalhandler.h>
 
@@ -56,6 +57,21 @@ Service::Service(const SentinelConfig::Service& service, const SentinelConfig::A
     start();
 }
 
+void applyLogctl(const cloud::config::SentinelConfig::Service &config) {
+    for (const auto &logctl : config.logctl) {
+        const auto cspec = config.name + ":" + logctl.componentSpec;
+        const auto lspec = logctl.levelsModSpec;
+        justRunLogctl(cspec.c_str(), lspec.c_str());
+    }
+}
+
+void unApplyLogctl(const cloud::config::SentinelConfig::Service &config) {
+    for (const auto &logctl : config.logctl) {
+        const auto cspec = config.name + ":" + logctl.componentSpec;
+        justRunLogctl(cspec.c_str(), "all=on,debug=off,spam=off");
+    }
+}
+
 void
 Service::reconfigure(const SentinelConfig::Service& config)
 {
@@ -70,8 +86,10 @@ Service::reconfigure(const SentinelConfig::Service& config)
         terminate();
     }
 
+    unApplyLogctl(*_config);
     delete _config;
     _config = new SentinelConfig::Service(config);
+    applyLogctl(*_config);
 
     if ((_state == READY) || (_state == FINISHED) || (_state == RESTARTING)) {
         if (_isAutomatic) {
@@ -313,7 +331,7 @@ Service::youExited(int status)
         // ### Implement some rate limiting here maybe?
         LOG(debug, "%s: Restarting.", name().c_str());
         setState(RESTARTING);
-        _metrics.totalRestartsCounter++;
+        _metrics.incRestartsCounter();
         _metrics.sentinel_restarts.add();
     }
 }
@@ -329,6 +347,7 @@ Service::runChild()
     for (const auto &envvar : _config->environ) {
         setenv(envvar.varname.c_str(), envvar.varvalue.c_str(), 1);
     }
+    applyLogctl(*_config);
 
     // Set up environment
     setenv("VESPA_SERVICE_NAME", _config->name.c_str(), 1);

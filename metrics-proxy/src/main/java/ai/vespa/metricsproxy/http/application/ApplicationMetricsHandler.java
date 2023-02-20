@@ -87,7 +87,7 @@ public class ApplicationMetricsHandler extends HttpHandlerBase {
                         .stream()
                         .map(builder -> builder.putDimension(DimensionId.toDimensionId("hostname"), element.hostname))
                         .map(MetricsPacket.Builder::build))
-                .collect(Collectors.toList());
+                .toList();
         return new TextResponse(200, toPrometheusModel(metricsForAllNodes).serialize());
     }
 

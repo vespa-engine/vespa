@@ -1,8 +1,8 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/vespalib/util/executor.h>
-#include <vespa/vespalib/util/time.h>
+#include "i_scheduled_executor.h"
+#include <vespa/vespalib/stllike/hash_map.h>
 #include <mutex>
 #include <vector>
 
@@ -17,16 +17,17 @@ class TimerTask;
  * interval. The timer can be reset to clear all tasks currently being
  * scheduled.
  */
-class ScheduledExecutor
+class ScheduledExecutor : public IScheduledExecutor
 {
 private:
-    using TaskList = std::vector<std::unique_ptr<TimerTask>>;
-    using duration = vespalib::duration;
-    using Executor = vespalib::Executor;
+    using TaskList = vespalib::hash_map<uint64_t, std::unique_ptr<TimerTask>>;
     FNET_Transport & _transport;
     std::mutex       _lock;
+    uint64_t         _nextKey;
     TaskList         _taskList;
 
+    bool cancel(uint64_t key);
+    class Registration;
 public:
     /**
      * Create a new timer, capable of scheduling tasks at fixed intervals.
@@ -37,21 +38,9 @@ public:
      * Destroys this timer, finishing the current task executing and then
      * finishing.
      */
-    ~ScheduledExecutor();
+    ~ScheduledExecutor() override;
 
-    /**
-     * Schedule new task to be executed at specified intervals.
-     *
-     * @param task The task to schedule.
-     * @param delay The delay to wait before first execution.
-     * @param interval The interval in seconds.
-     */
-    void scheduleAtFixedRate(std::unique_ptr<Executor::Task> task, duration delay, duration interval);
-
-    /**
-     * Reset timer, clearing the list of task to execute.
-     */
-    void reset();
+    [[nodiscard]] Handle scheduleAtFixedRate(std::unique_ptr<Executor::Task> task, duration delay, duration interval) override;
 };
 
 }

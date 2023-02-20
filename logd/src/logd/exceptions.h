@@ -12,7 +12,7 @@ private:
 public:
     MsgException(const std::string & s) : _string(s) {}
     ~MsgException() override {}
-    const char *what() const throw() override { return _string.c_str(); }
+    const char *what() const noexcept override { return _string.c_str(); }
 };
 
 class ConnectionException : public MsgException

@@ -21,6 +21,7 @@ import static com.yahoo.config.model.test.TestUtil.joinLines;
 import com.yahoo.vespa.model.content.cluster.ContentCluster;
 import com.yahoo.vespa.model.content.storagecluster.StorageCluster;
 import com.yahoo.vespa.model.content.utils.ContentClusterUtils;
+import com.yahoo.yolean.Exceptions;
 import org.junit.jupiter.api.Test;
 
 
@@ -75,6 +76,7 @@ public class StorageClusterTest {
     private static String cluster(String clusterName, String insert) {
         return joinLines(
                 "<content id=\"" + clusterName + "\">",
+                "<redundancy>3</redundancy>" +
                 "<documents/>",
                 insert,
                 group(),
@@ -149,9 +151,9 @@ public class StorageClusterTest {
     void verifyDefaultMbusConfig() {
         var confg = communicationmanagerConfigFromProperties(new TestProperties());
         assertEquals(1, confg.mbus().num_network_threads());
-        assertEquals(1, confg.mbus().num_rpc_targets());
+        assertEquals(2, confg.mbus().num_rpc_targets());
         assertEquals(1, confg.mbus().events_before_wakeup());
-        assertEquals(1, confg.rpc().num_targets_per_node());
+        assertEquals(2, confg.rpc().num_targets_per_node());
         assertEquals(1, confg.rpc().events_before_wakeup());
     }
 
@@ -337,6 +339,7 @@ public class StorageClusterTest {
     void testCapacity() {
         String xml = joinLines(
                 "<cluster id=\"storage\">",
+                "  <redundancy>2</redundancy>" +
                 "  <documents/>",
                 "  <group>",
                 "    <node distribution-key=\"0\" hostalias=\"mockhost\"/>",
@@ -384,6 +387,7 @@ public class StorageClusterTest {
     void testGenericPersistenceTuning() {
         String xml = joinLines(
                 "<cluster id=\"storage\">",
+                "  <redundancy>2</redundancy>" +
                 "  <documents/>",
                 "  <engine>",
                 "    <fail-partition-on-error>true</fail-partition-on-error>",
@@ -410,6 +414,7 @@ public class StorageClusterTest {
     void requireThatUserDoesNotSpecifyBothGroupAndNodes() {
         String xml = joinLines(
                 "<cluster id=\"storage\">",
+                "  <redundancy>2</redundancy>" +
                 "  <documents/>",
                 "  <engine>",
                 "    <fail-partition-on-error>true</fail-partition-on-error>",
@@ -432,8 +437,8 @@ public class StorageClusterTest {
             ContentClusterUtils.createCluster(xml, root);
             fail("Did not fail when having both group and nodes");
         } catch (RuntimeException e) {
-            assertEquals("Both <group> and <nodes> is specified: Only one of these tags can be used in the same configuration",
-                    e.getMessage());
+            assertEquals("In content cluster 'storage': Both <group> and <nodes> is specified: Only one of these tags can be used in the same configuration",
+                         Exceptions.toMessageString(e));
         }
     }
 
@@ -492,6 +497,7 @@ public class StorageClusterTest {
     void requireThatNestedGroupsRequireDistribution() {
         String xml = joinLines(
                 "<cluster id=\"storage\">",
+                "  <redundancy>2</redundancy>" +
                 "  <documents/>",
                 "  <group>",
                 "    <group distribution-key=\"0\" name=\"bar\">",
@@ -507,7 +513,7 @@ public class StorageClusterTest {
             ContentClusterUtils.createCluster(xml, new MockRoot());
             fail("Did not get exception with missing distribution element");
         } catch (RuntimeException e) {
-            assertEquals("'distribution' attribute is required with multiple subgroups", e.getMessage());
+            assertEquals("In content cluster 'storage': 'distribution' attribute is required with multiple subgroups", Exceptions.toMessageString(e));
         }
     }
 }

@@ -10,11 +10,11 @@ namespace search {
 class CondensedBitVector
 {
 public:
-    typedef std::unique_ptr<CondensedBitVector> UP;
-    typedef std::shared_ptr<CondensedBitVector> SP;
-    typedef uint32_t Key;
-    typedef std::set<Key> KeySet;
-    typedef vespalib::ArrayRef<uint8_t> CountVector;
+    using UP = std::unique_ptr<CondensedBitVector>;
+    using SP = std::shared_ptr<CondensedBitVector>;
+    using Key = uint32_t;
+    using KeySet = std::set<Key>;
+    using CountVector = vespalib::ArrayRef<uint8_t>;
 
     virtual ~CondensedBitVector();
 

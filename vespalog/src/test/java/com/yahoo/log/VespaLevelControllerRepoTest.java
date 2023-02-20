@@ -2,23 +2,24 @@
 package com.yahoo.log;
 
 import org.junit.Test;
-import org.junit.Ignore;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.nio.charset.StandardCharsets;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 /**
  * @author Ulf Lilleengen
  * @since 5.1
  */
-@SuppressWarnings({"deprecation", "removal"})
+@SuppressWarnings({"deprecation"})
 public class VespaLevelControllerRepoTest {
 
     static int findControlString(RandomAccessFile f, String s) {
@@ -28,7 +29,7 @@ public class VespaLevelControllerRepoTest {
             f.seek(0);
             f.read(contents);
             f.seek(0);
-            String c_as_s = new String(contents, "US-ASCII");
+            String c_as_s = new String(contents, StandardCharsets.US_ASCII);
             int off = c_as_s.indexOf(toFind);
             if (off < 0) {
                 System.err.println("did not find control line for level '"+s+"' in logcontrol file:");
@@ -49,8 +50,7 @@ public class VespaLevelControllerRepoTest {
         try {
             lcf.delete();
             Logger.getLogger("com.yahoo.log.test").setLevel(null);
-            assertEquals(null,
-                         Logger.getLogger("com.yahoo.log.test").getLevel());
+            assertNull(Logger.getLogger("com.yahoo.log.test").getLevel());
 
             LevelControllerRepo repo = new VespaLevelControllerRepo(lcf.getName(), "all -debug -spam", "TST");
 

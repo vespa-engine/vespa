@@ -41,9 +41,10 @@ public class DocumentScript {
     }
 
     public Expression getExpression() { return expression; }
+
     public Document execute(AdapterFactory adapterFactory, Document document) {
-        for (Iterator<Map.Entry<Field, FieldValue>> it = document.iterator(); it.hasNext(); ) {
-            Map.Entry<Field, FieldValue> entry = it.next();
+        for (var i = document.iterator(); i.hasNext(); ) {
+            Map.Entry<Field, FieldValue> entry = i.next();
             requireThatFieldIsDeclaredInDocument(entry.getKey());
             removeAnyLinguisticsSpanTree(entry.getValue());
         }
@@ -84,28 +85,29 @@ public class DocumentScript {
     private void removeAnyLinguisticsSpanTree(FieldValue value) {
         if (value instanceof StringFieldValue) {
             ((StringFieldValue)value).removeSpanTree(SpanTrees.LINGUISTICS);
-        } else if (value instanceof Array) {
-            Array<?> arr = (Array)value;
-            for (Object obj : arr.getValues()) {
-                removeAnyLinguisticsSpanTree((FieldValue)obj);
+        } else if (value instanceof Array<?> arr) {
+            for (FieldValue fieldValue : arr.getValues()) {
+                removeAnyLinguisticsSpanTree(fieldValue);
             }
-        } else if (value instanceof WeightedSet) {
-            WeightedSet<?> wset = (WeightedSet)value;
-            for (Object obj : wset.keySet()) {
-                removeAnyLinguisticsSpanTree((FieldValue)obj);
+        } else if (value instanceof WeightedSet<?> wset) {
+            for (FieldValue fieldValue : wset.keySet()) {
+                removeAnyLinguisticsSpanTree(fieldValue);
             }
-        } else if (value instanceof MapFieldValue) {
-            MapFieldValue<?,?> map = (MapFieldValue)value;
-            for (Map.Entry<?,?> entry : map.entrySet()) {
+        } else if (value instanceof MapFieldValue<?, ?> map) {
+            for (Map.Entry<?, ?> entry : map.entrySet()) {
                 removeAnyLinguisticsSpanTree((FieldValue)entry.getKey());
                 removeAnyLinguisticsSpanTree((FieldValue)entry.getValue());
             }
-        } else if (value instanceof StructuredFieldValue) {
-            StructuredFieldValue struct = (StructuredFieldValue)value;
+        } else if (value instanceof StructuredFieldValue struct) {
             for (Iterator<Map.Entry<Field, FieldValue>> it = struct.iterator(); it.hasNext();) {
                 removeAnyLinguisticsSpanTree(it.next().getValue());
             }
         }
+    }
+
+    @Override
+    public String toString() {
+        return "indexing script for '" + documentType + "' given inputs " + inputFields + ": " + expression;
     }
 
 }

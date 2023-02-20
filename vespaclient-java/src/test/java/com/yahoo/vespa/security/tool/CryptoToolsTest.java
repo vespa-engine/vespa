@@ -537,6 +537,50 @@ public class CryptoToolsTest {
         assertEquals("", procOut.stdOut());
     }
 
+    @Test
+    void can_transparently_compress_and_decompress_plaintext() throws IOException {
+        String substring = "here is some stuff that can be compressed!";
+        String compressibleSecret = substring.repeat(100);
+
+        var secretFile = pathInTemp("secret.txt");
+        Files.writeString(secretFile, compressibleSecret);
+
+        var privKeyFile   = pathInTemp("my-priv.txt");
+        writePrivateKeyFile(privKeyFile, TEST_PRIV_KEY);
+
+        var encryptedPath = pathInTemp("encrypted.bin");
+        var procOut = runMain(List.of(
+                "encrypt",
+                absPathOf(secretFile),
+                "--output-file",          absPathOf(encryptedPath),
+                "--recipient-public-key", TEST_PUB_KEY,
+                "--key-id",               "1234",
+                "--zstd-compress"));
+        assertEquals(0, procOut.exitCode());
+        assertEquals("", procOut.stdErr());
+
+        var token = procOut.stdOut();
+        assertFalse(token.isBlank());
+
+        assertTrue(Files.exists(encryptedPath));
+        assertTrue(Files.size(encryptedPath) < compressibleSecret.length());
+
+        var decryptedPath = pathInTemp("decrypted.txt");
+        procOut = runMain(List.of(
+                "decrypt",
+                absPathOf(encryptedPath),
+                "--output-file",      absPathOf(decryptedPath),
+                "--private-key-file", absPathOf(privKeyFile),
+                "--token",            token,
+                "--zstd-decompress"
+        ));
+        assertEquals(0, procOut.exitCode());
+        assertEquals("", procOut.stdOut());
+        assertEquals("", procOut.stdErr());
+
+        assertEquals(compressibleSecret, Files.readString(decryptedPath));
+    }
+
     private ProcessOutput runMain(List<String> args) {
         return runMain(args, EMPTY_BYTES);
     }

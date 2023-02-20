@@ -48,7 +48,6 @@ private:
     std::mutex               _lock;           // protects the Q
     std::mutex               _shutdownLock;   // used for synchronization during shutdown
     std::condition_variable  _shutdownCond;   // used for synchronization during shutdown
-    std::recursive_mutex     _pseudo_thread;  // used after transport thread has shut down
     std::atomic<bool>        _started;        // event loop started ?
     std::atomic<bool>        _shutdown;       // should stop event loop ?
     std::atomic<bool>        _finished;       // event loop stopped ?
@@ -129,9 +128,6 @@ private:
      * @param context the event parameter
      **/
     void DiscardEvent(FNET_ControlPacket *cpacket, FNET_Context context);
-
-    // safely discard events using the pseudo thread mutex
-    void SafeDiscardEvent(FNET_ControlPacket *cpacket, FNET_Context context);
 
 
     /**

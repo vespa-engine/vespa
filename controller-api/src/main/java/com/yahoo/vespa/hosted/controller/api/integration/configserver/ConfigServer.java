@@ -4,6 +4,8 @@ package com.yahoo.vespa.hosted.controller.api.integration.configserver;
 import ai.vespa.http.HttpURL.Query;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.EndpointsChecker.Availability;
+import com.yahoo.config.provision.EndpointsChecker.Endpoint;
 import com.yahoo.config.provision.zone.ZoneId;
 import ai.vespa.http.DomainName;
 import ai.vespa.http.HttpURL.Path;
@@ -38,7 +40,7 @@ public interface ConfigServer {
 
     PreparedApplication deploy(DeploymentData deployment);
 
-    void reindex(DeploymentId deployment, List<String> clusterNames, List<String> documentTypes, boolean indexedOnly, Double speed);
+    void reindex(DeploymentId deployment, List<String> clusterNames, List<String> documentTypes, boolean indexedOnly, Double speed, String cause);
 
     ApplicationReindexing getReindexing(DeploymentId deployment);
 
@@ -144,6 +146,8 @@ public interface ConfigServer {
     boolean isTesterReady(DeploymentId deployment);
 
     Optional<TestReport> getTestReport(DeploymentId deployment);
+
+    Availability verifyEndpoints(DeploymentId deploymentId, List<Endpoint> zoneEndpoints);
 
     /** Get maximum resources consumed */
     QuotaUsage getQuotaUsage(DeploymentId deploymentId);

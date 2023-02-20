@@ -61,10 +61,15 @@
 #define VESPA_DEFINE_EXCEPTION(MyClass, Parent)                            \
 class MyClass : public Parent {                                            \
 public:                                                                    \
-    MyClass(vespalib::stringref msg,                                \
-            vespalib::stringref location = "", int skipStack = 0);  \
-    MyClass(vespalib::stringref msg, const Exception &cause,        \
-            vespalib::stringref location = "", int skipStack = 0);  \
+    explicit MyClass(vespalib::stringref msg,                              \
+            vespalib::stringref location = "", int skipStack = 0);         \
+    MyClass(vespalib::stringref msg, const Exception &cause,               \
+            vespalib::stringref location = "", int skipStack = 0);         \
+    MyClass(const MyClass &);                                              \
+    MyClass & operator=(const MyClass &) = delete;                         \
+    MyClass(MyClass &&) noexcept;                                          \
+    MyClass & operator=(MyClass &&) noexcept;                              \
+    ~MyClass() override;                                                   \
     VESPA_DEFINE_EXCEPTION_SPINE(MyClass)                                  \
 };
 
@@ -77,12 +82,16 @@ public:                                                                    \
  * @param MyClass the name of your class
  **/
 #define VESPA_IMPLEMENT_EXCEPTION(MyClass, Parent)                           \
-    MyClass::MyClass(vespalib::stringref msg,                         \
-            vespalib::stringref location, int skipStack)     \
+    MyClass::MyClass(vespalib::stringref msg,                                \
+            vespalib::stringref location, int skipStack)                     \
         : Parent(msg, location, skipStack + 1) {}                            \
-    MyClass::MyClass(vespalib::stringref msg, const Exception &cause, \
-            vespalib::stringref location, int skipStack)     \
+    MyClass::MyClass(vespalib::stringref msg, const Exception &cause,        \
+            vespalib::stringref location, int skipStack)                     \
         : Parent(msg, cause, location, skipStack + 1) {}                     \
+    MyClass::MyClass(const MyClass &) = default;                             \
+    MyClass::MyClass(MyClass &&) noexcept = default;                         \
+    MyClass & MyClass::operator=(MyClass &&) noexcept = default;             \
+    MyClass::~MyClass() = default;                                           \
     VESPA_IMPLEMENT_EXCEPTION_SPINE(MyClass)
 
 namespace vespalib {
@@ -126,10 +135,10 @@ public:
     ~ExceptionPtr();
 
     /** @brief test if this object actually contains an exception */
-    bool isSet() const { return (_ref != 0); }
+    [[nodiscard]] bool isSet() const { return (_ref != nullptr); }
 
     /** @brief get pointer to currently held exception, returns NULL if not set */
-    const Exception *get() const { return _ref; }
+    [[nodiscard]] const Exception *get() const { return _ref; }
 
     /** @brief use pointer to currently held exception, will crash if not set */
     const Exception *operator->() const { return _ref; }
@@ -186,7 +195,7 @@ public:
      *                  should send (skipStack + 1) to the parent constructor (see
      *                  \ref VESPA_DEFINE_EXCEPTION for subclass implementation).
      **/
-    Exception(stringref msg, stringref location = "", int skipStack = 0);
+    explicit Exception(stringref msg, stringref location = "", int skipStack = 0);
     /**
      * @brief Construct an exception with a message, a causing exception, and a source code location.
      * @param msg A user-readable message describing the problem
@@ -202,13 +211,13 @@ public:
               stringref location = "", int skipStack = 0);
     Exception(const Exception &);
     Exception & operator = (const Exception &);
-    Exception(Exception &&) = default;
-    Exception & operator = (Exception &&) = default;
-    virtual ~Exception();
+    Exception(Exception &&) noexcept;
+    Exception & operator = (Exception &&) noexcept;
+    ~Exception() override;
 
 
     /** @brief Returns a string describing the current exception, including cause if any */
-    const char *what() const throw() override; // should not be overridden
+    const char *what() const noexcept override; // should not be overridden
 
     /** @brief Returns a pointer to underlying cause (or NULL if no cause) */
     const Exception *getCause() const { return _cause.get(); }

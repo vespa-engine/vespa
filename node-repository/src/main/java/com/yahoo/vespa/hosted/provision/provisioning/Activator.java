@@ -3,7 +3,6 @@ package com.yahoo.vespa.hosted.provision.provisioning;
 
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationTransaction;
-import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Flavor;
@@ -14,8 +13,8 @@ import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeMutex;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.applications.Application;
-import com.yahoo.vespa.hosted.provision.applications.AutoscalingStatus;
 import com.yahoo.vespa.hosted.provision.applications.ScalingEvent;
+import com.yahoo.vespa.hosted.provision.autoscale.Autoscaling;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.Allocation;
 
@@ -89,8 +88,7 @@ class Activator {
 
         NodeList activeToRemove = oldActive.matching(node ->  ! hostnames.contains(node.hostname()));
         remove(activeToRemove, transaction); // TODO: Pass activation time in this call and next line
-        // TODO (freva): Replace .mapToList(...) with .asList() after 8.80
-        nodeRepository.nodes().activate(newActive.mapToList(node -> fixCloudAccount(node, allNodes)), transaction.nested()); // activate also continued active to update node state
+        nodeRepository.nodes().activate(newActive.asList(), transaction.nested()); // activate also continued active to update node state
 
         rememberResourceChange(transaction, generation, activationTime,
                                oldActive.not().retired(),
@@ -120,10 +118,9 @@ class Activator {
                  || ! previousResources.justNumbers().equals(currentResources.justNumbers())) {
                 cluster = cluster.with(ScalingEvent.create(previousResources, currentResources, generation, at));
             }
-            if (cluster.targetResources().isPresent()
-                && cluster.targetResources().get().justNumbers().equals(currentResources.justNumbers())) {
-                cluster = cluster.with(new AutoscalingStatus(AutoscalingStatus.Status.ideal,
-                                                             "Cluster is ideally scaled within configured limits"));
+            if (cluster.target().resources().isPresent()
+                && cluster.target().resources().get().justNumbers().equals(currentResources.justNumbers())) {
+                cluster = cluster.withTarget(cluster.target().asIdeal(nodeRepository.clock().instant()));
             }
             if (cluster != modified.cluster(clusterEntry.getKey()).get())
                 modified = modified.with(cluster);
@@ -248,16 +245,6 @@ class Activator {
             if (host.hostname().equals(hostname))
                 return host;
         return null;
-    }
-
-    private Node fixCloudAccount(Node node, NodeList allNodes) {
-        // Existing nodes do not have cloudAccount set, copy the one from parent
-        CloudAccount cloudAccount = allNodes.parentOf(node).map(Node::cloudAccount).orElseGet(node::cloudAccount);
-        return new Node(node.id(), node.ipConfig(), node.hostname(),
-                node.parentHostname(), node.flavor(), node.status(), node.state(), node.allocation(), node.history(),
-                node.type(), node.reports(), node.modelName(), node.reservedTo(),
-                node.exclusiveToApplicationId(), node.exclusiveToClusterType(), node.switchHostname(),
-                node.trustedCertificates(), cloudAccount, node.wireguardPubKey());
     }
 
 }

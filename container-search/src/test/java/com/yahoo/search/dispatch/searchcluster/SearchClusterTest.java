@@ -375,4 +375,5 @@ public class SearchClusterTest {
         group.aggregateNodeValues();
         assertTrue(group.isBalanced());
     }
+
 }

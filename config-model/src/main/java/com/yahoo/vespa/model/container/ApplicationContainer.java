@@ -5,15 +5,16 @@ import com.yahoo.cloud.config.ZookeeperServerConfig;
 import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.api.container.ContainerServiceType;
 import com.yahoo.config.model.deploy.DeployState;
-import com.yahoo.config.model.producer.AbstractConfigProducer;
+import com.yahoo.config.model.producer.TreeConfigProducer;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.search.config.QrStartConfig;
+import com.yahoo.vespa.model.LogctlSpec;
 import com.yahoo.vespa.model.container.component.SimpleComponent;
 
+import java.time.Duration;
+import java.util.List;
 import java.util.Optional;
-
-import static com.yahoo.vespa.defaults.Defaults.getDefaults;
 
 /**
  * A container that is typically used by container clusters set up from the user application.
@@ -26,11 +27,11 @@ public final class ApplicationContainer extends Container implements
 
     private final boolean isHostedVespa;
 
-    public ApplicationContainer(AbstractConfigProducer<?> parent, String name, int index, DeployState deployState) {
+    public ApplicationContainer(TreeConfigProducer<?> parent, String name, int index, DeployState deployState) {
         this(parent, name, false, index, deployState);
     }
 
-    public ApplicationContainer(AbstractConfigProducer<?> parent, String name, boolean retired, int index, DeployState deployState) {
+    public ApplicationContainer(TreeConfigProducer<?> parent, String name, boolean retired, int index, DeployState deployState) {
         super(parent, name, retired, index, deployState);
         this.isHostedVespa = deployState.isHosted();
 
@@ -40,6 +41,15 @@ public final class ApplicationContainer extends Container implements
         addComponent(new SimpleComponent("com.yahoo.container.jdisc.SystemInfoProvider"));
         addComponent(new SimpleComponent("com.yahoo.container.jdisc.ZoneInfoProvider"));
         addComponent(new SimpleComponent("com.yahoo.container.jdisc.ClusterInfoProvider"));
+    }
+
+    private List<LogctlSpec> logctlSpecs = List.of();
+    void setLogctlSpecs(List<LogctlSpec> logctlSpecs) {
+        this.logctlSpecs = logctlSpecs;
+    }
+    @Override
+    public List<LogctlSpec> getLogctlSpecs() {
+        return logctlSpecs;
     }
 
     @Override
@@ -84,11 +94,6 @@ public final class ApplicationContainer extends Container implements
         return featureFlags.jvmOmitStackTraceInFastThrowOption(ClusterSpec.Type.container);
     }
 
-    @Override
-    public Optional<String> getPreShutdownCommand() {
-        int preshutdownTimeoutSeconds = 360;
-        int rpcTimeoutSeconds = preshutdownTimeoutSeconds + 10;
-        String rpcParams = "-t " + rpcTimeoutSeconds + " tcp/localhost:" + getRpcPort() + " prepareStop d:" + preshutdownTimeoutSeconds;
-        return Optional.of(getDefaults().underVespaHome("bin/vespa-rpc-invoke") + " " + rpcParams);
-    }
+    @Override public Optional<String> getPreShutdownCommand() { return Optional.of(prepareStopCommand(Duration.ofMinutes(6))); }
+
 }

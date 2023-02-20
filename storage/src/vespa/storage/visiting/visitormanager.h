@@ -52,12 +52,11 @@ private:
     StorageComponentRegister& _componentRegister;
     VisitorMessageSessionFactory& _messageSessionFactory;
     std::vector<std::pair<std::shared_ptr<VisitorThread>,
-                          std::map<api::VisitorId, std::string>
-                         > > _visitorThread;
+                          std::map<api::VisitorId, std::string>> > _visitorThread;
 
     struct MessageInfo {
         api::VisitorId id;
-        time_t timestamp;
+        vespalib::system_time timestamp;
         vespalib::duration timeout;
         std::string destination;
     };
@@ -73,10 +72,10 @@ private:
     uint32_t _maxVisitorQueueSize;
     std::map<std::string, api::VisitorId> _nameToId;
     StorageComponent _component;
-    framework::Thread::UP _thread;
+    std::unique_ptr<framework::Thread> _thread;
     CommandQueue<api::CreateVisitorCommand> _visitorQueue;
-    std::deque<std::pair<std::string, framework::MicroSecTime> > _recentlyDeletedVisitors;
-    framework::MicroSecTime _recentlyDeletedMaxTime;
+    std::deque<std::pair<std::string, vespalib::steady_time> > _recentlyDeletedVisitors;
+    vespalib::duration _recentlyDeletedMaxTime;
 
     mutable std::mutex _statusLock; // Only one can get status at a time
     mutable std::condition_variable _statusCond;// Notify when done
@@ -87,7 +86,7 @@ public:
     VisitorManager(const config::ConfigUri & configUri,
                    StorageComponentRegister&,
                    VisitorMessageSessionFactory&,
-                   const VisitorFactory::Map& external = VisitorFactory::Map(),
+                   VisitorFactory::Map external = VisitorFactory::Map(),
                    bool defer_manager_thread_start = false);
     ~VisitorManager() override;
 
@@ -168,9 +167,7 @@ private:
      * by the formula: fixed + variable * ((255 - priority) / 255)
      */
     uint32_t maximumConcurrent(const api::CreateVisitorCommand& cmd) const {
-        return _maxFixedConcurrentVisitors + static_cast<uint32_t>(
-                _maxVariableConcurrentVisitors
-                    * ((255.0 - cmd.getPriority()) / 255.0));
+        return _maxFixedConcurrentVisitors + static_cast<uint32_t>(_maxVariableConcurrentVisitors * ((255.0 - cmd.getPriority()) / 255.0));
     }
 
     void updateMetrics(const MetricLockGuard &) override;

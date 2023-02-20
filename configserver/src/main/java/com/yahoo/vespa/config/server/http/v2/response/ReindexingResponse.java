@@ -40,6 +40,7 @@ public class ReindexingResponse extends JSONResponse {
     private static void setStatus(Cursor object, ApplicationReindexing.Status readyStatus) {
         object.setLong("readyMillis", readyStatus.ready().toEpochMilli());
         object.setDouble("speed", readyStatus.speed());
+        object.setString("cause", readyStatus.cause());
     }
 
     private static void setStatus(Cursor object, ClusterReindexing.Status status) {

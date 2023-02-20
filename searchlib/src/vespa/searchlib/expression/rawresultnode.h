@@ -3,8 +3,7 @@
 
 #include "singleresultnode.h"
 
-namespace search {
-namespace expression {
+namespace search::expression {
 
 class RawResultNode : public SingleResultNode
 {
@@ -26,7 +25,7 @@ public:
     void negate() override;
     const BucketResultNode& getNullBucket() const override;
 private:
-    typedef std::vector<uint8_t> V;
+    using V = std::vector<uint8_t>;
     int cmpMem(const void * a, const void *b) const override {
         const V & ai(*static_cast<const V *>(a));
         const V & bi(*static_cast<const V *>(b));
@@ -50,5 +49,3 @@ private:
 };
 
 }
-}
-

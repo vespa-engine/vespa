@@ -182,8 +182,11 @@
       "public void <init>(com.yahoo.language.sentencepiece.SentencePieceEmbedder$Builder)",
       "public java.util.List segment(java.lang.String, com.yahoo.language.Language)",
       "public java.util.List embed(java.lang.String, com.yahoo.language.process.Embedder$Context)",
+      "public java.lang.String decode(java.util.List, com.yahoo.language.process.Embedder$Context)",
+      "public java.lang.String decode(java.util.List, com.yahoo.language.process.Embedder$Context, boolean)",
       "public com.yahoo.tensor.Tensor embed(java.lang.String, com.yahoo.language.process.Embedder$Context, com.yahoo.tensor.TensorType)",
-      "public java.lang.String normalize(java.lang.String)"
+      "public java.lang.String normalize(java.lang.String)",
+      "public java.lang.String denormalize(java.lang.String)"
     ],
     "fields" : [ ]
   },

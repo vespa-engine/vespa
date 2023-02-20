@@ -13,7 +13,7 @@ public:
     /**
      * Convenience typedefs.
      */
-    typedef std::map<vespalib::string, feature_t> RankScores;
+    using RankScores = std::map<vespalib::string, feature_t>;
 
 public:
     /**

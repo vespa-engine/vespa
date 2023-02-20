@@ -9,6 +9,7 @@ import java.time.Instant;
 import java.util.Optional;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 /**
  * @author jonmv
@@ -23,8 +24,11 @@ public class ApplicationCuratorDatabaseTest {
         assertEquals(Optional.empty(), db.readReindexingStatus(id));
 
         ApplicationReindexing reindexing = ApplicationReindexing.empty()
-                                                                .withPending("one", "a", 10).withReady("two", "b", Instant.ofEpochMilli(2), 0.2)
-                                                                .withPending("two", "b", 20).withReady("one", "a", Instant.ofEpochMilli(1), 0.2).withReady("two", "c", Instant.ofEpochMilli(3), 0.2)
+                                                                .withPending("one", "a", 10)
+                                                                .withReady("two", "b", Instant.ofEpochMilli(2), 0.2, "test reindexing")
+                                                                .withPending("two", "b", 20)
+                                                                .withReady("one", "a", Instant.ofEpochMilli(1), 0.2, "test reindexing")
+                                                                .withReady("two", "c", Instant.ofEpochMilli(3), 0.2, "test reindexing")
                                                                 .enabled(false);
 
         db.writeReindexingStatus(id, reindexing);

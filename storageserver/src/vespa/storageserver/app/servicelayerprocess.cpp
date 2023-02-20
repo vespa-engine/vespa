@@ -6,6 +6,7 @@
 #include <vespa/storage/common/i_storage_chain_builder.h>
 #include <vespa/storage/config/config-stor-server.h>
 #include <vespa/storage/storageserver/servicelayernode.h>
+#include <vespa/storageframework/defaultimplementation/clock/realclock.h>
 #include <vespa/searchvisitor/searchvisitor.h>
 
 #include <vespa/log/log.h>

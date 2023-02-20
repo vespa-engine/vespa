@@ -1,0 +1,6280 @@
+%A Abdou, I.E.
+%A Wong, K.Y.
+%D 1982
+%T Analysis of linear interpolation schemes for bi-level image applications
+%J IBM J Research and Development
+%V 26
+%P 667-680
+
+%A Abell, R.
+%D 1981
+%T Implementation of a Telidon system using Unix file structures
+%B The Telidon book
+%E D.Godfrey and E.Chang
+%I Press Porcepic
+%C Toronto, ON
+%P 203-209
+
+%A Abut, H.
+%A Gray, R.M.
+%A Rebolledo, V.
+%D 1982
+%T Vector quantization of speech and speech-like waveforms
+%J IEEE Trans Acoustics, Speech and Signal Processing
+%V Acoustics, Speech, and Signal Processing -30
+%N 3
+%P 423-435 
+%O June
+%K *
+
+%A Achugbue, J.O.
+%D 1981
+%T On the line breaking problem in text formatting
+%J SIGOA Newsletter (Proc ACM Symposium on Text manipulation, Portland, Oregon)
+%V 2
+%N 1/2
+%P 117-121
+%O Spring/Summer
+
+%A Adams, D.N.
+%D 1979
+%T The hitchhiker's guide to the galaxy
+%I Pan
+%C London, England
+
+%A Adams, J.B.
+%D 1976
+%T A probability model of medical reasoning and the MYCIN model
+%J Mathematical Biosciences
+%V 32
+%P 177-186
+
+%A Aho, A.V.
+%A Corasick, M.J.
+%D 1975
+%T Efficient string matching: an aid to bibliographic search
+%J Comm ACM
+%V 18
+%N 6
+%P 333-340
+%O June
+
+%A Aikins, J.S.
+%D 1983
+%T Prototypical knowledge for expert systems
+%J Artificial Intelligence
+%V 20
+%N 2
+%P 163-210
+%O February
+%K *
+
+%A Akers, G.
+%A Lennig, M.
+%D 1984
+%T Intonation in text-to-speech synthesis: evaluation of algorithms
+%R Report
+%I Bell-Northern Research
+%C Verdun, QUE 
+%K *
+
+%A Allebach, J.P.
+%A Liu, B.
+%D 1976
+%T Analysis of halftone dot profile and aliasing in the discrete binary representation of images
+%J Optical Society of America
+%V 67
+%N 9
+%K *
+
+%A Allen, B.P.
+%A Wright, J.M.
+%D 1983
+%T Integrating logic programs and schemata
+%J Proc 8th International Joint Conference on Artificial Intelligence
+%P 340-342
+
+%A Allen, E.M.
+%D 1983
+%T YAPS: yet another production system
+%R Report TR-1146
+%I Maryland Artificial Intelligence Group, Computer Science Department, University of Maryland
+%C Maryland, MD
+%O December
+%K *
+
+%A Allen, J.F.
+%A Perrault, C.R.
+%D 1980
+%T Analyzing intention in utterances
+%J Artificial Intelligence
+%V 15
+%P 143-178
+%K *
+
+%A Allen, J.F.
+%D 1984
+%T Towards a general theory of action and time
+%J Artificial Intelligence
+%V 23
+%P 123-154
+%K *
+
+%A Almes, G.T.
+%A Black, A.P.
+%A Lazowska, E.L.
+%A Noe, J.D.
+%D 1985
+%T The Eden system: a technical review
+%J IEEE Trans Software Engineering
+%V SE-11
+%N 1
+%P 43-59
+%O January
+%K *
+
+%A Alvey, P.
+%D 1983
+%T The problems of designing a medical expert system
+%J Proc Expert Systems 83
+%I Churchill College
+%C Cambridge, England
+%P 30-42
+%O December
+%K *
+
+%A Anderberg, M.R.
+%D 1973
+%T Cluster analysis for applications
+%I Academic Press
+%C New York, NY
+
+%A Anderson, D.P.
+%A Hedin, R.C.
+%D 1982
+%T Voice input/output module
+%J Voice Data Entry Systems Application Conference '82
+%C San Mateo, CA
+%O September 21
+%K *
+
+%A Anderson, J.R.
+%T Knowledge compilation: the general learning mechanism
+%K *
+
+%A Anderson, J.R.
+%A Reiser, B.J.
+%D 1985
+%T The LISP tutor
+%J Byte
+%V 10
+%N 4
+%P 159-175
+%O April
+
+%A Andreae, J.H.
+%D 1984
+%T Numbers in the head
+%R Man-Machine Studies Progress Report UC-DSE/24
+%P 5-28
+%I Department of Electrical Engineering, University of Canterbury
+%C New Zealand
+
+%A Andreae, P.M.
+%D 1984
+%T Constraint limited generalization: acquiring procedures from examples
+%J Proc American Association on Artificial Intelligence
+%C Austin, TX
+%O August
+%K *
+
+%A Andreae, P.M.
+%D 1984
+%T Justified generalization: acquiring procedures from examples
+%R PhD Thesis
+%I Department of Electrical Engineering and Computer Science, MIT
+
+%A Andreae, P.M.
+%D 1986
+%T Justified generalization
+%J Proc International Conference on Future Advances in Computing
+%C Christchurch, New Zealand
+%O February 17-21
+%K *
+
+%A Andreka, H.
+%A Nemeti, I.
+%A Sain, I.
+%D 1982
+%T A complete logic for reasoning about programs via nonstandard model theory I
+%J Theoretical Computer Science
+%V 17
+%P 193-212
+%K *
+
+%A Andreka, H.
+%A Nemeti, I.
+%A Sain, I.
+%D 1982
+%T A complete logic for reasoning about programs via nonstandard model theory II
+%J Theoretical Computer Science
+%V 17
+%P 259-278
+%K *
+
+%A Andrew, A.M.
+%D 1981
+%T Autopoiesis \(em allopoiesis interplay
+%E M.Zeleny
+%B Autopoiesis:  a theory of living organization
+%I North Holland
+%C New York, NY
+%P 157-166
+
+%A Anon
+%D 1972
+%T Holography and computer generated holograms
+%I Mills and Boom
+%C London, England
+%K *
+
+%A ANSI
+%D 1983
+%T Videotex/Teletext presentation level protocol syntax (Draft)
+%I American National Standards Committee X3 -- Information Processing Systems, Technical Committee X3L2 -- Codes and character sets
+%C New York, NY
+%O June
+
+%A Anson, E.
+%D 1982
+%T The device model of interaction
+%J Computer Graphics
+%V 16
+%N 2
+%P 107-114
+%O July
+%K *
+
+%A Aoki, M.
+%D 1965
+%T Optimal control of partially observable markovian systems
+%J J Franklin Institute
+%V 280
+%N 5
+%O November
+%K *
+
+%A Ascher, R.N.
+%A Nagy, G.
+%D 1974
+%T A means for achieving a high degree of compaction on scan-digitized printed text
+%J IEEE Trans Computers
+%V C-23
+%N 11
+%P 1174-1179
+%O November
+%K *
+
+%A Ash, W.L.
+%D 1981
+%T MXEC: parallel processing with an advanced macro facility
+%J Comm ACM
+%V 24
+%N 8
+%P 502-509
+%K *
+
+%A Ashby, W.R.
+%D 1960
+%T Design for a brain: the origin of adaptive behavior
+%I Wiley
+%C New York, NY
+%O (second edition)
+
+%A Askwall, S.
+%D 1985
+%T Computer supported reading vs reading text on paper: a comparison of two reading situations
+%J IJMMS
+%V 22
+%N 4
+%P 425-439
+%O April
+
+%A Atkinson, H.H.
+%A Gargantini, I.
+%A Ramanath, M.V.S.
+%D 1984
+%T Determination of the 3D border by repeated elimination of internal surfaces
+%J Computing
+%V 32
+%P 279-295
+%K *
+
+%A Attardi, G.
+%A Simi, M.
+%D 1982
+%T Semantics of inheritance and attributions in the description system Omega
+%R AI Memo 642
+%I MIT Artificial Intelligence Laboratory
+%O January
+%K *
+
+%A Axelrod, R.
+%D 1984
+%T The evolution of cooperation
+%I Basic Books
+%C New York, NY
+
+%A Backer, D.
+%A Gano, S.
+%D 1982
+%T Dynamically alterable videodisk displays
+%J Proc Graphics Interface 82
+%C Toronto, ON
+%P 365-
+%O May 17-21
+
+%A Baecker, R.
+%A Marcus, A.
+%D 1983
+%T On enhancing the interface to the source code of computer programs
+%J Proc ACM CHI 83 Human Factors in Computing Systems
+%P 251-255
+%C Boston, MA
+%O December 12-15
+%K *
+
+%A Bailey, D.
+%D 1985
+%T University of Salford Lisp/Prolog system
+%J Software -- Practice and Experience
+%V 15
+%N 6
+%P 595-609
+%O June
+%K *
+
+%A Ball, G.H.
+%A Hall, D.J.
+%D 1965
+%T ISODATA, a novel method of data analysis and pattern classification
+%R Report AD 699616
+%I Stanford Research Institute
+%C Stanford, CA
+
+%A Bandyopadhyay, S.
+%A Hughes, J.G.
+%A Smith, F.J.
+%A Sen, K.
+%T A generalized scientific information system
+%R Report
+%I Computer Science Department, Queen's University of Belfast
+%C Belfast, Northern Ireland
+%K *
+
+%A Barber, G.R.
+%D 1981
+%T Record of the workshop on research in office semantics
+%R AI Memo 620
+%I MIT
+%O February
+%K *
+
+%A Barber, G.R.
+%D 1982
+%T Office semantics
+%R PhD Thesis
+%I MIT
+%O February
+
+%A Barber, G.R.
+%D 1983
+%T Supporting organizational problem solving with a workstation
+%J ACM Trans Office Information Systems
+%V 1
+%N 1
+%P 45-67
+%O January
+%K *
+
+%A Barber, G.R.
+%A de\|Jong, P.S.
+%A Hewitt, C.
+%D 1983
+%T Semantic support for work in organizations
+%R AI Memo 719
+%I MIT Artificial Intelligence Laboratory
+%O April
+%K *
+
+%A Barnett, J.A.
+%D 1981
+%T Computational methods for a mathematical theory of evidence
+%J Proc 7th International Joint Conference on Artificial Intelligence
+%P 868-875
+%C Vancouver, BC
+%O August
+
+%A Barrow, H.G.
+%D 1979
+%T Artificial intelligence: state of the art
+%R Technical Note 198
+%I SRI International
+%C Menlo Park, CA
+%O October
+
+%A Barsky, B.A.
+%A Beatty, J.C.
+%D 1982
+%T Varying the betas in beta-splines
+%R Report CS-82-49
+%I University of Waterloo
+%O December
+%K *
+
+%A Barwise, J.
+%A Perry, J.
+%D 1983
+%T Situations and attitudes
+%I MIT Press
+%C Cambridge, MA
+
+%A Barwise, J.
+%D 1985
+%T The situation in logic II: conditionals and conditional information
+%R Report CSLI-85-21
+%I Center for the study of language and information, Stanford University
+%C Stanford, CA
+%O January
+%K *
+
+%A Bates, E.
+%D 1979
+%T The emergence of symbols
+%I Academic Press
+
+%A Beer, S.
+%D 1980
+%R Preface to \fIAutopoiesis and cognition\fR (Maturana and Varela, 1980)
+
+%A Bell, T.C.
+%D 1985
+%T Better OPM/L text compression
+%R Internal Report
+%I Computer Science Department, University of Canterbury
+%C Christchurch, New Zealand
+%K *
+
+%A Bell, T.C.
+%A Moffat, A.M.
+%D 1986
+%T A note on the DMC data compression scheme
+%R Internal Report
+%I Computer Science Department, University of Canterbury
+%C Christchurch, New Zealand
+
+%A Bell, T.C.
+%D 1986
+%T An introduction to text compression
+%R Internal Report
+%I Computer Science Department, University of Canterbury
+%C Christchurch, New Zealand
+
+%A Bellanger, M.G.
+%A Daguet, J.L.
+%A Lepagnol, G.P.
+%D 1974
+%T Interpolation, extrapolation, and reduction of computation speed in digital filters
+%J IEEE Trans Acoustics, Speech and Signal Processing
+%V ASSP-22
+%N 4
+%P 231-235
+%O August
+%K *
+
+%A Benest, I.D.
+%A Jones, G.
+%D 1982
+%T Computer emulation of books
+%J Proc IEE Conference Man-Machine Systems
+%P 267-271
+%C Manchester, England
+%O July
+
+%A Benest, I.D.
+%A Potok, M.H.N.
+%D 1984
+%T Wayfinding: an approach using signposting techniques
+%J Behaviour and Information Technology
+%V 3
+%N 2
+%P 99-107
+%K *
+
+%A Bentley, J.L.
+%A Friedman, J.H.
+%D 1979
+%T Data structures for range searching
+%J Computing Surveys
+%V 11
+%N 4
+%P 397-409
+%O December
+%K *
+
+%A Bentley, J.L.
+%D 1980
+%T Multidimensional divide-and-conquer
+%J Comm ACM
+%V 23
+%N 4
+%P 214-229
+%K *
+
+%A Bentley, J.L.
+%A Sleator, D.D.
+%A Tarjan, R.E.
+%A Wei, V.K.
+%D 1986
+%T A locally adaptive data compression scheme
+%J Comm ACM
+%V 29
+%N 4
+%P 320-330
+%O April
+
+%A Berglund, E.J.
+%A Cheriton, D.R.
+%T Amaze -- A distributed multi-player game program using the Distributed V Kernel
+%K *
+
+%A Bewley, W.L.
+%A Roberts, T.L.
+%A Schroit, D.
+%A Verplank, W.L.
+%D 1983
+%T Human factors testing in the design of Xerox's 8010 `Star' office workstation
+%J Proc ACM CHI 83 Human Factors in Computing Systems
+%P 72-77
+%C Boston, MA
+%O December 12-15
+%K *
+
+%A Bezdek, J.C.
+%D 1980
+%T A convergence theorem for the fuzzy ISODATA clustering algorithms
+%J IEEE Trans Pattern Analysis and Machine Intelligence
+%V PAMI-2
+%N 1
+%P 1-8
+%O January
+%K *
+
+%A Bibel, W.
+%D 1983
+%T Matings in matrices
+%J Comm ACM
+%V 26
+%N 11
+%P 844-852
+%O November
+%K *
+
+%A Biederman, I. 
+%D 1985
+%T Human image understanding: recent research and a theory
+%J Computer Vision, Graphics, and Image Processing
+%V 32
+%N 1
+%P 29-73
+%O October.
+
+%A Bigelow, C.
+%A Day, D.
+%D 1983
+%T Digital typography
+%J Scientific American
+%V 249
+%N 2
+%P 106-119
+%O August
+%K *
+
+%A Bigelow, C.
+%D 1984
+%T Principles of font design for the personal workstation
+%R Research Report
+%I Stanford University
+%K *
+
+%A Bigelow, C.
+%D 1986
+%T Notes on typeface protection
+%K *
+
+%A Birkhoff, G.
+%D 1967
+%T Lattice theory
+%I American Mathematical Society
+%C Providence, RI
+
+%A Birrell, A.D.
+%A Levin, R.
+%A Needham R.M.
+%A Schroeder, M.D.
+%D 1982
+%T Grapevine: an exercise in distributed computing
+%J Comm ACM
+%V 25
+%N 4
+%P 260-274
+%O April
+%K *
+
+%A Birtwistle, G.M.
+%A Dahl, O.J.
+%A Myhrhaug, B.
+%A Nygaard, K.
+%D 1973
+%T Simula Begin
+%I Auerbach
+%C Philadelphia, PA
+
+%A Birtwistle, G.
+%A Cleary, J.G.
+%A Joyce, J.
+%A Liblong, B.
+%A Unger, B.W.
+%A Witten, I.H.
+%A Wyvill, B.L.M.
+%D 1984
+%T A simulation environment
+%J Proc Canadian Information Processing Society Conference
+%C Calgary, AL
+%P 290-296
+%O May
+%K KConference
+
+%A Blakeslee, T.R.
+%D 1980
+%T The right brain
+%I MacMillan
+%C London, England
+
+%A Bobrow, D.G.
+%D 1985
+%T If Prolog is the answer, what is the question? or What it takes to support AI programming paradigms
+%J IEEE Trans Software Engineering
+%V SE-11
+%N 11
+%P 1401-1408
+%O November
+%K *
+
+%A Boehm-Davis, D.A.
+%A Fregly, A.M.
+%D 1983
+%T Documentation of concurrent programs
+%J Proc ACM CHI 83 Human Factors in Computing Systems
+%P 256-261
+%C Boston, MA
+%O December 12-15
+%K *
+
+%A Bonham, M.
+%A Witten, I.H.
+%D 1984
+%T Towards distributed document preparation with interactive and noninteractive viewing
+%J Proc Canadian Information Processing Society Conference
+%C Calgary, AL
+%P 365-372
+%O May
+%K KConference
+
+%A Bonham, M.
+%A Witten, I.H.
+%D 1985
+%T Towards distributed document preparation with interactive and noninteractive viewing
+%J Infor
+%V 23
+%N 4
+%P 365-388
+%O November
+%K KJournal
+
+%A Bonham, M.
+%A Witten, I.H.
+%D 1985
+%T More on `A large font virtual terminal interface: a software prosthesis for the visually impaired'
+%J Comm ACM
+%V 28
+%N 11
+%P 1236-1237
+%O November
+%K KCorrespondence
+
+%A Bonham, M.
+%A Witten, I.H.
+%D 1985
+%T Shape \(em a unifying concept in document layout
+%J Proc PROTEXT II -- Second International Conference on Text Processing Systems
+%I Boole Press
+%C Dublin, Ireland
+%P 126-132
+%O October
+%K KConference
+
+%A Bonner, S.
+%A Shin, K.
+%D 1982
+%T A comparative study of robot languages
+%J IEEE Computer
+%V 15
+%N 12
+%P 82-96
+
+%A Boose, J.H.
+%D 1986
+%T Rapid acquisition and combination of knowledge from multiple experts in the same domain
+%J Proc International Conference on Future Advances in Computing
+%C Christchurch, New Zealand
+%O February 17-21
+%K *
+
+%A Booth, T.L.
+%D 1984
+%T Computer education
+%J IEEE Computer
+%V 17
+%N 10
+%P 57-68
+%O October
+%K *
+
+%A Borning, A.
+%D 1981
+%T The programming language aspects of ThingLab, a constraint-oriented simulation laboratory
+%J ACM Trans Programming Languages and Systems
+%V 3
+%N 4
+%P 353-387
+%O October
+%K *
+
+%A Bouachache, B.
+%D 1983
+%T Wigner analysis of time-varying signals
+%B Signal processing II: Theories and applications
+%E H.W.Schussler
+%I Elsevier Science Publishers B.V. (North Holland)
+%P 703-706
+%K *
+
+%A Bouachache, B.
+%A Rodriguez, F.
+%D 1984
+%T Recognition of time-varying signals in the time-frequency domain by means of the Wigner distribution
+%J Proc International Circuits and Systems Symposium
+%K *
+
+%A Bouachache, B.
+%A Whitehouse, H.J.
+%D 1985
+%T Seismic applications of the Wigner-Ville distribution
+%J Proc International Circuits and Systems Symposium
+%C San Jose, CA
+%O May 5
+%K *
+
+%A Boulton, P.I.P.
+%A Lee, E.S.
+%D 1983
+%T The performance of Hubnet
+%J Proc International Electrical, Electronics Conference
+%V 2
+%P 450-453
+%C Toronto, ON
+%O September 26-28
+%K *
+
+%A Bower, G.H.
+%A Black, J.B.
+%D 1979
+%T Scripts in memory for text
+%J Cognitive Psychology
+%V 11
+%P 177-220
+%K *
+
+%A Brachman, R.J.
+%D 1983
+%T What IS-A is and isn't: an analysis of taxonomic links in semantic networks
+%J IEEE Computer
+%V 16
+%N 10
+%P 30-36
+%O October
+%K *
+
+%A Brachman, R.J.
+%A Schmolze, J.G.
+%D 1985
+%T An overview of the KL-ONE knowledge representation scheme
+%J Cognitive Science
+%V 9
+%N ii
+%P 171-216
+%K *
+
+%A Bramer, M.A.\0(Editor)
+%D 1985
+%T Research and development in expert systems
+%I Cambridge University Press
+%C Cambridge, England
+%O (Proc 4th Conference of BCS Group on Expert Systems, December 1984)
+
+%A Bramwell, B.
+%D 1984
+%T Browsing around a manual
+%J Proc Canadian Information Processing Society Conference
+%C Calgary, AL
+%P 438-442
+%O May
+%K *
+
+%A Britton, B.K.
+%A Black, J.B.\0(Editors)
+%D 1985
+%T Understanding expository text: a theoretical and practical handbook for analyzing explanatory text
+%I Erlbaum
+%C Hillsdale, NJ
+
+%A Brown, K.Q.
+%D 1979
+%T Voroni diagrams from convex hulls
+%J Information Processing Letters
+%V 9
+%N 5
+%P 223-228
+%O December
+%K *
+
+%A Brown, P.J.
+%D 1984
+%T Interactive documentation
+%R Internal Report
+%I Computing Laboratory, University of Kent
+%O April
+%K *
+
+%A Brown, J.S.
+%A Burton, R.R.
+%D 1975
+%T Multiple representations of knowledge for tutorial reasoning
+%B Representation of Learning
+%E D.G. Bobrow and A. Collins
+%I Academic Press
+%C New York, NY
+
+%A Brownston, L.
+%A Farrell, R.
+%A Kant, E.
+%A Martin, N.
+%D 1985
+%T Programming expert systems in OPS-5: an introduction to rule-based programming
+%I Addison-Wesley
+%C Reading, MA
+
+%A Brunner, J.
+%D 1975
+%T The shockwave rider
+%I Ballantine
+%C New York, NY
+
+%A Bruynooghs, M.
+%D 1982
+%T Adding redundancy to obtain more reliable and more readable Prolog programs
+%J Proc 1st International Logic Programming Conference
+%C Marseille, France
+%P 129-133
+%O September 14-17
+%K *
+
+%A Bryant, J.
+%D 1979
+%T On the clustering of multidimensional pictorial data
+%J Pattern Recognition
+%V 11
+%P 115-125
+%K *
+
+%A Buchman, C.
+%A Berry, D.M.
+%T An adaptation of the Unix DITROFF for formatting bidirectional text
+%I Computer Science Department, University of California
+%C Los Angeles, CA
+%K *
+
+%A Bundy, A.
+%A Silver, B.
+%A Plummer, D.
+%D 1985
+%T An analytical comparison of some rule-learning programs
+%J Artificial Intelligence
+%V 27
+%P 137-181
+
+%A Bundy, A.
+%D 1983
+%T The computer modelling of mathematical reasoning
+%A Academic Press
+%C London, England
+
+%A Burton, R.R.
+%A Brown, J.S.
+%D 1979
+%T An investigation of computer coaching for informal learning activities
+%J IJMMS
+%V 11
+%N 1
+%P 5-24
+%O January
+
+%A Bush, V.
+%D 1945
+%T As we may think
+%J Atlantic Monthly
+%P 101
+%O July
+
+%A Byrd, R.J.
+%A Smith, S.E.
+%A de\|Jong, S.P.
+%D 1982
+%T An actor-based programming system
+%J Proc SIGOA Conference on Office Information Systems
+%P 67-78
+%C Philadelphia, PA
+%O June 21-23
+%K *
+
+%A Campbell, F.W.
+%A Robson, J.G.
+%D 1967
+%T Application of fourier analysis to the visibility of gratings
+%J Physiol
+%N 197
+%P 551-566
+%I University of Cambridge
+%K *
+
+%A Cannon, W.B.
+%D 1932
+%T The wisdom of the body
+%I London
+
+%A Carroll, J.B.
+%D 1967
+%T On sampling from a lognormal model of word-frequency distribution
+%B Computational analysis of present-day American English
+%E Kucera, H. and Francis, W.N.
+%I Brown University Press
+%C Providence, RI
+%P 406-424
+%K *
+
+%A Carroll, J.B.
+%D 1966
+%T Word-frequency studies and the lognormal distribution
+%E E.M.Zale
+%B Proc Conference on Language and Language Behavior
+%I Appleton-Century-Crofts
+%C New York, NY
+%P 213-235
+%K *
+
+%A Carroll, J.M.
+%A Thomas, J.C.
+%D 1982
+%T Metaphor and the cognitive representation of computing systems
+%J IEEE Trans Systems, Man and Cybernetics
+%V SMC-12
+%N 2
+%P 107-116
+%O March/April
+%K *
+
+%A Carter, K.A.
+%D 1984
+%T The Rainbow workstation in brief/A window manager for the Rainbow workstation
+%R Rainbow Group Note
+%I Computer Laboratory, University of Cambridge
+%O May
+%K *
+
+%A Casey, R.G.
+%A Friedman, T.D.
+%A Wong, K.Y.
+%D 1982
+%T Automatic scaling of digital fonts
+%J IBM J Research and Development
+%V 26
+%P 657-666
+
+%A Casey, R.G.
+%A Nagy, G.
+%D 1984
+%T Decision tree design using a probabilistic model
+TJ IEEE Trans Information Theory
+%V IT-30
+%N 1
+%P 93-99
+%O January
+%K *
+
+%A Cater, J.P.
+%D 1983
+%T Electronically speaking: computer speech generation
+%I Howard W. Sams
+%C Indianapolis, IN
+
+%A Catmull, E.
+%D 1981
+%T New frontiers in computer animation
+%J American Cinematographer
+%P 157-163
+%O October
+
+%A Cendrowska, J.
+%A Bramer, M.A.
+%D 1984
+%T A rational reconstruction of the Mycin consultation system
+%J IJMMS
+%V 20
+%P 229-317
+
+%A Chapanis, A.
+%D 1984
+%T Taming and civilizing computers
+%B Computer culture: the scientific, intellectual, and social impact of the computer
+%E Heinz R. Pagels
+%I New York Academy of Sciences
+%C New York, NY
+%P 202-219
+%K *
+
+%A Chazelle, B.
+%D 1983
+%T A decision procedure for optimal polyhedron partitioning
+%J Information Processing Letters
+%V 16
+%P 75-78
+%O February 26
+%K *
+
+%A Cheeseman, P.
+%D 1985
+%T In defense of probability
+%J Proc 10th International Joint Conference on Artificial Intelligence
+%P 100R2-1009
+
+%A Cheriton, D.R.
+%A Zwaenepoel, W.
+%D 1983
+%T The distributed V kernel and its performance for diskless workstations
+%R Report No STAN-CS-83-973
+%I Stanford University, Computer Science Department
+%C Stanford, CA
+%O July
+%K *
+
+%A Christodoulakis, S
+%A Faloutsos, C.
+%D 1984
+%T Design considerations for a message file server
+%J IEEE Trans Software Engineering
+%V SE-10
+%N 2
+%P 201-210
+%O March
+%K *
+
+%A Ciminiere, L.
+%A Valenzano, A.
+%D 1984
+%T iAPX 432 hardware fault handling mechanisms
+%K *
+
+%A Clancey, W.J.
+%D 1979
+%T Tutoring rules for guiding a case method dialogue
+%J IJMMS
+%V 11
+%P 25-49
+%K *
+
+%A Clancey, W.J.
+%D 1983
+%T The epistemology of a rule-based expert system \(em a framework for explanation
+%J Artificial Intelligence
+%V 20
+%P 215-251
+%K *
+
+%A Clancey, W.J.
+%A Shortliffe, E.H. \0(Editors)
+%D 1984
+%T Readings in medical artificial intelligence
+%I Addison-Wesley
+%C Reading, MA
+
+%A Clarkson, T.
+%T Eye position sensor
+%R Section 7 of a report
+%I King's College
+%C London, England
+%K *
+
+%A Cleary, J.G.
+%D 1979
+%T Analysis of an algorithm for finding nearest neighbors in Euclidean space
+%J ACM Trans Mathematical Software
+%V 5
+%N 2
+%P 183-192
+%O June
+%K *
+
+%A Cleary, J.G.
+%D 1984
+%T Compact hash tables using bidirectional linear probing
+%J IEEE Trans Computers
+%V C-33
+%N 9
+%P 828-834
+%O September
+
+%A Cleary, J.G.
+%A Darragh, J.J.
+%D 1984
+%T A fast compact representation of trees using hash tables
+%R Research Report 83/162/20
+%I Computer Science Department, University of Calgary
+%O Submitted to \fIIEEE Trans Computers\fP
+
+%A Cleary, J.G.
+%A Witten, I.H.
+%D in preparation
+%T Universal data compression
+
+%A Clocksin, W.A.
+%D 1984
+%T Introduction to Prolog
+%B Artificial Intelligence:  tools, techniques, and applications
+%E T.O'Shea and M.Eisenstadt
+%I Harper and Row
+%C New York, NY
+
+%A Codd, E.F.
+%D 1968
+%T Cellular automata
+%I Academic Press
+%C London, England
+
+%A Codd, E.F.
+%D 1978
+%T How about recently?
+%B Databases: Improving usability and responsiveness
+%E B. Shneiderman (Ed.)
+%I Academic Press
+%C New York, NY
+%P 3-28
+
+%A Cohen, E.S.
+%A Smith, E.T.
+%A Iverson, L.A.
+%D 1985
+%T Constraint-based tiled windows
+%R Research Report
+%I Computer Science Department, Carnegie-Mellon University
+
+%A Cohen, J.
+%D 1985
+%T Describing Prolog by its interpretation and compilation
+%J Comm ACM
+%V 28
+%N 12
+%P 1311-1324
+%O December
+%K *
+
+%A Colby, K.M.
+%D 1973
+%T Simulations of belief systems
+%E R.C.Schank and K.M.Colby
+%B Computer models of thought and language
+%I Freeman
+%C San Francisco, CA
+%P 251-286
+
+%A Colmaurer, A.
+%A Colmaurer, C.
+%D 1983
+%T Prolog en 10 figures
+%J TSI
+%V 2
+%N 4
+%O July-August
+%K *
+
+%A Colmerauer, A.
+%D 1985
+%T Prolog in 10 figures
+%J Comm ACM
+%V 28
+%N 12
+%P 1296-1310
+%O December
+%K *
+
+%A Colmaurer, A.
+%T An interesting subset of natural language
+%K *
+
+%A Comer, D.E.
+%A Peterson, L.L.
+%T Conversation-based mail
+%J ACM Transactions on computer systems
+%V 4
+%N 4
+%O November
+%K *
+
+%A Computer\|Science\|Department
+%D 1983
+%T CPSC Student Handbook
+%I University of Calgary
+
+%A Coombs, M.
+%A Alty, J.
+%D 1984
+%T Expert systems: an alternative paradigm
+%J IJMMS
+%V 20
+%N 1
+%P 21-43
+%O January
+%K *
+
+%A Corbett, C.
+%D 1983
+%T MC nroff/troff macros reference manual
+%R Report EES-MMS-1983-2
+%I Department of Electrical Engineering Science, University of Essex
+%C Colchester, Essex, UK
+%K *
+
+%A Corbett, C.
+%D 1983
+%T Figure processing within nroff
+%J Presented at EUUG Meeting
+%C Dublin, Ireland
+%O September
+%K *
+
+%A Cormack, G.V.
+%A Horspool, R.N.
+%D 1984
+%T Algorithms for adaptive Huffman codes
+%J Information Processing Letters
+%V 18
+%N 3
+%P 159-166
+%O March
+%K *
+
+%A Cormack, G.V.
+%A Horspool, R.N.
+%D 1985
+%T Data compression using dynamic Markov modelling
+%R Research Report
+%I Computer Science Department, University of Waterloo
+%O April; submitted to Comm ACM
+%K *
+
+%A Costigan, D.M.
+%D 1978
+%T Electronic delivery of documents and graphics
+%I Van Nostrand Reinhold
+%C New York, NY
+
+%A Coulon, D.
+%A Kayser, D.
+%D 1979
+%T Construction of natural language sentence acceptors by a supervised-learning technique
+%J IEEE Trans Pattern Analysis and Machine Intelligence
+%V PAMI-1
+%N 1
+%P 94-99
+%O January
+%K *
+
+%A Cove, J.F.
+%A Walsh, B.C.
+%D 1988
+%T A taxonomy of browsing
+%R Working Paper 85/2
+%I Computer Science Department, University of Liverpool
+%O April
+%K *
+
+%A Cox, B.J.
+%D 1986
+%T Object oriented programming
+%I Addison-Wesley
+%C Reading, MA
+
+%A Crochiere, R.E.
+%A Rabiner, L.R.
+%D 1975
+%T Optimum FIR digital filter implementations for decimation, interpolation, and narrow-band filtering
+%J IEEE Trans Acoustics, Speech and Signal Processing
+%V ASSP-23
+%N 5
+%P 444-456
+%O October
+%K *
+
+%A Crochiere, R.E.
+%A Rabiner, L.R.
+%D 1976
+%T Further considerations in the design of decimators and interpolators
+%J IEEE Trans Acoustics, Speech and Signal Processing
+%V ASSP-24
+%N 4
+%P 296-311
+%O August
+%K *
+
+%A Croft, W.B.
+%A Lefkowitz, L.S.
+%D 1984
+%T Task support in an office system
+%J ACM Trans Office Information Systems
+%V 2
+%N 3
+%P 197-212
+%O July
+%K *
+
+%A Croft, W.B.
+%D 1984
+%T The role of context and adaptation in user interfaces
+%J IJMMS
+%V 21
+%N 4
+%P 283-292
+%O October
+
+%A Csuri, C.
+%D 1974
+%T Computer graphics and art
+%J Proc IEEE
+%O April
+
+%A Cuff, R.N.
+%D 1982
+%T Database query using menus and natural language fragments
+%R PhD Thesis
+%I Man-Machine Systems Laboratory, Department of Electrical Engineering Science, University of Essex
+%C Colchester, Essex, UK
+
+%A Cuff, R.N.
+%D 1984
+%T HERCULES: database query using natural language fragments
+%J Proc 3rd British National Conference on Database Systems
+%C Leeds
+%O July
+%K *
+
+%A Cullingford, R.E.
+%D 1978
+%T Script application: computer understanding of newspaper stories
+%R PhD Thesis, Research Report 116
+%I Yale University
+
+%A Cullingford, R.E.
+%A Krueger, M.W.
+%A Selfridge, M.
+%A Bienkowski, M.A.
+%D 1982
+%T Automated explanations as a component of a computer-aided design system
+%J IEEE Trans Systems, Man and Cybernetics
+%V SMC-12
+%N 2
+%P 168-181
+%O March/April
+%K *
+
+%A Cullingford, R.E.
+%A Pazzani, M.J.
+%D 1984
+%T Word-meaning selection in multiprocess language understanding programs
+%J IEEE Trans Pattern Analysis and Machine Intelligence
+%V PAMI-6
+%N 4
+%P 493-509
+%O July
+%K *
+
+%A Curry, G.
+%A Baer, L.
+%A Lipkie, D.
+%A Lee, B.
+%D 1982
+%T Traits: an approach to multiple-inheritance subclassing
+%J ACM Conference on Office Information Systems
+%P 1-9
+%O June
+%K *
+
+%A Damper, R.I.
+%A MacDonald, S.L.
+%D 1984
+%T Template adaptation in speech recognition
+%J Proc Institute of Acoustics
+%V 6
+%N 4
+%P 293-299
+%K *
+
+%A Damper, R.I.
+%A MacDonald, S.L.
+%D 1984
+%T Statistical clustering procedures applied to low-cost speech recognition
+%J J Biomed Engineering
+%V 6
+%P 265-271
+%O October
+%K *
+
+%A Darragh, J.J.
+%A Witten, I.H.
+%A Cleary, J.G.
+%D 1983
+%T Adaptive text compression to enhance a modem
+%R Research Report 83/132/21
+%I Computer Science Department, University of Calgary
+%K KReport
+
+%A Davis, R.
+%D 1979
+%T Interactive transfer of expertise: acquisition of new inference rules
+%J Artificial Intelligence
+%V 12
+%N 2
+%P 121-157
+%K *
+
+%A Davis, R.
+%A Lenat, D.B.
+%D 1982
+%T Knowledge-based systems in artificial intelligence
+%I McGraw Hill
+%C New York, NY
+
+%A Day, J.D.
+%A Zimmermann, H.
+%D 1983
+%T The OSI reference model
+%J Proc IEEE
+%V 71
+%N 12
+%P 1334-1340
+%O December
+
+%A Defude, B.
+%D 1984
+%T Knowledge based systems versus thesaurus: an architecture problem about expert systems design
+%J Proc 3rd Joint BCS and ACM Symposium (King's College, Cambridge)
+%I Cambridge University Press
+%P 267-280
+%O July
+%K *
+
+%A de\|Beaugrande, R.
+%D 1980
+%T Text, discourse and process: towards a multidisciplinary science of texts
+%I Ablex Publishing Corporation
+%C Norwood, NJ
+
+%A de\|Jong, G.
+%D 1979
+%T Prediction and substantiation: two processes that comprise understanding
+%J Proc International Joint Conference on Artificial Intelligence
+%C Tokyo, Japan
+%P 217-222
+%O August
+
+%A de\|Jong, G.
+%D 1981
+%T Generalizations based on explanations
+%J Proc IJCAI 81
+%P 67-69
+%K *
+
+%A de\|Jong, S.P.
+%D 1980
+%T The system for business automation (SBA): a unified application development system
+%B Information Processing 80
+%E S.H.Lavington
+%P 469-474
+%I North Holland
+%K *
+
+%A de\|Leon, L.
+%A Harris, W.G.
+%A Evens, M.
+%D 1983
+%T Is there really trouble with Unix?
+%J Proc ACM CHI 83 Human Factors in Computing Systems
+%P 125-129
+%C Boston, MA
+%O December 12-15
+
+%A Dietterich, T.G.
+%A Michalski, R.S.
+%D 1983
+%T A comparative review of selected methods for learning from examples
+%B Machine learning
+%E R.S. Michalski, J.G. Carbonell, and T.M. Mitchell
+%I Tioga
+%P 41-81
+
+%A Denning, P.J.
+%D 1982
+%T Computer-based predictive writing
+%J Comm ACM
+%V 25
+%N 5
+%P 315-316
+%O May
+%K *
+
+%A Denning, P.J.
+%D 1984
+%T Educational ruminations
+%J Comm ACM
+%V 27
+%N 10
+%P 979-983
+%O October
+
+%A Denning, P.J.
+%D 1985
+%T The science of computing: what is Computer Science?
+%J American Scientist
+%V 73
+%O January/February
+%K *
+
+%A Dewdney, A.K.
+%D 1984
+%T Computer recreations
+%J Scientific American
+%V 250
+%N 5
+%P 14-22
+%O May
+
+%A Downs, T.
+%A Cook, A.S.
+%A Rogers, G.
+%D 1984
+%T A partitioning approach to yield estimation for large circuits and systems
+%J IEEE Trans Circuits and Systems
+%V CAS-31
+%N 5
+%P 472-485
+%O May
+%K *
+
+%A Downs, T.
+%D 1985
+%T An approach to the modeling of software testing with some applications
+%J IEEE Trans Software Engineering
+%V SE-11
+%N 4
+%P 375-386
+%O April
+%K *
+
+%A Drummond, M.
+%D 1983
+%T A proposal to study the cost-effectiveness of planning, acting, and sensing
+%R DAI Working paper
+%I Department of Artificial Intelligence, University of Edinburgh
+%K *
+
+%A Dubes, R.
+%A Jain, A.K.
+%D 1979
+%T Validity studies in clustering methodologies
+%J Pattern Recognition
+%V 11
+%P 225-254
+%K *
+
+%A Duda, R.
+%A Gaschnig, J.
+%A Hart, P.
+%D 1979
+%T Model design in the Prospector consultant system for mineral exploration
+%E D. Michie
+%B Expert systems in the microelectronic age
+%I Edinburgh University Press
+%K *
+
+%A Dumais, S.
+%A Landauer, T.
+%D 1982
+%T Psychological investigations of natural terminology for command and query languages
+%B Directions in human/computer interactions
+%E Badre and Shneiderman
+%I Ablex Publishing Corporation
+%C Norwood, NJ
+%P 95-110
+
+%A Dumais, S.
+%A Landauer, T.
+%D 1983
+%T Using examples to describe categories
+%J Proc ACM CHI 83 Human Factors in Computing Systems
+%P 112-115
+%C Boston, MA
+%O December 12-15
+%K *
+
+%A Dunham, M.O.
+%A Gray, R.M.
+%D 1985
+%T An algorithm for the design of labeled-transition finite-state vector quantization
+%J IEEE Trans Communications
+%V COM-33
+%N 1
+%P 83-89
+%O January
+%K *
+
+%A Dyer, M.G.
+%D 1983
+%T In-depth understanding
+%I MIT Press
+%C Cambridge, MA
+
+%A Dynkin, E.B.
+%D 1965
+%T Controlled random sequences
+%J Theoretical Probability and its Applications
+%V X
+%N 1
+%K *
+
+%A Eason, K.D.
+%A Damodaran, L
+%D 1979
+%T Design procedures for user involvement and user support
+%J Infotech - Man Computer Communications
+%C London, England
+
+%A Edelsbrunner, H.
+%A Maurer, H.A.
+%D 1985
+%T Finding extreme points in three dimensions and solving the post-office problem in the plane
+%J Information Processing Letters
+%V 21
+%P 39-47
+%O 10 July
+%K *
+
+%A Efron, B.
+%A Thisted, R.
+%D 1976
+%T Estimating the number of unseen species: how many words did Shakespeare know?
+%J Biometrika
+%V 63
+%N 3
+%P 435-447
+%K *
+
+%A Eisenstadt, E.
+%A Hasemar, T.
+%D 1985
+%T An improved user interface for Prolog
+%E B.Shackel
+%B Human-Computer Interaction: Proceedings INTERACT 84
+%I North Holland
+%P 109-113
+%K *
+
+%A Ekeberg, O.
+%D 1986
+%T Robust dictionary lookup using associative methods
+%R Research Report
+%I Computer Vision and Associative Pattern Processing Laboratory, Department of Computing Science, Royal Institute of Technology
+%C Stockholm, Sweden
+%K *
+
+%A Elias, P.
+%D 1955
+%T Predictive coding: Part I and Part II
+%J IRE Trans Information Theory
+%V IT-1
+%N 1
+%P 16-33
+%K *
+
+%A Elias, P.
+%D 1970
+%T Bounds on performance of optimum quantizers
+%J IEEE Trans Information Theory
+%V IT-16
+%N 2
+%P 172-184
+%O March
+%K *
+
+%A Elias, P.
+%D 1975
+%T Universal codeword sets and representations of the integers
+%J IEEE Trans Information Theory
+%V IT-21
+%N 2
+%P 194-203
+%O March
+%K *
+
+%A Elliott, S.J.
+%A Nelson, P.A.
+%D 1985
+%T An algorithm for multichannel LMS adaptive filtering
+%R Research Report
+%I Institute of Sound and Vibration Research, University of Southampton
+%C Southampton, England
+%K *
+
+%A Ellis, C.A.
+%A Nutt, G.J.
+%D 1979
+%T On the equivalence of office models
+%R Research Report SSL-79-8
+%I Xerox PARC
+%O December
+%K *
+
+%A Ellis, C.A.
+%T Formal and informal models of office activity
+%R Research Report
+%I Xerox PARC
+%K *
+
+%A Ellis, C.A.
+%A Bernal, M.
+%D 1982
+%T Officetalk-D: an experimental office information system
+%J Proc ACM Conference 
+%P 131-140
+%K *
+
+%A Embley, D.W.
+%A Nagy, G.
+%D 1981
+%T Behavioral aspects of text editors
+%J Computing Surveys
+%V 13
+%N 1
+%P 33-70
+%O March
+%K *
+
+%A Engel F.L.
+%A Andriessen J.J.
+%A Schmitz, H.J.R.
+%D 1983
+%T What, where and whence: means for improving electronic data access
+%J IJMMS
+%V 18
+%P 145-160
+
+%A Englebart, D.C.
+%A English, W.K.
+%D 1968
+%T A research center for augmenting human intellect
+%J Proc Fall Joint Computer Conference
+%V 33
+%P 395-410
+%I AFIPS Press
+%C Arlington, VA
+
+%A Ernvall, J.
+%A Nevalainen, O.
+%D 1984
+%T Estimating the length of minimal spanning trees in compression of files
+%J BIT
+%V 24
+%P 19-32
+%K *
+
+%A Even, S.
+%A Rodeh, M.
+%D 1978
+%T Economical encodings of commas between strings
+%J Comm ACM
+%V 21
+%P 315-317
+%O April
+%K *
+
+%A Even, S.
+%A Pratt, V.
+%A Rodeh, M.
+%D 1981
+%T Linear algorithm for data compression via string matching
+%J J ACM
+%V 28
+%N 1
+%P 16-24
+%O January
+
+%A Everitt, B.
+%D 1974
+%T Cluster analysis
+%I Heineman
+%C London, England
+
+%A Fano, R.M.
+%D 1949
+%T The transmission of information
+%R Technical Report 65
+%I Research Laboratory of Electronics, MIT
+%C Cambridge, MA
+
+%A Feigenbaum, E.A.
+%A McCorduck, P.
+%D 1983
+%T The fifth generation
+%I Addison-Wesley
+%C Reading, MA
+
+%A Ferrans, J.C.
+%D 1982
+%T SEDL \(em a language for specifying integrity constraints on office forms
+%J SIGOA Newsletter (Proc SIGOA Conference on Office Information Systems)
+%V 3
+%N 3/4
+%P 123-130
+%C Philadelphia, PA
+%O June 21-23
+%K *
+
+%A Fikes, R.
+%A Kehler, T.
+%D 1985
+%T The role of frame-based representation in reasoning
+%J Comm ACM
+%V 28
+%N 9
+%P 904-920
+%O September
+%K *
+
+%A Filipski, A.
+%A Hanko, J.
+%D 1986
+%T Making UNIX secure
+%J Byte
+%P 113-128
+%O April
+
+%A Fillmore, C.J.
+%D 1968
+%T The case for case
+%E E.Bach and R.T.Harms
+%B Universals in linguistic theory
+%P 1-88
+%I Holt, Reinhart and Winston
+%C Chicago, IL
+%K *
+
+%A Finkel, R.A.
+%A Bentley, J.L.
+%D 1974
+%T Quad trees -- a data structure for retrieval on composite keys
+%J Acta Informatica
+%V 4
+%N 1
+%P 1-9
+
+%A Fischer, G.
+%A Lemke, A.
+%A Schwab, T.
+%D 1985
+%T Knowledge-based help systems
+%J Proc Human Factors in Computer Systems
+%C San Francisco, CA
+%P 161-167
+%O April
+%K *
+
+%A Fitter, M.
+%D 1979
+%T Toward more natural interactive systems
+%J IJMMS
+%V 11
+%P 339-350
+
+%A Fogel, L.J.
+%A Owens, A.J.
+%A Walsh, M.J.
+%D 1966
+%T Artificial intelligence through simulated evolution
+%I Wiley
+
+%A Foley, J.D.
+%A Wallace, V.L.
+%A Chan, P.
+%D 1984
+%T The human factors of computer graphics interaction techniques
+%J IEEE Computer Graphics and Applications
+%V 4
+%N 11
+%P 13-48
+%O November
+%K *
+
+%A Foster, J.
+%A Gray, R.M.
+%A Dunham, M.O.
+%D 1985
+%T Finite-state vector quantization for waveform coding
+%J IEEE Trans Information Theory
+%V IT-31
+%O May
+
+%A Freij, G.J.
+%A Cheetham, B.M.G.
+%D 1985
+%T Improved sequential linear prediction by selective time-domain coefficient extraction
+%R Report
+%K *
+
+%A Friedman, J.H.
+%A Baskett, F.
+%A Shustek, L.J.
+%D 1975
+%T An algorithm for finding nearest neighbors
+%J IEEE Trans Computers
+%V C-24
+%P 1000-1006
+%O October
+%K *
+
+%A Friedman, J.H.
+%A Bentley, J.L.
+%A Finkel, R.A.
+%D 1977
+%T An algorithm for finding best matches in logarithmic expected time
+%J ACM Trans Mathematical Software
+%V 3
+%N 3
+%P 209-226
+%O September
+%K *
+
+%A Fukunaga, K.
+%A Narendra, P.M.
+%D 1975
+%T A branch and bound algorithm for computing \fIk\fP-nearest neighbors
+%J IEEE Trans Computers
+%V C-24
+%P 750-753
+%O July
+%K *
+
+%A Fulton, M.A.
+%T A social cognition research model for studying human-computer communication
+%R Research Report
+%I Oklahoma State University Business College
+%C Stillwater, OK
+%K *
+
+%A Gaines, B.R.
+%D 1976
+%T On a danger in the assumption of causality
+%J IEEE Trans Systems, Man and Cybernetics
+%V SMC-6
+%P 56-59
+
+%A Gaines, B.R.
+%D 1981
+%T Autopoiesis: some questions
+%E M.Zeleny
+%B Autopoiesis:  a theory of living organization
+%I North Holland
+%C New York, NY
+%P 145-154
+
+%A Gaines, B.R.
+%D 1981
+%T The technology of interaction -- dialog programming rules
+%J IJMMS
+%V 14
+%N 1
+%P 133-150
+%O January
+
+%A Gaines, B.R.
+%D 1983
+%T From word processing to image processing in office systems
+%J Proc International Electrical, Electronics Conference
+%V 2
+%P 622-625
+%C Toronto, ON
+%O September 26-28
+%K *
+
+%A Gaines, B.R.
+%D 1984
+%T Fundamentals of decision: probabilistic, possibilistic and other forms of uncertainty in decision analysis
+%J Studies in the Management Sciences
+%V 20
+%P 47-65
+
+%A Gaines, B.R.
+%D 1985
+%T Expert systems and simulation in planning flexible manufacturing systems
+%J Proc Workshop on Coupling Symbolic and Numerical Computing in Expert Systems
+%I Boeing Computer Services AI Center
+%C Bellevue, WA
+%O August 27-29
+
+%A Gaines, B.R.
+%D 1985
+%T The design of expert systems for planning flexible manufacturing
+%R Research Report
+%I Computer Science Department, University of Calgary
+
+%A Gaines, B.R.
+%A Shaw, M.L.G
+%D 1986
+%T Foundations of dialog engineering: the development of human-computer interaction Part II
+%J IJMMS
+%V 24
+%N 2
+%P 101-123
+%O February
+
+%A Gaines, B.R.
+%D 1986
+%T An overview of knowledge acquisition and transfer
+%J Proc AAAI Workshop on Knowledge Acquisition for Knowledge-based Systems
+%C Banff, AL
+%O November
+
+%A Galitz, W.O.
+%D 1980
+%T Human factors in office automation
+%I Life Office Management Association
+%C Atlanta, GA 
+
+%A Gardner, M.
+%T In which `monster' curves force redefinition of the word `curve'
+%J Scientific American
+%P 124-133
+%K*
+
+%A Gargantini, I.
+%A Atkinson, H.H.
+%D 1984
+%T Linear quadtrees: a blocking technique for contour filling
+%J Pattern Recognition
+%V 17
+%N 3
+%P 285-293
+%K *
+
+%A Gargantini, I.A.
+%D 1983
+%T Recent results on linear quadtrees and related techniques
+%R Report 111
+%I Computer Science Department, University of Western Ontario
+%C London, ON
+%O December (to appear in \fIPattern recognition\fP)
+%K *
+
+%A Garudadri, H.
+%A Beddoes, M.P.
+%A Gilbert, J.H.V.
+%A Benguerel, A.P.
+%T Identification of invariant acoustic cues in stop consonants using the Wigner distribution
+%J 
+%K *
+
+%A Garvey, T.D.
+%A Lowrance, J.D.
+%A Fischler, M.A.
+%D 1981
+%T An inference technique for integrating knowledge from disparate sources
+%J Proc 7th International Joint Conference on Artificial Intelligence
+%P 319-325
+%C Vancouver, BC
+%O August
+%K *
+
+%A Gehani, N.H.
+%D 1983
+%T An electronic form system -- an experience in prototyping
+%J Software -- Practice and Experience
+%V 13
+%P 479-486
+%K *
+
+%A Gehani, N.H.
+%D 1983
+%T High level form definition in office information systems
+%J Computer J
+%V 26
+%N 1
+%P 52-59
+%K *
+
+%A Geller, V.J.
+%A Lesk, M.E.
+%D 1981
+%T How users search: a comparison of menu and attribute retrieval systems on a library catalog
+%R Internal Report
+%I Bell Laboratories
+%K *
+
+%A Genesereth, M.R.
+%A Ginsberg, M.L.
+%D 1985
+%T Logic programming
+%J Comm ACM
+%V 28
+%N 9
+%P 933-941
+%O September
+%K *
+
+%A Genesereth, M.R.
+%A Ginsberg, M.L.
+%A Rosenschein, J.S.
+%D 1985
+%T Solving the prisoner's dilemma
+%R Research Report STAN-CS-84-1032
+%I Computer Science Department, Stanford University
+%C Stanford, CA
+%K *
+
+%A Giles, R.
+%D 1976
+%T Lucasiewicz logic and fuzzy set theory
+%J IJMMS
+%V 8
+%P 313-327
+
+%A Ginsberg, M.L.
+%D 1985
+%T Does probability have a place in non-monotonic reasoning?
+%J Proc IJCAI
+%P 107-110
+%K *
+
+%A Georgeff, M.
+%A Lansky, A.L.
+%A Bessiere, P.
+%D 1985
+%T A procedural logic
+%J Proc International Joint Conference on Artificial Intelligence
+%C Los Angeles, CA
+%O August
+%K *
+
+%A Gersham, A.V.
+%D 1982
+%T A framework for conceptual analyzers
+%E W.G. Lenhert and M.H. Ringle
+%B Strategies for natural language processing
+%I Lawrence Erlbaum Associates
+%P 177-202
+
+%A Gersho, A.
+%D 1979
+%T Asymptotically optimal block quantization
+%J IEEE Trans Information Theory
+%V IT-25
+%N 4
+%P 373-380
+%O July
+%K *
+
+%A Gevarter, W.B.
+%D 1983
+%T An overview of computer-based natural language processing
+%R NASA Technical Memorandum 85635
+%C Washington, DC
+
+%A Gevarter, W.B.
+%D 1983
+%T Expert systems: limited but powerful
+%J IEEE Spectrum
+%P 39-45
+%O August
+
+%A Gibbon, D.
+%A Richter, H.\0(Editors)
+%D 1984
+%T Intonation, Accent and Rhythm
+%I de Gruyter
+%C Berlin
+
+%A Gibbs, R.W.
+%A Tenney, Y.J.
+%D 1980
+%T The concept of scripts in understanding stories
+%J J Psycholinguistic Research
+%V 9
+%N 3
+%P 275-284
+%K *
+
+%A Gibson, B.
+%A Wittig, R.
+%D 1983
+%T The Develnet LAN: architecture and experience
+%J Proc International Electrical, Electronics Conference
+%V 1
+%P 26-29
+%C Toronto, ON
+%O September 26-28
+%K *
+
+%A Girill, T.R.
+%A Luk, C.H.
+%D 1983
+%T DOCUMENT: an interactive, online solution to four documentation problems
+%J Comm ACM
+%V 26
+%N 5
+%P 328-337
+%O May
+
+%A Glinert, E.P.
+%A Tanimoto, S.L.
+%D 1984
+%T Pict: an interactive graphical programming environment
+%J IEEE Computer
+%V 17
+%N 11
+%P 7-25
+%O November
+%K *
+
+%A Glinert, E.P.
+%A Ladner, R.E.
+%D 1984
+%T A large font virtual terminal interface
+%J Comm ACM
+%V 27
+%N 7
+%P 567-572
+%O June
+%K *
+
+%A Godfrey, D.
+%A Chang, E.\0(Editors)
+%D 1981
+%T The Telidon book
+%I Press Porcepic
+%C Toronto, ON
+
+%A Goldshlager, L.M.
+%D 1980
+%T Short algorithms for space-filling curves
+%J Software -- Practice and Experience
+%V 11
+%P 99-100
+%O September
+%K *
+
+%A Good, D.I.
+%D 1982
+%T The proof of a distributed system in Gypsy
+%R Technical Report 30
+%I Institute for Computing Science, University of Texas at Austin
+%C Austin, TX
+%O September
+%K *
+
+%A Gordon, J.
+%A Shortliffe, E.H.
+%D 1984
+%T The Dempster-Shafer theory of evidence
+%B Rule-based expert systems
+%E B.G.Buchanan and E.H.Shortliffe
+%I Addison-Wesley
+%C Reading, MA
+%P 272-292
+
+%A Gordon, J.
+%A Shortliffe, E.H.
+%D 1985
+%T A method for managing evidential reasoning in a hierarchical hypothesis space
+%J Artificial Intelligence
+%V 26
+%P 323-357
+
+%A Gosling, J.A.
+%D 1981
+%T A redisplay algorithm
+%J SIGOA Newsletter (Proc ACM Symposium on Text manipulation)
+%C Portland, OR
+%V 2
+%N 1/2
+%P 123-129
+%O Spring/Summer
+
+%A Gosling, J.A.
+%A Rosenthal, D.S.H.
+%D 1983
+%T A network window-manager
+%R Report
+%I Information Technology Center, Carnegie-Mellon University
+%C Pittsburgh, PA
+%K *
+
+%A Grampp, F.T.
+%A Morris, R.H.
+%D 1984
+%T UNIX operating system security
+%J Bell System Technical J
+%V 62
+%N 8, part 2
+%P 1649-1672
+%O October
+
+%A Grasser, A.C.
+%D 1981
+%T Prose comprehension beyond the word
+%I Springer-Verlag
+%C New York, NY
+
+%A Gray, R.M.
+%A Kieffer, J.C.
+%A Linde, Y.
+%D 1980
+%T Locally optimal block quantizer design
+%J Information and Control
+%V 45
+%P 178-198
+%K *
+
+%A Gray, R.M.
+%D 1984
+%T Hardware realization of waveform vector quantizers
+%J IEEE Trans
+%V SAC-2
+%N 2
+
+%A Green, M.
+%D 1982
+%T Towards a user interface prototyping system
+%J Proc Graphics Interface 82
+%P 37-45
+%K *
+
+%A Greenberg, S.
+%D 1984
+%T User modeling in interactive computer systems
+%R MSc Thesis
+%I Computer Science Department, University of Calgary
+
+%A Greenberg, S.
+%A Witten, I.H.
+%D 1984
+%T Comparison of menu displays for ordered lists
+%J Proc Canadian Information Processing Society Conference
+%C Calgary, AL
+%P 464-469
+%O May
+%K KConference
+
+%A Greenberg, S.
+%A Witten, I.H.
+%D 1985
+%T Adaptive personalized interfaces -- a question of viability
+%J Behaviour and Information Technology
+%V 4
+%N 1
+%P 31-45
+%O January-March
+%K KJournal
+
+%A Greenberg, S.
+%A Witten, I.H.
+%D 1985
+%T Interactive end-user creation of workbench hierarchies within a window system
+%J Proc Canadian Information Processing Society Conference
+%C Montreal, QUE
+%P 408-416
+%O May
+%K KConference
+
+%A Greenberg, S.
+%A Peterson, M.
+%A Witten, I.H.
+%D 1986
+%T Issues and experiences in the design of a window management system
+%J Proc Canadian Information Processing Society Conference
+%C Edmonton, AL
+%P 33-44
+%K KConference
+
+%A Grice, H.P.
+%D 1957
+%T Meaning
+%J Philosophical Review
+%V LXVI
+%N 3
+%P 377-388
+%K *
+
+%A Grice, H.P.
+%D 1969
+%T Utterer's meaning and intentions
+%J Philosophical Review
+%V LXXVIII
+%N 2
+%P 147-177
+%K *
+
+%A Grossner, C.P.
+%A Radhakrishnan, T.
+%A Pospiech, A.
+%D 1983
+%T An integrated workstation for the visually handicapped
+%J IEEE Micro
+%P 8-16
+%O June
+%K *
+
+%A Gullichsen, E.
+%A Chang, E.
+%D 1985
+%T Generative design in architecture using an expert system
+%R Research Report
+%I Computer Science Department, University of Victoria
+%O February
+%K *
+
+%A Hagelbarger, D.W.
+%A Thompson, R.A.
+%D 1983
+%T Experiments in teleterminal design
+%J IEEE Spectrum
+%P 40-45
+%O October
+%K *
+
+%A Halbert, D.C.
+%D 1984
+%T Programming by example
+%R Technical Report
+%I Xerox PARC, (Office Products Division)
+%C Palo Alto, CA
+%O December
+
+%A Hammond, P.
+%A Sergot, M.
+%D 1983
+%T A Prolog shell for logic based expert systems
+%J Proc Expert Systems 83
+%I Churchill College
+%C Cambridge, England
+%P 95-104
+%O December
+%K *
+
+%A Hammond, P.
+%D 1984
+%T Representation of DHSS regulations as a logic program
+%J Proc Expert Systems 83
+%I Churchill College
+%C Cambridge, England
+%P 225-235
+%O December
+%K *
+
+%A Hanson, S.J.
+%A Kraut, R.E.
+%A Farber, J.M.
+%D 1984
+%T Interface design and multivariate analysis of UNIX command use
+%J ACM Trans Office Information Systems
+%V 2
+%N 1
+%O March
+
+%A Harrison, A.F.
+%A Bramson, R.M.
+%T The art of thinking
+%I Berkley Books
+%C New York, NY
+%K *
+
+%A Harth, E.
+%D 1982
+%T Windows on the mind
+%I Harvester Press
+%C Brighton, Sussex
+
+%A Hartigan, J.A.
+%D 1975
+%T Clustering algorithms
+%I Wiley
+
+%A Hartley, J.
+%D 1978
+%T Designing instructional text
+%I Kogan Page
+%C London, England
+
+%A Hartley, J.
+%D 1982
+%T Designing instructional text
+%E D.H. Jonassen
+%B The technology of text
+%I Educational Technology Publications
+%C Englewood Cliffs, NJ
+
+%A Hasling, D.W.
+%A Clancey, W.J.
+%A Rennels, G.
+%D 1984
+%T Strategic explanations for a diagnostic consultation system
+%J IJMMS
+%V 20
+%P 3-19
+%K *
+
+%A Haugeland, J.
+%D 1979
+%T Understanding natural language
+%V LXXVI
+%N 11
+%P 619-632
+%O November
+%K *
+
+%A Hayes, P.
+%T The naive physics manifesto
+%K *
+
+%A Hayes, P.J.
+%A Ball, E.
+%A Reddy, R.
+%D 1983
+%T Breaking the man-machine communication barrier
+%J IEEE Computer
+%P 19-30
+%O March
+%K *
+
+%A Hayes, P.J.
+%D 1984
+%T Executable interface definitions using form-based interface abstractions
+%R Report CMS-CS-84-110
+%I Computer Science Department, Carnegie-Mellon University
+%K *
+
+%A Hayes, P.J.
+%A Szekely, P.A.
+%A Lerner, R.A.
+%D 1985
+%T Design alternatives for user interface management systems based on experience with Cousin
+%J Proc Human Factors in Computer Systems
+%C San Francisco, CA
+%P 169-175
+%O April
+%K *
+
+%A Hayes, P.J.
+%A Lerner, R.A.
+%A Szekely, P.A.
+%T The COUSIN user interface project
+%K *
+
+%A Hayes-Roth, F.
+%D 1985
+%T Rule-based systems
+%J Comm ACM
+%V 28
+%N 9
+%P 921-932
+%O September
+%K *
+
+%A Hays, D.G.
+%D 1964
+%T Dependency theory -- a formalism and some observations
+%J Language
+%V 40
+%P 511-25
+
+%A Heath, F.G.
+%A Foulk, P.W.
+%A Li, D.Y.
+%D 1984
+%T Analysis and restructuring of concurrent systems using Prolog
+%J Proc IEEE Part E
+%V 131
+%N 5
+%P 169-176
+%O September
+%K *
+
+%A Heckbert, P.
+%D 1982
+%T Color image quantization for frame buffer display
+%J Proc SIGGRAPH 82
+%C Boston, MA
+%P 297-307
+%O July
+%K *
+
+%A Held, G.
+%D 1984
+%T Data compression: techniques and applications
+%I Wiley
+%C New York, NY
+
+%A Hendrix, G.G
+%A Sacerdoti, E.D.
+%A Sagalowicz, D.
+%A Slocum, J.
+%D 1978
+%T Developing a natural language interface to complex data
+%J ACM Trans Database Systems
+%V 3
+%N 2
+%O June
+
+%A Hester, J.H.
+%A Hirschberg, D.S.
+%D 1985
+%T Self-organizing linear search
+%J Computing Surveys
+%V 17
+%N 3
+%P 295-311
+%O September
+
+%A Hewitt, C.
+%D 1977
+%T Viewing control structures as patterns of passing messages
+%J Artificial Intelligence
+%V 8
+%P 323-364
+
+%A Hewitt, C.
+%A de\|Jong, P.S.
+%D 1982
+%T Open systems
+%R AI Memo 691
+%I MIT Artificial Intelligence Laboratory
+%O December
+%K *
+
+%A Hewitt, C.
+%A de\|Jong, P.S.
+%D 1983
+%T Analyzing the roles of descriptions and actions in open systems
+%R AI Memo 727
+%I MIT Artificial Intelligence Laboratory
+%O April
+%K *
+
+%A Hewitt, C.
+%A de\|Jong, P.S.
+%D 1983
+%T Message passing semantics as a foundation for reasoning in open systems
+%R Research Report
+%I MIT Artificial Intelligence Laboratory
+%O May
+%K *
+
+%A Hibbard, P.
+%D 1983
+%T User manual for MINT -- the SPICE document preparation system
+%R Technical Report
+%I Computer Science Department, Carnegie-Mellon University
+%C Pittsburgh, PA
+
+%A Hilbert, D.
+%D 1891
+%T Ueber die stetige Abbildung einer Linie auf ein Flachenstuck
+%J Math Annalen
+%V 38
+%P 459-460
+%K *
+
+%A Hill, D.R.
+%A Dohrn, C.
+%A Darragh, J.
+%A Esau, R.
+%A Levinson, D.
+%A Unger, B.
+%A Witten, I.H.
+%D 1984
+%T Using speech output as a medium for human-computer dialogue
+%J Proc Canadian Information Processing Society Conference
+%C Calgary, AL
+%P 470-476
+%O May
+%K KConference
+
+%A Hill, D.R.
+%A Witten, I.H.
+%A Neal, R.
+%A Lomow, G.
+%D 1984
+%T Jecl and Hide: practical questions for the Jade user interface
+%J Proc Canadian Information Processing Society Conference
+%C Calgary, AL
+%P 373-380
+%O May
+%K KConference
+
+%A Hiltz, S.R.
+%A Turoff, M.
+%D 1985
+%T Structuring computer-mediated communication systems to avoid information overload
+%J CACM
+%V 28
+%N 7
+%P 680-689
+%O July
+
+%A Hintikka, K.J.
+%D 1975
+%T The intentions of intentionality
+%I D. Reidel
+%C Dordrecht, Holland
+
+%A Ho, C.S.
+%A Hong, Y.C.
+%A Kuo, T.S.
+%D 1986
+%T A society model for office information systems
+%J ACM Trans Office Information Systems
+%V 4
+%N 2
+%P 104-137
+%O April
+%K *
+
+%A Horspool, R.N.
+%A Cormack, G.V.
+%D 1984
+%T A general-purpose data compression technique with practical computer applications
+%J Proc Canadian Information Processing Society Conference
+%C Calgary, AL
+%P 138-141
+%O May
+%K *
+
+%A Horspool, R.N.
+%A Cormack, G.V.
+%D 1985
+%T Comments on `Data compression using static Huffman code-decode tables'
+%O submitted to CACM, November 1985
+%K *
+
+%A Horspool, R.N.
+%A Cormack, G.V.
+%D 1986
+%T Dynamic Markov modelling -- a prediction technique
+%J Proc International Conference on the System Sciences
+%C Honolulu, HA
+%O January
+%K *
+
+%A Hosticka, B.J.
+%D 1985
+%T Performance comparison of analog and digital circuits
+%J Proc IEEE
+%V 73
+%N 1
+%P 25-29
+%O January
+
+%A Hou, H.S.
+%A Andrews, H.C.
+%D 1978
+%T Cubic splines for image interpolation and digital filtering
+%J IEEE Trans Acoustics, Speech and Signal Processing
+%V ASSP-26
+%N 6
+%P 508-517
+%O December
+%K *
+
+%A Hovy, E.H.
+%T Integrating text planning and production in generation
+%J Proc IJCAI
+%P 848-851
+%K *
+
+%A Hunter, R.
+%A Robinson, A.H.
+%D 1980
+%T International digital facsimile coding standards
+%J Proc IEEE
+%V 68
+%N 7
+%P 854-867
+%O July
+%K *
+
+%A Hutchings, E.
+%D 1983
+%T The autonomous Viking
+%J Science
+%V 219
+%P 803-808
+%O February 18
+
+%A Jackendoff, R.
+%D 1985
+%T Semantics and cognition
+%I MIT Press
+%C Cambridge, MA
+
+%A Jakobsson, M.
+%D 1985
+%T Compression of character strings by an adaptive dictionary
+%J BIT
+%V 25
+%N 4
+%P 593-603
+%K *
+
+%A Jantsch, E.
+%D 1981
+%T Autopoiesis: a central aspect of dissipative self-organization
+%E M.Zeleny
+%B Autopoiesis:  a theory of living organization
+%I North Holland
+%C New York, NY
+%P 65-88
+
+%A Jarvis, J.F.
+%D 1984
+%T Robotics
+%J IEEE Computer
+%P 283-292
+%O October
+%K *
+
+%A Jarvis, R.A.
+%D 1983
+%T Growing polyhedral obstacles for planning collision-free paths
+%J Australian Computer J
+%V 15
+%N 3
+%P 103-111
+%O August
+%K *
+
+%A Jaynes, J.
+%D 1976
+%T The origin of consciousness in the breakdown of the bicameral mind
+%I Houghton Mifflin
+%C Boston, MA
+
+%A Jefferson, D.R.
+%D 1985
+%T Virtual time
+%J ACM Trans Programming Languages and Systems
+%V 7
+%N 3
+%P 404-425
+%O July
+%K *
+
+%A Johnson, W.L.
+%A Soloway, E.
+%A Cutler, B.
+%A Draper, S.W.
+%D 1983
+%T Bug catalogue: I
+%R Research Report
+%I Cognition and Programming Project, Computer Science Department, Yale University
+%O October
+%K *
+
+%A Jones, H.
+%D 1976
+%T Stanley Morison displayed
+%I Frederick Muller
+%C London, England
+
+%A Jones, L.P.
+%A Iyengar, S.S.
+%D 1984
+%T Space and time efficient virtual quadtrees
+%J IEEE Trans Pattern Analysis and Machine Intelligence
+%V PAMI-6
+%N 2
+%P 244-247
+%O March
+%K *
+
+%A Kaczmarek, T.
+%A Mark, W.
+%A Sondheimer, N.
+%D 1983
+%T The Consul/CUE interface: an integrated interactive environment
+%J Proc ACM CHI 83 Human Factors in Computing Systems
+%P 98-102
+%C Boston, MA
+%O December 12-15
+%K *
+
+%A Kaehler, T.
+%A Patterson, D.
+%D 1986
+%T A taste of Smalltalk
+%I W.W. Norton
+%C New York, NY
+
+%A Kang, A.N.C.
+%A Lee, R.C.T.
+%A Chang, C-L.
+%A Chang, S-K.
+%D 1977
+%T Storage reduction through minimal spanning trees and spanning forests
+%J IEEE Trans Computers
+%V C-26
+%N 5
+%P 425-434
+%O May
+%K *
+
+%A Kawaguchi, E.
+%A Endo, T.
+%D 1980
+%T On a method of binary-picture representation and its application to data compression
+%J IEEE Trans Pattern Analysis and Machine Intelligence
+%V PAMI-2
+%N 1
+%P 27-35
+%O January
+%K *
+
+%A Kawaguchi, E.
+%A Endo, T.
+%A Matsunaga, J.I.
+%D 1983
+%T Depth-first picture expression viewed from digital picture processing
+%J IEEE Trans Pattern Analysis and Machine Intelligence
+%V PAMI-5
+%N 4
+%P 373-384
+%O July
+%K *
+
+%A Kelley, J.F.
+%A Chapanis, A.
+%D 1982
+%T How professional persons keep their calendars: implications for computerization
+%J J Occupational Psychology
+%V 55
+%P 241-256
+%K *
+
+%A Kennedy, H.C.\0(Editor)
+%D 1980
+%T Selected works of Guiseppe Peano
+%I Allen and Unwin
+%C Winchester, MA
+
+%A Keye, M.
+%D 1984
+%T Technique for real time pitch period estimation
+%R Submitted to \fIElectronics Letters\fP
+%K *
+
+%A Kidd, A.L.
+%A Cooper, M.B.
+%D 1985
+%T Man-machine interface issues in the construction and use of an expert system
+%J IJMMS
+%V 22
+%P 91-102
+%K *
+
+%A Kigger, J.
+%D 1984
+%T The depth/breadth trade-off in the design of menu-driven user interfaces
+%J IJMMS
+%V 20
+
+%A Klir, G.J.
+%A Parviz, B.
+%D 1985
+%T General reconstruction characteristics of probabilistic and possibilistic systems
+%R Research Report
+%K *
+
+%A Knuth, D.E.
+%A Plass, M.F.
+%D 1981
+%T Breaking paragraphs into lines
+%J Software -- Practice and Experience
+%V 11
+%P 1119-1184
+
+%A Knuth, D.E.
+%D 1983
+%T The WEB system of structured documentation
+%R Report STAN-CS-83-980
+%I Computer Science Department, University of Stanford
+%C Stanford, CA
+
+%A Knuth, D.E.
+%D 1984
+%T Literate programming
+%J Computer J
+%V 27
+%N 2
+%P 97-111
+%K *
+
+%A Kolata, G.
+%D 1986
+%T Shakespeare's new poem: an ode to statistics
+%J Science
+%V 231
+%P 335-336
+%O 24 January
+
+%A Kolodner, J.
+%D 1983
+%T Towards an understanding of the role of experience from novice to expert
+%J IJMMS
+%V 19
+%K *
+
+%A Kolodner, J.L.
+%D 1983
+%T Reconstructive memory: a computer model
+%J Cognitive Science
+%V 7
+%P 281-328
+%K *
+
+%A Kolodner, J.L.
+%D 1983
+%T Maintaining organization in a dynamic long-term memory
+%J Cognitive Science
+%V 7
+%P 243-280
+%K *
+
+%A Konopasek, M.
+%A Jayaraman, S.
+%D 1984
+%T Expert systems for personal computers: the TK!Solver approach
+%J Byte
+%P 137-156
+%O May
+%K *
+
+%A Koontz, H.
+%A O'Donnell, C.
+%D 1972
+%T Principles of management: an analysis of managerial functions
+%I McGraw Hill
+
+%A Korein, J.
+%A Badler, N.
+%D 1983
+%T Temporal anti-aliasing in computer generated animation
+%J Computer Graphics
+%V 17
+%N 3
+%P 377-388
+%O July
+%K *
+
+%A Kornfeld, W.A.
+%A Hewitt, C.E.
+%D 1981
+%T The scientific community metaphor
+%J IEEE Trans Systems, Man and Cybernetics
+%V SMC-11
+%N 1
+%P 24-33
+%O January
+%K *
+
+%A Kowalski, R.
+%D 1983
+%T Logic for expert systems
+%J Proc Expert Systems 83
+%I Churchill College
+%C Cambridge, England
+%P 80-93
+%O December
+%K *
+
+%A Kraut, R.E.
+%A Hanson, S.J.
+%A Farber, J.M.
+%D 1983
+%T Command use and interface design
+%J Proc ACM CHI 83 Human Factors in Computing Systems
+%P 120-123
+%C Boston, MA
+%O December 12-15
+%K *
+
+%A Klir, G.J.
+%D 1985
+%T Architecture of systems problem solving
+%I Plenum Press
+%C New York, NY
+
+%A Kunin, J.S.
+%D 1982
+%T Analysis and specification of office procedures
+%R PhD Thesis
+%I Department of Electrical Engineering and Computer Science, MIT
+%O February
+
+%A Lamb, M.
+%A Buckley, V.
+%D 1984
+%T New techniques for gesture-based dialogue
+%J Proc 1st IFIP Conference on Human-Computer Interaction
+%C London, England
+%O 4-7 September
+%K *
+
+%A Langdon, G.G
+%D 1981
+%T Tutorial on arithmetic coding
+%R Research Report RJ3128
+%I IBM Research Laboratory
+%C San Jose, CA
+%K *
+
+%A Langdon, G.G
+%D 1984
+%T An introduction to arithmetic coding
+%J IBM J Research and Development
+%V 28
+%N 2
+%P 135-149
+%O March
+%K *
+
+%A Langdon, G.G
+%D 1983
+%T A note on the Ziv-Lempel model for compressing individual sequences
+%J IEEE Trans Information Theory
+%V IT-30
+%P 284-287
+%O March
+%K *
+
+%A Langdon, G.G.
+%A Rissanen, J.J.
+%D 1983
+%T A doubly-adaptive file compression algorithm
+%J IEEE Trans Communications
+%V COM-31
+%N 11
+%P 1253-1255
+%O November
+%K *
+
+%A Langdon, G.G.
+%A Rissanen, J.J.
+%D 1982
+%T A simple general binary source code
+%J IEEE Trans Information Theory
+%V IT-28
+%P 800-803
+%O September
+
+%A Langley, P.
+%D 1983
+%T Learning search strategies through discrimination
+%J IJMMS
+%V 18
+%P 513-541
+%K *
+
+%A Lansky, A.L.
+%D 1985
+%T Behavioral planning for multi-agent domains
+%R NSF Proposal
+%I SRI International
+%K *
+
+%A Latremouille, S.
+%A Lee, E.
+%D 1981
+%T The design of videotex tree indexes: the use of descriptors and the enhancement of single index pages
+%J Telidon Behavioural Research
+%V 2
+%I Department of Communications
+%O May
+
+%A Lauer, H.C.
+%A Needham, R.M.
+%D 1977
+%T On the duality of operating system structures
+%J Operating Systems: Theory and Practice
+%K *
+
+%A Lazowska, E.D.
+%A Levy, H.M.
+%A Almes, G.T.
+%A Fischer, M.J.
+%A Fowler, R.J.
+%A Vestal, S.C.
+%D 1981
+%T The architecture of the Eden system
+%J Proc Eighth Symposium on Operating System Principles
+%P 148-159
+%C Pacific Grove, CA
+%O December
+%K *
+
+%A Lebowitz, M.
+%D 1980
+%T Generalization and memory in an integrated understanding system
+%R PhD Thesis
+%I Yale University
+%C New Haven, CT
+
+%A Lebowitz, M.
+%D 1981
+%T The nature of generalization in understanding
+%J Proc IJCAI 81
+%P 348-353
+%K *
+
+%A Lebowitz, M.
+%D 1983
+%T Generalization from natural language text
+%J Cognitive Science
+%V 7
+%P 1-40
+%K *
+
+%A Lee, A.
+%A Lochovsky, F.H.
+%D 1983
+%T Enhancing the usability of an office information system through direct manipulation
+%J Proc ACM CHI 83 Human Factors in Computing Systems
+%P 130-134
+%C Boston, MA
+%O December 12-15
+%K *
+
+%A Lee, D.T.
+%D 1982
+%T On \fIk\fP-nearest neighbor Voroni diagrams in the plane
+%J IEEE Trans Computers
+%V C-31
+%N 6
+%P 478-487
+%O June
+%K *
+
+%A Lee, D.T.
+%A Preparata, F.P.
+%D 1984
+%T Computational geometry -- a survey
+%J IEEE Trans Computers
+%V C-33
+%N 12
+%P 1072-1101
+%O December
+
+%A Lefebvre, V.A.
+%D 1977
+%T The structure of awareness
+%I Sage Publications
+%C Beverly Hills, CA
+%O (english translation by A.Rapoport)
+
+%A Lehar, A.F.
+%A Stevens, R.J.
+%D 1984
+%T High-speed manipulation of the color chromaticity of digital images
+%J IEEE Computer Graphics and Applications
+%P 34-39
+%O February
+%K *
+
+%A Lehnert, W.G.
+%D 1977
+%T A conceptual theory of question answering
+%J Proc International Joint Conference on Artificial Intelligence
+%I MIT
+%C Cambridge, MA
+%P 158-164
+%O August
+
+%A Lehnert, W.G.
+%D 1978
+%T The process of question answering
+%I Lawrence Erlbaum Associates
+%C Hillsdale, NJ
+%K *
+
+%A Lehnert, W.G.
+%A Dyer, M.G.
+%A Johnson, P.N.
+%A Yang, C.J.
+%A Harley, S.
+%D 1983
+%T BORIS: an experiment in in-depth understanding of narratives
+%J Artificial Intelligence
+%V 20
+%P 15-62
+%K *
+
+%A Lemer, L.
+%D 1974
+%T A.R.T.H.U.R. The life and opinions of a digital computer
+%I Harvester Press
+%C Sussex, England
+
+%A Lempel, A.
+%A Ziv, J.
+%T Compression of two-dimensional data
+%K *
+
+%A Lenat, D.
+%D 1983
+%T The role of heuristics in learning by discovery: three case studies
+%B Machine learning
+%E R.S. Michalski, J.G. Carbonell, and T.M. Mitchell
+%I Tioga
+%P 243-306
+
+%A Lenat, D.B.
+%A Sutherland, W.R.
+%A Gibbons, J.
+%D 1982
+%T Heuristic search for new microcircuit structures: an application of artificial intelligence
+%J AI Magazine
+%P 17-33
+%O Summer
+%K *
+
+%A Lenat, D.B.
+%D 1983
+%T EURISKO: a program that learns new heuristics and domain concepts
+%J Artificial Intelligence
+%V 21
+%P 61-98
+%K *
+
+%A Lenat, D.B.
+%A Brown, J.S.
+%D 1984
+%T Why AM and EURISKO appear to work
+%J Artificial Intelligence
+%V 23
+%P 269-294
+
+%A Lenat, D.B.
+%A Prakesh, M.
+%A Shepherd, M.
+%D 1986
+%T CYC: using common sense knowledge to overcome brittleness and knowledge acquisition bottlenecks
+%J The AI Magazine
+%P 65-85
+%O Winter
+%K *
+
+%A Lewis, J.
+%D 1963
+%T Typography: basic principles.  Influences and trends since the 19th century
+%I Van Nostrand Reinhold
+%C New York, NY
+
+%A Lewis, J.W.
+%D 1983
+%T An effective graphics user interface for rules
+%J Proc ACM CHI 83 Human Factors in Computing Systems
+%P 139-143
+%C Boston, MA
+%O December 12-15
+%K *
+
+%A Lewis, J.M.
+%T Analysing the action of UNIX-users
+%D 1986
+%O March
+%I University of Edinburgh, Department of Artificial Intelligence
+%K *
+
+%A Li, D.Y.
+%A Heath, F.G.
+%D 1983
+%T ILEX: an intelligent relational database system
+%J Proc ACM Conference on Personal and Small Computers
+%C San Diego, CA
+%P 245-252
+%O December
+%K *
+
+%A Liang, F.M.
+%D 1983
+%T Word hy-phen-a-tion by com-put-er
+%R PhD Thesis
+%I Computer Science Department, Stanford University
+%C Stanford, CA
+%K *
+
+%A Lieberman, H.
+%D 1978
+%T How to color in a coloring book
+%J Proc SIGGRAPH 78
+%P 111-116
+%K *
+
+%A Lieberman, H.
+%D 1984
+%T Seeing what your programs are doing
+%J IJMMS
+%V 21
+%N 4
+%P 311-331
+%O October
+
+%A Linde, Y.
+%A Buzo, A.
+%A Gray, R.M.
+%D 1980
+%T An algorithm for vector quantizer design
+%J IEEE Trans Communications
+%V COM-28
+%N 1
+%P 84-95
+%O January
+%K *
+
+%A Linington, P.F.
+%D 1983
+%T Fundamentals of the layer service definitions and protocol specifications
+%J Proc IEEE
+%V 71
+%N 12
+%P 1341-1345
+%O December
+
+%A Ljolje, A.
+%A Fallside, F.
+%D 1986
+%T Synthesis of natural sounding pitch contours in isolated utterances using hidden Markov models
+%J IEEE Trans Acoustics, Speech and Signal Processing
+%V ASSP-34
+%N 5
+%P 1074-1079
+%O October
+%K *
+
+%A Lloyd, J.W.
+%D 1984
+%T Foundations of logic programming
+%I Springer-Verlag
+%C Berlin
+
+%A Lowrance, R.
+%A Wagner, R.A.
+%D 1975
+%T An extension of the string-to-string correction problem
+%J J ACM
+%V 22
+%N 2
+%P 177-183
+%O April
+%K *
+
+%A Lozano-Perez, T.
+%A Wesley, M.A.
+%D 1979
+%T An algorithm for planning collision-free paths among polyhedral obstacles
+%J Comm ACM
+%V 22
+%N 10
+%P 560-570
+%O October
+%K *
+
+%A Lozano-Perez, T.
+%D 1981
+%T Automatic planning of manipulator transfer movements
+%J IEEE Trans Systems, Man and Cybernetics
+%V SMC-11
+%N 10
+%P 681-698
+%O October
+
+%A Lozano-Perez, T.
+%D 1983
+%T Robot programming
+%J Proc IEEE
+%V 71
+%N 7
+%P 821-841
+%O July
+
+%A Lu, M.I.
+%A Chen, C.F.
+%T Modified Huffman code
+%R Research Report
+%I Departmental of Electrical Engineering, Tatung Institute of Technology
+%C Taipei, Taiwan
+%K *
+
+%A Lynch, T.J.
+%D 1985
+%T Data compression -- techniques and applications
+%I Lifetime Learning Publications
+%C Belmont, CA
+
+%A MacMillan, S.A.
+%D 1984
+%T User models to personalize an intelligent agent
+%R PhD Thesis
+%I Stanford University
+
+%A MacQueen, J.B.
+%D 1967
+%T Some methods for classification and analysis of multivariate observations
+%J Proc 5th Berkeley Symposium on Mathematical Statistics and Probability
+%V 1
+%P 281-297
+
+%A Maguire, M.
+%D 1982
+%T An evaluation of published recommendations on the design of man-computer dialogues
+%J IJMMS
+%V 16
+%N 3
+%P 237-261
+%O April
+
+%A Malcolm, M.
+%A Dyment, D.
+%D 1983
+%T Experience designing the Waterloo Port user interface
+%J Proc ACM Conference on Personal and Small Computers
+%C San Diego, CA
+%P 168-175
+%O December
+%K *
+
+%A Mannos, J.L.
+%A Sakrison, D.J.
+%D 1974
+%T The effects of a visual fidelity criterion on the encoding of images
+%J IEEE Trans Information Theory
+%V IT-20
+%N 4
+%O July
+%K *
+
+%A Mantei, M.
+%D 1982
+%T Disorientation behavior in person-computer interactions
+%R PhD Thesis
+%I University of Southern California
+%C Los Angeles, CA
+
+%A Maragos, P.A.
+%A Schafer, R.W.
+%A Mersereau, R.M.
+%D 1984
+%T Two-dimensional linear prediction and its application to adaptive predictive coding of images
+%J IEEE Trans Acoustics, Speech and Signal Processing
+%V ASSP-32
+%N 6
+%P 1213-1229
+%O December
+%K *
+
+%A Marchetti, C.
+%D 1980
+%T Society as a learning system: discovery, invention, and innovation cycles revisited
+%J Technological Forecasting and Social Change
+%V 18
+%P 267-282
+%K *
+
+%A Martin, T.
+%D 1980
+%T Information retrieval
+%B Human interaction with computers
+%E Smith and Green
+%I Academic Press
+%C London, England
+%P 161-175
+
+%A Maslow, A.H.
+%D 1954
+%T Motivation and personality
+%I Harper and Row
+%C New York, NY
+
+%A Maslow, A.H.
+%D 1968
+%T Toward a psychology of being
+%I Van Nostrand Reinhold
+%C New York, NY
+%O second edition
+
+%A Masrani, R.
+%A Keenan, T.P.
+%D 1984
+%T Security and privacy in cellular telephone systems
+%J Proc AFIPS Conference on Computer Security
+%C Toronto, ON
+%O September
+%K *
+
+%A Masrani, R.
+%A Witten, I.H.
+%D 1984
+%T Natural language processing in object-oriented Prolog
+%R Unpublished note
+%O September
+
+%A Mathews, M.V.
+%D 1969
+%T The technology of computer music
+%I MIT Press
+
+%A Maturana, H.R.
+%D 1975
+%T The organization of the living: a theory of the living organization
+%J IJMMS
+%V 7
+%P 313-332
+
+%A Maturana, H.R.
+%A Varela, F.J.
+%D 1980
+%T Autopoiesis and cognition
+%I D. Reidel
+%C Dordrecht, Holland
+
+%A Mazer, M.S.
+%A Lochovsky, F.H.
+%D 1984
+%T Logical routing specification in office information systems
+%J ACM Trans Office Information Systems
+%V 2
+%N 4
+%P 303-330
+%O October
+
+%A McCarthy, J.
+%D 1980
+%T Circumscription -- a form of non-monotonic reasoning
+%J Artificial Intelligence
+%V 13
+%P 27-39
+%K *
+
+%A McCracken, D.L.
+%A Akscyn, R.M.
+%D 1984
+%T Experience with the ZOG human-computer interface system
+%J IJMMS
+%V 21
+%N 4
+%P 293-310
+%O October
+
+%A McCulloch, W.S.
+%D 1954
+%T Through the den of the metaphysician
+%J British J Philosophy of Science
+%V 5
+%P 18-31
+
+%A McDermott, J.
+%A Steele, B.
+%D 1981
+%T Extending a knowledge-based system to deal with ad hoc constraints
+%J Proc 7th International Joint Conference on Artificial Intelligence
+%P 824-828
+
+%A McDermott, J.
+%T Artificial intelligence meets natural stupidity
+%B Mind Design
+%E J. Haugeland
+%I MIT Press
+%C Cambridge, MA
+%P 143-160
+%K *
+
+%A McDermott, J.
+%D 1982
+%T A temporal logic for reasoning about processes and plans
+%J Cognitive Science
+%V 6
+%P 101-155
+%K *
+
+%A McDonald, D.
+%D 1977
+%T Language generation: the linguistics component
+%J Proc International Joint Conference on Artificial Intelligence
+%P 142
+%K *
+
+%A McDonald, D.D.
+%A Pustejovsky, J.D.
+%D 1985
+%T Description-directed natural language generation
+%J Proc IJCAI
+%P 799-805
+%K *
+
+%A McKeown, K.R.
+%A Wish, M.
+%A Matthews, K.
+%T Tailoring explanations for the user
+%J Proc IJCAI
+%P 794-798
+%K *
+
+%A McLean, R.S.
+%D 1983
+%T Ontario Ministry of Education specifies its microcomputer
+%J Proc 4th Canadian Symposium on Instructional Technology
+%C Winnipeg, MN
+%O October 19-21
+%K *
+
+%A Meehan, J.R.
+%D 1977
+%T TALESPIN, an interactive program that writes stories
+%J Proc 5th International Joint Conference on Artificial Intelligence
+%P 91-98
+
+%A Mervis, C.B.
+%A Rosch, E.
+%D 1981
+%T Categorization of natural objects
+%J Annual Review of Psychology
+%V 32
+%P 89-115
+
+%A Michaelsen, R.H.
+%A Michie, D.
+%A Boulanger, A.
+%D 1985
+%T The technology of expert systems
+%J Byte
+%P 303-312
+%O April
+%K *
+
+%A Miller, P.L.
+%D 1983
+%T ATTENDING: critiquing a physician's management plan
+%J IEEE Trans Pattern Analysis and Machine Intelligence
+%V PAMI-5
+%N 5
+%P 449-461
+%O September
+%K *
+
+%A Mitchell, T.M.
+%D 1982
+%T Generalization as search
+%J Artificial Intelligence
+%V 18
+%P 203-226
+%K *
+
+%A Mitchell, T.M.
+%D 1983
+%T Learning and problem solving
+%J Proc IJCAI 83
+%P 1139-1151
+%C Karlsruhe, W.Germany
+%O August
+%K *
+
+%A Moffat, A.
+%D 1986
+%T Predictive text compression based on the future rather than the past
+%R Research Report
+%I Computer Science Department, University of Canterbury
+%C Christchurch, New Zealand
+%K *
+
+%A Moher, T.G.
+%D 1985
+%T Estimating the distribution of software complexity \fIwithin\fP a program
+%J Proc Human Factors in Computer Systems
+%C San Francisco, CA
+%P 61-64
+%O April
+%K *
+
+%A Mooney, R.
+%A de\|Jong, G.
+%T Learning schemata for natural language processing
+%J Proc IJCAI
+%P 681-687
+%K *
+
+%A Morison, S.
+%D 1951
+%T First principles of typography
+%I Cambridge University Press
+%C Cambridge, England
+
+%A Morrin, T.H.
+%D 1974
+%T A black-white representation of a gray-scale picture
+%J IEEE Trans Computers
+%V C-23
+%P 184-186
+%O February
+%K *
+
+%A Morris, R.
+%A Cherry, L.L.
+%D 1975
+%T Computer detection of typographical errors
+%J IEEE Trans Professional Communications
+%V PC-18
+%N 1
+%P 54-56
+%O March
+%K *
+
+%A Morris, R.
+%A Thompson, K.
+%D 1979
+%T Password security: a case history
+%J Comm ACM
+%V 22
+%N 11
+%P 594-597
+%O November
+%K *
+
+%A Moses, J.
+%D 1971
+%T Symbolic integration: the stormy decade
+%J Comm ACM
+%V 14
+%N 8
+%P 548-560
+
+%A Mullen, J.
+%D 1984
+%T Unlimited vocabulary speech synthesis with low data rates
+%J Electronics and Power
+%P 850-852
+%O November/December
+%K *
+
+%A Mycielski, J.
+%D 1985
+%T Can mathematics explain natural intelligence?
+%R Research Report UC-32
+%I Los Alamos National Laboratory
+%C Los Alamos, NM
+%O July
+%K *
+
+%A Mycroft, A.
+%A O'Keefe, R.A.
+%D 1984
+%T A polymorphic type system for Prolog
+%J Artificial Intelligence
+%V 23
+%P 295-307
+%K *
+
+%A Myers, B.A
+%D 1986
+%T Visual programming, programming by example, and program visualization: a taxonomy
+%J Proc ACM CHI 86 Human Factors in Computing Systems
+%P 59-66
+%C Boston, MA
+%O April 13-17
+%K *
+
+%A Nagy, G.
+%A Wagle, S.
+%D 1979
+%T Geographic data processing
+%J Computing Surveys
+%V 11
+%N 2
+%P 139-181
+%O June
+%K *
+
+%A Nagy, G.
+%A Paton, K.
+%D 1982
+%T Intelligent facsimile
+%P Proc Harvard Computer Graphics Week
+%I Graduate School of Design, Harvard University
+%K *
+
+%A Nagy, G.
+%D 1983
+%T Candide's practical principles of experimental pattern recognition
+%J IEEE Trans Pattern Analysis and Machine Intelligence
+%V PAMI-5
+%N 2
+%P 199-200
+%O March
+%K *
+
+%A Nagy, G.
+%D 1983
+%T Optical scanning devices
+%J IEEE Computer
+%P 13-24
+%O May
+%K *
+
+%A Nagy, G.
+%A Seth, S.
+%T Hierarchical image representation with application to optically scanned documents
+%R Discussion paper
+%K *
+
+%A Nagy, G.
+%D 1984
+%T Advances in information extraction techniques
+%J Remote Sensing of Environment
+%V 15
+%P 167-175
+%K *
+
+%A Naiman, A.
+%D 1984
+%T Some new ingredients for the cookbook approach to anti-aliased text
+%J Proc Graphics Interface 84
+%I National Computer Graphics Association of Canada
+%P 99-108
+%O May
+
+%A Nakatani, L.H.
+%A Rohrlich, J.A.
+%D 1983
+%T Soft machines: A philosophy of user-computer interface design
+%J Proceedings Human Factors in Computer Systems
+%C Boston, MA
+%O December 12-15
+%K *
+
+%A Nasanen, R.
+%D 1984
+%T Visibility of halftone dot textures
+%J IEEE Trans Systems, Man and Cybernetics
+%V SMC-14
+%N 6
+%P 920-924
+%O November/December
+%K *
+
+%A Nau, D.S.
+%D 1983
+%T Expert computer systems
+%J IEEE Computer
+%V 16
+%N 2
+%P 63-85
+%O February
+
+%A Neal, R.M.
+%A Lomow, G.A.
+%A Peterson, M.W.
+%A Unger, B.W.
+%A Witten, I.H.
+%D 1984
+%T Inter-process communication in a distributed programming environment
+%J Proc Canadian Information Processing Society Conference
+%C Calgary, AL
+%P 361-364
+%O May
+%K KConference
+
+%A Nelson, G.A.
+%A Pfeifer, L.L.
+%A Wood, R.C.
+%D 1972
+%T High-speed octave band digital filtering
+%J IEEE Trans Audio and Electroacoustics
+%V AU-20
+%P 58-65
+%O March
+%K *
+
+%A Niblett, B.\0(Editor)
+%D 1980
+%T Computer science and law
+%I Cambridge University Press
+%C Cambridge, England
+
+%A Nicol, R.C.
+%A Fenn, B.A.
+%A Turkington, R.D.
+%D 1980
+%T Transmission techniques for picture viewdata
+%J Proc International Broadcasting Convention
+%K *
+
+%A Nicholson, R.T.
+%D 1985
+%T Usage patterns in an integrated voice and data communications system
+%J ACM Trans Office Information Systems
+%V 3
+%N 3
+%P 307-314
+%O July
+
+%A Nierstrasz, O.M.
+%D 1985
+%T An object-oriented system
+%E D.Tsichritzis
+%B Office automation
+%I Springer-Verlag
+%C Berlin
+%P 167-189
+
+%A Nilsson, N.J.
+%D 1986
+%T Probabilistic logic
+%J Artificial Intelligence
+%V 28
+%P 71-87
+
+%A Nilsson, N.J.
+%D 1980
+%T Principles of artificial intelligence
+%I Tioga
+%C Palo Alto, CA
+
+%A Nilsson, N.J.
+%D 1980
+%T The interplay between experimental and theoretical methods in artificial intelligence
+%R Technical Note 229
+%I SRI International
+%O September
+%K *
+
+%A Nilsson, N.J.
+%D 1981
+%T Artificial intelligence: engineering, science, or slogan?
+%R Technical Note 248
+%I SRI International
+%O July
+%K *
+
+%A Nix, R.
+%D 1983
+%T Editing by example
+%R PhD Dissertation
+%I Computer Science Department, Yale University
+%C New Haven, CT
+
+%A Nix, R.
+%D 1984
+%T Editing by example
+%J Proc 11th ACM Symposium on Principles of Programming Languages
+%C Salt Lake City, UT
+%P 186-195
+%O January
+
+%A Noakes, P.D.
+%A Aish, R.
+%D 1984
+%T A new peripheral for three-dimensional computer input
+%J IEEE Micro
+%V 4
+%N 5
+%P 26-35
+%O October
+
+%A Nooteboom, S.G.
+%D 1983
+%T The temporal organization of speech and the process of spoken-word recognition
+%J IPO Annual Progress Report
+%V 18
+%P 32-36
+%K *
+
+%A Norman, D.A.
+%D 1981
+%T The trouble about Unix
+%J Datamation
+%V 27
+%N 12
+%P 139-150
+
+%A Norman, D.A.
+%D 1984
+%T Stages and levels in human-machine interaction
+%J IJMMS
+%V 21
+%N 4
+%P 365-375
+%O October
+
+%A Norman, D.A.
+%A Draper, S.W.\0(Editors)
+%D 1986
+%T User centered system design \(em new perspectives on human-computer interaction
+%I Lawrence Erlbaum Associates
+%C Hillsdale, NJ
+
+%A Norman, K.L.
+%A Weldon, L.J.
+%A Shneiderman, B.
+%D 1985
+%T Cognitive representations of windows and multiple screen layouts of computer interfaces
+%R Research Report CAR-TR-123, CS-TR-1498
+%I Computer Science Department, University of Maryland
+%O May
+
+%A Null, A.
+%D 1971
+%T Space-filling curves or how to waste time with a plotter
+%J Software -- Practice and Experience
+%V 1
+%P 403-410
+%K *
+
+%A Oren, T.I.
+%A Brzozowski, J.A.
+%A Gilmore, P.C.
+%D 1982
+%T Crisis in Canadian academic Computer Science: facts and recommendations
+%R Report prepared by the Executive Committee of Canadian Computer Science Departments Chairmen
+%O January
+
+%A O'Shea, T.
+%A Self, J.
+%D 1983
+%T Learning and teaching with computers: artificial intelligence in education
+%I Prentice-Hall
+%C Englewood Cliffs, NJ
+
+%A O'Shea, T.
+%A Eisenstadt, M.\0(Editors)
+%D 1984
+%T Artificial intelligence: tools, techniques, and applications
+%I Harper and Row
+%C New York, NY
+
+%A Ogawa, Y.
+%A Shima, K.
+%A Sugawara, T.
+%A Takagi, S.
+%D 1984
+%T Knowledge representation and inference environment: KRINE -- an approach to integration of frame, Prolog and graphics
+%J Proc International Conference on Fifth Generation Computer Systems
+%I ICOT
+%P 643-651
+%K *
+
+%A Pake, G.E.
+%D 1985
+%T Research at Xerox PARC: a founder's assessment
+%J IEEE Spectrum
+%V 22
+%N 10
+%P 54-61
+%O October
+
+%A Paliwal, K.K.
+%A Espeland, O.
+%D 1983
+%T Some considerations about the shape of the window filter in an adaptive gradient lattice algorithm
+%R Report
+%I Division of Telecommunications, University of Trondheim
+%C Trondheim-NTH, Norway
+%K *
+
+%A Papamichalis, P.E.
+%D 1985
+%T Markov-Huffman coding of LPC parameters
+%J IEEE Trans Acoustics, Speech and Signal Processing
+%C ASSP-33
+%N 2
+%P 451-453
+%O April
+
+%A Park, O.C.
+%A Tennyson, R.D.
+%D 1983
+%T Computer-based instructional systems for adaptive education: a review
+%J Contemporary Education Review
+%V 2
+%N 2
+%P 121-135
+%O Fall
+%K *
+
+%A Parker-Rhodes, A.F.
+%D 1978
+%T Inferential semantics
+%I Harvester Press
+%C Brighton, Sussex
+
+%A Patil, R.S.
+%A Szolovits, P.
+%A Schwartz, W.B.
+%D 1981
+%T Causal understanding of patient illness in medical diagnosis
+%J Proc 7th International Joint Conference on Artificial Intelligence
+%P 893-899
+%K *
+
+%A Patil, R.S.
+%A Szolovits, P.
+%A Schwartz, W.B.
+%T Information acquisition in diagnosis
+%J Proc International Joint Conference on Artificial Intelligence
+%P 345-348
+%K *
+
+%A Patten, T.
+%D 1986
+%T Interpreting systemic grammar as a computational representation: a problem solving approach to text generation
+%R PhD Thesis
+%I University of Edinburgh
+
+%A Paulus, E.
+%D 1980
+%T The concept of the NN-error risk with respect to an arbitrary separating surface and its applications to clustering
+%J Proc IEEE Conference
+%K *
+
+%A Pavlidis, T.
+%D 1981
+%T Contour filling in raster graphics
+%J ACM Computer Graphics
+%V 15
+%N 3
+%P 29-36
+%O August
+%K *
+
+%A Pawlak, Z.
+%D 1982
+%T Rough sets
+%J Int J Computer and Information Systems
+%V 11
+%N 5
+%P 341-356
+%K *
+
+%A Pawlak, Z.
+%D 1985
+%T Rough sets and fuzzy sets
+%J Fuzzy Sets and Systems
+%P 99-103
+%K *
+
+%A Paxton, A.L
+%A Turner, E.J.
+%D 1984
+%T The application of human factors to the needs of the novice computer user
+%J IJMMS
+%V 20
+%N 2
+%P 137-156
+%O February
+
+%A Peano, G.
+%D 1890
+%T Sur une courbe, qui remplit toute une aire plane
+%J Math Annalen
+%V 36
+%P 157-160
+%K *
+
+%A Pearl, J.
+%D 1985
+%T Fusion, propagation, and structuring in Bayesian networks
+%R Technical Report CSD-850022 R-42, Revision I
+%I Cognitive Systems Laboratory, Computer Science Department, UCLA
+%O June
+
+%A Pearl, J.
+%D 1986
+%T Fusion, propagation, and structuring in belief networks
+%J Artificial Intelligence
+%V 29
+%N 3
+%P 241-288
+%O September
+
+%A Peng, X.T.
+%A Tu, X.C.
+%A Wang, P.Z.
+%D 1986
+%T Studies on parametric fuzzy controllers
+%R Research Report
+%K *
+
+%A Pereiro, L.M.
+%A Nagr, R.
+%D 1984
+%T Delta-Prolog: a distributed logic programming language
+%R Submitted to Int Conference on 5th Generation Systems
+%C Tokyo, Japan
+%O November 
+%K *
+
+%A Perlman, G.
+%D 1981
+%T Two papers in cognitive engineering: The design of an interface to a programming system, and MENUNIX: a menu-based interface to Unix (user manual)
+%R Research Report 8105
+%I Center for Human Information Processing, University of California
+%C San Diego, CA
+%O November
+%K *
+
+%A Perlman, G.
+%D 1984
+%T Natural artificial languages: low-level processes
+%J IJMMS
+%V 20
+%N 4
+%P 373-419
+%O April
+
+%A Perry, T.S.
+%A Wallich, P.
+%D 1985
+%T Inside the PARC: the `information architects'
+%J IEEE Spectrum
+%V 22
+%N 10
+%P 62-75
+%O October
+
+%A Peters, A.M.
+%D 1983
+%T The units of language acquisition
+%I Cambridge University Press
+%C Cambridge, England
+
+%A Phillips, J.
+%D 1983
+%T Self-describing programming environments
+%R PhD Thesis
+%I Computer Science Department, Stanford University
+%C Stanford, CA
+
+%A Pierce, J.R.
+%D 1962
+%T Symbols, signals and noise
+%I Hutchinson
+%C London, England
+
+%A Pike, R.
+%D 1983
+%T Graphics in overlapping bitmap layers
+%J ACM Trans Graphics
+%V 2
+%N 2
+%P 135-160
+%O April
+%K *
+
+%A Poggio, A.
+%A Garcia Luna Aceves, J.J.
+%A Craighill, E.J.
+%A Moran, D.
+%A Aguilar, L.
+%A Worthington, D.
+%A Hight, J.
+%D 1985
+%T CCWS: a computer-based, multimedia information system
+%J IEEE Computer
+%V 18
+%N 10
+%P 92-103
+%O October
+
+%A Poritz, A.B.
+%D 1982
+%T Linear predictive hidden Markov models and the speech signal
+%J Proc 
+%P 1291-1294
+%K *
+
+%A Post, E.
+%D 1983
+%T Real programmers don't use Pascal
+%J Datamation
+%P 263-265
+%O July
+%K *
+
+%A Postel, J.B.
+%D 1980
+%T Internetwork protocol approaches
+%J IEEE Trans Communications
+%V COM-28
+%N 4
+%P 604-611
+%O April
+%K *
+
+%A Potmesil, M.
+%A Chakravarty, I.
+%D 1983
+%T Modeling motion blur in computer-generated images
+%J ACM Computer Graphics
+%V 17
+%N 3
+%P 389-399
+%O July
+%K *
+
+%A Poulton, A.S.
+%D 1983
+%T Microcomputer speech synthesis and recognition
+%I Sigma Technical Press
+%C Wilmslow, Cheshire, UK
+
+%A Preucil, M.
+%A Sebela, Z.
+%D 1982
+%T Computer-assisted simulation of a coal-mine winding system
+%J Proc 4th Formator Symposium on Mathematical Methods for the Analysis of Large-scale Systems
+%C Prague
+%P 391-404
+%O May 18-21
+%K *
+
+%A Prusinkiewicz, P.
+%A Christopher, M.
+%D 1984
+%T Hologram-like transmission of pictures
+%R Technical Report CS-84-17
+%I Computer Science Department, University of Regina
+%O November
+%K *
+
+%A Purvy, R.
+%A Farrell, J.
+%A Klose, P.
+%D 1983
+%T The design of Star's records processing: data processing for the noncomputer professional
+%J ACM Trans Office Information Systems
+%V 1
+%N 1
+%P 3-24
+%O January
+%K *
+
+%A Quinlan, J.R.
+%D 1983
+%T Inferno: a cautious approach to uncertain inference
+%J Computer J
+%V 26
+%N 3
+%P 255-269
+
+%A Qureshi, S.U.H.
+%D 1985
+%T Adaptive equalization
+%J Proc IEEE
+%V 73
+%N 9
+%P 1349-1387
+%O September
+
+%A Rabiner, L.R.
+%A Crochiere, R.E.
+%D 1975
+%T A novel implementation for narrow-band FIR digital filters
+%J IEEE Trans Acoustics, Speech and Signal Processing
+%V ASSP-23
+%N 5
+%P 457-464
+%O October
+%K *
+
+%A Radhakrishnan, T.
+%A Grossner, C.P.
+%D 1985
+%T Cuenet \(em a distributed computing facility
+%J IEEE Micro
+%P 42-52
+%O February
+%K *
+
+%A Raeder, G.
+%D 1985
+%T A survey of current graphical programming techniques
+%J IEEE Computer
+%V 18
+%N 8
+%P 11-25
+
+%A Rashid, R.F.
+%D 1980
+%T An interprocess communication facility for Unix
+%R Technical Report
+%I Computer Science Department, Carnegie-Mellon University
+%O February
+
+%A Rashid, R.F.
+%A Robertson, G.G.
+%D 1981
+%T Accent: a communication oriented network operating system kernel
+%J Proc Eighth Symposium on Operating System Principles
+%P 64-75
+%C Pacific Grove, CA
+%O December
+
+%A Rasmussen, J.
+%D 1983
+%T Skills, rules, and knowledge; signals, signs, and symbols, and other distinctions in human performance models
+%J IEEE Trans Systems, Man and Cybernetics
+%V SMC-13
+%N 3
+%P 257-266
+%O May/June
+%K *
+
+%A Rassbach, M.E.
+%D 1980
+%T CLASSY: an adaptive clustering algorithm
+%J Proc IEEE Conference
+%P 442-444
+%K *
+
+%A Rawlings, C.
+%A Fox, J.
+%D 1983
+%T The UNIT package -- a critical appraisal of a frame-based knowledge representation system
+%J Proc Expert Systems 83
+%I Churchill College
+%C Cambridge, England
+%P 15-29
+%O December
+%K *
+
+%A Redell, D.D.
+%A White, J.E.
+%D 1983
+%T Interconnecting electronic mail systems
+%J IEEE Computer
+%V 16
+%N 9
+%P 55-63
+%O September
+%K *
+
+%A Reeds, J.A.
+%A Weinberger, P.J.
+%D 1984
+%T File security and the UNIX system \fIcrypt\fP command
+%J Bell System Technical J
+%V 63
+%N 8, part 2
+%P 1673-1684
+%O October
+
+%A Reichardt, J.
+%D 1971
+%T The computer in art
+%I Studio Vista
+%C London, England
+
+%A Reiter, R.
+%D 1980
+%T A logic for default reasoning
+%J Artificial Intelligence
+%V 13
+%P 81-132
+%K *
+
+%A Reynolds, J.K.
+%A Postel, J.B.
+%A Katz, A.R.
+%A Finn, G.C.
+%A DeSchon, A.L.
+%D 1985
+%T The DARPA experimental multimedia mail system
+%J IEEE Computer
+%V 18
+%N 10
+%P 82-89
+%O October
+
+%A Rich, C.
+%D 1982
+%T Knowledge representation languages and predicate calculus: how to have your cake and eat it too
+%J Proc National Conference on Artificial Intelligence
+%P 193-196
+
+%A Rich, E.
+%D 1984
+%T The gradual expansion of artificial intelligence
+%J IEEE Computer
+%V 17
+%N 5
+%P 4-12
+%O May
+
+%A Riesbeck, C.K.
+%D 1975
+%T Conceptual analysis
+%B Conceptual information processing
+%E R.C.Schank
+%I North Holland
+%C Amsterdam
+
+%A Riesbeck, C.K.
+%D 1981
+%T Failure-driven reminding for incremental learning
+%J Proc IJCAI 81
+%P 115-120
+%K *
+
+%A Riesbeck, C.K.
+%D 1982
+%T Realistic language comprehension
+%E W.G. Lenhert and M.H. Ringle
+%B Strategies for natural language processing
+%I Lawrence Erlbaum Associates
+%P 37-54
+
+%A Riesbeck, C.K.
+%D 1984
+%T Knowledge reorganization and reasoning style
+%J IJMMS
+%V 20
+%P 45-61
+%K *
+
+%A Rissanen, J.
+%A Langdon, G.G.
+%T Arithmetic coding
+%J IBM J Research and Development
+%D 1979
+%V 23
+%N 2
+%P 149-162
+%O March
+%K *
+
+%A Rissanen, J.
+%D 1984
+%T Complexity of strings in the class of Markov sources
+%R Research Report
+%I IBM Research Laboratory
+%C San Jose, CA
+%K *
+
+%A Rissanen, J.
+%D 1986
+%T Stochastic complexity and sufficient statistics
+%R Research Report
+
+%A Ritchie, D.M.
+%D 1981
+%T On the security of UNIX
+%R Programmers Manual for UNIX System III Volume II: Supplementary Documents
+%I Western Electric Corporation
+
+%A Ritchie, G.D.
+%A Hanna, F.K.
+%D 1984
+%T AM: a case study in AI methodology
+%J Artificial Intelligence
+%V 23
+%P 249-268
+%K *
+
+%A Roberts, M.G.
+%D 1982
+%T Local order estimating Markovian analysis for noiseless source coding and authorship identification
+%R PhD Thesis
+%I Stanford University
+
+%A Rogers, H.
+%D 1943
+%T Paragraphs on printing
+%I William E. Rudges
+%C New York, NY
+%O re-published by Dover Publications, New York, 1979
+
+%A Rosenthal, D.S.H.
+%D 1982
+%T Managing graphical resources
+%J Computer Graphics
+%V 16
+%N 4
+%P 38-45
+%O December
+%K *
+
+%A Ross, P.
+%A Jones, J.
+%A Millington, M.
+%D 1985
+%T User modelling in command-driven computer systems
+%R DAI Research Paper No 264
+%I Department of Artificial Intelligence, University of Edinburgh
+%K *
+
+%A Rouse, S.H.
+%A Rouse, W.B.
+%D 1980
+%T Computer-based manuals for procedural information
+%J IEEE Trans Systems, Man and Cybernetics
+%V SMC-10
+%N 8
+%P 506-510
+%O August
+
+%A Rowe, N.C.
+%D 1984
+%T Modelling degrees of item interest for a general database query system
+%J IJMMS
+%V 20
+%N 5
+%P 421-443
+%O May
+%K *
+
+%A Runciman, C.
+%A Thimbleby, H.
+%D 1986
+%T Equal opportunity interactive systems
+%R Report
+%I Computer Science Department, University of York
+%C York 
+%K *
+
+%A Rychener, M.D.
+%D 1979
+%T A semantic network of production rules in a system for describing computer structures
+%J Proc 6th Joint Conference on Artificial Intelligence
+%P 738-743
+
+%A Ryman, R.
+%A Singh, B.
+%D 1982
+%T The Benesh notation computerized editor
+%J Proc Dance in Canada Conference
+%O June
+
+%A Sagan, H.
+%D 1986
+%T Approximating polygons for Lebesgue's and Schoenberg's space filling curves
+%J American Mathematical Monthly
+%P 361-368
+%O May
+%K *
+
+%A Sammut, C.
+%A Banerji, R.
+%D 1983
+%T Hierarchical memories: an aid to concept learning
+%J Proc International Machine Learning Workshop
+%P 74-80
+%I Allerton House
+%C Monticello, IL
+%O June 22-24
+%K *
+
+%A Sammut, C.
+%A Banerji, R.
+%D 1986
+%T Learning concepts by asking questions
+%B Machine learning Volume 2
+%E R.S. Michalski, J.G. Carbonell, and T.M. Mitchell
+%I Morgan Kaufmann Inc
+%C Los Altos, CA
+%P 167-191
+%K *
+
+%A Sandewall, E.
+%T A functional approach to non-monotonic logic
+%J Proc IJCAI
+%P 100-106
+%K *
+
+%A Sakata, S.
+%A Ueda, T.
+%D 1985
+%T A distributed interoffice mail system
+%J IEEE Computer
+%V 18
+%N 10
+%P 106-116
+%O October
+
+%A Samet, H.
+%D 1983
+%T A quadtree medial axis transform
+%J Comm ACM
+%V 26
+%N 9
+%P 680-693
+%O September
+
+%A Samet, H.
+%D 1984
+%T The quadtree and related hierarchical data structures
+%J Computing Surveys
+%V 16
+%N 4
+%P 187-260
+%O June
+
+%A Santisteban, A.
+%D 1983
+%T The perceptual color space of digital image display terminals
+%J IBM J Research and Development
+%V 27
+%N 2
+%P 127-132
+%O March
+%K *
+
+%A Sawaragi, Y.
+%A Yoshikawa
+%D 1970
+%T Discrete-time markovian decision processes with incomplete state observation
+%J The Annals of Mathematical Statistics
+%V 41
+%N 1
+%P 78-86
+%K *
+
+%A Schank, R.C.\0(Editor)
+%D 1975
+%T Conceptual information processing
+%I North Holland
+
+%A Schank, R.C.
+%A Abelson, R.
+%D 1977
+%T Scripts, plans, goals and understanding
+%I Lawrence Erlbaum Associates
+
+%A Schank, R.C.
+%D 1980
+%T Language and memory
+%J Cognitive Science
+%V 4
+%P 243-284
+%K *
+
+%A Schank, R.C.
+%A Slade, S.
+%T Advisory systems
+%K *
+
+%A Scharf, T.F.
+%D 1984
+%T Sounding out speech synthesis
+%J Electronics and Power
+%P 847-849
+%O November/December
+%K *
+
+%A Schroeder, M.E.
+%D 1969
+%T Images from computers
+%J IEEE Spectrum
+%O March
+%K *
+
+%A Schulert, A.J.
+%A Rogers, G.T.
+%A Hamilton, J.A.
+%D 1985
+%T ADM \(em a dialog manager
+%J Proc ACM CHI 85 Human Factors in Computing Systems
+%P 177-183
+%O April
+%K *
+
+%A Searle, J.R.
+%D 1980
+%T Minds, brains, and programs
+%J Behavioral and Brain Sciences
+%V 3
+%P 417-457
+%K *
+
+%A Searle, J.R.
+%D 1983
+%T Intentionality
+%I Cambridge University Press
+%C Cambridge, England
+
+%A Seely\|Brown, J.
+%A Burton, R.R.
+%A Bell, A.G.
+%D 1975
+%T SOPHIE \(em a step toward creating a reactive learning environment
+%J IJMMS
+%V 7
+%N 5
+%P 675-696
+%O September
+
+%A Segre, A.M.
+%A Sherwood, B.A.
+%A Dickerson, W.B.
+%D 1983
+%T An expert system for the production of phoneme strings from unmarked english text using machine induced rules
+%J Proc Association for Computational Linguistics
+%C Pisa, Italy
+%O September
+%K *
+
+%A Selim, S.Z.
+%A Ismail, M.A.
+%D 1984
+%T \fIK\fP-means-type algorithms: a generalized convergence theorem and characterization of local optimality
+%J IEEE Trans Pattern Analysis and Machine Intelligence
+%V PAMI-6
+%N 1
+%P 81-87
+%O January
+%K *
+
+%A Sergot, M.
+%T Prospects for representing the law as logic programs
+%B In Clark and Tarnlund's book
+%K *
+
+%A Seybold
+%D 1985
+%T Apple Laserwriter
+%J Seybold Report on Publishing Systems
+%V 14
+%N 9
+%O January 28
+%K *
+
+%A Shafer, G.
+%D 1976
+%T A mathematical theory of evidence
+%I Princeton University Press
+%C Princeton, NJ
+
+%A Shamos, M.I.
+%A Hoey, D.
+%D 1975
+%T Closest-point problems
+%J Proc 16th IEEE Symposium on Foundations of Computer Science
+%P 151-162
+%O October
+
+%A Shamos, M.I.
+%D 1977
+%T Computational geometry
+%I Springer-Verlag
+%C New York, NY
+%A Shannon, C.E.
+%D 1948
+%T A mathematical theory of communication
+%J Bell System Technical J
+%V 27
+%P 398-403
+%O July
+
+%A Shannon, C.E.
+%D 1951
+%T Presentation of a maze-solving machine
+%B Trans 8th Conference Josiah Macy Foundation
+%E H.von Foerster
+%C New York, NY
+%P 173-192
+
+%A Shannon, C.E.
+%D 1951
+%T Prediction and entropy of printed English
+%J Bell System Technical J
+%P 50-64
+%O January
+%K *
+
+%A Shapiro, E.
+%D 1983
+%T A subset of concurrent Prolog and its interpreter
+%R ICOT Technical Report TR-003
+%O January
+%K *
+
+%A Shapiro, E.
+%D 1983
+%T Systems programming in concurrent Prolog
+%R ICOT Technical Report TR-034
+%O November
+%K *
+
+%A Shapiro, E.
+%A Takeuchi, A.
+%D 1983
+%T Object oriented programming in concurrent Prolog
+%J New Generation Computing
+%V 1
+%P 25-48
+%K *
+
+%A Shaw, M.L.G.
+%A Gaines, B.R.
+%D 1983
+%T Does the human component in the network have a protocol?
+%J Proc International Electrical, Electronics Conference
+%V 2
+%P 546-549
+%C Toronto, ON
+%O September 26-28
+%K *
+
+%A Shaw, M.L.G
+%A Gaines, B.R.
+%D 1985
+%T Knowledge engineering tools for expert systems
+%B Computer models for decision making
+%E G.Mitra
+%I North Holland
+%C Amsterdam
+%K *
+
+%A Shneiderman, B.
+%D 1984
+%T Response time and display rate in human performance with computers
+%J Computing Surveys
+%V 16
+%N 3
+%P 265-285
+%O September
+
+%A Shneiderman, B.
+%A Norman, K.
+%A Rogers, J.
+%A Arifin, R.
+%A Weldon, L.
+%D 1985
+%T A multi-screen programmer work station based on the IBM PC
+%R Research Report
+%I Computer Science Department, University of Maryland
+%O April
+
+%A Shoch, J.F.
+%A Hupp, J.A.
+%D 1982
+%T The `worm' programs \(em early experience with a distributed computation
+%J Comm ACM
+%V 25
+%N 3
+%P 172-180
+%O March
+%K *
+
+%A Shoemake, K.
+%T Animating rotation with quaternion curves
+%D 1985
+%J ACM
+%V 19
+%N 3
+%O July
+%K *
+
+%A Shortliffe, E.H.
+%A Buchanan, B.G.
+%D 1975
+%T A model of inexact reasoning in medicine
+%J Mathematical Biosciences
+%V 23
+%P 351-379
+
+%A Shortliffe, E.H.
+%D 1976
+%T Computer-based medical consultations: MYCIN
+%I Elsevier Science
+%C New York, NY
+%K *
+
+%A Shortliffe, E.H.
+%D 1980
+%T Consultation systems for physicians: the role of artificial intelligence techniques
+%J Proc Canadian Society for Computational Studies of Intelligence
+%I University of Victoria
+%C Victoria, BC
+%K *
+
+%A Shrager, J.C.
+%T Invoking a beginner's aid process by recognizing DCL goals
+%D 1981
+%R MSc Thesis
+%I University of Pennsylvania
+
+%A Shrager, J.C.
+%A Finin, T.
+%D 1982
+%T An expert system that volunteers advice
+%J Proc National Conference on Artificial Intelligence
+%P 339-340
+%K *
+%K *
+
+%A Shu, C.S.
+%D 1985
+%T FORMAL: A forms-oriented visual-directed application development system
+%J IEEE Computer
+%V 18
+%N 8
+%P 38-49
+
+%A Sierpinski, W.
+%D 1912
+%T Sur une nouvelle courbe qui remplit toute une aire plaine
+%J Bull Acad Sci Cracovie
+%V Serie A
+%P 462-478
+%K *
+
+%A Simons, G.L.
+%D 1980
+%T Robots in industry
+%I National Computing Centre
+%C Manchester, England
+
+%A Simpson, R.J.
+%A Terrell, T.J.
+%D 1984
+%T Digital filtering using the NEC PD7720 signal processor
+%J Microprocessing and Microprogramming
+%V 14
+%P 67-78
+%K *
+
+%A Sleeman, D.
+%D 1982
+%T Assessing aspects of competence in basic algebra
+%B Intelligent Tutoring Systems
+%E D. Sleeman and J.S. Brown
+%I Academic Press
+%C London, England
+%P 185-200
+
+%A Sloman, A.
+%A Croucher, M.
+%D 1981
+%T Why robots will have emotions
+%J Proc 7th International Joint Conference on Artificial Intelligence
+%V 1
+%P 197-202
+%C Vancouver, BC
+%K *
+
+%A Smith, K.
+%D 1985
+%T Watch out hackers, public encryption chips are coming
+%J Electronics Week
+%P 30-31
+%O May 20
+%K *
+
+%A Smith, R.
+%D 1979
+%T Tint fill
+%J Proc ACM Conference
+%P 276-284
+%K *
+
+%A Solomon, H.
+%D 1977
+%T Data dependent clustering techniques
+%B Classification and clustering
+%E J. Van Ryzin
+%I Academic Press
+%C New York, NY
+%P 155-173
+
+%A Southall, R.
+%D 1984
+%T First principles of typographic design for document production
+%J TUGBOAT (TEX Users Group Newsletter)
+%V 5
+%N 2
+%P 79-90
+%K *
+
+%A Sowa, J.F.
+%D 1983
+%T Generating language from conceptual graphs
+%B Computational Linguistics
+%E N.Cercone
+%P 29-43
+%I Pergamon
+%C Oxford, England
+%K *
+
+%A Sparck\|Jones, K.
+%D 1984
+%T User models and expert systems
+%R Technical Report
+%I Computer Laboratory, University of Cambridge
+%C Cambridge, England
+%K *
+
+%A Spector, A.Z.
+%D 1982
+%T Performing remote operations efficiently on a local computer network
+%J Comm ACM
+%V 25
+%N 4
+%P 246-260
+%O April
+%K *
+
+%A Spencer, H.
+%D 1969
+%T The visible word
+%I Lund Humphries
+%C London, England
+
+%A Stankovic, J.A.
+%D 1982
+%T Software communication mechanisms: procedure call versus messages
+%J IEEE Computer
+%P 19-25
+%O April
+%K *
+
+%A Stankovic, J.A.
+%D 1984
+%T A perspective on distributed computer systems
+%J IEEE Trans Computers
+%V C-33
+%N 12
+%P 1102-1115
+%O December
+%K *
+
+%A Staunstrup, J.
+%D 1982
+%T Message passing communication versus procedure call communication
+%J Software -- Practice and Experience
+%V 12
+%P 223-234
+%K *
+
+%A Stefik, M.
+%D 1979
+%T An examination of a frame-structured representation system
+%J Proc 6th International Conference on Artificial Intelligence
+%P 265-270
+%K *
+
+%A Stefik, M.
+%A Conway, L.
+%D 1982
+%T Towards the principled engineering of knowledge
+%J AI Magazine
+%P 4-16
+%O Summer
+%K *
+
+%A Stefik, M.
+%A Bobrow, D.G.
+%A Mittal, S.
+%A Conway, L.
+%D 1983
+%T Knowledge programming in LOOPS: report on an experimental course
+%J AI Magazine
+%P 3-13
+%O Fall
+%K *
+
+%A Stefik, M.J.
+%A Bobrow, D.G.
+%A Kahn, K.M.
+%D 1986
+%T Integrating access-oriented programming into a multiparadigm environment
+%J IEEE Software
+%P 10-18
+%O January
+%K *
+
+%A Stefik, M.J.
+%A Bobrow, D.G.
+%D 1986
+%T Object-oriented programming: themes and variations
+%J AI Magazine
+%V 6
+%N 4
+%P 40-62
+%O Winter
+
+%A Stevens, M.E.
+%A Little, J.L.
+%D 1967
+%T Automatic typographic-quality typesetting techniques: a state-of-the-art review
+%I National Bureau of Standards
+
+%A Stevens, R.J.
+%A Lehar, A.F.
+%A Preston, F.H.
+%D 1983
+%T Manipulation and presentation of multi-dimensional image data using the Peano scan
+%J IEEE Trans Pattern Analysis and Machine Intelligence
+%P 520-
+%O September
+
+%A Stoffel, J.G.
+%A Moreland, J.F.
+%D 1981
+%T A survey of electronic techniques for pictorial image reproduction
+%J IEEE Trans Communications
+%V COM-17
+%N 12
+%P 1898-1925
+%O December
+%K *
+
+%A Stroustrup, B.
+%D 1984
+%T The C++ programming language
+%R Computing Science Technical Report 108
+%I Bell Laboratories
+%C Murray Hill, NJ
+%O January
+%K *
+
+%A Stroustrup, B.
+%D 1984
+%T Data abstraction in C
+%R Computing Science Technical Report 109
+%I Bell Laboratories
+%C Murray Hill, NJ
+%O January
+%K *
+
+%A Suchman, L.A.
+%D 1982
+%T Toward a sociology of human-machine interaction: pragmatics of instruction-following
+%R Working Paper
+%I Xerox PARC, (Intelligent Systems Laboratory)
+%C Palo Alto, CA
+
+%A Suchman, L.A.
+%D 1982
+%T Human-machine interaction and the idea of a self-explanatory machine
+%J Paper presented at the Annual Meeting of the American Anthropological Society
+%C Washington, DC
+%O December
+%K *
+
+%A Suchman, L.A.
+%D 1983
+%T The role of common sense in interface design
+%B Office Automation: Jekyll or Hyde
+%E D.Marschall and J.Gregory
+%I Working Women Education Fund
+%C Cleveland, OH
+%P 96-102
+
+%A Suchman, L.A.
+%D 1983
+%T Office procedure as practical action: models of work and system design
+%J ACM Trans Office Information Systems
+%V 1
+%N 4
+%P 320-328
+%O October
+%K *
+
+%A Suchman, L.A.
+%D 1985
+%T Plans and situated actions: the problem of human-machine communication
+%R PhD Thesis
+%I Xerox PARC
+%C Palo Alto, CA
+%K *
+
+%A Sugeno, M.
+%A Nishida, M.
+%D 1984
+%T Fuzzy control of model car
+%K *
+
+%A Summers, P.D.
+%A Grossman, D.D.
+%D 1984
+%T XPROBE: an experimental system for programming robots by example
+%J Int J Robotics Research
+%V 3
+%N 1
+%P 25-39
+%O Spring
+
+%A Sussman, G.J.
+%D 1975
+%T A computer model of skill acquisition
+%I American Elsevier
+%C New York, NY
+
+%A Tannenbaum, A.
+%T Political history of UNIX
+%R Report
+%I MASSCOMP
+%C Westford, MA 
+%K *
+
+%A Tanner, W.
+%D 1979
+%T Industrial robots -- Volume 1: Fundamentals
+%I Society of Manufacturing Engineers
+%C Dearborn, MI
+
+%A Tennant, H.R.
+%A Ross, K.M.
+%A Thompson, C.W.
+%D 1983
+%T Usable natural language interfaces through menu-based natural language understanding
+%J Proc ACM CHI 83 Human Factors in Computing Systems
+%P 154-160
+%C Boston, MA
+%O December 12-15
+%K *
+
+%A Test, J.A.
+%D 1982
+%T The NUnix window system
+%R Internal Report
+%I Laboratory for Computer Science, MIT
+%C Cambridge, MA
+%K *
+
+%A Thimbleby, H.
+%D 1980
+%T Dialogue determination
+%J IJMMS
+%V 13
+%N 3
+%P 295-304
+%O October
+
+%A Thomsett, R.
+%D 1980
+%T People and project management
+%I Yourden Press
+%C New York, NY
+
+%A Thompson, B.A.
+%A Thompson, W.A.
+%D 1985
+%T Inside an expert system
+%J Byte
+%P 315-330
+%O April
+%K *
+
+%A Thompson, K.
+%D 1984
+%T Reflections on trusting trust
+%J Comm ACM
+%V 27
+%N 8
+%P 761-763
+%O August
+
+%A Ting, D.
+%A Prasada, B.
+%D 1980
+%T Digital processing techniques for encoding of graphics
+%J Proc IEEE
+%V 68
+%N 7
+%P 757-769
+%O July
+
+%A Tokuda, H.
+%A Manning, E.G.
+%D 1983
+%T An interprocess communication model for a distributed software testbed
+%J Proc ACM SIGCOMM 83
+%I University of Texas
+%C Austin, TX
+%O March
+%K *
+
+%A Tokuda, H.
+%A Radia, S.P.
+%A Manning. E.G.
+%D 1983
+%T Shoshin OS: a message-based operating system for a distributed software testbed
+%J Proc 16th Annual Hawaii International Conference on System Sciences
+%P 329-338
+%K *
+
+%A Tou, I.T.
+%A Gonzalez, R.C.
+%D 1974
+%T Pattern recognition principles
+%I Addison-Wesley
+%C Reading, MA
+
+%A Truin, P.G.M.
+%D 1983
+%T The `speaking tablet' as an aid in the acquisition of reading skills by dyslexic children
+%J IPO Annual Progress Report
+%V 18
+%P 79-84
+%K *
+
+%A Tsichritzis, D.\0(Editor)
+%D 1983
+%T Beta Gamma
+%R Technical Report CSRG-150
+%I Computer Systems Research Group, University of Toronto
+%C Toronto, ON
+
+%A Tsichritzis, D.
+%D 1985
+%T Objectworld
+%E D.Tsichritzis
+%B Office automation
+%I Springer-Verlag
+%C Berlin
+%P 379-398
+
+%A Turkle, S.
+%D 1982
+%T The subjective computer: a study in the psychology of personal computation
+%J Social Studies of Science
+%V 12
+%N 2
+%P 173-205
+%K *
+
+%A Tyree, A.
+%D 1986
+%T Expert systems and the law
+%J Current Affairs Bulletin
+%P 13-18
+%P March
+%K *
+
+%A Ulichney, R.A.
+%A Troxel, D.E.
+%D 1982
+%T Scaling binary images with the telescoping template
+%J IEEE Trans Pattern Analysis and Machine Intelligence
+%V PAMI-4
+%N 3
+%P 331-335
+
+%A Umphress, D.
+%A Williams, G.
+%D 1985
+%T Identity verification through keyboard characteristics
+%J IJMMS (submitted)
+%K *
+
+%A Unger, B.
+%A Birtwistle, G.
+%A Cleary, J.
+%A Hill, D.
+%A Lomow, G.
+%A Neal, R.
+%A Peterson, M.
+%A Witten, I.H.
+%A Wyvill, B.
+%D 1984
+%T Jade: a simulation and software prototyping environment
+%J Proc Conference on Simulation in Strongly Typed Languages
+%C San Diego, CA
+%O February
+%K KConference
+
+%A Unger, B.W.
+%A Lomow, G.A.
+%A Birtwistle, G..
+%D 1984
+%T Simulation software and Ada
+%I Society for Computer Simulation
+%K *
+
+%A University\|of\|Chicago\|Press
+%D 1969
+%T A manual of style
+%I University of Chicago 
+
+%A Uribe, R.B.
+%D 1981
+%T Modeling autopoiesis
+%E M.Zeleny
+%B Autopoiesis:  a theory of living organization
+%I North Holland
+%C New York, NY
+%P 51-62
+
+%A Van\|Dijk, T.A.
+%A Kintsch, W.
+%D 1983
+%T Strategies of discourse comprehension
+%I Academic Press
+%C New York, NY
+
+%A Van\|Lehn, K.
+%D 1983
+%T Felicity conditions for human skill acquisition: validating an AI-based theory
+%R Research Report CIS-21
+%I Xerox PARC
+%C Palo Alto, CA
+%O November
+
+%A Varela, F.J.
+%A Maturana, H.R.
+%A Uribe, R.B.
+%D 1974
+%T Autopoiesis: the organization of living systems, its characterization and a model
+%J Biosystems
+%V 5
+%P 187-196
+
+%A Varela, F.J.
+%D 1979
+%T Principles of biological autonomy
+%I North Holland
+%C New York, NY
+
+%A Varela, F.J.
+%D 1981
+%T Describing the logic of the living
+%E M.Zeleny
+%B Autopoiesis:  a theory of living organization
+%I North Holland
+%C New York, NY
+%P 36-48
+
+%A Wade, N.
+%D 1985
+%T Literal pictures
+%J Word and  Image
+%V 1
+%N 3
+%P 242-272
+%O July-September
+%K *
+
+%A Wagner, R.A.
+%A Fischer, M.J.
+%D 1974
+%T The string-to-string correction problem
+%J J ACM
+%V 21
+%N 1
+%P 168-173
+%O January
+%K *
+
+%A Wall, R.S.
+%A Apon, A.W.
+%A Beal, J.
+%A Gately M.T.
+%A Oren, L.G.
+%D 1985
+%T An evaluation of commercial expert system building tools
+%R Computer Science Laboratory Technical Report 85-30
+%I Texas Instruments
+%C Dallas, TX
+%O November
+%K *
+
+%A Waltz, D.L.
+%D 1975
+%T Natural language access to a large data base
+%J Advance papers of the International Joint Conference on Artificial Intelligence
+%I MIT
+%C Cambridge, MA
+
+%A Waterman, D.A.
+%D 1978
+%T A rule-based approach to knowledge acquisition for man-machine interface programs
+%J IJMMS
+%V 10
+%P 693-711
+%K *
+
+%A Waters, R.C.
+%D 1985
+%T The programmer's apprentice: a session with KBEmacs
+%J IEEE Trans Software Engineering
+%V SE-11
+%N 11
+%P 1296-1320
+%O November
+%K *
+
+%A Webber, B.L.
+%A Nilsson, N.J.
+%D 1981
+%T Readings in artificial intelligence
+%I Tioga
+%C Palo Alto, CA
+
+%A Weinreb, D.
+%A Moon, D.
+%D 1981
+%T LISP machine manual
+%I Third edition
+%O March
+
+%A Weizenbaum, J.
+%D 1976
+%T Computer power and human reason
+%I Freeman
+%C San Francisco, CA
+
+%A Welch, T.A.
+%D 1984
+%T A technique for high-performance data compression
+%J IEEE Computer
+%V 17
+%N 6
+%P 8-19
+%O June
+%K *
+
+%A Weyer, S.A.
+%D 1982
+%T Searching for information in a dynamic book
+%R PhD Thesis
+%I School of Education, Stanford University
+%O (Also Report SCG-82-1, Xerox Parc)
+
+%A Whalen, T.
+%A Mason, C.
+%D 1981
+%T The use of tree-structured index which contains three types of design defects
+%J Telidon Behavioural Research
+%V 2
+%I Department of Communications
+%O May
+
+%A Whalen, T.
+%A Latremouille, S.
+%D 1981
+%T The effectiveness of a tree-structured index when the existence of information is uncertain
+%J Telidon Behavioural Research
+%V 2
+%I Department of Communications
+%O May
+
+%A Wijk, C.van
+%A Kempen, G.
+%D 1985
+%T From sentence structure to intonation contour
+%E B.S.Muller
+%T Sprachsynthese: zur Synthese von naturlich gesprochener Sprache aus Texten und Konzepten
+%I Georg Olms Verlag
+%C Hildesheim
+%K *
+
+%A Wilensky, R.
+%A Arens, Y.
+%A Chin, D.
+%D 1984
+%T Talking to Unix in English: an overview of UC
+%J Comm ACM
+%V 27
+%N 6
+%P 574-593
+%O June
+%K *
+
+%A Wilkes, A.J.
+%A Singer, D.W.
+%A Gibbons, J.J.
+%A King, T.R.
+%A Robinson, P.
+%A Wiseman, N.E.
+%D 1984
+%T The Rainbow workstation
+%J Computer J
+%V 27
+%N 2
+%O May
+%K *
+
+%A Wilkes, A.J.
+%A Wiseman, N.E.
+%D 1982
+%T A soft-edged character set and its derivation
+%J Computer J
+%V 25
+%N 1
+%P 140-147
+%O February
+%K *
+
+%A Wilkinson, W.
+%D 1980
+%T Viewdata: The Prestel System
+%B Videotext: the coming revolution in home/office information retrieval
+%E Sigel, E.
+%I Harmony Books
+%C New York, NY
+%P 57-86
+
+%A Wilks, Y.
+%D 1977
+%T Good and bad arguments about semantic primitives
+%R Research Report
+%I Department of Artificial Intelligence, University of Edinburgh
+%O May
+%K *
+
+%A Wilks, Y.
+%D 1984
+%T Beliefs, points of view and multiple environments
+%B Artificial and human intelligence
+%E A.Elithorn and R.Banerji
+%I Elsevier Science
+%P 147-171
+%K *
+
+%A Willems, NJ
+%D 1983
+%T STEP: A model of standard English intonation patterns
+%J IPO Annual Progress Report
+%V 18
+%P 37-42
+%K *
+
+%A Williams, G.
+%D 1984
+%T The Apple Macintosh computer
+%J Byte
+%V 9
+%N 2
+%P 30-54
+%O February
+
+%A Winograd, T.
+%D 1972
+%T Understanding natural language
+%I Academic Press
+%C New York, NY
+
+%A Winograd, T.
+%D 1984
+%T Moving the semantic fulcrum
+%R Report CSLI-84-18
+%I Center for the study of language and information, Stanford University
+%C Stanford, CA
+%O December
+%K *
+
+%A Witten, I.H.
+%D 1983
+%T The Department of Computer Science, University of Calgary
+%J Computer Science Association Newsletter
+%V 11
+%N 1
+%P 15-23
+%O December
+%K KArticle
+
+%A Witten, I.H.
+%A Cleary, J.G.
+%D 1986
+%T Foretelling the future by adaptive modeling
+%J Abacus
+%V 3
+%N 3
+%P 16-36
+%O Spring
+%K KArticle
+
+%A Witten, I.H.
+%A Fremont, D.
+%D 1984
+%T A student information service for a University Computer Science department
+%J Proc 15th Ontario Universities Computing Conference
+%I Lakehead University
+%C Thunder Bay, ON
+%O June
+%K KInvited
+
+%A Witten, I.H.
+%D 1985
+%T Elements of computer typography
+%J IJMMS
+%V 23
+%N 6
+%P 623-687
+%O December
+%K KJournal
+
+%A Witten, I.H.
+%A Bramwell, B.
+%D 1985
+%T A system for interactive viewing of structured documents
+%J Comm ACM
+%V 28
+%N 3
+%P 280-288
+%O March
+%K KJournal
+
+%A Witten, I.H.
+%D 1984
+%T Dynamic documents
+%J Proc PROTEXT I -- First International Conference on Text Processing Systems
+%I Boole Press
+%C Dublin, Ireland
+%P 234-239
+%O October
+%K KConference
+
+%A Witten, I.H.
+%A Greenberg, S.
+%D 1985
+%T User interfaces for office systems
+%B Oxford Surveys in Information Technology Volume 2
+%E P.I. Zorkoczy
+%I Oxford University Press
+%C Oxford, England
+%P 69-104
+%K KJournal
+
+%A Witten, I.H.
+%D 1986
+%T Making computers talk \(em an introduction to speech synthesis
+%I Prentice-Hall
+%C Englewood Cliffs, NJ
+
+%A Witten, I.H.
+%D 1987
+%T Computer speech
+%B The Encyclopaedia of Physical Science and Technology, Volume 3
+%E Robert A Meyers
+%I Academic Press
+%P 482-506
+%K KInvited
+
+%A Witten, I.H.
+%A Bonham, M.
+%A Bramwell, B.
+%A Greenberg, S.
+%D in preparation
+%T Interacting with dynamic documents -- the new age of reading
+%R proposal submitted to MIT Press
+
+%A Witten, I.H.
+%D 1985
+%T Selected topics in computer science I
+%R Report
+%I Institute of Information Processing, Graz, Austria
+%O November
+%K KReport
+
+%A Witten, I.H.
+%D 1986
+%T Modeling behaviour sequences: principles, practice, prospects
+%J Proc International Conference on Future Advances in Computing
+%C Christchurch, New Zealand
+%O February 17-21
+%K KConference
+
+%A Witten, I.H.
+%D 1986
+%T In search of `autonomy'
+%J Proc International Conference on Future Advances in Computing
+%C Christchurch, New Zealand
+%O February 17-21
+%K KConference
+
+%A Witten, I.H.
+%D 1986
+%T Expert systems
+%J Man-Machine Studies
+%V UC-DSE
+%N 28
+%P 5-65
+%I University of Canterbury
+%C Christchurch, New Zealand
+%O May
+%K KArticle
+
+%A Witten, I.H.
+%D 1987
+%T Thoughts on artificial intentionality
+%J Man-Machine Studies
+%V UC-DSE
+%N 9
+%P 5-52
+%I University of Canterbury
+%C Christchurch, New Zealand
+%O January
+%K KArticle
+
+%A Witten, I.H.
+%A Neal, R.
+%A Cleary, J.G.
+%D 1987
+%T Arithmetic coding for data compression
+%J Comm ACM
+%V 30
+%N 6
+%P 520-540
+%O June; reprinted in \fIC Gazette\fP, December 1987
+%K KJournal
+
+%A Witten, I.H.
+%D 1987
+%T A course on `expert systems' for electrical engineering students
+%J Proc ACM SIGCSE Technical Symposium on Computer Science Education
+%C St Louis, MO
+%P 257-260
+%O February (published as SIGCSE Bulletin \fI19\fR(1))
+%K KConference
+
+%A Wong, S.K.M
+%A Ziarko, W.
+%A Ye, R. Li
+%D 1985
+%T Comparison of rough-set and statistical methods in inductive learning
+%R Technical Report CS-85-16
+%I Computer Science Department, University of Regina
+%K *
+
+%A Wood, R.J.
+%D 1982
+%T A window based display management system
+%R Internal Report
+%I University of Maryland
+
+%A Woods, W.A.
+%D 1973
+%T Progress in natural language understanding -- an application to lunar geology
+%J Proc National Computer Conference
+%C Montvale, NJ
+%I AFIPS Press
+
+%A Woolf, B.
+%A McDonald, D.D.
+%D 1983
+%T Human-computer discourse in the design of a Pascal tutor
+%J Proc ACM CHI 83 Human Factors in Computing Systems
+%P 230-234
+%C Boston, MA
+%O December 12-15
+%K *
+
+%A Woolf, B.
+%A McDonald, D.D.
+%D 1984
+%T Building a computer tutor: design issues
+%J IEEE Computer
+%V 17
+%N 9
+%P 61-73
+%O September
+
+%A Wright, W.E.
+%D 1977
+%T Gravitational clustering
+%J Pattern Recognition
+%V 9
+%P 151-166
+%K *
+
+%A Wu, X.
+%A Witten, I.H.
+%D 1985
+%T A fast \fIk-\fPmeans type clustering algorithm
+%R Research Report 85/197/10
+%I Computer Science Department, University of Calgary
+%O June
+
+%A Wupit, A.
+%D 1983
+%T Comparison of UNIX networks
+%J Proc ACM Conference on Personal and Small Computers
+%C San Diego, CA
+%P 99-108
+%O December
+
+%A Wyvill, B.L.M.
+%D 1984
+%T Three computer science plays:  \fISquanderella\fP, \fIDigital Alice\fP, and \fITwenty eighty-four\fP
+%R Research Report
+%I Computer Science Department, University of Calgary
+
+%A Wyvill, B.L.M.
+%A Witten, I.H.
+%D 1984
+%T Three computer science plays
+%R Research Report 84/184/42
+%I Computer Science Department, University of Calgary
+%O December
+%K KReport
+
+%A Xerox\|Corp
+%D 1984
+%T The role of electronic printing in the office of the future
+%R Executive Presentation II
+%K *
+
+%A Yankelovich, N.
+%A Meyrowitz, N.
+%A van Dam, A.
+%D 1985
+%T Reading and writing the electronic book
+%J IEEE Computer
+%V 18
+%N 10
+%P 15-30
+%O October
+
+%A Yoeli, M.
+%A Brzozowski, J.A.
+%D 1984
+%T A mathematical model of digital CMOS networks
+%R Research Report CS-84-22
+%I Computer Science Department, University of Waterloo
+%O August
+%K *
+
+%A Young, J.Z.
+%D 1978
+%T Programs of the brain
+%I Oxford University Press
+%C Oxford, England
+
+%A Zaniolo, C.
+%D 1984
+%T Object-oriented programming in Prolog
+%J Proc International Symposium on Logic Programming
+%C Atlantic City, NJ
+%P 265-270
+%O February 6-9
+%K *
+
+%A Zeleny, M.
+%D 1977
+%T Self-organization of living systems: a formal model of autopoiesis
+%J Int J General Systems
+%V 4
+%N 1
+%P 13-28
+
+%A Zeleny, M.
+%D 1978
+%T Apl-autopoiesis: experiments in self-organization of complexity
+%B Progress in cybernetics and systems research III
+%E R.Trappl, G.J.Klir and L.Ricciardi
+%P 65-84
+%I Hemisphere
+%C Washington, DC
+
+%A Zeleny, M.\0(Editor)
+%D 1981
+%T Autopoiesis:  a theory of living organization
+%I North Holland
+%C New York, NY
+
+%A Zeleny, M.
+%D 1981
+%T What is autopoiesis?
+%E M.Zeleny
+%B Autopoiesis:  a theory of living organization
+%I North Holland
+%C New York, NY
+%P 4-17
+
+%A Zimmermann, H.
+%D 1980
+%T OSI reference model \(em the ISO model of architecture for open systems interconnection
+%J IEEE Trans Communications
+%P 425-432
+%O April
+
+%A Zisman, M.M.
+%D 1977
+%T Representation, specification, and automation of office procedures
+%R PhD Dissertation
+%I Wharton School, University of Pennsylvania
+
+%A Zissos, A.Y.
+%A Witten, I.H.
+%D 1985
+%T User modelling for a computer coach: a case study
+%J IJMMS
+%V 23
+%N 6
+%P 729-750
+%O December
+%K KJournal
+
+%A Ziv, J.
+%A Lempel, A.
+%D 1977
+%T A universal algorithm for sequential data compression
+%J IEEE Trans Information Theory
+%V IT-23
+%N 3
+%P 337-343
+%O May
+%K *
+
+%A Ziv, J.
+%A Lempel, A.
+%D 1978
+%T Compression of individual sequences via variable-rate coding
+%J IEEE Trans Information Theory
+%V IT-24
+%P 530-536
+%O September
+%K *

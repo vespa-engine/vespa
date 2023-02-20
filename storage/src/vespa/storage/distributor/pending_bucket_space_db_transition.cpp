@@ -5,6 +5,7 @@
 #include "pending_bucket_space_db_transition.h"
 #include "pendingclusterstate.h"
 #include "stripe_access_guard.h"
+#include <vespa/storageframework/generic/clock/time.h>
 #include <vespa/vdslib/distribution/distribution.h>
 #include <vespa/vdslib/state/clusterstate.h>
 #include <algorithm>
@@ -193,7 +194,7 @@ PendingBucketSpaceDbTransition::DbMerger::addToMerger(BucketDatabase::Merger& me
     BucketDatabase::Entry e(bucket_id, BucketInfo());
     insertInfo(e, range);
     if (e->getLastGarbageCollectionTime() == 0) {
-        e->setLastGarbageCollectionTime(framework::MicroSecTime(_creation_timestamp).getSeconds().getTime());
+        e->setLastGarbageCollectionTime(framework::MicroSecTime(_creation_timestamp).getSeconds());
     }
     e.getBucketInfo().updateTrusted();
     merger.insert_before_current(bucket_id, e);
@@ -211,7 +212,7 @@ PendingBucketSpaceDbTransition::DbMerger::addToInserter(BucketDatabase::Trailing
     BucketDatabase::Entry e(bucket_id, BucketInfo());
     insertInfo(e, range);
     if (e->getLastGarbageCollectionTime() == 0) {
-        e->setLastGarbageCollectionTime(framework::MicroSecTime(_creation_timestamp).getSeconds().getTime());
+        e->setLastGarbageCollectionTime(framework::MicroSecTime(_creation_timestamp).getSeconds());
     }
     e.getBucketInfo().updateTrusted();
     inserter.insert_at_end(bucket_id, e);

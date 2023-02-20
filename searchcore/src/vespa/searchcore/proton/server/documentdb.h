@@ -36,6 +36,12 @@ namespace search {
         class TransLogClient;
         class WriterFactory;
     }
+    namespace engine {
+        class SearchReply;
+        class SearchRequest;
+        class DocsumReply;
+        class DocsumRequest;
+    }
 }
 
 namespace vespa::config::search::core::internal { class InternalProtonType; }
@@ -47,6 +53,7 @@ namespace storage::spi { struct BucketExecutor; }
 
 namespace proton {
 class AttributeConfigInspector;
+class DocumentDBReconfig;
 class ExecutorThreadingServiceStats;
 class IDocumentDBOwner;
 class ISharedThreadingService;
@@ -54,6 +61,7 @@ class ITransientResourceUsageProvider;
 class ReplayThrottlingPolicy;
 class StatusReport;
 struct MetricsWireService;
+class DocumentDBMaintenanceConfig;
 
 namespace matching { class SessionManager; }
 
@@ -109,7 +117,6 @@ private:
     mutable std::mutex                      _configMutex;  // protects _active* below.
     mutable std::condition_variable         _configCV;
     DocumentDBConfigSP                      _activeConfigSnapshot;
-    int64_t                                 _activeConfigSnapshotGeneration;
     const bool                              _validateAndSanitizeDocStore;
     vespalib::Gate                          _initGate;
 
@@ -118,7 +125,6 @@ private:
     index::IndexConfig                               _indexCfg;
     std::unique_ptr<ReplayThrottlingPolicy>          _replay_throttling_policy;
     ConfigStore::UP                                  _config_store;
-    std::shared_ptr<matching::SessionManager>        _sessionManager; // TODO: This should not have to be a shared pointer.
     MetricsWireService                              &_metricsWireService;
     DocumentDBTaggedMetrics                          _metrics;
     std::unique_ptr<metrics::UpdateHook>             _metricsHook;
@@ -138,17 +144,18 @@ private:
     DocumentDBMetricsUpdater                         _metricsUpdater;
 
     void registerReference();
-    void setActiveConfig(DocumentDBConfigSP config, int64_t generation);
+    void setActiveConfig(DocumentDBConfigSP config);
     DocumentDBConfigSP getActiveConfig() const;
     void internalInit();
     void initManagers();
     void initFinish(DocumentDBConfigSP configSnapshot);
-    void performReconfig(DocumentDBConfigSP configSnapshot);
+    void performReconfig(DocumentDBConfigSP configSnapshot, std::unique_ptr<DocumentDBReconfig> prepared_reconfig);
     void closeSubDBs();
 
     void applySubDBConfig(const DocumentDBConfig &newConfigSnapshot,
-                          SerialNum serialNum, const ReconfigParams &params);
-    void applyConfig(DocumentDBConfigSP configSnapshot, SerialNum serialNum);
+                          SerialNum serialNum, const ReconfigParams &params,
+                          const DocumentDBReconfig& prepared_reconfig);
+    void applyConfig(DocumentDBConfigSP configSnapshot, SerialNum serialNum, std::unique_ptr<DocumentDBReconfig> prepared_reconfig);
 
     /**
      * Save initial config if we don't have any saved config snapshots.
@@ -250,14 +257,6 @@ public:
            ConfigStore::UP config_store,
            InitializeThreads initializeThreads,
            const HwInfo &hwInfo);
-
-    /**
-     * Expose a cost view of the session manager. This is used by the
-     * document db explorer.
-     **/
-    const matching::SessionManager &session_manager() const {
-        return *_sessionManager;
-    }
 
     /**
      * Frees any allocated resources. This will also stop the internal thread
@@ -382,7 +381,7 @@ public:
     bool getDelayedConfig() const { return _state.getDelayedConfig(); }
     void replayConfig(SerialNum serialNum) override;
     const DocTypeName & getDocTypeName() const { return _docTypeName; }
-    void newConfigSnapshot(DocumentDBConfigSP snapshot);
+    std::unique_ptr<DocumentDBReconfig> prepare_reconfig(const DocumentDBConfig& new_config_snapshot, std::optional<SerialNum> serial_num);
     void reconfigure(DocumentDBConfigSP snapshot) override;
     int64_t getActiveGeneration() const;
     /*
@@ -391,6 +390,7 @@ public:
     document::BucketSpace getBucketSpace() const override;
     vespalib::string getName() const override;
     uint32_t getDistributionKey() const override;
+    matching::SessionManager &session_manager() override;
 
     /**
      * Implements IFeedHandlerOwner
@@ -422,6 +422,7 @@ public:
     ExecutorThreadingService & getWriteService() { return _writeService; }
 
     void set_attribute_usage_listener(std::unique_ptr<IAttributeUsageListener> listener);
+    const DDBState& get_state() const noexcept { return _state; }
 };
 
 } // namespace proton

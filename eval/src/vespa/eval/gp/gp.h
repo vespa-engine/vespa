@@ -164,16 +164,13 @@ struct Program : public Sim {
     size_t rnd_op(Random &rnd) { return rnd.get(0, _repo.max_op()); }
     Ref rnd_ref(Random &rnd, size_t limit) { return Ref::rnd(rnd, _in_cnt, limit); }
 
-    Program(Program &&) = default;
-    Program &operator=(Program &&) = default;
-    Program(const Program &) = default;
+    Program(Program &&) noexcept;
+    Program &operator=(Program &&) noexcept;
+    Program(const Program &);
     Program &operator=(const Program &) = delete;
-    ~Program() {}
+    ~Program() override;
 
-    Program(const OpRepo &repo, size_t in_cnt, size_t out_cnt, size_t alt_cnt, size_t gen)
-        : _repo(repo), _stats(gen), _waste(0.0),
-          _in_cnt(in_cnt), _out_cnt(out_cnt), _alt_cnt(alt_cnt),
-          _program(), _frozen(0), _bound() {}
+    Program(const OpRepo &repo, size_t in_cnt, size_t out_cnt, size_t alt_cnt, size_t gen);
     Ref add_op(size_t code, Ref lhs, Ref rhs);
     Ref add_forward(Ref ref);
 

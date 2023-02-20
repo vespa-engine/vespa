@@ -5,9 +5,8 @@
 #include <vespa/document/bucket/bucketid.h>
 #include <vespa/vespalib/util/md5.h>
 #include <vespa/vespalib/util/stringfmt.h>
-#include <vespa/vespalib/util/optimized.h>
-#include <cerrno>
 #include <cstring>
+#include <charconv>
 
 using vespalib::string;
 using vespalib::stringref;
@@ -54,83 +53,31 @@ union FourByte {
     uint32_t as32;
 };
 
-const FourByte _G_null = {{'n', 'u', 'l', 'l'}};
-const TwoByte _G_id = {{'i', 'd'}};
+constexpr FourByte G_null = {{'n', 'u', 'l', 'l'}};
+constexpr TwoByte G_id = {{'i', 'd'}};
 
-#ifdef __x86_64__
-typedef char v16qi __attribute__ ((__vector_size__(16)));
-
-v16qi _G_zero  = { ':', ':', ':', ':', ':', ':', ':', ':', ':', ':', ':', ':', ':', ':', ':', ':' };
-#endif
-
-inline const char *
-fmemchr(const char * s, const char * e)
-{
-#ifdef __x86_64__
-    while (s+15 < e) {
-#ifdef __clang__
-        v16qi tmpCurrent = __builtin_ia32_lddqu(s);
-        v16qi tmp0       = tmpCurrent == _G_zero;
-#else
-        v16qi tmpCurrent = __builtin_ia32_loaddqu(s);
-        v16qi tmp0       = __builtin_ia32_pcmpeqb128(tmpCurrent, _G_zero);
-#endif
-        uint32_t charMap = __builtin_ia32_pmovmskb128(tmp0); // 1 in charMap equals to '\0' in input buffer
-        if (__builtin_expect(charMap, 1)) {
-            return s + vespalib::Optimized::lsbIdx(charMap);
-        }
-        s+=16;
-    }
-
-    const char c(':');
-    while (s+3 < e) {
-        if (s[0] == c) {
-            return s;
-        }
-        if (s[1] == c) {
-            return s+1;
-        }
-        if (s[2] == c) {
-            return s+2;
-        }
-        if (s[3] == c) {
-            return s+3;
-        }
-        s+=4;
-    }
-    while (s < e) {
-        if (s[0] == c) {
-            return s;
-        }
-        s++;
-    }
-    return nullptr;
-#else
+const char *
+fmemchr(const char * s, const char * e) noexcept {
     return static_cast<const char *>(memchr(s, ':', e - s));
-#endif
 }
-
-namespace {
 
 // Avoid issues with primitive alignment when reading from buffer.
 // Requires caller to ensure buffer is big enough to read from.
 template <typename T>
-inline T read_unaligned(const char* buf) noexcept
+constexpr T read_unaligned(const char* buf) noexcept
 {
     T tmp;
     memcpy(&tmp, buf, sizeof(T));
     return tmp;
 }
 
-}
-
 void
 verifyIdString(const char * id, size_t sz_)
 {
-    if (sz_ > 4) {
-        if ((_G_id.as16 == read_unaligned<uint16_t>(id)) && (id[2] == ':')) {
+    if (sz_ > 4) [[likely]] {
+        if ((G_id.as16 == read_unaligned<uint16_t>(id)) && (id[2] == ':')) [[likely]] {
             return;
-        } else if ((sz_ == 6) && (_G_null.as32 == read_unaligned<uint32_t>(id)) && (id[4] == ':') && (id[5] == ':')) {
+        } else if ((sz_ == 6) && (G_null.as32 == read_unaligned<uint32_t>(id)) && (id[4] == ':') && (id[5] == ':')) {
             reportNoId(id);
         } else if (sz_ > 8) {
             reportNoSchemeSeparator(id);
@@ -159,29 +106,30 @@ validate(uint16_t numComponents)
 
 constexpr uint32_t NAMESPACE_OFFSET = 3;
 
-const vespalib::stringref DEFAULT_ID("id::::");
+constexpr vespalib::stringref DEFAULT_ID("id::::", 6);
 
 union LocationUnion {
     uint8_t _key[16];
     IdString::LocationType _location[2];
 };
 
-uint64_t parseNumber(stringref number) {
-    char* errPos = nullptr;
-    errno = 0;
-    uint64_t n = strtoul(number.data(), &errPos, 10);
-    if (*errPos) {
-        throw IdParseException("'n'-value must be a 64-bit number. It was " + number, VESPA_STRLOC);
+uint64_t
+parseNumber(stringref s) {
+    uint64_t n(0);
+    auto res = std::from_chars(s.data(), s.data() + s.size(), n, 10);
+    if (res.ptr != s.data() + s.size()) [[unlikely]]{
+        throw IdParseException("'n'-value must be a 64-bit number. It was " + s, VESPA_STRLOC);
     }
-    if (errno == ERANGE) {
-        throw IdParseException("'n'-value out of range (" + number + ")", VESPA_STRLOC);
+    if (res.ec == std::errc::result_out_of_range) [[unlikely]] {
+        throw IdParseException("'n'-value out of range (" + s + ")", VESPA_STRLOC);
     }
     return n;
 }
 
-void setLocation(IdString::LocationType &loc, IdString::LocationType val,
+void
+setLocation(IdString::LocationType &loc, IdString::LocationType val,
                  bool &has_set_location, stringref key_values) {
-    if (has_set_location) {
+    if (has_set_location) [[unlikely]] {
         throw IdParseException("Illegal key combination in " + key_values);
     }
     loc = val;
@@ -193,7 +141,7 @@ void setLocation(IdString::LocationType &loc, IdString::LocationType val,
 
 const IdString::Offsets IdString::Offsets::DefaultID(DEFAULT_ID);
 
-IdString::Offsets::Offsets(stringref id)
+IdString::Offsets::Offsets(stringref id) noexcept
     : _offsets()
 {
     compute(id);

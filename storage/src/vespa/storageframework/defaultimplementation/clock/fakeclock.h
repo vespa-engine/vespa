@@ -22,13 +22,12 @@ struct FakeClock : public framework::Clock {
 
 private:
     Mode _mode;
-    framework::MicroSecTime _absoluteTime;
+    vespalib::duration      _absoluteTime;
     mutable time_t          _cycleCount;
     mutable std::mutex      _lock;
 
 public:
-    FakeClock(Mode m = FAKE_ABSOLUTE,
-              framework::MicroSecTime startTime = framework::MicroSecTime(1));
+    explicit FakeClock(Mode m = FAKE_ABSOLUTE, vespalib::duration startTime = 1us);
 
     void setMode(Mode m) {
         std::lock_guard guard(_lock);
@@ -38,43 +37,37 @@ public:
 
     virtual void setAbsoluteTimeInSeconds(uint32_t seconds) {
         std::lock_guard guard(_lock);
-        _absoluteTime = framework::MicroSecTime(seconds * uint64_t(1000000));
+        _absoluteTime = std::chrono::seconds(seconds);
         _cycleCount = 0;
         _mode = FAKE_ABSOLUTE;
     }
 
     virtual void setAbsoluteTimeInMicroSeconds(uint64_t usecs) {
         std::lock_guard guard(_lock);
-        _absoluteTime = framework::MicroSecTime(usecs);
+        _absoluteTime = std::chrono::microseconds(usecs);
         _cycleCount = 0;
         _mode = FAKE_ABSOLUTE;
     }
 
     virtual void addMilliSecondsToTime(uint64_t ms) {
         std::lock_guard guard(_lock);
-        _absoluteTime += framework::MicroSecTime(ms * 1000);
+        _absoluteTime += std::chrono::milliseconds(ms);
     }
 
     virtual void addSecondsToTime(uint32_t nr) {
         std::lock_guard guard(_lock);
-        _absoluteTime += framework::MicroSecTime(nr * uint64_t(1000000));
+        _absoluteTime += std::chrono::seconds(nr);
     }
 
-    framework::MicroSecTime getTimeInMicros() const override {
-        std::lock_guard guard(_lock);
-        if (_mode == FAKE_ABSOLUTE) return _absoluteTime;
-        return _absoluteTime + framework::MicroSecTime(1000000 * _cycleCount++);
-    }
-    framework::MilliSecTime getTimeInMillis() const override {
-        return getTimeInMicros().getMillis();
-    }
-    framework::SecondTime getTimeInSeconds() const override {
-        return getTimeInMicros().getSeconds();
-    }
-    framework::MonotonicTimePoint getMonotonicTime() const override {
+    int64_t getTimeInMicros() const;
+
+    vespalib::system_time getSystemTime() const override {
         // For simplicity, assume fake monotonic time follows fake wall clock.
-        return MonotonicTimePoint(std::chrono::microseconds(
-                getTimeInMicros().getTime()));
+        return vespalib::system_time(std::chrono::microseconds(getTimeInMicros()));
+    }
+    vespalib::steady_time getMonotonicTime() const override {
+        // For simplicity, assume fake monotonic time follows fake wall clock.
+        return vespalib::steady_time(std::chrono::microseconds(getTimeInMicros()));
     }
 };
 

@@ -32,9 +32,9 @@ public:
 
     ~Zc4PostingSeqRead();
 
-    typedef index::DocIdAndFeatures DocIdAndFeatures;
-    typedef index::PostingListCounts PostingListCounts;
-    typedef index::PostingListParams PostingListParams;
+    using DocIdAndFeatures = index::DocIdAndFeatures;
+    using PostingListCounts = index::PostingListCounts;
+    using PostingListParams = index::PostingListParams;
 
     void readDocIdAndFeatures(DocIdAndFeatures &features) override;
     void readCounts(const PostingListCounts &counts) override; // Fill in for next word
@@ -53,7 +53,7 @@ class Zc4PostingSeqWrite : public index::PostingListFileSeqWrite
     Zc4PostingSeqWrite &operator=(const Zc4PostingSeqWrite &);
 
 protected:
-    typedef bitcompression::FeatureEncodeContextBE EncodeContext;
+    using EncodeContext = bitcompression::FeatureEncodeContextBE;
 
     Zc4PostingWriter<true> _writer;
     FastOS_File      _file;
@@ -68,9 +68,9 @@ public:
     Zc4PostingSeqWrite(index::PostingListCountFileSeqWrite *countFile);
     ~Zc4PostingSeqWrite();
 
-    typedef index::DocIdAndFeatures DocIdAndFeatures;
-    typedef index::PostingListCounts PostingListCounts;
-    typedef index::PostingListParams PostingListParams;
+    using DocIdAndFeatures = index::DocIdAndFeatures;
+    using PostingListCounts = index::PostingListCounts;
+    using PostingListParams = index::PostingListParams;
 
     void writeDocIdAndFeatures(const DocIdAndFeatures &features) override;
     void flushWord() override;

@@ -16,7 +16,6 @@ import java.util.Objects;
 import java.util.Optional;
 
 import static java.util.Collections.emptyList;
-import static java.util.stream.Collectors.toList;
 
 /**
  * @author bjorncs
@@ -57,7 +56,7 @@ public class Pkcs10Csr {
         return getExtensions()
                 .map(extensions -> Arrays.stream(extensions.getExtensionOIDs())
                         .map(ASN1ObjectIdentifier::getId)
-                        .collect(toList()))
+                        .toList())
                 .orElse(emptyList());
 
     }

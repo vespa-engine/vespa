@@ -71,7 +71,7 @@ public class LogEntry {
                                                             .replaceAll("\\\\t", "\t")))
                          .filter(entry -> entry.at().isAfter(from))
                          .limit(100_000)
-                         .collect(Collectors.toUnmodifiableList());
+                         .toList();
         }
         catch (IOException e) {
             throw new UncheckedIOException(e);

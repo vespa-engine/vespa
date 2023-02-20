@@ -103,7 +103,7 @@ public class ReconfigurerTest {
 
     @After
     public void stopReconfigurer() {
-       reconfigurer.shutdown();
+       reconfigurer.deconstruct();
     }
 
     private ZookeeperServerConfig createConfig(int numberOfServers, boolean dynamicReconfiguration, int... retiredIndices) {
@@ -155,7 +155,7 @@ public class ReconfigurerTest {
 
         void startOrReconfigure(ZookeeperServerConfig newConfig) {
             serverPeer = startOrReconfigure(newConfig, this, MockQuorumPeer::new);
-            phaser.arriveAndDeregister();
+            phaser.arriveAndAwaitAdvance(); // Let runner thread see us setting the peer—used below in start(Path)—the first time.
         }
 
         String connectionSpec() {
@@ -172,12 +172,12 @@ public class ReconfigurerTest {
 
         @Override
         public void shutdown() {
-            phaser.arriveAndAwaitAdvance();
-            serverPeer.shutdown(Duration.ofSeconds(1)); }
+            serverPeer.shutdown(Duration.ofSeconds(1));
+        }
 
         @Override
         public void start(Path configFilePath) {
-            phaser.arriveAndAwaitAdvance();
+            phaser.awaitAdvance(phaser.arriveAndDeregister());
             serverPeer.start(configFilePath);
         }
 

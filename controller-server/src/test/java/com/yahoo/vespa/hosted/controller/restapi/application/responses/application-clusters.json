@@ -28,6 +28,9 @@
         },
         "cost": 0.43
       },
+      "groupSize": {
+        "to": 3
+      },
       "current": {
         "nodes": 2,
         "groups": 1,
@@ -42,37 +45,53 @@
         "cost": 0.22
       },
       "target": {
-        "nodes": 2,
-        "groups": 1,
-        "nodeResources": {
-          "vcpu": 3.0,
-          "memoryGb": 8.0,
-          "diskGb": 50.0,
-          "bandwidthGbps": 1.0,
-          "diskSpeed": "slow",
-          "storageType": "remote"
+        "status": "ideal",
+        "description": "Cluster is ideally scaled",
+        "resources": {
+          "nodes": 2,
+          "groups": 1,
+          "nodeResources": {
+            "vcpu": 3.0,
+            "memoryGb": 8.0,
+            "diskGb": 50.0,
+            "bandwidthGbps": 1.0,
+            "diskSpeed": "slow",
+            "storageType": "remote"
+          },
+          "cost": 0.29
         },
-        "cost": 0.29
+        "at" : 123,
+        "peak": {
+          "cpu": 0.35,
+          "memory": 0.65,
+          "disk": 1.0
+        },
+        "ideal": {
+          "cpu": 0.2,
+          "memory": 0.5,
+          "disk": 0.8
+        }
       },
-      "utilization": {
-        "cpu": 0.1,
-        "idealCpu": 0.2,
-        "currentCpu": 0.3,
-        "peakCpu": 0.35,
-        "memory": 0.4,
-        "idealMemory": 0.5,
-        "currentMemory": 0.6,
-        "peakMemory": 0.65,
-        "disk": 0.7,
-        "idealDisk": 0.8,
-        "currentDisk": 0.9,
-        "peakDisk": 1.0
+      "suggested": {
+        "status": "unavailable",
+        "description": "",
+        "at": 0,
+        "peak": {
+          "cpu": 0.0,
+          "memory": 0.0,
+          "disk": 0.0
+        },
+        "ideal": {
+          "cpu": 0.0,
+          "memory": 0.0,
+          "disk": 0.0
+        }
       },
       "scalingEvents": [
         {
           "from": {
             "nodes": 0,
-            "groups": 0,
+            "groups": 1,
             "nodeResources": {
               "vcpu": 0.0,
               "memoryGb": 0.0,
@@ -100,11 +119,7 @@
           "completion": 2234
         }
       ],
-      "autoscalingStatusCode": "ideal",
-      "autoscalingStatus": "Cluster is ideally scaled",
-      "scalingDuration": 360000,
-      "maxQueryGrowthRate": 0.7,
-      "currentQueryFractionOfMax": 0.3
+      "scalingDuration": 360000
     }
   }
 }

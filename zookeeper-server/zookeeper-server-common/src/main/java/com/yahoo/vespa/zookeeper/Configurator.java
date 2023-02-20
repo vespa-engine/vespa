@@ -98,7 +98,7 @@ public class Configurator {
         sb.append("serverCnxnFactory=org.apache.zookeeper.server.VespaNettyServerCnxnFactory").append("\n");
         sb.append("quorumListenOnAllIPs=true").append("\n");
         sb.append("standaloneEnabled=false").append("\n");
-        sb.append("reconfigEnabled=true").append("\n");
+        sb.append("reconfigEnabled=").append(config.dynamicReconfiguration()).append("\n");
         sb.append("skipACL=yes").append("\n");
         ensureThisServerIsRepresented(config.myid(), config.server());
         config.server().forEach(server -> sb.append(serverSpec(server, server.joining())).append("\n"));
@@ -154,7 +154,7 @@ public class Configurator {
         return zookeeperServerConfig.server().stream()
                                     .map(ZookeeperServerConfig.Server::hostname)
                                     .distinct()
-                                    .collect(Collectors.toList());
+                                    .toList();
     }
 
     Path makeAbsolutePath(String filename) {

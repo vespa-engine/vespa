@@ -10,7 +10,6 @@ import com.yahoo.vespa.model.container.component.BindingPattern;
 import com.yahoo.vespa.model.container.component.FileStatusHandlerComponent;
 import com.yahoo.vespa.model.container.component.Handler;
 import com.yahoo.vespa.model.container.component.SystemBindingPattern;
-import com.yahoo.vespa.model.container.component.chain.Chain;
 import com.yahoo.vespa.model.container.http.ssl.HostedSslConnectorFactory;
 
 import java.util.Collection;
@@ -144,7 +143,7 @@ public class AccessControl {
 
     // Add a filter chain used by default hosted connector
     private void addDefaultHostedRequestChain(Http http) {
-        Chain<Filter> chain = createChain(DEFAULT_CONNECTOR_HOSTED_REQUEST_CHAIN_ID);
+        HttpFilterChain chain = createChain(DEFAULT_CONNECTOR_HOSTED_REQUEST_CHAIN_ID);
         http.getFilterChains().add(chain);
     }
 
@@ -184,7 +183,7 @@ public class AccessControl {
                 rewrittenBinding);
     }
 
-    private static Chain<Filter> createChain(ComponentId id) { return new Chain<>(FilterChains.emptyChainSpec(id)); }
+    private static HttpFilterChain createChain(ComponentId id) { return new HttpFilterChain(id, HttpFilterChain.Type.SYSTEM); }
 
     private static boolean isExcludedHandler(Handler handler) { return EXCLUDED_HANDLERS.contains(handler.getClassId().getName()); }
 

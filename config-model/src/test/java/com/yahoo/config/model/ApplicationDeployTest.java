@@ -10,7 +10,6 @@ import com.yahoo.config.model.application.provider.DeployData;
 import com.yahoo.config.model.application.provider.FilesApplicationPackage;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.Tags;
 import com.yahoo.document.DataType;
 import com.yahoo.io.IOUtils;
 import com.yahoo.path.Path;
@@ -227,7 +226,6 @@ public class ApplicationDeployTest {
         ApplicationId applicationId = ApplicationId.from("tenant1", "application1", "instance1");
         DeployData deployData = new DeployData("bar",
                                                applicationId,
-                                               Tags.fromString("tag1 tag2"),
                                                13L,
                                                false,
                                                1337L,
@@ -238,7 +236,6 @@ public class ApplicationDeployTest {
         ApplicationMetaData meta = newApp.getMetaData();
         assertEquals("bar", meta.getDeployPath());
         assertEquals(applicationId, meta.getApplicationId());
-        assertEquals(Tags.fromString("tag1 tag2"), meta.getTags());
         assertEquals(13L, (long) meta.getDeployTimestamp());
         assertEquals(1337L, (long) meta.getGeneration());
         assertEquals(3L, meta.getPreviousActiveGeneration());

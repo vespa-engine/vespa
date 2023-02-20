@@ -30,7 +30,7 @@ private:
     bitcompression::EG2PosOccEncodeContext<true> _realEncodeFeatures;
 
 public:
-    typedef index::Schema Schema;
+    using Schema = index::Schema;
 
     Zc4PosOccSeqWrite(const Schema &schema, uint32_t indexId,
                       const index::FieldLengthInfo &field_length_info,
@@ -58,7 +58,7 @@ private:
     bitcompression::PosOccFieldsParams _fieldsParams;
     bitcompression::EGPosOccEncodeContext<true> _realEncodeFeatures;
 public:
-    typedef index::Schema Schema;
+    using Schema = index::Schema;
     ZcPosOccSeqWrite(const Schema &schema, uint32_t indexId,
                      const index::FieldLengthInfo &field_length_info,
                      index::PostingListCountFileSeqWrite *countFile);

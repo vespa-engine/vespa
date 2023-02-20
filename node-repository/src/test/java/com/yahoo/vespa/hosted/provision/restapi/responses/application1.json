@@ -44,50 +44,76 @@
         }
       },
       "suggested" : {
-        "nodes" : 6,
-        "groups" : 2,
+        "status" : "unavailable",
+        "description" : "",
         "resources" : {
-          "vcpu" : 3.0,
-          "memoryGb" : 20.0,
-          "diskGb" : 100.0,
-          "bandwidthGbps" : 1.0,
-          "diskSpeed" : "fast",
-          "storageType" : "any",
-          "architecture":"x86_64"
+          "nodes": 6,
+          "groups": 2,
+          "resources": {
+            "vcpu": 3.0,
+            "memoryGb": 20.0,
+            "diskGb": 100.0,
+            "bandwidthGbps": 1.0,
+            "diskSpeed": "fast",
+            "storageType": "any",
+            "architecture": "x86_64"
+          }
+        },
+        "at" : 123,
+        "peak" : {
+          "cpu" : 0.0,
+          "memory" : 0.0,
+          "disk" : 0.0
+        },
+        "ideal" : {
+          "cpu" : 0.0,
+          "memory" : 0.0,
+          "disk" : 0.0
+        },
+        "metrics" : {
+          "queryRate" : 0.0,
+          "growthRateHeadroom" : 0.0,
+          "cpuCostPerQuery" : 0.0
         }
       },
       "target" : {
-        "nodes" : 4,
-        "groups" : 1,
+        "status" : "unavailable",
+        "description" : "",
         "resources" : {
-          "vcpu" : 3.0,
-          "memoryGb" : 16.0,
-          "diskGb" : 100.0,
-          "bandwidthGbps" : 1.0,
-          "diskSpeed" : "fast",
-          "storageType" : "any",
-          "architecture":"x86_64"
+          "nodes" : 4,
+          "groups" : 1,
+          "resources" : {
+            "vcpu": 3.0,
+            "memoryGb": 16.0,
+            "diskGb": 100.0,
+            "bandwidthGbps": 1.0,
+            "diskSpeed": "fast",
+            "storageType": "any",
+            "architecture": "x86_64"
+          }
+        },
+        "at" : 123,
+        "peak" : {
+          "cpu" : 0.1,
+          "memory" : 0.2,
+          "disk" : 0.3
+        },
+        "ideal" : {
+          "cpu" : 0.4,
+          "memory" : 0.5,
+          "disk" : 0.6
+        },
+        "metrics" : {
+          "queryRate" : 0.7,
+          "growthRateHeadroom" : 0.8,
+          "cpuCostPerQuery" : 0.9
         }
-      },
-      "utilization" : {
-          "cpu" : 0.0,
-          "idealCpu": 0.1375,
-          "currentCpu": 0.0,
-          "peakCpu": 0.0,
-          "memory" : 0.0,
-          "idealMemory": 0.65,
-          "currentMemory": 0.0,
-          "peakMemory": 0.0,
-          "disk" : 0.0,
-          "idealDisk": 0.95,
-          "currentDisk": 0.0,
-          "peakDisk": 0.0
       },
       "scalingEvents" : [
         {
           "from": {
             "nodes": 0,
-            "groups": 0,
+            "groups": 1,
             "resources": {
               "vcpu" : 0.0,
               "memoryGb": 0.0,
@@ -114,11 +140,7 @@
           "at" : 123
         }
       ],
-      "autoscalingStatusCode": "unavailable",
-      "autoscalingStatus": "",
-      "scalingDuration": 600000,
-      "maxQueryGrowthRate": 0.1,
-      "currentQueryFractionOfMax": 0.5
+      "scalingDuration": 600000
     }
   }
 }

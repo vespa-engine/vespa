@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.component.chain;
 
-import com.google.common.collect.ImmutableList;
 import com.yahoo.component.ComponentId;
 import com.yahoo.component.chain.dependencies.ordering.ChainBuilder;
 
@@ -28,7 +27,7 @@ public class Chain<COMPONENT extends ChainedComponent> {
     /** Create a chain directly. This will NOT order the chain by the ordering constraints. */
     public Chain(ComponentId id, List<COMPONENT> componentList) {
         this.id = id;
-        this.componentList = ImmutableList.copyOf(componentList);
+        this.componentList = List.copyOf(componentList);
     }
 
     /** Create a chain directly. This will NOT order the chain by the ordering constraints. */

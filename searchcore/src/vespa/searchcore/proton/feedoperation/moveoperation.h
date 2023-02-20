@@ -11,7 +11,7 @@ private:
     using DocumentSP = std::shared_ptr<document::Document>;
     DocumentSP _doc;
 public:
-    typedef std::unique_ptr<MoveOperation> UP;
+    using UP = std::unique_ptr<MoveOperation>;
 
     MoveOperation();
     MoveOperation(const document::BucketId &bucketId,

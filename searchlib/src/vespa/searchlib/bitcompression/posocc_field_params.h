@@ -18,8 +18,8 @@ namespace search::bitcompression {
 class PosOccFieldParams
 {
 public:
-    typedef index::PostingListParams PostingListParams;
-    typedef index::Schema Schema;
+    using PostingListParams = index::PostingListParams;
+    using Schema = index::Schema;
 
     enum CollectionType
     {

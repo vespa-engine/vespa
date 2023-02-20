@@ -34,10 +34,7 @@ struct Writer {
     void write(const char *data, size_t size) const {
         fwrite(data, 1, size, file);
     }
-    void fmt(const char *format, ...) const
-#ifdef __GNUC__
-        __attribute__ ((format (printf,2,3)))
-#endif
+    void fmt(const char *format, ...) const __attribute__ ((format (printf,2,3)))
     {
         va_list ap;
         va_start(ap, format);
@@ -84,7 +81,7 @@ private:
     Writer _writer;
 
 public:
-    typedef std::unique_ptr<Graph> UP;
+    using UP = std::unique_ptr<Graph>;
     Graph(const std::string &file) : _writer(file) {}
     void addValue(double x, double y) { _writer.fmt("%g %g\n", x, y); }
 };
@@ -99,7 +96,7 @@ private:
     static int  _plots;
 
 public:
-    typedef std::unique_ptr<Plot> UP;
+    using UP = std::unique_ptr<Plot>;
 
     Plot(const std::string &title) : _name(vespalib::make_string("plot.%d", _plots++)), _graphs(0),
                                      _writer(vespalib::make_string("%s.gnuplot", _name.c_str())) {

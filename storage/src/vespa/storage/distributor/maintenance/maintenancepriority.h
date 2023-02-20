@@ -20,33 +20,33 @@ public:
     static constexpr const char* toString(Priority pri) noexcept {
         switch (pri) {
         case NO_MAINTENANCE_NEEDED: return "NO_MAINTENANCE_NEEDED";
-        case VERY_LOW: return "VERY_LOW";
-        case LOW: return "LOW";
-        case MEDIUM: return "MEDIUM";
-        case HIGH: return "HIGH";
-        case VERY_HIGH: return "VERY_HIGH";
-        case HIGHEST: return "HIGHEST";
-        default: return "INVALID";
+        case VERY_LOW:              return "VERY_LOW";
+        case LOW:                   return "LOW";
+        case MEDIUM:                return "MEDIUM";
+        case HIGH:                  return "HIGH";
+        case VERY_HIGH:             return "VERY_HIGH";
+        case HIGHEST:               return "HIGHEST";
+        default:                    return "INVALID";
         }
     }
 
-    MaintenancePriority()
+    constexpr MaintenancePriority() noexcept
         : _priority(NO_MAINTENANCE_NEEDED)
     {}
 
-    explicit MaintenancePriority(Priority priority)
+    constexpr explicit MaintenancePriority(Priority priority) noexcept
         : _priority(priority)
     {}
 
-    Priority getPriority() const {
+    constexpr Priority getPriority() const noexcept {
         return _priority;
     }
 
-    bool requiresMaintenance() const {
+    constexpr bool requiresMaintenance() const noexcept {
         return _priority != NO_MAINTENANCE_NEEDED;
     }
 
-    static MaintenancePriority noMaintenanceNeeded() {
+    static constexpr MaintenancePriority noMaintenanceNeeded() noexcept {
         return MaintenancePriority(NO_MAINTENANCE_NEEDED);
     }
 

@@ -14,14 +14,13 @@ import java.util.Optional;
  */
 public class ClusterMembership {
 
-    private ClusterSpec cluster; // final
-    private int index; // final
-    private boolean retired; // final
-    private String stringValue; // final
+    private final ClusterSpec cluster;
+    private final int index;
+    private final boolean retired;
+    private final String stringValue;
 
-    protected ClusterMembership() {}
-
-    private ClusterMembership(String stringValue, Version vespaVersion, Optional<DockerImage> dockerImageRepo) {
+    private ClusterMembership(String stringValue, Version vespaVersion, Optional<DockerImage> dockerImageRepo,
+                              ZoneEndpoint zoneEndpoint) {
         String[] components = stringValue.split("/");
         if (components.length < 4)
             throw new RuntimeException("Could not parse '" + stringValue + "' to a cluster membership. " +
@@ -30,14 +29,15 @@ public class ClusterMembership {
         boolean exclusive = false;
         boolean stateful = false;
         var combinedId = Optional.<String>empty();
+        boolean retired = false;
         if (components.length > 4) {
             for (int i = 4; i < components.length; i++) {
                 String component = components[i];
                 switch (component) {
-                    case "exclusive": exclusive = true; break;
-                    case "retired": retired = true; break;
-                    case "stateful": stateful = true; break;
-                    default: combinedId = Optional.of(component); break;
+                    case "exclusive" -> exclusive = true;
+                    case "retired" -> retired = true;
+                    case "stateful" -> stateful = true;
+                    default -> combinedId = Optional.of(component);
                 }
             }
         }
@@ -49,9 +49,11 @@ public class ClusterMembership {
                                   .exclusive(exclusive)
                                   .combinedId(combinedId.map(ClusterSpec.Id::from))
                                   .dockerImageRepository(dockerImageRepo)
+                                  .loadBalancerSettings(zoneEndpoint)
                                   .stateful(stateful)
                                   .build();
         this.index = Integer.parseInt(components[3]);
+        this.retired = retired;
         this.stringValue = toStringValue();
     }
 
@@ -123,7 +125,12 @@ public class ClusterMembership {
     public String toString() { return stringValue(); }
 
     public static ClusterMembership from(String stringValue, Version vespaVersion, Optional<DockerImage> dockerImageRepo) {
-        return new ClusterMembership(stringValue, vespaVersion, dockerImageRepo);
+        return from(stringValue, vespaVersion, dockerImageRepo, ZoneEndpoint.defaultEndpoint);
+    }
+
+    public static ClusterMembership from(String stringValue, Version vespaVersion, Optional<DockerImage> dockerImageRepo,
+                                         ZoneEndpoint zoneEndpoint) {
+        return new ClusterMembership(stringValue, vespaVersion, dockerImageRepo, zoneEndpoint);
     }
 
     public static ClusterMembership from(ClusterSpec cluster, int index) {

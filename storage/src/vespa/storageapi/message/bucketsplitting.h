@@ -69,7 +69,7 @@ public:
  */
 class SplitBucketReply : public BucketReply {
 public:
-    typedef std::pair<document::BucketId, BucketInfo> Entry;
+    using Entry = std::pair<document::BucketId, BucketInfo>;
     explicit SplitBucketReply(const SplitBucketCommand& cmd);
     std::vector<Entry>& getSplitInfo() { return _result; }
     const std::vector<Entry>& getSplitInfo() const { return _result; }

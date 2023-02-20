@@ -38,9 +38,9 @@ using vespalib::ForegroundThreadExecutor;
 
 const vespalib::string TEST_DIR = "test_output";
 const SerialNum INIT_SERIAL_NUM = 10;
-typedef std::vector<vespalib::string> StringVector;
-typedef std::set<vespalib::string> StringSet;
-typedef AttributeReprocessingInitializer::Config ARIConfig;
+using StringVector = std::vector<vespalib::string>;
+using StringSet = std::set<vespalib::string>;
+using ARIConfig = AttributeReprocessingInitializer::Config;
 
 struct MyReprocessingHandler : public IReprocessingHandler
 {

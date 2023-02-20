@@ -10,6 +10,7 @@ import com.yahoo.metrics.simple.Point;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
@@ -52,15 +53,21 @@ public class DocumentApiMetrics {
         feeds.add(point);
     }
 
-    public void reportSuccessful(DocumentOperationType documentOperationType, Instant startTime) {
-        double latency = Duration.between(startTime, Instant.now()).toMillis() / 1000.0d;
-        reportSuccessful(documentOperationType, latency);
-    }
-
     public void reportFailure(DocumentOperationType documentOperationType, DocumentOperationStatus documentOperationStatus) {
         Point point = points.get(documentOperationStatus).get(documentOperationType);
         feeds.add(point);
     }
+
+    public void report(DocumentOperationType type, Instant start, DocumentOperationStatus... status) {
+        double latency = latency(start);
+        for (var s : status) {
+            var point = points.get(s).get(type);
+            feedLatency.sample(latency, point);
+            feeds.add(point);
+        }
+    }
+
+    private static double latency(Instant start) { return Duration.between(start, Instant.now()).toMillis() / 1000d; }
 
     public void reportHttpRequest(String clientVersion) {
         if (clientVersion != null) {

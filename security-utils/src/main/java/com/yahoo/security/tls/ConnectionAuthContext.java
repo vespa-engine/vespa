@@ -49,6 +49,7 @@ public record ConnectionAuthContext(List<X509Certificate> peerCertificateChain,
         if (capabilityMode == DISABLE) return;
         boolean hasCapabilities = capabilities.has(requiredCapabilities);
         if (!hasCapabilities) {
+            TlsMetrics.instance().incrementCapabilitiesFailed();
             String msg = createPermissionDeniedErrorMessage(requiredCapabilities, action, resource, peer);
             if (capabilityMode == LOG_ONLY) {
                 log.info(msg);
@@ -57,6 +58,8 @@ public record ConnectionAuthContext(List<X509Certificate> peerCertificateChain,
                 log.fine(msg);
                 throw new MissingCapabilitiesException(msg);
             }
+        } else {
+            TlsMetrics.instance().incrementCapabilitiesSucceeded();
         }
     }
 

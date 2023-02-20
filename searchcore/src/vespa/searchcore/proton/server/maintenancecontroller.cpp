@@ -2,7 +2,6 @@
 
 #include "maintenancecontroller.h"
 #include "maintenancejobrunner.h"
-#include "document_db_maintenance_config.h"
 #include "i_blockable_maintenance_job.h"
 #include <vespa/searchcorespi/index/i_thread_service.h>
 #include <vespa/searchcore/proton/common/scheduledexecutor.h>
@@ -31,28 +30,18 @@ public:
     void run() override { _job->run(); }
 };
 
-bool
-isRunnable(const MaintenanceJobRunner & job, const Executor * master) {
-    return (&job.getExecutor() == master)
-           ? false
-           : job.isRunnable();
-}
-
 }
 
 MaintenanceController::MaintenanceController(FNET_Transport & transport,
                                              ISyncableThreadService& masterThread,
-                                             vespalib::Executor& shared_executor,
                                              MonitoredRefCount& refCount,
                                              const DocTypeName& docTypeName)
     : _masterThread(masterThread),
-      _shared_executor(shared_executor),
       _refCount(refCount),
       _readySubDB(),
       _remSubDB(),
       _notReadySubDB(),
       _periodicTimer(std::make_unique<ScheduledExecutor>(transport)),
-      _config(),
       _state(State::INITIALIZING),
       _docTypeName(docTypeName),
       _jobs(),
@@ -65,25 +54,11 @@ MaintenanceController::~MaintenanceController()
 }
 
 void
-MaintenanceController::registerJobInMasterThread(IMaintenanceJob::UP job)
-{
-    // Called by master write thread
-    registerJob(_masterThread, std::move(job));
-}
-
-void
-MaintenanceController::registerJobInSharedExecutor(IMaintenanceJob::UP job)
-{
-    // Called by master write thread
-    registerJob(_shared_executor, std::move(job));
-}
-
-void
-MaintenanceController::registerJob(Executor & executor, IMaintenanceJob::UP job)
+MaintenanceController::registerJob(IMaintenanceJob::UP job)
 {
     // Called by master write thread
     Guard guard(_jobsLock);
-    _jobs.push_back(std::make_shared<MaintenanceJobRunner>(executor, std::move(job)));
+    _jobs.push_back(std::make_shared<MaintenanceJobRunner>(_masterThread, std::move(job)));
 }
 
 void
@@ -95,15 +70,10 @@ MaintenanceController::killJobs()
     // Called by master write thread
     assert(_masterThread.isCurrentThread());
     LOG(debug, "killJobs(): threadId=%zu", (size_t)FastOS_Thread::GetCurrentThreadId());
-    _periodicTimer->reset();
+    _periodicTaskHandles.clear();
     // No need to take _jobsLock as modification of _jobs also happens in master write thread.
     for (auto &job : _jobs) {
         job->stop(); // Make sure no more tasks are added to the executor
-    }
-    for (auto &job : _jobs) {
-        while (isRunnable(*job, &_masterThread)) {
-            std::this_thread::sleep_for(1ms);
-        }
     }
     JobList tmpJobs;
     {
@@ -157,11 +127,10 @@ MaintenanceController::kill()
 }
 
 void
-MaintenanceController::start(const DocumentDBMaintenanceConfig::SP &config)
+MaintenanceController::start()
 {
     // Called by master write thread
     assert(_state == State::INITIALIZING);
-    _config = config;
     _state = State::STARTED;
     restart();
 }
@@ -174,33 +143,33 @@ MaintenanceController::restart()
     if (!getStarted() || getStopping() || !_readySubDB.valid()) {
         return;
     }
-    _periodicTimer->reset();
-
     addJobsToPeriodicTimer();
 }
 
 void
 MaintenanceController::addJobsToPeriodicTimer()
 {
+    _periodicTaskHandles.clear();
     // No need to take _jobsLock as modification of _jobs also happens in master write thread.
     for (const auto &jw : _jobs) {
         const IMaintenanceJob &job = jw->getJob();
         LOG(debug, "addJobsToPeriodicTimer(): docType='%s', job.name='%s', job.delay=%f, job.interval=%f",
-                _docTypeName.getName().c_str(), job.getName().c_str(), vespalib::to_s(job.getDelay()), vespalib::to_s(job.getInterval()));
+            _docTypeName.getName().c_str(), job.getName().c_str(), vespalib::to_s(job.getDelay()),
+            vespalib::to_s(job.getInterval()));
         if (job.getInterval() == vespalib::duration::zero()) {
             jw->run();
             continue;
         }
-        _periodicTimer->scheduleAtFixedRate(std::make_unique<JobWrapperTask>(jw.get()),
-                                            job.getDelay(), job.getInterval());
+        _periodicTaskHandles.push_back(_periodicTimer->scheduleAtFixedRate(std::make_unique<JobWrapperTask>(jw.get()),
+                                                                           job.getDelay(), job.getInterval()));
     }
+
 }
 
 void
-MaintenanceController::newConfig(const DocumentDBMaintenanceConfig::SP &config)
+MaintenanceController::newConfig()
 {
     // Called by master write thread
-    _config = config;
     restart();
 }
 

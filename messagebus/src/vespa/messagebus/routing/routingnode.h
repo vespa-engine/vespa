@@ -43,10 +43,10 @@ private:
     Reply::UP                 _reply;
     Route                     _route;
     IRoutingPolicy::SP        _policy;
-    RoutingContext::UP        _routingContext;
-    IServiceAddress::UP       _serviceAddress;
-    bool                      _isActive;
-    bool                      _shouldRetry;
+    std::unique_ptr<RoutingContext>  _routingContext;
+    IServiceAddress::UP              _serviceAddress;
+    bool                             _isActive;
+    bool                             _shouldRetry;
 
     /**
      * Constructs a new instance of this class. This is the child node
@@ -211,7 +211,7 @@ public:
     /**
      * Convenience typedefs.
      */
-    typedef std::unique_ptr<RoutingNode> UP;
+    using UP = std::unique_ptr<RoutingNode>;
 
     /**
      * Constructs a new instance of this class. This is the root node
@@ -233,7 +233,7 @@ public:
      * Destructor. Frees up any allocated resources, namely all child nodes of
      * this.
      */
-    ~RoutingNode();
+    ~RoutingNode() override;
 
     /**
      * Discards this routing node. Invoking this will notify the parent {@link

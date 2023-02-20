@@ -7,7 +7,14 @@ import com.yahoo.prelude.query.TermType;
 import com.yahoo.prelude.semantics.rule.Condition;
 import com.yahoo.prelude.semantics.rule.ProductionRule;
 
-import java.util.*;
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Deque;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Set;
+
 
 /**
  * A particular evaluation of a particular rule.
@@ -41,15 +48,15 @@ public class RuleEvaluation {
     private String currentContext;
 
     /** A list of referencedMatches */
-    private final List<ReferencedMatches> referencedMatchesList = new java.util.ArrayList<>();
+    private final List<ReferencedMatches> referencedMatchesList = new ArrayList<>();
 
-    private final List<Match> nonreferencedMatches = new java.util.ArrayList<>();
+    private final List<Match> nonreferencedMatches = new ArrayList<>();
 
     /** The evaluation owning this */
     private final Evaluation evaluation;
 
     /** The choice points saved in this evaluation */
-    private Stack<Choicepoint> choicepoints = null;
+    private Deque<Choicepoint> choicepoints = null;
 
     /* The last value returned by a condition evaluated in this, may be null */
     private Object value = null;
@@ -98,20 +105,18 @@ public class RuleEvaluation {
     int calculateMatchDigest(ProductionRule rule) {
         int matchDigest = rule.hashCode();
         int matchCounter = 1;
-        for (Iterator<ReferencedMatches> i = referencedMatchesList.iterator(); i.hasNext(); ) {
-            ReferencedMatches matches = i.next();
+        for (ReferencedMatches matches : referencedMatchesList) {
             int termCounter = 0;
             for (Iterator<Match> j = matches.matchIterator(); j.hasNext(); ) {
                 Match match = j.next();
-                matchDigest = 7 * matchDigest * matchCounter+
-                              71 * termCounter +
-                              match.hashCode();
+                matchDigest = 7 * matchDigest * matchCounter +
+                        71 * termCounter +
+                        match.hashCode();
                 termCounter++;
             }
             matchCounter++;
         }
-        for (Iterator<Match> i = nonreferencedMatches.iterator(); i.hasNext(); ) {
-            Match match = i.next();
+        for (Match match : nonreferencedMatches) {
             matchDigest = 7 * matchDigest * matchCounter + match.hashCode();
             matchCounter++;
         }
@@ -163,10 +168,8 @@ public class RuleEvaluation {
     public int getPosition() { return position; }
 
     /** Sets a new current label and returns the previous one */
-    public String setCurrentLabel(String currentLabel) {
-        String oldLabel = currentLabel;
+    public void setCurrentLabel(String currentLabel) {
         this.currentLabel = currentLabel;
-        return oldLabel;
     }
 
     public String getCurrentLabel() { return currentLabel; }
@@ -226,8 +229,7 @@ public class RuleEvaluation {
 
     /** Returns the referenced matches for a context name, or null if none */
     public ReferencedMatches getReferencedMatches(String name) {
-        for (Iterator<ReferencedMatches> i = referencedMatchesList.iterator(); i.hasNext(); ) {
-            ReferencedMatches matches = i.next();
+        for (ReferencedMatches matches : referencedMatchesList) {
             if (name.equals(matches.getContextName()))
                 return matches;
         }
@@ -307,7 +309,7 @@ public class RuleEvaluation {
     public Choicepoint getChoicepoint(Condition condition, boolean create) {
         if (choicepoints == null) {
             if ( ! create) return null;
-            choicepoints = new java.util.Stack<>();
+            choicepoints = new ArrayDeque<>();
         }
         Choicepoint choicepoint=lookupChoicepoint(condition);
         if (choicepoint == null) {
@@ -319,8 +321,7 @@ public class RuleEvaluation {
     }
 
     private Choicepoint lookupChoicepoint(Condition condition) {
-        for (Iterator<Choicepoint> i = choicepoints.iterator(); i.hasNext(); ) {
-            Choicepoint choicepoint = i.next();
+        for (Choicepoint choicepoint : choicepoints) {
             if (condition == choicepoint.getCondition())
                 return choicepoint;
         }

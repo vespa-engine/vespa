@@ -1,6 +1,8 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.admin.monitoring;
-
+import com.yahoo.metrics.ContainerMetrics;
+import com.yahoo.metrics.SearchNodeMetrics;
+import com.yahoo.metrics.StorageMetrics;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -23,25 +25,25 @@ public class AutoscalingMetrics {
 
         // Memory util
         metrics.add("mem.util"); // node level - default
-        metrics.add("content.proton.resource_usage.memory.average"); // better for content as it is the basis for blocking
+        metrics.add(SearchNodeMetrics.CONTENT_PROTON_RESOURCE_USAGE_MEMORY.average()); // better for content as it is the basis for blocking
 
         // Disk util
         metrics.add("disk.util"); // node level -default
-        metrics.add("content.proton.resource_usage.disk.average"); // better for content as it is the basis for blocking
+        metrics.add(SearchNodeMetrics.CONTENT_PROTON_RESOURCE_USAGE_DISK.average()); // better for content as it is the basis for blocking
 
         metrics.add("application_generation");
 
         metrics.add("in_service");
 
         // Query rate
-        metrics.add("queries.rate"); // container
-        metrics.add("content.proton.documentdb.matching.queries.rate"); // content
+        metrics.add(ContainerMetrics.QUERIES.rate()); // container
+        metrics.add(SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_MATCHING_QUERIES.rate()); // content
 
         // Write rate
-        metrics.add("feed.http-requests.rate"); // container
-        metrics.add("vds.filestor.allthreads.put.count.rate"); // content
-        metrics.add("vds.filestor.allthreads.remove.count.rate"); // content
-        metrics.add("vds.filestor.allthreads.update.count.rate"); // content
+        metrics.add(ContainerMetrics.FEED_HTTP_REQUESTS.rate()); // container
+        metrics.add(StorageMetrics.VDS_FILESTOR_ALLTHREADS_PUT_COUNT.rate()); // content
+        metrics.add(StorageMetrics.VDS_FILESTOR_ALLTHREADS_REMOVE_COUNT.rate()); // content
+        metrics.add(StorageMetrics.VDS_FILESTOR_ALLTHREADS_UPDATE_COUNT.rate()); // content
 
         return new MetricSet("autoscaling", toMetrics(metrics));
     }

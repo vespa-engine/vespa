@@ -6,7 +6,7 @@ set -e
 readonly SOURCE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd )"
 readonly NUM_THREADS=$(( $(nproc) + 2 ))
 
-source /etc/profile.d/enable-gcc-toolset-11.sh
+source /etc/profile.d/enable-gcc-toolset-12.sh
 
 export MALLOC_ARENA_MAX=1
 export MAVEN_OPTS="-Xss1m -Xms128m -Xmx2g"
@@ -18,8 +18,18 @@ ccache -p
 
 if ! source $SOURCE_DIR/screwdriver/detect-what-to-build.sh; then
     echo "Could not detect what to build."
-    SHOULD_BUILD=all
+    SHOULD_BUILD=systemtest
 fi
+
+build_cpp() {
+    cat /proc/cpuinfo | grep "model name" | head -1
+    cat /proc/cpuinfo | grep "flags" | head -1
+    # TODO This will only build for x86_64 architecture, and is used for pull request builds.
+    cmake3 -DVESPA_UNPRIVILEGED=no -DDEFAULT_VESPA_CPU_ARCH_FLAGS="-march=skylake" $1
+    time make -j ${NUM_THREADS}
+    time ctest3 --output-on-failure -j ${NUM_THREADS}
+    ccache --show-stats
+}
 
 echo "Building: $SHOULD_BUILD"
 
@@ -28,10 +38,7 @@ cd ${SOURCE_DIR}
 case $SHOULD_BUILD in
   cpp)
     ./bootstrap.sh full
-    cmake3 -DVESPA_UNPRIVILEGED=no .
-    time make -j ${NUM_THREADS}
-    time ctest3 --output-on-failure -j ${NUM_THREADS}
-    ccache --show-stats
+    build_cpp .
     ;;
   java)
     ./bootstrap.sh java
@@ -44,10 +51,7 @@ case $SHOULD_BUILD in
     make -C client/go install-all
     ./bootstrap.sh java
     time mvn -V $VESPA_MAVEN_EXTRA_OPTS install
-    cmake3 -DVESPA_UNPRIVILEGED=no .
-    time make -j ${NUM_THREADS}
-    time ctest3 --output-on-failure -j ${NUM_THREADS}
-    ccache --show-stats
+    build_cpp .
     make install
     ;;    
 esac

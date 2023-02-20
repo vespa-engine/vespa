@@ -38,7 +38,7 @@ public class MlModelsImportingTest {
                                                                 xgboost);
             assertEquals("tensor()", function.returnType().get().toString());
             assertEquals("f109, f29, f56, f60", commaSeparated(function.arguments()));
-            function.arguments().forEach(arg -> assertEquals(TensorType.empty, function.argumentTypes().get(arg)));
+            function.arguments().forEach(arg -> assertEquals(TensorType.empty, function.getArgumentType(arg)));
 
             // Evaluator
             FunctionEvaluator evaluator = xgboost.evaluatorOf();
@@ -56,7 +56,7 @@ public class MlModelsImportingTest {
                     lightgbm);
             assertEquals("tensor()", function.returnType().get().toString());
             assertEquals("categorical_1, categorical_2, numerical_1, numerical_2", commaSeparated(function.arguments()));
-            function.arguments().forEach(arg -> assertEquals(TensorType.empty, function.argumentTypes().get(arg)));
+            function.arguments().forEach(arg -> assertEquals(TensorType.empty, function.getArgumentType(arg)));
 
             // Evaluator
             FunctionEvaluator evaluator = lightgbm.evaluatorOf();
@@ -76,7 +76,7 @@ public class MlModelsImportingTest {
             assertEquals("tensor(d1[10])", function.returnType().get().toString());
             assertEquals(1, function.arguments().size());
             assertEquals("Placeholder", function.arguments().get(0));
-            assertEquals("tensor(d0[],d1[784])", function.argumentTypes().get("Placeholder").toString());
+            assertEquals("tensor(d0[],d1[784])", function.getArgumentType("Placeholder").toString());
 
             // Evaluator
             assertEquals("tensor(d1[10],d2[784])",
@@ -98,7 +98,7 @@ public class MlModelsImportingTest {
             assertEquals("tensor(d1[10])", function.returnType().get().toString());
             assertEquals(1, function.arguments().size());
             assertEquals("Placeholder", function.arguments().get(0));
-            assertEquals("tensor(d0[],d1[784])", function.argumentTypes().get("Placeholder").toString());
+            assertEquals("tensor(d0[],d1[784])", function.getArgumentType("Placeholder").toString());
 
             // Evaluator
             FunctionEvaluator evaluator = tfMnistSoftmax.evaluatorOf(); // Verify exactly one output available
@@ -116,7 +116,7 @@ public class MlModelsImportingTest {
             assertEquals("tensor(d3[300])", generatedFunction.returnType().get().toString());
             assertEquals(1, generatedFunction.arguments().size());
             assertEquals("input", generatedFunction.arguments().get(0));
-            assertNull(null, generatedFunction.argumentTypes().get("input")); // TODO: Not available until we resolve all argument types
+            assertNull(null, generatedFunction.getArgumentType("input")); // TODO: Not available until we resolve all argument types
 
             // Function
             assertEquals(1, tfMnist.functions().size());
@@ -127,7 +127,7 @@ public class MlModelsImportingTest {
             assertEquals("tensor(d1[10])", function.returnType().get().toString());
             assertEquals(1, function.arguments().size());
             assertEquals("input", function.arguments().get(0));
-            assertEquals("tensor(d0[],d1[784])", function.argumentTypes().get("input").toString());
+            assertEquals("tensor(d0[],d1[784])", function.getArgumentType("input").toString());
 
             // Evaluator
             FunctionEvaluator evaluator = tfMnist.evaluatorOf("serving_default");

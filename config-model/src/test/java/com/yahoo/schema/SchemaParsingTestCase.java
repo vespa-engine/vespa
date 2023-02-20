@@ -5,9 +5,11 @@ import java.io.IOException;
 
 import com.yahoo.schema.parser.ParseException;
 
+import com.yahoo.yolean.Exceptions;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 /**
@@ -27,10 +29,8 @@ public class SchemaParsingTestCase extends AbstractSchemaTestCase {
     void requireThatParseExceptionPositionIsCorrect() throws Exception {
         try {
             ApplicationBuilder.buildFromFile("src/test/examples/invalid_sd_construct.sd");
-        } catch (ParseException e) {
-            if (!e.getMessage().contains("at line 5, column 36.")) {
-                throw e;
-            }
+        } catch (IllegalArgumentException e) {
+            assertTrue(Exceptions.toMessageString(e).contains("at line 5, column 36."));
         }
     }
 
@@ -38,10 +38,8 @@ public class SchemaParsingTestCase extends AbstractSchemaTestCase {
     void requireThatParserHandlesLexicalError() throws Exception {
         try {
             ApplicationBuilder.buildFromFile("src/test/examples/invalid_sd_lexical_error.sd");
-        } catch (ParseException e) {
-            if (!e.getMessage().contains("at line 7, column 27.")) {
-                throw e;
-            }
+        } catch (IllegalArgumentException e) {
+            assertTrue(Exceptions.toMessageString(e).contains("at line 7, column 27."));
         }
     }
 
@@ -50,10 +48,8 @@ public class SchemaParsingTestCase extends AbstractSchemaTestCase {
         try {
             ApplicationBuilder.buildFromFile("src/test/examples/invalid_sd_junk_at_end.sd");
             fail("Illegal junk at end of SD passed");
-        } catch (ParseException e) {
-            if (!e.getMessage().contains("at line 10, column 1")) {
-                throw e;
-            }
+        } catch (IllegalArgumentException e) {
+            assertTrue(Exceptions.toMessageString(e).contains("at line 10, column 1"));
         }
     }
 
@@ -62,10 +58,8 @@ public class SchemaParsingTestCase extends AbstractSchemaTestCase {
         try {
             ApplicationBuilder.buildFromFile("src/test/examples/invalid_sd_no_closing_bracket.sd");
             fail("SD without closing bracket passed");
-        } catch (ParseException e) {
-            if (!e.getMessage().contains("Encountered \"<EOF>\" at line 8, column 1")) {
-                throw e;
-            }
+        } catch (IllegalArgumentException e) {
+            assertTrue(Exceptions.toMessageString(e).contains("Encountered \"<EOF>\" at line 8, column 1"));
         }
     }
 
@@ -74,10 +68,8 @@ public class SchemaParsingTestCase extends AbstractSchemaTestCase {
         try {
             ApplicationBuilder.buildFromFile("src/test/examples/invalid-name.sd");
             fail("Name with dash passed");
-        } catch (ParseException e) {
-            if (!e.getMessage().contains("invalid-name")) {
-                throw e;
-            }
+        } catch (IllegalArgumentException e) {
+            assertTrue(Exceptions.toMessageString(e).contains("invalid-name"));
         }
     }
 

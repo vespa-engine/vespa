@@ -18,6 +18,7 @@
 #include <vespa/storage/common/storagelink.h>
 #include <vespa/storage/common/storagecomponent.h>
 #include <vespa/storageframework/generic/status/htmlstatusreporter.h>
+#include <vespa/storageframework/generic/thread/runnable.h>
 #include <vespa/storageapi/message/state.h>
 #include <vespa/storageapi/messageapi/storagemessage.h>
 #include <vespa/vespalib/objects/floatingpointtype.h>
@@ -42,11 +43,14 @@ class StateManager : public NodeStateUpdater,
                      private vespalib::JsonStreamTypes
 {
     using ClusterStateBundle = lib::ClusterStateBundle;
-    using TimeStateCmdPair   = std::pair<framework::MilliSecTime, api::GetNodeStateCommand::SP>;
-    using TimeSysStatePair   = std::pair<framework::MilliSecTime, std::shared_ptr<const ClusterStateBundle>>;
+    using TimeStateCmdPair   = std::pair<vespalib::steady_time, api::GetNodeStateCommand::SP>;
+    using TimeSysStatePair   = std::pair<vespalib::steady_time, std::shared_ptr<const ClusterStateBundle>>;
+
+    struct StateManagerMetrics;
 
     StorageComponent                          _component;
     metrics::MetricManager&                   _metricManager;
+    std::unique_ptr<StateManagerMetrics>      _metrics;
     mutable std::mutex                        _stateLock;
     std::condition_variable                   _stateCond;
     std::mutex                                _listenerLock;
@@ -62,7 +66,7 @@ class StateManager : public NodeStateUpdater,
     std::deque<TimeSysStatePair>              _systemStateHistory;
     uint32_t                                  _systemStateHistorySize;
     std::unique_ptr<HostInfo>                 _hostInfo;
-    framework::Thread::UP                     _thread;
+    std::unique_ptr<framework::Thread>        _thread;
     // Controllers that have observed a GetNodeState response sent _after_
     // immediately_send_get_node_state_replies() has been invoked.
     std::unordered_set<uint16_t>              _controllers_observed_explicit_node_state;
@@ -105,9 +109,10 @@ private:
     friend struct StateManagerTest;
 
     void notifyStateListeners();
-    bool sendGetNodeStateReplies(
-            framework::MilliSecTime olderThanTime = framework::MilliSecTime(0),
-            uint16_t index = 0xffff);
+    bool sendGetNodeStateReplies();
+    bool sendGetNodeStateReplies(vespalib::steady_time olderThanTime);
+    bool sendGetNodeStateReplies(uint16_t nodeIndex);
+    bool sendGetNodeStateReplies(vespalib::steady_time olderThanTime, uint16_t nodeIndex);
     void mark_controller_as_having_observed_explicit_node_state(const std::unique_lock<std::mutex> &, uint16_t controller_index);
 
     lib::Node thisNode() const;

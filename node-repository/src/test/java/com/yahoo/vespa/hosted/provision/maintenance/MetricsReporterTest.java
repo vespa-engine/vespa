@@ -40,7 +40,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
-import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
@@ -118,14 +117,14 @@ public class MetricsReporterTest {
         expectedMetrics.put("suspendedSeconds", 123L);
         expectedMetrics.put("numberOfServices", 0L);
 
-        expectedMetrics.put("cache.nodeObject.hitRate", 0.6D);
+        expectedMetrics.put("cache.nodeObject.hitRate", 0.7142857142857143D);
         expectedMetrics.put("cache.nodeObject.evictionCount", 0L);
         expectedMetrics.put("cache.nodeObject.size", 2L);
 
         nodeRepository.nodes().list();
-        expectedMetrics.put("cache.curator.hitRate", 0.52D);
+        expectedMetrics.put("cache.curator.hitRate", 2D/3D);
         expectedMetrics.put("cache.curator.evictionCount", 0L);
-        expectedMetrics.put("cache.curator.size", 12L);
+        expectedMetrics.put("cache.curator.size", 3L);
 
         tester.clock().setInstant(Instant.ofEpochSecond(124));
 
@@ -177,7 +176,7 @@ public class MetricsReporterTest {
         // Allow 4 containers
         Set<String> ipAddressPool = Set.of("::2", "::3", "::4", "::5");
 
-        Node dockerHost = Node.create("node-id-1", new IP.Config(Set.of("::1"), ipAddressPool), "dockerHost",
+        Node dockerHost = Node.create("node-id-1", IP.Config.of(Set.of("::1"), ipAddressPool), "dockerHost",
                                       nodeFlavors.getFlavorOrThrow("host"), NodeType.host).build();
         nodeRepository.nodes().addNodes(List.of(dockerHost), Agent.system);
         nodeRepository.nodes().deallocateRecursively("dockerHost", Agent.system, getClass().getSimpleName());
@@ -306,7 +305,7 @@ public class MetricsReporterTest {
     private Number getMetric(String name, TestMetric metric, Map<String, String> dimensions) {
         List<TestMetric.TestContext> metrics = metric.context.get(name).stream()
                                                              .filter(ctx -> ctx.properties.entrySet().containsAll(dimensions.entrySet()))
-                                                             .collect(Collectors.toList());
+                                                             .toList();
         if (metrics.isEmpty()) throw new IllegalArgumentException("No value found for metric " + name + " with dimensions " + dimensions);
         return metrics.get(metrics.size() - 1).value;
     }

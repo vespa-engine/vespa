@@ -8,7 +8,8 @@ namespace vespalib::net::tls {
 
 namespace {
 
-bool is_regex_special_char(char c) noexcept {
+bool
+is_regex_special_char(char c) noexcept {
     switch (c) {
     case '^':
     case '$':
@@ -32,7 +33,8 @@ bool is_regex_special_char(char c) noexcept {
 
 // Important: `delimiter` MUST NOT be a character that needs escaping within a regex [charset]
 template <bool SupportSingleCharMatch>
-std::string char_delimited_glob_to_regex(vespalib::stringref glob, char delimiter) {
+std::string
+char_delimited_glob_to_regex(vespalib::stringref glob, char delimiter) {
     std::string ret = "^";
     ret.reserve(glob.size() + 2);
     // Note: we explicitly stop matching at a delimiter boundary.
@@ -97,15 +99,18 @@ public:
 
 } // anon ns
 
-std::shared_ptr<const CredentialMatchPattern> CredentialMatchPattern::create_from_dns_glob(vespalib::stringref glob_pattern) {
+std::shared_ptr<const CredentialMatchPattern>
+CredentialMatchPattern::create_from_dns_glob(vespalib::stringref glob_pattern) {
     return std::make_shared<const RegexHostMatchPattern>(RegexHostMatchPattern::from_dns_glob_pattern(glob_pattern));
 }
 
-std::shared_ptr<const CredentialMatchPattern> CredentialMatchPattern::create_from_uri_glob(vespalib::stringref glob_pattern) {
+std::shared_ptr<const CredentialMatchPattern>
+    CredentialMatchPattern::create_from_uri_glob(vespalib::stringref glob_pattern) {
     return std::make_shared<const RegexHostMatchPattern>(RegexHostMatchPattern::from_uri_glob_pattern(glob_pattern));
 }
 
-std::shared_ptr<const CredentialMatchPattern> CredentialMatchPattern::create_exact_match(vespalib::stringref str) {
+std::shared_ptr<const CredentialMatchPattern>
+CredentialMatchPattern::create_exact_match(vespalib::stringref str) {
     return std::make_shared<const ExactMatchPattern>(str);
 }
 
@@ -117,6 +122,9 @@ RequiredPeerCredential::RequiredPeerCredential(Field field, vespalib::string mus
 {
 }
 
+RequiredPeerCredential::RequiredPeerCredential(const RequiredPeerCredential &) = default;
+RequiredPeerCredential::RequiredPeerCredential(RequiredPeerCredential &&) noexcept = default;
+RequiredPeerCredential & RequiredPeerCredential::operator=(RequiredPeerCredential &&) noexcept = default;
 RequiredPeerCredential::~RequiredPeerCredential() = default;
 
 PeerPolicy::PeerPolicy() = default;
@@ -135,9 +143,15 @@ PeerPolicy::PeerPolicy(std::vector<RequiredPeerCredential> required_peer_credent
 
 PeerPolicy::~PeerPolicy() = default;
 
+AuthorizedPeers::AuthorizedPeers(const AuthorizedPeers&) = default;
+AuthorizedPeers::AuthorizedPeers(AuthorizedPeers&&) noexcept = default;
+AuthorizedPeers& AuthorizedPeers::operator=(AuthorizedPeers&&) noexcept = default;
+AuthorizedPeers::~AuthorizedPeers() = default;
+
 namespace {
 template <typename Collection>
-void print_joined(std::ostream& os, const Collection& coll, const char* sep) {
+void
+print_joined(std::ostream& os, const Collection& coll, const char* sep) {
     bool first = true;
     for (const auto& e : coll) {
         if (!first) {
@@ -148,7 +162,8 @@ void print_joined(std::ostream& os, const Collection& coll, const char* sep) {
     }
 }
 
-constexpr const char* to_string(RequiredPeerCredential::Field field) noexcept {
+constexpr const char*
+to_string(RequiredPeerCredential::Field field) noexcept {
     switch (field) {
     case RequiredPeerCredential::Field::CN:      return "CN";
     case RequiredPeerCredential::Field::SAN_DNS: return "SAN_DNS";
@@ -159,7 +174,8 @@ constexpr const char* to_string(RequiredPeerCredential::Field field) noexcept {
 
 }
 
-std::ostream& operator<<(std::ostream& os, const RequiredPeerCredential& cred) {
+std::ostream&
+operator<<(std::ostream& os, const RequiredPeerCredential& cred) {
     os << "RequiredPeerCredential("
        << to_string(cred.field())
        << " matches '"
@@ -168,14 +184,16 @@ std::ostream& operator<<(std::ostream& os, const RequiredPeerCredential& cred) {
     return os;
 }
 
-std::ostream& operator<<(std::ostream& os, const PeerPolicy& policy) {
+std::ostream&
+operator<<(std::ostream& os, const PeerPolicy& policy) {
     os << "PeerPolicy(";
     print_joined(os, policy.required_peer_credentials(), ", ");
     os << ", " << policy.granted_capabilities().to_string() << ")";
     return os;
 }
 
-std::ostream& operator<<(std::ostream& os, const AuthorizedPeers& authorized){
+std::ostream&
+operator<<(std::ostream& os, const AuthorizedPeers& authorized){
     os << "AuthorizedPeers(";
     print_joined(os, authorized.peer_policies(), ", ");
     os << ")";

@@ -37,56 +37,78 @@ import java.util.stream.Collectors;
  */
 public class JsonFormat {
 
-    /** Serializes the given tensor value into JSON format */
-    public static byte[] encode(Tensor tensor) {
+    /**
+     * Serializes the given tensor value into JSON format.
+     *
+     * @param tensor the tensor to serialize
+     * @param shortForm whether to encode in a short type-dependent format
+     * @param directValues whether to encode values directly, or wrapped in am object containing "type" and "cells"
+     */
+    public static byte[] encode(Tensor tensor, boolean shortForm, boolean directValues) {
         Slime slime = new Slime();
-        Cursor root = slime.setObject();
-        encodeCells(tensor, root);
-        return com.yahoo.slime.JsonFormat.toJsonBytes(slime);
-    }
-
-    /** Serializes the given tensor type and value into JSON format */
-    public static byte[] encodeWithType(Tensor tensor) {
-        Slime slime = new Slime();
-        Cursor root = slime.setObject();
-        root.setString("type", tensor.type().toString());
-        encodeCells(tensor, root);
-        return com.yahoo.slime.JsonFormat.toJsonBytes(slime);
-    }
-
-    /** Serializes the given tensor type and value into a short-form JSON format */
-    public static byte[] encodeShortForm(Tensor tensor) {
-        Slime slime = new Slime();
-        Cursor root = slime.setObject();
-        root.setString("type", tensor.type().toString());
-
-        // Encode as nested lists if indexed tensor
-        if (tensor instanceof IndexedTensor) {
-            IndexedTensor denseTensor = (IndexedTensor) tensor;
-            encodeValues(denseTensor, root.setArray("values"), new long[denseTensor.dimensionSizes().dimensions()], 0);
+        Cursor root = null;
+        if ( ! directValues) {
+            root = slime.setObject();
+            root.setString("type", tensor.type().toString());
         }
 
-        // Short form for a single mapped dimension
-        else if (tensor instanceof MappedTensor && tensor.type().dimensions().size() == 1) {
-            encodeSingleDimensionCells((MappedTensor) tensor, root);
-        }
+        if (shortForm) {
+            if (tensor instanceof IndexedTensor denseTensor) {
+                // Encode as nested lists if indexed tensor
+                Cursor parent = root == null ? slime.setArray() : root.setArray("values");
+                encodeValues(denseTensor, parent, new long[denseTensor.dimensionSizes().dimensions()], 0);
+            } else if (tensor instanceof MappedTensor && tensor.type().dimensions().size() == 1) {
+                // Short form for a single mapped dimension
+                Cursor parent = root == null ? slime.setObject() : root.setObject("cells");
+                encodeSingleDimensionCells((MappedTensor) tensor, parent);
+            } else if (tensor instanceof MixedTensor &&
+                       tensor.type().dimensions().stream().anyMatch(TensorType.Dimension::isMapped)) {
+                // Short form for a mixed tensor
+                boolean singleMapped = tensor.type().dimensions().stream().filter(TensorType.Dimension::isMapped).count() == 1;
+                Cursor parent = root == null ? ( singleMapped ? slime.setObject() : slime.setArray() )
+                                             : ( singleMapped ? root.setObject("blocks") : root.setArray("blocks"));
+                encodeBlocks((MixedTensor) tensor, parent);
+            } else {
+                // default to standard cell address output
+                Cursor parent = root == null ? slime.setArray() : root.setArray("cells");
+                encodeCells(tensor, parent);
+            }
 
-        // Short form for a mixed tensor
-        else if (tensor instanceof MixedTensor &&
-                tensor.type().dimensions().stream().filter(TensorType.Dimension::isMapped).count() >= 1) {
-            encodeBlocks((MixedTensor) tensor, root);
+            return com.yahoo.slime.JsonFormat.toJsonBytes(slime);
         }
-
-        // No other short forms exist: default to standard cell address output
         else {
-            encodeCells(tensor, root);
+            Cursor parent = root == null ? slime.setArray() : root.setArray("cells");
+            encodeCells(tensor, parent);
         }
-
         return com.yahoo.slime.JsonFormat.toJsonBytes(slime);
     }
 
-    private static void encodeCells(Tensor tensor, Cursor rootObject) {
-        Cursor cellsArray = rootObject.setArray("cells");
+    /** Serializes the given tensor value into JSON format, in long format, wrapped in an object containing "cells" only. */
+    public static byte[] encode(Tensor tensor) {
+        return encode(tensor, false, false);
+    }
+
+    /**
+     * Serializes the given tensor type and value into JSON format.
+     *
+     * @deprecated use #encode(#Tensor, boolean, boolean)
+     */
+    @Deprecated // TODO: Remove on Vespa 9
+    public static byte[] encodeWithType(Tensor tensor) {
+        return encode(tensor, false, false);
+    }
+
+    /**
+     * Serializes the given tensor type and value into a short-form JSON format.
+     *
+     * @deprecated use #encode(#Tensor, boolean, boolean)
+     */
+    @Deprecated // TODO: Remove on Vespa 9
+    public static byte[] encodeShortForm(Tensor tensor) {
+        return encode(tensor, true, false);
+    }
+
+    private static void encodeCells(Tensor tensor, Cursor cellsArray) {
         for (Iterator<Tensor.Cell> i = tensor.cellIterator(); i.hasNext(); ) {
             Tensor.Cell cell = i.next();
             Cursor cellObject = cellsArray.addObject();
@@ -95,8 +117,7 @@ public class JsonFormat {
         }
     }
 
-    private static void encodeSingleDimensionCells(MappedTensor tensor, Cursor cursor) {
-        Cursor cells = cursor.setObject("cells");
+    private static void encodeSingleDimensionCells(MappedTensor tensor, Cursor cells) {
         if (tensor.type().dimensions().size() > 1)
             throw new IllegalStateException("JSON encode of mapped tensor can only contain a single dimension");
         tensor.cells().forEach((k,v) -> cells.setDouble(k.label(0), v));
@@ -124,11 +145,10 @@ public class JsonFormat {
 
     private static void encodeBlocks(MixedTensor tensor, Cursor cursor) {
         var mappedDimensions = tensor.type().dimensions().stream().filter(d -> d.isMapped())
-                .map(d -> TensorType.Dimension.mapped(d.name())).collect(Collectors.toList());
+                .map(d -> TensorType.Dimension.mapped(d.name())).toList();
         if (mappedDimensions.size() < 1) {
             throw new IllegalArgumentException("Should be ensured by caller");
         }
-        cursor = (mappedDimensions.size() == 1) ? cursor.setObject("blocks") : cursor.setArray("blocks");
 
         // Create tensor type for mapped dimensions subtype
         TensorType mappedSubType = new TensorType.Builder(mappedDimensions).build();
@@ -177,15 +197,23 @@ public class JsonFormat {
         Tensor.Builder builder = Tensor.Builder.of(type);
         Inspector root = new JsonDecoder().decode(new Slime(), jsonTensorValue).get();
 
-        if (root.field("cells").valid())
+        if (root.field("cells").valid() && ! primitiveContent(root.field("cells")))
             decodeCells(root.field("cells"), builder);
-        else if (root.field("values").valid())
+        else if (root.field("values").valid() && builder.type().dimensions().stream().allMatch(d -> d.isIndexed()))
             decodeValues(root.field("values"), builder);
         else if (root.field("blocks").valid())
             decodeBlocks(root.field("blocks"), builder);
-        else if (builder.type().dimensions().stream().anyMatch(d -> d.isIndexed())) // sparse can be empty
-            throw new IllegalArgumentException("Expected a tensor value to contain either 'cells' or 'values' or 'blocks'");
+        else
+            decodeDirectValue(root, builder);
         return builder.build();
+    }
+
+    private static boolean primitiveContent(Inspector cellsValue) {
+        if (cellsValue.type() == Type.DOUBLE) return true;
+        if (cellsValue.type() == Type.LONG) return true;
+        if (cellsValue.type() == Type.ARRAY && cellsValue.entries() > 0 &&
+            ( cellsValue.entry(0).type() == Type.DOUBLE || cellsValue.entry(0).type() == Type.LONG)) return true;
+        return false;
     }
 
     private static void decodeCells(Inspector cells, Tensor.Builder builder) {
@@ -212,57 +240,82 @@ public class JsonFormat {
     }
 
     private static void decodeValues(Inspector values, Tensor.Builder builder) {
-        if ( ! (builder instanceof IndexedTensor.BoundBuilder))
-            throw new IllegalArgumentException("The 'values' field can only be used with dense tensors. " +
-                                               "Use 'cells' or 'blocks' instead");
-        IndexedTensor.BoundBuilder indexedBuilder = (IndexedTensor.BoundBuilder)builder;
+        decodeValues(values, builder, new MutableInteger(0));
+    }
+
+    private static void decodeValues(Inspector values, Tensor.Builder builder, MutableInteger index) {
+        if ( ! (builder instanceof IndexedTensor.BoundBuilder indexedBuilder))
+            throw new IllegalArgumentException("An array of values can only be used with a dense tensor. Use a map instead");
         if (values.type() == Type.STRING) {
             double[] decoded = decodeHexString(values.asString(), builder.type().valueType());
             if (decoded.length == 0)
-                throw new IllegalArgumentException("The 'values' string does not contain any values");
+                throw new IllegalArgumentException("The values string does not contain any values");
             for (int i = 0; i < decoded.length; i++) {
                 indexedBuilder.cellByDirectIndex(i, decoded[i]);
             }
             return;
         }
         if (values.type() != Type.ARRAY)
-            throw new IllegalArgumentException("Excepted 'values' to contain an array, not " + values.type());
+            throw new IllegalArgumentException("Excepted values to be an array, not " + values.type());
         if (values.entries() == 0)
-            throw new IllegalArgumentException("The 'values' array does not contain any values");
+            throw new IllegalArgumentException("The values array does not contain any values");
 
-        MutableInteger index = new MutableInteger(0);
         values.traverse((ArrayTraverser) (__, value) -> {
-            if (value.type() != Type.LONG && value.type() != Type.DOUBLE) {
-                throw new IllegalArgumentException("Excepted the values array to contain numbers, not " + value.type());
-            }
-            indexedBuilder.cellByDirectIndex(index.next(), value.asDouble());
+            if (value.type() == Type.ARRAY)
+                decodeValues(value, builder, index);
+            else if (value.type() == Type.LONG || value.type() == Type.DOUBLE)
+                indexedBuilder.cellByDirectIndex(index.next(), value.asDouble());
+            else
+                throw new IllegalArgumentException("Excepted the values array to contain numbers or nested arrays, not " + value.type());
         });
     }
 
     private static void decodeBlocks(Inspector values, Tensor.Builder builder) {
-        if ( ! (builder instanceof MixedTensor.BoundBuilder))
-            throw new IllegalArgumentException("The 'blocks' field can only be used with mixed tensors with bound dimensions. " +
-                                               "Use 'cells' or 'values' instead");
-        MixedTensor.BoundBuilder mixedBuilder = (MixedTensor.BoundBuilder) builder;
+        if ( ! (builder instanceof MixedTensor.BoundBuilder mixedBuilder))
+            throw new IllegalArgumentException("Blocks of values can only be used with mixed (sparse and dense) tensors." +
+                                               "Use an array of cell values instead.");
 
         if (values.type() == Type.ARRAY)
             values.traverse((ArrayTraverser) (__, value) -> decodeBlock(value, mixedBuilder));
         else if (values.type() == Type.OBJECT)
             values.traverse((ObjectTraverser) (key, value) -> decodeSingleDimensionBlock(key, value, mixedBuilder));
         else
-            throw new IllegalArgumentException("Excepted 'blocks' to contain an array or object, not " + values.type());
+            throw new IllegalArgumentException("Excepted the block to contain an array or object, not " + values.type());
     }
 
     private static void decodeBlock(Inspector block, MixedTensor.BoundBuilder mixedBuilder) {
         if (block.type() != Type.OBJECT)
-            throw new IllegalArgumentException("Expected an item in a 'blocks' array to be an object, not " + block.type());
+            throw new IllegalArgumentException("Expected an item in a blocks array to be an object, not " + block.type());
         mixedBuilder.block(decodeAddress(block.field("address"), mixedBuilder.type().mappedSubtype()),
                            decodeValues(block.field("values"), mixedBuilder));
     }
 
+    /** Decodes a tensor value directly at the root, where the format is decided by the tensor type. */
+    private static void decodeDirectValue(Inspector root, Tensor.Builder builder) {
+        boolean hasIndexed = builder.type().dimensions().stream().anyMatch(TensorType.Dimension::isIndexed);
+        boolean hasMapped = builder.type().dimensions().stream().anyMatch(TensorType.Dimension::isMapped);
+
+        if (isArrayOfObjects(root))
+            decodeCells(root, builder);
+        else if ( ! hasMapped)
+            decodeValues(root, builder);
+        else if (hasMapped && hasIndexed)
+            decodeBlocks(root, builder);
+        else
+            decodeCells(root, builder);
+    }
+
+    private static boolean isArrayOfObjects(Inspector inspector) {
+        if (inspector.type() != Type.ARRAY) return false;
+        if (inspector.entries() == 0) return false;
+        Inspector firstItem = inspector.entry(0);
+        if (firstItem.type() == Type.ARRAY) return isArrayOfObjects(firstItem);
+        return firstItem.type() == Type.OBJECT;
+    }
+
     private static void decodeSingleDimensionBlock(String key, Inspector value, MixedTensor.BoundBuilder mixedBuilder) {
         if (value.type() != Type.ARRAY)
-            throw new IllegalArgumentException("Expected an item in a 'blocks' array to be an array, not " + value.type());
+            throw new IllegalArgumentException("Expected an item in a blocks array to be an array, not " + value.type());
         mixedBuilder.block(asAddress(key, mixedBuilder.type().mappedSubtype()),
                            decodeValues(value, mixedBuilder));
     }
@@ -334,37 +387,31 @@ public class JsonFormat {
     }
 
     public static double[] decodeHexString(String input, TensorType.Value valueType) {
-        switch(valueType) {
-            case INT8:
-                return decodeHexStringAsBytes(input);
-            case BFLOAT16:
-                return decodeHexStringAsBFloat16s(input);
-            case FLOAT:
-                return decodeHexStringAsFloats(input);
-            case DOUBLE:
-                return decodeHexStringAsDoubles(input);
-            default:
-                throw new IllegalArgumentException("Cannot handle value type: "+valueType);
-        }
+        return switch (valueType) {
+            case INT8 -> decodeHexStringAsBytes(input);
+            case BFLOAT16 -> decodeHexStringAsBFloat16s(input);
+            case FLOAT -> decodeHexStringAsFloats(input);
+            case DOUBLE -> decodeHexStringAsDoubles(input);
+        };
     }
 
     private static double[] decodeValues(Inspector valuesField, MixedTensor.BoundBuilder mixedBuilder) {
         double[] values = new double[(int)mixedBuilder.denseSubspaceSize()];
         if (valuesField.type() == Type.ARRAY) {
             if (valuesField.entries() == 0) {
-                throw new IllegalArgumentException("The 'block' value array does not contain any values");
+                throw new IllegalArgumentException("The block value array does not contain any values");
             }
             valuesField.traverse((ArrayTraverser) (index, value) -> values[index] = decodeNumeric(value));
         } else if (valuesField.type() == Type.STRING) {
             double[] decoded = decodeHexString(valuesField.asString(), mixedBuilder.type().valueType());
             if (decoded.length == 0) {
-                throw new IllegalArgumentException("The 'block' value string does not contain any values");
+                throw new IllegalArgumentException("The block value string does not contain any values");
             }
             for (int i = 0; i < decoded.length; i++) {
                 values[i] = decoded[i];
             }
         } else {
-            throw new IllegalArgumentException("Expected a block to contain a 'values' array");
+            throw new IllegalArgumentException("Expected a block to contain an array of values");
         }
         return values;
     }

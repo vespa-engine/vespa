@@ -6,7 +6,8 @@ import com.yahoo.collections.Pair;
 import com.yahoo.config.ConfigInstance;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.deploy.DeployState;
-import com.yahoo.config.model.producer.AbstractConfigProducer;
+import com.yahoo.config.model.producer.AnyConfigProducer;
+import com.yahoo.config.model.producer.TreeConfigProducer;
 import com.yahoo.io.IOUtils;
 import com.yahoo.log.InvalidLogFormatException;
 import com.yahoo.log.LogMessage;
@@ -108,7 +109,7 @@ public class RankSetupValidator extends Validator {
         IOUtils.recursiveDeleteDir(dir);
     }
 
-    private void writeConfigs(String dir, AbstractConfigProducer<?> producer) throws IOException {
+    private void writeConfigs(String dir, AnyConfigProducer producer) throws IOException {
         RankProfilesConfig.Builder rpcb = new RankProfilesConfig.Builder();
         ((RankProfilesConfig.Producer) producer).getConfig(rpcb);
         writeConfig(dir, RankProfilesConfig.getDefName() + ".cfg", rpcb.build());
@@ -198,17 +199,25 @@ public class RankSetupValidator extends Validator {
                 .append("' for content cluster '").append(sc.getClusterName()).append("'.").append(" Details:\n");
         if (output.isEmpty()) {
             message.append("Verifying rank setup failed and got no output from stderr and stdout from '")
-                  .append(binaryName)
-                  .append("' (exit code: ")
-                  .append(exitCode)
-                  .append("). This could be due to full disk, out of memory etc.");
+                   .append(binaryName)
+                   .append("' (exit code: ")
+                   .append(exitCode)
+                   .append(").");
+            if (exitCode == 137)
+                message.append(" Exit code 137 usually means that the program has been killed by the OOM killer")
+                       .append(", too little memory is allocated for the instance/container/machine");
+            else
+                message.append(" This could be due to full disk, out of memory etc. ");
         } else {
             for (String line : output.split("\n")) {
                 // Remove debug lines from start script
                 if (line.startsWith("debug\t")) continue;
                 try {
                     LogMessage logMessage = LogMessage.parseNativeFormat(line);
-                    message.append(logMessage.getLevel()).append(": ").append(logMessage.getPayload()).append("\n");
+                    message.append(logMessage.getLevel())
+			    .append(": ")
+			    .append(logMessage.getPayload().replace("\\n", "\n\t"))
+			    .append("\n");
                 } catch (InvalidLogFormatException e) {
                     message.append(line).append("\n");
                 }

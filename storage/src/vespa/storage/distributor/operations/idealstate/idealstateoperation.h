@@ -55,23 +55,23 @@ public:
 
        @return Returns the target bucket.
     */
-    document::BucketId getBucketId() const { return _bucket.getBucketId(); }
+    document::BucketId getBucketId() const noexcept { return _bucket.getBucketId(); }
 
-    document::Bucket getBucket() const { return _bucket; }
-
-    /**
-       Returns the target nodes
-
-       @return the target nodes
-    */
-    std::vector<uint16_t>& getNodes() { return _nodes; }
+    document::Bucket getBucket() const noexcept { return _bucket; }
 
     /**
        Returns the target nodes
 
        @return the target nodes
     */
-    const std::vector<uint16_t>& getNodes() const { return _nodes; }
+    std::vector<uint16_t>& getNodes() noexcept { return _nodes; }
+
+    /**
+       Returns the target nodes
+
+       @return the target nodes
+    */
+    const std::vector<uint16_t>& getNodes() const noexcept { return _nodes; }
 
     /**
        Returns a string representation of this object.
@@ -105,14 +105,14 @@ class IdealStateOperation : public MaintenanceOperation
 public:
     static const uint32_t MAINTENANCE_MESSAGE_TYPES[];
 
-    typedef std::shared_ptr<IdealStateOperation> SP;
-    typedef std::unique_ptr<IdealStateOperation> UP;
-    typedef std::vector<SP> Vector;
-    typedef std::map<document::BucketId, SP> Map;
+    using SP = std::shared_ptr<IdealStateOperation>;
+    using UP = std::unique_ptr<IdealStateOperation>;
+    using Vector = std::vector<SP>;
+    using Map = std::map<document::BucketId, SP>;
 
     IdealStateOperation(const BucketAndNodes& bucketAndNodes);
 
-    virtual ~IdealStateOperation();
+    ~IdealStateOperation() override;
 
     void onClose(DistributorStripeMessageSender&) override {}
 
@@ -121,37 +121,37 @@ public:
 
        @return Returns the status of the operation.
     */
-    virtual bool ok() { return _ok; }
+    [[nodiscard]] bool ok() const noexcept { return _ok; }
 
     /**
        Returns the target nodes of the operation.
 
        @return The target nodes
     */
-    std::vector<uint16_t>& getNodes() { return _bucketAndNodes.getNodes(); }
+    std::vector<uint16_t>& getNodes() noexcept { return _bucketAndNodes.getNodes(); }
 
     /**
        Returns the target nodes of the operation.
 
        @return The target nodes
     */
-    const std::vector<uint16_t>& getNodes() const { return _bucketAndNodes.getNodes(); }
+    const std::vector<uint16_t>& getNodes() const noexcept { return _bucketAndNodes.getNodes(); }
 
     /**
        Returns the target bucket of the operation.
 
        @return The target bucket.
     */
-    document::BucketId getBucketId() const { return _bucketAndNodes.getBucketId(); }
+    document::BucketId getBucketId() const noexcept { return _bucketAndNodes.getBucketId(); }
 
-    document::Bucket getBucket() const { return _bucketAndNodes.getBucket(); }
+    document::Bucket getBucket() const noexcept { return _bucketAndNodes.getBucket(); }
 
     /**
        Returns the target of the operation.
 
        @return The target bucket and nodes
     */
-    const BucketAndNodes& getBucketAndNodes() const { return _bucketAndNodes; }
+    const BucketAndNodes& getBucketAndNodes() const noexcept { return _bucketAndNodes; }
 
     /**
        Called by the operation when it is finished. Must be called, otherwise the active
@@ -174,7 +174,7 @@ public:
     /**
        Returns the type of operation this is.
     */
-    virtual Type getType() const = 0;
+    virtual Type getType() const noexcept = 0;
 
     /**
        Set the priority we should send messages from this operation with.
@@ -192,7 +192,7 @@ public:
     /**
        Returns the priority we should send messages with.
     */
-    api::StorageMessage::Priority getPriority() { return _priority; }
+    api::StorageMessage::Priority getPriority() const noexcept { return _priority; }
 
     void setDetailedReason(const std::string& detailedReason) {
         _detailedReason = detailedReason;
@@ -205,7 +205,7 @@ public:
         return _detailedReason;
     }
 
-    uint32_t memorySize() const;
+    uint32_t memorySize() const noexcept;
 
     /**
      * Sets the various metadata for the given command that
@@ -224,13 +224,12 @@ protected:
     friend struct IdealStateManagerTest;
     friend class IdealStateManager;
 
-    IdealStateManager* _manager;
-    DistributorBucketSpace *_bucketSpace;
-    BucketAndNodes _bucketAndNodes;
-    std::string _detailedReason;
-
-    bool _ok;
+    IdealStateManager*            _manager;
+    DistributorBucketSpace*       _bucketSpace;
+    BucketAndNodes                _bucketAndNodes;
+    std::string                   _detailedReason;
     api::StorageMessage::Priority _priority;
+    bool                          _ok;
 
     /**
      * Checks if the given bucket is blocked by any pending messages to any

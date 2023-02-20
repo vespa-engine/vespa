@@ -17,7 +17,7 @@ public class DeletedTenant extends Tenant {
     private final Instant deletedAt;
 
     public DeletedTenant(TenantName name, Instant createdAt, Instant deletedAt) {
-        super(name, createdAt, LastLoginInfo.EMPTY, Optional.empty());
+        super(name, createdAt, LastLoginInfo.EMPTY, Optional.empty(), Instant.EPOCH);
         this.deletedAt = Objects.requireNonNull(deletedAt, "deletedAt must be non-null");
     }
 

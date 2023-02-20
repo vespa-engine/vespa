@@ -2,6 +2,8 @@
 package com.yahoo.config.provision;
 
 import com.yahoo.component.Version;
+import com.yahoo.config.provision.ZoneEndpoint.AccessType;
+import com.yahoo.config.provision.ZoneEndpoint.AllowedUrn;
 
 import java.util.Objects;
 import java.util.Optional;
@@ -24,12 +26,12 @@ public final class ClusterSpec {
     private final boolean exclusive;
     private final Optional<Id> combinedId;
     private final Optional<DockerImage> dockerImageRepo;
-    private final LoadBalancerSettings loadBalancerSettings;
+    private final ZoneEndpoint zoneEndpoint;
     private final boolean stateful;
 
     private ClusterSpec(Type type, Id id, Optional<Group> groupId, Version vespaVersion, boolean exclusive,
                         Optional<Id> combinedId, Optional<DockerImage> dockerImageRepo,
-                        LoadBalancerSettings loadBalancerSettings, boolean stateful) {
+                        ZoneEndpoint zoneEndpoint, boolean stateful) {
         this.type = type;
         this.id = id;
         this.groupId = groupId;
@@ -47,7 +49,7 @@ public final class ClusterSpec {
         if (type.isContent() && !stateful) {
             throw new IllegalArgumentException("Cluster of type " + type + " must be stateful");
         }
-        this.loadBalancerSettings = Objects.requireNonNull(loadBalancerSettings);
+        this.zoneEndpoint = Objects.requireNonNull(zoneEndpoint);
         this.stateful = stateful;
     }
 
@@ -63,8 +65,8 @@ public final class ClusterSpec {
     /** Returns the docker image (repository + vespa version) we want this cluster to run */
     public Optional<String> dockerImage() { return dockerImageRepo.map(repo -> repo.withTag(vespaVersion).asString()); }
 
-    /** Returns any additional load balancer settings for application container clusters. */
-    public LoadBalancerSettings loadBalancerSettings() { return loadBalancerSettings; }
+    /** Returns any additional zone endpoint settings for application container clusters. */
+    public ZoneEndpoint zoneEndpoint() { return zoneEndpoint; }
 
     /** Returns the version of Vespa that we want this cluster to run */
     public Version vespaVersion() { return vespaVersion; }
@@ -87,11 +89,15 @@ public final class ClusterSpec {
     public boolean isStateful() { return stateful; }
 
     public ClusterSpec with(Optional<Group> newGroup) {
-        return new ClusterSpec(type, id, newGroup, vespaVersion, exclusive, combinedId, dockerImageRepo, loadBalancerSettings, stateful);
+        return new ClusterSpec(type, id, newGroup, vespaVersion, exclusive, combinedId, dockerImageRepo, zoneEndpoint, stateful);
+    }
+
+    public ClusterSpec withExclusivity(boolean exclusive) {
+        return new ClusterSpec(type, id, groupId, vespaVersion, exclusive, combinedId, dockerImageRepo, zoneEndpoint, stateful);
     }
 
     public ClusterSpec exclusive(boolean exclusive) {
-        return new ClusterSpec(type, id, groupId, vespaVersion, exclusive, combinedId, dockerImageRepo, loadBalancerSettings, stateful);
+        return new ClusterSpec(type, id, groupId, vespaVersion, exclusive, combinedId, dockerImageRepo, zoneEndpoint, stateful);
     }
 
     /** Creates a ClusterSpec when requesting a cluster */
@@ -115,7 +121,7 @@ public final class ClusterSpec {
         private Version vespaVersion;
         private boolean exclusive = false;
         private Optional<Id> combinedId = Optional.empty();
-        private LoadBalancerSettings loadBalancerSettings = LoadBalancerSettings.empty;
+        private ZoneEndpoint zoneEndpoint = ZoneEndpoint.defaultEndpoint;
         private boolean stateful;
 
         private Builder(Type type, Id id, boolean specification) {
@@ -131,7 +137,7 @@ public final class ClusterSpec {
                 if (vespaVersion == null) throw new IllegalArgumentException("vespaVersion is required to be set when creating a ClusterSpec with specification()");
             } else
                 if (groupId.isPresent()) throw new IllegalArgumentException("groupId is not allowed to be set when creating a ClusterSpec with request()");
-            return new ClusterSpec(type, id, groupId, vespaVersion, exclusive, combinedId, dockerImageRepo, loadBalancerSettings, stateful);
+            return new ClusterSpec(type, id, groupId, vespaVersion, exclusive, combinedId, dockerImageRepo, zoneEndpoint, stateful);
         }
 
         public Builder group(Group groupId) {
@@ -164,8 +170,8 @@ public final class ClusterSpec {
             return this;
         }
 
-        public Builder loadBalancerSettings(LoadBalancerSettings loadBalancerSettings) {
-            this.loadBalancerSettings = loadBalancerSettings;
+        public Builder loadBalancerSettings(ZoneEndpoint zoneEndpoint) {
+            this.zoneEndpoint = zoneEndpoint;
             return this;
         }
 
@@ -194,12 +200,12 @@ public final class ClusterSpec {
                vespaVersion.equals(that.vespaVersion) &&
                combinedId.equals(that.combinedId) &&
                dockerImageRepo.equals(that.dockerImageRepo) &&
-               loadBalancerSettings.equals(that.loadBalancerSettings);
+               zoneEndpoint.equals(that.zoneEndpoint);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(type, id, groupId, vespaVersion, exclusive, combinedId, dockerImageRepo, loadBalancerSettings, stateful);
+        return Objects.hash(type, id, groupId, vespaVersion, exclusive, combinedId, dockerImageRepo, zoneEndpoint, stateful);
     }
 
     /**

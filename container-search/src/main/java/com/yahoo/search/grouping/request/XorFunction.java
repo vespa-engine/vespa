@@ -32,7 +32,7 @@ public class XorFunction extends FunctionNode {
     public XorFunction copy() {
         return new XorFunction(getLabel(),
                                getLevelOrNull(),
-                               args().stream().map(arg -> arg.copy()).collect(Collectors.toList()));
+                               args().stream().map(arg -> arg.copy()).toList());
     }
 
     /**

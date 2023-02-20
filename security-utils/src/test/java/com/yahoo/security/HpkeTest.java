@@ -61,7 +61,7 @@ public class HpkeTest {
         var kpR     = receiverRrfc9180TestVectorKeyPair();
 
         var kem = Kem.dHKemX25519HkdfSha256(new Kem.UnsafeDeterminsticKeyPairOnlyUsedByTesting(ephemeralRrfc9180TestVectorKeyPair()));
-        var ciphersuite = Ciphersuite.of(kem, Kdf.hkdfSha256(), Aead.aesGcm128());
+        var ciphersuite = Ciphersuite.of(kem, Kdf.hkdfSha256(), Aead.aes128Gcm());
 
         var hpke = Hpke.of(ciphersuite);
         var s = hpke.sealBase(pk(kpR), info, aad, pt);

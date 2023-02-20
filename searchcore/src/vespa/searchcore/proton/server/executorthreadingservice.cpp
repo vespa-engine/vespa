@@ -21,12 +21,12 @@ namespace proton {
 namespace {
 
 std::unique_ptr<SyncableThreadExecutor>
-createExecutorWithOneThread(uint32_t stackSize, uint32_t taskLimit, OptimizeFor optimize,
+createExecutorWithOneThread(uint32_t taskLimit, OptimizeFor optimize,
                             vespalib::Runnable::init_fun_t init_function) {
     if (optimize == OptimizeFor::THROUGHPUT) {
         return std::make_unique<SingleExecutor>(std::move(init_function), taskLimit);
     } else {
-        return std::make_unique<BlockingThreadStackExecutor>(1, stackSize, taskLimit, std::move(init_function));
+        return std::make_unique<BlockingThreadStackExecutor>(1, taskLimit, std::move(init_function));
     }
 }
 
@@ -48,17 +48,16 @@ ExecutorThreadingService::ExecutorThreadingService(vespalib::Executor & sharedEx
                                                    const vespalib::Clock & clock,
                                                    vespalib::ISequencedTaskExecutor& field_writer,
                                                    vespalib::InvokeService * invokerService,
-                                                   const ThreadingServiceConfig & cfg,
-                                                   uint32_t stackSize)
+                                                   const ThreadingServiceConfig & cfg)
 
     : _sharedExecutor(sharedExecutor),
       _transport(transport),
       _clock(clock),
-      _masterExecutor(1, stackSize, CpuUsage::wrap(master_executor, CpuUsage::Category::WRITE)),
+      _masterExecutor(1, CpuUsage::wrap(master_executor, CpuUsage::Category::WRITE)),
       _master_task_limit(cfg.master_task_limit()),
-      _indexExecutor(createExecutorWithOneThread(stackSize, cfg.defaultTaskLimit(), cfg.optimize(),
+      _indexExecutor(createExecutorWithOneThread(cfg.defaultTaskLimit(), cfg.optimize(),
                                                  CpuUsage::wrap(index_executor, CpuUsage::Category::WRITE))),
-      _summaryExecutor(createExecutorWithOneThread(stackSize, cfg.defaultTaskLimit(), cfg.optimize(),
+      _summaryExecutor(createExecutorWithOneThread(cfg.defaultTaskLimit(), cfg.optimize(),
                                                    CpuUsage::wrap(summary_executor, CpuUsage::Category::WRITE))),
       _masterService(_masterExecutor),
       _indexService(*_indexExecutor),

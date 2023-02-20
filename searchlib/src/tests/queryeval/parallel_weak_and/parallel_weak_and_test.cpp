@@ -18,10 +18,10 @@ using namespace search::query;
 using namespace search::queryeval;
 using namespace search::queryeval::test;
 
-typedef search::feature_t feature_t;
-typedef wand::score_t score_t;
-typedef ParallelWeakAndSearch::MatchParams MatchParams;
-typedef ParallelWeakAndSearch::RankParams RankParams;
+using feature_t = search::feature_t;
+using score_t = wand::score_t;
+using MatchParams = ParallelWeakAndSearch::MatchParams;
+using RankParams = ParallelWeakAndSearch::RankParams;
 using search::test::DocumentWeightAttributeHelper;
 using search::IDocumentWeightAttribute;
 using search::fef::TermFieldMatchData;
@@ -115,8 +115,8 @@ WandTestSpec<HeapType>::WandTestSpec(uint32_t scoresToTrack, uint32_t scoresAdju
 template <typename HeapType>
 WandTestSpec<HeapType>::~WandTestSpec() {}
 
-typedef WandTestSpec<TestHeap> WandSpecWithTestHeap;
-typedef WandTestSpec<SharedWeakAndPriorityQueue> WandSpecWithRealHeap;
+using WandSpecWithTestHeap = WandTestSpec<TestHeap>;
+using WandSpecWithRealHeap = WandTestSpec<SharedWeakAndPriorityQueue>;
 
 FakeResult
 doSearch(SearchIterator &sb, const TermFieldMatchData &tfmd)

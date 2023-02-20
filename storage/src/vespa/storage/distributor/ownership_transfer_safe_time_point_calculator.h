@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include <chrono>
+#include <vespa/vespalib/util/time.h>
 
 namespace storage::distributor {
 
@@ -28,11 +28,7 @@ namespace storage::distributor {
 class OwnershipTransferSafeTimePointCalculator {
     std::chrono::seconds _max_cluster_clock_skew;
 public:
-    using Clock = std::chrono::system_clock;
-    using TimePoint = std::chrono::time_point<Clock>;
-
-    explicit OwnershipTransferSafeTimePointCalculator(
-            std::chrono::seconds max_cluster_clock_skew)
+    explicit OwnershipTransferSafeTimePointCalculator(std::chrono::seconds max_cluster_clock_skew)
         : _max_cluster_clock_skew(max_cluster_clock_skew)
     {
     }
@@ -41,7 +37,7 @@ public:
         _max_cluster_clock_skew = sec;
     }
 
-    TimePoint safeTimePoint(TimePoint now) const;
+    vespalib::system_time safeTimePoint(vespalib::system_time now) const;
 };
 
 }

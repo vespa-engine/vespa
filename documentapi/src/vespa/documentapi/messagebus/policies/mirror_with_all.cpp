@@ -10,7 +10,7 @@
 namespace documentapi {
 
 MirrorAndStuff::MirrorAndStuff(const slobrok::ConfiguratorFactory & config)
-    : _threadPool(std::make_unique<FastOS_ThreadPool>(64_Ki)),
+    : _threadPool(std::make_unique<FastOS_ThreadPool>()),
       _transport(std::make_unique<FNET_Transport>()),
       _orb(std::make_unique<FRT_Supervisor>(_transport.get())),
       _mirror(std::make_unique<slobrok::api::MirrorAPI>(*_orb, config))

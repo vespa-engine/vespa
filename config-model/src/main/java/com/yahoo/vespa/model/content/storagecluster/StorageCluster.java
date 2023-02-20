@@ -9,7 +9,8 @@ import com.yahoo.vespa.config.content.StorFilestorConfig;
 import com.yahoo.vespa.config.content.core.StorServerConfig;
 import com.yahoo.vespa.config.content.PersistenceConfig;
 import com.yahoo.metrics.MetricsmanagerConfig;
-import com.yahoo.config.model.producer.AbstractConfigProducer;
+import com.yahoo.config.model.producer.AnyConfigProducer;
+import com.yahoo.config.model.producer.TreeConfigProducer;
 import com.yahoo.vespa.model.builder.xml.dom.VespaDomBuilder;
 import com.yahoo.vespa.model.content.cluster.ContentCluster;
 import com.yahoo.vespa.model.builder.xml.dom.ModelElement;
@@ -19,7 +20,7 @@ import org.w3c.dom.Element;
 /**
  * Represents configuration that is common to all storage nodes.
  */
-public class StorageCluster extends AbstractConfigProducer<StorageNode>
+public class StorageCluster extends TreeConfigProducer<StorageNode>
     implements StorServerConfig.Producer,
         StorBucketmoverConfig.Producer,
         StorIntegritycheckerConfig.Producer,
@@ -28,9 +29,9 @@ public class StorageCluster extends AbstractConfigProducer<StorageNode>
         PersistenceConfig.Producer,
         MetricsmanagerConfig.Producer
 {
-    public static class Builder extends VespaDomBuilder.DomConfigProducerBuilder<StorageCluster> {
+    public static class Builder extends VespaDomBuilder.DomConfigProducerBuilderBase<StorageCluster> {
         @Override
-        protected StorageCluster doBuild(DeployState deployState, AbstractConfigProducer<?> ancestor, Element producerSpec) {
+        protected StorageCluster doBuild(DeployState deployState, TreeConfigProducer<AnyConfigProducer> ancestor, Element producerSpec) {
             final ModelElement clusterElem = new ModelElement(producerSpec);
             final ContentCluster cluster = (ContentCluster)ancestor;
 
@@ -51,7 +52,7 @@ public class StorageCluster extends AbstractConfigProducer<StorageNode>
     private final StorVisitorProducer storVisitorProducer;
     private final PersistenceProducer persistenceProducer;
 
-    StorageCluster(AbstractConfigProducer<?> parent,
+    StorageCluster(TreeConfigProducer<?> parent,
                    String clusterName,
                    FileStorProducer fileStorProducer,
                    IntegrityCheckerProducer integrityCheckerProducer,

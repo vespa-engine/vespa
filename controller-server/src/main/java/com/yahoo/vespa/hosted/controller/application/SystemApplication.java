@@ -33,7 +33,7 @@ public enum SystemApplication {
     tenantHost(InfrastructureApplication.TENANT_HOST);
 
     /** The tenant owning all system applications */
-    public static final TenantName TENANT = TenantName.from(Constants.TENANT_NAME);
+    public static final TenantName TENANT = TenantName.from("hosted-vespa");
 
     private final InfrastructureApplication application;
     private final List<SystemApplication> dependencies;
@@ -93,10 +93,6 @@ public enum SystemApplication {
     @Override
     public String toString() {
         return Text.format("system application %s of type %s", id(), nodeType());
-    }
-
-    private static class Constants {
-        private static final String TENANT_NAME = "hosted-vespa";
     }
 
 }

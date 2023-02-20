@@ -4,7 +4,8 @@ package com.yahoo.vespa.model.builder.xml.dom;
 import com.yahoo.config.model.ConfigModelContext;
 import com.yahoo.config.model.api.ConfigServerSpec;
 import com.yahoo.config.model.deploy.DeployState;
-import com.yahoo.config.model.producer.AbstractConfigProducer;
+import com.yahoo.config.model.producer.AnyConfigProducer;
+import com.yahoo.config.model.producer.TreeConfigProducer;
 import com.yahoo.text.XML;
 import com.yahoo.vespa.model.SimpleConfigProducer;
 import com.yahoo.vespa.model.admin.Admin;
@@ -14,7 +15,7 @@ import com.yahoo.vespa.model.admin.Slobrok;
 import com.yahoo.vespa.model.admin.clustercontroller.ClusterControllerCluster;
 import com.yahoo.vespa.model.admin.clustercontroller.ClusterControllerContainer;
 import com.yahoo.vespa.model.admin.clustercontroller.ClusterControllerContainerCluster;
-import com.yahoo.vespa.model.builder.xml.dom.VespaDomBuilder.DomConfigProducerBuilder;
+import com.yahoo.vespa.model.builder.xml.dom.VespaDomBuilder.DomConfigProducerBuilderBase;
 import com.yahoo.vespa.model.container.Container;
 import org.w3c.dom.Element;
 import java.util.ArrayList;
@@ -47,6 +48,7 @@ public class DomAdminV2Builder extends DomAdminBuilderBase {
             admin.setClusterControllers(addConfiguredClusterControllers(deployState, admin, adminE), deployState);
 
         addLogForwarders(new ModelElement(adminE).child("logforwarding"), admin);
+        addLoggingSpecs(new ModelElement(adminE).child("logging"), admin);
     }
 
     private List<Configserver> parseConfigservers(DeployState deployState, Admin admin, Element adminE) {
@@ -75,7 +77,7 @@ public class DomAdminV2Builder extends DomAdminBuilderBase {
     }
 
     private ClusterControllerContainerCluster addConfiguredClusterControllers(DeployState deployState,
-                                                                              AbstractConfigProducer<?> parent,
+                                                                              TreeConfigProducer<?> parent,
                                                                               Element admin) {
         Element controllersElements = XML.getChild(admin, "cluster-controllers");
         if (controllersElements == null) return null;
@@ -103,19 +105,19 @@ public class DomAdminV2Builder extends DomAdminBuilderBase {
         return cluster;
     }
 
-    private List<Configserver> getConfigServers(DeployState deployState, AbstractConfigProducer<?> parent, Element adminE) {
+    private List<Configserver> getConfigServers(DeployState deployState, TreeConfigProducer<AnyConfigProducer> parent, Element adminE) {
         Element configserversE = XML.getChild(adminE, "configservers");
         if (configserversE == null) {
             Element adminserver = XML.getChild(adminE, "adminserver");
             if (adminserver == null) {
                 return createSingleConfigServer(deployState, parent);
             } else {
-                SimpleConfigProducer<?> configServers = new SimpleConfigProducer<>(parent, "configservers");
+                SimpleConfigProducer<AnyConfigProducer> configServers = new SimpleConfigProducer<>(parent, "configservers");
                 return List.of(new ConfigserverBuilder(0, configServerSpecs).build(deployState, configServers, adminserver));
             }
         }
         else {
-            SimpleConfigProducer<?> configServers = new SimpleConfigProducer<>(parent, "configservers");
+            SimpleConfigProducer<AnyConfigProducer> configServers = new SimpleConfigProducer<>(parent, "configservers");
             List<Configserver> configservers = new ArrayList<>();
             int i = 0;
             for (Element configserverE : XML.getChildren(configserversE, "configserver"))
@@ -125,22 +127,22 @@ public class DomAdminV2Builder extends DomAdminBuilderBase {
     }
 
     /** Fallback when no config server is specified */
-    private List<Configserver> createSingleConfigServer(DeployState deployState, AbstractConfigProducer<?> parent) {
-        SimpleConfigProducer<?> configServers = new SimpleConfigProducer<>(parent, "configservers");
+    private List<Configserver> createSingleConfigServer(DeployState deployState, TreeConfigProducer<?> parent) {
+        SimpleConfigProducer<AnyConfigProducer> configServers = new SimpleConfigProducer<>(parent, "configservers");
         Configserver configServer = new Configserver(configServers, "configserver", Configserver.defaultRpcPort);
         configServer.setHostResource(parent.hostSystem().getHost(Container.SINGLENODE_CONTAINER_SERVICESPEC));
         configServer.initService(deployState);
         return List.of(configServer);
     }
 
-    private List<Slobrok> getSlobroks(DeployState deployState, AbstractConfigProducer<?> parent, Element slobroksE) {
+    private List<Slobrok> getSlobroks(DeployState deployState, TreeConfigProducer<AnyConfigProducer> parent, Element slobroksE) {
         List<Slobrok> slobroks = new ArrayList<>();
         if (slobroksE != null)
             slobroks = getExplicitSlobrokSetup(deployState, parent, slobroksE);
         return slobroks;
     }
 
-    private List<Slobrok> getExplicitSlobrokSetup(DeployState deployState, AbstractConfigProducer<?> parent, Element slobroksE) {
+    private List<Slobrok> getExplicitSlobrokSetup(DeployState deployState, TreeConfigProducer<AnyConfigProducer> parent, Element slobroksE) {
         List<Slobrok> slobroks = new ArrayList<>();
         int i = 0;
         for (Element e : XML.getChildren(slobroksE, "slobrok"))
@@ -148,17 +150,17 @@ public class DomAdminV2Builder extends DomAdminBuilderBase {
         return slobroks;
     }
 
-    private static class LogserverBuilder extends DomConfigProducerBuilder<Logserver> {
+    private static class LogserverBuilder extends DomConfigProducerBuilderBase<Logserver> {
         public LogserverBuilder() {
         }
 
         @Override
-        protected Logserver doBuild(DeployState deployState, AbstractConfigProducer<?> parent, Element producerSpec) {
+        protected Logserver doBuild(DeployState deployState, TreeConfigProducer<AnyConfigProducer> parent, Element producerSpec) {
             return new Logserver(parent);
         }
     }
 
-    private static class ConfigserverBuilder extends DomConfigProducerBuilder<Configserver> {
+    private static class ConfigserverBuilder extends DomConfigProducerBuilderBase<Configserver> {
         private final int i;
         private final int rpcPort;
 
@@ -172,14 +174,14 @@ public class DomAdminV2Builder extends DomAdminBuilderBase {
         }
 
         @Override
-        protected Configserver doBuild(DeployState deployState, AbstractConfigProducer<?> parent, Element spec) {
+        protected Configserver doBuild(DeployState deployState, TreeConfigProducer<AnyConfigProducer> parent, Element spec) {
             var configServer = new Configserver(parent, "configserver." + i, rpcPort);
             configServer.setProp("index", i);
             return configServer;
         }
     }
 
-    private static class SlobrokBuilder extends DomConfigProducerBuilder<Slobrok> {
+    private static class SlobrokBuilder extends DomConfigProducerBuilderBase<Slobrok> {
 
         int i;
 
@@ -188,13 +190,13 @@ public class DomAdminV2Builder extends DomAdminBuilderBase {
         }
 
         @Override
-        protected Slobrok doBuild(DeployState deployState, AbstractConfigProducer<?> parent, Element spec) {
+        protected Slobrok doBuild(DeployState deployState, TreeConfigProducer<AnyConfigProducer> parent, Element spec) {
             return new Slobrok(parent, i, deployState.featureFlags());
         }
 
     }
 
-    private static class ClusterControllerBuilder extends DomConfigProducerBuilder<ClusterControllerContainer> {
+    private static class ClusterControllerBuilder extends DomConfigProducerBuilderBase<ClusterControllerContainer> {
         int i;
         boolean runStandaloneZooKeeper;
 
@@ -204,7 +206,7 @@ public class DomAdminV2Builder extends DomAdminBuilderBase {
         }
 
         @Override
-        protected ClusterControllerContainer doBuild(DeployState deployState, AbstractConfigProducer<?> parent, Element spec) {
+        protected ClusterControllerContainer doBuild(DeployState deployState, TreeConfigProducer<AnyConfigProducer> parent, Element spec) {
             return new ClusterControllerContainer(parent, i, runStandaloneZooKeeper, deployState, false);
         }
     }

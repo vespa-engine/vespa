@@ -23,7 +23,7 @@ class SimplePhraseSearch : public AndSearch
     fef::TermFieldMatchData     &_tmd;
     bool                         _strict;
 
-    typedef fef::TermFieldMatchData::PositionsIterator It;
+    using It = fef::TermFieldMatchData::PositionsIterator;
     // Reuse this vector instead of allocating a new one when needed.
     std::vector<It> _iterators;
 

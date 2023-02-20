@@ -21,6 +21,7 @@ template <typename NodeSeq>
 class BucketInfoBase
 {
 protected:
+    //TODO: Should we use a chrono timepoint to ensure we are using same clock everywhere ?
     uint32_t _lastGarbageCollection;
     NodeSeq _nodes;
 public:

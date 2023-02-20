@@ -39,7 +39,7 @@ public:
     };
 
 private:
-    typedef std::vector<IVersionHandler*> HandlerList;
+    using HandlerList = std::vector<IVersionHandler*>;
 
     enum ResolveState {
         VERSION_NOT_RESOLVED,
@@ -47,7 +47,7 @@ private:
         PROCESSING_HANDLERS,
         VERSION_RESOLVED,
     };
-    typedef std::unique_ptr<vespalib::Version> Version_UP;
+    using Version_UP = std::unique_ptr<vespalib::Version>;
 
     std::mutex                 _lock;
     std::condition_variable    _cond;
@@ -62,7 +62,7 @@ public:
     /**
      * Convenience typedefs.
      */
-    typedef std::shared_ptr<RPCTarget> SP;
+    using SP = std::shared_ptr<RPCTarget>;
 
     /**
      * Constructs a new instance of this class. This object creates and

@@ -19,7 +19,7 @@ class Bucket;
  */
 class ClusterState {
 public:
-    typedef std::shared_ptr<ClusterState> SP;
+    using SP = std::shared_ptr<ClusterState>;
 
     ClusterState(const lib::ClusterState& state,
                  uint16_t nodeIndex,

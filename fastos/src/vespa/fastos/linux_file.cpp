@@ -36,8 +36,8 @@ FastOS_Linux_File::~FastOS_Linux_File () {
 }
 
 #define DIRECTIOPOSSIBLE(buf, len, off) \
- ((off & (_directIOFileAlign - 1)) == 0 && \
-  (len & (_directIOFileAlign - 1)) == 0 && \
+ (((off) & (_directIOFileAlign - 1)) == 0 && \
+  ((len) & (_directIOFileAlign - 1)) == 0 && \
   (reinterpret_cast<unsigned long>(buf) & (_directIOMemAlign - 1)) == 0)
 
 ssize_t
@@ -135,8 +135,7 @@ FastOS_Linux_File::ReadBufInternal(void *buffer, size_t length, int64_t readOffs
                 } else {
                     readResult = 0;
                 }
-                if (static_cast<size_t>(readResult) == alignedLength &&
-                    remain != 0) {
+                if (static_cast<size_t>(readResult) == alignedLength && (remain != 0)) {
                     ssize_t readResult2 = readUnalignedEnd(static_cast<char *>(buffer) + alignedLength,
                                                            remain, readOffset + alignedLength);
                     if (readResult == 0) {
@@ -434,11 +433,4 @@ FastOS_Linux_File::count_open_files()
     return count;
 }
 
-#include <vespa/fastos/backtrace.h>
-
-void forceStaticLinkOf_backtrace()
-{
-    void * dummy[2];
-    FastOS_backtrace(dummy, 2);
-}
 #endif

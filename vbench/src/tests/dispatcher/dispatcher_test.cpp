@@ -30,11 +30,9 @@ TEST("dispatcher") {
     Dispatcher<int> dispatcher(dropped);
     Fetcher fetcher1(dispatcher, handler1);
     Fetcher fetcher2(dispatcher, handler2);
-    vespalib::Thread thread1(fetcher1, fetcher1_thread);
-    vespalib::Thread thread2(fetcher2, fetcher2_thread);
-    thread1.start();
+    auto thread1 = vespalib::thread::start(fetcher1, fetcher1_thread);
     EXPECT_TRUE(dispatcher.waitForThreads(1, 512));
-    thread2.start();
+    auto thread2 = vespalib::thread::start(fetcher2, fetcher2_thread);
     EXPECT_TRUE(dispatcher.waitForThreads(2, 512));
     EXPECT_EQUAL(-1, dropped.value);
     EXPECT_EQUAL(-1, handler1.value);

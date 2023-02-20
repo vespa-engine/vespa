@@ -2,7 +2,8 @@
 package com.yahoo.vespa.model;
 
 import com.yahoo.config.ConfigInstance;
-import com.yahoo.config.model.producer.AbstractConfigProducer;
+import com.yahoo.config.model.producer.AnyConfigProducer;
+import com.yahoo.config.model.producer.TreeConfigProducer;
 import com.yahoo.vespa.model.admin.Admin;
 
 import java.util.Set;
@@ -21,7 +22,7 @@ public interface ConfigProducerRoot extends ConfigProducer {
      * @param id string id of descendant
      * @param descendant the producer to add to this root node
      */
-    void addDescendant(String id, AbstractConfigProducer<?> descendant);
+    void addDescendant(String id, AnyConfigProducer descendant);
 
     /**
      * @return an unmodifiable copy of the set of configIds in this root.

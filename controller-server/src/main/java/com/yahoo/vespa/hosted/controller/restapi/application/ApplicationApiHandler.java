@@ -16,17 +16,20 @@ import com.yahoo.config.application.api.DeploymentInstanceSpec;
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
+import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.InstanceName;
+import com.yahoo.config.provision.IntRange;
 import com.yahoo.config.provision.NodeResources;
-import com.yahoo.config.provision.Tags;
 import com.yahoo.config.provision.TenantName;
+import com.yahoo.config.provision.ZoneEndpoint.AllowedUrn;
 import com.yahoo.config.provision.zone.RoutingMethod;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.container.handler.metrics.JsonResponse;
+import com.yahoo.container.jdisc.EmptyResponse;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.ThreadedHttpRequestHandler;
@@ -47,7 +50,7 @@ import com.yahoo.slime.Slime;
 import com.yahoo.slime.SlimeUtils;
 import com.yahoo.text.Text;
 import com.yahoo.vespa.athenz.api.OAuthCredentials;
-import com.yahoo.vespa.flags.Flags;
+import com.yahoo.vespa.athenz.client.zms.ZmsClientException;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.Instance;
@@ -55,6 +58,7 @@ import com.yahoo.vespa.hosted.controller.LockedTenant;
 import com.yahoo.vespa.hosted.controller.NotExistsException;
 import com.yahoo.vespa.hosted.controller.api.application.v4.EnvironmentResource;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.ProtonMetrics;
+import com.yahoo.vespa.hosted.controller.api.identifiers.ClusterId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.TenantId;
 import com.yahoo.vespa.hosted.controller.api.integration.aws.TenantRoles;
@@ -63,6 +67,8 @@ import com.yahoo.vespa.hosted.controller.api.integration.configserver.Cluster;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.DeploymentResult;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.DeploymentResult.LogEntry;
+import com.yahoo.vespa.hosted.controller.api.integration.configserver.Load;
+import com.yahoo.vespa.hosted.controller.api.integration.configserver.LoadBalancer;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.NodeFilter;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.NodeRepository;
@@ -164,7 +170,6 @@ import static java.util.Comparator.comparingInt;
 import static java.util.Map.Entry.comparingByKey;
 import static java.util.stream.Collectors.collectingAndThen;
 import static java.util.stream.Collectors.joining;
-import static java.util.stream.Collectors.toList;
 
 /**
  * This implements the application/v4 API which is used to deploy and manage applications
@@ -225,10 +230,10 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         }
         catch (ConfigServerException e) {
             return switch (e.code()) {
-                case NOT_FOUND: yield ErrorResponse.notFoundError(Exceptions.toMessageString(e));
-                case ACTIVATION_CONFLICT: yield new ErrorResponse(CONFLICT, e.code().name(), Exceptions.toMessageString(e));
-                case INTERNAL_SERVER_ERROR: yield ErrorResponses.logThrowing(request, log, e);
-                default: yield new ErrorResponse(BAD_REQUEST, e.code().name(), Exceptions.toMessageString(e));
+                case NOT_FOUND -> ErrorResponse.notFoundError(Exceptions.toMessageString(e));
+                case ACTIVATION_CONFLICT -> new ErrorResponse(CONFLICT, e.code().name(), Exceptions.toMessageString(e));
+                case INTERNAL_SERVER_ERROR -> ErrorResponses.logThrowing(request, log, e);
+                default -> new ErrorResponse(BAD_REQUEST, e.code().name(), Exceptions.toMessageString(e));
             };
         }
         catch (RuntimeException e) {
@@ -277,6 +282,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/environment/{environment}/region/{region}/clusters")) return clusters(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"));
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/environment/{environment}/region/{region}/content/{*}")) return content(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), path.getRest(), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/environment/{environment}/region/{region}/logs")) return logs(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), request.propertyMap());
+        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/environment/{environment}/region/{region}/private-services")) return getPrivateServiceInfo(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"));
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/environment/{environment}/region/{region}/access/support")) return supportAccess(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), request.propertyMap());
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/environment/{environment}/region/{region}/node/{node}/service-dump")) return getServiceDump(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), path.get("node"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/environment/{environment}/region/{region}/scaling")) return scaling(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), request);
@@ -393,7 +399,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         for (Tenant tenant : controller.tenants().asList(includeDeleted(request)))
             toSlime(tenantArray.addObject(),
                     tenant,
-                    applications.stream().filter(app -> app.id().tenant().equals(tenant.name())).collect(toList()),
+                    applications.stream().filter(app -> app.id().tenant().equals(tenant.name())).toList(),
                     request);
         return new SlimeJsonResponse(slime);
     }
@@ -430,26 +436,31 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
             return ErrorResponse.badRequest("Can only see access requests for cloud tenants");
 
         var accessControlService = controller.serviceRegistry().accessControlService();
-        var accessRoleInformation = accessControlService.getAccessRoleInformation(tenant);
-        var managedAccess = accessControlService.getManagedAccess(tenant);
         var slime = new Slime();
         var cursor = slime.setObject();
-        cursor.setBool("managedAccess", managedAccess);
-        accessRoleInformation.getPendingRequest()
-                .ifPresent(membershipRequest -> {
-                    var requestCursor = cursor.setObject("pendingRequest");
-                    requestCursor.setString("requestTime", membershipRequest.getCreationTime());
-                    requestCursor.setString("reason", membershipRequest.getReason());
-                });
-        var auditLogCursor = cursor.setArray("auditLog");
-        accessRoleInformation.getAuditLog()
-                .forEach(auditLogEntry -> {
-                    var entryCursor = auditLogCursor.addObject();
-                    entryCursor.setString("created", auditLogEntry.getCreationTime());
-                    entryCursor.setString("approver", auditLogEntry.getApprover());
-                    entryCursor.setString("reason", auditLogEntry.getReason());
-                    entryCursor.setString("status", auditLogEntry.getAction());
-                });
+        try {
+            var accessRoleInformation = accessControlService.getAccessRoleInformation(tenant);
+            var managedAccess = accessControlService.getManagedAccess(tenant);
+            cursor.setBool("managedAccess", managedAccess);
+            accessRoleInformation.getPendingRequest()
+                                 .ifPresent(membershipRequest -> {
+                                     var requestCursor = cursor.setObject("pendingRequest");
+                                     requestCursor.setString("requestTime", membershipRequest.getCreationTime());
+                                     requestCursor.setString("reason", membershipRequest.getReason());
+                                 });
+            var auditLogCursor = cursor.setArray("auditLog");
+            accessRoleInformation.getAuditLog()
+                                 .forEach(auditLogEntry -> {
+                                     var entryCursor = auditLogCursor.addObject();
+                                     entryCursor.setString("created", auditLogEntry.getCreationTime());
+                                     entryCursor.setString("approver", auditLogEntry.getApprover());
+                                     entryCursor.setString("reason", auditLogEntry.getReason());
+                                     entryCursor.setString("status", auditLogEntry.getAction());
+                                 });
+        }
+        catch (ZmsClientException e) {
+            if (e.getErrorCode() == 404) cursor.setBool("managedAccess", false);
+        }
         return new SlimeJsonResponse(slime);
     }
 
@@ -496,10 +507,16 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         if (controller.tenants().require(tenant).type() != Tenant.Type.cloud)
             return ErrorResponse.badRequest("Can only set access privel for cloud tenants");
 
-        controller.serviceRegistry().accessControlService().setManagedAccess(tenant, managedAccess);
-        var slime = new Slime();
-        slime.setObject().setBool("managedAccess", managedAccess);
-        return new SlimeJsonResponse(slime);
+        try {
+            controller.serviceRegistry().accessControlService().setManagedAccess(tenant, managedAccess);
+            var slime = new Slime();
+            slime.setObject().setBool("managedAccess", managedAccess);
+            return new SlimeJsonResponse(slime);
+        }
+        catch (ZmsClientException e) {
+            if (e.getErrorCode() == 404) return ErrorResponse.conflict("Configuration not yet ready, please try again in a few minutes");
+            throw e;
+        }
     }
 
     private HttpResponse tenantInfo(String tenantName, HttpRequest request) {
@@ -567,11 +584,8 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         var mergedEmail = optional("email", inspector.field("contact"))
                 .filter(address -> !address.equals(info.contact().email().getEmailAddress()))
                 .map(address -> {
-                    if (emailVerificationEnabled()) {
-                        controller.mailVerifier().sendMailVerification(cloudTenant.name(), address, PendingMailVerification.MailType.TENANT_CONTACT);
-                        return new Email(address, false);
-                    }
-                    return new Email(address, true);
+                    controller.mailVerifier().sendMailVerification(cloudTenant.name(), address, PendingMailVerification.MailType.TENANT_CONTACT);
+                    return new Email(address, false);
                 })
                 .orElse(info.contact().email());
 
@@ -756,11 +770,8 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         var mergedEmail = optional("contactEmail", insp)
                 .filter(address -> !address.equals(oldInfo.contact().email().getEmailAddress()))
                 .map(address -> {
-                    if (emailVerificationEnabled()) {
-                        controller.mailVerifier().sendMailVerification(tenant.name(), address, PendingMailVerification.MailType.TENANT_CONTACT);
-                        return new Email(address, false);
-                    }
-                    return new Email(address, true);
+                    controller.mailVerifier().sendMailVerification(tenant.name(), address, PendingMailVerification.MailType.TENANT_CONTACT);
+                    return new Email(address, false);
                 })
                 .orElse(oldInfo.contact().email());
 
@@ -815,7 +826,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         var mergedEmail = optional("email", insp)
                 .filter(address -> !address.equals(oldContact.email().getEmailAddress()))
                 .map(address -> {
-                    if (isBillingContact || !emailVerificationEnabled())
+                    if (isBillingContact)
                         return new Email(address, true);
                     controller.mailVerifier().sendMailVerification(tenantName, address, PendingMailVerification.MailType.TENANT_CONTACT);
                     return new Email(address, false);
@@ -852,11 +863,8 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
                         .findAny()
                         .map(emailContact -> new TenantContacts.EmailContact(audiences, emailContact.email()))
                         .orElseGet(() -> {
-                            if (emailVerificationEnabled()) {
-                                controller.mailVerifier().sendMailVerification(tenantName, email, PendingMailVerification.MailType.NOTIFICATIONS);
-                                return new TenantContacts.EmailContact(audiences, new Email(email, false));
-                            }
-                            return new TenantContacts.EmailContact(audiences, new Email(email, true));
+                            controller.mailVerifier().sendMailVerification(tenantName, email, PendingMailVerification.MailType.NOTIFICATIONS);
+                            return new TenantContacts.EmailContact(audiences, new Email(email, false));
                         });
             }).toList();
 
@@ -1343,18 +1351,13 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
             clusterObject.setString("type", cluster.type().name());
             toSlime(cluster.min(), clusterObject.setObject("min"));
             toSlime(cluster.max(), clusterObject.setObject("max"));
+            if ( ! cluster.groupSize().isEmpty())
+                toSlime(cluster.groupSize(), clusterObject.setObject("groupSize"));
             toSlime(cluster.current(), clusterObject.setObject("current"));
-            if (cluster.target().isPresent()
-                && ! cluster.target().get().justNumbers().equals(cluster.current().justNumbers()))
-                toSlime(cluster.target().get(), clusterObject.setObject("target"));
-            cluster.suggested().ifPresent(suggested -> toSlime(suggested, clusterObject.setObject("suggested")));
-            utilizationToSlime(cluster.utilization(), clusterObject.setObject("utilization"));
+            toSlime(cluster.target(), clusterObject.setObject("target"));
+            toSlime(cluster.suggested(), clusterObject.setObject("suggested"));
             scalingEventsToSlime(cluster.scalingEvents(), clusterObject.setArray("scalingEvents"));
-            clusterObject.setString("autoscalingStatusCode", cluster.autoscalingStatusCode());
-            clusterObject.setString("autoscalingStatus", cluster.autoscalingStatus());
             clusterObject.setLong("scalingDuration", cluster.scalingDuration().toMillis());
-            clusterObject.setDouble("maxQueryGrowthRate", cluster.maxQueryGrowthRate());
-            clusterObject.setDouble("currentQueryFractionOfMax", cluster.currentQueryFractionOfMax());
         }
         return new SlimeJsonResponse(slime);
     }
@@ -1960,6 +1963,47 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
                                                  instance.id().toShortString(), zone, inService ? "in" : "out of"));
     }
 
+    private String serviceTypeIn(DeploymentId id) {
+        CloudName cloud = controller.zoneRegistry().zones().all().get(id.zoneId()).get().getCloudName();
+        if (CloudName.AWS.equals(cloud)) return "aws-private-link";
+        if (CloudName.GCP.equals(cloud)) return "gcp-service-connect";
+        return "unknown";
+    }
+
+    private HttpResponse getPrivateServiceInfo(String tenantName, String applicationName, String instanceName, String environment, String region) {
+        DeploymentId id = new DeploymentId(ApplicationId.from(tenantName, applicationName, instanceName),
+                                           ZoneId.from(environment, region));
+        List<LoadBalancer> lbs = controller.serviceRegistry().configServer().getLoadBalancers(id.applicationId(), id.zoneId());
+        Slime slime = new Slime();
+        Cursor lbArray = slime.setObject().setArray("privateServices");
+        for (LoadBalancer lb : lbs) {
+            Cursor serviceObject = lbArray.addObject();
+            serviceObject.setString("cluster", lb.cluster().value());
+            lb.service().ifPresent(service -> {
+                serviceObject.setString("serviceId", service.id()); // Really the "serviceName", but this is what the user needs >_<
+                serviceObject.setString("type", serviceTypeIn(id));
+                Cursor urnsArray = serviceObject.setArray("allowedUrns");
+                for (AllowedUrn urn : service.allowedUrns()) {
+                    Cursor urnObject = urnsArray.addObject();
+                    urnObject.setString("type", switch (urn.type()) {
+                        case awsPrivateLink -> "aws-private-link";
+                        case gcpServiceConnect -> "gcp-service-connect";
+                    });
+                    urnObject.setString("urn", urn.urn());
+                }
+                Cursor endpointsArray = serviceObject.setArray("endpoints");
+                controller.serviceRegistry().vpcEndpointService()
+                          .getConnections(new ClusterId(id, lb.cluster()), lb.cloudAccount())
+                        .forEach(endpoint -> {
+                            Cursor endpointObject = endpointsArray.addObject();
+                            endpointObject.setString("endpointId", endpoint.endpointId());
+                            endpointObject.setString("state", endpoint.state());
+                        });
+            });
+        }
+        return new SlimeJsonResponse(slime);
+    }
+
     private HttpResponse getGlobalRotationOverride(String tenantName, String applicationName, String instanceName, String environment, String region) {
         DeploymentId deploymentId = new DeploymentId(ApplicationId.from(tenantName, applicationName, instanceName),
                                                      requireZone(environment, region));
@@ -2090,7 +2134,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         if (controller.applications().getApplication(applicationId).isEmpty())
             createApplication(tenantName, applicationName, request);
 
-        controller.applications().createInstance(applicationId.instance(instanceName), Tags.empty());
+        controller.applications().createInstance(applicationId.instance(instanceName));
 
         Slime slime = new Slime();
         toSlime(applicationId.instance(instanceName), slime.setObject(), request);
@@ -2199,7 +2243,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
 
         Double speed = request.hasProperty("speed") ? Double.parseDouble(request.getProperty("speed")) : null;
         boolean indexedOnly = request.getBooleanProperty("indexedOnly");
-        controller.applications().reindex(id, zone, clusterNames, documentTypes, indexedOnly, speed);
+        controller.applications().reindex(id, zone, clusterNames, documentTypes, indexedOnly, speed, "reindexing triggered by " + requireUserPrincipal(request).getName());
         return new MessageResponse("Requested reindexing of " + id + " in " + zone +
                                    (clusterNames.isEmpty() ? "" : ", on clusters " + String.join(", ", clusterNames)) +
                                    (documentTypes.isEmpty() ? "" : ", for types " + String.join(", ", documentTypes)) +
@@ -2251,6 +2295,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         status.message().ifPresent(message -> statusObject.setString("message", message));
         status.progress().ifPresent(progress -> statusObject.setDouble("progress", progress));
         status.speed().ifPresent(speed -> statusObject.setDouble("speed", speed));
+        status.cause().ifPresent(cause -> statusObject.setString("cause", cause));
     }
 
     private static String toString(ApplicationReindexing.State state) {
@@ -2673,21 +2718,24 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         object.setDouble("cost", cost);
     }
 
-    private void utilizationToSlime(Cluster.Utilization utilization, Cursor utilizationObject) {
-        utilizationObject.setDouble("cpu", utilization.cpu());
-        utilizationObject.setDouble("idealCpu", utilization.idealCpu());
-        utilizationObject.setDouble("currentCpu", utilization.currentCpu());
-        utilizationObject.setDouble("peakCpu", utilization.peakCpu());
+    private void toSlime(IntRange range, Cursor object) {
+        range.from().ifPresent(from -> object.setLong("from", from));
+        range.to().ifPresent(to -> object.setLong("to", to));
+    }
 
-        utilizationObject.setDouble("memory", utilization.memory());
-        utilizationObject.setDouble("idealMemory", utilization.idealMemory());
-        utilizationObject.setDouble("currentMemory", utilization.currentMemory());
-        utilizationObject.setDouble("peakMemory", utilization.peakMemory());
+    private void toSlime(Cluster.Autoscaling autoscaling, Cursor autoscalingObject) {
+        autoscalingObject.setString("status", autoscaling.status());
+        autoscalingObject.setString("description", autoscaling.description());
+        autoscaling.resources().ifPresent(resources -> toSlime(resources, autoscalingObject.setObject("resources")));
+        autoscalingObject.setLong("at", autoscaling.at().toEpochMilli());
+        toSlime(autoscaling.peak(), autoscalingObject.setObject("peak"));
+        toSlime(autoscaling.ideal(), autoscalingObject.setObject("ideal"));
+    }
 
-        utilizationObject.setDouble("disk", utilization.disk());
-        utilizationObject.setDouble("idealDisk", utilization.idealDisk());
-        utilizationObject.setDouble("currentDisk", utilization.currentDisk());
-        utilizationObject.setDouble("peakDisk", utilization.peakDisk());
+    private void toSlime(Load load, Cursor loadObject) {
+        loadObject.setDouble("cpu", load.cpu());
+        loadObject.setDouble("memory", load.memory());
+        loadObject.setDouble("disk", load.disk());
     }
 
     private void scalingEventsToSlime(List<Cluster.ScalingEvent> scalingEvents, Cursor scalingEventsArray) {
@@ -3080,8 +3128,5 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
                           .collect(collectingAndThen(Collectors.toList(), Collections::unmodifiableList));
     }
 
-    public boolean emailVerificationEnabled() {
-        return Flags.ENABLED_MAIL_VERIFICATION.bindTo(controller.flagSource()).value();
-    }
 }
 

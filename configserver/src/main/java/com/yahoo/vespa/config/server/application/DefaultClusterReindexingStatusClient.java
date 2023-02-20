@@ -59,7 +59,7 @@ public class DefaultClusterReindexingStatusClient implements ClusterReindexingSt
         clusters.forEach((clusterId, clusterNodes) -> {
             var parallelRequests = clusterNodes.stream()
                     .map(this::getReindexingStatus)
-                    .collect(Collectors.toList());
+                    .toList();
             CompletableFuture<Map<String, ClusterReindexing>> combinedRequest = CompletableFutures.firstOf(parallelRequests);
             futureStatusPerCluster.put(clusterId, combinedRequest);
         });
@@ -146,6 +146,7 @@ public class DefaultClusterReindexingStatusClient implements ClusterReindexingSt
 
     }
 
+    @SuppressWarnings("deprecation")
     private static CloseableHttpAsyncClient createHttpClient() {
         return VespaAsyncHttpClientBuilder
                 .create()

@@ -5,6 +5,7 @@ import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.application.api.FileRegistry;
 import com.yahoo.config.model.api.ModelContext;
+import com.yahoo.config.model.application.AbstractApplicationPackage;
 import com.yahoo.config.model.application.provider.BaseDeployLogger;
 import com.yahoo.config.model.application.provider.MockFileRegistry;
 import com.yahoo.config.model.deploy.TestProperties;
@@ -27,6 +28,7 @@ import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -133,7 +135,7 @@ public class ApplicationBuilder {
         this.properties = properties;
         this.documentsOnly = documentsOnly;
         var list = new ArrayList<>(applicationPackage.getSchemas());
-        list.sort((a, b) -> a.getName().compareTo(b.getName()));
+        list.sort(Comparator.comparing(NamedReader::getName));
         for (NamedReader reader : list) {
             addSchema(reader);
         }
@@ -354,7 +356,7 @@ public class ApplicationBuilder {
     }
 
     /**
-     * Convenience factory methdd to create a SearchBuilder from multiple SD files..
+     * Convenience factory method to create a SearchBuilder from multiple SD files.
      */
     private static ApplicationBuilder createFromFiles(Collection<String> fileNames,
                                                       FileRegistry fileRegistry,
@@ -413,7 +415,7 @@ public class ApplicationBuilder {
 
         var fnli = Files.list(new File(dir).toPath())
             .map(p -> p.toString())
-            .filter(fn -> fn.endsWith(".sd"))
+            .filter(fn -> AbstractApplicationPackage.validSchemaFilename(fn))
             .sorted();
         for (var i = fnli.iterator(); i.hasNext(); ) {
             builder.addSchemaFile(i.next());

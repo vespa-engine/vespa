@@ -24,9 +24,9 @@ template< typename K, typename V, typename LT = std::less<K> >
 class vector_map
 {
 public:
-    typedef std::pair<K, V> value_type;
-    typedef K key_type;
-    typedef V mapped_type;
+    using value_type = std::pair<K, V>;
+    using key_type = K;
+    using mapped_type = V;
 private:
     using OrderedList = std::vector<value_type>;
     friend bool operator < (const std::pair<K, V> & a, const std::pair<K, V> & b) {

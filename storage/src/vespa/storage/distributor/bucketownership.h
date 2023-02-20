@@ -12,15 +12,15 @@ class BucketOwnership
     const lib::ClusterState* _checkedState;
     bool _owned;
 
-    BucketOwnership(const lib::ClusterState& checkedState)
+    BucketOwnership(const lib::ClusterState& checkedState) noexcept
         : _checkedState(&checkedState),
           _owned(false)
     { }
 
 public:
-    BucketOwnership() : _checkedState(nullptr), _owned(true) {}
+    constexpr BucketOwnership() noexcept : _checkedState(nullptr), _owned(true) {}
 
-    bool isOwned() const { return _owned; }
+    [[nodiscard]] bool isOwned() const noexcept { return _owned; }
     /**
      * Cluster state in which the ownership check failed. Lifetime of returned
      * reference depends on when the active or pending cluster state of the
@@ -30,16 +30,16 @@ public:
      *
      * Precondition: isOwned() == false
      */
-    const lib::ClusterState& getNonOwnedState() {
+    const lib::ClusterState& getNonOwnedState() noexcept {
         assert(!isOwned());
         return *_checkedState;
     }
 
-    static BucketOwnership createOwned() {
+    static constexpr BucketOwnership createOwned() noexcept {
         return BucketOwnership();
     }
 
-    static BucketOwnership createNotOwnedInState(const lib::ClusterState& s) {
+    static BucketOwnership createNotOwnedInState(const lib::ClusterState& s) noexcept {
         return BucketOwnership(s);
     }
 };

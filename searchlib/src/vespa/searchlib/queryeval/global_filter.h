@@ -8,6 +8,8 @@
 namespace vespalib { struct ThreadBundle; }
 namespace search { class BitVector; }
 
+namespace search::engine { class Trace; }
+
 namespace search::queryeval {
 
 class Blueprint;
@@ -22,7 +24,8 @@ class Blueprint;
 class GlobalFilter : public std::enable_shared_from_this<GlobalFilter>
 {
 public:
-    GlobalFilter();
+    using Trace = search::engine::Trace;
+    GlobalFilter() noexcept;
     GlobalFilter(const GlobalFilter &) = delete;
     GlobalFilter(GlobalFilter &&) = delete;
     virtual bool is_active() const = 0;
@@ -39,7 +42,10 @@ public:
     static std::shared_ptr<GlobalFilter> create(std::vector<uint32_t> docids, uint32_t size);
     static std::shared_ptr<GlobalFilter> create(std::unique_ptr<BitVector> vector);
     static std::shared_ptr<GlobalFilter> create(std::vector<std::unique_ptr<BitVector>> vectors);
-    static std::shared_ptr<GlobalFilter> create(Blueprint &blueprint, uint32_t docid_limit, vespalib::ThreadBundle &thread_bundle);
+    static std::shared_ptr<GlobalFilter> create(Blueprint &blueprint, uint32_t docid_limit, vespalib::ThreadBundle &thread_bundle, Trace *trace);
+    static std::shared_ptr<GlobalFilter> create(Blueprint &blueprint, uint32_t docid_limit, vespalib::ThreadBundle &thread_bundle) {
+        return create(blueprint, docid_limit, thread_bundle, nullptr);
+    }
 };
 
 } // namespace

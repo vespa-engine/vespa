@@ -21,8 +21,8 @@ public:
     /**
      * Convenience typedefs.
      */
-    typedef std::unique_ptr<Metrics> UP;
-    typedef std::shared_ptr<Metrics> SP;
+    using UP = std::unique_ptr<Metrics>;
+    using SP = std::shared_ptr<Metrics>;
 
 public:
     /**

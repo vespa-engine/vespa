@@ -106,7 +106,7 @@ public class ZoneFilterMock implements ZoneList {
                         .filter(zone -> negate ?
                                 condition.negate().test(zone) :
                                 condition.test(zone))
-                        .collect(Collectors.toList()),
+                        .toList(),
                 zoneRoutingMethods, dynamicallyProvisioned, false);
     }
 

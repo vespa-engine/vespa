@@ -165,7 +165,9 @@ public:
         uint32_t explore_k = 100;
         vespalib::ArrayRef qv_ref(qv);
         vespalib::eval::TypedCells qv_cells(qv_ref);
-        auto got_by_docid = index->find_top_k(k, qv_cells, explore_k, 10000.0);
+        auto got_by_docid = (global_filter->is_active()) ?
+                            index->find_top_k_with_filter(k, qv_cells, *global_filter, explore_k, 10000.0) :
+                            index->find_top_k(k, qv_cells, explore_k, 10000.0);
         std::vector<uint32_t> act;
         act.reserve(got_by_docid.size());
         for (auto& hit : got_by_docid) {
@@ -522,7 +524,7 @@ TYPED_TEST(HnswIndexTest, memory_is_reclaimed_when_doing_changes_to_graph)
     EXPECT_EQ(0, mem_2.allocatedBytesOnHold());
 
     this->remove_document(2);
-    size_t node_ref_growth = 0;
+    size_t nodes_growth = 0;
     if constexpr (TestFixture::is_single) {
         this->expect_level_0(1, {3});
         this->expect_empty_level_0(2);
@@ -532,11 +534,11 @@ TYPED_TEST(HnswIndexTest, memory_is_reclaimed_when_doing_changes_to_graph)
         this->expect_level_0(1, {2});
         this->expect_empty_level_0(3);
         this->expect_level_0(2, {1});
-        node_ref_growth = sizeof(HnswNode); // Entry for nodeid 3 added when adding doc 2
+        nodes_growth = sizeof(HnswNode); // Entry for nodeid 3 added when adding doc 2
     }
     auto mem_3 = this->memory_usage();
     // We end up in the same state as before document 2 was added and effectively use the same amount of memory.
-    EXPECT_EQ((mem_1.usedBytes() - mem_1.deadBytes() + node_ref_growth), (mem_3.usedBytes() - mem_3.deadBytes()));
+    EXPECT_EQ((mem_1.usedBytes() - mem_1.deadBytes() + nodes_growth), (mem_3.usedBytes() - mem_3.deadBytes()));
     EXPECT_EQ(0, mem_3.allocatedBytesOnHold());
 }
 
@@ -642,14 +644,14 @@ make_graph_helper(HnswIndex<type>& index)
     using LinkArrayRef = typename HnswGraph<type>::LinkArrayRef;
     auto& graph = index.get_graph();
     ResultGraph result(graph.size());
-    assert(!graph.get_node_ref(0).valid());
+    assert(!graph.get_levels_ref(0).valid());
     for (uint32_t doc_id = 1; doc_id < graph.size(); ++doc_id) {
         auto& node = result[doc_id];
-        auto node_ref = graph.get_node_ref(doc_id);
+        auto levels_ref = graph.get_levels_ref(doc_id);
         if constexpr (std::is_same_v<std::remove_reference_t<decltype(node)>, uint32_t>) {
-            node = node_ref.ref();
+            node = levels_ref.ref();
         } else {
-            LevelArrayRef level_array(graph.get_level_array(node_ref));
+            LevelArrayRef level_array(graph.get_level_array(levels_ref));
             for (uint32_t level = 0; level < level_array.size(); ++level) {
                 if constexpr (std::is_same_v<std::remove_reference_t<decltype(node)>, std::vector<uint32_t>>) {
                     node.emplace_back(level_array[level].load_relaxed().ref());
@@ -723,8 +725,11 @@ TYPED_TEST(HnswIndexTest, hnsw_graph_is_compacted)
         // Forced compaction to move things around
         CompactionSpec compaction_spec(true, false);
         CompactionStrategy compaction_strategy;
-        this->index->compact_link_arrays(compaction_spec, compaction_strategy);
-        this->index->compact_level_arrays(compaction_spec, compaction_strategy);
+        auto& graph = this->index->get_graph();
+        graph.links_store.set_compaction_spec(compaction_spec);
+        graph.levels_store.set_compaction_spec(compaction_spec);
+        this->index->compact_link_arrays(compaction_strategy);
+        this->index->compact_level_arrays(compaction_strategy);
         this->commit();
         this->index->update_stat(compaction_strategy);
         mem_2 = this->commit_and_update_stat();
@@ -757,6 +762,29 @@ TYPED_TEST(HnswIndexTest, hnsw_graph_can_be_saved_and_loaded)
 
 using HnswMultiIndexTest = HnswIndexTest<HnswIndex<HnswIndexType::MULTI>>;
 
+namespace {
+
+class MyGlobalFilter : public GlobalFilter {
+    std::shared_ptr<GlobalFilter> _filter;
+    mutable uint32_t              _max_docid;
+public:
+    MyGlobalFilter(std::shared_ptr<GlobalFilter> filter) noexcept
+        : _filter(std::move(filter)),
+          _max_docid(0)
+    {
+    }
+    bool is_active() const override { return _filter->is_active(); }
+    uint32_t size() const override { return _filter->size(); }
+    uint32_t count() const override { return _filter->count(); }
+    bool check(uint32_t docid) const override {
+        _max_docid = std::max(_max_docid, docid);
+        return _filter->check(docid);
+    }
+    uint32_t max_docid() const noexcept { return _max_docid; }
+};
+
+}
+
 TEST_F(HnswMultiIndexTest, duplicate_docid_is_removed)
 {
     this->init(false);
@@ -783,6 +811,10 @@ TEST_F(HnswMultiIndexTest, duplicate_docid_is_removed)
     this->expect_top_3_by_docid("{2, 0}", {2, 0}, {1, 2, 4});
     this->expect_top_3_by_docid("{2, 1}", {2, 1}, {2, 3, 4});
     this->expect_top_3_by_docid("{2, 2}", {2, 2}, {1, 3, 4});
+    auto filter = std::make_shared<MyGlobalFilter>(GlobalFilter::create({1, 2}, 3));
+    global_filter = filter;
+    this->expect_top_3_by_docid("{2,2}", {2, 2}, {1, 2});
+    EXPECT_EQ(2, filter->max_docid());
 };
 
 TEST(LevelGeneratorTest, gives_various_levels)

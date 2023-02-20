@@ -72,12 +72,7 @@ public:
         commit(memory.size);
     }
 
-    void printf(const char *fmt, ...)
-#ifdef __GNUC__
-        // Add printf format checks with gcc
-        __attribute__ ((format (printf,2,3)))
-#endif
-        ;
+    void printf(const char *fmt, ...) __attribute__ ((format (printf,2,3)));
 };
 
 } // namespace vespalib

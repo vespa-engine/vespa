@@ -30,6 +30,8 @@ import java.util.Map;
  *
  * @author <a href="mailto:humbe@yahoo-inc.com">H&aring;kon Humberset</a>
  */
+@Deprecated
+@SuppressWarnings("removal")
 public class XmlSerializationHelper {
 
     public static void printArrayXml(Array array, XmlStream xml) {

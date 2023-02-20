@@ -37,7 +37,7 @@ namespace {
 
     void writePidFile(const vespalib::string& pidfile)
     {
-        int rv = -1;
+        ssize_t rv = -1;
         vespalib::string mypid = vespalib::make_string("%d\n", getpid());
         size_t lastSlash = pidfile.rfind('/');
         if (lastSlash != vespalib::string::npos) {
@@ -137,8 +137,6 @@ StorageNode::initialize()
     // and store them away, while having the config lock.
     subscribeToConfigs();
 
-    updateUpgradeFlag(*_clusterConfig);
-
     // First update some basics that doesn't depend on anything else to be
     // available
     _rootFolder = _serverConfig->rootFolder;
@@ -156,7 +154,7 @@ StorageNode::initialize()
         _metricManager = std::make_unique<metrics::MetricManager>();
         _context.getComponentRegister().setMetricManager(*_metricManager);
     }
-    _component->registerMetricUpdateHook(*this, framework::SecondTime(300));
+    _component->registerMetricUpdateHook(*this, 300s);
 
     // Initializing state manager early, as others use it init time to
     // update node state according min used bits etc.
@@ -246,22 +244,6 @@ StorageNode::setNewDocumentRepo(const std::shared_ptr<const document::DocumentTy
 }
 
 void
-StorageNode::updateUpgradeFlag(const UpgradingConfig& config)
-{
-    framework::UpgradeFlags flag(framework::NO_UPGRADE_SPECIAL_HANDLING_ACTIVE);
-    if (config.upgradingMajorTo) {
-        flag = framework::UPGRADING_TO_MAJOR_VERSION;
-    } else if (config.upgradingMinorTo) {
-        flag = framework::UPGRADING_TO_MINOR_VERSION;
-    } else if (config.upgradingMajorFrom) {
-        flag = framework::UPGRADING_FROM_MAJOR_VERSION;
-    } else if (config.upgradingMinorFrom) {
-        flag = framework::UPGRADING_FROM_MINOR_VERSION;
-    }
-    _context.getComponentRegister().setUpgradeFlag(flag);
-}
-
-void
 StorageNode::handleLiveConfigUpdate(const InitialGuard & initGuard)
 {
     // Make sure we don't conflict with initialize or shutdown threads.
@@ -329,7 +311,6 @@ StorageNode::handleLiveConfigUpdate(const InitialGuard & initGuard)
         }
     }
     if (_newClusterConfig) {
-        updateUpgradeFlag(*_newClusterConfig);
         if (*_clusterConfig != *_newClusterConfig) {
             LOG(warning, "Live config failure: Cannot alter cluster config of node live.");
         }
@@ -391,7 +372,7 @@ StorageNode::shutdown()
         _chain->flush();
     }
 
-    if (_pidFile != "") {
+    if ( !_pidFile.empty() ) {
         LOG(debug, "Removing pid file");
         removePidFile(_pidFile);
     }
@@ -529,10 +510,8 @@ StorageNode::updateMetrics(const MetricLockGuard &) {
 }
 
 void
-StorageNode::waitUntilInitialized(uint32_t timeout) {
-    framework::defaultimplementation::RealClock clock;
-    framework::MilliSecTime endTime(
-            clock.getTimeInMillis() + framework::MilliSecTime(1000 * timeout));
+StorageNode::waitUntilInitialized(vespalib::duration timeout) {
+    vespalib::steady_time doom = vespalib::steady_clock::now() + timeout;
     while (true) {
         {
             NodeStateUpdater::Lock::SP lock(_component->getStateUpdater().grabStateChangeLock());
@@ -540,10 +519,9 @@ StorageNode::waitUntilInitialized(uint32_t timeout) {
             if (nodeState.getState() == lib::State::UP) break;
         }
         std::this_thread::sleep_for(10ms);
-        if (clock.getTimeInMillis() >= endTime) {
+        if (vespalib::steady_clock::now() >= doom) {
             std::ostringstream ost;
-            ost << "Storage server not initialized after waiting timeout of "
-                << timeout << " seconds.";
+            ost << "Storage server not initialized after waiting timeout of " << timeout << " seconds.";
             throw vespalib::IllegalStateException(ost.str(), VESPA_STRLOC);
         }
     }

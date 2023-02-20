@@ -10,8 +10,9 @@ import java.util.Optional;
  * This class holds the extracted information after parsing a "match"
  * block, using simple data structures as far as possible.  Do not put
  * advanced logic here!
+ *
  * @author arnej27959
- **/
+ */
 public class ParsedMatchSettings {
 
     private MatchType matchType = null;
@@ -35,4 +36,5 @@ public class ParsedMatchSettings {
     void setExactTerminator(String value) { this.exactTerminator = value; }
     void setGramSize(int value) { this.gramSize = value; }
     void setMaxLength(int value) { this.maxLength = value; }
+
 }

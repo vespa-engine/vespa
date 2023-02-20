@@ -86,7 +86,7 @@ DistributorNode::createChain(IStorageChainBuilder &builder)
     // TODO: All components in this chain should use a common thread instead of
     // each having its own configfetcher.
     StorageLink::UP chain;
-    if (_retrievedCommunicationManager.get()) {
+    if (_retrievedCommunicationManager) {
         builder.add(std::move(_retrievedCommunicationManager));
     } else {
         auto communication_manager = std::make_unique<CommunicationManager>(dcr, _configUri);
@@ -111,7 +111,7 @@ DistributorNode::createChain(IStorageChainBuilder &builder)
 api::Timestamp
 DistributorNode::generate_unique_timestamp()
 {
-    uint64_t now_seconds = _component->getClock().getTimeInSeconds().getTime();
+    uint64_t now_seconds = vespalib::count_s(_component->getClock().getSystemTime().time_since_epoch());
     std::lock_guard lock(_timestamp_mutex);
     // We explicitly handle a seemingly decreased wall clock time, as multiple threads may
     // race with each other over a second change edge. In this case, pretend an earlier
@@ -139,7 +139,7 @@ DistributorNode::generate_unique_timestamp()
 ResumeGuard
 DistributorNode::pause()
 {
-    return ResumeGuard();
+    return {};
 }
 
 } // storage

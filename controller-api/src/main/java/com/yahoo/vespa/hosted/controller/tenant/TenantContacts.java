@@ -40,7 +40,7 @@ public class TenantContacts {
         return contacts.stream()
                 .filter(type::isInstance)
                 .map(type::cast)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     public boolean isEmpty() {

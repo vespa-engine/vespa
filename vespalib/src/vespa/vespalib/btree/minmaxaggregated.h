@@ -11,7 +11,7 @@ class MinMaxAggregated
 {
     int32_t _min;
     int32_t _max;
-    
+
 public:
     MinMaxAggregated()
         : _min(std::numeric_limits<int32_t>::max()),

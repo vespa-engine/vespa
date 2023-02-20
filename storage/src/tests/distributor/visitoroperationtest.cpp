@@ -41,7 +41,7 @@ struct VisitorOperationTest : Test, DistributorStripeTestUtil {
     document::BucketId nullId;
     VisitorOperation::Config defaultConfig;
 
-    api::CreateVisitorCommand::SP
+    static api::CreateVisitorCommand::SP
     createVisitorCommand(std::string instanceId,
                          document::BucketId superBucket,
                          document::BucketId lastBucket,
@@ -122,7 +122,7 @@ struct VisitorOperationTest : Test, DistributorStripeTestUtil {
      */
     std::string runEmptyVisitor(api::CreateVisitorCommand::SP msg) {
         auto op = createOpWithDefaultConfig(std::move(msg));
-        op->start(_sender, framework::MilliSecTime(0));
+        op->start(_sender);
         return _sender.getLastReply();
     }
 
@@ -178,7 +178,7 @@ VisitorOperationTest::doStandardVisitTest(const std::string& clusterState)
 
     auto op = createOpWithDefaultConfig(std::move(msg));
 
-    op->start(_sender, framework::MilliSecTime(0));
+    op->start(_sender);
 
     ASSERT_EQ("Visitor Create => 0", _sender.getCommands(true));
 
@@ -228,7 +228,7 @@ TEST_F(VisitorOperationTest, shutdown) {
 
     auto op = createOpWithDefaultConfig(std::move(msg));
 
-    op->start(_sender, framework::MilliSecTime(0));
+    op->start(_sender);
 
     ASSERT_EQ("Visitor Create => 0", _sender.getCommands(true));
 
@@ -296,7 +296,7 @@ TEST_F(VisitorOperationTest, no_resend_after_timeout_passed) {
     auto op = createOpWithDefaultConfig(
             createVisitorCommand("lowtimeoutbusy", id, nullId, 8, 20ms));
 
-    op->start(_sender, framework::MilliSecTime(0));
+    op->start(_sender);
 
     ASSERT_EQ("Visitor Create => 0", _sender.getCommands(true));
 
@@ -346,7 +346,7 @@ TEST_F(VisitorOperationTest, user_single_bucket) {
             "dumpvisitor",
             "true"));
 
-    op->start(_sender, framework::MilliSecTime(0));
+    op->start(_sender);
 
     ASSERT_EQ("Visitor Create => 0", _sender.getCommands(true)) << _sender.getLastReply();
     sendReply(*op);
@@ -371,7 +371,7 @@ VisitorOperationTest::runVisitor(document::BucketId id,
                 "dumpvisitor",
                 "true"));
 
-    op->start(_sender, framework::MilliSecTime(0));
+    op->start(_sender);
 
     sendReply(*op);
 
@@ -437,7 +437,7 @@ TEST_F(VisitorOperationTest, bucket_removed_while_visitor_pending) {
     auto op = createOpWithDefaultConfig(
             createVisitorCommand("removefrombucketdb", id, nullId));
 
-    op->start(_sender, framework::MilliSecTime(0));
+    op->start(_sender);
 
     ASSERT_EQ("Visitor Create => 0", _sender.getCommands(true));
 
@@ -459,7 +459,7 @@ TEST_F(VisitorOperationTest, empty_buckets_visited_when_visiting_removes) {
     auto op = createOpWithDefaultConfig(
             createVisitorCommand("emptybucket", id, nullId, 8, 500ms, false, true));
 
-    op->start(_sender, framework::MilliSecTime(0));
+    op->start(_sender);
 
     // Since visitRemoves is true, the empty bucket will be visited
     ASSERT_EQ("Visitor Create => 0", _sender.getCommands(true));
@@ -474,7 +474,7 @@ TEST_F(VisitorOperationTest, resend_to_other_storage_node_on_failure) {
     auto op = createOpWithDefaultConfig(
             createVisitorCommand("emptyinconsistent", id, nullId));
 
-    op->start(_sender, framework::MilliSecTime(0));
+    op->start(_sender);
 
     ASSERT_EQ("Visitor Create => 0", _sender.getCommands(true));
 
@@ -502,7 +502,7 @@ TEST_F(VisitorOperationTest, timeout_only_after_reply_from_all_storage_nodes) {
                 nullId,
                 8));
 
-    op->start(_sender, framework::MilliSecTime(0));
+    op->start(_sender);
 
     ASSERT_EQ("Visitor Create => 0,Visitor Create => 1",
               _sender.getCommands(true));
@@ -539,7 +539,7 @@ TEST_F(VisitorOperationTest, timeout_does_not_override_critical_error) {
                 8,
                 500ms)); // ms timeout
 
-    op->start(_sender, framework::MilliSecTime(0));
+    op->start(_sender);
     ASSERT_EQ("Visitor Create => 0,Visitor Create => 1",
               _sender.getCommands(true));
 
@@ -614,7 +614,7 @@ TEST_F(VisitorOperationTest, bucket_high_bit_count) {
                 "dumpvisitor",
                 "true"));
 
-    op->start(_sender, framework::MilliSecTime(0));
+    op->start(_sender);
 
     EXPECT_EQ("Visitor Create => 0", _sender.getCommands(true));
 }
@@ -640,7 +640,7 @@ TEST_F(VisitorOperationTest, bucket_low_bit_count) {
                 "dumpvisitor",
                 "true"));
 
-    op->start(_sender, framework::MilliSecTime(0));
+    op->start(_sender);
     EXPECT_EQ("CreateVisitorReply(last=BucketId(0x0000000000000000)) "
               "ReturnCode(WRONG_DISTRIBUTION, distributor:1 storage:1)",
               _sender.getLastReply());
@@ -661,7 +661,7 @@ TEST_F(VisitorOperationTest, parallel_visitors_to_one_storage_node) {
             createVisitorCommand("multiplebuckets", id, nullId, 31),
             VisitorOperation::Config(1, 4));
 
-    op->start(_sender, framework::MilliSecTime(0));
+    op->start(_sender);
 
     ASSERT_EQ("Visitor Create => 0,Visitor Create => 0,"
               "Visitor Create => 0,Visitor Create => 0",
@@ -708,7 +708,7 @@ TEST_F(VisitorOperationTest, parallel_visitors_to_one_storage_node) {
             createVisitorCommand("multiplebuckets", id, document::BucketId(0x54000000000f0001), 31),
             VisitorOperation::Config(minBucketsPerVisitor, maxVisitorsPerNode));
 
-    op2->start(_sender, framework::MilliSecTime(0));
+    op2->start(_sender);
 
     ASSERT_EQ("Visitor Create => 0", _sender.getCommands(true));
 
@@ -736,7 +736,7 @@ TEST_F(VisitorOperationTest, parallel_visitors_resend_only_failing) {
             createVisitorCommand("multiplebuckets", id, nullId, 31),
             VisitorOperation::Config(minBucketsPerVisitor, maxVisitorsPerNode));
 
-    op->start(_sender, framework::MilliSecTime(0));
+    op->start(_sender);
 
     ASSERT_EQ("Visitor Create => 0,Visitor Create => 0,"
               "Visitor Create => 0,Visitor Create => 0",
@@ -775,7 +775,7 @@ TEST_F(VisitorOperationTest, parallel_visitors_to_one_storage_node_one_super_buc
             createVisitorCommand("multiplebucketsonesuper", id, nullId),
             VisitorOperation::Config(5, 4));
 
-    op->start(_sender, framework::MilliSecTime(0));
+    op->start(_sender);
 
     ASSERT_EQ("Visitor Create => 0", _sender.getCommands(true));
 
@@ -833,7 +833,7 @@ TEST_F(VisitorOperationTest, inconsistency_handling) {
             createVisitorCommand("multiplebucketsonesuper", id, nullId, 8, 500ms, true),
             VisitorOperation::Config(5, 4));
 
-    op->start(_sender, framework::MilliSecTime(0));
+    op->start(_sender);
 
     ASSERT_EQ("Visitor Create => 1", _sender.getCommands(true));
 
@@ -858,7 +858,7 @@ TEST_F(VisitorOperationTest, visit_ideal_node) {
     auto op = createOpWithDefaultConfig(
             createVisitorCommand("multinode", id, nullId, 8));
 
-    op->start(_sender, framework::MilliSecTime(0));
+    op->start(_sender);
 
     ASSERT_EQ("Visitor Create => 0", _sender.getCommands(true));
 
@@ -889,7 +889,7 @@ TEST_F(VisitorOperationTest, no_resending_on_critical_failure) {
     auto op = createOpWithDefaultConfig(
             createVisitorCommand("multinodefailurecritical", id, nullId, 8));
 
-    op->start(_sender, framework::MilliSecTime(0));
+    op->start(_sender);
 
     ASSERT_EQ("Visitor Create => 0", _sender.getCommands(true));
 
@@ -913,7 +913,7 @@ TEST_F(VisitorOperationTest, failure_on_all_nodes) {
     auto op = createOpWithDefaultConfig(
             createVisitorCommand("multinodefailurecritical", id, nullId, 8));
 
-    op->start(_sender, framework::MilliSecTime(0));
+    op->start(_sender);
 
     ASSERT_EQ("Visitor Create => 0", _sender.getCommands(true));
 
@@ -992,7 +992,7 @@ VisitorOperationTest::startOperationWith2StorageNodeVisitors(bool inconsistent)
                 500ms,
                 inconsistent));
 
-    op->start(_sender, framework::MilliSecTime(0));
+    op->start(_sender);
 
     assert(_sender.getCommands(true) == "Visitor Create => 0,Visitor Create => 1");
     return op;
@@ -1043,7 +1043,7 @@ TEST_F(VisitorOperationTest, queue_timeout_is_factor_of_total_timeout) {
     auto op = createOpWithDefaultConfig(
             createVisitorCommand("foo", id, nullId, 8, 10000ms));
 
-    op->start(_sender, framework::MilliSecTime(0));
+    op->start(_sender);
     ASSERT_EQ("Visitor Create => 0", _sender.getCommands(true));
 
     auto& cmd = dynamic_cast<CreateVisitorCommand&>(*_sender.command(0));
@@ -1061,7 +1061,7 @@ VisitorOperationTest::do_visitor_roundtrip_with_statistics(
     auto op = createOpWithDefaultConfig(
             createVisitorCommand("metricstats", id, nullId));
 
-    op->start(_sender, framework::MilliSecTime(0));
+    op->start(_sender);
     ASSERT_EQ("Visitor Create => 0", _sender.getCommands(true));
     auto& cmd = dynamic_cast<CreateVisitorCommand&>(*_sender.command(0));
     auto reply = cmd.makeReply();
@@ -1109,7 +1109,7 @@ TEST_F(VisitorOperationTest, assigning_put_lock_access_token_sets_special_visito
     auto op = createOpWithDefaultConfig(createVisitorCommand("metricstats", id, nullId));
     op->assign_put_lock_access_token("its-a me, mario");
 
-    op->start(_sender, framework::MilliSecTime(0));
+    op->start(_sender);
     ASSERT_EQ("Visitor Create => 0", _sender.getCommands(true));
     auto cmd = std::dynamic_pointer_cast<api::CreateVisitorCommand>(_sender.command(0));
     ASSERT_TRUE(cmd);

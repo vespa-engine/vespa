@@ -35,7 +35,7 @@ private:
     std::unique_ptr<vespalib::Slime> createSlimeReply();
 
 public:
-    typedef std::unique_ptr<DocsumContext> UP;
+    using UP = std::unique_ptr<DocsumContext>;
 
     DocsumContext(const search::engine::DocsumRequest & request,
                   search::docsummary::IDocsumWriter & docsumWriter,

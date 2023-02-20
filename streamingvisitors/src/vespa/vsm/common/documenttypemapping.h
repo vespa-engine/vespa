@@ -42,8 +42,8 @@ private:
     void buildFieldMap(const document::DocumentType *docType,
                        const StringFieldIdTMapT & fieldList,
                        const vespalib::string & typeId);
-    typedef vespalib::hash_map<vespalib::string, FieldPathMapT> FieldPathMapMapT;
-    typedef std::multimap<size_t, const document::DocumentType *> DocumentTypeUsage;
+    using FieldPathMapMapT = vespalib::hash_map<vespalib::string, FieldPathMapT>;
+    using DocumentTypeUsage = std::multimap<size_t, const document::DocumentType *>;
     FieldPathMapMapT        _fieldMap;
     vespalib::string        _defaultDocumentTypeName;
     const document::DocumentType *_defaultDocumentType;

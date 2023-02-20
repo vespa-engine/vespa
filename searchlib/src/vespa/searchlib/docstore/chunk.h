@@ -85,7 +85,7 @@ public:
         uint32_t _sz;
         uint32_t _offset;
     };
-    typedef std::vector<Entry> LidList;
+    using LidList = std::vector<Entry>;
     Chunk(uint32_t id, const Config & config);
     Chunk(uint32_t id, const void * buffer, size_t len, bool skipcrc=false);
     ~Chunk();
@@ -97,8 +97,8 @@ public:
     size_t size() const;
     const LidList & getLids() const { return _lids; }
     LidList getUniqueLids() const;
-    size_t getMaxPackSize(const CompressionConfig & compression) const;
-    void pack(uint64_t lastSerial, vespalib::DataBuffer & buffer, const CompressionConfig & compression);
+    size_t getMaxPackSize(CompressionConfig compression) const;
+    void pack(uint64_t lastSerial, vespalib::DataBuffer & buffer, CompressionConfig compression);
     uint64_t getLastSerial() const { return _lastSerial; }
     uint32_t getId() const { return _id; }
     bool validSerial() const { return getLastSerial() != static_cast<uint64_t>(-1l); }
@@ -116,7 +116,7 @@ private:
     mutable std::mutex            _lock;
 };
 
-typedef std::vector<ChunkMeta> ChunkMetaV;
+using ChunkMetaV = std::vector<ChunkMeta>;
 
 } // namespace search
 

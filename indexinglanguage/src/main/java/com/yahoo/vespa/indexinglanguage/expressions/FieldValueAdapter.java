@@ -14,4 +14,7 @@ public interface FieldValueAdapter extends FieldTypeAdapter {
 
     FieldValueAdapter setOutputValue(Expression exp, String fieldName, FieldValue fieldValue);
 
+    /** Returns true if this has values for all possibly existing inputs, or represents a partial set of values. */
+    boolean isComplete();
+
 }

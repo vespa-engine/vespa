@@ -30,8 +30,8 @@
   </content>
 
   <content id="ml" version="1.0">
-    <redundancy>2</redundancy>
-    <nodes count="[10,20]" flavor="large" groups="[1,3]" vespamalloc-debug-stacktrace="proton">
+    <min-redundancy>2</min-redundancy>
+    <nodes count="[10,20]" flavor="large" groups="[1,3]" group-size="[1,2]" vespamalloc-debug-stacktrace="proton">
       <resources vcpu="[3.0, 4]" memory="[32000.0Mb, 33Gb]" disk="[300 Gb, 1Tb]"/>
     </nodes>
   </content>

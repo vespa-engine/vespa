@@ -8,6 +8,9 @@ import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.NetworkPorts;
 import com.yahoo.config.provision.NodeResources;
+import com.yahoo.config.provision.ZoneEndpoint;
+import com.yahoo.config.provision.ZoneEndpoint.AccessType;
+import com.yahoo.config.provision.ZoneEndpoint.AllowedUrn;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
@@ -34,8 +37,8 @@ public class AllocatedHostsSerializerTest {
     @Test
     void testAllocatedHostsSerialization() throws IOException {
         Set<HostSpec> hosts = new LinkedHashSet<>();
-        hosts.add(new HostSpec("empty", List.of(), Optional.empty()));
-        hosts.add(new HostSpec("with-aliases", List.of("alias1", "alias2"), Optional.empty()));
+        hosts.add(new HostSpec("empty", Optional.empty()));
+        hosts.add(new HostSpec("with-aliases", Optional.empty()));
         hosts.add(new HostSpec("allocated",
                                smallSlowDiskSpeedNode,
                                bigSlowDiskSpeedNode,
@@ -62,6 +65,15 @@ public class AllocatedHostsSerializerTest {
                                                       Optional.empty()),
                                Optional.of(Version.fromString("3.4.5")),
                                Optional.empty(), Optional.empty()));
+        hosts.add(new HostSpec("with-load-balancer-settings",
+                               smallSlowDiskSpeedNode,
+                               bigSlowDiskSpeedNode,
+                               anyDiskSpeedNode,
+                               ClusterMembership.from("container/test/0/0", Version.fromString("6.73.1"),
+                                                      Optional.empty(), new ZoneEndpoint(true, true, List.of(new AllowedUrn(AccessType.awsPrivateLink, "burn")))),
+                               Optional.empty(),
+                               Optional.empty(),
+                               Optional.empty()));
         hosts.add(new HostSpec("with-ports",
                                smallSlowDiskSpeedNode,
                                bigSlowDiskSpeedNode,

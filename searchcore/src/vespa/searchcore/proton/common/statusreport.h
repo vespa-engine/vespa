@@ -14,9 +14,9 @@ namespace proton {
  */
 class StatusReport {
 public:
-    typedef std::unique_ptr<StatusReport> UP;
-    typedef std::shared_ptr<StatusReport> SP;
-    typedef std::vector<SP> List;
+    using UP = std::unique_ptr<StatusReport>;
+    using SP = std::shared_ptr<StatusReport>;
+    using List = std::vector<SP>;
 
     enum State {
         DOWN = 0,

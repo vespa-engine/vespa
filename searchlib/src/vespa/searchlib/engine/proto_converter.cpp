@@ -69,7 +69,18 @@ ProtoConverter::search_request_from_proto(const ProtoSearchRequest &proto, Searc
     request.maxhits = proto.hits();
     request.setTimeout(1ms * proto.timeout());
     request.trace().setLevel(proto.trace_level());
-    request.trace().setProfileDepth(proto.profile_depth());
+    if (int32_t value = proto.profile_depth(); value != 0) {
+        request.trace().profile_depth(value);
+    }
+    if (int32_t value = proto.profiling().match().depth(); value != 0) {
+        request.trace().match_profile_depth(value);
+    }
+    if (int32_t value = proto.profiling().first_phase().depth(); value != 0) {
+        request.trace().first_phase_profile_depth(value);
+    }
+    if (int32_t value = proto.profiling().second_phase().depth(); value != 0) {
+        request.trace().second_phase_profile_depth(value);
+    }
     request.sortSpec = make_sort_spec(proto.sorting());
     request.sessionId.assign(proto.session_key().begin(), proto.session_key().end());
     request.propertiesMap.lookupCreate(MapNames::MATCH).add("documentdb.searchdoctype", proto.document_type());

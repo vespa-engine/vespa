@@ -144,7 +144,7 @@ public class AbiCheck extends AbstractMojo {
     if (isPublicAbiPackage(pkg, publicApiAnnotation)) {
       PublicSignatureCollector collector = new PublicSignatureCollector();
       List<ClassFileTree.ClassFile> sortedClassFiles = pkg.getClassFiles().stream()
-          .sorted(Comparator.comparing(ClassFile::getName)).collect(Collectors.toList());
+          .sorted(Comparator.comparing(ClassFile::getName)).toList();
       for (ClassFile klazz : sortedClassFiles) {
         try (InputStream is = klazz.getInputStream()) {
           new ClassReader(is).accept(collector, 0);
@@ -154,7 +154,7 @@ public class AbiCheck extends AbstractMojo {
     }
     List<ClassFileTree.Package> sortedSubPackages = pkg.getSubPackages().stream()
         .sorted(Comparator.comparing(Package::getFullyQualifiedName))
-        .collect(Collectors.toList());
+        .toList();
     for (ClassFileTree.Package subPkg : sortedSubPackages) {
       signatures.putAll(collectPublicAbiSignatures(subPkg, publicApiAnnotation));
     }

@@ -2,7 +2,7 @@
 #pragma once
 
 #include "isummarymanager.h"
-#include <vespa/searchcore/proton/attribute/attributemanager.h>
+#include <vespa/searchcore/proton/attribute/i_attribute_manager.h>
 #include <vespa/searchcore/proton/common/doctypename.h>
 #include <vespa/searchcorespi/flush/iflushtarget.h>
 #include <vespa/searchlib/common/tunefileinfo.h>
@@ -35,7 +35,8 @@ public:
                      const JuniperrcConfig & juniperCfg,
                      search::IAttributeManager::SP attributeMgr,
                      search::IDocumentStore::SP docStore,
-                     std::shared_ptr<const document::DocumentTypeRepo> repo);
+                     std::shared_ptr<const document::DocumentTypeRepo> repo,
+                     const search::index::Schema& schema);
 
         search::docsummary::IDocsumWriter & getDocsumWriter() const override { return *_docsumWriter; }
         const search::docsummary::ResultConfig & getResultConfig() override { return *_docsumWriter->GetResultConfig(); }
@@ -43,7 +44,6 @@ public:
         search::docsummary::IDocsumStore::UP createDocsumStore() override;
 
         const search::IAttributeManager * getAttributeManager() const override { return _attributeMgr.get(); }
-        vespalib::string lookupIndex(const vespalib::string & s) const override { (void) s; return ""; }
         const juniper::Juniper * getJuniper() const override { return _juniperConfig.get(); }
     };
 
@@ -52,7 +52,7 @@ private:
     std::shared_ptr<search::IDocumentStore> _docStore;
 
 public:
-    typedef std::shared_ptr<SummaryManager> SP;
+    using SP = std::shared_ptr<SummaryManager>;
     SummaryManager(vespalib::Executor &shared_executor,
                    const search::LogDocumentStore::Config & summary,
                    const search::GrowStrategy & growStrategy,
@@ -72,7 +72,8 @@ public:
     createSummarySetup(const SummaryConfig &summaryCfg,
                        const JuniperrcConfig &juniperCfg,
                        const std::shared_ptr<const document::DocumentTypeRepo> &repo,
-                       const search::IAttributeManager::SP &attributeMgr) override;
+                       const search::IAttributeManager::SP &attributeMgr,
+                       const search::index::Schema& schema) override;
 
     search::IDocumentStore & getBackingStore() override { return *_docStore; }
     void reconfigure(const search::LogDocumentStore::Config & config);

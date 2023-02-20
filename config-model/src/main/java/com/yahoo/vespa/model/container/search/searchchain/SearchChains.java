@@ -3,7 +3,7 @@ package com.yahoo.vespa.model.container.search.searchchain;
 
 import com.yahoo.collections.CollectionUtil;
 import com.yahoo.component.provider.ComponentRegistry;
-import com.yahoo.config.model.producer.AbstractConfigProducer;
+import com.yahoo.config.model.producer.TreeConfigProducer;
 import com.yahoo.vespa.model.container.component.chain.Chains;
 import com.yahoo.vespa.model.search.SearchCluster;
 import com.yahoo.vespa.model.container.search.searchchain.defaultsearchchains.LocalClustersCreator;
@@ -21,7 +21,7 @@ public class SearchChains extends Chains<SearchChain> {
 
     private final SourceGroupRegistry sourceGroups = new SourceGroupRegistry();
 
-    public SearchChains(AbstractConfigProducer<?> parent, String subId) {
+    public SearchChains(TreeConfigProducer<? super Chains> parent, String subId) {
         super(parent, subId);
     }
 

@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "dummy_cluster_context.h"
-#include <tests/common/dummystoragelink.h>
 #include <tests/distributor/distributor_stripe_test_util.h>
 #include <vespa/document/test/make_document_bucket.h>
 #include <vespa/storage/distributor/top_level_distributor.h>
@@ -37,9 +36,9 @@ TEST_F(RemoveBucketOperationTest, simple) {
 
     RemoveBucketOperation op(dummy_cluster_context,
                              BucketAndNodes(makeDocumentBucket(document::BucketId(16, 1)),
-                                     toVector<uint16_t>(1,2)));
+                                            toVector<uint16_t>(1,2)));
     op.setIdealStateManager(&getIdealStateManager());
-    op.start(_sender, framework::MilliSecTime(0));
+    op.start(_sender);
 
 
     ASSERT_EQ("Delete bucket => 1,"
@@ -71,7 +70,7 @@ TEST_F(RemoveBucketOperationTest, bucket_info_mismatch_failure) {
                              BucketAndNodes(makeDocumentBucket(document::BucketId(16, 1)),
                                      toVector<uint16_t>(1)));
     op.setIdealStateManager(&getIdealStateManager());
-    op.start(_sender, framework::MilliSecTime(0));
+    op.start(_sender);
 
     ASSERT_EQ("Delete bucket => 1", _sender.getCommands(true));
     ASSERT_EQ(1, _sender.commands().size());
@@ -106,7 +105,7 @@ TEST_F(RemoveBucketOperationTest, fail_with_invalid_bucket_info) {
                              BucketAndNodes(makeDocumentBucket(document::BucketId(16, 1)),
                                      toVector<uint16_t>(1)));
     op.setIdealStateManager(&getIdealStateManager());
-    op.start(_sender, framework::MilliSecTime(0));
+    op.start(_sender);
 
     ASSERT_EQ("Delete bucket => 1", _sender.getCommands(true));
     ASSERT_EQ(1, _sender.commands().size());

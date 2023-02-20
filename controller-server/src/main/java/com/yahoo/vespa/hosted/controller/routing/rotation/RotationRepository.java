@@ -158,7 +158,7 @@ public class RotationRepository {
                                                          .flatMap(application -> application.instances().values().stream())
                                                          .flatMap(instance -> instance.rotations().stream())
                                                          .map(AssignedRotation::rotationId)
-                                                         .collect(Collectors.toList());
+                                                         .toList();
         Map<RotationId, Rotation> unassignedRotations = new LinkedHashMap<>(this.allRotations);
         assignedRotations.forEach(unassignedRotations::remove);
         return Collections.unmodifiableMap(unassignedRotations);

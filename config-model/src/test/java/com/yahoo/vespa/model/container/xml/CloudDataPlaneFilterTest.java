@@ -42,6 +42,7 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertIterableEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class CloudDataPlaneFilterTest extends ContainerModelBuilderTestBase {
@@ -75,7 +76,7 @@ public class CloudDataPlaneFilterTest extends ContainerModelBuilderTestBase {
                         .formatted(applicationFolder.toPath().relativize(certFile).toString()));
         X509Certificate certificate = createCertificate(certFile);
 
-        buildModel(true, clusterElem);
+        buildModel(clusterElem);
 
         CloudDataPlaneFilterConfig config = root.getConfig(CloudDataPlaneFilterConfig.class, cloudDataPlaneFilterConfigId);
         assertFalse(config.legacyMode());
@@ -103,7 +104,7 @@ public class CloudDataPlaneFilterTest extends ContainerModelBuilderTestBase {
         Element clusterElem = DomBuilderTest.parse("<container version='1.0' />");
         X509Certificate certificate = createCertificate(certFile);
 
-        buildModel(true, clusterElem);
+        buildModel(clusterElem);
 
         CloudDataPlaneFilterConfig config = root.getConfig(CloudDataPlaneFilterConfig.class, cloudDataPlaneFilterConfigId);
         assertTrue(config.legacyMode());
@@ -117,8 +118,8 @@ public class CloudDataPlaneFilterTest extends ContainerModelBuilderTestBase {
     }
 
     @Test
-    public void it_generates_correct_config_when_filter_not_enabled () throws IOException {
-        Path certFile = securityFolder.resolve("clients.pem");
+    public void it_rejects_files_without_certificates() throws IOException {
+        Path certFile = securityFolder.resolve("foo.pem");
         Element clusterElem = DomBuilderTest.parse(
                 """ 
                         <container version='1.0'>
@@ -130,18 +131,26 @@ public class CloudDataPlaneFilterTest extends ContainerModelBuilderTestBase {
                         </container>
                         """
                         .formatted(applicationFolder.toPath().relativize(certFile).toString()));
-        X509Certificate certificate = createCertificate(certFile);
+        Files.writeString(certFile, "effectively empty");
 
-        buildModel(false, clusterElem);
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> buildModel(clusterElem));
+        assertEquals("File security/foo.pem does not contain any certificates.", exception.getMessage());
+    }
 
-        // Data plane filter config is not configured
-        assertFalse(root.getConfigIds().contains("container/component/com.yahoo.jdisc.http.filter.security.cloud.CloudDataPlaneFilter"));
-
-        // Connector config configures ca certs from security/clients.pem
-        ConnectorConfig connectorConfig = connectorConfig();
-        var caCerts = X509CertificateUtils.certificateListFromPem(connectorConfig.ssl().caCertificate());
-        assertEquals(1, caCerts.size());
-        assertEquals(List.of(certificate), caCerts);
+    @Test
+    public void it_rejects_invalid_client_ids() throws IOException {
+        Element clusterElem = DomBuilderTest.parse(
+                """ 
+                        <container version='1.0'>
+                          <clients>
+                            <client id="_foo" permissions="read,write">
+                                <certificate file="foo"/>
+                            </client>
+                          </clients>
+                        </container>
+                        """);
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> buildModel(clusterElem));
+        assertEquals("Invalid client id '_foo', id cannot start with '_'", exception.getMessage());
     }
 
     private ConnectorConfig connectorConfig() {
@@ -170,7 +179,7 @@ public class CloudDataPlaneFilterTest extends ContainerModelBuilderTestBase {
         return certificate;
     }
 
-    public List<ContainerModel> buildModel(boolean enableFilter, Element... clusterElem) {
+    public List<ContainerModel> buildModel(Element... clusterElem) {
         var applicationPackage = new MockApplicationPackage.Builder()
                 .withRoot(applicationFolder)
                 .build();
@@ -180,8 +189,7 @@ public class CloudDataPlaneFilterTest extends ContainerModelBuilderTestBase {
                 .properties(
                         new TestProperties()
                                 .setEndpointCertificateSecrets(Optional.of(new EndpointCertificateSecrets("CERT", "KEY")))
-                                .setHostedVespa(true)
-                                .setEnableDataPlaneFilter(enableFilter))
+                                .setHostedVespa(true))
                 .zone(new Zone(SystemName.PublicCd, Environment.dev, RegionName.defaultName()))
                 .build();
         return createModel(root, state, null, clusterElem);

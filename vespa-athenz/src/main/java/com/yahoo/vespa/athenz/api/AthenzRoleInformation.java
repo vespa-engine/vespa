@@ -53,7 +53,7 @@ public class AthenzRoleInformation extends AthenzRole {
         var auditLog = roleEntity.auditLog()
                 .stream()
                 .map(entry -> new AuditLogEntry(entry.getAdmin(), entry.getAction(), entry.getAuditRef(), entry.getCreated()))
-                .collect(Collectors.toList());
+                .toList();
         return new AthenzRoleInformation(role.domain(), role.roleName(), isSelfServe, reviewEnabled, pendingRequest, auditLog);
     }
 

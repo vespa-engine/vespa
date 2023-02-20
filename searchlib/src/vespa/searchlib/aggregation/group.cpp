@@ -243,7 +243,6 @@ Group::Value::addExpressionResult(ExpressionNode::UP expressionNode)
 void
 Group::Value::addAggregationResult(ExpressionNode::UP aggr)
 {
-    assert(getAggrSize() < 15);
     size_t newSize = getAggrSize() + 1 + getExprSize();
     auto n = new ExpressionNode::CP[newSize];
     for (size_t i(0), m(getAggrSize()); i < m; i++) {
@@ -259,6 +258,24 @@ Group::Value::addAggregationResult(ExpressionNode::UP aggr)
     setAggrSize(getAggrSize() + 1);
 }
 
+void
+Group::Value::setAggrSize(uint32_t v) {
+    assert(v < 0x10000);
+    _packedLength = (_packedLength & ~0xffff) | v;
+}
+
+void
+Group::Value::setExprSize(uint32_t v) {
+    assert(v < sizeof(_orderBy)*2);
+    _packedLength = (_packedLength & ~0xf0000) | (v << 16);
+}
+
+void
+Group::Value::setOrderBySize(uint32_t v) {
+    assert(v < sizeof(_orderBy)*2);
+    _packedLength = (_packedLength & ~0xf00000) | (v << 20);
+}
+
 template <typename Doc>
 void Group::Value::collect(const Doc & doc, HitRank rank)
 {
@@ -272,15 +289,13 @@ Group::Value::addResult(ExpressionNode::UP aggr)
 {
     assert(getExprSize() < 15);
     addAggregationResult(std::move(aggr));
-    addExpressionResult(ExpressionNode::UP(new AggregationRefNode(getAggrSize() - 1)));
+    addExpressionResult(std::make_unique<AggregationRefNode>(getAggrSize() - 1));
     setupAggregationReferences();
 }
 
 void
 Group::Value::addOrderBy(ExpressionNode::UP orderBy, bool ascending)
 {
-    assert(getOrderBySize() < sizeof(_orderBy)*2-1);
-    assert(getExprSize() < 15);
     addExpressionResult(std::move(orderBy));
     setOrderBy(getOrderBySize(), (ascending ? getExprSize() : -getExprSize()));
     setOrderBySize(getOrderBySize() + 1);
@@ -555,7 +570,6 @@ Group::Value::deserialize(Deserializer & is) {
     }
     uint32_t aggrSize(0);
     is >> aggrSize;
-    assert(aggrSize < 16);
     // To avoid protocol changes, we must first deserialize the aggregation
     // results into a temporary buffer, and then reallocate the actual
     // vector when we know the total size. Then we copy the temp buffer and
@@ -575,7 +589,6 @@ Group::Value::deserialize(Deserializer & is) {
     }
     delete [] tmpAggregationResults;
 
-    assert(exprSize < 16);
     setExprSize(exprSize);
     for (uint32_t i(aggrSize); i < aggrSize + exprSize; i++) {
         is >> _aggregationResults[i];

@@ -900,37 +900,6 @@ TEST(DocumentTest, testBogusserialize)
     }
 }
 
-TEST(DocumentTest, testCRC32)
-{
-    TestDocRepo test_repo;
-    Document doc(*test_repo.getDocumentType("testdoctype1"), DocumentId("id:ns:testdoctype1::crawler:http://www.ntnu.no/"));
-
-    doc.setValue(doc.getField("hstringval"), StringFieldValue("bla bla bla bla bla"));
-
-    uint32_t crc = doc.calculateChecksum();
-    EXPECT_EQ(3987392271u, crc);
-
-    nbostream buf = doc.serialize();
-
-    int pos = 30;
-
-    // Corrupt serialization.
-    const_cast<char *>(buf.peek())[pos] ^= 72;
-        // Create document. Byte corrupted above is in data area and
-        // shouldn't fail deserialization.
-    try {
-        Document doc2(test_repo.getTypeRepo(), buf);
-        buf.rp(0);
-        EXPECT_TRUE(crc != doc2.calculateChecksum());
-    } catch (document::DeserializeException& e) {
-        EXPECT_TRUE(false);
-    }
-        // Return original value and retry
-    const_cast<char *>(buf.peek())[pos] ^= 72;
-
-    /// \todo TODO (was warning):  Cannot test for in memory representation altered, as there is no syntax for getting internal refs to data from document. Add test when this is added.
-}
-
 TEST(DocumentTest, testSliceSerialize)
 {
         // Test that document doesn't need its own bytebuffer, such that we

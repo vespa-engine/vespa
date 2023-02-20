@@ -4,7 +4,7 @@ package com.yahoo.vespa.model.container.search.searchchain;
 import com.yahoo.component.ComponentId;
 import com.yahoo.component.chain.model.ChainSpecification;
 import com.yahoo.search.searchchain.model.federation.FederationOptions;
-import com.yahoo.config.model.producer.AbstractConfigProducer;
+import com.yahoo.config.model.producer.TreeConfigProducer;
 
 import java.util.Arrays;
 
@@ -41,7 +41,7 @@ public class Source extends GenericTarget {
     }
 
     public Provider getParentProvider() {
-        AbstractConfigProducer parent = getParent();
+        var parent = getParent();
         while (!(parent instanceof Provider)) {
             parent = parent.getParent();
         }

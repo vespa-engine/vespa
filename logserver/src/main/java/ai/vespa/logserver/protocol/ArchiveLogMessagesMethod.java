@@ -8,6 +8,7 @@ import com.yahoo.jrt.Int8Value;
 import com.yahoo.jrt.Method;
 import com.yahoo.jrt.Request;
 import com.yahoo.logserver.LogDispatcher;
+import com.yahoo.security.tls.Capability;
 
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
@@ -32,6 +33,7 @@ public class ArchiveLogMessagesMethod {
     public ArchiveLogMessagesMethod(LogDispatcher logDispatcher) {
         this.logDispatcher = logDispatcher;
         this.method = new Method(METHOD_NAME, "bix", "bix", this::log)
+                .requireCapabilities(Capability.LOGSERVER_API)
                 .methodDesc("Archive log messages")
                 .paramDesc(0, "compressionType", "Compression type (0=raw)")
                 .paramDesc(1, "uncompressedSize", "Uncompressed size")

@@ -35,7 +35,7 @@ public:
      * Compress buffer into temporary buffer and copy temporary buffer to
      * value along with compression config.
      */
-    void set(vespalib::DataBuffer &&buf, ssize_t len, const CompressionConfig &compression);
+    void set(vespalib::DataBuffer &&buf, ssize_t len, CompressionConfig compression);
     // Keep buffer uncompressed
     void set(vespalib::DataBuffer &&buf, ssize_t len);
 

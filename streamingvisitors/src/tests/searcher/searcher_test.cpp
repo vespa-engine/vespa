@@ -32,14 +32,14 @@ public:
     Vector<T> & add(T v) { this->push_back(v); return *this; }
 };
 
-typedef Vector<size_t>       Hits;
-typedef Vector<std::string>  StringList;
-typedef Vector<Hits>         HitsList;
-typedef Vector<bool>         BoolList;
-typedef Vector<int64_t>      LongList;
-typedef Vector<float>        FloatList;
-typedef QueryTerm::FieldInfo QTFieldInfo;
-typedef Vector<QTFieldInfo>  FieldInfoList;
+using Hits = Vector<size_t>;
+using StringList = Vector<std::string> ;
+using HitsList = Vector<Hits>;
+using BoolList = Vector<bool>;
+using LongList = Vector<int64_t>;
+using FloatList = Vector<float>;
+using QTFieldInfo = QueryTerm::FieldInfo;
+using FieldInfoList = Vector<QTFieldInfo>;
 
 class String
 {
@@ -66,8 +66,8 @@ private:
         }
     }
 public:
-    typedef std::pair<std::string, std::string> ParsedQueryTerm;
-    typedef std::pair<std::string, TermType> ParsedTerm;
+    using ParsedQueryTerm = std::pair<std::string, std::string>;
+    using ParsedTerm = std::pair<std::string, TermType>;
     QueryNodeResultFactory   eqnr;
     std::vector<QueryTerm::UP> qtv;
     QueryTermList          qtl;

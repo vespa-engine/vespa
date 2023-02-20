@@ -99,8 +99,8 @@ mkdir -p "$VESPA_LOG_CONTROL_DIR"
 
 hname=$(vespa-print-default hostname)
 
-CONFIG_ID="hosts/$hname"
-export CONFIG_ID
+SENTINEL_CONFIG_ID="hosts/$hname/sentinel"
+export SENTINEL_CONFIG_ID
 export MALLOC_ARENA_MAX=1 #Does not need fast allocation
 export LD_LIBRARY_PATH="${VESPA_HOME}/lib64"
 
@@ -164,7 +164,7 @@ case $1 in
         export VESPA_SERVICE_NAME
 
         vespa-runserver -s config-sentinel -r 10 -p $P_SENTINEL -- \
-            sbin/vespa-config-sentinel -c "$CONFIG_ID"
+            sbin/vespa-config-sentinel -c "$SENTINEL_CONFIG_ID"
         ;;
 
     stop)

@@ -12,5 +12,7 @@ the quotes).
                                    already exists)
  -r,--recipient-public-key <arg>   Recipient X25519 public key in Base58
                                    encoded format
+ -z,--zstd-compress                Input data will be transparently
+                                   Zstd-compressed before being encrypted.
 Note: this is a BETA tool version; its interface may be changed at any
 time

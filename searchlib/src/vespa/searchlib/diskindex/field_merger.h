@@ -41,11 +41,11 @@ class FieldMerger
         MERGE_DONE
     };
 
-    uint32_t                 _id;
-    vespalib::string         _field_name;
-    vespalib::string         _field_dir;
-    const FusionOutputIndex& _fusion_out_index;
-    std::shared_ptr<IFlushToken> _flush_token;
+    const uint32_t                 _id;
+    const vespalib::string         _field_name;
+    const vespalib::string         _field_dir;
+    const FusionOutputIndex      & _fusion_out_index;
+    std::shared_ptr<IFlushToken>   _flush_token;
     std::vector<std::unique_ptr<DictionaryWordReader>> _word_readers;
     std::unique_ptr<PostingPriorityQueueMerger<DictionaryWordReader, WordAggregator>> _word_heap;
     std::unique_ptr<WordAggregator> _word_aggregator;

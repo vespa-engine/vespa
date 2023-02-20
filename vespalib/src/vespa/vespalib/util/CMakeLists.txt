@@ -1,7 +1,6 @@
 # Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 vespa_add_library(vespalib_vespalib_util OBJECT
     SOURCES
-    active.cpp
     adaptive_sequenced_executor.cpp
     address_space.cpp
     alloc.cpp
@@ -45,7 +44,6 @@ vespa_add_library(vespalib_vespalib_util OBJECT
     invokeserviceimpl.cpp
     isequencedtaskexecutor.cpp
     issue.cpp
-    joinable.cpp
     jsonexception.cpp
     jsonstream.cpp
     jsonwriter.cpp
@@ -54,6 +52,7 @@ vespa_add_library(vespalib_vespalib_util OBJECT
     lz4compressor.cpp
     malloc_mmap_guard.cpp
     md5.c
+    memory_trap.cpp
     memoryusage.cpp
     mmap_file_allocator.cpp
     mmap_file_allocator_factory.cpp

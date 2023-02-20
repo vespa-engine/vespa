@@ -15,7 +15,7 @@ namespace vespalib::compression {
 namespace {
 
 template <typename F>
-void with_compressor(const CompressionConfig::Type &type, F &&f) {
+void with_compressor(CompressionConfig::Type type, F &&f) {
     switch (type) {
     case CompressionConfig::LZ4:
     {
@@ -40,7 +40,7 @@ void with_compressor(const CompressionConfig::Type &type, F &&f) {
 //-----------------------------------------------------------------------------
 
 CompressionConfig::Type
-compress(ICompressor & compressor, const CompressionConfig & compression, const ConstBufferRef & org, DataBuffer & dest)
+compress(ICompressor & compressor, CompressionConfig compression, const ConstBufferRef & org, DataBuffer & dest)
 {
     CompressionConfig::Type type(CompressionConfig::NONE);
     dest.ensureFree(compressor.adjustProcessLen(0, org.size()));
@@ -55,7 +55,7 @@ compress(ICompressor & compressor, const CompressionConfig & compression, const 
 }
 
 CompressionConfig::Type
-docompress(const CompressionConfig & compression, const ConstBufferRef & org, DataBuffer & dest)
+docompress(CompressionConfig compression, const ConstBufferRef & org, DataBuffer & dest)
 {
     switch (compression.type) {
     case CompressionConfig::LZ4:
@@ -80,8 +80,9 @@ CompressionConfig::Type
 compress(CompressionConfig::Type compression, const ConstBufferRef & org, DataBuffer & dest, bool allowSwap) {
     return compress(CompressionConfig(compression), org, dest, allowSwap);
 }
+
 CompressionConfig::Type
-compress(const CompressionConfig & compression, const ConstBufferRef & org, DataBuffer & dest, bool allowSwap)
+compress(CompressionConfig compression, const ConstBufferRef & org, DataBuffer & dest, bool allowSwap)
 {
     CompressionConfig::Type type(CompressionConfig::NONE);
     if (org.size() >= compression.minSize) {
@@ -124,7 +125,7 @@ decompress(ICompressor & decompressor, size_t uncompressedLen, const ConstBuffer
 }
 
 void
-decompress(const CompressionConfig::Type & type, size_t uncompressedLen, const ConstBufferRef & org, DataBuffer & dest, bool allowSwap)
+decompress(CompressionConfig::Type type, size_t uncompressedLen, const ConstBufferRef & org, DataBuffer & dest, bool allowSwap)
 {
     switch (type) {
     case CompressionConfig::LZ4:
@@ -169,7 +170,7 @@ size_t computeMaxCompressedsize(CompressionConfig::Type type, size_t payloadSize
 
 //-----------------------------------------------------------------------------
 
-Compress::Compress(const CompressionConfig &config,
+Compress::Compress(CompressionConfig config,
                    const char *uncompressed_data, size_t uncompressed_size)
     : _space(),
       _type(CompressionConfig::NONE),
@@ -194,7 +195,7 @@ Compress::Compress(const CompressionConfig &config,
     }
 }
 
-Decompress::Decompress(const CompressionConfig::Type &type, size_t uncompressed_size,
+Decompress::Decompress(CompressionConfig::Type type, size_t uncompressed_size,
                        const char *compressed_data, size_t compressed_size)
     : _space(),
       _data(compressed_data),

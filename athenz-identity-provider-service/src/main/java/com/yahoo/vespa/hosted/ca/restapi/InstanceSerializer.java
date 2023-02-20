@@ -8,12 +8,13 @@ import com.yahoo.security.X509CertificateUtils;
 import com.yahoo.slime.ArrayTraverser;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Slime;
+import com.yahoo.slime.SlimeUtils;
 import com.yahoo.text.StringUtilities;
 import com.yahoo.vespa.athenz.api.AthenzService;
+import com.yahoo.vespa.athenz.identityprovider.api.ClusterType;
 import com.yahoo.vespa.athenz.identityprovider.api.IdentityType;
 import com.yahoo.vespa.athenz.identityprovider.api.SignedIdentityDocument;
 import com.yahoo.vespa.athenz.identityprovider.api.VespaUniqueInstanceId;
-import com.yahoo.slime.SlimeUtils;
 import com.yahoo.vespa.hosted.ca.instance.InstanceIdentity;
 import com.yahoo.vespa.hosted.ca.instance.InstanceRefresh;
 import com.yahoo.vespa.hosted.ca.instance.InstanceRegistration;
@@ -47,6 +48,7 @@ public class InstanceSerializer {
     private static final String IDD_CREATED_AT_FIELD = "created-at";
     private static final String IDD_IPADDRESSES_FIELD = "ip-addresses";
     private static final String IDD_IDENTITY_TYPE_FIELD = "identity-type";
+    private static final String IDD_CLUSTER_TYPE_FIELD = "cluster-type";
 
     private static final ObjectMapper objectMapper = new ObjectMapper();
     static {
@@ -96,9 +98,12 @@ public class InstanceSerializer {
         Set<String> ips = new HashSet<>();
         requireField(IDD_IPADDRESSES_FIELD, root).traverse((ArrayTraverser)  (__, entry) -> ips.add(entry.asString()));
         IdentityType identityType = IdentityType.fromId(requireField(IDD_IDENTITY_TYPE_FIELD, root).asString());
+        var clusterTypeField = root.field(IDD_CLUSTER_TYPE_FIELD);
+        var clusterType = clusterTypeField.valid() ? ClusterType.from(clusterTypeField.asString()) : null;
+
 
         return new SignedIdentityDocument(signature, (int)signingKeyVersion, providerUniqueId, athenzService, (int)documentVersion,
-                                          configserverHostname, instanceHostname, createdAt, ips, identityType);
+                                          configserverHostname, instanceHostname, createdAt, ips, identityType, clusterType);
     }
 
     private static Instant getJsr310Instant(double v) {

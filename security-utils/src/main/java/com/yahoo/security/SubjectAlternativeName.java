@@ -14,7 +14,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 
-import static java.util.stream.Collectors.toList;
 
 /**
  * @author bjorncs
@@ -51,7 +50,7 @@ public class SubjectAlternativeName {
     }
 
     static List<SubjectAlternativeName> fromGeneralNames(GeneralNames generalNames) {
-        return Arrays.stream(generalNames.getNames()).map(SubjectAlternativeName::new).collect(toList());
+        return Arrays.stream(generalNames.getNames()).map(SubjectAlternativeName::new).toList();
     }
 
     private String getValue(GeneralName bcGeneralName) {

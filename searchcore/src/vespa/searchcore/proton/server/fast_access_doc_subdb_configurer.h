@@ -1,12 +1,25 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+
 #pragma once
 
-#include "searchable_doc_subdb_configurer.h"
-#include "fast_access_feed_view.h"
-#include "i_attribute_writer_factory.h"
-#include <vespa/searchcore/proton/reprocessing/i_reprocessing_initializer.h>
+#include <vespa/searchlib/common/serialnum.h>
+#include <vespa/vespalib/stllike/string.h>
+#include <vespa/vespalib/util/varholder.h>
+#include <memory>
+#include <optional>
+
+namespace document { class DocumentTypeRepo; }
+namespace search::index { class Schema; }
 
 namespace proton {
+
+class AttributeCollectionSpecFactory;
+class DocumentDBConfig;
+class DocumentSubDBReconfig;
+class FastAccessFeedView;
+class IAttributeWriter;
+struct IReprocessingInitializer;
+class ReconfigParams;
 
 /**
  * Class used to reconfig the feed view used in a fast-access sub database
@@ -15,27 +28,34 @@ namespace proton {
 class FastAccessDocSubDBConfigurer
 {
 public:
-    using FeedViewVarHolder = vespalib::VarHolder<FastAccessFeedView::SP>;
+    using FeedViewVarHolder = vespalib::VarHolder<std::shared_ptr<FastAccessFeedView>>;
 
 private:
     FeedViewVarHolder           &_feedView;
-    IAttributeWriterFactory::UP _factory;
     vespalib::string             _subDbName;
 
     void reconfigureFeedView(FastAccessFeedView & curr,
-                             search::index::Schema::SP schema,
+                             std::shared_ptr<search::index::Schema> schema,
                              std::shared_ptr<const document::DocumentTypeRepo> repo,
-                             IAttributeWriter::SP attrWriter);
+                             std::shared_ptr<IAttributeWriter> attrWriter);
 
 public:
     FastAccessDocSubDBConfigurer(FeedViewVarHolder &feedView,
-                                 IAttributeWriterFactory::UP factory,
                                  const vespalib::string &subDbName);
     ~FastAccessDocSubDBConfigurer();
 
-    IReprocessingInitializer::UP reconfigure(const DocumentDBConfig &newConfig,
-                                             const DocumentDBConfig &oldConfig,
-                                             AttributeCollectionSpec && attrSpec);
+    std::unique_ptr<DocumentSubDBReconfig>
+    prepare_reconfig(const DocumentDBConfig& new_config_snapshot,
+                     const AttributeCollectionSpecFactory& attr_spec_factory,
+                     const ReconfigParams& reconfig_params,
+                     uint32_t docid_limit,
+                     std::optional<search::SerialNum> serial_num);
+
+    std::unique_ptr<IReprocessingInitializer>
+    reconfigure(const DocumentDBConfig &newConfig,
+                const DocumentDBConfig &oldConfig,
+                const DocumentSubDBReconfig& prepared_reconfig,
+                search::SerialNum serial_num);
 };
 
 } // namespace proton

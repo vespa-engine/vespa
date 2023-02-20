@@ -75,9 +75,9 @@ public class VespaMetrics {
             systemCheck.ifPresent(metricsPackets::add);
 
             MetricAggregator aggregator = new MetricAggregator(service.getDimensions());
-            MetricsParser.Consumer metricsConsumer = (consumerId != null)
-                    ? new GetServiceMetricsConsumer(metricsConsumers, aggregator, consumerId)
-                    : new GetServiceMetricsConsumerForAll(metricsConsumers, aggregator);
+            MetricsParser.Collector metricsConsumer = (consumerId != null)
+                    ? new ServiceMetricsCollector(metricsConsumers, aggregator, consumerId)
+                    : new ServiceMetricsCollectorForAll(metricsConsumers, aggregator);
             service.consumeMetrics(metricsConsumer);
 
             if (! aggregator.getAggregated().isEmpty()) {
@@ -118,10 +118,10 @@ public class VespaMetrics {
      * In order to include a metric, it must exist in the given map of metric to consumers.
      * Each returned metric will contain a collection of consumers that it should be routed to.
      */
-    private static abstract class GetServiceMetricsConsumerBase implements MetricsParser.Consumer {
+    private static abstract class ServiceMetricsCollectorBase implements MetricsParser.Collector {
         protected final MetricAggregator aggregator;
 
-        GetServiceMetricsConsumerBase(MetricAggregator aggregator) {
+        ServiceMetricsCollectorBase(MetricAggregator aggregator) {
             this.aggregator = aggregator;
         }
 
@@ -150,18 +150,18 @@ public class VespaMetrics {
         }
     }
 
-    private static class GetServiceMetricsConsumer extends GetServiceMetricsConsumerBase {
+    private static class ServiceMetricsCollector extends ServiceMetricsCollectorBase {
         private final Map<MetricId, ConfiguredMetric> configuredMetrics;
         private final Set<ConsumerId> consumerId;
 
-        GetServiceMetricsConsumer(MetricsConsumers metricsConsumers, MetricAggregator aggregator, ConsumerId consumerId) {
+        ServiceMetricsCollector(MetricsConsumers metricsConsumers, MetricAggregator aggregator, ConsumerId consumerId) {
             super(aggregator);
             this.consumerId = Set.of(consumerId);
             this.configuredMetrics = metricsConsumers.getMetricsForConsumer(consumerId);
         }
 
         @Override
-        public void consume(Metric candidate) {
+        public void accept(Metric candidate) {
             ConfiguredMetric configuredMetric = configuredMetrics.get(candidate.getName());
             if (configuredMetric != null) {
                 aggregator.aggregate(
@@ -170,16 +170,16 @@ public class VespaMetrics {
         }
     }
 
-    private static class GetServiceMetricsConsumerForAll extends GetServiceMetricsConsumerBase {
+    private static class ServiceMetricsCollectorForAll extends ServiceMetricsCollectorBase {
         private final MetricsConsumers metricsConsumers;
 
-        GetServiceMetricsConsumerForAll(MetricsConsumers metricsConsumers, MetricAggregator aggregator) {
+        ServiceMetricsCollectorForAll(MetricsConsumers metricsConsumers, MetricAggregator aggregator) {
             super(aggregator);
             this.metricsConsumers = metricsConsumers;
         }
 
         @Override
-        public void consume(Metric candidate) {
+        public void accept(Metric candidate) {
             Map<ConfiguredMetric, Set<ConsumerId>> consumersByMetric = metricsConsumers.getConsumersByMetric(candidate.getName());
             if (consumersByMetric != null) {
                 consumersByMetric.keySet().forEach(
@@ -234,11 +234,11 @@ public class VespaMetrics {
                 .statusMessage("Data collected successfully");
     }
 
-    private class MetricStringBuilder implements MetricsParser.Consumer {
+    private class MetricStringBuilder implements MetricsParser.Collector {
         private final StringBuilder sb = new StringBuilder();
         private VespaService service;
         @Override
-        public void consume(Metric metric) {
+        public void accept(Metric metric) {
             MetricId key = metric.getName();
             MetricId alias = key;
 
@@ -272,7 +272,7 @@ public class VespaMetrics {
         return msb.toString();
     }
 
-    private class MetricNamesBuilder implements MetricsParser.Consumer {
+    private class MetricNamesBuilder implements MetricsParser.Collector {
         private final StringBuilder bufferOn = new StringBuilder();
         private final StringBuilder bufferOff = new StringBuilder();
         private final ConsumerId consumer;
@@ -280,7 +280,7 @@ public class VespaMetrics {
             this.consumer = consumer;
         }
         @Override
-        public void consume(Metric m) {
+        public void accept(Metric m) {
             String description = m.getDescription();
             MetricId alias = MetricId.empty;
             boolean isForwarded = false;

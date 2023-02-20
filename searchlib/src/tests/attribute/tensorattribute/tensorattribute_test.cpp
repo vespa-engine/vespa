@@ -582,7 +582,7 @@ Fixture::Fixture(const vespalib::string &typeSpec, FixtureTraits traits)
       _index_factory(),
       _tensorAttr(),
       _attr(),
-      _executor(1, 0x10000),
+      _executor(1),
       _denseTensors(false),
       _traits(traits),
       _mmap_allocator_base_dir("mmap-file-allocator-factory-dir")
@@ -887,6 +887,7 @@ public:
     }
     void test_setup();
     void test_save_load(bool multi_node);
+    void test_address_space_usage();
 };
 
 template <HnswIndexType type>
@@ -935,6 +936,23 @@ TensorAttributeHnswIndex<type>::test_save_load(bool multi_node)
     expect_level_0(1, index_b.get_node(2));
 }
 
+template <HnswIndexType type>
+void
+TensorAttributeHnswIndex<type>::test_address_space_usage()
+{
+    bool dense = type == HnswIndexType::SINGLE;
+    search::AddressSpaceUsage usage = _attr->getAddressSpaceUsage();
+    const auto& all = usage.get_all();
+    EXPECT_EQUAL(dense ? 3u : 5u, all.size());
+    EXPECT_EQUAL(1u, all.count("tensor-store"));
+    EXPECT_EQUAL(1u, all.count("hnsw-levels-store"));
+    EXPECT_EQUAL(1u, all.count("hnsw-links-store"));
+    if (!dense) {
+        EXPECT_EQUAL(1u, all.count("hnsw-nodeid-mapping"));
+        EXPECT_EQUAL(1u, all.count("shared-string-repo"));
+    }
+}
+
 class DenseTensorAttributeHnswIndex : public TensorAttributeHnswIndex<HnswIndexType::SINGLE> {
 public:
     DenseTensorAttributeHnswIndex() : TensorAttributeHnswIndex<HnswIndexType::SINGLE>(vec_2d_spec, FixtureTraits().hnsw()) {}
@@ -970,16 +988,15 @@ TEST_F("Hnsw index is integrated in mixed tensor attribute and can be saved and 
     f.test_save_load(true);
 }
 
-TEST_F("Populates address space usage", DenseTensorAttributeHnswIndex)
+TEST_F("Populates address space usage in dense tensor attribute with hnsw index", DenseTensorAttributeHnswIndex)
 {
-    search::AddressSpaceUsage usage = f._attr->getAddressSpaceUsage();
-    const auto& all = usage.get_all();
-    EXPECT_EQUAL(3u, all.size());
-    EXPECT_EQUAL(1u, all.count("tensor-store"));
-    EXPECT_EQUAL(1u, all.count("hnsw-node-store"));
-    EXPECT_EQUAL(1u, all.count("hnsw-link-store"));
+    f.test_address_space_usage();
 }
 
+TEST_F("Populates address space usage in mixed tensor attribute with hnsw index", MixedTensorAttributeHnswIndex)
+{
+    f.test_address_space_usage();
+}
 
 class DenseTensorAttributeMockIndex : public Fixture {
 public:
@@ -1271,7 +1288,6 @@ TEST_F("NN blueprint handles weak filter (pre-filtering)", NearestNeighborBluepr
     filter->setBit(5);
     filter->setBit(7);
     filter->setBit(9);
-    filter->setBit(11);
     filter->invalidateCachedCount();
     auto weak_filter = GlobalFilter::create(std::move(filter));
     bp->set_global_filter(*weak_filter, 0.6);

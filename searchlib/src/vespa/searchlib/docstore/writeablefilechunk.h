@@ -26,12 +26,12 @@ public:
         using CompressionConfig = vespalib::compression::CompressionConfig;
         Config() : Config({CompressionConfig::LZ4, 9, 60}, 0x10000) { }
 
-        Config(const CompressionConfig &compression, size_t maxChunkBytes)
+        Config(CompressionConfig compression, size_t maxChunkBytes)
             : _compression(compression),
               _maxChunkBytes(maxChunkBytes)
         { }
 
-        const CompressionConfig & getCompression() const { return _compression; }
+        CompressionConfig getCompression() const { return _compression; }
         size_t getMaxChunkBytes() const { return _maxChunkBytes; }
         bool operator == (const Config & rhs) const {
             return (_compression == rhs._compression) && (_maxChunkBytes == rhs._maxChunkBytes);
@@ -42,7 +42,7 @@ public:
     };
 
 public:
-    typedef std::unique_ptr<WriteableFileChunk> UP;
+    using UP = std::unique_ptr<WriteableFileChunk>;
     WriteableFileChunk(vespalib::Executor & executor, FileId fileId, NameId nameId,
                        const vespalib::string & baseName, uint64_t initialSerialNum,
                        uint32_t docIdLimit, const Config & config,
@@ -73,9 +73,9 @@ public:
     static uint64_t writeIdxHeader(const common::FileHeaderContext &fileHeaderContext, uint32_t docIdLimit, FastOS_FileInterface &file);
 private:
     using ProcessedChunkUP = std::unique_ptr<ProcessedChunk>;
-    typedef std::map<uint32_t, ProcessedChunkUP > ProcessedChunkMap;
+    using ProcessedChunkMap = std::map<uint32_t, ProcessedChunkUP >;
 
-    typedef std::vector<ProcessedChunkUP> ProcessedChunkQ;
+    using ProcessedChunkQ = std::vector<ProcessedChunkUP>;
 
     bool frozen() const override { return _frozen.load(std::memory_order_acquire); }
     void waitForChunkFlushedToDisk(uint32_t chunkId) const;

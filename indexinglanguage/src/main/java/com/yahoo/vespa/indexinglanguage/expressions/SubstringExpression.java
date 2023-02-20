@@ -60,16 +60,9 @@ public final class SubstringExpression extends Expression {
 
     @Override
     public boolean equals(Object obj) {
-        if (!(obj instanceof SubstringExpression)) {
-            return false;
-        }
-        SubstringExpression rhs = (SubstringExpression)obj;
-        if (from != rhs.from) {
-            return false;
-        }
-        if (to != rhs.to) {
-            return false;
-        }
+        if (!(obj instanceof SubstringExpression rhs)) return false;
+        if (from != rhs.from) return false;
+        if (to != rhs.to) return false;
         return true;
     }
 
@@ -79,4 +72,5 @@ public final class SubstringExpression extends Expression {
                Integer.valueOf(from).hashCode() +
                Integer.valueOf(to).hashCode();
     }
+
 }

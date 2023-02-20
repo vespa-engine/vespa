@@ -4,22 +4,18 @@
 
 namespace document::select {
 
-std::vector<ResultSet> ResultSet::_ands;
-std::vector<ResultSet> ResultSet::_ors;
-std::vector<ResultSet> ResultSet::_nots;
+const ResultSet::PreCalculated ResultSet::_preCalc(ResultSet::illegalMask());
 
 /*
  * Precalculate possible outcomes of boolean operations, given possible
  * inputs.
  */
-void
-ResultSet::preCalc()
+ResultSet::PreCalculated::PreCalculated(uint32_t range)
+    : _ands(range * range),
+      _ors(range * range),
+      _nots(range)
 {
     uint32_t erange = Result::enumRange;
-    uint32_t range = illegalMask();
-    _ands.resize(range * range);
-    _ors.resize(range * range);
-    _nots.resize(range);
     for (ResultSet lset; lset.pcvalid(); lset.pcnext()) {
         for (ResultSet rset; rset.pcvalid(); rset.pcnext()) {
             ResultSet myand;
@@ -50,21 +46,6 @@ ResultSet::preCalc()
     }
 }
 
-
-namespace {
-
-class Precalc
-{
-public:
-    Precalc()
-    {
-        ResultSet::preCalc();
-    }
-};
-
-
-Precalc precalc;
-
-}
+ResultSet::PreCalculated::~PreCalculated() = default;
 
 }

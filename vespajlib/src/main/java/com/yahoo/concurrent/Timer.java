@@ -2,6 +2,7 @@
 package com.yahoo.concurrent;
 
 import java.time.Clock;
+import java.time.Instant;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -29,4 +30,6 @@ public interface Timer {
                 return clock.millis();
             }
         }; }
+
+    default Instant instant() { return Instant.ofEpochMilli(milliTime()); }
 }

@@ -204,30 +204,35 @@ public class StorageGroup {
         }
 
         public StorageGroup buildRootGroup(DeployState deployState, RedundancyBuilder redundancyBuilder, ContentCluster owner) {
-            if (owner.isHosted())
-                validateRedundancyAndGroups(deployState.zone().environment());
+            try {
+                if (owner.isHosted())
+                    validateRedundancyAndGroups(deployState.zone().environment());
 
-            Optional<ModelElement> group = Optional.ofNullable(clusterElement.child("group"));
-            Optional<ModelElement> nodes = getNodes(clusterElement);
+                Optional<ModelElement> group = Optional.ofNullable(clusterElement.child("group"));
+                Optional<ModelElement> nodes = getNodes(clusterElement);
 
-            if (group.isPresent() && nodes.isPresent())
-                throw new IllegalArgumentException("Both <group> and <nodes> is specified: Only one of these tags can be used in the same configuration");
-            if (group.isPresent() && (group.get().integerAttribute("distribution-key") != null)) {
-                deployState.getDeployLogger().logApplicationPackage(Level.INFO, "'distribution-key' attribute on a content cluster's root group is ignored");
+                if (group.isPresent() && nodes.isPresent())
+                    throw new IllegalArgumentException("Both <group> and <nodes> is specified: Only one of these tags can be used in the same configuration");
+                if (group.isPresent() && (group.get().integerAttribute("distribution-key") != null)) {
+                    deployState.getDeployLogger().logApplicationPackage(Level.INFO, "'distribution-key' attribute on a content cluster's root group is ignored");
+                }
+
+                GroupBuilder groupBuilder = collectGroup(owner.isHosted(), group, nodes, null, null);
+                StorageGroup storageGroup = owner.isHosted()
+                                            ? groupBuilder.buildHosted(deployState, owner, Optional.empty())
+                                            : groupBuilder.buildNonHosted(deployState, owner, Optional.empty());
+
+                Redundancy redundancy = redundancyBuilder.build(owner.isHosted(), storageGroup.subgroups.size(),
+                                                                storageGroup.getNumberOfLeafGroups(), storageGroup.countNodes(false));
+                owner.setRedundancy(redundancy);
+                if (storageGroup.partitions.isEmpty() && (redundancy.groups() > 1)) {
+                    storageGroup.partitions = Optional.of(computePartitions(redundancy.finalRedundancy(), redundancy.groups()));
+                }
+                return storageGroup;
             }
-
-            GroupBuilder groupBuilder = collectGroup(owner.isHosted(), group, nodes, null, null);
-            StorageGroup storageGroup = owner.isHosted()
-                                        ? groupBuilder.buildHosted(deployState, owner, Optional.empty())
-                                        : groupBuilder.buildNonHosted(deployState, owner, Optional.empty());
-
-            Redundancy redundancy = redundancyBuilder.build(owner.getName(), owner.isHosted(), storageGroup.subgroups.size(),
-                                                            storageGroup.getNumberOfLeafGroups(), storageGroup.countNodes(false));
-            owner.setRedundancy(redundancy);
-            if (storageGroup.partitions.isEmpty() && (redundancy.groups() > 1)) {
-                storageGroup.partitions = Optional.of(computePartitions(redundancy.finalRedundancy(), redundancy.groups()));
+            catch (IllegalArgumentException e) {
+                throw new IllegalArgumentException("In " + owner, e);
             }
-            return storageGroup;
         }
 
         private void validateRedundancyAndGroups(Environment environment) {
@@ -242,11 +247,11 @@ public class StorageGroup {
             // Allow dev deployment of self-hosted app (w/o count attribute): absent count => 1 node
             if (!nodesSpec.hasCountAttribute() && environment == Environment.dev) return;
 
-            int minNodesPerGroup = (int)Math.ceil((double)nodesSpec.minResources().nodes() / nodesSpec.minResources().groups());
+            int minNodesPerGroup = (int) Math.ceil((double) nodesSpec.minResources().nodes() / nodesSpec.minResources().groups());
 
             if (minNodesPerGroup < redundancy) {
-                throw new IllegalArgumentException("Cluster '" + clusterElement.stringAttribute("id") + "' " +
-                                                   "specifies redundancy " + redundancy + ", but it cannot be higher than " +
+                throw new IllegalArgumentException("This cluster specifies redundancy " + redundancy +
+                                                   ", but this cannot be higher than " +
                                                    "the minimum nodes per group, which is " + minNodesPerGroup);
             }
         }

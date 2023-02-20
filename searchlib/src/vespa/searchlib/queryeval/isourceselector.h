@@ -6,7 +6,7 @@
 
 namespace search::queryeval {
 
-typedef uint8_t Source;
+using Source = uint8_t;
 
 namespace sourceselector {
 
@@ -47,8 +47,8 @@ class ISourceSelector
 protected:
     using SourceStore = sourceselector::Iterator::SourceStore;
 public:
-    typedef std::unique_ptr<ISourceSelector> UP;
-    typedef std::shared_ptr<ISourceSelector> SP;
+    using UP = std::unique_ptr<ISourceSelector>;
+    using SP = std::shared_ptr<ISourceSelector>;
     static const Source SOURCE_LIMIT = 254u;
 
 protected:

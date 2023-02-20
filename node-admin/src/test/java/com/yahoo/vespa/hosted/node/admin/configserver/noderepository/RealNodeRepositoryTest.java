@@ -7,9 +7,12 @@ import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
+import com.yahoo.config.provision.WireguardKey;
 import com.yahoo.config.provision.host.FlavorOverrides;
 import com.yahoo.vespa.hosted.node.admin.configserver.ConfigServerApi;
 import com.yahoo.vespa.hosted.node.admin.configserver.ConfigServerApiImpl;
+import com.yahoo.vespa.hosted.node.admin.task.util.network.VersionedIpAddress;
+import com.yahoo.vespa.hosted.node.admin.wireguard.WireguardPeer;
 import com.yahoo.vespa.hosted.provision.restapi.NodesV2ApiHandler;
 import com.yahoo.vespa.hosted.provision.testutils.ContainerConfig;
 import org.junit.jupiter.api.AfterEach;
@@ -24,7 +27,10 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * Tests the NodeRepository class used for talking to the node repository. It uses a mock from the node repository
@@ -128,12 +134,21 @@ public class RealNodeRepositoryTest {
 
     @Test
     void testUpdateNodeAttributes() {
-        String hostname = "host4.yahoo.com";
+        var hostname = "host4.yahoo.com";
+        var dockerImage = "registry.example.com/repo/image-1:6.2.3";
+        var wireguardKey = WireguardKey.from("111122223333444455556666777788889999000042c=");
+
         nodeRepositoryApi.updateNodeAttributes(
                 hostname,
                 new NodeAttributes()
                         .withRestartGeneration(1)
-                        .withDockerImage(DockerImage.fromString("registry.example.com/repo/image-1:6.2.3")));
+                        .withDockerImage(DockerImage.fromString(dockerImage))
+                        .withWireguardPubkey(wireguardKey));
+
+        NodeSpec hostSpec = nodeRepositoryApi.getOptionalNode(hostname).orElseThrow();
+        assertEquals(1, hostSpec.currentRestartGeneration().orElseThrow());
+        assertEquals(dockerImage, hostSpec.currentDockerImage().orElseThrow().asString());
+        assertEquals(wireguardKey.value(), hostSpec.wireguardPubkey().orElseThrow().value());
     }
 
     @Test
@@ -181,6 +196,45 @@ public class RealNodeRepositoryTest {
         NodeSpec nodeSpec = nodeRepositoryApi.getOptionalNode("host123-1.domain.tld").orElseThrow();
         assertEquals(nodeResources, nodeSpec.resources());
         assertEquals(NodeType.config, nodeSpec.type());
+    }
+
+    @Test
+    void wireguard_peer_config_can_be_retrieved_for_configservers_and_exclave_nodes() {
+
+        //// Configservers ////
+
+        List<WireguardPeer> cfgPeers =  nodeRepositoryApi.getConfigserverPeers();
+
+        // cfg2 does not have a wg public key, so should not be included
+        assertEquals(1, cfgPeers.size());
+
+        assertWireguardPeer(cfgPeers.get(0), "cfg1.yahoo.com",
+                            "::201:1", "127.0.201.1",
+                            "lololololololololololololololololololololoo=");
+
+        //// Exclave nodes ////
+
+        List<WireguardPeer> exclavePeers =  nodeRepositoryApi.getExclavePeers();
+
+        // host3 does not have a wg public key, so should not be included
+        assertEquals(1, exclavePeers.size());
+
+        assertWireguardPeer(exclavePeers.get(0), "dockerhost2.yahoo.com",
+                            "::101:1", "127.0.101.1",
+                            "000011112222333344445555666677778888999900c=");
+    }
+
+    private void assertWireguardPeer(WireguardPeer peer, String hostname, String ipv6, String ipv4, String publicKey) {
+        assertEquals(hostname, peer.hostname().value());
+        assertEquals(2, peer.ipAddresses().size());
+        assertIp(peer.ipAddresses().get(0), ipv6, 6);
+        assertIp(peer.ipAddresses().get(1), ipv4, 4);
+        assertEquals(publicKey, peer.publicKey().value());
+    }
+
+    private void assertIp(VersionedIpAddress ip, String expectedIp, int expectedVersion) {
+        assertEquals(expectedIp, ip.asString());
+        assertEquals(expectedVersion, ip.version().version());
     }
 
 }

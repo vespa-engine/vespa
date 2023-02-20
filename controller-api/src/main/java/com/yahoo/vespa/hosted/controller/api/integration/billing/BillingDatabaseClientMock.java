@@ -159,7 +159,7 @@ public class BillingDatabaseClientMock implements BillingDatabaseClient {
                     var end = endTimes.get(invoiceId);
                     return new Bill(invoiceId, tenant, status, items, start, end);
                 })
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Override
@@ -173,7 +173,7 @@ public class BillingDatabaseClientMock implements BillingDatabaseClient {
                     var end = endTimes.get(invoiceId);
                     return new Bill(invoiceId, tenant, status, items, start, end);
                 })
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Override

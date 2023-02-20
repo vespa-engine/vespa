@@ -51,7 +51,7 @@ class HyperLogLog {
     typename Sketch<BucketBits, HashT>::UP _sketch;
 
 public:
-    typedef HashT hash_type;
+    using hash_type = HashT;
     enum { bucketBits = BucketBits };
 
     // Initialize ExchangerSketch with a reference to _sketch.
@@ -80,8 +80,8 @@ public:
 template <int BucketBits, typename HashT>
 void HyperLogLog<BucketBits, HashT>::
 merge(const HyperLogLog<BucketBits, HashT> &other) {
-    typedef SparseSketch<BucketBits, HashT> Sparse;
-    typedef NormalSketch<BucketBits, HashT> Normal;
+    using Sparse = SparseSketch<BucketBits, HashT>;
+    using Normal = NormalSketch<BucketBits, HashT>;
 
     if (_sketch->getClassId() == Sparse::classId) {
         Sparse &sparse = static_cast<Sparse &>(*_sketch);

@@ -49,8 +49,8 @@ public:
     CryptoSocket::UP create_server_crypto_socket(SocketHandle socket) override;
     bool use_tls_when_client() const override;
     bool always_use_tls_when_server() const override;
-    std::unique_ptr<TlsCryptoSocket> create_tls_client_crypto_socket(SocketHandle socket, const SocketSpec &spec) override;
-    std::unique_ptr<TlsCryptoSocket> create_tls_server_crypto_socket(SocketHandle socket) override;
+    std::unique_ptr<CryptoCodec> create_tls_client_crypto_codec(const SocketHandle &socket, const SocketSpec &spec) override;
+    std::unique_ptr<CryptoCodec> create_tls_server_crypto_codec(const SocketHandle &socket) override;
 };
 
 }

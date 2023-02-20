@@ -6,6 +6,8 @@
 #include <vespa/storageapi/message/visitor.h>
 #include <vespa/storageapi/message/removelocation.h>
 #include <vespa/storageframework/defaultimplementation/thread/threadpoolimpl.h>
+#include <vespa/storageframework/generic/thread/runnable.h>
+#include <vespa/storageframework/generic/thread/thread.h>
 #include <tests/distributor/top_level_distributor_test_util.h>
 #include <vespa/document/bucket/fixed_bucket_spaces.h>
 #include <vespa/document/test/make_document_bucket.h>
@@ -132,6 +134,18 @@ struct TopLevelDistributorTest : Test, TopLevelDistributorTestUtil {
             EXPECT_EQ(stripe->non_activation_maintenance_is_inhibited(), inhibited);
         }
     }
+
+    void set_bucket_last_gc_time(const BucketId& bucket_id, uint32_t last_gc_time) {
+        auto db_entry = get_bucket(bucket_id);
+        db_entry->setLastGarbageCollectionTime(last_gc_time);
+        stripe_bucket_database(stripe_index_of_bucket(bucket_id)).update(db_entry);
+    }
+
+    uint32_t get_bucket_last_gc_time(const BucketId& bucket_id) const {
+        auto db_entry = get_bucket(bucket_id);
+        return db_entry->getLastGarbageCollectionTime();
+    }
+
 };
 
 TopLevelDistributorTest::TopLevelDistributorTest()
@@ -618,6 +632,74 @@ TEST_F(TopLevelDistributorTest, maintenance_safe_time_not_triggered_if_state_tra
     enable_distributor_cluster_state("storage:1 distributor:1", false);
     tick_distributor_and_stripes_n_times(1);
     ASSERT_NO_FATAL_FAILURE(assert_all_stripes_are_maintenance_inhibited(false));
+}
+
+/**
+ * If a system is running in a stable state with no GC enabled, per-bucket last GC timestamps
+ * in the DB will end up further and further in the past. If GC is then enabled in config,
+ * we must ensure that GC timestamps are reset to the current time to avoid suddenly ending
+ * up with _every single_ bucket having exceeded its GC deadline, causing pending GC en masse.
+ *
+ * Resetting is edge-triggered, so it should not happen if GC is enabled in both the old
+ * and new configs.
+ */
+TEST_F(TopLevelDistributorTest, gc_timestamps_reset_to_current_time_on_gc_enabled_edge) {
+    setup_distributor(Redundancy(2), NodeCount(2), "version:1 distributor:1 storage:2");
+    fake_clock().setAbsoluteTimeInSeconds(1234);
+
+    BucketId b1(16, 1);
+    BucketId b2(16, 2);
+    BucketId b3(16, 3);
+
+    add_nodes_to_stripe_bucket_db(b1, "0=1/1/1/t/a");
+    set_bucket_last_gc_time(b1, 100);
+    add_nodes_to_stripe_bucket_db(b2, "0=2/2/2/t/a");
+    set_bucket_last_gc_time(b2, 101);
+    add_nodes_to_stripe_bucket_db(b3, "0=3/3/3/t/a");
+    set_bucket_last_gc_time(b3, 102);
+
+    // Reconfigure GC interval from 0 (disabled) to 3600 (enabled).
+    auto cfg = current_distributor_config();
+    cfg.garbagecollection.interval = 3600;
+    cfg.garbagecollection.selectiontoremove = "true";
+    reconfigure(cfg);
+
+    // GC timestamps must be set to the current time to avoid a flood of GC ops caused by
+    // all buckets suddenly implicitly exceeding their GC deadline.
+    ASSERT_EQ(get_bucket_last_gc_time(b1), 1234);
+    ASSERT_EQ(get_bucket_last_gc_time(b2), 1234);
+    ASSERT_EQ(get_bucket_last_gc_time(b3), 1234);
+}
+
+TEST_F(TopLevelDistributorTest, gc_timestamps_not_reset_to_current_time_when_gc_enabled_in_old_and_new_configs) {
+    setup_distributor(Redundancy(2), NodeCount(2), "version:1 distributor:1 storage:2");
+    fake_clock().setAbsoluteTimeInSeconds(1234);
+
+    auto cfg = current_distributor_config();
+    cfg.garbagecollection.interval = 3600;
+    cfg.garbagecollection.selectiontoremove = "true";
+    reconfigure(cfg);
+
+    BucketId b1(16, 1);
+    BucketId b2(16, 2);
+    BucketId b3(16, 3);
+
+    add_nodes_to_stripe_bucket_db(b1, "0=1/1/1/t/a");
+    set_bucket_last_gc_time(b1, 1001);
+    add_nodes_to_stripe_bucket_db(b2, "0=2/2/2/t/a");
+    set_bucket_last_gc_time(b2, 1002);
+    add_nodes_to_stripe_bucket_db(b3, "0=3/3/3/t/a");
+    set_bucket_last_gc_time(b3, 1003);
+
+    // Change in GC interval, but no enabling-edge
+    cfg = current_distributor_config();
+    cfg.garbagecollection.interval = 1800;
+    reconfigure(cfg);
+
+    // No changes in GC time
+    ASSERT_EQ(get_bucket_last_gc_time(b1), 1001);
+    ASSERT_EQ(get_bucket_last_gc_time(b2), 1002);
+    ASSERT_EQ(get_bucket_last_gc_time(b3), 1003);
 }
 
 }

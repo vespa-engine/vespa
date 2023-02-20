@@ -1,11 +1,14 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.applications;
 
+import com.yahoo.config.provision.IntRange;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.vespa.hosted.provision.autoscale.Autoscaler;
+import com.yahoo.vespa.hosted.provision.autoscale.Autoscaling;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
@@ -26,36 +29,39 @@ public class Cluster {
     private final ClusterSpec.Id id;
     private final boolean exclusive;
     private final ClusterResources min, max;
+    private final IntRange groupSize;
     private final boolean required;
-    private final Optional<Suggestion> suggested;
-    private final Optional<ClusterResources> target;
+    private final Autoscaling suggested;
+    private final Autoscaling target;
+    private final BcpGroupInfo bcpGroupInfo;
 
     /** The maxScalingEvents last scaling events of this, sorted by increasing time (newest last) */
     private final List<ScalingEvent> scalingEvents;
-    private final AutoscalingStatus autoscalingStatus;
 
     public Cluster(ClusterSpec.Id id,
                    boolean exclusive,
                    ClusterResources minResources,
                    ClusterResources maxResources,
+                   IntRange groupSize,
                    boolean required,
-                   Optional<Suggestion> suggestedResources,
-                   Optional<ClusterResources> targetResources,
-                   List<ScalingEvent> scalingEvents,
-                   AutoscalingStatus autoscalingStatus) {
+                   Autoscaling suggested,
+                   Autoscaling target,
+                   BcpGroupInfo bcpGroupInfo,
+                   List<ScalingEvent> scalingEvents) {
         this.id = Objects.requireNonNull(id);
         this.exclusive = exclusive;
         this.min = Objects.requireNonNull(minResources);
         this.max = Objects.requireNonNull(maxResources);
+        this.groupSize = Objects.requireNonNull(groupSize);
         this.required = required;
-        this.suggested = Objects.requireNonNull(suggestedResources);
-        Objects.requireNonNull(targetResources);
-        if (targetResources.isPresent() && ! targetResources.get().isWithin(minResources, maxResources))
-            this.target = Optional.empty();
+        this.suggested = Objects.requireNonNull(suggested);
+        Objects.requireNonNull(target);
+        if (target.resources().isPresent() && ! target.resources().get().isWithin(minResources, maxResources))
+            this.target = Autoscaling.empty();
         else
-            this.target = targetResources;
+            this.target = target;
+        this.bcpGroupInfo = Objects.requireNonNull(bcpGroupInfo);
         this.scalingEvents = List.copyOf(scalingEvents);
-        this.autoscalingStatus = autoscalingStatus;
     }
 
     public ClusterSpec.Id id() { return id; }
@@ -69,9 +75,12 @@ public class Cluster {
     /** Returns the configured maximal resources in this cluster */
     public ClusterResources maxResources() { return max; }
 
+    /** Returns the configured group size range in this cluster */
+    public IntRange groupSize() { return groupSize; }
+
     /**
      * Returns whether the resources of this cluster are required to be within the specified min and max.
-     * Otherwise they may be adjusted by capacity policies.
+     * Otherwise, they may be adjusted by capacity policies.
      */
     public boolean required() { return required; }
 
@@ -80,21 +89,24 @@ public class Cluster {
      * have allocated at the moment (whether or not it actually has it),
      * or empty if the system currently has no target.
      */
-    public Optional<ClusterResources> targetResources() { return target; }
+    public Autoscaling target() { return target; }
 
     /**
-     * The suggested size of this cluster, which may or may not be within the min and max limits,
+     * The suggested resources, which may or may not be within the min and max limits,
      * or empty if there is currently no recorded suggestion.
      */
-    public Optional<Suggestion> suggestedResources() { return suggested; }
+    public Autoscaling suggested() { return suggested; }
 
     /** Returns true if there is a current suggestion and we should actually make this suggestion to users. */
     public boolean shouldSuggestResources(ClusterResources currentResources) {
-        if (suggested.isEmpty()) return false;
-        if (suggested.get().resources().isWithin(min, max)) return false;
-        if ( ! Autoscaler.worthRescaling(currentResources, suggested.get().resources())) return false;
+        if (suggested.resources().isEmpty()) return false;
+        if (suggested.resources().get().isWithin(min, max)) return false;
+        if ( ! Autoscaler.worthRescaling(currentResources, suggested.resources().get())) return false;
         return true;
     }
+
+    /** Returns info about the BCP group of clusters this belongs to. */
+    public BcpGroupInfo bcpGroupInfo() { return bcpGroupInfo; }
 
     /** Returns the recent scaling events in this cluster */
     public List<ScalingEvent> scalingEvents() { return scalingEvents; }
@@ -104,21 +116,22 @@ public class Cluster {
         return Optional.of(scalingEvents.get(scalingEvents.size() - 1));
     }
 
-    /** The latest autoscaling status of this cluster, or unknown (never null) if none */
-    public AutoscalingStatus autoscalingStatus() { return autoscalingStatus; }
-
     public Cluster withConfiguration(boolean exclusive, Capacity capacity) {
         return new Cluster(id, exclusive,
-                           capacity.minResources(), capacity.maxResources(), capacity.isRequired(),
-                           suggested, target, scalingEvents, autoscalingStatus);
+                           capacity.minResources(), capacity.maxResources(), capacity.groupSize(), capacity.isRequired(),
+                           suggested, target, bcpGroupInfo, scalingEvents);
     }
 
-    public Cluster withSuggested(Optional<Suggestion> suggested) {
-        return new Cluster(id, exclusive, min, max, required, suggested, target, scalingEvents, autoscalingStatus);
+    public Cluster withSuggested(Autoscaling suggested) {
+        return new Cluster(id, exclusive, min, max, groupSize, required, suggested, target, bcpGroupInfo, scalingEvents);
     }
 
-    public Cluster withTarget(Optional<ClusterResources> target) {
-        return new Cluster(id, exclusive, min, max, required, suggested, target, scalingEvents, autoscalingStatus);
+    public Cluster withTarget(Autoscaling target) {
+        return new Cluster(id, exclusive, min, max, groupSize, required, suggested, target, bcpGroupInfo, scalingEvents);
+    }
+
+    public Cluster with(BcpGroupInfo bcpGroupInfo) {
+        return new Cluster(id, exclusive, min, max, groupSize, required, suggested, target, bcpGroupInfo, scalingEvents);
     }
 
     /** Add or update (based on "at" time) a scaling event */
@@ -132,12 +145,7 @@ public class Cluster {
             scalingEvents.add(scalingEvent);
 
         prune(scalingEvents);
-        return new Cluster(id, exclusive, min, max, required, suggested, target, scalingEvents, autoscalingStatus);
-    }
-
-    public Cluster with(AutoscalingStatus autoscalingStatus) {
-        if (autoscalingStatus.equals(this.autoscalingStatus)) return this;
-        return new Cluster(id, exclusive, min, max, required, suggested, target, scalingEvents, autoscalingStatus);
+        return new Cluster(id, exclusive, min, max, groupSize, required, suggested, target, bcpGroupInfo, scalingEvents);
     }
 
     @Override
@@ -167,45 +175,47 @@ public class Cluster {
     }
 
     public static Cluster create(ClusterSpec.Id id, boolean exclusive, Capacity requested) {
-        return new Cluster(id, exclusive, requested.minResources(), requested.maxResources(), requested.isRequired(),
-                           Optional.empty(), Optional.empty(), List.of(), AutoscalingStatus.empty());
+        return new Cluster(id, exclusive,
+                           requested.minResources(), requested.maxResources(), requested.groupSize(), requested.isRequired(),
+                           Autoscaling.empty(), Autoscaling.empty(), BcpGroupInfo.empty(), List.of());
     }
 
-    public static class Suggestion {
-
-        private final ClusterResources resources;
-        private final Instant at;
-
-        public Suggestion(ClusterResources resources, Instant at) {
-            this.resources = resources;
-            this.at = at;
+    /** The predicted time it will take to rescale this cluster. */
+    public Duration scalingDuration(ClusterSpec clusterSpec) {
+        int completedEventCount = 0;
+        Duration totalDuration = Duration.ZERO;
+        for (ScalingEvent event : scalingEvents()) {
+            if (event.duration().isEmpty()) continue;
+            completedEventCount++;
+            // Assume we have missed timely recording completion if it is longer than 4 days
+            totalDuration = totalDuration.plus(maximum(Duration.ofDays(4), event.duration().get()));
         }
-
-        /** Returns the suggested resources */
-        public ClusterResources resources() { return resources; }
-
-        /** Returns the instant this suggestion was made */
-        public Instant at() { return at; }
-
-        @Override
-        public String toString() {
-            return "suggestion made at " + at + ": " + resources;
+        if (completedEventCount == 0) { // Use defaults
+            if (clusterSpec.isStateful()) return Duration.ofHours(12);
+            return Duration.ofMinutes(10);
         }
+        else {
+            Duration predictedDuration = totalDuration.dividedBy(completedEventCount);
 
-        @Override
-        public int hashCode() {
-            return Objects.hash(resources, at);
+            if ( clusterSpec.isStateful() ) // TODO: Remove when we have reliable completion for content clusters
+                predictedDuration = minimum(Duration.ofHours(12), predictedDuration);
+
+            predictedDuration = minimum(Duration.ofMinutes(5), predictedDuration);
+
+            return predictedDuration;
         }
+    }
 
-        @Override
-        public boolean equals(Object o) {
-            if ( ! (o instanceof Suggestion)) return false;
-            Suggestion other = (Suggestion)o;
-            if ( ! this.at.equals(other.at)) return false;
-            if ( ! this.resources.equals(other.resources)) return false;
-            return true;
-        }
+    private static Duration minimum(Duration smallestAllowed, Duration duration) {
+        if (duration.minus(smallestAllowed).isNegative())
+            return smallestAllowed;
+        return duration;
+    }
 
+    private static Duration maximum(Duration largestAllowed, Duration duration) {
+        if ( ! duration.minus(largestAllowed).isNegative())
+            return largestAllowed;
+        return duration;
     }
 
 }

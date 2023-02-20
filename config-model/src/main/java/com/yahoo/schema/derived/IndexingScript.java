@@ -24,7 +24,6 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
  * An indexing language script derived from a search definition. An indexing script contains a set of indexing
@@ -76,7 +75,7 @@ public final class IndexingScript extends Derived implements IlscriptsConfig.Pro
         return schema.allFieldsList().stream()
                      .filter(field -> ! field.isImportedField())
                      .filter(field -> field.containsExpression(SetLanguageExpression.class))
-                     .collect(Collectors.toList());
+                     .toList();
     }
 
     public Iterable<Expression> expressions() {

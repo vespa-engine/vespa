@@ -12,6 +12,7 @@ public final class ToStringExpression extends Expression {
     public ToStringExpression() {
         super(UnresolvedDataType.INSTANCE);
     }
+
     @Override
     protected void doExecute(ExecutionContext context) {
         context.setValue(new StringFieldValue(String.valueOf(context.getValue())));
@@ -41,4 +42,5 @@ public final class ToStringExpression extends Expression {
     public int hashCode() {
         return getClass().hashCode();
     }
+
 }

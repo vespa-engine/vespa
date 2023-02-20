@@ -32,7 +32,7 @@ public class ModFunction extends FunctionNode {
     public ModFunction copy() {
         return new ModFunction(getLabel(),
                                getLevelOrNull(),
-                               args().stream().map(arg -> arg.copy()).collect(Collectors.toList()));
+                               args().stream().map(arg -> arg.copy()).toList());
     }
 
     /**

@@ -111,6 +111,11 @@ public class JobList extends AbstractFilteringList<JobStatus, JobList> {
         return matching(job -> job.id().type().isProduction());
     }
 
+    /** Returns the subset of jobs which are test jobs. */
+    public JobList test() {
+        return matching(job -> job.id().type().isTest());
+    }
+
     /** Returns the jobs with any runs failing with non-out-of-test-capacity on the given versions — targets only for system test, everything present otherwise. */
     public JobList failingHardOn(Versions versions) {
         return matching(job -> ! RunList.from(job)

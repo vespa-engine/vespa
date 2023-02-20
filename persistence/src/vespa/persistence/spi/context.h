@@ -34,11 +34,11 @@
 
 namespace storage::spi {
 
-typedef uint16_t Priority; // 0 - max pri, 255 - min pri
+using Priority = uint16_t; // 0 - max pri, 255 - min pri
 
 // Define this type just because a ton of tests currently use it.
 struct Trace {
-    typedef int TraceLevel;
+    using TraceLevel = int;
 };
 
 class Context {

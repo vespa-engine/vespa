@@ -9,7 +9,7 @@
  */
 #pragma once
 
-#include <vespa/storageframework/generic/clock/time.h>
+#include <vespa/vespalib/util/time.h>
 
 namespace storage::framework {
 
@@ -21,13 +21,12 @@ namespace storage::framework {
  * the thread is waiting for 1000 ms when it is idle.
  */
 enum CycleType { UNKNOWN_CYCLE, WAIT_CYCLE, PROCESS_CYCLE };
-const char* getCycleTypeName(CycleType);
 
 struct ThreadHandle {
-    virtual ~ThreadHandle() {}
+    virtual ~ThreadHandle() = default;
 
     /** Check whether thread have been interrupted or not. */
-    virtual bool interrupted() const = 0;
+    [[nodiscard]] virtual bool interrupted() const = 0;
 
     /**
      * Register a tick. Useful such that a deadlock detector can detect that
@@ -42,20 +41,20 @@ struct ThreadHandle {
      *                    not need to calculate clock. (Too avoid additional
      *                    clock fetches if client already knows current time)
      */
-    virtual void registerTick(CycleType = UNKNOWN_CYCLE,
-                              vespalib::steady_time = vespalib::steady_time()) = 0;
+    virtual void registerTick(CycleType cycleType, vespalib::steady_time time) = 0;
+    virtual void registerTick(CycleType cycleType) = 0;
 
-    virtual vespalib::duration getWaitTime() const = 0;
+    [[nodiscard]] virtual vespalib::duration getWaitTime() const = 0;
 
     /**
      * The number of ticks done before wait is called when no more work is
      * reported.
      */
-    virtual int getTicksBeforeWait() const = 0;
+    [[nodiscard]] virtual int getTicksBeforeWait() const = 0;
 };
 
 struct Runnable {
-    virtual ~Runnable() {}
+    virtual ~Runnable() = default;
 
     virtual void run(ThreadHandle&) = 0;
 };

@@ -5,7 +5,7 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostName;
-import com.yahoo.config.provision.LoadBalancerSettings;
+import com.yahoo.config.provision.ZoneEndpoint;
 import org.junit.Test;
 
 import java.util.Optional;
@@ -28,9 +28,10 @@ public class SharedLoadBalancerServiceTest {
 
     @Test
     public void test_create_lb() {
-        var lb = loadBalancerService.create(new LoadBalancerSpec(applicationId, clusterId, reals,
-                                                                 LoadBalancerSettings.empty, CloudAccount.empty),
-                                            false);
+        LoadBalancerSpec spec = new LoadBalancerSpec(applicationId, clusterId, reals,
+                                                     ZoneEndpoint.defaultEndpoint, CloudAccount.empty);
+        loadBalancerService.provision(spec);
+        var lb = loadBalancerService.configure(spec, false);
 
         assertEquals(Optional.of(HostName.of("vip.example.com")), lb.hostname());
         assertEquals(Optional.empty(), lb.dnsZone());

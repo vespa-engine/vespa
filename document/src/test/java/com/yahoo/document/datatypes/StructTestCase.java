@@ -248,6 +248,7 @@ public class StructTestCase {
     }
 
     @Test
+    @SuppressWarnings("deprecation")
     public void testCompareToDoesNotMutateStateBug6394548() {
         StructDataType type = new StructDataType("test");
         // NOTE: non-increasing ID order!

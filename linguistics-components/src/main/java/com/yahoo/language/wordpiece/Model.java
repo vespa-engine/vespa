@@ -20,7 +20,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.NavigableMap;
 import java.util.TreeMap;
-import java.util.stream.Collectors;
 
 /**
  * A WordPiece embedder "model" - just a vocabulary of strings with a fixed id (index).
@@ -85,7 +84,7 @@ class Model {
     }
 
     List<String> segment(String text, Tokenizer tokenizer) {
-        return embed(text, tokenizer).stream().map(tokenId -> tokenId2Token.get(tokenId)).collect(Collectors.toList());
+        return embed(text, tokenizer).stream().map(tokenId -> tokenId2Token.get(tokenId)).toList();
     }
 
     private Tuple2<String, Integer> findLongestSubstring(String candidate) {

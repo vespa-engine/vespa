@@ -11,6 +11,7 @@
 #include <vespa/storage/storageutil/distributorstatecache.h>
 #include <vespa/storageframework/generic/status/htmlstatusreporter.h>
 #include <vespa/storageframework/generic/status/xmlstatusreporter.h>
+#include <vespa/storageframework/generic/thread/thread.h>
 #include <vespa/storageframework/generic/clock/timer.h>
 #include <vespa/storageapi/message/persistence.h>
 #include <vespa/storageapi/message/state.h>
@@ -18,6 +19,7 @@
 #include <vespa/storageapi/message/stat.h>
 #include <vespa/document/bucket/fixed_bucket_spaces.h>
 #include <vespa/vespalib/util/stringfmt.h>
+#include <ranges>
 #include <vespa/config/helper/configgetter.hpp>
 #include <chrono>
 #include <thread>
@@ -30,8 +32,7 @@ using namespace std::chrono_literals;
 
 namespace storage {
 
-BucketManager::BucketManager(const config::ConfigUri & configUri,
-                             ServiceLayerComponentRegister& compReg)
+BucketManager::BucketManager(const config::ConfigUri & configUri, ServiceLayerComponentRegister& compReg)
     : StorageLink("Bucket manager"),
       framework::StatusReporter("bucketdb", "Bucket database"),
       _configUri(configUri),
@@ -50,18 +51,15 @@ BucketManager::BucketManager(const config::ConfigUri & configUri,
 {
     _component.registerStatusPage(*this);
     _component.registerMetric(*_metrics);
-    _component.registerMetricUpdateHook(*this, framework::SecondTime(300));
+    _component.registerMetricUpdateHook(*this, 300s);
 
         // Initialize min used bits to default value used here.
-    NodeStateUpdater::Lock::SP lock(
-            _component.getStateUpdater().grabStateChangeLock());
-    lib::NodeState ns(
-            *_component.getStateUpdater().getReportedNodeState());
+    NodeStateUpdater::Lock::SP lock(_component.getStateUpdater().grabStateChangeLock());
+    lib::NodeState ns(*_component.getStateUpdater().getReportedNodeState());
     ns.setMinUsedBits(58);
     _component.getStateUpdater().setReportedNodeState(ns);
 
-    auto server_config = config::ConfigGetter<vespa::config::content::core::StorServerConfig>::getConfig(
-            configUri.getConfigId(), configUri.getContext());
+    auto server_config = config::ConfigGetter<vespa::config::content::core::StorServerConfig>::getConfig(configUri.getConfigId(), configUri.getContext());
     _simulated_processing_delay = std::chrono::milliseconds(std::max(0, server_config->simulatedBucketRequestLatencyMsec));
 }
 
@@ -85,135 +83,120 @@ void BucketManager::onClose()
 }
 
 void
-BucketManager::print(std::ostream& out, bool verbose,
-                     const std::string& indent) const
+BucketManager::print(std::ostream& out, bool ,const std::string& ) const
 {
-    (void) verbose; (void) indent;
     out << "BucketManager()";
 }
 
 namespace {
 
-    template<bool log>
-    class DistributorInfoGatherer
+template<bool log>
+class DistributorInfoGatherer
+{
+    using ResultArray = api::RequestBucketInfoReply::EntryVector;
+
+    DistributorStateCache                      _state;
+    std::unordered_map<uint16_t, ResultArray>& _result;
+    const document::BucketIdFactory&           _factory;
+    std::shared_ptr<const lib::Distribution>  _storageDistribution;
+
+public:
+    DistributorInfoGatherer(
+            const lib::ClusterState& systemState,
+            std::unordered_map<uint16_t, ResultArray>& result,
+            const document::BucketIdFactory& factory,
+            std::shared_ptr<const lib::Distribution> distribution)
+        : _state(*distribution, systemState),
+          _result(result),
+          _factory(factory),
+          _storageDistribution(std::move(distribution))
     {
-        typedef api::RequestBucketInfoReply::EntryVector ResultArray;
-        DistributorStateCache _state;
-        std::unordered_map<uint16_t, ResultArray>& _result;
-        const document::BucketIdFactory& _factory;
-        std::shared_ptr<const lib::Distribution> _storageDistribution;
+    }
 
-    public:
-        DistributorInfoGatherer(
-                const lib::ClusterState& systemState,
-                std::unordered_map<uint16_t, ResultArray>& result,
-                const document::BucketIdFactory& factory,
-                std::shared_ptr<const lib::Distribution> distribution)
-            : _state(*distribution, systemState),
-              _result(result),
-              _factory(factory),
-              _storageDistribution(std::move(distribution))
-        {
-        }
-
-        StorBucketDatabase::Decision operator()(uint64_t bucketId,
-                                                const StorBucketDatabase::Entry& data)
-        {
-            document::BucketId b(document::BucketId::keyToBucketId(bucketId));
-            try{
-                uint16_t i = _state.getOwner(b);
-                auto it = _result.find(i);
-                    // Template parameter. This block should not be included
-                    // in version not logging.
-                if (log) {
-                    LOG(spam, "Bucket %s (reverse %" PRIu64 "), should be handled"
-                              " by distributor %u which we are %sgenerating "
-                              "state for.",
-                        b.toString().c_str(), bucketId, i,
-                        it == _result.end() ? "not " : "");
-                }
-                if (it != _result.end()) {
-                    api::RequestBucketInfoReply::Entry entry;
-                    entry._bucketId = b;
-                    entry._info = data.getBucketInfo();
-                    it->second.push_back(entry);
-                }
-            } catch (lib::TooFewBucketBitsInUseException& e) {
-                LOGBP(warning, "Cannot assign bucket %s to a distributor "
-                               " as bucket only specifies %u bits.",
-                      b.toString().c_str(),
-                      b.getUsedBits());
-            } catch (lib::NoDistributorsAvailableException& e) {
-                LOGBP(warning, "No distributors available while processing "
-                               "request bucket info. Distribution hash: %s, "
-                               "cluster state: %s",
-                      _state.getDistribution().getNodeGraph()
-                      .getDistributionConfigHash().c_str(),
-                      _state.getClusterState().toString().c_str());
+    StorBucketDatabase::Decision operator()(uint64_t bucketId,const StorBucketDatabase::Entry& data)
+    {
+        document::BucketId b(document::BucketId::keyToBucketId(bucketId));
+        try{
+            uint16_t i = _state.getOwner(b);
+            auto it = _result.find(i);
+            if constexpr (log) {
+                LOG(spam, "Bucket %s (reverse %" PRIu64 "), should be handled by distributor %u which we are %sgenerating state for.",
+                    b.toString().c_str(), bucketId, i, it == _result.end() ? "not " : "");
             }
-            return StorBucketDatabase::Decision::CONTINUE;
+            if (it != _result.end()) {
+                api::RequestBucketInfoReply::Entry entry;
+                entry._bucketId = b;
+                entry._info = data.getBucketInfo();
+                it->second.push_back(entry);
+            }
+        } catch (lib::TooFewBucketBitsInUseException& e) {
+            LOGBP(warning, "Cannot assign bucket %s to a distributor as bucket only specifies %u bits.",
+                  b.toString().c_str(), b.getUsedBits());
+        } catch (lib::NoDistributorsAvailableException& e) {
+            LOGBP(warning, "No distributors available while processing request bucket info. Distribution hash: %s, cluster state: %s",
+                  _state.getDistribution().getNodeGraph().getDistributionConfigHash().c_str(), _state.getClusterState().toString().c_str());
         }
+        return StorBucketDatabase::Decision::CONTINUE;
+    }
 
+};
+
+struct MetricsUpdater {
+    struct Count {
+        uint64_t docs;
+        uint64_t bytes;
+        uint64_t buckets;
+        uint64_t active;
+        uint64_t ready;
+
+        constexpr Count() noexcept : docs(0), bytes(0), buckets(0), active(0), ready(0) {}
     };
 
-    struct MetricsUpdater {
-        struct Count {
-            uint64_t docs;
-            uint64_t bytes;
-            uint64_t buckets;
-            uint64_t active;
-            uint64_t ready;
+    Count    count;
+    uint32_t lowestUsedBit;
 
-            Count() noexcept : docs(0), bytes(0), buckets(0), active(0), ready(0) {}
-        };
+    constexpr MetricsUpdater() noexcept
+        : count(), lowestUsedBit(58) {}
 
-        Count    count;
-        uint32_t lowestUsedBit;
+    void operator()(document::BucketId::Type bucketId,
+                    const StorBucketDatabase::Entry& data) noexcept
+    {
+        document::BucketId bucket(document::BucketId::keyToBucketId(bucketId));
 
-        MetricsUpdater() noexcept
-            : count(), lowestUsedBit(58) {}
-
-        void operator()(document::BucketId::Type bucketId,
-                        const StorBucketDatabase::Entry& data) noexcept
-        {
-            document::BucketId bucket(
-                    document::BucketId::keyToBucketId(bucketId));
-
-            if (data.valid()) {
-                ++count.buckets;
-                if (data.getBucketInfo().isActive()) {
-                    ++count.active;
-                }
-                if (data.getBucketInfo().isReady()) {
-                    ++count.ready;
-                }
-                count.docs += data.getBucketInfo().getDocumentCount();
-                count.bytes += data.getBucketInfo().getTotalDocumentSize();
-
-                if (bucket.getUsedBits() < lowestUsedBit) {
-                    lowestUsedBit = bucket.getUsedBits();
-                }
+        if (data.valid()) {
+            ++count.buckets;
+            if (data.getBucketInfo().isActive()) {
+                ++count.active;
             }
-        };
+            if (data.getBucketInfo().isReady()) {
+                ++count.ready;
+            }
+            count.docs += data.getBucketInfo().getDocumentCount();
+            count.bytes += data.getBucketInfo().getTotalDocumentSize();
 
-        void add(const MetricsUpdater& rhs) noexcept {
-            auto& d = count;
-            auto& s = rhs.count;
-            d.buckets += s.buckets;
-            d.docs    += s.docs;
-            d.bytes   += s.bytes;
-            d.ready   += s.ready;
-            d.active  += s.active;
+            if (bucket.getUsedBits() < lowestUsedBit) {
+                lowestUsedBit = bucket.getUsedBits();
+            }
         }
     };
+
+    void add(const MetricsUpdater& rhs) noexcept {
+        auto& d = count;
+        const auto& s = rhs.count;
+        d.buckets += s.buckets;
+        d.docs    += s.docs;
+        d.bytes   += s.bytes;
+        d.ready   += s.ready;
+        d.active  += s.active;
+    }
+};
 
 }   // End of anonymous namespace
 
 StorBucketDatabase::Entry
 BucketManager::getBucketInfo(const document::Bucket &bucket) const
 {
-    StorBucketDatabase::WrappedEntry entry(
-            _component.getBucketDatabase(bucket.getBucketSpace()).get(bucket.getBucketId(), "BucketManager::getBucketInfo"));
+    StorBucketDatabase::WrappedEntry entry(_component.getBucketDatabase(bucket.getBucketSpace()).get(bucket.getBucketId(), "BucketManager::getBucketInfo"));
     return *entry;
 }
 
@@ -226,7 +209,7 @@ BucketManager::updateMetrics(bool updateDocCount)
 
     if (!updateDocCount || _doneInitialized) {
         MetricsUpdater total;
-        for (auto& space : _component.getBucketSpaceRepo()) {
+        for (const auto& space : _component.getBucketSpaceRepo()) {
             MetricsUpdater m;
             auto guard = space.second->bucketDatabase().acquire_read_guard();
             guard->for_each(std::ref(m));
@@ -255,10 +238,9 @@ BucketManager::updateMetrics(bool updateDocCount)
 }
 
 void BucketManager::update_bucket_db_memory_usage_metrics() {
-    for (auto& space : _component.getBucketSpaceRepo()) {
+    for (const auto& space : _component.getBucketSpaceRepo()) {
         auto bm = _metrics->bucket_spaces.find(space.first);
-        bm->second->bucket_db_metrics.memory_usage.update(
-                space.second->bucketDatabase().detailed_memory_usage());
+        bm->second->bucket_db_metrics.memory_usage.update(space.second->bucketDatabase().detailed_memory_usage());
     }
 }
 
@@ -269,10 +251,8 @@ void BucketManager::updateMinUsedBits()
     // When going through to get sizes, we also record min bits
     MinimumUsedBitsTracker& bitTracker(_component.getMinUsedBitsTracker());
     if (bitTracker.getMinUsedBits() != m.lowestUsedBit) {
-        NodeStateUpdater::Lock::SP lock(
-                _component.getStateUpdater().grabStateChangeLock());
-        lib::NodeState ns(
-                *_component.getStateUpdater().getReportedNodeState());
+        NodeStateUpdater::Lock::SP lock(_component.getStateUpdater().grabStateChangeLock());
+        lib::NodeState ns(*_component.getStateUpdater().getReportedNodeState());
         bitTracker.setMinUsedBits(m.lowestUsedBit);
         ns.setMinUsedBits(m.lowestUsedBit);
         _component.getStateUpdater().setReportedNodeState(ns);
@@ -282,8 +262,8 @@ void BucketManager::updateMinUsedBits()
 // Responsible for sending on messages that was previously queued
 void BucketManager::run(framework::ThreadHandle& thread)
 {
-    const int64_t CHECK_MINUSEDBITS_INTERVAL = 1000*30;
-    framework::MilliSecTime timeToCheckMinUsedBits(0);
+    constexpr vespalib::duration CHECK_MINUSEDBITS_INTERVAL = 30s;
+    vespalib::steady_time timeToCheckMinUsedBits = vespalib::steady_time::min();
     while (!thread.interrupted()) {
         bool didWork = false;
         BucketInfoRequestMap infoReqs;
@@ -308,10 +288,9 @@ void BucketManager::run(framework::ThreadHandle& thread)
                 thread.registerTick(framework::PROCESS_CYCLE);
             }
         }
-        if (timeToCheckMinUsedBits < _component.getClock().getTimeInMillis()) {
+        if (timeToCheckMinUsedBits < _component.getClock().getMonotonicTime()) {
             updateMinUsedBits();
-            timeToCheckMinUsedBits = _component.getClock().getTimeInMillis();
-            timeToCheckMinUsedBits += framework::MilliSecTime(CHECK_MINUSEDBITS_INTERVAL);
+            timeToCheckMinUsedBits = _component.getClock().getMonotonicTime() + CHECK_MINUSEDBITS_INTERVAL;
         }
     }
 }
@@ -363,7 +342,7 @@ BucketManager::reportStatus(std::ostream& out,
         using vespalib::xml::XmlAttribute;
 
         xmlReporter << vespalib::xml::XmlTag("buckets");
-        for (auto& space : _component.getBucketSpaceRepo()) {
+        for (const auto& space : _component.getBucketSpaceRepo()) {
             xmlReporter << XmlTag("bucket-space")
                         << XmlAttribute("name", document::FixedBucketSpaces::to_string(space.first));
             BucketDBDumper dumper(xmlReporter.getStream());
@@ -410,7 +389,7 @@ bool BucketManager::onRequestBucketInfo(
             const std::shared_ptr<api::RequestBucketInfoCommand>& cmd)
 {
     LOG(debug, "Got request bucket info command %s", cmd->toString().c_str());
-    if (cmd->getBuckets().size() == 0 && cmd->hasSystemState()) {
+    if (cmd->getBuckets().empty() && cmd->hasSystemState()) {
 
         std::lock_guard guard(_workerLock);
         _bucketInfoRequests[cmd->getBucketSpace()].push_back(cmd);
@@ -423,23 +402,14 @@ bool BucketManager::onRequestBucketInfo(
 
     BucketSpace bucketSpace(cmd->getBucketSpace());
     api::RequestBucketInfoReply::EntryVector info;
-    if (cmd->getBuckets().size()) {
-        typedef std::map<document::BucketId,
-                         StorBucketDatabase::WrappedEntry> BucketMap;
-        for (uint32_t i = 0; i < cmd->getBuckets().size(); i++) {
-            BucketMap entries(_component.getBucketDatabase(bucketSpace).getAll(
-                                    cmd->getBuckets()[i],
-                                    "BucketManager::onRequestBucketInfo"));
-            for (BucketMap::iterator it = entries.begin();
-                 it != entries.end(); ++it)
-            {
-                info.push_back(api::RequestBucketInfoReply::Entry(
-                            it->first, it->second->getBucketInfo()));
+    if (!cmd->getBuckets().empty()) {
+        for (auto bucketId : cmd->getBuckets()) {
+            for (const auto & entry : _component.getBucketDatabase(bucketSpace).getAll(bucketId, "BucketManager::onRequestBucketInfo")) {
+                info.emplace_back(entry.first, entry.second->getBucketInfo());
             }
         }
     } else {
-        LOG(error, "We don't support fetching bucket info without bucket "
-                   "list or system state");
+        LOG(error, "We don't support fetching bucket info without bucket list or system state");
         assert(false);
     }
     _metrics->simpleBucketInfoRequestSize.addValue(info.size());
@@ -449,17 +419,14 @@ bool BucketManager::onRequestBucketInfo(
 
     LOG(spam, "Returning list of checksums:");
     for (const auto & entry : reply->getBucketInfo()) {
-        LOG(spam, "%s: %s",
-            entry._bucketId.toString().c_str(),
-            entry._info.toString().c_str());
+        LOG(spam, "%s: %s", entry._bucketId.toString().c_str(), entry._info.toString().c_str());
     }
     sendUp(reply);
     // Remaining replies dispatched by queueGuard upon function exit.
     return true;
 }
 
-BucketManager::ScopedQueueDispatchGuard::ScopedQueueDispatchGuard(
-        BucketManager& mgr)
+BucketManager::ScopedQueueDispatchGuard::ScopedQueueDispatchGuard(BucketManager& mgr)
     : _mgr(mgr)
 {
     _mgr.enterQueueProtectedSection();
@@ -490,7 +457,7 @@ BucketManager::leaveQueueProtectedSection(ScopedQueueDispatchGuard& queueGuard)
     // may alter the relevant state.
     --_requestsCurrentlyProcessing;
     if (_requestsCurrentlyProcessing == 0) {
-        for (auto& qr : _queuedReplies) {
+        for (const auto& qr : _queuedReplies) {
             sendUp(qr);
         }
         _queuedReplies.clear();
@@ -511,7 +478,7 @@ BucketManager::processRequestBucketInfoCommands(document::BucketSpace bucketSpac
     //   from the current cluster state.
 
     std::set<uint16_t> seenDistributors;
-    typedef std::shared_ptr<api::RequestBucketInfoCommand> RBISP;
+    using RBISP = std::shared_ptr<api::RequestBucketInfoCommand>;
     std::map<uint16_t, RBISP> requests;
 
     auto distribution(_component.getBucketSpaceRepo().get(bucketSpace).getDistribution());
@@ -524,16 +491,14 @@ BucketManager::processRequestBucketInfoCommands(document::BucketSpace bucketSpac
 
     LOG(debug, "Processing %zu queued request bucket info commands for bucket space %s. "
         "Using cluster state '%s' and distribution hash '%s'",
-        reqs.size(),
-        bucketSpace.toString().c_str(),
-        clusterState->toString().c_str(),
-        our_hash.c_str());
+        reqs.size(), bucketSpace.toString().c_str(), clusterState->toString().c_str(), our_hash.c_str());
 
     std::lock_guard clusterStateGuard(_clusterStateLock);
-    for (auto it = reqs.rbegin(); it != reqs.rend(); ++it) {
+    for (auto it = reqs.rbegin(); it != reqs.rend(); it++) {
+        const auto & req = *it;
         // Currently small requests should not be forwarded to worker thread
-        assert((*it)->hasSystemState());
-        const auto their_hash = (*it)->getDistributionHash();
+        assert(req->hasSystemState());
+        const auto their_hash = req->getDistributionHash();
 
         std::ostringstream error;
         if ((clusterState->getVersion() != _last_cluster_state_version_initiated) ||
@@ -543,13 +508,13 @@ BucketManager::processRequestBucketInfoCommands(document::BucketSpace bucketSpac
             // to another cluster state version does not happen atomically. Detect and
             // gracefully deal with the case where we're not internally in sync.
             error << "Inconsistent internal cluster state on node during transition; "
-                  << "failing request from distributor " << (*it)->getDistributor()
+                  << "failing request from distributor " << req->getDistributor()
                   << " so it can be retried. Node version is " << clusterState->getVersion()
                   << ", last version seen by the bucket manager is " << _last_cluster_state_version_initiated
                   << ", last internally converged version is " << _last_cluster_state_version_completed;
-        } else if ((*it)->getSystemState().getVersion() != _last_cluster_state_version_initiated) {
+        } else if (req->getSystemState().getVersion() != _last_cluster_state_version_initiated) {
             error << "Ignoring bucket info request for cluster state version "
-                  << (*it)->getSystemState().getVersion() << " as newest "
+                  << req->getSystemState().getVersion() << " as newest "
                   << "version we know of is " << _last_cluster_state_version_initiated;
         } else if (!their_hash.empty() && their_hash != our_hash) {
             // Mismatching config hash indicates nodes are out of sync with their config generations
@@ -557,21 +522,21 @@ BucketManager::processRequestBucketInfoCommands(document::BucketSpace bucketSpac
                   << our_hash.c_str() << ", their hash: " << their_hash.c_str() << ")";
         }
         if (error.str().empty()) {
-            auto result = seenDistributors.insert((*it)->getDistributor());
+            auto result = seenDistributors.insert(req->getDistributor());
             if (result.second) {
-                requests[(*it)->getDistributor()] = *it;
+                requests[req->getDistributor()] = req;
                 continue;
             } else {
                 error << "There is already a newer bucket info request for this"
-                      << " node from distributor " << (*it)->getDistributor();
+                      << " node from distributor " << req->getDistributor();
             }
         }
         
     	// If we get here, message should be failed
-        auto reply = std::make_shared<api::RequestBucketInfoReply>(**it);
+        auto reply = std::make_shared<api::RequestBucketInfoReply>(*req);
         reply->setResult(api::ReturnCode(api::ReturnCode::REJECTED, error.str()));
         LOG(debug, "Rejecting request from distributor %u: %s",
-            (*it)->getDistributor(),
+            req->getDistributor(),
             error.str().c_str());
         sendUp(reply);
     }
@@ -583,7 +548,7 @@ BucketManager::processRequestBucketInfoCommands(document::BucketSpace bucketSpac
 
     std::ostringstream distrList;
     std::unordered_map<uint16_t, api::RequestBucketInfoReply::EntryVector> result;
-    for (auto& nodeAndCmd : requests) {
+    for (const auto& nodeAndCmd : requests) {
         result[nodeAndCmd.first];
         if (LOG_WOULD_LOG(debug)) {
             distrList << ' ' << nodeAndCmd.first;
@@ -596,29 +561,24 @@ BucketManager::processRequestBucketInfoCommands(document::BucketSpace bucketSpac
     }
 
     _metrics->fullBucketInfoRequestSize.addValue(requests.size());
-    LOG(debug, "Processing %zu bucket info requests for "
-               "distributors %s, using system state %s",
-        requests.size(), distrList.str().c_str(),
-        clusterState->toString().c_str());
+    LOG(debug, "Processing %zu bucket info requests for distributors %s, using system state %s",
+        requests.size(), distrList.str().c_str(), clusterState->toString().c_str());
    framework::MilliSecTimer runStartTime(_component.getClock());
     // Don't allow logging to lower performance of inner loop.
     // Call other type of instance if logging
     const document::BucketIdFactory& idFac(_component.getBucketIdFactory());
     if (LOG_WOULD_LOG(spam)) {
-        DistributorInfoGatherer<true> builder(
-                *clusterState, result, idFac, distribution);
+        DistributorInfoGatherer<true> builder(*clusterState, result, idFac, distribution);
         _component.getBucketDatabase(bucketSpace).for_each_chunked(std::ref(builder),
                         "BucketManager::processRequestBucketInfoCommands-1");
     } else {
-        DistributorInfoGatherer<false> builder(
-                *clusterState, result, idFac, distribution);
+        DistributorInfoGatherer<false> builder(*clusterState, result, idFac, distribution);
         _component.getBucketDatabase(bucketSpace).for_each_chunked(std::ref(builder),
                         "BucketManager::processRequestBucketInfoCommands-2");
     }
     _metrics->fullBucketInfoLatency.addValue(runStartTime.getElapsedTimeAsDouble());
-    for (auto& nodeAndCmd : requests) {
-        auto reply(std::make_shared<api::RequestBucketInfoReply>(
-                *nodeAndCmd.second));
+    for (const auto& nodeAndCmd : requests) {
+        auto reply(std::make_shared<api::RequestBucketInfoReply>(*nodeAndCmd.second));
         reply->getBucketInfo().swap(result[nodeAndCmd.first]);
         sendUp(reply);
     }
@@ -657,8 +617,7 @@ BucketManager::verifyAndUpdateLastModified(api::StorageCommand& cmd,
     uint64_t prevLastModified = 0;
 
     {
-        StorBucketDatabase::WrappedEntry entry(
-                _component.getBucketDatabase(bucket.getBucketSpace()).get(bucket.getBucketId(), "BucketManager::verify"));
+        StorBucketDatabase::WrappedEntry entry(_component.getBucketDatabase(bucket.getBucketSpace()).get(bucket.getBucketId(), "BucketManager::verify"));
 
         if (entry.exist()) {
             prevLastModified = entry->info.getLastModified();
@@ -674,16 +633,11 @@ BucketManager::verifyAndUpdateLastModified(api::StorageCommand& cmd,
     }
 
     api::StorageReply::UP reply = cmd.makeReply();
-    reply->setResult(api::ReturnCode(
-                             api::ReturnCode::STALE_TIMESTAMP,
+    reply->setResult(api::ReturnCode(api::ReturnCode::STALE_TIMESTAMP,
                              vespalib::make_string(
-                                     "Received command %s with a lower/equal timestamp "
-                                     " (%" PRIu64 ") than the last operation received for "
-                                     "bucket %s, with timestamp %" PRIu64,
-                                     cmd.toString().c_str(),
-                                     lastModified,
-                                     bucket.toString().c_str(),
-                                     prevLastModified)));
+                                     "Received command %s with a lower/equal timestamp (%" PRIu64 ") than the last "
+                                     "operation received for bucket %s, with timestamp %" PRIu64,
+                                     cmd.toString().c_str(), lastModified, bucket.toString().c_str(), prevLastModified)));
 
 
     sendUp(api::StorageMessage::SP(reply.release()));
@@ -728,10 +682,8 @@ BucketManager::onCreateBucket(const api::CreateBucketCommand::SP& cmd)
 {
     MinimumUsedBitsTracker& bitTracker(_component.getMinUsedBitsTracker());
     if (bitTracker.update(cmd->getBucketId())) {
-        NodeStateUpdater::Lock::SP lock(
-                _component.getStateUpdater().grabStateChangeLock());
-        lib::NodeState ns(
-                *_component.getStateUpdater().getReportedNodeState());
+        NodeStateUpdater::Lock::SP lock(_component.getStateUpdater().grabStateChangeLock());
+        lib::NodeState ns(*_component.getStateUpdater().getReportedNodeState());
         ns.setMinUsedBits(bitTracker.getMinUsedBits());
         _component.getStateUpdater().setReportedNodeState(ns);
     }
@@ -744,10 +696,8 @@ BucketManager::onMergeBucket(const api::MergeBucketCommand::SP& cmd)
 {
     MinimumUsedBitsTracker& bitTracker(_component.getMinUsedBitsTracker());
     if (bitTracker.update(cmd->getBucketId())) {
-        NodeStateUpdater::Lock::SP lock(
-                _component.getStateUpdater().grabStateChangeLock());
-        lib::NodeState ns(
-                *_component.getStateUpdater().getReportedNodeState());
+        NodeStateUpdater::Lock::SP lock(_component.getStateUpdater().grabStateChangeLock());
+        lib::NodeState ns(*_component.getStateUpdater().getReportedNodeState());
         ns.setMinUsedBits(bitTracker.getMinUsedBits());
         _component.getStateUpdater().setReportedNodeState(ns);
     }
@@ -757,13 +707,7 @@ BucketManager::onMergeBucket(const api::MergeBucketCommand::SP& cmd)
 bool
 BucketManager::onRemove(const api::RemoveCommand::SP& cmd)
 {
-    if (!verifyAndUpdateLastModified(*cmd,
-                                     cmd->getBucket(),
-                                     cmd->getTimestamp())) {
-        return true;
-    }
-
-    return false;
+    return !verifyAndUpdateLastModified(*cmd, cmd->getBucket(), cmd->getTimestamp());
 }
 
 bool
@@ -775,13 +719,7 @@ BucketManager::onRemoveReply(const api::RemoveReply::SP& reply)
 bool
 BucketManager::onPut(const api::PutCommand::SP& cmd)
 {
-    if (!verifyAndUpdateLastModified(*cmd,
-                                     cmd->getBucket(),
-                                     cmd->getTimestamp())) {
-        return true;
-    }
-
-    return false;
+    return !verifyAndUpdateLastModified(*cmd, cmd->getBucket(), cmd->getTimestamp());
 }
 
 bool
@@ -793,13 +731,7 @@ BucketManager::onPutReply(const api::PutReply::SP& reply)
 bool
 BucketManager::onUpdate(const api::UpdateCommand::SP& cmd)
 {
-    if (!verifyAndUpdateLastModified(*cmd,
-                                     cmd->getBucket(),
-                                     cmd->getTimestamp())) {
-        return true;
-    }
-
-    return false;
+    return !verifyAndUpdateLastModified(*cmd, cmd->getBucket(), cmd->getTimestamp());
 }
 
 bool
@@ -809,10 +741,8 @@ BucketManager::onUpdateReply(const api::UpdateReply::SP& reply)
 }
 
 bool
-BucketManager::onNotifyBucketChangeReply(
-        const api::NotifyBucketChangeReply::SP& reply)
+BucketManager::onNotifyBucketChangeReply(const api::NotifyBucketChangeReply::SP&)
 {
-    (void) reply;
     // Handling bucket change replies is a no-op.
     return true;
 }
@@ -861,8 +791,7 @@ BucketManager::enqueueAsConflictIfProcessingRequest(
 {
     std::lock_guard guard(_queueProcessingLock);
     if (_requestsCurrentlyProcessing != 0) {
-        LOG(debug, "Enqueued %s due to concurrent RequestBucketInfo",
-            reply->toString().c_str());
+        LOG(debug, "Enqueued %s due to concurrent RequestBucketInfo", reply->toString().c_str());
         _queuedReplies.push_back(reply);
         _conflictingBuckets.insert(reply->getBucketId());
         return true;

@@ -100,9 +100,8 @@ public final class NGramExpression extends Expression {
 
     @Override
     public boolean equals(Object obj) {
-        if (!(obj instanceof NGramExpression)) return false;
+        if (!(obj instanceof NGramExpression rhs)) return false;
 
-        NGramExpression rhs = (NGramExpression)obj;
         if (linguistics == null) {
             if (rhs.linguistics != null) return false;
         } else if (rhs.linguistics != null) {
@@ -118,4 +117,5 @@ public final class NGramExpression extends Expression {
     public int hashCode() {
         return getClass().hashCode() + gramSize;
     }
+
 }

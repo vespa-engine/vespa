@@ -4,7 +4,8 @@ package com.yahoo.vespa.model.container;
 import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.api.container.ContainerServiceType;
 import com.yahoo.config.model.deploy.DeployState;
-import com.yahoo.config.model.producer.AbstractConfigProducer;
+import com.yahoo.config.model.producer.AnyConfigProducer;
+import com.yahoo.config.model.producer.TreeConfigProducer;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.container.ComponentsConfig;
 import com.yahoo.container.QrConfig;
@@ -28,6 +29,7 @@ import com.yahoo.vespa.model.container.http.Http;
 import com.yahoo.vespa.model.container.http.JettyHttpServer;
 import com.yahoo.vespa.model.filedistribution.FileDistributionConfigProducer;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -37,6 +39,7 @@ import java.util.Optional;
 
 import static com.yahoo.container.QrConfig.Filedistributor;
 import static com.yahoo.container.QrConfig.Rpc;
+import static com.yahoo.vespa.defaults.Defaults.getDefaults;
 
 /**
  * Note about components: In general, all components should belong to the cluster and not the container. However,
@@ -62,7 +65,7 @@ public abstract class Container extends AbstractService implements
     /** The cluster this container belongs to, or null if it is not added to any cluster */
     private ContainerCluster<?> owner = null;
 
-    protected final AbstractConfigProducer<?> parent;
+    protected final TreeConfigProducer<?> parent;
     private final String name;
     private boolean requireSpecificPorts = true;
 
@@ -73,7 +76,6 @@ public abstract class Container extends AbstractService implements
     private final boolean retired;
     /** The unique index of this node */
     private final int index;
-    private final boolean useOldStartupScript;
     private final boolean dumpHeapOnShutdownTimeout;
     private final double shutdownTimeoutS;
 
@@ -82,17 +84,16 @@ public abstract class Container extends AbstractService implements
 
     private final JettyHttpServer defaultHttpServer;
 
-    protected Container(AbstractConfigProducer<?> parent, String name, int index, DeployState deployState) {
+    protected Container(TreeConfigProducer<?> parent, String name, int index, DeployState deployState) {
         this(parent, name, false, index, deployState);
     }
 
-    protected Container(AbstractConfigProducer<?> parent, String name, boolean retired, int index, DeployState deployState) {
+    protected Container(TreeConfigProducer<?> parent, String name, boolean retired, int index, DeployState deployState) {
         super(parent, name);
         this.name = name;
         this.parent = parent;
         this.retired = retired;
         this.index = index;
-        useOldStartupScript = deployState.featureFlags().useOldJdiscContainerStartup();
         dumpHeapOnShutdownTimeout = deployState.featureFlags().containerDumpHeapOnShutdownTimeout();
         shutdownTimeoutS = deployState.featureFlags().containerShutdownTimeout();
         this.defaultHttpServer = new JettyHttpServer("DefaultHttpServer", containerClusterOrNull(parent), deployState);
@@ -301,10 +302,7 @@ public abstract class Container extends AbstractService implements
     }
 
     public Optional<String> getStartupCommand() {
-        if (useOldStartupScript) {
-            return Optional.of("PRELOAD=" + getPreLoad() + " exec vespa-start-container-daemon " + getJvmOptions() + " ");
-        }
-        return Optional.of("PRELOAD=" + getPreLoad() + " exec ${VESPA_HOME}/libexec/vespa/script-utils vespa-start-container-daemon " + getJvmOptions() + " ");
+        return Optional.of("PRELOAD=" + getPreLoad() + " exec ${VESPA_HOME}/libexec/vespa/vespa-wrapper vespa-start-container-daemon " + getJvmOptions() + " ");
     }
 
     @Override
@@ -350,18 +348,20 @@ public abstract class Container extends AbstractService implements
         return Collections.unmodifiableCollection(allComponents);
     }
 
-    private void addAllEnabledComponents(Collection<Component<?, ?>> allComponents, AbstractConfigProducer<?> current) {
-        for (AbstractConfigProducer<?> child: current.getChildren().values()) {
+    private void addAllEnabledComponents(Collection<Component<?, ?>> allComponents, TreeConfigProducer<?> current) {
+        for (var child: current.getChildren().values()) {
             if ( ! httpServerEnabled() && isHttpServer(child)) continue;
 
             if (child instanceof Component)
                 allComponents.add((Component<?, ?>) child);
 
-            addAllEnabledComponents(allComponents, child);
+            if (child instanceof TreeConfigProducer<?> t) {
+                addAllEnabledComponents(allComponents, t);
+            }
         }
     }
 
-    private boolean isHttpServer(AbstractConfigProducer<?> component) {
+    private boolean isHttpServer(AnyConfigProducer component) {
         return component instanceof JettyHttpServer;
     }
 
@@ -389,6 +389,12 @@ public abstract class Container extends AbstractService implements
         return dimensions;
     }
 
+    protected String prepareStopCommand(Duration timeout) {
+        long rpcTimeoutSeconds = timeout.toSeconds() + 10;
+        String rpcParams = "-t " + rpcTimeoutSeconds + " tcp/localhost:" + getRpcPort() + " prepareStop d:" + timeout.toSeconds();
+        return getDefaults().underVespaHome("bin/vespa-rpc-invoke") + " " + rpcParams;
+    }
+
     private boolean messageBusEnabled() {
         return containerCluster().isPresent() && containerCluster().get().messageBusEnabled();
     }
@@ -405,7 +411,7 @@ public abstract class Container extends AbstractService implements
         return Optional.ofNullable(containerClusterOrNull(parent));
     }
 
-    private static ContainerCluster containerClusterOrNull(AbstractConfigProducer producer) {
+    private static ContainerCluster containerClusterOrNull(AnyConfigProducer producer) {
         return producer instanceof ContainerCluster<?> ? (ContainerCluster<?>) producer : null;
     }
 

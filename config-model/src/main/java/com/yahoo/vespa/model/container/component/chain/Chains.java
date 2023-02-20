@@ -4,7 +4,8 @@ package com.yahoo.vespa.model.container.component.chain;
 import com.yahoo.component.chain.model.ChainsModel;
 import com.yahoo.component.provider.ComponentRegistry;
 import com.yahoo.container.core.ChainsConfig;
-import com.yahoo.config.model.producer.AbstractConfigProducer;
+import com.yahoo.config.model.producer.AnyConfigProducer;
+import com.yahoo.config.model.producer.TreeConfigProducer;
 import com.yahoo.vespa.model.container.component.ComponentGroup;
 import com.yahoo.vespa.model.container.component.ConfigProducerGroup;
 
@@ -18,13 +19,13 @@ import java.util.Set;
  * @author gjoranv
  */
 public class Chains<CHAIN extends Chain<?>>
-        extends AbstractConfigProducer<AbstractConfigProducer<?>>
+        extends TreeConfigProducer<AnyConfigProducer>
         implements ChainsConfig.Producer {
 
     private final ComponentGroup<ChainedComponent<?>> componentGroup;
     private final ConfigProducerGroup<CHAIN> chainGroup;
 
-    public Chains(AbstractConfigProducer parent, String subId) {
+    public Chains(TreeConfigProducer<? super Chains> parent, String subId) {
         super(parent, subId);
         componentGroup = new ComponentGroup<>(this, "component");
         chainGroup = new ConfigProducerGroup<>(this, "chain");

@@ -19,7 +19,7 @@ namespace document {
 
 namespace {
 
-static void throwOutOfBounds(size_t want, size_t has) __attribute__((noinline, noreturn));
+[[noreturn]] static void throwOutOfBounds(size_t want, size_t has) __attribute__((noinline));
 
 void throwOutOfBounds(size_t want, size_t has)
 {

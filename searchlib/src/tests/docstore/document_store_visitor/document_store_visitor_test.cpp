@@ -240,7 +240,7 @@ Fixture::Fixture()
       _storeConfig(DocumentStore::Config(CompressionConfig::NONE, 0, 0),
                    LogDataStore::Config().setMaxFileSize(50000).setMaxBucketSpread(3.0)
                            .setFileConfig(WriteableFileChunk::Config(CompressionConfig(), 16_Ki))),
-      _executor(1, 128_Ki),
+      _executor(1),
       _fileHeaderContext(),
       _tlSyncer(),
       _store(),

@@ -33,6 +33,10 @@ public class Reference extends Name implements Comparable<Reference> {
 
     private final static Pattern identifierPattern = Pattern.compile("[A-Za-z0-9_@.\"$-]+");
 
+    private static boolean isValidIdentifier(String name) {
+        return identifierPattern.matcher(name).matches();
+    }
+
     public Reference(String name, Arguments arguments, String output) {
         this(name, arguments, output, false);
     }
@@ -142,7 +146,7 @@ public class Reference extends Name implements Comparable<Reference> {
 
     /** Creates a reference from a simple identifier. */
     public static Reference fromIdentifier(String identifier) {
-        if ( ! identifierPattern.matcher(identifier).matches())
+        if ( ! isValidIdentifier(identifier))
             throw new IllegalArgumentException("Identifiers can only contain [A-Za-z0-9_@.\"$-]+, but was '" + identifier + "'");
         return new Reference(identifier, Arguments.EMPTY, null, true);
     }
@@ -156,21 +160,36 @@ public class Reference extends Name implements Comparable<Reference> {
 
     /**
      * Returns the given simple feature as a reference, or empty if it is not a valid simple
-     * feature string on the form name(argument).
+     * feature string on the form name(argument) or name(argument).outputname
      */
     public static Optional<Reference> simple(String feature) {
         int startParenthesis = feature.indexOf('(');
-        if (startParenthesis < 0)
+        if (startParenthesis < 1)
             return Optional.empty();
         int endParenthesis = feature.lastIndexOf(')');
         String featureName = feature.substring(0, startParenthesis);
-        if (startParenthesis < 1 || endParenthesis < startParenthesis) return Optional.empty();
+        if (endParenthesis < startParenthesis)
+            return Optional.empty();
         String argument = feature.substring(startParenthesis + 1, endParenthesis);
         if (argument.startsWith("'") || argument.startsWith("\""))
             argument = argument.substring(1);
         if (argument.endsWith("'") || argument.endsWith("\""))
             argument = argument.substring(0, argument.length() - 1);
-        return Optional.of(simple(featureName, argument));
+        if ( ! isValidIdentifier(argument))
+            return Optional.empty();
+        Reference result = simple(featureName, argument);
+        if (endParenthesis + 1 == feature.length())
+            return Optional.of(result);
+        // text after end parenthesis; must be ".outputname"
+        int lastDot = feature.lastIndexOf('.');
+        if (endParenthesis + 1 == lastDot && lastDot + 1 < feature.length()) {
+            String outputName = feature.substring(lastDot + 1);
+            if (isValidIdentifier(outputName)) {
+                result = result.withOutput(outputName);
+                return Optional.of(result);
+            }
+        }
+        return Optional.empty();
     }
 
 }

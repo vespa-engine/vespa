@@ -14,7 +14,7 @@ namespace document {
 
 class IntFieldValue final : public NumericFieldValue<int32_t> {
 public:
-    typedef int32_t Number;
+    using Number = int32_t;
 
     IntFieldValue(Number value = 0) : NumericFieldValue<Number>(Type::INT, value) {}
 

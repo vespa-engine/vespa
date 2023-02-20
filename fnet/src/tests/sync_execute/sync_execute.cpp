@@ -18,7 +18,7 @@ TEST("sync execute") {
     DoIt exe2;
     DoIt exe3;
     DoIt exe4;
-    FastOS_ThreadPool pool(128_Ki);
+    FastOS_ThreadPool pool;
     FNET_Transport transport;
     ASSERT_TRUE(transport.execute(&exe1));
     ASSERT_TRUE(transport.Start(&pool));

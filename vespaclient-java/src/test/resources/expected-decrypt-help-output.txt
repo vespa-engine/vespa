@@ -19,7 +19,11 @@ the quotes).
  -o,--output-file <arg>        Output file for decrypted plaintext.
                                Specify '-' (without the quotes) to write
                                plaintext to STDOUT instead of a file.
+ -r,--reseal-request           Delegate private key decryption via an
+                               interactive resealing session
  -t,--token <arg>              Token generated when the input file was
                                encrypted
+ -z,--zstd-decompress          Decrypted data will be transparently
+                               Zstd-decompressed before being output.
 Note: this is a BETA tool version; its interface may be changed at any
 time

@@ -30,7 +30,7 @@ class SelectPruner;
 class CachedSelect
 {
 public:
-    typedef std::shared_ptr<CachedSelect> SP;
+    using SP = std::shared_ptr<CachedSelect>;
 
     class Session {
     private:

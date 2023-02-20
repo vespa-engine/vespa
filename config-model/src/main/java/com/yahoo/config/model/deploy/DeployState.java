@@ -11,6 +11,7 @@ import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.application.api.FileRegistry;
 import com.yahoo.config.application.api.UnparsedConfigDefinition;
 import com.yahoo.config.application.api.ValidationOverrides;
+import com.yahoo.config.model.ConfigModelContext.ApplicationType;
 import com.yahoo.config.model.api.ConfigDefinitionRepo;
 import com.yahoo.config.model.api.ContainerEndpoint;
 import com.yahoo.config.model.api.EndpointCertificateSecrets;
@@ -28,11 +29,11 @@ import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.io.IOUtils;
-import com.yahoo.search.query.profile.QueryProfileRegistry;
 import com.yahoo.schema.Application;
+import com.yahoo.schema.ApplicationBuilder;
 import com.yahoo.schema.RankProfileRegistry;
 import com.yahoo.schema.Schema;
-import com.yahoo.schema.ApplicationBuilder;
+import com.yahoo.search.query.profile.QueryProfileRegistry;
 import com.yahoo.vespa.config.ConfigDefinition;
 import com.yahoo.vespa.config.ConfigDefinitionBuilder;
 import com.yahoo.vespa.config.ConfigDefinitionKey;
@@ -71,7 +72,6 @@ public class DeployState implements ConfigDefinitionStore {
     private final List<Schema> schemas;
     private final ApplicationPackage applicationPackage;
     private final Optional<ConfigDefinitionRepo> configDefinitionRepo;
-    private final Optional<ApplicationPackage> permanentApplicationPackage;
     private final Optional<Model> previousModel;
     private final boolean accessLoggingEnabledByDefault;
     private final ModelContext.Properties properties;
@@ -111,7 +111,6 @@ public class DeployState implements ConfigDefinitionStore {
                         Provisioned provisioned,
                         ModelContext.Properties properties,
                         Version vespaVersion,
-                        Optional<ApplicationPackage> permanentApplicationPackage,
                         Optional<ConfigDefinitionRepo> configDefinitionRepo,
                         Optional<Model> previousModel,
                         Set<ContainerEndpoint> endpoints,
@@ -123,7 +122,8 @@ public class DeployState implements ConfigDefinitionStore {
                         Version wantedNodeVespaVersion,
                         boolean accessLoggingEnabledByDefault,
                         Optional<DockerImage> wantedDockerImageRepo,
-                        Reindexing reindexing) {
+                        Reindexing reindexing,
+                        Optional<ValidationOverrides> validationOverrides) {
         this.logger = deployLogger;
         this.fileRegistry = fileRegistry;
         this.executor = executor;
@@ -137,7 +137,6 @@ public class DeployState implements ConfigDefinitionStore {
         this.provisioned = provisioned;
         this.schemas = List.copyOf(application.schemas().values());
         this.documentModel = application.documentModel();
-        this.permanentApplicationPackage = permanentApplicationPackage;
         this.configDefinitionRepo = configDefinitionRepo;
         this.endpoints = Set.copyOf(endpoints);
         this.zone = zone;
@@ -145,8 +144,8 @@ public class DeployState implements ConfigDefinitionStore {
         this.semanticRules = semanticRules; // TODO: Remove this by seeing how pagetemplates are propagated
         this.importedModels = importMlModels(applicationPackage, modelImporters, executor);
 
-        this.validationOverrides = applicationPackage.getValidationOverrides().map(ValidationOverrides::fromXml)
-                                                     .orElse(ValidationOverrides.empty);
+        this.validationOverrides = validationOverrides.orElse(applicationPackage.getValidationOverrides().map(ValidationOverrides::fromXml)
+                                                      .orElse(ValidationOverrides.empty));
 
         this.wantedNodeVespaVersion = wantedNodeVespaVersion;
         this.now = now;
@@ -251,10 +250,6 @@ public class DeployState implements ConfigDefinitionStore {
 
     public HostProvisioner getProvisioner() { return provisioner; }
 
-    public Optional<ApplicationPackage> getPermanentApplicationPackage() {
-        return permanentApplicationPackage;
-    }
-
     public ModelContext.Properties getProperties() { return properties; }
 
     public ModelContext.FeatureFlags featureFlags() { return properties.featureFlags(); }
@@ -309,6 +304,11 @@ public class DeployState implements ConfigDefinitionStore {
 
     public Optional<Reindexing> reindexing() { return Optional.ofNullable(reindexing); }
 
+    public boolean isHostedTenantApplication(ApplicationType type) {
+        boolean isTesterApplication = getProperties().applicationId().instance().isTester();
+        return isHosted() && type == ApplicationType.DEFAULT && !isTesterApplication;
+    }
+
     public static class Builder {
 
         private ApplicationPackage applicationPackage = MockApplicationPackage.createEmpty();
@@ -317,7 +317,6 @@ public class DeployState implements ConfigDefinitionStore {
         private DeployLogger logger = new BaseDeployLogger();
         private Optional<HostProvisioner> hostProvisioner = Optional.empty();
         private Provisioned provisioned = new Provisioned();
-        private Optional<ApplicationPackage> permanentApplicationPackage = Optional.empty();
         private ModelContext.Properties properties = new TestProperties();
         private Version version = new Version(1, 0, 0);
         private Optional<ConfigDefinitionRepo> configDefinitionRepo = Optional.empty();
@@ -329,9 +328,10 @@ public class DeployState implements ConfigDefinitionStore {
         private Version wantedNodeVespaVersion = Vtag.currentVersion;
         private boolean accessLoggingEnabledByDefault = true;
         private Optional<DockerImage> wantedDockerImageRepo = Optional.empty();
-        private Reindexing reindexing = null;
         private RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
         private QueryProfiles queryProfiles = null;
+        private Reindexing reindexing = null;
+        private Optional<ValidationOverrides> validationOverrides = Optional.empty();
 
         public Builder() {}
 
@@ -362,11 +362,6 @@ public class DeployState implements ConfigDefinitionStore {
 
         public Builder provisioned(Provisioned provisioned) {
             this.provisioned = provisioned;
-            return this;
-        }
-
-        public Builder permanentApplicationPackage(Optional<ApplicationPackage> permanentApplicationPackage) {
-            this.permanentApplicationPackage = permanentApplicationPackage;
             return this;
         }
 
@@ -444,7 +439,15 @@ public class DeployState implements ConfigDefinitionStore {
             return this;
         }
 
-        public Builder reindexing(Reindexing reindexing) { this.reindexing = Objects.requireNonNull(reindexing); return this; }
+        public Builder reindexing(Reindexing reindexing) {
+            this.reindexing = Objects.requireNonNull(reindexing);
+            return this;
+        }
+
+        public Builder validationOverrides(ValidationOverrides validationOverrides) {
+            this.validationOverrides = Optional.of(validationOverrides);
+            return this;
+        }
 
         public DeployState build() {
             return build(new ValidationParameters());
@@ -466,7 +469,6 @@ public class DeployState implements ConfigDefinitionStore {
                                    provisioned,
                                    properties,
                                    version,
-                                   permanentApplicationPackage,
                                    configDefinitionRepo,
                                    previousModel,
                                    endpoints,
@@ -478,7 +480,8 @@ public class DeployState implements ConfigDefinitionStore {
                                    wantedNodeVespaVersion,
                                    accessLoggingEnabledByDefault,
                                    wantedDockerImageRepo,
-                                   reindexing);
+                                   reindexing,
+                                   validationOverrides);
         }
 
     }

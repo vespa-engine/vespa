@@ -2,11 +2,13 @@
 
 #include "modifiedbucketchecker.h"
 #include "filestormanager.h"
+#include <vespa/storageframework/generic/thread/thread.h>
 #include <vespa/persistence/spi/persistenceprovider.h>
 #include <vespa/config/common/exceptions.h>
 #include <vespa/config/subscription/configuri.h>
 #include <vespa/config/helper/configfetcher.hpp>
 #include <algorithm>
+#include <unistd.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".persistence.filestor.modifiedbucketchecker");
@@ -16,8 +18,8 @@ using document::BucketSpace;
 namespace storage {
 
 ModifiedBucketChecker::CyclicBucketSpaceIterator::
-CyclicBucketSpaceIterator(const ContentBucketSpaceRepo::BucketSpaces &bucketSpaces)
-    : _bucketSpaces(bucketSpaces),
+CyclicBucketSpaceIterator(ContentBucketSpaceRepo::BucketSpaces bucketSpaces)
+    : _bucketSpaces(std::move(bucketSpaces)),
       _idx(0)
 {
     std::sort(_bucketSpaces.begin(), _bucketSpaces.end());
@@ -117,7 +119,7 @@ ModifiedBucketChecker::run(framework::ThreadHandle& thread)
     LOG(debug, "Started modified bucket checker thread with pid %d", getpid());
 
     while (!thread.interrupted()) {
-        thread.registerTick();
+        thread.registerTick(framework::UNKNOWN_CYCLE);
 
         bool ok = tick();
 

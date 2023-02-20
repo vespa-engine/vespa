@@ -24,7 +24,7 @@ import ai.vespa.metricsproxy.telegraf.Telegraf;
 import ai.vespa.metricsproxy.telegraf.TelegrafConfig;
 import ai.vespa.metricsproxy.telegraf.TelegrafRegistry;
 import com.yahoo.config.model.deploy.DeployState;
-import com.yahoo.config.model.producer.AbstractConfigProducer;
+import com.yahoo.config.model.producer.TreeConfigProducer;
 import com.yahoo.config.model.producer.AbstractConfigProducerRoot;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Zone;
@@ -92,10 +92,10 @@ public class MetricsProxyContainerCluster extends ContainerCluster<MetricsProxyC
         static final String LEGACY_APPLICATION = "app";        // app.instance
     }
 
-    private final AbstractConfigProducer<?> parent;
+    private final TreeConfigProducer<?> parent;
     private final ApplicationId applicationId;
 
-    public MetricsProxyContainerCluster(AbstractConfigProducer<?> parent, String name, DeployState deployState) {
+    public MetricsProxyContainerCluster(TreeConfigProducer<?> parent, String name, DeployState deployState) {
         super(parent, name, name, deployState, true);
         this.parent = parent;
         applicationId = deployState.getProperties().applicationId();
@@ -221,16 +221,6 @@ public class MetricsProxyContainerCluster extends ContainerCluster<MetricsProxyC
         return getAdmin()
                 .map(admin -> admin.getUserMetrics().getConsumers())
                 .orElse(Collections.emptyMap());
-    }
-
-    private Optional<Admin> getAdmin() {
-        if (parent != null) {
-            AbstractConfigProducerRoot r = parent.getRoot();
-            if (r instanceof VespaModel model) {
-                return Optional.ofNullable(model.getAdmin());
-            }
-        }
-        return Optional.empty();
     }
 
     private Optional<String> getSystemName() {

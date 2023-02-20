@@ -5,10 +5,15 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
-
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
+
+import static com.yahoo.vespa.flags.custom.Validation.requirePositive;
+import static com.yahoo.vespa.flags.custom.Validation.validArchitectures;
+import static com.yahoo.vespa.flags.custom.Validation.validClusterTypes;
+import static com.yahoo.vespa.flags.custom.Validation.validDiskSpeeds;
+import static com.yahoo.vespa.flags.custom.Validation.validStorageTypes;
+import static com.yahoo.vespa.flags.custom.Validation.validateEnum;
 
 /**
  * The advertised node resources of a host, similar to config-provision's NodeResources,
@@ -18,10 +23,6 @@ import java.util.Set;
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class HostResources {
-    private static final Set<String> validDiskSpeeds = Set.of("slow", "fast");
-    private static final Set<String> validStorageTypes = Set.of("remote", "local");
-    private static final Set<String> validClusterTypes = Set.of("container", "content", "combined", "admin");
-    private static final Set<String> validArchitectures = Set.of("arm64", "x86_64");
 
     private final double vcpu;
     private final double memoryGb;
@@ -89,32 +90,6 @@ public class HostResources {
 
     public boolean satisfiesClusterType(String clusterType) {
         return this.clusterType.map(clusterType::equalsIgnoreCase).orElse(true);
-    }
-
-    private static double requirePositive(String name, Double value) {
-        requireNonNull(name, value);
-        if (value <= 0)
-            throw new IllegalArgumentException("'" + name + "' must be positive, was " + value);
-        return value;
-    }
-
-    private static int requirePositive(String name, Integer value) {
-        requireNonNull(name, value);
-        if (value <= 0)
-            throw new IllegalArgumentException("'" + name + "' must be positive, was " + value);
-        return value;
-    }
-
-    private static String validateEnum(String name, Set<String> validValues, String value) {
-        requireNonNull(name, value);
-        if (!validValues.contains(value))
-            throw new IllegalArgumentException("Invalid " + name + ", valid values are: " +
-                    validValues + ", got: " + value);
-        return value;
-    }
-
-    private static <T> T requireNonNull(String name, T value) {
-        return Objects.requireNonNull(value, () -> "'" + name + "' has not been specified");
     }
 
     @Override

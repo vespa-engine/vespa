@@ -266,6 +266,7 @@ public class SpareCapacityMaintainerTest {
                                                 new MockNameResolver().mockAnyLookup(),
                                                 DockerImage.fromString("docker-registry.domain.tld:8080/dist/vespa"),
                                                 Optional.empty(),
+                                                Optional.empty(),
                                                 new InMemoryFlagSource(),
                                                 new MemoryMetricsDb(clock),
                                                 new OrchestratorMock(),
@@ -326,8 +327,8 @@ public class SpareCapacityMaintainerTest {
         }
 
         private IP.Config ipConfig(int id, boolean host) {
-            return new IP.Config(Set.of(String.format("%04X::%04X", id, 0)),
-                                 host ? IntStream.range(0, 10)
+            return IP.Config.of(Set.of(String.format("%04X::%04X", id, 0)),
+                                host ? IntStream.range(0, 10)
                                                  .mapToObj(n -> String.format("%04X::%04X", id, n))
                                                  .collect(Collectors.toSet())
                                       : Set.of());

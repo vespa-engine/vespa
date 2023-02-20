@@ -6,8 +6,8 @@ import com.yahoo.component.Version;
 import com.yahoo.component.VersionCompatibility;
 import com.yahoo.concurrent.UncheckedTimeoutException;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.SystemName;
-import com.yahoo.config.provision.Tags;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.transaction.Mutex;
 import com.yahoo.vespa.flags.FetchVector.Dimension;
@@ -29,6 +29,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.deployment.TestReport;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterCloud;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterId;
 import com.yahoo.vespa.hosted.controller.application.ApplicationList;
+import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackage;
@@ -93,8 +94,6 @@ import static java.util.Comparator.naturalOrder;
 import static java.util.function.Predicate.not;
 import static java.util.logging.Level.INFO;
 import static java.util.logging.Level.WARNING;
-import static java.util.stream.Collectors.toList;
-import static java.util.stream.Collectors.toUnmodifiableList;
 
 /**
  * A singleton owned by the controller, which contains the state and methods for controlling deployment jobs.
@@ -183,7 +182,7 @@ public class JobController {
     public void log(RunId id, Step step, Level level, List<String> messages) {
         log(id, step, messages.stream()
                               .map(message -> new LogEntry(0, controller.clock().instant(), LogEntry.typeOf(level), message))
-                              .collect(toList()));
+                              .toList());
     }
 
     /** Stores the given log message for the given run and step. */
@@ -589,9 +588,11 @@ public class JobController {
 
             validate(id, submission);
 
-            applications.storeWithUpdatedConfig(application, submission.applicationPackage());
+            List<InstanceName> newInstances = applications.storeWithUpdatedConfig(application, submission.applicationPackage());
             if (application.get().projectId().isPresent())
                 applications.deploymentTrigger().triggerNewRevision(id);
+            for (InstanceName instance : newInstances)
+                controller.applications().deploymentTrigger().forceChange(id.instance(instance), Change.of(version.get().id()));
         });
         return version.get();
     }
@@ -618,7 +619,7 @@ public class JobController {
         submission.applicationPackage().deploymentSpec().majorVersion().ifPresent(explicitMajor -> {
             if ( ! controller.readVersionStatus().isOnCurrentMajor(new Version(explicitMajor)))
                 controller.notificationsDb().setNotification(NotificationSource.from(id), Type.submission, Notification.Level.warning,
-                                                             "Vespa " + explicitMajor + " will soon be end of life, upgrade to Vespa " + (explicitMajor + 1) + " now: " +
+                                                             "Vespa " + explicitMajor + " will soon reach end of life, upgrade to Vespa " + (explicitMajor + 1) + " now: " +
                                                              "https://cloud.vespa.ai/en/vespa" + (explicitMajor + 1) + "-release-notes.html"); // ∠( ᐛ 」∠)＿
         });
     }
@@ -708,7 +709,7 @@ public class JobController {
 
         controller.applications().lockApplicationOrThrow(TenantAndApplicationId.from(id), application -> {
             if ( ! application.get().instances().containsKey(id.instance()))
-                application = controller.applications().withNewInstance(application, id, Tags.empty());
+                application = controller.applications().withNewInstance(application, id);
             // TODO(mpolden): Enable for public CD once all tests have been updated
             if (controller.system() != SystemName.PublicCd) {
                 controller.applications().validatePackage(applicationPackage, application.get());

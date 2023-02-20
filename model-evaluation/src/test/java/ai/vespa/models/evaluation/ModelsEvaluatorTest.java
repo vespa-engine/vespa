@@ -75,7 +75,7 @@ public class ModelsEvaluatorTest {
             evaluator.evaluate();
         }
         catch (IllegalStateException e) {
-            assertEquals("Argument 'arg2' must be bound to a value of type tensor(d1{})",
+            assertEquals("Argument 'arg1' must be bound to a value of type tensor(d0[1])",
                          Exceptions.toMessageString(e));
         }
 
@@ -88,6 +88,15 @@ public class ModelsEvaluatorTest {
             assertEquals("Argument 'arg1' must be bound to a value of type tensor(d0[1])",
                          Exceptions.toMessageString(e));
         }
+        try { // Just the other binding
+            FunctionEvaluator evaluator = model.evaluatorOf("test");
+            evaluator.bind("arg1", Tensor.from(TensorType.fromSpec("tensor(d0[1])"), "{{d0:0}:0.1}"));
+            evaluator.evaluate();
+        }
+        catch (IllegalStateException e) {
+            assertEquals("Argument 'arg2' must be bound to a value of type tensor(d1{})",
+                    Exceptions.toMessageString(e));
+        }
 
         try { // Wrong binding argument
             FunctionEvaluator evaluator = model.evaluatorOf("test");
@@ -95,7 +104,7 @@ public class ModelsEvaluatorTest {
             evaluator.evaluate();
         }
         catch (IllegalArgumentException e) {
-            assertEquals("'argNone' is not a valid argument in function 'test'. Expected arguments: arg2: tensor(d1{}), arg1: tensor(d0[1])",
+            assertEquals("'argNone' is not a valid argument in function 'test'. Expected arguments: arg1: tensor(d0[1]), arg2: tensor(d1{})",
                          Exceptions.toMessageString(e));
         }
 

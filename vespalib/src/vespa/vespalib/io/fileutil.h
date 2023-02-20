@@ -39,7 +39,7 @@ namespace vespalib {
  * @brief Simple metadata about a file or directory.
  **/
 struct FileInfo {
-    typedef std::unique_ptr<FileInfo> UP;
+    using UP = std::unique_ptr<FileInfo>;
 
     bool  _plainfile;
     bool  _directory;
@@ -75,7 +75,7 @@ private:
     void verifyDirectIO(uint64_t buf, size_t bufsize, off_t offset) const;
 
 public:
-    typedef std::unique_ptr<File> UP;
+    using UP = std::unique_ptr<File>;
 
     /**
      * If failing to open file using direct IO it will retry using cached IO.
@@ -366,7 +366,7 @@ extern void copy(const vespalib::string & frompath,
 /**
  * List the contents of the given directory.
  */
-typedef std::vector<vespalib::string> DirectoryList;
+using DirectoryList = std::vector<vespalib::string>;
 extern DirectoryList listDirectory(const vespalib::string & path);
 
 extern MallocAutoPtr getAlignedBuffer(size_t size);

@@ -698,7 +698,7 @@ TransLogStress::main(int argc, char **argv)
     }
 
     // start transaction log server
-    FastOS_ThreadPool threadPool(256_Ki);
+    FastOS_ThreadPool threadPool;
     FNET_Transport transport;
     DummyFileHeaderContext fileHeaderContext;
     TransLogServer tls(transport, "server", 17897, ".", fileHeaderContext, DomainConfig().setPartSizeLimit(_cfg.domainPartSize));

@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.controller.api.integration.configserver;
 
 import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.config.provision.IntRange;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -19,111 +20,58 @@ public class Cluster {
     private final ClusterSpec.Type type;
     private final ClusterResources min;
     private final ClusterResources max;
+    private final IntRange groupSize;
     private final ClusterResources current;
-    private final Optional<ClusterResources> target;
-    private final Optional<ClusterResources> suggested;
-    private final Utilization utilization;
+    private final Autoscaling target;
+    private final Autoscaling suggested;
     private final List<ScalingEvent> scalingEvents;
-    private final String autoscalingStatusCode;
-    private final String autoscalingStatus;
     private final Duration scalingDuration;
-    private final double maxQueryGrowthRate;
-    private final double currentQueryFractionOfMax;
 
     public Cluster(ClusterSpec.Id id,
                    ClusterSpec.Type type,
                    ClusterResources min,
                    ClusterResources max,
+                   IntRange groupSize,
                    ClusterResources current,
-                   Optional<ClusterResources> target,
-                   Optional<ClusterResources> suggested,
-                   Utilization utilization,
+                   Autoscaling target,
+                   Autoscaling suggested,
                    List<ScalingEvent> scalingEvents,
-                   String autoscalingStatusCode,
-                   String autoscalingStatus,
-                   Duration scalingDuration,
-                   double maxQueryGrowthRate,
-                   double currentQueryFractionOfMax) {
+                   Duration scalingDuration) {
         this.id = id;
         this.type = type;
         this.min = min;
         this.max = max;
+        this.groupSize = groupSize;
         this.current = current;
         this.target = target;
         this.suggested = suggested;
-        this.utilization = utilization;
         this.scalingEvents = scalingEvents;
-        this.autoscalingStatusCode = autoscalingStatusCode;
-        this.autoscalingStatus = autoscalingStatus;
         this.scalingDuration = scalingDuration;
-        this.maxQueryGrowthRate = maxQueryGrowthRate;
-        this.currentQueryFractionOfMax = currentQueryFractionOfMax;
     }
 
     public ClusterSpec.Id id() { return id; }
+
     public ClusterSpec.Type type() { return type; }
+
     public ClusterResources min() { return min; }
+
     public ClusterResources max() { return max; }
+
+    public IntRange groupSize() { return groupSize; }
+
     public ClusterResources current() { return current; }
-    public Optional<ClusterResources> target() { return target; }
-    public Optional<ClusterResources> suggested() { return suggested; }
-    public Utilization utilization() { return utilization; }
+
+    public Autoscaling target() { return target; }
+
+    public Autoscaling suggested() { return suggested; }
+
     public List<ScalingEvent> scalingEvents() { return scalingEvents; }
-    public String autoscalingStatusCode() { return autoscalingStatusCode; }
-    public String autoscalingStatus() { return autoscalingStatus; }
+
     public Duration scalingDuration() { return scalingDuration; }
-    public double maxQueryGrowthRate() { return maxQueryGrowthRate; }
-    public double currentQueryFractionOfMax() { return currentQueryFractionOfMax; }
 
     @Override
     public String toString() {
-        return "cluster '" + id + "'";
-    }
-
-    public static class Utilization {
-
-        private final double cpu, idealCpu, currentCpu, peakCpu;
-        private final double memory, idealMemory, currentMemory, peakMemory;
-        private final double disk, idealDisk, currentDisk, peakDisk;
-
-        public Utilization(double cpu, double idealCpu, double currentCpu, double peakCpu,
-                           double memory, double idealMemory, double currentMemory, double peakMemory,
-                           double disk, double idealDisk, double currentDisk, double peakDisk) {
-            this.cpu = cpu;
-            this.idealCpu = idealCpu;
-            this.currentCpu = currentCpu;
-            this.peakCpu = peakCpu;
-
-            this.memory = memory;
-            this.idealMemory = idealMemory;
-            this.currentMemory = currentMemory;
-            this.peakMemory = peakMemory;
-
-            this.disk = disk;
-            this.idealDisk = idealDisk;
-            this.currentDisk = currentDisk;
-            this.peakDisk = peakDisk;
-        }
-
-        public double cpu() { return cpu; }
-        public double idealCpu() { return idealCpu; }
-        public double currentCpu() { return currentCpu; }
-        public double peakCpu() { return peakCpu; }
-
-        public double memory() { return memory; }
-        public double idealMemory() { return idealMemory; }
-        public double currentMemory() { return currentMemory; }
-        public double peakMemory() { return peakMemory; }
-
-        public double disk() { return disk; }
-        public double idealDisk() { return idealDisk; }
-        public double currentDisk() { return currentDisk; }
-        public double peakDisk() { return peakDisk; }
-
-        public static Utilization empty() { return new Utilization(0, 0, 0, 0, 0,
-                                                                   0, 0, 0,
-                                                                   0, 0, 0, 0); }
-
+        return id.toString();
     }
 
     public static class ScalingEvent {
@@ -139,10 +87,13 @@ public class Cluster {
             this.completion = completion;
         }
 
-        public ClusterResources from() { return from; }
-        public ClusterResources to() { return to; }
-        public Instant at() { return at; }
-        public Optional<Instant> completion() { return completion; }
+        public ClusterResources from() {return from;}
+
+        public ClusterResources to() {return to;}
+
+        public Instant at() {return at;}
+
+        public Optional<Instant> completion() {return completion;}
 
         @Override
         public boolean equals(Object o) {
@@ -160,12 +111,88 @@ public class Cluster {
         @Override
         public String toString() {
             return "ScalingEvent{" +
-                    "from=" + from +
-                    ", to=" + to +
-                    ", at=" + at +
-                    ", completion=" + completion +
-                    '}';
+                   "from=" + from +
+                   ", to=" + to +
+                   ", at=" + at +
+                   ", completion=" + completion +
+                   '}';
         }
+    }
+
+    public static class Autoscaling {
+
+        private final String status;
+        private final String description;
+        private final Optional<ClusterResources> resources;
+        private final Instant at;
+        private final Load peak;
+        private final Load ideal;
+        private final Metrics metrics;
+
+        public Autoscaling(String status, String description, Optional<ClusterResources> resources, Instant at,
+                           Load peak, Load ideal, Metrics metrics) {
+            this.status = status;
+            this.description = description;
+            this.resources = resources;
+            this.at = at;
+            this.peak = peak;
+            this.ideal = ideal;
+            this.metrics = metrics;
+        }
+
+        public String status() {return status;}
+        public String description() {return description;}
+        public Optional<ClusterResources> resources() {
+            return resources;
+        }
+        public Instant at() {return at;}
+        public Load peak() {return peak;}
+        public Load ideal() {return ideal;}
+        public Metrics metrics() { return metrics; }
+
+        @Override
+        public boolean equals(Object o) {
+            if (!(o instanceof Autoscaling other)) return false;
+            if (!this.status.equals(other.status)) return false;
+            if (!this.description.equals(other.description)) return false;
+            if (!this.resources.equals(other.resources)) return false;
+            if (!this.at.equals(other.at)) return false;
+            if (!this.peak.equals(other.peak)) return false;
+            if (!this.ideal.equals(other.ideal)) return false;
+            if (!this.metrics.equals(other.metrics)) return false;
+            return true;
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(status, description, at, peak, ideal);
+        }
+
+        @Override
+        public String toString() {
+            return (resources.isPresent() ? "Autoscaling to " + resources : "Don't autoscale") +
+                   (description.isEmpty() ? "" : ": " + description);
+        }
+
+        public static Autoscaling empty() {
+            return new Autoscaling("unavailable",
+                                   "",
+                                   Optional.empty(),
+                                   Instant.EPOCH,
+                                   Load.zero(),
+                                   Load.zero(),
+                                   Metrics.zero());
+        }
+
+        // Used to create BcpGroupInfo
+        public record Metrics(double queryRate, double growthRateHeadroom, double cpuCostPerQuery) {
+
+            public static Metrics zero() {
+                return new Metrics(0, 0, 0);
+            }
+
+        }
+
     }
 
 }

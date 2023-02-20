@@ -1,12 +1,27 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/util/size_literals.h>
+#include <vespa/vespalib/util/optimized.h>
 #include <vespa/log/log.h>
 #include <malloc.h>
 #include <dlfcn.h>
 #include <functional>
 
 LOG_SETUP("new_test");
+
+void *wrap_memalign_real(size_t alignment, size_t size)
+{
+    return memalign(alignment, size);
+}
+
+void* (*wrap_memalign)(size_t alignment, size_t size) = wrap_memalign_real;
+
+void *wrap_aligned_alloc_real(size_t alignment, size_t size)
+{
+    return aligned_alloc(alignment, size);
+}
+
+void* (*wrap_aligned_alloc)(size_t alignment, size_t size) = wrap_aligned_alloc_real;
 
 void cmp(const void *a, const void *b) {
     EXPECT_EQUAL(a, b);
@@ -248,6 +263,45 @@ TEST("test realloc large buffers") {
     verifyReallocLarge(nullptr, false);
     verifyReallocLarge(static_cast<char *>(malloc(2000)), false);
     EXPECT_EQUAL(1, mallopt(M_MMAP_THRESHOLD, 1_Gi));
+}
+
+void verify_alignment(void * ptr, size_t align, size_t min_sz) {
+    EXPECT_NOT_EQUAL(ptr, nullptr);
+    EXPECT_EQUAL(0u, size_t(ptr) & (align-1));
+    assert(0ul == (size_t(ptr) & (align-1)));
+    EXPECT_GREATER_EQUAL(malloc_usable_size(ptr), min_sz);
+    free(ptr);
+}
+
+TEST("test memalign") {
+    verify_alignment(wrap_memalign(0, 0), 1, 1);
+    verify_alignment(wrap_memalign(0, 1), 1, 1);
+    verify_alignment(wrap_memalign(1, 0), 1, 1);
+
+    for (size_t align : {3,7,19}) {
+        // According to man pages these should fail, but it seems it rounds up and does best effort
+        verify_alignment(wrap_memalign(align, 73), 1ul << vespalib::Optimized::msbIdx(align), 73);
+    }
+    for (size_t align : {1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768, 65536}) {
+        verify_alignment(wrap_memalign(align, 1), align, 1);
+    }
+}
+
+TEST("test aligned_alloc") {
+    verify_alignment(wrap_aligned_alloc(0, 0), 1, 1);
+    verify_alignment(wrap_aligned_alloc(0, 1), 1, 1);
+    verify_alignment(wrap_aligned_alloc(1, 0), 1, 1);
+    for (size_t align : {3,7,19}) {
+        // According to man pages these should fail, but it seems it rounds up and does best effort
+        verify_alignment(wrap_aligned_alloc(align, align*7), 1ul << vespalib::Optimized::msbIdx(align), align*7);
+    }
+    for (size_t align : {1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768, 65536}) {
+        verify_alignment(wrap_aligned_alloc(align, align*7), align, align*7);
+    }
+    for (size_t sz : {31,33,63}) {
+        // According to man pages these should fail, but it seems it rounds up and does best effort
+        verify_alignment(wrap_aligned_alloc(32, sz), 32, sz);
+    }
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }

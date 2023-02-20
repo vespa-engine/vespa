@@ -4,7 +4,8 @@ package com.yahoo.vespa.model.container.component;
 import com.yahoo.collections.Pair;
 import com.yahoo.component.ComponentId;
 import com.yahoo.component.ComponentSpecification;
-import com.yahoo.config.model.producer.AbstractConfigProducer;
+import com.yahoo.config.model.producer.AnyConfigProducer;
+import com.yahoo.config.model.producer.TreeConfigProducer;
 import com.yahoo.osgi.provider.model.ComponentModel;
 
 import java.util.HashSet;
@@ -15,8 +16,8 @@ import java.util.Set;
  * @author gjoranv
  * @author Tony Vaagenes
  */
-public class Component<CHILD extends AbstractConfigProducer<?>, MODEL extends ComponentModel>
-        extends AbstractConfigProducer<CHILD> implements Comparable<Component<?, ?>> {
+public class Component<CCHILD extends AnyConfigProducer, MODEL extends ComponentModel>
+        extends TreeConfigProducer<CCHILD> implements Comparable<Component<?, ?>> {
 
     public final MODEL model;
     final Set<Pair<String, Component>> injectedComponents = new LinkedHashSet<>();
@@ -27,8 +28,8 @@ public class Component<CHILD extends AbstractConfigProducer<?>, MODEL extends Co
     }
 
     /** Returns a component that uses its class name as id. */
-    public static Component<?,?> fromClassAndBundle(String className, String bundle) {
-        return new Component<>(new ComponentModel(className, null, bundle));
+    public static Component<?,?> fromClassAndBundle(Class<?> clazz, String bundle) {
+        return new Component<>(new ComponentModel(clazz.getName(), null, bundle));
     }
 
     public ComponentId getGlobalComponentId() {
@@ -51,7 +52,7 @@ public class Component<CHILD extends AbstractConfigProducer<?>, MODEL extends Co
         injectedComponents.add(new Pair<>(name, component));
     }
 
-    public void addComponent(CHILD child) {
+    public void addComponent(CCHILD child) {
         addChild(child);
     }
 

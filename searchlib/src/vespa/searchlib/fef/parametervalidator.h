@@ -16,8 +16,8 @@ namespace search::fef {
  */
 class ParameterValidator {
 public:
-    typedef vespalib::string string;
-    typedef std::vector<string> StringVector;
+    using string = vespalib::string;
+    using StringVector = std::vector<string>;
     /**
      * This class contains the result after running a validation for a given parameter description.
      * If the result is valid the parameter description matched the string parameter list

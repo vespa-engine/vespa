@@ -28,6 +28,17 @@ Program::Ref map(const std::map<Program::Ref,Program::Ref> &ref_map, Program::Re
 
 } // namespace vespalib::gp::<unnamed>
 
+Program::Program(Program &&) noexcept = default;
+Program & Program::operator=(Program &&) noexcept = default;
+Program::Program(const Program &) = default;
+Program::~Program() = default;
+
+Program::Program(const OpRepo &repo, size_t in_cnt, size_t out_cnt, size_t alt_cnt, size_t gen)
+    : _repo(repo), _stats(gen), _waste(0.0),
+      _in_cnt(in_cnt), _out_cnt(out_cnt), _alt_cnt(alt_cnt),
+      _program(), _frozen(0), _bound()
+{}
+
 void
 Program::assert_valid(Ref ref, size_t limit) const
 {

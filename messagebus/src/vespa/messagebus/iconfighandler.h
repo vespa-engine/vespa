@@ -15,7 +15,7 @@ class RoutingSpec;
 class IConfigHandler
 {
 public:
-    virtual ~IConfigHandler() {}
+    virtual ~IConfigHandler() = default;
 
     /**
      * This method will be invoked to initialize or change the routing
@@ -26,7 +26,7 @@ public:
      * @return true if new setup was accepted
      * @param spec spec of new routing setup
      **/
-    virtual bool setupRouting(const RoutingSpec &spec) = 0;
+    virtual bool setupRouting(RoutingSpec spec) = 0;
 };
 
 } // namespace mbus

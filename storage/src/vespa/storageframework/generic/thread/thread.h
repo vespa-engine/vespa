@@ -30,7 +30,7 @@ class Thread : public ThreadHandle {
     vespalib::string _id;
 
 public:
-    typedef std::unique_ptr<Thread> UP;
+    using UP = std::unique_ptr<Thread>;
 
     Thread(vespalib::stringref id) : _id(id) {}
     virtual ~Thread() = default;

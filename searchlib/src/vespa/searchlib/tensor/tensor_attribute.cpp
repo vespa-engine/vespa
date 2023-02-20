@@ -30,6 +30,7 @@ using vespalib::eval::FastValueBuilderFactory;
 using vespalib::eval::TensorSpec;
 using vespalib::eval::Value;
 using vespalib::eval::ValueType;
+using vespalib::slime::ObjectInserter;
 
 namespace search::tensor {
 
@@ -82,9 +83,10 @@ uint32_t
 TensorAttribute::clearDoc(DocId docId)
 {
     consider_remove_from_index(docId);
-    EntryRef oldRef(_refVector[docId].load_relaxed());
     updateUncommittedDocIdLimit(docId);
-    _refVector[docId] = AtomicEntryRef();
+    auto& elem_ref = _refVector[docId];
+    EntryRef oldRef(elem_ref.load_relaxed());
+    elem_ref.store_relaxed(EntryRef());
     if (oldRef.valid()) {
         _tensorStore.holdTensor(oldRef);
         return 1u;
@@ -95,7 +97,6 @@ TensorAttribute::clearDoc(DocId docId)
 void
 TensorAttribute::onCommit()
 {
-    // Note: Cost can be reduced if unneeded generation increments are dropped
     incGeneration();
     if (_tensorStore.consider_compact()) {
         auto context = _tensorStore.start_compact(getConfig().getCompactionStrategy());
@@ -177,11 +178,9 @@ TensorAttribute::setTensorRef(DocId docId, EntryRef ref)
 {
     assert(docId < _refVector.size());
     updateUncommittedDocIdLimit(docId);
-    // TODO: validate if following fence is sufficient.
-    std::atomic_thread_fence(std::memory_order_release);
-    // TODO: Check if refVector must consist of std::atomic<EntryRef>
-    EntryRef oldRef(_refVector[docId].load_relaxed());
-    _refVector[docId].store_release(ref);
+    auto& elem_ref = _refVector[docId];
+    EntryRef oldRef(elem_ref.load_relaxed());
+    elem_ref.store_release(ref);
     if (oldRef.valid()) {
         _tensorStore.holdTensor(oldRef);
     }
@@ -224,6 +223,10 @@ TensorAttribute::populate_state(vespalib::slime::Cursor& object) const
                                               object.setObject("ref_vector").setObject("memory_usage"));
     StateExplorerUtils::memory_usage_to_slime(_tensorStore.getMemoryUsage(),
                                               object.setObject("tensor_store").setObject("memory_usage"));
+    if (_index) {
+        ObjectInserter index_inserter(object, "nearest_neighbor_index");
+        _index->get_state(index_inserter);
+    }
 }
 
 void

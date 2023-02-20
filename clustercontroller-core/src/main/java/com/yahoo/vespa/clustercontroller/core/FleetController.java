@@ -21,9 +21,9 @@ import com.yahoo.vespa.clustercontroller.core.status.ClusterStateRequestHandler;
 import com.yahoo.vespa.clustercontroller.core.status.LegacyIndexPageRequestHandler;
 import com.yahoo.vespa.clustercontroller.core.status.LegacyNodePageRequestHandler;
 import com.yahoo.vespa.clustercontroller.core.status.NodeHealthRequestHandler;
+import com.yahoo.vespa.clustercontroller.core.status.StatusHandler;
 import com.yahoo.vespa.clustercontroller.core.status.statuspage.StatusPageResponse;
 import com.yahoo.vespa.clustercontroller.core.status.statuspage.StatusPageServer;
-import com.yahoo.vespa.clustercontroller.core.status.statuspage.StatusPageServerInterface;
 import com.yahoo.vespa.clustercontroller.utils.util.MetricReporter;
 import java.io.FileNotFoundException;
 import java.time.Duration;
@@ -35,7 +35,6 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Queue;
 import java.util.Set;
 import java.util.TimeZone;
@@ -61,7 +60,7 @@ public class FleetController implements NodeListener, SlobrokListener, SystemSta
     private final StateChangeHandler stateChangeHandler;
     private final SystemStateBroadcaster systemStateBroadcaster;
     private final StateVersionTracker stateVersionTracker;
-    private final StatusPageServerInterface statusPageServer;
+    private final StatusHandler.ContainerStatusPageServer statusPageServer;
     private final RpcServer rpcServer;
     private final DatabaseHandler database;
     private final MasterElectionHandler masterElectionHandler;
@@ -106,7 +105,6 @@ public class FleetController implements NodeListener, SlobrokListener, SystemSta
                            ContentCluster cluster,
                            NodeStateGatherer nodeStateGatherer,
                            Communicator communicator,
-                           StatusPageServerInterface statusPage,
                            RpcServer server,
                            NodeLookup nodeLookup,
                            DatabaseHandler database,
@@ -130,7 +128,7 @@ public class FleetController implements NodeListener, SlobrokListener, SystemSta
         this.systemStateBroadcaster = systemStateBroadcaster;
         this.stateVersionTracker = new StateVersionTracker(options.minMergeCompletionRatio());
         this.metricUpdater = metricUpdater;
-        this.statusPageServer = Objects.requireNonNull(statusPage, "statusPage cannot be null");
+        this.statusPageServer = new StatusHandler.ContainerStatusPageServer();
         this.rpcServer = server;
         this.masterElectionHandler = masterElectionHandler;
         this.statusRequestRouter.addHandler(
@@ -150,9 +148,7 @@ public class FleetController implements NodeListener, SlobrokListener, SystemSta
         propagateOptions();
     }
 
-    public static FleetController create(FleetControllerOptions options,
-                                         StatusPageServerInterface statusPageServer,
-                                         MetricReporter metricReporter) throws Exception {
+    public static FleetController create(FleetControllerOptions options, MetricReporter metricReporter) throws Exception {
         var context = new FleetControllerContextImpl(options);
         var timer = new RealTimer();
         var metricUpdater = new MetricUpdater(metricReporter, options.fleetControllerIndex(), options.clusterName());
@@ -173,7 +169,7 @@ public class FleetController implements NodeListener, SlobrokListener, SystemSta
         var stateBroadcaster = new SystemStateBroadcaster(context, timer, timer);
         var masterElectionHandler = new MasterElectionHandler(context, options.fleetControllerIndex(), options.fleetControllerCount(), timer, timer);
         var controller = new FleetController(context, timer, log, cluster, stateGatherer, communicator,
-                                             statusPageServer, null, lookUp, database, stateGenerator,
+                                             null, lookUp, database, stateGenerator,
                                              stateBroadcaster, masterElectionHandler, metricUpdater, options);
         controller.start();
         return controller;
@@ -564,7 +560,7 @@ public class FleetController implements NodeListener, SlobrokListener, SystemSta
         StringBuilder content = new StringBuilder();
         response.setContentType("text/html");
         response.setResponseCode(responseCode);
-        content.append("<!-- Answer to request " + httpRequest.getRequest() + " -->\n");
+        content.append("<!-- Answer to request ").append(httpRequest.getRequest()).append(" -->\n");
         content.append("<p>UTC time when creating this page: ").append(RealTimer.printDateNoMilliSeconds(currentTime, tz)).append("</p>");
         response.writeHtmlHeader(content, message);
         response.writeHtmlFooter(content, hiddenMessage);
@@ -785,7 +781,7 @@ public class FleetController implements NodeListener, SlobrokListener, SystemSta
         return cluster.getNodeInfos().stream().
                       filter(n -> effectiveActivatedStateVersion(n, bundle) < version).
                       map(NodeInfo::getNode).
-                      collect(Collectors.toList());
+                      toList();
     }
 
     private static <E> String stringifyListWithLimits(List<E> list, int limit) {
@@ -1214,5 +1210,7 @@ public class FleetController implements NodeListener, SlobrokListener, SystemSta
     public EventLog getEventLog() {
         return eventLog;
     }
+
+    public StatusHandler.ContainerStatusPageServer statusPageServer() { return statusPageServer; }
 
 }

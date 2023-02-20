@@ -19,7 +19,7 @@
 #pragma once
 
 #include <memory>
-#include <vespa/storageframework/generic/clock/time.h>
+#include <vespa/vespalib/util/time.h>
 #include <vespa/vespalib/stllike/string.h>
 
 namespace storage::framework {
@@ -40,7 +40,7 @@ public:
     static ThreadWaitInfo NO_MORE_CRITICAL_WORK_KNOWN;
 
     void merge(const ThreadWaitInfo& other);
-    bool waitWanted() const noexcept { return _waitWanted; }
+    [[nodiscard]] bool waitWanted() const noexcept { return _waitWanted; }
 };
 
 /**

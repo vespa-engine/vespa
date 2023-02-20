@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.http.v2;
 
+import ai.vespa.http.DomainName;
 import ai.vespa.http.HttpURL;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.component.Version;
@@ -9,6 +10,10 @@ import com.yahoo.config.model.api.PortInfo;
 import com.yahoo.config.model.api.ServiceInfo;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
+import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.config.provision.EndpointsChecker;
+import com.yahoo.config.provision.EndpointsChecker.Availability;
+import com.yahoo.config.provision.EndpointsChecker.Endpoint;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
@@ -29,7 +34,6 @@ import com.yahoo.vespa.config.server.application.ClusterReindexing.Status;
 import com.yahoo.vespa.config.server.application.HttpProxy;
 import com.yahoo.vespa.config.server.application.OrchestratorMock;
 import com.yahoo.vespa.config.server.deploy.DeployTester;
-import com.yahoo.vespa.config.server.filedistribution.FileDirectory;
 import com.yahoo.vespa.config.server.filedistribution.MockFileDistributionFactory;
 import com.yahoo.vespa.config.server.http.HandlerTest;
 import com.yahoo.vespa.config.server.http.HttpErrorResponse;
@@ -43,7 +47,6 @@ import com.yahoo.vespa.config.server.session.PrepareParams;
 import com.yahoo.vespa.config.server.tenant.Tenant;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.config.server.tenant.TestTenantRepository;
-import com.yahoo.vespa.flags.InMemoryFlagSource;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -55,6 +58,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
+import java.net.InetAddress;
 import java.net.URI;
 import java.net.URLEncoder;
 import java.time.Duration;
@@ -62,6 +66,7 @@ import java.time.Instant;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
@@ -79,10 +84,12 @@ import static com.yahoo.vespa.config.server.http.HandlerTest.assertHttpStatusCod
 import static com.yahoo.vespa.config.server.http.SessionHandlerTest.getRenderedString;
 import static com.yahoo.vespa.config.server.http.v2.ApplicationHandler.HttpServiceListResponse;
 import static com.yahoo.vespa.config.server.http.v2.ApplicationHandler.HttpServiceResponse.createResponse;
+import static com.yahoo.yolean.Exceptions.uncheck;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
@@ -109,6 +116,8 @@ public class ApplicationHandlerTest {
     private MockProvisioner provisioner;
     private OrchestratorMock orchestrator;
     private ManualClock clock;
+    private List<Endpoint> expectedEndpoints;
+    private Availability availability;
 
     @Rule
     public TemporaryFolder temporaryFolder = new TemporaryFolder();
@@ -126,7 +135,7 @@ public class ApplicationHandlerTest {
         tenantRepository = new TestTenantRepository.Builder()
                 .withClock(clock)
                 .withConfigserverConfig(configserverConfig)
-                .withFileDistributionFactory(new MockFileDistributionFactory(configserverConfig, new FileDirectory(configserverConfig, new InMemoryFlagSource())))
+                .withFileDistributionFactory(new MockFileDistributionFactory(configserverConfig))
                 .withHostProvisionerProvider(HostProvisionerProvider.withProvisioner(provisioner, false))
                 .withModelFactoryRegistry(new ModelFactoryRegistry(modelFactories))
                 .build();
@@ -141,6 +150,7 @@ public class ApplicationHandlerTest {
                 .withLogRetriever(logRetriever)
                 .withConfigserverConfig(configserverConfig)
                 .withSecretStoreValidator(secretStoreValidator)
+                .withEndpointsChecker(endpoints -> { assertEquals(expectedEndpoints, endpoints); return availability; })
                 .build();
     }
 
@@ -241,37 +251,48 @@ public class ApplicationHandlerTest {
 
         clock.advance(Duration.ofSeconds(1));
         reindex(applicationId, "", "{\"message\":\"Reindexing document types [bar] in 'boo', [bar, bax, baz] in 'foo' of application default.default\"}");
-        expected = expected.withReady("boo", "bar", clock.instant(), 1).withReady("foo", "bar", clock.instant(), 1).withReady("foo", "baz", clock.instant(), 1).withReady("foo", "bax", clock.instant(), 1);
+        expected = expected.withReady("boo", "bar", clock.instant(), 1, "reindexing for an unknown reason")
+                           .withReady("foo", "bar", clock.instant(), 1, "reindexing for an unknown reason")
+                           .withReady("foo", "baz", clock.instant(), 1, "reindexing for an unknown reason")
+                           .withReady("foo", "bax", clock.instant(), 1, "reindexing for an unknown reason");
         assertEquals(expected,
                      database.readReindexingStatus(applicationId).orElseThrow());
 
         clock.advance(Duration.ofSeconds(1));
-        reindex(applicationId, "?indexedOnly=true", "{\"message\":\"Reindexing document types [bar] in 'foo' of application default.default\"}");
-        expected = expected.withReady("foo", "bar", clock.instant(), 1);
+        reindex(applicationId, "?indexedOnly=true&cause=test%20reindexing", "{\"message\":\"Reindexing document types [bar] in 'foo' of application default.default\"}");
+        expected = expected.withReady("foo", "bar", clock.instant(), 1, "test reindexing");
         assertEquals(expected,
                      database.readReindexingStatus(applicationId).orElseThrow());
 
         clock.advance(Duration.ofSeconds(1));
-        expected = expected.withReady("boo", "bar", clock.instant(), 1).withReady("foo", "bar", clock.instant(), 1).withReady("foo", "baz", clock.instant(), 1).withReady("foo", "bax", clock.instant(), 1);
-        reindex(applicationId, "?clusterId=", "{\"message\":\"Reindexing document types [bar] in 'boo', [bar, bax, baz] in 'foo' of application default.default\"}");
+        expected = expected.withReady("boo", "bar", clock.instant(), 1, "reindexing")
+                           .withReady("foo", "bar", clock.instant(), 1, "reindexing")
+                           .withReady("foo", "baz", clock.instant(), 1, "reindexing")
+                           .withReady("foo", "bax", clock.instant(), 1, "reindexing");
+        reindex(applicationId, "?clusterId=&cause=reindexing", "{\"message\":\"Reindexing document types [bar] in 'boo', [bar, bax, baz] in 'foo' of application default.default\"}");
         assertEquals(expected,
                      database.readReindexingStatus(applicationId).orElseThrow());
 
         clock.advance(Duration.ofSeconds(1));
-        expected = expected.withReady("boo", "bar", clock.instant(), 1).withReady("foo", "bar", clock.instant(), 1);
-        reindex(applicationId, "?documentType=bar", "{\"message\":\"Reindexing document types [bar] in 'boo', [bar] in 'foo' of application default.default\"}");
+        expected = expected.withReady("boo", "bar", clock.instant(), 1, "reindexing")
+                           .withReady("foo", "bar", clock.instant(), 1, "reindexing");
+        reindex(applicationId, "?documentType=bar&cause=reindexing", "{\"message\":\"Reindexing document types [bar] in 'boo', [bar] in 'foo' of application default.default\"}");
         assertEquals(expected,
                      database.readReindexingStatus(applicationId).orElseThrow());
 
         clock.advance(Duration.ofSeconds(1));
-        reindex(applicationId, "?clusterId=foo,boo", "{\"message\":\"Reindexing document types [bar] in 'boo', [bar, bax, baz] in 'foo' of application default.default\"}");
-        expected = expected.withReady("boo", "bar", clock.instant(), 1).withReady("foo", "bar", clock.instant(), 1).withReady("foo", "baz", clock.instant(), 1).withReady("foo", "bax", clock.instant(), 1);
+        reindex(applicationId, "?clusterId=foo,boo&cause=reindexing", "{\"message\":\"Reindexing document types [bar] in 'boo', [bar, bax, baz] in 'foo' of application default.default\"}");
+        expected = expected.withReady("boo", "bar", clock.instant(), 1, "reindexing")
+                           .withReady("foo", "bar", clock.instant(), 1, "reindexing")
+                           .withReady("foo", "baz", clock.instant(), 1, "reindexing")
+                           .withReady("foo", "bax", clock.instant(), 1, "reindexing");
         assertEquals(expected,
                      database.readReindexingStatus(applicationId).orElseThrow());
 
         clock.advance(Duration.ofSeconds(1));
-        reindex(applicationId, "?clusterId=foo&documentType=bar,baz&speed=0.1", "{\"message\":\"Reindexing document types [bar, baz] in 'foo' of application default.default\"}");
-        expected = expected.withReady("foo", "bar", clock.instant(), 0.1).withReady("foo", "baz", clock.instant(), 0.1);
+        reindex(applicationId, "?clusterId=foo&documentType=bar,baz&speed=0.1&cause=reindexing", "{\"message\":\"Reindexing document types [bar, baz] in 'foo' of application default.default\"}");
+        expected = expected.withReady("foo", "bar", clock.instant(), 0.1, "reindexing")
+                           .withReady("foo", "baz", clock.instant(), 0.1, "reindexing");
         assertEquals(expected,
                      database.readReindexingStatus(applicationId).orElseThrow());
 
@@ -298,7 +319,8 @@ public class ApplicationHandlerTest {
                                        "      \"ready\": {" +
                                        "        \"bar\": {" +
                                        "          \"readyMillis\": " + (now - 1000) + ", " +
-                                       "          \"speed\": 1.0" +
+                                       "          \"speed\": 1.0," +
+                                       "          \"cause\": \"reindexing\"" +
                                        "        }" +
                                        "      }" +
                                        "    }," +
@@ -307,15 +329,18 @@ public class ApplicationHandlerTest {
                                        "      \"ready\": {" +
                                        "        \"bar\": {" +
                                        "          \"readyMillis\": " + now + ", " +
-                                       "          \"speed\": 0.1" +
+                                       "          \"speed\": 0.1," +
+                                       "          \"cause\": \"reindexing\"" +
                                        "        }," +
                                        "        \"bax\": {" +
                                        "          \"readyMillis\": " + (now - 1000) + ", " +
-                                       "          \"speed\": 1.0" +
+                                       "          \"speed\": 1.0," +
+                                       "          \"cause\": \"reindexing\"" +
                                        "        }," +
                                        "        \"baz\": {" +
                                        "          \"readyMillis\": " + now + ", " +
-                                       "          \"speed\": 0.1" +
+                                       "          \"speed\": 0.1," +
+                                       "          \"cause\": \"reindexing\"" +
                                        "        }" +
                                        "      }" +
                                        "    }" +
@@ -379,7 +404,7 @@ public class ApplicationHandlerTest {
         assertHttpStatusCodeAndMessage(response, 200, "text/html", "<html>host=foo.yahoo.com,service=distributor,path=path '/state/v1/something/more',query=query 'foo=bar',forwardedUrl=https://api:123/my/base/path?bar=.</html>");
 
         response = mockHandler.handle(createTestRequest(toUrlPath(applicationId, Zone.defaultZone(), true) + "/service/distributor/" + host + "/status/something?foo=bar", GET));
-        assertHttpStatusCodeAndMessage(response, 200, "text/html", "<html>host=foo.yahoo.com,service=distributor,path=path '/something',query=query 'foo=bar'</html>");
+        assertHttpStatusCodeAndMessage(response, 200, "text/html", "<html>host=foo.yahoo.com,service=distributor,path=path '/contentnode-status/v1/something',query=query 'foo=bar'</html>");
 
         response = mockHandler.handle(createTestRequest(toUrlPath(applicationId, Zone.defaultZone(), true) + "/service/fake-service/" + host + "/status/something?foo=bar", GET));
         assertHttpStatusCodeAndMessage(response, 404, "{\"error-code\":\"NOT_FOUND\",\"message\":\"No status page for service: fake-service\"}");
@@ -491,6 +516,35 @@ public class ApplicationHandlerTest {
     }
 
     @Test
+    public void testVerifyEndpoints() {
+        expectedEndpoints = List.of(new Endpoint(ClusterSpec.Id.from("bluster"),
+                                                 HttpURL.from(URI.create("https://bluster.tld:1234")),
+                                                 Optional.of(uncheck(() -> InetAddress.getByName("4.3.2.1"))),
+                                                 Optional.of(DomainName.of("fluster.tld")),
+                                                 false));
+        availability = new Availability(EndpointsChecker.Status.available, "Endpoints are ready");
+        ApplicationHandler handler = createApplicationHandler();
+        HttpRequest request = createTestRequest(toUrlPath(applicationId, Zone.defaultZone(), true) + "/verify-endpoints",
+                                                POST,
+                                                new ByteArrayInputStream("""
+                                                                         {
+                                                                           "endpoints": [
+                                                                             {
+                                                                               "clusterName": "bluster",
+                                                                               "url": "https://bluster.tld:1234",
+                                                                               "ipAddress": "4.3.2.1",
+                                                                               "canonicalName": "fluster.tld",
+                                                                               "public": false
+                                                                             }
+                                                                           ]
+                                                                         }""".getBytes(UTF_8)));
+        HttpResponse response = handler.handle(request);
+        assertEquals(200, response.getStatus());
+        assertEquals("{\"status\":\"available\",\"message\":\"Endpoints are ready\"}",
+                     new ByteArrayOutputStream() {{ uncheck(() -> response.render(this)); }}.toString(UTF_8));
+    }
+
+    @Test
     public void testClusterReindexingStateSerialization() {
         Stream.of(ClusterReindexing.State.values()).forEach(ClusterReindexing.State::toString);
     }
@@ -499,7 +553,7 @@ public class ApplicationHandlerTest {
     public void testReindexingSerialization() throws IOException {
         Instant now = Instant.ofEpochMilli(123456);
         ApplicationReindexing applicationReindexing = ApplicationReindexing.empty()
-                                                                           .withPending("foo", "bar", 123L).withReady("moo", "baz", now, 1);
+                                                                           .withPending("foo", "bar", 123L).withReady("moo", "baz", now, 1, "reindexing");
         ClusterReindexing clusterReindexing = new ClusterReindexing(Map.of("bax", new Status(now, null, null, null, null),
                                                                            "baz", new Status(now.plusSeconds(1),
                                                                                              now.plusSeconds(2),
@@ -514,53 +568,56 @@ public class ApplicationHandlerTest {
                                                                   applicationReindexing,
                                                                   Map.of("boo", clusterReindexing,
                                                                          "moo", clusterReindexing))),
-                         "{\n" +
-                         "  \"enabled\": true,\n" +
-                         "  \"clusters\": {\n" +
-                         "    \"boo\": {\n" +
-                         "      \"pending\": {},\n" +
-                         "      \"ready\": {\n" +
-                         "        \"bar\": {},\n" +
-                         "        \"bax\": {\n" +
-                         "          \"startedMillis\": 123456\n" +
-                         "        },\n" +
-                         "        \"baz\": {\n" +
-                         "          \"startedMillis\": 124456,\n" +
-                         "          \"endedMillis\": 125456,\n" +
-                         "          \"state\": \"failed\",\n" +
-                         "          \"message\": \"message\",\n" +
-                         "          \"progress\": 0.1\n" +
-                         "        }\n" +
-                         "      }\n" +
-                         "    },\n" +
-                         "    \"foo\": {\n" +
-                         "      \"pending\": {\n" +
-                         "        \"bar\": 123\n" +
-                         "      },\n" +
-                         "      \"ready\": {\n" +
-                         "        \"bar\": {},\n" +
-                         "        \"hax\": {}\n" +
-                         "      }\n" +
-                         "    },\n" +
-                         "    \"moo\": {\n" +
-                         "      \"pending\": {},\n" +
-                         "      \"ready\": {\n" +
-                         "        \"bax\": {\n" +
-                         "          \"startedMillis\": 123456\n" +
-                         "        },\n" +
-                         "        \"baz\": {\n" +
-                         "          \"readyMillis\": 123456,\n" +
-                         "          \"speed\": 1.0,\n" +
-                         "          \"startedMillis\": 124456,\n" +
-                         "          \"endedMillis\": 125456,\n" +
-                         "          \"state\": \"failed\",\n" +
-                         "          \"message\": \"message\",\n" +
-                         "          \"progress\": 0.1\n" +
-                         "        }\n" +
-                         "      }\n" +
-                         "    }\n" +
-                         "  }\n" +
-                         "}\n");
+                         """
+                         {
+                           "enabled": true,
+                           "clusters": {
+                             "boo": {
+                               "pending": {},
+                               "ready": {
+                                 "bar": {},
+                                 "bax": {
+                                   "startedMillis": 123456
+                                 },
+                                 "baz": {
+                                   "startedMillis": 124456,
+                                   "endedMillis": 125456,
+                                   "state": "failed",
+                                   "message": "message",
+                                   "progress": 0.1
+                                 }
+                               }
+                             },
+                             "foo": {
+                               "pending": {
+                                 "bar": 123
+                               },
+                               "ready": {
+                                 "bar": {},
+                                 "hax": {}
+                               }
+                             },
+                             "moo": {
+                               "pending": {},
+                               "ready": {
+                                 "bax": {
+                                   "startedMillis": 123456
+                                 },
+                                 "baz": {
+                                   "readyMillis": 123456,
+                                   "speed": 1.0,
+                                   "cause": "reindexing",
+                                   "startedMillis": 124456,
+                                   "endedMillis": 125456,
+                                   "state": "failed",
+                                   "message": "message",
+                                   "progress": 0.1
+                                 }
+                               }
+                             }
+                           }
+                         }
+                         """);
     }
 
     @Test
@@ -576,12 +633,12 @@ public class ApplicationHandlerTest {
                                                    hostAndPort,
                                                    uri);
             assertResponse("{\n" +
-                                   "  \"url\": \"" + uri.toString() + "\",\n" +
-                                   "  \"host\": \"" + hostAndPort + "\",\n" +
-                                   "  \"wantedGeneration\": 3,\n" +
-                                   "  \"converged\": true,\n" +
-                                   "  \"currentGeneration\": 3\n" +
-                                   "}",
+                           "  \"url\": \"" + uri.toString() + "\",\n" +
+                           "  \"host\": \"" + hostAndPort + "\",\n" +
+                           "  \"wantedGeneration\": 3,\n" +
+                           "  \"converged\": true,\n" +
+                           "  \"currentGeneration\": 3\n" +
+                           "}",
                            200,
                            response);
         }
@@ -593,11 +650,11 @@ public class ApplicationHandlerTest {
                                                    uri);
 
             assertResponse("{\n" +
-                                   "  \"url\": \"" + uri.toString() + "\",\n" +
-                                   "  \"host\": \"" + hostAndPort + "\",\n" +
-                                   "  \"wantedGeneration\": 3,\n" +
-                                   "  \"problem\": \"Host:port (service) no longer part of application, refetch list of services.\"\n" +
-                                   "}",
+                           "  \"url\": \"" + uri.toString() + "\",\n" +
+                           "  \"host\": \"" + hostAndPort + "\",\n" +
+                           "  \"wantedGeneration\": 3,\n" +
+                           "  \"problem\": \"Host:port (service) no longer part of application, refetch list of services.\"\n" +
+                           "}",
                            410,
                            response);
         }
@@ -619,20 +676,20 @@ public class ApplicationHandlerTest {
                                                                         3L),
                                                 requestUrl);
             assertResponse("{\n" +
-                                   "  \"services\": [\n" +
-                                   "    {\n" +
-                                   "      \"host\": \"" + hostname + "\",\n" +
-                                   "      \"port\": " + port + ",\n" +
-                                   "      \"type\": \"container\",\n" +
-                                   "      \"url\": \"" + serviceUrl.toString() + "\",\n" +
-                                   "      \"currentGeneration\":" + 3 + "\n" +
-                                   "    }\n" +
-                                   "  ],\n" +
-                                   "  \"url\": \"" + requestUrl.toString() + "\",\n" +
-                                   "  \"currentGeneration\": 3,\n" +
-                                   "  \"wantedGeneration\": 3,\n" +
-                                   "  \"converged\": true\n" +
-                                   "}",
+                           "  \"services\": [\n" +
+                           "    {\n" +
+                           "      \"host\": \"" + hostname + "\",\n" +
+                           "      \"port\": " + port + ",\n" +
+                           "      \"type\": \"container\",\n" +
+                           "      \"url\": \"" + serviceUrl.toString() + "\",\n" +
+                           "      \"currentGeneration\":" + 3 + "\n" +
+                           "    }\n" +
+                           "  ],\n" +
+                           "  \"url\": \"" + requestUrl.toString() + "\",\n" +
+                           "  \"currentGeneration\": 3,\n" +
+                           "  \"wantedGeneration\": 3,\n" +
+                           "  \"converged\": true\n" +
+                           "}",
                            200,
                            response);
         }
@@ -653,27 +710,27 @@ public class ApplicationHandlerTest {
                                                                         3L),
                                                 requestUrl);
             assertResponse("{\n" +
-                                   "  \"services\": [\n" +
-                                   "    {\n" +
-                                   "      \"host\": \"" + hostname + "\",\n" +
-                                   "      \"port\": " + port + ",\n" +
-                                   "      \"type\": \"container\",\n" +
-                                   "      \"url\": \"" + serviceUrl.toString() + "\",\n" +
-                                   "      \"currentGeneration\":" + 4 + "\n" +
-                                   "    },\n" +
-                                   "    {\n" +
-                                   "      \"host\": \"" + hostname2 + "\",\n" +
-                                   "      \"port\": " + port2 + ",\n" +
-                                   "      \"type\": \"container\",\n" +
-                                   "      \"url\": \"" + serviceUrl2.toString() + "\",\n" +
-                                   "      \"currentGeneration\":" + 3 + "\n" +
-                                   "    }\n" +
-                                   "  ],\n" +
-                                   "  \"url\": \"" + requestUrl.toString() + "\",\n" +
-                                   "  \"currentGeneration\": 3,\n" +
-                                   "  \"wantedGeneration\": 4,\n" +
-                                   "  \"converged\": false\n" +
-                                   "}",
+                           "  \"services\": [\n" +
+                           "    {\n" +
+                           "      \"host\": \"" + hostname + "\",\n" +
+                           "      \"port\": " + port + ",\n" +
+                           "      \"type\": \"container\",\n" +
+                           "      \"url\": \"" + serviceUrl.toString() + "\",\n" +
+                           "      \"currentGeneration\":" + 4 + "\n" +
+                           "    },\n" +
+                           "    {\n" +
+                           "      \"host\": \"" + hostname2 + "\",\n" +
+                           "      \"port\": " + port2 + ",\n" +
+                           "      \"type\": \"container\",\n" +
+                           "      \"url\": \"" + serviceUrl2.toString() + "\",\n" +
+                           "      \"currentGeneration\":" + 3 + "\n" +
+                           "    }\n" +
+                           "  ],\n" +
+                           "  \"url\": \"" + requestUrl.toString() + "\",\n" +
+                           "  \"currentGeneration\": 3,\n" +
+                           "  \"wantedGeneration\": 4,\n" +
+                           "  \"converged\": false\n" +
+                           "}",
                            200,
                            response);
         }
@@ -691,11 +748,11 @@ public class ApplicationHandlerTest {
                                                uri);
 
         assertResponse("{\n" +
-                               "  \"url\": \"" + uri.toString() + "\",\n" +
-                               "  \"host\": \"" + hostAndPort + "\",\n" +
-                               "  \"wantedGeneration\": 3,\n" +
-                               "  \"error\": \"some error message\"" +
-                               "}",
+                       "  \"url\": \"" + uri + "\",\n" +
+                       "  \"host\": \"" + hostAndPort + "\",\n" +
+                       "  \"wantedGeneration\": 3,\n" +
+                       "  \"error\": \"some error message\"" +
+                       "}",
                        404,
                        response);
     }

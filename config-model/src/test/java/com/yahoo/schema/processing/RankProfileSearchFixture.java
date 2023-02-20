@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.schema.processing;
 
-import com.google.common.collect.ImmutableList;
 import com.yahoo.config.application.api.ApplicationPackage;
 import ai.vespa.rankingexpression.importer.configmodelview.MlModelImporter;
 import com.yahoo.config.model.application.provider.BaseDeployLogger;
@@ -37,10 +36,10 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  */
 class RankProfileSearchFixture {
 
-    private final ImmutableList<MlModelImporter> importers = ImmutableList.of(new TensorFlowImporter(),
-                                                                              new OnnxImporter(),
-                                                                              new LightGBMImporter(),
-                                                                              new XGBoostImporter());
+    private final List<MlModelImporter> importers = List.of(new TensorFlowImporter(),
+                                                            new OnnxImporter(),
+                                                            new LightGBMImporter(),
+                                                            new XGBoostImporter());
     private final RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
     private final QueryProfileRegistry queryProfileRegistry;
     private final Schema schema;
@@ -49,10 +48,6 @@ class RankProfileSearchFixture {
 
     public RankProfileRegistry getRankProfileRegistry() {
         return rankProfileRegistry;
-    }
-
-    public QueryProfileRegistry getQueryProfileRegistry() {
-        return queryProfileRegistry;
     }
 
     RankProfileSearchFixture(String rankProfiles) throws ParseException {
@@ -111,11 +106,6 @@ class RankProfileSearchFixture {
                                                            new ImportedMlModels(applicationDir.toFile(), executor, importers));
         compiledRankProfiles.put(rankProfile, compiled);
         return compiled;
-    }
-
-    /** Returns the given uncompiled profile */
-    public RankProfile rankProfile(String rankProfile) {
-        return rankProfileRegistry.get(schema, rankProfile);
     }
 
     /** Returns the given compiled profile, or null if not compiled yet or not present at all */

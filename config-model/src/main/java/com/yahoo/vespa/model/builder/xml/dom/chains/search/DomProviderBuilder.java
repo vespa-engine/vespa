@@ -4,7 +4,8 @@ package com.yahoo.vespa.model.builder.xml.dom.chains.search;
 import com.yahoo.component.ComponentId;
 import com.yahoo.component.chain.model.ChainSpecification;
 import com.yahoo.config.model.deploy.DeployState;
-import com.yahoo.config.model.producer.AbstractConfigProducer;
+import com.yahoo.config.model.producer.AnyConfigProducer;
+import com.yahoo.config.model.producer.TreeConfigProducer;
 import com.yahoo.search.searchchain.model.federation.FederationOptions;
 import com.yahoo.search.searchchain.model.federation.LocalProviderSpec;
 import com.yahoo.text.XML;
@@ -125,7 +126,7 @@ public class DomProviderBuilder extends DomGenericTargetBuilder<Provider> {
     }
 
     @Override
-    protected Provider buildChain(DeployState deployState, AbstractConfigProducer<?> ancestor, Element providerElement,
+    protected Provider buildChain(DeployState deployState, TreeConfigProducer<AnyConfigProducer> ancestor, Element providerElement,
                                   ChainSpecification specWithoutInnerComponents) {
 
         ProviderReader providerReader = new ProviderReader(providerElement);
@@ -140,7 +141,7 @@ public class DomProviderBuilder extends DomGenericTargetBuilder<Provider> {
     }
 
 
-    private Collection<Source> buildSources(DeployState deployState, AbstractConfigProducer<?> ancestor, Element providerElement) {
+    private Collection<Source> buildSources(DeployState deployState, TreeConfigProducer<AnyConfigProducer> ancestor, Element providerElement) {
         List<Source> sources = new ArrayList<>();
         for (Element sourceElement : XML.getChildren(providerElement, "source")) {
             sources.add(new DomSourceBuilder(outerComponentTypeByComponentName).build(deployState, ancestor, sourceElement));

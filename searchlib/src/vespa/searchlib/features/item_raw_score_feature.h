@@ -9,7 +9,7 @@ namespace search::features {
 class ItemRawScoreExecutor : public fef::FeatureExecutor
 {
 public:
-    typedef std::vector<fef::TermFieldHandle> HandleVector;
+    using HandleVector = std::vector<fef::TermFieldHandle>;
 private:
     HandleVector _handles;
     const fef::MatchData *_md;
@@ -42,7 +42,7 @@ public:
 class ItemRawScoreBlueprint : public fef::Blueprint
 {
 private:
-    typedef std::vector<fef::TermFieldHandle> HandleVector;
+    using HandleVector = std::vector<fef::TermFieldHandle>;
     vespalib::string _label;
 public:
     ItemRawScoreBlueprint() : Blueprint("itemRawScore"), _label() {}

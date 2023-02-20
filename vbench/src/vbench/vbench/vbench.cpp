@@ -78,7 +78,6 @@ VBench::VBench(const vespalib::Slime &cfg)
         }
         inputChain->generator = _factory.createGenerator(generator, *inputChain->taggers.back());
         if (inputChain->generator.get() != 0) {
-            inputChain->thread.reset(new vespalib::Thread(*inputChain->generator, vbench_inputchain_generator));
             _inputs.push_back(std::move(inputChain));
         }
     }
@@ -101,10 +100,10 @@ VBench::run()
 {
     _scheduler->start();
     for (size_t i = 0; i < _inputs.size(); ++i) {
-        _inputs[i]->thread->start();
+        _inputs[i]->thread = vespalib::thread::start(*_inputs[i]->generator, vbench_inputchain_generator);
     }
     for (size_t i = 0; i < _inputs.size(); ++i) {
-        _inputs[i]->thread->join();
+        _inputs[i]->thread.join();
     }
     _scheduler->stop().join();
     for (size_t i = 0; i < _inputs.size(); ++i) {

@@ -16,10 +16,10 @@ namespace proton {
  */
 class SearchableFeedView : public FastAccessFeedView
 {
-    typedef FastAccessFeedView Parent;
+    using Parent = FastAccessFeedView;
 public:
-    typedef std::unique_ptr<SearchableFeedView> UP;
-    typedef std::shared_ptr<SearchableFeedView> SP;
+    using UP = std::unique_ptr<SearchableFeedView>;
+    using SP = std::shared_ptr<SearchableFeedView>;
 
     struct Context {
         const IIndexWriter::SP &_indexWriter;

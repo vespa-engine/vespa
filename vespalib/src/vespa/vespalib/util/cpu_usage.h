@@ -166,6 +166,7 @@ private:
     CpuUsage(const CpuUsage &) = delete;
     CpuUsage &operator=(CpuUsage &&) = delete;
     CpuUsage &operator=(const CpuUsage &) = delete;
+    ~CpuUsage();
 
     static CpuUsage &self();
 

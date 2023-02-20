@@ -7,9 +7,14 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
-
 import java.util.Objects;
 import java.util.OptionalDouble;
+
+import static com.yahoo.vespa.flags.custom.Validation.requireNonNegative;
+import static com.yahoo.vespa.flags.custom.Validation.validArchitectures;
+import static com.yahoo.vespa.flags.custom.Validation.validDiskSpeeds;
+import static com.yahoo.vespa.flags.custom.Validation.validStorageTypes;
+import static com.yahoo.vespa.flags.custom.Validation.validateEnum;
 
 /**
  * @author freva
@@ -19,39 +24,60 @@ import java.util.OptionalDouble;
 @JsonInclude(value = JsonInclude.Include.NON_NULL)
 public class ClusterCapacity {
     private final int count;
-    private final double vcpu;
-    private final double memoryGb;
-    private final double diskGb;
+    private final OptionalDouble vcpu;
+    private final OptionalDouble memoryGb;
+    private final OptionalDouble diskGb;
     private final OptionalDouble bandwidthGbps;
+    private final String diskSpeed;
+    private final String storageType;
+    private final String architecture;
 
     @JsonCreator
     public ClusterCapacity(@JsonProperty("count") int count,
-                           @JsonProperty("vcpu") double vcpu,
-                           @JsonProperty("memoryGb") double memoryGb,
-                           @JsonProperty("diskGb") double diskGb,
-                           @JsonProperty("bandwidthGbps") Double bandwidthGbps) {
+                           @JsonProperty("vcpu") Double vcpu,
+                           @JsonProperty("memoryGb") Double memoryGb,
+                           @JsonProperty("diskGb") Double diskGb,
+                           @JsonProperty("bandwidthGbps") Double bandwidthGbps,
+                           @JsonProperty("diskSpeed") String diskSpeed,
+                           @JsonProperty("storageType") String storageType,
+                           @JsonProperty("architecture") String architecture) {
         this.count = (int) requireNonNegative("count", count);
-        this.vcpu = requireNonNegative("vcpu", vcpu);
-        this.memoryGb = requireNonNegative("memoryGb", memoryGb);
-        this.diskGb = requireNonNegative("diskGb", diskGb);
+        this.vcpu = vcpu == null ? OptionalDouble.empty() : OptionalDouble.of(requireNonNegative("vcpu", vcpu));
+        this.memoryGb = memoryGb == null ? OptionalDouble.empty() : OptionalDouble.of(requireNonNegative("memoryGb", memoryGb));
+        this.diskGb = diskGb == null ? OptionalDouble.empty() : OptionalDouble.of(requireNonNegative("diskGb", diskGb));
         this.bandwidthGbps = bandwidthGbps == null ? OptionalDouble.empty() : OptionalDouble.of(bandwidthGbps);
+        this.diskSpeed = validateEnum("diskSpeed", validDiskSpeeds, diskSpeed == null ? "fast" : diskSpeed);
+        this.storageType = validateEnum("storageType", validStorageTypes, storageType == null ? "any" : storageType);
+        this.architecture = validateEnum("architecture", validArchitectures, architecture == null ? "x86_64" : architecture);
     }
 
     /** Returns a new ClusterCapacity equal to {@code this}, but with the given count. */
     public ClusterCapacity withCount(int count) {
-        return new ClusterCapacity(count, vcpu, memoryGb, diskGb, bandwidthGbpsOrNull());
+        return new ClusterCapacity(count, vcpuOrNull(), memoryGbOrNull(), diskGbOrNull(), bandwidthGbpsOrNull(),
+                                   diskSpeed, storageType, architecture);
     }
 
     @JsonGetter("count") public int count() { return count; }
-    @JsonGetter("vcpu") public double vcpu() { return vcpu; }
-    @JsonGetter("memoryGb") public double memoryGb() { return memoryGb; }
-    @JsonGetter("diskGb") public double diskGb() { return diskGb; }
+    @JsonGetter("vcpu") public Double vcpuOrNull() {
+        return vcpu.isPresent() ? vcpu.getAsDouble() : null;
+    }
+    @JsonGetter("memoryGb") public Double memoryGbOrNull() {
+        return memoryGb.isPresent() ? memoryGb.getAsDouble() : null;
+    }
+    @JsonGetter("diskGb") public Double diskGbOrNull() {
+        return diskGb.isPresent() ? diskGb.getAsDouble() : null;
+    }
     @JsonGetter("bandwidthGbps") public Double bandwidthGbpsOrNull() {
         return bandwidthGbps.isPresent() ? bandwidthGbps.getAsDouble() : null;
     }
+    @JsonGetter("diskSpeed") public String diskSpeed() { return diskSpeed; }
+    @JsonGetter("storageType") public String storageType() { return storageType; }
+    @JsonGetter("architecture") public String architecture() { return architecture; }
 
-    @JsonIgnore
-    public double bandwidthGbps() { return bandwidthGbps.orElse(1.0); }
+    @JsonIgnore public Double vcpu() { return vcpu.orElse(0.0); }
+    @JsonIgnore public Double memoryGb() { return memoryGb.orElse(0.0); }
+    @JsonIgnore public Double diskGb() { return diskGb.orElse(0.0); }
+    @JsonIgnore public double bandwidthGbps() { return bandwidthGbps.orElse(1.0); }
 
     @Override
     public String toString() {
@@ -61,6 +87,9 @@ public class ClusterCapacity {
                 ", memoryGb=" + memoryGb +
                 ", diskGb=" + diskGb +
                 ", bandwidthGbps=" + bandwidthGbps +
+                ", diskSpeed=" + diskSpeed +
+                ", storageType=" + storageType +
+                ", architecture=" + architecture +
                 '}';
     }
 
@@ -70,20 +99,18 @@ public class ClusterCapacity {
         if (o == null || getClass() != o.getClass()) return false;
         ClusterCapacity that = (ClusterCapacity) o;
         return count == that.count &&
-                Double.compare(that.vcpu, vcpu) == 0 &&
-                Double.compare(that.memoryGb, memoryGb) == 0 &&
-                Double.compare(that.diskGb, diskGb) == 0 &&
-                bandwidthGbps.equals(that.bandwidthGbps);
+                vcpu.equals(that.vcpu) &&
+                memoryGb.equals(that.memoryGb) &&
+                diskGb.equals(that.diskGb) &&
+                bandwidthGbps.equals(that.bandwidthGbps) &&
+                diskSpeed.equals(that.diskSpeed) &&
+                storageType.equals(that.storageType) &&
+                architecture.equals(that.architecture);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(count, vcpu, memoryGb, diskGb, bandwidthGbps);
+        return Objects.hash(count, vcpu, memoryGb, diskGb, bandwidthGbps, diskSpeed, storageType, architecture);
     }
 
-    private static double requireNonNegative(String name, double value) {
-        if (value < 0)
-            throw new IllegalArgumentException("'" + name + "' must be positive, was " + value);
-        return value;
-    }
 }

@@ -6,7 +6,6 @@ import ai.vespa.metricsproxy.core.MetricsConsumers;
 import ai.vespa.metricsproxy.metric.model.ConsumerId;
 import ai.vespa.metricsproxy.metric.model.MetricsPacket;
 import ai.vespa.metricsproxy.metric.model.ServiceId;
-import com.google.common.collect.ImmutableList;
 import org.junit.Test;
 
 import java.util.List;
@@ -29,7 +28,7 @@ public class ExternalMetricsTest {
         MetricsConsumers noConsumers = new MetricsConsumers(new ConsumersConfig.Builder().build());
         ExternalMetrics externalMetrics = new ExternalMetrics(noConsumers);
 
-        externalMetrics.setExtraMetrics(ImmutableList.of(
+        externalMetrics.setExtraMetrics(List.of(
                 new MetricsPacket.Builder(toServiceId("foo"))));
 
         List<MetricsPacket.Builder> packets = externalMetrics.getMetrics();
@@ -42,7 +41,7 @@ public class ExternalMetricsTest {
 
         MetricsConsumers noConsumers = new MetricsConsumers(new ConsumersConfig.Builder().build());
         ExternalMetrics externalMetrics = new ExternalMetrics(noConsumers);
-        externalMetrics.setExtraMetrics(ImmutableList.of(
+        externalMetrics.setExtraMetrics(List.of(
                 new MetricsPacket.Builder(SERVICE_ID)));
 
         List<MetricsPacket.Builder> packets = externalMetrics.getMetrics();
@@ -59,7 +58,7 @@ public class ExternalMetricsTest {
         MetricsConsumers consumers = new MetricsConsumers(consumersConfig);
         ExternalMetrics externalMetrics = new ExternalMetrics(consumers);
 
-        externalMetrics.setExtraMetrics(ImmutableList.of(
+        externalMetrics.setExtraMetrics(List.of(
                 new MetricsPacket.Builder(toServiceId("foo"))));
 
         List<MetricsPacket.Builder> packets = externalMetrics.getMetrics();

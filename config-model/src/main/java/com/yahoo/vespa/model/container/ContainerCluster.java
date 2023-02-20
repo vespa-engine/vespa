@@ -10,7 +10,8 @@ import com.yahoo.config.docproc.DocprocConfig;
 import com.yahoo.config.docproc.SchemamappingConfig;
 import com.yahoo.config.model.ApplicationConfigProducerRoot;
 import com.yahoo.config.model.deploy.DeployState;
-import com.yahoo.config.model.producer.AbstractConfigProducer;
+import com.yahoo.config.model.producer.AnyConfigProducer;
+import com.yahoo.config.model.producer.TreeConfigProducer;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.container.ComponentsConfig;
@@ -25,7 +26,6 @@ import com.yahoo.container.jdisc.state.StateHandler;
 import com.yahoo.container.logging.AccessLog;
 import com.yahoo.container.usability.BindingsOverviewHandler;
 import com.yahoo.document.config.DocumentmanagerConfig;
-import com.yahoo.metrics.simple.runtime.MetricProperties;
 import com.yahoo.osgi.provider.model.ComponentModel;
 import com.yahoo.prelude.semantics.SemanticRulesConfig;
 import com.yahoo.search.config.IndexInfoConfig;
@@ -36,6 +36,8 @@ import com.yahoo.search.query.profile.config.QueryProfilesConfig;
 import com.yahoo.vespa.configdefinition.IlscriptsConfig;
 import com.yahoo.vespa.model.PortsMeta;
 import com.yahoo.vespa.model.Service;
+import com.yahoo.vespa.model.VespaModel;
+import com.yahoo.vespa.model.admin.Admin;
 import com.yahoo.vespa.model.admin.monitoring.Monitoring;
 import com.yahoo.vespa.model.clients.ContainerDocumentApi;
 import com.yahoo.vespa.model.container.component.AccessLogComponent;
@@ -82,7 +84,7 @@ import static com.yahoo.vespa.model.container.component.chain.ProcessingHandler.
  * @author Tony Vaagenes
  */
 public abstract class ContainerCluster<CONTAINER extends Container>
-        extends AbstractConfigProducer<AbstractConfigProducer<?>>
+        extends TreeConfigProducer<AnyConfigProducer>
         implements
         ComponentsConfig.Producer,
         JdiscBindingsConfig.Producer,
@@ -165,10 +167,10 @@ public abstract class ContainerCluster<CONTAINER extends Container>
     private boolean clientsLegacyMode;
     private List<Client> clients = List.of();
 
-    public ContainerCluster(AbstractConfigProducer<?> parent, String configSubId, String clusterId, DeployState deployState, boolean zooKeeperLocalhostAffinity) {
+    public ContainerCluster(TreeConfigProducer<?> parent, String configSubId, String clusterId, DeployState deployState, boolean zooKeeperLocalhostAffinity) {
         this(parent, configSubId, clusterId, deployState, zooKeeperLocalhostAffinity, 1);
     }
-    public ContainerCluster(AbstractConfigProducer<?> parent, String configSubId, String clusterId, DeployState deployState, boolean zooKeeperLocalhostAffinity, int defaultPoolNumThreads) {
+    public ContainerCluster(TreeConfigProducer<?> parent, String configSubId, String clusterId, DeployState deployState, boolean zooKeeperLocalhostAffinity, int defaultPoolNumThreads) {
         super(parent, configSubId);
         this.name = clusterId;
         this.isHostedVespa = stateIsHosted(deployState);
@@ -187,8 +189,8 @@ public abstract class ContainerCluster<CONTAINER extends Container>
         addSimpleComponent("com.yahoo.container.jdisc.metric.MetricProvider");
         addSimpleComponent("com.yahoo.container.jdisc.metric.MetricUpdater");
         addSimpleComponent(com.yahoo.container.jdisc.ThreadedHttpRequestHandler.Context.class);
-        addSimpleComponent(com.yahoo.metrics.simple.MetricManager.class.getName(), null, MetricProperties.BUNDLE_SYMBOLIC_NAME);
-        addSimpleComponent(com.yahoo.metrics.simple.jdisc.JdiscMetricsFactory.class.getName(), null, MetricProperties.BUNDLE_SYMBOLIC_NAME);
+        addSimpleComponent(com.yahoo.metrics.simple.MetricManager.class.getName());
+        addSimpleComponent(com.yahoo.metrics.simple.jdisc.JdiscMetricsFactory.class.getName());
         addSimpleComponent("com.yahoo.container.jdisc.state.StateMonitor");
         addSimpleComponent("com.yahoo.container.jdisc.ContainerThreadFactory");
         addSimpleComponent("com.yahoo.container.handler.VipStatus");
@@ -206,6 +208,17 @@ public abstract class ContainerCluster<CONTAINER extends Container>
     }
     public Zone getZone() {
         return zone;
+    }
+
+    protected Optional<Admin> getAdmin() {
+        var parent = getParent();
+        if (parent != null) {
+            var r = parent.getRoot();
+            if (r instanceof VespaModel model) {
+                return Optional.ofNullable(model.getAdmin());
+            }
+        }
+        return Optional.empty();
     }
 
     public void addDefaultHandlersWithVip() {
@@ -410,13 +423,13 @@ public abstract class ContainerCluster<CONTAINER extends Container>
         return Collections.unmodifiableCollection(allComponents);
     }
 
-    private void recursivelyFindAllComponents(Collection<Component<?, ?>> allComponents, AbstractConfigProducer<?> current) {
-        for (AbstractConfigProducer<?> child: current.getChildren().values()) {
+    private void recursivelyFindAllComponents(Collection<Component<?, ?>> allComponents, TreeConfigProducer<?> current) {
+        for (var child: current.getChildren().values()) {
             if (child instanceof Component)
                 allComponents.add((Component<?, ?>) child);
-
-            if (!(child instanceof Container))
-                recursivelyFindAllComponents(allComponents, child);
+            
+            if (child instanceof TreeConfigProducer t && !(child instanceof Container))
+                recursivelyFindAllComponents(allComponents, t);
         }
     }
 

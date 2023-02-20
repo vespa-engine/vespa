@@ -9,6 +9,8 @@ ConnectionStatistics ConnectionStatistics::server_stats = {};
 
 ConfigStatistics ConfigStatistics::instance = {};
 
+CapabilityStatistics CapabilityStatistics::instance = {};
+
 ConnectionStatistics::Snapshot ConnectionStatistics::snapshot() const noexcept {
     Snapshot s;
     s.insecure_connections       = insecure_connections.load(std::memory_order_relaxed);
@@ -40,6 +42,20 @@ ConfigStatistics::Snapshot ConfigStatistics::Snapshot::subtract(const Snapshot& 
     Snapshot s;
     s.successful_config_reloads = successful_config_reloads - rhs.successful_config_reloads;
     s.failed_config_reloads     = failed_config_reloads     - rhs.failed_config_reloads;
+    return s;
+}
+
+CapabilityStatistics::Snapshot CapabilityStatistics::snapshot() const noexcept {
+    Snapshot s;
+    s.rpc_capability_checks_failed    = rpc_capability_checks_failed.load(std::memory_order_relaxed);
+    s.status_capability_checks_failed = status_capability_checks_failed.load(std::memory_order_relaxed);
+    return s;
+}
+
+CapabilityStatistics::Snapshot CapabilityStatistics::Snapshot::subtract(const Snapshot& rhs) const noexcept {
+    Snapshot s;
+    s.rpc_capability_checks_failed    = rpc_capability_checks_failed - rhs.rpc_capability_checks_failed;
+    s.status_capability_checks_failed = status_capability_checks_failed - rhs.status_capability_checks_failed;
     return s;
 }
 

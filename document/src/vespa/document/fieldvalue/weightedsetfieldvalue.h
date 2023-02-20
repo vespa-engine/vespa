@@ -21,7 +21,7 @@ public:
         template<typename T> bool operator()(const T& s1, const T& s2) const
             { return *s1 < *s2; }
     };
-    typedef MapFieldValue WeightedFieldValueMap;
+    using WeightedFieldValueMap = MapFieldValue;
 
 private:
     std::shared_ptr<const MapDataType> _map_type;
@@ -33,7 +33,7 @@ private:
     bool removeValue(const FieldValue& val) override;
     fieldvalue::ModificationStatus onIterateNested(PathRange nested, fieldvalue::IteratorHandler& handler) const override;
 public:
-    typedef std::unique_ptr<WeightedSetFieldValue> UP;
+    using UP = std::unique_ptr<WeightedSetFieldValue>;
 
     /**
      * @param wsetType Type of the weighted set. Must be a WeightedSetDataType,
@@ -79,8 +79,8 @@ public:
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 
     // Implements iterating through internal content.
-    typedef WeightedFieldValueMap::const_iterator const_iterator;
-    typedef WeightedFieldValueMap::iterator iterator;
+    using const_iterator = WeightedFieldValueMap::const_iterator;
+    using iterator = WeightedFieldValueMap::iterator;
 
     const_iterator begin() const { return _map.begin(); }
     iterator begin() { return _map.begin(); }

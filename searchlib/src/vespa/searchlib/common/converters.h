@@ -16,7 +16,7 @@ private:
 class LowercaseConverter : public BlobConverter
 {
 public:
-    LowercaseConverter();
+    LowercaseConverter() noexcept;
 private:
     ConstBufferRef onConvert(const ConstBufferRef & src) const override;
     mutable vespalib::string _buffer;

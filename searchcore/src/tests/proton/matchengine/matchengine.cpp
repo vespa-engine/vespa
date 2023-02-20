@@ -116,7 +116,7 @@ TEST("requireThatCorrectHandlerIsUsed")
 }
 
 struct ObserveBundleMatchHandler : MySearchHandler {
-    typedef std::shared_ptr<ObserveBundleMatchHandler> SP;
+    using SP = std::shared_ptr<ObserveBundleMatchHandler>;
     mutable size_t bundleSize;
     ObserveBundleMatchHandler() : bundleSize(0) {}
 

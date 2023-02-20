@@ -9,7 +9,7 @@ namespace vespalib::eval {
 /**
  * Tensor function combining multiple dot products with multiple
  * layers of aggregation, resulting in a single scalar result.
- * 
+ *
  * inputs:
  *   query:    tensor<float>(qt{},x[32])
  *   document: tensor<float>(dt{},x[32])

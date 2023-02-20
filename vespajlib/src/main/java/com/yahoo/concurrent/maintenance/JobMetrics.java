@@ -14,6 +14,6 @@ public abstract class JobMetrics {
      * Records completion of a run of a job.
      * This is guaranteed to always be called once after each maintainer run.
      */
-    public abstract void completed(String job, double successFactor);
+    public abstract void completed(String job, double successFactor, long durationMs);
 
 }

@@ -44,6 +44,7 @@ public class ProtobufSerializationTest {
                 contentsOf(request1.getTensorFeatureOverrides(0).getValue()));
         assertEquals("\"\\006\\001\\001\\001x\\001?\\231\\231\\232\"",
                 contentsOf(request1.getTensorFeatureOverrides(1).getValue()));
+        assertFalse(request1.hasProfiling());
 
         query.prepare(); // calling prepare() moves "overrides" to "features" - content stays the same
         SearchProtocol.SearchRequest request2 = ProtobufSerialization.convertFromQuery(query, 9, "serverId", 0.5);
@@ -134,6 +135,28 @@ public class ProtobufSerializationTest {
             assertEquals(hitNum, hit.getSortData()[11]);
             hitNum++;
         }
+    }
+
+    @Test
+    void profiling_parameters_are_serialized_in_search_request() {
+        var q = new Query("?query=test&trace.level=1&" +
+                "trace.profiling.matching.depth=3&" +
+                "trace.profiling.firstPhaseRanking.depth=5&" +
+                "trace.profiling.secondPhaseRanking.depth=-7");
+        var req = ProtobufSerialization.convertFromQuery(q, 1, "serverId", 0.5);
+        assertEquals(3, req.getProfiling().getMatch().getDepth());
+        assertEquals(5, req.getProfiling().getFirstPhase().getDepth());
+        assertEquals(-7, req.getProfiling().getSecondPhase().getDepth());
+    }
+
+    @Test
+    void only_set_profiling_parameters_are_serialized_in_search_request() {
+        var q = new Query("?query=test&trace.level=1&" +
+                "trace.profiling.matching.depth=3");
+        var req = ProtobufSerialization.convertFromQuery(q, 1, "serverId", 0.5);
+        assertEquals(3, req.getProfiling().getMatch().getDepth());
+        assertFalse(req.getProfiling().hasFirstPhase());
+        assertFalse(req.getProfiling().hasSecondPhase());
     }
 
 }

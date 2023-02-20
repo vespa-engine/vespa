@@ -5,16 +5,15 @@
 #include <vespa/storage/distributor/operations/sequenced_operation.h>
 #include <vespa/storage/distributor/persistencemessagetracker.h>
 
-namespace document {
-    class Document;
-}
-namespace storage::lib {
-    class Distribution;
-}
+namespace document { class Document; }
+
+namespace storage::lib { class Distribution; }
+
 namespace storage::api {
-    class CreateBucketReply;
-    class PutCommand;
+class CreateBucketReply;
+class PutCommand;
 }
+
 namespace storage::distributor {
 
 class DistributorBucketSpace;
@@ -25,16 +24,16 @@ class PutOperation : public SequencedOperation
 public:
     PutOperation(const DistributorNodeContext& node_ctx,
                  DistributorStripeOperationContext& op_ctx,
-                 DistributorBucketSpace &bucketSpace,
+                 DistributorBucketSpace& bucketSpace,
                  std::shared_ptr<api::PutCommand> msg,
                  PersistenceOperationMetricSet& metric,
                  SequencingHandle sequencingHandle = SequencingHandle());
     ~PutOperation() override;
 
     void onStart(DistributorStripeMessageSender& sender) override;
-    const char* getName() const override { return "put"; };
+    const char* getName() const noexcept override { return "put"; };
     std::string getStatus() const override { return ""; };
-    void onReceive(DistributorStripeMessageSender& sender, const std::shared_ptr<api::StorageReply> &) override;
+    void onReceive(DistributorStripeMessageSender& sender, const std::shared_ptr<api::StorageReply>&) override;
     void onClose(DistributorStripeMessageSender& sender) override;
 
 private:

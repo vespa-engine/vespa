@@ -2,7 +2,7 @@
 
 #include "update_metric_set.h"
 
-namespace storage {
+namespace storage::distributor {
 
 using metrics::MetricSet;
 

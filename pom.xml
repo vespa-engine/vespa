@@ -24,9 +24,9 @@
     </developers>
 
     <modules>
+        <module>airlift-zstd</module>
         <module>application</module>
         <module>application-model</module>
-        <module>application-preprocessor</module>
         <module>athenz-identity-provider-service</module>
         <module>bundle-plugin-test</module>
         <module>client</module>
@@ -59,6 +59,7 @@
         <module>container-disc</module>
         <module>container-documentapi</module>
         <module>container-messagebus</module>
+        <module>container-onnxruntime</module>
         <module>container-search-and-docproc</module>
         <module>container-search</module>
         <module>container-spifly</module>
@@ -112,14 +113,12 @@
         <module>searchcore</module>
         <module>searchlib</module>
         <module>searchsummary</module>
-        <module>security-tools</module>
         <module>security-utils</module>
         <module>service-monitor</module>
         <module>socket_test</module>
         <module>standalone-container</module>
         <module>storage</module>
         <module>streamingvisitors</module>
-        <module>tenant-base</module>
         <module>tenant-cd-api</module>
         <module>tenant-cd-commons</module>
         <module>testutil</module>
@@ -136,8 +135,8 @@
         <module>vespa-maven-plugin</module>
         <module>vespa-osgi-testrunner</module>
         <module>vespa-testrunner-components</module>
-        <module>vespa_feed_perf</module>
         <module>vespa-3party-bundles</module>
+        <module>vespa-3party-jars</module>
         <module>vespajlib</module>
         <module>vespalog</module>
         <module>zkfacade</module>

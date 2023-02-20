@@ -148,7 +148,7 @@ MultiValueEnumAttribute<B, M>::onCommit()
     this->freezeEnumDictionary();
     std::atomic_thread_fence(std::memory_order_release);
     this->reclaim_unused_memory();
-    if (this->_mvMapping.considerCompact(this->getConfig().getCompactionStrategy())) {
+    if (this->_mvMapping.consider_compact(this->getConfig().getCompactionStrategy())) {
         this->incGeneration();
         this->updateStat(true);
     }
@@ -185,7 +185,7 @@ MultiValueEnumAttribute<B, M>::onUpdateStat()
     vespalib::MemoryUsage total;
     auto& compaction_strategy = this->getConfig().getCompactionStrategy();
     total.merge(this->_enumStore.update_stat(compaction_strategy));
-    total.merge(this->_mvMapping.updateStat(compaction_strategy));
+    total.merge(this->_mvMapping.update_stat(compaction_strategy));
     total.merge(this->getChangeVectorMemoryUsage());
     mergeMemoryStats(total);
     this->updateStatistics(this->_mvMapping.getTotalValueCnt(), this->_enumStore.get_num_uniques(), total.allocatedBytes(),

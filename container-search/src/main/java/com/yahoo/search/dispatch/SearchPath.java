@@ -234,7 +234,7 @@ public class SearchPath {
                 return Collections.emptyList();
             }
             int end = Math.min(to, max);
-            return IntStream.range(from, end).boxed().collect(Collectors.toList());
+            return IntStream.range(from, end).boxed().toList();
         }
 
         @Override

@@ -358,15 +358,6 @@ public class NodeAgentImplTest {
         verify(orchestrator, times(1)).resume(eq(hostName));
         verify(nodeRepository, times(1)).updateNodeAttributes(eq(hostName), eq(new NodeAttributes()
                 .withRebootGeneration(wantedRebootGeneration)));
-
-        // Re-create if new container config needs to be applied
-        when(containerOperations.shouldRecreate(eq(context), any(), any())).thenReturn(true);
-        nodeAgent.doConverge(context);
-        verify(containerOperations, times(2)).removeContainer(eq(context), any());
-        verify(containerOperations, times(2)).createContainer(eq(context), any());
-        verify(orchestrator, times(2)).resume(eq(hostName));
-        verify(nodeRepository, times(2)).updateNodeAttributes(eq(hostName), eq(new NodeAttributes()
-                                                                                       .withRebootGeneration(wantedRebootGeneration)));
     }
 
     @Test
@@ -798,7 +789,7 @@ public class NodeAgentImplTest {
         return new NodeAgentImpl(contextSupplier, nodeRepository, orchestrator, containerOperations,
                                  () -> RegistryCredentials.none, storageMaintainer, flagSource,
                                  List.of(credentialsMaintainer), Optional.of(aclMaintainer), Optional.of(healthChecker),
-                                 clock, warmUpDuration, VespaServiceDumper.DUMMY_INSTANCE, Optional.empty());
+                                 clock, warmUpDuration, VespaServiceDumper.DUMMY_INSTANCE, List.of());
     }
 
     private void mockGetContainer(DockerImage dockerImage, boolean isRunning) {
@@ -824,8 +815,7 @@ public class NodeAgentImplTest {
                             hostName,
                             containerResources,
                             List.of(),
-                            true,
-                            List.of())) :
+                            true)) :
                     Optional.empty();
         }).when(containerOperations).getContainer(any());
     }

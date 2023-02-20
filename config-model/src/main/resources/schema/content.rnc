@@ -9,6 +9,10 @@ Redundancy = element redundancy {
     xsd:nonNegativeInteger
 }
 
+MinRedundancy = element min-redundancy {
+    xsd:nonNegativeInteger
+}
+
 DistributionType = element distribution {
     attribute type { string "strict" | string "loose" | string "legacy" }
 }
@@ -104,8 +108,8 @@ Content = element content {
     attribute version { "1.0" } &
     attribute id { xsd:NCName }? &
     attribute distributor-base-port { xsd:unsignedShort }? &
-    # Mandatory
-    Redundancy &
+    Redundancy? &
+    MinRedundancy? &
     ContentSearch? &
     Dispatch? &
     ClusterTuning? &
@@ -226,7 +230,8 @@ ContentNodes = element nodes {
         attribute required { xsd:boolean }? &
         attribute exclusive { xsd:boolean }? &
         attribute docker-image { xsd:string }? &
-        attribute groups { xsd:positiveInteger | xsd:string }?
+        attribute groups { xsd:positiveInteger | xsd:string }? &
+        attribute group-size { xsd:positiveInteger | xsd:string }?
       )
       |
       ContentNode +

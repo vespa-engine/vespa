@@ -12,11 +12,17 @@ import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.DockerImage;
+import com.yahoo.config.provision.EndpointsChecker.Availability;
+import com.yahoo.config.provision.EndpointsChecker.Endpoint;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.HostName;
+import com.yahoo.config.provision.IntRange;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
+import com.yahoo.config.provision.ZoneEndpoint.AllowedUrn;
+import com.yahoo.config.provision.ZoneEndpoint.AccessType;
 import com.yahoo.config.provision.zone.ZoneId;
+import com.yahoo.rdl.UUID;
 import com.yahoo.vespa.flags.json.FlagData;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.ClusterMetrics;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.DeploymentData;
@@ -30,7 +36,9 @@ import com.yahoo.vespa.hosted.controller.api.integration.configserver.Cluster;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServer;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ContainerEndpoint;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.DeploymentResult;
+import com.yahoo.vespa.hosted.controller.api.integration.configserver.Load;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.LoadBalancer;
+import com.yahoo.vespa.hosted.controller.api.integration.configserver.LoadBalancer.PrivateServiceInfo;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.NodeFilter;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ProxyResponse;
@@ -38,17 +46,19 @@ import com.yahoo.vespa.hosted.controller.api.integration.configserver.QuotaUsage
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ServiceConvergence;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.TestReport;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterCloud;
+import com.yahoo.vespa.hosted.controller.api.integration.dns.NameService;
 import com.yahoo.vespa.hosted.controller.api.integration.noderepository.RestartFilter;
 import com.yahoo.vespa.hosted.controller.api.integration.secrets.TenantSecretStore;
+import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockTesterCloud;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
 import com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackage;
-import wiremock.org.checkerframework.checker.units.qual.A;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.net.URI;
+import java.security.cert.X509Certificate;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Collection;
@@ -60,8 +70,8 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Random;
 import java.util.Set;
-import java.util.UUID;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.logging.Level;
@@ -78,6 +88,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  */
 public class ConfigServerMock extends AbstractComponent implements ConfigServer {
 
+    private final MockTesterCloud mockTesterCloud;
     private final Map<DeploymentId, Application> applications = new LinkedHashMap<>();
     private final Set<ZoneId> inactiveZones = new HashSet<>();
     private final Map<DeploymentId, EndpointStatus> endpoints = new HashMap<>();
@@ -94,15 +105,16 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
     private final Map<DeploymentId, List<ClusterMetrics>> clusterMetrics = new HashMap<>();
     private final Map<DeploymentId, TestReport> testReport = new HashMap<>();
     private final Map<DeploymentId, CloudAccount> cloudAccounts = new HashMap<>();
+    private final Map<DeploymentId, List<X509Certificate>> additionalCertificates = new HashMap<>();
     private List<ProtonMetrics> protonMetrics;
 
     private Version lastPrepareVersion = null;
     private Consumer<ApplicationId> prepareException = null;
     private Supplier<String> log = () -> "INFO - All good";
 
-    @Inject
-    public ConfigServerMock(ZoneRegistryMock zoneRegistry) {
+    public ConfigServerMock(ZoneRegistryMock zoneRegistry, NameService nameService) {
         bootstrap(zoneRegistry.zones().all().ids(), SystemApplication.notController());
+        this.mockTesterCloud = new MockTesterCloud(nameService);
     }
 
     /** Assigns a reserved tenant node to the given deployment, with initial versions. */
@@ -112,21 +124,21 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
                                       ClusterSpec.Type.container,
                                       new ClusterResources(2, 1, new NodeResources(1,  4, 20, 1, slow, remote)),
                                       new ClusterResources(2, 1, new NodeResources(4, 16, 90, 1, slow, remote)),
+                                      IntRange.to(3),
                                       current,
-                                      Optional.of(new ClusterResources(2, 1, new NodeResources(3, 8, 50, 1, slow, remote))),
-                                      Optional.empty(),
-                                      new Cluster.Utilization(0.1, 0.2, 0.3, 0.35,
-                                                              0.4, 0.5, 0.6, 0.65,
-                                                              0.7, 0.8, 0.9, 1.0),
+                                      new Cluster.Autoscaling("ideal",
+                                                              "Cluster is ideally scaled",
+                                                              Optional.of(new ClusterResources(2, 1, new NodeResources(3, 8, 50, 1, slow, remote))),
+                                                              Instant.ofEpochMilli(123),
+                                                              new Load(0.35, 0.65, 1.0),
+                                                              new Load(0.2,  0.5,  0.8),
+                                                              new Cluster.Autoscaling.Metrics(0.1, 0.2, 0.3)),
+                                      Cluster.Autoscaling.empty(),
                                       List.of(new Cluster.ScalingEvent(new ClusterResources(0, 0, NodeResources.unspecified()),
                                                                        current,
                                                                        Instant.ofEpochMilli(1234),
                                                                        Optional.of(Instant.ofEpochMilli(2234)))),
-                                      "ideal",
-                                      "Cluster is ideally scaled",
-                                      Duration.ofMinutes(6),
-                                      0.7,
-                                      0.3);
+                                      Duration.ofMinutes(6));
         nodeRepository.putApplication(zone,
                                       new com.yahoo.vespa.hosted.controller.api.integration.configserver.Application(application,
                                                                                                                      List.of(cluster)));
@@ -197,7 +209,7 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
                                                                                                                                       43,
                                                                                                                                       "container",
                                                                                                                                       2))
-                                                                                           .collect(Collectors.toList())));
+                                                                                           .toList()));
     }
 
     /** The version given in the previous prepare call, or empty if no call has been made */
@@ -306,6 +318,10 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
         deferLoadBalancerProvisioning.addAll(environments);
     }
 
+    public List<X509Certificate> additionalCertificates(DeploymentId deployment) {
+        return additionalCertificates.getOrDefault(deployment, List.of());
+    }
+
     @Override
     public NodeRepositoryMock nodeRepository() {
         return nodeRepository;
@@ -331,7 +347,7 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
     public List<LoadBalancer> getLoadBalancers(ApplicationId application, ZoneId zone) {
         return getLoadBalancers(zone).stream()
                                      .filter(lb -> lb.application().equals(application))
-                                     .collect(Collectors.toUnmodifiableList());
+                                     .toList();
     }
 
     @Override
@@ -363,14 +379,15 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
     public Optional<TestReport> getTestReport(DeploymentId deployment) {
         return Optional.ofNullable(testReport.get(deployment));
     }
-    public void setTestReport(DeploymentId deploymentId, TestReport report) {
-        testReport.put(deploymentId, report);
+
+    @Override
+    public Availability verifyEndpoints(DeploymentId deploymentId, List<Endpoint> zoneEndpoints) {
+        return mockTesterCloud.verifyEndpoints(deploymentId, zoneEndpoints); // Wraps the same name service mock, which is updated by test harness.
     }
 
     /** Add any of given loadBalancers that do not already exist to the load balancers in zone */
     public void putLoadBalancers(ZoneId zone, List<LoadBalancer> loadBalancers) {
-        this.loadBalancers.putIfAbsent(zone, new LinkedHashSet<>());
-        this.loadBalancers.get(zone).addAll(loadBalancers);
+        this.loadBalancers.computeIfAbsent(zone, __ -> new LinkedHashSet<>()).addAll(loadBalancers);
     }
 
     public void removeLoadBalancers(ApplicationId application, ZoneId zone) {
@@ -404,13 +421,16 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
         deployment.cloudAccount().ifPresent(account -> this.cloudAccounts.put(id, account));
 
         if (!deferLoadBalancerProvisioning.contains(id.zoneId().environment())) {
-            putLoadBalancers(id.zoneId(), List.of(new LoadBalancer(UUID.randomUUID().toString(),
+            putLoadBalancers(id.zoneId(), List.of(new LoadBalancer(id.dottedString() + "." + cluster,
                                                                    id.applicationId(),
                                                                    cluster,
                                                                    Optional.of(HostName.of("lb-0--" + id.applicationId().toFullString() + "--" + id.zoneId().toString())),
                                                                    Optional.empty(),
                                                                    LoadBalancer.State.active,
-                                                                   Optional.of("dns-zone-1"))));
+                                                                   Optional.of("dns-zone-1"),
+                                                                   Optional.empty(),
+                                                                   Optional.of(new PrivateServiceInfo("service", List.of(new AllowedUrn(AccessType.awsPrivateLink, "arne")))),
+                                                                   true)));
         }
 
         Application application = applications.get(id);
@@ -431,14 +451,15 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
                                                                                                      43,
                                                                                                      "container",
                                                                                                      1))
-                                                          .collect(Collectors.toList())));
+                                                          .toList()));
 
+        additionalCertificates.put(id, deployment.operatorCertificates());
         DeploymentResult result = new DeploymentResult("foo", warnings.getOrDefault(id, List.of()));
         return () -> result;
     }
 
     @Override
-    public void reindex(DeploymentId deployment, List<String> clusterNames, List<String> documentTypes, boolean indexedOnly, Double speed) { }
+    public void reindex(DeploymentId deployment, List<String> clusterNames, List<String> documentTypes, boolean indexedOnly, Double speed, String cause) { }
 
     @Override
     public ApplicationReindexing getReindexing(DeploymentId deployment) {
@@ -451,7 +472,8 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
                                                                                                             ApplicationReindexing.State.FAILED,
                                                                                                             "(＃｀д´)ﾉ",
                                                                                                             0.1,
-                                                                                                            1.0)))));
+                                                                                                            1.0,
+                                                                                                            "test reindexing")))));
     }
 
     @Override

@@ -3,10 +3,8 @@
 #include "fieldpositionsiterator.h"
 #include <vespa/searchlib/common/fslimits.h>
 
-namespace search {
-namespace fef {
+namespace search::fef {
 
 const uint32_t FieldPositionsIterator::UNKNOWN_LENGTH = SEARCHLIB_FEF_UNKNOWN_FIELD_LENGTH;
 
-} // namespace fef
-} // namespace search
+}

@@ -33,12 +33,12 @@ public:
         void merge(const PendingMaintenanceStats& rhs);
     };
 private:
-    BucketPriorityDatabase& _bucketPriorityDb;
-    const MaintenancePriorityGenerator& _priorityGenerator;
-    const DistributorBucketSpaceRepo& _bucketSpaceRepo;
+    BucketPriorityDatabase&                                    _bucketPriorityDb;
+    const MaintenancePriorityGenerator&                        _priorityGenerator;
+    const DistributorBucketSpaceRepo&                          _bucketSpaceRepo;
     DistributorBucketSpaceRepo::BucketSpaceMap::const_iterator _bucketSpaceItr;
-    document::BucketId _bucketCursor;
-    PendingMaintenanceStats _pendingMaintenance;
+    document::BucketId                                         _bucketCursor;
+    PendingMaintenanceStats                                    _pendingMaintenance;
 
     void countBucket(document::BucketSpace bucketSpace, const BucketInfo &info);
 public:
@@ -55,7 +55,7 @@ public:
     // TODO: move out into own interface!
     void prioritizeBucket(const document::Bucket &id);
 
-    const PendingMaintenanceStats& getPendingMaintenanceStats() const {
+    const PendingMaintenanceStats& getPendingMaintenanceStats() const noexcept {
         return _pendingMaintenance;
     }
 };

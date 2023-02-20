@@ -158,7 +158,7 @@ public class ContainerImagePruner {
                         if ("<none>:<none>".equals(tag)) return image.id();
                         return tag;
                     })
-                    .collect(Collectors.toUnmodifiableList());
+                    .toList();
     }
 
 }

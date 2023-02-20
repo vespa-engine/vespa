@@ -369,7 +369,7 @@ public class DocumentUpdateJsonSerializer {
 
         @Override
         public void write(FieldBase field, TensorFieldValue value) {
-            serializeTensorField(generator, field, value);
+            serializeTensorField(generator, field, value, false, false);
         }
 
         @Override

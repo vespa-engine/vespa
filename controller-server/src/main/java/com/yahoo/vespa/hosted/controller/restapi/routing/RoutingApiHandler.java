@@ -146,7 +146,7 @@ public class RoutingApiHandler extends AuditLoggingRequestHandler {
                                   .map(zone -> zone.environment().value() +
                                                "/region/" + zone.region().value())
                                   .sorted()
-                                  .collect(Collectors.toList());
+                                  .toList();
         return new ResourceResponse(request.getUri(), resources);
     }
 
@@ -168,7 +168,7 @@ public class RoutingApiHandler extends AuditLoggingRequestHandler {
                                   .map(ApplicationName::value)
                                   .map(application -> "application/" + application)
                                   .sorted()
-                                  .collect(Collectors.toList());
+                                  .toList();
         return new ResourceResponse(request.getUri(), resources);
     }
 
@@ -185,7 +185,7 @@ public class RoutingApiHandler extends AuditLoggingRequestHandler {
                                   .map(InstanceName::value)
                                   .map(instance -> "instance/" + instance)
                                   .sorted()
-                                  .collect(Collectors.toList());
+                                  .toList();
         return new ResourceResponse(request.getUri(), resources);
     }
 
@@ -202,7 +202,7 @@ public class RoutingApiHandler extends AuditLoggingRequestHandler {
                                   .map(zone -> "environment/" + zone.environment().value() +
                                                "/region/" + zone.region().value())
                                   .sorted()
-                                  .collect(Collectors.toList());
+                                  .toList();
         return new ResourceResponse(request.getUri(), resources);
     }
 
@@ -252,7 +252,7 @@ public class RoutingApiHandler extends AuditLoggingRequestHandler {
         for (var application : applications) {
             var instances = instanceId == null
                     ? application.instances().values()
-                    : List.of(application.instances().get(instanceId.instance()));
+                    : List.of(application.require(instanceId.instance()));
             EndpointList declaredEndpoints = controller.routing().declaredEndpointsOf(application);
             for (var instance : instances) {
                 var zones = zoneId == null

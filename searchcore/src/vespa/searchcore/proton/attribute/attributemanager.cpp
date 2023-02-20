@@ -3,6 +3,7 @@
 #include "attributemanager.h"
 #include "attribute_directory.h"
 #include "attribute_factory.h"
+#include "attribute_manager_reconfig.h"
 #include "attribute_type_matcher.h"
 #include "attributedisklayout.h"
 #include "flushableattribute.h"
@@ -210,7 +211,7 @@ AttributeManager::addNewAttributes(const Spec &newSpec,
 {
     for (auto &aspec : toBeAdded) {
         LOG(debug, "Creating initializer for attribute vector '%s': docIdLimit=%u, serialNumber=%" PRIu64,
-                   aspec.getName().c_str(), newSpec.getDocIdLimit(), newSpec.getCurrentSerialNum());
+            aspec.getName().c_str(), newSpec.getDocIdLimit(), newSpec.getCurrentSerialNum().value_or(0));
 
         auto initializer = std::make_unique<AttributeInitializer>(_diskLayout->createAttributeDir(aspec.getName()),
                                                                   _documentSubDbName, std::move(aspec), newSpec.getCurrentSerialNum(),
@@ -324,11 +325,25 @@ AttributeManager::addAttribute(AttributeSpec && spec, uint64_t serialNum)
 }
 
 void
-AttributeManager::addInitializedAttributes(const std::vector<AttributeInitializerResult> &attributes)
+AttributeManager::addInitializedAttributes(const std::vector<AttributeInitializerResult> &attributes, uint32_t docid_limit, SerialNum serial_num)
 {
+    /*
+     * Called (indirectly) by
+     * DocumentSubDBCollection::complete_prepare_reconfig to complete
+     * setup of new attribute manager.
+     */
     for (const auto &result : attributes) {
         assert(result);
         auto attr = result.getAttribute();
+        if (attr->getCreateSerialNum() == 0) {
+            /*
+             * The attribute vector is empty (not loaded from disk)
+             * and has been added as part of live reconfig. Make it
+             * ready for use by setting size and create serial num.
+             */
+            AttributeManager::padAttribute(*attr, docid_limit);
+            attr->setCreateSerialNum(serial_num);
+        }
         attr->setInterlock(_interlock);
         auto shrinker = allocShrinker(attr, _attributeFieldWriter, *_diskLayout);
         addAttribute(AttributeWrap::normalAttribute(std::move(attr)), shrinker);
@@ -484,13 +499,12 @@ AttributeManager::createContext() const
     return std::make_unique<AttributeContext>(*this);
 }
 
-proton::IAttributeManager::SP
-AttributeManager::create(Spec && spec) const
+std::unique_ptr<IAttributeManagerReconfig>
+AttributeManager::prepare_create(Spec&& spec) const
 {
-    SequentialAttributesInitializer initializer(spec.getDocIdLimit());
-    proton::AttributeManager::SP result = std::make_shared<AttributeManager>(*this, std::move(spec), initializer);
-    result->addInitializedAttributes(initializer.getInitializedAttributes());
-    return result;
+    auto initializer = std::make_unique<SequentialAttributesInitializer>(spec.getDocIdLimit());
+    auto result = std::make_shared<AttributeManager>(*this, std::move(spec), *initializer);
+    return std::make_unique<AttributeManagerReconfig>(std::move(result), std::move(initializer));
 }
 
 std::vector<IFlushTarget::SP>
@@ -648,6 +662,20 @@ AttributeManager::readable_attribute_vector(const string& name) const
         return attribute;
     }
     return _importedAttributes->get(name);
+}
+
+TransientResourceUsage
+AttributeManager::get_transient_resource_usage() const
+{
+    // Transient disk usage is measured as the total disk usage of all attribute snapshots
+    // that are NOT the valid best one.
+    // Transient memory usage is zero.
+    TransientResourceUsage result;
+    for (const auto& elem : _flushables) {
+        auto usage = elem.second.getFlusher()->get_transient_resource_usage();
+        result.merge(usage);
+    }
+    return result;
 }
 
 } // namespace proton

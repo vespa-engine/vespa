@@ -18,6 +18,8 @@
 LOG_SETUP(".storage.shared_rpc_resources");
 
 using namespace std::chrono_literals;
+using vespalib::make_string_short::fmt;
+using vespalib::IllegalStateException;
 
 namespace storage::rpc {
 
@@ -64,7 +66,7 @@ SharedRpcResources::SharedRpcResources(const config::ConfigUri& config_uri,
                                        int rpc_server_port,
                                        size_t rpc_thread_pool_size,
                                        size_t rpc_events_before_wakeup)
-    : _thread_pool(std::make_unique<FastOS_ThreadPool>(1024*60)),
+    : _thread_pool(std::make_unique<FastOS_ThreadPool>()),
       _transport(std::make_unique<FNET_Transport>(fnet::TransportConfig(rpc_thread_pool_size).
               events_before_wakeup(rpc_events_before_wakeup))),
       _orb(std::make_unique<FRT_Supervisor>(_transport.get())),
@@ -88,8 +90,7 @@ void SharedRpcResources::start_server_and_register_slobrok(vespalib::stringref m
     LOG(debug, "Starting main RPC supervisor on port %d with slobrok handle '%s'",
         _rpc_server_port, vespalib::string(my_handle).c_str());
     if (!_orb->Listen(_rpc_server_port)) {
-        throw vespalib::IllegalStateException(vespalib::make_string("Failed to listen to RPC port %d", _rpc_server_port),
-                                              VESPA_STRLOC);
+        throw IllegalStateException(fmt("Failed to listen to RPC port %d", _rpc_server_port), VESPA_STRLOC);
     }
     _transport->Start(_thread_pool.get());
     _slobrok_register->registerName(my_handle);
@@ -102,7 +103,7 @@ void SharedRpcResources::wait_until_slobrok_is_ready() {
     while (_slobrok_register->busy() || !_slobrok_mirror->ready()) {
         // TODO some form of timeout mechanism here, and warning logging to identify SB issues
         LOG(debug, "Waiting for Slobrok to become ready");
-        std::this_thread::sleep_for(50ms);
+        std::this_thread::sleep_for(10ms);
     }
 }
 
@@ -111,9 +112,7 @@ void SharedRpcResources::shutdown() {
     if (listen_port() > 0) {
         _slobrok_register->unregisterName(_handle);
         // Give slobrok some time to dispatch unregister RPC
-        while (_slobrok_register->busy()) {
-            std::this_thread::sleep_for(10ms);
-        }
+        std::this_thread::sleep_for(10ms);
     }
     _transport->ShutDown(true);
     // FIXME need to reset to break weak_ptrs? But ShutDown should already sync pending resolves...!

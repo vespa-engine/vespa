@@ -14,12 +14,13 @@
 #include "active_operations_metrics.h"
 #include <vespa/metrics/metricset.h>
 #include <vespa/metrics/summetric.h>
+#include <vespa/vespalib/util/memory_trap.h>
 
 namespace storage {
 
 struct FileStorThreadMetrics : public metrics::MetricSet
 {
-    typedef std::shared_ptr<FileStorThreadMetrics> SP;
+    using SP = std::shared_ptr<FileStorThreadMetrics>;
 
     struct Op : metrics::MetricSet {
         std::string _name;
@@ -116,9 +117,11 @@ struct FileStorThreadMetrics : public metrics::MetricSet
     Op mergeBuckets;
     Op getBucketDiff;
     Op applyBucketDiff;
+    vespalib::InlineMemoryTrap<1> mem_trap_1;
     metrics::LongCountMetric getBucketDiffReply;
     metrics::LongCountMetric applyBucketDiffReply;
     MergeHandlerMetrics merge_handler_metrics;
+    vespalib::InlineMemoryTrap<1> mem_trap_2;
 
     FileStorThreadMetrics(const std::string& name, const std::string& desc);
     ~FileStorThreadMetrics() override;

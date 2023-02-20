@@ -8,15 +8,14 @@
 #include "summaryadapter.h"
 #include "igetserialnum.h"
 #include "document_db_flush_config.h"
+#include <vespa/config-rank-profiles.h>
 #include <vespa/eval/eval/value_cache/constant_tensor_loader.h>
 #include <vespa/eval/eval/value_cache/constant_value_cache.h>
-#include <vespa/searchcore/proton/attribute/attributemanager.h>
 #include <vespa/searchcore/proton/common/doctypename.h>
 #include <vespa/searchcore/proton/docsummary/summarymanager.h>
 #include <vespa/searchcore/proton/documentmetastore/documentmetastorecontext.h>
 #include <vespa/searchcore/proton/index/i_index_writer.h>
 #include <vespa/searchcore/proton/index/indexmanager.h>
-#include <vespa/searchcore/proton/matching/ranking_assets_repo.h>
 #include <vespa/searchcorespi/index/iindexmanager.h>
 #include <vespa/vespalib/util/blockingthreadstackexecutor.h>
 
@@ -59,7 +58,7 @@ public:
     };
 
 private:
-    typedef FastAccessDocSubDB Parent;
+    using Parent = FastAccessDocSubDB;
     using IFlushTargetList = std::vector<std::shared_ptr<searchcorespi::IFlushTarget>>;
 
     searchcorespi::IIndexManager::SP            _indexMgr;
@@ -68,7 +67,6 @@ private:
     vespalib::VarHolder<SearchableFeedView::SP> _rFeedView;
     vespalib::eval::ConstantTensorLoader        _tensorLoader;
     vespalib::eval::ConstantValueCache          _constantValueCache;
-    matching::RankingAssetsRepo                 _rankingAssetsRepo;
     SearchableDocSubDBConfigurer                _configurer;
     vespalib::Executor                         &_warmupExecutor;
     std::shared_ptr<GidToLidChangeHandler>      _realGidToLidChangeHandler;
@@ -100,20 +98,22 @@ public:
                       const IndexConfig &indexCfg) const override;
 
     void setup(const DocumentSubDbInitializerResult &initResult) override;
-    void initViews(const DocumentDBConfig &configSnapshot, const SessionManagerSP &sessionManager)  override;
+    void initViews(const DocumentDBConfig &configSnapshot) override;
 
+    std::unique_ptr<DocumentSubDBReconfig>
+    prepare_reconfig(const DocumentDBConfig& new_config_snapshot, const ReconfigParams& reconfig_params, std::optional<SerialNum> serial_num) override;
     IReprocessingTask::List
     applyConfig(const DocumentDBConfig &newConfigSnapshot, const DocumentDBConfig &oldConfigSnapshot,
-                SerialNum serialNum, const ReconfigParams &params, IDocumentDBReferenceResolver &resolver) override;
+                SerialNum serialNum, const ReconfigParams &params, IDocumentDBReferenceResolver &resolver, const DocumentSubDBReconfig& prepared_reconfig) override;
     void setBucketStateCalculator(const std::shared_ptr<IBucketStateCalculator> &calc, OnDone onDone) override;
 
     void clearViews() override;
 
-    proton::IAttributeManager::SP getAttributeManager() const override {
+    std::shared_ptr<IAttributeManager> getAttributeManager() const override {
         return _rSearchView.get()->getAttributeManager();
     }
 
-    const searchcorespi::IIndexManager::SP &getIndexManager() const override {
+    const std::shared_ptr<searchcorespi::IIndexManager>& getIndexManager() const override {
         return _indexMgr;
     }
 
@@ -131,6 +131,7 @@ public:
     void close() override;
     std::shared_ptr<IDocumentDBReference> getDocumentDBReference() override;
     void tearDownReferences(IDocumentDBReferenceResolver &resolver) override;
+    TransientResourceUsage get_transient_resource_usage() const override;
 };
 
 } // namespace proton

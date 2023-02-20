@@ -1,6 +1,0 @@
-GET:/foo/bar:200:Hello
-There!
-
-PUT:/bar:301:My data is on a single line
-
-GET:/foo/bar?key1=foo&key2=bar:200:With params!

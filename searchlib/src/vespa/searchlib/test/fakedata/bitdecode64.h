@@ -13,14 +13,14 @@ class BitDecode64 : public bitcompression::DecodeContext64<bigEndian>
 private:
     const uint64_t *_comprBase;
     int _bitOffsetBase;
-    typedef bitcompression::DecodeContext64<bigEndian> ParentClass;
+    using ParentClass = bitcompression::DecodeContext64<bigEndian>;
 
 public:
     using ParentClass::_val;
     using ParentClass::_valI;
     using ParentClass::_preRead;
     using ParentClass::_cacheInt;
-    typedef typename bitcompression::DecodeContext64<bigEndian>::EC EC;
+    using EC = typename bitcompression::DecodeContext64<bigEndian>::EC;
 
     BitDecode64(const uint64_t *compr, int bitOffset)
         : bitcompression::DecodeContext64<bigEndian>(compr, bitOffset),
@@ -29,7 +29,7 @@ public:
     {
     }
 
-    typedef bitcompression::DecodeContext64<bigEndian> DC;
+    using DC = bitcompression::DecodeContext64<bigEndian>;
 
     void seek(uint64_t offset) {
         offset += _bitOffsetBase;
@@ -59,6 +59,6 @@ public:
 extern template class BitDecode64<true>;
 extern template class BitDecode64<false>;
 
-typedef BitDecode64<true> BitDecode64BE;
+using BitDecode64BE = BitDecode64<true>;
 
 }

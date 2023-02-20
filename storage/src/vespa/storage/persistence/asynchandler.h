@@ -34,7 +34,7 @@ public:
     MessageTrackerUP handleDeleteBucket(api::DeleteBucketCommand& cmd, MessageTrackerUP tracker) const;
     MessageTrackerUP handleCreateBucket(api::CreateBucketCommand& cmd, MessageTrackerUP tracker) const;
     MessageTrackerUP handleRemoveLocation(api::RemoveLocationCommand& cmd, MessageTrackerUP tracker) const;
-    static bool is_async_message(api::MessageType::Id type_id) noexcept;
+    static bool is_async_unconditional_message(const api::StorageMessage & cmd) noexcept;
 private:
     bool checkProviderBucketInfoMatches(const spi::Bucket&, const api::BucketInfo&) const;
     static bool tasConditionExists(const api::TestAndSetCommand & cmd);

@@ -240,14 +240,18 @@ DocsumStoreVsmDocument::insert_juniper_field(const vespalib::string& field_name,
     auto field_value = get_field_value(field_name);
     if (field_value) {
         FieldModifier* modifier = nullptr;
-        if (is_struct_or_multivalue_field_type(*field_value->getDataType())) {
-            auto entry_idx = _result_class.getIndexFromName(field_name.c_str());
-            if (entry_idx >= 0) {
-                assert((uint32_t) entry_idx < _result_class.getNumEntries());
+        auto entry_idx = _result_class.getIndexFromName(field_name.c_str());
+        if (entry_idx >= 0) {
+            assert((uint32_t) entry_idx < _result_class.getNumEntries());
+            if (is_struct_or_multivalue_field_type(*field_value->getDataType())) {
                 modifier = _docsum_filter.get_field_modifier(entry_idx);
+            } else {
+                if (!_docsum_filter.has_flatten_juniper_command(entry_idx)) {
+                    modifier = _docsum_filter.get_field_modifier(entry_idx);
+                } else {
+                    // Markup for juniper has already been added due to FLATTENJUNIPER command in vsm summary config.
+                }
             }
-        } else {
-            // Markup for juniper has already been added due to FLATTENJUNIPER command in vsm summary config.
         }
         SnippetModifierJuniperConverter string_converter(converter, modifier);
         SlimeFiller::insert_juniper_field(*field_value, inserter, string_converter);
@@ -405,6 +409,14 @@ DocsumFilter::insert_summary_field(uint32_t entry_idx, const Document& doc, vesp
     const CharBuffer& buf = _flattenWriter.getResult();
     inserter.insertString(vespalib::Memory(buf.getBuffer(), buf.getPos()));
     _flattenWriter.clear();
+}
+
+bool
+DocsumFilter::has_flatten_juniper_command(uint32_t entry_idx) const
+{
+    const auto& field_spec = _fields[entry_idx];
+    auto command = field_spec.getCommand();
+    return command == VsmsummaryConfig::Fieldmap::Command::FLATTENJUNIPER;
 }
 
 FieldModifier*

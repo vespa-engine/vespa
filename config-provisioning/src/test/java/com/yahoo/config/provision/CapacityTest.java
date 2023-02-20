@@ -3,6 +3,8 @@ package com.yahoo.config.provision;
 
 import org.junit.jupiter.api.Test;
 
+import java.util.Optional;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -15,8 +17,11 @@ public class CapacityTest {
     void testCapacityValidation() {
         // Equal min and max is allowed
         Capacity.from(new ClusterResources(4, 2, new NodeResources(1, 2, 3, 4)),
-                               new ClusterResources(4, 2, new NodeResources(1, 2, 3, 4)),
-                               false, true);
+                      new ClusterResources(4, 2, new NodeResources(1, 2, 3, 4)),
+                      IntRange.empty(),
+                      false,
+                      true,
+                      Optional.empty());
         assertValidationFailure(new ClusterResources(4, 2, new NodeResources(1, 2, 3, 4)),
                                new ClusterResources(2, 2, new NodeResources(1, 2, 3, 4)));
         assertValidationFailure(new ClusterResources(4, 4, new NodeResources(1, 2, 3, 4)),
@@ -36,7 +41,7 @@ public class CapacityTest {
 
     private void assertValidationFailure(ClusterResources min, ClusterResources max) {
         try {
-            Capacity.from(min, max, false, true);
+            Capacity.from(min, max, IntRange.empty(), false, true, Optional.empty());
             fail("Expected exception with min " + min + " and max " + max);
         }
         catch (IllegalArgumentException e) {

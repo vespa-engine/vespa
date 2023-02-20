@@ -21,7 +21,7 @@ public class ExactTestCase {
     @Test
     public void requireThatHashCodeAndEqualsAreImplemented() {
         Expression exp = new ExactExpression();
-        assertFalse(exp.equals(new Object()));
+        assertNotEquals(exp, new Object());
         assertEquals(exp, new ExactExpression());
         assertEquals(exp.hashCode(), new ExactExpression().hashCode());
     }

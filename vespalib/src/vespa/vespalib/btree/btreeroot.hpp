@@ -453,8 +453,7 @@ insert(Iterator &itr,
        const KeyType &key, const DataType &data,
        const AggrCalcT &aggrCalc)
 {
-    typedef BTreeInserter<KeyT, DataT, AggrT, CompareT, TraitsT,
-        AggrCalcT> Inserter;
+    using Inserter = BTreeInserter<KeyT, DataT, AggrT, CompareT, TraitsT, AggrCalcT>;
     bool oldFrozen = isFrozen();
     Inserter::insert(_root, itr, key, data,
                      aggrCalc);
@@ -487,8 +486,7 @@ BTreeRoot<KeyT, DataT, AggrT, CompareT, TraitsT, AggrCalcT>::
 remove(Iterator &itr,
        const AggrCalcT &aggrCalc)
 {
-    typedef BTreeRemover<KeyT, DataT, AggrT, CompareT, TraitsT, AggrCalcT>
-        Remover;
+    using Remover = BTreeRemover<KeyT, DataT, AggrT, CompareT, TraitsT, AggrCalcT>;
     bool oldFrozen = isFrozen();
     Remover::remove(_root, itr, aggrCalc);
     if (oldFrozen && !isFrozen())

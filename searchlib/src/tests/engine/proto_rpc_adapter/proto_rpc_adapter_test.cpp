@@ -14,9 +14,6 @@
 #include <thread>
 #include <chrono>
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Winline"
-
 using namespace search::engine;
 
 using vespalib::Slime;
@@ -222,5 +219,3 @@ TEST_F(ProtoRpcAdapterTest, require_that_proto_rpc_ping_works) {
 //-----------------------------------------------------------------------------
 
 GTEST_MAIN_RUN_ALL_TESTS()
-
-#pragma GCC diagnostic pop

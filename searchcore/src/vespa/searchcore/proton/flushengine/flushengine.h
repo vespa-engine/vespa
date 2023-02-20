@@ -23,31 +23,33 @@ class FlushEngine final : public FastOS_Runnable
 public:
     class FlushMeta {
     public:
-        FlushMeta(const vespalib::string & name, uint32_t id);
+        FlushMeta(const vespalib::string& handler_name, const vespalib::string& target_name, uint32_t id);
         ~FlushMeta();
         const vespalib::string & getName() const { return _name; }
-        vespalib::system_time getStart() const { return vespalib::system_clock::now() - std::chrono::duration_cast<vespalib::system_time::duration>(elapsed()); }
+        const vespalib::string& handler_name() const { return _handler_name; }
+        vespalib::system_time getStart() const { return vespalib::to_utc(_timer.get_start()); }
         vespalib::duration elapsed() const { return _timer.elapsed(); }
         uint32_t getId() const { return _id; }
         bool operator < (const FlushMeta & rhs) const { return _id < rhs._id; }
     private:
         vespalib::string  _name;
+        vespalib::string  _handler_name;
         vespalib::Timer   _timer;
         uint32_t          _id;
     };
-    typedef std::set<FlushMeta> FlushMetaSet;
+    using FlushMetaSet = std::set<FlushMeta>;
 private:
     using IFlushTarget = searchcorespi::IFlushTarget;
     struct FlushInfo : public FlushMeta
     {
         FlushInfo();
-        FlushInfo(uint32_t taskId, const IFlushTarget::SP &target, const vespalib::string &destination);
+        FlushInfo(uint32_t taskId, const vespalib::string& handler_name, const IFlushTarget::SP &target);
         ~FlushInfo();
 
         IFlushTarget::SP  _target;
     };
-    typedef std::map<uint32_t, FlushInfo> FlushMap;
-    typedef HandlerMap<IFlushHandler> FlushHandlerMap;
+    using FlushMap = std::map<uint32_t, FlushInfo>;
+    using FlushHandlerMap = HandlerMap<IFlushHandler>;
     bool                           _closed;
     const uint32_t                 _maxConcurrent;
     const vespalib::duration       _idleInterval;
@@ -89,8 +91,8 @@ public:
     /**
      * Convenience typedefs.
      */
-    typedef std::unique_ptr<FlushEngine> UP;
-    typedef std::shared_ptr<FlushEngine> SP;
+    using UP = std::unique_ptr<FlushEngine>;
+    using SP = std::shared_ptr<FlushEngine>;
 
     /**
      * Constructs a new instance of this class.

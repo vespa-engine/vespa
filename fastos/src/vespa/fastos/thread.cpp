@@ -14,10 +14,11 @@
 // FastOS_ThreadPool
 // ----------------------------------------------------------------------
 
-FastOS_ThreadPool::FastOS_ThreadPool(int stackSize, int maxThreads)
+FastOS_ThreadPool::FastOS_ThreadPool() : FastOS_ThreadPool(0) {}
+
+FastOS_ThreadPool::FastOS_ThreadPool(int maxThreads)
     : _startedThreadsCount(0),
       _closeFlagMutex(),
-      _stackSize(stackSize),
       _closeCalledFlag(false),
       _freeMutex(),
       _liveMutex(),
@@ -255,7 +256,6 @@ void FastOS_ThreadInterface::Hook ()
         dispatchedGuard.unlock();           // END lock
 
         if(!finished) {
-            PreEntry();
             deleteOnCompletion = _owner->DeleteOnCompletion();
             _owner->Run(this, _startArg);
 
@@ -308,7 +308,7 @@ void FastOS_ThreadInterface::Dispatch(FastOS_Runnable *newOwner, void *arg)
     _owner = newOwner;
     _startArg = arg;
     // Set _thread variable before NewThread returns
-    _owner->_thread = this;
+    _owner->_thread.store(this, std::memory_order_release);
 
     // It is safe to signal after the unlock since _liveCond is still held
     // so the signalled thread still exists.
@@ -331,7 +331,7 @@ FastOS_ThreadInterface *FastOS_ThreadInterface::CreateThread(FastOS_ThreadPool *
 {
     FastOS_ThreadInterface *thread = new FastOS_Thread(pool);
 
-    if(!thread->Initialize(pool->GetStackSize(), pool->GetStackGuardSize())) {
+    if(!thread->Initialize()) {
         delete(thread);
         thread = nullptr;
     }

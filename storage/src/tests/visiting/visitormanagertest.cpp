@@ -49,8 +49,8 @@ protected:
     std::unique_ptr<DummyStorageLink> _top;
     VisitorManager* _manager;
 
-    VisitorManagerTest() : _node() {}
-    ~VisitorManagerTest();
+    VisitorManagerTest() : _node(), _top(), _manager(nullptr) {}
+    ~VisitorManagerTest() override;
 
     // Not using setUp since can't throw exception out of it.
     void initializeTest(bool defer_manager_thread_start = false);
@@ -184,8 +184,8 @@ VisitorManagerTest::addSomeRemoves(bool removeAll)
     for (uint32_t i=0; i<docCount; i += (removeAll ? 1 : 4)) {
             // Add it to the database
         document::BucketId bid(16, i % 10);
-        auto cmd = std::make_shared<api::RemoveCommand>(
-                        makeDocumentBucket(bid), _documents[i]->getId(), clock.getTimeInMicros().getTime() + docCount + i + 1);
+        auto cmd = std::make_shared<api::RemoveCommand>(makeDocumentBucket(bid), _documents[i]->getId(),
+                                                        vespalib::count_us(clock.getSystemTime().time_since_epoch()) + docCount + i + 1);
         cmd->setAddress(_Address);
         _top->sendDown(cmd);
         _top->waitForMessages(1, 60);
@@ -217,7 +217,7 @@ VisitorManagerTest::getSession(uint32_t n)
     // Wait until we have started the visitor
     const std::vector<TestVisitorMessageSession*>& sessions(_messageSessionFactory->_visitorSessions);
     framework::defaultimplementation::RealClock clock;
-    framework::MilliSecTime endTime(clock.getTimeInMillis() + framework::MilliSecTime(30 * 1000));
+    vespalib::steady_time endTime = clock.getMonotonicTime() + 30s;
     while (true) {
         {
             std::lock_guard lock(_messageSessionFactory->_accessLock);
@@ -225,9 +225,8 @@ VisitorManagerTest::getSession(uint32_t n)
                 return *sessions[n];
             }
         }
-        if (clock.getTimeInMillis() > endTime) {
-            throw vespalib::IllegalStateException(
-                    "Timed out waiting for visitor session", VESPA_STRLOC);
+        if (clock.getMonotonicTime() > endTime) {
+            throw vespalib::IllegalStateException("Timed out waiting for visitor session", VESPA_STRLOC);
         }
         std::this_thread::sleep_for(10ms);
     }
@@ -255,12 +254,10 @@ VisitorManagerTest::getMessagesAndReply(
 
             switch (session.sentMessages[i]->getType()) {
             case documentapi::DocumentProtocol::MESSAGE_PUTDOCUMENT:
-                docs.push_back(static_cast<documentapi::PutDocumentMessage&>(
-                                       *session.sentMessages[i]).getDocumentSP());
+                docs.push_back(dynamic_cast<documentapi::PutDocumentMessage&>(*session.sentMessages[i]).getDocumentSP());
                 break;
             case documentapi::DocumentProtocol::MESSAGE_REMOVEDOCUMENT:
-                docIds.push_back(static_cast<documentapi::RemoveDocumentMessage&>(
-                                       *session.sentMessages[i]).getDocumentId());
+                docIds.push_back(dynamic_cast<documentapi::RemoveDocumentMessage&>(*session.sentMessages[i]).getDocumentId());
                 break;
             default:
                 break;
@@ -290,7 +287,7 @@ VisitorManagerTest::verifyCreateVisitorReply(
     const msg_ptr_vector replies = _top->getRepliesOnce();
     ASSERT_EQ(1, replies.size());
 
-    std::shared_ptr<api::StorageMessage> msg(replies[0]);
+    const std::shared_ptr<api::StorageMessage>& msg(replies[0]);
 
     ASSERT_EQ(api::MessageType::VISITOR_CREATE_REPLY, msg->getType());
 
@@ -315,11 +312,9 @@ VisitorManagerTest::verifyCreateVisitorReply(
 uint32_t
 VisitorManagerTest::getMatchingDocuments(std::vector<document::Document::SP >& docs) {
     uint32_t equalCount = 0;
-    for (uint32_t i=0; i<docs.size(); ++i) {
-        for (uint32_t j=0; j<_documents.size(); ++j) {
-            if (docs[i]->getId() == _documents[j]->getId()
-                && *docs[i] == *_documents[j])
-            {
+    for (const auto & doc : docs) {
+        for (const auto & document : _documents) {
+            if (doc->getId() == document->getId() && *doc == *document) {
                 equalCount++;
             }
         }
@@ -333,8 +328,8 @@ namespace {
 int getTotalSerializedSize(const std::vector<document::Document::SP>& docs)
 {
     int total = 0;
-    for (size_t i = 0; i < docs.size(); ++i) {
-        total += int(docs[i]->serialize().size());
+    for (const auto & doc : docs) {
+        total += int(doc->serialize().size());
     }
     return total;
 }
@@ -355,10 +350,7 @@ TEST_F(VisitorManagerTest, normal_usage) {
     getMessagesAndReply(1, getSession(0), docs, docIds);
 
     // All data has been replied to, expecting to get a create visitor reply
-    ASSERT_NO_FATAL_FAILURE(
-            verifyCreateVisitorReply(api::ReturnCode::OK,
-                                     int(docs.size()),
-                                     getTotalSerializedSize(docs)));
+    ASSERT_NO_FATAL_FAILURE(verifyCreateVisitorReply(api::ReturnCode::OK, int(docs.size()), getTotalSerializedSize(docs)));
 
     EXPECT_EQ(1u, getMatchingDocuments(docs));
     EXPECT_FALSE(_manager->hasPendingMessageState());
@@ -631,7 +623,7 @@ TEST_F(VisitorManagerTest, visitor_cleanup) {
         int busy = 0;
 
         for (uint32_t i=0; i< expected_total; ++i) {
-            std::shared_ptr<api::StorageMessage> msg(replies[i]);
+            const std::shared_ptr<api::StorageMessage>& msg(replies[i]);
             ASSERT_EQ(api::MessageType::VISITOR_CREATE_REPLY, msg->getType());
             auto reply = std::dynamic_pointer_cast<api::CreateVisitorReply>(msg);
             ASSERT_TRUE(reply.get());
@@ -694,8 +686,7 @@ TEST_F(VisitorManagerTest, visitor_cleanup) {
     const msg_ptr_vector replies = _top->getRepliesOnce();
     ASSERT_EQ(8, replies.size());
 
-    for (uint32_t i=0; i< replies.size(); ++i) {
-        std::shared_ptr<api::StorageMessage> msg(replies[i]);
+    for (const auto & msg : replies) {
         ASSERT_EQ(api::MessageType::VISITOR_CREATE_REPLY, msg->getType());
         auto reply = std::dynamic_pointer_cast<api::CreateVisitorReply>(msg);
         ASSERT_TRUE(reply.get());
@@ -776,7 +767,7 @@ TEST_F(VisitorManagerTest, visitor_queue_timeout) {
     // Don't answer any messages. Make sure we timeout anyways.
     _top->waitForMessages(1, 60);
     const msg_ptr_vector replies = _top->getRepliesOnce();
-    std::shared_ptr<api::StorageMessage> msg(replies[0]);
+    const std::shared_ptr<api::StorageMessage>& msg(replies[0]);
 
     ASSERT_EQ(api::MessageType::VISITOR_CREATE_REPLY, msg->getType());
     auto reply = std::dynamic_pointer_cast<api::CreateVisitorReply>(msg);

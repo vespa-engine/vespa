@@ -18,7 +18,6 @@ public class MessageBusParams {
     private final List<Protocol> protocols = new ArrayList<>();
     private RetryPolicy retryPolicy;
     private int maxPendingCount;
-    private int maxPendingSize;
     private MessagebusConfig config;
 
     /**
@@ -27,7 +26,6 @@ public class MessageBusParams {
     public MessageBusParams() {
         retryPolicy = new RetryTransientErrorsPolicy();
         maxPendingCount = 1024;
-        maxPendingSize = 128 * 1024 * 1024;
         config = null;
     }
 
@@ -40,7 +38,6 @@ public class MessageBusParams {
         protocols.addAll(params.protocols);
         retryPolicy = params.retryPolicy;
         maxPendingCount = params.maxPendingCount;
-        maxPendingSize = params.maxPendingSize;
         config = params.config;
     }
 
@@ -132,8 +129,9 @@ public class MessageBusParams {
      *
      * @return The size limit.
      */
+    @Deprecated(forRemoval = true)
     public int getMaxPendingSize() {
-        return maxPendingSize;
+        return Integer.MAX_VALUE;
     }
 
     /**
@@ -142,8 +140,8 @@ public class MessageBusParams {
      * @param maxSize The size limit to set.
      * @return This, to allow chaining.
      */
+    @Deprecated(forRemoval = true)
     public MessageBusParams setMaxPendingSize(int maxSize) {
-        this.maxPendingSize = maxSize;
         return this;
     }
 

@@ -5,7 +5,6 @@ import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.DockerImage;
-import com.yahoo.config.provision.Tags;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.Quota;
@@ -32,7 +31,6 @@ import static java.util.Objects.requireNonNull;
 public class DeploymentData {
 
     private final ApplicationId instance;
-    private final Tags tags;
     private final ZoneId zone;
     private final Supplier<InputStream> applicationPackage;
     private final Version platform;
@@ -46,7 +44,7 @@ public class DeploymentData {
     private final Supplier<Optional<CloudAccount>> cloudAccount;
     private final boolean dryRun;
 
-    public DeploymentData(ApplicationId instance, Tags tags, ZoneId zone, Supplier<InputStream> applicationPackage, Version platform,
+    public DeploymentData(ApplicationId instance, ZoneId zone, Supplier<InputStream> applicationPackage, Version platform,
                           Set<ContainerEndpoint> containerEndpoints,
                           Supplier<Optional<EndpointCertificateMetadata>> endpointCertificateMetadata,
                           Optional<DockerImage> dockerImageRepo,
@@ -57,7 +55,6 @@ public class DeploymentData {
                           Supplier<Optional<CloudAccount>> cloudAccount,
                           boolean dryRun) {
         this.instance = requireNonNull(instance);
-        this.tags = requireNonNull(tags);
         this.zone = requireNonNull(zone);
         this.applicationPackage = requireNonNull(applicationPackage);
         this.platform = requireNonNull(platform);
@@ -75,8 +72,6 @@ public class DeploymentData {
     public ApplicationId instance() {
         return instance;
     }
-
-    public Tags tags() { return tags; }
 
     public ZoneId zone() {
         return zone;

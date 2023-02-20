@@ -10,7 +10,6 @@
 #pragma once
 
 #include <vespa/fastos/file.h>
-#include <cerrno>
 
 /**
  * This is the generic UNIX implementation of @ref FastOS_FileInterface.
@@ -90,7 +89,7 @@ public:
     void dropFromCache() const override;
 
     static bool Delete(const char *filename);
-    static int GetLastOSError() { return errno; }
+    static int GetLastOSError();
     static Error TranslateError(const int osError);
     static std::string getErrorString(const int osError);
     static int64_t GetFreeDiskSpace (const char *path);

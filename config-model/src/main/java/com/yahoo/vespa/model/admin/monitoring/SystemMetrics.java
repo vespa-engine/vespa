@@ -24,6 +24,9 @@ public class SystemMetrics {
     public static final String MEM_TOTAL_USED = "mem_total.used";
     public static final String MEM_TOTAL_UTIL = "mem_total.util";
     public static final String BANDWIDTH_LIMIT = "bandwidth.limit";
+    public static final String GPU_UTIL = "gpu.util";
+    public static final String GPU_MEM_USED = "gpu.memory.used";
+    public static final String GPU_MEM_TOTAL = "gpu.memory.total";
 
     public static final MetricSet systemMetricSet = createSystemMetricSet();
 
@@ -42,7 +45,10 @@ public class SystemMetrics {
                                 new Metric(MEM_UTIL),
                                 new Metric(MEM_TOTAL_USED),
                                 new Metric(MEM_TOTAL_UTIL),
-                                new Metric(BANDWIDTH_LIMIT)
+                                new Metric(BANDWIDTH_LIMIT),
+                                new Metric(GPU_UTIL),
+                                new Metric(GPU_MEM_USED),
+                                new Metric(GPU_MEM_TOTAL)
                 );
 
         Set<Metric> nonDockerNodeMetrics =
@@ -61,4 +67,5 @@ public class SystemMetrics {
 
         return new MetricSet("system", systemMetrics);
     }
+
 }

@@ -15,6 +15,8 @@ AnnotationReferenceDataType::AnnotationReferenceDataType(const AnnotationType &t
       _type(&type) {
 }
 
+AnnotationReferenceDataType::~AnnotationReferenceDataType() = default;
+
 const AnnotationType &
 AnnotationReferenceDataType::getAnnotationType() const {
     assert(_type);

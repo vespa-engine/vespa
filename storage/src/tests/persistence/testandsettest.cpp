@@ -222,6 +222,18 @@ TEST_F(TestAndSetTest, invalid_document_selection_should_fail) {
     EXPECT_EQ("", dumpBucket(BUCKET_ID));
 }
 
+TEST_F(TestAndSetTest, document_selection_with_imported_field_should_fail_with_illegal_parameters) {
+    api::Timestamp timestamp = 0;
+    auto put = std::make_shared<api::PutCommand>(BUCKET, testDoc, timestamp);
+    put->setCondition(documentapi::TestAndSetCondition("testdoctype1.my_imported_field == null"));
+
+    ASSERT_EQ(fetchResult(asyncHandler->handlePut(*put, createTracker(put, BUCKET))),
+              api::ReturnCode(api::ReturnCode::Result::ILLEGAL_PARAMETERS,
+                              "Condition field 'my_imported_field' could not be found, or is an imported field. "
+                              "Imported fields are not supported in conditional mutations."));
+    EXPECT_EQ("", dumpBucket(BUCKET_ID));
+}
+
 TEST_F(TestAndSetTest, conditional_put_to_non_existing_document_should_fail) {
     // Conditionally replace nonexisting document
     // Fail since no document exists to match with test and set

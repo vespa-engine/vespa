@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.controller.restapi.user;
 import com.yahoo.component.annotation.Inject;
 import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.TenantName;
+import com.yahoo.container.jdisc.EmptyResponse;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.ThreadedHttpRequestHandler;
@@ -37,7 +38,6 @@ import com.yahoo.vespa.hosted.controller.api.role.SimplePrincipal;
 import com.yahoo.vespa.hosted.controller.api.role.TenantRole;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.restapi.ErrorResponses;
-import com.yahoo.vespa.hosted.controller.restapi.application.EmptyResponse;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 import com.yahoo.yolean.Exceptions;
 
@@ -368,7 +368,7 @@ public class UserApiHandler extends ThreadedHttpRequestHandler {
 
     private boolean hasTrialCapacity() {
         if (! controller.system().isPublic()) return true;
-        var existing = controller.tenants().asList().stream().map(Tenant::name).collect(Collectors.toList());
+        var existing = controller.tenants().asList().stream().map(Tenant::name).toList();
         var trialTenants = controller.serviceRegistry().billingController().tenantsWithPlan(existing, PlanId.from("trial"));
         return maxTrialTenants.value() < 0 || trialTenants.size() < maxTrialTenants.value();
     }

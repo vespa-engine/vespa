@@ -7,7 +7,7 @@
 namespace storage::spi { class Result; }
 namespace proton {
 
-typedef std::unique_ptr<storage::spi::Result> ResultUP;
+using ResultUP = std::unique_ptr<storage::spi::Result>;
 
 namespace feedtoken {
 

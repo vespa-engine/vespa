@@ -44,7 +44,7 @@ updateHeader(const vespalib::string &name, uint64_t fileBitSize)
     f.OpenReadWrite(name.c_str());
     h.readFile(f);
     FileHeaderContext::setFreezeTime(h);
-    typedef vespalib::GenericHeader::Tag Tag;
+    using Tag = vespalib::GenericHeader::Tag;
     h.putTag(Tag("frozen", 1));
     h.putTag(Tag("fileBitSize", fileBitSize));
     h.rewriteFile(f);

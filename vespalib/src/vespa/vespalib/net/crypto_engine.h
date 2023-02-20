@@ -31,18 +31,7 @@ struct CryptoEngine {
  * Crypto engine without encryption.
  **/
 struct NullCryptoEngine : public CryptoEngine {
-    bool use_tls_when_client() const override { return false; }
-    bool always_use_tls_when_server() const override { return false; }
-    CryptoSocket::UP create_client_crypto_socket(SocketHandle socket, const SocketSpec &spec) override;
-    CryptoSocket::UP create_server_crypto_socket(SocketHandle socket) override;
-};
-
-/**
- * Very simple crypto engine that requires connection handshaking and
- * data transformation. Used to test encryption integration separate
- * from TLS.
- **/
-struct XorCryptoEngine : public CryptoEngine {
+    ~NullCryptoEngine() override;
     bool use_tls_when_client() const override { return false; }
     bool always_use_tls_when_server() const override { return false; }
     CryptoSocket::UP create_client_crypto_socket(SocketHandle socket, const SocketSpec &spec) override;

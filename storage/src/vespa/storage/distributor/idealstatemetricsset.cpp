@@ -53,7 +53,7 @@ MergeBucketMetricSet::~MergeBucketMetricSet() = default;
 
 void
 IdealStateMetricSet::createOperationMetrics() {
-    typedef IdealStateOperation ISO;
+    using ISO = IdealStateOperation;
     operations.resize(ISO::OPERATION_COUNT);
     // Note: naked new is used instead of make_shared due to the latter not being
     // able to properly transitively deduce the types for the tag initializer lists.

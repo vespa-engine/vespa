@@ -3,6 +3,7 @@ package com.yahoo.slime;
 
 import java.io.ByteArrayOutputStream;
 import java.util.Arrays;
+import java.util.function.Consumer;
 
 /**
  * Common implementation for all value types.
@@ -17,6 +18,11 @@ abstract class Value implements Cursor {
     private static final byte[] emptyData = new byte[0];
 
     public final boolean valid() { return this != NixValue.invalid(); }
+
+    public final void ifValid(Consumer<Inspector> consumer) {
+        if (valid()) consumer.accept(this);
+    }
+
     public int children() { return 0; }
     public int entries() { return 0; }
     public int fields() { return 0; }

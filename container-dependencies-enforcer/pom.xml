@@ -71,7 +71,7 @@
 
                                         <!-- Guava with its internal dependencies -->
                                         <include>com.google.guava:guava:${guava.version}:provided</include>
-                                        <include>com.google.errorprone:error_prone_annotations:2.2.0:provided</include>
+                                        <include>com.google.errorprone:error_prone_annotations:2.18.0:provided</include>
                                         <include>com.google.guava:failureaccess:1.0.1:provided</include>
                                         <include>com.google.j2objc:j2objc-annotations:1.1:provided</include>
 

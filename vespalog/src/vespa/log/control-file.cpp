@@ -1,13 +1,13 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <sys/types.h>
 #include <cstdlib>
 #include <cstring>
-#include <ctype.h>
+#include <cctype>
 #include <cstdio>
-#include <sys/mman.h>
-#include <errno.h>
-#include <unistd.h>
+#include <cerrno>
 #include <memory>
+#include <unistd.h>
+#include <sys/mman.h>
+#include <sys/types.h>
 
 #include "log.h"
 LOG_SETUP_INDIRECT(".log.control", "$Id$");
@@ -28,10 +28,10 @@ ControlFile::ControlFile(const char *file, Mode mode)
       _fileSize(0),
       _mode(mode),
       _fileName(file),
-      _prefix(0),
-      _mapBase(0),
+      _prefix(nullptr),
+      _mapBase(nullptr),
       _mappedSize(0),
-      _firstComponent(0)
+      _firstComponent(nullptr)
 {
     _fileBacking.lock(mode != READONLY);
     ensureHeader(); // Create the header if it doesn't exist
@@ -83,7 +83,7 @@ ControlFile::ensureHeader()
 void
 ControlFile::flush()
 {
-    if (_mapBase != NULL) {
+    if (_mapBase != nullptr) {
         if (msync(_mapBase, 0, MS_SYNC) != 0) {
             LOG(warning, "msync of log control file failed: %s",
                 strerror(errno));
@@ -103,7 +103,7 @@ ControlFile::ensureMapping()
         int fd = -1;
         size_t length = pageAlign(_maxMapSize + 1);
 
-        void *addr = mmap(NULL, length, prot, flags, fd, 0);
+        void *addr = mmap(nullptr, length, prot, flags, fd, 0);
         if (!addr) {
             throwInvalid("Failed to get anonymous memory for control file: %s",
                          strerror(errno));
@@ -129,7 +129,7 @@ ControlFile::freeMapping()
         LOG(warning, "munmapping of loglevel settings failed: %s",
             strerror(errno));
     }
-    _mapBase = NULL;
+    _mapBase = nullptr;
 }
 
 unsigned int
@@ -142,19 +142,19 @@ ControlFile::pageAlign(unsigned int len)
 char *
 ControlFile::nextNewline(char *addr)
 {
-    if (addr < _mapBase) return NULL;
+    if (addr < _mapBase) return nullptr;
     char *end = _mapBase + _fileSize;
     while (addr < end) {
         if (*addr == '\n') return addr;
         ++addr;
     }
-    return NULL;
+    return nullptr;
 }
 
 char *
 ControlFile::alignLevels(char *addr)
 {
-    unsigned long x = reinterpret_cast<unsigned long>(addr);
+    auto x = reinterpret_cast<unsigned long>(addr);
     x = (x + 3) & ~3;
     return reinterpret_cast<char *>(x);
 }
@@ -201,7 +201,7 @@ ControlFile::setPrefix(const char *prefix)
 {
     if (prefix && !hasPrefix() && _prefix) {
         char buf[_maxPrefix + 1];
-        sprintf(buf, "%.*s\n", _maxPrefix - 1, prefix);
+        snprintf(buf, _maxPrefix + 1, "%.*s\n", _maxPrefix - 1, prefix);
         memcpy(_prefix, buf, strlen(buf));
         msync(_mapBase, pageAlign(1), MS_ASYNC | MS_INVALIDATE);
     }
@@ -243,12 +243,12 @@ ControlFile::getLevels(const char *name)
 
     char *inheritLevels =  reinterpret_cast<char *>(defaultLevels());
     const char *chop = strrchr(name, '.');
-    if (chop != NULL) {
+    if (chop != nullptr) {
         char shorterName[2000];
         strncpy(shorterName, name, chop - name);
         shorterName[chop-name] = '\0';
         unsigned int *inherit = getLevels(shorterName);
-        if (inherit != NULL) {
+        if (inherit != nullptr) {
             inheritLevels =  reinterpret_cast<char *>(inherit);
         }
     }
@@ -262,12 +262,7 @@ ControlFile::getLevels(const char *name)
     strcat(appendedString, &padSpaces[3 - padding]);
     int prefix_len = strlen(appendedString);
 
-#pragma GCC diagnostic push
-#ifndef __clang__
-#pragma GCC diagnostic ignored "-Wstringop-truncation"
-#endif
     strncat(appendedString, inheritLevels, Logger::NUM_LOGLEVELS*sizeof(int));
-#pragma GCC diagnostic pop
     strcat(appendedString, "\n");
 
     int len = strlen(appendedString);
@@ -370,7 +365,7 @@ ControlFile::ensureComponent(const char *pattern)
     ComponentIterator iter(getComponentIterator());
     bool wasSeen = false;
     Component *c;
-    while ((c = iter.next()) != NULL) {
+    while ((c = iter.next()) != nullptr) {
         std::unique_ptr<Component> component(c);
         if (c->matches(pattern)) {
             wasSeen = true;
@@ -399,7 +394,7 @@ ControlFile::makeName(const char *service, char *buf, int bufLen)
         if (!*service || strcmp(service, "-") == 0) {
             return false;
         }
-        if (strchr(service, '/') != NULL) {
+        if (strchr(service, '/') != nullptr) {
             LOG(debug, "service name '%s' should not contain /", service);
             return false;
         }
@@ -416,14 +411,10 @@ ControlFile::makeName(const char *service, char *buf, int bufLen)
 ComponentIterator
 ControlFile::getComponentIterator()
 {
-    return ComponentIterator(this);
+    return { this };
 }
 
-ComponentIterator::ComponentIterator(const ComponentIterator& ci)
-    : _cf(ci._cf),
-      _next(ci._next)
-{
-}
+ComponentIterator::ComponentIterator(const ComponentIterator& ci) = default;
 
 ComponentIterator::ComponentIterator(ControlFile *cf)
     : _cf(cf),
@@ -434,7 +425,7 @@ ComponentIterator::ComponentIterator(ControlFile *cf)
 Component *
 ComponentIterator::next()
 {
-    Component *ret = NULL;
+    Component *ret = nullptr;
     if (_next) {
         char *nn = _cf->nextNewline(_next);
         if (nn) {
@@ -444,11 +435,11 @@ ComponentIterator::next()
             } else {
                 LOG(warning, "mismatch between component size and line size, aborting ComponentIterator loop");
                 delete ret;
-                ret = NULL;
-                _next = NULL;
+                ret = nullptr;
+                _next = nullptr;
             }
         } else {
-            _next = NULL;
+            _next = nullptr;
         }
     }
     return ret;

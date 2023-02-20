@@ -108,6 +108,7 @@ public class JsonReaderTestCase {
             x.addField(new Field("field2", DataType.STRING));
             x.addField(new Field("int1", DataType.INT));
             x.addField(new Field("flag", DataType.BOOL));
+            x.addField(new Field("tensor1", DataType.getTensor(TensorType.fromSpec("tensor(x{})"))));
             types.registerDocumentType(x);
         }
         {
@@ -990,7 +991,7 @@ public class JsonReaderTestCase {
     }
 
     @Test
-    public void nonExistingFieldCausesException()  throws IOException{
+    public void nonExistingFieldCausesException() throws IOException {
         JsonReader r = createReader(inputJson(
                 "{ 'put': 'id:unittest:smoke::whee',",
                 "  'fields': {",
@@ -1009,7 +1010,7 @@ public class JsonReaderTestCase {
     }
 
     @Test
-    public void nonExistingFieldsCanBeIgnoredInPut()  throws IOException{
+    public void nonExistingFieldsCanBeIgnoredInPut() throws IOException {
         JsonReader r = createReader(inputJson(
                 "{ ",
                 "  'put': 'id:unittest:smoke::doc1',",
@@ -1023,7 +1024,11 @@ public class JsonReaderTestCase {
                 "      }",
                 "    },",
                 "    'field2': 'value2',",
-                "    'nonexisting3': 'ignored value'",
+                "    'nonexisting3': {",
+                "      'cells': [{'address': {'x': 'x1'}, 'value': 1.0}]",
+                "    },",
+                "    'tensor1': {'cells': {'x1': 1.0}},",
+                "    'nonexisting4': 'ignored value'",
                 "  }",
                 "}"));
         DocumentParseInfo parseInfo = r.parseDocument().get();
@@ -1036,6 +1041,8 @@ public class JsonReaderTestCase {
         assertNull(put.getDocument().getField("nonexisting2"));
         assertEquals("value2", put.getDocument().getFieldValue("field2").toString());
         assertNull(put.getDocument().getField("nonexisting3"));
+        assertEquals(Tensor.from("tensor(x{}):{{x:x1}:1.0}"), put.getDocument().getFieldValue("tensor1").getWrappedValue());
+        assertNull(put.getDocument().getField("nonexisting4"));
     }
 
     @Test
@@ -1055,7 +1062,13 @@ public class JsonReaderTestCase {
                 "      }",
                 "    },",
                 "    'field2': { 'assign': 'value2' },",
-                "    'nonexisting3': { 'assign': 'ignored value' }",
+                "    'nonexisting3': {",
+                "      'assign' : {",
+                "        'cells': [{'address': {'x': 'x1'}, 'value': 1.0}]",
+                "      }",
+                "    },",
+                "    'tensor1': {'assign': { 'cells': {'x1': 1.0} } },",
+                "    'nonexisting4': { 'assign': 'ignored value' }",
                 "  }",
                 "}"));
         DocumentParseInfo parseInfo = r.parseDocument().get();
@@ -1068,6 +1081,8 @@ public class JsonReaderTestCase {
         assertNull(update.getFieldUpdate("nonexisting2"));
         assertEquals("value2", update.getFieldUpdate("field2").getValueUpdates().get(0).getValue().getWrappedValue().toString());
         assertNull(update.getFieldUpdate("nonexisting3"));
+        assertEquals(Tensor.from("tensor(x{}):{{x:x1}:1.0}"), update.getFieldUpdate("tensor1").getValueUpdates().get(0).getValue().getWrappedValue());
+        assertNull(update.getFieldUpdate("nonexisting4"));
     }
 
     @Test
@@ -1388,12 +1403,6 @@ public class JsonReaderTestCase {
     }
 
     @Test
-    public void testParsingOfTensorWithEmptyDimensions() {
-        assertSparseTensorField("tensor(x{},y{}):{}",
-                                createPutWithSparseTensor(inputJson("{ 'dimensions': [] }")));
-    }
-
-    @Test
     public void testParsingOfTensorWithEmptyCells() {
         assertSparseTensorField("tensor(x{},y{}):{}",
                                 createPutWithSparseTensor(inputJson("{ 'cells': [] }")));
@@ -1418,14 +1427,16 @@ public class JsonReaderTestCase {
     @Test
     public void testParsingOfSparseTensorWithCells() {
         Tensor tensor = assertSparseTensorField("{{x:a,y:b}:2.0,{x:c,y:b}:3.0}}",
-                                createPutWithSparseTensor(inputJson("{",
-                                                    "  'cells': [",
-                                                    "    { 'address': { 'x': 'a', 'y': 'b' },",
-                                                    "      'value': 2.0 },",
-                                                    "    { 'address': { 'x': 'c', 'y': 'b' },",
-                                                    "      'value': 3.0 }",
-                                                    "  ]",
-                                                    "}")));
+                                createPutWithSparseTensor(
+                                        """
+                                                    {
+                                                      "type": "tensor(x{},y{})",
+                                                      "cells": [
+                                                        { "address": { "x": "a", "y": "b" }, "value": 2.0 },
+                                                        { "address": { "x": "c", "y": "b" }, "value": 3.0 }
+                                                      ]
+                                                    }
+                                                    """));
         assertTrue(tensor instanceof MappedTensor); // any functional instance is fine
     }
 
@@ -1496,6 +1507,33 @@ public class JsonReaderTestCase {
         Tensor tensor = assertTensorField(expected, put, "mixed_bfloat16_tensor");
     }
 
+    /** Tests parsing of various tensor values set at the root, i.e. no 'cells', 'blocks' or 'values' */
+    @Test
+    public void testDirectValue() {
+        assertTensorField("tensor(x{}):{a:2, b:3}", "sparse_single_dimension_tensor", "{'a':2.0, 'b':3.0}");
+        assertTensorField("tensor(x[2],y[3]):[2, 3, 4, 5, 6, 7]]", "dense_tensor", "[2, 3, 4, 5, 6, 7]");
+        assertTensorField("tensor(x[2],y[3]):[2, 3, 4, 5, 6, 7]]", "dense_tensor", "[[2, 3, 4], [5, 6, 7]]");
+        assertTensorField("tensor(x{},y[3]):{a:[2, 3, 4], b:[4, 5, 6]}", "mixed_tensor", "{'a':[2, 3, 4], 'b':[4, 5, 6]}");
+        assertTensorField("tensor(x{},y{}):{{x:a,y:0}:2, {x:b,y:1}:3}", "sparse_tensor",
+                          "[{'address':{'x':'a','y':'0'},'value':2}, {'address':{'x':'b','y':'1'},'value':3}]");
+    }
+
+    @Test
+    public void testDirectValueReservedNameKeys() {
+        // Single-valued
+        assertTensorField("tensor(x{}):{cells:2, b:3}", "sparse_single_dimension_tensor", "{'cells':2.0, 'b':3.0}");
+        assertTensorField("tensor(x{}):{values:2, b:3}", "sparse_single_dimension_tensor", "{'values':2.0, 'b':3.0}");
+        assertTensorField("tensor(x{}):{block:2, b:3}", "sparse_single_dimension_tensor", "{'block':2.0, 'b':3.0}");
+
+        // Multi-valued
+        assertTensorField("tensor(x{},y[3]):{cells:[2, 3, 4], b:[4, 5, 6]}", "mixed_tensor",
+                          "{'cells':[2, 3, 4], 'b':[4, 5, 6]}");
+        assertTensorField("tensor(x{},y[3]):{values:[2, 3, 4], b:[4, 5, 6]}", "mixed_tensor",
+                          "{'values':[2, 3, 4], 'b':[4, 5, 6]}");
+        assertTensorField("tensor(x{},y[3]):{block:[2, 3, 4], b:[4, 5, 6]}", "mixed_tensor",
+                          "{'block':[2, 3, 4], 'b':[4, 5, 6]}");
+    }
+
     @Test
     public void testParsingOfMixedTensorOnMixedForm() {
         Tensor.Builder builder = Tensor.Builder.of(TensorType.fromSpec("tensor(x{},y[3])"));
@@ -1507,13 +1545,33 @@ public class JsonReaderTestCase {
         builder.cell().label("x", 1).label("y", 2).value(7.0);
         Tensor expected = builder.build();
 
-        String mixedJson = "{\"blocks\":[" +
-                           "{\"address\":{\"x\":\"0\"},\"values\":[2.0,3.0,4.0]}," +
-                           "{\"address\":{\"x\":\"1\"},\"values\":[5.0,6.0,7.0]}" +
-                           "]}";
+        String mixedJson =
+                """
+                {
+                  "blocks":[
+                    {"address":{"x":"0"},"values":[2.0,3.0,4.0]},
+                    {"address":{"x":"1"},"values":[5.0,6.0,7.0]}
+                  ]
+                }
+                """;
         Tensor tensor = assertTensorField(expected,
                                           createPutWithTensor(inputJson(mixedJson), "mixed_tensor"), "mixed_tensor");
         assertTrue(tensor instanceof MixedTensor); // this matters for performance
+
+        String mixedJsonDirect =
+                """
+                [
+                  {"address":{"x":"0","y":"0"},"value":2.0},
+                  {"address":{"x":"0","y":"1"},"value":3.0},
+                  {"address":{"x":"0","y":"2"},"value":4.0},
+                  {"address":{"x":"1","y":"0"},"value":5.0},
+                  {"address":{"x":"1","y":"1"},"value":6.0},
+                  {"address":{"x":"1","y":"2"},"value":7.0}
+                ]
+                """;
+        Tensor tensorDirect = assertTensorField(expected,
+                                                createPutWithTensor(inputJson(mixedJsonDirect), "mixed_tensor"), "mixed_tensor");
+        assertTrue(tensorDirect instanceof MixedTensor); // this matters for performance
     }
 
     @Test
@@ -1567,8 +1625,8 @@ public class JsonReaderTestCase {
     @Test
     public void testAssignUpdateOfNullTensor() {
         ClearValueUpdate clearUpdate = (ClearValueUpdate) getTensorField(createAssignUpdateWithSparseTensor(null)).getValueUpdate(0);
-        assertTrue(clearUpdate != null);
-        assertTrue(clearUpdate.getValue() == null);
+        assertNotNull(clearUpdate);
+        assertNull(clearUpdate.getValue());
     }
 
     @Test
@@ -2054,6 +2112,9 @@ public class JsonReaderTestCase {
 
     private static Tensor assertSparseTensorField(String expectedTensor, DocumentPut put) {
         return assertTensorField(expectedTensor, put, "sparse_tensor");
+    }
+    private Tensor assertTensorField(String expectedTensor, String fieldName, String inputJson) {
+        return assertTensorField(expectedTensor, createPutWithTensor(inputJson, fieldName), fieldName);
     }
     private static Tensor assertTensorField(String expectedTensor, DocumentPut put, String tensorFieldName) {
         return assertTensorField(Tensor.from(expectedTensor), put, tensorFieldName);

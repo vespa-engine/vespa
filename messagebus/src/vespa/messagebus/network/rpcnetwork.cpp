@@ -18,7 +18,6 @@
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/util/stringfmt.h>
-#include <vespa/vespalib/util/gate.h>
 #include <vespa/fastos/thread.h>
 #include <thread>
 
@@ -31,36 +30,6 @@ using namespace std::chrono_literals;
 namespace mbus {
 
 namespace {
-
-/**
- * Implements a helper class for {@link RPCNetwork#sync()}. It provides a
- * blocking method {@link #await()} that will wait until the internal state
- * of this object is set to 'done'. By scheduling this task in the network
- * thread and then calling this method, we achieve handshaking with the network
- * thread.
- */
-class SyncTask : public FNET_Task {
-private:
-    vespalib::Gate _gate;
-
-public:
-    SyncTask(FNET_Scheduler &s) :
-        FNET_Task(&s),
-        _gate() {
-        ScheduleNow();
-    }
-    ~SyncTask() override {
-        Kill();
-    }
-
-    void await() {
-        _gate.await();
-    }
-
-    void PerformTask() override {
-        _gate.countDown();
-    }
-};
 
 struct TargetPoolTask : public FNET_Task {
     RPCTargetPool &_pool;
@@ -126,7 +95,7 @@ RPCNetwork::SendContext::handleVersion(const vespalib::Version *version)
 RPCNetwork::RPCNetwork(const RPCNetworkParams &params) :
     _owner(nullptr),
     _ident(params.getIdentity()),
-    _threadPool(std::make_unique<FastOS_ThreadPool>(128_Ki, 0)),
+    _threadPool(std::make_unique<FastOS_ThreadPool>()),
     _transport(std::make_unique<FNET_Transport>(toFNETConfig(params))),
     _orb(std::make_unique<FRT_Supervisor>(_transport.get())),
     _scheduler(*_transport->GetScheduler()),
@@ -412,8 +381,8 @@ RPCNetwork::send(RPCNetwork::SendContext &ctx)
 void
 RPCNetwork::sync()
 {
-    SyncTask task(_scheduler);
-    task.await();
+    _transport->sync(); // Ensure transport loop run at least once to execute task scheduled for NOW
+    _transport->sync(); // And then once more to ensure they are all done.
 }
 
 void

@@ -4,16 +4,14 @@
 #include "bucketlistmerger.h"
 #include "distributor_stripe_component.h"
 #include "distributormessagesender.h"
-#include "messageguard.h"
 #include "operation_routing_snapshot.h"
 #include "outdated_nodes_map.h"
 #include "pendingclusterstate.h"
 #include "potential_data_loss_report.h"
 #include <vespa/document/bucket/bucket.h>
-#include <vespa/storage/common/storagelink.h>
+#include <vespa/storage/common/message_guard.h>
 #include <vespa/storageapi/message/bucket.h>
 #include <vespa/storageapi/messageapi/messagehandler.h>
-#include <vespa/storageframework/generic/clock/timer.h>
 #include <vespa/storageframework/generic/status/statusreporter.h>
 #include <vespa/vdslib/state/clusterstate.h>
 #include <atomic>
@@ -71,6 +69,8 @@ public:
     }
 
     OperationRoutingSnapshot read_snapshot_for_bucket(const document::Bucket&) const;
+
+    void reset_all_last_gc_timestamps_to_current_time();
 private:
     class MergeReplyGuard {
     public:
@@ -144,12 +144,12 @@ private:
                                        const BucketRequest& req);
     void mergeBucketInfoWithDatabase(const std::shared_ptr<api::RequestBucketInfoReply>& repl,
                                      const BucketRequest& req);
-    void convertBucketInfoToBucketList(const std::shared_ptr<api::RequestBucketInfoReply>& repl,
-                                       uint16_t targetNode, BucketListMerger::BucketList& newList);
+    static void convertBucketInfoToBucketList(const std::shared_ptr<api::RequestBucketInfoReply>& repl,
+                                              uint16_t targetNode, BucketListMerger::BucketList& newList);
     void sendRequestBucketInfo(uint16_t node, const document::Bucket& bucket,
-                               const std::shared_ptr<MergeReplyGuard>& mergeReply);
-    void addBucketInfoForNode(const BucketDatabase::Entry& e, uint16_t node,
-                              BucketListMerger::BucketList& existing) const;
+                               const std::shared_ptr<MergeReplyGuard>& mergeReplystatic );
+    static void addBucketInfoForNode(const BucketDatabase::Entry& e, uint16_t node,
+                                     BucketListMerger::BucketList& existing);
     void clearReadOnlyBucketRepoDatabases();
     /**
      * Adds all buckets contained in the bucket database
@@ -197,7 +197,7 @@ private:
         ~MergingNodeRemover() override;
 
         Result merge(BucketDatabase::Merger&) override;
-        void logRemove(const document::BucketId& bucketId, const char* msg) const;
+        static void logRemove(const document::BucketId& bucketId, const char* msg) ;
         bool distributorOwnsBucket(const document::BucketId&) const;
 
         const std::vector<BucketDatabase::Entry>& getNonOwnedEntries() const noexcept {
@@ -230,7 +230,7 @@ private:
     using DbGuards = std::unordered_map<document::BucketSpace,
                                         std::shared_ptr<BucketDatabase::ReadGuard>,
                                         document::BucketSpace::hash>;
-    using DelayedRequestsQueue = std::deque<std::pair<framework::MilliSecTime, BucketRequest>>;
+    using DelayedRequestsQueue = std::deque<std::pair<vespalib::steady_time, BucketRequest>>;
 
     const DistributorNodeContext&      _node_ctx;
     DistributorStripeOperationContext& _op_ctx;

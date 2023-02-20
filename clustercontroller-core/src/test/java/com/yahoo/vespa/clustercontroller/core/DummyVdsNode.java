@@ -31,7 +31,6 @@ import java.util.Optional;
 import java.util.TreeMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
 
 /**
  *
@@ -63,11 +62,11 @@ public class DummyVdsNode {
 
     static class Req {
         Request request;
-        long timeout;
+        long timeToReply;
 
-        Req(Request r, long timeout) {
+        Req(Request r, long timeToReply) {
             request = r;
-            this.timeout = timeout;
+            this.timeToReply = timeToReply;
         }
     }
     static class BackOff implements BackOffPolicy {
@@ -76,6 +75,8 @@ public class DummyVdsNode {
         public boolean shouldWarn(double v) { return false; }
         public boolean shouldInform(double v) { return false; }
     }
+
+    /** List of requests that should be replied to after a specified time */
     private final List<Req> waitingRequests = new LinkedList<>();
 
     /**
@@ -94,7 +95,7 @@ public class DummyVdsNode {
                     long currentTime = timer.getCurrentTimeInMillis();
                     for (Iterator<Req> it = waitingRequests.iterator(); it.hasNext(); ) {
                         Req r = it.next();
-                        if (r.timeout <= currentTime) {
+                        if (currentTime >= r.timeToReply) {
                             log.log(Level.FINE, () -> "Dummy node " + DummyVdsNode.this + ": Responding to node state request at time " + currentTime);
                             r.request.returnValues().add(new StringValue(nodeState.serialize()));
                             if (r.request.methodName().equals("getnodestate3")) {
@@ -258,7 +259,7 @@ public class DummyVdsNode {
         synchronized(timer) {
             return clusterStateBundles.stream()
                     .map(ClusterStateBundle::getBaselineClusterState)
-                    .collect(Collectors.toList());
+                    .toList();
         }
     }
 
@@ -294,10 +295,11 @@ public class DummyVdsNode {
         m.returnDesc(0, "returnCode", "Returncode of request. Should be 0 = OK");
         supervisor.addMethod(m);
 
-        m = new Method("getnodestate3", "sii", "ss", this::rpc_getNodeState2);
+        m = new Method("getnodestate3", "sii", "ss", this::rpc_getNodeState3);
         m.methodDesc("Get nodeState of a node, answer when state changes from given state.");
         m.paramDesc(0, "nodeStateIn", "The node state of the given node");
         m.paramDesc(1, "timeout", "Time timeout in milliseconds set by the state requester.");
+        m.paramDesc(2, "index", "Node index.");
         m.returnDesc(0, "nodeStateOut", "The node state of the given node");
         m.returnDesc(1, "hostinfo", "Information on the host node is running on");
         supervisor.addMethod(m);
@@ -339,31 +341,27 @@ public class DummyVdsNode {
         return false;
     }
 
-    private void rpc_getNodeState2(Request req) {
+    private void rpc_getNodeState3(Request req) {
         log.log(Level.FINE, () -> "Dummy node " + this + ": Got " + req.methodName() + " request");
         try{
             String oldState = req.parameters().get(0).asString();
             int timeout = req.parameters().get(1).asInt32();
-            int index = -1;
-            if (req.parameters().size() > 2) {
-                index = req.parameters().get(2).asInt32();
-            }
+            int index = req.parameters().get(2).asInt32();
             synchronized(timer) {
                 boolean sentReply = sendGetNodeStateReply(index);
                 NodeState givenState = (oldState.equals("unknown") ? null : NodeState.deserialize(type, oldState));
                 if (givenState != null && (givenState.equals(nodeState) || sentReply)) {
-                    log.log(Level.FINE, () -> "Dummy node " + this + ": Has same state as reported " + givenState + ". Queing request. Timeout is " + timeout + " ms. "
-                            + "Will be answered at time " + (timer.getCurrentTimeInMillis() + timeout * 800L / 1000));
+                    long timeToReply = timer.getCurrentTimeInMillis() + timeout * 800L / 1000;
+                    log.log(Level.FINE, () -> "Dummy node " + this + " has same state as reported (" + givenState + "). Queuing request. Timeout is " + timeout + " ms. "
+                            + "Will be answered at time " + timeToReply);
                     req.detach();
-                    waitingRequests.add(new Req(req, timer.getCurrentTimeInMillis() + timeout * 800L / 1000));
-                    log.log(Level.FINE, () -> "Dummy node " + this + " has now " + waitingRequests.size() + " entries and is " + (waitingRequests.isEmpty() ? "empty" : "not empty"));
+                    waitingRequests.add(new Req(req, timeToReply));
+                    log.log(Level.FINE, () -> "Dummy node " + this + " has " + waitingRequests.size() + " requests waiting to be answered");
                     timer.notifyAll();
                 } else {
                     log.log(Level.FINE, () -> "Dummy node " + this + ": Request had " + (givenState == null ? "no state" : "different state(" + givenState +")") + ". Answering with " + nodeState);
                     req.returnValues().add(new StringValue(nodeState.serialize()));
-                    if (req.methodName().equals("getnodestate3")) {
-                        req.returnValues().add(new StringValue(hostInfo));
-                    }
+                    req.returnValues().add(new StringValue(hostInfo));
                     ++immediateStateReplies;
                 }
             }

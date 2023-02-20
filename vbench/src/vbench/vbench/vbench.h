@@ -23,10 +23,10 @@ class VBench : public vespalib::Runnable,
 {
 private:
     struct InputChain {
-        typedef std::unique_ptr<InputChain> UP;
+        using UP = std::unique_ptr<InputChain>;
         std::vector<Tagger::UP>           taggers;
         Generator::UP                     generator;
-        std::unique_ptr<vespalib::Thread> thread;
+        std::thread                       thread;
     };
     NativeFactory                _factory;
     std::vector<Analyzer::UP>    _analyzers;

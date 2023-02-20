@@ -601,6 +601,8 @@ SourceBlenderBlueprint::SourceBlenderBlueprint(const ISourceSelector &selector)
 {
 }
 
+SourceBlenderBlueprint::~SourceBlenderBlueprint() = default;
+
 Blueprint::HitEstimate
 SourceBlenderBlueprint::combine(const std::vector<HitEstimate> &data) const
 {

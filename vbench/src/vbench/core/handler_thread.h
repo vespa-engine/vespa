@@ -6,7 +6,7 @@
 #include <vespa/vespalib/util/arrayqueue.hpp>
 #include <vespa/vespalib/util/thread.h>
 #include <vespa/vespalib/util/runnable.h>
-#include <vespa/vespalib/util/joinable.h>
+#include <condition_variable>
 
 namespace vbench {
 
@@ -19,15 +19,14 @@ namespace vbench {
  **/
 template <typename T>
 class HandlerThread : public Handler<T>,
-                      public vespalib::Runnable,
-                      public vespalib::Joinable
+                      public vespalib::Runnable
 {
 private:
     std::mutex                                 _lock;
     std::condition_variable                    _cond;
     vespalib::ArrayQueue<std::unique_ptr<T> >  _queue;
     Handler<T>                                &_next;
-    vespalib::Thread                           _thread;
+    std::thread                                _thread;
     bool                                       _done;
 
     void run() override;
@@ -36,7 +35,7 @@ public:
     HandlerThread(Handler<T> &next, init_fun_t init_fun);
     ~HandlerThread();
     void handle(std::unique_ptr<T> obj) override;
-    void join() override;
+    void join();
 };
 
 } // namespace vbench

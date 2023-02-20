@@ -33,14 +33,17 @@ import com.yahoo.vespa.hosted.controller.versions.VespaVersion.Confidence;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -64,10 +67,8 @@ import static java.util.function.BinaryOperator.maxBy;
 import static java.util.stream.Collectors.collectingAndThen;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.mapping;
-import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Collectors.toSet;
-import static java.util.stream.Collectors.toUnmodifiableList;
 
 /**
  * Status of the deployment jobs of an {@link Application}.
@@ -77,7 +78,7 @@ import static java.util.stream.Collectors.toUnmodifiableList;
 public class DeploymentStatus {
 
     private static <T> List<T> union(List<T> first, List<T> second) {
-        return Stream.concat(first.stream(), second.stream()).distinct().collect(toUnmodifiableList());
+        return Stream.concat(first.stream(), second.stream()).distinct().toList();
     }
 
     private final Application application;
@@ -102,7 +103,7 @@ public class DeploymentStatus {
         Map<JobId, JobStatus> jobs = new HashMap<>();
         this.jobSteps = jobDependencies(application.deploymentSpec(), allSteps, job -> jobs.computeIfAbsent(job, allJobs));
         this.allSteps = Collections.unmodifiableList(allSteps);
-        this.allJobs = JobList.from(jobSteps.keySet().stream().map(allJobs).collect(toList()));
+        this.allJobs = JobList.from(jobSteps.keySet().stream().map(allJobs).toList());
     }
 
     private JobType systemTest(JobType dependent) {
@@ -181,7 +182,7 @@ public class DeploymentStatus {
 
         // If compatibility platform is present, require that jobs have previously been run on that platform's major.
         // If platform is not present, app is already on the (old) platform iff. it has production deployments.
-        boolean alreadyDeployedOnPlatform = augmented.platform().map(platform -> allJobs.production().asList().stream()
+        boolean alreadyDeployedOnPlatform = augmented.platform().map(platform -> allJobs.production().not().test().asList().stream()
                                                                                         .anyMatch(job -> job.runs().values().stream()
                                                                                                             .anyMatch(run -> run.versions().targetPlatform().getMajor() == platform.getMajor())))
                                                      .orElse( ! application.productionDeployments().values().stream().allMatch(List::isEmpty));
@@ -243,7 +244,7 @@ public class DeploymentStatus {
                        .filter(version -> version.confidence().equalOrHigherThan(target))
                        .map(VespaVersion::versionNumber)
                        .sorted(reverseOrder())
-                       .collect(Collectors.toList());
+                       .toList();
     }
 
 
@@ -444,7 +445,7 @@ public class DeploymentStatus {
      * which does not downgrade any deployments in the instance,
      * which is not already rolling out to the instance, and
      * which causes at least one job to run if deployed to the instance.
-     * For the "exclusive" revision upgrade policy it is the oldest such revision; otherwise, it is the latest.
+     * For the "next" revision target policy it is the oldest such revision; otherwise, it is the latest.
      */
     public Change outstandingChange(InstanceName instance) {
         StepStatus status = instanceSteps().get(instance);
@@ -503,25 +504,26 @@ public class DeploymentStatus {
                                                                         .filter(run -> run.versions().equals(versions))
                                                                         .findFirst())
                                                .map(Run::start);
-        Optional<Instant> systemTestedAt = testedAt(job.application(), systemTest(job.type()), versions);
-        Optional<Instant> stagingTestedAt = testedAt(job.application(), stagingTest(job.type()), versions);
+        Optional<Instant> systemTestedAt = testedAt(job, systemTest(job.type()), versions);
+        Optional<Instant> stagingTestedAt = testedAt(job, stagingTest(job.type()), versions);
         if (systemTestedAt.isEmpty() || stagingTestedAt.isEmpty()) return triggeredAt;
         Optional<Instant> testedAt = systemTestedAt.get().isAfter(stagingTestedAt.get()) ? systemTestedAt : stagingTestedAt;
         return triggeredAt.isPresent() && triggeredAt.get().isBefore(testedAt.get()) ? triggeredAt : testedAt;
     }
 
-    /** Earliest instant when versions were tested for the given instance */
-    private Optional<Instant> testedAt(ApplicationId instance, JobType type, Versions versions) {
-        return declaredTest(instance, type).map(__ -> allJobs.instance(instance.instance()))
-                                                    .orElse(allJobs)
-                                                    .type(type).asList().stream()
-                                                    .flatMap(status -> RunList.from(status)
-                                                                              .on(versions)
-                                                                              .matching(run -> run.id().type().zone().equals(type.zone()))
-                                                                              .matching(Run::hasSucceeded)
-                                                                              .asList().stream()
-                                                                              .map(Run::start))
-                                                    .min(naturalOrder());
+    /** Earliest instant when versions were tested for the given instance. */
+    private Optional<Instant> testedAt(JobId job, JobType type, Versions versions) {
+        return prerequisiteTests(job, type).stream()
+                                           .map(test -> allJobs.get(test).stream()
+                                                               .flatMap(status -> RunList.from(status)
+                                                                                         .on(versions)
+                                                                                         .matching(run -> run.id().type().zone().equals(type.zone()))
+                                                                                         .matching(Run::hasSucceeded)
+                                                                                         .asList().stream()
+                                                                                         .map(run -> run.end().get()))
+                                                               .min(naturalOrder()))
+                                           .reduce((o, n) -> o.isEmpty() || n.isEmpty() ? Optional.empty() : o.get().isBefore(n.get()) ? n : o)
+                                           .orElse(Optional.empty());
     }
 
     private Map<JobId, List<Job>> productionJobs(InstanceName instance, Change change, boolean assumeUpgradesSucceed) {
@@ -667,11 +669,10 @@ public class DeploymentStatus {
     /** The test jobs that need to run prior to the given production deployment jobs. */
     public Map<JobId, List<Job>> testJobs(Map<JobId, List<Job>> jobs) {
         Map<JobId, List<Job>> testJobs = new LinkedHashMap<>();
-        // First, look for a declared test in the instance of each production job.
         jobs.forEach((job, versionsList) -> {
-            for (JobType testType : List.of(systemTest(job.type()), stagingTest(job.type()))) {
-                if (job.type().isProduction() && job.type().isDeployment()) {
-                    declaredTest(job.application(), testType).ifPresent(testJob -> {
+            if (job.type().isProduction() && job.type().isDeployment()) {
+                for (JobType testType : List.of(systemTest(job.type()), stagingTest(job.type()))) {
+                    prerequisiteTests(job, testType).forEach(testJob -> {
                         for (Job productionJob : versionsList)
                             if (allJobs.successOn(testType, productionJob.versions())
                                        .instance(testJob.application().instance())
@@ -683,26 +684,6 @@ public class DeploymentStatus {
                                                DeploymentStatus::union);
                     });
                 }
-            }
-        });
-        // If no declared test in the right instance was triggered, pick one from a different instance.
-        jobs.forEach((job, versionsList) -> {
-            for (JobType testType : List.of(systemTest(job.type()), stagingTest(job.type()))) {
-                for (Job productionJob : versionsList)
-                    if (   job.type().isProduction() && job.type().isDeployment()
-                        && allJobs.successOn(testType, productionJob.versions()).asList().isEmpty()
-                        && testJobs.keySet().stream()
-                                   .noneMatch(test ->    test.type().equals(testType) && test.type().zone().equals(testType.zone())
-                                                      && testJobs.get(test).stream().anyMatch(testJob -> test.type().isSystemTest() ? testJob.versions().targetsMatch(productionJob.versions())
-                                                                                                                                    : testJob.versions().equals(productionJob.versions())))) {
-                        JobId testJob = firstDeclaredOrElseImplicitTest(testType);
-                        testJobs.merge(testJob,
-                                       List.of(new Job(testJob.type(),
-                                                       productionJob.versions(),
-                                                       jobSteps.get(testJob).readyAt(productionJob.change),
-                                                       productionJob.change)),
-                                       DeploymentStatus::union);
-                    }
             }
         });
         return Collections.unmodifiableMap(testJobs);
@@ -747,6 +728,30 @@ public class DeploymentStatus {
             first = first != null ? first : step.name();
         }
         return first;
+    }
+
+    /**
+     * Returns set of declared tests directly reachable from the given production job, or the first declared (or implicit) test.
+     * A test in instance {@code I} is directly reachable from a job in instance {@code K} if a chain of instances {@code I, J, ..., K}
+     * exists, such that only {@code I} has a declared test of the particular type.
+     * These are the declared tests that should be OK before we proceed with the corresponding production deployment.
+     * If no such tests exist, the first declared test, or a test in the first declared instance, is used instead.
+     */
+    private List<JobId> prerequisiteTests(JobId prodJob, JobType testType) {
+        List<JobId> tests = new ArrayList<>();
+        Set<InstanceName> seen = new LinkedHashSet<>();
+        Deque<InstanceName> pending = new ArrayDeque<>();
+        pending.add(prodJob.application().instance());
+        while ( ! pending.isEmpty()) {
+            InstanceName instance = pending.poll();
+            Optional<JobId> test = declaredTest(application().id().instance(instance), testType);
+            if (test.isPresent()) tests.add(test.get());
+            else instanceSteps().get(instance).dependencies().stream().map(StepStatus::instance).forEach(dependency -> {
+                if (seen.add(dependency)) pending.add(dependency);
+            });
+        }
+        if (tests.isEmpty()) tests.add(firstDeclaredOrElseImplicitTest(testType));
+        return tests;
     }
 
     /** Adds the primitive steps contained in the given step, which depend on the given previous primitives, to the dependency graph. */

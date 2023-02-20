@@ -23,12 +23,13 @@ protected:
 
 public:
     VersionedRPCNetwork(const RPCNetworkParams &params);
+    ~VersionedRPCNetwork() override;
     void setVersion(const vespalib::Version &version);
 };
 
 class TestServer {
 public:
-    typedef std::unique_ptr<TestServer> UP;
+    using UP = std::unique_ptr<TestServer>;
     TestServer(const TestServer &) = delete;
     TestServer & operator = (const TestServer &) = delete;
 

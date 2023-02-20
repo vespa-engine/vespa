@@ -26,7 +26,7 @@ public:
     /**
      * Convenience typedef for an auto pointer to a Reply object.
      */
-    typedef std::unique_ptr<Reply> UP;
+    using UP = std::unique_ptr<Reply>;
 
     /**
      * Constructs a new instance of this class. This object is useless until the

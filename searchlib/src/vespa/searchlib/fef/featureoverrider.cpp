@@ -2,8 +2,7 @@
 
 #include "featureoverrider.h"
 
-namespace search {
-namespace fef {
+namespace search::fef {
 
 void
 FeatureOverrider::handle_bind_inputs(vespalib::ConstArrayRef<LazyValue> inputs)
@@ -50,5 +49,4 @@ FeatureOverrider::handle_bind_match_data(const MatchData &md)
     _executor.bind_match_data(md);
 }
 
-} // namespace fef
-} // namespace search
+}

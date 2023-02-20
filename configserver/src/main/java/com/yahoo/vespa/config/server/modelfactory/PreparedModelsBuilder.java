@@ -29,14 +29,12 @@ import com.yahoo.container.jdisc.secretstore.SecretStore;
 import com.yahoo.vespa.config.server.application.Application;
 import com.yahoo.vespa.config.server.application.ApplicationCuratorDatabase;
 import com.yahoo.vespa.config.server.application.ApplicationSet;
-import com.yahoo.vespa.config.server.application.PermanentApplicationPackage;
 import com.yahoo.vespa.config.server.deploy.ModelContextImpl;
 import com.yahoo.vespa.config.server.host.HostValidator;
 import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
 import com.yahoo.vespa.config.server.session.PrepareParams;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.flags.FlagSource;
-
 import java.io.File;
 import java.io.IOException;
 import java.time.Duration;
@@ -47,7 +45,6 @@ import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
 
 /**
  * @author bratseth
@@ -56,13 +53,12 @@ public class PreparedModelsBuilder extends ModelsBuilder<PreparedModelsBuilder.P
 
     private static final Logger log = Logger.getLogger(PreparedModelsBuilder.class.getName());
 
-    private final PermanentApplicationPackage permanentApplicationPackage;
     private final FlagSource flagSource;
     private final SecretStore secretStore;
     private final List<ContainerEndpoint> containerEndpoints;
     private final Optional<EndpointCertificateSecrets> endpointCertificateSecrets;
     private final ConfigDefinitionRepo configDefinitionRepo;
-    private final HostValidator<ApplicationId> hostValidator;
+    private final HostValidator hostValidator;
     private final PrepareParams params;
     private final FileRegistry fileRegistry;
     private final Optional<ApplicationSet> currentActiveApplicationSet;
@@ -70,7 +66,6 @@ public class PreparedModelsBuilder extends ModelsBuilder<PreparedModelsBuilder.P
     private final ExecutorService executor;
 
     public PreparedModelsBuilder(ModelFactoryRegistry modelFactoryRegistry,
-                                 PermanentApplicationPackage permanentApplicationPackage,
                                  FlagSource flagSource,
                                  SecretStore secretStore,
                                  List<ContainerEndpoint> containerEndpoints,
@@ -80,14 +75,13 @@ public class PreparedModelsBuilder extends ModelsBuilder<PreparedModelsBuilder.P
                                  ExecutorService executor,
                                  HostProvisionerProvider hostProvisionerProvider,
                                  Curator curator,
-                                 HostValidator<ApplicationId> hostValidator,
+                                 HostValidator hostValidator,
                                  DeployLogger deployLogger,
                                  PrepareParams params,
                                  Optional<ApplicationSet> currentActiveApplicationSet,
                                  ConfigserverConfig configserverConfig,
                                  Zone zone) {
         super(modelFactoryRegistry, configserverConfig, zone, hostProvisionerProvider, deployLogger);
-        this.permanentApplicationPackage = permanentApplicationPackage;
         this.flagSource = flagSource;
         this.secretStore = secretStore;
         this.containerEndpoints = containerEndpoints;
@@ -115,7 +109,6 @@ public class PreparedModelsBuilder extends ModelsBuilder<PreparedModelsBuilder.P
         ModelContext modelContext = new ModelContextImpl(
                 applicationPackage,
                 modelOf(modelVersion),
-                permanentApplicationPackage.applicationPackage(),
                 deployLogger(),
                 configDefinitionRepo,
                 fileRegistry,
@@ -177,7 +170,7 @@ public class PreparedModelsBuilder extends ModelsBuilder<PreparedModelsBuilder.P
         }
     }
 
-    private void validateModelHosts(HostValidator<ApplicationId> hostValidator, ApplicationId applicationId, Model model) {
+    private void validateModelHosts(HostValidator hostValidator, ApplicationId applicationId, Model model) {
         // Will retry here, since hosts used might not be in sync on all config servers (we wait for 2/3 servers
         // to respond to deployments and deletions).
         Instant end = Instant.now().plus(Duration.ofSeconds(1));
@@ -186,7 +179,7 @@ public class PreparedModelsBuilder extends ModelsBuilder<PreparedModelsBuilder.P
             try {
                 hostValidator.verifyHosts(applicationId, model.getHosts().stream()
                                                               .map(HostInfo::getHostname)
-                                                              .collect(Collectors.toList()));
+                                                              .toList());
                 return;
             } catch (IllegalArgumentException e) {
                 exception = e;

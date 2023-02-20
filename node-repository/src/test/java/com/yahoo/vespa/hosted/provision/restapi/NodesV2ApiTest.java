@@ -65,6 +65,7 @@ public class NodesV2ApiTest {
         assertFile(new Request("http://localhost:8080/nodes/v2/node/host2.yahoo.com"), "node2.json");
         assertFile(new Request("http://localhost:8080/nodes/v2/stats"), "stats.json");
         assertFile(new Request("http://localhost:8080/nodes/v2/maintenance/"), "maintenance.json");
+        assertFile(new Request("http://localhost:8080/nodes/v2/wireguard/"), "wireguard.json");
 
         // GET with filters
         assertFile(new Request("http://localhost:8080/nodes/v2/node/?recursive=true&hostname=host6.yahoo.com%20host2.yahoo.com"), "application2-nodes.json");
@@ -218,9 +219,8 @@ public class NodesV2ApiTest {
         assertResponse(new Request("http://localhost:8080/nodes/v2/node/dockerhost2.yahoo.com",
                                    Utf8.toBytes("{\"wantToDeprovision\": true, \"wantToRetire\": true}"), Request.Method.PATCH),
                        "{\"message\":\"Updated dockerhost2.yahoo.com\"}");
-        // Make sure that wantToRetire is applied recursively, but wantToDeprovision isn't
         tester.assertResponseContains(new Request("http://localhost:8080/nodes/v2/node/host5.yahoo.com"),
-                "\"wantToRetire\":true,\"preferToRetire\":false,\"wantToDeprovision\":false,");
+                "\"wantToRetire\":true,\"preferToRetire\":false,\"wantToDeprovision\":true,");
         assertResponse(new Request("http://localhost:8080/nodes/v2/node/dockerhost1.yahoo.com",
                                    Utf8.toBytes("{\"wantToRebuild\": true, \"wantToRetire\": true}"), Request.Method.PATCH),
                        "{\"message\":\"Updated dockerhost1.yahoo.com\"}");
@@ -384,6 +384,21 @@ public class NodesV2ApiTest {
     }
 
     @Test
+    public void patch_wireguard_pubkey() throws IOException {
+        assertFile(new Request("http://localhost:8080/nodes/v2/node/host4.yahoo.com"), "node4.json");
+
+        tester.assertResponse(new Request("http://localhost:8080/nodes/v2/node/host4.yahoo.com",
+                        Utf8.toBytes("{\"wireguardPubkey\": \"not a wg key\"}"), Request.Method.PATCH), 400,
+                "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Could not set field 'wireguardPubkey': Wireguard key must match '^[A-Za-z0-9+/]{42}[AEIMQUYcgkosw480]=$', but got: 'not a wg key'\"}");
+
+        assertResponse(new Request("http://localhost:8080/nodes/v2/node/host4.yahoo.com",
+                        Utf8.toBytes("{\"wireguardPubkey\": \"lololololololololololololololololololololoo=\"}"), Request.Method.PATCH),
+                "{\"message\":\"Updated host4.yahoo.com\"}");
+
+        assertFile(new Request("http://localhost:8080/nodes/v2/node/host4.yahoo.com"), "node4-wg.json");
+    }
+
+        @Test
     public void post_controller_node() throws Exception {
         String data = "[{\"hostname\":\"controller1.yahoo.com\", \"id\":\"fake-controller1.yahoo.com\"," +
                       createIpAddresses("127.0.0.1") +
@@ -797,8 +812,8 @@ public class NodesV2ApiTest {
         // Filter nodes by osVersion
         assertResponse(new Request("http://localhost:8080/nodes/v2/node/?osVersion=7.5.2"),
                        "{\"nodes\":[" +
-                       "{\"url\":\"http://localhost:8080/nodes/v2/node/dockerhost2.yahoo.com\"}," +
-                       "{\"url\":\"http://localhost:8080/nodes/v2/node/dockerhost1.yahoo.com\"}" +
+                       "{\"url\":\"http://localhost:8080/nodes/v2/node/dockerhost1.yahoo.com\"}," +
+                       "{\"url\":\"http://localhost:8080/nodes/v2/node/dockerhost2.yahoo.com\"}" +
                        "]}");
     }
 
@@ -984,7 +999,7 @@ public class NodesV2ApiTest {
         assertResponse(new Request("http://localhost:8080/nodes/v2/archive/tenant2", Utf8.toBytes("{\"uri\": \"s3://my-bucket/dir\"}"), Request.Method.PATCH),
                 "{\"message\":\"Updated archive URI for tenant2\"}");
 
-        tester.assertPartialResponse(new Request("http://localhost:8080/nodes/v2/node/host4.yahoo.com"), "\"archiveUri\":\"ftp://host/dir/application3/instance3/host4/\"", true);
+        tester.assertPartialResponse(new Request("http://localhost:8080/nodes/v2/node/host4.yahoo.com"), "\"archiveUri\":\"ftp://host/dir/application3/instance3/id3/host4/\"", true);
         assertFile(new Request("http://localhost:8080/nodes/v2/archive"), "archives.json");
 
         tester.assertResponse(new Request("http://localhost:8080/nodes/v2/archive/tenant3", new byte[0], Request.Method.DELETE), "{\"message\":\"Removed archive URI for tenant3\"}");

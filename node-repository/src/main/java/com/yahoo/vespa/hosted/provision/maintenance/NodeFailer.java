@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.maintenance;
 
+import com.yahoo.concurrent.UncheckedTimeoutException;
 import com.yahoo.config.provision.Deployer;
 import com.yahoo.config.provision.Deployment;
 import com.yahoo.config.provision.NodeType;
@@ -137,7 +138,7 @@ public class NodeFailer extends NodeRepositoryMaintainer {
                 .filter(report -> report.getType().hostShouldBeFailed())
                 // The generated string is built from the report's ID, created time, and description only.
                 .map(report -> report.getReportId() + " reported " + report.getCreatedTime() + ": " + report.getDescription())
-                .collect(Collectors.toList());
+                .toList();
     }
 
     /** Returns whether node has any kind of hardware issue */
@@ -170,16 +171,11 @@ public class NodeFailer extends NodeRepositoryMaintainer {
      * But we refuse to fail out config(host)/controller(host)
      */
     private boolean failAllowedFor(NodeType nodeType) {
-        switch (nodeType) {
-            case tenant:
-            case host:
-                return true;
-            case proxy:
-            case proxyhost:
-                return nodeRepository().nodes().list(Node.State.failed).nodeType(nodeType).isEmpty();
-            default:
-                return false;
-        }
+        return switch (nodeType) {
+            case tenant, host -> true;
+            case proxy, proxyhost -> nodeRepository().nodes().list(Node.State.failed).nodeType(nodeType).isEmpty();
+            default -> false;
+        };
     }
 
     /**
@@ -191,7 +187,7 @@ public class NodeFailer extends NodeRepositoryMaintainer {
      */
     private boolean failActive(FailingNode failing) {
         Optional<Deployment> deployment =
-            deployer.deployFromLocalActive(failing.node().allocation().get().owner(), Duration.ofMinutes(30));
+            deployer.deployFromLocalActive(failing.node().allocation().get().owner(), Duration.ofMinutes(5));
         if (deployment.isEmpty()) return false;
 
         // If the active node that we are trying to fail is of type host, we need to successfully fail all
@@ -219,11 +215,12 @@ public class NodeFailer extends NodeRepositoryMaintainer {
             }
 
             if (activeChildrenToFail.isEmpty()) {
+                log.log(Level.INFO, "Failing out " + failing.node + ": " + failing.reason);
                 wantToFail(failing.node(), true, lock);
                 try {
                     deployment.get().activate();
                     return true;
-                } catch (TransientException e) {
+                } catch (TransientException | UncheckedTimeoutException e) {
                     log.log(Level.INFO, "Failed to redeploy " + failing.node().allocation().get().owner() +
                                         " with a transient error, will be retried by application maintainer: " +
                                         Exceptions.toMessageString(e));
@@ -286,7 +283,7 @@ public class NodeFailer extends NodeRepositoryMaintainer {
 
     public enum ThrottlePolicy {
 
-        hosted(Duration.ofDays(1), 0.03, 2),
+        hosted(Duration.ofDays(1), 0.04, 2),
         disabled(Duration.ZERO, 0, 0);
 
         private final Duration throttleWindow;

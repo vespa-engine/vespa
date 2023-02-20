@@ -2,7 +2,8 @@
 package com.yahoo.vespa.model.builder.xml.dom.chains.search;
 
 import com.yahoo.config.model.deploy.DeployState;
-import com.yahoo.config.model.producer.AbstractConfigProducer;
+import com.yahoo.config.model.producer.AnyConfigProducer;
+import com.yahoo.config.model.producer.TreeConfigProducer;
 import com.yahoo.vespa.model.builder.xml.dom.chains.ChainsBuilder;
 import com.yahoo.vespa.model.builder.xml.dom.chains.ComponentsBuilder;
 import com.yahoo.vespa.model.builder.xml.dom.chains.DomChainBuilderBase;
@@ -30,7 +31,7 @@ public class SearchChainsBuilder extends ChainsBuilder<Searcher<?>, SearchChain>
                 put("provider", DomProviderBuilder.class);
             }});
 
-    public SearchChainsBuilder(DeployState deployState, AbstractConfigProducer<?> ancestor, List<Element> searchChainsElements,
+    public SearchChainsBuilder(DeployState deployState, TreeConfigProducer<AnyConfigProducer> ancestor, List<Element> searchChainsElements,
                                Map<String, ComponentsBuilder.ComponentType<?>> outerSearcherTypeByComponentName) {
         super(deployState, ancestor, searchChainsElements, outerSearcherTypeByComponentName, chainType2builderClass);
     }

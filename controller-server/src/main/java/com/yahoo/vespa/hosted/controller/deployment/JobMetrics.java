@@ -1,12 +1,10 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.deployment;
 
-import com.yahoo.config.provision.SystemName;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobId;
 
 import java.util.Map;
-import java.util.function.Supplier;
 
 /**
  * Records metrics related to deployment jobs.

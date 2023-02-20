@@ -1,8 +1,8 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision;
 
-import com.yahoo.component.annotation.Inject;
 import com.yahoo.component.AbstractComponent;
+import com.yahoo.component.annotation.Inject;
 import com.yahoo.concurrent.maintenance.JobControl;
 import com.yahoo.config.provision.ApplicationTransaction;
 import com.yahoo.config.provision.ClusterSpec;
@@ -12,6 +12,9 @@ import com.yahoo.config.provision.Zone;
 import com.yahoo.config.provisioning.NodeRepositoryConfig;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.flags.FlagSource;
+import com.yahoo.vespa.flags.JacksonFlag;
+import com.yahoo.vespa.flags.PermanentFlags;
+import com.yahoo.vespa.flags.custom.SharedHost;
 import com.yahoo.vespa.hosted.provision.Node.State;
 import com.yahoo.vespa.hosted.provision.applications.Applications;
 import com.yahoo.vespa.hosted.provision.autoscale.MetricsDb;
@@ -21,7 +24,7 @@ import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.NodeAcl;
 import com.yahoo.vespa.hosted.provision.node.Nodes;
 import com.yahoo.vespa.hosted.provision.os.OsVersions;
-import com.yahoo.vespa.hosted.provision.persistence.CuratorDatabaseClient;
+import com.yahoo.vespa.hosted.provision.persistence.CuratorDb;
 import com.yahoo.vespa.hosted.provision.persistence.DnsNameResolver;
 import com.yahoo.vespa.hosted.provision.persistence.JobControlFlags;
 import com.yahoo.vespa.hosted.provision.persistence.NameResolver;
@@ -43,7 +46,7 @@ import java.util.Optional;
  */
 public class NodeRepository extends AbstractComponent {
 
-    private final CuratorDatabaseClient db;
+    private final CuratorDb db;
     private final Clock clock;
     private final Zone zone;
     private final Nodes nodes;
@@ -62,6 +65,7 @@ public class NodeRepository extends AbstractComponent {
     private final MetricsDb metricsDb;
     private final Orchestrator orchestrator;
     private final int spareCount;
+    private final JacksonFlag<SharedHost> sharedHosts;
 
     /**
      * Creates a node repository from a zookeeper provider.
@@ -83,7 +87,8 @@ public class NodeRepository extends AbstractComponent {
              zone,
              new DnsNameResolver(),
              DockerImage.fromString(config.containerImage()),
-             Optional.of(config.tenantContainerImage()).filter(s -> !s.isEmpty()).map(DockerImage::fromString),
+             optionalImage(config.tenantContainerImage()),
+             optionalImage(config.tenantGpuContainerImage()),
              flagSource,
              metricsDb,
              orchestrator,
@@ -104,6 +109,7 @@ public class NodeRepository extends AbstractComponent {
                           NameResolver nameResolver,
                           DockerImage containerImage,
                           Optional<DockerImage> tenantContainerImage,
+                          Optional<DockerImage> tenantGpuContainerImage,
                           FlagSource flagSource,
                           MetricsDb metricsDb,
                           Orchestrator orchestrator,
@@ -116,7 +122,7 @@ public class NodeRepository extends AbstractComponent {
                     zone.cloud().dynamicProvisioning(), provisionServiceProvider.getHostProvisioner().map(__ -> "present").orElse("empty")));
 
         this.flagSource = flagSource;
-        this.db = new CuratorDatabaseClient(flavors, curator, clock, useCuratorClientCache, nodeCacheSize);
+        this.db = new CuratorDb(flavors, curator, clock, useCuratorClientCache, nodeCacheSize);
         this.zone = zone;
         this.clock = clock;
         this.applications = new Applications(db);
@@ -127,18 +133,19 @@ public class NodeRepository extends AbstractComponent {
         this.osVersions = new OsVersions(this);
         this.infrastructureVersions = new InfrastructureVersions(db);
         this.firmwareChecks = new FirmwareChecks(db, clock);
-        this.containerImages = new ContainerImages(containerImage, tenantContainerImage);
-        this.archiveUris = new ArchiveUris(db);
+        this.containerImages = new ContainerImages(containerImage, tenantContainerImage, tenantGpuContainerImage);
+        this.archiveUris = new ArchiveUris(db, zone);
         this.jobControl = new JobControl(new JobControlFlags(db, flagSource));
         this.loadBalancers = new LoadBalancers(db);
         this.metricsDb = metricsDb;
         this.orchestrator = orchestrator;
         this.spareCount = spareCount;
+        this.sharedHosts = PermanentFlags.SHARED_HOST.bindTo(flagSource());
         nodes.rewrite();
     }
 
     /** Returns the curator database client used by this */
-    public CuratorDatabaseClient database() { return db; }
+    public CuratorDb database() { return db; }
 
     /** Returns the nodes of the node repo. */
     public Nodes nodes() { return nodes; }
@@ -197,7 +204,9 @@ public class NodeRepository extends AbstractComponent {
      * perfectly.
      */
     public boolean exclusiveAllocation(ClusterSpec clusterSpec) {
-        return clusterSpec.isExclusive() || ! zone().cloud().allowHostSharing();
+        return clusterSpec.isExclusive() ||
+               ( clusterSpec.type().isContainer() && zone.system().isPublic() &&  !zone.environment().isTest() ) ||
+               ( !zone().cloud().allowHostSharing() && !sharedHosts.value().isEnabled(clusterSpec.type().name()));
     }
 
     /**
@@ -222,6 +231,10 @@ public class NodeRepository extends AbstractComponent {
                    Optional.of("Application is removed"),
                    transaction.nested());
         applications.remove(transaction);
+    }
+
+    private static Optional<DockerImage> optionalImage(String image) {
+        return Optional.of(image).filter(s -> !s.isEmpty()).map(DockerImage::fromString);
     }
 
 }

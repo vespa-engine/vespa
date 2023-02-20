@@ -2,7 +2,6 @@
 #pragma once
 
 #include "search_session.h"
-#include "isessioncachepruner.h"
 #include <vespa/searchcore/grouping/groupingsession.h>
 #include <vespa/searchcore/grouping/sessionid.h>
 #include <vespa/vespalib/stllike/lrucache_map.h>
@@ -14,7 +13,7 @@ using SessionId = vespalib::string;
 struct GroupingSessionCache;
 struct SearchSessionCache;
 
-class SessionManager : public ISessionCachePruner {
+class SessionManager {
 public:
     struct Stats {
         Stats()
@@ -46,11 +45,8 @@ private:
     std::unique_ptr<SearchSessionCache> _search_map;
 
 public:
-    typedef std::unique_ptr<SessionManager> UP;
-    typedef std::shared_ptr<SessionManager> SP;
-
     SessionManager(uint32_t maxSizeGrouping);
-    ~SessionManager() override;
+    ~SessionManager();
 
     void insert(search::grouping::GroupingSession::UP session);
     search::grouping::GroupingSession::UP pickGrouping(const SessionId &id);
@@ -62,8 +58,7 @@ public:
     size_t getNumSearchSessions() const;
     std::vector<SearchSessionInfo> getSortedSearchSessionInfo() const;
 
-    void pruneTimedOutSessions(vespalib::steady_time currentTime) override;
-    void close();
+    void pruneTimedOutSessions(vespalib::steady_time currentTime);
 };
 
 }

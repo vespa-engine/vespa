@@ -32,7 +32,7 @@ public:
         IDocumentMetaStoreContext::IReadGuard::UP readGuard;
     };
 private:
-    typedef vespalib::string SessionId;
+    using SessionId = vespalib::string;
 
     SessionId             _session_id;
     vespalib::steady_time _create_time;
@@ -41,7 +41,7 @@ private:
     std::unique_ptr<MatchToolsFactory> _match_tools_factory;
 
 public:
-    typedef std::shared_ptr<SearchSession> SP;
+    using SP = std::shared_ptr<SearchSession>;
 
     SearchSession(const SessionId &id, vespalib::steady_time create_time, vespalib::steady_time time_of_doom,
                   std::unique_ptr<MatchToolsFactory> match_tools_factory,

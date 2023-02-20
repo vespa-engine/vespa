@@ -11,6 +11,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.List;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.jar.JarOutputStream;
@@ -97,5 +98,31 @@ public class BundleValidatorTest {
         }
         return new JarFile(jarFile.toFile());
     }
+
+    private void verifyParsing(String text, List<String> expected) {
+        TokenizeAndDeQuote tokenizer = new TokenizeAndDeQuote(";,=", "\"'");
+        var words = tokenizer.tokenize(text);
+        assertEquals(expected, words);
+    }
+
+    @Test
+    void testImportPackagesParsing() {
+        assertEquals(new ImportPackageInfo("com.yahoo.config;version=\"[1.0.0,2)\",com.yahoo.filedistribution.fileacquirer;version=\"[1.0.0,2)\"," +
+                        "com.yahoo.jdisc,com.yahoo.jdisc.handler,java.io;version=\"[0.0.0,1)\",java.lang;version=\"[0.0.0,1)\"," +
+                        "java.nio;version=\"[0.0.0,1)\",java.util.concurrent;version=\"[0.0.0,1)\",java.util;version=\"[0.0.0,1)\"").packages(),
+                List.of("com.yahoo.config", "com.yahoo.filedistribution.fileacquirer", "com.yahoo.jdisc",
+                        "com.yahoo.jdisc.handler", "java.io", "java.lang", "java.nio", "java.util.concurrent", "java.util"));
+        assertEquals(new ImportPackageInfo("org.json;version=\"[0.0.0,1)\",org.eclipse.jetty.client.api;version=\"[9.4.46,10)").packages(),
+                List.of("org.json", "org.eclipse.jetty.client.api"));
+    }
+
+    @Test
+    void testQuotedTokenizer() {
+        verifyParsing("org.json;version=\"[0.0.0,1)\",org.eclipse.jetty.client.api;version=\"[9.4.46,10)\"",
+                List.of("org.json", "version", "[0.0.0,1)", "org.eclipse.jetty.client.api", "version", "[9.4.46,10)"));
+        verifyParsing("org.json;version='[0.0.0,1)',org.eclipse.jetty.client.api;version='[9.4.46,10)'",
+                List.of("org.json", "version", "[0.0.0,1)", "org.eclipse.jetty.client.api", "version", "[9.4.46,10)"));
+    }
+
 
 }

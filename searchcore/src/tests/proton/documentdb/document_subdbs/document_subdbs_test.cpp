@@ -15,9 +15,11 @@
 #include <vespa/searchcore/proton/metrics/metricswireservice.h>
 #include <vespa/searchcore/proton/reference/i_document_db_reference_resolver.h>
 #include <vespa/searchcore/proton/reprocessing/reprocessingrunner.h>
+#include <vespa/searchcore/proton/matching/sessionmanager.h>
 #include <vespa/searchcore/proton/server/bootstrapconfig.h>
 #include <vespa/searchcore/proton/server/document_subdb_explorer.h>
 #include <vespa/searchcore/proton/server/document_subdb_initializer.h>
+#include <vespa/searchcore/proton/server/document_subdb_reconfig.h>
 #include <vespa/searchcore/proton/server/emptysearchview.h>
 #include <vespa/searchcore/proton/server/fast_access_document_retriever.h>
 #include <vespa/searchcore/proton/server/i_document_subdb_owner.h>
@@ -74,12 +76,12 @@ using vespa::config::content::core::BucketspacesConfig;
 using vespalib::datastore::CompactionStrategy;
 using proton::index::IndexConfig;
 
-typedef StoreOnlyDocSubDB::Config StoreOnlyConfig;
-typedef StoreOnlyDocSubDB::Context StoreOnlyContext;
-typedef FastAccessDocSubDB::Config FastAccessConfig;
-typedef FastAccessDocSubDB::Context FastAccessContext;
-typedef SearchableDocSubDB::Context SearchableContext;
-typedef std::vector<AttributeGuard> AttributeGuardList;
+using StoreOnlyConfig = StoreOnlyDocSubDB::Config;
+using StoreOnlyContext = StoreOnlyDocSubDB::Context;
+using FastAccessConfig = FastAccessDocSubDB::Config;
+using FastAccessContext = FastAccessDocSubDB::Context;
+using SearchableContext = SearchableDocSubDB::Context;
+using AttributeGuardList = std::vector<AttributeGuard>;
 
 const std::string DOCTYPE_NAME = "searchdocument";
 const std::string SUB_NAME = "subdb";
@@ -93,10 +95,17 @@ struct ConfigDir4 { static vespalib::string dir() { return TEST_PATH("cfg4"); } 
 
 struct MySubDBOwner : public IDocumentSubDBOwner
 {
+    SessionManager _sessionMgr;
+    MySubDBOwner();
+    ~MySubDBOwner() override;
     document::BucketSpace getBucketSpace() const override { return makeBucketSpace(); }
     vespalib::string getName() const override { return "owner"; }
     uint32_t getDistributionKey() const override { return -1; }
+    SessionManager & session_manager() override { return _sessionMgr; }
 };
+
+MySubDBOwner::MySubDBOwner() : _sessionMgr(1) {}
+MySubDBOwner::~MySubDBOwner() = default;
 
 struct MySyncProxy : public SyncProxy
 {
@@ -274,7 +283,7 @@ make_all_attr_schema(bool has_attr2)
 
 struct MyConfigSnapshot
 {
-    typedef std::unique_ptr<MyConfigSnapshot> UP;
+    using UP = std::unique_ptr<MyConfigSnapshot>;
     Schema _schema;
     DocBuilder _builder;
     DocumentDBConfig::SP _cfg;
@@ -351,11 +360,10 @@ struct FixtureBase
     void init() {
         DocumentSubDbInitializer::SP task =
             _subDb.createInitializer(*_snapshot->_cfg, Traits::configSerial(), IndexConfig());
-        vespalib::ThreadStackExecutor executor(1, 1_Mi);
+        vespalib::ThreadStackExecutor executor(1);
         initializer::TaskRunner taskRunner(executor);
         taskRunner.runTask(task);
-        auto sessionMgr = std::make_shared<SessionManager>(1);
-        runInMasterAndSync([&]() { _subDb.initViews(*_snapshot->_cfg, sessionMgr); });
+        runInMasterAndSync([&]() { _subDb.initViews(*_snapshot->_cfg); });
     }
     void basicReconfig(SerialNum serialNum) {
         runInMasterAndSync([&]() { performReconfig(serialNum, make_all_attr_schema(two_attr_schema), ConfigDir2::dir()); });
@@ -370,8 +378,12 @@ struct FixtureBase
         cmpResult.documenttypesChanged = true;
         cmpResult.documentTypeRepoChanged = true;
         MyDocumentDBReferenceResolver resolver;
+        ReconfigParams reconfig_params(cmpResult);
+        auto prepared_reconfig = _subDb.prepare_reconfig(*newCfg->_cfg, reconfig_params, serialNum);
+        _subDb.complete_prepare_reconfig(*prepared_reconfig, serialNum);
         auto tasks = _subDb.applyConfig(*newCfg->_cfg, *_snapshot->_cfg,
-                                        serialNum, ReconfigParams(cmpResult), resolver);
+                                        serialNum, reconfig_params, resolver, *prepared_reconfig);
+        prepared_reconfig.reset();
         _snapshot = std::move(newCfg);
         if (!tasks.empty()) {
             ReprocessingRunner runner;
@@ -403,11 +415,11 @@ template <bool has_attr2_in, typename ConfigDirT, uint32_t ConfigSerial = CFG_SE
 struct BaseTraitsT
 {
     static constexpr bool has_attr2 = has_attr2_in;
-    typedef ConfigDirT ConfigDir;
+    using ConfigDir = ConfigDirT;
     static uint32_t configSerial() { return ConfigSerial; }
 };
 
-typedef BaseTraitsT<one_attr_schema, ConfigDir1> BaseTraits;
+using BaseTraits = BaseTraitsT<one_attr_schema, ConfigDir1>;
 
 struct StoreOnlyTraits : public BaseTraits
 {
@@ -417,7 +429,7 @@ struct StoreOnlyTraits : public BaseTraits
     using FeedView = StoreOnlyFeedView;
 };
 
-typedef FixtureBase<StoreOnlyTraits> StoreOnlyFixture;
+using StoreOnlyFixture = FixtureBase<StoreOnlyTraits>;
 
 struct FastAccessTraits : public BaseTraits
 {
@@ -427,7 +439,7 @@ struct FastAccessTraits : public BaseTraits
     using FeedView = FastAccessFeedView;
 };
 
-typedef FixtureBase<FastAccessTraits> FastAccessFixture;
+using FastAccessFixture = FixtureBase<FastAccessTraits>;
 
 template <typename ConfigDirT>
 struct FastAccessOnlyTraitsBase : public BaseTraitsT<two_attr_schema, ConfigDirT>
@@ -439,8 +451,8 @@ struct FastAccessOnlyTraitsBase : public BaseTraitsT<two_attr_schema, ConfigDirT
 };
 
 // Setup with 1 fast-access attribute
-typedef FastAccessOnlyTraitsBase<ConfigDir3> FastAccessOnlyTraits;
-typedef FixtureBase<FastAccessOnlyTraits> FastAccessOnlyFixture;
+using FastAccessOnlyTraits = FastAccessOnlyTraitsBase<ConfigDir3>;
+using FastAccessOnlyFixture = FixtureBase<FastAccessOnlyTraits>;
 
 template <bool has_attr2_in, typename ConfigDirT>
 struct SearchableTraitsBase : public BaseTraitsT<has_attr2_in, ConfigDirT>
@@ -451,8 +463,8 @@ struct SearchableTraitsBase : public BaseTraitsT<has_attr2_in, ConfigDirT>
     using FeedView = proton::SearchableFeedView;
 };
 
-typedef SearchableTraitsBase<one_attr_schema, ConfigDir1> SearchableTraits;
-typedef FixtureBase<SearchableTraits> SearchableFixture;
+using SearchableTraits = SearchableTraitsBase<one_attr_schema, ConfigDir1>;
+using SearchableFixture = FixtureBase<SearchableTraits>;
 
 void
 assertAttributes1(const AttributeGuardList &attributes)
@@ -704,8 +716,8 @@ getFlushTargets(Fixture &f)
     return targets;
 }
 
-typedef IFlushTarget::Type FType;
-typedef IFlushTarget::Component FComponent;
+using FType = IFlushTarget::Type;
+using FComponent = IFlushTarget::Component;
 
 bool
 assertTarget(const vespalib::string &name,
@@ -747,6 +759,13 @@ TEST_F("require that flush targets can be retrieved", SearchableFixture)
     EXPECT_TRUE(assertTarget("subdb.summary.compact_spread", FType::GC, FComponent::DOCUMENT_STORE, *targets[7]));
     EXPECT_TRUE(assertTarget("subdb.summary.flush", FType::SYNC, FComponent::DOCUMENT_STORE, *targets[8]));
     EXPECT_TRUE(assertTarget("subdb.summary.shrink", FType::GC, FComponent::DOCUMENT_STORE, *targets[9]));
+}
+
+TEST_F("transient resource usage is zero in steady state", SearchableFixture)
+{
+    auto usage = f._subDb.get_transient_resource_usage();
+    EXPECT_EQUAL(0u, usage.disk());
+    EXPECT_EQUAL(0u, usage.memory());
 }
 
 TEST_F("require that only fast-access attributes are instantiated", FastAccessOnlyFixture)
@@ -837,9 +856,9 @@ struct DocumentHandler
         gate.await();
     }
     void putDocs() {
-        PutOperation putOp = createPut(std::move(createDoc(1, 22, 33)), Timestamp(10), 10);
+        PutOperation putOp = createPut(createDoc(1, 22, 33), Timestamp(10), 10);
         putDoc(putOp);
-        putOp = createPut(std::move(createDoc(2, 44, 55)), Timestamp(20), 20);
+        putOp = createPut(createDoc(2, 44, 55), Timestamp(20), 20);
         putDoc(putOp);
     }
 };
@@ -913,8 +932,8 @@ TEST_F("require that fast-access attributes are populated during reprocessing",
 }
 
 // Setup with 2 fields (1 attribute according to config in dir)
-typedef SearchableTraitsBase<two_attr_schema, ConfigDir1> SearchableTraitsTwoField;
-typedef FixtureBase<SearchableTraitsTwoField> SearchableFixtureTwoField;
+using SearchableTraitsTwoField = SearchableTraitsBase<two_attr_schema, ConfigDir1>;
+using SearchableFixtureTwoField = FixtureBase<SearchableTraitsTwoField>;
 
 TEST_F("require that regular attributes are populated during reprocessing",
         SearchableFixtureTwoField)
@@ -995,10 +1014,10 @@ struct ExplorerFixture : public FixtureType
     }
 };
 
-typedef ExplorerFixture<StoreOnlyFixture> StoreOnlyExplorerFixture;
-typedef ExplorerFixture<FastAccessFixture> FastAccessExplorerFixture;
-typedef ExplorerFixture<SearchableFixture> SearchableExplorerFixture;
-typedef std::vector<vespalib::string> StringVector;
+using StoreOnlyExplorerFixture = ExplorerFixture<StoreOnlyFixture>;
+using FastAccessExplorerFixture = ExplorerFixture<FastAccessFixture>;
+using SearchableExplorerFixture = ExplorerFixture<SearchableFixture>;
+using StringVector = std::vector<vespalib::string>;
 
 void
 assertExplorer(const StringVector &extraNames, const vespalib::StateExplorer &explorer)

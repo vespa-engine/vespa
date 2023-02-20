@@ -15,9 +15,9 @@ private:
     using HashTable = hashtable< K, K, H, EQ, Identity, M>;
     HashTable _ht;
 public:
-    typedef typename HashTable::iterator iterator;
-    typedef typename HashTable::const_iterator const_iterator;
-    typedef typename HashTable::insert_result insert_result;
+    using iterator = typename HashTable::iterator;
+    using const_iterator = typename HashTable::const_iterator;
+    using insert_result = typename HashTable::insert_result;
 public:
     hash_set(hash_set &&) noexcept = default;
     hash_set & operator = (hash_set &&) noexcept = default;

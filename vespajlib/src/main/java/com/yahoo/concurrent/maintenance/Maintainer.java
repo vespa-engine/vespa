@@ -6,6 +6,7 @@ import com.yahoo.net.HostName;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
@@ -35,15 +36,17 @@ public abstract class Maintainer implements Runnable {
     private final ScheduledExecutorService service;
     private final AtomicBoolean shutDown = new AtomicBoolean();
     private final boolean ignoreCollision;
+    private final Clock clock;
 
-    public Maintainer(String name, Duration interval, Instant startedAt, JobControl jobControl,
+    public Maintainer(String name, Duration interval, Clock clock, JobControl jobControl,
                       JobMetrics jobMetrics, List<String> clusterHostnames, boolean ignoreCollision) {
         this.name = name;
         this.interval = requireInterval(interval);
         this.jobControl = Objects.requireNonNull(jobControl);
         this.jobMetrics = Objects.requireNonNull(jobMetrics);
         this.ignoreCollision = ignoreCollision;
-        Objects.requireNonNull(startedAt);
+        this.clock = clock;
+        var startedAt = clock.instant();
         Objects.requireNonNull(clusterHostnames);
         Duration initialDelay = staggeredDelay(interval, startedAt, HostName.getLocalhost(), clusterHostnames)
                                 .plus(Duration.ofSeconds(30)); // Let the system stabilize before maintenance
@@ -109,6 +112,7 @@ public abstract class Maintainer implements Runnable {
         log.log(Level.FINE, () -> "Running " + this.getClass().getSimpleName());
 
         double successFactor = 0;
+        long startTime = clock.millis();
         try (var lock = jobControl.lockJob(name())) {
             successFactor = maintain();
         }
@@ -122,7 +126,8 @@ public abstract class Maintainer implements Runnable {
             log.log(Level.WARNING, this + " failed. Will retry in " + interval, e);
         }
         finally {
-            jobMetrics.completed(name(), successFactor);
+            long endTime = clock.millis();
+            jobMetrics.completed(name(), successFactor, endTime - startTime);
         }
         log.log(Level.FINE, () -> "Finished " + this.getClass().getSimpleName());
     }

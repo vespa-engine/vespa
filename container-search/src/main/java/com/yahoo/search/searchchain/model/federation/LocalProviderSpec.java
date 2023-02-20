@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.searchchain.model.federation;
 
-import com.google.common.collect.ImmutableList;
 import com.yahoo.container.bundle.BundleInstantiationSpecification;
 import com.yahoo.component.chain.dependencies.Dependencies;
 import com.yahoo.component.chain.model.ChainedComponentModel;
@@ -67,6 +66,6 @@ public class LocalProviderSpec {
                             Dependencies.emptyDependencies()));
         }
 
-        return ImmutableList.copyOf(searcherModels);
+        return List.copyOf(searcherModels);
     }
 }

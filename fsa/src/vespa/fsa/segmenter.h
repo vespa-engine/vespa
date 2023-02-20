@@ -102,11 +102,11 @@ public:
   // {{{ typedef Segmenter::Segmentation
 
   /** %Segmentation type */
-  typedef std::list<int> Segmentation;
+  using Segmentation = std::list<int>;
   /** Iterator for %segmentation type */
-  typedef std::list<int>::iterator SegmentationIterator;
+  using SegmentationIterator = std::list<int>::iterator;
   /** Const iterator for %segmentation type */
-  typedef std::list<int>::const_iterator SegmentationConstIterator;
+  using SegmentationConstIterator = std::list<int>::const_iterator;
 
   // }}}
 

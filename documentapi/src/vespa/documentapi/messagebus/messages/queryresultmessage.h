@@ -18,8 +18,8 @@ public:
     /**
      * Convenience typedefs.
      */
-    typedef std::unique_ptr<QueryResultMessage> UP;
-    typedef std::shared_ptr<QueryResultMessage> SP;
+    using UP = std::unique_ptr<QueryResultMessage>;
+    using SP = std::shared_ptr<QueryResultMessage>;
 
     /**
      * Constructs a new search result message for deserialization.
@@ -32,7 +32,7 @@ public:
      *
      * @param result The result to set.
      */
-    QueryResultMessage(const vdslib::SearchResult & result, const vdslib::DocumentSummary & summary);
+    QueryResultMessage(vdslib::SearchResult && result, const vdslib::DocumentSummary & summary);
 
     uint32_t getApproxSize() const override;
     uint32_t getType() const override;

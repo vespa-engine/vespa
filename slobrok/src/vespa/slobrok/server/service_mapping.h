@@ -15,7 +15,7 @@ struct ServiceMapping {
     ~ServiceMapping();
     ServiceMapping& operator=(const ServiceMapping& rhs);
 
-    bool operator== (const ServiceMapping &other) const {
+    bool operator== (const ServiceMapping &other) const noexcept {
         return name == other.name && spec == other.spec;
     }
 
@@ -26,6 +26,6 @@ struct ServiceMapping {
     }
 };
 
-typedef std::vector<ServiceMapping> ServiceMappingList;
+using ServiceMappingList = std::vector<ServiceMapping>;
 
 }

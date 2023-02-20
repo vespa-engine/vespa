@@ -121,7 +121,7 @@ public class NodeResourcesTuning implements ProtonConfig.Producer {
 
     private void tuneRequestThreads(ProtonConfig.Builder builder) {
         int numCores = (int)Math.ceil(resources.vcpu());
-        builder.numsearcherthreads(numCores*threadsPerSearch);
+        builder.numsearcherthreads(Math.min(((numCores*4 + threadsPerSearch - 1)/threadsPerSearch)*threadsPerSearch, numCores*threadsPerSearch));
         builder.numsummarythreads(numCores);
         builder.numthreadspersearch(threadsPerSearch);
     }

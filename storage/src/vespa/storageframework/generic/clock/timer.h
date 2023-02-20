@@ -14,10 +14,10 @@ namespace storage::framework {
 
 class MilliSecTimer {
     const Clock* _clock;
-    MonotonicTimePoint _startTime;
+    vespalib::steady_time _startTime;
 
 public:
-    MilliSecTimer(const Clock& clock)
+    explicit MilliSecTimer(const Clock& clock)
         : _clock(&clock), _startTime(_clock->getMonotonicTime()) {}
 
     // Copy construction makes the most sense when creating a timer that is
@@ -26,11 +26,11 @@ public:
     MilliSecTimer(const MilliSecTimer&) = default;
     MilliSecTimer& operator=(const MilliSecTimer&) = default;
 
-    MonotonicDuration getElapsedTime() const {
+    [[nodiscard]] vespalib::duration getElapsedTime() const {
         return _clock->getMonotonicTime() - _startTime;
     }
 
-    double getElapsedTimeAsDouble() const {
+    [[nodiscard]] double getElapsedTimeAsDouble() const {
         using ToDuration = std::chrono::duration<double, std::milli>;
         return std::chrono::duration_cast<ToDuration>(getElapsedTime()).count();
     }

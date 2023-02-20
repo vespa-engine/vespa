@@ -4,8 +4,7 @@
 #include "unaryfunctionnode.h"
 #include <vespa/vespalib/objects/nbostream.h>
 
-namespace search {
-namespace expression {
+namespace search::expression {
 
 class UnaryBitFunctionNode : public UnaryFunctionNode
 {
@@ -15,6 +14,7 @@ public:
     DECLARE_ABSTRACT_EXPRESSIONNODE(UnaryBitFunctionNode);
     UnaryBitFunctionNode() : _numBits(0) { }
     UnaryBitFunctionNode(ExpressionNode::UP arg, unsigned numBits) : UnaryFunctionNode(std::move(arg)), _numBits(numBits) { }
+    ~UnaryBitFunctionNode() override;
 protected:
     size_t getNumBits()  const { return _numBits; }
     size_t getNumBytes() const { return (_numBits+7)/8; }
@@ -28,5 +28,3 @@ private:
 };
 
 }
-}
-

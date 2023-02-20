@@ -25,7 +25,6 @@ public final class NormalizeExpression extends Expression {
     public Linguistics getLinguistics() {
         return linguistics;
     }
-
     
     private static String escape(String str) {
         StringBuilder buf = new StringBuilder();
@@ -79,8 +78,7 @@ public final class NormalizeExpression extends Expression {
 
     @Override
     public boolean equals(Object o) {
-        if (!(o instanceof NormalizeExpression)) return false;
-        NormalizeExpression other = (NormalizeExpression)o;
+        if (!(o instanceof NormalizeExpression other)) return false;
         if (linguistics.getClass() != other.linguistics.getClass()) return false;
         return true;
     }

@@ -13,7 +13,7 @@ public class WeightedSetReader {
 
     public static void fillWeightedSet(TokenBuffer buffer, DataType valueType, @SuppressWarnings("rawtypes") WeightedSet weightedSet) {
         int initNesting = buffer.nesting();
-        expectObjectStart(buffer.currentToken());
+        expectObjectStart(buffer.current());
         buffer.next();
         iterateThroughWeightedSet(buffer, initNesting, valueType, weightedSet);
     }

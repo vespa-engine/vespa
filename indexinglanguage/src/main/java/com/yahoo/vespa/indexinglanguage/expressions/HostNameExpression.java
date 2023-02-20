@@ -51,4 +51,5 @@ public final class HostNameExpression extends Expression {
         int pos = hostName.indexOf('.');
         return pos < 0 ? hostName : hostName.substring(0, pos);
     }
+
 }

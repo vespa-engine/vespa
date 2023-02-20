@@ -24,7 +24,7 @@ private:
     mutable vespalib::Version _lastVersion;
 
 public:
-    typedef std::shared_ptr<TestProtocol> SP;
+    using SP = std::shared_ptr<TestProtocol>;
     ~TestProtocol() override;
     mbus::Blob encode(const vespalib::Version &version, const mbus::Routable &routable) const override {
         _lastVersion = version;

@@ -30,7 +30,7 @@ feature_t adjustToOne(feature_t value) {
 
 bool hasAttribute(const IQueryEnvironment &env, const ITermData &term_data)
 {
-    typedef ITermFieldRangeAdapter FRA;
+    using FRA = ITermFieldRangeAdapter;
 
     for (FRA iter(term_data); iter.valid(); iter.next()) {
         const FieldInfo *info = env.getIndexEnvironment().getField(iter.get().getFieldId());

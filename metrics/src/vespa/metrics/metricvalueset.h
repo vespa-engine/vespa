@@ -29,6 +29,7 @@
 
 #include <vector>
 #include <atomic>
+#include <array>
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/util/jsonstream.h>
 
@@ -49,20 +50,16 @@ struct MetricValueClass {
 template<typename ValueClass>
 class MetricValueSet {
     using AtomicValues = typename ValueClass::AtomicImpl;
-    std::vector<AtomicValues> _values;
-    std::atomic<uint32_t> _activeValueIndex;
-    std::atomic<uint32_t> _flags;
+    std::array<AtomicValues, 3> _values;
+    std::atomic<uint32_t>       _activeValueIndex;
+    std::atomic<uint32_t>       _flags;
 
     enum Flag { RESET = 1 };
     bool isReset() const { return hasFlag(RESET); }
-
-    void validateCorrectValueSuperClass(const MetricValueClass&) {}
-
 public:
-    MetricValueSet(uint32_t copyCount = 3);
-    MetricValueSet(const MetricValueSet& other, uint32_t copyCount = 3);
-
-    MetricValueSet& operator=(const MetricValueSet& other);
+    MetricValueSet() noexcept;
+    MetricValueSet(const MetricValueSet&) noexcept;
+    MetricValueSet& operator=(const MetricValueSet& other) noexcept;
 
     /** Get the current values. */
     ValueClass getValues() const;
@@ -81,10 +78,6 @@ public:
     }
 
     std::string toString();
-
-    uint32_t getMemoryUsageAllocatedInternally() const {
-        return _values.capacity() * sizeof(ValueClass);
-    }
 
     uint32_t size() const { return _values.size(); }
 

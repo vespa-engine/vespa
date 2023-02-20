@@ -19,8 +19,8 @@ class DocumentTypeRepo;
 
 class StringFieldValue final : public LiteralFieldValue<StringFieldValue, DataType::T_STRING> {
 public:
-    typedef LiteralFieldValue<StringFieldValue, DataType::T_STRING> Parent;
-    typedef std::vector<SpanTree::UP> SpanTrees;
+    using Parent = LiteralFieldValue<StringFieldValue, DataType::T_STRING>;
+    using SpanTrees = std::vector<SpanTree::UP>;
 
     StringFieldValue() : Parent(Type::STRING), _annotationData() { }
     StringFieldValue(const vespalib::stringref &value)
@@ -30,7 +30,7 @@ public:
 
     StringFieldValue &operator=(const StringFieldValue &rhs);
     StringFieldValue &operator=(vespalib::stringref value) override;
-    ~StringFieldValue();
+    ~StringFieldValue() override;
 
     FieldValue &assign(const FieldValue &) override;
 
@@ -62,16 +62,16 @@ private:
 
     class AnnotationData {
     public:
-        typedef std::vector<char> BackingBlob;
-        typedef std::unique_ptr<AnnotationData> UP;
+        using BackingBlob = std::vector<char>;
+        using UP = std::unique_ptr<AnnotationData>;
         VESPA_DLL_LOCAL AnnotationData(const AnnotationData & rhs);
         AnnotationData & operator = (const AnnotationData &) = delete;
         VESPA_DLL_LOCAL AnnotationData(vespalib::ConstBufferRef serialized, const FixedTypeRepo &repo,
                                        uint8_t version, bool isSerializedDataLongLived);
 
-        bool hasSpanTrees() const { return _serialized.size() > 0u; }
-        vespalib::ConstBufferRef getSerializedAnnotations() const { return _serialized; }
-        VESPA_DLL_LOCAL SpanTrees getSpanTrees() const;
+        [[nodiscard]] bool hasSpanTrees() const { return _serialized.size() > 0u; }
+        [[nodiscard]] vespalib::ConstBufferRef getSerializedAnnotations() const { return _serialized; }
+        [[nodiscard]] VESPA_DLL_LOCAL SpanTrees getSpanTrees() const;
     private:
         vespalib::ConstBufferRef _serialized;
         BackingBlob              _backingBlob;

@@ -7,7 +7,7 @@ class FRT_RPCRequest;
 class FRT_Invokable
 {
 public:
-    virtual ~FRT_Invokable() {}
+    virtual ~FRT_Invokable() = default;
 };
 
 typedef void (FRT_Invokable::*FRT_METHOD_PT)(FRT_RPCRequest *);
@@ -21,10 +21,7 @@ template <class T>
 FRT_METHOD_PT
 frt_method_pt_cast(frt_method_precast_pt<T> pt)
 {
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wshift-negative-value"
   return (FRT_METHOD_PT) pt;
-#pragma GCC diagnostic pop
 }
 
 }

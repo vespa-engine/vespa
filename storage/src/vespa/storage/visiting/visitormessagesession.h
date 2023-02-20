@@ -13,7 +13,7 @@ namespace documentapi {
 namespace storage {
 
 struct VisitorMessageSession {
-    typedef std::unique_ptr<VisitorMessageSession> UP;
+    using UP = std::unique_ptr<VisitorMessageSession>;
 
     virtual ~VisitorMessageSession() {}
 

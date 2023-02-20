@@ -80,11 +80,6 @@ public class SlobrokClient implements NodeLookup {
     public Mirror getMirror() { return mirror; }
 
     @Override
-    public boolean isReady() {
-        return mirror != null && mirror.ready();
-    }
-
-    @Override
     public boolean updateCluster(ContentCluster cluster, SlobrokListener listener) {
         if (mirror == null) return false;
 

@@ -30,7 +30,7 @@ public:
      * A task that can be executed by an executor.
      **/
     struct Task {
-        typedef std::unique_ptr<Task> UP;
+        using UP = std::unique_ptr<Task>;
         virtual void run() = 0;
         virtual ~Task() = default;
     };

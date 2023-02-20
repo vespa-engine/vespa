@@ -16,8 +16,8 @@ public:
 
     void onStart(DistributorStripeMessageSender&) override;
     void onReceive(DistributorStripeMessageSender&, const std::shared_ptr<api::StorageReply>&) override;
-    const char* getName() const override { return "setbucketstate"; }
-    Type getType() const override { return SET_BUCKET_STATE; }
+    const char* getName() const noexcept override { return "setbucketstate"; }
+    Type getType() const noexcept override { return SET_BUCKET_STATE; }
 protected:
     MessageTracker _tracker;
     std::vector<uint16_t> _wantedActiveNodes;

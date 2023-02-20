@@ -41,7 +41,7 @@ FeatureSet::addDocId(uint32_t docId)
 bool
 FeatureSet::contains(const std::vector<uint32_t> &docIds) const
 {
-    typedef std::vector<uint32_t>::const_iterator ITR;
+    using ITR = std::vector<uint32_t>::const_iterator;
     ITR myPos = _docIds.begin();
     ITR myEnd = _docIds.end();
     ITR pos = docIds.begin();

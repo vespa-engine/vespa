@@ -235,7 +235,7 @@ AttributeNode::IntegerHandler<V>::handle(const AttributeResult & r)
     size_t numValues = r.getAttribute()->getValueCount(r.getDocId());
     _vector.resize(numValues);
     _wVector.resize(numValues);
-    r.getAttribute()->get(r.getDocId(), &_wVector[0], _wVector.size());
+    r.getAttribute()->get(r.getDocId(), _wVector.data(), _wVector.size());
     for(size_t i(0); i < numValues; i++) {
         _vector[i] = _wVector[i].getValue();
     }
@@ -247,7 +247,7 @@ AttributeNode::FloatHandler::handle(const AttributeResult & r)
     size_t numValues = r.getAttribute()->getValueCount(r.getDocId());
     _vector.resize(numValues);
     _wVector.resize(numValues);
-    r.getAttribute()->get(r.getDocId(), &_wVector[0], _wVector.size());
+    r.getAttribute()->get(r.getDocId(), _wVector.data(), _wVector.size());
     for(size_t i(0); i < numValues; i++) {
         _vector[i] = _wVector[i].getValue();
     }
@@ -259,7 +259,7 @@ AttributeNode::StringHandler::handle(const AttributeResult & r)
     size_t numValues = r.getAttribute()->getValueCount(r.getDocId());
     _vector.resize(numValues);
     _wVector.resize(numValues);
-    r.getAttribute()->get(r.getDocId(), &_wVector[0], _wVector.size());
+    r.getAttribute()->get(r.getDocId(), _wVector.data(), _wVector.size());
     for(size_t i(0); i < numValues; i++) {
         _vector[i] = _wVector[i].getValue();
     }
@@ -270,7 +270,7 @@ void AttributeNode::EnumHandler::handle(const AttributeResult & r)
     size_t numValues = r.getAttribute()->getValueCount(r.getDocId());
     _vector.resize(numValues);
     _wVector.resize(numValues);
-    r.getAttribute()->get(r.getDocId(), &_wVector[0], _wVector.size());
+    r.getAttribute()->get(r.getDocId(), _wVector.data(), _wVector.size());
     for(size_t i(0); i < numValues; i++) {
         _vector[i] = _wVector[i].getValue();
     }

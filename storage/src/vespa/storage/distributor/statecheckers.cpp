@@ -10,6 +10,7 @@
 #include <vespa/storage/distributor/operations/idealstate/setbucketstateoperation.h>
 #include <vespa/storage/distributor/operations/idealstate/mergeoperation.h>
 #include <vespa/storage/distributor/operations/idealstate/garbagecollectionoperation.h>
+#include <vespa/storageframework/generic/clock/clock.h>
 #include <vespa/vdslib/distribution/distribution.h>
 #include <vespa/vdslib/state/clusterstate.h>
 #include <vespa/vespalib/stllike/asciistream.h>
@@ -1129,7 +1130,7 @@ GarbageCollectionStateChecker::garbage_collection_disabled(const Context& c) noe
 }
 
 bool
-GarbageCollectionStateChecker::needs_garbage_collection(const Context& c, std::chrono::seconds time_since_epoch)
+GarbageCollectionStateChecker::needs_garbage_collection(const Context& c, vespalib::duration time_since_epoch)
 {
     if (c.entry->getNodeCount() == 0) {
         return false;
@@ -1147,20 +1148,18 @@ GarbageCollectionStateChecker::check(Context& c) const
     if (garbage_collection_disabled(c)) {
         return Result::noMaintenanceNeeded();
     }
-    const std::chrono::seconds now(c.node_ctx.clock().getTimeInSeconds().getTime());
+    const vespalib::duration now(c.node_ctx.clock().getSystemTime().time_since_epoch());
     const std::chrono::seconds last_run_at(c.entry->getLastGarbageCollectionTime());
     c.stats.update_observed_time_since_last_gc(now - last_run_at);
 
     if (needs_garbage_collection(c, now)) {
-        auto op = std::make_unique<GarbageCollectionOperation>(
-                        c.node_ctx,
-                        BucketAndNodes(c.getBucket(), c.entry->getNodes()));
+        auto op = std::make_unique<GarbageCollectionOperation>(c.node_ctx, BucketAndNodes(c.getBucket(), c.entry->getNodes()));
 
         vespalib::asciistream reason;
         reason << "[Needs garbage collection: Last check at "
                << c.entry->getLastGarbageCollectionTime()
                << ", current time "
-               << now.count()
+               << vespalib::count_s(now)
                << ", configured interval "
                << vespalib::to_s(c.distributorConfig.getGarbageCollectionInterval()) << "]";
 

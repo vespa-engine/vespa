@@ -493,7 +493,7 @@ TopLevelBucketDBUpdater::report_xml_status(vespalib::xml::XmlOutputStream& xos,
         xos << XmlTag("change")
             << XmlAttribute("from", i->_prevClusterState)
             << XmlAttribute("to", i->_newClusterState)
-            << XmlAttribute("processingtime", i->_processingTime)
+            << XmlAttribute("processingtime", vespalib::count_us(i->_processingTime))
             << XmlEndTag();
     }
     xos << XmlEndTag()

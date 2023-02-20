@@ -283,6 +283,7 @@ public class IfThenTestCase {
         }
 
         @Override
+        @Deprecated
         public void printXml(XmlStream xml) {
 
         }

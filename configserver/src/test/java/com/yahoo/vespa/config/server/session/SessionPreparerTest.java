@@ -31,9 +31,7 @@ import com.yahoo.vespa.config.server.MockProvisioner;
 import com.yahoo.vespa.config.server.MockSecretStore;
 import com.yahoo.vespa.config.server.TestConfigDefinitionRepo;
 import com.yahoo.vespa.config.server.TimeoutBudgetTest;
-import com.yahoo.vespa.config.server.application.PermanentApplicationPackage;
 import com.yahoo.vespa.config.server.deploy.DeployHandlerLogger;
-import com.yahoo.vespa.config.server.filedistribution.FileDirectory;
 import com.yahoo.vespa.config.server.filedistribution.MockFileDistributionFactory;
 import com.yahoo.vespa.config.server.host.HostRegistry;
 import com.yahoo.vespa.config.server.http.InvalidApplicationException;
@@ -53,7 +51,6 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.junit.rules.TemporaryFolder;
-
 import javax.security.auth.x500.X500Principal;
 import java.io.File;
 import java.io.IOException;
@@ -127,10 +124,9 @@ public class SessionPreparerTest {
                                            HostProvisionerProvider hostProvisionerProvider) {
         return new SessionPreparer(
                 modelFactoryRegistry,
-                new MockFileDistributionFactory(configserverConfig, new FileDirectory(configserverConfig, flagSource)),
+                new MockFileDistributionFactory(configserverConfig),
                 new InThreadExecutorService(),
                 hostProvisionerProvider,
-                new PermanentApplicationPackage(configserverConfig),
                 configserverConfig,
                 new TestConfigDefinitionRepo(),
                 curator,
@@ -218,7 +214,7 @@ public class SessionPreparerTest {
         PrepareParams params = new PrepareParams.Builder().applicationId(applicationId()).build();
         int sessionId = 1;
         prepare(testApp, params);
-        assertEquals(applicationId(), createSessionZooKeeperClient(sessionId).readApplicationId().get());
+        assertEquals(applicationId(), createSessionZooKeeperClient(sessionId).readApplicationId());
     }
 
     @Test

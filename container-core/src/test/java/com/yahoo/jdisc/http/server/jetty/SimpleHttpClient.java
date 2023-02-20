@@ -158,6 +158,7 @@ public class SimpleHttpClient implements AutoCloseable {
             return this;
         }
 
+        @SuppressWarnings("deprecation")
         public ResponseValidator execute() throws IOException {
             if (entity != null) {
                 request.setEntity(entity);
@@ -189,18 +190,16 @@ public class SimpleHttpClient implements AutoCloseable {
             return this;
         }
 
-        public ResponseValidator expectHeader(String headerName, Matcher<String> matcher) {
+        public void expectHeader(String headerName, Matcher<String> matcher) {
             Header firstHeader = response.getFirstHeader(headerName);
             String headerValue = firstHeader != null ? firstHeader.getValue() : null;
             assertThat(headerValue, matcher);
             assertNotNull(firstHeader);
-            return this;
         }
 
-        public ResponseValidator expectNoHeader(String headerName) {
+        public void expectNoHeader(String headerName) {
             Header firstHeader = response.getFirstHeader(headerName);
             assertThat(firstHeader, is(nullValue()));
-            return this;
         }
 
         public ResponseValidator expectContent(final Matcher<String> matcher) {

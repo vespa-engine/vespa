@@ -6,7 +6,8 @@ import com.yahoo.vespa.config.content.core.StorDistributormanagerConfig;
 import com.yahoo.vespa.config.content.core.StorServerConfig;
 import com.yahoo.document.select.DocumentSelector;
 import com.yahoo.document.select.parser.ParseException;
-import com.yahoo.config.model.producer.AbstractConfigProducer;
+import com.yahoo.config.model.producer.AnyConfigProducer;
+import com.yahoo.config.model.producer.TreeConfigProducer;
 import com.yahoo.metrics.MetricsmanagerConfig;
 import com.yahoo.vespa.model.builder.xml.dom.ModelElement;
 import com.yahoo.vespa.model.builder.xml.dom.VespaDomBuilder;
@@ -18,7 +19,7 @@ import java.util.logging.Logger;
 /**
  * Generates distributor-specific configuration.
  */
-public class DistributorCluster extends AbstractConfigProducer<Distributor> implements
+public class DistributorCluster extends TreeConfigProducer<Distributor> implements
         StorDistributormanagerConfig.Producer,
         StorServerConfig.Producer,
         MetricsmanagerConfig.Producer {
@@ -32,9 +33,7 @@ public class DistributorCluster extends AbstractConfigProducer<Distributor> impl
     private final GcOptions gc;
     private final boolean hasIndexedDocumentType;
     private final int maxActivationInhibitedOutOfSyncGroups;
-    private final boolean useTwoPhaseDocumentGc;
-
-    public static class Builder extends VespaDomBuilder.DomConfigProducerBuilder<DistributorCluster> {
+    public static class Builder extends VespaDomBuilder.DomConfigProducerBuilderBase<DistributorCluster> {
 
         ContentCluster parent;
 
@@ -88,25 +87,23 @@ public class DistributorCluster extends AbstractConfigProducer<Distributor> impl
         }
 
         @Override
-        protected DistributorCluster doBuild(DeployState deployState, AbstractConfigProducer<?> ancestor, Element producerSpec) {
+        protected DistributorCluster doBuild(DeployState deployState, TreeConfigProducer<AnyConfigProducer> ancestor, Element producerSpec) {
             final ModelElement clusterElement = new ModelElement(producerSpec);
             final ModelElement documentsNode = clusterElement.child("documents");
             final GcOptions gc = parseGcOptions(documentsNode);
             final boolean hasIndexedDocumentType = clusterContainsIndexedDocumentType(documentsNode);
             int maxInhibitedGroups = deployState.getProperties().featureFlags().maxActivationInhibitedOutOfSyncGroups();
-            boolean useTwoPhaseDocumentGc = deployState.getProperties().featureFlags().useTwoPhaseDocumentGc();
 
             return new DistributorCluster(parent,
                     new BucketSplitting.Builder().build(new ModelElement(producerSpec)), gc,
                     hasIndexedDocumentType,
-                    maxInhibitedGroups, useTwoPhaseDocumentGc);
+                    maxInhibitedGroups);
         }
     }
 
     private DistributorCluster(ContentCluster parent, BucketSplitting bucketSplitting,
                                GcOptions gc, boolean hasIndexedDocumentType,
-                               int maxActivationInhibitedOutOfSyncGroups,
-                               boolean useTwoPhaseDocumentGc)
+                               int maxActivationInhibitedOutOfSyncGroups)
     {
         super(parent, "distributor");
         this.parent = parent;
@@ -114,7 +111,6 @@ public class DistributorCluster extends AbstractConfigProducer<Distributor> impl
         this.gc = gc;
         this.hasIndexedDocumentType = hasIndexedDocumentType;
         this.maxActivationInhibitedOutOfSyncGroups = maxActivationInhibitedOutOfSyncGroups;
-        this.useTwoPhaseDocumentGc = useTwoPhaseDocumentGc;
     }
 
     @Override
@@ -127,8 +123,6 @@ public class DistributorCluster extends AbstractConfigProducer<Distributor> impl
         builder.enable_revert(parent.getPersistence().supportRevert());
         builder.disable_bucket_activation(!hasIndexedDocumentType);
         builder.max_activation_inhibited_out_of_sync_groups(maxActivationInhibitedOutOfSyncGroups);
-        builder.enable_two_phase_garbage_collection(useTwoPhaseDocumentGc);
-
         bucketSplitting.getConfig(builder);
     }
 

@@ -3,14 +3,15 @@ package com.yahoo.vespa.model.container.component;
 
 import com.yahoo.container.bundle.BundleInstantiationSpecification;
 import com.yahoo.osgi.provider.model.ComponentModel;
-import com.yahoo.config.model.producer.AbstractConfigProducer;
+import com.yahoo.config.model.producer.AnyConfigProducer;
+import com.yahoo.config.model.producer.TreeConfigProducer;
 
 /**
  * A component that uses the class name as id, and resides in the container-disc bundle.
  *
  * @author gjoranv
  */
-public class SimpleComponent extends Component<AbstractConfigProducer<?>, ComponentModel> {
+public class SimpleComponent extends Component<AnyConfigProducer, ComponentModel> {
 
     public SimpleComponent(ComponentModel model) {
         super(model);

@@ -18,7 +18,7 @@ public:
     template <bool MULTI>
     struct Features
     {
-        typedef uint32_t EnumType;
+        using EnumType = uint32_t;
         static bool IsMultiValue() { return MULTI; }
     };
 };
@@ -29,17 +29,17 @@ template <typename B>
 class NumericDirectAttribute : public B
 {
 private:
-    typedef typename B::EnumHandle EnumHandle;
+    using EnumHandle = typename B::EnumHandle;
     NumericDirectAttribute(const NumericDirectAttribute &);
     NumericDirectAttribute & operator=(const NumericDirectAttribute &);
     bool onLoad(vespalib::Executor *executor) override;
     typename B::BaseType getFromEnum(EnumHandle e) const override { return _data[e]; }
 protected:
-    typedef typename B::BaseType   BaseType;
-    typedef typename B::DocId      DocId;
-    typedef typename B::Change     Change;
-    typedef typename B::largeint_t largeint_t;
-    typedef typename B::Config     Config;
+    using BaseType = typename B::BaseType;
+    using DocId = typename B::DocId;
+    using Change = typename B::Change;
+    using largeint_t = typename B::largeint_t;
+    using Config = typename B::Config;
 
     NumericDirectAttribute(const vespalib::string & baseFileName, const Config & c);
     ~NumericDirectAttribute() override;
@@ -59,10 +59,10 @@ template <typename F, typename B>
 class NumericDirectAttrVector : public search::NumericDirectAttribute<B>
 {
 protected:
-    typedef typename B::DocId         DocId;
-    typedef NumericDirectAttrVector<F, B> NumDirectAttrVec;
+    using DocId = typename B::DocId;
+    using NumDirectAttrVec = NumericDirectAttrVector<F, B>;
 private:
-    typedef typename B::largeint_t    largeint_t;
+    using largeint_t = typename B::largeint_t;
 public:
     NumericDirectAttrVector(const vespalib::string & baseFileName);
     NumericDirectAttrVector(const vespalib::string & baseFileName, const AttributeVector::Config & c);
@@ -71,12 +71,12 @@ public:
     uint32_t get(DocId doc, largeint_t * v, uint32_t sz)     const override { return getAllHelper<largeint_t, largeint_t>(doc, v, sz); }
     uint32_t get(DocId doc, double * v, uint32_t sz)         const override { return getAllHelper<double, double>(doc, v, sz); }
 private:
-    typedef typename B::EnumHandle    EnumHandle;
-    typedef typename B::BaseType      BaseType;
-    typedef typename B::Weighted      Weighted;
-    typedef typename B::WeightedEnum  WeightedEnum;
-    typedef typename B::WeightedInt   WeightedInt;
-    typedef typename B::WeightedFloat WeightedFloat;
+    using EnumHandle = typename B::EnumHandle;
+    using BaseType = typename B::BaseType;
+    using Weighted = typename B::Weighted;
+    using WeightedEnum = typename B::WeightedEnum;
+    using WeightedInt = typename B::WeightedInt;
+    using WeightedFloat = typename B::WeightedFloat;
     BaseType get(DocId doc)        const override { return getHelper(doc, 0); }
     EnumHandle getEnum(DocId doc)  const override { return getEnumHelper(doc, 0); }
     uint32_t get(DocId doc, EnumHandle * e, uint32_t sz) const override { return getAllEnumHelper(doc, e, sz); }

@@ -12,7 +12,7 @@ public class SlimeStreamTest {
     @Test
     public void test_empty_array() {
         var inspector = new Slime().setArray();
-        var items = SlimeStream.fromArray(inspector, Inspector::asString).collect(Collectors.toList());
+        var items = SlimeStream.fromArray(inspector, Inspector::asString).toList();
         assertEquals(List.of(), items);
     }
 
@@ -21,7 +21,7 @@ public class SlimeStreamTest {
         var inspector = new Slime().setArray();
         inspector.addString("foo");
         inspector.addString("bar");
-        var items = SlimeStream.fromArray(inspector, Inspector::asString).collect(Collectors.toList());
+        var items = SlimeStream.fromArray(inspector, Inspector::asString).toList();
         assertEquals(List.of("foo", "bar"), items);
     }
 }

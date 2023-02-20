@@ -87,7 +87,7 @@ public final class ApplicationSet {
         return applications.values().stream()
                 .flatMap(app -> app.getModel().getHosts().stream()
                         .map(HostInfo::getHostname))
-                .collect(Collectors.toList());
+                .toList();
     }
 
     public void updateHostMetrics() {
@@ -109,7 +109,7 @@ public final class ApplicationSet {
                 .filter(application -> application.getId().equals(applicationId))
                 .map(Application::getVespaVersion)
                 .sorted()
-                .collect(Collectors.toList());
+                .toList();
     }
 
 }

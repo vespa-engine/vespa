@@ -37,28 +37,29 @@ public class OnnxEvaluationHandlerTest {
         String expected = "{\"one_layer\":\"http://localhost/model-evaluation/v1/one_layer\"," +
                            "\"add_mul\":\"http://localhost/model-evaluation/v1/add_mul\"," +
                            "\"no_model\":\"http://localhost/model-evaluation/v1/no_model\"}";
-        handler.assertResponse(url, 200, expected);
+        handler.checkResponse(url, 200, HandlerTester.matchJson(expected));
     }
 
     @Test
     public void testModelInfo() {
         String url = "http://localhost/model-evaluation/v1/add_mul";
-        String expected = "{\"model\":\"add_mul\",\"functions\":[" +
-                "{\"function\":\"output1\"," +
-                    "\"info\":\"http://localhost/model-evaluation/v1/add_mul/output1\"," +
-                    "\"eval\":\"http://localhost/model-evaluation/v1/add_mul/output1/eval\"," +
-                    "\"arguments\":[" +
-                        "{\"name\":\"input1\",\"type\":\"tensor<float>(d0[1])\"}," +
-                        "{\"name\":\"input2\",\"type\":\"tensor<float>(d0[1])\"}" +
-                    "]}," +
-                "{\"function\":\"output2\"," +
-                    "\"info\":\"http://localhost/model-evaluation/v1/add_mul/output2\"," +
-                    "\"eval\":\"http://localhost/model-evaluation/v1/add_mul/output2/eval\"," +
-                    "\"arguments\":[" +
-                        "{\"name\":\"input1\",\"type\":\"tensor<float>(d0[1])\"}," +
-                        "{\"name\":\"input2\",\"type\":\"tensor<float>(d0[1])\"}" +
-                "]}]}";
-        handler.assertResponse(url, 200, expected);
+        var check = HandlerTester.matchJson(
+                "{'model':'add_mul','functions':[",
+                " {'function':'output1',",
+                "  'info':'http://localhost/model-evaluation/v1/add_mul/output1',",
+                "  'eval':'http://localhost/model-evaluation/v1/add_mul/output1/eval',",
+                "  'arguments':[",
+                "   {'name':'input1','type':'tensor<float>(d0[1])'},",
+                "   {'name':'input2','type':'tensor<float>(d0[1])'}",
+                "  ]},",
+                " {'function':'output2',",
+                "  'info':'http://localhost/model-evaluation/v1/add_mul/output2',",
+                "  'eval':'http://localhost/model-evaluation/v1/add_mul/output2/eval',",
+                "  'arguments':[",
+                "   {'name':'input1','type':'tensor<float>(d0[1])'},",
+                "   {'name':'input2','type':'tensor<float>(d0[1])'}",
+                "  ]}]}");
+        handler.checkResponse(url, 200, check);
     }
 
     @Test
@@ -80,8 +81,9 @@ public class OnnxEvaluationHandlerTest {
         Map<String, String> properties = new HashMap<>();
         properties.put("input1", "tensor<float>(d0[1]):[2]");
         properties.put("input2", "tensor<float>(d0[1]):[3]");
+        properties.put("format.tensors", "long");
         String url = "http://localhost/model-evaluation/v1/add_mul/output1/eval";
-        String expected = "{\"cells\":[{\"address\":{\"d0\":\"0\"},\"value\":6.0}]}";  // output1 is a mul
+        String expected = "{\"type\":\"tensor<float>(d0[1])\",\"cells\":[{\"address\":{\"d0\":\"0\"},\"value\":6.0}]}";  // output1 is a mul
         handler.assertResponse(url, properties, 200, expected);
     }
 
@@ -90,8 +92,9 @@ public class OnnxEvaluationHandlerTest {
         Map<String, String> properties = new HashMap<>();
         properties.put("input1", "tensor<float>(d0[1]):[2]");
         properties.put("input2", "tensor<float>(d0[1]):[3]");
+        properties.put("format.tensors", "long");
         String url = "http://localhost/model-evaluation/v1/add_mul/output2/eval";
-        String expected = "{\"cells\":[{\"address\":{\"d0\":\"0\"},\"value\":5.0}]}";  // output2 is an add
+        String expected = "{\"type\":\"tensor<float>(d0[1])\",\"cells\":[{\"address\":{\"d0\":\"0\"},\"value\":5.0}]}";  // output2 is an add
         handler.assertResponse(url, properties, 200, expected);
     }
 
@@ -112,6 +115,7 @@ public class OnnxEvaluationHandlerTest {
     public void testBatchDimensionEvaluation() {
         Map<String, String> properties = new HashMap<>();
         properties.put("input", "tensor<float>(d0[],d1[3]):{{d0:0,d1:0}:0.1,{d0:0,d1:1}:0.2,{d0:0,d1:2}:0.3,{d0:1,d1:0}:0.4,{d0:1,d1:1}:0.5,{d0:1,d1:2}:0.6}");
+        properties.put("format.tensors", "long");
         String url = "http://localhost/model-evaluation/v1/one_layer/eval";  // output not specified
         Tensor expected = Tensor.from("tensor<float>(d0[2],d1[1]):[0.6393113,0.67574286]");
         handler.assertResponse(url, properties, 200, expected);

@@ -228,7 +228,7 @@ FakeMemTreeOccMgr::remove(uint32_t wordIdx, uint32_t docId)
 void
 FakeMemTreeOccMgr::sortUnflushed()
 {
-    typedef std::vector<PendingOp>::iterator I;
+    using I = std::vector<PendingOp>::iterator;
     uint32_t seq = 0;
     for (I i(_unflushed.begin()), ie(_unflushed.end()); i != ie; ++i) {
         i->setSeq(++seq);
@@ -241,7 +241,7 @@ void
 FakeMemTreeOccMgr::flush()
 {
     using Aligner = FeatureStore::Aligner;
-    typedef std::vector<PendingOp>::iterator I;
+    using I = std::vector<PendingOp>::iterator;
 
     if (_unflushed.empty())
         return;
@@ -338,7 +338,7 @@ FakeMemTreeOccFactory::make(const FakeWord &fw)
 void
 FakeMemTreeOccFactory::setup(const std::vector<const FakeWord *> &fws)
 {
-    typedef FakeMemTreeOccMgr::PostingIdx PostingIdx;
+    using PostingIdx = FakeMemTreeOccMgr::PostingIdx;
     std::vector<FakeWord::RandomizedReader> r;
     uint32_t wordIdx = 0;
     std::vector<const FakeWord *>::const_iterator fwi(fws.begin());

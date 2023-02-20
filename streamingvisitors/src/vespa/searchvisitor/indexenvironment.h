@@ -21,7 +21,7 @@ namespace streaming {
 class IndexEnvironment : public search::fef::IIndexEnvironment
 {
 private:
-    typedef vespalib::hash_map<vespalib::string, uint32_t> StringInt32Map;
+    using StringInt32Map = vespalib::hash_map<vespalib::string, uint32_t>;
     const search::fef::ITableManager   * _tableManager;
     search::fef::Properties              _properties;
     std::vector<search::fef::FieldInfo>  _fields;
@@ -32,7 +32,9 @@ private:
 
 public:
     IndexEnvironment(const search::fef::ITableManager & tableManager);
-    ~IndexEnvironment();
+    IndexEnvironment(IndexEnvironment &&) noexcept;
+    IndexEnvironment(const IndexEnvironment &);
+    ~IndexEnvironment() override;
 
     const search::fef::Properties & getProperties() const override { return _properties; }
 

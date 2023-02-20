@@ -9,28 +9,7 @@
 #include "bm_storage_link_context.h"
 #include "i_bm_distribution.h"
 #include "storage_api_rpc_bm_feed_handler.h"
-#include <tests/proton/common/dummydbowner.h>
-#include <vespa/config-attributes.h>
-#include <vespa/config-bucketspaces.h>
-#include <vespa/config-imported-fields.h>
-#include <vespa/config-indexschema.h>
-#include <vespa/config-persistence.h>
-#include <vespa/config-rank-profiles.h>
-#include <vespa/config-slobroks.h>
-#include <vespa/config-stor-distribution.h>
-#include <vespa/config-stor-filestor.h>
-#include <vespa/config-summary.h>
-#include <vespa/config-upgrading.h>
-#include <vespa/config/common/configcontext.h>
-#include <vespa/document/bucket/bucketspace.h>
-#include <vespa/document/config/documenttypes_config_fwd.h>
-#include <vespa/document/repo/configbuilder.h>
-#include <vespa/document/repo/document_type_repo_factory.h>
-#include <vespa/document/repo/documenttyperepo.h>
-#include <vespa/document/test/make_bucket_space.h>
-#include <vespa/messagebus/config-messagebus.h>
-#include <vespa/messagebus/testlib/slobrok.h>
-#include <vespa/metrics/config-metricsmanager.h>
+#include <vespa/searchcore/proton/test/dummydbowner.h>
 #include <vespa/searchcore/proton/common/alloc_config.h>
 #include <vespa/searchcore/proton/matching/querylimiter.h>
 #include <vespa/searchcore/proton/metrics/metricswireservice.h>
@@ -70,6 +49,27 @@
 #include <vespa/vdslib/state/clusterstate.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/size_literals.h>
+#include <vespa/config-attributes.h>
+#include <vespa/config-bucketspaces.h>
+#include <vespa/config-imported-fields.h>
+#include <vespa/config-indexschema.h>
+#include <vespa/config-persistence.h>
+#include <vespa/config-rank-profiles.h>
+#include <vespa/config-slobroks.h>
+#include <vespa/config-stor-distribution.h>
+#include <vespa/config-stor-filestor.h>
+#include <vespa/config-summary.h>
+#include <vespa/config-upgrading.h>
+#include <vespa/config/common/configcontext.h>
+#include <vespa/document/bucket/bucketspace.h>
+#include <vespa/document/config/documenttypes_config_fwd.h>
+#include <vespa/document/repo/configbuilder.h>
+#include <vespa/document/repo/document_type_repo_factory.h>
+#include <vespa/document/repo/documenttyperepo.h>
+#include <vespa/document/test/make_bucket_space.h>
+#include <vespa/messagebus/config-messagebus.h>
+#include <vespa/messagebus/testlib/slobrok.h>
+#include <vespa/metrics/config-metricsmanager.h>
 #include <filesystem>
 
 #include <vespa/log/log.h>
@@ -501,7 +501,7 @@ MyBmNode::MyBmNode(const vespalib::string& base_dir, int base_port, uint32_t nod
       _query_limiter(),
       _metrics_wire_service(),
       _config_stores(),
-      _summary_executor(8, 128_Ki),
+      _summary_executor(8),
       _shared_service(_summary_executor, _summary_executor),
       _tls(_shared_service.transport(), "tls", _tls_listen_port, _base_dir, _file_header_context),
       _document_db_owner(),
@@ -579,7 +579,7 @@ MyBmNode::create_document_db(const BmClusterParams& params)
                                       _metrics_wire_service, _file_header_context,
                                       std::make_shared<search::attribute::Interlock>(),
                                       _config_stores.getConfigStore(_doc_type_name.toString()),
-                                      std::make_shared<vespalib::ThreadStackExecutor>(16, 128_Ki), HwInfo());
+                                      std::make_shared<vespalib::ThreadStackExecutor>(16), HwInfo());
     _document_db->start();
     _document_db->waitForOnlineState();
 }

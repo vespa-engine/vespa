@@ -12,8 +12,6 @@
 #include <vespa/messagebus/testlib/receptor.h>
 #include <vespa/messagebus/sourcesessionparams.h>
 #include <vespa/messagebus/testlib/simplemessage.h>
-#include <vespa/messagebus/testlib/simplereply.h>
-#include <vespa/messagebus/testlib/simpleprotocol.h>
 
 using namespace mbus;
 

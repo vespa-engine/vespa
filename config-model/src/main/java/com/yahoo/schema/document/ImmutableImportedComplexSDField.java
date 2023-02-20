@@ -3,8 +3,6 @@ package com.yahoo.schema.document;
 
 import java.util.Collection;
 
-import static java.util.stream.Collectors.toList;
-
 /**
  * Wraps {@link ImportedComplexField} as {@link ImmutableSDField}.
  */
@@ -24,6 +22,6 @@ public class ImmutableImportedComplexSDField extends ImmutableImportedSDField {
 
     @Override
     public Collection<? extends ImmutableSDField> getStructFields() {
-        return importedComplexField.getNestedFields().stream().map(field -> field.asImmutableSDField()).collect(toList());
+        return importedComplexField.getNestedFields().stream().map(field -> field.asImmutableSDField()).toList();
     }
 }

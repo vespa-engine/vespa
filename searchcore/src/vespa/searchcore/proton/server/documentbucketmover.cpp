@@ -16,7 +16,7 @@ using storage::spi::Timestamp;
 
 namespace proton::bucketdb {
 
-typedef IDocumentMetaStore::Iterator Iterator;
+using Iterator = IDocumentMetaStore::Iterator;
 
 MoveOperation::UP
 BucketMover::createMoveOperation(const MoveKey &key) {

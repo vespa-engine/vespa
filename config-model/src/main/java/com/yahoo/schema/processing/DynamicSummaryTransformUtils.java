@@ -1,6 +1,8 @@
 package com.yahoo.schema.processing;
 
 import com.yahoo.document.DataType;
+import com.yahoo.schema.Schema;
+import com.yahoo.schema.document.ImmutableSDField;
 import com.yahoo.vespa.documentmodel.SummaryField;
 
 /**
@@ -50,10 +52,22 @@ public class DynamicSummaryTransformUtils {
         return summaryFieldIsPopulatedBySourceField(summaryField.getDataType());
     }
 
-    public static String getSource(SummaryField summaryField) {
-        // Summary fields with the original supported type is always present in the document type,
-        // and we must use that field as source at run-time.
-        return isOriginalSupportedType(summaryField.getDataType()) ?
-                summaryField.getName() : summaryField.getSingleSource();
+    public static String getSource(SummaryField summaryField, Schema schema) {
+        // Summary fields with the original supported type is always present in the document type.
+        // However, if the source of that summary field is a single explicit source that exists in the schema we
+        // use that as source instead as this is handled by the backend code.
+        // This is a move in the right direction to avoid adding some summary fields as extra document fields.
+        if (isOriginalSupportedType(summaryField.getDataType())) {
+            if (summaryField.hasExplicitSingleSource()) {
+                String sourceFieldName = summaryField.getSingleSource();
+                ImmutableSDField source = schema.getField(sourceFieldName);
+                if (source != null) {
+                    return sourceFieldName;
+                }
+            }
+            return summaryField.getName();
+        } else {
+            return summaryField.getSingleSource();
+        }
     }
 }

@@ -19,5 +19,7 @@ Prints new token to STDOUT.
                                    a console
  -r,--recipient-public-key <arg>   Recipient X25519 public key in Base58
                                    encoded format
+    --reseal-request               Handle input as a resealing request
+                                   instead of a token
 Note: this is a BETA tool version; its interface may be changed at any
 time

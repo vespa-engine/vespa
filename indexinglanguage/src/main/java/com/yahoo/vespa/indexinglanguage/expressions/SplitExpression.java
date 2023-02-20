@@ -54,13 +54,8 @@ public final class SplitExpression extends Expression {
 
     @Override
     public boolean equals(Object obj) {
-        if (!(obj instanceof SplitExpression)) {
-            return false;
-        }
-        SplitExpression rhs = (SplitExpression)obj;
-        if (!splitPattern.toString().equals(rhs.splitPattern.toString())) {
-            return false;
-        }
+        if (!(obj instanceof SplitExpression rhs)) return false;
+        if (!splitPattern.toString().equals(rhs.splitPattern.toString())) return false;
         return true;
     }
 

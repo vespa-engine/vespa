@@ -26,7 +26,7 @@ protected:
 
 template <typename T>
 struct SessionCache : SessionCacheBase {
-    typedef typename T::UP EntryUP;
+    using EntryUP = typename T::UP;
     vespalib::lrucache_map<vespalib::LruParam<SessionId, EntryUP> > _cache;
 
     SessionCache(uint32_t max_size) : _cache(max_size) {}
@@ -85,7 +85,7 @@ struct SessionCache : SessionCacheBase {
 
 template <typename T>
 struct SessionMap : SessionCacheBase {
-    typedef typename T::SP EntrySP;
+    using EntrySP = typename T::SP;
     vespalib::hash_map<SessionId, EntrySP> _map;
 
     void insert(EntrySP session) {
@@ -173,7 +173,11 @@ SessionManager::SessionManager(uint32_t maxSize)
       _search_map(std::make_unique<SearchSessionCache>()) {
 }
 
-SessionManager::~SessionManager() = default;
+SessionManager::~SessionManager() {
+    pruneTimedOutSessions(vespalib::steady_time::max());
+    assert(_grouping_cache->empty());
+    assert(_search_map->empty());
+}
 
 void SessionManager::insert(search::grouping::GroupingSession::UP session) {
     _grouping_cache->insert(std::move(session));
@@ -213,12 +217,6 @@ SessionManager::getSortedSearchSessionInfo() const
 void SessionManager::pruneTimedOutSessions(vespalib::steady_time currentTime) {
     _grouping_cache->pruneTimedOutSessions(currentTime);
     _search_map->pruneTimedOutSessions(currentTime);
-}
-
-void SessionManager::close() {
-    pruneTimedOutSessions(vespalib::steady_time::max());
-    assert(_grouping_cache->empty());
-    assert(_search_map->empty());
 }
 
 SessionManager::Stats SessionManager::getGroupingStats() {

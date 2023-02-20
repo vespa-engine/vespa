@@ -107,18 +107,17 @@ private:
     bool _expensive;
 };
 
-class SameElement : public QueryNodeMixin<SameElement, Intermediate> {
+class SameElement : public QueryNodeMixin<SameElement, Intermediate>, public Term {
 public:
-    SameElement(const vespalib::string &view) : _view(view), _expensive(false) {}
+    SameElement(const vespalib::string &view, int32_t id, Weight weight)
+        : Term(view, id, weight), _expensive(false) {}
     virtual ~SameElement() = 0;
-    const vespalib::string & getView() const { return _view; }
     SameElement &set_expensive(bool value) {
         _expensive = value;
         return *this;
     }
     bool is_expensive() const { return _expensive; }
 private:
-    vespalib::string _view;
     bool _expensive;
 };
 

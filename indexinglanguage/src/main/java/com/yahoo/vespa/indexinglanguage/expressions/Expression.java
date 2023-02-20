@@ -52,21 +52,21 @@ public abstract class Expression extends Selectable {
     }
 
     public static DocumentUpdate execute(Expression expression, AdapterFactory factory, DocumentUpdate update) {
-        DocumentUpdate ret = null;
+        DocumentUpdate result = null;
         for (UpdateAdapter adapter : factory.newUpdateAdapterList(update)) {
             DocumentUpdate output = adapter.getExpression(expression).execute(adapter);
             if (output == null) {
                 // ignore
-            } else if (ret != null) {
-                ret.addAll(output);
+            } else if (result != null) {
+                result.addAll(output);
             } else {
-                ret = output;
+                result = output;
             }
         }
-        if (ret != null) {
-            ret.setCreateIfNonExistent(update.getCreateIfNonExistent());
+        if (result != null) {
+            result.setCreateIfNonExistent(update.getCreateIfNonExistent());
         }
-        return ret;
+        return result;
     }
 
     public final DocumentUpdate execute(UpdateAdapter adapter) {
@@ -206,18 +206,13 @@ public abstract class Expression extends Selectable {
 
     protected static boolean equals(Object lhs, Object rhs) {
         if (lhs == null) {
-            if (rhs != null) {
-                return false;
-            }
+            return rhs == null;
         } else {
             if (rhs == null) {
                 return false;
             }
-            if (!lhs.equals(rhs)) {
-                return false;
-            }
+            return lhs.equals(rhs);
         }
-        return true;
     }
 
     // Convenience For testing

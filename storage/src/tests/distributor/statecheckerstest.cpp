@@ -1371,25 +1371,23 @@ std::string StateCheckersTest::testGarbageCollection(
         uint32_t checkInterval, uint32_t lastChangeTime,
         bool includePriority, bool includeSchedulingPri)
 {
-    BucketDatabase::Entry e(document::BucketId(17, 0));
-    e.getBucketInfo().addNode(BucketCopy(prevTimestamp, 0,
-                                         api::BucketInfo(3,3,3)),
-                              toVector((uint16_t)0));
-    e.getBucketInfo().setLastGarbageCollectionTime(prevTimestamp);
-    getBucketDatabase().update(e);
-
     GarbageCollectionStateChecker checker;
     auto cfg = make_config();
     cfg->setGarbageCollection("music", std::chrono::seconds(checkInterval));
     cfg->setLastGarbageCollectionChangeTime(vespalib::steady_time(std::chrono::seconds(lastChangeTime)));
     configure_stripe(cfg);
+    // Insert after stripe configuration to avoid GC timestamp being implicitly reset
+    BucketDatabase::Entry e(document::BucketId(17, 0));
+    e.getBucketInfo().addNode(BucketCopy(prevTimestamp, 0, api::BucketInfo(3,3,3)), toVector((uint16_t)0));
+    e.getBucketInfo().setLastGarbageCollectionTime(prevTimestamp);
+    getBucketDatabase().update(e);
+
     NodeMaintenanceStatsTracker statsTracker;
     StateChecker::Context c(node_context(), operation_context(),
                             getDistributorBucketSpace(), statsTracker,
                             makeDocumentBucket(e.getBucketId()));
     getClock().setAbsoluteTimeInSeconds(nowTimestamp);
-    return testStateChecker(checker, c, false, PendingMessage(),
-                            includePriority, includeSchedulingPri);
+    return testStateChecker(checker, c, false, PendingMessage(), includePriority, includeSchedulingPri);
 }
 
 TEST_F(StateCheckersTest, garbage_collection) {
@@ -1748,7 +1746,7 @@ TEST_F(StateCheckersTest, stats_updates_for_maximum_time_since_gc_run) {
           .last_gc_at_time({17, 0}, 100)
           .runFor({17, 0});
 
-    EXPECT_EQ(runner.stats().max_observed_time_since_last_gc().count(), 1900);
+    EXPECT_EQ(runner.stats().max_observed_time_since_last_gc(), 1900s);
 }
 
 }

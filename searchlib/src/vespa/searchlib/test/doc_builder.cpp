@@ -80,15 +80,6 @@ DocBuilder::make_array(vespalib::stringref field_name)
     assert(field_type.isArray());
     return {field_type};
 }
-MapFieldValue
-DocBuilder::make_map(vespalib::stringref field_name)
-{
-    auto& field = _document_type->getField(field_name);
-    auto& field_type = field.getDataType();
-    assert(field_type.isMap());
-    return {field_type};
-
-}
 
 WeightedSetFieldValue
 DocBuilder::make_wset(vespalib::stringref field_name)
@@ -96,15 +87,6 @@ DocBuilder::make_wset(vespalib::stringref field_name)
     auto& field = _document_type->getField(field_name);
     auto& field_type = field.getDataType();
     assert(field_type.isWeightedSet());
-    return {field_type};
-}
-
-StructFieldValue
-DocBuilder::make_struct(vespalib::stringref field_name)
-{
-    auto& field = _document_type->getField(field_name);
-    auto& field_type = field.getDataType();
-    assert(field_type.isStructured());
     return {field_type};
 }
 

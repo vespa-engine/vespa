@@ -9,9 +9,10 @@ import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancer;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancer.State;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancerId;
+import com.yahoo.vespa.hosted.provision.lb.LoadBalancerInstance;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancerService;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancerSpec;
-import com.yahoo.vespa.hosted.provision.persistence.CuratorDatabaseClient;
+import com.yahoo.vespa.hosted.provision.persistence.CuratorDb;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -46,7 +47,7 @@ public class LoadBalancerExpirer extends NodeRepositoryMaintainer {
     private static final Duration inactiveExpiry = Duration.ofHours(1);
 
     private final LoadBalancerService service;
-    private final CuratorDatabaseClient db;
+    private final CuratorDb db;
 
     public LoadBalancerExpirer(NodeRepository nodeRepository, Duration interval, LoadBalancerService service, Metric metric) {
         super(nodeRepository, interval, metric);
@@ -111,10 +112,10 @@ public class LoadBalancerExpirer extends NodeRepositoryMaintainer {
             try {
                 attempts.add(1);
                 LOG.log(Level.INFO, () -> "Removing reals from inactive load balancer " + lb.id() + ": " + Sets.difference(lb.instance().get().reals(), reals));
-                service.create(new LoadBalancerSpec(lb.id().application(), lb.id().cluster(), reals,
-                                                    lb.instance().get().settings(), lb.instance().get().cloudAccount()),
-                               true);
-                db.writeLoadBalancer(lb.with(lb.instance().map(instance -> instance.withReals(reals))), lb.state());
+                LoadBalancerInstance instance = service.configure(new LoadBalancerSpec(lb.id().application(), lb.id().cluster(), reals,
+                                                                                       lb.instance().get().settings(), lb.instance().get().cloudAccount()),
+                                                                  true);
+                db.writeLoadBalancer(lb.with(Optional.of(instance)), lb.state());
             } catch (Exception e) {
                 failed.add(lb.id());
                 lastException.set(e);

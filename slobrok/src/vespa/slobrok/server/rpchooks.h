@@ -35,7 +35,8 @@ public:
         unsigned long doRemoveReqs;
         unsigned long adminReqs;
         unsigned long otherReqs;
-        static Metrics zero() { return Metrics{0,0,0,0,0,0,0,0}; }
+        unsigned long missingConsensusTime;
+        static Metrics zero() { return Metrics{0,0,0,0,0,0,0,0,0}; }
     };
 
 private:
@@ -54,7 +55,9 @@ public:
     void reportMetrics();
     const Metrics& getMetrics() const { return _cnts; }
     void countFailedHeartbeat() { _cnts.heartBeatFails++; }
-
+    void setConsensusTime(unsigned long value) {
+        _cnts.missingConsensusTime = value;
+    }
 private:
     void rpc_registerRpcServer(FRT_RPCRequest *req);
     void rpc_unregisterRpcServer(FRT_RPCRequest *req);

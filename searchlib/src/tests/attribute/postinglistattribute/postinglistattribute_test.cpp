@@ -51,7 +51,7 @@ using search::fef::TermFieldMatchData;
 using search::queryeval::SearchIterator;
 
 using SearchContextPtr = std::unique_ptr<SearchContext>;
-typedef std::unique_ptr<search::queryeval::SearchIterator> SearchBasePtr;
+using SearchBasePtr = std::unique_ptr<search::queryeval::SearchIterator>;
 
 void
 toStr(std::stringstream &ss, SearchIterator &it, TermFieldMatchData *md)
@@ -91,36 +91,30 @@ using AttributePtr = AttributeVector::SP;
 class PostingListAttributeTest : public ::testing::Test
 {
 protected:
-    typedef IntegerAttribute::largeint_t     largeint_t;
-    typedef std::set<AttributeVector::DocId> DocSet;
+    using largeint_t = IntegerAttribute::largeint_t;
+    using DocSet = std::set<AttributeVector::DocId>;
 
-    typedef SingleValueNumericPostingAttribute<
-        EnumAttribute<IntegerAttributeTemplate<int32_t> > >
-    Int32PostingListAttribute;
-    typedef MultiValueNumericPostingAttribute<
+    using Int32PostingListAttribute = SingleValueNumericPostingAttribute<
+        EnumAttribute<IntegerAttributeTemplate<int32_t> > >;
+    using Int32ArrayPostingListAttribute = MultiValueNumericPostingAttribute<
         EnumAttribute<IntegerAttributeTemplate<int32_t> >,
-        IEnumStore::AtomicIndex>
-    Int32ArrayPostingListAttribute;
-    typedef MultiValueNumericPostingAttribute<
+        IEnumStore::AtomicIndex>;
+    using Int32WsetPostingListAttribute = MultiValueNumericPostingAttribute<
         EnumAttribute<IntegerAttributeTemplate<int32_t> >,
-        multivalue::WeightedValue<IEnumStore::AtomicIndex> >
-    Int32WsetPostingListAttribute;
+        multivalue::WeightedValue<IEnumStore::AtomicIndex> >;
 
-    typedef SingleValueNumericPostingAttribute<
-        EnumAttribute<FloatingPointAttributeTemplate<float> > >
-    FloatPostingListAttribute;
-    typedef MultiValueNumericPostingAttribute<
+    using FloatPostingListAttribute = SingleValueNumericPostingAttribute<
+        EnumAttribute<FloatingPointAttributeTemplate<float> > >;
+    using FloatArrayPostingListAttribute = MultiValueNumericPostingAttribute<
         EnumAttribute<FloatingPointAttributeTemplate<float> >,
-        IEnumStore::AtomicIndex>
-    FloatArrayPostingListAttribute;
-    typedef MultiValueNumericPostingAttribute<
+        IEnumStore::AtomicIndex>;
+    using FloatWsetPostingListAttribute = MultiValueNumericPostingAttribute<
         EnumAttribute<FloatingPointAttributeTemplate<float> >,
-        multivalue::WeightedValue<IEnumStore::AtomicIndex> >
-    FloatWsetPostingListAttribute;
+        multivalue::WeightedValue<IEnumStore::AtomicIndex> >;
 
-    typedef SingleValueStringPostingAttribute StringPostingListAttribute;
-    typedef ArrayStringPostingAttribute StringArrayPostingListAttribute;
-    typedef WeightedSetStringPostingAttribute StringWsetPostingListAttribute;
+    using StringPostingListAttribute = SingleValueStringPostingAttribute;
+    using StringArrayPostingListAttribute = ArrayStringPostingAttribute;
+    using StringWsetPostingListAttribute = WeightedSetStringPostingAttribute;
 
     template <typename VectorType>
     void populate(VectorType &v);
@@ -737,7 +731,7 @@ PostingListAttributeTest::testArithmeticValueUpdate(const AttributePtr & ptr)
 {
     LOG(info, "testArithmeticValueUpdate: vector '%s'", ptr->getName().c_str());
 
-    typedef document::ArithmeticValueUpdate Arith;
+    using Arith = document::ArithmeticValueUpdate;
     AttributeType & vec = static_cast<AttributeType &>(*ptr.get());
 
     addDocs(ptr, 4);

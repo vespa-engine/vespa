@@ -110,9 +110,9 @@ public:
 class FakeMemTreeOccFactory : public FPFactory
 {
 public:
-    typedef FakeMemTreeOccMgr::Tree Tree;
-    typedef FakeMemTreeOccMgr::NodeAllocator NodeAllocator;
-    typedef index::Schema Schema;
+    using Tree = FakeMemTreeOccMgr::Tree;
+    using NodeAllocator = FakeMemTreeOccMgr::NodeAllocator;
+    using Schema = index::Schema;
 
     FakeMemTreeOccMgr _mgr;
 
@@ -139,9 +139,9 @@ public:
 class FakeMemTreeOcc : public FakePosting
 {
 public:
-    typedef FakeMemTreeOccMgr::Tree Tree;
-    typedef FakeMemTreeOccMgr::NodeAllocator NodeAllocator;
-    typedef FakeMemTreeOccMgr::PosOccFieldsParams PosOccFieldsParams;
+    using Tree = FakeMemTreeOccMgr::Tree;
+    using NodeAllocator = FakeMemTreeOccMgr::NodeAllocator;
+    using PosOccFieldsParams = FakeMemTreeOccMgr::PosOccFieldsParams;
 
 
 private:

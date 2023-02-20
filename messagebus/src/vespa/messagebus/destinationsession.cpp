@@ -2,13 +2,16 @@
 #include "destinationsession.h"
 #include "messagebus.h"
 #include "emptyreply.h"
+#include <cassert>
 
 namespace mbus {
 
 DestinationSession::DestinationSession(MessageBus &mbus, const DestinationSessionParams &params) :
     _mbus(mbus),
     _name(params.getName()),
-    _msgHandler(params.getMessageHandler())
+    _msgHandler(params.getMessageHandler()),
+    _session_registered(!params.defer_registration()),
+    _broadcast_name(params.getBroadcastName())
 { }
 
 DestinationSession::~DestinationSession() {
@@ -16,9 +19,19 @@ DestinationSession::~DestinationSession() {
 }
 
 void
+DestinationSession::register_session_deferred() {
+    assert(!_session_registered);
+    _mbus.register_session(*this, _name, _broadcast_name);
+    _session_registered = true;
+}
+
+void
 DestinationSession::close() {
-    _mbus.unregisterSession(_name);
-    _mbus.sync();
+    if (_session_registered) {
+        _mbus.unregisterSession(_name);
+        _mbus.sync();
+        _session_registered = false;
+    }
 }
 
 void

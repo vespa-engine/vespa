@@ -2,7 +2,7 @@
 package com.yahoo.vespa.model.admin;
 
 import com.yahoo.config.model.api.ModelContext;
-import com.yahoo.config.model.producer.AbstractConfigProducer;
+import com.yahoo.config.model.producer.TreeConfigProducer;
 import com.yahoo.vespa.config.core.StateserverConfig;
 import com.yahoo.vespa.model.AbstractService;
 import com.yahoo.vespa.model.PortAllocBridge;
@@ -28,7 +28,7 @@ public class Slobrok extends AbstractService implements StateserverConfig.Produc
      * @param parent the parent ConfigProducer.
      * @param index  unique index for all slobroks
      */
-    public Slobrok(AbstractConfigProducer<?> parent, int index,
+    public Slobrok(TreeConfigProducer<?> parent, int index,
                    ModelContext.FeatureFlags featureFlags)
     {
         super(parent, "slobrok." + index);

@@ -14,14 +14,14 @@ namespace proton {
 class AttributesInitializerBase : public IAttributeInitializerRegistry
 {
 public:
-    typedef std::vector<AttributeInitializerResult> AttributesVector;
+    using AttributesVector = std::vector<AttributeInitializerResult>;
 
 protected:
     AttributesVector _initializedAttributes;
 
 public:
     static void considerPadAttribute(search::AttributeVector &attribute,
-                                     search::SerialNum currentSerialNum,
+                                     std::optional<search::SerialNum> currentSerialNum,
                                      uint32_t newDocIdLimit);
 
     AttributesInitializerBase();

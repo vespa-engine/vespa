@@ -33,7 +33,7 @@ public class TensorModifyUpdateReader {
     public static TensorModifyUpdate createModifyUpdate(TokenBuffer buffer, Field field) {
         expectFieldIsOfTypeTensor(field);
         expectTensorTypeHasNoIndexedUnboundDimensions(field);
-        expectObjectStart(buffer.currentToken());
+        expectObjectStart(buffer.current());
 
         ModifyUpdateResult result = createModifyUpdateResult(buffer, field);
         expectOperationSpecified(result.operation, field.getName());

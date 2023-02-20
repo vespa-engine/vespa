@@ -36,12 +36,11 @@ public:
               attribute_field(false),
               filter_field(false) {}
 
-        FieldSpec fieldSpec() const {
-            return FieldSpec(field_name, getFieldId(),
-                             getHandle(), filter_field);
+        [[nodiscard]] FieldSpec fieldSpec() const {
+            return {field_name, getFieldId(), getHandle(), filter_field};
         }
         using SimpleTermFieldData::getHandle;
-        search::fef::TermFieldHandle getHandle(search::fef::MatchDataDetails requested_details) const override;
+        [[nodiscard]] search::fef::TermFieldHandle getHandle(search::fef::MatchDataDetails requested_details) const override;
     };
 
 private:
@@ -67,10 +66,10 @@ public:
     void setDocumentFrequency(uint32_t estHits, uint32_t numDocs);
 
     // ITermData interface
-    std::optional<vespalib::string> query_tensor_name() const override { return std::nullopt; }
-    size_t numFields() const override final { return _fields.size(); }
-    const FieldEntry &field(size_t i) const override final { return _fields[i]; }
-    const FieldEntry *lookupField(uint32_t fieldId) const override final;
+    [[nodiscard]] std::optional<vespalib::string> query_tensor_name() const override { return std::nullopt; }
+    [[nodiscard]] size_t numFields() const final { return _fields.size(); }
+    [[nodiscard]] const FieldEntry &field(size_t i) const final { return _fields[i]; }
+    [[nodiscard]] const FieldEntry *lookupField(uint32_t fieldId) const final;
 };
 
 template <typename NodeType> inline uint32_t numTerms(const NodeType &) { return 1; }
@@ -85,6 +84,7 @@ struct ProtonTermBase : public Base,
                         public ProtonTermData
 {
     using Base::Base;
+    ~ProtonTermBase() override;
 
     void resolve(const ViewResolver &resolver, const search::fef::IIndexEnvironment &idxEnv)
     {
@@ -93,10 +93,13 @@ struct ProtonTermBase : public Base,
     }
 
     // ITermData interface
-    uint32_t getPhraseLength() const final { return numTerms<Base>(*this); }
-    search::query::Weight getWeight() const final { return Base::getWeight(); }
-    uint32_t getUniqueId() const final { return Base::getId(); }
+    [[nodiscard]] uint32_t getPhraseLength() const final { return numTerms<Base>(*this); }
+    [[nodiscard]] search::query::Weight getWeight() const final { return Base::getWeight(); }
+    [[nodiscard]] uint32_t getUniqueId() const final { return Base::getId(); }
 };
+
+template <typename Base>
+ProtonTermBase<Base>::~ProtonTermBase() = default;
 
 template <typename Base>
 struct ProtonTerm final : public ProtonTermBase<Base> {
@@ -114,7 +117,6 @@ using ProtonONear =       search::query::SimpleONear;
 using ProtonOr =          search::query::SimpleOr;
 using ProtonRank =        search::query::SimpleRank;
 using ProtonWeakAnd =     search::query::SimpleWeakAnd;
-using ProtonSameElement = search::query::SimpleSameElement;
 using ProtonTrue =        search::query::SimpleTrue;
 using ProtonFalse =       search::query::SimpleFalse;
 
@@ -123,9 +125,13 @@ struct ProtonEquiv final : public ProtonTermBase<search::query::Equiv> {
     using ProtonTermBase::ProtonTermBase;
 };
 
+struct ProtonSameElement final : public ProtonTermBase<search::query::SameElement> {
+    using ProtonTermBase::ProtonTermBase;
+};
+
 struct ProtonNearestNeighborTerm : public ProtonTermBase<search::query::NearestNeighborTerm> {
     using ProtonTermBase::ProtonTermBase;
-    std::optional<vespalib::string> query_tensor_name() const override {
+    [[nodiscard]] std::optional<vespalib::string> query_tensor_name() const override {
         return ProtonTermBase::NearestNeighborTerm::get_query_tensor_name();
     }
 };

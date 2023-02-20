@@ -3,6 +3,7 @@ package com.yahoo.search.dispatch.searchcluster;
 
 import org.junit.jupiter.api.Test;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -84,6 +85,19 @@ public class SearchClusterCoverageTest {
         assertTrue(tester.group(0).hasSufficientCoverage());
         assertFalse(tester.group(1).hasSufficientCoverage());
         assertTrue(tester.group(2).hasSufficientCoverage());
+    }
+
+    @Test
+    void test_non_working_node_count() {
+        var tester = new SearchClusterTester(3, 3);
+        tester.setDocsPerNode(100, 0);
+        tester.setDocsPerNode(100, 1);
+        tester.setDocsPerNode(100, 2);
+        assertEquals(0, tester.cluster().nonWorkingNodeCount());
+        tester.setWorking(1, 1, false);
+        assertEquals(1, tester.cluster().nonWorkingNodeCount());
+        tester.setWorking(2, 2, false);
+        assertEquals(2, tester.cluster().nonWorkingNodeCount());
     }
 
     @Test

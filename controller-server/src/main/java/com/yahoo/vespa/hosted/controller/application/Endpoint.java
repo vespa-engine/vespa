@@ -31,7 +31,6 @@ import static java.util.Comparator.comparing;
  */
 public class Endpoint {
 
-    private static final String YAHOO_DNS_SUFFIX = ".vespa.yahooapis.com";
     private static final String OATH_DNS_SUFFIX = ".vespa.oath.cloud";
     private static final String PUBLIC_DNS_SUFFIX = ".vespa-app.cloud";
     private static final String PUBLIC_CD_DNS_SUFFIX = ".cd.vespa-app.cloud";

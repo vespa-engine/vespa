@@ -13,4 +13,7 @@ public interface DocumentAdapter extends FieldValueAdapter {
 
     Document getUpdatableOutput();
 
+    @Override
+    default boolean isComplete() { return true; }
+
 }

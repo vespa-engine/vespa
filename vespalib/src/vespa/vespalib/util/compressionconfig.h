@@ -9,7 +9,7 @@
 namespace vespalib::compression {
 
 struct CompressionConfig {
-    enum Type {
+    enum Type : uint8_t {
         NONE = 0,
         NONE_MULTI = 1,
         HISTORIC_2 = 2,
@@ -21,15 +21,15 @@ struct CompressionConfig {
     };
 
     CompressionConfig() noexcept
-        : type(NONE), compressionLevel(0), threshold(90), minSize(0) {}
+        : CompressionConfig(NONE, 0, 90) {}
     CompressionConfig(Type t) noexcept
-        : type(t), compressionLevel(9), threshold(90), minSize(0) {}
+        : CompressionConfig(t, 9, 90) {}
 
     CompressionConfig(Type t, uint8_t level, uint8_t minRes) noexcept
-        : type(t), compressionLevel(level), threshold(minRes), minSize(0) {}
+        : CompressionConfig(t, level, minRes, 0) {}
 
     CompressionConfig(Type t, uint8_t lvl, uint8_t minRes, size_t minSz) noexcept
-        : type(t), compressionLevel(lvl), threshold(minRes), minSize(minSz) {}
+        : minSize(minSz), type(t), compressionLevel(lvl), threshold(minRes) {}
 
     bool operator==(const CompressionConfig& o) const {
         return (type == o.type
@@ -66,29 +66,11 @@ struct CompressionConfig {
     }
     bool useCompression() const { return isCompressed(type); }
 
-    Type type;
-    uint8_t compressionLevel;
-    uint8_t threshold;
-    size_t minSize;
+    uint32_t minSize;
+    Type     type;
+    uint8_t  compressionLevel;
+    uint8_t  threshold;
 };
-
-class CompressionInfo
-{
-public:
-    CompressionInfo(size_t uncompressedSize, size_t compressedSize)
-        : _uncompressedSize(uncompressedSize), _compressedSize(compressedSize) { }
-    size_t getUncompressedSize() const { return _uncompressedSize; }
-    size_t getCompressedSize()   const { return _compressedSize; }
-    double getCompressionRatio() const { return _uncompressedSize/_compressedSize; }
-private:
-    size_t _uncompressedSize;
-    size_t _compressedSize;
-};
-
-inline CompressionInfo operator + (const CompressionInfo & a, const CompressionInfo & b)
-{
-    return CompressionInfo(a.getUncompressedSize() + b.getUncompressedSize(), a.getCompressedSize() + b.getCompressedSize());
-}
 
 }
 

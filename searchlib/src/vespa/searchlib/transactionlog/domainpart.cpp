@@ -310,7 +310,7 @@ DomainPart::~DomainPart()
 void
 DomainPart::writeHeader(const FileHeaderContext &fileHeaderContext)
 {
-    typedef vespalib::GenericHeader::Tag Tag;
+    using Tag = vespalib::GenericHeader::Tag;
     FileHeader header;
     assert(_transLog->IsOpened());
     assert(_transLog->IsWriteMode());

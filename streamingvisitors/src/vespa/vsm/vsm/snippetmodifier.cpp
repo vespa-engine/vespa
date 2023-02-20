@@ -11,7 +11,7 @@ LOG_SETUP(".vsm.snippetmodifier");
 using namespace document;
 using search::streaming::QueryTerm;
 using search::streaming::QueryTermList;
-typedef vespalib::hash_map<vsm::FieldIdT, QueryTermList> FieldQueryTermMap;
+using FieldQueryTermMap = vespalib::hash_map<vsm::FieldIdT, QueryTermList>;
 
 namespace {
 

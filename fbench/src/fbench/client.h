@@ -88,7 +88,7 @@ struct ClientArguments
      * client.
      **/
     bool        _keepAlive;
-    
+
     /**
      * Indicate wether POST content should be Base64 decoded before
      * sending it
@@ -183,7 +183,7 @@ private:
     void run();
 
 public:
-    typedef std::unique_ptr<Client> UP;
+    using UP = std::unique_ptr<Client>;
     /**
      * The client arguments given to this method becomes the
      * responsibility of the client.

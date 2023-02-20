@@ -27,12 +27,11 @@ public:
      *
      * @param name A protocol-unique name for this route.
      */
-    RouteSpec(const string &name);
+    explicit RouteSpec(const string &name) noexcept;
     RouteSpec(const RouteSpec &);
     RouteSpec & operator = (const RouteSpec &);
-    RouteSpec(RouteSpec &&) = default;
-    RouteSpec & operator = (RouteSpec &&) = default;
-
+    RouteSpec(RouteSpec &&) noexcept;
+    RouteSpec & operator = (RouteSpec &&) noexcept;
     ~RouteSpec();
 
     /**
@@ -40,7 +39,7 @@ public:
      *
      * @return The name.
      */
-    const string &getName() const { return _name; }
+    [[nodiscard]] const string &getName() const { return _name; }
 
     /**
      * Returns the hop name at the given index.
@@ -48,21 +47,14 @@ public:
      * @param i The index of the hop to return.
      * @return The hop at the given index.
      */
-    const string &getHop(uint32_t i) const { return _hops[i]; }
-
-    /**
-     * Returns whether or not there are any hops in this route.
-     *
-     * @return True if there is at least one hop.
-     */
-    bool hasHops() const { return !_hops.empty(); }
+    [[nodiscard]] const string &getHop(uint32_t i) const { return _hops[i]; }
 
     /**
      * Returns the number of hops that make up this route.
      *
      * @return The number of hops.
      */
-    uint32_t getNumHops() const { return _hops.size(); }
+    [[nodiscard]] uint32_t getNumHops() const { return _hops.size(); }
 
     /**
      * Adds the given hop name to this.
@@ -70,15 +62,8 @@ public:
      * @param hop The hop to add.
      * @return This, to allow chaining.
      */
-    RouteSpec &addHop(const string &hop) { _hops.push_back(hop); return *this; }
-
-    /**
-     * Adds the given hop names to this.
-     *
-     * @param hops The hops to add.
-     * @return This, to allow chaining.
-     */
-    RouteSpec &addHops(const std::vector<string> &hops);
+    RouteSpec & addHop(const string &hop) &;
+    RouteSpec && addHop(const string &hop) &&;
 
     /**
      * Sets the hop name for a given index.
@@ -87,22 +72,7 @@ public:
      * @param hop The hop to set.
      * @return This, to allow chaining.
      */
-    RouteSpec &setHop(uint32_t i, const string &hop) { _hops[i] = hop; return *this; }
-
-    /**
-     * Removes the hop name at the given index.
-     *
-     * @param i The index of the hop to remove.
-     * @return The removed hop.
-     */
-    string removeHop(uint32_t i);
-
-    /**
-     * Clears the list of hops that make up this route.
-     *
-     * @return This, to allow chaining.
-     */
-    RouteSpec &clearHops() { _hops.clear(); return *this; }
+    RouteSpec &setHop(uint32_t i, const string &hop);
 
     /**
      * Appends the content of this to the given config string.
@@ -117,7 +87,7 @@ public:
      *
      * @return The string.
      */
-    string toString() const;
+    [[nodiscard]] string toString() const;
 
     /**
      * Implements the equality operator.

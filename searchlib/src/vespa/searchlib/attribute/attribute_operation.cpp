@@ -89,7 +89,7 @@ struct UpdateFast {
     using F = OP;
     A * attr;
     F op;
-    typedef typename T::LoadedValueType ValueType;
+    using ValueType = typename T::LoadedValueType;
     UpdateFast(IAttributeVector &attr_in, typename F::V operand)
         : attr(dynamic_cast<A *>(&attr_in)),
           op(operand)

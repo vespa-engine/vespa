@@ -117,7 +117,7 @@ Test::testAdvanced(TestData &data)
 {
     const duration TIMEOUT = 60s;
     IProtocol::SP protocol(new SimpleProtocol());
-    SimpleProtocol &simple = static_cast<SimpleProtocol&>(*protocol);
+    auto &simple = dynamic_cast<SimpleProtocol&>(*protocol);
     simple.addPolicyFactory("Custom", SimpleProtocol::IPolicyFactory::SP(new CustomPolicyFactory(false, ErrorCode::NO_ADDRESS_FOR_SERVICE)));
     data._srcServer.mb.putProtocol(protocol);
     data._srcServer.mb.setupRouting(RoutingSpec().addTable(RoutingTableSpec(SimpleProtocol::NAME)
@@ -134,13 +134,13 @@ Test::testAdvanced(TestData &data)
     data._fooSession->acknowledge(std::move(msg));
     msg = data._barHandler.getMessage(TIMEOUT);
     ASSERT_TRUE(msg);
-    Reply::UP reply(new EmptyReply());
+    Reply::UP reply = std::make_unique<EmptyReply>();
     reply->swapState(*msg);
     reply->addError(Error(ErrorCode::TRANSIENT_ERROR, "bar"));
     data._barSession->reply(std::move(reply));
     msg = data._bazHandler.getMessage(TIMEOUT);
     ASSERT_TRUE(msg);
-    reply.reset(new EmptyReply());
+    reply = std::make_unique<EmptyReply>();
     reply->swapState(*msg);
     reply->addError(Error(ErrorCode::TRANSIENT_ERROR, "baz1"));
     data._bazSession->reply(std::move(reply));
@@ -153,7 +153,7 @@ Test::testAdvanced(TestData &data)
     data._barSession->acknowledge(std::move(msg));
     msg = data._bazHandler.getMessage(TIMEOUT);
     ASSERT_TRUE(msg);
-    reply.reset(new EmptyReply());
+    reply = std::make_unique<EmptyReply>();
     reply->swapState(*msg);
     reply->addError(Error(ErrorCode::TRANSIENT_ERROR, "baz2"));
     data._bazSession->reply(std::move(reply));
@@ -165,7 +165,7 @@ Test::testAdvanced(TestData &data)
     ASSERT_FALSE(msg);
     msg = data._bazHandler.getMessage(TIMEOUT);
     ASSERT_TRUE(msg);
-    reply.reset(new EmptyReply());
+    reply = std::make_unique<EmptyReply>();
     reply->swapState(*msg);
     reply->addError(Error(ErrorCode::FATAL_ERROR, "baz3"));
     data._bazSession->reply(std::move(reply));

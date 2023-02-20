@@ -7,9 +7,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import java.util.TreeSet;
 import java.util.concurrent.ConcurrentSkipListSet;
-import java.util.stream.Collectors;
 
 /**
  * An in-memory name service for testing purposes.
@@ -45,7 +43,7 @@ public class MemoryNameService implements NameService {
         var records = targets.stream()
                              .sorted((a, b) -> Comparator.comparing(AliasTarget::name).compare(a, b))
                              .map(d -> new Record(Record.Type.ALIAS, name, d.pack()))
-                             .collect(Collectors.toList());
+                             .toList();
         // Satisfy idempotency contract of interface
         for (var r1 : records) {
             this.records.removeIf(r2 -> conflicts(r1, r2));
@@ -59,7 +57,7 @@ public class MemoryNameService implements NameService {
         var records = targets.stream()
                 .sorted((a, b) -> Comparator.comparing((DirectTarget target) -> target.recordData().asString()).compare(a, b))
                 .map(d -> new Record(Record.Type.DIRECT, name, d.pack()))
-                .collect(Collectors.toList());
+                .toList();
         // Satisfy idempotency contract of interface
         for (var r1 : records) {
             this.records.removeIf(r2 -> conflicts(r1, r2));
@@ -72,7 +70,7 @@ public class MemoryNameService implements NameService {
     public List<Record> createTxtRecords(RecordName name, List<RecordData> txtData) {
         var records = txtData.stream()
                              .map(data -> new Record(Record.Type.TXT, name, data))
-                             .collect(Collectors.toList());
+                             .toList();
         records.forEach(this::add);
         return records;
     }
@@ -81,29 +79,7 @@ public class MemoryNameService implements NameService {
     public List<Record> findRecords(Record.Type type, RecordName name) {
         return records.stream()
                       .filter(record -> record.type() == type && record.name().equals(name))
-                      .collect(Collectors.toUnmodifiableList());
-    }
-
-    @Override
-    public List<Record> findRecords(Record.Type type, RecordData data) {
-        if (type == Record.Type.ALIAS && data.asString().contains("/")) {
-            // Validate the same expectation as of a real name service
-            throw new IllegalArgumentException("Finding " + Record.Type.ALIAS + " record by data should only include " +
-                                               "the FQDN name");
-        }
-        return records.stream()
-                      .filter(record -> {
-                          if (record.type() == type) {
-                              if (type == Record.Type.ALIAS) {
-                                  // Unpack ALIAS record and compare FQDN of data part
-                                  return RecordData.fqdn(AliasTarget.unpack(record.data()).name().value())
-                                                   .equals(data);
-                              }
-                              return record.data().equals(data);
-                          }
-                          return false;
-                      })
-                      .collect(Collectors.toUnmodifiableList());
+                      .toList();
     }
 
     @Override

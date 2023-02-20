@@ -110,7 +110,7 @@ getSignificance(double docFreq)
 feature_t
 getSignificance(const search::fef::ITermData& termData)
 {
-    typedef search::fef::ITermFieldRangeAdapter FRA;
+    using FRA = search::fef::ITermFieldRangeAdapter;
     double df = 0;
     for (FRA iter(termData); iter.valid(); iter.next()) {
         df = std::max(df, iter.get().getDocFreq());

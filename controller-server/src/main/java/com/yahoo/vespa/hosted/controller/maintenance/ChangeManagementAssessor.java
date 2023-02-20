@@ -30,7 +30,6 @@ public class ChangeManagementAssessor {
     }
 
     Assessment assessmentInner(List<String> impactedHostnames, List<Node> allNodes, ZoneId zone) {
-
         List<String> impactedParentHosts = toParentHosts(impactedHostnames, allNodes);
         // Group impacted application nodes by parent host
         Map<Node, List<Node>> prParentHost = allNodes.stream()
@@ -51,12 +50,9 @@ public class ChangeManagementAssessor {
         var tenantHosts = prParentHost.keySet().stream()
                 .filter(node -> node.type() == NodeType.host)
                 .map(node -> node.hostname())
-                .collect(Collectors.toList());
+                .toList();
 
-        boolean allHostsReplacable = tenantHosts.isEmpty() || nodeRepository.isReplaceable(
-                zone,
-                tenantHosts
-        );
+        boolean allHostsReplacable = tenantHosts.isEmpty() || nodeRepository.isReplaceable(zone, tenantHosts);
 
         // Report assessment pr cluster
         var clusterAssessments = prCluster.entrySet().stream().map((entry) -> {
@@ -84,7 +80,7 @@ public class ChangeManagementAssessor {
             assessment.impact = getImpact(cluster, impactedStats, totalStats);
 
             return assessment;
-        }).collect(Collectors.toList());
+        }).toList();
 
         var hostAssessments = prParentHost.entrySet().stream().map((entry) -> {
             HostAssessment hostAssessment = new HostAssessment();
@@ -99,7 +95,7 @@ public class ChangeManagementAssessor {
                     .count();
 
             return hostAssessment;
-        }).collect(Collectors.toList());
+        }).toList();
 
         return new Assessment(clusterAssessments, hostAssessments);
     }
@@ -116,7 +112,7 @@ public class ChangeManagementAssessor {
                                 return node.parentHostname().get().value();
                             }).findFirst().stream()
                 )
-                .collect(Collectors.toList());
+                .toList();
     }
 
     private static Cluster clusterKey(Node node) {
@@ -127,7 +123,7 @@ public class ChangeManagementAssessor {
     }
 
     private static long[] clusterStats(Cluster cluster, List<Node> containerNodes) {
-        List<Node> clusterNodes = containerNodes.stream().filter(node -> cluster.equals(clusterKey(node))).collect(Collectors.toList());
+        List<Node> clusterNodes = containerNodes.stream().filter(node -> cluster.equals(clusterKey(node))).toList();
         long groups = clusterNodes.stream().map(Node::group).distinct().count();
         return new long[] { clusterNodes.size(), groups};
     }

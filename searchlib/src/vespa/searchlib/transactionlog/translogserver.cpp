@@ -98,8 +98,8 @@ TransLogServer::TransLogServer(FNET_Transport & transport, const vespalib::strin
       _name(name),
       _baseDir(baseDir),
       _domainConfig(cfg),
-      _executor(maxThreads, 128_Ki, CpuUsage::wrap(tls_executor, CpuUsage::Category::WRITE)),
-      _threadPool(std::make_unique<FastOS_ThreadPool>(120_Ki)),
+      _executor(maxThreads, CpuUsage::wrap(tls_executor, CpuUsage::Category::WRITE)),
+      _threadPool(std::make_unique<FastOS_ThreadPool>()),
       _supervisor(std::make_unique<FRT_Supervisor>(&transport)),
       _domains(),
       _reqQ(),
@@ -124,7 +124,7 @@ TransLogServer::TransLogServer(FNET_Transport & transport, const vespalib::strin
             }
             exportRPC(*_supervisor);
             char listenSpec[32];
-            sprintf(listenSpec, "tcp/%d", listenPort);
+            snprintf(listenSpec, sizeof(listenSpec), "tcp/%d", listenPort);
             bool listenOk(false);
             for (int i(600); !listenOk && i; i--) {
                 if (_supervisor->Listen(listenSpec)) {

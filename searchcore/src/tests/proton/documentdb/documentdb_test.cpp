@@ -1,13 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <tests/proton/common/dummydbowner.h>
-#include <vespa/config-bucketspaces.h>
-#include <vespa/config/subscription/sourcespec.h>
-#include <vespa/document/config/documenttypes_config_fwd.h>
-#include <vespa/document/datatype/documenttype.h>
-#include <vespa/document/repo/documenttyperepo.h>
-#include <vespa/document/test/make_bucket_space.h>
-#include <vespa/fnet/transport.h>
+#include <vespa/searchcore/proton/test/dummydbowner.h>
 #include <vespa/searchcore/proton/attribute/flushableattribute.h>
 #include <vespa/searchcore/proton/common/statusreport.h>
 #include <vespa/searchcore/proton/docsummary/summaryflushtarget.h>
@@ -18,6 +11,7 @@
 #include <vespa/searchcore/proton/metrics/job_tracked_flush_target.h>
 #include <vespa/searchcore/proton/metrics/metricswireservice.h>
 #include <vespa/searchcore/proton/reference/i_document_db_reference.h>
+#include <vespa/searchcore/proton/reference/i_document_db_reference_registry.h>
 #include <vespa/searchcore/proton/server/bootstrapconfig.h>
 #include <vespa/searchcore/proton/server/document_db_explorer.h>
 #include <vespa/searchcore/proton/server/documentdb.h>
@@ -27,6 +21,13 @@
 #include <vespa/searchcore/proton/server/memoryconfigstore.h>
 #include <vespa/searchcore/proton/test/mock_shared_threading_service.h>
 #include <vespa/searchcorespi/index/indexflushtarget.h>
+#include <vespa/config-bucketspaces.h>
+#include <vespa/config/subscription/sourcespec.h>
+#include <vespa/document/config/documenttypes_config_fwd.h>
+#include <vespa/document/datatype/documenttype.h>
+#include <vespa/document/repo/documenttyperepo.h>
+#include <vespa/document/test/make_bucket_space.h>
+#include <vespa/fnet/transport.h>
 #include <vespa/searchlib/attribute/attribute_read_guard.h>
 #include <vespa/searchlib/attribute/interlock.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
@@ -78,22 +79,6 @@ config_subdir(SerialNum serialNum)
     return os.str();
 }
 
-struct MyDBOwner : public DummyDBOwner
-{
-    std::shared_ptr<DocumentDBReferenceRegistry> _registry;
-    MyDBOwner();
-    ~MyDBOwner() override;
-    std::shared_ptr<IDocumentDBReferenceRegistry> getDocumentDBReferenceRegistry() const override {
-        return _registry;
-    }
-};
-
-MyDBOwner::MyDBOwner()
-    : DummyDBOwner(),
-      _registry(std::make_shared<DocumentDBReferenceRegistry>())
-{}
-MyDBOwner::~MyDBOwner() = default;
-
 struct FixtureBase {
     bool _cleanup;
     bool _file_config;
@@ -119,7 +104,7 @@ FixtureBase::~FixtureBase()
 
 struct Fixture : public FixtureBase {
     DummyWireService _dummy;
-    MyDBOwner _myDBOwner;
+    DummyDBOwner _myDBOwner;
     vespalib::ThreadStackExecutor _summaryExecutor;
     MockSharedThreadingService _shared_service;
     HwInfo _hwInfo;
@@ -143,7 +128,7 @@ Fixture::Fixture(bool file_config)
     : FixtureBase(file_config),
       _dummy(),
       _myDBOwner(),
-      _summaryExecutor(8, 128_Ki),
+      _summaryExecutor(8),
       _shared_service(_summaryExecutor, _summaryExecutor),
       _hwInfo(),
       _db(),
@@ -170,7 +155,7 @@ Fixture::Fixture(bool file_config)
                              _fileHeaderContext,
                              std::make_shared<search::attribute::Interlock>(),
                              make_config_store(),
-                             std::make_shared<vespalib::ThreadStackExecutor>(16, 128_Ki), _hwInfo);
+                             std::make_shared<vespalib::ThreadStackExecutor>(16), _hwInfo);
     _db->start();
     _db->waitForOnlineState();
 }
@@ -303,11 +288,6 @@ TEST_F("requireThatStateIsReported", Fixture)
             "    }\n"
             "}\n",
             slime.toString());
-}
-
-TEST_F("require that session manager can be explored", Fixture)
-{
-    EXPECT_TRUE(DocumentDBExplorer(f._db).get_child("session"));
 }
 
 TEST_F("require that document db registers reference", Fixture)

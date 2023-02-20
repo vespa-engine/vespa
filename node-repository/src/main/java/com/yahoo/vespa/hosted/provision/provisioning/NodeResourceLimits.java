@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.provisioning;
 
+import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.NodeResources;
@@ -25,51 +26,53 @@ public class NodeResourceLimits {
     }
 
     /** Validates the resources applications ask for (which are in "advertised" resource space) */
-    public void ensureWithinAdvertisedLimits(String type, NodeResources requested, ClusterSpec cluster) {
+    public void ensureWithinAdvertisedLimits(String type, NodeResources requested, ApplicationId applicationId, ClusterSpec cluster) {
         if (requested.isUnspecified()) return;
 
-        if (requested.vcpu() < minAdvertisedVcpu(cluster.type()))
-            illegal(type, "vcpu", "", cluster, requested.vcpu(), minAdvertisedVcpu(cluster.type()));
-        if (requested.memoryGb() < minAdvertisedMemoryGb(cluster.type()))
-            illegal(type, "memoryGb", "Gb", cluster, requested.memoryGb(), minAdvertisedMemoryGb(cluster.type()));
+        if (requested.vcpu() < minAdvertisedVcpu(applicationId, cluster))
+            illegal(type, "vcpu", "", cluster, requested.vcpu(), minAdvertisedVcpu(applicationId, cluster));
+        if (requested.memoryGb() < minAdvertisedMemoryGb(cluster))
+            illegal(type, "memoryGb", "Gb", cluster, requested.memoryGb(), minAdvertisedMemoryGb(cluster));
         if (requested.diskGb() < minAdvertisedDiskGb(requested, cluster.isExclusive()))
             illegal(type, "diskGb", "Gb", cluster, requested.diskGb(), minAdvertisedDiskGb(requested, cluster.isExclusive()));
     }
 
     /** Returns whether the real resources we'll end up with on a given tenant node are within limits */
-    public boolean isWithinRealLimits(NodeCandidate candidateNode, ClusterSpec cluster) {
+    public boolean isWithinRealLimits(NodeCandidate candidateNode, ApplicationId applicationId, ClusterSpec cluster) {
         if (candidateNode.type() != NodeType.tenant) return true; // Resource limits only apply to tenant nodes
         return isWithinRealLimits(nodeRepository.resourcesCalculator().realResourcesOf(candidateNode, nodeRepository),
-                                  cluster.type());
+                                  applicationId, cluster);
     }
 
     /** Returns whether the real resources we'll end up with on a given tenant node are within limits */
-    public boolean isWithinRealLimits(NodeResources realResources, ClusterSpec.Type clusterType) {
+    public boolean isWithinRealLimits(NodeResources realResources, ApplicationId applicationId, ClusterSpec cluster) {
         if (realResources.isUnspecified()) return true;
 
-        if (realResources.vcpu() < minRealVcpu(clusterType)) return false;
-        if (realResources.memoryGb() < minRealMemoryGb(clusterType)) return false;
+        if (realResources.vcpu() < minRealVcpu(applicationId, cluster)) return false;
+        if (realResources.memoryGb() < minRealMemoryGb(cluster)) return false;
         if (realResources.diskGb() < minRealDiskGb()) return false;
        return true;
     }
 
-    public NodeResources enlargeToLegal(NodeResources requested, ClusterSpec.Type clusterType, boolean exclusive) {
+    public NodeResources enlargeToLegal(NodeResources requested, ApplicationId applicationId, ClusterSpec cluster, boolean exclusive) {
         if (requested.isUnspecified()) return requested;
 
-        return requested.withVcpu(Math.max(minAdvertisedVcpu(clusterType), requested.vcpu()))
-                        .withMemoryGb(Math.max(minAdvertisedMemoryGb(clusterType), requested.memoryGb()))
+        return requested.withVcpu(Math.max(minAdvertisedVcpu(applicationId, cluster), requested.vcpu()))
+                        .withMemoryGb(Math.max(minAdvertisedMemoryGb(cluster), requested.memoryGb()))
                         .withDiskGb(Math.max(minAdvertisedDiskGb(requested, exclusive), requested.diskGb()));
     }
 
-    private double minAdvertisedVcpu(ClusterSpec.Type clusterType) {
-        if (zone().environment() == Environment.dev && zone().cloud().allowHostSharing()) return 0.1;
-        if (clusterType.isContent() && zone().environment().isProduction()) return 1.0;
-        if (clusterType == ClusterSpec.Type.admin) return 0.1;
+    private double minAdvertisedVcpu(ApplicationId applicationId, ClusterSpec cluster) {
+        if (cluster.type() == ClusterSpec.Type.admin) return 0.1;
+        if (zone().environment().isProduction() && ! zone().system().isCd() &&
+                nodeRepository.exclusiveAllocation(cluster) && ! applicationId.instance().isTester()) return 2;
+        if (zone().environment().isProduction() && cluster.type().isContent()) return 1.0;
+        if (zone().environment() == Environment.dev && ! nodeRepository.exclusiveAllocation(cluster)) return 0.1;
         return 0.5;
     }
 
-    private double minAdvertisedMemoryGb(ClusterSpec.Type clusterType) {
-        if (clusterType == ClusterSpec.Type.admin) return 1;
+    private double minAdvertisedMemoryGb(ClusterSpec cluster) {
+        if (cluster.type() == ClusterSpec.Type.admin) return 1;
         return 4;
     }
 
@@ -85,10 +88,10 @@ public class NodeResourceLimits {
             return 4;
     }
 
-    private double minRealVcpu(ClusterSpec.Type clusterType) { return minAdvertisedVcpu(clusterType); }
+    private double minRealVcpu(ApplicationId applicationId, ClusterSpec cluster) { return minAdvertisedVcpu(applicationId, cluster); }
 
-    private double minRealMemoryGb(ClusterSpec.Type clusterType) {
-        return minAdvertisedMemoryGb(clusterType) - 1.7;
+    private double minRealMemoryGb(ClusterSpec cluster) {
+        return minAdvertisedMemoryGb(cluster) - 1.7;
     }
 
     private double minRealDiskGb() { return 6; }

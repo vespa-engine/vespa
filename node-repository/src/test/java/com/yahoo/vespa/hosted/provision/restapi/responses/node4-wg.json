@@ -1,0 +1,100 @@
+{
+  "url": "http://localhost:8080/nodes/v2/node/host4.yahoo.com",
+  "id": "node4",
+  "state": "active",
+  "type": "tenant",
+  "hostname": "host4.yahoo.com",
+  "parentHostname": "dockerhost1.yahoo.com",
+  "flavor": "[vcpu: 1.0, memory: 4.0 Gb, disk 100.0 Gb, bandwidth: 1.0 Gbps, storage type: local, architecture: x86_64]",
+  "resources":{"vcpu":1.0,"memoryGb":4.0,"diskGb":100.0,"bandwidthGbps":1.0,"diskSpeed":"fast","storageType":"local","architecture":"x86_64"},
+  "realResources":{"vcpu":1.0,"memoryGb":4.0,"diskGb":100.0,"bandwidthGbps":1.0,"diskSpeed":"fast","storageType":"local","architecture":"x86_64"},
+  "environment": "DOCKER_CONTAINER",
+  "owner": {
+    "tenant": "tenant3",
+    "application": "application3",
+    "instance": "instance3"
+  },
+  "membership": {
+    "clustertype": "content",
+    "clusterid": "id3",
+    "group": "0",
+    "index": 0,
+    "retired": false
+  },
+  "restartGeneration": 0,
+  "currentRestartGeneration": 0,
+  "wantedDockerImage": "docker-registry.domain.tld:8080/dist/vespa:6.42.0",
+  "wantedVespaVersion": "6.42.0",
+  "requestedResources": { "vcpu":1.0, "memoryGb":4.0, "diskGb":100.0, "bandwidthGbps":1.0, "diskSpeed":"fast", "storageType":"any","architecture":"x86_64" },
+  "rebootGeneration": 0,
+  "currentRebootGeneration": 0,
+  "vespaVersion": "6.41.0",
+  "currentDockerImage": "docker-registry.domain.tld:8080/dist/vespa:6.41.0",
+  "failCount": 0,
+  "wantToRetire": false,
+  "preferToRetire": false,
+  "wantToDeprovision": false,
+  "wantToRebuild": false,
+  "down": false,
+  "history": [
+    {
+      "event": "provisioned",
+      "at": 123,
+      "agent": "system"
+    },
+    {
+      "event": "readied",
+      "at": 123,
+      "agent": "system"
+    },
+    {
+      "event": "reserved",
+      "at": 123,
+      "agent": "application"
+    },
+    {
+      "event": "activated",
+      "at": 123,
+      "agent": "application"
+    }
+  ],
+  "log": [
+    {
+      "event": "provisioned",
+      "at": 123,
+      "agent": "system"
+    },
+    {
+      "event": "deallocated",
+      "at": 123,
+      "agent": "system"
+    },
+    {
+      "event": "readied",
+      "at": 123,
+      "agent": "system"
+    },
+    {
+      "event": "reserved",
+      "at": 123,
+      "agent": "application"
+    },
+    {
+      "event": "reserved",
+      "at": 123,
+      "agent": "application"
+    },
+    {
+      "event": "activated",
+      "at": 123,
+      "agent": "application"
+    }
+  ],
+  "ipAddresses": [
+    "127.0.4.1",
+    "::4:1"
+  ],
+  "additionalIpAddresses": [],
+  "cloudAccount": "111222333444",
+  "wireguardPubkey": "lololololololololololololololololololololoo="
+}

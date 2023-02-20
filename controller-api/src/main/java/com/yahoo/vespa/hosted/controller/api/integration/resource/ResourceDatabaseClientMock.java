@@ -84,7 +84,7 @@ public class ResourceDatabaseClientMock implements ResourceDatabaseClient {
                             BigDecimal.valueOf(a.getDiskGb()).multiply(d)
                     );
                 })
-                .collect(Collectors.toList());
+                .toList();
     }
 
     private ResourceUsage resourceUsageAdd(ResourceUsage a, ResourceUsage b) {
@@ -119,7 +119,7 @@ public class ResourceDatabaseClientMock implements ResourceDatabaseClient {
                 .map(usages -> usages.stream().reduce(this::resourceUsageAdd))
                 .filter(Optional::isPresent)
                 .map(Optional::get)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Override

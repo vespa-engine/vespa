@@ -13,15 +13,13 @@
 #pragma once
 
 #include <vespa/storage/frameworkimpl/component/storagecomponentregisterimpl.h>
-#include <vespa/storageframework/defaultimplementation/clock/realclock.h>
 #include <vespa/storageframework/defaultimplementation/thread/threadpoolimpl.h>
 
 namespace storage {
 
 struct StorageNodeContext {
     // Typedefs to simplify the remainder of the interface
-    typedef StorageComponentRegisterImpl ComponentRegister;
-    typedef framework::defaultimplementation::RealClock RealClock;
+    using ComponentRegister = StorageComponentRegisterImpl;
 
     /**
      * Get the actual component register. Available as the actual type as the
@@ -41,11 +39,11 @@ struct StorageNodeContext {
 protected:
         // Initialization has been split in two as subclass needs to initialize
         // component register before sending it on.
-    StorageNodeContext(ComponentRegister::UP, framework::Clock::UP);
+    StorageNodeContext(std::unique_ptr<ComponentRegister>, std::unique_ptr<framework::Clock>);
 
 private:
-    ComponentRegister::UP _componentRegister;
-    framework::Clock::UP _clock;
+    std::unique_ptr<ComponentRegister>               _componentRegister;
+    std::unique_ptr<framework::Clock>                _clock;
     framework::defaultimplementation::ThreadPoolImpl _threadPool;
 
 };

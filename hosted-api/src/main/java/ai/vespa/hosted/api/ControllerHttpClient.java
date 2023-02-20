@@ -27,6 +27,7 @@ import java.io.UncheckedIOException;
 import java.net.URI;
 import java.net.URLEncoder;
 import java.net.http.HttpClient;
+import java.net.http.HttpConnectTimeoutException;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.file.Files;
@@ -103,10 +104,10 @@ public abstract class ControllerHttpClient {
         var certificates = unchecked(() -> X509CertificateUtils.certificateListFromPem(Files.readString(certificateFile, UTF_8)));
 
         for (var certificate : certificates)
-        if (   Instant.now().isBefore(certificate.getNotBefore().toInstant())
-            || Instant.now().isAfter(certificate.getNotAfter().toInstant()))
-            throw new IllegalStateException("Certificate at '" + certificateFile + "' is valid between " +
-                                            certificate.getNotBefore() + " and " + certificate.getNotAfter() + " — not now.");
+            if (   Instant.now().isBefore(certificate.getNotBefore().toInstant())
+                || Instant.now().isAfter(certificate.getNotAfter().toInstant()))
+                throw new IllegalStateException("Certificate at '" + certificateFile + "' is valid between " +
+                                                certificate.getNotBefore() + " and " + certificate.getNotAfter() + " — not now.");
 
         return new MutualTlsControllerHttpClient(endpoint, privateKey, certificates);
     }
@@ -176,12 +177,6 @@ public abstract class ControllerHttpClient {
         return toDeploymentLog(send(request(HttpRequest.newBuilder(runPath(id, zone, run, after))
                                                        .timeout(Duration.ofMinutes(2)),
                                             GET)));
-    }
-
-    /** Returns the application package of the given id. */
-    // TODO(mpolden): Remove after all callers have switched to the method below
-    public HttpResponse<byte[]> applicationPackage(ApplicationId id) {
-        return applicationPackage(id, false);
     }
 
     /**
@@ -257,6 +252,10 @@ public abstract class ControllerHttpClient {
         return deploymentLog(id, zone, run, -1);
     }
 
+    public Inspector runs(ApplicationId id, String jobName) {
+        return toInspector(send(request(HttpRequest.newBuilder(jobPath(id, jobName)).timeout(Duration.ofSeconds(10)), GET)));
+    }
+
     /** Returns an authenticated request from the given input. Override this for, e.g., request signing. */
     protected HttpRequest request(HttpRequest.Builder request, Method method, Supplier<InputStream> data) {
         return request.method(method.name(), ofInputStream(data)).build();
@@ -313,6 +312,10 @@ public abstract class ControllerHttpClient {
                             "deploy", jobNameOf(zone));
     }
 
+    private URI jobPath(ApplicationId id, String jobName) {
+        return concatenated(instancePath(id), "job", jobName);
+    }
+
     private URI jobPath(ApplicationId id, ZoneId zone) {
         return concatenated(instancePath(id), "job", jobNameOf(zone));
     }
@@ -359,7 +362,7 @@ public abstract class ControllerHttpClient {
             throw new IllegalStateException("Programming error, attempts must be at least 1");
 
         UncheckedIOException thrown = null;
-        for (int attempt = 1; attempt <= attempts; attempt++) {
+        for (int attempt = 1, connectionRetries = 3; attempt <= attempts; attempt++) {
             try {
                 HttpResponse<byte[]> response = client.send(request, ofByteArray());
                 if (response.statusCode() / 100 == 2)
@@ -392,6 +395,8 @@ public abstract class ControllerHttpClient {
                     catch (InterruptedException f) {
                         throw new RuntimeException(f);
                     }
+
+                if (e instanceof HttpConnectTimeoutException && --connectionRetries > 0) --attempt;
             }
             catch (InterruptedException e) {
                 throw new RuntimeException(e);
@@ -409,7 +414,7 @@ public abstract class ControllerHttpClient {
         }
     }
 
-    /** Returns a JSON representation of the deployment meta data. */
+    /** Returns a JSON representation of the deployment metadata. */
     private static String metaToJson(Deployment deployment) {
         Slime slime = new Slime();
         Cursor rootObject = slime.setObject();

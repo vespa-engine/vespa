@@ -4,7 +4,8 @@ package com.yahoo.vespa.model.container.component.chain;
 import com.yahoo.component.ComponentId;
 import com.yahoo.component.ComponentSpecification;
 import com.yahoo.component.chain.model.ChainSpecification;
-import com.yahoo.config.model.producer.AbstractConfigProducer;
+import com.yahoo.config.model.producer.AnyConfigProducer;
+import com.yahoo.config.model.producer.TreeConfigProducer;
 import com.yahoo.vespa.model.container.component.ComponentGroup;
 
 import java.util.ArrayList;
@@ -19,7 +20,7 @@ import static com.yahoo.container.core.ChainsConfig.Chains.Type;
  * @author Tony Vaagenes
  * @author gjoranv
  */
-public class Chain<T extends ChainedComponent<?>> extends AbstractConfigProducer<AbstractConfigProducer<?>> {
+public class Chain<T extends ChainedComponent<?>> extends TreeConfigProducer<AnyConfigProducer> {
 
     private final ComponentId componentId;
     private final ChainSpecification specWithoutInnerComponents;

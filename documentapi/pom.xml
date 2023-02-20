@@ -27,8 +27,8 @@
       <!-- Needed because 'document' uses guava collections, and has guava only in provided scope -->
       <groupId>com.google.guava</groupId>
       <artifactId>guava</artifactId>
+      <scope>test</scope>
     </dependency>
-
     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>

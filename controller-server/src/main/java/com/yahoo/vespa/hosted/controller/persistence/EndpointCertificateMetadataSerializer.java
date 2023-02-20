@@ -70,7 +70,7 @@ public class EndpointCertificateMetadataSerializer {
                 inspector.field(rootRequestIdField).asString(),
                 SlimeUtils.optionalString(inspector.field(leafRequestIdField)),
                 IntStream.range(0, inspector.field(requestedDnsSansField).entries())
-                        .mapToObj(i -> inspector.field(requestedDnsSansField).entry(i).asString()).collect(Collectors.toList()),
+                        .mapToObj(i -> inspector.field(requestedDnsSansField).entry(i).asString()).toList(),
                 inspector.field(issuerField).asString(),
                 inspector.field(expiryField).valid() ?
                         Optional.of(inspector.field(expiryField).asLong()) :

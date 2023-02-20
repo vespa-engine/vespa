@@ -5,6 +5,7 @@ import com.yahoo.athenz.auth.util.Crypto;
 import com.yahoo.security.KeyUtils;
 import com.yahoo.vespa.athenz.api.AthenzAssertion;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
+import com.yahoo.vespa.athenz.api.AthenzDomainMeta;
 import com.yahoo.vespa.athenz.api.AthenzGroup;
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
 import com.yahoo.vespa.athenz.api.AthenzPolicy;
@@ -33,6 +34,7 @@ import com.yahoo.vespa.athenz.utils.AthenzIdentities;
 import org.apache.http.Header;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.client.methods.RequestBuilder;
+import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.message.BasicHeader;
 
@@ -50,7 +52,6 @@ import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-import static java.util.stream.Collectors.toList;
 
 /**
  * @author bjorncs
@@ -200,7 +201,7 @@ public class DefaultZmsClient extends ClientBase implements ZmsClient {
                 .build();
         return execute(request, response -> {
             DomainListResponseEntity result = readEntity(response, DomainListResponseEntity.class);
-            return result.domains.stream().map(AthenzDomain::new).collect(toList());
+            return result.domains.stream().map(AthenzDomain::new).toList();
         });
     }
 
@@ -212,8 +213,36 @@ public class DefaultZmsClient extends ClientBase implements ZmsClient {
                 .build();
         return execute(request, response -> {
             DomainListResponseEntity result = readEntity(response, DomainListResponseEntity.class);
-            return result.domains.stream().map(AthenzDomain::new).collect(toList());
+            return result.domains.stream().map(AthenzDomain::new).toList();
         });
+    }
+
+    @Override
+    public AthenzDomainMeta getDomainMeta(AthenzDomain domain) {
+        HttpUriRequest request = RequestBuilder.get()
+                .setUri(zmsUrl.resolve("domain/%s".formatted(domain.getName())))
+                .build();
+        return execute(request, response -> readEntity(response, AthenzDomainMeta.class));
+    }
+
+    @Override
+    public void updateDomain(AthenzDomain domain, Map<String, Object> attributes) {
+        for (String attribute : attributes.keySet()) {
+            Object attrVal = attributes.get(attribute);
+
+            String val = attrVal instanceof String ? "\"" + attrVal.toString() + "\"" : attrVal.toString();
+            String domainMeta = """
+                    {
+                        "%s": %s
+                    }
+                    """
+                    .formatted(attribute, val);
+            HttpUriRequest request = RequestBuilder.put()
+                    .setUri(zmsUrl.resolve("domain/%s/meta/system/%s".formatted(domain.getName(), attribute)))
+                    .setEntity(new StringEntity(domainMeta, ContentType.APPLICATION_JSON))
+                    .build();
+            execute(request, response -> readEntity(response, Void.class));
+        }
     }
 
     @Override
@@ -300,7 +329,7 @@ public class DefaultZmsClient extends ClientBase implements ZmsClient {
                         .id(a.getId())
                         .effect(AthenzAssertion.Effect.valueOrNull(a.getEffect()))
                         .build())
-                .collect(toList());
+                .toList();
         return Optional.of(new AthenzPolicy(entity.getName(), assertions));
     }
 
@@ -346,7 +375,7 @@ public class DefaultZmsClient extends ClientBase implements ZmsClient {
                 .filter(member -> ! member.pendingApproval())
                 .map(RoleEntity.Member::memberName)
                 .map(AthenzIdentities::from)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Override
@@ -356,7 +385,7 @@ public class DefaultZmsClient extends ClientBase implements ZmsClient {
 
         return execute.services.stream()
                 .map(serviceName -> new AthenzService(athenzDomain, serviceName))
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Override
@@ -424,13 +453,15 @@ public class DefaultZmsClient extends ClientBase implements ZmsClient {
     }
 
     @Override
-    public void createSubdomain(AthenzDomain parent, String name) {
+    public void createSubdomain(AthenzDomain parent, String name, Map<String, Object> attributes) {
         URI uri = zmsUrl.resolve(String.format("subdomain/%s", parent.getName()));
-        StringEntity entity = toJsonStringEntity(
-                Map.of("name", name,
+        var metaData = new HashMap<String, Object>();
+        metaData.putAll(attributes);
+        metaData.putAll(Map.of("name", name,
                         "parent", parent.getName(),
                         "adminUsers", List.of(identity.getFullName())) // TODO: createSubdomain should receive an adminUsers argument
         );
+        var entity = toJsonStringEntity(metaData);
         var request = RequestBuilder.post(uri)
                 .setEntity(entity)
                 .build();

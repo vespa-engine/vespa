@@ -7,29 +7,34 @@ using vespalib::make_string;
 
 namespace mbus {
 
-RouteSpec::RouteSpec(const string &name) :
+RouteSpec::RouteSpec(const string &name) noexcept :
     _name(name),
     _hops()
 { }
 
 RouteSpec::RouteSpec(const RouteSpec &) = default;
 RouteSpec & RouteSpec::operator = (const RouteSpec &) = default;
+RouteSpec::RouteSpec(RouteSpec &&) noexcept = default;
+RouteSpec & RouteSpec::operator = (RouteSpec &&) noexcept = default;
 
-RouteSpec::~RouteSpec() {}
+RouteSpec::~RouteSpec() = default;
 
 RouteSpec &
-RouteSpec::addHops(const std::vector<string> &hops)
-{
-    _hops.insert(_hops.end(), hops.begin(), hops.end());
+RouteSpec::addHop(const string &hop) & {
+    _hops.push_back(hop);
     return *this;
 }
 
-string
-RouteSpec::removeHop(uint32_t i)
-{
-    string ret = _hops[i];
-    _hops.erase(_hops.begin() + i);
-    return ret;
+RouteSpec &&
+RouteSpec::addHop(const string &hop) && {
+    _hops.push_back(hop);
+    return std::move(*this);
+}
+
+RouteSpec &
+RouteSpec::setHop(uint32_t i, const string &hop) {
+    _hops[i] = hop;
+    return *this;
 }
 
 void

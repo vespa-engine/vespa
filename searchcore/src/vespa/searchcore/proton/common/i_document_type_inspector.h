@@ -12,7 +12,7 @@ namespace proton {
  */
 struct IDocumentTypeInspector
 {
-    typedef std::shared_ptr<IDocumentTypeInspector> SP;
+    using SP = std::shared_ptr<IDocumentTypeInspector>;
 
     virtual ~IDocumentTypeInspector() =default;
 

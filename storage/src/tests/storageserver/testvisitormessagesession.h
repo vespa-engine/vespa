@@ -22,7 +22,7 @@ private:
     bool _autoReply;
 
 public:
-    typedef std::unique_ptr<TestVisitorMessageSession> UP;
+    using UP = std::unique_ptr<TestVisitorMessageSession>;
 
     VisitorThread& thread;
     Visitor& visitor;
@@ -32,10 +32,7 @@ public:
 
     std::deque<std::unique_ptr<documentapi::DocumentMessage> > sentMessages;
 
-    TestVisitorMessageSession(VisitorThread& t,
-                              Visitor& v,
-                              const mbus::Error& autoReplyError,
-                              bool autoReply);
+    TestVisitorMessageSession(VisitorThread& t, Visitor& v, const mbus::Error& autoReplyError, bool autoReply);
 
     void reply(mbus::Reply::UP rep);
     uint32_t pending() override { return pendingCount; }

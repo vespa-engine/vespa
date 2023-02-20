@@ -88,11 +88,12 @@ namespace {
 class OutputBuf : public vespalib::Output {
 public:
     explicit OutputBuf(size_t estimatedSize) : _buf(estimatedSize) { }
+    ~OutputBuf() override;
     DataBuffer & getBuf() { return _buf; }
 private:
     vespalib::WritableMemory reserve(size_t bytes) override {
         _buf.ensureFree(bytes);
-        return vespalib::WritableMemory(_buf.getFree(), _buf.getFreeLen());
+        return {_buf.getFree(), _buf.getFreeLen()};
     }
     Output &commit(size_t bytes) override {
         _buf.moveFreeToData(bytes);
@@ -100,6 +101,8 @@ private:
     }
     DataBuffer _buf;
 };
+OutputBuf::~OutputBuf() = default;
+
 }
 
 void

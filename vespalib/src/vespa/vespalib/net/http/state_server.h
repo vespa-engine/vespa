@@ -24,7 +24,7 @@ private:
     std::vector<JsonHandlerRepo::Token::UP> _tokens;
 
 public:
-    typedef std::unique_ptr<StateServer> UP;
+    using UP = std::unique_ptr<StateServer>;
     StateServer(int port, const HealthProducer &hp, MetricsProducer &mp, ComponentConfigProducer &ccp);
     ~StateServer();
     int getListenPort() { return _server.port(); }

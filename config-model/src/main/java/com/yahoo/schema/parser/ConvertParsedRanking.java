@@ -84,6 +84,11 @@ public class ConvertParsedRanking {
         parsed.getSecondPhaseExpression().ifPresent
             (value -> profile.setSecondPhaseRanking(value));
 
+        parsed.getGlobalPhaseExpression().ifPresent
+            (value -> profile.setGlobalPhaseRanking(value));
+        parsed.getGlobalPhaseRerankCount().ifPresent
+            (value -> profile.setGlobalPhaseRerankCount(value));
+
         for (var value : parsed.getMatchFeatures()) {
             profile.addMatchFeatures(value);
         }

@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 
 import static com.yahoo.jdisc.http.HttpRequest.Method;
 
@@ -453,6 +454,36 @@ public class HttpRequest {
     public com.yahoo.jdisc.http.HttpRequest getJDiscRequest() {
         return parentRequest;
     }
+
+    /**
+     * <p>Returns the named application context objects. This data is not intended for network transport, rather they
+     * are intended for passing shared data between components of an Application.</p>
+     *
+     * @return The context map.
+     */
+    public Map<String, Object> context() {
+        return parentRequest.context();
+    }
+
+    /** Returns the time at which this Request was created. */
+    public long creationTime(TimeUnit unit) {
+        return parentRequest.creationTime(unit);
+    }
+
+    /**
+     * <p>For server requests, this returns the timestamp of when the underlying HTTP channel was connected.
+     *
+     * @param unit the unit to return the time in
+     * @return the timestamp of when the underlying HTTP channel was connected, or request creation time
+     */
+    public long getConnectedAt(TimeUnit unit) {
+        return parentRequest.getConnectedAt(TimeUnit.MILLISECONDS);
+    }
+
+    /**
+     * @return the relative created timestamp (using {@link System#nanoTime()}
+     */
+    public long relativeCreatedAtNanoTime() { return parentRequest.relativeCreatedAtNanoTime(); }
 
     /**
      * Returns the value of a request property/parameter.

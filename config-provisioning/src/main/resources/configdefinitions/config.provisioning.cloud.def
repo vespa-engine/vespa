@@ -14,3 +14,6 @@ requireAccessControl bool default=false
 
 # The default account used to provision hosts and load balancers in this zone.
 account string default=""
+
+# The cloud-specific region for this zone (as opposed to the Vespa region).
+region string default=""

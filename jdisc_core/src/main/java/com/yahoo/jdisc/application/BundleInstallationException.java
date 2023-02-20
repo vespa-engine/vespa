@@ -1,13 +1,10 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jdisc.application;
 
-import com.google.common.collect.ImmutableList;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleException;
 
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 
 /**
@@ -25,7 +22,7 @@ public final class BundleInstallationException extends BundleException {
 
     public BundleInstallationException(Collection<Bundle> installedBundles, Throwable cause) {
         super(cause.getMessage(), cause);
-        this.installedBundles = ImmutableList.copyOf(installedBundles);
+        this.installedBundles = List.copyOf(installedBundles);
     }
 
     public List<Bundle> installedBundles() {

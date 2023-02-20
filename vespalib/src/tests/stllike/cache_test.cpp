@@ -9,8 +9,8 @@ using namespace vespalib;
 
 template<typename K, typename V>
 class Map : public std::map<K, V> {
-    typedef typename std::map<K, V>::const_iterator const_iterator;
-    typedef std::map<K, V> M;
+    using const_iterator = typename std::map<K, V>::const_iterator;
+    using M = std::map<K, V>;
 public:
     bool read(const K & k, V & v) const {
         const_iterator found = M::find(k);

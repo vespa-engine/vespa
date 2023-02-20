@@ -11,7 +11,7 @@ namespace proton::test {
 
 using BucketIdVector = document::bucket::BucketIdList;
 
-typedef std::set<document::BucketId>    BucketIdSet;
+using BucketIdSet = std::set<document::BucketId>;
 
 class BucketStateCalculator : public IBucketStateCalculator
 {

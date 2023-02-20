@@ -39,7 +39,7 @@ class PredicateQueryTerm {
     std::vector<Entry<uint64_t>> _range_features;
 
 public:
-    typedef std::unique_ptr<PredicateQueryTerm> UP;
+    using UP = std::unique_ptr<PredicateQueryTerm>;
 
     PredicateQueryTerm() noexcept : _features(), _range_features() {}
 

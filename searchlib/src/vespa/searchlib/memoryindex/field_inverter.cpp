@@ -18,7 +18,9 @@
 #include <vespa/searchlib/util/url.h>
 #include <vespa/vespalib/datastore/aligner.h>
 #include <vespa/vespalib/text/utf8.h>
+#include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/stringfmt.h>
+#include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
 #include <stdexcept>
 
@@ -519,7 +521,7 @@ FieldInverter::applyRemoves()
 }
 
 void
-FieldInverter::pushDocuments()
+FieldInverter::push_documents_internal()
 {
     trimAbortedDocs();
 
@@ -543,6 +545,7 @@ FieldInverter::pushDocuments()
     uint32_t lastDocId = 0;
     vespalib::stringref word;
     bool emptyFeatures = true;
+    uint32_t last_field_length = 0;
 
     _inserter.rewind();
 
@@ -574,12 +577,15 @@ FieldInverter::pushDocuments()
                 lastWordPos = NO_WORD_POS;
                 const ElemInfo &elem = _elems[i._elemRef];
                 _features.set_field_length(elem.get_field_length());
+                last_field_length = elem.get_field_length();
             } else {
                 continue; // ignore dup remove
             }
         } else {
             // removes must come before non-removes
             assert(!i.removed());
+            const ElemInfo &elem = _elems[i._elemRef];
+            assert(last_field_length == elem.get_field_length());
         }
         const ElemInfo &elem = _elems[i._elemRef];
         if (i._wordPos != lastWordPos || i._elemId != lastElemId) {
@@ -599,6 +605,19 @@ FieldInverter::pushDocuments()
     _inserter.flush();
     _inserter.commit();
     reset();
+}
+
+void
+FieldInverter::pushDocuments()
+{
+    try {
+        push_documents_internal();
+    } catch (vespalib::OverflowException &e) {
+        const Schema::IndexField &field = _schema.getIndexField(_fieldId);
+        vespalib::asciistream s;
+        s << "FieldInverter::pushDocuments(), caught exception for field " << field.getName();
+        throw vespalib::OverflowException(s.c_str(), e);
+    }
 }
 
 }

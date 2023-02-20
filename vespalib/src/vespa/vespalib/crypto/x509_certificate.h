@@ -38,9 +38,9 @@ public:
         // we want to be able to test this edge case.
         std::vector<vespalib::string> _common_names; // "CN"
 
-        DistinguishedName();
+        DistinguishedName() noexcept;
         DistinguishedName(const DistinguishedName&);
-        DistinguishedName& operator=(const DistinguishedName&);
+        DistinguishedName& operator=(const DistinguishedName&) = delete;
         DistinguishedName(DistinguishedName&&) noexcept;
         DistinguishedName& operator=(DistinguishedName&&) noexcept;
         ~DistinguishedName();
@@ -64,11 +64,13 @@ public:
         DistinguishedName dn;
         std::vector<vespalib::string> subject_alt_names;
 
-        SubjectInfo() = default;
-        explicit SubjectInfo(DistinguishedName dn_)
-                : dn(std::move(dn_)),
-                  subject_alt_names()
-        {}
+        SubjectInfo() noexcept;
+        explicit SubjectInfo(DistinguishedName dn_) noexcept;
+        SubjectInfo(const SubjectInfo &);
+        SubjectInfo & operator=(const SubjectInfo &) = delete;
+        SubjectInfo(SubjectInfo &&) noexcept;
+        SubjectInfo & operator=(SubjectInfo &&) noexcept;
+        ~SubjectInfo();
 
         SubjectInfo& add_subject_alt_name(vespalib::string san) {
             subject_alt_names.emplace_back(std::move(san));
@@ -77,11 +79,11 @@ public:
     };
 
     struct Params {
-        Params();
+        Params() noexcept;
         ~Params();
 
         Params(const Params&);
-        Params& operator=(const Params&);
+        Params& operator=(const Params&) = delete;
         Params(Params&&) noexcept;
         Params& operator=(Params&&) noexcept;
 
@@ -117,6 +119,8 @@ struct CertKeyWrapper {
 
     CertKeyWrapper(std::shared_ptr<X509Certificate> cert_,
                    std::shared_ptr<PrivateKey> key_);
+    CertKeyWrapper(CertKeyWrapper &&) noexcept;
+    CertKeyWrapper & operator=(CertKeyWrapper &&) noexcept;
     ~CertKeyWrapper();
 };
 

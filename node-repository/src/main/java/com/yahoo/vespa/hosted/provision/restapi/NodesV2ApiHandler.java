@@ -7,10 +7,12 @@ import com.yahoo.config.provision.ApplicationLockException;
 import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.HostFilter;
+import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.TenantName;
+import com.yahoo.config.provision.security.NodePrincipal;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.ThreadedHttpRequestHandler;
@@ -32,8 +34,6 @@ import com.yahoo.vespa.hosted.provision.NodeMutex;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.applications.Application;
 import com.yahoo.vespa.hosted.provision.autoscale.Load;
-import com.yahoo.vespa.hosted.provision.autoscale.MetricsDb;
-import com.yahoo.vespa.hosted.provision.node.Address;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.IP;
 import com.yahoo.vespa.hosted.provision.node.filter.ApplicationFilter;
@@ -74,16 +74,13 @@ public class NodesV2ApiHandler extends ThreadedHttpRequestHandler {
 
     private final Orchestrator orchestrator;
     private final NodeRepository nodeRepository;
-    private final MetricsDb metricsDb;
     private final NodeFlavors nodeFlavors;
 
     @Inject
-    public NodesV2ApiHandler(ThreadedHttpRequestHandler.Context parentCtx, Orchestrator orchestrator,
-                             NodeRepository nodeRepository, MetricsDb metricsDb, NodeFlavors flavors) {
+    public NodesV2ApiHandler(Context parentCtx, Orchestrator orchestrator, NodeRepository nodeRepository, NodeFlavors flavors) {
         super(parentCtx);
         this.orchestrator = orchestrator;
         this.nodeRepository = nodeRepository;
-        this.metricsDb = metricsDb;
         this.nodeFlavors = flavors;
     }
 
@@ -118,7 +115,7 @@ public class NodesV2ApiHandler extends ThreadedHttpRequestHandler {
     private HttpResponse handleGET(HttpRequest request) {
         Path path = new Path(request.getUri());
         String pathS = request.getUri().getPath();
-        if (path.matches(    "/nodes/v2")) return new ResourceResponse(request.getUri(), "node", "state", "acl", "command", "archive", "locks", "maintenance", "upgrade", "capacity", "application", "stats");
+        if (path.matches(    "/nodes/v2")) return new ResourceResponse(request.getUri(), "node", "state", "acl", "command", "archive", "locks", "maintenance", "upgrade", "capacity", "application", "stats", "wireguard");
         if (path.matches(    "/nodes/v2/node")) return new NodesResponse(ResponseType.nodeList, request, orchestrator, nodeRepository);
         if (pathS.startsWith("/nodes/v2/node/")) return new NodesResponse(ResponseType.singleNode, request, orchestrator, nodeRepository);
         if (path.matches(    "/nodes/v2/state")) return new NodesResponse(ResponseType.stateList, request, orchestrator, nodeRepository);
@@ -133,6 +130,7 @@ public class NodesV2ApiHandler extends ThreadedHttpRequestHandler {
         if (path.matches(    "/nodes/v2/application")) return applicationList(request.getUri());
         if (path.matches(    "/nodes/v2/application/{applicationId}")) return application(path.get("applicationId"), request.getUri());
         if (path.matches(    "/nodes/v2/stats")) return stats();
+        if (path.matches(    "/nodes/v2/wireguard")) return new WireguardResponse(nodeRepository);
         throw new NotFoundException("Nothing at " + path);
     }
 
@@ -173,7 +171,11 @@ public class NodesV2ApiHandler extends ThreadedHttpRequestHandler {
         if (path.matches("/nodes/v2/node/{hostname}")) {
             NodePatcher patcher = new NodePatcher(nodeFlavors, nodeRepository);
             String hostname = path.get("hostname");
-            patcher.patch(hostname, request.getData());
+            if (isTenantPeer(request)) {
+                patcher.patchFromUntrustedTenantHost(hostname, request.getData());
+            } else {
+                patcher.patch(hostname, request.getData());
+            }
             return new MessageResponse("Updated " + hostname);
         }
         else if (path.matches("/nodes/v2/application/{applicationId}")) {
@@ -193,6 +195,15 @@ public class NodesV2ApiHandler extends ThreadedHttpRequestHandler {
         }
 
         throw new NotFoundException("Nothing at '" + path + "'");
+    }
+
+    /** Returns true if the peer is a tenant host or node. */
+    private boolean isTenantPeer(HttpRequest request) {
+        return request.getJDiscRequest().getUserPrincipal() instanceof NodePrincipal nodePrincipal &&
+               switch (nodePrincipal.getIdentity().nodeType()) {
+                   case host, tenant -> true;
+                   default -> false;
+               };
     }
 
     private HttpResponse handlePOST(HttpRequest request) {
@@ -269,15 +280,16 @@ public class NodesV2ApiHandler extends ThreadedHttpRequestHandler {
         Set<String> ipAddressPool = new HashSet<>();
         inspector.field("additionalIpAddresses").traverse((ArrayTraverser) (i, item) -> ipAddressPool.add(item.asString()));
 
-        List<Address> addressPool = new ArrayList<>();
+        List<HostName> hostnames = new ArrayList<>();
         inspector.field("additionalHostnames").traverse((ArrayTraverser) (i, item) ->
-                addressPool.add(new Address(item.asString())));
+                hostnames.add(HostName.of(item.asString())));
 
         Node.Builder builder = Node.create(inspector.field("id").asString(),
-                                           IP.Config.of(ipAddresses, ipAddressPool, addressPool),
+                                           IP.Config.of(ipAddresses, ipAddressPool, hostnames),
                                            inspector.field("hostname").asString(),
                                            flavorFromSlime(inspector),
-                                           nodeTypeFromSlime(inspector.field("type")));
+                                           nodeTypeFromSlime(inspector.field("type")))
+                                   .cloudAccount(nodeRepository.zone().cloud().account());
         optionalString(inspector.field("parentHostname")).ifPresent(builder::parentHostname);
         optionalString(inspector.field("modelName")).ifPresent(builder::modelName);
         optionalString(inspector.field("reservedTo")).map(TenantName::from).ifPresent(builder::reservedTo);
@@ -439,7 +451,6 @@ public class NodesV2ApiHandler extends ThreadedHttpRequestHandler {
             return ErrorResponse.notFoundError("No application '" + id + "'");
         Slime slime = ApplicationSerializer.toSlime(application.get(),
                                                     nodeRepository.nodes().list(Node.State.active).owner(id),
-                                                    metricsDb,
                                                     nodeRepository,
                                                     withPath("/nodes/v2/applications/" + id, uri));
         return new SlimeJsonResponse(slime);

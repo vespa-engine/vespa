@@ -155,7 +155,7 @@ public class ApplicationApiImplTest {
         try (scopedApi) {
             List<HostName> upStorageNodes = scopedApi.applicationApi().getNoRemarksStorageNodesInGroupInClusterOrder().stream()
                     .map(storageNode -> storageNode.hostName())
-                    .collect(Collectors.toList());
+                    .toList();
             assertEquals(Arrays.asList(expectedHostNames), upStorageNodes);
         }
     }
@@ -192,7 +192,7 @@ public class ApplicationApiImplTest {
                     .getNoRemarksStorageNodesInGroupInClusterOrder()
                     .stream()
                     .map(storageNode -> storageNode.hostName())
-                    .collect(Collectors.toList());
+                    .toList();
             assertEquals(upStorageNodes, actualStorageNodes);
         }
     }
@@ -344,7 +344,7 @@ public class ApplicationApiImplTest {
                     .getSuspendedStorageNodesInGroupInReverseClusterOrder()
                     .stream()
                     .map(storageNode -> storageNode.hostName())
-                    .collect(Collectors.toList());
+                    .toList();
             assertEquals(Arrays.asList(hostNames), actualStorageNodes);
         }
     }

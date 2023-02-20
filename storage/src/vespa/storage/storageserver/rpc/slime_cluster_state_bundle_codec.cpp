@@ -26,11 +26,12 @@ namespace {
 class OutputBuf : public vespalib::Output {
 public:
     explicit OutputBuf(size_t estimatedSize) : _buf(estimatedSize) { }
+    ~OutputBuf() override;
     vespalib::DataBuffer & getBuf() { return _buf; }
 private:
     vespalib::WritableMemory reserve(size_t bytes) override {
         _buf.ensureFree(bytes);
-        return vespalib::WritableMemory(_buf.getFree(), _buf.getFreeLen());
+        return {_buf.getFree(), _buf.getFreeLen()};
     }
     Output &commit(size_t bytes) override {
         _buf.moveFreeToData(bytes);
@@ -39,19 +40,21 @@ private:
     vespalib::DataBuffer _buf;
 };
 
+OutputBuf::~OutputBuf() = default;
+
 vespalib::string serialize_state(const lib::ClusterState& state) {
     vespalib::asciistream as;
     state.serialize(as, false);
     return as.str();
 }
 
-static const Memory StatesField("states");
-static const Memory BaselineField("baseline");
-static const Memory SpacesField("spaces");
-static const Memory DeferredActivationField("deferred-activation");
-static const Memory FeedBlockField("feed-block");
-static const Memory BlockFeedInClusterField("block-feed-in-cluster");
-static const Memory DescriptionField("description");
+const Memory StatesField("states");
+const Memory BaselineField("baseline");
+const Memory SpacesField("spaces");
+const Memory DeferredActivationField("deferred-activation");
+const Memory FeedBlockField("feed-block");
+const Memory BlockFeedInClusterField("block-feed-in-cluster");
+const Memory DescriptionField("description");
 
 }
 

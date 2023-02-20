@@ -32,6 +32,45 @@ using namespace config::protocol::v3;
 
 namespace {
 
+struct Response {
+    vespalib::string defName;
+    vespalib::string defMd5;
+    vespalib::string configId;
+    vespalib::string configXxhash64;
+    int changed;
+    long generation;
+    StringVector payload;
+    vespalib::string ns;
+    void encodeResponse(FRT_RPCRequest * req) const {
+        FRT_Values & ret = *req->GetReturn();
+
+        ret.AddString(defName.c_str());
+        ret.AddString("");
+        ret.AddString(defMd5.c_str());
+        ret.AddString(configId.c_str());
+        ret.AddString(configXxhash64.c_str());
+        ret.AddInt32(changed);
+        ret.AddInt64(generation);
+        FRT_StringValue * payload_arr = ret.AddStringArray(payload.size());
+        for (uint32_t i = 0; i < payload.size(); i++) {
+            ret.SetString(&payload_arr[i], payload[i].c_str());
+        }
+        if (!ns.empty())
+            ret.AddString(ns.c_str());
+        req->SetError(FRTE_NO_ERROR);
+    }
+    Response(vespalib::stringref name, vespalib::stringref md5,
+             vespalib::stringref id, vespalib::stringref hash,
+             int changed_in=0, long generation_in=0)
+        : defName(name),
+          defMd5(md5),
+          configId(id),
+          configXxhash64(hash),
+          changed(changed_in),
+          generation(generation_in)
+    {}
+};
+
     struct RPCFixture
     {
         std::vector<FRT_RPCRequest *> requests;
@@ -47,32 +86,10 @@ namespace {
             requests.push_back(req);
             return req;
         }
-        FRT_RPCRequest * createOKResponse(const vespalib::string & defName="",
-                                          const vespalib::string & defMd5="",
-                                          const vespalib::string & configId="",
-                                          const vespalib::string & configXxhash64="",
-                                          int changed=0,
-                                          long generation=0,
-                                          const StringVector & payload = StringVector(),
-                                          const vespalib::string & ns = "")
+        FRT_RPCRequest * createOKRequest(const Response & response)
         {
             FRT_RPCRequest * req = new FRT_RPCRequest();
-            FRT_Values & ret = *req->GetReturn();
-
-            ret.AddString(defName.c_str());
-            ret.AddString("");
-            ret.AddString(defMd5.c_str());
-            ret.AddString(configId.c_str());
-            ret.AddString(configXxhash64.c_str());
-            ret.AddInt32(changed);
-            ret.AddInt64(generation);
-            FRT_StringValue * payload_arr = ret.AddStringArray(payload.size());
-            for (uint32_t i = 0; i < payload.size(); i++) {
-                ret.SetString(&payload_arr[i], payload[i].c_str());
-            }
-            if (!ns.empty())
-                ret.AddString(ns.c_str());
-            req->SetError(FRTE_NO_ERROR);
+            response.encodeResponse(req);
             requests.push_back(req);
             return req;
         }
@@ -87,31 +104,33 @@ namespace {
     struct ConnectionMock : public Connection {
         int errorCode;
         duration timeout;
-        FRT_RPCRequest * ans;
+        std::unique_ptr<Response> ans;
         fnet::frt::StandaloneFRT server;
         FRT_Supervisor & supervisor;
         FNET_Scheduler scheduler;
         vespalib::string address;
-        ConnectionMock(FRT_RPCRequest * answer = nullptr);
+        ConnectionMock() : ConnectionMock(std::unique_ptr<Response>()) { }
+        ConnectionMock(std::unique_ptr<Response> answer);
         ~ConnectionMock();
         FRT_RPCRequest * allocRPCRequest() override { return supervisor.AllocRPCRequest(); }
         void setError(int ec) override { errorCode = ec; }
         void invoke(FRT_RPCRequest * req, duration t, FRT_IRequestWait * waiter) override
         {
             timeout = t;
-            if (ans != nullptr)
-                waiter->RequestDone(ans);
+            if (ans != nullptr) {
+                ans->encodeResponse(req);
+                waiter->RequestDone(req);
+            }
             else
                 waiter->RequestDone(req);
         }
         const vespalib::string & getAddress() const override { return address; }
-        void setTransientDelay(duration delay) override { (void) delay; }
     };
 
-    ConnectionMock::ConnectionMock(FRT_RPCRequest * answer)
+    ConnectionMock::ConnectionMock(std::unique_ptr<Response> answer)
         : errorCode(0),
           timeout(0ms),
-          ans(answer),
+          ans(std::move(answer)),
           server(),
           supervisor(server.supervisor()),
           address()
@@ -128,7 +147,6 @@ namespace {
         FNET_Scheduler * getScheduler() override { return &current->scheduler; }
         void syncTransport() override { }
     };
-
 
     struct AgentResultFixture
     {
@@ -175,7 +193,7 @@ namespace {
         ConfigKey key;
         SourceFixture()
             : rpc(),
-              conn(rpc.createOKResponse("foo", "baz", "4", "boo")),
+              conn(std::make_unique<Response>("foo", "baz", "4", "boo")),
               key("foo", "bar", "4", "boo")
         { }
 
@@ -215,7 +233,7 @@ TEST_F("require that response containing errors does not validate", RPCFixture()
 }
 
 TEST_F("require that response contains all values", RPCFixture()) {
-    FRTConfigResponseV3 ok(f1.createOKResponse("foo", "baz", "bim", "boo", 12, 15));
+    FRTConfigResponseV3 ok(f1.createOKRequest(Response("foo", "baz", "bim", "boo", 12, 15)));
     ASSERT_FALSE(ok.validateResponse());
     ASSERT_FALSE(ok.hasValidResponse());
 }

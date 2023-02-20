@@ -9,6 +9,7 @@
 #include <vespa/vespalib/util/varholder.h>
 #include <vespa/vespalib/util/idestructorcallback.h>
 #include <mutex>
+#include <optional>
 
 namespace vespalib {
     class Clock;
@@ -31,6 +32,7 @@ namespace proton {
 
 class DocTypeName;
 class DocumentDBConfig;
+class DocumentDBReconfig;
 class FeedHandler;
 class HwInfo;
 class IDocumentRetriever;
@@ -46,10 +48,7 @@ struct IBucketStateCalculator;
 struct IDocumentDBReferenceResolver;
 struct MetricsWireService;
 
-namespace matching {
-    class QueryLimiter;
-    class SessionManager;
-}
+namespace matching { class QueryLimiter; }
 
 namespace initializer { class InitializerTask; }
 
@@ -65,7 +64,6 @@ public:
 private:
     using IFeedViewSP = std::shared_ptr<IFeedView>;
     using IBucketStateCalculatorSP = std::shared_ptr<IBucketStateCalculator>;
-    using SessionManagerSP = std::shared_ptr<matching::SessionManager>;
     using IFlushTargetList = std::vector<std::shared_ptr<searchcorespi::IFlushTarget>>;
     SubDBVector _subDBs;
     IDocumentSubDBOwner     &_owner;
@@ -131,7 +129,7 @@ public:
     createInitializer(const DocumentDBConfig &configSnapshot, SerialNum configSerialNum,
                       const index::IndexConfig & indexCfg);
 
-    void initViews(const DocumentDBConfig &configSnapshot, const SessionManagerSP &sessionManager);
+    void initViews(const DocumentDBConfig &configSnapshot);
     void clearViews();
     void onReplayDone();
     void onReprocessDone(SerialNum serialNum);
@@ -140,8 +138,10 @@ public:
 
     void pruneRemovedFields(SerialNum serialNum);
 
+    std::unique_ptr<DocumentDBReconfig> prepare_reconfig(const DocumentDBConfig& new_config_snapshot, const ReconfigParams& reconfig_params, std::optional<SerialNum> serial_num);
+    void complete_prepare_reconfig(DocumentDBReconfig& prepared_reconfig, SerialNum serial_num);
     void applyConfig(const DocumentDBConfig &newConfigSnapshot, const DocumentDBConfig &oldConfigSnapshot,
-                     SerialNum serialNum, const ReconfigParams &params, IDocumentDBReferenceResolver &resolver);
+                     SerialNum serialNum, const ReconfigParams &params, IDocumentDBReferenceResolver &resolver, const DocumentDBReconfig& prepared_reconfig);
 
     IFeedViewSP getFeedView();
     IFlushTargetList getFlushTargets();

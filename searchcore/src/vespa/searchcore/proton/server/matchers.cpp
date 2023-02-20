@@ -18,10 +18,11 @@ using namespace vespalib::make_string_short;
 
 Matchers::Matchers(const vespalib::Clock &clock,
                    matching::QueryLimiter &queryLimiter,
-                   const matching::IRankingAssetsRepo &rankingAssetsRepo)
+                   const matching::RankingAssetsRepo &rankingAssetsRepo)
     : _rpmap(),
+      _ranking_assets_repo(rankingAssetsRepo),
       _fallback(std::make_shared<Matcher>(search::index::Schema(), search::fef::Properties(), clock, queryLimiter,
-                                          rankingAssetsRepo, -1)),
+                                          _ranking_assets_repo, -1)),
       _default()
 { }
 

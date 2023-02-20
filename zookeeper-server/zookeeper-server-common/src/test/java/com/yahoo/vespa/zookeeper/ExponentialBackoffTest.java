@@ -26,7 +26,7 @@ public class ExponentialBackoffTest {
                              Duration.ofMillis(4932)),
                      IntStream.rangeClosed(1, 5)
                               .mapToObj(b::delay)
-                              .collect(Collectors.toList()));
+                              .toList());
     }
 
 }

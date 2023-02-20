@@ -30,11 +30,16 @@ public class SyncParameters extends Parameters {
 
         private Duration defaultTimeout;
 
-        /**
-         * Set default timeout for all messagebus operations.
-         */
+        /** @deprecated use {@link #defaultTimeout} */
+        @Deprecated // TODO: Remove on Vespa 9
         public void setDefaultTimeout(Duration defaultTimeout) {
+            defaultTimeout(defaultTimeout);
+        }
+
+        /** Set default timeout for all messagebus operations. */
+        public Builder defaultTimeout(Duration defaultTimeout) {
             this.defaultTimeout = defaultTimeout;
+            return this;
         }
 
         public SyncParameters build() {

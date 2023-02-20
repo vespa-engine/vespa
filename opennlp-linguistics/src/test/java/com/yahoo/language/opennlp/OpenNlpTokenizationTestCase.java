@@ -246,7 +246,7 @@ public class OpenNlpTokenizationTestCase {
                 }
             }
             if (orig != null) {
-                assertEquals("orig index: " + j, token.getOrig(), orig.get(j++));
+                assertEquals("orig index: " + j, orig.get(j++), token.getOrig());
             }
         }
         assertEquals("indexed length", indexed.size(), i);

@@ -34,7 +34,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static java.util.stream.Collectors.toList;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -325,7 +324,7 @@ public class SystemFlagsDataArchiveTest {
     private static List<FlagData> getData(SystemFlagsDataArchive archive, FlagId flagId, FlagsTarget target) {
         return archive.flagData(target).stream()
                 .filter(d -> d.id().equals(flagId))
-                .collect(toList());
+                .toList();
     }
 
     private static class SimpleZone implements ZoneApi {

@@ -3,7 +3,7 @@
 
 #include "persistence_operation_metric_set.h"
 
-namespace storage {
+namespace storage::distributor {
 
 struct VisitorMetricSet : public PersistenceOperationMetricSet {
     metrics::LongAverageMetric buckets_per_visitor;
@@ -11,11 +11,10 @@ struct VisitorMetricSet : public PersistenceOperationMetricSet {
     metrics::LongAverageMetric bytes_per_visitor;
 
     VisitorMetricSet(MetricSet* owner = nullptr);
-    ~VisitorMetricSet();
+    ~VisitorMetricSet() override;
 
     MetricSet * clone(std::vector<Metric::UP>& ownerList, CopyType copyType,
                       MetricSet* owner, bool includeUnused) const override;
 };
 
-} // storage
-
+} // storage::distributor

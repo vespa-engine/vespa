@@ -102,6 +102,30 @@ public class TensorTypeTestCase {
         assertEquals("tensor<int8>(x[])", TensorType.fromSpec("tensor<int8>(x[])").toString());
     }
 
+    @Test
+    public void testIndexedSubtype() {
+        assertEquals(TensorType.fromSpec("tensor(x[10])"),
+                     TensorType.fromSpec("tensor(x[10])").indexedSubtype());
+        assertEquals(TensorType.fromSpec("tensor(x[10])"),
+                     TensorType.fromSpec("tensor(x[10],a{})").indexedSubtype());
+        assertEquals(TensorType.fromSpec("tensor(x[10],y[5])"),
+                     TensorType.fromSpec("tensor(x[10],y[5],a{},b{})").indexedSubtype());
+        assertEquals(TensorType.fromSpec("tensor()"),
+                     TensorType.fromSpec("tensor(a{})").indexedSubtype());
+    }
+
+    @Test
+    public void testMappedSubtype() {
+        assertEquals(TensorType.fromSpec("tensor(a{})"),
+                     TensorType.fromSpec("tensor(a{})").mappedSubtype());
+        assertEquals(TensorType.fromSpec("tensor(a{})"),
+                     TensorType.fromSpec("tensor(x[10],a{})").mappedSubtype());
+        assertEquals(TensorType.fromSpec("tensor(a{},b{})"),
+                     TensorType.fromSpec("tensor(x[10],y[5],a{},b{})").mappedSubtype());
+        assertEquals(TensorType.fromSpec("tensor()"),
+                     TensorType.fromSpec("tensor(x[10])").mappedSubtype());
+    }
+
     private static void assertTensorType(String typeSpec) {
         assertTensorType(typeSpec, typeSpec);
     }

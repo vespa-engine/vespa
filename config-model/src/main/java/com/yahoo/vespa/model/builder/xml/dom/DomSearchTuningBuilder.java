@@ -3,7 +3,8 @@ package com.yahoo.vespa.model.builder.xml.dom;
 
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.text.XML;
-import com.yahoo.config.model.producer.AbstractConfigProducer;
+import com.yahoo.config.model.producer.AnyConfigProducer;
+import com.yahoo.config.model.producer.TreeConfigProducer;
 import com.yahoo.vespa.model.search.Tuning;
 import org.w3c.dom.Element;
 
@@ -12,10 +13,10 @@ import org.w3c.dom.Element;
  *
  * @author geirst
  */
-public class DomSearchTuningBuilder extends VespaDomBuilder.DomConfigProducerBuilder<Tuning> {
+public class DomSearchTuningBuilder extends VespaDomBuilder.DomConfigProducerBuilderBase<Tuning> {
 
     @Override
-    protected Tuning doBuild(DeployState deployState, AbstractConfigProducer parent, Element spec) {
+    protected Tuning doBuild(DeployState deployState, TreeConfigProducer<AnyConfigProducer> parent, Element spec) {
         Tuning tuning = new Tuning(parent);
         for (Element e : XML.getChildren(spec)) {
             if (equals("searchnode", e))

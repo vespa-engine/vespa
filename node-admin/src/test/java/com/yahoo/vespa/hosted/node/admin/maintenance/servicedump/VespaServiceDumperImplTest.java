@@ -227,7 +227,7 @@ class VespaServiceDumperImplTest {
         List<URI> actualFilenames = actualFiles.stream()
                 .map(SyncFileInfo::destination)
                 .sorted()
-                .collect(Collectors.toList());
+                .toList();
         assertEquals(expectedDestinations, actualFilenames);
     }
 

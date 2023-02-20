@@ -2,56 +2,51 @@
 
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/vespalib/util/thread.h>
-#include <thread>
 
 using namespace vespalib;
 
 VESPA_THREAD_STACK_TAG(test_agent_thread);
 
 struct Agent : public Runnable {
-    bool started;
-    int loopCnt;
-    Agent() : started(false), loopCnt(0) {}
+    bool was_run;
+    Agent() : was_run(false) {}
     void run() override {
-        started = true;
-        Thread &thread = Thread::currentThread();
-        while (thread.slumber(60.0)) {
-            ++loopCnt;
-        }
+        was_run = true;
     }
 };
 
-TEST("thread never started") {
-    Agent agent;
-    {
-        Thread thread(agent, test_agent_thread);
-    }
-    EXPECT_TRUE(!agent.started);
-    EXPECT_EQUAL(0, agent.loopCnt);
+void my_fun(bool *was_run) {
+    *was_run = true;
 }
 
-TEST("normal operation") {
-    Agent agent;
-    {
-        Thread thread(agent, test_agent_thread);
-        thread.start();
-        std::this_thread::sleep_for(20ms);
-        thread.stop().join();
-    }
-    EXPECT_TRUE(agent.started);
-    EXPECT_EQUAL(0, agent.loopCnt);
+Runnable::init_fun_t wrap(Runnable::init_fun_t init, bool *init_called) {
+    return [=](Runnable &target)
+           {
+               *init_called = true;
+               return init(target);
+           };
 }
 
-TEST("stop before start") {
+TEST("run vespalib::Runnable with init function") {
     Agent agent;
-    {
-        Thread thread(agent, test_agent_thread);
-        thread.stop();
-        thread.start();
-        thread.join();
-    }
-    EXPECT_TRUE(agent.started);
-    EXPECT_EQUAL(0, agent.loopCnt);
+    bool init_called = false;
+    auto thread = thread::start(agent, wrap(test_agent_thread, &init_called));
+    thread.join();
+    EXPECT_TRUE(init_called);
+    EXPECT_TRUE(agent.was_run);
+}
+
+TEST("use thread pool to run multiple things") {
+    Agent agent;
+    bool init_called = false;
+    bool was_run = false;
+    ThreadPool pool;
+    pool.start(my_fun, &was_run);
+    pool.start(agent, wrap(test_agent_thread, &init_called));
+    pool.join();
+    EXPECT_TRUE(init_called);
+    EXPECT_TRUE(agent.was_run);
+    EXPECT_TRUE(was_run);
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }

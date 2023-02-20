@@ -8,7 +8,7 @@
 #include "btreeaggregator.h"
 #include "noaggrcalc.h"
 #include "minmaxaggrcalc.h"
-#include "btreeiterator.h" 
+#include "btreeiterator.h"
 
 namespace vespalib::btree {
 
@@ -21,17 +21,17 @@ template <typename KeyT,
 class BTreeRemoverBase
 {
 public:
-    typedef BTreeNodeAllocator<KeyT, DataT, AggrT,
-                               INTERNAL_SLOTS,
-                               LEAF_SLOTS> NodeAllocatorType;
-    typedef BTreeAggregator<KeyT, DataT, AggrT,
-                            INTERNAL_SLOTS,
-                            LEAF_SLOTS,
-                            AggrCalcT> Aggregator;
-    typedef BTreeInternalNode<KeyT, AggrT, INTERNAL_SLOTS> InternalNodeType;
-    typedef BTreeLeafNode<KeyT, DataT, AggrT, LEAF_SLOTS>  LeafNodeType;
-    typedef typename InternalNodeType::RefPair InternalNodeTypeRefPair;
-    typedef typename LeafNodeType::RefPair LeafNodeTypeRefPair;
+    using NodeAllocatorType = BTreeNodeAllocator<KeyT, DataT, AggrT,
+                                                 INTERNAL_SLOTS,
+                                                 LEAF_SLOTS>;
+    using Aggregator = BTreeAggregator<KeyT, DataT, AggrT,
+                                       INTERNAL_SLOTS,
+                                       LEAF_SLOTS,
+                                       AggrCalcT>;
+    using InternalNodeType = BTreeInternalNode<KeyT, AggrT, INTERNAL_SLOTS>;
+    using LeafNodeType = BTreeLeafNode<KeyT, DataT, AggrT, LEAF_SLOTS>;
+    using InternalNodeTypeRefPair = typename InternalNodeType::RefPair;
+    using LeafNodeTypeRefPair = typename LeafNodeType::RefPair;
 
     template <typename NodeType, typename NodeTypeRefPair,
               class Iterator>
@@ -56,29 +56,27 @@ class BTreeRemover : public BTreeRemoverBase<KeyT, DataT, AggrT,
                                              TraitsT::INTERNAL_SLOTS,
                                              TraitsT::LEAF_SLOTS,
                                              AggrCalcT>
-    
+
 {
 public:
-    typedef BTreeRemoverBase<KeyT, DataT, AggrT,
-                             TraitsT::INTERNAL_SLOTS,
-                             TraitsT::LEAF_SLOTS,
-                             AggrCalcT> ParentType;
-    typedef BTreeNodeAllocator<KeyT, DataT, AggrT,
-                               TraitsT::INTERNAL_SLOTS,
-                               TraitsT::LEAF_SLOTS> NodeAllocatorType;
-    typedef BTreeAggregator<KeyT, DataT, AggrT,
-                            TraitsT::INTERNAL_SLOTS,
-                            TraitsT::LEAF_SLOTS,
-                            AggrCalcT> Aggregator;
-    typedef BTreeInternalNode<KeyT, AggrT, TraitsT::INTERNAL_SLOTS>
-    InternalNodeType;
-    typedef BTreeLeafNode<KeyT, DataT, AggrT, TraitsT::LEAF_SLOTS>
-    LeafNodeType;
-    typedef KeyT  KeyType;
-    typedef DataT DataType;
-    typedef typename InternalNodeType::RefPair InternalNodeTypeRefPair;
-    typedef typename LeafNodeType::RefPair LeafNodeTypeRefPair;
-    typedef BTreeIterator<KeyT, DataT, AggrT, CompareT, TraitsT> Iterator;
+    using ParentType = BTreeRemoverBase<KeyT, DataT, AggrT,
+                                        TraitsT::INTERNAL_SLOTS,
+                                        TraitsT::LEAF_SLOTS,
+                                        AggrCalcT>;
+    using NodeAllocatorType = BTreeNodeAllocator<KeyT, DataT, AggrT,
+                                                 TraitsT::INTERNAL_SLOTS,
+                                                 TraitsT::LEAF_SLOTS>;
+    using Aggregator = BTreeAggregator<KeyT, DataT, AggrT,
+                                       TraitsT::INTERNAL_SLOTS,
+                                       TraitsT::LEAF_SLOTS,
+                                       AggrCalcT>;
+    using InternalNodeType = BTreeInternalNode<KeyT, AggrT, TraitsT::INTERNAL_SLOTS>;
+    using LeafNodeType = BTreeLeafNode<KeyT, DataT, AggrT, TraitsT::LEAF_SLOTS>;
+    using KeyType = KeyT;
+    using DataType = DataT;
+    using InternalNodeTypeRefPair = typename InternalNodeType::RefPair;
+    using LeafNodeTypeRefPair = typename LeafNodeType::RefPair;
+    using Iterator = BTreeIterator<KeyT, DataT, AggrT, CompareT, TraitsT>;
 
     static void
     remove(BTreeNode::Ref &root, Iterator &itr, const AggrCalcT &aggrCalc);

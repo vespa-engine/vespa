@@ -18,4 +18,5 @@ public final class PassthroughExpression extends OutputExpression {
     public boolean equals(Object obj) {
         return super.equals(obj) && obj instanceof PassthroughExpression;
     }
+
 }

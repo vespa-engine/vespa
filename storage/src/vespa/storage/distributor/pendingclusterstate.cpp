@@ -10,7 +10,6 @@
 #include <vespa/vdslib/distribution/distribution.h>
 #include <vespa/vespalib/util/xmlstream.hpp>
 #include <vespa/vespalib/stllike/hash_map.hpp>
-#include <climits>
 
 #include <vespa/log/bufferedlogger.h>
 LOG_SETUP(".pendingclusterstate");
@@ -23,13 +22,17 @@ using lib::Node;
 using lib::NodeType;
 using lib::NodeState;
 
+namespace {
+    constexpr vespalib::duration MAX_TIMEOUT = 3600s;
+}
+
 PendingClusterState::PendingClusterState(
         const framework::Clock& clock,
         const ClusterInformation::CSP& clusterInfo,
         DistributorMessageSender& sender,
         const BucketSpaceStateMap& bucket_space_states,
         const std::shared_ptr<api::SetSystemStateCommand>& newStateCmd,
-        const OutdatedNodesMap &outdatedNodesMap,
+        const OutdatedNodesMap& outdatedNodesMap,
         api::Timestamp creationTimestamp)
     : _cmd(newStateCmd),
       _sentMessages(),
@@ -79,7 +82,7 @@ PendingClusterState::PendingClusterState(
 PendingClusterState::~PendingClusterState() = default;
 
 void
-PendingClusterState::initializeBucketSpaceTransitions(bool distributionChanged, const OutdatedNodesMap &outdatedNodesMap)
+PendingClusterState::initializeBucketSpaceTransitions(bool distributionChanged, const OutdatedNodesMap& outdatedNodesMap)
 {
     OutdatedNodes emptyOutdatedNodes;
     for (const auto &elem : _bucket_space_states) {
@@ -129,12 +132,6 @@ PendingClusterState::getOutdatedNodesMap() const
     return outdatedNodesMap;
 }
 
-uint16_t
-PendingClusterState::newStateStorageNodeCount() const
-{
-    return _newClusterStateBundle.getBaselineClusterState()->getNodeCount(lib::NodeType::STORAGE);
-}
-
 bool
 PendingClusterState::shouldRequestBucketInfo() const
 {
@@ -167,10 +164,8 @@ PendingClusterState::iAmDown() const
 void
 PendingClusterState::requestNodes()
 {
-    LOG(debug,
-        "New system state: Old state was %s, new state is %s",
-        getPrevClusterStateBundleString().c_str(),
-        getNewClusterStateBundleString().c_str());
+    LOG(debug, "New system state: Old state was %s, new state is %s",
+        getPrevClusterStateBundleString().c_str(), getNewClusterStateBundleString().c_str());
 
     requestBucketInfoFromStorageNodesWithChangedState();
 }
@@ -195,10 +190,8 @@ PendingClusterState::requestNode(BucketSpaceAndNode bucketSpaceAndNode)
     vespalib::string distributionHash = distribution.getNodeGraph().getDistributionConfigHash();
 
     LOG(debug,
-        "Requesting bucket info for bucket space %" PRIu64 " node %d with cluster state '%s' "
-        "and distribution hash '%s'",
-        bucketSpaceAndNode.bucketSpace.getId(),
-        bucketSpaceAndNode.node,
+        "Requesting bucket info for bucket space %" PRIu64 " node %d with cluster state '%s' and distribution hash '%s'",
+        bucketSpaceAndNode.bucketSpace.getId(), bucketSpaceAndNode.node,
         _newClusterStateBundle.getDerivedClusterState(bucketSpaceAndNode.bucketSpace)->toString().c_str(),
         distributionHash.c_str());
 
@@ -209,7 +202,7 @@ PendingClusterState::requestNode(BucketSpaceAndNode bucketSpaceAndNode)
                     distributionHash);
 
     cmd->setPriority(api::StorageMessage::HIGH);
-    cmd->setTimeout(vespalib::duration::max());
+    cmd->setTimeout(MAX_TIMEOUT);
 
     _sentMessages.emplace(cmd->getMsgId(), bucketSpaceAndNode);
 
@@ -217,11 +210,10 @@ PendingClusterState::requestNode(BucketSpaceAndNode bucketSpaceAndNode)
 }
 
 
-PendingClusterState::Summary::Summary(const std::string& prevClusterState,
-                                      const std::string& newClusterState,
-                                      uint32_t processingTime)
-    : _prevClusterState(prevClusterState),
-      _newClusterState(newClusterState),
+PendingClusterState::Summary::Summary(std::string prevClusterState, std::string newClusterState,
+                                      vespalib::duration processingTime)
+    : _prevClusterState(std::move(prevClusterState)),
+      _newClusterState(std::move(newClusterState)),
       _processingTime(processingTime)
 {}
 
@@ -256,9 +248,7 @@ PendingClusterState::onRequestBucketInfoReply(const std::shared_ptr<api::Request
 
     api::ReturnCode result(reply->getResult());
     if (!result.success()) {
-        framework::MilliSecTime resendTime(_clock);
-        resendTime += framework::MilliSecTime(100);
-        _delayedRequests.emplace_back(resendTime, bucketSpaceAndNode);
+        _delayedRequests.emplace_back(_clock.getMonotonicTime() + 100ms, bucketSpaceAndNode);
         _sentMessages.erase(iter);
         update_reply_failure_statistics(result, bucketSpaceAndNode);
         return true;
@@ -279,9 +269,9 @@ PendingClusterState::onRequestBucketInfoReply(const std::shared_ptr<api::Request
 void
 PendingClusterState::resendDelayedMessages() {
     if (_delayedRequests.empty()) return; // Don't fetch time if not needed
-    framework::MilliSecTime currentTime(_clock);
+    vespalib::steady_time currentTime = _clock.getMonotonicTime();
     while (!_delayedRequests.empty()
-           && currentTime >= _delayedRequests.front().first)
+           && (currentTime >= _delayedRequests.front().first))
     {
         requestNode(_delayedRequests.front().second);
         _delayedRequests.pop_front();
@@ -313,12 +303,12 @@ PendingClusterState::printXml(vespalib::XmlOutputStream& xos) const
 PendingClusterState::Summary
 PendingClusterState::getSummary() const
 {
-    return Summary(getPrevClusterStateBundleString(),
-                   getNewClusterStateBundleString(),
-                   (_clock.getTimeInMicros().getTime() - _creationTimestamp));
+    return {getPrevClusterStateBundleString(),
+            getNewClusterStateBundleString(),
+            _clock.getSystemTime().time_since_epoch() - std::chrono::microseconds(_creationTimestamp)};
 }
 
-PendingBucketSpaceDbTransition &
+PendingBucketSpaceDbTransition&
 PendingClusterState::getPendingBucketSpaceDbTransition(document::BucketSpace bucketSpace)
 {
     auto transitionIter = _pendingTransitions.find(bucketSpace);

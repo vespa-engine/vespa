@@ -30,7 +30,7 @@ SumBlueprint::visitDumpFeatures(const IIndexEnvironment & indexEnv, IDumpFeature
     (void) visitor;
 #else
     // Use the feature name builder to make sure that the naming of features are quoted correctly.
-    typedef FeatureNameBuilder FNB;
+    using FNB = FeatureNameBuilder;
 
     // This blueprint dumps 2 ranking features. This is a very tricky feature in that it's dependencies
     // are given by its parameters, so the definition of features implicitly declares this tree. This

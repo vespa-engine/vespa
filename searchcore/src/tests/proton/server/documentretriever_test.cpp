@@ -341,7 +341,7 @@ struct Fixture {
           _dtName(doc_type_name),
           _retriever()
     {
-        typedef DocumentMetaStore::Result Result;
+        using Result = DocumentMetaStore::Result;
         meta_store.constructFreeList();
         Result inspect = meta_store.get().inspect(gid, 0u);
         uint32_t docSize = 1;

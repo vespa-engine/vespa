@@ -11,9 +11,7 @@ LOG_SETUP(".operationowner");
 
 namespace storage::distributor {
 
-OperationOwner::~OperationOwner()
-{
-}
+OperationOwner::~OperationOwner() = default;
 
 void
 OperationOwner::Sender::sendCommand(const std::shared_ptr<api::StorageCommand> & msg)
@@ -33,7 +31,7 @@ OperationOwner::handleReply(const std::shared_ptr<api::StorageReply>& reply)
 {
     std::shared_ptr<Operation> cb = _sentMessageMap.pop(reply->getMsgId());
 
-    if (cb.get() != 0) {
+    if (cb) {
         Sender sender(*this, _sender, cb);
         cb->receive(sender, reply);
         return true;
@@ -43,13 +41,11 @@ OperationOwner::handleReply(const std::shared_ptr<api::StorageReply>& reply)
 }
 
 bool
-OperationOwner::start(const std::shared_ptr<Operation>& operation,
-                      Priority priority)
+OperationOwner::start(const std::shared_ptr<Operation>& operation, Priority)
 {
-    (void) priority;
     LOG(spam, "Starting operation %s", operation->toString().c_str());
     Sender sender(*this, _sender, operation);
-    operation->start(sender, _clock.getTimeInMillis());
+    operation->start(sender, _clock.getSystemTime());
     return true;
 }
 
@@ -65,7 +61,7 @@ OperationOwner::onClose()
     while (true) {
         std::shared_ptr<Operation> cb = _sentMessageMap.pop();
 
-        if (cb.get()) {
+        if (cb) {
             Sender sender(*this, _sender, std::shared_ptr<Operation>());
             cb->onClose(sender);
         } else {

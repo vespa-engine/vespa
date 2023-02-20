@@ -3,7 +3,6 @@
 #include <vespa/vespalib/coro/lazy.h>
 #include <vespa/vespalib/coro/completion.h>
 #include <vespa/vespalib/coro/schedule.h>
-#include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/util/require.h>
 #include <vespa/vespalib/util/gate.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
@@ -102,7 +101,7 @@ TEST(LazyTest, extract_rvalue_from_lazy_in_sync_wait) {
 }
 
 TEST(LazyTest, calculate_result_in_another_thread) {
-    vespalib::ThreadStackExecutor executor(1, 128_Ki);
+    vespalib::ThreadStackExecutor executor(1);
     auto result = sync_wait(try_schedule_on(executor, make_lazy(7)));
     EXPECT_EQ(result.first, true);
     EXPECT_EQ(result.second, 7);
@@ -111,13 +110,13 @@ TEST(LazyTest, calculate_result_in_another_thread) {
 }
 
 TEST(LazyTest, exceptions_are_propagated) {
-    vespalib::ThreadStackExecutor executor(1, 128_Ki);
+    vespalib::ThreadStackExecutor executor(1);
     auto lazy = try_schedule_on(executor, forward_value(will_throw()));
     EXPECT_THROW(sync_wait(std::move(lazy)), vespalib::RequireFailedException);
 }
 
 TEST(LazyTest, not_able_to_switch_thread_if_executor_is_shut_down) {
-    vespalib::ThreadStackExecutor executor(1, 128_Ki);
+    vespalib::ThreadStackExecutor executor(1);
     executor.shutdown();
     auto result = sync_wait(try_schedule_on(executor, make_lazy(7)));
     EXPECT_EQ(result.first, false);
@@ -129,7 +128,7 @@ TEST(LazyTest, not_able_to_switch_thread_if_executor_is_shut_down) {
 TEST(LazyTest, async_wait_with_lambda) {
     Gate gate;
     Received<int> result;
-    vespalib::ThreadStackExecutor executor(1, 128_Ki);
+    vespalib::ThreadStackExecutor executor(1);
     auto lazy = schedule_on(executor, make_lazy(7));
     async_wait(std::move(lazy), [&](auto res)
                                 {
@@ -143,7 +142,7 @@ TEST(LazyTest, async_wait_with_lambda) {
 TEST(LazyTest, async_wait_with_error) {
     Gate gate;
     Received<int> result;
-    vespalib::ThreadStackExecutor executor(1, 128_Ki);
+    vespalib::ThreadStackExecutor executor(1);
     auto lazy = schedule_on(executor, will_throw());
     async_wait(std::move(lazy), [&](auto res)
                                 {
@@ -157,7 +156,7 @@ TEST(LazyTest, async_wait_with_error) {
 TEST(LazyTest, async_wait_with_move_only_result) {
     Gate gate;
     Received<std::unique_ptr<int>> result;
-    vespalib::ThreadStackExecutor executor(1, 128_Ki);
+    vespalib::ThreadStackExecutor executor(1);
     auto lazy = schedule_on(executor, move_only_int());
     async_wait(std::move(lazy), [&](auto res)
                                 {
@@ -178,7 +177,7 @@ struct Refs {
 TEST(LazyTest, async_wait_with_move_only_result_and_move_only_lambda) {
     Gate gate;
     Received<std::unique_ptr<int>> result;
-    vespalib::ThreadStackExecutor executor(1, 128_Ki);
+    vespalib::ThreadStackExecutor executor(1);
     auto lazy = schedule_on(executor, move_only_int());
     async_wait(std::move(lazy), [refs = std::make_unique<Refs>(gate,result)](auto res)
                                 {

@@ -7,7 +7,6 @@ import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
-import com.yahoo.config.provision.Tags;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.zone.RoutingMethod;
 import com.yahoo.config.provision.zone.ZoneApi;
@@ -218,14 +217,14 @@ public final class ControllerTester {
     /** Set the zones and system for this and bootstrap infrastructure nodes */
     public ControllerTester setZones(List<ZoneId> zones) {
         ZoneApiMock.Builder builder = ZoneApiMock.newBuilder().withSystem(zoneRegistry().system());
-        zoneRegistry().setZones(zones.stream().map(zone -> builder.with(zone).build()).collect(Collectors.toList()));
+        zoneRegistry().setZones(zones.stream().map(zone -> builder.with(zone).build()).toList());
         configServer().bootstrap(zones, SystemApplication.notController());
         return this;
     }
 
     /** Set the routing method for given zones */
     public ControllerTester setRoutingMethod(List<ZoneId> zones, RoutingMethod routingMethod) {
-        zoneRegistry().setRoutingMethod(zones.stream().map(ZoneApiMock::from).collect(Collectors.toList()),
+        zoneRegistry().setRoutingMethod(zones.stream().map(ZoneApiMock::from).toList(),
                                         routingMethod);
         return this;
     }
@@ -371,7 +370,7 @@ public final class ControllerTester {
 
     public Application createApplication(String tenant, String applicationName, String instanceName) {
         Application application = createApplication(tenant, applicationName);
-        controller().applications().createInstance(application.id().instance(instanceName), Tags.empty());
+        controller().applications().createInstance(application.id().instance(instanceName));
         return application;
     }
 

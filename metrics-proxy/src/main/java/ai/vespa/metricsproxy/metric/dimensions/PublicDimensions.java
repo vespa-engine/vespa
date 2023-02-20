@@ -40,16 +40,23 @@ public final class PublicDimensions {
 
 
     /**  Metric specific dimensions  **/
-    public static final String API = "api";                      // feed
-    public static final String CHAIN = "chain";                  // query
-    public static final String DOCUMENT_TYPE = "documenttype";   // content
-    public static final String ENDPOINT = "endpoint";            // query
-    public static final String GC_NAME = "gcName";               // container
-    public static final String HTTP_METHOD = "httpMethod";       // container
-    public static final String OPERATION = "operation";          // feed
-    public static final String RANK_PROFILE = "rankProfile";     // content
-    public static final String REASON = "reason";                // query (degraded etc.)
-    public static final String STATUS = "status";                // feed
+    public static final String API = "api";                                 // feed
+    public static final String CHAIN = "chain";                             // query
+    public static final String DOCUMENT_TYPE = "documenttype";              // content
+    public static final String ENDPOINT = "endpoint";                       // query
+    public static final String GC_NAME = "gcName";                          // container
+    public static final String HTTP_METHOD = "httpMethod";                  // container
+    public static final String OPERATION = "operation";                     // feed
+    public static final String RANK_PROFILE = "rankProfile";                // content
+    public static final String REASON = "reason";                           // query (degraded etc.)
+    public static final String STATUS = "status";                           // feed
+    public static final String THREADPOOL = "threadpool";                   // container
+    private static final String LOGLEVEL = "loglevel";                      // log line metrics
+    private static final String SERVICE = "service";                        // log line metrics
+    private static final String CHAIN_ID = "chainId";                       // container
+    private static final String REQUEST_SERVER_NAME = "requestServerName";  // container
+    public static final String HANDLER_NAME = "handler-name";               // container
+    public static final String FIELD = "field";                             // content
 
 
     // Dimensions that are valid (but not necessarily used) for all metrics.
@@ -71,13 +78,19 @@ public final class PublicDimensions {
                 OPERATION,
                 RANK_PROFILE,
                 REASON,
-                STATUS);
+                STATUS,
+                THREADPOOL,
+                LOGLEVEL,
+                SERVICE,
+                CHAIN_ID,
+                REQUEST_SERVER_NAME,
+                HANDLER_NAME);
 
 
     /**
      * All public dimensions, common dimensions first, then dimensions for individual metrics
      */
     public static final List<String> publicDimensions = Stream.concat(commonDimensions.stream(), metricDimensions.stream())
-            .collect(Collectors.toList());
+            .toList();
 
 }

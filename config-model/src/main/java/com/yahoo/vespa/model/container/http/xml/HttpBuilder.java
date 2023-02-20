@@ -4,7 +4,8 @@ package com.yahoo.vespa.model.container.http.xml;
 import com.yahoo.component.ComponentSpecification;
 import com.yahoo.config.model.builder.xml.XmlHelper;
 import com.yahoo.config.model.deploy.DeployState;
-import com.yahoo.config.model.producer.AbstractConfigProducer;
+import com.yahoo.config.model.producer.AnyConfigProducer;
+import com.yahoo.config.model.producer.TreeConfigProducer;
 import com.yahoo.config.provision.AthenzDomain;
 import com.yahoo.text.XML;
 import com.yahoo.vespa.defaults.Defaults;
@@ -27,14 +28,14 @@ import java.util.logging.Level;
  * @author Tony Vaagenes
  * @author gjoranv
  */
-public class HttpBuilder extends VespaDomBuilder.DomConfigProducerBuilder<Http> {
+public class HttpBuilder extends VespaDomBuilder.DomConfigProducerBuilderBase<Http> {
 
     static final String REQUEST_CHAIN_TAG_NAME = "request-chain";
     static final String RESPONSE_CHAIN_TAG_NAME = "response-chain";
     static final List<String> VALID_FILTER_CHAIN_TAG_NAMES = List.of(REQUEST_CHAIN_TAG_NAME, RESPONSE_CHAIN_TAG_NAME);
 
     @Override
-    protected Http doBuild(DeployState deployState, AbstractConfigProducer<?> ancestor, Element spec) {
+    protected Http doBuild(DeployState deployState, TreeConfigProducer<AnyConfigProducer> ancestor, Element spec) {
         FilterChains filterChains;
         List<FilterBinding> bindings = new ArrayList<>();
         AccessControl accessControl = null;
@@ -66,7 +67,7 @@ public class HttpBuilder extends VespaDomBuilder.DomConfigProducerBuilder<Http> 
         return http;
     }
 
-    private AccessControl buildAccessControl(DeployState deployState, AbstractConfigProducer<?> ancestor, Element accessControlElem) {
+    private AccessControl buildAccessControl(DeployState deployState, TreeConfigProducer<?> ancestor, Element accessControlElem) {
         AthenzDomain domain = getAccessControlDomain(deployState, accessControlElem);
         AccessControl.Builder builder = new AccessControl.Builder(domain.value());
 
@@ -129,8 +130,8 @@ public class HttpBuilder extends VespaDomBuilder.DomConfigProducerBuilder<Http> 
         return tenantDomain != null ? tenantDomain : explicitDomain;
     }
 
-    private static Optional<ApplicationContainerCluster> getContainerCluster(AbstractConfigProducer<?> configProducer) {
-        AbstractConfigProducer<?> currentProducer = configProducer;
+    private static Optional<ApplicationContainerCluster> getContainerCluster(TreeConfigProducer<?> configProducer) {
+        AnyConfigProducer currentProducer = configProducer;
         while (! ApplicationContainerCluster.class.isAssignableFrom(currentProducer.getClass())) {
             currentProducer = currentProducer.getParent();
             if (currentProducer == null)

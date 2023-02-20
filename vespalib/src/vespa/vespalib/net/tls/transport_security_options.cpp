@@ -30,7 +30,6 @@ TransportSecurityOptions::TransportSecurityOptions(vespalib::string ca_certs_pem
 }
 
 TransportSecurityOptions::TransportSecurityOptions(const TransportSecurityOptions&) = default;
-TransportSecurityOptions& TransportSecurityOptions::operator=(const TransportSecurityOptions&) = default;
 TransportSecurityOptions::TransportSecurityOptions(TransportSecurityOptions&&) noexcept = default;
 TransportSecurityOptions& TransportSecurityOptions::operator=(TransportSecurityOptions&&) noexcept = default;
 
@@ -62,9 +61,6 @@ TransportSecurityOptions::Params::~Params() {
 }
 
 TransportSecurityOptions::Params::Params(const Params&) = default;
-
-TransportSecurityOptions::Params&
-TransportSecurityOptions::Params::operator=(const TransportSecurityOptions::Params&) = default;
 
 TransportSecurityOptions::Params::Params(Params&&) noexcept = default;
 

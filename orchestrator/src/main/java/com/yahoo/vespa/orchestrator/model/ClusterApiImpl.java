@@ -196,7 +196,7 @@ class ClusterApiImpl implements ClusterApi {
             description.append(" ");
 
             final int nodeLimit = 3;
-            description.append(suspended.stream().sorted().distinct().limit(nodeLimit).collect(Collectors.toList()).toString());
+            description.append(suspended.stream().sorted().distinct().limit(nodeLimit).toList().toString());
             if (suspended.size() > nodeLimit) {
                 description.append(" and " + (suspended.size() - nodeLimit) + " others");
             }
@@ -216,7 +216,7 @@ class ClusterApiImpl implements ClusterApi {
                     downElsewhere.stream().map(ServiceInstance::toString).sorted(),
                     missingServices > 0 ? Stream.of(descriptionOfMissingServices) : Stream.of())
                     .limit(serviceLimit)
-                    .collect(Collectors.toList())
+                    .toList()
                     .toString());
 
             if (downElsewhereTotal > serviceLimit) {

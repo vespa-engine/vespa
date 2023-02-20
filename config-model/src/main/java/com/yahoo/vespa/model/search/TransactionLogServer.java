@@ -3,7 +3,8 @@ package com.yahoo.vespa.model.search;
 
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.searchlib.TranslogserverConfig;
-import com.yahoo.config.model.producer.AbstractConfigProducer;
+import com.yahoo.config.model.producer.AnyConfigProducer;
+import com.yahoo.config.model.producer.TreeConfigProducer;
 import com.yahoo.vespa.model.AbstractService;
 import com.yahoo.vespa.model.PortAllocBridge;
 import com.yahoo.vespa.model.builder.xml.dom.VespaDomBuilder;
@@ -16,7 +17,7 @@ public class TransactionLogServer extends AbstractService  {
 
     private final Boolean useFsync;
 
-    public TransactionLogServer(AbstractConfigProducer<?> searchNode, String clusterName, Boolean useFsync) {
+    public TransactionLogServer(TreeConfigProducer<?> searchNode, String clusterName, Boolean useFsync) {
         super(searchNode, "transactionlogserver");
         portsMeta.on(0).tag("tls");
         this.useFsync = useFsync;
@@ -24,7 +25,7 @@ public class TransactionLogServer extends AbstractService  {
         setProp("clustertype", "search");
     }
 
-    public static class Builder extends VespaDomBuilder.DomConfigProducerBuilder<TransactionLogServer> {
+    public static class Builder extends VespaDomBuilder.DomConfigProducerBuilderBase<TransactionLogServer> {
 
         private final String clusterName;
         private final Boolean useFsync;
@@ -34,7 +35,7 @@ public class TransactionLogServer extends AbstractService  {
         }
 
         @Override
-        protected TransactionLogServer doBuild(DeployState deployState, AbstractConfigProducer<?> ancestor, Element producerSpec) {
+        protected TransactionLogServer doBuild(DeployState deployState, TreeConfigProducer<AnyConfigProducer> ancestor, Element producerSpec) {
             return new TransactionLogServer(ancestor, clusterName, useFsync);
         }
 

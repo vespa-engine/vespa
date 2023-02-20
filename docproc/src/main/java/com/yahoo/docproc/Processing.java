@@ -1,16 +1,20 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.docproc;
 
+import com.yahoo.concurrent.SystemTimer;
 import com.yahoo.docproc.impl.ProcessingAccess;
 import com.yahoo.docproc.impl.ProcessingEndpoint;
 import com.yahoo.document.DocumentOperation;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * A document processing. This contains the document(s) or document update(s) to process,
@@ -44,6 +48,8 @@ public final class Processing extends ProcessingAccess {
     private ProcessingEndpoint endpoint = null;
 
     private boolean operationsGotten = false;
+
+    private Instant expiresAt = Instant.MAX;
 
     /**
      * Create a Processing with no documents. Useful with DocprocService.process(Processing).
@@ -193,6 +199,10 @@ public final class Processing extends ProcessingAccess {
         }
     }
 
+    /**
+     * Returns the operations in this processing.
+     * This can be mutated to add or remove operations to be performed.
+     */
     public List<DocumentOperation> getDocumentOperations() {
         updateDocumentOperations();
         return documentOperations;
@@ -215,6 +225,17 @@ public final class Processing extends ProcessingAccess {
 
         operationsGotten = true;
         return getDocumentOperations();
+    }
+
+    public void setExpiresAt(Instant i) { this.expiresAt = i; }
+
+    public static final Duration NO_TIMEOUT = Duration.ofDays(10);
+    /** @return time left or {@link #NO_TIMEOUT} if processing has no timeout */
+    public Duration timeLeft() {
+        if (expiresAt == Instant.MAX) return NO_TIMEOUT;
+        Instant now = SystemTimer.INSTANCE.instant();
+        if (now.isAfter(expiresAt)) return Duration.ZERO;
+        return Duration.between(now, expiresAt);
     }
 
     @Override

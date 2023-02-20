@@ -9,7 +9,7 @@
 
 using namespace vespalib;
 
-typedef Executor::Task Task;
+using Task = Executor::Task;
 
 struct MyTask : public Executor::Task {
     Gate &gate;
@@ -39,7 +39,7 @@ struct MyState {
     CountDownLatch      latch;    // to wait for workers
     ThreadStackExecutor executor;
     bool                checked;
-    MyState() : gate(), latch(10), executor(NUM_THREADS, 128000, 20), checked(false)
+    MyState() : gate(), latch(10), executor(NUM_THREADS, 20), checked(false)
     {
         MyTask::resetStats();
     }
@@ -132,7 +132,7 @@ struct WaitState {
     std::vector<Gate> block_task;
     std::vector<Gate> wait_done;
     WaitState(size_t num_threads)
-        : executor(num_threads / 2, 128000), block_task(num_threads - 2), wait_done(num_threads - 1)
+        : executor(num_threads / 2), block_task(num_threads - 2), wait_done(num_threads - 1)
     {
         for (auto &gate: block_task) {
             auto result = executor.execute(std::make_unique<WaitTask>(gate));
@@ -175,14 +175,14 @@ vespalib::string get_worker_stack_trace(ThreadStackExecutor &executor) {
 
 VESPA_THREAD_STACK_TAG(my_stack_tag);
 
-TEST_F("require that executor has appropriate default thread stack tag", ThreadStackExecutor(1, 128_Ki)) {
+TEST_F("require that executor has appropriate default thread stack tag", ThreadStackExecutor(1)) {
     vespalib::string trace = get_worker_stack_trace(f1);
     if (!EXPECT_TRUE(trace.find("unnamed_nonblocking_executor") != vespalib::string::npos)) {
         fprintf(stderr, "%s\n", trace.c_str());
     }
 }
 
-TEST_F("require that executor thread stack tag can be set", ThreadStackExecutor(1, 128_Ki, my_stack_tag)) {
+TEST_F("require that executor thread stack tag can be set", ThreadStackExecutor(1, my_stack_tag)) {
     vespalib::string trace = get_worker_stack_trace(f1);
     if (!EXPECT_TRUE(trace.find("my_stack_tag") != vespalib::string::npos)) {
         fprintf(stderr, "%s\n", trace.c_str());
@@ -215,7 +215,7 @@ TEST("require that stats can be accumulated") {
 }
 
 TEST("Test that utilization is computed") {
-    ThreadStackExecutor executor(1, 128_Ki);
+    ThreadStackExecutor executor(1);
     std::this_thread::sleep_for(1s);
     auto stats = executor.getStats();
     EXPECT_GREATER(0.50, stats.getUtil());

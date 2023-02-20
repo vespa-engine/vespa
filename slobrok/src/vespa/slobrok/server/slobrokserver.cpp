@@ -8,16 +8,16 @@ VESPA_THREAD_STACK_TAG(slobrok_server_thread);
 
 SlobrokServer::SlobrokServer(ConfigShim &shim)
     : _env(shim),
-      _thread(*this, slobrok_server_thread)
+      _thread()
 {
-    _thread.start();
+    _thread = vespalib::thread::start(*this, slobrok_server_thread);
 }
 
 SlobrokServer::SlobrokServer(uint32_t port)
     : _env(ConfigShim(port)),
-      _thread(*this, slobrok_server_thread)
+      _thread()
 {
-    _thread.start();
+    _thread = vespalib::thread::start(*this, slobrok_server_thread);
 }
 
 

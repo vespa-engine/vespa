@@ -2,7 +2,8 @@
 package com.yahoo.vespa.model.builder.xml.dom.chains.processing;
 
 import com.yahoo.config.model.deploy.DeployState;
-import com.yahoo.config.model.producer.AbstractConfigProducer;
+import com.yahoo.config.model.producer.AnyConfigProducer;
+import com.yahoo.config.model.producer.TreeConfigProducer;
 import com.yahoo.vespa.model.builder.xml.dom.chains.ComponentsBuilder;
 import com.yahoo.vespa.model.builder.xml.dom.chains.DomChainsBuilder;
 import com.yahoo.vespa.model.container.processing.ProcessingChain;
@@ -24,12 +25,12 @@ public class DomProcessingBuilder extends DomChainsBuilder<Processor, Processing
     }
 
     @Override
-    protected ProcessingChains newChainsInstance(AbstractConfigProducer<?> parent) {
+    protected ProcessingChains newChainsInstance(TreeConfigProducer<AnyConfigProducer> parent) {
         return new ProcessingChains(parent, "processing");
     }
 
     @Override
-    protected ProcessingChainsBuilder readChains(DeployState deployState, AbstractConfigProducer<?> ancestor, List<Element> processingChainsElements,
+    protected ProcessingChainsBuilder readChains(DeployState deployState, TreeConfigProducer<AnyConfigProducer> ancestor, List<Element> processingChainsElements,
                                                  Map<String, ComponentsBuilder.ComponentType<?>> outerComponentTypeByComponentName) {
         return new ProcessingChainsBuilder(deployState, ancestor, processingChainsElements, outerComponentTypeByComponentName);
     }

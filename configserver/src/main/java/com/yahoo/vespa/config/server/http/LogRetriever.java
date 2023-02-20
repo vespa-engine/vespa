@@ -18,8 +18,9 @@ import java.util.Optional;
  */
 public class LogRetriever {
 
-    private final CloseableHttpClient httpClient = VespaHttpClientBuilder.create().build();
+    private final CloseableHttpClient httpClient = VespaHttpClientBuilder.custom().buildClient();
 
+    @SuppressWarnings("deprecation")
     public HttpResponse getLogs(String logServerUri, Optional<Instant> deployTime) {
         HttpGet get = new HttpGet(logServerUri);
         try {

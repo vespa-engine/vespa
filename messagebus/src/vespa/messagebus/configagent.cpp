@@ -1,8 +1,8 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/messagebus/routing/routingspec.h>
 #include "configagent.h"
 #include "iconfighandler.h"
+#include <vespa/messagebus/routing/routingspec.h>
 
 using namespace config;
 using namespace messagebus;
@@ -18,28 +18,24 @@ ConfigAgent::configure(std::unique_ptr<MessagebusConfig> config)
 {
     const MessagebusConfig &cfg(*config);
     RoutingSpec spec;
-    typedef MessagebusConfig CFG;
-    for (uint32_t t = 0; t < cfg.routingtable.size(); ++t) {
-        const CFG::Routingtable &table = cfg.routingtable[t];
+    for (const auto & table : cfg.routingtable) {
         RoutingTableSpec tableSpec(table.protocol);
-        for (uint32_t h = 0; h < table.hop.size(); ++h) {
-            const CFG::Routingtable::Hop &hop = table.hop[h];
+        for (const auto & hop : table.hop) {
             HopSpec hopSpec(hop.name, hop.selector);
-            for (uint32_t i = 0; i < hop.recipient.size(); ++i) {
-                hopSpec.addRecipient(hop.recipient[i]);
+            for (const auto & i : hop.recipient) {
+                hopSpec.addRecipient(i);
             }
             hopSpec.setIgnoreResult(hop.ignoreresult);
-            tableSpec.addHop(hopSpec);
+            tableSpec.addHop(std::move(hopSpec));
         }
-        for (uint32_t r = 0; r < table.route.size(); ++r) {
-            const CFG::Routingtable::Route &route = table.route[r];
+        for (const auto & route : table.route) {
             RouteSpec routeSpec(route.name);
-            for (uint32_t i = 0; i < route.hop.size(); ++i) {
-                routeSpec.addHop(route.hop[i]);
+            for (const auto & i : route.hop) {
+                routeSpec.addHop(i);
             }
-            tableSpec.addRoute(routeSpec);
+            tableSpec.addRoute(std::move(routeSpec));
         }
-        spec.addTable(tableSpec);
+        spec.addTable(std::move(tableSpec));
     }
     _handler.setupRouting(spec);
 }

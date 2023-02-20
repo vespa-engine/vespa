@@ -173,6 +173,7 @@ public class FastHit extends Hit {
      * <a href="https://docs.vespa.ai/en/reference/schema-reference.html#summary-features">summary-features</a>
      * in the rank profile specified in the query producing this.
      */
+    @Override
     public FeatureData features() {
         FeatureData data = (FeatureData)getField("summaryfeatures");
         return data == null ? super.features() : data;

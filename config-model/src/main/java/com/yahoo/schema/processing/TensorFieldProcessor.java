@@ -44,16 +44,25 @@ public class TensorFieldProcessor extends Processor {
     private void validateIndexingScripsForTensorField(SDField field) {
         if (field.doesIndexing() && !isTensorTypeThatSupportsHnswIndex(field)) {
             fail(schema, field, "A tensor of type '" + tensorTypeToString(field) + "' does not support having an 'index'. " +
-                                "Currently, only tensors with 1 indexed dimension supports that.");
+                    "Currently, only tensors with 1 indexed dimension or 1 mapped + 1 indexed dimension support that.");
         }
     }
 
     private boolean isTensorTypeThatSupportsHnswIndex(ImmutableSDField field) {
         var type = ((TensorDataType)field.getDataType()).getTensorType();
-        // Tensors with 1 indexed dimension supports a hnsw index (used for approximate nearest neighbor search).
+        // Tensors with 1 indexed dimension support hnsw index (used for approximate nearest neighbor search).
         if ((type.dimensions().size() == 1) &&
                 type.dimensions().get(0).isIndexed()) {
             return true;
+        }
+        // Tensors with 1 mapped + 1 indexed dimension support hnsw index (aka multiple vectors per document).
+        if (type.dimensions().size() == 2) {
+            var a = type.dimensions().get(0);
+            var b = type.dimensions().get(1);
+            if ((a.isMapped() && b.isIndexed()) ||
+                    (a.isIndexed() && b.isMapped())) {
+                return true;
+            }
         }
         return false;
     }

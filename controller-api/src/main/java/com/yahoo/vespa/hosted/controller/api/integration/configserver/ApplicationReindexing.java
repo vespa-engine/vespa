@@ -87,7 +87,7 @@ public class ApplicationReindexing {
         @Override
         public String toString() {
             return "Cluster{" +
-                   ", pending=" + pending +
+                   "pending=" + pending +
                    ", ready=" + ready +
                    '}';
         }
@@ -104,8 +104,9 @@ public class ApplicationReindexing {
         private final String message;
         private final Double progress;
         private final Double speed;
+        private final String cause;
 
-        public Status(Instant readyAt, Instant startedAt, Instant endedAt, State state, String message, Double progress, Double speed) {
+        public Status(Instant readyAt, Instant startedAt, Instant endedAt, State state, String message, Double progress, Double speed, String cause) {
             this.readyAt = readyAt;
             this.startedAt = startedAt;
             this.endedAt = endedAt;
@@ -113,10 +114,11 @@ public class ApplicationReindexing {
             this.message = message;
             this.progress = progress;
             this.speed = speed;
+            this.cause = cause;
         }
 
         public Status(Instant readyAt) {
-            this(readyAt, null, null, null, null, null, 1.0);
+            this(readyAt, null, null, null, null, null, 1.0, null);
         }
 
         public Optional<Instant> readyAt() { return Optional.ofNullable(readyAt); }
@@ -126,18 +128,26 @@ public class ApplicationReindexing {
         public Optional<String> message() { return Optional.ofNullable(message); }
         public Optional<Double> progress() { return Optional.ofNullable(progress); }
         public Optional<Double> speed() { return Optional.ofNullable(speed); }
+        public Optional<String> cause() { return Optional.ofNullable(cause); }
 
         @Override
         public boolean equals(Object o) {
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
             Status status = (Status) o;
-            return Objects.equals(readyAt, status.readyAt) && Objects.equals(startedAt, status.startedAt) && Objects.equals(endedAt, status.endedAt) && state == status.state && Objects.equals(message, status.message) && Objects.equals(progress, status.progress) && Objects.equals(speed, status.speed);
+            return Objects.equals(readyAt, status.readyAt) &&
+                   Objects.equals(startedAt, status.startedAt) &&
+                   Objects.equals(endedAt, status.endedAt) &&
+                   state == status.state &&
+                   Objects.equals(message, status.message) &&
+                   Objects.equals(progress, status.progress) &&
+                   Objects.equals(speed, status.speed) &&
+                   Objects.equals(cause, status.cause);
         }
 
         @Override
         public int hashCode() {
-            return Objects.hash(readyAt, startedAt, endedAt, state, message, progress, speed);
+            return Objects.hash(readyAt, startedAt, endedAt, state, message, progress, speed, cause);
         }
 
         @Override
@@ -150,6 +160,7 @@ public class ApplicationReindexing {
                    ", message='" + message + '\'' +
                    ", progress=" + progress +
                    ", speed=" + speed +
+                   ", cause='" + cause + '\'' +
                    '}';
         }
 

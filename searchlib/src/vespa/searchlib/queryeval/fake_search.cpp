@@ -24,9 +24,9 @@ FakeSearch::doSeek(uint32_t docid)
 void
 FakeSearch::doUnpack(uint32_t docid)
 {
-    typedef fef::TermFieldMatchDataPosition PosCtx;
-    typedef FakeResult::Document Doc;
-    typedef FakeResult::Element Elem;
+    using PosCtx = fef::TermFieldMatchDataPosition;
+    using Doc = FakeResult::Document;
+    using Elem = FakeResult::Element;
 
     assert(valid());
     const Doc &doc = _result.inspect()[_offset];

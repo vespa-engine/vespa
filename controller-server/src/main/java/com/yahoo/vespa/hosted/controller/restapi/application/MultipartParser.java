@@ -33,7 +33,7 @@ public class MultipartParser {
     }
 
     /**
-     * Parses the given multi-part request and returns all the parts indexed by their name.
+     * Parses the given multipart request and returns all the parts indexed by their name.
      * 
      * @throws IllegalArgumentException if this request is not a well-formed request with Content-Type multipart/form-data
      */

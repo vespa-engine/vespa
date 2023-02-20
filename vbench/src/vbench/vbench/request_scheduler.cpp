@@ -2,6 +2,7 @@
 
 #include "request_scheduler.h"
 #include <vbench/core/timer.h>
+#include <vespa/vespalib/util/time.h>
 
 namespace vbench {
 
@@ -13,14 +14,18 @@ RequestScheduler::run()
 {
     double sleepTime;
     std::vector<Request::UP> list;
-    vespalib::Thread &thread = vespalib::Thread::currentThread();
     while (_queue.extract(_timer.sample(), list, sleepTime)) {
         for (size_t i = 0; i < list.size(); ++i) {
             Request::UP request = Request::UP(list[i].release());
             _dispatcher.handle(std::move(request));
         }
         list.clear();
-        thread.slumber(sleepTime);
+        {
+            auto guard = std::unique_lock(_lock);
+            if (_may_slumber) {
+                _cond.wait_for(guard, std::chrono::duration<double,std::milli>(sleepTime));
+            }
+        }
     }
 }
 
@@ -30,9 +35,12 @@ RequestScheduler::RequestScheduler(CryptoEngine::SP crypto, Handler<Request> &ne
       _queue(10.0, 0.020),
       _droppedTagger(_proxy),
       _dispatcher(_droppedTagger),
-      _thread(*this, vbench_request_scheduler_thread),
+      _thread(),
       _connectionPool(std::move(crypto), _timer),
-      _workers()
+      _workers(),
+      _lock(),
+      _cond(),
+      _may_slumber(true)
 {
     for (size_t i = 0; i < numWorkers; ++i) {
         _workers.push_back(std::make_unique<Worker>(_dispatcher, _proxy, _connectionPool, _timer));
@@ -45,7 +53,11 @@ RequestScheduler::abort()
 {
     _queue.close();
     _queue.discard();
-    _thread.stop();
+    {
+        auto guard = std::lock_guard(_lock);
+        _may_slumber = false;
+        _cond.notify_all();
+    }
 }
 
 void
@@ -59,7 +71,7 @@ void
 RequestScheduler::start()
 {
     _timer.reset();
-    _thread.start();
+    _thread = vespalib::thread::start(*this, vbench_request_scheduler_thread);
 }
 
 RequestScheduler &

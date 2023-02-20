@@ -28,25 +28,22 @@ class BTreeRootT : public BTreeRootBase<KeyT, DataT, AggrT,
                                        TraitsT::LEAF_SLOTS>
 {
 public:
-    typedef BTreeRootBase<KeyT, DataT, AggrT,
-                      TraitsT::INTERNAL_SLOTS, TraitsT::LEAF_SLOTS> ParentType;
-    typedef typename ParentType::NodeAllocatorType NodeAllocatorType;
-    typedef BTreeKeyData<KeyT, DataT> KeyDataType;
-    typedef typename ParentType::InternalNodeType InternalNodeType;
-    typedef typename ParentType::LeafNodeType LeafNodeType;
-    typedef BTreeLeafNodeTemp<KeyT, DataT, AggrT, TraitsT::LEAF_SLOTS>
-    LeafNodeTempType;
-    typedef BTreeIterator<KeyT, DataT, AggrT, CompareT, TraitsT> Iterator;
-    typedef BTreeConstIterator<KeyT, DataT, AggrT, CompareT, TraitsT>
-    ConstIterator;
-
-    typedef typename ParentType::KeyType KeyType;
-    typedef typename ParentType::DataType DataType;
+    using ParentType = BTreeRootBase<KeyT, DataT, AggrT,
+                                     TraitsT::INTERNAL_SLOTS, TraitsT::LEAF_SLOTS>;
+    using NodeAllocatorType = typename ParentType::NodeAllocatorType;
+    using KeyDataType = BTreeKeyData<KeyT, DataT>;
+    using InternalNodeType = typename ParentType::InternalNodeType;
+    using LeafNodeType = typename ParentType::LeafNodeType;
+    using LeafNodeTempType = BTreeLeafNodeTemp<KeyT, DataT, AggrT, TraitsT::LEAF_SLOTS>;
+    using Iterator = BTreeIterator<KeyT, DataT, AggrT, CompareT, TraitsT>;
+    using ConstIterator = BTreeConstIterator<KeyT, DataT, AggrT, CompareT, TraitsT>;
+    using KeyType = typename ParentType::KeyType;
+    using DataType = typename ParentType::DataType;
 protected:
-    typedef typename ParentType::BTreeRootBaseType BTreeRootBaseType;
-    typedef BTreeRootT<KeyT, DataT, AggrT, CompareT, TraitsT> BTreeRootTType;
-    typedef typename InternalNodeType::RefPair InternalNodeTypeRefPair;
-    typedef typename LeafNodeType::RefPair LeafNodeTypeRefPair;
+    using BTreeRootBaseType = typename ParentType::BTreeRootBaseType;
+    using BTreeRootTType = BTreeRootT<KeyT, DataT, AggrT, CompareT, TraitsT>;
+    using InternalNodeTypeRefPair = typename InternalNodeType::RefPair;
+    using LeafNodeTypeRefPair = typename LeafNodeType::RefPair;
     using ParentType::_root;
     using ParentType::getFrozenRoot;
     using ParentType::getFrozenRootRelaxed;
@@ -63,7 +60,7 @@ public:
         BTreeNode::Ref _frozenRoot;
         const NodeAllocatorType *const _allocator;
     public:
-        typedef ConstIterator Iterator;
+        using Iterator = ConstIterator;
         FrozenView();
         FrozenView(BTreeNode::Ref frozenRoot,
                    const NodeAllocatorType & allocator);
@@ -150,25 +147,24 @@ class BTreeRoot : public BTreeRootT<KeyT, DataT, AggrT,
                                     CompareT, TraitsT>
 {
 public:
-    typedef BTreeRootT<KeyT, DataT, AggrT, CompareT, TraitsT> ParentType;
-    typedef typename ParentType::ParentType Parent2Type;
-    typedef typename ParentType::NodeAllocatorType NodeAllocatorType;
-    typedef typename ParentType::KeyType KeyType;
-    typedef typename ParentType::DataType DataType;
-    typedef typename ParentType::LeafNodeType LeafNodeType;
-    typedef typename ParentType::InternalNodeType InternalNodeType;
-    typedef typename ParentType::LeafNodeTypeRefPair LeafNodeTypeRefPair;
-    typedef typename ParentType::InternalNodeTypeRefPair
-    InternalNodeTypeRefPair;
-    typedef typename ParentType::Iterator Iterator;
-    typedef BTreeBuilder<KeyT, DataT, AggrT,
-                         TraitsT::INTERNAL_SLOTS, TraitsT::LEAF_SLOTS,
-                         AggrCalcT> Builder;
-    typedef BTreeAggregator<KeyT, DataT, AggrT,
-                            TraitsT::INTERNAL_SLOTS,
-                            TraitsT::LEAF_SLOTS,
-                            AggrCalcT> Aggregator;
-    typedef AggrCalcT      AggrCalcType;
+    using ParentType = BTreeRootT<KeyT, DataT, AggrT, CompareT, TraitsT>;
+    using Parent2Type = typename ParentType::ParentType;
+    using NodeAllocatorType = typename ParentType::NodeAllocatorType;
+    using KeyType = typename ParentType::KeyType;
+    using DataType = typename ParentType::DataType;
+    using LeafNodeType = typename ParentType::LeafNodeType;
+    using InternalNodeType = typename ParentType::InternalNodeType;
+    using LeafNodeTypeRefPair = typename ParentType::LeafNodeTypeRefPair;
+    using InternalNodeTypeRefPair = typename ParentType::InternalNodeTypeRefPair;
+    using Iterator = typename ParentType::Iterator;
+    using Builder = BTreeBuilder<KeyT, DataT, AggrT,
+                                 TraitsT::INTERNAL_SLOTS, TraitsT::LEAF_SLOTS,
+                                 AggrCalcT>;
+    using Aggregator = BTreeAggregator<KeyT, DataT, AggrT,
+                                       TraitsT::INTERNAL_SLOTS,
+                                       TraitsT::LEAF_SLOTS,
+                                       AggrCalcT>;
+    using AggrCalcType = AggrCalcT;
     using Parent2Type::_root;
     using Parent2Type::getFrozenRoot;
     using Parent2Type::getFrozenRootRelaxed;

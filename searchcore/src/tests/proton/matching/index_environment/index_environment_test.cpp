@@ -15,7 +15,9 @@ using search::index::Schema;
 using search::index::schema::CollectionType;
 using search::index::schema::DataType;
 using vespalib::eval::ConstantValue;
+using SAF = Schema::AttributeField;
 using SIAF = Schema::ImportedAttributeField;
+using SIF = Schema::IndexField;
 
 const vespalib::string my_expr_ref(
     "this is my reference ranking expression.\n"
@@ -118,6 +120,11 @@ struct Fixture {
         EXPECT_TRUE(field->type() == FieldType::ATTRIBUTE);
         EXPECT_FALSE(field->isFilter());
     }
+    void assert_virtual_field(size_t idx,
+                              const vespalib::string& name) const {
+        const auto* field = assertField(idx, name, DataType::COMBINED, CollectionType::ARRAY);
+        EXPECT_TRUE(field->type() == FieldType::VIRTUAL);
+    }
 };
 
 TEST_F("require that document meta store is always extracted in index environment", Fixture(buildEmptySchema()))
@@ -137,6 +144,40 @@ TEST_F("require that imported attribute fields are extracted in index environmen
     TEST_DO(f.assertAttributeField(0, "imported_a", DataType::INT32, CollectionType::SINGLE));
     TEST_DO(f.assertAttributeField(1, "imported_b", DataType::STRING, CollectionType::ARRAY));
     EXPECT_EQUAL("[documentmetastore]", f.env.getField(2)->name());
+}
+
+Schema::UP schema_with_virtual_fields() {
+    // These attributes represent parts of the following fields:
+    //   * field person_map type map<int, person>, where the person struct has the fields name and year.
+    //   * field int_map type map<int, int>
+    //
+    // In this example 'person_map', 'person_map.value', and 'int_map' are virtual fields as seen from the ranking framework.
+    auto result = std::make_unique<Schema>();
+    result->addAttributeField(SAF("person_map.key", DataType::INT32, CollectionType::ARRAY));
+    result->addAttributeField(SAF("person_map.value.name", DataType::STRING, CollectionType::ARRAY));
+    result->addAttributeField(SAF("person_map.value.year", DataType::INT32, CollectionType::ARRAY));
+    result->addImportedAttributeField(SAF("int_map.key", DataType::INT32, CollectionType::ARRAY));
+    result->addImportedAttributeField(SAF("int_map.value", DataType::INT32, CollectionType::ARRAY));
+    // Index fields do not represent virtual fields:
+    result->addIndexField(SIF("url.hostname", DataType::STRING, CollectionType::SINGLE));
+    result->addIndexField(SIF("url.port", DataType::STRING, CollectionType::SINGLE));
+    return result;
+}
+
+TEST_F("virtual fields are extracted in index environment", Fixture(schema_with_virtual_fields()))
+{
+    ASSERT_EQUAL(11u, f.env.getNumFields());
+    TEST_DO(f.assertAttributeField(0, "person_map.key", DataType::INT32, CollectionType::ARRAY));
+    TEST_DO(f.assertAttributeField(1, "person_map.value.name", DataType::STRING, CollectionType::ARRAY));
+    TEST_DO(f.assertAttributeField(2, "person_map.value.year", DataType::INT32, CollectionType::ARRAY));
+    TEST_DO(f.assertField(3, "url.hostname", DataType::STRING, CollectionType::SINGLE));
+    TEST_DO(f.assertField(4, "url.port", DataType::STRING, CollectionType::SINGLE));
+    TEST_DO(f.assertAttributeField(5, "int_map.key", DataType::INT32, CollectionType::ARRAY));
+    TEST_DO(f.assertAttributeField(6, "int_map.value", DataType::INT32, CollectionType::ARRAY));
+    EXPECT_EQUAL("[documentmetastore]", f.env.getField(7)->name());
+    TEST_DO(f.assert_virtual_field(8, "int_map"));
+    TEST_DO(f.assert_virtual_field(9, "person_map"));
+    TEST_DO(f.assert_virtual_field(10, "person_map.value"));
 }
 
 TEST_F("require that onnx model config can be obtained", Fixture(buildEmptySchema())) {

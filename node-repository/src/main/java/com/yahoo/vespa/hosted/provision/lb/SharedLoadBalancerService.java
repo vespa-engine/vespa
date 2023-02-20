@@ -3,9 +3,9 @@ package com.yahoo.vespa.hosted.provision.lb;
 
 import ai.vespa.http.DomainName;
 import com.yahoo.config.provision.ClusterSpec;
-import com.yahoo.config.provision.LoadBalancerSettings;
 import com.yahoo.config.provision.NodeType;
 
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -28,8 +28,18 @@ public class SharedLoadBalancerService implements LoadBalancerService {
     }
 
     @Override
-    public LoadBalancerInstance create(LoadBalancerSpec spec, boolean force) {
-        if ( ! spec.settings().isEmpty()) throw new IllegalArgumentException("custom load balancer settings are not supported with " + getClass());
+    public LoadBalancerInstance provision(LoadBalancerSpec spec) {
+        return create(spec);
+    }
+
+    @Override
+    public LoadBalancerInstance configure(LoadBalancerSpec spec, boolean force) {
+        return create(spec);
+    }
+
+    private LoadBalancerInstance create(LoadBalancerSpec spec) {
+        if ( ! spec.settings().isPublicEndpoint())
+            throw new IllegalArgumentException("non-public endpoints is not supported with " + getClass());
         return new LoadBalancerInstance(Optional.of(DomainName.of(vipHostname)),
                                         Optional.empty(),
                                         Optional.empty(),
@@ -37,6 +47,7 @@ public class SharedLoadBalancerService implements LoadBalancerService {
                                         Set.of(),
                                         spec.reals(),
                                         spec.settings(),
+                                        List.of(),
                                         spec.cloudAccount());
     }
 

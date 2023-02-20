@@ -39,7 +39,7 @@ public class DirtyExpirerTest {
     private void assertAllocationAfterExpiry(boolean dynamicProvisioning) {
         Zone zone = new Zone(Cloud.builder().dynamicProvisioning(dynamicProvisioning).build(), SystemName.main, Environment.prod, RegionName.from("us-east"));
         ProvisioningTester tester = new ProvisioningTester.Builder().zone(zone)
-                .hostProvisioner(dynamicProvisioning ? new MockHostProvisioner(List.of(), zone.cloud()) : null)
+                .hostProvisioner(dynamicProvisioning ? new MockHostProvisioner(List.of()) : null)
                 .build();
 
         Node node = Node.create("id", "node1.domain.tld", new Flavor(NodeResources.unspecified()), Node.State.dirty, NodeType.tenant)

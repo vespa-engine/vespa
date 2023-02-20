@@ -3,7 +3,6 @@ package com.yahoo.vespa.hosted.provision.autoscale;
 
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Capacity;
-import com.yahoo.config.provision.Cloud;
 import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Flavor;
@@ -44,26 +43,19 @@ class AutoscalingTester {
     private final HostResourcesCalculator hostResourcesCalculator;
     private final CapacityPolicies capacityPolicies;
 
-    public AutoscalingTester(Zone zone,
-                             HostResourcesCalculator resourcesCalculator,
-                             List<Flavor> hostFlavors,
-                             InMemoryFlagSource flagSource,
-                             int hostCount) {
+    public AutoscalingTester(Zone zone, HostResourcesCalculator resourcesCalculator, List<Flavor> hostFlavors, InMemoryFlagSource flagSource, int hostCount) {
         this(zone, hostFlavors, resourcesCalculator, flagSource);
         for (Flavor flavor : hostFlavors)
             provisioningTester.makeReadyNodes(hostCount, flavor.name(), NodeType.host, 8);
         provisioningTester.activateTenantHosts();
     }
 
-    private AutoscalingTester(Zone zone,
-                              List<Flavor> flavors,
-                              HostResourcesCalculator resourcesCalculator,
-                              InMemoryFlagSource flagSource) {
+    private AutoscalingTester(Zone zone, List<Flavor> flavors, HostResourcesCalculator resourcesCalculator, InMemoryFlagSource flagSource) {
         provisioningTester = new ProvisioningTester.Builder().zone(zone)
                                                              .flavors(flavors)
-                                                             .flagSource(flagSource)
                                                              .resourcesCalculator(resourcesCalculator)
-                                                             .hostProvisioner(zone.cloud().dynamicProvisioning() ? new MockHostProvisioner(flavors, zone.cloud()) : null)
+                                                             .flagSource(flagSource)
+                                                             .hostProvisioner(zone.cloud().dynamicProvisioning() ? new MockHostProvisioner(flavors) : null)
                                                              .build();
 
         hostResourcesCalculator = resourcesCalculator;
@@ -113,9 +105,9 @@ class AutoscalingTester {
 
     public void makeReady(String hostname) {
         Node node = nodeRepository().nodes().node(hostname).get();
-        provisioningTester.patchNode(node, (n) -> n.with(new IP.Config(Set.of("::" + 0 + ":0"), Set.of())));
+        provisioningTester.patchNode(node, (n) -> n.with(IP.Config.of(Set.of("::" + 0 + ":0"), Set.of())));
         Node host = nodeRepository().nodes().node(node.parentHostname().get()).get();
-        host = host.with(new IP.Config(Set.of("::" + 0 + ":0"), Set.of("::" + 0 + ":2")));
+        host = host.with(IP.Config.of(Set.of("::" + 0 + ":0"), Set.of("::" + 0 + ":2")));
         if (host.state() == Node.State.provisioned)
             provisioningTester.move(Node.State.ready, host);
     }
@@ -138,11 +130,12 @@ class AutoscalingTester {
                               cluster.exclusive(),
                               cluster.minResources(),
                               cluster.maxResources(),
+                              cluster.groupSize(),
                               cluster.required(),
-                              cluster.suggestedResources(),
-                              cluster.targetResources(),
-                              List.of(), // Remove scaling events
-                              cluster.autoscalingStatus());
+                              cluster.suggested(),
+                              cluster.target(),
+                              cluster.bcpGroupInfo(),
+                              List.of()); // Remove scaling events
         cluster = cluster.with(ScalingEvent.create(cluster.minResources(), cluster.minResources(),
                                                    0,
                                                    clock().instant().minus(Duration.ofDays(1).minus(duration))).withCompletion(clock().instant().minus(Duration.ofDays(1))));
@@ -150,8 +143,8 @@ class AutoscalingTester {
         nodeRepository().applications().put(application, nodeRepository().applications().lock(applicationId));
     }
 
-    public Autoscaler.Advice autoscale(ApplicationId applicationId, ClusterSpec cluster, Capacity capacity) {
-        capacity = capacityPolicies.applyOn(capacity, applicationId, capacityPolicies.decideExclusivity(capacity, cluster.isExclusive()));
+    public Autoscaling autoscale(ApplicationId applicationId, ClusterSpec cluster, Capacity capacity) {
+        capacity = capacityPolicies.applyOn(capacity, applicationId, capacityPolicies.decideExclusivity(capacity, cluster).isExclusive());
         Application application = nodeRepository().applications().get(applicationId).orElse(Application.empty(applicationId))
                                                   .withCluster(cluster.id(), false, capacity);
         try (Mutex lock = nodeRepository().applications().lock(applicationId)) {
@@ -161,7 +154,7 @@ class AutoscalingTester {
                                     nodeRepository().nodes().list(Node.State.active).owner(applicationId));
     }
 
-    public Autoscaler.Advice suggest(ApplicationId applicationId, ClusterSpec.Id clusterId,
+    public Autoscaling suggest(ApplicationId applicationId, ClusterSpec.Id clusterId,
                                      ClusterResources min, ClusterResources max) {
         Application application = nodeRepository().applications().get(applicationId).orElse(Application.empty(applicationId))
                                                   .withCluster(clusterId, false, Capacity.from(min, max));
@@ -184,10 +177,10 @@ class AutoscalingTester {
     public ClusterResources assertResources(String message,
                                             int nodeCount, int groupCount,
                                             double approxCpu, double approxMemory, double approxDisk,
-                                            Autoscaler.Advice advice) {
-        assertTrue("Resources are present: " + message + " (" + advice + ": " + advice.reason() + ")",
-                   advice.target().isPresent());
-        var resources = advice.target().get();
+                                            Autoscaling autoscaling) {
+        assertTrue("Resources are present: " + message + " (" + autoscaling + ": " + autoscaling.status() + ")",
+                   autoscaling.resources().isPresent());
+        var resources = autoscaling.resources().get();
         assertResources(message, nodeCount, groupCount, approxCpu, approxMemory, approxDisk, resources);
         return resources;
     }
@@ -241,12 +234,12 @@ class AutoscalingTester {
         }
 
         @Override
-        public NodeResources requestToReal(NodeResources resources, boolean exclusive) {
+        public NodeResources requestToReal(NodeResources resources, boolean exclusive, boolean bestCase) {
             return resources.withMemoryGb(resources.memoryGb());
         }
 
         @Override
-        public NodeResources realToRequest(NodeResources resources, boolean exclusive) {
+        public NodeResources realToRequest(NodeResources resources, boolean exclusive, boolean bestCase) {
             return resources.withMemoryGb(resources.memoryGb());
         }
 
@@ -257,8 +250,8 @@ class AutoscalingTester {
 
     private class MockHostProvisioner extends com.yahoo.vespa.hosted.provision.testutils.MockHostProvisioner {
 
-        public MockHostProvisioner(List<Flavor> flavors, Cloud cloud) {
-            super(flavors, cloud);
+        public MockHostProvisioner(List<Flavor> flavors) {
+            super(flavors);
         }
 
         @Override

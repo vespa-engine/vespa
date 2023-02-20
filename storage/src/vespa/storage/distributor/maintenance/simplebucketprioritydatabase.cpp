@@ -42,7 +42,7 @@ SimpleBucketPriorityDatabase::setPriority(const PrioritizedBucket& bucket)
 }
 
 void
-SimpleBucketPriorityDatabase::PriFifoMappingConstIteratorImpl::increment()
+SimpleBucketPriorityDatabase::PriFifoMappingConstIteratorImpl::increment() noexcept
 {
     if (_pri_fifo_iter != _pri_fifo_end) {
         ++_pri_fifo_iter;
@@ -50,14 +50,14 @@ SimpleBucketPriorityDatabase::PriFifoMappingConstIteratorImpl::increment()
 }
 
 bool
-SimpleBucketPriorityDatabase::PriFifoMappingConstIteratorImpl::equal(const ConstIteratorImpl& other) const
+SimpleBucketPriorityDatabase::PriFifoMappingConstIteratorImpl::equal(const ConstIteratorImpl& other) const noexcept
 {
     auto& typed_other = dynamic_cast<const PriFifoMappingConstIteratorImpl&>(other);
     return (_pri_fifo_iter == typed_other._pri_fifo_iter);
 }
 
 PrioritizedBucket
-SimpleBucketPriorityDatabase::PriFifoMappingConstIteratorImpl::dereference() const
+SimpleBucketPriorityDatabase::PriFifoMappingConstIteratorImpl::dereference() const noexcept
 {
     assert(_pri_fifo_iter != _pri_fifo_end);
     return {_pri_fifo_iter->second, _pri_fifo_iter->first._pri};

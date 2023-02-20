@@ -13,12 +13,14 @@
 #include "proton_configurer.h"
 #include "rpc_hooks.h"
 #include "shared_threading_service.h"
-#include <vespa/eval/eval/llvm/compile_cache.h>
+#include <vespa/searchcore/proton/common/i_scheduled_executor.h>
+#include <vespa/searchcore/proton/matching/querylimiter.h>
 #include <vespa/searchcore/proton/matching/querylimiter.h>
 #include <vespa/searchcore/proton/persistenceengine/i_resource_write_filter.h>
 #include <vespa/searchcore/proton/persistenceengine/ipersistenceengineowner.h>
 #include <vespa/searchlib/common/fileheadercontext.h>
 #include <vespa/searchlib/engine/monitorapi.h>
+#include <vespa/eval/eval/llvm/compile_cache.h>
 #include <vespa/vespalib/net/http/component_config_producer.h>
 #include <vespa/vespalib/net/http/generic_state_handler.h>
 #include <vespa/vespalib/net/http/json_get_handler.h>
@@ -50,6 +52,7 @@ class MetricsEngine;
 class PersistenceEngine;
 class PrepareRestartHandler;
 class SummaryEngine;
+class ScheduledForwardExecutor;
 
 class Proton : public IProtonConfigurerOwner,
                public search::engine::MonitorServer,
@@ -112,10 +115,14 @@ private:
     std::unique_ptr<IProtonDiskLayout>     _protonDiskLayout;
     ProtonConfigurer                       _protonConfigurer;
     ProtonConfigFetcher                    _protonConfigFetcher;
-    std::unique_ptr<SharedThreadingService> _shared_service;
+    std::unique_ptr<SharedThreadingService>   _shared_service;
+    std::unique_ptr<matching::SessionManager> _sessionManager;
+    IScheduledExecutor::Handle                _sessionPruneHandle;
+    std::unique_ptr<ScheduledForwardExecutor> _scheduler;
     vespalib::eval::CompileCache::ExecutorBinding::UP _compile_cache_executor_binding;
     matching::QueryLimiter          _queryLimiter;
     uint32_t                        _distributionKey;
+    uint32_t                        _numThreadsPerSearch;
     bool                            _isInitializing;
     bool                            _abortInit;
     bool                            _initStarted;
@@ -141,12 +148,13 @@ private:
     uint32_t getDistributionKey() const override { return _distributionKey; }
     BootstrapConfig::SP getActiveConfigSnapshot() const;
     std::shared_ptr<IDocumentDBReferenceRegistry> getDocumentDBReferenceRegistry() const override;
+    SessionManager & session_manager() override;
     // Returns true if the node is up in _any_ bucket space
     bool updateNodeUp(BucketSpace bucketSpace, bool nodeUpInBucketSpace);
     void closeDocumentDBs(vespalib::ThreadStackExecutorBase & executor);
 public:
-    typedef std::unique_ptr<Proton> UP;
-    typedef std::shared_ptr<Proton> SP;
+    using UP = std::unique_ptr<Proton>;
+    using SP = std::shared_ptr<Proton>;
 
     Proton(FastOS_ThreadPool & threadPool, FNET_Transport & transport, const config::ConfigUri & configUri,
            const vespalib::string &progName, vespalib::duration subscribeTimeout);
@@ -215,6 +223,7 @@ public:
 
     bool hasAbortedInit() const { return _abortInit; }
     storage::spi::PersistenceProvider & getPersistence();
+    uint32_t getNumThreadsPerSearch() const override { return _numThreadsPerSearch; }
 
     void get_state(const vespalib::slime::Inserter &inserter, bool full) const override;
     std::vector<vespalib::string> get_children_names() const override;

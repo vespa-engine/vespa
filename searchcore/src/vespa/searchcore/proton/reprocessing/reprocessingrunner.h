@@ -16,7 +16,7 @@ class IReprocessingTask;
 class ReprocessingRunner
 {
 public:
-    typedef std::vector<std::shared_ptr<IReprocessingTask>> ReprocessingTasks;
+    using ReprocessingTasks = std::vector<std::shared_ptr<IReprocessingTask>>;
 private:
     mutable std::mutex _lock;
     ReprocessingTasks _tasks; // Protected by _lock

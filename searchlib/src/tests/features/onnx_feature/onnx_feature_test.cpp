@@ -179,8 +179,11 @@ struct MyIssues : Issue::Handler {
     std::vector<vespalib::string> list;
     Issue::Binding capture;
     MyIssues() : list(), capture(Issue::listen(*this)) {}
+    ~MyIssues() override;
     void handle(const Issue &issue) override { list.push_back(issue.message()); }
 };
+
+MyIssues::~MyIssues() = default;
 
 TEST_F(OnnxFeatureTest, broken_model_evaluates_to_all_zeros) {
     add_expr("in1", "tensor<float>(x[2]):[docid,5]");

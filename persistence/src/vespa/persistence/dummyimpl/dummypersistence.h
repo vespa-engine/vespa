@@ -36,7 +36,7 @@ struct BucketEntry
     DocEntry::SP entry;
     GlobalId gid;
 
-    BucketEntry(DocEntry::SP e, const GlobalId& g)
+    BucketEntry(DocEntry::SP e, const GlobalId& g) noexcept
         : entry(std::move(e)),
           gid(g)
     { }
@@ -58,7 +58,7 @@ struct BucketContent {
     mutable bool _outdatedInfo;
     bool _active;
 
-    BucketContent();
+    BucketContent() noexcept;
     ~BucketContent();
 
 
@@ -200,6 +200,7 @@ public:
     }
 
 private:
+    void verifyInitialized() const noexcept __attribute__((noinline));
     friend class BucketContentGuard;
     // Const since funcs only alter mutable field in BucketContent
     BucketContentGuard::UP acquireBucketWithLock(const Bucket& b, LockMode lock_mode = LockMode::Exclusive) const;
@@ -219,11 +220,9 @@ private:
     std::unique_ptr<ClusterState> _clusterState;
     std::weak_ptr<BucketExecutor> _bucket_executor;
 
-    std::unique_ptr<document::select::Node> parseDocumentSelection(
-            const string& documentSelection,
-            bool allowLeaf);
-
     mutable BucketIdListResult::List _modifiedBuckets;
+    std::unique_ptr<document::select::Node> parseDocumentSelection(const string& documentSelection, bool allowLeaf);
+    Content::const_iterator find(const Bucket & bucket) const __attribute__((noinline));
 };
 
 }

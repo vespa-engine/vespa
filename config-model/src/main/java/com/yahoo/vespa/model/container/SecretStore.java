@@ -1,7 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.container;
 
-import com.google.common.collect.ImmutableList;
+
 
 import java.util.ArrayList;
 import java.util.List;
@@ -17,7 +17,7 @@ public class SecretStore {
     }
 
     public List<Group> getGroups() {
-        return ImmutableList.copyOf(groups);
+        return List.copyOf(groups);
     }
 
     public static class Group {

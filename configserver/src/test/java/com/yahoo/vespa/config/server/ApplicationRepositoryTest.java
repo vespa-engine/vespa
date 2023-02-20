@@ -17,7 +17,6 @@ import com.yahoo.config.provision.HostFilter;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.NetworkPorts;
-import com.yahoo.config.provision.Tags;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.exception.ActivationConflictException;
 import com.yahoo.container.jdisc.HttpResponse;
@@ -52,6 +51,7 @@ import com.yahoo.vespa.config.util.ConfigUtils;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.mock.MockCurator;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
+import com.yahoo.vespa.flags.PermanentFlags;
 import com.yahoo.vespa.model.VespaModelFactory;
 import org.junit.Before;
 import org.junit.Rule;
@@ -66,7 +66,6 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -106,6 +105,7 @@ public class ApplicationRepositoryTest {
     private Curator curator;
     private ConfigserverConfig configserverConfig;
     private FileDirectory fileDirectory;
+    private InMemoryFlagSource flagSource;
 
     @Rule
     public TemporaryFolder temporaryFolder = new TemporaryFolder();
@@ -123,14 +123,13 @@ public class ApplicationRepositoryTest {
                 .configDefinitionsDir(temporaryFolder.newFolder().getAbsolutePath())
                 .fileReferencesDir(temporaryFolder.newFolder().getAbsolutePath())
                 .build();
-        InMemoryFlagSource flagSource = new InMemoryFlagSource();
-        fileDirectory = new FileDirectory(configserverConfig, flagSource);
+        flagSource = new InMemoryFlagSource();
+        fileDirectory = new FileDirectory(configserverConfig);
         tenantRepository = new TestTenantRepository.Builder()
                 .withClock(clock)
                 .withConfigserverConfig(configserverConfig)
                 .withCurator(curator)
-                .withFileDistributionFactory(
-                        new MockFileDistributionFactory(configserverConfig, fileDirectory))
+                .withFileDistributionFactory(new MockFileDistributionFactory(configserverConfig))
                 .withFlagSource(flagSource)
                 .build();
         tenantRepository.addTenant(TenantRepository.HOSTED_VESPA_TENANT);
@@ -145,6 +144,7 @@ public class ApplicationRepositoryTest {
                 .withOrchestrator(orchestrator)
                 .withLogRetriever(new MockLogRetriever())
                 .withClock(clock)
+                .withFlagSource(flagSource)
                 .build();
         timeoutBudget = new TimeoutBudget(clock, Duration.ofSeconds(60));
     }
@@ -295,10 +295,8 @@ public class ApplicationRepositoryTest {
         // deployApp(new File("src/test/apps/app"), prepareParams);
 
         List<String> deleted = applicationRepository.deleteUnusedFileDistributionReferences(fileDirectory, keepFileReferencesDuration);
-        Collections.sort(deleted);
-        List<String> expected = new ArrayList<>(List.of("bar", "baz0", "baz1"));
-        Collections.sort(expected);
-        assertEquals(expected, deleted);
+        List<String> expected = List.of("bar", "baz0", "baz1");
+        assertEquals(expected.stream().sorted().toList(), deleted.stream().sorted().toList());
         // bar, baz0 and baz1 will be deleted and foo is not old enough to be considered
         assertFalse(filereferenceDirOldest.exists());
         assertFalse(new File(fileReferencesDir, "baz0").exists());
@@ -405,14 +403,20 @@ public class ApplicationRepositoryTest {
 
     @Test
     public void testDeletingInactiveSessions() throws IOException {
+        long sessionLifeTime = 60;
+        flagSource = flagSource.withLongFlag(PermanentFlags.CONFIG_SERVER_SESSION_EXPIRY_TIME.id(), sessionLifeTime * 2);
         File serverdb = temporaryFolder.newFolder("serverdb");
-        ConfigserverConfig configserverConfig =
+        configserverConfig =
                 new ConfigserverConfig(new ConfigserverConfig.Builder()
                                                .configServerDBDir(serverdb.getAbsolutePath())
                                                .configDefinitionsDir(temporaryFolder.newFolder("configdefinitions").getAbsolutePath())
                                                .fileReferencesDir(temporaryFolder.newFolder("filedistribution").getAbsolutePath())
-                                               .sessionLifetime(60));
-        DeployTester tester = new DeployTester.Builder(temporaryFolder).configserverConfig(configserverConfig).clock(clock).build();
+                                               .sessionLifetime(sessionLifeTime));
+        DeployTester tester = new DeployTester.Builder(temporaryFolder)
+                .configserverConfig(configserverConfig)
+                .clock(clock)
+                .flagSource(flagSource)
+                .build();
         tester.deployApp("src/test/apps/app"); // session 2 (numbering starts at 2)
 
         clock.advance(Duration.ofSeconds(10));
@@ -566,9 +570,7 @@ public class ApplicationRepositoryTest {
         AllocatedHosts info = session.getAllocatedHosts();
         assertNotNull(info);
         assertEquals(1, info.getHosts().size());
-        assertTrue(info.getHosts().contains(new HostSpec("mytesthost2",
-                                                         Collections.emptyList(),
-                                                         Optional.empty())));
+        assertTrue(info.getHosts().contains(new HostSpec("mytesthost2", Optional.empty())));
         Optional<NetworkPorts> portsCopy = info.getHosts().iterator().next().networkPorts();
         assertTrue(portsCopy.isPresent());
         assertEquals(list, portsCopy.get().allocations());
@@ -849,7 +851,7 @@ public class ApplicationRepositoryTest {
     }
 
     private long createSession(ApplicationId applicationId, TimeoutBudget timeoutBudget, File app) {
-        return applicationRepository.createSession(applicationId, Tags.empty(), timeoutBudget, app, new BaseDeployLogger());
+        return applicationRepository.createSession(applicationId, timeoutBudget, app, new BaseDeployLogger());
     }
 
     private long createSessionFromExisting(ApplicationId applicationId, TimeoutBudget timeoutBudget) {

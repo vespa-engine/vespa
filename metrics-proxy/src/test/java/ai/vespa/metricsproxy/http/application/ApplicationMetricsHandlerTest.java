@@ -37,7 +37,6 @@ import static com.github.tomakehurst.wiremock.client.WireMock.get;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.options;
 import static com.yahoo.collections.CollectionUtil.first;
-import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -182,14 +181,14 @@ public class ApplicationMetricsHandlerTest {
 
         GenericService searchnode = jsonModel.nodes.get(0).services.get(0);
         Map<String, String> dimensions = searchnode.metrics.get(0).dimensions;
-        assertEquals(6, dimensions.size());
+        assertEquals(7, dimensions.size());
         assertEquals("music.default", dimensions.get(PublicDimensions.APPLICATION_ID));
         assertEquals("container/default", dimensions.get(PublicDimensions.CLUSTER_ID));
         assertEquals("us-west", dimensions.get(PublicDimensions.ZONE));
         assertEquals("search/", dimensions.get(PublicDimensions.API));
         assertEquals("music", dimensions.get(PublicDimensions.DOCUMENT_TYPE));
         assertEquals("default0", dimensions.get(PublicDimensions.SERVICE_ID));
-        assertFalse(dimensions.containsKey("non-public"));
+        assertFalse(dimensions.containsKey("clusterid"));
     }
 
     @Test
@@ -220,7 +219,7 @@ public class ApplicationMetricsHandlerTest {
     private MetricsNodesConfig nodesConfig(String... paths) {
         var nodes = Arrays.stream(paths)
                 .map(this::nodeConfig)
-                .collect(toList());
+                .toList();
         return new MetricsNodesConfig.Builder()
                 .node(nodes)
                 .build();

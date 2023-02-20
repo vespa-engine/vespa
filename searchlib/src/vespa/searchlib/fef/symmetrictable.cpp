@@ -2,13 +2,12 @@
 
 #include "symmetrictable.h"
 
-namespace search {
-namespace fef {
+namespace search::fef {
 
 SymmetricTable::SymmetricTable() :
     _backingTable(),
     _size(),
-    _table(NULL),
+    _table(nullptr),
     _max(0)
 {
 }
@@ -43,9 +42,6 @@ SymmetricTable::SymmetricTable(const Table & table) :
     }
 }
 
-SymmetricTable::~SymmetricTable()
-{
-}
+SymmetricTable::~SymmetricTable() = default;
 
-} // namespace fef
-} // namespace search
+}

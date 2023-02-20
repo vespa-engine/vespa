@@ -7,23 +7,21 @@
 namespace metrics {
 
 template<typename ValueClass>
-MetricValueSet<ValueClass>::MetricValueSet(uint32_t copyCount)
-    : _values(copyCount),
+MetricValueSet<ValueClass>::MetricValueSet() noexcept
+    : _values(),
       _activeValueIndex(0),
       _flags(0)
 { }
 
 template<typename ValueClass>
-MetricValueSet<ValueClass>::MetricValueSet(const MetricValueSet& other, uint32_t copyCount)
-    : _values(copyCount),
-      _activeValueIndex(0),
-      _flags(other._flags.load(std::memory_order_relaxed))
-{
-    setValues(other.getValues());
-}
+MetricValueSet<ValueClass>::MetricValueSet(const MetricValueSet& rhs) noexcept
+    : _values(rhs._values),
+      _activeValueIndex(rhs._activeValueIndex.load(std::memory_order_relaxed)),
+      _flags(rhs._flags.load(std::memory_order_relaxed))
+{ }
 
 template<typename ValueClass>
-MetricValueSet<ValueClass> & MetricValueSet<ValueClass>::operator=(const MetricValueSet& other)
+MetricValueSet<ValueClass> & MetricValueSet<ValueClass>::operator=(const MetricValueSet& other) noexcept
 {
     setValues(other.getValues());
     return *this;
@@ -47,11 +45,9 @@ MetricValueSet<ValueClass>::getValues() const {
 template<typename ValueClass>
 bool
 MetricValueSet<ValueClass>::setValues(const ValueClass& values) {
-    validateCorrectValueSuperClass(values);
     // Only setter-thread can write _activeValueIndex, so relaxed
     // load suffices.
-    uint32_t nextIndex = (_activeValueIndex.load(std::memory_order_relaxed)
-                          + 1) % _values.size();
+    uint32_t nextIndex = (_activeValueIndex.load(std::memory_order_relaxed) + 1) % _values.size();
     // Reset flag is loaded/stored with relaxed semantics since it does not
     // carry data dependencies. _activeValueIndex has a dependency on
     // _values, however, so we must ensure that stores are published

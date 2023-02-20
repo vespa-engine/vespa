@@ -2,6 +2,7 @@
 
 #include "matchview.h"
 #include "searchcontext.h"
+#include <vespa/searchcore/proton/attribute/i_attribute_manager.h>
 #include <vespa/searchcore/proton/matching/matcher.h>
 #include <vespa/searchlib/engine/searchrequest.h>
 #include <vespa/searchlib/engine/searchreply.h>
@@ -34,15 +35,15 @@ using matching::Matcher;
 using matching::SessionManager;
 
 MatchView::MatchView(Matchers::SP matchers,
-                     IndexSearchable::SP indexSearchable,
-                     IAttributeManager::SP attrMgr,
-                     SessionManagerSP sessionMgr,
+                     std::shared_ptr<IndexSearchable> indexSearchable,
+                     std::shared_ptr<IAttributeManager> attrMgr,
+                     SessionManager & sessionMgr,
                      IDocumentMetaStoreContext::SP metaStore,
                      DocIdLimit &docIdLimit)
     : _matchers(std::move(matchers)),
       _indexSearchable(std::move(indexSearchable)),
       _attrMgr(std::move(attrMgr)),
-      _sessionMgr(std::move(sessionMgr)),
+      _sessionMgr(sessionMgr),
       _metaStore(std::move(metaStore)),
       _docIdLimit(docIdLimit)
 { }
@@ -75,7 +76,7 @@ MatchView::match(std::shared_ptr<const ISearchHandler> searchHandler, const Sear
     const search::IDocumentMetaStore & dms = owned_objects.readGuard->get();
     const bucketdb::BucketDBOwner & bucketDB = _metaStore->get().getBucketDB();
     return matcher->match(req, threadBundle, ctx->getSearchContext(), ctx->getAttributeContext(),
-                          *_sessionMgr, dms, bucketDB, std::move(owned_objects));
+                          _sessionMgr, dms, bucketDB, std::move(owned_objects));
 }
 
 } // namespace proton

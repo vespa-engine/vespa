@@ -19,6 +19,7 @@
 #include <vespa/storage/persistence/messages.h>
 #include <vespa/storage/common/storagecomponent.h>
 #include <vespa/storageframework/generic/metric/metricupdatehook.h>
+#include <vespa/storageframework/generic/thread/runnable.h>
 #include <vespa/storageapi/messageapi/messagehandler.h>
 #include <vespa/metrics/metrictimer.h>
 #include <vespa/vespalib/util/document_runnable.h>
@@ -38,7 +39,7 @@ class VisitorThread : public framework::Runnable,
 
     using VisitorMap = std::map<api::VisitorId, std::shared_ptr<Visitor>>;
     VisitorMap _visitors;
-    std::deque<std::pair<api::VisitorId, framework::SecondTime>> _recentlyCompleted;
+    std::deque<std::pair<api::VisitorId, vespalib::steady_time>> _recentlyCompleted;
 
     struct Event {
         enum class Type {
@@ -82,11 +83,11 @@ class VisitorThread : public framework::Runnable,
     uint32_t _defaultPendingMessages;
     uint32_t _defaultDocBlockSize;
     uint32_t _visitorMemoryUsageLimit;
-    framework::MilliSecTime _defaultDocBlockTimeout;
-    framework::MilliSecTime _defaultVisitorInfoTimeout;
+    vespalib::duration _defaultDocBlockTimeout;
+    vespalib::duration _defaultVisitorInfoTimeout;
     std::atomic<uint32_t> _timeBetweenTicks;
     StorageComponent _component;
-    framework::Thread::UP _thread;
+    std::unique_ptr<framework::Thread> _thread;
     VisitorMessageSessionFactory& _messageSessionFactory;
     VisitorFactory::Map& _visitorFactories;
 
@@ -118,7 +119,7 @@ private:
      */
     Event popNextQueuedEventIfAvailable();
     void tick();
-    void trimRecentlyCompletedList(framework::SecondTime currentTime);
+    void trimRecentlyCompletedList(vespalib::steady_time currentTime);
     void handleNonExistingVisitorCall(const Event& entry, api::ReturnCode& code);
 
     std::shared_ptr<Visitor> createVisitor(vespalib::stringref libName,

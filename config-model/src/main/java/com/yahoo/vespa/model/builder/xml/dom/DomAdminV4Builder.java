@@ -56,6 +56,7 @@ public class DomAdminV4Builder extends DomAdminBuilderBase {
         assignLogserver(deployState, requestedLogservers.orElse(createNodesSpecificationForLogserver()), admin);
 
         addLogForwarders(adminElement.child("logforwarding"), admin);
+        addLoggingSpecs(adminElement.child("logging"), admin);
     }
 
     private void assignSlobroks(DeployState deployState, NodesSpecification nodesSpecification, Admin admin) {
@@ -165,7 +166,7 @@ public class DomAdminV4Builder extends DomAdminBuilderBase {
                                                                      .filter(container -> retired == container.isRetired())
                                                                      .map(Container::getHostResource)
                                                                      .sorted(HostResource::comparePrimarilyByIndexTo)
-                                                                     .collect(Collectors.toList());
+                                                                     .collect(Collectors.toCollection(ArrayList::new));
         return hosts.subList(0, Math.min(count, hosts.size()));
     }
 

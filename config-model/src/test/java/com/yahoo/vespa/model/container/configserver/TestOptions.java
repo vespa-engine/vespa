@@ -3,6 +3,7 @@ package com.yahoo.vespa.model.container.configserver;
 
 import com.yahoo.vespa.model.container.configserver.option.CloudConfigOptions;
 
+import java.util.Objects;
 import java.util.Optional;
 
 /**
@@ -17,6 +18,7 @@ public class TestOptions implements CloudConfigOptions {
     private Optional<String> region = Optional.empty();
     private Optional<Boolean> useVespaVersionInRequest = Optional.empty();
     private Optional<Boolean> hostedVespa = Optional.empty();
+    private String zooKeeperSnapshotMethod = "gz";
 
     @Override
     public Optional<Integer> rpcPort() {
@@ -106,6 +108,9 @@ public class TestOptions implements CloudConfigOptions {
         return Optional.empty();
     }
 
+    @Override
+    public String zooKeeperSnapshotMethod() { return zooKeeperSnapshotMethod; }
+
     public TestOptions configServers(ConfigServer[] configServers) {
         this.configServers = configServers;
         return this;
@@ -128,6 +133,12 @@ public class TestOptions implements CloudConfigOptions {
 
     public TestOptions hostedVespa(boolean hostedVespa) {
         this.hostedVespa = Optional.of(hostedVespa);
+        return this;
+    }
+
+    public TestOptions zooKeeperSnapshotMethod(String snapshotMethod) {
+        Objects.requireNonNull(snapshotMethod);
+        this.zooKeeperSnapshotMethod = snapshotMethod;
         return this;
     }
 

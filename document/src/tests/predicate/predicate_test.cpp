@@ -20,7 +20,7 @@ using namespace document;
 
 namespace {
 
-typedef std::unique_ptr<Slime> SlimeUP;
+using SlimeUP = std::unique_ptr<Slime>;
 
 TEST("require that predicate feature set slimes can be compared") {
     PredicateSlimeBuilder builder;

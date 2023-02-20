@@ -3,11 +3,9 @@ package com.yahoo.vespa.clustercontroller.core.status;
 
 import com.yahoo.vespa.clustercontroller.core.status.statuspage.StatusPageResponse;
 import com.yahoo.vespa.clustercontroller.core.status.statuspage.StatusPageServer;
-import com.yahoo.vespa.clustercontroller.core.status.statuspage.StatusPageServerInterface;
 import com.yahoo.vespa.clustercontroller.utils.communication.http.HttpRequest;
 import com.yahoo.vespa.clustercontroller.utils.communication.http.HttpRequestHandler;
 import com.yahoo.vespa.clustercontroller.utils.communication.http.HttpResult;
-
 import java.io.IOException;
 import java.io.StringWriter;
 import java.nio.charset.StandardCharsets;
@@ -27,7 +25,7 @@ public class StatusHandler implements HttpRequestHandler {
 
     }
 
-    public static class ContainerStatusPageServer implements StatusPageServerInterface {
+    public static class ContainerStatusPageServer {
 
         StatusPageServer.HttpRequest request;
         StatusPageResponse response;
@@ -36,13 +34,9 @@ public class StatusHandler implements HttpRequestHandler {
         // Lock safety with fleetcontroller. Wait until completion
         private final Object answerMonitor = new Object();
 
-        @Override
         public int getPort() { return 0; }
-        @Override
         public void shutdown() throws InterruptedException, IOException {}
-        @Override
         public void setPort(int port) {}
-        @Override
         public StatusPageServer.HttpRequest getCurrentHttpRequest() {
             synchronized (answerMonitor) {
                 StatusPageServer.HttpRequest r = request;
@@ -50,7 +44,6 @@ public class StatusHandler implements HttpRequestHandler {
                 return r;
             }
         }
-        @Override
         public void answerCurrentStatusRequest(StatusPageResponse r) {
             synchronized (answerMonitor) {
                 response = r;

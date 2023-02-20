@@ -8,7 +8,8 @@ import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.search.searchchain.model.federation.FederationOptions;
 import com.yahoo.search.searchchain.model.federation.FederationSearcherModel;
 import com.yahoo.text.XML;
-import com.yahoo.config.model.producer.AbstractConfigProducer;
+import com.yahoo.config.model.producer.AnyConfigProducer;
+import com.yahoo.config.model.producer.TreeConfigProducer;
 import com.yahoo.vespa.model.builder.xml.dom.DomComponentBuilder;
 import com.yahoo.vespa.model.builder.xml.dom.VespaDomBuilder;
 import com.yahoo.vespa.model.builder.xml.dom.chains.GenericChainedComponentModelBuilder;
@@ -26,7 +27,7 @@ import java.util.Optional;
  *
  * @author Tony Vaagenes
  */
-public class DomFederationSearcherBuilder extends VespaDomBuilder.DomConfigProducerBuilder<Searcher<?>> {
+public class DomFederationSearcherBuilder extends VespaDomBuilder.DomConfigProducerBuilderBase<Searcher<?>> {
 
     static class FederationSearcherModelBuilder extends GenericChainedComponentModelBuilder {
 
@@ -75,14 +76,14 @@ public class DomFederationSearcherBuilder extends VespaDomBuilder.DomConfigProdu
     }
 
     @Override
-    protected FederationSearcher doBuild(DeployState deployState, AbstractConfigProducer<?> ancestor, Element searcherElement) {
+    protected FederationSearcher doBuild(DeployState deployState, TreeConfigProducer<AnyConfigProducer> ancestor, Element searcherElement) {
         FederationSearcherModel model = new FederationSearcherModelBuilder(searcherElement).build();
         Optional<Component> targetSelector = buildTargetSelector(deployState, ancestor, searcherElement, model.getComponentId());
 
         return new FederationSearcher(model, targetSelector);
     }
 
-    private Optional<Component> buildTargetSelector(DeployState deployState, AbstractConfigProducer<?> ancestor, Element searcherElement, ComponentId namespace) {
+    private Optional<Component> buildTargetSelector(DeployState deployState, TreeConfigProducer<AnyConfigProducer> ancestor, Element searcherElement, ComponentId namespace) {
         Element targetSelectorElement = XML.getChild(searcherElement, "target-selector");
         if (targetSelectorElement == null)
             return Optional.empty();

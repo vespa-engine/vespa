@@ -12,8 +12,8 @@ class SpanList : public SpanNode {
     std::vector<SpanNode *> _span_vector;
 
 public:
-    typedef std::unique_ptr<SpanList> UP;
-    typedef std::vector<SpanNode *>::const_iterator const_iterator;
+    using UP = std::unique_ptr<SpanList>;
+    using const_iterator = std::vector<SpanNode *>::const_iterator;
 
     ~SpanList();
 
@@ -34,12 +34,12 @@ public:
 };
 
 class SimpleSpanList : public SpanNode {
-    typedef std::vector<Span> SpanVector;
+    using SpanVector = std::vector<Span>;
     SpanVector _span_vector;
 
 public:
-    typedef std::unique_ptr<SimpleSpanList> UP;
-    typedef SpanVector::const_iterator const_iterator;
+    using UP = std::unique_ptr<SimpleSpanList>;
+    using const_iterator = SpanVector::const_iterator;
 
     SimpleSpanList(size_t sz);
     ~SimpleSpanList();

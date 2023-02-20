@@ -3,10 +3,11 @@ package com.yahoo.vespa.model.container.http.xml;
 
 import com.yahoo.component.chain.model.ChainSpecification;
 import com.yahoo.config.model.deploy.DeployState;
-import com.yahoo.config.model.producer.AbstractConfigProducer;
+import com.yahoo.config.model.producer.AnyConfigProducer;
+import com.yahoo.config.model.producer.TreeConfigProducer;
 import com.yahoo.vespa.model.builder.xml.dom.chains.DomChainBuilderBase;
-import com.yahoo.vespa.model.container.component.chain.Chain;
 import com.yahoo.vespa.model.container.http.Filter;
+import com.yahoo.vespa.model.container.http.HttpFilterChain;
 import org.w3c.dom.Element;
 
 import java.util.Collection;
@@ -18,7 +19,7 @@ import static com.yahoo.vespa.model.builder.xml.dom.chains.ComponentsBuilder.Com
 /**
  * @author Tony Vaagenes
  */
-public class FilterChainBuilder extends DomChainBuilderBase<Filter, Chain<Filter>> {
+public class FilterChainBuilder extends DomChainBuilderBase<Filter, HttpFilterChain> {
 
     private static final Collection<ComponentType<Filter>> allowedComponentTypes = Collections.singleton(ComponentType.filter);
 
@@ -27,7 +28,7 @@ public class FilterChainBuilder extends DomChainBuilderBase<Filter, Chain<Filter
     }
 
     @Override
-    protected Chain<Filter> buildChain(DeployState deployState, AbstractConfigProducer<?> ancestor, Element producerSpec, ChainSpecification specWithoutInnerComponents) {
-        return new Chain<>(specWithoutInnerComponents);
+    protected HttpFilterChain buildChain(DeployState deployState, TreeConfigProducer<AnyConfigProducer> ancestor, Element producerSpec, ChainSpecification specWithoutInnerComponents) {
+        return new HttpFilterChain(specWithoutInnerComponents, HttpFilterChain.Type.USER);
     }
 }

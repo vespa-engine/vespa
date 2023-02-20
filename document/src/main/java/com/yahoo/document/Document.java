@@ -43,7 +43,7 @@ public class Document extends StructuredFieldValue {
     public static final int classId = registerClass(Ids.document + 3, Document.class);
     public static final short SERIALIZED_VERSION = 8;
     private DocumentId docId;
-    private Struct header;
+    private Struct content;
     private Long lastModified = null;
 
     /**
@@ -73,7 +73,7 @@ public class Document extends StructuredFieldValue {
      */
     public Document(Document doc) {
         this(doc.getDataType(), doc.getId());
-        header = doc.header;
+        content = doc.content;
         lastModified = doc.lastModified;
     }
 
@@ -105,12 +105,12 @@ public class Document extends StructuredFieldValue {
     public Document clone() {
         Document doc = (Document) super.clone();
         doc.docId = docId.clone();
-        doc.header = header.clone();
+        doc.content = content.clone();
         return doc;
     }
 
     private void setNewType(DocumentType type) {
-        header = type.contentStruct().createFieldValue();
+        content = type.contentStruct().createFieldValue();
     }
 
     public void setDataType(DataType type) {
@@ -163,7 +163,7 @@ public class Document extends StructuredFieldValue {
 
     @Override
     public Field getField(String fieldName) {
-        Field field = header.getField(fieldName);
+        Field field = content.getField(fieldName);
         if (field == null) {
             for(DocumentType parent : getDataType().getInheritedTypes()) {
                 field = parent.getField(fieldName);
@@ -177,33 +177,34 @@ public class Document extends StructuredFieldValue {
 
     @Override
     public FieldValue getFieldValue(Field field) {
-        return header.getFieldValue(field);
+        return content.getFieldValue(field);
     }
 
     @Override
     protected void doSetFieldValue(Field field, FieldValue value) {
-        header.setFieldValue(field, value);
+        content.setFieldValue(field, value);
     }
 
     @Override
     public FieldValue removeFieldValue(Field field) {
-        return header.removeFieldValue(field);
+        return content.removeFieldValue(field);
     }
 
     @Override
     public void clear() {
-        header.clear();
+        content.clear();
     }
 
     @Override
     public Iterator<Map.Entry<Field, FieldValue>> iterator() {
-        return header.iterator();
+        return content.iterator();
     }
 
     public String toString() {
         return "document '" + docId + "' of type '" + getDataType().getName() + "'";
     }
 
+    @Deprecated
     public String toXML(String indent) {
         XmlStream xml = new XmlStream();
         xml.setIndent(indent);
@@ -218,10 +219,12 @@ public class Document extends StructuredFieldValue {
      * within a &lt;document&gt;&lt;/document&gt; tag.
      * @return XML representation of document
      */
+    @Deprecated
     public String toXml() {
         return toXML("  ");
     }
 
+    @Deprecated
     public void printXml(XmlStream xml) {
         XmlSerializationHelper.printDocumentXml(this, xml);
     }
@@ -244,7 +247,7 @@ public class Document extends StructuredFieldValue {
         if (o == this) return true;
         if (!(o instanceof Document other)) return false;
         return (super.equals(o) && docId.equals(other.docId) &&
-                header.equals(other.header));
+                content.equals(other.content));
     }
 
     @Override
@@ -289,7 +292,7 @@ public class Document extends StructuredFieldValue {
 
     @Override
     public int getFieldCount() {
-        return header.getFieldCount();
+        return content.getFieldCount();
     }
 
     public void serialize(DocumentWriter writer) {
@@ -329,7 +332,7 @@ public class Document extends StructuredFieldValue {
             return comp;
         }
 
-        comp = header.compareTo(otherValue.header);
+        comp = content.compareTo(otherValue.content);
 
         if (comp != 0) {
             return comp;

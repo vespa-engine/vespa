@@ -13,7 +13,9 @@ using namespace storage::api;
 
 namespace storage {
 
-StorageLink::~StorageLink() = default;
+StorageLink::~StorageLink() {
+    LOG(debug, "Destructing link %s.", toString().c_str());
+}
 
 void StorageLink::push_back(StorageLink::UP link)
 {
@@ -74,14 +76,18 @@ void StorageLink::doneInit()
 void StorageLink::close()
 {
     _state = CLOSING;
+    LOG(debug, "Start close link %s.", toString().c_str());
     onClose();
     if (!isBottom()) {
         _down->close();
     }
+    LOG(debug, "End close link %s.", toString().c_str());
 }
 
 void StorageLink::closeNextLink() {
+    LOG(debug, "Start closeNextLink link %s.", toString().c_str());
     _down.reset();
+    LOG(debug, "End closeNextLink link %s.", toString().c_str());
 }
 
 void StorageLink::flush()

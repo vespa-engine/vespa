@@ -3,8 +3,8 @@ package com.yahoo.vespa.model.application.validation.change.search;
 
 import com.yahoo.config.application.api.ValidationId;
 import com.yahoo.config.application.api.ValidationOverrides;
+import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.provision.ClusterSpec;
-import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.model.application.validation.change.VespaConfigChangeAction;
 import org.junit.jupiter.api.Test;
 
@@ -28,8 +28,7 @@ public class AttributeChangeValidatorTest {
                                                      nextDb().getDerivedConfiguration().getAttributeFields(),
                                                      nextDb().getDerivedConfiguration().getIndexSchema(),
                                                      nextDocType(),
-                                                     new ValidationOverrides(List.of()),
-                                                     new ManualClock().instant());
+                                                     new DeployState.Builder().build());
         }
 
         @Override

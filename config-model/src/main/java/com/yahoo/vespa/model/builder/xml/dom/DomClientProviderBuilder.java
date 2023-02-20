@@ -2,7 +2,8 @@
 package com.yahoo.vespa.model.builder.xml.dom;
 
 import com.yahoo.config.model.deploy.DeployState;
-import com.yahoo.config.model.producer.AbstractConfigProducer;
+import com.yahoo.config.model.producer.AnyConfigProducer;
+import com.yahoo.config.model.producer.TreeConfigProducer;
 import com.yahoo.text.XML;
 import com.yahoo.vespa.model.container.ApplicationContainerCluster;
 import com.yahoo.vespa.model.container.component.Handler;
@@ -20,7 +21,7 @@ public class DomClientProviderBuilder extends DomHandlerBuilder {
     }
 
     @Override
-    protected Handler doBuild(DeployState deployState, AbstractConfigProducer parent, Element clientElement) {
+    protected Handler doBuild(DeployState deployState, TreeConfigProducer<AnyConfigProducer> parent, Element clientElement) {
         Handler client = createHandler(clientElement);
 
         for (Element binding : XML.getChildren(clientElement, "binding"))

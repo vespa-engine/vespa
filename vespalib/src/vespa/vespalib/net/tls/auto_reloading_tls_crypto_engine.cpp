@@ -6,6 +6,7 @@
 #include "tls_crypto_engine.h"
 #include "transport_security_options.h"
 #include "transport_security_options_reading.h"
+#include "crypto_codec.h"
 
 #include <functional>
 #include <stdexcept>
@@ -111,14 +112,14 @@ AutoReloadingTlsCryptoEngine::always_use_tls_when_server() const
     return acquire_current_engine()->always_use_tls_when_server();
 }
 
-std::unique_ptr<TlsCryptoSocket>
-AutoReloadingTlsCryptoEngine::create_tls_client_crypto_socket(SocketHandle socket, const SocketSpec &spec) {
-    return acquire_current_engine()->create_tls_client_crypto_socket(std::move(socket), spec);
+std::unique_ptr<CryptoCodec>
+AutoReloadingTlsCryptoEngine::create_tls_client_crypto_codec(const SocketHandle &socket, const SocketSpec &spec) {
+    return acquire_current_engine()->create_tls_client_crypto_codec(socket, spec);
 }
 
-std::unique_ptr<TlsCryptoSocket>
-AutoReloadingTlsCryptoEngine::create_tls_server_crypto_socket(SocketHandle socket) {
-    return acquire_current_engine()->create_tls_server_crypto_socket(std::move(socket));
+std::unique_ptr<CryptoCodec>
+AutoReloadingTlsCryptoEngine::create_tls_server_crypto_codec(const SocketHandle &socket) {
+    return acquire_current_engine()->create_tls_server_crypto_codec(socket);
 }
 
 }

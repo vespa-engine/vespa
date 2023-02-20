@@ -1,7 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.utils.internal;
 
-import com.yahoo.config.model.producer.AbstractConfigProducer;
+import com.yahoo.config.model.producer.TreeConfigProducer;
 import com.yahoo.test.ArraytypesConfig;
 import com.yahoo.config.ChangesRequiringRestart;
 import com.yahoo.config.ConfigInstance;
@@ -22,8 +22,8 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 public class ReflectionUtilTest {
 
-    private static class SimpleProducer extends AbstractConfigProducer implements SimpletypesConfig.Producer {
-        SimpleProducer(AbstractConfigProducer parent, String subId) { super(parent, subId); }
+    private static class SimpleProducer extends TreeConfigProducer implements SimpletypesConfig.Producer {
+        SimpleProducer(TreeConfigProducer parent, String subId) { super(parent, subId); }
 
         @Override
         public void getConfig(SimpletypesConfig.Builder builder) { }
@@ -31,8 +31,8 @@ public class ReflectionUtilTest {
 
     private interface ProducerInterface extends SimpletypesConfig.Producer, ArraytypesConfig.Producer { }
 
-    private static class InterfaceImplementingProducer extends AbstractConfigProducer implements ProducerInterface {
-        InterfaceImplementingProducer(AbstractConfigProducer parent, String subId) { super(parent, subId); }
+    private static class InterfaceImplementingProducer extends TreeConfigProducer implements ProducerInterface {
+        InterfaceImplementingProducer(TreeConfigProducer parent, String subId) { super(parent, subId); }
 
         @Override
         public void getConfig(ArraytypesConfig.Builder builder) { }
@@ -40,14 +40,14 @@ public class ReflectionUtilTest {
         public void getConfig(SimpletypesConfig.Builder builder) { }
     }
 
-    private static abstract class MyAbstractProducer extends AbstractConfigProducer implements SimpletypesConfig.Producer {
-        MyAbstractProducer(AbstractConfigProducer parent, String subId) { super(parent, subId); }
+    private static abstract class MyAbstractProducer extends TreeConfigProducer implements SimpletypesConfig.Producer {
+        MyAbstractProducer(TreeConfigProducer parent, String subId) { super(parent, subId); }
         @Override
         public void getConfig(SimpletypesConfig.Builder builder) { }
     }
 
     private static class ConcreteProducer extends MyAbstractProducer {
-        ConcreteProducer(AbstractConfigProducer parent, String subId) { super(parent, subId); }
+        ConcreteProducer(TreeConfigProducer parent, String subId) { super(parent, subId); }
     }
 
     private static class RestartConfig extends ConfigInstance {

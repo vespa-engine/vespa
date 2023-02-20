@@ -73,12 +73,12 @@ public:
                 ApplicationGenerationFetcher& generationFetcher,
                 std::unique_ptr<HostInfo> hostInfo,
                 RunMode = NORMAL);
-    virtual ~StorageNode();
+    ~StorageNode() override;
 
     virtual const lib::NodeType& getNodeType() const = 0;
     bool attemptedStopped() const;
     void notifyDoneInitializing() override;
-    void waitUntilInitialized(uint32_t timeoutSeconds = 15);
+    void waitUntilInitialized(vespalib::duration timeout = 15s);
     void updateMetrics(const MetricLockGuard & guard) override;
 
     /** Updates the document type repo. */
@@ -136,7 +136,6 @@ private:
     virtual void configure(std::unique_ptr<document::config::DocumenttypesConfig> config,
                            bool hasChanged, int64_t generation);
     void configure(std::unique_ptr<BucketspacesConfig>) override;
-    void updateUpgradeFlag(const UpgradingConfig&);
 
 protected:
         // Lock taken while doing configuration of the server.

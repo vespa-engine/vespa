@@ -414,7 +414,7 @@
                                 line-height: 32px;
                               "
                             >
-                              Vespa cloud notifications
+                              Vespa Cloud Notifications
                             </h1>
                           </div>
                         </td>
@@ -443,11 +443,9 @@
                             "
                           >
                             <p>
-                              There are problems with tests for default.default
+                              There are problems with tests for default.default:
                             </p>
-                            <ul>
-                              <li>test package has production tests, but no production tests are declared in deployment.xml</li><li>see <a href="https://docs.vespa.ai/en/testing.html">https://docs.vespa.ai/en/testing.html</a> for details on how to write system tests for Vespa</li>
-                            </ul>
+                            <p>Test package has production tests, but no production tests are declared in deployment.xml</p><p>See <a href="https://docs.vespa.ai/en/testing.html">https://docs.vespa.ai/en/testing.html</a> for details on how to write system tests for Vespa</p>
                           </div>
                         </td>
                       </tr>

@@ -62,9 +62,12 @@ MmapFileAllocator::alloc(size_t sz) const
     assert(ins_res.second);
     int retval = madvise(buf, sz, MADV_RANDOM);
     assert(retval == 0);
+#ifdef __linux__
+    retval = madvise(buf, sz, MADV_DONTDUMP);
+    assert(retval == 0);
+#endif
     return PtrAndSize(buf, sz);
 }
-
 
 void
 MmapFileAllocator::free(PtrAndSize alloc) const

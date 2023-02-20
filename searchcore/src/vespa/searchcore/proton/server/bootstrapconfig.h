@@ -22,8 +22,8 @@ namespace proton {
 class BootstrapConfig
 {
 public:
-    typedef std::shared_ptr<BootstrapConfig> SP;
-    typedef std::shared_ptr<vespa::config::search::core::ProtonConfig> ProtonConfigSP;
+    using SP = std::shared_ptr<BootstrapConfig>;
+    using ProtonConfigSP = std::shared_ptr<vespa::config::search::core::ProtonConfig>;
     using FiledistributorrpcConfig = const cloud::config::filedistribution::FiledistributorrpcConfig;
     using FiledistributorrpcConfigSP = std::shared_ptr<FiledistributorrpcConfig>;
 

@@ -19,8 +19,8 @@ public:
     /**
      * Convenience typedef.
      */
-    typedef std::unique_ptr<DocumentReply> UP;
-    typedef std::shared_ptr<DocumentReply> SP;
+    using UP = std::unique_ptr<DocumentReply>;
+    using SP = std::shared_ptr<DocumentReply>;
 
     /**
      * Constructs a new reply of given type.

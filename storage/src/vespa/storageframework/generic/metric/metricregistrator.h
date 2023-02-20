@@ -10,7 +10,7 @@
  */
 #pragma once
 
-#include <vespa/storageframework/generic/clock/time.h>
+#include <vespa/vespalib/util/time.h>
 
 namespace metrics {
     class Metric;
@@ -24,7 +24,7 @@ struct MetricRegistrator {
     virtual ~MetricRegistrator() = default;
 
     virtual void registerMetric(metrics::Metric&) = 0;
-    virtual void registerUpdateHook(vespalib::stringref name, MetricUpdateHook& hook, SecondTime period) = 0;
+    virtual void registerUpdateHook(vespalib::stringref name, MetricUpdateHook& hook, vespalib::duration period) = 0;
 };
 
 }

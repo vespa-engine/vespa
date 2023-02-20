@@ -6,6 +6,12 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.container.jdisc.HttpRequest;
+import com.yahoo.security.KeyId;
+import com.yahoo.security.KeyUtils;
+import com.yahoo.security.SecretSharedKey;
+import com.yahoo.security.SharedKeyGenerator;
+import com.yahoo.security.SharedKeyResealingSession;
+import com.yahoo.slime.SlimeUtils;
 import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.flags.PermanentFlags;
@@ -15,6 +21,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.configserver.Applicatio
 import com.yahoo.vespa.hosted.controller.api.integration.resource.ResourceSnapshot;
 import com.yahoo.vespa.hosted.controller.auditlog.AuditLogger;
 import com.yahoo.vespa.hosted.controller.integration.NodeRepositoryMock;
+import com.yahoo.vespa.hosted.controller.integration.SecretStoreMock;
 import com.yahoo.vespa.hosted.controller.restapi.ContainerTester;
 import com.yahoo.vespa.hosted.controller.restapi.ControllerContainerTest;
 import org.junit.jupiter.api.BeforeEach;
@@ -23,11 +30,16 @@ import org.junit.jupiter.api.Test;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.nio.charset.StandardCharsets;
+import java.security.KeyPair;
+import java.security.interfaces.XECPrivateKey;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 
+import static com.yahoo.security.ArrayUtils.hex;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * @author bratseth
@@ -177,4 +189,116 @@ public class ControllerApiTest extends ControllerContainerTest {
         tester.assertResponse(operatorRequest("http://localhost:8080/controller/v1/access/requests/" + hostedOperator.getName(), requestBody, Request.Method.POST),
                 "{\"members\":[\"user.alice\"]}");
     }
+
+    private SharedKeyResealingSession.ResealingResponse extractResealingResponseFromJsonResponse(String json) {
+        var cursor = SlimeUtils.jsonToSlime(json).get();
+        var responseField = cursor.field("resealResponse");
+        if (!responseField.valid()) {
+            fail("No 'resealResponse' field in JSON response");
+        }
+        return SharedKeyResealingSession.ResealingResponse.fromSerializedString(responseField.asString());
+    }
+
+    private record ResealingTestData(SharedKeyResealingSession.ResealingRequest resealingRequest,
+                                     SharedKeyResealingSession session,
+                                     SecretSharedKey originalSecretSharedKey,
+                                     KeyPair originalReceiverKeyPair) {}
+
+    private static ResealingTestData createResealingRequestData(String keyIdStr) {
+        var receiverKeyPair = KeyUtils.generateX25519KeyPair();
+        var keyId = KeyId.ofString(keyIdStr);
+        var sharedKey = SharedKeyGenerator.generateForReceiverPublicKey(receiverKeyPair.getPublic(), keyId);
+
+        var session = SharedKeyResealingSession.newEphemeralSession();
+        var resealRequest = session.resealingRequestFor(sharedKey.sealedSharedKey());
+        return new ResealingTestData(resealRequest, session, sharedKey, receiverKeyPair);
+    }
+
+    private static String requestJsonOf(ResealingTestData reqData) {
+        return "{\"resealRequest\":\"%s\"}".formatted(reqData.resealingRequest.toSerializedString());
+    }
+
+    @Test
+    void decryption_token_reseal_request_succeeds_when_matching_versioned_key_found() {
+        var reqData = createResealingRequestData("a.really.cool.key.123"); // Must match key name in config
+        var secret = hex(reqData.originalSecretSharedKey.secretKey().getEncoded());
+
+        var secretStore = (SecretStoreMock)tester.controller().secretStore();
+        secretStore.setSecret("a.really.cool.key", KeyUtils.toBase58EncodedX25519PrivateKey((XECPrivateKey)reqData.originalReceiverKeyPair.getPrivate()), 123);
+
+        tester.assertResponse(
+                () -> operatorRequest("http://localhost:8080/controller/v1/access/cores/reseal", requestJsonOf(reqData), Request.Method.POST),
+                (responseJson) -> {
+                    var resealResponse = extractResealingResponseFromJsonResponse(responseJson.getBodyAsString());
+                    var myShared = reqData.session.openResealingResponse(resealResponse);
+                    assertEquals(secret, hex(reqData.originalSecretSharedKey.secretKey().getEncoded()));
+                },
+                200);
+    }
+
+    @Test
+    void decryption_token_reseal_request_fails_when_unexpected_key_name_is_supplied() {
+        var reqData = createResealingRequestData("a.really.cool.but.non.existing.key.123");
+        tester.assertResponse(
+                () -> operatorRequest("http://localhost:8080/controller/v1/access/cores/reseal", requestJsonOf(reqData), Request.Method.POST),
+                "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Token is not generated for the expected key\"}",
+                400);
+    }
+
+    @Test
+    void secret_key_lookup_does_not_use_key_id_provided_in_user_supplied_token() {
+        var reqData = createResealingRequestData("a.sneaky.key.123");
+        var secretStore = (SecretStoreMock)tester.controller().secretStore();
+        // Token key ID is technically valid, but should not be used. Only config should be obeyed.
+        secretStore.setSecret("a.sneaky.key", KeyUtils.toBase58EncodedX25519PrivateKey((XECPrivateKey)reqData.originalReceiverKeyPair.getPrivate()), 123);
+
+        tester.assertResponse(
+                () -> operatorRequest("http://localhost:8080/controller/v1/access/cores/reseal", requestJsonOf(reqData), Request.Method.POST),
+                "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Token is not generated for the expected key\"}",
+                400);
+    }
+
+    @Test
+    void decryption_token_reseal_request_fails_when_request_payload_is_missing_or_bogus() {
+        tester.assertResponse(
+                () -> operatorRequest("http://localhost:8080/controller/v1/access/cores/reseal", "{}", Request.Method.POST),
+                "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Expected field \\\"resealRequest\\\" in request\"}",
+                400);
+        // TODO this error message is technically an implementation detail...
+        tester.assertResponse(
+                () -> operatorRequest("http://localhost:8080/controller/v1/access/cores/reseal",
+                        "{\"resealRequest\":\"five badgers destroying a flowerbed\"}", Request.Method.POST),
+                "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Input character not part of codec alphabet\"}",
+                400);
+    }
+
+    @Test
+    void decryption_token_reseal_request_fails_when_key_id_does_not_conform_to_expected_form() {
+        tester.assertResponse(
+                () -> operatorRequest("http://localhost:8080/controller/v1/access/cores/reseal",
+                        requestJsonOf(createResealingRequestData("a-really-cool-key")), Request.Method.POST),
+                "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Key ID is not of the form 'name.version'\"}",
+                400);
+        tester.assertResponse(
+                () -> operatorRequest("http://localhost:8080/controller/v1/access/cores/reseal",
+                        requestJsonOf(createResealingRequestData("a.really.cool.key.123asdf")), Request.Method.POST),
+                "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Key version is not a valid integer\"}",
+                400);
+        tester.assertResponse(
+                () -> operatorRequest("http://localhost:8080/controller/v1/access/cores/reseal",
+                        requestJsonOf(createResealingRequestData("a.really.cool.key.")), Request.Method.POST),
+                "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Key version is not a valid integer\"}",
+                400);
+        tester.assertResponse(
+                () -> operatorRequest("http://localhost:8080/controller/v1/access/cores/reseal",
+                        requestJsonOf(createResealingRequestData("a.really.cool.key.-123")), Request.Method.POST),
+                "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Key version is out of range\"}",
+                400);
+        tester.assertResponse(
+                () -> operatorRequest("http://localhost:8080/controller/v1/access/cores/reseal",
+                        requestJsonOf(createResealingRequestData("a.really.cool.key.%d".formatted((long)Integer.MAX_VALUE + 1))), Request.Method.POST),
+                "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Key version is not a valid integer\"}",
+                400);
+    }
+
 }

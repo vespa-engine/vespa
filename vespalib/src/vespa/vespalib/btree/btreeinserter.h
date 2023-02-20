@@ -8,7 +8,7 @@
 #include "btreeaggregator.h"
 #include "noaggrcalc.h"
 #include "minmaxaggrcalc.h"
-#include "btreeiterator.h" 
+#include "btreeiterator.h"
 
 namespace vespalib::btree {
 
@@ -21,20 +21,20 @@ template <typename KeyT,
 class BTreeInserter
 {
 public:
-    typedef BTreeNodeAllocator<KeyT, DataT, AggrT,
-                               TraitsT::INTERNAL_SLOTS,
-                               TraitsT::LEAF_SLOTS> NodeAllocatorType;
-    typedef BTreeAggregator<KeyT, DataT, AggrT,
-                            TraitsT::INTERNAL_SLOTS,
-                            TraitsT::LEAF_SLOTS,
-                            AggrCalcT> Aggregator;
-    typedef BTreeIterator<KeyT, DataT, AggrT, CompareT, TraitsT> Iterator;
-    typedef BTreeInternalNode<KeyT, AggrT, TraitsT::INTERNAL_SLOTS> InternalNodeType;
-    typedef BTreeLeafNode<KeyT, DataT, AggrT, TraitsT::LEAF_SLOTS> LeafNodeType;
-    typedef KeyT  KeyType;
-    typedef DataT DataType;
-    typedef typename InternalNodeType::RefPair InternalNodeTypeRefPair;
-    typedef typename LeafNodeType::RefPair LeafNodeTypeRefPair;
+    using NodeAllocatorType = BTreeNodeAllocator<KeyT, DataT, AggrT,
+                                                 TraitsT::INTERNAL_SLOTS,
+                                                 TraitsT::LEAF_SLOTS>;
+    using Aggregator = BTreeAggregator<KeyT, DataT, AggrT,
+                                       TraitsT::INTERNAL_SLOTS,
+                                       TraitsT::LEAF_SLOTS,
+                                       AggrCalcT>;
+    using Iterator = BTreeIterator<KeyT, DataT, AggrT, CompareT, TraitsT>;
+    using InternalNodeType = BTreeInternalNode<KeyT, AggrT, TraitsT::INTERNAL_SLOTS>;
+    using LeafNodeType = BTreeLeafNode<KeyT, DataT, AggrT, TraitsT::LEAF_SLOTS>;
+    using KeyType = KeyT;
+    using DataType = DataT;
+    using InternalNodeTypeRefPair = typename InternalNodeType::RefPair;
+    using LeafNodeTypeRefPair = typename LeafNodeType::RefPair;
     using Inserter = BTreeInserter<KeyT, DataT, AggrT, CompareT, TraitsT, AggrCalcT>;
 
 private:

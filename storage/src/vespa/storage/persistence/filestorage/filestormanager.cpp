@@ -2,6 +2,7 @@
 
 #include "filestormanager.h"
 #include "filestorhandlerimpl.h"
+#include <vespa/storageframework/generic/thread/thread.h>
 #include <vespa/storage/bucketdb/minimumusedbitstracker.h>
 #include <vespa/storage/common/bucketmessages.h>
 #include <vespa/storage/common/content_bucket_space_repo.h>
@@ -78,6 +79,10 @@ FileStorManager(const config::ConfigUri & configUri, spi::PersistenceProvider& p
       _configFetcher(std::make_unique<config::ConfigFetcher>(configUri.getContext())),
       _use_async_message_handling_on_schedule(false),
       _metrics(std::make_unique<FileStorMetrics>()),
+      _mem_trap_1(std::make_unique<vespalib::HeapMemoryTrap>(1)),
+      _mem_trap_2(std::make_unique<vespalib::HeapMemoryTrap>(2)),
+      _mem_trap_3(std::make_unique<vespalib::HeapMemoryTrap>(3)),
+      _mem_trap_4(std::make_unique<vespalib::HeapMemoryTrap>(16)),
       _filestorHandler(),
       _sequencedExecutor(),
       _closed(false),
@@ -105,13 +110,14 @@ FileStorManager::~FileStorManager()
             thread->getThread().interrupt();
         }
     }
+    LOG(debug, "Closing all filestor queues, answering queued messages. New messages will be refused.");
+    _filestorHandler->close();
     for (const auto & thread : _threads) {
         if (thread) {
             thread->getThread().join();
         }
     }
-    LOG(debug, "Closing all filestor queues, answering queued messages. New messages will be refused.");
-    _filestorHandler->close();
+
     LOG(debug, "Deleting filestor threads. Waiting for their current operation "
                "to finish. Stop their threads and delete objects.");
     _threads.clear();
@@ -295,7 +301,7 @@ FileStorManager::mapOperationToBucketAndDisk(api::BucketCommand& cmd, const docu
         if (docId) {
             specific = _bucketIdFactory.getBucketId(*docId);
         }
-        typedef std::map<document::BucketId, StorBucketDatabase::WrappedEntry> BucketMap;
+        using BucketMap = std::map<document::BucketId, StorBucketDatabase::WrappedEntry>;
         std::shared_ptr<api::StorageReply> reply;
         {
             BucketMap results( database.getContained( specific, "FileStorManager::mapOperationToBucketAndDisk-2"));

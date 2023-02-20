@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.searchers;
 
+import com.yahoo.prelude.Index;
 import com.yahoo.prelude.IndexFacts;
 import com.yahoo.prelude.IndexModel;
 import com.yahoo.prelude.SearchDefinition;
@@ -12,7 +13,6 @@ import com.yahoo.search.query.parser.ParserEnvironment;
 import com.yahoo.search.result.ErrorMessage;
 import com.yahoo.search.searchchain.Execution;
 import com.yahoo.search.yql.YqlParser;
-import com.yahoo.vespa.config.search.AttributesConfig;
 import com.yahoo.vespa.config.search.AttributesConfig.Attribute;
 import org.junit.jupiter.api.Test;
 
@@ -31,26 +31,28 @@ public class ValidateFuzzySearcherTestCase {
 
     List<String> attributes;
 
+    private List<Index> indexes;
+
+    private static final String CMD_ATTRIBUTE = "attribute";
+    private static final String CMD_STRING = "string";
+
     public ValidateFuzzySearcherTestCase() {
         attributes = new ArrayList<>();
-        AttributesConfig.Builder configBuilder = new AttributesConfig.Builder();
-        List<AttributesConfig.Attribute.Builder> attributesList = new ArrayList<>();
+        indexes = new ArrayList<>();
         for (Attribute.Datatype.Enum attr: Attribute.Datatype.Enum.values()) {
             for (Attribute.Collectiontype.Enum ctype: Attribute.Collectiontype.Enum.values()) {
-                AttributesConfig.Attribute.Builder attributesBuilder = new AttributesConfig.Attribute.Builder();
                 String attributeName = attr.name().toLowerCase() + "_" + ctype.name().toLowerCase();
-                attributesBuilder.name(attributeName);
-                attributesBuilder.datatype(attr);
-                attributesBuilder.collectiontype(ctype);
-                attributesList.add(attributesBuilder);
-
                 attributes.add(attributeName);
+
+                Index index = new Index(attributeName);
+                index.addCommand(CMD_ATTRIBUTE);
+                if (attr == Attribute.Datatype.STRING) {
+                    index.addCommand(CMD_STRING);
+                }
+                indexes.add(index);
             }
         }
-        configBuilder.attribute(attributesList);
-        AttributesConfig config = configBuilder.build();
-
-        searcher = new ValidateFuzzySearcher(config);
+        searcher = new ValidateFuzzySearcher();
     }
 
     private String makeQuery(String attribute, String query, int maxEditDistance, int prefixLength) {
@@ -111,11 +113,14 @@ public class ValidateFuzzySearcherTestCase {
         assertEquals(ErrorMessage.createIllegalQuery(message), r.hits().getError());
     }
 
-    private static Result doSearch(ValidateFuzzySearcher searcher, String yqlQuery) {
+    private Result doSearch(ValidateFuzzySearcher searcher, String yqlQuery) {
         QueryTree queryTree = new YqlParser(new ParserEnvironment()).parse(new Parsable().setQuery(yqlQuery));
         Query query = new Query();
         query.getModel().getQueryTree().setRoot(queryTree.getRoot());
         SearchDefinition searchDefinition = new SearchDefinition("document");
+        for (Index index : indexes) {
+            searchDefinition.addIndex(index);
+        }
         IndexFacts indexFacts = new IndexFacts(new IndexModel(searchDefinition));
         return new Execution(searcher, Execution.Context.createContextStub(indexFacts)).search(query);
     }

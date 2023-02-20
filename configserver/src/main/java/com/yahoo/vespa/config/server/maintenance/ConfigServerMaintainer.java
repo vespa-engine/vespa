@@ -14,6 +14,7 @@ import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.flags.ListFlag;
 import com.yahoo.vespa.flags.PermanentFlags;
 
+import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Arrays;
@@ -33,8 +34,8 @@ public abstract class ConfigServerMaintainer extends Maintainer {
 
     /** Creates a maintainer where maintainers on different nodes in this cluster run with even delay. */
     ConfigServerMaintainer(ApplicationRepository applicationRepository, Curator curator, FlagSource flagSource,
-                           Instant now, Duration interval, boolean useLock) {
-        super(null, interval, now, new JobControl(new JobControlFlags(curator, flagSource, useLock)),
+                           Clock clock, Duration interval, boolean useLock) {
+        super(null, interval, clock, new JobControl(new JobControlFlags(curator, flagSource, useLock)),
               new ConfigServerJobMetrics(applicationRepository.metric()), cluster(curator), false);
         this.applicationRepository = applicationRepository;
     }
@@ -48,8 +49,10 @@ public abstract class ConfigServerMaintainer extends Maintainer {
         }
 
         @Override
-        public void completed(String job, double successFactor) {
-            metric.set("maintenance.successFactor", successFactor, metric.createContext(Map.of("job", job)));
+        public void completed(String job, double successFactor, long durationMs) {
+            var context = metric.createContext(Map.of("job", job));
+            metric.set("maintenance.successFactor", successFactor, context);
+            metric.set("maintenance.duration", durationMs, context);
         }
 
     }
@@ -89,7 +92,7 @@ public abstract class ConfigServerMaintainer extends Maintainer {
         return Arrays.stream(curator.zooKeeperEnsembleConnectionSpec().split(","))
                      .filter(hostAndPort -> !hostAndPort.isEmpty())
                      .map(hostAndPort -> hostAndPort.split(":")[0])
-                     .collect(Collectors.toList());
+                     .toList();
     }
 
 

@@ -79,6 +79,7 @@ class AthenzCredentialsService {
                 tenantIdentity,
                 document.providerUniqueId(),
                 document.ipAddresses(),
+                document.clusterType(),
                 keyPair);
 
         try (ZtsClient ztsClient = new DefaultZtsClient.Builder(ztsEndpoint).withIdentityProvider(nodeIdentityProvider).build()) {
@@ -100,6 +101,7 @@ class AthenzCredentialsService {
                 tenantIdentity,
                 document.providerUniqueId(),
                 document.ipAddresses(),
+                document.clusterType(),
                 newKeyPair);
 
         try (ZtsClient ztsClient = new DefaultZtsClient.Builder(ztsEndpoint).withSslContext(sslContext).build()) {

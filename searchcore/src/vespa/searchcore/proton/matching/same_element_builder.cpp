@@ -75,10 +75,10 @@ public:
 } // namespace proton::matching::<unnamed>
 
 SameElementBuilder::SameElementBuilder(const search::queryeval::IRequestContext &requestContext, ISearchContext &context,
-                                       const vespalib::string &struct_field_name, bool expensive)
+                                       const search::queryeval::FieldSpec &field, bool expensive)
     : _requestContext(requestContext),
       _context(context),
-      _result(std::make_unique<SameElementBlueprint>(struct_field_name, expensive))
+      _result(std::make_unique<SameElementBlueprint>(field, expensive))
 {
 }
 
@@ -92,7 +92,7 @@ SameElementBuilder::add_child(search::query::Node &node)
 Blueprint::UP
 SameElementBuilder::build()
 {
-    if (!_result || _result->terms().empty()) {
+    if (_result->terms().empty()) {
         return std::make_unique<EmptyBlueprint>();
     }
     return std::move(_result);

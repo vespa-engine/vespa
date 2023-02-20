@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.tensor.functions;
 
-import com.google.common.collect.ImmutableList;
 import com.yahoo.tensor.DimensionSizes;
 import com.yahoo.tensor.IndexedTensor;
 import com.yahoo.tensor.Tensor;
@@ -47,12 +46,12 @@ public class ReduceJoin<NAMETYPE extends Name> extends CompositeTensorFunction<N
         this.argumentB = argumentB;
         this.combinator = combinator;
         this.aggregator = aggregator;
-        this.dimensions = ImmutableList.copyOf(dimensions);
+        this.dimensions = List.copyOf(dimensions);
     }
 
     @Override
     public List<TensorFunction<NAMETYPE>> arguments() {
-        return ImmutableList.of(argumentA, argumentB);
+        return List.of(argumentA, argumentB);
     }
 
     @Override
@@ -295,7 +294,7 @@ public class ReduceJoin<NAMETYPE extends Name> extends CompositeTensorFunction<N
         if (reducingDimensions.isEmpty()) {
             reducingDimensions = dimensionsInCommon((IndexedTensor)a, (IndexedTensor)b).dimensions().stream()
                     .map(TensorType.Dimension::name)
-                    .collect(Collectors.toList());
+                    .toList();
         }
         if (reducingDimensions.size() != 1) {
             return false;

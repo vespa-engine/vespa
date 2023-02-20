@@ -15,8 +15,8 @@ class IIndexCollection {
 protected:
     using ISourceSelector = search::queryeval::ISourceSelector;
 public:
-    typedef std::unique_ptr<IIndexCollection> UP;
-    typedef std::shared_ptr<IIndexCollection> SP;
+    using UP = std::unique_ptr<IIndexCollection>;
+    using SP = std::shared_ptr<IIndexCollection>;
 
     virtual ~IIndexCollection() {}
 

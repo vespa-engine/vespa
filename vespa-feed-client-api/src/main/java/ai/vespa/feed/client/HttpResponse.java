@@ -6,6 +6,8 @@ public interface HttpResponse {
     int code();
     byte[] body();
 
+    default String contentType() { return "application/json"; }
+
     static HttpResponse of(int code, byte[] body) {
         return new HttpResponse() {
             @Override public int code() { return code; }

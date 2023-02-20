@@ -38,8 +38,8 @@ private:
     int64_t _lastModified;
 
 public:
-    typedef std::unique_ptr<Document> UP;
-    typedef std::shared_ptr<Document> SP;
+    using UP = std::unique_ptr<Document>;
+    using SP = std::shared_ptr<Document>;
 
     static constexpr uint16_t getNewestSerializationVersion() { return 8; }
     static const DataType & verifyDocumentType(const DataType *type);
@@ -106,7 +106,6 @@ public:
 
     bool empty() const override { return _fields.empty(); }
 
-    uint32_t calculateChecksum() const;
     void setFieldValue(const Field& field, FieldValue::UP data) override;
 private:
     friend TransactionGuard;
@@ -125,7 +124,7 @@ private:
 
 class TransactionGuard {
 public:
-    TransactionGuard(Document & value)
+    explicit TransactionGuard(Document & value)
         : _value(value)
     {
         _value.beginTransaction();

@@ -12,7 +12,7 @@ class SlobrokServer : public vespalib::Runnable
 {
 private:
     SBEnv              _env;
-    vespalib::Thread   _thread;
+    std::thread        _thread;
 
 public:
     SlobrokServer(ConfigShim &shim);

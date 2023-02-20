@@ -89,7 +89,7 @@ public class FieldCollapsingSearcher extends Searcher {
 
         if (collapseField == null) return execution.search(query);
 
-        int collapseSize = query.properties().getInteger(collapsesize,defaultCollapseSize);
+        int collapseSize = query.properties().getInteger(collapsesize, defaultCollapseSize);
         query.properties().set(collapse, "0");
 
         int hitsToRequest = query.getHits() != 0 ? (int) Math.ceil((query.getOffset() + query.getHits() + 1) * extraFactor) : 0;

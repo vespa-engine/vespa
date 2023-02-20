@@ -20,6 +20,7 @@ import com.yahoo.jrt.StringValue;
 import com.yahoo.jrt.Supervisor;
 import com.yahoo.jrt.Target;
 import com.yahoo.jrt.Transport;
+import com.yahoo.security.tls.Capability;
 import com.yahoo.vespa.config.ErrorCode;
 import com.yahoo.vespa.config.JRTMethods;
 import com.yahoo.vespa.config.protocol.ConfigResponse;
@@ -224,11 +225,13 @@ public class RpcServer implements Runnable, ConfigActivationListener, TenantList
         getSupervisor().addMethod(new Method("printStatistics", "", "s", this::printStatistics)
                                   .methodDesc("printStatistics")
                                   .returnDesc(0, "statistics", "Statistics for server"));
-        getSupervisor().addMethod(new Method("filedistribution.serveFile", "si*", "is", this::serveFile));
+        getSupervisor().addMethod(new Method("filedistribution.serveFile", "si*", "is", this::serveFile)
+                                  .requireCapabilities(Capability.CONFIGSERVER__FILEDISTRIBUTION_API));
         getSupervisor().addMethod(new Method("filedistribution.setFileReferencesToDownload", "S", "i", this::setFileReferencesToDownload)
-                                     .methodDesc("set which file references to download")
-                                     .paramDesc(0, "file references", "file reference to download")
-                                     .returnDesc(0, "ret", "0 if success, 1 otherwise"));
+                                  .requireCapabilities(Capability.CONFIGSERVER__FILEDISTRIBUTION_API)
+                                  .methodDesc("set which file references to download")
+                                  .paramDesc(0, "file references", "file reference to download")
+                                  .returnDesc(0, "ret", "0 if success, 1 otherwise"));
     }
 
     /**
@@ -236,7 +239,8 @@ public class RpcServer implements Runnable, ConfigActivationListener, TenantList
      */
     public void setUpGetConfigHandlers() {
         // The getConfig method in this class will handle RPC calls for getting config
-        getSupervisor().addMethod(JRTMethods.createConfigV3GetConfigMethod(this::getConfigV3));
+        getSupervisor().addMethod(JRTMethods.createConfigV3GetConfigMethod(this::getConfigV3)
+                                          .requireCapabilities(Capability.CONFIGSERVER__CONFIG_API));
         isServingConfigRequests = true;
     }
 
@@ -587,6 +591,7 @@ public class RpcServer implements Runnable, ConfigActivationListener, TenantList
                     boolean downloadFromOtherSourceIfNotFound = request.parameters().get(1).asInt32() == 0;
                     Set<FileReferenceData.CompressionType> acceptedCompressionTypes = Set.of(CompressionType.gzip);
                     // Newer clients specify accepted compression types in request
+                    // TODO Require acceptedCompressionTypes parameter in Vespa 9
                     if (request.parameters().size() > 2)
                         acceptedCompressionTypes = Arrays.stream(request.parameters().get(2).asStringArray())
                                                          .map(CompressionType::valueOf)

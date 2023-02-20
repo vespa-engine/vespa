@@ -12,10 +12,7 @@ vespalib::CryptoEngine::SP my_crypto_engine() {
         return std::make_shared<vespalib::NullCryptoEngine>();
     }
     std::string engine(env_str);
-    if (engine == "xor") {
-        fprintf(stderr, "crypto engine: xor\n");
-        return std::make_shared<vespalib::XorCryptoEngine>();
-    } else if (engine == "tls") {
+    if (engine == "tls") {
         fprintf(stderr, "crypto engine: tls\n");
         return std::make_shared<vespalib::TlsCryptoEngine>(
                 vespalib::test::make_telemetry_only_capability_tls_options_for_testing());

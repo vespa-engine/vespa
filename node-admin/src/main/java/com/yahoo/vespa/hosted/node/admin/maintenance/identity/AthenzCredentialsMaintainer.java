@@ -114,7 +114,12 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
             X509Certificate certificate = readCertificateFromFile(certificateFile);
             Instant now = clock.instant();
             Instant expiry = certificate.getNotAfter().toInstant();
-            if (isCertificateExpired(expiry, now)) {
+            var doc = EntityBindingsMapper.readSignedIdentityDocumentFromFile(identityDocumentFile);
+            if (doc.outdated()) {
+                context.log(logger, "Identity document is outdated (version=%d)", doc.documentVersion());
+                registerIdentity(context, privateKeyFile, certificateFile, identityDocumentFile);
+                return true;
+            } else if (isCertificateExpired(expiry, now)) {
                 context.log(logger, "Certificate has expired (expiry=%s)", expiry.toString());
                 registerIdentity(context, privateKeyFile, certificateFile, identityDocumentFile);
                 return true;
@@ -130,7 +135,7 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
                     return false;
                 } else {
                     lastRefreshAttempt.put(context.containerName(), now);
-                    refreshIdentity(context, privateKeyFile, certificateFile, identityDocumentFile);
+                    refreshIdentity(context, privateKeyFile, certificateFile, identityDocumentFile, doc);
                     return true;
                 }
             }
@@ -180,9 +185,9 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
 
     private void registerIdentity(NodeAgentContext context, ContainerPath privateKeyFile, ContainerPath certificateFile, ContainerPath identityDocumentFile) {
         KeyPair keyPair = KeyUtils.generateKeypair(KeyAlgorithm.RSA);
-        SignedIdentityDocument signedIdentityDocument = identityDocumentClient.getNodeIdentityDocument(context.hostname().value());
+        var doc = identityDocumentClient.getNodeIdentityDocument(context.hostname().value());
         Pkcs10Csr csr = csrGenerator.generateInstanceCsr(
-                context.identity(), signedIdentityDocument.providerUniqueId(), signedIdentityDocument.ipAddresses(), keyPair);
+                context.identity(), doc.providerUniqueId(), doc.ipAddresses(), doc.clusterType(), keyPair);
 
         // Set up a hostname verified for zts if this is configured to use the config server (internal zts) apis
         HostnameVerifier ztsHostNameVerifier = useInternalZts
@@ -193,19 +198,19 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
                     ztsClient.registerInstance(
                             configserverIdentity,
                             context.identity(),
-                            EntityBindingsMapper.toAttestationData(signedIdentityDocument),
+                            EntityBindingsMapper.toAttestationData(doc),
                             csr);
-            EntityBindingsMapper.writeSignedIdentityDocumentToFile(identityDocumentFile, signedIdentityDocument);
+            EntityBindingsMapper.writeSignedIdentityDocumentToFile(identityDocumentFile, doc);
             writePrivateKeyAndCertificate(privateKeyFile, keyPair.getPrivate(), certificateFile, instanceIdentity.certificate());
             context.log(logger, "Instance successfully registered and credentials written to file");
         }
     }
 
-    private void refreshIdentity(NodeAgentContext context, ContainerPath privateKeyFile, ContainerPath certificateFile, ContainerPath identityDocumentFile) {
-        SignedIdentityDocument identityDocument = EntityBindingsMapper.readSignedIdentityDocumentFromFile(identityDocumentFile);
+    private void refreshIdentity(NodeAgentContext context, ContainerPath privateKeyFile, ContainerPath certificateFile,
+                                 ContainerPath identityDocumentFile, SignedIdentityDocument doc) {
         KeyPair keyPair = KeyUtils.generateKeypair(KeyAlgorithm.RSA);
         Pkcs10Csr csr = csrGenerator.generateInstanceCsr(
-                context.identity(), identityDocument.providerUniqueId(), identityDocument.ipAddresses(), keyPair);
+                context.identity(), doc.providerUniqueId(), doc.ipAddresses(), doc.clusterType(), keyPair);
 
         SSLContext containerIdentitySslContext = new SslContextBuilder().withKeyStore(privateKeyFile, certificateFile)
                                                                         .withTrustStore(ztsTrustStorePath)
@@ -221,7 +226,7 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
                         ztsClient.refreshInstance(
                                 configserverIdentity,
                                 context.identity(),
-                                identityDocument.providerUniqueId().asDottedString(),
+                                doc.providerUniqueId().asDottedString(),
                                 csr);
                 writePrivateKeyAndCertificate(privateKeyFile, keyPair.getPrivate(), certificateFile, instanceIdentity.certificate());
                 context.log(logger, "Instance successfully refreshed and credentials written to file");

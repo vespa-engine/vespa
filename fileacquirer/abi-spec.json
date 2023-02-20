@@ -25,28 +25,6 @@
     ],
     "fields" : [ ]
   },
-  "com.yahoo.filedistribution.fileacquirer.FileReferenceDoesNotExistException" : {
-    "superClass" : "java.lang.RuntimeException",
-    "interfaces" : [ ],
-    "attributes" : [
-      "public"
-    ],
-    "methods" : [ ],
-    "fields" : [
-      "public final java.lang.String fileReference"
-    ]
-  },
-  "com.yahoo.filedistribution.fileacquirer.FileReferenceRemovedException" : {
-    "superClass" : "java.lang.RuntimeException",
-    "interfaces" : [ ],
-    "attributes" : [
-      "public"
-    ],
-    "methods" : [ ],
-    "fields" : [
-      "public final java.lang.String fileReference"
-    ]
-  },
   "com.yahoo.filedistribution.fileacquirer.MockFileAcquirer" : {
     "superClass" : "java.lang.Object",
     "interfaces" : [
@@ -73,7 +51,6 @@
       "public"
     ],
     "methods" : [
-      "public void <init>()",
       "public void <init>(java.lang.String)",
       "public void <init>(java.lang.String, java.lang.Throwable)"
     ],

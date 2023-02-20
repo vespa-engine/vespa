@@ -2,14 +2,12 @@
 package com.yahoo.vespa.model.application.validation.change;
 
 import com.yahoo.config.model.api.ConfigChangeAction;
+import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.vespa.model.VespaModel;
-import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.vespa.model.test.utils.VespaModelCreatorWithMockPkg;
 import org.junit.jupiter.api.Test;
 
-import java.time.Instant;
-import java.util.Collections;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -57,8 +55,7 @@ public class ContainerRestartValidatorTest {
     }
 
     private static List<ConfigChangeAction> validateModel(VespaModel current, VespaModel next) {
-        return new ContainerRestartValidator()
-                .validate(current, next, new ValidationOverrides(Collections.emptyList()), Instant.now());
+        return new ContainerRestartValidator().validate(current, next, new DeployState.Builder().build());
     }
 
     private static VespaModel createModel(boolean restartOnDeploy) {

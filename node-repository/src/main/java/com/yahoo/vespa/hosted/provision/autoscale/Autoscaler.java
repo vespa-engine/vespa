@@ -6,12 +6,11 @@ import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.applications.Application;
-import com.yahoo.vespa.hosted.provision.applications.AutoscalingStatus;
-import com.yahoo.vespa.hosted.provision.applications.AutoscalingStatus.Status;
 import com.yahoo.vespa.hosted.provision.applications.Cluster;
+import com.yahoo.vespa.hosted.provision.autoscale.Autoscaling.Status;
 
 import java.time.Duration;
-import java.util.Objects;
+import java.time.Instant;
 import java.util.Optional;
 
 /**
@@ -41,7 +40,7 @@ public class Autoscaler {
      * @param clusterNodes the list of all the active nodes in a cluster
      * @return scaling advice for this cluster
      */
-    public Advice suggest(Application application, Cluster cluster, NodeList clusterNodes) {
+    public Autoscaling suggest(Application application, Cluster cluster, NodeList clusterNodes) {
         return autoscale(application, cluster, clusterNodes, Limits.empty());
     }
 
@@ -51,52 +50,42 @@ public class Autoscaler {
      * @param clusterNodes the list of all the active nodes in a cluster
      * @return scaling advice for this cluster
      */
-    public Advice autoscale(Application application, Cluster cluster, NodeList clusterNodes) {
-        if (cluster.minResources().equals(cluster.maxResources()))
-            return Advice.none(Status.unavailable, "Autoscaling is not enabled");
+    public Autoscaling autoscale(Application application, Cluster cluster, NodeList clusterNodes) {
         return autoscale(application, cluster, clusterNodes, Limits.of(cluster));
     }
 
-    private Advice autoscale(Application application, Cluster cluster, NodeList clusterNodes, Limits limits) {
+    private Autoscaling autoscale(Application application, Cluster cluster, NodeList clusterNodes, Limits limits) {
         ClusterModel clusterModel = new ClusterModel(nodeRepository.zone(),
                                                      application,
-                                                     clusterNodes.clusterSpec(),
+                                                     clusterNodes.not().retired().clusterSpec(),
                                                      cluster,
                                                      clusterNodes,
                                                      nodeRepository.metricsDb(),
                                                      nodeRepository.clock());
+        if (clusterModel.isEmpty()) return Autoscaling.empty();
 
-        if ( ! clusterIsStable(clusterNodes, nodeRepository))
-            return Advice.none(Status.waiting, "Cluster change in progress");
+        if (! limits.isEmpty() && cluster.minResources().equals(cluster.maxResources()))
+            return Autoscaling.dontScale(Autoscaling.Status.unavailable, "Autoscaling is not enabled", clusterModel);
 
-        var currentAllocation = new AllocatableClusterResources(clusterNodes, nodeRepository);
+        if ( ! clusterModel.isStable(nodeRepository))
+            return Autoscaling.dontScale(Status.waiting, "Cluster change in progress", clusterModel);
+
+        var currentAllocation = new AllocatableClusterResources(clusterNodes.not().retired(), nodeRepository);
         Optional<AllocatableClusterResources> bestAllocation =
                 allocationOptimizer.findBestAllocation(clusterModel.loadAdjustment(), currentAllocation, clusterModel, limits);
         if (bestAllocation.isEmpty())
-            return Advice.dontScale(Status.insufficient, "No allocations are possible within configured limits");
+            return Autoscaling.dontScale(Status.insufficient, "No allocations are possible within configured limits", clusterModel);
 
         if (! worthRescaling(currentAllocation.realResources(), bestAllocation.get().realResources())) {
-            if (bestAllocation.get().fulfilment() < 1)
-                return Advice.dontScale(Status.insufficient, "Configured limits prevents better scaling of this cluster");
+            if (bestAllocation.get().fulfilment() < 0.9999999)
+                return Autoscaling.dontScale(Status.insufficient, "Configured limits prevents ideal scaling of this cluster", clusterModel);
+            else if ( ! clusterModel.safeToScaleDown() && clusterModel.idealLoad().any(v -> v < 1.0))
+                return Autoscaling.dontScale(Status.ideal, "Cooling off before considering to scale down", clusterModel);
             else
-                return Advice.dontScale(Status.ideal, "Cluster is ideally scaled");
+                return Autoscaling.dontScale(Status.ideal, "Cluster is ideally scaled (within limits)", clusterModel);
         }
 
-        return Advice.scaleTo(bestAllocation.get().advertisedResources());
-    }
-
-    public static boolean clusterIsStable(NodeList clusterNodes, NodeRepository nodeRepository) {
-        // The cluster is processing recent changes
-        if (clusterNodes.stream().anyMatch(node -> node.status().wantToRetire() ||
-                                                   node.allocation().get().membership().retired() ||
-                                                   node.allocation().get().removable()))
-            return false;
-
-        // A deployment is ongoing
-        if (nodeRepository.nodes().list(Node.State.reserved).owner(clusterNodes.first().get().allocation().get().owner()).size() > 0)
-            return false;
-
-        return true;
+        return Autoscaling.scaleTo(bestAllocation.get().advertisedResources(), clusterModel);
     }
 
     /** Returns true if it is worthwhile to make the given resource change, false if it is too insignificant */
@@ -120,55 +109,6 @@ public class Autoscaler {
 
     static Duration maxScalingWindow() {
         return Duration.ofHours(48);
-    }
-
-    public static class Advice {
-
-        private final boolean present;
-        private final Optional<ClusterResources> target;
-        private final AutoscalingStatus reason;
-
-        private Advice(Optional<ClusterResources> target, boolean present, AutoscalingStatus reason) {
-            this.target = target;
-            this.present = present;
-            this.reason = Objects.requireNonNull(reason);
-        }
-
-        /**
-         * Returns the autoscaling target that should be set by this advice.
-         * This is empty if the advice is to keep the current allocation.
-         */
-        public Optional<ClusterResources> target() { return target; }
-
-        /** True if this does not provide any advice */
-        public boolean isEmpty() { return ! present; }
-
-        /** True if this provides advice (which may be to keep the current allocation) */
-        public boolean isPresent() { return present; }
-
-        /** The reason for this advice */
-        public AutoscalingStatus reason() { return reason; }
-
-        private static Advice none(Status status, String description) {
-            return new Advice(Optional.empty(), false, new AutoscalingStatus(status, description));
-        }
-
-        private static Advice dontScale(Status status, String description) {
-            return new Advice(Optional.empty(), true, new AutoscalingStatus(status, description));
-        }
-
-        private static Advice scaleTo(ClusterResources target) {
-            return new Advice(Optional.of(target), true,
-                              new AutoscalingStatus(AutoscalingStatus.Status.rescaling,
-                                                    "Rescaling initiated due to load changes"));
-        }
-
-        @Override
-        public String toString() {
-            return "autoscaling advice: " +
-                   (present ? (target.isPresent() ? "Scale to " + target.get() : "Don't scale") : "None");
-        }
-
     }
 
 }

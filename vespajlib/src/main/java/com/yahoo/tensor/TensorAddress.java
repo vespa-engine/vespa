@@ -14,6 +14,8 @@ import java.util.stream.Collectors;
  */
 public abstract class TensorAddress implements Comparable<TensorAddress> {
 
+    private static final String [] SMALL_INDEXES = createSmallIndexesAsStrings(1000);
+
     public static TensorAddress of(String[] labels) {
         return new StringTensorAddress(labels);
     }
@@ -71,8 +73,7 @@ public abstract class TensorAddress implements Comparable<TensorAddress> {
     @Override
     public boolean equals(Object o) {
         if (o == this) return true;
-        if ( ! (o instanceof TensorAddress)) return false;
-        TensorAddress other = (TensorAddress)o;
+        if ( ! (o instanceof TensorAddress other)) return false;
         if (other.size() != this.size()) return false;
         for (int i = 0; i < this.size(); i++)
             if ( ! Objects.equals(this.label(i), other.label(i)))
@@ -98,6 +99,18 @@ public abstract class TensorAddress implements Comparable<TensorAddress> {
         if (TensorType.labelMatcher.matches(label)) return label; // no quoting
         if (label.contains("'")) return "\"" + label + "\"";
         return "'" + label + "'";
+    }
+
+    private static String[] createSmallIndexesAsStrings(int count) {
+        String [] asStrings = new String[count];
+        for (int i = 0; i < count; i++) {
+            asStrings[i] = String.valueOf(i);
+        }
+        return asStrings;
+    }
+
+    private static String asString(long index) {
+        return ((index >= 0) && (index < SMALL_INDEXES.length)) ? SMALL_INDEXES[(int)index] : String.valueOf(index);
     }
 
     private static final class StringTensorAddress extends TensorAddress {
@@ -127,7 +140,7 @@ public abstract class TensorAddress implements Comparable<TensorAddress> {
         @Override
         public TensorAddress withLabel(int index, long label) {
             String[] labels = Arrays.copyOf(this.labels, this.labels.length);
-            labels[index] = String.valueOf(label);
+            labels[index] = TensorAddress.asString(label);
             return new StringTensorAddress(labels);
         }
 
@@ -151,7 +164,7 @@ public abstract class TensorAddress implements Comparable<TensorAddress> {
         public int size() { return labels.length; }
 
         @Override
-        public String label(int i) { return String.valueOf(labels[i]); }
+        public String label(int i) { return TensorAddress.asString(labels[i]); }
 
         @Override
         public long numericLabel(int i) { return labels[i]; }
@@ -165,7 +178,7 @@ public abstract class TensorAddress implements Comparable<TensorAddress> {
 
         @Override
         public String toString() {
-            return "cell address (" + Arrays.stream(labels).mapToObj(String::valueOf).collect(Collectors.joining(",")) + ")";
+            return "cell address (" + Arrays.stream(labels).mapToObj(TensorAddress::asString).collect(Collectors.joining(",")) + ")";
         }
 
     }

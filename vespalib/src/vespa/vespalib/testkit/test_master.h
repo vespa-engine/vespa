@@ -36,9 +36,11 @@ public:
         std::string file;
         uint32_t    line;
         std::string msg;
-        TraceItem(const std::string &file_in, uint32_t line_in,
-                  const std::string &msg_in)
-            : file(file_in), line(line_in), msg(msg_in) {}
+        TraceItem(const std::string &file_in, uint32_t line_in, const std::string &msg_in);
+        TraceItem(TraceItem &&) noexcept;
+        TraceItem & operator=(TraceItem &&) noexcept;
+        TraceItem(const TraceItem &);
+        TraceItem & operator=(const TraceItem &);
         ~TraceItem();
     };
 

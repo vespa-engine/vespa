@@ -103,7 +103,7 @@ public class RoutingTable {
                                                                                    4443,
                                                                                    configuredEndpoint.weight(),
                                                                                    applications.getValue().activeRotation()))
-                                                         .collect(Collectors.toList());
+                                                         .toList();
                     Endpoint endpoint = new Endpoint(configuredEndpoint.dnsName(), routingMethodFrom(configuredEndpoint));
                     ClusterSpec.Id cluster = ClusterSpec.Id.from(configuredEndpoint.clusterId());
                     Target target;
@@ -154,7 +154,7 @@ public class RoutingTable {
             this.instance = Objects.requireNonNull(instance);
             this.zone = Objects.requireNonNull(zone);
             this.cluster = Objects.requireNonNull(cluster);
-            this.reals = Objects.requireNonNull(reals).stream().sorted().collect(Collectors.toUnmodifiableList());
+            this.reals = Objects.requireNonNull(reals).stream().sorted().toList();
             for (int i = 0; i < reals.size(); i++) {
                 for (int j = 0; j < i; j++) {
                     if (reals.get(i).equals(reals.get(j))) {

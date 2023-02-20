@@ -19,13 +19,13 @@ namespace storage {
 
 struct ServiceLayerNodeContext : public StorageNodeContext {
     // Typedefs to simplify the remainder of the interface
-    typedef ServiceLayerComponentRegisterImpl ComponentRegister;
+    using ComponentRegister = ServiceLayerComponentRegisterImpl;
 
     /**
      * You can provide your own clock implementation. Useful in testing where
      * you want to fake the clock.
      */
-    ServiceLayerNodeContext(framework::Clock::UP clock, const ContentBucketDbOptions& db_opts);
+    ServiceLayerNodeContext(std::unique_ptr<framework::Clock> clock, const ContentBucketDbOptions& db_opts);
 
     /**
      * Get the actual component register. Available as the actual type as the

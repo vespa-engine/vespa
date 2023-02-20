@@ -5,7 +5,8 @@ import com.yahoo.component.ComponentId;
 import com.yahoo.component.ComponentSpecification;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.text.XML;
-import com.yahoo.config.model.producer.AbstractConfigProducer;
+import com.yahoo.config.model.producer.AnyConfigProducer;
+import com.yahoo.config.model.producer.TreeConfigProducer;
 import com.yahoo.config.model.builder.xml.XmlHelper;
 import com.yahoo.vespa.model.builder.xml.dom.VespaDomBuilder;
 import com.yahoo.vespa.model.builder.xml.dom.chains.docproc.DomDocumentProcessorBuilder;
@@ -48,15 +49,15 @@ public class ComponentsBuilder<T extends ChainedComponent<?>> {
 
         final String name;
 
-        private final Class<? extends VespaDomBuilder.DomConfigProducerBuilder<T>> builderClass;
+        private final Class<? extends VespaDomBuilder.DomConfigProducerBuilderBase<T> > builderClass;
 
-        private ComponentType(String name, Class<? extends VespaDomBuilder.DomConfigProducerBuilder<T>> builderClass) {
+        private ComponentType(String name, Class<? extends VespaDomBuilder.DomConfigProducerBuilderBase<T> > builderClass) {
             this.name = name;
             this.builderClass = builderClass;
             values.add(this);
         }
 
-        public VespaDomBuilder.DomConfigProducerBuilder<T> createBuilder() {
+        public VespaDomBuilder.DomConfigProducerBuilderBase<T > createBuilder() {
             return DomBuilderCreator.create(builderClass);
         }
     }
@@ -73,7 +74,7 @@ public class ComponentsBuilder<T extends ChainedComponent<?>> {
      *                                          every component is a definition, not a reference.
      */
     ComponentsBuilder(DeployState deployState,
-                      AbstractConfigProducer<?> ancestor,
+                      TreeConfigProducer<AnyConfigProducer> ancestor,
                       Collection<ComponentType<T>> componentTypes,
                       List<Element> elementsContainingComponentElems,
                       Map<String, ComponentType<?>> outerComponentTypeByComponentName) {
@@ -81,7 +82,8 @@ public class ComponentsBuilder<T extends ChainedComponent<?>> {
         readComponents(deployState, ancestor, componentTypes, elementsContainingComponentElems, unmodifiable(outerComponentTypeByComponentName));
     }
 
-    private void readComponents(DeployState deployState, AbstractConfigProducer<?> ancestor,
+    private void readComponents(DeployState deployState,
+                                TreeConfigProducer<AnyConfigProducer> ancestor,
                                 Collection<ComponentType<T>> componentTypes,
                                 List<Element> elementsContainingComponentElems,
                                 Map<String, ComponentType<?>> outerComponentTypeByComponentName) {
@@ -95,7 +97,7 @@ public class ComponentsBuilder<T extends ChainedComponent<?>> {
         }
     }
 
-    private void readComponent(DeployState deployState, AbstractConfigProducer<?> ancestor,
+    private void readComponent(DeployState deployState, TreeConfigProducer<AnyConfigProducer> ancestor,
                                Element componentElement,
                                ComponentType<T> componentType,
                                Map<String, ComponentType<?>> outerComponentTypeByComponentName) {
@@ -119,7 +121,7 @@ public class ComponentsBuilder<T extends ChainedComponent<?>> {
         outerComponentReferences.add(componentSpecification);
     }
 
-    private void readComponentDefinition(DeployState deployState, AbstractConfigProducer<?> ancestor, Element componentElement, ComponentType<T> componentType) {
+    private void readComponentDefinition(DeployState deployState, TreeConfigProducer<AnyConfigProducer> ancestor, Element componentElement, ComponentType<T> componentType) {
         T component = componentType.createBuilder().build(deployState, ancestor, componentElement);
         componentDefinitions.add(component);
         updateComponentTypes(component.getComponentId(), componentType);

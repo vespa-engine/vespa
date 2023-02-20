@@ -31,7 +31,7 @@ template <bool bigEndian, bool dynamic_k>
 class ZcPosOccIterator : public ZcPostingIterator<bigEndian>
 {
 private:
-    typedef ZcPostingIterator<bigEndian> ParentClass;
+    using ParentClass = ZcPostingIterator<bigEndian>;
     using ParentClass::_decodeContext;
 
     using DecodeContext = std::conditional_t<dynamic_k, bitcompression::EGPosOccDecodeContextCooked<bigEndian>, bitcompression::EG2PosOccDecodeContextCooked<bigEndian>>;

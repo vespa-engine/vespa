@@ -6,6 +6,7 @@
 
 #include <iostream>
 #include <fstream>
+#include <memory>
 
 #include <vespa/fsa/base64.h>
 #include <vespa/fsa/fsa.h>
@@ -154,7 +155,7 @@ int main(int argc, char** argv)
   } num_meta;
   std::ifstream infile;
   std::istream *in;
-  char binary_info[info_size_binary];
+  auto binary_info = std::make_unique<char[]>(info_size_binary);
   size_t split;
   bool empty_meta_str = false;
 
@@ -186,8 +187,8 @@ int main(int argc, char** argv)
     case INPUT_BINARY_RAW:
       getline(*in,input,'\0');
       if (info_size_binary) {
-        in->read(binary_info, info_size_binary);
-        meta.assign(binary_info, info_size_binary);
+        in->read(binary_info.get(), info_size_binary);
+        meta.assign(binary_info.get(), info_size_binary);
       }
       else
         getline(*in,meta,'\0');

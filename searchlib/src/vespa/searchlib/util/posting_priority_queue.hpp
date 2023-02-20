@@ -10,7 +10,7 @@ template <class Reader>
 void
 PostingPriorityQueue<Reader>::adjust()
 {
-    typedef typename Vector::iterator VIT;
+    using VIT = typename Vector::iterator;
     if (!_vec.front().get()->isValid()) {
         _vec.erase(_vec.begin());   // Iterator no longer valid
         return;

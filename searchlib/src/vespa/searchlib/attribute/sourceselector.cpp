@@ -33,7 +33,7 @@ public:
     virtual void
     addTags(GenericHeader &header, const vespalib::string &name) const override
     {
-        typedef GenericHeader::Tag Tag;
+        using Tag = GenericHeader::Tag;
         _parent.addTags(header, name);
         header.putTag(Tag(defaultSourceTag, _hi._defaultSource));
         header.putTag(Tag(baseIdTag, _hi._baseId));

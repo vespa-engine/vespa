@@ -22,7 +22,7 @@ public class TensorAddUpdateReader {
     }
 
     public static TensorAddUpdate createTensorAddUpdate(TokenBuffer buffer, Field field) {
-        expectObjectStart(buffer.currentToken());
+        expectObjectStart(buffer.current());
         expectTensorTypeHasSparseDimensions(field);
 
         TensorDataType tensorDataType = (TensorDataType)field.getDataType();

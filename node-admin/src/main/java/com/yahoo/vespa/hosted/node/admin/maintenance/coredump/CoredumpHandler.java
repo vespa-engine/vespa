@@ -1,14 +1,9 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.maintenance.coredump;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.security.KeyId;
 import com.yahoo.security.SecretSharedKey;
-import com.yahoo.security.SharedKeyGenerator;
-import com.yahoo.vespa.flags.BooleanFlag;
 import com.yahoo.vespa.flags.FetchVector;
 import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.flags.Flags;
@@ -26,21 +21,16 @@ import com.yahoo.vespa.hosted.node.admin.task.util.file.FileDeleter;
 import com.yahoo.vespa.hosted.node.admin.task.util.file.FileFinder;
 import com.yahoo.vespa.hosted.node.admin.task.util.file.FileMover;
 import com.yahoo.vespa.hosted.node.admin.task.util.file.MakeDirectory;
-import com.yahoo.vespa.hosted.node.admin.task.util.file.UnixPath;
 import com.yahoo.vespa.hosted.node.admin.task.util.fs.ContainerPath;
 
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.UncheckedIOException;
-import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.time.Clock;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Predicate;
@@ -61,70 +51,54 @@ import static com.yahoo.yolean.Exceptions.uncheck;
  */
 public class CoredumpHandler {
 
+    public static final String COREDUMP_FILENAME_PREFIX = "dump_";
+
+    private static final Logger logger = Logger.getLogger(CoredumpHandler.class.getName());
     private static final Pattern HS_ERR_PATTERN = Pattern.compile("hs_err_pid[0-9]+\\.log");
     private static final String PROCESSING_DIRECTORY_NAME = "processing";
-    private static final String METADATA_FILE_NAME = "metadata.json";
     private static final String METADATA2_FILE_NAME = "metadata2.json";
     private static final String COMPRESSED_EXTENSION = ".zst";
     private static final String ENCRYPTED_EXTENSION = ".enc";
-    public static final String COREDUMP_FILENAME_PREFIX = "dump_";
-
-    private final Logger logger = Logger.getLogger(CoredumpHandler.class.getName());
-    private final ObjectMapper objectMapper = new ObjectMapper();
 
     private final CoreCollector coreCollector;
     private final Cores cores;
-    private final CoredumpReporter coredumpReporter;
     private final String crashPatchInContainer;
     private final Path doneCoredumpsPath;
     private final Metrics metrics;
     private final Clock clock;
     private final Supplier<String> coredumpIdSupplier;
     private final SecretSharedKeySupplier secretSharedKeySupplier;
-    private final BooleanFlag reportCoresViaCfgFlag;
     private final StringFlag coreEncryptionPublicKeyIdFlag;
 
     /**
      * @param crashPathInContainer path inside the container where core dump are dumped
      * @param doneCoredumpsPath    path on host where processed core dumps are stored
      */
-    public CoredumpHandler(CoreCollector coreCollector, Cores cores, CoredumpReporter coredumpReporter,
-                           String crashPathInContainer, Path doneCoredumpsPath, Metrics metrics,
-                           FlagSource flagSource) {
-        this(coreCollector, cores, coredumpReporter, crashPathInContainer, doneCoredumpsPath,
-             metrics, Clock.systemUTC(), () -> UUID.randomUUID().toString(), (ctx) -> Optional.empty() /*TODO*/,
-             flagSource);
-    }
-
-    // TODO remove redundant constructor once internal callsite has been updated
-    public CoredumpHandler(CoreCollector coreCollector, Cores cores, CoredumpReporter coredumpReporter,
+    public CoredumpHandler(CoreCollector coreCollector, Cores cores,
                            String crashPathInContainer, Path doneCoredumpsPath, Metrics metrics,
                            SecretSharedKeySupplier secretSharedKeySupplier, FlagSource flagSource) {
-        this(coreCollector, cores, coredumpReporter, crashPathInContainer, doneCoredumpsPath,
+        this(coreCollector, cores, crashPathInContainer, doneCoredumpsPath,
                 metrics, Clock.systemUTC(), () -> UUID.randomUUID().toString(), secretSharedKeySupplier,
                 flagSource);
     }
 
-    CoredumpHandler(CoreCollector coreCollector, Cores cores, CoredumpReporter coredumpReporter,
+    CoredumpHandler(CoreCollector coreCollector, Cores cores,
                     String crashPathInContainer, Path doneCoredumpsPath, Metrics metrics,
                     Clock clock, Supplier<String> coredumpIdSupplier,
                     SecretSharedKeySupplier secretSharedKeySupplier, FlagSource flagSource) {
         this.coreCollector = coreCollector;
         this.cores = cores;
-        this.coredumpReporter = coredumpReporter;
         this.crashPatchInContainer = crashPathInContainer;
         this.doneCoredumpsPath = doneCoredumpsPath;
         this.metrics = metrics;
         this.clock = clock;
         this.coredumpIdSupplier = coredumpIdSupplier;
         this.secretSharedKeySupplier = secretSharedKeySupplier;
-        this.reportCoresViaCfgFlag = Flags.REPORT_CORES_VIA_CFG.bindTo(flagSource);
         this.coreEncryptionPublicKeyIdFlag = Flags.CORE_ENCRYPTION_PUBLIC_KEY_ID.bindTo(flagSource);
     }
 
 
-    public void converge(NodeAgentContext context, Supplier<Map<String, Object>> nodeAttributesSupplier,
-                         Optional<DockerImage> dockerImage, boolean throwIfCoreBeingWritten) {
+    public void converge(NodeAgentContext context, Optional<DockerImage> dockerImage, boolean throwIfCoreBeingWritten) {
         ContainerPath containerCrashPath = context.paths().of(crashPatchInContainer, context.users().vespa());
         ContainerPath containerProcessingPath = containerCrashPath.resolve(PROCESSING_DIRECTORY_NAME);
 
@@ -143,13 +117,7 @@ public class CoredumpHandler {
 
         // Check if we have already started to process a core dump or we can enqueue a new core one
         getCoredumpToProcess(context, containerCrashPath, containerProcessingPath)
-                .ifPresent(path -> {
-                    if (reportCoresViaCfgFlag.with(FetchVector.Dimension.NODE_TYPE, context.nodeType().name()).value()) {
-                        processAndReportSingleCoreDump2(context, path, dockerImage);
-                    } else {
-                        processAndReportSingleCoredump(context, path, nodeAttributesSupplier);
-                    }
-                });
+                .ifPresent(path -> processAndReportSingleCoreDump(context, path, dockerImage));
     }
 
     /** @return path to directory inside processing directory that contains a core dump file to process */
@@ -212,82 +180,21 @@ public class CoredumpHandler {
         return coreEncryptionPublicKeyIdFlag.with(FetchVector.Dimension.NODE_TYPE, context.nodeType().name()).value();
     }
 
-    void processAndReportSingleCoredump(NodeAgentContext context, ContainerPath coredumpDirectory, Supplier<Map<String, Object>> nodeAttributesSupplier) {
-        try {
-            Optional<SecretSharedKey> sharedCoreKey = Optional.of(corePublicKeyFlagValue(context))
-                    .filter(k -> !k.isEmpty())
-                    .map(KeyId::ofString)
-                    .flatMap(secretSharedKeySupplier::create);
-            Optional<String> decryptionToken = sharedCoreKey.map(k -> k.sealedSharedKey().toTokenString());
-            String metadata = getMetadata(context, coredumpDirectory, nodeAttributesSupplier, decryptionToken);
-            String coredumpId = coredumpDirectory.getFileName().toString();
-            coredumpReporter.reportCoredump(coredumpId, metadata);
-            finishProcessing(context, coredumpDirectory, sharedCoreKey);
-            context.log(logger, "Successfully reported coredump " + coredumpId);
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to process coredump " + coredumpDirectory, e);
-        }
-    }
-
-    /**
-     * @return coredump metadata from metadata.json if present, otherwise attempts to get metadata using
-     * {@link CoreCollector} and stores it to metadata.json
-     */
-    String getMetadata(NodeAgentContext context, ContainerPath coredumpDirectory, Supplier<Map<String, Object>> nodeAttributesSupplier, Optional<String> decryptionToken) throws IOException {
-        UnixPath metadataPath = new UnixPath(coredumpDirectory.resolve(METADATA_FILE_NAME));
-        if (!metadataPath.exists()) {
-            ContainerPath coredumpFile = findCoredumpFileInProcessingDirectory(coredumpDirectory);
-            Map<String, Object> metadata = new HashMap<>(coreCollector.collect(context, coredumpFile));
-            metadata.putAll(nodeAttributesSupplier.get());
-            metadata.put("coredump_path", doneCoredumpsPath
-                    .resolve(context.containerName().asString())
-                    .resolve(coredumpDirectory.getFileName().toString())
-                    .resolve(coredumpFile.getFileName().toString()).toString());
-            decryptionToken.ifPresent(token -> metadata.put("decryption_token", token));
-
-            String metadataFields = objectMapper.writeValueAsString(Map.of("fields", metadata));
-            metadataPath.writeUtf8File(metadataFields);
-            return metadataFields;
-        } else {
-            if (decryptionToken.isPresent()) {
-                // Since encryption keys are single-use and generated for each core dump processing invocation,
-                // we must ensure we store and report the token associated with the _latest_ (i.e. current)
-                // attempt at processing the core dump. Patch and rewrite the file with a new token, if present.
-                String metadataFields = metadataWithPatchedTokenValue(metadataPath, decryptionToken.get());
-                metadataPath.deleteIfExists();
-                metadataPath.writeUtf8File(metadataFields);
-                return metadataFields;
-            } else {
-                return metadataPath.readUtf8File();
-            }
-        }
-    }
-
-    private String metadataWithPatchedTokenValue(UnixPath metadataPath, String decryptionToken) throws JsonProcessingException {
-        var jsonRoot = objectMapper.readTree(metadataPath.readUtf8File());
-        if (jsonRoot.path("fields").isObject()) {
-            ((ObjectNode)jsonRoot.get("fields")).put("decryption_token", decryptionToken);
-        } // else: unit testing case without real metadata
-        return objectMapper.writeValueAsString(jsonRoot);
-    }
-
-    static OutputStream maybeWrapWithEncryption(OutputStream wrappedStream, Optional<SecretSharedKey> sharedCoreKey) {
-        return sharedCoreKey
-                .map(key -> SharedKeyGenerator.makeAesGcmEncryptionCipher(key).wrapOutputStream(wrappedStream))
-                .orElse(wrappedStream);
+    static OutputStream wrapWithEncryption(OutputStream wrappedStream, SecretSharedKey sharedCoreKey) {
+        return sharedCoreKey.makeEncryptionCipher().wrapOutputStream(wrappedStream);
     }
 
     /**
      * Compresses and, if a key is provided, encrypts core file (and deletes the uncompressed core), then moves
      * the entire core dump processing directory to {@link #doneCoredumpsPath} for archive
      */
-    private void finishProcessing(NodeAgentContext context, ContainerPath coredumpDirectory, Optional<SecretSharedKey> sharedCoreKey) {
+    private void finishProcessing(NodeAgentContext context, ContainerPath coredumpDirectory, SecretSharedKey sharedCoreKey) {
         ContainerPath coreFile = findCoredumpFileInProcessingDirectory(coredumpDirectory);
-        String extension = COMPRESSED_EXTENSION + (sharedCoreKey.isPresent() ? ENCRYPTED_EXTENSION : "");
+        String extension = COMPRESSED_EXTENSION + ENCRYPTED_EXTENSION;
         ContainerPath compressedCoreFile = coreFile.resolveSibling(coreFile.getFileName() + extension);
 
         try (ZstdCompressingInputStream zcis = new ZstdCompressingInputStream(Files.newInputStream(coreFile));
-             OutputStream fos = maybeWrapWithEncryption(Files.newOutputStream(compressedCoreFile), sharedCoreKey)) {
+             OutputStream fos = wrapWithEncryption(Files.newOutputStream(compressedCoreFile), sharedCoreKey)) {
             zcis.transferTo(fos);
         } catch (IOException e) {
             throw new UncheckedIOException(e);
@@ -372,17 +279,18 @@ public class CoredumpHandler {
         return clock.instant().minusSeconds(60).isAfter(fileAttributes.lastModifiedTime());
     }
 
-    void processAndReportSingleCoreDump2(NodeAgentContext context, ContainerPath coreDumpDirectory,
-                                         Optional<DockerImage> dockerImage) {
+    void processAndReportSingleCoreDump(NodeAgentContext context, ContainerPath coreDumpDirectory,
+                                        Optional<DockerImage> dockerImage) {
         CoreDumpMetadata metadata = gatherMetadata(context, coreDumpDirectory);
         dockerImage.ifPresent(metadata::setDockerImage);
         dockerImage.flatMap(DockerImage::tag).ifPresent(metadata::setVespaVersion);
         dockerImage.ifPresent(metadata::setDockerImage);
-        Optional<SecretSharedKey> sharedCoreKey = Optional.of(corePublicKeyFlagValue(context))
+        SecretSharedKey sharedCoreKey = Optional.of(corePublicKeyFlagValue(context))
                 .filter(k -> !k.isEmpty())
                 .map(KeyId::ofString)
-                .flatMap(secretSharedKeySupplier::create);
-        sharedCoreKey.map(key -> key.sealedSharedKey().toTokenString()).ifPresent(metadata::setDecryptionToken);
+                .flatMap(secretSharedKeySupplier::create)
+                .orElseThrow(() -> ConvergenceException.ofError("No core dump encryption key provided"));
+        metadata.setDecryptionToken(sharedCoreKey.sealedSharedKey().toTokenString());
 
         String coreDumpId = coreDumpDirectory.getFileName().toString();
         cores.report(context.hostname(), coreDumpId, metadata);
@@ -390,20 +298,17 @@ public class CoredumpHandler {
         finishProcessing(context, coreDumpDirectory, sharedCoreKey);
     }
 
-    private CoreDumpMetadata gatherMetadata(NodeAgentContext context, ContainerPath coreDumpDirectory) {
+    CoreDumpMetadata gatherMetadata(NodeAgentContext context, ContainerPath coreDumpDirectory) {
         ContainerPath metadataPath = coreDumpDirectory.resolve(METADATA2_FILE_NAME);
         Optional<ReportCoreDumpRequest> request = ReportCoreDumpRequest.load(metadataPath);
         if (request.isPresent()) {
-            return request.map(requestInstance -> {
-                              var metadata = new CoreDumpMetadata();
-                              requestInstance.populateMetadata(metadata, FileSystems.getDefault());
-                              return metadata;
-                          })
-                          .get();
+            var metadata = new CoreDumpMetadata();
+            request.get().populateMetadata(metadata, doneCoredumpsPath.getFileSystem());
+            return metadata;
         }
 
         ContainerPath coreDumpFile = findCoredumpFileInProcessingDirectory(coreDumpDirectory);
-        CoreDumpMetadata metadata = coreCollector.collect2(context, coreDumpFile);
+        CoreDumpMetadata metadata = coreCollector.collect(context, coreDumpFile);
         metadata.setCpuMicrocodeVersion(getMicrocodeVersion())
                 .setKernelVersion(System.getProperty("os.version"))
                 .setCoreDumpPath(doneCoredumpsPath.resolve(context.containerName().asString())
@@ -418,7 +323,7 @@ public class CoredumpHandler {
     }
 
     private String getMicrocodeVersion() {
-        String output = uncheck(() -> Files.readAllLines(Paths.get("/proc/cpuinfo")).stream()
+        String output = uncheck(() -> Files.readAllLines(doneCoredumpsPath.getFileSystem().getPath("/proc/cpuinfo")).stream()
                                            .filter(line -> line.startsWith("microcode"))
                                            .findFirst()
                                            .orElse("microcode : UNKNOWN"));

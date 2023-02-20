@@ -13,17 +13,21 @@ import com.yahoo.document.serialization.XmlStream;
  * @author Simon Thoresen Hult
  */
 public class UnresolvedFieldValue extends FieldValue {
+
     private static class Factory extends PrimitiveDataType.Factory {
         @Override public FieldValue create() { return new UnresolvedFieldValue(); }
         @Override public FieldValue create(String value) { throw new UnsupportedOperationException(); }
     }
+
     public static PrimitiveDataType.Factory getFactory() { return new Factory(); }
+
     @Override
     public DataType getDataType() {
         return UnresolvedDataType.INSTANCE;
     }
 
     @Override
+    @Deprecated
     public void printXml(XmlStream xml) {
         throw new UnsupportedOperationException();
     }
@@ -47,4 +51,5 @@ public class UnresolvedFieldValue extends FieldValue {
     public void deserialize(Field field, FieldReader reader) {
         throw new UnsupportedOperationException();
     }
+
 }

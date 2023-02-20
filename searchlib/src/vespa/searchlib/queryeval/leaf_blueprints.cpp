@@ -59,9 +59,9 @@ AlwaysTrueBlueprint::AlwaysTrueBlueprint() : SimpleLeafBlueprint(FieldSpecBaseLi
 //-----------------------------------------------------------------------------
 
 SearchIterator::UP
-SimpleBlueprint::createLeafSearch(const search::fef::TermFieldMatchDataArray &, bool) const
+SimpleBlueprint::createLeafSearch(const search::fef::TermFieldMatchDataArray &, bool strict) const
 {
-    SimpleSearch *ss = new SimpleSearch(_result);
+    SimpleSearch *ss = new SimpleSearch(_result, strict);
     SearchIterator::UP search(ss);
     ss->tag(_tag);
     return search;
@@ -70,7 +70,7 @@ SimpleBlueprint::createLeafSearch(const search::fef::TermFieldMatchDataArray &, 
 SearchIterator::UP
 SimpleBlueprint::createFilterSearch(bool strict, FilterConstraint constraint) const
 {
-    SimpleSearch *ss = new SimpleSearch(_result);
+    SimpleSearch *ss = new SimpleSearch(_result, strict);
     SearchIterator::UP search(ss);
     ss->tag(_tag +
             (strict ? "<strict," : "<nostrict,") +

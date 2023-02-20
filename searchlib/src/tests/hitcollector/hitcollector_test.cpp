@@ -12,7 +12,7 @@ using namespace search;
 using namespace search::fef;
 using namespace search::queryeval;
 
-typedef std::map<uint32_t, feature_t> ScoreMap;
+using ScoreMap = std::map<uint32_t, feature_t>;
 
 using Ranges = std::pair<Scores, Scores>;
 

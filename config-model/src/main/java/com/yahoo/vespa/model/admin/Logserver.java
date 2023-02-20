@@ -2,7 +2,7 @@
 package com.yahoo.vespa.model.admin;
 
 import com.yahoo.config.model.deploy.DeployState;
-import com.yahoo.config.model.producer.AbstractConfigProducer;
+import com.yahoo.config.model.producer.TreeConfigProducer;
 import com.yahoo.vespa.model.AbstractService;
 import com.yahoo.vespa.model.PortAllocBridge;
 import java.util.Optional;
@@ -19,7 +19,7 @@ public class Logserver extends AbstractService {
     private static final String logArchiveDir = "$ROOT/logs/vespa/logarchive";
     private String compressionType = "gzip";
 
-    public Logserver(AbstractConfigProducer parent) {
+    public Logserver(TreeConfigProducer<? super Logserver> parent) {
         super(parent, "logserver");
         portsMeta.on(0).tag("logtp").tag("rpc");
         portsMeta.on(1).tag("unused");

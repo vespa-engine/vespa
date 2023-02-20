@@ -30,14 +30,13 @@ public class StructReader {
                     throw new IllegalArgumentException("No field '" + buffer.currentName() + "' in the structure of type '" +
                                                        parent.getDataType().getDataTypeName() +
                                                        "', which has the fields: " + parent.getDataType().getFields());
-
-                buffer.skipToRelativeNesting(0);
+                buffer.skipToRelativeNesting(1);
                 fullyApplied = false;
                 continue;
             }
 
             try {
-                if (buffer.currentToken() != JsonToken.VALUE_NULL) {
+                if (buffer.current() != JsonToken.VALUE_NULL) {
                     FieldValue v = readSingleValue(buffer, field.getDataType(), ignoreUndefinedFields);
                     parent.setFieldValue(field, v);
                 }

@@ -112,6 +112,24 @@
     ],
     "fields" : [ ]
   },
+  "ai.vespa.feed.client.FeedClientBuilder$Compression" : {
+    "superClass" : "java.lang.Enum",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public",
+      "final",
+      "enum"
+    ],
+    "methods" : [
+      "public static ai.vespa.feed.client.FeedClientBuilder$Compression[] values()",
+      "public static ai.vespa.feed.client.FeedClientBuilder$Compression valueOf(java.lang.String)"
+    ],
+    "fields" : [
+      "public static final enum ai.vespa.feed.client.FeedClientBuilder$Compression auto",
+      "public static final enum ai.vespa.feed.client.FeedClientBuilder$Compression none",
+      "public static final enum ai.vespa.feed.client.FeedClientBuilder$Compression gzip"
+    ]
+  },
   "ai.vespa.feed.client.FeedClientBuilder" : {
     "superClass" : "java.lang.Object",
     "interfaces" : [ ],
@@ -142,6 +160,7 @@
       "public abstract ai.vespa.feed.client.FeedClientBuilder setCaCertificates(java.util.Collection)",
       "public abstract ai.vespa.feed.client.FeedClientBuilder setEndpointUris(java.util.List)",
       "public abstract ai.vespa.feed.client.FeedClientBuilder setProxy(java.net.URI)",
+      "public abstract ai.vespa.feed.client.FeedClientBuilder setCompression(ai.vespa.feed.client.FeedClientBuilder$Compression)",
       "public abstract ai.vespa.feed.client.FeedClient build()"
     ],
     "fields" : [
@@ -176,6 +195,7 @@
     "methods" : [
       "public abstract int code()",
       "public abstract byte[] body()",
+      "public java.lang.String contentType()",
       "public static ai.vespa.feed.client.HttpResponse of(int, byte[])"
     ],
     "fields" : [ ]

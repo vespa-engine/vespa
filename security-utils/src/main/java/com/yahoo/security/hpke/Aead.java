@@ -35,8 +35,8 @@ public interface Aead {
     /** Predefined AEAD ID, as given in RFC 9180 section 7.3 */
     short aeadId();
 
-    static Aead aesGcm128() {
-        return AesGcm128.getInstance();
+    static Aead aes128Gcm() {
+        return Aes128Gcm.getInstance();
     }
 
 }

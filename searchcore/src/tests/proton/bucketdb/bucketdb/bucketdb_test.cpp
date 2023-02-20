@@ -29,8 +29,8 @@ const Timestamp TIME_3(3u);
 constexpr uint32_t DOCSIZE_1(4096u);
 constexpr uint32_t DOCSIZE_2(10000u);
 
-typedef BucketInfo::ReadyState RS;
-typedef SubDbType SDT;
+using RS = BucketInfo::ReadyState;
+using SDT = SubDbType;
 
 namespace {
 

@@ -1,6 +1,8 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/searchlib/memoryindex/word_store.h>
 #include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/util/exceptions.h>
+#include <vespa/vespalib/util/size_literals.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP("word_store_test");
@@ -43,7 +45,7 @@ TEST(WordStoreTest, add_word_triggers_change_of_buffer)
     uint32_t lastId = 0;
     char wordStr[10];
     for (;;++word) {
-        sprintf(wordStr, "%6zu", word);
+        snprintf(wordStr, sizeof(wordStr), "%6zu", word);
         // all words uses 12 bytes (include padding)
         EntryRef r = ws.addWord(std::string(wordStr));
         EXPECT_EQ(std::string(wordStr), ws.getWord(r));
@@ -62,6 +64,13 @@ TEST(WordStoreTest, add_word_triggers_change_of_buffer)
     LOG(info, "Added %zu words in 4 buffers", word);
     EXPECT_EQ(2047u, word);
     EXPECT_EQ(4u, lastId);
+}
+
+TEST(WordStoreTest, long_word_triggers_exception)
+{
+    WordStore ws;
+    vespalib::string word(16_Mi + 1_Ki, 'z');
+    EXPECT_THROW(ws.addWord(word), vespalib::OverflowException);
 }
 
 }

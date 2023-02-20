@@ -86,8 +86,8 @@ private:
         mutable vespalib::IdentifiablePtr<aggregation::AggregationResult> _aggregator;
         uint32_t       _offset;
     };
-    typedef vespalib::Array<uint8_t> AggregatorBacking;
-    typedef vespalib::Array<ResultAccessor> ResultAccessorList;
+    using AggregatorBacking = vespalib::Array<uint8_t>;
+    using ResultAccessorList = vespalib::Array<ResultAccessor>;
     class SortInfo {
     public:
         SortInfo() noexcept : _index(0), _sign(1) { }

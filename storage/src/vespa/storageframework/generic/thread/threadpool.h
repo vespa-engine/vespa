@@ -13,14 +13,14 @@
 #pragma once
 
 #include <atomic>
-#include <vespa/storageframework/generic/thread/runnable.h>
-#include <vespa/storageframework/generic/thread/thread.h>
-#include <vespa/storageframework/generic/clock/time.h>
 #include <vespa/vespalib/util/cpu_usage.h>
 #include <optional>
 #include <vector>
 
 namespace storage::framework {
+
+class Thread;
+struct Runnable;
 
 /** Interface used to access data for the existing threads. */
 struct ThreadVisitor {
@@ -31,12 +31,10 @@ struct ThreadVisitor {
 struct ThreadPool {
     virtual ~ThreadPool() = default;
 
-    virtual Thread::UP startThread(Runnable&,
-                                   vespalib::stringref id,
-                                   vespalib::duration waitTime,
-                                   vespalib::duration maxProcessTime,
-                                   int ticksBeforeWait,
-                                   std::optional<vespalib::CpuUsage::Category> cpu_category) = 0;
+    virtual std::unique_ptr<Thread>
+    startThread(Runnable&, vespalib::stringref id, vespalib::duration waitTime,
+                vespalib::duration maxProcessTime, int ticksBeforeWait,
+                std::optional<vespalib::CpuUsage::Category> cpu_category) = 0;
 
     virtual void visitThreads(ThreadVisitor&) const = 0;
 };

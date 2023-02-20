@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.model;
 
-import com.yahoo.config.application.api.ApplicationFile;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.model.ConfigModelContext.ApplicationType;
 import com.yahoo.config.model.builder.xml.ConfigModelBuilder;
@@ -10,9 +9,9 @@ import com.yahoo.config.model.builder.xml.XmlHelper;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.graph.ModelGraphBuilder;
 import com.yahoo.config.model.graph.ModelNode;
-import com.yahoo.config.model.producer.AbstractConfigProducer;
+import com.yahoo.config.model.producer.AnyConfigProducer;
+import com.yahoo.config.model.producer.TreeConfigProducer;
 import com.yahoo.config.model.provision.HostsXmlProvisioner;
-import com.yahoo.path.Path;
 import com.yahoo.text.XML;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.builder.VespaModelBuilder;
@@ -20,8 +19,6 @@ import com.yahoo.vespa.model.content.Content;
 import com.yahoo.vespa.model.routing.Routing;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
-import org.xml.sax.SAXException;
-
 import java.io.IOException;
 import java.io.Reader;
 import java.io.Serializable;
@@ -33,7 +30,6 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.TreeMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -82,10 +78,10 @@ public class ConfigModelRepo implements ConfigModelRepoAdder, Serializable, Iter
                                  VespaModel vespaModel,
                                  VespaModelBuilder builder,
                                  ApplicationConfigProducerRoot root,
-                                 ConfigModelRegistry configModelRegistry) throws IOException, SAXException {
+                                 ConfigModelRegistry configModelRegistry) throws IOException {
         Element userServicesElement = getServicesFromApp(deployState.getApplicationPackage());
         readConfigModels(root, userServicesElement, deployState, vespaModel, configModelRegistry);
-        builder.postProc(deployState.getDeployLogger(), root, this);
+        builder.postProc(deployState, root, this);
     }
 
     private Element getServicesFromApp(ApplicationPackage applicationPackage) throws IOException {
@@ -117,7 +113,7 @@ public class ConfigModelRepo implements ConfigModelRepoAdder, Serializable, Iter
                                   Element servicesRoot,
                                   DeployState deployState,
                                   VespaModel vespaModel,
-                                  ConfigModelRegistry configModelRegistry) throws IOException, SAXException {
+                                  ConfigModelRegistry configModelRegistry) {
         final Map<ConfigModelBuilder, List<Element>> model2Element = new LinkedHashMap<>();
         ModelGraphBuilder graphBuilder = new ModelGraphBuilder();
 
@@ -125,8 +121,6 @@ public class ConfigModelRepo implements ConfigModelRepoAdder, Serializable, Iter
 
         if (XML.getChild(servicesRoot, "admin") == null)
             children.add(getImplicitAdmin(deployState));
-
-        children.addAll(getPermanentServices(deployState));
 
         for (Element servicesElement : children) {
             String tagName = servicesElement.getTagName();
@@ -138,8 +132,6 @@ public class ConfigModelRepo implements ConfigModelRepoAdder, Serializable, Iter
                 // Top level config, mainly to be used by the Vespa team.
                 continue;
             }
-            if ((tagName.equals("clients")) && deployState.isHosted())
-                throw new IllegalArgumentException("<" + tagName + "> is not allowed when running Vespa in a hosted environment");
 
             String tagVersion = servicesElement.getAttribute("version");
             ConfigModelId xmlId = ConfigModelId.fromNameAndVersion(tagName, tagVersion);
@@ -170,21 +162,6 @@ public class ConfigModelRepo implements ConfigModelRepoAdder, Serializable, Iter
                 .orElse(ApplicationType.DEFAULT);
     }
 
-    private Collection<Element> getPermanentServices(DeployState deployState) throws IOException, SAXException {
-        List<Element> permanentServices = new ArrayList<>();
-        Optional<ApplicationPackage> applicationPackage = deployState.getPermanentApplicationPackage();
-        if (applicationPackage.isPresent()) {
-            ApplicationFile file = applicationPackage.get().getFile(Path.fromString(ApplicationPackage.PERMANENT_SERVICES));
-            if (file.exists()) {
-                try (Reader reader = file.createReader()) {
-                    Element permanentServicesRoot = getServicesFromReader(reader);
-                    permanentServices.addAll(getServiceElements(permanentServicesRoot));
-                }
-            }
-        }
-        return permanentServices;
-    }
-
     private Element getServicesFromReader(Reader reader) {
         Document doc = XmlHelper.getDocument(reader);
         return doc.getDocumentElement();
@@ -194,7 +171,7 @@ public class ConfigModelRepo implements ConfigModelRepoAdder, Serializable, Iter
                              ApplicationType applicationType,
                              DeployState deployState,
                              VespaModel vespaModel,
-                             AbstractConfigProducer parent,
+                             TreeConfigProducer<AnyConfigProducer> parent,
                              List<Element> elements) {
         for (Element servicesElement : elements) {
             ConfigModel model = buildModel(node, applicationType, deployState, vespaModel, parent, servicesElement);
@@ -207,7 +184,7 @@ public class ConfigModelRepo implements ConfigModelRepoAdder, Serializable, Iter
                                    ApplicationType applicationType,
                                    DeployState deployState,
                                    VespaModel vespaModel,
-                                   AbstractConfigProducer parent,
+                                   TreeConfigProducer<AnyConfigProducer> parent,
                                    Element servicesElement) {
         ConfigModelBuilder builder = node.builder;
         ConfigModelContext context = ConfigModelContext.create(applicationType, deployState, vespaModel, this, parent, getIdString(servicesElement));

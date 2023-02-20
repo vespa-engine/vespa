@@ -110,7 +110,7 @@ TEST_F("verify too deep dependency graph", RankFixture) {
                               "  ... needed by rank feature chain(basic,253,4)\n"
                               "  ... needed by rank feature chain(basic,254,4)\n"
                               "  ... needed by rank feature chain(basic,255,4)\n"
-                              "  ... needed by rank feature chain(basic,256,4)\n"}},
+                              "  ... needed by rank feature chain(basic,256,4)"}},
                             {regex, {Level::WARNING, "high stack usage: [0-9]+ bytes"}},
                             {equal, {Level::ERROR, "verification failed: rank feature chain(basic, 256, 4) (feature verification test)"}}}));
 }
@@ -123,7 +123,7 @@ TEST_F("verify dependency cycle", RankFixture) {
                               "  ... needed by rank feature chain(cycle,1,2)\n"
                               "  ... needed by rank feature chain(cycle,2,2)\n"
                               "  ... needed by rank feature chain(cycle,3,2)\n"
-                              "  ... needed by rank feature chain(cycle,4,2)\n"}},
+                              "  ... needed by rank feature chain(cycle,4,2)"}},
                             {equal, {Level::ERROR, "verification failed: rank feature chain(cycle, 4, 2) (feature verification test)"}}}));
 }
 

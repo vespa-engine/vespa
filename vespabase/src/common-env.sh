@@ -35,7 +35,7 @@ consider_fallback () {
 read_conf_file () {
     deffile="$VESPA_HOME/conf/vespa/default-env.txt"
     if [ -f "${deffile}" ]; then
-        eval $(${VESPA_HOME}/libexec/vespa/script-utils export-env)
+        eval $(${VESPA_HOME}/libexec/vespa/vespa-wrapper export-env)
     fi
 }
 
@@ -163,7 +163,7 @@ export MALLOC_ARENA_MAX=1
 optionally_reduce_base_frequency
 
 # Prefer newer gdb and pstack
-prepend_path /opt/rh/gcc-toolset-11/root/usr/bin
+prepend_path /opt/rh/gcc-toolset-12/root/usr/bin
 
 # Maven is needed for tester applications
 prepend_path "$VESPA_HOME/local/maven/bin"
@@ -329,7 +329,7 @@ use_configserver_if_needed () {
 }
 
 getJavaOptionsIPV46() {
-    if ${VESPA_HOME}/libexec/vespa/script-utils ipv6-only; then
+    if ${VESPA_HOME}/libexec/vespa/vespa-wrapper ipv6-only; then
         echo " -Djava.net.preferIPv6Addresses=true"
     fi
 }

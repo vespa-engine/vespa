@@ -3,6 +3,9 @@ package com.yahoo.vespa.model.container.xml;
 
 import com.yahoo.text.XML;
 import org.w3c.dom.Element;
+
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -14,10 +17,22 @@ import java.util.stream.Collectors;
  */
 public class ModelIdResolver {
 
-    private static final Map<String, String> providedModels =
-            Map.of("minilm-l6-v2", "https://data.vespa.oath.cloud/onnx_models/sentence_all_MiniLM_L6_v2.onnx",
-                   "mpnet-base-v2", "https://data.vespa.oath.cloud/onnx_models/sentence-all-mpnet-base-v2.onnx",
-                   "bert-base-uncased", "https://data.vespa.oath.cloud/onnx_models/bert-base-uncased-vocab.txt");
+    private static Map<String, String> setupProvidedModels() {
+        Map<String, String> models = new HashMap<>();
+        models.put("minilm-l6-v2",          "https://data.vespa.oath.cloud/onnx_models/sentence_all_MiniLM_L6_v2.onnx");
+        models.put("mpnet-base-v2",         "https://data.vespa.oath.cloud/onnx_models/sentence-all-mpnet-base-v2.onnx");
+        models.put("bert-base-uncased",     "https://data.vespa.oath.cloud/onnx_models/bert-base-uncased-vocab.txt");
+        models.put("flan-t5-vocab",         "https://data.vespa.oath.cloud/onnx_models/flan-t5-spiece.model");
+        models.put("flan-t5-small-encoder", "https://data.vespa.oath.cloud/onnx_models/flan-t5-small-encoder-model.onnx");
+        models.put("flan-t5-small-decoder", "https://data.vespa.oath.cloud/onnx_models/flan-t5-small-decoder-model.onnx");
+        models.put("flan-t5-base-encoder",  "https://data.vespa.oath.cloud/onnx_models/flan-t5-base-encoder-model.onnx");
+        models.put("flan-t5-base-decoder",  "https://data.vespa.oath.cloud/onnx_models/flan-t5-base-decoder-model.onnx");
+        models.put("flan-t5-large-encoder", "https://data.vespa.oath.cloud/onnx_models/flan-t5-large-encoder-model.onnx");
+        models.put("flan-t5-large-decoder", "https://data.vespa.oath.cloud/onnx_models/flan-t5-large-decoder-model.onnx");
+        return Collections.unmodifiableMap(models);
+    }
+
+    private static final Map<String, String> providedModels = setupProvidedModels();
 
     /**
      * Finds any config values of type 'model' below the given config element and

@@ -24,6 +24,7 @@ import com.yahoo.vespa.model.PortAllocBridge;
 import com.yahoo.vespa.model.container.Container;
 import com.yahoo.vespa.model.container.component.AccessLogComponent;
 
+import java.time.Duration;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -195,5 +196,7 @@ public class MetricsProxyContainer extends Container implements
     protected String defaultPreload() {
         return "";
     }
+
+    @Override public Optional<String> getPreShutdownCommand() { return Optional.of(prepareStopCommand(Duration.ofMinutes(6))); }
 
 }

@@ -1,11 +1,9 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.text;
 
-import com.google.common.collect.ImmutableSet;
-
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
-import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.io.ByteArrayOutputStream;
 import java.util.Set;
@@ -88,7 +86,7 @@ public class StringUtilities {
                 result.write(replacementCharacters.replacement2[val]);
             }
         }
-        return new String(result.toByteArray(), UTF8);
+        return result.toString(UTF8);
     }
 
     public static String unescape(String source) {
@@ -103,14 +101,13 @@ public class StringUtilities {
 
             if (bytes[i + 1] != (byte) 'x') {
                 switch (bytes[i + 1]) {
-                    case '\\': result.write('\\'); break;
-                    case '"': result.write('"'); break;
-                    case 't': result.write('\t'); break;
-                    case 'n': result.write('\n'); break;
-                    case 'r': result.write('\r'); break;
-                    case 'f': result.write('\f'); break;
-                    default:
-                        throw new IllegalArgumentException("Illegal escape sequence \\" + ((char) bytes[i+1]) + " found");
+                    case '\\' -> result.write('\\');
+                    case '"' -> result.write('"');
+                    case 't' -> result.write('\t');
+                    case 'n' -> result.write('\n');
+                    case 'r' -> result.write('\r');
+                    case 'f' -> result.write('\f');
+                    default -> throw new IllegalArgumentException("Illegal escape sequence \\" + ((char) bytes[i + 1]) + " found");
                 }
                 ++i;
                 continue;
@@ -122,7 +119,7 @@ public class StringUtilities {
             result.write((byte) Integer.parseInt(hexdigits, 16));
             i += 3;
         }
-        return new String(result.toByteArray(), UTF8);
+        return result.toString(UTF8);
     }
 
     /**
@@ -212,12 +209,12 @@ public class StringUtilities {
 
     /** Splits a string on both space and comma */
     public static Set<String> split(String s) {
-        if (s == null || s.isEmpty()) return Collections.emptySet();
-        ImmutableSet.Builder<String> b = new ImmutableSet.Builder<>();
+        if (s == null || s.isEmpty()) return Set.of();
+        Set<String> b = new HashSet<>();
         for (String item : s.split("[\\s,]"))
             if ( ! item.isEmpty())
                 b.add(item);
-        return b.build();
+        return Set.copyOf(b);
     }
 
 }

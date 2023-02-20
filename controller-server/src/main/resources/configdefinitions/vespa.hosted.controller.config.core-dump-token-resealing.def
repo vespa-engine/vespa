@@ -1,0 +1,6 @@
+# Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+namespace=vespa.hosted.controller.config
+
+# Key name for private key used for re-sealing decryption tokens.
+# Using the default of "" means the resealing feature is disabled and no key will be looked up.
+resealingPrivateKeyName string default=""

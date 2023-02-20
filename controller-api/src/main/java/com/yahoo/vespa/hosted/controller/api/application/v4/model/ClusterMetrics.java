@@ -23,13 +23,11 @@ public class ClusterMetrics {
     private final String clusterId;
     private final String clusterType;
     private final Map<String, Double> metrics;
-    private final Map<String, Double> reindexingProgress;
 
-    public ClusterMetrics(String clusterId, String clusterType, Map<String, Double> metrics, Map<String, Double> reindexingProgress) {
+    public ClusterMetrics(String clusterId, String clusterType, Map<String, Double> metrics) {
         this.clusterId = clusterId;
         this.clusterType = clusterType;
         this.metrics = Map.copyOf(metrics);
-        this.reindexingProgress = Map.copyOf(reindexingProgress);
     }
 
     public String getClusterId() {
@@ -74,9 +72,5 @@ public class ClusterMetrics {
 
     public Optional<Double> diskFeedBlockLimit() {
         return Optional.ofNullable(metrics.get(DISK_FEED_BLOCK_LIMIT));
-    }
-
-    public Map<String, Double> reindexingProgress() {
-        return reindexingProgress;
     }
 }

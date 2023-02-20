@@ -25,7 +25,7 @@ struct CompareValue {
 void
 removeDupAdditions(PostingChange<AttributePosting>::A &additions)
 {
-    typedef PostingChange<AttributePosting>::A::iterator Iterator;
+    using Iterator = PostingChange<AttributePosting>::A::iterator;
     if (additions.empty())
         return;
     if (additions.size() == 1)
@@ -53,7 +53,7 @@ removeDupAdditions(PostingChange<AttributePosting>::A &additions)
 void
 removeDupAdditions(PostingChange<AttributeWeightPosting>::A &additions)
 {
-    typedef PostingChange<AttributeWeightPosting>::A::iterator Iterator;
+    using Iterator = PostingChange<AttributeWeightPosting>::A::iterator;
     if (additions.empty())
         return;
     if (additions.size() == 1u)
@@ -85,7 +85,7 @@ removeDupAdditions(PostingChange<AttributeWeightPosting>::A &additions)
 void
 removeDupRemovals(std::vector<uint32_t> &removals)
 {
-    typedef std::vector<uint32_t>::iterator Iterator;
+    using Iterator = std::vector<uint32_t>::iterator;
     if (removals.empty())
         return;
     if (removals.size() == 1u)
@@ -299,7 +299,7 @@ PostingChangeComputerT<WeightedIndex, PostingMap>::
 compute(const MultivalueMapping & mvm, const DocIndices & docIndices,
         const vespalib::datastore::EntryComparator & compare, const EnumIndexMapper & mapper)
 {
-    typedef ActualChangeComputer<WeightedIndex> AC;
+    using AC = ActualChangeComputer<WeightedIndex>;
     AC actualChange(compare, mapper);
     typename AC::AlwaysWeightedIndexVector added, changed, removed;
     PostingMap changePost;
@@ -327,15 +327,15 @@ template class PostingChange<AttributePosting>;
 
 template class PostingChange<AttributeWeightPosting>;
 
-typedef PostingChange<vespalib::btree::BTreeKeyData<unsigned int, int> > WeightedPostingChange;
-typedef std::map<EnumPostingPair, WeightedPostingChange> WeightedPostingChangeMap;
-typedef multivalue::WeightedValue<AtomicEntryRef> WeightedIndex;
-typedef AtomicEntryRef ValueIndex;
+using WeightedPostingChange = PostingChange<vespalib::btree::BTreeKeyData<unsigned int, int> >;
+using WeightedPostingChangeMap = std::map<EnumPostingPair, WeightedPostingChange>;
+using WeightedIndex = multivalue::WeightedValue<AtomicEntryRef>;
+using ValueIndex = AtomicEntryRef;
 
 using WeightedMultiValueMapping = attribute::MultiValueMapping<WeightedIndex>;
 using ValueMultiValueMapping = attribute::MultiValueMapping<ValueIndex>;
-typedef std::vector<std::pair<uint32_t, std::vector<WeightedIndex>>> DocIndicesWeighted;
-typedef std::vector<std::pair<uint32_t, std::vector<ValueIndex>>> DocIndicesValue;
+using DocIndicesWeighted = std::vector<std::pair<uint32_t, std::vector<WeightedIndex>>>;
+using DocIndicesValue = std::vector<std::pair<uint32_t, std::vector<ValueIndex>>>;
 
 template WeightedPostingChangeMap PostingChangeComputerT<WeightedIndex, WeightedPostingChangeMap>
              ::compute<WeightedMultiValueMapping>(const WeightedMultiValueMapping &,

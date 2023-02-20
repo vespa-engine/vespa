@@ -11,7 +11,7 @@
 
 namespace search::query {
 
-typedef TermBase<vespalib::string> StringBase;
+using StringBase = TermBase<vespalib::string>;
 
 class NumberTerm : public QueryNodeMixin<NumberTerm, StringBase >
 {

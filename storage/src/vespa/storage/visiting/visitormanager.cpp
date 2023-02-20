@@ -7,6 +7,7 @@
 #include "testvisitor.h"
 #include "recoveryvisitor.h"
 #include "reindexing_visitor.h"
+#include <vespa/storageframework/generic/thread/thread.h>
 #include <vespa/config/subscription/configuri.h>
 #include <vespa/config/common/exceptions.h>
 #include <vespa/config/helper/configfetcher.hpp>
@@ -23,7 +24,7 @@ namespace storage {
 VisitorManager::VisitorManager(const config::ConfigUri & configUri,
                                StorageComponentRegister& componentRegister,
                                VisitorMessageSessionFactory& messageSF,
-                               const VisitorFactory::Map& externalFactories,
+                               VisitorFactory::Map externalFactories,
                                bool defer_manager_thread_start)
     : StorageLink("Visitor Manager"),
       framework::HtmlStatusReporter("visitorman", "Visitor Manager"),
@@ -43,12 +44,12 @@ VisitorManager::VisitorManager(const config::ConfigUri & configUri,
       _component(componentRegister, "visitormanager"),
       _visitorQueue(_component.getClock()),
       _recentlyDeletedVisitors(),
-      _recentlyDeletedMaxTime(5 * 1000 * 1000),
+      _recentlyDeletedMaxTime(5s),
       _statusLock(),
       _statusCond(),
       _statusRequest(),
       _enforceQueueUse(false),
-      _visitorFactories(externalFactories)
+      _visitorFactories(std::move(externalFactories))
 {
     _configFetcher->subscribe<vespa::config::content::core::StorVisitorConfig>(configUri.getConfigId(), this);
     _configFetcher->start();
@@ -56,7 +57,7 @@ VisitorManager::VisitorManager(const config::ConfigUri & configUri,
     if (!defer_manager_thread_start) {
         create_and_start_manager_thread();
     }
-    _component.registerMetricUpdateHook(*this, framework::SecondTime(5));
+    _component.registerMetricUpdateHook(*this, 5s);
     _visitorFactories["dumpvisitor"]       = std::make_shared<DumpVisitorSingleFactory>();
     _visitorFactories["dumpvisitorsingle"] = std::make_shared<DumpVisitorSingleFactory>();
     _visitorFactories["testvisitor"]       = std::make_shared<TestVisitorFactory>();
@@ -187,9 +188,8 @@ VisitorManager::configure(std::unique_ptr<vespa::config::content::core::StorVisi
         for (int32_t i=0; i<config->visitorthreads; ++i) {
             _visitorThread.emplace_back(
                     // Naked new due to a lot of private inheritance in VisitorThread and VisitorManager
-                    std::shared_ptr<VisitorThread>(
-                            new VisitorThread(i, _componentRegister, _messageSessionFactory,
-                                              _visitorFactories, *_metrics->threads[i], *this)),
+                    std::shared_ptr<VisitorThread>(new VisitorThread(i, _componentRegister, _messageSessionFactory,
+                                                                     _visitorFactories, *_metrics->threads[i], *this)),
                     std::map<api::VisitorId, std::string>());
         }
     }
@@ -207,7 +207,7 @@ void
 VisitorManager::run(framework::ThreadHandle& thread)
 {
     LOG(debug, "Started visitor manager thread with pid %d.", getpid());
-    typedef CommandQueue<api::CreateVisitorCommand> CQ;
+    using CQ = CommandQueue<api::CreateVisitorCommand>;
     std::vector<CQ::CommandEntry> timedOut;
     // Run forever, dump messages in the visitor queue that times out.
     while (true) {
@@ -450,8 +450,7 @@ VisitorManager::processReply(const std::shared_ptr<api::StorageReply>& reply)
 }
 
 void
-VisitorManager::send(const std::shared_ptr<api::StorageCommand>& cmd,
-                     Visitor& visitor)
+VisitorManager::send(const std::shared_ptr<api::StorageCommand>& cmd, Visitor& visitor)
 {
     assert(cmd->getType() == api::MessageType::INTERNAL);
     // Only add to internal state if not destroy iterator command, as
@@ -460,7 +459,7 @@ VisitorManager::send(const std::shared_ptr<api::StorageCommand>& cmd,
     if (static_cast<const api::InternalCommand&>(*cmd).getType() != DestroyIteratorCommand::ID) {
         MessageInfo inf;
         inf.id = visitor.getVisitorId();
-        inf.timestamp = _component.getClock().getTimeInSeconds().getTime();
+        inf.timestamp = _component.getClock().getSystemTime();
         inf.timeout = cmd->getTimeout();
 
         if (cmd->getAddress()) {
@@ -526,11 +525,11 @@ VisitorManager::closed(api::VisitorId id)
                      "same visitor. This was not intended.");
         return;
     }
-    framework::MicroSecTime time(_component.getClock().getTimeInMicros());
-    _recentlyDeletedVisitors.emplace_back(it->second, time);
+    vespalib::steady_time now(_component.getClock().getMonotonicTime());
+    _recentlyDeletedVisitors.emplace_back(it->second, now);
     _nameToId.erase(it->second);
     usedIds.erase(it);
-    while ((_recentlyDeletedVisitors.front().second + _recentlyDeletedMaxTime) < time) {
+    while ((_recentlyDeletedVisitors.front().second + _recentlyDeletedMaxTime) < now) {
         _recentlyDeletedVisitors.pop_front();
     }
 
@@ -623,7 +622,7 @@ VisitorManager::reportHtmlStatus(std::ostream& out,
                     out << "<tr>"
                         << "<td>" << entry.first << "</td>"
                         << "<td>" << entry.second.id << "</td>"
-                        << "<td>" << entry.second.timestamp << "</td>"
+                        << "<td>" << vespalib::to_string(entry.second.timestamp) << "</td>"
                         << "<td>" << vespalib::count_ms(entry.second.timeout) << "</td>"
                         << "<td>" << xml_content_escaped(entry.second.destination) << "</td>"
                         << "</tr>\n";
@@ -655,9 +654,9 @@ VisitorManager::reportHtmlStatus(std::ostream& out,
     std::sort(_statusRequest.begin(), _statusRequest.end(), StatusReqSorter());
 
     // Create output
-    for (uint32_t i=0; i<_statusRequest.size(); ++i) {
-        out << "<h2>" << _statusRequest[i]->getSortToken()
-            << "</h2>\n" << _statusRequest[i]->getStatus() << "\n";
+    for (const auto & request : _statusRequest) {
+        out << "<h2>" << request->getSortToken()
+            << "</h2>\n" << request->getStatus() << "\n";
     }
     _statusRequest.clear();
 }

@@ -18,7 +18,7 @@ namespace search::diskindex {
 class BitVectorDictionary
 {
 private:
-    typedef search::index::BitVectorWordSingleKey WordSingleKey;
+    using WordSingleKey = search::index::BitVectorWordSingleKey;
 
     uint32_t                              _docIdLimit;
     std::vector<WordSingleKey>            _entries;
@@ -27,7 +27,7 @@ private:
     uint32_t                              _datHeaderLen;
 
 public:
-    typedef std::shared_ptr<BitVectorDictionary> SP;
+    using SP = std::shared_ptr<BitVectorDictionary>;
     BitVectorDictionary(const BitVectorDictionary &rhs) = delete;
     BitVectorDictionary &operator=(const BitVectorDictionary &rhs) = delete;
     BitVectorDictionary();

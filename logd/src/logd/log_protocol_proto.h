@@ -2,12 +2,5 @@
 
 #pragma once
 
-#pragma GCC diagnostic push
-#ifndef __clang__
-#pragma GCC diagnostic ignored "-Wsuggest-override"
-#endif
-
 #include <logd/log_protocol.pb.h>
-
-#pragma GCC diagnostic pop
 

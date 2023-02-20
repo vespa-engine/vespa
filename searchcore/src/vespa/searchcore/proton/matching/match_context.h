@@ -14,7 +14,7 @@ class MatchContext {
     ISearchContext::UP    _searchCtx;
 
 public:
-    typedef std::unique_ptr<MatchContext> UP;
+    using UP = std::unique_ptr<MatchContext>;
 
     MatchContext(IAttributeContext::UP attrCtx, ISearchContext::UP searchCtx)
         : _attrCtx(std::move(attrCtx)),

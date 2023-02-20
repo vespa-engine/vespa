@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.tensor;
 
-import com.google.common.collect.ImmutableList;
 import com.yahoo.tensor.evaluation.MapEvaluationContext;
 import com.yahoo.tensor.evaluation.Name;
 import com.yahoo.tensor.evaluation.VariableTensor;
@@ -154,7 +153,7 @@ public class TensorTestCase {
         Tensor xy = Tensor.from("{{x:0,y:1}:11, {x:1,y:1}:13}");
         double nest1 = y.multiply(x.multiply(xy).sum("x")).sum("y").asDouble();
         double nest2 = x.multiply(xy).sum("x").multiply(y).sum("y").asDouble();
-        double flat = y.multiply(x).multiply(xy).sum(ImmutableList.of("x","y")).asDouble();
+        double flat = y.multiply(x).multiply(xy).sum(List.of("x","y")).asDouble();
         assertEquals(nest1, flat, 0.000000001);
         assertEquals(nest2, flat, 0.000000001);
     }
@@ -176,8 +175,8 @@ public class TensorTestCase {
         assertEquals(Tensor.from("{ {x:1,y:1}:0, {x:2,y:1}:1 }"), tensor1.larger(tensor2));
         assertEquals(Tensor.from("{ {y:1}:50.0 }"), tensor1.matmul(tensor2, "x"));
         assertEquals(Tensor.from("{ {z:1}:3, {z:2}:7 }"), tensor1.rename("x", "z"));
-        assertEquals(Tensor.from("{ {y:1,x:1}:8, {x:1,y:2}:12 }"), tensor1.add(tensor2).rename(ImmutableList.of("x", "y"),
-                                                                                               ImmutableList.of("y", "x")));
+        assertEquals(Tensor.from("{ {y:1,x:1}:8, {x:1,y:2}:12 }"), tensor1.add(tensor2).rename(List.of("x", "y"),
+                                                                                               List.of("y", "x")));
         assertEquals(Tensor.from("{ {x:0,y:0}:0, {x:0,y:1}:0, {x:1,y:0}:0, {x:1,y:1}:1, {x:2,y:0}:0, {x:2,y:1}:2, }"),
                      Tensor.generate(new TensorType.Builder().indexed("x", 3).indexed("y", 2).build(),
                                      (List<Long> indexes) -> (double)indexes.get(0)*indexes.get(1)));

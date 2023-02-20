@@ -153,7 +153,7 @@ public class ResourceMeterMaintainer extends ControllerMaintainer {
                 .map(ZoneApi::getId)
                 .map(zoneId -> createResourceSnapshotsFromNodes(zoneId, nodeRepository.list(zoneId, NodeFilter.all())))
                 .flatMap(Collection::stream)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     private Stream<Instance> mapApplicationToInstances(Application application) {
@@ -168,6 +168,7 @@ public class ResourceMeterMaintainer extends ControllerMaintainer {
 
     private Stream<Map.Entry<ClusterId, List<Cluster.ScalingEvent>>> mapDeploymentToClusterScalingEvent(DeploymentId deploymentId) {
         try {
+            // TODO: get Application from controller.applications().deploymentInfo()
             return nodeRepository.getApplication(deploymentId.zoneId(), deploymentId.applicationId())
                     .clusters().entrySet().stream()
                     .map(cluster -> Map.entry(new ClusterId(deploymentId, cluster.getKey()), cluster.getValue().scalingEvents()));
@@ -204,7 +205,7 @@ public class ResourceMeterMaintainer extends ControllerMaintainer {
                 .values()
                 .stream()
                 .flatMap(list -> list.values().stream())
-                .collect(Collectors.toList());
+                .toList();
     }
 
     private boolean unlessNodeOwnerIsSystemApplication(Node node) {

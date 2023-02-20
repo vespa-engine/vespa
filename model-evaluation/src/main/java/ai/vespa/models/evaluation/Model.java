@@ -2,18 +2,16 @@
 package ai.vespa.models.evaluation;
 
 import com.yahoo.api.annotations.Beta;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
 import com.yahoo.searchlib.rankingexpression.ExpressionFunction;
 import com.yahoo.searchlib.rankingexpression.evaluation.ContextIndex;
-import com.yahoo.searchlib.rankingexpression.evaluation.DoubleValue;
 import com.yahoo.searchlib.rankingexpression.evaluation.ExpressionOptimizer;
-import com.yahoo.searchlib.rankingexpression.evaluation.Value;
+import com.yahoo.stream.CustomCollectors;
 import com.yahoo.tensor.TensorType;
 
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -32,16 +30,16 @@ public class Model {
     private final String name;
 
     /** Free functions */
-    private final ImmutableList<ExpressionFunction> functions;
+    private final List<ExpressionFunction> functions;
 
     /** The subset of the free functions which are public (additional non-public methods are generated during import) */
-    private final ImmutableList<ExpressionFunction> publicFunctions;
+    private final List<ExpressionFunction> publicFunctions;
 
     /** Instances of each usage of the above function, where variables (if any) are replaced by their bindings */
-    private final ImmutableMap<FunctionReference, ExpressionFunction> referencedFunctions;
+    private final Map<FunctionReference, ExpressionFunction> referencedFunctions;
 
     /** Context prototypes, indexed by function name (as all invocations of the same function share the same context prototype) */
-    private final ImmutableMap<String, LazyArrayContext> contextPrototypes;
+    private final Map<String, LazyArrayContext> contextPrototypes;
 
     private final ExpressionOptimizer expressionOptimizer = new ExpressionOptimizer();
 
@@ -49,9 +47,9 @@ public class Model {
     public Model(String name, Collection<ExpressionFunction> functions) {
         this(name,
              functions.stream().collect(Collectors.toMap(f -> FunctionReference.fromName(f.getName()), f -> f)),
-             Collections.emptyMap(),
-             Collections.emptyList(),
-             Collections.emptyList());
+             Map.of(),
+             List.of(),
+             List.of());
     }
 
     Model(String name,
@@ -62,12 +60,12 @@ public class Model {
         this.name = name;
 
         // Build context and add missing function arguments (missing because it is legal to omit scalar type arguments)
-        ImmutableMap.Builder<String, LazyArrayContext> contextBuilder = new ImmutableMap.Builder<>();
+        Map<String, LazyArrayContext> contextBuilder = new LinkedHashMap<>();
         for (Map.Entry<FunctionReference, ExpressionFunction> function : functions.entrySet()) {
             try {
                 LazyArrayContext context = new LazyArrayContext(function.getValue(), referencedFunctions, constants, onnxModels, this);
                 contextBuilder.put(function.getValue().getName(), context);
-                if ( ! function.getValue().returnType().isPresent()) {
+                if (function.getValue().returnType().isEmpty()) {
                     functions.put(function.getKey(), function.getValue().withReturnType(TensorType.empty));
                 }
 
@@ -86,7 +84,7 @@ public class Model {
                     }
                     else {
                         // External functions have type info (when not scalar) - add argument types
-                        if (function.getValue().argumentTypes().get(argument) == null)
+                        if (function.getValue().getArgumentType(argument) == null)
                             functions.put(function.getKey(), function.getValue().withArgument(argument, TensorType.empty));
                     }
                 }
@@ -95,20 +93,14 @@ public class Model {
                 throw new IllegalArgumentException("Could not prepare an evaluation context for " + function, e);
             }
         }
-        this.contextPrototypes = contextBuilder.build();
-        this.functions = ImmutableList.copyOf(functions.values());
-        this.publicFunctions = ImmutableList.copyOf(functions.values().stream()
-                                                                      .filter(f ->  ! f.getName().startsWith(INTERMEDIATE_OPERATION_FUNCTION_PREFIX))
-                                                                      .collect(Collectors.toList()));
+        this.contextPrototypes = Map.copyOf(contextBuilder);
+        this.functions = List.copyOf(functions.values());
+        this.publicFunctions = functions.values().stream()
+                .filter(f -> !f.getName().startsWith(INTERMEDIATE_OPERATION_FUNCTION_PREFIX)).toList();
 
         // Optimize functions
-        ImmutableMap.Builder<FunctionReference, ExpressionFunction> functionsBuilder = new ImmutableMap.Builder<>();
-        for (Map.Entry<FunctionReference, ExpressionFunction> function : referencedFunctions.entrySet()) {
-            ExpressionFunction optimizedFunction = optimize(function.getValue(),
-                                                            contextPrototypes.get(function.getKey().functionName()));
-            functionsBuilder.put(function.getKey(), optimizedFunction);
-        }
-        this.referencedFunctions = functionsBuilder.build();
+        this.referencedFunctions = Map.copyOf(referencedFunctions.entrySet().stream()
+                .collect(CustomCollectors.toLinkedMap(f -> f.getKey(), f -> optimize(f.getValue(), contextPrototypes.get(f.getKey().functionName())))));
     }
 
     /** Returns an optimized version of the given function */
@@ -129,20 +121,11 @@ public class Model {
     }
 
     /** Returns the given function, or throws a IllegalArgumentException if it does not exist */
-    ExpressionFunction requireFunction(String name) {
-        ExpressionFunction function = function(name);
-        if (function == null)
-            throw new IllegalArgumentException("No function named '" + name + "' in " + this + ". Available functions: " +
-                                               functions.stream().map(f -> f.getName()).collect(Collectors.joining(", ")));
-        return function;
-    }
-
-    /** Returns the given function, or throws a IllegalArgumentException if it does not exist */
     private LazyArrayContext requireContextPrototype(String name) {
         LazyArrayContext context = contextPrototypes.get(name);
         if (context == null) // Implies function is not present
             throw new IllegalArgumentException("No function named '" + name + "' in " + this + ". Available functions: " +
-                                               functions.stream().map(f -> f.getName()).collect(Collectors.joining(", ")));
+                                               functions.stream().map(ExpressionFunction::getName).collect(Collectors.joining(", ")));
         return context;
     }
 
@@ -155,7 +138,7 @@ public class Model {
     }
 
     /** Returns an immutable map of the referenced function instances of this */
-    Map<FunctionReference, ExpressionFunction> referencedFunctions() { return referencedFunctions; }
+    Map<FunctionReference, ExpressionFunction> referencedFunctions() { return Map.copyOf(referencedFunctions); }
 
     /** Returns the given referred function, or throws a IllegalArgumentException if it does not exist */
     ExpressionFunction requireReferencedFunction(FunctionReference reference) {
@@ -234,7 +217,7 @@ public class Model {
 
     private void throwUndeterminedFunction(String message) {
         throw new IllegalArgumentException(message + ". Available functions: " +
-                                           functions.stream().map(f -> f.getName()).collect(Collectors.joining(", ")));
+                                           functions.stream().map(ExpressionFunction::getName).collect(Collectors.joining(", ")));
     }
 
     @Override

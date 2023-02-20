@@ -53,7 +53,7 @@ void Test::setup()
     }
 }
 
-typedef std::vector<uint32_t> H;
+using H = std::vector<uint32_t>;
 
 H
 seek(SearchIterator & s, uint32_t docIdLimit)

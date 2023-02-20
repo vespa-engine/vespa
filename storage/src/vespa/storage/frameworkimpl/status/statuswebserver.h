@@ -53,7 +53,7 @@ class StatusWebServer : private config::IFetcherCallback<vespa::config::content:
         }
     };
     struct HttpRequest {
-        typedef std::shared_ptr<HttpRequest> SP;
+        using SP = std::shared_ptr<HttpRequest>;
 
         vespalib::string _url;
         vespalib::string _serverSpec;

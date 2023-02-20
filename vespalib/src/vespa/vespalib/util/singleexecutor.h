@@ -9,6 +9,8 @@
 #include <vespa/vespalib/util/executor_idle_tracking.h>
 #include <thread>
 #include <atomic>
+#include <mutex>
+#include <condition_variable>
 
 namespace vespalib {
 
@@ -38,6 +40,8 @@ private:
     using Lock = std::unique_lock<std::mutex>;
     void drain(Lock & lock);
     void run() override;
+    void stop() { _stopped = true; }
+    bool stopped() const { return _stopped.load(std::memory_order_relaxed); }
     void drain_tasks();
     void sleepProducer(Lock & guard, duration maxWaitTime, uint64_t wakeupAt);
     void run_tasks_till(uint64_t available);
@@ -48,7 +52,6 @@ private:
     uint64_t index(uint64_t counter) const {
         return counter & (_taskLimit.load(std::memory_order_relaxed) - 1);
     }
-
     uint64_t numTasks();
     uint64_t numTasks(Lock & guard) const {
         return num_tasks_in_main_q() + num_tasks_in_overflow_q(guard);
@@ -67,7 +70,8 @@ private:
     std::mutex                  _mutex;
     std::condition_variable     _consumerCondition;
     std::condition_variable     _producerCondition;
-    vespalib::Thread            _thread;
+    std::thread                 _thread;
+    std::atomic<bool>           _stopped;
     ExecutorIdleTracker         _idleTracker;
     ThreadIdleTracker           _threadIdleTracker;
     uint64_t                    _wakeupCount;

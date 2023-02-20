@@ -148,9 +148,7 @@ public:
      *             unused metrics, but while generating sum metric sum in active
      *             metrics we want to. This has no affect if type is CLONE.
      */
-    virtual Metric* clone(std::vector<Metric::UP> &ownerList,
-                          CopyType type, MetricSet* owner,
-                          bool includeUnused = false) const = 0;
+    virtual Metric* clone(std::vector<Metric::UP> &ownerList, CopyType type, MetricSet* owner, bool includeUnused) const = 0;
 
     /**
      * Utility function for assigning values from one metric of identical type
@@ -163,8 +161,7 @@ public:
     /** Reset all metric values. */
     virtual void reset() = 0;
 
-    void print(std::ostream& out, bool verbose,
-                       const std::string& indent) const override {
+    void print(std::ostream& out, bool verbose, const std::string& indent) const override {
         print(out, verbose, indent, 0);
     }
     virtual void print(std::ostream&, bool verbose, const std::string& indent,
@@ -225,7 +222,7 @@ public:
     /** Used by sum metric to alter tag of cloned metric for sum. */
     void setTags(Tags tags) {
         _tags = std::move(tags);
-        assignMangledNameWithDimensions(); 
+        assignMangledNameWithDimensions();
     }
 
     /** Set whether metrics have ever been set. */

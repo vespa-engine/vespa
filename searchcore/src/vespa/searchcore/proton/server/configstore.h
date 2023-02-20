@@ -13,8 +13,8 @@ namespace proton {
 class DocumentDBConfig;
 
 struct ConfigStore : FeedConfigStore {
-    typedef std::unique_ptr<ConfigStore> UP;
-    typedef search::SerialNum SerialNum;
+    using UP = std::unique_ptr<ConfigStore>;
+    using SerialNum = search::SerialNum;
     using ProtonConfig = const vespa::config::search::core::internal::InternalProtonType;
     using ProtonConfigSP = std::shared_ptr<ProtonConfig>;
 

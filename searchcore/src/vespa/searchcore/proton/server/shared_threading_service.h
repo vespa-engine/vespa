@@ -6,9 +6,11 @@
 #include <vespa/vespalib/util/threadexecutor.h>
 #include <vespa/vespalib/util/syncable.h>
 #include <vespa/vespalib/util/clock.h>
-#include <vespa/vespalib/util/invokeserviceimpl.h>
 #include <memory>
 
+namespace vespalib {
+    class IDestructorCallback;
+}
 namespace proton {
 
 /**
@@ -21,7 +23,7 @@ private:
     std::unique_ptr<vespalib::SyncableThreadExecutor> _warmup;
     std::shared_ptr<vespalib::SyncableThreadExecutor> _shared;
     std::unique_ptr<vespalib::ISequencedTaskExecutor> _field_writer;
-    vespalib::InvokeServiceImpl                       _invokeService;
+    std::unique_ptr<vespalib::InvokeService>          _invokeService;
     std::vector<Registration>                         _invokeRegistrations;
     storage::spi::BucketExecutor&                     _bucket_executor;
     vespalib::Clock                                   _clock;
@@ -37,7 +39,7 @@ public:
     vespalib::ThreadExecutor& warmup() override { return *_warmup; }
     vespalib::ThreadExecutor& shared() override { return *_shared; }
     vespalib::ISequencedTaskExecutor& field_writer() override { return *_field_writer; }
-    vespalib::InvokeService & invokeService() override { return _invokeService; }
+    vespalib::InvokeService & invokeService() override { return *_invokeService; }
     FNET_Transport & transport() override { return _transport; }
     storage::spi::BucketExecutor& bucket_executor() override { return _bucket_executor; }
     const vespalib::Clock & clock() const override { return _clock; }

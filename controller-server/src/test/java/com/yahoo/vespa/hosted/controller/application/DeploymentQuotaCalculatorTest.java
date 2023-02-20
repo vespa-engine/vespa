@@ -8,12 +8,10 @@ import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
-import com.yahoo.config.provision.Tags;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.Quota;
-import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RevisionId;
 import com.yahoo.vespa.hosted.controller.api.integration.noderepository.ApplicationData;
 import com.yahoo.vespa.hosted.controller.deployment.RevisionHistory;
@@ -39,23 +37,24 @@ public class DeploymentQuotaCalculatorTest {
     void quota_is_divided_among_prod_instances() {
         Quota calculated = DeploymentQuotaCalculator.calculate(Quota.unlimited().withBudget(10), List.of(), ApplicationId.defaultId(), ZoneId.defaultId(),
                 DeploymentSpec.fromXml(
-                        "<deployment version='1.0'>\n" +
-                                "  <instance id='instance1'> \n" +
-                                "    <test />\n" +
-                                "    <staging />\n" +
-                                "    <prod>\n" +
-                                "      <region active=\"true\">us-east-1</region>\n" +
-                                "      <region active=\"false\">us-west-1</region>\n" +
-                                "    </prod>\n" +
-                                "  </instance>\n" +
-                                "  <instance id='instance2'>\n" +
-                                "    <perf/>\n" +
-                                "    <dev/>\n" +
-                                "    <prod>\n" +
-                                "      <region active=\"true\">us-north-1</region>\n" +
-                                "    </prod>\n" +
-                                "  </instance>\n" +
-                                "</deployment>"));
+                        """
+                        <deployment version='1.0'>
+                          <instance id='instance1'>\s
+                            <test />
+                            <staging />
+                            <prod>
+                              <region active="true">us-east-1</region>
+                              <region active="false">us-west-1</region>
+                            </prod>
+                          </instance>
+                          <instance id='instance2'>
+                            <perf/>
+                            <dev/>
+                            <prod>
+                              <region active="true">us-north-1</region>
+                            </prod>
+                          </instance>
+                        </deployment>"""));
         assertEquals(10d / 3, calculated.budget().orElseThrow().doubleValue(), 1e-5);
     }
 
@@ -64,23 +63,24 @@ public class DeploymentQuotaCalculatorTest {
 
         var existing_dev_deployment = new Application(TenantAndApplicationId.from(ApplicationId.defaultId()), Instant.EPOCH, DeploymentSpec.empty, ValidationOverrides.empty, Optional.empty(),
                 Optional.empty(), Optional.empty(), OptionalInt.empty(), new ApplicationMetrics(1, 1), Set.of(), OptionalLong.empty(), RevisionHistory.empty(),
-                List.of(new Instance(ApplicationId.defaultId(), Tags.empty()).withNewDeployment(ZoneId.from(Environment.dev, RegionName.defaultName()),
+                List.of(new Instance(ApplicationId.defaultId()).withNewDeployment(ZoneId.from(Environment.dev, RegionName.defaultName()),
                                                                                          RevisionId.forProduction(1), Version.emptyVersion, Instant.EPOCH, Map.of(), QuotaUsage.create(0.53d))));
 
         Quota calculated = DeploymentQuotaCalculator.calculate(Quota.unlimited().withBudget(2), List.of(existing_dev_deployment), ApplicationId.defaultId(), ZoneId.defaultId(),
                 DeploymentSpec.fromXml(
-                        "<deployment version='1.0'>\n" +
-                                "  <instance id='default'> \n" +
-                                "    <test />\n" +
-                                "    <staging />\n" +
-                                "    <prod>\n" +
-                                "      <region active=\"true\">us-east-1</region>\n" +
-                                "      <region active=\"false\">us-west-1</region>\n" +
-                                "      <region active=\"true\">us-north-1</region>\n" +
-                                "      <region active=\"true\">us-south-1</region>\n" +
-                                "    </prod>\n" +
-                                "  </instance>\n" +
-                                "</deployment>"));
+                        """
+                        <deployment version='1.0'>
+                          <instance id='default'>\s
+                            <test />
+                            <staging />
+                            <prod>
+                              <region active="true">us-east-1</region>
+                              <region active="false">us-west-1</region>
+                              <region active="true">us-north-1</region>
+                              <region active="true">us-south-1</region>
+                            </prod>
+                          </instance>
+                        </deployment>"""));
         assertEquals((2d - 0.53d) / 4d, calculated.budget().orElseThrow().doubleValue(), 1e-5);
     }
 

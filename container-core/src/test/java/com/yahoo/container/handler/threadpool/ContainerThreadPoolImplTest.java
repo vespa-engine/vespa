@@ -6,6 +6,7 @@ import com.yahoo.concurrent.Receiver;
 import com.yahoo.container.protect.ProcessTerminator;
 import com.yahoo.container.test.MetricMock;
 import com.yahoo.jdisc.Metric;
+import com.yahoo.metrics.ContainerMetrics;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
@@ -81,10 +82,10 @@ public class ContainerThreadPoolImplTest {
         assertEquals(1200, executor.getQueue().remainingCapacity());
         assertEquals(7, metrics.innvocations().size());
         assertEquals(3L, metrics.innvocations().get("serverThreadPoolSize").val);
-        assertEquals(3L, metrics.innvocations().get("jdisc.thread_pool.max_allowed_size").val);
+        assertEquals(3L, metrics.innvocations().get(ContainerMetrics.JDISC_THREAD_POOL_MAX_ALLOWED_SIZE.baseName()).val);
         assertEquals(0L, metrics.innvocations().get("serverActiveThreads").val);
-        assertEquals(1200L, metrics.innvocations().get("jdisc.thread_pool.work_queue.capacity").val);
-        assertEquals(0L, metrics.innvocations().get("jdisc.thread_pool.work_queue.size").val);
+        assertEquals(1200L, metrics.innvocations().get(ContainerMetrics.JDISC_THREAD_POOL_WORK_QUEUE_CAPACITY.baseName()).val);
+        assertEquals(0L, metrics.innvocations().get(ContainerMetrics.JDISC_THREAD_POOL_WORK_QUEUE_SIZE.baseName()).val);
     }
 
     @Test
@@ -95,10 +96,10 @@ public class ContainerThreadPoolImplTest {
         assertEquals(0, executor.getQueue().remainingCapacity());
         assertEquals(7, metrics.innvocations().size());
         assertEquals(64L, metrics.innvocations().get("serverThreadPoolSize").val);
-        assertEquals(64L, metrics.innvocations().get("jdisc.thread_pool.max_allowed_size").val);
+        assertEquals(64L, metrics.innvocations().get(ContainerMetrics.JDISC_THREAD_POOL_MAX_ALLOWED_SIZE.baseName()).val);
         assertEquals(0L, metrics.innvocations().get("serverActiveThreads").val);
-        assertEquals(64L, metrics.innvocations().get("jdisc.thread_pool.work_queue.capacity").val);
-        assertEquals(0L, metrics.innvocations().get("jdisc.thread_pool.work_queue.size").val);
+        assertEquals(64L, metrics.innvocations().get(ContainerMetrics.JDISC_THREAD_POOL_WORK_QUEUE_CAPACITY.baseName()).val);
+        assertEquals(0L, metrics.innvocations().get(ContainerMetrics.JDISC_THREAD_POOL_WORK_QUEUE_SIZE.baseName()).val);
     }
 
     @Test

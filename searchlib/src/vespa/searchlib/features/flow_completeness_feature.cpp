@@ -30,7 +30,7 @@ FlowCompletenessExecutor::FlowCompletenessExecutor(const fef::IQueryEnvironment 
         const fef::ITermData *termData = env.getTerm(i);
         LOG(spam, "term %u weight %u", i, termData->getWeight().percent());
         if (termData->getWeight().percent() != 0) { // only consider query terms with contribution
-            typedef fef::ITermFieldRangeAdapter FRA;
+            using FRA = fef::ITermFieldRangeAdapter;
             uint32_t j = 0;
             for (FRA iter(*termData); iter.valid(); iter.next()) {
                 const fef::ITermFieldData &tfd = iter.get();
@@ -48,10 +48,10 @@ FlowCompletenessExecutor::FlowCompletenessExecutor(const fef::IQueryEnvironment 
 }
 
 namespace {
-typedef std::vector<uint32_t> TermIdxList;
-typedef std::vector<uint32_t> PosList;
+using TermIdxList = std::vector<uint32_t>;
+using PosList = std::vector<uint32_t>;
 
-typedef vespalib::hash_map<uint32_t, uint32_t> TermIdxMap;
+using TermIdxMap = vespalib::hash_map<uint32_t, uint32_t>;
 
 struct State {
     int       elementWeight;

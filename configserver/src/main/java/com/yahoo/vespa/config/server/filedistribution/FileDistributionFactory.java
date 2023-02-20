@@ -42,8 +42,6 @@ public class FileDistributionFactory implements AutoCloseable {
 
     public FileDirectory fileDirectory() { return fileDirectory; }
 
-    protected File getFileReferencesDir() {return fileDirectory.getRoot();}
-
     public void close() {
         supervisor.transport().shutdown().join();
     }

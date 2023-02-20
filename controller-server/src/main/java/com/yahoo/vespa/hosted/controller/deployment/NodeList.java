@@ -32,7 +32,7 @@ public class NodeList extends AbstractFilteringList<NodeWithServices, NodeList> 
                                                                    parentsByHostName.get(node.parentHostname().get()),
                                                                    services.wantedGeneration(),
                                                                    servicesByHostName.getOrDefault(node.hostname(), List.of())))
-                                 .collect(Collectors.toList()),
+                                 .toList(),
                             false,
                             services.wantedGeneration());
     }

@@ -12,7 +12,7 @@ struct MockBucketIdHasher : public BucketGcTimeCalculator::BucketIdHasher
 {
     size_t nextGeneratedHash {0};
 
-    size_t doHash(const document::BucketId&) const override {
+    size_t doHash(const document::BucketId&) const noexcept override {
         return nextGeneratedHash;
     }
 };

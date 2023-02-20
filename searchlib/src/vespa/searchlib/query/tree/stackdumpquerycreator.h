@@ -110,7 +110,9 @@ private:
             pureTermView = view;
         } else if (type == ParseItem::ITEM_SAME_ELEMENT) {
             vespalib::stringref view = queryStack.getIndexName();
-            builder.addSameElement(arity, view);
+            int32_t id = queryStack.getUniqueId();
+            Weight weight = queryStack.GetWeight();
+            builder.addSameElement(arity, view, id, weight);
             pureTermView = view;
         } else if (type == ParseItem::ITEM_WEIGHTED_SET) {
             vespalib::stringref view = queryStack.getIndexName();

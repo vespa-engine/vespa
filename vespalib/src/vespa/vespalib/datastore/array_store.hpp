@@ -5,7 +5,7 @@
 #include "array_store.h"
 #include "compacting_buffers.h"
 #include "compaction_context.h"
-#include "compaction_spec.h"
+#include "compaction_strategy.h"
 #include "datastore.hpp"
 #include "entry_ref_filter.h"
 #include "large_array_buffer_type.hpp"
@@ -46,7 +46,8 @@ ArrayStore<EntryT, RefT, TypeMapperT>::ArrayStore(const ArrayStoreConfig &cfg, s
       _store(),
       _mapper(std::move(mapper)),
       _smallArrayTypes(),
-      _largeArrayType(cfg.spec_for_type_id(0), memory_allocator, _mapper)
+      _largeArrayType(cfg.spec_for_type_id(0), memory_allocator, _mapper),
+      _compaction_spec()
 {
     initArrayTypes(cfg, std::move(memory_allocator));
     _store.init_primary_buffers();
@@ -155,17 +156,17 @@ ArrayStore<EntryT, RefT, TypeMapperT>::move_on_compact(EntryRef ref)
 
 template <typename EntryT, typename RefT, typename TypeMapperT>
 ICompactionContext::UP
-ArrayStore<EntryT, RefT, TypeMapperT>::compactWorst(CompactionSpec compaction_spec, const CompactionStrategy &compaction_strategy)
+ArrayStore<EntryT, RefT, TypeMapperT>::compact_worst(const CompactionStrategy &compaction_strategy)
 {
-    auto compacting_buffers = _store.start_compact_worst_buffers(compaction_spec, compaction_strategy);
+    auto compacting_buffers = _store.start_compact_worst_buffers(_compaction_spec, compaction_strategy);
     return std::make_unique<CompactionContext>(*this, std::move(compacting_buffers));
 }
 
 template <typename EntryT, typename RefT, typename TypeMapperT>
 std::unique_ptr<CompactingBuffers>
-ArrayStore<EntryT, RefT, TypeMapperT>::start_compact_worst_buffers(CompactionSpec compaction_spec, const CompactionStrategy &compaction_strategy)
+ArrayStore<EntryT, RefT, TypeMapperT>::start_compact_worst_buffers(const CompactionStrategy &compaction_strategy)
 {
-    return _store.start_compact_worst_buffers(compaction_spec, compaction_strategy);
+    return _store.start_compact_worst_buffers(_compaction_spec, compaction_strategy);
 }
 
 template <typename EntryT, typename RefT, typename TypeMapperT>
@@ -173,6 +174,16 @@ vespalib::AddressSpace
 ArrayStore<EntryT, RefT, TypeMapperT>::addressSpaceUsage() const
 {
     return _store.getAddressSpaceUsage();
+}
+
+template <typename EntryT, typename RefT, typename TypeMapperT>
+vespalib::MemoryUsage
+ArrayStore<EntryT, RefT, TypeMapperT>::update_stat(const CompactionStrategy& compaction_strategy)
+{
+    auto address_space_usage = _store.getAddressSpaceUsage();
+    auto memory_usage = _store.getMemoryUsage();
+    _compaction_spec = compaction_strategy.should_compact(memory_usage, address_space_usage);
+    return memory_usage;
 }
 
 template <typename EntryT, typename RefT, typename TypeMapperT>
@@ -209,7 +220,7 @@ ArrayStore<EntryT, RefT, TypeMapperT>::optimizedConfigForHugePage(uint32_t maxSm
                                                                   size_t minNumArraysForNewBuffer,
                                                                   float allocGrowFactor)
 {
-    return ArrayStoreConfig::optimizeForHugePage(maxSmallArrayTypeId,
+    return ArrayStoreConfig::optimizeForHugePage(mapper.get_max_small_array_type_id(maxSmallArrayTypeId),
                                                  [&](uint32_t type_id) noexcept { return mapper.get_array_size(type_id); },
                                                  hugePageSize,
                                                  smallPageSize,

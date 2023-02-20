@@ -67,6 +67,7 @@ private:
     double                        wait_time_s;
     bool                          match_with_ranking;
     std::unique_ptr<Trace>        trace;
+    std::unique_ptr<vespalib::ExecutionProfiler> match_profiler;
     std::unique_ptr<vespalib::ExecutionProfiler> first_phase_profiler;
     std::unique_ptr<vespalib::ExecutionProfiler> second_phase_profiler;
     UniqueIssues                  my_issues;
@@ -130,9 +131,7 @@ public:
                 ResultProcessor &rp,
                 vespalib::DualMergeDirector &md,
                 uint32_t distributionKey,
-                const RelativeTime & relativeTime,
-                uint32_t traceLevel,
-                uint32_t profileDepth);
+                const Trace &parent_trace);
     void run() override;
     const MatchingStats::Partition &get_thread_stats() const { return thread_stats; }
     double get_match_time() const { return match_time_s; }

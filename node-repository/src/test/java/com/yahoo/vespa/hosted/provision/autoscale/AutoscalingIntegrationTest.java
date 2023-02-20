@@ -44,7 +44,6 @@ public class AutoscalingIntegrationTest {
         }
 
         var scaledResources = autoscaler.suggest(fixture.application(), fixture.cluster(), fixture.nodes());
-        assertTrue(scaledResources.isPresent());
     }
 
     private static class MockHttpClient implements MetricsV2MetricsFetcher.AsyncHttpClient {

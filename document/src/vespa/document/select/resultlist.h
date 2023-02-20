@@ -10,10 +10,10 @@ namespace document::select {
 class ResultList : public Printable {
 public:
     using VariableMap = fieldvalue::VariableMap;
-    typedef std::pair<VariableMap, const Result*> ResultPair;
-    typedef std::vector<ResultPair> Results;
-    typedef Results::iterator iterator;
-    typedef Results::const_iterator const_iterator;
+    using ResultPair = std::pair<VariableMap, const Result*>;
+    using Results = std::vector<ResultPair>;
+    using iterator = Results::iterator;
+    using const_iterator = Results::const_iterator;
     using reverse_iterator = Results::reverse_iterator;
 
     ResultList();

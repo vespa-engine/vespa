@@ -448,7 +448,7 @@ public class YqlParser implements Parser {
         Preconditions.checkArgument(args.size() == 2, "Expected 2 arguments, got %s.", args.size());
         String field = fetchFieldName(args.get(0));
         String property = fetchLiteral(args.get(1));
-        NearestNeighborItem item = new NearestNeighborItem(field, property);
+        NearestNeighborItem item = new NearestNeighborItem(indexFactsSession.getCanonicName(field), property);
         Integer targetNumHits = getAnnotation(ast, TARGET_HITS,
                 Integer.class, null, "desired minimum hits to produce");
         if (targetNumHits == null) {

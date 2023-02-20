@@ -51,7 +51,7 @@ namespace docstore {
 
 class BackingStore {
 public:
-    BackingStore(IDataStore &store, const CompressionConfig &compression) :
+    BackingStore(IDataStore &store, CompressionConfig compression) :
         _backingStore(store),
         _compression(compression)
     { }
@@ -60,11 +60,11 @@ public:
     void visit(const IDocumentStore::LidVector &lids, const DocumentTypeRepo &repo, IDocumentVisitor &visitor) const;
     void write(DocumentIdT, const Value &);
     void erase(DocumentIdT) {}
-    const CompressionConfig &getCompression() const { return _compression; }
-    void reconfigure(const CompressionConfig &compression);
+    CompressionConfig getCompression() const { return _compression.load(std::memory_order_relaxed); }
+    void reconfigure(CompressionConfig compression);
 private:
     IDataStore &_backingStore;
-    CompressionConfig _compression;
+    std::atomic<CompressionConfig> _compression;
 };
 
 void
@@ -80,7 +80,7 @@ BackingStore::read(DocumentIdT key, Value &value) const {
     vespalib::DataBuffer buf(4_Ki);
     ssize_t len = _backingStore.read(key, buf);
     if (len > 0) {
-        value.set(std::move(buf), len, _compression);
+        value.set(std::move(buf), len, getCompression());
         found = true;
     }
     return found;
@@ -95,8 +95,8 @@ BackingStore::write(DocumentIdT lid, const Value & value)
 }
 
 void
-BackingStore::reconfigure(const CompressionConfig &compression) {
-    _compression = compression;
+BackingStore::reconfigure(CompressionConfig compression) {
+    _compression.store(compression, std::memory_order_relaxed);
 }
 
 using CacheParams = vespalib::CacheParam<
@@ -117,7 +117,6 @@ using docstore::Value;
 bool
 DocumentStore::Config::operator == (const Config &rhs) const {
     return  (_maxCacheBytes == rhs._maxCacheBytes) &&
-            (_allowVisitCaching == rhs._allowVisitCaching) &&
             (_initialCacheEntries == rhs._initialCacheEntries) &&
             (_updateStrategy == rhs._updateStrategy) &&
             (_compression == rhs._compression);
@@ -126,11 +125,11 @@ DocumentStore::Config::operator == (const Config &rhs) const {
 
 DocumentStore::DocumentStore(const Config & config, IDataStore & store)
     : IDocumentStore(),
-      _config(config),
       _backingStore(store),
       _store(std::make_unique<docstore::BackingStore>(_backingStore, config.getCompression())),
       _cache(std::make_unique<docstore::Cache>(*_store, config.getMaxCacheBytes())),
       _visitCache(std::make_unique<docstore::VisitCache>(store, config.getMaxCacheBytes(), config.getCompression())),
+      _updateStrategy(config.updateStrategy()),
       _uncached_lookups(0)
 {
     _cache->reserveElements(config.getInitialCacheEntries());
@@ -142,9 +141,8 @@ void
 DocumentStore::reconfigure(const Config & config) {
     _cache->setCapacityBytes(config.getMaxCacheBytes());
     _store->reconfigure(config.getCompression());
-    _visitCache->reconfigure(_config.getMaxCacheBytes(), config.getCompression());
-
-    _config = config;
+    _visitCache->reconfigure(config.getMaxCacheBytes(), config.getCompression());
+    _updateStrategy.store(config.updateStrategy(), std::memory_order_relaxed);
 }
 
 bool
@@ -152,10 +150,14 @@ DocumentStore::useCache() const {
     return (_cache->capacityBytes() != 0) && (_cache->capacity() != 0);
 }
 
+DocumentStore::Config::UpdateStrategy DocumentStore::updateStrategy() const {
+    return _updateStrategy.load(std::memory_order_relaxed);
+}
+
 void
 DocumentStore::visit(const LidVector & lids, const DocumentTypeRepo &repo, IDocumentVisitor & visitor) const
 {
-    if (useCache() && _config.allowVisitCaching() && visitor.allowVisitCaching()) {
+    if (useCache() && visitor.allowVisitCaching()) {
         docstore::BlobSet blobSet = _visitCache->read(lids).getBlobSet();
         DocumentVisitorAdapter adapter(repo, visitor);
         for (DocumentIdT lid : lids) {
@@ -204,7 +206,7 @@ DocumentStore::write(uint64_t syncToken, DocumentIdT lid, const document::Docume
 void
 DocumentStore::write(uint64_t syncToken, DocumentIdT lid, const vespalib::nbostream & stream) {
     if (useCache()) {
-        switch (_config.updateStrategy()) {
+        switch (updateStrategy()) {
             case Config::UpdateStrategy::INVALIDATE:
                 _backingStore.write(syncToken, lid, stream.peek(), stream.size());
                 _cache->invalidate(lid);
@@ -286,14 +288,14 @@ class DocumentStore::WrapVisitor : public IDataStoreVisitor
 {
     Visitor                 &_visitor;
     const DocumentTypeRepo  &_repo;
-    const CompressionConfig &_compression;
+    const CompressionConfig  _compression;
     IDocumentStore          &_ds;
     uint64_t                 _syncToken;
     
 public:
     void visit(uint32_t lid, const void *buffer, size_t sz) override;
 
-    WrapVisitor(Visitor &visitor, const DocumentTypeRepo &repo, const CompressionConfig &compresion,
+    WrapVisitor(Visitor &visitor, const DocumentTypeRepo &repo, CompressionConfig compresion,
                 IDocumentStore &ds, uint64_t syncToken);
     
     void rewrite(uint32_t lid, const document::Document &doc);
@@ -381,7 +383,7 @@ DocumentStore::WrapVisitor<Visitor>::visit(uint32_t lid, const void *buffer, siz
 
 template <class Visitor>
 DocumentStore::WrapVisitor<Visitor>::
-WrapVisitor(Visitor &visitor, const DocumentTypeRepo &repo, const CompressionConfig &compression,
+WrapVisitor(Visitor &visitor, const DocumentTypeRepo &repo, CompressionConfig compression,
             IDocumentStore &ds, uint64_t syncToken)
     : _visitor(visitor),
       _repo(repo),

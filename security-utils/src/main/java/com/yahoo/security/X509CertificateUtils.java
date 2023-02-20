@@ -39,7 +39,6 @@ import java.util.Optional;
 import java.util.Random;
 
 import static com.yahoo.security.Extension.SUBJECT_ALTERNATIVE_NAMES;
-import static java.util.stream.Collectors.toList;
 
 /**
  * @author bjorncs
@@ -138,7 +137,7 @@ public class X509CertificateUtils {
             return new LdapName(distinguishedName.getName()).getRdns().stream()
                     .filter(rdn -> rdn.getType().equalsIgnoreCase(rdnName))
                     .map(rdn -> rdn.getValue().toString())
-                    .collect(toList());
+                    .toList();
         } catch (NamingException e) {
             throw new IllegalArgumentException("Invalid DN: " + distinguishedName.getName(), e);
         }

@@ -62,7 +62,8 @@ BioPtr new_memory_bio() {
 
 } // anonymous namespace
 
-vespalib::string PrivateKeyImpl::private_to_pem() const {
+vespalib::string
+PrivateKeyImpl::private_to_pem() const {
     BioPtr bio = new_memory_bio();
     // TODO this API is const-broken even on 1.1.1, revisit in the future...
     auto* mutable_pkey = const_cast<::EVP_PKEY*>(_pkey.get());
@@ -73,7 +74,8 @@ vespalib::string PrivateKeyImpl::private_to_pem() const {
     return bio_to_string(*bio);
 }
 
-std::shared_ptr<PrivateKeyImpl> PrivateKeyImpl::generate_openssl_p256_ec_key() {
+std::shared_ptr<PrivateKeyImpl>
+PrivateKeyImpl::generate_openssl_p256_ec_key() {
     // We first have to generate an EVP context for the keygen _parameters_...
     EvpPkeyCtxPtr params_ctx(::EVP_PKEY_CTX_new_id(EVP_PKEY_EC, nullptr));
     if (!params_ctx) {
@@ -174,7 +176,8 @@ void set_certificate_expires_from_now(::X509& cert, std::chrono::seconds valid_f
     }
 }
 
-void set_name_entry_if_non_empty(::X509_NAME& name, const char* field, vespalib::stringref entry) {
+void
+set_name_entry_if_non_empty(::X509_NAME& name, const char* field, vespalib::stringref entry) {
     if (entry.empty()) {
         return;
     }
@@ -186,7 +189,8 @@ void set_name_entry_if_non_empty(::X509_NAME& name, const char* field, vespalib:
     }
 }
 
-void assign_subject_distinguished_name(::X509_NAME& name, const X509Certificate::DistinguishedName& dn) {
+void
+assign_subject_distinguished_name(::X509_NAME& name, const X509Certificate::DistinguishedName& dn) {
     set_name_entry_if_non_empty(name, "C",  dn._country);
     set_name_entry_if_non_empty(name, "ST", dn._state);
     set_name_entry_if_non_empty(name, "L",  dn._locality);
@@ -200,7 +204,8 @@ void assign_subject_distinguished_name(::X509_NAME& name, const X509Certificate:
 // `value` string is taken by value since X509V3_EXT_conf_nid takes in a mutable char*
 // and who knows what terrible things it might do to it (we must also ensure null
 // termination of the string).
-void add_v3_ext(::X509& subject, ::X509& issuer, int nid, vespalib::string value) {
+void
+add_v3_ext(::X509& subject, ::X509& issuer, int nid, vespalib::string value) {
     // We are now reaching a point where the API we need to use is not properly documented.
     // This functionality is inferred from https://opensource.apple.com/source/OpenSSL/OpenSSL-22/openssl/demos/x509/mkcert.c
     ::X509V3_CTX ctx;
@@ -219,7 +224,8 @@ void add_v3_ext(::X509& subject, ::X509& issuer, int nid, vespalib::string value
     }
 }
 
-void add_any_subject_alternate_names(::X509& subject, ::X509& issuer,
+void
+add_any_subject_alternate_names(::X509& subject, ::X509& issuer,
                                      const std::vector<vespalib::string>& sans) {
     // There can only be 1 SAN entry in a valid cert, but it can have multiple
     // logical entries separated by commas in a single string.
@@ -237,10 +243,13 @@ void add_any_subject_alternate_names(::X509& subject, ::X509& issuer,
 
 } // anonymous namespace
 
+X509CertificateImpl::~X509CertificateImpl() = default;
+
 // Some references:
 // https://stackoverflow.com/questions/256405/programmatically-create-x509-certificate-using-openssl
 // https://opensource.apple.com/source/OpenSSL/OpenSSL-22/openssl/demos/x509/mkcert.c
-std::shared_ptr<X509CertificateImpl> X509CertificateImpl::generate_openssl_x509_from(Params params) {
+std::shared_ptr<X509CertificateImpl>
+X509CertificateImpl::generate_openssl_x509_from(Params params) {
     X509Ptr cert(::X509_new());
     if (!cert) {
         throw CryptoException("X509_new");
@@ -291,7 +300,8 @@ std::shared_ptr<X509CertificateImpl> X509CertificateImpl::generate_openssl_x509_
     return std::make_shared<X509CertificateImpl>(std::move(cert));
 }
 
-vespalib::string X509CertificateImpl::to_pem() const {
+vespalib::string
+X509CertificateImpl::to_pem() const {
     BioPtr bio = new_memory_bio();
     // TODO this API is const-broken, revisit in the future...
     auto* mutable_cert = const_cast<::X509*>(_cert.get());

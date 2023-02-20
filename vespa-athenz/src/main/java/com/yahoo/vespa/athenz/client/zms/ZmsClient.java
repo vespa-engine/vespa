@@ -2,6 +2,7 @@
 package com.yahoo.vespa.athenz.client.zms;
 
 import com.yahoo.vespa.athenz.api.AthenzDomain;
+import com.yahoo.vespa.athenz.api.AthenzDomainMeta;
 import com.yahoo.vespa.athenz.api.AthenzGroup;
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
 import com.yahoo.vespa.athenz.api.AthenzPolicy;
@@ -52,6 +53,10 @@ public interface ZmsClient extends Closeable {
 
     List<AthenzDomain> getDomainListByAccount(String id);
 
+    AthenzDomainMeta getDomainMeta(AthenzDomain domain);
+
+    void updateDomain(AthenzDomain domain, Map<String, Object> attributes);
+
     boolean hasAccess(AthenzResourceName resource, String action, AthenzIdentity identity);
 
     void createPolicy(AthenzDomain athenzDomain, String athenzPolicy);
@@ -85,7 +90,11 @@ public interface ZmsClient extends Closeable {
 
     void deleteRole(AthenzRole athenzRole);
 
-    void createSubdomain(AthenzDomain parent, String name);
+    void createSubdomain(AthenzDomain parent, String name, Map<String, Object> attributes);
+
+    default void createSubdomain(AthenzDomain parent, String name) {
+        createSubdomain(parent, name, Map.of());
+    };
 
     AthenzRoleInformation getFullRoleInformation(AthenzRole role);
 

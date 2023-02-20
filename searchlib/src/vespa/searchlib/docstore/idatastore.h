@@ -39,7 +39,7 @@ public:
 class IDataStore : public common::ICompactableLidSpace
 {
 public:
-    typedef std::vector<uint32_t> LidVector;
+    using LidVector = std::vector<uint32_t>;
     /**
      * Construct an idata store.
      * A data store has a base directory. The rest is up to the implementation.

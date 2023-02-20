@@ -9,7 +9,7 @@ namespace storage::mbusprot {
 class StorageProtocol final : public mbus::IProtocol
 {
 public:
-    typedef std::shared_ptr<StorageProtocol> SP;
+    using SP = std::shared_ptr<StorageProtocol>;
 
     static mbus::string NAME;
 

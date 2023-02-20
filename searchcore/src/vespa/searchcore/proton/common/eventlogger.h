@@ -13,8 +13,8 @@ namespace proton {
  **/
 class EventLogger {
 private:
-    typedef search::SerialNum SerialNum;
-    typedef vespalib::string string;
+    using SerialNum = search::SerialNum;
+    using string = vespalib::string;
 public:
     static void transactionLogReplayComplete(const string &domainName, vespalib::duration elapsedTime);
     static void populateAttributeStart(const std::vector<string> &names);

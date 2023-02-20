@@ -19,7 +19,7 @@ class FieldInfo
 public:
     using CollectionType = search::index::schema::CollectionType;
     using DataType = search::index::schema::DataType;
-    typedef vespalib::string string;
+    using string = vespalib::string;
 private:
     FieldType      _type;
     DataType       _data_type;

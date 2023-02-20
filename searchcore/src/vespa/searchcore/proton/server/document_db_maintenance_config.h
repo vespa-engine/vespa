@@ -99,12 +99,11 @@ private:
 class DocumentDBMaintenanceConfig
 {
 public:
-    typedef std::shared_ptr<DocumentDBMaintenanceConfig> SP;
+    using SP = std::shared_ptr<DocumentDBMaintenanceConfig>;
 
 private:
     DocumentDBPruneConfig                 _pruneRemovedDocuments;
     DocumentDBHeartBeatConfig             _heartBeat;
-    vespalib::duration                    _sessionCachePruneInterval;
     vespalib::duration                    _visibilityDelay;
     DocumentDBLidSpaceCompactionConfig    _lidSpaceCompaction;
     AttributeUsageFilterConfig            _attributeUsageFilterConfig;
@@ -117,7 +116,6 @@ public:
     DocumentDBMaintenanceConfig() noexcept;
     DocumentDBMaintenanceConfig(const DocumentDBPruneConfig &pruneRemovedDocuments,
                                 const DocumentDBHeartBeatConfig &heartBeat,
-                                vespalib::duration sessionCachePruneInterval,
                                 vespalib::duration visibilityDelay,
                                 const DocumentDBLidSpaceCompactionConfig &lidSpaceCompaction,
                                 const AttributeUsageFilterConfig &attributeUsageFilterConfig,
@@ -139,9 +137,6 @@ public:
     }
     const DocumentDBHeartBeatConfig &getHeartBeatConfig() const noexcept {
         return _heartBeat;
-    }
-    vespalib::duration getSessionCachePruneInterval() const noexcept {
-        return _sessionCachePruneInterval;
     }
     vespalib::duration getVisibilityDelay() const noexcept { return _visibilityDelay; }
     const DocumentDBLidSpaceCompactionConfig &getLidSpaceCompactionConfig() const noexcept {

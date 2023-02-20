@@ -35,12 +35,7 @@ public class Xml {
     private static final Logger log = Logger.getLogger(Xml.class.getPackage().toString());
 
     // Access to this needs to be synchronized (as it is in getDocumentBuilder() below)
-    private static final DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-
-    static {
-        factory.setNamespaceAware(true);
-        factory.setXIncludeAware(false);
-    }
+    private static final DocumentBuilderFactory factory = createDocumentBuilderFactory();
 
     public static Document getDocument(Reader reader) {
         Document doc;
@@ -50,6 +45,23 @@ public class Xml {
             throw new IllegalArgumentException(e);
         }
         return doc;
+    }
+
+    private static DocumentBuilderFactory createDocumentBuilderFactory() {
+        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+        factory.setNamespaceAware(true);
+        factory.setXIncludeAware(false);
+
+        try {
+            // XXE prevention
+            factory.setFeature("http://xml.org/sax/features/external-general-entities", false);
+            factory.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
+            factory.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
+            return factory;
+        } catch (ParserConfigurationException e) {
+            log.log(Level.SEVERE, "Could not initialize XML parser", e);
+            throw new RuntimeException(e);
+        }
     }
 
     /**
@@ -67,10 +79,7 @@ public class Xml {
     }
 
     static DocumentBuilder getPreprocessDocumentBuilder() throws ParserConfigurationException {
-        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-        factory.setFeature("http://xml.org/sax/features/external-general-entities", false); // XXE prevention
-        factory.setNamespaceAware(true);
-        factory.setXIncludeAware(false);
+        DocumentBuilderFactory factory = createDocumentBuilderFactory();
         factory.setValidating(false);
         return factory.newDocumentBuilder();
     }
@@ -92,7 +101,12 @@ public class Xml {
         }
         StringWriter writer = new StringWriter();
         transformer.transform(new DOMSource(document), new StreamResult(writer));
-        return writer.toString();
+        String[] lines = writer.toString().split("\n");
+        var b = new StringBuilder();
+        for (String line : lines)
+            if ( ! line.isBlank())
+                b.append(line).append("\n");
+        return b.toString();
     }
 
     static String documentAsString(Document document) throws TransformerException {

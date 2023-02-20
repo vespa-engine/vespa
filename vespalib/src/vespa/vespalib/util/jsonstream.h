@@ -20,9 +20,9 @@ struct JsonStreamTypes {
 };
 // Use namespace in function to avoid prefixing namespace everywhere.
 namespace jsonstream {
-    typedef JsonStreamTypes::Object Object;
-    typedef JsonStreamTypes::Array Array;
-    typedef JsonStreamTypes::End End;
+    using Object = JsonStreamTypes::Object;
+    using Array = JsonStreamTypes::Array;
+    using End = JsonStreamTypes::End;
 }
 
 // We can disable this if it ends up being a performance issue.
@@ -44,12 +44,12 @@ class JsonStream : public JsonStreamTypes {
         string object_key;
         size_t array_index;
 
-        StateEntry() noexcept
-            : state(State::ROOT), object_key(""), array_index(size_t(0)) {}
-        StateEntry(State s)
-            : state(s), object_key(""), array_index(size_t(0)) {}
-        StateEntry(State s, stringref key)
-            : state(s), object_key(key), array_index(size_t(0)) {}
+        StateEntry() noexcept;
+        StateEntry(State s) noexcept;
+        StateEntry(State s, stringref key) noexcept;
+        StateEntry(const StateEntry &) noexcept;
+        StateEntry & operator =(const StateEntry &) noexcept;
+        ~StateEntry();
     };
     std::vector<StateEntry> _state;
 

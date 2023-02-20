@@ -33,7 +33,7 @@ public:
      * multi-level sorting.
      **/
     struct Sort {
-        typedef std::unique_ptr<Sort> UP;
+        using UP = std::unique_ptr<Sort>;
         FastS_IResultSorter *sorter;
         std::unique_ptr<search::common::ConverterFactory> _ucaFactory;
         FastS_SortSpec       sortSpec;

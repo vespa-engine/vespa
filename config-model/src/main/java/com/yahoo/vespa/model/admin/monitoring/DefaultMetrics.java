@@ -2,14 +2,14 @@
 
 package com.yahoo.vespa.model.admin.monitoring;
 
+import com.yahoo.metrics.ContainerMetrics;
+import com.yahoo.metrics.SearchNodeMetrics;
 
-import com.google.common.collect.ImmutableSet;
-
+import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
 import static com.yahoo.vespa.model.admin.monitoring.DefaultVespaMetrics.defaultVespaMetricSet;
-import static java.util.Collections.singleton;
 
 /**
  * Metrics for the 'default' consumer, which is used by default for the generic metrics api and
@@ -26,96 +26,85 @@ public class DefaultMetrics {
     private static MetricSet createMetricSet() {
         return new MetricSet(defaultMetricSetId,
                              getAllMetrics(),
-                             singleton(defaultVespaMetricSet));
+                             Set.of(defaultVespaMetricSet));
     }
 
     private static Set<Metric> getAllMetrics() {
-        return ImmutableSet.<Metric>builder()
-                .addAll(getContentMetrics())
-                .addAll(getContainerMetrics())
-                .addAll(getSearchChainMetrics())
-                .build();
-    }
-
-    private static Set<Metric> getContainerMetrics() {
         Set<Metric> metrics = new LinkedHashSet<>();
 
-        metrics.add(new Metric("http.status.1xx.rate"));
-        metrics.add(new Metric("http.status.2xx.rate"));
-        metrics.add(new Metric("http.status.3xx.rate"));
-        metrics.add(new Metric("http.status.4xx.rate"));
-        metrics.add(new Metric("http.status.5xx.rate"));
-        metrics.add(new Metric("jdisc.gc.ms.average"));
-        metrics.add(new Metric("mem.heap.free.average"));
-
-        return metrics;
+        addContentMetrics(metrics);
+        addContainerMetrics(metrics);
+        addSearchChainMetrics(metrics);
+        return Collections.unmodifiableSet(metrics);
     }
 
-    private static Set<Metric> getSearchChainMetrics() {
-        Set<Metric> metrics = new LinkedHashSet<>();
-
-        metrics.add(new Metric("queries.rate"));
-        metrics.add(new Metric("query_latency.sum"));
-        metrics.add(new Metric("query_latency.count"));
-        metrics.add(new Metric("query_latency.max"));
-        metrics.add(new Metric("query_latency.average")); // TODO: Remove with Vespa 9
-        metrics.add(new Metric("query_latency.95percentile"));
-        metrics.add(new Metric("query_latency.99percentile"));
-        metrics.add(new Metric("hits_per_query.sum"));
-        metrics.add(new Metric("hits_per_query.count"));
-        metrics.add(new Metric("hits_per_query.max"));
-        metrics.add(new Metric("hits_per_query.average")); // TODO: Remove with Vespa 9
-        metrics.add(new Metric("totalhits_per_query.sum"));
-        metrics.add(new Metric("totalhits_per_query.count"));
-        metrics.add(new Metric("totalhits_per_query.max"));
-        metrics.add(new Metric("totalhits_per_query.average")); // TODO: Remove with Vespa 9
-        metrics.add(new Metric("degraded_queries.rate"));
-        metrics.add(new Metric("failed_queries.rate"));
-        metrics.add(new Metric("serverActiveThreads.average"));
-
-        return metrics;
+    private static void addContainerMetrics(Set<Metric> metrics) {
+        metrics.add(new Metric(ContainerMetrics.HTTP_STATUS_1XX.rate()));
+        metrics.add(new Metric(ContainerMetrics.HTTP_STATUS_2XX.rate()));
+        metrics.add(new Metric(ContainerMetrics.HTTP_STATUS_3XX.rate()));
+        metrics.add(new Metric(ContainerMetrics.HTTP_STATUS_4XX.rate()));
+        metrics.add(new Metric(ContainerMetrics.HTTP_STATUS_5XX.rate()));
+        metrics.add(new Metric(ContainerMetrics.JDISC_GC_MS.average()));
+        metrics.add(new Metric(ContainerMetrics.MEM_HEAP_FREE.average()));
     }
 
-    private static Set<Metric> getContentMetrics() {
-        Set<Metric> metrics = new LinkedHashSet<>();
+    private static void addSearchChainMetrics(Set<Metric> metrics) {
+        metrics.add(new Metric(ContainerMetrics.QUERIES.rate()));
+        metrics.add(new Metric(ContainerMetrics.QUERY_LATENCY.sum()));
+        metrics.add(new Metric(ContainerMetrics.QUERY_LATENCY.count()));
+        metrics.add(new Metric(ContainerMetrics.QUERY_LATENCY.max()));
+        metrics.add(new Metric(ContainerMetrics.QUERY_LATENCY.ninety_five_percentile()));
+        metrics.add(new Metric(ContainerMetrics.QUERY_LATENCY.ninety_nine_percentile()));
+        metrics.add(new Metric(ContainerMetrics.HITS_PER_QUERY.sum()));
+        metrics.add(new Metric(ContainerMetrics.HITS_PER_QUERY.count()));
+        metrics.add(new Metric(ContainerMetrics.HITS_PER_QUERY.max()));
+        metrics.add(new Metric(ContainerMetrics.TOTAL_HITS_PER_QUERY.sum()));
+        metrics.add(new Metric(ContainerMetrics.TOTAL_HITS_PER_QUERY.count()));
+        metrics.add(new Metric(ContainerMetrics.TOTAL_HITS_PER_QUERY.max()));
+        metrics.add(new Metric(ContainerMetrics.DEGRADED_QUERIES.rate()));
+        metrics.add(new Metric(ContainerMetrics.FAILED_QUERIES.rate()));
+        metrics.add(new Metric(ContainerMetrics.QUERY_LATENCY.average())); // TODO: Remove with Vespa 9
+        metrics.add(new Metric(ContainerMetrics.HITS_PER_QUERY.average())); // TODO: Remove with Vespa 9
+        metrics.add(new Metric(ContainerMetrics.TOTAL_HITS_PER_QUERY.average())); // TODO: Remove with Vespa 9
+        metrics.add(new Metric(ContainerMetrics.SERVER_ACTIVE_THREADS.average())); // TODO: Remove on Vespa 9. Use jdisc.thread_pool.active_threads.
+    }
 
-        metrics.add(new Metric("content.proton.search_protocol.docsum.requested_documents.rate"));
-        metrics.add(new Metric("content.proton.search_protocol.docsum.latency.sum"));
-        metrics.add(new Metric("content.proton.search_protocol.docsum.latency.count"));
-        metrics.add(new Metric("content.proton.search_protocol.docsum.latency.max"));
-        metrics.add(new Metric("content.proton.search_protocol.docsum.latency.average")); // TODO: Remove with Vespa 9
-        metrics.add(new Metric("content.proton.search_protocol.query.latency.sum"));
-        metrics.add(new Metric("content.proton.search_protocol.query.latency.count"));
-        metrics.add(new Metric("content.proton.search_protocol.query.latency.max"));
-        metrics.add(new Metric("content.proton.search_protocol.query.latency.average")); // TODO: Remove with Vespa 9
+    private static void addContentMetrics(Set<Metric> metrics) {
+        metrics.add(new Metric(SearchNodeMetrics.CONTENT_PROTON_SEARCH_PROTOCOL_DOCSUM_REQUESTED_DOCUMENTS.rate()));
+        metrics.add(new Metric(SearchNodeMetrics.CONTENT_PROTON_SEARCH_PROTOCOL_DOCSUM_LATENCY.sum()));
+        metrics.add(new Metric(SearchNodeMetrics.CONTENT_PROTON_SEARCH_PROTOCOL_DOCSUM_LATENCY.count()));
+        metrics.add(new Metric(SearchNodeMetrics.CONTENT_PROTON_SEARCH_PROTOCOL_DOCSUM_LATENCY.max()));
+        metrics.add(new Metric(SearchNodeMetrics.CONTENT_PROTON_SEARCH_PROTOCOL_DOCSUM_LATENCY.average())); // TODO: Remove with Vespa 9
+        metrics.add(new Metric(SearchNodeMetrics.CONTENT_PROTON_SEARCH_PROTOCOL_QUERY_LATENCY.sum()));
+        metrics.add(new Metric(SearchNodeMetrics.CONTENT_PROTON_SEARCH_PROTOCOL_QUERY_LATENCY.count()));
+        metrics.add(new Metric(SearchNodeMetrics.CONTENT_PROTON_SEARCH_PROTOCOL_QUERY_LATENCY.max()));
+        metrics.add(new Metric(SearchNodeMetrics.CONTENT_PROTON_SEARCH_PROTOCOL_QUERY_LATENCY.average())); // TODO: Remove with Vespa 9
 
-        metrics.add(new Metric("content.proton.documentdb.documents.total.last"));
-        metrics.add(new Metric("content.proton.documentdb.documents.ready.last"));
-        metrics.add(new Metric("content.proton.documentdb.documents.active.last"));
-        metrics.add(new Metric("content.proton.documentdb.disk_usage.last"));
-        metrics.add(new Metric("content.proton.documentdb.memory_usage.allocated_bytes.last"));
+        metrics.add(new Metric(SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_DOCUMENTS_TOTAL.last()));
+        metrics.add(new Metric(SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_DOCUMENTS_READY.last()));
+        metrics.add(new Metric(SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_DOCUMENTS_ACTIVE.last()));
+        metrics.add(new Metric(SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_DISK_USAGE.last()));
+        metrics.add(new Metric(SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_MEMORY_USAGE_ALLOCATED_BYTES.last()));
 
-        metrics.add(new Metric("content.proton.resource_usage.disk.average"));
-        metrics.add(new Metric("content.proton.resource_usage.memory.average"));
+        metrics.add(new Metric(SearchNodeMetrics.CONTENT_PROTON_RESOURCE_USAGE_DISK.average()));
+        metrics.add(new Metric(SearchNodeMetrics.CONTENT_PROTON_RESOURCE_USAGE_MEMORY.average()));
 
-        metrics.add(new Metric("content.proton.documentdb.matching.docs_matched.rate"));
-        metrics.add(new Metric("content.proton.documentdb.matching.docs_reranked.rate"));
-        metrics.add(new Metric("content.proton.documentdb.matching.rank_profile.query_setup_time.sum"));
-        metrics.add(new Metric("content.proton.documentdb.matching.rank_profile.query_setup_time.count"));
-        metrics.add(new Metric("content.proton.documentdb.matching.rank_profile.query_setup_time.max"));
-        metrics.add(new Metric("content.proton.documentdb.matching.rank_profile.query_setup_time.average")); // TODO: Remove with Vespa 9
-        metrics.add(new Metric("content.proton.documentdb.matching.rank_profile.query_latency.sum"));
-        metrics.add(new Metric("content.proton.documentdb.matching.rank_profile.query_latency.count"));
-        metrics.add(new Metric("content.proton.documentdb.matching.rank_profile.query_latency.max"));
-        metrics.add(new Metric("content.proton.documentdb.matching.rank_profile.query_latency.average")); // TODO: Remove with Vespa 9
-        metrics.add(new Metric("content.proton.documentdb.matching.rank_profile.rerank_time.sum"));
-        metrics.add(new Metric("content.proton.documentdb.matching.rank_profile.rerank_time.count"));
-        metrics.add(new Metric("content.proton.documentdb.matching.rank_profile.rerank_time.max"));
-        metrics.add(new Metric("content.proton.documentdb.matching.rank_profile.rerank_time.average")); // TODO: Remove with Vespa 9
+        metrics.add(new Metric(SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_MATCHING_DOCS_MATCHED.rate()));
+        metrics.add(new Metric(SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_MATCHING_DOCS_RERANKED.rate()));
+        metrics.add(new Metric(SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_MATCHING_RANK_PROFILE_QUERY_SETUP_TIME.sum()));
+        metrics.add(new Metric(SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_MATCHING_RANK_PROFILE_QUERY_SETUP_TIME.count()));
+        metrics.add(new Metric(SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_MATCHING_RANK_PROFILE_QUERY_SETUP_TIME.max()));
+        metrics.add(new Metric(SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_MATCHING_RANK_PROFILE_QUERY_SETUP_TIME.average())); // TODO: Remove with Vespa 9
+        metrics.add(new Metric(SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_MATCHING_RANK_PROFILE_QUERY_LATENCY.sum()));
+        metrics.add(new Metric(SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_MATCHING_RANK_PROFILE_QUERY_LATENCY.count()));
+        metrics.add(new Metric(SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_MATCHING_RANK_PROFILE_QUERY_LATENCY.max()));
+        metrics.add(new Metric(SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_MATCHING_RANK_PROFILE_QUERY_LATENCY.average())); // TODO: Remove with Vespa 9
+        metrics.add(new Metric(SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_MATCHING_RANK_PROFILE_RERANK_TIME.sum()));
+        metrics.add(new Metric(SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_MATCHING_RANK_PROFILE_RERANK_TIME.count()));
+        metrics.add(new Metric(SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_MATCHING_RANK_PROFILE_RERANK_TIME.max()));
+        metrics.add(new Metric(SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_MATCHING_RANK_PROFILE_RERANK_TIME.average())); // TODO: Remove with Vespa 9
 
-        metrics.add(new Metric("content.proton.transactionlog.disk_usage.last"));
-
-        return metrics;
+        metrics.add(new Metric(SearchNodeMetrics.CONTENT_PROTON_TRANSACTIONLOG_DISK_USAGE.last()));
     }
 
     private DefaultMetrics() { }

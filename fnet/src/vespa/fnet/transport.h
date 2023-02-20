@@ -89,7 +89,7 @@ private:
     FNET_Config                 _config;
     vespalib::AsyncResolver::SP _resolver;
     vespalib::CryptoEngine::SP  _crypto;
-    fnet::TimeTools::SP          _time_tools;
+    fnet::TimeTools::SP         _time_tools;
     uint32_t                    _num_threads;
 };
 
@@ -108,10 +108,10 @@ private:
 
     vespalib::AsyncResolver::SP _async_resolver;
     vespalib::CryptoEngine::SP  _crypto_engine;
-    fnet::TimeTools::SP _time_tools;
+    fnet::TimeTools::SP         _time_tools;
     std::unique_ptr<vespalib::SyncableThreadExecutor> _work_pool;
-    Threads            _threads;
-    const FNET_Config  _config;
+    Threads                     _threads;
+    const FNET_Config           _config;
 
     /**
      * Wait for all pending resolve requests.

@@ -16,13 +16,23 @@ ContentProtonMetrics::ProtonExecutorMetrics::ProtonExecutorMetrics(metrics::Metr
 {
 }
 
+ContentProtonMetrics::SessionCacheMetrics::SessionCacheMetrics(metrics::MetricSet *parent)
+    : metrics::MetricSet("session_cache", {}, "Metrics for session caches (search / grouping requests)", parent),
+      search("search", this),
+      grouping("grouping", this)
+{
+}
+
+ContentProtonMetrics::SessionCacheMetrics::~SessionCacheMetrics() = default;
+
 ContentProtonMetrics::ProtonExecutorMetrics::~ProtonExecutorMetrics() = default;
 
 ContentProtonMetrics::ContentProtonMetrics()
     : metrics::MetricSet("content.proton", {}, "Search engine metrics", nullptr),
       transactionLog(this),
       resourceUsage(this),
-      executor(this)
+      executor(this),
+      sessionCache(this)
 {
 }
 

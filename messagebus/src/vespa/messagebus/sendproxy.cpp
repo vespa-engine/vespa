@@ -22,10 +22,10 @@ SendProxy::handleMessage(Message::UP msg)
 {
     Trace &trace = msg->getTrace();
     if (trace.getLevel() == 0) {
-        if (logger.wants(ns_log::Logger::spam)) {
+        if (LOG_WOULD_LOG(spam)) {
             trace.setLevel(9);
             _logTrace = true;
-        } else if (logger.wants(ns_log::Logger::debug)) {
+        } else if (LOG_WOULD_LOG(debug)) {
             trace.setLevel(6);
             _logTrace = true;
         }
@@ -50,7 +50,7 @@ SendProxy::handleReply(Reply::UP reply)
     if (_logTrace) {
         if (reply->hasErrors()) {
             LOG(debug, "Trace for reply with error(s):\n%s", reply->getTrace().toString().c_str());
-        } else if (logger.wants(ns_log::Logger::spam)) {
+        } else if (LOG_WOULD_LOG(spam)) {
             LOG(spam, "Trace for reply:\n%s", reply->getTrace().toString().c_str());
         }
         trace.clear();

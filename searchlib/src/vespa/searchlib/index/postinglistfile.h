@@ -134,7 +134,7 @@ protected:
     // Can be examined after open
     bool _memoryMapped;
 public:
-    typedef std::shared_ptr<PostingListFileRandRead> SP;
+    using SP = std::shared_ptr<PostingListFileRandRead>;
 
     PostingListFileRandRead();
     virtual ~PostingListFileRandRead();

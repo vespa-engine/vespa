@@ -22,7 +22,7 @@ namespace storage {
 class DiskThread : public framework::Runnable
 {
 public:
-    typedef std::shared_ptr<DiskThread> SP;
+    using SP = std::shared_ptr<DiskThread>;
 
     DiskThread(const DiskThread &) = delete;
     DiskThread & operator = (const DiskThread &) = delete;

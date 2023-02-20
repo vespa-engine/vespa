@@ -2,8 +2,10 @@
 package com.yahoo.vespa.hosted.controller.application.pkg;
 
 import com.google.common.hash.Funnel;
+import com.google.common.hash.HashFunction;
 import com.google.common.hash.Hasher;
 import com.google.common.hash.Hashing;
+import com.google.common.hash.HashingOutputStream;
 import com.yahoo.component.Version;
 import com.yahoo.vespa.archive.ArchiveStreamReader;
 import com.yahoo.vespa.archive.ArchiveStreamReader.ArchiveFile;
@@ -18,7 +20,6 @@ import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.Tags;
-import com.yahoo.security.X509CertificateUtils;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.Slime;
 import com.yahoo.slime.SlimeUtils;
@@ -27,12 +28,13 @@ import com.yahoo.vespa.hosted.controller.deployment.ZipBuilder;
 import com.yahoo.yolean.Exceptions;
 
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.io.UncheckedIOException;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.security.cert.X509Certificate;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneOffset;
@@ -42,6 +44,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Random;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
@@ -80,7 +83,6 @@ public class ApplicationPackage {
     private final Optional<Version> compileVersion;
     private final Optional<Instant> buildTime;
     private final Optional<Version> parentVersion;
-    private final List<X509Certificate> trustedCertificates;
 
     /**
      * Creates an application package from its zipped content.
@@ -112,8 +114,6 @@ public class ApplicationPackage {
         this.compileVersion = buildMetaObject.flatMap(object -> parse(object, "compileVersion", field -> Version.fromString(field.asString())));
         this.buildTime = buildMetaObject.flatMap(object -> parse(object, "buildTime", field -> Instant.ofEpochMilli(field.asLong())));
         this.parentVersion = buildMetaObject.flatMap(object -> parse(object, "parentVersion", field -> Version.fromString(field.asString())));
-
-        this.trustedCertificates = files.get(trustedCertificatesFile).map(bytes -> X509CertificateUtils.certificateListFromPem(new String(bytes, UTF_8))).orElse(List.of());
 
         this.bundleHash = calculateBundleHash(zippedContent);
 
@@ -149,11 +149,6 @@ public class ApplicationPackage {
 
     /** Returns the parent version used to compile the package, if known. */
     public Optional<Version> parentVersion() { return parentVersion; }
-
-    /** Returns the list of certificates trusted by this application, or an empty list if no trust configured. */
-    public List<X509Certificate> trustedCertificates() {
-        return trustedCertificates;
-    }
 
     private static <Type> Optional<Type> parse(Inspector buildMetaObject, String fieldName, Function<Inspector, Type> mapper) {
         Inspector field = buildMetaObject.field(fieldName);
@@ -227,20 +222,18 @@ public class ApplicationPackage {
     // Hashes all files and settings that require a deployment to be forwarded to configservers
     private String calculateBundleHash(byte[] zippedContent) {
         Predicate<String> entryMatcher = name -> ! name.endsWith(deploymentFile) && ! name.endsWith(buildMetaFile);
-        SortedMap<String, Long> crcByEntry = new TreeMap<>();
         Options options = Options.standard().pathPredicate(entryMatcher);
+        HashingOutputStream hashOut = new HashingOutputStream(Hashing.murmur3_128(-1), OutputStream.nullOutputStream());
         ArchiveFile file;
         try (ArchiveStreamReader reader = ArchiveStreamReader.ofZip(new ByteArrayInputStream(zippedContent), options)) {
-            OutputStream discard = OutputStream.nullOutputStream();
-            while ((file = reader.readNextTo(discard)) != null) {
-                crcByEntry.put(file.path().toString(), file.crc32().orElse(-1));
+            while ((file = reader.readNextTo(hashOut)) != null) {
+                hashOut.write(file.path().toString().getBytes(UTF_8));
             }
         }
-        Funnel<SortedMap<String, Long>> funnel = (from, into) -> from.forEach((key, value) -> {
-            into.putBytes(key.getBytes());
-            into.putLong(value);
-        });
-        return hasher().putObject(crcByEntry, funnel)
+        catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+        return hasher().putLong(hashOut.hash().asLong())
                        .putInt(deploymentSpec.deployableHashCode())
                        .hash().toString();
     }

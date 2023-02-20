@@ -10,7 +10,8 @@ import java.nio.ReadOnlyBufferException;
 import java.nio.charset.Charset;
 import java.nio.charset.CharsetEncoder;
 import java.nio.charset.CodingErrorAction;
-import java.nio.charset.StandardCharsets;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * Utility class with functions for handling UTF-8
@@ -23,16 +24,16 @@ public final class Utf8 {
 
     private static final byte [] TRUE = {(byte) 't', (byte) 'r', (byte) 'u', (byte) 'e'};
     private static final byte [] FALSE = {(byte) 'f', (byte) 'a', (byte) 'l', (byte) 's', (byte) 'e'};
-    private static final byte[] LONG_MIN_VALUE_BYTES = String.valueOf(Long.MIN_VALUE).getBytes(StandardCharsets.UTF_8);
+    private static final byte[] LONG_MIN_VALUE_BYTES = String.valueOf(Long.MIN_VALUE).getBytes(UTF_8);
 
     /** Returns the Charset instance for UTF-8 */
     public static Charset getCharset() {
-        return StandardCharsets.UTF_8;
+        return UTF_8;
     }
 
     /** To be used instead of String.String(byte[] bytes) */
     public static String toStringStd(byte[] data) {
-        return new String(data, StandardCharsets.UTF_8);
+        return new String(data, UTF_8);
     }
 
     /**
@@ -60,7 +61,7 @@ public final class Utf8 {
      * @return a decoded String
      */
     public static String toString(ByteBuffer data) {
-        CharBuffer c = StandardCharsets.UTF_8.decode(data);
+        CharBuffer c = UTF_8.decode(data);
         return c.toString();
     }
 
@@ -68,7 +69,7 @@ public final class Utf8 {
      * Uses String.getBytes directly.
      */
     public static byte[] toBytesStd(String str) {
-        return str.getBytes(StandardCharsets.UTF_8);
+        return str.getBytes(UTF_8);
     }
 
     /**
@@ -112,7 +113,7 @@ public final class Utf8 {
      */
     public static byte[] toBytes(String string) {
         // This is just wrapper for String::getBytes. Pre-Java 9 this had a more efficient approach for ASCII-only strings.
-        return string.getBytes(StandardCharsets.UTF_8);
+        return string.getBytes(UTF_8);
     }
     /**
      * Decode a UTF-8 string.
@@ -122,7 +123,7 @@ public final class Utf8 {
      */
     public static String toString(byte[] utf8) {
         // This is just wrapper for String::new. Pre-Java 9 this had a more efficient approach for ASCII-onlu strings.
-        return new String(utf8, StandardCharsets.UTF_8);
+        return new String(utf8, UTF_8);
     }
 
     /**
@@ -138,7 +139,7 @@ public final class Utf8 {
      */
     public static byte[] toBytes(String str, int offset, int length) {
         CharBuffer c = CharBuffer.wrap(str, offset, offset + length);
-        ByteBuffer b = StandardCharsets.UTF_8.encode(c);
+        ByteBuffer b = UTF_8.encode(c);
         byte[] result = new byte[b.remaining()];
         b.get(result);
         return result;
@@ -161,7 +162,7 @@ public final class Utf8 {
      */
     public static int toBytes(String str, int srcOffset, int srcLen, byte[] dst, int dstOffset) {
         CharBuffer c = CharBuffer.wrap(str, srcOffset, srcOffset + srcLen);
-        ByteBuffer b = StandardCharsets.UTF_8.encode(c);
+        ByteBuffer b = UTF_8.encode(c);
         int encoded = b.remaining();
         b.get(dst, dstOffset, encoded);
         return encoded;
@@ -206,7 +207,7 @@ public final class Utf8 {
      * @see Utf8#toBytes(String, int, int, ByteBuffer, CharsetEncoder)
      */
     public static CharsetEncoder getNewEncoder() {
-        return StandardCharsets.UTF_8.newEncoder().onMalformedInput(CodingErrorAction.REPLACE)
+        return UTF_8.newEncoder().onMalformedInput(CodingErrorAction.REPLACE)
                 .onUnmappableCharacter(CodingErrorAction.REPLACE);
     }
 

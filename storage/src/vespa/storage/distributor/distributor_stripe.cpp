@@ -2,7 +2,6 @@
 
 #include "blockingoperationstarter.h"
 #include "distributor_bucket_space.h"
-#include "distributor_status.h"
 #include "distributor_stripe.h"
 #include "distributormetricsset.h"
 #include "idealstatemetricsset.h"
@@ -769,11 +768,26 @@ void DistributorStripe::mark_maintenance_tick_as_no_longer_inhibited() noexcept 
     _inhibited_maintenance_tick_count = 0;
 }
 
+namespace {
+
+bool config_change_has_gc_enable_edge(const DistributorConfiguration& old_config,
+                                      const DistributorConfiguration& new_config) noexcept {
+    return ((old_config.getGarbageCollectionInterval().count() == 0) &&
+            (new_config.getGarbageCollectionInterval().count() != 0));
+}
+
+}
+
 void
 DistributorStripe::update_total_distributor_config(std::shared_ptr<const DistributorConfiguration> config)
 {
+    auto old_config = std::move(_total_config);
     _total_config = std::move(config);
     propagate_config_snapshot_to_internal_components();
+    if (config_change_has_gc_enable_edge(*old_config, *_total_config)) {
+        LOG(debug, "GC has been enabled at reconfig edge; resetting last GC for all buckets to current time");
+        _bucketDBUpdater.reset_all_last_gc_timestamps_to_current_time();
+    }
 }
 
 void
@@ -834,11 +848,7 @@ DistributorStripe::enable_cluster_state_bundle(const lib::ClusterStateBundle& ne
     // TODO STRIPE replace legacy func
     enableClusterStateBundle(new_state);
     if (has_bucket_ownership_change) {
-        using TimePoint = OwnershipTransferSafeTimePointCalculator::TimePoint;
-        // Note: this assumes that std::chrono::system_clock and the framework
-        // system clock have the same epoch, which should be a reasonable
-        // assumption.
-        const auto now = TimePoint(std::chrono::milliseconds(_component.getClock().getTimeInMillis().getTime()));
+        vespalib::system_time now = _component.getClock().getSystemTime();
         _externalOperationHandler.rejectFeedBeforeTimeReached(_ownershipSafeTimeCalc->safeTimePoint(now));
     }
     _bucketDBUpdater.handle_activated_cluster_state_bundle(); // Triggers resending of queued requests

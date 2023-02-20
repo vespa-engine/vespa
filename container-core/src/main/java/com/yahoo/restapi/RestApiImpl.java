@@ -10,10 +10,16 @@ import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.RequestHandlerSpec;
 import com.yahoo.container.jdisc.RequestView;
 import com.yahoo.jdisc.http.HttpRequest.Method;
+import com.yahoo.jdisc.http.server.jetty.RequestUtils;
 import com.yahoo.restapi.RestApiMappers.ExceptionMapperHolder;
 import com.yahoo.restapi.RestApiMappers.RequestMapperHolder;
 import com.yahoo.restapi.RestApiMappers.ResponseMapperHolder;
+import com.yahoo.security.tls.Capability;
+import com.yahoo.security.tls.CapabilitySet;
+import com.yahoo.security.tls.ConnectionAuthContext;
+import com.yahoo.security.tls.TransportSecurityUtils;
 
+import javax.net.ssl.SSLSession;
 import java.io.InputStream;
 import java.net.URI;
 import java.security.Principal;
@@ -41,6 +47,7 @@ class RestApiImpl implements RestApi {
     private final List<Filter> filters;
     private final ObjectMapper jacksonJsonMapper;
     private final boolean disableDefaultAclMapping;
+    private final CapabilitySet requiredCapabilities;
 
     private RestApiImpl(RestApi.Builder builder) {
         BuilderImpl builderImpl = (BuilderImpl) builder;
@@ -55,6 +62,7 @@ class RestApiImpl implements RestApi {
         this.filters = List.copyOf(builderImpl.filters);
         this.jacksonJsonMapper = jacksonJsonMapper;
         this.disableDefaultAclMapping = Boolean.TRUE.equals(builderImpl.disableDefaultAclMapping);
+        this.requiredCapabilities = builderImpl.requiredCapabilities;
     }
 
     @Override
@@ -81,6 +89,19 @@ class RestApiImpl implements RestApi {
         return RequestHandlerSpec.builder()
                 .withAclMapping(requestView -> getAclMapping(requestView.method(), requestView.uri()))
                 .build();
+    }
+
+    private static final CapabilitySet DEFAULT_REQUIRED_CAPABILITIES = Capability.RESTAPI_UNCLASSIFIED.toCapabilitySet();
+
+    @Override
+    public CapabilitySet requiredCapabilities(RequestView req) {
+        Path pathMatcher = new Path(req.uri());
+        Route route = resolveRoute(pathMatcher);
+        HandlerHolder<?> handler = resolveHandler(req.method(), route);
+        return Optional.ofNullable(handler.config.requiredCapabilities)
+                .or(() -> Optional.ofNullable(route.requiredCapabilities))
+                .or(() -> Optional.ofNullable(requiredCapabilities))
+                .orElse(DEFAULT_REQUIRED_CAPABILITIES);
     }
 
     private AclMapping.Action getAclMapping(Method method, URI uri) {
@@ -216,6 +237,7 @@ class RestApiImpl implements RestApi {
         private Boolean disableDefaultExceptionMappers;
         private Boolean disableDefaultResponseMappers;
         private Boolean disableDefaultAclMapping;
+        private CapabilitySet requiredCapabilities;
 
         @Override public RestApi.Builder setObjectMapper(ObjectMapper mapper) { this.jacksonJsonMapper = mapper; return this; }
         @Override public RestApi.Builder setDefaultRoute(RestApi.RouteBuilder route) { this.defaultRoute = ((RouteBuilderImpl)route).build(); return this; }
@@ -246,6 +268,15 @@ class RestApiImpl implements RestApi {
         @Override public Builder disableDefaultResponseMappers() { this.disableDefaultResponseMappers = true; return this; }
         @Override public Builder disableDefaultAclMapping() { this.disableDefaultAclMapping = true; return this; }
 
+        @Override public Builder requiredCapabilities(Capability... capabilities) {
+            return requiredCapabilities(CapabilitySet.of(capabilities));
+        }
+        @Override public Builder requiredCapabilities(CapabilitySet capabilities) {
+            if (requiredCapabilities != null) throw new IllegalStateException("Capabilities already set");
+            requiredCapabilities = capabilities;
+            return this;
+        }
+
         @Override public RestApi build() { return new RestApiImpl(this); }
     }
 
@@ -255,10 +286,21 @@ class RestApiImpl implements RestApi {
         private final Map<Method, HandlerHolder<?>> handlerPerMethod = new HashMap<>();
         private final List<RestApi.Filter> filters = new ArrayList<>();
         private HandlerHolder<?> defaultHandler;
+        private CapabilitySet requiredCapabilities;
 
         RouteBuilderImpl(String pathPattern) { this.pathPattern = pathPattern; }
 
         @Override public RestApi.RouteBuilder name(String name) { this.name = name; return this; }
+
+        @Override public RestApi.RouteBuilder requiredCapabilities(Capability... capabilities) {
+            return requiredCapabilities(CapabilitySet.of(capabilities));
+        }
+        @Override public RestApi.RouteBuilder requiredCapabilities(CapabilitySet capabilities) {
+            if (requiredCapabilities != null) throw new IllegalStateException("Capabilities already set");
+            requiredCapabilities = capabilities;
+            return this;
+        }
+
         @Override public RestApi.RouteBuilder addFilter(RestApi.Filter filter) { filters.add(filter); return this; }
 
         // GET
@@ -351,7 +393,16 @@ class RestApiImpl implements RestApi {
 
     static class HandlerConfigBuilderImpl implements HandlerConfigBuilder {
         private AclMapping.Action aclAction;
+        private CapabilitySet requiredCapabilities;
 
+        @Override public HandlerConfigBuilder withRequiredCapabilities(Capability... capabilities) {
+            return withRequiredCapabilities(CapabilitySet.of(capabilities));
+        }
+        @Override public HandlerConfigBuilder withRequiredCapabilities(CapabilitySet capabilities) {
+            if (requiredCapabilities != null) throw new IllegalStateException("Capabilities already set");
+            requiredCapabilities = capabilities;
+            return this;
+        }
         @Override public HandlerConfigBuilder withReadAclAction() { return withCustomAclAction(AclMapping.Action.READ); }
         @Override public HandlerConfigBuilder withWriteAclAction() { return withCustomAclAction(AclMapping.Action.WRITE); }
         @Override public HandlerConfigBuilder withCustomAclAction(AclMapping.Action action) {
@@ -363,9 +414,11 @@ class RestApiImpl implements RestApi {
 
     private static class HandlerConfig {
         final AclMapping.Action aclAction;
+        final CapabilitySet requiredCapabilities;
 
         HandlerConfig(HandlerConfigBuilderImpl builder) {
             this.aclAction = builder.aclAction;
+            this.requiredCapabilities = builder.requiredCapabilities;
         }
 
         static HandlerConfig empty() { return new HandlerConfigBuilderImpl().build(); }
@@ -391,6 +444,7 @@ class RestApiImpl implements RestApi {
         }
 
         @Override public HttpRequest request() { return request; }
+        @Override public Method method() { return request.getMethod(); }
         @Override public PathParameters pathParameters() { return pathParameters; }
         @Override public QueryParameters queryParameters() { return queryParameters; }
         @Override public Headers headers() { return headers; }
@@ -427,6 +481,13 @@ class RestApiImpl implements RestApi {
         @Override public Principal userPrincipalOrThrow() {
             return userPrincipal().orElseThrow(RestApiException.Unauthorized::new);
         }
+        @Override public Optional<SSLSession> sslSession() {
+            return Optional.ofNullable((SSLSession) request.context().get(RequestUtils.JDISC_REQUEST_SSLSESSION));
+        }
+        @Override public Optional<ConnectionAuthContext> connectionAuthContext() {
+            return sslSession().flatMap(TransportSecurityUtils::getConnectionAuthContext);
+        }
+
 
         private class PathParametersImpl implements RestApi.RequestContext.PathParameters {
             @Override
@@ -543,6 +604,7 @@ class RestApiImpl implements RestApi {
         private final Map<Method, HandlerHolder<?>> handlerPerMethod;
         private final HandlerHolder<?> defaultHandler;
         private final List<Filter> filters;
+        private final CapabilitySet requiredCapabilities;
 
         private Route(RestApi.RouteBuilder builder) {
             RouteBuilderImpl builderImpl = (RouteBuilderImpl)builder;
@@ -551,6 +613,7 @@ class RestApiImpl implements RestApi {
             this.handlerPerMethod = Map.copyOf(builderImpl.handlerPerMethod);
             this.defaultHandler = builderImpl.defaultHandler != null ? builderImpl.defaultHandler : createDefaultMethodHandler();
             this.filters = List.copyOf(builderImpl.filters);
+            this.requiredCapabilities = builderImpl.requiredCapabilities;
         }
 
         private HandlerHolder<?> createDefaultMethodHandler() {

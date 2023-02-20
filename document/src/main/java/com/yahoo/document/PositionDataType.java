@@ -53,6 +53,7 @@ public final class PositionDataType {
         return buf.toString();
     }
 
+    @Deprecated
     public static void renderXml(Struct pos, XmlStream target) {
         target.addContent(renderAsString(pos));
     }

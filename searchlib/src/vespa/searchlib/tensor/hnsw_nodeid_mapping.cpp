@@ -7,6 +7,7 @@
 #include <vespa/vespalib/util/size_literals.h>
 #include <cassert>
 
+using vespalib::datastore::CompactionStrategy;
 using vespalib::datastore::EntryRef;
 
 namespace {
@@ -42,7 +43,7 @@ HnswNodeidMapping::allocate_id()
 }
 
 HnswNodeidMapping::HnswNodeidMapping()
-    : _refs(),
+    : _refs(1),
       _grow_strategy(16, 1.0, 0, 0), // These are the same parameters as the default in rcuvector.h
       _nodeid_limit(1), // Starting with nodeid=1 matches that we also start with docid=1.
       _nodeids(NodeidStore::optimizedConfigForHugePage(max_small_array_type_id,
@@ -122,7 +123,7 @@ get_docid_limit(vespalib::ConstArrayRef<HnswNode> nodes)
 {
     uint32_t max_docid = 0;
     for (auto& node : nodes) {
-        if (node.ref().load_relaxed().valid()) {
+        if (node.levels_ref().load_relaxed().valid()) {
             max_docid = std::max(node.acquire_docid(), max_docid);
         }
     }
@@ -135,7 +136,7 @@ make_subspaces_histogram(vespalib::ConstArrayRef<HnswNode> nodes, uint32_t docid
     // Make histogram
     std::vector<uint32_t> histogram(docid_limit);
     for (auto& node : nodes) {
-        if (node.ref().load_relaxed().valid()) {
+        if (node.levels_ref().load_relaxed().valid()) {
             auto docid = node.acquire_docid();
             auto subspace = node.acquire_subspace();
             auto &num_subspaces = histogram[docid];
@@ -171,7 +172,7 @@ HnswNodeidMapping::populate_docid_to_nodeids_mapping_and_free_list(vespalib::Con
 {
     uint32_t nodeid = 0;
     for (auto& node : nodes) {
-        if (node.ref().load_relaxed().valid()) {
+        if (node.levels_ref().load_relaxed().valid()) {
             auto docid = node.acquire_docid();
             auto subspace = node.acquire_subspace();
             auto nodeids = _nodeids.get_writable(_refs[docid]);
@@ -184,6 +185,7 @@ HnswNodeidMapping::populate_docid_to_nodeids_mapping_and_free_list(vespalib::Con
         ++nodeid;
     }
     std::reverse(_free_list.begin(), _free_list.end());
+    _nodeid_limit = nodes.size();
 }
 
 void
@@ -207,7 +209,7 @@ HnswNodeidMapping::on_load(vespalib::ConstArrayRef<HnswNode> nodes)
         return;
     }
     // Check that reserved nodeid is not used
-    assert(!nodes[0].ref().load_relaxed().valid());
+    assert(!nodes[0].levels_ref().load_relaxed().valid());
     auto docid_limit = get_docid_limit(nodes);
     auto histogram = make_subspaces_histogram(nodes, docid_limit);    // Allocate mapping from docid to nodeids
     allocate_docid_to_nodeids_mapping(std::move(histogram));
@@ -237,6 +239,31 @@ HnswNodeidMapping::memory_usage() const
     // Note that the memory usage of the hold list and free list is not explicitly tracked
     // as their content are covered by the memory usage reported from the NodeidStore (array store).
     return result;
+}
+
+vespalib::MemoryUsage
+HnswNodeidMapping::update_stat(const CompactionStrategy& compaction_strategy)
+{
+    vespalib::MemoryUsage result;
+    result.merge(get_refs_usage(_refs));
+    result.merge(_nodeids.update_stat(compaction_strategy));
+    // Note that the memory usage of the hold list and free list is not explicitly tracked
+    // as their content are covered by the memory usage reported from the NodeidStore (array store).
+    return result;
+}
+
+void
+HnswNodeidMapping::compact_worst(const vespalib::datastore::CompactionStrategy& compaction_strategy)
+{
+    auto compacting_buffers = _nodeids.start_compact_worst_buffers(compaction_strategy);
+    auto filter = compacting_buffers->make_entry_ref_filter();
+   vespalib::ArrayRef<EntryRef> refs(&_refs[0], _refs.size());
+   for (auto& ref : refs) {
+       if (ref.valid() && filter.has(ref)) {
+           ref = _nodeids.move_on_compact(ref);
+       }
+   }
+   compacting_buffers->finish();
 }
 
 }

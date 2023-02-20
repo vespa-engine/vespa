@@ -28,7 +28,6 @@ import java.util.Set;
 import java.util.logging.Logger;
 
 import static java.util.Collections.emptyList;
-import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
 
 /**
@@ -100,7 +99,7 @@ public class FilterChainRepository extends AbstractComponent {
         checkFilterTypesCompatible(chain);
         List<?> jdiscFilters = chain.components().stream()
                         .map(filterWrapper -> filterWrapper.filter)
-                        .collect(toList());
+                        .toList();
         List<?> wrappedFilters = wrapSecurityFilters(jdiscFilters);
         Object head = wrappedFilters.get(0);
         if (wrappedFilters.size() == 1) return head;

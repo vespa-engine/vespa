@@ -10,7 +10,8 @@
 #include <vespa/searchcore/proton/flushengine/shrink_lid_space_flush_target.h>
 #include <vespa/vespalib/util/lambdatask.h>
 #include <vespa/searchsummary/docsummary/docsum_field_writer_factory.h>
-#include <vespa/searchsummary/docsummary/keywordextractor.h>
+#include <vespa/searchsummary/docsummary/i_query_term_filter.h>
+#include <vespa/searchsummary/docsummary/query_term_filter_factory.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/fastlib/text/normwordfolder.h>
 #include <vespa/config-summary.h>
@@ -82,7 +83,8 @@ SummaryManager::SummarySetup::
 SummarySetup(const vespalib::string & baseDir, const SummaryConfig & summaryCfg,
              const JuniperrcConfig & juniperCfg,
              search::IAttributeManager::SP attributeMgr, search::IDocumentStore::SP docStore,
-             std::shared_ptr<const DocumentTypeRepo> repo)
+             std::shared_ptr<const DocumentTypeRepo> repo,
+             const search::index::Schema& schema)
     : _docsumWriter(),
       _wordFolder(std::make_unique<Fast_NormalizeWordFolder>()),
       _juniperProps(juniperCfg),
@@ -93,7 +95,8 @@ SummarySetup(const vespalib::string & baseDir, const SummaryConfig & summaryCfg,
 {
     _juniperConfig = std::make_unique<juniper::Juniper>(&_juniperProps, _wordFolder.get());
     auto resultConfig = std::make_unique<ResultConfig>();
-    auto docsum_field_writer_factory = std::make_unique<DocsumFieldWriterFactory>(summaryCfg.usev8geopositions, *this);
+    std::unique_ptr<IQueryTermFilterFactory> query_term_filter_factory = std::make_unique<QueryTermFilterFactory>(schema);
+    auto docsum_field_writer_factory = std::make_unique<DocsumFieldWriterFactory>(summaryCfg.usev8geopositions, *this, *query_term_filter_factory);
     if (!resultConfig->readConfig(summaryCfg, make_string("SummaryManager(%s)", baseDir.c_str()).c_str(),
                                   *docsum_field_writer_factory)) {
         std::ostringstream oss;
@@ -105,7 +108,7 @@ SummarySetup(const vespalib::string & baseDir, const SummaryConfig & summaryCfg,
     }
     docsum_field_writer_factory.reset();
 
-    _docsumWriter = std::make_unique<DynamicDocsumWriter>(std::move(resultConfig), std::unique_ptr<KeywordExtractor>());
+    _docsumWriter = std::make_unique<DynamicDocsumWriter>(std::move(resultConfig));
 }
 
 IDocsumStore::UP
@@ -118,10 +121,11 @@ SummaryManager::SummarySetup::createDocsumStore()
 ISummaryManager::ISummarySetup::SP
 SummaryManager::createSummarySetup(const SummaryConfig & summaryCfg,
                                    const JuniperrcConfig & juniperCfg, const std::shared_ptr<const DocumentTypeRepo> &repo,
-                                   const search::IAttributeManager::SP &attributeMgr)
+                                   const search::IAttributeManager::SP &attributeMgr,
+                                   const search::index::Schema& schema)
 {
     return std::make_shared<SummarySetup>(_baseDir, summaryCfg,
-                                          juniperCfg, attributeMgr, _docStore, repo);
+                                          juniperCfg, attributeMgr, _docStore, repo, schema);
 }
 
 SummaryManager::SummaryManager(vespalib::Executor &shared_executor, const LogDocumentStore::Config & storeConfig,

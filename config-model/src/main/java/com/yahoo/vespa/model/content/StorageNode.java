@@ -3,7 +3,8 @@ package com.yahoo.vespa.model.content;
 
 import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.deploy.DeployState;
-import com.yahoo.config.model.producer.AbstractConfigProducer;
+import com.yahoo.config.model.producer.AnyConfigProducer;
+import com.yahoo.config.model.producer.TreeConfigProducer;
 import com.yahoo.vespa.config.content.StorFilestorConfig;
 import com.yahoo.vespa.config.content.core.StorBucketmoverConfig;
 import com.yahoo.vespa.config.content.core.StorServerConfig;
@@ -29,10 +30,10 @@ public class StorageNode extends ContentNode implements StorServerConfig.Produce
     private final boolean retired;
     private final StorageCluster cluster;
 
-    public static class Builder extends VespaDomBuilder.DomConfigProducerBuilder<StorageNode> {
+    public static class Builder extends VespaDomBuilder.DomConfigProducerBuilder<StorageNode, StorageNode> {
 
         @Override
-        protected StorageNode doBuild(DeployState deployState, AbstractConfigProducer<?> ancestor, Element producerSpec) {
+        protected StorageNode doBuild(DeployState deployState, TreeConfigProducer<StorageNode> ancestor, Element producerSpec) {
             ModelElement e = new ModelElement(producerSpec);
             return new StorageNode(deployState.getProperties(), (StorageCluster)ancestor, e.doubleAttribute("capacity"), e.integerAttribute("distribution-key"), false);
         }
@@ -67,7 +68,7 @@ public class StorageNode extends ContentNode implements StorServerConfig.Produce
     public boolean isRetired() { return retired; }
 
     private boolean isProviderProton() {
-        for (AbstractConfigProducer<?> producer : getChildren().values()) {
+        for (var producer : getChildren().values()) {
             if (producer instanceof ProtonProvider) {
                 return true;
             }
@@ -81,7 +82,7 @@ public class StorageNode extends ContentNode implements StorServerConfig.Produce
 
         builder.node_capacity(getCapacity());
 
-        for (AbstractConfigProducer<?> producer : getChildren().values()) {
+        for (var producer : getChildren().values()) {
             ((PersistenceEngine)producer).getConfig(builder);
         }
     }

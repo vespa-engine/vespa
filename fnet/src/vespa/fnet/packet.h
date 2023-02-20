@@ -18,8 +18,8 @@ class FNET_DataBuffer;
 class FNET_Packet
 {
 public:
-    typedef std::unique_ptr<FNET_Packet> UP;
-    typedef std::shared_ptr<FNET_Packet> SP;
+    using UP = std::unique_ptr<FNET_Packet>;
+    using SP = std::shared_ptr<FNET_Packet>;
 
     /** Does nothing. **/
     FNET_Packet() {}

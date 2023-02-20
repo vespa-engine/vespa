@@ -2,7 +2,6 @@
 package com.yahoo.schema.derived;
 
 import ai.vespa.rankingexpression.importer.configmodelview.ImportedMlModels;
-import com.google.common.collect.ImmutableList;
 import com.yahoo.collections.Pair;
 import com.yahoo.compress.Compressor;
 import com.yahoo.config.model.api.ModelContext;
@@ -20,7 +19,6 @@ import com.yahoo.searchlib.rankingexpression.Reference;
 import com.yahoo.searchlib.rankingexpression.parser.ParseException;
 import com.yahoo.searchlib.rankingexpression.rule.ReferenceNode;
 import com.yahoo.searchlib.rankingexpression.rule.SerializationContext;
-import com.yahoo.tensor.TensorType;
 import com.yahoo.vespa.config.search.RankProfilesConfig;
 
 import java.nio.ByteBuffer;
@@ -87,9 +85,9 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
 
     private List<Pair<String, String>> decompress(Compressor.Compression compression) {
         String propertiesString = new String(compressor.decompress(compression), StandardCharsets.UTF_8);
-        if (propertiesString.isEmpty()) return ImmutableList.of();
+        if (propertiesString.isEmpty()) return List.of();
 
-        ImmutableList.Builder<Pair<String, String>> properties = new ImmutableList.Builder<>();
+        List<Pair<String, String>> properties = new ArrayList<>();
         for (int pos = 0; pos < propertiesString.length();) {
             int keyEndPos = propertiesString.indexOf(keyEndMarker, pos);
             String key = propertiesString.substring(pos, keyEndPos);
@@ -99,7 +97,7 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
             pos = valueEndPos + valueEndMarker.length();
             properties.add(new Pair<>(key, value));
         }
-        return properties.build();
+        return List.copyOf(properties);
     }
 
     public String getName() { return name; }
@@ -166,6 +164,8 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
 
         private RankingExpression firstPhaseRanking;
         private RankingExpression secondPhaseRanking;
+        private RankingExpression globalPhaseRanking;
+        private final int globalPhaseRerankCount;
 
         /**
          * Creates a raw rank profile from the given rank profile
@@ -179,10 +179,12 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
             inputs = compiled.inputs();
             firstPhaseRanking = compiled.getFirstPhaseRanking();
             secondPhaseRanking = compiled.getSecondPhaseRanking();
+            globalPhaseRanking = compiled.getGlobalPhaseRanking();
             summaryFeatures = new LinkedHashSet<>(compiled.getSummaryFeatures());
             matchFeatures = new LinkedHashSet<>(compiled.getMatchFeatures());
             rankFeatures = compiled.getRankFeatures();
             rerankCount = compiled.getRerankCount();
+            globalPhaseRerankCount = compiled.getGlobalPhaseRerankCount();
             matchPhaseSettings = compiled.getMatchPhaseSettings();
             numThreadsPerSearch = compiled.getNumThreadsPerSearch();
             minHitsPerThread = compiled.getMinHitsPerThread();
@@ -196,7 +198,7 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
             rankProperties = new ArrayList<>(compiled.getRankProperties());
 
             Map<String, RankProfile.RankingExpressionFunction> functions = compiled.getFunctions();
-            List<ExpressionFunction> functionExpressions = functions.values().stream().map(f -> f.function()).collect(Collectors.toList());
+            List<ExpressionFunction> functionExpressions = functions.values().stream().map(RankProfile.RankingExpressionFunction::function).toList();
             Map<String, String> functionProperties = new LinkedHashMap<>();
             SerializationContext functionSerializationContext = new SerializationContext(functionExpressions,
                                                                                          Map.of(),
@@ -208,7 +210,9 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
             if (secondPhaseRanking != null) {
                 functionProperties.putAll(secondPhaseRanking.getRankProperties(functionSerializationContext));
             }
-
+            if (globalPhaseRanking != null) {
+                functionProperties.putAll(globalPhaseRanking.getRankProperties(functionSerializationContext));
+            }
             derivePropertiesAndFeaturesFromFunctions(functions, functionProperties, functionSerializationContext);
             deriveOnnxModelFunctionsAndFeatures(compiled);
 
@@ -248,8 +252,8 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
                 String expressionString = e.getValue().function().getBody().getRoot().toString(context).toString();
 
                 context.addFunctionSerialization(propertyName, expressionString);
-                for (Map.Entry<String, TensorType> argumentType : e.getValue().function().argumentTypes().entrySet())
-                    context.addArgumentTypeSerialization(e.getKey(), argumentType.getKey(), argumentType.getValue());
+                e.getValue().function().argumentTypes().entrySet().stream().sorted(Map.Entry.comparingByKey())
+                        .forEach(argumentType -> context.addArgumentTypeSerialization(e.getKey(), argumentType.getKey(), argumentType.getValue()));
                 if (e.getValue().function().returnType().isPresent())
                     context.addFunctionTypeSerialization(e.getKey(), e.getValue().function().returnType().get());
                 // else if (e.getValue().function().arguments().isEmpty()) TODO: Enable this check when we resolve all types
@@ -362,12 +366,20 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
                         throw new IllegalArgumentException("Could not parse second phase expression", e);
                     }
                 }
+                else if (RankingExpression.propertyName(RankProfile.GLOBAL_PHASE).equals(property.getName())) {
+                    try {
+                        globalPhaseRanking = new RankingExpression(property.getValue());
+                    } catch (ParseException e) {
+                        throw new IllegalArgumentException("Could not parse global-phase expression", e);
+                    }
+                }
                 else {
                     properties.add(new Pair<>(property.getName(), property.getValue()));
                 }
             }
             properties.addAll(deriveRankingPhaseRankProperties(firstPhaseRanking, RankProfile.FIRST_PHASE));
             properties.addAll(deriveRankingPhaseRankProperties(secondPhaseRanking, RankProfile.SECOND_PHASE));
+            properties.addAll(deriveRankingPhaseRankProperties(globalPhaseRanking, RankProfile.GLOBAL_PHASE));
             for (FieldRankSettings settings : fieldRankSettings.values()) {
                 properties.addAll(settings.deriveRankProperties());
             }
@@ -425,6 +437,9 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
             }
             if (keepRankCount > -1) {
                 properties.add(new Pair<>("vespa.hitcollector.arraysize", keepRankCount + ""));
+            }
+            if (globalPhaseRerankCount > -1) {
+                properties.add(new Pair<>("vespa.globalphase.rerankcount", globalPhaseRerankCount + ""));
             }
             if (rankScoreDropLimit > -Double.MAX_VALUE) {
                 properties.add(new Pair<>("vespa.hitcollector.rankscoredroplimit", rankScoreDropLimit + ""));

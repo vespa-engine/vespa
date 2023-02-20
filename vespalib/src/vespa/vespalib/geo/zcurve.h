@@ -32,9 +32,9 @@ public:
 
         ~BoundingBox() = default;
 
-        int64_t getzMinx() const { return _zMinx; } 
-        int64_t getzMaxx() const { return _zMaxx; } 
-        int64_t getzMiny() const { return _zMiny; } 
+        int64_t getzMinx() const { return _zMinx; }
+        int64_t getzMaxx() const { return _zMaxx; }
+        int64_t getzMiny() const { return _zMiny; }
         int64_t getzMaxy() const { return _zMaxy; }
 
         /**
@@ -182,7 +182,7 @@ public:
             assert((min_y <= max_y) && ((min_y < 0) == (max_y < 0)));
         }
         Area &operator=(Area &&rhs) { new ((void*)this) Area(rhs); return *this; }
-        int64_t size() const { return (max.x - min.x + 1) * (max.y - min.y + 1); }
+        int64_t size() const { return (static_cast<int64_t>(max.x) - min.x + 1) * (static_cast<int64_t>(max.y) - min.y + 1); }
         int64_t estimate() const { return (max.z - min.z + 1); }
         int64_t error() const { return estimate() - size(); }
     };
@@ -201,7 +201,7 @@ public:
         void max(int64_t value) { _max = value; }
         bool operator<(const Range &rhs) const { return (_min < rhs._min); }
     };
-    typedef std::vector<Range> RangeVector;
+    using RangeVector = std::vector<Range>;
 
     /**
      * Given an inclusive bounding box, return a set of ranges in

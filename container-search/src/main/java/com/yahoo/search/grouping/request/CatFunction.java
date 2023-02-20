@@ -32,7 +32,7 @@ public class CatFunction extends FunctionNode {
     public CatFunction copy() {
         return new CatFunction(getLabel(),
                                getLevelOrNull(),
-                               args().stream().map(arg -> arg.copy()).collect(Collectors.toList()));
+                               args().stream().map(arg -> arg.copy()).toList());
     }
 
     /**

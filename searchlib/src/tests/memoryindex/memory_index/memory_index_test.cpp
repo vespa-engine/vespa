@@ -55,6 +55,8 @@ using namespace search::queryeval;
 struct MySetup : public IFieldLengthInspector {
     std::vector<vespalib::string> fields;
     std::map<vespalib::string, FieldLengthInfo> field_lengths;
+    MySetup();
+    ~MySetup() override;
     MySetup &field(const std::string &name) {
         fields.emplace_back(name);
         return *this;
@@ -83,6 +85,9 @@ struct MySetup : public IFieldLengthInspector {
     }
 
 };
+
+MySetup::MySetup() = default;
+MySetup::~MySetup() = default;
 
 //-----------------------------------------------------------------------------
 
@@ -156,7 +161,7 @@ VESPA_THREAD_STACK_TAG(invert_executor)
 VESPA_THREAD_STACK_TAG(push_executor)
 
 Index::Index(const MySetup &setup)
-    : _executor(1, 128_Ki),
+    : _executor(1),
       _invertThreads(SequencedTaskExecutor::create(invert_executor, 2)),
       _pushThreads(SequencedTaskExecutor::create(push_executor, 2)),
       index(setup.make_all_index_schema(), setup, *_invertThreads, *_pushThreads),

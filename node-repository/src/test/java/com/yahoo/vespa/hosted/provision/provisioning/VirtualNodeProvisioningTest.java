@@ -49,8 +49,8 @@ public class VirtualNodeProvisioningTest {
     private static final NodeResources resources1 = new NodeResources(4, 8, 100, 1);
     private static final NodeResources resources2 = new NodeResources(1, 4, 100, 1,
                                                                       NodeResources.DiskSpeed.fast, NodeResources.StorageType.local);
-    private static final ClusterSpec contentClusterSpec = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("myContent")).vespaVersion("6.42").build();
-    private static final ClusterSpec containerClusterSpec = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("myContainer")).vespaVersion("6.42").build();
+    private static final ClusterSpec contentClusterSpec = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("my-content")).vespaVersion("6.42").build();
+    private static final ClusterSpec containerClusterSpec = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("my-container")).vespaVersion("6.42").build();
 
     private final ApplicationId applicationId = ProvisioningTester.applicationId("test");
 
@@ -242,7 +242,7 @@ public class VirtualNodeProvisioningTest {
         Version wantedVespaVersion = Version.fromString("6.39");
         int nodeCount = 7;
         List<HostSpec> hosts = tester.prepare(application1,
-                                              ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("myContent")).vespaVersion(wantedVespaVersion).build(),
+                                              ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("my-content")).vespaVersion(wantedVespaVersion).build(),
                                               nodeCount, 1, resources2);
         tester.activate(application1, new HashSet<>(hosts));
 
@@ -253,7 +253,7 @@ public class VirtualNodeProvisioningTest {
         // Upgrade Vespa version on nodes
         Version upgradedWantedVespaVersion = Version.fromString("6.40");
         List<HostSpec> upgradedHosts = tester.prepare(application1,
-                                                      ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("myContent")).vespaVersion(upgradedWantedVespaVersion).build(),
+                                                      ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("my-content")).vespaVersion(upgradedWantedVespaVersion).build(),
                                                       nodeCount, 1, resources2);
         tester.activate(application1, new HashSet<>(upgradedHosts));
         NodeList upgradedNodes = tester.getNodes(application1, Node.State.active);
@@ -275,7 +275,7 @@ public class VirtualNodeProvisioningTest {
         int nodeCount = 7;
         try {
             List<HostSpec> nodes = tester.prepare(application1,
-                                                  ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("myContent")).vespaVersion(wantedVespaVersion).build(),
+                                                  ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("my-content")).vespaVersion(wantedVespaVersion).build(),
                                                   nodeCount, 1, resources2);
             fail("Expected the allocation to fail due to parent hosts not being active yet");
         } catch (NodeAllocationException expected) { }
@@ -285,7 +285,7 @@ public class VirtualNodeProvisioningTest {
 
         // Try allocating tenants again
         List<HostSpec> nodes = tester.prepare(application1,
-                                              ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("myContent")).vespaVersion(wantedVespaVersion).build(),
+                                              ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("my-content")).vespaVersion(wantedVespaVersion).build(),
                                               nodeCount, 1, resources2);
         tester.activate(application1, new HashSet<>(nodes));
 
@@ -309,14 +309,14 @@ public class VirtualNodeProvisioningTest {
 
         Version wantedVespaVersion = Version.fromString("6.39");
         List<HostSpec> nodes = tester.prepare(application2_1,
-                                              ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("myContent")).vespaVersion(wantedVespaVersion).build(),
+                                              ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("my-content")).vespaVersion(wantedVespaVersion).build(),
                                               6, 1, resources);
         assertHostSpecParentReservation(nodes, Optional.empty(), tester); // We do not get nodes on hosts reserved to tenant1
         tester.activate(application2_1, nodes);
 
         try {
             tester.prepare(application2_2,
-                           ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("myContent")).vespaVersion(wantedVespaVersion).build(),
+                           ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("my-content")).vespaVersion(wantedVespaVersion).build(),
                            5, 1, resources);
             fail("Expected exception");
         }
@@ -325,7 +325,7 @@ public class VirtualNodeProvisioningTest {
         }
 
         nodes = tester.prepare(application1_1,
-                               ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("myContent")).vespaVersion(wantedVespaVersion).build(),
+                               ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("my-content")).vespaVersion(wantedVespaVersion).build(),
                                10, 1, resources);
         assertHostSpecParentReservation(nodes, Optional.of(tenant1), tester);
         tester.activate(application1_1, nodes);
@@ -346,14 +346,14 @@ public class VirtualNodeProvisioningTest {
         try {
             // No capacity for 'container' nodes
             tester.prepare(applicationId,
-                    ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("myContent")).vespaVersion(wantedVespaVersion).build(),
+                    ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("my-content")).vespaVersion(wantedVespaVersion).build(),
                     6, 1, resources);
             fail("Expected to fail node allocation");
         } catch (NodeAllocationException ignored) { }
 
         // Same cluster, but content type is now 'content'
         List<HostSpec> nodes = tester.prepare(applicationId,
-                ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("myContent")).vespaVersion(wantedVespaVersion).build(),
+                ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("my-content")).vespaVersion(wantedVespaVersion).build(),
                 6, 1, resources);
         tester.activate(applicationId, nodes);
 
@@ -364,7 +364,7 @@ public class VirtualNodeProvisioningTest {
     @Test
     public void application_deployment_with_exclusive_app_first() {
         NodeResources hostResources = new NodeResources(10, 40, 1000, 10);
-        NodeResources nodeResources = new NodeResources(1, 4, 100, 1);
+        NodeResources nodeResources = new NodeResources(2, 4, 100, 1);
         ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east"))).build();
         tester.makeReadyHosts(4, hostResources).activateTenantHosts();
         ApplicationId application1 = ProvisioningTester.applicationId("app1");
@@ -383,7 +383,7 @@ public class VirtualNodeProvisioningTest {
     @Test
     public void application_deployment_with_exclusive_app_last() {
         NodeResources hostResources = new NodeResources(10, 40, 1000, 10);
-        NodeResources nodeResources = new NodeResources(1, 4, 100, 1);
+        NodeResources nodeResources = new NodeResources(2, 4, 100, 1);
         ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east"))).build();
         tester.makeReadyHosts(4, hostResources).activateTenantHosts();
         ApplicationId application1 = ProvisioningTester.applicationId("app1");
@@ -402,7 +402,7 @@ public class VirtualNodeProvisioningTest {
     @Test
     public void application_deployment_change_to_exclusive_and_back() {
         NodeResources hostResources = new NodeResources(10, 40, 1000, 10);
-        NodeResources nodeResources = new NodeResources(1, 4, 100, 1);
+        NodeResources nodeResources = new NodeResources(2, 4, 100, 1);
         ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east"))).build();
         tester.makeReadyHosts(4, hostResources).activateTenantHosts();
 
@@ -429,7 +429,7 @@ public class VirtualNodeProvisioningTest {
         ApplicationId application2 = ApplicationId.from("tenant2", "app2", "default");
         ApplicationId application3 = ApplicationId.from("tenant1", "app3", "default");
         NodeResources hostResources = new NodeResources(10, 40, 1000, 10);
-        NodeResources nodeResources = new NodeResources(1, 4, 100, 1);
+        NodeResources nodeResources = new NodeResources(2, 4, 100, 1);
         ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east"))).build();
         tester.makeReadyHosts(4, hostResources).activateTenantHosts();
 
@@ -444,8 +444,8 @@ public class VirtualNodeProvisioningTest {
         catch (Exception e) {
             assertEquals("No room for 3 nodes as 2 of 4 hosts are exclusive",
                          "Could not satisfy request for 3 nodes with " +
-                         "[vcpu: 1.0, memory: 4.0 Gb, disk 100.0 Gb, bandwidth: 1.0 Gbps, architecture: x86_64] " +
-                         "in tenant2.app2 container cluster 'myContainer' 6.39: " +
+                         "[vcpu: 2.0, memory: 4.0 Gb, disk 100.0 Gb, bandwidth: 1.0 Gbps, architecture: x86_64] " +
+                         "in tenant2.app2 container cluster 'my-container' 6.39: " +
                          "Node allocation failure on group 0: " +
                          "Not enough suitable nodes available due to host exclusivity constraints",
                          e.getMessage());
@@ -465,14 +465,14 @@ public class VirtualNodeProvisioningTest {
             tester.makeReadyChildren(1, resources2, "host2");
 
             tester.prepare(application1,
-                           ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("myContent")).vespaVersion("6.42").build(),
+                           ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("my-content")).vespaVersion("6.42").build(),
                            2, 1,
                            resources2.with(NodeResources.StorageType.remote));
         }
         catch (NodeAllocationException e) {
             assertEquals("Could not satisfy request for 2 nodes with " +
                          "[vcpu: 1.0, memory: 4.0 Gb, disk 100.0 Gb, bandwidth: 1.0 Gbps, storage type: remote, architecture: x86_64] " +
-                         "in tenant.app1 content cluster 'myContent'" +
+                         "in tenant.app1 content cluster 'my-content'" +
                          " 6.42: Node allocation failure on group 0",
                          e.getMessage());
         }
@@ -672,7 +672,7 @@ public class VirtualNodeProvisioningTest {
 
     private void prepareAndActivate(ApplicationId application, int nodeCount, boolean exclusive, NodeResources resources, ProvisioningTester tester) {
         Set<HostSpec> hosts = new HashSet<>(tester.prepare(application,
-                                                           ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("myContainer")).vespaVersion("6.39").exclusive(exclusive).build(),
+                                                           ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("my-container")).vespaVersion("6.39").exclusive(exclusive).build(),
                                                            Capacity.from(new ClusterResources(nodeCount, 1, resources), false, true)));
         tester.activate(application, hosts);
     }

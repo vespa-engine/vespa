@@ -1,19 +1,17 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.host;
 
+import com.google.common.collect.Collections2;
+import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.TenantName;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
-
-import com.google.common.collect.Collections2;
-import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.TenantName;
-
-import java.util.logging.Level;
 
 /**
  * A host registry with a mapping between hosts (hostname as a String) and some type T
@@ -21,7 +19,7 @@ import java.util.logging.Level;
  *
  * @author Ulf Lilleengen
  */
-public class HostRegistry implements HostValidator<ApplicationId> {
+public class HostRegistry implements HostValidator {
 
     private static final Logger log = Logger.getLogger(HostRegistry.class.getName());
 
@@ -43,10 +41,10 @@ public class HostRegistry implements HostValidator<ApplicationId> {
     }
 
     @Override
-    public synchronized void verifyHosts(ApplicationId key, Collection<String> newHosts) {
+    public synchronized void verifyHosts(ApplicationId applicationId, Collection<String> newHosts) {
         for (String host : newHosts) {
-            if (hostAlreadyTaken(host, key)) {
-                throw new IllegalArgumentException("'" + key + "' tried to allocate host '" + host + 
+            if (hostAlreadyTaken(host, applicationId)) {
+                throw new IllegalArgumentException("'" + applicationId + "' tried to allocate host '" + host +
                                                    "', but the host is already taken by '" + host2KeyMap.get(host) + "'");
             }
         }

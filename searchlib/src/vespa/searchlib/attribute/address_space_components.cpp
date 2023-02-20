@@ -19,7 +19,8 @@ const vespalib::string AddressSpaceComponents::enum_store = "enum-store";
 const vespalib::string AddressSpaceComponents::multi_value = "multi-value";
 const vespalib::string AddressSpaceComponents::tensor_store = "tensor-store";
 const vespalib::string AddressSpaceComponents::shared_string_repo = "shared-string-repo";
-const vespalib::string AddressSpaceComponents::hnsw_node_store = "hnsw-node-store";
-const vespalib::string AddressSpaceComponents::hnsw_link_store = "hnsw-link-store";
+const vespalib::string AddressSpaceComponents::hnsw_levels_store = "hnsw-levels-store";
+const vespalib::string AddressSpaceComponents::hnsw_links_store = "hnsw-links-store";
+const vespalib::string AddressSpaceComponents::hnsw_nodeid_mapping = "hnsw-nodeid-mapping";
 
 }

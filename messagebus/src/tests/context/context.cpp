@@ -18,7 +18,7 @@ struct Handler : public IMessageHandler
 {
     DestinationSession::UP session;
 
-    Handler(MessageBus &mb) : session() {
+    explicit Handler(MessageBus &mb) : session() {
         session = mb.createDestinationSession("session", true, *this);
     }
     ~Handler() override {

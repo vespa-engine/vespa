@@ -2,6 +2,7 @@
 package com.yahoo.container.jdisc.metric;
 
 import com.yahoo.jdisc.Metric;
+import com.yahoo.metrics.ContainerMetrics;
 
 import java.lang.management.GarbageCollectorMXBean;
 import java.lang.management.ManagementFactory;
@@ -18,8 +19,8 @@ import java.util.Map;
  */
 public class GarbageCollectionMetrics {
 
-    private static final String GC_COUNT = "jdisc.gc.count";
-    private static final String GC_TIME = "jdisc.gc.ms";
+    private static final String GC_COUNT = ContainerMetrics.JDISC_GC_COUNT.baseName();
+    private static final String GC_TIME = ContainerMetrics.JDISC_GC_MS.baseName();
     private static final String DIMENSION_KEY = "gcName";
 
     public static final Duration REPORTING_INTERVAL = Duration.ofSeconds(62);

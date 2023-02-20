@@ -9,7 +9,11 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.util.List;
 
+/**
+ * @author ogronnesby
+ */
 class CsvResponse extends HttpResponse {
+
     private final String[] header;
     private final List<Object[]> rows;
 
@@ -31,4 +35,5 @@ class CsvResponse extends HttpResponse {
     public String getContentType() {
         return "text/csv; encoding=utf-8";
     }
+
 }

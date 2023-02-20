@@ -13,7 +13,7 @@ VESPA_THREAD_STACK_TAG(simple_configurer_thread);
 SimpleConfigurer::SimpleConfigurer(SimpleConfigRetriever::UP retriever, SimpleConfigurable * const configurable)
     : _retriever(std::move(retriever)),
       _configurable(configurable),
-      _thread(*this, simple_configurer_thread),
+      _thread(),
       _started(false)
 {
     assert(_retriever);
@@ -25,7 +25,7 @@ SimpleConfigurer::start()
     if (!_retriever->isClosed()) {
         LOG(debug, "Polling for config");
         runConfigure();
-        _thread.start();
+        _thread = vespalib::thread::start(*this, simple_configurer_thread);
         _started = true;
     }
 }
@@ -38,9 +38,11 @@ SimpleConfigurer::~SimpleConfigurer()
 void
 SimpleConfigurer::close()
 {
-    _retriever->close();
-    if (_started)
-        _thread.join();
+    if (!_retriever->isClosed()) {
+        _retriever->close();
+        if (_started)
+            _thread.join();
+    }
 }
 
 void

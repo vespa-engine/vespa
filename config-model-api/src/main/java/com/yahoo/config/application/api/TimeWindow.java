@@ -34,8 +34,8 @@ public class TimeWindow {
     private final LocalDateRange dateRange;
 
     private TimeWindow(List<DayOfWeek> days, List<Integer> hours, ZoneId zone, LocalDateRange dateRange) {
-        this.days = Objects.requireNonNull(days).stream().distinct().sorted().collect(Collectors.toUnmodifiableList());
-        this.hours = Objects.requireNonNull(hours).stream().distinct().sorted().collect(Collectors.toUnmodifiableList());
+        this.days = Objects.requireNonNull(days).stream().distinct().sorted().toList();
+        this.hours = Objects.requireNonNull(hours).stream().distinct().sorted().toList();
         this.zone = Objects.requireNonNull(zone);
         this.dateRange = Objects.requireNonNull(dateRange);
         if (days.isEmpty()) throw new IllegalArgumentException("At least one day must be specified");
@@ -79,7 +79,7 @@ public class TimeWindow {
                hours.toString() +
                " on " + days.stream().map(DayOfWeek::name)
                             .map(String::toLowerCase)
-                            .collect(Collectors.toList()) +
+                            .toList() +
                " in time zone " + zone + " and " + dateRange.toString();
     }
 
@@ -90,7 +90,7 @@ public class TimeWindow {
                 ? List.copyOf(dateRange.days()) // Default to the days contained in the date range
                 : parse(daySpec, TimeWindow::parseDays);
         List<Integer> hours = hourSpec.isEmpty()
-                ? IntStream.rangeClosed(0, 23).boxed().collect(Collectors.toList()) // All hours by default
+                ? IntStream.rangeClosed(0, 23).boxed().toList() // All hours by default
                 : parse(hourSpec, TimeWindow::parseHours);
         ZoneId zone = zoneFrom(zoneSpec.isEmpty() ? "UTC" : zoneSpec);
         return new TimeWindow(days, hours, zone, dateRange);
@@ -123,7 +123,7 @@ public class TimeWindow {
                                                              endInclusive));
         }
         return IntStream.rangeClosed(start, end).boxed()
-                        .collect(Collectors.toList());
+                        .toList();
     }
 
     /** Returns a list of all days occurring between startInclusive and endInclusive */
@@ -136,7 +136,7 @@ public class TimeWindow {
         }
         return IntStream.rangeClosed(start.getValue(), end.getValue()).boxed()
                         .map(DayOfWeek::of)
-                        .collect(Collectors.toList());
+                        .toList();
     }
 
     /** Parse day of week from string */

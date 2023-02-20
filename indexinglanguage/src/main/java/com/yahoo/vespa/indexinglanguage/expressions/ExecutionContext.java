@@ -30,12 +30,17 @@ public class ExecutionContext implements FieldTypeAdapter, FieldValueAdapter, Cl
         this.language = Language.UNKNOWN;
     }
 
-    public ExecutionContext execute(Expression exp) {
-        if (exp != null) {
-            exp.execute(this);
-        }
+    public ExecutionContext execute(Expression expression) {
+        if (expression != null)
+            expression.execute(this);
         return this;
     }
+
+    /**
+     * Returns whether this is for a complete execution of all statements of a script,
+     * or a partial execution of only the statements accessing the available data.
+     */
+    public boolean isComplete() { return adapter == null ? false : adapter.isComplete(); }
 
     @Override
     public DataType getInputType(Expression exp, String fieldName) {
@@ -65,9 +70,8 @@ public class ExecutionContext implements FieldTypeAdapter, FieldValueAdapter, Cl
 
     @Override
     public ExecutionContext setOutputValue(Expression exp, String fieldName, FieldValue fieldValue) {
-        if (adapter == null) {
+        if (adapter == null)
             throw new IllegalStateException("Can not set field '" + fieldName + "' because adapter is null.");
-        }
         adapter.setOutputValue(exp, fieldName, fieldValue);
         return this;
     }

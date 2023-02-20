@@ -2,6 +2,7 @@
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/vespalib/net/socket_spec.h>
 #include <vespa/vespalib/net/tls/capability_env_config.h>
+#include <vespa/vespalib/net/tls/statistics.h>
 #include <vespa/vespalib/util/benchmark_timer.h>
 #include <vespa/vespalib/util/latch.h>
 #include <vespa/fnet/frt/supervisor.h>
@@ -16,6 +17,7 @@
 
 using vespalib::SocketSpec;
 using vespalib::BenchmarkTimer;
+using vespalib::net::tls::CapabilityStatistics;
 using namespace vespalib::net::tls;
 
 constexpr double timeout = 60.0;
@@ -90,69 +92,11 @@ private:
     vespalib::Stash _echo_stash;
     FRT_Values      _echo_args;
 
-    EchoTest(const EchoTest &);
-    EchoTest &operator=(const EchoTest &);
-
 public:
-    EchoTest(FRT_Supervisor *supervisor)
-        : _echo_stash(),
-          _echo_args(_echo_stash)
-    {
-        FRT_ReflectionBuilder rb(supervisor);
-        rb.DefineMethod("echo", "*", "*",
-                        FRT_METHOD(EchoTest::RPC_Echo), this);
-
-        FRT_Values *args = &_echo_args;
-        args->EnsureFree(16);
-
-        args->AddInt8(8);
-        uint8_t *pt_int8 = args->AddInt8Array(3);
-        pt_int8[0] = 1;
-        pt_int8[1] = 2;
-        pt_int8[2] = 3;
-
-        args->AddInt16(16);
-        uint16_t *pt_int16 = args->AddInt16Array(3);
-        pt_int16[0] = 2;
-        pt_int16[1] = 4;
-        pt_int16[2] = 6;
-
-        args->AddInt32(32);
-        uint32_t *pt_int32 = args->AddInt32Array(3);
-        pt_int32[0] = 4;
-        pt_int32[1] = 8;
-        pt_int32[2] = 12;
-
-        args->AddInt64(64);
-        uint64_t *pt_int64 = args->AddInt64Array(3);
-        pt_int64[0] = 8;
-        pt_int64[1] = 16;
-        pt_int64[2] = 24;
-
-        args->AddFloat(32.5);
-        float *pt_float = args->AddFloatArray(3);
-        pt_float[0] = 0.25;
-        pt_float[1] = 0.5;
-        pt_float[2] = 0.75;
-
-        args->AddDouble(64.5);
-        double *pt_double = args->AddDoubleArray(3);
-        pt_double[0] = 0.1;
-        pt_double[1] = 0.2;
-        pt_double[2] = 0.3;
-
-        args->AddString("string");
-        FRT_StringValue *pt_string = args->AddStringArray(3);
-        args->SetString(&pt_string[0], "str1");
-        args->SetString(&pt_string[1], "str2");
-        args->SetString(&pt_string[2], "str3");
-
-        args->AddData("data", 4);
-        FRT_DataValue *pt_data = args->AddDataArray(3);
-        args->SetData(&pt_data[0], "dat1", 4);
-        args->SetData(&pt_data[1], "dat2", 4);
-        args->SetData(&pt_data[2], "dat3", 4);
-    }
+    EchoTest(const EchoTest &) = delete;
+    EchoTest &operator=(const EchoTest &) = delete;
+    EchoTest(FRT_Supervisor *supervisor);
+    ~EchoTest() override;
 
     bool prepare_params(FRT_RPCRequest &req)
     {
@@ -178,6 +122,66 @@ public:
     }
 };
 
+EchoTest::~EchoTest() = default;
+
+EchoTest::EchoTest(FRT_Supervisor *supervisor)
+    : _echo_stash(),
+      _echo_args(_echo_stash)
+{
+    FRT_ReflectionBuilder rb(supervisor);
+    rb.DefineMethod("echo", "*", "*", FRT_METHOD(EchoTest::RPC_Echo), this);
+
+    FRT_Values *args = &_echo_args;
+    args->EnsureFree(16);
+
+    args->AddInt8(8);
+    uint8_t *pt_int8 = args->AddInt8Array(3);
+    pt_int8[0] = 1;
+    pt_int8[1] = 2;
+    pt_int8[2] = 3;
+
+    args->AddInt16(16);
+    uint16_t *pt_int16 = args->AddInt16Array(3);
+    pt_int16[0] = 2;
+    pt_int16[1] = 4;
+    pt_int16[2] = 6;
+
+    args->AddInt32(32);
+    uint32_t *pt_int32 = args->AddInt32Array(3);
+    pt_int32[0] = 4;
+    pt_int32[1] = 8;
+    pt_int32[2] = 12;
+
+    args->AddInt64(64);
+    uint64_t *pt_int64 = args->AddInt64Array(3);
+    pt_int64[0] = 8;
+    pt_int64[1] = 16;
+    pt_int64[2] = 24;
+
+    args->AddFloat(32.5);
+    float *pt_float = args->AddFloatArray(3);
+    pt_float[0] = 0.25;
+    pt_float[1] = 0.5;
+    pt_float[2] = 0.75;
+
+    args->AddDouble(64.5);
+    double *pt_double = args->AddDoubleArray(3);
+    pt_double[0] = 0.1;
+    pt_double[1] = 0.2;
+    pt_double[2] = 0.3;
+
+    args->AddString("string");
+    FRT_StringValue *pt_string = args->AddStringArray(3);
+    args->SetString(&pt_string[0], "str1");
+    args->SetString(&pt_string[1], "str2");
+    args->SetString(&pt_string[2], "str3");
+
+    args->AddData("data", 4);
+    FRT_DataValue *pt_data = args->AddDataArray(3);
+    args->SetData(&pt_data[0], "dat1", 4);
+    args->SetData(&pt_data[1], "dat2", 4);
+    args->SetData(&pt_data[2], "dat3", 4);
+}
 //-------------------------------------------------------------
 
 struct MyAccessFilter : FRT_RequestAccessFilter {
@@ -484,6 +488,7 @@ TEST_F("request allowed by access filter invokes server method as usual", Fixtur
 }
 
 TEST_F("capability checking filter is enforced under mTLS unless overridden by env var", Fixture()) {
+    const auto cap_stats_before = CapabilityStatistics::get().snapshot();
     MyReq req("capabilityRestricted"); // Requires content node cap set; disallowed
     f1.target().InvokeSync(req.borrow(), timeout);
     auto cap_mode = capability_enforcement_mode_from_env();
@@ -492,6 +497,9 @@ TEST_F("capability checking filter is enforced under mTLS unless overridden by e
         // Default authz rule does not give required capabilities; must fail.
         EXPECT_EQUAL(req.get().GetErrorCode(), FRTE_RPC_PERMISSION_DENIED);
         EXPECT_FALSE(f1.server_instance().restricted_method_was_invoked());
+        // Permission denied should bump capability check failure statistic
+        const auto cap_stats = CapabilityStatistics::get().snapshot().subtract(cap_stats_before);
+        EXPECT_EQUAL(cap_stats.rpc_capability_checks_failed, 1u);
     } else {
         // Either no mTLS configured (implicit full capability set) or capabilities not enforced.
         ASSERT_FALSE(req.get().IsError());
@@ -500,11 +508,15 @@ TEST_F("capability checking filter is enforced under mTLS unless overridden by e
 }
 
 TEST_F("access is allowed by capability filter when peer is granted the required capability", Fixture()) {
+    const auto cap_stats_before = CapabilityStatistics::get().snapshot();
     MyReq req("capabilityAllowed"); // Requires telemetry cap set; allowed
     f1.target().InvokeSync(req.borrow(), timeout);
     // Should always be allowed, regardless of mTLS mode or capability enforcement
     ASSERT_FALSE(req.get().IsError());
     EXPECT_TRUE(f1.server_instance().restricted_method_was_invoked());
+    // Should _not_ bump capability check failure statistic
+    const auto cap_stats = CapabilityStatistics::get().snapshot().subtract(cap_stats_before);
+    EXPECT_EQUAL(cap_stats.rpc_capability_checks_failed, 0u);
 }
 
 TEST_F("access is allowed by capability filter when required capability set is empty", Fixture()) {

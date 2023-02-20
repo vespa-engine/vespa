@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.provision.restapi;
 
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.ZoneEndpoint.AllowedUrn;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.restapi.SlimeJsonResponse;
 import com.yahoo.slime.Cursor;
@@ -74,6 +75,21 @@ public class LoadBalancersResponse extends SlimeJsonResponse {
                     realObject.setString("ipAddress", real.ipAddress());
                     realObject.setLong("port", real.port());
                 });
+            });
+            lb.instance().ifPresent(instance -> {
+                if ( ! instance.settings().isDefault()) {
+                    Cursor urnsArray = lbObject.setObject("settings").setArray("allowedUrns");
+                    for (AllowedUrn urn : instance.settings().allowedUrns()) {
+                        Cursor urnObject = urnsArray.addObject();
+                        urnObject.setString("type", switch (urn.type()) {
+                                                        case awsPrivateLink -> "aws-private-link";
+                                                        case gcpServiceConnect -> "gcp-service-connect";
+                                                    });
+                        urnObject.setString("urn", urn.urn());
+                    }
+                }
+                instance.serviceId().ifPresent(serviceId -> lbObject.setString("serviceId", serviceId.value()));
+                lbObject.setBool("public", instance.settings().isPublicEndpoint());
             });
             lb.instance()
               .map(LoadBalancerInstance::cloudAccount)

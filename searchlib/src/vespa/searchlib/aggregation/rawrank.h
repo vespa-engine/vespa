@@ -3,6 +3,6 @@
 
 namespace search::aggregation {
 
-typedef double RawRank;
+using RawRank = double;
 
 }

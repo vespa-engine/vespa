@@ -1,19 +1,12 @@
 package com.yahoo.vespa.hosted.controller.application.pkg;
 
-import com.yahoo.security.X509CertificateUtils;
-
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
-import java.security.cert.X509Certificate;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
@@ -22,10 +15,8 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 
-import static com.yahoo.security.X509CertificateUtils.certificateListFromPem;
 import static java.io.OutputStream.nullOutputStream;
 import static java.lang.Math.min;
-import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * Wraps a zipped application package stream.
@@ -41,24 +32,6 @@ public class ApplicationPackageStream {
     private final Supplier<Predicate<String>> filter;
     private final Supplier<InputStream> in;
     private final AtomicReference<ApplicationPackage> truncatedPackage = new AtomicReference<>();
-
-    public static Supplier<Replacer> addingCertificate(Optional<X509Certificate> certificate) {
-        return certificate.map(cert -> Replacer.of(Map.of(ApplicationPackage.trustedCertificatesFile,
-                                                          trustBytes -> append(trustBytes, cert))))
-                          .orElse(Replacer.of(Map.of()));
-    }
-
-    static InputStream append(InputStream trustIn, X509Certificate cert) {
-        try {
-            List<X509Certificate> trusted = trustIn == null ? new ArrayList<>()
-                                                            : new ArrayList<>(certificateListFromPem(new String(trustIn.readAllBytes(), UTF_8)));
-            trusted.add(cert);
-            return new ByteArrayInputStream(X509CertificateUtils.toPem(trusted).getBytes(UTF_8));
-        }
-        catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
-    }
 
     /** Stream that effectively copies the input stream to its {@link #truncatedPackage()} when exhausted. */
     public ApplicationPackageStream(Supplier<InputStream> in) {

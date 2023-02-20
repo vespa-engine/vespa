@@ -23,7 +23,7 @@ public:
      *
      * @param name The name of the route to insert.
      */
-    RouteDirective(vespalib::stringref name);
+    explicit RouteDirective(vespalib::stringref name);
     ~RouteDirective() override;
 
     /**
@@ -31,12 +31,12 @@ public:
      *
      * @return The name name.
      */
-    const string &getName() const { return _name; }
+    [[nodiscard]] const string &getName() const { return _name; }
 
-    Type getType() const override { return TYPE_ROUTE; }
-    bool matches(const IHopDirective &dir) const override;
-    string toString() const override;
-    string toDebugString() const override;
+    [[nodiscard]] Type getType() const override { return TYPE_ROUTE; }
+    [[nodiscard]] bool matches(const IHopDirective &dir) const override;
+    [[nodiscard]] string toString() const override;
+    [[nodiscard]] string toDebugString() const override;
 };
 
 } // mbus

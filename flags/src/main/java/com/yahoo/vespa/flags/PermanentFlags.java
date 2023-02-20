@@ -70,7 +70,7 @@ public class PermanentFlags {
             "Takes effect on next iteration of HostCapacityMaintainer.");
 
     public static final UnboundIntFlag REBOOT_INTERVAL_IN_DAYS = defineIntFlag(
-            "reboot-interval-in-days", 15,
+            "reboot-interval-in-days", 30,
             "No reboots are scheduled 0x-1x reboot intervals after the previous reboot, while reboot is " +
                     "scheduled evenly distributed in the 1x-2x range (and naturally guaranteed at the 2x boundary).",
             "Takes effect on next run of NodeRebooter");
@@ -313,6 +313,21 @@ public class PermanentFlags {
             "The zones, e.g., prod.norway-71, where deployments jobs are currently disabled",
             "Takes effect immediately",
             APPLICATION_ID
+    );
+
+    public static final UnboundBooleanFlag ALLOW_USER_FILTERS = defineFeatureFlag(
+            "allow-user-filters", true,
+            "Allow user filter (chains) in application",
+            "Takes effect on next redeployment",
+            APPLICATION_ID);
+
+    public static final UnboundLongFlag CONFIG_SERVER_SESSION_EXPIRY_TIME = defineLongFlag(
+            // TODO: Lower to 3600, which is default session expiry time
+            "config-server-session-expiry-time", 3600 * 2,
+            "Expiry time in seconds for remote sessions (session in ZooKeeper). Default should be equal to session lifetime, " +
+            "but can be lowered if there are incidents/bugs where one needs to delete sessions",
+            "Takes effect immediately",
+            ZONE_ID
     );
 
     private PermanentFlags() {}

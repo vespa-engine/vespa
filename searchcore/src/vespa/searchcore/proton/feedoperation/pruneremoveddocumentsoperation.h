@@ -11,7 +11,7 @@ class PruneRemovedDocumentsOperation : public RemoveDocumentsOperation
 private:
     uint32_t _subDbId;
 public:
-    typedef std::unique_ptr<PruneRemovedDocumentsOperation> UP;
+    using UP = std::unique_ptr<PruneRemovedDocumentsOperation>;
 
     PruneRemovedDocumentsOperation();
     PruneRemovedDocumentsOperation(search::DocumentIdT docIdLimit, uint32_t subDbId);

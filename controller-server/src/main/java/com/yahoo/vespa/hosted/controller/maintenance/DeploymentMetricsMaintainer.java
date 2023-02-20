@@ -7,6 +7,7 @@ import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.ClusterMetrics;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
+import com.yahoo.vespa.hosted.controller.api.integration.configserver.ApplicationReindexing;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
 import com.yahoo.yolean.Exceptions;
@@ -24,8 +25,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * Retrieve deployment metrics such as QPS and document count from the metric service and
- * update applications with this info.
+ * Retrieves deployment metrics such as QPS and document count over the config server API
+ * and updates application objects in the controller with this info.
  *
  * @author smorgrav
  * @author mpolden
@@ -68,7 +69,8 @@ public class DeploymentMetricsMaintainer extends ControllerMaintainer {
                                                                lockedInstance -> lockedInstance.with(existingDeployment.zone(), newMetrics)
                                                                                                .recordActivityAt(now, existingDeployment.zone())));
 
-                                controller().notificationsDb().setDeploymentMetricsNotifications(deploymentId, clusterMetrics);
+                                ApplicationReindexing applicationReindexing = controller().serviceRegistry().configServer().getReindexing(deploymentId);
+                                controller().notificationsDb().setDeploymentMetricsNotifications(deploymentId, clusterMetrics, applicationReindexing);
                             });
                         } catch (Exception e) {
                             failures.incrementAndGet();

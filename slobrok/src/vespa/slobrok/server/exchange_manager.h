@@ -7,6 +7,7 @@
 #include <deque>
 #include <string>
 #include <unordered_map>
+#include <vespa/vespalib/util/time.h>
 
 namespace slobrok {
 
@@ -73,6 +74,7 @@ private:
     };
 
     SBEnv             &_env;
+    vespalib::steady_time _lastFullConsensusTime;
 
     vespalib::string diffLists(const ServiceMappingList &lhs, const ServiceMappingList &rhs);
 

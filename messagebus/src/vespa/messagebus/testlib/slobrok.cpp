@@ -18,6 +18,7 @@ private:
     std::condition_variable _cond;
 public:
     explicit WaitTask(FNET_Scheduler *s) : FNET_Task(s), _done(false), _mon() {}
+    ~WaitTask() override;
     void wait() {
         std::unique_lock guard(_mon);
         while (!_done) {
@@ -31,6 +32,8 @@ public:
         _cond.notify_one();
     }
 };
+
+WaitTask::~WaitTask() = default;
 } // namespace <unnamed>
 
 namespace mbus {
@@ -67,7 +70,7 @@ Slobrok::init()
 }
 
 Slobrok::Slobrok()
-    : _pool(128000, 0),
+    : _pool(),
       _env(),
       _port(0),
       _thread()
@@ -76,7 +79,7 @@ Slobrok::Slobrok()
 }
 
 Slobrok::Slobrok(int p)
-    : _pool(128000, 0),
+    : _pool(),
       _env(),
       _port(p),
       _thread()

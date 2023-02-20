@@ -41,7 +41,7 @@ UpdateDocumentMessage::hasSequenceId() const
 uint64_t
 UpdateDocumentMessage::getSequenceId() const
 {
-    return *reinterpret_cast<const uint64_t*>(_documentUpdate->getId().getGlobalId().get());
+    return vespalib::Unaligned<uint64_t>::at(_documentUpdate->getId().getGlobalId().get()).read();
 }
 
 uint32_t

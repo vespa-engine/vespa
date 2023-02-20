@@ -37,8 +37,8 @@ struct Object {
     }
 };
 
-typedef Object<8>     SmallObject;
-typedef Object<10000> LargeObject;
+using SmallObject = Object<8>;
+using LargeObject = Object<10000>;
 
 struct Small : SmallObject {
     Small(size_t &dref) : SmallObject(dref) {}

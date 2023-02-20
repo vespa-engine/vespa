@@ -9,6 +9,7 @@
 #include <vespa/document/base/exceptions.h>
 #include <vespa/document/fieldvalue/stringfieldvalue.h>
 #include <vespa/document/repo/fixedtyperepo.h>
+#include <vespa/document/util/serializableexceptions.h>
 #include <vespa/vespalib/objects/nbostream.h>
 
 #include <vespa/log/log.h>
@@ -17,6 +18,11 @@ LOG_SETUP(".annotationdeserializer");
 using std::unique_ptr;
 
 namespace document {
+namespace {
+[[noreturn]] void fail(const char *message) {
+    throw DeserializeException(message);
+}
+}
 
 AnnotationDeserializer::AnnotationDeserializer(const FixedTypeRepo &repo,
                                                vespalib::nbostream &stream,
@@ -63,6 +69,7 @@ unique_ptr<SpanNode> AnnotationDeserializer::readSpanNode() {
         node = readAlternateSpanList();
     } else {
         LOG(warning, "Cannot read SpanNode of type %u.", type);
+        fail("Annotation data contains SpanNode with bad type");
     }
     _nodes[node_index] = node.get();
     return node;
@@ -102,10 +109,15 @@ void AnnotationDeserializer::readAnnotation(Annotation & annotation) {
     uint32_t type_id = readValue<uint32_t>(_stream);
     uint8_t features = readValue<uint8_t>(_stream);
     uint32_t size = getInt1_2_4Bytes(_stream);
+    if (size > _stream.size()) {
+        LOG(warning, "Annotation of type %u claims size %u > available %zd", type_id, size, _stream.size());
+        fail("Annotation contains SpanNode with bad size");
+        return;
+    }
 
     const AnnotationType *type = _repo.getAnnotationType(type_id);
     if (!type) {
-//        LOG(warning, "Skipping unknown annotation of type %u", type_id);
+        LOG(warning, "Skipping unknown annotation of type %u", type_id);
         _stream.adjustReadPos(size);
         return;
     }
@@ -114,16 +126,21 @@ void AnnotationDeserializer::readAnnotation(Annotation & annotation) {
     SpanNode *span_node = 0;
     if (features & 1) {  // has span node
         uint32_t span_node_id = getInt1_2_4Bytes(_stream);
-        span_node = _nodes[span_node_id];
+        if (span_node_id > _nodes.size()) {
+            LOG(warning, "Annotation of type %u has node_id %u > #nodes %zd", type_id, span_node_id, _nodes.size());
+            fail("Annotation refers to out-of-bounds span node");
+        } else {
+            span_node = _nodes[span_node_id];
+        }
     }
     if (features & 2) {  // has value
         uint32_t data_type_id = readValue<uint32_t>(_stream);
 
         const DataType *data_type = type->getDataType();
         if (!data_type) {
-            LOG(warning, "Skipping payload (data type %d) for annotation type %s",
+            LOG(warning, "Bad data type %d for annotation type %s",
                 data_type_id, type->getName().c_str());
-            _stream.adjustReadPos(size - sizeof(uint32_t));
+            fail("Annotation with bad datatype for its value");
         } else {
             FieldValue::UP value(data_type->createFieldValue());
             VespaDocumentDeserializer deserializer(_repo, _stream, _version);

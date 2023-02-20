@@ -2,17 +2,16 @@
 
 #pragma once
 
-#include <vector>
-#include <queue>
-#include <map>
-#include "blueprint.h"
 #include "feature_type.h"
+#include <vector>
+#include <map>
 
 namespace search::fef {
 
 class BlueprintFactory;
 class IIndexEnvironment;
 class FeatureNameParser;
+class Blueprint;
 
 /**
  * This class is used by the framework to resolve blueprint
@@ -25,6 +24,7 @@ class BlueprintResolver
 {
 public:
     using SP = std::shared_ptr<BlueprintResolver>;
+    using BlueprintSP = std::shared_ptr<Blueprint>;
     using Warnings = std::vector<vespalib::string>;
 
     /**
@@ -43,7 +43,7 @@ public:
         FeatureRef() : executor(undef), output(0) {}
         FeatureRef(uint32_t executor_in, uint32_t output_in)
             : executor(executor_in), output(output_in) {}
-        bool valid() { return (executor != undef); }
+        [[nodiscard]] bool valid() const { return (executor != undef); }
     };
     using FeatureMap = std::map<vespalib::string, FeatureRef>;
 
@@ -53,11 +53,14 @@ public:
      * other executors.
      **/
     struct ExecutorSpec {
-        Blueprint::SP            blueprint;
+        BlueprintSP              blueprint;
         std::vector<FeatureRef>  inputs;
         std::vector<FeatureType> output_types;
 
-        ExecutorSpec(Blueprint::SP blueprint_in);
+        explicit ExecutorSpec(BlueprintSP blueprint_in) noexcept;
+        ExecutorSpec(ExecutorSpec &&) noexcept;
+        ExecutorSpec & operator =(ExecutorSpec &&) noexcept;
+        ExecutorSpec(const ExecutorSpec &);
         ~ExecutorSpec();
     };
     using ExecutorSpecList = std::vector<ExecutorSpec>;
@@ -85,7 +88,7 @@ private:
     ExecutorSpecList              _executorSpecs;
     FeatureMap                    _featureMap;
     FeatureMap                    _seedMap;
-    Warnings                        _warnings;
+    Warnings                      _warnings;
 
 public:
     BlueprintResolver(const BlueprintResolver &) = delete;
@@ -136,7 +139,7 @@ public:
      *
      * @return feature executor assembly directions
      **/
-    const ExecutorSpecList &getExecutorSpecs() const { return _executorSpecs; }
+    [[nodiscard]] const ExecutorSpecList &getExecutorSpecs() const { return _executorSpecs; }
 
     /**
      * Obtain the location of all named features known to this
@@ -147,7 +150,7 @@ public:
      *
      * @return feature locations
      **/
-    const FeatureMap &getFeatureMap() const { return _featureMap; }
+    [[nodiscard]] const FeatureMap &getFeatureMap() const { return _featureMap; }
 
     /**
      * Obtain the location of all seeds used by this resolver. This
@@ -158,13 +161,13 @@ public:
      *
      * @return seed locations
      **/
-    const FeatureMap &getSeedMap() const { return _seedMap; }
+    [[nodiscard]] const FeatureMap &getSeedMap() const { return _seedMap; }
 
     /**
      * Will return any accumulated warnings during compile
      * @return list of warnings
      **/
-    const Warnings & getWarnings() const { return _warnings; }
+    [[nodiscard]] const Warnings & getWarnings() const { return _warnings; }
 };
 
 }

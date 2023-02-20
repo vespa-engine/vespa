@@ -1,0 +1,268 @@
+<services version="1.0" xmlns:deploy="vespa" xmlns:preprocess="properties">
+
+    <container id="docsgateway" version="1.0">
+
+        <nodes count="1" deploy:environment="dev" deploy:instance="staging1">
+            <resources vcpu="48" memory="96Gb" disk="1800Gb" disk-speed="fast" storage-type="local" />
+        </nodes>
+
+        <nodes count="1" deploy:environment="dev" deploy:instance="staging1-root">
+            <resources vcpu="48" memory="96Gb" disk="1800Gb" disk-speed="fast" storage-type="local" />
+        </nodes>
+
+        <nodes count="3">
+            <resources deploy:environment="prod perf" vcpu="48" memory="96Gb" disk="1800Gb" disk-speed="fast" storage-type="local" />
+            <resources vcpu="8" memory="16Gb" disk="32Gb" />
+        </nodes>
+
+        <nodes deploy:environment="staging" count="3">
+            <resources vcpu="8" memory="16Gb" disk="32Gb" />
+        </nodes>
+
+    </container>
+
+    <container id="qrs" version="1.0">
+        <nodes count="1" deploy:environment="dev" deploy:instance="staging1">
+            <resources vcpu="16" memory="32Gb" disk="64Gb" />
+        </nodes>
+
+        <nodes count="1" deploy:environment="dev" deploy:instance="staging1-root">
+            <resources vcpu="16" memory="32Gb" disk="64Gb" />
+        </nodes>
+
+        <nodes count="2">
+            <resources vcpu="8" memory="16Gb" disk="10Gb" />
+            <resources deploy:environment="prod perf" vcpu="16" memory="32Gb" disk="64Gb" />
+        </nodes>
+
+        <nodes count="25" deploy:tags="gamma" deploy:region="aws-us-east-1b">
+            <resources vcpu="16" memory="32Gb" disk="64Gb" />
+        </nodes>
+
+        <nodes count="2" deploy:tags="cd" deploy:region="aws-ap-southeast-1a">
+            <resources vcpu="16" memory="32Gb" disk="64Gb" />
+        </nodes>
+
+        <nodes count="2" deploy:tags="delta" deploy:region="aws-ap-southeast-1a">
+            <resources vcpu="16" memory="32Gb" disk="64Gb" />
+        </nodes>
+
+        <nodes count="2" deploy:tags="prod-a" deploy:region="aws-ap-southeast-1a">
+            <resources vcpu="16" memory="32Gb" disk="64Gb" />
+        </nodes>
+
+        <nodes count="2" deploy:tags="prod-b" deploy:region="aws-ap-southeast-1a">
+            <resources vcpu="16" memory="32Gb" disk="64Gb" />
+        </nodes>
+
+        <nodes count="2" deploy:tags="prod-c" deploy:region="aws-ap-southeast-1a">
+            <resources vcpu="16" memory="32Gb" disk="64Gb" />
+        </nodes>
+
+        <nodes count="2" deploy:tags="cd" deploy:region="aws-us-east-1b">
+            <resources vcpu="16" memory="32Gb" disk="64Gb" />
+        </nodes>
+
+        <nodes count="2" deploy:tags="delta" deploy:region="aws-us-east-1b">
+            <resources vcpu="16" memory="32Gb" disk="64Gb" />
+        </nodes>
+
+        <nodes count="2" deploy:tags="prod-a" deploy:region="aws-us-east-1b">
+            <resources vcpu="16" memory="32Gb" disk="64Gb" />
+        </nodes>
+
+        <nodes count="2" deploy:tags="prod-b" deploy:region="aws-us-east-1b">
+            <resources vcpu="16" memory="32Gb" disk="64Gb" />
+        </nodes>
+
+        <nodes count="2" deploy:tags="prod-c" deploy:region="aws-us-east-1b">
+            <resources vcpu="16" memory="32Gb" disk="64Gb" />
+        </nodes>
+
+        <nodes count="2" deploy:tags="cd" deploy:region="aws-us-west-2a aws-eu-west-1a">
+            <resources vcpu="16" memory="32Gb" disk="64Gb" />
+        </nodes>
+
+        <nodes count="2" deploy:tags="delta" deploy:region="aws-us-west-2a aws-eu-west-1a">
+            <resources vcpu="16" memory="32Gb" disk="64Gb" />
+        </nodes>
+
+        <nodes count="2" deploy:tags="prod-a" deploy:region="aws-us-west-2a aws-eu-west-1a">
+            <resources vcpu="16" memory="32Gb" disk="64Gb" />
+        </nodes>
+
+        <nodes count="2" deploy:tags="prod-b" deploy:region="aws-us-west-2a aws-eu-west-1a">
+            <resources vcpu="16" memory="32Gb" disk="64Gb" />
+        </nodes>
+
+        <nodes count="2" deploy:tags="prod-c" deploy:region="aws-us-west-2a aws-eu-west-1a">
+            <resources vcpu="16" memory="32Gb" disk="64Gb" />
+        </nodes>
+
+        <nodes count="3" deploy:tags="beta" deploy:region="aws-us-west-2a aws-eu-west-1a aws-ap-southeast-1a">
+            <resources vcpu="16" memory="32Gb" disk="64Gb" />
+        </nodes>
+
+        <nodes count="5" deploy:tags="beta" deploy:region="aws-us-east-1b">
+            <resources vcpu="16" memory="32Gb" disk="64Gb" />
+        </nodes>
+
+        <nodes count="5" deploy:tags="gamma" deploy:region="aws-us-west-2a aws-eu-west-1a">
+            <resources vcpu="16" memory="32Gb" disk="64Gb" />
+        </nodes>
+
+        <nodes count="7" deploy:tags="gamma" deploy:region="aws-ap-southeast-1a">
+            <resources vcpu="16" memory="32Gb" disk="64Gb" />
+        </nodes>
+
+        <search/>
+
+    </container>
+
+    <container id="visitor" version="1.0">
+        <nodes count="2">
+            <resources vcpu="8" memory="16Gb" disk="32Gb" />
+        </nodes>
+
+        <search/>
+    </container>
+
+    <content id="all" version="1.0">
+        <nodes deploy:tags="gamma" deploy:region="aws-ap-southeast-1a" count="10" groups="10">
+            <resources vcpu="72" memory="144Gb" disk="1800Gb" disk-speed="fast" storage-type="local" />
+        </nodes>
+
+        <nodes deploy:tags="beta" deploy:region="aws-us-east-1b" count="10" groups="10">
+            <resources vcpu="48" memory="96Gb" disk="1800Gb" disk-speed="fast" storage-type="local" />
+        </nodes>
+
+        <nodes deploy:environment="dev" deploy:instance="staging1" count="1" groups="1">
+            <resources vcpu="48" memory="96Gb" disk="1800Gb" disk-speed="fast" storage-type="local" />
+        </nodes>
+
+        <nodes deploy:tags="gamma" deploy:region="aws-us-east-1b" count="25" groups="25">
+            <resources vcpu="96" memory="192Gb" disk="3600Gb" disk-speed="fast" storage-type="local" />
+        </nodes>
+
+        <nodes count="2" groups="2" />
+
+        <nodes deploy:environment="dev" deploy:instance="staging1-root" count="2" groups="2">
+            <resources vcpu="48" memory="96Gb" disk="1800Gb" disk-speed="fast" storage-type="local" />
+        </nodes>
+
+        <nodes deploy:tags="cd" deploy:region="aws-ap-southeast-1a" count="2" groups="2">
+            <resources vcpu="72" memory="144Gb" disk="1800Gb" disk-speed="fast" storage-type="local" />
+        </nodes>
+
+        <nodes deploy:tags="delta" deploy:region="aws-ap-southeast-1a" count="2" groups="2">
+            <resources vcpu="72" memory="144Gb" disk="1800Gb" disk-speed="fast" storage-type="local" />
+        </nodes>
+
+        <nodes deploy:tags="prod-a" deploy:region="aws-ap-southeast-1a" count="2" groups="2">
+            <resources vcpu="72" memory="144Gb" disk="1800Gb" disk-speed="fast" storage-type="local" />
+        </nodes>
+
+        <nodes deploy:tags="prod-b" deploy:region="aws-ap-southeast-1a" count="2" groups="2">
+            <resources vcpu="72" memory="144Gb" disk="1800Gb" disk-speed="fast" storage-type="local" />
+        </nodes>
+
+        <nodes deploy:tags="prod-c" deploy:region="aws-ap-southeast-1a" count="2" groups="2">
+            <resources vcpu="72" memory="144Gb" disk="1800Gb" disk-speed="fast" storage-type="local" />
+        </nodes>
+
+        <nodes deploy:tags="cd" deploy:region="aws-eu-west-1a" count="2" groups="2">
+            <resources vcpu="72" memory="144Gb" disk="1800Gb" disk-speed="fast" storage-type="local" />
+        </nodes>
+
+        <nodes deploy:tags="delta" deploy:region="aws-eu-west-1a" count="2" groups="2">
+            <resources vcpu="72" memory="144Gb" disk="1800Gb" disk-speed="fast" storage-type="local" />
+        </nodes>
+
+        <nodes deploy:tags="prod-a" deploy:region="aws-eu-west-1a" count="2" groups="2">
+            <resources vcpu="72" memory="144Gb" disk="1800Gb" disk-speed="fast" storage-type="local" />
+        </nodes>
+
+        <nodes deploy:tags="prod-b" deploy:region="aws-eu-west-1a" count="2" groups="2">
+            <resources vcpu="72" memory="144Gb" disk="1800Gb" disk-speed="fast" storage-type="local" />
+        </nodes>
+
+        <nodes deploy:tags="prod-c" deploy:region="aws-eu-west-1a" count="2" groups="2">
+            <resources vcpu="72" memory="144Gb" disk="1800Gb" disk-speed="fast" storage-type="local" />
+        </nodes>
+
+        <nodes deploy:tags="cd" deploy:region="aws-us-east-1b" count="2" groups="2">
+            <resources vcpu="96" memory="192Gb" disk="3600Gb" disk-speed="fast" storage-type="local" />
+        </nodes>
+
+        <nodes deploy:tags="delta" deploy:region="aws-us-east-1b" count="2" groups="2">
+            <resources vcpu="96" memory="192Gb" disk="3600Gb" disk-speed="fast" storage-type="local" />
+        </nodes>
+
+        <nodes deploy:tags="prod-a" deploy:region="aws-us-east-1b" count="2" groups="2">
+            <resources vcpu="96" memory="192Gb" disk="3600Gb" disk-speed="fast" storage-type="local" />
+        </nodes>
+
+        <nodes deploy:tags="prod-b" deploy:region="aws-us-east-1b" count="2" groups="2">
+            <resources vcpu="96" memory="192Gb" disk="3600Gb" disk-speed="fast" storage-type="local" />
+        </nodes>
+
+        <nodes deploy:tags="prod-c" deploy:region="aws-us-east-1b" count="2" groups="2">
+            <resources vcpu="96" memory="192Gb" disk="3600Gb" disk-speed="fast" storage-type="local" />
+        </nodes>
+
+        <nodes deploy:tags="cd" deploy:region="aws-us-west-2a" count="2" groups="2">
+            <resources vcpu="96" memory="192Gb" disk="3600Gb" disk-speed="fast" storage-type="local" />
+        </nodes>
+
+        <nodes deploy:tags="delta" deploy:region="aws-us-west-2a" count="2" groups="2">
+            <resources vcpu="96" memory="192Gb" disk="3600Gb" disk-speed="fast" storage-type="local" />
+        </nodes>
+
+        <nodes deploy:tags="prod-a" deploy:region="aws-us-west-2a" count="2" groups="2">
+            <resources vcpu="96" memory="192Gb" disk="3600Gb" disk-speed="fast" storage-type="local" />
+        </nodes>
+
+        <nodes deploy:tags="prod-b" deploy:region="aws-us-west-2a" count="2" groups="2">
+            <resources vcpu="96" memory="192Gb" disk="3600Gb" disk-speed="fast" storage-type="local" />
+        </nodes>
+
+        <nodes deploy:tags="prod-c" deploy:region="aws-us-west-2a" count="2" groups="2">
+            <resources vcpu="96" memory="192Gb" disk="3600Gb" disk-speed="fast" storage-type="local" />
+        </nodes>
+
+        <nodes deploy:tags="beta" deploy:region="aws-eu-west-1a" count="3" groups="3">
+            <resources vcpu="36" memory="72Gb" disk="900Gb" disk-speed="fast" storage-type="local" />
+        </nodes>
+
+        <nodes deploy:tags="beta" deploy:region="aws-us-west-2a" count="3" groups="3">
+            <resources vcpu="48" memory="96Gb" disk="1800Gb" disk-speed="fast" storage-type="local" />
+        </nodes>
+
+        <nodes deploy:environment="perf" count="4" groups="4">
+            <resources vcpu="48" memory="96Gb" disk="1800Gb" disk-speed="fast" storage-type="local" />
+        </nodes>
+
+        <nodes deploy:tags="beta" deploy:region="aws-ap-southeast-1a" count="4" groups="4">
+            <resources vcpu="36" memory="72Gb" disk="900Gb" disk-speed="fast" storage-type="local" />
+        </nodes>
+
+        <nodes deploy:tags="gamma" deploy:region="aws-us-west-2a" count="5" groups="5">
+            <resources vcpu="96" memory="192Gb" disk="3600Gb" disk-speed="fast" storage-type="local" />
+        </nodes>
+
+        <nodes deploy:tags="gamma" deploy:region="aws-eu-west-1a" count="8" groups="8">
+            <resources vcpu="72" memory="144Gb" disk="1800Gb" disk-speed="fast" storage-type="local" />
+        </nodes>
+
+        <redundancy>1</redundancy>
+
+    </content>
+
+    <content id="filedocument" version="1.0">
+        <nodes count="2" groups="2">
+            <resources vcpu="4" memory="8Gb" disk="32Gb" />
+        </nodes>
+        <redundancy>1</redundancy>
+    </content>
+
+</services>

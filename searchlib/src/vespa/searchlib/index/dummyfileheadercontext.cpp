@@ -35,7 +35,7 @@ void
 DummyFileHeaderContext::addTags(vespalib::GenericHeader &header,
                                 const vespalib::string &name) const
 {
-    typedef vespalib::GenericHeader::Tag Tag;
+    using Tag = vespalib::GenericHeader::Tag;
 
     FileHeaderTk::addVersionTags(header);
     if (!_disableFileName) {

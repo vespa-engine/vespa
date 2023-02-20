@@ -42,15 +42,15 @@ public:
 
     // MaintenancePriorityGenerator interface
     MaintenancePriorityAndType prioritize(
-            const document::Bucket &bucket,
+            const document::Bucket& bucket,
             NodeMaintenanceStatsTracker& statsTracker) const override;
 
     // MaintenanceOperationGenerator
-    MaintenanceOperation::SP generate(const document::Bucket &bucket) const override;
+    MaintenanceOperation::SP generate(const document::Bucket& bucket) const override;
 
     // MaintenanceOperationGenerator
     std::vector<MaintenanceOperation::SP> generateAll(
-            const document::Bucket &bucket,
+            const document::Bucket& bucket,
             NodeMaintenanceStatsTracker& statsTracker) const override;
 
     /**
@@ -62,49 +62,43 @@ public:
             const BucketDatabase::Entry& e,
             api::StorageMessage::Priority pri);
 
-    IdealStateMetricSet& getMetrics() { return _metrics; }
-
+    IdealStateMetricSet& getMetrics() noexcept { return _metrics; }
 
     void dump_bucket_space_db_status(document::BucketSpace bucket_space, std::ostream& out) const;
 
     void getBucketStatus(std::ostream& out) const;
 
-    const DistributorNodeContext& node_context() const { return _node_ctx; }
-    DistributorStripeOperationContext& operation_context() { return _op_ctx; }
-    const DistributorStripeOperationContext& operation_context() const { return _op_ctx; }
-    DistributorBucketSpaceRepo &getBucketSpaceRepo() { return _op_ctx.bucket_space_repo(); }
-    const DistributorBucketSpaceRepo &getBucketSpaceRepo() const { return _op_ctx.bucket_space_repo(); }
+    const DistributorNodeContext& node_context() const noexcept { return _node_ctx; }
+    DistributorStripeOperationContext& operation_context() noexcept { return _op_ctx; }
+    const DistributorStripeOperationContext& operation_context() const noexcept { return _op_ctx; }
+    DistributorBucketSpaceRepo &getBucketSpaceRepo() noexcept { return _op_ctx.bucket_space_repo(); }
+    const DistributorBucketSpaceRepo &getBucketSpaceRepo() const noexcept { return _op_ctx.bucket_space_repo(); }
 
 private:
     void verify_only_live_nodes_in_context(const StateChecker::Context& c) const;
     static void fillParentAndChildBuckets(StateChecker::Context& c);
     static void fillSiblingBucket(StateChecker::Context& c);
     StateChecker::Result generateHighestPriority(
-            const document::Bucket &bucket,
+            const document::Bucket& bucket,
             NodeMaintenanceStatsTracker& statsTracker) const;
     StateChecker::Result runStateCheckers(StateChecker::Context& c) const;
 
     static BucketDatabase::Entry* getEntryForPrimaryBucket(StateChecker::Context& c);
 
-    IdealStateMetricSet& _metrics;
-    document::BucketId _lastPrioritizedBucket;
-
-    // Prioritized of state checkers that generate operations
-    // for idealstatemanager.
-    std::vector<StateChecker::SP> _stateCheckers;
-    SplitBucketStateChecker* _splitBucketStateChecker;
-
-    const DistributorNodeContext& _node_ctx;
+    IdealStateMetricSet&               _metrics;
+    std::vector<StateChecker::SP>      _stateCheckers;
+    SplitBucketStateChecker*           _splitBucketStateChecker;
+    const DistributorNodeContext&      _node_ctx;
     DistributorStripeOperationContext& _op_ctx;
-    mutable bool _has_logged_phantom_replica_warning;
+    mutable bool                       _has_logged_phantom_replica_warning;
 
     class StatusBucketVisitor : public BucketDatabase::EntryProcessor {
         // Stats tracker to use for all generateAll() calls to avoid having
         // to create a new hash map for each single bucket processed.
         NodeMaintenanceStatsTracker _statsTracker;
-        const IdealStateManager   & _ism;
+        const IdealStateManager&    _ism;
         document::BucketSpace       _bucketSpace;
-        std::ostream              & _out;
+        std::ostream&               _out;
     public:
         StatusBucketVisitor(const IdealStateManager& ism, document::BucketSpace bucketSpace, std::ostream& out)
             : _statsTracker(), _ism(ism), _bucketSpace(bucketSpace), _out(out) {}

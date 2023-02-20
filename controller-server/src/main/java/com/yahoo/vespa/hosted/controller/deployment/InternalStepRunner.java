@@ -2,13 +2,16 @@
 package com.yahoo.vespa.hosted.controller.deployment;
 
 import ai.vespa.http.DomainName;
-import com.google.common.net.InetAddresses;
+import ai.vespa.http.HttpURL;
 import com.yahoo.component.Version;
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.application.api.Notifications;
 import com.yahoo.config.application.api.Notifications.When;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.config.provision.EndpointsChecker;
+import com.yahoo.config.provision.EndpointsChecker.Availability;
+import com.yahoo.config.provision.EndpointsChecker.Status;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.zone.RoutingMethod;
@@ -33,7 +36,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.organization.Mail;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.Endpoint;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
-import com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackageStream;
 import com.yahoo.vespa.hosted.controller.application.pkg.TestPackage;
 import com.yahoo.vespa.hosted.controller.maintenance.JobRunner;
@@ -44,9 +46,9 @@ import com.yahoo.vespa.hosted.controller.routing.context.DeploymentRoutingContex
 import com.yahoo.yolean.Exceptions;
 
 import java.io.ByteArrayOutputStream;
-import java.io.InputStream;
 import java.io.PrintStream;
 import java.io.UncheckedIOException;
+import java.net.InetAddress;
 import java.security.cert.CertificateExpiredException;
 import java.security.cert.CertificateNotYetValidException;
 import java.security.cert.X509Certificate;
@@ -89,12 +91,12 @@ import static com.yahoo.vespa.hosted.controller.deployment.Step.deployReal;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.deployTester;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.installTester;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.report;
+import static com.yahoo.yolean.Exceptions.uncheck;
 import static java.util.Objects.requireNonNull;
 import static java.util.logging.Level.FINE;
 import static java.util.logging.Level.INFO;
 import static java.util.logging.Level.WARNING;
 import static java.util.stream.Collectors.joining;
-import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
 
 /**
@@ -127,31 +129,28 @@ public class InternalStepRunner implements StepRunner {
     public Optional<RunStatus> run(LockedStep step, RunId id) {
         DualLogger logger = new DualLogger(id, step.get());
         try {
-            switch (step.get()) {
-                case deployTester: return deployTester(id, logger);
-                case deployInitialReal: return deployInitialReal(id, logger);
-                case installInitialReal: return installInitialReal(id, logger);
-                case deployReal: return deployReal(id, logger);
-                case installTester: return installTester(id, logger);
-                case installReal: return installReal(id, logger);
-                case startStagingSetup: return startTests(id, true, logger);
-                case endStagingSetup: return endTests(id, true, logger);
-                case endTests: return endTests(id, false, logger);
-                case startTests: return startTests(id, false, logger);
-                case copyVespaLogs: return copyVespaLogs(id, logger);
-                case deactivateReal: return deactivateReal(id, logger);
-                case deactivateTester: return deactivateTester(id, logger);
-                case report: return report(id, logger);
-                default: throw new AssertionError("Unknown step '" + step + "'!");
-            }
-        }
-        catch (UncheckedIOException e) {
+            return switch (step.get()) {
+                case deployTester -> deployTester(id, logger);
+                case deployInitialReal -> deployInitialReal(id, logger);
+                case installInitialReal -> installInitialReal(id, logger);
+                case deployReal -> deployReal(id, logger);
+                case installTester -> installTester(id, logger);
+                case installReal -> installReal(id, logger);
+                case startStagingSetup -> startTests(id, true, logger);
+                case endStagingSetup -> endTests(id, true, logger);
+                case endTests -> endTests(id, false, logger);
+                case startTests -> startTests(id, false, logger);
+                case copyVespaLogs -> copyVespaLogs(id, logger);
+                case deactivateReal -> deactivateReal(id, logger);
+                case deactivateTester -> deactivateTester(id, logger);
+                case report -> report(id, logger);
+            };
+        } catch (UncheckedIOException e) {
             logger.logWithInternalException(INFO, "IO exception running " + id + ": " + Exceptions.toMessageString(e), e);
             return Optional.empty();
-        }
-        catch (RuntimeException e) {
+        } catch (RuntimeException|LinkageError e) {
             logger.log(WARNING, "Unexpected exception running " + id, e);
-            if (step.get().alwaysRun()) {
+            if (step.get().alwaysRun() && !(e instanceof LinkageError)) {
                 logger.log("Will keep trying, as this is a cleanup step.");
                 return Optional.empty();
             }
@@ -215,7 +214,7 @@ public class InternalStepRunner implements StepRunner {
                                                                Instant.ofEpochMilli(entry.epochMillis()),
                                                                LogEntry.typeOf(entry.level()),
                                                                entry.message()))
-                                    .collect(toList()));
+                                    .toList());
 
             logger.log("Deployment successful.");
             logger.log(result.message());
@@ -281,7 +280,8 @@ public class InternalStepRunner implements StepRunner {
             switch (e.type()) {
                 case CERT_NOT_AVAILABLE:
                     // Same as CERTIFICATE_NOT_READY above, only from the controller
-                    logger.log("Validating CA signed certificate requested for app: not yet available");
+                    logger.log("Creating a CA signed certificate for the application. " +
+                               "This may take up to " + timeouts.endpointCertificate() + " on first deployment.");
                     if (startTime.plus(timeouts.endpointCertificate()).isBefore(controller.clock().instant())) {
                         logger.log(WARNING, "CA signed certificate for app not available within " +
                                    timeouts.endpointCertificate() + ": " + Exceptions.toMessageString(e));
@@ -335,7 +335,7 @@ public class InternalStepRunner implements StepRunner {
             logger.log("######## Details for all nodes ########");
             logger.log(nodeList.asList().stream()
                                .flatMap(node -> nodeDetails(node, true))
-                               .collect(toList()));
+                               .toList());
         }
         else if ( ! summary.converged()) {
             logger.log("Waiting for convergence of " + summary.services() + " services across " + summary.nodes() + " nodes");
@@ -356,13 +356,17 @@ public class InternalStepRunner implements StepRunner {
         }
         if (summary.converged()) {
             controller.jobController().locked(id, lockedRun -> lockedRun.withSummary(null));
-            if (endpointsAvailable(id.application(), id.type().zone(), logger)) {
-                if (containersAreUp(id.application(), id.type().zone(), logger)) {
+            Availability availability = endpointsAvailable(id.application(), id.type().zone(), logger);
+            if (availability.status() == Status.available) {
+                if (controller.routing().policies().processDnsChallenges(new DeploymentId(id.application(), id.type().zone()))) {
                     logger.log("Installation succeeded!");
                     return Optional.of(running);
                 }
+                logger.log("Waiting for DNS challenges for private endpoints to be processed");
+                return Optional.empty();
             }
-            else if (timedOut(id, deployment.get(), timeouts.endpoint())) {
+            logger.log(availability.message());
+            if (availability.status() == Status.endpointsUnavailable && timedOut(id, deployment.get(), timeouts.endpoint())) {
                 logger.log(WARNING, "Endpoints failed to show up within " + timeouts.endpoint().toMinutes() + " minutes!");
                 return Optional.of(error);
             }
@@ -401,7 +405,7 @@ public class InternalStepRunner implements StepRunner {
             logger.log("######## Details for all nodes ########");
             logger.log(nodeList.asList().stream()
                                .flatMap(node -> nodeDetails(node, true))
-                               .collect(toList()));
+                               .toList());
             logger.log("######## Details for nodes with pending changes ########");
             logger.log(nodeList.not().in(nodeList.not().needsNewConfig()
                                                  .not().needsPlatformUpgrade()
@@ -411,7 +415,7 @@ public class InternalStepRunner implements StepRunner {
                                                  .not().needsOsUpgrade())
                                .asList().stream()
                                .flatMap(node -> nodeDetails(node, true))
-                               .collect(toList()));
+                               .toList());
             logger.log(INFO, failureReason);
             return Optional.of(installationFailed);
         }
@@ -420,7 +424,7 @@ public class InternalStepRunner implements StepRunner {
             logger.log(FINE, nodeList.expectedDown().and(nodeList.needsNewConfig()).asList().stream()
                                      .distinct()
                                      .flatMap(node -> nodeDetails(node, false))
-                                     .collect(toList()));
+                                     .toList());
 
         controller.jobController().locked(id, lockedRun -> {
             Instant noNodesDownSince = nodeList.allowedDown().size() == 0 ? lockedRun.noNodesDownSince().orElse(controller.clock().instant()) : null;
@@ -466,7 +470,7 @@ public class InternalStepRunner implements StepRunner {
         NodeList nodeList = NodeList.of(nodes, parents, services.get());
         logger.log(nodeList.asList().stream()
                            .flatMap(node -> nodeDetails(node, false))
-                           .collect(toList()));
+                           .toList());
 
         if (nodeList.summary().converged() && testerContainersAreUp(testerId, zone, logger)) {
             logger.log("Tester container successfully installed!");
@@ -481,21 +485,6 @@ public class InternalStepRunner implements StepRunner {
         return Optional.empty();
     }
 
-    /** Returns true iff all calls to endpoint in the deployment give 100 consecutive 200 OK responses on /status.html. */
-    private boolean containersAreUp(ApplicationId id, ZoneId zoneId, DualLogger logger) {
-        var endpoints = controller.routing().readTestRunnerEndpointsOf(Set.of(new DeploymentId(id, zoneId)));
-        if ( ! endpoints.containsKey(zoneId))
-            return false;
-
-        return endpoints.get(zoneId).parallelStream().allMatch(endpoint -> {
-            boolean ready = controller.jobController().cloud().ready(endpoint.url());
-            if (!ready) {
-                logger.log("Failed to get 100 consecutive OKs from " + endpoint);
-            }
-            return ready;
-        });
-    }
-
     /** Returns true iff all containers in the tester deployment give 100 consecutive 200 OK responses on /status.html. */
     private boolean testerContainersAreUp(ApplicationId id, ZoneId zoneId, DualLogger logger) {
         DeploymentId deploymentId = new DeploymentId(id, zoneId);
@@ -507,50 +496,25 @@ public class InternalStepRunner implements StepRunner {
         }
     }
 
-    private boolean endpointsAvailable(ApplicationId id, ZoneId zone, DualLogger logger) {
+    private Availability endpointsAvailable(ApplicationId id, ZoneId zone, DualLogger logger) {
         DeploymentId deployment = new DeploymentId(id, zone);
         Map<ZoneId, List<Endpoint>> endpoints = controller.routing().readTestRunnerEndpointsOf(Set.of(deployment));
-        if ( ! endpoints.containsKey(zone)) {
-            logger.log("Endpoints not yet ready.");
-            return false;
-        }
-        for (var endpoint : endpoints.get(zone)) {
-            DomainName endpointName = DomainName.of(endpoint.dnsName());
-            var ipAddress = controller.jobController().cloud().resolveHostName(endpointName);
-            if (ipAddress.isEmpty()) {
-                logger.log(INFO, "DNS lookup yielded no IP address for '" + endpointName + "'.");
-                return false;
-            }
-            DeploymentRoutingContext context = controller.routing().of(deployment);
-            if (context.routingMethod() == RoutingMethod.exclusive)  {
-                RoutingPolicy policy = context.routingPolicy(ClusterSpec.Id.from(endpoint.name()))
-                                              .orElseThrow(() -> new IllegalStateException(endpoint + " has no matching policy"));
-                if (policy.ipAddress().isPresent()) {
-                    if (ipAddress.equals(policy.ipAddress().map(InetAddresses::forString))) continue;
-                    logger.log(INFO, "IP address of '" + endpointName + "' (" +
-                            ipAddress.map(InetAddresses::toAddrString).get() + ") and load balancer "
-                            + "' (" + policy.ipAddress().orElseThrow() + ") are not equal");
-                    return false;
-                }
-
-                var cNameValue = controller.jobController().cloud().resolveCname(endpointName);
-                if ( ! cNameValue.map(policy.canonicalName().get()::equals).orElse(false)) {
-                    logger.log(INFO, "CNAME '" + endpointName + "' points at " +
-                                     cNameValue.map(name -> "'" + name + "'").orElse("nothing") +
-                                     " but should point at load balancer '" + policy.canonicalName() + "'");
-                    return false;
-                }
-                var loadBalancerAddress = controller.jobController().cloud().resolveHostName(policy.canonicalName().get());
-                if ( ! loadBalancerAddress.equals(ipAddress)) {
-                    logger.log(INFO, "IP address of CNAME '" + endpointName + "' (" + ipAddress.get() + ") and load balancer '" +
-                                     policy.canonicalName().get() + "' (" + loadBalancerAddress.orElse(null) + ") are not equal");
-                    return false;
-                }
-            }
-        }
-
         logEndpoints(endpoints, logger);
-        return true;
+        DeploymentRoutingContext context = controller.routing().of(deployment);
+        boolean resolveEndpoints = context.routingMethod() == RoutingMethod.exclusive;
+        return controller.serviceRegistry().testerCloud().verifyEndpoints(
+                deployment,
+                endpoints.getOrDefault(zone, List.of())
+                         .stream()
+                         .map(endpoint -> {
+                             ClusterSpec.Id cluster = ClusterSpec.Id.from(endpoint.name());
+                             RoutingPolicy policy = context.routingPolicy(cluster).get();
+                             return new EndpointsChecker.Endpoint(cluster,
+                                                                  HttpURL.from(endpoint.url()),
+                                                                  policy.ipAddress().filter(__ -> resolveEndpoints).map(uncheck(InetAddress::getByName)),
+                                                                  policy.canonicalName().filter(__ -> resolveEndpoints),
+                                                                  policy.isPublic());
+                         }).toList());
     }
 
     private void logEndpoints(Map<ZoneId, List<Endpoint>> zoneEndpoints, DualLogger logger) {

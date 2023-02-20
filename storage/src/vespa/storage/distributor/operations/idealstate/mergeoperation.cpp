@@ -6,6 +6,7 @@
 #include <vespa/storage/distributor/distributor_bucket_space.h>
 #include <vespa/storage/distributor/node_supported_features_repo.h>
 #include <vespa/storage/distributor/pendingmessagetracker.h>
+#include <vespa/storageframework/generic/clock/clock.h>
 #include <vespa/vdslib/distribution/distribution.h>
 #include <vespa/vdslib/state/clusterstate.h>
 #include <array>
@@ -13,6 +14,9 @@
 #include <vespa/log/bufferedlogger.h>
 LOG_SETUP(".distributor.operation.idealstate.merge");
 
+using vespalib::to_utc;
+using vespalib::to_string;
+using vespalib::make_string_short::fmt;
 namespace storage::distributor {
 
 MergeOperation::~MergeOperation() = default;
@@ -22,8 +26,7 @@ MergeOperation::getStatus() const
 {
     return
         Operation::getStatus() +
-        vespalib::make_string(" . Sent MergeBucketCommand at %s",
-                              _sentMessageTime.toString().c_str());
+        fmt(" . Sent MergeBucketCommand at %s", to_string(to_utc(_sentMessageTime)).c_str());
 }
 
 void
@@ -33,11 +36,11 @@ MergeOperation::addIdealNodes(
         std::vector<MergeMetaData>& result)
 {
     // Add all ideal nodes first. These are never marked source-only.
-    for (uint32_t i = 0; i < idealNodes.size(); i++) {
+    for (uint16_t idealNode : idealNodes) {
         const MergeMetaData* entry = nullptr;
-        for (uint32_t j = 0; j < nodes.size(); j++) {
-            if (idealNodes[i] == nodes[j]._nodeIndex) {
-                entry = &nodes[j];
+        for (const auto & node : nodes) {
+            if (idealNode == node._nodeIndex) {
+                entry = &node;
                 break;
             }
         }
@@ -50,21 +53,20 @@ MergeOperation::addIdealNodes(
 }
 
 void
-MergeOperation::addCopiesNotAlreadyAdded(
-        uint16_t redundancy,
-        const std::vector<MergeMetaData>& nodes,
-        std::vector<MergeMetaData>& result)
+MergeOperation::addCopiesNotAlreadyAdded(uint16_t redundancy,
+                                         const std::vector<MergeMetaData>& nodes,
+                                         std::vector<MergeMetaData>& result)
 {
-    for (uint32_t i = 0; i < nodes.size(); i++) {
+    for (const auto & node : nodes) {
         bool found = false;
-        for (uint32_t j = 0; j < result.size(); j++) {
-            if (result[j]._nodeIndex == nodes[i]._nodeIndex) {
+        for (const auto & mergeData : result) {
+            if (mergeData._nodeIndex == node._nodeIndex) {
                 found = true;
             }
         }
 
         if (!found) {
-            result.push_back(nodes[i]);
+            result.push_back(node);
             result.back()._sourceOnly = (result.size() > redundancy);
         }
     }
@@ -78,8 +80,7 @@ MergeOperation::generateSortedNodeList(
         MergeLimiter& limiter,
         std::vector<MergeMetaData>& nodes)
 {
-    std::vector<uint16_t> idealNodes(
-            distribution.getIdealStorageNodes(state, bucketId, "ui"));
+    std::vector<uint16_t> idealNodes(distribution.getIdealStorageNodes(state, bucketId, "ui"));
 
     std::vector<MergeMetaData> result;
     const uint16_t redundancy = distribution.getRedundancy();
@@ -123,31 +124,25 @@ MergeOperation::onStart(DistributorStripeMessageSender& sender)
     std::vector<std::unique_ptr<BucketCopy> > newCopies;
     std::vector<MergeMetaData> nodes;
 
-    for (uint32_t i = 0; i < getNodes().size(); ++i) {
-        const BucketCopy* copy = entry->getNode(getNodes()[i]);
+    for (uint16_t node : getNodes()) {
+        const BucketCopy* copy = entry->getNode(node);
         if (copy == nullptr) { // New copies?
-            newCopies.emplace_back(std::make_unique<BucketCopy>(BucketCopy::recentlyCreatedCopy(0, getNodes()[i])));
+            newCopies.emplace_back(std::make_unique<BucketCopy>(BucketCopy::recentlyCreatedCopy(0, node)));
             copy = newCopies.back().get();
         }
-        nodes.emplace_back(getNodes()[i], *copy);
+        nodes.emplace_back(node, *copy);
     }
     _infoBefore = entry.getBucketInfo();
 
-    generateSortedNodeList(_bucketSpace->getDistribution(),
-                           clusterState,
-                           getBucketId(),
-                           _limiter,
-                           nodes);
+    generateSortedNodeList(_bucketSpace->getDistribution(), clusterState, getBucketId(), _limiter, nodes);
     for (const auto& node : nodes) {
         _mnodes.emplace_back(node._nodeIndex, node._sourceOnly);
     }
 
     if (_mnodes.size() > 1) {
-        auto msg = std::make_shared<api::MergeBucketCommand>(
-                getBucket(),
-                _mnodes,
-                _manager->operation_context().generate_unique_timestamp(),
-                clusterState.getVersion());
+        auto msg = std::make_shared<api::MergeBucketCommand>(getBucket(), _mnodes,
+                                                             _manager->operation_context().generate_unique_timestamp(),
+                                                             clusterState.getVersion());
         const bool may_send_unordered = (_manager->operation_context().distributor_config().use_unordered_merge_chaining()
                                          && all_involved_nodes_support_unordered_merge_chaining());
         if (!may_send_unordered) {
@@ -159,8 +154,7 @@ MergeOperation::onStart(DistributorStripeMessageSender& sender)
             msg->set_use_unordered_forwarding(true);
         }
 
-        LOG(debug, "Sending %s to storage node %u", msg->toString().c_str(),
-            _mnodes[0].index);
+        LOG(debug, "Sending %s to storage node %u", msg->toString().c_str(), _mnodes[0].index);
 
         // Set timeout to one hour to prevent hung nodes that manage to keep
         // connections open from stalling merges in the cluster indefinitely.
@@ -169,10 +163,9 @@ MergeOperation::onStart(DistributorStripeMessageSender& sender)
 
         sender.sendToNode(lib::NodeType::STORAGE, _mnodes[0].index, msg);
 
-        _sentMessageTime = _manager->node_context().clock().getTimeInSeconds();
+        _sentMessageTime = _manager->node_context().clock().getMonotonicTime();
     } else {
-        LOGBP(debug,
-              "Unable to merge bucket %s, since only one copy is available. System state %s",
+        LOGBP(debug, "Unable to merge bucket %s, since only one copy is available. System state %s",
               getBucketId().toString().c_str(), clusterState.toString().c_str());
         _ok = false;
         done();
@@ -184,28 +177,20 @@ MergeOperation::sourceOnlyCopyChangedDuringMerge(
         const BucketDatabase::Entry& currentState) const
 {
     assert(currentState.valid());
-    for (size_t i = 0; i < _mnodes.size(); ++i) {
-        const BucketCopy* copyBefore(_infoBefore.getNode(_mnodes[i].index));
+    for (const auto & mnode : _mnodes) {
+        const BucketCopy* copyBefore(_infoBefore.getNode(mnode.index));
         if (!copyBefore) {
             continue;
         }
-        const BucketCopy* copyAfter(currentState->getNode(_mnodes[i].index));
+        const BucketCopy* copyAfter(currentState->getNode(mnode.index));
         if (!copyAfter) {
             LOG(debug, "Copy of %s on node %u removed during merge. Was %s",
-                getBucketId().toString().c_str(),
-                _mnodes[i].index,
-                copyBefore->toString().c_str());
+                getBucketId().toString().c_str(), mnode.index, copyBefore->toString().c_str());
             continue;
         }
-        if (_mnodes[i].sourceOnly
-            && !copyBefore->consistentWith(*copyAfter))
-        {
-            LOG(debug, "Source-only copy of %s on node %u changed from "
-                "%s to %s during the course of the merge. Failing it.",
-                getBucketId().toString().c_str(),
-                _mnodes[i].index,
-                copyBefore->toString().c_str(),
-                copyAfter->toString().c_str());
+        if (mnode.sourceOnly && !copyBefore->consistentWith(*copyAfter)){
+            LOG(debug, "Source-only copy of %s on node %u changed from %s to %s during the course of the merge. Failing it.",
+                getBucketId().toString().c_str(), mnode.index, copyBefore->toString().c_str(), copyAfter->toString().c_str());
             return true;
         }
     }
@@ -220,25 +205,22 @@ MergeOperation::deleteSourceOnlyNodes(
 {
     assert(currentState.valid());
     std::vector<uint16_t> sourceOnlyNodes;
-    for (uint32_t i = 0; i < _mnodes.size(); ++i) {
-        const uint16_t nodeIndex = _mnodes[i].index;
+    for (const auto & mnode : _mnodes) {
+        const uint16_t nodeIndex = mnode.index;
         const BucketCopy* copy = currentState->getNode(nodeIndex);
         if (!copy) {
             continue; // No point in deleting what's not even there now.
         }
-        if (_mnodes[i].sourceOnly) {
+        if (mnode.sourceOnly) {
             sourceOnlyNodes.push_back(nodeIndex);
         }
     }
 
     LOG(debug, "Attempting to delete %zu source only copies for %s",
-        sourceOnlyNodes.size(),
-        getBucketId().toString().c_str());
+        sourceOnlyNodes.size(), getBucketId().toString().c_str());
 
     if (!sourceOnlyNodes.empty()) {
-        _removeOperation = std::make_unique<RemoveBucketOperation>(
-                        _manager->node_context(),
-                        BucketAndNodes(getBucket(), sourceOnlyNodes));
+        _removeOperation = std::make_unique<RemoveBucketOperation>(_manager->node_context(), BucketAndNodes(getBucket(), sourceOnlyNodes));
         // Must not send removes to source only copies if something has caused
         // pending load to the copy after the merge was sent!
         if (_removeOperation->isBlocked(_manager->operation_context(), sender.operation_sequencer())) {
@@ -268,8 +250,7 @@ MergeOperation::deleteSourceOnlyNodes(
 }
 
 void
-MergeOperation::onReceive(DistributorStripeMessageSender& sender,
-                          const std::shared_ptr<api::StorageReply> & msg)
+MergeOperation::onReceive(DistributorStripeMessageSender& sender, const std::shared_ptr<api::StorageReply> & msg)
 {
     if (_removeOperation) {
         if (_removeOperation->onReceiveInternal(msg)) {
@@ -287,18 +268,14 @@ MergeOperation::onReceive(DistributorStripeMessageSender& sender,
     }
 
     auto& reply = dynamic_cast<api::MergeBucketReply&>(*msg);
-    LOG(debug,
-        "Merge operation for bucket %s finished",
-        getBucketId().toString().c_str());
+    LOG(debug, "Merge operation for bucket %s finished", getBucketId().toString().c_str());
 
     api::ReturnCode result = reply.getResult();
     _ok = result.success();
     if (_ok) {
-        BucketDatabase::Entry entry(
-                _bucketSpace->getBucketDatabase().get(getBucketId()));
+        BucketDatabase::Entry entry(_bucketSpace->getBucketDatabase().get(getBucketId()));
         if (!entry.valid()) {
-            LOG(debug, "Bucket %s no longer exists after merge",
-                getBucketId().toString().c_str());
+            LOG(debug, "Bucket %s no longer exists after merge", getBucketId().toString().c_str());
             done(); // Nothing more we can do.
             return;
         }
@@ -315,11 +292,8 @@ MergeOperation::onReceive(DistributorStripeMessageSender& sender,
         return;
     } else if (result.isBusy()) {
     } else if (result.isCriticalForMaintenance()) {
-        LOGBP(warning,
-              "Merging failed for %s: %s with error '%s'",
-              getBucketId().toString().c_str(),
-              msg->toString().c_str(),
-              msg->getResult().toString().c_str());
+        LOGBP(warning, "Merging failed for %s: %s with error '%s'",
+              getBucketId().toString().c_str(), msg->toString().c_str(), msg->getResult().toString().c_str());
     } else {
         LOG(debug, "Merge failed for %s with non-critical failure: %s",
             getBucketId().toString().c_str(), result.toString().c_str());
@@ -363,7 +337,7 @@ bool MergeOperation::isBlocked(const DistributorStripeOperationContext& ctx,
     //     to enter the merge throttler queues, displacing lower priority merges.
     if (!is_global_bucket_merge()) {
         const auto& node_info = ctx.pending_message_tracker().getNodeInfo();
-        for (auto node : getNodes()) {
+        for (uint16_t node : getNodes()) {
             if (node_info.isBusy(node)) {
                 return true;
             }
@@ -389,11 +363,9 @@ bool MergeOperation::all_involved_nodes_support_unordered_merge_chaining() const
 MergeBucketMetricSet*
 MergeOperation::get_merge_metrics()
 {
-    if (_manager) {
-        return dynamic_cast<MergeBucketMetricSet *>(_manager->getMetrics().operations[getType()].get());
-    } else {
-        return nullptr;
-    }
+    return (_manager)
+        ? dynamic_cast<MergeBucketMetricSet *>(_manager->getMetrics().operations[getType()].get())
+        : nullptr;
 }
 
 }

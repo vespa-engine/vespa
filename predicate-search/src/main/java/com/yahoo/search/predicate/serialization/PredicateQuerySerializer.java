@@ -14,7 +14,6 @@ import java.io.StringWriter;
 import java.io.Writer;
 import java.util.List;
 
-import static java.util.stream.Collectors.toList;
 
 /**
  * Converts {@link PredicateQuery} to and from JSON
@@ -99,7 +98,7 @@ public class PredicateQuerySerializer {
             return reader.lines()
                     .limit(maxQueryCount)
                     .map(serializer::fromJSON)
-                    .collect(toList());
+                    .toList();
         }
     }
 

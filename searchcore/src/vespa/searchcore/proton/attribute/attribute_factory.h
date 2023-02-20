@@ -12,11 +12,11 @@ namespace proton {
 class AttributeFactory : public IAttributeFactory
 {
 public:
-    typedef std::shared_ptr<AttributeFactory> SP;
+    using SP = std::shared_ptr<AttributeFactory>;
     AttributeFactory();
 
     AttributeVectorSP create(const vespalib::string &name, const search::attribute::Config &cfg) const override;
-    void setupEmpty(const AttributeVectorSP &vec, search::SerialNum serialNum) const override;
+    void setupEmpty(const AttributeVectorSP &vec, std::optional<search::SerialNum> serialNum) const override;
 };
 
 }

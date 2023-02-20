@@ -155,11 +155,10 @@ public class ModelProvisioningTest {
         assertEquals(45, qrsStartConfig.jvm().heapSizeAsPercentageOfPhysicalMemory());
         
         HostSystem hostSystem = model.hostSystem();
-        assertNotNull(hostSystem.getHostByHostname("myhost0"));
-        assertNotNull(hostSystem.getHostByHostname("myhost1"));
-        assertNotNull(hostSystem.getHostByHostname("myhost2"));
-        assertNotNull(hostSystem.getHostByHostname("myhost3"));
-        assertNull(hostSystem.getHostByHostname("Nope"));
+        assertTrue(hostNameExists(hostSystem, "myhost0"));
+        assertTrue(hostNameExists(hostSystem, "myhost1"));
+        assertTrue(hostNameExists(hostSystem, "myhost2"));
+        assertFalse(hostNameExists(hostSystem, "Nope"));
     }
 
     @Test
@@ -501,14 +500,14 @@ public class ModelProvisioningTest {
                 "     <documents>" +
                 "       <document type='type1' mode='index'/>" +
                 "     </documents>" +
-                "     <nodes count='27' groups='9'/>" +
+                "     <nodes count='27' groups='9' group-size='[2, 3]'/>" +
                 "  </content>" +
                 "  <content version='1.0' id='baz'>" +
                 "     <redundancy>1</redundancy>" +
                 "     <documents>" +
                 "       <document type='type1' mode='index'/>" +
                 "     </documents>" +
-                "     <nodes count='27' groups='27'/>" +
+                "     <nodes count='27' groups='27' group-size='1'/>" +
                 "   </content>" +
                 "</services>";
 
@@ -592,6 +591,126 @@ public class ModelProvisioningTest {
         assertEquals(1, subGroups.get(26).getNodes().size());
         assertEquals(26, subGroups.get(26).getNodes().get(0).getDistributionKey());
         assertEquals("baz/storage/26", subGroups.get(26).getNodes().get(0).getConfigId());
+    }
+
+    @Test
+    public void testUsingGroups() {
+        String services =
+                "<?xml version='1.0' encoding='utf-8' ?>\n" +
+                "<services>" +
+                "  <admin version='4.0'/>" +
+                "  <container version='1.0' id='foo'>" +
+                "     <nodes count='10'/>" +
+                "  </container>" +
+                "  <content version='1.0' id='bar'>" +
+                "     <redundancy>2</redundancy>" +
+                "     <documents>" +
+                "       <document type='type1' mode='index'/>" +
+                "     </documents>" +
+                "     <nodes count='30' groups='2'/>" +
+                "  </content>" +
+                "  <content version='1.0' id='baz'>" +
+                "     <redundancy>1</redundancy>" +
+                "     <documents>" +
+                "       <document type='type1' mode='index'/>" +
+                "     </documents>" +
+                "     <nodes count='30' groups='30'/>" +
+                "   </content>" +
+                "</services>";
+
+        int numberOfHosts = 73;
+        VespaModelTester tester = new VespaModelTester();
+        tester.addHosts(numberOfHosts);
+        VespaModel model = tester.createModel(services, true);
+        assertEquals(numberOfHosts, model.getRoot().hostSystem().getHosts().size());
+
+        ContentCluster cluster = model.getContentClusters().get("bar");
+        List<StorageGroup> subGroups = cluster.getRootGroup().getSubgroups();
+        assertEquals( 0, cluster.getRootGroup().getNodes().size());
+        assertEquals( 2, subGroups.size());
+        assertEquals(15, subGroups.get(0).getNodes().size());
+
+        cluster = model.getContentClusters().get("baz");
+        subGroups = cluster.getRootGroup().getSubgroups();
+        assertEquals( 0, cluster.getRootGroup().getNodes().size());
+        assertEquals(30, subGroups.size());
+        assertEquals( 1, subGroups.get(0).getNodes().size());
+    }
+
+    // Same as the test above but setting groupSize only
+    @Test
+    public void testUsingGroupSizeNotGroups() {
+        String services =
+                "<?xml version='1.0' encoding='utf-8' ?>\n" +
+                "<services>" +
+                "  <admin version='4.0'/>" +
+                "  <container version='1.0' id='foo'>" +
+                "     <nodes count='10'/>" +
+                "  </container>" +
+                "  <content version='1.0' id='bar'>" +
+                "     <redundancy>2</redundancy>" +
+                "     <documents>" +
+                "       <document type='type1' mode='index'/>" +
+                "     </documents>" +
+                "     <nodes count='30' group-size='[15, 30]'/>" +
+                "  </content>" +
+                "  <content version='1.0' id='baz'>" +
+                "     <redundancy>1</redundancy>" +
+                "     <documents>" +
+                "       <document type='type1' mode='index'/>" +
+                "     </documents>" +
+                "     <nodes count='30' group-size='1'/>" +
+                "   </content>" +
+                "</services>";
+
+        int numberOfHosts = 73;
+        VespaModelTester tester = new VespaModelTester();
+        tester.addHosts(numberOfHosts);
+        VespaModel model = tester.createModel(services, true);
+        assertEquals(numberOfHosts, model.getRoot().hostSystem().getHosts().size());
+
+        ContentCluster cluster = model.getContentClusters().get("bar");
+        List<StorageGroup> subGroups = cluster.getRootGroup().getSubgroups();
+        assertEquals( 0, cluster.getRootGroup().getNodes().size());
+        assertEquals( 2, subGroups.size());
+        assertEquals(15, subGroups.get(0).getNodes().size());
+
+        cluster = model.getContentClusters().get("baz");
+        subGroups = cluster.getRootGroup().getSubgroups();
+        assertEquals( 0, cluster.getRootGroup().getNodes().size());
+        assertEquals(30, subGroups.size());
+        assertEquals( 1, subGroups.get(0).getNodes().size());
+    }
+
+    @Test
+    public void testIllegalGroupSize() {
+        String services =
+                "<?xml version='1.0' encoding='utf-8' ?>\n" +
+                "<services>" +
+                "  <admin version='4.0'/>" +
+                "  <container version='1.0' id='foo'>" +
+                "     <nodes count='2'/>" +
+                "  </container>" +
+                "  <content version='1.0' id='bar'>" +
+                "     <redundancy>2</redundancy>" +
+                "     <documents>" +
+                "       <document type='type1' mode='index'/>" +
+                "     </documents>" +
+                "     <nodes count='5' group-size='[2, --]'/>" +
+                "  </content>" +
+                "</services>";
+
+        int numberOfHosts = 10;
+        VespaModelTester tester = new VespaModelTester();
+        tester.addHosts(numberOfHosts);
+        try {
+            tester.createModel(services, true);
+            fail("Expected exception");
+        }
+        catch (IllegalArgumentException e) {
+            assertEquals("In content cluster 'bar': Illegal group-size value: " +
+                         "Expected a number or range on the form [min, max], but got '[2, --]': '--' is not an integer", Exceptions.toMessageString(e));
+        }
     }
 
     @Test
@@ -1104,7 +1223,8 @@ public class ModelProvisioningTest {
             fail("Expected exception");
         }
         catch (IllegalArgumentException e) {
-            assertEquals("Cluster 'bar' specifies redundancy 2, but it cannot be higher than the minimum nodes per group, which is 1", Exceptions.toMessageString(e));
+            assertEquals("In content cluster 'bar': This cluster specifies redundancy 2, " +
+                         "but this cannot be higher than the minimum nodes per group, which is 1", Exceptions.toMessageString(e));
         }
     }
 
@@ -1389,6 +1509,7 @@ public class ModelProvisioningTest {
                       </nodes>
                    </container>
                    <content version='1.0' id='foo'>
+                     <redundancy>3</redundancy>
                       <documents>
                         <document type='type1' mode='index'/>
                       </documents>
@@ -1397,6 +1518,7 @@ public class ModelProvisioningTest {
                       </nodes>
                    </content>
                    <content version='1.0' id='bar'>
+                     <redundancy>3</redundancy>
                       <documents>
                         <document type='type1' mode='index'/>
                       </documents>
@@ -1434,6 +1556,7 @@ public class ModelProvisioningTest {
                 "      </nodes>" +
                 "   </container>" +
                 "   <content version='1.0' id='foo'>" +
+                "      <redundancy>2</redundancy>" +
                 "      <documents>" +
                 "        <document type='type1' mode='index'/>" +
                 "      </documents>" +
@@ -1449,7 +1572,7 @@ public class ModelProvisioningTest {
         tester.addHosts(new NodeResources(85,   200, 1000_000_000, 0.3), 20);
         tester.addHosts(new NodeResources( 0.5,   2,           10, 0.3), 3);
         VespaModel model = tester.createModel(services, true);
-        assertEquals(totalHosts + 3, model.getRoot().hostSystem().getHosts().size());
+        assertEquals(4 + 6 + 1, model.getRoot().hostSystem().getHosts().size());
     }
 
     @Test
@@ -1463,6 +1586,7 @@ public class ModelProvisioningTest {
                 "      </nodes>" +
                 "   </container>" +
                 "   <content version='1.0' id='foo'>" +
+                "      <redundancy>2</redundancy>" +
                 "      <documents>" +
                 "        <document type='type1' mode='index'/>" +
                 "      </documents>" +
@@ -1494,6 +1618,7 @@ public class ModelProvisioningTest {
                         "      </nodes>" +
                         "   </container>" +
                         "   <content version='1.0' id='foo'>" +
+                        "      <redundancy>2</redundancy>" +
                         "      <documents>" +
                         "        <document type='type1' mode='index'/>" +
                         "      </documents>" +
@@ -1700,7 +1825,9 @@ public class ModelProvisioningTest {
             VespaModel model = tester.createModel(new Zone(Environment.staging, RegionName.from("us-central-1")), services, true);
             fail("expected failure");
         } catch (IllegalArgumentException e) {
-            assertTrue(e.getMessage().startsWith("Clusters in hosted environments must have a <nodes count='N'> tag"));
+            assertEquals("In content cluster 'bar': Clusters in hosted environments must have a <nodes count='N'> tag\n" +
+                         "matching all zones, and having no <node> subtags,\nsee https://cloud.vespa.ai/en/reference/services",
+                         Exceptions.toMessageString(e));
         }
     }
 
@@ -1740,6 +1867,93 @@ public class ModelProvisioningTest {
         StorageCluster storage = model.getContentClusters().get("content").getStorageCluster();
         StorCommunicationmanagerConfig.Builder builder = new StorCommunicationmanagerConfig.Builder();
         storage.getChildren().get("0").getConfig(builder);
+    }
+
+    @Test
+    public void testMinRedundancyMetByGroups() {
+        String services =
+                "<?xml version='1.0' encoding='utf-8' ?>" +
+                "<services>" +
+                "  <container version='1.0' id='container1'>" +
+                "     <nodes count='1'/>" +
+                "  </container>" +
+                "  <content version='1.0'>" +
+                "     <min-redundancy>2</min-redundancy>" +
+                "     <documents>" +
+                "       <document type='type1' mode='index'/>" +
+                "     </documents>" +
+                "     <nodes count='2' groups='2'/>" +
+                "   </content>" +
+                "</services>";
+        VespaModelTester tester = new VespaModelTester();
+        tester.setHosted(true);
+        tester.addHosts(6);
+        VespaModel model = tester.createModel(services, true);
+
+        var contentCluster = model.getContentClusters().get("content");
+        ProtonConfig.Builder protonBuilder = new ProtonConfig.Builder();
+        contentCluster.getSearch().getConfig(protonBuilder);
+        ProtonConfig protonConfig = new ProtonConfig(protonBuilder);
+        assertEquals(1, protonConfig.distribution().searchablecopies());
+        assertEquals(1, protonConfig.distribution().redundancy());
+    }
+
+    @Test
+    public void testMinRedundancyMetWithinGroup() {
+        String services =
+                "<?xml version='1.0' encoding='utf-8' ?>" +
+                "<services>" +
+                "  <container version='1.0' id='container1'>" +
+                "     <nodes count='1'/>" +
+                "  </container>" +
+                "  <content version='1.0'>" +
+                "     <min-redundancy>2</min-redundancy>" +
+                "     <documents>" +
+                "       <document type='type1' mode='index'/>" +
+                "     </documents>" +
+                "     <nodes count='2' groups='1'/>" +
+                "   </content>" +
+                "</services>";
+        VespaModelTester tester = new VespaModelTester();
+        tester.setHosted(true);
+        tester.addHosts(6);
+        VespaModel model = tester.createModel(services, true);
+
+        var contentCluster = model.getContentClusters().get("content");
+        ProtonConfig.Builder protonBuilder = new ProtonConfig.Builder();
+        contentCluster.getSearch().getConfig(protonBuilder);
+        ProtonConfig protonConfig = new ProtonConfig(protonBuilder);
+        assertEquals(2, protonConfig.distribution().searchablecopies());
+        assertEquals(2, protonConfig.distribution().redundancy());
+    }
+
+    @Test
+    public void testRedundancy1() {
+        String services =
+                "<?xml version='1.0' encoding='utf-8' ?>" +
+                "<services>" +
+                "  <container version='1.0' id='container1'>" +
+                "     <nodes count='1'/>" +
+                "  </container>" +
+                "  <content version='1.0'>" +
+                "     <min-redundancy>1</min-redundancy>" +
+                "     <documents>" +
+                "       <document type='type1' mode='index'/>" +
+                "     </documents>" +
+                "     <nodes count='2' groups='1'/>" +
+                "   </content>" +
+                "</services>";
+        VespaModelTester tester = new VespaModelTester();
+        tester.setHosted(true);
+        tester.addHosts(6);
+        VespaModel model = tester.createModel(services, true);
+
+        var contentCluster = model.getContentClusters().get("content");
+        ProtonConfig.Builder protonBuilder = new ProtonConfig.Builder();
+        contentCluster.getSearch().getConfig(protonBuilder);
+        ProtonConfig protonConfig = new ProtonConfig(protonBuilder);
+        assertEquals(1, protonConfig.distribution().searchablecopies());
+        assertEquals(1, protonConfig.distribution().redundancy());
     }
 
     /**
@@ -1810,6 +2024,7 @@ public class ModelProvisioningTest {
                 "    <document-api/>" +
                 "  </container>" +
                 "  <content version='1.0' id='bar'>" +
+                "     <redundancy>3</redundancy>" +
                 "     <documents>" +
                 "       <document type='type1' mode='index'/>" +
                 "     </documents>" +
@@ -1852,6 +2067,7 @@ public class ModelProvisioningTest {
                 "    <document-api/>" +
                 "  </container>" +
                 "  <content version='1.0' id='bar'>" +
+                "     <redundancy>3</redundancy>" +
                 "     <documents>" +
                 "       <document type='type1' mode='index'/>" +
                 "     </documents>" +
@@ -1878,6 +2094,7 @@ public class ModelProvisioningTest {
                 "    <nodes><node hostalias='foo'/></nodes>"+
                 "  </container>" +
                 "  <content version='1.0' id='bar'>" +
+                "     <redundancy>3</redundancy>" +
                 "     <documents>" +
                 "       <document type='type1' mode='index'/>" +
                 "     </documents>" +
@@ -2229,6 +2446,7 @@ public class ModelProvisioningTest {
          String services = joinLines("<?xml version='1.0' encoding='utf-8' ?>",
                  "<services>",
                  "  <content version='1.0' id='test'>",
+                 "     <redundancy>2</redundancy>" +
                  "     <documents>",
                  "       <document type='type1' mode='index'/>",
                  "     </documents>",
@@ -2260,6 +2478,7 @@ public class ModelProvisioningTest {
         String services = joinLines("<?xml version='1.0' encoding='utf-8' ?>",
                 "<services>",
                 "  <content version='1.0' id='test'>",
+                "    <redundancy>1</redundancy>" +
                 "    <config name='vespa.config.search.core.proton'>",
                 "      <flush><memory><maxtlssize>2000</maxtlssize></memory></flush>",
                 "    </config>",
@@ -2348,6 +2567,10 @@ public class ModelProvisioningTest {
 
     private static void assertProvisioned(int nodeCount, ClusterSpec.Id id, ClusterSpec.Type type, VespaModel model) {
         assertProvisioned(nodeCount, id, null, type, model);
+    }
+
+    private static boolean hostNameExists(HostSystem hostSystem, String hostname) {
+        return hostSystem.getHosts().stream().map(HostResource::getHost).anyMatch(host -> host.getHostname().equals(hostname));
     }
 
     record TestLogger(List<LogMessage> msgs) implements DeployLogger {

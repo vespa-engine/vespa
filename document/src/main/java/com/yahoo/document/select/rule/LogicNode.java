@@ -7,9 +7,10 @@ import com.yahoo.document.select.Context;
 import com.yahoo.document.select.ResultList;
 import com.yahoo.document.select.Visitor;
 
+import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Deque;
 import java.util.List;
-import java.util.Stack;
 
 /**
  * This class defines a logical expression of nodes. This implementation uses a stack to evaluate its content as to
@@ -56,7 +57,7 @@ public class LogicNode implements ExpressionNode {
 
     @Override
     public BucketSet getBucketSet(BucketIdFactory factory) {
-        Stack<BucketItem> buf = new Stack<>();
+        Deque<BucketItem> buf = new ArrayDeque<>();
         for (NodeItem item : items) {
             if (!buf.isEmpty()) {
                 while (buf.peek().operator > item.operator) {
@@ -76,11 +77,11 @@ public class LogicNode implements ExpressionNode {
      *
      * @param buf The stack of bucket items.
      */
-    private void combineBuckets(Stack<BucketItem> buf) {
+    private void combineBuckets(Deque<BucketItem> buf) {
         BucketItem rhs = buf.pop();
         BucketItem lhs = buf.pop();
         switch (rhs.operator) {
-            case AND:
+            case AND -> {
                 if (lhs.buckets == null) {
                     lhs.buckets = rhs.buckets;
                 } else if (rhs.buckets == null) {
@@ -88,8 +89,8 @@ public class LogicNode implements ExpressionNode {
                 } else {
                     lhs.buckets = lhs.buckets.intersection(rhs.buckets);
                 }
-                break;
-            case OR:
+            }
+            case OR -> {
                 if (lhs.buckets == null) {
                     // empty
                 } else if (rhs.buckets == null) {
@@ -97,16 +98,15 @@ public class LogicNode implements ExpressionNode {
                 } else {
                     lhs.buckets = lhs.buckets.union(rhs.buckets);
                 }
-                break;
-            default:
-                throw new IllegalStateException("Arithmetic operator " + rhs.operator + " not supported.");
+            }
+            default -> throw new IllegalStateException("Arithmetic operator " + rhs.operator + " not supported.");
         }
         buf.push(lhs);
     }
 
     @Override
     public Object evaluate(Context context) {
-        Stack<ValueItem> buf = new Stack<>();
+        Deque<ValueItem> buf = new ArrayDeque<>();
         for (NodeItem item : items) {
             if ( buf.size() > 1) {
                 while ((buf.peek().getOperator() >= item.operator)) {
@@ -126,7 +126,7 @@ public class LogicNode implements ExpressionNode {
      *
      * @param buf The stack of values.
      */
-    private void combineValues(Stack<ValueItem> buf) {
+    private void combineValues(Deque<ValueItem> buf) {
         ValueItem rhs = buf.pop();
         ValueItem lhs = buf.pop();
         buf.push(new LazyCombinedItem(lhs, rhs));
@@ -156,16 +156,12 @@ public class LogicNode implements ExpressionNode {
      * @return The string representation.
      */
     private String operatorToString(int operator) {
-        switch (operator) {
-            case NOP:
-                return null;
-            case OR:
-                return "or";
-            case AND:
-                return "and";
-            default:
-                throw new IllegalStateException("Logical operator " + operator + " not supported.");
-        }
+        return switch (operator) {
+            case NOP -> null;
+            case OR -> "or";
+            case AND -> "and";
+            default -> throw new IllegalStateException("Logical operator " + operator + " not supported.");
+        };
     }
 
     /**
@@ -231,14 +227,10 @@ public class LogicNode implements ExpressionNode {
         public ResultList getResult() {
             if (lazyResult == null) {
                 switch (rhs.getOperator()) {
-                    case AND:
-                        lazyResult = lhs.getResult().combineAND(rhs);
-                        break;
-                    case OR:
-                        lazyResult = lhs.getResult().combineOR(rhs);
-                        break;
-                    default:
-                        throw new IllegalStateException("Logical operator " + rhs.getOperator() + " not supported.");
+                    case AND -> lazyResult = lhs.getResult().combineAND(rhs);
+                    case OR -> lazyResult = lhs.getResult().combineOR(rhs);
+                    default ->
+                            throw new IllegalStateException("Logical operator " + rhs.getOperator() + " not supported.");
                 }
             }
             return lazyResult;
@@ -249,7 +241,7 @@ public class LogicNode implements ExpressionNode {
      * Private class to store bucket sets in a stack.
      */
     private static final class BucketItem {
-        private int operator;
+        final private int operator;
         private BucketSet buckets;
 
         BucketItem(int operator, BucketSet buckets) {
@@ -262,8 +254,8 @@ public class LogicNode implements ExpressionNode {
      * Private class to store expression nodes in a stack.
      */
     public static final class NodeItem {
-        private int operator;
-        private ExpressionNode node;
+        final private int operator;
+        final private ExpressionNode node;
 
         NodeItem(int operator, ExpressionNode node) {
             this.operator = operator;

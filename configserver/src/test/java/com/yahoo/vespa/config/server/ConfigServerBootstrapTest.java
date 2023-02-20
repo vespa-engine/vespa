@@ -25,7 +25,6 @@ import com.yahoo.vespa.config.server.rpc.RpcServer;
 import com.yahoo.vespa.config.server.version.VersionState;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.mock.MockCurator;
-import com.yahoo.vespa.flags.InMemoryFlagSource;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -39,7 +38,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.BooleanSupplier;
-import java.util.stream.Collectors;
 
 import static com.yahoo.vespa.config.server.ConfigServerBootstrap.RedeployingApplicationsFails.CONTINUE;
 import static com.yahoo.vespa.config.server.ConfigServerBootstrap.VipStatusMode;
@@ -75,7 +73,7 @@ public class ConfigServerBootstrapTest {
         assertEquals(List.of("ApplicationPackageMaintainer", "TenantsMaintainer"),
                      bootstrap.configServerMaintenance().maintainers().stream()
                               .map(Maintainer::name)
-                              .sorted().collect(Collectors.toList()));
+                              .sorted().toList());
         assertFalse(bootstrap.vipStatus().isInRotation());
 
         bootstrap.doStart();
@@ -86,7 +84,7 @@ public class ConfigServerBootstrapTest {
         assertEquals(List.of("ApplicationPackageMaintainer", "FileDistributionMaintainer", "ReindexingMaintainer", "SessionsMaintainer", "TenantsMaintainer"),
                      bootstrap.configServerMaintenance().maintainers().stream()
                               .map(Maintainer::name)
-                              .sorted().collect(Collectors.toList()));
+                              .sorted().toList());
 
         bootstrap.deconstruct();
         assertEquals(StateMonitor.Status.down, bootstrap.status());
@@ -189,7 +187,7 @@ public class ConfigServerBootstrapTest {
                                 stateMonitor,
                                 vipStatus,
                                 vipStatusMode,
-                                new FileDirectory(tester.applicationRepository().configserverConfig(), new InMemoryFlagSource()));
+                                new FileDirectory(tester.applicationRepository().configserverConfig()));
     }
 
     private void waitUntil(BooleanSupplier booleanSupplier, String messageIfWaitingFails) throws InterruptedException {
@@ -216,6 +214,9 @@ public class ConfigServerBootstrapTest {
     }
 
     private static ConfigserverConfig createConfigserverConfig(TemporaryFolder temporaryFolder, boolean hosted) throws IOException {
+        var servers = List.of(new ConfigserverConfig.Zookeeperserver.Builder().hostname("foo").port(1),
+                              new ConfigserverConfig.Zookeeperserver.Builder().hostname("bar").port(1),
+                              new ConfigserverConfig.Zookeeperserver.Builder().hostname("baz").port(1));
         return new ConfigserverConfig(new ConfigserverConfig.Builder()
                                               .configServerDBDir(temporaryFolder.newFolder("serverdb").getAbsolutePath())
                                               .configDefinitionsDir(temporaryFolder.newFolder("configdefinitions").getAbsolutePath())
@@ -223,7 +224,8 @@ public class ConfigServerBootstrapTest {
                                               .hostedVespa(hosted)
                                               .multitenant(hosted)
                                               .maxDurationOfBootstrap(0) /* seconds, 0 => it will not retry deployment if bootstrap fails */
-                                              .sleepTimeWhenRedeployingFails(0)); /* seconds */
+                                              .sleepTimeWhenRedeployingFails(0) /* seconds */
+                                              .zookeeperserver(servers));
     }
 
     private List<Host> createHosts(String vespaVersion) {

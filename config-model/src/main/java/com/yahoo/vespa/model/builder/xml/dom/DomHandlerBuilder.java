@@ -3,7 +3,8 @@ package com.yahoo.vespa.model.builder.xml.dom;
 
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.deploy.DeployState;
-import com.yahoo.config.model.producer.AbstractConfigProducer;
+import com.yahoo.config.model.producer.AnyConfigProducer;
+import com.yahoo.config.model.producer.TreeConfigProducer;
 import com.yahoo.container.bundle.BundleInstantiationSpecification;
 import com.yahoo.osgi.provider.model.ComponentModel;
 import com.yahoo.text.XML;
@@ -27,7 +28,7 @@ import static java.util.logging.Level.INFO;
 /**
  * @author gjoranv
  */
-public class DomHandlerBuilder extends VespaDomBuilder.DomConfigProducerBuilder<Handler> {
+public class DomHandlerBuilder extends VespaDomBuilder.DomConfigProducerBuilderBase<Handler> {
 
     private static final Set<BindingPattern> reservedBindings =
             Set.of(METRICS_V2_HANDLER_BINDING_1,
@@ -48,7 +49,7 @@ public class DomHandlerBuilder extends VespaDomBuilder.DomConfigProducerBuilder<
     }
 
     @Override
-    protected Handler doBuild(DeployState deployState, AbstractConfigProducer<?> parent, Element handlerElement) {
+    protected Handler doBuild(DeployState deployState, TreeConfigProducer<AnyConfigProducer> parent, Element handlerElement) {
         Handler handler = createHandler(handlerElement);
         OptionalInt port = portBindingOverride.isPresent() && deployState.isHosted() && deployState.featureFlags().useRestrictedDataPlaneBindings()
                 ? portBindingOverride

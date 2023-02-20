@@ -8,39 +8,41 @@ import org.apache.hc.client5.http.classic.methods.HttpGet;
 import org.apache.hc.client5.http.config.RequestConfig;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpResponse;
-import org.apache.hc.client5.http.impl.classic.HttpClientBuilder;
-import org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManager;
 import org.apache.hc.core5.http.HttpEntity;
 import org.apache.hc.core5.util.Timeout;
 
 import java.io.IOException;
 import java.net.SocketTimeoutException;
 import java.net.URI;
+import java.time.Duration;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class SimpleHttpFetcher implements HttpFetcher {
+
     private static final Logger logger = Logger.getLogger(SimpleHttpFetcher.class.getName());
 
     private final CloseableHttpClient client;
 
-    public SimpleHttpFetcher() { this(null); }
-
-    public SimpleHttpFetcher(NodeHostnameVerifier verifier) {
-        HttpClientBuilder b = verifier != null
-                ? VespaHttpClientBuilder.create(PoolingHttpClientConnectionManager::new, verifier::verify)
-                : VespaHttpClientBuilder.create();
-        this.client = b.build();
+    public SimpleHttpFetcher(Duration connectTimeout) {
+        this(connectTimeout, null);
+    }
+    public SimpleHttpFetcher(Duration connectTimeout, NodeHostnameVerifier verifier) {
+        VespaHttpClientBuilder builder = VespaHttpClientBuilder.custom().connectTimeout(Timeout.of(connectTimeout));
+        if (verifier != null) {
+            builder.hostnameVerifier(verifier::verify);
+        }
+        this.client = builder.buildClient();
     }
 
     @Override
+    @SuppressWarnings("deprecation")
     public HttpResponse get(Params params, URI url) {
         try {
             HttpGet request = new HttpGet(url);
             request.addHeader("Connection", "Close");
             request.setConfig(
                     RequestConfig.custom()
-                            .setConnectTimeout(Timeout.ofMilliseconds(params.readTimeoutMs))
                             .setResponseTimeout(Timeout.ofMilliseconds(params.readTimeoutMs))
                             .build());
             try (CloseableHttpResponse response = client.execute(request)) {

@@ -4,7 +4,7 @@ package com.yahoo.vespa.model.container.configserver;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.cloud.config.CuratorConfig;
 import com.yahoo.cloud.config.ZookeeperServerConfig;
-import com.yahoo.config.model.producer.AbstractConfigProducer;
+import com.yahoo.config.model.producer.TreeConfigProducer;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
@@ -25,7 +25,7 @@ import java.util.stream.IntStream;
  *
  * @author Ulf Lilleengen
  */
-public class ConfigserverCluster extends AbstractConfigProducer
+public class ConfigserverCluster extends TreeConfigProducer
         implements
         ConfigserverConfig.Producer,
         CuratorConfig.Producer,
@@ -36,7 +36,7 @@ public class ConfigserverCluster extends AbstractConfigProducer
     private final CloudConfigOptions options;
     private ContainerCluster<?> containerCluster;
 
-    public ConfigserverCluster(AbstractConfigProducer<?> parent, String subId, CloudConfigOptions options) {
+    public ConfigserverCluster(TreeConfigProducer<?> parent, String subId, CloudConfigOptions options) {
         super(parent, subId);
         this.options = options;
     }
@@ -84,6 +84,9 @@ public class ConfigserverCluster extends AbstractConfigProducer
         if (options.hostedVespa().orElse(false)) {
             builder.vespaTlsConfigFile(Defaults.getDefaults().underVespaHome("var/zookeeper/conf/tls.conf.json"));
         }
+
+        builder.dynamicReconfiguration(options.hostedVespa().orElse(false));
+        builder.snapshotMethod(options.zooKeeperSnapshotMethod());
     }
 
     @Override

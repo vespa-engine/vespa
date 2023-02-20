@@ -195,7 +195,7 @@
                             <goal>copy-dependencies</goal>
                         </goals>
                         <configuration>
-                            <excludeTransitive>true</excludeTransitive>
+                            <excludeTransitive>false</excludeTransitive>
                             <stripVersion>true</stripVersion>
                             <outputDirectory>${project.build.directory}/dependency</outputDirectory>
                         </configuration>
@@ -227,6 +227,7 @@
                                 <argument>${project.build.directory}/dependency/slf4j-api.jar</argument>
                                 <argument>${project.build.directory}/dependency/slf4j-jdk14.jar</argument>
                                 <argument>${project.build.directory}/dependency/jcl-over-slf4j.jar</argument>
+                                <argument>${project.build.directory}/dependency/jna.jar</argument>
                                 <argument>${project.build.directory}/dependency/log4j-over-slf4j.jar</argument>
                                 <argument>${project.build.directory}/dependency/annotations.jar</argument>
                                 <argument>${project.build.directory}/dependency/config-lib.jar</argument>

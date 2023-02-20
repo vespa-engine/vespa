@@ -35,8 +35,7 @@ FPFactory::setup(const std::vector<const FakeWord *> &fws)
 }
 
 
-typedef std::map<const std::string, FPFactoryMaker *const>
-FPFactoryMap;
+using FPFactoryMap = std::map<const std::string, FPFactoryMaker *const>;
 
 static FPFactoryMap *fpFactoryMap = nullptr;
 

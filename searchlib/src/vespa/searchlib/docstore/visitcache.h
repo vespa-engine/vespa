@@ -56,7 +56,6 @@ public:
     BlobSet &operator = (BlobSet &&) = default;
     ~BlobSet();
     void append(uint32_t lid, vespalib::ConstBufferRef blob);
-    void remove(uint32_t lid);
     const Positions & getPositions() const { return _positions; }
     vespalib::ConstBufferRef get(uint32_t lid) const;
     vespalib::ConstBufferRef getBuffer() const { return vespalib::ConstBufferRef(_buffer.data(), _buffer.size()); }
@@ -75,7 +74,7 @@ class CompressedBlobSet {
 public:
     using CompressionConfig = vespalib::compression::CompressionConfig;
     CompressedBlobSet();
-    CompressedBlobSet(const CompressionConfig &compression, const BlobSet & uncompressed);
+    CompressedBlobSet(CompressionConfig compression, const BlobSet & uncompressed);
     CompressedBlobSet(CompressedBlobSet && rhs) = default;
     CompressedBlobSet & operator=(CompressedBlobSet && rhs) = default;
     CompressedBlobSet(const CompressedBlobSet & rhs) = default;
@@ -98,14 +97,14 @@ private:
 class VisitCache {
 public:
     using CompressionConfig = vespalib::compression::CompressionConfig;
-    VisitCache(IDataStore &store, size_t cacheSize, const CompressionConfig &compression);
+    VisitCache(IDataStore &store, size_t cacheSize, CompressionConfig compression);
 
     CompressedBlobSet read(const IDocumentStore::LidVector & keys) const;
     void remove(uint32_t key);
     void invalidate(uint32_t key) { remove(key); }
 
     vespalib::CacheStats getCacheStats() const;
-    void reconfigure(size_t cacheSize, const CompressionConfig &compression);
+    void reconfigure(size_t cacheSize, CompressionConfig compression);
 private:
     /**
      * This implments the interface the cache uses when it has a cache miss.
@@ -115,18 +114,18 @@ private:
      */
     class BackingStore {
     public:
-        BackingStore(IDataStore &store, const CompressionConfig &compression) :
+        BackingStore(IDataStore &store, CompressionConfig compression) :
             _backingStore(store),
             _compression(compression)
         { }
         bool read(const KeySet &key, CompressedBlobSet &blobs) const;
         void write(const KeySet &, const CompressedBlobSet &) { }
         void erase(const KeySet &) { }
-        void reconfigure(const CompressionConfig &compression);
+        void reconfigure(CompressionConfig compression);
 
     private:
         IDataStore        &_backingStore;
-        CompressionConfig  _compression;
+        std::atomic<CompressionConfig>  _compression;
     };
 
     using CacheParams = vespalib::CacheParam<

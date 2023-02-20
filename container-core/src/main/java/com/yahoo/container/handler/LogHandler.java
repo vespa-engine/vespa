@@ -5,9 +5,12 @@ import com.yahoo.component.annotation.Inject;
 import com.yahoo.container.core.LogHandlerConfig;
 import com.yahoo.container.jdisc.AsyncHttpResponse;
 import com.yahoo.container.jdisc.HttpRequest;
+import com.yahoo.container.jdisc.RequestView;
 import com.yahoo.container.jdisc.ThreadedHttpRequestHandler;
+import com.yahoo.container.jdisc.utils.CapabilityRequiringRequestHandler;
 import com.yahoo.jdisc.handler.CompletionHandler;
 import com.yahoo.jdisc.handler.ContentChannel;
+import com.yahoo.security.tls.Capability;
 
 import java.io.OutputStream;
 import java.time.Instant;
@@ -15,7 +18,7 @@ import java.util.Optional;
 import java.util.concurrent.Executor;
 import java.util.logging.Level;
 
-public class LogHandler extends ThreadedHttpRequestHandler {
+public class LogHandler extends ThreadedHttpRequestHandler implements CapabilityRequiringRequestHandler {
 
     private final LogReader logReader;
     private static final long MB = 1024 * 1024;
@@ -29,6 +32,8 @@ public class LogHandler extends ThreadedHttpRequestHandler {
         super(executor);
         this.logReader = logReader;
     }
+
+    @Override public Capability requiredCapability(RequestView __) { return Capability.LOGSERVER_API; }
 
     @Override
     public AsyncHttpResponse handle(HttpRequest request) {

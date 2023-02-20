@@ -77,7 +77,7 @@ MetricManager::MetricManager(std::unique_ptr<Timer> timer)
       _lastProcessedTime(0),
       _snapshotUnsetMetrics(false),
       _consumerConfigChanged(false),
-      _metricManagerMetrics("metricmanager", {}, "Metrics for the metric manager upkeep tasks"),
+      _metricManagerMetrics("metricmanager", {}, "Metrics for the metric manager upkeep tasks", nullptr),
       _periodicHookLatency("periodichooklatency", {}, "Time in ms used to update a single periodic hook", &_metricManagerMetrics),
       _snapshotHookLatency("snapshothooklatency", {}, "Time in ms used to update a single snapshot hook", &_metricManagerMetrics),
       _resetLatency("resetlatency", {}, "Time in ms used to reset all metrics.", &_metricManagerMetrics),
@@ -383,11 +383,9 @@ MetricManager::handleMetricsAltered(const MetricLockGuard & guard)
         configMap[consumer.name] = std::make_shared<ConsumerSpec>(std::move(consumerMetricBuilder._matchedMetrics));
     }
     LOG(debug, "Recreating snapshots to include altered metrics");
-    _totalMetrics->recreateSnapshot(_activeMetrics.getMetrics(),
-                                    _snapshotUnsetMetrics);
+    _totalMetrics->recreateSnapshot(_activeMetrics.getMetrics(), _snapshotUnsetMetrics);
     for (uint32_t i=0; i<_snapshots.size(); ++i) {
-        _snapshots[i]->recreateSnapshot(_activeMetrics.getMetrics(),
-                                        _snapshotUnsetMetrics);
+        _snapshots[i]->recreateSnapshot(_activeMetrics.getMetrics(), _snapshotUnsetMetrics);
     }
     LOG(debug, "Setting new consumer config. Clearing dirty flag");
     _consumerConfig.swap(configMap);
@@ -395,8 +393,7 @@ MetricManager::handleMetricsAltered(const MetricLockGuard & guard)
 }
 
 namespace {
-    bool setSnapshotName(std::ostream& out, const char* name,
-                         uint32_t length, uint32_t period)
+    bool setSnapshotName(std::ostream& out, const char* name, uint32_t length, uint32_t period)
     {
         if (length % period != 0) return false;
         out << (length / period) << ' ' << name;
@@ -412,9 +409,8 @@ MetricManager::createSnapshotPeriods(const Config& config)
     try{
         for (uint32_t i=0; i<config.snapshot.periods.size(); ++i) {
             uint32_t length = config.snapshot.periods[i];
-            if (length < 1) throw vespalib::IllegalStateException(
-                    "Snapshot periods must be positive numbers",
-                    VESPA_STRLOC);
+            if (length < 1)
+                throw vespalib::IllegalStateException("Snapshot periods must be positive numbers", VESPA_STRLOC);
             std::ostringstream name;
             if (setSnapshotName(name, "week", length, 60 * 60 * 24 * 7)) {
             } else if (setSnapshotName(name, "day", length, 60 * 60 * 24)) {
@@ -483,15 +479,13 @@ MetricManager::configure(const MetricLockGuard & , std::unique_ptr<Config> confi
                             VESPA_STRLOC);
                 }
             }
-            _snapshots.push_back(MetricSnapshotSet::SP(new MetricSnapshotSet(
+            _snapshots.push_back(std::make_shared<MetricSnapshotSet>(
                     snapshotPeriods[i].second, snapshotPeriods[i].first, count,
-                    _activeMetrics.getMetrics(), _snapshotUnsetMetrics)));
+                    _activeMetrics.getMetrics(), _snapshotUnsetMetrics));
             count = nextCount;
         }
             // Add all time snapshot.
-        _totalMetrics = MetricSnapshot::SP(new MetricSnapshot(
-                "All time snapshot", 0, _activeMetrics.getMetrics(),
-                _snapshotUnsetMetrics));
+        _totalMetrics = std::make_shared<MetricSnapshot>("All time snapshot", 0, _activeMetrics.getMetrics(), _snapshotUnsetMetrics);
         _totalMetrics->reset(currentTime);
     }
     if (_config.get() == 0

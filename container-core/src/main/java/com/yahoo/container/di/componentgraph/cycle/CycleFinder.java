@@ -89,7 +89,7 @@ public class CycleFinder<T> {
         T cycleStart = pathWithCycle.get(pathWithCycle.size() - 1);
         return pathWithCycle.stream()
                 .dropWhile(vertex -> ! vertex.equals(cycleStart))
-                .collect(Collectors.toList());
+                .toList();
     }
 
 }

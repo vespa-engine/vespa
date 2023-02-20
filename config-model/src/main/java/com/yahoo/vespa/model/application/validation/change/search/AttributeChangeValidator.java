@@ -2,7 +2,7 @@
 package com.yahoo.vespa.model.application.validation.change.search;
 
 import com.yahoo.config.application.api.ValidationId;
-import com.yahoo.config.application.api.ValidationOverrides;
+import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.documentmodel.NewDocumentType;
 import com.yahoo.schema.derived.AttributeFields;
@@ -14,7 +14,6 @@ import com.yahoo.schema.document.HnswIndexParams;
 import com.yahoo.vespa.model.application.validation.change.VespaConfigChangeAction;
 import com.yahoo.vespa.model.application.validation.change.VespaRestartAction;
 
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -36,8 +35,7 @@ public class AttributeChangeValidator {
     private final AttributeFields nextFields;
     private final IndexSchema nextIndexSchema;
     private final NewDocumentType nextDocType;
-    private final ValidationOverrides overrides;
-    private final Instant now;
+    private final DeployState deployState;
 
     public AttributeChangeValidator(ClusterSpec.Id id,
                                     AttributeFields currentFields,
@@ -46,8 +44,7 @@ public class AttributeChangeValidator {
                                     AttributeFields nextFields,
                                     IndexSchema nextIndexSchema,
                                     NewDocumentType nextDocType,
-                                    ValidationOverrides overrides,
-                                    Instant now) {
+                                    DeployState deployState) {
         this.id = id;
         this.currentFields = currentFields;
         this.currentIndexSchema = currentIndexSchema;
@@ -55,8 +52,7 @@ public class AttributeChangeValidator {
         this.nextFields = nextFields;
         this.nextIndexSchema = nextIndexSchema;
         this.nextDocType = nextDocType;
-        this.overrides = overrides;
-        this.now = now;
+        this.deployState = deployState;
     }
 
     public List<VespaConfigChangeAction> validate() {
@@ -69,7 +65,7 @@ public class AttributeChangeValidator {
 
     private List<VespaConfigChangeAction> validateAddAttributeAspect() {
         return nextFields.attributes().stream().
-                map(attr -> attr.getName()).
+                map(Attribute::getName).
                 filter(attrName -> !currentFields.containsAttribute(attrName) &&
                                    currentDocType.containsField(attrName)).
                 map(attrName -> new VespaRestartAction(id, new ChangeMessageBuilder(attrName).addChange("add attribute aspect").build())).
@@ -78,7 +74,7 @@ public class AttributeChangeValidator {
 
     private List<VespaConfigChangeAction> validateRemoveAttributeAspect() {
         return currentFields.attributes().stream().
-                map(attr -> attr.getName()).
+                map(Attribute::getName).
                 filter(attrName -> !nextFields.containsAttribute(attrName) &&
                                    nextDocType.containsField(attrName) &&
                                    !isIndexField(attrName)).
@@ -167,10 +163,10 @@ public class AttributeChangeValidator {
 
     private void validatePagedAttributeRemoval(Attribute current, Attribute next) {
         if (current.isPaged() && !next.isPaged()) {
-            overrides.invalid(ValidationId.pagedSettingRemoval,
+            deployState.validationOverrides().invalid(ValidationId.pagedSettingRemoval,
                               current + "' has setting 'paged' removed. " +
                               "This may cause content nodes to run out of memory as the entire attribute is loaded into memory",
-                              now);
+                              deployState.now());
         }
     }
 

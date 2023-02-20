@@ -35,7 +35,7 @@ struct MyFlushTask : public searchcorespi::FlushTask
 
 struct MyFlushTarget : public test::DummyFlushTarget
 {
-    typedef std::shared_ptr<MyFlushTarget> SP;
+    using SP = std::shared_ptr<MyFlushTarget>;
     SerialNum _initFlushSerial;
     Gate _execGate;
     Gate _initGate;
@@ -71,7 +71,7 @@ struct Fixture
           _trackedFlush(_tracker, _target),
           _task(),
           _taskGate(),
-          _exec(1, 64000)
+          _exec(1)
     {
     }
     void initFlush(SerialNum currentSerial) {

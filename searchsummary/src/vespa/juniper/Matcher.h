@@ -47,7 +47,7 @@ class SummaryDesc;
 class SummaryConfig;
 class QueryTerm;
 
-typedef std::list<MatchCandidate*> match_sequence;
+using match_sequence = std::list<MatchCandidate*>;
 
 class Matcher : public ITokenProcessor
 {

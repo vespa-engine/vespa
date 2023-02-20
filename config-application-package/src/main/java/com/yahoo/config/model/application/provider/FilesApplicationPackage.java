@@ -11,7 +11,10 @@ import com.yahoo.config.application.api.ApplicationMetaData;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.ComponentInfo;
 import com.yahoo.config.application.api.DeployLogger;
+import com.yahoo.config.application.api.DeploymentInstanceSpec;
+import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.application.api.UnparsedConfigDefinition;
+import com.yahoo.config.application.api.xml.DeploymentSpecXmlReader;
 import com.yahoo.config.codegen.DefParser;
 import com.yahoo.config.model.application.AbstractApplicationPackage;
 import com.yahoo.config.provision.ApplicationId;
@@ -139,7 +142,6 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
                                        deployData.getDeployTimestamp(),
                                        deployData.isInternalRedeploy(),
                                        deployData.getApplicationId(),
-                                       deployData.getTags(),
                                        computeCheckSum(appDir),
                                        deployData.getGeneration(),
                                        deployData.getCurrentlyActiveGeneration());
@@ -430,11 +432,11 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
 
         File sdDir = applicationFile(appDir, SEARCH_DEFINITIONS_DIR.getRelative());
         if (sdDir.isDirectory())
-            schemaFiles.addAll(Arrays.asList(sdDir.listFiles((dir, name) -> name.matches(".*\\" + SD_NAME_SUFFIX))));
+            schemaFiles.addAll(Arrays.asList(sdDir.listFiles((dir, name) -> validSchemaFilename(name))));
 
         sdDir = applicationFile(appDir, SCHEMAS_DIR.getRelative());
         if (sdDir.isDirectory())
-            schemaFiles.addAll(Arrays.asList(sdDir.listFiles((dir, name) -> name.matches(".*\\" + SD_NAME_SUFFIX))));
+            schemaFiles.addAll(Arrays.asList(sdDir.listFiles((dir, name) -> validSchemaFilename(name))));
 
         return schemaFiles;
     }
@@ -486,7 +488,6 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
                                                                       ApplicationId.from(TenantName.defaultName(),
                                                                                          ApplicationName.from(originalAppDir),
                                                                                          InstanceName.defaultName()),
-                                                                      Tags.empty(),
                                                                       "",
                                                                       0L,
                                                                       0L);
@@ -582,12 +583,16 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
     private void preprocessXML(File destination, File inputXml, Zone zone) throws IOException {
         if ( ! inputXml.exists()) return;
         try {
+            InstanceName instance = metaData.getApplicationId().instance();
             Document document = new XmlPreProcessor(appDir,
                                                     inputXml,
-                                                    metaData.getApplicationId().instance(),
+                                                    instance,
                                                     zone.environment(),
                                                     zone.region(),
-                                                    metaData.getTags())
+                                                    getDeployment().map(new DeploymentSpecXmlReader(false)::read)
+                                                                   .flatMap(spec -> spec.instance(instance))
+                                                                   .map(DeploymentInstanceSpec::tags)
+                                                                   .orElse(Tags.empty()))
                     .run();
 
             try (FileOutputStream outputStream = new FileOutputStream(destination)) {

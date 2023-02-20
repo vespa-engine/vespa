@@ -28,7 +28,7 @@ int main(int /*argc*/, char ** /*argv*/)
     int fd = open("logserver.port", O_CREAT | O_WRONLY,
                   S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
     char out[6];
-    sprintf(out, "%d\n", portno);
+    snprintf(out, sizeof(out), "%d\n", portno);
     ssize_t writeRes = write(fd, out, sizeof(out));
     close(fd);
     if (writeRes != sizeof(out)) {

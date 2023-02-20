@@ -6,6 +6,7 @@
 #include "array_store_config.h"
 #include "buffer_type.h"
 #include "bufferstate.h"
+#include "compaction_spec.h"
 #include "datastore.h"
 #include "entryref.h"
 #include "atomic_entry_ref.h"
@@ -48,6 +49,7 @@ private:
     TypeMapper _mapper;
     std::vector<SmallBufferType> _smallArrayTypes;
     LargeBufferType _largeArrayType;
+    CompactionSpec _compaction_spec;
     using generation_t = vespalib::GenerationHandler::generation_t;
 
     void initArrayTypes(const ArrayStoreConfig &cfg, std::shared_ptr<alloc::MemoryAllocator> memory_allocator);
@@ -106,11 +108,16 @@ public:
 
     void remove(EntryRef ref);
     EntryRef move_on_compact(EntryRef ref) override;
-    ICompactionContext::UP compactWorst(CompactionSpec compaction_spec, const CompactionStrategy& compaction_strategy);
+    ICompactionContext::UP compact_worst(const CompactionStrategy& compaction_strategy);
     // Use this if references to array store is not an array of AtomicEntryRef
-    std::unique_ptr<CompactingBuffers> start_compact_worst_buffers(CompactionSpec compaction_spec, const CompactionStrategy &compaction_strategy);
+    std::unique_ptr<CompactingBuffers> start_compact_worst_buffers(const CompactionStrategy &compaction_strategy);
 
     vespalib::MemoryUsage getMemoryUsage() const { return _store.getMemoryUsage(); }
+    vespalib::MemoryUsage update_stat(const CompactionStrategy& compaction_strategy);
+    bool consider_compact() const noexcept { return _compaction_spec.compact() && !_store.has_held_buffers(); }
+
+    // Set compaction spec. Only used by unit tests.
+    void set_compaction_spec(CompactionSpec compaction_spec) noexcept { _compaction_spec = compaction_spec; }
 
     /**
      * Returns the address space usage by this store as the ratio between active buffers
@@ -136,6 +143,8 @@ public:
 
     bool has_free_lists_enabled() const { return _store.has_free_lists_enabled(); }
     bool has_held_buffers() const noexcept { return _store.has_held_buffers(); }
+
+    const TypeMapper& get_mapper() const noexcept { return _mapper; }
 
     static ArrayStoreConfig optimizedConfigForHugePage(uint32_t maxSmallArrayTypeId,
                                                        size_t hugePageSize,

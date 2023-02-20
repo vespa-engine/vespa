@@ -1,11 +1,12 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchlib.rankingexpression.evaluation;
 
-import com.google.common.collect.ImmutableMap;
+import com.yahoo.lang.MutableInteger;
 import com.yahoo.searchlib.rankingexpression.RankingExpression;
 import com.yahoo.searchlib.rankingexpression.rule.CompositeNode;
 import com.yahoo.searchlib.rankingexpression.rule.ExpressionNode;
 import com.yahoo.searchlib.rankingexpression.rule.ReferenceNode;
+import com.yahoo.stream.CustomCollectors;
 
 import java.util.BitSet;
 import java.util.LinkedHashSet;
@@ -116,7 +117,7 @@ public abstract class AbstractArrayContext extends Context implements Cloneable,
     private static class IndexedBindings implements Cloneable {
 
         /** The mapping from variable name to index */
-        private final ImmutableMap<String, Integer> nameToIndex;
+        private final Map<String, Integer> nameToIndex;
 
         /** The current values set, pre-converted to doubles */
         private double[] doubleValues;
@@ -125,7 +126,7 @@ public abstract class AbstractArrayContext extends Context implements Cloneable,
         private BitSet setValues;
 
         /** Value to return if value is missing. */
-        private double missingValue;
+        private final double missingValue;
 
         public IndexedBindings(RankingExpression expression, Value missingValue) {
             Set<String> bindTargets = new LinkedHashSet<>();
@@ -138,11 +139,8 @@ public abstract class AbstractArrayContext extends Context implements Cloneable,
                 doubleValues[i] = this.missingValue;
             }
 
-            int i = 0;
-            ImmutableMap.Builder<String, Integer> nameToIndexBuilder = new ImmutableMap.Builder<>();
-            for (String variable : bindTargets)
-                nameToIndexBuilder.put(variable,i++);
-            nameToIndex = nameToIndexBuilder.build();
+            MutableInteger index = new MutableInteger(0);
+            nameToIndex = bindTargets.stream().collect(CustomCollectors.toLinkedMap(name -> name, name -> index.next()));
         }
 
         private void extractBindTargets(ExpressionNode node, Set<String> bindTargets) {
@@ -152,8 +150,7 @@ public abstract class AbstractArrayContext extends Context implements Cloneable,
                                                             ": Array lookup is not supported with features having arguments)");
                 bindTargets.add(node.toString());
             }
-            else if (node instanceof CompositeNode) {
-                CompositeNode cNode = (CompositeNode)node;
+            else if (node instanceof CompositeNode cNode) {
                 for (ExpressionNode child : cNode.children())
                     extractBindTargets(child, bindTargets);
             }

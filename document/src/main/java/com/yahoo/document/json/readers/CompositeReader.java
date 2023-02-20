@@ -7,7 +7,6 @@ import com.yahoo.document.PositionDataType;
 import com.yahoo.document.datatypes.CollectionFieldValue;
 import com.yahoo.document.datatypes.FieldValue;
 import com.yahoo.document.datatypes.MapFieldValue;
-import com.yahoo.document.datatypes.StringFieldValue;
 import com.yahoo.document.datatypes.StructuredFieldValue;
 import com.yahoo.document.datatypes.TensorFieldValue;
 import com.yahoo.document.datatypes.WeightedSet;
@@ -20,8 +19,8 @@ import static com.yahoo.document.json.readers.WeightedSetReader.fillWeightedSet;
 public class CompositeReader {
 
     public static boolean populateComposite(TokenBuffer buffer, FieldValue fieldValue, boolean ignoreUndefinedFields) {
-        boolean fullyApplied = populateComposite(buffer.currentToken(), buffer, fieldValue, ignoreUndefinedFields);
-        expectCompositeEnd(buffer.currentToken());
+        boolean fullyApplied = populateComposite(buffer.current(), buffer, fieldValue, ignoreUndefinedFields);
+        expectCompositeEnd(buffer.current());
         return fullyApplied;
     }
 

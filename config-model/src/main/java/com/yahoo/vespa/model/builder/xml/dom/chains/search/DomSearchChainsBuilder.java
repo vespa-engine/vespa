@@ -2,7 +2,8 @@
 package com.yahoo.vespa.model.builder.xml.dom.chains.search;
 
 import com.yahoo.config.model.deploy.DeployState;
-import com.yahoo.config.model.producer.AbstractConfigProducer;
+import com.yahoo.config.model.producer.AnyConfigProducer;
+import com.yahoo.config.model.producer.TreeConfigProducer;
 import com.yahoo.vespa.model.builder.xml.dom.chains.ComponentsBuilder.ComponentType;
 import com.yahoo.vespa.model.builder.xml.dom.chains.DomChainsBuilder;
 import com.yahoo.vespa.model.container.search.searchchain.SearchChain;
@@ -26,12 +27,12 @@ public class DomSearchChainsBuilder extends DomChainsBuilder<Searcher<?>, Search
     }
 
     @Override
-    protected SearchChains newChainsInstance(AbstractConfigProducer<?> parent) {
+    protected SearchChains newChainsInstance(TreeConfigProducer<AnyConfigProducer> parent) {
         return new SearchChains(parent, "searchchains");
     }
 
     @Override
-    protected SearchChainsBuilder readChains(DeployState deployState, AbstractConfigProducer<?> ancestor, List<Element> searchChainsElements,
+    protected SearchChainsBuilder readChains(DeployState deployState, TreeConfigProducer<AnyConfigProducer> ancestor, List<Element> searchChainsElements,
                                              Map<String, ComponentType<?>> outerComponentTypeByComponentName) {
         return new SearchChainsBuilder(deployState, ancestor, searchChainsElements, outerComponentTypeByComponentName);
     }

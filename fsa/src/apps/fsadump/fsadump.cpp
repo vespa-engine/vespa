@@ -62,6 +62,20 @@ void version()
   std::cout << std::endl;
 }
 
+
+namespace {
+
+template <typename T>
+T
+read_unaligned(const void* data)
+{
+    T value;
+    memcpy(&value, data, sizeof(T));
+    return value;
+}
+
+}
+
 int main(int argc, char** argv)
 {
   FSA_Input_Format  format = OUTPUT_UNDEF;
@@ -154,11 +168,11 @@ int main(int argc, char** argv)
           break;
         case 2:
         case 3:
-          num_meta = *((const uint16_t*)(const void *)it->data());
+          num_meta = read_unaligned<uint16_t>(it->data());
           break;
         case 4:
         default:
-          num_meta = *((const uint32_t*)(const void *)it->data());
+          num_meta = read_unaligned<uint32_t>(it->data());
           break;
         }
         std::cout << it->str() << '\t' << num_meta << '\n';

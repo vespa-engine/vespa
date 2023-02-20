@@ -29,9 +29,7 @@ public final class SwitchExpression extends CompositeExpression {
     public <T extends Expression> SwitchExpression(Map<String, T> cases, Expression defaultExp) {
         super(null);
         this.defaultExp = defaultExp;
-        for (Map.Entry<String, T> entry : cases.entrySet()) {
-            this.cases.put(entry.getKey(), entry.getValue());
-        }
+        this.cases.putAll(cases);
     }
 
     public boolean isEmpty() {
@@ -121,16 +119,9 @@ public final class SwitchExpression extends CompositeExpression {
 
     @Override
     public boolean equals(Object obj) {
-        if (!(obj instanceof SwitchExpression)) {
-            return false;
-        }
-        SwitchExpression rhs = (SwitchExpression)obj;
-        if (!cases.equals(rhs.cases)) {
-            return false;
-        }
-        if (!equals(defaultExp, rhs.defaultExp)) {
-            return false;
-        }
+        if (!(obj instanceof SwitchExpression rhs)) return false;
+        if (!cases.equals(rhs.cases)) return false;
+        if (!equals(defaultExp, rhs.defaultExp)) return false;
         return true;
     }
 
@@ -138,4 +129,5 @@ public final class SwitchExpression extends CompositeExpression {
     public int hashCode() {
         return getClass().hashCode() + (defaultExp != null ? defaultExp.hashCode() : 0);
     }
+
 }

@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.tensor.functions;
 
-import com.google.common.collect.ImmutableList;
 import com.yahoo.tensor.IndexedTensor;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorAddress;
@@ -37,12 +36,12 @@ public class Reduce<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMET
 
     /** Creates a reduce function reducing all dimensions */
     public Reduce(TensorFunction<NAMETYPE> argument, Aggregator aggregator) {
-        this(argument, aggregator, Collections.emptyList());
+        this(argument, aggregator, List.of());
     }
 
     /** Creates a reduce function reducing a single dimension */
     public Reduce(TensorFunction<NAMETYPE> argument, Aggregator aggregator, String dimension) {
-        this(argument, aggregator, Collections.singletonList(dimension));
+        this(argument, aggregator, List.of(dimension));
     }
 
     /**
@@ -57,7 +56,7 @@ public class Reduce<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMET
     public Reduce(TensorFunction<NAMETYPE> argument, Aggregator aggregator, List<String> dimensions) {
         this.argument = Objects.requireNonNull(argument, "The argument tensor cannot be null");
         this.aggregator  = Objects.requireNonNull(aggregator, "The aggregator cannot be null");
-        this.dimensions = ImmutableList.copyOf(dimensions);
+        this.dimensions = List.copyOf(dimensions);
     }
 
     public static TensorType outputType(TensorType inputType, List<String> reduceDimensions) {
@@ -71,7 +70,7 @@ public class Reduce<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMET
     List<String> dimensions() { return dimensions; }
 
     @Override
-    public List<TensorFunction<NAMETYPE>> arguments() { return Collections.singletonList(argument); }
+    public List<TensorFunction<NAMETYPE>> arguments() { return List.of(argument); }
 
     @Override
     public TensorFunction<NAMETYPE> withArguments(List<TensorFunction<NAMETYPE>> arguments) {
@@ -174,16 +173,16 @@ public class Reduce<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMET
     static abstract class ValueAggregator {
 
         static ValueAggregator ofType(Aggregator aggregator) {
-            switch (aggregator) {
-                case avg : return new AvgAggregator();
-                case count : return new CountAggregator();
-                case max : return new MaxAggregator();
-                case median : return new MedianAggregator();
-                case min : return new MinAggregator();
-                case prod : return new ProdAggregator();
-                case sum : return new SumAggregator();
-                default: throw new UnsupportedOperationException("Aggregator " + aggregator + " is not implemented");
-            }
+            return switch (aggregator) {
+                case avg -> new AvgAggregator();
+                case count -> new CountAggregator();
+                case max -> new MaxAggregator();
+                case median -> new MedianAggregator();
+                case min -> new MinAggregator();
+                case prod -> new ProdAggregator();
+                case sum -> new SumAggregator();
+                default -> throw new UnsupportedOperationException("Aggregator " + aggregator + " is not implemented");
+            };
 
         }
 

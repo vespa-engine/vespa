@@ -11,7 +11,7 @@ namespace search::features {
 class NativeDotProductExecutor : public fef::FeatureExecutor
 {
 private:
-    typedef std::pair<fef::TermFieldHandle,query::Weight> Pair;
+    using Pair = std::pair<fef::TermFieldHandle,query::Weight>;
     std::vector<Pair>     _pairs;
     const fef::MatchData *_md;
 

@@ -40,7 +40,7 @@
             "zone": "us-west",
             "api": "search/",
             "documenttype": "music",
-            "non-public": "will-be-removed"
+            "custom-dimension": "will-not-be-removed"
           }
         }
       ]

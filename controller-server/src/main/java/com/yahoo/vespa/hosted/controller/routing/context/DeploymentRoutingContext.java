@@ -116,7 +116,7 @@ public abstract class DeploymentRoutingContext implements RoutingContext {
                                                    .asList().stream()
                                                    .map(endpoint -> endpoint.upstreamName(deployment))
                                                    .distinct()
-                                                   .collect(Collectors.toList());
+                                                   .toList();
             if (upstreamNames.isEmpty()) {
                 throw new IllegalArgumentException("No upstream names found for " + deployment);
             }

@@ -21,7 +21,6 @@ import java.io.IOException;
 import java.nio.file.FileSystem;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
@@ -63,7 +62,7 @@ public class StorageMaintainerTest {
 
     @Test
     void testNonExistingDiskUsed() {
-        DiskSize size = storageMaintainer.getDiskUsed(null, Paths.get("/fake/path"));
+        DiskSize size = storageMaintainer.getDiskUsed(null, Path.of("/fake/path"));
         assertEquals(DiskSize.ZERO, size);
     }
 
@@ -126,6 +125,9 @@ public class StorageMaintainerTest {
         Files.createDirectories(containerVespaHome.resolve("var/db"));
         Files.createFile(containerVespaHome.resolve("var/db/some-file"));
 
+        Files.createDirectories(containerVespaHome.resolve("var/tmp"));
+        Files.createFile(containerVespaHome.resolve("var/tmp/some-file"));
+
         ContainerPath containerRoot = context.paths().of("/");
         Set<String> actualContents = FileFinder.files(containerRoot)
                 .stream()
@@ -135,6 +137,7 @@ public class StorageMaintainerTest {
                 "etc/something/conf",
                 "opt/vespa/logs/vespa/vespa.log",
                 "opt/vespa/logs/vespa/zookeeper.log",
+                "opt/vespa/var/tmp/some-file",
                 "opt/vespa/var/db/some-file");
         assertEquals(expectedContents, actualContents);
         return context;

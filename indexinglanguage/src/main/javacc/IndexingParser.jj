@@ -8,7 +8,6 @@ options {
     CACHE_TOKENS = false;
     DEBUG_PARSER = false;
     ERROR_REPORTING = true;
-    STATIC = false;
     USER_CHAR_STREAM = true;
 }
 
@@ -24,7 +23,7 @@ package com.yahoo.vespa.indexinglanguage.parser;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.List;
-import java.util.LinkedList;
+import java.util.ArrayList;
 import java.util.Map;
 import java.util.LinkedHashMap;
 
@@ -137,6 +136,7 @@ TOKEN :
     <LE: "<="> |
     <GT: ">"> |
     <GE: ">="> |
+    <CHOICE: "||"> |
     <PIPE: "|"> |
     <LCURLY: "{"> |
     <RCURLY: "}"> |
@@ -229,7 +229,7 @@ Expression root() :
 ScriptExpression script() :
 {
     StatementExpression exp;
-    List<StatementExpression> lst = new LinkedList<StatementExpression>();
+    List<StatementExpression> lst = new ArrayList<StatementExpression>();
 }
 {
     (   <LCURLY> nl()   exp = statement() { lst.add(exp); } nl()
@@ -240,7 +240,7 @@ ScriptExpression script() :
 StatementExpression statement() :
 {
     Expression exp;
-    List<Expression> lst = new LinkedList<Expression>();
+    List<Expression> lst = new ArrayList<Expression>();
 }
 {
     ( exp = expression() { lst.add(exp); } ( <PIPE> nl() exp = expression() { lst.add(exp); } )* )
@@ -249,8 +249,19 @@ StatementExpression statement() :
 
 Expression expression() :
 {
+    Expression choice;
+    List<Expression> choices = new ArrayList<Expression>();
+}
+{
+    choice = nonChoiceExpression() { choices.add(choice); }
+    ( <CHOICE> choice = nonChoiceExpression() { choices.add(choice); } )*
+    { return choices.size() == 1 ? choices.get(0) : new ChoiceExpression(choices); }
+}
+
+Expression nonChoiceExpression() :
+{
     Expression exp;
-    List<Expression> lst = new LinkedList<Expression>();
+    List<Expression> lst = new ArrayList<Expression>();
 }
 {
     ( exp = math() { lst.add(exp); } ( <DOT> exp = math() { lst.add(exp); } )* )
@@ -273,6 +284,8 @@ Expression math() :
           exp = value() { math.push(op, exp);                     } )* )
     { return math.resolve(); }
 }
+
+
 
 Expression value() :
 {
@@ -553,7 +566,7 @@ Expression randomExp() :
 
 Expression selectInputExp() :
 {
-    List<Pair<String, Expression>> cases = new LinkedList<Pair<String, Expression>>();
+    List<Pair<String, Expression>> cases = new ArrayList<Pair<String, Expression>>();
     Expression exp;
     String str;
 }

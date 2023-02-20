@@ -80,6 +80,7 @@ public class ProvisioningTester {
     private final NodeFlavors nodeFlavors;
     private final ManualClock clock;
     private final NodeRepository nodeRepository;
+    private final HostProvisioner hostProvisioner;
     private final NodeRepositoryProvisioner provisioner;
     private final CapacityPolicies capacityPolicies;
     private final ProvisionLogger provisionLogger;
@@ -102,6 +103,7 @@ public class ProvisioningTester {
         this.curator = curator;
         this.nodeFlavors = nodeFlavors;
         this.clock = new ManualClock();
+        this.hostProvisioner = hostProvisioner;
         ProvisionServiceProvider provisionServiceProvider = new MockProvisionServiceProvider(loadBalancerService, hostProvisioner, resourcesCalculator);
         this.nodeRepository = new NodeRepository(nodeFlavors,
                                                  provisionServiceProvider,
@@ -110,6 +112,7 @@ public class ProvisioningTester {
                                                  zone,
                                                  nameResolver,
                                                  containerImage,
+                                                 Optional.empty(),
                                                  Optional.empty(),
                                                  flagSource,
                                                  new MemoryMetricsDb(clock),
@@ -126,7 +129,7 @@ public class ProvisioningTester {
     public static FlavorsConfig createConfig() {
         FlavorConfigBuilder b = new FlavorConfigBuilder();
         b.addFlavor("default", 2., 40., 100, 10, Flavor.Type.BARE_METAL).cost(3);
-        b.addFlavor("small", 1., 20., 50, 5, Flavor.Type.BARE_METAL).cost(2);
+        b.addFlavor("small", 2., 20., 50, 5, Flavor.Type.BARE_METAL).cost(2);
         b.addFlavor("dockerSmall", 1., 10., 10, 1, Flavor.Type.DOCKER_CONTAINER).cost(1);
         b.addFlavor("dockerLarge", 2., 10., 20, 1, Flavor.Type.DOCKER_CONTAINER).cost(3);
         b.addFlavor("v-4-8-100", 4., 80., 100, 10, Flavor.Type.VIRTUAL_MACHINE).cost(4);
@@ -144,6 +147,7 @@ public class ProvisioningTester {
     public Orchestrator orchestrator() { return nodeRepository.orchestrator(); }
     public ManualClock clock() { return clock; }
     public NodeRepositoryProvisioner provisioner() { return provisioner; }
+    public HostProvisioner hostProvisioner() { return hostProvisioner; }
     public LoadBalancerServiceMock loadBalancerService() { return loadBalancerService; }
     public CapacityPolicies capacityPolicies() { return capacityPolicies; }
     public NodeList getNodes(ApplicationId id, Node.State ... inState) { return nodeRepository.nodes().list(inState).owner(id); }
@@ -197,7 +201,7 @@ public class ProvisioningTester {
             try (var lock = nodeRepository.nodes().lockAndGetRequired(prepared.hostname())) {
                 Node node = lock.node();
                 if (node.ipConfig().primary().isEmpty()) {
-                    node = node.with(new IP.Config(Set.of("::" + 0 + ":0"), Set.of()));
+                    node = node.with(IP.Config.of(Set.of("::" + 0 + ":0"), Set.of()));
                     nodeRepository.nodes().write(node, lock);
                 }
                 if (node.parentHostname().isEmpty()) continue;
@@ -205,7 +209,7 @@ public class ProvisioningTester {
                 if (parent.state() == Node.State.active) continue;
                 NestedTransaction t = new NestedTransaction();
                 if (parent.ipConfig().primary().isEmpty())
-                    parent = parent.with(new IP.Config(Set.of("::" + 0 + ":0"), Set.of("::" + 0 + ":2")));
+                    parent = parent.with(IP.Config.of(Set.of("::" + 0 + ":0"), Set.of("::" + 0 + ":2")));
                 nodeRepository.nodes().activate(List.of(parent), t);
                 t.commit();
             }
@@ -324,7 +328,7 @@ public class ProvisioningTester {
     }
 
     public void fail(String hostname) {
-        int beforeFailCount = nodeRepository.nodes().node(hostname, Node.State.active).get().status().failCount();
+        int beforeFailCount = nodeRepository.nodes().node(hostname).get().status().failCount();
         Node failedNode = nodeRepository.nodes().fail(hostname, Agent.system, "Failing to unit test");
         assertTrue(nodeRepository.nodes().list(Node.State.failed).nodeType(NodeType.tenant).asList().contains(failedNode));
         assertEquals(beforeFailCount + 1, failedNode.status().failCount());
@@ -443,7 +447,7 @@ public class ProvisioningTester {
                     nameResolver.addRecord(nodeHostname, ipv4Addr);
                 }
             }
-            Node.Builder builder = Node.create(hostname, new IP.Config(hostIps, ipAddressPool), hostname, flavor, type);
+            Node.Builder builder = Node.create(hostname, IP.Config.of(hostIps, ipAddressPool), hostname, flavor, type);
             reservedTo.ifPresent(builder::reservedTo);
             nodes.add(builder.build());
         }
@@ -460,8 +464,8 @@ public class ProvisioningTester {
             String ipv4 = "127.0.1." + i;
 
             nameResolver.addRecord(hostname, ipv4);
-            Node node = Node.create(hostname, new IP.Config(Set.of(ipv4), Set.of()), hostname,
-                    nodeFlavors.getFlavorOrThrow(flavor), NodeType.config).build();
+            Node node = Node.create(hostname, IP.Config.of(Set.of(ipv4), Set.of()), hostname,
+                                    nodeFlavors.getFlavorOrThrow(flavor), NodeType.config).build();
             nodes.add(node);
         }
 
@@ -528,7 +532,7 @@ public class ProvisioningTester {
         List<Node> nodes = new ArrayList<>(count);
         for (int i = startIndex; i < count + startIndex; i++) {
             String hostname = nodeNamer.apply(i);
-            IP.Config ipConfig = new IP.Config(nodeRepository.nameResolver().resolveAll(hostname), Set.of());
+            IP.Config ipConfig = IP.Config.of(nodeRepository.nameResolver().resolveAll(hostname), Set.of());
             Node node = Node.create("node-id", ipConfig, hostname, new Flavor(resources), nodeType)
                             .parentHostname(parentHostname)
                             .build();
@@ -569,7 +573,7 @@ public class ProvisioningTester {
 
     /** Returns the hosts from the input list which are not retired */
     public List<HostSpec> nonRetired(Collection<HostSpec> hosts) {
-        return hosts.stream().filter(host -> ! host.membership().get().retired()).collect(Collectors.toList());
+        return hosts.stream().filter(host -> ! host.membership().get().retired()).toList();
     }
 
     public void assertAllocatedOn(String explanation, String hostFlavor, ApplicationId app) {
@@ -592,7 +596,7 @@ public class ProvisioningTester {
             Optional<String> allocatedSwitchHostname = allNodes.parentOf(node).flatMap(Node::switchHostname);
             return allocatedSwitchHostname.isPresent() &&
                    allocatedSwitchHostname.get().equals(switchHostname);
-        }).collect(Collectors.toList());
+        }).toList();
     }
 
     public Set<String> switchesOf(NodeList applicationNodes, NodeList allNodes) {
@@ -769,13 +773,13 @@ public class ProvisioningTester {
         }
 
         @Override
-        public NodeResources requestToReal(NodeResources resources, boolean exclusive) {
+        public NodeResources requestToReal(NodeResources resources, boolean exclusive, boolean bestCase) {
             return resources.withMemoryGb(resources.memoryGb() - memoryTaxGb)
                             .withDiskGb(resources.diskGb() - ( resources.storageType() == local ? localDiskTax : 0) );
         }
 
         @Override
-        public NodeResources realToRequest(NodeResources resources, boolean exclusive) {
+        public NodeResources realToRequest(NodeResources resources, boolean exclusive, boolean bestCase) {
             return resources.withMemoryGb(resources.memoryGb() + memoryTaxGb)
                             .withDiskGb(resources.diskGb() + ( resources.storageType() == local ? localDiskTax : 0) );
         }

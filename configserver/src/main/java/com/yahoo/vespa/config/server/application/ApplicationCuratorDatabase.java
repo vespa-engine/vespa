@@ -122,7 +122,7 @@ public class ApplicationCuratorDatabase {
                       .sorted()
                       .map(ApplicationId::fromSerializedForm)
                       .filter(id -> activeSessionOf(id).isPresent())
-                      .collect(Collectors.toUnmodifiableList());
+                      .toList();
     }
 
     public Optional<ApplicationReindexing> readReindexingStatus(ApplicationId id) {
@@ -174,6 +174,7 @@ public class ApplicationCuratorDatabase {
         private static final String GENERATION = "generation";
         private static final String EPOCH_MILLIS = "epochMillis";
         private static final String SPEED = "speed";
+        private static final String CAUSE = "cause";
 
         private static byte[] toBytes(ApplicationReindexing reindexing) {
             Cursor root = new Slime().setObject();
@@ -204,6 +205,7 @@ public class ApplicationCuratorDatabase {
         private static void setStatus(Cursor statusObject, Status status) {
             statusObject.setLong(EPOCH_MILLIS, status.ready().toEpochMilli());
             statusObject.setDouble(SPEED, status.speed());
+            statusObject.setString(CAUSE, status.cause());
         }
 
         private static ApplicationReindexing fromBytes(byte[] data) {
@@ -225,7 +227,8 @@ public class ApplicationCuratorDatabase {
 
         private static Status getStatus(Inspector statusObject) {
             return new Status(Instant.ofEpochMilli(statusObject.field(EPOCH_MILLIS).asLong()),
-                              statusObject.field(SPEED).valid() ? statusObject.field(SPEED).asDouble() : 0.2);
+                              statusObject.field(SPEED).valid() ? statusObject.field(SPEED).asDouble() : 0.2,
+                              statusObject.field(CAUSE).asString());
         }
 
     }

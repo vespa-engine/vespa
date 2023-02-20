@@ -284,8 +284,8 @@ private:
 
 
 private:
-    typedef std::shared_ptr<BitVector> BitVectorPtr;
-    typedef std::vector<const fef::TermFieldMatchData *> TermFieldMatchDataVector;
+    using BitVectorPtr = std::shared_ptr<BitVector>;
+    using TermFieldMatchDataVector = std::vector<const fef::TermFieldMatchData *>;
 
     struct SegmentData {
         SegmentData() : segment(), valid(false) {}

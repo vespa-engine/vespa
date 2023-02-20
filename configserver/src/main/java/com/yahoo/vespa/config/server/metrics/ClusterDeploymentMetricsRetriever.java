@@ -3,6 +3,7 @@ package com.yahoo.vespa.config.server.metrics;
 
 import ai.vespa.util.http.hc5.VespaHttpClientBuilder;
 import com.yahoo.concurrent.DaemonThreadFactory;
+import com.yahoo.metrics.ContainerMetrics;
 import com.yahoo.slime.ArrayTraverser;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Inspector;
@@ -32,7 +33,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
 
 
 /**
@@ -56,15 +56,13 @@ public class ClusterDeploymentMetricsRetriever {
     private static final ExecutorService executor = Executors.newFixedThreadPool(10, new DaemonThreadFactory("cluster-deployment-metrics-retriever-"));
 
     private static final CloseableHttpClient httpClient =
-            VespaHttpClientBuilder
-                    .create(registry -> new PoolingHttpClientConnectionManager(registry,
-                                                                               null,
-                                                                               null,
-                                                                               TimeValue.ofMinutes(1)))
+            VespaHttpClientBuilder.custom()
+                    .connectTimeout(Timeout.ofSeconds(10))
+                    .connectionManagerFactory(registry -> new PoolingHttpClientConnectionManager(registry, null, null, TimeValue.ofMinutes(1)))
+                    .apacheBuilder()
                     .setDefaultRequestConfig(
                             RequestConfig.custom()
                                          .setConnectionRequestTimeout(Timeout.ofSeconds(60))
-                                         .setConnectTimeout(Timeout.ofSeconds(10))
                                          .setResponseTimeout(Timeout.ofSeconds(10))
                                          .build())
                     .build();
@@ -86,7 +84,7 @@ public class ClusterDeploymentMetricsRetriever {
                     }
                     return null;
                 })
-                .collect(Collectors.toList());
+                .toList();
         try {
             executor.invokeAll(jobs, 1, TimeUnit.MINUTES);
         } catch (InterruptedException e) {
@@ -128,35 +126,22 @@ public class ClusterDeploymentMetricsRetriever {
         Supplier<DeploymentMetricsAggregator> aggregator = () -> clusterMetricsMap.computeIfAbsent(clusterInfo, c -> new DeploymentMetricsAggregator());
 
         switch (serviceName) {
-            case VESPA_CONTAINER:
+            case VESPA_CONTAINER -> {
                 optionalDouble(values.field("query_latency.sum")).ifPresent(qlSum ->
-                        aggregator.get()
-                                .addContainerLatency(qlSum, values.field("query_latency.count").asDouble()));
+                        aggregator.get().addContainerLatency(qlSum, values.field("query_latency.count").asDouble()));
                 optionalDouble(values.field("feed.latency.sum")).ifPresent(flSum ->
-                        aggregator.get()
-                                .addFeedLatency(flSum, values.field("feed.latency.count").asDouble()));
-                break;
-            case VESPA_QRSERVER:
-                optionalDouble(values.field("query_latency.sum")).ifPresent(qlSum ->
-                        aggregator.get()
-                                .addQrLatency(qlSum, values.field("query_latency.count").asDouble()));
-                break;
-            case VESPA_DISTRIBUTOR:
-                optionalDouble(values.field("vds.distributor.docsstored.average"))
-                        .ifPresent(docCount -> aggregator.get().addDocumentCount(docCount));
-                break;
-            case VESPA_CONTAINER_CLUSTERCONTROLLER:
-                optionalDouble(values.field("cluster-controller.resource_usage.max_memory_utilization.max")).ifPresent(memoryUtil ->
-                        aggregator.get()
-                                .addMemoryUsage(memoryUtil,
-                                        values.field("cluster-controller.resource_usage.memory_limit.last").asDouble())
-                                .addDiskUsage(values.field("cluster-controller.resource_usage.max_disk_utilization.max").asDouble(),
-                                        values.field("cluster-controller.resource_usage.disk_limit.last").asDouble()));
-                optionalDouble(values.field("reindexing.progress.last")).ifPresent(progress -> {
-                    if (progress < 0 || progress >= 1) return;
-                    aggregator.get().addReindexingProgress(metric.field("dimensions").field("documenttype").asString(), progress);
-                });
-                break;
+                        aggregator.get().addFeedLatency(flSum, values.field("feed.latency.count").asDouble()));
+            }
+            case VESPA_QRSERVER -> optionalDouble(values.field("query_latency.sum")).ifPresent(qlSum ->
+                    aggregator.get().addQrLatency(qlSum, values.field("query_latency.count").asDouble()));
+            case VESPA_DISTRIBUTOR -> optionalDouble(values.field("vds.distributor.docsstored.average"))
+                    .ifPresent(docCount -> aggregator.get().addDocumentCount(docCount));
+            case VESPA_CONTAINER_CLUSTERCONTROLLER ->
+                    optionalDouble(values.field(ContainerMetrics.CLUSTER_CONTROLLER_RESOURCE_USAGE_MAX_MEMORY_UTILIZATION.max())).ifPresent(memoryUtil ->
+                            aggregator.get()
+                                    .addMemoryUsage(memoryUtil, values.field(ContainerMetrics.CLUSTER_CONTROLLER_RESOURCE_USAGE_MEMORY_LIMIT.last()).asDouble())
+                                    .addDiskUsage(values.field(ContainerMetrics.CLUSTER_CONTROLLER_RESOURCE_USAGE_MAX_DISK_UTILIZATION.max()).asDouble(),
+                                            values.field(ContainerMetrics.CLUSTER_CONTROLLER_RESOURCE_USAGE_DISK_LIMIT.last()).asDouble()));
         }
     }
 
@@ -164,6 +149,7 @@ public class ClusterDeploymentMetricsRetriever {
         return new ClusterInfo(dimensions.field("clusterid").asString(), dimensions.field("clustertype").asString());
     }
 
+    @SuppressWarnings("deprecation")
     private static Slime doMetricsRequest(URI hostURI) {
         HttpGet get = new HttpGet(hostURI);
         try (CloseableHttpResponse response = httpClient.execute(get)) {

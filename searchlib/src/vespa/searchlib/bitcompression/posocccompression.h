@@ -24,7 +24,7 @@ template <bool bigEndian>
 class EG2PosOccDecodeContext : public FeatureDecodeContext<bigEndian>
 {
 public:
-    typedef FeatureDecodeContext<bigEndian> ParentClass;
+    using ParentClass = FeatureDecodeContext<bigEndian>;
     using ParentClass::smallAlign;
     using ParentClass::readBits;
     using ParentClass::_valI;
@@ -35,8 +35,8 @@ public:
     using ParentClass::_fileReadBias;
     using ParentClass::_readContext;
     using ParentClass::readHeader;
-    typedef EncodeContext64<bigEndian> EC;
-    typedef index::PostingListParams PostingListParams;
+    using EC = EncodeContext64<bigEndian>;
+    using PostingListParams = index::PostingListParams;
 
     const PosOccFieldsParams *_fieldsParams;
 
@@ -86,7 +86,7 @@ template <bool bigEndian>
 class EG2PosOccDecodeContextCooked : public EG2PosOccDecodeContext<bigEndian>
 {
 public:
-    typedef EG2PosOccDecodeContext<bigEndian> ParentClass;
+    using ParentClass = EG2PosOccDecodeContext<bigEndian>;
     using ParentClass::smallAlign;
     using ParentClass::readBits;
     using ParentClass::_valI;
@@ -97,8 +97,8 @@ public:
     using ParentClass::_fileReadBias;
     using ParentClass::_readContext;
     using ParentClass::_fieldsParams;
-    typedef EncodeContext64<bigEndian> EC;
-    typedef index::PostingListParams PostingListParams;
+    using EC = EncodeContext64<bigEndian>;
+    using PostingListParams = index::PostingListParams;
 
     EG2PosOccDecodeContextCooked(const PosOccFieldsParams *fieldsParams)
         : EG2PosOccDecodeContext<bigEndian>(fieldsParams)
@@ -138,9 +138,9 @@ template <bool bigEndian>
 class EG2PosOccEncodeContext : public FeatureEncodeContext<bigEndian>
 {
 public:
-    typedef FeatureEncodeContext<bigEndian> ParentClass;
-    typedef index::DocIdAndFeatures DocIdAndFeatures;
-    typedef index::PostingListParams PostingListParams;
+    using ParentClass = FeatureEncodeContext<bigEndian>;
+    using DocIdAndFeatures = index::DocIdAndFeatures;
+    using PostingListParams = index::PostingListParams;
     using ParentClass::smallAlign;
     using ParentClass::writeBits;
     using ParentClass::_valI;
@@ -179,9 +179,9 @@ template <bool bigEndian>
 class EGPosOccDecodeContext : public EG2PosOccDecodeContext<bigEndian>
 {
 public:
-    typedef EG2PosOccDecodeContext<bigEndian> ParentClass;
-    typedef index::DocIdAndFeatures DocIdAndFeatures;
-    typedef index::PostingListParams PostingListParams;
+    using ParentClass = EG2PosOccDecodeContext<bigEndian>;
+    using DocIdAndFeatures = index::DocIdAndFeatures;
+    using PostingListParams = index::PostingListParams;
     using ParentClass::smallAlign;
     using ParentClass::readBits;
     using ParentClass::_valI;
@@ -193,7 +193,7 @@ public:
     using ParentClass::_readContext;
     using ParentClass::_fieldsParams;
     using ParentClass::readHeader;
-    typedef EncodeContext64<bigEndian> EC;
+    using EC = EncodeContext64<bigEndian>;
 
     EGPosOccDecodeContext(const PosOccFieldsParams *fieldsParams)
         : EG2PosOccDecodeContext<bigEndian>(fieldsParams)
@@ -238,9 +238,9 @@ template <bool bigEndian>
 class EGPosOccDecodeContextCooked : public EGPosOccDecodeContext<bigEndian>
 {
 public:
-    typedef EGPosOccDecodeContext<bigEndian> ParentClass;
-    typedef index::DocIdAndFeatures DocIdAndFeatures;
-    typedef index::PostingListParams PostingListParams;
+    using ParentClass = EGPosOccDecodeContext<bigEndian>;
+    using DocIdAndFeatures = index::DocIdAndFeatures;
+    using PostingListParams = index::PostingListParams;
     using ParentClass::smallAlign;
     using ParentClass::readBits;
     using ParentClass::_valI;
@@ -251,7 +251,7 @@ public:
     using ParentClass::_fileReadBias;
     using ParentClass::_readContext;
     using ParentClass::_fieldsParams;
-    typedef EncodeContext64<bigEndian> EC;
+    using EC = EncodeContext64<bigEndian>;
 
     EGPosOccDecodeContextCooked(const PosOccFieldsParams *fieldsParams)
         : EGPosOccDecodeContext<bigEndian>(fieldsParams)
@@ -291,9 +291,9 @@ template <bool bigEndian>
 class EGPosOccEncodeContext : public EG2PosOccEncodeContext<bigEndian>
 {
 public:
-    typedef EG2PosOccEncodeContext<bigEndian> ParentClass;
-    typedef index::DocIdAndFeatures DocIdAndFeatures;
-    typedef index::PostingListParams PostingListParams;
+    using ParentClass = EG2PosOccEncodeContext<bigEndian>;
+    using DocIdAndFeatures = index::DocIdAndFeatures;
+    using PostingListParams = index::PostingListParams;
     using ParentClass::smallAlign;
     using ParentClass::writeBits;
     using ParentClass::_valI;

@@ -14,7 +14,7 @@ namespace document {
 
 class DoubleFieldValue final : public NumericFieldValue<double> {
 public:
-    typedef double Number;
+    using Number = double;
 
     DoubleFieldValue(Number value = 0) : NumericFieldValue<Number>(Type::DOUBLE, value) {}
 

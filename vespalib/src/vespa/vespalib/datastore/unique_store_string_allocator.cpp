@@ -53,7 +53,9 @@ UniqueStoreSmallStringBufferType::fallbackCopy(void *newBuffer, const void *oldB
 {
     static_assert(std::is_trivially_copyable<UniqueStoreSmallStringEntry>::value,
                   "UniqueStoreSmallStringEntry must be trivially copyable");
-    memcpy(newBuffer, oldBuffer, numElems);
+    if (numElems > 0) {
+        memcpy(newBuffer, oldBuffer, numElems);
+    }
 }
 
 void

@@ -9,6 +9,7 @@ import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContext;
 import com.yahoo.vespa.hosted.node.admin.task.util.file.UnixUser;
 import com.yahoo.vespa.hosted.node.admin.task.util.fs.ContainerPath;
 import com.yahoo.vespa.hosted.node.admin.task.util.process.CommandResult;
+import com.yahoo.vespa.hosted.node.admin.task.util.process.TestTerminal;
 
 import java.nio.file.Path;
 import java.time.Duration;
@@ -19,7 +20,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
-import java.util.stream.Collectors;
 
 /**
  * @author mpolden
@@ -28,8 +28,17 @@ public class ContainerEngineMock implements ContainerEngine {
 
     private final Map<ContainerName, Container> containers = new ConcurrentHashMap<>();
     private final Map<String, ImageDownload> images = new ConcurrentHashMap<>();
-
     private boolean asyncImageDownload = false;
+
+    private final TestTerminal terminal;
+
+    public ContainerEngineMock() {
+        this(null);
+    }
+
+    public ContainerEngineMock(TestTerminal terminal) {
+        this.terminal = terminal;
+    }
 
     public ContainerEngineMock asyncImageDownload(boolean enabled) {
         this.asyncImageDownload = enabled;
@@ -113,11 +122,6 @@ public class ContainerEngineMock implements ContainerEngine {
     }
 
     @Override
-    public boolean shouldRecreate(NodeAgentContext context, Container container, ContainerResources wantedResources) {
-        return false;
-    }
-
-    @Override
     public void updateContainer(NodeAgentContext context, ContainerId containerId, ContainerResources containerResources) {
         Container container = requireContainer(context.containerName());
         containers.put(container.name(), new Container(containerId, container.name(), container.createdAt(), container.state(),
@@ -125,8 +129,7 @@ public class ContainerEngineMock implements ContainerEngine {
                                                        container.labels(), container.pid(),
                                                        container.conmonPid(), container.hostname(),
                                                        containerResources, container.networks(),
-                                                       container.managed(),
-                                                       container.createCommand()));
+                                                       container.managed()));
     }
 
     @Override
@@ -146,12 +149,22 @@ public class ContainerEngineMock implements ContainerEngine {
 
     @Override
     public CommandResult execute(NodeAgentContext context, UnixUser user, Duration timeout, String... command) {
-        return new CommandResult(null, 0, "");
+        if (terminal == null) {
+            return new CommandResult(null, 0, "");
+        }
+        return terminal.newCommandLine(context)
+                       .add(command)
+                       .executeSilently();
     }
 
     @Override
     public CommandResult executeInNetworkNamespace(NodeAgentContext context, String... command) {
-        return new CommandResult(null, 0, "");
+        if (terminal == null) {
+            return new CommandResult(null, 0, "");
+        }
+        return terminal.newCommandLine(context)
+                       .add(command)
+                       .executeSilently();
     }
 
     @Override
@@ -180,7 +193,7 @@ public class ContainerEngineMock implements ContainerEngine {
         return images.values().stream()
                      .filter(ImageDownload::isComplete)
                      .map(ImageDownload::image)
-                     .collect(Collectors.toUnmodifiableList());
+                     .toList();
     }
 
     private Container requireContainer(ContainerName name) {
@@ -207,8 +220,7 @@ public class ContainerEngineMock implements ContainerEngine {
                              context.hostname().value(),
                              containerResources,
                              List.of(),
-                             true,
-                             List.of());
+                             true);
     }
 
     private static class ImageDownload {

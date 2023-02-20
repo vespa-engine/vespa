@@ -16,7 +16,7 @@ class FeedOperation;
 class ReplayPacketDispatcher
 {
 private:
-    typedef search::transactionlog::Packet Packet;
+    using Packet = search::transactionlog::Packet;
     IReplayPacketHandler &_handler;
 
     template <typename OperationType>

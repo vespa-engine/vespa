@@ -11,16 +11,22 @@ using vespalib::ConstBufferRef;
 class Test : public vespalib::TestApp
 {
 public:
-    typedef std::vector<uint32_t> V;
+    using V = std::vector<uint32_t>;
     std::vector< std::vector<uint32_t> > _data;
     int Main() override;
     void generateVectors(size_t numVectors, size_t values);
     V merge();
     void twoWayMerge();
     V cat() const;
+    Test();
+    ~Test() override;
 };
 
-void Test::generateVectors(size_t numVectors, size_t values)
+Test::Test() = default;
+Test::~Test() = default;
+
+void
+Test::generateVectors(size_t numVectors, size_t values)
 {
     _data.resize(numVectors);
     for (size_t j(0); j < numVectors; j++) {
@@ -32,13 +38,15 @@ void Test::generateVectors(size_t numVectors, size_t values)
     }
 }
 
-Test::V Test::merge()
+Test::V
+Test::merge()
 {
     twoWayMerge();
     return _data[0];
 }
 
-void Test::twoWayMerge()
+void
+Test::twoWayMerge()
 {
     std::vector<V> n((_data.size()+1)/2);
 
@@ -57,7 +65,8 @@ void Test::twoWayMerge()
     }
 }
 
-Test::V Test::cat() const
+Test::V
+Test::cat() const
 {
     size_t sum(0);
     for (size_t i(0), m(_data.size()); i < m; i++) {

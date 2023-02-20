@@ -6,6 +6,10 @@
 
 namespace storage::api {
 
+namespace {
+    constexpr vespalib::duration MAX_TIMEOUT = 3600s;
+}
+
 StorageCommand::StorageCommand(const StorageCommand& other)
     : StorageMessage(other, generateMsgId()),
       _timeout(other._timeout),
@@ -15,10 +19,7 @@ StorageCommand::StorageCommand(const StorageCommand& other)
 
 StorageCommand::StorageCommand(const MessageType& type, Priority p)
     : StorageMessage(type, generateMsgId()),
-        // Default timeout is unlimited. Set from mbus message. Some internal
-        // use want unlimited timeout, (such as readbucketinfo, repair bucket
-        // etc)
-      _timeout(duration::max()),
+      _timeout(MAX_TIMEOUT),
       _sourceIndex(0xFFFF)
 {
     setPriority(p);
@@ -27,10 +28,8 @@ StorageCommand::StorageCommand(const MessageType& type, Priority p)
 StorageCommand::~StorageCommand() = default;
 
 void
-StorageCommand::print(std::ostream& out, bool verbose,
-                      const std::string& indent) const
+StorageCommand::print(std::ostream& out, bool, const std::string&) const
 {
-    (void) verbose; (void) indent;
     out << "StorageCommand(" << _type.getName();
     if (_priority != NORMAL) out << ", priority = " << static_cast<int>(_priority);
     if (_sourceIndex != 0xFFFF) out << ", source = " << _sourceIndex;

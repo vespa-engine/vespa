@@ -70,7 +70,7 @@ public class SummaryClass extends Derived {
                 accessingDiskSummary = true;
             }
             addField(summaryField.getName(), summaryField.getDataType(), summaryField.getTransform(),
-                    getSource(summaryField), fields);
+                    getSource(summaryField, schema), fields);
         }
     }
 
@@ -143,7 +143,7 @@ public class SummaryClass extends Derived {
         }
     }
 
-    static String getSource(SummaryField summaryField) {
+    static String getSource(SummaryField summaryField, Schema schema) {
         if (summaryField.getTransform() == SummaryTransform.NONE) {
             return "";
         }
@@ -159,7 +159,7 @@ public class SummaryClass extends Derived {
         {
             return summaryField.getSingleSource();
         } else if (summaryField.getTransform().isDynamic()) {
-            return DynamicSummaryTransformUtils.getSource(summaryField);
+            return DynamicSummaryTransformUtils.getSource(summaryField, schema);
         } else {
             return "";
         }

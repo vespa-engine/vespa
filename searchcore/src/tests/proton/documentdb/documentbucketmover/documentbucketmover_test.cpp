@@ -123,7 +123,7 @@ ControllerFixtureBase::ControllerFixtureBase(const BlockableMaintenanceJobConfig
       _bucketCreateNotifier(),
       _diskMemUsageNotifier(),
       _refCount(),
-      _singleExecutor(1, 0x10000),
+      _singleExecutor(1),
       _master(_singleExecutor),
       _bucketExecutor(4),
       _moveHandler(*_bucketDB, storeMoveDoneContexts),

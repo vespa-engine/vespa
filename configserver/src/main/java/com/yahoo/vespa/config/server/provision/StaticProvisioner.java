@@ -38,7 +38,7 @@ public class StaticProvisioner implements HostProvisioner {
         List<HostSpec> hostsAlreadyAllocatedToCluster = 
                 allocatedHosts.getHosts().stream()
                                          .filter(host -> host.membership().isPresent() && matches(host.membership().get().cluster(), cluster))
-                                         .collect(Collectors.toList());
+                                         .toList();
         if ( ! hostsAlreadyAllocatedToCluster.isEmpty()) 
             return hostsAlreadyAllocatedToCluster;
         else

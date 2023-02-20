@@ -11,11 +11,18 @@ LOG_SETUP(".slobrok.server.exchange_manager");
 
 namespace slobrok {
 
+namespace {
+vespalib::steady_time now() {
+    return vespalib::steady_clock::now();
+}
+}
+
 //-----------------------------------------------------------------------------
 
 ExchangeManager::ExchangeManager(SBEnv &env)
     : _partners(),
-      _env(env)
+      _env(env),
+      _lastFullConsensusTime(now())
 {
 }
 
@@ -102,6 +109,7 @@ ExchangeManager::diffLists(const ServiceMappingList &lhs, const ServiceMappingLi
 void
 ExchangeManager::healthCheck()
 {
+    bool someBad = false;
     auto newWorldList = env().consensusMap().currentConsensus();
     for (const auto & [ name, partner ] : _partners) {
         partner->maybeStartFetch();
@@ -110,10 +118,17 @@ ExchangeManager::healthCheck()
         if (remoteList.size() != 0) {
             vespalib::string diff = diffLists(newWorldList, remoteList);
             if (! diff.empty()) {
-                LOG(warning, "Diff from consensus map to peer slobrok mirror: %s",
-                    diff.c_str());
+                LOG(warning, "Peer slobrok at %s may have problems, differences from consensus map: %s",
+                    partner->getName().c_str(), diff.c_str());
+                someBad = true;
             }
         }
+    }
+    if (someBad) {
+        _env.setConsensusTime(vespalib::to_s(now() - _lastFullConsensusTime));
+    } else {
+        _lastFullConsensusTime = now();
+        _env.setConsensusTime(0);
     }
     LOG(debug, "ExchangeManager::healthCheck for %ld partners", _partners.size());
 }

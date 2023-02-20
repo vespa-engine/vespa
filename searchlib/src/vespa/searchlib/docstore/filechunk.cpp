@@ -130,7 +130,7 @@ public:
     }
 };
 
-typedef vespalib::Array<TmpChunkMeta> TmpChunkMetaV;
+using TmpChunkMetaV = vespalib::Array<TmpChunkMeta>;
 
 namespace {
 

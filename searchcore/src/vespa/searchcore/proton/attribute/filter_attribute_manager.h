@@ -17,7 +17,7 @@ namespace proton {
 class FilterAttributeManager : public IAttributeManager
 {
 public:
-    typedef std::set<vespalib::string> AttributeSet;
+    using AttributeSet = std::set<vespalib::string>;
 
 private:
     AttributeSet                           _acceptedAttributes;
@@ -38,7 +38,7 @@ public:
     std::unique_ptr<search::attribute::AttributeReadGuard> getAttributeReadGuard(const vespalib::string &name, bool stableEnumGuard) const override;
 
     // Implements proton::IAttributeManager
-    IAttributeManager::SP create(AttributeCollectionSpec &&) const override;
+    std::unique_ptr<IAttributeManagerReconfig> prepare_create(AttributeCollectionSpec&& spec) const override;
     std::vector<searchcorespi::IFlushTarget::SP> getFlushTargets() const override;
     search::SerialNum getOldestFlushedSerialNumber() const override;
     search::SerialNum getNewestFlushedSerialNumber() const override;
@@ -58,6 +58,8 @@ public:
     std::shared_ptr<search::attribute::ReadableAttributeVector> readable_attribute_vector(const string& name) const override;
 
     void asyncForAttribute(const vespalib::string &name, std::unique_ptr<IAttributeFunctor> func) const override;
+
+    TransientResourceUsage get_transient_resource_usage() const override { return {}; }
 };
 
 } // namespace proton

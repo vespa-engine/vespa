@@ -84,7 +84,7 @@ CompressedBlobSet::CompressedBlobSet() :
 CompressedBlobSet::~CompressedBlobSet() = default;
 
 
-CompressedBlobSet::CompressedBlobSet(const CompressionConfig &compression, const BlobSet & uncompressed) :
+CompressedBlobSet::CompressedBlobSet(CompressionConfig compression, const BlobSet & uncompressed) :
     _compression(compression.type),
     _positions(uncompressed.getPositions()),
     _buffer()
@@ -144,24 +144,24 @@ bool
 VisitCache::BackingStore::read(const KeySet &key, CompressedBlobSet &blobs) const {
     VisitCollector collector;
     _backingStore.read(key.getKeys(), collector);
-    blobs = CompressedBlobSet(_compression, collector.getBlobSet());
+    blobs = CompressedBlobSet(_compression.load(std::memory_order_relaxed), collector.getBlobSet());
     return ! blobs.empty();
 }
 
 void
-VisitCache::BackingStore::reconfigure(const CompressionConfig &compression) {
-    _compression = compression;
+VisitCache::BackingStore::reconfigure(CompressionConfig compression) {
+    _compression.store(compression, std::memory_order_relaxed);
 }
 
 
-VisitCache::VisitCache(IDataStore &store, size_t cacheSize, const CompressionConfig &compression) :
+VisitCache::VisitCache(IDataStore &store, size_t cacheSize, CompressionConfig compression) :
     _store(store, compression),
     _cache(std::make_unique<Cache>(_store, cacheSize))
 {
 }
 
 void
-VisitCache::reconfigure(size_t cacheSize, const CompressionConfig &compression) {
+VisitCache::reconfigure(size_t cacheSize, CompressionConfig compression) {
     _store.reconfigure(compression);
     _cache->setCapacityBytes(cacheSize);
 }

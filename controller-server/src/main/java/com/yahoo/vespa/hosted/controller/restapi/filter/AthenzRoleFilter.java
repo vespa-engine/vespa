@@ -6,7 +6,6 @@ import com.auth0.jwt.interfaces.DecodedJWT;
 import com.auth0.jwt.interfaces.Payload;
 import com.yahoo.component.annotation.Inject;
 import com.yahoo.config.provision.ApplicationName;
-import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.jdisc.Response;
@@ -33,7 +32,6 @@ import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 import com.yahoo.yolean.Exceptions;
 
 import java.net.URI;
-import java.security.Principal;
 import java.security.cert.X509Certificate;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -64,7 +62,6 @@ public class AthenzRoleFilter extends JsonSecurityRequestFilterBase {
     private final AthenzFacade athenz;
     private final TenantController tenants;
     private final ExecutorService executor;
-    private final SystemName systemName;
     private final ZoneRegistry zones;
 
     @Inject
@@ -72,15 +69,13 @@ public class AthenzRoleFilter extends JsonSecurityRequestFilterBase {
         this.athenz = new AthenzFacade(athenzClientFactory);
         this.tenants = controller.tenants();
         this.executor = Executors.newCachedThreadPool();
-        this.systemName = controller.system();
         this.zones = controller.zoneRegistry();
     }
 
     @Override
     protected Optional<ErrorResponse> filter(DiscFilterRequest request) {
         try {
-            Principal principal = request.getUserPrincipal();
-            if (principal instanceof AthenzPrincipal) {
+            if (request.getUserPrincipal() instanceof AthenzPrincipal principal) {
                 Optional<DecodedJWT> oktaAt = Optional.ofNullable((String) request.getAttribute("okta.access-token")).map(JWT::decode);
                 Optional<X509Certificate> cert = request.getClientCertificateChain().stream().findFirst();
                 Instant issuedAt = cert.map(X509Certificate::getNotBefore)
@@ -89,9 +84,8 @@ public class AthenzRoleFilter extends JsonSecurityRequestFilterBase {
                 Instant expireAt = cert.map(X509Certificate::getNotAfter)
                         .or(() -> oktaAt.map(Payload::getExpiresAt))
                         .map(Date::toInstant).orElse(Instant.MAX);
-                request.setAttribute(SecurityContext.ATTRIBUTE_NAME, new SecurityContext(principal,
-                        roles((AthenzPrincipal) principal, request.getUri()),
-                        issuedAt, expireAt));
+                request.setAttribute(SecurityContext.ATTRIBUTE_NAME,
+                                     new SecurityContext(principal, roles(principal, request.getUri()), issuedAt, expireAt));
             }
         }
         catch (Exception e) {

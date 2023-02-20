@@ -2,7 +2,6 @@
 package com.yahoo.search;
 
 import ai.vespa.cloud.ZoneInfo;
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.language.process.Embedder;
@@ -46,6 +45,7 @@ import com.yahoo.search.yql.VespaSerializer;
 import com.yahoo.search.yql.YqlParser;
 import com.yahoo.yolean.Exceptions;
 
+import java.net.URI;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -261,7 +261,7 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
 
     /** Returns an unmodifiable list of all the native properties under a Query */
     public static final List<CompoundName> nativeProperties =
-            ImmutableList.copyOf(namesUnder(CompoundName.empty, Query.getArgumentType()));
+            List.copyOf(namesUnder(CompoundName.empty, Query.getArgumentType()));
 
     private static List<CompoundName> namesUnder(CompoundName prefix, QueryProfileType type) {
         if (type == null) return Collections.emptyList(); // Names not known statically
@@ -362,7 +362,7 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
                       Map<String, Embedder> embedders,
                       ZoneInfo zoneInfo,
                       SchemaInfo schemaInfo) {
-        startTime = httpRequest.getJDiscRequest().creationTime(TimeUnit.MILLISECONDS);
+        startTime = httpRequest.creationTime(TimeUnit.MILLISECONDS);
         if (queryProfile != null) {
             // Move all request parameters to the query profile
             Properties queryProfileProperties = new QueryProfileProperties(queryProfile, embedders, zoneInfo);
@@ -912,7 +912,9 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
      * Return the HTTP request which caused this query. This will never be null
      * when running with queries from the network.
      */
-     public HttpRequest getHttpRequest() { return httpRequest; }
+    public HttpRequest getHttpRequest() { return httpRequest; }
+
+    public URI getUri() { return httpRequest != null ? httpRequest.getUri() : null; }
 
     /** Returns the session id of this query, or null if none is assigned */
     public SessionId getSessionId() {

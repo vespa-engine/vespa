@@ -41,7 +41,7 @@ public class AddRemoveCreator {
         FieldUpdate singleUpdate;
         int initNesting = buffer.nesting();
 
-        Preconditions.checkState(buffer.currentToken().isStructStart(), "Expected start of composite, got %s", buffer.currentToken());
+        Preconditions.checkState(buffer.current().isStructStart(), "Expected start of composite, got %s", buffer.current());
         if (container instanceof CollectionFieldValue) {
             buffer.next();
             DataType valueType = ((CollectionFieldValue) container).getDataType().getNestedType();
@@ -58,8 +58,8 @@ public class AddRemoveCreator {
             } else {
                 List<FieldValue> arrayContents = new ArrayList<>();
                 ArrayReader.fillArrayUpdate(buffer, initNesting, valueType, arrayContents, ignoreUndefinedFields);
-                if (buffer.currentToken() != JsonToken.END_ARRAY) {
-                    throw new IllegalArgumentException("Expected END_ARRAY. Got '" + buffer.currentToken() + "'.");
+                if (buffer.current() != JsonToken.END_ARRAY) {
+                    throw new IllegalArgumentException("Expected END_ARRAY. Got '" + buffer.current() + "'.");
                 }
                 if (isRemove) {
                     singleUpdate = FieldUpdate.createRemoveAll(field, arrayContents);
@@ -72,7 +72,7 @@ public class AddRemoveCreator {
                     "Trying to add or remove from a field of a type the reader does not know how to handle: "
                             + container.getClass().getName());
         }
-        expectCompositeEnd(buffer.currentToken());
+        expectCompositeEnd(buffer.current());
         update.addAll(singleUpdate);
     }
 }

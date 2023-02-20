@@ -5,8 +5,7 @@
 #include <vespa/vespalib/stllike/string.h>
 #include <vector>
 
-namespace search {
-namespace fef {
+namespace search::fef {
 
 /**
  * Simple parser used to split feature names into components by the
@@ -15,8 +14,8 @@ namespace fef {
 class FeatureNameParser
 {
 public:
-    typedef vespalib::string string;
-    typedef std::vector<string> StringVector;
+    using string = vespalib::string;
+    using StringVector = std::vector<string>;
 private:
     bool                _valid;
     uint32_t            _endPos;
@@ -96,6 +95,4 @@ public:
     const string &featureName() const { return _featureName; }
 };
 
-} // namespace fef
-} // namespace search
-
+}

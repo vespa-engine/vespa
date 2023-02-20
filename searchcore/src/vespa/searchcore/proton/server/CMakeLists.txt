@@ -19,6 +19,7 @@ vespa_add_library(searchcore_server STATIC
     document_db_explorer.cpp
     document_db_flush_config.cpp
     document_db_maintenance_config.cpp
+    document_db_reconfig.cpp
     document_meta_store_read_guards.cpp
     document_scan_iterator.cpp
     document_subdb_collection_explorer.cpp
@@ -26,6 +27,7 @@ vespa_add_library(searchcore_server STATIC
     document_subdb_explorer.cpp
     document_subdb_initializer.cpp
     document_subdb_initializer_result.cpp
+    document_subdb_reconfig.cpp
     documentbucketmover.cpp
     documentdb.cpp
     documentdb_metrics_updater.cpp
@@ -57,6 +59,7 @@ vespa_add_library(searchcore_server STATIC
     hw_info_explorer.cpp
     idocumentdbowner.cpp
     ifeedview.cpp
+    initialize_threads_calculator.cpp
     ireplayconfig.cpp
     job_tracked_maintenance_job.cpp
     lid_space_compaction_handler.cpp
@@ -82,7 +85,6 @@ vespa_add_library(searchcore_server STATIC
     proton_configurer.cpp
     proton_disk_layout.cpp
     proton_thread_pools_explorer.cpp
-    prune_session_cache_job.cpp
     pruneremoveddocumentsjob.cpp
     putdonecontext.cpp
     reconfig_params.cpp

@@ -4,6 +4,6 @@ search indexing_extra_field_input_null {
 
     }
     field foo type string {
-        indexing: input | index
+        indexing: input foo | index
     }
 }

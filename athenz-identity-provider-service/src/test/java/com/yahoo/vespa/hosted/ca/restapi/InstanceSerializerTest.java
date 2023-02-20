@@ -7,6 +7,7 @@ import com.yahoo.slime.Slime;
 import com.yahoo.slime.SlimeUtils;
 import com.yahoo.text.StringUtilities;
 import com.yahoo.vespa.athenz.api.AthenzService;
+import com.yahoo.vespa.athenz.identityprovider.api.ClusterType;
 import com.yahoo.vespa.athenz.identityprovider.api.EntityBindingsMapper;
 import com.yahoo.vespa.athenz.identityprovider.api.IdentityType;
 import com.yahoo.vespa.athenz.identityprovider.api.SignedIdentityDocument;
@@ -46,7 +47,8 @@ public class InstanceSerializerTest {
                 "instancehostname",
                 Instant.now().truncatedTo(ChronoUnit.MICROS),  // Truncate to the precision given from EntityBindingsMapper.toAttestationData()
                 Collections.emptySet(),
-                IdentityType.NODE);
+                IdentityType.NODE,
+                ClusterType.CONTAINER);
 
         var json = String.format("{\n" +
                 "  \"provider\": \"provider_prod_us-north-1\",\n" +

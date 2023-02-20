@@ -14,12 +14,12 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.AthenzDomain;
 import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.DockerImage;
-import com.yahoo.config.provision.Tags;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.path.Path;
 import com.yahoo.slime.SlimeUtils;
 import com.yahoo.text.Utf8;
 import com.yahoo.transaction.Transaction;
+import com.yahoo.vespa.config.server.NotFoundException;
 import com.yahoo.vespa.config.server.UserConfigDefinitionRepo;
 import com.yahoo.vespa.config.server.deploy.ZooKeeperClient;
 import com.yahoo.vespa.config.server.deploy.ZooKeeperDeployer;
@@ -58,7 +58,6 @@ public class SessionZooKeeperClient {
     // NOTE: Any state added here MUST also be propagated in com.yahoo.vespa.config.server.deploy.Deployment.prepare()
 
     static final String APPLICATION_ID_PATH = "applicationId";
-    static final String TAGS_PATH = "tags";
     static final String APPLICATION_PACKAGE_REFERENCE_PATH = "applicationPackageReference";
     private static final String VERSION_PATH = "version";
     private static final String CREATE_TIME_PATH = "createTime";
@@ -169,22 +168,9 @@ public class SessionZooKeeperClient {
         curator.set(applicationIdPath(), Utf8.toBytes(id.serializedForm()));
     }
 
-    public Optional<ApplicationId> readApplicationId() {
-        return curator.getData(applicationIdPath()).map(d -> ApplicationId.fromSerializedForm(Utf8.toString(d)));
-    }
-
-    private Path tagsPath() {
-        return sessionPath.append(TAGS_PATH);
-    }
-
-    public void writeTags(Tags tags) {
-        curator.set(tagsPath(), Utf8.toBytes(tags.asString()));
-    }
-
-    public Tags readTags() {
-        Optional<byte[]> data = curator.getData(tagsPath());
-        if (data.isEmpty()) return Tags.empty();
-        return Tags.fromString(Utf8.toString(data.get()));
+    public ApplicationId readApplicationId() {
+        return curator.getData(applicationIdPath()).map(d -> ApplicationId.fromSerializedForm(Utf8.toString(d)))
+                      .orElseThrow(() -> new NotFoundException("Could not find application id for session " + sessionId));
     }
 
     void writeApplicationPackageReference(Optional<FileReference> applicationPackageReference) {

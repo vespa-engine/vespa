@@ -54,12 +54,13 @@ struct ArrayStoreTest : public TestT
           generation(1),
           add_using_allocate(add_using_allocate_in)
     {}
-    ArrayStoreTest(const ArrayStoreConfig &storeCfg)
+    explicit ArrayStoreTest(const ArrayStoreConfig &storeCfg)
         : store(storeCfg, std::make_unique<MemoryAllocatorObserver>(stats)),
           refStore(),
           generation(1),
           add_using_allocate(false)
     {}
+    ~ArrayStoreTest() override;
     void assertAdd(const EntryVector &input) {
         EntryRef ref = add(input);
         assertGet(ref, input);
@@ -143,7 +144,8 @@ struct ArrayStoreTest : public TestT
     void compactWorst(bool compactMemory, bool compactAddressSpace) {
         CompactionSpec compaction_spec(compactMemory, compactAddressSpace);
         CompactionStrategy compaction_strategy;
-        ICompactionContext::UP ctx = store.compactWorst(compaction_spec, compaction_strategy);
+        store.set_compaction_spec(compaction_spec);
+        ICompactionContext::UP ctx = store.compact_worst(compaction_strategy);
         std::vector<AtomicEntryRef> refs;
         for (auto itr = refStore.begin(); itr != refStore.end(); ++itr) {
             refs.emplace_back(itr->first);
@@ -161,6 +163,9 @@ struct ArrayStoreTest : public TestT
     size_t entrySize() const { return sizeof(EntryT); }
     size_t largeArraySize() const { return sizeof(LargeArray); }
 };
+
+template <typename TestT, typename EntryT, typename RefT>
+ArrayStoreTest<TestT, EntryT, RefT>::~ArrayStoreTest() = default;
 
 struct TestParam {
     bool add_using_allocate;
@@ -205,10 +210,10 @@ INSTANTIATE_TEST_SUITE_P(NumberStoreFreeListsDisabledMultiTest,
 
 TEST_P(NumberStoreTest, control_static_sizes) {
 #ifdef _LIBCPP_VERSION
-    EXPECT_EQ(472u, sizeof(store));
+    EXPECT_EQ(480u, sizeof(store));
     EXPECT_EQ(304u, sizeof(NumberStoreTest::ArrayStoreType::DataStoreType));
 #else
-    EXPECT_EQ(504u, sizeof(store));
+    EXPECT_EQ(512u, sizeof(store));
     EXPECT_EQ(336u, sizeof(NumberStoreTest::ArrayStoreType::DataStoreType));
 #endif
     EXPECT_EQ(112u, sizeof(NumberStoreTest::ArrayStoreType::SmallBufferType));

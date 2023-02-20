@@ -249,12 +249,15 @@
   },
   "com.yahoo.container.handler.LogHandler" : {
     "superClass" : "com.yahoo.container.jdisc.ThreadedHttpRequestHandler",
-    "interfaces" : [ ],
+    "interfaces" : [
+      "com.yahoo.container.jdisc.utils.CapabilityRequiringRequestHandler"
+    ],
     "attributes" : [
       "public"
     ],
     "methods" : [
       "public void <init>(java.util.concurrent.Executor, com.yahoo.container.core.LogHandlerConfig)",
+      "public com.yahoo.security.tls.Capability requiredCapability(com.yahoo.container.jdisc.RequestView)",
       "public com.yahoo.container.jdisc.AsyncHttpResponse handle(com.yahoo.container.jdisc.HttpRequest)",
       "public bridge synthetic com.yahoo.container.jdisc.HttpResponse handle(com.yahoo.container.jdisc.HttpRequest)"
     ],
@@ -538,6 +541,7 @@
     ],
     "methods" : [
       "public void <init>(int)",
+      "public void <init>()",
       "public void render(java.io.OutputStream)"
     ],
     "fields" : [ ]
@@ -627,6 +631,10 @@
       "public com.yahoo.jdisc.http.HttpRequest$Method getMethod()",
       "public java.net.URI getUri()",
       "public com.yahoo.jdisc.http.HttpRequest getJDiscRequest()",
+      "public java.util.Map context()",
+      "public long creationTime(java.util.concurrent.TimeUnit)",
+      "public long getConnectedAt(java.util.concurrent.TimeUnit)",
+      "public long relativeCreatedAtNanoTime()",
       "public java.lang.String getProperty(java.lang.String)",
       "public java.util.Map propertyMap()",
       "public boolean getBooleanProperty(java.lang.String)",

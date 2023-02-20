@@ -5,7 +5,6 @@ import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.applications.Cluster;
 
 import java.time.Duration;
-import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.OptionalDouble;
@@ -36,7 +35,7 @@ public class ClusterNodesTimeseries {
         var timeseries = db.getNodeTimeseries(period.plus(warmupDuration.multipliedBy(4)), clusterNodes);
         if (cluster.lastScalingEvent().isPresent()) {
             long currentGeneration = cluster.lastScalingEvent().get().generation();
-            timeseries = keepCurrentGenerationAfterWarmup(timeseries, currentGeneration);
+            timeseries = keepGenerationAfterWarmup(timeseries, currentGeneration);
         }
         timeseries = keep(timeseries, snapshot -> snapshot.inService() && snapshot.stable());
         timeseries = keep(timeseries, snapshot -> ! snapshot.at().isBefore(db.clock().instant().minus(period)));
@@ -111,14 +110,14 @@ public class ClusterNodesTimeseries {
     }
 
     private static List<NodeTimeseries> keep(List<NodeTimeseries> timeseries, Predicate<NodeMetricSnapshot> filter) {
-        return timeseries.stream().map(nodeTimeseries -> nodeTimeseries.keep(filter)).collect(Collectors.toList());
+        return timeseries.stream().map(nodeTimeseries -> nodeTimeseries.keep(filter)).toList();
     }
 
-    private static List<NodeTimeseries> keepCurrentGenerationAfterWarmup(List<NodeTimeseries> timeseries,
-                                                                         long currentGeneration) {
+    private List<NodeTimeseries> keepGenerationAfterWarmup(List<NodeTimeseries> timeseries, long currentGeneration) {
         return timeseries.stream()
-                         .map(nodeTimeseries -> nodeTimeseries.keepCurrentGenerationAfterWarmup(currentGeneration))
-                         .collect(Collectors.toList());
+                         .map(nodeTimeseries -> nodeTimeseries.keepGenerationAfterWarmup(currentGeneration,
+                                                                                         clusterNodes.node(nodeTimeseries.hostname())))
+                         .toList();
     }
 
     public static ClusterNodesTimeseries empty() {

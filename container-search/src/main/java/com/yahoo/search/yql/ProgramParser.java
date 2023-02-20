@@ -2,13 +2,7 @@
 package com.yahoo.search.yql;
 
 import com.google.common.base.Preconditions;
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
-import com.google.common.collect.Sets;
 import com.yahoo.search.yql.yqlplusParser.Annotate_expressionContext;
 import com.yahoo.search.yql.yqlplusParser.AnnotationContext;
 import com.yahoo.search.yql.yqlplusParser.ArgumentContext;
@@ -66,22 +60,21 @@ import org.antlr.v4.runtime.tree.RuleNode;
 import org.antlr.v4.runtime.tree.TerminalNode;
 
 import java.io.IOException;
-import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Stream;
 
 /**
  * Translate the ANTLR grammar into the logical representation.
  */
 final class ProgramParser {
 
-    public yqlplusParser prepareParser(String programName, InputStream input) throws IOException {
-        return prepareParser(programName, new CaseInsensitiveCharStream(CharStreams.fromStream(input)));
-    }
-
-    public yqlplusParser prepareParser(String programName, String input) throws IOException {
+    public yqlplusParser prepareParser(String programName, String input) {
         return prepareParser(programName, new CaseInsensitiveCharStream(CharStreams.fromString(input)));
     }
 
@@ -142,13 +135,9 @@ final class ProgramParser {
     }
 
     private List<String> readName(Namespaced_nameContext node) {
-        List<String> path = Lists.newArrayList();
-        for (ParseTree elt:node.children) {
-            if (!(getParseTreeIndex(elt) == yqlplusParser.DOT)) {
-                path.add(elt.getText());
-            }
-         }
-        return path;
+        return node.children.stream()
+                .filter(elt -> !(getParseTreeIndex(elt) == yqlplusParser.DOT))
+                .map(ParseTree::getText).toList();
     }
 
     static class Binding {
@@ -164,7 +153,7 @@ final class ProgramParser {
         }
 
         public List<String> toPathWith(List<String> rest) {
-            return ImmutableList.copyOf(Iterables.concat(toPath(), rest));
+            return Stream.concat(toPath().stream(), rest.stream()).toList();
         }
 
     }
@@ -173,9 +162,9 @@ final class ProgramParser {
 
         final Scope root;
         final Scope parent;
-        Set<String> cursors = ImmutableSet.of();
-        Set<String> variables = ImmutableSet.of();
-        Map<String, Binding> bindings = Maps.newHashMap();
+        Set<String> cursors = Set.of();
+        Set<String> variables = Set.of();
+        Map<String, Binding> bindings = new HashMap<>();
         final yqlplusParser parser;
         final String programName;
 
@@ -231,7 +220,7 @@ final class ProgramParser {
                 throw new ProgramCompileException(loc, "Alias '%s' is already used.", name);
             }
             if (cursors.isEmpty()) {
-                cursors = Sets.newHashSet();
+                cursors = new HashSet<>();
             }
             cursors.add(name);
         }
@@ -241,7 +230,7 @@ final class ProgramParser {
                 throw new ProgramCompileException(loc, "Variable/argument '%s' is already used.", name);
             }
             if (variables.isEmpty()) {
-                variables = Sets.newHashSet();
+                variables = new HashSet<>();
             }
             variables.add(name);
 
@@ -311,7 +300,7 @@ final class ProgramParser {
                     // OrderbyContext orderby()
                     List<Orderby_fieldContext> orderFieds = ((OrderbyContext) child)
                                                                     .orderby_fields().orderby_field();
-                    orderby = Lists.newArrayListWithExpectedSize(orderFieds.size());
+                    orderby = new ArrayList<>(orderFieds.size());
                     for (var field: orderFieds) {
                         orderby.add(convertSortKey(field, scope));
                     }
@@ -375,7 +364,7 @@ final class ProgramParser {
     }
 
     private OperatorNode<SequenceOperator> readMultiSource(Scope scope, Source_listContext multiSource) {
-        List<List<String>> sourceNameList = Lists.newArrayList();
+        List<List<String>> sourceNameList = new ArrayList<>();
         List<Namespaced_nameContext> nameSpaces = multiSource.namespaced_name();
         for(Namespaced_nameContext node : nameSpaces) {
             List<String> name = readName(node);
@@ -389,16 +378,16 @@ final class ProgramParser {
         for (Pipeline_stepContext step:nodes) {
             if (getParseTreeIndex(step.getChild(0)) == yqlplusParser.RULE_vespa_grouping) {
                 result = OperatorNode.create(SequenceOperator.PIPE, result, List.of(),
-                                             ImmutableList.of(convertExpr(step.getChild(0), scope)));
+                                             List.of(convertExpr(step.getChild(0), scope)));
             } else {
                 List<String> name = readName(step.namespaced_name());
-                List<OperatorNode<ExpressionOperator>> args = ImmutableList.of();
+                List<OperatorNode<ExpressionOperator>> args = List.of();
                 // LPAREN (argument[$in_select] (COMMA argument[$in_select])*) RPAREN
                 if (step.getChildCount() > 1) {
                     ArgumentsContext arguments = step.arguments();
                     if (arguments.getChildCount() > 2) {
                         List<ArgumentContext> argumentContextList = arguments.argument();
-                        args = Lists.newArrayListWithExpectedSize(argumentContextList.size());
+                        args = new ArrayList<>(argumentContextList.size());
                         for (ArgumentContext argumentContext: argumentContextList) {
                             args.add(convertExpr(argumentContext.expression(), scope.getRoot()));
 
@@ -471,11 +460,11 @@ final class ProgramParser {
             case yqlplusParser.RULE_call_source -> {
                 List<String> names = readName(dataSourceNode.getChild(Namespaced_nameContext.class, 0));
                 alias = assignAlias(names.get(names.size() - 1), aliasContext, scope);
-                List<OperatorNode<ExpressionOperator>> arguments = ImmutableList.of();
+                List<OperatorNode<ExpressionOperator>> arguments = List.of();
                 ArgumentsContext argumentsContext = dataSourceNode.getRuleContext(ArgumentsContext.class, 0);
                 if (argumentsContext != null) {
                     List<ArgumentContext> argumentContexts = argumentsContext.argument();
-                    arguments = Lists.newArrayListWithExpectedSize(argumentContexts.size());
+                    arguments = new ArrayList<>(argumentContexts.size());
                     for (ArgumentContext argumentContext : argumentContexts) {
                         arguments.add(convertExpr(argumentContext, scope));
                     }
@@ -514,7 +503,7 @@ final class ProgramParser {
                                                            yqlplusParser parser,
                                                            String programName) {
         Scope scope = new Scope(parser, programName);
-        List<OperatorNode<StatementOperator>> stmts = Lists.newArrayList();
+        List<OperatorNode<StatementOperator>> stmts = new ArrayList<>();
         int output = 0;
         for (ParseTree node : program.children) {
             if (!(node instanceof ParserRuleContext ruleContext)) continue;
@@ -624,8 +613,8 @@ final class ProgramParser {
             }
             case yqlplusParser.RULE_map_expression: {
                 List<Property_name_and_valueContext> propertyList = ((Map_expressionContext)parseTree).property_name_and_value();
-                List<String> names = Lists.newArrayListWithExpectedSize(propertyList.size());
-                List<OperatorNode<ExpressionOperator>> exprs = Lists.newArrayListWithCapacity(propertyList.size());
+                List<String> names = new ArrayList<>(propertyList.size());
+                List<OperatorNode<ExpressionOperator>> exprs = new ArrayList<>(propertyList.size());
                 for (Property_name_and_valueContext child : propertyList) {
                     // : propertyName ':' expression[$expression::namespace] ->
                     // ^(PROPERTY propertyName expression)
@@ -636,7 +625,7 @@ final class ProgramParser {
             }
             case yqlplusParser.RULE_array_literal: {
                 List<Constant_expressionContext> expressionList = ((Array_literalContext) parseTree).constant_expression();
-                List<OperatorNode<ExpressionOperator>> values = Lists.newArrayListWithExpectedSize(expressionList.size());
+                List<OperatorNode<ExpressionOperator>> values = new ArrayList<>(expressionList.size());
                 for (Constant_expressionContext expr : expressionList) {
                     values.add(convertExpr(expr, scope));
                 }
@@ -668,7 +657,7 @@ final class ProgramParser {
                     }
                     case yqlplusParser.RULE_call_expression: {
                         List<ArgumentContext> args = ((ArgumentsContext) firstChild.getChild(1)).argument();
-                        List<OperatorNode<ExpressionOperator>> arguments = Lists.newArrayListWithExpectedSize(args.size());
+                        List<OperatorNode<ExpressionOperator>> arguments = new ArrayList<>(args.size());
                         for (ArgumentContext argContext : args) {
                             arguments.add(convertExpr(argContext.expression(),scope));
                         }
@@ -889,7 +878,7 @@ final class ProgramParser {
                     if (elements.size() == 1 && scope.getParser().isArrayParameter(firldElement)) {
                         return convertExpr(firldElement, scope);
                     } else {
-                        List<OperatorNode<ExpressionOperator>> values = Lists.newArrayListWithExpectedSize(elements.size());
+                        List<OperatorNode<ExpressionOperator>> values = new ArrayList<>(elements.size());
                         for (Literal_elementContext child : elements) {
                             values.add(convertExpr(child.getChild(0), scope));
                         }
@@ -906,10 +895,10 @@ final class ProgramParser {
         String text = literal.getChild(0).getText();
         switch(parseTreeIndex) {
             case yqlplusParser.INT:
-                Long as_long = Long.valueOf(text);
-                int as_int = as_long.intValue();
+                long as_long = Long.parseLong(text);
+                int as_int = (int)as_long;
                 if (as_int == as_long) {
-                    return Integer.valueOf(as_int);
+                    return as_int;
                 } else {
                     return as_long;
                 }
@@ -943,11 +932,7 @@ final class ProgramParser {
             }
             case ARRAY: {
                 List<OperatorNode<ExpressionOperator>> exprs = node.getArgument(0);
-                ImmutableList.Builder<Object> lst = ImmutableList.builder();
-                for (OperatorNode<ExpressionOperator> expr : exprs) {
-                    lst.add(readConstantExpression(expr));
-                }
-                return lst.build();
+                return exprs.stream().map(expr -> readConstantExpression(expr)).toList();
             }
             case VARREF: {
                 return node; // must be dereferenced in YqlParser when we have userQuery
@@ -967,7 +952,7 @@ final class ProgramParser {
     }
 
     private OperatorNode<ExpressionOperator> readConjOp(ExpressionOperator op, List<Equality_expressionContext> nodes, Scope scope) {
-        List<OperatorNode<ExpressionOperator>> arguments = Lists.newArrayListWithExpectedSize(nodes.size());
+        List<OperatorNode<ExpressionOperator>> arguments = new ArrayList<>(nodes.size());
         for (ParseTree child : nodes) {
             arguments.add(convertExpr(child, scope));
         }
@@ -976,13 +961,13 @@ final class ProgramParser {
 
     private OperatorNode<ExpressionOperator> readConjOrOp(ExpressionOperator op, Logical_OR_expressionContext node, Scope scope) {
         List<Logical_AND_expressionContext> andExpressionList = node.logical_AND_expression();
-        List<OperatorNode<ExpressionOperator>> arguments = Lists.newArrayListWithExpectedSize(andExpressionList.size());
+        List<OperatorNode<ExpressionOperator>> arguments = new ArrayList<>(andExpressionList.size());
         for (Logical_AND_expressionContext child : andExpressionList) {
          	List<Equality_expressionContext> equalities = child.equality_expression();
          	if (equalities.size() == 1) {
          		arguments.add(convertExpr(equalities.get(0), scope));
          	} else {
-         		List<OperatorNode<ExpressionOperator>> andArguments = Lists.newArrayListWithExpectedSize(equalities.size());
+         		List<OperatorNode<ExpressionOperator>> andArguments = new ArrayList<>(equalities.size());
          		for (Equality_expressionContext subTreeChild:equalities) {
          				andArguments.add(convertExpr(subTreeChild, scope));
          		}
@@ -1015,19 +1000,17 @@ final class ProgramParser {
      * @return list of READ_FIELD expressions
      */
     private List<OperatorNode<ExpressionOperator>> getReadFieldExpressions(OperatorNode<ExpressionOperator> in) {
-        List<OperatorNode<ExpressionOperator>> readFieldList = Lists.newArrayList();
+        List<OperatorNode<ExpressionOperator>> readFieldList = new ArrayList<>();
         switch (in.getOperator()) {
-            case READ_FIELD:
-                readFieldList.add(in);
-                break;
-            case CALL:
+            case READ_FIELD -> readFieldList.add(in);
+            case CALL -> {
                 List<OperatorNode<ExpressionOperator>> callArgs = in.getArgument(1);
                 for (OperatorNode<ExpressionOperator> callArg : callArgs) {
                     if (callArg.getOperator() == ExpressionOperator.READ_FIELD) {
                         readFieldList.add(callArg);
                     }
                 }
-                break;
+            }
         }
         return readFieldList;
     }

@@ -23,8 +23,8 @@ import com.yahoo.vespa.hosted.node.admin.container.ContainerOperations;
 import com.yahoo.vespa.hosted.node.admin.container.ContainerResources;
 import com.yahoo.vespa.hosted.node.admin.container.RegistryCredentials;
 import com.yahoo.vespa.hosted.node.admin.container.RegistryCredentialsProvider;
+import com.yahoo.vespa.hosted.node.admin.maintenance.ContainerWireguardTask;
 import com.yahoo.vespa.hosted.node.admin.maintenance.StorageMaintainer;
-import com.yahoo.vespa.hosted.node.admin.maintenance.WireguardMaintainer;
 import com.yahoo.vespa.hosted.node.admin.maintenance.acl.AclMaintainer;
 import com.yahoo.vespa.hosted.node.admin.maintenance.identity.CredentialsMaintainer;
 import com.yahoo.vespa.hosted.node.admin.maintenance.servicedump.VespaServiceDumper;
@@ -72,7 +72,7 @@ public class NodeAgentImpl implements NodeAgent {
     private final Duration warmUpDuration;
     private final DoubleFlag containerCpuCap;
     private final VespaServiceDumper serviceDumper;
-    private final Optional<WireguardMaintainer> wireguardMaintainer;
+    private final List<ContainerWireguardTask> wireguardTasks;
 
     private Thread loopThread;
     private ContainerState containerState = UNKNOWN;
@@ -108,10 +108,10 @@ public class NodeAgentImpl implements NodeAgent {
                          RegistryCredentialsProvider registryCredentialsProvider, StorageMaintainer storageMaintainer,
                          FlagSource flagSource, List<CredentialsMaintainer> credentialsMaintainers,
                          Optional<AclMaintainer> aclMaintainer, Optional<HealthChecker> healthChecker, Clock clock,
-                         VespaServiceDumper serviceDumper, Optional<WireguardMaintainer> wireguardMaintainer) {
+                         VespaServiceDumper serviceDumper, List<ContainerWireguardTask> wireguardTasks) {
         this(contextSupplier, nodeRepository, orchestrator, containerOperations, registryCredentialsProvider,
              storageMaintainer, flagSource, credentialsMaintainers, aclMaintainer, healthChecker, clock,
-             DEFAULT_WARM_UP_DURATION, serviceDumper, wireguardMaintainer);
+             DEFAULT_WARM_UP_DURATION, serviceDumper, wireguardTasks);
     }
 
     public NodeAgentImpl(NodeAgentContextSupplier contextSupplier, NodeRepository nodeRepository,
@@ -120,7 +120,7 @@ public class NodeAgentImpl implements NodeAgent {
                          FlagSource flagSource, List<CredentialsMaintainer> credentialsMaintainers,
                          Optional<AclMaintainer> aclMaintainer, Optional<HealthChecker> healthChecker, Clock clock,
                          Duration warmUpDuration, VespaServiceDumper serviceDumper,
-                         Optional<WireguardMaintainer> wireguardMaintainer) {
+                         List<ContainerWireguardTask> wireguardTasks) {
         this.contextSupplier = contextSupplier;
         this.nodeRepository = nodeRepository;
         this.orchestrator = orchestrator;
@@ -134,7 +134,7 @@ public class NodeAgentImpl implements NodeAgent {
         this.warmUpDuration = warmUpDuration;
         this.containerCpuCap = PermanentFlags.CONTAINER_CPU_CAP.bindTo(flagSource);
         this.serviceDumper = serviceDumper;
-        this.wireguardMaintainer = wireguardMaintainer;
+        this.wireguardTasks = new ArrayList<>(wireguardTasks);
     }
 
     @Override
@@ -332,34 +332,34 @@ public class NodeAgentImpl implements NodeAgent {
     }
 
     private List<String> shouldRemoveContainer(NodeAgentContext context, Container existingContainer) {
-        NodeState nodeState = context.node().state();
+        final NodeState nodeState = context.node().state();
         List<String> reasons = new ArrayList<>();
-        if (nodeState == NodeState.dirty || nodeState == NodeState.provisioned) {
+        if (nodeState == NodeState.dirty || nodeState == NodeState.provisioned)
             reasons.add("Node in state " + nodeState + ", container should no longer be running");
-        }
+
         if (context.node().wantedDockerImage().isPresent() &&
                 !context.node().wantedDockerImage().get().equals(existingContainer.image())) {
-            reasons.add("The node is supposed to run a new image: "
+            reasons.add("The node is supposed to run a new Docker image: "
                         + existingContainer.image().asString() + " -> " + context.node().wantedDockerImage().get().asString());
         }
-        if (!existingContainer.state().isRunning()) {
+
+        if (!existingContainer.state().isRunning())
             reasons.add("Container no longer running");
-        }
+
         if (currentRebootGeneration < context.node().wantedRebootGeneration()) {
             reasons.add(String.format("Container reboot wanted. Current: %d, Wanted: %d",
                     currentRebootGeneration, context.node().wantedRebootGeneration()));
         }
+
         ContainerResources wantedContainerResources = getContainerResources(context);
         if (!wantedContainerResources.equalsMemory(existingContainer.resources())) {
             reasons.add("Container should be running with different memory allocation, wanted: " +
                         wantedContainerResources.toStringMemory() + ", actual: " + existingContainer.resources().toStringMemory());
         }
-        if (containerOperations.shouldRecreate(context, existingContainer, wantedContainerResources)) {
-            reasons.add("Container should be re-created to apply new configuration");
-        }
-        if (containerState == STARTING) {
+
+        if (containerState == STARTING)
             reasons.add("Container failed to start");
-        }
+
         return reasons;
     }
 
@@ -498,7 +498,7 @@ public class NodeAgentImpl implements NodeAgent {
                 }
 
                 aclMaintainer.ifPresent(maintainer -> maintainer.converge(context));
-                wireguardMaintainer.ifPresent(maintainer -> maintainer.converge(context));
+                wireguardTasks.forEach(task -> task.converge(context));
                 startServicesIfNeeded(context);
                 resumeNodeIfNeeded(context);
                 if (healthChecker.isPresent()) {
@@ -614,12 +614,11 @@ public class NodeAgentImpl implements NodeAgent {
     private Duration warmUpDuration(NodeAgentContext context) {
         ZoneApi zone = context.zone();
         Optional<NodeMembership> membership = context.node().membership();
-        return zone.getSystemName().isCd()
-               || zone.getEnvironment().isTest()
+        return zone.getEnvironment().isTest()
                || context.nodeType() != NodeType.tenant
                || membership.map(mem -> ! (mem.type().hasContainer() || mem.type().isAdmin())).orElse(false)
                 ? Duration.ofSeconds(-1)
-                : warmUpDuration;
+                : warmUpDuration.dividedBy(zone.getSystemName().isCd() ? 3 : 1);
     }
 
 }

@@ -1,8 +1,8 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <chrono>
 #include <vespa/document/bucket/bucketid.h>
+#include <vespa/vespalib/util/time.h>
 
 namespace storage::distributor {
 
@@ -22,32 +22,32 @@ class BucketGcTimeCalculator
 {
 public:
     class BucketIdHasher {
-        virtual size_t doHash(const document::BucketId&) const = 0;
+        virtual size_t doHash(const document::BucketId&) const noexcept = 0;
     public:
-        virtual ~BucketIdHasher() {}
-        size_t hash(const document::BucketId& b) const { return doHash(b); }
+        virtual ~BucketIdHasher() = default;
+        size_t hash(const document::BucketId& b) const noexcept { return doHash(b); }
     };
 
     class BucketIdIdentityHasher : public BucketIdHasher {
-        size_t doHash(const document::BucketId& b) const override {
+        size_t doHash(const document::BucketId& b) const noexcept override {
             return b.getId();
         }
     };
 
     BucketGcTimeCalculator(const BucketIdHasher& hasher,
-                           std::chrono::seconds checkInterval)
+                           vespalib::duration checkInterval)
         : _hasher(hasher),
           _checkInterval(checkInterval)
     {
     }
 
     bool shouldGc(const document::BucketId&,
-                  std::chrono::seconds currentTime,
-                  std::chrono::seconds lastRunAt) const;
+                  vespalib::duration currentTime,
+                  vespalib::duration lastRunAt) const;
 
 private:
     const BucketIdHasher& _hasher;
-    std::chrono::seconds _checkInterval;
+    vespalib::duration _checkInterval;
 };
 
 }

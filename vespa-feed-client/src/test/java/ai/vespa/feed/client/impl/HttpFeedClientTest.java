@@ -3,7 +3,7 @@ package ai.vespa.feed.client.impl;
 
 import ai.vespa.feed.client.DocumentId;
 import ai.vespa.feed.client.FeedClient;
-import ai.vespa.feed.client.FeedClientBuilder;
+import ai.vespa.feed.client.FeedException;
 import ai.vespa.feed.client.HttpResponse;
 import ai.vespa.feed.client.OperationParameters;
 import ai.vespa.feed.client.OperationStats;
@@ -42,7 +42,9 @@ class HttpFeedClientTest {
             @Override public void await() { throw new UnsupportedOperationException(); }
             @Override public CompletableFuture<HttpResponse> enqueue(DocumentId documentId, HttpRequest request) { return dispatch.get().apply(documentId, request); }
         }
-        FeedClient client = new HttpFeedClient(new FeedClientBuilderImpl(Collections.singletonList(URI.create("https://dummy:123"))), new MockRequestStrategy());
+        FeedClient client = new HttpFeedClient(new FeedClientBuilderImpl(Collections.singletonList(URI.create("https://dummy:123"))).setDryrun(true),
+                                               new DryrunCluster(),
+                                               new MockRequestStrategy());
 
         // Update is a PUT, and 200 OK is a success.
         dispatch.set((documentId, request) -> {
@@ -54,10 +56,11 @@ class HttpFeedClientTest {
                 assertEquals("json", new String(request.body(), UTF_8));
 
                 HttpResponse response = HttpResponse.of(200,
-                                                        ("{\n" +
-                                                         "  \"pathId\": \"/document/v1/ns/type/docid/0\",\n" +
-                                                         "  \"id\": \"id:ns:type::0\"\n" +
-                                                         "}").getBytes(UTF_8));
+                                                        ("""
+                                                         {
+                                                           "pathId": "/document/v1/ns/type/docid/0",
+                                                           "id": "id:ns:type::0"
+                                                         }""").getBytes(UTF_8));
                 return CompletableFuture.completedFuture(response);
             }
             catch (Throwable thrown) {
@@ -85,26 +88,27 @@ class HttpFeedClientTest {
                 assertNull(request.body());
 
                 HttpResponse response = HttpResponse.of(412,
-                                                        ("{\n" +
-                                                         "  \"pathId\": \"/document/v1/ns/type/docid/0\",\n" +
-                                                         "  \"id\": \"id:ns:type::0\",\n" +
-                                                         "  \"message\": \"Relax, take it easy.\",\n" +
-                                                         "  \"trace\": [\n" +
-                                                         "    {\n" +
-                                                         "      \"message\": \"For there is nothing that we can do.\"\n" +
-                                                         "    },\n" +
-                                                         "    {\n" +
-                                                         "      \"fork\": [\n" +
-                                                         "        {\n" +
-                                                         "          \"message\": \"Relax, take is easy.\"\n" +
-                                                         "        },\n" +
-                                                         "        {\n" +
-                                                         "          \"message\": \"Blame it on me or blame it on you.\"\n" +
-                                                         "        }\n" +
-                                                         "      ]\n" +
-                                                         "    }\n" +
-                                                         "  ]\n" +
-                                                         "}").getBytes(UTF_8));
+                                                        ("""
+                                                         {
+                                                           "pathId": "/document/v1/ns/type/docid/0",
+                                                           "id": "id:ns:type::0",
+                                                           "message": "Relax, take it easy.",
+                                                           "trace": [
+                                                             {
+                                                               "message": "For there is nothing that we can do."
+                                                             },
+                                                             {
+                                                               "fork": [
+                                                                 {
+                                                                   "message": "Relax, take is easy."
+                                                                 },
+                                                                 {
+                                                                   "message": "Blame it on me or blame it on you."
+                                                                 }
+                                                               ]
+                                                             }
+                                                           ]
+                                                         }""").getBytes(UTF_8));
                 return CompletableFuture.completedFuture(response);
             }
             catch (Throwable thrown) {
@@ -119,21 +123,22 @@ class HttpFeedClientTest {
         assertEquals(Result.Type.conditionNotMet, result.type());
         assertEquals(id, result.documentId());
         assertEquals(Optional.of("Relax, take it easy."), result.resultMessage());
-        assertEquals(Optional.of("[\n" +
-                                 "    {\n" +
-                                 "      \"message\": \"For there is nothing that we can do.\"\n" +
-                                 "    },\n" +
-                                 "    {\n" +
-                                 "      \"fork\": [\n" +
-                                 "        {\n" +
-                                 "          \"message\": \"Relax, take is easy.\"\n" +
-                                 "        },\n" +
-                                 "        {\n" +
-                                 "          \"message\": \"Blame it on me or blame it on you.\"\n" +
-                                 "        }\n" +
-                                 "      ]\n" +
-                                 "    }\n" +
-                                 "  ]"), result.traceMessage());
+        assertEquals(Optional.of("""
+                                 [
+                                     {
+                                       "message": "For there is nothing that we can do."
+                                     },
+                                     {
+                                       "fork": [
+                                         {
+                                           "message": "Relax, take is easy."
+                                         },
+                                         {
+                                           "message": "Blame it on me or blame it on you."
+                                         }
+                                       ]
+                                     }
+                                   ]"""), result.traceMessage());
 
         // Put is a POST, and a Vespa error is a ResultException.
         dispatch.set((documentId, request) -> {
@@ -144,12 +149,13 @@ class HttpFeedClientTest {
                 assertEquals("json", new String(request.body(), UTF_8));
 
                 HttpResponse response = HttpResponse.of(502,
-                                                        ("{\n" +
-                                                         "  \"pathId\": \"/document/v1/ns/type/docid/0\",\n" +
-                                                         "  \"id\": \"id:ns:type::0\",\n" +
-                                                         "  \"message\": \"Ooops! ... I did it again.\",\n" +
-                                                         "  \"trace\": [ { \"message\": \"I played with your heart. Got lost in the game.\" } ]\n" +
-                                                         "}").getBytes(UTF_8));
+                                                        ("""
+                                                         {
+                                                           "pathId": "/document/v1/ns/type/docid/0",
+                                                           "id": "id:ns:type::0",
+                                                           "message": "Ooops! ... I did it again.",
+                                                           "trace": [ { "message": "I played with your heart. Got lost in the game." } ]
+                                                         }""").getBytes(UTF_8));
                 return CompletableFuture.completedFuture(response);
             }
             catch (Throwable thrown) {
@@ -181,12 +187,13 @@ class HttpFeedClientTest {
                 assertEquals("json", new String(request.body(), UTF_8));
 
                 HttpResponse response = HttpResponse.of(500,
-                                                        ("{\n" +
-                                                         "  \"pathId\": \"/document/v1/ns/type/docid/0\",\n" +
-                                                         "  \"id\": \"id:ns:type::0\",\n" +
-                                                         "  \"message\": \"Alla ska i jorden.\",\n" +
-                                                         "  \"trace\": [ { \"message\": \"Din tid den kom, och senn så for den.\" } ]\n" +
-                                                         "}").getBytes(UTF_8));
+                                                        ("""
+                                                         {
+                                                           "pathId": "/document/v1/ns/type/docid/0",
+                                                           "id": "id:ns:type::0",
+                                                           "message": "Alla ska i jorden.",
+                                                           "trace": [ { "message": "Din tid den kom, och senn så for den." } ]
+                                                         }""").getBytes(UTF_8));
                 return CompletableFuture.completedFuture(response);
             }
             catch (Throwable thrown) {
@@ -201,6 +208,48 @@ class HttpFeedClientTest {
                                                  OperationParameters.empty())
                                             .get());
         assertEquals("Status 500 executing 'POST /document/v1/ns/type/docid/0': Alla ska i jorden.", expected.getCause().getMessage());
+    }
+
+    @Test
+    void testHandshake() {
+        // dummy:123 does not exist, and results in a host-not-found exception.
+        assertTrue(assertThrows(FeedException.class,
+                                () -> new HttpFeedClient(new FeedClientBuilderImpl(Collections.singletonList(URI.create("https://dummy:123")))))
+                           .getMessage().startsWith("failed handshake with server: java.net.UnknownHostException"));
+
+        HttpResponse oldResponse = HttpResponse.of(400, "{\"pathId\":\"/document/v1/test/build/docid/foo\",\"message\":\"Could not read document, no document?\"}".getBytes(UTF_8));
+        HttpResponse okResponse = HttpResponse.of(200, null);
+        AtomicReference<HttpResponse> response = new AtomicReference<>(oldResponse);
+        Cluster cluster = (request, vessel) -> {
+            try {
+                assertNull(request.body());
+                assertEquals("POST", request.method());
+                assertEquals("/document/v1/feeder/handshake/docid/dummy?dryRun=true", request.path());
+                vessel.complete(response.get());
+            }
+            catch (Throwable t) {
+                vessel.completeExceptionally(t);
+            }
+        };
+
+        // Old server, and speed-test.
+        assertEquals("server does not support speed test; upgrade to a newer version",
+                     assertThrows(FeedException.class,
+                                  () -> new HttpFeedClient(new FeedClientBuilderImpl(Collections.singletonList(URI.create("https://dummy:123"))).setSpeedTest(true),
+                                                           cluster,
+                                                           null))
+                             .getMessage());
+
+        // Old server.
+        new HttpFeedClient(new FeedClientBuilderImpl(Collections.singletonList(URI.create("https://dummy:123"))),
+                           cluster,
+                           null);
+
+        // New server.
+        response.set(okResponse);
+        new HttpFeedClient(new FeedClientBuilderImpl(Collections.singletonList(URI.create("https://dummy:123"))),
+                           cluster,
+                           null);
     }
 
 }

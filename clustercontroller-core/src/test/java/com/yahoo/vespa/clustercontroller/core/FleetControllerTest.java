@@ -19,7 +19,6 @@ import com.yahoo.vespa.clustercontroller.core.database.ZooKeeperDatabaseFactory;
 import com.yahoo.vespa.clustercontroller.core.rpc.RPCCommunicator;
 import com.yahoo.vespa.clustercontroller.core.rpc.RpcServer;
 import com.yahoo.vespa.clustercontroller.core.rpc.SlobrokClient;
-import com.yahoo.vespa.clustercontroller.core.status.StatusHandler;
 import com.yahoo.vespa.clustercontroller.core.testutils.WaitCondition;
 import com.yahoo.vespa.clustercontroller.core.testutils.WaitTask;
 import com.yahoo.vespa.clustercontroller.core.testutils.Waiter;
@@ -126,7 +125,7 @@ public abstract class FleetControllerTest implements Waiter {
                 options.nodeStateRequestTimeoutLatestPercentage(),
                 options.nodeStateRequestRoundTripTimeMaxSeconds());
         var lookUp = new SlobrokClient(context, timer, new String[0]);
-        var rpcServer = new RpcServer(timer, timer, options.clusterName(), options.fleetControllerIndex(), options.slobrokBackOffPolicy());
+        var rpcServer = new RpcServer(timer, options.clusterName(), options.fleetControllerIndex(), options.slobrokBackOffPolicy());
         var database = new DatabaseHandler(context, new ZooKeeperDatabaseFactory(context), timer, options.zooKeeperServerAddress(), timer);
 
         // Setting this <1000 ms causes ECONNREFUSED on socket trying to connect to ZK server, in ZooKeeper,
@@ -138,8 +137,7 @@ public abstract class FleetControllerTest implements Waiter {
         var stateBroadcaster = new SystemStateBroadcaster(context, timer, timer);
         var masterElectionHandler = new MasterElectionHandler(context, options.fleetControllerIndex(), options.fleetControllerCount(), timer, timer);
 
-        var status = new StatusHandler.ContainerStatusPageServer();
-        var controller = new FleetController(context, timer, log, cluster, stateGatherer, communicator, status, rpcServer, lookUp,
+        var controller = new FleetController(context, timer, log, cluster, stateGatherer, communicator, rpcServer, lookUp,
                                              database, stateGenerator, stateBroadcaster, masterElectionHandler, metricUpdater, options);
         controller.start();
         return controller;
@@ -241,7 +239,7 @@ public abstract class FleetControllerTest implements Waiter {
             public List<DummyVdsNode> getDummyNodes() {
                 return nodes.stream()
                         .filter(n -> !excludedNodes.contains(n.getNode().getIndex()))
-                        .collect(Collectors.toList());
+                        .toList();
             }
             @Override
             public Duration getTimeout() { return timeout; }
@@ -298,12 +296,16 @@ public abstract class FleetControllerTest implements Waiter {
     }
 
     void setWantedState(DummyVdsNode node, State state, String reason, Supervisor supervisor) {
-        NodeState ns = new NodeState(node.getType(), state);
-        if (reason != null) ns.setDescription(reason);
+        setWantedState(new NodeState(node.getType(), state), reason, node.getSlobrokName(), supervisor);
+    }
+
+    void setWantedState(NodeState nodeState, String reason, String slobrokName, Supervisor supervisor) {
+        if (reason != null) nodeState.setDescription(reason);
         Target connection = supervisor.connect(new Spec("localhost", fleetController().getRpcPort()));
+
         Request req = new Request("setNodeState");
-        req.parameters().add(new StringValue(node.getSlobrokName()));
-        req.parameters().add(new StringValue(ns.serialize()));
+        req.parameters().add(new StringValue(slobrokName));
+        req.parameters().add(new StringValue(nodeState.serialize()));
         connection.invokeSync(req, timeout());
         if (req.isError()) {
             fail("Failed to invoke setNodeState(): " + req.errorCode() + ": " + req.errorMessage());

@@ -73,6 +73,8 @@ constexpr duration from_timespec(const timespec & ts) {
 
 vespalib::string to_string(system_time time);
 
+steady_time saturated_add(steady_time time, duration diff);
+
 /**
  * Simple utility class used to measure how much time has elapsed
  * since it was constructed.
@@ -84,6 +86,7 @@ private:
 public:
     Timer() : _start(steady_clock::now()) {}
     ~Timer();
+    steady_time get_start() const { return _start; }
     duration elapsed() const { return (steady_clock::now() - _start); }
     static void waitAtLeast(duration dur, bool busyWait);
 };
@@ -96,3 +99,16 @@ duration adjustTimeoutByDetectedHz(duration timeout);
 duration adjustTimeoutByHz(duration timeout, long hz);
 
 }
+
+#if defined(_LIBCPP_VERSION) && _LIBCPP_VERSION < 160000
+
+// Temporary workaround until libc++ supports stream operators for duration
+
+#include <iosfwd>
+
+namespace std::chrono {
+
+ostream& operator<<(ostream& os, const nanoseconds& value);
+
+}
+#endif

@@ -1,8 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.tensor.functions;
 
-import com.google.common.collect.ImmutableList;
-
 import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
@@ -510,9 +508,9 @@ public class ScalarFunctions {
     // Variable-length operators -----------------------------------------------------------------------------
 
     public static class EqualElements implements Function<List<Long>, Double> {
-        private final ImmutableList<String> argumentNames;
+        private final List<String> argumentNames;
         private EqualElements(List<String> argumentNames) {
-            this.argumentNames = ImmutableList.copyOf(argumentNames);
+            this.argumentNames = List.copyOf(argumentNames);
         }
 
         @Override
@@ -553,9 +551,9 @@ public class ScalarFunctions {
     }
 
     public static class SumElements implements Function<List<Long>, Double> {
-        private final ImmutableList<String> argumentNames;
+        private final List<String> argumentNames;
         private SumElements(List<String> argumentNames) {
-            this.argumentNames = ImmutableList.copyOf(argumentNames);
+            this.argumentNames = List.copyOf(argumentNames);
         }
 
         @Override

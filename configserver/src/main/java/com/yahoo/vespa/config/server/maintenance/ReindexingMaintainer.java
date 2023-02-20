@@ -40,14 +40,15 @@ public class ReindexingMaintainer extends ConfigServerMaintainer {
     private static final Duration timeout = Duration.ofSeconds(10);
 
     /** Relative reindexing speed. */
-    static final double SPEED = 1;
+    public static final double SPEED = 1;
+    static final String CAUSE = "reindexing due to a schema change";
 
     private final ConfigConvergenceChecker convergence;
     private final Clock clock;
 
     public ReindexingMaintainer(ApplicationRepository applicationRepository, Curator curator, FlagSource flagSource,
                                 Duration interval, ConfigConvergenceChecker convergence, Clock clock) {
-        super(applicationRepository, curator, flagSource, clock.instant(), interval, true);
+        super(applicationRepository, curator, flagSource, clock, interval, true);
         this.convergence = convergence;
         this.clock = clock;
     }
@@ -96,7 +97,7 @@ public class ReindexingMaintainer extends ConfigServerMaintainer {
         for (var cluster : reindexing.clusters().entrySet())
             for (var pending : cluster.getValue().pending().entrySet())
                 if (pending.getValue() <= oldestGeneration.get()) {
-                    reindexing = reindexing.withReady(cluster.getKey(), pending.getKey(), now, SPEED)
+                    reindexing = reindexing.withReady(cluster.getKey(), pending.getKey(), now, SPEED, CAUSE)
                                            .withoutPending(cluster.getKey(), pending.getKey());
                 }
 

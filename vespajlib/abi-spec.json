@@ -976,6 +976,7 @@
       "public com.yahoo.tensor.Tensor$Builder cell(com.yahoo.tensor.TensorAddress, double)",
       "public com.yahoo.tensor.Tensor$Builder block(com.yahoo.tensor.TensorAddress, double[])",
       "public com.yahoo.tensor.MixedTensor build()",
+      "public static com.yahoo.tensor.MixedTensor$BoundBuilder of(com.yahoo.tensor.TensorType)",
       "public bridge synthetic com.yahoo.tensor.Tensor build()"
     ],
     "fields" : [ ]
@@ -1026,6 +1027,7 @@
       "public com.yahoo.tensor.MixedTensor build()",
       "public void trackBounds(com.yahoo.tensor.TensorAddress)",
       "public com.yahoo.tensor.TensorType createBoundType()",
+      "public static com.yahoo.tensor.MixedTensor$UnboundBuilder of(com.yahoo.tensor.TensorType)",
       "public bridge synthetic com.yahoo.tensor.Tensor build()"
     ],
     "fields" : [ ]
@@ -1466,6 +1468,7 @@
       "public static com.yahoo.tensor.TensorType fromSpec(java.lang.String)",
       "public com.yahoo.tensor.TensorType$Value valueType()",
       "public com.yahoo.tensor.TensorType mappedSubtype()",
+      "public com.yahoo.tensor.TensorType indexedSubtype()",
       "public int rank()",
       "public java.util.List dimensions()",
       "public java.util.Set dimensionNames()",
@@ -3079,7 +3082,8 @@
     "methods" : [
       "public static java.lang.String encode(java.util.Map)",
       "public static java.lang.String escape(java.lang.String)",
-      "public static boolean equals(java.lang.String, java.lang.String)"
+      "public static boolean equals(java.lang.String, java.lang.String)",
+      "public static java.lang.String canonical(java.lang.String)"
     ],
     "fields" : [ ]
   },
@@ -3642,6 +3646,19 @@
     ],
     "fields" : [ ]
   },
+  "com.yahoo.yolean.Exceptions$FunctionThrowingIOException" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public",
+      "interface",
+      "abstract"
+    ],
+    "methods" : [
+      "public abstract java.lang.Object map(java.lang.Object)"
+    ],
+    "fields" : [ ]
+  },
   "com.yahoo.yolean.Exceptions$RunnableThrowingIOException" : {
     "superClass" : "java.lang.Object",
     "interfaces" : [ ],
@@ -3696,6 +3713,7 @@
       "public static void uncheckInterruptedAndRestoreFlag(com.yahoo.yolean.Exceptions$RunnableThrowingInterruptedException)",
       "public static varargs void uncheck(com.yahoo.yolean.Exceptions$RunnableThrowingIOException, java.lang.String, java.lang.String[])",
       "public static void uncheckAndIgnore(com.yahoo.yolean.Exceptions$RunnableThrowingIOException, java.lang.Class)",
+      "public static java.util.function.Function uncheck(com.yahoo.yolean.Exceptions$FunctionThrowingIOException)",
       "public static java.lang.Object uncheck(com.yahoo.yolean.Exceptions$SupplierThrowingIOException)",
       "public static varargs java.lang.Object uncheck(com.yahoo.yolean.Exceptions$SupplierThrowingIOException, java.lang.String, java.lang.String[])",
       "public static java.lang.Object uncheckAndIgnore(com.yahoo.yolean.Exceptions$SupplierThrowingIOException, java.lang.Class)",

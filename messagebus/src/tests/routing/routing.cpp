@@ -14,6 +14,9 @@
 #include <vespa/vespalib/testkit/testapp.h>
 
 #include <vespa/log/log.h>
+
+#include <memory>
+#include <utility>
 LOG_SETUP("routing_test");
 
 using namespace mbus;
@@ -53,21 +56,19 @@ private:
     uint32_t _idxRemove;
 public:
     RemoveReplyPolicy(bool selectOnRetry,
-                      const std::vector<uint32_t> consumableErrors,
-                      const std::vector<Route> routes,
+                      std::vector<uint32_t> consumableErrors,
+                      std::vector<Route> routes,
                       uint32_t idxRemove);
     void merge(RoutingContext &ctx) override;
 };
 
 RemoveReplyPolicy::RemoveReplyPolicy(bool selectOnRetry,
-                                     const std::vector<uint32_t> consumableErrors,
-                                     const std::vector<Route> routes,
+                                     std::vector<uint32_t> consumableErrors,
+                                     std::vector<Route> routes,
                                      uint32_t idxRemove) :
-    CustomPolicy::CustomPolicy(selectOnRetry, consumableErrors, routes),
+    CustomPolicy::CustomPolicy(selectOnRetry, std::move(consumableErrors), std::move(routes)),
     _idxRemove(idxRemove)
-{
-    // empty
-}
+{ }
 
 void
 RemoveReplyPolicy::merge(RoutingContext &ctx)
@@ -82,7 +83,7 @@ private:
     uint32_t              _idxRemove;
 public:
     RemoveReplyPolicyFactory(bool selectOnRetry,
-                             const std::vector<uint32_t> &consumableErrors,
+                             std::vector<uint32_t> consumableErrors,
                              uint32_t idxRemove);
     ~RemoveReplyPolicyFactory() override;
     IRoutingPolicy::UP create(const string &param) override;
@@ -91,10 +92,10 @@ public:
 RemoveReplyPolicyFactory::~RemoveReplyPolicyFactory() = default;
 
 RemoveReplyPolicyFactory::RemoveReplyPolicyFactory(bool selectOnRetry,
-                                                   const std::vector<uint32_t> &consumableErrors,
+                                                   std::vector<uint32_t> consumableErrors,
                                                    uint32_t idxRemove) :
     _selectOnRetry(selectOnRetry),
-    _consumableErrors(consumableErrors),
+    _consumableErrors(std::move(consumableErrors)),
     _idxRemove(idxRemove)
 {
     // empty
@@ -103,39 +104,30 @@ RemoveReplyPolicyFactory::RemoveReplyPolicyFactory(bool selectOnRetry,
 IRoutingPolicy::UP
 RemoveReplyPolicyFactory::create(const string &param)
 {
-    std::vector<Route> routes;
-    CustomPolicyFactory::parseRoutes(param, routes);
-    return IRoutingPolicy::UP(new RemoveReplyPolicy(_selectOnRetry, _consumableErrors, routes, _idxRemove));
+    return std::make_unique<RemoveReplyPolicy>(_selectOnRetry, _consumableErrors,
+                                               CustomPolicyFactory::parseRoutes(param), _idxRemove);
 }
 
 class ReuseReplyPolicy : public CustomPolicy {
 private:
     std::vector<uint32_t> _errorMask;
 public:
-    ReuseReplyPolicy(bool selectOnRetry,
-                     const std::vector<uint32_t> &errorMask,
-                     const std::vector<Route> &routes);
+    ReuseReplyPolicy(bool selectOnRetry, std::vector<uint32_t> errorMask, std::vector<Route> routes);
     void merge(RoutingContext &ctx) override;
 };
 
-ReuseReplyPolicy::ReuseReplyPolicy(bool selectOnRetry,
-                                   const std::vector<uint32_t> &errorMask,
-                                   const std::vector<Route> &routes) :
-    CustomPolicy::CustomPolicy(selectOnRetry, errorMask, routes),
-    _errorMask(errorMask)
-{
-    // empty
-}
+ReuseReplyPolicy::ReuseReplyPolicy(bool selectOnRetry, std::vector<uint32_t> errorMask, std::vector<Route> routes) :
+    CustomPolicy::CustomPolicy(selectOnRetry, errorMask, std::move(routes)),
+    _errorMask(std::move(errorMask))
+{ }
 
 void
 ReuseReplyPolicy::merge(RoutingContext &ctx)
 {
-    Reply::UP ret(new EmptyReply());
+    auto ret = std::make_unique<EmptyReply>();
     uint32_t idx = 0;
     int idxFirstOk = -1;
-    for (RoutingNodeIterator it = ctx.getChildIterator();
-         it.isValid(); it.next(), ++idx)
-    {
+    for (RoutingNodeIterator it = ctx.getChildIterator(); it.isValid(); it.next(), ++idx) {
         const Reply &ref = it.getReplyRef();
         if (!ref.hasErrors()) {
             if (idxFirstOk < 0) {
@@ -181,9 +173,7 @@ ReuseReplyPolicyFactory::~ReuseReplyPolicyFactory() = default;
 IRoutingPolicy::UP
 ReuseReplyPolicyFactory::create(const string &param)
 {
-    std::vector<Route> routes;
-    CustomPolicyFactory::parseRoutes(param, routes);
-    return IRoutingPolicy::UP(new ReuseReplyPolicy(_selectOnRetry, _errorMask, routes));
+    return std::make_unique<ReuseReplyPolicy>(_selectOnRetry, _errorMask, CustomPolicyFactory::parseRoutes(param));
 }
 
 class SetReplyPolicy : public IRoutingPolicy {
@@ -219,7 +209,7 @@ SetReplyPolicy::select(RoutingContext &ctx)
     if (err != ErrorCode::NONE) {
         ctx.setError(err, _param);
     } else {
-        ctx.setReply(Reply::UP(new EmptyReply()));
+        ctx.setReply(std::make_unique<EmptyReply>());
     }
     ctx.setSelectOnRetry(_selectOnRetry);
 }
@@ -227,7 +217,7 @@ SetReplyPolicy::select(RoutingContext &ctx)
 void
 SetReplyPolicy::merge(RoutingContext &ctx)
 {
-    Reply::UP reply(new EmptyReply());
+    auto reply = std::make_unique<EmptyReply>();
     reply->addError(Error(ErrorCode::FATAL_ERROR, "Merge should not be called when select() sets a reply."));
     ctx.setReply(std::move(reply));
 }
@@ -256,11 +246,11 @@ SetReplyPolicyFactory::~SetReplyPolicyFactory() = default;
 IRoutingPolicy::UP
 SetReplyPolicyFactory::create(const string &param)
 {
-    return IRoutingPolicy::UP(new SetReplyPolicy(_selectOnRetry, _errors, param));
+    return std::make_unique<SetReplyPolicy>(_selectOnRetry, _errors, param);
 }
 
 class TestException : public std::exception {
-    virtual const char* what() const throw() override {
+    virtual const char* what() const noexcept override {
         return "{test exception}";
     }
 };
@@ -280,9 +270,8 @@ public:
 class SelectExceptionPolicyFactory : public SimpleProtocol::IPolicyFactory {
 public:
     ~SelectExceptionPolicyFactory() override;
-    IRoutingPolicy::UP create(const string &param) override {
-        (void)param;
-        return IRoutingPolicy::UP(new SelectExceptionPolicy());
+    IRoutingPolicy::UP create(const string &) override {
+        return std::make_unique<SelectExceptionPolicy>();
     }
 };
 
@@ -293,18 +282,15 @@ private:
     const string _select;
 
 public:
-    MergeExceptionPolicy(const string &param)
+    explicit MergeExceptionPolicy(const string &param)
         : _select(param)
-    {
-        // empty
-    }
+    { }
 
     void select(RoutingContext &ctx) override {
         ctx.addChild(Route::parse(_select));
     }
 
-    void merge(RoutingContext &ctx) override {
-        (void)ctx;
+    void merge(RoutingContext &) override {
         throw TestException();
     }
 };
@@ -313,7 +299,7 @@ class MergeExceptionPolicyFactory : public SimpleProtocol::IPolicyFactory {
 public:
     ~MergeExceptionPolicyFactory() override;
     IRoutingPolicy::UP create(const string &param) override {
-        return IRoutingPolicy::UP(new MergeExceptionPolicy(param));
+        return std::make_unique<MergeExceptionPolicy>(param);
     }
 };
 
@@ -331,37 +317,17 @@ private:
 public:
     friend class MyPolicy;
 
-    MyPolicyFactory(const string &selectRoute,
-                    uint32_t &selectError,
-                    bool selectException,
-                    bool mergeFromChild,
-                    uint32_t mergeError,
-                    bool mergeException) :
-        _selectRoute(selectRoute),
-        _selectError(selectError),
-        _selectException(selectException),
-        _mergeFromChild(mergeFromChild),
-        _mergeError(mergeError),
-        _mergeException(mergeException)
-    {
-        // empty
-    }
+    MyPolicyFactory(const string &selectRoute, uint32_t &selectError, bool selectException,
+                    bool mergeFromChild, uint32_t mergeError, bool mergeException) noexcept;
+    ~MyPolicyFactory() override;
 
-    IRoutingPolicy::UP 
-    create(const string &param) override;
+    IRoutingPolicy::UP create(const string &param) override;
 
-    static MyPolicyFactory::SP
-    newInstance(const string &selectRoute,
-                uint32_t selectError,
-                bool selectException,
-                bool mergeFromChild,
-                uint32_t mergeError,
-                bool mergeException) 
+    static MyPolicyFactory::SP newInstance(const string &selectRoute, uint32_t selectError, bool selectException,
+                                           bool mergeFromChild, uint32_t mergeError, bool mergeException)
     {
-        MyPolicyFactory::SP ptr;
-        ptr.reset(new MyPolicyFactory(selectRoute, selectError, selectException,
-                                      mergeFromChild, mergeError, mergeException));
-        return ptr;
+        return std::make_shared<MyPolicyFactory>(selectRoute, selectError, selectException,
+                                                 mergeFromChild, mergeError, mergeException);
     }
 
     static MyPolicyFactory::SP 
@@ -419,12 +385,24 @@ public:
     }    
 };
 
+MyPolicyFactory::MyPolicyFactory(const string &selectRoute, uint32_t &selectError, bool selectException,
+                                 bool mergeFromChild, uint32_t mergeError, bool mergeException) noexcept
+    : _selectRoute(selectRoute),
+      _selectError(selectError),
+      _selectException(selectException),
+      _mergeFromChild(mergeFromChild),
+      _mergeError(mergeError),
+      _mergeException(mergeException)
+{ }
+
+MyPolicyFactory::~MyPolicyFactory() = default;
+
 class MyPolicy : public IRoutingPolicy {
 private:
     const MyPolicyFactory &_parent;
     
 public:
-    MyPolicy(const MyPolicyFactory &parent) :
+    explicit MyPolicy(const MyPolicyFactory &parent) :
         _parent(parent)
     {}
 
@@ -434,7 +412,7 @@ public:
             ctx.addChild(Route::parse(_parent._selectRoute));
         }
         if (_parent._selectError != ErrorCode::NONE) {
-            Reply::UP reply(new EmptyReply());
+            auto reply = std::make_unique<EmptyReply>();
             reply->addError(Error(_parent._selectError, "err"));
             ctx.setReply(std::move(reply));
         }
@@ -446,7 +424,7 @@ public:
     void merge(RoutingContext &ctx) override
     {
         if (_parent._mergeError != ErrorCode::NONE) {
-            Reply::UP reply(new EmptyReply());
+            auto reply = std::make_unique<EmptyReply>();
             reply->addError(Error(_parent._mergeError, "err"));
             ctx.setReply(std::move(reply));
         } else if (_parent._mergeFromChild) {
@@ -459,10 +437,9 @@ public:
 };
 
 IRoutingPolicy::UP
-MyPolicyFactory::create(const string &param)
+MyPolicyFactory::create(const string &)
 {
-    (void)param;
-    return IRoutingPolicy::UP(new MyPolicy(*this));
+    return std::make_unique<MyPolicy>(*this);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -491,10 +468,10 @@ public:
 class Test : public vespalib::TestApp {
 private:
     Message::UP createMessage(const string &msg, uint32_t level = 9);
-    void setupRouting(TestData &data, const RoutingTableSpec &spec);
+    void setupRouting(TestData &data, RoutingTableSpec && spec);
     void setupPolicy(TestData &data, const string &policyName, 
                      SimpleProtocol::IPolicyFactory::SP policy);
-    bool testAcknowledge(TestData &data);
+    static bool testAcknowledge(TestData &data);
     bool testSend(TestData &data, const string &route, uint32_t level = 9);
     bool testTrace(TestData &data, const std::vector<string> &expected);
     bool testTrace(const std::vector<string> &expected, const Trace &trace);
@@ -603,24 +580,24 @@ TestData::start()
 Message::UP
 Test::createMessage(const string &msg, uint32_t level)
 {
-    Message::UP ret(new SimpleMessage(msg));
+    auto ret = std::make_unique<SimpleMessage>(msg);
     ret->getTrace().setLevel(level);
     return ret;
 }
 
 void 
-Test::setupRouting(TestData &data, const RoutingTableSpec &spec)
+Test::setupRouting(TestData &data, RoutingTableSpec && spec)
 {
-    data._srcServer.mb.setupRouting(RoutingSpec().addTable(spec));
+    data._srcServer.mb.setupRouting(RoutingSpec().addTable(std::move(spec)));
 }
 
 void 
 Test::setupPolicy(TestData &data, const string &policyName,
                   SimpleProtocol::IPolicyFactory::SP policy)
 {
-    IProtocol::SP ptr(new SimpleProtocol());
-    static_cast<SimpleProtocol&>(*ptr).addPolicyFactory(policyName, policy);
-    data._srcServer.mb.putProtocol(ptr);
+    auto protocol = std::make_shared<SimpleProtocol>();
+    protocol->addPolicyFactory(policyName, std::move(policy));
+    data._srcServer.mb.putProtocol(protocol);
 }
 
 bool 
@@ -649,7 +626,7 @@ Test::testTrace(TestData &data, const std::vector<string> &expected)
     if (!EXPECT_TRUE(reply)) {
         return false;
     }
-    if (!EXPECT_TRUE(!reply->hasErrors())) {
+    if (!EXPECT_FALSE(reply->hasErrors())) {
         return false;
     }
     return testTrace(expected, reply->getTrace());
@@ -658,7 +635,7 @@ Test::testTrace(TestData &data, const std::vector<string> &expected)
 bool
 Test::testTrace(const std::vector<string> &expected, const Trace &trace)
 {
-    string version = vespalib::Vtag::currentVersion.toString();
+    const string& version = vespalib::Vtag::currentVersion.toString();
     string actual = trace.toString();
     size_t pos = 0;
     for (uint32_t i = 0; i < expected.size(); ++i) {
@@ -758,7 +735,7 @@ void
 Test::testNoRoutingTable(TestData &data)
 {
     Result res = data._srcSession->send(createMessage("msg"), "foo");
-    EXPECT_TRUE(!res.isAccepted());
+    EXPECT_FALSE(res.isAccepted());
     EXPECT_EQUAL((uint32_t)ErrorCode::ILLEGAL_ROUTE, res.getError().getCode());
     Message::UP msg = res.getMessage();
     EXPECT_TRUE(msg);
@@ -770,7 +747,7 @@ Test::testUnknownRoute(TestData &data)
     data._srcServer.mb.setupRouting(RoutingSpec().addTable(RoutingTableSpec(SimpleProtocol::NAME)
                                                            .addHop(HopSpec("foo", "bar"))));
     Result res = data._srcSession->send(createMessage("msg"), "baz");
-    EXPECT_TRUE(!res.isAccepted());
+    EXPECT_FALSE(res.isAccepted());
     EXPECT_EQUAL((uint32_t)ErrorCode::ILLEGAL_ROUTE, res.getError().getCode());
     Message::UP msg = res.getMessage();
     EXPECT_TRUE(msg);
@@ -797,7 +774,7 @@ Test::testRecognizeHopName(TestData &data)
     data._dstSession->acknowledge(std::move(msg));
     Reply::UP reply = data._srcHandler.getReply(RECEPTOR_TIMEOUT);
     ASSERT_TRUE(reply);
-    EXPECT_TRUE(!reply->hasErrors());
+    EXPECT_FALSE(reply->hasErrors());
 }
 
 void
@@ -812,7 +789,7 @@ Test::testRecognizeRouteDirective(TestData &data)
     data._dstSession->acknowledge(std::move(msg));
     Reply::UP reply = data._srcHandler.getReply(RECEPTOR_TIMEOUT);
     ASSERT_TRUE(reply);
-    EXPECT_TRUE(!reply->hasErrors());
+    EXPECT_FALSE(reply->hasErrors());
 }
 
 void
@@ -826,7 +803,7 @@ Test::testRecognizeRouteName(TestData &data)
     data._dstSession->acknowledge(std::move(msg));
     Reply::UP reply = data._srcHandler.getReply(RECEPTOR_TIMEOUT);
     ASSERT_TRUE(reply);
-    EXPECT_TRUE(!reply->hasErrors());
+    EXPECT_FALSE(reply->hasErrors());
 }
 
 void
@@ -868,14 +845,14 @@ Test::testInsertRoute(TestData &data)
     data._dstSession->acknowledge(std::move(msg));
     Reply::UP reply = data._srcHandler.getReply(RECEPTOR_TIMEOUT);
     ASSERT_TRUE(reply);
-    EXPECT_TRUE(!reply->hasErrors());
+    EXPECT_FALSE(reply->hasErrors());
 }
 
 void
 Test::testErrorDirective(TestData &data)
 {
     Route route = Route::parse("foo/bar/baz");
-    route.getHop(0).setDirective(1, IHopDirective::SP(new ErrorDirective("err")));
+    route.getHop(0).setDirective(1, std::make_shared<ErrorDirective>("err"));
     EXPECT_TRUE(data._srcSession->send(createMessage("msg"), route).isAccepted());
     Reply::UP reply = data._srcHandler.getReply(RECEPTOR_TIMEOUT);
     ASSERT_TRUE(reply);
@@ -887,9 +864,8 @@ Test::testErrorDirective(TestData &data)
 void
 Test::testSelectError(TestData &data)
 {
-    IProtocol::SP protocol(new SimpleProtocol());
-    SimpleProtocol &simple = static_cast<SimpleProtocol&>(*protocol);
-    simple.addPolicyFactory("Custom", SimpleProtocol::IPolicyFactory::SP(new CustomPolicyFactory()));
+    auto protocol = std::make_shared<SimpleProtocol>();
+    protocol->addPolicyFactory("Custom", std::make_shared<CustomPolicyFactory>());
     data._srcServer.mb.putProtocol(protocol);
     EXPECT_TRUE(data._srcSession->send(createMessage("msg"), Route::parse("[Custom: ]")).isAccepted());
     Reply::UP reply = data._srcHandler.getReply(RECEPTOR_TIMEOUT);
@@ -903,9 +879,8 @@ Test::testSelectError(TestData &data)
 void
 Test::testSelectNone(TestData &data)
 {
-    IProtocol::SP protocol(new SimpleProtocol());
-    SimpleProtocol &simple = static_cast<SimpleProtocol&>(*protocol);
-    simple.addPolicyFactory("Custom", SimpleProtocol::IPolicyFactory::SP(new CustomPolicyFactory()));
+    auto protocol = std::make_shared<SimpleProtocol>();
+    protocol->addPolicyFactory("Custom", std::make_shared<CustomPolicyFactory>());
     data._srcServer.mb.putProtocol(protocol);
     EXPECT_TRUE(data._srcSession->send(createMessage("msg"), Route::parse("[Custom]")).isAccepted());
     Reply::UP reply = data._srcHandler.getReply(RECEPTOR_TIMEOUT);
@@ -917,9 +892,8 @@ Test::testSelectNone(TestData &data)
 void
 Test::testSelectOne(TestData &data)
 {
-    IProtocol::SP protocol(new SimpleProtocol());
-    SimpleProtocol &simple = static_cast<SimpleProtocol&>(*protocol);
-    simple.addPolicyFactory("Custom", SimpleProtocol::IPolicyFactory::SP(new CustomPolicyFactory()));
+    auto protocol = std::make_shared<SimpleProtocol>();
+    protocol->addPolicyFactory("Custom", std::make_shared<CustomPolicyFactory>());
     data._srcServer.mb.putProtocol(protocol);
     EXPECT_TRUE(data._srcSession->send(createMessage("msg"), Route::parse("[Custom:dst/session]")).isAccepted());
     Message::UP msg = data._dstHandler.getMessage(RECEPTOR_TIMEOUT);
@@ -927,7 +901,7 @@ Test::testSelectOne(TestData &data)
     data._dstSession->acknowledge(std::move(msg));
     Reply::UP reply = data._srcHandler.getReply(RECEPTOR_TIMEOUT);
     ASSERT_TRUE(reply);
-    EXPECT_TRUE(!reply->hasErrors());
+    EXPECT_FALSE(reply->hasErrors());
 }
 
 void
@@ -937,13 +911,13 @@ Test::testResend1(TestData &data)
     EXPECT_TRUE(data._srcSession->send(createMessage("msg"), Route::parse("dst/session")).isAccepted());
     Message::UP msg = data._dstHandler.getMessage(RECEPTOR_TIMEOUT);
     ASSERT_TRUE(msg);
-    Reply::UP reply(new EmptyReply());
+    Reply::UP reply = std::make_unique<EmptyReply>();
     reply->swapState(*msg);
     reply->addError(Error(ErrorCode::APP_TRANSIENT_ERROR, "err1"));
     data._dstSession->reply(std::move(reply));
     msg = data._dstHandler.getMessage(RECEPTOR_TIMEOUT);
     ASSERT_TRUE(msg);
-    reply.reset(new EmptyReply());
+    reply = std::make_unique<EmptyReply>();
     reply->swapState(*msg);
     reply->addError(Error(ErrorCode::APP_TRANSIENT_ERROR, "err2"));
     data._dstSession->reply(std::move(reply));
@@ -952,7 +926,7 @@ Test::testResend1(TestData &data)
     data._dstSession->acknowledge(std::move(msg));
     reply = data._srcHandler.getReply(RECEPTOR_TIMEOUT);
     ASSERT_TRUE(reply);
-    EXPECT_TRUE(!reply->hasErrors());
+    EXPECT_FALSE(reply->hasErrors());
     EXPECT_TRUE(testTrace(StringList()
                          .add("[APP_TRANSIENT_ERROR @ localhost]: err1")
                          .add("-[APP_TRANSIENT_ERROR @ localhost]: err1")
@@ -964,21 +938,20 @@ Test::testResend1(TestData &data)
 void
 Test::testResend2(TestData &data)
 {
-    IProtocol::SP protocol(new SimpleProtocol());
-    SimpleProtocol &simple = static_cast<SimpleProtocol&>(*protocol);
-    simple.addPolicyFactory("Custom", SimpleProtocol::IPolicyFactory::SP(new CustomPolicyFactory()));
+    auto protocol = std::make_shared<SimpleProtocol>();
+    protocol->addPolicyFactory("Custom", std::make_shared<CustomPolicyFactory>());
     data._srcServer.mb.putProtocol(protocol);
     data._retryPolicy->setEnabled(true);
     EXPECT_TRUE(data._srcSession->send(createMessage("msg"), Route::parse("[Custom:dst/session]")).isAccepted());
     Message::UP msg = data._dstHandler.getMessage(RECEPTOR_TIMEOUT);
     ASSERT_TRUE(msg);
-    Reply::UP reply(new EmptyReply());
+    Reply::UP reply = std::make_unique<EmptyReply>();
     reply->swapState(*msg);
     reply->addError(Error(ErrorCode::APP_TRANSIENT_ERROR, "err1"));
     data._dstSession->reply(std::move(reply));
     msg = data._dstHandler.getMessage(RECEPTOR_TIMEOUT);
     ASSERT_TRUE(msg);
-    reply.reset(new EmptyReply());
+    reply = std::make_unique<EmptyReply>();
     reply->swapState(*msg);
     reply->addError(Error(ErrorCode::APP_TRANSIENT_ERROR, "err2"));
     data._dstSession->reply(std::move(reply));
@@ -987,7 +960,7 @@ Test::testResend2(TestData &data)
     data._dstSession->acknowledge(std::move(msg));
     reply = data._srcHandler.getReply(RECEPTOR_TIMEOUT);
     ASSERT_TRUE(reply);
-    EXPECT_TRUE(!reply->hasErrors());
+    EXPECT_FALSE(reply->hasErrors());
     EXPECT_TRUE(testTrace(StringList()
                          .add("Source session accepted a 3 byte message. 1 message(s) now pending.")
                          .add("Running routing policy 'Custom'.")
@@ -1037,7 +1010,7 @@ Test::testNoResend(TestData &data)
     EXPECT_TRUE(data._srcSession->send(createMessage("msg"), Route::parse("dst/session")).isAccepted());
     Message::UP msg = data._dstHandler.getMessage(RECEPTOR_TIMEOUT);
     ASSERT_TRUE(msg);
-    Reply::UP reply(new EmptyReply());
+    Reply::UP reply = std::make_unique<EmptyReply>();
     reply->swapState(*msg);
     reply->addError(Error(ErrorCode::APP_TRANSIENT_ERROR, "err1"));
     data._dstSession->reply(std::move(reply));
@@ -1050,15 +1023,14 @@ Test::testNoResend(TestData &data)
 void
 Test::testSelectOnResend(TestData &data)
 {
-    IProtocol::SP protocol(new SimpleProtocol());
-    SimpleProtocol &simple = static_cast<SimpleProtocol&>(*protocol);
-    simple.addPolicyFactory("Custom", SimpleProtocol::IPolicyFactory::SP(new CustomPolicyFactory()));
+    auto protocol = std::make_shared<SimpleProtocol>();
+    protocol->addPolicyFactory("Custom", std::make_shared<CustomPolicyFactory>());
     data._srcServer.mb.putProtocol(protocol);
     data._retryPolicy->setEnabled(true);
     EXPECT_TRUE(data._srcSession->send(createMessage("msg"), Route::parse("[Custom:dst/session]")).isAccepted());
     Message::UP msg = data._dstHandler.getMessage(RECEPTOR_TIMEOUT);
     ASSERT_TRUE(msg);
-    Reply::UP reply(new EmptyReply());
+    Reply::UP reply = std::make_unique<EmptyReply>();
     reply->swapState(*msg);
     reply->addError(Error(ErrorCode::APP_TRANSIENT_ERROR, "err"));
     data._dstSession->reply(std::move(reply));
@@ -1067,7 +1039,7 @@ Test::testSelectOnResend(TestData &data)
     data._dstSession->acknowledge(std::move(msg));
     reply = data._srcHandler.getReply(RECEPTOR_TIMEOUT);
     ASSERT_TRUE(reply);
-    EXPECT_TRUE(!reply->hasErrors());
+    EXPECT_FALSE(reply->hasErrors());
     EXPECT_TRUE(testTrace(StringList()
                          .add("Selecting { 'dst/session' }.")
                          .add("[APP_TRANSIENT_ERROR @ localhost]")
@@ -1082,15 +1054,14 @@ Test::testSelectOnResend(TestData &data)
 void
 Test::testNoSelectOnResend(TestData &data)
 {
-    IProtocol::SP protocol(new SimpleProtocol());
-    SimpleProtocol &simple = static_cast<SimpleProtocol&>(*protocol);
-    simple.addPolicyFactory("Custom", SimpleProtocol::IPolicyFactory::SP(new CustomPolicyFactory(false)));
+    auto protocol = std::make_shared<SimpleProtocol>();
+    protocol->addPolicyFactory("Custom", std::make_shared<CustomPolicyFactory>(false));
     data._srcServer.mb.putProtocol(protocol);
     data._retryPolicy->setEnabled(true);
     EXPECT_TRUE(data._srcSession->send(createMessage("msg"), Route::parse("[Custom:dst/session]")).isAccepted());
     Message::UP msg = data._dstHandler.getMessage(RECEPTOR_TIMEOUT);
     ASSERT_TRUE(msg);
-    Reply::UP reply(new EmptyReply());
+    Reply::UP reply = std::make_unique<EmptyReply>();
     reply->swapState(*msg);
     reply->addError(Error(ErrorCode::APP_TRANSIENT_ERROR, "err"));
     data._dstSession->reply(std::move(reply));
@@ -1099,7 +1070,7 @@ Test::testNoSelectOnResend(TestData &data)
     data._dstSession->acknowledge(std::move(msg));
     reply = data._srcHandler.getReply(RECEPTOR_TIMEOUT);
     ASSERT_TRUE(reply);
-    EXPECT_TRUE(!reply->hasErrors());
+    EXPECT_FALSE(reply->hasErrors());
     EXPECT_TRUE(testTrace(StringList()
                          .add("Selecting { 'dst/session' }.")
                          .add("[APP_TRANSIENT_ERROR @ localhost]")
@@ -1114,9 +1085,8 @@ Test::testNoSelectOnResend(TestData &data)
 void
 Test::testCanConsumeError(TestData &data)
 {
-    IProtocol::SP protocol(new SimpleProtocol());
-    SimpleProtocol &simple = static_cast<SimpleProtocol&>(*protocol);
-    simple.addPolicyFactory("Custom", SimpleProtocol::IPolicyFactory::SP(new CustomPolicyFactory(true, ErrorCode::NO_ADDRESS_FOR_SERVICE)));
+    auto protocol = std::make_shared<SimpleProtocol>();
+    protocol->addPolicyFactory("Custom", std::make_shared<CustomPolicyFactory>(true, ErrorCode::NO_ADDRESS_FOR_SERVICE));
     data._srcServer.mb.putProtocol(protocol);
     data._retryPolicy->setEnabled(false);
     EXPECT_TRUE(data._srcSession->send(createMessage("msg"), Route::parse("[Custom:dst/session,dst/unknown]")).isAccepted());
@@ -1138,9 +1108,8 @@ Test::testCanConsumeError(TestData &data)
 void
 Test::testCantConsumeError(TestData &data)
 {
-    IProtocol::SP protocol(new SimpleProtocol());
-    SimpleProtocol &simple = static_cast<SimpleProtocol&>(*protocol);
-    simple.addPolicyFactory("Custom", SimpleProtocol::IPolicyFactory::SP(new CustomPolicyFactory()));
+    auto protocol = std::make_shared<SimpleProtocol>();
+    protocol->addPolicyFactory("Custom", std::make_shared<CustomPolicyFactory>());
     data._srcServer.mb.putProtocol(protocol);
     data._retryPolicy->setEnabled(false);
     EXPECT_TRUE(data._srcSession->send(createMessage("msg"), Route::parse("[Custom:dst/unknown]")).isAccepted());
@@ -1159,9 +1128,8 @@ Test::testCantConsumeError(TestData &data)
 void
 Test::testNestedPolicies(TestData &data)
 {
-    IProtocol::SP protocol(new SimpleProtocol());
-    SimpleProtocol &simple = static_cast<SimpleProtocol&>(*protocol);
-    simple.addPolicyFactory("Custom", SimpleProtocol::IPolicyFactory::SP(new CustomPolicyFactory(true, ErrorCode::NO_ADDRESS_FOR_SERVICE)));
+    auto protocol = std::make_shared<SimpleProtocol>();
+    protocol->addPolicyFactory("Custom", std::make_shared<CustomPolicyFactory>(true, ErrorCode::NO_ADDRESS_FOR_SERVICE));
     data._srcServer.mb.putProtocol(protocol);
     data._retryPolicy->setEnabled(false);
     EXPECT_TRUE(data._srcSession->send(createMessage("msg"), Route::parse("[Custom:[Custom:dst/session],[Custom:dst/unknown]]")).isAccepted());
@@ -1177,12 +1145,8 @@ Test::testNestedPolicies(TestData &data)
 void
 Test::testRemoveReply(TestData &data)
 {
-    IProtocol::SP protocol(new SimpleProtocol());
-    SimpleProtocol &simple = static_cast<SimpleProtocol&>(*protocol);
-    simple.addPolicyFactory("Custom", SimpleProtocol::IPolicyFactory::SP(new RemoveReplyPolicyFactory(
-                                                                             true,
-                                                                             UIntList().add(ErrorCode::NO_ADDRESS_FOR_SERVICE),
-                                                                             0)));
+    auto protocol = std::make_shared<SimpleProtocol>();
+    protocol->addPolicyFactory("Custom", std::make_shared<RemoveReplyPolicyFactory>(true, UIntList().add(ErrorCode::NO_ADDRESS_FOR_SERVICE), 0));
     data._srcServer.mb.putProtocol(protocol);
     data._retryPolicy->setEnabled(false);
     EXPECT_TRUE(data._srcSession->send(createMessage("msg"), Route::parse("[Custom:[Custom:dst/session],[Custom:dst/unknown]]")).isAccepted());
@@ -1191,7 +1155,7 @@ Test::testRemoveReply(TestData &data)
     data._dstSession->acknowledge(std::move(msg));
     Reply::UP reply = data._srcHandler.getReply(RECEPTOR_TIMEOUT);
     ASSERT_TRUE(reply);
-    EXPECT_TRUE(!reply->hasErrors());
+    EXPECT_FALSE(reply->hasErrors());
     EXPECT_TRUE(testTrace(StringList()
                          .add("[NO_ADDRESS_FOR_SERVICE @ localhost]")
                          .add("-[NO_ADDRESS_FOR_SERVICE @ localhost]")
@@ -1203,10 +1167,9 @@ Test::testRemoveReply(TestData &data)
 void
 Test::testSetReply(TestData &data)
 {
-    IProtocol::SP protocol(new SimpleProtocol());
-    SimpleProtocol &simple = static_cast<SimpleProtocol&>(*protocol);
-    simple.addPolicyFactory("Select", SimpleProtocol::IPolicyFactory::SP(new CustomPolicyFactory(true, ErrorCode::APP_FATAL_ERROR)));
-    simple.addPolicyFactory("SetReply", SimpleProtocol::IPolicyFactory::SP(new SetReplyPolicyFactory(true, UIntList().add(ErrorCode::APP_FATAL_ERROR))));
+    auto protocol = std::make_shared<SimpleProtocol>();
+    protocol->addPolicyFactory("Select", std::make_shared<CustomPolicyFactory>(true, ErrorCode::APP_FATAL_ERROR));
+    protocol->addPolicyFactory("SetReply", std::make_shared<SetReplyPolicyFactory>(true, UIntList().add(ErrorCode::APP_FATAL_ERROR)));
     data._srcServer.mb.putProtocol(protocol);
     data._retryPolicy->setEnabled(false);
     EXPECT_TRUE(data._srcSession->send(createMessage("msg"), Route::parse("[Select:[SetReply:foo],dst/session]")).isAccepted());
@@ -1223,20 +1186,15 @@ Test::testSetReply(TestData &data)
 void
 Test::testResendSetAndReuseReply(TestData &data)
 {
-    IProtocol::SP protocol(new SimpleProtocol());
-    SimpleProtocol &simple = static_cast<SimpleProtocol&>(*protocol);
-    simple.addPolicyFactory("ReuseReply", SimpleProtocol::IPolicyFactory::SP(new ReuseReplyPolicyFactory(
-                                                                                 false,
-                                                                                 UIntList().add(ErrorCode::APP_FATAL_ERROR))));
-    simple.addPolicyFactory("SetReply", SimpleProtocol::IPolicyFactory::SP(new SetReplyPolicyFactory(
-                                                                               false,
-                                                                               UIntList().add(ErrorCode::APP_FATAL_ERROR))));
+    auto protocol = std::make_shared<SimpleProtocol>();
+    protocol->addPolicyFactory("ReuseReply", std::make_shared<ReuseReplyPolicyFactory>(false, UIntList().add(ErrorCode::APP_FATAL_ERROR)));
+    protocol->addPolicyFactory("SetReply", std::make_shared<SetReplyPolicyFactory>(false, UIntList().add(ErrorCode::APP_FATAL_ERROR)));
     data._srcServer.mb.putProtocol(protocol);
     data._retryPolicy->setEnabled(true);
     EXPECT_TRUE(data._srcSession->send(createMessage("msg"), Route::parse("[ReuseReply:[SetReply:foo],dst/session]")).isAccepted());
     Message::UP msg = data._dstHandler.getMessage(RECEPTOR_TIMEOUT);
     ASSERT_TRUE(msg);
-    Reply::UP reply(new EmptyReply());
+    Reply::UP reply = std::make_unique<EmptyReply>();
     reply->swapState(*msg);
     reply->addError(Error(ErrorCode::APP_TRANSIENT_ERROR, "dst"));
     data._dstSession->reply(std::move(reply));
@@ -1245,21 +1203,15 @@ Test::testResendSetAndReuseReply(TestData &data)
     data._dstSession->acknowledge(std::move(msg));
     reply = data._srcHandler.getReply(RECEPTOR_TIMEOUT);
     ASSERT_TRUE(reply);
-    EXPECT_TRUE(!reply->hasErrors());
+    EXPECT_FALSE(reply->hasErrors());
 }
 
 void
 Test::testResendSetAndRemoveReply(TestData &data)
 {
-    IProtocol::SP protocol(new SimpleProtocol());
-    SimpleProtocol &simple = static_cast<SimpleProtocol&>(*protocol);
-    simple.addPolicyFactory("RemoveReply", SimpleProtocol::IPolicyFactory::SP(new RemoveReplyPolicyFactory(
-                                                                                  false,
-                                                                                  UIntList().add(ErrorCode::APP_TRANSIENT_ERROR),
-                                                                                  0)));
-    simple.addPolicyFactory("SetReply", SimpleProtocol::IPolicyFactory::SP(new SetReplyPolicyFactory(
-                                                                               false,
-                                                                               UIntList().add(ErrorCode::APP_TRANSIENT_ERROR).add(ErrorCode::APP_FATAL_ERROR))));
+    auto protocol = std::make_shared<SimpleProtocol>();
+    protocol->addPolicyFactory("RemoveReply", std::make_shared<RemoveReplyPolicyFactory>(false, UIntList().add(ErrorCode::APP_TRANSIENT_ERROR), 0));
+    protocol->addPolicyFactory("SetReply", std::make_shared<SetReplyPolicyFactory>(false, UIntList().add(ErrorCode::APP_TRANSIENT_ERROR).add(ErrorCode::APP_FATAL_ERROR)));
     data._srcServer.mb.putProtocol(protocol);
     data._retryPolicy->setEnabled(true);
     EXPECT_TRUE(data._srcSession->send(createMessage("msg"), Route::parse("[RemoveReply:[SetReply:foo],dst/session]")).isAccepted());
@@ -1286,13 +1238,13 @@ Test::testHopIgnoresReply(TestData &data)
     EXPECT_TRUE(data._srcSession->send(createMessage("msg"), Route::parse("?dst/session")).isAccepted());
     Message::UP msg = data._dstHandler.getMessage(RECEPTOR_TIMEOUT);
     ASSERT_TRUE(msg);
-    Reply::UP reply(new EmptyReply());
+    Reply::UP reply = std::make_unique<EmptyReply>();
     reply->swapState(*msg);
     reply->addError(Error(ErrorCode::APP_FATAL_ERROR, "dst"));
     data._dstSession->reply(std::move(reply));
     reply = data._srcHandler.getReply(RECEPTOR_TIMEOUT);
     ASSERT_TRUE(reply);
-    EXPECT_TRUE(!reply->hasErrors());
+    EXPECT_FALSE(reply->hasErrors());
     EXPECT_TRUE(testTrace(StringList()
                          .add("Not waiting for a reply from 'dst/session'."),
                          reply->getTrace()));
@@ -1302,17 +1254,17 @@ void
 Test::testHopBlueprintIgnoresReply(TestData &data)
 {
     data._srcServer.mb.setupRouting(RoutingSpec().addTable(RoutingTableSpec(SimpleProtocol::NAME)
-                                                           .addHop(HopSpec("foo", "dst/session").setIgnoreResult(true))));
+                                                           .addHop(std::move(HopSpec("foo", "dst/session").setIgnoreResult(true)))));
     EXPECT_TRUE(data._srcSession->send(createMessage("msg"), Route::parse("foo")).isAccepted());
     Message::UP msg = data._dstHandler.getMessage(RECEPTOR_TIMEOUT);
     ASSERT_TRUE(msg);
-    Reply::UP reply(new EmptyReply());
+    Reply::UP reply = std::make_unique<EmptyReply>();
     reply->swapState(*msg);
     reply->addError(Error(ErrorCode::APP_FATAL_ERROR, "dst"));
     data._dstSession->reply(std::move(reply));
     reply = data._srcHandler.getReply(RECEPTOR_TIMEOUT);
     ASSERT_TRUE(reply);
-    EXPECT_TRUE(!reply->hasErrors());
+    EXPECT_FALSE(reply->hasErrors());
     EXPECT_TRUE(testTrace(StringList()
                          .add("Not waiting for a reply from 'dst/session'."),
                          reply->getTrace()));
@@ -1334,15 +1286,12 @@ Test::testAcceptEmptyRoute(TestData &data)
 void
 Test::testAbortOnlyActiveNodes(TestData &data)
 {
-    IProtocol::SP protocol(new SimpleProtocol());
-    SimpleProtocol &simple = static_cast<SimpleProtocol&>(*protocol);
-    simple.addPolicyFactory("Custom", SimpleProtocol::IPolicyFactory::SP(new CustomPolicyFactory(false)));
-    simple.addPolicyFactory("SetReply", SimpleProtocol::IPolicyFactory::SP(new SetReplyPolicyFactory(
-                                                                               false,
-                                                                               UIntList()
-                                                                               .add(ErrorCode::APP_TRANSIENT_ERROR)
-                                                                               .add(ErrorCode::APP_TRANSIENT_ERROR)
-                                                                               .add(ErrorCode::APP_FATAL_ERROR))));
+    auto protocol = std::make_shared<SimpleProtocol>();
+    protocol->addPolicyFactory("Custom", std::make_shared<CustomPolicyFactory>(false));
+    protocol->addPolicyFactory("SetReply", std::make_shared<SetReplyPolicyFactory>(false,
+                                                                                   UIntList().add(ErrorCode::APP_TRANSIENT_ERROR)
+                                                                                             .add(ErrorCode::APP_TRANSIENT_ERROR)
+                                                                                             .add(ErrorCode::APP_FATAL_ERROR)));
     data._srcServer.mb.putProtocol(protocol);
     data._retryPolicy->setEnabled(true);
     EXPECT_TRUE(data._srcSession->send(createMessage("msg"), Route::parse("[Custom:[SetReply:foo],?bar,dst/session]")).isAccepted());
@@ -1366,20 +1315,14 @@ Test::testUnknownPolicy(TestData &data)
 void
 Test::testSelectException(TestData &data)
 {
-    IProtocol::SP protocol(new SimpleProtocol());
-    SimpleProtocol &simple = static_cast<SimpleProtocol&>(*protocol);
-    simple.addPolicyFactory("SelectException",
-                            SimpleProtocol::IPolicyFactory::SP(
-                                    new SelectExceptionPolicyFactory()));
+    auto protocol = std::make_shared<SimpleProtocol>();
+    protocol->addPolicyFactory("SelectException", std::make_shared<SelectExceptionPolicyFactory>());
     data._srcServer.mb.putProtocol(protocol);
-    EXPECT_TRUE(data._srcSession->send(createMessage("msg"),
-                                       Route::parse("[SelectException]"))
-                .isAccepted());
+    EXPECT_TRUE(data._srcSession->send(createMessage("msg"), Route::parse("[SelectException]")).isAccepted());
     Reply::UP reply = data._srcHandler.getReply(RECEPTOR_TIMEOUT);
     ASSERT_TRUE(reply);
     EXPECT_EQUAL(1u, reply->getNumErrors());
-    EXPECT_EQUAL((uint32_t)ErrorCode::POLICY_ERROR,
-                 reply->getError(0).getCode());
+    EXPECT_EQUAL((uint32_t)ErrorCode::POLICY_ERROR, reply->getError(0).getCode());
     EXPECT_EQUAL("Policy 'SelectException' threw an exception; {test exception}",
                  reply->getError(0).getMessage());
 }
@@ -1387,15 +1330,11 @@ Test::testSelectException(TestData &data)
 void
 Test::testMergeException(TestData &data)
 {
-    IProtocol::SP protocol(new SimpleProtocol());
-    SimpleProtocol &simple = static_cast<SimpleProtocol&>(*protocol);
-    simple.addPolicyFactory("MergeException",
-                            SimpleProtocol::IPolicyFactory::SP(
-                                    new MergeExceptionPolicyFactory()));
+    auto protocol = std::make_shared<SimpleProtocol>();
+    protocol->addPolicyFactory("MergeException", std::make_shared<MergeExceptionPolicyFactory>());
     data._srcServer.mb.putProtocol(protocol);
     Route route = Route::parse("[MergeException:dst/session]");
-    EXPECT_TRUE(data._srcSession->send(createMessage("msg"), route)
-                .isAccepted());
+    EXPECT_TRUE(data._srcSession->send(createMessage("msg"), route).isAccepted());
     Message::UP msg = data._dstHandler.getMessage(RECEPTOR_TIMEOUT);
     ASSERT_TRUE(msg);
     data._dstSession->acknowledge(std::move(msg));
@@ -1442,7 +1381,7 @@ Test::requireThatIgnoreFlagIsSerializedWithMessage(TestData &data)
     EXPECT_EQUAL(2u, route.getNumHops());
     Hop hop = route.getHop(0);
     EXPECT_EQUAL("foo", hop.toString());
-    EXPECT_TRUE(!hop.getIgnoreResult());
+    EXPECT_FALSE(hop.getIgnoreResult());
     hop = route.getHop(1);
     EXPECT_EQUAL("?bar", hop.toString());
     EXPECT_TRUE(hop.getIgnoreResult());

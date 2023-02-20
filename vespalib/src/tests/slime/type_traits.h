@@ -16,30 +16,30 @@ template<> struct TypeTraits<NIX> {
 };
 
 template<> struct TypeTraits<BOOL> {
-    typedef bool PassType;
-    typedef PassType StoreType;
+    using PassType = bool;
+    using StoreType = PassType;
     static const bool unsetValue = false;
 };
 
 template<> struct TypeTraits<LONG> {
-    typedef int64_t PassType;
-    typedef PassType StoreType;
+    using PassType = int64_t;
+    using StoreType = PassType;
     static const int64_t unsetValue = 0;
 };
 
 template<> struct TypeTraits<DOUBLE> {
-    typedef double PassType;
-    typedef PassType StoreType;
+    using PassType = double;
+    using StoreType = PassType;
     static const double unsetValue;
 };
 
 template<> struct TypeTraits<STRING> {
-    typedef Memory PassType;
+    using PassType = Memory;
     static const Memory unsetValue;
 };
 
 template<> struct TypeTraits<DATA> {
-    typedef Memory PassType;
+    using PassType = Memory;
     static const Memory unsetValue;
 };
 

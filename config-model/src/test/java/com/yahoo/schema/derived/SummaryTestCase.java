@@ -77,11 +77,11 @@ public class SummaryTestCase extends AbstractSchemaTestCase {
         assertSummaryField("exact", SummaryClassField.Type.LONGSTRING, fields.next());
         assertSummaryField("title", SummaryClassField.Type.LONGSTRING, fields.next());
         assertSummaryField("description", SummaryClassField.Type.LONGSTRING, fields.next());
-        assertSummaryField("dyndesc", SummaryClassField.Type.LONGSTRING, "dynamicteaser", "dyndesc", fields.next());
+        assertSummaryField("dyndesc", SummaryClassField.Type.LONGSTRING, "dynamicteaser", "description", fields.next());
         assertSummaryField("longdesc", SummaryClassField.Type.LONGSTRING, fields.next());
         assertSummaryField("longstat", SummaryClassField.Type.LONGSTRING, fields.next());
-        assertSummaryField("dynlong", SummaryClassField.Type.LONGSTRING, "dynamicteaser", "dynlong", fields.next());
-        assertSummaryField("dyndesc2", SummaryClassField.Type.LONGSTRING, "dynamicteaser", "dyndesc2", fields.next());
+        assertSummaryField("dynlong", SummaryClassField.Type.LONGSTRING, "dynamicteaser", "longdesc", fields.next());
+        assertSummaryField("dyndesc2", SummaryClassField.Type.LONGSTRING, "dynamicteaser", "longdesc", fields.next());
         assertSummaryField("measurement", SummaryClassField.Type.INTEGER, "attribute", "measurement", fields.next());
         assertSummaryField("rankfeatures", SummaryClassField.Type.FEATUREDATA, "rankfeatures", fields.next());
         assertSummaryField("summaryfeatures", SummaryClassField.Type.FEATUREDATA, "summaryfeatures", fields.next());

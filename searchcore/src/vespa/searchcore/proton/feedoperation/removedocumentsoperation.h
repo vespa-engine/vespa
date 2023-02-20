@@ -10,7 +10,7 @@ namespace proton {
 class RemoveDocumentsOperation : public FeedOperation
 {
 protected:
-    typedef std::map<uint32_t, LidVectorContext::SP> LidsToRemoveMap;
+    using LidsToRemoveMap = std::map<uint32_t, LidVectorContext::SP>;
     LidsToRemoveMap _lidsToRemoveMap;
 
     RemoveDocumentsOperation(Type type);

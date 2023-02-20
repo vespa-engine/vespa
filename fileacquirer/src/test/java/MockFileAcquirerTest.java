@@ -1,11 +1,11 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+
 import com.yahoo.config.FileReference;
 import com.yahoo.filedistribution.fileacquirer.FileAcquirer;
-import com.yahoo.filedistribution.fileacquirer.FileReferenceDoesNotExistException;
 import com.yahoo.filedistribution.fileacquirer.MockFileAcquirer;
 import com.yahoo.filedistribution.fileacquirer.TimeoutException;
+import com.yahoo.vespa.config.FileReferenceDoesNotExistException;
 import org.junit.Test;
-
 import java.io.File;
 import java.lang.reflect.Constructor;
 import java.util.HashMap;

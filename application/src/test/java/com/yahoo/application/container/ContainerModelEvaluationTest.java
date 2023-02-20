@@ -55,19 +55,19 @@ public class ContainerModelEvaluationTest {
 
         {
             String expected = "{\"cells\":[{\"address\":{},\"value\":2.496898}]}";
-            assertResponse("http://localhost/model-evaluation/v1/xgboost_xgboost_2_2/eval", expected, jdisc);
+            assertResponse("http://localhost/model-evaluation/v1/xgboost_xgboost_2_2/eval?format.tensors=long", expected, jdisc);
         }
 
         {
             String expected = "{\"cells\":[{\"address\":{},\"value\":1.9130086820218188}]}";
-            assertResponse("http://localhost/model-evaluation/v1/lightgbm_regression/eval", expected, jdisc);
+            assertResponse("http://localhost/model-evaluation/v1/lightgbm_regression/eval?format.tensors=long", expected, jdisc);
         }
 
         {
             String expected = "{\"cells\":[{\"address\":{\"d0\":\"0\"},\"value\":0.3006095290184021},{\"address\":{\"d0\":\"1\"},\"value\":0.33222490549087524},{\"address\":{\"d0\":\"2\"},\"value\":0.3671652674674988}]}";
-            assertResponse("http://localhost/model-evaluation/v1/onnx_softmax_func/output/eval?input=" + inputTensor(), expected, jdisc);
-            assertResponse("http://localhost/model-evaluation/v1/onnx_softmax_func/default.output/eval?input=" + inputTensor(), expected, jdisc);
-            assertResponse("http://localhost/model-evaluation/v1/onnx_softmax_func/default/output/eval?input=" + inputTensor(), expected, jdisc);
+            assertResponse("http://localhost/model-evaluation/v1/onnx_softmax_func/output/eval?format.tensors=long&input=" + inputTensor(), expected, jdisc);
+            assertResponse("http://localhost/model-evaluation/v1/onnx_softmax_func/default.output/eval?format.tensors=long&input=" + inputTensor(), expected, jdisc);
+            assertResponse("http://localhost/model-evaluation/v1/onnx_softmax_func/default/output/eval?format.tensors=long&input=" + inputTensor(), expected, jdisc);
         }
     }
 

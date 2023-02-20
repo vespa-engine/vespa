@@ -12,6 +12,8 @@ import com.yahoo.jrt.StringValue;
 import com.yahoo.jrt.Supervisor;
 import com.yahoo.jrt.Target;
 import com.yahoo.jrt.TargetWatcher;
+import com.yahoo.security.tls.Capability;
+import com.yahoo.security.tls.CapabilitySet;
 import com.yahoo.vespa.config.JRTMethods;
 import com.yahoo.vespa.config.RawConfig;
 import com.yahoo.vespa.config.protocol.JRTServerConfigRequest;
@@ -77,41 +79,51 @@ public class ConfigProxyRpcServer implements Runnable, TargetWatcher {
     }
 
     private void declareConfigMethods() {
-        supervisor.addMethod(JRTMethods.createConfigV3GetConfigMethod(this::getConfigV3));
+        supervisor.addMethod(JRTMethods.createConfigV3GetConfigMethod(this::getConfigV3)
+                                     .requireCapabilities(Capability.CONFIGPROXY__CONFIG_API));
         supervisor.addMethod(new Method("ping", "", "i",
                 this::ping)
+                .requireCapabilities(CapabilitySet.none())
                 .methodDesc("ping")
                 .returnDesc(0, "ret code", "return code, 0 is OK"));
         supervisor.addMethod(new Method("listCachedConfig", "", "S",
                 this::listCachedConfig)
+                .requireCapabilities(Capability.CONFIGPROXY__CONFIG_API)
                 .methodDesc("list cached configs)")
                 .returnDesc(0, "data", "string array of configs"));
         supervisor.addMethod(new Method("listCachedConfigFull", "", "S",
                 this::listCachedConfigFull)
+                .requireCapabilities(Capability.CONFIGPROXY__CONFIG_API)
                 .methodDesc("list cached configs with cache content)")
                 .returnDesc(0, "data", "string array of configs"));
         supervisor.addMethod(new Method("listSourceConnections", "", "S",
                 this::listSourceConnections)
+                .requireCapabilities(Capability.CONFIGPROXY__CONFIG_API)
                 .methodDesc("list config source connections)")
                 .returnDesc(0, "data", "string array of source connections"));
         supervisor.addMethod(new Method("invalidateCache", "", "S",
                 this::invalidateCache)
+                .requireCapabilities(Capability.CONFIGPROXY__MANAGEMENT_API)
                 .methodDesc("list config source connections)")
                 .returnDesc(0, "data", "0 if success, 1 otherwise"));
         supervisor.addMethod(new Method("updateSources", "s", "s",
                 this::updateSources)
+                .requireCapabilities(Capability.CONFIGPROXY__MANAGEMENT_API)
                 .methodDesc("update list of config sources")
                 .returnDesc(0, "ret", "list of updated config sources"));
         supervisor.addMethod(new Method("setMode", "s", "S",
                 this::setMode)
+                .requireCapabilities(Capability.CONFIGPROXY__MANAGEMENT_API)
                 .methodDesc("Set config proxy mode { default | memorycache }")
                 .returnDesc(0, "ret", "0 if success, 1 otherwise as first element, description as second element"));
         supervisor.addMethod(new Method("getMode", "", "s",
                 this::getMode)
+                .requireCapabilities(Capability.CONFIGPROXY__MANAGEMENT_API)
                 .methodDesc("What serving mode the config proxy is in (default, memorycache)")
                 .returnDesc(0, "ret", "mode as a string"));
         supervisor.addMethod(new Method("dumpCache", "s", "s",
                 this::dumpCache)
+                .requireCapabilities(Capability.CONFIGPROXY__MANAGEMENT_API)
                 .methodDesc("Dump cache to disk")
                 .paramDesc(0, "path", "path to write cache contents to")
                 .returnDesc(0, "ret", "Empty string or error message"));

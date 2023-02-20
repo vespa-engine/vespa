@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.controller.api.integration.athenz;
 
 import com.yahoo.vespa.athenz.api.AthenzAssertion;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
+import com.yahoo.vespa.athenz.api.AthenzDomainMeta;
 import com.yahoo.vespa.athenz.api.AthenzGroup;
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
 import com.yahoo.vespa.athenz.api.AthenzPolicy;
@@ -139,6 +140,25 @@ public class ZmsClientMock implements ZmsClient {
     }
 
     @Override
+    public AthenzDomainMeta getDomainMeta(AthenzDomain domain) {
+        return Optional.ofNullable(athenz.domains.get(domain))
+                .map(d -> d.attributes)
+                .map(attrs -> {
+                    if (attrs.containsKey("account")) {
+                        return new AthenzDomainMeta((String)attrs.get("account"), domain.getName());
+                    }
+                    return null;
+                })
+                .orElse(null);
+    }
+
+    @Override
+    public void updateDomain(AthenzDomain domain, Map<String, Object> attributes) {
+        if (!athenz.domains.containsKey(domain)) throw new IllegalStateException("Domain does not exist: " + domain.getName());
+        athenz.domains.get(domain).withAttributes(attributes);
+    }
+
+    @Override
     public boolean hasAccess(AthenzResourceName resource, String action, AthenzIdentity identity) {
         log("hasAccess(resource=%s, action=%s, identity=%s)", resource, action, identity);
         if (resource.getDomain().equals(this.controllerIdentity.getDomain())) {
@@ -186,7 +206,9 @@ public class ZmsClientMock implements ZmsClient {
 
     @Override
     public boolean deletePolicyRule(AthenzDomain athenzDomain, String athenzPolicy, String action, AthenzResourceName resourceName, AthenzRole athenzRole) {
-        return false;
+        var assertion = new AthenzDbMock.Assertion(athenzRole.roleName(), action, resourceName.toResourceNameString());
+        var policy = athenz.getOrCreateDomain(athenzDomain).policies.get(athenzPolicy);
+        return policy.assertions.remove(assertion);
     }
 
     @Override
@@ -199,7 +221,7 @@ public class ZmsClientMock implements ZmsClient {
                         AthenzResourceName.fromString(a.resource()),
                         a.action())
                         .build())
-                .collect(Collectors.toList());
+                .toList();
         return Optional.of(new AthenzPolicy(policy.name(), assertions));
     }
 
@@ -221,7 +243,7 @@ public class ZmsClientMock implements ZmsClient {
     public List<AthenzService> listServices(AthenzDomain athenzDomain) {
         return athenz.getOrCreateDomain(athenzDomain).services.keySet().stream()
                 .map(serviceName -> new AthenzService(athenzDomain, serviceName))
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Override
@@ -266,7 +288,11 @@ public class ZmsClientMock implements ZmsClient {
     }
 
     @Override
-    public void createSubdomain(AthenzDomain parent, String name) {}
+    public void createSubdomain(AthenzDomain parent, String name, Map<String, Object> attributes) {
+        AthenzDomain domain = new AthenzDomain(parent, name);
+        if (athenz.domains.containsKey(domain)) throw new IllegalStateException("Subdomain already exists: %s".formatted(domain.getName()));
+        athenz.getOrCreateDomain(domain, attributes);
+    }
 
     @Override
     public AthenzRoleInformation getFullRoleInformation(AthenzRole role) {

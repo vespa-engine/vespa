@@ -13,7 +13,7 @@ using namespace search::fef;
 using namespace search::queryeval;
 using namespace search::queryeval::test;
 
-typedef SearchHistory History;
+using History = SearchHistory;
 
 namespace {
 

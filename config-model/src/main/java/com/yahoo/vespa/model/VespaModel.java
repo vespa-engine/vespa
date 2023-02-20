@@ -11,15 +11,20 @@ import com.yahoo.config.FileReference;
 import com.yahoo.config.application.api.ApplicationFile;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.DeployLogger;
+import com.yahoo.config.application.api.FileRegistry;
 import com.yahoo.config.application.api.ValidationId;
 import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.config.model.ApplicationConfigProducerRoot;
 import com.yahoo.config.model.ConfigModelRegistry;
 import com.yahoo.config.model.ConfigModelRepo;
 import com.yahoo.config.model.NullConfigModelRegistry;
-import com.yahoo.config.model.api.*;
+import com.yahoo.config.model.api.ApplicationClusterInfo;
+import com.yahoo.config.model.api.HostInfo;
+import com.yahoo.config.model.api.Model;
+import com.yahoo.config.model.api.Provisioned;
 import com.yahoo.config.model.deploy.DeployState;
-import com.yahoo.config.model.producer.AbstractConfigProducer;
+import com.yahoo.config.model.producer.AnyConfigProducer;
+import com.yahoo.config.model.producer.TreeConfigProducer;
 import com.yahoo.config.model.producer.AbstractConfigProducerRoot;
 import com.yahoo.config.model.producer.UserConfigRepo;
 import com.yahoo.config.provision.AllocatedHosts;
@@ -47,7 +52,6 @@ import com.yahoo.vespa.model.container.search.QueryProfiles;
 import com.yahoo.vespa.model.content.Content;
 import com.yahoo.vespa.model.content.cluster.ContentCluster;
 import com.yahoo.vespa.model.filedistribution.FileDistributionConfigProducer;
-import com.yahoo.vespa.model.filedistribution.FileReferencesRepository;
 import com.yahoo.vespa.model.ml.ConvertedModel;
 import com.yahoo.vespa.model.ml.ModelName;
 import com.yahoo.vespa.model.ml.OnnxModelInfo;
@@ -56,7 +60,6 @@ import com.yahoo.vespa.model.search.DocumentDatabase;
 import com.yahoo.vespa.model.search.SearchCluster;
 import com.yahoo.vespa.model.utils.internal.ReflectionUtil;
 import org.xml.sax.SAXException;
-
 import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.time.Instant;
@@ -114,7 +117,7 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Mode
     /** The validation overrides of this. This is never null. */
     private final ValidationOverrides validationOverrides;
 
-    private final FileReferencesRepository fileReferencesRepository;
+    private final FileRegistry fileRegistry;
 
     private final Provisioned provisioned;
 
@@ -150,12 +153,11 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Mode
         this(configModelRegistry, deployState, true);
     }
 
-    private VespaModel(ConfigModelRegistry configModelRegistry, DeployState deployState, boolean complete)
-            throws IOException, SAXException {
+    private VespaModel(ConfigModelRegistry configModelRegistry, DeployState deployState, boolean complete) throws IOException {
         super("vespamodel");
         version = deployState.getVespaVersion();
         wantedNodeVersion = deployState.getWantedNodeVespaVersion();
-        fileReferencesRepository = new FileReferencesRepository(deployState.getFileRegistry());
+        fileRegistry = deployState.getFileRegistry();
         validationOverrides = deployState.validationOverrides();
         applicationPackage = deployState.getApplicationPackage();
         provisioned = deployState.provisioned();
@@ -235,7 +237,7 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Mode
     public ApplicationPackage applicationPackage() { return applicationPackage; }
 
     /** Creates a mutable model with no services instantiated */
-    public static VespaModel createIncomplete(DeployState deployState) throws IOException, SAXException {
+    public static VespaModel createIncomplete(DeployState deployState) throws IOException {
         return new VespaModel(new NullConfigModelRegistry(), deployState, false);
     }
 
@@ -353,7 +355,7 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Mode
                            .collect(Collectors.toCollection(LinkedHashSet::new));
     }
 
-    public Set<FileReference> fileReferences() { return fileReferencesRepository.allFileReferences(); }
+    public Set<FileReference> fileReferences() { return fileRegistry.asSet(); }
 
     /** Returns this models Vespa instance */
     public ApplicationConfigProducerRoot getVespa() { return root; }
@@ -477,7 +479,7 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Mode
      * Resolves the given config key into a correctly typed ConfigBuilder
      * and fills in the config from this model.
      *
-     * @return A new config builder with config from this model filled in,.
+     * @return A new config builder with config from this model filled in
      */
     private ConfigInstance.Builder resolveToBuilder(ConfigKey<?> key) {
         ConfigInstance.Builder builder = createBuilder(new ConfigDefinitionKey(key));
@@ -590,7 +592,7 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Mode
      * @param configId   the id to register with, not necessarily equal to descendant.getConfigId().
      * @param descendant The configProducer descendant to add
      */
-    public void addDescendant(String configId, AbstractConfigProducer<?> descendant) {
+    public void addDescendant(String configId, AnyConfigProducer descendant) {
         if (id2producer.containsKey(configId)) {
             throw new RuntimeException
                     ("Config ID '" + configId + "' cannot be reserved by an instance of class '" +

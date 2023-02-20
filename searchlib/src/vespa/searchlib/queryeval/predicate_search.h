@@ -8,19 +8,17 @@
 #include <vespa/searchlib/predicate/predicate_tree_annotator.h>
 #include <vector>
 
-namespace search {
-namespace fef {
-class TermFieldMatchData;
-class TermFieldMatchDataArray;
-}  // namespace fef
-namespace queryeval {
+namespace search::fef {
+    class TermFieldMatchData;
+    class TermFieldMatchDataArray;
+}
 
-
+namespace search::queryeval {
 
 class SkipMinFeature
 {
 public:
-    typedef std::unique_ptr<SkipMinFeature> UP;
+    using UP = std::unique_ptr<SkipMinFeature>;
     virtual ~SkipMinFeature() { }
     VESPA_DLL_LOCAL virtual uint32_t next() = 0;
     static SkipMinFeature::UP create(const uint8_t * min_feature, const uint8_t * kv, size_t sz);
@@ -65,6 +63,4 @@ public:
     void doUnpack(uint32_t doc_id) override;
 };
 
-}  // namespace search::queryeval
-}  // namespace search
-
+}

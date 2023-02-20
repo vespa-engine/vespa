@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.federation;
 
-import com.google.common.collect.ImmutableList;
 import com.yahoo.search.Result;
 import com.yahoo.search.searchchain.FutureResult;
 
@@ -27,13 +26,14 @@ class FederationResult {
      * The remaining targets to wait for. 
      * Other targets are either complete, or should only be included if they are available when we complete
      */
-    private List<TargetResult> targetsToWaitFor;
+    private final List<TargetResult> targetsToWaitFor;
     
-    private FederationResult(ImmutableList<TargetResult> targetResults) {
+    private FederationResult(List<TargetResult> targetResults) {
         this.targetResults = targetResults;
 
         if (targetResults.stream().anyMatch(TargetResult::isMandatory))
-            targetsToWaitFor = targetResults.stream().filter(TargetResult::isMandatory).collect(Collectors.toList());
+            targetsToWaitFor = targetResults.stream().filter(TargetResult::isMandatory)
+                    .collect(Collectors.toCollection(ArrayList::new));
         else
             targetsToWaitFor = new ArrayList<>(targetResults);
     }
@@ -94,7 +94,7 @@ class FederationResult {
         public Optional<Result> getIfAvailable(long timeout) {
             if (availableResult.isPresent()) return availableResult;
             availableResult = futureResult.getIfAvailable(timeout, TimeUnit.MILLISECONDS);
-            availableResult.ifPresent(result -> target.modifyTargetResult(result));
+            availableResult.ifPresent(target::modifyTargetResult);
             return availableResult;
         }
         
@@ -121,14 +121,14 @@ class FederationResult {
 
     public static class Builder {
         
-        private final ImmutableList.Builder<TargetResult> results = new ImmutableList.Builder();
+        private final List<TargetResult> results = new ArrayList<>();
         
         public void add(FederationSearcher.Target target, FutureResult futureResult) {
             results.add(new TargetResult(target, futureResult));
         }
         
         public FederationResult build() {
-            return new FederationResult(results.build());
+            return new FederationResult(List.copyOf(results));
         }
         
     }

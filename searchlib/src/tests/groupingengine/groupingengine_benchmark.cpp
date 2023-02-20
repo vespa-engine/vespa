@@ -69,9 +69,9 @@ public:
     }
 };
 
-typedef AttrBuilder<SingleIntegerExtAttribute, int64_t> IntAttrBuilder;
-typedef AttrBuilder<SingleFloatExtAttribute, double> FloatAttrBuilder;
-typedef AttrBuilder<SingleStringExtAttribute, const char *> StringAttrBuilder;
+using IntAttrBuilder = AttrBuilder<SingleIntegerExtAttribute, int64_t>;
+using FloatAttrBuilder = AttrBuilder<SingleFloatExtAttribute, double>;
+using StringAttrBuilder = AttrBuilder<SingleStringExtAttribute, const char *>;
 
 //-----------------------------------------------------------------------------
 

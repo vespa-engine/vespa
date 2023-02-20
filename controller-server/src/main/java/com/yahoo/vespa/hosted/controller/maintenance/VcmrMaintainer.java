@@ -38,7 +38,7 @@ import java.util.stream.Stream;
  *
  * Maintains status and execution of Vespa CMRs.
  *
- * Currently this retires all affected tenant hosts if zone capacity allows it.
+ * Currently, this retires all affected tenant hosts if zone capacity allows it.
  *
  * @author olaa
  */
@@ -140,7 +140,7 @@ public class VcmrMaintainer extends ControllerMaintainer {
                     }
                     var spareCapacity = hasSpareCapacity(zone, nodes);
                     return nodes.stream().map(node -> nextAction(zone, node, changeRequest, spareCapacity));
-                }).collect(Collectors.toList());
+                }).toList();
 
     }
 
@@ -151,7 +151,7 @@ public class VcmrMaintainer extends ControllerMaintainer {
                 .filter(entry -> entry.getValue().stream().anyMatch(isImpacted(changeRequest))) // Skip zones without impacted nodes
                 .collect(Collectors.toMap(
                         Map.Entry::getKey,
-                        entry -> entry.getValue().stream().filter(isImpacted(changeRequest)).collect(Collectors.toList())
+                        entry -> entry.getValue().stream().filter(isImpacted(changeRequest)).toList()
                 ));
     }
 
@@ -305,7 +305,7 @@ public class VcmrMaintainer extends ControllerMaintainer {
         var tenantHosts = nodes.stream()
                 .filter(node -> node.type() == NodeType.host)
                 .map(Node::hostname)
-                .collect(Collectors.toList());
+                .toList();
 
         return tenantHosts.isEmpty() ||
                 nodeRepository.isReplaceable(zoneId, tenantHosts);

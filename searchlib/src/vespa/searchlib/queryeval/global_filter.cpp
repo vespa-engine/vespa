@@ -2,11 +2,17 @@
 
 #include "global_filter.h"
 #include "blueprint.h"
+#include "profiled_iterator.h"
 #include <vespa/vespalib/util/require.h>
 #include <vespa/vespalib/util/thread_bundle.h>
+#include <vespa/vespalib/util/execution_profiler.h>
 #include <vespa/searchlib/common/bitvector.h>
+#include <vespa/searchlib/engine/trace.h>
+#include <vespa/vespalib/data/slime/slime.h>
 #include <cassert>
 
+using search::engine::Trace;
+using vespalib::ExecutionProfiler;
 using vespalib::Runnable;
 using vespalib::ThreadBundle;
 using vespalib::Trinary;
@@ -14,6 +20,8 @@ using vespalib::Trinary;
 namespace search::queryeval {
 
 namespace {
+
+using namespace vespalib::literals;
 
 struct Inactive : GlobalFilter {
     bool is_active() const override { return false; }
@@ -24,16 +32,19 @@ struct Inactive : GlobalFilter {
 
 struct EmptyFilter : GlobalFilter {
     uint32_t docid_limit;
-    EmptyFilter(uint32_t docid_limit_in) : docid_limit(docid_limit_in) {}
+    EmptyFilter(uint32_t docid_limit_in) noexcept : docid_limit(docid_limit_in) {}
+    ~EmptyFilter() override;
     bool is_active() const override { return true; }
     uint32_t size() const override { return docid_limit; }
     uint32_t count() const override { return 0; }
     bool check(uint32_t) const override { return false; }
 };
 
+EmptyFilter::~EmptyFilter() = default;
+
 struct BitVectorFilter : public GlobalFilter {
     std::unique_ptr<BitVector> vector;
-    BitVectorFilter(std::unique_ptr<BitVector> vector_in)
+    BitVectorFilter(std::unique_ptr<BitVector> vector_in) noexcept
       : vector(std::move(vector_in)) {}
     bool is_active() const override { return true; }
     uint32_t size() const override { return vector->size(); }
@@ -49,7 +60,7 @@ struct MultiBitVectorFilter : public GlobalFilter {
     MultiBitVectorFilter(std::vector<std::unique_ptr<BitVector>> vectors_in,
                          std::vector<uint32_t> splits_in,
                          uint32_t total_size_in,
-                         uint32_t total_count_in)
+                         uint32_t total_count_in) noexcept
       : vectors(std::move(vectors_in)),
         splits(std::move(splits_in)),
         total_size(total_size_in),
@@ -77,35 +88,69 @@ struct PartResult {
       : matches_any(Trinary::Undefined), bits(std::move(bits_in)) {}
 };
 
-PartResult make_part(Blueprint &blueprint, uint32_t begin, uint32_t end) {
-    bool strict = true;
-    auto constraint = Blueprint::FilterConstraint::UPPER_BOUND;
-    auto filter = blueprint.createFilterSearch(strict, constraint);
-    auto matches_any = filter->matches_any();
-    if (matches_any == Trinary::Undefined) {
-        filter->initRange(begin, end);
-        auto bits = filter->get_hits(begin);
-        // count bits in parallel and cache the results for later
-        bits->countTrueBits();
-        return PartResult(std::move(bits));
-    } else {
-        return PartResult(matches_any);
-    }
-}
-
 struct MakePart : Runnable {
     Blueprint &blueprint;
     uint32_t begin;
     uint32_t end;
     PartResult result;
-    MakePart(Blueprint &blueprint_in, uint32_t begin_in, uint32_t end_in) noexcept
-      : blueprint(blueprint_in), begin(begin_in), end(end_in), result() {}
-    void run() override { result = make_part(blueprint, begin, end); }
+    std::unique_ptr<Trace> trace;
+    std::unique_ptr<ExecutionProfiler> profiler;
+    MakePart(MakePart &&) = default;
+    MakePart(Blueprint &blueprint_in, uint32_t begin_in, uint32_t end_in, Trace *parent_trace)
+      : blueprint(blueprint_in), begin(begin_in), end(end_in), result(), trace(), profiler()
+    {
+        if (parent_trace && parent_trace->getLevel() > 0) {
+            trace = parent_trace->make_trace_up();
+            if (int32_t profile_depth = trace->match_profile_depth(); profile_depth != 0) {
+                profiler = std::make_unique<ExecutionProfiler>(profile_depth);
+            }
+        }
+    }
+    bool is_first_thread() const { return (begin == 1); }
+    bool should_trace(int level) const { return trace && trace->shouldTrace(level); }
+    void run() override {
+        bool strict = true;
+        auto constraint = Blueprint::FilterConstraint::UPPER_BOUND;
+        auto filter = blueprint.createFilterSearch(strict, constraint);
+        if (is_first_thread() && should_trace(7)) {
+            vespalib::slime::ObjectInserter inserter(trace->createCursor("iterator"), "optimized");
+            filter->asSlime(inserter);
+        }
+        auto matches_any = filter->matches_any();
+        if (matches_any == Trinary::Undefined) {
+            if (profiler) {
+                filter = ProfiledIterator::profile(*profiler, std::move(filter));
+            }
+            filter->initRange(begin, end);
+            auto bits = filter->get_hits(begin);
+            // count bits in parallel and cache the results for later
+            bits->countTrueBits();
+            result = PartResult(std::move(bits));
+        } else {
+            result = PartResult(matches_any);
+        }
+        if (profiler) {
+            profiler->report(trace->createCursor("global_filter_profiling"));
+        }
+    }
+    ~MakePart();
 };
+MakePart::~MakePart() = default;
+
+void insert_traces(Trace *trace, const std::vector<MakePart> &parts) {
+    if (trace) {
+        auto inserter = trace->make_inserter("global_filter_execution"_ssv);
+        for (const auto &part: parts) {
+            if (part.trace) {
+                inserter.handle_thread(*part.trace);
+            }
+        }
+    }
+}
 
 }
 
-GlobalFilter::GlobalFilter() = default;
+GlobalFilter::GlobalFilter() noexcept = default;
 GlobalFilter::~GlobalFilter() = default;
 
 std::shared_ptr<GlobalFilter>
@@ -156,7 +201,7 @@ GlobalFilter::create(std::vector<std::unique_ptr<BitVector>> vectors)
 }
 
 std::shared_ptr<GlobalFilter>
-GlobalFilter::create(Blueprint &blueprint, uint32_t docid_limit, ThreadBundle &thread_bundle)
+GlobalFilter::create(Blueprint &blueprint, uint32_t docid_limit, ThreadBundle &thread_bundle, Trace *trace)
 {
     uint32_t num_threads = thread_bundle.size();
     std::vector<MakePart> parts;
@@ -166,12 +211,13 @@ GlobalFilter::create(Blueprint &blueprint, uint32_t docid_limit, ThreadBundle &t
     uint32_t rest_docs = (docid_limit - docid) % num_threads;
     while (docid < docid_limit) {
         uint32_t part_size = per_thread + (parts.size() < rest_docs);
-        parts.emplace_back(blueprint, docid, docid + part_size);
+        parts.emplace_back(blueprint, docid, docid + part_size, trace);
         docid += part_size;
     }
     assert(parts.size() <= num_threads);
     assert((docid == docid_limit) || parts.empty());
     thread_bundle.run(parts);
+    insert_traces(trace, parts);
     std::vector<std::unique_ptr<BitVector>> vectors;
     vectors.reserve(parts.size());
     for (MakePart &part: parts) {

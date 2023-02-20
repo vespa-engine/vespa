@@ -15,7 +15,7 @@ import java.util.Optional;
  *
  * @author Tony Vaagenes
  */
-public abstract class AbstractConfigProducerRoot extends AbstractConfigProducer<AbstractConfigProducer<?>>
+public abstract class AbstractConfigProducerRoot extends TreeConfigProducer<AnyConfigProducer>
         implements ConfigProducerRoot {
 
     /** The ConfigProducers contained in this model indexed by config id */

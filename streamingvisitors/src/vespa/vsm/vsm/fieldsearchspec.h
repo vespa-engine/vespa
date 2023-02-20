@@ -39,7 +39,7 @@ private:
     bool                   _reconfigured;
 };
 
-typedef std::map<FieldIdT, FieldSearchSpec> FieldSearchSpecMapT;
+using FieldSearchSpecMapT = std::map<FieldIdT, FieldSearchSpec>;
 
 class FieldSearchSpecMap
 {

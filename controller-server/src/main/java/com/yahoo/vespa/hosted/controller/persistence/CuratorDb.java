@@ -6,6 +6,7 @@ import com.yahoo.component.Version;
 import com.yahoo.component.annotation.Inject;
 import com.yahoo.concurrent.UncheckedTimeoutException;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.zone.ZoneId;
@@ -15,12 +16,14 @@ import com.yahoo.slime.SlimeUtils;
 import com.yahoo.transaction.Mutex;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.hosted.controller.Application;
+import com.yahoo.vespa.hosted.controller.api.identifiers.ClusterId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.ControllerVersion;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.archive.ArchiveBucket;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateMetadata;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
+import com.yahoo.vespa.hosted.controller.api.integration.dns.VpcEndpointService.DnsChallenge;
 import com.yahoo.vespa.hosted.controller.api.integration.vcmr.VespaChangeRequest;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.auditlog.AuditLog;
@@ -90,6 +93,7 @@ public class CuratorDb {
     private static final Path jobRoot = root.append("jobs");
     private static final Path controllerRoot = root.append("controllers");
     private static final Path routingPoliciesRoot = root.append("routingPolicies");
+    private static final Path dnsChallengesRoot = root.append("dnsChallenges");
     private static final Path zoneRoutingPoliciesRoot = root.append("zoneRoutingPolicies");
     private static final Path endpointCertificateRoot = root.append("applicationCertificates");
     private static final Path archiveBucketsRoot = root.append("archiveBuckets");
@@ -114,6 +118,7 @@ public class CuratorDb {
     private final RunSerializer runSerializer = new RunSerializer();
     private final RetriggerEntrySerializer retriggerEntrySerializer = new RetriggerEntrySerializer();
     private final NotificationsSerializer notificationsSerializer = new NotificationsSerializer();
+    private final DnsChallengeSerializer dnsChallengeSerializer = new DnsChallengeSerializer();
 
     private final Curator curator;
     private final Duration tryLockTimeout;
@@ -353,7 +358,7 @@ public class CuratorDb {
     public List<TenantName> readTenantNames() {
         return curator.getChildren(tenantRoot).stream()
                       .map(TenantName::from)
-                      .collect(Collectors.toList());
+                      .toList();
     }
 
     public void removeTenant(TenantName name) {
@@ -450,7 +455,7 @@ public class CuratorDb {
     public List<ApplicationId> applicationsWithJobs() {
         return curator.getChildren(jobRoot).stream()
                       .map(ApplicationId::fromSerializedForm)
-                      .collect(Collectors.toList());
+                      .toList();
     }
 
 
@@ -559,6 +564,35 @@ public class CuratorDb {
                                                      .orElseGet(() -> new ZoneRoutingPolicy(zone, RoutingStatus.DEFAULT));
     }
 
+    public void writeDnsChallenge(DnsChallenge challenge) {
+        curator.set(dnsChallengePath(challenge.clusterId()), dnsChallengeSerializer.toJson(challenge));
+    }
+
+    public void deleteDnsChallenge(ClusterId id) {
+        curator.delete(dnsChallengePath(id));
+    }
+
+    public List<DnsChallenge> readDnsChallenges(DeploymentId id) {
+        return curator.getChildren(dnsChallengePath(id)).stream()
+                      .map(cluster -> readDnsChallenge(new ClusterId(id, ClusterSpec.Id.from(cluster))))
+                      .toList();
+    }
+
+    private DnsChallenge readDnsChallenge(ClusterId clusterId) {
+        return curator.getData(dnsChallengePath(clusterId))
+                      .map(bytes -> dnsChallengeSerializer.fromJson(bytes, clusterId))
+                      .orElseThrow(() -> new IllegalArgumentException("no DNS challenge for " + clusterId));
+    }
+
+    private static Path dnsChallengePath(DeploymentId id) {
+        return dnsChallengesRoot.append(id.applicationId().serializedForm())
+                                .append(id.zoneId().value());
+    }
+
+    private static Path dnsChallengePath(ClusterId id) {
+        return dnsChallengePath(id.deploymentId()).append(id.clusterId().value());
+    }
+
     // -------------- Application endpoint certificates ----------------------------
 
     public void writeEndpointCertificateMetadata(ApplicationId applicationId, EndpointCertificateMetadata endpointCertificateMetadata) {
@@ -618,7 +652,7 @@ public class CuratorDb {
                 .stream()
                 .map(this::readChangeRequest)
                 .flatMap(Optional::stream)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     public void writeChangeRequest(VespaChangeRequest changeRequest) {
@@ -682,7 +716,7 @@ public class CuratorDb {
                 .stream()
                 .map(this::getPendingMailVerification)
                 .flatMap(Optional::stream)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     public void writePendingMailVerification(PendingMailVerification pendingMailVerification) {

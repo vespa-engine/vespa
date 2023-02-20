@@ -124,8 +124,11 @@ jobs:
           (cd vespa && git checkout $VESPA_REF && git tag v$VESPA_VERSION)
           git clone -q https://github.com/vespa-engine/system-test
           (cd system-test && git checkout $SYSTEM_TEST_REF)
+          git clone -q https://github.com/vespa-engine/sample-apps
           # Set correct version in pom.xml files
           (cd vespa && screwdriver/replace-vespa-version-in-poms.sh $VESPA_VERSION $(pwd) )
+          (cd sample-apps && find . -name "pom.xml" -exec sed -i -e "s,<vespa_version>.*</vespa_version>,<vespa_version>$VESPA_VERSION</vespa_version>," {} \;)
+          (cd sample-apps && find . -name "pom.xml" -exec sed -i -e "s:<version>[[]8,9[)]</version>:<version>$VESPA_VERSION</version>:" {} \;)
       - make-srpm: |
           make -C $WORKDIR/vespa -f .copr/Makefile srpm outdir=$WORKDIR
       - *restore-cache
@@ -133,14 +136,17 @@ jobs:
           cd $WORKDIR/vespa
           export FACTORY_VESPA_VERSION=$VESPA_VERSION
           NUM_THREADS=$(( $(nproc) + 2 ))
+          VESPA_CMAKE_SANITIZERS_OPTION=""
           time make -C client/go BIN=$WORKDIR/vespa-install/opt/vespa/bin SHARE=$WORKDIR/vespa-install/usr/share install-all
           time ./bootstrap.sh java
           time mvn -T $NUM_THREADS $VESPA_MAVEN_EXTRA_OPTS install
-          cmake3 -DVESPA_UNPRIVILEGED=no .
+          cmake3 -DVESPA_UNPRIVILEGED=no $VESPA_CMAKE_SANITIZERS_OPTION .
           time make -j ${NUM_THREADS}
           time ctest3 --output-on-failure -j ${NUM_THREADS}
           ccache --show-stats
           time make -j ${NUM_THREADS} install DESTDIR=$WORKDIR/vespa-install
+      - build-sample-apps: |
+          (cd $WORKDIR/sample-apps && time mvn -T $NUM_THREADS $VESPA_MAVEN_EXTRA_OPTS package)
       - verify-rpm-build: |
           cd $WORKDIR
           ulimit -c 0
@@ -149,7 +155,10 @@ jobs:
                         --define "installdir $WORKDIR/vespa-install" *.src.rpm
           mkdir -p $WORKDIR/system-test/docker/rpms
           mv $WORKDIR/vespa-rpmbuild/RPMS/x86_64/*.rpm $WORKDIR/system-test/docker/rpms
-          rm -f $WORKDIR/system-test/docker/rpms/*debuginfo*rpm
+          if test -z "$VESPA_CMAKE_SANITIZERS_OPTION"
+          then
+              rm -f $WORKDIR/system-test/docker/rpms/*debuginfo*rpm
+          fi
           ls -la $WORKDIR/system-test/docker/rpms
       - build-test-image: |
           cd $WORKDIR/system-test
@@ -217,12 +226,12 @@ jobs:
           dnf config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
           dnf install -y docker-ce docker-ce-cli containerd.io
           docker system info
+      - release-java-artifacts: |
+          screwdriver/release-java-artifacts.sh $VESPA_VERSION $VESPA_REF
       - release-rpms: |
           screwdriver/release-rpms.sh $VESPA_VERSION $VESPA_REF
       - release-container-image: |
           screwdriver/release-container-image.sh $VESPA_VERSION
-      - release-java-artifacts: |
-          screwdriver/release-java-artifacts.sh $VESPA_VERSION $VESPA_REF
       - update-sample-apps: |
           screwdriver/update-vespa-version-in-sample-apps.sh $VESPA_VERSION
 

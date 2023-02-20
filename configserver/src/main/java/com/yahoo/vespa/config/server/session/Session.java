@@ -13,11 +13,9 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.AthenzDomain;
 import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.DockerImage;
-import com.yahoo.config.provision.Tags;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.path.Path;
 import com.yahoo.transaction.Transaction;
-import com.yahoo.vespa.config.server.NotFoundException;
 import com.yahoo.vespa.config.server.application.ApplicationSet;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import java.security.cert.X509Certificate;
@@ -121,10 +119,6 @@ public abstract class Session implements Comparable<Session>  {
         sessionZooKeeperClient.writeApplicationId(applicationId);
     }
 
-    public void setTags(Tags tags) {
-        sessionZooKeeperClient.writeTags(tags);
-    }
-
     void setApplicationPackageReference(FileReference applicationPackageReference) {
         sessionZooKeeperClient.writeApplicationPackageReference(Optional.ofNullable(applicationPackageReference));
     }
@@ -158,14 +152,7 @@ public abstract class Session implements Comparable<Session>  {
     }
 
     /** Returns application id read from ZooKeeper. Will throw RuntimeException if not found */
-    public ApplicationId getApplicationId() {
-        return sessionZooKeeperClient.readApplicationId()
-                .orElseThrow(() -> new NotFoundException("Unable to read application id for session " + sessionId));
-    }
-
-    public Tags getTags() {
-        return sessionZooKeeperClient.readTags();
-    }
+    public ApplicationId getApplicationId() { return sessionZooKeeperClient.readApplicationId(); }
 
     /** Returns application id read from ZooKeeper. Will return Optional.empty() if not found */
     public Optional<ApplicationId> getOptionalApplicationId() {

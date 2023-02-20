@@ -27,7 +27,7 @@ private:
     FNET_Channel &operator=(const FNET_Channel &);
 
 public:
-    typedef std::unique_ptr<FNET_Channel> UP;
+    using UP = std::unique_ptr<FNET_Channel>;
 
     FNET_Channel(uint32_t id = FNET_NOID, FNET_Connection * conn = nullptr, FNET_IPacketHandler * handler = nullptr, FNET_Context context = FNET_Context())
       : _id(id), _conn(conn), _handler(handler), _context(context)

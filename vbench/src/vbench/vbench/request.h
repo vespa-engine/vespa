@@ -17,7 +17,7 @@ namespace vbench {
 class Request : public HttpResultHandler
 {
 public:
-    typedef std::unique_ptr<Request> UP;
+    using UP = std::unique_ptr<Request>;
 
     enum Status {
         STATUS_OK      = 0,

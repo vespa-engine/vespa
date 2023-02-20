@@ -45,6 +45,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import static ai.vespa.validation.Validation.require;
+import static com.yahoo.config.provision.Environment.prod;
 import static com.yahoo.config.provision.SystemName.cd;
 import static com.yahoo.vespa.hosted.controller.deployment.DeploymentContext.applicationPackage;
 import static com.yahoo.vespa.hosted.controller.deployment.DeploymentContext.productionApNortheast1;
@@ -995,7 +996,7 @@ public class DeploymentTriggerTest {
     @Test
     void testUserInstancesNotInDeploymentSpec() {
         var app = tester.newDeploymentContext();
-        tester.controller().applications().createInstance(app.application().id().instance("user"), Tags.empty());
+        tester.controller().applications().createInstance(app.application().id().instance("user"));
         app.submit().deploy();
     }
 
@@ -1370,52 +1371,52 @@ public class DeploymentTriggerTest {
 
         app1.runJob(productionUsWest1);
         tester.triggerJobs();
-        assertEquals(2, tester.jobs().active().size());
+        assertEquals(3, tester.jobs().active().size());
         app1.runJob(productionUsEast3);
         tester.triggerJobs();
-        assertEquals(1, tester.jobs().active().size());
+        assertEquals(2, tester.jobs().active().size());
 
         tester.clock().advance(Duration.ofHours(2));
 
         app1.runJob(productionEuWest1);
         tester.triggerJobs();
-        assertEquals(1, tester.jobs().active().size());
+        assertEquals(2, tester.jobs().active().size());
         app2.assertNotRunning(testEuWest1);
         app2.runJob(productionEuWest1);
         tester.triggerJobs();
-        assertEquals(1, tester.jobs().active().size());
+        assertEquals(2, tester.jobs().active().size());
         app2.runJob(testEuWest1);
         tester.triggerJobs();
-        assertEquals(List.of(), tester.jobs().active());
+        assertEquals(1, tester.jobs().active().size());
 
         tester.clock().advance(Duration.ofHours(1));
         app1.runJob(productionUsCentral1);
         tester.triggerJobs();
-        assertEquals(3, tester.jobs().active().size());
+        assertEquals(4, tester.jobs().active().size());
         app1.runJob(testUsCentral1);
         tester.triggerJobs();
-        assertEquals(2, tester.jobs().active().size());
+        assertEquals(3, tester.jobs().active().size());
         app1.runJob(productionApNortheast2);
         tester.triggerJobs();
-        assertEquals(1, tester.jobs().active().size());
+        assertEquals(2, tester.jobs().active().size());
         app1.runJob(productionApNortheast1);
         tester.triggerJobs();
-        assertEquals(List.of(), tester.jobs().active());
+        assertEquals(1, tester.jobs().active().size());
 
         tester.clock().advance(Duration.ofMinutes(30));
         tester.triggerJobs();
-        assertEquals(List.of(), tester.jobs().active());
+        assertEquals(1, tester.jobs().active().size());
 
         tester.clock().advance(Duration.ofMinutes(30));
         app1.runJob(testApNortheast1);
         tester.triggerJobs();
-        assertEquals(1, tester.jobs().active().size());
+        assertEquals(2, tester.jobs().active().size());
         app1.runJob(testApNortheast2);
         tester.triggerJobs();
-        assertEquals(1, tester.jobs().active().size());
+        assertEquals(2, tester.jobs().active().size());
         app1.runJob(testUsEast3);
         tester.triggerJobs();
-        assertEquals(1, tester.jobs().active().size());
+        assertEquals(2, tester.jobs().active().size());
         app1.runJob(productionApSoutheast1);
         tester.triggerJobs();
         assertEquals(1, tester.jobs().active().size());
@@ -2458,7 +2459,7 @@ public class DeploymentTriggerTest {
         ZoneApiMock.Builder builder = ZoneApiMock.newBuilder().withCloud("centauri").withSystem(tester.controller().system());
         ZoneApi testAlphaCentauri = builder.with(ZoneId.from(Environment.test, alphaCentauri)).build();
         ZoneApi stagingAlphaCentauri = builder.with(ZoneId.from(Environment.staging, alphaCentauri)).build();
-        ZoneApi prodAlphaCentauri = builder.with(ZoneId.from(Environment.prod, alphaCentauri)).build();
+        ZoneApi prodAlphaCentauri = builder.with(ZoneId.from(prod, alphaCentauri)).build();
 
         tester.controllerTester().zoneRegistry().addZones(testAlphaCentauri, stagingAlphaCentauri, prodAlphaCentauri);
         tester.controllerTester().setRoutingMethod(tester.controllerTester().zoneRegistry().zones().all().ids(), RoutingMethod.sharedLayer4);
@@ -2474,6 +2475,8 @@ public class DeploymentTriggerTest {
         JobId stagingTestJob = new JobId(tests.instanceId(), stagingTest);
         JobId mainJob = new JobId(main.instanceId(), productionUsEast3);
         JobId centauriJob = new JobId(main.instanceId(), JobType.deploymentTo(prodAlphaCentauri.getId()));
+        JobType centuariTest = JobType.systemTest(tester.controllerTester().zoneRegistry(), CloudName.from("centauri"));
+        JobType centuariStaging = JobType.stagingTest(tester.controllerTester().zoneRegistry(), CloudName.from("centauri"));
 
         assertEquals(Set.of(systemTestJob, stagingTestJob, mainJob, centauriJob), tests.deploymentStatus().jobsToRun().keySet());
         tests.runJob(systemTest).runJob(stagingTest).triggerJobs();
@@ -2482,13 +2485,13 @@ public class DeploymentTriggerTest {
         tests.triggerJobs();
         assertEquals(3, tester.jobs().active().size());
 
-        tests.runJob(systemTest);
+        tests.runJob(centuariTest);
         tester.outstandingChangeDeployer().run();
 
         assertEquals(2, tester.jobs().active().size());
         main.assertRunning(productionUsEast3);
 
-        tests.runJob(stagingTest);
+        tests.runJob(centuariStaging);
         main.runJob(productionUsEast3).runJob(centauriJob.type());
 
         assertEquals(Change.empty(), tests.instance().change());
@@ -2511,17 +2514,17 @@ public class DeploymentTriggerTest {
 
         Version version3 = new Version("6.4");
         tester.controllerTester().upgradeSystem(version3);
-        tests.runJob(systemTest)            // Success in default cloud.
-             .failDeployment(systemTest);   // Failure in centauri cloud.
+        tests.runJob(systemTest)              // Success in default cloud.
+             .failDeployment(centuariTest);   // Failure in centauri cloud.
         tester.upgrader().run();
 
         assertEquals(Change.of(version3), tests.instance().change());
         assertEquals(Change.empty(), main.instance().change());
         assertEquals(Set.of(systemTestJob), tests.deploymentStatus().jobsToRun().keySet());
 
-        tests.runJob(systemTest).runJob(systemTest);
+        tests.runJob(systemTest).runJob(centuariTest);
         tester.upgrader().run();
-        tests.runJob(stagingTest).runJob(stagingTest);
+        tests.runJob(stagingTest).runJob(centuariStaging);
 
         assertEquals(Change.empty(), tests.instance().change());
         assertEquals(Change.of(version3), main.instance().change());
@@ -2579,7 +2582,7 @@ public class DeploymentTriggerTest {
         assertEquals(Change.empty(), main.instance().change());
         assertEquals(Set.of(systemTestJob, stagingTestJob), tests.deploymentStatus().jobsToRun().keySet());
 
-        tests.runJob(systemTest);
+        tests.runJob(centuariTest);
         tester.outstandingChangeDeployer().run();
         tester.outstandingChangeDeployer().run();
 
@@ -2587,7 +2590,7 @@ public class DeploymentTriggerTest {
         assertEquals(Change.of(revision3.get()), main.instance().change());
         assertEquals(Set.of(stagingTestJob, mainJob, centauriJob), tests.deploymentStatus().jobsToRun().keySet());
 
-        tests.runJob(stagingTest);
+        tests.runJob(centuariStaging);
 
         assertEquals(Change.empty(), tests.instance().change());
         assertEquals(Change.of(revision3.get()), main.instance().change());
@@ -2663,20 +2666,28 @@ public class DeploymentTriggerTest {
         ZoneApiMock.Builder builder = ZoneApiMock.newBuilder().withCloud("centauri").withSystem(tester.controller().system());
         ZoneApi testAlphaCentauri = builder.with(ZoneId.from(Environment.test, alphaCentauri)).build();
         ZoneApi stagingAlphaCentauri = builder.with(ZoneId.from(Environment.staging, alphaCentauri)).build();
-        ZoneApi prodAlphaCentauri = builder.with(ZoneId.from(Environment.prod, alphaCentauri)).build();
+        ZoneApi prodAlphaCentauri = builder.with(ZoneId.from(prod, alphaCentauri)).build();
 
         tester.controllerTester().zoneRegistry().addZones(testAlphaCentauri, stagingAlphaCentauri, prodAlphaCentauri);
         tester.controllerTester().setRoutingMethod(tester.controllerTester().zoneRegistry().zones().all().ids(), RoutingMethod.sharedLayer4);
         tester.configServer().bootstrap(tester.controllerTester().zoneRegistry().zones().all().ids(), SystemApplication.notController());
 
         ApplicationPackage appPackage = ApplicationPackageBuilder.fromDeploymentXml(spec);
-        DeploymentContext app = tester.newDeploymentContext("tenant", "application", "alpha").submit(appPackage).deploy();
-        app.submit(appPackage);
-        Map<JobId, List<DeploymentStatus.Job>> jobs = app.deploymentStatus().jobsToRun();
+        DeploymentContext alpha = tester.newDeploymentContext("tenant", "application", "alpha").submit(appPackage).deploy();
+        DeploymentContext beta = tester.newDeploymentContext("tenant", "application", "beta");
+        DeploymentContext gamma = tester.newDeploymentContext("tenant", "application", "gamma");
+        DeploymentContext nu = tester.newDeploymentContext("tenant", "application", "nu");
+        DeploymentContext omega = tester.newDeploymentContext("tenant", "application", "omega");
+        DeploymentContext separate = tester.newDeploymentContext("tenant", "application", "separate");
+        DeploymentContext independent = tester.newDeploymentContext("tenant", "application", "independent");
+        DeploymentContext dependent = tester.newDeploymentContext("tenant", "application", "dependent");
+        alpha.submit(appPackage);
+        Map<JobId, List<DeploymentStatus.Job>> jobs = alpha.deploymentStatus().jobsToRun();
 
         JobType centauriTest = JobType.systemTest(tester.controller().zoneRegistry(), CloudName.from("centauri"));
         JobType centauriStaging = JobType.stagingTest(tester.controller().zoneRegistry(), CloudName.from("centauri"));
-        assertQueued("separate", jobs, centauriTest);
+        JobType centauriProd = JobType.deploymentTo(ZoneId.from(prod, alphaCentauri));
+        assertQueued("separate", jobs, systemTest, centauriTest);
         assertQueued("separate", jobs, stagingTest, centauriStaging);
         assertQueued("independent", jobs, systemTest, centauriTest);
         assertQueued("alpha", jobs, systemTest);
@@ -2684,8 +2695,51 @@ public class DeploymentTriggerTest {
         assertQueued("gamma", jobs, centauriTest);
 
         // Once alpha runs its default system test, it also runs the centauri system test, as omega depends on it.
-        app.runJob(systemTest);
-        assertQueued("alpha", app.deploymentStatus().jobsToRun(), centauriTest);
+        alpha.runJob(systemTest);
+        assertQueued("alpha", alpha.deploymentStatus().jobsToRun(), centauriTest);
+
+        // Run tests, and see production jobs are triggered as they are verified.
+        for (DeploymentContext app : List.of(alpha, beta, gamma, nu, omega, separate, independent, dependent))
+            tester.deploymentTrigger().forceChange(app.instanceId(), Change.of(alpha.lastSubmission().get()));
+
+        // Missing separate staging test.
+        alpha.triggerJobs().assertNotRunning(productionUsEast3);
+
+        beta.runJob(centauriTest);
+        // Missing separate centauri staging.
+        beta.triggerJobs().assertNotRunning(centauriProd);
+
+        gamma.runJob(centauriTest);
+
+        // Missing alpha centauri test, and nu centauri staging.
+        omega.triggerJobs().assertNotRunning(centauriProd);
+        alpha.runJob(centauriTest);
+        omega.triggerJobs().assertNotRunning(centauriProd);
+        nu.runJob(centauriStaging);
+        omega.triggerJobs().assertRunning(centauriProd);
+
+        separate.triggerJobs().assertNotRunning(centauriProd);
+
+        separate.runJob(centauriStaging);
+        separate.triggerJobs().assertNotRunning(centauriProd);
+        beta.triggerJobs().assertRunning(centauriProd);
+
+        separate.runJob(centauriTest);
+        separate.triggerJobs().assertRunning(centauriProd);
+
+        dependent.triggerJobs().assertNotRunning(productionUsEast3);
+
+        separate.runJob(systemTest).runJob(stagingTest).triggerJobs();
+        dependent.triggerJobs().assertRunning(productionUsEast3);
+        alpha.triggerJobs().assertRunning(productionUsEast3);
+
+        separate.runJob(centauriProd);
+        alpha.runJob(productionUsEast3);
+        beta.runJob(centauriProd);
+        omega.runJob(centauriProd);
+        dependent.runJob(productionUsEast3);
+        independent.runJob(centauriTest).runJob(systemTest);
+        assertEquals(Map.of(), alpha.deploymentStatus().jobsToRun());
     }
 
     private static void assertQueued(String instance, Map<JobId, List<DeploymentStatus.Job>> jobs, JobType... expected) {
@@ -2788,7 +2842,7 @@ public class DeploymentTriggerTest {
     }
 
     @Test
-    void test() {
+    void testOrderOfTests() {
         String deploymentXml = """
                                <deployment version="1.0">
                                  <test/>
@@ -2801,9 +2855,6 @@ public class DeploymentTriggerTest {
                                    <region>us-west-1</region>
                                  </prod>
                                </deployment>""";
-
-        // TODO jonmv: recreate problem where revision starts, then upgrade, while prod is blocked,
-        //             then both are tested as separate upgrades, but prod-test has them reversed.
 
         Version version1 = new Version("7.1");
         tester.controllerTester().upgradeSystem(version1);
@@ -2844,6 +2895,236 @@ public class DeploymentTriggerTest {
         app.runJob(testUsEast3);
         app.runJob(productionUsWest1);
         assertEquals(Change.empty(), app.instance().change());
+    }
+
+    @Test
+    void miniBenchmark() {
+        String spec = """
+                      <deployment version="1.0">
+                          <parallel>
+                              <instance id="instance0">
+                                  <test tester-flavor="d-8-16-10" />
+                                  <block-change version="true" revision="false" days="mon-fri,sun" hours="4-23" time-zone="UTC" />
+                              </instance>
+                              <instance id="instance1">
+                                  <test tester-flavor="d-8-16-10" />
+                                  <block-change version="true" revision="false" days="mon-fri,sun" hours="4-23" time-zone="UTC" />
+                              </instance>
+                              <instance id="instance2">
+                                  <test tester-flavor="d-8-16-10" />
+                                  <block-change version="true" revision="false" days="mon-fri,sun" hours="4-23" time-zone="UTC" />
+                              </instance>
+                              <instance id="instance3">
+                                  <test tester-flavor="d-8-16-10" />
+                                  <block-change version="true" revision="false" days="mon-fri,sun" hours="4-23" time-zone="UTC" />
+                              </instance>
+                              <instance id="stress">
+                                  <staging />
+                                  <block-change version="true" revision="false" days="mon-fri,sun" hours="4-23" time-zone="UTC" />
+                              </instance>
+                          </parallel>
+                          <instance id="beta1">
+                              <block-change version="true" revision="false" days="mon-fri,sun" hours="4-23" time-zone="UTC" />
+                              <block-change version="true" revision="false" days="sat" hours="0-23" time-zone="UTC" />
+                              <upgrade revision-change='when-clear' rollout='separate' revision-target='next' policy='conservative'/>
+                              <prod>
+                                  <parallel>
+                                      <steps>
+                                          <region>us-east-3</region>
+                                          <test>us-east-3</test>
+                                      </steps>
+                                      <steps>
+                                          <region>us-west-1</region>
+                                          <test>us-west-1</test>
+                                      </steps>
+                                      <steps>
+                                          <region>eu-west-1</region>
+                                          <test>eu-west-1</test>
+                                      </steps>
+                                      <steps>
+                                          <region>us-central-1</region>
+                                          <test>us-central-1</test>
+                                      </steps>
+                                  </parallel>
+                              </prod>
+                          </instance>
+                          <instance id="gamma5">
+                              <block-change version="true" revision="false" days="mon-fri,sun" hours="4-23" time-zone="UTC" />
+                              <block-change version="true" revision="false" days="sat" hours="0-23" time-zone="UTC" />
+                              <upgrade revision-change='when-clear' rollout='separate' revision-target='next' policy='conservative'/>
+                              <prod>
+                                  <parallel>
+                                      <steps>
+                                          <region>us-east-3</region>
+                                          <test>us-east-3</test>
+                                      </steps>
+                                      <steps>
+                                          <region>us-west-1</region>
+                                          <test>us-west-1</test>
+                                      </steps>
+                                      <steps>
+                                          <region>eu-west-1</region>
+                                          <test>eu-west-1</test>
+                                      </steps>
+                                      <steps>
+                                          <region>us-central-1</region>
+                                          <test>us-central-1</test>
+                                      </steps>
+                                  </parallel>
+                              </prod>
+                          </instance>
+                          <instance id="delta21">
+                              <block-change version="true" revision="false" days="mon-fri,sun" hours="4-23" time-zone="UTC" />
+                              <block-change version="true" revision="false" days="sat" hours="0-23" time-zone="UTC" />
+                              <upgrade revision-change='when-clear' rollout='separate' revision-target='next' policy='conservative'/>
+                              <prod>
+                                  <parallel>
+                                      <steps>
+                                          <region>us-east-3</region>
+                                          <test>us-east-3</test>
+                                      </steps>
+                                      <steps>
+                                          <region>us-west-1</region>
+                                          <test>us-west-1</test>
+                                      </steps>
+                                      <steps>
+                                          <region>eu-west-1</region>
+                                          <test>eu-west-1</test>
+                                      </steps>
+                                      <steps>
+                                          <region>us-central-1</region>
+                                          <test>us-central-1</test>
+                                      </steps>
+                                  </parallel>
+                              </prod>
+                          </instance>
+                          <instance id="prod21a">
+                              <block-change version="true" revision="false" days="mon-fri,sun" hours="4-23" time-zone="UTC" />
+                              <block-change version="true" revision="false" days="sat" hours="0-23" time-zone="UTC" />
+                              <upgrade revision-change='when-clear' rollout='separate' revision-target='next' policy='conservative'/>
+                              <prod>
+                                  <parallel>
+                                      <steps>
+                                          <region>us-east-3</region>
+                                          <test>us-east-3</test>
+                                      </steps>
+                                      <steps>
+                                          <region>us-west-1</region>
+                                          <test>us-west-1</test>
+                                      </steps>
+                                      <steps>
+                                          <region>eu-west-1</region>
+                                          <test>eu-west-1</test>
+                                      </steps>
+                                      <steps>
+                                          <region>us-central-1</region>
+                                          <test>us-central-1</test>
+                                      </steps>
+                                  </parallel>
+                              </prod>
+                          </instance>
+                          <instance id="prod21b">
+                              <block-change version="true" revision="false" days="mon-fri,sun" hours="4-23" time-zone="UTC" />
+                              <block-change version="true" revision="false" days="sat" hours="0-23" time-zone="UTC" />
+                              <upgrade revision-change='when-clear' rollout='separate' revision-target='next' policy='conservative'/>
+                              <prod>
+                                  <parallel>
+                                      <steps>
+                                          <region>us-east-3</region>
+                                          <test>us-east-3</test>
+                                      </steps>
+                                      <steps>
+                                          <region>us-west-1</region>
+                                          <test>us-west-1</test>
+                                      </steps>
+                                      <steps>
+                                          <region>eu-west-1</region>
+                                          <test>eu-west-1</test>
+                                      </steps>
+                                      <steps>
+                                          <region>us-central-1</region>
+                                          <test>us-central-1</test>
+                                      </steps>
+                                  </parallel>
+                              </prod>
+                          </instance>
+                          <instance id="prod21c">
+                              <block-change version="true" revision="false" days="mon-fri,sun" hours="4-23" time-zone="UTC" />
+                              <block-change version="true" revision="false" days="sat" hours="0-23" time-zone="UTC" />
+                              <upgrade revision-change='when-clear' rollout='separate' revision-target='next' policy='conservative'/>
+                              <prod>
+                                  <parallel>
+                                      <steps>
+                                          <region>us-east-3</region>
+                                          <test>us-east-3</test>
+                                      </steps>
+                                      <steps>
+                                          <region>us-west-1</region>
+                                          <test>us-west-1</test>
+                                      </steps>
+                                      <steps>
+                                          <region>eu-west-1</region>
+                                          <test>eu-west-1</test>
+                                      </steps>
+                                      <steps>
+                                          <region>us-central-1</region>
+                                          <test>us-central-1</test>
+                                      </steps>
+                                  </parallel>
+                              </prod>
+                          </instance>
+                          <instance id="cd10">
+                              <block-change version="true" revision="false" days="mon-fri,sun" hours="4-23" time-zone="UTC" />
+                              <block-change version="true" revision="false" days="sat" hours="0-23" time-zone="UTC" />
+                              <upgrade revision-change='when-clear' rollout='separate' revision-target='next' policy='conservative'/>
+                              <prod>
+                                  <parallel>
+                                      <steps>
+                                          <region>us-east-3</region>
+                                          <test>us-east-3</test>
+                                      </steps>
+                                      <steps>
+                                          <region>us-west-1</region>
+                                          <test>us-west-1</test>
+                                      </steps>
+                                      <steps>
+                                          <region>eu-west-1</region>
+                                          <test>eu-west-1</test>
+                                      </steps>
+                                      <steps>
+                                          <region>us-central-1</region>
+                                          <test>us-central-1</test>
+                                      </steps>
+                                  </parallel>
+                              </prod>
+                          </instance>
+                          <instance id="prod1">
+                              <block-change version="true" revision="false" days="mon-fri,sun" hours="4-23" time-zone="UTC" />
+                              <block-change version="true" revision="false" days="sat" hours="0-23" time-zone="UTC" />
+                              <upgrade revision-change='when-clear' rollout='separate' revision-target='next' policy='conservative'/>
+                              <prod>
+                                  <parallel>
+                                      <steps>
+                                          <region>us-east-3</region>
+                                          <test>us-east-3</test>
+                                      </steps>
+                                      <steps>
+                                          <region>us-west-1</region>
+                                          <test>us-west-1</test>
+                                      </steps>
+                                      <steps>
+                                          <region>eu-west-1</region>
+                                          <test>eu-west-1</test>
+                                      </steps>
+                                      <steps>
+                                          <region>us-central-1</region>
+                                          <test>us-central-1</test>
+                                      </steps>
+                                  </parallel>
+                              </prod>
+                          </instance>
+                      </deployment>""";
+        tester.newDeploymentContext("t", "a", "prod1").submit(ApplicationPackageBuilder.fromDeploymentXml(spec)).deploy();
     }
 
 }

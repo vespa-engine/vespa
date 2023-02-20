@@ -145,8 +145,8 @@ public class QueryTestCase {
     @Test
     void testCloneWithConnectivity() {
         List<String> l = List.of("a", "b", "c", "a");
-        printIt(l.stream().filter(i -> isA(i)).collect(Collectors.toList()));
-        printIt(l.stream().filter(i -> !isA(i)).collect(Collectors.toList()));
+        printIt(l.stream().filter(i -> isA(i)).toList());
+        printIt(l.stream().filter(i -> !isA(i)).toList());
 
         Query q = new Query();
         WordItem a = new WordItem("a");
@@ -597,9 +597,24 @@ public class QueryTestCase {
     }
 
     @Test
-    void testProfilingDepth() {
+    void profile_depth_sets_default_profiling_parameters() {
         Query q = new Query("?query=foo&trace.profileDepth=2");
         assertEquals(2, q.getTrace().getProfileDepth());
+        assertEquals(2, q.getTrace().getProfiling().getMatching().getDepth());
+        assertEquals(2, q.getTrace().getProfiling().getFirstPhaseRanking().getDepth());
+        assertEquals(2, q.getTrace().getProfiling().getSecondPhaseRanking().getDepth());
+    }
+
+    @Test
+    void profiling_parameters_are_resolved() {
+        var q = new Query("?query=foo&" +
+                "trace.profiling.matching.depth=3&" +
+                "trace.profiling.firstPhaseRanking.depth=5&" +
+                "trace.profiling.secondPhaseRanking.depth=-7");
+        assertEquals(0, q.getTrace().getProfileDepth());
+        assertEquals(3, q.getTrace().getProfiling().getMatching().getDepth());
+        assertEquals(5, q.getTrace().getProfiling().getFirstPhaseRanking().getDepth());
+        assertEquals(-7, q.getTrace().getProfiling().getSecondPhaseRanking().getDepth());
     }
 
     @Test

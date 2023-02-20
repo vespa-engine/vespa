@@ -8,13 +8,13 @@ import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeAttribu
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeRepository;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeState;
+import com.yahoo.vespa.hosted.node.admin.wireguard.WireguardPeer;
 
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 
 /**
  * Mock with some simple logic
@@ -33,7 +33,7 @@ public class NodeRepoMock implements NodeRepository {
     public List<NodeSpec> getNodes(String baseHostName) {
         return nodeSpecByHostname.values().stream()
                 .filter(node -> baseHostName.equals(node.parentHostname().orElse(null)))
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Override
@@ -44,6 +44,16 @@ public class NodeRepoMock implements NodeRepository {
     @Override
     public Map<String, Acl> getAcls(String hostname) {
         return aclByHostname;
+    }
+
+    @Override
+    public List<WireguardPeer> getExclavePeers() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public List<WireguardPeer> getConfigserverPeers() {
+        throw new UnsupportedOperationException();
     }
 
     @Override

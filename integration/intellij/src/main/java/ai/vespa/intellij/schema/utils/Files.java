@@ -42,7 +42,7 @@ public class Files {
                             .stream()
                             .filter(file -> file.getParent().getPath().endsWith(dir.getRelative()))
                             .map(file -> PsiManager.getInstance(project).findFile(file))
-                            .collect(Collectors.toList());
+                            .toList();
     }
 
 }

@@ -103,8 +103,11 @@ public:
             && ((p[3] == ALLOC_MAGIC) || (p[3] == FREE_MAGIC))
             && *(reinterpret_cast<const unsigned *> ((const char*)_ptr + size() + alignment() + StackTraceLen*sizeof(void *))) == TAIL_MAGIC;
     }
-    static size_t usable_size(void *ptr, size_t ) {
-        return MemBlockBoundsCheckBaseT(ptr).size();
+    template<typename T>
+    static size_t usable_size(void *ptr, const T & segment) {
+        MemBlockBoundsCheckBaseT mem(ptr);
+        mem.readjustAlignment(segment);
+        return mem.size();
     }
     bool validAlloc1() const {
         unsigned *p((unsigned*)_ptr);

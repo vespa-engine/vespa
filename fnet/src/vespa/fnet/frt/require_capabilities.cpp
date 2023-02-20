@@ -5,6 +5,7 @@
 #include <vespa/fnet/connection.h>
 #include <vespa/vespalib/net/connection_auth_context.h>
 #include <vespa/vespalib/net/tls/capability_env_config.h>
+#include <vespa/vespalib/net/tls/statistics.h>
 
 #include <vespa/log/bufferedlogger.h>
 LOG_SETUP(".fnet.frt.require_capabilities");
@@ -19,6 +20,7 @@ FRT_RequireCapabilities::allow(FRT_RPCRequest& req) const noexcept
     if (is_authorized) {
         return true;
     } else {
+        CapabilityStatistics::get().inc_rpc_capability_checks_failed();
         const auto mode = capability_enforcement_mode_from_env();
         if (mode == CapabilityEnforcementMode::Disable) {
             return true;

@@ -2,7 +2,7 @@
 package com.yahoo.vespa.hosted.provision.lb;
 
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.vespa.hosted.provision.persistence.CuratorDatabaseClient;
+import com.yahoo.vespa.hosted.provision.persistence.CuratorDb;
 
 import java.util.function.Predicate;
 
@@ -14,9 +14,9 @@ import java.util.function.Predicate;
  */
 public class LoadBalancers {
 
-    private final CuratorDatabaseClient db;
+    private final CuratorDb db;
 
-    public LoadBalancers(CuratorDatabaseClient db) {
+    public LoadBalancers(CuratorDb db) {
         this.db = db;
     }
 

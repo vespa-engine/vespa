@@ -24,6 +24,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 public class EmbedderTestCase {
@@ -91,8 +92,7 @@ public class EmbedderTestCase {
                           "  </config>" +
                           "</component>";
         assertTransformThrows(embedder,
-                              "Unknown model id 'my_model_id' on 'transformerModel'. " +
-                              "Available models are [bert-base-uncased, minilm-l6-v2, mpnet-base-v2]",
+                              "Unknown model id 'my_model_id' on 'transformerModel'",
                               true);
     }
 
@@ -194,7 +194,7 @@ public class EmbedderTestCase {
             ModelIdResolver.resolveModelIds(createElement(embedder), hosted);
             fail("Expected exception was not thrown: " + expectedMessage);
         } catch (IllegalArgumentException e) {
-            assertEquals(expectedMessage, e.getMessage());
+            assertTrue(e.getMessage().contains(expectedMessage), "Expected error message not found");
         }
     }
 

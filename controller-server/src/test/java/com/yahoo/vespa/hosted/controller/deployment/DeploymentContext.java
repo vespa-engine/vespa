@@ -15,6 +15,7 @@ import com.yahoo.security.KeyUtils;
 import com.yahoo.security.SignatureAlgorithm;
 import com.yahoo.security.X509CertificateBuilder;
 import com.yahoo.vespa.hosted.controller.Application;
+import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
@@ -52,6 +53,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
+import java.util.OptionalLong;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Supplier;
@@ -196,8 +198,9 @@ public class DeploymentContext {
         Application application = application();
         assertTrue(application.revisions().last().isPresent(), "Application package submitted");
         assertFalse(application.instances().values().stream()
-                                                                     .anyMatch(instance -> instance.deployments().values().stream()
-                                                                                                   .anyMatch(deployment -> deployment.revision().equals(lastSubmission))), "Submission is not already deployed");
+                               .anyMatch(instance -> instance.deployments().values().stream()
+                                                     .anyMatch(deployment -> deployment.revision().equals(lastSubmission))),
+                    "Submission is not already deployed");
         completeRollout(application.deploymentSpec().instances().size() > 1);
         for (var instance : application().instances().values()) {
             assertFalse(instance.change().hasTargets());
@@ -249,8 +252,9 @@ public class DeploymentContext {
     /** Flush all pending DNS updates */
     public DeploymentContext flushDnsUpdates() {
         flushDnsUpdates(Integer.MAX_VALUE);
-        assertTrue(tester.controller().curator().readNameServiceQueue().requests().isEmpty(),
-                   "All name service requests dispatched");
+        assertEquals(List.of(),
+                     tester.controller().curator().readNameServiceQueue().requests(),
+                     "All name service requests dispatched");
         return this;
     }
 
@@ -276,7 +280,8 @@ public class DeploymentContext {
                                            Optional.empty(),
                                            Set.of(EndpointId.of("default")),
                                            Set.of(),
-                                           new RoutingPolicy.Status(false, RoutingStatus.DEFAULT)));
+                                           new RoutingPolicy.Status(false, RoutingStatus.DEFAULT),
+                                           true));
         tester.controller().curator().writeRoutingPolicies(instanceId, List.copyOf(policies.values()));
         return this;
     }
@@ -453,7 +458,9 @@ public class DeploymentContext {
     /** Pulls the ready job trigger, and then runs the whole of job for the given instance, successfully. */
     private DeploymentContext runJob(JobType type, ApplicationId instance) {
         triggerJobs();
-        var job = currentRun(new JobId(instance, type)).id().job();
+        Run run = currentRun(new JobId(instance, type));
+        assertEquals(type.zone(), run.id().type().zone());
+        JobId job = run.id().job();
         doDeploy(job);
         if (job.type().isDeployment()) {
             doUpgrade(job);
@@ -586,6 +593,9 @@ public class DeploymentContext {
             tester.cloud().set(Status.SUCCESS);
             runner.advance(currentRun(job));
             assertEquals(succeeded, jobs.run(id).stepStatuses().get(Step.endStagingSetup));
+
+            if ( ! deferDnsUpdates)
+                flushDnsUpdates();
         }
     }
 

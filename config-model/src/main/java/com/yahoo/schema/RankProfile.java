@@ -15,6 +15,7 @@ import com.yahoo.schema.document.ImmutableSDField;
 import com.yahoo.schema.document.SDDocumentType;
 import com.yahoo.schema.expressiontransforms.ExpressionTransforms;
 import com.yahoo.schema.expressiontransforms.RankProfileTransformContext;
+import com.yahoo.schema.expressiontransforms.InputRecorder;
 import com.yahoo.schema.parser.ParseException;
 import com.yahoo.searchlib.rankingexpression.ExpressionFunction;
 import com.yahoo.searchlib.rankingexpression.FeatureList;
@@ -57,6 +58,7 @@ public class RankProfile implements Cloneable {
 
     public final static String FIRST_PHASE = "firstphase";
     public final static String SECOND_PHASE = "secondphase";
+    public final static String GLOBAL_PHASE = "globalphase";
 
     /** The schema-unique name of this rank profile */
     private final String name;
@@ -79,8 +81,14 @@ public class RankProfile implements Cloneable {
     /** The ranking expression to be used for second phase */
     private RankingExpressionFunction secondPhaseRanking = null;
 
+    /** The ranking expression to be used for global-phase */
+    private RankingExpressionFunction globalPhaseRanking = null;
+
     /** Number of hits to be reranked in second phase, -1 means use default */
     private int rerankCount = -1;
+
+    /** Number of hits to be reranked in global-phase, -1 means use default */
+    private int globalPhaseRerankCount = -1;
 
     /** Mysterious attribute */
     private int keepRankCount = -1;
@@ -509,6 +517,26 @@ public class RankProfile implements Cloneable {
         }
     }
 
+    public RankingExpression getGlobalPhaseRanking() {
+        RankingExpressionFunction function = getGlobalPhase();
+        if (function == null) return null;
+        return function.function().getBody();
+    }
+
+    public RankingExpressionFunction getGlobalPhase() {
+        if (globalPhaseRanking != null) return globalPhaseRanking;
+        return uniquelyInherited(p -> p.getGlobalPhase(), "global-phase expression").orElse(null);
+    }
+
+    public void setGlobalPhaseRanking(String expression) {
+        try {
+            globalPhaseRanking = new RankingExpressionFunction(parseRankingExpression(GLOBAL_PHASE, Collections.emptyList(), expression), false);
+        }
+        catch (ParseException e) {
+            throw new IllegalArgumentException("Illegal global-phase ranking function", e);
+        }
+    }
+
     // TODO: Below we have duplicate methods for summary and match features: Encapsulate this in a single parametrized
     //       class instead (and probably make rank features work the same).
 
@@ -665,6 +693,13 @@ public class RankProfile implements Cloneable {
     public int getRerankCount() {
         if (rerankCount >= 0) return rerankCount;
         return uniquelyInherited(p -> p.getRerankCount(), c -> c >= 0, "rerank-count").orElse(-1);
+    }
+
+    public void setGlobalPhaseRerankCount(int count) { this.globalPhaseRerankCount = count; }
+
+    public int getGlobalPhaseRerankCount() {
+        if (globalPhaseRerankCount >= 0) return globalPhaseRerankCount;
+        return uniquelyInherited(p -> p.getGlobalPhaseRerankCount(), c -> c >= 0, "global-phase rerank-count").orElse(-1);
     }
 
     public void setNumThreadsPerSearch(int numThreads) { this.numThreadsPerSearch = numThreads; }
@@ -842,7 +877,7 @@ public class RankProfile implements Cloneable {
         }
     }
 
-    private  Map<String, RankingExpressionFunction> gatherAllFunctions() {
+    private Map<String, RankingExpressionFunction> gatherAllFunctions() {
         if (functions.isEmpty() && inherited().isEmpty()) return Map.of();
         if (inherited().isEmpty()) return Collections.unmodifiableMap(new LinkedHashMap<>(functions));
 
@@ -966,11 +1001,31 @@ public class RankProfile implements Cloneable {
 
         firstPhaseRanking = compile(this.getFirstPhase(), queryProfiles, featureTypes, importedModels, constants(), inlineFunctions, expressionTransforms);
         secondPhaseRanking = compile(this.getSecondPhase(), queryProfiles, featureTypes, importedModels, constants(), inlineFunctions, expressionTransforms);
+        globalPhaseRanking = compile(this.getGlobalPhase(), queryProfiles, featureTypes, importedModels, constants(), inlineFunctions, expressionTransforms);
 
         // Function compiling second pass: compile all functions and insert previously compiled inline functions
         // TODO: This merges all functions from inherited profiles too and erases inheritance information. Not good.
         functions = compileFunctions(this::getFunctions, queryProfiles, featureTypes, importedModels, inlineFunctions, expressionTransforms);
         allFunctionsCached = null;
+
+        if (globalPhaseRanking != null) {
+            var context = new RankProfileTransformContext(this,
+                                                          queryProfiles,
+                                                          featureTypes,
+                                                          importedModels,
+                                                          constants(),
+                                                          inlineFunctions);
+            var needInputs = new HashSet<String>();
+            var recorder = new InputRecorder(needInputs);
+            recorder.transform(globalPhaseRanking.function().getBody(), context);
+            for (String input : needInputs) {
+                try {
+                    addMatchFeatures(new FeatureList(input));
+                } catch (com.yahoo.searchlib.rankingexpression.parser.ParseException e) {
+                    throw new IllegalArgumentException("invalid input in global-phase expression: "+input);
+                }
+            }
+        }
     }
 
     private void checkNameCollisions(Map<String, RankingExpressionFunction> functions, Map<Reference, Constant> constants) {
@@ -1067,7 +1122,7 @@ public class RankProfile implements Cloneable {
             for (FieldDescription field : queryProfileType.declaredFields().values()) {
                 TensorType type = field.getType().asTensorType();
                 Optional<Reference> feature = Reference.simple(field.getName());
-                if ( feature.isEmpty() || ! feature.get().name().equals("query")) continue;
+                if (feature.isEmpty() || ! feature.get().name().equals("query")) continue;
                 if (featureTypes.containsKey(feature.get())) continue; // Explicit feature types (from inputs) overrides
 
                 TensorType existingType = context.getType(feature.get());

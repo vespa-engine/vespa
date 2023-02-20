@@ -40,9 +40,9 @@ class IndexMaintainer : public IIndexManager,
      */
     class FrozenMemoryIndexRef {
     public:
-        typedef search::FixedSourceSelector::SaveInfo SaveInfo;
-        typedef search::SerialNum SerialNum;
-        typedef std::shared_ptr<SaveInfo> SaveInfoSP;
+        using SaveInfo = search::FixedSourceSelector::SaveInfo;
+        using SerialNum = search::SerialNum;
+        using SaveInfoSP = std::shared_ptr<SaveInfo>;
 
         IMemoryIndex::SP _index;
         SerialNum        _serialNum;
@@ -189,7 +189,7 @@ class IndexMaintainer : public IIndexManager,
         ISearchableIndexCollection::SP            old_source_list; // Delays destruction
         search::FixedSourceSelector::SaveInfo::SP save_info;
         SerialNum        flush_serial_num;
-        FlushStats     * stats;
+        searchcorespi::FlushStats  * stats;
         bool             _skippedEmptyLast; // Don't flush empty memory index
 
         // Extra indexes to flush before flushing last frozen memory index

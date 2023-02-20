@@ -21,18 +21,16 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.charset.Charset;
+import java.time.Duration;
 import java.util.List;
-import java.util.logging.Logger;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 public class HttpProxy {
 
-    private static final Logger logger = Logger.getLogger(HttpProxy.class.getName());
-
     private final HttpFetcher fetcher;
 
-    @Inject public HttpProxy(NodeHostnameVerifier verifier) { this(new SimpleHttpFetcher(verifier)); }
+    @Inject public HttpProxy(NodeHostnameVerifier verifier) { this(new SimpleHttpFetcher(Duration.ofSeconds(30), verifier)); }
 
     public HttpProxy(HttpFetcher fetcher) { this.fetcher = fetcher; }
 

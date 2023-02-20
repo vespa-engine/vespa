@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.application.validation.change;
 
-import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.config.model.api.ConfigChangeAction;
 import com.yahoo.config.model.api.HostProvisioner;
 import com.yahoo.config.model.deploy.DeployState;
@@ -15,7 +14,6 @@ import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.test.utils.VespaModelCreatorWithMockPkg;
 import org.junit.jupiter.api.Test;
 
-import java.time.Clock;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -56,9 +54,7 @@ public class NodeResourceChangeValidatorTest {
     }
 
     private List<ConfigChangeAction> validate(VespaModel current, VespaModel next) {
-        return new NodeResourceChangeValidator().validate(current, next,
-                                                          ValidationOverrides.empty,
-                                                          Clock.systemUTC().instant());
+        return new NodeResourceChangeValidator().validate(current, next, new DeployState.Builder().build());
     }
 
     private static VespaModel model(int mem1, int mem2, int mem3, int mem4) {
@@ -109,7 +105,7 @@ public class NodeResourceChangeValidatorTest {
 
         @Override
         public HostSpec allocateHost(String alias) {
-            return new HostSpec(alias, List.of(), Optional.empty());
+            return new HostSpec(alias, Optional.empty());
         }
 
         @Override

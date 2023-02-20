@@ -17,7 +17,7 @@ class SearchEnvironment : public storage::VisitorEnvironment
 private:
     class Env : public config::SimpleConfigurable {
     public:
-        typedef std::shared_ptr<Env> SP;
+        using SP = std::shared_ptr<Env>;
         Env(const vespalib::string & muffens, const config::ConfigUri & configUri, Fast_NormalizeWordFolder & wf);
         ~Env() override;
         const vsm::VSMAdapter * getVSMAdapter() const { return _vsmAdapter.get(); }
@@ -31,9 +31,9 @@ private:
         std::unique_ptr<vsm::VSMAdapter> _vsmAdapter;
         std::unique_ptr<RankManager>     _rankManager;
     };
-    typedef vespalib::hash_map<vespalib::string, Env::SP> EnvMap;
-    typedef std::unique_ptr<EnvMap> EnvMapUP;
-    typedef std::vector<EnvMapUP> ThreadLocals;
+    using EnvMap = vespalib::hash_map<vespalib::string, Env::SP>;
+    using EnvMapUP = std::unique_ptr<EnvMap>;
+    using ThreadLocals = std::vector<EnvMapUP>;
 
     static __thread EnvMap * _localEnvMap;
     EnvMap                   _envMap;

@@ -28,11 +28,12 @@ public class VespaMlModelTestCase {
             "constant(constant1).type : tensor(x[3])\n" +
             "constant(constant1).value : tensor(x[3]):[0.5, 1.5, 2.5]\n" +
             "rankingExpression(foo1).rankingScript : reduce(reduce(input1 * input2, sum, name) * constant(constant1), max, x) * 3.0\n" +
-            "rankingExpression(foo1).input2.type : tensor(x[3])\n" +
             "rankingExpression(foo1).input1.type : tensor(name{},x[3])\n" +
+            "rankingExpression(foo1).input2.type : tensor(x[3])\n" +
             "rankingExpression(foo2).rankingScript : reduce(reduce(input1 * input2, sum, name) * constant(constant1asLarge), max, x) * 3.0\n" +
-            "rankingExpression(foo2).input2.type : tensor(x[3])\n" +
-            "rankingExpression(foo2).input1.type : tensor(name{},x[3])\n";
+            "rankingExpression(foo2).input1.type : tensor(name{},x[3])\n" +
+            "rankingExpression(foo2).input2.type : tensor(x[3])\n";
+
 
     /** The model name */
     private final String name = "example";

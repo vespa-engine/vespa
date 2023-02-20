@@ -55,8 +55,11 @@ public:
     void assign_generation(generation_t current_gen);
     void reclaim_memory(generation_t oldest_used_gen);
     void on_load(vespalib::ConstArrayRef<HnswNode> nodes);
-    // TODO: Add support for compaction
+    vespalib::AddressSpace address_space_usage() const { return _nodeids.addressSpaceUsage(); }
     vespalib::MemoryUsage memory_usage() const;
+    vespalib::MemoryUsage update_stat(const vespalib::datastore::CompactionStrategy& compaction_strategy);
+    bool consider_compact() const noexcept { return _nodeids.consider_compact(); }
+    void compact_worst(const vespalib::datastore::CompactionStrategy& compaction_strategy);
 };
 
 }

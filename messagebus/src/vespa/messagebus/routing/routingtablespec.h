@@ -20,7 +20,7 @@ namespace mbus {
  */
 class RoutingTableSpec {
 private:
-    string            _protocol;
+    string                 _protocol;
     std::vector<HopSpec>   _hops;
     std::vector<RouteSpec> _routes;
 
@@ -30,7 +30,7 @@ public:
      *
      * @param protocol The name of the protocol that this belongs to.
      */
-    RoutingTableSpec(const string &protocol);
+    explicit RoutingTableSpec(const string &protocol);
     RoutingTableSpec(const RoutingTableSpec&);
     RoutingTableSpec(RoutingTableSpec&&) noexcept = default;
     ~RoutingTableSpec();
@@ -42,21 +42,14 @@ public:
      *
      * @return The protocol name.
      */
-    const string &getProtocol() const { return _protocol; }
-
-    /**
-     * Returns whether or not there are any hop specs contained in this.
-     *
-     * @return True if there is at least one hop.
-     */
-    bool hasHops() const { return !_hops.empty(); }
+    [[nodiscard]] const string &getProtocol() const { return _protocol; }
 
     /**
      * Returns the number of hops that are contained in this table.
      *
      * @return The number of hops.
      */
-    uint32_t getNumHops() const { return _hops.size(); }
+    [[nodiscard]] uint32_t getNumHops() const { return _hops.size(); }
 
     /**
      * Returns the hop spec at the given index.
@@ -72,7 +65,7 @@ public:
      * @param i The index of the hop to return.
      * @return The hop at the given position.
      */
-    const HopSpec &getHop(uint32_t i) const { return _hops[i]; }
+    [[nodiscard]] const HopSpec &getHop(uint32_t i) const { return _hops[i]; }
 
     /**
      * Adds the given hop spec to this.
@@ -80,7 +73,8 @@ public:
      * @param hop The hop to add.
      * @return This, to allow chaining.
      */
-    RoutingTableSpec &addHop(const HopSpec &hop) { _hops.push_back(hop); return *this; }
+    RoutingTableSpec & addHop(HopSpec && hop) &;
+    RoutingTableSpec && addHop(HopSpec && hop) &&;
 
     /**
      * Sets the hop spec at the given index.
@@ -89,36 +83,14 @@ public:
      * @param hop The hop to set.
      * @return This, to allow chaining.
      */
-    RoutingTableSpec &setHop(uint32_t i, const HopSpec &hop) { _hops[i] = hop; return *this; }
-
-    /**
-     * Removes the hop spec at the given index.
-     *
-     * @param i The index of the hop to remove.
-     * @return The removed hop.
-     */
-    HopSpec removeHop(uint32_t i);
-
-    /**
-     * Clears the list of hop specs contained in this.
-     *
-     * @return This, to allow chaining.
-     */
-    RoutingTableSpec &clearHops() { _hops.clear(); return *this; }
-
-    /**
-     * Returns whether or not there are any route specs contained in this.
-     *
-     * @return True if there is at least one route.
-     */
-    bool hasRoutes() const { return !_routes.empty(); }
+    RoutingTableSpec &setHop(uint32_t i, HopSpec &&hop);
 
     /**
      * Returns the number of route specs contained in this.
      *
      * @return The number of routes.
      */
-    uint32_t getNumRoutes() const { return _routes.size(); }
+    [[nodiscard]] uint32_t getNumRoutes() const { return _routes.size(); }
 
     /**
      * Returns the route spec at the given index.
@@ -134,7 +106,7 @@ public:
      * @param i The index of the route to return.
      * @return The route at the given index.
      */
-    const RouteSpec &getRoute(uint32_t i) const { return _routes[i]; }
+    [[nodiscard]] const RouteSpec &getRoute(uint32_t i) const { return _routes[i]; }
 
     /**
      * Adds a route spec to this.
@@ -142,7 +114,8 @@ public:
      * @param route The route to add.
      * @return This, to allow chaining.
      */
-    RoutingTableSpec &addRoute(const RouteSpec &route) { _routes.push_back(route); return *this; }
+    RoutingTableSpec && addRoute(RouteSpec &&route) &&;
+    RoutingTableSpec & addRoute(RouteSpec &&route) &;
 
     /**
      * Sets the route spec at the given index.
@@ -151,15 +124,7 @@ public:
      * @param route The route to set.
      * @return This, to allow chaining.
      */
-    RoutingTableSpec &setRoute(uint32_t i, const RouteSpec &route) { _routes[i] = route; return *this; }
-
-    /**
-     * Removes a route spec at a given index.
-     *
-     * @param i The index of the route to remove.
-     * @return The removed route.
-     */
-    RouteSpec removeRoute(uint32_t i);
+    RoutingTableSpec &setRoute(uint32_t i, RouteSpec && route) { _routes[i] = std::move(route); return *this; }
 
     /**
      * Appends the content of this to the given config string.
@@ -174,7 +139,7 @@ public:
      *
      * @return The string.
      */
-    string toString() const;
+    [[nodiscard]] string toString() const;
 
     /**
      * Implements the equality operator.

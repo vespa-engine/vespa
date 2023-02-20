@@ -76,13 +76,13 @@ class ValueMetric : public AbstractValueMetric {
     bool checkFinite(AvgVal, std::false_type) { return true; }
 
 public:
-    ValueMetric(const ValueMetric<AvgVal, TotVal, SumOnAdd> &,
-                CopyType, MetricSet *owner);
+    ValueMetric(const ValueMetric<AvgVal, TotVal, SumOnAdd> &, MetricSet *owner);
+    ValueMetric(const String &name, Tags dimensions, const String &description)
+        : ValueMetric(name, std::move(dimensions), description, nullptr)
+    {}
+    ValueMetric(const String &name, Tags dimensions, const String &description, MetricSet *owner);
 
-    ValueMetric(const String &name, Tags dimensions,
-                const String &description, MetricSet *owner = 0);
-
-    ~ValueMetric();
+    ~ValueMetric() override;
 
     MetricValueClass::UP getValues() const override {
         return std::make_unique<Values>(_values.getValues());
@@ -90,9 +90,8 @@ public:
 
     void unsetOnZeroValue() { _values.setFlag(UNSET_ON_ZERO_VALUE); }
 
-    ValueMetric *clone(std::vector<Metric::UP> &, CopyType type, MetricSet *owner,
-                       bool /*includeUnused*/) const override {
-        return new ValueMetric<AvgVal,TotVal,SumOnAdd>(*this, type, owner);
+    ValueMetric *clone(std::vector<Metric::UP> &, CopyType , MetricSet *owner, bool) const override {
+        return new ValueMetric<AvgVal,TotVal,SumOnAdd>(*this, owner);
     }
 
     ValueMetric & operator+=(const ValueMetric &);
@@ -149,10 +148,10 @@ public:
     void addToSnapshot(Metric&, std::vector<Metric::UP> &) const override;
 };
 
-typedef ValueMetric<double, double, true> DoubleValueMetric;
-typedef ValueMetric<double, double, false> DoubleAverageMetric;
-typedef ValueMetric<int64_t, int64_t, true> LongValueMetric;
-typedef ValueMetric<int64_t, int64_t, false> LongAverageMetric;
+using DoubleValueMetric = ValueMetric<double, double, true>;
+using DoubleAverageMetric = ValueMetric<double, double, false>;
+using LongValueMetric = ValueMetric<int64_t, int64_t, true>;
+using LongAverageMetric = ValueMetric<int64_t, int64_t, false>;
 
 } // metrics
 

@@ -2,8 +2,6 @@
 
 #include "termfieldmatchdataposition.h"
 
-namespace search {
-namespace fef {
+namespace search::fef {
 
-} // namespace fef
-} // namespace search
+}

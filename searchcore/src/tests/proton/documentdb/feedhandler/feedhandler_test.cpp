@@ -75,7 +75,7 @@ using vespalib::eval::ValueType;
 using namespace proton;
 using namespace search::index;
 
-typedef std::unique_ptr<vespalib::CountDownLatch> CountDownLatchUP;
+using CountDownLatchUP = std::unique_ptr<vespalib::CountDownLatch>;
 
 namespace {
 
@@ -83,7 +83,7 @@ struct Rendezvous {
     vespalib::Gate enter;
     vespalib::Gate leave;
     vespalib::Gate gone;
-    typedef std::unique_ptr<Rendezvous> UP;
+    using UP = std::unique_ptr<Rendezvous>;
     Rendezvous() : enter(), leave(), gone() {}
     bool run(vespalib::duration timeout = 80s) {
         enter.countDown();

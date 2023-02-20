@@ -6,6 +6,7 @@ import com.yahoo.document.DocumentTypeManager;
 import com.yahoo.document.DocumentTypeManagerConfigurer;
 import com.yahoo.feedapi.FeedContext;
 import com.yahoo.feedhandler.FeedResponse;
+import com.yahoo.feedhandler.InputStreamRequest;
 import com.yahoo.feedhandler.VespaFeedHandler;
 import com.yahoo.log.LogSetup;
 import com.yahoo.concurrent.SystemTimer;
@@ -78,7 +79,7 @@ public class VespaFeeder {
         if (args.getFiles().isEmpty()) {
             InputStreamRequest req = new InputStreamRequest(input);
             setProperties(req, input);
-            FeedResponse response = handler.handle(req.toRequest(), createProgressCallback(output), args.getNumThreads());
+            FeedResponse response = handler.handle(req, createProgressCallback(output), args.getNumThreads());
             if ( ! response.isSuccess()) {
                 throw renderErrors(response.getErrorList());
             }
@@ -96,7 +97,7 @@ public class VespaFeeder {
                 final BufferedInputStream inputSnooper = new BufferedInputStream(new FileInputStream(fileName));
                 setProperties(req, inputSnooper);
                 inputSnooper.close();
-                FeedResponse response = handler.handle(req.toRequest(), createProgressCallback(output), args.getNumThreads());
+                FeedResponse response = handler.handle(req, createProgressCallback(output), args.getNumThreads());
                 if (!response.isSuccess()) {
                     throw renderErrors(response.getErrorList());
                 }

@@ -123,7 +123,7 @@ public class ContainerImagePrunerTest {
         return new Container(new ContainerId("id-of-" + name), new ContainerName(name), Instant.EPOCH,
                              Container.State.running, imageId, DockerImage.EMPTY, Map.of(),
                              42, 43, name + ".example.com", ContainerResources.UNLIMITED,
-                             List.of(), true, List.of());
+                             List.of(), true);
     }
 
     private static class Tester {

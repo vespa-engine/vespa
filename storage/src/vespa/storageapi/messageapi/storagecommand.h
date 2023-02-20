@@ -39,9 +39,6 @@ public:
     void setTimeout(duration timeout) { _timeout = timeout; }
     duration getTimeout() const { return _timeout; }
 
-    /** Used to set a new id so the message can be resent. */
-    void setNewId() { StorageMessage::setNewMsgId(); }
-
     /** Overload this to get more descriptive message output. */
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 

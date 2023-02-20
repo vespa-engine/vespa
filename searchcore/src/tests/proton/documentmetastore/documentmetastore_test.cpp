@@ -640,8 +640,8 @@ void
 requireThatBasicBucketInfoWorks()
 {
     DocumentMetaStore dms(createBucketDB());
-    typedef std::pair<BucketId, GlobalId> Elem;
-    typedef std::map<Elem, Timestamp> Map;
+    using Elem = std::pair<BucketId, GlobalId>;
+    using Map = std::map<Elem, Timestamp>;
     Map m;
     uint32_t numLids = 2000;
     dms.constructFreeList();
@@ -1068,7 +1068,7 @@ SplitAndJoinEmptyFixture::~SplitAndJoinEmptyFixture()
 
 
 struct SplitAndJoinFixture : public SplitAndJoinEmptyFixture {
-    typedef std::map<BucketId, GlobalIdVector> BucketMap;
+    using BucketMap = std::map<BucketId, GlobalIdVector>;
     GlobalIdVector    gids;
     BucketMap         bid1s;
     BucketMap         bid2s;
@@ -1807,7 +1807,7 @@ TEST(DocumentMetaStoreTest, shrink_via_flush_target_works)
     EXPECT_TRUE(ft->getApproxMemoryGain().getBefore() >
                 ft->getApproxMemoryGain().getAfter());
 
-    vespalib::ThreadStackExecutor exec(1, 128_Ki);
+    vespalib::ThreadStackExecutor exec(1);
     vespalib::Executor::Task::UP task = ft->initFlush(11, std::make_shared<search::FlushToken>());
     exec.execute(std::move(task));
     exec.sync();

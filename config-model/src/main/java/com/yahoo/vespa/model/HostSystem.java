@@ -3,14 +3,13 @@ package com.yahoo.vespa.model;
 
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.api.HostProvisioner;
-import com.yahoo.config.model.producer.AbstractConfigProducer;
+import com.yahoo.config.model.producer.AnyConfigProducer;
+import com.yahoo.config.model.producer.TreeConfigProducer;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.ProvisionLogger;
-import com.yahoo.net.HostName;
-
 import java.net.UnknownHostException;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -31,7 +30,7 @@ import static java.util.logging.Level.FINE;
  *
  * @author gjoranv
  */
-public class HostSystem extends AbstractConfigProducer<Host> {
+public class HostSystem extends TreeConfigProducer<Host> {
 
     private static final Logger log = Logger.getLogger(HostSystem.class.getName());
     private static final boolean doCheckIp;
@@ -47,7 +46,7 @@ public class HostSystem extends AbstractConfigProducer<Host> {
         doCheckIp = ! checkIpProperty.equalsIgnoreCase("false");
     }
 
-    public HostSystem(AbstractConfigProducer<?> parent, String name, HostProvisioner provisioner, DeployLogger deployLogger, boolean isHosted) {
+    public HostSystem(TreeConfigProducer<AnyConfigProducer> parent, String name, HostProvisioner provisioner, DeployLogger deployLogger, boolean isHosted) {
         super(parent, name);
         this.provisioner = provisioner;
         this.deployLogger = deployLogger;
@@ -72,27 +71,6 @@ public class HostSystem extends AbstractConfigProducer<Host> {
         }
     }
 
-    /**
-     * Returns the host with the given hostname.
-     *
-     * @param name the hostname of the host
-     * @return the host with the given hostname, or null if no such host
-     */
-    public HostResource getHostByHostname(String name) {
-        String localhost = "localhost";
-        HostResource hostResource = hostname2host.get(name);
-        if (hostResource == null) {
-            // Create a new HostResource if this is the host this code is running on (as it is when running tests)
-            if (HostName.getLocalhost().equals(name)) {
-                if (! getChildren().containsKey(localhost)) {
-                    new Host(this, localhost);
-                }
-                hostResource = new HostResource(getChildren().get(localhost));
-            }
-        }
-        return hostResource;
-    }
-
     @Override
     public String toString() {
         return "hosts [" + hostname2host.values().stream()
@@ -115,11 +93,16 @@ public class HostSystem extends AbstractConfigProducer<Host> {
         return hostResource;
     }
 
-    /** Returns the hosts owned by the application having this system - i.e all hosts except config servers */
+    /** Returns the hosts owned by the application having this system - i.e. all hosts except config servers */
     public List<HostResource> getHosts() {
         return hostname2host.values().stream()
                 .filter(host -> !host.getHost().runsConfigServer())
-                .collect(Collectors.toList());
+                .toList();
+    }
+
+    /** Returns the hosts in this system */
+    public List<HostResource> getAllHosts() {
+        return hostname2host.values().stream().toList();
     }
 
     public void dumpPortAllocations() {

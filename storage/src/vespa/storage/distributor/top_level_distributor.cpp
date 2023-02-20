@@ -84,7 +84,7 @@ TopLevelDistributor::TopLevelDistributor(DistributorComponentRegister& compReg,
 {
     _component.registerMetric(*_total_metrics);
     _ideal_state_component.registerMetric(*_ideal_state_total_metrics);
-    _component.registerMetricUpdateHook(_metricUpdateHook, framework::SecondTime(0));
+    _component.registerMetricUpdateHook(_metricUpdateHook, 0s);
 
     assert(num_distributor_stripes == adjusted_num_stripes(num_distributor_stripes));
     _n_stripe_bits = calc_num_stripe_bits(num_distributor_stripes);
@@ -145,9 +145,8 @@ TopLevelDistributor::onOpen()
         _threadPool.start(_component.getThreadPool());
         start_stripe_pool();
     } else {
-        LOG(warning, "Not starting distributor thread as it's configured to "
-                     "run. Unless you are just running a test tool, this is a "
-                     "fatal error.");
+        LOG(warning, "Not starting distributor thread as it's configured to run. Unless you are just running a "
+                     "test tool, this is a fatal error.");
     }
 }
 
@@ -313,8 +312,7 @@ TopLevelDistributor::storageDistributionChanged()
         _next_distribution = _component.getDistribution();
     } else {
         LOG(debug, "Got distribution change, but the distribution %s was the same as before: %s",
-            _component.getDistribution()->toString().c_str(),
-            _distribution->toString().c_str());
+            _component.getDistribution()->toString().c_str(), _distribution->toString().c_str());
     }
 }
 
@@ -457,15 +455,14 @@ TopLevelDistributor::enable_next_config_if_changed()
 void
 TopLevelDistributor::un_inhibit_maintenance_if_safe_time_passed()
 {
-    if (_maintenance_safe_time_point.time_since_epoch().count() != 0) {
-        using TimePoint = OwnershipTransferSafeTimePointCalculator::TimePoint;
-        const auto now = TimePoint(std::chrono::seconds(_component.clock().getTimeInSeconds().getTime()));
+    if (vespalib::count_s(_maintenance_safe_time_point.time_since_epoch()) != 0) {
+        const auto now = _component.clock().getSystemTime();
         if (now >= _maintenance_safe_time_point) {
             // Thread safe. Relaxed store is fine; stripes will eventually observe new flag status.
             for (auto& stripe : _stripes) {
                 stripe->inhibit_non_activation_maintenance_operations(false);
             }
-            _maintenance_safe_time_point = TimePoint{};
+            _maintenance_safe_time_point = {};
             LOG(debug, "Marked all stripes as no longer inhibiting non-activation maintenance operations");
         }
     }
@@ -531,8 +528,7 @@ TopLevelDistributor::on_cluster_state_bundle_activated(const lib::ClusterStateBu
     }
     if (has_bucket_ownership_transfer && _maintenance_safe_time_delay.count() > 0) {
         OwnershipTransferSafeTimePointCalculator safe_time_calc(_maintenance_safe_time_delay);
-        using TimePoint = OwnershipTransferSafeTimePointCalculator::TimePoint;
-        const auto now = TimePoint(std::chrono::milliseconds(_component.getClock().getTimeInMillis().getTime()));
+        const auto now = _component.getClock().getSystemTime();
         _maintenance_safe_time_point = safe_time_calc.safeTimePoint(now);
         // All stripes are in a waiting pattern and will observe this on their next tick.
         // Memory visibility enforced by all stripes being held under a mutex by our caller.

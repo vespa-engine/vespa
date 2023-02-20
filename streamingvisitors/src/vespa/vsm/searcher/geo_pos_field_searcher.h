@@ -21,7 +21,7 @@ protected:
         GeoPosInfo (GeoLocation loc) noexcept : GeoLocation(std::move(loc)) {}
         bool cmp(const document::StructFieldValue & fv) const;
     };
-    typedef std::vector<GeoPosInfo> GeoPosInfoListT;
+    using GeoPosInfoListT = std::vector<GeoPosInfo>;
     GeoPosInfoListT _geoPosTerm;
 };
 

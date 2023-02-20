@@ -66,7 +66,7 @@ MultiValueNumericAttribute<B, M>::onCommit()
     this->reclaim_unused_memory();
 
     this->_changes.clear();
-    if (this->_mvMapping.considerCompact(this->getConfig().getCompactionStrategy())) {
+    if (this->_mvMapping.consider_compact(this->getConfig().getCompactionStrategy())) {
         this->incGeneration();
         this->updateStat(true);
     }
@@ -76,7 +76,7 @@ template <typename B, typename M>
 void MultiValueNumericAttribute<B, M>::onUpdateStat()
 {
     auto& compaction_strategy = this->getConfig().getCompactionStrategy();
-    vespalib::MemoryUsage usage = this->_mvMapping.updateStat(compaction_strategy);
+    vespalib::MemoryUsage usage = this->_mvMapping.update_stat(compaction_strategy);
     usage.merge(this->getChangeVectorMemoryUsage());
     this->updateStatistics(this->_mvMapping.getTotalValueCnt(), this->_mvMapping.getTotalValueCnt(), usage.allocatedBytes(),
                            usage.usedBytes(), usage.deadBytes(), usage.allocatedBytesOnHold());

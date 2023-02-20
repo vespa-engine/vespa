@@ -45,6 +45,7 @@ public class NodeRepositoryTester {
                                             new MockNameResolver().mockAnyLookup(),
                                             DockerImage.fromString("docker-registry.domain.tld:8080/dist/vespa"),
                                             Optional.empty(),
+                                            Optional.empty(),
                                             new InMemoryFlagSource(),
                                             new MemoryMetricsDb(clock),
                                             new OrchestratorMock(),
@@ -73,7 +74,7 @@ public class NodeRepositoryTester {
 
     private Node addNode(String id, String hostname, String parentHostname, Flavor flavor, NodeType type) {
         Set<String> ips = nodeRepository.nameResolver().resolveAll(hostname);
-        IP.Config ipConfig = new IP.Config(ips, type.isHost() ? ips : Set.of());
+        IP.Config ipConfig = IP.Config.of(ips, type.isHost() ? ips : Set.of());
         Node node = Node.create(id, ipConfig, hostname, flavor, type).parentHostname(parentHostname).build();
         return nodeRepository.nodes().addNodes(List.of(node), Agent.system).get(0);
     }

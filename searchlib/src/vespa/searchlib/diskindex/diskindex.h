@@ -30,37 +30,37 @@ public:
         uint64_t                         wordNum;
         index::PostingListCounts         counts;
         uint64_t                         bitOffset;
-        typedef std::unique_ptr<LookupResult> UP;
+        using UP = std::unique_ptr<LookupResult>;
         LookupResult() noexcept;
-        bool valid() const { return counts._numDocs > 0; }
-        void swap(LookupResult & rhs) {
+        bool valid() const noexcept { return counts._numDocs > 0; }
+        void swap(LookupResult & rhs) noexcept {
             std::swap(indexId , rhs.indexId);
             std::swap(wordNum , rhs.wordNum);
             counts.swap(rhs.counts);
             std::swap(bitOffset , rhs.bitOffset);
         }
     };
-    typedef std::vector<LookupResult> LookupResultVector;
-    typedef std::vector<uint32_t> IndexList;
+    using LookupResultVector = std::vector<LookupResult>;
+    using IndexList = std::vector<uint32_t>;
 
     class Key {
     public:
-        Key();
-        Key(IndexList indexes, vespalib::stringref word);
+        Key() noexcept;
+        Key(IndexList indexes, vespalib::stringref word) noexcept;
         Key(const Key &);
         Key & operator = (const Key &);
-        Key(Key &&) = default;
-        Key & operator = (Key &&) = default;
+        Key(Key &&) noexcept = default;
+        Key & operator = (Key &&) noexcept = default;
         ~Key();
-        uint32_t hash() const {
+        uint32_t hash() const noexcept {
             return vespalib::hashValue(_word.c_str(), _word.size());
         }
-        bool operator == (const Key & rhs) const {
+        bool operator == (const Key & rhs) const noexcept {
             return _word == rhs._word;
         }
         void push_back(uint32_t indexId) { _indexes.push_back(indexId); }
-        const IndexList & getIndexes() const { return _indexes; }
-        const vespalib::string & getWord() const { return _word; }
+        const IndexList & getIndexes() const noexcept { return _indexes; }
+        const vespalib::string & getWord() const noexcept { return _word; }
     private:
         vespalib::string _word;
         IndexList        _indexes;

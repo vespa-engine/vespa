@@ -634,7 +634,7 @@ BucketIdListResult
 PersistenceEngine::getModifiedBuckets(BucketSpace bucketSpace) const
 {
     ReadGuard rguard(_rwMutex);
-    typedef BucketIdListResultV MBV;
+    using MBV = BucketIdListResultV;
     MBV extraModifiedBuckets;
     {
         std::lock_guard<std::mutex> guard(_lock);
@@ -797,7 +797,7 @@ PersistenceEngine::populateInitialBucketDB(const WriteGuard & guard, BucketSpace
         IPersistenceHandler *handler = snap.handlers().get();
         handler->handleListActiveBuckets(resultHandler);
     }
-    typedef std::map<document::BucketId, size_t> BucketIdMap;
+    using BucketIdMap = std::map<document::BucketId, size_t>;
     document::BucketId::List buckets;
     const BucketIdMap &bucketMap(resultHandler.getBucketMap());
 

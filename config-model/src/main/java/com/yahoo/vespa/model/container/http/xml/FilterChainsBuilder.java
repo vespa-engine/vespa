@@ -2,15 +2,16 @@
 package com.yahoo.vespa.model.container.http.xml;
 
 import com.yahoo.config.model.deploy.DeployState;
-import com.yahoo.config.model.producer.AbstractConfigProducer;
+import com.yahoo.config.model.producer.AnyConfigProducer;
+import com.yahoo.config.model.producer.TreeConfigProducer;
 import com.yahoo.vespa.model.builder.xml.dom.chains.ChainsBuilder;
 import com.yahoo.vespa.model.builder.xml.dom.chains.ComponentsBuilder;
 import com.yahoo.vespa.model.builder.xml.dom.chains.ComponentsBuilder.ComponentType;
 import com.yahoo.vespa.model.builder.xml.dom.chains.DomChainBuilderBase;
 import com.yahoo.vespa.model.builder.xml.dom.chains.DomChainsBuilder;
-import com.yahoo.vespa.model.container.component.chain.Chain;
 import com.yahoo.vespa.model.container.http.Filter;
 import com.yahoo.vespa.model.container.http.FilterChains;
+import com.yahoo.vespa.model.container.http.HttpFilterChain;
 import org.w3c.dom.Element;
 
 import java.util.Collection;
@@ -21,11 +22,11 @@ import java.util.Map;
 /**
  * @author Tony Vaagenes
  */
-public class FilterChainsBuilder extends DomChainsBuilder<Filter, Chain<Filter>, FilterChains>  {
+public class FilterChainsBuilder extends DomChainsBuilder<Filter, HttpFilterChain, FilterChains>  {
     private static final Collection<ComponentType<Filter>> allowedComponentTypes =
             Collections.singleton(ComponentType.filter);
 
-    private static final Map<String, Class<? extends DomChainBuilderBase<? extends Filter, ? extends Chain<Filter>>>> chainType2BuilderClass =
+    private static final Map<String, Class<? extends DomChainBuilderBase<? extends Filter, ? extends HttpFilterChain>>> chainType2BuilderClass =
             Map.of(
                     HttpBuilder.REQUEST_CHAIN_TAG_NAME, FilterChainBuilder.class,
                     HttpBuilder.RESPONSE_CHAIN_TAG_NAME, FilterChainBuilder.class);
@@ -35,14 +36,14 @@ public class FilterChainsBuilder extends DomChainsBuilder<Filter, Chain<Filter>,
     }
 
     @Override
-    protected FilterChains newChainsInstance(AbstractConfigProducer<?> parent) {
+    protected FilterChains newChainsInstance(TreeConfigProducer<AnyConfigProducer> parent) {
         return new FilterChains(parent);
     }
 
     @Override
-    protected ChainsBuilder<Filter, Chain<Filter>> readChains(
+    protected ChainsBuilder<Filter, HttpFilterChain> readChains(
             DeployState deployState,
-            AbstractConfigProducer<?> ancestor,
+            TreeConfigProducer<AnyConfigProducer> ancestor,
             List<Element> allChainsElems, Map<String, ComponentsBuilder.ComponentType<?>> outerComponentTypeByComponentName) {
 
         return new ChainsBuilder<>(deployState, ancestor, allChainsElems, outerComponentTypeByComponentName, chainType2BuilderClass);

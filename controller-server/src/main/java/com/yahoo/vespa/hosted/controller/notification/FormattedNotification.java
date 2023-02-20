@@ -9,32 +9,13 @@ import java.util.Objects;
  *
  * @author enygaard
  */
-public class FormattedNotification {
-    private final String prettyType;
-    private final String messagePrefix;
-    private final URI uri;
-    private final Notification notification;
+public record FormattedNotification(Notification notification, String prettyType, String messagePrefix, URI uri) {
 
-    public FormattedNotification(Notification notification, String prettyType, String messagePrefix, URI uri) {
-        this.prettyType = Objects.requireNonNull(prettyType);
-        this.messagePrefix = Objects.requireNonNull(messagePrefix);
-        this.uri = Objects.requireNonNull(uri);
-        this.notification = Objects.requireNonNull(notification);
+    public FormattedNotification {
+        Objects.requireNonNull(prettyType);
+        Objects.requireNonNull(messagePrefix);
+        Objects.requireNonNull(uri);
+        Objects.requireNonNull(notification);
     }
 
-    public String prettyType() {
-        return prettyType;
-    }
-
-    public String messagePrefix() {
-        return messagePrefix;
-    }
-
-    public URI uri() {
-        return uri;
-    }
-
-    public Notification notification() {
-        return notification;
-    }
 }

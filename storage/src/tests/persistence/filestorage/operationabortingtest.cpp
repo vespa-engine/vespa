@@ -31,7 +31,7 @@ class BlockingMockProvider : public PersistenceProviderWrapper
     vespalib::Barrier& _queueBarrier;
     vespalib::Barrier& _completionBarrier;
 public:
-    typedef std::unique_ptr<BlockingMockProvider> UP;
+    using UP = std::unique_ptr<BlockingMockProvider>;
 
     mutable std::atomic<uint32_t> _bucketInfoInvocations;
     std::atomic<uint32_t> _createBucketInvocations;
@@ -296,8 +296,7 @@ TEST_F(OperationAbortingTest, wait_for_current_operation_completion_for_aborted_
     auto abortCmd = makeAbortCmd(abortSet);
 
     SendTask sendTask(abortCmd, *_queueBarrier, c.top);
-    vespalib::Thread thread(sendTask, test_thread);
-    thread.start();
+    auto thread = vespalib::thread::start(sendTask, test_thread);
 
     LOG(debug, "waiting for threads to reach barriers");
     _queueBarrier->await();
@@ -306,7 +305,6 @@ TEST_F(OperationAbortingTest, wait_for_current_operation_completion_for_aborted_
     LOG(debug, "waiting on completion barrier");
     _completionBarrier->await();
 
-    thread.stop();
     thread.join();
 
     // If waiting works, put reply shall always be ordered before the internal

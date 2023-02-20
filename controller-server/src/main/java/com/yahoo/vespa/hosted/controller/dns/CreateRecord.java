@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.controller.dns;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.NameService;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.Record;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordName;
+import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 
 import java.util.List;
 import java.util.Objects;
@@ -14,12 +15,13 @@ import java.util.Optional;
  *
  * @author mpolden
  */
-public class CreateRecord implements NameServiceRequest {
+public class CreateRecord extends AbstractNameServiceRequest {
 
     private final Record record;
 
     /** DO NOT USE. Public for serialization purposes */
-    public CreateRecord(Record record) {
+    public CreateRecord(Optional<TenantAndApplicationId> owner, Record record) {
+        super(owner, record.name());
         this.record = Objects.requireNonNull(record, "record must be non-null");
         if (record.type() != Record.Type.CNAME && record.type() != Record.Type.A) {
             throw new IllegalArgumentException("Record of type " + record.type() + " is not supported: " + record);
@@ -28,11 +30,6 @@ public class CreateRecord implements NameServiceRequest {
 
     public Record record() {
         return record;
-    }
-
-    @Override
-    public Optional<RecordName> name() {
-        return Optional.of(record.name());
     }
 
     @Override
@@ -59,12 +56,12 @@ public class CreateRecord implements NameServiceRequest {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         CreateRecord that = (CreateRecord) o;
-        return record.equals(that.record);
+        return owner().equals(that.owner()) && record.equals(that.record);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(record);
+        return Objects.hash(owner(), record);
     }
 
 }

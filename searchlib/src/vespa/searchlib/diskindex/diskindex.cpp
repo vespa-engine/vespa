@@ -35,8 +35,8 @@ DiskIndex::LookupResult::LookupResult() noexcept
 {
 }
 
-DiskIndex::Key::Key() = default;
-DiskIndex::Key::Key(IndexList indexes, vespalib::stringref word) :
+DiskIndex::Key::Key() noexcept = default;
+DiskIndex::Key::Key(IndexList indexes, vespalib::stringref word) noexcept :
     _word(word),
     _indexes(std::move(indexes))
 {
@@ -302,7 +302,7 @@ DiskIndex::readPostingList(const LookupResult &lookupRes) const
     SchemaUtil::IndexIterator it(_schema, lookupRes.indexId);
     handle->_file = _postingFiles[it.getIndex()].get();
     if (handle->_file == nullptr) {
-        return PostingListHandle::UP();
+        return {};
     }
     const uint32_t firstSegment = 0;
     const uint32_t numSegments = 0; // means all segments
@@ -316,7 +316,7 @@ DiskIndex::readBitVector(const LookupResult &lookupRes) const
     SchemaUtil::IndexIterator it(_schema, lookupRes.indexId);
     BitVectorDictionary * dict = _bitVectorDicts[it.getIndex()].get();
     if (dict == nullptr) {
-        return BitVector::UP();
+        return {};
     }
     return dict->lookup(lookupRes.wordNum);
 }
@@ -330,7 +330,7 @@ DiskIndex::calculateSize()
 
 namespace {
 
-DiskIndex::LookupResult _G_nothing;
+DiskIndex::LookupResult G_nothing;
 
 class LookupCache {
 public:
@@ -352,11 +352,11 @@ public:
                 return result;
             }
         }
-        return _G_nothing;
+        return G_nothing;
     }
 private:
 
-    typedef vespalib::hash_map<vespalib::string, DiskIndex::LookupResultVector> Cache;
+    using Cache = vespalib::hash_map<vespalib::string, DiskIndex::LookupResultVector>;
     DiskIndex &                   _diskIndex;
     const std::vector<uint32_t> & _fieldIds;
     Cache                         _cache;

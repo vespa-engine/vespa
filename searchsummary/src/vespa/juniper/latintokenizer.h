@@ -374,4 +374,4 @@ struct Fast_IsPunctuation {
 * @date    Creation date: 2001-12-07
 *****************************************************************************/
 
-typedef Fast_LatinTokenizer<Fast_IsSpace, Fast_IsPunctuation> Fast_SimpleLatinTokenizer;
+using Fast_SimpleLatinTokenizer = Fast_LatinTokenizer<Fast_IsSpace, Fast_IsPunctuation>;

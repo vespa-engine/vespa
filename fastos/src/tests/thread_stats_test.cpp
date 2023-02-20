@@ -14,7 +14,7 @@ class Thread_Stats_Test : public ThreadTestBase
 
       TestHeader("Thread Statistics Test");
 
-      FastOS_ThreadPool pool(128*1024);
+      FastOS_ThreadPool pool;
       Job job[2];
 
       inactiveThreads = pool.GetNumInactiveThreads();

@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.document;
 
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.yahoo.document.datatypes.FieldValue;
 import com.yahoo.document.fieldset.AllFields;
@@ -38,9 +37,9 @@ public class DocumentType extends StructuredDataType {
     public static final int classId = registerClass(Ids.document + 58, DocumentType.class);
     private StructDataType contentStructType;
     private List<DocumentType> inherits = new ArrayList<>(1);
-    private Map<String, Set<Field>> fieldSets = new HashMap<>();
+    private final Map<String, Set<Field>> fieldSets = new HashMap<>();
     private final Set<String> importedFieldNames;
-    private Map<String, StructDataType> declaredStructTypes = new HashMap<>();
+    private final Map<String, StructDataType> declaredStructTypes = new HashMap<>();
 
     /**
      * Creates a new document type and registers it with the document type manager.
@@ -101,10 +100,9 @@ public class DocumentType extends StructuredDataType {
 
     @Override
     public boolean isValueCompatible(FieldValue value) {
-        if (!(value instanceof Document)) {
+        if (!(value instanceof Document doc)) {
             return false;
         }
-        Document doc = (Document) value;
         if (doc.getDataType().inherits(this)) {
             //the value is of this type; or the supertype of the value is of this type, etc....
             return true;
@@ -330,7 +328,7 @@ public class DocumentType extends StructuredDataType {
         for (DocumentType type : inherits) {
             names.add(type.getDataTypeName());
         }
-        return ImmutableList.copyOf(names).listIterator();
+        return List.copyOf(names).listIterator();
     }
 
     /**
@@ -433,7 +431,7 @@ public class DocumentType extends StructuredDataType {
         }
 
         collection.addAll(contentStructType.getFields());
-        return ImmutableList.copyOf(collection);
+        return List.copyOf(collection);
     }
 
     private Set<Field> getAllUniqueFields() {
@@ -486,8 +484,7 @@ public class DocumentType extends StructuredDataType {
     }
 
     public boolean equals(Object o) {
-        if (!(o instanceof DocumentType)) return false;
-        DocumentType other = (DocumentType) o;
+        if (!(o instanceof DocumentType other)) return false;
         // Ignore whether one of them have added inheritance to super Document.0 type
         if (super.equals(o) && contentStructType.equals(other.contentStructType)) {
             if ((inherits.size() > 1 || other.inherits.size() > 1) ||

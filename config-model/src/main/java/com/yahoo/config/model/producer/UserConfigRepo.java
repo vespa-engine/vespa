@@ -28,7 +28,7 @@ public class UserConfigRepo {
     }
 
     /**
-     * Must copy the builder, because the merge method on {@link AbstractConfigProducer} might override the row's builders otherwise
+     * Must copy the builder, because the merge method on {@link TreeConfigProducer} might override the row's builders otherwise
      */
     private Map<ConfigDefinitionKey, ConfigPayloadBuilder> copyBuilders(Map<ConfigDefinitionKey, ConfigPayloadBuilder> source) {
         Map<ConfigDefinitionKey, ConfigPayloadBuilder> ret = new LinkedHashMap<>();

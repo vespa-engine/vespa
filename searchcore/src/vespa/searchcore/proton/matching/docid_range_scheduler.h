@@ -104,7 +104,7 @@ public:
  * passed as input to the 'share_range' function.
  **/
 struct DocidRangeScheduler {
-    typedef std::unique_ptr<DocidRangeScheduler> UP;
+    using UP = std::unique_ptr<DocidRangeScheduler>;
     virtual DocidRange first_range(size_t thread_id) = 0;
     virtual DocidRange next_range(size_t thread_id) = 0;
     virtual size_t total_size(size_t thread_id) const = 0;

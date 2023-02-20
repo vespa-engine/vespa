@@ -14,6 +14,12 @@ ProviderErrorWrapper::checkResult(ResultType&& result) const
     return std::forward<ResultType>(result);
 }
 
+ProviderErrorWrapper::ProviderErrorWrapper(spi::PersistenceProvider& impl) noexcept
+    : _impl(impl),
+      _mutex()
+{ }
+ProviderErrorWrapper::~ProviderErrorWrapper() = default;
+
 void
 ProviderErrorWrapper::handle(const spi::Result & result) const {
     if (result.getErrorCode() == spi::Result::ErrorType::FATAL_ERROR) {

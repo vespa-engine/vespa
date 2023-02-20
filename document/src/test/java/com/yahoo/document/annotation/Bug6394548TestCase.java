@@ -17,6 +17,7 @@ import static org.junit.Assert.*;
 
 public class Bug6394548TestCase {
     @Test
+    @SuppressWarnings("deprecation")
     public void testSerializeAndDeserializeMultipleAdjacentStructAnnotations() {
         DocumentTypeManager manager = new DocumentTypeManager();
         var sub = DocumentTypeManagerConfigurer.configure
@@ -65,6 +66,7 @@ public class Bug6394548TestCase {
         assertEquals(annotationsBefore, annotationsAfter);
     }
 
+    @SuppressWarnings("deprecation")
     private String dumpAllAnnotations(SpanTree tree) {
         ArrayList<String> tmp = new ArrayList<>();
         for (Annotation anno : tree) {

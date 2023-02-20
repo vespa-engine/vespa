@@ -59,4 +59,11 @@ public class EmbedderTester {
                           expectedSegments, ((Segmenter)embedder).segment(input, language).toArray());
     }
 
+    public void assertDecoded(String input) {
+        var context = new Embedder.Context("test");
+        var tokens = embedder.embed(input, context);
+        var result = embedder.decode(tokens, context);
+        assertEquals(input, result);
+    }
+
 }

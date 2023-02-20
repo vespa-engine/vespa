@@ -9,8 +9,7 @@
 #include <vector>
 #include <cassert>
 
-namespace search {
-namespace fef {
+namespace search::fef {
 
 /**
  * Static match data for a single unit (term/phrase/etc).
@@ -20,49 +19,42 @@ class SimpleTermData final : public ITermData
 private:
     query::Weight   _weight;
     uint32_t        _numTerms;
-    uint32_t        _termIndex;
     uint32_t        _uniqueId;
-    std::optional<vespalib::string> _query_tensor_name;
-
+    std::optional<vespalib::string>  _query_tensor_name;
     std::vector<SimpleTermFieldData> _fields;
 
 public:
-    /**
-     * Creates a new object.
-     **/
-    SimpleTermData();
-
-    /**
-     * Side-cast copy constructor.
-     **/
+    SimpleTermData() noexcept;
     SimpleTermData(const ITermData &rhs);
-
-    ~SimpleTermData();
+    SimpleTermData(const SimpleTermData &);
+    SimpleTermData(SimpleTermData &&) noexcept;
+    SimpleTermData & operator=(SimpleTermData &&) noexcept;
+    ~SimpleTermData() override;
 
     //----------- ITermData implementation ------------------------------------
 
-    query::Weight getWeight() const override { return _weight; }
+    [[nodiscard]] query::Weight getWeight() const override { return _weight; }
 
-    uint32_t getPhraseLength() const override { return _numTerms; }
+    [[nodiscard]] uint32_t getPhraseLength() const override { return _numTerms; }
 
-    uint32_t getUniqueId() const override { return _uniqueId; }
+    [[nodiscard]] uint32_t getUniqueId() const override { return _uniqueId; }
 
-    std::optional<vespalib::string> query_tensor_name() const override { return _query_tensor_name; }
+    [[nodiscard]] std::optional<vespalib::string> query_tensor_name() const override { return _query_tensor_name; }
 
-    size_t numFields() const override { return _fields.size(); }
+    [[nodiscard]] size_t numFields() const override { return _fields.size(); }
 
-    const ITermFieldData &field(size_t i) const override {
+    [[nodiscard]] const ITermFieldData &field(size_t i) const override {
         return _fields[i];
     }
 
-    const ITermFieldData *lookupField(uint32_t fieldId) const override {
+    [[nodiscard]] const ITermFieldData *lookupField(uint32_t fieldId) const override {
         for (size_t fieldIdx(0), m(numFields()); fieldIdx < m; ++fieldIdx) {
             const ITermFieldData &tfd = field(fieldIdx);
             if (tfd.getFieldId() == fieldId) {
                 return &tfd;
             }
         }
-        return 0;
+        return nullptr;
     }
 
     //----------- Utility functions -------------------------------------------
@@ -80,17 +72,6 @@ public:
      **/
     SimpleTermData &setPhraseLength(uint32_t numTerms) {
         _numTerms = numTerms;
-        return *this;
-    }
-
-    /**
-     * Set the location of this term in the original user query.
-     *
-     * @return this to allow chaining.
-     * @param idx term index
-     **/
-    SimpleTermData &setTermIndex(uint32_t idx) {
-        _termIndex = idx;
         return *this;
     }
 
@@ -117,7 +98,7 @@ public:
      * @param fieldId field id of the added field
      **/
     SimpleTermFieldData &addField(uint32_t fieldId) {
-        _fields.push_back(SimpleTermFieldData(fieldId));
+        _fields.emplace_back(fieldId);
         return _fields.back();
     }
 
@@ -143,10 +124,9 @@ public:
                 return &tfd;
             }
         }
-        return 0;
+        return nullptr;
     }
 };
-
 
 /**
  * convenience adapter for easy iteration
@@ -161,14 +141,11 @@ public:
         : _ref(ref), _idx(0), _lim(ref.numFields())
     {}
 
-    bool valid() const { return (_idx < _lim); }
+    [[nodiscard]] bool valid() const { return (_idx < _lim); }
 
-    SimpleTermFieldData& get() const  { return _ref.field(_idx); }
+    [[nodiscard]] SimpleTermFieldData& get() const  { return _ref.field(_idx); }
 
     void next() { assert(valid()); ++_idx; }
 };
 
-
-} // namespace fef
-} // namespace search
-
+}

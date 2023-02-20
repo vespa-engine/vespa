@@ -35,7 +35,7 @@ public final class JoinExpression extends Expression {
         }
         StringBuilder output = new StringBuilder();
         for (Iterator<FieldValue> it = ((Array)input).fieldValueIterator(); it.hasNext(); ) {
-            output.append(String.valueOf(it.next()));
+            output.append(it.next());
             if (it.hasNext()) {
                 output.append(delimiter);
             }
@@ -64,13 +64,8 @@ public final class JoinExpression extends Expression {
 
     @Override
     public boolean equals(Object obj) {
-        if (!(obj instanceof JoinExpression)) {
-            return false;
-        }
-        JoinExpression rhs = (JoinExpression)obj;
-        if (!delimiter.equals(rhs.delimiter)) {
-            return false;
-        }
+        if (!(obj instanceof JoinExpression rhs)) return false;
+        if (!delimiter.equals(rhs.delimiter)) return false;
         return true;
     }
 

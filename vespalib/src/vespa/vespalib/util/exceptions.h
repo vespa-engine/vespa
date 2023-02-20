@@ -68,13 +68,13 @@ public:
     class Anything {
     public:
        using UP = std::unique_ptr<Anything>;
-       virtual ~Anything() { }
+       virtual ~Anything() = default;
     };
-    ExceptionWithPayload(vespalib::stringref msg);
+    explicit ExceptionWithPayload(vespalib::stringref msg);
     ExceptionWithPayload(vespalib::stringref msg, Anything::UP payload);
-    ExceptionWithPayload(ExceptionWithPayload &&) = default;
-    ExceptionWithPayload & operator = (ExceptionWithPayload &&) = default;
-    ~ExceptionWithPayload();
+    ExceptionWithPayload(ExceptionWithPayload &&) noexcept;
+    ExceptionWithPayload & operator = (ExceptionWithPayload &&) noexcept;
+    ~ExceptionWithPayload() override;
     void setPayload(Anything::UP payload) { _payload = std::move(payload); }
     const char * what() const noexcept override;
 private:
@@ -84,7 +84,7 @@ private:
 
 class OOMException : public ExceptionWithPayload {
 public:
-    OOMException(vespalib::stringref msg) : ExceptionWithPayload(msg) { }
+    explicit OOMException(vespalib::stringref msg) : ExceptionWithPayload(msg) { }
     OOMException(vespalib::stringref msg, Anything::UP payload) : ExceptionWithPayload(msg, std::move(payload)) { }
 };
 
@@ -105,11 +105,11 @@ public:
                         vespalib::stringref location = "", int skipStack = 0);
     PortListenException(int port, vespalib::stringref protocol, const Exception &cause, vespalib::stringref msg = "",
                         vespalib::stringref location = "", int skipStack = 0);
-    PortListenException(PortListenException &&) = default;
-    PortListenException & operator = (PortListenException &&) = default;
+    PortListenException(PortListenException &&) noexcept;
+    PortListenException & operator = (PortListenException &&) noexcept;
     PortListenException(const PortListenException &);
     PortListenException & operator = (const PortListenException &);
-    ~PortListenException();
+    ~PortListenException() override;
     VESPA_DEFINE_EXCEPTION_SPINE(PortListenException);
     int get_port() const { return _port; }
     const vespalib::string &get_protocol() const { return _protocol; }
@@ -130,6 +130,11 @@ public:
 
     IoException(stringref msg, Type type, stringref location, int skipStack = 0);
     IoException(stringref msg, Type type, const Exception& cause, stringref location, int skipStack = 0);
+    IoException(const IoException &);
+    IoException & operator =(const IoException &) = delete;
+    IoException(IoException &&) noexcept;
+    IoException & operator =(IoException &&) noexcept;
+    ~IoException() override;
 
     VESPA_DEFINE_EXCEPTION_SPINE(IoException);
 
@@ -148,8 +153,10 @@ class SilenceUncaughtException : public ExceptionWithPayload::Anything {
 public:
     SilenceUncaughtException(const SilenceUncaughtException &) = delete;
     SilenceUncaughtException & operator = (const SilenceUncaughtException &) = delete;
+    SilenceUncaughtException(SilenceUncaughtException &&) noexcept = delete;
+    SilenceUncaughtException & operator=(SilenceUncaughtException &&) noexcept = delete;
     SilenceUncaughtException(const std::exception & e);
-    ~SilenceUncaughtException();
+    ~SilenceUncaughtException() override;
 private:
     std::terminate_handler _oldTerminate;
 };
@@ -157,7 +164,7 @@ private:
 /**
  * NOTE: This function must only be called from within a catch block,
  * and the parameter must reference the caught exception.
- * 
+ *
  * Based on the run-time type of the exception, determine if it is
  * safe to handle this exception and continue normal program
  * operation. If the exception is considered safe, no additional

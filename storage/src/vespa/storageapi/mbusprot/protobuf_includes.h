@@ -2,15 +2,7 @@
 
 #pragma once
 
-// Disable warnings emitted by protoc generated files
-#pragma GCC diagnostic push
-#ifndef __clang__
-#pragma GCC diagnostic ignored "-Wsuggest-override"
-#endif
-
 #include <vespa/storageapi/mbusprot/feed.pb.h>
 #include <vespa/storageapi/mbusprot/inspect.pb.h>
 #include <vespa/storageapi/mbusprot/visiting.pb.h>
 #include <vespa/storageapi/mbusprot/maintenance.pb.h>
-
-#pragma GCC diagnostic pop

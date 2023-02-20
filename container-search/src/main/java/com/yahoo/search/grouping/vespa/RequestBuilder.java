@@ -18,14 +18,14 @@ import com.yahoo.searchlib.aggregation.HitsAggregationResult;
 import com.yahoo.searchlib.expression.ExpressionNode;
 import com.yahoo.searchlib.expression.RangeBucketPreDefFunctionNode;
 
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Objects;
 import java.util.OptionalLong;
-import java.util.Stack;
+import java.util.Deque;
 import java.util.TimeZone;
-
-import static java.util.stream.Collectors.toList;
 
 /**
  * This class implements the necessary logic to build a list of {@link Grouping} objects from an instance of {@link
@@ -63,7 +63,7 @@ class RequestBuilder {
      * @return This, to allow chaining.
      */
     public RequestBuilder setRootOperation(GroupingOperation root) {
-        root.getClass(); // throws NullPointerException
+        Objects.requireNonNull(root, "Root must be non-null");
         this.root = root;
         return this;
     }
@@ -127,7 +127,7 @@ class RequestBuilder {
         Grouping grouping = new Grouping();
         grouping.getRoot().setTag(++tag);
         grouping.setForceSinglePass(root.getForceSinglePass() || root.containsHint("singlepass"));
-        Stack<BuildFrame> stack = new Stack<>();
+        Deque<BuildFrame> stack = new ArrayDeque<>();
         stack.push(new BuildFrame(grouping, new BuildState(), root));
         while (!stack.isEmpty()) {
             BuildFrame frame = stack.pop();
@@ -319,11 +319,10 @@ class RequestBuilder {
         result.setTag(++tag);
 
         String label = exp.getLabel();
-        if (result instanceof HitsAggregationResult) {
+        if (result instanceof HitsAggregationResult hits) {
             if (label != null) {
                 throw new UnsupportedOperationException("Can not label expression '" + exp + "'.");
             }
-            HitsAggregationResult hits = (HitsAggregationResult)result;
             if (frame.state.max != null) {
                 transform.putMax(tag, frame.state.max, "hit list");
                 int offset = transform.getOffset(tag);
@@ -456,7 +455,7 @@ class RequestBuilder {
         return lvl.getGroupPrototype().getAggregationResults().stream()
                 .filter(ar -> ar instanceof HitsAggregationResult)
                 .map(ar -> (HitsAggregationResult) ar)
-                .collect(toList());
+                .toList();
     }
 
     private static class BuildFrame {

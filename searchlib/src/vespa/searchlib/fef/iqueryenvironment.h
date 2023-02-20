@@ -23,7 +23,7 @@ public:
     /**
      * Convenience typedef.
      **/
-    typedef std::shared_ptr<IQueryEnvironment> SP;
+    using SP = std::shared_ptr<IQueryEnvironment>;
 
     /** Convenience typedef. */
     using GeoLocationSpecPtrs = std::vector<const search::common::GeoLocationSpec *>;

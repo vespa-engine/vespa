@@ -14,7 +14,7 @@
 #include <vespa/storageapi/messageapi/maintenancecommand.h>
 #include <vespa/document/base/globalid.h>
 #include <vespa/document/util/printable.h>
-#include <vespa/vespalib/util/array.h>
+#include <vespa/vespalib/stllike/allocator.h>
 #include <vespa/storageapi/defs.h>
 
 namespace document { class DocumentTypeRepo; }
@@ -154,7 +154,7 @@ operator<<(std::ostream& out, const MergeBucketCommand::Node& n);
  */
 class MergeBucketReply : public BucketReply {
 public:
-    typedef MergeBucketCommand::Node Node;
+    using Node = MergeBucketCommand::Node;
 
 private:
     std::vector<Node> _nodes;
@@ -182,7 +182,7 @@ public:
  */
 class GetBucketDiffCommand : public BucketCommand {
 public:
-    typedef MergeBucketCommand::Node Node;
+    using Node = MergeBucketCommand::Node;
 
     struct Entry : public document::Printable {
         Timestamp _timestamp;
@@ -227,8 +227,8 @@ public:
  */
 class GetBucketDiffReply : public BucketReply {
 public:
-    typedef MergeBucketCommand::Node Node;
-    typedef GetBucketDiffCommand::Entry Entry;
+    using Node = MergeBucketCommand::Node;
+    using Entry = GetBucketDiffCommand::Entry;
 
 private:
     std::vector<Node> _nodes;
@@ -237,7 +237,7 @@ private:
 
 public:
     explicit GetBucketDiffReply(const GetBucketDiffCommand& cmd);
-    ~GetBucketDiffReply();
+    ~GetBucketDiffReply() override;
 
     const std::vector<Node>& getNodes() const { return _nodes; }
     Timestamp getMaxTimestamp() const { return _maxTimestamp; }
@@ -257,7 +257,7 @@ public:
  */
 class ApplyBucketDiffCommand : public BucketInfoCommand {
 public:
-    typedef MergeBucketCommand::Node Node;
+    using Node = MergeBucketCommand::Node;
     struct Entry : public document::Printable {
         GetBucketDiffCommand::Entry _entry;
         vespalib::string _docName;
@@ -268,14 +268,14 @@ public:
         const document::DocumentTypeRepo *_repo;
 
         Entry();
-        Entry(const GetBucketDiffCommand::Entry&);
+        explicit Entry(const GetBucketDiffCommand::Entry&);
         Entry(const Entry &);
         Entry & operator = (const Entry &);
         Entry(Entry &&) = default;
         Entry & operator = (Entry &&) = default;
-        ~Entry();
+        ~Entry() override;
 
-        bool filled() const;
+        [[nodiscard]] bool filled() const;
         void print(std::ostream& out, bool verbose, const std::string& indent) const override;
         bool operator==(const Entry&) const;
     };
@@ -304,8 +304,8 @@ public:
  */
 class ApplyBucketDiffReply : public BucketInfoReply {
 public:
-    typedef MergeBucketCommand::Node Node;
-    typedef ApplyBucketDiffCommand::Entry Entry;
+    using Node = MergeBucketCommand::Node;
+    using Entry = ApplyBucketDiffCommand::Entry;
 
 private:
     std::vector<Node> _nodes;
@@ -358,7 +358,7 @@ public:
 
     const std::vector<document::BucketId>& getBuckets() const { return _buckets; }
 
-    bool hasSystemState() const { return (_state.get() != 0); }
+    bool hasSystemState() const { return bool(_state); }
     uint16_t getDistributor() const { return _distributor; }
     const lib::ClusterState& getSystemState() const { return *_state; }
 
@@ -387,8 +387,8 @@ public:
 
         bool operator==(const Entry& e) const { return (_bucketId == e._bucketId && _info == e._info); }
         bool operator!=(const Entry& e) const { return !(*this == e); }
-        Entry() : _bucketId(), _info() {}
-        Entry(const document::BucketId& id, const BucketInfo& info)
+        Entry() noexcept : _bucketId(), _info() {}
+        Entry(const document::BucketId& id, const BucketInfo& info) noexcept
             : _bucketId(id), _info(info) {}
         friend std::ostream& operator<<(std::ostream& os, const Entry&);
     };
@@ -397,7 +397,7 @@ public:
         bool two_phase_remove_location              = false;
         bool no_implicit_indexing_of_active_buckets = false;
     };
-    using EntryVector = vespalib::Array<Entry>;
+    using EntryVector = std::vector<Entry, vespalib::allocator_large<Entry>>;
 private:
     EntryVector           _buckets;
     bool                  _full_bucket_fetch;

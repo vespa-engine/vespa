@@ -68,9 +68,6 @@
 #pragma once
 
 #include "managedcomponent.h"
-#include <vespa/storageframework/generic/thread/runnable.h>
-#include <vespa/storageframework/generic/thread/thread.h>
-#include <vespa/storageframework/generic/clock/clock.h>
 #include <vespa/vespalib/util/cpu_usage.h>
 #include <atomic>
 #include <optional>
@@ -78,13 +75,8 @@
 namespace storage::framework {
 
 struct ComponentRegister;
-
-struct ComponentStateListener {
-    virtual ~ComponentStateListener() = default;
-
-    virtual void onOpen() {}
-    virtual void onClose() {}
-};
+struct Runnable;
+class Thread;
 
 class Component : private ManagedComponent
 {
@@ -94,25 +86,15 @@ class Component : private ManagedComponent
     metrics::Metric* _metric;
     ThreadPool* _threadPool;
     MetricRegistrator* _metricReg;
-    std::pair<MetricUpdateHook*, SecondTime> _metricUpdateHook;
+    std::pair<MetricUpdateHook*, vespalib::duration> _metricUpdateHook;
     const Clock* _clock;
-    ComponentStateListener* _listener;
-    std::atomic<UpgradeFlags> _upgradeFlag;
-
-    UpgradeFlags loadUpgradeFlag() const {
-        return _upgradeFlag.load(std::memory_order_relaxed);
-    }
 
     // ManagedComponent implementation
     metrics::Metric* getMetric() override { return _metric; }
-    std::pair<MetricUpdateHook*, SecondTime> getMetricUpdateHook() override { return _metricUpdateHook; }
     const StatusReporter* getStatusReporter() override { return _status; }
     void setMetricRegistrator(MetricRegistrator& mr) override;
     void setClock(Clock& c) override { _clock = &c; }
     void setThreadPool(ThreadPool& tp) override { _threadPool = &tp; }
-    void setUpgradeFlag(UpgradeFlags flag) override {
-        _upgradeFlag.store(flag, std::memory_order_relaxed);
-    }
     void open() override;
     void close() override;
 
@@ -120,18 +102,8 @@ public:
     using UP = std::unique_ptr<Component>;
 
     Component(ComponentRegister&, vespalib::stringref name);
-    virtual ~Component();
+    ~Component() override;
 
-    /**
-     * Register a component state listener, getting callbacks when components
-     * are started and stopped. An application might want to create all
-     * components before starting to do it's work. And it might stop doing work
-     * before starting to remove components. Using this listener, components
-     * may get callbacks in order to do some initialization after all components
-     * are set up, and to do some cleanups before other components are being
-     * removed.
-     */
-    void registerComponentStateListener(ComponentStateListener&);
     /**
      * Register a status page, which might be visible to others through a
      * component showing status of components. Only one status page can be
@@ -152,10 +124,10 @@ public:
      * update hook will only be called if there actually is a metric mananger
      * component registered in the application.
      */
-    void registerMetricUpdateHook(MetricUpdateHook&, SecondTime period);
+    void registerMetricUpdateHook(MetricUpdateHook&, vespalib::duration period);
 
     /** Get the name of the component. Must be a unique name. */
-    const vespalib::string& getName() const override { return _name; }
+    [[nodiscard]] const vespalib::string& getName() const override { return _name; }
 
     /**
      * Get the thread pool for this application. Note that this call will fail
@@ -163,7 +135,7 @@ public:
      * encouraged to register a threadpool before adding components to avoid
      * needing components to wait before accessing threadpool.
      */
-    ThreadPool& getThreadPool() const;
+    [[nodiscard]] ThreadPool& getThreadPool() const;
 
     /**
      * Get the clock used in this application. This function will fail before
@@ -171,7 +143,7 @@ public:
      * encourated to register a clock implementation before adding components to
      * avoid needing components to delay using it.
      */
-    const Clock& getClock() const { return *_clock; }
+    [[nodiscard]] const Clock& getClock() const { return *_clock; }
 
     /**
      * Helper functions for components wanting to start a single thread.
@@ -179,22 +151,11 @@ public:
      * If max process time is not set, deadlock detector cannot detect deadlocks
      * in this thread. (Thus one is not required to call registerTick())
      */
-    Thread::UP startThread(Runnable&,
-                           vespalib::duration maxProcessTime = vespalib::duration::zero(),
-                           vespalib::duration waitTime = vespalib::duration::zero(),
-                           int ticksBeforeWait = 1,
-                           std::optional<vespalib::CpuUsage::Category> cpu_category = std::nullopt);
-
-    // Check upgrade flag settings. Note that this flag may change at any time.
-    // Thus the results of these functions should not be cached.
-    bool isUpgradingToMajorVersion() const
-        { return (loadUpgradeFlag() == UPGRADING_TO_MAJOR_VERSION); }
-    bool isUpgradingToMinorVersion() const
-        { return (loadUpgradeFlag() == UPGRADING_TO_MINOR_VERSION); }
-    bool isUpgradingFromMajorVersion() const
-        { return (loadUpgradeFlag() == UPGRADING_FROM_MAJOR_VERSION); }
-    bool isUpgradingFromMinorVersion() const
-        { return (loadUpgradeFlag() == UPGRADING_FROM_MINOR_VERSION); }
+    std::unique_ptr<Thread> startThread(Runnable&,
+                                        vespalib::duration maxProcessTime = vespalib::duration::zero(),
+                                        vespalib::duration waitTime = vespalib::duration::zero(),
+                                        int ticksBeforeWait = 1,
+                                        std::optional<vespalib::CpuUsage::Category> cpu_category = std::nullopt) const;
 
     void requestShutdown(vespalib::stringref reason);
 

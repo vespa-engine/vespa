@@ -39,13 +39,11 @@ public class StatementTestCase {
         Expression foo = new AttributeExpression("foo");
         Expression bar = new AttributeExpression("bar");
         Expression exp = newStatement(foo, bar);
-        assertFalse(exp.equals(new Object()));
-        assertFalse(exp.equals(new CatExpression(foo, bar)));
-        assertFalse(exp.equals(newStatement(new IndexExpression("foo"))));
-        assertFalse(exp.equals(newStatement(new IndexExpression("foo"),
-                                            new IndexExpression("bar"))));
-        assertFalse(exp.equals(newStatement(foo,
-                                            new IndexExpression("bar"))));
+        assertNotEquals(exp, new Object());
+        assertNotEquals(exp, new CatExpression(foo, bar));
+        assertNotEquals(exp, newStatement(new IndexExpression("foo")));
+        assertNotEquals(exp, newStatement(new IndexExpression("foo"), new IndexExpression("bar")));
+        assertNotEquals(exp, newStatement(foo, new IndexExpression("bar")));
         assertEquals(exp, newStatement(foo, bar));
         assertEquals(exp.hashCode(), newStatement(foo, bar).hashCode());
     }
@@ -117,4 +115,5 @@ public class StatementTestCase {
     private static StatementExpression newStatement(Expression... args) {
         return new StatementExpression(args);
     }
+
 }

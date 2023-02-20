@@ -69,4 +69,9 @@ public class SimpleTestAdapter implements FieldValueAdapter {
         return this;
     }
 
+    @Override
+    public boolean isComplete() {
+        return false;
+    }
+
 }

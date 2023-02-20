@@ -109,9 +109,9 @@ struct StringEntry {
 };
 
 struct Reader {
-    typedef StringEnumStore::Index Index;
-    typedef std::vector<Index> IndexVector;
-    typedef std::vector<StringEntry> ExpectedVector;
+    using Index = StringEnumStore::Index;
+    using IndexVector = std::vector<Index>;
+    using ExpectedVector = std::vector<StringEntry>;
     uint32_t _generation;
     IndexVector _indices;
     ExpectedVector _expected;
@@ -132,8 +132,7 @@ checkReaders(const StringEnumStore& ses,
              const std::vector<Reader>& readers)
 {
     const char* t = "";
-    for (uint32_t i = 0; i < readers.size(); ++i) {
-        const Reader& r = readers[i];
+    for (const auto & r : readers) {
         for (uint32_t j = 0; j < r._indices.size(); ++j) {
             EXPECT_TRUE(ses.get_value(r._indices[j], t));
             EXPECT_TRUE(r._expected[j]._string == std::string(t));
@@ -151,12 +150,6 @@ public:
     {}
 };
 
-// Disable warnings emitted by gtest generated files when using typed tests
-#pragma GCC diagnostic push
-#ifndef __clang__
-#pragma GCC diagnostic ignored "-Wsuggest-override"
-#endif
-
 using FloatEnumStoreTestTypes = ::testing::Types<BTreeFloatEnumStore, BTreeDoubleEnumStore, HybridFloatEnumStore, HybridDoubleEnumStore, HashFloatEnumStore, HashDoubleEnumStore>;
 TYPED_TEST_SUITE(FloatEnumStoreTest, FloatEnumStoreTestTypes);
 
@@ -168,8 +161,8 @@ TYPED_TEST(FloatEnumStoreTest, numbers_can_be_inserted_and_retrieved)
     EntryType a[5] = {-20.5f, -10.5f, -0.5f, 9.5f, 19.5f};
     EntryType b[5] = {-25.5f, -15.5f, -5.5f, 4.5f, 14.5f};
 
-    for (uint32_t i = 0; i < 5; ++i) {
-        this->es.insert(a[i]);
+    for (auto i : a) {
+        this->es.insert(i);
     }
 
     for (uint32_t i = 0; i < 5; ++i) {
@@ -186,8 +179,6 @@ TYPED_TEST(FloatEnumStoreTest, numbers_can_be_inserted_and_retrieved)
         EXPECT_TRUE(!this->es.find_index(b[i], idx));
     }
 }
-
-#pragma GCC diagnostic pop
 
 TEST(EnumStoreTest, test_find_folded_on_string_enum_store)
 {
@@ -235,7 +226,7 @@ testUniques(const StringEnumStore& ses, const std::vector<std::string>& unique)
 
 class StringEnumStoreTest : public ::testing::Test {
 public:
-    void testInsert(bool hasPostings);
+    static void testInsert(bool hasPostings);
 };
 
 void
@@ -244,17 +235,13 @@ StringEnumStoreTest::testInsert(bool hasPostings)
     StringEnumStore ses(hasPostings, DictionaryConfig::Type::BTREE);
 
     std::vector<EnumIndex> indices;
-    std::vector<std::string> unique;
-    unique.push_back("");
-    unique.push_back("add");
-    unique.push_back("enumstore");
-    unique.push_back("unique");
+    std::vector<std::string> unique = {"", "add", "enumstore", "unique"};
 
-    for (uint32_t i = 0; i < unique.size(); ++i) {
-        EnumIndex idx = ses.insert(unique[i].c_str());
+    for (const auto & i : unique) {
+        EnumIndex idx = ses.insert(i.c_str());
         EXPECT_EQ(1u, ses.get_ref_count(idx));
         indices.push_back(idx);
-        EXPECT_TRUE(ses.find_index(unique[i].c_str(), idx));
+        EXPECT_TRUE(ses.find_index(i.c_str(), idx));
     }
     ses.freeze_dictionary();
 
@@ -293,15 +280,15 @@ TEST(EnumStoreTest, test_hold_lists_and_generation)
     uniques.reserve(100);
     for (uint32_t i = 0; i < 100; ++i) {
         char tmp[16];
-        sprintf(tmp, i < 10 ? "enum0%u" : "enum%u", i);
-        uniques.push_back(tmp);
+        snprintf(tmp, sizeof(tmp), i < 10 ? "enum0%u" : "enum%u", i);
+        uniques.emplace_back(tmp);
     }
     StringVector newUniques;
     newUniques.reserve(100);
     for (uint32_t i = 0; i < 100; ++i) {
         char tmp[16];
-        sprintf(tmp, i < 10 ? "unique0%u" : "unique%u", i);
-        newUniques.push_back(tmp);
+        snprintf(tmp, sizeof(tmp), i < 10 ? "unique0%u" : "unique%u", i);
+        newUniques.emplace_back(tmp);
     }
     uint32_t generation = 0;
     std::vector<Reader> readers;
@@ -327,7 +314,7 @@ TEST(EnumStoreTest, test_hold_lists_and_generation)
             EXPECT_TRUE(indices.size() == 10);
             EXPECT_TRUE(expected.size() == 10);
             sesGen = generation++;
-            readers.push_back(Reader(sesGen, indices, expected));
+            readers.emplace_back(sesGen, indices, expected);
             checkReaders(ses, readers);
         }
     }
@@ -408,7 +395,7 @@ public:
         expect_value_in_store(5, 2, i5);
     }
 
-    void expect_value_in_store(int32_t exp_value, uint32_t exp_ref_count, EnumIndex idx) {
+    void expect_value_in_store(int32_t exp_value, uint32_t exp_ref_count, EnumIndex idx) const {
         EnumIndex tmp_idx;
         EXPECT_TRUE(store.find_index(exp_value, tmp_idx));
         EXPECT_EQ(idx, tmp_idx);
@@ -416,7 +403,7 @@ public:
         EXPECT_EQ(exp_ref_count, store.get_ref_count(idx));
     }
 
-    void expect_value_not_in_store(int32_t value, EnumIndex idx) {
+    void expect_value_not_in_store(int32_t value, EnumIndex idx) const {
         EnumIndex temp_idx;
         EXPECT_FALSE(store.find_index(value, idx));
         EXPECT_EQ(0, store.get_ref_count(idx));
@@ -508,7 +495,7 @@ public:
         Values::load_values(loader);
     }
 
-    EnumIndex find_index(size_t values_idx) const {
+    [[nodiscard]] EnumIndex find_index(size_t values_idx) const {
         EnumIndex result;
         EXPECT_TRUE(store.find_index(Values::values[values_idx], result));
         return result;
@@ -546,12 +533,6 @@ public:
     }
 
 };
-
-// Disable warnings emitted by gtest generated files when using typed tests
-#pragma GCC diagnostic push
-#ifndef __clang__
-#pragma GCC diagnostic ignored "-Wsuggest-override"
-#endif
 
 using LoaderTestTypes = ::testing::Types<BTreeNumericEnumStore, BTreeFloatEnumStore, BTreeStringEnumStore, HybridNumericEnumStore, HybridFloatEnumStore, HybridStringEnumStore, HashNumericEnumStore, HashFloatEnumStore, HashStringEnumStore>;
 TYPED_TEST_SUITE(LoaderTest, LoaderTestTypes);
@@ -604,8 +585,6 @@ TYPED_TEST(LoaderTest, store_is_instantiated_with_non_enumerated_loader)
     this->expect_posting_idx(1, 101);
     this->expect_posting_idx(3, 103);
 }
-
-#pragma GCC diagnostic pop
 
 template <typename EnumStoreTypeAndDictionaryType>
 class EnumStoreDictionaryTest : public ::testing::Test {
@@ -724,7 +703,7 @@ EnumStoreDictionaryTest<EnumStoreTypeAndDictionaryType>::clear_sample_values(uin
         auto comparator = store.make_comparator(i);
         auto enum_idx = dict.find(comparator);
         EXPECT_TRUE(enum_idx.valid());
-        dict.update_posting_list(enum_idx, comparator, [](EntryRef) noexcept -> EntryRef { return EntryRef(); });
+        dict.update_posting_list(enum_idx, comparator, [](EntryRef) noexcept -> EntryRef { return {}; });
     }
 }
 
@@ -795,12 +774,6 @@ EnumStoreDictionaryTest<EnumStoreTypeAndDictionaryType>::test_foreach_posting_li
     EXPECT_EQ(exp_refs, act_refs);
     clear_sample_values(large_population);
 }
-
-// Disable warnings emitted by gtest generated files when using typed tests
-#pragma GCC diagnostic push
-#ifndef __clang__
-#pragma GCC diagnostic ignored "-Wsuggest-override"
-#endif
 
 using EnumStoreDictionaryTestTypes = ::testing::Types<BTreeNumericEnumStore, HybridNumericEnumStore, HashNumericEnumStore>;
 TYPED_TEST_SUITE(EnumStoreDictionaryTest, EnumStoreDictionaryTestTypes);
@@ -941,8 +914,6 @@ TYPED_TEST(EnumStoreDictionaryTest, compact_worst_works)
     read_snapshot->foreach_key([&values, &mystore](const AtomicEntryRef& idx) { values.push_back(mystore.get_value(idx.load_acquire())); });
     EXPECT_EQ(exp_values, values);
 }
-
-#pragma GCC diagnostic pop
 
 }
 

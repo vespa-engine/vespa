@@ -1,20 +1,19 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.admin;
 
-import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.cloud.config.SlobroksConfig;
 import com.yahoo.cloud.config.ZookeepersConfig;
 import com.yahoo.cloud.config.log.LogdConfig;
 import com.yahoo.config.model.ConfigModelContext.ApplicationType;
 import com.yahoo.config.model.deploy.DeployState;
-import com.yahoo.config.model.producer.AbstractConfigProducer;
-import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.model.producer.AnyConfigProducer;
+import com.yahoo.config.model.producer.TreeConfigProducer;
 import com.yahoo.config.provision.ClusterSpec;
-import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.model.AbstractService;
 import com.yahoo.vespa.model.ConfigProxy;
 import com.yahoo.vespa.model.ConfigSentinel;
 import com.yahoo.vespa.model.HostResource;
+import com.yahoo.vespa.model.LogctlSpec;
 import com.yahoo.vespa.model.Logd;
 import com.yahoo.vespa.model.admin.clustercontroller.ClusterControllerContainer;
 import com.yahoo.vespa.model.admin.clustercontroller.ClusterControllerContainerCluster;
@@ -40,7 +39,7 @@ import static com.yahoo.vespa.model.admin.monitoring.MetricSet.empty;
  *
  * @author gjoranv
  */
-public class Admin extends AbstractConfigProducer<Admin> implements Serializable {
+public class Admin extends TreeConfigProducer<AnyConfigProducer> implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
@@ -68,6 +67,14 @@ public class Admin extends AbstractConfigProducer<Admin> implements Serializable
         this.logForwarderIncludeAdmin = includeAdmin;
     }
 
+    private final List<LogctlSpec> logctlSpecs = new ArrayList<>();
+    public List<LogctlSpec> getLogctlSpecs() {
+        return logctlSpecs;
+    }
+    public void addLogctlCommand(String componentSpec, String levelsModSpec) {
+        logctlSpecs.add(new LogctlSpec(componentSpec,  levelsModSpec));
+    }
+
     /**
      * The single cluster controller cluster shared by all content clusters by default when not multitenant.
      * If multitenant, this is null.
@@ -81,7 +88,7 @@ public class Admin extends AbstractConfigProducer<Admin> implements Serializable
     private final FileDistributionConfigProducer fileDistribution;
     private final boolean multitenant;
 
-    public Admin(AbstractConfigProducer<?> parent,
+    public Admin(TreeConfigProducer<AnyConfigProducer> parent,
                  Monitoring monitoring,
                  Metrics metrics,
                  boolean multitenant,
@@ -241,8 +248,7 @@ public class Admin extends AbstractConfigProducer<Admin> implements Serializable
     }
 
     private void addCommonServices(HostResource host, DeployState deployState) {
-        addConfigSentinel(deployState, host, deployState.getProperties().applicationId(), deployState.zone(),
-                          deployState.featureFlags());
+        addConfigSentinel(deployState, host);
         addLogd(deployState, host);
         addConfigProxy(deployState, host);
         addFileDistribution(host);
@@ -262,10 +268,9 @@ public class Admin extends AbstractConfigProducer<Admin> implements Serializable
         }
     }
 
-    private void addConfigSentinel(DeployState deployState, HostResource host,
-                                   ApplicationId applicationId, Zone zone, ModelContext.FeatureFlags featureFlags)
+    private void addConfigSentinel(DeployState deployState, HostResource host)
     {
-        ConfigSentinel configSentinel = new ConfigSentinel(host.getHost(), applicationId, zone, featureFlags);
+        ConfigSentinel configSentinel = new ConfigSentinel(host.getHost(), deployState.getProperties().applicationId(), deployState.zone());
         addAndInitializeService(deployState, host, configSentinel);
         host.getHost().setConfigSentinel(configSentinel);
     }
@@ -288,8 +293,8 @@ public class Admin extends AbstractConfigProducer<Admin> implements Serializable
     }
 
     private void addFileDistribution(HostResource host) {
-        FileDistributionConfigProvider configProvider = new FileDistributionConfigProvider(fileDistribution, host.getHost());
-        fileDistribution.addFileDistributionConfigProducer(host.getHost(), configProvider);
+        var configProvider = new FileDistributionConfigProvider(fileDistribution, host.getHost());
+        fileDistribution.addProvider(host.getHost(), configProvider);
     }
 
     // If not configured by user: Use default setup: max 3 slobroks, 1 on the default configserver host

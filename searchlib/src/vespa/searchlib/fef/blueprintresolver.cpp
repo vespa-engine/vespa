@@ -3,17 +3,13 @@
 #include "blueprintresolver.h"
 #include "blueprintfactory.h"
 #include "featurenameparser.h"
-#include <vespa/vespalib/util/lambdatask.h>
+#include "blueprint.h"
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/size_literals.h>
-#include <vespa/vespalib/util/threadstackexecutor.h>
 #include <cassert>
 #include <set>
-#include <thread>
 
 using vespalib::make_string_short::fmt;
-using vespalib::ThreadStackExecutor;
-using vespalib::makeLambdaTask;
 
 namespace search::fef {
 
@@ -55,7 +51,7 @@ struct Compiler : public Blueprint::DependencyHandler {
     struct Frame {
         ExecutorSpec spec;
         const FeatureNameParser &parser;
-        Frame(Blueprint::SP blueprint, const FeatureNameParser &parser_in)
+        Frame(Blueprint::SP blueprint, const FeatureNameParser &parser_in) noexcept
             : spec(std::move(blueprint)), parser(parser_in) {}
     };
     using Stack = std::vector<Frame>;
@@ -95,7 +91,7 @@ struct Compiler : public Blueprint::DependencyHandler {
           failed_set(),
           min_stack(nullptr),
           max_stack(nullptr) {}
-    ~Compiler();
+    ~Compiler() override;
 
     void probe_stack() {
         const char c = 'X';
@@ -103,12 +99,12 @@ struct Compiler : public Blueprint::DependencyHandler {
         max_stack = (max_stack == nullptr) ? &c : std::max(max_stack, &c);
     }
 
-    int stack_usage() const {
+    [[nodiscard]] int stack_usage() const {
         return (max_stack - min_stack);
     }
 
     Frame &self() { return resolve_stack.back(); }
-    bool failed() const { return !failed_set.empty(); }
+    [[nodiscard]] bool failed() const { return !failed_set.empty(); }
 
     vespalib::string make_trace(bool skip_self) {
         vespalib::string trace;
@@ -138,15 +134,12 @@ struct Compiler : public Blueprint::DependencyHandler {
             failed_set.insert(feature_name);
             auto trace = make_trace(skip_self);
             vespalib::string msg;
-            if (trace.empty()) {
-                msg = fmt("invalid %s: %s", describe(feature_name).c_str(), reason.c_str());
-            } else {
-                msg = fmt("invalid %s: %s\n%s", describe(feature_name).c_str(), reason.c_str(), trace.c_str());
-            }
+            msg = fmt("invalid %s: %s\n%s", describe(feature_name).c_str(), reason.c_str(), trace.c_str());
+            msg.chomp();
             errors.emplace_back(msg);
         }
         probe_stack();
-        return FeatureRef();
+        return {};
     }
 
     void fail_self(const vespalib::string &reason) {
@@ -249,12 +242,14 @@ Compiler::~Compiler() = default;
 
 } // namespace search::fef::<unnamed>
 
-BlueprintResolver::ExecutorSpec::ExecutorSpec(Blueprint::SP blueprint_in)
+BlueprintResolver::ExecutorSpec::ExecutorSpec(Blueprint::SP blueprint_in) noexcept
     : blueprint(std::move(blueprint_in)),
       inputs(),
       output_types()
 { }
-
+BlueprintResolver::ExecutorSpec::ExecutorSpec(ExecutorSpec &&) noexcept = default;
+BlueprintResolver::ExecutorSpec & BlueprintResolver::ExecutorSpec::operator =(ExecutorSpec &&) noexcept = default;
+BlueprintResolver::ExecutorSpec::ExecutorSpec(const ExecutorSpec &) = default;
 BlueprintResolver::ExecutorSpec::~ExecutorSpec() = default;
 BlueprintResolver::~BlueprintResolver() = default;
 
@@ -297,21 +292,17 @@ BlueprintResolver::compile()
 {
     assert(_executorSpecs.empty()); // only one compilation allowed
     Compiler compiler(_factory, _indexEnv, _executorSpecs, _featureMap);
-    auto compile_task = makeLambdaTask([&]() {
-                                   compiler.probe_stack();
-                                   for (const auto &seed: _seeds) {
-                                       auto ref = compiler.resolve_feature(seed, Blueprint::AcceptInput::ANY);
-                                       if (compiler.failed()) {
-                                           _warnings = std::move(compiler.errors);
-                                           return;
-                                       }
-                                       _seedMap.emplace(FeatureNameParser(seed).featureName(), ref);
-                                   }
-                               });
-    ThreadStackExecutor executor(1, 8_Mi);
-    executor.execute(std::move(compile_task));
-    executor.sync();
-    executor.shutdown();
+
+    compiler.probe_stack();
+    for (const auto &seed: _seeds) {
+       auto ref = compiler.resolve_feature(seed, Blueprint::AcceptInput::ANY);
+       if (compiler.failed()) {
+           _warnings = std::move(compiler.errors);
+           break;
+       }
+       _seedMap.emplace(FeatureNameParser(seed).featureName(), ref);
+    }
+
     size_t stack_usage = compiler.stack_usage();
     if (stack_usage > (128_Ki)) {
         _warnings.emplace_back(fmt("high stack usage: %zu bytes", stack_usage));

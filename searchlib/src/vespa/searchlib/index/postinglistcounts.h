@@ -29,15 +29,14 @@ public:
         uint32_t _numDocs;   // Number of documents in segment
         uint32_t _lastDoc;   // Last document id in segment
 
-        Segment()
+        Segment() noexcept
             : _bitLength(0),
               _numDocs(0),
               _lastDoc(0)
         { }
 
         bool
-        operator==(const Segment &rhs) const
-        {
+        operator==(const Segment &rhs) const noexcept {
             return (_bitLength == rhs._bitLength &&
                     _numDocs == rhs._numDocs &&
                     _lastDoc == rhs._lastDoc);
@@ -59,24 +58,24 @@ public:
      */
     std::vector<Segment> _segments;
 
-    PostingListCounts()
+    PostingListCounts() noexcept
         : _numDocs(0),
           _bitLength(0),
           _segments()
     { }
-    void swap(PostingListCounts & rhs) {
+    void swap(PostingListCounts & rhs) noexcept {
         std::swap(_numDocs, rhs._numDocs);
         std::swap(_bitLength, rhs._bitLength);
         std::swap(_segments, rhs._segments);
     }
 
-    void clear() {
+    void clear() noexcept {
         _bitLength = 0;
         _numDocs = 0;
         _segments.clear();
     }
 
-    bool operator==(const PostingListCounts &rhs) const {
+    bool operator==(const PostingListCounts &rhs) const noexcept {
         return (_numDocs == rhs._numDocs &&
                 _bitLength == rhs._bitLength &&
                 _segments == rhs._segments);
@@ -92,7 +91,7 @@ public:
     uint64_t _accNumDocs;   // Used by prefix search for now.
     PostingListCounts _counts;
 
-    PostingListOffsetAndCounts()
+    PostingListOffsetAndCounts() noexcept
         : _offset(0),
           _accNumDocs(0u),
           _counts()

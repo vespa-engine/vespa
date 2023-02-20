@@ -3,10 +3,12 @@
 #include <vespa/searchcore/proton/attribute/attribute_directory.h>
 #include <vespa/searchcore/proton/attribute/attributedisklayout.h>
 #include <vespa/searchlib/test/directory_handler.h>
+#include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/stllike/string.h>
-#include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/vespalib/util/size_literals.h>
 #include <filesystem>
+#include <fstream>
 
 #include <vespa/log/log.h>
 LOG_SETUP("attribute_directory_test");
@@ -45,10 +47,14 @@ bool hasWriter(const std::unique_ptr<AttributeDirectory::Writer> &writer) {
     return static_cast<bool>(writer);
 }
 
+void create_directory(const vespalib::string& path) {
+    std::filesystem::create_directory(std::filesystem::path(path));
 }
 
-struct Fixture : public DirectoryHandler
-{
+}
+
+class Fixture : public DirectoryHandler {
+public:
 
     std::shared_ptr<AttributeDiskLayout> _diskLayout;
 
@@ -69,7 +75,7 @@ struct Fixture : public DirectoryHandler
     }
 
     void assertAttributeDiskDir(const vespalib::string &name) {
-        TEST_DO(assertDiskDir(getAttrDir(name)));
+        assertDiskDir(getAttrDir(name));
     }
 
     void assertNotDiskDir(const vespalib::string &name) {
@@ -77,7 +83,7 @@ struct Fixture : public DirectoryHandler
     }
 
     void assertNotAttributeDiskDir(const vespalib::string &name) {
-        TEST_DO(assertNotDiskDir(getAttrDir(name)));
+        assertNotDiskDir(getAttrDir(name));
     }
 
     vespalib::string getSnapshotDirComponent(SerialNum serialNum) {
@@ -92,11 +98,11 @@ struct Fixture : public DirectoryHandler
     }
 
     void assertSnapshotDir(const vespalib::string &name, SerialNum serialNum) {
-        TEST_DO(assertDiskDir(getSnapshotDir(name, serialNum)));
+        assertDiskDir(getSnapshotDir(name, serialNum));
     }
 
     void assertNotSnapshotDir(const vespalib::string &name, SerialNum serialNum) {
-        TEST_DO(assertNotDiskDir(getSnapshotDir(name, serialNum)));
+        assertNotDiskDir(getSnapshotDir(name, serialNum));
     }
 
     void assertSnapshots(const vespalib::string &name, const vespalib::string &exp) {
@@ -104,7 +110,7 @@ struct Fixture : public DirectoryHandler
         IndexMetaInfo info(attrDir);
         info.load();
         vespalib::string act = toString(info);
-        EXPECT_EQUAL(exp, act);
+        EXPECT_EQ(exp, act);
     }
 
     auto createAttributeDir(const vespalib::string &name) { return _diskLayout->createAttributeDir(name); }
@@ -116,17 +122,17 @@ struct Fixture : public DirectoryHandler
     void assertNotGetAttributeDir(const vespalib::string &name) {
         auto dir = getAttributeDir(name);
         EXPECT_FALSE(static_cast<bool>(dir));
-        TEST_DO(assertNotAttributeDiskDir(name));
+        assertNotAttributeDiskDir(name);
     }
     void assertGetAttributeDir(const vespalib::string &name, std::shared_ptr<AttributeDirectory> expDir) {
         auto dir = getAttributeDir(name);
         EXPECT_TRUE(static_cast<bool>(dir));
-        EXPECT_EQUAL(expDir, dir);
+        EXPECT_EQ(expDir, dir);
     }
     void assertCreateAttributeDir(const vespalib::string &name, std::shared_ptr<AttributeDirectory> expDir) {
         auto dir = getAttributeDir(name);
         EXPECT_TRUE(static_cast<bool>(dir));
-        EXPECT_EQUAL(expDir, dir);
+        EXPECT_EQ(expDir, dir);
     }
 
     void setupFooSnapshots(SerialNum serialNum) {
@@ -134,9 +140,9 @@ struct Fixture : public DirectoryHandler
         EXPECT_TRUE(hasAttributeDir(dir));
         auto writer = dir->getWriter();
         writer->createInvalidSnapshot(serialNum);
-        std::filesystem::create_directory(std::filesystem::path(writer->getSnapshotDir(serialNum)));
+        create_directory(writer->getSnapshotDir(serialNum));
         writer->markValidSnapshot(serialNum);
-        TEST_DO(assertAttributeDiskDir("foo"));
+        assertAttributeDiskDir("foo");
     }
 
     void invalidateFooSnapshots(bool removeDir) {
@@ -147,7 +153,7 @@ struct Fixture : public DirectoryHandler
         if (removeDir) {
             writer->removeDiskDir();
         }
-        TEST_DO(assertGetAttributeDir("foo", dir));
+        assertGetAttributeDir("foo", dir);
     }
 
     void makeInvalidSnapshot(SerialNum serialNum) {
@@ -160,110 +166,111 @@ struct Fixture : public DirectoryHandler
         auto dir = createFooAttrDir();
         auto writer = dir->getWriter();
         writer->createInvalidSnapshot(serialNum);
-        std::filesystem::create_directory(std::filesystem::path(writer->getSnapshotDir(serialNum)));
+        create_directory(writer->getSnapshotDir(serialNum));
         writer->markValidSnapshot(serialNum);
     }
 
 };
 
-TEST_F("Test that we can create attribute directory", Fixture)
+class AttributeDirectoryTest : public Fixture, public testing::Test {};
+
+TEST_F(AttributeDirectoryTest, can_create_attribute_directory)
 {
-    auto dir = f.createFooAttrDir();
+    auto dir = createFooAttrDir();
     EXPECT_TRUE(hasAttributeDir(dir));
 }
 
-
-TEST_F("Test that attribute directory is persistent", Fixture)
+TEST_F(AttributeDirectoryTest, attribute_directory_is_persistent)
 {
-    TEST_DO(f.assertNotGetAttributeDir("foo"));
-    auto dir = f.createFooAttrDir();
+    assertNotGetAttributeDir("foo");
+    auto dir = createFooAttrDir();
     EXPECT_TRUE(hasAttributeDir(dir));
-    TEST_DO(f.assertGetAttributeDir("foo", dir));
+    assertGetAttributeDir("foo", dir);
 }
 
-TEST_F("Test that we can remove attribute directory", Fixture)
+TEST_F(AttributeDirectoryTest, can_remove_attribute_directory)
 {
-    auto dir = f.createFooAttrDir();
+    auto dir = createFooAttrDir();
     EXPECT_TRUE(hasAttributeDir(dir));
-    TEST_DO(f.assertGetAttributeDir("foo", dir));
-    f.removeFooAttrDir(10);
-    TEST_DO(f.assertNotGetAttributeDir("foo"));
+    assertGetAttributeDir("foo", dir);
+    removeFooAttrDir(10);
+    assertNotGetAttributeDir("foo");
 }
 
-TEST_F("Test that we can create attribute directory with one snapshot", Fixture)
+TEST_F(AttributeDirectoryTest, can_create_attribute_directory_with_one_snapshot)
 {
-    TEST_DO(f.assertNotGetAttributeDir("foo"));
-    auto dir = f.createFooAttrDir();
+    assertNotGetAttributeDir("foo");
+    auto dir = createFooAttrDir();
     EXPECT_TRUE(hasAttributeDir(dir));
-    TEST_DO(f.assertNotAttributeDiskDir("foo"));
+    assertNotAttributeDiskDir("foo");
     dir->getWriter()->createInvalidSnapshot(1);
-    TEST_DO(f.assertAttributeDiskDir("foo"));
-    TEST_DO(f.assertSnapshots("foo", "i1"));
+    assertAttributeDiskDir("foo");
+    assertSnapshots("foo", "i1");
 }
 
-TEST_F("Test that we can prune attribute snapshots", Fixture)
+TEST_F(AttributeDirectoryTest, can_prune_attribute_snapshots)
 {
-    auto dir = f.createFooAttrDir();
-    TEST_DO(f.assertNotAttributeDiskDir("foo"));
+    auto dir = createFooAttrDir();
+    assertNotAttributeDiskDir("foo");
     auto writer = dir->getWriter();
     writer->createInvalidSnapshot(2);
-    std::filesystem::create_directory(std::filesystem::path(writer->getSnapshotDir(2)));
+    create_directory(writer->getSnapshotDir(2));
     writer->markValidSnapshot(2);
     writer->createInvalidSnapshot(4);
-    std::filesystem::create_directory(std::filesystem::path(writer->getSnapshotDir(4)));
+    create_directory(writer->getSnapshotDir(4));
     writer->markValidSnapshot(4);
     writer.reset();
-    TEST_DO(f.assertAttributeDiskDir("foo"));
-    TEST_DO(f.assertSnapshots("foo", "v2,v4"));
+    assertAttributeDiskDir("foo");
+    assertSnapshots("foo", "v2,v4");
     dir->getWriter()->invalidateOldSnapshots();
-    TEST_DO(f.assertSnapshots("foo", "i2,v4"));
+    assertSnapshots("foo", "i2,v4");
     dir->getWriter()->removeInvalidSnapshots();
-    TEST_DO(f.assertSnapshots("foo", "v4"));
+    assertSnapshots("foo", "v4");
 }
 
-TEST_F("Test that attribute directory is not removed if valid snapshots remain", Fixture)
+TEST_F(AttributeDirectoryTest, attribute_directory_is_not_removed_if_valid_snapshots_remain)
 {
-    TEST_DO(f.setupFooSnapshots(20));
-    auto dir = f.getFooAttrDir();
+    setupFooSnapshots(20);
+    auto dir = getFooAttrDir();
     EXPECT_TRUE(hasAttributeDir(dir));
     dir->getWriter()->createInvalidSnapshot(30);
-    TEST_DO(f.assertSnapshots("foo", "v20,i30"));
-    TEST_DO(f.removeFooAttrDir(10));
-    TEST_DO(f.assertGetAttributeDir("foo", dir));
-    TEST_DO(f.assertAttributeDiskDir("foo"));
-    TEST_DO(f.assertSnapshots("foo", "v20"));
+    assertSnapshots("foo", "v20,i30");
+    removeFooAttrDir(10);
+    assertGetAttributeDir("foo", dir);
+    assertAttributeDiskDir("foo");
+    assertSnapshots("foo", "v20");
 }
 
-TEST_F("Test that attribute directory is removed if no valid snapshots remain", Fixture)
+TEST_F(AttributeDirectoryTest, attribute_directory_is_removed_if_no_valid_snapshots_remain)
 {
-    TEST_DO(f.setupFooSnapshots(5));
-    auto dir = f.getFooAttrDir();
+    setupFooSnapshots(5);
+    auto dir = getFooAttrDir();
     EXPECT_TRUE(hasAttributeDir(dir));
     dir->getWriter()->createInvalidSnapshot(30);
-    TEST_DO(f.assertSnapshots("foo", "v5,i30"));
-    TEST_DO(f.removeFooAttrDir(10));
-    TEST_DO(f.assertNotGetAttributeDir("foo"));
+    assertSnapshots("foo", "v5,i30");
+    removeFooAttrDir(10);
+    assertNotGetAttributeDir("foo");
 }
 
-TEST_F("Test that attribute directory is not removed due to pruning and disk dir is kept", Fixture)
+TEST_F(AttributeDirectoryTest, attribute_directory_is_not_removed_due_to_pruning_and_disk_dir_is_kept)
 {
-    TEST_DO(f.setupFooSnapshots(5));
-    TEST_DO(f.invalidateFooSnapshots(false));
-    TEST_DO(f.assertAttributeDiskDir("foo"));
+    setupFooSnapshots(5);
+    invalidateFooSnapshots(false);
+    assertAttributeDiskDir("foo");
 }
 
-TEST_F("Test that attribute directory is not removed due to pruning but disk dir is removed", Fixture)
+TEST_F(AttributeDirectoryTest, attribute_directory_is_not_removed_due_to_pruning_but_disk_dir_is_removed)
 {
-    TEST_DO(f.setupFooSnapshots(5));
-    TEST_DO(f.invalidateFooSnapshots(true));
-    TEST_DO(f.assertNotAttributeDiskDir("foo"));
+    setupFooSnapshots(5);
+    invalidateFooSnapshots(true);
+    assertNotAttributeDiskDir("foo");
 }
 
-TEST("Test that initial state tracks disk layout")
+TEST(BasicDirectoryTest, initial_state_tracks_disk_layout)
 {
-    std::filesystem::create_directory(std::filesystem::path("attributes"));
-    std::filesystem::create_directory(std::filesystem::path("attributes/foo"));
-    std::filesystem::create_directory(std::filesystem::path("attributes/bar"));
+    create_directory("attributes");
+    create_directory("attributes/foo");
+    create_directory("attributes/bar");
     IndexMetaInfo fooInfo("attributes/foo");
     IndexMetaInfo barInfo("attributes/bar");
     fooInfo.addSnapshot({true, 4, "snapshot-4"});
@@ -272,38 +279,38 @@ TEST("Test that initial state tracks disk layout")
     barInfo.addSnapshot({false, 5, "snapshot-5"});
     barInfo.save();
     Fixture f;
-    TEST_DO(f.assertAttributeDiskDir("foo"));
-    TEST_DO(f.assertAttributeDiskDir("bar"));
+    f.assertAttributeDiskDir("foo");
+    f.assertAttributeDiskDir("bar");
     auto foodir = f.getFooAttrDir();
     EXPECT_TRUE(hasAttributeDir(foodir));
     auto bardir = f.getAttributeDir("bar");
     EXPECT_TRUE(hasAttributeDir(bardir));
-    TEST_DO(f.assertNotGetAttributeDir("baz"));
-    TEST_DO(f.assertSnapshots("foo", "v4,i8"));
-    TEST_DO(f.assertSnapshots("bar", "i5"));
+    f.assertNotGetAttributeDir("baz");
+    f.assertSnapshots("foo", "v4,i8");
+    f.assertSnapshots("bar", "i5");
     f.makeInvalidSnapshot(12);
     f.makeValidSnapshot(16);
-    TEST_DO(f.assertSnapshots("foo", "v4,i8,i12,v16"));
+    f.assertSnapshots("foo", "v4,i8,i12,v16");
 }
 
-TEST_F("Test that snapshot removal removes correct snapshot directory", Fixture)
+TEST_F(AttributeDirectoryTest, snapshot_removal_removes_correct_snapshot_directory)
 {
-    TEST_DO(f.setupFooSnapshots(5));
-    std::filesystem::create_directory(std::filesystem::path(f.getSnapshotDir("foo", 5)));
-    std::filesystem::create_directory(std::filesystem::path(f.getSnapshotDir("foo", 6)));
-    TEST_DO(f.assertSnapshotDir("foo", 5));
-    TEST_DO(f.assertSnapshotDir("foo", 6));
-    TEST_DO(f.invalidateFooSnapshots(false));
-    TEST_DO(f.assertNotSnapshotDir("foo", 5));
-    TEST_DO(f.assertSnapshotDir("foo", 6));
-    TEST_DO(f.invalidateFooSnapshots(true));
-    TEST_DO(f.assertNotSnapshotDir("foo", 5));
-    TEST_DO(f.assertNotSnapshotDir("foo", 6));
+    setupFooSnapshots(5);
+    create_directory(getSnapshotDir("foo", 5));
+    create_directory(getSnapshotDir("foo", 6));
+    assertSnapshotDir("foo", 5);
+    assertSnapshotDir("foo", 6);
+    invalidateFooSnapshots(false);
+    assertNotSnapshotDir("foo", 5);
+    assertSnapshotDir("foo", 6);
+    invalidateFooSnapshots(true);
+    assertNotSnapshotDir("foo", 5);
+    assertNotSnapshotDir("foo", 6);
 }
 
-TEST_F("Test that we can get nonblocking writer", Fixture)
+TEST_F(AttributeDirectoryTest, can_get_nonblocking_writer)
 {
-    auto dir = f.createFooAttrDir();
+    auto dir = createFooAttrDir();
     auto writer = dir->getWriter();
     EXPECT_TRUE(hasWriter(writer));
     auto writer2 = dir->tryGetWriter();
@@ -315,9 +322,86 @@ TEST_F("Test that we can get nonblocking writer", Fixture)
     EXPECT_FALSE(hasWriter(writer));
 }
 
+class TransientDiskUsageFixture : public Fixture {
+public:
+    std::shared_ptr<AttributeDirectory> dir;
+    std::unique_ptr<AttributeDirectory::Writer> writer;
+    TransientDiskUsageFixture()
+        : dir(createFooAttrDir()),
+          writer(dir->getWriter())
+    {
+    }
+    ~TransientDiskUsageFixture() {}
+    void create_invalid_snapshot(SerialNum serial_num) {
+        writer->createInvalidSnapshot(serial_num);
+        create_directory(writer->getSnapshotDir(serial_num));
+    }
+    void create_valid_snapshot(SerialNum serial_num, size_t num_bytes_in_file) {
+        create_invalid_snapshot(serial_num);
+        write_snapshot_file(serial_num, num_bytes_in_file);
+        writer->markValidSnapshot(serial_num);
+    }
+    void write_snapshot_file(SerialNum serial_num, size_t num_bytes) {
+        std::ofstream file;
+        file.open(writer->getSnapshotDir(serial_num) + "/file.dat");
+        std::string data(num_bytes, 'X');
+        file.write(data.data(), num_bytes);
+        file.close();
+    }
+    size_t transient_disk_usage() const {
+        return dir->get_transient_resource_usage().disk();
+    }
+};
+
+class TransientDiskUsageTest : public TransientDiskUsageFixture, public testing::Test {};
+
+TEST_F(TransientDiskUsageTest, disk_usage_of_snapshots_can_count_towards_transient_usage)
+{
+    create_invalid_snapshot(3);
+    EXPECT_EQ(0, transient_disk_usage());
+    write_snapshot_file(3, 64);
+    // Note: search::DirectoryTraverse rounds each file size up to a block size of 4 KiB.
+    // Writing of snapshot 3 is ongoing and counts towards transient disk usage.
+    EXPECT_EQ(4_Ki, transient_disk_usage());
+    writer->markValidSnapshot(3);
+    // Snapshot 3 is now the best and does NOT count towards transient disk usage.
+    EXPECT_EQ(0, transient_disk_usage());
+
+    create_invalid_snapshot(5);
+    EXPECT_EQ(0, transient_disk_usage());
+    write_snapshot_file(5, 4_Ki + 1);
+    // Writing of snapshot 5 is ongoing and counts towards transient disk usage.
+    EXPECT_EQ(8_Ki, transient_disk_usage());
+    writer->markValidSnapshot(5);
+    // Snapshot 5 is now the best and only 3 counts towards transient disk usage.
+    EXPECT_EQ(4_Ki, transient_disk_usage());
+
+    // Snapshot 3 is removed.
+    writer->invalidateOldSnapshots();
+    writer->removeInvalidSnapshots();
+    EXPECT_EQ(0, transient_disk_usage());
 }
 
-TEST_MAIN()
+TEST(TransientDiskUsageLoadTest, disk_usage_of_snapshots_are_calculated_when_loading)
 {
-    TEST_RUN_ALL();
+    {
+        TransientDiskUsageFixture f;
+        f.cleanup(false);
+        f.create_valid_snapshot(3, 64);
+        f.create_valid_snapshot(5, 4_Ki + 1);
+        f.writer->invalidateOldSnapshots();
+        EXPECT_EQ(4_Ki, f.transient_disk_usage());
+    }
+    {
+        TransientDiskUsageFixture f;
+        // Snapshot 5 is the best and only 3 counts towards transient disk usage.
+        EXPECT_EQ(4_Ki, f.transient_disk_usage());
+        // Snapshot 3 is removed.
+        f.writer->removeInvalidSnapshots();
+        EXPECT_EQ(0, f.transient_disk_usage());
+    }
 }
+
+}
+
+GTEST_MAIN_RUN_ALL_TESTS()

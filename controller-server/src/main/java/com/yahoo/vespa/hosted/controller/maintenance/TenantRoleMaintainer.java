@@ -2,18 +2,12 @@
 
 package com.yahoo.vespa.hosted.controller.maintenance;
 
-import com.yahoo.config.provision.Environment;
-import com.yahoo.config.provision.TenantName;
-import com.yahoo.config.provision.zone.ZoneId;
-import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 
 import java.time.Duration;
-import java.util.List;
-import java.util.Map;
-import java.util.function.Predicate;
-import java.util.stream.Collectors;
+import java.time.Instant;
+import java.util.Comparator;
 
 public class TenantRoleMaintainer extends ControllerMaintainer {
 
@@ -24,21 +18,24 @@ public class TenantRoleMaintainer extends ControllerMaintainer {
     @Override
     protected double maintain() {
         var roleService = controller().serviceRegistry().roleService();
-        var tenants = controller().tenants().asList();
+        var tenants = controller().tenants().asList().stream()
+                .sorted(Comparator.comparing(Tenant::tenantRolesLastMaintained))
+                .limit(5)
+                .toList();
 
         // Create separate athenz service for all tenants
         tenants.forEach(roleService::createTenantRole);
 
         var tenantsWithRoles = tenants.stream()
                 .map(Tenant::name)
-                .collect(Collectors.toList());
+                .toList();
         roleService.maintainRoles(tenantsWithRoles);
 
-        var deletedTenants = controller().tenants().asList(true).stream()
-                .filter(tenant -> tenant.type() == Tenant.Type.deleted)
-                .map(Tenant::name)
-                .toList();
-        roleService.cleanupRoles(deletedTenants);
+        // Update last maintained timestamp
+        var updated = Instant.now(controller().clock());
+        tenants.forEach(t -> {
+            controller().tenants().updateLastTenantRolesMaintained(t.name(), updated);
+        });
 
         return 1.0;
     }

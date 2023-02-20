@@ -8,7 +8,7 @@
 namespace storage::distributor {
 
 DistributorStripePool::DistributorStripePool(bool test_mode, PrivateCtorTag)
-    : _thread_pool(512_Ki),
+    : _thread_pool(std::make_unique<FastOS_ThreadPool>()),
       _n_stripe_bits(0),
       _stripes(),
       _threads(),
@@ -119,7 +119,7 @@ void DistributorStripePool::start(const std::vector<TickableStripe*>& stripes) {
     }
     std::unique_lock lock(_mutex); // Ensure _threads is visible to all started threads
     for (auto& s : _stripes) {
-        _threads.emplace_back(_thread_pool.NewThread(s.get()));
+        _threads.emplace_back(_thread_pool->NewThread(s.get()));
     }
 }
 

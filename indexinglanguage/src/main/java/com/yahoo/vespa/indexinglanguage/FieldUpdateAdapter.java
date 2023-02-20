@@ -192,7 +192,6 @@ public class FieldUpdateAdapter implements UpdateAdapter {
             return ret;
         }
 
-        @SuppressWarnings({ "unchecked" })
         private List<ValueUpdate> createRemoveValueUpdateForEachElement(Iterator<FieldValue> it) {
             List<ValueUpdate> ret = new ArrayList<>();
             while (it.hasNext()) {
@@ -215,7 +214,6 @@ public class FieldUpdateAdapter implements UpdateAdapter {
             return ret;
         }
 
-        @SuppressWarnings({ "unchecked" })
         private List<ValueUpdate> createMapValueUpdatesForStruct(StructuredFieldValue struct, MapValueUpdate upd) {
             List<ValueUpdate> ret = new ArrayList<>();
             for (Iterator<Map.Entry<Field, FieldValue>> it = struct.iterator(); it.hasNext();) {

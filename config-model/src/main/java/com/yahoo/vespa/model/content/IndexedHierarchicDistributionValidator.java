@@ -12,16 +12,13 @@ package com.yahoo.vespa.model.content;
  */
 public class IndexedHierarchicDistributionValidator {
 
-    private final String clusterName;
     private final StorageGroup rootGroup;
     private final Redundancy redundancy;
     private final DispatchTuning.DispatchPolicy dispatchPolicy;
 
-    public IndexedHierarchicDistributionValidator(String clusterName,
-                                                  StorageGroup rootGroup,
+    public IndexedHierarchicDistributionValidator(StorageGroup rootGroup,
                                                   Redundancy redundancy,
                                                   DispatchTuning.DispatchPolicy dispatchPolicy) {
-        this.clusterName = clusterName;
         this.rootGroup = rootGroup;
         this.redundancy = redundancy;
         this.dispatchPolicy = dispatchPolicy;
@@ -30,17 +27,18 @@ public class IndexedHierarchicDistributionValidator {
     public void validate() {
         validateThatWeHaveOneGroupLevel();
         validateThatLeafGroupsHasEqualNumberOfNodes();
-        validateThatLeafGroupsCountIsAFactorOfRedundancy(clusterName, redundancy.effectiveFinalRedundancy(), rootGroup.getSubgroups().size());
+        validateThatLeafGroupsCountIsAFactorOfRedundancy(redundancy.effectiveFinalRedundancy(), rootGroup.getSubgroups().size());
         validateThatRedundancyPerGroupIsEqual();
-        validateThatReadyCopiesIsCompatibleWithRedundancy(clusterName, redundancy.effectiveFinalRedundancy(), redundancy.effectiveReadyCopies(), rootGroup.getSubgroups().size());
+        validateThatReadyCopiesIsCompatibleWithRedundancy(redundancy.effectiveFinalRedundancy(), redundancy.effectiveReadyCopies(), rootGroup.getSubgroups().size());
     }
 
     private void validateThatWeHaveOneGroupLevel() {
         for (StorageGroup group : rootGroup.getSubgroups()) {
             if (group.getSubgroups().size() > 0) {
-                throw new IllegalArgumentException(getErrorMsgPrefix(clusterName) + "Expected all groups under root group '" +
-                                                   rootGroup.getName() + "' to be leaf groups only containing nodes, but sub group '" + group.getName() + "' contains " +
-                                                   group.getSubgroups().size() + " sub groups.");
+                throw new IllegalArgumentException("Expected all groups under root group '" +
+                                                   rootGroup.getName() + "' to be leaf groups only containing nodes, but sub group '" +
+                                                   group.getName() + "' contains " +
+                                                   group.getSubgroups().size() + " sub groups");
             }
         }
     }
@@ -56,18 +54,19 @@ public class IndexedHierarchicDistributionValidator {
             }
 
             if (group.getNodes().size() != previousGroup.getNodes().size())
-                throw new IllegalArgumentException(getErrorMsgPrefix(clusterName) + "Expected leaf groups to contain an equal number of nodes, but leaf group '" +
-                        previousGroup.getName() + "' contains " + previousGroup.getNodes().size() + " node(s) while leaf group '" +
-                        group.getName() + "' contains " + group.getNodes().size() + " node(s).");
+                throw new IllegalArgumentException("Expected leaf groups to contain an equal number of nodes, but leaf group '" +
+                                                   previousGroup.getName() + "' contains " + previousGroup.getNodes().size() +
+                                                   " node(s) while leaf group '" + group.getName() +
+                                                   "' contains " + group.getNodes().size() + " node(s)");
             previousGroup = group;
         }
     }
 
-    static public void validateThatLeafGroupsCountIsAFactorOfRedundancy(String clusterName, int totalRedundancy, int subGroups) {
+    static public void validateThatLeafGroupsCountIsAFactorOfRedundancy(int totalRedundancy, int subGroups) {
         if (totalRedundancy % subGroups != 0) {
-            throw new IllegalArgumentException(getErrorMsgPrefix(clusterName) + "Expected number of leaf groups (" +
+            throw new IllegalArgumentException("Expected number of leaf groups (" +
                                                subGroups + ") to be a factor of redundancy (" +
-                                               totalRedundancy + "), but it is not.");
+                                               totalRedundancy + "), but it is not");
         }
     }
 
@@ -75,9 +74,10 @@ public class IndexedHierarchicDistributionValidator {
         int redundancyPerGroup = redundancy.effectiveFinalRedundancy() / rootGroup.getSubgroups().size();
         String expPartitions = createDistributionPartitions(redundancyPerGroup, rootGroup.getSubgroups().size());
         if (!rootGroup.getPartitions().get().equals(expPartitions)) {
-            throw new IllegalArgumentException(getErrorMsgPrefix(clusterName) + "Expected redundancy per leaf group to be " +
+            throw new IllegalArgumentException("Expected redundancy per leaf group to be " +
                                                redundancyPerGroup + ", but it is not according to distribution partitions '" +
-                                               rootGroup.getPartitions().get() + "'. Expected distribution partitions should be '" + expPartitions + "'.");
+                                               rootGroup.getPartitions().get() +
+                                               "'. Expected distribution partitions should be '" + expPartitions + "'");
         }
     }
 
@@ -91,20 +91,17 @@ public class IndexedHierarchicDistributionValidator {
         return sb.toString();
     }
 
-    static public void validateThatReadyCopiesIsCompatibleWithRedundancy(String clusterName, int totalRedundancy, int totalReadyCopies, int groupCount) {
+    static public void validateThatReadyCopiesIsCompatibleWithRedundancy(int totalRedundancy, int totalReadyCopies, int groupCount) {
         if (totalRedundancy % groupCount != 0) {
-            throw new IllegalArgumentException(getErrorMsgPrefix(clusterName) + "Expected equal redundancy per group.");
+            throw new IllegalArgumentException("Expected equal redundancy per group");
         }
         if (totalReadyCopies % groupCount != 0) {
-            throw new IllegalArgumentException(getErrorMsgPrefix(clusterName) + "Expected equal amount of ready copies per group, but " +
+            throw new IllegalArgumentException("Expected equal amount of ready copies per group, but " +
                                                totalReadyCopies + " ready copies is specified with " + groupCount + " groups");
         }
         if (totalReadyCopies == 0) {
-            throw new IllegalArgumentException(getErrorMsgPrefix(clusterName) + "Warning. No ready copies configured. At least one is required.");
+            throw new IllegalArgumentException("No ready copies configured. At least 1 is required.");
         }
     }
 
-    static private String getErrorMsgPrefix(String clusterName) {
-        return "In indexed content cluster '" + clusterName + "' using hierarchic distribution: ";
-    }
 }

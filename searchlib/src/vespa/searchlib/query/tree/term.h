@@ -50,7 +50,7 @@ class TermBase : public TermNode {
     T _term;
 
 public:
-    typedef T Type;
+    using Type = T;
 
     ~TermBase() override = 0;
     const T &getTerm() const { return _term; }

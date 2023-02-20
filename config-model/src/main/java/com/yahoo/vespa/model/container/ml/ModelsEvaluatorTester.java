@@ -8,7 +8,6 @@ import ai.vespa.rankingexpression.importer.onnx.OnnxImporter;
 import ai.vespa.rankingexpression.importer.tensorflow.TensorFlowImporter;
 import ai.vespa.rankingexpression.importer.vespa.VespaImporter;
 import ai.vespa.rankingexpression.importer.xgboost.XGBoostImporter;
-import com.google.common.collect.ImmutableList;
 import com.yahoo.config.FileReference;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.FileRegistry;
@@ -34,6 +33,7 @@ import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -49,7 +49,7 @@ import java.util.Map;
  */
 public class ModelsEvaluatorTester {
 
-    private static final ImmutableList<MlModelImporter> importers = ImmutableList.of(new TensorFlowImporter(),
+    private static final List<MlModelImporter> importers = List.of(new TensorFlowImporter(),
             new OnnxImporter(),
             new LightGBMImporter(),
             new XGBoostImporter(),

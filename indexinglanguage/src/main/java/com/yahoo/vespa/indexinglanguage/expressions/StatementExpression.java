@@ -15,13 +15,17 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * @author Simon Thoresen Hult
  */
 public final class StatementExpression extends ExpressionList<Expression> {
 
-    /** The name of the (last) output field tthis statement will write to, or null if none */
+    /** The names of the fields consumed by this. */
+    private final List<String> inputFields;
+
+    /** The name of the (last) output field this statement will write to, or null if none */
     private String outputField;
 
     public StatementExpression(Expression... lst) {
@@ -34,12 +38,16 @@ public final class StatementExpression extends ExpressionList<Expression> {
 
     private StatementExpression(Iterable<Expression> list, Object unused) {
         super(list, resolveInputType(list));
+        inputFields = List.copyOf(InputExpression.InputFieldNameExtractor.runOn(this));
     }
+
+    /** Returns the input fields which are (perhaps optionally) consumed by some expression in this statement. */
+    public List<String> getInputFields() { return inputFields; }
 
     @Override
     protected void doExecute(ExecutionContext context) {
-        for (Expression exp : this) {
-            context.execute(exp);
+        for (Expression expression : this) {
+            context.execute(expression);
         }
     }
 
@@ -58,14 +66,10 @@ public final class StatementExpression extends ExpressionList<Expression> {
     private static DataType resolveInputType(Iterable<Expression> lst) {
         for (Expression exp : lst) {
             DataType type = exp.requiredInputType();
-            if (type != null) {
-                return type;
-            }
+            if (type != null) return type;
 
             type = exp.createdOutputType();
-            if (type != null) {
-                return null;
-            }
+            if (type != null) return null;
         }
         return null;
     }
@@ -74,23 +78,14 @@ public final class StatementExpression extends ExpressionList<Expression> {
     public DataType createdOutputType() {
         for (int i = size(); --i >= 0; ) {
             DataType type = get(i).createdOutputType();
-            if (type != null) {
-                return type;
-            }
+            if (type != null) return type;
         }
         return null;
     }
 
     @Override
     public String toString() {
-        StringBuilder ret = new StringBuilder();
-        for (Iterator<Expression> it = iterator(); it.hasNext();) {
-            ret.append(it.next());
-            if (it.hasNext()) {
-                ret.append(" | ");
-            }
-        }
-        return ret.toString();
+        return asList().stream().map(Expression::toString).collect(Collectors.joining(" | "));
     }
 
     @Override
@@ -122,4 +117,5 @@ public final class StatementExpression extends ExpressionList<Expression> {
         }
         return ret;
     }
+
 }

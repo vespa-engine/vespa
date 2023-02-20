@@ -29,9 +29,13 @@ class TlsStatisticsMetricsWrapper : public metrics::MetricSet {
 
     metrics::LongCountMetric failed_tls_config_reloads;
 
+    metrics::LongCountMetric rpc_capability_checks_failed;
+    metrics::LongCountMetric status_capability_checks_failed;
+
     vespalib::net::tls::ConnectionStatistics::Snapshot last_client_stats_snapshot;
     vespalib::net::tls::ConnectionStatistics::Snapshot last_server_stats_snapshot;
     vespalib::net::tls::ConfigStatistics::Snapshot     last_config_stats_snapshot;
+    vespalib::net::tls::CapabilityStatistics::Snapshot last_capability_stats_snapshot;
 
 public:
     explicit TlsStatisticsMetricsWrapper(metrics::MetricSet* owner);

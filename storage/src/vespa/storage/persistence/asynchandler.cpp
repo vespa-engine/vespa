@@ -171,7 +171,7 @@ AsyncHandler::handlePut(api::PutCommand& cmd, MessageTracker::UP trackerUP) cons
         tracker->checkForError(*response);
         tracker->sendReply();
     });
-    _spi.putAsync(bucket, spi::Timestamp(cmd.getTimestamp()), std::move(cmd.getDocument()),
+    _spi.putAsync(bucket, spi::Timestamp(cmd.getTimestamp()), cmd.getDocument(),
                   std::make_unique<ResultTaskOperationDone>(_sequencedExecutor, cmd.getBucketId(), std::move(task)));
 
     return trackerUP;
@@ -300,7 +300,7 @@ AsyncHandler::handleUpdate(api::UpdateCommand& cmd, MessageTracker::UP trackerUP
         }
         tracker->sendReply();
     });
-    _spi.updateAsync(bucket, spi::Timestamp(cmd.getTimestamp()), std::move(cmd.getUpdate()),
+    _spi.updateAsync(bucket, spi::Timestamp(cmd.getTimestamp()), cmd.getUpdate(),
                      std::make_unique<ResultTaskOperationDone>(_sequencedExecutor, cmd.getBucketId(), std::move(task)));
     return trackerUP;
 }
@@ -337,13 +337,13 @@ AsyncHandler::handleRemove(api::RemoveCommand& cmd, MessageTracker::UP trackerUP
 }
 
 bool
-AsyncHandler::is_async_message(api::MessageType::Id type_id) noexcept
+AsyncHandler::is_async_unconditional_message(const api::StorageMessage & cmd) noexcept
 {
-    switch (type_id) {
+    switch (cmd.getType().getId()) {
         case api::MessageType::PUT_ID:
         case api::MessageType::UPDATE_ID:
         case api::MessageType::REMOVE_ID:
-            return true;
+            return ! cmd.hasTestAndSetCondition();
         default:
             return false;
     }

@@ -179,7 +179,7 @@ using attribute::Config;
 class AttributeTest : public ::testing::Test
 {
 protected:
-    typedef AttributeVector::SP AttributePtr;
+    using AttributePtr = AttributeVector::SP;
 
     void addDocs(const AttributePtr & v, size_t sz);
     void addClearedDocs(const AttributePtr & v, size_t sz);
@@ -1303,7 +1303,7 @@ AttributeTest::testArithmeticValueUpdate(const AttributePtr & ptr)
 {
     LOG(info, "testArithmeticValueUpdate: vector '%s'", ptr->getName().c_str());
 
-    typedef document::ArithmeticValueUpdate Arith;
+    using Arith = document::ArithmeticValueUpdate;
     auto & vec = static_cast<VectorType &>(*ptr.get());
     addDocs(ptr, 13);
     EXPECT_EQ(ptr->getStatus().getUpdateCount(), 0u);
@@ -1472,7 +1472,7 @@ AttributeTest::testArithmeticWithUndefinedValue(const AttributePtr & ptr, BaseTy
 {
     LOG(info, "testArithmeticWithUndefinedValue: vector '%s'", ptr->getName().c_str());
 
-    typedef document::ArithmeticValueUpdate Arith;
+    using Arith = document::ArithmeticValueUpdate;
     auto & vec = static_cast<VectorType &>(*ptr.get());
     addDocs(ptr, 1);
     ASSERT_TRUE(vec.update(0, before));
@@ -1519,8 +1519,8 @@ AttributeTest::testMapValueUpdate(const AttributePtr & ptr, BufferType initValue
                                   bool removeIfZero, bool createIfNonExistant)
 {
     LOG(info, "testMapValueUpdate: vector '%s'", ptr->getName().c_str());
-    typedef MapValueUpdate MapVU;
-    typedef ArithmeticValueUpdate ArithVU;
+    using MapVU = MapValueUpdate;
+    using ArithVU = ArithmeticValueUpdate;
     auto & vec = static_cast<VectorType &>(*ptr.get());
 
     addDocs(ptr, 7);

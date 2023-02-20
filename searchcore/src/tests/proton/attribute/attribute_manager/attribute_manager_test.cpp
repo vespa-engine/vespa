@@ -2,6 +2,7 @@
 
 #include <vespa/searchcore/proton/attribute/attribute_collection_spec_factory.h>
 #include <vespa/searchcore/proton/attribute/attribute_manager_initializer.h>
+#include <vespa/searchcore/proton/attribute/attribute_manager_reconfig.h>
 #include <vespa/searchcore/proton/attribute/attribute_writer.h>
 #include <vespa/searchcore/proton/attribute/attributemanager.h>
 #include <vespa/searchcore/proton/attribute/exclusive_attribute_read_accessor.h>
@@ -72,9 +73,9 @@ using vespa::config::search::AttributesConfig;
 using vespa::config::search::AttributesConfigBuilder;
 using vespalib::eval::ValueType;
 
-typedef search::attribute::Config AVConfig;
-typedef proton::AttributeCollectionSpec::AttributeList AttrSpecList;
-typedef proton::AttributeCollectionSpec AttrMgrSpec;
+using AVConfig = search::attribute::Config;
+using AttrSpecList = proton::AttributeCollectionSpec::AttributeList;
+using AttrMgrSpec = proton::AttributeCollectionSpec;
 
 namespace {
 
@@ -181,7 +182,7 @@ struct AttributeManagerFixture
     proton::AttributeManager::SP _msp;
     proton::AttributeManager &_m;
     ImportedAttributesRepoBuilder _builder;
-    AttributeManagerFixture(BaseFixture &bf);
+    explicit AttributeManagerFixture(BaseFixture &bf);
     ~AttributeManagerFixture();
     AttributeVector::SP addAttribute(const vespalib::string &name) {
         return _m.addAttribute({name, INT32_SINGLE}, createSerialNum);
@@ -213,19 +214,26 @@ struct Fixture : public BaseFixture, public AttributeManagerFixture
 struct SequentialAttributeManager
 {
     SequentialAttributesInitializer initializer;
+    uint32_t                 docid_limit;
+    SerialNum                serial_num;
     proton::AttributeManager mgr;
-    SequentialAttributeManager(const AttributeManager &currMgr, AttrMgrSpec && newSpec)
-        : initializer(newSpec.getDocIdLimit()),
-          mgr(currMgr, std::move(newSpec), initializer)
-    {
-        mgr.addInitializedAttributes(initializer.getInitializedAttributes());
-    }
-    ~SequentialAttributeManager() = default;
+    SequentialAttributeManager(const AttributeManager &currMgr, AttrMgrSpec && newSpec);
+    ~SequentialAttributeManager();
 };
+
+SequentialAttributeManager::SequentialAttributeManager(const AttributeManager &currMgr, AttrMgrSpec && newSpec)
+    : initializer(newSpec.getDocIdLimit()),
+      docid_limit(newSpec.getDocIdLimit()),
+      serial_num(newSpec.getCurrentSerialNum().value_or(0)),
+      mgr(currMgr, std::move(newSpec), initializer)
+{
+    mgr.addInitializedAttributes(initializer.getInitializedAttributes(), docid_limit, serial_num);
+}
+SequentialAttributeManager::~SequentialAttributeManager() = default;
 
 struct DummyInitializerTask : public InitializerTask
 {
-    virtual void run() override {}
+    void run() override {}
 };
 
 struct ParallelAttributeManager
@@ -240,12 +248,12 @@ struct ParallelAttributeManager
     ExecutorThreadService master;
     AttributeManagerInitializer::SP initializer;
 
-    ParallelAttributeManager(search::SerialNum configSerialNum, AttributeManager::SP baseAttrMgr,
+    ParallelAttributeManager(search::SerialNum configSerialNum, AttributeManager & baseAttrMgr,
                              const AttributesConfig &attrCfg, uint32_t docIdLimit);
     ~ParallelAttributeManager();
 };
 
-ParallelAttributeManager::ParallelAttributeManager(search::SerialNum configSerialNum, AttributeManager::SP baseAttrMgr,
+ParallelAttributeManager::ParallelAttributeManager(search::SerialNum configSerialNum, AttributeManager & baseAttrMgr,
                                                    const AttributesConfig &attrCfg, uint32_t docIdLimit)
     : documentMetaStoreInitTask(std::make_shared<DummyInitializerTask>()),
       bucketDbOwner(std::make_shared<bucketdb::BucketDBOwner>()),
@@ -253,15 +261,15 @@ ParallelAttributeManager::ParallelAttributeManager(search::SerialNum configSeria
       alloc_strategy(),
       fastAccessAttributesOnly(false),
       mgr(std::make_shared<AttributeManager::SP>()),
-      masterExecutor(1, 128_Ki),
+      masterExecutor(1),
       master(masterExecutor),
       initializer(std::make_shared<AttributeManagerInitializer>(configSerialNum, documentMetaStoreInitTask,
-                                                                documentMetaStore, *baseAttrMgr, attrCfg,
+                                                                documentMetaStore, baseAttrMgr, attrCfg,
                                                                 alloc_strategy,
                                                                 fastAccessAttributesOnly, master, mgr))
 {
     documentMetaStore->setCommittedDocIdLimit(docIdLimit);
-    vespalib::ThreadStackExecutor executor(3, 128_Ki);
+    vespalib::ThreadStackExecutor executor(3);
     initializer::TaskRunner taskRunner(executor);
     taskRunner.runTask(initializer);
 }
@@ -389,7 +397,7 @@ TEST_F("require that predicate attributes are flushed and loaded", BaseFixture)
         AttributeVector::SP a1 = am.addAttribute({"a1", AttributeUtils::getPredicateConfig()}, createSerialNum);
         EXPECT_EQUAL(1u, a1->getNumDocs());
 
-        auto &pa = static_cast<PredicateAttribute &>(*a1);
+        auto &pa = dynamic_cast<PredicateAttribute &>(*a1);
         PredicateIndex &index = pa.getIndex();
         uint32_t doc_id;
         a1->addDoc(doc_id);
@@ -409,7 +417,7 @@ TEST_F("require that predicate attributes are flushed and loaded", BaseFixture)
         AttributeVector::SP a1 = am.addAttribute({"a1", AttributeUtils::getPredicateConfig()}, createSerialNum); // loaded
         EXPECT_EQUAL(2u, a1->getNumDocs());
 
-        auto &pa = static_cast<PredicateAttribute &>(*a1);
+        auto &pa = dynamic_cast<PredicateAttribute &>(*a1);
         PredicateIndex &index = pa.getIndex();
         uint32_t doc_id;
         a1->addDoc(doc_id);
@@ -441,9 +449,9 @@ TEST_F("require that reconfig can add attributes", Fixture)
     f._m.addExtraAttribute(ex);
 
     AttrSpecList newSpec;
-    newSpec.push_back(AttributeSpec("a1", INT32_SINGLE));
-    newSpec.push_back(AttributeSpec("a2", INT32_SINGLE));
-    newSpec.push_back(AttributeSpec("a3", INT32_SINGLE));
+    newSpec.emplace_back("a1", INT32_SINGLE);
+    newSpec.emplace_back("a2", INT32_SINGLE);
+    newSpec.emplace_back("a3", INT32_SINGLE);
 
     SequentialAttributeManager sam(f._m, AttrMgrSpec(std::move(newSpec), f._m.getNumDocs(), 10));
     std::vector<AttributeGuard> list;
@@ -466,7 +474,7 @@ TEST_F("require that reconfig can remove attributes", Fixture)
     AttributeVector::SP a3 = f.addAttribute("a3");
 
     AttrSpecList newSpec;
-    newSpec.push_back(AttributeSpec("a2", INT32_SINGLE));
+    newSpec.emplace_back("a2", INT32_SINGLE);
 
     SequentialAttributeManager sam(f._m, AttrMgrSpec(std::move(newSpec), 1, 10));
     std::vector<AttributeGuard> list;
@@ -487,9 +495,9 @@ TEST_F("require that new attributes after reconfig are initialized", Fixture)
     EXPECT_EQUAL(3u, a1->getNumDocs());
 
     AttrSpecList newSpec;
-    newSpec.push_back(AttributeSpec("a1", INT32_SINGLE));
-    newSpec.push_back(AttributeSpec("a2", INT32_SINGLE));
-    newSpec.push_back(AttributeSpec("a3", INT32_ARRAY));
+    newSpec.emplace_back("a1", INT32_SINGLE);
+    newSpec.emplace_back("a2", INT32_SINGLE);
+    newSpec.emplace_back("a3", INT32_ARRAY);
 
     SequentialAttributeManager sam(f._m, AttrMgrSpec(std::move(newSpec), 3, 4));
     AttributeGuard::UP a2ap = sam.mgr.getAttribute("a2");
@@ -521,7 +529,7 @@ TEST_F("require that removed attributes cannot resurrect", BaseFixture)
     am1.reset();
 
     AttrSpecList ns2;
-    ns2.push_back(AttributeSpec("a1", INT32_SINGLE));
+    ns2.emplace_back("a1", INT32_SINGLE);
     // 2 new documents added since a1 was removed
     SequentialAttributeManager am3(am2.mgr, AttrMgrSpec(std::move(ns2), 5, 20));
 
@@ -555,7 +563,7 @@ TEST_F("require that removed fields can be pruned", Fixture)
     f._m.flushAll(10);
 
     AttrSpecList newSpec;
-    newSpec.push_back(AttributeSpec("a2", INT32_SINGLE));
+    newSpec.emplace_back("a2", INT32_SINGLE);
     SequentialAttributeManager sam(f._m, AttrMgrSpec(std::move(newSpec), 1, 11));
     sam.mgr.pruneRemovedFields(11);
 
@@ -684,9 +692,9 @@ TEST_F("require that attributes can be initialized and loaded in sequence", Base
         AttributeManagerFixture amf(f);
 
         AttrSpecList newSpec;
-        newSpec.push_back(AttributeSpec("a1", INT32_SINGLE));
-        newSpec.push_back(AttributeSpec("a2", INT32_SINGLE));
-        newSpec.push_back(AttributeSpec("a3", INT32_SINGLE));
+        newSpec.emplace_back("a1", INT32_SINGLE);
+        newSpec.emplace_back("a2", INT32_SINGLE);
+        newSpec.emplace_back("a3", INT32_SINGLE);
 
         SequentialAttributeManager newMgr(amf._m, AttrMgrSpec(std::move(newSpec), 10, createSerialNum + 5));
 
@@ -723,7 +731,7 @@ TEST_F("require that attributes can be initialized and loaded in parallel", Base
         attrCfg.attribute.push_back(createAttributeConfig("a2"));
         attrCfg.attribute.push_back(createAttributeConfig("a3"));
 
-        ParallelAttributeManager newMgr(createSerialNum + 5, amf._msp, attrCfg, 10);
+        ParallelAttributeManager newMgr(createSerialNum + 5, *amf._msp, attrCfg, 10);
 
         AttributeGuard::UP a1 = newMgr.mgr->get()->getAttribute("a1");
         TEST_DO(validateAttribute(*a1->get()));
@@ -811,12 +819,12 @@ TEST_F("require that attribute vector of wrong type is dropped", BaseFixture)
     am1->addAttribute({"a5", predicate}, 5);
     am1->addAttribute({"a6", predicate}, 6);
     AttrSpecList newSpec;
-    newSpec.push_back(AttributeSpec("a1", INT32_SINGLE));
-    newSpec.push_back(AttributeSpec("a2", INT32_ARRAY));
-    newSpec.push_back(AttributeSpec("a3", generic_tensor));
-    newSpec.push_back(AttributeSpec("a4", dense_tensor));
-    newSpec.push_back(AttributeSpec("a5", predicate));
-    newSpec.push_back(AttributeSpec("a6", predicate2));
+    newSpec.emplace_back("a1", INT32_SINGLE);
+    newSpec.emplace_back("a2", INT32_ARRAY);
+    newSpec.emplace_back("a3", generic_tensor);
+    newSpec.emplace_back("a4", dense_tensor);
+    newSpec.emplace_back("a5", predicate);
+    newSpec.emplace_back("a6", predicate2);
     SequentialAttributeManager am2(*am1, AttrMgrSpec(std::move(newSpec), 5, 20));
     TEST_DO(assertCreateSerialNum(*am1, "a1", 1));
     TEST_DO(assertCreateSerialNum(*am1, "a2", 2));
@@ -858,11 +866,50 @@ TEST_F("require that shrink flushtarget is handed over to new attribute manager"
     auto am1 = f.make_manager();
     am1->addAttribute({"a1", INT32_SINGLE}, 4);
     AttrSpecList newSpec;
-    newSpec.push_back(AttributeSpec("a1", INT32_SINGLE));
-    auto am2 = am1->create(AttrMgrSpec(std::move(newSpec), 5, 20));
+    newSpec.emplace_back("a1", INT32_SINGLE);
+    auto am2 = am1->prepare_create(AttrMgrSpec(std::move(newSpec), 5, 20))->create(5, 20);
     auto am3 = std::dynamic_pointer_cast<AttributeManager>(am2);
     TEST_DO(assertShrinkTargetSerial(*am3, "a1", 3));
     EXPECT_EQUAL(am1->getShrinker("a1"), am3->getShrinker("a1"));
+}
+
+TEST_F("transient resource usage is zero in steady state", Fixture)
+{
+    f.addAttribute("a1");
+    f.addAttribute("a2");
+    auto usage = f._m.get_transient_resource_usage();
+    EXPECT_EQUAL(0u, usage.disk());
+    EXPECT_EQUAL(0u, usage.memory());
+}
+
+TEST_F("late create serial number is set on new attributes", Fixture)
+{
+    auto am1 = f.make_manager();
+    am1->addAttribute({"a1", INT32_SINGLE}, 4);
+    auto a1 = am1->getAttribute("a1")->getSP();
+    uint32_t docid = 0;
+    a1->addDoc(docid);
+    EXPECT_EQUAL(1u, docid);
+    a1->clearDoc(docid);
+    a1->commit(CommitParam(5));
+    AttrSpecList new_spec;
+    new_spec.emplace_back("a1", INT32_SINGLE);
+    new_spec.emplace_back("a2", INT32_SINGLE);
+    // late serial number
+    auto am2 = am1->prepare_create(AttrMgrSpec(std::move(new_spec), 10, std::nullopt))->create(14, 20);
+    auto am3 = std::dynamic_pointer_cast<AttributeManager>(am2);
+    EXPECT_TRUE(a1 == am3->getAttribute("a1")->getSP());
+    auto a2 = am3->getAttribute("a2")->getSP();
+    TEST_DO(assertCreateSerialNum(*am3, "a1", 4));
+    TEST_DO(assertCreateSerialNum(*am3, "a2", 20));
+    TEST_DO(assertShrinkTargetSerial(*am3, "a1", 3));
+    TEST_DO(assertShrinkTargetSerial(*am3, "a2", 19));
+    EXPECT_EQUAL(0u, am3->getFlushedSerialNum("a1"));
+    EXPECT_EQUAL(0u, am3->getFlushedSerialNum("a2"));
+    EXPECT_EQUAL(2u, a1->getNumDocs());
+    EXPECT_EQUAL(2u, a1->getCommittedDocIdLimit());
+    EXPECT_EQUAL(14u, a2->getNumDocs());
+    EXPECT_EQUAL(14u, a2->getCommittedDocIdLimit());
 }
 
 TEST_MAIN()

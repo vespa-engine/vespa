@@ -18,11 +18,9 @@ ValueMetric<AvgVal, TotVal, SumOnAdd>::ValueMetric(
 {}
 
 template<typename AvgVal, typename TotVal, bool SumOnAdd>
-ValueMetric<AvgVal, TotVal, SumOnAdd>::ValueMetric(
-        const ValueMetric<AvgVal, TotVal, SumOnAdd>& other,
-        CopyType copyType, MetricSet* owner)
+ValueMetric<AvgVal, TotVal, SumOnAdd>::ValueMetric(const ValueMetric<AvgVal, TotVal, SumOnAdd>& other, MetricSet* owner)
     : AbstractValueMetric(other, owner),
-      _values(other._values, copyType == CLONE ? other._values.size() : 1)
+      _values(other._values)
 {}
 
 template<typename AvgVal, typename TotVal, bool SumOnAdd>
@@ -66,11 +64,9 @@ void ValueMetric<AvgVal, TotVal, SumOnAdd>::dec(AvgVal decVal)
 
 template<typename AvgVal, typename TotVal, bool SumOnAdd>
 void
-ValueMetric<AvgVal, TotVal, SumOnAdd>::addToSnapshot(
-        Metric& other, std::vector<Metric::UP> &) const
+ValueMetric<AvgVal, TotVal, SumOnAdd>::addToSnapshot(Metric& other, std::vector<Metric::UP> &) const
 {
-    ValueMetric<AvgVal, TotVal, SumOnAdd>& o(
-            reinterpret_cast<ValueMetric<AvgVal, TotVal, SumOnAdd>&>(other));
+    auto & o = reinterpret_cast<ValueMetric<AvgVal, TotVal, SumOnAdd>&>(other);
     if (_values.getValues()._count == 0) return; // Don't add if not set
     o.add(_values.getValues(), false);
 }
@@ -79,9 +75,7 @@ template<typename AvgVal, typename TotVal, bool SumOnAdd>
 void
 ValueMetric<AvgVal, TotVal, SumOnAdd>::addToPart(Metric& other) const
 {
-    ValueMetric<AvgVal, TotVal, SumOnAdd>& o(
-            reinterpret_cast<ValueMetric<AvgVal, TotVal, SumOnAdd>&>(
-                other));
+    auto & o = reinterpret_cast<ValueMetric<AvgVal, TotVal, SumOnAdd>&>(other);
     o.add(_values.getValues(), SumOnAdd);
 }
 
@@ -229,10 +223,8 @@ ValueMetric<AvgVal, TotVal, SumOnAdd>::getDoubleValue(stringref id) const
         return getAverage();
     if (id == "count") return static_cast<double>(values._count);
     if (id == "total") return static_cast<double>(values._total);
-    if (id == "min") return static_cast<double>(
-            values._count > 0 ? values._min : 0);
-    if (id == "max") return static_cast<double>(
-            values._count > 0 ? values._max : 0);
+    if (id == "min") return static_cast<double>(values._count > 0 ? values._min : 0);
+    if (id == "max") return static_cast<double>(values._count > 0 ? values._max : 0);
     throw vespalib::IllegalArgumentException(
             "No value " + vespalib::string(id) + " in average metric.", VESPA_STRLOC);
 }
@@ -242,9 +234,7 @@ void
 ValueMetric<AvgVal, TotVal, SumOnAdd>::addMemoryUsage(MemoryConsumption& mc) const
 {
     ++mc._valueMetricCount;
-    mc._valueMetricValues += _values.getMemoryUsageAllocatedInternally();
-    mc._valueMetricMeta += sizeof(ValueMetric<AvgVal, TotVal, SumOnAdd>)
-                         - sizeof(Metric);
+    mc._valueMetricMeta += sizeof(ValueMetric<AvgVal, TotVal, SumOnAdd>) - sizeof(Metric);
     Metric::addMemoryUsage(mc);
 }
 

@@ -28,10 +28,10 @@ template <typename Scorer, typename Cmp>
 class RiseWand : public search::queryeval::SearchIterator
 {
 public:
-    typedef uint32_t docid_t;
-    typedef uint64_t score_t;
-    typedef search::queryeval::wand::Terms Terms;
-    typedef search::queryeval::SearchIterator *PostingStreamPtr;
+    using docid_t = uint32_t;
+    using score_t = uint64_t;
+    using Terms = search::queryeval::wand::Terms;
+    using PostingStreamPtr = search::queryeval::SearchIterator*;
 
 private:
     // comparator class that compares two streams. The variables a and b are
@@ -125,8 +125,8 @@ public:
     void doUnpack(uint32_t docid) override;
 };
 
-typedef RiseWand<TermFreqScorer, std::greater_equal<uint64_t> > TermFrequencyRiseWand;
-typedef RiseWand<DotProductScorer, std::greater<uint64_t> > DotProductRiseWand;
+using TermFrequencyRiseWand = RiseWand<TermFreqScorer, std::greater_equal<uint64_t> >;
+using DotProductRiseWand = RiseWand<DotProductScorer, std::greater<uint64_t> >;
 
 } // namespacve rise
 

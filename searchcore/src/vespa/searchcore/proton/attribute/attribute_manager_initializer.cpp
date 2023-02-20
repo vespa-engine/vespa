@@ -86,7 +86,7 @@ void
 AttributeManagerInitializerTask::run()
 {
     _attrMgr->addExtraAttribute(_documentMetaStore);
-    _attrMgr->addInitializedAttributes(_attributesResult.get());
+    _attrMgr->addInitializedAttributes(_attributesResult.get(), 1, _configSerialNum);
     _attrMgr->pruneRemovedFields(_configSerialNum);
     _promise.set_value();
 }

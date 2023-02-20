@@ -11,7 +11,9 @@ import com.yahoo.config.application.XmlPreProcessor;
 import com.yahoo.config.application.api.ApplicationMetaData;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.DeployLogger;
+import com.yahoo.config.application.api.DeploymentInstanceSpec;
 import com.yahoo.config.application.api.FileRegistry;
+import com.yahoo.config.application.api.xml.DeploymentSpecXmlReader;
 import com.yahoo.config.model.api.ConfigDefinitionRepo;
 import com.yahoo.config.model.api.ContainerEndpoint;
 import com.yahoo.config.model.api.EndpointCertificateMetadata;
@@ -24,6 +26,7 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.AthenzDomain;
 import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.DockerImage;
+import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.Tags;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.container.jdisc.secretstore.SecretStore;
@@ -33,7 +36,6 @@ import com.yahoo.text.XML;
 import com.yahoo.vespa.config.server.ConfigServerSpec;
 import com.yahoo.vespa.config.server.TimeoutBudget;
 import com.yahoo.vespa.config.server.application.ApplicationSet;
-import com.yahoo.vespa.config.server.application.PermanentApplicationPackage;
 import com.yahoo.vespa.config.server.configchange.ConfigChangeActions;
 import com.yahoo.vespa.config.server.deploy.ZooKeeperDeployer;
 import com.yahoo.vespa.config.server.filedistribution.FileDistributionFactory;
@@ -83,7 +85,6 @@ public class SessionPreparer {
     private final ModelFactoryRegistry modelFactoryRegistry;
     private final FileDistributionFactory fileDistributionFactory;
     private final HostProvisionerProvider hostProvisionerProvider;
-    private final PermanentApplicationPackage permanentApplicationPackage;
     private final ConfigserverConfig configserverConfig;
     private final ConfigDefinitionRepo configDefinitionRepo;
     private final Curator curator;
@@ -96,7 +97,6 @@ public class SessionPreparer {
                            FileDistributionFactory fileDistributionFactory,
                            ExecutorService executor,
                            HostProvisionerProvider hostProvisionerProvider,
-                           PermanentApplicationPackage permanentApplicationPackage,
                            ConfigserverConfig configserverConfig,
                            ConfigDefinitionRepo configDefinitionRepo,
                            Curator curator,
@@ -106,7 +106,6 @@ public class SessionPreparer {
         this.modelFactoryRegistry = modelFactoryRegistry;
         this.fileDistributionFactory = fileDistributionFactory;
         this.hostProvisionerProvider = hostProvisionerProvider;
-        this.permanentApplicationPackage = permanentApplicationPackage;
         this.configserverConfig = configserverConfig;
         this.configDefinitionRepo = configDefinitionRepo;
         this.curator = curator;
@@ -127,7 +126,7 @@ public class SessionPreparer {
      * @param activeApplicationSet        set of currently active applications.
      * @return the config change actions that must be done to handle the activation of the models prepared.
      */
-    public PrepareResult prepare(HostValidator<ApplicationId> hostValidator, DeployLogger logger, PrepareParams params,
+    public PrepareResult prepare(HostValidator hostValidator, DeployLogger logger, PrepareParams params,
                                  Optional<ApplicationSet> activeApplicationSet, Instant now, File serverDbSessionDir,
                                  ApplicationPackage applicationPackage, SessionZooKeeperClient sessionZooKeeperClient) {
         ApplicationId applicationId = params.getApplicationId();
@@ -160,7 +159,6 @@ public class SessionPreparer {
         final PrepareParams params;
 
         final ApplicationId applicationId;
-        final Tags tags;
 
         /** The repository part of docker image to be used for this deployment */
         final Optional<DockerImage> dockerImageRepository;
@@ -183,7 +181,7 @@ public class SessionPreparer {
         private final PreparedModelsBuilder preparedModelsBuilder;
         private final FileRegistry fileRegistry;
 
-        Preparation(HostValidator<ApplicationId> hostValidator, DeployLogger logger, PrepareParams params,
+        Preparation(HostValidator hostValidator, DeployLogger logger, PrepareParams params,
                     Optional<ApplicationSet> currentActiveApplicationSet, Path tenantPath,
                     File serverDbSessionDir, ApplicationPackage applicationPackage,
                     SessionZooKeeperClient sessionZooKeeperClient) {
@@ -192,7 +190,6 @@ public class SessionPreparer {
             this.applicationPackage = applicationPackage;
             this.sessionZooKeeperClient = sessionZooKeeperClient;
             this.applicationId = params.getApplicationId();
-            this.tags = params.tags();
             this.dockerImageRepository = params.dockerImageRepository();
             this.vespaVersion = params.vespaVersion().orElse(Vtag.currentVersion);
             this.containerEndpointsCache = new ContainerEndpointsCache(tenantPath, curator);
@@ -206,7 +203,6 @@ public class SessionPreparer {
             this.athenzDomain = params.athenzDomain();
             this.fileRegistry = fileDistributionFactory.createFileRegistry(serverDbSessionDir);
             this.preparedModelsBuilder = new PreparedModelsBuilder(modelFactoryRegistry,
-                                                                   permanentApplicationPackage,
                                                                    flagSource,
                                                                    secretStore,
                                                                    containerEndpoints,
@@ -272,11 +268,17 @@ public class SessionPreparer {
             File hostsXml = applicationPackage.getFileReference(Path.fromString("hosts.xml"));
 
             // Validate after doing our own preprocessing on these two files
-            if(servicesXml.exists()) {
-                vespaPreprocess(applicationPackageDir.getAbsoluteFile(), servicesXml, applicationPackage.getMetaData());
+            ApplicationMetaData meta = applicationPackage.getMetaData();
+            InstanceName instance = meta.getApplicationId().instance();
+            Tags tags = applicationPackage.getDeployment().map(new DeploymentSpecXmlReader(false)::read)
+                                          .flatMap(spec -> spec.instance(instance))
+                                          .map(DeploymentInstanceSpec::tags)
+                                          .orElse(Tags.empty());
+            if (servicesXml.exists()) {
+                vespaPreprocess(applicationPackageDir.getAbsoluteFile(), servicesXml, meta, tags);
             }
-            if(hostsXml.exists()) {
-                vespaPreprocess(applicationPackageDir.getAbsoluteFile(), hostsXml, applicationPackage.getMetaData());
+            if (hostsXml.exists()) {
+                vespaPreprocess(applicationPackageDir.getAbsoluteFile(), hostsXml, meta, tags);
             }
 
             if (zone.system().isPublic()) {
@@ -320,14 +322,15 @@ public class SessionPreparer {
             }
         }
 
-        void vespaPreprocess(File appDir, File inputXml, ApplicationMetaData metaData) {
+        void vespaPreprocess(File appDir, File inputXml, ApplicationMetaData metaData, Tags tags) {
             try {
+                InstanceName instance = metaData.getApplicationId().instance();
                 new XmlPreProcessor(appDir,
                                     inputXml,
-                                    metaData.getApplicationId().instance(),
+                                    instance,
                                     zone.environment(),
                                     zone.region(),
-                                    metaData.getTags())
+                                    tags)
                         .run();
             } catch (ParserConfigurationException | IOException | SAXException | TransformerException e) {
                 throw new RuntimeException(e);
@@ -352,7 +355,6 @@ public class SessionPreparer {
             writeStateToZooKeeper(sessionZooKeeperClient,
                                   preprocessedApplicationPackage,
                                   applicationId,
-                                  tags,
                                   filereference,
                                   dockerImageRepository,
                                   vespaVersion,
@@ -394,7 +396,6 @@ public class SessionPreparer {
     private void writeStateToZooKeeper(SessionZooKeeperClient zooKeeperClient,
                                        ApplicationPackage applicationPackage,
                                        ApplicationId applicationId,
-                                       Tags tags,
                                        FileReference fileReference,
                                        Optional<DockerImage> dockerImageRepository,
                                        Version vespaVersion,
@@ -411,7 +412,6 @@ public class SessionPreparer {
             zkDeployer.deploy(applicationPackage, fileRegistryMap, allocatedHosts);
             // Note: When changing the below you need to also change similar calls in SessionRepository.createSessionFromExisting()
             zooKeeperClient.writeApplicationId(applicationId);
-            zooKeeperClient.writeTags(tags);
             zooKeeperClient.writeApplicationPackageReference(Optional.of(fileReference));
             zooKeeperClient.writeVespaVersion(vespaVersion);
             zooKeeperClient.writeDockerImageRepository(dockerImageRepository);
@@ -460,7 +460,7 @@ public class SessionPreparer {
          public ConfigChangeActions getConfigChangeActions() {
             return new ConfigChangeActions(results.stream().map(result -> result.actions)
                                                            .flatMap(Collection::stream)
-                                                           .collect(Collectors.toList()));
+                                                           .toList());
          }
 
     }

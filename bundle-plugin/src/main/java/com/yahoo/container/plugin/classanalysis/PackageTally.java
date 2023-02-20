@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.container.plugin.classanalysis;
 
-import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Sets;
 import com.yahoo.container.plugin.util.Maps;
 
@@ -21,7 +20,6 @@ public class PackageTally {
     private final Map<String, Optional<ExportPackageAnnotation>> definedPackagesMap;
     private final Set<String> referencedPackagesUnfiltered;
 
-    @VisibleForTesting
     PackageTally(Map<String, Optional<ExportPackageAnnotation>> definedPackagesMap, Set<String> referencedPackagesUnfiltered) {
         this.definedPackagesMap = definedPackagesMap;
         this.referencedPackagesUnfiltered = referencedPackagesUnfiltered;

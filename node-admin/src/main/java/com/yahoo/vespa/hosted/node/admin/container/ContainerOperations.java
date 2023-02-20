@@ -18,7 +18,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
  * High-level interface for container operations. Code managing containers should use this and not
@@ -38,7 +37,7 @@ public class ContainerOperations {
         this.containerEngine = Objects.requireNonNull(containerEngine);
         this.imageDownloader = new ContainerImageDownloader(containerEngine);
         this.imagePruner = new ContainerImagePruner(containerEngine, Clock.systemUTC());
-        this.containerStatsCollector = new ContainerStatsCollector(cgroup, fileSystem);
+        this.containerStatsCollector = new ContainerStatsCollector(containerEngine, cgroup, fileSystem);
     }
 
     public ContainerData createContainer(NodeAgentContext context, ContainerResources containerResources) {
@@ -55,10 +54,6 @@ public class ContainerOperations {
 
     public void updateContainer(NodeAgentContext context, ContainerId containerId, ContainerResources containerResources) {
         containerEngine.updateContainer(context, containerId, containerResources);
-    }
-
-    public boolean shouldRecreate(NodeAgentContext context, Container container, ContainerResources wantedResources) {
-        return containerEngine.shouldRecreate(context, container, wantedResources);
     }
 
     public Optional<Container> getContainer(NodeAgentContext context) {
@@ -116,13 +111,13 @@ public class ContainerOperations {
     /** Get container statistics */
     public Optional<ContainerStats> getContainerStats(NodeAgentContext context) {
         String iface = containerEngine.networkInterface(context);
-        return getContainer(context).flatMap(container -> containerStatsCollector.collect(container.id(), container.pid(), iface));
+        return getContainer(context).flatMap(container -> containerStatsCollector.collect(context, container.id(), container.pid(), iface));
     }
 
     /** Returns true if no containers managed by node-admin are running */
     public boolean noManagedContainersRunning(TaskContext context) {
         return containerEngine.listContainers(context).stream()
-                              .filter(c -> c.managed())
+                              .filter(PartialContainer::managed)
                               .noneMatch(container -> container.state() == Container.State.running);
     }
 
@@ -133,7 +128,7 @@ public class ContainerOperations {
      */
     public boolean retainManagedContainers(TaskContext context, Set<ContainerName> containerNames) {
         return containerEngine.listContainers(context).stream()
-                              .filter(c -> c.managed())
+                              .filter(PartialContainer::managed)
                               .filter(container -> !containerNames.contains(container.name()))
                               .peek(container -> containerEngine.removeContainer(context, container))
                               .count() > 0;
@@ -141,7 +136,7 @@ public class ContainerOperations {
 
     /** Deletes the local images that are currently not in use by any container and not recently used. */
     public boolean deleteUnusedContainerImages(TaskContext context, List<DockerImage> excludes, Duration minImageAgeToDelete) {
-        List<String> excludedRefs = excludes.stream().map(DockerImage::asString).collect(Collectors.toList());
+        List<String> excludedRefs = excludes.stream().map(DockerImage::asString).toList();
         return imagePruner.removeUnusedImages(context, excludedRefs, minImageAgeToDelete);
     }
 

@@ -15,6 +15,7 @@
 #include "memory_bounded_trace.h"
 #include <vespa/storageapi/messageapi/storagemessage.h>
 #include <vespa/storageapi/message/visitor.h>
+#include <vespa/storageframework/generic/clock/time.h>
 #include <vespa/storage/common/storagecomponent.h>
 #include <vespa/storage/common/visitorfactory.h>
 #include <vespa/documentapi/messagebus/messages/documentmessage.h>
@@ -38,9 +39,7 @@ namespace documentapi {
 
 namespace storage {
 
-namespace spi {
-    class DocEntry;
-}
+namespace spi { class DocEntry; }
 
 namespace api {
     class ReturnCode;
@@ -136,28 +135,24 @@ private:
         {}
 
         /** Sends DestroyIterator over _messageHandler if _iteratorId != 0 */
-        ~BucketIterationState();
+        ~BucketIterationState() override;
 
         void setCompleted(bool completed = true) { _completed = completed; }
-        bool isCompleted() const { return _completed; }
+        [[nodiscard]] bool isCompleted() const { return _completed; }
 
-        document::Bucket   getBucket() const { return _bucket; }
-        document::BucketId getBucketId() const { return _bucket.getBucketId(); }
+        [[nodiscard]] document::Bucket   getBucket() const { return _bucket; }
+        [[nodiscard]] document::BucketId getBucketId() const { return _bucket.getBucketId(); }
 
         void setIteratorId(spi::IteratorId iteratorId) {
             _iteratorId = iteratorId;
         }
-        spi::IteratorId getIteratorId() const { return _iteratorId; }
+        [[nodiscard]] spi::IteratorId getIteratorId() const { return _iteratorId; }
 
-        void setPendingControlCommand() {
-            _iteratorId = spi::IteratorId(0);
-        }
-
-        bool hasPendingControlCommand() const {
+        [[nodiscard]] bool hasPendingControlCommand() const {
             return _iteratorId == spi::IteratorId(0);
         }
 
-        bool hasPendingIterators() const { return _pendingIterators > 0; }
+        [[nodiscard]] bool hasPendingIterators() const { return _pendingIterators > 0; }
 
         void print(std::ostream& out, bool, const std::string& ) const override {
             out << "BucketIterationState("
@@ -233,12 +228,11 @@ private:
 
         // Maps from time sent to message to send.
         // Value refers to message id (key in _messageMeta).
-        typedef std::multimap<framework::MicroSecTime, uint64_t> MessageQueue;
+        using MessageQueue = std::multimap<vespalib::steady_time, uint64_t>;
 
         MessageQueue _queuedMessages;
 
-        MessageMeta& insertMessage(
-                std::unique_ptr<documentapi::DocumentMessage>);
+        MessageMeta& insertMessage(std::unique_ptr<documentapi::DocumentMessage>);
         /**
          * Preconditions:
          *   msgId exists as a key in _messageMeta
@@ -247,12 +241,10 @@ private:
         MessageMeta releaseMetaForMessageId(uint64_t msgId);
         void reinsertMeta(MessageMeta);
 
-        bool hasQueuedMessages() const { return !_queuedMessages.empty(); }
+        [[nodiscard]] bool hasQueuedMessages() const { return !_queuedMessages.empty(); }
         void discardQueuedMessages();
 
-        uint32_t getMemoryUsage() const noexcept {
-            return _memoryUsage;
-        }
+        [[nodiscard]] uint32_t getMemoryUsage() const noexcept { return _memoryUsage; }
 
         VisitorTarget();
         ~VisitorTarget();
@@ -273,21 +265,20 @@ private:
     // The iterator iterating the buckets to visit.
     uint32_t _currentBucket;
     // The states of the buckets currently being visited.
-    typedef std::list<BucketIterationState*> BucketStateList;
+    using BucketStateList = std::list<BucketIterationState*>;
     BucketStateList _bucketStates;
     // Set to true after performing given callbacks
     bool _calledStartingVisitor;
     bool _calledCompletedVisitor;
 
-    framework::MicroSecTime _startTime;
+    vespalib::steady_time _startTime;
 
     bool _hasSentReply;
 
     uint32_t _docBlockSize;
     uint32_t _memoryUsageLimit;
-    framework::MilliSecTime _docBlockTimeout;
-    framework::MilliSecTime _visitorInfoTimeout;
-    uint32_t _serialNumber;
+    vespalib::duration _docBlockTimeout;
+    vespalib::duration _visitorInfoTimeout;
     // Keep trace level independent of _initiatingCmd, since we might want to
     // print out the trace level even after the command's ownership has been
     // released away from us.
@@ -301,16 +292,13 @@ private:
     api::StorageMessage::Priority _priority;
 
     api::ReturnCode _result;
-    std::map<std::string, framework::MicroSecTime> _recentlySentErrorMessages;
-    framework::MicroSecTime _timeToDie; // Visitor will time out to distributor at this time
+    std::map<std::string, vespalib::steady_time> _recentlySentErrorMessages;
+    vespalib::steady_time _timeToDie; // Visitor will time out to distributor at this time
 
     std::unique_ptr<HitCounter> _hitCounter;
 
     static constexpr size_t DEFAULT_TRACE_MEMORY_LIMIT = 65536;
     MemoryBoundedTrace _trace;
-
-    Visitor(const Visitor &);
-    Visitor& operator=(const Visitor &);
 
 protected:
     // These variables should not be altered after visitor starts. This not
@@ -326,9 +314,9 @@ protected:
     std::string _documentSelectionString;
     vdslib::VisitorStatistics _visitorStatistics;
 
-    bool isCompletedCalled() const { return _calledCompletedVisitor; }
+    [[nodiscard]] bool isCompletedCalled() const { return _calledCompletedVisitor; }
 
-    uint32_t traceLevel() const noexcept { return _traceLevel; }
+    [[nodiscard]] uint32_t traceLevel() const noexcept { return _traceLevel; }
 
     /**
      * Attempts to add the given trace message to the internal, memory bounded
@@ -339,7 +327,7 @@ protected:
      */
     bool addBoundedTrace(uint32_t level, const vespalib::string& message);
 
-    const vdslib::Parameters& visitor_parameters() const noexcept;
+    [[nodiscard]] const vdslib::Parameters& visitor_parameters() const noexcept;
 
     // Possibly modifies the ReturnCode parameter in-place if its return code should
     // be changed based on visitor subclass-specific behavior.
@@ -348,36 +336,35 @@ protected:
     [[nodiscard]] virtual bool remap_docapi_message_error_code(api::ReturnCode& in_out_code);
 public:
     using DocEntryList = std::vector<std::unique_ptr<spi::DocEntry>>;
-    Visitor(StorageComponent& component);
+    Visitor(const Visitor &) = delete;
+    Visitor& operator=(const Visitor &) = delete;
+    explicit Visitor(StorageComponent& component);
     virtual ~Visitor();
 
-    framework::MicroSecTime getStartTime() const { return _startTime; }
-    api::VisitorId getVisitorId() const { return _visitorId; }
-    const std::string& getVisitorName() const { return _id; }
-    const mbus::Route* getControlDestination() const {
+    [[nodiscard]] vespalib::steady_time getStartTime() const { return _startTime; }
+    [[nodiscard]] api::VisitorId getVisitorId() const { return _visitorId; }
+    [[nodiscard]] const std::string& getVisitorName() const { return _id; }
+    [[nodiscard]] const mbus::Route* getControlDestination() const {
         return _controlDestination.get(); // Can't be null if attached
     }
-    const mbus::Route* getDataDestination() const {
+    [[nodiscard]] const mbus::Route* getDataDestination() const {
         return _dataDestination.get(); // Can't be null if attached
     }
 
-    void setMaxPending(unsigned int maxPending)
-        { _visitorOptions._maxPending = maxPending; }
+    void setMaxPending(unsigned int maxPending) { _visitorOptions._maxPending = maxPending; }
 
     void setFieldSet(const std::string& fieldSet) { _visitorOptions._fieldSet = fieldSet; }
     void visitRemoves() { _visitorOptions._visitRemoves = true; }
     void setDocBlockSize(uint32_t size) { _docBlockSize = size; }
-    uint32_t getDocBlockSize() const { return _docBlockSize; }
+    [[nodiscard]] uint32_t getDocBlockSize() const { return _docBlockSize; }
     void setMemoryUsageLimit(uint32_t limit) noexcept {
         _memoryUsageLimit = limit;
     }
-    uint32_t getMemoryUsageLimit() const noexcept {
+    [[nodiscard]] uint32_t getMemoryUsageLimit() const noexcept {
         return _memoryUsageLimit;
     }
-    void setDocBlockTimeout(framework::MilliSecTime timeout)
-        { _docBlockTimeout = timeout; }
-    void setVisitorInfoTimeout(framework::MilliSecTime timeout)
-        { _visitorInfoTimeout = timeout; }
+    void setDocBlockTimeout(vespalib::duration timeout) { _docBlockTimeout = timeout; }
+    void setVisitorInfoTimeout(vespalib::duration timeout) { _visitorInfoTimeout = timeout; }
     void setOwnNodeIndex(uint16_t nodeIndex) { _ownNodeIndex = nodeIndex; }
     void setBucketSpace(document::BucketSpace bucketSpace) { _bucketSpace = bucketSpace; }
 
@@ -417,7 +404,7 @@ public:
      * The consistency level provided here is propagated through the SPI
      * Context object for createIterator calls.
      */
-    virtual spi::ReadConsistency getRequiredReadConsistency() const {
+    [[nodiscard]] virtual spi::ReadConsistency getRequiredReadConsistency() const {
         return spi::ReadConsistency::STRONG;
     }
 
@@ -428,8 +415,7 @@ public:
     /**
      * Used to silence transient errors that can happen during normal operation.
      */
-    bool shouldReportProblemToClient(const api::ReturnCode&,
-                                     size_t retryCount) const;
+    [[nodiscard]] static bool shouldReportProblemToClient(const api::ReturnCode&, size_t retryCount) ;
 
     /** Called to send report to client of potential non-critical problems. */
     void reportProblem(const std::string& problem);
@@ -470,19 +456,15 @@ public:
     void attach(std::shared_ptr<api::CreateVisitorCommand> initiatingCmd,
                 const mbus::Route& controlAddress,
                 const mbus::Route& dataAddress,
-                framework::MilliSecTime timeout);
+                vespalib::duration timeout);
 
-    void handleDocumentApiReply(mbus::Reply::UP reply,
-                                VisitorThreadMetrics& metrics);
+    void handleDocumentApiReply(mbus::Reply::UP reply, VisitorThreadMetrics& metrics);
 
-    void onGetIterReply(const std::shared_ptr<GetIterReply>& reply,
-                        VisitorThreadMetrics& metrics);
+    void onGetIterReply(const std::shared_ptr<GetIterReply>& reply, VisitorThreadMetrics& metrics);
 
-    void onCreateIteratorReply(
-            const std::shared_ptr<CreateIteratorReply>& reply,
-            VisitorThreadMetrics& metrics);
+    void onCreateIteratorReply(const std::shared_ptr<CreateIteratorReply>& reply, VisitorThreadMetrics& metrics);
 
-    bool failed() const { return _result.failed(); }
+    [[nodiscard]] bool failed() const { return _result.failed(); }
 
     /**
      * This function will check current state and make the visitor move on, if
@@ -492,18 +474,16 @@ public:
 
     void getStatus(std::ostream& out, bool verbose) const;
 
-    void setMaxParallel(uint32_t maxParallel)
-        { _visitorOptions._maxParallel = maxParallel; }
-    void setMaxParallelPerBucket(uint32_t max)
-        { _visitorOptions._maxParallelOneBucket = max; }
+    void setMaxParallel(uint32_t maxParallel) { _visitorOptions._maxParallel = maxParallel; }
+    void setMaxParallelPerBucket(uint32_t max) { _visitorOptions._maxParallelOneBucket = max; }
 
     /**
      * Sends a message to the data handler for this visitor.
      */
     void sendMessage(std::unique_ptr<documentapi::DocumentMessage> documentMessage);
 
-    bool isRunning() const { return _state == STATE_RUNNING; }
-    bool isCompleted() const { return _state == STATE_COMPLETED; }
+    [[nodiscard]] bool isRunning() const { return _state == STATE_RUNNING; }
+    [[nodiscard]] bool isCompleted() const { return _state == STATE_COMPLETED; }
 
 private:
     /**
@@ -542,11 +522,9 @@ private:
 
     void sendReplyOnce();
 
-    bool hasFailedVisiting() const { return _result.failed(); }
-
-    bool hasPendingIterators() const { return !_bucketStates.empty(); }
-
-    bool mayTransitionToCompleted() const;
+    [[nodiscard]] bool hasFailedVisiting() const { return _result.failed(); }
+    [[nodiscard]] bool hasPendingIterators() const { return !_bucketStates.empty(); }
+    [[nodiscard]] bool mayTransitionToCompleted() const;
 
     void discardAllNoPendingBucketStates();
 
@@ -557,7 +535,7 @@ private:
      * Ensures number of resulting pending messages from visitor does not
      * violate maximum pending options.
      */
-    void sendDueQueuedMessages(framework::MicroSecTime timeNow);
+    void sendDueQueuedMessages(vespalib::steady_time timeNow);
 
     /**
      * Whether visitor should enable and forward message bus traces for messages
@@ -565,9 +543,7 @@ private:
      *
      * Precondition: attach() must have been called on `this`.
      */
-    bool shouldAddMbusTrace() const noexcept {
-        return _traceLevel != 0;
-    }
+    [[nodiscard]] bool shouldAddMbusTrace() const noexcept { return _traceLevel != 0; }
 
     /**
      * Set internal state to the given state value.

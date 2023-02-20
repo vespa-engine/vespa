@@ -6,21 +6,18 @@ using vespalib::eval::ConstantValue;
 
 namespace proton::matching {
 
-RankingAssetsRepo::RankingAssetsRepo(const ConstantValueFactory &factory)
+RankingAssetsRepo::RankingAssetsRepo(const ConstantValueFactory &factory,
+                                     std::shared_ptr<const RankingConstants> constants,
+                                     std::shared_ptr<const RankingExpressions> expressions,
+                                     std::shared_ptr<const OnnxModels> models)
     : _factory(factory),
-      _constants()
+      _constants(std::move(constants)),
+      _rankingExpressions(std::move(expressions)),
+      _onnxModels(std::move(models))
 {
 }
 
 RankingAssetsRepo::~RankingAssetsRepo() = default;
-
-void
-RankingAssetsRepo::reconfigure(RankingConstants::SP constants, RankingExpressions::SP expressions, OnnxModels::SP models)
-{
-    _constants = std::move(constants);
-    _rankingExpressions = std::move(expressions);
-    _onnxModels = std::move(models);
-}
 
 ConstantValue::UP
 RankingAssetsRepo::getConstant(const vespalib::string &name) const

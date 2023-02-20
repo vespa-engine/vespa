@@ -22,7 +22,7 @@ private:
     string _address;
 
 public:
-    MyServiceAddress(const string &address) : _address(address) {}
+    explicit MyServiceAddress(const string &address) : _address(address) {}
 
     const string &getAddress() { return _address; }
 };
@@ -32,7 +32,7 @@ private:
     std::vector<mbus::RoutingNode*> _nodes;
 
 public:
-    MyNetwork(const mbus::RPCNetworkParams &params) :
+    explicit MyNetwork(const mbus::RPCNetworkParams &params) :
         mbus::RPCNetwork(params),
         _nodes()
     { }
@@ -86,7 +86,7 @@ void
 TestFrame::setHop(const mbus::HopSpec &hop)
 {
     _hop = hop;
-    _mbus->setupRouting(mbus::RoutingSpec().addTable(mbus::RoutingTableSpec(DocumentProtocol::NAME).addHop(_hop)));
+    _mbus->setupRouting(mbus::RoutingSpec().addTable(mbus::RoutingTableSpec(DocumentProtocol::NAME).addHop(mbus::HopSpec(_hop))));
 }
 
 bool
@@ -111,8 +111,8 @@ TestFrame::testSelect(const std::vector<string> &expected)
     std::vector<mbus::RoutingNode*> selected;
     if (!select(selected, expected.size())) {
         LOG(error, "Failed to select recipients.");
-        for (size_t i = 0; i < selected.size(); ++i) {
-            LOG(error, "Selected: %s", selected[i]->getRoute().toString().c_str());
+        for (auto & node : selected) {
+            LOG(error, "Selected: %s", node->getRoute().toString().c_str());
         }
         return false;
     }
@@ -154,7 +154,7 @@ TestFrame::testMerge(const ReplyMap &replies,
 
     for (mbus::RoutingNode* node : selected) {
         string route = node->getRoute().toString();
-        ReplyMap::const_iterator mip = replies.find(route);
+        auto mip = replies.find(route);
         if (mip == replies.end()) {
             LOG(error, "Recipient '%s' not expected.", route.c_str());
             return false;

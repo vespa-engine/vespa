@@ -5,7 +5,9 @@ import com.yahoo.component.annotation.Inject;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.jdisc.statistics.ContainerWatchdogMetrics;
+import com.yahoo.metrics.ContainerMetrics;
 import com.yahoo.nativec.NativeHeap;
+import com.yahoo.security.tls.TlsMetrics;
 
 import java.lang.management.BufferPoolMXBean;
 import java.lang.management.ManagementFactory;
@@ -28,18 +30,18 @@ import java.util.TimerTask;
  */
 public class MetricUpdater extends AbstractComponent {
 
-    private static final String NATIVE_FREE_MEMORY_BYTES = "mem.native.free";
-    private static final String NATIVE_USED_MEMORY_BYTES = "mem.native.used";
-    private static final String NATIVE_TOTAL_MEMORY_BYTES = "mem.native.total";
-    private static final String HEAP_FREE_MEMORY_BYTES = "mem.heap.free";
-    private static final String HEAP_USED_MEMORY_BYTES = "mem.heap.used";
-    private static final String HEAP_TOTAL_MEMORY_BYTES = "mem.heap.total";
-    private static final String DIRECT_FREE_MEMORY_BYTES = "mem.direct.free";
-    private static final String DIRECT_USED_MEMORY_BYTES = "mem.direct.used";
-    private static final String DIRECT_TOTAL_MEMORY_BYTES = "mem.direct.total";
-    private static final String DIRECT_COUNT = "mem.direct.count";
-    private static final String MEMORY_MAPPINGS_COUNT = "jdisc.memory_mappings";
-    private static final String OPEN_FILE_DESCRIPTORS = "jdisc.open_file_descriptors";
+    private static final String NATIVE_FREE_MEMORY_BYTES = ContainerMetrics.MEM_NATIVE_FREE.baseName();
+    private static final String NATIVE_USED_MEMORY_BYTES = ContainerMetrics.MEM_NATIVE_USED.baseName();
+    private static final String NATIVE_TOTAL_MEMORY_BYTES = ContainerMetrics.MEM_NATIVE_TOTAL.baseName();
+    private static final String HEAP_FREE_MEMORY_BYTES = ContainerMetrics.MEM_HEAP_FREE.baseName();
+    private static final String HEAP_USED_MEMORY_BYTES = ContainerMetrics.MEM_HEAP_USED.baseName();
+    private static final String HEAP_TOTAL_MEMORY_BYTES = ContainerMetrics.MEM_HEAP_TOTAL.baseName();
+    private static final String DIRECT_FREE_MEMORY_BYTES = ContainerMetrics.MEM_DIRECT_FREE.baseName();
+    private static final String DIRECT_USED_MEMORY_BYTES = ContainerMetrics.MEM_DIRECT_USED.baseName();
+    private static final String DIRECT_TOTAL_MEMORY_BYTES = ContainerMetrics.MEM_DIRECT_TOTAL.baseName();
+    private static final String DIRECT_COUNT = ContainerMetrics.MEM_DIRECT_COUNT.baseName();
+    private static final String MEMORY_MAPPINGS_COUNT = ContainerMetrics.JDISC_MEMORY_MAPPINGS.baseName();
+    private static final String OPEN_FILE_DESCRIPTORS = ContainerMetrics.JDISC_OPEN_FILE_DESCRIPTORS.baseName();
     private static final String TOTAL_THREADS = "jdisc.threads.total";
 
     private final Scheduler scheduler;
@@ -102,6 +104,7 @@ public class MetricUpdater extends AbstractComponent {
         private final GarbageCollectionMetrics garbageCollectionMetrics;
         private final JrtMetrics jrtMetrics;
         private final ThreadMXBean threadMXBean = ManagementFactory.getThreadMXBean();
+        private TlsMetrics.Snapshot tlsMetricsSnapshot = TlsMetrics.Snapshot.EMPTY;
 
         public UpdaterTask(Metric metric, ContainerWatchdogMetrics containerWatchdogMetrics) {
             this.metric = metric;
@@ -141,6 +144,14 @@ public class MetricUpdater extends AbstractComponent {
             metric.set("jdisc.jvm", Runtime.version().feature(), ctx);
         }
 
+        private void tlsMetrics() {
+            var newSnapshot = TlsMetrics.instance().snapshot();
+            var diff = newSnapshot.changesSince(tlsMetricsSnapshot);
+            metric.add(ContainerMetrics.JDISC_TLS_CAPABILITY_CHECKS_SUCCEEDED.baseName(), diff.capabilityChecksSucceeded(), null);
+            metric.add(ContainerMetrics.JDISC_TLS_CAPABILITY_CHECKS_FAILED.baseName(), diff.capabilityChecksFailed(), null);
+            tlsMetricsSnapshot = newSnapshot;
+        }
+
         @Override
         public void run() {
             long freeMemory = runtime.freeMemory();
@@ -159,6 +170,7 @@ public class MetricUpdater extends AbstractComponent {
             garbageCollectionMetrics.emitMetrics(metric);
             jrtMetrics.emitMetrics();
             jvmDetails();
+            tlsMetrics();
         }
     }
 

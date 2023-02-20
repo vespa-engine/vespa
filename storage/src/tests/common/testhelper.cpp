@@ -44,37 +44,6 @@ vdstestlib::DirConfig getStandardConfig(bool storagenode, const std::string & ro
     config->set("total_storage_count", "10");
     config = &dc.addConfig("upgrading");
     config = &dc.addConfig("load-type");
-    config->set("type[10]");
-    config->set("type[0].id", "1");
-    config->set("type[0].name", "\"maintenance.inconsistent.join\"");
-    config->set("type[0].priority", "\"high_3\"");
-    config->set("type[1].id", "2");
-    config->set("type[1].name", "\"maintenance.inconsistent.split\"");
-    config->set("type[1].priority", "\"normal_1\"");
-    config->set("type[2].id", "3");
-    config->set("type[2].name", "\"maintenance.active.incorrectamount\"");
-    config->set("type[2].priority", "\"normal_2\"");
-    config->set("type[3].id", "4");
-    config->set("type[3].name", "\"maintenance.active.wrongcopy\"");
-    config->set("type[3].priority", "\"normal_3\"");
-    config->set("type[4].id", "5");
-    config->set("type[4].name", "\"maintenance.size.split\"");
-    config->set("type[4].priority", "\"normal_4\"");
-    config->set("type[5].id", "6");
-    config->set("type[5].name", "\"maintenance.size.join\"");
-    config->set("type[5].priority", "\"normal_5\"");
-    config->set("type[6].id", "7");
-    config->set("type[6].name", "\"maintenance.merge.toofewcopies\"");
-    config->set("type[6].priority", "\"normal_6\"");
-    config->set("type[7].id", "8");
-    config->set("type[7].name", "\"maintenance.merge.toomanycopies\"");
-    config->set("type[7].priority", "\"low_1\"");
-    config->set("type[8].id", "9");
-    config->set("type[8].name", "\"maintenance.merge.outofsync\"");
-    config->set("type[8].priority", "\"low_2\"");
-    config->set("type[9].id", "10");
-    config->set("type[9].name", "\"maintenance.move\"");
-    config->set("type[9].priority", "\"low_3\"");
     config = &dc.addConfig("bucket");
     config = &dc.addConfig("messagebus");
     config = &dc.addConfig("stor-prioritymapping");
@@ -104,17 +73,9 @@ vdstestlib::DirConfig getStandardConfig(bool storagenode, const std::string & ro
     config->set("abort_operations_with_changed_bucket_ownership", "true");
     config = &dc.addConfig("stor-filestor");
     // Easier to see what goes wrong with only 1 thread per disk.
-    config->set("minimum_file_meta_slots", "2");
-    config->set("minimum_file_header_block_size", "368");
-    config->set("minimum_file_size", "4096");
     config->set("num_threads", "1");
-    config->set("dir_spread", "4");
-    config->set("dir_levels", "0");
+    config->set("num_response_threads", "1");
     config->set("maximum_versions_of_single_document_stored", "0");
-    //config->set("enable_slotfile_cache", "false");
-    // Unit tests typically use fake low time values, so don't complain
-    // about them or compact/delete them by default. Override in tests testing that
-    // behavior
     config->set("keep_remove_time_period", "2000000000");
     config->set("revert_time_period", "2000000000");
     // Don't want test to call exit()

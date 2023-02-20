@@ -5,6 +5,7 @@
 #include "getdocsumargs.h"
 #include <vespa/searchlib/common/featureset.h>
 #include <vespa/searchlib/common/geo_location_spec.h>
+#include <vespa/vespalib/stllike/hash_map.h>
 #include <vespa/vespalib/util/stash.h>
 
 namespace juniper {
@@ -26,7 +27,6 @@ namespace search::docsummary {
 
 class GetDocsumsState;
 class IDocsumEnvironment;
-class KeywordExtractor;
 class DocsumFieldWriterState;
 
 class GetDocsumsStateCallback
@@ -52,15 +52,17 @@ public:
 
     GetDocsumArgs               _args;      // from getdocsums request
     std::vector<uint32_t>       _docsumbuf; // from getdocsums request
-    KeywordExtractor           *_kwExtractor;
 
     GetDocsumsStateCallback    &_callback;
 
-    struct DynTeaserState {
-        std::unique_ptr<juniper::QueryHandle> _query;  // juniper query representation
-    } _dynteaser;
-
-
+    class DynTeaserState {
+        vespalib::hash_map<vespalib::string, std::unique_ptr<juniper::QueryHandle>> _queries;  // juniper query representations
+    public:
+        DynTeaserState();
+        ~DynTeaserState();
+        std::unique_ptr<juniper::QueryHandle>& get_query(vespalib::stringref field);
+    };
+    DynTeaserState _dynteaser;
     std::unique_ptr<search::attribute::IAttributeContext> _attrCtx;
     std::vector<const search::attribute::IAttributeVector *> _attributes;
 private:

@@ -42,7 +42,7 @@ public class SchemaBuilder {
         return Arrays.asList(docTypes)
                 .stream()
                 .map(type -> new SchemaBuilder().name(type).build())
-                .collect(Collectors.toList());
+                .toList();
     }
 
 }

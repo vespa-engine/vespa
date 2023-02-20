@@ -30,7 +30,7 @@ public:
 };
 
 template <typename EntryT>
-const EntryT UniqueStoreFloatingPointValueFilter<EntryT>::normalized_nan = -std::numeric_limits<EntryT>::quiet_NaN(); 
+const EntryT UniqueStoreFloatingPointValueFilter<EntryT>::normalized_nan = -std::numeric_limits<EntryT>::quiet_NaN();
 
 /*
  * Specialized helper class for normalizing float values inserted into unique store.

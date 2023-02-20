@@ -13,8 +13,6 @@
 #include "fieldvalue.h"
 #include <vespa/document/base/field.h>
 
-#define VESPA_DLL_LOCAL  __attribute__ ((visibility("hidden")))
-
 namespace document {
 
 class ArrayFieldValue;
@@ -51,7 +49,7 @@ protected:
     const DataType &getType() const { return *_type; }
 
     struct StructuredIterator {
-        typedef std::unique_ptr<StructuredIterator> UP;
+        using UP = std::unique_ptr<StructuredIterator>;
         virtual ~StructuredIterator() {}
 
         virtual const Field* getNextField() = 0;
@@ -178,7 +176,7 @@ public:
     }
     virtual bool empty() const = 0;
 
-    typedef Iterator const_iterator;
+    using const_iterator = Iterator;
     const_iterator begin() const { return const_iterator(*this, nullptr); }
     const_iterator end() const { return const_iterator(); }
 

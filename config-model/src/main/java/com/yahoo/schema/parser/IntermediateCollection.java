@@ -20,7 +20,7 @@ import java.util.Map;
  * schemas in the intermediate format.
  *
  * @author arnej27959
- **/
+ */
 public class IntermediateCollection {
 
     private final DeployLogger deployLogger;
@@ -47,8 +47,11 @@ public class IntermediateCollection {
         var parser = new SchemaParser(stream, deployLogger, modelProperties);
         try {
             var schema = parser.schema();
+            if (schema == null) {
+                throw new IllegalArgumentException("No schema content");
+            }
             if (parsedSchemas.containsKey(schema.name())) {
-                throw new IllegalArgumentException("Duplicate schemas named: " + schema.name());
+                throw new IllegalArgumentException("Duplicate schemas named " + schema.name());
             }
             parsedSchemas.put(schema.name(), schema);
             return schema;
@@ -66,7 +69,7 @@ public class IntermediateCollection {
             throw new IllegalArgumentException("The file containing schema '"
                                                + parsed.name() + "' must be named '"
                                                + parsed.name() + ApplicationPackage.SD_NAME_SUFFIX
-                                               + "', was '" + stripDirs(fileName) + "'");
+                                               + "', but is '" + stripDirs(fileName) + "'");
         }
         return parsed.name();
     }
@@ -91,54 +94,51 @@ public class IntermediateCollection {
         return filename;
     }
 
-    /**
-     * parse a schema from the given reader and add result to collection
-     **/
-    public String addSchemaFromReader(NamedReader reader) throws ParseException {
+    /** Parses a schema from the given reader and add result to collection. */
+    public String addSchemaFromReader(NamedReader reader) {
         try {
             var nameParsed = addSchemaFromStringWithFileName(IOUtils.readAll(reader.getReader()), reader.getName());
             reader.close();
             return nameParsed;
-        } catch (ParseException ex) {
-            throw new ParseException("Failed parsing schema from " + reader.getName() + ": " + ex.getMessage());
-        } catch (java.io.IOException ex) {
-            throw new IllegalArgumentException("Failed reading from " + reader.getName() + ": " + ex.getMessage());
+        } catch (ParseException e) {
+            throw new IllegalArgumentException("Failed parsing schema from '" + reader.getName() + "'", e);
+        } catch (java.io.IOException e) {
+            throw new IllegalArgumentException("Failed reading from '" + reader.getName() + "'", e);
         }
     }
 
-    /** for unit tests */
-    public String addSchemaFromFile(String fileName) throws ParseException {
+    /** For unit tests */
+    public String addSchemaFromFile(String fileName) {
         try {
-            // return addSchemaFromStringWithFileName(IOUtils.readFile(new File(fileName)), fileName);
             var parsed = addSchemaFromString(IOUtils.readFile(new File(fileName)));
             return parsed.name();
-        } catch (ParseException ex) {
-            throw new ParseException("Failed parsing schema from " + fileName + ": " + ex.getMessage());
-        } catch (java.io.IOException ex) {
-            throw new IllegalArgumentException("Could not read file " + fileName + ": " + ex.getMessage());
+        } catch (ParseException e) {
+            throw new IllegalArgumentException("Failed parsing schema from '" + fileName + "'", e);
+        } catch (java.io.IOException e) {
+            throw new IllegalArgumentException("Failed reading from '" + fileName + "'", e);
         }
     }
 
     /**
-     * parse a rank profile from the given reader and add to the schema identified by name.
+     * Parses a rank profile from the given reader and add to the schema identified by name.
      * note: the named schema must have been parsed already.
-     **/
+     */
     public void addRankProfileFile(String schemaName, NamedReader reader) throws ParseException {
         try {
             ParsedSchema schema = parsedSchemas.get(schemaName);
             if (schema == null) {
-                throw new IllegalArgumentException("No schema named: " + schemaName);
+                throw new IllegalArgumentException("No schema named '" + schemaName + "'");
             }
             var stream = new SimpleCharStream(IOUtils.readAll(reader.getReader()));
             var parser = new SchemaParser(stream, deployLogger, modelProperties);
             try {
                 parser.rankProfile(schema);
             } catch (ParseException pe) {
-                throw new ParseException("Failed parsing rank-profile from " + reader.getName() + ": " +
+                throw new ParseException("Failed parsing rank-profile from '" + reader.getName() + "': " +
                                          stream.formatException(Exceptions.toMessageString(pe)));
             }
         } catch (java.io.IOException ex) {
-            throw new IllegalArgumentException("Failed reading from " + reader.getName() + ": " + ex.getMessage());
+            throw new IllegalArgumentException("Failed reading from '" + reader.getName() + "': " + ex.getMessage());
         }
     }
 
@@ -147,8 +147,8 @@ public class IntermediateCollection {
         try {
             var reader = IOUtils.createReader(fileName, "UTF-8");
             addRankProfileFile(schemaName, new NamedReader(fileName, reader));
-        } catch (java.io.IOException ex) {
-            throw new IllegalArgumentException("Could not read file " + fileName + ": " + ex.getMessage());
+        } catch (java.io.IOException e) {
+            throw new IllegalArgumentException("Could not read file '" + fileName + "'", e);
         }
     }
 

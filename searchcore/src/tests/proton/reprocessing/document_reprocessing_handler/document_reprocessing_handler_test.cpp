@@ -13,7 +13,7 @@ using search::test::DocBuilder;
 template <typename ReprocessingType>
 struct MyProcessor : public ReprocessingType
 {
-    typedef std::shared_ptr<MyProcessor<ReprocessingType> > SP;
+    using SP = std::shared_ptr<MyProcessor<ReprocessingType> >;
     uint32_t _lid;
     DocumentId _docId;
 
@@ -24,8 +24,8 @@ struct MyProcessor : public ReprocessingType
     }
 };
 
-typedef MyProcessor<IReprocessingReader> MyReader;
-typedef MyProcessor<IReprocessingRewriter> MyRewriter;
+using MyReader = MyProcessor<IReprocessingReader>;
+using MyRewriter = MyProcessor<IReprocessingRewriter>;
 
 const vespalib::string DOC_ID = "id:test:searchdocument::0";
 

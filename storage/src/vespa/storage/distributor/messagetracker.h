@@ -25,11 +25,11 @@ public:
         uint16_t _target;
     };
 
-    MessageTracker(const ClusterContext &cluster_context);
-    MessageTracker(MessageTracker &&) = default;
-    MessageTracker & operator = (MessageTracker &&) = delete;
+    MessageTracker(const ClusterContext& cluster_context);
+    MessageTracker(MessageTracker&&) = default;
+    MessageTracker& operator=(MessageTracker&&) = delete;
     MessageTracker(const MessageTracker &) = delete;
-    MessageTracker & operator = (const MessageTracker &) = delete;
+    MessageTracker& operator=(const MessageTracker&) = delete;
     ~MessageTracker();
 
     void queueCommand(std::shared_ptr<api::BucketCommand> msg, uint16_t target) {
@@ -49,11 +49,10 @@ public:
     bool finished();
 
 protected:
-    std::vector<ToSend> _commandQueue;
-
+    std::vector<ToSend>          _commandQueue;
     // Keeps track of which node a message was sent to.
     std::map<uint64_t, uint16_t> _sentMessages;
-    const ClusterContext &_cluster_ctx;
+    const ClusterContext&        _cluster_ctx;
 };
 
 }

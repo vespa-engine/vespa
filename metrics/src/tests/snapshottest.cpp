@@ -176,7 +176,7 @@ TEST_F(SnapshotTest, test_snapshot_two_days)
     TestMetricSet set("test");
 
     FakeTimer* timer;
-    FastOS_ThreadPool threadPool(256_Ki);
+    FastOS_ThreadPool threadPool;
     MetricManager mm(
             std::unique_ptr<MetricManager::Timer>(timer = new FakeTimer));
     {

@@ -9,17 +9,37 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
-import java.util.Base64;
+import java.util.Optional;
 
 import static com.yahoo.security.ArrayUtils.hex;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class SharedKeyTest {
 
     private static final KeyId KEY_ID_1 = KeyId.ofString("1");
     private static final KeyId KEY_ID_2 = KeyId.ofString("2");
+
+    @Test
+    void sealed_shared_key_uses_enc_and_ciphertext_contents_for_equals_and_hash_code() {
+        var tokenStr1 = "2qW20eDfgCxDVTJfLPzihhqV4i1Ma6QrvjdoU24Csf6W0iKbYmezchhxIGeI39WcHYDvbah5tfLoYZ69ofW40zy59Nm91tavFsA";
+        var tokenStr2 = "mjA83HYuulZW5SWV8FKz4m3b3m9zU8mTrX9n6iY4wZaA6ZNr8WnBZwOU4KQqhPCORPlzSYk4svlonzPZIb3Bjbqr2ePYKLOpdGhCO";
+        var token1a = SealedSharedKey.fromTokenString(tokenStr1);
+        var token1b = SealedSharedKey.fromTokenString(tokenStr1);
+        var token2a = SealedSharedKey.fromTokenString(tokenStr2);
+        var token2b = SealedSharedKey.fromTokenString(tokenStr2);
+        assertEquals(token1a, token1a); // trivial
+        assertEquals(token1a, token1b); // needs deep compare for array contents
+        assertEquals(token1b, token1a);
+        assertEquals(token2a, token2b);
+        assertNotEquals(token1a, token2a);
+
+        assertEquals(token1a.hashCode(), token1b.hashCode());
+        assertEquals(token2a.hashCode(), token2b.hashCode());
+        assertNotEquals(token1a.hashCode(), token2a.hashCode()); // ... with a very high probability
+    }
 
     @Test
     void generated_secret_key_is_128_bit_aes() {
@@ -59,20 +79,74 @@ public class SharedKeyTest {
     }
 
     @Test
-    void token_v1_representation_is_stable() {
+    void resealed_token_preserves_token_version_of_source_token() {
+        var originalPrivate = KeyUtils.fromBase58EncodedX25519PrivateKey("GFg54SaGNCmcSGufZCx68SKLGuAFrASoDeMk3t5AjU6L");
+        var v1Token         = "OntP9gRVAjXeZIr4zkYqRJFcnA993v7ZEE7VbcNs1NcR3HdE7Mpwlwi3r3anF1kVa5fn7O1CyeHQpBWpdayUTKkrtyFepG6WJrZdE";
+
+        var originalSealed = SealedSharedKey.fromTokenString(v1Token);
+        var originalSecret = SharedKeyGenerator.fromSealedKey(originalSealed, originalPrivate);
+
+        var secondaryReceiverKp = KeyUtils.generateX25519KeyPair();
+        var resealedShared = SharedKeyGenerator.reseal(originalSecret, secondaryReceiverKp.getPublic(), KEY_ID_2);
+
+        var theirSealed = SealedSharedKey.fromTokenString(resealedShared.sealedSharedKey().toTokenString());
+        assertEquals(1, theirSealed.tokenVersion());
+    }
+
+    @Test
+    void token_v1_representation_is_stable() throws IOException {
         var receiverPrivate = KeyUtils.fromBase58EncodedX25519PrivateKey("GFg54SaGNCmcSGufZCx68SKLGuAFrASoDeMk3t5AjU6L");
         var receiverPublic  = KeyUtils.fromBase58EncodedX25519PublicKey( "5drrkakYLjYSBpr5Haknh13EiCYL36ndMzK4gTJo6pwh");
         var keyId           = KeyId.ofString("my key ID");
 
-        // Token generated for the above receiver public key, with the below expected shared secret (in hex)
+        // V1 token generated for the above receiver public key, with the below expected shared secret (in hex)
         var publicToken = "OntP9gRVAjXeZIr4zkYqRJFcnA993v7ZEE7VbcNs1NcR3HdE7Mpwlwi3r3anF1kVa5fn7O1CyeHQpBWpdayUTKkrtyFepG6WJrZdE";
         var expectedSharedSecret = "1b33b4dcd6a94e5a4a1ee6d208197d01";
 
         var theirSealed = SealedSharedKey.fromTokenString(publicToken);
         var theirShared = SharedKeyGenerator.fromSealedKey(theirSealed, receiverPrivate);
 
+        assertEquals(1, theirSealed.tokenVersion());
         assertEquals(keyId, theirSealed.keyId());
         assertEquals(expectedSharedSecret, hex(theirShared.secretKey().getEncoded()));
+
+        // Encryption with v1 tokens must use AES-GCM 128
+        var plaintext = "it's Bocchi time";
+        var expectedCiphertext = "a2ba842b2e0769a4a2948c4236d4ae921f1dd05c2e094dcde9699eeefcc3d7ae";
+        byte[] ct = streamEncryptString(plaintext, theirShared);
+        assertEquals(expectedCiphertext, hex(ct));
+
+        // Decryption with v1 tokens must use AES-GCM 128
+        var decrypted = streamDecryptString(ct, theirShared);
+        assertEquals(plaintext, decrypted);
+    }
+
+    @Test
+    void token_v2_representation_is_stable() throws IOException {
+        var receiverPrivate = KeyUtils.fromBase58EncodedX25519PrivateKey("GFg54SaGNCmcSGufZCx68SKLGuAFrASoDeMk3t5AjU6L");
+        var receiverPublic  = KeyUtils.fromBase58EncodedX25519PublicKey( "5drrkakYLjYSBpr5Haknh13EiCYL36ndMzK4gTJo6pwh");
+        var keyId           = KeyId.ofString("my key ID");
+
+        // V2 token generated for the above receiver public key, with the below expected shared secret (in hex)
+        var publicToken = "mjA83HYuulZW5SWV8FKz4m3b3m9zU8mTrX9n6iY4wZaA6ZNr8WnBZwOU4KQqhPCORPlzSYk4svlonzPZIb3Bjbqr2ePYKLOpdGhCO";
+        var expectedSharedSecret = "205af82154690fd7b6d56a977563822c";
+
+        var theirSealed = SealedSharedKey.fromTokenString(publicToken);
+        var theirShared = SharedKeyGenerator.fromSealedKey(theirSealed, receiverPrivate);
+
+        assertEquals(2, theirSealed.tokenVersion());
+        assertEquals(keyId, theirSealed.keyId());
+        assertEquals(expectedSharedSecret, hex(theirShared.secretKey().getEncoded()));
+
+        // Encryption with v2 tokens must use ChaCha20-Poly1305
+        var plaintext = "it's Bocchi time";
+        var expectedCiphertext = "ea19dd0ac3ea6d76dc4e96430b0d5902a21cb3a27fa99490f4dcc391eaf5cec4";
+        byte[] ct = streamEncryptString(plaintext, theirShared);
+        assertEquals(expectedCiphertext, hex(ct));
+
+        // Decryption with v2 tokens must use ChaCha20-Poly1305
+        var decrypted = streamDecryptString(ct, theirShared);
+        assertEquals(plaintext, decrypted);
     }
 
     @Test
@@ -102,7 +176,7 @@ public class SharedKeyTest {
         var mySealed = myShared.sealedSharedKey();
         var badId    = KeyId.ofString("my key 2");
 
-        var tamperedShared = new SealedSharedKey(badId, mySealed.enc(), mySealed.ciphertext());
+        var tamperedShared = new SealedSharedKey(SealedSharedKey.CURRENT_TOKEN_VERSION, badId, mySealed.enc(), mySealed.ciphertext());
         // Should not be able to unseal the token since the AAD auth tag won't be correct
         assertThrows(RuntimeException.class, // TODO consider distinct exception class
                      () -> SharedKeyGenerator.fromSealedKey(tamperedShared, keyPair.getPrivate()));
@@ -130,15 +204,15 @@ public class SharedKeyTest {
         var myShared = SharedKeyGenerator.generateForReceiverPublicKey(keyPair.getPublic(), goodId);
 
         // token header is u8 version || u8 key id length || key id bytes ...
-        // Since the key ID is only 1 bytes long, patch it with a bad UTF-8 value
-        byte[] tokenBytes = Base64.getUrlDecoder().decode(myShared.sealedSharedKey().toTokenString());
+        // Since the key ID is only 1 byte long, patch it with a bad UTF-8 value
+        byte[] tokenBytes = Base62.codec().decode(myShared.sealedSharedKey().toTokenString());
         tokenBytes[2] = (byte)0xC0; // First part of a 2-byte continuation without trailing byte
-        var patchedTokenStr = Base64.getUrlEncoder().encodeToString(tokenBytes);
+        var patchedTokenStr = Base62.codec().encode(tokenBytes);
         assertThrows(IllegalArgumentException.class, () -> SealedSharedKey.fromTokenString(patchedTokenStr));
     }
 
     static byte[] streamEncryptString(String data, SecretSharedKey secretSharedKey) throws IOException {
-        var cipher = SharedKeyGenerator.makeAesGcmEncryptionCipher(secretSharedKey);
+        var cipher = secretSharedKey.makeEncryptionCipher();
         var outStream = new ByteArrayOutputStream();
         try (var cipherStream = cipher.wrapOutputStream(outStream)) {
             cipherStream.write(data.getBytes(StandardCharsets.UTF_8));
@@ -148,7 +222,7 @@ public class SharedKeyTest {
     }
 
     static String streamDecryptString(byte[] encrypted, SecretSharedKey secretSharedKey) throws IOException {
-        var cipher   = SharedKeyGenerator.makeAesGcmDecryptionCipher(secretSharedKey);
+        var cipher   = secretSharedKey.makeDecryptionCipher();
         var inStream = new ByteArrayInputStream(encrypted);
         var total    = ByteBuffer.allocate(encrypted.length); // Assume decrypted form can't be _longer_
         byte[] tmp   = new byte[8]; // short buf to test chunking
@@ -178,6 +252,29 @@ public class SharedKeyTest {
         assertEquals(terrifyingSecret, decrypted);
     }
 
+    @Test
+    void shared_key_can_be_resealed_via_interactive_resealing_session() {
+        var originalReceiverKp  = KeyUtils.generateX25519KeyPair();
+        var shared = SharedKeyGenerator.generateForReceiverPublicKey(originalReceiverKp.getPublic(), KEY_ID_1);
+        var secret = hex(shared.secretKey().getEncoded());
+
+        // Resealing requester side; ask for token to be resealed for ephemeral session public key
+        var session = SharedKeyResealingSession.newEphemeralSession();
+        var wrappedResealRequest = session.resealingRequestFor(shared.sealedSharedKey());
+
+        // Resealing request handler side; reseal using private key for original token
+        var unwrappedResealRequest = SharedKeyResealingSession.ResealingRequest.fromSerializedString(wrappedResealRequest.toSerializedString());
+        var wrappedResponse = SharedKeyResealingSession.reseal(unwrappedResealRequest,
+                (keyId) -> Optional.ofNullable(keyId.equals(KEY_ID_1) ? originalReceiverKp.getPrivate() : null));
+
+        // Back to resealing requester side
+        var unwrappedResponse = SharedKeyResealingSession.ResealingResponse.fromSerializedString(wrappedResponse.toSerializedString());
+        var resealed = session.openResealingResponse(unwrappedResponse);
+
+        var resealedSecret = hex(resealed.secretKey().getEncoded());
+        assertEquals(secret, resealedSecret);
+    }
+
     // javax.crypto.CipherOutputStream swallows exceptions caused by MAC failures in cipher
     // decryption mode (!) and must therefore _not_ be used for this purpose. This is documented,
     // but still very surprising behavior.
@@ -198,7 +295,7 @@ public class SharedKeyTest {
     }
 
     private static void doOutputStreamCipherDecrypt(SecretSharedKey myShared, byte[] encrypted) throws Exception {
-        var cipher = SharedKeyGenerator.makeAesGcmDecryptionCipher(myShared);
+        var cipher = myShared.makeDecryptionCipher();
         var outStream = new ByteArrayOutputStream();
         try (var cipherStream = cipher.wrapOutputStream(outStream)) {
             cipherStream.write(encrypted);

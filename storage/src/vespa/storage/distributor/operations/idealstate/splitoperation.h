@@ -12,14 +12,14 @@ public:
     SplitOperation(const ClusterContext& cluster_ctx,
                    const BucketAndNodes& nodes,
                    uint32_t maxBits, uint32_t splitCount, uint32_t splitSize);
-    SplitOperation(const SplitOperation &) = delete;
-    SplitOperation & operator = (const SplitOperation &) = delete;
-    ~SplitOperation();
+    SplitOperation(const SplitOperation&) = delete;
+    SplitOperation& operator=(const SplitOperation&) = delete;
+    ~SplitOperation() override;
 
     void onStart(DistributorStripeMessageSender& sender) override;
-    void onReceive(DistributorStripeMessageSender& sender, const std::shared_ptr<api::StorageReply> &) override;
-    const char* getName() const override { return "split"; };
-    Type getType() const override { return SPLIT_BUCKET; }
+    void onReceive(DistributorStripeMessageSender& sender, const std::shared_ptr<api::StorageReply>&) override;
+    const char* getName() const noexcept override { return "split"; };
+    Type getType() const noexcept override { return SPLIT_BUCKET; }
     bool isBlocked(const DistributorStripeOperationContext&, const OperationSequencer&) const override;
     bool shouldBlockThisOperation(uint32_t, uint16_t, uint8_t) const override;
 protected:

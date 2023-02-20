@@ -32,6 +32,7 @@ public class Mirror implements IMirror {
 
     private static final Logger log = Logger.getLogger(Mirror.class.getName());
 
+    private final EventLog eventLog = new EventLog();
     private final Supervisor orb;
     private final SlobrokList slobroks;
     private String currSlobrok;
@@ -59,6 +60,7 @@ public class Mirror implements IMirror {
         this.orb = orb;
         this.slobroks = slobroks;
         this.backOff = bop;
+        eventLog.addEvent("mirror created; with list of servers: "+slobroks);
         transportThread = orb.transport().selectThread();
         updateTask = transportThread.createTask(this::checkForUpdate);
         reqWait = new RequestWaiter() {
@@ -87,6 +89,7 @@ public class Mirror implements IMirror {
      * stop the regular mirror updates, and discard all entries.
      */
     public void shutdown() {
+        eventLog.addEvent("mirror shutdown");
         updateTask.kill();
         transportThread.perform(this::handleShutdown);
     }
@@ -182,6 +185,7 @@ public class Mirror implements IMirror {
             log.log(Level.INFO, "location broker "+currSlobrok+" removed, will disconnect and use one of: "+slobroks);
             target.close();
             target = null;
+            eventLog.addEvent("new list of servers: "+slobroks);
         }
         if (target == null) {
             logOnSuccess = true;
@@ -197,6 +201,7 @@ public class Mirror implements IMirror {
                 updateTask.schedule(delay);
                 return;
             }
+            eventLog.addEvent("selected new server: "+currSlobrok);
             log.fine(() -> "Try connecting to "+currSlobrok);
             target = orb.connect(new Spec(currSlobrok));
             specsGeneration = 0;
@@ -221,8 +226,10 @@ public class Mirror implements IMirror {
             }
             target.close();
             target = null; // try next slobrok
+            eventLog.addEvent("failed: "+currSlobrok+" ["+req.errorMessage()+"]");
             return;
         }
+        eventLog.addEvent("good answer from: "+currSlobrok);
         Values answer = req.returnValues();
 
         int diffFromGeneration = answer.get(0).asInt32();
@@ -339,13 +346,57 @@ public class Mirror implements IMirror {
         log.log(Level.INFO, "location broker mirror state: " +
                 " iterations: " + iterations +
                 ", connected to: " + target +
+                ", number of service specs: " + specs.get().length +
                 ", seen " + updates + " updates" +
                 ", current server: "+ currSlobrok +
                 ", list of servers: " + slobroks);
+        eventLog.dump();
     }
 
     public long getIterations() {
         return iterations;
     }
 
+    static class EventLog {
+        private static class Event {
+            final long timestamp;
+            final String message;
+            Event(String msg) {
+                this.timestamp = System.nanoTime();
+                this.message = msg;
+            }
+        }
+        int idx = 0;
+        List<Event> firstEvents = new ArrayList<>();
+        List<Event> lastEvents = new ArrayList<>();
+        synchronized void addEvent(String message) {
+            var event = new Event(message);
+            if (firstEvents.size() < 10) {
+                firstEvents.add(event);
+            } else if (lastEvents.size() < 10) {
+                lastEvents.add(event);
+            } else {
+                lastEvents.set(idx, event);
+                idx = (idx + 1) % lastEvents.size();
+            }
+        }
+        void dump(Event e, long nanos, double now) {
+            long tt = (long)(now - (nanos - e.timestamp) / 1.0e9);
+            log.info("event at [" + tt + "]: " + e.message);
+        }
+        synchronized void dump() {
+            long nanos = System.nanoTime();
+            double now = System.currentTimeMillis() / 1000.0;
+            log.info("initial events for location broker mirror");
+            for (Event e : firstEvents) {
+                dump(e, nanos, now);
+            }
+            if (lastEvents.size() > 0) {
+                log.info("last events for location broker mirror");
+                for (Event e : lastEvents) {
+                    dump(e, nanos, now);
+                }
+            }
+        }
+    }
 }

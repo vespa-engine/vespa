@@ -1,12 +1,10 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.feedhandler;
 
-import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.document.DocumentTypeManager;
 import com.yahoo.feedapi.FeedContext;
 import com.yahoo.feedapi.MessagePropertyProcessor;
 import com.yahoo.feedapi.SharedSender;
-import com.yahoo.search.query.ParameterParser;
 
 
 import java.io.InputStream;
@@ -39,7 +37,7 @@ public abstract class VespaFeedHandlerBase {
      *         original data stream.
      * @throws IllegalArgumentException if GZIP stream creation failed
      */
-    InputStream getRequestInputStream(HttpRequest request) {
+    InputStream getRequestInputStream(InputStreamRequest request) {
          return request.getData();
     }
 
@@ -47,7 +45,7 @@ public abstract class VespaFeedHandlerBase {
         return context.getDocumentTypeManager();
     }
 
-    protected long getTimeoutMillis(HttpRequest request) {
+    protected long getTimeoutMillis(InputStreamRequest request) {
         return ParameterParser.asMilliSeconds(request.getProperty("timeout"), defaultTimeoutMillis);
     }
     

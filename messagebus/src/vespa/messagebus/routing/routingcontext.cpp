@@ -8,11 +8,13 @@ namespace mbus {
 
 RoutingContext::RoutingContext(RoutingNode &node, uint32_t directive) :
     _node(node),
+    _context(),
     _directive(directive),
-    _consumableErrors(),
     _selectOnRetry(true),
-    _context()
+    _consumableErrors()
 { }
+
+RoutingContext::~RoutingContext() = default;
 
 bool
 RoutingContext::hasRecipients() const
@@ -60,19 +62,6 @@ RoutingContext::getMatchedRecipients(std::vector<Route> &ret) const
     }
 }
 
-bool
-RoutingContext::getSelectOnRetry() const
-{
-    return _selectOnRetry;
-}
-
-RoutingContext &
-RoutingContext::setSelectOnRetry(bool selectOnRetry)
-{
-    _selectOnRetry = selectOnRetry;
-    return *this;
-}
-
 const Route &
 RoutingContext::getRoute() const
 {
@@ -83,12 +72,6 @@ const Hop &
 RoutingContext::getHop() const
 {
     return _node.getRoute().getHop(0);
-}
-
-uint32_t
-RoutingContext::getDirectiveIndex() const
-{
-    return _directive;
 }
 
 const PolicyDirective &
@@ -109,25 +92,6 @@ RoutingContext::getHopSuffix() const
     return getHop().getSuffix(_directive);
 }
 
-Context &
-RoutingContext::getContext()
-{
-    return _context;
-}
-
-const Context &
-RoutingContext::getContext() const
-{
-    return _context;
-}
-
-RoutingContext &
-RoutingContext::setContext(const Context &ctx)
-{
-    _context = ctx;
-    return *this;
-}
-
 const Message &
 RoutingContext::getMessage() const
 {
@@ -138,12 +102,6 @@ void
 RoutingContext::trace(uint32_t level, const string &note)
 {
     _node.getTrace().trace(level, note);
-}
-
-bool
-RoutingContext::hasReply() const
-{
-    return _node.hasReply();
 }
 
 const Reply &

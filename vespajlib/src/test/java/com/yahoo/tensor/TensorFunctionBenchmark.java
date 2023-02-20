@@ -26,7 +26,7 @@ public class TensorFunctionBenchmark {
         Tensor queryVector = vectors(1, 300, dimensionType).get(0);
         if (extraSpace) {
             queryVector = queryVector.multiply(unitVector("j"));
-            modelVectors = modelVectors.stream().map(t -> t.multiply(unitVector("k"))).collect(Collectors.toList());
+            modelVectors = modelVectors.stream().map(t -> t.multiply(unitVector("k"))).toList();
         }
         dotProduct(queryVector, modelVectors, Math.max(iterations/10, 10)); // warmup
         System.gc();

@@ -15,6 +15,7 @@ import com.yahoo.vespa.hosted.provision.applications.Applications;
 import com.yahoo.vespa.hosted.provision.applications.Cluster;
 import com.yahoo.vespa.hosted.provision.autoscale.AllocatableClusterResources;
 import com.yahoo.vespa.hosted.provision.autoscale.Autoscaler;
+import com.yahoo.vespa.hosted.provision.autoscale.Autoscaling;
 import com.yahoo.vespa.hosted.provision.autoscale.NodeMetricSnapshot;
 import com.yahoo.vespa.hosted.provision.node.History;
 import java.time.Duration;
@@ -55,57 +56,45 @@ public class AutoscalingMaintainer extends NodeRepositoryMaintainer {
 
     private void autoscale(ApplicationId application, NodeList applicationNodes) {
         try {
-            nodesByCluster(applicationNodes).forEach((clusterId, clusterNodes) -> autoscale(application, clusterId, clusterNodes));
+            nodesByCluster(applicationNodes).forEach((clusterId, clusterNodes) -> autoscale(application, clusterId));
         }
         catch (IllegalArgumentException e) {
             throw new IllegalArgumentException("Illegal arguments for " + application, e);
         }
     }
 
-    private void autoscale(ApplicationId applicationId, ClusterSpec.Id clusterId, NodeList clusterNodes) {
-        Optional<Application> application = nodeRepository().applications().get(applicationId);
-        if (application.isEmpty()) return;
-        Optional<Cluster> cluster = application.get().cluster(clusterId);
-        if (cluster.isEmpty()) return;
-
-        Cluster updatedCluster = updateCompletion(cluster.get(), clusterNodes);
-        var advice = autoscaler.autoscale(application.get(), updatedCluster, clusterNodes);
-
-        if ( ! anyChanges(advice, cluster.get(), updatedCluster, clusterNodes)) return;
-
+    private void autoscale(ApplicationId applicationId, ClusterSpec.Id clusterId) {
         try (var lock = nodeRepository().applications().lock(applicationId)) {
-            application = nodeRepository().applications().get(applicationId);
+            Optional<Application> application = nodeRepository().applications().get(applicationId);
             if (application.isEmpty()) return;
-            cluster = application.get().cluster(clusterId);
-            if (cluster.isEmpty()) return;
-            clusterNodes = nodeRepository().nodes().list(Node.State.active).owner(applicationId).cluster(clusterId);
+            if (application.get().cluster(clusterId).isEmpty()) return;
+            Cluster cluster = application.get().cluster(clusterId).get();
 
-            // 1. Update cluster info
-            updatedCluster = updateCompletion(cluster.get(), clusterNodes)
-                                     .with(advice.reason())
-                                     .withTarget(advice.target());
-            applications().put(application.get().with(updatedCluster), lock);
+            NodeList clusterNodes = nodeRepository().nodes().list(Node.State.active).owner(applicationId).cluster(clusterId);
+            cluster = updateCompletion(cluster, clusterNodes);
 
-            var current = new AllocatableClusterResources(clusterNodes, nodeRepository()).advertisedResources();
-            if (advice.isPresent() && advice.target().isPresent() && !current.equals(advice.target().get())) {
-                // 2. Also autoscale
+            var current = new AllocatableClusterResources(clusterNodes.not().retired(), nodeRepository()).advertisedResources();
+
+            // Autoscale unless an autoscaling is already in progress
+            Autoscaling autoscaling = null;
+            if (cluster.target().resources().isEmpty() || current.equals(cluster.target().resources().get())) {
+                autoscaling = autoscaler.autoscale(application.get(), cluster, clusterNodes);
+                if ( ! autoscaling.isEmpty()) // Ignore empties we'll get from servers recently started
+                    cluster = cluster.withTarget(autoscaling);
+            }
+
+            // Always store updates
+            applications().put(application.get().with(cluster), lock);
+
+            // Attempt to perform the autoscaling immediately, and log it regardless
+            if (autoscaling != null && autoscaling.resources().isPresent() && !current.equals(autoscaling.resources().get())) {
                 try (MaintenanceDeployment deployment = new MaintenanceDeployment(applicationId, deployer, metric, nodeRepository())) {
-                    if (deployment.isValid()) {
+                    if (deployment.isValid())
                         deployment.activate();
-                        logAutoscaling(current, advice.target().get(), applicationId, clusterNodes);
-                    }
+                    logAutoscaling(current, autoscaling.resources().get(), applicationId, clusterNodes.not().retired());
                 }
             }
         }
-    }
-
-    private boolean anyChanges(Autoscaler.Advice advice, Cluster cluster, Cluster updatedCluster, NodeList clusterNodes) {
-        if (advice.isPresent() && !cluster.targetResources().equals(advice.target())) return true;
-        if (updatedCluster != cluster) return true;
-        if ( ! advice.reason().equals(cluster.autoscalingStatus())) return true;
-        if (advice.target().isPresent() &&
-            !advice.target().get().equals(new AllocatableClusterResources(clusterNodes, nodeRepository()).advertisedResources())) return true;
-        return false;
     }
 
     private Applications applications() {
@@ -138,7 +127,7 @@ public class AutoscalingMaintainer extends NodeRepositoryMaintainer {
     }
 
     private void logAutoscaling(ClusterResources from, ClusterResources to, ApplicationId application, NodeList clusterNodes) {
-        log.info("Autoscaled " + application + " " + clusterNodes.clusterSpec() + ":" +
+        log.info("Autoscaling " + application + " " + clusterNodes.clusterSpec() + ":" +
                  "\nfrom " + toString(from) + "\nto   " + toString(to));
     }
 

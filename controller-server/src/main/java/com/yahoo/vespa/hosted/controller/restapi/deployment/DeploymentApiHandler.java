@@ -5,6 +5,7 @@ import com.yahoo.component.Version;
 import com.yahoo.config.application.api.DeploymentInstanceSpec;
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.container.jdisc.EmptyResponse;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.ThreadedHttpRequestHandler;
@@ -25,7 +26,6 @@ import com.yahoo.vespa.hosted.controller.deployment.Run;
 import com.yahoo.vespa.hosted.controller.deployment.RunStatus;
 import com.yahoo.vespa.hosted.controller.deployment.Versions;
 import com.yahoo.vespa.hosted.controller.restapi.ErrorResponses;
-import com.yahoo.vespa.hosted.controller.restapi.application.EmptyResponse;
 import com.yahoo.vespa.hosted.controller.versions.DeploymentStatistics;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
 import com.yahoo.yolean.Exceptions;
@@ -98,7 +98,7 @@ public class DeploymentApiHandler extends ThreadedHttpRequestHandler {
         var versionStatus = controller.readVersionStatus();
         ApplicationList applications = ApplicationList.from(controller.applications().asList()).withJobs();
         var deploymentStatuses = controller.jobController().deploymentStatuses(applications, versionStatus);
-        Map<Version, DeploymentStatistics> deploymentStatistics = DeploymentStatistics.compute(versionStatus.versions().stream().map(VespaVersion::versionNumber).collect(toList()),
+        Map<Version, DeploymentStatistics> deploymentStatistics = DeploymentStatistics.compute(versionStatus.versions().stream().map(VespaVersion::versionNumber).toList(),
                                                                                                deploymentStatuses)
                                                                                       .stream().collect(toMap(DeploymentStatistics::version, identity()));
         for (VespaVersion version : versionStatus.versions()) {
@@ -169,6 +169,7 @@ public class DeploymentApiHandler extends ThreadedHttpRequestHandler {
                       instanceObject.setString("application", instance.application().value());
                       instanceObject.setString("instance", instance.instance().value());
                       instanceObject.setBool("upgrading", status.application().require(instance.instance()).change().platform().equals(Optional.of(statistics.version())));
+                      instanceObject.setBool("pinned", status.application().require(instance.instance()).change().isPinned());
                       DeploymentStatus.StepStatus stepStatus = status.instanceSteps().get(instance.instance());
                       if (stepStatus != null) { // Instance may not have any steps, i.e. an empty deployment spec has been submitted
                           stepStatus.blockedUntil(Change.of(statistics.version()))

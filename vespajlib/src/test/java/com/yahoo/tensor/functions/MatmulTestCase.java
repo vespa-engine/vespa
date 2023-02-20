@@ -1,10 +1,11 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.tensor.functions;
 
-import com.google.common.collect.ImmutableList;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
 import org.junit.Test;
+
+import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 
@@ -41,7 +42,7 @@ public class MatmulTestCase {
         rb.cell(154,1, 1);
         Tensor r = rb.build();
 
-        Tensor result = a.matmul(b.rename(ImmutableList.of("d0","d1"), ImmutableList.of("d1","d2")), "d1")
+        Tensor result = a.matmul(b.rename(List.of("d0","d1"), List.of("d1","d2")), "d1")
                          .rename("d2","d1");
         assertEquals(r, result);
     }
@@ -90,7 +91,7 @@ public class MatmulTestCase {
         rb.cell(730,1, 1, 1);
         Tensor r = rb.build();
 
-        Tensor result = a.matmul(b.rename(ImmutableList.of("d1","d2"), ImmutableList.of("d2","d3")), "d2")
+        Tensor result = a.matmul(b.rename(List.of("d1","d2"), List.of("d2","d3")), "d2")
                          .rename("d3","d2");
         assertEquals(r, result);
     }

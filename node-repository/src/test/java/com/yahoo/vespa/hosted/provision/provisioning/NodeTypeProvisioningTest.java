@@ -194,7 +194,7 @@ public class NodeTypeProvisioningTest {
             // Verify that wantToRetire has been propagated
             List<Node> nodesCurrentlyRetiring = nodes.stream()
                     .filter(node -> node.allocation().get().membership().retired())
-                    .collect(Collectors.toList());
+                    .toList();
             assertEquals(5, nodesCurrentlyRetiring.size());
 
             // The retiring nodes should be the nodes we marked for retirement
@@ -211,7 +211,7 @@ public class NodeTypeProvisioningTest {
             // Verify that wantToRetire has been propagated
             List<Node> nodesCurrentlyRetiring = nodes.stream()
                     .filter(node -> node.allocation().get().membership().retired())
-                    .collect(Collectors.toList());
+                    .toList();
             assertEquals(5, nodesCurrentlyRetiring.size());
         }
 

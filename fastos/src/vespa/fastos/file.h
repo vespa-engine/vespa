@@ -11,18 +11,19 @@
 #pragma once
 
 #include "types.h"
+#include <cstdint>
 #include <string>
 
-const int FASTOS_FILE_OPEN_READ      = (1<<0);
-const int FASTOS_FILE_OPEN_WRITE     = (1<<1);
-const int FASTOS_FILE_OPEN_EXISTING  = (1<<2);
-const int FASTOS_FILE_OPEN_CREATE    = (1<<3);
-const int FASTOS_FILE_OPEN_TRUNCATE  = (1<<4);
-const int FASTOS_FILE_OPEN_STDOUT    = (2<<5);
-const int FASTOS_FILE_OPEN_STDERR    = (3<<5);
-const int FASTOS_FILE_OPEN_STDFLAGS  = (3<<5);
-const int FASTOS_FILE_OPEN_DIRECTIO  = (1<<7);
-const int FASTOS_FILE_OPEN_SYNCWRITES = (1<<9); // synchronous writes
+constexpr int FASTOS_FILE_OPEN_READ      = (1<<0);
+constexpr int FASTOS_FILE_OPEN_WRITE     = (1<<1);
+constexpr int FASTOS_FILE_OPEN_EXISTING  = (1<<2);
+constexpr int FASTOS_FILE_OPEN_CREATE    = (1<<3);
+constexpr int FASTOS_FILE_OPEN_TRUNCATE  = (1<<4);
+constexpr int FASTOS_FILE_OPEN_STDOUT    = (2<<5);
+constexpr int FASTOS_FILE_OPEN_STDERR    = (3<<5);
+constexpr int FASTOS_FILE_OPEN_STDFLAGS  = (3<<5);
+constexpr int FASTOS_FILE_OPEN_DIRECTIO  = (1<<7);
+constexpr int FASTOS_FILE_OPEN_SYNCWRITES = (1<<9); // synchronous writes
 
 /**
  * This class contains regular file-access functionality.

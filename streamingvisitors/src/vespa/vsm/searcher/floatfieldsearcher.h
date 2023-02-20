@@ -28,12 +28,12 @@ protected:
         T _upper;
         bool    _valid;
     };
-    typedef std::vector<FloatInfo> FloatInfoListT;
+    using FloatInfoListT = std::vector<FloatInfo>;
     FloatInfoListT _floatTerm;
 };
 
-typedef FloatFieldSearcherT<float> FloatFieldSearcherTF;
-typedef FloatFieldSearcherT<double> FloatFieldSearcherTD;
+using FloatFieldSearcherTF = FloatFieldSearcherT<float>;
+using FloatFieldSearcherTD = FloatFieldSearcherT<double>;
 
 class FloatFieldSearcher : public FloatFieldSearcherTF
 {

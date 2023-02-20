@@ -50,10 +50,12 @@ public class RankProfileInputTest {
             assertEquals(Tensor.from(tensorString), query.getRanking().getFeatures().getTensor("query(myTensor1)").get());
         }
 
-        { // Resolution is limited to the correct sources
-            Query query = createTensor1Query(tensorString, "bOnly", "sources=a");
-            assertEquals(0, query.errors().size());
-            assertEquals(tensorString, query.properties().get("ranking.features.query(myTensor1)"), "Not converted to tensor");
+        try {
+            createTensor1Query(tensorString, "bOnly", "sources=a");
+            fail("Expected exception");
+        }
+        catch (IllegalArgumentException e) {
+            assertEquals("No profile named 'bOnly' exists in schemas [a]", Exceptions.toMessageString(e));
         }
     }
 
@@ -237,20 +239,19 @@ public class RankProfileInputTest {
 
     private SchemaInfo createSchemaInfo() {
         List<Schema> schemas = new ArrayList<>();
-        RankProfile common = new RankProfile.Builder("commonProfile")
+        RankProfile.Builder common = new RankProfile.Builder("commonProfile")
                 .addInput("query(myTensor1)", TensorType.fromSpec("tensor(a{},b{})"))
                 .addInput("query(myTensor2)", TensorType.fromSpec("tensor(x[2],y[2])"))
                 .addInput("query(myTensor3)", TensorType.fromSpec("tensor(x[2],y[2])"))
-                .addInput("query(myTensor4)", TensorType.fromSpec("tensor<float>(x[5])"))
-                .build();
+                .addInput("query(myTensor4)", TensorType.fromSpec("tensor<float>(x[5])"));
         schemas.add(new Schema.Builder("a")
-                            .add(common)
+                            .add(common.build())
                             .add(new RankProfile.Builder("inconsistent")
                                          .addInput("query(myTensor1)", TensorType.fromSpec("tensor(a{},b{})"))
                                          .build())
                             .build());
         schemas.add(new Schema.Builder("b")
-                            .add(common)
+                            .add(common.build())
                             .add(new RankProfile.Builder("inconsistent")
                                          .addInput("query(myTensor1)", TensorType.fromSpec("tensor(x[10])"))
                                          .build())

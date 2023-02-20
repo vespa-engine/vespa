@@ -1,9 +1,9 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include "fast_access_doc_subdb_configurer.h"
 #include "storeonlydocsubdb.h"
-#include <vespa/searchcore/proton/attribute/attributemanager.h>
+#include "fast_access_doc_subdb_configurer.h"
+#include <vespa/config-attributes.h>
 #include <vespa/searchcore/proton/common/docid_limit.h>
 #include <vespa/searchcore/proton/metrics/attribute_metrics.h>
 #include <vespa/searchcore/proton/metrics/metricswireservice.h>
@@ -11,6 +11,8 @@
 namespace search::attribute { class Interlock; }
 
 namespace proton {
+
+class AttributeManager;
 
 /**
  * The fast-access sub database keeps fast-access attribute fields in memory
@@ -68,8 +70,9 @@ private:
 
     const bool                    _hasAttributes;
     const bool                    _fastAccessAttributesOnly;
-    AttributeManager::SP          _initAttrMgr;
+    std::shared_ptr<AttributeManager> _initAttrMgr;
     Configurer::FeedViewVarHolder _fastAccessFeedView;
+    Configurer                    _configurer;
     AttributeMetrics             &_subAttributeMetrics;
 
     std::shared_ptr<initializer::InitializerTask>
@@ -77,27 +80,27 @@ private:
                                       SerialNum configSerialNum,
                                       std::shared_ptr<initializer::InitializerTask> documentMetaStoreInitTask,
                                       DocumentMetaStore::SP documentMetaStore,
-                                      std::shared_ptr<AttributeManager::SP> attrMgrResult) const;
+                                      std::shared_ptr<std::shared_ptr<AttributeManager>> attrMgrResult) const;
 
-    void setupAttributeManager(AttributeManager::SP attrMgrResult);
-    void initFeedView(IAttributeWriter::SP writer, const DocumentDBConfig &configSnapshot);
+    void setupAttributeManager(std::shared_ptr<AttributeManager> attrMgrResult);
+    void initFeedView(std::shared_ptr<IAttributeWriter> writer, const DocumentDBConfig &configSnapshot);
 
 protected:
     using Parent = StoreOnlyDocSubDB;
-    using SessionManagerSP = std::shared_ptr<matching::SessionManager>;
 
     const bool           _addMetrics;
     MetricsWireService  &_metricsWireService;
     std::shared_ptr<search::attribute::Interlock> _attribute_interlock;
     DocIdLimit           _docIdLimit;
 
-    std::unique_ptr<AttributeCollectionSpec> createAttributeSpec(const AttributesConfig &attrCfg, const AllocStrategy& alloc_strategy, SerialNum serialNum) const;
-    AttributeManager::SP getAndResetInitAttributeManager();
+    std::shared_ptr<AttributeManager> getAndResetInitAttributeManager();
     virtual IFlushTargetList getFlushTargetsInternal() override;
     void reconfigureAttributeMetrics(const IAttributeManager &newMgr, const IAttributeManager &oldMgr);
 
     IReprocessingTask::UP createReprocessingTask(IReprocessingInitializer &initializer,
                                                  const std::shared_ptr<const document::DocumentTypeRepo> &docTypeRepo) const;
+
+    bool has_fast_access_attributes_only() const noexcept { return _fastAccessAttributesOnly; }
 
 public:
     FastAccessDocSubDB(const Config &cfg, const Context &ctx);
@@ -108,19 +111,22 @@ public:
                       const IndexConfig &indexCfg) const override;
 
     void setup(const DocumentSubDbInitializerResult &initResult) override;
-    void initViews(const DocumentDBConfig &configSnapshot, const SessionManagerSP &sessionManager) override;
+    void initViews(const DocumentDBConfig &configSnapshot) override;
 
+    std::unique_ptr<DocumentSubDBReconfig>
+    prepare_reconfig(const DocumentDBConfig& new_config_snapshot, const ReconfigParams& reconfig_params, std::optional<SerialNum> serial_num) override;
     IReprocessingTask::List
     applyConfig(const DocumentDBConfig &newConfigSnapshot, const DocumentDBConfig &oldConfigSnapshot,
-                SerialNum serialNum, const ReconfigParams &params, IDocumentDBReferenceResolver &resolver) override;
+                SerialNum serialNum, const ReconfigParams &params, IDocumentDBReferenceResolver &resolver, const DocumentSubDBReconfig& prepared_reconfig) override;
 
-    proton::IAttributeManager::SP getAttributeManager() const override;
+    std::shared_ptr<IAttributeManager> getAttributeManager() const override;
     IDocumentRetriever::UP getDocumentRetriever() override;
     void onReplayDone() override;
     void onReprocessDone(SerialNum serialNum) override;
     SerialNum getOldestFlushedSerial() override;
     SerialNum getNewestFlushedSerial() override;
     virtual void pruneRemovedFields(SerialNum serialNum) override;
+    TransientResourceUsage get_transient_resource_usage() const override;
 };
 
 } // namespace proton

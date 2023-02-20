@@ -10,6 +10,7 @@
 #include <vespa/searchlib/fef/termfieldmatchdataarray.h>
 #include <vespa/vespalib/test/memory_allocator_observer.h>
 #include <vespa/vespalib/util/rand48.h>
+#include <vespa/vespalib/util/exceptions.h>
 #include <algorithm>
 
 using namespace search;
@@ -135,7 +136,7 @@ assertBV(const std::string & exp, const BitVector & act)
     bool res1 = EXPECT_EQUAL(exp, toString(act));
     search::fef::TermFieldMatchData f;
     queryeval::SearchIterator::UP it(BitVectorIterator::create(&act, f, true));
-    BitVectorIterator & b(dynamic_cast<BitVectorIterator &>(*it));
+    auto & b(dynamic_cast<BitVectorIterator &>(*it));
     bool res2 = EXPECT_EQUAL(exp, toString(b));
     return res1 && res2;
 }
@@ -295,6 +296,15 @@ TEST("requireThatSequentialOperationsOnPartialWorks")
     EXPECT_EQUAL(5u, p2.countTrueBits());
     p2.orWith(full);
     EXPECT_EQUAL(202u, p2.countTrueBits());
+
+    AllocatedBitVector before(100);
+    before.setInterval(0, 100);
+    p2.orWith(before);
+    EXPECT_EQUAL(202u, p2.countTrueBits());
+
+    PartialBitVector after(1000, 1100);
+    after.setInterval(1000, 1100);
+    EXPECT_EQUAL(202u, p2.countTrueBits());
 }
 
 TEST("requireThatInitRangeStaysWithinBounds") {
@@ -342,7 +352,26 @@ verifyThatLongerWithShorterWorksAsZeroPadded(uint32_t offset, uint32_t sz1, uint
     func(*aLarger2, *bSmall);
     func(*aLarger3, *bEmpty);
     EXPECT_TRUE(*aLarger == *aLarger2);
-    //EXPECT_TRUE(*aLarger == *aLarger3);
+}
+
+template<typename Func>
+void
+verifyNonOverlappingWorksAsZeroPadded(bool clear, Func func) {
+    constexpr size_t CNT = 34;
+    BitVector::UP left = createEveryNthBitSet(3, 1000, 100);
+    BitVector::UP right = createEveryNthBitSet(3, 2000, 100);
+    EXPECT_EQUAL(CNT, left->countTrueBits());
+    EXPECT_EQUAL(CNT, right->countTrueBits());
+    func(*left, *right);
+    EXPECT_EQUAL(clear ? 0 : CNT, left->countTrueBits());
+    EXPECT_EQUAL(CNT, right->countTrueBits());
+    left = createEveryNthBitSet(3, 1000, 100);
+    right = createEveryNthBitSet(3, 2000, 100);
+    EXPECT_EQUAL(CNT, left->countTrueBits());
+    EXPECT_EQUAL(CNT, right->countTrueBits());
+    func(*right, *left);
+    EXPECT_EQUAL(CNT, left->countTrueBits());
+    EXPECT_EQUAL(clear ? 0 : CNT, right->countTrueBits());
 }
 
 TEST("requireThatAndWorks") {
@@ -351,6 +380,7 @@ TEST("requireThatAndWorks") {
         verifyThatLongerWithShorterWorksAsZeroPadded(offset, offset+256, offset+256 + offset + 3,
                                                      [](BitVector & a, const BitVector & b) { a.andWith(b); });
     }
+    verifyNonOverlappingWorksAsZeroPadded(true, [](BitVector & a, const BitVector & b) { a.andWith(b); });
 }
 
 TEST("requireThatOrWorks") {
@@ -359,6 +389,7 @@ TEST("requireThatOrWorks") {
         verifyThatLongerWithShorterWorksAsZeroPadded(offset, offset+256, offset+256 + offset + 3,
                                                      [](BitVector & a, const BitVector & b) { a.orWith(b); });
     }
+    verifyNonOverlappingWorksAsZeroPadded(false, [](BitVector & a, const BitVector & b) { a.orWith(b); });
 }
 
 
@@ -368,6 +399,7 @@ TEST("requireThatAndNotWorks") {
         verifyThatLongerWithShorterWorksAsZeroPadded(offset, offset+256, offset+256 + offset + 3,
                                                      [](BitVector & a, const BitVector & b) { a.andNotWith(b); });
     }
+    verifyNonOverlappingWorksAsZeroPadded(false, [](BitVector & a, const BitVector & b) { a.andNotWith(b); });
 }
 
 TEST("test that empty bitvectors does not crash") {
@@ -678,6 +710,38 @@ TEST("require that growable bit vectors keeps memory allocator")
     EXPECT_EQUAL(AllocStats(5, 2), stats);
     g.assign_generation(1);
     g.reclaim(2);
+}
+
+TEST("require that creating partial nonoverlapping vector is cleared") {
+    AllocatedBitVector org(1000);
+    org.setInterval(org.getStartIndex(), org.size());
+    EXPECT_EQUAL(1000u, org.countTrueBits());
+
+    BitVector::UP after = BitVector::create(org, 2000, 3000);
+    EXPECT_EQUAL(2000u, after->getStartIndex());
+    EXPECT_EQUAL(3000u, after->size());
+    EXPECT_EQUAL(0u, after->countTrueBits());
+
+    BitVector::UP before = BitVector::create(*after, 0, 1000);
+    EXPECT_EQUAL(0u, before->getStartIndex());
+    EXPECT_EQUAL(1000u, before->size());
+    EXPECT_EQUAL(0u, before->countTrueBits());
+}
+
+TEST("require that creating partial overlapping vector is properly copied") {
+    AllocatedBitVector org(1000);
+    org.setInterval(org.getStartIndex(), org.size());
+    EXPECT_EQUAL(1000u, org.countTrueBits());
+
+    BitVector::UP after = BitVector::create(org, 900, 1100);
+    EXPECT_EQUAL(900u, after->getStartIndex());
+    EXPECT_EQUAL(1100u, after->size());
+    EXPECT_EQUAL(100u, after->countTrueBits());
+
+    BitVector::UP before = BitVector::create(*after, 0, 1000);
+    EXPECT_EQUAL(0u, before->getStartIndex());
+    EXPECT_EQUAL(1000u, before->size());
+    EXPECT_EQUAL(100u, before->countTrueBits());
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }

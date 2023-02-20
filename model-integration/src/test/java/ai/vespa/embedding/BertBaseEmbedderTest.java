@@ -1,9 +1,7 @@
 package ai.vespa.embedding;
 
 import ai.vespa.modelintegration.evaluator.OnnxEvaluator;
-import com.yahoo.config.FileReference;
 import com.yahoo.config.ModelReference;
-import com.yahoo.config.UrlReference;
 import com.yahoo.embedding.BertBaseEmbedderConfig;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;

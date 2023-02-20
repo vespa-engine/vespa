@@ -32,7 +32,7 @@ public class StrCatFunction extends FunctionNode {
     public StrCatFunction copy() {
         return new StrCatFunction(getLabel(),
                                   getLevelOrNull(),
-                                  args().stream().map(arg -> arg.copy()).collect(Collectors.toList()));
+                                  args().stream().map(arg -> arg.copy()).toList());
     }
 
     /**

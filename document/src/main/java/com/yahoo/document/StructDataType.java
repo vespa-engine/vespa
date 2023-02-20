@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.document;
 
-import com.google.common.collect.ImmutableList;
 import com.yahoo.document.datatypes.FieldValue;
 import com.yahoo.document.datatypes.Struct;
 import com.yahoo.vespa.objects.Ids;
@@ -9,6 +8,7 @@ import com.yahoo.vespa.objects.Ids;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 
 /**
  * @author Einar M R Rosenvinge
@@ -98,7 +98,7 @@ public class StructDataType extends BaseStructDataType {
         Collection<Field> fieldsBuilder = new ArrayList<>();
         fieldsBuilder.addAll(super.getFields());
         fieldsBuilder.addAll(superType.getFields());
-        return ImmutableList.copyOf(fieldsBuilder);
+        return List.copyOf(fieldsBuilder);
     }
 
     public Collection<Field> getFieldsThisTypeOnly() {
@@ -117,10 +117,9 @@ public class StructDataType extends BaseStructDataType {
 
     @Override
     public boolean isValueCompatible(FieldValue value) {
-        if (!(value instanceof Struct)) {
+        if (!(value instanceof Struct structValue)) {
             return false;
         }
-        Struct structValue = (Struct) value;
         if (structValue.getDataType().inherits(this)) {
             //the value is of this type; or the supertype of the value is of this type, etc....
             return true;
@@ -142,9 +141,9 @@ public class StructDataType extends BaseStructDataType {
 
     public Collection<StructDataType> getInheritedTypes() {
         if (superType == null) {
-            return ImmutableList.of();
+            return List.of();
         }
-        return ImmutableList.of(superType);
+        return List.of(superType);
     }
 
     public boolean inherits(StructDataType type) {
@@ -156,10 +155,9 @@ public class StructDataType extends BaseStructDataType {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof StructDataType)) return false;
+        if (!(o instanceof StructDataType that)) return false;
         if (!super.equals(o)) return false;
 
-        StructDataType that = (StructDataType) o;
         if (superType != null ? !superType.equals(that.superType) : that.superType != null) return false;
         return true;
     }

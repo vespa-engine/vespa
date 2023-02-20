@@ -2,7 +2,7 @@
 package com.yahoo.vespa.model.builder.xml.dom.chains.search;
 
 import com.yahoo.config.model.builder.xml.test.DomBuilderTest;
-import com.yahoo.config.model.producer.AbstractConfigProducer;
+import com.yahoo.config.model.producer.TreeConfigProducer;
 import com.yahoo.search.federation.FederationConfig;
 import com.yahoo.search.searchchain.model.federation.FederationSearcherModel;
 import com.yahoo.vespa.model.container.search.searchchain.FederationSearcher;
@@ -61,7 +61,7 @@ public class DomFederationSearcherBuilderTest extends DomBuilderTest {
 
         String targetSelectorId = "my-id@federation-id";
 
-        AbstractConfigProducer<?> targetSelector = searcher.getChildren().get(targetSelectorId);
+        var targetSelector = searcher.getChildren().get(targetSelectorId);
         assertNotNull(targetSelector, "No target selector child found");
 
         FederationConfig.Builder builder = new FederationConfig.Builder();

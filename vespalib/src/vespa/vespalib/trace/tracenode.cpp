@@ -67,6 +67,7 @@ TraceNode::TraceNode(const TraceNode &rhs)
 }
 
 TraceNode::TraceNode(TraceNode &&) noexcept = default;
+TraceNode & TraceNode::operator =(TraceNode &&) noexcept = default;
 TraceNode & TraceNode::operator =(const TraceNode &) = default;
 
 TraceNode::~TraceNode() = default;

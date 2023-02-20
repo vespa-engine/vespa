@@ -4,7 +4,7 @@
 
   <container version="1.0">
 
-    <component id="transformer" class="ai.vespa.embedding.BertBaseEmbedder" bindle="model-integration">
+    <component id="transformer" class="ai.vespa.embedding.BertBaseEmbedder" bundle="model-integration">
       <config name="embedding.bert-base-embedder">
         <!-- model specifics -->
         <transformerModel model-id="minilm-l6-v2" url="application-url"/>

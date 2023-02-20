@@ -14,8 +14,8 @@ using namespace searchcorespi;
 
 constexpr double EPS = 0.000001;
 
-typedef IFlushTarget::Type FTT;
-typedef IFlushTarget::Component FTC;
+using FTT = IFlushTarget::Type;
+using FTC = IFlushTarget::Component;
 
 struct MFT : public test::DummyFlushTarget
 {

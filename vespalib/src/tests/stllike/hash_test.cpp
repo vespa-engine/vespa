@@ -390,9 +390,9 @@ struct equal_types<T0, T0> {
 
 TEST("test hash set iterators stl compatible")
 {
-    typedef vespalib::hash_set<int> set_type;
-    typedef set_type::iterator iter_type;
-    typedef std::iterator_traits<iter_type> iter_traits;
+    using set_type = vespalib::hash_set<int>;
+    using iter_type = set_type::iterator;
+    using iter_traits = std::iterator_traits<iter_type>;
 
     set_type set;
     set.insert(123);
@@ -417,8 +417,8 @@ TEST("test hash set iterators stl compatible")
     EXPECT_TRUE((equal_types<iter_traits::pointer, int*>::value));
     EXPECT_TRUE((equal_types<iter_traits::iterator_category, std::forward_iterator_tag>::value));
 
-    typedef set_type::const_iterator const_iter_type;
-    typedef std::iterator_traits<const_iter_type> const_iter_traits;
+    using const_iter_type = set_type::const_iterator;
+    using const_iter_traits = std::iterator_traits<const_iter_type>;
     EXPECT_TRUE((equal_types<const_iter_traits::difference_type, ptrdiff_t>::value));
     EXPECT_TRUE((equal_types<const_iter_traits::value_type, const int>::value));
     EXPECT_TRUE((equal_types<const_iter_traits::reference, const int&>::value));

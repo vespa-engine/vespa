@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "documentdb_metrics_updater.h"
-#include "ddbstate.h"
 #include "document_meta_store_read_guards.h"
 #include "documentsubdbcollection.h"
 #include "executorthreadingservice.h"
@@ -11,7 +10,6 @@
 #include <vespa/searchcore/proton/attribute/attribute_usage_filter.h>
 #include <vespa/searchcore/proton/attribute/i_attribute_manager.h>
 #include <vespa/searchcore/proton/docsummary/isummarymanager.h>
-#include <vespa/searchcore/proton/matching/matching_stats.h>
 #include <vespa/searchcore/proton/matching/matching_stats.h>
 #include <vespa/searchcore/proton/metrics/documentdb_job_trackers.h>
 #include <vespa/searchcore/proton/metrics/executor_threading_service_stats.h>
@@ -34,13 +32,11 @@ using matching::MatchingStats;
 DocumentDBMetricsUpdater::DocumentDBMetricsUpdater(const DocumentSubDBCollection &subDBs,
                                                    ExecutorThreadingService &writeService,
                                                    DocumentDBJobTrackers &jobTrackers,
-                                                   matching::SessionManager &sessionManager,
                                                    const AttributeUsageFilter &writeFilter,
                                                    FeedHandler& feed_handler)
     : _subDBs(subDBs),
       _writeService(writeService),
       _jobTrackers(jobTrackers),
-      _sessionManager(sessionManager),
       _writeFilter(writeFilter),
       _feed_handler(feed_handler),
       _lastDocStoreCacheStats(),
@@ -94,7 +90,7 @@ struct TempAttributeMetric
 
 struct TempAttributeMetrics
 {
-    typedef std::map<vespalib::string, TempAttributeMetric> AttrMap;
+    using AttrMap = std::map<vespalib::string, TempAttributeMetric>;
     TempAttributeMetric total;
     AttrMap attrs;
 };
@@ -184,16 +180,6 @@ updateMatchingMetrics(const metrics::MetricLockGuard & guard, DocumentDBTaggedMe
         totalStats.add(matchingStats);
     }
     metrics.matching.update(totalStats);
-}
-
-void
-updateSessionCacheMetrics(DocumentDBTaggedMetrics &metrics, proton::matching::SessionManager &sessionManager)
-{
-    auto searchStats = sessionManager.getSearchStats();
-    metrics.sessionCache.search.update(searchStats);
-
-    auto groupingStats = sessionManager.getGroupingStats();
-    metrics.sessionCache.grouping.update(groupingStats);
 }
 
 void
@@ -316,7 +302,6 @@ DocumentDBMetricsUpdater::updateMetrics(const metrics::MetricLockGuard & guard, 
     updateIndexMetrics(metrics, _subDBs.getReadySubDB()->getSearchableStats(), totalStats);
     updateAttributeMetrics(metrics, _subDBs, totalStats);
     updateMatchingMetrics(guard, metrics, *_subDBs.getReadySubDB());
-    updateSessionCacheMetrics(metrics, _sessionManager);
     updateDocumentsMetrics(metrics, _subDBs);
     updateDocumentStoreMetrics(metrics, _subDBs, _lastDocStoreCacheStats, totalStats);
     updateMiscMetrics(metrics, threadingServiceStats);

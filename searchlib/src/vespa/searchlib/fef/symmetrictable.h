@@ -5,8 +5,7 @@
 #include "table.h"
 #include <vector>
 
-namespace search {
-namespace fef {
+namespace search::fef {
 
 /**
  * This class represents a rank table with double values. It takes both negative and positive indexes.
@@ -22,7 +21,7 @@ private:
     double              _max;
 
 public:
-    typedef std::shared_ptr<SymmetricTable> SP;
+    using SP = std::shared_ptr<SymmetricTable>;
 
     SymmetricTable();
     /**
@@ -53,6 +52,4 @@ public:
     double max() const { return _max; }
 };
 
-} // namespace fef
-} // namespace search
-
+}

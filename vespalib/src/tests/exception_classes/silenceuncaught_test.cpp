@@ -1,7 +1,8 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+
+#include <vespa/config.h>
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/vespalib/util/exception.h>
-#include <vespa/vespalib/util/sanitizers.h>
 #include <vespa/vespalib/process/process.h>
 
 using namespace vespalib;
@@ -32,7 +33,7 @@ TEST("that caught silenced exception causes exitcode 0") {
 // setrlimit with RLIMIT_AS is broken on Darwin
 #else
 TEST("that mmap within limits are fine cause exitcode 0") {
-    Process proc("exec ./vespalib_mmap_app 150000000 10485760 1");
+    Process proc("exec ./vespalib_mmap_app 536870912 10485760 1");
     EXPECT_EQUAL(proc.join(), 0);
 }
 

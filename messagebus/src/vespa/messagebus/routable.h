@@ -32,7 +32,7 @@ public:
     /**
      * Convenience typedef for an auto pointer to a Routable object.
      */
-    typedef std::unique_ptr<Routable> UP;
+    using UP = std::unique_ptr<Routable>;
     Routable(const Routable &) = delete;
     Routable & operator = (const Routable &) = delete;
 

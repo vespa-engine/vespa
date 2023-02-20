@@ -89,7 +89,8 @@ public class TenantSerializerTest {
                 Optional.of(new PropertyId("1")),
                 Optional.of(contact()),
                 Instant.EPOCH,
-                lastLoginInfo(321L, 654L, 987L));
+                lastLoginInfo(321L, 654L, 987L),
+                Instant.EPOCH);
         AthenzTenant serialized = (AthenzTenant) serializer.tenantFrom(serializer.toSlime(tenant));
         assertEquals(tenant.contact(), serialized.contact());
     }
@@ -105,7 +106,8 @@ public class TenantSerializerTest {
                 TenantInfo.empty(),
                 List.of(),
                 new ArchiveAccess(),
-                Optional.empty());
+                Optional.empty(),
+                Instant.EPOCH);
         CloudTenant serialized = (CloudTenant) serializer.tenantFrom(serializer.toSlime(tenant));
         assertEquals(tenant.name(), serialized.name());
         assertEquals(tenant.creator(), serialized.creator());
@@ -127,7 +129,8 @@ public class TenantSerializerTest {
                         new TenantSecretStore("ss2", "124", "role2")
                 ),
                 new ArchiveAccess().withAWSRole("arn:aws:iam::123456789012:role/my-role"),
-                Optional.of(Instant.ofEpochMilli(1234567)));
+                Optional.of(Instant.ofEpochMilli(1234567)),
+                Instant.EPOCH);
         CloudTenant serialized = (CloudTenant) serializer.tenantFrom(serializer.toSlime(tenant));
         assertEquals(tenant.info(), serialized.info());
         assertEquals(tenant.tenantSecretStores(), serialized.tenantSecretStores());
@@ -177,7 +180,8 @@ public class TenantSerializerTest {
                 TenantInfo.empty(),
                 List.of(),
                 new ArchiveAccess().withAWSRole("arn:aws:iam::123456789012:role/my-role").withGCPMember("user:foo@example.com"),
-                Optional.empty());
+                Optional.empty(),
+                Instant.EPOCH);
         CloudTenant serialized = (CloudTenant) serializer.tenantFrom(serializer.toSlime(tenant));
         assertEquals(serialized.archiveAccess().awsRole().get(), "arn:aws:iam::123456789012:role/my-role");
         assertEquals(serialized.archiveAccess().gcpMember().get(), "user:foo@example.com");
@@ -244,6 +248,19 @@ public class TenantSerializerTest {
         assertEquals(tenant.name(), serialized.name());
         assertEquals(tenant.createdAt(), serialized.createdAt());
         assertEquals(tenant.deletedAt(), serialized.deletedAt());
+    }
+
+    @Test
+    void tenant_with_roles_maintained() {
+        AthenzTenant tenant = new AthenzTenant(TenantName.from("athenz-tenant"),
+                new AthenzDomain("domain1"),
+                new Property("property1"),
+                Optional.of(new PropertyId("1")),
+                Optional.of(contact()),
+                Instant.EPOCH,
+                lastLoginInfo(321L, 654L, 987L),
+                Instant.ofEpochMilli(1_000_000));
+        assertEquals(tenant, serializer.tenantFrom(serializer.toSlime(tenant)));
     }
 
     private static Contact contact() {

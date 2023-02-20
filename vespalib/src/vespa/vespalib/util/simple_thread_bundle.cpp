@@ -178,11 +178,11 @@ SimpleThreadBundle::run(Runnable* const* targets, size_t cnt)
 }
 
 SimpleThreadBundle::Worker::Worker(Signal &s, Runnable::init_fun_t init_fun, Runnable::UP h)
-  : thread(*this, std::move(init_fun)),
+  : thread(),
     signal(s),
     hook(std::move(h))
 {
-    thread.start();
+    thread = thread::start(*this, std::move(init_fun));
 }
 
 void

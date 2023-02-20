@@ -69,7 +69,7 @@ AllocatedBitVector::AllocatedBitVector(Index numberOfElements, Index capacityBit
         if (minCount/8 == numberOfElements/8) {
             static_cast<Word *>(getStart())[numWords()-1] &= ~endBits(minCount);
         }
-        setBit(size()); // Guard bit
+        set_bit_no_range_check(size()); // Guard bit
     }
     updateCount();
 }
@@ -90,7 +90,7 @@ AllocatedBitVector::AllocatedBitVector(const BitVector & rhs, std::pair<Index, I
     _capacityBits = computeCapacity(_capacityBits, _alloc.size());
     memcpy(_alloc.get(),  rhs.getStart(), numBytes(size_capacity.first - rhs.getStartIndex()));
     init(_alloc.get(), 0, size_capacity.first);
-    setBit(size());
+    set_bit_no_range_check(size());
     updateCount();
 }
 

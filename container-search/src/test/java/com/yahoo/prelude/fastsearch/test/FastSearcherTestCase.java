@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.prelude.fastsearch.test;
 
-import com.google.common.collect.ImmutableList;
 import com.yahoo.component.chain.Chain;
 import com.yahoo.container.QrSearchersConfig;
 import com.yahoo.container.handler.VipStatus;
@@ -143,7 +142,7 @@ public class FastSearcherTestCase {
 
     @Test
     void testSinglePassGroupingIsNotForcedWithSingleNodeGroups() {
-        MockDispatcher dispatcher = MockDispatcher.create(ImmutableList.of(new Node(0, "host0", 0), new Node(2, "host1", 0)));
+        MockDispatcher dispatcher = MockDispatcher.create(List.of(new Node(0, "host0", 0), new Node(2, "host1", 0)));
 
         FastSearcher fastSearcher = new FastSearcher("container.0",
                 dispatcher,
@@ -185,7 +184,7 @@ public class FastSearcherTestCase {
         searchClusterB.name(clusterName);
         b.searchcluster(searchClusterB);
         VipStatus vipStatus = new VipStatus(b.build());
-        List<Node> nodes_1 = ImmutableList.of(new Node(0, "host0", 0));
+        List<Node> nodes_1 = List.of(new Node(0, "host0", 0));
         RpcResourcePool rpcPool_1 = new RpcResourcePool(MockDispatcher.toDispatchConfig(), MockDispatcher.toNodesConfig(nodes_1));
         MockDispatcher dispatch_1 = MockDispatcher.create(nodes_1, rpcPool_1, vipStatus);
         dispatch_1.clusterMonitor.shutdown();

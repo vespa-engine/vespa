@@ -396,19 +396,21 @@ public class JsonWriterTestCase {
 
     @Test
     public void testWritingOfEmptyTensor() throws IOException {
-        assertTensorRoundTripEquality("{}","{ \"cells\": [] }");
+        assertTensorRoundTripEquality("{}","{ \"type\":\"tensor(x{},y{})\", \"cells\": [] }");
     }
 
     @Test
     public void testWritingOfTensorWithCellsOnly() throws IOException {
         assertTensorRoundTripEquality("{ "
-                + "  \"cells\": [ "
+        + "  \"type\": \"tensor(x{},y{})\","
+        + "  \"cells\": [ "
                 + "    { \"address\": { \"x\": \"a\", \"y\": \"b\" }, "
                 + "      \"value\": 2.0 }, "
                 + "    { \"address\": { \"x\": \"c\", \"y\": \"b\" }, "
                 + "      \"value\": 3.0 } "
                 + "  ]"
                 + "}", "{ "
+                + "  \"type\": \"tensor(x{},y{})\","
                 + "  \"cells\": [ "
                 + "    { \"address\": { \"x\": \"a\", \"y\": \"b\" }, "
                 + "      \"value\": 2.0 }, "
@@ -449,17 +451,17 @@ public class JsonWriterTestCase {
         Tensor tensor = Tensor.from("tensor(x[3]):[1,2,3]");
         doc.setFieldValue(tensorField, new TensorFieldValue(tensor));
 
-        assertEqualJson(asDocument(docId, "{ \"tensorfield\": {\"cells\":[{\"address\":{\"x\":\"0\"},\"value\":1.0},{\"address\":{\"x\":\"1\"},\"value\":2.0},{\"address\":{\"x\":\"2\"},\"value\":3.0}]} }"),
-                        writeDocument(doc, false));
+        assertEqualJson(asDocument(docId, "{ \"tensorfield\": {\"type\":\"tensor(x[3])\", \"cells\":[{\"address\":{\"x\":\"0\"},\"value\":1.0},{\"address\":{\"x\":\"1\"},\"value\":2.0},{\"address\":{\"x\":\"2\"},\"value\":3.0}]} }"),
+                        writeDocument(doc, false, false));
         assertEqualJson(asDocument(docId, "{ \"tensorfield\": {\"type\":\"tensor(x[3])\", \"values\":[1.0, 2.0, 3.0] } }"),
-                        writeDocument(doc, true));
+                        writeDocument(doc, true, false));
     }
 
-    private byte[] writeDocument(Document doc, boolean tensorShortForm) throws IOException {
+    private byte[] writeDocument(Document doc, boolean tensorShortForm, boolean tensorDirectValues) throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         JsonFactory factory = new JsonFactory();
         JsonGenerator generator = factory.createGenerator(out);
-        JsonWriter writer = new JsonWriter(generator, tensorShortForm);
+        JsonWriter writer = new JsonWriter(generator, tensorShortForm, tensorDirectValues);
         writer.write(doc);
         return out.toByteArray();
     }

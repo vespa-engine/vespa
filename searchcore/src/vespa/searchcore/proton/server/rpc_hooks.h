@@ -33,7 +33,7 @@ private:
     void getProtonStatus(FRT_RPCRequest * req);
 
 public:
-    typedef std::unique_ptr<RPCHooksBase> UP;
+    using UP = std::unique_ptr<RPCHooksBase>;
     struct Params {
         Proton           &proton;
         config::ConfigUri slobrok_config;

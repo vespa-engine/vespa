@@ -162,7 +162,7 @@ public abstract class VespaBackEndSearcher extends PingableSearcher {
         // query root should not be null here
         Item root = query.getModel().getQueryTree().getRoot();
         if (root == null || root instanceof NullItem) {
-            return new Result(query, ErrorMessage.createNullQuery(query.getHttpRequest().getUri().toString()));
+            return new Result(query, ErrorMessage.createNullQuery(query.getUri().toString()));
         }
 
         if ( ! getDocumentDatabase(query).schema().rankProfiles().containsKey(query.getRanking().getProfile()))

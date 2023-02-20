@@ -16,7 +16,7 @@ class FixedWidthBucketFunctionNode : public UnaryFunctionNode
 public:
     // update result bucket based on numeric value
     struct BucketHandler {
-        typedef vespalib::CloneablePtr<BucketHandler> CP;
+        using CP = vespalib::CloneablePtr<BucketHandler>;
         virtual void update(ResultNode &result, const ResultNode &value) const = 0;
         virtual BucketHandler *clone() const = 0;
         virtual ~BucketHandler() {}

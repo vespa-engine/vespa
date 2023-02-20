@@ -14,7 +14,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static java.util.stream.Collectors.toList;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -136,7 +135,7 @@ public class DocumentGraphValidatorTest {
     }
 
     private static List<SDDocumentType> documentListOf(Schema... schemas) {
-        return Arrays.stream(schemas).map(Schema::getDocument).collect(toList());
+        return Arrays.stream(schemas).map(Schema::getDocument).toList();
     }
 
     private static Schema createSearchWithName(String name, Schema... parents) {

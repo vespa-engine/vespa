@@ -14,14 +14,14 @@ namespace search {
  * Meta data for a single document.
  **/
 struct DocumentMetaData {
-    typedef uint32_t DocId;
+    using DocId = uint32_t;
     DocId lid;
     uint64_t timestamp;
     document::BucketId bucketId;
     document::GlobalId gid;
     bool removed;
 
-    typedef std::vector<DocumentMetaData> Vector;
+    using Vector = std::vector<DocumentMetaData>;
 
     DocumentMetaData() noexcept
         : lid(0),
@@ -70,10 +70,10 @@ class IGidToLidMapperVisitor;
  * meta data per document.
  **/
 struct IDocumentMetaStore {
-    typedef uint32_t                DocId;
-    typedef document::GlobalId      GlobalId;
-    typedef document::BucketId      BucketId;
-    typedef uint64_t Timestamp;
+    using DocId = uint32_t;
+    using GlobalId = document::GlobalId;
+    using BucketId = document::BucketId;
+    using Timestamp = uint64_t;
 
     virtual ~IDocumentMetaStore() = default;
 

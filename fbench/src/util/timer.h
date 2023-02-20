@@ -17,15 +17,15 @@
 class Timer
 {
 private:
-  typedef std::chrono::steady_clock clock;
-  typedef std::chrono::time_point<clock> time_point;
+  using clock = std::chrono::steady_clock;
+  using time_point = std::chrono::time_point<clock>;
   time_point _time;
   double     _timespan;
   double     _maxTime;
   bool       _running;
 
 public:
-  typedef std::unique_ptr<Timer> UP;
+  using UP = std::unique_ptr<Timer>;
   /**
    * Create a new timer.
    **/

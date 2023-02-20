@@ -168,14 +168,12 @@ DocumentListMessage::Entry::serialize(vespalib::GrowableByteBuffer& buf) const
     buf.putByte(_removeEntry ? 1 : 0);
 }
 
-DocumentListMessage::DocumentListMessage() = default;
-
-DocumentListMessage::DocumentListMessage(document::BucketId bid) :
+DocumentListMessage::DocumentListMessage() noexcept = default;
+DocumentListMessage::~DocumentListMessage() = default;
+DocumentListMessage::DocumentListMessage(document::BucketId bid) noexcept :
     _bucketId(bid),
     _documents()
-{
-    // empty
-}
+{ }
 
 DocumentReply::UP
 DocumentListMessage::doCreateReply() const

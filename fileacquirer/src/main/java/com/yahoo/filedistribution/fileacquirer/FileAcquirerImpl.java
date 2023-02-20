@@ -2,18 +2,23 @@
 package com.yahoo.filedistribution.fileacquirer;
 
 import com.yahoo.cloud.config.filedistribution.FiledistributorrpcConfig;
-import com.yahoo.config.subscription.ConfigSubscriber;
 import com.yahoo.config.FileReference;
-import com.yahoo.jrt.*;
-
+import com.yahoo.config.subscription.ConfigSubscriber;
+import com.yahoo.jrt.ErrorCode;
+import com.yahoo.jrt.Request;
+import com.yahoo.jrt.Spec;
+import com.yahoo.jrt.StringValue;
+import com.yahoo.jrt.Supervisor;
+import com.yahoo.jrt.Target;
+import com.yahoo.jrt.Transport;
+import com.yahoo.vespa.config.FileReferenceDoesNotExistException;
+import java.io.File;
 import java.time.Duration;
-import java.util.logging.Level;
-
-import java.util.logging.Logger;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
-import java.util.concurrent.TimeUnit;
-import java.io.File;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Retrieves the path to a file or directory on the local file system
@@ -30,9 +35,7 @@ class FileAcquirerImpl implements FileAcquirer {
 
         public static final int baseErrorCode = 0x10000;
         public static final int baseFileProviderErrorCode = baseErrorCode + 0x1000;
-
         public static final int fileReferenceDoesNotExists = baseFileProviderErrorCode;
-        public static final int fileReferenceRemoved = fileReferenceDoesNotExists + 1;
 
     }
 
@@ -113,16 +116,10 @@ class FileAcquirerImpl implements FileAcquirer {
     private final Connection connection = new Connection();
 
     private boolean temporaryError(int errorCode) {
-        switch (errorCode) {
-        case ErrorCode.ABORT:
-        case ErrorCode.CONNECTION:
-        case ErrorCode.GENERAL_ERROR:
-        case ErrorCode.OVERLOAD:
-        case ErrorCode.TIMEOUT:
-            return true;
-        default:
-            return false;
-        }
+        return switch (errorCode) {
+            case ErrorCode.ABORT, ErrorCode.CONNECTION, ErrorCode.GENERAL_ERROR, ErrorCode.OVERLOAD, ErrorCode.TIMEOUT -> true;
+            default -> false;
+        };
     }
 
     public FileAcquirerImpl(String configId) {
@@ -168,12 +165,11 @@ class FileAcquirerImpl implements FileAcquirer {
             } else {
                 if (request.errorCode() == FileDistributionErrorCode.fileReferenceDoesNotExists)
                     throw new FileReferenceDoesNotExistException(fileReference.value());
-                else if (request.errorCode() == FileDistributionErrorCode.fileReferenceRemoved)
-                    throw new FileReferenceRemovedException(fileReference.value());
                 else
-                    throw new RuntimeException("Wait for " + fileReference + " failed:" + request.errorMessage() + " (" + request.errorCode() + ")");
+                    throw new RuntimeException("Wait for " + fileReference + " failed: " + request.errorMessage() + " (" + request.errorCode() + ")");
             }
         } while ( timer.isTimeLeft() );
+
         throw new TimeoutException("Timed out waiting for " + fileReference + " after " + timeout + " " + timeUnit.name().toLowerCase());
     }
 

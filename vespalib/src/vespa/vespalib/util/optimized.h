@@ -103,5 +103,7 @@ inline int Optimized::lsbIdx(unsigned long v) { return v ? __builtin_ctzl(v) : 0
 inline int Optimized::lsbIdx(unsigned long long v) { return v ? __builtin_ctzll(v) : 0; }
 #endif
 
+#define VESPA_DLL_LOCAL  __attribute__ ((visibility("hidden")))
+
 }
 

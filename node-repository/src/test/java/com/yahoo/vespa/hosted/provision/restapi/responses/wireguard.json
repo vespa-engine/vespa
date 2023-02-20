@@ -1,0 +1,10 @@
+{
+  "configservers":
+  [
+    {
+      "hostname":"cfg1.yahoo.com",
+      "wireguardPubkey":"lololololololololololololololololololololoo=",
+      "ipAddresses":["127.0.201.1","::201:1"]
+    }
+  ]
+}

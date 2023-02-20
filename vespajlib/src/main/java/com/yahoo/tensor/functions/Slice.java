@@ -116,7 +116,7 @@ public class Slice<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMETY
     }
 
     private List<String> findDimensions(List<TensorType.Dimension> dims, Predicate<TensorType.Dimension> pred) {
-        return dims.stream().filter(pred).map(TensorType.Dimension::name).collect(Collectors.toList());
+        return dims.stream().filter(pred).map(TensorType.Dimension::name).toList();
     }
 
     private TensorType resultType(TensorType argumentType) {
@@ -138,7 +138,7 @@ public class Slice<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMETY
             }
         }
         else { // general slicing
-            peekDimensions = subspaceAddress.stream().map(d -> d.dimension().get()).collect(Collectors.toList());
+            peekDimensions = subspaceAddress.stream().map(d -> d.dimension().get()).toList();
         }
         try {
             return TypeResolver.peek(argumentType, peekDimensions);

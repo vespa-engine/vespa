@@ -20,11 +20,11 @@ import com.yahoo.vespa.hosted.provision.NodeMutex;
 import com.yahoo.vespa.hosted.provision.applications.Applications;
 import com.yahoo.vespa.hosted.provision.maintenance.NodeFailer;
 import com.yahoo.vespa.hosted.provision.node.filter.NodeFilter;
-import com.yahoo.vespa.hosted.provision.persistence.CuratorDatabaseClient;
+import com.yahoo.vespa.hosted.provision.persistence.CuratorDb;
+import com.yahoo.vespa.hosted.provision.provisioning.HostIpConfig;
 import com.yahoo.vespa.orchestrator.HostNameNotFoundException;
 import com.yahoo.vespa.orchestrator.Orchestrator;
 
-import javax.ws.rs.NotFoundException;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
@@ -59,13 +59,13 @@ public class Nodes {
 
     private static final Logger log = Logger.getLogger(Nodes.class.getName());
 
-    private final CuratorDatabaseClient db;
+    private final CuratorDb db;
     private final Zone zone;
     private final Clock clock;
     private final Orchestrator orchestrator;
     private final Applications applications;
 
-    public Nodes(CuratorDatabaseClient db, Zone zone, Clock clock, Orchestrator orchestrator, Applications applications) {
+    public Nodes(CuratorDb db, Zone zone, Clock clock, Orchestrator orchestrator, Applications applications) {
         this.zone = zone;
         this.clock = clock;
         this.db = db;
@@ -76,37 +76,26 @@ public class Nodes {
     /** Read and write all nodes to make sure they are stored in the latest version of the serialized format */
     public void rewrite() {
         Instant start = clock.instant();
-        int nodesWritten = 0;
-        for (Node.State state : Node.State.values()) {
-            List<Node> nodes = db.readNodes(state);
-            // TODO(mpolden): This should take the lock before writing
-            db.writeTo(state, nodes, Agent.system, Optional.empty());
-            nodesWritten += nodes.size();
-        }
+        int nodesWritten = performOn(list(), this::write).size();
         Instant end = clock.instant();
         log.log(Level.INFO, String.format("Rewrote %d nodes in %s", nodesWritten, Duration.between(start, end)));
     }
 
     // ---------------- Query API ----------------------------------------------------------------
 
-    /**
-     * Finds and returns the node with the hostname in any of the given states, or empty if not found
-     *
-     * @param hostname the full host name of the node
-     * @param inState the states the node may be in. If no states are given, it will be returned from any state
-     * @return the node, or empty if it was not found in any of the given states
-     */
-    public Optional<Node> node(String hostname, Node.State... inState) {
-        return db.readNode(hostname, inState);
+    /** Finds and returns the node with given hostname, or empty if not found */
+    public Optional<Node> node(String hostname) {
+        return db.readNode(hostname);
     }
 
     /**
-     * Returns a list of nodes in this repository in any of the given states
+     * Returns an unsorted list of all nodes in this repository, in any of the given states
      *
-     * @param inState the states to return nodes from. If no states are given, all nodes of the given type are returned
+     * @param inState the states to return nodes from. If no states are given, all nodes are returned
      */
     public NodeList list(Node.State... inState) {
-        return NodeList.copyOf(db.readNodes(inState));
+        NodeList nodes = NodeList.copyOf(db.readNodes());
+        return inState.length == 0 ? nodes : nodes.state(Set.of(inState));
     }
 
     /** Returns a locked list of all nodes in this repository */
@@ -183,8 +172,8 @@ public class Nodes {
                 nodesToAdd.add(node);
             }
             NestedTransaction transaction = new NestedTransaction();
-            List<Node> resultingNodes = db.addNodesInState(IP.Config.verify(nodesToAdd, list(lock)), Node.State.provisioned, agent, transaction);
             db.removeNodes(nodesToRemove, transaction);
+            List<Node> resultingNodes = db.addNodesInState(IP.Config.verify(nodesToAdd, list(lock)), Node.State.provisioned, agent, transaction);
             transaction.commit();
             return resultingNodes;
         }
@@ -198,6 +187,7 @@ public class Nodes {
         if (node.status().wantToDeprovision() || node.status().wantToRebuild())
             return park(node.hostname(), false, agent, reason);
 
+        node = node.withWantToRetire(false, false, false, agent, clock.instant());
         return db.writeTo(Node.State.ready, node, agent, Optional.of(reason));
     }
 
@@ -235,10 +225,11 @@ public class Nodes {
         if ( ! zone.environment().isProduction() || zone.system().isCd())
             return deallocate(nodes, Agent.application, "Deactivated by application", transaction.nested());
 
-        var stateless = NodeList.copyOf(nodes).stateless();
-        var stateful  = NodeList.copyOf(nodes).stateful();
-        var statefulToInactive  = stateful.not().reusable();
-        var statefulToDirty = stateful.reusable();
+        NodeList nodeList = NodeList.copyOf(nodes);
+        NodeList stateless = nodeList.stateless();
+        NodeList stateful  = nodeList.stateful();
+        NodeList statefulToInactive  = stateful.not().reusable();
+        NodeList statefulToDirty = stateful.reusable();
         List<Node> written = new ArrayList<>();
         written.addAll(deallocate(stateless.asList(), Agent.application, "Deactivated by application", transaction.nested()));
         written.addAll(deallocate(statefulToDirty.asList(), Agent.application, "Deactivated by application (recycled)", transaction.nested()));
@@ -264,7 +255,7 @@ public class Nodes {
     private List<Node> fail(List<Node> nodes, Agent agent, String reason, NestedTransaction transaction) {
         nodes = nodes.stream()
                      .map(n -> n.withWantToFail(false, agent, clock.instant()))
-                     .collect(Collectors.toList());
+                     .toList();
         return db.writeTo(Node.State.failed, nodes, agent, Optional.of(reason), transaction);
     }
 
@@ -274,7 +265,7 @@ public class Nodes {
     }
 
     public List<Node> deallocateRecursively(String hostname, Agent agent, String reason) {
-        Node nodeToDirty = node(hostname).orElseThrow(() -> new NotFoundException("Could not deallocate " + hostname + ": Node not found"));
+        Node nodeToDirty = node(hostname).orElseThrow(() -> new NoSuchNodeException("Could not deallocate " + hostname + ": Node not found"));
 
         List<Node> nodesToDirty =
                 (nodeToDirty.type().isHost() ?
@@ -290,7 +281,7 @@ public class Nodes {
             illegal("Could not deallocate " + nodeToDirty + ": " +
                     hostnamesNotAllowedToDirty + " are not in states [provisioned, failed, parked, breakfixed]");
 
-        return nodesToDirty.stream().map(node -> deallocate(node, agent, reason)).collect(Collectors.toList());
+        return nodesToDirty.stream().map(node -> deallocate(node, agent, reason)).toList();
     }
 
     /**
@@ -305,7 +296,7 @@ public class Nodes {
     }
 
     public List<Node> deallocate(List<Node> nodes, Agent agent, String reason, NestedTransaction transaction) {
-        return nodes.stream().map(node -> deallocate(node, agent, reason, transaction)).collect(Collectors.toList());
+        return nodes.stream().map(node -> deallocate(node, agent, reason, transaction)).toList();
     }
 
     public Node deallocate(Node node, Agent agent, String reason, NestedTransaction transaction) {
@@ -331,8 +322,8 @@ public class Nodes {
         return fail(hostname, false, agent, reason);
     }
 
-    public Node fail(String hostname, boolean wantToDeprovision, Agent agent, String reason) {
-        return move(hostname, Node.State.failed, agent, wantToDeprovision, Optional.of(reason));
+    public Node fail(String hostname, boolean forceDeprovision, Agent agent, String reason) {
+        return move(hostname, Node.State.failed, agent, forceDeprovision, Optional.of(reason));
     }
 
     /**
@@ -364,21 +355,30 @@ public class Nodes {
         }
     }
 
+    /** Update IP config for nodes in given config */
+    public void setIpConfig(HostIpConfig hostIpConfig) {
+        Predicate<Node> nodeInConfig = (node) -> hostIpConfig.contains(node.hostname());
+        performOn(nodeInConfig, (node, lock) -> {
+            IP.Config ipConfig = hostIpConfig.require(node.hostname());
+            return write(node.with(ipConfig), lock);
+        });
+    }
+
     /**
      * Parks this node and returns it in its new state.
      *
      * @return the node in its new state
      * @throws NoSuchNodeException if the node is not found
      */
-    public Node park(String hostname, boolean wantToDeprovision, Agent agent, String reason) {
+    public Node park(String hostname, boolean forceDeprovision, Agent agent, String reason) {
         NestedTransaction transaction = new NestedTransaction();
-        Node parked = park(hostname, wantToDeprovision, agent, reason, transaction);
+        Node parked = park(hostname, forceDeprovision, agent, reason, transaction);
         transaction.commit();
         return parked;
     }
 
-    private Node park(String hostname, boolean wantToDeprovision, Agent agent, String reason, NestedTransaction transaction) {
-        return move(hostname, Node.State.parked, agent, wantToDeprovision, Optional.of(reason), transaction);
+    private Node park(String hostname, boolean forceDeprovision, Agent agent, String reason, NestedTransaction transaction) {
+        return move(hostname, Node.State.parked, agent, forceDeprovision, Optional.of(reason), transaction);
     }
 
     /**
@@ -419,22 +419,22 @@ public class Nodes {
         NestedTransaction transaction = new NestedTransaction();
         List<Node> moved = list().childrenOf(hostname).asList().stream()
                                  .map(child -> move(child.hostname(), toState, agent, false, reason, transaction))
-                                 .collect(Collectors.toList());
+                                 .collect(Collectors.toCollection(ArrayList::new));
         moved.add(move(hostname, toState, agent, false, reason, transaction));
         transaction.commit();
         return moved;
     }
 
     /** Move a node to given state */
-    private Node move(String hostname, Node.State toState, Agent agent, boolean wantToDeprovision, Optional<String> reason) {
+    private Node move(String hostname, Node.State toState, Agent agent, boolean forceDeprovision, Optional<String> reason) {
         NestedTransaction transaction = new NestedTransaction();
-        Node moved = move(hostname, toState, agent, wantToDeprovision, reason, transaction);
+        Node moved = move(hostname, toState, agent, forceDeprovision, reason, transaction);
         transaction.commit();
         return moved;
     }
 
     /** Move a node to given state as part of a transaction */
-    private Node move(String hostname, Node.State toState, Agent agent, boolean wantToDeprovision, Optional<String> reason, NestedTransaction transaction) {
+    private Node move(String hostname, Node.State toState, Agent agent, boolean forceDeprovision, Optional<String> reason, NestedTransaction transaction) {
         // TODO: Work out a safe lock acquisition strategy for moves. Lock is only held while adding operations to
         //       transaction, but lock must also be held while committing
         try (NodeMutex lock = lockAndGetRequired(hostname)) {
@@ -447,8 +447,8 @@ public class Nodes {
                         illegal("Could not set " + node + " active: Same cluster and index as " + currentActive);
                 }
             }
-            if (wantToDeprovision)
-                node = node.withWantToRetire(wantToDeprovision, wantToDeprovision, agent, clock.instant());
+            if (forceDeprovision)
+                node = node.withWantToRetire(true, true, agent, clock.instant());
             if (toState == Node.State.deprovisioned) {
                 node = node.with(IP.Config.EMPTY);
             }
@@ -643,23 +643,24 @@ public class Nodes {
     private List<Node> decommission(String hostname, HostOperation op, Agent agent, Instant instant) {
         Optional<NodeMutex> nodeMutex = lockAndGet(hostname);
         if (nodeMutex.isEmpty()) return List.of();
-        Node host = nodeMutex.get().node();
-        if (!host.type().isHost()) throw new IllegalArgumentException("Cannot " + op + " non-host " + host);
-
+        List<Node> result = new ArrayList<>();
         boolean wantToDeprovision = op == HostOperation.deprovision;
         boolean wantToRebuild = op == HostOperation.rebuild || op == HostOperation.softRebuild;
         boolean wantToRetire = op.needsRetirement();
-        List<Node> result = new ArrayList<>();
-        try (NodeMutex lock = nodeMutex.get(); Mutex allocationLock = lockUnallocated()) {
-            // Modify parent with wantToRetire while holding the allocationLock to prevent
-            // any further allocation of nodes on this host
-            Node newHost = lock.node().withWantToRetire(wantToRetire, wantToDeprovision, wantToRebuild, agent, instant);
-            result.add(write(newHost, lock));
+        Node host = nodeMutex.get().node();
+        try (NodeMutex lock = nodeMutex.get()) {
+            if ( ! host.type().isHost()) throw new IllegalArgumentException("Cannot " + op + " non-host " + host);
+            try (Mutex allocationLock = lockUnallocated()) {
+                // Modify parent with wantToRetire while holding the allocationLock to prevent
+                // any further allocation of nodes on this host
+                Node newHost = lock.node().withWantToRetire(wantToRetire, wantToDeprovision, wantToRebuild, agent, instant);
+                result.add(write(newHost, lock));
+            }
         }
 
         if (wantToRetire) { // Apply recursively if we're retiring
             List<Node> updatedNodes = performOn(list().childrenOf(host), (node, nodeLock) -> {
-                Node newNode = node.withWantToRetire(wantToRetire, wantToDeprovision, wantToRebuild, agent, instant);
+                Node newNode = node.withWantToRetire(wantToRetire, wantToDeprovision, false, agent, instant);
                 return write(newNode, nodeLock);
             });
             result.addAll(updatedNodes);
@@ -692,7 +693,7 @@ public class Nodes {
     }
 
     /**
-     * Performs an operation requiring locking on all nodes matching some filter.
+     * Performs an operation requiring locking on all given nodes.
      *
      * @param action the action to perform
      * @return the set of nodes on which the action was performed, as they became as a result of the operation
@@ -710,7 +711,7 @@ public class Nodes {
                 unallocatedNodes.add(node);
         }
 
-        // perform operation while holding locks
+        // Perform operation while holding appropriate lock
         List<Node> resultingNodes = new ArrayList<>();
         try (Mutex lock = lockUnallocated()) {
             for (Node node : unallocatedNodes) {
@@ -767,13 +768,9 @@ public class Nodes {
         for (int i = 0; i < maxRetries; ++i) {
             Mutex lockToClose = lock(staleNode, timeout);
             try {
-                // As an optimization we first try finding the node in the same state
-                Optional<Node> freshNode = node(staleNode.hostname(), staleNode.state());
+                Optional<Node> freshNode = node(staleNode.hostname());
                 if (freshNode.isEmpty()) {
-                    freshNode = node(staleNode.hostname());
-                    if (freshNode.isEmpty()) {
-                        return Optional.empty();
-                    }
+                    return Optional.empty();
                 }
 
                 if (node.type() != NodeType.tenant ||

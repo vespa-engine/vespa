@@ -6,8 +6,8 @@
 
 namespace search::fef {
 
-typedef uint32_t FeatureHandle;
-typedef uint32_t TermFieldHandle;
+using FeatureHandle = uint32_t;
+using TermFieldHandle = uint32_t;
 
 const uint32_t IllegalHandle = 0xffffffff;
 

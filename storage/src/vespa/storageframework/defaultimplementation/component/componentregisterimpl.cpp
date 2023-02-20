@@ -1,7 +1,8 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "componentregisterimpl.h"
-#include <vespa/storageframework/storageframework.h>
+#include <vespa/storageframework/generic/status/statusreporter.h>
+#include <vespa/storageframework/generic/metric/metricupdatehook.h>
 #include <vespa/metrics/metricmanager.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <cassert>
@@ -16,7 +17,6 @@ ComponentRegisterImpl::ComponentRegisterImpl()
       _metricManager(nullptr),
       _clock(nullptr),
       _threadPool(nullptr),
-      _upgradeFlag(NO_UPGRADE_SPECIAL_HANDLING_ACTIVE),
       _shutdownListener(nullptr)
 { }
 
@@ -36,7 +36,6 @@ ComponentRegisterImpl::registerComponent(ManagedComponent& mc)
     if (_metricManager) {
         mc.setMetricRegistrator(*this);
     }
-    mc.setUpgradeFlag(_upgradeFlag);
 }
 
 void
@@ -62,7 +61,7 @@ ComponentRegisterImpl::setMetricManager(metrics::MetricManager& mm)
         metrics::MetricLockGuard lock(mm.getMetricLock());
         mm.registerMetric(lock, _topMetricSet);
     }
-    for (auto* component : _components) {
+    for (auto* component : components) {
         component->setMetricRegistrator(*this);
     }
 }
@@ -86,16 +85,6 @@ ComponentRegisterImpl::setThreadPool(ThreadPool& tp)
     _threadPool = &tp;
     for (auto* component : _components) {
         component->setThreadPool(tp);
-    }
-}
-
-void
-ComponentRegisterImpl::setUpgradeFlag(UpgradeFlags flag)
-{
-    std::lock_guard lock(_componentLock);
-    _upgradeFlag = flag;
-    for (auto* component : _components) {
-        component->setUpgradeFlag(_upgradeFlag);
     }
 }
 
@@ -150,11 +139,11 @@ namespace {
 void
 ComponentRegisterImpl::registerUpdateHook(vespalib::stringref name,
                                           MetricUpdateHook& hook,
-                                          SecondTime period)
+                                          vespalib::duration period)
 {
     std::lock_guard lock(_componentLock);
     auto hookPtr = std::make_unique<MetricHookWrapper>(name, hook);
-    _metricManager->addMetricUpdateHook(*hookPtr, period.getTime());
+    _metricManager->addMetricUpdateHook(*hookPtr, vespalib::to_s(period));
     _hooks.emplace_back(std::move(hookPtr));
 }
 

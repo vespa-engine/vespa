@@ -36,6 +36,7 @@
         <target_jdk_version>17</target_jdk_version>
         <maven-compiler-plugin.version>3.10.1</maven-compiler-plugin.version>
         <maven-surefire-plugin.version>2.22.2</maven-surefire-plugin.version>
+        <maven-dependency-plugin.version>3.5.0</maven-dependency-plugin.version>
         <!-- NOTE: this must not be overriden by users, and must be in sync with junit version specified in 'tenant-cd-api' -->
         <vespa.junit.version>5.8.1</vespa.junit.version>
         <test.categories>!integration</test.categories>
@@ -443,6 +444,15 @@
     </profiles>
 
     <build>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-dependency-plugin</artifactId>
+                    <version>${maven-dependency-plugin.version}</version>
+                </plugin>
+            </plugins>
+        </pluginManagement>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>

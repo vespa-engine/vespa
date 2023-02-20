@@ -1,6 +1,9 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.autoscale;
 
+import com.yahoo.vespa.hosted.provision.Node;
+import com.yahoo.vespa.hosted.provision.node.History;
+
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -69,28 +72,44 @@ public class NodeTimeseries {
     public NodeTimeseries keep(Predicate<NodeMetricSnapshot> filter) {
         return new NodeTimeseries(hostname, snapshots.stream()
                                                      .filter(snapshot -> filter.test(snapshot))
-                                                     .collect(Collectors.toList()));
+                                                     .toList());
     }
 
     public NodeTimeseries keepAfter(Instant oldestTime) {
         return new NodeTimeseries(hostname,
                                   snapshots.stream()
                                            .filter(snapshot -> snapshot.at().equals(oldestTime) || snapshot.at().isAfter(oldestTime))
-                                           .collect(Collectors.toList()));
+                                           .toList());
     }
 
-    public NodeTimeseries keepCurrentGenerationAfterWarmup(long currentGeneration) {
-        Optional<Instant> generationChange = generationChange(currentGeneration);
-        return keep(snapshot -> isOnCurrentGenerationAfterWarmup(snapshot, currentGeneration, generationChange));
+    public NodeTimeseries keepGenerationAfterWarmup(long generation, Optional<Node> node) {
+        Optional<Instant> generationChange = generationChange(generation);
+        return keep(snapshot -> isOnGenerationAfterWarmup(snapshot, node, generation, generationChange));
+    }
+    private boolean isOnGenerationAfterWarmup(NodeMetricSnapshot snapshot,
+                                              Optional<Node> node,
+                                              long generation,
+                                              Optional<Instant> generationChange) {
+        if ( ! node.isPresent()) return false; // Node has been removed
+        if ( ! onAtLeastGeneration(generation, snapshot)) return false;
+        if (recentlyChangedGeneration(snapshot, generationChange)) return false;
+        if (recentlyCameUp(snapshot, node.get())) return false;
+        return true;
     }
 
-    private boolean isOnCurrentGenerationAfterWarmup(NodeMetricSnapshot snapshot,
-                                                     long currentGeneration,
-                                                     Optional<Instant> generationChange) {
+    private boolean onAtLeastGeneration(long generation, NodeMetricSnapshot snapshot) {
         if (snapshot.generation() < 0) return true; // Content nodes do not yet send generation
-        if (snapshot.generation() < currentGeneration) return false;
-        if (generationChange.isEmpty()) return true;
-        return ! snapshot.at().isBefore(generationChange.get().plus(warmupDuration));
+        return snapshot.generation() >= generation;
+    }
+
+    private boolean recentlyChangedGeneration(NodeMetricSnapshot snapshot, Optional<Instant> generationChange) {
+        if (generationChange.isEmpty()) return false;
+        return snapshot.at().isBefore(generationChange.get().plus(warmupDuration));
+    }
+
+    private boolean recentlyCameUp(NodeMetricSnapshot snapshot, Node node) {
+        Optional<History.Event> up = node.history().event(History.Event.Type.up);
+        return up.isPresent() && snapshot.at().isBefore(up.get().at().plus(warmupDuration));
     }
 
 }

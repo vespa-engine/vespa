@@ -10,6 +10,7 @@
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/fastos/file.h>
 #include <cassert>
+#include <cstdlib>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".searchlib.common.bitvector");
@@ -22,17 +23,6 @@ using vespalib::alloc::Alloc;
 
 namespace {
 
-void verifyInclusiveStart(const search::BitVector & a, const search::BitVector & b) __attribute__((noinline));
-
-void verifyInclusiveStart(const search::BitVector & a, const search::BitVector & b)
-{
-    if (a.getStartIndex() < b.getStartIndex()) {
-        throw IllegalArgumentException(make_string("[%d, %d] starts before which is not allowed currently [%d, %d]",
-                                                   a.getStartIndex(), a.size(), b.getStartIndex(), b.size()),
-                                       VESPA_STRLOC);
-    }
-}
-
 constexpr size_t MMAP_LIMIT = 256_Mi;
 
 }
@@ -41,6 +31,8 @@ constexpr size_t MMAP_LIMIT = 256_Mi;
 namespace search {
 
 using vespalib::nbostream;
+
+bool BitVector::_enable_range_check = false;
 
 Alloc
 BitVector::allocatePaddedAndAligned(Index start, Index end, Index capacity, const Alloc* init_alloc)
@@ -79,7 +71,7 @@ void
 BitVector::clear()
 {
     memset(getActiveStart(), '\0', getActiveBytes());
-    setBit(size()); // Guard bit
+    set_bit_no_range_check(size()); // Guard bit
     setTrueBits(0);
 }
 
@@ -87,8 +79,13 @@ void
 BitVector::clearInterval(Index start, Index end)
 {
     clearIntervalNoInvalidation(Range(start, end));
-
     invalidateCachedCount();
+}
+
+void
+BitVector::store(Word &word, Word value) {
+    assert(!_enable_range_check || ((&word >= getActiveStart()) && (&word < (getActiveStart() + numActiveWords()))));
+    return store_unchecked(word, value);
 }
 
 void
@@ -104,7 +101,7 @@ BitVector::clearIntervalNoInvalidation(Range range_in)
     if (endw > startw) {
         store(_words[startw], _words[startw] & startBits(range.start()));
         for (Index i = startw + 1; i < endw; ++i) {
-            store(_words[i], 0);
+            store_unchecked(_words[i], 0);
         }
         store(_words[endw], _words[endw] & endBits(last));
     } else {
@@ -125,7 +122,7 @@ BitVector::setInterval(Index start_in, Index end_in)
     if (endw > startw) {
         store(_words[startw], _words[startw] | checkTab(range.start()));
         for (Index i = startw + 1; i < endw; ++i) {
-            store(_words[i], allBits());
+            store_unchecked(_words[i], allBits());
         }
         store(_words[endw], _words[endw] | ~endBits(last));
     } else {
@@ -184,19 +181,18 @@ BitVector::countInterval(Range range_in) const
 void
 BitVector::orWith(const BitVector & right)
 {
-    verifyInclusiveStart(*this, right);
+    Range range = sanitize(right.range());
+    if ( ! range.validNonZero()) return;
 
     if (right.size() < size()) {
-        if (right.size() > 0) {
-            ssize_t commonBytes = numActiveBytes(getStartIndex(), right.size()) - sizeof(Word);
-            if (commonBytes > 0) {
-                IAccelrated::getAccelerator().orBit(getActiveStart(), right.getWordIndex(getStartIndex()), commonBytes);
-            }
-            Index last(right.size() - 1);
-            store(getWordIndex(last)[0], getWordIndex(last)[0] | (load(right.getWordIndex(last)[0]) & ~endBits(last)));
+        ssize_t commonBytes = numActiveBytes(range.start(), range.end()) - sizeof(Word);
+        if (commonBytes > 0) {
+            IAccelrated::getAccelerator().orBit(getWordIndex(range.start()), right.getWordIndex(range.start()), commonBytes);
         }
+        Index last(range.end() - 1);
+        store(getWordIndex(last)[0], getWordIndex(last)[0] | (load(right.getWordIndex(last)[0]) & ~endBits(last)));
     } else {
-        IAccelrated::getAccelerator().orBit(getActiveStart(), right.getWordIndex(getStartIndex()), getActiveBytes());
+        IAccelrated::getAccelerator().orBit(getWordIndex(range.start()), right.getWordIndex(range.start()), getActiveBytes());
     }
     repairEnds();
     invalidateCachedCount();
@@ -218,7 +214,11 @@ BitVector::repairEnds()
 void
 BitVector::andWith(const BitVector & right)
 {
-    verifyInclusiveStart(*this, right);
+    Range range = sanitize(right.range());
+    if ( ! range.validNonZero()) {
+        clear();
+        return;
+    }
 
     uint32_t commonBytes = std::min(getActiveBytes(), numActiveBytes(getStartIndex(), right.size()));
     IAccelrated::getAccelerator().andBit(getActiveStart(), right.getWordIndex(getStartIndex()), commonBytes);
@@ -234,19 +234,18 @@ BitVector::andWith(const BitVector & right)
 void
 BitVector::andNotWith(const BitVector& right)
 {
-    verifyInclusiveStart(*this, right);
+    Range range = sanitize(right.range());
+    if ( ! range.validNonZero()) return;
 
     if (right.size() < size()) {
-        if (right.size() > 0) {
-            ssize_t commonBytes = numActiveBytes(getStartIndex(), right.size()) - sizeof(Word);
-            if (commonBytes > 0) {
-                IAccelrated::getAccelerator().andNotBit(getActiveStart(), right.getWordIndex(getStartIndex()), commonBytes);
-            }
-            Index last(right.size() - 1);
-            store(getWordIndex(last)[0], getWordIndex(last)[0] & ~(load(right.getWordIndex(last)[0]) & ~endBits(last)));
+        ssize_t commonBytes = numActiveBytes(range.start(), range.end()) - sizeof(Word);
+        if (commonBytes > 0) {
+            IAccelrated::getAccelerator().andNotBit(getWordIndex(range.start()), right.getWordIndex(range.start()), commonBytes);
         }
+        Index last(range.end() - 1);
+        store(getWordIndex(last)[0], getWordIndex(last)[0] & ~(load(right.getWordIndex(last)[0]) & ~endBits(last)));
     } else {
-        IAccelrated::getAccelerator().andNotBit(getActiveStart(), right.getWordIndex(getStartIndex()), getActiveBytes());
+        IAccelrated::getAccelerator().andNotBit(getWordIndex(range.start()), right.getWordIndex(range.start()), getActiveBytes());
     }
 
     repairEnds();
@@ -369,6 +368,15 @@ BitVector::create(const BitVector & rhs)
     return std::make_unique<AllocatedBitVector>(rhs);
 }
 
+void
+BitVector::consider_enable_range_check()
+{
+    const char *env = getenv("VESPA_BITVECTOR_RANGE_CHECK");
+    if (env != nullptr && strcmp(env, "true") == 0) {
+        _enable_range_check = true;
+    }
+}
+
 MMappedBitVector::MMappedBitVector(Index numberOfElements, FastOS_FileInterface &file,
                                    int64_t offset, Index doccount) :
     BitVector()
@@ -422,5 +430,17 @@ operator>>(nbostream &in, AllocatedBitVector &bv)
     return in;
 }
 
+class ConsiderEnableRangeCheckCaller
+{
+public:
+    ConsiderEnableRangeCheckCaller();
+};
+
+ConsiderEnableRangeCheckCaller::ConsiderEnableRangeCheckCaller()
+{
+    BitVector::consider_enable_range_check();
+}
+
+ConsiderEnableRangeCheckCaller consider_enable_range_check_caller;
 
 } // namespace search

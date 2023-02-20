@@ -34,10 +34,10 @@ public class CliApiHandler extends ThreadedHttpRequestHandler {
     @Override
     public HttpResponse handle(HttpRequest request) {
         try {
-            switch (request.getMethod()) {
-                case GET: return get(request);
-                default: return ErrorResponse.methodNotAllowed("Method '" + request.getMethod() + "' is not supported");
-            }
+            return switch (request.getMethod()) {
+                case GET -> get(request);
+                default -> ErrorResponse.methodNotAllowed("Method '" + request.getMethod() + "' is not supported");
+            };
         }
         catch (IllegalArgumentException e) {
             return ErrorResponse.badRequest(Exceptions.toMessageString(e));

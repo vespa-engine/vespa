@@ -73,7 +73,7 @@ TEST(ExecutionProfilerTest, resolve_names) {
     EXPECT_EQ(profiler.resolve("baz"), 2);
 }
 
-TEST(ExecutionProfilerTest, empty_report) {
+TEST(ExecutionProfilerTest, empty_tree_report) {
     Profiler profiler(64);
     profiler.resolve("foo");
     profiler.resolve("bar");
@@ -81,6 +81,24 @@ TEST(ExecutionProfilerTest, empty_report) {
     Slime slime;
     profiler.report(slime.setObject());
     fprintf(stderr, "%s\n", slime.toString().c_str());
+    EXPECT_EQ(slime["profiler"].asString().make_string(), "tree");
+    EXPECT_EQ(slime["depth"].asLong(), 64);
+    EXPECT_EQ(slime["total_time_ms"].asDouble(), 0.0);
+    EXPECT_EQ(slime["roots"].entries(), 0);
+    EXPECT_TRUE(find_path(slime, {}));
+}
+
+TEST(ExecutionProfilerTest, empty_flat_report) {
+    Profiler profiler(-64);
+    profiler.resolve("foo");
+    profiler.resolve("bar");
+    profiler.resolve("baz");
+    Slime slime;
+    profiler.report(slime.setObject());
+    fprintf(stderr, "%s\n", slime.toString().c_str());
+    EXPECT_EQ(slime["profiler"].asString().make_string(), "flat");
+    EXPECT_EQ(slime["topn"].asLong(), 64);
+    EXPECT_EQ(slime["total_time_ms"].asDouble(), 0.0);
     EXPECT_EQ(slime["roots"].entries(), 0);
     EXPECT_TRUE(find_path(slime, {}));
 }
@@ -96,6 +114,8 @@ TEST(ExecutionProfilerTest, perform_dummy_profiling) {
     Slime slime;
     profiler.report(slime.setObject());
     fprintf(stderr, "%s\n", slime.toString().c_str());
+    EXPECT_EQ(slime["profiler"].asString().make_string(), "tree");
+    EXPECT_EQ(slime["depth"].asLong(), 64);
     EXPECT_EQ(slime["roots"].entries(), 4);
     EXPECT_TRUE(find_path(slime, {{"foo", 3}, {"bar", 3}, {"baz", 6}, {"fox", 18}}));
     EXPECT_TRUE(find_path(slime, {{"foo", 3}, {"bar", 3}, {"fox", 6}}));
@@ -105,6 +125,42 @@ TEST(ExecutionProfilerTest, perform_dummy_profiling) {
     EXPECT_TRUE(find_path(slime, {{"bar", 3}, {"fox", 6}}));
     EXPECT_TRUE(find_path(slime, {{"baz", 3}, {"fox", 9}}));
     EXPECT_TRUE(find_path(slime, {{"fox", 3}}));
+}
+
+TEST(ExecutionProfilerTest, perform_flat_dummy_profiling) {
+    Profiler profiler(-64);
+    for (int i = 0; i < 3; ++i) {
+        foo(profiler);
+        bar(profiler);
+        baz(profiler);
+        fox(profiler);
+    }
+    Slime slime;
+    profiler.report(slime.setObject());
+    fprintf(stderr, "%s\n", slime.toString().c_str());
+    EXPECT_EQ(slime["profiler"].asString().make_string(), "flat");
+    EXPECT_EQ(slime["topn"].asLong(), 64);
+    EXPECT_EQ(slime["roots"].entries(), 4);
+    EXPECT_TRUE(find_path(slime, {{"foo", 3}}));
+    EXPECT_TRUE(find_path(slime, {{"bar", 6}}));
+    EXPECT_TRUE(find_path(slime, {{"baz", 18}}));
+    EXPECT_TRUE(find_path(slime, {{"fox", 72}}));
+}
+
+TEST(ExecutionProfilerTest, perform_limited_flat_dummy_profiling) {
+    Profiler profiler(-2);
+    for (int i = 0; i < 3; ++i) {
+        foo(profiler);
+        bar(profiler);
+        baz(profiler);
+        fox(profiler);
+    }
+    Slime slime;
+    profiler.report(slime.setObject());
+    fprintf(stderr, "%s\n", slime.toString().c_str());
+    EXPECT_EQ(slime["profiler"].asString().make_string(), "flat");
+    EXPECT_EQ(slime["topn"].asLong(), 2);
+    EXPECT_EQ(slime["roots"].entries(), 2);
 }
 
 TEST(ExecutionProfilerTest, perform_shallow_dummy_profiling) {
@@ -118,6 +174,8 @@ TEST(ExecutionProfilerTest, perform_shallow_dummy_profiling) {
     Slime slime;
     profiler.report(slime.setObject());
     fprintf(stderr, "%s\n", slime.toString().c_str());
+    EXPECT_EQ(slime["profiler"].asString().make_string(), "tree");
+    EXPECT_EQ(slime["depth"].asLong(), 2);
     EXPECT_EQ(slime["roots"].entries(), 4);
     EXPECT_TRUE(find_path(slime, {{"foo", 3}, {"bar", 3}}));
     EXPECT_TRUE(find_path(slime, {{"foo", 3}, {"bar", 3}}));
@@ -154,6 +212,24 @@ TEST(ExecutionProfilerTest, with_name_mapping) {
     EXPECT_TRUE(find_path(slime, {{"magic", 3}, {"fox", 6}}));
     EXPECT_TRUE(find_path(slime, {{"baz", 3}, {"fox", 9}}));
     EXPECT_TRUE(find_path(slime, {{"fox", 3}}));
+}
+
+TEST(ExecutionProfilerTest, flat_profiling_does_not_report_tasks_with_count_0) {
+    Profiler profiler(-2);
+    {
+        profiler.resolve("foo");
+        profiler.resolve("bar");
+        profiler.start(profiler.resolve("baz"));
+        profiler.complete();
+    }
+    Slime slime;
+    profiler.report(slime.setObject());
+    fprintf(stderr, "%s\n", slime.toString().c_str());
+    EXPECT_EQ(slime["profiler"].asString().make_string(), "flat");
+    EXPECT_EQ(slime["topn"].asLong(), 2);
+    EXPECT_EQ(slime["roots"].entries(), 1);
+    EXPECT_EQ(slime["roots"][0]["name"].asString().make_stringref(), "baz");
+    EXPECT_EQ(slime["roots"][0]["count"].asLong(), 1);
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()

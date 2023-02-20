@@ -16,6 +16,7 @@ public final class ZCurveExpression extends Expression {
     public ZCurveExpression() {
         super(PositionDataType.INSTANCE);
     }
+
     @Override
     protected void doExecute(ExecutionContext context) {
         Struct input = ((Struct) context.getValue());
@@ -60,4 +61,5 @@ public final class ZCurveExpression extends Expression {
     public int hashCode() {
         return getClass().hashCode();
     }
+
 }

@@ -54,19 +54,19 @@ TEST(MetricTest, mangled_name_lists_dimensions_in_lexicographic_order)
 {
     LongValueMetric m("test",
                       {{"xyz", "bar"}, {"abc", "foo"}, {"def", "baz"}},
-                      "");
+                      "", nullptr);
     EXPECT_EQ(vespalib::string("test{abc:foo,def:baz,xyz:bar}"), m.getMangledName());
 }
 
 TEST(MetricTest, mangling_does_not_change_original_metric_name)
 {
-    LongValueMetric m("test", {{"foo", "bar"}}, "");
+    LongValueMetric m("test", {{"foo", "bar"}}, "", nullptr);
     EXPECT_EQ(vespalib::string("test"), m.getName());
 }
 
 TEST(MetricTest, legacy_tags_do_not_create_mangled_name)
 {
-    LongValueMetric m("test", {{"foo"},{"bar"}}, "");
+    LongValueMetric m("test", {{"foo"},{"bar"}}, "", nullptr);
     EXPECT_EQ(vespalib::string("test"), m.getName());
     EXPECT_EQ(vespalib::string("test"), m.getMangledName());
 }

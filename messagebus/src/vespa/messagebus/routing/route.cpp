@@ -4,15 +4,13 @@
 
 namespace mbus {
 
-Route::Route() :
-    _hops()
-{ }
+Route::Route() = default;
 
 Route::Route(std::vector<Hop> lst) :
     _hops(std::move(lst))
 { }
 
-Route::~Route() { }
+Route::~Route() = default;
 
 Route &
 Route::addHop(Hop hop)
@@ -34,13 +32,6 @@ Route::removeHop(uint32_t i)
     Hop ret = std::move(_hops[i]);
     _hops.erase(_hops.begin() + i);
     return ret;
-}
-
-Route &
-Route::clearHops()
-{
-    _hops.clear();
-    return *this;
 }
 
 string

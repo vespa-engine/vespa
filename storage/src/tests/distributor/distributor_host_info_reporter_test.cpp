@@ -21,14 +21,9 @@ using BucketSpacesStats = BucketSpacesStatsProvider::BucketSpacesStats;
 using namespace ::testing;
 
 struct DistributorHostInfoReporterTest : Test {
-    void verifyBucketSpaceStats(const vespalib::Slime& root,
-                                uint16_t nodeIndex,
-                                const vespalib::string& bucketSpaceName,
-                                size_t bucketsTotal,
-                                size_t bucketsPending);
-    void verifyBucketSpaceStats(const vespalib::Slime& root,
-                                uint16_t nodeIndex,
-                                const vespalib::string& bucketSpaceName);
+    static void verifyBucketSpaceStats(const vespalib::Slime& root, uint16_t nodeIndex, const vespalib::string& bucketSpaceName,
+                                       size_t bucketsTotal, size_t bucketsPending);
+    static void verifyBucketSpaceStats(const vespalib::Slime& root, uint16_t nodeIndex, const vespalib::string& bucketSpaceName);
 };
 
 using ms = std::chrono::milliseconds;
@@ -40,18 +35,25 @@ struct MockedMinReplicaProvider : MinReplicaProvider
 {
     MinReplicaStats minReplica;
 
+    ~MockedMinReplicaProvider() override;
     std::unordered_map<uint16_t, uint32_t> getMinReplica() const override {
         return minReplica;
     }
 };
 
+MockedMinReplicaProvider::~MockedMinReplicaProvider() = default;
+
+
 struct MockedBucketSpacesStatsProvider : public BucketSpacesStatsProvider {
     PerNodeBucketSpacesStats stats;
 
+    ~MockedBucketSpacesStatsProvider() override;
     PerNodeBucketSpacesStats getBucketSpacesStats() const override {
         return stats;
     }
 };
+
+MockedBucketSpacesStatsProvider::~MockedBucketSpacesStatsProvider() = default;
 
 const vespalib::slime::Inspector&
 getNode(const vespalib::Slime& root, uint16_t nodeIndex)

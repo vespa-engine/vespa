@@ -277,6 +277,7 @@
       "public java.util.List arguments()",
       "public com.yahoo.searchlib.rankingexpression.RankingExpression getBody()",
       "public java.util.Map argumentTypes()",
+      "public com.yahoo.tensor.TensorType getArgumentType(java.lang.String)",
       "public java.util.Optional returnType()",
       "public com.yahoo.searchlib.rankingexpression.ExpressionFunction withName(java.lang.String)",
       "public com.yahoo.searchlib.rankingexpression.ExpressionFunction withBody(com.yahoo.searchlib.rankingexpression.RankingExpression)",

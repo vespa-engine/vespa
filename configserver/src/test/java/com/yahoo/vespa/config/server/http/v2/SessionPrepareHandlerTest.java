@@ -10,7 +10,6 @@ import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.NodeAllocationException;
-import com.yahoo.config.provision.Tags;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.jdisc.http.HttpRequest;
@@ -325,7 +324,7 @@ public class SessionPrepareHandlerTest extends SessionHandlerTest {
     }
 
     private long createSession(ApplicationId applicationId) {
-        return applicationRepository.createSession(applicationId, Tags.empty(), timeoutBudget, app, new BaseDeployLogger());
+        return applicationRepository.createSession(applicationId, timeoutBudget, app, new BaseDeployLogger());
     }
 
     private static class FailingSessionPrepareHandler extends SessionPrepareHandler {

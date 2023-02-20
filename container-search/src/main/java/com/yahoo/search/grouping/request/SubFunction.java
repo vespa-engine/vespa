@@ -32,7 +32,7 @@ public class SubFunction extends FunctionNode {
     public SubFunction copy() {
         return new SubFunction(getLabel(),
                                getLevelOrNull(),
-                               args().stream().map(arg -> arg.copy()).collect(Collectors.toList()));
+                               args().stream().map(arg -> arg.copy()).toList());
     }
 
     /**

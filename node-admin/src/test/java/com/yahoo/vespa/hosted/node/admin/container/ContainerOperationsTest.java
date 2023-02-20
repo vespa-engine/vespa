@@ -53,13 +53,13 @@ public class ContainerOperationsTest {
         assertEquals(List.of(c1.name(), c3.name()), containerEngine.listContainers(context).stream()
                 .map(PartialContainer::name)
                 .sorted()
-                .collect(Collectors.toList()));
+                .toList());
     }
 
     private Container createContainer(String name, boolean managed) {
         return new Container(new ContainerId("id-of-" + name), new ContainerName(name), Instant.EPOCH, PartialContainer.State.running,
                              "image-id", DockerImage.EMPTY, Map.of(), 42, 43, name,
-                             ContainerResources.UNLIMITED, List.of(), managed, List.of());
+                             ContainerResources.UNLIMITED, List.of(), managed);
     }
 
 }

@@ -2,7 +2,7 @@
 package com.yahoo.jdisc.http;
 
 import org.eclipse.jetty.http.HttpCookie;
-import org.eclipse.jetty.server.CookieCutter;
+import org.eclipse.jetty.server.Cookies;
 
 import java.util.Arrays;
 import java.util.HashSet;
@@ -13,8 +13,6 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
-
-import static java.util.stream.Collectors.toList;
 
 /**
  * A RFC 6265 compliant cookie.
@@ -180,7 +178,7 @@ public class Cookie {
     }
 
     public static List<Cookie> fromCookieHeader(String headerVal) {
-        CookieCutter cookieCutter = new CookieCutter();
+        Cookies cookieCutter = new Cookies();
         cookieCutter.addCookieField(headerVal);
         return Arrays.stream(cookieCutter.getCookies())
                 .map(servletCookie -> {
@@ -194,7 +192,7 @@ public class Cookie {
                     cookie.setHttpOnly(servletCookie.isHttpOnly());
                     return cookie;
                 })
-                .collect(toList());
+                .toList();
     }
 
     public static List<String> toSetCookieHeaders(Iterable<? extends Cookie> cookies) {
@@ -212,7 +210,7 @@ public class Cookie {
                                      0, /* version */
                                      Optional.ofNullable(cookie.getSameSite()).map(SameSite::jettySameSite).orElse(null)
                              ).getRFC6265SetCookie())
-                .collect(toList());
+                .toList();
     }
 
     public static Cookie fromSetCookieHeader(String headerVal) {

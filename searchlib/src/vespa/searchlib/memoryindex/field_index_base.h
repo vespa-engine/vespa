@@ -78,7 +78,7 @@ protected:
     GenerationHandler       _generationHandler;
     DictionaryTree          _dict;
     FeatureStore            _featureStore;
-    uint32_t                _fieldId;
+    const uint32_t          _fieldId;
     FieldIndexRemover       _remover;
     std::unique_ptr<IOrderedFieldIndexInserter> _inserter;
     index::FieldLengthCalculator _calculator;

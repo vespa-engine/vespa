@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespaget;
 
-import com.yahoo.document.fieldset.AllFields;
 import com.yahoo.document.fieldset.DocumentOnly;
 import com.yahoo.document.fieldset.DocIdOnly;
 import com.yahoo.documentapi.messagebus.protocol.DocumentProtocol;
@@ -39,6 +38,8 @@ public class CommandLineOptions {
     public static final String PRIORITY_OPTION = "priority";
     public static final String JSONOUTPUT_OPTION = "jsonoutput";
     public static final String XMLOUTPUT_OPTION = "xmloutput";
+    public static final String SHORTTENSORS_OPTION = "shorttensors";
+    public static final String DIRECTTENSORS_OPTION = "directtensors";
 
     private final Options options = createOptions();
     private final InputStream stdIn;
@@ -131,6 +132,13 @@ public class CommandLineOptions {
                 .desc("XML output")
                 .longOpt(XMLOUTPUT_OPTION).build());
 
+        // TODO Vespa 9: replace with --longtensors ?
+        options.addOption(Option.builder()
+                .longOpt(SHORTTENSORS_OPTION)
+                .desc("Output JSON tensors in short form. Will be the default on Vespa 9")
+                .hasArg(false)
+                .build());
+
         return options;
     }
 
@@ -159,6 +167,8 @@ public class CommandLineOptions {
             boolean showDocSize = cl.hasOption(SHOWDOCSIZE_OPTION);
             boolean jsonOutput = cl.hasOption(JSONOUTPUT_OPTION);
             boolean xmlOutput = cl.hasOption(XMLOUTPUT_OPTION);
+            boolean shortTensors = cl.hasOption(SHORTTENSORS_OPTION);
+            boolean directTensors = cl.hasOption(DIRECTTENSORS_OPTION);
             int trace = getTrace(cl);
             DocumentProtocol.Priority priority = getPriority(cl);
             double timeout = getTimeout(cl);
@@ -209,6 +219,8 @@ public class CommandLineOptions {
                     .setPriority(priority)
                     .setTimeout(timeout)
                     .setJsonOutput(!xmlOutput)
+                    .setTensorShortForm(shortTensors)
+                    .setTensorDirectValues(directTensors)
                     .build();
         } catch (ParseException pe) {
             throw new IllegalArgumentException(pe.getMessage());

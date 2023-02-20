@@ -5,9 +5,10 @@ import com.google.common.collect.ImmutableSortedSet;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.ClusterSpec;
-import com.yahoo.config.provision.LoadBalancerSettings;
+import com.yahoo.config.provision.ZoneEndpoint;
 
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -20,11 +21,11 @@ public class LoadBalancerSpec {
     private final ApplicationId application;
     private final ClusterSpec.Id cluster;
     private final Set<Real> reals;
-    private final LoadBalancerSettings settings;
+    private final ZoneEndpoint settings;
     private final CloudAccount cloudAccount;
 
     public LoadBalancerSpec(ApplicationId application, ClusterSpec.Id cluster, Set<Real> reals,
-                            LoadBalancerSettings settings, CloudAccount cloudAccount) {
+                            ZoneEndpoint settings, CloudAccount cloudAccount) {
         this.application = Objects.requireNonNull(application);
         this.cluster = Objects.requireNonNull(cluster);
         this.reals = ImmutableSortedSet.copyOf(Objects.requireNonNull(reals));
@@ -48,7 +49,7 @@ public class LoadBalancerSpec {
     }
 
     /** Static user-configured settings for this load balancer. */
-    public LoadBalancerSettings settings() {
+    public ZoneEndpoint settings() {
         return settings;
     }
 

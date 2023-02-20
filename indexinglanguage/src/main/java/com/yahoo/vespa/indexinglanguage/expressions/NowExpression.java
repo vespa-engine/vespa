@@ -46,13 +46,8 @@ public final class NowExpression extends Expression {
 
     @Override
     public boolean equals(Object obj) {
-        if (!(obj instanceof NowExpression)) {
-            return false;
-        }
-        NowExpression rhs = (NowExpression)obj;
-        if (timer != rhs.timer) {
-            return false;
-        }
+        if (!(obj instanceof NowExpression rhs)) return false;
+        if (timer != rhs.timer) return false;
         return true;
     }
 

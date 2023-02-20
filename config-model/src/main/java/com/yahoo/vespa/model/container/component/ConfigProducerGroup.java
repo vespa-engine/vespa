@@ -2,7 +2,8 @@
 package com.yahoo.vespa.model.container.component;
 
 import com.yahoo.component.ComponentId;
-import com.yahoo.config.model.producer.AbstractConfigProducer;
+import com.yahoo.config.model.producer.AnyConfigProducer;
+import com.yahoo.config.model.producer.TreeConfigProducer;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -16,11 +17,11 @@ import java.util.Map;
  *
  * @author Tony Vaagenes
  */
-public class ConfigProducerGroup<CHILD extends AbstractConfigProducer<?>> extends AbstractConfigProducer<CHILD> {
+public class ConfigProducerGroup<CHILD extends AnyConfigProducer> extends TreeConfigProducer<CHILD> {
 
     private final Map<ComponentId, CHILD> producerById = new LinkedHashMap<>();
 
-    public ConfigProducerGroup(AbstractConfigProducer parent, String subId) {
+    public ConfigProducerGroup(TreeConfigProducer<? super ConfigProducerGroup> parent, String subId) {
         super(parent, subId);
     }
 

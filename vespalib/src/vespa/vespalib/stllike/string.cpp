@@ -1,15 +1,13 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/vespalib/stllike/string.hpp>
-#include <ostream>
 #include <istream>
+#include <ostream>
 
 namespace vespalib {
 
-const stringref::size_type stringref::npos;
-
 stringref::size_type
-stringref::rfind(const char * s, size_type e) const {
+stringref::rfind(const char * s, size_type e) const noexcept {
     size_type n = strlen(s);
     if (n <= size()) {
         size_type sz = std::min(size()-n, e);
@@ -30,7 +28,7 @@ stringref::rfind(const char * s, size_type e) const {
 }
 
 stringref::size_type
-stringref::find(stringref s, size_type start) const {
+stringref::find(stringref s, size_type start) const noexcept {
     const char *buf = begin()+start;
     const char *e = end() - s.size();
     while (buf <= e) {
@@ -69,7 +67,7 @@ template std::ostream & operator << (std::ostream & os, const string & v);
 template std::istream & operator >> (std::istream & is, string & v);
 
 string
-operator + (stringref a, const char * b)
+operator + (stringref a, const char * b) noexcept
 {
     string t(a);
     t += b;
@@ -77,7 +75,7 @@ operator + (stringref a, const char * b)
 }
 
 string
-operator + (const char * a, stringref b)
+operator + (const char * a, stringref b) noexcept
 {
     string t(a);
     t += b;
@@ -85,7 +83,7 @@ operator + (const char * a, stringref b)
 }
 
 string
-operator + (stringref a, stringref b)
+operator + (stringref a, stringref b) noexcept
 {
     string t(a);
     t += b;
@@ -94,13 +92,13 @@ operator + (stringref a, stringref b)
 
 template class small_string<48>;
 
-template string operator + (const string & a, const string & b);
-template string operator + (const string & a, stringref b);
-template string operator + (stringref a, const string & b);
-template string operator + (const string & a, const char * b);
-template string operator + (const  char * a, const string & b);
+template string operator + (const string & a, const string & b) noexcept;
+template string operator + (const string & a, stringref b) noexcept;
+template string operator + (stringref a, const string & b) noexcept;
+template string operator + (const string & a, const char * b) noexcept;
+template string operator + (const  char * a, const string & b) noexcept;
 
-const string &empty_string() {
+const string &empty_string() noexcept {
     static string empty;
     return empty;
 }

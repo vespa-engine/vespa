@@ -5,13 +5,13 @@ import com.google.common.base.Preconditions;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.ConfigModelContext;
 import com.yahoo.config.model.deploy.DeployState;
-import com.yahoo.config.model.producer.AbstractConfigProducer;
+import com.yahoo.config.model.producer.AnyConfigProducer;
+import com.yahoo.config.model.producer.TreeConfigProducer;
 import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.Zone;
-import com.yahoo.documentapi.messagebus.protocol.DocumentProtocol;
 import com.yahoo.documentmodel.NewDocumentType;
 import com.yahoo.metrics.MetricsmanagerConfig;
 import com.yahoo.vespa.config.content.AllClustersBucketSpacesConfig;
@@ -21,6 +21,7 @@ import com.yahoo.vespa.config.content.MessagetyperouteselectorpolicyConfig;
 import com.yahoo.vespa.config.content.StorDistributionConfig;
 import com.yahoo.vespa.config.content.core.BucketspacesConfig;
 import com.yahoo.vespa.config.content.core.StorDistributormanagerConfig;
+import com.yahoo.vespa.model.AbstractService;
 import com.yahoo.vespa.model.HostResource;
 import com.yahoo.vespa.model.admin.Admin;
 import com.yahoo.vespa.model.admin.clustercontroller.ClusterControllerCluster;
@@ -48,6 +49,7 @@ import com.yahoo.vespa.model.content.StorageGroup;
 import com.yahoo.vespa.model.content.engines.PersistenceEngine;
 import com.yahoo.vespa.model.content.engines.ProtonEngine;
 import com.yahoo.vespa.model.content.storagecluster.StorageCluster;
+import com.yahoo.vespa.model.routing.DocumentProtocol;
 import com.yahoo.vespa.model.search.IndexedSearchCluster;
 import com.yahoo.vespa.model.search.Tuning;
 import org.w3c.dom.Element;
@@ -62,15 +64,13 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.logging.Level;
 
-import static java.util.stream.Collectors.toList;
-
 /**
  * A content cluster.
  *
  * @author mostly somebody unknown
  * @author bratseth
  */
-public class ContentCluster extends AbstractConfigProducer<AbstractConfigProducer<?>> implements
+public class ContentCluster extends TreeConfigProducer<AnyConfigProducer> implements
                                                            DistributionConfig.Producer,
                                                            StorDistributionConfig.Producer,
                                                            StorDistributormanagerConfig.Producer,
@@ -156,10 +156,6 @@ public class ContentCluster extends AbstractConfigProducer<AbstractConfigProduce
             ModelElement tuning = contentElement.child("tuning");
             if (tuning != null)
                 setupTuning(c, tuning);
-
-            ModelElement experimental = contentElement.child("experimental");
-            if (experimental != null)
-                setupExperimental(c, experimental);
 
             if (context.getParentProducer().getRoot() == null) return c;
 
@@ -251,10 +247,6 @@ public class ContentCluster extends AbstractConfigProducer<AbstractConfigProduce
             return 0.0;
         }
 
-        private void setupExperimental(ContentCluster cluster, ModelElement experimental) {
-            // Put handling of experimental flags here
-        }
-
         private void validateGroupSiblings(String cluster, StorageGroup group) {
             Set<String> siblings = new HashSet<>();
             for (StorageGroup g : group.getSubgroups()) {
@@ -304,7 +296,7 @@ public class ContentCluster extends AbstractConfigProducer<AbstractConfigProduce
             }
             else { // self-hosted: Put cluster controller on config servers or use explicit cluster controllers
                 if (admin.getClusterControllers() == null) {
-                    var hosts = admin.getConfigservers().stream().map(s -> s.getHostResource()).collect(toList());
+                    var hosts = admin.getConfigservers().stream().map(AbstractService::getHostResource).toList();
                     if (hosts.size() > 1) {
                         var message = "When having content clusters and more than 1 config server " +
                                       "it is recommended to configure cluster controllers explicitly.";
@@ -353,7 +345,7 @@ public class ContentCluster extends AbstractConfigProducer<AbstractConfigProduce
             return admin.getClusterControllers();
         }
 
-        private ClusterControllerContainerCluster createClusterControllers(AbstractConfigProducer<?> parent,
+        private ClusterControllerContainerCluster createClusterControllers(TreeConfigProducer<?> parent,
                                                                            Collection<HostResource> hosts,
                                                                            String name,
                                                                            boolean runStandaloneZooKeeper,
@@ -394,7 +386,7 @@ public class ContentCluster extends AbstractConfigProducer<AbstractConfigProduce
 
     }
 
-    private ContentCluster(AbstractConfigProducer<?> parent, String clusterId,
+    private ContentCluster(TreeConfigProducer<?> parent, String clusterId,
                            Map<String, NewDocumentType> documentDefinitions,
                            Set<NewDocumentType> globallyDistributedDocuments,
                            String routingSelection, Zone zone, boolean isHosted) {
@@ -449,16 +441,7 @@ public class ContentCluster extends AbstractConfigProducer<AbstractConfigProduce
     @Override
     public void getConfig(MessagetyperouteselectorpolicyConfig.Builder builder) {
         if ( ! getSearch().hasIndexedCluster()) return;
-        builder.defaultroute(com.yahoo.vespa.model.routing.DocumentProtocol.getDirectRouteName(getConfigId()))
-               .route(new MessagetyperouteselectorpolicyConfig.Route.Builder()
-                              .messagetype(DocumentProtocol.MESSAGE_PUTDOCUMENT)
-                              .name(com.yahoo.vespa.model.routing.DocumentProtocol.getIndexedRouteName(getConfigId())))
-               .route(new MessagetyperouteselectorpolicyConfig.Route.Builder()
-                              .messagetype(DocumentProtocol.MESSAGE_REMOVEDOCUMENT)
-                              .name(com.yahoo.vespa.model.routing.DocumentProtocol.getIndexedRouteName(getConfigId())))
-               .route(new MessagetyperouteselectorpolicyConfig.Route.Builder()
-                              .messagetype(DocumentProtocol.MESSAGE_UPDATEDOCUMENT)
-                              .name(com.yahoo.vespa.model.routing.DocumentProtocol.getIndexedRouteName(getConfigId())));
+        DocumentProtocol.getConfig(builder, getConfigId());
     }
 
     public com.yahoo.vespa.model.content.StorageGroup getRootGroup() {
@@ -539,7 +522,7 @@ public class ContentCluster extends AbstractConfigProducer<AbstractConfigProduce
         super.validate();
         if (search.usesHierarchicDistribution() && !isHosted) {
             // validate manually configured groups
-            new IndexedHierarchicDistributionValidator(search.getClusterName(), rootGroup, redundancy, search.getIndexed().getTuning().dispatch.getDispatchPolicy()).validate();
+            new IndexedHierarchicDistributionValidator(rootGroup, redundancy, search.getIndexed().getTuning().dispatch.getDispatchPolicy()).validate();
         }
         new ReservedDocumentTypeNameValidator().validate(documentDefinitions);
         new GlobalDistributionValidator().validate(documentDefinitions, globallyDistributedDocuments);

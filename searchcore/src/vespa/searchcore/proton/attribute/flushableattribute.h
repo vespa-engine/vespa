@@ -2,10 +2,9 @@
 
 #pragma once
 
+#include <vespa/searchcore/proton/common/hw_info.h>
 #include <vespa/searchcorespi/flush/iflushtarget.h>
 #include <vespa/searchlib/common/tunefileinfo.h>
-#include <vespa/searchcore/proton/common/hw_info.h>
-
 
 namespace search { class AttributeVector; }
 
@@ -14,8 +13,8 @@ namespace vespalib { class ISequencedTaskExecutor; }
 
 namespace proton {
 
-
 class AttributeDirectory;
+class TransientResourceUsage;
 
 /**
  * Implementation of IFlushTarget interface for attribute vectors.
@@ -43,7 +42,7 @@ private:
     Task::UP internalInitFlush(SerialNum currentSerial);
 
 public:
-    typedef std::shared_ptr<FlushableAttribute> SP;
+    using SP = std::shared_ptr<FlushableAttribute>;
 
     /**
      * Creates a new instance using the given attribute vector and the
@@ -59,10 +58,11 @@ public:
                        vespalib::ISequencedTaskExecutor &attributeFieldWriter,
                        const HwInfo &hwInfo);
 
-    virtual
-    ~FlushableAttribute();
+    virtual ~FlushableAttribute();
 
     void setCleanUpAfterFlush(bool cleanUp) { _cleanUpAfterFlush = cleanUp; }
+
+    TransientResourceUsage get_transient_resource_usage() const;
 
     // Implements IFlushTarget
     virtual MemoryGain getApproxMemoryGain() const override;

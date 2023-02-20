@@ -2,12 +2,13 @@
 
 #pragma once
 
-#include "rank_program.h"
+#include <vespa/searchlib/common/feature.h>
 #include <vespa/eval/eval/value.h>
 #include <map>
 
-namespace search {
-namespace fef {
+namespace search::fef {
+
+class RankProgram;
 
 struct Utils
 {
@@ -33,5 +34,4 @@ struct Utils
 
 };
 
-} // namespace fef
-} // namespace search
+}

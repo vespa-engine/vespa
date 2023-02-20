@@ -9,6 +9,7 @@
 #include <vespa/searchsummary/docsummary/resultconfig.h>
 
 namespace document { class DocumentTypeRepo; }
+namespace search::index { class Schema; }
 
 namespace proton {
 
@@ -27,8 +28,8 @@ public:
      */
     class ISummarySetup : public search::docsummary::IDocsumEnvironment {
     public:
-        typedef std::unique_ptr<ISummarySetup> UP;
-        typedef std::shared_ptr<ISummarySetup> SP;
+        using UP = std::unique_ptr<ISummarySetup>;
+        using SP = std::shared_ptr<ISummarySetup>;
 
         ~ISummarySetup() override = default;
 
@@ -37,8 +38,8 @@ public:
         virtual search::docsummary::IDocsumStore::UP createDocsumStore() = 0;
     };
 
-    typedef std::unique_ptr<ISummaryManager> UP;
-    typedef std::shared_ptr<ISummaryManager> SP;
+    using UP = std::unique_ptr<ISummaryManager>;
+    using SP = std::shared_ptr<ISummaryManager>;
 
     virtual ~ISummaryManager() = default;
 
@@ -46,7 +47,8 @@ public:
     createSummarySetup(const SummaryConfig &summaryCfg,
                        const JuniperrcConfig &juniperCfg,
                        const std::shared_ptr<const document::DocumentTypeRepo> &repo,
-                       const std::shared_ptr<search::IAttributeManager> &attributeMgr) = 0;
+                       const std::shared_ptr<search::IAttributeManager> &attributeMgr,
+                       const search::index::Schema& schema) = 0;
 
     virtual search::IDocumentStore &getBackingStore() = 0;
 protected:

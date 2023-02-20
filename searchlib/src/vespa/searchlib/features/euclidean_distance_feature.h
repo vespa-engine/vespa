@@ -14,8 +14,8 @@ template <typename DataType>
 class EuclideanDistanceExecutor : public fef::FeatureExecutor {
 
 public:
-    typedef search::attribute::AttributeContent<DataType> BufferType;
-    typedef std::vector<DataType> QueryVectorType;
+    using BufferType = search::attribute::AttributeContent<DataType>;
+    using QueryVectorType = std::vector<DataType>;
 
 private:
     const search::attribute::IAttributeVector &_attribute;

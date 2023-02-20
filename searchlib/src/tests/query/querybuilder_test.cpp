@@ -105,7 +105,7 @@ Node::UP createQueryTree() {
             n.addTerm(str[2], weight[2]);
         }
         builder.addRegExpTerm(str[5], view[5], id[5], weight[5]);
-        builder.addSameElement(3, view[4]);
+        builder.addSameElement(3, view[4], id[4], weight[4]);
         {
             builder.addStringTerm(str[4], view[4], id[4], weight[5]);
             builder.addStringTerm(str[5], view[5], id[5], weight[6]);
@@ -174,31 +174,28 @@ as_node(Node* node)
 
 template <class NodeTypes>
 void checkQueryTreeTypes(Node *node) {
-    typedef typename NodeTypes::And And;
-    typedef typename NodeTypes::AndNot AndNot;
-    typedef typename NodeTypes::NumberTerm NumberTerm;
-    //typedef typename NodeTypes::NumberTerm FloatTrm;
-    typedef typename NodeTypes::Near Near;
-    typedef typename NodeTypes::ONear ONear;
-    typedef typename NodeTypes::SameElement SameElement;
-    typedef typename NodeTypes::Or Or;
-    typedef typename NodeTypes::Phrase Phrase;
-    typedef typename NodeTypes::PrefixTerm PrefixTerm;
-    typedef typename NodeTypes::RangeTerm RangeTerm;
-    typedef typename NodeTypes::Rank Rank;
-    typedef typename NodeTypes::StringTerm StringTerm;
-    //typedef typename NodeTypes::SubstringTerm SubstrTr;
-    typedef typename NodeTypes::SuffixTerm SuffixTerm;
-    typedef typename NodeTypes::LocationTerm LocationTerm;
-    //typedef typename NodeTypes::WeightedSetTerm WeightedSetTerm;
-    typedef typename NodeTypes::DotProduct DotProduct;
-    typedef typename NodeTypes::WandTerm WandTerm;
-    typedef typename NodeTypes::WeakAnd WeakAnd;
-    typedef typename NodeTypes::PredicateQuery PredicateQuery;
-    typedef typename NodeTypes::RegExpTerm RegExpTerm;
-    typedef typename NodeTypes::TrueQueryNode TrueNode;
-    typedef typename NodeTypes::FalseQueryNode FalseNode;
-    typedef typename NodeTypes::FuzzyTerm FuzzyTerm;
+    using And = typename NodeTypes::And;
+    using AndNot = typename NodeTypes::AndNot;
+    using NumberTerm = typename NodeTypes::NumberTerm;
+    using Near = typename NodeTypes::Near;
+    using ONear = typename NodeTypes::ONear;
+    using SameElement = typename NodeTypes::SameElement;
+    using Or = typename NodeTypes::Or;
+    using Phrase = typename NodeTypes::Phrase;
+    using PrefixTerm = typename NodeTypes::PrefixTerm;
+    using RangeTerm = typename NodeTypes::RangeTerm;
+    using Rank = typename NodeTypes::Rank;
+    using StringTerm = typename NodeTypes::StringTerm;
+    using SuffixTerm = typename NodeTypes::SuffixTerm;
+    using LocationTerm = typename NodeTypes::LocationTerm;
+    using DotProduct = typename NodeTypes::DotProduct;
+    using WandTerm = typename NodeTypes::WandTerm;
+    using WeakAnd = typename NodeTypes::WeakAnd;
+    using PredicateQuery = typename NodeTypes::PredicateQuery;
+    using RegExpTerm = typename NodeTypes::RegExpTerm;
+    using TrueNode = typename NodeTypes::TrueQueryNode;
+    using FalseNode = typename NodeTypes::FalseQueryNode;
+    using FuzzyTerm = typename NodeTypes::FuzzyTerm;
 
     ASSERT_TRUE(node);
     auto* and_node = as_node<And>(node);
@@ -334,30 +331,30 @@ void checkQueryTreeTypes(Node *node) {
 }
 
 struct AbstractTypes {
-    typedef search::query::And And;
-    typedef search::query::AndNot AndNot;
-    typedef search::query::NumberTerm NumberTerm;
-    typedef search::query::LocationTerm LocationTerm;
-    typedef search::query::Near Near;
-    typedef search::query::ONear ONear;
-    typedef search::query::SameElement SameElement;
-    typedef search::query::Or Or;
-    typedef search::query::Phrase Phrase;
-    typedef search::query::PrefixTerm PrefixTerm;
-    typedef search::query::RangeTerm RangeTerm;
-    typedef search::query::Rank Rank;
-    typedef search::query::StringTerm StringTerm;
-    typedef search::query::SubstringTerm SubstringTerm;
-    typedef search::query::SuffixTerm SuffixTerm;
-    typedef search::query::WeightedSetTerm WeightedSetTerm;
-    typedef search::query::DotProduct DotProduct;
-    typedef search::query::WandTerm WandTerm;
-    typedef search::query::WeakAnd WeakAnd;
-    typedef search::query::PredicateQuery PredicateQuery;
-    typedef search::query::RegExpTerm RegExpTerm;
-    typedef search::query::TrueQueryNode TrueQueryNode;
-    typedef search::query::FalseQueryNode FalseQueryNode;
-    typedef search::query::FuzzyTerm FuzzyTerm;
+    using And = search::query::And;
+    using AndNot = search::query::AndNot;
+    using NumberTerm = search::query::NumberTerm;
+    using LocationTerm = search::query::LocationTerm;
+    using Near = search::query::Near;
+    using ONear = search::query::ONear;
+    using SameElement = search::query::SameElement;
+    using Or = search::query::Or;
+    using Phrase = search::query::Phrase;
+    using PrefixTerm = search::query::PrefixTerm;
+    using RangeTerm = search::query::RangeTerm;
+    using Rank = search::query::Rank;
+    using StringTerm = search::query::StringTerm;
+    using SubstringTerm = search::query::SubstringTerm;
+    using SuffixTerm = search::query::SuffixTerm;
+    using WeightedSetTerm = search::query::WeightedSetTerm;
+    using DotProduct = search::query::DotProduct;
+    using WandTerm = search::query::WandTerm;
+    using WeakAnd = search::query::WeakAnd;
+    using PredicateQuery = search::query::PredicateQuery;
+    using RegExpTerm = search::query::RegExpTerm;
+    using TrueQueryNode = search::query::TrueQueryNode;
+    using FalseQueryNode = search::query::FalseQueryNode;
+    using FuzzyTerm = search::query::FuzzyTerm;
 };
 
 // Builds a tree with simplequery and checks that the results have the
@@ -384,7 +381,7 @@ struct MyONear : ONear { MyONear(size_t dist) : ONear(dist) {} };
 struct MyWeakAnd : WeakAnd { MyWeakAnd(uint32_t minHits, const vespalib::string & v) : WeakAnd(minHits, v) {} };
 struct MyOr : Or {};
 struct MyPhrase : Phrase { MyPhrase(const string &f, int32_t i, Weight w) : Phrase(f, i, w) {}};
-struct MySameElement : SameElement { MySameElement(const string &f) : SameElement(f) {}};
+struct MySameElement : SameElement { MySameElement(const string &f, int32_t i, Weight w) : SameElement(f, i, w) {}};
 
 struct MyWeightedSetTerm : WeightedSetTerm {
     MyWeightedSetTerm(uint32_t n, const string &f, int32_t i, Weight w) : WeightedSetTerm(n, f, i, w) {}
@@ -461,32 +458,32 @@ struct MyFuzzyTerm : FuzzyTerm {
 };
 
 struct MyQueryNodeTypes {
-    typedef MyAnd And;
-    typedef MyAndNot AndNot;
-    typedef MyEquiv Equiv;
-    typedef MyNumberTerm NumberTerm;
-    typedef MyLocationTerm LocationTerm;
-    typedef MyNear Near;
-    typedef MyONear ONear;
-    typedef MyOr Or;
-    typedef MyPhrase Phrase;
-    typedef MySameElement SameElement;
-    typedef MyPrefixTerm PrefixTerm;
-    typedef MyRangeTerm RangeTerm;
-    typedef MyRank Rank;
-    typedef MyStringTerm StringTerm;
-    typedef MySubstringTerm SubstringTerm;
-    typedef MySuffixTerm SuffixTerm;
-    typedef MyWeakAnd WeakAnd;
-    typedef MyWeightedSetTerm WeightedSetTerm;
-    typedef MyDotProduct DotProduct;
-    typedef MyWandTerm WandTerm;
-    typedef MyPredicateQuery PredicateQuery;
-    typedef MyRegExpTerm RegExpTerm;
-    typedef MyNearestNeighborTerm NearestNeighborTerm;
-    typedef MyTrue TrueQueryNode;
-    typedef MyFalse FalseQueryNode;
-    typedef MyFuzzyTerm FuzzyTerm;
+    using And = MyAnd;
+    using AndNot = MyAndNot;
+    using Equiv = MyEquiv;
+    using NumberTerm = MyNumberTerm;
+    using LocationTerm = MyLocationTerm;
+    using Near = MyNear;
+    using ONear = MyONear;
+    using Or = MyOr;
+    using Phrase = MyPhrase;
+    using SameElement = MySameElement;
+    using PrefixTerm = MyPrefixTerm;
+    using RangeTerm = MyRangeTerm;
+    using Rank = MyRank;
+    using StringTerm = MyStringTerm;
+    using SubstringTerm = MySubstringTerm;
+    using SuffixTerm = MySuffixTerm;
+    using WeakAnd = MyWeakAnd;
+    using WeightedSetTerm = MyWeightedSetTerm;
+    using DotProduct = MyDotProduct;
+    using WandTerm = MyWandTerm;
+    using PredicateQuery = MyPredicateQuery;
+    using RegExpTerm = MyRegExpTerm;
+    using NearestNeighborTerm = MyNearestNeighborTerm;
+    using TrueQueryNode = MyTrue;
+    using FalseQueryNode = MyFalse;
+    using FuzzyTerm = MyFuzzyTerm;
 };
 
 TEST("require that Custom Query Trees Can Be Built") {

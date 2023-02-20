@@ -192,7 +192,7 @@ public class ConfigServerBootstrap extends AbstractComponent implements Runnable
 
     private void redeployAllApplications() throws InterruptedException {
         Instant end = clock.instant().plus(maxDurationOfRedeployment);
-        List<ApplicationId> applicationsToRedeploy = applicationRepository.listApplications();
+        List<ApplicationId> applicationsToRedeploy = new ArrayList<>(applicationRepository.listApplications());
         Collections.shuffle(applicationsToRedeploy);
         long failCount = 0;
         do {
@@ -229,12 +229,15 @@ public class ConfigServerBootstrap extends AbstractComponent implements Runnable
         List<ApplicationId> failedDeployments = checkDeployments(deployments);
 
         executor.shutdown();
-        executor.awaitTermination(365, TimeUnit.DAYS); // Timeout should never happen
+        if (! executor.awaitTermination(5, TimeUnit.HOURS)) {
+            log.log(Level.SEVERE, () -> "Unable to shutdown " + executor + ", waited 5 hours. Exiting");
+            System.exit(1);
+        }
 
         return failedDeployments;
     }
 
-    private enum DeploymentStatus { inProgress, done, failed}
+    private enum DeploymentStatus { inProgress, done, failed }
 
     private List<ApplicationId> checkDeployments(Map<ApplicationId, Future<?>> deployments) {
         int applicationCount = deployments.size();

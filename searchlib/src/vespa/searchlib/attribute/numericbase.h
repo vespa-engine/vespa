@@ -13,8 +13,8 @@ class ReaderBase;
 class NumericAttribute : public AttributeVector
 {
 protected:
-    typedef IEnumStore::Index       EnumIndex;
-    typedef IEnumStore::EnumVector  EnumVector;
+    using EnumIndex = IEnumStore::Index;
+    using EnumVector = IEnumStore::EnumVector;
 
     NumericAttribute(const vespalib::string & name, const AttributeVector::Config & cfg)
         : AttributeVector(name, cfg)

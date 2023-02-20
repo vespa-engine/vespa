@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchlib.rankingexpression.rule;
 
-import com.google.common.collect.ImmutableList;
 import com.yahoo.searchlib.rankingexpression.evaluation.Context;
 import com.yahoo.searchlib.rankingexpression.evaluation.Value;
 
@@ -18,27 +17,23 @@ public final class Arguments implements Serializable {
 
     public static final Arguments EMPTY = new Arguments();
 
-    private final ImmutableList<ExpressionNode> expressions;
+    private final List<ExpressionNode> expressions;
 
     public Arguments() {
-        this(ImmutableList.of());
+        this(List.of());
     }
 
     public Arguments(ExpressionNode singleArgument) {
-        this(ImmutableList.of(singleArgument));
+        this(List.of(singleArgument));
     }
 
     public Arguments(List<? extends ExpressionNode> expressions) {
         if (expressions == null) {
-            this.expressions = ImmutableList.of();
+            this.expressions = List.of();
             return;
         }
 
-        // Build in a roundabout way because java generics and lists
-        ImmutableList.Builder<ExpressionNode> b = ImmutableList.builder();
-        for (ExpressionNode node : expressions)
-            b.add(node);
-        this.expressions = b.build();
+        this.expressions = List.copyOf(expressions);
     }
 
     /** Returns an unmodifiable list of the expressions in this, never null */

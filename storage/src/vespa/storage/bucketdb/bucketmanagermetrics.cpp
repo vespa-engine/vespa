@@ -4,7 +4,6 @@
 #include <vespa/document/bucket/fixed_bucket_spaces.h>
 #include <vespa/storage/common/content_bucket_space_repo.h>
 #include <vespa/vespalib/util/exceptions.h>
-#include <cassert>
 
 namespace storage {
 
@@ -30,13 +29,13 @@ ContentBucketDbMetrics::ContentBucketDbMetrics(metrics::MetricSet* owner)
 ContentBucketDbMetrics::~ContentBucketDbMetrics() = default;
 
 BucketSpaceMetrics::BucketSpaceMetrics(const vespalib::string& space_name, metrics::MetricSet* owner)
-        : metrics::MetricSet("bucket_space", {{"bucketSpace", space_name}}, "", owner),
-          buckets_total("buckets_total", {}, "Total number buckets present in the bucket space (ready + not ready)", this),
-          docs("docs", {}, "Documents stored in the bucket space", this),
-          bytes("bytes", {}, "Bytes stored across all documents in the bucket space", this),
-          active_buckets("active_buckets", {}, "Number of active buckets in the bucket space", this),
-          ready_buckets("ready_buckets", {}, "Number of ready buckets in the bucket space", this),
-          bucket_db_metrics(this)
+    : metrics::MetricSet("bucket_space", {{"bucketSpace", space_name}}, "", owner),
+      buckets_total("buckets_total", {}, "Total number buckets present in the bucket space (ready + not ready)", this),
+      docs("docs", {}, "Documents stored in the bucket space", this),
+      bytes("bytes", {}, "Bytes stored across all documents in the bucket space", this),
+      active_buckets("active_buckets", {}, "Number of active buckets in the bucket space", this),
+      ready_buckets("ready_buckets", {}, "Number of ready buckets in the bucket space", this),
+      bucket_db_metrics(this)
 {}
 
 BucketSpaceMetrics::~BucketSpaceMetrics() = default;

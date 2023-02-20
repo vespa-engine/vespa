@@ -130,11 +130,11 @@ TEST("requireThatNegativeTermsAreSkipped") {
     EXPECT_EQUAL(id[1], term_data[1]->getUniqueId());
 }
 
-TEST("requireThatSameElementIsSkipped")
+TEST("requireThatSameElementIsExtractedAsOneTerm")
 {
     QueryBuilder<ProtonNodeTypes> query_builder;
     query_builder.addAnd(2);
-    query_builder.addSameElement(2, field);
+    query_builder.addSameElement(2, field, id[3], Weight(7));
     query_builder.addStringTerm("term1", field, id[0], Weight(1));
     query_builder.addStringTerm("term2", field, id[1], Weight(1));
     query_builder.addStringTerm("term3", field, id[2], Weight(1));
@@ -142,9 +142,9 @@ TEST("requireThatSameElementIsSkipped")
 
     vector<const ITermData *> term_data;
     TermDataExtractor::extractTerms(*node, term_data);
-    EXPECT_EQUAL(1u, term_data.size());
-    ASSERT_TRUE(term_data.size() >= 1);
-    EXPECT_EQUAL(id[2], term_data[0]->getUniqueId());
+    ASSERT_EQUAL(2u, term_data.size());
+    EXPECT_EQUAL(id[3], term_data[0]->getUniqueId());
+    EXPECT_EQUAL(id[2], term_data[1]->getUniqueId());
 }
 
 }  // namespace

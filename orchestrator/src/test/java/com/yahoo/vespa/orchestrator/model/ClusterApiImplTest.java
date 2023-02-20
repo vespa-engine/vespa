@@ -126,7 +126,7 @@ public class ClusterApiImplTest {
 
         var hostnames = IntStream.rangeClosed(1, serviceStatusList.size())
                                  .mapToObj(i -> new HostName("cfg" + i))
-                                 .collect(Collectors.toList());
+                                 .toList();
         var instances = new ArrayList<ServiceInstance>();
         for (int i = 0; i < hostnames.size(); i++) {
             instances.add(modelUtils.createServiceInstance("cs" + i + 1, hostnames.get(i), serviceStatusList.get(i)));
@@ -371,7 +371,7 @@ public class ClusterApiImplTest {
         serviceStatusList.addAll(List.of(rest));
         var hostnames = IntStream.rangeClosed(1, serviceStatusList.size())
                                  .mapToObj(i -> new HostName("cfg" + i))
-                                 .collect(Collectors.toList());
+                                 .toList();
         var instances = new ArrayList<ServiceInstance>();
         for (int i = 0; i < hostnames.size(); i++) {
             instances.add(modelUtils.createServiceInstance("cs" + i + 1, hostnames.get(i), serviceStatusList.get(i)));

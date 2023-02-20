@@ -72,9 +72,8 @@ public class Hit extends ListenableFreezableClass implements Data, Comparable<Hi
      * The summary classes for which this hit is filled. If this set
      * is 'null', it means that this hit is unfillable, which is
      * equivalent to a hit where all summary classes have already
-     * been filled, or a hit where further filling will
-     * yield no extra information, if you prefer to look at it that
-     * way.
+     * been filled, or equivalently a hit where further filling will
+     * yield no extra information
      */
     private Set<String> filled = null;
     private Set<String> unmodifiableFilled = null;

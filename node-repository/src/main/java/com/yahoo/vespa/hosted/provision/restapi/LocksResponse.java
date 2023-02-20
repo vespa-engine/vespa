@@ -77,7 +77,7 @@ public class LocksResponse extends HttpResponse {
 
         List<RecordedLockAttempts> historicRecordings = LockStats.getGlobal().getHistoricRecordings().stream()
                 .sorted(Comparator.comparing(RecordedLockAttempts::duration).reversed())
-                .collect(Collectors.toList());
+                .toList();
         if (!historicRecordings.isEmpty()) {
             Cursor recordingsCursor = root.setArray("recordings");
             historicRecordings.forEach(recording -> setRecording(recordingsCursor.addObject(), recording));
