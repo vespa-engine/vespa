@@ -264,6 +264,10 @@ func (c *CLI) printSuccess(msg ...interface{}) {
 	fmt.Fprintln(c.Stdout, color.GreenString("Success:"), fmt.Sprint(msg...))
 }
 
+func (c *CLI) printDebug(msg ...interface{}) {
+	fmt.Fprintln(c.Stderr, color.CyanString("Debug:"), fmt.Sprint(msg...))
+}
+
 func (c *CLI) printWarning(msg interface{}, hints ...string) {
 	fmt.Fprintln(c.Stderr, color.YellowString("Warning:"), msg)
 	for _, hint := range hints {
