@@ -347,7 +347,7 @@ public class DeploymentSpecWithBcpTest {
     }
 
     @Test
-    public void endpontsDefinedInBcpValidation1() {
+    public void endpointsDefinedInBcpValidation1() {
         StringReader r = new StringReader("""
                 <deployment version='1.0'>
                    <instance id='beta'>
@@ -374,7 +374,7 @@ public class DeploymentSpecWithBcpTest {
     }
 
     @Test
-    public void endpontsDefinedInBcpValidation2() {
+    public void endpointsDefinedInBcpValidation2() {
         StringReader r = new StringReader("""
                 <deployment version='1.0'>
                    <instance id='beta'>

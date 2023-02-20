@@ -360,7 +360,7 @@ public class DeploymentSpecXmlReader {
      * @param instance the instance this applies to, or empty if it does not apply to an instance (application endpoints)
      * @param steps
      * @param forRegions the regions this applies to (for bcp), or empty (otherwise) to read this from "region" subelements
-     * @param endpointsByZone a map containing any zone endpoints rtead by this
+     * @param endpointsByZone a map containing any zone endpoints read by this
      * @return the endpoint read, unless it is added to endspointsByZone instead *sob*
      */
     static Optional<Endpoint> readEndpoint(Element parentElement,
