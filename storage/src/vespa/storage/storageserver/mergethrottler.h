@@ -15,7 +15,6 @@
 #include <vespa/storageframework/generic/thread/runnable.h>
 #include <vespa/storageapi/message/bucket.h>
 #include <vespa/document/bucket/bucket.h>
-#include <vespa/vespalib/util/document_runnable.h>
 #include <vespa/metrics/metricset.h>
 #include <vespa/metrics/summetric.h>
 #include <vespa/metrics/countmetric.h>

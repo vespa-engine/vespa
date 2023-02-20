@@ -4,6 +4,7 @@
 
 #include <mutex>
 #include <condition_variable>
+#include <vespa/fastos/thread.h>
 
 namespace search {
 

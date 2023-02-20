@@ -24,7 +24,6 @@ vespa_add_library(vespalib_vespalib_util OBJECT
     cpu_usage.cpp
     crc.cpp
     destructor_callbacks.cpp
-    document_runnable.cpp
     doom.cpp
     dual_merge_director.cpp
     error.cpp

@@ -28,12 +28,6 @@ struct StorageNodeContext {
      */
     ComponentRegister& getComponentRegister() { return *_componentRegister; }
 
-    /**
-     * There currently exist threads that doesn't use the component model.
-     * Let the backend threadpool be accessible for now.
-     */
-    FastOS_ThreadPool& getThreadPool() { return _threadPool.getThreadPool(); }
-
     ~StorageNodeContext();
 
 protected:

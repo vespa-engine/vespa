@@ -15,7 +15,6 @@ class ThreadImpl;
 
 struct ThreadPoolImpl final : public ThreadPool
 {
-    std::unique_ptr<FastOS_ThreadPool> _backendThreadPool;
     std::vector<ThreadImpl*>   _threads;
     mutable std::mutex         _threadVectorLock;
     Clock                    & _clock;
@@ -30,7 +29,6 @@ public:
                                         std::optional<vespalib::CpuUsage::Category> cpu_category) override;
     void visitThreads(ThreadVisitor&) const override;
     void unregisterThread(ThreadImpl&);
-    FastOS_ThreadPool& getThreadPool() { return *_backendThreadPool; }
     Clock& getClock() { return _clock; }
 };
 

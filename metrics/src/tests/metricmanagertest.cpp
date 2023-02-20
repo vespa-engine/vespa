@@ -152,11 +152,10 @@ namespace {
 std::pair<std::string, std::string>
 getMatchedMetrics(const vespalib::string& config)
 {
-    FastOS_ThreadPool pool;
     TestMetricSet mySet;
     MetricManager mm;
     mm.registerMetric(mm.getMetricLock(), mySet.set);
-    mm.init(ConfigUri(config), pool);
+    mm.init(ConfigUri(config));
     MetricNameVisitor visitor;
 
     /** Take a copy to verify clone works.
@@ -475,7 +474,6 @@ std::string dumpAllSnapshots(const MetricManager& mm,
 
 TEST_F(MetricManagerTest, test_snapshots)
 {
-    FastOS_ThreadPool pool;
     FakeTimer* timer = new FakeTimer(1000);
     std::unique_ptr<MetricManager::Timer> timerImpl(timer);
     TestMetricSet mySet;
@@ -491,8 +489,7 @@ TEST_F(MetricManagerTest, test_snapshots)
                       "consumer[0].tags[0] snaptest\n"
                       "consumer[1].name log\n"
                       "consumer[1].tags[1]\n"
-                      "consumer[1].tags[0] snaptest\n"),
-            pool);
+                      "consumer[1].tags[0] snaptest\n"));
     MetricNameVisitor visitor;
     {
         MetricLockGuard lockGuard(mm.getMetricLock());
@@ -575,7 +572,6 @@ TEST_F(MetricManagerTest, test_snapshots)
 
 TEST_F(MetricManagerTest, test_xml_output)
 {
-    FastOS_ThreadPool pool;
     FakeTimer* timer = new FakeTimer(1000);
     std::unique_ptr<MetricManager::Timer> timerImpl(timer);
     MetricManager mm(std::move(timerImpl));
@@ -593,8 +589,7 @@ TEST_F(MetricManagerTest, test_xml_output)
                       "consumer[0].tags[0] snaptest\n"
                       "consumer[1].name log\n"
                       "consumer[1].tags[1]\n"
-                      "consumer[1].tags[0] snaptest\n"),
-            pool);
+                      "consumer[1].tags[0] snaptest\n"));
 
     takeSnapshots(mm, 1000);
 
@@ -653,7 +648,6 @@ TEST_F(MetricManagerTest, test_xml_output)
 
 TEST_F(MetricManagerTest, test_json_output)
 {
-    FastOS_ThreadPool pool;
     FakeTimer* timer = new FakeTimer(1000);
     std::unique_ptr<MetricManager::Timer> timerImpl(timer);
     MetricManager mm(std::move(timerImpl));
@@ -668,8 +662,7 @@ TEST_F(MetricManagerTest, test_json_output)
                       "consumer[1]\n"
                       "consumer[0].name snapper\n"
                       "consumer[0].tags[1]\n"
-                      "consumer[0].tags[0] snaptest\n"),
-            pool);
+                      "consumer[0].tags[0] snaptest\n"));
 
     takeSnapshots(mm, 1000);
 
@@ -743,14 +736,12 @@ namespace {
 struct MetricSnapshotTestFixture
 {
     MetricManagerTest& test;
-    FastOS_ThreadPool pool;
     FakeTimer* timer;
     MetricManager manager;
     MetricSet& mset;
 
     MetricSnapshotTestFixture(MetricManagerTest& callerTest, MetricSet& metricSet)
         : test(callerTest),
-          pool(),
           timer(new FakeTimer(1000)),
           manager(std::unique_ptr<MetricManager::Timer>(timer)),
           mset(metricSet)
@@ -765,8 +756,7 @@ struct MetricSnapshotTestFixture
                                "consumer[1]\n"
                                "consumer[0].name snapper\n"
                                "consumer[0].addedmetrics[1]\n"
-                               "consumer[0].addedmetrics[0] *\n"),
-                pool);
+                               "consumer[0].addedmetrics[0] *\n"));
 
         test.takeSnapshots(manager, 1000);
     }
@@ -986,7 +976,6 @@ TEST_F(MetricManagerTest, json_output_can_have_multiple_sets_with_same_name)
 
 TEST_F(MetricManagerTest, test_text_output)
 {
-    FastOS_ThreadPool pool;
     FakeTimer* timer = new FakeTimer(1000);
     std::unique_ptr<MetricManager::Timer> timerImpl(timer);
     MetricManager mm(std::move(timerImpl));
@@ -1010,8 +999,7 @@ TEST_F(MetricManagerTest, test_text_output)
                       "consumer[0].tags[0] snaptest\n"
                       "consumer[1].name log\n"
                       "consumer[1].tags[1]\n"
-                      "consumer[1].tags[0] snaptest\n"),
-            pool);
+                      "consumer[1].tags[0] snaptest\n"));
     std::string expected(
         "snapshot \"Active metrics showing updates since last snapshot\" from 1000 to 0 period 0\n"
         "temp.val6 average=2 last=2 min=2 max=2 count=1 total=2\n"
@@ -1085,7 +1073,6 @@ TEST_F(MetricManagerTest, test_update_hooks)
 {
     std::mutex output_mutex;
     std::ostringstream output;
-    FastOS_ThreadPool pool;
     FakeTimer* timer = new FakeTimer(1000);
     std::unique_ptr<MetricManager::Timer> timerImpl(timer);
         // Add a metric set just so one exist
@@ -1114,8 +1101,7 @@ TEST_F(MetricManagerTest, test_update_hooks)
                       "consumer[0].tags[0] snaptest\n"
                       "consumer[1].name log\n"
                       "consumer[1].tags[1]\n"
-                      "consumer[1].tags[0] snaptest\n"),
-            pool);
+                      "consumer[1].tags[0] snaptest\n"));
     output << "Init done\n";
 
     MyUpdateHook postInitShort(output, output_mutex, "AIS", *timer);

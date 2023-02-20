@@ -30,7 +30,6 @@
 #include <vespa/storageapi/message/internal.h>
 #include <vespa/storageapi/message/visitor.h>
 #include <vespa/config/helper/ifetchercallback.h>
-#include <vespa/vespalib/util/document_runnable.h>
 
 namespace config {
     class ConfigUri;

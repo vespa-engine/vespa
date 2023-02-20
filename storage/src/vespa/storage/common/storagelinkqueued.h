@@ -16,7 +16,6 @@
 
 #include "storagelink.h"
 #include <vespa/storageframework/generic/thread/runnable.h>
-#include <vespa/vespalib/util/document_runnable.h>
 #include <deque>
 #include <limits>
 #include <mutex>
