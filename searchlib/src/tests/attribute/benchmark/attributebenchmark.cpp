@@ -5,7 +5,7 @@
 #include <vespa/searchlib/attribute/attributeguard.h>
 #include <vespa/searchlib/attribute/attributefactory.h>
 #include <vespa/searchcommon/attribute/config.h>
-#include <vespa/fastos/thread.h>
+#include <thread>
 #include <vespa/vespalib/util/signalhandler.h>
 #include <iostream>
 #include "attributesearcher.h"
@@ -96,7 +96,6 @@ private:
         static struct rusage computeDifference(struct rusage & first, struct rusage & second);
     };
 
-    FastOS_ThreadPool * _threadPool;
     Config _config;
     RandomGenerator _rndGen;
 
@@ -129,12 +128,8 @@ private:
 
 
 public:
-    AttributeBenchmark() : _threadPool(NULL), _config(), _rndGen() {}
-    ~AttributeBenchmark() {
-        if (_threadPool != NULL) {
-            delete _threadPool;
-        }
-    }
+    AttributeBenchmark() : _config(), _rndGen() {}
+    ~AttributeBenchmark() = default;
     int main(int argc, char **argv);
 };
 
@@ -268,7 +263,7 @@ AttributeBenchmark::benchmarkSearch(const AttributePtr & ptr, const std::vector<
             } else {
                 searchers.push_back(new AttributeFindSearcher<T>(ptr, values, _config._numQueries));
             }
-            _threadPool->NewThread(searchers.back());
+            searchers.back()->start();
         }
 
         for (uint32_t i = 0; i < searchers.size(); ++i) {
@@ -299,7 +294,7 @@ AttributeBenchmark::benchmarkSearchWithUpdater(const AttributePtr & ptr,
         AttributeUpdaterThread<Vector, T, BT>
             updater(ptr, values, _rndGen, _config._validate, _config._commitFreq,
                     _config._minValueCount, _config._maxValueCount);
-        _threadPool->NewThread(&updater);
+        updater.start();
         benchmarkSearch(ptr, values);
         updater.stop();
         updater.join();
@@ -337,8 +332,6 @@ AttributeBenchmark::benchmarkAttribute(const AttributePtr & ptr, const std::vect
     } else {
         benchmarkSearchWithUpdater<Vector, T, BT>(ptr, values);
     }
-
-    _threadPool->Close();
 }
 
 
@@ -568,8 +561,6 @@ AttributeBenchmark::main(int argc, char **argv)
     }
 
     dc._attribute = vespalib::string(argv[optind]);
-
-    _threadPool = new FastOS_ThreadPool();
 
     std::cout << "<attribute-benchmark>" << std::endl;
     init(dc);

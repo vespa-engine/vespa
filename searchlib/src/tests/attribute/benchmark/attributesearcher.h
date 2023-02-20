@@ -2,7 +2,6 @@
 
 #pragma once
 
-#include <vespa/searchlib/util/runnable.h>
 #include <vespa/searchlib/attribute/attribute.h>
 #include <vespa/searchlib/attribute/attributeguard.h>
 #include <vespa/searchlib/attribute/search_context.h>
@@ -59,7 +58,7 @@ public:
 };
 
 
-class AttributeSearcher : public Runnable
+class AttributeSearcher
 {
 protected:
     using AttributePtr = AttributeVector::SP;
@@ -67,17 +66,23 @@ protected:
     const AttributePtr    & _attrPtr;
     vespalib::Timer         _timer;
     AttributeSearcherStatus _status;
-
+    std::thread             _thread;
+    
 public:
-    AttributeSearcher(const AttributePtr & attrPtr) :
-        Runnable(), _attrPtr(attrPtr), _timer(), _status()
+    AttributeSearcher(const AttributePtr & attrPtr)
+      : _attrPtr(attrPtr), _timer(), _status(), _thread()
     {
         _status._numClients = 1;
     }
-    virtual void doRun() override = 0;
+    virtual ~AttributeSearcher();
+    virtual void doRun() = 0;
+    void start() { _thread = std::thread([this](){doRun();}); }
+    void join() { _thread.join(); }
     AttributeSearcherStatus & getStatus() { return _status; }
     void buildTermQuery(std::vector<char> & buffer, const vespalib::string & index, const char * term, bool prefix = false);
 };
+AttributeSearcher::~AttributeSearcher() = default;
+
 
 void
 AttributeSearcher::buildTermQuery(std::vector<char> & buffer, const vespalib::string & index, const char * term, bool prefix)

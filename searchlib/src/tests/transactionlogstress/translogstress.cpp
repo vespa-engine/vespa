@@ -5,7 +5,6 @@
 #include <vespa/searchlib/transactionlog/translogclient.h>
 #include <vespa/vespalib/util/rand48.h>
 #include <vespa/vespalib/util/size_literals.h>
-#include <vespa/searchlib/util/runnable.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/fnet/transport.h>
 #include <vespa/vespalib/util/signalhandler.h>
@@ -13,6 +12,7 @@
 #include <sstream>
 #include <thread>
 #include <unistd.h>
+#include <vespa/fastos/thread.h>
 
 #include <vespa/log/log.h>
 #include <vespa/vespalib/util/time.h>
@@ -20,7 +20,6 @@
 LOG_SETUP("translogstress");
 
 using vespalib::nbostream;
-using search::Runnable;
 using std::shared_ptr;
 using vespalib::make_string;
 using vespalib::ConstBufferRef;
@@ -190,7 +189,7 @@ public:
 //-----------------------------------------------------------------------------
 // FeederThread
 //-----------------------------------------------------------------------------
-class FeederThread : public Runnable
+class FeederThread
 {
 private:
     std::string _tlsSpec;
@@ -203,6 +202,8 @@ private:
     SerialNum _current;
     SerialNum _lastCommited;
     vespalib::Timer _timer;
+    std::atomic<bool> _done;
+    std::thread _thread;
 
     void commitPacket();
     bool addEntry(const Packet::Entry & e);
@@ -210,8 +211,11 @@ private:
 public:
     FeederThread(FNET_Transport & transport, const std::string & tlsSpec, const std::string & domain,
                  const EntryGenerator & generator, uint32_t feedRate, size_t packetSize);
-    ~FeederThread() override;
-    void doRun() override;
+    ~FeederThread();
+    void doRun();
+    void start() { _thread = std::thread([this](){doRun();}); }
+    void stop() { _done = true; }
+    void join() { _thread.join(); }
     SerialNumRange getRange() const { return SerialNumRange(1, _lastCommited); }
 };
 
@@ -450,7 +454,7 @@ VisitorAgent::receive(const Packet & packet)
 //-----------------------------------------------------------------------------
 // ControllerThread
 //-----------------------------------------------------------------------------
-class ControllerThread : public Runnable
+class ControllerThread
 {
 private:
     std::string _tlsSpec;
@@ -466,7 +470,9 @@ private:
     SerialNum _begin;
     SerialNum _end;
     size_t _count;
-
+    std::atomic<bool> _done;
+    std::thread _thread;
+    
     void getStatus();
     void makeRandomVisitorVector();
 
@@ -475,8 +481,10 @@ public:
                      uint32_t numVisitors, vespalib::duration visitorInterval, vespalib::duration pruneInterval);
     ~ControllerThread();
     std::vector<std::shared_ptr<VisitorAgent> > & getVisitors() { return _visitors; }
-    virtual void doRun() override;
-
+    void doRun();
+    void start() { _thread = std::thread([this](){doRun();}); }
+    void stop() { _done = true; }
+    void join() { _thread.join(); }
 };
 
 ControllerThread::ControllerThread(FNET_Transport & transport, const std::string & tlsSpec, const std::string & domain,
@@ -719,12 +727,12 @@ TransLogStress::main(int argc, char **argv)
 
     // start feeder and controller
     FeederThread feeder(transport, tlsSpec, domain, generator, _cfg.feedRate, _cfg.packetSize);
-    threadPool.NewThread(&feeder);
+    feeder.start();
 
     std::this_thread::sleep_for(sleepTime);
 
     ControllerThread controller(transport, tlsSpec, domain, generator, _cfg.numVisitors, _cfg.visitorInterval, _cfg.pruneInterval);
-    threadPool.NewThread(&controller);
+    controller.start();
 
     // stop feeder and controller
     std::this_thread::sleep_for(_cfg.stressTime);
