@@ -57,7 +57,7 @@ public class Cluster {
         this.suggested = Objects.requireNonNull(suggested);
         Objects.requireNonNull(target);
         if (target.resources().isPresent() && ! target.resources().get().isWithin(minResources, maxResources))
-            this.target = Autoscaling.empty();
+            this.target = target.withResources(Optional.empty()); // Delete illegal target
         else
             this.target = target;
         this.bcpGroupInfo = Objects.requireNonNull(bcpGroupInfo);

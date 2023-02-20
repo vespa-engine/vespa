@@ -57,6 +57,10 @@ public class Autoscaling {
         return new Autoscaling(status, description, resources, at, peak, ideal, metrics);
     }
 
+    public Autoscaling withResources(Optional<ClusterResources> resources) {
+        return new Autoscaling(status, description, resources, at, peak, ideal, metrics);
+    }
+
     /** Converts this autoscaling into an ideal one at the completion of it. */
     public Autoscaling asIdeal(Instant at) {
         return new Autoscaling(Status.ideal,
