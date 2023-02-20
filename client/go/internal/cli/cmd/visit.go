@@ -11,11 +11,9 @@ import (
 	"io"
 	"net/http"
 	"net/url"
-	"os"
 	"strings"
 	"time"
 
-	"github.com/fatih/color"
 	"github.com/spf13/cobra"
 	"github.com/vespa-engine/vespa/client/go/internal/util"
 	"github.com/vespa-engine/vespa/client/go/internal/vespa"
@@ -28,8 +26,52 @@ type visitArgs struct {
 	makeFeed       bool
 	jsonLines      bool
 	pretty         bool
-	quietMode      bool
+	debugMode      bool
 	chunkCount     int
+	cli            *CLI
+}
+
+func (v *visitArgs) writeBytes(b []byte) {
+	v.cli.Stdout.Write(b)
+}
+
+func (v *visitArgs) writeString(s string) {
+	v.writeBytes([]byte(s))
+}
+
+func (v *visitArgs) debugPrint(s string) {
+	if v.debugMode {
+		v.cli.printDebug(s)
+	}
+}
+
+func (v *visitArgs) dumpDocuments(documents []DocumentBlob) {
+	comma := false
+	pretty := false
+	if v.makeFeed {
+		comma = true
+		pretty = v.pretty
+	} else if !v.jsonLines {
+		return
+	}
+	for _, value := range documents {
+		if pretty {
+			var prettyJSON bytes.Buffer
+			parseError := json.Indent(&prettyJSON, value.blob, "", "    ")
+			if parseError != nil {
+				v.writeBytes(value.blob)
+			} else {
+				v.writeBytes(prettyJSON.Bytes())
+			}
+		} else {
+			v.writeBytes(value.blob)
+		}
+		if comma {
+			v.writeString(",\n")
+		} else {
+			v.writeString("\n")
+		}
+	}
 }
 
 var totalDocCount int
@@ -53,28 +95,27 @@ $ vespa visit --content-cluster search # get documents from cluster named "searc
 		DisableAutoGenTag: true,
 		SilenceUsage:      true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			vArgs.quietMode = cli.config.isQuiet()
+			vArgs.cli = cli
 			service, err := documentService(cli)
 			if err != nil {
 				return err
 			}
-			result := probeHandler(service)
+			result := probeHandler(service, cli)
 			if result.Success {
-				result = visitClusters(vArgs, service)
+				result = visitClusters(&vArgs, service)
 			}
 			if !result.Success {
 				return fmt.Errorf("visit failed: %s", result.Message)
 			}
-			if !vArgs.quietMode {
-				fmt.Fprintln(os.Stderr, "[debug] sum of 'documentCount':", totalDocCount)
-			}
+			vArgs.debugPrint(fmt.Sprintf("sum of 'documentCount': %d", totalDocCount))
 			return nil
 		},
 	}
 	cmd.Flags().StringVar(&vArgs.contentCluster, "content-cluster", "*", `Which content cluster to visit documents from`)
 	cmd.Flags().StringVar(&vArgs.fieldSet, "field-set", "", `Which fieldset to ask for`)
 	cmd.Flags().StringVar(&vArgs.selection, "selection", "", `select subset of cluster`)
-	cmd.Flags().BoolVar(&vArgs.jsonLines, "json-lines", false, `output documents as JSON lines`)
+	cmd.Flags().BoolVar(&vArgs.debugMode, "debug-mode", false, `print debugging output`)
+	cmd.Flags().BoolVar(&vArgs.jsonLines, "json-lines", true, `output documents as JSON lines`)
 	cmd.Flags().BoolVar(&vArgs.makeFeed, "make-feed", false, `output JSON array suitable for vespa-feeder`)
 	cmd.Flags().BoolVar(&vArgs.pretty, "pretty-json", false, `format pretty JSON`)
 	cmd.Flags().IntVar(&vArgs.chunkCount, "chunk-count", 1000, `chunk by count`)
@@ -97,7 +138,7 @@ func parseHandlersOutput(r io.Reader) (*HandlersInfo, error) {
 	return &handlersInfo, err
 }
 
-func probeHandler(service *vespa.Service) (res util.OperationResult) {
+func probeHandler(service *vespa.Service, cli *CLI) (res util.OperationResult) {
 	urlPath := service.BaseURL + "/"
 	url, urlParseError := url.Parse(urlPath)
 	if urlParseError != nil {
@@ -116,7 +157,7 @@ func probeHandler(service *vespa.Service) (res util.OperationResult) {
 	if response.StatusCode == 200 {
 		handlersInfo, err := parseHandlersOutput(response.Body)
 		if err != nil || len(handlersInfo.Handlers) == 0 {
-			fmt.Fprintln(os.Stderr, "Could not parse JSON response from", urlPath, err)
+			cli.printWarning("Could not parse JSON response from"+urlPath, err.Error())
 			return util.Failure("Bad endpoint")
 		}
 		for _, h := range handlersInfo.Handlers {
@@ -126,17 +167,18 @@ func probeHandler(service *vespa.Service) (res util.OperationResult) {
 						return util.Success("handler OK")
 					}
 				}
-				fmt.Fprintln(os.Stderr, "expected /document/v1/ binding, but got:", h.ServerBindings)
+				w := fmt.Sprintf("expected /document/v1/ binding, but got: %v", h.ServerBindings)
+				cli.printWarning(w)
 			}
 		}
-		fmt.Fprintln(os.Stderr, "Missing /document/v1/ API; add <document-api /> to the container cluster delcaration in services.xml")
+		cli.printWarning("Missing /document/v1/ API; add <document-api /> to the container cluster delcaration in services.xml")
 		return util.Failure("Missing /document/v1 API")
 	} else {
 		return util.FailureWithPayload(service.Description()+" at "+request.URL.Host+": "+response.Status, util.ReaderToJSON(response.Body))
 	}
 }
 
-func visitClusters(vArgs visitArgs, service *vespa.Service) (res util.OperationResult) {
+func visitClusters(vArgs *visitArgs, service *vespa.Service) (res util.OperationResult) {
 	clusters := []string{
 		vArgs.contentCluster,
 	}
@@ -144,7 +186,7 @@ func visitClusters(vArgs visitArgs, service *vespa.Service) (res util.OperationR
 		clusters = probeVisit(vArgs, service)
 	}
 	if vArgs.makeFeed {
-		fmt.Printf("[")
+		vArgs.writeString("[\n")
 	}
 	for _, c := range clusters {
 		vArgs.contentCluster = c
@@ -152,17 +194,15 @@ func visitClusters(vArgs visitArgs, service *vespa.Service) (res util.OperationR
 		if !res.Success {
 			return res
 		}
-		if !vArgs.quietMode {
-			fmt.Fprintln(os.Stderr, color.GreenString("Success:"), res.Message)
-		}
+		vArgs.debugPrint("Success: " + res.Message)
 	}
 	if vArgs.makeFeed {
-		fmt.Println("{}\n]")
+		vArgs.writeString("{}\n]\n")
 	}
 	return res
 }
 
-func probeVisit(vArgs visitArgs, service *vespa.Service) []string {
+func probeVisit(vArgs *visitArgs, service *vespa.Service) []string {
 	clusters := make([]string, 0, 3)
 	vvo, _ := runOneVisit(vArgs, service, "")
 	if vvo != nil {
@@ -181,10 +221,8 @@ func probeVisit(vArgs visitArgs, service *vespa.Service) []string {
 	return clusters
 }
 
-func runVisit(vArgs visitArgs, service *vespa.Service) (res util.OperationResult) {
-	if !vArgs.quietMode {
-		fmt.Fprintf(os.Stderr, "[debug] trying to visit: '%s'\n", vArgs.contentCluster)
-	}
+func runVisit(vArgs *visitArgs, service *vespa.Service) (res util.OperationResult) {
+	vArgs.debugPrint(fmt.Sprintf("trying to visit: '%s'", vArgs.contentCluster))
 	var totalDocuments int = 0
 	var continuationToken string
 	for {
@@ -192,18 +230,12 @@ func runVisit(vArgs visitArgs, service *vespa.Service) (res util.OperationResult
 		vvo, res = runOneVisit(vArgs, service, continuationToken)
 		if !res.Success {
 			if vvo != nil && vvo.ErrorMsg != "" {
-				fmt.Fprintln(os.Stderr, vvo.ErrorMsg)
+				vArgs.cli.printWarning(vvo.ErrorMsg)
 			}
 			return res
 		}
-		if vArgs.makeFeed {
-			dumpDocuments(vvo.Documents, true, vArgs.pretty)
-		} else if vArgs.jsonLines {
-			dumpDocuments(vvo.Documents, false, vArgs.pretty)
-		}
-		if !vArgs.quietMode {
-			fmt.Fprintln(os.Stderr, "[debug] got", len(vvo.Documents), "documents")
-		}
+		vArgs.dumpDocuments(vvo.Documents)
+		vArgs.debugPrint(fmt.Sprintf("got %d documents", len(vvo.Documents)))
 		totalDocuments += len(vvo.Documents)
 		continuationToken = vvo.Continuation
 		if continuationToken == "" {
@@ -235,7 +267,7 @@ func quoteArgForUrl(arg string) string {
 	return buf.String()
 }
 
-func runOneVisit(vArgs visitArgs, service *vespa.Service, contToken string) (*VespaVisitOutput, util.OperationResult) {
+func runOneVisit(vArgs *visitArgs, service *vespa.Service, contToken string) (*VespaVisitOutput, util.OperationResult) {
 	urlPath := service.BaseURL + "/document/v1/?cluster=" + quoteArgForUrl(vArgs.contentCluster)
 	if vArgs.fieldSet != "" {
 		urlPath = urlPath + "&fieldSet=" + quoteArgForUrl(vArgs.fieldSet)
@@ -268,10 +300,10 @@ func runOneVisit(vArgs visitArgs, service *vespa.Service, contToken string) (*Ve
 		if err == nil {
 			totalDocCount += vvo.DocumentCount
 			if vvo.DocumentCount != len(vvo.Documents) {
-				fmt.Fprintln(os.Stderr, "Inconsistent contents from:", url)
-				fmt.Fprintln(os.Stderr, "claimed count: ", vvo.DocumentCount)
-				fmt.Fprintln(os.Stderr, "document blobs: ", len(vvo.Documents))
-				// return nil, util.Failure("Inconsistent contents from document API")
+				vArgs.cli.printWarning(fmt.Sprintf("Inconsistent contents from: %v", url))
+				vArgs.cli.printWarning(fmt.Sprintf("claimed count: %d", vvo.DocumentCount))
+				vArgs.cli.printWarning(fmt.Sprintf("document blobs: %d", len(vvo.Documents)))
+				return nil, util.Failure("Inconsistent contents from document API")
 			}
 			return vvo, util.Success("visited " + vArgs.contentCluster)
 		} else {
@@ -311,29 +343,7 @@ func parseVisitOutput(r io.Reader) (*VespaVisitOutput, error) {
 	var parsedJson VespaVisitOutput
 	err := codec.Decode(&parsedJson)
 	if err != nil {
-		fmt.Fprintln(os.Stderr, "could not decode JSON, error:", err)
-		return nil, err
+		return nil, fmt.Errorf("could not decode JSON, error: %s", err.Error())
 	}
 	return &parsedJson, nil
-}
-
-func dumpDocuments(documents []DocumentBlob, comma, pretty bool) {
-	for _, value := range documents {
-		if pretty {
-			var prettyJSON bytes.Buffer
-			parseError := json.Indent(&prettyJSON, value.blob, "", "    ")
-			if parseError != nil {
-				os.Stdout.Write(value.blob)
-			} else {
-				os.Stdout.Write(prettyJSON.Bytes())
-			}
-		} else {
-			os.Stdout.Write(value.blob)
-		}
-		if comma {
-			fmt.Printf(",\n")
-		} else {
-			fmt.Printf("\n")
-		}
-	}
 }
