@@ -19,8 +19,22 @@ const (
 
 	savedresponse = `{"pathId":"/document/v1/","documents":[{"id":"id:test:music::1921492307","fields":{"title":"song","year":2010}},{"id":"id:test:music::p_try-this-clean-bonus-dvd-_music_1922003403","fields":{"artist":"xyz","weight":600000,"song":"hate","title":"xyz","year":2000}}],"documentCount":2,"continuation":"AAAACAAAAAAAAAAJAAAAAAAAAAgAAAAAAAABAAAAAAEgAAAAAAAAEAAAAAAAAAAA"}`
 
-	saveddoc0 = `{"id":"id:test:music::1921492307","fields":{"title":"song","year":2010}}`
-	saveddoc1 = `{"id":"id:test:music::p_try-this-clean-bonus-dvd-_music_1922003403","fields":{"artist":"xyz","weight":600000,"song":"hate","title":"xyz","year":2000}}`
+	saveddoc0        = `{"id":"id:test:music::1921492307","fields":{"title":"song","year":2010}}`
+	saveddoc1        = `{"id":"id:test:music::p_try-this-clean-bonus-dvd-_music_1922003403","fields":{"artist":"xyz","weight":600000,"song":"hate","title":"xyz","year":2000}}`
+	handlersResponse = `{
+  "handlers" : [ {
+    "id" : "com.yahoo.container.usability.BindingsOverviewHandler",
+    "class" : "com.yahoo.container.usability.BindingsOverviewHandler",
+    "bundle" : "container-disc:8.0.0",
+    "serverBindings" : [ "http://*/" ]
+  }, {
+    "id" : "com.yahoo.document.restapi.resource.DocumentV1ApiHandler",
+    "class" : "com.yahoo.document.restapi.resource.DocumentV1ApiHandler",
+    "bundle" : "vespaclient-container-plugin:8.0.0",
+    "serverBindings" : [ "http://*/document/v1/*", "http://*/document/v1/*/" ]
+  } ]
+}`
+	clusterStarResponse = `{"pathId":"/document/v1/","message":"Your Vespa deployment has no content cluster '*', only 'fooCC'"}`
 )
 
 func TestQuoteFunc(t *testing.T) {
@@ -61,6 +75,20 @@ func TestRunOneVisit(t *testing.T) {
 	}
 	req := withMockClient(t, withResponse, op)
 	assert.Equal(t, "cluster=fooCC&continuation=BBBB", req.URL.RawQuery)
+
+	op = func(service *vespa.Service) {
+		vArgs := visitArgs{
+			contentCluster: "search",
+			fieldSet:       "[id]",
+			selection:      "music.year>2000",
+			chunkCount:     123,
+		}
+		vvo, res := runOneVisit(&vArgs, service, "asdf")
+		assert.Equal(t, true, res.Success)
+		assert.Equal(t, 2, vvo.DocumentCount)
+	}
+	req = withMockClient(t, withResponse, op)
+	assert.Equal(t, "cluster=search&fieldSet=%5Bid%5D&selection=music%2Eyear%3E2000&continuation=asdf&wantedDocumentCount=123", req.URL.RawQuery)
 }
 
 func withMockClient(t *testing.T, prepCli func(*mock.HTTPClient), runOp func(*vespa.Service)) *http.Request {
@@ -98,20 +126,8 @@ func TestVisitCommand(t *testing.T) {
 
 func assertVisitResults(arguments []string, t *testing.T, responses []string, queryPart, output string) {
 	client := &mock.HTTPClient{}
-	client.NextResponseString(200, `{
-  "handlers" : [ {
-    "id" : "com.yahoo.container.usability.BindingsOverviewHandler",
-    "class" : "com.yahoo.container.usability.BindingsOverviewHandler",
-    "bundle" : "container-disc:8.0.0",
-    "serverBindings" : [ "http://*/" ]
-  }, {
-    "id" : "com.yahoo.document.restapi.resource.DocumentV1ApiHandler",
-    "class" : "com.yahoo.document.restapi.resource.DocumentV1ApiHandler",
-    "bundle" : "vespaclient-container-plugin:8.0.0",
-    "serverBindings" : [ "http://*/document/v1/*", "http://*/document/v1/*/" ]
-  }, {
-  } ] }`)
-	client.NextResponseString(400, `{"pathId":"/document/v1/","message":"Your Vespa deployment has no content cluster '*', only 'fooCC'"}`)
+	client.NextResponseString(200, handlersResponse)
+	client.NextResponseString(400, clusterStarResponse)
 	for _, resp := range responses {
 		client.NextResponseString(200, resp)
 	}
