@@ -44,7 +44,8 @@ public class CapabilitySet implements ToCapabilitySet {
             SHARED_CAPABILITIES_APP_NODE);
     public static final CapabilitySet CONTAINER_NODE = predefined(
             "vespa.container_node",
-            Capability.CONTENT__DOCUMENT_API, Capability.CONTENT__SEARCH_API, SHARED_CAPABILITIES_APP_NODE);
+            Capability.CONTAINER__DOCUMENT_API, Capability.CONTENT__DOCUMENT_API, Capability.CONTENT__SEARCH_API,
+            SHARED_CAPABILITIES_APP_NODE);
     public static final CapabilitySet CLUSTER_CONTROLLER_NODE = predefined(
             "vespa.cluster_controller_node",
             Capability.CONTENT__CLUSTER_CONTROLLER__INTERNAL_STATE_API,
