@@ -97,7 +97,7 @@ public class MetricsManager {
         return metricsPackets;
     }
 
-    private MetricsPacket.Builder [] getMetricsBuildersAsArray(List<VespaService> services, Instant startTime, ConsumerId consumerId) {
+    private MetricsPacket.Builder[] getMetricsBuildersAsArray(List<VespaService> services, Instant startTime, ConsumerId consumerId) {
         List<MetricsPacket.Builder> builders = getMetricsAsBuilders(services, startTime, consumerId);
         return builders.toArray(new MetricsPacket.Builder[0]);
     }

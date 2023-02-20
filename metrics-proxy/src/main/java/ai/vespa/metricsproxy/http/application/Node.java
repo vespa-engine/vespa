@@ -25,14 +25,10 @@ public class Node {
     }
 
     public Node(String role, String hostname, int port, String path) {
-        Objects.requireNonNull(role, "Null role is not allowed");
-        Objects.requireNonNull(hostname, "Null hostname is not allowed");
-        Objects.requireNonNull(path, "Null path is not allowed");
-
-        this.role = role;
-        this.hostname = hostname;
+        this.role = Objects.requireNonNull(role, "Null role is not allowed");
+        this.hostname = Objects.requireNonNull(hostname, "Null hostname is not allowed");
         this.port = port;
-        this.path = path;
+        this.path = Objects.requireNonNull(path, "Null path is not allowed");
         metricsUriBase = "http://" + hostname + ":" + port + path;
     }
 
@@ -55,10 +51,10 @@ public class Node {
     public int hashCode() {
         return Objects.hash(role, hostname, port, path);
     }
+
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder();
-        sb.append(role).append(":").append(metricsUriBase);
-        return sb.toString();
+        return role + ":" + metricsUriBase;
     }
+
 }
