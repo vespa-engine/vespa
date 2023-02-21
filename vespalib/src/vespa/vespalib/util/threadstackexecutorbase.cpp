@@ -1,28 +1,8 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "threadstackexecutorbase.h"
-#include <vespa/fastos/thread.h>
 
 namespace vespalib {
-
-namespace thread {
-
-struct ThreadInit : public FastOS_Runnable {
-    Runnable &worker;
-    ThreadStackExecutorBase::init_fun_t init_fun;
-
-    explicit ThreadInit(Runnable &worker_in, ThreadStackExecutorBase::init_fun_t init_fun_in)
-            : worker(worker_in), init_fun(std::move(init_fun_in)) {}
-
-    void Run(FastOS_ThreadInterface *, void *) override;
-};
-
-void
-ThreadInit::Run(FastOS_ThreadInterface *, void *) {
-    init_fun(worker);
-}
-
-}
 
 ThreadStackExecutorBase::Worker::Worker()
     : lock(),
@@ -155,7 +135,7 @@ ThreadStackExecutorBase::run()
 ThreadStackExecutorBase::ThreadStackExecutorBase(uint32_t taskLimit, init_fun_t init_fun)
     : SyncableThreadExecutor(),
       Runnable(),
-      _pool(std::make_unique<FastOS_ThreadPool>()),
+      _pool(),
       _lock(),
       _cond(),
       _stats(),
@@ -167,7 +147,7 @@ ThreadStackExecutorBase::ThreadStackExecutorBase(uint32_t taskLimit, init_fun_t 
       _taskCount(0),
       _taskLimit(taskLimit),
       _closed(false),
-      _thread_init(std::make_unique<thread::ThreadInit>(*this, std::move(init_fun)))
+      _init_fun(init_fun)
 {
     assert(taskLimit > 0);
 }
@@ -177,15 +157,13 @@ ThreadStackExecutorBase::start(uint32_t threads)
 {
     assert(threads > 0);
     for (uint32_t i = 0; i < threads; ++i) {
-        FastOS_ThreadInterface *thread = _pool->NewThread(_thread_init.get());
-        assert(thread != nullptr);
-        (void)thread;
+        _pool.start(*this, _init_fun);
     }
 }
 
 size_t
 ThreadStackExecutorBase::getNumThreads() const {
-    return _pool->GetNumStartedThreads();
+    return _pool.size();
 }
 
 void
@@ -315,12 +293,11 @@ ThreadStackExecutorBase::cleanup()
 {
     shutdown().sync();
     _executorCompletion.countDown();
-    _pool->Close();
+    _pool.join();
 }
 
 ThreadStackExecutorBase::~ThreadStackExecutorBase()
 {
-    assert(_pool->isClosed());
     assert(_taskCount == 0);
     assert(_blocked.empty());
 }
