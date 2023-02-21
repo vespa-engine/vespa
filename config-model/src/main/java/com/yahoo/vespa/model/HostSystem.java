@@ -34,18 +34,11 @@ import static java.util.logging.Level.FINE;
 public class HostSystem extends TreeConfigProducer<Host> {
 
     private static final Logger log = Logger.getLogger(HostSystem.class.getName());
-    private static final boolean doCheckIp;
-
 
     private final Map<String, HostResource> hostname2host = new LinkedHashMap<>();
     private final HostProvisioner provisioner;
     private final DeployLogger deployLogger;
     private final boolean isHosted;
-
-    static {
-        String checkIpProperty = System.getProperty("config_model.ip_check", "true");
-        doCheckIp = ! checkIpProperty.equalsIgnoreCase("false");
-    }
 
     public HostSystem(TreeConfigProducer<AnyConfigProducer> parent, String name, HostProvisioner provisioner, DeployLogger deployLogger, boolean isHosted) {
         super(parent, name);
@@ -57,19 +50,17 @@ public class HostSystem extends TreeConfigProducer<Host> {
     void checkName(String hostname) {
         if (isHosted) return; // Done in node-repo instead
 
-        if (doCheckIp) {
-            BiConsumer<Level, String> logFunction = deployLogger::logApplicationPackage;
-            // Give a warning if the host does not exist
-            try {
-                var inetAddr = java.net.InetAddress.getByName(hostname);
-                String canonical = inetAddr.getCanonicalHostName();
-                if (!hostname.equals(canonical)) {
-                    logFunction.accept(Level.WARNING, "Host named '" + hostname + "' may not receive any config " +
-                                                      "since it differs from its canonical hostname '" + canonical + "' (check DNS and /etc/hosts).");
-                }
-            } catch (UnknownHostException e) {
-                logFunction.accept(Level.WARNING, "Unable to lookup IP address of host: " + hostname);
+        BiConsumer<Level, String> logFunction = deployLogger::logApplicationPackage;
+        // Give a warning if the host does not exist
+        try {
+            var inetAddr = java.net.InetAddress.getByName(hostname);
+            String canonical = inetAddr.getCanonicalHostName();
+            if (!hostname.equals(canonical)) {
+                logFunction.accept(Level.WARNING, "Host named '" + hostname + "' may not receive any config " +
+                        "since it differs from its canonical hostname '" + canonical + "' (check DNS and /etc/hosts).");
             }
+        } catch (UnknownHostException e) {
+            logFunction.accept(Level.WARNING, "Unable to lookup IP address of host: " + hostname);
         }
     }
 
