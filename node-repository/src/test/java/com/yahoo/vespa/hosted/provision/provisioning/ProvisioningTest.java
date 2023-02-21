@@ -24,6 +24,7 @@ import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
+import com.yahoo.vespa.hosted.provision.autoscale.AutoscalingTester;
 import com.yahoo.vespa.hosted.provision.maintenance.ReservationExpirer;
 import com.yahoo.vespa.hosted.provision.maintenance.TestMetric;
 import com.yahoo.vespa.hosted.provision.node.Agent;
@@ -1039,6 +1040,19 @@ public class ProvisioningTest {
         assertEquals(new NodeResources(2, 2, 2, 2), CapacityPolicies.versioned(spec.vespaVersion("7.1").build(), resources));
         assertEquals(new NodeResources(3, 3, 3, 3), CapacityPolicies.versioned(spec.vespaVersion("8.0").build(), resources));
         assertEquals(new NodeResources(3, 3, 3, 3), CapacityPolicies.versioned(spec.vespaVersion("9.0").build(), resources));
+    }
+
+    @Test
+    public void testAdminProvisioning() {
+        var nodeResources = new NodeResources(0.25, 1.32, 10, 0.3);
+        var resources = new ClusterResources(1, 1, nodeResources);
+        var fixture = AutoscalingTester.fixture()
+                                       .awsProdSetup(true)
+                                       .clusterType(ClusterSpec.Type.admin)
+                                       .initialResources(Optional.empty())
+                                       .capacity(Capacity.from(resources))
+                                       .build();
+        fixture.deploy();
     }
 
     private SystemState prepare(ApplicationId application, int container0Size, int container1Size, int content0Size,

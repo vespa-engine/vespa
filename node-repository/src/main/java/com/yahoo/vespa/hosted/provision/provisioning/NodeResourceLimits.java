@@ -88,10 +88,13 @@ public class NodeResourceLimits {
             return 4;
     }
 
-    private double minRealVcpu(ApplicationId applicationId, ClusterSpec cluster) { return minAdvertisedVcpu(applicationId, cluster); }
+    private double minRealVcpu(ApplicationId applicationId, ClusterSpec cluster) {
+        return minAdvertisedVcpu(applicationId, cluster);
+    }
 
     private double minRealMemoryGb(ClusterSpec cluster) {
-        return minAdvertisedMemoryGb(cluster) - 1.7;
+        if (cluster.type() == ClusterSpec.Type.admin) return 0.95; // TODO: Increase to 1.05 after March 2023
+        return 2.3;
     }
 
     private double minRealDiskGb() { return 6; }

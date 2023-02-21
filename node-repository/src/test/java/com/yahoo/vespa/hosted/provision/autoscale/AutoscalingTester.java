@@ -34,9 +34,17 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 /**
+ * A provisioniong tester which
+ * - Supports dynamic provisioning (only).
+ * - Optionally replicates the actual AWS setup and logic used on Vespa Cloud.
+ * - Supports autoscaling testing.
+ *
+ * TODO: All provisioning testing should migrate to use this, and then the provisionging tester should be collapsed
+ *       into this.
+ *
  * @author bratseth
  */
-class AutoscalingTester {
+public class AutoscalingTester {
 
     private final ProvisioningTester provisioningTester;
     private final Autoscaler autoscaler;
@@ -51,11 +59,18 @@ class AutoscalingTester {
     }
 
     private AutoscalingTester(Zone zone, List<Flavor> flavors, HostResourcesCalculator resourcesCalculator, InMemoryFlagSource flagSource) {
+        MockHostProvisioner hostProvisioner = null;
+        if (zone.cloud().dynamicProvisioning()) {
+            hostProvisioner = new MockHostProvisioner(flavors);
+            hostProvisioner.setHostFlavorIfAvailable(new NodeResources(2, 8, 75, 10, NodeResources.DiskSpeed.fast, NodeResources.StorageType.remote), resourcesCalculator, ClusterSpec.Type.admin
+            );
+        }
+
         provisioningTester = new ProvisioningTester.Builder().zone(zone)
                                                              .flavors(flavors)
                                                              .resourcesCalculator(resourcesCalculator)
                                                              .flagSource(flagSource)
-                                                             .hostProvisioner(zone.cloud().dynamicProvisioning() ? new MockHostProvisioner(flavors) : null)
+                                                             .hostProvisioner(hostProvisioner)
                                                              .build();
 
         hostResourcesCalculator = resourcesCalculator;

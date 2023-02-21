@@ -122,7 +122,7 @@ public class HostCapacityMaintainerTest {
     public void preprovision_with_shared_host() {
         var tester = new DynamicProvisioningTester().addInitialNodes();
         // Makes provisioned hosts 48-128-1000-10
-        tester.hostProvisioner.overrideHostFlavor("host4");
+        tester.hostProvisioner.setHostFlavor("host4");
         var clusterCapacity = new ClusterCapacity(2, 1.0, 30.0, 20.0, 3.0, "fast", "local", "x86_64");
         tester.flagSource.withListFlag(PermanentFlags.PREPROVISION_CAPACITY.id(),
                 List.of(clusterCapacity),
@@ -235,7 +235,7 @@ public class HostCapacityMaintainerTest {
 
         // Pretend shared-host flag has been set to host4's flavor
         var sharedHostNodeResources = new NodeResources(48, 128, 1000, 10, NodeResources.DiskSpeed.fast, NodeResources.StorageType.remote);
-        tester.hostProvisioner.overrideHostFlavor("host4");
+        tester.hostProvisioner.setHostFlavor("host4");
 
         // Next maintenance run does nothing
         tester.assertNodesUnchanged();
@@ -365,7 +365,7 @@ public class HostCapacityMaintainerTest {
         Cloud cloud = Cloud.builder().dynamicProvisioning(true).build();
         DynamicProvisioningTester dynamicProvisioningTester = new DynamicProvisioningTester(cloud, new MockNameResolver().mockAnyLookup());
         ProvisioningTester tester = dynamicProvisioningTester.provisioningTester;
-        dynamicProvisioningTester.hostProvisioner.overrideHostFlavor("default");
+        dynamicProvisioningTester.hostProvisioner.setHostFlavor("default");
 
         // Initial config server hosts are provisioned manually
         List<Node> provisionedHosts = tester.makeReadyNodes(3, "default", hostType, 1).stream()
