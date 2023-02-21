@@ -4,7 +4,6 @@
 
 #include <vespa/vespalib/util/hdr_abort.h>
 #include <vespa/searchlib/util/randomgenerator.h>
-#include <vespa/searchlib/util/runnable.h>
 #include <vespa/searchlib/attribute/attribute.h>
 
 #define VALIDATOR_STR(str) #str
@@ -153,26 +152,30 @@ template <typename Vector, typename T, typename BT>
 AttributeUpdater<Vector, T, BT>::~AttributeUpdater() = default;
 
 template <typename Vector, typename T, typename BT>
-class AttributeUpdaterThread : public AttributeUpdater<Vector, T, BT>, public Runnable
+class AttributeUpdaterThread : public AttributeUpdater<Vector, T, BT>
 {
 private:
     using AttributePtr = AttributeVector::SP;
-
+    std::atomic<bool> _done;
+    std::thread _thread;
 public:
     AttributeUpdaterThread(const AttributePtr & attrPtr, const std::vector<T> & values,
                            RandomGenerator & rndGen, bool validate, uint32_t commitFreq,
                            uint32_t minValueCount, uint32_t maxValueCount);
     ~AttributeUpdaterThread();
-
-    virtual void doRun() override;
+    void doRun();
+    void start() { _thread = std::thread([this](){doRun();}); }
+    void stop() { _done = true; }
+    void join() { _thread.join(); }
 };
 
 template <typename Vector, typename T, typename BT>
 AttributeUpdaterThread<Vector, T, BT>::AttributeUpdaterThread(const AttributePtr & attrPtr, const std::vector<T> & values,
                                                RandomGenerator & rndGen, bool validate, uint32_t commitFreq,
                                                uint32_t minValueCount, uint32_t maxValueCount)
-    : AttributeUpdater<Vector, T, BT>(attrPtr, values, rndGen, validate, commitFreq, minValueCount, maxValueCount),
-      Runnable()
+  : AttributeUpdater<Vector, T, BT>(attrPtr, values, rndGen, validate, commitFreq, minValueCount, maxValueCount),
+    _done(false),
+    _thread()
 {}
 template <typename Vector, typename T, typename BT>
 AttributeUpdaterThread<Vector, T, BT>::~AttributeUpdaterThread() = default;
