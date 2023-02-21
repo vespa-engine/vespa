@@ -89,7 +89,6 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
@@ -136,7 +135,7 @@ public class ApplicationHandlerTest {
                 .withClock(clock)
                 .withConfigserverConfig(configserverConfig)
                 .withFileDistributionFactory(new MockFileDistributionFactory(configserverConfig))
-                .withHostProvisionerProvider(HostProvisionerProvider.withProvisioner(provisioner, false))
+                .withHostProvisionerProvider(HostProvisionerProvider.empty())
                 .withModelFactoryRegistry(new ModelFactoryRegistry(modelFactories))
                 .build();
         tenantRepository.addTenant(mytenantName);

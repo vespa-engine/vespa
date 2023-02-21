@@ -41,7 +41,7 @@ class MaintainerTester {
                 .build();
         tenantRepository = new TestTenantRepository.Builder()
                 .withClock(clock)
-                .withHostProvisionerProvider(HostProvisionerProvider.withProvisioner(provisioner, true))
+                .withHostProvisionerProvider(HostProvisionerProvider.withProvisioner(provisioner, configserverConfig))
                 .withConfigserverConfig(configserverConfig)
                 .withModelFactoryRegistry(new ModelFactoryRegistry(List.of(new DeployTester.CountingModelFactory(clock))))
                 .build();
