@@ -1,5 +1,5 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.vespa.hosted.provision.autoscale;
+package com.yahoo.vespa.hosted.provision.provisioning;
 
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Capacity;
@@ -19,6 +19,10 @@ import com.yahoo.vespa.hosted.provision.Nodelike;
 import com.yahoo.vespa.hosted.provision.applications.Application;
 import com.yahoo.vespa.hosted.provision.applications.Cluster;
 import com.yahoo.vespa.hosted.provision.applications.ScalingEvent;
+import com.yahoo.vespa.hosted.provision.autoscale.Autoscaler;
+import com.yahoo.vespa.hosted.provision.autoscale.Autoscaling;
+import com.yahoo.vespa.hosted.provision.autoscale.Fixture;
+import com.yahoo.vespa.hosted.provision.autoscale.MetricsDb;
 import com.yahoo.vespa.hosted.provision.node.IP;
 import com.yahoo.vespa.hosted.provision.provisioning.CapacityPolicies;
 import com.yahoo.vespa.hosted.provision.provisioning.HostResourcesCalculator;
@@ -44,21 +48,21 @@ import static org.junit.Assert.assertTrue;
  *
  * @author bratseth
  */
-public class AutoscalingTester {
+public class DynamicProvisioningTester {
 
     private final ProvisioningTester provisioningTester;
     private final Autoscaler autoscaler;
     private final HostResourcesCalculator hostResourcesCalculator;
     private final CapacityPolicies capacityPolicies;
 
-    public AutoscalingTester(Zone zone, HostResourcesCalculator resourcesCalculator, List<Flavor> hostFlavors, InMemoryFlagSource flagSource, int hostCount) {
+    public DynamicProvisioningTester(Zone zone, HostResourcesCalculator resourcesCalculator, List<Flavor> hostFlavors, InMemoryFlagSource flagSource, int hostCount) {
         this(zone, hostFlavors, resourcesCalculator, flagSource);
         for (Flavor flavor : hostFlavors)
             provisioningTester.makeReadyNodes(hostCount, flavor.name(), NodeType.host, 8);
         provisioningTester.activateTenantHosts();
     }
 
-    private AutoscalingTester(Zone zone, List<Flavor> flavors, HostResourcesCalculator resourcesCalculator, InMemoryFlagSource flagSource) {
+    private DynamicProvisioningTester(Zone zone, List<Flavor> flavors, HostResourcesCalculator resourcesCalculator, InMemoryFlagSource flagSource) {
         MockHostProvisioner hostProvisioner = null;
         if (zone.cloud().dynamicProvisioning()) {
             hostProvisioner = new MockHostProvisioner(flavors);

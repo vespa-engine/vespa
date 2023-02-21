@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.provision.autoscale;
 import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.test.ManualClock;
+import com.yahoo.vespa.hosted.provision.provisioning.DynamicProvisioningTester;
 import com.yahoo.vespa.hosted.provision.testutils.OrchestratorMock;
 import org.junit.Test;
 
@@ -22,12 +23,12 @@ public class AutoscalingIntegrationTest {
 
     @Test
     public void testComponentIntegration() {
-        var fixture = AutoscalingTester.fixture()
-                                       .hostCount(20)
-                                       .hostFlavors(new NodeResources(3, 20, 200, 1))
-                                       .initialResources(Optional.of(new ClusterResources(2, 1,
+        var fixture = DynamicProvisioningTester.fixture()
+                                               .hostCount(20)
+                                               .hostFlavors(new NodeResources(3, 20, 200, 1))
+                                               .initialResources(Optional.of(new ClusterResources(2, 1,
                                                                                           new NodeResources(1, 10, 100, 1))))
-                                       .build();
+                                               .build();
         MetricsV2MetricsFetcher fetcher = new MetricsV2MetricsFetcher(fixture.tester().nodeRepository(),
                                                                       new OrchestratorMock(),
                                                                       new MockHttpClient(fixture.tester().clock()));
