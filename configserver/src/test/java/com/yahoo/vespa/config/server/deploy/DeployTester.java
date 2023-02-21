@@ -296,7 +296,8 @@ public class DeployTester {
                     .withZone(zone)
                     .withFlagSource(flagSource);
 
-            if (configserverConfig.hostedVespa()) builder.withHostProvisionerProvider(HostProvisionerProvider.withProvisioner(provisioner, true));
+            if (configserverConfig.hostedVespa())
+                builder.withHostProvisionerProvider(HostProvisionerProvider.withProvisioner(provisioner, configserverConfig));
 
             TenantRepository tenantRepository = builder.build();
             tenantRepository.addTenant(tenantName);
