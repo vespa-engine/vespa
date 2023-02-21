@@ -618,4 +618,6 @@ public class TenantRepository {
 
     public com.yahoo.vespa.curator.Curator getCurator() { return curator; }
 
+    public HostProvisionerProvider hostProvisionerProvider() { return hostProvisionerProvider; }
+
 }

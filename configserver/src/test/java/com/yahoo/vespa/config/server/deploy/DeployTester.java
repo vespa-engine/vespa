@@ -307,7 +307,6 @@ public class DeployTester {
                     .withConfigserverConfig(configserverConfig)
                     .withOrchestrator(new OrchestratorMock())
                     .withClock(clock)
-                    .withProvisioner(provisioner)
                     .withConfigConvergenceChecker(configConvergenceChecker)
                     .withFlagSource(flagSource)
                     .build();

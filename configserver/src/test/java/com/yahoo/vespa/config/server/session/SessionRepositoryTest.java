@@ -19,7 +19,6 @@ import com.yahoo.io.reader.NamedReader;
 import com.yahoo.path.Path;
 import com.yahoo.text.Utf8;
 import com.yahoo.vespa.config.server.ApplicationRepository;
-import com.yahoo.vespa.config.server.MockProvisioner;
 import com.yahoo.vespa.config.server.application.ApplicationSet;
 import com.yahoo.vespa.config.server.application.OrchestratorMock;
 import com.yahoo.vespa.config.server.filedistribution.MockFileDistributionFactory;
@@ -103,7 +102,6 @@ public class SessionRepositoryTest {
         tenantRepository.addTenant(SessionRepositoryTest.tenantName);
         applicationRepository = new ApplicationRepository.Builder()
                 .withTenantRepository(tenantRepository)
-                .withProvisioner(new MockProvisioner())
                 .withOrchestrator(new OrchestratorMock())
                 .withFlagSource(flagSource)
                 .build();

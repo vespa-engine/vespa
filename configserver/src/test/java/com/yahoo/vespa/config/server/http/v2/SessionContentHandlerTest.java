@@ -11,7 +11,6 @@ import com.yahoo.jdisc.Response;
 import com.yahoo.jdisc.http.HttpRequest;
 import com.yahoo.text.Utf8;
 import com.yahoo.vespa.config.server.ApplicationRepository;
-import com.yahoo.vespa.config.server.MockProvisioner;
 import com.yahoo.vespa.config.server.application.OrchestratorMock;
 import com.yahoo.vespa.config.server.http.ContentHandlerTestBase;
 import com.yahoo.vespa.config.server.http.SessionHandlerTest;
@@ -24,7 +23,6 @@ import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
-
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
@@ -63,7 +61,6 @@ public class SessionContentHandlerTest extends ContentHandlerTestBase {
 
         ApplicationRepository applicationRepository = new ApplicationRepository.Builder()
                 .withTenantRepository(tenantRepository)
-                .withProvisioner(new MockProvisioner())
                 .withOrchestrator(new OrchestratorMock())
                 .withConfigserverConfig(configserverConfig)
                 .build();
@@ -186,7 +183,6 @@ public class SessionContentHandlerTest extends ContentHandlerTestBase {
                 SessionContentHandler.testContext(),
                 new ApplicationRepository.Builder()
                         .withTenantRepository(tenantRepository)
-                        .withProvisioner(new MockProvisioner())
                         .withOrchestrator(new OrchestratorMock())
                         .withClock(Clock.systemUTC())
                         .build()

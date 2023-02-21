@@ -19,6 +19,7 @@ import com.yahoo.vespa.config.server.http.HandlerTest;
 import com.yahoo.vespa.config.server.http.HttpErrorResponse;
 import com.yahoo.vespa.config.server.model.TestModelFactory;
 import com.yahoo.vespa.config.server.modelfactory.ModelFactoryRegistry;
+import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
 import com.yahoo.vespa.config.server.session.PrepareParams;
 import com.yahoo.vespa.config.server.session.Session;
 import com.yahoo.vespa.config.server.tenant.Tenant;
@@ -74,11 +75,11 @@ public class SessionActiveHandlerTest {
         TenantRepository tenantRepository = new TestTenantRepository.Builder()
                 .withConfigserverConfig(configserverConfig)
                 .withModelFactoryRegistry(new ModelFactoryRegistry(List.of((modelFactory))))
+                .withHostProvisionerProvider(HostProvisionerProvider.withProvisioner(provisioner, configserverConfig))
                 .build();
         tenantRepository.addTenant(tenantName);
         applicationRepository = new ApplicationRepository.Builder()
                 .withTenantRepository(tenantRepository)
-                .withProvisioner(provisioner)
                 .withOrchestrator(new OrchestratorMock())
                 .withClock(clock)
                 .withConfigserverConfig(configserverConfig)
@@ -164,8 +165,6 @@ public class SessionActiveHandlerTest {
                 "/environment/" + "prod" +
                 "/region/" + "default" +
                 "/instance/" + "default"));
-        assertTrue(provisioner.activated());
-        assertEquals(1, provisioner.lastHosts().size());
     }
 
     private SessionActiveHandler createHandler() {
