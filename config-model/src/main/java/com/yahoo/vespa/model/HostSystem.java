@@ -10,6 +10,7 @@ import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.ProvisionLogger;
+
 import java.net.UnknownHostException;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -54,9 +55,10 @@ public class HostSystem extends TreeConfigProducer<Host> {
     }
 
     void checkName(String hostname) {
+        if (isHosted) return; // Done in node-repo instead
+
         if (doCheckIp) {
-            // Bad DNS config in a hosted system isn't actionable by the tenant, so we log any warnings internally
-            BiConsumer<Level, String> logFunction = isHosted ? deployLogger::log : deployLogger::logApplicationPackage;
+            BiConsumer<Level, String> logFunction = deployLogger::logApplicationPackage;
             // Give a warning if the host does not exist
             try {
                 var inetAddr = java.net.InetAddress.getByName(hostname);
