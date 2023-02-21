@@ -17,6 +17,7 @@ import com.yahoo.vespa.hosted.provision.node.IP;
 import com.yahoo.vespa.hosted.provision.provisioning.FatalProvisioningException;
 import com.yahoo.vespa.hosted.provision.provisioning.HostIpConfig;
 import com.yahoo.vespa.hosted.provision.provisioning.HostProvisioner;
+import com.yahoo.vespa.hosted.provision.provisioning.HostResourcesCalculator;
 import com.yahoo.vespa.hosted.provision.provisioning.ProvisionedHost;
 
 import java.time.Instant;
@@ -46,7 +47,7 @@ public class MockHostProvisioner implements HostProvisioner {
 
     private int deprovisionedHosts = 0;
     private EnumSet<Behaviour> behaviours = EnumSet.noneOf(Behaviour.class);
-    private Optional<Flavor> hostFlavor = Optional.empty();
+    private Map<ClusterSpec.Type, Flavor> hostFlavors = new HashMap<>();
 
     public MockHostProvisioner(List<Flavor> flavors, MockNameResolver nameResolver, int memoryTaxGb) {
         this.flavors = List.copyOf(flavors);
@@ -67,11 +68,14 @@ public class MockHostProvisioner implements HostProvisioner {
                                ApplicationId applicationId, Version osVersion, HostSharing sharing,
                                Optional<ClusterSpec.Type> clusterType, CloudAccount cloudAccount,
                                Consumer<List<ProvisionedHost>> provisionedHostsConsumer) {
-        Flavor hostFlavor = this.hostFlavor.orElseGet(() -> flavors.stream()
-                                                                   .filter(f -> sharing == HostSharing.exclusive ? compatible(f, resources)
-                                                                                                                 : f.resources().satisfies(resources))
-                                                                   .findFirst()
-                                                                   .orElseThrow(() -> new NodeAllocationException("No host flavor matches " + resources, true)));
+        Flavor hostFlavor = hostFlavors.get(clusterType.orElse(ClusterSpec.Type.content));
+        if (hostFlavor == null)
+            hostFlavor = flavors.stream()
+                                .filter(f -> sharing == HostSharing.exclusive ? compatible(f, resources)
+                                                                              : f.resources().satisfies(resources))
+                                .findFirst()
+                                .orElseThrow(() -> new NodeAllocationException("No host flavor matches " + resources, true));
+
         List<ProvisionedHost> hosts = new ArrayList<>();
         for (int index : provisionIndices) {
             String hostHostname = hostType == NodeType.host ? "host" + index : hostType.name() + index;
@@ -152,13 +156,29 @@ public class MockHostProvisioner implements HostProvisioner {
         return this;
     }
 
-    public MockHostProvisioner overrideHostFlavor(String flavorName) {
+    public MockHostProvisioner setHostFlavor(String flavorName, ClusterSpec.Type ... types) {
         Flavor flavor = flavors.stream().filter(f -> f.name().equals(flavorName))
                                .findFirst()
                                .orElseThrow(() -> new IllegalArgumentException("No such flavor '" + flavorName + "'"));
-        hostFlavor = Optional.of(flavor);
+        if (types.length == 0)
+            types = ClusterSpec.Type.values();
+        for (var type : types)
+            hostFlavors.put(type, flavor);
         return this;
     }
+
+    /** Sets the host flavor to use to the flavor matching these resources exactly, if any. */
+    public MockHostProvisioner setHostFlavorIfAvailable(NodeResources flavorAdvertisedResources, HostResourcesCalculator calculator, ClusterSpec.Type ... types) {
+        Optional<Flavor> hostFlavor = flavors.stream().filter(f -> calculator.advertisedResourcesOf(f).compatibleWith(flavorAdvertisedResources))
+                                             .findFirst();
+        if (types.length == 0)
+            types = ClusterSpec.Type.values();
+        for (var type : types)
+            hostFlavor.ifPresent(f -> hostFlavors.put(type, f));
+        return this;
+    }
+
+    public Optional<Flavor> getHostFlavor(ClusterSpec.Type type) { return Optional.ofNullable(hostFlavors.get(type)); }
 
     public MockHostProvisioner addEvent(HostEvent event) {
         hostEvents.add(event);

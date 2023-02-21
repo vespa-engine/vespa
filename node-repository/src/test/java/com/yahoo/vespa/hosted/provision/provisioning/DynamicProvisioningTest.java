@@ -256,13 +256,13 @@ public class DynamicProvisioningTest {
         ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content, new ClusterSpec.Id("cluster1")).vespaVersion("8").build();
         Capacity capacity = Capacity.from(new ClusterResources(4, 2, new NodeResources(2, 4, 50, 0.1, DiskSpeed.any, StorageType.any, Architecture.any)));
 
-        hostProvisioner.overrideHostFlavor("x86");
+        hostProvisioner.setHostFlavor("x86", ClusterSpec.Type.content);
         tester.activate(app, cluster, capacity);
         NodeList nodes = tester.nodeRepository().nodes().list();
         assertEquals(4, nodes.owner(app).state(Node.State.active).size());
         assertEquals(Set.of("x86"), nodes.parentsOf(nodes.owner(app).state(Node.State.active)).stream().map(n -> n.flavor().name()).collect(Collectors.toSet()));
 
-        hostProvisioner.overrideHostFlavor("arm");
+        hostProvisioner.setHostFlavor("arm", ClusterSpec.Type.content);
         flagSource.withStringFlag(PermanentFlags.HOST_FLAVOR.id(), "arm");
         tester.activate(app, cluster, capacity);
         nodes = tester.nodeRepository().nodes().list();

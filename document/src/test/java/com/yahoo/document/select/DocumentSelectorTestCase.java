@@ -775,7 +775,7 @@ public class DocumentSelectorTestCase {
 
     @Test
     public void testInheritance() throws ParseException {
-        var s=new DocumentSelector("parent.parentField = \"parentValue\"");
+        new DocumentSelector("parent.parentField = \"parentValue\"");
         List<DocumentPut> documents = createDocs();
         assertEquals(Result.TRUE, evaluate("test", documents.get(0)));
         assertEquals("Matching on type is exact", Result.FALSE, evaluate("parent", documents.get(0)));

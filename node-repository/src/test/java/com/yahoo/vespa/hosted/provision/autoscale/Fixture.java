@@ -24,6 +24,7 @@ import com.yahoo.vespa.hosted.provision.applications.Cluster;
 import com.yahoo.vespa.hosted.provision.applications.BcpGroupInfo;
 import com.yahoo.vespa.hosted.provision.autoscale.awsnodes.AwsHostResourcesCalculatorImpl;
 import com.yahoo.vespa.hosted.provision.autoscale.awsnodes.AwsNodeTypes;
+import com.yahoo.vespa.hosted.provision.provisioning.DynamicProvisioningTester;
 import com.yahoo.vespa.hosted.provision.provisioning.HostResourcesCalculator;
 import java.time.Duration;
 import java.util.Arrays;
@@ -37,7 +38,7 @@ import java.util.Optional;
  */
 public class Fixture {
 
-    final AutoscalingTester tester;
+    final DynamicProvisioningTester tester;
     final Zone zone;
     final ApplicationId applicationId;
     final ClusterSpec clusterSpec;
@@ -49,13 +50,13 @@ public class Fixture {
         applicationId = builder.application;
         clusterSpec = builder.cluster;
         capacity = builder.capacity;
-        tester = new AutoscalingTester(builder.zone, builder.resourceCalculator, builder.hostFlavors, builder.flagSource, hostCount);
+        tester = new DynamicProvisioningTester(builder.zone, builder.resourceCalculator, builder.hostFlavors, builder.flagSource, hostCount);
         var deployCapacity = initialResources.isPresent() ? Capacity.from(initialResources.get()) : capacity;
         tester.deploy(builder.application, builder.cluster, deployCapacity);
         this.loader = new Loader(this);
     }
 
-    public AutoscalingTester tester() { return tester; }
+    public DynamicProvisioningTester tester() { return tester; }
 
     public ApplicationId applicationId() { return applicationId; }
 
@@ -141,7 +142,7 @@ public class Fixture {
 
     public static class Builder {
 
-        ApplicationId application = AutoscalingTester.applicationId("application1");
+        ApplicationId application = DynamicProvisioningTester.applicationId("application1");
         ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("cluster1")).vespaVersion("7").build();
         Zone zone = new Zone(Environment.prod, RegionName.from("us-east"));
         List<Flavor> hostFlavors = List.of(new Flavor(new NodeResources(100, 100, 100, 1)));
@@ -150,7 +151,7 @@ public class Fixture {
                                                                new NodeResources(1, 4, 10, 1, NodeResources.DiskSpeed.any)),
                                           new ClusterResources(20, 1,
                                                                new NodeResources(100, 1000, 1000, 1, NodeResources.DiskSpeed.any)));
-        HostResourcesCalculator resourceCalculator = new AutoscalingTester.MockHostResourcesCalculator(zone);
+        HostResourcesCalculator resourceCalculator = new DynamicProvisioningTester.MockHostResourcesCalculator(zone);
         final InMemoryFlagSource flagSource = new InMemoryFlagSource();
         int hostCount = 0;
 

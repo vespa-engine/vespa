@@ -1041,6 +1041,19 @@ public class ProvisioningTest {
         assertEquals(new NodeResources(3, 3, 3, 3), CapacityPolicies.versioned(spec.vespaVersion("9.0").build(), resources));
     }
 
+    @Test
+    public void testAdminProvisioning() {
+        var nodeResources = new NodeResources(0.25, 1.32, 10, 0.3);
+        var resources = new ClusterResources(1, 1, nodeResources);
+        var fixture = DynamicProvisioningTester.fixture()
+                                               .awsProdSetup(true)
+                                               .clusterType(ClusterSpec.Type.admin)
+                                               .initialResources(Optional.empty())
+                                               .capacity(Capacity.from(resources))
+                                               .build();
+        fixture.deploy();
+    }
+
     private SystemState prepare(ApplicationId application, int container0Size, int container1Size, int content0Size,
                                 int content1Size, NodeResources flavor, ProvisioningTester tester) {
         return prepare(application, tester, container0Size, container1Size, content0Size, content1Size, flavor, "6.42");

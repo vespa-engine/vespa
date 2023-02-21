@@ -5,6 +5,7 @@ import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.vespa.hosted.provision.applications.BcpGroupInfo;
+import com.yahoo.vespa.hosted.provision.provisioning.DynamicProvisioningTester;
 import org.junit.Test;
 
 import java.time.Duration;
@@ -21,7 +22,7 @@ public class AutoscalingUsingBcpGroupInfoTest {
     /** Tests with varying BCP group info parameters. */
     @Test
     public void test_autoscaling_single_content_group() {
-        var fixture = AutoscalingTester.fixture().awsProdSetup(true).build();
+        var fixture = DynamicProvisioningTester.fixture().awsProdSetup(true).build();
 
         fixture.tester().clock().advance(Duration.ofDays(2));
         fixture.store(new BcpGroupInfo(100, 1.1, 0.3));
@@ -62,11 +63,11 @@ public class AutoscalingUsingBcpGroupInfoTest {
                                        new NodeResources(1, 4, 10, 1, NodeResources.DiskSpeed.any));
         var max = new ClusterResources(21, 3,
                                        new NodeResources(100, 1000, 1000, 1, NodeResources.DiskSpeed.any));
-        var fixture = AutoscalingTester.fixture()
-                                       .awsProdSetup(true)
-                                       .initialResources(Optional.of(new ClusterResources(9, 3, new NodeResources(2, 16, 75, 1))))
-                                       .capacity(Capacity.from(min, max))
-                                       .build();
+        var fixture = DynamicProvisioningTester.fixture()
+                                               .awsProdSetup(true)
+                                               .initialResources(Optional.of(new ClusterResources(9, 3, new NodeResources(2, 16, 75, 1))))
+                                               .capacity(Capacity.from(min, max))
+                                               .build();
 
         fixture.tester().clock().advance(Duration.ofDays(2));
         fixture.store(new BcpGroupInfo(100, 1.1, 0.3));
@@ -108,7 +109,7 @@ public class AutoscalingUsingBcpGroupInfoTest {
      */
     @Test
     public void test_autoscaling_container() {
-        var fixture = AutoscalingTester.fixture().clusterType(ClusterSpec.Type.container).awsProdSetup(true).build();
+        var fixture = DynamicProvisioningTester.fixture().clusterType(ClusterSpec.Type.container).awsProdSetup(true).build();
 
         fixture.tester().clock().advance(Duration.ofDays(2));
         fixture.store(new BcpGroupInfo(100, 1.1, 0.3));
@@ -144,7 +145,7 @@ public class AutoscalingUsingBcpGroupInfoTest {
 
     @Test
     public void test_autoscaling_single_content_group_with_some_local_traffic() {
-        var fixture = AutoscalingTester.fixture().awsProdSetup(true).build();
+        var fixture = DynamicProvisioningTester.fixture().awsProdSetup(true).build();
 
         // Baseline: No local traffic, group traffic indicates much higher cpu usage than local
         fixture.tester().clock().advance(Duration.ofDays(2));

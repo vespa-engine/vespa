@@ -48,6 +48,7 @@ public class AwsResourcesCalculator {
                              ( hostFlavor.advertisedResources().memoryGb() - ( real ? hostMemoryOverhead : 0));
         if (memoryShare > 1) // The real resources of the host cannot fit the requested real resources after overhead
             memoryShare = 1;
+
         return hostMemoryOverhead * memoryShare;
     }
 
