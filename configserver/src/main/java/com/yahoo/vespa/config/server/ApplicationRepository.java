@@ -227,7 +227,6 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     // Should be used by tests only (first constructor in this class makes sure we use injectable components where possible)
     public static class Builder {
         private TenantRepository tenantRepository;
-        private Optional<Provisioner> hostProvisioner = Optional.empty();
         private HttpProxy httpProxy = new HttpProxy(new SimpleHttpFetcher(Duration.ofSeconds(30)));
         private EndpointsChecker endpointsChecker = __ -> { throw new UnsupportedOperationException(); };
         private Clock clock = Clock.systemUTC();
@@ -247,18 +246,6 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
 
         public Builder withClock(Clock clock) {
             this.clock = clock;
-            return this;
-        }
-
-        public Builder withProvisioner(Provisioner provisioner) {
-            if (this.hostProvisioner.isPresent()) throw new IllegalArgumentException("provisioner already set in builder");
-            this.hostProvisioner = Optional.ofNullable(provisioner);
-            return this;
-        }
-
-        public Builder withHostProvisionerProvider(HostProvisionerProvider hostProvisionerProvider) {
-            if (this.hostProvisioner.isPresent()) throw new IllegalArgumentException("provisioner already set in builder");
-            this.hostProvisioner = hostProvisionerProvider.getHostProvisioner();
             return this;
         }
 
@@ -314,7 +301,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
 
         public ApplicationRepository build() {
             return new ApplicationRepository(tenantRepository,
-                                             hostProvisioner,
+                                             tenantRepository.hostProvisionerProvider().getHostProvisioner(),
                                              InfraDeployerProvider.empty().getInfraDeployer(),
                                              configConvergenceChecker,
                                              httpProxy,

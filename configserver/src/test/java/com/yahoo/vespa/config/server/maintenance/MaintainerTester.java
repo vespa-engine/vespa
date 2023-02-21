@@ -47,7 +47,6 @@ class MaintainerTester {
                 .build();
         applicationRepository = new ApplicationRepository.Builder()
                 .withTenantRepository(tenantRepository)
-                .withProvisioner(provisioner)
                 .withOrchestrator(new OrchestratorMock())
                 .withLogRetriever(new MockLogRetriever())
                 .withClock(clock)

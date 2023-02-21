@@ -13,7 +13,6 @@ import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.Deployment;
-import com.yahoo.config.provision.HostFilter;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.NetworkPorts;
@@ -38,6 +37,7 @@ import com.yahoo.vespa.config.server.deploy.TenantFileSystemDirs;
 import com.yahoo.vespa.config.server.filedistribution.FileDirectory;
 import com.yahoo.vespa.config.server.filedistribution.MockFileDistributionFactory;
 import com.yahoo.vespa.config.server.http.v2.PrepareResult;
+import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
 import com.yahoo.vespa.config.server.session.LocalSession;
 import com.yahoo.vespa.config.server.session.PrepareParams;
 import com.yahoo.vespa.config.server.session.Session;
@@ -79,7 +79,6 @@ import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 /**
  * @author hmusum
@@ -125,21 +124,21 @@ public class ApplicationRepositoryTest {
                 .build();
         flagSource = new InMemoryFlagSource();
         fileDirectory = new FileDirectory(configserverConfig);
+        provisioner = new MockProvisioner();
         tenantRepository = new TestTenantRepository.Builder()
                 .withClock(clock)
                 .withConfigserverConfig(configserverConfig)
                 .withCurator(curator)
                 .withFileDistributionFactory(new MockFileDistributionFactory(configserverConfig))
                 .withFlagSource(flagSource)
+                .withHostProvisionerProvider(HostProvisionerProvider.withProvisioner(provisioner, configserverConfig))
                 .build();
         tenantRepository.addTenant(TenantRepository.HOSTED_VESPA_TENANT);
         tenantRepository.addTenant(tenant1);
         tenantRepository.addTenant(tenant2);
         orchestrator = new OrchestratorMock();
-        provisioner = new MockProvisioner();
         applicationRepository = new ApplicationRepository.Builder()
                 .withTenantRepository(tenantRepository)
-                .withProvisioner(provisioner)
                 .withConfigserverConfig(configserverConfig)
                 .withOrchestrator(orchestrator)
                 .withLogRetriever(new MockLogRetriever())
@@ -177,7 +176,6 @@ public class ApplicationRepositoryTest {
     public void prepareAndActivateWithRestart() {
         applicationRepository = new ApplicationRepository.Builder()
                 .withTenantRepository(tenantRepository)
-                .withProvisioner(provisioner)
                 .withConfigserverConfig(configserverConfig)
                 .withOrchestrator(orchestrator)
                 .withLogRetriever(new MockLogRetriever())
@@ -188,8 +186,7 @@ public class ApplicationRepositoryTest {
         prepareAndActivate(testAppJdiscOnly);
         PrepareResult result = prepareAndActivate(testAppJdiscOnlyRestart);
         assertTrue(result.configChangeActions().getRefeedActions().isEmpty());
-        assertTrue(result.configChangeActions().getRestartActions().isEmpty());
-        assertEquals(HostFilter.hostname("mytesthost2"), provisioner.lastRestartFilter());
+        assertFalse(result.configChangeActions().getRestartActions().isEmpty());
     }
 
     @Test
@@ -197,7 +194,6 @@ public class ApplicationRepositoryTest {
         applicationRepository = new ApplicationRepository.Builder()
                 .withTenantRepository(tenantRepository)
                 .withOrchestrator(orchestrator)
-                .withProvisioner(null)
                 .build();
 
         prepareAndActivate(testAppJdiscOnly);
@@ -285,7 +281,6 @@ public class ApplicationRepositoryTest {
 
         applicationRepository = new ApplicationRepository.Builder()
                 .withTenantRepository(tenantRepository)
-                .withProvisioner(provisioner)
                 .withOrchestrator(orchestrator)
                 .withClock(clock)
                 .build();
@@ -329,20 +324,16 @@ public class ApplicationRepositoryTest {
             File sessionFile = new File(tenantFileSystemDirs.sessionsPath(), String.valueOf(sessionId));
             assertTrue(sessionFile.exists());
 
-            // Delete app and verify that it has been deleted from repos and provisioner and no application set exists
+            // Delete app and verify that it has been deleted from repos and no application set exists
             assertTrue(applicationRepository.delete(applicationId()));
             assertTrue(applicationRepository.getActiveSession(applicationId()).isEmpty());
             assertEquals(Optional.empty(), sessionRepository.getRemoteSession(sessionId).applicationSet());
-            assertEquals(1, provisioner.removeCount());
-            assertEquals(tenant().getName(), provisioner.lastApplicationId().tenant());
-            assertEquals(applicationId(), provisioner.lastApplicationId());
             assertTrue(curator.exists(sessionNode));
             assertEquals(Session.Status.DELETE.name(), Utf8.toString(curator.getData(sessionNode.append("sessionState")).get()));
             assertTrue(sessionFile.exists());
 
-            // Deleting a non-existent application still attempts to remove resources
+            // Deleting a non-existent application will return false
             assertFalse(applicationRepository.delete(applicationId()));
-            assertEquals(2, provisioner.removeCount());
         }
 
         {
@@ -358,46 +349,9 @@ public class ApplicationRepositoryTest {
 
             // Delete app with id fooId, should not affect original app
             assertTrue(applicationRepository.delete(fooId));
-            assertEquals(fooId, provisioner.lastApplicationId());
             assertNotNull(applicationRepository.getActiveSession(applicationId()));
 
             assertTrue(applicationRepository.delete(applicationId()));
-        }
-
-        // If delete fails, a retry should work if the failure is transient and zookeeper state should be consistent
-        {
-            long sessionId = deployApp(testApp).sessionId();
-            assertNotNull(sessionRepository.getRemoteSession(sessionId));
-            assertNotNull(applicationRepository.getActiveSession(applicationId()));
-            assertEquals(sessionId, applicationRepository.getActiveSession(applicationId()).get().getSessionId());
-            assertNotNull(applicationRepository.getApplication(applicationId()));
-
-            provisioner.failureOnRemove(true);
-            try {
-                applicationRepository.delete(applicationId());
-                fail("Should fail with RuntimeException");
-            } catch (RuntimeException e) {
-                // ignore
-            }
-            assertNotNull(sessionRepository.getRemoteSession(sessionId));
-            assertNotNull(applicationRepository.getActiveSession(applicationId()));
-            assertEquals(sessionId, applicationRepository.getActiveSession(applicationId()).get().getSessionId());
-
-            // Delete should work when there is no failure anymore
-            provisioner.failureOnRemove(false);
-            assertTrue(applicationRepository.delete(applicationId()));
-
-            // Session should be in state DELETE
-            Path sessionNode = sessionRepository.getSessionPath(sessionId);
-            assertEquals(Session.Status.DELETE.name(), Utf8.toString(curator.getData(sessionNode.append("sessionState")).get()));
-            assertNotNull(sessionRepository.getRemoteSession(sessionId)); // session still exists
-            assertTrue(applicationRepository.getActiveSession(applicationId()).isEmpty()); // but it is not active
-            try {
-                applicationRepository.getApplication(applicationId());
-                fail("Should fail with NotFoundException, application should not exist");
-            } catch (NotFoundException e) {
-                // ignore
-            }
         }
     }
 
@@ -522,7 +476,6 @@ public class ApplicationRepositoryTest {
         MockMetric actual = new MockMetric();
         applicationRepository = new ApplicationRepository.Builder()
                 .withTenantRepository(tenantRepository)
-                .withProvisioner(provisioner)
                 .withOrchestrator(orchestrator)
                 .withMetric(actual)
                 .withClock(new ManualClock())
