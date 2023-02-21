@@ -53,6 +53,14 @@ public class AutoscalingUsingBcpGroupInfoTest {
         fixture.tester().assertResources("Scaling up cpu using bcp group cpu info",
                                          9, 1, 5.4,  6.1, 25.3,
                                          fixture.autoscale());
+
+        // Bcp elsewhere is 0 - use local only
+        fixture.tester().clock().advance(Duration.ofDays(2));
+        fixture.store(new BcpGroupInfo(0, 1.1, 0.45));
+        fixture.loader().addCpuMeasurements(0.7f, 10);
+        fixture.tester().assertResources("Scaling using local info",
+                                         8, 1, 1,  7.0, 29.0,
+                                         fixture.autoscale());
     }
 
     /** Tests with varying BCP group info parameters. */
