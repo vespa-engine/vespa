@@ -4,14 +4,10 @@
 package vespa
 
 import (
-	"fmt"
 	"net"
 	"os"
-	"strings"
 
 	"github.com/vespa-engine/vespa/client/go/internal/admin/envvars"
-	"github.com/vespa-engine/vespa/client/go/internal/admin/trace"
-	"github.com/vespa-engine/vespa/client/go/internal/util"
 )
 
 // detect if this host is IPv6-only, in which case we want to pass
@@ -56,76 +52,8 @@ func FindOurHostname() (string, error) {
 	if err != nil {
 		name = "localhost"
 	}
-	name, err = findOurHostnameFrom(name)
 	if err == nil {
 		os.Setenv(envvars.VESPA_HOSTNAME, name)
 	}
 	return name, err
-}
-
-func validateHostname(name string) bool {
-	ipAddrs, _ := net.LookupIP(name)
-	trace.Debug("lookupIP", name, "=>", ipAddrs)
-	if len(ipAddrs) < 1 {
-		return false
-	}
-	myIpAddresses := make(map[string]bool)
-	interfaceAddrs, _ := net.InterfaceAddrs()
-	for _, ifAddr := range interfaceAddrs {
-		// note: ifAddr.String() is typically "127.0.0.1/8"
-		if ipnet, ok := ifAddr.(*net.IPNet); ok {
-			myIpAddresses[ipnet.IP.String()] = true
-		}
-	}
-	trace.Debug("validate with interfaces =>", myIpAddresses)
-	someGood := false
-	for _, addr := range ipAddrs {
-		if len(myIpAddresses) == 0 {
-			// no validation possible, assume OK
-			return true
-		}
-		if myIpAddresses[addr.String()] {
-			someGood = true
-		} else {
-			return false
-		}
-	}
-	return someGood
-}
-
-func goodHostname(name string) (result string, good bool) {
-	result = strings.TrimSpace(name)
-	result = strings.TrimSuffix(result, ".")
-	if name != result {
-		trace.Trace("trimmed hostname", name, "=>", result)
-	}
-	good = strings.Contains(result, ".") && validateHostname(result)
-	trace.Debug("hostname:", result, "good =>", good)
-	return
-}
-
-func findOurHostnameFrom(name string) (string, error) {
-	trimmed, good := goodHostname(name)
-	if good {
-		return trimmed, nil
-	}
-	backticks := util.BackTicksIgnoreStderr
-	out, err := backticks.Run("vespa-detect-hostname")
-	if err != nil {
-		out, err = backticks.Run("hostname", "-f")
-	}
-	if err != nil {
-		out, err = backticks.Run("hostname")
-	}
-	alternate, good := goodHostname(out)
-	if err == nil && good {
-		return alternate, nil
-	}
-	if validateHostname(trimmed) {
-		return trimmed, nil
-	}
-	if validateHostname(alternate) {
-		return alternate, nil
-	}
-	return "localhost", fmt.Errorf("fallback to localhost [os.Hostname was '%s']", name)
 }
