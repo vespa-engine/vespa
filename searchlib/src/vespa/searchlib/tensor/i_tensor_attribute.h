@@ -13,6 +13,7 @@ namespace vespalib::slime { struct Inserter; }
 namespace search::tensor {
 
 class NearestNeighborIndex;
+class SerializedTensorRef;
 
 /**
  * Interface for tensor attribute used by feature executors to get information.
@@ -24,8 +25,10 @@ public:
     virtual std::unique_ptr<vespalib::eval::Value> getEmptyTensor() const = 0;
     virtual vespalib::eval::TypedCells extract_cells_ref(uint32_t docid) const = 0;
     virtual const vespalib::eval::Value& get_tensor_ref(uint32_t docid) const = 0;
+    virtual SerializedTensorRef get_serialized_tensor_ref(uint32_t docid) const = 0;
     virtual bool supports_extract_cells_ref() const = 0;
     virtual bool supports_get_tensor_ref() const = 0;
+    virtual bool supports_get_serialized_tensor_ref() const = 0;
 
     virtual const vespalib::eval::ValueType & getTensorType() const = 0;
 

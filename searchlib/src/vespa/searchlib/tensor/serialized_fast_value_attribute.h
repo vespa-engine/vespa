@@ -23,6 +23,9 @@ public:
     SerializedFastValueAttribute(vespalib::stringref baseFileName, const Config &cfg, const NearestNeighborIndexFactory& index_factory = DefaultNearestNeighborIndexFactory());
     ~SerializedFastValueAttribute() override;
 
+    SerializedTensorRef get_serialized_tensor_ref(uint32_t docid) const override;
+    bool supports_get_serialized_tensor_ref() const override;
+
     // Implements DocVectorAccess
     vespalib::eval::TypedCells get_vector(uint32_t docid, uint32_t subspace) const override;
     VectorBundle get_vectors(uint32_t docid) const override;

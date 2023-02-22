@@ -35,9 +35,11 @@ public:
     std::unique_ptr<vespalib::eval::Value> getEmptyTensor() const override;
     vespalib::eval::TypedCells extract_cells_ref(uint32_t docid) const override;
     const vespalib::eval::Value& get_tensor_ref(uint32_t docid) const override;
+    SerializedTensorRef get_serialized_tensor_ref(uint32_t docid) const override;
     bool supports_extract_cells_ref() const override { return _target_tensor_attribute.supports_extract_cells_ref(); }
     bool supports_get_tensor_ref() const override { return _target_tensor_attribute.supports_get_tensor_ref(); }
     DistanceMetric distance_metric() const override { return _target_tensor_attribute.distance_metric(); }
+    bool supports_get_serialized_tensor_ref() const override;
     uint32_t get_num_docs() const override { return getNumDocs(); }
 
     vespalib::eval::TypedCells get_vector(uint32_t docid, uint32_t subspace) const override;

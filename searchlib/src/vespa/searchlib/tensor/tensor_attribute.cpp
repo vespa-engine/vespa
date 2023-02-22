@@ -4,6 +4,7 @@
 #include "nearest_neighbor_index.h"
 #include "nearest_neighbor_index_factory.h"
 #include "nearest_neighbor_index_saver.h"
+#include "serialized_tensor_ref.h"
 #include "tensor_attribute_constants.h"
 #include "tensor_attribute_loader.h"
 #include "tensor_attribute_saver.h"
@@ -259,6 +260,18 @@ const vespalib::eval::Value&
 TensorAttribute::get_tensor_ref(uint32_t /*docid*/) const
 {
     notImplemented();
+}
+
+SerializedTensorRef
+TensorAttribute::get_serialized_tensor_ref(uint32_t) const
+{
+    notImplemented();
+}
+
+bool
+TensorAttribute::supports_get_serialized_tensor_ref() const
+{
+    return false;
 }
 
 const vespalib::eval::ValueType &

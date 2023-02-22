@@ -3,6 +3,7 @@
 #pragma once
 
 #include "empty_subspace.h"
+#include "serialized_tensor_ref.h"
 #include "subspace_type.h"
 #include "vector_bundle.h"
 #include <vespa/vespalib/datastore/aligner.h>
@@ -109,6 +110,13 @@ public:
         auto cells_mem_size = get_cells_mem_size(num_subspaces);
         auto aligner = select_aligner(cells_mem_size);
         return VectorBundle(buf.data() + get_cells_offset(num_subspaces, aligner), num_subspaces, _subspace_type);
+    }
+    SerializedTensorRef get_serialized_tensor_ref(vespalib::ConstArrayRef<char> buf) const {
+        auto num_subspaces = get_num_subspaces(buf);
+        auto cells_mem_size = get_cells_mem_size(num_subspaces);
+        auto aligner = select_aligner(cells_mem_size);
+        vespalib::ConstArrayRef<vespalib::string_id> labels(reinterpret_cast<const vespalib::string_id*>(buf.data() + get_labels_offset()), num_subspaces * _num_mapped_dimensions);
+        return SerializedTensorRef(VectorBundle(buf.data() + get_cells_offset(num_subspaces, aligner), num_subspaces, _subspace_type), _num_mapped_dimensions, labels);
     }
 };
 

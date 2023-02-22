@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "imported_tensor_attribute_vector_read_guard.h"
+#include "serialized_tensor_ref.h"
 #include "vector_bundle.h"
 #include <vespa/searchlib/attribute/attributevector.h>
 #include <vespa/eval/eval/value.h>
@@ -77,6 +78,18 @@ const vespalib::eval::ValueType &
 ImportedTensorAttributeVectorReadGuard::getTensorType() const
 {
     return _target_tensor_attribute.getTensorType();
+}
+
+SerializedTensorRef
+ImportedTensorAttributeVectorReadGuard::get_serialized_tensor_ref(uint32_t docid) const
+{
+    return _target_tensor_attribute.get_serialized_tensor_ref(getTargetLid(docid));
+}
+
+bool
+ImportedTensorAttributeVectorReadGuard::supports_get_serialized_tensor_ref() const
+{
+    return _target_tensor_attribute.supports_get_serialized_tensor_ref();
 }
 
 void
