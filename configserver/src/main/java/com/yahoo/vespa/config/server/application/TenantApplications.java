@@ -253,7 +253,7 @@ public class TenantApplications implements RequestHandler, HostValidator {
 
         if (hasApplication(applicationId)) {
             applicationMapper.remove(applicationId);
-            hostRegistry.removeHostsForKey(applicationId);
+            hostRegistry.removeHosts(applicationId);
             configActivationListenersOnRemove(applicationId);
             tenantMetricUpdater.setApplications(applicationMapper.numApplications());
             metrics.removeMetricUpdater(Metrics.createDimensions(applicationId));
@@ -277,17 +277,16 @@ public class TenantApplications implements RequestHandler, HostValidator {
     }
 
     private void configActivationListenersOnRemove(ApplicationId applicationId) {
-        configActivationListener.hostsUpdated(applicationId, hostRegistry.getHostsForKey(applicationId));
+        configActivationListener.hostsUpdated(applicationId, hostRegistry.getHosts(applicationId));
         configActivationListener.applicationRemoved(applicationId);
     }
 
     private void setActiveApp(ApplicationSet applicationSet) {
-        ApplicationId id = applicationSet.getId();
-        Collection<String> hostsForApp = applicationSet.getAllHosts();
-        hostRegistry.update(id, hostsForApp);
+        ApplicationId applicationId = applicationSet.getId();
+        hostRegistry.update(applicationId, applicationSet.getAllHosts());
         applicationSet.updateHostMetrics();
         tenantMetricUpdater.setApplications(applicationMapper.numApplications());
-        applicationMapper.register(id, applicationSet);
+        applicationMapper.register(applicationId, applicationSet);
     }
 
     @Override
@@ -377,7 +376,7 @@ public class TenantApplications implements RequestHandler, HostValidator {
 
     @Override
     public ApplicationId resolveApplicationId(String hostName) {
-        return hostRegistry.getKeyForHost(hostName);
+        return hostRegistry.getApplicationId(hostName);
     }
 
     @Override
@@ -403,7 +402,7 @@ public class TenantApplications implements RequestHandler, HostValidator {
     }
 
     public ApplicationId getApplicationIdForHostName(String hostname) {
-        return hostRegistry.getKeyForHost(hostname);
+        return hostRegistry.getApplicationId(hostname);
     }
 
     public TenantFileSystemDirs getTenantFileSystemDirs() { return tenantFileSystemDirs; }
