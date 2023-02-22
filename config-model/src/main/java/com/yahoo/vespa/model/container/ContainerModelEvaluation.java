@@ -44,6 +44,7 @@ public class ContainerModelEvaluation implements
     public ContainerModelEvaluation(ApplicationContainerCluster cluster, RankProfileList rankProfileList) {
         this.rankProfileList = Objects.requireNonNull(rankProfileList, "rankProfileList cannot be null");
         cluster.addSimpleComponent(EVALUATOR_NAME, null, EVALUATION_BUNDLE_NAME);
+        cluster.addSimpleComponent("ai.vespa.modelintegration.evaluator.OnnxEvaluatorCache", null, INTEGRATION_BUNDLE_NAME);
         cluster.addComponent(ContainerModelEvaluation.getHandler());
     }
 

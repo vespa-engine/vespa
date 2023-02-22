@@ -2,6 +2,7 @@
 package ai.vespa.models.evaluation;
 
 import ai.vespa.modelintegration.evaluator.OnnxEvaluator;
+import ai.vespa.modelintegration.evaluator.OnnxEvaluatorCache;
 import ai.vespa.modelintegration.evaluator.OnnxEvaluatorOptions;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
@@ -14,18 +15,20 @@ import java.util.Map;
  *
  * @author lesters
  */
-class OnnxModel {
+class OnnxModel implements AutoCloseable {
 
     private final String name;
     private final File modelFile;
     private final OnnxEvaluatorOptions options;
+    private final OnnxEvaluatorCache cache;
 
-    private OnnxEvaluator evaluator;
+    private OnnxEvaluatorCache.ReferencedEvaluator referencedEvaluator;
 
-    OnnxModel(String name, File modelFile, OnnxEvaluatorOptions options) {
+    OnnxModel(String name, File modelFile, OnnxEvaluatorOptions options, OnnxEvaluatorCache cache) {
         this.name = name;
         this.modelFile = modelFile;
         this.options = options;
+        this.cache = cache;
     }
 
     public String name() {
@@ -33,8 +36,8 @@ class OnnxModel {
     }
 
     public void load() {
-        if (evaluator == null) {
-            evaluator = new OnnxEvaluator(modelFile.getPath(), options);
+        if (referencedEvaluator == null) {
+            referencedEvaluator = cache.evaluatorOf(modelFile.getPath(), options);
         }
     }
 
@@ -51,10 +54,11 @@ class OnnxModel {
     }
 
     private OnnxEvaluator evaluator() {
-        if (evaluator == null) {
+        if (referencedEvaluator == null) {
             throw new IllegalStateException("ONNX model has not been loaded.");
         }
-        return evaluator;
+        return referencedEvaluator.evaluator();
     }
 
+    @Override public void close() { referencedEvaluator.close(); }
 }

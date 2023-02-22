@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.models.evaluation;
 
+import ai.vespa.modelintegration.evaluator.OnnxEvaluatorCache;
 import ai.vespa.modelintegration.evaluator.OnnxEvaluatorOptions;
 import com.yahoo.collections.Pair;
 import com.yahoo.config.FileReference;
@@ -46,9 +47,11 @@ import java.util.regex.Pattern;
 public class RankProfilesConfigImporter {
 
     private final FileAcquirer fileAcquirer;
+    private final OnnxEvaluatorCache onnxEvaluatorCache;
 
-    public RankProfilesConfigImporter(FileAcquirer fileAcquirer) {
+    public RankProfilesConfigImporter(FileAcquirer fileAcquirer, OnnxEvaluatorCache onnxEvaluatorCache) {
         this.fileAcquirer = fileAcquirer;
+        this.onnxEvaluatorCache = onnxEvaluatorCache;
     }
 
     /**
@@ -183,7 +186,7 @@ public class RankProfilesConfigImporter {
             options.setInterOpThreads(onnxModelConfig.stateless_interop_threads());
             options.setIntraOpThreads(onnxModelConfig.stateless_intraop_threads());
             options.setGpuDevice(onnxModelConfig.gpu_device(), onnxModelConfig.gpu_device_required());
-            return new OnnxModel(name, file, options);
+            return new OnnxModel(name, file, options, onnxEvaluatorCache);
         } catch (InterruptedException e) {
             throw new IllegalStateException("Gave up waiting for ONNX model " + onnxModelConfig.name());
         }
