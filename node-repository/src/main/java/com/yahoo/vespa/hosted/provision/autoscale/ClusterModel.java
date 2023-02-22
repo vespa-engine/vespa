@@ -216,7 +216,7 @@ public class ClusterModel {
     public Instant at() { return at;}
 
     private OptionalDouble cpuCostPerQuery() {
-        if (averageQueryRate().isEmpty()) return OptionalDouble.empty();
+        if (averageQueryRate().isEmpty() || averageQueryRate().getAsDouble() == 0.0) return OptionalDouble.empty();
         // TODO: Query rate should generally be sampled at the time where we see the peak resource usage
         int fanOut = clusterSpec.type().isContainer() ? 1 : groupSize();
         return OptionalDouble.of(peakLoad().cpu()  * queryCpuFraction() * fanOut * nodes.not().retired().first().get().resources().vcpu()
