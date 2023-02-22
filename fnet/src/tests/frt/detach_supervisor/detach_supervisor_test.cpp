@@ -10,7 +10,6 @@
 #include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/time.h>
-#include <vespa/fastos/thread.h>
 #include <thread>
 
 using namespace vespalib;
@@ -19,14 +18,12 @@ using vespalib::make_string_short::fmt;
 CryptoEngine::SP null_crypto = std::make_shared<NullCryptoEngine>();
 
 struct BasicFixture {
-    FastOS_ThreadPool thread_pool;
     FNET_Transport    transport;
-    BasicFixture() : thread_pool(), transport(fnet::TransportConfig(4).crypto(null_crypto)) {
-        ASSERT_TRUE(transport.Start(&thread_pool));
+    BasicFixture() : transport(fnet::TransportConfig(4).crypto(null_crypto)) {
+        ASSERT_TRUE(transport.Start());
     }
     ~BasicFixture() {
         transport.ShutDown(true);
-        thread_pool.Close();
     }
 };
 

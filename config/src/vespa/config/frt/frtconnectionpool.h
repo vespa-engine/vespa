@@ -8,7 +8,6 @@
 #include <map>
 
 class FNET_Transport;
-class FastOS_ThreadPool;
 
 namespace config {
 
@@ -103,8 +102,7 @@ public:
 
 class FRTConnectionPoolWithTransport : public ConnectionFactory {
 public:
-    FRTConnectionPoolWithTransport(std::unique_ptr<FastOS_ThreadPool> threadPool,
-                                   std::unique_ptr<FNET_Transport> transport,
+    FRTConnectionPoolWithTransport(std::unique_ptr<FNET_Transport> transport,
                                    const ServerSpec & spec, const TimingValues & timingValues);
     FRTConnectionPoolWithTransport(const FRTConnectionPoolWithTransport&) = delete;
     FRTConnectionPoolWithTransport& operator=(const FRTConnectionPoolWithTransport&) = delete;
@@ -113,7 +111,6 @@ public:
     void syncTransport() override { _connectionPool->syncTransport(); }
     Connection* getCurrent() override { return _connectionPool->getCurrent(); }
 private:
-    std::unique_ptr<FastOS_ThreadPool> _threadPool;
     std::unique_ptr<FNET_Transport>    _transport;
     std::unique_ptr<FRTConnectionPool> _connectionPool;
 };

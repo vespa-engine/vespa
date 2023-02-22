@@ -46,17 +46,15 @@ make_scheduled_executor<ScheduledForwardExecutor>(FNET_Transport& transport, ves
 template <typename ScheduledT>
 class ScheduledExecutorTest : public testing::Test {
 public:
-    FastOS_ThreadPool threadPool;
     FNET_Transport transport;
     vespalib::ThreadStackExecutor executor;
     std::unique_ptr<ScheduledT> timer;
 
     ScheduledExecutorTest()
-        : threadPool(),
-          transport(),
+        : transport(),
           executor(1)
     {
-        transport.Start(&threadPool);
+        transport.Start();
         timer = make_scheduled_executor<ScheduledT>(transport, executor);
     }
     ~ScheduledExecutorTest() {

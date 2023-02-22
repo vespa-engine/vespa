@@ -706,7 +706,6 @@ TransLogStress::main(int argc, char **argv)
     }
 
     // start transaction log server
-    FastOS_ThreadPool threadPool;
     FNET_Transport transport;
     DummyFileHeaderContext fileHeaderContext;
     TransLogServer tls(transport, "server", 17897, ".", fileHeaderContext, DomainConfig().setPartSizeLimit(_cfg.domainPartSize));
@@ -758,8 +757,6 @@ TransLogStress::main(int argc, char **argv)
         std::cout << "<state>" << visitors[i]->getState() << "</state>" << std::endl;
         std::cout << "</visitor>" << std::endl;
     }
-
-    threadPool.Close();
 
     return 0;
 }

@@ -4,8 +4,6 @@
 
 #include <vespa/storageframework/generic/thread/threadpool.h>
 
-class FastOS_ThreadPool;
-
 namespace storage::framework {
     struct Clock;
 }

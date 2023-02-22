@@ -7,7 +7,6 @@
 #include <vespa/fnet/transport.h>
 #include <vespa/fnet/transport_thread.h>
 #include <vespa/fnet/connector.h>
-#include <vespa/fastos/thread.h>
 #include <vespa/vespalib/util/require.h>
 
 FNET_IPacketStreamer *
@@ -291,11 +290,10 @@ FRT_Supervisor::SchedulerPtr::SchedulerPtr(FNET_TransportThread *transport_threa
 namespace fnet::frt {
 
 StandaloneFRT::StandaloneFRT(const TransportConfig &config)
-    : _threadPool(std::make_unique<FastOS_ThreadPool>()),
-      _transport(std::make_unique<FNET_Transport>(config)),
+    : _transport(std::make_unique<FNET_Transport>(config)),
       _supervisor(std::make_unique<FRT_Supervisor>(_transport.get()))
 {
-    REQUIRE(_transport->Start(_threadPool.get()));
+    REQUIRE(_transport->Start());
 }
 
 StandaloneFRT::StandaloneFRT()

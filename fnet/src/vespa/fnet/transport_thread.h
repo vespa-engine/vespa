@@ -6,9 +6,9 @@
 #include "config.h"
 #include "task.h"
 #include "packetqueue.h"
-#include <vespa/fastos/thread.h>
 #include <vespa/vespalib/net/socket_handle.h>
 #include <vespa/vespalib/net/selector.h>
+#include <vespa/vespalib/util/thread.h>
 #include <atomic>
 #include <mutex>
 #include <condition_variable>
@@ -26,7 +26,7 @@ class FNET_IServerAdapter;
  * the network related work for the application in both client and
  * server aspects.
  **/
-class FNET_TransportThread : public FastOS_Runnable
+class FNET_TransportThread
 {
     friend class FNET_IOComponent;
 
@@ -195,7 +195,7 @@ public:
      * Destruct object. This should NOT be done before the transport
      * thread has completed it's work and raised the finished flag.
      **/
-    ~FNET_TransportThread() override;
+    ~FNET_TransportThread();
 
 
     /**
@@ -425,7 +425,7 @@ public:
      * @return thread create status.
      * @param pool threadpool that may be used to spawn a new thread.
      **/
-    bool Start(FastOS_ThreadPool *pool);
+    bool Start(vespalib::ThreadPool &pool);
 
 
     /**
@@ -440,5 +440,5 @@ public:
      * This is where the transport thread lives, when started by
      * invoking one of the @ref Main or @ref Start methods.
      **/
-    void Run(FastOS_ThreadInterface *thisThread, void *args) override;
+    void run();
 };

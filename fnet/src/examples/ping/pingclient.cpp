@@ -6,7 +6,6 @@
 #include <vespa/fnet/connection.h>
 #include <examples/ping/packets.h>
 #include <vespa/vespalib/util/signalhandler.h>
-#include <vespa/fastos/thread.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP("pingclient");
@@ -28,7 +27,6 @@ PingClient::main(int argc, char **argv)
     }
 
     FNET_PacketQueue           queue;
-    FastOS_ThreadPool          pool;
     PingPacketFactory          factory;
     FNET_SimplePacketStreamer  streamer(&factory);
     FNET_Transport             transport;
@@ -39,7 +37,7 @@ PingClient::main(int argc, char **argv)
     if (argc == 3) {
         timeout_ms = atof(argv[2]) * 1000;
     }
-    transport.Start(&pool);
+    transport.Start();
 
     uint32_t channelCnt = 0;
     for (uint32_t i = 0; i < 10; i++) {
@@ -90,7 +88,6 @@ PingClient::main(int argc, char **argv)
     if (conn != nullptr)
         conn->SubRef();
     transport.ShutDown(true);
-    pool.Close();
     return 0;
 }
 

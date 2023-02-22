@@ -12,7 +12,6 @@
 class FNET_Transport;
 class FRT_Supervisor;
 class FRT_Target;
-class FastOS_ThreadPool;
 
 namespace vespalib { class ThreadStackExecutorBase; }
 namespace search::transactionlog::client {
