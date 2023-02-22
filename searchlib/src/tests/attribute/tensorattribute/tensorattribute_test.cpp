@@ -26,9 +26,11 @@
 #include <vespa/searchlib/util/bufferwriter.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
 #include <vespa/document/base/exceptions.h>
+#include <vespa/eval/eval/fast_value.h>
 #include <vespa/eval/eval/simple_value.h>
 #include <vespa/eval/eval/tensor_spec.h>
 #include <vespa/eval/eval/value.h>
+#include <vespa/eval/eval/value_codec.h>
 #include <vespa/eval/eval/test/value_compare.h>
 #include <vespa/fastos/file.h>
 #include <filesystem>
@@ -60,7 +62,9 @@ using search::tensor::PrepareResult;
 using search::tensor::SerializedFastValueAttribute;
 using search::tensor::TensorAttribute;
 using search::tensor::VectorBundle;
+using vespalib::SharedStringRepo;
 using vespalib::datastore::CompactionStrategy;
+using vespalib::eval::FastValueBuilderFactory;
 using vespalib::eval::CellType;
 using vespalib::eval::SimpleValue;
 using vespalib::eval::TensorSpec;
@@ -76,7 +80,17 @@ vespalib::string vec_2d_spec("tensor(x[2])");
 vespalib::string vec_mixed_2d_spec("tensor(a{},x[2])");
 
 Value::UP createTensor(const TensorSpec &spec) {
-    return SimpleValue::from_spec(spec);
+    return value_from_spec(spec, FastValueBuilderFactory::get());
+}
+
+std::vector<vespalib::string>
+to_string_labels(vespalib::ConstArrayRef<vespalib::string_id> labels)
+{
+    std::vector<vespalib::string> result;
+    for (auto& label : labels) {
+        result.emplace_back(SharedStringRepo::Handle::string_from_id(label));
+    }
+    return result;
 }
 
 TensorSpec
@@ -569,6 +583,7 @@ struct Fixture {
     void testCompaction();
     void testTensorTypeFileHeaderTag();
     void testEmptyTensor();
+    void testSerializedTensorRef();
     void testOnHoldAccounting();
     void test_populate_address_space_usage();
     void test_mmap_file_allocator();
@@ -776,6 +791,44 @@ Fixture::testEmptyTensor()
 }
 
 void
+Fixture::testSerializedTensorRef()
+{
+    const TensorAttribute &tensorAttr = *_tensorAttr;
+    if (_traits.use_dense_tensor_attribute || _traits.use_direct_tensor_attribute) {
+        EXPECT_FALSE(tensorAttr.supports_get_serialized_tensor_ref());
+        return;
+    }
+    EXPECT_TRUE(tensorAttr.supports_get_serialized_tensor_ref());
+    if (_denseTensors) {
+        set_tensor(3, expDenseTensor3());
+    } else {
+        set_tensor(3, TensorSpec(sparseSpec)
+                   .add({{"x", "one"}, {"y", "two"}}, 11)
+                   .add({{"x", "three"}, {"y", "four"}}, 17));
+    }
+    auto ref = tensorAttr.get_serialized_tensor_ref(3);
+    auto vectors = ref.get_vectors();
+    if (_denseTensors) {
+        EXPECT_EQUAL(1u, vectors.subspaces());
+        auto cells = vectors.cells(0).typify<double>();
+        auto labels = ref.get_labels(0);
+        EXPECT_EQUAL(0u, labels.size());
+        EXPECT_EQUAL((std::vector<double>{0.0, 11.0, 0.0, 0.0, 0.0, 0.0}), (std::vector<double>{ cells.begin(), cells.end() }));
+    } else {
+        EXPECT_EQUAL(2u, vectors.subspaces());
+        auto cells = vectors.cells(0).typify<double>();
+        auto labels = ref.get_labels(0);
+        EXPECT_EQUAL((std::vector<vespalib::string>{"one", "two"}), to_string_labels(labels));
+        EXPECT_EQUAL((std::vector<double>{11.0}), (std::vector<double>{ cells.begin(), cells.end() }));
+        cells = vectors.cells(1).typify<double>();
+        labels = ref.get_labels(1);
+        EXPECT_EQUAL((std::vector<vespalib::string>{"three", "four"}), to_string_labels(labels));
+        EXPECT_EQUAL((std::vector<double>{17.0}), (std::vector<double>{ cells.begin(), cells.end() }));
+    }
+    TEST_DO(clearTensor(3));
+}
+
+void
 Fixture::testOnHoldAccounting()
 {
     {
@@ -829,6 +882,7 @@ void testAll(MakeFixture &&f)
     TEST_DO(f()->testCompaction());
     TEST_DO(f()->testTensorTypeFileHeaderTag());
     TEST_DO(f()->testEmptyTensor());
+    TEST_DO(f()->testSerializedTensorRef());
     TEST_DO(f()->testOnHoldAccounting());
     TEST_DO(f()->test_populate_address_space_usage());
     TEST_DO(f()->test_mmap_file_allocator());

@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "serialized_fast_value_attribute.h"
+#include "serialized_tensor_ref.h"
 #include <vespa/eval/eval/value.h>
 #include <vespa/searchcommon/attribute/config.h>
 
@@ -24,6 +25,19 @@ SerializedFastValueAttribute::~SerializedFastValueAttribute()
 {
     getGenerationHolder().reclaim_all();
     _tensorStore.reclaim_all_memory();
+}
+
+SerializedTensorRef
+SerializedFastValueAttribute::get_serialized_tensor_ref(uint32_t docid) const
+{
+    EntryRef ref = acquire_entry_ref(docid);
+    return _tensorBufferStore.get_serialized_tensor_ref(ref);
+}
+
+bool
+SerializedFastValueAttribute::supports_get_serialized_tensor_ref() const
+{
+    return true;
 }
 
 vespalib::eval::TypedCells

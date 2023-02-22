@@ -44,6 +44,13 @@ public:
         auto buf = _array_store.get(ref);
         return _ops.get_vectors(buf);
     }
+    SerializedTensorRef get_serialized_tensor_ref(EntryRef ref) const {
+        if (!ref.valid()) {
+            return SerializedTensorRef();
+        }
+        auto buf = _array_store.get(ref);
+        return _ops.get_serialized_tensor_ref(buf);
+    }
 
     // Used by unit test
     static constexpr uint32_t get_offset_bits() noexcept { return RefType::offset_bits; }

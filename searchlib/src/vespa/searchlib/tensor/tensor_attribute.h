@@ -63,8 +63,10 @@ public:
     std::unique_ptr<vespalib::eval::Value> getEmptyTensor() const override;
     vespalib::eval::TypedCells extract_cells_ref(uint32_t docid) const override;
     const vespalib::eval::Value& get_tensor_ref(uint32_t docid) const override;
+    SerializedTensorRef get_serialized_tensor_ref(uint32_t docid) const override;
     bool supports_extract_cells_ref() const override { return false; }
     bool supports_get_tensor_ref() const override { return false; }
+    bool supports_get_serialized_tensor_ref() const override;
     const vespalib::eval::ValueType & getTensorType() const override;
     const NearestNeighborIndex* nearest_neighbor_index() const override;
     void get_state(const vespalib::slime::Inserter& inserter) const override;
