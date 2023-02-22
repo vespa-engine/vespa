@@ -27,16 +27,22 @@ class HandlerTester {
     }
     private static Predicate<String> matchString(String expected) {
         return s -> {
-            //System.out.println("Expected: " + expected);
-            //System.out.println("Actual:   " + s);
-            return expected.equals(s);
+            boolean result = expected.equals(s);
+            if (!result) {
+                System.out.println("Expected: " + expected);
+                System.out.println("Actual:   " + s);
+            }
+            return result;
         };
     }
     private static Predicate<String> matchJsonString(String expected) {
         return s -> {
-            //System.out.println("Expected: " + expected);
-            //System.out.println("Actual:   " + s);
-            return JSON.canonical(expected).equals(JSON.canonical(s));
+            boolean result = JSON.canonical(expected).equals(JSON.canonical(s));
+            if (!result) {
+                System.out.println("Expected: " + expected);
+                System.out.println("Actual:   " + s);
+            }
+            return result;
         };
     }
     public static Predicate<String> matchJson(String... expectedJson) {
