@@ -20,10 +20,20 @@ LOG_SETUP(".document.select.valuenode");
 namespace document::select {
 
 namespace {
-    bool documentTypeEqualsName(const DocumentType& type, vespalib::stringref name)
-    {
-        return (type.getName() == name);
+
+[[nodiscard]] bool document_type_is_a(const DocumentType& type, vespalib::stringref name) {
+    if (type.getName() == name) {
+        return true;
     }
+    // No exact match; try to recursively match name against any types inherited from.
+    for (const auto* parent : type.getInheritedTypes()) {
+        if (document_type_is_a(*parent, name)) {
+            return true;
+        }
+    }
+    return false;
+}
+
 }
 
 InvalidValueNode::InvalidValueNode(vespalib::stringref name)
@@ -409,7 +419,7 @@ FieldValueNode::getValue(const Context& context) const
 
     const Document& doc = *context._doc;
 
-    if (!documentTypeEqualsName(doc.getType(), _doctype)) {
+    if (!document_type_is_a(doc.getType(), _doctype)) {
         return std::make_unique<InvalidValue>();
     }
     // Imported fields can only be meaningfully evaluated inside Proton, so we
@@ -473,7 +483,7 @@ FieldValueNode::traceValue(const Context &context, std::ostream& out) const
         return defaultTrace(getValue(context), out);
     }
     const Document &doc(*context._doc);
-    if (!documentTypeEqualsName(doc.getType(), _doctype)) {
+    if (!document_type_is_a(doc.getType(), _doctype)) {
         out << "Document is of type " << doc.getType() << " which isn't a "
             << _doctype << " document, thus resolving invalid.\n";
         return std::make_unique<InvalidValue>();

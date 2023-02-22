@@ -673,8 +673,9 @@ TEST_F(DocumentSelectParserTest, operators_1)
     // Inherited doctypes
     PARSE("testdoctype2", *_doc[4], True);
     PARSE("testdoctype2", *_doc[3], False);
-    PARSE("testdoctype1", *_doc[4], False); // testdoctype2 inherits testdoctype1, but we use exact matching for types
-    PARSE("testdoctype1.headerval = 10", *_doc[4], Invalid);
+    PARSE("testdoctype1", *_doc[4], False); // testdoctype2 inherits testdoctype1, but we use exact matching for "standalone" doctype matches.
+    PARSE("testdoctype1.headerval = 10", *_doc[4], True); // But _field lookups_ use is-a type matching semantics.
+    PARSE("testdoctype2.headerval = 10", *_doc[4], True); // Exact type match with parent field also works transparently
 }
 
 TEST_F(DocumentSelectParserTest, operators_2)
