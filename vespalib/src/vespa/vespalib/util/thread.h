@@ -32,6 +32,7 @@ public:
         _threads.reserve(_threads.size() + 1);
         _threads.emplace_back(std::forward<F>(f), std::forward<Args>(args)...);
     };
+    size_t size() const { return _threads.size(); }
     void join() {
         for (auto &thread: _threads) {
             thread.join();

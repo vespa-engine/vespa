@@ -2,7 +2,6 @@
 
 #include <vespa/vespalib/util/clock.h>
 #include <vespa/vespalib/util/invokeserviceimpl.h>
-#include <vespa/fastos/thread.h>
 #include <cassert>
 #include <vector>
 #include <atomic>
@@ -10,6 +9,7 @@
 #include <cstring>
 #include <condition_variable>
 #include <mutex>
+#include <thread>
 
 using vespalib::Clock;
 using vespalib::steady_time;
@@ -36,7 +36,7 @@ struct NSAtomic : public UpdateClock {
     std::atomic<int64_t> _value;
 };
 
-class TestClock : public FastOS_Runnable
+class TestClock
 {
 private:
     int                       _timePeriodMS;
@@ -44,8 +44,9 @@ private:
     std::condition_variable   _cond;
     UpdateClock              &_clock;
     bool                      _stop;
+    std::thread               _thread;
 
-    void Run(FastOS_ThreadInterface *thisThread, void *arguments) override;
+    void run();
 
 public:
     TestClock(UpdateClock & clock, double timePeriod)
@@ -53,74 +54,68 @@ public:
           _lock(),
           _cond(),
           _clock(clock),
-          _stop(false)
-    { }
+          _stop(false),
+          _thread()
+    {
+        _thread = std::thread([this](){run();});
+    }
     ~TestClock() {
-        std::lock_guard<std::mutex> guard(_lock);
-        _stop = true;
-        _cond.notify_all();
+        {
+            std::lock_guard<std::mutex> guard(_lock);
+            _stop = true;
+            _cond.notify_all();
+        }
+        _thread.join();
     }
 };
 
-void TestClock::Run(FastOS_ThreadInterface *thread, void *)
+void TestClock::run()
 {
     std::unique_lock<std::mutex> guard(_lock);
-    while ( ! thread->GetBreakFlag() && !_stop) {
+    while (!_stop) {
         _clock.update();
         _cond.wait_for(guard, std::chrono::milliseconds(_timePeriodMS));
     }
 }
 
-struct SamplerBase : public FastOS_Runnable {
-    SamplerBase(uint32_t threadId)
-        : _thread(nullptr),
-          _threadId(threadId),
-          _samples(0),
-          _count()
+template<typename Func>
+struct Sampler {
+    Sampler(Func func, uint64_t samples)
+      : _samples(samples),
+        _count(),
+        _func(func),
+        _thread()
     {
         memset(_count, 0, sizeof(_count));
+        _thread = std::thread([this](){run();});
     }
-    FastOS_ThreadInterface * _thread;
-    uint32_t _threadId;
-    uint64_t _samples;
-    uint64_t _count[3];
-};
-
-template<typename Func>
-struct Sampler : public SamplerBase {
-    Sampler(Func func, uint32_t threadId)
-        : SamplerBase(threadId),
-          _func(func)
-    { }
-    void Run(FastOS_ThreadInterface *, void *) override {
-        uint64_t samples;
+    void run() {
         steady_time prev = _func();
-        for (samples = 0; (samples < _samples); samples++) {
+        for (uint64_t samples = 0; samples < _samples; ++samples) {
             steady_time now = _func();
             duration diff = now - prev;
             if (diff > duration::zero()) prev = now;
             _count[1 + ((diff == duration::zero()) ? 0 : (diff > duration::zero()) ? 1 : -1)]++;
         }
-
     }
-    Func     _func;
+    uint64_t    _samples;
+    uint64_t    _count[3];
+    Func        _func;
+    std::thread _thread;
 };
 
 template<typename Func>
-void benchmark(const char * desc, FastOS_ThreadPool & pool, uint64_t samples, uint32_t numThreads, Func func) {
-    std::vector<std::unique_ptr<SamplerBase>> threads;
+void benchmark(const char * desc, uint64_t samples, uint32_t numThreads, Func func) {
+    std::vector<std::unique_ptr<Sampler<Func>>> threads;
     threads.reserve(numThreads);
     steady_time start = steady_clock::now();
     for (uint32_t i(0); i < numThreads; i++) {
-        SamplerBase * sampler = new Sampler<Func>(func, i);
-        sampler->_samples = samples;
-        sampler->_thread = pool.NewThread(sampler, nullptr);
-        threads.emplace_back(sampler);
+        threads.push_back(std::make_unique<Sampler<Func>>(func, samples));
     }
     uint64_t count[3];
     memset(count, 0, sizeof(count));
     for (const auto & sampler : threads) {
-        sampler->_thread->Join();
+        sampler->_thread.join();
         for (uint32_t i(0); i < 3; i++) {
             count[i] += sampler->_count[i];
         }
@@ -129,12 +124,15 @@ void benchmark(const char * desc, FastOS_ThreadPool & pool, uint64_t samples, ui
 }
 
 int
-main(int , char *argv[])
+main(int argc, char *argv[])
 {
+    if (argc != 4) {
+        fprintf(stderr, "usage: %s <frequency> <numThreads> <samples>\n", argv[0]);
+        return 1;
+    }
     uint64_t frequency = atoll(argv[1]);
     uint32_t numThreads = atoi(argv[2]);
     uint64_t samples = atoll(argv[3]);
-    FastOS_ThreadPool pool;
     NSValue nsValue;
     NSVolatile nsVolatile;
     NSAtomic nsAtomic;
@@ -143,36 +141,30 @@ main(int , char *argv[])
     TestClock nsClock(nsValue, 1.0/frequency);
     TestClock nsVolatileClock(nsVolatile, 1.0/frequency);
     TestClock nsAtomicClock(nsAtomic, 1.0/frequency);
-    assert(pool.NewThread(&nsClock, nullptr) != nullptr);
-    assert(pool.NewThread(&nsVolatileClock, nullptr) != nullptr);
-    assert(pool.NewThread(&nsAtomicClock, nullptr) != nullptr);
 
-    benchmark("vespalib::Clock", pool, samples, numThreads, [&clock]() {
+    benchmark("vespalib::Clock", samples, numThreads, [&clock]() {
         return clock.getTimeNS();
     });
-    benchmark("uint64_t", pool, samples, numThreads, [&nsValue]() {
+    benchmark("uint64_t", samples, numThreads, [&nsValue]() {
         return steady_time (duration(nsValue._value));
     });
-    benchmark("volatile uint64_t", pool, samples, numThreads, [&nsVolatile]() {
+    benchmark("volatile uint64_t", samples, numThreads, [&nsVolatile]() {
         return steady_time(duration(nsVolatile._value));
     });
-    benchmark("memory_order_relaxed", pool, samples, numThreads, [&nsAtomic]() {
+    benchmark("memory_order_relaxed", samples, numThreads, [&nsAtomic]() {
         return steady_time(duration(nsAtomic._value.load(std::memory_order_relaxed)));
     });
-    benchmark("memory_order_consume", pool, samples, numThreads, [&nsAtomic]() {
+    benchmark("memory_order_consume", samples, numThreads, [&nsAtomic]() {
         return steady_time(duration(nsAtomic._value.load(std::memory_order_consume)));
     });
-    benchmark("memory_order_acquire", pool, samples, numThreads, [&nsAtomic]() {
+    benchmark("memory_order_acquire", samples, numThreads, [&nsAtomic]() {
         return steady_time(duration(nsAtomic._value.load(std::memory_order_acquire)));
     });
-    benchmark("memory_order_seq_cst", pool, samples, numThreads, [&nsAtomic]() {
+    benchmark("memory_order_seq_cst", samples, numThreads, [&nsAtomic]() {
         return steady_time(duration(nsAtomic._value.load(std::memory_order_seq_cst)));
     });
-
-    benchmark("vespalib::steady_time::now()", pool, samples, numThreads, []() {
+    benchmark("vespalib::steady_time::now()", samples, numThreads, []() {
         return steady_clock::now();
     });
-
-    pool.Close();
     return 0;
 }

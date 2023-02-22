@@ -2,20 +2,16 @@
 
 #pragma once
 
+#include "thread.h"
 #include "threadexecutor.h"
 #include "eventbarrier.hpp"
 #include "arrayqueue.hpp"
 #include "gate.h"
-#include "runnable.h"
 #include "executor_idle_tracking.h"
 #include <vector>
 #include <functional>
 
-class FastOS_ThreadPool;
-
 namespace vespalib {
-
-namespace thread { struct ThreadInit; }
 
 /**
  * An executor service that executes tasks in multiple threads.
@@ -73,7 +69,7 @@ private:
         void unblock();
     };
 
-    std::unique_ptr<FastOS_ThreadPool>   _pool;
+    ThreadPool                           _pool;
     mutable std::mutex                   _lock;
     std::condition_variable              _cond;
     ExecutorStats                        _stats;
@@ -86,7 +82,7 @@ private:
     uint32_t                             _taskCount;
     uint32_t                             _taskLimit;
     bool                                 _closed;
-    std::unique_ptr<thread::ThreadInit>  _thread_init;
+    init_fun_t                           _init_fun;
     static thread_local ThreadStackExecutorBase *_master;
 
     void block_thread(const unique_lock &, BlockedThread &blocked_thread);
@@ -225,4 +221,3 @@ public:
 };
 
 } // namespace vespalib
-
