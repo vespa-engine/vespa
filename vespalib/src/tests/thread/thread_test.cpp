@@ -2,6 +2,7 @@
 
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/vespalib/util/thread.h>
+#include <iostream>
 
 using namespace vespalib;
 
@@ -11,6 +12,7 @@ struct Agent : public Runnable {
     bool was_run;
     Agent() : was_run(false) {}
     void run() override {
+        fprintf(stderr, "agent run in thread %zu\n", thread::as_zu(std::this_thread::get_id()));
         was_run = true;
     }
 };
@@ -22,9 +24,16 @@ void my_fun(bool *was_run) {
 Runnable::init_fun_t wrap(Runnable::init_fun_t init, bool *init_called) {
     return [=](Runnable &target)
            {
+               fprintf(stderr, "lambda run in thread %zu\n", thread::as_zu(std::this_thread::get_id()));
                *init_called = true;
                return init(target);
            };
+}
+
+TEST("main thread") {
+    auto my_id = std::this_thread::get_id();
+    std::cerr <<    "main thread(with     <<): " << my_id << "\n";
+    fprintf(stderr, "main thread(with printf): %zu\n", thread::as_zu(my_id));
 }
 
 TEST("run vespalib::Runnable with init function") {
