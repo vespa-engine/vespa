@@ -338,13 +338,6 @@ public class Flags {
             "Takes effect immediately",
             CONSOLE_USER_EMAIL);
 
-    public static final UnboundBooleanFlag USE_WIREGUARD_ON_CONFIGSERVERS = defineFeatureFlag(
-            "use-wireguard-on-configservers", false,
-            List.of("andreer", "gjoranv"), "2022-09-28", "2023-04-01",
-            "Set up a WireGuard endpoint on config servers",
-            "Takes effect on configserver restart",
-            HOSTNAME);
-
     public static final UnboundStringFlag CORE_ENCRYPTION_PUBLIC_KEY_ID = defineStringFlag(
             "core-encryption-public-key-id", "",
             List.of("vekterli"), "2022-11-03", "2023-05-01",
