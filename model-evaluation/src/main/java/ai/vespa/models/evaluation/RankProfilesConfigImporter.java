@@ -186,7 +186,14 @@ public class RankProfilesConfigImporter {
             options.setInterOpThreads(onnxModelConfig.stateless_interop_threads());
             options.setIntraOpThreads(onnxModelConfig.stateless_intraop_threads());
             options.setGpuDevice(onnxModelConfig.gpu_device(), onnxModelConfig.gpu_device_required());
-            return new OnnxModel(name, file, options, onnxEvaluatorCache);
+            var m =  new OnnxModel(name, file, options, onnxEvaluatorCache);
+            for (var spec : onnxModelConfig.input()) {
+                m.addInputMapping(spec.name(), spec.source());
+            }
+            for (var spec : onnxModelConfig.output()) {
+                m.addOutputMapping(spec.name(), spec.as());
+            }
+            return m;
         } catch (InterruptedException e) {
             throw new IllegalStateException("Gave up waiting for ONNX model " + onnxModelConfig.name());
         }
