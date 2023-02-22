@@ -4,8 +4,8 @@ package com.yahoo.vespa.config.server;
 import ai.vespa.http.DomainName;
 import ai.vespa.http.HttpURL;
 import ai.vespa.http.HttpURL.Query;
-import ai.vespa.util.http.hc5.VespaHttpClientBuilder;
 import ai.vespa.util.http.hc5.DefaultHttpClientBuilder;
+import ai.vespa.util.http.hc5.VespaHttpClientBuilder;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.component.Version;
 import com.yahoo.component.annotation.Inject;
@@ -94,10 +94,8 @@ import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.orchestrator.Orchestrator;
 import org.apache.hc.client5.http.classic.methods.HttpGet;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
-import org.apache.hc.client5.http.ssl.NoopHostnameVerifier;
 import org.apache.hc.core5.http.HttpHeaders;
 import org.apache.hc.core5.http.message.BasicHeader;
-
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -229,7 +227,6 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     // Should be used by tests only (first constructor in this class makes sure we use injectable components where possible)
     public static class Builder {
         private TenantRepository tenantRepository;
-        private Optional<Provisioner> hostProvisioner;
         private HttpProxy httpProxy = new HttpProxy(new SimpleHttpFetcher(Duration.ofSeconds(30)));
         private EndpointsChecker endpointsChecker = __ -> { throw new UnsupportedOperationException(); };
         private Clock clock = Clock.systemUTC();
@@ -249,18 +246,6 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
 
         public Builder withClock(Clock clock) {
             this.clock = clock;
-            return this;
-        }
-
-        public Builder withProvisioner(Provisioner provisioner) {
-            if (this.hostProvisioner != null) throw new IllegalArgumentException("provisioner already set in builder");
-            this.hostProvisioner = Optional.ofNullable(provisioner);
-            return this;
-        }
-
-        public Builder withHostProvisionerProvider(HostProvisionerProvider hostProvisionerProvider) {
-            if (this.hostProvisioner != null) throw new IllegalArgumentException("provisioner already set in builder");
-            this.hostProvisioner = hostProvisionerProvider.getHostProvisioner();
             return this;
         }
 
@@ -316,7 +301,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
 
         public ApplicationRepository build() {
             return new ApplicationRepository(tenantRepository,
-                                             hostProvisioner,
+                                             tenantRepository.hostProvisionerProvider().getHostProvisioner(),
                                              InfraDeployerProvider.empty().getInfraDeployer(),
                                              configConvergenceChecker,
                                              httpProxy,
