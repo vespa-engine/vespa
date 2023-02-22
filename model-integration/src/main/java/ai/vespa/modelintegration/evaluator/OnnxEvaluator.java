@@ -2,6 +2,7 @@
 
 package ai.vespa.modelintegration.evaluator;
 
+import ai.onnxruntime.NodeInfo;
 import ai.onnxruntime.OnnxTensor;
 import ai.onnxruntime.OnnxValue;
 import ai.onnxruntime.OrtEnvironment;
@@ -69,6 +70,35 @@ public class OnnxEvaluator implements AutoCloseable {
             if (onnxInputs != null) {
                 onnxInputs.values().forEach(OnnxTensor::close);
             }
+        }
+    }
+
+    public record IdAndType(String id, TensorType type) { }
+
+    private Map<String, IdAndType> toSpecMap(Map<String, NodeInfo> infoMap) {
+        Map<String, IdAndType> result = new HashMap<>();
+        for (var info : infoMap.entrySet()) {
+            String name = info.getKey();
+            String ident = TensorConverter.asValidName(name);
+            TensorType t = TensorConverter.toVespaType(info.getValue().getInfo());
+            result.put(name, new IdAndType(ident, t));
+        }
+        return result;
+    }
+
+    public Map<String, IdAndType> getInputs() {
+        try {
+            return toSpecMap(session.getInputInfo());
+        } catch (OrtException e) {
+            throw new RuntimeException("ONNX Runtime exception", e);
+        }
+    }
+
+    public Map<String, IdAndType> getOutputs() {
+        try {
+            return toSpecMap(session.getOutputInfo());
+        } catch (OrtException e) {
+            throw new RuntimeException("ONNX Runtime exception", e);
         }
     }
 
