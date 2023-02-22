@@ -45,11 +45,12 @@ public class NodeAgentContextImpl implements NodeAgentContext {
     private final double cpuSpeedup;
     private final Set<NodeAgentTask> disabledNodeAgentTasks;
     private final Optional<ApplicationId> hostExclusiveTo;
+    private final boolean exclave;
 
     public NodeAgentContextImpl(NodeSpec node, Acl acl, AthenzIdentity identity,
                                 ContainerNetworkMode containerNetworkMode, ZoneApi zone,
                                 FlagSource flagSource, UserScope userScope, PathScope pathScope,
-                                double cpuSpeedup, Optional<ApplicationId> hostExclusiveTo) {
+                                double cpuSpeedup, Optional<ApplicationId> hostExclusiveTo, boolean exclave) {
         if (cpuSpeedup <= 0)
             throw new IllegalArgumentException("cpuSpeedUp must be positive, was: " + cpuSpeedup);
 
@@ -68,6 +69,7 @@ public class NodeAgentContextImpl implements NodeAgentContext {
                         .with(FetchVector.Dimension.HOSTNAME, node.hostname())
                         .with(FetchVector.Dimension.NODE_TYPE, node.type().name()).value());
         this.hostExclusiveTo = hostExclusiveTo;
+        this.exclave = exclave;
     }
 
     @Override
@@ -140,6 +142,11 @@ public class NodeAgentContextImpl implements NodeAgentContext {
         logger.log(level, logPrefix + message, throwable);
     }
 
+    @Override
+    public boolean exclave() {
+        return exclave;
+    }
+
     public static NodeAgentContextImpl.Builder builder(NodeSpec node) {
         return new Builder(new NodeSpec.Builder(node));
     }
@@ -168,6 +175,7 @@ public class NodeAgentContextImpl implements NodeAgentContext {
         private FlagSource flagSource;
         private double cpuSpeedUp = 1;
         private Optional<ApplicationId> hostExclusiveTo = Optional.empty();
+        private boolean exclave = false;
 
         private Builder(NodeSpec.Builder nodeSpecBuilder) {
             this.nodeSpecBuilder = nodeSpecBuilder;
@@ -234,6 +242,11 @@ public class NodeAgentContextImpl implements NodeAgentContext {
             return this;
         }
 
+        public Builder exclave(boolean exclave) {
+            this.exclave = exclave;
+            return this;
+        }
+
         public NodeAgentContextImpl build() {
             Objects.requireNonNull(containerStorage, "Must set one of containerStorage or fileSystem");
 
@@ -273,7 +286,7 @@ public class NodeAgentContextImpl implements NodeAgentContext {
                     Optional.ofNullable(flagSource).orElseGet(InMemoryFlagSource::new),
                     userScope,
                     new PathScope(containerFs, "/opt/vespa"),
-                    cpuSpeedUp, hostExclusiveTo);
+                    cpuSpeedUp, hostExclusiveTo, exclave);
         }
     }
 }
