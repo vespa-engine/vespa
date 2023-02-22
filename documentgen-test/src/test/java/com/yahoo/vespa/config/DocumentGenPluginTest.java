@@ -47,8 +47,10 @@ import com.yahoo.vespa.documentgen.test.Book;
 import com.yahoo.vespa.documentgen.test.Book.Ss0;
 import com.yahoo.vespa.documentgen.test.Book.Ss1;
 import com.yahoo.vespa.documentgen.test.Common;
+import com.yahoo.vespa.documentgen.test.Common2;
 import com.yahoo.vespa.documentgen.test.ConcreteDocumentFactory;
 import com.yahoo.vespa.documentgen.test.Music;
+import com.yahoo.vespa.documentgen.test.Music2;
 import com.yahoo.vespa.documentgen.test.Music3;
 import com.yahoo.vespa.documentgen.test.Music4;
 import com.yahoo.vespa.documentgen.test.Parent;
@@ -1023,6 +1025,37 @@ public class DocumentGenPluginTest {
         assertTrue(docType.hasImportedField("my_dummy"));
         assertTrue(docType.hasImportedField("my_foo"));
         assertFalse(docType.hasImportedField("some_field_that_does_not_exist"));
+    }
+
+    @Test
+    public void subtypes_are_tagged_as_inheriting_supertypes() {
+        // music -> common
+        assertTrue(Music.type.isA("common"));
+        assertTrue(Music.type.inherits(Common.type));
+        // ... but not common2
+        assertFalse(Music.type.inherits(Common2.type));
+
+        // music3 -> (music2 -> common), common2
+        assertTrue(Music3.type.isA("common"));
+        assertTrue(Music3.type.isA("common2"));
+        assertTrue(Music3.type.isA("music2"));
+        assertTrue(Music3.type.inherits(Common.type));
+        assertTrue(Music3.type.inherits(Common2.type));
+        assertTrue(Music3.type.inherits(Music2.type));
+        // ... but not parent
+        assertFalse(Music3.type.isA("parent"));
+        assertFalse(Music3.type.inherits(Parent.type));
+
+        // music4 -> music3 -> (music2 -> common), common2
+        assertTrue(Music4.type.inherits(Common.type));
+        assertTrue(Music4.type.inherits(Common2.type));
+        assertTrue(Music4.type.inherits(Music2.type));
+        assertTrue(Music4.type.inherits(Music3.type));
+        // ... but not music
+        assertFalse(Music4.type.inherits(Music.type));
+
+        // parent has no explicit inheritance
+        assertFalse(Parent.type.isA("common"));
     }
     
 }
