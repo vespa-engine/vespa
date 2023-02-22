@@ -61,18 +61,18 @@ public class ResourceMeterMaintainerTest {
                         .collect(Collectors.toMap(Map.Entry::getKey, entry -> entry.getValue().cost().getAsDouble())));
 
         List<ResourceSnapshot> resourceSnapshots = List.of(
-                new ResourceSnapshot(app1, 12, 34, 56, NodeResources.Architecture.getDefault(), Instant.EPOCH, z1),
-                new ResourceSnapshot(app1, 23, 45, 67, NodeResources.Architecture.getDefault(), Instant.EPOCH, z2),
-                new ResourceSnapshot(app2, 34, 56, 78, NodeResources.Architecture.getDefault(), Instant.EPOCH, z1));
+                new ResourceSnapshot(app1, 12, 34, 56, NodeResources.Architecture.getDefault(), Instant.EPOCH, z1, Version.emptyVersion),
+                new ResourceSnapshot(app1, 23, 45, 67, NodeResources.Architecture.getDefault(), Instant.EPOCH, z2, Version.emptyVersion),
+                new ResourceSnapshot(app2, 34, 56, 78, NodeResources.Architecture.getDefault(), Instant.EPOCH, z1, Version.emptyVersion));
         maintainer.updateDeploymentCost(resourceSnapshots);
         assertCost.accept(app1, Map.of(z1, 1.72, z2, 3.05));
         assertCost.accept(app2, Map.of(z1, 4.39));
 
         // Remove a region from app1 and add region to app2
         resourceSnapshots = List.of(
-                new ResourceSnapshot(app1, 23, 45, 67, NodeResources.Architecture.getDefault(), Instant.EPOCH, z2),
-                new ResourceSnapshot(app2, 34, 56, 78, NodeResources.Architecture.getDefault(), Instant.EPOCH, z1),
-                new ResourceSnapshot(app2, 45, 67, 89, NodeResources.Architecture.getDefault(), Instant.EPOCH, z2));
+                new ResourceSnapshot(app1, 23, 45, 67, NodeResources.Architecture.getDefault(), Instant.EPOCH, z2, Version.emptyVersion),
+                new ResourceSnapshot(app2, 34, 56, 78, NodeResources.Architecture.getDefault(), Instant.EPOCH, z1, Version.emptyVersion),
+                new ResourceSnapshot(app2, 45, 67, 89, NodeResources.Architecture.getDefault(), Instant.EPOCH, z2, Version.emptyVersion));
         maintainer.updateDeploymentCost(resourceSnapshots);
         assertCost.accept(app1, Map.of(z2, 3.05));
         assertCost.accept(app2, Map.of(z1, 4.39, z2, 5.72));

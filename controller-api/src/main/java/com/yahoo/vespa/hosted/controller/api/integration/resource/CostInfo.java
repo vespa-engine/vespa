@@ -21,11 +21,12 @@ public class CostInfo {
     private final BigDecimal memoryCost;
     private final BigDecimal diskCost;
     private final NodeResources.Architecture architecture;
+    private final int majorVersion;
 
 
     public CostInfo(ApplicationId applicationId, ZoneId zoneId,
                     BigDecimal cpuHours, BigDecimal memoryHours, BigDecimal diskHours,
-                    BigDecimal cpuCost, BigDecimal memoryCost, BigDecimal diskCost, NodeResources.Architecture architecture) {
+                    BigDecimal cpuCost, BigDecimal memoryCost, BigDecimal diskCost, NodeResources.Architecture architecture, int majorVersion) {
         this.applicationId = applicationId;
         this.zoneId = zoneId;
         this.cpuHours = cpuHours;
@@ -35,6 +36,7 @@ public class CostInfo {
         this.memoryCost = memoryCost;
         this.diskCost = diskCost;
         this.architecture = architecture;
+        this.majorVersion = majorVersion;
     }
 
     public ApplicationId getApplicationId() {
@@ -75,6 +77,10 @@ public class CostInfo {
 
     public NodeResources.Architecture getArchitecture() {
         return architecture;
+    }
+
+    public int getMajorVersion() {
+        return majorVersion;
     }
 
 }

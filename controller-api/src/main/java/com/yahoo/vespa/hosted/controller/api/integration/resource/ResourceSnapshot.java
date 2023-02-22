@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.api.integration.resource;
 
+import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.zone.ZoneId;
@@ -23,16 +24,18 @@ public class ResourceSnapshot {
     private final ResourceAllocation resourceAllocation;
     private final Instant timestamp;
     private final ZoneId zoneId;
+    private final Version version;
 
-    public ResourceSnapshot(ApplicationId applicationId, double cpuCores, double memoryGb, double diskGb, NodeResources.Architecture architecture, Instant timestamp, ZoneId zoneId) {
+    public ResourceSnapshot(ApplicationId applicationId, double cpuCores, double memoryGb, double diskGb, NodeResources.Architecture architecture, Instant timestamp, ZoneId zoneId, Version version) {
         this.applicationId = applicationId;
         this.resourceAllocation = new ResourceAllocation(cpuCores, memoryGb, diskGb, architecture);
         this.timestamp = timestamp;
         this.zoneId = zoneId;
+        this.version = version;
     }
 
     public static ResourceSnapshot from(ApplicationId applicationId, int nodes, double cpuCores, double memoryGb, double diskGb, NodeResources.Architecture architecture, Instant timestamp, ZoneId zoneId) {
-        return new ResourceSnapshot(applicationId, cpuCores * nodes, memoryGb * nodes, diskGb * nodes, architecture, timestamp, zoneId);
+        return new ResourceSnapshot(applicationId, cpuCores * nodes, memoryGb * nodes, diskGb * nodes, architecture, timestamp, zoneId, Version.emptyVersion);
     }
 
     public static ResourceSnapshot from(List<Node> nodes, Instant timestamp, ZoneId zoneId) {
@@ -50,7 +53,8 @@ public class ResourceSnapshot {
                 nodes.stream().map(Node::resources).mapToDouble(NodeResources::diskGb).sum(),
                 nodes.stream().map(node -> node.resources().architecture()).findFirst().orElse(NodeResources.Architecture.getDefault()),
                 timestamp,
-                zoneId
+                zoneId,
+                nodes.stream().map(Node::currentVersion).min(Version::compareTo).orElse(Version.emptyVersion)
         );
     }
 
@@ -82,6 +86,10 @@ public class ResourceSnapshot {
         return zoneId;
     }
 
+    public Version getVersion() {
+        return version;
+    }
+
     public NodeResources.Architecture getArchitecture() {
         return resourceAllocation.getArchitecture();
     }
@@ -95,11 +103,12 @@ public class ResourceSnapshot {
         return this.applicationId.equals(other.applicationId) &&
                 this.resourceAllocation.equals(other.resourceAllocation) &&
                 this.timestamp.equals(other.timestamp) &&
-                this.zoneId.equals(other.zoneId);
+                this.zoneId.equals(other.zoneId) &&
+                this.version.equals(other.version);
     }
 
     @Override
     public int hashCode(){
-        return Objects.hash(applicationId, resourceAllocation, timestamp, zoneId);
+        return Objects.hash(applicationId, resourceAllocation, timestamp, zoneId, version);
     }
 }

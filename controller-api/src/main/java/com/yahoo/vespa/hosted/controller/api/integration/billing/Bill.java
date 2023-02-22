@@ -189,6 +189,7 @@ public class Bill {
         private BigDecimal memoryCost;
         private BigDecimal diskCost;
         private NodeResources.Architecture architecture;
+        private int majorVersion;
 
         public LineItem(String id, String description, BigDecimal amount, String plan, String agent, ZonedDateTime addedAt) {
             this.id = id;
@@ -200,7 +201,7 @@ public class Bill {
         }
 
         public LineItem(String id, String description, BigDecimal amount, String plan, String agent, ZonedDateTime addedAt, ZonedDateTime startedAt, ZonedDateTime endedAt, ApplicationId applicationId, ZoneId zoneId,
-                        BigDecimal cpuHours, BigDecimal memoryHours, BigDecimal diskHours, BigDecimal cpuCost, BigDecimal memoryCost, BigDecimal diskCost, NodeResources.Architecture architecture) {
+                        BigDecimal cpuHours, BigDecimal memoryHours, BigDecimal diskHours, BigDecimal cpuCost, BigDecimal memoryCost, BigDecimal diskCost, NodeResources.Architecture architecture, int majorVersion) {
             this(id, description, amount, plan, agent, addedAt);
             this.startedAt = startedAt;
             this.endedAt = endedAt;
@@ -217,6 +218,7 @@ public class Bill {
             this.memoryCost = memoryCost;
             this.diskCost = diskCost;
             this.architecture = architecture;
+            this.majorVersion = majorVersion;
         }
 
         /** The opaque ID of this */
@@ -297,6 +299,10 @@ public class Bill {
             return Optional.ofNullable(architecture);
         }
 
+        public int getMajorVersion() {
+            return majorVersion;
+        }
+
         @Override
         public boolean equals(Object o) {
             if (this == o) return true;
@@ -311,12 +317,13 @@ public class Bill {
                     startedAt.equals(lineItem.startedAt) &&
                     endedAt.equals(lineItem.endedAt) &&
                     applicationId.equals(lineItem.applicationId) &&
-                    zoneId.equals(lineItem.zoneId);
+                    zoneId.equals(lineItem.zoneId) &&
+                    majorVersion == lineItem.majorVersion;
         }
 
         @Override
         public int hashCode() {
-            return Objects.hash(id, description, amount, plan, agent, addedAt, startedAt, endedAt, applicationId, zoneId);
+            return Objects.hash(id, description, amount, plan, agent, addedAt, startedAt, endedAt, applicationId, zoneId, majorVersion);
         }
 
         @Override
