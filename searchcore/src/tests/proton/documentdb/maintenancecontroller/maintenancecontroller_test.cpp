@@ -82,9 +82,9 @@ namespace {
 VESPA_THREAD_STACK_TAG(my_executor_init);
 
 void
-sampleThreadId(FastOS_ThreadId *threadId)
+sampleThreadId(std::thread::id *threadId)
 {
-    *threadId = FastOS_Thread::GetCurrentThreadId();
+    *threadId = std::this_thread::get_id();
 }
 
 }  // namespace
@@ -207,12 +207,12 @@ class MyFeedHandler : public IDocumentMoveHandler,
                       public IHeartBeatHandler,
                       public IOperationStorer
 {
-    FastOS_ThreadId                _executorThreadId;
+    std::thread::id                _executorThreadId;
     std::vector<MyDocumentSubDB *> _subDBs;
     SerialNum                      _serialNum;
     std::atomic<uint32_t>          _heartBeats;
 public:
-    explicit MyFeedHandler(FastOS_ThreadId &executorThreadId);
+    explicit MyFeedHandler(std::thread::id executorThreadId);
 
     ~MyFeedHandler() override;
 
@@ -241,7 +241,7 @@ public:
 class MyExecutor : public vespalib::ThreadStackExecutorBase
 {
 public:
-    FastOS_ThreadId       _threadId;
+    std::thread::id _threadId;
 
     MyExecutor();
     bool acceptNewTask(unique_lock &, std::condition_variable &) override {
@@ -604,7 +604,7 @@ MyDocumentSubDB::getNumUsedLids() const
 }
 
 
-MyFeedHandler::MyFeedHandler(FastOS_ThreadId &executorThreadId)
+MyFeedHandler::MyFeedHandler(std::thread::id executorThreadId)
     : IDocumentMoveHandler(),
       IPruneRemovedDocumentsHandler(),
       IHeartBeatHandler(),
@@ -622,8 +622,7 @@ MyFeedHandler::~MyFeedHandler() = default;
 bool
 MyFeedHandler::isExecutorThread() const
 {
-    FastOS_ThreadId threadId(FastOS_Thread::GetCurrentThreadId());
-    return FastOS_Thread::CompareThreadIds(_executorThreadId, threadId);
+    return (_executorThreadId == std::this_thread::get_id());
 }
 
 

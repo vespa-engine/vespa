@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "maintenancejobrunner.h"
-#include <vespa/fastos/thread.h>
 #include <vespa/vespalib/util/cpu_usage.h>
 #include <vespa/vespalib/util/lambdatask.h>
 
@@ -54,10 +53,9 @@ MaintenanceJobRunner::runJobInExecutor()
     }
     bool finished = _job->run();
     if (LOG_WOULD_LOG(debug)) {
-        FastOS_ThreadId threadId = FastOS_Thread::GetCurrentThreadId();
         LOG(debug,
-            "runJobInExecutor(): job='%s', task='%p', threadId=%" PRIu64 "",
-            _job->getName().c_str(), this, (uint64_t)threadId);
+            "runJobInExecutor(): job='%s', task='%p'",
+            _job->getName().c_str(), this);
     }
     if (!finished) {
         addExecutorTask();

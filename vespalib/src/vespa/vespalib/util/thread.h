@@ -10,6 +10,7 @@ namespace vespalib {
 
 namespace thread {
 [[nodiscard]] std::thread start(Runnable &runnable, Runnable::init_fun_t init_fun);
+size_t as_zu(std::thread::id id);
 }
 
 /**

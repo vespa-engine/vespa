@@ -3,7 +3,6 @@
 #include "executor_thread_service.h"
 #include <vespa/vespalib/util/lambdatask.h>
 #include <vespa/vespalib/util/gate.h>
-#include <vespa/fastos/thread.h>
 
 using vespalib::makeLambdaTask;
 using vespalib::Executor;
@@ -14,27 +13,20 @@ using vespalib::SyncableThreadExecutor;
 
 namespace proton {
 
-namespace internal {
-
-struct ThreadId {
-    FastOS_ThreadId _id;
-};
-}
-
 namespace {
 
 void
-sampleThreadId(FastOS_ThreadId *threadId)
+sampleThreadId(std::thread::id *threadId)
 {
-    *threadId = FastOS_Thread::GetCurrentThreadId();
+    *threadId = std::this_thread::get_id();
 }
 
-std::unique_ptr<internal::ThreadId>
+std::thread::id
 getThreadId(ThreadExecutor &executor)
 {
-    std::unique_ptr<internal::ThreadId> id = std::make_unique<internal::ThreadId>();
+    std::thread::id id;
     vespalib::Gate gate;
-    executor.execute(makeLambdaTask([threadId=&id->_id, &gate] {
+    executor.execute(makeLambdaTask([threadId = &id, &gate] {
         sampleThreadId(threadId);
         gate.countDown();
     }));
@@ -74,8 +66,7 @@ ExecutorThreadService::run(Runnable &runnable)
 bool
 ExecutorThreadService::isCurrentThread() const
 {
-    FastOS_ThreadId currentThreadId = FastOS_Thread::GetCurrentThreadId();
-    return FastOS_Thread::CompareThreadIds(_threadId->_id, currentThreadId);
+    return (_threadId == std::this_thread::get_id());
 }
 
 vespalib::ExecutorStats ExecutorThreadService::getStats() {
@@ -118,8 +109,7 @@ SyncableExecutorThreadService::run(Runnable &runnable)
 bool
 SyncableExecutorThreadService::isCurrentThread() const
 {
-    FastOS_ThreadId currentThreadId = FastOS_Thread::GetCurrentThreadId();
-    return FastOS_Thread::CompareThreadIds(_threadId->_id, currentThreadId);
+    return (_threadId == std::this_thread::get_id());
 }
 
 vespalib::ExecutorStats

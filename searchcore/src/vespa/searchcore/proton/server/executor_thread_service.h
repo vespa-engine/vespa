@@ -3,10 +3,10 @@
 
 #include <vespa/searchcorespi/index/i_thread_service.h>
 #include <vespa/vespalib/util/threadexecutor.h>
+#include <thread>
 
 namespace proton {
 
-namespace internal { struct ThreadId; }
 /**
  * Implementation of IThreadService using an underlying thread stack executor
  * with a single thread.
@@ -15,7 +15,7 @@ class ExecutorThreadService : public searchcorespi::index::IThreadService
 {
 private:
     vespalib::ThreadExecutor &_executor;
-    std::unique_ptr<internal::ThreadId>   _threadId;
+    std::thread::id _threadId;
 
 public:
     ExecutorThreadService(vespalib::ThreadExecutor &executor);
@@ -39,8 +39,8 @@ public:
 class SyncableExecutorThreadService : public searchcorespi::index::ISyncableThreadService
 {
 private:
-    vespalib::SyncableThreadExecutor    &_executor;
-    std::unique_ptr<internal::ThreadId>  _threadId;
+    vespalib::SyncableThreadExecutor &_executor;
+    std::thread::id _threadId;
 
 public:
     SyncableExecutorThreadService(vespalib::SyncableThreadExecutor &executor);
@@ -66,5 +66,3 @@ public:
 };
 
 } // namespace proton
-
-

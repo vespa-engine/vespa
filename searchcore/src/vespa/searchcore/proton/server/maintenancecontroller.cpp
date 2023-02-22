@@ -6,8 +6,7 @@
 #include <vespa/searchcorespi/index/i_thread_service.h>
 #include <vespa/searchcore/proton/common/scheduledexecutor.h>
 #include <vespa/vespalib/util/lambdatask.h>
-#include <vespa/fastos/thread.h>
-#include <thread>
+#include <vespa/vespalib/util/thread.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.server.maintenancecontroller");
@@ -16,6 +15,7 @@ using document::BucketId;
 using vespalib::Executor;
 using vespalib::MonitoredRefCount;
 using vespalib::makeLambdaTask;
+using vespalib::thread::as_zu;
 
 namespace proton {
 
@@ -69,7 +69,7 @@ MaintenanceController::killJobs()
     }
     // Called by master write thread
     assert(_masterThread.isCurrentThread());
-    LOG(debug, "killJobs(): threadId=%zu", (size_t)FastOS_Thread::GetCurrentThreadId());
+    LOG(debug, "killJobs(): threadId=%zu", as_zu(std::this_thread::get_id()));
     _periodicTaskHandles.clear();
     // No need to take _jobsLock as modification of _jobs also happens in master write thread.
     for (auto &job : _jobs) {
@@ -99,7 +99,7 @@ void
 MaintenanceController::performHoldJobs(JobList jobs)
 {
     // Called by master write thread
-    LOG(debug, "performHoldJobs(): threadId=%zu", (size_t)FastOS_Thread::GetCurrentThreadId());
+    LOG(debug, "performHoldJobs(): threadId=%zu", as_zu(std::this_thread::get_id()));
     (void) jobs;
 }
 
