@@ -5,6 +5,8 @@ package ai.vespa.modelintegration.evaluator;
 import ai.onnxruntime.OrtException;
 import ai.onnxruntime.OrtSession;
 
+import java.util.Objects;
+
 /**
  * Session options for ONNX Runtime evaluation
  *
@@ -12,7 +14,7 @@ import ai.onnxruntime.OrtSession;
  */
 public class OnnxEvaluatorOptions {
 
-    private OrtSession.SessionOptions.OptLevel optimizationLevel;
+    private final OrtSession.SessionOptions.OptLevel optimizationLevel;
     private OrtSession.SessionOptions.ExecutionMode executionMode;
     private int interOpThreads;
     private int intraOpThreads;
@@ -74,4 +76,18 @@ public class OnnxEvaluatorOptions {
         return gpuDeviceRequired;
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        OnnxEvaluatorOptions that = (OnnxEvaluatorOptions) o;
+        return interOpThreads == that.interOpThreads && intraOpThreads == that.intraOpThreads
+                && gpuDeviceNumber == that.gpuDeviceNumber && gpuDeviceRequired == that.gpuDeviceRequired
+                && optimizationLevel == that.optimizationLevel && executionMode == that.executionMode;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(optimizationLevel, executionMode, interOpThreads, intraOpThreads, gpuDeviceNumber, gpuDeviceRequired);
+    }
 }

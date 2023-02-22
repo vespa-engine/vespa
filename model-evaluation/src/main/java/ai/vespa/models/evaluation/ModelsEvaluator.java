@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.models.evaluation;
 
+import ai.vespa.modelintegration.evaluator.OnnxEvaluatorCache;
 import com.yahoo.api.annotations.Beta;
 import com.yahoo.component.annotation.Inject;
 import com.yahoo.component.AbstractComponent;
@@ -30,8 +31,17 @@ public class ModelsEvaluator extends AbstractComponent {
                            RankingConstantsConfig constantsConfig,
                            RankingExpressionsConfig expressionsConfig,
                            OnnxModelsConfig onnxModelsConfig,
+                           FileAcquirer fileAcquirer,
+                           OnnxEvaluatorCache cache) {
+        this(new RankProfilesConfigImporter(fileAcquirer, cache), config, constantsConfig, expressionsConfig, onnxModelsConfig);
+    }
+
+    public ModelsEvaluator(RankProfilesConfig config,
+                           RankingConstantsConfig constantsConfig,
+                           RankingExpressionsConfig expressionsConfig,
+                           OnnxModelsConfig onnxModelsConfig,
                            FileAcquirer fileAcquirer) {
-        this(new RankProfilesConfigImporter(fileAcquirer), config, constantsConfig, expressionsConfig, onnxModelsConfig);
+        this(config, constantsConfig, expressionsConfig, onnxModelsConfig, fileAcquirer, new OnnxEvaluatorCache());
     }
 
     public ModelsEvaluator(RankProfilesConfigImporter importer,
@@ -69,4 +79,5 @@ public class ModelsEvaluator extends AbstractComponent {
         return model;
     }
 
+    @Override public void deconstruct() { models.values().forEach(Model::close); }
 }

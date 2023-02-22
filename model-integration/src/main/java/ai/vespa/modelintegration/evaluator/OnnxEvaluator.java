@@ -20,7 +20,7 @@ import java.util.Map;
  *
  * @author lesters
  */
-public class OnnxEvaluator {
+public class OnnxEvaluator implements AutoCloseable {
 
     private final OrtEnvironment environment;
     private final OrtSession session;
@@ -85,6 +85,17 @@ public class OnnxEvaluator {
             return TensorConverter.toVespaTypes(session.getOutputInfo());
         } catch (OrtException e) {
             throw new RuntimeException("ONNX Runtime exception", e);
+        }
+    }
+
+    @Override
+    public void close() throws IllegalStateException {
+        try {
+            session.close();
+        } catch (OrtException e) {
+            throw new IllegalStateException("Failed to close ONNX session", e);
+        } catch (IllegalStateException e) {
+            throw new IllegalStateException("Already closed", e);
         }
     }
 

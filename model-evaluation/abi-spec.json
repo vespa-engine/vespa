@@ -47,7 +47,9 @@
   },
   "ai.vespa.models.evaluation.Model" : {
     "superClass" : "java.lang.Object",
-    "interfaces" : [ ],
+    "interfaces" : [
+      "java.lang.AutoCloseable"
+    ],
     "attributes" : [
       "public"
     ],
@@ -56,7 +58,8 @@
       "public java.lang.String name()",
       "public java.util.List functions()",
       "public varargs ai.vespa.models.evaluation.FunctionEvaluator evaluatorOf(java.lang.String[])",
-      "public java.lang.String toString()"
+      "public java.lang.String toString()",
+      "public void close()"
     ],
     "fields" : [ ]
   },
@@ -67,12 +70,14 @@
       "public"
     ],
     "methods" : [
+      "public void <init>(com.yahoo.vespa.config.search.RankProfilesConfig, com.yahoo.vespa.config.search.core.RankingConstantsConfig, com.yahoo.vespa.config.search.core.RankingExpressionsConfig, com.yahoo.vespa.config.search.core.OnnxModelsConfig, com.yahoo.filedistribution.fileacquirer.FileAcquirer, ai.vespa.modelintegration.evaluator.OnnxEvaluatorCache)",
       "public void <init>(com.yahoo.vespa.config.search.RankProfilesConfig, com.yahoo.vespa.config.search.core.RankingConstantsConfig, com.yahoo.vespa.config.search.core.RankingExpressionsConfig, com.yahoo.vespa.config.search.core.OnnxModelsConfig, com.yahoo.filedistribution.fileacquirer.FileAcquirer)",
       "public void <init>(ai.vespa.models.evaluation.RankProfilesConfigImporter, com.yahoo.vespa.config.search.RankProfilesConfig, com.yahoo.vespa.config.search.core.RankingConstantsConfig, com.yahoo.vespa.config.search.core.RankingExpressionsConfig, com.yahoo.vespa.config.search.core.OnnxModelsConfig)",
       "public void <init>(java.util.Map)",
       "public java.util.Map models()",
       "public varargs ai.vespa.models.evaluation.FunctionEvaluator evaluatorOf(java.lang.String, java.lang.String[])",
-      "public ai.vespa.models.evaluation.Model requireModel(java.lang.String)"
+      "public ai.vespa.models.evaluation.Model requireModel(java.lang.String)",
+      "public void deconstruct()"
     ],
     "fields" : [ ]
   },
@@ -83,7 +88,7 @@
       "public"
     ],
     "methods" : [
-      "public void <init>(com.yahoo.filedistribution.fileacquirer.FileAcquirer)",
+      "public void <init>(com.yahoo.filedistribution.fileacquirer.FileAcquirer, ai.vespa.modelintegration.evaluator.OnnxEvaluatorCache)",
       "public java.util.Map importFrom(com.yahoo.vespa.config.search.RankProfilesConfig, com.yahoo.vespa.config.search.core.RankingConstantsConfig, com.yahoo.vespa.config.search.core.RankingExpressionsConfig, com.yahoo.vespa.config.search.core.OnnxModelsConfig)",
       "protected final java.lang.String readExpressionFromFile(java.io.File)",
       "protected com.yahoo.searchlib.rankingexpression.RankingExpression readExpressionFromFile(java.lang.String, com.yahoo.config.FileReference)",
