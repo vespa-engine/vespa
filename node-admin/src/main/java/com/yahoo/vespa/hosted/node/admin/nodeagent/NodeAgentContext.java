@@ -61,4 +61,6 @@ public interface NodeAgentContext extends TaskContext {
     double vcpuOnThisHost();
 
     Optional<ApplicationId> hostExclusiveTo();
+
+    boolean exclave();
 }
