@@ -5,7 +5,9 @@ import com.yahoo.config.model.api.ApplicationInfo;
 import com.yahoo.config.model.api.HostInfo;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.HostName;
+import java.util.logging.Level;
 import com.yahoo.vespa.service.monitor.DuperModelListener;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -13,7 +15,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -22,7 +23,7 @@ import java.util.logging.Logger;
  * @author hakonhall
  */
 public class DuperModel {
-    private static final Logger logger = Logger.getLogger(DuperModel.class.getName());
+    private static Logger logger = Logger.getLogger(DuperModel.class.getName());
 
     private final Map<ApplicationId, ApplicationInfo> applicationsById = new HashMap<>();
     private final Map<HostName, ApplicationId> idsByHostname = new HashMap<>();

@@ -296,8 +296,7 @@ public class DeployTester {
                     .withZone(zone)
                     .withFlagSource(flagSource);
 
-            if (configserverConfig.hostedVespa())
-                builder.withHostProvisionerProvider(HostProvisionerProvider.withProvisioner(provisioner, configserverConfig));
+            if (configserverConfig.hostedVespa()) builder.withHostProvisionerProvider(HostProvisionerProvider.withProvisioner(provisioner, true));
 
             TenantRepository tenantRepository = builder.build();
             tenantRepository.addTenant(tenantName);
@@ -307,6 +306,7 @@ public class DeployTester {
                     .withConfigserverConfig(configserverConfig)
                     .withOrchestrator(new OrchestratorMock())
                     .withClock(clock)
+                    .withProvisioner(provisioner)
                     .withConfigConvergenceChecker(configConvergenceChecker)
                     .withFlagSource(flagSource)
                     .build();

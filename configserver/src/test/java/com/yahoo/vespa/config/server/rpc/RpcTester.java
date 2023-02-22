@@ -12,6 +12,7 @@ import com.yahoo.jrt.Transport;
 import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.config.server.ApplicationRepository;
 import com.yahoo.vespa.config.server.MemoryGenerationCounter;
+import com.yahoo.vespa.config.server.MockProvisioner;
 import com.yahoo.vespa.config.server.PortRangeAllocator;
 import com.yahoo.vespa.config.server.SuperModelManager;
 import com.yahoo.vespa.config.server.SuperModelRequestHandler;
@@ -86,6 +87,7 @@ public class RpcTester implements AutoCloseable {
         applicationRepository = new ApplicationRepository.Builder()
                 .withTenantRepository(tenantRepository)
                 .withConfigserverConfig(configserverConfig)
+                .withProvisioner(new MockProvisioner())
                 .withOrchestrator(new OrchestratorMock())
                 .build();
     }
