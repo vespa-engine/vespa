@@ -47,6 +47,7 @@ private:
         ContentMetricsApi,
         ContentProtonAdminApi,
         ContentSearchApi,
+        ContentStateApi,
         ContentStatusPages,
         ContentStorageApi,
         LogserverApi,
@@ -174,6 +175,10 @@ public:
 
     constexpr static Capability content_search_api() noexcept {
         return Capability(Id::ContentSearchApi);
+    }
+
+    constexpr static Capability content_state_api() noexcept {
+        return Capability(Id::ContentStateApi);
     }
 
     constexpr static Capability content_proton_admin_api() noexcept {

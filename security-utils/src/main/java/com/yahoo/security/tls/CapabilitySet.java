@@ -29,8 +29,9 @@ public class CapabilitySet implements ToCapabilitySet {
             "vespa.all", Capability.values());
     public static final CapabilitySet TELEMETRY = predefined(
             "vespa.telemetry",
-            Capability.CONTENT__STATUS_PAGES, Capability.CONTENT__METRICS_API, Capability.CONTAINER__STATE_API,
-            Capability.METRICSPROXY__METRICS_API, Capability.SENTINEL__CONNECTIVITY_CHECK);
+            Capability.CONTENT__STATUS_PAGES, Capability.CONTENT__STATE_API, Capability.CONTENT__METRICS_API,
+            Capability.CONTAINER__STATE_API, Capability.METRICSPROXY__METRICS_API,
+            Capability.SENTINEL__CONNECTIVITY_CHECK);
 
     private static final CapabilitySet SHARED_CAPABILITIES_APP_NODE = CapabilitySet.unionOf(List.of(
             Capability.LOGSERVER_API, Capability.CONFIGSERVER__CONFIG_API,
