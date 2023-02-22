@@ -345,6 +345,13 @@ public class Flags {
             "Takes effect at redeployment",
             APPLICATION_ID);
 
+    public static final UnboundBooleanFlag VESPA_ATHENZ_PROVIDER = defineFeatureFlag(
+            "vespa-athenz-provider", false,
+            List.of("mortent"), "2023-02-22", "2023-05-01",
+            "Enable athenz provider in public systems",
+            "Takes effect on next config server container start",
+            ZONE_ID);
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
                                                        String createdAt, String expiresAt, String description,
