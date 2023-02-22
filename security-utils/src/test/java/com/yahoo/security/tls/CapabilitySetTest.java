@@ -4,8 +4,6 @@ package com.yahoo.security.tls;
 import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
-import java.util.SortedSet;
-import java.util.TreeSet;
 import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -17,10 +15,10 @@ class CapabilitySetTest {
 
     @Test
     void contains_all_capabilities() {
-        SortedSet<String> expectedNames = Arrays.stream(Capability.values())
+        var expectedNames = Arrays.stream(Capability.values())
                 .map(Capability::asString)
-                .collect(Collectors.toCollection(TreeSet::new));
-        SortedSet<String> actualNames = CapabilitySet.all().toNames();
+                .collect(Collectors.toSet());
+        var actualNames = CapabilitySet.all().toCapabilityNames();
         assertEquals(expectedNames, actualNames);
     }
 
