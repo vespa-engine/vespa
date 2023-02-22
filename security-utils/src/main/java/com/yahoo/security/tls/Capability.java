@@ -30,6 +30,7 @@ public enum Capability implements ToCapabilitySet {
     CONTENT__METRICS_API("vespa.content.metrics_api"),
     CONTENT__PROTON_ADMIN_API("vespa.content.proton_admin_api"),
     CONTENT__SEARCH_API("vespa.content.search_api"),
+    CONTENT__STATE_API("vespa.content.state_api"),
     CONTENT__STATUS_PAGES("vespa.content.status_pages"),
     CONTENT__STORAGE_API("vespa.content.storage_api"),
     LOGSERVER_API("vespa.logserver.api"),
