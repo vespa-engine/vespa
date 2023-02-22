@@ -216,10 +216,10 @@ public class TenantApplications implements RequestHandler, HostValidator {
     }
 
     private void notifyConfigActivationListeners(ApplicationSet applicationSet) {
-        if (applicationSet.getAllApplications().isEmpty()) throw new IllegalArgumentException("application set cannot be empty");
+        List<Application> applications = applicationSet.getAllApplications();
+        if (applications.isEmpty()) throw new IllegalArgumentException("application set cannot be empty");
 
-        configActivationListener.hostsUpdated(applicationSet.getAllApplications().get(0).toApplicationInfo().getApplicationId(),
-                                              applicationSet.getAllHosts());
+        configActivationListener.hostsUpdated(applications.get(0).getId(), applicationSet.getAllHosts());
         configActivationListener.configActivated(applicationSet);
     }
 

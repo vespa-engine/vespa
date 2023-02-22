@@ -16,15 +16,15 @@ import java.util.Collection;
 public interface ConfigActivationListener {
 
     /**
-     * Signals the listener that hosts used by a particular tenant.
+     * Signals the listener that hosts used by a particular application has changed.
      *
      * @param applicationId application id
-     * @param newHosts a {@link Collection} of hosts used by tenant.
+     * @param newHosts a {@link Collection} of hosts used by an application.
      */
     void hostsUpdated(ApplicationId applicationId, Collection<String> newHosts);
 
     /**
-     * Verifies that given hosts are available for use by tenant.
+     * Verifies that given hosts are available for use by an application.
      *
      * @param applicationId application id
      * @param newHosts a {@link java.util.Collection} of hosts that tenant wants to allocate.
