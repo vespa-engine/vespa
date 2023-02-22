@@ -4,7 +4,6 @@
 #include <vespa/fnet/frt/rpcrequest.h>
 #include <vespa/fnet/frt/target.h>
 #include <vespa/fnet/transport.h>
-#include <vespa/fastos/thread.h>
 #include <vespa/vespalib/util/benchmark_timer.h>
 #include <vespa/vespalib/net/crypto_engine.h>
 #include <vespa/vespalib/net/tls/tls_crypto_engine.h>
@@ -15,13 +14,12 @@
 using namespace vespalib;
 
 struct Rpc : FRT_Invokable {
-    FastOS_ThreadPool thread_pool;
     FNET_Transport    transport;
     FRT_Supervisor    orb;
     Rpc(CryptoEngine::SP crypto, size_t num_threads, bool drop_empty)
-        : thread_pool(), transport(fnet::TransportConfig(num_threads).crypto(std::move(crypto)).drop_empty_buffers(drop_empty)), orb(&transport) {}
+        : transport(fnet::TransportConfig(num_threads).crypto(std::move(crypto)).drop_empty_buffers(drop_empty)), orb(&transport) {}
     void start() {
-        ASSERT_TRUE(transport.Start(&thread_pool));
+        ASSERT_TRUE(transport.Start());
     }
     uint32_t listen() {
         ASSERT_TRUE(orb.Listen(0));
@@ -32,7 +30,6 @@ struct Rpc : FRT_Invokable {
     }
     ~Rpc() override {
         transport.ShutDown(true);
-        thread_pool.Close();
     }
 };
 

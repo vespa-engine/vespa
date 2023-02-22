@@ -5,7 +5,6 @@
 #include <vespa/fnet/packetqueue.h>
 #include <vespa/fnet/controlpacket.h>
 #include <vespa/vespalib/util/signalhandler.h>
-#include <vespa/fastos/thread.h>
 #include <vespa/vespalib/util/time.h>
 #include <thread>
 
@@ -54,10 +53,9 @@ MyApp::main(int, char **)
   ms_double                  ms;
   clock::time_point          t;
   FNET_PacketQueue           queue;
-  FastOS_ThreadPool          pool;
   FNET_Transport             transport;
   Timeout                    timeout(transport.GetScheduler(), &queue);
-  transport.Start(&pool);
+  transport.Start();
 
   // stable-state operation
   std::this_thread::sleep_for(100ms);
@@ -90,7 +88,6 @@ MyApp::main(int, char **)
   fprintf(stderr, "time since timeout was scheduled: %f ms\n", ms.count());
 
   transport.ShutDown(true);
-  pool.Close();
   return 0;
 }
 

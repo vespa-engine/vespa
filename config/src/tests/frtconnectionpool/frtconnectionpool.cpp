@@ -4,7 +4,6 @@
 #include <vespa/config/frt/frtconnectionpool.h>
 #include <vespa/fnet/frt/error.h>
 #include <vespa/fnet/transport.h>
-#include <vespa/fastos/thread.h>
 #include <sstream>
 #include <set>
 #include <unistd.h>
@@ -14,7 +13,6 @@ using namespace config;
 class Test : public vespalib::TestApp {
 private:
     static ServerSpec::HostSpecList _sources;
-    FastOS_ThreadPool _threadPool;
     FNET_Transport    _transport;
     void verifyAllSourcesInRotation(FRTConnectionPool& sourcePool);
 public:
@@ -33,10 +31,9 @@ public:
 
 Test::Test()
     : vespalib::TestApp(),
-      _threadPool(),
       _transport()
 {
-    _transport.Start(&_threadPool);
+    _transport.Start();
 }
 
 Test::~Test() {

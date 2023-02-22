@@ -3,8 +3,6 @@
 
 #include <vespa/searchcorespi/index/ithreadingservice.h>
 
-class FastOS_ThreadPool;
-
 namespace vespalib { class TestClock; }
 
 namespace proton {
@@ -19,11 +17,9 @@ public:
     Transport();
     virtual ~Transport();
     FNET_Transport & transport() { return *_transport; }
-    FastOS_ThreadPool & threadPool() { return *_threadPool; }
     const vespalib::Clock & clock() const;
     virtual void shutdown();
 private:
-    std::unique_ptr<FastOS_ThreadPool> _threadPool;
     std::unique_ptr<FNET_Transport>    _transport;
     std::unique_ptr<vespalib::TestClock>   _clock;
 };

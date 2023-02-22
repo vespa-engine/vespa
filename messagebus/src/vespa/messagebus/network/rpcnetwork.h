@@ -16,7 +16,6 @@
 #include <vespa/fnet/frt/invokable.h>
 
 class FNET_Transport;
-class FastOS_ThreadPool;
 
 namespace slobrok {
     namespace api { class RegisterAPI; }
@@ -56,7 +55,6 @@ private:
 
     INetworkOwner                                     *_owner;
     Identity                                           _ident;
-    std::unique_ptr<FastOS_ThreadPool>                 _threadPool;
     std::unique_ptr<FNET_Transport>                    _transport;
     std::unique_ptr<FRT_Supervisor>                    _orb;
     FNET_Scheduler                                    &_scheduler;

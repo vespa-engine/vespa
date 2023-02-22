@@ -12,11 +12,10 @@
 namespace proton {
 
 Transport::Transport()
-    : _threadPool(std::make_unique<FastOS_ThreadPool>()),
-      _transport(std::make_unique<FNET_Transport>()),
+    : _transport(std::make_unique<FNET_Transport>()),
       _clock(std::make_unique<vespalib::TestClock>())
 {
-    _transport->Start(_threadPool.get());
+    _transport->Start();
 }
 
 Transport::~Transport() {

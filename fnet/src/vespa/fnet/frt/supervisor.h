@@ -13,7 +13,6 @@
 namespace fnet { class TransportConfig; }
 class FNET_Transport;
 class FRT_Target;
-class FastOS_ThreadPool;
 class FNET_Scheduler;
 class FRT_RPCInvoker;
 class FRT_IRequestWait;
@@ -106,7 +105,6 @@ public:
     const FRT_Supervisor &supervisor() const { return *_supervisor; }
     void shutdown();
 private:
-    std::unique_ptr<FastOS_ThreadPool> _threadPool;
     std::unique_ptr<FNET_Transport> _transport;
     std::unique_ptr<FRT_Supervisor> _supervisor;
 };

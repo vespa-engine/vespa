@@ -6,7 +6,6 @@
 #include <vespa/vespalib/stllike/string.h>
 #include <memory>
 
-class FastOS_ThreadPool;
 class FNET_Transport;
 class FRT_Supervisor;
 
@@ -19,7 +18,6 @@ namespace storage::rpc {
 
 class SharedRpcResources {
     class RpcTargetFactoryImpl;
-    std::unique_ptr<FastOS_ThreadPool>         _thread_pool;
     std::unique_ptr<FNET_Transport>            _transport;
     std::unique_ptr<FRT_Supervisor>            _orb;
     std::unique_ptr<slobrok::api::RegisterAPI> _slobrok_register;

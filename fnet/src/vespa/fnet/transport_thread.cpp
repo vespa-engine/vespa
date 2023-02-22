@@ -598,28 +598,28 @@ FNET_TransportThread::endEventLoop() {
 
 
 bool
-FNET_TransportThread::Start(FastOS_ThreadPool *pool)
+FNET_TransportThread::Start(vespalib::ThreadPool &pool)
 {
-    return (pool != nullptr && pool->NewThread(this));
+    pool.start([this](){run();});
+    return true;
 }
 
 
 void
 FNET_TransportThread::Main()
 {
-    Run(nullptr, nullptr);
+    run();
 }
 
 
 void
-FNET_TransportThread::Run(FastOS_ThreadInterface *thisThread, void *)
+FNET_TransportThread::run()
 {
     if (!InitEventLoop()) {
         LOG(warning, "Transport: Run: Could not init event loop");
         return;
     }
     while (EventLoopIteration()) {
-        if (thisThread != nullptr && thisThread->GetBreakFlag())
-            ShutDown(false);
+        // event loop must be stopped from the outside
     }
 }

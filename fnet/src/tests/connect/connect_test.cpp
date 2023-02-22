@@ -88,26 +88,25 @@ struct BlockingCryptoEngine : public CryptoEngine {
 
 struct TransportFixture : FNET_IPacketHandler, FNET_IConnectionCleanupHandler {
     FNET_SimplePacketStreamer streamer;
-    FastOS_ThreadPool pool;
     FNET_Transport transport;
     Gate conn_lost;
     Gate conn_deleted;
-    TransportFixture() : streamer(nullptr), pool(), transport(),
+    TransportFixture() : streamer(nullptr), transport(),
                          conn_lost(), conn_deleted()
     {
-        transport.Start(&pool);
+        transport.Start();
     }
     TransportFixture(AsyncResolver::HostResolver::SP host_resolver)
-        : streamer(nullptr), pool(), transport(fnet::TransportConfig().resolver(make_resolver(std::move(host_resolver)))),
+        : streamer(nullptr), transport(fnet::TransportConfig().resolver(make_resolver(std::move(host_resolver)))),
           conn_lost(), conn_deleted()
     {
-        transport.Start(&pool);
+        transport.Start();
     }
     TransportFixture(CryptoEngine::SP crypto)
-        : streamer(nullptr), pool(), transport(fnet::TransportConfig().crypto(std::move(crypto))),
+        : streamer(nullptr), transport(fnet::TransportConfig().crypto(std::move(crypto))),
           conn_lost(), conn_deleted()
     {
-        transport.Start(&pool);
+        transport.Start();
     }
     HP_RetCode HandlePacket(FNET_Packet *packet, FNET_Context) override {
         ASSERT_TRUE(packet->GetCommand() == FNET_ControlPacket::FNET_CMD_CHANNEL_LOST);
@@ -127,7 +126,6 @@ struct TransportFixture : FNET_IPacketHandler, FNET_IConnectionCleanupHandler {
     }
     ~TransportFixture() override {
         transport.ShutDown(true);
-        pool.Close();
     }
 };
 

@@ -136,7 +136,7 @@ RPCHooksBase::open(Params & params)
     initRPC();
     _regAPI.registerName((params.identity + "/realtimecontroller").c_str());
     _orb->Listen(params.rtcPort);
-    _transport->Start(&_proton.getThreadPool());
+    _transport->Start();
     LOG(debug, "started monitoring interface");
 }
 

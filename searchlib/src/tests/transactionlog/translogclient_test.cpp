@@ -480,16 +480,14 @@ getMaxSessionRunTime(TransLogServer &tls, const vespalib::string &domain)
 }
 
 struct TLS {
-    FastOS_ThreadPool threadPool;
     FNET_Transport transport;
     TransLogServer tls;
     TLS(const vespalib::string &name, int listenPort, const vespalib::string &baseDir,
         const common::FileHeaderContext &fileHeaderContext, const DomainConfig & cfg, size_t maxThreads = 4)
-        : threadPool(),
-          transport(),
+        : transport(),
           tls(transport, name, listenPort, baseDir, fileHeaderContext, cfg, maxThreads)
     {
-        transport.Start(&threadPool);
+        transport.Start();
     }
     ~TLS() {
         transport.ShutDown(true);

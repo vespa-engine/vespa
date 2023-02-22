@@ -136,6 +136,7 @@ FNET_Transport::FNET_Transport(const fnet::TransportConfig &cfg)
       _time_tools(cfg.time_tools()),
       _work_pool(std::make_unique<vespalib::ThreadStackExecutor>(1, fnet_work_pool, 1024)),
       _threads(),
+      _pool(),
       _config(cfg.config())
 {
     // TODO Temporary logging to track down overspend
@@ -146,7 +147,10 @@ FNET_Transport::FNET_Transport(const fnet::TransportConfig &cfg)
     }
 }
 
-FNET_Transport::~FNET_Transport() = default;
+FNET_Transport::~FNET_Transport()
+{
+    _pool.join();
+}
 
 void
 FNET_Transport::post_or_perform(vespalib::Executor::Task::UP task)
@@ -266,13 +270,12 @@ FNET_Transport::WaitFinished()
 }
 
 bool
-FNET_Transport::Start(FastOS_ThreadPool *pool)
+FNET_Transport::Start()
 {
-    bool result = true;
     for (const auto &thread: _threads) {
-        result &= thread->Start(pool);
+        thread->Start(_pool);
     }
-    return result;
+    return true;
 }
 
 void

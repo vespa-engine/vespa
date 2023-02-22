@@ -4,7 +4,6 @@
 #include <vespa/vespalib/util/size_literals.h>
 #include <vespa/fnet/transport.h>
 #include <vespa/fnet/iexecutable.h>
-#include <vespa/fastos/thread.h>
 
 struct DoIt : public FNET_IExecutable {
     vespalib::Gate gate;
@@ -18,10 +17,9 @@ TEST("sync execute") {
     DoIt exe2;
     DoIt exe3;
     DoIt exe4;
-    FastOS_ThreadPool pool;
     FNET_Transport transport;
     ASSERT_TRUE(transport.execute(&exe1));
-    ASSERT_TRUE(transport.Start(&pool));
+    ASSERT_TRUE(transport.Start());
     exe1.gate.await();
     ASSERT_TRUE(transport.execute(&exe2));
     transport.sync();
@@ -32,7 +30,6 @@ TEST("sync execute") {
     transport.sync();
     transport.WaitFinished();
     transport.sync();
-    pool.Close();
     ASSERT_TRUE(exe1.gate.getCount() == 0u);
     ASSERT_TRUE(exe2.gate.getCount() == 0u);
     ASSERT_TRUE(exe3.gate.getCount() == 0u);

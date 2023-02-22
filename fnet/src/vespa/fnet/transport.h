@@ -7,9 +7,9 @@
 #include <vespa/vespalib/net/async_resolver.h>
 #include <vespa/vespalib/net/crypto_engine.h>
 #include <vespa/vespalib/util/time.h>
+#include <vespa/vespalib/util/thread.h>
 
 class FNET_TransportThread;
-class FastOS_ThreadPool;
 class FNET_Connector;
 class FNET_IPacketStreamer;
 class FNET_IServerAdapter;
@@ -111,6 +111,7 @@ private:
     fnet::TimeTools::SP         _time_tools;
     std::unique_ptr<vespalib::SyncableThreadExecutor> _work_pool;
     Threads                     _threads;
+    vespalib::ThreadPool        _pool;
     const FNET_Config           _config;
 
     /**
@@ -317,9 +318,8 @@ public:
      * ok.
      *
      * @return thread create status.
-     * @param pool threadpool that may be used to spawn new threads.
      **/
-    bool Start(FastOS_ThreadPool *pool);
+    bool Start();
 
     /**
      * Capture transport threads. Used for testing purposes,
