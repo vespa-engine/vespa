@@ -401,6 +401,7 @@ public class TenantRepository {
     }
 
     private void notifyRemovedTenant(TenantName name) {
+        hostRegistry.removeHosts(name);
         tenantListener.onTenantDelete(name);
     }
 

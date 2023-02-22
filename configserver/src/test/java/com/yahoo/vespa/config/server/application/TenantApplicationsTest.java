@@ -203,15 +203,6 @@ public class TenantApplicationsTest {
         }
 
         @Override
-        public void hostsUpdated(ApplicationId applicationId, Collection<String> newHosts) {
-            tenantHosts.put(applicationId.tenant().value(), newHosts);
-        }
-
-        @Override
-        public void verifyHostsAreAvailable(ApplicationId applicationId, Collection<String> newHosts) {
-        }
-
-        @Override
         public void applicationRemoved(ApplicationId applicationId) {
             removed.incrementAndGet();
         }
