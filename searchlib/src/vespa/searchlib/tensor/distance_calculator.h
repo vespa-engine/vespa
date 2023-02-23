@@ -4,6 +4,7 @@
 #include "distance_function.h"
 #include "i_tensor_attribute.h"
 #include "vector_bundle.h"
+#include <optional>
 
 namespace vespalib::eval { struct Value; }
 
@@ -62,6 +63,19 @@ public:
             result = std::min(result, distance);
         }
         return result;
+    }
+
+    std::optional<uint32_t> calc_closest_subspace(VectorBundle vectors) {
+        double best_distance = 0.0;
+        std::optional<uint32_t> closest_subspace;
+        for (uint32_t i = 0; i < vectors.subspaces(); ++i) {
+            double distance = _dist_fun->calc(_query_tensor_cells, vectors.cells(i));
+            if (!closest_subspace.has_value() || distance < best_distance) {
+                best_distance = distance;
+                closest_subspace = i;
+            }
+        }
+        return closest_subspace;
     }
 
     /**
