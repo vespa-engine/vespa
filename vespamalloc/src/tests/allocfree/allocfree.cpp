@@ -2,7 +2,6 @@
 #include "producerconsumer.h"
 #include <vespa/vespalib/testkit/testapp.h>
 #include <map>
-#include <thread>
 
 #include <vespa/log/log.h>
 LOG_SETUP("allocfree_test");
@@ -73,7 +72,7 @@ int Test::Main() {
     }
     TEST_INIT("allocfree_test");
 
-    FastOS_ThreadPool pool;
+    vespalib::ThreadPool pool;
 
     std::map<int, std::shared_ptr<FreeWorker> > freeWorkers;
     std::map<int, std::shared_ptr<MallocWorker> > mallocWorkers;
@@ -86,22 +85,23 @@ int Test::Main() {
         mallocFreeWorkers[i] = std::shared_ptr<MallocFreeWorker>(new MallocFreeWorker(200, 16, (i%2) ? true : false));
     }
 
-
+    std::atomic<bool> stop_flag(false);
     for(std::map<int, std::shared_ptr<FreeWorker> >::iterator it(freeWorkers.begin()), mt(freeWorkers.end()); it != mt; it++) {
-        ASSERT_TRUE(pool.NewThread(it->second.get(), NULL) != NULL);
+        it->second->start(pool, stop_flag);
     }
     for(std::map<int, std::shared_ptr<MallocWorker> >::iterator it(mallocWorkers.begin()), mt(mallocWorkers.end()); it != mt; it++) {
-        ASSERT_TRUE(pool.NewThread(it->second.get(), NULL) != NULL);
+        it->second->start(pool, stop_flag);
     }
     for(std::map<int, std::shared_ptr<MallocFreeWorker> >::iterator it(mallocFreeWorkers.begin()), mt(mallocFreeWorkers.end()); it != mt; it++) {
-        ASSERT_TRUE(pool.NewThread(it->second.get(), NULL) != NULL);
+        it->second->start(pool, stop_flag);
     }
 
     for (; duration > 0; --duration) {
         LOG(info, "%d seconds left...", duration);
         std::this_thread::sleep_for(1s);
     }
-    pool.Close();
+    stop_flag = true;
+    pool.join();
     size_t numFreeOperations(0);
     size_t numMallocOperations(0);
     size_t numSameThreadMallocFreeOperations(0);

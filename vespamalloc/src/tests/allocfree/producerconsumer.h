@@ -3,7 +3,8 @@
 
 #include <vector>
 #include "queue.h"
-#include <vespa/fastos/thread.h>
+#include <vespa/vespalib/util/thread.h>
+#include <atomic>
 
 namespace vespalib {
 
@@ -11,7 +12,15 @@ typedef std::vector<void *> MemListImpl;
 typedef MemListImpl * MemList;
 typedef vespalib::Queue<MemList>      MemQueue;
 
-class Consumer : public FastOS_Runnable {
+struct RunWithStopFlag {
+    virtual void run(std::atomic<bool> &stop_flag) = 0;
+    void start(vespalib::ThreadPool &pool, std::atomic<bool> &stop_flag) {
+        pool.start([this,&stop_flag](){run(stop_flag);});
+    }
+    virtual ~RunWithStopFlag() = default;
+};
+
+class Consumer : public RunWithStopFlag {
 private:
     MemQueue _queue;
     bool     _inverse;
@@ -22,11 +31,11 @@ public:
     virtual ~Consumer();
     void enqueue(const MemList &mem) { _queue.enqueue(mem); }
     void close() { _queue.close(); }
-    void Run(FastOS_ThreadInterface *t, void *) override;
+    void run(std::atomic<bool> &stop_flag) override;
     uint64_t operations() const { return _operations; }
 };
 
-class Producer : public FastOS_Runnable {
+class Producer : public RunWithStopFlag {
 private:
     Consumer & _target;
     uint32_t   _cnt;
@@ -35,11 +44,11 @@ private:
 public:
     Producer(uint32_t cnt, Consumer &target);
     virtual ~Producer();
-    void Run(FastOS_ThreadInterface *t, void *) override;
+    void run(std::atomic<bool> &stop_flag) override;
     uint64_t operations() const { return _operations; }
 };
 
-class ProducerConsumer : public FastOS_Runnable {
+class ProducerConsumer : public RunWithStopFlag {
 private:
     uint32_t _cnt;
     bool     _inverse;
@@ -50,7 +59,7 @@ private:
 public:
     ProducerConsumer(uint32_t cnt, bool inverse);
     virtual ~ProducerConsumer();
-    void Run(FastOS_ThreadInterface *t, void *) override;
+    void run(std::atomic<bool> &stop_flag) override;
     uint64_t operationsConsumed() const { return _operationsConsumed; }
     uint64_t operationsProduced() const { return _operationsProduced; }
 };

@@ -1,6 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/thread.h>
+#include <vespa/vespalib/util/thread.h>
 #include <cstdlib>
 #include <cstdio>
 
@@ -24,31 +24,21 @@ void testdd()
     free(a);
 }
 
-class Thread : public FastOS_Runnable
-{
-private:
-    void Run(FastOS_ThreadInterface * ti, void * arg) override;
-};
+void thread_run();
 
 int main(int, char *[])
 {
-    FastOS_ThreadPool threadPool;
+    vespalib::ThreadPool threadPool;
     printf("Main stack(%p)\n", &threadPool);
-    Thread context;
 
-    FastOS_ThreadInterface * th[4];
-    for (size_t i=0; i<sizeof(th)/sizeof(th[0]); i++) {
-        th[i] = threadPool.NewThread(&context);
+    for (int i = 0; i < 4; ++i) {
+        threadPool.start([](){thread_run();});
     }
-    for (size_t i=0; i<sizeof(th)/sizeof(th[0]); i++) {
-        th[i]->Join();
-        delete th[i];
-    }
-
+    threadPool.join();
     return 0;
 }
 
-void Thread::Run(FastOS_ThreadInterface *, void *)
+void thread_run()
 {
     char * a = new char [100];
     delete [] a;

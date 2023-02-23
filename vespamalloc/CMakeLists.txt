@@ -6,7 +6,6 @@ add_definitions(-DPARANOID_LEVEL=0)
 
 vespa_define_module(
     TEST_DEPENDS
-    fastos
     vespalib
     vespalog
 

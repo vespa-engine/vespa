@@ -124,7 +124,7 @@ int Test::Main() {
 
     ASSERT_EQUAL(1024ul, sizeof(List));
 
-    FastOS_ThreadPool      pool;
+    vespalib::ThreadPool   pool;
     List::AtomicHeadPtr    sharedList(List::HeadPtr(nullptr, 1));
     fprintf(stderr, "Start populating list\n");
     for (size_t i=0; i < NumBlocks; i++) {
@@ -156,18 +156,20 @@ int Test::Main() {
     LinkInOutAndIn  pc1(sharedList, 16, false);
     LinkInOutAndIn  pc2(sharedList, 16, true);
 
-    ASSERT_TRUE(pool.NewThread(&c1, nullptr) != nullptr);
-    ASSERT_TRUE(pool.NewThread(&c2, nullptr) != nullptr);
-    ASSERT_TRUE(pool.NewThread(&p1, nullptr) != nullptr);
-    ASSERT_TRUE(pool.NewThread(&p2, nullptr) != nullptr);
-    ASSERT_TRUE(pool.NewThread(&pc1, nullptr) != nullptr);
-    ASSERT_TRUE(pool.NewThread(&pc2, nullptr) != nullptr);
+    std::atomic<bool> stop_flag(false);
+    c1.start(pool, stop_flag);
+    c2.start(pool, stop_flag);
+    p1.start(pool, stop_flag);
+    p2.start(pool, stop_flag);
+    pc1.start(pool, stop_flag);
+    pc2.start(pool, stop_flag);
 
     for (; duration > 0; --duration) {
         LOG(info, "%d seconds left...", duration);
         std::this_thread::sleep_for(1s);
     }
-    pool.Close();
+    stop_flag = true;
+    pool.join();
     fprintf(stderr, "Did (%lu + %lu) = %lu linkIn operations\n",
             c1.operations(), c2.operations(), c1.operations() + c2.operations());
     fprintf(stderr, "Did (%lu + %lu) = %lu linkOut operations\n",
