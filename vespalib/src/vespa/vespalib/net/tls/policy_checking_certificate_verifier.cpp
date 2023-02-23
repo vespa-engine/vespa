@@ -74,13 +74,15 @@ VerificationResult PolicyConfiguredCertificateVerifier::verify(const PeerCredent
         return VerificationResult::make_authorized_with_all_capabilities();
     }
     CapabilitySet caps;
+    bool matched_any_policy = false;
     for (const auto& policy : _authorized_peers.peer_policies()) {
         if (matches_all_policy_requirements(peer_creds, policy)) {
             caps.add_all(policy.granted_capabilities());
+            matched_any_policy = true;
         }
     }
-    if (!caps.empty()) {
-        return VerificationResult::make_authorized_with_capabilities(std::move(caps));
+    if (matched_any_policy) {
+        return VerificationResult::make_authorized_with_capabilities(caps);
     } else {
         return VerificationResult::make_not_authorized();
     }

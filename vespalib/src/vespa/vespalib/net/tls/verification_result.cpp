@@ -6,14 +6,18 @@
 
 namespace vespalib::net::tls {
 
-VerificationResult::VerificationResult() = default;
-
-VerificationResult::VerificationResult(CapabilitySet granted_capabilities)
-    : _granted_capabilities(std::move(granted_capabilities))
+VerificationResult::VerificationResult() noexcept
+    : _granted_capabilities(),
+      _authorized(false)
 {}
 
-VerificationResult::VerificationResult(const VerificationResult&) = default;
-VerificationResult& VerificationResult::operator=(const VerificationResult&) = default;
+VerificationResult::VerificationResult(bool authorized, CapabilitySet granted_capabilities) noexcept
+    : _granted_capabilities(granted_capabilities),
+      _authorized(authorized)
+{}
+
+VerificationResult::VerificationResult(const VerificationResult&) noexcept = default;
+VerificationResult& VerificationResult::operator=(const VerificationResult&) noexcept = default;
 VerificationResult::VerificationResult(VerificationResult&&) noexcept = default;
 VerificationResult& VerificationResult::operator=(VerificationResult&&) noexcept = default;
 VerificationResult::~VerificationResult() = default;
@@ -29,18 +33,18 @@ void VerificationResult::print(asciistream& os) const {
 }
 
 VerificationResult
-VerificationResult::make_authorized_with_capabilities(CapabilitySet granted_capabilities) {
-    return VerificationResult(std::move(granted_capabilities));
+VerificationResult::make_authorized_with_capabilities(CapabilitySet granted_capabilities) noexcept {
+    return {true, granted_capabilities};
 }
 
 VerificationResult
-VerificationResult::make_authorized_with_all_capabilities() {
-    return VerificationResult(CapabilitySet::make_with_all_capabilities());
+VerificationResult::make_authorized_with_all_capabilities() noexcept {
+    return {true, CapabilitySet::make_with_all_capabilities()};
 }
 
 VerificationResult
-VerificationResult::make_not_authorized() {
-    return {};
+VerificationResult::make_not_authorized() noexcept {
+    return {false, CapabilitySet::make_empty()};
 }
 
 asciistream& operator<<(asciistream& os, const VerificationResult& res) {
