@@ -41,6 +41,7 @@ import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
@@ -193,7 +194,7 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
         HostnameVerifier ztsHostNameVerifier = useInternalZts
                 ? new AthenzIdentityVerifier(Set.of(configserverIdentity))
                 : null;
-        try (ZtsClient ztsClient = new DefaultZtsClient.Builder(ztsEndpoint).withIdentityProvider(hostIdentityProvider).withHostnameVerifier(ztsHostNameVerifier).build()) {
+        try (ZtsClient ztsClient = new DefaultZtsClient.Builder(ztsEndpoint(doc)).withIdentityProvider(hostIdentityProvider).withHostnameVerifier(ztsHostNameVerifier).build()) {
             InstanceIdentity instanceIdentity =
                     ztsClient.registerInstance(
                             configserverIdentity,
@@ -206,6 +207,15 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
         }
     }
 
+    /**
+     * Return zts url from identity document, fallback to ztsEndpoint
+     */
+    private URI ztsEndpoint(SignedIdentityDocument doc) {
+        return Optional.ofNullable(doc.ztsUrl())
+                .filter(s -> !s.isBlank())
+                .map(URI::create)
+                .orElse(ztsEndpoint);
+    }
     private void refreshIdentity(NodeAgentContext context, ContainerPath privateKeyFile, ContainerPath certificateFile,
                                  ContainerPath identityDocumentFile, SignedIdentityDocument doc) {
         KeyPair keyPair = KeyUtils.generateKeypair(KeyAlgorithm.RSA);
@@ -221,7 +231,7 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
             HostnameVerifier ztsHostNameVerifier = useInternalZts
                     ? new AthenzIdentityVerifier(Set.of(configserverIdentity))
                     : null;
-            try (ZtsClient ztsClient = new DefaultZtsClient.Builder(ztsEndpoint).withSslContext(containerIdentitySslContext).withHostnameVerifier(ztsHostNameVerifier).build()) {
+            try (ZtsClient ztsClient = new DefaultZtsClient.Builder(ztsEndpoint(doc)).withSslContext(containerIdentitySslContext).withHostnameVerifier(ztsHostNameVerifier).build()) {
                 InstanceIdentity instanceIdentity =
                         ztsClient.refreshInstance(
                                 configserverIdentity,

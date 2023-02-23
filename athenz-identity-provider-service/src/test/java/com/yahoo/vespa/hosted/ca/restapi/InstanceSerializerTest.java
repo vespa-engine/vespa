@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.ca.restapi;
 
+import com.yahoo.config.provision.Cloud;
 import com.yahoo.security.Pkcs10CsrUtils;
 import com.yahoo.security.X509CertificateUtils;
 import com.yahoo.slime.Slime;
@@ -48,7 +49,8 @@ public class InstanceSerializerTest {
                 Instant.now().truncatedTo(ChronoUnit.MICROS),  // Truncate to the precision given from EntityBindingsMapper.toAttestationData()
                 Collections.emptySet(),
                 IdentityType.NODE,
-                ClusterType.CONTAINER);
+                ClusterType.CONTAINER,
+                "https://zts.url");
 
         var json = String.format("{\n" +
                 "  \"provider\": \"provider_prod_us-north-1\",\n" +
