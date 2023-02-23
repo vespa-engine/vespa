@@ -225,7 +225,7 @@ public class InstanceValidatorTest {
                         IdentityType.NODE, keyProvider.getPrivateKey(0));
         SignedIdentityDocument signedIdentityDocument = new SignedIdentityDocument(
                 signature, 0, vespaUniqueInstanceId, domainService, 0, "localhost", "localhost",
-                clock, Collections.emptySet(), IdentityType.NODE, clusterType);
+                clock, Collections.emptySet(), IdentityType.NODE, clusterType, "https://zts.url");
         return createInstanceConfirmation(vespaUniqueInstanceId, domain, service, signedIdentityDocument);
     }
 
