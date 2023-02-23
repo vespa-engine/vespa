@@ -1,13 +1,12 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.deploy;
 
-import com.google.common.base.Supplier;
-import com.google.common.base.Suppliers;
 import com.yahoo.concurrent.UncheckedTimeoutException;
 import com.yahoo.config.FileReference;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.provision.ActivationContext;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.ApplicationLockException;
 import com.yahoo.config.provision.ApplicationTransaction;
 import com.yahoo.config.provision.HostFilter;
 import com.yahoo.config.provision.HostSpec;
@@ -29,11 +28,14 @@ import com.yahoo.vespa.config.server.session.PrepareParams;
 import com.yahoo.vespa.config.server.session.Session;
 import com.yahoo.vespa.config.server.session.SessionRepository;
 import com.yahoo.vespa.config.server.tenant.Tenant;
+import com.yahoo.yolean.concurrent.Memoized;
+
 import java.time.Clock;
 import java.time.Duration;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -113,8 +115,6 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
             deleteSession();
             throw e;
         }
-
-        waitForResourcesOrTimeout(params, session, provisioner);
     }
 
     /** Activates this. If it is not already prepared, this will call prepare first. */
@@ -125,6 +125,8 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
         validateSessionStatus(session);
 
         PrepareParams params = this.params.get();
+        waitForResourcesOrTimeout(params, session, provisioner);
+
         ApplicationId applicationId = session.getApplicationId();
         try (ActionTimer timer = applicationRepository.timerFor(applicationId, "deployment.activateMillis")) {
             TimeoutBudget timeoutBudget = params.getTimeoutBudget();
@@ -263,7 +265,7 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
 
         // Use supplier because we shouldn't/can't create this before validateSessionStatus() for prepared deployments,
         // memoize because we want to create this once for unprepared deployments
-        return Suppliers.memoize(() -> {
+        return new Memoized<>(() -> {
             TimeoutBudget timeoutBudget = new TimeoutBudget(clock, timeout);
 
             PrepareParams.Builder params = new PrepareParams.Builder()
@@ -288,20 +290,19 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
 
         Set<HostSpec> preparedHosts = session.getAllocatedHosts().getHosts();
         ActivationContext context = new ActivationContext(session.getSessionId());
-        ProvisionLock lock = new ProvisionLock(session.getApplicationId(), () -> {});
-        AtomicReference<TransientException> lastException = new AtomicReference<>();
+        AtomicReference<Exception> lastException = new AtomicReference<>();
 
         while (true) {
             params.getTimeoutBudget().assertNotTimedOut(
                     () -> "Timeout exceeded while waiting for application resources of '" + session.getApplicationId() + "'" +
                             Optional.ofNullable(lastException.get()).map(e -> ". Last exception: " + e.getMessage()).orElse(""));
 
-            try {
+            try (ProvisionLock lock = provisioner.get().lock(session.getApplicationId())) {
                 // Call to activate to make sure that everything is ready, but do not commit the transaction
                 ApplicationTransaction transaction = new ApplicationTransaction(lock, new NestedTransaction());
                 provisioner.get().activate(preparedHosts, context, transaction);
                 return;
-            } catch (TransientException e) {
+            } catch (ApplicationLockException | TransientException e) {
                 lastException.set(e);
                 try {
                     Thread.sleep(durationBetweenResourceReadyChecks.toMillis());
