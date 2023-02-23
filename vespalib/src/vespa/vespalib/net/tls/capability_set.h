@@ -111,7 +111,7 @@ public:
     [[nodiscard]] static CapabilitySet telemetry() noexcept;
     [[nodiscard]] static CapabilitySet cluster_controller_node() noexcept;
     [[nodiscard]] static CapabilitySet logserver_node() noexcept;
-    [[nodiscard]] static CapabilitySet config_server() noexcept;
+    [[nodiscard]] static CapabilitySet config_server_node() noexcept;
 
     [[nodiscard]] static CapabilitySet make_with_all_capabilities() noexcept;
     [[nodiscard]] static constexpr CapabilitySet make_empty() noexcept { return {}; };
