@@ -72,7 +72,6 @@ CapabilitySet CapabilitySet::container_node() noexcept {
 
 CapabilitySet CapabilitySet::telemetry() noexcept {
     return CapabilitySet::of({Capability::content_status_pages(),
-                              Capability::content_state_api(),
                               Capability::content_metrics_api(),
                               Capability::container_state_api(),
                               Capability::metricsproxy_metrics_api(),
