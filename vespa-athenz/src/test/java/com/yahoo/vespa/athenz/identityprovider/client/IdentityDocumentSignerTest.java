@@ -36,6 +36,7 @@ public class IdentityDocumentSignerTest {
     private static final Instant createdAt = Instant.EPOCH;
     private static final HashSet<String> ipAddresses = new HashSet<>(Arrays.asList("1.2.3.4", "::1"));
     private static final ClusterType clusterType = ClusterType.CONTAINER;
+    private static final String ztsUrl = "https://foo";
 
     @Test
     void generates_and_validates_signature() {
@@ -46,7 +47,7 @@ public class IdentityDocumentSignerTest {
 
         SignedIdentityDocument signedIdentityDocument = new SignedIdentityDocument(
                 signature, KEY_VERSION, id, providerService, DEFAULT_DOCUMENT_VERSION, configserverHostname,
-                instanceHostname, createdAt, ipAddresses, identityType, clusterType);
+                instanceHostname, createdAt, ipAddresses, identityType, clusterType, ztsUrl);
 
         assertTrue(signer.hasValidSignature(signedIdentityDocument, keyPair.getPublic()));
     }
@@ -60,10 +61,10 @@ public class IdentityDocumentSignerTest {
 
         var docWithoutClusterType = new SignedIdentityDocument(
                 signature, KEY_VERSION, id, providerService, DEFAULT_DOCUMENT_VERSION, configserverHostname,
-                instanceHostname, createdAt, ipAddresses, identityType, null);
+                instanceHostname, createdAt, ipAddresses, identityType, null, ztsUrl);
         var docWithClusterType = new SignedIdentityDocument(
                 signature, KEY_VERSION, id, providerService, DEFAULT_DOCUMENT_VERSION, configserverHostname,
-                instanceHostname, createdAt, ipAddresses, identityType, clusterType);
+                instanceHostname, createdAt, ipAddresses, identityType, clusterType, ztsUrl);
 
         assertTrue(signer.hasValidSignature(docWithoutClusterType, keyPair.getPublic()));
         assertEquals(docWithClusterType.signature(), docWithoutClusterType.signature());
