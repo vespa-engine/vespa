@@ -124,7 +124,7 @@ TEST("All known capability sets can be looked up by name") {
     check_capability_set_mapping("vespa.telemetry",               CapabilitySet::telemetry());
     check_capability_set_mapping("vespa.cluster_controller_node", CapabilitySet::cluster_controller_node());
     check_capability_set_mapping("vespa.logserver_node",          CapabilitySet::logserver_node());
-    check_capability_set_mapping("vespa.config_server",           CapabilitySet::config_server());
+    check_capability_set_mapping("vespa.config_server_node",      CapabilitySet::config_server_node());
 }
 
 TEST("Unknown capability set name returns nullopt") {
