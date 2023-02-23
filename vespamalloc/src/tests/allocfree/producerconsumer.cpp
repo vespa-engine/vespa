@@ -38,7 +38,7 @@ ProducerConsumer::~ProducerConsumer()
 }
 
 
-void Consumer::Run(FastOS_ThreadInterface *, void *) {
+void Consumer::run(std::atomic<bool> &) {
     for (;;) {
         MemList ml = _queue.dequeue();
         if (ml == NULL) {
@@ -59,8 +59,8 @@ void Consumer::Run(FastOS_ThreadInterface *, void *) {
     }
 }
 
-void Producer::Run(FastOS_ThreadInterface *t, void *) {
-    while (!t->GetBreakFlag()) {
+void Producer::run(std::atomic<bool> &stop_flag) {
+    while (!stop_flag.load(std::memory_order_relaxed)) {
         MemList ml = new MemListImpl();
         for (uint32_t i = 0; i < _cnt; ++i) {
             ml->push_back(produce());
@@ -71,8 +71,8 @@ void Producer::Run(FastOS_ThreadInterface *t, void *) {
     _target.close();
 }
 
-void ProducerConsumer::Run(FastOS_ThreadInterface *t, void *) {
-    while (!t->GetBreakFlag()) {
+void ProducerConsumer::run(std::atomic<bool> &stop_flag) {
+    while (!stop_flag.load(std::memory_order_relaxed)) {
         MemListImpl ml;
         for (uint32_t i = 0; i < _cnt; ++i) {
             ml.push_back(produce());
