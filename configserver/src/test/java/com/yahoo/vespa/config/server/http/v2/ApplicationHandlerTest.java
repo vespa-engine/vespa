@@ -87,9 +87,7 @@ import static com.yahoo.vespa.config.server.http.v2.ApplicationHandler.HttpServi
 import static com.yahoo.yolean.Exceptions.uncheck;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
@@ -136,14 +134,13 @@ public class ApplicationHandlerTest {
                 .withClock(clock)
                 .withConfigserverConfig(configserverConfig)
                 .withFileDistributionFactory(new MockFileDistributionFactory(configserverConfig))
-                .withHostProvisionerProvider(HostProvisionerProvider.withProvisioner(provisioner, false))
+                .withHostProvisionerProvider(HostProvisionerProvider.withProvisioner(provisioner, configserverConfig))
                 .withModelFactoryRegistry(new ModelFactoryRegistry(modelFactories))
                 .build();
         tenantRepository.addTenant(mytenantName);
         orchestrator = new OrchestratorMock();
         applicationRepository = new ApplicationRepository.Builder()
                 .withTenantRepository(tenantRepository)
-                .withProvisioner(provisioner)
                 .withOrchestrator(orchestrator)
                 .withClock(clock)
                 .withTesterClient(testerClient)
@@ -350,11 +347,9 @@ public class ApplicationHandlerTest {
 
     @Test
     public void testRestart() throws Exception {
-        applicationRepository.deploy(testApp, prepareParams(applicationId));
-        assertFalse(provisioner.restarted());
+        var result = applicationRepository.deploy(testApp, prepareParams(applicationId));
+        assertTrue(result.configChangeActions().getRestartActions().isEmpty());
         restart(applicationId, Zone.defaultZone());
-        assertTrue(provisioner.restarted());
-        assertEquals(applicationId, provisioner.lastApplicationId());
     }
 
     @Test
@@ -378,7 +373,6 @@ public class ApplicationHandlerTest {
         HttpProxy mockHttpProxy = mock(HttpProxy.class);
         ApplicationRepository applicationRepository = new ApplicationRepository.Builder()
                 .withTenantRepository(tenantRepository)
-                .withHostProvisionerProvider(HostProvisionerProvider.empty())
                 .withOrchestrator(orchestrator)
                 .withTesterClient(testerClient)
                 .withHttpProxy(mockHttpProxy)

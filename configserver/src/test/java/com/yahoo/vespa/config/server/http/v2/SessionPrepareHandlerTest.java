@@ -16,7 +16,6 @@ import com.yahoo.jdisc.http.HttpRequest;
 import com.yahoo.slime.Slime;
 import com.yahoo.slime.SlimeUtils;
 import com.yahoo.vespa.config.server.ApplicationRepository;
-import com.yahoo.vespa.config.server.MockProvisioner;
 import com.yahoo.vespa.config.server.TimeoutBudget;
 import com.yahoo.vespa.config.server.application.OrchestratorMock;
 import com.yahoo.vespa.config.server.http.HttpErrorResponse;
@@ -30,7 +29,6 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
-
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
@@ -82,7 +80,6 @@ public class SessionPrepareHandlerTest extends SessionHandlerTest {
         tenantRepository.addTenant(tenant);
         applicationRepository = new ApplicationRepository.Builder()
                 .withTenantRepository(tenantRepository)
-                .withProvisioner(new MockProvisioner())
                 .withOrchestrator(new OrchestratorMock())
                 .withClock(clock)
                 .withConfigserverConfig(configserverConfig)

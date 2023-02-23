@@ -42,11 +42,6 @@ public class HostProvisionerProvider {
     }
 
     // for testing
-    public static HostProvisionerProvider withProvisioner(Provisioner provisioner, boolean hostedVespa) {
-        return withProvisioner(provisioner, new ConfigserverConfig(new ConfigserverConfig.Builder().hostedVespa(hostedVespa)));
-    }
-
-    // for testing
     public static HostProvisionerProvider withProvisioner(Provisioner provisioner, ConfigserverConfig config) {
         ComponentRegistry<Provisioner> registry = new ComponentRegistry<>();
         registry.register(ComponentId.createAnonymousComponentId("foobar"), provisioner);

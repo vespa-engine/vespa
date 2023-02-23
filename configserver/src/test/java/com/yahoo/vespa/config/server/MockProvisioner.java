@@ -22,15 +22,7 @@ import java.util.List;
  */
 public class MockProvisioner implements Provisioner {
 
-    private boolean activated = false;
-    private int removeCount = 0;
-    private boolean restarted = false;
-    private ApplicationId lastApplicationId;
-    private Collection<HostSpec> lastHosts;
-    private HostFilter lastRestartFilter;
-
     private boolean transientFailureOnPrepare = false;
-    private boolean failureOnRemove = false;
     private HostProvisioner hostProvisioner = null;
 
     public MockProvisioner hostProvisioner(HostProvisioner hostProvisioner) {
@@ -41,10 +33,6 @@ public class MockProvisioner implements Provisioner {
     public MockProvisioner transientFailureOnPrepare() {
         transientFailureOnPrepare = true;
         return this;
-    }
-
-    public void failureOnRemove(boolean failureOnRemove) {
-        this.failureOnRemove = failureOnRemove;
     }
 
     @Override
@@ -60,54 +48,19 @@ public class MockProvisioner implements Provisioner {
 
     @Override
     public void activate(Collection<HostSpec> hosts, ActivationContext context, ApplicationTransaction transaction) {
-        activated = true;
-        lastApplicationId = transaction.application();
-        lastHosts = hosts;
     }
 
     @Override
     public void remove(ApplicationTransaction transaction) {
-        if (failureOnRemove)
-            throw new IllegalStateException("Unable to remove " + transaction.application());
-
-        removeCount++;
-        lastApplicationId = transaction.application();
     }
 
     @Override
     public void restart(ApplicationId application, HostFilter filter) {
-        restarted = true;
-        lastApplicationId = application;
-        lastRestartFilter = filter;
     }
 
     @Override
     public ProvisionLock lock(ApplicationId application) {
         return new ProvisionLock(application, () -> {});
-    }
-
-    public Collection<HostSpec> lastHosts() {
-        return lastHosts;
-    }
-
-    public boolean activated() {
-        return activated;
-    }
-
-    public int removeCount() {
-        return removeCount;
-    }
-
-    public boolean restarted() {
-        return restarted;
-    }
-
-    public ApplicationId lastApplicationId() {
-        return lastApplicationId;
-    }
-
-    public HostFilter lastRestartFilter() {
-        return lastRestartFilter;
     }
 
 }
