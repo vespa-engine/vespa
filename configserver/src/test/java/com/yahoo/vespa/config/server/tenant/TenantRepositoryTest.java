@@ -13,7 +13,6 @@ import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.config.server.ConfigServerDB;
-import com.yahoo.vespa.config.server.MockProvisioner;
 import com.yahoo.vespa.config.server.MockSecretStore;
 import com.yahoo.vespa.config.server.ServerCache;
 import com.yahoo.vespa.config.server.TestConfigDefinitionRepo;
@@ -219,7 +218,7 @@ public class TenantRepositoryTest {
                   flagSource,
                   new InThreadExecutorService(),
                   new MockSecretStore(),
-                  HostProvisionerProvider.withProvisioner(new MockProvisioner(), false),
+                  HostProvisionerProvider.empty(),
                   configserverConfig,
                   new ConfigServerDB(configserverConfig),
                   Zone.defaultZone(),

@@ -106,7 +106,7 @@ public class MultiTenantRpcAuthorizer implements RpcAuthorizer {
                     return; // global config access ok
                 } else {
                     String hostname = configRequest.getClientHostName();
-                    ApplicationId applicationId = hostRegistry.getKeyForHost(hostname);
+                    ApplicationId applicationId = hostRegistry.getApplicationId(hostname);
                     if (applicationId == null) {
                         if (isConfigKeyForSentinelConfig(configKey)) {
                             return; // config processor will return empty sentinel config for unknown nodes
