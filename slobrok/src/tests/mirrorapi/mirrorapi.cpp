@@ -9,7 +9,6 @@
 #include <vespa/fnet/frt/target.h>
 #include <vespa/fnet/transport.h>
 #include <thread>
-#include <vespa/fastos/thread.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP("mirrorapi_test");
