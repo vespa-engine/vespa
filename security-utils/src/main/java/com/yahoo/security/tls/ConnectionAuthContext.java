@@ -8,7 +8,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
 
 import static com.yahoo.security.SubjectAlternativeName.Type.DNS;
 import static com.yahoo.security.SubjectAlternativeName.Type.URI;
@@ -79,12 +78,8 @@ public record ConnectionAuthContext(List<X509Certificate> peerCertificateChain,
         b.append(". Peer ");
         if (peer != null) b.append("'").append(peer).append("' ");
         return b.append("with ").append(peerCertificateString().orElse("<missing-certificate>")).append(". Requires capabilities ")
-                .append(toCapabilityNames(required)).append(" but peer has ").append(toCapabilityNames(capabilities))
+                .append(required.toNames()).append(" but peer has ").append(capabilities.toNames())
                 .append(".").toString();
-    }
-
-    private static String toCapabilityNames(CapabilitySet capabilities) {
-        return capabilities.toCapabilityNames().stream().sorted().collect(Collectors.joining(", ", "[", "]"));
     }
 
     public Optional<X509Certificate> peerCertificate() {

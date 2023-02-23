@@ -1,16 +1,17 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.security.tls;
 
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -33,10 +34,10 @@ public class CapabilitySet implements ToCapabilitySet {
             Capability.CONTAINER__STATE_API, Capability.METRICSPROXY__METRICS_API,
             Capability.SENTINEL__CONNECTIVITY_CHECK);
 
-    private static final CapabilitySet SHARED_CAPABILITIES_APP_NODE = CapabilitySet.unionOf(List.of(
+    private static final CapabilitySet SHARED_CAPABILITIES_APP_NODE = CapabilitySet.of(
             Capability.LOGSERVER_API, Capability.CONFIGSERVER__CONFIG_API,
             Capability.CONFIGSERVER__FILEDISTRIBUTION_API, Capability.CONFIGPROXY__CONFIG_API,
-            Capability.CONFIGPROXY__FILEDISTRIBUTION_API, Capability.SLOBROK__API, TELEMETRY));
+            Capability.CONFIGPROXY__FILEDISTRIBUTION_API, Capability.SLOBROK__API, TELEMETRY);
 
     public static final CapabilitySet CONTENT_NODE = predefined(
             "vespa.content_node",
@@ -59,7 +60,7 @@ public class CapabilitySet implements ToCapabilitySet {
             TELEMETRY);
 
     private static CapabilitySet predefined(String name, ToCapabilitySet... capabilities) {
-        var instance = CapabilitySet.unionOf(List.of(capabilities));
+        var instance = CapabilitySet.of(capabilities);
         PREDEFINED.put(name, instance);
         return instance;
     }
@@ -85,14 +86,14 @@ public class CapabilitySet implements ToCapabilitySet {
         return new CapabilitySet(caps);
     }
 
-    public static CapabilitySet ofSets(Collection<CapabilitySet> capSets) {
+    public static CapabilitySet unionOf(Collection<CapabilitySet> capSets) {
         EnumSet<Capability> union = EnumSet.noneOf(Capability.class);
         capSets.forEach(cs -> union.addAll(cs.caps));
         return new CapabilitySet(union);
     }
 
-    public static CapabilitySet unionOf(Collection<ToCapabilitySet> caps) {
-        return CapabilitySet.ofSets(caps.stream().map(ToCapabilitySet::toCapabilitySet).toList());
+    public static CapabilitySet of(ToCapabilitySet... capabilities) {
+        return CapabilitySet.unionOf(Arrays.stream(capabilities).map(ToCapabilitySet::toCapabilitySet).toList());
     }
 
     public static CapabilitySet of(EnumSet<Capability> caps) { return new CapabilitySet(EnumSet.copyOf(caps)); }
@@ -107,33 +108,8 @@ public class CapabilitySet implements ToCapabilitySet {
     public boolean has(Collection<Capability> caps) { return this.caps.containsAll(caps); }
     public boolean has(Capability... caps) {  return this.caps.containsAll(List.of(caps)); }
 
-    public Set<String> toCapabilityNames() {
-        return caps.stream().map(Capability::asString).collect(Collectors.toSet());
-    }
-
-    /** return name of the capability set if predefined, otherwise names of the individual capabilities */
-    public Set<String> resolveNames() {
-        var predefinedName = toPredefinedName().orElse(null);
-        if (predefinedName != null) return Set.of(predefinedName);
-        return toCapabilityNames();
-    }
-
-    /** @return the name if this is a predefined capability set, or empty if not */
-    public Optional<String> toPredefinedName() {
-        return PREDEFINED.entrySet().stream()
-            .filter(e -> e.getValue().equals(this))
-            .map(Map.Entry::getKey)
-            .findFirst();
-    }
-
-    public static Set<String> resolveNames(Collection<ToCapabilitySet> capabilities) {
-        var names = new HashSet<String>();
-        for (ToCapabilitySet tcs : capabilities) {
-            if (tcs instanceof Capability c) names.add(c.asString());
-            else if (tcs instanceof CapabilitySet cs) names.addAll(cs.resolveNames());
-            else throw new IllegalArgumentException(tcs.toString());
-        }
-        return Set.copyOf(names);
+    public SortedSet<String> toNames() {
+        return caps.stream().map(Capability::asString).collect(Collectors.toCollection(TreeSet::new));
     }
 
     public Set<Capability> asSet() { return Collections.unmodifiableSet(caps); }

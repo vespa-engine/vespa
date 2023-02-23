@@ -96,15 +96,15 @@ class TransportSecurityOptionsJsonSerializer {
             throw missingFieldException("required-credentials");
         }
         return new PeerPolicy(authorizedPeer.name, Optional.ofNullable(authorizedPeer.description),
-                              toCapabilities(authorizedPeer.capabilities), toRequestPeerCredentials(authorizedPeer.requiredCredentials));
+                toCapabilities(authorizedPeer.capabilities), toRequestPeerCredentials(authorizedPeer.requiredCredentials));
     }
 
-    private static Set<String> toCapabilities(List<String> capabilities) {
-        if (capabilities == null) return Set.of(CapabilitySet.ALL.toPredefinedName().get());
+    private static CapabilitySet toCapabilities(List<String> capabilities) {
+        if (capabilities == null) return CapabilitySet.all();
         if (capabilities.isEmpty())
             throw new IllegalArgumentException("\"capabilities\" array must either be not present " +
                     "(implies all capabilities) or contain at least one capability name");
-        return Set.copyOf(capabilities);
+        return CapabilitySet.fromNames(capabilities);
     }
 
     private static List<RequiredPeerCredential> toRequestPeerCredentials(List<RequiredCredential> requiredCredentials) {
@@ -148,7 +148,7 @@ class TransportSecurityOptionsJsonSerializer {
                     authorizedPeer.description = peerPolicy.description().orElse(null);
                     CapabilitySet caps = peerPolicy.capabilities();
                     if (!caps.hasAll()) {
-                        authorizedPeer.capabilities = peerPolicy.capabilityNames().stream().sorted().toList();
+                        authorizedPeer.capabilities = List.copyOf(caps.toNames());
                     }
                     for (RequiredPeerCredential requiredPeerCredential : peerPolicy.requiredCredentials()) {
                         RequiredCredential requiredCredential = new RequiredCredential();
