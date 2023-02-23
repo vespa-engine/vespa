@@ -12,7 +12,6 @@
 #include <sstream>
 #include <thread>
 #include <unistd.h>
-#include <vespa/fastos/thread.h>
 
 #include <vespa/log/log.h>
 #include <vespa/vespalib/util/time.h>

@@ -11,7 +11,6 @@
 #include <vespa/vespalib/util/destructor_callbacks.h>
 #include <vespa/fnet/transport.h>
 #include <vespa/fastos/file.h>
-#include <vespa/fastos/thread.h>
 #include <thread>
 
 #include <vespa/log/log.h>
