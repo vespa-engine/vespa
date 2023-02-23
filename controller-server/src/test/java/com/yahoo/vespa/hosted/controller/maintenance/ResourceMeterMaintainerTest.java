@@ -61,18 +61,20 @@ public class ResourceMeterMaintainerTest {
                         .collect(Collectors.toMap(Map.Entry::getKey, entry -> entry.getValue().cost().getAsDouble())));
 
         List<ResourceSnapshot> resourceSnapshots = List.of(
-                new ResourceSnapshot(app1, 12, 34, 56, NodeResources.Architecture.getDefault(), Instant.EPOCH, z1, Version.emptyVersion),
-                new ResourceSnapshot(app1, 23, 45, 67, NodeResources.Architecture.getDefault(), Instant.EPOCH, z2, Version.emptyVersion),
-                new ResourceSnapshot(app2, 34, 56, 78, NodeResources.Architecture.getDefault(), Instant.EPOCH, z1, Version.emptyVersion));
+                new ResourceSnapshot(app1, resources(12, 34, 56), Instant.EPOCH, z1, Version.emptyVersion),
+                new ResourceSnapshot(app1, resources(23, 45, 67), Instant.EPOCH, z2, Version.emptyVersion),
+                new ResourceSnapshot(app2, resources(34, 56, 78), Instant.EPOCH, z1, Version.emptyVersion));
+
         maintainer.updateDeploymentCost(resourceSnapshots);
         assertCost.accept(app1, Map.of(z1, 1.72, z2, 3.05));
         assertCost.accept(app2, Map.of(z1, 4.39));
 
         // Remove a region from app1 and add region to app2
         resourceSnapshots = List.of(
-                new ResourceSnapshot(app1, 23, 45, 67, NodeResources.Architecture.getDefault(), Instant.EPOCH, z2, Version.emptyVersion),
-                new ResourceSnapshot(app2, 34, 56, 78, NodeResources.Architecture.getDefault(), Instant.EPOCH, z1, Version.emptyVersion),
-                new ResourceSnapshot(app2, 45, 67, 89, NodeResources.Architecture.getDefault(), Instant.EPOCH, z2, Version.emptyVersion));
+                new ResourceSnapshot(app1, resources(23, 45, 67), Instant.EPOCH, z2, Version.emptyVersion),
+                new ResourceSnapshot(app2, resources(34, 56, 78), Instant.EPOCH, z1, Version.emptyVersion),
+                new ResourceSnapshot(app2, resources(45, 67, 89), Instant.EPOCH, z2, Version.emptyVersion));
+
         maintainer.updateDeploymentCost(resourceSnapshots);
         assertCost.accept(app1, Map.of(z2, 3.05));
         assertCost.accept(app2, Map.of(z1, 4.39, z2, 5.72));
@@ -97,13 +99,13 @@ public class ResourceMeterMaintainerTest {
         ResourceSnapshot app1 = consumedResources.stream().filter(snapshot -> snapshot.getApplicationId().equals(ApplicationId.from("tenant1", "app1", "default"))).findFirst().orElseThrow();
         ResourceSnapshot app2 = consumedResources.stream().filter(snapshot -> snapshot.getApplicationId().equals(ApplicationId.from("tenant2", "app2", "default"))).findFirst().orElseThrow();
 
-        assertEquals(24, app1.getCpuCores(), Double.MIN_VALUE);
-        assertEquals(24, app1.getMemoryGb(), Double.MIN_VALUE);
-        assertEquals(500, app1.getDiskGb(), Double.MIN_VALUE);
+        assertEquals(24, app1.resources().vcpu(), Double.MIN_VALUE);
+        assertEquals(24, app1.resources().memoryGb(), Double.MIN_VALUE);
+        assertEquals(500, app1.resources().diskGb(), Double.MIN_VALUE);
 
-        assertEquals(40, app2.getCpuCores(), Double.MIN_VALUE);
-        assertEquals(24, app2.getMemoryGb(), Double.MIN_VALUE);
-        assertEquals(500, app2.getDiskGb(), Double.MIN_VALUE);
+        assertEquals(40, app2.resources().vcpu(), Double.MIN_VALUE);
+        assertEquals(24, app2.resources().memoryGb(), Double.MIN_VALUE);
+        assertEquals(500, app2.resources().diskGb(), Double.MIN_VALUE);
 
         assertEquals(tester.clock().millis() / 1000, metrics.getMetric("metering_last_reported"));
         assertEquals(2224.0d, (Double) metrics.getMetric("metering_total_reported"), Double.MIN_VALUE);
@@ -153,5 +155,9 @@ public class ResourceMeterMaintainerTest {
                                        .clusterType(state == Node.State.active ? Node.ClusterType.admin : Node.ClusterType.container)
                                        .build())
                      .toList();
+    }
+
+    private NodeResources resources(double cpu, double ram, double disk) {
+        return new NodeResources(cpu, ram, disk, 0, NodeResources.DiskSpeed.getDefault(), NodeResources.StorageType.getDefault(), NodeResources.Architecture.getDefault(), NodeResources.GpuResources.getDefault());
     }
 }

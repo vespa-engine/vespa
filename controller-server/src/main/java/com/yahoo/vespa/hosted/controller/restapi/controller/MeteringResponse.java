@@ -29,10 +29,10 @@ public class MeteringResponse extends SlimeJsonResponse {
             object.setString("applicationId", snapshot.getApplicationId().toShortString());
             object.setLong("timestamp", snapshot.getTimestamp().toEpochMilli());
             object.setString("zoneId", snapshot.getZoneId().value());
-            object.setDouble("cpu", snapshot.getCpuCores());
-            object.setDouble("memory", snapshot.getMemoryGb());
-            object.setDouble("disk", snapshot.getDiskGb());
-            object.setString("architecture", snapshot.getArchitecture().name());
+            object.setDouble("cpu", snapshot.resources().vcpu());
+            object.setDouble("memory", snapshot.resources().memoryGb());
+            object.setDouble("disk", snapshot.resources().diskGb());
+            object.setString("architecture", snapshot.resources().architecture().name());
         });
         return slime;
     }
