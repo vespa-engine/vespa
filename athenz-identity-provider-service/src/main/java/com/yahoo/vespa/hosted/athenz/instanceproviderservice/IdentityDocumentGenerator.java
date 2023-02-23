@@ -3,7 +3,10 @@ package com.yahoo.vespa.hosted.athenz.instanceproviderservice;
 
 import com.yahoo.component.annotation.Inject;
 import com.yahoo.config.provision.Zone;
+import com.yahoo.container.jdisc.secretstore.SecretStore;
 import com.yahoo.net.HostName;
+import com.yahoo.security.KeyUtils;
+
 import com.yahoo.vespa.athenz.api.AthenzService;
 import com.yahoo.vespa.athenz.identityprovider.api.ClusterType;
 import com.yahoo.vespa.athenz.identityprovider.api.IdentityType;
@@ -32,17 +35,20 @@ public class IdentityDocumentGenerator {
     private final NodeRepository nodeRepository;
     private final Zone zone;
     private final KeyProvider keyProvider;
+    private final SecretStore secretStore;
     private final AthenzProviderServiceConfig athenzProviderServiceConfig;
 
     @Inject
     public IdentityDocumentGenerator(AthenzProviderServiceConfig config,
                                      NodeRepository nodeRepository,
                                      Zone zone,
-                                     KeyProvider keyProvider) {
+                                     KeyProvider keyProvider,
+                                     SecretStore secretStore) {
         this.athenzProviderServiceConfig = config;
         this.nodeRepository = nodeRepository;
         this.zone = zone;
         this.keyProvider = keyProvider;
+        this.secretStore = secretStore;
     }
 
     public SignedIdentityDocument generateSignedIdentityDocument(String hostname, IdentityType identityType) {
@@ -61,7 +67,7 @@ public class IdentityDocumentGenerator {
 
             Set<String> ips = new HashSet<>(node.ipConfig().primary());
 
-            PrivateKey privateKey = keyProvider.getPrivateKey(athenzProviderServiceConfig.secretVersion());
+            PrivateKey privateKey = privateKey(node);
             AthenzService providerService = new AthenzService(athenzProviderServiceConfig.domain(), athenzProviderServiceConfig.serviceName());
 
             String configServerHostname = HostName.getLocalhost();
@@ -73,11 +79,28 @@ public class IdentityDocumentGenerator {
             return new SignedIdentityDocument(
                     signature, athenzProviderServiceConfig.secretVersion(), providerUniqueId, providerService,
                     SignedIdentityDocument.DEFAULT_DOCUMENT_VERSION, configServerHostname, node.hostname(),
-                    createdAt, ips, identityType, clusterType);
+                    createdAt, ips, identityType, clusterType, ztsUrl(node));
         } catch (Exception e) {
             throw new RuntimeException("Exception generating identity document: " + e.getMessage(), e);
         }
     }
 
+    private PrivateKey privateKey(Node node) {
+        // return sisSecret for public non-enclave hosts. secret otherwise
+        if (zone.system().isPublic() && !node.cloudAccount().isEnclave(zone)) {
+            String keyPem = secretStore.getSecret(athenzProviderServiceConfig.sisSecretName(), athenzProviderServiceConfig.sisSecretVersion());
+            return KeyUtils.fromPemEncodedPrivateKey(keyPem);
+        } else {
+            return keyProvider.getPrivateKey(athenzProviderServiceConfig.secretVersion());
+        }
+    }
+    private String ztsUrl(Node node) {
+        // return sisUrl for public non-enclave hosts, ztsUrl otherwise
+        if (zone.system().isPublic() && !node.cloudAccount().isEnclave(zone)) {
+            return athenzProviderServiceConfig.sisUrl();
+        } else {
+            return athenzProviderServiceConfig.ztsUrl();
+        }
+    }
 }
 
