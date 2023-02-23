@@ -735,6 +735,28 @@ TEST_F("Authz policy-derived peer capabilities are propagated to CryptoCodec", C
                                                  Capability::content_status_pages()}));
 }
 
+TEST_F("Handshake is allowed if at least one policy matches, even if resulting capability set is empty", CertFixture) {
+    auto server_ck = f.create_ca_issued_peer_cert({}, {{"DNS:hello.world.example.com"}});
+    auto authorized = authorized_peers({policy_with({required_san_dns("stale.memes.example.com")},
+                                                    CapabilitySet::make_empty()),
+                                        policy_with({required_san_dns("fresh.memes.example.com")},
+                                                    CapabilitySet::make_with_all_capabilities())});
+    f.reset_server_with_cert_opts(server_ck, std::move(authorized));
+    auto client_ck = f.create_ca_issued_peer_cert({}, {{"DNS:stale.memes.example.com"}});
+    f.reset_client_with_cert_opts(client_ck, AuthorizedPeers::allow_all_authenticated());
+
+    ASSERT_TRUE(f.handshake());
+
+    // Note: "inversion" of client <-> server is because the capabilities are that of the _peer_.
+    auto client_caps = f.server->granted_capabilities();
+    auto server_caps = f.client->granted_capabilities();
+    // Server (from client's PoV) implicitly has all capabilities since client doesn't specify any policies
+    EXPECT_EQUAL(server_caps, CapabilitySet::make_with_all_capabilities());
+    // Client (from server's PoV) only has capabilities for the rule matching its DNS SAN entry.
+    // In this case, it is the empty set.
+    EXPECT_EQUAL(client_caps, CapabilitySet::make_empty());
+}
+
 void reset_peers_with_server_authz_mode(CertFixture& f, AuthorizationMode authz_mode) {
     auto ck = f.create_ca_issued_peer_cert({"hello.world.example.com"}, {});
 
