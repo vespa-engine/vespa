@@ -15,7 +15,6 @@
 #include <vespa/vespalib/net/http/simple_health_producer.h>
 #include <vespa/vespalib/net/http/simple_component_config_producer.h>
 
-class FastOS_ThreadPool;
 class FNET_Transport;
 class FNET_Scheduler;
 class FRT_Supervisor;
