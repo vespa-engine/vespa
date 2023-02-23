@@ -13,6 +13,7 @@ vespa_add_library(searchlib_tensor OBJECT
     distance_function_factory.cpp
     empty_subspace.cpp
     euclidean_distance.cpp
+    fast_value_view.cpp
     geo_degrees_distance.cpp
     hamming_distance.cpp
     hash_set_visited_tracker.cpp

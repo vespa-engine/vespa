@@ -1,8 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "tensor_buffer_operations.h"
-#include <vespa/eval/eval/fast_value.hpp>
-#include <vespa/eval/eval/value.h>
+#include "fast_value_view.h"
 #include <vespa/eval/eval/value_codec.h>
 #include <vespa/eval/eval/value_type.h>
 #include <vespa/eval/streamed/streamed_value_view.h>
@@ -33,36 +32,6 @@ adjust_min_alignment(size_t min_alignment)
 {
     // Also apply alignment for num_subspaces and labels
     return std::max(std::max(sizeof(uint32_t), sizeof(string_id)), min_alignment);
-}
-
-struct FastValueView final : Value {
-    const ValueType& _type;
-    StringIdVector   _labels;
-    FastValueIndex   _index;
-    TypedCells       _cells;
-    FastValueView(const ValueType& type, ConstArrayRef<string_id> labels, TypedCells cells, size_t num_mapped_dimensions, size_t num_subspaces);
-    const ValueType& type() const override { return _type; }
-    const Value::Index& index() const override { return _index; }
-    TypedCells cells() const override { return _cells; }
-    MemoryUsage get_memory_usage() const override {
-        MemoryUsage usage = self_memory_usage<FastValueView>();
-        usage.merge(_index.map.estimate_extra_memory_usage());
-        return usage;
-    }
-};
-
-FastValueView::FastValueView(const ValueType& type, ConstArrayRef<string_id> labels, TypedCells cells, size_t num_mapped_dimensions, size_t num_subspaces)
-    : Value(),
-      _type(type),
-      _labels(labels.begin(), labels.end()),
-      _index(num_mapped_dimensions, _labels, num_subspaces),
-      _cells(cells)
-{
-    for (size_t i = 0; i < num_subspaces; ++i) {
-        ConstArrayRef<string_id> addr(_labels.data() + (i * num_mapped_dimensions), num_mapped_dimensions);
-        _index.map.add_mapping(FastAddrMap::hash_labels(addr));
-    }
-    assert(_index.map.size() == num_subspaces);
 }
 
 }
