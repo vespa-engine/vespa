@@ -35,42 +35,45 @@ import java.util.logging.Logger;
 @SuppressWarnings("deprecation")
 public class StdOutVisitorHandler extends VdsVisitHandler {
 
-    private static final Logger log = Logger.getLogger(
-                                        StdOutVisitorHandler.class.getName());
-    private final boolean printIds;
-    private final boolean indentXml;
-    private final int processTimeMilliSecs;
-    private final PrintStream out;
-    private final boolean jsonOutput;
-    private final boolean tensorShortForm;
-    private final boolean tensorDirectValues;
+    private static final Logger log = Logger.getLogger(StdOutVisitorHandler.class.getName());
 
-    private final VisitorDataHandler dataHandler;
-
-    public StdOutVisitorHandler(boolean printIds, boolean indentXml,
-                                boolean showProgress, boolean showStatistics, boolean doStatistics,
-                                boolean abortOnClusterDown, int processtime, boolean jsonOutput,
-                                boolean tensorShortForm,
-                                boolean tensorDirectValues)
-    {
-        this(printIds, indentXml, showProgress, showStatistics, doStatistics, abortOnClusterDown, processtime,
-             jsonOutput, tensorShortForm, tensorDirectValues, createStdOutPrintStream());
+    public enum OutputFormat {
+        JSONL,
+        JSON,
+        XML // Deprecated
     }
 
-    StdOutVisitorHandler(boolean printIds, boolean indentXml,
-                         boolean showProgress, boolean showStatistics, boolean doStatistics,
-                         boolean abortOnClusterDown, int processtime, boolean jsonOutput,
-                         boolean tensorShortForm, boolean tensorDirectValues, PrintStream out)
-    {
-        super(showProgress, showStatistics, abortOnClusterDown);
-        this.printIds = printIds;
-        this.indentXml = indentXml;
-        this.processTimeMilliSecs = processtime;
-        this.jsonOutput = jsonOutput;
-        this.tensorShortForm = tensorShortForm;
-        this.tensorDirectValues = tensorDirectValues;
+    // Explicitly _not_ a record since we want the fields to be mutable when building.
+    public static class Params {
+        boolean printIds           = false;
+        boolean indentXml          = false;
+        boolean showProgress       = false;
+        boolean showStatistics     = false;
+        boolean doStatistics       = false;
+        boolean abortOnClusterDown = false;
+        int processTimeMilliSecs   = 0;
+        OutputFormat outputFormat  = OutputFormat.JSON;
+        boolean tensorShortForm    = false; // TODO Vespa 9: change default to true
+        boolean tensorDirectValues = false; // TODO Vespa 9: change default to true
+
+        boolean usesJson() {
+            return outputFormat == OutputFormat.JSON || outputFormat == OutputFormat.JSONL;
+        }
+    }
+
+    private final Params params;
+    private final PrintStream out;
+    private final VisitorDataHandler dataHandler;
+
+    public StdOutVisitorHandler(Params params, PrintStream out) {
+        super(params.showProgress, params.showStatistics, params.abortOnClusterDown);
+        this.params = params;
         this.out = out;
-        this.dataHandler = new DataHandler(doStatistics);
+        this.dataHandler = new DataHandler(params.doStatistics);
+    }
+
+    public StdOutVisitorHandler(Params params) {
+        this(params, createStdOutPrintStream());
     }
 
     private static PrintStream createStdOutPrintStream() {
@@ -128,9 +131,9 @@ public class StdOutVisitorHandler extends VdsVisitHandler {
 
         @Override
         public void onMessage(Message m, AckToken token) {
-            if (processTimeMilliSecs > 0) {
+            if (params.processTimeMilliSecs > 0) {
                 try {
-                    Thread.sleep(processTimeMilliSecs);
+                    Thread.sleep(params.processTimeMilliSecs);
                 } catch (InterruptedException e) {}
             }
 
@@ -158,16 +161,15 @@ public class StdOutVisitorHandler extends VdsVisitHandler {
                     System.err.print('\r');
                 }
 
-                if (printIds) {
+                if (params.printIds) {
                     out.print(doc.getId());
                     out.print(" (Last modified at ");
                     out.println(timestamp + ")");
                 } else {
-                    if (jsonOutput) {
+                    if (params.usesJson()) {
                         writeJsonDocument(doc);
                     } else {
-                        out.print(doc.toXML(
-                                indentXml ? "  " : ""));
+                        out.print(doc.toXML(params.indentXml ? "  " : ""));
                     }
                 }
             } catch (Exception e) {
@@ -179,7 +181,7 @@ public class StdOutVisitorHandler extends VdsVisitHandler {
 
         private void writeJsonDocument(Document doc) throws IOException {
             writeFeedStartOrRecordSeparator();
-            out.write(JsonWriter.toByteArray(doc, tensorShortForm, tensorDirectValues));
+            out.write(JsonWriter.toByteArray(doc, params.tensorShortForm, params.tensorDirectValues));
         }
 
         @Override
@@ -189,10 +191,10 @@ public class StdOutVisitorHandler extends VdsVisitHandler {
                     System.err.print('\r');
                 }
 
-                if (printIds) {
+                if (params.printIds) {
                     out.println(docId + " (Removed)");
                 } else {
-                    if (jsonOutput) {
+                    if (params.usesJson()) {
                         writeJsonDocumentRemove(docId);
                     } else {
                         XmlStream stream = new XmlStream();
@@ -218,10 +220,12 @@ public class StdOutVisitorHandler extends VdsVisitHandler {
 
         private void writeFeedStartOrRecordSeparator() {
             if (first) {
-                out.println("[");
+                if (params.outputFormat == OutputFormat.JSON) {
+                    out.println("[");
+                }
                 first = false;
             } else {
-                out.println(",");
+                out.println((params.outputFormat == OutputFormat.JSON) ? "," : "");
             }
         }
 
@@ -259,7 +263,7 @@ public class StdOutVisitorHandler extends VdsVisitHandler {
 
         @Override
         public synchronized void onDone() {
-            if (jsonOutput && !printIds) {
+            if ((params.outputFormat == OutputFormat.JSON) && !params.printIds) {
                 if (first) {
                     out.print('[');
                 }
