@@ -413,6 +413,12 @@ public class BillingApiHandler extends ThreadedHttpRequestHandler {
             cursor.setString("zone", zoneId.value())
         );
 
+        lineItem.getArchitecture().ifPresent(architecture -> {
+            cursor.setString("architecture", architecture.name());
+        });
+
+        cursor.setLong("majorVersion", lineItem.getMajorVersion());
+
         lineItem.getCpuHours().ifPresent(cpuHours ->
                 cursor.setString("cpuHours", cpuHours.toString())
         );

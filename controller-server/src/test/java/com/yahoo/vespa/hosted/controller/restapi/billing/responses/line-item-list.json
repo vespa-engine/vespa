@@ -5,7 +5,8 @@
       "description": "some description",
       "amount": "123.45",
       "plan": "some-plan",
-      "planName": "Plan with id: some-plan"
+      "planName": "Plan with id: some-plan",
+      "majorVersion": 0
     }
   ]
 }
