@@ -8,7 +8,6 @@
 #include <vespa/fnet/transport.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
 #include <vespa/vespalib/util/size_literals.h>
-#include <vespa/fastos/thread.h>
 
 
 #include <vespa/log/log.h>

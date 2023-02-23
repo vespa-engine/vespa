@@ -2,7 +2,6 @@
 
 #include "stress_runner.h"
 
-#include <vespa/fastos/thread.h>
 #include <vespa/searchlib/test/fakedata/fake_match_loop.h>
 #include <vespa/searchlib/test/fakedata/fakeposting.h>
 #include <vespa/searchlib/test/fakedata/fakeword.h>
@@ -13,7 +12,7 @@
 #include <condition_variable>
 #include <mutex>
 #include <vector>
-#include <thread>
+#include <vespa/vespalib/util/thread.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".stress_runner");
@@ -43,7 +42,7 @@ private:
     uint32_t _stride;
     bool _unpack;
 
-    FastOS_ThreadPool *_threadPool;
+    vespalib::ThreadPool _threadPool;
     std::vector<StressWorkerUP> _workers;
     uint32_t _workersDone;
 
@@ -88,7 +87,7 @@ public:
     double runWorkers(const std::string &postingFormat);
 };
 
-class StressWorker : public FastOS_Runnable {
+class StressWorker : vespalib::Runnable {
 protected:
     StressMaster& _master;
     uint32_t _id;
@@ -102,7 +101,7 @@ public:
     StressWorker(StressMaster& master, uint32_t id);
     virtual ~StressWorker();
 
-    virtual void Run(FastOS_ThreadInterface* thisThread, void* arg) override;
+    virtual void run() override;
 };
 
 class DirectStressWorker : public StressWorker {
@@ -147,7 +146,7 @@ StressMaster::StressMaster(vespalib::Rand48 &rnd,
       _skipCommonPairsRate(skipCommonPairsRate),
       _stride(stride),
       _unpack(unpack),
-      _threadPool(nullptr),
+      _threadPool(),
       _workers(),
       _workersDone(0),
       _wordSet(wordSet),
@@ -159,17 +158,12 @@ StressMaster::StressMaster(vespalib::Rand48 &rnd,
       _tasks()
 {
     LOG(info, "StressMaster::StressMaster()");
-
-    _threadPool = new FastOS_ThreadPool(400);
 }
 
 StressMaster::~StressMaster()
 {
     LOG(info, "StressMaster::~StressMaster()");
-
-    _threadPool->Close();
-    delete _threadPool;
-    _threadPool = nullptr;
+    _threadPool.join();
     _workers.clear();
     dropPostings();
 }
@@ -329,7 +323,7 @@ StressMaster::runWorkers(const std::string &postingFormat)
     }
 
     for (auto& worker : _workers) {
-        _threadPool->NewThread(worker.get());
+        _threadPool.start([obj = worker.get()](){obj->run();});
     }
 
     {
@@ -357,10 +351,8 @@ StressWorker::StressWorker(StressMaster& master, uint32_t id)
 StressWorker::~StressWorker() = default;
 
 void
-StressWorker::Run(FastOS_ThreadInterface* thisThread, void* arg)
+StressWorker::run()
 {
-    (void) thisThread;
-    (void) arg;
     LOG(debug, "StressWorker::Run(), id=%u", _id);
 
     bool unpack = _master.getUnpack();
