@@ -475,7 +475,7 @@ FNET_Connection::FNET_Connection(FNET_TransportThread *owner,
       _streamer(streamer),
       _serverAdapter(serverAdapter),
       _socket(owner->owner().create_server_crypto_socket(std::move(socket))),
-      _resolve_handler(nullptr),
+      _resolve_handler(),
       _context(),
       _state(FNET_CONNECTING),
       _flags(owner->owner().getConfig()),
@@ -506,7 +506,7 @@ FNET_Connection::FNET_Connection(FNET_TransportThread *owner,
       _streamer(streamer),
       _serverAdapter(serverAdapter),
       _socket(),
-      _resolve_handler(nullptr),
+      _resolve_handler(),
       _context(context),
       _state(FNET_CONNECTING),
       _flags(owner->owner().getConfig()),
@@ -529,6 +529,7 @@ FNET_Connection::FNET_Connection(FNET_TransportThread *owner,
 
 FNET_Connection::~FNET_Connection()
 {
+    assert(!_resolve_handler);
     assert(_cleanup == nullptr);
     _num_connections.fetch_sub(1, std::memory_order_relaxed);
 }
