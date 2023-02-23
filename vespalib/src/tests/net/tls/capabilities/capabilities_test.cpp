@@ -84,7 +84,6 @@ TEST("All known capabilities can be looked up by name, and resolve back to same 
     check_capability_mapping("vespa.content.metrics_api",           Capability::content_metrics_api());
     check_capability_mapping("vespa.content.proton_admin_api",      Capability::content_proton_admin_api());
     check_capability_mapping("vespa.content.search_api",            Capability::content_search_api());
-    check_capability_mapping("vespa.content.state_api",             Capability::content_state_api());
     check_capability_mapping("vespa.content.status_pages",          Capability::content_status_pages());
     check_capability_mapping("vespa.content.storage_api",           Capability::content_storage_api());
     check_capability_mapping("vespa.logserver.api",                 Capability::logserver_api());
@@ -110,7 +109,6 @@ TEST("CapabilitySet instances can be stringified") {
                                 "vespa.container.state_api, "
                                 "vespa.content.document_api, "
                                 "vespa.content.metrics_api, "
-                                "vespa.content.state_api, "
                                 "vespa.content.status_pages, "
                                 "vespa.content.storage_api, "
                                 "vespa.logserver.api, "
@@ -137,7 +135,7 @@ TEST("Resolving a capability set adds all its underlying capabilities") {
     CapabilitySet caps;
     EXPECT_TRUE(caps.resolve_and_add("vespa.content_node"));
     // Slightly suboptimal; this test will fail if the default set of capabilities for vespa.content_node changes.
-    EXPECT_EQUAL(caps.count(), 15u);
+    EXPECT_EQUAL(caps.count(), 14u);
     EXPECT_FALSE(caps.empty());
     EXPECT_TRUE(caps.contains(Capability::content_storage_api()));
     EXPECT_TRUE(caps.contains(Capability::content_document_api()));
@@ -149,7 +147,6 @@ TEST("Resolving a capability set adds all its underlying capabilities") {
     EXPECT_TRUE(caps.contains(Capability::configproxy_config_api()));
     EXPECT_TRUE(caps.contains(Capability::configproxy_filedistribution_api()));
     // vespa.content_node -> shared node caps -> vespa.telemetry
-    EXPECT_TRUE(caps.contains(Capability::content_state_api()));
     EXPECT_TRUE(caps.contains(Capability::content_status_pages()));
     EXPECT_TRUE(caps.contains(Capability::content_metrics_api()));
     EXPECT_TRUE(caps.contains(Capability::container_state_api()));
