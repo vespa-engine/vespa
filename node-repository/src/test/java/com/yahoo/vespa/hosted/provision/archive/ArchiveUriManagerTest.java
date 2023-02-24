@@ -3,10 +3,16 @@ package com.yahoo.vespa.hosted.provision.archive;
 
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.Cloud;
+import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.ClusterMembership;
+import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
+import com.yahoo.config.provision.RegionName;
+import com.yahoo.config.provision.SystemName;
+import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.node.Allocation;
 import com.yahoo.vespa.hosted.provision.node.Generation;
@@ -15,10 +21,9 @@ import org.junit.Test;
 
 import java.util.Optional;
 
-import static com.yahoo.vespa.hosted.provision.archive.ArchiveUriManager.normalizeUri;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.assertThrows;
 
 /**
  * @author freva
@@ -27,19 +32,35 @@ public class ArchiveUriManagerTest {
 
     @Test
     public void archive_uri() {
-        ApplicationId app = ApplicationId.from("vespa", "music", "main");
-        Node allocated = createNode(app);
-        Node unallocated = createNode(null);
-        ArchiveUriManager archiveUriManager = new ProvisioningTester.Builder().build().nodeRepository().archiveUriManager();
+        ApplicationId app1 = ApplicationId.from("vespa", "music", "main");
+        ApplicationId app2 = ApplicationId.from("yahoo", "music", "main");
+        CloudAccount account1 = CloudAccount.from("123456789012");
+        CloudAccount account2 = CloudAccount.from("210987654321");
+        CloudAccount accountSystem = CloudAccount.from("555444333222");
+        ArchiveUriManager archiveUriManager = new ProvisioningTester.Builder()
+                .zone(new Zone(Cloud.builder().account(accountSystem).build(), SystemName.Public, Environment.prod, RegionName.defaultName()))
+                .build().nodeRepository().archiveUriManager();
 
-        assertFalse(archiveUriManager.archiveUriFor(unallocated).isPresent());
-        assertFalse(archiveUriManager.archiveUriFor(allocated).isPresent());
+        // Initially no uris are set
+        assertFalse(archiveUriManager.archiveUriFor(createNode(null, null)).isPresent());
+        assertFalse(archiveUriManager.archiveUriFor(createNode(app1, account1)).isPresent());
 
-        archiveUriManager.setArchiveUri(app.tenant(), Optional.of("scheme://hostname/dir"));
-        assertEquals("scheme://hostname/dir/music/main/default/h432a/", archiveUriManager.archiveUriFor(allocated).get());
+        archiveUriManager.setArchiveUri(app1.tenant(), Optional.of("scheme://tenant-bucket/dir"));
+        archiveUriManager.setArchiveUri(account1, Optional.of("scheme://account-bucket/dir"));
+        assertThrows(IllegalArgumentException.class, () -> archiveUriManager.setArchiveUri(accountSystem, Optional.of("scheme://something")));
+        assertThrows(IllegalArgumentException.class, () -> archiveUriManager.setArchiveUri(CloudAccount.empty, Optional.of("scheme://something")));
+
+        assertFalse(archiveUriManager.archiveUriFor(createNode(null, null)).isPresent()); // Not allocated
+        assertFalse(archiveUriManager.archiveUriFor(createNode(null, account1)).isPresent()); // URI set for this account, but not allocated
+        assertFalse(archiveUriManager.archiveUriFor(createNode(null, account2)).isPresent()); // Not allocated
+        assertFalse(archiveUriManager.archiveUriFor(createNode(app2, null)).isPresent()); // No URI set for this tenant or account
+        assertEquals("scheme://tenant-bucket/dir/music/main/default/h432a/", archiveUriManager.archiveUriFor(createNode(app1, null)).get());
+        assertEquals("scheme://account-bucket/dir/music/main/default/h432a/", archiveUriManager.archiveUriFor(createNode(app1, account1)).get()); // Account has precedence
+        assertFalse(archiveUriManager.archiveUriFor(createNode(app1, account2)).isPresent()); // URI set for this tenant, but is ignored because enclave account
+        assertEquals("scheme://tenant-bucket/dir/music/main/default/h432a/", archiveUriManager.archiveUriFor(createNode(app1, accountSystem)).get()); // URI for tenant because non-enclave acocunt
     }
 
-    private Node createNode(ApplicationId appId) {
+    private Node createNode(ApplicationId appId, CloudAccount account) {
         Node.Builder nodeBuilder = Node.create("id", "h432a.prod.us-south-1.vespa.domain.tld", new Flavor(NodeResources.unspecified()), Node.State.parked, NodeType.tenant);
         Optional.ofNullable(appId)
                 .map(app -> new Allocation(app,
@@ -48,31 +69,7 @@ public class ArchiveUriManagerTest {
                         Generation.initial(),
                         false))
                 .ifPresent(nodeBuilder::allocation);
+        Optional.ofNullable(account).ifPresent(nodeBuilder::cloudAccount);
         return nodeBuilder.build();
-    }
-
-    @Test
-    public void normalize_test() {
-        assertEquals("ftp://domain/legal-dir123/", normalizeUri("ftp://domain/legal-dir123"));
-        assertEquals("ftp://domain/legal-dir123/", normalizeUri("ftp://domain/legal-dir123/"));
-        assertEquals("s3://my-bucket-prod.region/my-tenant-123/", normalizeUri("s3://my-bucket-prod.region/my-tenant-123/"));
-        assertEquals("s3://my-bucket-prod.region/my-tenant_123/", normalizeUri("s3://my-bucket-prod.region/my-tenant_123/"));
-        assertThrows(IllegalArgumentException.class, () -> normalizeUri("domain/dir/"));
-        assertThrows(IllegalArgumentException.class, () -> normalizeUri("ftp:/domain/dir/"));
-        assertThrows(IllegalArgumentException.class, () -> normalizeUri("ftp:/domain//dir/"));
-        assertThrows(IllegalArgumentException.class, () -> normalizeUri("ftp://domain/illegal:dir/"));
-        assertThrows(IllegalArgumentException.class, () -> normalizeUri("ftp://domain/-illegal-dir/"));
-        assertThrows(IllegalArgumentException.class, () -> normalizeUri("ftp://domain/_illegal-dir/"));
-        assertThrows(IllegalArgumentException.class, () -> normalizeUri("ftp://domain/illegal-dir-/"));
-        assertThrows(IllegalArgumentException.class, () -> normalizeUri("ftp://domain/illegal-dir_/"));
-    }
-
-    private static void assertThrows(Class<? extends Throwable> clazz, Runnable runnable) {
-        try {
-            runnable.run();
-            fail("Expected " + clazz);
-        } catch (Throwable e) {
-            if (!clazz.isInstance(e)) throw e;
-        }
     }
 }

@@ -10,7 +10,6 @@ import com.yahoo.config.provision.ApplicationTransaction;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.NodeType;
-import com.yahoo.config.provision.TenantName;
 import com.yahoo.path.Path;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.transaction.Transaction;
@@ -21,6 +20,7 @@ import com.yahoo.vespa.curator.transaction.CuratorOperations;
 import com.yahoo.vespa.curator.transaction.CuratorTransaction;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.applications.Application;
+import com.yahoo.vespa.hosted.provision.archive.ArchiveUris;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancer;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancerId;
 import com.yahoo.vespa.hosted.provision.node.Agent;
@@ -70,7 +70,7 @@ public class CuratorDb {
     private static final Path infrastructureVersionsPath = root.append("infrastructureVersions");
     private static final Path osVersionsPath = root.append("osVersions");
     private static final Path firmwareCheckPath = root.append("firmwareCheck");
-    private static final Path archiveUrisPath = root.append("archiveUris");
+    private static final Path archiveUrisPath = root.append("archiveUri");
 
     private static final Duration defaultLockTimeout = Duration.ofMinutes(1);
 
@@ -102,6 +102,7 @@ public class CuratorDb {
         db.create(archiveUrisPath);
         db.create(loadBalancersPath);
         provisionIndexCounter.initialize(100);
+        CuratorOperations.delete(root.append("archiveUris").toString()); // TODO (freva): March 2023
     }
 
     /** Adds a set of nodes. Rollbacks/fails transaction if any node is not in the expected state. */
@@ -375,16 +376,16 @@ public class CuratorDb {
 
     // Archive URIs -----------------------------------------------------------
 
-    public void writeArchiveUris(Map<TenantName, String> archiveUris) {
-        byte[] data = TenantArchiveUriSerializer.toJson(archiveUris);
+    public void writeArchiveUris(ArchiveUris archiveUris) {
+        byte[] data = ArchiveUriSerializer.toJson(archiveUris);
         NestedTransaction transaction = new NestedTransaction();
         CuratorTransaction curatorTransaction = db.newCuratorTransactionIn(transaction);
         curatorTransaction.add(CuratorOperations.setData(archiveUrisPath.getAbsolute(), data));
         transaction.commit();
     }
 
-    public Map<TenantName, String> readArchiveUris() {
-        return read(archiveUrisPath, TenantArchiveUriSerializer::fromJson).orElseGet(Map::of);
+    public ArchiveUris readArchiveUris() {
+        return read(archiveUrisPath, ArchiveUriSerializer::fromJson).orElseGet(() -> new ArchiveUris(Map.of(), Map.of()));
     }
 
     public Lock lockArchiveUris() {
