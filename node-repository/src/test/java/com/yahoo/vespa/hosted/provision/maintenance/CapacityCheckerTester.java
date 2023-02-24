@@ -156,8 +156,8 @@ public class CapacityCheckerTester {
                     .collect(Collectors.toSet());
 
             NodeResources nr = containingNodeResources(childResources, excessCapacity);
-            Node node = Node.create(hostname, IP.Config.of(Set.of("::"), availableIps), hostname,
-                                    new Flavor(nr), NodeType.host).build();
+            Node node = Node.create(hostname, new IP.Config(Set.of("::"), availableIps), hostname,
+                    new Flavor(nr), NodeType.host).build();
             hosts.computeIfAbsent(tenantHostApp, (ignored) -> new ArrayList<>())
                  .add(node);
         }
@@ -175,8 +175,8 @@ public class CapacityCheckerTester {
             Set<String> availableIps = IntStream.range(2000, 2000 + ips)
                     .mapToObj(n -> String.format("%04X::%04X", hostId, n))
                     .collect(Collectors.toSet());
-            Node node = Node.create(hostname, IP.Config.of(Set.of("::" + (1000 + hostId)), availableIps), hostname,
-                                    new Flavor(capacity), NodeType.host).build();
+            Node node = Node.create(hostname, new IP.Config(Set.of("::" + (1000 + hostId)), availableIps), hostname,
+                    new Flavor(capacity), NodeType.host).build();
             hosts.add(node);
         }
         return hosts;
@@ -290,7 +290,7 @@ public class CapacityCheckerTester {
         Flavor f = new Flavor(nr);
 
         Node.Builder builder = Node.create(nodeModel.id, nodeModel.hostname, f, nodeModel.state, nodeModel.type)
-                .ipConfig(IP.Config.of(nodeModel.ipAddresses, nodeModel.additionalIpAddresses));
+                .ipConfig(new IP.Config(nodeModel.ipAddresses, nodeModel.additionalIpAddresses));
         nodeModel.parentHostname.ifPresent(builder::parentHostname);
         Node node = builder.build();
 

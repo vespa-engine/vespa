@@ -6,10 +6,10 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Flavor;
-import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.hosted.provision.Node;
+import com.yahoo.vespa.hosted.provision.node.Address;
 import com.yahoo.vespa.hosted.provision.node.IP;
 import com.yahoo.vespa.hosted.provision.node.OsVersion;
 import com.yahoo.vespa.hosted.provision.node.Status;
@@ -32,38 +32,38 @@ public class ProvisionedHost {
     private final NodeType hostType;
     private final Optional<ApplicationId> exclusiveToApplicationId;
     private final Optional<ClusterSpec.Type> exclusiveToClusterType;
-    private final List<HostName> nodeHostnames;
+    private final List<Address> nodeAddresses;
     private final NodeResources nodeResources;
     private final Version osVersion;
     private final CloudAccount cloudAccount;
 
     public ProvisionedHost(String id, String hostHostname, Flavor hostFlavor, NodeType hostType,
                            Optional<ApplicationId> exclusiveToApplicationId, Optional<ClusterSpec.Type> exclusiveToClusterType,
-                           List<HostName> nodeHostnames, NodeResources nodeResources, Version osVersion, CloudAccount cloudAccount) {
+                           List<Address> nodeAddresses, NodeResources nodeResources, Version osVersion, CloudAccount cloudAccount) {
         this.id = Objects.requireNonNull(id, "Host id must be set");
         this.hostHostname = Objects.requireNonNull(hostHostname, "Host hostname must be set");
         this.hostFlavor = Objects.requireNonNull(hostFlavor, "Host flavor must be set");
         this.hostType = Objects.requireNonNull(hostType, "Host type must be set");
         this.exclusiveToApplicationId = Objects.requireNonNull(exclusiveToApplicationId, "exclusiveToApplicationId must be set");
         this.exclusiveToClusterType = Objects.requireNonNull(exclusiveToClusterType, "exclusiveToClusterType must be set");
-        this.nodeHostnames = validateNodeAddresses(nodeHostnames);
+        this.nodeAddresses = validateNodeAddresses(nodeAddresses);
         this.nodeResources = Objects.requireNonNull(nodeResources, "Node resources must be set");
         this.osVersion = Objects.requireNonNull(osVersion, "OS version must be set");
         this.cloudAccount = Objects.requireNonNull(cloudAccount, "Cloud account must be set");
         if (!hostType.isHost()) throw new IllegalArgumentException(hostType + " is not a host");
     }
 
-    private static List<HostName> validateNodeAddresses(List<HostName> nodeHostnames) {
-        Objects.requireNonNull(nodeHostnames, "Node hostnames must be set");
-        if (nodeHostnames.isEmpty()) {
-            throw new IllegalArgumentException("There must be at least one node hostname");
+    private static List<Address> validateNodeAddresses(List<Address> nodeAddresses) {
+        Objects.requireNonNull(nodeAddresses, "Node addresses must be set");
+        if (nodeAddresses.isEmpty()) {
+            throw new IllegalArgumentException("There must be at least one node address");
         }
-        return nodeHostnames;
+        return nodeAddresses;
     }
 
     /** Generate {@link Node} instance representing the provisioned physical host */
     public Node generateHost() {
-        Node.Builder builder = Node.create(id, IP.Config.of(Set.of(), Set.of(), nodeHostnames), hostHostname, hostFlavor,
+        Node.Builder builder = Node.create(id, IP.Config.of(Set.of(), Set.of(), nodeAddresses), hostHostname, hostFlavor,
                                            hostType)
                                    .status(Status.initial().withOsVersion(OsVersion.EMPTY.withCurrent(Optional.of(osVersion))))
                                    .cloudAccount(cloudAccount);
@@ -85,12 +85,12 @@ public class ProvisionedHost {
     public NodeType hostType() { return hostType; }
     public Optional<ApplicationId> exclusiveToApplicationId() { return exclusiveToApplicationId; }
     public Optional<ClusterSpec.Type> exclusiveToClusterType() { return exclusiveToClusterType; }
-    public List<HostName> nodeHostnames() { return nodeHostnames; }
+    public List<Address> nodeAddresses() { return nodeAddresses; }
     public NodeResources nodeResources() { return nodeResources; }
     public Version osVersion() { return osVersion; }
     public CloudAccount cloudAccount() { return cloudAccount; }
 
-    public String nodeHostname() { return nodeHostnames.get(0).value(); }
+    public String nodeHostname() { return nodeAddresses.get(0).hostname(); }
 
     @Override
     public boolean equals(Object o) {
@@ -103,7 +103,7 @@ public class ProvisionedHost {
                hostType == that.hostType &&
                exclusiveToApplicationId.equals(that.exclusiveToApplicationId) &&
                exclusiveToClusterType.equals(that.exclusiveToClusterType) &&
-               nodeHostnames.equals(that.nodeHostnames) &&
+               nodeAddresses.equals(that.nodeAddresses) &&
                nodeResources.equals(that.nodeResources) &&
                osVersion.equals(that.osVersion) &&
                cloudAccount.equals(that.cloudAccount);
@@ -111,7 +111,7 @@ public class ProvisionedHost {
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, hostHostname, hostFlavor, hostType, exclusiveToApplicationId, exclusiveToClusterType, nodeHostnames, nodeResources, osVersion, cloudAccount);
+        return Objects.hash(id, hostHostname, hostFlavor, hostType, exclusiveToApplicationId, exclusiveToClusterType, nodeAddresses, nodeResources, osVersion, cloudAccount);
     }
 
     @Override
@@ -123,7 +123,7 @@ public class ProvisionedHost {
                ", hostType=" + hostType +
                ", exclusiveToApplicationId=" + exclusiveToApplicationId +
                ", exclusiveToClusterType=" + exclusiveToClusterType +
-               ", nodeAddresses=" + nodeHostnames +
+               ", nodeAddresses=" + nodeAddresses +
                ", nodeResources=" + nodeResources +
                ", osVersion=" + osVersion +
                ", cloudAccount=" + cloudAccount +

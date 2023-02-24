@@ -453,7 +453,7 @@ public class DynamicProvisioningTest {
         if (!provisionedHosts.isEmpty()) {
             List<Node> hosts = provisionedHosts.asList()
                                                .stream()
-                                               .map(h -> h.with(((MockHostProvisioner) tester.hostProvisioner()).createIpConfig(h)))
+                                               .map(h -> ((MockHostProvisioner)tester.hostProvisioner()).withIpAssigned(h))
                                                .toList();
             tester.move(Node.State.ready, hosts);
             tester.activateTenantHosts();

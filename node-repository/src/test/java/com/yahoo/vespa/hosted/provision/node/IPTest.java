@@ -2,7 +2,6 @@
 package com.yahoo.vespa.hosted.provision.node;
 
 import com.google.common.collect.ImmutableSet;
-import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.hosted.provision.LockedNodeList;
@@ -15,6 +14,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -156,7 +156,7 @@ public class IPTest {
 
         IP.Config config = IP.Config.of(Set.of("2600:1f10:::1"),
                                         Set.of("2600:1f10:::2", "2600:1f10:::3"),
-                                        List.of(HostName.of("node1"), HostName.of("node2")));
+                                        List.of(new Address("node1"), new Address("node2")));
         IP.Pool pool = config.pool();
         Optional<IP.Allocation> allocation = pool.findAllocation(emptyList, resolver, false);
     }
@@ -193,12 +193,12 @@ public class IPTest {
         }
 
         IP.Pool pool = node.ipConfig().pool();
-        assertNotEquals(dualStack, pool.ipAddresses().protocol() == IP.IpAddresses.Protocol.ipv4);
+        assertNotEquals(dualStack, pool.getProtocol() == IP.IpAddresses.Protocol.ipv4);
         return pool;
     }
 
     private static Node createNode(Set<String> ipAddresses) {
-        return Node.create("id1", IP.Config.of(Set.of("127.0.0.1"), ipAddresses),
+        return Node.create("id1", new IP.Config(Set.of("127.0.0.1"), ipAddresses),
                            "host1", nodeFlavors.getFlavorOrThrow("default"), NodeType.host).build();
     }
 
