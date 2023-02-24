@@ -24,23 +24,23 @@ public class HostRegistryTest {
     @Test
     public void old_hosts_are_removed() {
         HostRegistry reg = new HostRegistry();
-        assertNull(reg.getKeyForHost("foo.com"));
+        assertNull(reg.getApplicationId("foo.com"));
         reg.update(foo, List.of("foo.com", "bar.com", "baz.com"));
         assertGetKey(reg, "foo.com", foo);
         assertGetKey(reg, "bar.com", foo);
         assertGetKey(reg, "baz.com", foo);
         assertEquals(3, reg.getAllHosts().size());
         reg.update(foo, List.of("bar.com", "baz.com"));
-        assertNull(reg.getKeyForHost("foo.com"));
+        assertNull(reg.getApplicationId("foo.com"));
         assertGetKey(reg, "bar.com", foo);
         assertGetKey(reg, "baz.com", foo);
 
         assertEquals(2, reg.getAllHosts().size());
         assertTrue(reg.getAllHosts().containsAll(List.of("bar.com", "baz.com")));
-        reg.removeHostsForKey(foo);
+        reg.removeHosts(foo);
         assertTrue(reg.getAllHosts().isEmpty());
-        assertNull(reg.getKeyForHost("foo.com"));
-        assertNull(reg.getKeyForHost("bar.com"));
+        assertNull(reg.getApplicationId("foo.com"));
+        assertNull(reg.getApplicationId("bar.com"));
     }
 
     @Test
@@ -74,9 +74,9 @@ public class HostRegistryTest {
         HostRegistry reg = new HostRegistry();
         List<String> hosts = new ArrayList<>(List.of("foo.com", "bar.com", "baz.com"));
         reg.update(foo, hosts);
-        assertEquals(3, reg.getHostsForKey(foo).size());
+        assertEquals(3, reg.getHosts(foo).size());
         hosts.remove(2);
-        assertEquals(3, reg.getHostsForKey(foo).size());
+        assertEquals(3, reg.getHosts(foo).size());
     }
 
     @Test
@@ -90,8 +90,8 @@ public class HostRegistryTest {
     }
 
     private void assertGetKey(HostRegistry reg, String host, ApplicationId expectedKey) {
-        assertNotNull(reg.getKeyForHost(host));
-        assertEquals(expectedKey, reg.getKeyForHost(host));
+        assertNotNull(reg.getApplicationId(host));
+        assertEquals(expectedKey, reg.getApplicationId(host));
     }
 
 }
