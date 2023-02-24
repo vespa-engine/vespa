@@ -7,7 +7,8 @@
 #include "reply.h"
 #include <vespa/vespalib/util/executor.h>
 #include <vespa/vespalib/util/arrayqueue.hpp>
-#include <vespa/fastos/thread.h>
+#include <condition_variable>
+#include <mutex>
 
 namespace mbus {
 
@@ -16,7 +17,7 @@ namespace mbus {
  * tasks. Tasks are enqueued using the synchronized {@link #enqueue(Task)}
  * method, and are run in the order they were enqueued.
  */
-class Messenger : public FastOS_Runnable {
+class Messenger {
 public:
     /**
      * Defines the required interface for tasks to be posted to this worker.
@@ -39,15 +40,15 @@ public:
     };
 
 private:
-    mutable std::mutex      _lock;
-    std::condition_variable _cond;
-    FastOS_ThreadPool       _pool;
-    std::vector<ITask*>     _children;
-    vespalib::ArrayQueue<ITask*>  _queue;
-    bool                _closed;
-
+    mutable std::mutex           _lock;
+    std::condition_variable      _cond;
+    std::vector<ITask*>          _children;
+    vespalib::ArrayQueue<ITask*> _queue;
+    bool                         _closed;
+    std::thread                  _thread;
+    
 protected:
-    void Run(FastOS_ThreadInterface *thread, void *arg) override;
+    void run();
 
 public:
     Messenger();
@@ -55,7 +56,7 @@ public:
     /**
      * Frees any allocated resources. Also destroys all queued tasks.
      */
-    ~Messenger() override;
+    ~Messenger();
 
     /**
      * Adds a recurrent task to this that is to be run for every iteration of

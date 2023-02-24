@@ -4,7 +4,7 @@
 
 #include <vespa/messagebus/common.h>
 #include <vespa/slobrok/cfg.h>
-#include <vespa/fastos/thread.h>
+#include <thread>
 
 namespace slobrok {
 class SBEnv;
@@ -15,17 +15,9 @@ namespace mbus {
 class Slobrok
 {
 private:
-    class Thread : public FastOS_Runnable {
-    private:
-        slobrok::SBEnv *_env;
-    public:
-        void setEnv(slobrok::SBEnv *env);
-        void Run(FastOS_ThreadInterface *, void *) override;
-    };
-    FastOS_ThreadPool  _pool;
     std::unique_ptr<slobrok::SBEnv>  _env;
-    int                _port;
-    Thread             _thread;
+    int _port;
+    std::thread _thread;
 
     Slobrok(const Slobrok &);
     Slobrok &operator=(const Slobrok &);
@@ -42,4 +34,3 @@ public:
 };
 
 } // namespace mbus
-
