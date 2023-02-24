@@ -57,6 +57,12 @@ import java.util.stream.Stream;
 // Nodes might have an application assigned in dirty.
 public class Nodes {
 
+    /**
+     * This timeout must be longer than the time it takes to redeploy an application when one cfg is down,
+     * which includes an uploadBarrier of 2 minutes.
+     */
+    public static final Duration APPLICATION_LOCK_TIMEOUT_AT_BOOT = Duration.ofMinutes(3);
+
     private static final Logger log = Logger.getLogger(Nodes.class.getName());
 
     private final CuratorDb db;
@@ -76,7 +82,7 @@ public class Nodes {
     /** Read and write all nodes to make sure they are stored in the latest version of the serialized format */
     public void rewrite() {
         Instant start = clock.instant();
-        int nodesWritten = performOn(list(), this::write).size();
+        int nodesWritten = performOn(list(), this::write, APPLICATION_LOCK_TIMEOUT_AT_BOOT).size();
         Instant end = clock.instant();
         log.log(Level.INFO, String.format("Rewrote %d nodes in %s", nodesWritten, Duration.between(start, end)));
     }
@@ -692,13 +698,18 @@ public class Nodes {
         return performOn(list().matching(filter), action);
     }
 
+    private List<Node> performOn(NodeList nodes, BiFunction<Node, Mutex, Node> action) {
+        return performOn(nodes, action, Duration.ofMinutes(1));
+    }
+
     /**
      * Performs an operation requiring locking on all given nodes.
      *
      * @param action the action to perform
+     * @param lockTimeout the time to wait for each application/unallocated lock before giving up
      * @return the set of nodes on which the action was performed, as they became as a result of the operation
      */
-    private List<Node> performOn(NodeList nodes, BiFunction<Node, Mutex, Node> action) {
+    private List<Node> performOn(NodeList nodes, BiFunction<Node, Mutex, Node> action, Duration lockTimeout) {
         List<Node> unallocatedNodes = new ArrayList<>();
         ListMap<ApplicationId, Node> allocatedNodes = new ListMap<>();
 
@@ -713,7 +724,7 @@ public class Nodes {
 
         // Perform operation while holding appropriate lock
         List<Node> resultingNodes = new ArrayList<>();
-        try (Mutex lock = lockUnallocated()) {
+        try (Mutex lock = lockUnallocated(lockTimeout)) {
             for (Node node : unallocatedNodes) {
                 Optional<Node> currentNode = db.readNode(node.hostname()); // Re-read while holding lock
                 if (currentNode.isEmpty()) continue;
@@ -721,7 +732,7 @@ public class Nodes {
             }
         }
         for (Map.Entry<ApplicationId, List<Node>> applicationNodes : allocatedNodes.entrySet()) {
-            try (Mutex lock = applications.lock(applicationNodes.getKey())) {
+            try (Mutex lock = applications.lock(applicationNodes.getKey(), lockTimeout)) {
                 for (Node node : applicationNodes.getValue()) {
                     Optional<Node> currentNode = db.readNode(node.hostname());  // Re-read while holding lock
                     if (currentNode.isEmpty()) continue;
@@ -759,6 +770,9 @@ public class Nodes {
 
     /** Create a lock which provides exclusive rights to modifying unallocated nodes */
     public Mutex lockUnallocated() { return db.lockInactive(); }
+
+    /** Create a lock which provides exclusive rights to modifying unallocated nodes */
+    public Mutex lockUnallocated(Duration timeout) { return db.lockInactive(timeout); }
 
     /** Returns the unallocated/application lock, and the node acquired under that lock. */
     private Optional<NodeMutex> lockAndGet(Node node, Optional<Duration> timeout) {

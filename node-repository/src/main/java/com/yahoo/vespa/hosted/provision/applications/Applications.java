@@ -6,6 +6,7 @@ import com.yahoo.config.provision.ApplicationLockException;
 import com.yahoo.config.provision.ApplicationTransaction;
 import com.yahoo.transaction.Mutex;
 import com.yahoo.transaction.NestedTransaction;
+import com.yahoo.vespa.hosted.provision.node.Nodes;
 import com.yahoo.vespa.hosted.provision.persistence.CuratorDb;
 
 import java.time.Duration;
@@ -27,7 +28,7 @@ public class Applications {
         this.db = db;
         // read and write all to make sure they are stored in the latest version of the serialized format
         for (ApplicationId id : ids()) {
-            try (Mutex lock = db.lock(id)) {
+            try (Mutex lock = db.lock(id, Nodes.APPLICATION_LOCK_TIMEOUT_AT_BOOT)) {
                 get(id).ifPresent(application -> put(application, lock));
             } catch (ApplicationLockException e) {
                 throw new ApplicationLockException(e);

@@ -25,6 +25,7 @@ import com.yahoo.vespa.hosted.provision.lb.LoadBalancerService;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancerSpec;
 import com.yahoo.vespa.hosted.provision.lb.Real;
 import com.yahoo.vespa.hosted.provision.node.IP;
+import com.yahoo.vespa.hosted.provision.node.Nodes;
 import com.yahoo.vespa.hosted.provision.persistence.CuratorDb;
 
 import java.time.Instant;
@@ -70,7 +71,7 @@ public class LoadBalancerProvisioner {
         this.deactivateRouting = PermanentFlags.DEACTIVATE_ROUTING.bindTo(nodeRepository.flagSource());
         // Read and write all load balancers to make sure they are stored in the latest version of the serialization format
         for (var id : db.readLoadBalancerIds()) {
-            try (var lock = db.lock(id.application())) {
+            try (var lock = db.lock(id.application(), Nodes.APPLICATION_LOCK_TIMEOUT_AT_BOOT)) {
                 var loadBalancer = db.readLoadBalancer(id);
                 loadBalancer.ifPresent(lb -> db.writeLoadBalancer(lb, lb.state()));
             }
