@@ -11,8 +11,6 @@
 #include <vespa/storage/common/bucketmessages.h>
 #include <vespa/storageapi/message/internal.h>
 
-class FastOS_ThreadPool;
-
 namespace storage {
 
 class DummyStorageLink : public StorageLink {

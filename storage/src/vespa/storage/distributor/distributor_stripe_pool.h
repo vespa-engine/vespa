@@ -2,13 +2,11 @@
 #pragma once
 
 #include <vespa/vespalib/util/time.h>
+#include <vespa/vespalib/util/thread.h>
 #include <atomic>
 #include <condition_variable>
 #include <mutex>
 #include <vector>
-
-class FastOS_ThreadInterface;
-class FastOS_ThreadPool;
 
 namespace storage::distributor {
 
@@ -37,12 +35,10 @@ class TickableStripe;
  */
 class DistributorStripePool {
     using StripeVector       = std::vector<std::unique_ptr<DistributorStripeThread>>;
-    using NativeThreadVector = std::vector<FastOS_ThreadInterface*>;
 
-    std::unique_ptr<FastOS_ThreadPool>  _thread_pool;
     uint8_t                 _n_stripe_bits;
     StripeVector            _stripes;
-    NativeThreadVector      _threads;
+    vespalib::ThreadPool    _threads;
     std::mutex              _mutex;
     std::condition_variable _parker_cond;
     size_t                  _parked_threads; // Must be protected by _park_mutex

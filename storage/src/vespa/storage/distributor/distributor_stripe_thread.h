@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/fastos/thread.h>
 #include <vespa/vespalib/util/time.h>
 #include <atomic>
 #include <condition_variable>
@@ -21,7 +20,7 @@ class TickableStripe;
  * A DistributorStripeThread instance is bidirectionally bound to a particular pool and
  * should therefore always be created by the pool itself (never standalone).
  */
-class DistributorStripeThread : private FastOS_Runnable {
+class DistributorStripeThread {
     using AtomicDuration = std::atomic<vespalib::duration>;
 
     TickableStripe&         _stripe;
@@ -41,7 +40,7 @@ public:
                             DistributorStripePool& stripe_pool);
     ~DistributorStripeThread();
 
-    void Run(FastOS_ThreadInterface*, void*) override;
+    void run();
 
     // Wakes up stripe thread if it's currently waiting for an external event to be triggered,
     // such as the arrival of a new RPC message. If thread is parked this call will have no

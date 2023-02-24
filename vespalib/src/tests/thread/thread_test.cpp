@@ -50,9 +50,17 @@ TEST("use thread pool to run multiple things") {
     bool init_called = false;
     bool was_run = false;
     ThreadPool pool;
+    EXPECT_TRUE(pool.empty());
+    EXPECT_EQUAL(pool.size(), 0u);
     pool.start(my_fun, &was_run);
+    EXPECT_TRUE(!pool.empty());
+    EXPECT_EQUAL(pool.size(), 1u);
     pool.start(agent, wrap(test_agent_thread, &init_called));
+    EXPECT_TRUE(!pool.empty());
+    EXPECT_EQUAL(pool.size(), 2u);
     pool.join();
+    EXPECT_TRUE(pool.empty());
+    EXPECT_EQUAL(pool.size(), 0u);
     EXPECT_TRUE(init_called);
     EXPECT_TRUE(agent.was_run);
     EXPECT_TRUE(was_run);

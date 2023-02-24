@@ -8,8 +8,7 @@
 namespace storage::distributor {
 
 DistributorStripePool::DistributorStripePool(bool test_mode, PrivateCtorTag)
-    : _thread_pool(std::make_unique<FastOS_ThreadPool>()),
-      _n_stripe_bits(0),
+    : _n_stripe_bits(0),
       _stripes(),
       _threads(),
       _mutex(),
@@ -119,7 +118,7 @@ void DistributorStripePool::start(const std::vector<TickableStripe*>& stripes) {
     }
     std::unique_lock lock(_mutex); // Ensure _threads is visible to all started threads
     for (auto& s : _stripes) {
-        _threads.emplace_back(_thread_pool->NewThread(s.get()));
+        _threads.start([ptr = s.get()](){ ptr->run(); });
     }
 }
 
@@ -131,9 +130,7 @@ void DistributorStripePool::stop_and_join() {
     for (auto& s : _stripes) {
         s->signal_should_stop();
     }
-    for (auto* t : _threads) {
-        t->Join();
-    }
+    _threads.join();
 }
 
 void DistributorStripePool::set_tick_wait_duration(vespalib::duration new_tick_wait_duration) noexcept {
