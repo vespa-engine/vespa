@@ -23,8 +23,12 @@ import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 
-import java.io.*;
+import java.io.IOException;
+import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
+import java.nio.file.Path;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -751,24 +755,14 @@ public class VdsVisit {
             !"".equals(visitorParameters.getResumeFileName()))
         {
             try {
-                File file = new File(visitorParameters.getResumeFileName());
-                FileInputStream fos = new FileInputStream(file);
-
-                StringBuilder builder = new StringBuilder();
-                byte[] b = new byte[100000];
-                int length;
-
-                while ((length = fos.read(b)) > 0) {
-                    builder.append(new String(b, 0, length));
-                }
-                fos.close();
-                visitorParameters.setResumeToken(new ProgressToken(builder.toString()));
+                var progressFileContents = Files.readString(Path.of(visitorParameters.getResumeFileName()));
+                visitorParameters.setResumeToken(new ProgressToken(progressFileContents));
 
                 if (params.isVerbose()) {
                     System.err.format("Resuming visitor already %.1f %% finished.\n",
                             visitorParameters.getResumeToken().percentFinished());
                 }
-            } catch (FileNotFoundException e) {
+            } catch (NoSuchFileException e) {
                 // Ignore; file has not been created yet but will be shortly.
             } catch (IOException e) {
                 System.err.println("Could not open progress file: " + visitorParameters.getResumeFileName());
