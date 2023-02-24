@@ -6,6 +6,7 @@ import com.yahoo.application.container.handler.Response;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.NodeType;
+import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.text.Utf8;
 import com.yahoo.vespa.applicationmodel.HostName;
@@ -41,7 +42,7 @@ public class NodesV2ApiTest {
 
     @Before
     public void createTester() {
-        tester = new RestApiTester(CloudAccount.from("111222333444"));
+        tester = new RestApiTester(SystemName.main, CloudAccount.from("111222333444"));
     }
 
     @After
@@ -987,23 +988,6 @@ public class NodesV2ApiTest {
         assertResponse(new Request(url, Utf8.toBytes("{\"exclusiveTo\": null, \"exclusiveToClusterType\": null}"), Request.Method.PATCH),
                 "{\"message\":\"Updated dockerhost1.yahoo.com\"}");
         tester.assertPartialResponse(new Request(url), "exclusiveTo", false);
-    }
-
-    @Test
-    public void archive_uris() throws IOException {
-        tester.assertPartialResponse(new Request("http://localhost:8080/nodes/v2/node/host4.yahoo.com"), "archiveUri", false);
-        tester.assertResponse(new Request("http://localhost:8080/nodes/v2/archive"), "{\"archives\":[]}");
-
-        assertResponse(new Request("http://localhost:8080/nodes/v2/archive/tenant3", Utf8.toBytes("{\"uri\": \"ftp://host/dir\"}"), Request.Method.PATCH),
-                "{\"message\":\"Updated archive URI for tenant3\"}");
-        assertResponse(new Request("http://localhost:8080/nodes/v2/archive/tenant2", Utf8.toBytes("{\"uri\": \"s3://my-bucket/dir\"}"), Request.Method.PATCH),
-                "{\"message\":\"Updated archive URI for tenant2\"}");
-
-        tester.assertPartialResponse(new Request("http://localhost:8080/nodes/v2/node/host4.yahoo.com"), "\"archiveUri\":\"ftp://host/dir/application3/instance3/id3/host4/\"", true);
-        assertFile(new Request("http://localhost:8080/nodes/v2/archive"), "archives.json");
-
-        tester.assertResponse(new Request("http://localhost:8080/nodes/v2/archive/tenant3", new byte[0], Request.Method.DELETE), "{\"message\":\"Removed archive URI for tenant3\"}");
-        tester.assertPartialResponse(new Request("http://localhost:8080/nodes/v2/node/host4.yahoo.com"), "archiveUri", false);
     }
 
     @Test

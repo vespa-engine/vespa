@@ -7,6 +7,10 @@
     {
       "tenant": "tenant3",
       "uri": "ftp://host/dir/"
+    },
+    {
+      "account": "777888999000",
+      "uri": "s3://acc-bucket/"
     }
   ]
 }
