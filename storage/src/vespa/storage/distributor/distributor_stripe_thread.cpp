@@ -23,7 +23,7 @@ DistributorStripeThread::DistributorStripeThread(TickableStripe& stripe,
 
 DistributorStripeThread::~DistributorStripeThread() = default;
 
-void DistributorStripeThread::Run(FastOS_ThreadInterface*, void*) {
+void DistributorStripeThread::run() {
     uint32_t tick_waits_inhibited = 0;
     while (!should_stop_thread_relaxed()) {
         while (should_park_relaxed()) {

@@ -30,7 +30,6 @@ public:
 };
 
 struct StateReporterTest : Test {
-    FastOS_ThreadPool _threadPool;
     framework::defaultimplementation::FakeClock* _clock;
     std::unique_ptr<TestServiceLayerApp> _node;
     std::unique_ptr<DummyStorageLink> _top;
@@ -61,8 +60,7 @@ struct MetricClock : public metrics::MetricManager::Timer
 }
 
 StateReporterTest::StateReporterTest()
-    : _threadPool(),
-      _clock(nullptr),
+    : _clock(nullptr),
       _top(),
       _stateReporter()
 {

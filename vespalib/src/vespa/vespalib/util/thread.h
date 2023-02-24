@@ -24,16 +24,18 @@ private:
 public:
     ThreadPool() noexcept : _threads() {}
     void start(Runnable &runnable, Runnable::init_fun_t init_fun) {
-        _threads.reserve(_threads.size() + 1);
+        reserve(size() + 1);
         _threads.push_back(thread::start(runnable, std::move(init_fun)));
     }
     template<typename F, typename... Args>
     requires std::invocable<F,Args...>
     void start(F &&f, Args && ... args) {
-        _threads.reserve(_threads.size() + 1);
+        reserve(size() + 1);
         _threads.emplace_back(std::forward<F>(f), std::forward<Args>(args)...);
     };
+    void reserve(size_t capacity) { _threads.reserve(capacity); }
     size_t size() const { return _threads.size(); }
+    bool empty() const { return _threads.empty(); }
     void join() {
         for (auto &thread: _threads) {
             thread.join();
