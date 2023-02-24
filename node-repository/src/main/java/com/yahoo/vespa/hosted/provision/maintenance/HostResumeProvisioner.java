@@ -9,14 +9,17 @@ import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.IP;
 import com.yahoo.vespa.hosted.provision.provisioning.FatalProvisioningException;
-import com.yahoo.vespa.hosted.provision.provisioning.HostIpConfig;
 import com.yahoo.vespa.hosted.provision.provisioning.HostProvisioner;
 import com.yahoo.yolean.Exceptions;
 
 import javax.naming.NamingException;
 import java.time.Duration;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 /**
  * Resumes provisioning (requests additional IP addresses, updates DNS when IPs are ready) of hosts in state provisioned
@@ -38,13 +41,23 @@ public class HostResumeProvisioner extends NodeRepositoryMaintainer {
     @Override
     protected double maintain() {
         NodeList allNodes = nodeRepository().nodes().list();
+        Map<String, Set<Node>> nodesByProvisionedParentHostname =
+                allNodes.nodeType(NodeType.tenant, NodeType.config, NodeType.controller)
+                     .asList()
+                     .stream()
+                     .filter(node -> node.parentHostname().isPresent())
+                     .collect(Collectors.groupingBy(node -> node.parentHostname().get(), Collectors.toSet()));
+
         NodeList hosts = allNodes.state(Node.State.provisioned).nodeType(NodeType.host, NodeType.confighost, NodeType.controllerhost);
         int failures = 0;
         for (Node host : hosts) {
-            NodeList children = allNodes.childrenOf(host);
-            try {
-                HostIpConfig hostIpConfig = hostProvisioner.provision(host, children.asSet());
-                setIpConfig(host, children, hostIpConfig);
+            Set<Node> children = nodesByProvisionedParentHostname.getOrDefault(host.hostname(), Set.of());
+            // This doesn't actually require unallocated lock, but that is much easier than simultaneously holding
+            // the application locks of the host and all it's children.
+            try (var lock = nodeRepository().nodes().lockUnallocated()) {
+                List<Node> updatedNodes = hostProvisioner.provision(host, children);
+                verifyDns(updatedNodes);
+                nodeRepository().nodes().write(updatedNodes, lock);
             } catch (IllegalArgumentException | IllegalStateException e) {
                 log.log(Level.INFO, "Could not provision " + host.hostname() + " with " + children.size() + " children, will retry in " +
                                     interval() + ": " + Exceptions.toMessageString(e));
@@ -66,21 +79,13 @@ public class HostResumeProvisioner extends NodeRepositoryMaintainer {
         return asSuccessFactor(hosts.size(), failures);
     }
 
-    private void setIpConfig(Node host, NodeList children, HostIpConfig hostIpConfig) {
-        if (hostIpConfig.isEmpty()) return;
-        NodeList nodes = NodeList.of(host).and(children);
+    /** Verify DNS configuration of given nodes */
+    private void verifyDns(List<Node> nodes) {
         for (var node : nodes) {
-            verifyDns(node, hostIpConfig.require(node.hostname()));
-        }
-        nodeRepository().nodes().setIpConfig(hostIpConfig);
-    }
-
-    /** Verify DNS configuration of given node */
-    private void verifyDns(Node node, IP.Config ipConfig) {
-        boolean enclave = node.cloudAccount().isEnclave(nodeRepository().zone());
-        for (var ipAddress : ipConfig.primary()) {
-            IP.verifyDns(node.hostname(), ipAddress, nodeRepository().nameResolver(), !enclave);
+            boolean enclave = node.cloudAccount().isEnclave(nodeRepository().zone());
+            for (var ipAddress : node.ipConfig().primary()) {
+                IP.verifyDns(node.hostname(), ipAddress, nodeRepository().nameResolver(), !enclave);
+            }
         }
     }
-
 }

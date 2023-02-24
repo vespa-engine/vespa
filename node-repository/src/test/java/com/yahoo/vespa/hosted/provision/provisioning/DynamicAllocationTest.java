@@ -534,7 +534,7 @@ public class DynamicAllocationTest {
     }
 
     private void addAndAssignNode(ApplicationId id, String hostname, String parentHostname, ClusterSpec clusterSpec, NodeResources flavor, int index, ProvisioningTester tester) {
-        Node node1a = Node.create("open1", IP.Config.of(Set.of("127.0.233." + index), Set.of()), hostname,
+        Node node1a = Node.create("open1", new IP.Config(Set.of("127.0.233." + index), Set.of()), hostname,
                                   new Flavor(flavor), NodeType.tenant).parentHostname(parentHostname).build();
         ClusterMembership clusterMembership1 = ClusterMembership.from(
                 clusterSpec.with(Optional.of(ClusterSpec.Group.from(0))), index); // Need to add group here so that group is serialized in node allocation
