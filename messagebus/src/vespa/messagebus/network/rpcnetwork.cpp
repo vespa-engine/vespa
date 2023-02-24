@@ -18,7 +18,6 @@
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/util/stringfmt.h>
-#include <vespa/fastos/thread.h>
 #include <thread>
 
 #include <vespa/log/log.h>

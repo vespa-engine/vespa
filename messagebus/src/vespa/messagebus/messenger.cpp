@@ -157,10 +157,11 @@ namespace mbus {
 
 Messenger::Messenger()
     : _lock(),
-      _pool(),
+      _cond(),
       _children(),
       _queue(),
-      _closed(false)
+      _closed(false),
+      _thread()
 {}
 
 Messenger::~Messenger()
@@ -170,8 +171,9 @@ Messenger::~Messenger()
         _closed = true;
     }
     _cond.notify_all();
-
-    _pool.Close();
+    if (_thread.joinable()) {
+        _thread.join();
+    }
     std::for_each(_children.begin(), _children.end(), DeleteFunctor<ITask>());
     if ( ! _queue.empty()) {
         LOG(warning,
@@ -185,10 +187,8 @@ Messenger::~Messenger()
 }
 
 void
-Messenger::Run(FastOS_ThreadInterface *thread, void *arg)
+Messenger::run()
 {
-    (void)thread;
-    (void)arg;
     while (true) {
         ITask::UP task;
         {
@@ -235,9 +235,7 @@ Messenger::discardRecurrentTasks()
 bool
 Messenger::start()
 {
-    if (_pool.NewThread(this) == nullptr) {
-        return false;
-    }
+    _thread = std::thread([this](){run();});
     return true;
 }
 
