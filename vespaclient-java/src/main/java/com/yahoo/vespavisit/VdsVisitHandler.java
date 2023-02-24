@@ -6,15 +6,19 @@ import com.yahoo.documentapi.VisitorControlHandler;
 import com.yahoo.documentapi.VisitorDataHandler;
 import com.yahoo.vdslib.VisitorStatistics;
 
-import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.time.Duration;
 import java.util.Date;
 import java.util.TimeZone;
 import java.text.DateFormat;
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
+
+import static java.nio.file.StandardCopyOption.ATOMIC_MOVE;
+import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 
 /**
  * An abstract class that can be subclassed by different visitor handlers.
@@ -30,14 +34,26 @@ public abstract class VdsVisitHandler {
     String lastPercentage;
     final Object printLock = new Object();
 
-    protected String progressFileName = "";
+    private static class ProgressMeta {
+        String fileName = "";
+        String lastProgressContents;
+        int unwrittenUpdates = 0;
+        long lastWriteAtNanos = 0;
+        Duration writeInterval = Duration.ofSeconds(10);
 
+        boolean shouldWriteProgress() {
+            return !fileName.isEmpty();
+        }
+    }
+
+    ProgressMeta progressMeta = new ProgressMeta();
     final VisitorControlHandler controlHandler = new ControlHandler();
 
     public VdsVisitHandler(boolean showProgress, boolean showStatistics, boolean abortOnClusterDown) {
         this.showProgress = showProgress;
         this.showStatistics = showStatistics;
         this.abortOnClusterDown = abortOnClusterDown;
+        this.progressMeta.lastWriteAtNanos = System.nanoTime(); // Avoid always writing a file on the first progress update
     }
 
     public boolean getShowProgress() {
@@ -75,11 +91,11 @@ public abstract class VdsVisitHandler {
     public void onDone() { }
 
     public String getProgressFileName() {
-        return progressFileName;
+        return progressMeta.fileName;
     }
 
     public void setProgressFileName(String progressFileName) {
-        this.progressFileName = progressFileName;
+        this.progressMeta.fileName = progressFileName;
     }
 
     public VisitorControlHandler getControlHandler() { return controlHandler; }
@@ -88,19 +104,28 @@ public abstract class VdsVisitHandler {
     class ControlHandler extends VisitorControlHandler {
         VisitorStatistics statistics;
 
+        private void rewriteProgressFile() {
+            try {
+                var tmpPath = Path.of(progressMeta.fileName + ".tmp");
+                Files.writeString(tmpPath, progressMeta.lastProgressContents);
+                Files.move(tmpPath, Path.of(progressMeta.fileName), REPLACE_EXISTING, ATOMIC_MOVE);
+            } catch (IOException e) {
+                e.printStackTrace();
+                abort(); // Don't continue visiting if we're unable to save progress state
+            }
+        }
+
         public void onProgress(ProgressToken token) {
-            if (progressFileName.length() > 0) {
-                 try {
-                     synchronized (token) {
-                         File file = new File(progressFileName + ".tmp");
-                         FileOutputStream fos = new FileOutputStream(file);
-                         fos.write(token.toString().getBytes());
-                         fos.close();
-                         file.renameTo(new File(progressFileName));
+            if (progressMeta.shouldWriteProgress()) {
+                 synchronized (token) {
+                     progressMeta.unwrittenUpdates++;
+                     progressMeta.lastProgressContents = token.toString();
+                     long nowNanos = System.nanoTime();
+                     if ((nowNanos - progressMeta.lastWriteAtNanos) > progressMeta.writeInterval.toNanos()) {
+                         rewriteProgressFile();
+                         progressMeta.unwrittenUpdates = 0;
+                         progressMeta.lastWriteAtNanos = nowNanos;
                      }
-                 }
-                 catch (IOException e) {
-                     e.printStackTrace();
                  }
             }
             if (showProgress) {
@@ -111,7 +136,9 @@ public abstract class VdsVisitHandler {
                         if (lastLineIsProgress) {
                             System.err.print('\r');
                         }
-                        System.err.print(percentage + " % finished.");
+                        // Pad with a few extra spaces to handle case where current line written is shorter
+                        // than the previous line written. Would otherwise leave stale characters behind.
+                        System.err.print(percentage + " % finished.   ");
                         lastLineIsProgress = true;
                         lastPercentage = percentage;
                     }
@@ -147,6 +174,11 @@ public abstract class VdsVisitHandler {
             }
         }
         public void onDone(CompletionCode code, String message) {
+            // Flush any remaining unwritten progress updates.
+            // It is expected that this happens-after any and all calls to onProgress().
+            if (progressMeta.unwrittenUpdates > 0) {
+                rewriteProgressFile();
+            }
             if (lastLineIsProgress) {
                 System.err.print('\n');
                 lastLineIsProgress = false;
