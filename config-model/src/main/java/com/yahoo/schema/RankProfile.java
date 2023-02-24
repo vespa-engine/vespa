@@ -1019,6 +1019,9 @@ public class RankProfile implements Cloneable {
             var recorder = new InputRecorder(needInputs);
             recorder.transform(globalPhaseRanking.function().getBody(), context);
             for (String input : needInputs) {
+                if (input.startsWith("constant(") || input.startsWith("query(")) {
+                    continue;
+                }
                 try {
                     addMatchFeatures(new FeatureList(input));
                 } catch (com.yahoo.searchlib.rankingexpression.parser.ParseException e) {

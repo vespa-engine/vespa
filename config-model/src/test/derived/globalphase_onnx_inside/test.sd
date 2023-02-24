@@ -1,0 +1,42 @@
+schema test {
+
+    document test {
+        field aa type tensor(d1[3]) {
+            indexing: attribute
+        }
+    }
+
+    constant xx {
+        file: files/const_xx.json
+        type: tensor(d0[2],d1[3])
+    }
+    constant ww {
+        file: files/const_ww.json
+        type: tensor(d0[2])
+    }
+
+    rank-profile default {
+        inputs {
+            query(bb) tensor(d0[2])
+            query(yy) tensor(d0[2])
+        }
+        onnx-model inside {
+            file: files/ax_plus_b.onnx
+            input vector_A: attribute(aa)
+            input matrix_X: constant(xx)
+            input vector_B: query(bb)
+            output vector_Y: foobar
+        }
+        first-phase {
+            expression: sum(attribute(aa))
+        }
+        function handicap() {
+            expression: query(yy)
+        }
+        global-phase {
+            rerank-count: 13
+            expression: sum(constant(ww) * (onnx(inside).foobar - handicap))
+        }
+    }
+
+}
