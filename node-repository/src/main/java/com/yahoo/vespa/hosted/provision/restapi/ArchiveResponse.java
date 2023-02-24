@@ -14,7 +14,7 @@ public class ArchiveResponse extends SlimeJsonResponse {
 
     public ArchiveResponse(NodeRepository nodeRepository) {
         Cursor archivesArray = slime.setObject().setArray("archives");
-        nodeRepository.archiveUris().getArchiveUris().forEach((tenant, uri) -> {
+        nodeRepository.archiveUriManager().getArchiveUris().forEach((tenant, uri) -> {
             Cursor archiveObject = archivesArray.addObject();
             archiveObject.setString("tenant", tenant.value());
             archiveObject.setString("uri", uri);

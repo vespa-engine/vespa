@@ -423,7 +423,7 @@ public class NodesV2ApiHandler extends ThreadedHttpRequestHandler {
     }
 
     private HttpResponse setTenantArchiveUri(String tenant, Optional<String> archiveUri) {
-        nodeRepository.archiveUris().setArchiveUri(TenantName.from(tenant), archiveUri);
+        nodeRepository.archiveUriManager().setArchiveUri(TenantName.from(tenant), archiveUri);
         return new MessageResponse(archiveUri.map(a -> "Updated").orElse("Removed") + " archive URI for " + tenant);
     }
 

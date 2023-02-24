@@ -1,5 +1,5 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.vespa.hosted.provision.provisioning;
+package com.yahoo.vespa.hosted.provision.archive;
 
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
@@ -10,11 +10,12 @@ import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.node.Allocation;
 import com.yahoo.vespa.hosted.provision.node.Generation;
+import com.yahoo.vespa.hosted.provision.provisioning.ProvisioningTester;
 import org.junit.Test;
 
 import java.util.Optional;
 
-import static com.yahoo.vespa.hosted.provision.provisioning.ArchiveUris.normalizeUri;
+import static com.yahoo.vespa.hosted.provision.archive.ArchiveUriManager.normalizeUri;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.fail;
@@ -22,20 +23,20 @@ import static org.junit.Assert.fail;
 /**
  * @author freva
  */
-public class ArchiveUrisTest {
+public class ArchiveUriManagerTest {
 
     @Test
     public void archive_uri() {
         ApplicationId app = ApplicationId.from("vespa", "music", "main");
         Node allocated = createNode(app);
         Node unallocated = createNode(null);
-        ArchiveUris archiveUris = new ProvisioningTester.Builder().build().nodeRepository().archiveUris();
+        ArchiveUriManager archiveUriManager = new ProvisioningTester.Builder().build().nodeRepository().archiveUriManager();
 
-        assertFalse(archiveUris.archiveUriFor(unallocated).isPresent());
-        assertFalse(archiveUris.archiveUriFor(allocated).isPresent());
+        assertFalse(archiveUriManager.archiveUriFor(unallocated).isPresent());
+        assertFalse(archiveUriManager.archiveUriFor(allocated).isPresent());
 
-        archiveUris.setArchiveUri(app.tenant(), Optional.of("scheme://hostname/dir"));
-        assertEquals("scheme://hostname/dir/music/main/default/h432a/", archiveUris.archiveUriFor(allocated).get());
+        archiveUriManager.setArchiveUri(app.tenant(), Optional.of("scheme://hostname/dir"));
+        assertEquals("scheme://hostname/dir/music/main/default/h432a/", archiveUriManager.archiveUriFor(allocated).get());
     }
 
     private Node createNode(ApplicationId appId) {

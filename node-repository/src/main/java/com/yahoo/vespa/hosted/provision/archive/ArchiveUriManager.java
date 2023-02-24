@@ -1,5 +1,5 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.vespa.hosted.provision.provisioning;
+package com.yahoo.vespa.hosted.provision.archive;
 
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
@@ -23,9 +23,9 @@ import java.util.regex.Pattern;
  *
  * @author freva
  */
-public class ArchiveUris {
+public class ArchiveUriManager {
 
-    private static final Logger log = Logger.getLogger(ArchiveUris.class.getName());
+    private static final Logger log = Logger.getLogger(ArchiveUriManager.class.getName());
     private static final Pattern validUriPattern = Pattern.compile("[a-z0-9]+://(?:(?:[a-z0-9]+(?:[-_][a-z0-9.]+)*)+/)+");
     private static final Duration cacheTtl = Duration.ofMinutes(1);
 
@@ -33,7 +33,7 @@ public class ArchiveUris {
     private final CachedSupplier<Map<TenantName, String>> archiveUris;
     private final Zone zone;
 
-    public ArchiveUris(CuratorDb db, Zone zone) {
+    public ArchiveUriManager(CuratorDb db, Zone zone) {
         this.db = db;
         this.archiveUris = new CachedSupplier<>(db::readArchiveUris, cacheTtl);
         this.zone = zone;
@@ -76,7 +76,7 @@ public class ArchiveUris {
             Map<TenantName, String> archiveUris = new TreeMap<>(db.readArchiveUris());
             if (Optional.ofNullable(archiveUris.get(tenant)).equals(archiveUri)) return; // No change
 
-            archiveUri.map(ArchiveUris::normalizeUri).ifPresentOrElse(uri -> archiveUris.put(tenant, uri),
+            archiveUri.map(ArchiveUriManager::normalizeUri).ifPresentOrElse(uri -> archiveUris.put(tenant, uri),
                                                                       () -> archiveUris.remove(tenant));
             db.writeArchiveUris(archiveUris);
             this.archiveUris.invalidate(); // Throw away current cache
