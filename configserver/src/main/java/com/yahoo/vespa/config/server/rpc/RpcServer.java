@@ -351,7 +351,7 @@ public class RpcServer implements Runnable, ConfigActivationListener, TenantList
     Optional<TenantName> resolveTenant(JRTServerConfigRequest request, Trace trace) {
         if ("*".equals(request.getConfigKey().getConfigId())) return Optional.of(ApplicationId.global().tenant());
         String hostname = request.getClientHostName();
-        ApplicationId applicationId = hostRegistry.getApplicationId(hostname);
+        ApplicationId applicationId = hostRegistry.getKeyForHost(hostname);
         if (applicationId == null) {
             if (GetConfigProcessor.logDebug(trace)) {
                 String message = "Did not find tenant for host '" + hostname + "', using " + TenantName.defaultName() +
@@ -445,7 +445,7 @@ public class RpcServer implements Runnable, ConfigActivationListener, TenantList
         log.log(Level.FINE, () -> TenantRepository.logPre(tenant) +
                             "Tenant deleted, removing request handler and cleaning host registry");
         tenants.remove(tenant);
-        hostRegistry.removeHosts(tenant);
+        hostRegistry.removeHostsForKey(tenant);
     }
 
     @Override

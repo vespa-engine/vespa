@@ -9,26 +9,35 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 /**
- * A host registry with a mapping between hostname and ApplicationId
+ * A host registry with a mapping between hosts (hostname as a String) and some type T
+ * TODO: Maybe we should have a Host type, but using String for now.
  *
  * @author Ulf Lilleengen
  */
 public class HostRegistry implements HostValidator {
 
-    private final Map<String, ApplicationId> host2ApplicationId = new ConcurrentHashMap<>();
+    private static final Logger log = Logger.getLogger(HostRegistry.class.getName());
 
-    public ApplicationId getApplicationId(String hostName) {
-        return host2ApplicationId.get(hostName);
+    private final Map<String, ApplicationId> host2KeyMap = new ConcurrentHashMap<>();
+
+    public ApplicationId getKeyForHost(String hostName) {
+        return host2KeyMap.get(hostName);
     }
 
-    public synchronized void update(ApplicationId applicationId, Collection<String> newHosts) {
-        verifyHosts(applicationId, newHosts);
-        Collection<String> removedHosts = findRemovedHosts(newHosts, getHosts(applicationId));
+    public synchronized void update(ApplicationId key, Collection<String> newHosts) {
+        verifyHosts(key, newHosts);
+        Collection<String> currentHosts = getHostsForKey(key);
+        log.log(Level.FINE, () -> "Setting hosts for key '" + key + "', " +
+                                  "newHosts: " + newHosts + ", " +
+                                  "currentHosts: " + currentHosts);
+        Collection<String> removedHosts = getRemovedHosts(newHosts, currentHosts);
         removeHosts(removedHosts);
-        addHosts(applicationId, newHosts);
+        addHosts(key, newHosts);
     }
 
     @Override
@@ -36,47 +45,49 @@ public class HostRegistry implements HostValidator {
         for (String host : newHosts) {
             if (hostAlreadyTaken(host, applicationId)) {
                 throw new IllegalArgumentException("'" + applicationId + "' tried to allocate host '" + host +
-                                                   "', but the host is already taken by '" + host2ApplicationId.get(host) + "'");
+                                                   "', but the host is already taken by '" + host2KeyMap.get(host) + "'");
             }
         }
     }
 
-    public synchronized void removeHosts(ApplicationId applicationId) {
-        host2ApplicationId.entrySet().removeIf(entry -> entry.getValue().equals(applicationId));
+    public synchronized void removeHostsForKey(ApplicationId key) {
+        host2KeyMap.entrySet().removeIf(entry -> entry.getValue().equals(key));
     }
 
-    public synchronized void removeHosts(TenantName tenantName) {
-        host2ApplicationId.entrySet().removeIf(entry -> entry.getValue().tenant().equals(tenantName));
+    public synchronized void removeHostsForKey(TenantName key) {
+        host2KeyMap.entrySet().removeIf(entry -> entry.getValue().tenant().equals(key));
     }
 
     public synchronized Collection<String> getAllHosts() {
-        return Collections.unmodifiableCollection(new ArrayList<>(host2ApplicationId.keySet()));
+        return Collections.unmodifiableCollection(new ArrayList<>(host2KeyMap.keySet()));
     }
 
-    public synchronized Collection<String> getHosts(ApplicationId applicationId) {
-        return host2ApplicationId.entrySet().stream()
-                                 .filter(entry -> entry.getValue().equals(applicationId))
-                                 .map(Map.Entry::getKey)
-                                 .collect(Collectors.toSet());
+    public synchronized Collection<String> getHostsForKey(ApplicationId key) {
+        return host2KeyMap.entrySet().stream()
+                .filter(entry -> entry.getValue().equals(key))
+                .map(Map.Entry::getKey)
+                .collect(Collectors.toSet());
     }
 
-    private boolean hostAlreadyTaken(String host, ApplicationId applicationId) {
-        return host2ApplicationId.containsKey(host) && !applicationId.equals(host2ApplicationId.get(host));
+    private boolean hostAlreadyTaken(String host, ApplicationId key) {
+        return host2KeyMap.containsKey(host) && !key.equals(host2KeyMap.get(host));
     }
 
-    private static Collection<String> findRemovedHosts(Collection<String> newHosts, Collection<String> previousHosts) {
+    private static Collection<String> getRemovedHosts(Collection<String> newHosts, Collection<String> previousHosts) {
         return Collections2.filter(previousHosts, host -> !newHosts.contains(host));
     }
 
-    private void removeHosts(Collection<String> hosts) {
-        for (String host : hosts) {
-            host2ApplicationId.remove(host);
+    private void removeHosts(Collection<String> removedHosts) {
+        for (String host : removedHosts) {
+            log.log(Level.FINE, () -> "Removing " + host);
+            host2KeyMap.remove(host);
         }
     }
 
-    private void addHosts(ApplicationId key, Collection<String> hosts) {
-        for (String host : hosts) {
-            host2ApplicationId.put(host, key);
+    private void addHosts(ApplicationId key, Collection<String> newHosts) {
+        for (String host : newHosts) {
+            log.log(Level.FINE, () -> "Adding " + host);
+            host2KeyMap.put(host, key);
         }
     }
 
