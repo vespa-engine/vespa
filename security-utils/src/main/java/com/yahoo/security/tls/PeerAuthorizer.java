@@ -49,7 +49,7 @@ public class PeerAuthorizer {
         // TODO Pass this through constructor
         CapabilityMode capabilityMode = TransportSecurityUtils.getCapabilityMode();
         return new ConnectionAuthContext(
-                certChain, CapabilitySet.unionOf(grantedCapabilities), matchedPolicies, capabilityMode);
+                certChain, CapabilitySet.ofSets(grantedCapabilities), matchedPolicies, capabilityMode);
     }
 
     private static boolean matchesPolicy(PeerPolicy peerPolicy, String cn, List<String> sans) {
