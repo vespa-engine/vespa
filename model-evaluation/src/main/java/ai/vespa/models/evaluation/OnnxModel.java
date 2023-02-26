@@ -48,11 +48,13 @@ class OnnxModel implements AutoCloseable {
     final List<OutputSpec> outputSpecs = new ArrayList<>();
 
     void addInputMapping(String onnxName, String source) {
-        assert(referencedEvaluator == null);
+        if (referencedEvaluator != null)
+            throw new IllegalStateException("input mapping must be added before load()");
         inputSpecs.add(new InputSpec(onnxName, source));
     }
     void addOutputMapping(String onnxName, String outputAs) {
-        assert(referencedEvaluator == null);
+        if (referencedEvaluator != null)
+            throw new IllegalStateException("output mapping must be added before load()");
         outputSpecs.add(new OutputSpec(onnxName, outputAs));
     }
 
