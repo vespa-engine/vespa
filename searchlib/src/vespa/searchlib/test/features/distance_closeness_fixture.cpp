@@ -50,7 +50,8 @@ DistanceClosenessFixture::DistanceClosenessFixture(size_t fooCnt, size_t barCnt,
     : queryEnv(&indexEnv), rankSetup(factory, indexEnv),
       mdl(), match_data(), rankProgram(), fooHandles(), barHandles(),
       tensor_attr(),
-      docid_limit(11)
+      docid_limit(11),
+      _failed(false)
 {
     for (size_t i = 0; i < fooCnt; ++i) {
         uint32_t fieldId = indexEnv.getFieldByName("foo")->id();
@@ -79,7 +80,10 @@ DistanceClosenessFixture::DistanceClosenessFixture(size_t fooCnt, size_t barCnt,
     labels.inject(queryEnv.getProperties());
     rankSetup.setFirstPhaseRank(featureName);
     rankSetup.setIgnoreDefaultRankFeatures(true);
-    ASSERT_TRUE(rankSetup.compile());
+    EXPECT_TRUE(rankSetup.compile()) << (_failed = true, "");
+    if (_failed) {
+        return;
+    }
     rankSetup.prepareSharedState(queryEnv, queryEnv.getObjectStore());
     match_data = mdl.createMatchData();
     rankProgram = rankSetup.create_first_phase_program();
