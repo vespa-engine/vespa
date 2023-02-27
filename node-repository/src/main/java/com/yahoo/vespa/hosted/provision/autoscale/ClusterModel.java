@@ -113,6 +113,10 @@ public class ClusterModel {
     public ClusterSpec clusterSpec() { return clusterSpec; }
     public Cluster cluster() { return cluster; }
 
+    public String description() {
+        return nodeTimeseries.description();
+    }
+
     public boolean isEmpty() {
         return nodeTimeseries().isEmpty();
     }
