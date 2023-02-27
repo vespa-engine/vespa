@@ -452,15 +452,23 @@ export FACTORY_VESPA_VERSION=%{version}
 mvn --batch-mode -e -N io.takari:maven:wrapper -Dmaven=3.6.3
 %endif
 %{?_use_mvn_wrapper:env VESPA_MAVEN_COMMAND=$(pwd)/mvnw }sh bootstrap.sh java
-%{?_use_mvn_wrapper:./mvnw}%{!?_use_mvn_wrapper:mvn} --batch-mode -nsu -T 1C  install -Dmaven.test.skip=true -Dmaven.javadoc.skip=true
+%{?_use_mvn_wrapper:./mvnw}%{!?_use_mvn_wrapper:mvn} --batch-mode -nsu -T 1C install -DskipTests -Dmaven.javadoc.skip=true
 %{_command_cmake} -DCMAKE_INSTALL_PREFIX=%{_prefix} \
        -DJAVA_HOME=$JAVA_HOME \
        -DVESPA_USER=%{_vespa_user} \
        -DVESPA_UNPRIVILEGED=no \
+       %{_cmake_extra_opts} \
        .
 
 make %{_smp_mflags}
 VERSION=%{version} CI=true make -C client/go install-all
+%endif
+
+%check
+%if ! 0%{?installdir:1}
+export PYTHONPATH="$PYTHONPATH:/usr/local/lib/$(basename $(readlink -f $(which python3)))/site-packages"
+#%{?_use_mvn_wrapper:./mvnw}%{!?_use_mvn_wrapper:mvn} --batch-mode -nsu -T 1C -Dmaven.javadoc.skip=true test
+make test ARGS="--output-on-failure %{_smp_mflags}"
 %endif
 
 %install

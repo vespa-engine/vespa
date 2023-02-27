@@ -220,7 +220,7 @@ jobs:
           VESPA_REF=$(meta get vespa.ref)
           if [[ $VESPA_VERSION == null ]] || [[ $VESPA_REF == null ]]; then
             echo "Must have valid Vespa version and reference to continue (got VESPA_VERSION=$VESPA_VERSION, VESPA_REF=$VESPA_REF)."
-            exit 1
+            return 1
           fi
           meta set vespa.version $VESPA_VERSION
       - install-dependencies: |
@@ -235,6 +235,95 @@ jobs:
           screwdriver/release-container-image.sh $VESPA_VERSION
       - update-sample-apps: |
           screwdriver/update-vespa-version-in-sample-apps.sh $VESPA_VERSION
+
+  publish-legacy-release:
+    image: docker.io/vespaengine/vespa-build-centos-stream8:latest
+
+    annotations:
+      screwdriver.cd/cpu: 7
+      screwdriver.cd/ram: 16
+      screwdriver.cd/disk: HIGH
+      screwdriver.cd/timeout: 300
+      screwdriver.cd/dockerEnabled: true
+      screwdriver.cd/dockerCpu: TURBO
+      screwdriver.cd/dockerRam: HIGH
+      screwdriver.cd/buildPeriodically: H 6 1 * *
+
+    environment:
+      IMAGE_NAME: "vespaengine/vespa-generic-intel-x86_64"
+
+    secrets:
+      - DOCKER_HUB_DEPLOY_KEY
+
+    steps:
+      - get-vespa-version: |
+          set -x
+          VESPA_VERSION=$(meta get vespa.version --external sd@8683:publish-release)
+          if [[ $VESPA_VERSION == null ]] || [[ $VESPA_REF == null ]]; then
+            echo "Must have valid Vespa version to continue (got VESPA_VERSION=$VESPA_VERSION)."
+            return 1
+          fi
+      - install-dependencies: |
+          dnf config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
+          dnf install -y docker-ce docker-ce-cli containerd.io
+          docker system info
+      - checkout: |
+          mkdir -p workdir
+          cd workdir
+          export WORKDIR=$(pwd)
+          git clone -q https://github.com/vespa-engine/vespa
+          (cd vespa && git checkout v$VESPA_VERSION)
+          git clone -q https://github.com/vespa-engine/system-test
+          # Set correct version in pom.xml files
+          (cd vespa && screwdriver/replace-vespa-version-in-poms.sh $VESPA_VERSION $(pwd) )
+      - build-rpms: |
+          cd $WORKDIR
+          make -C $WORKDIR/vespa -f .copr/Makefile srpm outdir=$WORKDIR
+          rpmbuild --rebuild \
+                   --define="_topdir $WORKDIR/vespa-rpmbuild" \
+                   --define "debug_package %{nil}" \
+                   --define "_debugsource_template %{nil}" \
+                   --define '_cmake_extra_opts "-DDEFAULT_VESPA_CPU_ARCH_FLAGS=-msse3 -mcx16 -mtune=intel"' \
+                   *.src.rpm
+          rm -f *.src.rpm
+          mv $WORKDIR/vespa-rpmbuild/RPMS/x86_64/*.rpm .
+      - build-container-image: |
+          cat <<EOF > Dockerfile
+          ARG VESPA_VERSION
+          FROM docker.io/vespaengine/vespa:\$VESPA_VERSION
+          USER root
+          RUN --mount=type=bind,target=/rpms/,source=. dnf reinstall -y /rpms/vespa*rpm && dnf clean all
+          USER vespa
+          EOF
+          docker build --progress plain --build-arg VESPA_VERSION=$VESPA_VERSION --tag docker.io/$IMAGE_NAME:$VESPA_VERSION \
+            --tag docker.io/$IMAGE_NAME:latest --file Dockerfile .
+      - verify-container-image: |
+          # Trick to be able to use the documentation testing to verify the image built locally
+          docker tag docker.io/$IMAGE_NAME:$VESPA_VERSION vespaengine/vespa:latest
+          # Clone and setup doc tests
+          git clone -q --depth 1 https://github.com/vespa-engine/documentation
+          cd documentation
+          python3 -m pip install -qqq -r test/requirements.txt --user
+          echo -e "urls:\n    - en/vespa-quick-start.html" > test/_quick-start.yaml
+          # Get the required vespa CLI
+          VESPA_CLI_VERSION=$(curl -fsSL https://api.github.com/repos/vespa-engine/vespa/releases/latest | grep -Po '"tag_name": "v\K.*?(?=")') && \
+          curl -fsSL https://github.com/vespa-engine/vespa/releases/download/v${VESPA_CLI_VERSION}/vespa-cli_${VESPA_CLI_VERSION}_linux_amd64.tar.gz | tar -zxf - -C /opt && \
+          ln -sf /opt/vespa-cli_${VESPA_CLI_VERSION}_linux_amd64/bin/vespa /usr/local/bin/
+          # Run test
+          test/test.py -c test/_quick-start.yaml
+      - publish-test-image: |
+          if [[ -z $SD_PULL_REQUEST ]]; then
+            if curl -fsSL https://index.docker.io/v1/repositories/$IMAGE_NAME/tags/$VESPA_VERSION &> /dev/null; then
+              echo "Container image docker.io/$IMAGE_NAME:$VESPA_VERSION aldready exists."
+            else
+              OPT_STATE="$(set +o)"
+              set +x
+              docker login --username aressem --password "$DOCKER_HUB_DEPLOY_KEY"
+              eval "$OPT_STATE"
+              docker push docker.io/$IMAGE_NAME:$VESPA_VERSION
+              docker push docker.io/$IMAGE_NAME:latest
+            fi
+          fi
 
   publish-cli-release:
     image: homebrew/brew:latest
