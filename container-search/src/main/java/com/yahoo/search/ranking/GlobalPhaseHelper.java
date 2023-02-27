@@ -48,7 +48,7 @@ public class GlobalPhaseHelper {
         };
         // TODO need to get rerank-count somehow
         int rerank = 7;
-        rerankHits(query, result, new HitRescorer(supplier), rerank);
+        ResultReranker.rerankHits(result, new HitRescorer(supplier), rerank);
     }
 
     record NameAndValue(String name, Tensor value) { }
@@ -84,40 +84,6 @@ public class GlobalPhaseHelper {
             }
         }
         return result;
-    }
-
-    void rerankHits(Query query, Result result, HitRescorer hitRescorer, int rerank) {
-        double worstRerankedScore = Double.MAX_VALUE;
-        double worstRerankedOldScore = Double.MAX_VALUE;
-        // TODO consider doing recursive iteration instead of deepIterator
-        for (var iterator = result.hits().deepIterator(); iterator.hasNext();) {
-            Hit hit = iterator.next();
-            if (hit.isMeta() || hit instanceof HitGroup) {
-                continue;
-            }
-            // what about hits inside grouping results?
-            if (rerank > 0) {
-                double oldScore = hit.getRelevance().getScore();
-                boolean didRerank = hitRescorer.rescoreHit(hit);
-                if (didRerank) {
-                    double newScore = hit.getRelevance().getScore();
-                    if (oldScore < worstRerankedOldScore) worstRerankedOldScore = oldScore;
-                    if (newScore < worstRerankedScore) worstRerankedScore = newScore;
-                    --rerank;
-                } else {
-                    // failed to rescore this hit, what should we do?
-                    hit.setRelevance(-Double.MAX_VALUE);
-                }
-            } else {
-                // too low quality
-                if (worstRerankedOldScore > worstRerankedScore) {
-                    double penalty = worstRerankedOldScore - worstRerankedScore;
-                    double oldScore = hit.getRelevance().getScore();
-                    hit.setRelevance(oldScore - penalty);
-                }
-            }
-        }
-        result.hits().sort();
     }
 
     private Supplier<FunctionEvaluator> underlying(Query query, String schema) {
