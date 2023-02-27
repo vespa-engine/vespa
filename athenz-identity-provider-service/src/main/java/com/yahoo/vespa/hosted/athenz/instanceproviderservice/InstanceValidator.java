@@ -7,6 +7,8 @@ import com.yahoo.config.model.api.ApplicationInfo;
 import com.yahoo.config.model.api.ServiceInfo;
 import com.yahoo.config.model.api.SuperModelProvider;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.container.jdisc.secretstore.SecretStore;
+import com.yahoo.security.KeyUtils;
 import com.yahoo.vespa.athenz.api.AthenzService;
 import com.yahoo.vespa.athenz.identityprovider.api.ClusterType;
 import com.yahoo.vespa.athenz.identityprovider.api.EntityBindingsMapper;
@@ -19,6 +21,7 @@ import com.yahoo.vespa.hosted.provision.NodeRepository;
 
 import java.net.InetAddress;
 import java.net.URI;
+import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.util.Arrays;
 import java.util.Collection;
@@ -52,25 +55,32 @@ public class InstanceValidator {
     private final KeyProvider keyProvider;
     private final SuperModelProvider superModelProvider;
     private final NodeRepository nodeRepository;
+    private final AthenzProviderServiceConfig athenzProviderServiceConfig;
+    private final SecretStore secretStore;
 
     @Inject
     public InstanceValidator(KeyProvider keyProvider,
                              SuperModelProvider superModelProvider,
                              NodeRepository nodeRepository,
-                             AthenzProviderServiceConfig config) {
-        this(keyProvider, superModelProvider, nodeRepository, new IdentityDocumentSigner(), new AthenzService(config.tenantService()));
+                             AthenzProviderServiceConfig config,
+                             SecretStore secretStore) {
+        this(keyProvider, superModelProvider, nodeRepository, new IdentityDocumentSigner(), new AthenzService(config.tenantService()), config,secretStore);
     }
 
     public InstanceValidator(KeyProvider keyProvider,
                              SuperModelProvider superModelProvider,
                              NodeRepository nodeRepository,
                              IdentityDocumentSigner identityDocumentSigner,
-                             AthenzService tenantIdentity){
+                             AthenzService tenantIdentity,
+                             AthenzProviderServiceConfig athenzProviderServiceConfig,
+                             SecretStore secretStore){
         this.keyProvider = keyProvider;
         this.superModelProvider = superModelProvider;
         this.nodeRepository = nodeRepository;
         this.signer = identityDocumentSigner;
         this.tenantDockerContainerIdentity = tenantIdentity;
+        this.athenzProviderServiceConfig = athenzProviderServiceConfig;
+        this.secretStore = secretStore;
     }
 
     public boolean isValidInstance(InstanceConfirmation instanceConfirmation) {
@@ -102,7 +112,8 @@ public class InstanceValidator {
 
         log.log(Level.FINE, () -> String.format("Validating instance %s.", providerUniqueId));
 
-        PublicKey publicKey = keyProvider.getPublicKey(signedIdentityDocument.signingKeyVersion());
+
+        PublicKey publicKey = publicKey(signedIdentityDocument.signingKeyVersion());
         if (! signer.hasValidSignature(signedIdentityDocument, publicKey)) {
             var msg = String.format("Instance %s has invalid signature.", providerUniqueId);
             throw new ValidationException(Level.SEVERE, () -> msg);
@@ -110,6 +121,11 @@ public class InstanceValidator {
 
         validateAttributes(req, providerUniqueId);
         log.log(Level.FINE, () -> String.format("Instance %s is valid.", providerUniqueId));
+    }
+
+    private PublicKey publicKey(int keyVersion) {
+            String keyPem = secretStore.getSecret(athenzProviderServiceConfig.sisSecretName(), athenzProviderServiceConfig.sisSecretVersion());
+            return KeyUtils.extractPublicKey(KeyUtils.fromPemEncodedPrivateKey(keyPem));
     }
 
     // TODO Add actual validation. Cannot reuse isValidInstance as identity document is not part of the refresh request.
