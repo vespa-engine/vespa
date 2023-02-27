@@ -5,7 +5,6 @@
 #include <vespa/vespalib/util/size_literals.h>
 #include <vespa/fnet/frt/supervisor.h>
 #include <vespa/fnet/transport.h>
-#include <vespa/fastos/thread.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".config.frt.frtconnectionpool");

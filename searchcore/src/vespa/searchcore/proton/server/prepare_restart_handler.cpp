@@ -21,7 +21,7 @@ bool
 PrepareRestartHandler::prepareRestart(const ProtonConfig &protonCfg)
 {
     std::unique_lock lock(_mutex);
-    if (!_flushEngine.HasThread()) {
+    if (!_flushEngine.has_thread()) {
         return false;
     }
     if (!_running) {

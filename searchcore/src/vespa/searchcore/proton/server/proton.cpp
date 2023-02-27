@@ -215,7 +215,7 @@ Proton::ProtonFileHeaderContext::setClusterName(const vespalib::string & cluster
 }
 
 
-Proton::Proton(FastOS_ThreadPool & threadPool, FNET_Transport & transport, const config::ConfigUri & configUri,
+Proton::Proton(FNET_Transport & transport, const config::ConfigUri & configUri,
                const vespalib::string &progName, vespalib::duration subscribeTimeout)
     : IProtonConfigurerOwner(),
       search::engine::MonitorServer(),
@@ -225,7 +225,6 @@ Proton::Proton(FastOS_ThreadPool & threadPool, FNET_Transport & transport, const
       ComponentConfigProducer(),
       _cpu_util(),
       _hw_info(),
-      _threadPool(threadPool),
       _transport(transport),
       _configUri(configUri),
       _mutex(),
@@ -277,7 +276,7 @@ Proton::init()
 {
     assert( ! _initStarted && ! _initComplete );
     _initStarted = true;
-    _protonConfigFetcher.start(_threadPool);
+    _protonConfigFetcher.start();
     auto configSnapshot = _protonConfigurer.getPendingConfigSnapshot();
     assert(configSnapshot);
     auto bootstrapConfig = configSnapshot->getBootstrapConfig();
@@ -757,7 +756,7 @@ Proton::ping(std::unique_ptr<MonitorRequest>, MonitorClient &)
 bool
 Proton::triggerFlush()
 {
-    if (!_flushEngine || ! _flushEngine->HasThread()) {
+    if (!_flushEngine || ! _flushEngine->has_thread()) {
         return false;
     }
     _flushEngine->triggerFlush();

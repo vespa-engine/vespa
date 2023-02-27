@@ -7,7 +7,6 @@
 #include <vespa/slobrok/sbmirror.h>
 #include <vespa/fnet/transport.h>
 #include <vespa/fnet/frt/supervisor.h>
-#include <vespa/fastos/thread.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".externpolicy");

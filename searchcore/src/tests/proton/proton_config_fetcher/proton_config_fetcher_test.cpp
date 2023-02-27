@@ -305,8 +305,7 @@ TEST_FFF("require that proton config fetcher follows changes to bootstrap",
          ConfigTestFixture("search"),
          ProtonConfigOwner(),
          ProtonConfigFetcher(f1.transport.transport(), ConfigUri(f1.configId, f1.context), f2, 60s)) {
-    FastOS_ThreadPool pool;
-    f3.start(pool);
+    f3.start();
     ASSERT_TRUE(f2._configured);
     ASSERT_TRUE(f1.configEqual(f2.getBootstrapConfig()));
     f2._configured = false;
@@ -321,8 +320,7 @@ TEST_FFF("require that proton config fetcher follows changes to doctypes",
          ConfigTestFixture("search"),
          ProtonConfigOwner(),
          ProtonConfigFetcher(f1.transport.transport(), ConfigUri(f1.configId, f1.context), f2, 60s)) {
-    FastOS_ThreadPool pool;
-    f3.start(pool);
+    f3.start();
 
     f2._configured = false;
     f1.addDocType("typea");
@@ -342,8 +340,7 @@ TEST_FFF("require that proton config fetcher reconfigures dbowners",
          ConfigTestFixture("search"),
          ProtonConfigOwner(),
          ProtonConfigFetcher(f1.transport.transport(), ConfigUri(f1.configId, f1.context), f2, 60s)) {
-    FastOS_ThreadPool pool;
-    f3.start(pool);
+    f3.start();
     ASSERT_FALSE(f2.getDocumentDBConfig("typea"));
 
     // Add db and verify that config for db is provided

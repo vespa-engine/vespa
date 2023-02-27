@@ -4,7 +4,6 @@
 
 #include "bootstrapconfigmanager.h"
 #include "i_document_db_config_owner.h"
-#include <vespa/fastos/thread.h>
 #include <vespa/searchcore/proton/common/doctypename.h>
 #include <vespa/config/retriever/configretriever.h>
 #include <vespa/config/subscription/configuri.h>
@@ -24,13 +23,13 @@ class IProtonConfigurer;
  * A ProtonConfigFetcher monitors all config in proton and document dbs for change
  * and starts proton reconfiguration if config has been reloaded.
  */
-class ProtonConfigFetcher : public FastOS_Runnable
+class ProtonConfigFetcher
 {
 public:
     using BootstrapConfigSP = std::shared_ptr<BootstrapConfig>;
 
     ProtonConfigFetcher(FNET_Transport & transport, const config::ConfigUri & configUri, IProtonConfigurer &owner, vespalib::duration subscribeTimeout);
-    ~ProtonConfigFetcher() override;
+    ~ProtonConfigFetcher();
     /**
      * Get the current config generation.
      */
@@ -39,14 +38,14 @@ public:
     /**
      * Start config fetcher, callbacks may come from now on.
      */
-    void start(FastOS_ThreadPool & threadPool);
+    void start();
 
     /**
      * Shutdown config fetcher, ensuring that no more callbacks arrive
      */
     void close();
 
-    void Run(FastOS_ThreadInterface * thread, void *arg) override;
+    void run();
 
 private:
     using DBManagerMap = std::map<DocTypeName, std::shared_ptr<DocumentDBConfigManager>>;
@@ -63,7 +62,8 @@ private:
     std::condition_variable   _cond;
     DBManagerMap              _dbManagerMap;
     bool                      _running;
-
+    std::thread               _thread;
+    
     std::deque<OldDocumentTypeRepo>                   _oldDocumentTypeRepos;
     std::shared_ptr<const document::DocumentTypeRepo> _currentDocumentTypeRepo;
 

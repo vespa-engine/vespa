@@ -15,7 +15,6 @@
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/size_literals.h>
 #include <thread>
-#include <vespa/fastos/thread.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".test.statereporter");

@@ -9,7 +9,6 @@
 #include <vespa/slobrok/sbmirror.h>
 #include <vespa/fnet/frt/supervisor.h>
 #include <vespa/fnet/transport.h>
-#include <vespa/fastos/thread.h>
 #include <thread>
 
 using slobrok::api::IMirrorAPI;

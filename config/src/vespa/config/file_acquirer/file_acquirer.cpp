@@ -5,7 +5,6 @@
 #include <vespa/fnet/frt/target.h>
 #include <vespa/fnet/frt/rpcrequest.h>
 #include <vespa/fnet/transport.h>
-#include <vespa/fastos/thread.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".config.file_acquirer");

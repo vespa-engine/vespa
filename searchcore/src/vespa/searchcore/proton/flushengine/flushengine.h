@@ -7,7 +7,7 @@
 #include <vespa/searchcore/proton/common/doctypename.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
 #include <vespa/vespalib/util/time.h>
-#include <vespa/fastos/thread.h>
+#include <thread>
 #include <set>
 #include <mutex>
 #include <condition_variable>
@@ -18,7 +18,7 @@ namespace proton {
 
 namespace flushengine { class ITlsStatsFactory; }
 
-class FlushEngine final : public FastOS_Runnable
+class FlushEngine
 {
 public:
     class FlushMeta {
@@ -54,7 +54,8 @@ private:
     const uint32_t                 _maxConcurrent;
     const vespalib::duration       _idleInterval;
     uint32_t                       _taskId;    
-    FastOS_ThreadPool              _threadPool;
+    std::thread                    _thread;
+    std::atomic<bool>              _has_thread;
     IFlushStrategy::SP             _strategy;
     mutable IFlushStrategy::SP     _priorityStrategy;
     vespalib::ThreadStackExecutor  _executor;
@@ -109,7 +110,7 @@ public:
     /**
      * Destructor. Waits for all pending tasks to complete.
      */
-    ~FlushEngine() override;
+    ~FlushEngine();
 
     /**
      * Observe and reset internal executor stats
@@ -129,7 +130,8 @@ public:
      * @return This, to allow chaining.
      */
     FlushEngine &start();
-
+    bool has_thread() const { return _has_thread; }
+    
     /**
      * Stops the scheduling thread and. This will prevent any more flush
      * requests being performed on the attached handlers, allowing you to flush
@@ -168,7 +170,7 @@ public:
      */
     IFlushHandler::SP removeFlushHandler(const DocTypeName &docTypeName);
 
-    void Run(FastOS_ThreadInterface *thread, void *arg) override;
+    void run();
 
     FlushMetaSet getCurrentlyFlushingSet() const;
 

@@ -29,6 +29,7 @@ ProtonConfigFetcher::ProtonConfigFetcher(FNET_Transport & transport, const confi
       _cond(),
       _dbManagerMap(),
       _running(false),
+      _thread(),
       _oldDocumentTypeRepos(),
       _currentDocumentTypeRepo()
 {
@@ -40,10 +41,8 @@ ProtonConfigFetcher::~ProtonConfigFetcher()
 }
 
 void
-ProtonConfigFetcher::Run(FastOS_ThreadInterface * thread, void *arg)
+ProtonConfigFetcher::run()
 {
-    (void) arg;
-    (void) thread;
     while (!_retriever.isClosed()) {
         try {
             fetchConfigs();
@@ -166,17 +165,13 @@ ProtonConfigFetcher::getGeneration() const
 }
 
 void
-ProtonConfigFetcher::start(FastOS_ThreadPool & threadPool)
+ProtonConfigFetcher::start()
 {
     fetchConfigs();
     lock_guard guard(_mutex);
     if (_running) return;
     _running = true;
-    if (threadPool.NewThread(this, nullptr) == nullptr) {
-        _running = false;
-        throw vespalib::IllegalStateException(
-                "Failed starting thread for proton config fetcher");
-    }
+    _thread = std::thread([this](){run();});
 }
 
 void
@@ -188,6 +183,9 @@ ProtonConfigFetcher::close()
     std::unique_lock<std::mutex> guard(_mutex);
     while (_running) {
         _cond.wait(guard);
+    }
+    if (_thread.joinable()) {
+        _thread.join();
     }
 }
 

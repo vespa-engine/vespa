@@ -10,7 +10,6 @@
 #include <vespa/config/common/exceptions.h>
 #include <vespa/config/common/configcontext.h>
 #include <vespa/fnet/transport.h>
-#include <vespa/fastos/thread.h>
 #include <vespa/fastos/file.h>
 #include <filesystem>
 #include <iostream>
@@ -45,7 +44,7 @@ private:
     static void setupSignals();
     static void setup_fadvise();
     Params parseParams(int argc, char **argv);
-    void startAndRun(FastOS_ThreadPool & threadPool, FNET_Transport & transport, int argc, char **argv);
+    void startAndRun(FNET_Transport & transport, int argc, char **argv);
 public:
     int main(int argc, char **argv);
 };
@@ -222,7 +221,7 @@ private:
 }
 
 void
-App::startAndRun(FastOS_ThreadPool & threadPool, FNET_Transport & transport, int argc, char **argv) {
+App::startAndRun(FNET_Transport & transport, int argc, char **argv) {
     Params params = parseParams(argc, argv);
     LOG(debug, "identity: '%s'", params.identity.c_str());
     LOG(debug, "serviceidentity: '%s'", params.serviceidentity.c_str());
@@ -231,7 +230,7 @@ App::startAndRun(FastOS_ThreadPool & threadPool, FNET_Transport & transport, int
 
     config::ConfigServerSpec configServerSpec(transport);
     config::ConfigUri identityUri(params.identity, std::make_shared<config::ConfigContext>(configServerSpec));
-    auto protonUP = std::make_unique<proton::Proton>(threadPool, transport, identityUri,
+    auto protonUP = std::make_unique<proton::Proton>(transport, identityUri,
                                                      (argc > 0) ? argv[0] : "proton", subscribeTimeout);
     proton::Proton & proton = *protonUP;
     proton::BootstrapConfig::SP configSnapshot = proton.init();
@@ -283,9 +282,8 @@ App::main(int argc, char **argv)
     try {
         setupSignals();
         setup_fadvise();
-        FastOS_ThreadPool threadPool;
         Transport transport(buildTransportConfig());
-        startAndRun(threadPool, transport.transport(), argc, argv);
+        startAndRun(transport.transport(), argc, argv);
     } catch (const vespalib::InvalidCommandLineArgumentsException &e) {
         LOG(warning, "Invalid commandline arguments: '%s'", e.what());
         return 1;
