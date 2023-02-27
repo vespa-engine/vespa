@@ -54,7 +54,7 @@ public class RpcTester implements AutoCloseable {
     private final ApplicationId applicationId;
     private final TenantName tenantName;
     private final TenantRepository tenantRepository;
-    private final HostRegistry hostRegistry = new HostRegistry();
+    final HostRegistry hostRegistry = new HostRegistry();
 
     private final ApplicationRepository applicationRepository;
     private final List<Integer> allocatedPorts = new ArrayList<>();

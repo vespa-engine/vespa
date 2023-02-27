@@ -216,10 +216,10 @@ public class TenantApplications implements RequestHandler, HostValidator {
     }
 
     private void notifyConfigActivationListeners(ApplicationSet applicationSet) {
-        if (applicationSet.getAllApplications().isEmpty()) throw new IllegalArgumentException("application set cannot be empty");
+        List<Application> applications = applicationSet.getAllApplications();
+        if (applications.isEmpty()) throw new IllegalArgumentException("application set cannot be empty");
 
-        configActivationListener.hostsUpdated(applicationSet.getAllApplications().get(0).toApplicationInfo().getApplicationId(),
-                                              applicationSet.getAllHosts());
+        hostRegistry.update(applications.get(0).getId(), applicationSet.getAllHosts());
         configActivationListener.configActivated(applicationSet);
     }
 
@@ -277,7 +277,7 @@ public class TenantApplications implements RequestHandler, HostValidator {
     }
 
     private void configActivationListenersOnRemove(ApplicationId applicationId) {
-        configActivationListener.hostsUpdated(applicationId, hostRegistry.getHosts(applicationId));
+        hostRegistry.removeHosts(applicationId);
         configActivationListener.applicationRemoved(applicationId);
     }
 
@@ -399,7 +399,6 @@ public class TenantApplications implements RequestHandler, HostValidator {
     @Override
     public void verifyHosts(ApplicationId applicationId, Collection<String> newHosts) {
         hostRegistry.verifyHosts(applicationId, newHosts);
-        configActivationListener.verifyHostsAreAvailable(applicationId, newHosts);
     }
 
     // TODO: Duplicate of resolveApplicationId() above

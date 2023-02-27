@@ -38,10 +38,10 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Optional;
 
+import static com.yahoo.vespa.config.server.rpc.RpcServer.ChunkedFileReceiver.createMetaRequest;
 import static com.yahoo.vespa.filedistribution.FileReferenceData.CompressionType.gzip;
 import static com.yahoo.vespa.filedistribution.FileReferenceData.CompressionType.lz4;
 import static com.yahoo.vespa.filedistribution.FileReferenceData.Type.compressed;
-import static com.yahoo.vespa.config.server.rpc.RpcServer.ChunkedFileReceiver.createMetaRequest;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -84,7 +84,7 @@ public class RpcServerTest {
     public void testEmptySentinelConfigWhenAppDeletedOnHostedVespa() throws IOException, InterruptedException {
         ConfigserverConfig.Builder configBuilder = new ConfigserverConfig.Builder().canReturnEmptySentinelConfig(true);
         try (RpcTester tester = new RpcTester(applicationId, temporaryFolder, configBuilder)) {
-            tester.rpcServer().onTenantDelete(tenantName);
+            tester.hostRegistry.removeHosts(applicationId);
             tester.rpcServer().onTenantsLoaded();
             JRTClientConfigRequest clientReq = createSentinelRequest();
 

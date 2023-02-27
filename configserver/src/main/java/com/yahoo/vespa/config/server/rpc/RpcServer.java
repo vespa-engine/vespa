@@ -44,11 +44,9 @@ import com.yahoo.vespa.filedistribution.FileDownloader;
 import com.yahoo.vespa.filedistribution.FileReceiver;
 import com.yahoo.vespa.filedistribution.FileReferenceData;
 import com.yahoo.vespa.filedistribution.FileReferenceDownload;
-
 import java.nio.ByteBuffer;
 import java.time.Duration;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -320,17 +318,6 @@ public class RpcServer implements Runnable, ConfigActivationListener, TenantList
     }
 
     @Override
-    public void hostsUpdated(ApplicationId applicationId, Collection<String> newHosts) {
-        log.log(Level.FINE, () -> "Updating hosts in tenant host registry '" + hostRegistry + "' with " + newHosts);
-        hostRegistry.update(applicationId, newHosts);
-    }
-
-    @Override
-    public void verifyHostsAreAvailable(ApplicationId applicationId, Collection<String> newHosts) {
-        hostRegistry.verifyHosts(applicationId, newHosts);
-    }
-
-    @Override
     public void applicationRemoved(ApplicationId applicationId) {
         superModelRequestHandler.removeApplication(applicationId);
         configActivated(applicationId);
@@ -350,6 +337,7 @@ public class RpcServer implements Runnable, ConfigActivationListener, TenantList
      */
     Optional<TenantName> resolveTenant(JRTServerConfigRequest request, Trace trace) {
         if ("*".equals(request.getConfigKey().getConfigId())) return Optional.of(ApplicationId.global().tenant());
+
         String hostname = request.getClientHostName();
         ApplicationId applicationId = hostRegistry.getApplicationId(hostname);
         if (applicationId == null) {
@@ -445,7 +433,6 @@ public class RpcServer implements Runnable, ConfigActivationListener, TenantList
         log.log(Level.FINE, () -> TenantRepository.logPre(tenant) +
                             "Tenant deleted, removing request handler and cleaning host registry");
         tenants.remove(tenant);
-        hostRegistry.removeHosts(tenant);
     }
 
     @Override
