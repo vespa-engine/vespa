@@ -58,7 +58,6 @@ public class EntityBindingsMapper {
                 entity.ipAddresses(),
                 IdentityType.fromId(entity.identityType()),
                 Optional.ofNullable(entity.clusterType()).map(ClusterType::from).orElse(null),
-                entity.ztsUrl(),
                 entity.unknownAttributes());
     }
 
@@ -75,7 +74,6 @@ public class EntityBindingsMapper {
                 model.ipAddresses(),
                 model.identityType().id(),
                 Optional.ofNullable(model.clusterType()).map(ClusterType::toConfigValue).orElse(null),
-                model.ztsUrl(),
                 model.unknownAttributes());
     }
 
