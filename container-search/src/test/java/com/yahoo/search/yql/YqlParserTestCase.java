@@ -44,11 +44,9 @@ import com.yahoo.search.query.Sorting.Order;
 import com.yahoo.search.query.Sorting.UcaSorter;
 import com.yahoo.search.query.parser.Parsable;
 import com.yahoo.search.query.parser.ParserEnvironment;
-import com.yahoo.search.query.parser.ParserFactory;
 
 import com.yahoo.search.searchchain.Execution;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.Timeout;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -68,7 +66,6 @@ public class YqlParserTestCase {
     private final YqlParser parser = new YqlParser(new ParserEnvironment());
 
     @Test
-    @Timeout(120_000)
     void failsGracefullyOnMissingQuoteEscapingAndSubsequentUnicodeCharacter() {
         assertParseFail("select * from bar where rank(ids contains 'http://en.wikipedia.org/wiki/Hors_d'œuvre') limit 10",
                 new IllegalInputException("com.yahoo.search.yql.ProgramCompileException: query:L1:79 token recognition error at: 'œ'"));

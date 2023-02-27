@@ -10,6 +10,8 @@ import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.Searcher;
 import com.yahoo.search.searchchain.Execution;
+import com.yahoo.search.yql.MinimalQueryInserter;
+import com.yahoo.yolean.chain.After;
 
 /**
  * Recursively replaces all instances of OrItems with WeakAndItems if the query property weakand.replace is true.
@@ -17,6 +19,7 @@ import com.yahoo.search.searchchain.Execution;
  *
  * @author karowan
  */
+@After(MinimalQueryInserter.EXTERNAL_YQL)
 public class WeakAndReplacementSearcher extends Searcher {
     static final CompoundName WEAKAND_REPLACE = new CompoundName("weakAnd.replace");
     static final CompoundName WAND_HITS = new CompoundName("wand.hits");
