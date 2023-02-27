@@ -249,6 +249,7 @@ public class ConfigServerApiImpl implements ConfigServerApi {
         return HttpClientBuilder.create()
                 .setDefaultRequestConfig(DEFAULT_REQUEST_CONFIG)
                 .disableAutomaticRetries()
+                .disableConnectionState() // Share connections between subsequent requests.
                 .setUserAgent("node-admin")
                 .setConnectionManager(cm)
                 .build();
