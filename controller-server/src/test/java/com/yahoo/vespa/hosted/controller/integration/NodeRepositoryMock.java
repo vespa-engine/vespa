@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.controller.integration;
 import com.yahoo.collections.Pair;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.NodeResources;
@@ -11,8 +12,10 @@ import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
+import com.yahoo.vespa.hosted.controller.api.integration.archive.ArchiveUriUpdate;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Application;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ApplicationStats;
+import com.yahoo.vespa.hosted.controller.api.integration.configserver.ArchiveUris;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Load;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.NodeFilter;
@@ -22,6 +25,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.configserver.TargetVers
 import com.yahoo.vespa.hosted.controller.api.integration.noderepository.ApplicationPatch;
 
 import java.net.URI;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -41,7 +45,7 @@ public class NodeRepositoryMock implements NodeRepository {
     private final Map<ZoneId, TargetVersions> targetVersions = new ConcurrentHashMap<>();
     private final Map<DeploymentId, Pair<Double, Double>> trafficFractions = new ConcurrentHashMap<>();
     private final Map<DeploymentClusterId, BcpGroupInfo> bcpGroupInfos = new ConcurrentHashMap<>();
-    private final Map<ZoneId, Map<TenantName, URI>> archiveUris = new ConcurrentHashMap<>();
+    private final Map<ZoneId, ArchiveUris> archiveUris = new ConcurrentHashMap<>();
 
     private boolean allowPatching = true;
     private boolean hasSpareCapacity = false;
@@ -118,18 +122,26 @@ public class NodeRepositoryMock implements NodeRepository {
     }
 
     @Override
-    public Map<TenantName, URI> getArchiveUris(ZoneId zone) {
-        return Map.copyOf(archiveUris.getOrDefault(zone, Map.of()));
+    public ArchiveUris getArchiveUris(ZoneId zone) {
+        return archiveUris.getOrDefault(zone, ArchiveUris.EMPTY);
     }
 
     @Override
-    public void setArchiveUri(ZoneId zone, TenantName tenantName, URI archiveUri) {
-        archiveUris.computeIfAbsent(zone, z -> new ConcurrentHashMap<>()).put(tenantName, archiveUri);
-    }
-
-    @Override
-    public void removeArchiveUri(ZoneId zone, TenantName tenantName) {
-        Optional.ofNullable(archiveUris.get(zone)).ifPresent(map -> map.remove(tenantName));
+    public void updateArchiveUri(ZoneId zone, ArchiveUriUpdate update) {
+        archiveUris.compute(zone, (z, prev) -> {
+            prev = prev == null ? ArchiveUris.EMPTY : prev;
+            if (update.tenantName().isPresent()) {
+                Map<TenantName, URI> updated = new HashMap<>(prev.tenantArchiveUris());
+                update.archiveUri().ifPresentOrElse(uri -> updated.put(update.tenantName().get(), uri),
+                                                    () -> updated.remove(update.tenantName().get()));
+                return new ArchiveUris(updated, prev.accountArchiveUris());
+            } else {
+                Map<CloudAccount, URI> updated = new HashMap<>(prev.accountArchiveUris());
+                update.archiveUri().ifPresentOrElse(uri -> updated.put(update.cloudAccount().get(), uri),
+                                                    () -> updated.remove(update.cloudAccount().get()));
+                return new ArchiveUris(prev.tenantArchiveUris(), updated);
+            }
+        });
     }
 
     @Override

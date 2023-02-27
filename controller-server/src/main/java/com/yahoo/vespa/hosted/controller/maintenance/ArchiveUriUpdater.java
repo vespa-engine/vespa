@@ -5,12 +5,13 @@ import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.ApplicationController;
 import com.yahoo.vespa.hosted.controller.Controller;
+import com.yahoo.vespa.hosted.controller.api.integration.archive.ArchiveUriUpdate;
+import com.yahoo.vespa.hosted.controller.api.integration.configserver.ArchiveUris;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.NodeRepository;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
 import com.yahoo.vespa.hosted.controller.archive.CuratorArchiveBucketDb;
 import com.yahoo.yolean.Exceptions;
 
-import java.net.URI;
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -56,17 +57,19 @@ public class ArchiveUriUpdater extends ControllerMaintainer {
         int failures = 0;
         for (ZoneId zone : tenantsByZone.keySet()) {
             try {
-                Map<TenantName, URI> zoneArchiveUris = nodeRepository.getArchiveUris(zone);
+                ArchiveUris zoneArchiveUris = nodeRepository.getArchiveUris(zone);
 
                 for (TenantName tenant : tenantsByZone.get(zone)) {
                     archiveBucketDb.archiveUriFor(zone, tenant, true)
-                            .filter(uri -> !uri.equals(zoneArchiveUris.get(tenant)))
-                            .ifPresent(uri -> nodeRepository.setArchiveUri(zone, tenant, uri));
+                            .filter(uri -> !uri.equals(zoneArchiveUris.tenantArchiveUris().get(tenant)))
+                            .ifPresent(uri -> nodeRepository.updateArchiveUri(zone, ArchiveUriUpdate.setArchiveUriFor(tenant, uri)));
                 }
 
-                zoneArchiveUris.keySet().stream()
+                zoneArchiveUris.tenantArchiveUris().keySet().stream()
                         .filter(tenant -> !tenantsByZone.get(zone).contains(tenant))
-                        .forEach(tenant -> nodeRepository.removeArchiveUri(zone, tenant));
+                        .forEach(tenant -> nodeRepository.updateArchiveUri(zone, ArchiveUriUpdate.deleteArchiveUriFor(tenant)));
+
+                // TODO (freva): Update account archive URIs
             } catch (Exception e) {
                 log.log(Level.WARNING, "Failed to update archive URI in " + zone + ". Retrying in " + interval() + ". Error: " +
                         Exceptions.toMessageString(e));

@@ -1,12 +1,12 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.maintenance;
 
-import com.yahoo.component.Version;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.api.integration.archive.ArchiveBucket;
+import com.yahoo.vespa.hosted.controller.api.integration.archive.ArchiveUriUpdate;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.NodeRepository;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
@@ -62,7 +62,7 @@ public class ArchiveUriUpdaterTest {
 
     private void assertArchiveUris(Map<TenantName, String> expectedUris, ZoneId zone) {
         Map<TenantName, String> actualUris = tester.controller().serviceRegistry().configServer().nodeRepository()
-                .getArchiveUris(zone).entrySet().stream()
+                .getArchiveUris(zone).tenantArchiveUris().entrySet().stream()
                 .collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().toString()));
         assertEquals(expectedUris, actualUris);
     }
@@ -76,7 +76,7 @@ public class ArchiveUriUpdaterTest {
 
     private void setArchiveUriInNodeRepo(Map<TenantName, String> archiveUris, ZoneId zone) {
         NodeRepository nodeRepository = tester.controller().serviceRegistry().configServer().nodeRepository();
-        archiveUris.forEach((tenant, uri) -> nodeRepository.setArchiveUri(zone, tenant, URI.create(uri)));
+        archiveUris.forEach((tenant, uri) -> nodeRepository.updateArchiveUri(zone, ArchiveUriUpdate.setArchiveUriFor(tenant, URI.create(uri))));
     }
 
     private void deploy(DeploymentContext application, ZoneId zone) {
