@@ -7,7 +7,7 @@
 #include <vespa/searchlib/fef/test/labels.h>
 #include <vespa/searchlib/test/features/distance_closeness_fixture.h>
 #include <vespa/vespalib/stllike/asciistream.h>
-#include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/stringfmt.h>
 
 using search::feature_t;
@@ -23,60 +23,97 @@ const vespalib::string fieldFeatureName("closeness(bar)");
 
 using RankFixture = DistanceClosenessFixture;
 
-TEST_F("require that blueprint can be created from factory", BlueprintFactoryFixture) {
+TEST(NnsClosenessTest, require_that_blueprint_can_be_created_from_factory)
+{
+    BlueprintFactoryFixture f;
     Blueprint::SP bp = f.factory.createBlueprint("closeness");
     EXPECT_TRUE(bp.get() != 0);
     EXPECT_TRUE(dynamic_cast<ClosenessBlueprint*>(bp.get()) != 0);
 }
 
-TEST_FFF("require that no features are dumped", ClosenessBlueprint, IndexEnvironmentFixture, FeatureDumpFixture) {
+TEST(NnsClosenessTest, require_that_no_features_are_dumped)
+{
+    ClosenessBlueprint f1;
+    IndexEnvironmentFixture f2;
+    FeatureDumpFixture f3;
     f1.visitDumpFeatures(f2.indexEnv, f3);
 }
 
-TEST_FF("require that setup can be done on random label", ClosenessBlueprint, IndexEnvironmentFixture) {
+TEST(NnsClosenessTest, require_that_setup_can_be_done_on_random_label)
+{
+    ClosenessBlueprint f1;
+    IndexEnvironmentFixture f2;
     DummyDependencyHandler deps(f1);
     f1.setName(vespalib::make_string("%s(label,random_label)", f1.getBaseName().c_str()));
     EXPECT_TRUE(static_cast<Blueprint&>(f1).setup(f2.indexEnv, std::vector<vespalib::string>{"label", "random_label"}));
 }
 
-TEST_FF("require that no label gives 0 closeness", NoLabel(), RankFixture(2, 2, f1, labelFeatureName)) {
-    EXPECT_EQUAL(0.0, f2.getScore(10));
+TEST(NnsClosenessTest, require_that_no_label_gives_0_closeness)
+{
+    NoLabel f1;
+    RankFixture f2(2, 2, f1, labelFeatureName);
+    ASSERT_FALSE(f2.failed());
+    EXPECT_EQ(0.0, f2.getScore(10));
 }
 
-TEST_FF("require that unrelated label gives 0 closeness", SingleLabel("unrelated", 1), RankFixture(2, 2, f1, labelFeatureName)) {
-    EXPECT_EQUAL(0.0, f2.getScore(10));
+TEST(NnsClosenessTest, require_that_unrelated_label_gives_0_closeness)
+{
+    SingleLabel f1("unrelated", 1);
+    RankFixture f2(2, 2, f1, labelFeatureName);
+    ASSERT_FALSE(f2.failed());
+    EXPECT_EQ(0.0, f2.getScore(10));
 }
 
-TEST_FF("require that labeled item raw score can be obtained", SingleLabel("nns", 1), RankFixture(2, 2, f1, labelFeatureName)) {
+TEST(NnsClosenessTest, require_that_labeled_item_raw_score_can_be_obtained)
+{
+    SingleLabel f1("nns", 1);
+    RankFixture f2(2, 2, f1, labelFeatureName);
+    ASSERT_FALSE(f2.failed());
     f2.setFooScore(0, 10, 5.0);
-    EXPECT_EQUAL(1/(1+5.0), f2.getScore(10));
+    EXPECT_EQ(1/(1+5.0), f2.getScore(10));
 }
 
-TEST_FF("require that field raw score can be obtained", NoLabel(), RankFixture(2, 2, f1, fieldFeatureName)) {
+TEST(NnsClosenessTest, require_that_field_raw_score_can_be_obtained)
+{
+    NoLabel f1;
+    RankFixture f2(2, 2, f1, fieldFeatureName);
+    ASSERT_FALSE(f2.failed());
     f2.setBarScore(0, 10, 5.0);
-    EXPECT_EQUAL(1/(1+5.0), f2.getScore(10));
+    EXPECT_EQ(1/(1+5.0), f2.getScore(10));
 }
 
-TEST_FF("require that other raw scores are ignored", SingleLabel("nns", 2), RankFixture(2, 2, f1, labelFeatureName)) {
+TEST(NnsClosenessTest, require_that_other_raw_scores_are_ignored)
+{
+    SingleLabel f1("nns", 2);
+    RankFixture f2(2, 2, f1, labelFeatureName);
+    ASSERT_FALSE(f2.failed());
     f2.setFooScore(0, 10, 1.0);
     f2.setFooScore(1, 10, 2.0);
     f2.setBarScore(0, 10, 5.0);
     f2.setBarScore(1, 10, 6.0);
-    EXPECT_EQUAL(1/(1+2.0), f2.getScore(10));
+    EXPECT_EQ(1/(1+2.0), f2.getScore(10));
 }
 
-TEST_FF("require that the correct raw score is used", NoLabel(), RankFixture(2, 2, f1, fieldFeatureName)) {
+TEST(NnsClosenessTest, require_that_the_correct_raw_score_is_used)
+{
+    NoLabel f1;
+    RankFixture f2(2, 2, f1, fieldFeatureName);
+    ASSERT_FALSE(f2.failed());
     f2.setFooScore(0, 10, 3.0);
     f2.setFooScore(1, 10, 4.0);
     f2.setBarScore(0, 10, 8.0);
     f2.setBarScore(1, 10, 7.0);
-    EXPECT_EQUAL(1/(1+7.0), f2.getScore(10));
+    EXPECT_EQ(1/(1+7.0), f2.getScore(10));
 }
 
-TEST_FF("require that stale data is ignored", SingleLabel("nns", 2), RankFixture(2, 2, f1, labelFeatureName)) {
+TEST(NnsClosenessTest, require_that_stale_data_is_ignored)
+{
+    SingleLabel f1("nns", 2);
+    RankFixture f2(2, 2, f1, labelFeatureName);
+    ASSERT_FALSE(f2.failed());
     f2.setFooScore(0, 10, 1.0);
     f2.setFooScore(1, 5, 2.0);
-    EXPECT_EQUAL(0, f2.getScore(10));
+    EXPECT_EQ(0, f2.getScore(10));
 }
 
 void
@@ -88,21 +125,25 @@ expect_raw_score_calculated_on_the_fly(RankFixture& f)
 
     // For docids 9 and 10 the raw score is calculated on the fly
     // using a distance calculator over the attribute and query tensors.
-    EXPECT_EQUAL(1/(1+13.0), f.getScore(8));
-    EXPECT_EQUAL(1/(1+(5.0-3.0)), f.getScore(9));
-    EXPECT_EQUAL(1/(1+(7.0-3.0)), f.getScore(10));
+    EXPECT_EQ(1/(1+13.0), f.getScore(8));
+    EXPECT_EQ(1/(1+(5.0-3.0)), f.getScore(9));
+    EXPECT_EQ(1/(1+(7.0-3.0)), f.getScore(10));
 }
 
-TEST_FF("raw score is calculated on the fly (using field setup)",
-        NoLabel(), RankFixture(0, 1, f1, fieldFeatureName, "tensor(x[2]):[3,11]"))
+TEST(NnsClosenessTest, raw_score_is_calculated_on_the_fly_using_field_setup)
 {
+    NoLabel f1;
+    RankFixture f2(0, 1, f1, fieldFeatureName, "tensor(x[2]):[3,11]");
+    ASSERT_FALSE(f2.failed());
     expect_raw_score_calculated_on_the_fly(f2);
 }
 
-TEST_FF("raw score is calculated on the fly (using label setup)",
-        SingleLabel("nns", 1), RankFixture(0, 1, f1, labelFeatureName, "tensor(x[2]):[3,11]"))
+TEST(NnsClosenessTest, raw_score_is_calculated_on_the_fly_using_label_setup)
 {
+    SingleLabel f1("nns", 1);
+    RankFixture f2(0, 1, f1, labelFeatureName, "tensor(x[2]):[3,11]");
+    ASSERT_FALSE(f2.failed());
     expect_raw_score_calculated_on_the_fly(f2);
 }
 
-TEST_MAIN() { TEST_RUN_ALL(); }
+GTEST_MAIN_RUN_ALL_TESTS()

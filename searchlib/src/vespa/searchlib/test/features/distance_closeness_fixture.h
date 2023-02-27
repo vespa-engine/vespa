@@ -8,7 +8,7 @@
 #include <vespa/searchlib/fef/test/indexenvironmentbuilder.h>
 #include <vespa/searchlib/fef/test/labels.h>
 #include <vespa/searchlib/fef/test/queryenvironment.h>
-#include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/gtest/gtest.h>
 
 using namespace search::fef;
 using namespace search::fef::test;
@@ -38,7 +38,7 @@ struct IndexEnvironmentFixture {
 
 struct FeatureDumpFixture : public IDumpFeatureVisitor {
     virtual void visitDumpFeature(const vespalib::string &) override {
-        TEST_ERROR("no features should be dumped");
+        FAIL() << "no features should be dumped";
     }
     FeatureDumpFixture() : IDumpFeatureVisitor() {}
     ~FeatureDumpFixture() override;
@@ -57,6 +57,7 @@ struct DistanceClosenessFixture : BlueprintFactoryFixture, IndexEnvironmentFixtu
     std::vector<TermFieldHandle> barHandles;
     std::shared_ptr<search::tensor::DenseTensorAttribute> tensor_attr;
     uint32_t docid_limit;
+    bool     _failed;
     DistanceClosenessFixture(size_t fooCnt, size_t barCnt,
                              const Labels &labels, const vespalib::string &featureName,
                              const vespalib::string& query_tensor = "");
@@ -72,13 +73,14 @@ struct DistanceClosenessFixture : BlueprintFactoryFixture, IndexEnvironmentFixtu
         match_data->resolveTermField(handle)->setRawScore(docId, score);
     }
     void setFooScore(uint32_t i, uint32_t docId, feature_t distance) {
-        ASSERT_LESS(i, fooHandles.size());
+        ASSERT_LT(i, fooHandles.size());
         setScore(fooHandles[i], docId, 1.0/(1.0+distance));
     }
     void setBarScore(uint32_t i, uint32_t docId, feature_t distance) {
-        ASSERT_LESS(i, barHandles.size());
+        ASSERT_LT(i, barHandles.size());
         setScore(barHandles[i], docId, 1.0/(1.0+distance));
     }
+    bool failed() const noexcept { return _failed; }
 };
 
 }
