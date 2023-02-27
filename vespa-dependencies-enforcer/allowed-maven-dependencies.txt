@@ -49,7 +49,7 @@ com.yahoo.athenz:athenz-zts-core:1.10.54
 com.yahoo.rdl:rdl-java:1.5.4
 commons-cli:commons-cli:1.5.0
 commons-codec:commons-codec:1.15
-commons-fileupload:commons-fileupload:1.4
+commons-fileupload:commons-fileupload:1.5
 commons-io:commons-io:2.11.0
 commons-logging:commons-logging:1.2
 io.airlift:airline:0.9
