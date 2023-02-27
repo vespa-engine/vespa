@@ -2,8 +2,8 @@
 package ai.vespa.models.evaluation;
 
 import ai.vespa.modelintegration.evaluator.OnnxEvaluator;
-import ai.vespa.modelintegration.evaluator.OnnxEvaluatorCache;
 import ai.vespa.modelintegration.evaluator.OnnxEvaluatorOptions;
+import ai.vespa.modelintegration.evaluator.OnnxRuntime;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
 
@@ -48,12 +48,12 @@ class OnnxModel implements AutoCloseable {
     final List<OutputSpec> outputSpecs = new ArrayList<>();
 
     void addInputMapping(String onnxName, String source) {
-        if (referencedEvaluator != null)
+        if (evaluator != null)
             throw new IllegalStateException("input mapping must be added before load()");
         inputSpecs.add(new InputSpec(onnxName, source));
     }
     void addOutputMapping(String onnxName, String outputAs) {
-        if (referencedEvaluator != null)
+        if (evaluator != null)
             throw new IllegalStateException("output mapping must be added before load()");
         outputSpecs.add(new OutputSpec(onnxName, outputAs));
     }
@@ -61,15 +61,15 @@ class OnnxModel implements AutoCloseable {
     private final String name;
     private final File modelFile;
     private final OnnxEvaluatorOptions options;
-    private final OnnxEvaluatorCache cache;
+    private final OnnxRuntime onnx;
 
-    private OnnxEvaluatorCache.ReferencedEvaluator referencedEvaluator;
+    private OnnxEvaluator evaluator;
 
-    OnnxModel(String name, File modelFile, OnnxEvaluatorOptions options, OnnxEvaluatorCache cache) {
+    OnnxModel(String name, File modelFile, OnnxEvaluatorOptions options, OnnxRuntime onnx) {
         this.name = name;
         this.modelFile = modelFile;
         this.options = options;
-        this.cache = cache;
+        this.onnx = onnx;
     }
 
     public String name() {
@@ -77,8 +77,8 @@ class OnnxModel implements AutoCloseable {
     }
 
     public void load() {
-        if (referencedEvaluator == null) {
-            referencedEvaluator = cache.evaluatorOf(modelFile.getPath(), options);
+        if (evaluator == null) {
+            evaluator = onnx.evaluatorOf(modelFile.getPath(), options);
             fillInputTypes(evaluator().getInputs());
             fillOutputTypes(evaluator().getOutputs());
         }
@@ -178,11 +178,11 @@ class OnnxModel implements AutoCloseable {
     }
 
     private OnnxEvaluator evaluator() {
-        if (referencedEvaluator == null) {
+        if (evaluator == null) {
             throw new IllegalStateException("ONNX model has not been loaded.");
         }
-        return referencedEvaluator.evaluator();
+        return evaluator;
     }
 
-    @Override public void close() { referencedEvaluator.close(); }
+    @Override public void close() { evaluator.close(); }
 }

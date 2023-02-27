@@ -5,15 +5,17 @@ package ai.vespa.modelintegration.evaluator;
 import ai.onnxruntime.NodeInfo;
 import ai.onnxruntime.OnnxTensor;
 import ai.onnxruntime.OnnxValue;
-import ai.onnxruntime.OrtEnvironment;
 import ai.onnxruntime.OrtException;
 import ai.onnxruntime.OrtSession;
+import ai.vespa.modelintegration.evaluator.OnnxRuntime.ReferencedOrtSession;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
 
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+
+import static ai.vespa.modelintegration.evaluator.OnnxRuntime.isCudaError;
 
 
 /**
@@ -23,24 +25,18 @@ import java.util.Map;
  */
 public class OnnxEvaluator implements AutoCloseable {
 
-    private final OrtEnvironment environment;
-    private final OrtSession session;
+    private final ReferencedOrtSession session;
 
-    public OnnxEvaluator(String modelPath) {
-        this(modelPath, null);
-    }
-
-    public OnnxEvaluator(String modelPath, OnnxEvaluatorOptions options) {
-        environment = OrtEnvironment.getEnvironment();
-        session = createSession(modelPath, environment, options, true);
+    OnnxEvaluator(String modelPath, OnnxEvaluatorOptions options, OnnxRuntime runtime) {
+        session = createSession(modelPath, runtime, options, true);
     }
 
     public Tensor evaluate(Map<String, Tensor> inputs, String output) {
         Map<String, OnnxTensor> onnxInputs = null;
         try {
             output = mapToInternalName(output);
-            onnxInputs = TensorConverter.toOnnxTensors(inputs, environment, session);
-            try (OrtSession.Result result = session.run(onnxInputs, Collections.singleton(output))) {
+            onnxInputs = TensorConverter.toOnnxTensors(inputs, OnnxRuntime.ortEnvironment(), session.instance());
+            try (OrtSession.Result result = session.instance().run(onnxInputs, Collections.singleton(output))) {
                 return TensorConverter.toVespaTensor(result.get(0));
             }
         } catch (OrtException e) {
@@ -55,9 +51,9 @@ public class OnnxEvaluator implements AutoCloseable {
     public Map<String, Tensor> evaluate(Map<String, Tensor> inputs) {
         Map<String, OnnxTensor> onnxInputs = null;
         try {
-            onnxInputs = TensorConverter.toOnnxTensors(inputs, environment, session);
+            onnxInputs = TensorConverter.toOnnxTensors(inputs, OnnxRuntime.ortEnvironment(), session.instance());
             Map<String, Tensor> outputs = new HashMap<>();
-            try (OrtSession.Result result = session.run(onnxInputs)) {
+            try (OrtSession.Result result = session.instance().run(onnxInputs)) {
                 for (Map.Entry<String, OnnxValue> output : result) {
                     String mapped = TensorConverter.asValidName(output.getKey());
                     outputs.put(mapped, TensorConverter.toVespaTensor(output.getValue()));
@@ -88,7 +84,7 @@ public class OnnxEvaluator implements AutoCloseable {
 
     public Map<String, IdAndType> getInputs() {
         try {
-            return toSpecMap(session.getInputInfo());
+            return toSpecMap(session.instance().getInputInfo());
         } catch (OrtException e) {
             throw new RuntimeException("ONNX Runtime exception", e);
         }
@@ -96,7 +92,7 @@ public class OnnxEvaluator implements AutoCloseable {
 
     public Map<String, IdAndType> getOutputs() {
         try {
-            return toSpecMap(session.getOutputInfo());
+            return toSpecMap(session.instance().getOutputInfo());
         } catch (OrtException e) {
             throw new RuntimeException("ONNX Runtime exception", e);
         }
@@ -104,7 +100,7 @@ public class OnnxEvaluator implements AutoCloseable {
 
     public Map<String, TensorType> getInputInfo() {
         try {
-            return TensorConverter.toVespaTypes(session.getInputInfo());
+            return TensorConverter.toVespaTypes(session.instance().getInputInfo());
         } catch (OrtException e) {
             throw new RuntimeException("ONNX Runtime exception", e);
         }
@@ -112,7 +108,7 @@ public class OnnxEvaluator implements AutoCloseable {
 
     public Map<String, TensorType> getOutputInfo() {
         try {
-            return TensorConverter.toVespaTypes(session.getOutputInfo());
+            return TensorConverter.toVespaTypes(session.instance().getOutputInfo());
         } catch (OrtException e) {
             throw new RuntimeException("ONNX Runtime exception", e);
         }
@@ -122,26 +118,26 @@ public class OnnxEvaluator implements AutoCloseable {
     public void close() throws IllegalStateException {
         try {
             session.close();
-        } catch (OrtException e) {
+        } catch (UncheckedOrtException e) {
             throw new IllegalStateException("Failed to close ONNX session", e);
         } catch (IllegalStateException e) {
             throw new IllegalStateException("Already closed", e);
         }
     }
 
-    private static OrtSession createSession(String modelPath, OrtEnvironment environment, OnnxEvaluatorOptions options, boolean tryCuda) {
+    private static ReferencedOrtSession createSession(String modelPath, OnnxRuntime runtime, OnnxEvaluatorOptions options, boolean tryCuda) {
         if (options == null) {
             options = new OnnxEvaluatorOptions();
         }
         try {
-            return environment.createSession(modelPath, options.getOptions(tryCuda && options.requestingGpu()));
+            return runtime.acquireSession(modelPath, options, tryCuda && options.requestingGpu());
         } catch (OrtException e) {
             if (e.getCode() == OrtException.OrtErrorCode.ORT_NO_SUCHFILE) {
                 throw new IllegalArgumentException("No such file: " + modelPath);
             }
             if (tryCuda && isCudaError(e) && !options.gpuDeviceRequired()) {
                 // Failed in CUDA native code, but GPU device is optional, so we can proceed without it
-                return createSession(modelPath, environment, options, false);
+                return createSession(modelPath, runtime, options, false);
             }
             if (isCudaError(e)) {
                 throw new IllegalArgumentException("GPU device is required, but CUDA initialization failed", e);
@@ -150,34 +146,8 @@ public class OnnxEvaluator implements AutoCloseable {
         }
     }
 
-    private static boolean isCudaError(OrtException e) {
-        return switch (e.getCode()) {
-            case ORT_FAIL -> e.getMessage().contains("cudaError");
-            case ORT_EP_FAIL -> e.getMessage().contains("Failed to find CUDA");
-            default -> false;
-        };
-    }
-
-    public static boolean isRuntimeAvailable() {
-        return isRuntimeAvailable("");
-    }
-
-    public static boolean isRuntimeAvailable(String modelPath) {
-        try {
-            new OnnxEvaluator(modelPath);
-            return true;
-        } catch (IllegalArgumentException e) {
-            if (e.getMessage().equals("No such file: ")) {
-                return true;
-            }
-            return false;
-        } catch (UnsatisfiedLinkError | RuntimeException | NoClassDefFoundError e) {
-            return false;
-        }
-    }
-
     private String mapToInternalName(String outputName) throws OrtException {
-        var info = session.getOutputInfo();
+        var info = session.instance().getOutputInfo();
         var internalNames = info.keySet();
         for (String name : internalNames) {
             if (name.equals(outputName)) {

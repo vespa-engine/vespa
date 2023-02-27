@@ -1,19 +1,5 @@
 package ai.vespa.embedding.huggingface;
 
-import ai.vespa.modelintegration.evaluator.OnnxEvaluator;
-import com.yahoo.config.ModelReference;
-import com.yahoo.tensor.Tensor;
-import com.yahoo.tensor.TensorType;
-import org.junit.Test;
-
-import com.yahoo.embedding.huggingface.HuggingFaceEmbedderConfig;
-
-import java.io.IOException;
-import java.util.List;
-
-import static org.junit.Assume.assumeTrue;
-import static org.junit.Assert.assertEquals;
-
 public class HuggingFaceEmbedderTest {
 /*
     @Test
@@ -21,7 +7,7 @@ public class HuggingFaceEmbedderTest {
 
         String modelPath = "src/test/models/hf/model.onnx";
         String tokenizerPath = "src/test/models/hf/tokenizer.json";
-        assumeTrue(OnnxEvaluator.isRuntimeAvailable(modelPath));
+        assumeTrue(OnnxRuntime.isRuntimeAvailable(modelPath));
 
         HuggingFaceEmbedderConfig.Builder builder = new HuggingFaceEmbedderConfig.Builder();
         builder.tokenizerPath(ModelReference.valueOf(tokenizerPath));

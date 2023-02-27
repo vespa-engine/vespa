@@ -1,8 +1,8 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.models.evaluation;
 
-import ai.vespa.modelintegration.evaluator.OnnxEvaluatorCache;
 import ai.vespa.modelintegration.evaluator.OnnxEvaluatorOptions;
+import ai.vespa.modelintegration.evaluator.OnnxRuntime;
 import com.yahoo.collections.Pair;
 import com.yahoo.config.FileReference;
 import com.yahoo.filedistribution.fileacquirer.FileAcquirer;
@@ -47,11 +47,11 @@ import java.util.regex.Pattern;
 public class RankProfilesConfigImporter {
 
     private final FileAcquirer fileAcquirer;
-    private final OnnxEvaluatorCache onnxEvaluatorCache;
+    private final OnnxRuntime onnx;
 
-    public RankProfilesConfigImporter(FileAcquirer fileAcquirer, OnnxEvaluatorCache onnxEvaluatorCache) {
+    public RankProfilesConfigImporter(FileAcquirer fileAcquirer, OnnxRuntime onnx) {
         this.fileAcquirer = fileAcquirer;
-        this.onnxEvaluatorCache = onnxEvaluatorCache;
+        this.onnx = onnx;
     }
 
     /**
@@ -198,7 +198,7 @@ public class RankProfilesConfigImporter {
             options.setInterOpThreads(onnxModelConfig.stateless_interop_threads());
             options.setIntraOpThreads(onnxModelConfig.stateless_intraop_threads());
             options.setGpuDevice(onnxModelConfig.gpu_device(), onnxModelConfig.gpu_device_required());
-            var m =  new OnnxModel(name, file, options, onnxEvaluatorCache);
+            var m =  new OnnxModel(name, file, options, onnx);
             for (var spec : onnxModelConfig.input()) {
                 m.addInputMapping(spec.name(), spec.source());
             }

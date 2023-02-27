@@ -1,7 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.models.evaluation;
 
-import ai.vespa.modelintegration.evaluator.OnnxEvaluatorCache;
+import ai.vespa.modelintegration.evaluator.OnnxRuntime;
 import com.yahoo.config.FileReference;
 import com.yahoo.filedistribution.fileacquirer.FileAcquirer;
 import com.yahoo.io.GrowableByteBuffer;
@@ -25,7 +25,7 @@ public class RankProfilesConfigImporterWithMockedConstants extends RankProfilesC
     private final Path constantsPath;
 
     public RankProfilesConfigImporterWithMockedConstants(Path constantsPath, FileAcquirer fileAcquirer) {
-        super(fileAcquirer, new OnnxEvaluatorCache());
+        super(fileAcquirer, new OnnxRuntime());
         this.constantsPath = constantsPath;
     }
 
