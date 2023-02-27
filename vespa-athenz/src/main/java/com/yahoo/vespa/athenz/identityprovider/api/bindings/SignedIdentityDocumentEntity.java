@@ -17,7 +17,7 @@ import java.util.Set;
 public record SignedIdentityDocumentEntity(
         String signature, int signingKeyVersion, String providerUniqueId, String providerService, int documentVersion,
         String configServerHostname, String instanceHostname, Instant createdAt, Set<String> ipAddresses,
-        String identityType, String clusterType, String ztsUrl, Map<String, Object> unknownAttributes) {
+        String identityType, String clusterType, Map<String, Object> unknownAttributes) {
 
     @JsonCreator
     public SignedIdentityDocumentEntity(@JsonProperty("signature") String signature,
@@ -30,10 +30,9 @@ public record SignedIdentityDocumentEntity(
                                         @JsonProperty("created-at") Instant createdAt,
                                         @JsonProperty("ip-addresses") Set<String> ipAddresses,
                                         @JsonProperty("identity-type") String identityType,
-                                        @JsonProperty("cluster-type") String clusterType,
-                                        @JsonProperty("zts-url") String ztsUrl) {
+                                        @JsonProperty("cluster-type") String clusterType) {
         this(signature, signingKeyVersion, providerUniqueId, providerService, documentVersion, configServerHostname,
-             instanceHostname, createdAt, ipAddresses, identityType, clusterType, ztsUrl, new HashMap<>());
+             instanceHostname, createdAt, ipAddresses, identityType, clusterType, new HashMap<>());
     }
 
     @JsonProperty("signature") @Override public String signature() { return signature; }
@@ -47,7 +46,6 @@ public record SignedIdentityDocumentEntity(
     @JsonProperty("ip-addresses") @Override public Set<String> ipAddresses() { return ipAddresses; }
     @JsonProperty("identity-type") @Override public String identityType() { return identityType; }
     @JsonProperty("cluster-type") @Override public String clusterType() { return clusterType; }
-    @JsonProperty("zts-url") @Override public String ztsUrl() { return ztsUrl; }
     @JsonAnyGetter @Override public Map<String, Object> unknownAttributes() { return unknownAttributes; }
     @JsonAnySetter public void set(String name, Object value) { unknownAttributes.put(name, value); }
 }
