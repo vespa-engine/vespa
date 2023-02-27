@@ -28,7 +28,7 @@ import com.yahoo.vespa.hosted.provision.persistence.CuratorDb;
 import com.yahoo.vespa.hosted.provision.persistence.DnsNameResolver;
 import com.yahoo.vespa.hosted.provision.persistence.JobControlFlags;
 import com.yahoo.vespa.hosted.provision.persistence.NameResolver;
-import com.yahoo.vespa.hosted.provision.provisioning.ArchiveUris;
+import com.yahoo.vespa.hosted.provision.archive.ArchiveUriManager;
 import com.yahoo.vespa.hosted.provision.provisioning.ContainerImages;
 import com.yahoo.vespa.hosted.provision.provisioning.FirmwareChecks;
 import com.yahoo.vespa.hosted.provision.provisioning.HostResourcesCalculator;
@@ -57,7 +57,7 @@ public class NodeRepository extends AbstractComponent {
     private final InfrastructureVersions infrastructureVersions;
     private final FirmwareChecks firmwareChecks;
     private final ContainerImages containerImages;
-    private final ArchiveUris archiveUris;
+    private final ArchiveUriManager archiveUriManager;
     private final JobControl jobControl;
     private final Applications applications;
     private final LoadBalancers loadBalancers;
@@ -134,7 +134,7 @@ public class NodeRepository extends AbstractComponent {
         this.infrastructureVersions = new InfrastructureVersions(db);
         this.firmwareChecks = new FirmwareChecks(db, clock);
         this.containerImages = new ContainerImages(containerImage, tenantContainerImage, tenantGpuContainerImage);
-        this.archiveUris = new ArchiveUris(db, zone);
+        this.archiveUriManager = new ArchiveUriManager(db, zone);
         this.jobControl = new JobControl(new JobControlFlags(db, flagSource));
         this.loadBalancers = new LoadBalancers(db);
         this.metricsDb = metricsDb;
@@ -166,7 +166,7 @@ public class NodeRepository extends AbstractComponent {
     public ContainerImages containerImages() { return containerImages; }
 
     /** Returns the archive URIs to use for nodes in this. */
-    public ArchiveUris archiveUris() { return archiveUris; }
+    public ArchiveUriManager archiveUriManager() { return archiveUriManager; }
 
     /** Returns the status of maintenance jobs managed by this. */
     public JobControl jobControl() { return jobControl; }

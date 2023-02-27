@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.provision.testutils;
 
 import com.yahoo.config.provision.CloudAccount;
+import com.yahoo.config.provision.SystemName;
 
 /**
  * For running NodeRepository API with some mocked data.
@@ -11,11 +12,14 @@ import com.yahoo.config.provision.CloudAccount;
  */
 public class ContainerConfig {
 
-    public static String servicesXmlV2(int port, CloudAccount cloudAccount) {
+    public static String servicesXmlV2(int port, SystemName systemName, CloudAccount cloudAccount) {
         return """
                <container version='1.0'>
                  <config name="container.handler.threadpool">
                    <maxthreads>20</maxthreads>
+                 </config>
+                 <config name="cloud.config.configserver">
+                   <system>%s</system>
                  </config>
                  <config name="config.provisioning.cloud">
                    <account>%s</account>
@@ -47,7 +51,7 @@ public class ContainerConfig {
                    <server id='myServer' port='%s'/>
                  </http>
                </container>
-               """.formatted(cloudAccount.value(), port);
+               """.formatted(systemName.value(), cloudAccount.value(), port);
     }
 
 }

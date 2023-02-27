@@ -6,6 +6,7 @@ import com.yahoo.application.container.JDisc;
 import com.yahoo.application.container.handler.Request;
 import com.yahoo.application.container.handler.Response;
 import com.yahoo.config.provision.CloudAccount;
+import com.yahoo.config.provision.SystemName;
 import com.yahoo.io.IOUtils;
 import com.yahoo.vespa.hosted.provision.testutils.ContainerConfig;
 import org.junit.ComparisonFailure;
@@ -25,8 +26,8 @@ public class RestApiTester {
 
     private final JDisc container;
 
-    public RestApiTester(CloudAccount defaultCloudAccount) {
-        container = JDisc.fromServicesXml(ContainerConfig.servicesXmlV2(0, defaultCloudAccount), Networking.disable);
+    public RestApiTester(SystemName systemName, CloudAccount defaultCloudAccount) {
+        container = JDisc.fromServicesXml(ContainerConfig.servicesXmlV2(0, systemName, defaultCloudAccount), Networking.disable);
     }
 
     public void close() {
