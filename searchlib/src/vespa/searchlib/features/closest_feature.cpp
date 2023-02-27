@@ -231,21 +231,7 @@ ClosestBlueprint::setup(const fef::IIndexEnvironment & env, const fef::Parameter
         _item_label = params[1].getValue();
     }
     auto fi = env.getFieldByName(_field_name);
-    if (fi == nullptr) {
-        LOG(error, "%s: Unknown field %s", getName().c_str(), _field_name.c_str());
-        return false;
-    }
-    auto dt = fi->get_data_type();
-    auto ct = fi->collection();
-    if (dt != search::index::schema::DataType::TENSOR ||
-        ct != search::index::schema::CollectionType::SINGLE) {
-        LOG(error, "%s: Field %s is not a single value tensor field", getName().c_str(), _field_name.c_str());
-        return false;
-    }
-    if (!fi->hasAttribute()) {
-        LOG(error, "%s: Field %s does not have an attribute", getName().c_str(), _field_name.c_str());
-        return false;
-    }
+    assert(fi != nullptr);
     vespalib::string attr_type_spec = type::Attribute::lookup(env.getProperties(), _field_name);
     if (attr_type_spec.empty()) {
         LOG(error, "%s: Field %s lacks a type in index properties", getName().c_str(), _field_name.c_str());

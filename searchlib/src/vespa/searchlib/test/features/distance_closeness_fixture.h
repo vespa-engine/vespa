@@ -33,6 +33,7 @@ struct IndexEnvironmentFixture {
         IndexEnvironmentBuilder builder(indexEnv);
         builder.addField(FieldType::ATTRIBUTE, FieldInfo::CollectionType::SINGLE, FieldInfo::DataType::INT64, "foo");
         builder.addField(FieldType::ATTRIBUTE, FieldInfo::CollectionType::SINGLE, FieldInfo::DataType::TENSOR, "bar");
+        builder.addField(FieldType::INDEX, FieldInfo::CollectionType::SINGLE, FieldInfo::DataType::TENSOR, "ibar");
     }
 };
 

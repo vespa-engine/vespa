@@ -11,7 +11,7 @@
 #include <vespa/searchlib/test/features/distance_closeness_fixture.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/gtest/gtest.h>
-#include <vespa/vespalib/util/stringfmt.h>
+#include <vespa/vespalib/stllike/asciistream.h>
 
 using search::feature_t;
 using search::features::test::BlueprintFactoryFixture;
@@ -64,6 +64,30 @@ std::ostream& operator<<(std::ostream& os, const TestParam param)
     return os;
 }
 
+void
+assert_setup(vespalib::string field_name,
+             bool exp_setup_result,
+             std::optional<vespalib::string> attr_type_spec,
+             std::optional<vespalib::string> label)
+{
+    vespalib::asciistream feature_name;
+    std::vector<vespalib::string> setup_args;
+    ClosestBlueprint f1;
+    IndexEnvironmentFixture f2;
+    DummyDependencyHandler deps(f1);
+    setup_args.emplace_back(field_name);
+    feature_name << f1.getBaseName() << "(" << field_name;
+    if (label.has_value()) {
+        feature_name << "," << label.value();
+        setup_args.emplace_back(label.value());
+    }
+    feature_name << ")";
+    f1.setName(feature_name.str());
+    if (attr_type_spec.has_value()) {
+        search::fef::indexproperties::type::Attribute::set(f2.indexEnv.getProperties(), field_name, attr_type_spec.value());
+    }
+    EXPECT_EQ(exp_setup_result, static_cast<Blueprint&>(f1).setup(f2.indexEnv, setup_args));
+}
 
 class ClosestTest : public ::testing::TestWithParam<TestParam>
 {
@@ -120,6 +144,41 @@ TEST(ClosestTest, require_that_no_features_are_dumped)
     IndexEnvironmentFixture f2;
     FeatureDumpFixture f3;
     f1.visitDumpFeatures(f2.indexEnv, f3);
+}
+
+TEST(ClosestTest, require_that_setup_fails_for_unknown_field)
+{
+    assert_setup("random_field", false, mixed_tensor_type, std::nullopt);
+}
+
+TEST(ClosestTest, require_that_setup_fails_if_field_type_is_not_attribute)
+{
+    assert_setup("ibar", false, sparse_tensor_type, std::nullopt);
+}
+
+TEST(ClosestTest, require_that_setup_fails_if_field_data_type_is_not_tensor)
+{
+    assert_setup("foo", false, sparse_tensor_type, std::nullopt);
+}
+
+TEST(ClosestTest, require_that_setup_can_be_done_on_random_label)
+{
+    assert_setup("bar", true, mixed_tensor_type, "random_label");
+}
+
+TEST(ClosestTest, require_that_setup_fails_if_tensor_type_is_missing)
+{
+    assert_setup("bar", false, std::nullopt, std::nullopt);
+}
+
+TEST(ClosestTest, require_that_setup_fails_if_tensor_type_is_dense)
+{
+    assert_setup("bar", false, dense_tensor_type, std::nullopt);
+}
+
+TEST(ClosestTest, require_that_setup_fails_if_tensor_type_is_sparse)
+{
+    assert_setup("bar", false, sparse_tensor_type, std::nullopt);
 }
 
 TEST_P(ClosestTest, require_that_no_label_gives_empty_result)
