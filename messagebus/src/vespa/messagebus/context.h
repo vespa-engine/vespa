@@ -17,11 +17,10 @@ struct Context
 {
     /**
      * This is a region of memory that can be interpreted as either an
-     * integer, a floating-point number or a pointer.
+     * integer or a pointer.
      **/
     union {
         uint64_t UINT64;
-        double   DOUBLE;
         void    *PTR;
     } value;
 
@@ -36,13 +35,6 @@ struct Context
      * @param v the value
      **/
     Context(uint64_t v) { value.UINT64 = v; }
-
-    /**
-     * Create a context from a floating-point number
-     *
-     * @param v the value
-     **/
-    Context(double v) { value.DOUBLE = v; }
 
     /**
      * Create a context from a pointer

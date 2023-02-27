@@ -15,7 +15,7 @@ public:
     /**
      * Virtual destructor required for inheritance.
      */
-    virtual ~IDiscardHandler() { }
+    virtual ~IDiscardHandler() = default;
 
     /**
      * This method is invoked by message bus when a routable is being

@@ -9,58 +9,59 @@
 
 using namespace mbus;
 
-struct MyGate : public ReplyGate
-{
+namespace {
+
+struct MyGate : public ReplyGate {
     static int ctorCnt;
     static int dtorCnt;
+
     MyGate(IMessageHandler &sender) : ReplyGate(sender) {
         ++ctorCnt;
     }
-    virtual ~MyGate() {
+
+    ~MyGate() override {
         ++dtorCnt;
     }
 };
+
 int MyGate::ctorCnt = 0;
 int MyGate::dtorCnt = 0;
 
-struct MyReply : public EmptyReply
-{
+struct MyReply : public EmptyReply {
     static int ctorCnt;
     static int dtorCnt;
+
     MyReply() : EmptyReply() {
         ++ctorCnt;
     }
-    virtual ~MyReply() {
+
+    ~MyReply() override {
         ++dtorCnt;
     }
 };
+
 int MyReply::ctorCnt = 0;
 int MyReply::dtorCnt = 0;
 
-struct MySender : public IMessageHandler
-{
+struct MySender : public IMessageHandler {
     // giving a sync reply here is against the API contract, but it is
     // ok for testing.
     void handleMessage(Message::UP msg) override {
-        Reply::UP reply(new MyReply());
+        auto reply = std::make_unique<MyReply>();
         msg->swapState(*reply);
         IReplyHandler &handler = reply->getCallStack().pop(*reply);
         handler.handleReply(std::move(reply));
     }
 };
+}
 
-TEST_SETUP(Test);
-
-int
-Test::Main()
-{
-    TEST_INIT("replygate_test");
+TEST("replygate_test") {
     {
         RoutableQueue q;
         MySender      sender;
         MyGate       *gate = new MyGate(sender);
         {
-            Message::UP msg(new SimpleMessage("test"));
+            auto msg = std::make_unique<SimpleMessage>("test");
             msg->pushHandler(q);
             gate->handleMessage(std::move(msg));
         }
@@ -69,7 +70,7 @@ Test::Main()
         EXPECT_TRUE(MyReply::dtorCnt == 0);
         gate->close();
         {
-            Message::UP msg(new SimpleMessage("test"));
+            auto msg = std::make_unique<SimpleMessage>("test");
             msg->pushHandler(q);
             gate->handleMessage(std::move(msg));
         }
@@ -84,5 +85,6 @@ Test::Main()
     }
     EXPECT_TRUE(MyReply::ctorCnt == 2);
     EXPECT_TRUE(MyReply::dtorCnt == 2);
-    TEST_DONE();
 }
+
+TEST_MAIN() { TEST_RUN_ALL(); }

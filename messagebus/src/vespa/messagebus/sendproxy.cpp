@@ -29,7 +29,7 @@ SendProxy::handleMessage(Message::UP msg)
         }
     }
     _msg = std::move(msg);
-    _root.reset(new RoutingNode(_mbus, _net, _resender, *this, *_msg, this));
+    _root = std::make_unique<RoutingNode>(_mbus, _net, _resender, *this, *_msg, this);
     _root->send();
 }
 
