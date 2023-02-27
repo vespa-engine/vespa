@@ -31,4 +31,22 @@ public class RankProfileImportingTest {
                                    "4 * (match + rankBoost)", macros);
     }
 
+    @Test
+    public void testImportingSimpleGlobalPhase() {
+        ModelTester tester = new ModelTester("src/test/resources/config/dotproduct/");
+        assertEquals(1, tester.models().size());
+        Model m = tester.models().get("default");
+        assertEquals("default", m.name());
+        assertEquals(1, m.functions().size());
+        tester.assertFunction("globalphase", "reduce(attribute(aa) * query(zz), sum)", m);
+        var f = m.functions().get(0);
+        assertEquals("globalphase", f.getName());
+        assertEquals(2, f.arguments().size());
+        assertEquals("tensor(d0[3])", f.getArgumentType("query(zz)").toString());
+        assertEquals("tensor(d0[3])", f.getArgumentType("attribute(aa)").toString());
+        var rt = f.returnType();
+        assertEquals(true, rt.isPresent());
+        assertEquals("tensor()", rt.get().toString());
+    }
+
 }
