@@ -13,10 +13,7 @@ private:
 
       Progress(true, "FastOS_DirectoryScan %d", sizeof(FastOS_DirectoryScan));
       Progress(true, "FastOS_File:         %d", sizeof(FastOS_File));
-      Progress(true, "FastOS_Runnable      %d", sizeof(FastOS_Runnable));
       Progress(true, "FastOS_StatInfo      %d", sizeof(FastOS_StatInfo));
-      Progress(true, "FastOS_Thread:       %d", sizeof(FastOS_Thread));
-      Progress(true, "FastOS_ThreadPool:   %d", sizeof(FastOS_ThreadPool));
 
       PrintSeparator();
    }

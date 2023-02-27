@@ -4,9 +4,7 @@ vespa_add_library(fastos_objects OBJECT
     file.cpp
     file_rw_ops.cpp
     linux_file.cpp
-    thread.cpp
     unix_file.cpp
-    unix_thread.cpp
 )
   
 vespa_add_library(fastos
