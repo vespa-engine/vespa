@@ -85,12 +85,12 @@ ClosestTest::~ClosestTest() = default;
 void
 ClosestTest::assert_closest(const Labels& labels, const vespalib::string& feature_name, const vespalib::string& query_tensor, const TensorSpec& exp_spec)
 {
-    RankFixture f2(mixed_tensor_type, direct_tensor(), 0, 1, labels, feature_name,
-                   dense_tensor_type + ":" + query_tensor);
-    ASSERT_FALSE(f2.failed());
+    RankFixture f(mixed_tensor_type, direct_tensor(), 0, 1, labels, feature_name,
+                  dense_tensor_type + ":" + query_tensor);
+    ASSERT_FALSE(f.failed());
     SCOPED_TRACE(query_tensor);
-    f2.set_attribute_tensor(9, doc_tensor);
-    EXPECT_EQ(exp_spec, get_spec(f2, 9));
+    f.set_attribute_tensor(9, doc_tensor);
+    EXPECT_EQ(exp_spec, get_spec(f, 9));
 }
 
 void
@@ -109,8 +109,8 @@ INSTANTIATE_TEST_SUITE_P(ClosestMultiTest,
 TEST(ClosestTest, require_that_blueprint_can_be_created_from_factory)
 {
     BlueprintFactoryFixture f;
-    Blueprint::SP bp = f.factory.createBlueprint("closest");
-    EXPECT_TRUE(bp.get() != 0);
+    auto bp = f.factory.createBlueprint("closest");
+    EXPECT_TRUE(bp);
     EXPECT_TRUE(dynamic_cast<ClosestBlueprint*>(bp.get()) != 0);
 }
 
@@ -124,26 +124,26 @@ TEST(ClosestTest, require_that_no_features_are_dumped)
 
 TEST_P(ClosestTest, require_that_no_label_gives_empty_result)
 {
-    NoLabel f1;
-    assert_closest(f1, field_and_label_feature_name, {no_subspace, no_subspace});
+    NoLabel f;
+    assert_closest(f, field_and_label_feature_name, {no_subspace, no_subspace});
 }
 
 TEST_P(ClosestTest, require_that_unrelated_label_gives_empty_result)
 {
-    SingleLabel f1("unrelated", 1);
-    assert_closest(f1, field_and_label_feature_name, {no_subspace, no_subspace});
+    SingleLabel f("unrelated", 1);
+    assert_closest(f, field_and_label_feature_name, {no_subspace, no_subspace});
 }
 
 TEST_P(ClosestTest, closest_using_field_setup)
 {
-    NoLabel f1;
-    assert_closest(f1, field_feature_name, {subspace_b, subspace_a});
+    NoLabel f;
+    assert_closest(f, field_feature_name, {subspace_b, subspace_a});
 }
 
 TEST_P(ClosestTest, closest_using_field_and_label_setup)
 {
-    SingleLabel f1("nns", 1);
-    assert_closest(f1, field_and_label_feature_name, {subspace_b, subspace_a});
+    SingleLabel f("nns", 1);
+    assert_closest(f, field_and_label_feature_name, {subspace_b, subspace_a});
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()

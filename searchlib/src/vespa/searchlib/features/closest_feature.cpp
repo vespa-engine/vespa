@@ -62,9 +62,6 @@ void setup_identity_cells(const ValueType& type, std::vector<char>& space, Typed
 
 namespace search::features {
 
-/**
- * Implements the executor for the closest feature.
- */
 class ClosestExecutor : public fef::FeatureExecutor {
 protected:
     DistanceCalculatorBundle _bundle;
@@ -78,6 +75,9 @@ public:
     static fef::FeatureExecutor& make(DistanceCalculatorBundle&& bundle, Value& empty_output, TypedCells identity, const ITensorAttribute& attr, vespalib::Stash& stash);
 };
 
+/**
+ * Implements the executor for the closest feature for SerializedFastValueAttribute.
+ */
 class ClosestSerializedExecutor : public ClosestExecutor {
 public:
     ClosestSerializedExecutor(DistanceCalculatorBundle&& bundle, Value& empty_output, TypedCells identity, const ITensorAttribute& attr);
@@ -85,6 +85,9 @@ public:
     void execute(uint32_t docId) override;
 };
 
+/**
+ * Implements the executor for the closest feature for DirectTensorAttribute.
+ */
 class ClosestDirectExecutor : public ClosestExecutor {
     SubspaceType            _subspace_type;
     std::vector<string_id>  _labels;
@@ -146,7 +149,7 @@ ClosestSerializedExecutor::execute(uint32_t docId)
 ClosestDirectExecutor::ClosestDirectExecutor(DistanceCalculatorBundle&& bundle, Value& empty_output, TypedCells identity, const ITensorAttribute& attr)
     : ClosestExecutor(std::move(bundle), empty_output, identity, attr),
       _subspace_type(attr.getTensorType()),
-      _labels(attr.getTensorType().count_mapped_dimensions()),
+      _labels(1),
       _label_ptrs(_labels.size())
 {
     for (size_t i = 0; i < _labels.size(); ++i) {
@@ -249,8 +252,8 @@ ClosestBlueprint::setup(const fef::IIndexEnvironment & env, const fef::Parameter
         return false;
     }
     _field_tensor_type = ValueType::from_spec(attr_type_spec);
-    if (_field_tensor_type.is_error() || _field_tensor_type.is_double() || _field_tensor_type.count_mapped_dimensions() == 0) {
-        LOG(error, "%s: Field %s invalid type: '%s'", getName().c_str(), _field_name.c_str(), attr_type_spec.c_str());
+    if (_field_tensor_type.is_error() || _field_tensor_type.is_double() || _field_tensor_type.count_mapped_dimensions() != 1 || _field_tensor_type.count_indexed_dimensions() != 1) {
+        LOG(error, "%s: Field %s has invalid type: '%s'", getName().c_str(), _field_name.c_str(), attr_type_spec.c_str());
         return false;
     }
     _output_tensor_type = ValueType::make_type(_field_tensor_type.cell_type(), _field_tensor_type.mapped_dimensions());
@@ -280,6 +283,11 @@ ClosestBlueprint::createExecutor(const fef::IQueryEnvironment &env, vespalib::St
     if (bundle.elements().empty()) {
         return ConstantTensorExecutor::createEmpty(_output_tensor_type, stash);
     } else {
+        for (const auto& elem : bundle.elements()) {
+            if (!elem.calc) {
+                return ConstantTensorExecutor::createEmpty(_output_tensor_type, stash);
+            }
+        }
         auto& attr = bundle.elements().front().calc->attribute_tensor();
         return ClosestExecutor::make(std::move(bundle), *_empty_output, _identity_cells, attr, stash);
     }
