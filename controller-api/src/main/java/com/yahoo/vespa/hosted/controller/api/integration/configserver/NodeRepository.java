@@ -5,15 +5,10 @@ import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.NodeType;
-import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.zone.ZoneId;
+import com.yahoo.vespa.hosted.controller.api.integration.archive.ArchiveUriUpdate;
 import com.yahoo.vespa.hosted.controller.api.integration.noderepository.ApplicationPatch;
 
-import javax.ws.rs.HeaderParam;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import java.net.URI;
 import java.util.List;
 import java.util.Map;
 
@@ -48,14 +43,11 @@ public interface NodeRepository {
     /** Get node statistics such as cost and load from given zone */
     NodeRepoStats getStats(ZoneId zone);
 
-    /** Get all archive URLs found in zone */
-    Map<TenantName, URI> getArchiveUris(ZoneId zone);
+    /** Get all archive URIs found in zone */
+    ArchiveUris getArchiveUris(ZoneId zone);
 
-    /** Update archive URL for given tenant */
-    void setArchiveUri(ZoneId zone, TenantName tenantName, URI archiveUri);
-
-    /** Remove archive URL for given tenant */
-    void removeArchiveUri(ZoneId zone, TenantName tenantName);
+    /** Update some archive URI in the given zone */
+    void updateArchiveUri(ZoneId zone, ArchiveUriUpdate archiveUriUpdate);
 
     /** Upgrade all nodes of given type to a new version */
     void upgrade(ZoneId zone, NodeType type, Version version, boolean allowDowngrade);

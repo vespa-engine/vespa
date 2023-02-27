@@ -16,6 +16,9 @@ public class ArchiveList {
         @JsonProperty("tenant")
         public String tenant;
 
+        @JsonProperty("account")
+        public String account;
+
         @JsonProperty("uri")
         public String uri;
     }
