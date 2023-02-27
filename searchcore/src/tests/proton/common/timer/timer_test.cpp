@@ -1,6 +1,5 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/thread.h>
 #include <vespa/fnet/transport.h>
 #include <vespa/searchcore/proton/common/scheduled_forward_executor.h>
 #include <vespa/searchcore/proton/common/scheduledexecutor.h>

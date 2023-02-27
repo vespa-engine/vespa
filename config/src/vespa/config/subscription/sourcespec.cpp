@@ -13,7 +13,6 @@
 #include <vespa/config/print/asciiconfigwriter.h>
 #include <vespa/vespalib/util/size_literals.h>
 #include <vespa/fnet/transport.h>
-#include <vespa/fastos/thread.h>
 #include <cassert>
 
 namespace config {

@@ -88,7 +88,6 @@ private:
 
     vespalib::CpuUtil                      _cpu_util;
     HwInfo                                 _hw_info;
-    FastOS_ThreadPool                    & _threadPool;
     FNET_Transport                       & _transport;
     const config::ConfigUri                _configUri;
     mutable std::shared_mutex              _mutex;
@@ -156,7 +155,7 @@ public:
     using UP = std::unique_ptr<Proton>;
     using SP = std::shared_ptr<Proton>;
 
-    Proton(FastOS_ThreadPool & threadPool, FNET_Transport & transport, const config::ConfigUri & configUri,
+    Proton(FNET_Transport & transport, const config::ConfigUri & configUri,
            const vespalib::string &progName, vespalib::duration subscribeTimeout);
     ~Proton() override;
 
@@ -193,7 +192,6 @@ public:
                   const std::shared_ptr<DocumentDBConfig> &documentDBConfig, InitializeThreads initializeThreads);
 
     metrics::MetricManager & getMetricManager();
-    FastOS_ThreadPool & getThreadPool() { return _threadPool; }
 
     bool triggerFlush();
     bool prepareRestart();

@@ -4,7 +4,6 @@
 #include <vespa/fnet/frt/supervisor.h>
 #include <vespa/fnet/frt/rpcrequest.h>
 #include <vespa/fnet/transport.h>
-#include <vespa/fastos/thread.h>
 #include <vespa/vespalib/util/stringfmt.h>
 
 using namespace config;

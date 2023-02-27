@@ -10,7 +10,6 @@
 #include <vespa/searchcore/proton/common/eventlogger.h>
 #include <vespa/searchlib/common/flush_token.h>
 #include <vespa/vespalib/util/cpu_usage.h>
-#include <thread>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.flushengine.flushengine");
@@ -86,7 +85,8 @@ FlushEngine::FlushEngine(std::shared_ptr<flushengine::ITlsStatsFactory> tlsStats
       _maxConcurrent(numThreads),
       _idleInterval(idleInterval),
       _taskId(0),
-      _threadPool(),
+      _thread(),
+      _has_thread(false),
       _strategy(std::move(strategy)),
       _priorityStrategy(),
       _executor(numThreads, CpuUsage::wrap(flush_engine_executor, CpuUsage::Category::COMPACT)),
@@ -111,9 +111,7 @@ FlushEngine::~FlushEngine()
 FlushEngine &
 FlushEngine::start()
 {
-    if (_threadPool.NewThread(this) == nullptr) {
-        throw vespalib::IllegalStateException("Failed to start engine thread.");
-    }
+    _thread = std::thread([this](){run();});
     return *this;
 }
 
@@ -127,7 +125,9 @@ FlushEngine::close()
         _closed = true;
         _cond.notify_all();
     }
-    _threadPool.Close();
+    if (_thread.joinable()) {
+        _thread.join();
+    }
     _executor.shutdown();
     _executor.sync();
     return *this;
@@ -168,8 +168,9 @@ FlushEngine::wait(vespalib::duration minimumWaitTimeIfReady, bool ignorePendingP
 }
 
 void
-FlushEngine::Run(FastOS_ThreadInterface *, void *)
+FlushEngine::run()
 {
+    _has_thread = true;
     bool shouldIdle = false;
     vespalib::string prevFlushName;
     while (wait(shouldIdle ? _idleInterval : vespalib::duration::zero(), false)) {
@@ -190,6 +191,7 @@ FlushEngine::Run(FastOS_ThreadInterface *, void *)
     }
     _executor.sync();
     prune();
+    _has_thread = false;
 }
 
 namespace {
