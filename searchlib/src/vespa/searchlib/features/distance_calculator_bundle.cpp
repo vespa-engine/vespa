@@ -115,6 +115,7 @@ DistanceCalculatorBundle::DistanceCalculatorBundle(const fef::IQueryEnvironment&
 }
 
 DistanceCalculatorBundle::DistanceCalculatorBundle(const fef::IQueryEnvironment& env,
+                                                   std::optional<uint32_t> field_id,
                                                    const vespalib::string& label,
                                                    const vespalib::string& feature_name)
     : _elems()
@@ -124,6 +125,9 @@ DistanceCalculatorBundle::DistanceCalculatorBundle(const fef::IQueryEnvironment&
         // expect numFields() == 1
         for (uint32_t i = 0; i < term->numFields(); ++i) {
             const auto& term_field = term->field(i);
+            if (field_id.has_value() && field_id.value() != term_field.getFieldId()) {
+                continue;
+            }
             TermFieldHandle handle = term_field.getHandle();
             if (handle != IllegalHandle) {
                 std::unique_ptr<DistanceCalculator> calc;

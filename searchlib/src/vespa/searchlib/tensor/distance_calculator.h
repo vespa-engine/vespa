@@ -65,9 +65,7 @@ public:
         return result;
     }
 
-    std::optional<uint32_t> calc_closest_subspace(VectorBundle vectors) {
-        double best_distance = 0.0;
-        std::optional<uint32_t> closest_subspace;
+    void calc_closest_subspace(VectorBundle vectors, std::optional<uint32_t>& closest_subspace, double& best_distance) {
         for (uint32_t i = 0; i < vectors.subspaces(); ++i) {
             double distance = _dist_fun->calc(_query_tensor_cells, vectors.cells(i));
             if (!closest_subspace.has_value() || distance < best_distance) {
@@ -75,6 +73,12 @@ public:
                 closest_subspace = i;
             }
         }
+    }
+
+    std::optional<uint32_t> calc_closest_subspace(VectorBundle vectors) {
+        double best_distance = 0.0;
+        std::optional<uint32_t> closest_subspace;
+        calc_closest_subspace(vectors, closest_subspace, best_distance);
         return closest_subspace;
     }
 

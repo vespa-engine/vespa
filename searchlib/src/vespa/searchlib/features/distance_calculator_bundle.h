@@ -5,6 +5,7 @@
 #include <vespa/searchlib/fef/handle.h>
 #include <vespa/vespalib/stllike/string.h>
 #include <memory>
+#include <optional>
 #include <vector>
 
 namespace search::tensor { class DistanceCalculator; }
@@ -40,6 +41,7 @@ public:
                              const vespalib::string& feature_name);
 
     DistanceCalculatorBundle(const fef::IQueryEnvironment& env,
+                             std::optional<uint32_t> field_id,
                              const vespalib::string& label,
                              const vespalib::string& feature_name);
 

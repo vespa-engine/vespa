@@ -44,7 +44,7 @@ ConvertRawscoreToDistance::ConvertRawscoreToDistance(const fef::IQueryEnvironmen
 }
 
 ConvertRawscoreToDistance::ConvertRawscoreToDistance(const fef::IQueryEnvironment &env, const vespalib::string &label)
-  : _bundle(env, label, "distance"),
+  : _bundle(env, std::nullopt, label, "distance"),
     _md(nullptr)
 {
 }
