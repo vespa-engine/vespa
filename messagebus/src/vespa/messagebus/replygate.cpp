@@ -38,9 +38,8 @@ ReplyGate::handleReply(Reply::UP reply)
 }
 
 void
-ReplyGate::handleDiscard(Context ctx)
+ReplyGate::handleDiscard(Context)
 {
-    (void)ctx;
     subRef();
 }
 
