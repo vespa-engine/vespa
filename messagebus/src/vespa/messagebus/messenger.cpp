@@ -18,70 +18,6 @@ struct DeleteFunctor
     }
 };
 
-class MessageTask : public mbus::Messenger::ITask {
-private:
-    mbus::Message::UP      _msg;
-    mbus::IMessageHandler &_handler;
-
-public:
-    MessageTask(mbus::Message::UP msg, mbus::IMessageHandler &handler)
-        : _msg(std::move(msg)),
-          _handler(handler)
-    {
-        // empty
-    }
-
-    ~MessageTask() {
-        if (_msg) {
-            _msg->discard();
-        }
-    }
-
-    void run() override {
-        _handler.handleMessage(std::move(_msg));
-    }
-
-    uint8_t priority() const override {
-        if (_msg) {
-            return _msg->priority();
-        }
-
-        return 255;
-    }
-};
-
-class ReplyTask : public mbus::Messenger::ITask {
-private:
-    mbus::Reply::UP      _reply;
-    mbus::IReplyHandler &_handler;
-
-public:
-    ReplyTask(mbus::Reply::UP reply, mbus::IReplyHandler &handler)
-        : _reply(std::move(reply)),
-          _handler(handler)
-    {
-        // empty
-    }
-
-    ~ReplyTask() {
-        if (_reply) {
-            _reply->discard();
-        }
-    }
-
-    void run() override {
-        _handler.handleReply(std::move(_reply));
-    }
-
-    uint8_t priority() const override {
-        if (_reply) {
-            return _reply->priority();
-        }
-
-        return 255;
-    }
-};
-
 class SyncTask : public mbus::Messenger::ITask {
 private:
     vespalib::Gate &_gate;
@@ -89,17 +25,13 @@ private:
 public:
     SyncTask(vespalib::Gate &gate)
         : _gate(gate)
-    {
-        // empty
-    }
+    { }
 
     ~SyncTask() {
         _gate.countDown();
     }
 
-    void run() override {
-        // empty
-    }
+    void run() override { }
 
     uint8_t priority() const override {
         return 255;
@@ -115,9 +47,7 @@ public:
     AddRecurrentTask(std::vector<ITask*> &tasks, mbus::Messenger::ITask::UP task)
         : _tasks(tasks),
           _task(std::move(task))
-    {
-        // empty
-    }
+    { }
 
     void run() override {
         _tasks.push_back(_task.release());
@@ -136,9 +66,7 @@ public:
     DiscardRecurrentTasks(vespalib::Gate &gate, std::vector<ITask*> &tasks)
         : SyncTask(gate),
           _tasks(tasks)
-    {
-        // empty
-    }
+    { }
 
     void run() override {
         std::for_each(_tasks.begin(), _tasks.end(), DeleteFunctor<ITask>());

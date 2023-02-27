@@ -18,8 +18,8 @@ Sequencer::Sequencer(IMessageHandler &sender) :
 
 Sequencer::~Sequencer()
 {
-    for (QueueMap::iterator it = _seqMap.begin(); it != _seqMap.end(); ++it) {
-        MessageQueue *queue = it->second;
+    for (auto & entry : _seqMap) {
+        MessageQueue *queue = entry.second;
         if (queue != nullptr) {
             while (queue->size() > 0) {
                 Message *msg = queue->front();
@@ -39,7 +39,7 @@ Sequencer::filter(Message::UP msg)
     msg->setContext(Context(seqId));
     {
         std::lock_guard guard(_lock);
-        QueueMap::iterator it = _seqMap.find(seqId);
+        auto it = _seqMap.find(seqId);
         if (it != _seqMap.end()) {
             if (it->second == nullptr) {
                 it->second = new MessageQueue();
@@ -48,7 +48,7 @@ Sequencer::filter(Message::UP msg)
                                   make_string("Sequencer queued message with sequence id '%" PRIu64 "'.", seqId));
             it->second->push(msg.get());
             msg.release();
-            return Message::UP();
+            return {};
         }
         _seqMap[seqId] = nullptr; // insert empty queue
     }
@@ -87,7 +87,7 @@ Sequencer::handleReply(Reply::UP reply)
     Message::UP msg;
     {
         std::lock_guard guard(_lock);
-        QueueMap::iterator it = _seqMap.find(seq);
+        auto it = _seqMap.find(seq);
         MessageQueue *que = it->second;
         assert(it != _seqMap.end());
         if (que == nullptr || que->size() == 0) {

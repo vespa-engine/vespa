@@ -13,9 +13,7 @@ SendProxy::SendProxy(MessageBus &mbus, INetwork &net, Resender *resender) :
     _msg(),
     _logTrace(false),
     _root()
-{
-    // empty
-}
+{ }
 
 void
 SendProxy::handleMessage(Message::UP msg)
@@ -36,9 +34,8 @@ SendProxy::handleMessage(Message::UP msg)
 }
 
 void
-SendProxy::handleDiscard(Context ctx)
+SendProxy::handleDiscard(Context)
 {
-    (void)ctx;
     _msg->discard();
     delete this;
 }
