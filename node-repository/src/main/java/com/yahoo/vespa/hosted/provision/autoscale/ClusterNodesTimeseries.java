@@ -23,6 +23,8 @@ public class ClusterNodesTimeseries {
     /** The measurements for all nodes in this snapshot */
     private final List<NodeTimeseries> timeseries;
 
+    private int initialCount, afterWarmupCount, afterStableCount, finalCount;
+
     public ClusterNodesTimeseries(Duration period, Cluster cluster, NodeList clusterNodes, MetricsDb db) {
         this.clusterNodes = clusterNodes;
 
@@ -31,18 +33,29 @@ public class ClusterNodesTimeseries {
         // If either this is the case, or there is a generation change, we ignore
         // the first warmupWindow metrics.
         var timeseries = db.getNodeTimeseries(period.plus(warmupDuration.multipliedBy(4)), clusterNodes);
+        initialCount = totalMeasurementsIn(timeseries);
         if (cluster.lastScalingEvent().isPresent()) {
             long currentGeneration = cluster.lastScalingEvent().get().generation();
             timeseries = keepGenerationAfterWarmup(timeseries, currentGeneration);
+            afterWarmupCount = totalMeasurementsIn(timeseries);
         }
         timeseries = keep(timeseries, snapshot -> snapshot.inService() && snapshot.stable());
+        afterStableCount = totalMeasurementsIn(timeseries);
         timeseries = keep(timeseries, snapshot -> ! snapshot.at().isBefore(db.clock().instant().minus(period)));
+        finalCount = totalMeasurementsIn(timeseries);
         this.timeseries = timeseries;
     }
 
     private ClusterNodesTimeseries(NodeList clusterNodes, List<NodeTimeseries> timeseries) {
         this.clusterNodes = clusterNodes;
         this.timeseries = timeseries;
+    }
+
+    public String description() {
+        return "initial measurements: " + initialCount +
+               ", after warmpup: " + afterWarmupCount +
+               ", after stable: " + afterStableCount +
+               ", final measurements: " + finalCount;
     }
 
     public boolean isEmpty() {
@@ -52,8 +65,11 @@ public class ClusterNodesTimeseries {
     /** Returns the average number of measurements per node */
     public double measurementsPerNode() {
         if (clusterNodes.size() == 0) return 0;
-        int measurementCount = timeseries.stream().mapToInt(m -> m.size()).sum();
-        return (double)measurementCount / clusterNodes.size();
+        return (double) totalMeasurementsIn(timeseries) / clusterNodes.size();
+    }
+
+    private int totalMeasurementsIn(List<NodeTimeseries> timeseries) {
+        return timeseries.stream().mapToInt(m -> m.size()).sum();
     }
 
     /** Returns the number of nodes measured in this */
