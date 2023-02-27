@@ -243,14 +243,12 @@ public class ClusterSearcher extends Searcher {
         if (restrict.size() != 1) {
             throw new IllegalStateException("perSchemaSearch must always be called with 1 schema, got: " + restrict.size());
         }
-        for (String schema : restrict) {
-            Result result = searcher.search(query, execution);
-            if (globalPhaseHelper != null) {
-                globalPhaseHelper.process(query, result, schema);
-            }
-            return result;
+        String schema = restrict.iterator().next();
+        Result result = searcher.search(query, execution);
+        if (globalPhaseHelper != null) {
+            globalPhaseHelper.process(query, result, schema);
         }
-        return null;
+        return result;
     }
 
     private static void processResult(Query query, FutureTask<Result> task, Result mergedResult) {
