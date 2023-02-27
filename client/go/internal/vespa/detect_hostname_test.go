@@ -4,6 +4,7 @@ package vespa
 import (
 	"fmt"
 	"os"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -17,7 +18,16 @@ func TestDetectHostname(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, "foo.bar", got)
 	os.Unsetenv("VESPA_HOSTNAME")
-	got, _ = FindOurHostname()
+	got, err = findOurHostnameFrom("bar.foo.123")
+	fmt.Fprintln(os.Stderr, "findOurHostname from bar.foo.123 returns:", got, "with error:", err)
 	assert.NotEqual(t, "", got)
-	fmt.Fprintln(os.Stderr, "FindOurHostname() returns:", got, "with error:", err)
+	parts := strings.Split(got, ".")
+	if len(parts) > 1 {
+		expanded, err2 := findOurHostnameFrom(parts[0])
+		fmt.Fprintln(os.Stderr, "findOurHostname from", parts[0], "returns:", expanded, "with error:", err2)
+		assert.Equal(t, got, expanded)
+	}
+	got, err = findOurHostnameFrom("")
+	assert.NotEqual(t, "", got)
+	fmt.Fprintln(os.Stderr, "findOurHostname('') returns:", got, "with error:", err)
 }
