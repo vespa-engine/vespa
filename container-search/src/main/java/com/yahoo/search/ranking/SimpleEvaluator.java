@@ -15,25 +15,28 @@ public class SimpleEvaluator implements Evaluator {
 
     private final FunctionEvaluator evaluator;
     private final Set<String> neededInputs;
-
     
     public SimpleEvaluator(FunctionEvaluator prototype) {
         this.evaluator = prototype;
         this.neededInputs = new HashSet<String>(prototype.function().arguments());
     }
 
+    @Override
     public Collection<String> needInputs() { return List.copyOf(neededInputs); }
 
+    @Override
     public SimpleEvaluator bind(String name, Tensor value) {
         if (value != null) evaluator.bind(name, value);
         neededInputs.remove(name);
         return this;
     }
 
+    @Override
     public double evaluateScore() {
         return evaluator.evaluate().asDouble();
     }
 
+    @Override
     public String toString() {
         var buf = new StringBuilder();
         buf.append("SimpleEvaluator(");
