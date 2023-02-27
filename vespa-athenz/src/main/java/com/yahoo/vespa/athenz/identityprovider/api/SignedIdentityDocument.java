@@ -4,6 +4,7 @@ package com.yahoo.vespa.athenz.identityprovider.api;
 import com.yahoo.vespa.athenz.api.AthenzService;
 
 import java.time.Instant;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
@@ -20,7 +21,13 @@ public record SignedIdentityDocument(String signature, int signingKeyVersion, Ve
 
     public SignedIdentityDocument {
         ipAddresses = Set.copyOf(ipAddresses);
-        unknownAttributes = Map.copyOf(unknownAttributes);
+
+        Map<String, Object> nonNull = new HashMap<>();
+        unknownAttributes.forEach((key, value) -> {
+            if (value != null) nonNull.put(key, value);
+        });
+        // Map.copyOf() does not allow null values
+        unknownAttributes = Map.copyOf(nonNull);
     }
 
     public SignedIdentityDocument(String signature, int signingKeyVersion, VespaUniqueInstanceId providerUniqueId,
