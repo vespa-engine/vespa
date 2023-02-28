@@ -54,10 +54,22 @@ public class ArchiveUriManagerTest {
         assertFalse(archiveUriManager.archiveUriFor(createNode(null, account1)).isPresent()); // URI set for this account, but not allocated
         assertFalse(archiveUriManager.archiveUriFor(createNode(null, account2)).isPresent()); // Not allocated
         assertFalse(archiveUriManager.archiveUriFor(createNode(app2, null)).isPresent()); // No URI set for this tenant or account
-        assertEquals("scheme://tenant-bucket/dir/music/main/default/h432a/", archiveUriManager.archiveUriFor(createNode(app1, null)).get());
-        assertEquals("scheme://account-bucket/dir/music/main/default/h432a/", archiveUriManager.archiveUriFor(createNode(app1, account1)).get()); // Account has precedence
+        assertEquals("scheme://tenant-bucket/dir/vespa/music/main/default/h432a/", archiveUriManager.archiveUriFor(createNode(app1, null)).get());
+        assertEquals("scheme://account-bucket/dir/vespa/music/main/default/h432a/", archiveUriManager.archiveUriFor(createNode(app1, account1)).get()); // Account has precedence
         assertFalse(archiveUriManager.archiveUriFor(createNode(app1, account2)).isPresent()); // URI set for this tenant, but is ignored because enclave account
-        assertEquals("scheme://tenant-bucket/dir/music/main/default/h432a/", archiveUriManager.archiveUriFor(createNode(app1, accountSystem)).get()); // URI for tenant because non-enclave acocunt
+        assertEquals("scheme://tenant-bucket/dir/vespa/music/main/default/h432a/", archiveUriManager.archiveUriFor(createNode(app1, accountSystem)).get()); // URI for tenant because non-enclave acocunt
+    }
+
+    @Test
+    public void handles_uri_with_tenant_name() {
+        ApplicationId app1 = ApplicationId.from("vespa", "music", "main");
+        ArchiveUriManager archiveUriManager = new ProvisioningTester.Builder().build().nodeRepository().archiveUriManager();
+        archiveUriManager.setArchiveUri(app1.tenant(), Optional.of("scheme://tenant-bucket/vespa"));
+        assertEquals("scheme://tenant-bucket/vespa/music/main/default/h432a/", archiveUriManager.archiveUriFor(createNode(app1, null)).get());
+
+        // Archive URI ends with the tenant name
+        archiveUriManager.setArchiveUri(app1.tenant(), Optional.of("scheme://tenant-vespa/"));
+        assertEquals("scheme://tenant-vespa/vespa/music/main/default/h432a/", archiveUriManager.archiveUriFor(createNode(app1, null)).get());
     }
 
     private Node createNode(ApplicationId appId, CloudAccount account) {

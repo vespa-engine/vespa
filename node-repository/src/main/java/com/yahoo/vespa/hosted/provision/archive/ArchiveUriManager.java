@@ -13,7 +13,6 @@ import com.yahoo.vespa.hosted.provision.persistence.CuratorDb;
 import java.time.Duration;
 import java.util.Optional;
 import java.util.function.Function;
-import java.util.logging.Logger;
 
 /**
  * Thread safe class to get and set archive URI for given account and tenants.
@@ -22,7 +21,6 @@ import java.util.logging.Logger;
  */
 public class ArchiveUriManager {
 
-    private static final Logger log = Logger.getLogger(ArchiveUriManager.class.getName());
     private static final Duration cacheTtl = Duration.ofMinutes(1);
 
     private final CuratorDb db;
@@ -48,7 +46,14 @@ public class ArchiveUriManager {
                 archiveUris.get().accountArchiveUris().get(node.cloudAccount()) :
                 archiveUris.get().tenantArchiveUris().get(app.tenant()))
                 .map(uri -> {
+                    // TODO (freva): Remove when all URIs dont have tenant name in them anymore
+                    String tenantSuffix = "/" + app.tenant().value() + "/";
+                    if (uri.endsWith(tenantSuffix)) return uri.substring(0, uri.length() - tenantSuffix.length() + 1);
+                    return uri;
+                })
+                .map(uri -> {
                     StringBuilder sb = new StringBuilder(100).append(uri)
+                            .append(app.tenant().value()).append('/')
                             .append(app.application().value()).append('/')
                             .append(app.instance().value()).append('/')
                             .append(node.allocation().get().membership().cluster().id().value()).append('/');
