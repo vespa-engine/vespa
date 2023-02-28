@@ -34,7 +34,7 @@ MetricManager::ConsumerSpec::~ConsumerSpec() = default;
 
 time_point
 MetricManager::Timer::getTime() const {
-    return vespalib::steady_clock::now();
+    return vespalib::system_clock::now();
 }
 
 void

@@ -6,7 +6,7 @@
 
 namespace metrics {
 
-using time_point = vespalib::steady_time;
+using time_point = vespalib::system_time;
 
 class MetricLockGuard {
 public:
