@@ -118,11 +118,11 @@ MetricManager::stop()
 void
 MetricManager::addMetricUpdateHook(UpdateHook& hook, uint32_t period)
 {
-    hook._period = period;
+    hook.setPeriod(vespalib::from_s(period));
+    hook.updateNextCall(_timer->getTime());
     std::lock_guard sync(_waiter);
         // If we've already initialized manager, log period has been set.
         // In this case. Call first time after period
-    hook._nextCall = count_s(_timer->getTime().time_since_epoch()) + period;
     if (period == 0) {
         for (UpdateHook * sHook : _snapshotUpdateHooks) {
             if (sHook == &hook) {
@@ -146,7 +146,7 @@ void
 MetricManager::removeMetricUpdateHook(UpdateHook& hook)
 {
     std::lock_guard sync(_waiter);
-    if (hook._period == 0) {
+    if (hook.is_periodic()) {
         for (auto it = _snapshotUpdateHooks.begin(); it != _snapshotUpdateHooks.end(); it++) {
             if (*it == &hook) {
                 _snapshotUpdateHooks.erase(it);
@@ -654,23 +654,25 @@ MetricManager::updateMetrics(bool includeSnapshotOnlyHooks)
 
 // When this is called, the thread monitor lock has already been grabbed
 time_t
-MetricManager::updatePeriodicMetrics(const MetricLockGuard & guard, time_t updateTime, bool outOfSchedule)
+MetricManager::updatePeriodicMetrics(const MetricLockGuard & guard, time_t updateTimeS, bool outOfSchedule)
 {
     assertMetricLockLocked(guard);
     time_t nextUpdateTime = std::numeric_limits<time_t>::max();
     time_point preTime = _timer->getTimeInMilliSecs();
+    time_point updateTime = time_point(from_s(updateTimeS));
     for (auto hook : _periodicUpdateHooks) {
-        if (hook->_nextCall <= updateTime) {
+        if (hook->expired(updateTime)) {
             hook->updateMetrics(guard);
-            if (hook->_nextCall + hook->_period < updateTime) {
-                if (hook->_nextCall != 0) {
-                    LOG(debug, "Updated hook %s at time %" PRIu64 ", but next run in %u seconds have already passed as "
-                               "time is %" PRIu64 ". Bumping next call to current time + period.",
-                        hook->_name, static_cast<uint64_t>(hook->_nextCall), hook->_period, static_cast<uint64_t>(updateTime));
+            if (hook->expired(updateTime - hook->getPeriod())) {
+                if (hook->has_valid_expiry()) {
+                    LOG(debug, "Updated hook %s at time %s, but next run in %ld seconds have already passed as "
+                               "time is %s. Bumping next call to current time + period.",
+                        hook->getName(), to_string(hook->getNextCall()).c_str(),
+                        count_s(hook->getPeriod()), to_string(updateTime).c_str());
                 }
-                hook->_nextCall = updateTime + hook->_period;
+                hook->updateNextCall(updateTime);
             } else {
-                hook->_nextCall += hook->_period;
+                hook->updateNextCall();
             }
             time_point postTime = _timer->getTimeInMilliSecs();
             _periodicHookLatency.addValue(count_ms(postTime - preTime));
@@ -681,7 +683,7 @@ MetricManager::updatePeriodicMetrics(const MetricLockGuard & guard, time_t updat
             _periodicHookLatency.addValue(count_ms(postTime - preTime));
             preTime = postTime;
         }
-        nextUpdateTime = std::min(nextUpdateTime, hook->_nextCall);
+        nextUpdateTime = std::min(nextUpdateTime, count_s(hook->getNextCall().time_since_epoch()));
     }
     return nextUpdateTime;
 }
@@ -739,7 +741,7 @@ MetricManager::run()
         snapshot->setFromTime(currentTime);
     }
     for (auto hook : _periodicUpdateHooks) {
-        hook->_nextCall = count_s(currentTime.time_since_epoch());
+        hook->setNextCall(currentTime);
     }
     // Ensure correct time for first snapshot
     _snapshots[0]->getSnapshot().setToTime(currentTime);
