@@ -20,7 +20,7 @@ import com.yahoo.search.Searcher;
 import com.yahoo.search.config.ClusterConfig;
 import com.yahoo.search.dispatch.Dispatcher;
 import com.yahoo.search.query.ParameterParser;
-import com.yahoo.search.ranking.GlobalPhaseHelper;
+import com.yahoo.search.ranking.GlobalPhaseRanker;
 import com.yahoo.search.result.ErrorMessage;
 import com.yahoo.search.schema.SchemaInfo;
 import com.yahoo.search.searchchain.Execution;
@@ -65,7 +65,7 @@ public class ClusterSearcher extends Searcher {
 
     private final VespaBackEndSearcher server;
     private final Executor executor;
-    private final GlobalPhaseHelper globalPhaseHelper;
+    private final GlobalPhaseRanker globalPhaseHelper;
 
     @Inject
     public ClusterSearcher(ComponentId id,
@@ -75,7 +75,7 @@ public class ClusterSearcher extends Searcher {
                            DocumentdbInfoConfig documentDbConfig,
                            SchemaInfo schemaInfo,
                            ComponentRegistry<Dispatcher> dispatchers,
-                           GlobalPhaseHelper globalPhaseHelper,
+                           GlobalPhaseRanker globalPhaseHelper,
                            VipStatus vipStatus,
                            VespaDocumentAccess access) {
         super(id);

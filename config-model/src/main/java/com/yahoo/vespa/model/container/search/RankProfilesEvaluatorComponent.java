@@ -3,7 +3,7 @@ package com.yahoo.vespa.model.container.search;
 
 import com.yahoo.config.model.producer.AnyConfigProducer;
 import com.yahoo.osgi.provider.model.ComponentModel;
-import com.yahoo.search.ranking.RankingExpressionEvaluatorProxy;
+import com.yahoo.search.ranking.RankProfilesEvaluator;
 import com.yahoo.vespa.config.search.RankProfilesConfig;
 import com.yahoo.vespa.config.search.core.OnnxModelsConfig;
 import com.yahoo.vespa.config.search.core.RankingConstantsConfig;
@@ -13,7 +13,7 @@ import com.yahoo.vespa.model.container.PlatformBundles;
 import com.yahoo.vespa.model.container.component.Component;
 import com.yahoo.vespa.model.search.DocumentDatabase;
 
-public class RankingExpressionEvaluatorProxyComponent
+public class RankProfilesEvaluatorComponent
     extends Component<AnyConfigProducer, ComponentModel>
     implements
         RankProfilesConfig.Producer,
@@ -23,7 +23,7 @@ public class RankingExpressionEvaluatorProxyComponent
 {
     private final DocumentDatabase ddb;
 
-    public RankingExpressionEvaluatorProxyComponent(DocumentDatabase db) {
+    public RankProfilesEvaluatorComponent(DocumentDatabase db) {
         super(toComponentModel(db.getSchemaName()));
         ddb = db;
     }
@@ -31,7 +31,7 @@ public class RankingExpressionEvaluatorProxyComponent
     private static ComponentModel toComponentModel(String p) {
         String myComponentId = "ranking-expression-evaluator." + p;
         return new ComponentModel(myComponentId,
-                                  RankingExpressionEvaluatorProxy.class.getName(),
+                                  RankProfilesEvaluator.class.getName(),
                                   PlatformBundles.SEARCH_AND_DOCPROC_BUNDLE);
     }
 

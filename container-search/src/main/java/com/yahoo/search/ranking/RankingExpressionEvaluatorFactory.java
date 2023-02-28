@@ -13,14 +13,14 @@ import com.yahoo.component.provider.ComponentRegistry;
 @Beta
 public class RankingExpressionEvaluatorFactory {
 
-    private final ComponentRegistry<RankingExpressionEvaluatorProxy> registry;
+    private final ComponentRegistry<RankProfilesEvaluator> registry;
 
     @Inject
-    public RankingExpressionEvaluatorFactory(ComponentRegistry<RankingExpressionEvaluatorProxy> registry) {
+    public RankingExpressionEvaluatorFactory(ComponentRegistry<RankProfilesEvaluator> registry) {
         this.registry = registry;
     }
 
-    public RankingExpressionEvaluatorProxy proxyForSchema(String schemaName) {
+    public RankProfilesEvaluator proxyForSchema(String schemaName) {
         var component = registry.getComponent("ranking-expression-evaluator." + schemaName);
         if (component == null) {
             throw new IllegalArgumentException("ranking expression evaluator for schema '" + schemaName + "' not found");

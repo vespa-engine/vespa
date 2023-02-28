@@ -58,7 +58,7 @@ public class ContainerSearch extends ContainerSubsystem<SearchChains>
         owningCluster.addComponent(Component.fromClassAndBundle(com.yahoo.search.schema.SchemaInfo.class, SEARCH_AND_DOCPROC_BUNDLE));
         owningCluster.addComponent(Component.fromClassAndBundle(SearchStatusExtension.class, SEARCH_AND_DOCPROC_BUNDLE));
         owningCluster.addComponent(Component.fromClassAndBundle(RankingExpressionEvaluatorFactory.class, SEARCH_AND_DOCPROC_BUNDLE));
-        owningCluster.addComponent(Component.fromClassAndBundle(com.yahoo.search.ranking.GlobalPhaseHelper.class, SEARCH_AND_DOCPROC_BUNDLE));
+        owningCluster.addComponent(Component.fromClassAndBundle(com.yahoo.search.ranking.GlobalPhaseRanker.class, SEARCH_AND_DOCPROC_BUNDLE));
         cluster.addSearchAndDocprocBundles();
     }
 
@@ -75,7 +75,7 @@ public class ContainerSearch extends ContainerSubsystem<SearchChains>
                 var dispatcher = new DispatcherComponent(indexed);
                 owningCluster.addComponent(dispatcher);
                 for (var documentDb : indexed.getDocumentDbs()) {
-                    var factory = new RankingExpressionEvaluatorProxyComponent(documentDb);
+                    var factory = new RankProfilesEvaluatorComponent(documentDb);
                     if (! owningCluster.getComponentsMap().containsKey(factory.getComponentId())) {
                         owningCluster.addComponent(factory);
                     }

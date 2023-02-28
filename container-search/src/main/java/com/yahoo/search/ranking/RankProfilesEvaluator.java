@@ -19,12 +19,12 @@ import com.yahoo.vespa.config.search.core.RankingExpressionsConfig;
  * @author arnej
  */
 @Beta
-public class RankingExpressionEvaluatorProxy extends AbstractComponent {
+public class RankProfilesEvaluator extends AbstractComponent {
 
     private final ModelsEvaluator evaluator;
 
     @Inject
-    public RankingExpressionEvaluatorProxy(
+    public RankProfilesEvaluator(
             RankProfilesConfig rankProfilesConfig,
             RankingConstantsConfig constantsConfig,
             RankingExpressionsConfig expressionsConfig,

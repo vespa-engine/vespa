@@ -19,15 +19,15 @@ import java.util.Set;
 import java.util.logging.Logger;
 import java.util.function.Supplier;
 
-public class GlobalPhaseHelper {
+public class GlobalPhaseRanker {
 
-    private static final Logger logger = Logger.getLogger(GlobalPhaseHelper.class.getName());
+    private static final Logger logger = Logger.getLogger(GlobalPhaseRanker.class.getName());
     private final RankingExpressionEvaluatorFactory factory;
     private final Set<String> skipProcessing = new HashSet<>();
     private final Map<String, Supplier<FunctionEvaluator>> scorers = new HashMap<>();
 
     @Inject
-    public GlobalPhaseHelper(RankingExpressionEvaluatorFactory factory) {
+    public GlobalPhaseRanker(RankingExpressionEvaluatorFactory factory) {
         this.factory = factory;
         logger.info("using factory: " + factory);
     }
