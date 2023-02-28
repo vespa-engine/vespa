@@ -22,12 +22,12 @@ import java.util.function.Supplier;
 public class GlobalPhaseRanker {
 
     private static final Logger logger = Logger.getLogger(GlobalPhaseRanker.class.getName());
-    private final RankingExpressionEvaluatorFactory factory;
+    private final RankProfilesEvaluatorFactory factory;
     private final Set<String> skipProcessing = new HashSet<>();
     private final Map<String, Supplier<FunctionEvaluator>> scorers = new HashMap<>();
 
     @Inject
-    public GlobalPhaseRanker(RankingExpressionEvaluatorFactory factory) {
+    public GlobalPhaseRanker(RankProfilesEvaluatorFactory factory) {
         this.factory = factory;
         logger.info("using factory: " + factory);
     }

@@ -7,7 +7,7 @@ import com.yahoo.search.config.IndexInfoConfig;
 import com.yahoo.search.config.SchemaInfoConfig;
 import com.yahoo.search.pagetemplates.PageTemplatesConfig;
 import com.yahoo.search.query.profile.config.QueryProfilesConfig;
-import com.yahoo.search.ranking.RankingExpressionEvaluatorFactory;
+import com.yahoo.search.ranking.RankProfilesEvaluatorFactory;
 import com.yahoo.schema.derived.SchemaInfo;
 import com.yahoo.vespa.configdefinition.IlscriptsConfig;
 import com.yahoo.vespa.model.container.ApplicationContainerCluster;
@@ -57,7 +57,7 @@ public class ContainerSearch extends ContainerSubsystem<SearchChains>
         owningCluster.addComponent(Component.fromClassAndBundle(CompiledQueryProfileRegistry.class, SEARCH_AND_DOCPROC_BUNDLE));
         owningCluster.addComponent(Component.fromClassAndBundle(com.yahoo.search.schema.SchemaInfo.class, SEARCH_AND_DOCPROC_BUNDLE));
         owningCluster.addComponent(Component.fromClassAndBundle(SearchStatusExtension.class, SEARCH_AND_DOCPROC_BUNDLE));
-        owningCluster.addComponent(Component.fromClassAndBundle(RankingExpressionEvaluatorFactory.class, SEARCH_AND_DOCPROC_BUNDLE));
+        owningCluster.addComponent(Component.fromClassAndBundle(RankProfilesEvaluatorFactory.class, SEARCH_AND_DOCPROC_BUNDLE));
         owningCluster.addComponent(Component.fromClassAndBundle(com.yahoo.search.ranking.GlobalPhaseRanker.class, SEARCH_AND_DOCPROC_BUNDLE));
         cluster.addSearchAndDocprocBundles();
     }

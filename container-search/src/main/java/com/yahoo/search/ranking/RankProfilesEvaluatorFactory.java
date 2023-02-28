@@ -11,12 +11,12 @@ import com.yahoo.component.provider.ComponentRegistry;
  * @author arnej
  */
 @Beta
-public class RankingExpressionEvaluatorFactory {
+public class RankProfilesEvaluatorFactory {
 
     private final ComponentRegistry<RankProfilesEvaluator> registry;
 
     @Inject
-    public RankingExpressionEvaluatorFactory(ComponentRegistry<RankProfilesEvaluator> registry) {
+    public RankProfilesEvaluatorFactory(ComponentRegistry<RankProfilesEvaluator> registry) {
         this.registry = registry;
     }
 
