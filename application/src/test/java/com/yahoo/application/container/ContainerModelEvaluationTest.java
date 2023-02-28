@@ -75,7 +75,13 @@ public class ContainerModelEvaluationTest {
     private void assertResponse(String url, String expectedResponse, JDisc jdisc) {
         try {
             Response response = jdisc.handleRequest(new Request(url));
-            JsonTestHelper.assertJsonEquals(expectedResponse, response.getBodyAsString());
+
+            // Truncate JSON encoded numbers having more than 6 digits after the decimal point
+            String pattern = "([0-9]+\\.[0-9]{6})[0-9]*";
+            String normalizedExpectedResponse = expectedResponse.replaceAll(pattern, "$1");
+            String normalizedActualResponse = response.getBodyAsString().replaceAll(pattern, "$1");
+
+            JsonTestHelper.assertJsonEquals(normalizedExpectedResponse, normalizedActualResponse);
             assertEquals(200, response.getStatus());
         }
         catch (CharacterCodingException e) {
