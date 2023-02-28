@@ -17,7 +17,7 @@ com.auth0:java-jwt:3.10.0
 com.fasterxml.jackson.core:jackson-annotations:2.14.2
 com.fasterxml.jackson.core:jackson-core:2.14.2
 com.fasterxml.jackson.core:jackson-databind:2.14.2
-com.fasterxml.jackson.dataformat:jackson-dataformat-cbor:2.12.6
+com.fasterxml.jackson.dataformat:jackson-dataformat-cbor:2.14.2
 com.fasterxml.jackson.datatype:jackson-datatype-jdk8:2.14.2
 com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.14.2
 com.fasterxml.jackson.jaxrs:jackson-jaxrs-base:2.14.2
