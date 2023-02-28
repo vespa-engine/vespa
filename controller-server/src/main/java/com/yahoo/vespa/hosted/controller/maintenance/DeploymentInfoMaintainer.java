@@ -1,6 +1,5 @@
 package com.yahoo.vespa.hosted.controller.maintenance;
 
-import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
@@ -9,7 +8,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.configserver.NodeReposi
 import com.yahoo.yolean.Exceptions;
 
 import java.time.Duration;
-import java.util.stream.Stream;
+import java.util.Collection;
 
 /**
  * This pulls application deployment information from the node repo on all config servers,
@@ -28,29 +27,35 @@ public class DeploymentInfoMaintainer extends ControllerMaintainer {
 
     @Override
     protected double maintain() {
-        controller().applications().asList().stream()
-                                   .flatMap(this::mapApplicationToInstances)
-                                   .flatMap(this::mapInstanceToDeployments)
-                                   .forEach(this::updateDeploymentInfo);
-        return 1.0;
+        int attempts = 0;
+        int failures = 0;
+        for (var application : controller().applications().asList()) {
+            for (var instance : application.instances().values()) {
+                for (var deployment : instanceDeployments(instance)) {
+                    attempts++;
+                    if ( ! updateDeploymentInfo(deployment))
+                        failures++;
+                }
+            }
+        }
+        return asSuccessFactor(attempts, failures);
     }
 
-    private Stream<Instance> mapApplicationToInstances(Application application) {
-        return application.instances().values().stream();
-    }
-
-    private Stream<DeploymentId> mapInstanceToDeployments(Instance instance) {
+    private Collection<DeploymentId> instanceDeployments(Instance instance) {
         return instance.deployments().keySet().stream()
                        .filter(zoneId -> !zoneId.environment().isTest())
-                       .map(zoneId -> new DeploymentId(instance.id(), zoneId));
+                       .map(zoneId -> new DeploymentId(instance.id(), zoneId))
+                       .toList();
     }
 
-    private void updateDeploymentInfo(DeploymentId id) {
+    private boolean updateDeploymentInfo(DeploymentId id) {
         try {
             controller().applications().deploymentInfo().put(id, nodeRepository.getApplication(id.zoneId(), id.applicationId()));
+            return true;
         }
         catch (ConfigServerException e) {
             log.info("Could not retrieve deployment info for " + id + ": " + Exceptions.toMessageString(e));
+            return false;
         }
     }
 
