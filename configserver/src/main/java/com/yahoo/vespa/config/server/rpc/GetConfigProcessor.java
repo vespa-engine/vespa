@@ -96,7 +96,7 @@ class GetConfigProcessor implements Runnable {
         }
 
         GetConfigContext context = rpcServer.createGetConfigContext(tenant, request, trace);
-        if (context == null || ! context.requestHandler().hasApplication(context.applicationId(), Optional.empty())) {
+        if (context.isEmpty() || ! context.requestHandler().hasApplication(context.applicationId(), Optional.empty())) {
             handleError(request, APPLICATION_NOT_LOADED, "No application exists");
             return null;
         }
