@@ -26,6 +26,8 @@ vespa_define_module(
     src/apps/vespa-validate-hostname
 
     TESTS
+    ${VESPALIB_DIRECTIO_TESTDIR}
+    ${VESPALIB_PROCESS_MEMORY_STATS_TESTDIR}
     src/tests/alloc
     src/tests/approx
     src/tests/array
@@ -38,9 +40,9 @@ vespa_define_module(
     src/tests/bits
     src/tests/box
     src/tests/btree
-    src/tests/btree/btree_store
     src/tests/btree/btree-scan-speed
     src/tests/btree/btree-stress
+    src/tests/btree/btree_store
     src/tests/clock
     src/tests/component
     src/tests/compress
@@ -73,7 +75,6 @@ vespa_define_module(
     src/tests/datastore/unique_store
     src/tests/datastore/unique_store_dictionary
     src/tests/datastore/unique_store_string_allocator
-    ${VESPALIB_DIRECTIO_TESTDIR}
     src/tests/detect_type_benchmark
     src/tests/dotproduct
     src/tests/drop-file-from-cache
@@ -86,6 +87,9 @@ vespa_define_module(
     src/tests/executor_idle_tracking
     src/tests/explore_modern_cpp
     src/tests/false
+    src/tests/fastlib/io
+    src/tests/fastlib/text
+    src/tests/fastos
     src/tests/fiddle
     src/tests/fileheader
     src/tests/floatingpointtype
@@ -95,6 +99,7 @@ vespa_define_module(
     src/tests/guard
     src/tests/host_name
     src/tests/hwaccelrated
+    src/tests/invokeservice
     src/tests/io/fileutil
     src/tests/io/mapped_file_input
     src/tests/issue
@@ -134,7 +139,6 @@ vespa_define_module(
     src/tests/printable
     src/tests/priority_queue
     src/tests/process
-    ${VESPALIB_PROCESS_MEMORY_STATS_TESTDIR}
     src/tests/programoptions
     src/tests/random
     src/tests/referencecounter
@@ -144,14 +148,14 @@ vespa_define_module(
     src/tests/runnable_pair
     src/tests/rusage
     src/tests/sequencedtaskexecutor
-    src/tests/shutdownguard
-    src/tests/singleexecutor
     src/tests/sha1
     src/tests/shared_operation_throttler
     src/tests/shared_string_repo
     src/tests/sharedptr
+    src/tests/shutdownguard
     src/tests/signalhandler
     src/tests/simple_thread_bundle
+    src/tests/singleexecutor
     src/tests/slime
     src/tests/slime/external_data_value
     src/tests/slime/summary-feature-benchmark
@@ -204,17 +208,15 @@ vespa_define_module(
     src/tests/util/string_escape
     src/tests/valgrind
     src/tests/visit_ranges
-    src/tests/invokeservice
     src/tests/wakeup
     src/tests/xmlserializable
     src/tests/zcurve
-    src/tests/fastlib/io
-    src/tests/fastlib/text
 
     LIBS
     src/vespa/fastlib/io
     src/vespa/fastlib/text
     src/vespa/fastlib/text/apps
+    src/vespa/fastos
     src/vespa/vespalib
     src/vespa/vespalib/btree
     src/vespa/vespalib/component
