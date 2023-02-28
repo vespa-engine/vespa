@@ -3,22 +3,25 @@ package ai.vespa.embedding.huggingface;
 import ai.djl.huggingface.tokenizers.Encoding;
 import ai.djl.huggingface.tokenizers.HuggingFaceTokenizer;
 import ai.vespa.modelintegration.evaluator.OnnxEvaluator;
+import ai.vespa.modelintegration.evaluator.OnnxRuntime;
+import com.yahoo.component.AbstractComponent;
 import com.yahoo.component.annotation.Inject;
+import com.yahoo.embedding.huggingface.HuggingFaceEmbedderConfig;
 import com.yahoo.language.process.Embedder;
 import com.yahoo.tensor.IndexedTensor;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorAddress;
 import com.yahoo.tensor.TensorType;
-import com.yahoo.embedding.huggingface.HuggingFaceEmbedderConfig;
-
-import java.io.*;
-import java.nio.file.Paths;
-import java.util.*;
-
-import org.slf4j.LoggerFactory;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-public class HuggingFaceEmbedder implements Embedder {
+import java.io.IOException;
+import java.nio.file.Paths;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+
+public class HuggingFaceEmbedder extends AbstractComponent implements Embedder {
 
     private static final Logger LOG = LoggerFactory.getLogger(HuggingFaceEmbedder.class.getName());
 
@@ -30,7 +33,7 @@ public class HuggingFaceEmbedder implements Embedder {
     private final OnnxEvaluator evaluator;
 
     @Inject
-    public HuggingFaceEmbedder(HuggingFaceEmbedderConfig config) throws IOException {
+    public HuggingFaceEmbedder(OnnxRuntime onnx, HuggingFaceEmbedderConfig config) throws IOException {
         maxTokens = config.transformerMaxTokens();
         inputIdsName = config.transformerInputIds();
         attentionMaskName = config.transformerAttentionMask();
@@ -48,7 +51,7 @@ public class HuggingFaceEmbedder implements Embedder {
             LOG.info("Could not initialize the tokenizer");
 	    throw new IOException("Could not initialize the tokenizer.");
         }
-        evaluator = new OnnxEvaluator(config.transformerModel().toString());
+        evaluator = onnx.evaluatorOf(config.transformerModel().toString());
         validateModel();
     }
 
@@ -82,6 +85,8 @@ public class HuggingFaceEmbedder implements Embedder {
         }
         return tokenIds;
     }
+
+    @Override public void deconstruct() { evaluator.close(); }
 
     public List<Integer> longToInteger(long[] values) {
         return Arrays.stream(values)

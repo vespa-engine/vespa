@@ -1,7 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.ml;
 
-import ai.vespa.modelintegration.evaluator.OnnxEvaluator;
+import ai.vespa.modelintegration.evaluator.OnnxRuntime;
 import ai.vespa.models.evaluation.FunctionEvaluator;
 import ai.vespa.models.evaluation.Model;
 import ai.vespa.models.evaluation.ModelsEvaluator;
@@ -45,7 +45,7 @@ public class StatelessOnnxEvaluationTest {
 
     @Test
     void testStatelessOnnxModelNameCollision() {
-        assumeTrue(OnnxEvaluator.isRuntimeAvailable());
+        assumeTrue(OnnxRuntime.isRuntimeAvailable());
         Path appDir = Path.fromString("src/test/cfg/application/onnx_name_collision");
         try {
             ImportedModelTester tester = new ImportedModelTester("onnx", appDir);
@@ -66,7 +66,7 @@ public class StatelessOnnxEvaluationTest {
 
     @Test
     void testStatelessOnnxModelEvaluation() throws Exception {
-        assumeTrue(OnnxEvaluator.isRuntimeAvailable());
+        assumeTrue(OnnxRuntime.isRuntimeAvailable());
         Path appDir = Path.fromString("src/test/cfg/application/onnx");
         Path storedAppDir = appDir.append("copy");
         try {
@@ -91,7 +91,7 @@ public class StatelessOnnxEvaluationTest {
 
     @Test
     void testStatelessOnnxModelEvaluationWithGpu() {
-        assumeTrue(OnnxEvaluator.isRuntimeAvailable());
+        assumeTrue(OnnxRuntime.isRuntimeAvailable());
         NodeResources resources = new NodeResources(4, 16, 125, 10,
                                                     NodeResources.DiskSpeed.fast, NodeResources.StorageType.local,
                                                     NodeResources.Architecture.x86_64,

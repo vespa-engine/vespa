@@ -2,6 +2,8 @@ package ai.vespa.llm;
 
 import ai.vespa.modelintegration.evaluator.OnnxEvaluator;
 import ai.vespa.modelintegration.evaluator.OnnxEvaluatorOptions;
+import ai.vespa.modelintegration.evaluator.OnnxRuntime;
+import com.yahoo.component.AbstractComponent;
 import com.yahoo.component.annotation.Inject;
 import com.yahoo.language.process.Embedder;
 import com.yahoo.language.sentencepiece.SentencePieceEmbedder;
@@ -25,7 +27,7 @@ import java.util.Map;
  *
  * @author lesters
  */
-public class Generator {
+public class Generator extends AbstractComponent {
 
     private final static int TOKEN_EOS = 1;  // end of sequence
 
@@ -46,7 +48,7 @@ public class Generator {
     private final OnnxEvaluator decoder;
 
     @Inject
-    public Generator(GeneratorConfig config) {
+    public Generator(OnnxRuntime onnx, GeneratorConfig config) {
         // Set up tokenizer
         tokenizer = new SentencePieceEmbedder.Builder(config.tokenizerModel().toString()).build();
         tokenizerMaxTokens = config.tokenizerMaxTokens();
@@ -61,7 +63,7 @@ public class Generator {
         encoderOptions.setInterOpThreads(modifyThreadCount(config.encoderOnnxInterOpThreads()));
         encoderOptions.setIntraOpThreads(modifyThreadCount(config.encoderOnnxIntraOpThreads()));
 
-        encoder = new OnnxEvaluator(config.encoderModel().toString(), encoderOptions);
+        encoder = onnx.evaluatorOf(config.encoderModel().toString(), encoderOptions);
 
         // Set up decoder
         decoderInputIdsName = config.decoderModelInputIdsName();
@@ -74,7 +76,7 @@ public class Generator {
         decoderOptions.setInterOpThreads(modifyThreadCount(config.decoderOnnxInterOpThreads()));
         decoderOptions.setIntraOpThreads(modifyThreadCount(config.decoderOnnxIntraOpThreads()));
 
-        decoder = new OnnxEvaluator(config.decoderModel().toString(), decoderOptions);
+        decoder = onnx.evaluatorOf(config.decoderModel().toString(), decoderOptions);
 
         validateModels();
     }
@@ -98,6 +100,8 @@ public class Generator {
     public String generate(String prompt) {
         return generate(prompt, new GeneratorOptions());
     }
+
+    @Override public void deconstruct() { encoder.close(); decoder.close(); }
 
     private String generateNotImplemented(GeneratorOptions options) {
         throw new UnsupportedOperationException("Search method '" + options.getSearchMethod() + "' is currently not implemented");

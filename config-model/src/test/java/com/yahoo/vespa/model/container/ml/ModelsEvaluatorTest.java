@@ -1,7 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.container.ml;
 
-import ai.vespa.modelintegration.evaluator.OnnxEvaluator;
+import ai.vespa.modelintegration.evaluator.OnnxRuntime;
 import ai.vespa.models.evaluation.FunctionEvaluator;
 import ai.vespa.models.evaluation.ModelsEvaluator;
 import com.yahoo.tensor.Tensor;
@@ -21,7 +21,7 @@ public class ModelsEvaluatorTest {
     void testModelsEvaluator() {
         // Assumption fails but test passes on Intel macs
         // Assumption fails and test fails on ARM64
-        assumeTrue(OnnxEvaluator.isRuntimeAvailable());
+        assumeTrue(OnnxRuntime.isRuntimeAvailable());
 
         ModelsEvaluator modelsEvaluator = ModelsEvaluatorTester.create("src/test/cfg/application/stateless_eval");
         assertEquals(3, modelsEvaluator.models().size());

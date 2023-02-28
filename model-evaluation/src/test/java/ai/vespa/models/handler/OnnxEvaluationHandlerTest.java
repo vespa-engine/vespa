@@ -1,7 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.models.handler;
 
-import ai.vespa.modelintegration.evaluator.OnnxEvaluator;
+import ai.vespa.modelintegration.evaluator.OnnxRuntime;
 import ai.vespa.models.evaluation.ModelsEvaluator;
 import com.yahoo.config.subscription.ConfigGetter;
 import com.yahoo.filedistribution.fileacquirer.FileAcquirer;
@@ -27,7 +27,7 @@ public class OnnxEvaluationHandlerTest {
 
     @BeforeClass
     static public void setUp() {
-        assumeTrue(OnnxEvaluator.isRuntimeAvailable());
+        assumeTrue(OnnxRuntime.isRuntimeAvailable());
         handler = new HandlerTester(createModels());
     }
 

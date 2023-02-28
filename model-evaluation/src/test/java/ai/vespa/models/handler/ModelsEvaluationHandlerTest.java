@@ -1,7 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.models.handler;
 
-import ai.vespa.modelintegration.evaluator.OnnxEvaluator;
+import ai.vespa.modelintegration.evaluator.OnnxRuntime;
 import ai.vespa.models.evaluation.ModelsEvaluator;
 import ai.vespa.models.evaluation.RankProfilesConfigImporterWithMockedConstants;
 import com.yahoo.config.subscription.ConfigGetter;
@@ -323,7 +323,7 @@ public class ModelsEvaluationHandlerTest {
 
     @Test
     public void testMnistSavedEvaluateSpecificFunction() {
-        assumeTrue(OnnxEvaluator.isRuntimeAvailable());
+        assumeTrue(OnnxRuntime.isRuntimeAvailable());
         Map<String, String> properties = new HashMap<>();
         properties.put("input", inputTensor());
         properties.put("format.tensors", "long");

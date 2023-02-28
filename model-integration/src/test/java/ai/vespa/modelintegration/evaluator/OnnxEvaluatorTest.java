@@ -5,23 +5,31 @@ package ai.vespa.modelintegration.evaluator;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
 import org.junit.Test;
+import org.junit.jupiter.api.BeforeAll;
 
 import java.util.HashMap;
 import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assume.assumeTrue;
+import static org.junit.Assume.assumeNotNull;
 
 /**
  * @author lesters
  */
 public class OnnxEvaluatorTest {
 
+    private static OnnxRuntime runtime;
+
+    @BeforeAll
+    public static void beforeAll() {
+        if (OnnxRuntime.isRuntimeAvailable()) runtime = new OnnxRuntime();
+    }
+
     @Test
     public void testSimpleModel() {
-        assumeTrue(OnnxEvaluator.isRuntimeAvailable());
-        OnnxEvaluator evaluator = new OnnxEvaluator("src/test/models/onnx/simple/simple.onnx");
+        assumeNotNull(runtime);
+        OnnxEvaluator evaluator = runtime.evaluatorOf("src/test/models/onnx/simple/simple.onnx");
 
         // Input types
         Map<String, TensorType> inputTypes = evaluator.getInputInfo();
@@ -45,8 +53,8 @@ public class OnnxEvaluatorTest {
 
     @Test
     public void testBatchDimension() {
-        assumeTrue(OnnxEvaluator.isRuntimeAvailable());
-        OnnxEvaluator evaluator = new OnnxEvaluator("src/test/models/onnx/pytorch/one_layer.onnx");
+        assumeNotNull(runtime);
+        OnnxEvaluator evaluator = runtime.evaluatorOf("src/test/models/onnx/pytorch/one_layer.onnx");
 
         // Input types
         Map<String, TensorType> inputTypes = evaluator.getInputInfo();
@@ -64,7 +72,7 @@ public class OnnxEvaluatorTest {
 
     @Test
     public void testMatMul() {
-        assumeTrue(OnnxEvaluator.isRuntimeAvailable());
+        assumeNotNull(runtime);
         String expected = "tensor<float>(d0[2],d1[4]):[38,44,50,56,83,98,113,128]";
         String input1 = "tensor<float>(d0[2],d1[3]):[1,2,3,4,5,6]";
         String input2 = "tensor<float>(d0[3],d1[4]):[1,2,3,4,5,6,7,8,9,10,11,12]";
@@ -73,7 +81,7 @@ public class OnnxEvaluatorTest {
 
     @Test
     public void testTypes() {
-        assumeTrue(OnnxEvaluator.isRuntimeAvailable());
+        assumeNotNull(runtime);
         assertEvaluate("add_double.onnx", "tensor(d0[1]):[3]", "tensor(d0[1]):[1]", "tensor(d0[1]):[2]");
         assertEvaluate("add_float.onnx", "tensor<float>(d0[1]):[3]", "tensor<float>(d0[1]):[1]", "tensor<float>(d0[1]):[2]");
         assertEvaluate("add_int64.onnx", "tensor<double>(d0[1]):[3]", "tensor<double>(d0[1]):[1]", "tensor<double>(d0[1]):[2]");
@@ -86,8 +94,8 @@ public class OnnxEvaluatorTest {
 
     @Test
     public void testNotIdentifiers() {
-        assumeTrue(OnnxEvaluator.isRuntimeAvailable());
-        OnnxEvaluator evaluator = new OnnxEvaluator("src/test/models/onnx/badnames.onnx");
+        assumeNotNull(runtime);
+        OnnxEvaluator evaluator = runtime.evaluatorOf("src/test/models/onnx/badnames.onnx");
         var inputInfo = evaluator.getInputInfo();
         var outputInfo = evaluator.getOutputInfo();
         for (var entry : inputInfo.entrySet()) {
@@ -152,7 +160,7 @@ public class OnnxEvaluatorTest {
     }
 
     private void assertEvaluate(String model, String output, String... input) {
-        OnnxEvaluator evaluator = new OnnxEvaluator("src/test/models/onnx/" + model);
+        OnnxEvaluator evaluator = runtime.evaluatorOf("src/test/models/onnx/" + model);
         Map<String, Tensor> inputs = new HashMap<>();
         for (int i = 0; i < input.length; ++i) {
             inputs.put("input" + (i+1), Tensor.from(input[i]));

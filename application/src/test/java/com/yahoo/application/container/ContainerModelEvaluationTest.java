@@ -1,7 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.application.container;
 
-import ai.vespa.modelintegration.evaluator.OnnxEvaluator;
+import ai.vespa.modelintegration.evaluator.OnnxRuntime;
 import com.yahoo.application.Application;
 import com.yahoo.application.Networking;
 import com.yahoo.application.container.handler.Request;
@@ -40,7 +40,7 @@ public class ContainerModelEvaluationTest {
 
     @Test
     void testCreateApplicationInstanceWithModelEvaluation() {
-        assumeTrue(OnnxEvaluator.isRuntimeAvailable());
+        assumeTrue(OnnxRuntime.isRuntimeAvailable());
         try (Application application =
                 Application.fromApplicationPackage(new File("src/test/app-packages/model-evaluation"),
                         Networking.disable)) {
@@ -54,17 +54,17 @@ public class ContainerModelEvaluationTest {
         }
 
         {
-            String expected = "{\"cells\":[{\"address\":{},\"value\":2.496898}]}";
+            String expected = "{\"type\":\"tensor()\",\"cells\":[{\"address\":{},\"value\":2.496898}]}";
             assertResponse("http://localhost/model-evaluation/v1/xgboost_xgboost_2_2/eval?format.tensors=long", expected, jdisc);
         }
 
         {
-            String expected = "{\"cells\":[{\"address\":{},\"value\":1.9130086820218188}]}";
+            String expected = "{\"type\":\"tensor()\",\"cells\":[{\"address\":{},\"value\":1.9130086820218188}]}";
             assertResponse("http://localhost/model-evaluation/v1/lightgbm_regression/eval?format.tensors=long", expected, jdisc);
         }
 
         {
-            String expected = "{\"cells\":[{\"address\":{\"d0\":\"0\"},\"value\":0.3006095290184021},{\"address\":{\"d0\":\"1\"},\"value\":0.33222490549087524},{\"address\":{\"d0\":\"2\"},\"value\":0.3671652674674988}]}";
+            String expected = "{\"type\":\"tensor<float>(d0[3])\",\"cells\":[{\"address\":{\"d0\":\"0\"},\"value\":0.3006095290184021},{\"address\":{\"d0\":\"1\"},\"value\":0.33222490549087524},{\"address\":{\"d0\":\"2\"},\"value\":0.36716532707214355}]}";
             assertResponse("http://localhost/model-evaluation/v1/onnx_softmax_func/output/eval?format.tensors=long&input=" + inputTensor(), expected, jdisc);
             assertResponse("http://localhost/model-evaluation/v1/onnx_softmax_func/default.output/eval?format.tensors=long&input=" + inputTensor(), expected, jdisc);
             assertResponse("http://localhost/model-evaluation/v1/onnx_softmax_func/default/output/eval?format.tensors=long&input=" + inputTensor(), expected, jdisc);
@@ -75,7 +75,13 @@ public class ContainerModelEvaluationTest {
     private void assertResponse(String url, String expectedResponse, JDisc jdisc) {
         try {
             Response response = jdisc.handleRequest(new Request(url));
-            JsonTestHelper.assertJsonEquals(expectedResponse, response.getBodyAsString());
+
+            // Truncate JSON encoded numbers having more than 6 digits after the decimal point
+            String pattern = "([0-9]+\\.[0-9]{6})[0-9]*";
+            String normalizedExpectedResponse = expectedResponse.replaceAll(pattern, "$1");
+            String normalizedActualResponse = response.getBodyAsString().replaceAll(pattern, "$1");
+
+            JsonTestHelper.assertJsonEquals(normalizedExpectedResponse, normalizedActualResponse);
             assertEquals(200, response.getStatus());
         }
         catch (CharacterCodingException e) {

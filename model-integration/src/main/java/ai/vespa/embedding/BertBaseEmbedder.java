@@ -2,8 +2,10 @@ package ai.vespa.embedding;
 
 import ai.vespa.modelintegration.evaluator.OnnxEvaluator;
 import ai.vespa.modelintegration.evaluator.OnnxEvaluatorOptions;
-import com.yahoo.embedding.BertBaseEmbedderConfig;
+import ai.vespa.modelintegration.evaluator.OnnxRuntime;
+import com.yahoo.component.AbstractComponent;
 import com.yahoo.component.annotation.Inject;
+import com.yahoo.embedding.BertBaseEmbedderConfig;
 import com.yahoo.language.process.Embedder;
 import com.yahoo.language.wordpiece.WordPieceEmbedder;
 import com.yahoo.tensor.IndexedTensor;
@@ -28,7 +30,7 @@ import java.util.Map;
  *
  * @author lesters
  */
-public class BertBaseEmbedder implements Embedder {
+public class BertBaseEmbedder extends AbstractComponent implements Embedder {
 
     private final static int TOKEN_CLS = 101;  // [CLS]
     private final static int TOKEN_SEP = 102;  // [SEP]
@@ -44,7 +46,7 @@ public class BertBaseEmbedder implements Embedder {
     private final OnnxEvaluator evaluator;
 
     @Inject
-    public BertBaseEmbedder(BertBaseEmbedderConfig config) {
+    public BertBaseEmbedder(OnnxRuntime onnx, BertBaseEmbedderConfig config) {
         maxTokens = config.transformerMaxTokens();
         inputIdsName = config.transformerInputIds();
         attentionMaskName = config.transformerAttentionMask();
@@ -58,7 +60,7 @@ public class BertBaseEmbedder implements Embedder {
         options.setIntraOpThreads(modifyThreadCount(config.onnxIntraOpThreads()));
 
         tokenizer = new WordPieceEmbedder.Builder(config.tokenizerVocab().toString()).build();
-        evaluator = new OnnxEvaluator(config.transformerModel().toString(), options);
+        this.evaluator = onnx.evaluatorOf(config.transformerModel().toString(), options);
 
         validateModel();
     }
@@ -99,6 +101,8 @@ public class BertBaseEmbedder implements Embedder {
         List<Integer> tokens = embedWithSeperatorTokens(text, context, maxTokens);
         return embedTokens(tokens, type);
     }
+
+    @Override public void deconstruct() { evaluator.close(); }
 
     Tensor embedTokens(List<Integer> tokens, TensorType type) {
         Tensor inputSequence = createTensorRepresentation(tokens, "d1");
