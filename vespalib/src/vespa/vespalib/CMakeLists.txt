@@ -30,8 +30,9 @@ vespa_add_library(vespalib
     $<TARGET_OBJECTS:vespalib_vespalib_time>
     $<TARGET_OBJECTS:vespalib_vespalib_trace>
     $<TARGET_OBJECTS:vespalib_vespalib_util>
-    $<TARGET_OBJECTS:fastlib_io>
-    $<TARGET_OBJECTS:fastlib_text>
+    $<TARGET_OBJECTS:vespalib_fastlib_io>
+    $<TARGET_OBJECTS:vespalib_fastlib_text>
+    $<TARGET_OBJECTS:vespalib_fastos>
     INSTALL lib64
     DEPENDS
     ${VESPA_GCC_LIB}
