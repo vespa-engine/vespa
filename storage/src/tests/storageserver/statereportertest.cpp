@@ -54,7 +54,6 @@ struct MetricClock : public metrics::MetricManager::Timer
     framework::Clock& _clock;
     explicit MetricClock(framework::Clock& c) : _clock(c) {}
     [[nodiscard]] time_t getTime() const override { return vespalib::count_s(_clock.getMonotonicTime().time_since_epoch()); }
-    [[nodiscard]] time_t getTimeInMilliSecs() const override { return vespalib::count_ms(_clock.getMonotonicTime().time_since_epoch()); }
 };
 
 }
@@ -85,11 +84,8 @@ void StateReporterTest::SetUp() {
         _metricManager->registerMetric(guard, *_topSet);
     }
 
-    _stateReporter = std::make_unique<StateReporter>(
-            _node->getComponentRegister(),
-            *_metricManager,
-            _generationFetcher,
-            "status");
+    _stateReporter = std::make_unique<StateReporter>(_node->getComponentRegister(), *_metricManager,
+                                                     _generationFetcher, "status");
 
     _filestorMetrics = std::make_shared<FileStorMetrics>();
     _filestorMetrics->initDiskMetrics(1, 1);
@@ -125,20 +121,14 @@ vespalib::Slime slime; \
 #define ASSERT_GENERATION(jsonData, component, generation) \
 { \
     PARSE_JSON(jsonData); \
-    ASSERT_EQ( \
-            generation, \
-            slime.get()["config"][component]["generation"].asDouble()); \
+    ASSERT_EQ(generation, slime.get()["config"][component]["generation"].asDouble()); \
 }
 
 #define ASSERT_NODE_STATUS(jsonData, code, message) \
 { \
     PARSE_JSON(jsonData); \
-    ASSERT_EQ( \
-            vespalib::string(code), \
-            slime.get()["status"]["code"].asString().make_string()); \
-    ASSERT_EQ( \
-            vespalib::string(message), \
-            slime.get()["status"]["message"].asString().make_string()); \
+    ASSERT_EQ(vespalib::string(code), slime.get()["status"]["code"].asString().make_string()); \
+    ASSERT_EQ(vespalib::string(message), slime.get()["status"]["message"].asString().make_string()); \
 }
 
 #define ASSERT_METRIC_GET_PUT(jsonData, expGetCount, expPutCount) \
@@ -148,16 +138,11 @@ vespalib::Slime slime; \
     double putCount = -1; \
     size_t metricCount = slime.get()["metrics"]["values"].children(); \
     for (size_t j=0; j<metricCount; j++) { \
-        const vespalib::string name = slime.get()["metrics"]["values"][j]["name"] \
-                                 .asString().make_string(); \
-        if (name.compare("vds.filestor.allthreads.get.count") == 0) \
-        { \
-            getCount = slime.get()["metrics"]["values"][j]["values"]["count"] \
-                       .asDouble(); \
-        } else if (name.compare("vds.filestor.allthreads.put.count") == 0) \
-        { \
-            putCount = slime.get()["metrics"]["values"][j]["values"]["count"] \
-                       .asDouble(); \
+        const vespalib::string name = slime.get()["metrics"]["values"][j]["name"].asString().make_string(); \
+        if (name.compare("vds.filestor.allthreads.get.count") == 0) { \
+            getCount = slime.get()["metrics"]["values"][j]["values"]["count"].asDouble(); \
+        } else if (name.compare("vds.filestor.allthreads.put.count") == 0) { \
+            putCount = slime.get()["metrics"]["values"][j]["values"]["count"].asDouble(); \
         } \
     } \
     ASSERT_EQ(expGetCount, getCount); \
@@ -226,8 +211,7 @@ TEST_F(StateReporterTest, report_metrics) {
     for (uint32_t i = 0; i < 6; ++i) {
         _clock->addSecondsToTime(60);
         _metricManager->timeChangedNotification();
-        while (int64_t(_metricManager->getLastProcessedTime()) < vespalib::count_s(_clock->getMonotonicTime().time_since_epoch()))
-        {
+        while (int64_t(_metricManager->getLastProcessedTime()) < vespalib::count_s(_clock->getMonotonicTime().time_since_epoch())) {
             std::this_thread::sleep_for(1ms);
         }
     }

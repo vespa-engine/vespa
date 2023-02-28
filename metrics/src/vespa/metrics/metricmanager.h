@@ -68,7 +68,7 @@ public:
     struct Timer {
         virtual ~Timer() = default;
         virtual time_t getTime() const;
-        virtual time_t getTimeInMilliSecs() const { return getTime() * 1000; }
+        time_point getTimeInMilliSecs() const { return time_point(vespalib::from_s(getTime())); }
     };
 
     /**

@@ -25,6 +25,7 @@ using Config = MetricsmanagerConfig;
 using vespalib::IllegalStateException;
 using vespalib::IllegalArgumentException;
 using vespalib::make_string_short::fmt;
+using vespalib::count_ms;
 
 MetricManager::ConsumerSpec::ConsumerSpec() = default;
 MetricManager::ConsumerSpec::~ConsumerSpec() = default;
@@ -654,7 +655,7 @@ MetricManager::updatePeriodicMetrics(const MetricLockGuard & guard, time_t updat
 {
     assertMetricLockLocked(guard);
     time_t nextUpdateTime = std::numeric_limits<time_t>::max();
-    time_t preTime = _timer->getTimeInMilliSecs();
+    time_point preTime = _timer->getTimeInMilliSecs();
     for (auto hook : _periodicUpdateHooks) {
         if (hook->_nextCall <= updateTime) {
             hook->updateMetrics(guard);
@@ -668,13 +669,13 @@ MetricManager::updatePeriodicMetrics(const MetricLockGuard & guard, time_t updat
             } else {
                 hook->_nextCall += hook->_period;
             }
-            time_t postTime = _timer->getTimeInMilliSecs();
-            _periodicHookLatency.addValue(postTime - preTime);
+            time_point postTime = _timer->getTimeInMilliSecs();
+            _periodicHookLatency.addValue(count_ms(postTime - preTime));
             preTime = postTime;
         } else if (outOfSchedule) {
             hook->updateMetrics(guard);
-            time_t postTime = _timer->getTimeInMilliSecs();
-            _periodicHookLatency.addValue(postTime - preTime);
+            time_point postTime = _timer->getTimeInMilliSecs();
+            _periodicHookLatency.addValue(count_ms(postTime - preTime));
             preTime = postTime;
         }
         nextUpdateTime = std::min(nextUpdateTime, hook->_nextCall);
@@ -687,11 +688,11 @@ void
 MetricManager::updateSnapshotMetrics(const MetricLockGuard & guard)
 {
     assertMetricLockLocked(guard);
-    time_t preTime = _timer->getTimeInMilliSecs();
+    time_point preTime = _timer->getTimeInMilliSecs();
     for (const auto & hook : _snapshotUpdateHooks) {
         hook->updateMetrics(guard);
-        time_t postTime = _timer->getTimeInMilliSecs();
-        _snapshotHookLatency.addValue(postTime - preTime);
+        time_point postTime = _timer->getTimeInMilliSecs();
+        _snapshotHookLatency.addValue(count_ms(postTime - preTime));
         preTime = postTime;
     }
 }
@@ -708,7 +709,7 @@ MetricManager::forceEventLogging()
 void
 MetricManager::reset(time_t currentTime)
 {
-    time_t preTime = _timer->getTimeInMilliSecs();
+    time_point preTime = _timer->getTimeInMilliSecs();
     // Resetting implies visiting metrics, which needs to grab metric lock
     // to avoid conflict with adding/removal of metrics
     std::lock_guard waiterLock(_waiter);
@@ -717,8 +718,8 @@ MetricManager::reset(time_t currentTime)
         snapshot->reset(currentTime);
     }
     _totalMetrics->reset(currentTime);
-    time_t postTime = _timer->getTimeInMilliSecs();
-    _resetLatency.addValue(postTime - preTime);
+    time_point postTime = _timer->getTimeInMilliSecs();
+    _resetLatency.addValue(count_ms(postTime - preTime));
 }
 
 void
@@ -806,7 +807,7 @@ MetricManager::takeSnapshots(const MetricLockGuard & guard, time_t timeToProcess
              static_cast<uint64_t>(_snapshots[0]->getToTime()));
         return;
     }
-    time_t preTime = _timer->getTimeInMilliSecs();
+    time_point preTime = _timer->getTimeInMilliSecs();
     LOG(debug, "Updating %s snapshot and total metrics at time %" PRIu64 ".",
         _snapshots[0]->getName().c_str(), static_cast<uint64_t>(timeToProcess));
     MetricSnapshot& firstTarget(_snapshots[0]->getNextTarget());
@@ -838,8 +839,8 @@ MetricManager::takeSnapshots(const MetricLockGuard & guard, time_t timeToProcess
                 _snapshots[i]->getName().c_str(), static_cast<uint64_t>(timeToProcess));
         }
     }
-    time_t postTime = _timer->getTimeInMilliSecs();
-    _snapshotLatency.addValue(postTime - preTime);
+    time_point postTime = _timer->getTimeInMilliSecs();
+    _snapshotLatency.addValue(count_ms(postTime - preTime));
 }
 
 MemoryConsumption::UP
