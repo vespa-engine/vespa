@@ -53,9 +53,9 @@ public:
     // Precondition: handshake must have been completed
     const net::ConnectionAuthContext &auth_context() const noexcept { return *_auth_ctx; }
 
-    void respond_with_content(const vespalib::string &content_type,
-                              const vespalib::string &content);
-    void respond_with_error(int code, const vespalib::string &msg);
+    void respond_with_content(vespalib::stringref content_type,
+                              vespalib::stringref content);
+    void respond_with_error(int code, const vespalib::stringref msg);
 };
 
 } // namespace vespalib::portal

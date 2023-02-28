@@ -245,14 +245,16 @@ HttpConnection::handle_event(bool, bool)
 }
 
 void
-HttpConnection::respond_with_content(const vespalib::string &content_type,
-                                     const vespalib::string &content)
+HttpConnection::respond_with_content(vespalib::stringref content_type,
+                                     vespalib::stringref content)
 {
     {
         OutputWriter dst(_output, CHUNK_SIZE);
         dst.printf("HTTP/1.1 200 OK\r\n");
         dst.printf("Connection: close\r\n");
-        dst.printf("Content-Type: %s\r\n", content_type.c_str());
+        dst.printf("Content-Type: ");
+        dst.write(content_type.data(), content_type.size());
+        dst.printf("\r\n");
         dst.printf("Content-Length: %zu\r\n", content.size());
         emit_http_security_headers(dst);
         dst.printf("\r\n");
@@ -263,11 +265,13 @@ HttpConnection::respond_with_content(const vespalib::string &content_type,
 }
 
 void
-HttpConnection::respond_with_error(int code, const vespalib::string &msg)
+HttpConnection::respond_with_error(int code, vespalib::stringref msg)
 {
     {
         OutputWriter dst(_output, CHUNK_SIZE);
-        dst.printf("HTTP/1.1 %d %s\r\n", code, msg.c_str());
+        dst.printf("HTTP/1.1 %d ", code);
+        dst.write(msg.data(), msg.size());
+        dst.printf("\r\n");
         dst.printf("Connection: close\r\n");
         dst.printf("\r\n");
     }

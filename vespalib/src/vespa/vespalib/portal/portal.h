@@ -65,9 +65,9 @@ public:
         bool has_param(const vespalib::string &name) const;
         const vespalib::string &get_param(const vespalib::string &name) const;
         std::map<vespalib::string, vespalib::string> export_params() const;
-        void respond_with_content(const vespalib::string &content_type,
-                                  const vespalib::string &content);
-        void respond_with_error(int code, const vespalib::string &msg);
+        void respond_with_content(vespalib::stringref content_type,
+                                  vespalib::stringref content);
+        void respond_with_error(int code, vespalib::stringref msg);
         const net::ConnectionAuthContext &auth_context() const noexcept;
         ~GetRequest();
     };
