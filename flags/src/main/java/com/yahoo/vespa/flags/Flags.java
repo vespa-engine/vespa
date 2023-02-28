@@ -352,6 +352,13 @@ public class Flags {
             "Takes effect on next config server container start",
             ZONE_ID);
 
+    public static final UnboundBooleanFlag ENABLE_GLOBAL_PHASE = defineFeatureFlag(
+            "enable-global-phase", false,
+            List.of("arnej", "bjorncs"), "2023-02-28", "2024-01-10",
+            "Enable global phase ranking",
+            "Takes effect at redeployment",
+            APPLICATION_ID);
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
                                                        String createdAt, String expiresAt, String description,
