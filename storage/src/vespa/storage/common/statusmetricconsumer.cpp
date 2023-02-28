@@ -5,7 +5,6 @@
 #include <boost/lexical_cast.hpp>
 #include <vespa/metrics/jsonwriter.h>
 #include <vespa/metrics/textwriter.h>
-#include <vespa/metrics/xmlwriter.h>
 #include <vespa/metrics/metricmanager.h>
 #include <vespa/storageapi/messageapi/storagemessage.h>
 #include <vespa/vespalib/stllike/asciistream.h>
@@ -37,10 +36,6 @@ StatusMetricConsumer::getReportContentType(const framework::HttpUrlPath& path) c
         return "text/plain";
     }
 
-    if (path.getAttribute("format") == "xml") {
-        return "application/xml";
-    }
-
     if (path.getAttribute("format") == "text") {
         return "text/plain";
     }
@@ -67,7 +62,6 @@ StatusMetricConsumer::reportStatus(std::ostream& out,
         LOG(debug, "Not calling update hooks as dontcallupdatehooks option has been given");
     }
     int64_t currentTimeS(vespalib::count_s(_component.getClock().getMonotonicTime().time_since_epoch()));
-    bool xml = (path.getAttribute("format") == "xml");
     bool json = (path.getAttribute("format") == "json");
 
     int verbosity(path.get("verbosity", 0));
@@ -131,13 +125,7 @@ StatusMetricConsumer::reportStatus(std::ostream& out,
         }
 
         std::string consumer = path.getAttribute("consumer", "");
-        if (xml) {
-            out << "<?xml version=\"1.0\"?>\n";
-            vespalib::XmlOutputStream xos(out);
-            metrics::XmlWriter xmlWriter(xos, snapshot->getPeriod(), verbosity);
-            _manager.visit(metricLock, *snapshot, xmlWriter, consumer);
-            out << "\n";
-        } else if (json) {
+        if (json) {
             vespalib::asciistream jsonStreamData;
             vespalib::JsonStream stream(jsonStreamData, true);
             stream << Object() << "metrics";
