@@ -1,0 +1,11 @@
+*.ilk
+*.pdb
+.Build_completed
+.Dist_completed
+.Install_completed
+.PreBuild_completed
+bin
+include
+lib
+update.log
+Makefile

@@ -4,5 +4,6 @@ vespa_add_executable(vespalog_threads_test_app TEST
     testthreads.cpp
     DEPENDS
     vespalog
+    fastos
 )
 vespa_add_test(NAME vespalog_threads_test_app COMMAND vespalog_threads_test_app vespa.log ENVIRONMENT "VESPA_LOG_TARGET=file:vespa.log")
