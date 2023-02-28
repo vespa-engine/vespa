@@ -53,7 +53,7 @@ struct MetricClock : public metrics::MetricManager::Timer
 {
     framework::Clock& _clock;
     explicit MetricClock(framework::Clock& c) : _clock(c) {}
-    [[nodiscard]] metrics::time_point getTime() const override { return _clock.getMonotonicTime(); }
+    [[nodiscard]] metrics::time_point getTime() const override { return _clock.getSystemTime(); }
 };
 
 }
