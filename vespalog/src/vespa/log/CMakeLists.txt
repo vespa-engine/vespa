@@ -18,3 +18,4 @@ vespa_add_library(vespalog
     reject-filter.cpp
     INSTALL lib64
 )
+target_link_libraries(vespalog PUBLIC ${CMAKE_THREAD_LIBS_INIT})
