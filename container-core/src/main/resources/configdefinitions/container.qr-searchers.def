@@ -71,3 +71,6 @@ searchcluster[].indexingmode enum { REALTIME, STREAMING } default=REALTIME
 
 ## Storage cluster route to use for search cluster if indexingmode is streaming.
 searchcluster[].storagecluster.routespec string default=""
+
+## Enable global phase ranking
+searchcluster[].globalphase bool default=false

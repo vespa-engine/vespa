@@ -485,7 +485,7 @@ public class ContainerClusterTest {
         if (isCombinedCluster)
             cluster.setHostClusterId("test-content-cluster");
         cluster.setMemoryPercentage(memoryPercentage);
-        cluster.setSearch(new ContainerSearch(cluster, new SearchChains(cluster, "search-chain")));
+        cluster.setSearch(new ContainerSearch(root.getDeployState(), cluster, new SearchChains(cluster, "search-chain")));
         return cluster;
     }
 

@@ -66,6 +66,7 @@ public class ClusterSearcher extends Searcher {
     private final VespaBackEndSearcher server;
     private final Executor executor;
     private final GlobalPhaseRanker globalPhaseHelper;
+    private final boolean enableGlobalPhase;
 
     @Inject
     public ClusterSearcher(ComponentId id,
@@ -105,6 +106,7 @@ public class ClusterSearcher extends Searcher {
             server = searchDispatch(searchClusterIndex, searchClusterName, uniqueServerId,
                                     docSumParams, documentDbConfig, schemaInfo, dispatchers);
         }
+        enableGlobalPhase = searchClusterConfig.globalphase();
     }
 
     private static QrSearchersConfig.Searchcluster getSearchClusterConfigFromClusterName(QrSearchersConfig config, String name) {
@@ -164,6 +166,7 @@ public class ClusterSearcher extends Searcher {
         server = searcher;
         this.executor = executor;
         this.globalPhaseHelper = null;
+        this.enableGlobalPhase = false;
     }
 
     /** Do not use, for internal testing purposes only. **/
@@ -245,7 +248,7 @@ public class ClusterSearcher extends Searcher {
         }
         String schema = restrict.iterator().next();
         Result result = searcher.search(query, execution);
-        if (globalPhaseHelper != null) {
+        if (globalPhaseHelper != null && enableGlobalPhase) {
             globalPhaseHelper.process(query, result, schema);
         }
         return result;

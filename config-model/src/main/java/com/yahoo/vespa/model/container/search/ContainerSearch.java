@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.container.search;
 
+import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.container.QrSearchersConfig;
 import com.yahoo.prelude.semantics.SemanticRulesConfig;
 import com.yahoo.search.config.IndexInfoConfig;
@@ -45,13 +46,15 @@ public class ContainerSearch extends ContainerSubsystem<SearchChains>
 
     private final ApplicationContainerCluster owningCluster;
     private final List<SearchCluster> searchClusters = new LinkedList<>();
+    private final boolean globalPhase;
 
     private QueryProfiles queryProfiles;
     private SemanticRules semanticRules;
     private PageTemplates pageTemplates;
 
-    public ContainerSearch(ApplicationContainerCluster cluster, SearchChains chains) {
+    public ContainerSearch(DeployState deployState, ApplicationContainerCluster cluster, SearchChains chains) {
         super(chains);
+        this.globalPhase = deployState.featureFlags().enableGlobalPhase();
         this.owningCluster = cluster;
 
         owningCluster.addComponent(Component.fromClassAndBundle(CompiledQueryProfileRegistry.class, SEARCH_AND_DOCPROC_BUNDLE));
@@ -74,10 +77,12 @@ public class ContainerSearch extends ContainerSubsystem<SearchChains>
             if (searchCluster instanceof IndexedSearchCluster indexed) {
                 var dispatcher = new DispatcherComponent(indexed);
                 owningCluster.addComponent(dispatcher);
-                for (var documentDb : indexed.getDocumentDbs()) {
-                    var factory = new RankProfilesEvaluatorComponent(documentDb);
-                    if (! owningCluster.getComponentsMap().containsKey(factory.getComponentId())) {
-                        owningCluster.addComponent(factory);
+                if (globalPhase) {
+                    for (var documentDb : indexed.getDocumentDbs()) {
+                        var factory = new RankProfilesEvaluatorComponent(documentDb);
+                        if (! owningCluster.getComponentsMap().containsKey(factory.getComponentId())) {
+                            owningCluster.addComponent(factory);
+                        }
                     }
                 }
             }
@@ -153,6 +158,7 @@ public class ContainerSearch extends ContainerSubsystem<SearchChains>
                 if ( ! (sys instanceof IndexedSearchCluster)) {
                 scB.storagecluster(new QrSearchersConfig.Searchcluster.Storagecluster.Builder().
                                 routespec(((StreamingSearchCluster)sys).getStorageRouteSpec()));
+                scB.globalphase(globalPhase);
             }
             builder.searchcluster(scB);
         }
