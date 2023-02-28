@@ -45,6 +45,7 @@ public class ExportPackages {
         }
     }
 
+    // Make sure to update the junit integration test `ExportPackagesIT.java` if the set of exported packages is modified.
     private static String getExportPackages(String[] jars) throws IOException {
         StringBuilder out = new StringBuilder();
         out.append(getSystemPackages()).append(", ")
@@ -53,6 +54,7 @@ public class ExportPackages {
            .append("com.yahoo.jdisc.handler, ")
            .append("com.yahoo.jdisc.service, ")
            .append("com.yahoo.jdisc.statistics, ")
+           .append("com.yahoo.jdisc.refcount, ")
 
            .append("javax.inject;version=1.0.0, ")  // TODO Vespa 9: remove. Included in guice, but not exported. Needed by container-jersey.
            .append("org.aopalliance.intercept, ")
