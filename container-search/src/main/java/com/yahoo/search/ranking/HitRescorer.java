@@ -7,7 +7,7 @@ import com.yahoo.search.result.Hit;
 import java.util.function.Supplier;
 import java.util.logging.Logger;
 
-public class HitRescorer {
+class HitRescorer {
 
     private static final Logger logger = Logger.getLogger(HitRescorer.class.getName());
     

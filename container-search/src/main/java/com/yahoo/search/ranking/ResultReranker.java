@@ -10,7 +10,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.logging.Logger;
 
-public class ResultReranker {
+class ResultReranker {
 
     private static final Logger logger = Logger.getLogger(ResultReranker.class.getName());
 
