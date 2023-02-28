@@ -6,6 +6,7 @@ endif()
 
 vespa_define_module(
     DEPENDS
+    fastos
     vespalog
 
     EXTERNAL_DEPENDS
