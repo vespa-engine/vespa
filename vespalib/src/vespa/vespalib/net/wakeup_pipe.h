@@ -2,6 +2,8 @@
 
 #pragma once
 
+#include "socket_handle.h"
+
 namespace vespalib {
 
 //-----------------------------------------------------------------------------
@@ -15,11 +17,12 @@ namespace vespalib {
  **/
 class WakeupPipe {
 private:
-    int _pipe[2];
+    SocketHandle _reader;
+    SocketHandle _writer;
 public:
     WakeupPipe();
     ~WakeupPipe();
-    int get_read_fd() const { return _pipe[0]; }
+    int get_read_fd() const { return _reader.get(); }
     void write_token();
     void read_tokens();
 };

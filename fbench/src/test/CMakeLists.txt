@@ -26,5 +26,6 @@ vespa_add_executable(fbench_clientstatus_app TEST
     clientstatus.cpp
     DEPENDS
     fbench_util
+    fastos
 )
 vespa_add_test(NAME fbench_clientstatus_app COMMAND fbench_clientstatus_app)
