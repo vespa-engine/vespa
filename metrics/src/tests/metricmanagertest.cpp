@@ -364,10 +364,10 @@ class FakeTimer : public MetricManager::Timer {
     std::atomic<time_t> _time;
 public:
     FakeTimer(time_t startTime = 0) : _time(startTime) {}
-    time_t getTime() const override { return load_relaxed(_time); }
+    time_point getTime() const override { return time_point(vespalib::from_s(load_relaxed(_time))); }
     void set_time(time_t t) noexcept { store_relaxed(_time, t); }
     // Not safe for multiple writers, only expected to be called by test.
-    void add_time(time_t t) noexcept { set_time(getTime() + t); }
+    void add_time(time_t t) noexcept { set_time(load_relaxed(_time) + t); }
 };
 
 struct BriefValuePrinter : public MetricVisitor {
@@ -556,8 +556,8 @@ TEST_F(MetricManagerTest, test_snapshots)
 
 TEST_F(MetricManagerTest, test_json_output)
 {
-    FakeTimer* timer = new FakeTimer(1000);
-    std::unique_ptr<MetricManager::Timer> timerImpl(timer);
+    auto timerImpl = std::make_unique<FakeTimer>(1000);
+    FakeTimer & timer = *timerImpl;
     MetricManager mm(std::move(timerImpl));
     TestMetricSet mySet;
     {
@@ -582,7 +582,7 @@ TEST_F(MetricManagerTest, test_json_output)
     mySet.val10.a.val2.addValue(2);
     mySet.val10.b.val1.addValue(1);
 
-    timer->set_time(1300);
+    timer.set_time(1300);
     takeSnapshots(mm, 1300);
 
     // Create json output
@@ -879,9 +879,7 @@ TEST_F(MetricManagerTest, json_output_can_have_multiple_sets_with_same_name)
 
 TEST_F(MetricManagerTest, test_text_output)
 {
-    FakeTimer* timer = new FakeTimer(1000);
-    std::unique_ptr<MetricManager::Timer> timerImpl(timer);
-    MetricManager mm(std::move(timerImpl));
+    MetricManager mm(std::make_unique<FakeTimer>(1000));
     TestMetricSet mySet;
     {
         MetricLockGuard lockGuard(mm.getMetricLock());
@@ -954,10 +952,7 @@ namespace {
         std::mutex&         _output_mutex;
         FakeTimer&          _timer;
 
-        MyUpdateHook(std::ostringstream& output,
-                     std::mutex& output_mutex,
-                     const char* name,
-                     FakeTimer& timer)
+        MyUpdateHook(std::ostringstream& output, std::mutex& output_mutex, const char* name, FakeTimer& timer)
             : UpdateHook(name),
               _output(output),
               _output_mutex(output_mutex),
@@ -967,7 +962,7 @@ namespace {
 
         void updateMetrics(const MetricLockGuard & ) override {
             std::lock_guard lock(_output_mutex); // updateMetrics() called from metric manager thread
-            _output << _timer.getTime() << ": " << getName() << " called\n";
+            _output << vespalib::count_s(_timer.getTime().time_since_epoch()) << ": " << getName() << " called\n";
         }
     };
 }
@@ -976,8 +971,8 @@ TEST_F(MetricManagerTest, test_update_hooks)
 {
     std::mutex output_mutex;
     std::ostringstream output;
-    FakeTimer* timer = new FakeTimer(1000);
-    std::unique_ptr<MetricManager::Timer> timerImpl(timer);
+    auto timerImpl = std::make_unique<FakeTimer>(1000);
+    FakeTimer & timer = *timerImpl;
         // Add a metric set just so one exist
     TestMetricSet mySet;
     MetricManager mm(std::move(timerImpl));
@@ -986,9 +981,9 @@ TEST_F(MetricManagerTest, test_update_hooks)
         mm.registerMetric(lockGuard, mySet.set);
     }
 
-    MyUpdateHook preInitShort(output, output_mutex, "BIS", *timer);
-    MyUpdateHook preInitLong(output, output_mutex, "BIL", *timer);
-    MyUpdateHook preInitInfinite(output, output_mutex, "BII", *timer);
+    MyUpdateHook preInitShort(output, output_mutex, "BIS", timer);
+    MyUpdateHook preInitLong(output, output_mutex, "BIL", timer);
+    MyUpdateHook preInitInfinite(output, output_mutex, "BII", timer);
     mm.addMetricUpdateHook(preInitShort, 5);
     mm.addMetricUpdateHook(preInitLong, 300);
     mm.addMetricUpdateHook(preInitInfinite, 0);
@@ -1007,55 +1002,55 @@ TEST_F(MetricManagerTest, test_update_hooks)
                       "consumer[1].tags[0] snaptest\n"));
     output << "Init done\n";
 
-    MyUpdateHook postInitShort(output, output_mutex, "AIS", *timer);
-    MyUpdateHook postInitLong(output, output_mutex, "AIL", *timer);
-    MyUpdateHook postInitInfinite(output, output_mutex, "AII", *timer);
+    MyUpdateHook postInitShort(output, output_mutex, "AIS", timer);
+    MyUpdateHook postInitLong(output, output_mutex, "AIL", timer);
+    MyUpdateHook postInitInfinite(output, output_mutex, "AII", timer);
     mm.addMetricUpdateHook(postInitShort, 5);
     mm.addMetricUpdateHook(postInitLong, 400);
     mm.addMetricUpdateHook(postInitInfinite, 0);
 
     // After 5 seconds the short ones should get another.
 
-    timer->set_time(1006);
+    timer.set_time(1006);
     waitForTimeProcessed(mm, 1006);
 
     // After 4 more seconds the short ones should get another
     // since last update was a second late. (Stable periods, process time
     // should not affect how often they are updated)
 
-    timer->set_time(1010);
+    timer.set_time(1010);
     waitForTimeProcessed(mm, 1010);
 
     // Bumping considerably ahead, such that next update is in the past,
     // we should only get one update called in this period.
 
-    timer->set_time(1200);
+    timer.set_time(1200);
     waitForTimeProcessed(mm, 1200);
 
     // No updates at this time.
-    timer->set_time(1204);
+    timer.set_time(1204);
     waitForTimeProcessed(mm, 1204);
 
     // Give all hooks an update
     mm.updateMetrics(true);
 
     // Last update should not have interfered with periods
-    timer->set_time(1205);
+    timer.set_time(1205);
     waitForTimeProcessed(mm, 1205);
 
     // Time is just ahead of a snapshot.
-    timer->set_time(1299);
+    timer.set_time(1299);
     waitForTimeProcessed(mm, 1299);
 
     // At time 1300 we are at a 5 minute snapshot bump
     // All hooks should thus get an update. The one with matching period
     // should only get one
-    timer->set_time(1300);
+    timer.set_time(1300);
     waitForTimeProcessed(mm, 1300);
 
     // The snapshot time currently doesn't count for the metric at period
     // 400. It will get an event at this time.
-    timer->set_time(1450);
+    timer.set_time(1450);
     waitForTimeProcessed(mm, 1450);
 
     std::string expected(

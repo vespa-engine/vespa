@@ -52,7 +52,7 @@ namespace {
     {
         framework::Clock& _clock;
         explicit MetricClock(framework::Clock& c) : _clock(c) {}
-        [[nodiscard]] time_t getTime() const override { return vespalib::count_s(_clock.getMonotonicTime().time_since_epoch()); }
+        [[nodiscard]] metrics::time_point getTime() const override { return _clock.getSystemTime(); }
     };
 }
 
