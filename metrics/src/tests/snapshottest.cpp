@@ -122,15 +122,15 @@ struct TestMetricSet : public MetricSet {
     SubMetricSet set2;
     SumMetric<SubMetricSet> setSum;
 
-    TestMetricSet(vespalib::stringref name, MetricSet* owner = 0);
+    TestMetricSet(vespalib::stringref name);
     ~TestMetricSet();
 
     void incValues();
 };
 
 
-TestMetricSet::TestMetricSet(vespalib::stringref name, MetricSet* owner)
-    : MetricSet(name, {}, "", owner),
+TestMetricSet::TestMetricSet(vespalib::stringref name)
+    : MetricSet(name, {}, "", nullptr),
       set1("set1", this),
       set2("set2", this),
       setSum("setSum", {}, "", this)
@@ -149,7 +149,7 @@ TestMetricSet::incValues() {
 struct FakeTimer : public MetricManager::Timer {
     uint32_t _timeInSecs;
     FakeTimer() : _timeInSecs(1) {}
-    time_t getTime() const override { return _timeInSecs; }
+    time_point getTime() const override { return time_point(vespalib::from_s(_timeInSecs)); }
 };
 
 void ASSERT_VALUE(int32_t value, const MetricSnapshot & snapshot, const char *name) __attribute__((noinline));
@@ -176,8 +176,7 @@ TEST_F(SnapshotTest, test_snapshot_two_days)
     TestMetricSet set("test");
 
     FakeTimer* timer;
-    MetricManager mm(
-            std::unique_ptr<MetricManager::Timer>(timer = new FakeTimer));
+    MetricManager mm(std::unique_ptr<MetricManager::Timer>(timer = new FakeTimer));
     {
         MetricLockGuard lockGuard(mm.getMetricLock());
         mm.registerMetric(lockGuard, set);
@@ -215,10 +214,9 @@ TEST_F(SnapshotTest, test_snapshot_two_days)
               << "\n";
     */
 
-    const MetricSnapshot* snap = 0;
     // active snapshot
     MetricLockGuard lockGuard(mm.getMetricLock());
-    snap = &mm.getActiveMetrics(lockGuard);
+    const MetricSnapshot* snap = &mm.getActiveMetrics(lockGuard);
     ASSERT_VALUE(0, *snap, "test.set1.set1.count1");
     ASSERT_VALUE(0, *snap, "test.set1.set1.countSum");
 

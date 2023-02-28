@@ -26,13 +26,15 @@ using vespalib::IllegalStateException;
 using vespalib::IllegalArgumentException;
 using vespalib::make_string_short::fmt;
 using vespalib::count_ms;
+using vespalib::count_s;
+using vespalib::from_s;
 
 MetricManager::ConsumerSpec::ConsumerSpec() = default;
 MetricManager::ConsumerSpec::~ConsumerSpec() = default;
 
-time_t
+time_point
 MetricManager::Timer::getTime() const {
-    return vespalib::count_s(vespalib::system_clock::now().time_since_epoch());
+    return vespalib::steady_clock::now();
 }
 
 void
@@ -119,7 +121,7 @@ MetricManager::addMetricUpdateHook(UpdateHook& hook, uint32_t period)
     std::lock_guard sync(_waiter);
         // If we've already initialized manager, log period has been set.
         // In this case. Call first time after period
-    hook._nextCall = _timer->getTime() + period;
+    hook._nextCall = count_s(_timer->getTime().time_since_epoch()) + period;
     if (period == 0) {
         for (UpdateHook * sHook : _snapshotUpdateHooks) {
             if (sHook == &hook) {
@@ -464,7 +466,7 @@ MetricManager::configure(const MetricLockGuard & , std::unique_ptr<Config> confi
 
             // Set up snapshots only first time. We don't allow live reconfig
             // of snapshot periods.
-        time_t currentTime(_timer->getTime());
+        time_t currentTime = count_s(_timer->getTime().time_since_epoch());
         _activeMetrics.setFromTime(currentTime);
         uint32_t count = 1;
         for (uint32_t i = 0; i< snapshotPeriods.size(); ++i) {
@@ -731,7 +733,7 @@ MetricManager::run()
     // we constantly add next time to do something from the last timer.
     // For that to work, we need to initialize timers on first iteration
     // to set them to current time.
-    time_t currentTime = _timer->getTime();
+    time_t currentTime = count_s(_timer->getTime().time_since_epoch());
     for (auto & snapshot : _snapshots) {
         snapshot->setFromTime(currentTime);
     }
@@ -741,12 +743,13 @@ MetricManager::run()
     // Ensure correct time for first snapshot
     _snapshots[0]->getSnapshot().setToTime(currentTime);
     while (!stop_requested()) {
-        currentTime = _timer->getTime();
+        time_point now = _timer->getTime();
+        currentTime = count_s(now.time_since_epoch());
         time_t next = tick(sync, currentTime);
         if (currentTime < next) {
-            size_t ms = (next - currentTime) * 1000;
-            _cond.wait_for(sync, std::chrono::milliseconds(ms));
-            _sleepTimes.addValue(ms);
+            vespalib::duration wait_time = from_s(next - currentTime);
+            _cond.wait_for(sync, wait_time);
+            _sleepTimes.addValue(count_ms(wait_time));
         } else {
             _sleepTimes.addValue(0);
         }
