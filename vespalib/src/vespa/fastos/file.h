@@ -10,9 +10,10 @@
 
 #pragma once
 
-#include "types.h"
 #include <cstdint>
 #include <string>
+
+#define FASTOS_PREFIX(a) FastOS_##a
 
 constexpr int FASTOS_FILE_OPEN_READ      = (1<<0);
 constexpr int FASTOS_FILE_OPEN_WRITE     = (1<<1);

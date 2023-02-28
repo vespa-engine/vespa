@@ -3,7 +3,8 @@
 
 #include <memory>
 #include <cstdint>
-#include <vespa/fastos/types.h>
+
+#define VESPA_DLL_LOCAL  __attribute__ ((visibility("hidden")))
 
 /**
  * Interface for posting lists used by PredicateSearch.
@@ -25,7 +26,7 @@ protected:
 public:
     using UP = std::unique_ptr<PredicatePostingList>;
 
-    virtual ~PredicatePostingList() {}
+    virtual ~PredicatePostingList() = default;
 
     /*
      * Moves to next document after the one supplied.

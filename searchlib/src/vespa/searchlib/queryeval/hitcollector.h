@@ -9,7 +9,6 @@
 #include <vespa/vespalib/util/sort.h>
 #include <algorithm>
 #include <vector>
-#include <vespa/fastos/types.h>
 
 namespace search::queryeval {
 
