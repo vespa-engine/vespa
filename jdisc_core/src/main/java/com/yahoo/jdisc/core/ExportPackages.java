@@ -45,6 +45,7 @@ public class ExportPackages {
         }
     }
 
+    // Make sure to update the junit integration test `ExportPackagesIT.java` if the set of exported packages is modified.
     private static String getExportPackages(String[] jars) throws IOException {
         StringBuilder out = new StringBuilder();
         out.append(getSystemPackages()).append(", ")
