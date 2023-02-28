@@ -2,34 +2,40 @@
 
 #include "wakeup_pipe.h"
 #include "socket_utils.h"
+#include <vespa/vespalib/util/require.h>
 #include <unistd.h>
 
 namespace vespalib {
 
 WakeupPipe::WakeupPipe()
-    : _pipe()
+  : _reader(),
+    _writer()
 {
-    socketutils::nonblocking_pipe(_pipe);
+    int pipe[2];
+    socketutils::nonblocking_pipe(pipe);
+    _reader.reset(pipe[0]);
+    _writer.reset(pipe[1]);
 }
 
-WakeupPipe::~WakeupPipe()
-{
-    close(_pipe[0]);
-    close(_pipe[1]);
-}
+WakeupPipe::~WakeupPipe() = default;
 
 void
 WakeupPipe::write_token()
 {
     char token = 'T';
-    [[maybe_unused]] ssize_t res = write(_pipe[1], &token, 1);
+    ssize_t res = _writer.write(&token, 1);
+    if (res < 0) {
+        res = -errno;
+    }
+    REQUIRE(res > 0 || res == -EAGAIN || res == -EWOULDBLOCK);
 }
 
 void
 WakeupPipe::read_tokens()
 {
     char token_trash[128];
-    [[maybe_unused]] ssize_t res = read(_pipe[0], token_trash, sizeof(token_trash));
+    ssize_t res = _reader.read(token_trash, sizeof(token_trash));
+    REQUIRE(res > 0);
 }
 
 }
