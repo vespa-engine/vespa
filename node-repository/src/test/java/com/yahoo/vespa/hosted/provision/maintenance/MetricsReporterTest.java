@@ -87,7 +87,7 @@ public class MetricsReporterTest {
 
         Map<String, Number> expectedMetrics = new TreeMap<>();
         expectedMetrics.put("zone.working", 1);
-        expectedMetrics.put("hostedVespa.provisionedHosts", 1);
+        expectedMetrics.put("hostedVespa.provisionedHosts", 0);
         expectedMetrics.put("hostedVespa.parkedHosts", 0);
         expectedMetrics.put("hostedVespa.readyHosts", 0);
         expectedMetrics.put("hostedVespa.reservedHosts", 0);
@@ -97,6 +97,16 @@ public class MetricsReporterTest {
         expectedMetrics.put("hostedVespa.failedHosts", 0);
         expectedMetrics.put("hostedVespa.deprovisionedHosts", 0);
         expectedMetrics.put("hostedVespa.breakfixedHosts", 0);
+        expectedMetrics.put("hostedVespa.provisionedNodes", 1);
+        expectedMetrics.put("hostedVespa.parkedNodes", 0);
+        expectedMetrics.put("hostedVespa.readyNodes", 0);
+        expectedMetrics.put("hostedVespa.reservedNodes", 0);
+        expectedMetrics.put("hostedVespa.activeNodes", 0);
+        expectedMetrics.put("hostedVespa.inactiveNodes", 0);
+        expectedMetrics.put("hostedVespa.dirtyNodes", 0);
+        expectedMetrics.put("hostedVespa.failedNodes", 0);
+        expectedMetrics.put("hostedVespa.deprovisionedNodes", 0);
+        expectedMetrics.put("hostedVespa.breakfixedNodes", 0);
         expectedMetrics.put("hostedVespa.pendingRedeployments", 42);
         expectedMetrics.put("hostedVespa.docker.totalCapacityDisk", 0.0);
         expectedMetrics.put("hostedVespa.docker.totalCapacityMem", 0.0);
@@ -207,8 +217,8 @@ public class MetricsReporterTest {
         MetricsReporter metricsReporter = metricsReporter(metric, tester);
         metricsReporter.maintain();
 
-        assertEquals(0, metric.values.get("hostedVespa.readyHosts")); // Only tenants counts
-        assertEquals(2, metric.values.get("hostedVespa.reservedHosts"));
+        assertEquals(0, metric.values.get("hostedVespa.readyNodes")); // Only tenants counts
+        assertEquals(2, metric.values.get("hostedVespa.reservedNodes"));
 
         assertEquals(120.0, metric.values.get("hostedVespa.docker.totalCapacityDisk"));
         assertEquals(100.0, metric.values.get("hostedVespa.docker.totalCapacityMem"));
