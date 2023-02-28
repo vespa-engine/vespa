@@ -47,8 +47,8 @@ public class ArchiveUriManager {
                 archiveUris.get().tenantArchiveUris().get(app.tenant()))
                 .map(uri -> {
                     // TODO (freva): Remove when all URIs dont have tenant name in them anymore
-                    String tenantSuffix = app.tenant().value() + "/";
-                    if (uri.endsWith(tenantSuffix)) return uri.substring(0, uri.length() - tenantSuffix.length());
+                    String tenantSuffix = "/" + app.tenant().value() + "/";
+                    if (uri.endsWith(tenantSuffix)) return uri.substring(0, uri.length() - tenantSuffix.length() + 1);
                     return uri;
                 })
                 .map(uri -> {

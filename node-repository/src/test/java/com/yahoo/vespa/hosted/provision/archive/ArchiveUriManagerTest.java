@@ -65,8 +65,11 @@ public class ArchiveUriManagerTest {
         ApplicationId app1 = ApplicationId.from("vespa", "music", "main");
         ArchiveUriManager archiveUriManager = new ProvisioningTester.Builder().build().nodeRepository().archiveUriManager();
         archiveUriManager.setArchiveUri(app1.tenant(), Optional.of("scheme://tenant-bucket/vespa"));
-
         assertEquals("scheme://tenant-bucket/vespa/music/main/default/h432a/", archiveUriManager.archiveUriFor(createNode(app1, null)).get());
+
+        // Archive URI ends with the tenant name
+        archiveUriManager.setArchiveUri(app1.tenant(), Optional.of("scheme://tenant-vespa/"));
+        assertEquals("scheme://tenant-vespa/vespa/music/main/default/h432a/", archiveUriManager.archiveUriFor(createNode(app1, null)).get());
     }
 
     private Node createNode(ApplicationId appId, CloudAccount account) {
