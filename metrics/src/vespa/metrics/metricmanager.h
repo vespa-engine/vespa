@@ -191,7 +191,7 @@ public:
      * Reset all metrics including all snapshots.
      * This function can not be called from an update hook callback.
      */
-    void reset(time_t currentTime);
+    void reset(system_time currentTime);
 
     /**
      * Read configuration. Before reading config, all metrics should be set
@@ -267,7 +267,7 @@ public:
     bool isInitialized() const;
 
 private:
-    void takeSnapshots(const MetricLockGuard &, time_t timeToProcess);
+    void takeSnapshots(const MetricLockGuard &, system_time timeToProcess);
 
     friend struct MetricManagerTest;
     friend struct SnapshotTest;

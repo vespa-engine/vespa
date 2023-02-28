@@ -15,6 +15,9 @@
 
 namespace metrics {
 
+using system_time = vespalib::system_time;
+static constexpr system_time default_system_time = system_time();
+
 class MetricManager;
 
 class MetricSnapshot
@@ -23,9 +26,9 @@ class MetricSnapshot
         // Period length of this snapshot
     uint32_t _period;
         // Time this snapshot was last updated.
-    time_t _fromTime;
+    system_time _fromTime;
         // If set to 0, use _fromTime + _period.
-    time_t _toTime;
+    system_time _toTime;
         // Keeps the metrics set view of the snapshot
     std::unique_ptr<MetricSet> _snapshot;
         // Snapshots must own their own metrics
@@ -42,27 +45,31 @@ public:
                    const MetricSet& source, bool copyUnset);
     virtual ~MetricSnapshot();
 
-    void addToSnapshot(MetricSnapshot& other, bool reset_, time_t currentTime) {
+    void addToSnapshot(MetricSnapshot& other, bool reset_, system_time currentTime) {
         _snapshot->addToSnapshot(other.getMetrics(), other._metrics);
         if (reset_) reset(currentTime);
         other._toTime = currentTime;
     }
-    void addToSnapshot(MetricSnapshot& other, time_t currentTime) const {
+    void addToSnapshot(MetricSnapshot& other, system_time currentTime) const {
         _snapshot->addToSnapshot(other.getMetrics(), other._metrics);
         other._toTime = currentTime;
     }
-    void setFromTime(time_t fromTime) { _fromTime = fromTime; }
-    void setToTime(time_t toTime) { _toTime = toTime; }
+    void setFromTime(system_time fromTime) { _fromTime = fromTime; }
+    void setToTime(system_time toTime) { _toTime = toTime; }
 
     const Metric::String& getName() const { return _name; }
     uint32_t getPeriod() const { return _period; }
-    time_t getFromTime() const { return _fromTime; }
-    time_t getToTime() const { return _toTime; }
-    time_t getLength() const
-        { return (_toTime != 0 ? _toTime - _fromTime : _fromTime + _period); }
+    system_time getFromTime() const { return _fromTime; }
+    system_time getToTime() const { return _toTime; }
+    time_t getLength() const {
+        return (_toTime != default_system_time)
+            ? vespalib::count_s(_toTime - _fromTime)
+            : vespalib::count_s((_fromTime + vespalib::from_s(_period)).time_since_epoch());
+    }
     const MetricSet& getMetrics() const { return *_snapshot; }
     MetricSet& getMetrics() { return *_snapshot; }
-    void reset(time_t currentTime);
+    void reset(system_time currentTime);
+    void reset();
     /**
      * Recreate snapshot by cloning given metric set and then add the data
      * from the old one. New metrics have been added.
@@ -82,32 +89,32 @@ class MetricSnapshotSet {
 public:
     using SP = std::shared_ptr<MetricSnapshotSet>;
 
-    MetricSnapshotSet(const Metric::String& name, uint32_t period,
-                      uint32_t count, const MetricSet& source,
-                      bool snapshotUnsetMetrics);
+    MetricSnapshotSet(const Metric::String& name, uint32_t period, uint32_t count,
+                      const MetricSet& source, bool snapshotUnsetMetrics);
 
     const Metric::String& getName() const { return _current->getName(); }
     uint32_t getPeriod() const { return _current->getPeriod(); }
-    time_t getFromTime() const { return _current->getFromTime(); }
-    time_t getToTime() const { return _current->getToTime(); }
+    system_time getFromTime() const { return _current->getFromTime(); }
+    system_time getToTime() const { return _current->getToTime(); }
     uint32_t getCount() const { return _count; }
     uint32_t getBuilderCount() const { return _builderCount; }
-    bool hasTemporarySnapshot() const { return (_building.get() != 0); }
-    MetricSnapshot& getSnapshot(bool temporary = false)
-        { return *((temporary && _count > 1) ? _building : _current); }
-    const MetricSnapshot& getSnapshot(bool temporary = false) const
-        { return *((temporary && _count > 1) ? _building : _current); }
+    MetricSnapshot& getSnapshot(bool temporary = false) {
+        return *((temporary && _count > 1) ? _building : _current);
+    }
+    const MetricSnapshot& getSnapshot(bool temporary = false) const {
+        return *((temporary && _count > 1) ? _building : _current);
+    }
     MetricSnapshot& getNextTarget();
-    bool timeForAnotherSnapshot(time_t currentTime);
-    bool haveCompletedNewPeriod(time_t newFromTime);
-    void reset(time_t currentTime);
+    bool timeForAnotherSnapshot(system_time currentTime);
+    bool haveCompletedNewPeriod(system_time newFromTime);
+    void reset(system_time currentTime);
     /**
      * Recreate snapshot by cloning given metric set and then add the data
      * from the old one. New metrics have been added.
      */
     void recreateSnapshot(const MetricSet& metrics, bool copyUnset);
     void addMemoryUsage(MemoryConsumption&) const;
-    void setFromTime(time_t fromTime);
+    void setFromTime(system_time fromTime);
 };
 
 } // metrics

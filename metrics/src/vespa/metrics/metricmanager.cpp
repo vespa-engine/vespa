@@ -28,6 +28,7 @@ using vespalib::make_string_short::fmt;
 using vespalib::count_ms;
 using vespalib::count_s;
 using vespalib::from_s;
+using vespalib::to_string;
 
 MetricManager::ConsumerSpec::ConsumerSpec() = default;
 MetricManager::ConsumerSpec::~ConsumerSpec() = default;
@@ -464,9 +465,9 @@ MetricManager::configure(const MetricLockGuard & , std::unique_ptr<Config> confi
         LOG(debug, "Initializing snapshots as this is first configure call");
         std::vector<SnapSpec> snapshotPeriods(createSnapshotPeriods(*config));
 
-            // Set up snapshots only first time. We don't allow live reconfig
-            // of snapshot periods.
-        time_t currentTime = count_s(_timer->getTime().time_since_epoch());
+        // Set up snapshots only first time. We don't allow live reconfig
+        // of snapshot periods.
+        time_point currentTime = _timer->getTime();
         _activeMetrics.setFromTime(currentTime);
         uint32_t count = 1;
         for (uint32_t i = 0; i< snapshotPeriods.size(); ++i) {
@@ -482,7 +483,7 @@ MetricManager::configure(const MetricLockGuard & , std::unique_ptr<Config> confi
                     _activeMetrics.getMetrics(), _snapshotUnsetMetrics));
             count = nextCount;
         }
-            // Add all time snapshot.
+        // Add all time snapshot.
         _totalMetrics = std::make_shared<MetricSnapshot>("All time snapshot", 0, _activeMetrics.getMetrics(), _snapshotUnsetMetrics);
         _totalMetrics->reset(currentTime);
     }
@@ -709,7 +710,7 @@ MetricManager::forceEventLogging()
 }
 
 void
-MetricManager::reset(time_t currentTime)
+MetricManager::reset(system_time currentTime)
 {
     time_point preTime = _timer->getTimeInMilliSecs();
     // Resetting implies visiting metrics, which needs to grab metric lock
@@ -733,21 +734,21 @@ MetricManager::run()
     // we constantly add next time to do something from the last timer.
     // For that to work, we need to initialize timers on first iteration
     // to set them to current time.
-    time_t currentTime = count_s(_timer->getTime().time_since_epoch());
+    system_time currentTime = _timer->getTime();
     for (auto & snapshot : _snapshots) {
         snapshot->setFromTime(currentTime);
     }
     for (auto hook : _periodicUpdateHooks) {
-        hook->_nextCall = currentTime;
+        hook->_nextCall = count_s(currentTime.time_since_epoch());
     }
     // Ensure correct time for first snapshot
     _snapshots[0]->getSnapshot().setToTime(currentTime);
     while (!stop_requested()) {
-        time_point now = _timer->getTime();
-        currentTime = count_s(now.time_since_epoch());
-        time_t next = tick(sync, currentTime);
-        if (currentTime < next) {
-            vespalib::duration wait_time = from_s(next - currentTime);
+        currentTime = _timer->getTime();
+        time_t currentTimeS = count_s(currentTime.time_since_epoch());
+        time_t next = tick(sync, currentTimeS);
+        if (currentTimeS < next) {
+            vespalib::duration wait_time = from_s(next - currentTimeS);
             _cond.wait_for(sync, wait_time);
             _sleepTimes.addValue(count_ms(wait_time));
         } else {
@@ -772,7 +773,7 @@ MetricManager::tick(const MetricLockGuard & guard, time_t currentTime)
     checkMetricsAltered(guard);
 
         // Set next work time to the time we want to take next snapshot.
-    time_t nextWorkTime = _snapshots[0]->getToTime() + _snapshots[0]->getPeriod();
+    time_t nextWorkTime = count_s(_snapshots[0]->getToTime().time_since_epoch()) + _snapshots[0]->getPeriod();
     time_t nextUpdateHookTime;
     if (nextWorkTime <= currentTime) {
         // If taking a new snapshot or logging, force calls to all
@@ -787,41 +788,40 @@ MetricManager::tick(const MetricLockGuard & guard, time_t currentTime)
         nextUpdateHookTime = updatePeriodicMetrics(guard, currentTime, false);
     }
         // Do snapshotting if it is time
-    if (nextWorkTime <= currentTime) takeSnapshots(guard, nextWorkTime);
+    if (nextWorkTime <= currentTime) takeSnapshots(guard, system_time(from_s(nextWorkTime)));
 
     _lastProcessedTime.store(nextWorkTime <= currentTime ? nextWorkTime : currentTime, std::memory_order_relaxed);
     LOG(spam, "Worker thread done with processing for time %" PRIu64 ".",
         static_cast<uint64_t>(_lastProcessedTime.load(std::memory_order_relaxed)));
-    time_t next = _snapshots[0]->getPeriod() + _snapshots[0]->getToTime();
+    time_t next = count_s(_snapshots[0]->getToTime().time_since_epoch()) + _snapshots[0]->getPeriod();
     next = std::min(next, nextUpdateHookTime);
     return next;
 }
 
 void
-MetricManager::takeSnapshots(const MetricLockGuard & guard, time_t timeToProcess)
+MetricManager::takeSnapshots(const MetricLockGuard & guard, system_time timeToProcess)
 {
     assertMetricLockLocked(guard);
     // If not time to do dump data from active snapshot yet, nothing to do
     if (!_snapshots[0]->timeForAnotherSnapshot(timeToProcess)) {
-         LOG(spam, "Not time to process snapshot %s at time %" PRIu64 ". Current "
-                   "first period (%u) snapshot goes from %" PRIu64 " to %" PRIu64,
-             _snapshots[0]->getName().c_str(), static_cast<uint64_t>(timeToProcess),
-             _snapshots[0]->getPeriod(), static_cast<uint64_t>(_snapshots[0]->getFromTime()),
-             static_cast<uint64_t>(_snapshots[0]->getToTime()));
+         LOG(spam, "Not time to process snapshot %s at time %s. Current "
+                   "first period (%u) snapshot goes from %s to %s",
+             _snapshots[0]->getName().c_str(), to_string(timeToProcess).c_str(),
+             _snapshots[0]->getPeriod(), to_string(_snapshots[0]->getFromTime()).c_str(),
+             to_string(_snapshots[0]->getToTime()).c_str());
         return;
     }
     time_point preTime = _timer->getTimeInMilliSecs();
-    LOG(debug, "Updating %s snapshot and total metrics at time %" PRIu64 ".",
-        _snapshots[0]->getName().c_str(), static_cast<uint64_t>(timeToProcess));
+    LOG(debug, "Updating %s snapshot and total metrics at time %s.",
+        _snapshots[0]->getName().c_str(), to_string(timeToProcess).c_str());
     MetricSnapshot& firstTarget(_snapshots[0]->getNextTarget());
     firstTarget.reset(_activeMetrics.getFromTime());
     _activeMetrics.addToSnapshot(firstTarget, false, timeToProcess);
     _activeMetrics.addToSnapshot(*_totalMetrics, false, timeToProcess);
     _activeMetrics.reset(timeToProcess);
-    LOG(debug, "After snapshotting, active metrics goes from %" PRIu64 " to %" PRIu64", "
-               "and 5 minute metrics goes from %" PRIu64 " to %" PRIu64".",
-        static_cast<uint64_t>(_activeMetrics.getFromTime()), static_cast<uint64_t>(_activeMetrics.getToTime()),
-        static_cast<uint64_t>(firstTarget.getFromTime()), static_cast<uint64_t>(firstTarget.getToTime()));
+    LOG(debug, "After snapshotting, active metrics goes from %s to %s, and 5 minute metrics goes from %s to %s.",
+        to_string(_activeMetrics.getFromTime()).c_str(), to_string(_activeMetrics.getToTime()).c_str(),
+        to_string(firstTarget.getFromTime()).c_str(), to_string(firstTarget.getToTime()).c_str());
 
         // Update later snapshots if it is time for it
     for (uint32_t i=1; i<_snapshots.size(); ++i) {
@@ -831,15 +831,15 @@ MetricManager::takeSnapshots(const MetricLockGuard & guard, time_t timeToProcess
         _snapshots[i-1]->getSnapshot().addToSnapshot(target, false, timeToProcess);
         target.setToTime(timeToProcess);
         if (!_snapshots[i]->haveCompletedNewPeriod(timeToProcess)) {
-            LOG(debug, "Not time to roll snapshot %s yet. %u of %u snapshot taken at time %" PRIu64 ", and period of %u "
-                       "is not up yet as we're currently processing for time %" PRIu64 ".",
+            LOG(debug, "Not time to roll snapshot %s yet. %u of %u snapshot taken at time %s, and period of %u "
+                       "is not up yet as we're currently processing for time %s.",
                 _snapshots[i]->getName().c_str(), _snapshots[i]->getBuilderCount(), _snapshots[i]->getCount(),
-                static_cast<uint64_t>(_snapshots[i]->getBuilderCount() * _snapshots[i]->getPeriod() + _snapshots[i]->getFromTime()),
-                _snapshots[i]->getPeriod(), static_cast<uint64_t>(timeToProcess));
+                to_string(_snapshots[i]->getBuilderCount() * from_s(_snapshots[i]->getPeriod()) + _snapshots[i]->getFromTime()).c_str(),
+                _snapshots[i]->getPeriod(), to_string(timeToProcess).c_str());
             break;
         } else {
-            LOG(debug, "Rolled snapshot %s at time %" PRIu64 ".",
-                _snapshots[i]->getName().c_str(), static_cast<uint64_t>(timeToProcess));
+            LOG(debug, "Rolled snapshot %s at time %s.",
+                _snapshots[i]->getName().c_str(), to_string(timeToProcess).c_str());
         }
     }
     time_point postTime = _timer->getTimeInMilliSecs();

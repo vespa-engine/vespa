@@ -104,8 +104,7 @@ TEST(SumMetricTest, test_remove)
 TEST(SumMetricTest, test_start_value)
 {
     MetricSnapshot snapshot("active");
-    SumMetric<LongValueMetric> sum("foo", {}, "foodesc",
-                                   &snapshot.getMetrics());
+    SumMetric<LongValueMetric> sum("foo", {}, "foodesc", &snapshot.getMetrics());
     LongValueMetric start("start", {}, "", 0);
     start.set(50);
     sum.setStartValue(start);
@@ -115,7 +114,7 @@ TEST(SumMetricTest, test_start_value)
 
     MetricSnapshot copy("copy");
     copy.recreateSnapshot(snapshot.getMetrics(), true);
-    snapshot.addToSnapshot(copy, 100);
+    snapshot.addToSnapshot(copy, system_time(100s));
 
     LongValueMetric value("value", {}, "", &snapshot.getMetrics());
     sum.addMetricToSum(value);
