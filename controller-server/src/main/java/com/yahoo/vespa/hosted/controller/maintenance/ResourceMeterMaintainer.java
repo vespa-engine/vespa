@@ -201,10 +201,11 @@ public class ResourceMeterMaintainer extends ControllerMaintainer {
                 // Grouping by ApplicationId -> Architecture -> ResourceSnapshot
                 .collect(Collectors.groupingBy(node ->
                         node.owner().get(),
-                        groupSnapshotsByArchitecture(zoneId)))
+                        groupSnapshotsByArchitectureAndMajorVersion(zoneId)))
                 .values()
                 .stream()
-                .flatMap(list -> list.values().stream())
+                .flatMap(byArch -> byArch.values().stream())
+                .flatMap(byMajor -> byMajor.values().stream())
                 .toList();
     }
 
@@ -284,19 +285,22 @@ public class ResourceMeterMaintainer extends ControllerMaintainer {
         ));
     }
 
-    private Collector<Node, ?, Map<NodeResources.Architecture, ResourceSnapshot>> groupSnapshotsByArchitecture(ZoneId zoneId) {
-        return Collectors.collectingAndThen(
-                Collectors.groupingBy(node -> node.resources().architecture()),
-                convertNodeListToResourceSnapshot(zoneId)
-        );
+    private Collector<Node, ?, Map<NodeResources.Architecture, Map<Integer, ResourceSnapshot>>> groupSnapshotsByArchitectureAndMajorVersion(ZoneId zoneId) {
+        return Collectors.groupingBy(
+                (Node node) -> node.resources().architecture(),
+                Collectors.collectingAndThen(
+                        Collectors.groupingBy(
+                                (Node node) -> node.currentVersion().getMajor(),
+                                Collectors.toList()),
+                        convertNodeListToResourceSnapshot(zoneId)));
     }
 
-    private Function<Map<NodeResources.Architecture, List<Node>>, Map<NodeResources.Architecture, ResourceSnapshot>> convertNodeListToResourceSnapshot(ZoneId zoneId) {
-        return nodeMap -> nodeMap.entrySet()
-                .stream()
-                .collect(Collectors.toMap(
-                        Map.Entry::getKey,
-                        entry -> ResourceSnapshot.from(entry.getValue(), clock.instant(), zoneId))
-                );
+    private Function<Map<Integer, List<Node>>, Map<Integer, ResourceSnapshot>> convertNodeListToResourceSnapshot(ZoneId zoneId) {
+        return nodesByMajor -> {
+            return nodesByMajor.entrySet().stream()
+                    .collect(Collectors.toMap(
+                            entry -> entry.getKey(),
+                            entry -> ResourceSnapshot.from(entry.getValue(), clock.instant(), zoneId)));
+        };
     }
 }
