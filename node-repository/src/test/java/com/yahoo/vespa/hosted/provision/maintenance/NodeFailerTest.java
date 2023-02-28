@@ -177,17 +177,17 @@ public class NodeFailerTest {
 
     @Test
     public void zone_is_not_working_if_too_many_nodes_down() {
-        NodeFailTester tester = NodeFailTester.withTwoApplications();
+        NodeFailTester tester = NodeFailTester.withTwoApplications(10, 5, 5);
 
-        tester.serviceMonitor.setHostDown(tester.nodeRepository.nodes().list(Node.State.active).owner(NodeFailTester.app1).asList().get(0).hostname());
-        tester.runMaintainers();
-        assertTrue(tester.nodeRepository.nodes().isWorking());
+        int i = 0;
+        while (i < 4) {
+            tester.serviceMonitor.setHostDown(tester.nodeRepository.nodes().list(Node.State.active).owner(NodeFailTester.app1).asList().get(i).hostname());
+            tester.runMaintainers();
+            assertTrue(tester.nodeRepository.nodes().isWorking());
+            i++;
+        }
 
-        tester.serviceMonitor.setHostDown(tester.nodeRepository.nodes().list(Node.State.active).owner(NodeFailTester.app1).asList().get(1).hostname());
-        tester.runMaintainers();
-        assertTrue(tester.nodeRepository.nodes().isWorking());
-
-        tester.serviceMonitor.setHostDown(tester.nodeRepository.nodes().list(Node.State.active).owner(NodeFailTester.app1).asList().get(2).hostname());
+        tester.serviceMonitor.setHostDown(tester.nodeRepository.nodes().list(Node.State.active).owner(NodeFailTester.app1).asList().get(i).hostname());
         tester.runMaintainers();
         assertFalse(tester.nodeRepository.nodes().isWorking());
 

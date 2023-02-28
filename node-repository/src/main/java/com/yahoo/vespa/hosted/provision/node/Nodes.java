@@ -109,7 +109,7 @@ public class Nodes {
      */
     public boolean isWorking() {
         NodeList activeNodes = list(Node.State.active);
-        if (activeNodes.size() <= 5) return true; // Not enough data to decide
+        if (activeNodes.size() < 20) return true; // Not enough data to decide
         NodeList downNodes = activeNodes.down();
         return ! ( (double)downNodes.size() / (double)activeNodes.size() > 0.2 );
     }
