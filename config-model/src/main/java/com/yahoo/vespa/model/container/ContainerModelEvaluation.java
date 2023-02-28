@@ -26,9 +26,9 @@ public class ContainerModelEvaluation implements
         OnnxModelsConfig.Producer,
         RankingExpressionsConfig.Producer {
 
-    private final static String EVALUATION_BUNDLE_NAME = "model-evaluation";
-    private final static String INTEGRATION_BUNDLE_NAME = "model-integration";
-    private final static String ONNXRUNTIME_BUNDLE_NAME = "container-onnxruntime.jar";
+    public final static String EVALUATION_BUNDLE_NAME = "model-evaluation";
+    public final static String INTEGRATION_BUNDLE_NAME = "model-integration";
+    public final static String ONNXRUNTIME_BUNDLE_NAME = "container-onnxruntime.jar";
 
     private final static String EVALUATOR_NAME = ModelsEvaluator.class.getName();
     private final static String REST_HANDLER_NAME = "ai.vespa.models.handler.ModelsEvaluationHandler";
