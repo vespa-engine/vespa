@@ -49,6 +49,7 @@ public class InstanceSerializer {
     private static final String IDD_IPADDRESSES_FIELD = "ip-addresses";
     private static final String IDD_IDENTITY_TYPE_FIELD = "identity-type";
     private static final String IDD_CLUSTER_TYPE_FIELD = "cluster-type";
+    private static final String IDD_ZTS_URL_FIELD = "zts-url";
 
     private static final ObjectMapper objectMapper = new ObjectMapper();
     static {
@@ -100,10 +101,12 @@ public class InstanceSerializer {
         IdentityType identityType = IdentityType.fromId(requireField(IDD_IDENTITY_TYPE_FIELD, root).asString());
         var clusterTypeField = root.field(IDD_CLUSTER_TYPE_FIELD);
         var clusterType = clusterTypeField.valid() ? ClusterType.from(clusterTypeField.asString()) : null;
+        var ztsUrlField = root.field(IDD_ZTS_URL_FIELD);
+        var ztsUrl = ztsUrlField.valid() ? ztsUrlField.asString() : "";
 
 
         return new SignedIdentityDocument(signature, (int)signingKeyVersion, providerUniqueId, athenzService, (int)documentVersion,
-                                          configserverHostname, instanceHostname, createdAt, ips, identityType, clusterType);
+                                          configserverHostname, instanceHostname, createdAt, ips, identityType, clusterType, ztsUrl);
     }
 
     private static Instant getJsr310Instant(double v) {
