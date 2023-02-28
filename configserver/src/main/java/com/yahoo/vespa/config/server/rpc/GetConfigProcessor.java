@@ -2,7 +2,6 @@
 package com.yahoo.vespa.config.server.rpc;
 
 import com.yahoo.cloud.config.SentinelConfig;
-import com.yahoo.collections.Pair;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.container.di.config.ApplicationBundlesConfig;
@@ -37,12 +36,10 @@ class GetConfigProcessor implements Runnable {
 
     private static final Logger log = Logger.getLogger(GetConfigProcessor.class.getName());
     private static final String localHostName = HostName.getLocalhost();
-
     private static final PayloadChecksums emptyApplicationBundlesConfigChecksums =
             PayloadChecksums.fromPayload(Payload.from(ConfigPayload.fromInstance(new ApplicationBundlesConfig.Builder().build())));
 
     private final JRTServerConfigRequest request;
-
     /* True only when this request has expired its server timeout and we need to respond to the client */
     private final boolean forceResponse;
     private final RpcServer rpcServer;
@@ -75,13 +72,13 @@ class GetConfigProcessor implements Runnable {
     }
 
     // TODO: Increment statistics (Metrics) failed counters when requests fail
-    public Pair<GetConfigContext, Long> getConfig(JRTServerConfigRequest request) {
+    public Optional<DelayedConfig> resolveConfig(JRTServerConfigRequest request) {
         // Request has already been detached
         if ( ! request.validateParameters()) {
             // Error code is set in verifyParameters if parameters are not OK.
             log.log(Level.WARNING, "Parameters for request " + request + " did not validate: " + request.errorCode() + " : " + request.errorMessage());
             respond(request);
-            return null;
+            return Optional.empty();
         }
         Trace trace = request.getRequestTrace();
         debugLog(trace, "GetConfigProcessor.run() on " + localHostName);
@@ -92,13 +89,13 @@ class GetConfigProcessor implements Runnable {
         // fabricate an empty request to cause the sentinel to stop all running services
         if (rpcServer.canReturnEmptySentinelConfig() && rpcServer.allTenantsLoaded() && tenant.isEmpty() && isSentinelConfigRequest(request)) {
             returnEmpty(request);
-            return null;
+            return Optional.empty();
         }
 
         GetConfigContext context = rpcServer.createGetConfigContext(tenant, request, trace);
-        if (context == null || ! context.requestHandler().hasApplication(context.applicationId(), Optional.empty())) {
+        if (context.isEmpty() || ! context.requestHandler().hasApplication(context.applicationId(), Optional.empty())) {
             handleError(request, APPLICATION_NOT_LOADED, "No application exists");
-            return null;
+            return Optional.empty();
         }
         logPre = TenantRepository.logPre(context.applicationId());
 
@@ -109,7 +106,7 @@ class GetConfigProcessor implements Runnable {
 
         if ( ! context.requestHandler().hasApplication(context.applicationId(), vespaVersion)) {
             handleError(request, ErrorCode.UNKNOWN_VESPA_VERSION, "Unknown Vespa version in request: " + printableVespaVersion(vespaVersion));
-            return null;
+            return Optional.empty();
         }
 
         ConfigResponse config;
@@ -117,14 +114,14 @@ class GetConfigProcessor implements Runnable {
             config = rpcServer.resolveConfig(request, context, vespaVersion);
         } catch (UnknownConfigDefinitionException e) {
             handleError(request, ErrorCode.UNKNOWN_DEFINITION, "Unknown config definition " + request.getConfigKey());
-            return null;
+            return Optional.empty();
         } catch (UnknownConfigIdException e) {
             handleError(request, ErrorCode.ILLEGAL_CONFIGID, "Illegal config id " + request.getConfigKey().getConfigId());
-            return null;
+            return Optional.empty();
         } catch (Throwable e) {
             log.log(Level.SEVERE, "Unexpected error handling config request", e);
             handleError(request, ErrorCode.INTERNAL_ERROR, "Internal error " + e.getMessage());
-            return null;
+            return Optional.empty();
         }
 
         // config == null is not an error, but indicates that the config will be returned later.
@@ -135,7 +132,7 @@ class GetConfigProcessor implements Runnable {
                 && ! context.requestHandler().compatibleWith(vespaVersion, context.applicationId())  // ... with a runtime version incompatible with the deploying version ...
                 && ! emptyApplicationBundlesConfigChecksums.matches(config.getPayloadChecksums())) { // ... and there actually are incompatible user bundles, then return no config:
                 handleError(request, ErrorCode.INCOMPATIBLE_VESPA_VERSION, "Version " + printableVespaVersion(vespaVersion) + " is binary incompatible with the latest deployed version");
-                return null;
+                return Optional.empty();
             }
 
             // debugLog(trace, "config response before encoding:" + config.toString());
@@ -144,23 +141,24 @@ class GetConfigProcessor implements Runnable {
             respond(request);
         } else {
             debugLog(trace, "delaying response " + request.getShortDescription());
-            return new Pair<>(context, config != null ? config.getGeneration() : 0);
+            return Optional.of(new DelayedConfig(context, config != null ? config.getGeneration() : 0));
         }
-        return null;
+        return Optional.empty();
     }
 
     @Override
     public void run() {
-        Pair<GetConfigContext, Long> delayed = getConfig(request);
+        Optional<DelayedConfig> delayed = resolveConfig(request);
 
-        if (delayed != null) {
-            rpcServer.delayResponse(request, delayed.getFirst());
-            if (rpcServer.hasNewerGeneration(delayed.getFirst().applicationId(), delayed.getSecond())) {
+        delayed.ifPresent(d -> {
+            GetConfigContext context = d.context();
+            rpcServer.delayResponse(request, context);
+            if (rpcServer.hasNewerGeneration(context.applicationId(), d.generation())) {
                 // This will ensure that if the config activation train left the station while I was boarding,
                 // another train will immediately be scheduled.
-                rpcServer.configActivated(delayed.getFirst().applicationId());
+                rpcServer.configActivated(context.applicationId());
             }
-        }
+        });
     }
 
     private boolean isSentinelConfigRequest(JRTServerConfigRequest request) {
@@ -193,5 +191,7 @@ class GetConfigProcessor implements Runnable {
             trace.trace(RpcServer.TRACELEVEL_DEBUG, logPre + message);
         }
     }
+
+    private record DelayedConfig(GetConfigContext context, long generation) {}
 
 }

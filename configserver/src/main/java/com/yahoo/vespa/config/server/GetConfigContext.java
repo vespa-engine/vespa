@@ -38,9 +38,15 @@ public class GetConfigContext {
         return new GetConfigContext(app, handler, trace);
     }
 
+    public static GetConfigContext empty() {
+        return new GetConfigContext(null, null, null);
+    }
+
     public static GetConfigContext testContext(ApplicationId app) {
         return new GetConfigContext(app, null, null);
     }
+
+    public boolean isEmpty() { return app == null && requestHandler == null && trace == null; }
     
     /**
      * Helper to produce a log preamble with the tenant and app id
