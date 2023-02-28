@@ -3,16 +3,13 @@ package com.yahoo.schema.expressiontransforms;
 
 import com.yahoo.schema.FeatureNames;
 import com.yahoo.schema.RankProfile;
-import com.yahoo.searchlib.rankingexpression.RankingExpression;
 import com.yahoo.searchlib.rankingexpression.Reference;
-import com.yahoo.searchlib.rankingexpression.parser.ParseException;
 import com.yahoo.searchlib.rankingexpression.rule.CompositeNode;
 import com.yahoo.searchlib.rankingexpression.rule.ConstantNode;
 import com.yahoo.searchlib.rankingexpression.rule.ExpressionNode;
 import com.yahoo.searchlib.rankingexpression.rule.ReferenceNode;
 import com.yahoo.searchlib.rankingexpression.transform.ExpressionTransformer;
 
-import java.io.StringReader;
 import java.util.Set;
 
 /**
@@ -86,13 +83,7 @@ public class InputRecorder extends ExpressionTransformer<RankProfileTransformCon
                 throw new IllegalArgumentException("missing onnx model: " + arg);
             }
             for (String onnxInput : model.getInputMap().values()) {
-                var reader = new StringReader(onnxInput);
-                try {
-                    var asExpression = new RankingExpression(reader);
-                    transform(asExpression.getRoot(), context);
-                } catch (ParseException e) {
-                    throw new IllegalArgumentException("illegal onnx input '" + onnxInput + "': " + e.getMessage());
-                }
+                neededInputs.add(onnxInput);
             }
             return;
         }
