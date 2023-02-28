@@ -250,6 +250,7 @@ func (c *CLI) configureCommands() {
 	rootCmd.AddCommand(statusCmd)                   // status
 	rootCmd.AddCommand(newTestCmd(c))               // test
 	rootCmd.AddCommand(newVersionCmd(c))            // version
+	rootCmd.AddCommand(newVisitCmd(c))              // visit
 }
 
 func (c *CLI) printErr(err error, hints ...string) {
@@ -261,6 +262,10 @@ func (c *CLI) printErr(err error, hints ...string) {
 
 func (c *CLI) printSuccess(msg ...interface{}) {
 	fmt.Fprintln(c.Stdout, color.GreenString("Success:"), fmt.Sprint(msg...))
+}
+
+func (c *CLI) printDebug(msg ...interface{}) {
+	fmt.Fprintln(c.Stderr, color.CyanString("Debug:"), fmt.Sprint(msg...))
 }
 
 func (c *CLI) printWarning(msg interface{}, hints ...string) {
