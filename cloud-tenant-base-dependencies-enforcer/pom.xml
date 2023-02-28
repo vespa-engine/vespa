@@ -38,8 +38,8 @@
         <aopalliance.version>1.0</aopalliance.version>
         <guava.version>27.1-jre</guava.version>
         <guice.version>4.2.3</guice.version>
-        <jackson2.version>2.13.4</jackson2.version>
-        <jackson-databind.version>2.13.4.2</jackson-databind.version>
+        <jackson2.version>2.14.2</jackson2.version>
+        <jackson-databind.version>2.14.2</jackson-databind.version>
         <javax.inject.version>1</javax.inject.version>
         <javax.servlet-api.version>3.1.0</javax.servlet-api.version>
         <javax.ws.rs-api.version>2.0.1</javax.ws.rs-api.version>
