@@ -3,8 +3,8 @@ package ai.vespa.llm;
 import ai.vespa.modelintegration.evaluator.OnnxEvaluator;
 import ai.vespa.modelintegration.evaluator.OnnxEvaluatorOptions;
 import ai.vespa.modelintegration.evaluator.OnnxRuntime;
+import com.yahoo.component.AbstractComponent;
 import com.yahoo.component.annotation.Inject;
-import com.yahoo.jdisc.AbstractResource;
 import com.yahoo.language.process.Embedder;
 import com.yahoo.language.sentencepiece.SentencePieceEmbedder;
 import com.yahoo.llm.GeneratorConfig;
@@ -27,7 +27,7 @@ import java.util.Map;
  *
  * @author lesters
  */
-public class Generator extends AbstractResource {
+public class Generator extends AbstractComponent {
 
     private final static int TOKEN_EOS = 1;  // end of sequence
 
@@ -101,7 +101,7 @@ public class Generator extends AbstractResource {
         return generate(prompt, new GeneratorOptions());
     }
 
-    @Override protected void destroy() { encoder.close(); decoder.close(); }
+    @Override public void deconstruct() { encoder.close(); decoder.close(); }
 
     private String generateNotImplemented(GeneratorOptions options) {
         throw new UnsupportedOperationException("Search method '" + options.getSearchMethod() + "' is currently not implemented");

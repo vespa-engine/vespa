@@ -4,9 +4,9 @@ import ai.djl.huggingface.tokenizers.Encoding;
 import ai.djl.huggingface.tokenizers.HuggingFaceTokenizer;
 import ai.vespa.modelintegration.evaluator.OnnxEvaluator;
 import ai.vespa.modelintegration.evaluator.OnnxRuntime;
+import com.yahoo.component.AbstractComponent;
 import com.yahoo.component.annotation.Inject;
 import com.yahoo.embedding.huggingface.HuggingFaceEmbedderConfig;
-import com.yahoo.jdisc.AbstractResource;
 import com.yahoo.language.process.Embedder;
 import com.yahoo.tensor.IndexedTensor;
 import com.yahoo.tensor.Tensor;
@@ -21,7 +21,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
-public class HuggingFaceEmbedder extends AbstractResource implements Embedder {
+public class HuggingFaceEmbedder extends AbstractComponent implements Embedder {
 
     private static final Logger LOG = LoggerFactory.getLogger(HuggingFaceEmbedder.class.getName());
 
@@ -86,7 +86,7 @@ public class HuggingFaceEmbedder extends AbstractResource implements Embedder {
         return tokenIds;
     }
 
-    @Override protected void destroy() { evaluator.close(); }
+    @Override public void deconstruct() { evaluator.close(); }
 
     public List<Integer> longToInteger(long[] values) {
         return Arrays.stream(values)
