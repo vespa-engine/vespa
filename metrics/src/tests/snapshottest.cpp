@@ -4,7 +4,6 @@
 #include <vespa/metrics/metrics.h>
 #include <vespa/metrics/summetric.hpp>
 #include <vespa/vespalib/gtest/gtest.h>
-#include <vespa/vespalib/util/size_literals.h>
 
 namespace metrics {
 
@@ -166,8 +165,8 @@ void ASSERT_VALUE(int32_t value, const MetricSnapshot & snapshot, const char *na
 }
 
 struct SnapshotTest : public ::testing::Test {
-    time_t tick(MetricManager& mgr, time_t currentTime) {
-        return mgr.tick(mgr.getMetricLock(), currentTime);
+    void tick(MetricManager& mgr, time_t currentTime) {
+        mgr.tick(mgr.getMetricLock(), time_point(vespalib::from_s(currentTime)));
     }
 };
 

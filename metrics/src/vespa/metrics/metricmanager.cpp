@@ -645,7 +645,7 @@ MetricManager::updateMetrics(bool includeSnapshotOnlyHooks)
     // Ensure we're not in the way of the background thread
     MetricLockGuard sync(_waiter);
     LOG(debug, "Giving %zu periodic update hooks.", _periodicUpdateHooks.size());
-    updatePeriodicMetrics(sync, 0, true);
+    updatePeriodicMetrics(sync, time_point(), true);
     if (includeSnapshotOnlyHooks) {
         LOG(debug, "Giving %zu snapshot update hooks.", _snapshotUpdateHooks.size());
         updateSnapshotMetrics(sync);
@@ -653,13 +653,12 @@ MetricManager::updateMetrics(bool includeSnapshotOnlyHooks)
 }
 
 // When this is called, the thread monitor lock has already been grabbed
-time_t
-MetricManager::updatePeriodicMetrics(const MetricLockGuard & guard, time_t updateTimeS, bool outOfSchedule)
+time_point
+MetricManager::updatePeriodicMetrics(const MetricLockGuard & guard, time_point updateTime, bool outOfSchedule)
 {
     assertMetricLockLocked(guard);
-    time_t nextUpdateTime = std::numeric_limits<time_t>::max();
+    time_point nextUpdateTime = time_point::max();
     time_point preTime = _timer->getTimeInMilliSecs();
-    time_point updateTime = time_point(from_s(updateTimeS));
     for (auto hook : _periodicUpdateHooks) {
         if (hook->expired(updateTime)) {
             hook->updateMetrics(guard);
@@ -683,7 +682,7 @@ MetricManager::updatePeriodicMetrics(const MetricLockGuard & guard, time_t updat
             _periodicHookLatency.addValue(count_ms(postTime - preTime));
             preTime = postTime;
         }
-        nextUpdateTime = std::min(nextUpdateTime, count_s(hook->getNextCall().time_since_epoch()));
+        nextUpdateTime = std::min(nextUpdateTime, hook->getNextCall());
     }
     return nextUpdateTime;
 }
@@ -747,10 +746,9 @@ MetricManager::run()
     _snapshots[0]->getSnapshot().setToTime(currentTime);
     while (!stop_requested()) {
         currentTime = _timer->getTime();
-        time_t currentTimeS = count_s(currentTime.time_since_epoch());
-        time_t next = tick(sync, currentTimeS);
-        if (currentTimeS < next) {
-            vespalib::duration wait_time = from_s(next - currentTimeS);
+        time_point next = tick(sync, currentTime);
+        if (currentTime < next) {
+            vespalib::duration wait_time = next - currentTime;
             _cond.wait_for(sync, wait_time);
             _sleepTimes.addValue(count_ms(wait_time));
         } else {
@@ -759,10 +757,10 @@ MetricManager::run()
     }
 }
 
-time_t
-MetricManager::tick(const MetricLockGuard & guard, time_t currentTime)
+time_point
+MetricManager::tick(const MetricLockGuard & guard, time_point currentTime)
 {
-    LOG(spam, "Worker thread starting to process for time %" PRIu64 ".", static_cast<uint64_t>(currentTime));
+    LOG(spam, "Worker thread starting to process for time %s.", to_string(currentTime).c_str());
 
     // Check for new config and reconfigure
     if (_configSubscriber && _configSubscriber->nextConfigNow()) {
@@ -775,8 +773,8 @@ MetricManager::tick(const MetricLockGuard & guard, time_t currentTime)
     checkMetricsAltered(guard);
 
         // Set next work time to the time we want to take next snapshot.
-    time_t nextWorkTime = count_s(_snapshots[0]->getToTime().time_since_epoch()) + _snapshots[0]->getPeriod();
-    time_t nextUpdateHookTime;
+    time_point nextWorkTime = _snapshots[0]->getNextWorkTime();
+    time_point nextUpdateHookTime;
     if (nextWorkTime <= currentTime) {
         // If taking a new snapshot or logging, force calls to all
         // update hooks.
@@ -790,12 +788,12 @@ MetricManager::tick(const MetricLockGuard & guard, time_t currentTime)
         nextUpdateHookTime = updatePeriodicMetrics(guard, currentTime, false);
     }
         // Do snapshotting if it is time
-    if (nextWorkTime <= currentTime) takeSnapshots(guard, system_time(from_s(nextWorkTime)));
+    if (nextWorkTime <= currentTime) takeSnapshots(guard, nextWorkTime);
 
-    _lastProcessedTime.store(nextWorkTime <= currentTime ? nextWorkTime : currentTime, std::memory_order_relaxed);
+    _lastProcessedTime.store(count_s((nextWorkTime <= currentTime ? nextWorkTime : currentTime).time_since_epoch()), std::memory_order_relaxed);
     LOG(spam, "Worker thread done with processing for time %" PRIu64 ".",
         static_cast<uint64_t>(_lastProcessedTime.load(std::memory_order_relaxed)));
-    time_t next = count_s(_snapshots[0]->getToTime().time_since_epoch()) + _snapshots[0]->getPeriod();
+    time_point next = _snapshots[0]->getNextWorkTime();
     next = std::min(next, nextUpdateHookTime);
     return next;
 }

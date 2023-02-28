@@ -90,6 +90,7 @@ public:
     uint32_t getPeriod() const { return _current->getPeriod(); }
     system_time getFromTime() const { return _current->getFromTime(); }
     system_time getToTime() const { return _current->getToTime(); }
+    system_time getNextWorkTime() const { return getToTime() + vespalib::from_s(getPeriod()); }
     uint32_t getCount() const { return _count; }
     uint32_t getBuilderCount() const { return _builderCount; }
     MetricSnapshot& getSnapshot(bool temporary = false) {

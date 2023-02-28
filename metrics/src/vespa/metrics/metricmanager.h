@@ -274,7 +274,7 @@ private:
 
     void configure(const MetricLockGuard & guard, std::unique_ptr<MetricsmanagerConfig> conf);
     void run();
-    time_t tick(const MetricLockGuard & guard, time_t currentTime);
+    time_point tick(const MetricLockGuard & guard, time_point currentTime);
     /**
      * Utility function for updating periodic metrics.
      *
@@ -284,7 +284,7 @@ private:
      *                      without adjusting schedule for next update.
      * @return Time of next hook to be called in the future.
      */
-    time_t updatePeriodicMetrics(const MetricLockGuard & guard, time_t updateTime, bool outOfSchedule);
+    time_point updatePeriodicMetrics(const MetricLockGuard & guard, time_point updateTime, bool outOfSchedule);
     void updateSnapshotMetrics(const MetricLockGuard & guard);
 
     void handleMetricsAltered(const MetricLockGuard & guard);
