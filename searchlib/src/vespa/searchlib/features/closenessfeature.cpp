@@ -36,7 +36,7 @@ ConvertRawScoreToCloseness::ConvertRawScoreToCloseness(const fef::IQueryEnvironm
 }
 
 ConvertRawScoreToCloseness::ConvertRawScoreToCloseness(const fef::IQueryEnvironment &env, const vespalib::string &label)
-  : _bundle(env, label, "closeness"),
+  : _bundle(env, std::nullopt, label, "closeness"),
     _md(nullptr)
 {
 }

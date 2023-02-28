@@ -71,6 +71,7 @@ private:
                 asMask(DataType::REFERENCE) |
                 asMask(DataType::COMBINED));
     }
+    static uint32_t tensor_type_mask() { return asMask(DataType::TENSOR); }
     ParameterDataTypeSet(uint32_t typeMask)
         : _typeMask(typeMask)
     {
@@ -87,8 +88,9 @@ public:
         return ParameterDataTypeSet(asMask(DataType::INT32) | asMask(DataType::INT64));
     }
     static ParameterDataTypeSet normalOrTensorTypeSet() {
-        return ParameterDataTypeSet(normalTypesMask() | asMask(DataType::TENSOR));
+        return ParameterDataTypeSet(normalTypesMask() | tensor_type_mask());
     }
+    static ParameterDataTypeSet tensor_type_set() { return ParameterDataTypeSet(tensor_type_mask()); }
     bool allowedType(DataType dataType) const {
         return ((asMask(dataType) & _typeMask) != 0);
     }

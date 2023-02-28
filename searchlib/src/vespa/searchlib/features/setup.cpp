@@ -6,6 +6,7 @@
 #include "attributematchfeature.h"
 #include "bm25_feature.h"
 #include "closenessfeature.h"
+#include "closest_feature.h"
 #include "constant_feature.h"
 #include "debug_attribute_wait.h"
 #include "debug_wait.h"
@@ -75,6 +76,7 @@ void setup_search_features(fef::IBlueprintRegistry & registry)
     registry.addPrototype(std::make_shared<AttributeMatchBlueprint>());
     registry.addPrototype(std::make_shared<Bm25Blueprint>());
     registry.addPrototype(std::make_shared<ClosenessBlueprint>());
+    registry.addPrototype(std::make_shared<ClosestBlueprint>());
     registry.addPrototype(std::make_shared<DebugAttributeWaitBlueprint>());
     registry.addPrototype(std::make_shared<DebugWaitBlueprint>());
     registry.addPrototype(std::make_shared<DistanceBlueprint>());
