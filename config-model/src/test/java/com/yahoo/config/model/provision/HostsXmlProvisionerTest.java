@@ -70,8 +70,6 @@ public class HostsXmlProvisionerTest {
         assertEquals(3, map.size());
         assertCorrectNumberOfHosts(map, 3);
         assertTrue(map.keySet().containsAll(aliases));
-
-        assertEquals("", System.getProperty("zookeeper.vespa.clients"));
     }
 
     @Test

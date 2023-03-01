@@ -36,9 +36,6 @@ public class Hosts {
         for (Host host : hosts)
             hostsBuilder.put(host.hostname(), host);
         this.hosts = hostsBuilder.build();
-
-        // Don't limit zk connections on non-hosted systems
-        System.setProperty("zookeeper.vespa.clients", "");
     }
 
     /** Throw IllegalArgumentException if host aliases breaks invariants */
