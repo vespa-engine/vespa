@@ -190,8 +190,10 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
         Pkcs10Csr csr = csrGenerator.generateInstanceCsr(
                 context.identity(), doc.providerUniqueId(), doc.ipAddresses(), doc.clusterType(), keyPair);
 
-        // Allow all zts hosts while removing SIS
-        HostnameVerifier ztsHostNameVerifier = (hostname, sslSession) -> true;
+        // Set up a hostname verified for zts if this is configured to use the config server (internal zts) apis
+        HostnameVerifier ztsHostNameVerifier = useInternalZts
+                ? new AthenzIdentityVerifier(Set.of(configserverIdentity))
+                : null;
         try (ZtsClient ztsClient = new DefaultZtsClient.Builder(ztsEndpoint(doc)).withIdentityProvider(hostIdentityProvider).withHostnameVerifier(ztsHostNameVerifier).build()) {
             InstanceIdentity instanceIdentity =
                     ztsClient.registerInstance(
@@ -225,8 +227,10 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
                                                                         .build();
 
         try {
-            // Allow all zts hosts while removing SIS
-            HostnameVerifier ztsHostNameVerifier = (hostname, sslSession) -> true;
+            // Set up a hostname verified for zts if this is configured to use the config server (internal zts) apis
+            HostnameVerifier ztsHostNameVerifier = useInternalZts
+                    ? new AthenzIdentityVerifier(Set.of(configserverIdentity))
+                    : null;
             try (ZtsClient ztsClient = new DefaultZtsClient.Builder(ztsEndpoint(doc)).withSslContext(containerIdentitySslContext).withHostnameVerifier(ztsHostNameVerifier).build()) {
                 InstanceIdentity instanceIdentity =
                         ztsClient.refreshInstance(
