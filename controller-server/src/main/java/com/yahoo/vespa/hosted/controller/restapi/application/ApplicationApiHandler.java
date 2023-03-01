@@ -596,7 +596,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         var mergedAddress = updateTenantInfoAddress(inspector.field("address"), info.address());
 
         var mergedInfo = info
-                .withName(getString(inspector.field("tenant").field("name"), info.name()))
+                .withName(getString(inspector.field("tenant").field("company"), info.name()))
                 .withWebsite(getString(inspector.field("tenant").field("website"), info.website()))
                 .withContact(mergedContact)
                 .withAddress(mergedAddress);

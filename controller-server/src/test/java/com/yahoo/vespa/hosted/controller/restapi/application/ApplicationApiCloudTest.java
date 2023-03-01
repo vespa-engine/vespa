@@ -77,7 +77,7 @@ public class ApplicationApiCloudTest extends ControllerContainerCloudTest {
                 .roles(Set.of(Role.administrator(tenantName)));
         tester.assertResponse(updateRequest, "{\"message\":\"Tenant info updated\"}", 200);
 
-        tester.assertResponse(request, "{\"contact\":{\"name\":\"Some Name\",\"email\":\"foo@example.com\",\"emailVerified\":false},\"tenant\":{\"company\":\"\",\"website\":\"https://example.com/\"}}", 200);
+        tester.assertResponse(request, "{\"contact\":{\"name\":\"Some Name\",\"email\":\"foo@example.com\",\"emailVerified\":false},\"tenant\":{\"company\":\"Scoober, Inc.\",\"website\":\"https://example.com/\"}}", 200);
     }
 
     @Test
