@@ -20,13 +20,9 @@ LOG_SETUP_INDIRECT(".log", "$Id$");
 
 namespace ns_log {
 
-uint64_t Timer::getTimestamp() const {
-    struct timeval tv;
-    gettimeofday(&tv, nullptr);
-    uint64_t timestamp = tv.tv_sec;
-    timestamp *= 1000000;
-    timestamp += tv.tv_usec;
-    return timestamp;
+system_time
+Timer::getTimestamp() const {
+    return std::chrono::system_clock::now();
 }
 
 LogTarget *Logger::_target = 0;
@@ -220,8 +216,7 @@ Logger::tryLog(int sizeofPayload, LogLevel level, const char *file, int line, co
     const int actualSize = vsnprintf(payload, sizeofPayload, fmt, args);
 
     if (actualSize < sizeofPayload) {
-        uint64_t timestamp = _timer->getTimestamp();
-        doLogCore(timestamp, level, file, line, payload, actualSize);
+        doLogCore(_timer->getTimestamp(), level, file, line, payload, actualSize);
     }
     delete[] payload;
     return actualSize;
@@ -242,8 +237,9 @@ Logger::doLog(LogLevel level, const char *file, int line, const char *fmt, ...)
     ns_log::BufferedLogger::instance().trimCache();
 }
 
-void Logger::doLogCore(uint64_t timestamp, LogLevel level,
-                       const char *file, int line, const char *msg, size_t msgSize)
+void
+Logger::doLogCore(system_time timestamp, LogLevel level,
+                  const char *file, int line, const char *msg, size_t msgSize)
 {
     const size_t sizeofEscapedPayload(msgSize*4+1);
     const size_t sizeofTotalMessage(sizeofEscapedPayload + 1000);
@@ -281,23 +277,23 @@ void Logger::doLogCore(uint64_t timestamp, LogLevel level,
         // found to be too inaccurate.
     int32_t tid = (fakePid ? -1 : gettid(pthread_self()) % 0xffff);
 
+    time_t secs = count_s(timestamp.time_since_epoch());
+    uint32_t usecs_part = count_us(timestamp.time_since_epoch()) % 1000000;
     if (_target->makeHumanReadable()) {
-        time_t secs = static_cast<time_t>(timestamp / 1000000);
         struct tm tmbuf;
         localtime_r(&secs, &tmbuf);
         char timebuf[100];
         strftime(timebuf, 100, "%Y-%m-%d %H:%M:%S", &tmbuf);
         snprintf(totalMessage.get(), sizeofTotalMessage,
                  "[%s.%06u] %d/%d (%s%s) %s: %s\n",
-                 timebuf, static_cast<unsigned int>(timestamp % 1000000),
+                 timebuf, usecs_part,
                  fakePid ? -1 : getpid(), tid,
                  _prefix, _appendix,
                  levelName(level), msg);
     } else if (level == debug || level == spam) {
         snprintf(totalMessage.get(), sizeofTotalMessage,
-                 "%u.%06u\t%s\t%d/%d\t%s\t%s%s\t%s\t%s:%d %s%s\n",
-                 static_cast<unsigned int>(timestamp / 1000000),
-                 static_cast<unsigned int>(timestamp % 1000000),
+                 "%lu.%06u\t%s\t%d/%d\t%s\t%s%s\t%s\t%s:%d %s%s\n",
+                 secs, usecs_part,
                  _hostname, fakePid ? -1 : getpid(), tid,
                  _serviceName, _prefix,
                  _appendix, levelName(level), file, line,
@@ -305,9 +301,8 @@ void Logger::doLogCore(uint64_t timestamp, LogLevel level,
                  escapedPayload.get());
     } else {
         snprintf(totalMessage.get(), sizeofTotalMessage,
-                 "%u.%06u\t%s\t%d/%d\t%s\t%s%s\t%s\t%s\n",
-                 static_cast<unsigned int>(timestamp / 1000000),
-                 static_cast<unsigned int>(timestamp % 1000000),
+                 "%lu.%06u\t%s\t%d/%d\t%s\t%s%s\t%s\t%s\n",
+                 secs, usecs_part,
                  _hostname, fakePid ? -1 : getpid(), tid,
                  _serviceName, _prefix,
                  _appendix, levelName(level), escapedPayload.get());

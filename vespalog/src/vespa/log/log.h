@@ -3,12 +3,15 @@
 
 #include <memory>
 #include <cstdint>
-#include <sys/types.h> // for pid_t
 #include <new>         // for placement new
 #include <cstdlib>     // for malloc
 #include <cstring>     // for memset
 #include <cstdarg>     // for va_list
 #include <cinttypes>
+#include <chrono>
+#include <sys/types.h> // for pid_t
+
+
 
 /**
  * If this macro is defined, the regular LOG calls will go through the
@@ -144,19 +147,24 @@ namespace ns_log {
 
 class LogTarget;
 class ControlFile;
+using system_time  = std::chrono::system_clock::time_point;
+using duration  = std::chrono::nanoseconds;
+
+constexpr int64_t
+count_s(duration d) {
+    return std::chrono::duration_cast<std::chrono::seconds>(d).count();
+}
+
+constexpr int64_t
+count_us(duration d) {
+    return std::chrono::duration_cast<std::chrono::microseconds>(d).count();
+}
 
 // XXX this is way too complicated, must be some simpler way to do this
 /** Timer class used to retrieve timestamp, such that we can override in test */
 struct Timer {
     virtual ~Timer() = default;
-    virtual uint64_t getTimestamp() const;
-};
-
-/** Test timer returning just a given time. Used in tests to fake time. */
-struct TestTimer : public Timer {
-    uint64_t & _time;
-    TestTimer(uint64_t & timeVar) : _time(timeVar) { }
-    uint64_t getTimestamp() const override { return _time; }
+    virtual system_time getTimestamp() const;
 };
 
 class Logger {
@@ -219,7 +227,7 @@ public:
      *
      * @param timestamp Time in microseconds.
      */
-    void doLogCore(uint64_t timestamp, LogLevel level,
+    void doLogCore(system_time timestamp, LogLevel level,
                    const char *file, int line, const char *msg, size_t msgSize);
     void doEventStarting(const char *name);
     void doEventStopping(const char *name, const char *why);

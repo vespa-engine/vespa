@@ -178,8 +178,8 @@ public:
     // to easier be able to test all aspects of the buffer, and be independent
     // of the default settings for applications
     void setMaxCacheSize(uint32_t size);
-    void setMaxEntryAge(uint64_t seconds);
-    void setCountFactor(uint64_t factor);
+    void setMaxEntryAge(duration seconds);
+    void setCountFactor(duration factor);
 
     void doLog(Logger&, Logger::LogLevel level, const char *file, int line,
                const std::string& token,

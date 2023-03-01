@@ -12,6 +12,16 @@
 
 LOG_SETUP("bufferedlogtest");
 
+using namespace std::literals::chrono_literals;
+
+
+/** Test timer returning just a given time. Used in tests to fake time. */
+struct TestTimer : public ns_log::Timer {
+    uint64_t & _time;
+    TestTimer(uint64_t & timeVar) : _time(timeVar) { }
+    ns_log::system_time getTimestamp() const override { return ns_log::system_time(std::chrono::microseconds(_time)); }
+};
+
 std::string readFile(const std::string& file) {
     std::ostringstream ost;
     std::ifstream is(file.c_str());
@@ -112,9 +122,9 @@ void testThatEntriesWithHighCountsAreEventuallyRemoved(
         // Should eventually throw out the entries with high count
     timer = 10 * 1000000 + 4;
         // Make sure we don't remove due to age.
-    ns_log::BufferedLogger::instance().setMaxEntryAge(1000000);
+    ns_log::BufferedLogger::instance().setMaxEntryAge(1000000s);
         // Let each count, count for 5 seconds.
-    ns_log::BufferedLogger::instance().setCountFactor(5);
+    ns_log::BufferedLogger::instance().setCountFactor(5s);
 
     LOGBM(info, "Starting up, using logfile %s", file.c_str());
     timer = 100 * 1000000 + 4;
@@ -147,9 +157,9 @@ void testThatEntriesExpire(
         // Test that we don't keep entries longer than max age
     timer = 10 * 1000000 + 4;
         // Time out after 120 seconds
-    ns_log::BufferedLogger::instance().setMaxEntryAge(120);
+    ns_log::BufferedLogger::instance().setMaxEntryAge(120s);
         // Let counts count much, so they expire due to time instead
-    ns_log::BufferedLogger::instance().setCountFactor(100000);
+    ns_log::BufferedLogger::instance().setCountFactor(100000s);
 
     LOGBM(info, "Starting up, using logfile %s", file.c_str());
     timer = 100 * 1000000 + 4;
@@ -217,9 +227,9 @@ void testThatHighCountEntriesDontStarveOthers(
     std::cerr << "testThatHighCountEntriesDontStarveOthers ...\n";
     timer = 10 * 1000000 + 4;
         // Long time out, we don't want to rely on timeout to prevent starvation
-    ns_log::BufferedLogger::instance().setMaxEntryAge(12000000);
+    ns_log::BufferedLogger::instance().setMaxEntryAge(12000000s);
         // Let counts count much, so they score high
-    ns_log::BufferedLogger::instance().setCountFactor(100000);
+    ns_log::BufferedLogger::instance().setCountFactor(100000s);
 
     LOGBM(info, "Starting up, using logfile %s", file.c_str());
     timer = 100 * 1000000;
@@ -372,8 +382,8 @@ void testNonBufferedLoggerTriggersBufferedLogTrim(const std::string& file,
 
 void reset(uint64_t& timer) {
     timer = 0;
-    ns_log::BufferedLogger::instance().setMaxEntryAge(300);
-    ns_log::BufferedLogger::instance().setCountFactor(5);
+    ns_log::BufferedLogger::instance().setMaxEntryAge(300s);
+    ns_log::BufferedLogger::instance().setCountFactor(5s);
 }
 
 int
@@ -386,8 +396,8 @@ main(int argc, char **argv)
     ns_log::Logger::fakePid = true;
     ns_log::BufferedLogger::instance().setMaxCacheSize(10);
     uint64_t timer;
-    ns_log_logger.setTimer(std::unique_ptr<ns_log::Timer>(new ns_log::TestTimer(timer)));
-    ns_log::BufferedLogger::instance().setTimer(std::unique_ptr<ns_log::Timer>(new ns_log::TestTimer(timer)));
+    ns_log_logger.setTimer(std::make_unique<TestTimer>(timer));
+    ns_log::BufferedLogger::instance().setTimer(std::make_unique<TestTimer>(timer));
 
     reset(timer);
     testThatEntriesWithHighCountIsKept(argv[1], timer);
