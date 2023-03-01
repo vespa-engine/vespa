@@ -57,7 +57,7 @@ public class ApplicationSerializer {
     private static final String requiredKey = "required";
     private static final String suggestedKey = "suggested";
     private static final String clusterInfoKey = "clusterInfo";
-    private static final String bcpDeadlineKey = "clusterInfo";
+    private static final String bcpDeadlineKey = "bcpDeadline";
     private static final String bcpGroupInfoKey = "bcpGroupInfo";
     private static final String queryRateKey = "queryRateKey";
     private static final String growthRateHeadroomKey = "growthRateHeadroomKey";
