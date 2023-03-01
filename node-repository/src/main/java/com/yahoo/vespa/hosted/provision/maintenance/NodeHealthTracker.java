@@ -46,7 +46,7 @@ public class NodeHealthTracker extends NodeRepositoryMaintainer {
     }
 
     /**
-     * Update UO and DOWN node records for each node as they change.
+     * Update UP and DOWN node records for each node as they change.
      */
     private double updateNodeHealth() {
         var attempts = new MutableInteger(0);
