@@ -94,11 +94,10 @@ public class BoolFieldValue extends FieldValue {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if ( ! (o instanceof BoolFieldValue)) return false;
+        if ( ! (o instanceof BoolFieldValue other)) return false;
         if ( ! super.equals(o)) return false;
 
-        BoolFieldValue that = (BoolFieldValue) o;
-        return (value == that.value);
+        return (value == other.value);
     }
 
     @Override

@@ -150,7 +150,7 @@ public class ContentCluster extends TreeConfigProducer<AnyConfigProducer> implem
                 if (e != null)
                     setupDocumentProcessing(c, e);
             } else if (c.persistenceFactory != null) {
-                throw new IllegalArgumentException("The specified content engine requires the <documents> element to be specified.");
+                throw new IllegalArgumentException("The <documents> element is mandatory in content cluster '" + clusterId + "'");
             }
 
             ModelElement tuning = contentElement.child("tuning");
@@ -333,7 +333,8 @@ public class ContentCluster extends TreeConfigProducer<AnyConfigProducer> implem
                                                                 ClusterSpec.Type.admin,
                                                                 ClusterSpec.Id.from(clusterName),
                                                                 context.getDeployLogger(),
-                                                                true)
+                                                                true,
+                                                                context.clusterInfo().build())
                                                      .keySet();
                 admin.setClusterControllers(createClusterControllers(new ClusterControllerCluster(admin, "standalone", deployState),
                                                                      hosts,

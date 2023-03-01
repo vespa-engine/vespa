@@ -21,7 +21,8 @@ public class CapacityTest {
                       IntRange.empty(),
                       false,
                       true,
-                      Optional.empty());
+                      Optional.empty(),
+                      ClusterInfo.empty());
         assertValidationFailure(new ClusterResources(4, 2, new NodeResources(1, 2, 3, 4)),
                                new ClusterResources(2, 2, new NodeResources(1, 2, 3, 4)));
         assertValidationFailure(new ClusterResources(4, 4, new NodeResources(1, 2, 3, 4)),
@@ -41,7 +42,7 @@ public class CapacityTest {
 
     private void assertValidationFailure(ClusterResources min, ClusterResources max) {
         try {
-            Capacity.from(min, max, IntRange.empty(), false, true, Optional.empty());
+            Capacity.from(min, max, IntRange.empty(), false, true, Optional.empty(), ClusterInfo.empty());
             fail("Expected exception with min " + min + " and max " + max);
         }
         catch (IllegalArgumentException e) {

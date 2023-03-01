@@ -835,7 +835,7 @@ public class ContentBuilderTest extends DomBuilderTest {
                             "    </group>" +
                             "</content>");
         });
-        assertTrue(exception.getMessage().contains("The specified content engine requires the <documents> element to be specified."));
+        assertEquals("The <documents> element is mandatory in content cluster 'a'", exception.getMessage());
     }
 
     private ProtonConfig getProtonConfig(ContentCluster content) {

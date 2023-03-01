@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.container.xml;
 
+import com.yahoo.config.provision.ClusterInfo;
 import com.yahoo.config.provision.IntRange;
 import com.yahoo.component.ComponentSpecification;
 import com.yahoo.component.Version;
@@ -345,10 +346,10 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
     private void addDeploymentSpecConfig(ApplicationContainerCluster cluster, ConfigModelContext context, DeployLogger deployLogger) {
         if ( ! context.getDeployState().isHosted()) return;
-        Optional<DeploymentSpec> deploymentSpec = app.getDeployment().map(DeploymentSpec::fromXml);
+        DeploymentSpec deploymentSpec = app.getDeploymentSpec();
         if (deploymentSpec.isEmpty()) return;
 
-        for (var deprecatedElement : deploymentSpec.get().deprecatedElements()) {
+        for (var deprecatedElement : deploymentSpec.deprecatedElements()) {
             deployLogger.logApplicationPackage(WARNING, deprecatedElement.humanReadableString());
         }
 
@@ -358,8 +359,8 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                             context.getDeployState().getProperties().ztsUrl(),
                             context.getDeployState().getProperties().athenzDnsSuffix(),
                             context.getDeployState().zone(),
-                            deploymentSpec.get());
-        addRotationProperties(cluster, context.getDeployState().zone(), context.getDeployState().getEndpoints(), deploymentSpec.get());
+                            deploymentSpec);
+        addRotationProperties(cluster, context.getDeployState().zone(), context.getDeployState().getEndpoints(), deploymentSpec);
     }
 
     private void addRotationProperties(ApplicationContainerCluster cluster, Zone zone, Set<ContainerEndpoint> endpoints, DeploymentSpec spec) {
@@ -863,10 +864,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         InstanceName instance = context.properties().applicationId().instance();
         ZoneId zone = ZoneId.from(context.properties().zone().environment(),
                                   context.properties().zone().region());
-        DeploymentSpec spec = context.getApplicationPackage().getDeployment()
-                                     .map(new DeploymentSpecXmlReader(false)::read)
-                                     .orElse(DeploymentSpec.empty);
-        return spec.zoneEndpoint(instance, zone, cluster);
+        return context.getApplicationPackage().getDeploymentSpec().zoneEndpoint(instance, zone, cluster);
     }
 
     private static Map<String, String> getEnvironmentVariables(Element environmentVariables) {
@@ -924,22 +922,15 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         HostSystem hostSystem = cluster.hostSystem();
         if (deployState.isHosted()) {
             // request just enough nodes to satisfy environment capacity requirement
-            ClusterSpec clusterSpec = ClusterSpec.request(ClusterSpec.Type.container,
-                                                          ClusterSpec.Id.from(cluster.getName()))
-                                                 .vespaVersion(deployState.getWantedNodeVespaVersion())
-                                                 .dockerImageRepository(deployState.getWantedDockerImageRepo())
-                                                 .build();
             int nodeCount = deployState.zone().environment().isProduction() ? 2 : 1;
-            deployState.getDeployLogger().logApplicationPackage(Level.INFO, "Using " + nodeCount +
-                                                                            " nodes in " + cluster);
-            ClusterResources resources = new ClusterResources(nodeCount, 1, NodeResources.unspecified());
-            Capacity capacity = Capacity.from(resources,
-                                              resources,
-                                              IntRange.empty(),
-                                              false,
-                                              !deployState.getProperties().isBootstrap(),
-                                              context.getDeployState().getProperties().cloudAccount());
-            var hosts = hostSystem.allocateHosts(clusterSpec, capacity, log);
+            deployState.getDeployLogger().logApplicationPackage(Level.INFO, "Using " + nodeCount + " nodes in " + cluster);
+            var nodesSpec = NodesSpecification.dedicated(nodeCount, context);
+            var hosts = nodesSpec.provision(hostSystem,
+                                            ClusterSpec.Type.container,
+                                            ClusterSpec.Id.from(cluster.getName()),
+                                            deployState.getDeployLogger(),
+                                            false,
+                                            context.clusterInfo().build());
             return createNodesFromHosts(hosts, cluster, context.getDeployState());
         }
         else {
@@ -956,15 +947,15 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
     private List<ApplicationContainer> createNodesFromNodeCount(ApplicationContainerCluster cluster, Element containerElement, Element nodesElement, ConfigModelContext context) {
         try {
-            NodesSpecification nodesSpecification = NodesSpecification.from(new ModelElement(nodesElement), context);
-            ClusterSpec.Id clusterId = ClusterSpec.Id.from(cluster.name());
-            ZoneEndpoint zoneEndpoint = zoneEndpoint(context, clusterId);
+            var nodesSpecification = NodesSpecification.from(new ModelElement(nodesElement), context);
+            var clusterId = ClusterSpec.Id.from(cluster.name());
             Map<HostResource, ClusterMembership> hosts = nodesSpecification.provision(cluster.getRoot().hostSystem(),
                                                                                       ClusterSpec.Type.container,
                                                                                       clusterId,
-                                                                                      zoneEndpoint,
+                                                                                      zoneEndpoint(context, clusterId),
                                                                                       log,
-                                                                                      getZooKeeper(containerElement) != null);
+                                                                                      getZooKeeper(containerElement) != null,
+                                                                                      context.clusterInfo().build());
             return createNodesFromHosts(hosts, cluster, context.getDeployState());
         }
         catch (IllegalArgumentException e) {
@@ -998,7 +989,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                 StorageGroup.provisionHosts(nodeSpecification,
                                             referenceId, 
                                             cluster.getRoot().hostSystem(),
-                                            context.getDeployLogger());
+                                            context);
         return createNodesFromHosts(hosts, cluster, context.getDeployState());
     }
 

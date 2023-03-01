@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.maintenance;
 
+import com.yahoo.config.provision.ClusterInfo;
 import com.yahoo.config.provision.IntRange;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
@@ -467,7 +468,7 @@ public class HostCapacityMaintainerTest {
         ClusterSpec spec = ProvisioningTester.contentClusterSpec();
         ClusterResources resources = new ClusterResources(2, 1, new NodeResources(16, 24, 100, 1));
         CloudAccount cloudAccount0 = CloudAccount.from("000000000000");
-        Capacity capacity0 = Capacity.from(resources, resources, IntRange.empty(), false, true, Optional.of(cloudAccount0));
+        Capacity capacity0 = Capacity.from(resources, resources, IntRange.empty(), false, true, Optional.of(cloudAccount0), ClusterInfo.empty());
         List<HostSpec> prepared = provisioningTester.prepare(applicationId, spec, capacity0);
 
         // Hosts are provisioned in requested account
@@ -477,7 +478,7 @@ public class HostCapacityMaintainerTest {
 
         // Redeployment in different account provisions a new set of hosts
         CloudAccount cloudAccount1 = CloudAccount.from("100000000000");
-        Capacity capacity1 = Capacity.from(resources, resources, IntRange.empty(), false, true, Optional.of(cloudAccount1));
+        Capacity capacity1 = Capacity.from(resources, resources, IntRange.empty(), false, true, Optional.of(cloudAccount1), ClusterInfo.empty());
         prepared = provisioningTester.prepare(applicationId, spec, capacity1);
         provisionHostsIn(cloudAccount1, 2, tester);
         assertEquals(2, provisioningTester.activate(applicationId, prepared).size());

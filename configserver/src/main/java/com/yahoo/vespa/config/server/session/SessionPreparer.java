@@ -270,8 +270,7 @@ public class SessionPreparer {
             // Validate after doing our own preprocessing on these two files
             ApplicationMetaData meta = applicationPackage.getMetaData();
             InstanceName instance = meta.getApplicationId().instance();
-            Tags tags = applicationPackage.getDeployment().map(new DeploymentSpecXmlReader(false)::read)
-                                          .flatMap(spec -> spec.instance(instance))
+            Tags tags = applicationPackage.getDeploymentSpec().instance(instance)
                                           .map(DeploymentInstanceSpec::tags)
                                           .orElse(Tags.empty());
             if (servicesXml.exists()) {

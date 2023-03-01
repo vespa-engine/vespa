@@ -7,8 +7,11 @@ import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AnyConfigProducer;
 import com.yahoo.config.model.producer.TreeConfigProducer;
+import com.yahoo.config.provision.ClusterInfo;
 import com.yahoo.vespa.model.VespaModel;
 
+import java.time.Duration;
+import java.util.Comparator;
 import java.util.stream.Stream;
 
 /**
@@ -65,6 +68,18 @@ public final class ConfigModelContext {
 
     public ConfigModelContext with(VespaModel vespaModel) {
         return ConfigModelContext.create(deployState, vespaModel, configModelRepoAdder, parent, producerId);
+    }
+
+    /** Returns a cluster info builder pre-populated with info known in this context. */
+    public ClusterInfo.Builder clusterInfo() {
+        var instance = getApplicationPackage().getDeploymentSpec().instance(properties().applicationId().instance());
+        if ( ! instance.isPresent()) return new ClusterInfo.Builder();
+        var maxDeadline = instance.get().bcp().groups().stream()
+                             .filter(group -> group.memberRegions().contains(properties().zone().region()))
+                             .map(group -> group.deadline())
+                             .min(Comparator.comparing(deadline -> deadline))
+                             .orElse(Duration.ofMinutes(0));
+        return new ClusterInfo.Builder().bcpDeadline(maxDeadline);
     }
 
     /**

@@ -1,5 +1,6 @@
 package com.yahoo.vespa.model.application.validation.change;
 
+import com.yahoo.config.provision.ClusterInfo;
 import com.yahoo.config.provision.IntRange;
 import com.yahoo.config.model.api.Provisioned;
 import com.yahoo.config.model.deploy.DeployState;
@@ -57,7 +58,8 @@ class CloudAccountChangeValidatorTest {
                              IntRange.empty(),
                              false,
                              false,
-                             Optional.of(cloudAccount).filter(account -> !account.isUnspecified()));
+                             Optional.of(cloudAccount).filter(account -> !account.isUnspecified()),
+                             ClusterInfo.empty());
     }
 
     private static VespaModel model(Provisioned provisioned) {

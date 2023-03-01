@@ -110,10 +110,7 @@ public class HostedOverrideProcessorComplexTest {
     private void assertOverride(InstanceName instance, Environment environment, RegionName region, String expected) throws TransformerException {
         ApplicationPackage app = FilesApplicationPackage.fromFile(new File(servicesFile).getParentFile());
         Document inputDoc = Xml.getDocument(app.getServices());
-        Tags tags = app.getDeployment()
-                       .map(new DeploymentSpecXmlReader(false)::read)
-                       .flatMap(spec -> spec.instance(instance).map(DeploymentInstanceSpec::tags))
-                       .orElse(Tags.empty());
+        Tags tags = app.getDeploymentSpec().instance(instance).map(DeploymentInstanceSpec::tags).orElse(Tags.empty());
         Document newDoc = new OverrideProcessor(instance, environment, region, tags).process(inputDoc);
         assertEquals(expected, Xml.documentAsString(newDoc, true));
     }

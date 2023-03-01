@@ -519,7 +519,7 @@ public class DeploymentSpecXmlReader {
             }
 
             Duration deadline = XML.attribute("deadline", groupElement).map(value -> toDuration(value, "deadline")).orElse(Duration.ZERO);
-            groups.add(new Bcp.Group(regions, endpoints, deadline));
+            groups.add(new Bcp.Group(regions, deadline));
         }
         validateAndConsolidate(endpointsByZone, zoneEndpoints);
         return new Bcp(groups);

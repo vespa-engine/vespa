@@ -84,6 +84,7 @@ public class FilesApplicationPackageTest {
         assertFalse(new File(appDir, "deployment.xml").exists());
         FilesApplicationPackage app = FilesApplicationPackage.fromFile(appDir);
         assertFalse(app.getDeployment().isPresent());
+        assertTrue(app.getDeploymentSpec().isEmpty());
     }
 
     @Test
@@ -93,6 +94,7 @@ public class FilesApplicationPackageTest {
         assertTrue(deployment.exists());
         FilesApplicationPackage app = FilesApplicationPackage.fromFile(appDir);
         assertTrue(app.getDeployment().isPresent());
+        assertFalse(app.getDeploymentSpec().isEmpty());
         assertFalse(app.getMajorVersion().isPresent());
         assertEquals(IOUtils.readAll(app.getDeployment().get()), IOUtils.readAll(new FileReader(deployment)));
     }

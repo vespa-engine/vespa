@@ -88,6 +88,8 @@ public class DeploymentSpec {
         validateBcp();
     }
 
+    public boolean isEmpty() { return this == empty; }
+
     /** Throw an IllegalArgumentException if the total delay exceeds 24 hours */
     private void validateTotalDelay(List<Step> steps) {
         long totalDelaySeconds = steps.stream().mapToLong(step -> (step.delay().getSeconds())).sum();

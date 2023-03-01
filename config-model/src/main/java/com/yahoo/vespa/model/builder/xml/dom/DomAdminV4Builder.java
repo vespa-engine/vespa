@@ -123,7 +123,8 @@ public class DomAdminV4Builder extends DomAdminBuilderBase {
                                             ClusterSpec.Type.admin, 
                                             ClusterSpec.Id.from(clusterId), 
                                             context.getDeployLogger(),
-                                            false)
+                                            false,
+                                            context.clusterInfo().build())
                                  .keySet();
     }
 

@@ -6,6 +6,7 @@ import com.yahoo.component.Version;
 import com.yahoo.config.application.api.ApplicationFile;
 import com.yahoo.config.application.api.ApplicationMetaData;
 import com.yahoo.config.application.api.ComponentInfo;
+import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.application.api.FileRegistry;
 import com.yahoo.config.application.api.UnparsedConfigDefinition;
 import com.yahoo.config.codegen.DefParser;
@@ -55,6 +56,8 @@ public class ZKApplicationPackage extends AbstractApplicationPackage {
     public static final String allocatedHostsNode = "allocatedHosts";
     private final ApplicationMetaData metaData;
 
+    private DeploymentSpec deploymentSpec = null;
+
     public ZKApplicationPackage(AddFileInterface fileManager, Curator curator, Path sessionPath, int maxNodeSize) {
         verifyAppPath(curator, sessionPath);
         zkApplication = new ZKApplication(curator, sessionPath, maxNodeSize);
@@ -71,6 +74,12 @@ public class ZKApplicationPackage extends AbstractApplicationPackage {
     private Optional<AllocatedHosts> importAllocatedHosts() {
         if ( ! zkApplication.exists(Path.fromString(allocatedHostsNode))) return Optional.empty();
         return Optional.of(readAllocatedHosts());
+    }
+
+    @Override
+    public DeploymentSpec getDeploymentSpec() {
+        if (deploymentSpec != null) return deploymentSpec;
+        return deploymentSpec = parseDeploymentSpec(false);
     }
 
     /**
