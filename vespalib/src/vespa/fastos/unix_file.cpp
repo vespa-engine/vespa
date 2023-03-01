@@ -345,8 +345,8 @@ FastOS_UNIX_File::GetSize()
 }
 
 
-time_t
-FastOS_UNIX_File::GetModificationTime()
+vespalib::system_time
+FastOS_UNIX_File::getModificationTime()
 {
     struct stat stbuf{};
     assert(IsOpened());
@@ -355,7 +355,7 @@ FastOS_UNIX_File::GetModificationTime()
     assert(res == 0);
     (void) res;
 
-    return stbuf.st_mtime;
+    return vespalib::system_time(vespalib::duration(stbuf.st_mtim.tv_sec*1000*1000*1000 + stbuf.st_mtim.tv_nsec));
 }
 
 

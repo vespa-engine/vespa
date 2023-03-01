@@ -177,7 +177,7 @@ public:
      *
      * @return time_t The last modification time.
      */
-    time_t GetModificationTime() override;
+    vespalib::system_time getModificationTime() override;
     /**
      * Turn on direct IO.
      */

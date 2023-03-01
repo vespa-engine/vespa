@@ -82,7 +82,7 @@ public:
     bool SetPosition(int64_t desiredPosition) override;
     int64_t GetPosition() override;
     int64_t GetSize() override;
-    time_t GetModificationTime() override;
+    vespalib::system_time getModificationTime() override;
     bool Delete() override;
     [[nodiscard]] bool Sync() override;
     bool SetSize(int64_t newSize) override;

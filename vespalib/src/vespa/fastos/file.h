@@ -10,7 +10,7 @@
 
 #pragma once
 
-#include <cstdint>
+#include <vespa/vespalib/util/time.h>
 #include <string>
 
 #define FASTOS_PREFIX(a) FastOS_##a
@@ -347,7 +347,7 @@ public:
      * Return the time when file was last modified.
      * @return time of last modification
      */
-    virtual time_t GetModificationTime() = 0;
+    virtual vespalib::system_time getModificationTime() = 0;
 
     /**
      * Delete the file. This method requires that the file is

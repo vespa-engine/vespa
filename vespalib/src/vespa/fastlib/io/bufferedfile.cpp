@@ -107,11 +107,10 @@ Fast_BufferedFile::Sync()
     return _file->Sync();
 }
 
-time_t
-Fast_BufferedFile::GetModificationTime()
+vespalib::system_time
+Fast_BufferedFile::getModificationTime()
 {
-    time_t retval = _file->GetModificationTime();
-    return retval;
+    return _file->getModificationTime();
 }
 
 void
