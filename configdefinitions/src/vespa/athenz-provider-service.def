@@ -13,10 +13,6 @@ secretName                                string
 # Secret version
 secretVersion                             int
 
-# Tempory resources
-sisSecretName                             string default=""
-sisSecretVersion                          int default=0
-
 # Secret name of CA certificate
 caCertSecretName                          string
 

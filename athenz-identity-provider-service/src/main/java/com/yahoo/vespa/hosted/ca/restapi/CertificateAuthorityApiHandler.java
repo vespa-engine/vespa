@@ -65,7 +65,7 @@ public class CertificateAuthorityApiHandler extends ThreadedHttpRequestHandler {
         super(ctx);
         this.secretStore = secretStore;
         this.certificates = certificates;
-        this.caPrivateKeySecretName = athenzProviderServiceConfig.sisSecretName();
+        this.caPrivateKeySecretName = athenzProviderServiceConfig.secretName();
         this.caCertificateSecretName = athenzProviderServiceConfig.caCertSecretName();
         this.instanceValidator = instanceValidator;
     }
