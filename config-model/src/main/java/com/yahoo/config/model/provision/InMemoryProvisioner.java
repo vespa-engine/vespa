@@ -129,6 +129,8 @@ public class InMemoryProvisioner implements HostProvisioner {
         this.retiredHostNames = Set.of(retiredHostNames);
     }
 
+    public Provisioned provisioned() { return provisioned; }
+
     /** May affect e.g. the number of nodes/cluster. */
     public InMemoryProvisioner setEnvironment(Environment environment) {
         this.environment = environment;

@@ -187,10 +187,15 @@ public class StorageGroup {
 
     public static Map<HostResource, ClusterMembership> provisionHosts(NodesSpecification nodesSpecification, 
                                                                       String clusterIdString, 
-                                                                      HostSystem hostSystem, 
-                                                                      DeployLogger logger) {
+                                                                      HostSystem hostSystem,
+                                                                      ConfigModelContext context) {
         ClusterSpec.Id clusterId = ClusterSpec.Id.from(clusterIdString);
-        return nodesSpecification.provision(hostSystem, ClusterSpec.Type.content, clusterId, logger, true);
+        return nodesSpecification.provision(hostSystem,
+                                            ClusterSpec.Type.content,
+                                            clusterId,
+                                            context.getDeployLogger(),
+                                            true,
+                                            context.clusterInfo().build());
     }
 
     public static class Builder {
@@ -203,7 +208,9 @@ public class StorageGroup {
             this.context = context;
         }
 
-        public StorageGroup buildRootGroup(DeployState deployState, RedundancyBuilder redundancyBuilder, ContentCluster owner) {
+        public StorageGroup buildRootGroup(DeployState deployState,
+                                           RedundancyBuilder redundancyBuilder,
+                                           ContentCluster owner) {
             try {
                 if (owner.isHosted())
                     validateRedundancyAndGroups(deployState.zone().environment());
@@ -219,7 +226,7 @@ public class StorageGroup {
 
                 GroupBuilder groupBuilder = collectGroup(owner.isHosted(), group, nodes, null, null);
                 StorageGroup storageGroup = owner.isHosted()
-                                            ? groupBuilder.buildHosted(deployState, owner, Optional.empty())
+                                            ? groupBuilder.buildHosted(deployState, owner, Optional.empty(), context)
                                             : groupBuilder.buildNonHosted(deployState, owner, Optional.empty());
 
                 Redundancy redundancy = redundancyBuilder.build(owner.isHosted(), storageGroup.subgroups.size(),
@@ -334,12 +341,18 @@ public class StorageGroup {
              * @param parent the parent storage group, or empty if this is the root group
              * @return the storage group build by this
              */
-            public StorageGroup buildHosted(DeployState deployState, ContentCluster owner, Optional<GroupBuilder> parent) {
+            public StorageGroup buildHosted(DeployState deployState,
+                                            ContentCluster owner,
+                                            Optional<GroupBuilder> parent,
+                                            ConfigModelContext context) {
                 if (storageGroup.getIndex() != null)
                     throw new IllegalArgumentException("Specifying individual groups is not supported on hosted applications");
                 Map<HostResource, ClusterMembership> hostMapping =
                         nodeRequirement.isPresent() ?
-                        provisionHosts(nodeRequirement.get(), owner.getStorageCluster().getClusterName(), owner.getRoot().hostSystem(), deployState.getDeployLogger()) :
+                        provisionHosts(nodeRequirement.get(),
+                                       owner.getStorageCluster().getClusterName(),
+                                       owner.getRoot().hostSystem(),
+                                       context) :
                         Collections.emptyMap();
 
                 Map<Optional<ClusterSpec.Group>, Map<HostResource, ClusterMembership>> hostGroups = collectAllocatedSubgroups(hostMapping);
@@ -362,7 +375,7 @@ public class StorageGroup {
                         storageGroup.nodes.add(createStorageNode(deployState, owner, host.getKey(), storageGroup, host.getValue()));
                     }
                     for (GroupBuilder subGroup : subGroups) {
-                        storageGroup.subgroups.add(subGroup.buildHosted(deployState, owner, Optional.of(this)));
+                        storageGroup.subgroups.add(subGroup.buildHosted(deployState, owner, Optional.of(this), context));
                     }
                 }
                 return storageGroup;

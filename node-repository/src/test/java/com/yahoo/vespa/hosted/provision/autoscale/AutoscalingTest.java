@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.provision.autoscale;
 
 import com.yahoo.config.provision.Capacity;
+import com.yahoo.config.provision.ClusterInfo;
 import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
@@ -389,7 +390,7 @@ public class AutoscalingTest {
         var fixture = DynamicProvisioningTester.fixture()
                                                .awsProdSetup(true)
                                                .initialResources(Optional.of(now))
-                                               .capacity(Capacity.from(min, max, IntRange.of(2, 3), false, true, Optional.empty()))
+                                               .capacity(Capacity.from(min, max, IntRange.of(2, 3), false, true, Optional.empty(), ClusterInfo.empty()))
                                                .build();
         fixture.tester().clock().advance(Duration.ofDays(2));
         fixture.loader().applyCpuLoad(0.4, 240);
@@ -497,7 +498,7 @@ public class AutoscalingTest {
         var fixture = DynamicProvisioningTester.fixture()
                                                .awsProdSetup(true)
                                                .initialResources(Optional.of(now))
-                                               .capacity(Capacity.from(min, max, IntRange.of(1), false, true, Optional.empty()))
+                                               .capacity(Capacity.from(min, max, IntRange.of(1), false, true, Optional.empty(), ClusterInfo.empty()))
                                                .build();
         fixture.tester().clock().advance(Duration.ofDays(2));
         fixture.loader().applyCpuLoad(0.9, 120);
@@ -743,7 +744,7 @@ public class AutoscalingTest {
                                        new NodeResources(100, 1000, 1000, 1, NodeResources.DiskSpeed.any));
         var fixture = DynamicProvisioningTester.fixture()
                                                .awsSetup(true, Environment.dev)
-                                               .capacity(Capacity.from(min, max, IntRange.of(3, 5), false, true, Optional.empty()))
+                                               .capacity(Capacity.from(min, max, IntRange.of(3, 5), false, true, Optional.empty(), ClusterInfo.empty()))
                                                .build();
         fixture.tester().clock().advance(Duration.ofDays(2));
         fixture.loader().applyLoad(new Load(1.0, 1.0, 1.0), 200);
@@ -763,7 +764,8 @@ public class AutoscalingTest {
                               IntRange.empty(),
                               true,
                               true,
-                              Optional.empty());
+                              Optional.empty(),
+                              ClusterInfo.empty());
 
         var fixture = DynamicProvisioningTester.fixture()
                                                .hostCount(5)
@@ -785,7 +787,8 @@ public class AutoscalingTest {
                               IntRange.empty(),
                               true,
                               true,
-                              Optional.empty());
+                              Optional.empty(),
+                              ClusterInfo.empty());
 
         var fixture = DynamicProvisioningTester.fixture()
                                                .hostCount(5)

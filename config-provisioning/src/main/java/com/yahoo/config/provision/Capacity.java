@@ -20,6 +20,7 @@ public final class Capacity {
     private final boolean canFail;
     private final NodeType type;
     private final Optional<CloudAccount> cloudAccount;
+    private final ClusterInfo clusterInfo;
 
     private Capacity(ClusterResources min,
                      ClusterResources max,
@@ -27,7 +28,8 @@ public final class Capacity {
                      boolean required,
                      boolean canFail,
                      NodeType type,
-                     Optional<CloudAccount> cloudAccount) {
+                     Optional<CloudAccount> cloudAccount,
+                     ClusterInfo clusterInfo) {
         validate(min);
         validate(max);
         if (max.smallerThan(min))
@@ -42,6 +44,7 @@ public final class Capacity {
         this.canFail = canFail;
         this.type = type;
         this.cloudAccount = Objects.requireNonNull(cloudAccount);
+        this.clusterInfo = clusterInfo;
     }
 
     private static void validate(ClusterResources resources) {
@@ -77,12 +80,14 @@ public final class Capacity {
         return cloudAccount;
     }
 
+    public ClusterInfo clusterInfo() { return clusterInfo; }
+
     public Capacity withLimits(ClusterResources min, ClusterResources max) {
         return withLimits(min, max, IntRange.empty());
     }
 
     public Capacity withLimits(ClusterResources min, ClusterResources max, IntRange groupSize) {
-        return new Capacity(min, max, groupSize, required, canFail, type, cloudAccount);
+        return new Capacity(min, max, groupSize, required, canFail, type, cloudAccount, clusterInfo);
     }
 
     @Override
@@ -98,25 +103,21 @@ public final class Capacity {
 
     /** Create a non-required, failable capacity request */
     public static Capacity from(ClusterResources min, ClusterResources max) {
-        return from(min, max, IntRange.empty(), false, true, Optional.empty());
+        return from(min, max, IntRange.empty(), false, true, Optional.empty(), ClusterInfo.empty());
     }
 
     public static Capacity from(ClusterResources resources, boolean required, boolean canFail) {
         return from(resources, required, canFail, NodeType.tenant);
     }
 
-    // TODO: Remove after February 2023
-    public static Capacity from(ClusterResources min, ClusterResources max, boolean required, boolean canFail) {
-        return new Capacity(min, max, IntRange.empty(), required, canFail, NodeType.tenant, Optional.empty());
-    }
-
-    // TODO: Remove after February 2023
-    public static Capacity from(ClusterResources min, ClusterResources max, boolean required, boolean canFail, Optional<CloudAccount> cloudAccount) {
-        return new Capacity(min, max, IntRange.empty(), required, canFail, NodeType.tenant, cloudAccount);
-    }
-
+    // TODO: Remove after March 2023
     public static Capacity from(ClusterResources min, ClusterResources max, IntRange groupSize, boolean required, boolean canFail, Optional<CloudAccount> cloudAccount) {
-        return new Capacity(min, max, groupSize, required, canFail, NodeType.tenant, cloudAccount);
+        return new Capacity(min, max, groupSize, required, canFail, NodeType.tenant, cloudAccount, ClusterInfo.empty());
+    }
+
+    public static Capacity from(ClusterResources min, ClusterResources max, IntRange groupSize, boolean required, boolean canFail,
+                                Optional<CloudAccount> cloudAccount, ClusterInfo clusterInfo) {
+        return new Capacity(min, max, groupSize, required, canFail, NodeType.tenant, cloudAccount, clusterInfo);
     }
 
     /** Creates this from a node type */
@@ -125,7 +126,7 @@ public final class Capacity {
     }
 
     private static Capacity from(ClusterResources resources, boolean required, boolean canFail, NodeType type) {
-        return new Capacity(resources, resources, IntRange.empty(), required, canFail, type, Optional.empty());
+        return new Capacity(resources, resources, IntRange.empty(), required, canFail, type, Optional.empty(), ClusterInfo.empty());
     }
 
 }

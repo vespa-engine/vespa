@@ -101,7 +101,9 @@ public class ZKApplicationPackageTest {
         assertEquals("6.0.1", readInfo.getHosts().iterator().next().version().get().toString());
         assertEquals(dockerImage, readInfo.getHosts().iterator().next().dockerImageRepo().get().asString());
         assertTrue(zkApp.getDeployment().isPresent());
+        assertFalse(zkApp.getDeploymentSpec().isEmpty());
         assertEquals("mydisc", DeploymentSpec.fromXml(zkApp.getDeployment().get()).requireInstance("default").globalServiceId().get());
+        assertEquals("mydisc", zkApp.getDeploymentSpec().requireInstance("default").globalServiceId().get());
     }
 
     private void feed(com.yahoo.vespa.curator.Curator zk, File dirToFeed) throws IOException {

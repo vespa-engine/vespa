@@ -87,27 +87,18 @@ public class Bcp {
     public static class Group {
 
         private final List<RegionMember> members;
-        private final List<Endpoint> endpoints;
+        private final Set<RegionName> memberRegions;
         private final Duration deadline;
 
         public Group(List<RegionMember> members, Duration deadline) {
-            this(members, List.of(), deadline);
-        }
-
-        public Group(List<RegionMember> members, List<Endpoint> endpoints, Duration deadline) {
             this.members = List.copyOf(members);
-            this.endpoints = endpoints;
+            this.memberRegions = members.stream().map(member -> member.region()).collect(Collectors.toSet());
             this.deadline = deadline;
         }
 
         public List<RegionMember> members() { return members; }
 
-        /**
-         * Returns the endpoints defined in this.
-         * These will be added to instances during XML import post processing
-         * and should not otherwise be exposed from here.
-         */
-        List<Endpoint> endpoints() { return endpoints; }
+        public Set<RegionName> memberRegions() { return memberRegions; }
 
         /**
          * Returns the max time until the other regions must be able to handle the additional traffic

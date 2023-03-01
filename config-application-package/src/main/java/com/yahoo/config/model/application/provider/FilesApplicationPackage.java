@@ -106,6 +106,8 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
     private final boolean includeSourceFiles;
     private final TransformerFactory transformerFactory;
 
+    private DeploymentSpec deploymentSpec = null;
+
     /** Creates from a directory with source files included */
     public static FilesApplicationPackage fromFile(File appDir) {
         return fromFile(appDir, false);
@@ -580,6 +582,12 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
         IOUtils.writeFile(metaFile, metaData.asJsonBytes());
     }
 
+    @Override
+    public DeploymentSpec getDeploymentSpec() {
+        if (deploymentSpec != null) return deploymentSpec;
+        return deploymentSpec = parseDeploymentSpec(false);
+    }
+
     private void preprocessXML(File destination, File inputXml, Zone zone) throws IOException {
         if ( ! inputXml.exists()) return;
         try {
@@ -589,10 +597,9 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
                                                     instance,
                                                     zone.environment(),
                                                     zone.region(),
-                                                    getDeployment().map(new DeploymentSpecXmlReader(false)::read)
-                                                                   .flatMap(spec -> spec.instance(instance))
-                                                                   .map(DeploymentInstanceSpec::tags)
-                                                                   .orElse(Tags.empty()))
+                                                    getDeploymentSpec().instance(instance)
+                                                                       .map(DeploymentInstanceSpec::tags)
+                                                                       .orElse(Tags.empty()))
                     .run();
 
             try (FileOutputStream outputStream = new FileOutputStream(destination)) {

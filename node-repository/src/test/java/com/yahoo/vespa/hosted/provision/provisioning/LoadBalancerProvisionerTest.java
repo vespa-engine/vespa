@@ -6,6 +6,7 @@ import com.google.common.collect.Iterators;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.CloudAccount;
+import com.yahoo.config.provision.ClusterInfo;
 import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostSpec;
@@ -326,7 +327,7 @@ public class LoadBalancerProvisionerTest {
     @Test
     public void load_balancer_with_custom_settings() {
         ClusterResources resources = new ClusterResources(3, 1, nodeResources);
-        Capacity capacity = Capacity.from(resources, resources, IntRange.empty(), false, true, Optional.of(CloudAccount.empty));
+        Capacity capacity = Capacity.from(resources, resources, IntRange.empty(), false, true, Optional.of(CloudAccount.empty), ClusterInfo.empty());
         tester.activate(app1, prepare(app1, capacity, clusterRequest(ClusterSpec.Type.container, ClusterSpec.Id.from("c1"))));
         LoadBalancerList loadBalancers = tester.nodeRepository().loadBalancers().list();
         assertEquals(1, loadBalancers.size());
@@ -343,7 +344,7 @@ public class LoadBalancerProvisionerTest {
     @Test
     public void load_balancer_with_changing_visibility() {
         ClusterResources resources = new ClusterResources(3, 1, nodeResources);
-        Capacity capacity = Capacity.from(resources, resources, IntRange.empty(), false, true, Optional.of(CloudAccount.empty));
+        Capacity capacity = Capacity.from(resources, resources, IntRange.empty(), false, true, Optional.of(CloudAccount.empty), ClusterInfo.empty());
         tester.activate(app1, prepare(app1, capacity, clusterRequest(ClusterSpec.Type.container, ClusterSpec.Id.from("c1"))));
         LoadBalancerList loadBalancers = tester.nodeRepository().loadBalancers().list();
         assertEquals(1, loadBalancers.size());
@@ -379,7 +380,7 @@ public class LoadBalancerProvisionerTest {
         ClusterResources resources = new ClusterResources(3, 1, nodeResources);
         CloudAccount cloudAccount0 = CloudAccount.empty;
         {
-            Capacity capacity = Capacity.from(resources, resources, IntRange.empty(), false, true, Optional.of(cloudAccount0));
+            Capacity capacity = Capacity.from(resources, resources, IntRange.empty(), false, true, Optional.of(cloudAccount0), ClusterInfo.empty());
             tester.activate(app1, prepare(app1, capacity, clusterRequest(ClusterSpec.Type.container, ClusterSpec.Id.from("c1"))));
         }
         LoadBalancerList loadBalancers = tester.nodeRepository().loadBalancers().list();
@@ -388,7 +389,7 @@ public class LoadBalancerProvisionerTest {
 
         // Changing account fails if there is an existing LB in the previous account.
         CloudAccount cloudAccount1 = CloudAccount.from("111111111111");
-        Capacity capacity = Capacity.from(resources, resources, IntRange.empty(), false, true, Optional.of(cloudAccount1));
+        Capacity capacity = Capacity.from(resources, resources, IntRange.empty(), false, true, Optional.of(cloudAccount1), ClusterInfo.empty());
         try {
             prepare(app1, capacity, clusterRequest(ClusterSpec.Type.container, ClusterSpec.Id.from("c1")));
             fail("Expected exception");

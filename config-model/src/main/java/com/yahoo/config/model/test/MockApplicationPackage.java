@@ -6,6 +6,7 @@ import com.yahoo.config.application.api.ApplicationFile;
 import com.yahoo.config.application.api.ApplicationMetaData;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.ComponentInfo;
+import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.application.api.UnparsedConfigDefinition;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
@@ -57,11 +58,13 @@ public class MockApplicationPackage implements ApplicationPackage {
     private final List<String> schemas;
     private final Map<Path, MockApplicationFile> files;
     private final String schemaDir;
-    private final Optional<String> deploymentSpec;
+    private final Optional<String> deploymentSpecString;
     private final Optional<String> validationOverrides;
     private final boolean failOnValidateXml;
     private final QueryProfileRegistry queryProfileRegistry;
     private final ApplicationMetaData applicationMetaData;
+
+    private DeploymentSpec deploymentSpec = null;
 
     protected MockApplicationPackage(File root, String hosts, String services, List<String> schemas,
                                      Map<Path, MockApplicationFile> files,
@@ -74,7 +77,7 @@ public class MockApplicationPackage implements ApplicationPackage {
         this.schemas = schemas;
         this.files = files;
         this.schemaDir = schemaDir;
-        this.deploymentSpec = Optional.ofNullable(deploymentSpec);
+        this.deploymentSpecString = Optional.ofNullable(deploymentSpec);
         this.validationOverrides = Optional.ofNullable(validationOverrides);
         this.failOnValidateXml = failOnValidateXml;
         queryProfileRegistry = new QueryProfileXMLReader().read(asNamedReaderList(queryProfileType),
@@ -99,6 +102,12 @@ public class MockApplicationPackage implements ApplicationPackage {
     @Override
     public Reader getServices() {
         return new StringReader(servicesS);
+    }
+
+    @Override
+    public DeploymentSpec getDeploymentSpec() {
+        if (deploymentSpec != null) return deploymentSpec;
+        return deploymentSpec = parseDeploymentSpec(false);
     }
 
     @Override
@@ -183,7 +192,7 @@ public class MockApplicationPackage implements ApplicationPackage {
 
     @Override
     public Optional<Reader> getDeployment() {
-        return deploymentSpec.map(StringReader::new);
+        return deploymentSpecString.map(StringReader::new);
     }
 
     @Override

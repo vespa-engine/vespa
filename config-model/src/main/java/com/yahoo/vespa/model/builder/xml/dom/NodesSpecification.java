@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.builder.xml.dom;
 
+import com.yahoo.config.provision.ClusterInfo;
 import com.yahoo.config.provision.IntRange;
 import com.yahoo.collections.Pair;
 import com.yahoo.component.Version;
@@ -266,8 +267,9 @@ public class NodesSpecification {
                                                           ClusterSpec.Type clusterType,
                                                           ClusterSpec.Id clusterId,
                                                           DeployLogger logger,
-                                                          boolean stateful) {
-        return provision(hostSystem, clusterType, clusterId, ZoneEndpoint.defaultEndpoint, logger, stateful);
+                                                          boolean stateful,
+                                                          ClusterInfo clusterInfo) {
+        return provision(hostSystem, clusterType, clusterId, ZoneEndpoint.defaultEndpoint, logger, stateful, clusterInfo);
     }
 
     public Map<HostResource, ClusterMembership> provision(HostSystem hostSystem,
@@ -275,7 +277,8 @@ public class NodesSpecification {
                                                           ClusterSpec.Id clusterId,
                                                           ZoneEndpoint zoneEndpoint,
                                                           DeployLogger logger,
-                                                          boolean stateful) {
+                                                          boolean stateful,
+                                                          ClusterInfo info) {
         if (combinedId.isPresent())
             clusterType = ClusterSpec.Type.combined;
         ClusterSpec cluster = ClusterSpec.request(clusterType, clusterId)
@@ -286,7 +289,7 @@ public class NodesSpecification {
                                          .loadBalancerSettings(zoneEndpoint)
                                          .stateful(stateful)
                                          .build();
-        return hostSystem.allocateHosts(cluster, Capacity.from(min, max, groupSize, required, canFail, cloudAccount), logger);
+        return hostSystem.allocateHosts(cluster, Capacity.from(min, max, groupSize, required, canFail, cloudAccount, info), logger);
     }
 
     private static Pair<NodeResources, NodeResources> nodeResources(ModelElement nodesElement) {

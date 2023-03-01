@@ -2,6 +2,7 @@
 package com.yahoo.config.application.api;
 
 import com.yahoo.component.Version;
+import com.yahoo.config.application.api.xml.DeploymentSpecXmlReader;
 import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Zone;
@@ -128,20 +129,7 @@ public interface ApplicationPackage {
 
     /** Returns the major version this application is valid for, or empty if it is valid for all versions */
     default Optional<Integer> getMajorVersion() {
-        if (getDeployment().isEmpty()) return Optional.empty();
-
-        Element deployElement = XML.getDocument(getDeployment().get()).getDocumentElement();
-        if (deployElement == null) return Optional.empty();
-
-        String majorVersionString = deployElement.getAttribute("major-version");
-        if (majorVersionString == null || majorVersionString.isEmpty())
-            return Optional.empty();
-        try {
-            return Optional.of(Integer.parseInt(majorVersionString));
-        }
-        catch (NumberFormatException e) {
-            throw new IllegalArgumentException("major-version must be an integer number, not '" + majorVersionString + "'");
-        }
+        return getDeploymentSpec().majorVersion();
     }
 
     /**
@@ -168,6 +156,19 @@ public interface ApplicationPackage {
     String getServicesSource();
 
     Optional<Reader> getDeployment();
+
+    /**
+     * Returns the parsed deployment spec of this,
+     * without validating it, and without reparsing on each request.
+     */
+    DeploymentSpec getDeploymentSpec();
+
+    default DeploymentSpec parseDeploymentSpec(boolean validate) {
+         return getDeployment()
+                   .map(new DeploymentSpecXmlReader(validate)::read)
+                   .orElse(DeploymentSpec.empty);
+    }
+
     Optional<Reader> getValidationOverrides();
 
     List<ComponentInfo> getComponentsInfo(Version vespaVersion);
@@ -226,6 +227,7 @@ public interface ApplicationPackage {
 
     /**
      * Readers for all the schema files.
+     *
      * @return a collection of readers for schemas
      */
     Collection<NamedReader> getSchemas();
@@ -235,10 +237,9 @@ public interface ApplicationPackage {
      * application package. This is the entry point for the multi environment application package support. This method
      * will not mutate the existing application package.
      *
-     * @param zone A valid {@link Zone} instance, used to decide which parts of services to keep and remove
-     * @param logger A {@link DeployLogger} to add output that will be returned to the user
-     *
-     * @return A new application package instance pointing to a new location
+     * @param zone a valid {@link Zone} instance, used to decide which parts of services to keep and remove
+     * @param logger a {@link DeployLogger} to add output that will be returned to the user
+     * @return a new application package instance pointing to a new location
      */
     default ApplicationPackage preprocess(Zone zone, DeployLogger logger) throws IOException {
         throw new UnsupportedOperationException("This application package does not support preprocessing");
