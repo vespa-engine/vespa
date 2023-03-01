@@ -1030,7 +1030,7 @@ TEST_F(MetricManagerTest, test_update_hooks)
     waitForTimeProcessed(mm, 1204);
 
     // Give all hooks an update
-    mm.updateMetrics(true);
+    mm.updateMetrics();
 
     // Last update should not have interfered with periods
     timer.set_time(1205);

@@ -155,10 +155,7 @@ public:
      * nice values before reporting something.
      * This function can not be called from an update hook callback.
      */
-    void updateMetrics(bool includeSnapshotOnlyHooks);
-    void updateMetrics() {
-        updateMetrics(false);
-    }
+    void updateMetrics();
 
     /**
      * Force event logging to happen now.

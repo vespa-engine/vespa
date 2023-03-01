@@ -26,7 +26,7 @@ StateApiAdapter::getMetrics(const vespalib::string &consumer)
 vespalib::string
 StateApiAdapter::getTotalMetrics(const vespalib::string &consumer)
 {
-    _manager.updateMetrics(true);
+    _manager.updateMetrics();
     metrics::MetricLockGuard guard(_manager.getMetricLock());
     _manager.checkMetricsAltered(guard);
     system_time currentTime = vespalib::system_clock::now();

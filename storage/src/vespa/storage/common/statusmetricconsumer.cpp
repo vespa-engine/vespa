@@ -51,11 +51,7 @@ bool
 StatusMetricConsumer::reportStatus(std::ostream& out,
                                    const framework::HttpUrlPath& path) const
 {
-    // snapshot metrics too, if callsnapshothooks is set to 1.
-    bool updateSnapshotHooks = path.get("callsnapshothooks", 0) == 1;
-    LOG(debug, "Updating metrics ahead of status page view%s",
-        updateSnapshotHooks ? ", calling snapshot hooks too" : ".");
-    _manager.updateMetrics(updateSnapshotHooks);
+    _manager.updateMetrics();
 
     vespalib::system_time currentTime = _component.getClock().getSystemTime();
     bool json = (path.getAttribute("format") == "json");

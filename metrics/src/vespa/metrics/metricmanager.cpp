@@ -635,17 +635,13 @@ MetricManager::timeChangedNotification() const
 }
 
 void
-MetricManager::updateMetrics(bool includeSnapshotOnlyHooks)
+MetricManager::updateMetrics()
 {
-    LOG(debug, "Calling metric update hooks%s.", includeSnapshotOnlyHooks ? ", including snapshot hooks" : "");
     // Ensure we're not in the way of the background thread
     MetricLockGuard sync(_waiter);
-    LOG(debug, "Giving %zu periodic update hooks.", _periodicUpdateHooks.size());
+    LOG(debug, "Calling %zu periodic update hooks.", _periodicUpdateHooks.size());
     updatePeriodicMetrics(sync, time_point(), true);
-    if (includeSnapshotOnlyHooks) {
-        LOG(debug, "Giving %zu snapshot update hooks.", _snapshotUpdateHooks.size());
-        updateSnapshotMetrics(sync);
-    }
+    updateSnapshotMetrics(sync);
 }
 
 // When this is called, the thread monitor lock has already been grabbed
