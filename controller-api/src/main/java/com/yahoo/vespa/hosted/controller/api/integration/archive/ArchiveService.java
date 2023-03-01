@@ -23,5 +23,5 @@ public interface ArchiveService {
 
     boolean canAddTenantToBucket(ZoneId zoneId, ArchiveBucket bucket);
 
-    URI bucketURI(ZoneId zoneId, String bucketName, TenantName tenantName);
+    URI bucketURI(ZoneId zoneId, String bucketName);
 }

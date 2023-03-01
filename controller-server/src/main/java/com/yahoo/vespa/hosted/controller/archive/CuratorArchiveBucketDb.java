@@ -41,7 +41,7 @@ public class CuratorArchiveBucketDb {
         return getBucketNameFromCache(zoneId, tenant)
                 .or(() -> findAndUpdateArchiveUriCache(zoneId, tenant, buckets(zoneId)))
                 .or(() -> createIfMissing ? Optional.of(assignToBucket(zoneId, tenant)) : Optional.empty())
-                .map(bucketName -> archiveService.bucketURI(zoneId, bucketName, tenant));
+                .map(bucketName -> archiveService.bucketURI(zoneId, bucketName));
     }
 
     private String assignToBucket(ZoneId zoneId, TenantName tenant) {

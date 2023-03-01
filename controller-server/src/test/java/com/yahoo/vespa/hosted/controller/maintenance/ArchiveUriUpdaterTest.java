@@ -42,22 +42,22 @@ public class ArchiveUriUpdaterTest {
 
         // Initially we should only is the bucket for hosted-vespa tenant
         updater.maintain();
-        assertArchiveUris(Map.of(TenantName.from("hosted-vespa"), "s3://bucketName/hosted-vespa/"), zone);
-        assertArchiveUris(Map.of(TenantName.from("hosted-vespa"), "s3://bucketName/hosted-vespa/"), ZoneId.from("prod", "controller"));
+        assertArchiveUris(Map.of(TenantName.from("hosted-vespa"), "s3://bucketName/"), zone);
+        assertArchiveUris(Map.of(TenantName.from("hosted-vespa"), "s3://bucketName/"), ZoneId.from("prod", "controller"));
 
         // Archive service now has URI for tenant1, but tenant1 is not deployed in zone
         setBucketNameInService(Map.of(tenant1, "uri-1"), zone);
         updater.maintain();
-        assertArchiveUris(Map.of(TenantName.from("hosted-vespa"), "s3://bucketName/hosted-vespa/"), zone);
+        assertArchiveUris(Map.of(TenantName.from("hosted-vespa"), "s3://bucketName/"), zone);
 
         deploy(application, zone);
         updater.maintain();
-        assertArchiveUris(Map.of(tenant1, "s3://uri-1/tenant1/", tenantInfra, "s3://bucketName/hosted-vespa/"), zone);
+        assertArchiveUris(Map.of(tenant1, "s3://uri-1/", tenantInfra, "s3://bucketName/"), zone);
 
         // URI for tenant1 should be updated and removed for tenant2
         setArchiveUriInNodeRepo(Map.of(tenant1, "wrong-uri", tenant2, "uri-2"), zone);
         updater.maintain();
-        assertArchiveUris(Map.of(tenant1, "s3://uri-1/tenant1/", tenantInfra, "s3://bucketName/hosted-vespa/"), zone);
+        assertArchiveUris(Map.of(tenant1, "s3://uri-1/", tenantInfra, "s3://bucketName/"), zone);
     }
 
     private void assertArchiveUris(Map<TenantName, String> expectedUris, ZoneId zone) {

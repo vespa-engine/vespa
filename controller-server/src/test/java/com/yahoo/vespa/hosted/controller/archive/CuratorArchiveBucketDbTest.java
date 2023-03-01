@@ -29,19 +29,19 @@ public class CuratorArchiveBucketDbTest {
                 Set.of(new ArchiveBucket("existingBucket", "keyArn").withTenant(TenantName.defaultName())));
 
         // Finds existing bucket in db
-        assertEquals(Optional.of(URI.create("s3://existingBucket/default/")), bucketDb.archiveUriFor(ZoneId.defaultId(), TenantName.defaultName(), true));
+        assertEquals(Optional.of(URI.create("s3://existingBucket/")), bucketDb.archiveUriFor(ZoneId.defaultId(), TenantName.defaultName(), true));
 
         // Assigns to existing bucket while there is space
         IntStream.range(0, 4).forEach(i ->
                 assertEquals(
-                        Optional.of(URI.create("s3://existingBucket/tenant" + i + "/")), bucketDb
+                        Optional.of(URI.create("s3://existingBucket/")), bucketDb
                                 .archiveUriFor(ZoneId.defaultId(), TenantName.from("tenant" + i), true)));
 
         // Creates new bucket when existing buckets are full
-        assertEquals(Optional.of(URI.create("s3://bucketName/lastDrop/")), bucketDb.archiveUriFor(ZoneId.defaultId(), TenantName.from("lastDrop"), true));
+        assertEquals(Optional.of(URI.create("s3://bucketName/")), bucketDb.archiveUriFor(ZoneId.defaultId(), TenantName.from("lastDrop"), true));
 
         // Creates new bucket when there are no existing buckets in zone
-        assertEquals(Optional.of(URI.create("s3://bucketName/firstInZone/")), bucketDb.archiveUriFor(ZoneId.from("prod.us-east-3"), TenantName.from("firstInZone"), true));
+        assertEquals(Optional.of(URI.create("s3://bucketName/")), bucketDb.archiveUriFor(ZoneId.from("prod.us-east-3"), TenantName.from("firstInZone"), true));
 
         // Does not create bucket if not required
         assertEquals(Optional.empty(), bucketDb.archiveUriFor(ZoneId.from("prod.us-east-3"), TenantName.from("newTenant"), false));

@@ -10,7 +10,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.TreeMap;
 
 /**
  * @author freva
@@ -40,7 +39,7 @@ public class MockArchiveService implements ArchiveService {
     }
 
     @Override
-    public URI bucketURI(ZoneId zoneId, String bucketName, TenantName tenantName) {
-        return URI.create(String.format("s3://%s/%s/", bucketName, tenantName.value()));
+    public URI bucketURI(ZoneId zoneId, String bucketName) {
+        return URI.create(String.format("s3://%s/", bucketName));
     }
 }
