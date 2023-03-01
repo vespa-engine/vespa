@@ -5,6 +5,7 @@
 #include <vespa/vespalib/util/size_literals.h>
 #include <vector>
 #include <algorithm>
+#include <cinttypes>
 
 #include <vespa/log/log.h>
 LOG_SETUP("expglomb_test");

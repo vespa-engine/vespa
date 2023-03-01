@@ -12,6 +12,7 @@
 #include <vespa/config/common/configresponse.h>
 #include <vespa/config/common/trace.h>
 #include <vespa/vespalib/util/signalhandler.h>
+#include <cinttypes>
 #include <unistd.h>
 
 #include <sstream>

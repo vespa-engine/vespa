@@ -3,6 +3,7 @@
 #include "native_epoll.h"
 #include <cassert>
 #include <cerrno>
+#include <cstring>
 #include <unistd.h>
 #include <vespa/log/log.h>
 

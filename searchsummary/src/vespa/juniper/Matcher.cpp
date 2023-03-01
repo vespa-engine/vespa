@@ -1,7 +1,5 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <algorithm>
-#include <string>
 #include "query.h"
 #include "juniperdebug.h"
 #include "sumdesc.h"
@@ -10,6 +8,10 @@
 #include "juniperparams.h"
 #include "config.h"
 #include <sstream>
+#include <algorithm>
+#include <string>
+#include <cinttypes>
+
 #include <vespa/log/log.h>
 LOG_SETUP(".juniper.matcher");
 

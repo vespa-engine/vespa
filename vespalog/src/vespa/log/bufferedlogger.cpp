@@ -1,9 +1,9 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "bufferedlogger.h"
+#include "internal.h"
 #include <boost/multi_index_container.hpp>
 #include <boost/multi_index/identity.hpp>
-#include <boost/multi_index/member.hpp>
 #include <boost/multi_index/mem_fun.hpp>
 #include <boost/multi_index/ordered_index.hpp>
 #include <boost/multi_index/sequenced_index.hpp>
@@ -208,16 +208,25 @@ BufferedLogger::~BufferedLogger()
 }
 
 namespace {
-    typedef boost::multi_index::nth_index<
-            BackingBuffer::LogCacheFront, 0>::type LogCacheFrontTimestamp;
-    typedef boost::multi_index::nth_index<
-            BackingBuffer::LogCacheFront, 1>::type LogCacheFrontToken;
-    typedef boost::multi_index::nth_index<
-            BackingBuffer::LogCacheBack, 0>::type LogCacheBackTimestamp;
-    typedef boost::multi_index::nth_index<
-            BackingBuffer::LogCacheBack, 1>::type LogCacheBackToken;
-    typedef boost::multi_index::nth_index<
-            BackingBuffer::LogCacheBack, 2>::type LogCacheBackAge;
+
+typedef boost::multi_index::nth_index<
+        BackingBuffer::LogCacheFront, 0>::type LogCacheFrontTimestamp;
+typedef boost::multi_index::nth_index<
+        BackingBuffer::LogCacheFront, 1>::type LogCacheFrontToken;
+typedef boost::multi_index::nth_index<
+        BackingBuffer::LogCacheBack, 0>::type LogCacheBackTimestamp;
+typedef boost::multi_index::nth_index<
+        BackingBuffer::LogCacheBack, 1>::type LogCacheBackToken;
+typedef boost::multi_index::nth_index<
+        BackingBuffer::LogCacheBack, 2>::type LogCacheBackAge;
+
+struct TimeStampWrapper : public Timer {
+    TimeStampWrapper(system_time timeStamp) : _timeStamp(timeStamp) {}
+    system_time getTimestamp() const noexcept override { return _timeStamp; }
+
+    system_time _timeStamp;
+};
+
 }
 
 void
@@ -260,7 +269,7 @@ BackingBuffer::logImpl(Logger& l, Logger::LogLevel level,
         _cacheBack.get<1>().replace(it2, copy);
     } else {
             // If entry didn't already exist, add it to the cache and log it
-        l.doLogCore(entry._timestamp, level, file, line, message.c_str(), message.size());
+        l.doLogCore(TimeStampWrapper(entry._timestamp), level, file, line, message.c_str(), message.size());
         _cacheFront.push_back(entry);
     }
     trimCache(entry._timestamp);
@@ -335,7 +344,7 @@ BackingBuffer::log(const Entry& e) const
             << " times since " << count_s(e._timestamp.time_since_epoch()) << "."
             << std::setw(6) << std::setfill('0') << (count_us(e._timestamp.time_since_epoch()) % 1000000)
             << ")";
-        e._logger->doLogCore(_timer->getTimestamp(), e._level, e._file.c_str(),
+        e._logger->doLogCore(*_timer, e._level, e._file.c_str(),
                              e._line, ost.str().c_str(), ost.str().size());
     }
 }
@@ -367,13 +376,13 @@ BufferedLogger::setMaxCacheSize(uint32_t size) {
 }
 
 void
-BufferedLogger::setMaxEntryAge(duration maxAge) {
-    _backing->_maxEntryAge = maxAge;
+BufferedLogger::setMaxEntryAge(uint64_t seconds) {
+    _backing->_maxEntryAge = std::chrono::seconds(seconds);
 }
 
 void
-BufferedLogger::setCountFactor(duration factor) {
-    _backing->_countFactor = factor;
+BufferedLogger::setCountFactor(uint64_t seconds) {
+    _backing->_countFactor = std::chrono::seconds(seconds);
 }
 
 /** Set a fake timer to use for log messages. Used in unit testing. */

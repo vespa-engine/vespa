@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/log/bufferedlogger.h>
+#include <vespa/log/internal.h>
 
 #include <fstream>
 #include <iostream>
@@ -15,7 +16,9 @@ using namespace std::literals::chrono_literals;
 struct TestTimer : public ns_log::Timer {
     uint64_t & _time;
     TestTimer(uint64_t & timeVar) : _time(timeVar) { }
-    ns_log::system_time getTimestamp() const override { return ns_log::system_time(std::chrono::microseconds(_time)); }
+    ns_log::system_time getTimestamp() const noexcept override {
+        return ns_log::system_time(std::chrono::microseconds(_time));
+    }
 };
 
 std::string readFile(const std::string& file) {
@@ -71,8 +74,8 @@ void testSkipBufferOnDebug(const std::string& file, uint64_t & timer)
 void reset(uint64_t & timer) {
     timer = 0;
     ns_log::BufferedLogger::instance().setMaxCacheSize(10);
-    ns_log::BufferedLogger::instance().setMaxEntryAge(300s);
-    ns_log::BufferedLogger::instance().setCountFactor(5s);
+    ns_log::BufferedLogger::instance().setMaxEntryAge(300);
+    ns_log::BufferedLogger::instance().setCountFactor(5);
 }
 
 int

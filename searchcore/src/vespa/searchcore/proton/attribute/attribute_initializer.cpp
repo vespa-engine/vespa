@@ -14,6 +14,7 @@
 #include <vespa/searchlib/attribute/attribute_header.h>
 #include <vespa/searchlib/attribute/attributevector.h>
 #include <vespa/fastos/file.h>
+#include <cinttypes>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.attribute.attribute_initializer");

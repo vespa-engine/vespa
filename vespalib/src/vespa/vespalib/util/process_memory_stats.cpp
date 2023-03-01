@@ -4,6 +4,7 @@
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <algorithm>
 #include <vector>
+#include <cinttypes>
 
 #include <vespa/log/log.h>
 

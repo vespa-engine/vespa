@@ -7,6 +7,7 @@
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <fstream>
+#include <cinttypes>
 
 #include <vespa/log/log.h>
 

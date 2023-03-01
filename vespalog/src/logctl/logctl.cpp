@@ -6,6 +6,7 @@
 #include <vespa/log/component.h>
 
 #include <optional>
+#include <cstring>
 #include <unistd.h>
 #include <dirent.h>
 #include <sys/stat.h>
@@ -16,7 +17,7 @@ LOG_SETUP("vespa-logctl");
 using namespace ns_log;
 
 static void modifyLevels(const char *file, const char *component, const char *levels,
-             bool shouldCreateFile, bool shouldCreateEntry);
+                         bool shouldCreateFile, bool shouldCreateEntry);
 static void readLevels(const char *file, const char *component);
 
 

@@ -7,6 +7,7 @@
 #include <vespa/vespalib/stllike/hash_set.h>
 #include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/util/time.h>
+#include <cinttypes>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.server.memoryflush");

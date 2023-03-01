@@ -3,6 +3,7 @@
 #include <vespa/vespalib/stllike/hash_map.hpp>
 #include <algorithm>
 #include <cassert>
+#include <cinttypes>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".searchlib.common.bitvectorcache");

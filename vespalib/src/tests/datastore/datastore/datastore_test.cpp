@@ -6,6 +6,7 @@
 #include <vespa/vespalib/test/insertion_operators.h>
 #include <vespa/vespalib/test/memory_allocator_observer.h>
 #include <vespa/vespalib/util/size_literals.h>
+#include <cinttypes>
 
 #include <vespa/log/log.h>
 LOG_SETUP("datastore_test");

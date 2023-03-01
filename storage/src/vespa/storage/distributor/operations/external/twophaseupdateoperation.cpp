@@ -12,7 +12,7 @@
 #include <vespa/storage/distributor/distributor_bucket_space_repo.h>
 #include <vespa/storageapi/message/persistence.h>
 #include <vespa/vdslib/state/cluster_state_bundle.h>
-#include <vespa/vespalib/stllike/hash_map.hpp>
+#include <cinttypes>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".distributor.callback.twophaseupdate");

@@ -6,8 +6,9 @@
 #include <vespa/vespalib/data/slime/binary_format.h>
 #include <vespa/vespalib/data/smart_buffer.h>
 #include <vespa/vespalib/util/size_literals.h>
-#include <vespa/log/log.h>
+#include <cinttypes>
 
+#include <vespa/log/log.h>
 LOG_SETUP(".searchlib.engine.proto_converter");
 
 namespace search::engine {

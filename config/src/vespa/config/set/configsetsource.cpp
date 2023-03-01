@@ -4,6 +4,7 @@
 #include <vespa/config/print/asciiconfigwriter.h>
 #include <vespa/config/common/iconfigholder.h>
 #include <vespa/config/common/exceptions.h>
+#include <cinttypes>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".config.set.configsetsource");

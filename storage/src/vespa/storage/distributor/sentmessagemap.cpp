@@ -4,6 +4,7 @@
 #include <vespa/storage/distributor/operations/operation.h>
 #include <sstream>
 #include <set>
+#include <cinttypes>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".distributor.callback.map");

@@ -2,6 +2,7 @@
 
 #include "index_writer.h"
 #include <vespa/document/fieldvalue/document.h>
+#include <cinttypes>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.server.indexadapter");

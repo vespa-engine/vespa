@@ -23,6 +23,7 @@
 #include <vespa/vespalib/util/threadstackexecutor.h>
 #include <filesystem>
 #include <thread>
+#include <cinttypes>
 
 #include <vespa/log/log.h>
 LOG_SETUP("attributeflush_test");

@@ -2,16 +2,8 @@
 #pragma once
 
 #include <memory>
-#include <cstdint>
 #include <new>         // for placement new
-#include <cstdlib>     // for malloc
-#include <cstring>     // for memset
-#include <cstdarg>     // for va_list
-#include <cinttypes>
-#include <chrono>
 #include <sys/types.h> // for pid_t
-
-
 
 /**
  * If this macro is defined, the regular LOG calls will go through the
@@ -27,7 +19,7 @@
 static ns_log::Logger ns_log_logger(__VA_ARGS__)  // NOLINT
 
 #define LOG_SETUP_INDIRECT(x, id)                   \
-static ns_log::Logger *ns_log_indirect_logger=NULL; \
+static ns_log::Logger *ns_log_indirect_logger=nullptr; \
 static bool logInitialised = false;                 \
 static const char *logName = x;                     \
 static const char *indirectRcsId = id
@@ -36,9 +28,6 @@ static const char *indirectRcsId = id
 #define LOG_WOULD_VLOG(level) ns_log_logger.wants(level)
 #define LOG_INDIRECT_WOULD_LOG(levelName) \
     ns_log_indirect_logger->wants(ns_log::Logger::levelName)
-
-#define LOG_RCSID(x)                                            \
-static int log_dummmy __attribute__((unused)) = ns_log_logger.setRcsId(x)
 
 // Define LOG if not using log buffer. Otherwise log buffer will define them
 #ifndef VESPA_LOG_USELOGBUFFERFORREGULARLOG
@@ -147,25 +136,7 @@ namespace ns_log {
 
 class LogTarget;
 class ControlFile;
-using system_time  = std::chrono::system_clock::time_point;
-using duration  = std::chrono::nanoseconds;
-
-constexpr int64_t
-count_s(duration d) {
-    return std::chrono::duration_cast<std::chrono::seconds>(d).count();
-}
-
-constexpr int64_t
-count_us(duration d) {
-    return std::chrono::duration_cast<std::chrono::microseconds>(d).count();
-}
-
-// XXX this is way too complicated, must be some simpler way to do this
-/** Timer class used to retrieve timestamp, such that we can override in test */
-struct Timer {
-    virtual ~Timer() = default;
-    virtual system_time getTimestamp() const;
-};
+struct Timer;
 
 class Logger {
 public:
@@ -182,9 +153,6 @@ public:
     static bool fakePid;
 
 private:
-    Logger(const Logger &);
-    Logger& operator =(const Logger &);
-
     unsigned int *_logLevels;
 
     static char _prefix[64];
@@ -214,6 +182,8 @@ private:
 public:
     ~Logger();
     explicit Logger(const char *name, const char *rcsId = nullptr);
+    Logger(const Logger &) = delete;
+    Logger & operator=(const Logger &) = delete;
     int setRcsId(const char *rcsId);
     static const char *levelName(LogLevel level);
 
@@ -227,14 +197,12 @@ public:
      *
      * @param timestamp Time in microseconds.
      */
-    void doLogCore(system_time timestamp, LogLevel level,
+    void doLogCore(const Timer &, LogLevel level,
                    const char *file, int line, const char *msg, size_t msgSize);
     void doEventStarting(const char *name);
     void doEventStopping(const char *name, const char *why);
     void doEventStarted(const char *name);
     void doEventStopped(const char *name, pid_t pid, int exitCode);
-    void doEventReloading(const char *name);
-    void doEventReloaded(const char *name);
     void doEventCrash(const char *name, pid_t pid, int signal);
     void doEventProgress(const char *name, double value, double total = 0);
     void doEventCount(const char *name, uint64_t value);
@@ -242,7 +210,7 @@ public:
     void doEventState(const char *name, const char *value);
 
     // Only for unit testing
-    void setTimer(std::unique_ptr<Timer> timer) { _timer = std::move(timer); }
+    void setTimer(std::unique_ptr<Timer> timer);
 
     // Only for internal use
     static LogTarget *getCurrentTarget();

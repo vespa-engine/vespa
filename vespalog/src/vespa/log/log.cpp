@@ -6,7 +6,6 @@ LOG_SETUP_INDIRECT(".log", "$Id$");
 #undef LOG
 #define LOG LOG_INDIRECT
 
-#include "lock.h"
 #include "log-target.h"
 #include "internal.h"
 #include "control-file.h"
@@ -15,13 +14,15 @@ LOG_SETUP_INDIRECT(".log", "$Id$");
 #include <vespa/defaults.h>
 #include <cassert>
 #include <cstdarg>
+#include <cstring>
+#include <cinttypes>
 #include <unistd.h>
 #include <sys/time.h>
 
 namespace ns_log {
 
 system_time
-Timer::getTimestamp() const {
+Timer::getTimestamp() const noexcept {
     return std::chrono::system_clock::now();
 }
 
@@ -131,7 +132,7 @@ Logger::ensureHostname()
 
 Logger::Logger(const char *name, const char *rcsId)
     : _logLevels(ControlFile::defaultLevels()),
-      _timer(new Timer())
+      _timer(std::make_unique<Timer>())
 {
     _numInstances++;
     memset(_rcsId, 0, sizeof(_rcsId));
@@ -168,7 +169,6 @@ Logger::Logger(const char *name, const char *rcsId)
     }
 }
 
-
 Logger::~Logger()
 {
     _numInstances--;
@@ -186,6 +186,10 @@ Logger::~Logger()
     }
 }
 
+void
+Logger::setTimer(std::unique_ptr<Timer> timer) {
+    _timer = std::move(timer);
+}
 
 int
 Logger::setRcsId(const char *id)
@@ -216,7 +220,7 @@ Logger::tryLog(int sizeofPayload, LogLevel level, const char *file, int line, co
     const int actualSize = vsnprintf(payload, sizeofPayload, fmt, args);
 
     if (actualSize < sizeofPayload) {
-        doLogCore(_timer->getTimestamp(), level, file, line, payload, actualSize);
+        doLogCore(*_timer, level, file, line, payload, actualSize);
     }
     delete[] payload;
     return actualSize;
@@ -238,9 +242,10 @@ Logger::doLog(LogLevel level, const char *file, int line, const char *fmt, ...)
 }
 
 void
-Logger::doLogCore(system_time timestamp, LogLevel level,
+Logger::doLogCore(const Timer & timer, LogLevel level,
                   const char *file, int line, const char *msg, size_t msgSize)
 {
+    system_time timestamp = timer.getTimestamp();
     const size_t sizeofEscapedPayload(msgSize*4+1);
     const size_t sizeofTotalMessage(sizeofEscapedPayload + 1000);
     auto escapedPayload = std::make_unique<char[]>(sizeofEscapedPayload);
@@ -349,35 +354,20 @@ Logger::doEventStarted(const char *name)
 void
 Logger::doEventStopped(const char *name, pid_t pid, int exitCode)
 {
-    doLog(event, "", 0, "stopped/1 name=\"%s\" pid=%d exitcode=%d", name,
-          static_cast<int>(pid), exitCode);
-}
-
-void
-Logger::doEventReloading(const char *name)
-{
-    doLog(event, "", 0, "reloading/1 name=\"%s\"", name);
-}
-
-void
-Logger::doEventReloaded(const char *name)
-{
-    doLog(event, "", 0, "reloaded/1 name=\"%s\"", name);
+    doLog(event, "", 0, "stopped/1 name=\"%s\" pid=%d exitcode=%d", name, static_cast<int>(pid), exitCode);
 }
 
 void
 Logger::doEventCrash(const char *name, pid_t pid, int signal)
 {
-    doLog(event, "", 0, "crash/1 name=\"%s\" pid=%d signal=\"%s\"", name, pid,
-          strsignal(signal));
+    doLog(event, "", 0, "crash/1 name=\"%s\" pid=%d signal=\"%s\"", name, pid, strsignal(signal));
 }
 
 void
 Logger::doEventProgress(const char *name, double value, double total)
 {
     if (total > 0) {
-        doLog(event, "", 0, "progress/1 name=\"%s\" value=%.18g total=%.18g",
-              name, value, total);
+        doLog(event, "", 0, "progress/1 name=\"%s\" value=%.18g total=%.18g", name, value, total);
     } else {
         doLog(event, "", 0, "progress/1 name=\"%s\" value=%.18g", name, value);
     }

@@ -9,6 +9,7 @@ LOG_SETUP_INDIRECT(".log.control", "$Id$");
 #include "component.h"
 #include "control-file.h"
 #include "internal.h"
+#include <cstring>
 
 namespace ns_log {
 

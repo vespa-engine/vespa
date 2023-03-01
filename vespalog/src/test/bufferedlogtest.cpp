@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/log/bufferedlogger.h>
+#include <vespa/log/internal.h>
 
 #include "bufferedlogtest.logger1.h"
 #include "bufferedlogtest.logger2.h"
@@ -19,7 +20,9 @@ using namespace std::literals::chrono_literals;
 struct TestTimer : public ns_log::Timer {
     uint64_t & _time;
     TestTimer(uint64_t & timeVar) : _time(timeVar) { }
-    ns_log::system_time getTimestamp() const override { return ns_log::system_time(std::chrono::microseconds(_time)); }
+    ns_log::system_time getTimestamp() const noexcept override {
+        return ns_log::system_time(std::chrono::microseconds(_time));
+    }
 };
 
 std::string readFile(const std::string& file) {
@@ -122,9 +125,9 @@ void testThatEntriesWithHighCountsAreEventuallyRemoved(
         // Should eventually throw out the entries with high count
     timer = 10 * 1000000 + 4;
         // Make sure we don't remove due to age.
-    ns_log::BufferedLogger::instance().setMaxEntryAge(1000000s);
+    ns_log::BufferedLogger::instance().setMaxEntryAge(1000000);
         // Let each count, count for 5 seconds.
-    ns_log::BufferedLogger::instance().setCountFactor(5s);
+    ns_log::BufferedLogger::instance().setCountFactor(5);
 
     LOGBM(info, "Starting up, using logfile %s", file.c_str());
     timer = 100 * 1000000 + 4;
@@ -157,9 +160,9 @@ void testThatEntriesExpire(
         // Test that we don't keep entries longer than max age
     timer = 10 * 1000000 + 4;
         // Time out after 120 seconds
-    ns_log::BufferedLogger::instance().setMaxEntryAge(120s);
+    ns_log::BufferedLogger::instance().setMaxEntryAge(120);
         // Let counts count much, so they expire due to time instead
-    ns_log::BufferedLogger::instance().setCountFactor(100000s);
+    ns_log::BufferedLogger::instance().setCountFactor(100000);
 
     LOGBM(info, "Starting up, using logfile %s", file.c_str());
     timer = 100 * 1000000 + 4;
@@ -227,9 +230,9 @@ void testThatHighCountEntriesDontStarveOthers(
     std::cerr << "testThatHighCountEntriesDontStarveOthers ...\n";
     timer = 10 * 1000000 + 4;
         // Long time out, we don't want to rely on timeout to prevent starvation
-    ns_log::BufferedLogger::instance().setMaxEntryAge(12000000s);
+    ns_log::BufferedLogger::instance().setMaxEntryAge(12000000);
         // Let counts count much, so they score high
-    ns_log::BufferedLogger::instance().setCountFactor(100000s);
+    ns_log::BufferedLogger::instance().setCountFactor(100000);
 
     LOGBM(info, "Starting up, using logfile %s", file.c_str());
     timer = 100 * 1000000;
@@ -382,8 +385,8 @@ void testNonBufferedLoggerTriggersBufferedLogTrim(const std::string& file,
 
 void reset(uint64_t& timer) {
     timer = 0;
-    ns_log::BufferedLogger::instance().setMaxEntryAge(300s);
-    ns_log::BufferedLogger::instance().setCountFactor(5s);
+    ns_log::BufferedLogger::instance().setMaxEntryAge(300);
+    ns_log::BufferedLogger::instance().setCountFactor(5);
 }
 
 int

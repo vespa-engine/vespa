@@ -1,12 +1,15 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/log/log.h>
-LOG_SETUP("generation_handler_stress_test");
+
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/generationhandler.h>
 #include <vespa/vespalib/util/lambdatask.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
 #include <vespa/vespalib/util/size_literals.h>
 #include <thread>
+#include <cinttypes>
+
+#include <vespa/log/log.h>
+LOG_SETUP("generation_handler_stress_test");
 
 using vespalib::Executor;
 using vespalib::GenerationHandler;

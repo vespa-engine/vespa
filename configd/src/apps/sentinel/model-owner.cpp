@@ -3,6 +3,7 @@
 #include "model-owner.h"
 #include <vespa/config/common/exceptions.h>
 #include <vespa/config/subscription/configsubscriber.hpp>
+#include <cinttypes>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".sentinel.model-owner");

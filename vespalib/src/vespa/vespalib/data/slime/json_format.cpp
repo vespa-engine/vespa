@@ -7,6 +7,7 @@
 #include <vespa/vespalib/data/memory_input.h>
 #include <vespa/vespalib/locale/c.h>
 #include <cmath>
+#include <cinttypes>
 #include <sstream>
 #include <cassert>
 

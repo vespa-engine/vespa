@@ -5,6 +5,7 @@
 #include <vespa/messagebus/routablequeue.h>
 #include <vespa/messagebus/emptyreply.h>
 #include <vespa/vespalib/testkit/testapp.h>
+#include <cinttypes>
 
 #include <vespa/log/log.h>
 LOG_SETUP("sequencer_test");

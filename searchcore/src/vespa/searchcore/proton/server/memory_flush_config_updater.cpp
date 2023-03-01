@@ -2,6 +2,7 @@
 
 #include "memory_flush_config_updater.h"
 #include <vespa/vespalib/util/size_literals.h>
+#include <cinttypes>
 #include <vespa/log/log.h>
 
 LOG_SETUP(".proton.server.memory_flush_config_updater");

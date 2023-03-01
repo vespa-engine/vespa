@@ -6,6 +6,7 @@
 #include "Matcher.h"
 #include "appender.h"
 #include <vespa/fastlib/text/unicodeutil.h>
+#include <cinttypes>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".juniper.sumdesc");

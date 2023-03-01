@@ -3,6 +3,7 @@
 #include <vespa/searchlib/memoryindex/feature_store.h>
 #include <vespa/searchcommon/common/schema.h>
 #include <vespa/vespalib/gtest/gtest.h>
+#include <cinttypes>
 
 #include <vespa/log/log.h>
 LOG_SETUP("feature_store_test");

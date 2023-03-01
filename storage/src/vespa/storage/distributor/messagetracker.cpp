@@ -3,6 +3,7 @@
 #include "messagetracker.h"
 #include <vespa/storageapi/messageapi/bucketcommand.h>
 #include <vespa/storageapi/messageapi/bucketreply.h>
+#include <cinttypes>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".messagetracker");

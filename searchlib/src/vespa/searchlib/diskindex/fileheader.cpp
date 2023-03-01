@@ -5,6 +5,7 @@
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/data/fileheader.h>
 #include <vespa/fastos/file.h>
+#include <cinttypes>
 #include <arpa/inet.h>
 
 #include <vespa/log/log.h>

@@ -2,6 +2,7 @@
 
 #include "config-owner.h"
 #include <vespa/config/subscription/configsubscriber.hpp>
+#include <cinttypes>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".sentinel.config-owner");
@@ -9,7 +10,6 @@ LOG_SETUP(".sentinel.config-owner");
 namespace config::sentinel {
 
 ConfigOwner::ConfigOwner() = default;
-
 ConfigOwner::~ConfigOwner() = default;
 
 void
