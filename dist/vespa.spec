@@ -689,7 +689,6 @@ fi
 %endif
 %dir %{_prefix}
 %dir %{_prefix}/lib64
-%{_prefix}/lib64/libfastos.so
 %{_prefix}/lib64/libfnet.so
 %{_prefix}/lib64/libvespadefaults.so
 %{_prefix}/lib64/libvespalib.so
@@ -701,7 +700,6 @@ fi
 %endif
 %dir %{_prefix}
 %{_prefix}/lib64
-%exclude %{_prefix}/lib64/libfastos.so
 %exclude %{_prefix}/lib64/libfnet.so
 %exclude %{_prefix}/lib64/libvespadefaults.so
 %exclude %{_prefix}/lib64/libvespalib.so
