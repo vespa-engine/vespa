@@ -193,9 +193,7 @@ BackingBuffer::BackingBuffer()
 {
 }
 
-BackingBuffer::~BackingBuffer()
-{
-}
+BackingBuffer::~BackingBuffer() = default;
 
 BufferedLogger::BufferedLogger()
 {
@@ -279,16 +277,12 @@ void
 BackingBuffer::flush()
 {
     std::lock_guard<std::mutex> guard(_mutex);
-    for (LogCacheBack::const_iterator it = _cacheBack.begin();
-         it != _cacheBack.end(); ++it)
-    {
-        log(*it);
+    for (const auto & entry : _cacheBack) {
+        log(entry);
     }
     _cacheBack.clear();
-    for (LogCacheFront::const_iterator it = _cacheFront.begin();
-         it != _cacheFront.end(); ++it)
-    {
-        log(*it);
+    for (const auto & entry : _cacheFront) {
+        log(entry);
     }
     _cacheFront.clear();
 }
@@ -321,9 +315,7 @@ BackingBuffer::trimCache(system_time currentTime)
         _cacheBack.push_back(e);
     }
         // Remove entries from back based on count modified age.
-    for (uint32_t i = _cacheFront.size() + _cacheBack.size();
-         i > _maxCacheSize; --i)
-    {
+    for (uint32_t i = _cacheFront.size() + _cacheBack.size(); i > _maxCacheSize; --i) {
         log(*_cacheBack.get<2>().begin());
         _cacheBack.get<2>().erase(_cacheBack.get<2>().begin());
     }
@@ -355,16 +347,12 @@ BackingBuffer::toString() const
     std::ostringstream ost;
     ost << "Front log cache content:\n";
     std::lock_guard<std::mutex> guard(_mutex);
-    for (LogCacheFront::const_iterator it = _cacheFront.begin();
-         it != _cacheFront.end(); ++it)
-    {
-        ost << "  " << it->toString() << "\n";
+    for (const auto & entry : _cacheFront) {
+        ost << "  " << entry.toString() << "\n";
     }
     ost << "Back log cache content:\n";
-    for (LogCacheBack::const_iterator it = _cacheBack.begin();
-         it != _cacheBack.end(); ++it)
-    {
-        ost << "  " << it->toString() << "\n";
+    for (const auto & entry : _cacheBack) {
+        ost << "  " << entry.toString() << "\n";
     }
     return ost.str();
 }
