@@ -165,7 +165,7 @@ getMatchedMetrics(const vespalib::string& config)
 
     MetricLockGuard g(mm.getMetricLock());
     mm.visit(g, mm.getActiveMetrics(g), visitor, "consumer");
-    MetricManager::ConsumerSpec::SP consumerSpec(mm.getConsumerSpec(g, "consumer"));
+    const MetricManager::ConsumerSpec * consumerSpec = mm.getConsumerSpec(g, "consumer");
     return { visitor.toString(), consumerSpec ? consumerSpec->toString() : "Non-existing consumer" };
 }
 
@@ -478,8 +478,7 @@ TEST_F(MetricManagerTest, test_snapshots)
     {
         MetricLockGuard lockGuard(mm.getMetricLock());
         mm.visit(lockGuard, mm.getActiveMetrics(lockGuard), visitor, "snapper");
-        MetricManager::ConsumerSpec::SP consumerSpec(
-                mm.getConsumerSpec(lockGuard, "snapper"));
+        const MetricManager::ConsumerSpec * consumerSpec = mm.getConsumerSpec(lockGuard, "snapper");
         EXPECT_EQ(std::string("\n"
                               "temp.val6\n"
                               "temp.sub.val1\n"
@@ -492,8 +491,7 @@ TEST_F(MetricManagerTest, test_snapshots)
                               "*temp.multisub.sum.val1\n"
                               "*temp.multisub.sum.val2\n"
                               "*temp.multisub.sum.valsum\n"),
-                  "\n" + visitor.toString()) << (consumerSpec.get() ? consumerSpec->toString()
-                                                                    : "Non-existing consumer");
+                  "\n" + visitor.toString()) << (consumerSpec ? consumerSpec->toString() : "Non-existing consumer");
     }
     // Initially, there should be no metrics logged
     ASSERT_PROCESS_TIME(mm, 1000);

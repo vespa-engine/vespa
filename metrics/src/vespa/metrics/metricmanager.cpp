@@ -44,19 +44,20 @@ MetricManager::assertMetricLockLocked(const MetricLockGuard& g) const {
     }
 }
 
-void
-MetricManager::ConsumerSpec::print(std::ostream& out, bool verbose, const std::string& indent) const
+vespalib::string
+MetricManager::ConsumerSpec::toString() const
 {
-    (void) verbose;
+    vespalib::asciistream out;
     out << "ConsumerSpec(";
     std::set<Metric::String> sortedMetrics;
     for (const Metric::String & name : includedMetrics) {
         sortedMetrics.insert(name);
     }
     for (const auto & s : sortedMetrics) {
-        out << "\n" << indent << "  " << s;
+        out << "\n" << "  " << s;
     }
     out << ")";
+    return out.str();
 }
 
 void
@@ -379,12 +380,12 @@ MetricManager::handleMetricsAltered(const MetricLockGuard & guard)
         LOG(info, "Metrics registration changes detected. Handling changes.");
     }
     _activeMetrics.getMetrics().clearRegistrationAltered();
-    std::map<Metric::String, ConsumerSpec::SP> configMap;
+    std::map<Metric::String, ConsumerSpec> configMap;
     LOG(debug, "Calculating new consumer config");
     for (const auto & consumer : _config->consumer) {
         ConsumerMetricBuilder consumerMetricBuilder(consumer);
         _activeMetrics.getMetrics().visit(consumerMetricBuilder);
-        configMap[consumer.name] = std::make_shared<ConsumerSpec>(std::move(consumerMetricBuilder._matchedMetrics));
+        configMap[consumer.name] = ConsumerSpec(std::move(consumerMetricBuilder._matchedMetrics));
     }
     LOG(debug, "Recreating snapshots to include altered metrics");
     _totalMetrics->recreateSnapshot(_activeMetrics.getMetrics(), _snapshotUnsetMetrics);
@@ -500,11 +501,11 @@ MetricManager::configure(const MetricLockGuard & , std::unique_ptr<Config> confi
 
 }
 
-MetricManager::ConsumerSpec::SP
+const MetricManager::ConsumerSpec *
 MetricManager::getConsumerSpec(const MetricLockGuard &, const Metric::String& consumer) const
 {
     auto it(_consumerConfig.find(consumer));
-    return (it != _consumerConfig.end() ? it->second : ConsumerSpec::SP());
+    return (it != _consumerConfig.end() ? &it->second : nullptr);
 }
 
 //#define VERIFY_ALL_METRICS_VISITED 1
@@ -565,8 +566,8 @@ MetricManager::visit(const MetricLockGuard & guard, const MetricSnapshot& snapsh
         if (consumer == "") {
             snapshot.getMetrics().visit(visitor);
         } else {
-            ConsumerSpec::SP consumerSpec(getConsumerSpec(guard, consumer));
-            if (consumerSpec.get()) {
+            const ConsumerSpec * consumerSpec = getConsumerSpec(guard, consumer);
+            if (consumerSpec) {
                 ConsumerMetricVisitor consumerVis(*consumerSpec, visitor);
                 snapshot.getMetrics().visit(consumerVis);
 #ifdef VERIFY_ALL_METRICS_VISITED
@@ -844,10 +845,10 @@ MetricManager::getMemoryConsumption(const MetricLockGuard & guard) const
     assertMetricLockLocked(guard);
     auto mc = std::make_unique<MemoryConsumption>();
     mc->_consumerCount += _consumerConfig.size();
-    mc->_consumerMeta += (sizeof(ConsumerSpec::SP) + sizeof(ConsumerSpec)) * _consumerConfig.size();
+    mc->_consumerMeta += sizeof(ConsumerSpec) * _consumerConfig.size();
     for (const auto & consumer : _consumerConfig) {
         mc->_consumerId += mc->getStringMemoryUsage(consumer.first, mc->_consumerIdUnique) + sizeof(Metric::String);
-        consumer.second->addMemoryUsage(*mc);
+        consumer.second.addMemoryUsage(*mc);
     }
     uint32_t preTotal = mc->getTotalMemoryUsage();
     _activeMetrics.addMemoryUsage(*mc);

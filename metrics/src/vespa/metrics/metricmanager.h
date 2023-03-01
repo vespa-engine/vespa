@@ -73,20 +73,19 @@ public:
      * Spec saved from config. If metricSetChildren has content, metric pointed
      * to is a metric set.
      */
-    struct ConsumerSpec : public vespalib::Printable {
-        using SP = std::shared_ptr<ConsumerSpec>;
-
+    struct ConsumerSpec {
         vespalib::hash_set<Metric::String> includedMetrics;
+
         ConsumerSpec(ConsumerSpec &&) noexcept = default;
         ConsumerSpec & operator= (ConsumerSpec &&) noexcept = default;
         ConsumerSpec();
-        ~ConsumerSpec() override;
+        ~ConsumerSpec();
 
         bool contains(const Metric& m) const {
             return (includedMetrics.find(m.getPath()) != includedMetrics.end());
         }
 
-        void print(std::ostream& out, bool verbose, const std::string& indent) const override;
+        vespalib::string toString() const;
 
         void addMemoryUsage(MemoryConsumption&) const;
     };
@@ -96,7 +95,7 @@ private:
     std::unique_ptr<config::ConfigSubscriber> _configSubscriber;
     std::unique_ptr<config::ConfigHandle<MetricsmanagerConfig>> _configHandle;
     std::unique_ptr<MetricsmanagerConfig> _config;
-    std::map<Metric::String, ConsumerSpec::SP> _consumerConfig;
+    std::map<Metric::String, ConsumerSpec> _consumerConfig;
     std::list<UpdateHook*> _periodicUpdateHooks;
     std::list<UpdateHook*> _snapshotUpdateHooks;
     mutable std::mutex _waiter;
@@ -246,7 +245,8 @@ public:
 
     std::vector<uint32_t> getSnapshotPeriods(const MetricLockGuard& l) const;
 
-    ConsumerSpec::SP getConsumerSpec(const MetricLockGuard & guard, const Metric::String& consumer) const;
+    // Public only for testing. The returned pointer is only valid while holding the lock.
+    const ConsumerSpec * getConsumerSpec(const MetricLockGuard & guard, const Metric::String& consumer) const;
 
     /**
      * If you add or remove metrics from the active metric sets, normally,
