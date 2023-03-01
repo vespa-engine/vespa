@@ -34,15 +34,12 @@ class MetricSnapshot
     mutable std::vector<Metric::UP> _metrics;
 
 public:
-    using UP = std::unique_ptr<MetricSnapshot>;
-    using SP = std::shared_ptr<MetricSnapshot>;
-
     /** Create a fresh empty top level snapshot. */
     MetricSnapshot(const Metric::String& name);
     /** Create a snapshot of another metric source. */
     MetricSnapshot(const Metric::String& name, uint32_t period,
                    const MetricSet& source, bool copyUnset);
-    virtual ~MetricSnapshot();
+    ~MetricSnapshot();
 
     void addToSnapshot(MetricSnapshot& other, bool reset_, system_time currentTime) {
         _snapshot->addToSnapshot(other.getMetrics(), other._metrics);
@@ -78,11 +75,9 @@ class MetricSnapshotSet {
                      // before we have a full time window.
     uint32_t _builderCount; // Number of times we've currently added to the
                             // building instance.
-    MetricSnapshot::UP _current; // The last full period
-    MetricSnapshot::UP _building; // The building period
+    std::unique_ptr<MetricSnapshot> _current; // The last full period
+    std::unique_ptr<MetricSnapshot> _building; // The building period
 public:
-    using SP = std::shared_ptr<MetricSnapshotSet>;
-
     MetricSnapshotSet(const Metric::String& name, uint32_t period, uint32_t count,
                       const MetricSet& source, bool snapshotUnsetMetrics);
 
@@ -93,10 +88,16 @@ public:
     system_time getNextWorkTime() const { return getToTime() + vespalib::from_s(getPeriod()); }
     uint32_t getCount() const { return _count; }
     uint32_t getBuilderCount() const { return _builderCount; }
-    MetricSnapshot& getSnapshot(bool temporary = false) {
+    MetricSnapshot& getSnapshot() {
+        return getSnapshot(false);
+    }
+    MetricSnapshot& getSnapshot(bool temporary) {
         return *((temporary && _count > 1) ? _building : _current);
     }
-    const MetricSnapshot& getSnapshot(bool temporary = false) const {
+    const MetricSnapshot& getSnapshot() const {
+        return getSnapshot(false);
+    }
+    const MetricSnapshot& getSnapshot(bool temporary) const {
         return *((temporary && _count > 1) ? _building : _current);
     }
     MetricSnapshot& getNextTarget();

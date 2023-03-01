@@ -31,9 +31,7 @@ MetricSnapshot::MetricSnapshot(const Metric::String& name, uint32_t period, cons
       _snapshot(),
       _metrics()
 {
-    Metric* m = source.clone(_metrics, Metric::INACTIVE, 0, copyUnset);
-    assert(m->isMetricSet());
-    _snapshot.reset(static_cast<MetricSet*>(m));
+    _snapshot.reset(source.clone(_metrics, Metric::INACTIVE, 0, copyUnset));
     _metrics.shrink_to_fit();
 }
 
@@ -103,9 +101,7 @@ MetricSnapshotSet::haveCompletedNewPeriod(system_time newFromTime)
     // If not time to roll yet, just return
     if (++_builderCount < _count) return false;
     // Building buffer done. Use that as current and reset current.
-    MetricSnapshot::UP tmp(std::move(_current));
-    _current = std::move(_building);
-    _building = std::move(tmp);
+    std::swap(_current, _building);
     _building->reset(newFromTime);
     _builderCount = 0;
     return true;

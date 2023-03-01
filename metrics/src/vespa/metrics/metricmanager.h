@@ -57,8 +57,6 @@
 #include <list>
 #include <thread>
 
-template class vespalib::hash_set<metrics::Metric::String>;
-
 namespace metrics {
 
 class MetricManager
@@ -103,8 +101,8 @@ private:
     std::list<UpdateHook*> _snapshotUpdateHooks;
     mutable std::mutex _waiter;
     mutable std::condition_variable _cond;
-    std::vector<MetricSnapshotSet::SP> _snapshots;
-    MetricSnapshot::SP _totalMetrics;
+    std::vector<std::shared_ptr<MetricSnapshotSet>> _snapshots;
+    std::shared_ptr<MetricSnapshot> _totalMetrics;
     std::unique_ptr<Timer> _timer;
     std::atomic<time_t> _lastProcessedTime;
     // Should be added to config, but wont now due to problems with
@@ -147,7 +145,7 @@ public:
      *               seconds or so. Any value of period >= the smallest snapshot
      *               time will behave identically as if period is set to 0.
      */
-    void addMetricUpdateHook(UpdateHook&, uint32_t period = 0);
+    void addMetricUpdateHook(UpdateHook&, uint32_t period);
 
     /** Remove a metric update hook so it won't get any more updates. */
     void removeMetricUpdateHook(UpdateHook&);
@@ -157,7 +155,10 @@ public:
      * nice values before reporting something.
      * This function can not be called from an update hook callback.
      */
-    void updateMetrics(bool includeSnapshotOnlyHooks = false);
+    void updateMetrics(bool includeSnapshotOnlyHooks);
+    void updateMetrics() {
+        updateMetrics(false);
+    }
 
     /**
      * Force event logging to happen now.
@@ -199,7 +200,10 @@ public:
      * of consumers. readConfig() will start a config subscription. It should
      * not be called multiple times.
      */
-    void init(const config::ConfigUri & uri, bool startThread = true);
+    void init(const config::ConfigUri & uri, bool startThread);
+    void init(const config::ConfigUri & uri) {
+        init(uri, true);
+    }
 
     /**
      * Visit a given snapshot for a given consumer. (Empty consumer name means
