@@ -15,8 +15,9 @@ import com.yahoo.vespa.config.search.core.RankingConstantsConfig;
 import com.yahoo.vespa.config.search.core.RankingExpressionsConfig;
 
 import java.util.HashMap;
-import java.util.Map;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.logging.Logger;
 
@@ -65,8 +66,8 @@ public class RankProfilesEvaluator extends AbstractComponent {
 
     private Map<String, GlobalPhaseData> profilesWithGlobalPhase = new HashMap<>();
 
-    GlobalPhaseData getGlobalPhaseData(String rankProfile) {
-        return profilesWithGlobalPhase.get(rankProfile);
+    Optional<GlobalPhaseData> getGlobalPhaseData(String rankProfile) {
+        return Optional.ofNullable(profilesWithGlobalPhase.get(rankProfile));
     }
 
     private void extractGlobalPhaseData(RankProfilesConfig rankProfilesConfig) {
@@ -78,23 +79,13 @@ public class RankProfilesEvaluator extends AbstractComponent {
 
             for (var prop : rp.fef().property()) {
                 if (prop.name().equals("vespa.globalphase.rerankcount")) {
-                    try {
-                        rerankCount = Integer.valueOf(prop.value());
-                    } catch (NumberFormatException e) {
-                        logger.warning("bad vespa.globalphase.rerankcount '" + prop.value() +
-                                       "' for rank profile " + name + ": " + e.getMessage());
-                    }
+                    rerankCount = Integer.valueOf(prop.value());
                 }
                 if (prop.name().equals("vespa.rank.globalphase")) {
-                    try {
-                        var model = modelForRankProfile(name);
-                        functionEvaluatorSource = () -> model.evaluatorOf("globalphase");
-                        var evaluator = functionEvaluatorSource.get();
-                        needInputs = List.copyOf(evaluator.function().arguments());
-                    } catch (IllegalArgumentException e) {
-                        logger.warning("failed setting up global-phase for " + name + " because: " + e.getMessage());
-                        functionEvaluatorSource = null;
-                    }
+                    var model = modelForRankProfile(name);
+                    functionEvaluatorSource = () -> model.evaluatorOf("globalphase");
+                    var evaluator = functionEvaluatorSource.get();
+                    needInputs = List.copyOf(evaluator.function().arguments());
                 }
             }
             if (functionEvaluatorSource != null && needInputs != null) {

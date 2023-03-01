@@ -6,6 +6,7 @@ import ai.vespa.models.evaluation.Model;
 import com.yahoo.component.annotation.Inject;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
+import com.yahoo.search.ranking.RankProfilesEvaluator.GlobalPhaseData;
 import com.yahoo.search.result.Hit;
 import com.yahoo.search.result.HitGroup;
 import com.yahoo.tensor.Tensor;
@@ -33,9 +34,10 @@ public class GlobalPhaseRanker {
     public void process(Query query, Result result, String schema) {
         var proxy = factory.proxyForSchema(schema);
         String rankProfile = query.getRanking().getProfile();
-        var data = proxy.getGlobalPhaseData(rankProfile);
-        if (data == null)
+        var optData = proxy.getGlobalPhaseData(rankProfile);
+        if (optData.isEmpty())
             return;
+        GlobalPhaseData data = optData.get();
         var functionEvaluatorSource = data.functionEvaluatorSource();
         var prepared = findFromQuery(query, data.needInputs());
         Supplier<Evaluator> supplier = () -> {
