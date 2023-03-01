@@ -20,14 +20,16 @@ public class NodeFilter {
     private final boolean includeDeprovisioned;
     private final Set<Node.State> states;
     private final Set<HostName> hostnames;
+    private final Set<HostName> parentHostnames;
     private final Set<ApplicationId> applications;
 
     private NodeFilter(boolean includeDeprovisioned, Set<Node.State> states, Set<HostName> hostnames,
-                       Set<ApplicationId> applications) {
+                       Set<HostName> parentHostnames, Set<ApplicationId> applications) {
         this.includeDeprovisioned = includeDeprovisioned;
         // Uses Guava Set to preserve insertion order
         this.states = ImmutableSet.copyOf(Objects.requireNonNull(states));
         this.hostnames = ImmutableSet.copyOf(Objects.requireNonNull(hostnames));
+        this.parentHostnames = ImmutableSet.copyOf(Objects.requireNonNull(parentHostnames));
         this.applications = ImmutableSet.copyOf(Objects.requireNonNull(applications));
         if (!includeDeprovisioned && states.contains(Node.State.deprovisioned)) {
             throw new IllegalArgumentException("Must include deprovisioned nodes when matching deprovisioned state");
@@ -46,12 +48,16 @@ public class NodeFilter {
         return hostnames;
     }
 
+    public Set<HostName> parentHostnames() {
+        return parentHostnames;
+    }
+
     public Set<ApplicationId> applications() {
         return applications;
     }
 
     public NodeFilter includeDeprovisioned(boolean includeDeprovisioned) {
-        return new NodeFilter(includeDeprovisioned, states, hostnames, applications);
+        return new NodeFilter(includeDeprovisioned, states, hostnames, parentHostnames, applications);
     }
 
     public NodeFilter states(Node.State... states) {
@@ -59,7 +65,7 @@ public class NodeFilter {
     }
 
     public NodeFilter states(Set<Node.State> states) {
-        return new NodeFilter(includeDeprovisioned, states, hostnames, applications);
+        return new NodeFilter(includeDeprovisioned, states, hostnames, parentHostnames, applications);
     }
 
     public NodeFilter hostnames(HostName... hostnames) {
@@ -67,7 +73,15 @@ public class NodeFilter {
     }
 
     public NodeFilter hostnames(Set<HostName> hostnames) {
-        return new NodeFilter(includeDeprovisioned, states, hostnames, applications);
+        return new NodeFilter(includeDeprovisioned, states, hostnames, parentHostnames, applications);
+    }
+
+    public NodeFilter parentHostnames(HostName... parentHostnames) {
+        return parentHostnames(ImmutableSet.copyOf(parentHostnames));
+    }
+
+    public NodeFilter parentHostnames(Set<HostName> parentHostnames) {
+        return new NodeFilter(includeDeprovisioned, states, hostnames, parentHostnames, applications);
     }
 
     public NodeFilter applications(ApplicationId... applications) {
@@ -75,12 +89,12 @@ public class NodeFilter {
     }
 
     public NodeFilter applications(Set<ApplicationId> applications) {
-        return new NodeFilter(includeDeprovisioned, states, hostnames, applications);
+        return new NodeFilter(includeDeprovisioned, states, hostnames, parentHostnames, applications);
     }
 
     /** A filter which matches all nodes, except deprovisioned ones */
     public static NodeFilter all() {
-        return new NodeFilter(false, Set.of(), Set.of(), Set.of());
+        return new NodeFilter(false, Set.of(), Set.of(), Set.of(), Set.of());
     }
 
 }

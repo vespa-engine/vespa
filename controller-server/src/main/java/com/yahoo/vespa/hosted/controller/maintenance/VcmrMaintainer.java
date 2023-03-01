@@ -192,17 +192,15 @@ public class VcmrMaintainer extends ControllerMaintainer {
         }
 
         if (shouldRetire(changeRequest, hostAction)) {
-            if (!node.wantToRetire()) {
+            if (!wantToRetireRecursive(zoneId, node)) {
                 LOG.info(Text.format("Retiring %s due to %s", node.hostname().value(), changeRequest.getChangeRequestSource().getId()));
                 // TODO: Remove try/catch once retirement is stabilized
                 try {
                     setWantToRetire(zoneId, node, true);
                 } catch (Exception e) {
                     LOG.warning("Failed to retire host " + node.hostname() + ": " + Exceptions.toMessageString(e));
-                    // Check if retirement actually failed
-                    if (!nodeRepository.getNode(zoneId, node.hostname().value()).wantToRetire()) {
-                        return hostAction;
-                    }
+                    // Will retry next maintenance run
+                    return hostAction;
                 }
             }
             return hostAction.withState(State.RETIRING);
@@ -223,6 +221,13 @@ public class VcmrMaintainer extends ControllerMaintainer {
         }
 
         return hostAction;
+    }
+
+    // Determines if a host and all its children are retiring
+    private boolean wantToRetireRecursive(ZoneId zoneId, Node node) {
+        var children = nodeRepository.list(zoneId, NodeFilter.all().parentHostnames(node.hostname()));
+        return node.wantToRetire() &&
+                children.stream().allMatch(Node::wantToRetire);
     }
 
     // Dirty host iff the parked host was retired by this maintainer
