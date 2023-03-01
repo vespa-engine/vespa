@@ -5,6 +5,7 @@
 #include "bitdecode64.h"
 #include "fpfactory.h"
 #include <vespa/searchlib/queryeval/iterators.h>
+#include <cinttypes>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".searchlib.test.fake_eg_compr64_filter_occ");

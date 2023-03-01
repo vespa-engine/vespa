@@ -4,6 +4,7 @@
 #include "domainpart.h"
 #include <vespa/fastlib/io/bufferedfile.h>
 #include <cassert>
+#include <cinttypes>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".transactionlog.session");

@@ -1,16 +1,11 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <stdlib.h>
-#include <string.h>
-#include <stdio.h>
-#include <fcntl.h>
-#include <errno.h>
-#include <unistd.h>
-#include <sys/time.h>
 
 #include "llreader.h"
+#include <cstdlib>
+#include <cstring>
+#include <unistd.h>
 
 namespace ns_log {
-
 
 InputBuf::InputBuf(int fd)
     : _inputfd(fd),

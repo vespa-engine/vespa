@@ -167,10 +167,10 @@ class BackingBuffer;
 
 class BufferedLogger {
     BackingBuffer *_backing;
-    BufferedLogger(const BufferedLogger & buf);
-    BufferedLogger & operator = (const BufferedLogger & buf);
 
 public:
+    BufferedLogger(const BufferedLogger & buf) = delete;
+    BufferedLogger & operator = (const BufferedLogger & buf) = delete;
     BufferedLogger();
     ~BufferedLogger();
 
@@ -179,7 +179,7 @@ public:
     // of the default settings for applications
     void setMaxCacheSize(uint32_t size);
     void setMaxEntryAge(uint64_t seconds);
-    void setCountFactor(uint64_t factor);
+    void setCountFactor(uint64_t seconds);
 
     void doLog(Logger&, Logger::LogLevel level, const char *file, int line,
                const std::string& token,
@@ -187,9 +187,6 @@ public:
 
     /** Empty buffer and write all log entries in it. */
     void flush();
-
-    /** Gives all current content of log buffer. Useful for debugging. */
-    std::string toString() const;
 
     /** Set a fake timer to use for log messages. Used in unit testing. */
     void setTimer(std::unique_ptr<Timer> timer);

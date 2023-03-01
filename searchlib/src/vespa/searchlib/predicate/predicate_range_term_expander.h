@@ -5,6 +5,7 @@
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/util/issue.h>
 #include <climits>
+#include <cinttypes>
 
 namespace search::predicate {
 

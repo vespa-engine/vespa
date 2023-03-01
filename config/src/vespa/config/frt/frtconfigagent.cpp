@@ -4,6 +4,7 @@
 #include <vespa/config/common/trace.h>
 #include <vespa/config/common/configresponse.h>
 #include <vespa/config/common/iconfigholder.h>
+#include <cinttypes>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".config.frt.frtconfigagent");

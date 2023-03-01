@@ -8,6 +8,7 @@
 #include <vespa/vespalib/util/time.h>
 #include <vespa/vespalib/util/size_literals.h>
 #include <thread>
+#include <cinttypes>
 #include <fcntl.h>
 #include <glob.h>
 #include <sys/stat.h>

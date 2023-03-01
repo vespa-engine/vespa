@@ -15,6 +15,7 @@
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/test/insertion_operators.h>
+#include <cinttypes>
 
 #include <vespa/log/log.h>
 LOG_SETUP("reference_attribute_test");

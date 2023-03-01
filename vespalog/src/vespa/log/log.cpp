@@ -6,7 +6,6 @@ LOG_SETUP_INDIRECT(".log", "$Id$");
 #undef LOG
 #define LOG LOG_INDIRECT
 
-#include "lock.h"
 #include "log-target.h"
 #include "internal.h"
 #include "control-file.h"
@@ -15,18 +14,16 @@ LOG_SETUP_INDIRECT(".log", "$Id$");
 #include <vespa/defaults.h>
 #include <cassert>
 #include <cstdarg>
+#include <cstring>
+#include <cinttypes>
 #include <unistd.h>
 #include <sys/time.h>
 
 namespace ns_log {
 
-uint64_t Timer::getTimestamp() const {
-    struct timeval tv;
-    gettimeofday(&tv, nullptr);
-    uint64_t timestamp = tv.tv_sec;
-    timestamp *= 1000000;
-    timestamp += tv.tv_usec;
-    return timestamp;
+system_time
+Timer::getTimestamp() const noexcept {
+    return std::chrono::system_clock::now();
 }
 
 LogTarget *Logger::_target = 0;
@@ -135,7 +132,7 @@ Logger::ensureHostname()
 
 Logger::Logger(const char *name, const char *rcsId)
     : _logLevels(ControlFile::defaultLevels()),
-      _timer(new Timer())
+      _timer(std::make_unique<Timer>())
 {
     _numInstances++;
     memset(_rcsId, 0, sizeof(_rcsId));
@@ -172,7 +169,6 @@ Logger::Logger(const char *name, const char *rcsId)
     }
 }
 
-
 Logger::~Logger()
 {
     _numInstances--;
@@ -190,6 +186,10 @@ Logger::~Logger()
     }
 }
 
+void
+Logger::setTimer(std::unique_ptr<Timer> timer) {
+    _timer = std::move(timer);
+}
 
 int
 Logger::setRcsId(const char *id)
@@ -220,8 +220,7 @@ Logger::tryLog(int sizeofPayload, LogLevel level, const char *file, int line, co
     const int actualSize = vsnprintf(payload, sizeofPayload, fmt, args);
 
     if (actualSize < sizeofPayload) {
-        uint64_t timestamp = _timer->getTimestamp();
-        doLogCore(timestamp, level, file, line, payload, actualSize);
+        doLogCore(*_timer, level, file, line, payload, actualSize);
     }
     delete[] payload;
     return actualSize;
@@ -242,9 +241,11 @@ Logger::doLog(LogLevel level, const char *file, int line, const char *fmt, ...)
     ns_log::BufferedLogger::instance().trimCache();
 }
 
-void Logger::doLogCore(uint64_t timestamp, LogLevel level,
-                       const char *file, int line, const char *msg, size_t msgSize)
+void
+Logger::doLogCore(const Timer & timer, LogLevel level,
+                  const char *file, int line, const char *msg, size_t msgSize)
 {
+    system_time timestamp = timer.getTimestamp();
     const size_t sizeofEscapedPayload(msgSize*4+1);
     const size_t sizeofTotalMessage(sizeofEscapedPayload + 1000);
     auto escapedPayload = std::make_unique<char[]>(sizeofEscapedPayload);
@@ -281,23 +282,23 @@ void Logger::doLogCore(uint64_t timestamp, LogLevel level,
         // found to be too inaccurate.
     int32_t tid = (fakePid ? -1 : gettid(pthread_self()) % 0xffff);
 
+    time_t secs = count_s(timestamp.time_since_epoch());
+    uint32_t usecs_part = count_us(timestamp.time_since_epoch()) % 1000000;
     if (_target->makeHumanReadable()) {
-        time_t secs = static_cast<time_t>(timestamp / 1000000);
         struct tm tmbuf;
         localtime_r(&secs, &tmbuf);
         char timebuf[100];
         strftime(timebuf, 100, "%Y-%m-%d %H:%M:%S", &tmbuf);
         snprintf(totalMessage.get(), sizeofTotalMessage,
                  "[%s.%06u] %d/%d (%s%s) %s: %s\n",
-                 timebuf, static_cast<unsigned int>(timestamp % 1000000),
+                 timebuf, usecs_part,
                  fakePid ? -1 : getpid(), tid,
                  _prefix, _appendix,
                  levelName(level), msg);
     } else if (level == debug || level == spam) {
         snprintf(totalMessage.get(), sizeofTotalMessage,
-                 "%u.%06u\t%s\t%d/%d\t%s\t%s%s\t%s\t%s:%d %s%s\n",
-                 static_cast<unsigned int>(timestamp / 1000000),
-                 static_cast<unsigned int>(timestamp % 1000000),
+                 "%lu.%06u\t%s\t%d/%d\t%s\t%s%s\t%s\t%s:%d %s%s\n",
+                 secs, usecs_part,
                  _hostname, fakePid ? -1 : getpid(), tid,
                  _serviceName, _prefix,
                  _appendix, levelName(level), file, line,
@@ -305,9 +306,8 @@ void Logger::doLogCore(uint64_t timestamp, LogLevel level,
                  escapedPayload.get());
     } else {
         snprintf(totalMessage.get(), sizeofTotalMessage,
-                 "%u.%06u\t%s\t%d/%d\t%s\t%s%s\t%s\t%s\n",
-                 static_cast<unsigned int>(timestamp / 1000000),
-                 static_cast<unsigned int>(timestamp % 1000000),
+                 "%lu.%06u\t%s\t%d/%d\t%s\t%s%s\t%s\t%s\n",
+                 secs, usecs_part,
                  _hostname, fakePid ? -1 : getpid(), tid,
                  _serviceName, _prefix,
                  _appendix, levelName(level), escapedPayload.get());
@@ -354,35 +354,20 @@ Logger::doEventStarted(const char *name)
 void
 Logger::doEventStopped(const char *name, pid_t pid, int exitCode)
 {
-    doLog(event, "", 0, "stopped/1 name=\"%s\" pid=%d exitcode=%d", name,
-          static_cast<int>(pid), exitCode);
-}
-
-void
-Logger::doEventReloading(const char *name)
-{
-    doLog(event, "", 0, "reloading/1 name=\"%s\"", name);
-}
-
-void
-Logger::doEventReloaded(const char *name)
-{
-    doLog(event, "", 0, "reloaded/1 name=\"%s\"", name);
+    doLog(event, "", 0, "stopped/1 name=\"%s\" pid=%d exitcode=%d", name, static_cast<int>(pid), exitCode);
 }
 
 void
 Logger::doEventCrash(const char *name, pid_t pid, int signal)
 {
-    doLog(event, "", 0, "crash/1 name=\"%s\" pid=%d signal=\"%s\"", name, pid,
-          strsignal(signal));
+    doLog(event, "", 0, "crash/1 name=\"%s\" pid=%d signal=\"%s\"", name, pid, strsignal(signal));
 }
 
 void
 Logger::doEventProgress(const char *name, double value, double total)
 {
     if (total > 0) {
-        doLog(event, "", 0, "progress/1 name=\"%s\" value=%.18g total=%.18g",
-              name, value, total);
+        doLog(event, "", 0, "progress/1 name=\"%s\" value=%.18g total=%.18g", name, value, total);
     } else {
         doLog(event, "", 0, "progress/1 name=\"%s\" value=%.18g", name, value);
     }

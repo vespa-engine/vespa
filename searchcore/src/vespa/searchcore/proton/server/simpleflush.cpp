@@ -2,15 +2,14 @@
 
 #include "simpleflush.h"
 #include <algorithm>
+#include <cinttypes>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.server.simpleflush");
 
 namespace proton {
 
-SimpleFlush::SimpleFlush()
-{
-}
+SimpleFlush::SimpleFlush() = default;
 
 FlushContext::List
 SimpleFlush::getFlushTargets(const FlushContext::List& targetList,

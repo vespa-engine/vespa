@@ -3,6 +3,7 @@
 #include "tokenizer.h"
 #include "juniperdebug.h"
 #include <vespa/fastlib/text/wordfolder.h>
+#include <cinttypes>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".juniper.tokenizer");

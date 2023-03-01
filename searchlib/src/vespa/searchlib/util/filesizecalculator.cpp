@@ -2,6 +2,7 @@
 
 #include "filesizecalculator.h"
 #include <vespa/vespalib/data/fileheader.h>
+#include <cinttypes>
 #include <vespa/log/log.h>
 LOG_SETUP(".searchlib.util.filesizecalculator");
 

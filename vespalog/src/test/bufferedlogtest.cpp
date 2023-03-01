@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/log/bufferedlogger.h>
+#include <vespa/log/internal.h>
 
 #include "bufferedlogtest.logger1.h"
 #include "bufferedlogtest.logger2.h"
@@ -11,6 +12,18 @@
 #include <cstdlib>
 
 LOG_SETUP("bufferedlogtest");
+
+using namespace std::literals::chrono_literals;
+
+
+/** Test timer returning just a given time. Used in tests to fake time. */
+struct TestTimer : public ns_log::Timer {
+    uint64_t & _time;
+    TestTimer(uint64_t & timeVar) : _time(timeVar) { }
+    ns_log::system_time getTimestamp() const noexcept override {
+        return ns_log::system_time(std::chrono::microseconds(_time));
+    }
+};
 
 std::string readFile(const std::string& file) {
     std::ostringstream ost;
@@ -386,8 +399,8 @@ main(int argc, char **argv)
     ns_log::Logger::fakePid = true;
     ns_log::BufferedLogger::instance().setMaxCacheSize(10);
     uint64_t timer;
-    ns_log_logger.setTimer(std::unique_ptr<ns_log::Timer>(new ns_log::TestTimer(timer)));
-    ns_log::BufferedLogger::instance().setTimer(std::unique_ptr<ns_log::Timer>(new ns_log::TestTimer(timer)));
+    ns_log_logger.setTimer(std::make_unique<TestTimer>(timer));
+    ns_log::BufferedLogger::instance().setTimer(std::make_unique<TestTimer>(timer));
 
     reset(timer);
     testThatEntriesWithHighCountIsKept(argv[1], timer);

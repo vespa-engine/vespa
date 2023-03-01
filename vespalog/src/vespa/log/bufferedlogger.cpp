@@ -1,9 +1,9 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "bufferedlogger.h"
+#include "internal.h"
 #include <boost/multi_index_container.hpp>
 #include <boost/multi_index/identity.hpp>
-#include <boost/multi_index/member.hpp>
 #include <boost/multi_index/mem_fun.hpp>
 #include <boost/multi_index/ordered_index.hpp>
 #include <boost/multi_index/sequenced_index.hpp>
@@ -13,6 +13,8 @@
 #include <vector>
 #include <cstdarg>
 #include <mutex>
+
+using namespace std::literals::chrono_literals;
 
 namespace ns_log {
 
@@ -25,7 +27,7 @@ public:
     /** Lock needed to access cache. */
     mutable std::mutex _mutex;
 
-    static uint64_t _countFactor;
+    static duration _countFactor;
 
     /** Struct keeping information about log message. */
     struct Entry {
@@ -35,7 +37,7 @@ public:
         std::string _token;
         std::string _message;
         uint32_t _count;
-        uint64_t _timestamp;
+        system_time _timestamp;
         Logger* _logger;
 
         Entry(const Entry &);
@@ -44,13 +46,13 @@ public:
         Entry & operator=(Entry &&) noexcept;
         Entry(Logger::LogLevel level, const char* file, int line,
               const std::string& token, const std::string& message,
-              uint64_t timestamp, Logger&);
+              system_time timestamp, Logger&);
         ~Entry();
 
         bool operator==(const Entry& entry) const;
         bool operator<(const Entry& entry) const;
 
-        uint64_t getAgeFactor() const;
+        system_time getAgeFactor() const;
 
         std::string toString() const;
     };
@@ -73,7 +75,7 @@ public:
             >,
             boost::multi_index::ordered_non_unique<
                 boost::multi_index::const_mem_fun<
-                    Entry, uint64_t, &Entry::getAgeFactor
+                    Entry, system_time, &Entry::getAgeFactor
                 >
             >
         >
@@ -85,7 +87,7 @@ public:
     LogCacheBack _cacheBack;
 
     uint32_t _maxCacheSize;
-    uint64_t _maxEntryAge;
+    duration _maxEntryAge;
 
     /** Empty buffer and write all log entries in it. */
     void flush();
@@ -97,7 +99,7 @@ public:
      * Flush parts of cache, so we're below max size and only have messages of
      * acceptable age. Calling this, _mutex should already be locked.
      */
-    void trimCache(uint64_t currentTime);
+    void trimCache(system_time currentTime);
 
     /**
      * Trim the cache up to current time. Used externally to check if we
@@ -125,11 +127,11 @@ public:
 };
 
 // Let each hit count for 5 seconds
-uint64_t BackingBuffer::_countFactor = VESPA_LOG_COUNTAGEFACTOR * 1000 * 1000;
+duration BackingBuffer::_countFactor = VESPA_LOG_COUNTAGEFACTOR * 1s;
 
 BackingBuffer::Entry::Entry(Logger::LogLevel level, const char* file, int line,
                              const std::string& token, const std::string& msg,
-                             uint64_t timestamp, Logger& l)
+                             system_time timestamp, Logger& l)
     : _level(level),
       _file(file),
       _line(line),
@@ -171,11 +173,11 @@ BackingBuffer::Entry::toString() const
     std::ostringstream ost;
     ost << "Entry(" << _level << ", " << _file << ":" << _line << ": "
         << _message << " [" << _token << "], count " << _count
-        << ", timestamp " << _timestamp << ")";
+        << ", timestamp " << count_us(_timestamp.time_since_epoch()) << ")";
     return ost.str();
 }
 
-uint64_t
+system_time
 BackingBuffer::Entry::getAgeFactor() const
 {
     return _timestamp + _countFactor * _count;
@@ -191,9 +193,7 @@ BackingBuffer::BackingBuffer()
 {
 }
 
-BackingBuffer::~BackingBuffer()
-{
-}
+BackingBuffer::~BackingBuffer() = default;
 
 BufferedLogger::BufferedLogger()
 {
@@ -206,16 +206,25 @@ BufferedLogger::~BufferedLogger()
 }
 
 namespace {
-    typedef boost::multi_index::nth_index<
-            BackingBuffer::LogCacheFront, 0>::type LogCacheFrontTimestamp;
-    typedef boost::multi_index::nth_index<
-            BackingBuffer::LogCacheFront, 1>::type LogCacheFrontToken;
-    typedef boost::multi_index::nth_index<
-            BackingBuffer::LogCacheBack, 0>::type LogCacheBackTimestamp;
-    typedef boost::multi_index::nth_index<
-            BackingBuffer::LogCacheBack, 1>::type LogCacheBackToken;
-    typedef boost::multi_index::nth_index<
-            BackingBuffer::LogCacheBack, 2>::type LogCacheBackAge;
+
+typedef boost::multi_index::nth_index<
+        BackingBuffer::LogCacheFront, 0>::type LogCacheFrontTimestamp;
+typedef boost::multi_index::nth_index<
+        BackingBuffer::LogCacheFront, 1>::type LogCacheFrontToken;
+typedef boost::multi_index::nth_index<
+        BackingBuffer::LogCacheBack, 0>::type LogCacheBackTimestamp;
+typedef boost::multi_index::nth_index<
+        BackingBuffer::LogCacheBack, 1>::type LogCacheBackToken;
+typedef boost::multi_index::nth_index<
+        BackingBuffer::LogCacheBack, 2>::type LogCacheBackAge;
+
+struct TimeStampWrapper : public Timer {
+    TimeStampWrapper(system_time timeStamp) : _timeStamp(timeStamp) {}
+    system_time getTimestamp() const noexcept override { return _timeStamp; }
+
+    system_time _timeStamp;
+};
+
 }
 
 void
@@ -258,7 +267,7 @@ BackingBuffer::logImpl(Logger& l, Logger::LogLevel level,
         _cacheBack.get<1>().replace(it2, copy);
     } else {
             // If entry didn't already exist, add it to the cache and log it
-        l.doLogCore(entry._timestamp, level, file, line, message.c_str(), message.size());
+        l.doLogCore(TimeStampWrapper(entry._timestamp), level, file, line, message.c_str(), message.size());
         _cacheFront.push_back(entry);
     }
     trimCache(entry._timestamp);
@@ -268,16 +277,12 @@ void
 BackingBuffer::flush()
 {
     std::lock_guard<std::mutex> guard(_mutex);
-    for (LogCacheBack::const_iterator it = _cacheBack.begin();
-         it != _cacheBack.end(); ++it)
-    {
-        log(*it);
+    for (const auto & entry : _cacheBack) {
+        log(entry);
     }
     _cacheBack.clear();
-    for (LogCacheFront::const_iterator it = _cacheFront.begin();
-         it != _cacheFront.end(); ++it)
-    {
-        log(*it);
+    for (const auto & entry : _cacheFront) {
+        log(entry);
     }
     _cacheFront.clear();
 }
@@ -288,7 +293,7 @@ BufferedLogger::flush() {
 }
 
 void
-BackingBuffer::trimCache(uint64_t currentTime)
+BackingBuffer::trimCache(system_time currentTime)
 {
         // Remove entries that have been in here too long.
     while (!_cacheBack.empty() &&
@@ -310,9 +315,7 @@ BackingBuffer::trimCache(uint64_t currentTime)
         _cacheBack.push_back(e);
     }
         // Remove entries from back based on count modified age.
-    for (uint32_t i = _cacheFront.size() + _cacheBack.size();
-         i > _maxCacheSize; --i)
-    {
+    for (uint32_t i = _cacheFront.size() + _cacheBack.size(); i > _maxCacheSize; --i) {
         log(*_cacheBack.get<2>().begin());
         _cacheBack.get<2>().erase(_cacheBack.get<2>().begin());
     }
@@ -330,10 +333,10 @@ BackingBuffer::log(const Entry& e) const
     if (e._count > 1) {
         std::ostringstream ost;
         ost << e._message << " (Repeated " << (e._count - 1)
-            << " times since " << (e._timestamp / 1000000) << "."
-            << std::setw(6) << std::setfill('0') << (e._timestamp % 1000000)
+            << " times since " << count_s(e._timestamp.time_since_epoch()) << "."
+            << std::setw(6) << std::setfill('0') << (count_us(e._timestamp.time_since_epoch()) % 1000000)
             << ")";
-        e._logger->doLogCore(_timer->getTimestamp(), e._level, e._file.c_str(),
+        e._logger->doLogCore(*_timer, e._level, e._file.c_str(),
                              e._line, ost.str().c_str(), ost.str().size());
     }
 }
@@ -344,16 +347,12 @@ BackingBuffer::toString() const
     std::ostringstream ost;
     ost << "Front log cache content:\n";
     std::lock_guard<std::mutex> guard(_mutex);
-    for (LogCacheFront::const_iterator it = _cacheFront.begin();
-         it != _cacheFront.end(); ++it)
-    {
-        ost << "  " << it->toString() << "\n";
+    for (const auto & entry : _cacheFront) {
+        ost << "  " << entry.toString() << "\n";
     }
     ost << "Back log cache content:\n";
-    for (LogCacheBack::const_iterator it = _cacheBack.begin();
-         it != _cacheBack.end(); ++it)
-    {
-        ost << "  " << it->toString() << "\n";
+    for (const auto & entry : _cacheBack) {
+        ost << "  " << entry.toString() << "\n";
     }
     return ost.str();
 }
@@ -366,12 +365,12 @@ BufferedLogger::setMaxCacheSize(uint32_t size) {
 
 void
 BufferedLogger::setMaxEntryAge(uint64_t seconds) {
-    _backing->_maxEntryAge = seconds * 1000000;
+    _backing->_maxEntryAge = std::chrono::seconds(seconds);
 }
 
 void
-BufferedLogger::setCountFactor(uint64_t factor) {
-    _backing->_countFactor = factor * 1000000;
+BufferedLogger::setCountFactor(uint64_t seconds) {
+    _backing->_countFactor = std::chrono::seconds(seconds);
 }
 
 /** Set a fake timer to use for log messages. Used in unit testing. */

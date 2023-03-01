@@ -6,6 +6,7 @@
 #include <vespa/config/common/misc.h>
 #include <vespa/config/common/iconfigmanager.h>
 #include <vespa/config/common/iconfigcontext.h>
+#include <cinttypes>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".config.subscription.configsubscriptionset");

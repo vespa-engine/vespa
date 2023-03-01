@@ -4,6 +4,7 @@
 #include "llparser.h"
 #include "internal.h"
 #include <cstdlib>
+#include <cstring>
 #include <unistd.h>
 #include <sys/time.h>
 #include <cassert>

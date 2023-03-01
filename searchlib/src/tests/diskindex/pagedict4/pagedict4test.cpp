@@ -16,6 +16,7 @@
 #include <vespa/searchlib/common/tunefileinfo.h>
 #include <vespa/vespalib/util/signalhandler.h>
 #include <sstream>
+#include <cinttypes>
 
 #include <vespa/log/log.h>
 LOG_SETUP("pagedict4test");

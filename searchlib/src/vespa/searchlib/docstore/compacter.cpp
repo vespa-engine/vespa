@@ -4,6 +4,7 @@
 #include "logdatastore.h"
 #include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/util/array.hpp>
+#include <cinttypes>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".searchlib.docstore.compacter");

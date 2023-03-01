@@ -21,6 +21,7 @@
 #include <filesystem>
 #include <sstream>
 #include <cassert>
+#include <cinttypes>
 #include <fcntl.h>
 
 #include <vespa/log/log.h>

@@ -4,6 +4,7 @@
 #include "utils.h"
 #include <vespa/searchlib/fef/properties.h>
 #include <vespa/vespalib/util/stash.h>
+#include <cinttypes>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".features.randomnormalstablefeature");

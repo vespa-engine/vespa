@@ -11,6 +11,7 @@
 #include <vespa/vespalib/testkit/testapp.h>
 #include <set>
 #include <map>
+#include <cinttypes>
 
 #include <vespa/log/log.h>
 LOG_SETUP("postinglist_test");

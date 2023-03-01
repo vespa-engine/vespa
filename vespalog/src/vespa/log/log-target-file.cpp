@@ -1,14 +1,14 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+#include "log.h"
+LOG_SETUP(".log");
+#include "log-target-file.h"
+#include "internal.h"
+
 #include <unistd.h>
 #include <cstring>
 #include <fcntl.h>
 #include <cerrno>
 #include <cassert>
-
-#include "log.h"
-LOG_SETUP(".log");
-#include "log-target-file.h"
-#include "internal.h"
 
 namespace ns_log {
 

@@ -9,6 +9,7 @@
 #include <unistd.h>
 #include <sys/stat.h>
 #include <cstdlib>
+#include <cstring>
 #include <vector>
 
 using std::string;

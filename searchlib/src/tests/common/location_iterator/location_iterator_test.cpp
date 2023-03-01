@@ -9,6 +9,7 @@
 #include <vespa/searchlib/common/locationiterators.h>
 #include <vespa/searchcommon/attribute/config.h>
 #include <vespa/vespalib/gtest/gtest.h>
+#include <cinttypes>
 
 #include <vespa/log/log.h>
 LOG_SETUP("location_iterator_test");

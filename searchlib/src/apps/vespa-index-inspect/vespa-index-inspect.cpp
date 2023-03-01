@@ -16,6 +16,7 @@
 #include <iostream>
 #include <getopt.h>
 #include <cstdlib>
+#include <cinttypes>
 #include <unistd.h>
 
 #include <vespa/log/log.h>
@@ -256,12 +257,12 @@ ShowPostingListSubApp::getOptions(int argc, char **argv)
     int c;
     int longopt_index = 0;
     static struct option longopts[] = {
-        { "indexdir", 1, NULL, 0 },
-        { "field", 1, NULL, 0 },
-        { "transpose", 0, NULL, 0 },
-        { "docidlimit", 1, NULL, 0 },
-        { "mindocid", 1, NULL, 0 },
-        { NULL, 0, NULL, 0 }
+        { "indexdir", 1, nullptr, 0 },
+        { "field", 1, nullptr, 0 },
+        { "transpose", 0, nullptr, 0 },
+        { "docidlimit", 1, nullptr, 0 },
+        { "mindocid", 1, nullptr, 0 },
+        { nullptr, 0, nullptr, 0 }
     };
     enum longopts_enum {
         LONGOPT_INDEXDIR,
@@ -293,7 +294,7 @@ ShowPostingListSubApp::getOptions(int argc, char **argv)
                 _minDocId = atoi(optarg);
                 break;
             default:
-                if (optarg != NULL) {
+                if (optarg != nullptr) {
                     LOG(error,
                         "longopt %s with arg %s",
                         longopts[longopt_index].name, optarg);
@@ -683,9 +684,7 @@ DumpWordsSubApp::DumpWordsSubApp()
 }
 
 
-DumpWordsSubApp::~DumpWordsSubApp()
-{
-}
+DumpWordsSubApp::~DumpWordsSubApp() = default;
 
 
 void
@@ -708,12 +707,12 @@ DumpWordsSubApp::getOptions(int argc, char **argv)
     int c;
     int longopt_index = 0;
     static struct option longopts[] = {
-        { "indexdir", 1, NULL, 0 },
-        { "field", 1, NULL, 0 },
-        { "minnumdocs", 1, NULL, 0 },
-        { "verbose", 0, NULL, 0 },
-        { "wordnum", 0, NULL, 0 },
-        { NULL, 0, NULL, 0 }
+        { "indexdir", 1, nullptr, 0 },
+        { "field", 1, nullptr, 0 },
+        { "minnumdocs", 1, nullptr, 0 },
+        { "verbose", 0, nullptr, 0 },
+        { "wordnum", 0, nullptr, 0 },
+        { nullptr, 0, nullptr, 0 }
     };
     enum longopts_enum {
         LONGOPT_INDEXDIR,
@@ -745,7 +744,7 @@ DumpWordsSubApp::getOptions(int argc, char **argv)
                 _showWordNum = true;
                 break;
             default:
-                if (optarg != NULL) {
+                if (optarg != nullptr) {
                     LOG(error,
                         "longopt %s with arg %s",
                         longopts[longopt_index].name, optarg);

@@ -4,6 +4,7 @@
 #include <vespa/searchcore/proton/docsummary/summarymanager.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <cassert>
+#include <cinttypes>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.server.summaryadapter");

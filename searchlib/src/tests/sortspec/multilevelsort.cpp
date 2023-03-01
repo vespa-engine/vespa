@@ -11,6 +11,7 @@
 #include <vespa/vespalib/util/testclock.h>
 #include <vespa/vespalib/testkit/testapp.h>
 #include <type_traits>
+#include <cinttypes>
 #include <vespa/log/log.h>
 LOG_SETUP("multilevelsort_test");
 
