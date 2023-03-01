@@ -634,7 +634,8 @@ public class ApplicationController {
                                     Supplier<Optional<EndpointCertificateMetadata>> endpointCertificateMetadata,
                                     boolean dryRun, Optional<X509Certificate> testerCertificate) {
         DeploymentId deployment = new DeploymentId(application, zone);
-        try {
+        // Routing and metadata may have changed, so we need to refresh state after deployment, even if deployment fails.
+        try (var postDeployment = (() -> updateRoutingAndMeta(deployment, applicationPackage))) {
             Optional<DockerImage> dockerImageRepo = Optional.ofNullable(
                     dockerImageRepoFlag
                             .with(FetchVector.Dimension.ZONE_ID, zone.value())
@@ -669,17 +670,14 @@ public class ApplicationController {
                                                            cloudAccount, dryRun));
 
             return preparedApplication.deploymentResult();
-        } finally {
-            // Even if prepare fails, routing configuration may need to be updated
-            if ( ! application.instance().isTester()) {
-                controller.routing().of(deployment).configure(applicationPackage.truncatedPackage().deploymentSpec());
-                if (zone.environment().isManuallyDeployed())
-                    controller.applications().applicationStore().putMeta(deployment,
-                                                                         clock.instant(),
-                                                                         applicationPackage.truncatedPackage().metaDataZip());
-
-            }
         }
+    }
+
+    private void updateRoutingAndMeta(DeploymentId id, ApplicationPackageStream data) {
+        if (id.applicationId().instance().isTester()) return;
+        controller.routing().of(id).configure(data.truncatedPackage().deploymentSpec());
+        if ( ! id.zoneId().environment().isManuallyDeployed()) return;
+        controller.applications().applicationStore().putMeta(id, clock.instant(), data.truncatedPackage().metaDataZip());
     }
 
     public Optional<CloudAccount> decideCloudAccountOf(DeploymentId deployment, DeploymentSpec spec) {
