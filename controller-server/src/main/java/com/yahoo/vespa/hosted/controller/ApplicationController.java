@@ -635,7 +635,8 @@ public class ApplicationController {
                                     boolean dryRun, Optional<X509Certificate> testerCertificate) {
         DeploymentId deployment = new DeploymentId(application, zone);
         // Routing and metadata may have changed, so we need to refresh state after deployment, even if deployment fails.
-        try (var postDeployment = (() -> updateRoutingAndMeta(deployment, applicationPackage))) {
+        interface CleanCloseable extends AutoCloseable { void close(); }
+        try (CleanCloseable postDeployment = () -> updateRoutingAndMeta(deployment, applicationPackage)) {
             Optional<DockerImage> dockerImageRepo = Optional.ofNullable(
                     dockerImageRepoFlag
                             .with(FetchVector.Dimension.ZONE_ID, zone.value())
