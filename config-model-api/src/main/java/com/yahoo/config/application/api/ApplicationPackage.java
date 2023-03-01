@@ -72,6 +72,9 @@ public interface ApplicationPackage {
     String RULES_NAME_SUFFIX = ".sr";
     String EXT_DIR = "ext";
 
+    // TODO: Remove when oldest model version is 8.95
+    String PERMANENT_SERVICES = "permanent-services.xml";
+
     ApplicationId getApplicationId();
 
     /**
