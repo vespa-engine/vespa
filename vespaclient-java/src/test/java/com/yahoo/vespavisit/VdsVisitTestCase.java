@@ -19,8 +19,11 @@ import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -77,7 +80,6 @@ public class VdsVisitTestCase {
     /**
      * Test the parameters that could not be used in conjunction with
      * those in the first parameter test.
-     * @throws Exception
      */
     @Test
     void testCommandLineShortOptions2() throws Exception {
@@ -113,6 +115,11 @@ public class VdsVisitTestCase {
         assertTrue(allParams.isPrintIdsOnly());
     }
 
+    private static String joinLines(String... lines) {
+        String nl = System.getProperty("line.separator"); // in case of \r\n instead of just \n...
+        return String.join(nl, lines) + nl;
+    }
+
     @Test
     void testCommandLineLongOptions() throws Exception {
         // short options testing (for options that do not collide with each other)
@@ -140,7 +147,9 @@ public class VdsVisitTestCase {
                 "--abortonclusterdown",
                 "--visitremoves",
                 "--bucketspace", "outerspace",
-                "--shorttensors"
+                "--shorttensors",
+                "--slices", "16",
+                "--sliceid", "5"
         };
         VdsVisit.ArgumentParser parser = createMockArgumentParser();
         VdsVisit.VdsVisitParameters allParams = parser.parse(args);
@@ -177,32 +186,43 @@ public class VdsVisitTestCase {
         assertTrue(allParams.getAbortOnClusterDown());
         assertTrue(params.visitRemoves());
 
+        assertEquals(16, params.getSlices());
+        assertEquals(5, params.getSliceId());
+
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         PrintStream printStream = new PrintStream(outputStream);
         VdsVisit.verbosePrintParameters(allParams, printStream);
         printStream.flush();
         String nl = System.getProperty("line.separator"); // the joys of running tests on windows
-        assertEquals(
-                "Time out visitor after 123456789 ms." + nl +
-                        "Visiting documents matching: 'id.user=1234'" + nl +
-                        "Visiting bucket space: outerspace" + nl +
-                        "Visiting in the inclusive timestamp range 5678 - 9012." + nl +
-                        "Visiting field set foodoc.bar,foodoc.baz." + nl +
-                        "Visiting inconsistent buckets." + nl +
-                        "Including remove entries." + nl +
-                        "Tracking progress in file: foo-progress.txt" + nl +
-                        "Let visitor have maximum 6000 replies pending on data handlers per storage node visitor." + nl +
-                        "Visit maximum 5 buckets per visitor." + nl +
-                        "Sending data to data handler at: foo.remote" + nl +
-                        "Using visitor library 'fnord'." + nl +
-                        "Adding the following library specific parameters:" + nl +
-                        "  asdf = rargh" + nl +
-                        "Visitor priority NORMAL_1" + nl +
-                        "Skip visiting super buckets with fatal errors." + nl,
-                outputStream.toString("utf-8"));
+        assertEquals(joinLines(
+                "Time out visitor after 123456789 ms.",
+                "Visiting documents matching: 'id.user=1234'",
+                "Visiting bucket space: outerspace",
+                "Visiting in the inclusive timestamp range 5678 - 9012.",
+                "Visiting field set foodoc.bar,foodoc.baz.",
+                "Visiting inconsistent buckets.",
+                "Including remove entries.",
+                "Tracking progress in file: foo-progress.txt",
+                "Let visitor have maximum 6000 replies pending on data handlers per storage node visitor.",
+                "Visit maximum 5 buckets per visitor.",
+                "Sending data to data handler at: foo.remote",
+                "Using visitor library 'fnord'.",
+                "Adding the following library specific parameters:",
+                "  asdf = rargh",
+                "Visitor priority NORMAL_1",
+                "Skip visiting super buckets with fatal errors.",
+                "Visiting slice 5 out of 16 slices"),
+                outputStream.toString(StandardCharsets.UTF_8));
     }
 
     private static String[] emptyArgList() { return new String[]{}; }
+
+    @Test
+    void slicing_is_disabled_by_default() throws Exception {
+        var allParams = createMockArgumentParser().parse(emptyArgList());
+        assertEquals(1, allParams.slices()); // 1 slice; the entire cluster
+        assertEquals(0, allParams.sliceId());
+    }
 
     // TODO Vespa 9: change default from long to short
     @Test

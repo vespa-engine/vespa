@@ -313,6 +313,10 @@ public class VisitorParameters extends Parameters {
         sb.append("  Max total hits:     ").append(maxTotalHits).append('\n');
         sb.append("  Max buckets:        ").append(maxBucketsPerVisitor).append('\n');
         sb.append("  Priority:           ").append(getPriority().toString()).append('\n');
+        if (slices > 1) {
+            sb.append("  Slice ID:           %d\n".formatted(sliceId));
+            sb.append("  Slice count:        %d\n".formatted(slices));
+        }
         sb.append(')');
 
         return sb.toString();
