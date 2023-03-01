@@ -184,7 +184,15 @@ public enum ContainerMetrics implements VespaMetrics {
     CLUSTER_CONTROLLER_RESOURCE_USAGE_MAX_DISK_UTILIZATION("cluster-controller.resource_usage.max_disk_utilization", Unit.FRACTION, "Current disk space utilisation, per content node"),
     CLUSTER_CONTROLLER_RESOURCE_USAGE_MEMORY_LIMIT("cluster-controller.resource_usage.memory_limit", Unit.FRACTION, "Disk space limit as a fraction of available disk space"),
     CLUSTER_CONTROLLER_RESOURCE_USAGE_DISK_LIMIT("cluster-controller.resource_usage.disk_limit", Unit.FRACTION, "Memory space limit as a fraction of available memory"),
-    CLUSTER_CONTROLLER_REINDEXING_PROGRESS("reindexing.progress", Unit.FRACTION, "Re-indexing progress");
+    CLUSTER_CONTROLLER_REINDEXING_PROGRESS("reindexing.progress", Unit.FRACTION, "Re-indexing progress"),
+
+    // Java (JRT) TLS metrics
+    JRT_TRANSPORT_TLS_CERTIFICATE_VERIFICATION_FAILURES("jrt.transport.tls-certificate-verification-failures", Unit.FAILURE, "TLS certificate verification failures"),
+    JRT_TRANSPORT_PEER_AUTHORIZATION_FAILURES("jrt.transport.peer-authorization-failures", Unit.FAILURE, "TLS peer authorization failures"),
+    JRT_TRANSPORT_SERVER_TLS_CONNECIONTS_ESTABLISHED("jrt.transport.server.tls-connections-established", Unit.CONNECTION, "TLS server connections established"),
+    JRT_TRANSPORT_CLIENT_TLS_CONNECTIONS_ESTABLISHED("jrt.transport.client.tls-connections-established", Unit.CONNECTION, "TLS client connections established"),
+    JRT_TRANSPORT_SERVER_UNENCRYPTED_CONNECTIONS_ESTABLISHED("jrt.transport.server.unencrypted-connections-established", Unit.CONNECTION, "Unencrypted server connections established"),
+    JRT_TRANSPORT_CLIENT_UNENCRYPTED_CONNECTIONS_ESTABLISHED("jrt.transport.client.unencrypted-connections-established", Unit.CONNECTION, "Unencrypted client connections established");
 
 
     private final String name;
