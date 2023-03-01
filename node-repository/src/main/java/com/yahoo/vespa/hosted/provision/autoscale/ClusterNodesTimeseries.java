@@ -39,6 +39,9 @@ public class ClusterNodesTimeseries {
             timeseries = keepGenerationAfterWarmup(timeseries, currentGeneration);
             afterWarmupCount = totalMeasurementsIn(timeseries);
         }
+        else {
+            afterWarmupCount = initialCount;
+        }
         timeseries = keep(timeseries, snapshot -> snapshot.inService() && snapshot.stable());
         afterStableCount = totalMeasurementsIn(timeseries);
         timeseries = keep(timeseries, snapshot -> ! snapshot.at().isBefore(db.clock().instant().minus(period)));
