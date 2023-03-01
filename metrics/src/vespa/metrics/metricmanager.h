@@ -237,13 +237,13 @@ public:
         return *_totalMetrics;
     }
     /** While accessing snapshots you should have the metric lock. */
-    const MetricSnapshot& getMetricSnapshot( const MetricLockGuard& guard, uint32_t period) const {
+    const MetricSnapshot& getMetricSnapshot( const MetricLockGuard& guard, vespalib::duration period) const {
         return getMetricSnapshot(guard, period, false);
     }
-    const MetricSnapshot& getMetricSnapshot( const MetricLockGuard&, uint32_t period, bool getInProgressSet) const;
-    const MetricSnapshotSet& getMetricSnapshotSet(const MetricLockGuard&, uint32_t period) const;
+    const MetricSnapshot& getMetricSnapshot( const MetricLockGuard&, vespalib::duration period, bool getInProgressSet) const;
+    const MetricSnapshotSet& getMetricSnapshotSet(const MetricLockGuard&, vespalib::duration period) const;
 
-    std::vector<uint32_t> getSnapshotPeriods(const MetricLockGuard& l) const;
+    std::vector<vespalib::duration> getSnapshotPeriods(const MetricLockGuard& l) const;
 
     // Public only for testing. The returned pointer is only valid while holding the lock.
     const ConsumerSpec * getConsumerSpec(const MetricLockGuard & guard, const Metric::String& consumer) const;
@@ -290,7 +290,7 @@ private:
 
     void handleMetricsAltered(const MetricLockGuard & guard);
 
-    using SnapSpec = std::pair<uint32_t, std::string>;
+    using SnapSpec = std::pair<vespalib::duration, std::string>;
     static std::vector<SnapSpec> createSnapshotPeriods( const MetricsmanagerConfig& config);
     void assertMetricLockLocked(const MetricLockGuard& g) const;
 };

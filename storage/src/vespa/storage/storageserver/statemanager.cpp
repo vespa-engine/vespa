@@ -18,7 +18,6 @@
 #include <vespa/vespalib/util/string_escape.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <fstream>
-#include <ranges>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".state.manager");
@@ -545,10 +544,9 @@ StateManager::getNodeInfo() const
         stream << "metrics";
         try {
             metrics::MetricLockGuard lock(_metricManager.getMetricLock());
-            std::vector<uint32_t> periods(_metricManager.getSnapshotPeriods(lock));
+            auto periods(_metricManager.getSnapshotPeriods(lock));
             if (!periods.empty()) {
-                uint32_t period = periods[0];
-                const metrics::MetricSnapshot& snapshot(_metricManager.getMetricSnapshot(lock, period));
+                const metrics::MetricSnapshot& snapshot(_metricManager.getMetricSnapshot(lock, periods[0]));
                 metrics::JsonWriter metricJsonWriter(stream);
                 _metricManager.visit(lock,  snapshot, metricJsonWriter, "fleetcontroller");
             } else {

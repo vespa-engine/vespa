@@ -411,14 +411,11 @@ std::string dumpAllSnapshots(const MetricManager& mm, const std::string& consume
         mm.visit(metricLock, mm.getTotalMetricSnapshot(metricLock), briefValuePrinter, consumer);
         ost << "Total: " << briefValuePrinter.ost.str() << "\n";
     }
-    std::vector<uint32_t> periods;
-    {
-        MetricLockGuard metricLock(mm.getMetricLock());
-        periods = mm.getSnapshotPeriods(metricLock);
-    }
-    for (uint32_t i=0; i<periods.size(); ++i) {
-        MetricLockGuard metricLock(mm.getMetricLock());
-        const MetricSnapshotSet& set(mm.getMetricSnapshotSet(metricLock, periods[i]));
+
+    MetricLockGuard metricLock(mm.getMetricLock());
+    auto periods = mm.getSnapshotPeriods(metricLock);
+    for (vespalib::duration period : periods) {
+        const MetricSnapshotSet& set(mm.getMetricSnapshotSet(metricLock, period));
         ost << set.getName() << "\n";
         for (uint32_t count=0,j=0; j<2; ++j) {
             if (set.getCount() == 1 && j == 1) continue;
@@ -438,9 +435,9 @@ std::string dumpAllSnapshots(const MetricManager& mm, const std::string& consume
 { \
     MetricLockGuard lockGuard(mm.getMetricLock()); \
     BriefValuePrinter briefValuePrinter; \
-    if (period == -1) { \
+    if (period < vespalib::duration::zero()) { \
         mm.visit(lockGuard, mm.getActiveMetrics(lockGuard), briefValuePrinter, "snapper"); \
-    } else if (period == 0) { \
+    } else if (period == vespalib::duration::zero()) { \
         mm.visit(lockGuard, mm.getTotalMetricSnapshot(lockGuard), briefValuePrinter, "snapper"); \
     } else { \
         mm.visit(lockGuard, mm.getMetricSnapshot(lockGuard, period), briefValuePrinter, "snapper"); \
@@ -495,7 +492,7 @@ TEST_F(MetricManagerTest, test_snapshots)
     }
     // Initially, there should be no metrics logged
     ASSERT_PROCESS_TIME(mm, 1000);
-    ASSERT_VALUES(mm, 5 * 60, "");
+    ASSERT_VALUES(mm, 5 * 60s, "");
 
     // Adding metrics done in first five minutes.
     mySet.val6.addValue(2);
@@ -506,9 +503,9 @@ TEST_F(MetricManagerTest, test_snapshots)
     mySet.val10.b.val1.addValue(1);
     timer.add_time(5 * 60);
     ASSERT_PROCESS_TIME(mm, 1000 + 5 * 60);
-    ASSERT_VALUES(mm,  5 * 60, "2,4,4,1,7,9,1,1,8,2,10");
-    ASSERT_VALUES(mm, 60 * 60, "");
-    ASSERT_VALUES(mm,  0 * 60, "2,4,4,1,7,9,1,1,8,2,10");
+    ASSERT_VALUES(mm,  5 * 60s, "2,4,4,1,7,9,1,1,8,2,10");
+    ASSERT_VALUES(mm, 60 * 60s, "");
+    ASSERT_VALUES(mm,  0 * 60s, "2,4,4,1,7,9,1,1,8,2,10");
 
     // Adding metrics done in second five minute period. Total should
     // be updated to account for both
@@ -520,17 +517,17 @@ TEST_F(MetricManagerTest, test_snapshots)
     mySet.val10.b.val1.addValue(2);
     timer.add_time(5 * 60);
     ASSERT_PROCESS_TIME(mm, 1000 + 5 * 60 * 2);
-    ASSERT_VALUES(mm,  5 * 60, "4,5,5,1,8,11,2,2,10,3,13");
-    ASSERT_VALUES(mm, 60 * 60, "");
-    ASSERT_VALUES(mm,  0 * 60, "4,5,5,2,8,11,2,2,10,3,13");
+    ASSERT_VALUES(mm,  5 * 60s, "4,5,5,1,8,11,2,2,10,3,13");
+    ASSERT_VALUES(mm, 60 * 60s, "");
+    ASSERT_VALUES(mm,  0 * 60s, "4,5,5,2,8,11,2,2,10,3,13");
 
     // Adding another five minute period where nothing have happened.
     // Metric for last 5 minutes should be 0.
     timer.add_time(5 * 60);
     ASSERT_PROCESS_TIME(mm, 1000 + 5 * 60 * 3);
-    ASSERT_VALUES(mm,  5 * 60, "0,0,0,0,0,0,0,0,0,0,0");
-    ASSERT_VALUES(mm, 60 * 60, "");
-    ASSERT_VALUES(mm,  0 * 60, "4,5,5,2,8,11,2,2,10,3,13");
+    ASSERT_VALUES(mm,  5 * 60s, "0,0,0,0,0,0,0,0,0,0,0");
+    ASSERT_VALUES(mm, 60 * 60s, "");
+    ASSERT_VALUES(mm,  0 * 60s, "4,5,5,2,8,11,2,2,10,3,13");
 
     // Advancing time to 60 minute period, we should create a proper
     // 60 minute period timer.
@@ -540,16 +537,16 @@ TEST_F(MetricManagerTest, test_snapshots)
         timer.add_time(5 * 60);
         ASSERT_PROCESS_TIME(mm, 1000 + 5 * 60 * (4 + i));
     }
-    ASSERT_VALUES(mm,  5 * 60, "0,0,0,0,0,0,0,0,0,0,0");
-    ASSERT_VALUES(mm, 60 * 60, "6,5,5,2,8,11,2,2,10,3,13");
-    ASSERT_VALUES(mm,  0 * 60, "6,5,5,2,8,11,2,2,10,3,13");
+    ASSERT_VALUES(mm,  5 * 60s, "0,0,0,0,0,0,0,0,0,0,0");
+    ASSERT_VALUES(mm, 60 * 60s, "6,5,5,2,8,11,2,2,10,3,13");
+    ASSERT_VALUES(mm,  0 * 60s, "6,5,5,2,8,11,2,2,10,3,13");
 
     // Test that reset works
     mm.reset(system_time(1000s));
-    ASSERT_VALUES(mm,      -1, "0,0,0,0,0,0,0,0,0,0,0");
-    ASSERT_VALUES(mm,  5 * 60, "0,0,0,0,0,0,0,0,0,0,0");
-    ASSERT_VALUES(mm, 60 * 60, "0,0,0,0,0,0,0,0,0,0,0");
-    ASSERT_VALUES(mm,  0 * 60, "0,0,0,0,0,0,0,0,0,0,0");
+    ASSERT_VALUES(mm,      -1s, "0,0,0,0,0,0,0,0,0,0,0");
+    ASSERT_VALUES(mm,  5 * 60s, "0,0,0,0,0,0,0,0,0,0,0");
+    ASSERT_VALUES(mm, 60 * 60s, "0,0,0,0,0,0,0,0,0,0,0");
+    ASSERT_VALUES(mm,  0 * 60s, "0,0,0,0,0,0,0,0,0,0,0");
 }
 
 TEST_F(MetricManagerTest, test_json_output)
@@ -589,7 +586,7 @@ TEST_F(MetricManagerTest, test_json_output)
     JsonWriter writer(jsonStream);
     {
         MetricLockGuard lockGuard(mm.getMetricLock());
-        mm.visit(lockGuard, mm.getMetricSnapshot(lockGuard, 300, false), writer, "snapper");
+        mm.visit(lockGuard, mm.getMetricSnapshot(lockGuard, 300s, false), writer, "snapper");
     }
     jsonStream.finalize();
     std::string jsonData = as.str();
@@ -678,7 +675,7 @@ struct MetricSnapshotTestFixture
         JsonWriter writer(jsonStream);
         {
             MetricLockGuard lockGuard(manager.getMetricLock());
-            manager.visit(lockGuard, manager.getMetricSnapshot(lockGuard, 300, false), writer, "snapper");
+            manager.visit(lockGuard, manager.getMetricSnapshot(lockGuard, 300s, false), writer, "snapper");
         }
         jsonStream.finalize();
         return as.str();
@@ -687,10 +684,10 @@ struct MetricSnapshotTestFixture
     std::string renderLastSnapshotAsText(const std::string& matchPattern = ".*") const
     {
         std::ostringstream ss;
-        TextWriter writer(ss, 300, matchPattern, true);
+        TextWriter writer(ss, 300s, matchPattern, true);
         {
             MetricLockGuard lockGuard(manager.getMetricLock());
-            manager.visit(lockGuard, manager.getMetricSnapshot(lockGuard, 300, false), writer, "snapper");
+            manager.visit(lockGuard, manager.getMetricSnapshot(lockGuard, 300s, false), writer, "snapper");
         }
         return ss.str();
     }
@@ -913,7 +910,7 @@ TEST_F(MetricManagerTest, test_text_output)
         "temp.multisub.sum.val2 average=2 last=2 min=2 max=2 count=1 total=2\n"
         "temp.multisub.sum.valsum average=10 last=10");
     std::ostringstream ost;
-    TextWriter writer(ost, 300, ".*", true);
+    TextWriter writer(ost, 300s, ".*", true);
     {
         MetricLockGuard lockGuard(mm.getMetricLock());
         mm.visit(lockGuard, mm.getActiveMetrics(lockGuard), writer, "snapper");

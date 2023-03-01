@@ -69,11 +69,11 @@ vespalib::string
 StateReporter::getMetrics(const vespalib::string &consumer)
 {
     metrics::MetricLockGuard guard(_manager.getMetricLock());
-    std::vector<uint32_t> periods = _manager.getSnapshotPeriods(guard);
+    auto periods = _manager.getSnapshotPeriods(guard);
     if (periods.empty()) {
         return ""; // no configuration yet
     }
-    uint32_t interval = periods[0];
+    vespalib::duration interval = periods[0];
 
     // To get unset metrics, we have to copy active metrics, clear them
     // and then assign the snapshot

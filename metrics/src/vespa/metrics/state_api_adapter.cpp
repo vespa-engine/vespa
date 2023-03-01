@@ -9,12 +9,12 @@ namespace metrics {
 vespalib::string
 StateApiAdapter::getMetrics(const vespalib::string &consumer)
 {
-    metrics::MetricLockGuard guard(_manager.getMetricLock());
-    std::vector<uint32_t> periods = _manager.getSnapshotPeriods(guard);
+    MetricLockGuard guard(_manager.getMetricLock());
+    auto periods = _manager.getSnapshotPeriods(guard);
     if (periods.empty()) {
         return ""; // no configuration yet
     }
-    const metrics::MetricSnapshot &snapshot(_manager.getMetricSnapshot(guard, periods[0]));
+    const MetricSnapshot &snapshot(_manager.getMetricSnapshot(guard, periods[0]));
     vespalib::asciistream json;
     vespalib::JsonStream stream(json);
     metrics::JsonWriter metricJsonWriter(stream);
@@ -27,16 +27,14 @@ vespalib::string
 StateApiAdapter::getTotalMetrics(const vespalib::string &consumer)
 {
     _manager.updateMetrics();
-    metrics::MetricLockGuard guard(_manager.getMetricLock());
+    MetricLockGuard guard(_manager.getMetricLock());
     _manager.checkMetricsAltered(guard);
     system_time currentTime = vespalib::system_clock::now();
-    auto generated = std::make_unique<metrics::MetricSnapshot>(
-           "Total metrics from start until current time", 0,
-           _manager.getTotalMetricSnapshot(guard).getMetrics(),
-           true);
+    auto generated = std::make_unique<MetricSnapshot>("Total metrics from start until current time", 0s,
+                                                      _manager.getTotalMetricSnapshot(guard).getMetrics(), true);
     _manager.getActiveMetrics(guard).addToSnapshot(*generated, false, currentTime);
     generated->setFromTime(_manager.getTotalMetricSnapshot(guard).getFromTime());
-    const metrics::MetricSnapshot &snapshot = *generated;
+    const MetricSnapshot &snapshot = *generated;
     vespalib::asciistream json;
     vespalib::JsonStream stream(json);
     metrics::JsonWriter metricJsonWriter(stream);

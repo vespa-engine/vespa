@@ -7,6 +7,7 @@
 LOG_SETUP(".metrics.snapshot");
 
 using vespalib::to_string;
+using vespalib::to_s;
 
 
 namespace metrics {
@@ -23,7 +24,7 @@ MetricSnapshot::MetricSnapshot(const Metric::String& name)
 {
 }
 
-MetricSnapshot::MetricSnapshot(const Metric::String& name, uint32_t period, const MetricSet& source, bool copyUnset)
+MetricSnapshot::MetricSnapshot(const Metric::String& name, vespalib::duration period, const MetricSet& source, bool copyUnset)
     : _name(name),
       _period(period),
       _fromTime(system_time_epoch),
@@ -72,7 +73,7 @@ MetricSnapshot::addMemoryUsage(MemoryConsumption& mc) const
     _snapshot->addMemoryUsage(mc);
 }
 
-MetricSnapshotSet::MetricSnapshotSet(const Metric::String& name, uint32_t period, uint32_t count,
+MetricSnapshotSet::MetricSnapshotSet(const Metric::String& name, vespalib::duration period, uint32_t count,
                                      const MetricSet& source, bool snapshotUnsetMetrics)
     : _count(count),
       _builderCount(0),
@@ -110,13 +111,13 @@ MetricSnapshotSet::haveCompletedNewPeriod(system_time newFromTime)
 bool
 MetricSnapshotSet::timeForAnotherSnapshot(system_time currentTime) {
     system_time lastTime = getToTime();
-    vespalib::duration period = vespalib::from_s(getPeriod());
+    vespalib::duration period = getPeriod();
     if (currentTime >= lastTime + period) {
         if (currentTime >= lastTime + 2 * period) {
             LOG(warning, "Metric snapshot set %s was asked if it was time for another snapshot, a whole period beyond "
                          "when it should have been done (Last update was at time %s, current time is %s and period "
-                         "is %u). Clearing data and updating time to current time.",
-                getName().c_str(), to_string(lastTime).c_str(), to_string(currentTime).c_str(), getPeriod());
+                         "is %f seconds). Clearing data and updating time to current time.",
+                getName().c_str(), to_string(lastTime).c_str(), to_string(currentTime).c_str(), to_s(getPeriod()));
             reset(currentTime);
         }
         return true;

@@ -28,7 +28,7 @@ JsonWriter::visitSnapshot(const MetricSnapshot& snapshot)
         << End()
         << "values" << Array();
     _flag = SNAPSHOT_STARTED;
-    _period = snapshot.getPeriod();
+    _period = vespalib::count_s(snapshot.getPeriod()); // Only prints second resolution
     return true;
 }
 
