@@ -344,21 +344,6 @@ FastOS_UNIX_File::GetSize()
     return fileSize;
 }
 
-
-vespalib::system_time
-FastOS_UNIX_File::getModificationTime()
-{
-    struct stat stbuf{};
-    assert(IsOpened());
-
-    int res = fstat(_filedes, &stbuf);
-    assert(res == 0);
-    (void) res;
-
-    return vespalib::system_time(vespalib::duration(stbuf.st_mtim.tv_sec*1000*1000*1000 + stbuf.st_mtim.tv_nsec));
-}
-
-
 bool
 FastOS_UNIX_File::Delete(const char *name)
 {
@@ -580,11 +565,4 @@ FastOS_UNIX_DirectoryScan::GetName()
     assert(_dp != nullptr);
 
     return static_cast<const char *>(_dp->d_name);
-}
-
-
-bool
-FastOS_UNIX_DirectoryScan::IsValidScan() const
-{
-    return _dir != nullptr;
 }

@@ -107,12 +107,6 @@ Fast_BufferedFile::Sync()
     return _file->Sync();
 }
 
-vespalib::system_time
-Fast_BufferedFile::getModificationTime()
-{
-    return _file->getModificationTime();
-}
-
 void
 Fast_BufferedFile::EnableDirectIO()
 {

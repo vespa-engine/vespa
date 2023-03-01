@@ -82,7 +82,6 @@ public:
     bool SetPosition(int64_t desiredPosition) override;
     int64_t GetPosition() override;
     int64_t GetSize() override;
-    vespalib::system_time getModificationTime() override;
     bool Delete() override;
     [[nodiscard]] bool Sync() override;
     bool SetSize(int64_t newSize) override;
@@ -103,9 +102,6 @@ public:
 class FastOS_UNIX_DirectoryScan : public FastOS_DirectoryScanInterface
 {
 private:
-    FastOS_UNIX_DirectoryScan(const FastOS_UNIX_DirectoryScan&);
-    FastOS_UNIX_DirectoryScan& operator=(const FastOS_UNIX_DirectoryScan&);
-
     bool _statRun;
     bool _isDirectory;
     bool _isRegular;
@@ -126,5 +122,4 @@ public:
     bool IsDirectory() override;
     bool IsRegular() override;
     const char *GetName() override;
-    bool IsValidScan() const override;
 };
