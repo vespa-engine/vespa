@@ -34,8 +34,6 @@ public final class Host extends TreeConfigProducer<AnyConfigProducer> implements
         Objects.requireNonNull(hostname, "The host name of a host cannot be null");
         this.runsConfigServer = runsConfigServer;
         this.hostname = hostname;
-        if (parent instanceof HostSystem)
-            ((HostSystem)parent).checkName(hostname);
     }
 
     public static Host createConfigServerHost(HostSystem hostSystem, String hostname) {

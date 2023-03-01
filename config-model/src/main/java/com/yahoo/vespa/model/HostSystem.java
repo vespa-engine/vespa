@@ -54,8 +54,8 @@ public class HostSystem extends TreeConfigProducer<Host> {
         this.isHosted = isHosted;
     }
 
-    void checkName(String hostname) {
-        if (isHosted) return; // Done in node-repo instead
+    String checkHostname(String hostname) {
+        if (isHosted) return hostname; // Done in node-repo instead
 
         if (doCheckIp) {
             BiConsumer<Level, String> logFunction = deployLogger::logApplicationPackage;
@@ -71,6 +71,7 @@ public class HostSystem extends TreeConfigProducer<Host> {
                 logFunction.accept(Level.WARNING, "Unable to lookup IP address of host: " + hostname);
             }
         }
+        return hostname;
     }
 
     @Override
@@ -88,10 +89,10 @@ public class HostSystem extends TreeConfigProducer<Host> {
     }
 
     private HostResource addNewHost(HostSpec hostSpec) {
-        Host host = Host.createHost(this, hostSpec.hostname());
-        HostResource hostResource = new HostResource(host, hostSpec);
+        String hostname = checkHostname(hostSpec.hostname());
+        HostResource hostResource = new HostResource(Host.createHost(this, hostname), hostSpec);
         hostSpec.networkPorts().ifPresent(np -> hostResource.ports().addNetworkPorts(np));
-        hostname2host.put(host.getHostname(), hostResource);
+        hostname2host.put(hostname, hostResource);
         return hostResource;
     }
 
