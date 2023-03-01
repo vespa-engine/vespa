@@ -6,6 +6,7 @@ import ai.vespa.models.evaluation.Model;
 import com.yahoo.component.annotation.Inject;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
+import com.yahoo.search.ranking.RankProfilesEvaluator.GlobalPhaseData;
 import com.yahoo.search.result.Hit;
 import com.yahoo.search.result.HitGroup;
 import com.yahoo.tensor.Tensor;
@@ -23,8 +24,6 @@ public class GlobalPhaseRanker {
 
     private static final Logger logger = Logger.getLogger(GlobalPhaseRanker.class.getName());
     private final RankProfilesEvaluatorFactory factory;
-    private final Set<String> skipProcessing = new HashSet<>();
-    private final Map<String, Supplier<FunctionEvaluator>> scorers = new HashMap<>();
 
     @Inject
     public GlobalPhaseRanker(RankProfilesEvaluatorFactory factory) {
@@ -33,11 +32,14 @@ public class GlobalPhaseRanker {
     }
 
     public void process(Query query, Result result, String schema) {
-        var functionEvaluatorSource = underlying(query, schema);
-        if (functionEvaluatorSource == null) {
+        var proxy = factory.proxyForSchema(schema);
+        String rankProfile = query.getRanking().getProfile();
+        var optData = proxy.getGlobalPhaseData(rankProfile);
+        if (optData.isEmpty())
             return;
-        }
-        var prepared = findFromQuery(query, functionEvaluatorSource.get().function().arguments());
+        GlobalPhaseData data = optData.get();
+        var functionEvaluatorSource = data.functionEvaluatorSource();
+        var prepared = findFromQuery(query, data.needInputs());
         Supplier<Evaluator> supplier = () -> {
             var evaluator = functionEvaluatorSource.get();
             var simple = new SimpleEvaluator(evaluator);
@@ -46,9 +48,10 @@ public class GlobalPhaseRanker {
             }
             return simple;
         };
-        // TODO need to get rerank-count somehow
-        int rerank = 7;
-        ResultReranker.rerankHits(result, new HitRescorer(supplier), rerank);
+        int rerankCount = data.rerankCount();
+        if (rerankCount < 0)
+            rerankCount = 100;
+        ResultReranker.rerankHits(result, new HitRescorer(supplier), rerankCount);
     }
 
     record NameAndValue(String name, Tensor value) { }
@@ -84,35 +87,6 @@ public class GlobalPhaseRanker {
             }
         }
         return result;
-    }
-
-    private Supplier<FunctionEvaluator> underlying(Query query, String schema) {
-        String rankProfile = query.getRanking().getProfile();
-        String key = schema + " with rank profile " + rankProfile;
-        if (skipProcessing.contains(key)) {
-            return null;
-        }
-        Supplier<FunctionEvaluator> supplier = scorers.get(key);
-        if (supplier != null) {
-            return supplier;
-        }
-        try {
-            var proxy = factory.proxyForSchema(schema);
-            var model = proxy.modelForRankProfile(rankProfile);
-            supplier = () -> model.evaluatorOf("globalphase");
-            if (supplier.get() == null) {
-                supplier = null;
-            }
-        } catch (IllegalArgumentException e) {
-            logger.info("no global-phase for " + key + " because: " + e.getMessage());
-            supplier = null;
-        }
-        if (supplier == null) {
-            skipProcessing.add(key);
-        } else {
-            scorers.put(key, supplier);
-        }
-        return supplier;
     }
 
 }
