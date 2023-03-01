@@ -2,7 +2,6 @@
 package com.yahoo.vespa.model.builder.xml.dom;
 
 import ai.vespa.validation.Validation;
-import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.ApplicationConfigProducerRoot;
 import com.yahoo.config.model.ConfigModelRepo;
 import com.yahoo.config.model.builder.xml.XmlHelper;
@@ -24,12 +23,8 @@ import com.yahoo.vespa.model.container.docproc.ContainerDocproc;
 import com.yahoo.vespa.model.content.Content;
 import com.yahoo.vespa.model.search.SearchCluster;
 import org.w3c.dom.Element;
-
-import java.util.HashSet;
 import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.Map;
-import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
