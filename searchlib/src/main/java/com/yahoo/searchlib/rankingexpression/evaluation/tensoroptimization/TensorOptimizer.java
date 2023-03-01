@@ -59,7 +59,6 @@ public class TensorOptimizer extends Optimizer {
      * The ReduceJoin class determines whether or not the arguments are
      * compatible with the optimization.
      */
-    @SuppressWarnings("unchecked")
     private ExpressionNode optimizeReduceJoin(ExpressionNode node) {
         if ( ! (node instanceof TensorFunctionNode)) {
             return node;
