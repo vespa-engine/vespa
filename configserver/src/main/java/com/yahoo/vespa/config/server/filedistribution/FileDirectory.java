@@ -155,7 +155,7 @@ public class FileDirectory extends AbstractComponent {
         }
 
         // update last modified time so that maintainer deleting unused file references considers this as recently used
-        existingFile.setLastModified(Clock.systemUTC().instant().toEpochMilli());
+        destinationDir.setLastModified(Clock.systemUTC().instant().toEpochMilli());
         log.log(Level.FINE, "Directory for file reference '" + fileReference.value() + "' already exists and has all content");
         return false;
     }
