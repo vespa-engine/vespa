@@ -164,7 +164,6 @@ IndexWriteUtilities::updateDiskIndexSchema(const vespalib::string &indexDir,
         LOG(error, "Could not save schema to '%s'",
             schemaTmpName.c_str());
     }
-    // XXX: FastOS layer violation
     FastOS_StatInfo statInfo;
     bool statres;
     statres = FastOS_File::Stat(schemaOrigName.c_str(), &statInfo);
@@ -183,7 +182,6 @@ IndexWriteUtilities::updateDiskIndexSchema(const vespalib::string &indexDir,
         }
         vespalib::File::sync(indexDir);
     }
-    // XXX: FastOS layer violation
     int renameres = ::rename(schemaTmpName.c_str(), schemaName.c_str());
     if (renameres != 0) {
         int error = errno;
