@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.api.integration.archive;
 
+import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.tenant.ArchiveAccess;
@@ -9,6 +10,7 @@ import java.net.URI;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -36,6 +38,11 @@ public class MockArchiveService implements ArchiveService {
     @Override
     public boolean canAddTenantToBucket(ZoneId zoneId, ArchiveBucket bucket) {
         return bucket.tenants().size() < 5;
+    }
+
+    @Override
+    public Optional<String> findEnclaveArchiveBucket(ZoneId zoneId, CloudAccount cloudAccount) {
+        return Optional.empty();
     }
 
     @Override
