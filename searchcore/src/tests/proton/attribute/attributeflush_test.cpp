@@ -14,7 +14,6 @@
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/searchlib/test/directory_handler.h>
 #include <vespa/searchcommon/attribute/config.h>
-#include <vespa/vespalib/datastore/datastorebase.h>
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/util/foreground_thread_executor.h>
 #include <vespa/vespalib/util/foregroundtaskexecutor.h>
@@ -530,20 +529,20 @@ Test::requireThatLastFlushTimeIsReported()
         EXPECT_EQUAL(vespalib::system_time(), ft->getLastFlushTime());
         ft->initFlush(200, std::make_shared<search::FlushToken>())->run();
         EXPECT_TRUE(FastOS_File::Stat("flush/a9/snapshot-200", &stat));
-        EXPECT_EQUAL(seconds(stat._modifiedTime), duration_cast<seconds>(ft->getLastFlushTime().time_since_epoch()));
+        EXPECT_EQUAL(stat._modifiedTime, ft->getLastFlushTime());
     }
     { // snapshot flushed
         AttributeManagerFixture amf(f);
         AttributeManager &am = amf._m;
         amf.addAttribute("a9");
         IFlushTarget::SP ft = am.getFlushable("a9");
-        EXPECT_EQUAL(seconds(stat._modifiedTime), duration_cast<seconds>(ft->getLastFlushTime().time_since_epoch()));
+        EXPECT_EQUAL(stat._modifiedTime, ft->getLastFlushTime());
         { // updated flush time after nothing to flush
             std::this_thread::sleep_for(1100ms);
             std::chrono::seconds now = duration_cast<seconds>(vespalib::system_clock::now().time_since_epoch());
             Executor::Task::UP task = ft->initFlush(200, std::make_shared<search::FlushToken>());
             EXPECT_FALSE(task);
-            EXPECT_LESS(seconds(stat._modifiedTime), ft->getLastFlushTime().time_since_epoch());
+            EXPECT_LESS(stat._modifiedTime, ft->getLastFlushTime());
             EXPECT_APPROX(now.count(), duration_cast<seconds>(ft->getLastFlushTime().time_since_epoch()).count(), 3);
         }
     }
