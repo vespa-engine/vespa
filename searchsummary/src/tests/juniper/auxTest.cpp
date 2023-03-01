@@ -11,9 +11,7 @@ LOG_SETUP(".auxtest");
 #define COLOR_HIGH_ON "\e[1;31m"
 #define COLOR_HIGH_OFF "\e[0m"
 
-#ifndef FASTOS_DEBUG
 static int debug_level = 0;
-#endif
 
 bool color_highlight = false;
 bool verbose = false;

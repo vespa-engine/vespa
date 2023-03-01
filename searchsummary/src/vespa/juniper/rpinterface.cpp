@@ -26,13 +26,6 @@ bool AnalyseCompatible(Config* conf1, Config* conf2)
 
 void SetDebug(unsigned int mask)
 {
-#ifdef FASTOS_DEBUG
-    if (mask & ~1 && mask != debug_level)
-        LOG(info, "Juniper debug mode enabled (0x%x)", mask);
-    else if (! (debug_level & ~1))
-        LOG(info, "Juniper debug mode disabled (0x%x)", mask);
-    debug_level = mask;
-#else
     // Make sure we do not get 200 of these warnings per query..
     static bool warning_printed = false;
     if (mask && !warning_printed)
@@ -41,7 +34,6 @@ void SetDebug(unsigned int mask)
             "Juniper debug mode requested in binary compiled without debug support!");
         warning_printed = true;
     }
-#endif
 }
 
 

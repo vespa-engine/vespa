@@ -27,22 +27,9 @@
 /* Logging to log object (juniperlog summary field) */
 #define JL(level, stmt)  do { if (_log_mask & level) { stmt; } } while (0)
 
-#ifdef FASTOS_DEBUG
-extern unsigned debug_level;
-#define JD(level, stmt)  do { if (debug_level & level) { stmt; } } while (0)
-# warning "FASTOS_DEBUG is defined"
-
-/* Invariant checking */
-
-#define JD_INVAR(level, condition, action, log) \
-   do { if (!(condition)) { if (debug_level & level) { log; } action; } } while (0)
-#else
-
 #define JD_INVAR(level, condition, action, log) \
    do { if (!(condition)) { action; } } while (0)
 #define JD(level, stmt)
-
-#endif
 
 template <class _container>
 void dump_list(_container& __c)

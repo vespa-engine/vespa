@@ -45,12 +45,12 @@
  *    optimize clock fetching as we see fit later.
  *
  *  - A thread pool is given. This makes us able to use a thread pool.
- *    (Allthough currently we don't really need a thread pool, as threads
- *    typically live for the whole lifetime of the server. But currently we are
- *    forced to use a thread pool due to fastos.) Another feature of this is
- *    that the thread interface has built in information needed to detect
- *    deadlocks and report status about thread behavior, such that deadlock
- *    detecting and thread status can be shown without the threads themselves
+ *    (Allthough currently we don't really need a thread pool, as
+ *    threads typically live for the whole lifetime of the
+ *    server. Another feature of this is that the thread interface has
+ *    built in information needed to detect deadlocks and report
+ *    status about thread behavior, such that deadlock detecting and
+ *    thread status can be shown without the threads themselves
  *    depending on how this is done.
  *
  *  - A memory manager may also be provided, allowing components to request

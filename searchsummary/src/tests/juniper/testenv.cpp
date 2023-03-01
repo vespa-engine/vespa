@@ -26,11 +26,7 @@ TestEnv::TestEnv(int argc, char **argv, const char* propfile) :
         switch (c)
         {
 	case 'd':
-#ifdef FASTOS_DEBUG
-            debug_level = strtol(optarg, NULL, 0);
-#else
             fprintf(stderr, "This version of Juniper compiled without debug\n");
-#endif
             break;
 	case 'c':
             color_highlight = true;

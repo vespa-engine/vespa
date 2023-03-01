@@ -106,7 +106,6 @@ The module definition is used to specify common dependencies for every target de
 
         vespa_define_module(
             DEPENDS
-            fastos
             vespalib
             bjarnelib
 
