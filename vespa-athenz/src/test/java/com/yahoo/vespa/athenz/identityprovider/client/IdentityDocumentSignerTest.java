@@ -36,7 +36,6 @@ public class IdentityDocumentSignerTest {
     private static final Instant createdAt = Instant.EPOCH;
     private static final HashSet<String> ipAddresses = new HashSet<>(Arrays.asList("1.2.3.4", "::1"));
     private static final ClusterType clusterType = ClusterType.CONTAINER;
-    private static final String ztsUrl = "https://foo";
 
     @Test
     void generates_and_validates_signature() {
@@ -47,27 +46,27 @@ public class IdentityDocumentSignerTest {
 
         SignedIdentityDocument signedIdentityDocument = new SignedIdentityDocument(
                 signature, KEY_VERSION, id, providerService, DEFAULT_DOCUMENT_VERSION, configserverHostname,
-                instanceHostname, createdAt, ipAddresses, identityType, clusterType, ztsUrl);
+                instanceHostname, createdAt, ipAddresses, identityType, clusterType);
 
         assertTrue(signer.hasValidSignature(signedIdentityDocument, keyPair.getPublic()));
     }
 
     @Test
-    void ignores_cluster_type_and_zts_url() {
+    void ignores_cluster_type() {
         IdentityDocumentSigner signer = new IdentityDocumentSigner();
         String signature =
                 signer.generateSignature(id, providerService, configserverHostname, instanceHostname, createdAt,
                                          ipAddresses, identityType, keyPair.getPrivate());
 
-        var docWithoutIgnoredFields = new SignedIdentityDocument(
+        var docWithoutClusterType = new SignedIdentityDocument(
                 signature, KEY_VERSION, id, providerService, DEFAULT_DOCUMENT_VERSION, configserverHostname,
-                instanceHostname, createdAt, ipAddresses, identityType, null, null);
-        var docWithIgnoredFields = new SignedIdentityDocument(
+                instanceHostname, createdAt, ipAddresses, identityType, null);
+        var docWithClusterType = new SignedIdentityDocument(
                 signature, KEY_VERSION, id, providerService, DEFAULT_DOCUMENT_VERSION, configserverHostname,
-                instanceHostname, createdAt, ipAddresses, identityType, clusterType, ztsUrl);
+                instanceHostname, createdAt, ipAddresses, identityType, clusterType);
 
-        assertTrue(signer.hasValidSignature(docWithoutIgnoredFields, keyPair.getPublic()));
-        assertEquals(docWithIgnoredFields.signature(), docWithoutIgnoredFields.signature());
+        assertTrue(signer.hasValidSignature(docWithoutClusterType, keyPair.getPublic()));
+        assertEquals(docWithClusterType.signature(), docWithoutClusterType.signature());
     }
 
 }

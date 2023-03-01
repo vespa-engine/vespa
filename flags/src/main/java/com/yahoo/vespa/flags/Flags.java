@@ -345,13 +345,6 @@ public class Flags {
             "Takes effect on the next tick.",
             ZONE_ID, NODE_TYPE, HOSTNAME);
 
-    public static final UnboundBooleanFlag VESPA_ATHENZ_PROVIDER = defineFeatureFlag(
-            "vespa-athenz-provider", false,
-            List.of("mortent"), "2023-02-22", "2023-05-01",
-            "Enable athenz provider in public systems",
-            "Takes effect on next config server container start",
-            ZONE_ID);
-
     public static final UnboundBooleanFlag ENABLE_GLOBAL_PHASE = defineFeatureFlag(
             "enable-global-phase", false,
             List.of("arnej", "bjorncs"), "2023-02-28", "2024-01-10",

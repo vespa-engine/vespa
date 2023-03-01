@@ -7,9 +7,6 @@ import com.yahoo.config.model.api.ApplicationInfo;
 import com.yahoo.config.model.api.ServiceInfo;
 import com.yahoo.config.model.api.SuperModelProvider;
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.Zone;
-import com.yahoo.container.jdisc.secretstore.SecretStore;
-import com.yahoo.security.KeyUtils;
 import com.yahoo.vespa.athenz.api.AthenzService;
 import com.yahoo.vespa.athenz.identityprovider.api.ClusterType;
 import com.yahoo.vespa.athenz.identityprovider.api.EntityBindingsMapper;
@@ -55,32 +52,25 @@ public class InstanceValidator {
     private final KeyProvider keyProvider;
     private final SuperModelProvider superModelProvider;
     private final NodeRepository nodeRepository;
-    private final SecretStore secretStore;
-    private final String sisSecretName;
 
     @Inject
     public InstanceValidator(KeyProvider keyProvider,
                              SuperModelProvider superModelProvider,
                              NodeRepository nodeRepository,
-                             AthenzProviderServiceConfig config,
-                             SecretStore secretStore) {
-        this(keyProvider, superModelProvider, nodeRepository, new IdentityDocumentSigner(), new AthenzService(config.tenantService()), secretStore, config.sisSecretName());
+                             AthenzProviderServiceConfig config) {
+        this(keyProvider, superModelProvider, nodeRepository, new IdentityDocumentSigner(), new AthenzService(config.tenantService()));
     }
 
     public InstanceValidator(KeyProvider keyProvider,
                              SuperModelProvider superModelProvider,
                              NodeRepository nodeRepository,
                              IdentityDocumentSigner identityDocumentSigner,
-                             AthenzService tenantIdentity,
-                             SecretStore secretStore,
-                             String sisSecretName) {
+                             AthenzService tenantIdentity){
         this.keyProvider = keyProvider;
         this.superModelProvider = superModelProvider;
         this.nodeRepository = nodeRepository;
         this.signer = identityDocumentSigner;
         this.tenantDockerContainerIdentity = tenantIdentity;
-        this.secretStore = secretStore;
-        this.sisSecretName = sisSecretName;
     }
 
     public boolean isValidInstance(InstanceConfirmation instanceConfirmation) {
@@ -112,28 +102,14 @@ public class InstanceValidator {
 
         log.log(Level.FINE, () -> String.format("Validating instance %s.", providerUniqueId));
 
-        // Find node matching vespa unique id
-        Node node = getNode(providerUniqueId);
-
-        PublicKey publicKey = publicKey(node, signedIdentityDocument.signingKeyVersion());
+        PublicKey publicKey = keyProvider.getPublicKey(signedIdentityDocument.signingKeyVersion());
         if (! signer.hasValidSignature(signedIdentityDocument, publicKey)) {
             var msg = String.format("Instance %s has invalid signature.", providerUniqueId);
             throw new ValidationException(Level.SEVERE, () -> msg);
         }
 
-        validateAttributes(node, req, providerUniqueId);
+        validateAttributes(req, providerUniqueId);
         log.log(Level.FINE, () -> String.format("Instance %s is valid.", providerUniqueId));
-    }
-
-    private PublicKey publicKey(Node node, int version) {
-        // return sisSecret for public non-enclave hosts.
-        Zone zone = nodeRepository.zone();
-        if (zone.system().isPublic() && !node.cloudAccount().isEnclave(zone)) {
-            String keyPem = secretStore.getSecret(sisSecretName, version);
-            return KeyUtils.extractPublicKey(KeyUtils.fromPemEncodedPrivateKey(keyPem));
-        } else {
-            return keyProvider.getPublicKey(version);
-        }
     }
 
     // TODO Add actual validation. Cannot reuse isValidInstance as identity document is not part of the refresh request.
@@ -145,8 +121,7 @@ public class InstanceValidator {
                                                    confirmation.provider,
                                                    confirmation.attributes.get(SAN_DNS_ATTRNAME)));
         try {
-            VespaUniqueInstanceId vespaUniqueInstanceId = getVespaUniqueInstanceId(confirmation);
-            validateAttributes(getNode(vespaUniqueInstanceId), confirmation, vespaUniqueInstanceId);
+            validateAttributes(confirmation, getVespaUniqueInstanceId(confirmation));
             return true;
         } catch (ValidationException e) {
             log.log(e.logLevel(), e.messageSupplier());
@@ -171,10 +146,21 @@ public class InstanceValidator {
                 .orElse(null);
     }
 
-    private void validateAttributes(Node node, InstanceConfirmation confirmation, VespaUniqueInstanceId vespaUniqueInstanceId)
+    private void validateAttributes(InstanceConfirmation confirmation, VespaUniqueInstanceId vespaUniqueInstanceId)
             throws ValidationException {
         if(vespaUniqueInstanceId == null) {
             var msg = "Unable to find unique instance ID in refresh request: " + confirmation.toString();
+            throw new ValidationException(Level.WARNING, () -> msg);
+        }
+
+        // Find node matching vespa unique id
+        Node node = nodeRepository.nodes().list().stream()
+                .filter(n -> n.allocation().isPresent())
+                .filter(n -> nodeMatchesVespaUniqueId(n, vespaUniqueInstanceId))
+                .findFirst() // Should be only one
+                .orElse(null);
+        if(node == null) {
+            var msg = "Invalid InstanceConfirmation, No nodes matching uniqueId: " + vespaUniqueInstanceId;
             throw new ValidationException(Level.WARNING, () -> msg);
         }
 
@@ -211,20 +197,6 @@ public class InstanceValidator {
             Supplier<String> msg = () -> "Illegal SAN URIs: expected '%s' found '%s'".formatted(allowedUris, requestedUris);
             throw new ValidationException(Level.WARNING, msg);
         }
-    }
-
-    private Node getNode(VespaUniqueInstanceId vespaUniqueInstanceId) throws ValidationException {
-        // Find node matching vespa unique id
-        Node node = nodeRepository.nodes().list().stream()
-                .filter(n -> n.allocation().isPresent())
-                .filter(n -> nodeMatchesVespaUniqueId(n, vespaUniqueInstanceId))
-                .findFirst() // Should be only one
-                .orElse(null);
-        if(node == null) {
-            var msg = "Invalid InstanceConfirmation, No nodes matching uniqueId: " + vespaUniqueInstanceId;
-            throw new ValidationException(Level.WARNING, () -> msg);
-        }
-        return node;
     }
 
     private boolean nodeMatchesVespaUniqueId(Node node, VespaUniqueInstanceId vespaUniqueInstanceId) {
