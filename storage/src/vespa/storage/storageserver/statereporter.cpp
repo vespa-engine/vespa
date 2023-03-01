@@ -81,9 +81,8 @@ StateReporter::getMetrics(const vespalib::string &consumer)
             _manager.getMetricSnapshot(guard, interval).getName(), interval,
             _manager.getActiveMetrics(guard).getMetrics(), true);
 
-    snapshot.reset(0);
-    _manager.getMetricSnapshot(guard, interval).addToSnapshot(
-            snapshot, vespalib::count_s(_component.getClock().getSystemTime().time_since_epoch()));
+    snapshot.reset();
+    _manager.getMetricSnapshot(guard, interval).addToSnapshot(snapshot, _component.getClock().getSystemTime());
 
     vespalib::asciistream json;
     vespalib::JsonStream stream(json);

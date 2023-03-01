@@ -29,7 +29,7 @@ struct MetricManagerTest : public ::testing::Test {
     // MetricManager that aren't accessible to "freestanding" fixtures. So we
     // get the test to do the necessary poking and prodding for us instead.
     void takeSnapshots(MetricManager& mm, time_t timeToProcess) {
-        mm.takeSnapshots(mm.getMetricLock(), timeToProcess);
+        mm.takeSnapshots(mm.getMetricLock(), system_time(vespalib::from_s(timeToProcess)));
     }
 };
 
@@ -547,7 +547,7 @@ TEST_F(MetricManagerTest, test_snapshots)
     ASSERT_VALUES(mm,  0 * 60, "6,5,5,2,8,11,2,2,10,3,13");
 
     // Test that reset works
-    mm.reset(1000);
+    mm.reset(system_time(1000s));
     ASSERT_VALUES(mm,      -1, "0,0,0,0,0,0,0,0,0,0,0");
     ASSERT_VALUES(mm,  5 * 60, "0,0,0,0,0,0,0,0,0,0,0");
     ASSERT_VALUES(mm, 60 * 60, "0,0,0,0,0,0,0,0,0,0,0");
@@ -902,7 +902,7 @@ TEST_F(MetricManagerTest, test_text_output)
                       "consumer[1].tags[1]\n"
                       "consumer[1].tags[0] snaptest\n"));
     std::string expected(
-        "snapshot \"Active metrics showing updates since last snapshot\" from 1000 to 0 period 0\n"
+        "snapshot \"Active metrics showing updates since last snapshot\" from 1970-01-01 00:16:40.000 UTC to 1970-01-01 00:00:00.000 UTC period 0\n"
         "temp.val6 average=2 last=2 min=2 max=2 count=1 total=2\n"
         "temp.sub.val1 average=4 last=4 min=4 max=4 count=1 total=4\n"
         "temp.sub.valsum average=4 last=4 min=4 max=4 count=1 total=4\n"
@@ -938,11 +938,9 @@ TEST_F(MetricManagerTest, text_output_supports_dimensions)
     fixture.takeSnapshotsOnce();
     std::string actual = fixture.renderLastSnapshotAsText("outer.*temp.*val");
     std::string expected(
-            "snapshot \"5 minute\" from 1000 to 1300 period 300\n"
-            "outer{fancy:stuff}.temp{bar:hyperbar,foo:megafoo}.val1 "
-                "average=2 last=2 min=2 max=2 count=1 total=2\n"
-            "outer{fancy:stuff}.temp{bar:hyperbar,foo:megafoo}.val2"
-                "{baz:superbaz} count=1");
+            "snapshot \"5 minute\" from 1970-01-01 00:16:40.000 UTC to 1970-01-01 00:21:40.000 UTC period 300\n"
+            "outer{fancy:stuff}.temp{bar:hyperbar,foo:megafoo}.val1 average=2 last=2 min=2 max=2 count=1 total=2\n"
+            "outer{fancy:stuff}.temp{bar:hyperbar,foo:megafoo}.val2{baz:superbaz} count=1");
     EXPECT_EQ(expected, actual);
 }
 

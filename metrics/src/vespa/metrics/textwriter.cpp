@@ -7,6 +7,8 @@
 #include "valuemetric.h"
 #include <sstream>
 
+using vespalib::to_string;
+
 namespace metrics {
 
 TextWriter::TextWriter(std::ostream& out, uint32_t period,
@@ -19,13 +21,13 @@ TextWriter::TextWriter(std::ostream& out, uint32_t period,
     }
 }
 
-TextWriter::~TextWriter() { }
+TextWriter::~TextWriter() = default;
 
 bool
 TextWriter::visitSnapshot(const MetricSnapshot& snapshot)
 {
     _out << "snapshot \"" << snapshot.getName() << "\" from "
-         << snapshot.getFromTime() << " to " << snapshot.getToTime()
+         << to_string(snapshot.getFromTime()) << " to " << to_string(snapshot.getToTime())
          << " period " << snapshot.getPeriod();
     return true;
 }
