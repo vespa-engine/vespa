@@ -136,7 +136,7 @@ public:
      * snapshotting and metric logging, to make the metrics the best as they can
      * be at those occasions.
      *
-     * @param period Period in seconds for how often callback should be called.
+     * @param period Period for how often callback should be called.
      *               The default value of 0, means only before snapshotting or
      *               logging, while another value will give callbacks each
      *               period seconds. Expensive metrics to calculate will
@@ -145,7 +145,7 @@ public:
      *               seconds or so. Any value of period >= the smallest snapshot
      *               time will behave identically as if period is set to 0.
      */
-    void addMetricUpdateHook(UpdateHook&, uint32_t period);
+    void addMetricUpdateHook(UpdateHook&);
 
     /** Remove a metric update hook so it won't get any more updates. */
     void removeMetricUpdateHook(UpdateHook&);

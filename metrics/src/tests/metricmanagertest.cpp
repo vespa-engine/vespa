@@ -950,8 +950,8 @@ namespace {
         std::mutex&         _output_mutex;
         FakeTimer&          _timer;
 
-        MyUpdateHook(std::ostringstream& output, std::mutex& output_mutex, const char* name, FakeTimer& timer)
-            : UpdateHook(name),
+        MyUpdateHook(std::ostringstream& output, std::mutex& output_mutex, const char* name, vespalib::duration period, FakeTimer& timer)
+            : UpdateHook(name, period),
               _output(output),
               _output_mutex(output_mutex),
               _timer(timer)
@@ -979,12 +979,12 @@ TEST_F(MetricManagerTest, test_update_hooks)
         mm.registerMetric(lockGuard, mySet.set);
     }
 
-    MyUpdateHook preInitShort(output, output_mutex, "BIS", timer);
-    MyUpdateHook preInitLong(output, output_mutex, "BIL", timer);
-    MyUpdateHook preInitInfinite(output, output_mutex, "BII", timer);
-    mm.addMetricUpdateHook(preInitShort, 5);
-    mm.addMetricUpdateHook(preInitLong, 300);
-    mm.addMetricUpdateHook(preInitInfinite, 0);
+    MyUpdateHook preInitShort(output, output_mutex, "BIS", 5s, timer);
+    MyUpdateHook preInitLong(output, output_mutex, "BIL", 300s, timer);
+    MyUpdateHook preInitInfinite(output, output_mutex, "BII", 0s, timer);
+    mm.addMetricUpdateHook(preInitShort);
+    mm.addMetricUpdateHook(preInitLong);
+    mm.addMetricUpdateHook(preInitInfinite);
 
     // All hooks should get called during initialization
 
@@ -1000,12 +1000,12 @@ TEST_F(MetricManagerTest, test_update_hooks)
                       "consumer[1].tags[0] snaptest\n"));
     output << "Init done\n";
 
-    MyUpdateHook postInitShort(output, output_mutex, "AIS", timer);
-    MyUpdateHook postInitLong(output, output_mutex, "AIL", timer);
-    MyUpdateHook postInitInfinite(output, output_mutex, "AII", timer);
-    mm.addMetricUpdateHook(postInitShort, 5);
-    mm.addMetricUpdateHook(postInitLong, 400);
-    mm.addMetricUpdateHook(postInitInfinite, 0);
+    MyUpdateHook postInitShort(output, output_mutex, "AIS", 5s, timer);
+    MyUpdateHook postInitLong(output, output_mutex, "AIL", 400s, timer);
+    MyUpdateHook postInitInfinite(output, output_mutex, "AII", 0s, timer);
+    mm.addMetricUpdateHook(postInitShort);
+    mm.addMetricUpdateHook(postInitLong);
+    mm.addMetricUpdateHook(postInitInfinite);
 
     // After 5 seconds the short ones should get another.
 

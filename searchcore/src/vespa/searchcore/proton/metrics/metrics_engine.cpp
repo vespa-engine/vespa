@@ -42,7 +42,7 @@ MetricsEngine::start(const config::ConfigUri &)
 void
 MetricsEngine::addMetricsHook(metrics::UpdateHook &hook)
 {
-    _manager->addMetricUpdateHook(hook, 5);
+    _manager->addMetricUpdateHook(hook);
 }
 
 void

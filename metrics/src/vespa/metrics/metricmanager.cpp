@@ -115,22 +115,11 @@ MetricManager::stop()
 }
 
 void
-MetricManager::addMetricUpdateHook(UpdateHook& hook, uint32_t period)
+MetricManager::addMetricUpdateHook(UpdateHook& hook)
 {
-    hook.setPeriod(vespalib::from_s(period));
     hook.updateNextCall(_timer->getTime());
     std::lock_guard sync(_waiter);
-        // If we've already initialized manager, log period has been set.
-        // In this case. Call first time after period
-    if (period == 0) {
-        for (UpdateHook * sHook : _snapshotUpdateHooks) {
-            if (sHook == &hook) {
-                LOG(warning, "Update hook already registered");
-                return;
-            }
-        }
-        _snapshotUpdateHooks.push_back(&hook);
-    } else {
+    if ( hook.is_periodic() ) {
         for (UpdateHook * pHook : _periodicUpdateHooks) {
             if (pHook == &hook) {
                 LOG(warning, "Update hook already registered");
@@ -138,6 +127,14 @@ MetricManager::addMetricUpdateHook(UpdateHook& hook, uint32_t period)
             }
         }
         _periodicUpdateHooks.push_back(&hook);
+    } else {
+        for (UpdateHook * sHook : _snapshotUpdateHooks) {
+            if (sHook == &hook) {
+                LOG(warning, "Update hook already registered");
+                return;
+            }
+        }
+        _snapshotUpdateHooks.push_back(&hook);
     }
 }
 
@@ -146,16 +143,16 @@ MetricManager::removeMetricUpdateHook(UpdateHook& hook)
 {
     std::lock_guard sync(_waiter);
     if (hook.is_periodic()) {
-        for (auto it = _snapshotUpdateHooks.begin(); it != _snapshotUpdateHooks.end(); it++) {
+        for (auto it = _periodicUpdateHooks.begin(); it != _periodicUpdateHooks.end(); it++) {
             if (*it == &hook) {
-                _snapshotUpdateHooks.erase(it);
+                _periodicUpdateHooks.erase(it);
                 return;
             }
         }
     } else {
-        for (auto it = _periodicUpdateHooks.begin(); it != _periodicUpdateHooks.end(); it++) {
+        for (auto it = _snapshotUpdateHooks.begin(); it != _snapshotUpdateHooks.end(); it++) {
             if (*it == &hook) {
-                _periodicUpdateHooks.erase(it);
+                _snapshotUpdateHooks.erase(it);
                 return;
             }
         }

@@ -136,7 +136,7 @@ struct MetricsUpdateHook : metrics::UpdateHook
 {
     Proton &self;
     explicit MetricsUpdateHook(Proton &s)
-        : metrics::UpdateHook("proton-hook"),
+        : metrics::UpdateHook("proton-hook", 5s),
           self(s)
     {}
     void updateMetrics(const MetricLockGuard &guard) override {
