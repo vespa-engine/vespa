@@ -103,7 +103,7 @@ private:
     std::vector<std::shared_ptr<MetricSnapshotSet>> _snapshots;
     std::shared_ptr<MetricSnapshot> _totalMetrics;
     std::unique_ptr<Timer> _timer;
-    std::atomic<time_t> _lastProcessedTime;
+    std::atomic<time_point> _lastProcessedTime;
     // Should be added to config, but wont now due to problems with
     // upgrading
     bool _snapshotUnsetMetrics;
@@ -258,7 +258,7 @@ public:
     void checkMetricsAltered(const MetricLockGuard &);
 
     /** Used by unit tests to verify that we have processed for a given time. */
-    time_t getLastProcessedTime() const { return _lastProcessedTime.load(std::memory_order_relaxed); }
+    time_point getLastProcessedTime() const { return _lastProcessedTime.load(std::memory_order_relaxed); }
 
     /** Used by unit tests to wake waiters after altering time. */
     void timeChangedNotification() const;

@@ -384,11 +384,11 @@ struct BriefValuePrinter : public MetricVisitor {
     }
 };
 
-bool waitForTimeProcessed(const MetricManager& mm, time_t processtime, uint32_t timeout = 120)
+bool waitForTimeProcessed(const MetricManager& mm, vespalib::duration processtime, uint32_t timeout = 120)
 {
     uint32_t lastchance = time(0) + timeout;
     while (time(0) < lastchance) {
-        if (mm.getLastProcessedTime() >= processtime) return true;
+        if (mm.getLastProcessedTime() >= time_point(processtime)) return true;
         mm.timeChangedNotification();
         std::this_thread::sleep_for(10ms);
     }
@@ -447,8 +447,8 @@ std::string dumpAllSnapshots(const MetricManager& mm, const std::string& consume
 
 #define ASSERT_PROCESS_TIME(mm, time) \
 { \
-    LOG(info, "Waiting for processed time %u.", time); \
-    bool gotToCorrectProgress = waitForTimeProcessed(mm, time); \
+    LOG(info, "Waiting for processed time %s.", vespalib::to_string(time_point(time)).c_str()); \
+    bool gotToCorrectProgress = waitForTimeProcessed(mm, (time)); \
     if (!gotToCorrectProgress) \
         FAIL() << "Failed to get to processed time within timeout"; \
 }
@@ -491,7 +491,7 @@ TEST_F(MetricManagerTest, test_snapshots)
                   "\n" + visitor.toString()) << (consumerSpec ? consumerSpec->toString() : "Non-existing consumer");
     }
     // Initially, there should be no metrics logged
-    ASSERT_PROCESS_TIME(mm, 1000);
+    ASSERT_PROCESS_TIME(mm, 1000s);
     ASSERT_VALUES(mm, 5 * 60s, "");
 
     // Adding metrics done in first five minutes.
@@ -502,7 +502,7 @@ TEST_F(MetricManagerTest, test_snapshots)
     mySet.val10.a.val2.addValue(2);
     mySet.val10.b.val1.addValue(1);
     timer.add_time(5 * 60);
-    ASSERT_PROCESS_TIME(mm, 1000 + 5 * 60);
+    ASSERT_PROCESS_TIME(mm, 1000s + 5 * 60s);
     ASSERT_VALUES(mm,  5 * 60s, "2,4,4,1,7,9,1,1,8,2,10");
     ASSERT_VALUES(mm, 60 * 60s, "");
     ASSERT_VALUES(mm,  0 * 60s, "2,4,4,1,7,9,1,1,8,2,10");
@@ -516,7 +516,7 @@ TEST_F(MetricManagerTest, test_snapshots)
     mySet.val10.a.val2.addValue(3);
     mySet.val10.b.val1.addValue(2);
     timer.add_time(5 * 60);
-    ASSERT_PROCESS_TIME(mm, 1000 + 5 * 60 * 2);
+    ASSERT_PROCESS_TIME(mm, 1000s + 5 * 60 * 2s);
     ASSERT_VALUES(mm,  5 * 60s, "4,5,5,1,8,11,2,2,10,3,13");
     ASSERT_VALUES(mm, 60 * 60s, "");
     ASSERT_VALUES(mm,  0 * 60s, "4,5,5,2,8,11,2,2,10,3,13");
@@ -524,7 +524,7 @@ TEST_F(MetricManagerTest, test_snapshots)
     // Adding another five minute period where nothing have happened.
     // Metric for last 5 minutes should be 0.
     timer.add_time(5 * 60);
-    ASSERT_PROCESS_TIME(mm, 1000 + 5 * 60 * 3);
+    ASSERT_PROCESS_TIME(mm, 1000s + 5 * 60s * 3);
     ASSERT_VALUES(mm,  5 * 60s, "0,0,0,0,0,0,0,0,0,0,0");
     ASSERT_VALUES(mm, 60 * 60s, "");
     ASSERT_VALUES(mm,  0 * 60s, "4,5,5,2,8,11,2,2,10,3,13");
@@ -535,7 +535,7 @@ TEST_F(MetricManagerTest, test_snapshots)
     for (uint32_t i=0; i<9; ++i) { // 9 x 5 minutes. Avoid snapshot bumping
                                    // due to taking snapshots in the past
         timer.add_time(5 * 60);
-        ASSERT_PROCESS_TIME(mm, 1000 + 5 * 60 * (4 + i));
+        ASSERT_PROCESS_TIME(mm, 1000s + 5 * 60s * (4 + i));
     }
     ASSERT_VALUES(mm,  5 * 60s, "0,0,0,0,0,0,0,0,0,0,0");
     ASSERT_VALUES(mm, 60 * 60s, "6,5,5,2,8,11,2,2,10,3,13");
@@ -1005,46 +1005,46 @@ TEST_F(MetricManagerTest, test_update_hooks)
     // After 5 seconds the short ones should get another.
 
     timer.set_time(1006);
-    waitForTimeProcessed(mm, 1006);
+    waitForTimeProcessed(mm, 1006s);
 
     // After 4 more seconds the short ones should get another
     // since last update was a second late. (Stable periods, process time
     // should not affect how often they are updated)
 
     timer.set_time(1010);
-    waitForTimeProcessed(mm, 1010);
+    waitForTimeProcessed(mm, 1010s);
 
     // Bumping considerably ahead, such that next update is in the past,
     // we should only get one update called in this period.
 
     timer.set_time(1200);
-    waitForTimeProcessed(mm, 1200);
+    waitForTimeProcessed(mm, 1200s);
 
     // No updates at this time.
     timer.set_time(1204);
-    waitForTimeProcessed(mm, 1204);
+    waitForTimeProcessed(mm, 1204s);
 
     // Give all hooks an update
     mm.updateMetrics();
 
     // Last update should not have interfered with periods
     timer.set_time(1205);
-    waitForTimeProcessed(mm, 1205);
+    waitForTimeProcessed(mm, 1205s);
 
     // Time is just ahead of a snapshot.
     timer.set_time(1299);
-    waitForTimeProcessed(mm, 1299);
+    waitForTimeProcessed(mm, 1299s);
 
     // At time 1300 we are at a 5 minute snapshot bump
     // All hooks should thus get an update. The one with matching period
     // should only get one
     timer.set_time(1300);
-    waitForTimeProcessed(mm, 1300);
+    waitForTimeProcessed(mm, 1300s);
 
     // The snapshot time currently doesn't count for the metric at period
     // 400. It will get an event at this time.
     timer.set_time(1450);
-    waitForTimeProcessed(mm, 1450);
+    waitForTimeProcessed(mm, 1450s);
 
     std::string expected(
         "Running init\n"

@@ -83,7 +83,7 @@ MetricManager::MetricManager(std::unique_ptr<Timer> timer)
       _snapshots(),
       _totalMetrics(std::make_shared<MetricSnapshot>("Empty metrics before init", 0s, _activeMetrics.getMetrics(), false)),
       _timer(std::move(timer)),
-      _lastProcessedTime(0),
+      _lastProcessedTime(),
       _snapshotUnsetMetrics(false),
       _consumerConfigChanged(false),
       _metricManagerMetrics("metricmanager", {}, "Metrics for the metric manager upkeep tasks", nullptr),
@@ -185,7 +185,7 @@ MetricManager::init(const config::ConfigUri & uri, bool startThread)
         // Wait for first iteration to have completed, such that it is safe
         // to access snapshots afterwards.
         MetricLockGuard sync(_waiter);
-        while (_lastProcessedTime.load(std::memory_order_relaxed) == 0) {
+        while (_lastProcessedTime.load(std::memory_order_relaxed) == time_point()) {
             _cond.wait_for(sync, 1ms);
         }
     } else {
@@ -793,9 +793,9 @@ MetricManager::tick(const MetricLockGuard & guard, time_point currentTime)
         // Do snapshotting if it is time
     if (nextWorkTime <= currentTime) takeSnapshots(guard, nextWorkTime);
 
-    _lastProcessedTime.store(count_s((nextWorkTime <= currentTime ? nextWorkTime : currentTime).time_since_epoch()), std::memory_order_relaxed);
-    LOG(spam, "Worker thread done with processing for time %" PRIu64 ".",
-        static_cast<uint64_t>(_lastProcessedTime.load(std::memory_order_relaxed)));
+    _lastProcessedTime.store((nextWorkTime <= currentTime ? nextWorkTime : currentTime), std::memory_order_relaxed);
+    LOG(spam, "Worker thread done with processing for time %s.",
+        to_string(_lastProcessedTime.load(std::memory_order_relaxed)).c_str());
     time_point next = _snapshots[0]->getNextWorkTime();
     next = std::min(next, nextUpdateHookTime);
     return next;
