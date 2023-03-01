@@ -1,8 +1,10 @@
 package com.yahoo.vespa.hosted.provision.autoscale;
 
 import com.yahoo.config.provision.Capacity;
+import com.yahoo.config.provision.ClusterInfo;
 import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.config.provision.IntRange;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.vespa.hosted.provision.applications.BcpGroupInfo;
 import com.yahoo.vespa.hosted.provision.provisioning.DynamicProvisioningTester;
@@ -150,6 +152,28 @@ public class AutoscalingUsingBcpGroupInfoTest {
         fixture.loader().addCpuMeasurements(0.7f, 10);
         fixture.tester().assertResources("Scaling up cpu using bcp group cpu info",
                                          6, 1, 8.0, 16.0, 40.8,
+                                         fixture.autoscale());
+    }
+
+    @Test
+    public void test_autoscaling_with_bcp_deadline() {
+        var capacity = Capacity.from(new ClusterResources(2, 1,
+                                                          new NodeResources(1, 4, 10, 1, NodeResources.DiskSpeed.any)),
+                                     new ClusterResources(20, 1,
+                                                          new NodeResources(100, 1000, 1000, 1, NodeResources.DiskSpeed.any)),
+                                     IntRange.empty(), false, true, Optional.empty(),
+                                     new ClusterInfo.Builder().bcpDeadline(Duration.ofMinutes(60)).build());
+
+        var fixture = DynamicProvisioningTester.fixture()
+                                               .capacity(capacity)
+                                               .clusterType(ClusterSpec.Type.container).awsProdSetup(true).build();
+
+        // We can rescale within deadline - do not take BCP info into account
+        fixture.tester().clock().advance(Duration.ofDays(2));
+        fixture.store(new BcpGroupInfo(100, 1.1, 0.45));
+        fixture.loader().addCpuMeasurements(0.7f, 10);
+        fixture.tester().assertResources("No need for traffic shift headroom",
+                                         2, 1, 2.0, 16.0, 40.8,
                                          fixture.autoscale());
     }
 

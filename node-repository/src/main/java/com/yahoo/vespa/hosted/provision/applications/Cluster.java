@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.applications;
 
+import com.yahoo.config.provision.ClusterInfo;
 import com.yahoo.config.provision.IntRange;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterResources;
@@ -33,6 +34,7 @@ public class Cluster {
     private final boolean required;
     private final Autoscaling suggested;
     private final Autoscaling target;
+    private final ClusterInfo clusterInfo;
     private final BcpGroupInfo bcpGroupInfo;
 
     /** The maxScalingEvents last scaling events of this, sorted by increasing time (newest last) */
@@ -46,6 +48,7 @@ public class Cluster {
                    boolean required,
                    Autoscaling suggested,
                    Autoscaling target,
+                   ClusterInfo clusterInfo,
                    BcpGroupInfo bcpGroupInfo,
                    List<ScalingEvent> scalingEvents) {
         this.id = Objects.requireNonNull(id);
@@ -60,6 +63,7 @@ public class Cluster {
             this.target = target.withResources(Optional.empty()); // Delete illegal target
         else
             this.target = target;
+        this.clusterInfo = clusterInfo;
         this.bcpGroupInfo = Objects.requireNonNull(bcpGroupInfo);
         this.scalingEvents = List.copyOf(scalingEvents);
     }
@@ -105,6 +109,8 @@ public class Cluster {
         return true;
     }
 
+    public ClusterInfo clusterInfo() { return clusterInfo; }
+
     /** Returns info about the BCP group of clusters this belongs to. */
     public BcpGroupInfo bcpGroupInfo() { return bcpGroupInfo; }
 
@@ -119,19 +125,19 @@ public class Cluster {
     public Cluster withConfiguration(boolean exclusive, Capacity capacity) {
         return new Cluster(id, exclusive,
                            capacity.minResources(), capacity.maxResources(), capacity.groupSize(), capacity.isRequired(),
-                           suggested, target, bcpGroupInfo, scalingEvents);
+                           suggested, target, capacity.clusterInfo(), bcpGroupInfo, scalingEvents);
     }
 
     public Cluster withSuggested(Autoscaling suggested) {
-        return new Cluster(id, exclusive, min, max, groupSize, required, suggested, target, bcpGroupInfo, scalingEvents);
+        return new Cluster(id, exclusive, min, max, groupSize, required, suggested, target, clusterInfo, bcpGroupInfo, scalingEvents);
     }
 
     public Cluster withTarget(Autoscaling target) {
-        return new Cluster(id, exclusive, min, max, groupSize, required, suggested, target, bcpGroupInfo, scalingEvents);
+        return new Cluster(id, exclusive, min, max, groupSize, required, suggested, target, clusterInfo, bcpGroupInfo, scalingEvents);
     }
 
     public Cluster with(BcpGroupInfo bcpGroupInfo) {
-        return new Cluster(id, exclusive, min, max, groupSize, required, suggested, target, bcpGroupInfo, scalingEvents);
+        return new Cluster(id, exclusive, min, max, groupSize, required, suggested, target, clusterInfo, bcpGroupInfo, scalingEvents);
     }
 
     /** Add or update (based on "at" time) a scaling event */
@@ -145,7 +151,7 @@ public class Cluster {
             scalingEvents.add(scalingEvent);
 
         prune(scalingEvents);
-        return new Cluster(id, exclusive, min, max, groupSize, required, suggested, target, bcpGroupInfo, scalingEvents);
+        return new Cluster(id, exclusive, min, max, groupSize, required, suggested, target, clusterInfo, bcpGroupInfo, scalingEvents);
     }
 
     @Override
@@ -177,7 +183,7 @@ public class Cluster {
     public static Cluster create(ClusterSpec.Id id, boolean exclusive, Capacity requested) {
         return new Cluster(id, exclusive,
                            requested.minResources(), requested.maxResources(), requested.groupSize(), requested.isRequired(),
-                           Autoscaling.empty(), Autoscaling.empty(), BcpGroupInfo.empty(), List.of());
+                           Autoscaling.empty(), Autoscaling.empty(), requested.clusterInfo(), BcpGroupInfo.empty(), List.of());
     }
 
     /** The predicted time it will take to rescale this cluster. */

@@ -193,21 +193,26 @@ public class ClusterModel {
 
     /**
      * Returns the ideal load across the nodes of this such that each node will be at ideal load
-     * if one of  the nodes go down.
+     * if one of the nodes go down.
      */
     public Load idealLoad() {
         var ideal = new Load(idealCpuLoad(), idealMemoryLoad(), idealDiskLoad()).divide(redundancyAdjustment());
-        if (! cluster.bcpGroupInfo().isEmpty()) {
+        if ( !cluster.bcpGroupInfo().isEmpty() && cluster.bcpGroupInfo().queryRate() > 0) {
+            // Since we have little local information, use information about query cost in other groups
+
+            Load bcpGroupIdeal = adjustQueryDependentIdealLoadByBcpGroupInfo(ideal);
+
             // Do a weighted sum of the ideal "vote" based on local and bcp group info.
             // This avoids any discontinuities with a near-zero local query rate.
-            double localInformationWeight = cluster.bcpGroupInfo().queryRate() == 0
-                                            ? 1
-                                            : Math.min(1, averageQueryRate().orElse(0) /
-                                                          Math.min(queryRateGivingFullConfidence, cluster.bcpGroupInfo().queryRate()));
-            Load bcpGroupIdeal = adjustQueryDependentIdealLoadByBcpGroupInfo(ideal);
+            double localInformationWeight = Math.min(1, averageQueryRate().orElse(0) /
+                                                        Math.min(queryRateGivingFullConfidence, cluster.bcpGroupInfo().queryRate()));
             ideal = ideal.multiply(localInformationWeight).add(bcpGroupIdeal.multiply(1 - localInformationWeight));
         }
         return ideal;
+    }
+
+    private boolean canRescaleWithinBcpDeadline() {
+        return scalingDuration().minus(cluster.clusterInfo().bcpDeadline()).isNegative();
     }
 
     public Autoscaling.Metrics metrics() {
@@ -230,7 +235,9 @@ public class ClusterModel {
     private Load adjustQueryDependentIdealLoadByBcpGroupInfo(Load ideal) {
         double currentClusterTotalVcpuPerGroup = nodes.not().retired().first().get().resources().vcpu() * groupSize();
 
-        double targetQueryRateToHandle = cluster.bcpGroupInfo().queryRate() * cluster.bcpGroupInfo().growthRateHeadroom() * trafficShiftHeadroom();
+        double targetQueryRateToHandle = ( canRescaleWithinBcpDeadline() ? averageQueryRate().orElse(0)
+                                                                         : cluster.bcpGroupInfo().queryRate() )
+                                         * cluster.bcpGroupInfo().growthRateHeadroom() * trafficShiftHeadroom();
         double neededTotalVcpPerGroup = cluster.bcpGroupInfo().cpuCostPerQuery() * targetQueryRateToHandle / groupCount() +
                                         ( 1 - queryCpuFraction()) * idealCpuLoad() *
                                         (clusterSpec.type().isContainer() ? 1 : groupSize());
@@ -325,6 +332,7 @@ public class ClusterModel {
      */
     private double trafficShiftHeadroom() {
         if ( ! zone.environment().isProduction()) return 1;
+        if (canRescaleWithinBcpDeadline()) return 1;
         double trafficShiftHeadroom;
         if (application.status().maxReadShare() == 0) // No traffic fraction data
             trafficShiftHeadroom = 2.0; // assume we currently get half of the max possible share of traffic

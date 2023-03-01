@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.persistence;
 
+import com.yahoo.config.provision.ClusterInfo;
 import com.yahoo.config.provision.IntRange;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterResources;
@@ -20,6 +21,7 @@ import com.yahoo.vespa.hosted.provision.autoscale.Load;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -54,6 +56,8 @@ public class ApplicationSerializer {
     private static final String groupSizeKey = "groupSize";
     private static final String requiredKey = "required";
     private static final String suggestedKey = "suggested";
+    private static final String clusterInfoKey = "clusterInfo";
+    private static final String bcpDeadlineKey = "bcpDeadline";
     private static final String bcpGroupInfoKey = "bcpGroupInfo";
     private static final String queryRateKey = "queryRateKey";
     private static final String growthRateHeadroomKey = "growthRateHeadroomKey";
@@ -134,6 +138,8 @@ public class ApplicationSerializer {
         clusterObject.setBool(requiredKey, cluster.required());
         toSlime(cluster.suggested(), clusterObject.setObject(suggestedKey));
         toSlime(cluster.target(), clusterObject.setObject(targetKey));
+        if (! cluster.clusterInfo().isEmpty())
+            toSlime(cluster.clusterInfo(), clusterObject.setObject(clusterInfoKey));
         if (! cluster.bcpGroupInfo().isEmpty())
             toSlime(cluster.bcpGroupInfo(), clusterObject.setObject(bcpGroupInfoKey));
         scalingEventsToSlime(cluster.scalingEvents(), clusterObject.setArray(scalingEventsKey));
@@ -148,6 +154,7 @@ public class ApplicationSerializer {
                            clusterObject.field(requiredKey).asBool(),
                            autoscalingFromSlime(clusterObject.field(suggestedKey)),
                            autoscalingFromSlime(clusterObject.field(targetKey)),
+                           clusterInfoFromSlime(clusterObject.field(clusterInfoKey)),
                            bcpGroupInfoFromSlime(clusterObject.field(bcpGroupInfoKey)),
                            scalingEventsFromSlime(clusterObject.field(scalingEventsKey)));
     }
@@ -225,8 +232,18 @@ public class ApplicationSerializer {
                                metricsFromSlime(autoscalingObject.field(metricsKey)));
     }
 
+    private static void toSlime(ClusterInfo clusterInfo, Cursor clusterInfoObject) {
+        clusterInfoObject.setLong(bcpDeadlineKey, clusterInfo.bcpDeadline().toMinutes());
+    }
+
+    private static ClusterInfo clusterInfoFromSlime(Inspector clusterInfoObject) {
+        if ( ! clusterInfoObject.valid()) return ClusterInfo.empty();
+        ClusterInfo.Builder builder = new ClusterInfo.Builder();
+        builder.bcpDeadline(Duration.ofMinutes(clusterInfoObject.field(bcpDeadlineKey).asLong()));
+        return builder.build();
+    }
+
     private static void toSlime(BcpGroupInfo bcpGroupInfo, Cursor bcpGroupInfoObject) {
-        if (bcpGroupInfo.isEmpty()) return;
         bcpGroupInfoObject.setDouble(queryRateKey, bcpGroupInfo.queryRate());
         bcpGroupInfoObject.setDouble(growthRateHeadroomKey, bcpGroupInfo.growthRateHeadroom());
         bcpGroupInfoObject.setDouble(cpuCostPerQueryKey, bcpGroupInfo.cpuCostPerQuery());
