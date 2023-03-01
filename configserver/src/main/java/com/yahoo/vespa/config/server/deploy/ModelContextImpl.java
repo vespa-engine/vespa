@@ -247,7 +247,7 @@ public class ModelContextImpl implements ModelContext {
             this.queryDispatchWarmup = flagValue(source, appId, version, PermanentFlags.QUERY_DISPATCH_WARMUP);
             this.useRestrictedDataPlaneBindings = flagValue(source, appId, version, Flags.RESTRICT_DATA_PLANE_BINDINGS);
             this.heapPercentage = flagValue(source, appId, version, PermanentFlags.HEAP_SIZE_PERCENTAGE);
-            this.enableGlobalPhase = flagValue(source, appId, version, PermanentFlags.ENABLE_PUBLIC_SIGNUP_FLOW);
+            this.enableGlobalPhase = flagValue(source, appId, version, Flags.ENABLE_GLOBAL_PHASE);
         }
 
         @Override public int heapSizePercentage() { return heapPercentage; }
