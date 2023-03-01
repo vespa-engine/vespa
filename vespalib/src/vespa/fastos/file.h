@@ -10,7 +10,7 @@
 
 #pragma once
 
-#include <cstdint>
+#include <vespa/vespalib/util/time.h>
 #include <string>
 
 #define FASTOS_PREFIX(a) FastOS_##a
@@ -99,12 +99,6 @@ public:
     static void setDefaultFAdviseOptions(int options) { _defaultFAdviseOptions = options; }
     int getFAdviseOptions()                     const { return _fAdviseOptions; }
     void setFAdviseOptions(int options)               { _fAdviseOptions = options; }
-
-    /**
-     * Return path separator string. This will yield "/" on UNIX systems.
-     * @return pointer to path separator character string
-     */
-    static const char *GetPathSeparator() { return "/"; }
 
     /**
      * Constructor. A filename could be supplied at this point, or specified
@@ -344,12 +338,6 @@ public:
     int64_t getSize() const { return const_cast<FastOS_FileInterface *>(this)->GetSize(); }
 
     /**
-     * Return the time when file was last modified.
-     * @return time of last modification
-     */
-    virtual time_t GetModificationTime() = 0;
-
-    /**
      * Delete the file. This method requires that the file is
      * currently not opened.
      * @return Boolean success/failure
@@ -413,10 +401,6 @@ public:
 
     bool useSyncWrites() const { return _syncWritesEnabled; }
 
-    /**
-     * Set the write chunk size used in WriteBuf.
-     */
-    void setChunkSize(size_t chunkSize) { _chunkSize = chunkSize; }
     size_t getChunkSize() const { return _chunkSize; }
 
     /**
@@ -652,14 +636,12 @@ public:
  */
 class FastOS_DirectoryScanInterface
 {
-private:
-    FastOS_DirectoryScanInterface(const FastOS_DirectoryScanInterface&);
-    FastOS_DirectoryScanInterface& operator= (const FastOS_DirectoryScanInterface&);
-
 protected:
     std::string _searchPath;
 
 public:
+    FastOS_DirectoryScanInterface(const FastOS_DirectoryScanInterface&) = delete;
+    FastOS_DirectoryScanInterface& operator= (const FastOS_DirectoryScanInterface&) = delete;
 
     /**
      * Constructor.
@@ -675,13 +657,6 @@ public:
      * Frees operating system resources related to the directory scan.
      */
     virtual ~FastOS_DirectoryScanInterface();
-
-    /**
-     * Get search path.
-     * This is an internal copy of the path specified in the constructor.
-     * @return Search path string.
-     */
-    const char *GetSearchPath () { return _searchPath.c_str(); }
 
     /**
      * Read the next entry in the directory scan. Failure indicates
@@ -726,14 +701,6 @@ public:
      * @return    A pointer to the recently read directory entry.
      */
     virtual const char *GetName() = 0;
-
-    /**
-     * Check whether the creation of a directory scan succeeded or
-     * failed (e.g. due to resource constraints).
-     *
-     * return    True if the directory scan is valid.
-     */
-    virtual bool IsValidScan() const = 0;
 };
 
 #ifdef __linux__

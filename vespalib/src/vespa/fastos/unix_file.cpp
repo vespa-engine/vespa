@@ -344,21 +344,6 @@ FastOS_UNIX_File::GetSize()
     return fileSize;
 }
 
-
-time_t
-FastOS_UNIX_File::GetModificationTime()
-{
-    struct stat stbuf{};
-    assert(IsOpened());
-
-    int res = fstat(_filedes, &stbuf);
-    assert(res == 0);
-    (void) res;
-
-    return stbuf.st_mtime;
-}
-
-
 bool
 FastOS_UNIX_File::Delete(const char *name)
 {
@@ -580,11 +565,4 @@ FastOS_UNIX_DirectoryScan::GetName()
     assert(_dp != nullptr);
 
     return static_cast<const char *>(_dp->d_name);
-}
-
-
-bool
-FastOS_UNIX_DirectoryScan::IsValidScan() const
-{
-    return _dir != nullptr;
 }

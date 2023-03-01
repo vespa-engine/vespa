@@ -107,13 +107,6 @@ Fast_BufferedFile::Sync()
     return _file->Sync();
 }
 
-time_t
-Fast_BufferedFile::GetModificationTime()
-{
-    time_t retval = _file->GetModificationTime();
-    return retval;
-}
-
 void
 Fast_BufferedFile::EnableDirectIO()
 {

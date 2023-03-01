@@ -94,9 +94,8 @@ class ConfigFile
 {
     using SP = std::shared_ptr<ConfigFile>;
 
-    vespalib::string _name;
-    time_t _modTime;
-    std::vector<char> _content;
+    vespalib::string      _name;
+    std::vector<char>     _content;
 
 public:
     ConfigFile();
@@ -111,7 +110,6 @@ public:
 
 ConfigFile::ConfigFile()
     : _name(),
-      _modTime(0),
       _content()
 {
 }
@@ -120,7 +118,6 @@ ConfigFile::~ConfigFile() = default;
 
 ConfigFile::ConfigFile(const vespalib::string &name, const vespalib::string &fullName)
     : _name(name),
-      _modTime(0),
       _content()
 {
     FastOS_File file;
@@ -130,7 +127,6 @@ ConfigFile::ConfigFile(const vespalib::string &name, const vespalib::string &ful
     int64_t fileSize = file.getSize();
     _content.resize(fileSize);
     file.ReadBuf(_content.data(), fileSize);
-    _modTime = file.GetModificationTime();
 }
 
 nbostream &
@@ -138,7 +134,7 @@ ConfigFile::serialize(nbostream &stream) const
 {
     assert(strchr(_name.c_str(), '/') == nullptr);
     stream << _name;
-    stream << static_cast<int64_t>(_modTime);;
+    stream << int64_t(0ul);   // Used to be modtime => unused
     uint32_t sz = _content.size();
     stream << sz;
     stream.write(_content.data(), sz);
@@ -150,9 +146,8 @@ ConfigFile::deserialize(nbostream &stream)
 {
     stream >> _name;
     assert(strchr(_name.c_str(), '/') == nullptr);
-    int64_t modTime;
-    stream >> modTime;
-    _modTime = modTime;
+    int64_t unused_modTime;
+    stream >> unused_modTime;
     uint32_t sz;
     stream >> sz;
     _content.resize(sz);

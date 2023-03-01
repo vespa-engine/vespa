@@ -172,12 +172,7 @@ public:
      * Force completion of pending disk writes (flush cache).
      */
     [[nodiscard]] bool Sync() override;
-    /**
-     * Get the time the file was last modified.
-     *
-     * @return time_t The last modification time.
-     */
-    time_t GetModificationTime() override;
+
     /**
      * Turn on direct IO.
      */
