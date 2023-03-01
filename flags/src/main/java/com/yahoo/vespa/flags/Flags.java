@@ -281,13 +281,6 @@ public class Flags {
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
 
-    public static final UnboundBooleanFlag NOTIFICATION_DISPATCH_FLAG = defineFeatureFlag(
-            "dispatch-notifications", false,
-            List.of("enygaard"), "2022-05-02", "2023-03-01",
-            "Whether we should send notification for a given tenant",
-            "Takes effect immediately",
-            TENANT_ID);
-
     public static final UnboundBooleanFlag ENABLE_PROXY_PROTOCOL_MIXED_MODE = defineFeatureFlag(
             "enable-proxy-protocol-mixed-mode", true,
             List.of("tokle"), "2022-05-09", "2023-03-31",

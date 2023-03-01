@@ -329,6 +329,13 @@ public class PermanentFlags {
             ZONE_ID
     );
 
+    public static final UnboundBooleanFlag NOTIFICATION_DISPATCH_FLAG = defineFeatureFlag(
+            "dispatch-notifications", true,
+            "Whether we should send notification for a given tenant",
+            "Takes effect immediately",
+            TENANT_ID);
+
+
     private PermanentFlags() {}
 
     private static UnboundBooleanFlag defineFeatureFlag(

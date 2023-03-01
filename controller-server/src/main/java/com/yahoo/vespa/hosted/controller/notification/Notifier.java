@@ -9,6 +9,7 @@ import com.yahoo.text.Text;
 import com.yahoo.vespa.flags.FetchVector;
 import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.flags.Flags;
+import com.yahoo.vespa.flags.PermanentFlags;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.Mail;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.Mailer;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.MailerException;
@@ -76,7 +77,7 @@ public class Notifier {
     }
 
     private boolean dispatchEnabled(NotificationSource source) {
-        return Flags.NOTIFICATION_DISPATCH_FLAG.bindTo(flagSource)
+        return PermanentFlags.NOTIFICATION_DISPATCH_FLAG.bindTo(flagSource)
                 .with(FetchVector.Dimension.TENANT_ID, source.tenant().value())
                 .value();
     }

@@ -8,6 +8,7 @@ import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
+import com.yahoo.vespa.flags.PermanentFlags;
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockMailer;
 import com.yahoo.vespa.hosted.controller.integration.ZoneRegistryMock;
 import com.yahoo.vespa.hosted.controller.persistence.MockCuratorDb;
@@ -58,7 +59,7 @@ public class NotifierTest {
     @Test
     void dispatch() throws IOException {
         var mailer = new MockMailer();
-        var flagSource = new InMemoryFlagSource().withBooleanFlag(Flags.NOTIFICATION_DISPATCH_FLAG.id(), true);
+        var flagSource = new InMemoryFlagSource().withBooleanFlag(PermanentFlags.NOTIFICATION_DISPATCH_FLAG.id(), true);
         var notifier = new Notifier(curatorDb, new ZoneRegistryMock(SystemName.cd), mailer, flagSource);
 
         var notification = new Notification(Instant.now(), Notification.Type.testPackage, Notification.Level.warning,
