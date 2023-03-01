@@ -24,13 +24,13 @@ import java.util.regex.Pattern;
 class FunctionReference {
 
     private static final Pattern referencePattern =
-            Pattern.compile("rankingExpression\\(([a-zA-Z0-9_.]+)(@[a-f0-9]+\\.[a-f0-9]+)?\\)(\\.rankingScript)?");
+            Pattern.compile("rankingExpression\\(([a-zA-Z0-9_.]+)(@[a-f0-9]+[.a-f0-9]*)?\\)(\\.rankingScript)?");
     private static final Pattern externalReferencePattern =
-            Pattern.compile("rankingExpression\\(([a-zA-Z0-9_.]+)(@[a-f0-9]+\\.[a-f0-9]+)?\\)(\\.expressionName)?");
+            Pattern.compile("rankingExpression\\(([a-zA-Z0-9_.]+)(@[a-f0-9]+[.a-f0-9]*)?\\)(\\.expressionName)?");
     private static final Pattern argumentTypePattern =
-            Pattern.compile("rankingExpression\\(([a-zA-Z0-9_.]+)(@[a-f0-9]+\\.[a-f0-9]+)?\\)\\.([a-zA-Z0-9_]+)\\.type?");
+            Pattern.compile("rankingExpression\\(([a-zA-Z0-9_.]+)(@[a-f0-9]+[.a-f0-9]*)?\\)\\.([a-zA-Z0-9_]+)\\.type");
     private static final Pattern returnTypePattern =
-            Pattern.compile("rankingExpression\\(([a-zA-Z0-9_.]+)(@[a-f0-9]+\\.[a-f0-9]+)?\\)\\.type?");
+            Pattern.compile("rankingExpression\\(([a-zA-Z0-9_.]+)(@[a-f0-9]+[.a-f0-9]*)?\\)\\.type");
 
     /** The name of the function referenced */
     private final String name;

@@ -99,13 +99,17 @@ public class Model implements AutoCloseable {
             }
         }
         this.contextPrototypes = Map.copyOf(contextBuilder);
-        this.functions = List.copyOf(functions.values());
+        // Optimize free functions
+        this.functions = List.copyOf(functions.entrySet()
+                                     .stream()
+                                     .map(f -> optimize(f.getValue(),
+                                                        contextPrototypes.get(f.getKey().functionName())))
+                                     .collect(Collectors.toList()));
+
         this.publicFunctions = functions.values().stream()
                 .filter(f -> !f.getName().startsWith(INTERMEDIATE_OPERATION_FUNCTION_PREFIX)).toList();
 
-        // Optimize functions
-        this.referencedFunctions = Map.copyOf(referencedFunctions.entrySet().stream()
-                .collect(CustomCollectors.toLinkedMap(f -> f.getKey(), f -> optimize(f.getValue(), contextPrototypes.get(f.getKey().functionName())))));
+        this.referencedFunctions = Map.copyOf(referencedFunctions);
         this.closeActions = onnxModels.stream().map(o -> (Runnable)o::close).toList();
     }
 
