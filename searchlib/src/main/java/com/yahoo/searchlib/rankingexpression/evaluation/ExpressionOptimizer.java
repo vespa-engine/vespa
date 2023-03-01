@@ -32,9 +32,9 @@ import com.yahoo.searchlib.rankingexpression.evaluation.tensoroptimization.Tenso
  */
 public class ExpressionOptimizer {
 
-    private GBDTOptimizer gbdtOptimizer = new GBDTOptimizer();
-    private GBDTForestOptimizer gbdtForestOptimizer = new GBDTForestOptimizer();
-    private TensorOptimizer tensorOptimizer = new TensorOptimizer();
+    private final GBDTOptimizer gbdtOptimizer = new GBDTOptimizer();
+    private final GBDTForestOptimizer gbdtForestOptimizer = new GBDTForestOptimizer();
+    private final TensorOptimizer tensorOptimizer = new TensorOptimizer();
 
     /** Gets an optimizer instance used by this by class name, or null if the optimizer is not known */
     public Optimizer getOptimizer(Class<?> clazz) {

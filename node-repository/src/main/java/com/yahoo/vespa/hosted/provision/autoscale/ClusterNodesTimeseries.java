@@ -53,7 +53,7 @@ public class ClusterNodesTimeseries {
 
     public String description() {
         return "initial measurements: " + initialCount +
-               ", after warmpup: " + afterWarmupCount +
+               ", after warmup: " + afterWarmupCount +
                ", after stable: " + afterStableCount +
                ", final measurements: " + finalCount;
     }

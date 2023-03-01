@@ -42,14 +42,13 @@ public class NodeHealthTracker extends NodeRepositoryMaintainer {
 
     @Override
     protected double maintain() {
-        return updateActiveNodeDownState();
+        return updateNodeHealth();
     }
 
     /**
-     * If the node is down (see {@link #allDown}), and there is no "down" history record, we add it.
-     * Otherwise we remove any "down" history record.
+     * Update UP and DOWN node records for each node as they change.
      */
-    private double updateActiveNodeDownState() {
+    private double updateNodeHealth() {
         var attempts = new MutableInteger(0);
         var failures = new MutableInteger(0);
         NodeList activeNodes = nodeRepository().nodes().list(Node.State.active);
@@ -59,7 +58,7 @@ public class NodeHealthTracker extends NodeRepositoryMaintainer {
 
             // Already correct record, nothing to do
             boolean isDown = allDown(serviceInstances);
-            if (isDown == node.get().isDown()) return;
+            if (isDown == node.get().isDown() && isDown != node.get().isUp()) return;
 
             // Lock and update status
             ApplicationId owner = node.get().allocation().get().owner();
@@ -82,7 +81,7 @@ public class NodeHealthTracker extends NodeRepositoryMaintainer {
     }
 
     /**
-     * Returns true if the node is considered bad: All monitored services services are down.
+     * Returns true if the node is considered bad: All monitored services are down.
      * If a node remains bad for a long time, the NodeFailer will try to fail the node.
      */
     static boolean allDown(List<ServiceInstance> services) {
@@ -110,7 +109,7 @@ public class NodeHealthTracker extends NodeRepositoryMaintainer {
 
     /** Clear down record for node, if any */
     private void recordAsUp(Node node, Mutex lock) {
-        if (!node.isDown()) return; // already up: Don't change down timestamp
+        if (node.isUp()) return; // already up: Don't change up timestamp
         nodeRepository().nodes().write(node.upAt(clock().instant(), Agent.NodeHealthTracker), lock);
     }
 

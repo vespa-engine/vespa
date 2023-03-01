@@ -388,12 +388,20 @@ public final class Node implements Nodelike {
         return with(history.with(new History.Event(History.Event.Type.up, agent, instant)));
     }
 
-    /** Returns whether this node is down, according to its recorded 'down' and 'up' events */
+    /** Returns true if we have positive evidence that this node is down. */
     public boolean isDown() {
         Optional<Instant> downAt = history().event(History.Event.Type.down).map(History.Event::at);
         if (downAt.isEmpty()) return false;
 
         return !history().hasEventAfter(History.Event.Type.up, downAt.get());
+    }
+
+    /** Returns true if we have positive evidence that this node is up. */
+    public boolean isUp() {
+        Optional<Instant> upAt = history().event(History.Event.Type.up).map(History.Event::at);
+        if (upAt.isEmpty()) return false;
+
+        return !history().hasEventAfter(History.Event.Type.down, upAt.get());
     }
 
     /** Returns a copy of this with allocation set as specified. <code>node.state</code> is *not* changed. */
