@@ -3,12 +3,13 @@
 #pragma once
 
 #include <vespa/searchlib/queryeval/begin_and_end_id.h>
-#include <vespa/fastos/types.h>
 #include <mutex>
 #include <condition_variable>
 #include <atomic>
 #include <algorithm>
 #include <vector>
+
+#define VESPA_DLL_LOCAL  __attribute__ ((visibility("hidden")))
 
 namespace proton::matching {
 

@@ -20,6 +20,7 @@ import com.yahoo.search.Searcher;
 import com.yahoo.search.config.ClusterConfig;
 import com.yahoo.search.dispatch.Dispatcher;
 import com.yahoo.search.query.ParameterParser;
+import com.yahoo.search.ranking.GlobalPhaseRanker;
 import com.yahoo.search.result.ErrorMessage;
 import com.yahoo.search.schema.SchemaInfo;
 import com.yahoo.search.searchchain.Execution;
@@ -64,6 +65,8 @@ public class ClusterSearcher extends Searcher {
 
     private final VespaBackEndSearcher server;
     private final Executor executor;
+    private final GlobalPhaseRanker globalPhaseHelper;
+    private final boolean enableGlobalPhase;
 
     @Inject
     public ClusterSearcher(ComponentId id,
@@ -73,10 +76,12 @@ public class ClusterSearcher extends Searcher {
                            DocumentdbInfoConfig documentDbConfig,
                            SchemaInfo schemaInfo,
                            ComponentRegistry<Dispatcher> dispatchers,
+                           GlobalPhaseRanker globalPhaseHelper,
                            VipStatus vipStatus,
                            VespaDocumentAccess access) {
         super(id);
         this.executor = executor;
+        this.globalPhaseHelper = globalPhaseHelper;
         int searchClusterIndex = clusterConfig.clusterId();
         searchClusterName = clusterConfig.clusterName();
         QrSearchersConfig.Searchcluster searchClusterConfig = getSearchClusterConfigFromClusterName(qrsConfig, searchClusterName);
@@ -101,6 +106,7 @@ public class ClusterSearcher extends Searcher {
             server = searchDispatch(searchClusterIndex, searchClusterName, uniqueServerId,
                                     docSumParams, documentDbConfig, schemaInfo, dispatchers);
         }
+        enableGlobalPhase = searchClusterConfig.globalphase();
     }
 
     private static QrSearchersConfig.Searchcluster getSearchClusterConfigFromClusterName(QrSearchersConfig config, String name) {
@@ -159,7 +165,10 @@ public class ClusterSearcher extends Searcher {
         maxQueryCacheTimeout = DEFAULT_MAX_QUERY_CACHE_TIMEOUT;
         server = searcher;
         this.executor = executor;
+        this.globalPhaseHelper = null;
+        this.enableGlobalPhase = false;
     }
+
     /** Do not use, for internal testing purposes only. **/
     ClusterSearcher(Set<String> schemas) {
         this(schemas, null, null);
@@ -169,7 +178,7 @@ public class ClusterSearcher extends Searcher {
     public void fill(com.yahoo.search.Result result, String summaryClass, Execution execution) {
         Query query = result.getQuery();
 
-        VespaBackEndSearcher searcher = server;
+        Searcher searcher = server;
         if (searcher != null) {
             if (query.getTimeLeft() > 0) {
                 searcher.fill(result, summaryClass, execution);
@@ -190,7 +199,7 @@ public class ClusterSearcher extends Searcher {
     public Result search(Query query, Execution execution) {
         validateQueryTimeout(query);
         validateQueryCache(query);
-        VespaBackEndSearcher searcher = server;
+        Searcher searcher = server;
         if (searcher == null) {
             return new Result(query, ErrorMessage.createNoBackendsInService("Could not search"));
         }
@@ -228,8 +237,21 @@ public class ClusterSearcher extends Searcher {
         } else {
             String docType = schemas.iterator().next();
             query.getModel().setRestrict(docType);
-            return searcher.search(query, execution);
+            return perSchemaSearch(searcher, query, execution);
         }
+    }
+
+    private Result perSchemaSearch(Searcher searcher, Query query, Execution execution) {
+        Set<String> restrict = query.getModel().getRestrict();
+        if (restrict.size() != 1) {
+            throw new IllegalStateException("perSchemaSearch must always be called with 1 schema, got: " + restrict.size());
+        }
+        String schema = restrict.iterator().next();
+        Result result = searcher.search(query, execution);
+        if (globalPhaseHelper != null && enableGlobalPhase) {
+            globalPhaseHelper.process(query, result, schema);
+        }
+        return result;
     }
 
     private static void processResult(Query query, FutureTask<Result> task, Result mergedResult) {
@@ -248,12 +270,12 @@ public class ClusterSearcher extends Searcher {
         Set<String> schemas = resolveSchemas(query, execution.context().getIndexFacts());
         List<Query> queries = createQueries(query, schemas);
         if (queries.size() == 1) {
-            return searcher.search(queries.get(0), execution);
+            return perSchemaSearch(searcher, queries.get(0), execution);
         } else {
             Result mergedResult = new Result(query);
             List<FutureTask<Result>> pending = new ArrayList<>(queries.size());
             for (Query q : queries) {
-                FutureTask<Result> task = new FutureTask<>(() -> searcher.search(q, execution));
+                FutureTask<Result> task = new FutureTask<>(() -> perSchemaSearch(searcher, q, execution));
                 try {
                     executor.execute(task);
                     pending.add(task);

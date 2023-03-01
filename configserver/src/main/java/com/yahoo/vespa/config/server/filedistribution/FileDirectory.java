@@ -23,6 +23,7 @@ import java.nio.channels.FileChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.time.Clock;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.logging.Level;
@@ -153,6 +154,8 @@ public class FileDirectory extends AbstractComponent {
             return true;
         }
 
+        // update last modified time so that maintainer deleting unused file references considers this as recently used
+        existingFile.setLastModified(Clock.systemUTC().instant().toEpochMilli());
         log.log(Level.FINE, "Directory for file reference '" + fileReference.value() + "' already exists and has all content");
         return false;
     }

@@ -464,6 +464,7 @@ public class ClusterSearcherTestCase {
                                    documentDbConfig.build(),
                                    new SchemaInfo(List.of(schema.build()), Map.of()),
                                    dispatchers,
+                                   null,
                                    vipStatus,
                                    null);
     }

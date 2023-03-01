@@ -67,8 +67,8 @@ public:
 
     struct Timer {
         virtual ~Timer() = default;
-        virtual time_t getTime() const;
-        virtual time_t getTimeInMilliSecs() const { return getTime() * 1000; }
+        virtual time_point getTime() const;
+        time_point getTimeInMilliSecs() const { return getTime(); }
     };
 
     /**
@@ -88,8 +88,7 @@ public:
             return (includedMetrics.find(m.getPath()) != includedMetrics.end());
         }
 
-        void print(std::ostream& out, bool verbose,
-                   const std::string& indent) const override;
+        void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 
         void addMemoryUsage(MemoryConsumption&) const;
     };
@@ -126,7 +125,8 @@ private:
     bool stop_requested() const { return _stop_requested.load(std::memory_order_relaxed); }
     
 public:
-    MetricManager(std::unique_ptr<Timer> timer = std::make_unique<Timer>());
+    MetricManager();
+    MetricManager(std::unique_ptr<Timer> timer);
     ~MetricManager();
 
     void stop();
@@ -232,19 +232,16 @@ public:
     }
 
     /** While accessing the total metrics you should have the metric lock. */
-    const MetricSnapshot& getTotalMetricSnapshot(const MetricLockGuard& l) const
-    {
+    const MetricSnapshot& getTotalMetricSnapshot(const MetricLockGuard& l) const {
         assertMetricLockLocked(l);
         return *_totalMetrics;
     }
     /** While accessing snapshots you should have the metric lock. */
-    const MetricSnapshot& getMetricSnapshot(
-            const MetricLockGuard&,
-            uint32_t period, bool getInProgressSet = false) const;
-    const MetricSnapshotSet& getMetricSnapshotSet(
-            const MetricLockGuard&, uint32_t period) const;
-    bool hasTemporarySnapshot(const MetricLockGuard& l, uint32_t period) const
-        { return getMetricSnapshotSet(l, period).hasTemporarySnapshot(); }
+    const MetricSnapshot& getMetricSnapshot( const MetricLockGuard& guard, uint32_t period) const {
+        return getMetricSnapshot(guard, period, false);
+    }
+    const MetricSnapshot& getMetricSnapshot( const MetricLockGuard&, uint32_t period, bool getInProgressSet) const;
+    const MetricSnapshotSet& getMetricSnapshotSet(const MetricLockGuard&, uint32_t period) const;
 
     std::vector<uint32_t> getSnapshotPeriods(const MetricLockGuard& l) const;
 

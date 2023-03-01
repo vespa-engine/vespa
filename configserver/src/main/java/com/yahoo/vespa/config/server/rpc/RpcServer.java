@@ -406,7 +406,7 @@ public class RpcServer implements Runnable, ConfigActivationListener, TenantList
             metrics.incUnknownHostRequests();
             trace.trace(TRACELEVEL, msg);
             log.log(Level.WARNING, msg);
-            return null;
+            return GetConfigContext.empty();
         }
         RequestHandler handler = requestHandler.get();
         ApplicationId applicationId = handler.resolveApplicationId(request.getClientHostName());

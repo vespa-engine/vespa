@@ -52,8 +52,7 @@ namespace {
     {
         framework::Clock& _clock;
         explicit MetricClock(framework::Clock& c) : _clock(c) {}
-        [[nodiscard]] time_t getTime() const override { return vespalib::count_s(_clock.getMonotonicTime().time_since_epoch()); }
-        [[nodiscard]] time_t getTimeInMilliSecs() const override { return vespalib::count_ms(_clock.getMonotonicTime().time_since_epoch()); }
+        [[nodiscard]] metrics::time_point getTime() const override { return _clock.getSystemTime(); }
     };
 }
 
@@ -85,10 +84,7 @@ void MetricsTest::SetUp() {
         _metricManager->registerMetric(guard, *_topSet);
     }
 
-    _metricsConsumer = std::make_unique<StatusMetricConsumer>(
-            _node->getComponentRegister(),
-            *_metricManager,
-            "status");
+    _metricsConsumer = std::make_unique<StatusMetricConsumer>(_node->getComponentRegister(), *_metricManager, "status");
 
     _filestorMetrics = std::make_shared<FileStorMetrics>();
     _filestorMetrics->initDiskMetrics(1, 1);

@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.provision.maintenance;
 
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.ApplicationLockException;
 import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Deployer;
@@ -47,27 +48,30 @@ public class AutoscalingMaintainer extends NodeRepositoryMaintainer {
     @Override
     protected double maintain() {
         if ( ! nodeRepository().nodes().isWorking()) return 0.0;
+        if (nodeRepository().zone().environment().isTest()) return 1.0;
 
-        if ( ! nodeRepository().zone().environment().isAnyOf(Environment.dev, Environment.perf, Environment.prod)) return 1.0;
-
-        activeNodesByApplication().forEach(this::autoscale);
-        return 1.0;
+        int attempts = 0;
+        int failures = 0;
+        for (var applicationNodes : activeNodesByApplication().entrySet()) {
+            for (var clusterNodes : nodesByCluster(applicationNodes.getValue()).entrySet()) {
+                attempts++;
+                if ( ! autoscale(applicationNodes.getKey(), clusterNodes.getKey()))
+                    failures++;
+            }
+        }
+        return asSuccessFactor(attempts, failures);
     }
 
-    private void autoscale(ApplicationId application, NodeList applicationNodes) {
-        try {
-            nodesByCluster(applicationNodes).forEach((clusterId, clusterNodes) -> autoscale(application, clusterId));
-        }
-        catch (IllegalArgumentException e) {
-            throw new IllegalArgumentException("Illegal arguments for " + application, e);
-        }
-    }
-
-    private void autoscale(ApplicationId applicationId, ClusterSpec.Id clusterId) {
+    /**
+     * Autoscales the given cluster.
+     *
+     * @return true if an autoscaling decision was made or nothing should be done, false if there was an error
+     */
+    private boolean autoscale(ApplicationId applicationId, ClusterSpec.Id clusterId) {
         try (var lock = nodeRepository().applications().lock(applicationId)) {
             Optional<Application> application = nodeRepository().applications().get(applicationId);
-            if (application.isEmpty()) return;
-            if (application.get().cluster(clusterId).isEmpty()) return;
+            if (application.isEmpty()) return true;
+            if (application.get().cluster(clusterId).isEmpty()) return true;
             Cluster cluster = application.get().cluster(clusterId).get();
 
             NodeList clusterNodes = nodeRepository().nodes().list(Node.State.active).owner(applicationId).cluster(clusterId);
@@ -79,7 +83,7 @@ public class AutoscalingMaintainer extends NodeRepositoryMaintainer {
             Autoscaling autoscaling = null;
             if (cluster.target().resources().isEmpty() || current.equals(cluster.target().resources().get())) {
                 autoscaling = autoscaler.autoscale(application.get(), cluster, clusterNodes);
-                if ( ! autoscaling.isEmpty()) // Ignore empties we'll get from servers recently started
+                if ( autoscaling.isPresent() || cluster.target().isEmpty()) // Ignore empty from recently started servers
                     cluster = cluster.withTarget(autoscaling);
             }
 
@@ -94,6 +98,13 @@ public class AutoscalingMaintainer extends NodeRepositoryMaintainer {
                     logAutoscaling(current, autoscaling.resources().get(), applicationId, clusterNodes.not().retired());
                 }
             }
+            return true;
+        }
+        catch (ApplicationLockException e) {
+            return false;
+        }
+        catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("Illegal arguments for " + applicationId + " cluster " + clusterId, e);
         }
     }
 

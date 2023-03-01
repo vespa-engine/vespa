@@ -3,10 +3,8 @@
 #pragma once
 
 #include "bitword.h"
-#include <memory>
 #include <vespa/vespalib/util/alloc.h>
 #include <vespa/vespalib/util/atomic.h>
-#include <vespa/fastos/types.h>
 #include <algorithm>
 #include <cassert>
 

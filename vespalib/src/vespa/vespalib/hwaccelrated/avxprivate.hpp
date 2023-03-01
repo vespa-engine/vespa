@@ -3,7 +3,6 @@
 #pragma once
 
 #include "private_helpers.hpp"
-#include <vespa/fastos/types.h>
 
 namespace vespalib::hwaccelrated::avx {
 

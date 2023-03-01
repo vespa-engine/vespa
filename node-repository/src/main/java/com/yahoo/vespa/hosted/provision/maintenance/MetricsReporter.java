@@ -267,13 +267,20 @@ public class MetricsReporter extends NodeRepositoryMaintainer {
     }
 
     private void updateNodeCountMetrics(NodeList nodes) {
-        Map<State, List<Node>> nodesByState = nodes.nodeType(NodeType.tenant).asList().stream()
-                                                   .collect(Collectors.groupingBy(Node::state));
+        var nodesByState = nodes.nodeType(NodeType.tenant)
+                .asList().stream()
+                .collect(Collectors.groupingBy(Node::state));
+
+        var hostsByState = nodes.nodeType(NodeType.host)
+                .asList().stream()
+                .collect(Collectors.groupingBy(Node::state));
 
         // Count per state
         for (State state : State.values()) {
-            List<Node> nodesInState = nodesByState.getOrDefault(state, List.of());
-            metric.set("hostedVespa." + state.name() + "Hosts", nodesInState.size(), null);
+            var nodesInState = nodesByState.getOrDefault(state, List.of());
+            var hostsInState = hostsByState.getOrDefault(state, List.of());
+            metric.set("hostedVespa." + state.name() + "Nodes", nodesInState.size(), null);
+            metric.set("hostedVespa." + state.name() + "Hosts", hostsInState.size(), null);
         }
     }
 

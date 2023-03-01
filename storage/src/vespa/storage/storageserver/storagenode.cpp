@@ -33,34 +33,36 @@ namespace storage {
 
 namespace {
 
-    using vespalib::getLastErrorString;
+using vespalib::getLastErrorString;
 
-    void writePidFile(const vespalib::string& pidfile)
-    {
-        ssize_t rv = -1;
-        vespalib::string mypid = vespalib::make_string("%d\n", getpid());
-        size_t lastSlash = pidfile.rfind('/');
-        if (lastSlash != vespalib::string::npos) {
-            std::filesystem::create_directories(std::filesystem::path(pidfile.substr(0, lastSlash)));
-        }
-        int fd = open(pidfile.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0644);
-        if (fd != -1) {
-            rv = write(fd, mypid.c_str(), mypid.size());
-            close(fd);
-        }
-        if (rv < 1) {
-            LOG(warning, "Failed to write pidfile '%s': %s",
-                pidfile.c_str(), getLastErrorString().c_str());
-        }
+void
+writePidFile(const vespalib::string& pidfile)
+{
+    ssize_t rv = -1;
+    vespalib::string mypid = vespalib::make_string("%d\n", getpid());
+    size_t lastSlash = pidfile.rfind('/');
+    if (lastSlash != vespalib::string::npos) {
+        std::filesystem::create_directories(std::filesystem::path(pidfile.substr(0, lastSlash)));
     }
+    int fd = open(pidfile.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0644);
+    if (fd != -1) {
+        rv = write(fd, mypid.c_str(), mypid.size());
+        close(fd);
+    }
+    if (rv < 1) {
+        LOG(warning, "Failed to write pidfile '%s': %s",
+            pidfile.c_str(), getLastErrorString().c_str());
+    }
+}
 
-    void removePidFile(const vespalib::string& pidfile)
-    {
-        if (unlink(pidfile.c_str()) != 0) {
-            LOG(warning, "Failed to delete pidfile '%s': %s",
-                pidfile.c_str(), getLastErrorString().c_str());
-        }
+void
+removePidFile(const vespalib::string& pidfile)
+{
+    if (unlink(pidfile.c_str()) != 0) {
+        LOG(warning, "Failed to delete pidfile '%s': %s",
+            pidfile.c_str(), getLastErrorString().c_str());
     }
+}
 
 } // End of anonymous namespace
 
@@ -429,7 +431,8 @@ StorageNode::shutdown()
     LOG(debug, "Done shutting down node");
 }
 
-void StorageNode::configure(std::unique_ptr<StorServerConfig> config) {
+void
+StorageNode::configure(std::unique_ptr<StorServerConfig> config) {
     log_config_received(*config);
     // When we get config, we try to grab the config lock to ensure noone
     // else is doing configuration work, and then we write the new config
@@ -445,7 +448,8 @@ void StorageNode::configure(std::unique_ptr<StorServerConfig> config) {
     }
 }
 
-void StorageNode::configure(std::unique_ptr<UpgradingConfig> config) {
+void
+StorageNode::configure(std::unique_ptr<UpgradingConfig> config) {
     log_config_received(*config);
     {
         std::lock_guard configLockGuard(_configLock);
@@ -457,7 +461,8 @@ void StorageNode::configure(std::unique_ptr<UpgradingConfig> config) {
     }
 }
 
-void StorageNode::configure(std::unique_ptr<StorDistributionConfig> config) {
+void
+StorageNode::configure(std::unique_ptr<StorDistributionConfig> config) {
     log_config_received(*config);
     {
         std::lock_guard configLockGuard(_configLock);
@@ -486,7 +491,8 @@ StorageNode::configure(std::unique_ptr<document::config::DocumenttypesConfig> co
     }
 }
 
-void StorageNode::configure(std::unique_ptr<BucketspacesConfig> config) {
+void
+StorageNode::configure(std::unique_ptr<BucketspacesConfig> config) {
     log_config_received(*config);
     {
         std::lock_guard configLockGuard(_configLock);

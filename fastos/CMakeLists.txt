@@ -4,5 +4,4 @@ vespa_define_module(
     src/vespa/fastos
 
     TESTS
-    src/tests
 )

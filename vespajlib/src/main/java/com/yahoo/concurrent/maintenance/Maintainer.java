@@ -93,7 +93,7 @@ public abstract class Maintainer implements Runnable {
      *
      * @return the degree to which the run was successful - a number between 0 (no success), to 1 (complete success).
      *         Note that this indicates whether something is wrong, so e.g if the call did nothing because it should do
-     *         nothing,  1.0 should be returned.
+     *         nothing, 1.0 should be returned.
      */
     protected abstract double maintain();
 
