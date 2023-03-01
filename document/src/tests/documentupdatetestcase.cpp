@@ -1,14 +1,17 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/document/test/fieldvalue_helpers.h>
-#include <vespa/document/base/testdocman.h>
+#include <vespa/document/annotation/spanlist.h>
 #include <vespa/document/base/exceptions.h>
-#include <vespa/document/datatype/tensor_data_type.h>
+#include <vespa/document/base/testdocman.h>
 #include <vespa/document/datatype/documenttype.h>
+#include <vespa/document/datatype/tensor_data_type.h>
 #include <vespa/document/fieldvalue/fieldvalues.h>
 #include <vespa/document/fieldvalue/tensorfieldvalue.h>
 #include <vespa/document/repo/configbuilder.h>
 #include <vespa/document/repo/documenttyperepo.h>
+#include <vespa/document/repo/fixedtyperepo.h>
+#include <vespa/document/serialization/vespadocumentdeserializer.h>
 #include <vespa/document/serialization/vespadocumentserializer.h>
 #include <vespa/document/update/addvalueupdate.h>
 #include <vespa/document/update/arithmeticvalueupdate.h>
@@ -26,8 +29,8 @@
 #include <vespa/document/util/bytebuffer.h>
 #include <vespa/eval/eval/simple_value.h>
 #include <vespa/eval/eval/tensor_spec.h>
-#include <vespa/eval/eval/value.h>
 #include <vespa/eval/eval/test/value_compare.h>
+#include <vespa/eval/eval/value.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/util/exception.h>
 #include <vespa/vespalib/util/exceptions.h>
@@ -1327,6 +1330,70 @@ TEST(DocumentUpdateTest, array_element_update_for_invalid_index_is_ignored)
 
     auto result_array = f.doc->getAs<ArrayFieldValue>(f.array_field);
     EXPECT_EQ(array_value, *result_array);
+}
+
+struct UpdateToEmptyDocumentFixture {
+    std::unique_ptr<DocumentTypeRepo> repo;
+    const DocumentType& doc_type;
+    FixedTypeRepo fixed_repo;
+
+    UpdateToEmptyDocumentFixture()
+        : repo(make_repo()),
+          doc_type(*repo->getDocumentType("test")),
+          fixed_repo(*repo, doc_type)
+    {
+    }
+
+    std::unique_ptr<DocumentTypeRepo> make_repo() {
+        config_builder::DocumenttypesConfigBuilderHelper builder;
+        builder.document(222, "test",
+                         Struct("test.header").addField("text", DataType::T_STRING),
+                         Struct("test.body"));
+        return std::make_unique<DocumentTypeRepo>(builder.config());
+    }
+
+    Document::UP make_empty_doc() {
+        vespalib::nbostream stream;
+        {
+            Document doc(doc_type, DocumentId("id:test:test::0"));
+            VespaDocumentSerializer serializer(stream);
+            serializer.write(doc);
+        }
+        // This simulates that the document is read from e.g. the document store
+        return std::make_unique<Document>(*repo, stream);
+    }
+
+    DocumentUpdate::UP make_update() {
+        auto text = std::make_unique<StringFieldValue>("hello world");
+        auto span_list_up = std::make_unique<SpanList>();
+        auto span_list = span_list_up.get();
+        auto tree = std::make_unique<SpanTree>("my_span_tree", std::move(span_list_up));
+        tree->annotate(span_list->add(std::make_unique<Span>(0, 5)), *AnnotationType::TERM);
+        tree->annotate(span_list->add(std::make_unique<Span>(6, 3)), *AnnotationType::TERM);
+        StringFieldValue::SpanTrees trees;
+        trees.push_back(std::move(tree));
+        text->setSpanTrees(trees, fixed_repo);
+
+        auto result = std::make_unique<DocumentUpdate>(*repo, doc_type, DocumentId("id:test:test::0"));
+        result->addUpdate(FieldUpdate(doc_type.getField("text"))
+                                  .addUpdate(std::make_unique<AssignValueUpdate>(std::move(text))));
+        return result;
+    }
+};
+
+TEST(DocumentUpdateTest, string_field_annotations_can_be_deserialized_after_assign_update_to_empty_document)
+{
+    UpdateToEmptyDocumentFixture f;
+    auto doc = f.make_empty_doc();
+    auto update = f.make_update();
+    update->applyTo(*doc);
+    auto fv = doc->getValue("text");
+    auto& text = dynamic_cast<StringFieldValue&>(*fv);
+    // This uses both the DocumentTypeRepo and DocumentType in order to deserialize the annotations.
+    auto tree = text.getSpanTrees();
+    EXPECT_EQ("hello world", text.getValue());
+    ASSERT_EQ(1, tree.size());
+    ASSERT_EQ(2, tree[0]->numAnnotations());
 }
 
 }  // namespace document
