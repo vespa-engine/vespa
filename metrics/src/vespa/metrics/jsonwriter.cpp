@@ -23,8 +23,8 @@ JsonWriter::visitSnapshot(const MetricSnapshot& snapshot)
 {
     _stream << Object()
         << "snapshot" << Object()
-            << "from" << vespalib::count_s(snapshot.getFromTime().time_since_epoch())
-            << "to" << vespalib::count_s(snapshot.getToTime().time_since_epoch())
+            << "from" << snapshot.getFromTime()
+            << "to" << snapshot.getToTime()
         << End()
         << "values" << Array();
     _flag = SNAPSHOT_STARTED;

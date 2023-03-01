@@ -61,7 +61,7 @@ StatusMetricConsumer::reportStatus(std::ostream& out,
     } else {
         LOG(debug, "Not calling update hooks as dontcallupdatehooks option has been given");
     }
-    vespalib::system_time currentTime = _component.getClock().getSystemTime();
+    int64_t currentTimeS(vespalib::count_s(_component.getClock().getMonotonicTime().time_since_epoch()));
     bool json = (path.getAttribute("format") == "json");
 
     int verbosity(path.get("verbosity", 0));
@@ -72,7 +72,7 @@ StatusMetricConsumer::reportStatus(std::ostream& out,
 
     if (path.hasAttribute("task") && path.getAttribute("task") == "reset") {
         std::lock_guard guard(_lock);
-        _manager.reset(currentTime);
+        _manager.reset(currentTimeS);
     }
 
     if (path.hasAttribute("interval")) {
@@ -83,7 +83,7 @@ StatusMetricConsumer::reportStatus(std::ostream& out,
         const metrics::MetricSnapshot* snapshot;
         if (interval == -2) {
             snapshot = &_manager.getActiveMetrics(metricLock);
-            _manager.getActiveMetrics(metricLock).setToTime(currentTime);
+            _manager.getActiveMetrics(metricLock).setToTime(currentTimeS);
         } else if (interval == -1) {
             // "Prime" the metric structure by first fetching the set of active
             // metrics (complete with structure) and resetting these. This
@@ -94,9 +94,9 @@ StatusMetricConsumer::reportStatus(std::ostream& out,
                     "Total metrics from start until current time", 0,
                     _manager.getActiveMetrics(metricLock).getMetrics(),
                     copyUnset);
-            generated->reset();
-            _manager.getTotalMetricSnapshot(metricLock).addToSnapshot(*generated, currentTime);
-            _manager.getActiveMetrics(metricLock).addToSnapshot(*generated, currentTime);
+            generated->reset(0);
+            _manager.getTotalMetricSnapshot(metricLock).addToSnapshot(*generated, currentTimeS);
+            _manager.getActiveMetrics(metricLock).addToSnapshot(*generated, currentTimeS);
             generated->setFromTime(_manager.getTotalMetricSnapshot(metricLock).getFromTime());
             snapshot = generated.get();
         } else if (interval == 0) {
@@ -104,8 +104,8 @@ StatusMetricConsumer::reportStatus(std::ostream& out,
                 generated = std::make_unique<metrics::MetricSnapshot>(
                         _manager.getTotalMetricSnapshot(metricLock).getName(), 0,
                         _manager.getActiveMetrics(metricLock).getMetrics(), true);
-                generated->reset();
-                _manager.getTotalMetricSnapshot(metricLock).addToSnapshot(*generated, currentTime);
+                generated->reset(0);
+                _manager.getTotalMetricSnapshot(metricLock).addToSnapshot(*generated, currentTimeS);
                 snapshot = generated.get();
             } else {
                 snapshot = &_manager.getTotalMetricSnapshot(metricLock);
@@ -115,9 +115,9 @@ StatusMetricConsumer::reportStatus(std::ostream& out,
                 generated = std::make_unique<metrics::MetricSnapshot>(
                         _manager.getMetricSnapshot(metricLock, interval).getName(), 0,
                         _manager.getActiveMetrics(metricLock).getMetrics(), true);
-                generated->reset();
+                generated->reset(0);
                 _manager.getMetricSnapshot(metricLock, interval, temporarySnap)
-                        .addToSnapshot(*generated, currentTime);
+                        .addToSnapshot(*generated, currentTimeS);
                 snapshot = generated.get();
             } else {
                 snapshot = &_manager.getMetricSnapshot(metricLock, interval, temporarySnap);
