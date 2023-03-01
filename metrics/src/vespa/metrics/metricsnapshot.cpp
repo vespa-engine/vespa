@@ -8,13 +8,16 @@ LOG_SETUP(".metrics.snapshot");
 
 using vespalib::to_string;
 
+
 namespace metrics {
+
+static constexpr system_time system_time_epoch = system_time();
 
 MetricSnapshot::MetricSnapshot(const Metric::String& name)
     : _name(name),
       _period(0),
-      _fromTime(default_system_time),
-      _toTime(default_system_time),
+      _fromTime(system_time_epoch),
+      _toTime(system_time_epoch),
       _snapshot(new MetricSet("top", {}, "", nullptr)),
       _metrics()
 {
@@ -23,8 +26,8 @@ MetricSnapshot::MetricSnapshot(const Metric::String& name)
 MetricSnapshot::MetricSnapshot(const Metric::String& name, uint32_t period, const MetricSet& source, bool copyUnset)
     : _name(name),
       _period(period),
-      _fromTime(default_system_time),
-      _toTime(default_system_time),
+      _fromTime(system_time_epoch),
+      _toTime(system_time_epoch),
       _snapshot(),
       _metrics()
 {
@@ -38,13 +41,13 @@ MetricSnapshot::~MetricSnapshot() = default;
 
 void
 MetricSnapshot::reset() {
-    reset(default_system_time);
+    reset(system_time_epoch);
 }
 void
 MetricSnapshot::reset(system_time currentTime)
 {
     _fromTime = currentTime;
-    _toTime = default_system_time;
+    _toTime = system_time_epoch;
     _snapshot->reset();
 }
 

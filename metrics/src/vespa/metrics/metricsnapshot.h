@@ -16,7 +16,6 @@
 namespace metrics {
 
 using system_time = vespalib::system_time;
-static constexpr system_time default_system_time = system_time();
 
 class MetricManager;
 
@@ -61,11 +60,6 @@ public:
     uint32_t getPeriod() const { return _period; }
     system_time getFromTime() const { return _fromTime; }
     system_time getToTime() const { return _toTime; }
-    time_t getLength() const {
-        return (_toTime != default_system_time)
-            ? vespalib::count_s(_toTime - _fromTime)
-            : vespalib::count_s((_fromTime + vespalib::from_s(_period)).time_since_epoch());
-    }
     const MetricSet& getMetrics() const { return *_snapshot; }
     MetricSet& getMetrics() { return *_snapshot; }
     void reset(system_time currentTime);
