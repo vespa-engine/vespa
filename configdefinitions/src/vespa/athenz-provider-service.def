@@ -16,7 +16,6 @@ secretVersion                             int
 # Tempory resources
 sisSecretName                             string default=""
 sisSecretVersion                          int default=0
-sisUrl                                    string default = ""
 
 # Secret name of CA certificate
 caCertSecretName                          string
