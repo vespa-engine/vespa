@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.persistence;
 
+import com.yahoo.config.provision.ClusterInfo;
 import com.yahoo.config.provision.IntRange;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterResources;
@@ -15,6 +16,7 @@ import com.yahoo.vespa.hosted.provision.autoscale.Autoscaling;
 import com.yahoo.vespa.hosted.provision.autoscale.Load;
 import org.junit.Test;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
@@ -40,6 +42,7 @@ public class ApplicationSerializerTest {
                                  true,
                                  Autoscaling.empty(),
                                  Autoscaling.empty(),
+                                 ClusterInfo.empty(),
                                  BcpGroupInfo.empty(),
                                  List.of()));
         var minResources = new NodeResources(1, 2, 3, 4);
@@ -65,6 +68,7 @@ public class ApplicationSerializerTest {
                                                  Load.zero(),
                                                  Load.one(),
                                                  Autoscaling.Metrics.zero()),
+                                 new ClusterInfo.Builder().bcpDeadline(Duration.ofMinutes(33)).build(),
                                  new BcpGroupInfo(0.1, 0.2, 0.3),
                                  List.of(new ScalingEvent(new ClusterResources(10, 5, minResources),
                                                           new ClusterResources(12, 6, minResources),
@@ -95,6 +99,7 @@ public class ApplicationSerializerTest {
             assertEquals(originalCluster.required(), serializedCluster.required());
             assertEquals(originalCluster.suggested(), serializedCluster.suggested());
             assertEquals(originalCluster.target(), serializedCluster.target());
+            assertEquals(originalCluster.clusterInfo(), serializedCluster.clusterInfo());
             assertEquals(originalCluster.bcpGroupInfo(), serializedCluster.bcpGroupInfo());
             assertEquals(originalCluster.scalingEvents(), serializedCluster.scalingEvents());
         }

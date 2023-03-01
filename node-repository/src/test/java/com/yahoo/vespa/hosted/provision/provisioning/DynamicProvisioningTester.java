@@ -153,6 +153,7 @@ public class DynamicProvisioningTester {
                               cluster.required(),
                               cluster.suggested(),
                               cluster.target(),
+                              cluster.clusterInfo(),
                               cluster.bcpGroupInfo(),
                               List.of()); // Remove scaling events
         cluster = cluster.with(ScalingEvent.create(cluster.minResources(), cluster.minResources(),
