@@ -1,4 +1,0 @@
-Old OS abstraction layer
-
-obsolete, to be replaced with implementations using
-standard C++14 threads and newer unix networking APIs
