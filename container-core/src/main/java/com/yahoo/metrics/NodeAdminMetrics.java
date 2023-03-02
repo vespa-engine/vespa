@@ -1,7 +1,7 @@
 package com.yahoo.metrics;
 
 /**
- * @author yngve
+ * @author yngveaasheim
  */
 public enum NodeAdminMetrics implements VespaMetrics {
 
