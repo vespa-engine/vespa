@@ -121,7 +121,7 @@ struct ExecFixture
                                                  .add({{"x", "b"}}, 5)
                                                  .add({{"x", "c"}}, 7));
         tensorAttr->setTensor(1, *doc_tensor);
-        directAttr->set_tensor(1, std::move(doc_tensor));
+        directAttr->setTensor(1, *doc_tensor);
 
         for (const auto &attr : attrs) {
             attr->commit();
