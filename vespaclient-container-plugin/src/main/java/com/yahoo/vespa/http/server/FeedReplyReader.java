@@ -50,7 +50,7 @@ public class FeedReplyReader implements ReplyHandler {
             DocumentOperationStatus status = DocumentOperationStatus.fromMessageBusErrorCodes(reply.getErrorCodes());
             metricsHelper.reportFailure(type, status);
             metric.add(MetricNames.FAILED, 1, null);
-            enqueue(context, reply.getError(0).getMessage(), ErrorCode.ERROR, false, reply.getTrace());
+            enqueue(context, reply.getError(0).getMessage(), ErrorCode.fromBusError(reply.getError(0)), false, reply.getTrace());
         } else {
             metricsHelper.reportSuccessful(type, latencyInSeconds);
             if ( ! conditionMet)

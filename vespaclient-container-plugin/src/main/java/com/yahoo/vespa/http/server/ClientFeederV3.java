@@ -188,16 +188,12 @@ class ClientFeederV3 {
                 outstandingOperations.incrementAndGet();
                 updateOpsPerSec();
                 log(Level.FINE, "Sent message successfully, document id: ", message.get().getOperationId());
-            } else if (!result.getError().isFatal()) {
-                repliesFromOldMessages.add(createOperationStatus(message.get().getOperationId(),
-                                                                 result.getError().getMessage(),
-                                                                 ErrorCode.TRANSIENT_ERROR,
-                        message.get().getMessage()));
             } else {
-                repliesFromOldMessages.add(createOperationStatus(message.get().getOperationId(),
-                                                                 result.getError().getMessage(),
-                                                                 ErrorCode.ERROR,
-                        message.get().getMessage()));
+                var err = result.getError();
+                var msg = message.get();
+                repliesFromOldMessages.add(
+                        createOperationStatus(
+                                msg.getOperationId(), err.getMessage(), ErrorCode.fromBusError(err), msg.getMessage()));
             }
         }
     }
