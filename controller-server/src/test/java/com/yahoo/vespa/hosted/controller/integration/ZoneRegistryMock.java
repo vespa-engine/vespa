@@ -266,7 +266,7 @@ public class ZoneRegistryMock extends AbstractComponent implements ZoneRegistry 
 
     @Override
     public boolean hasZone(ZoneId zoneId, CloudAccount cloudAccount) {
-        return hasZone(zoneId) && cloudAccountZones.getOrDefault(cloudAccount, Set.of()).contains(zoneId);
+        return hasZone(zoneId) && (system.isPublic() || cloudAccountZones.getOrDefault(cloudAccount, Set.of()).contains(zoneId));
     }
 
     @Override

@@ -7,7 +7,6 @@ import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.jdisc.test.MockMetric;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.LockedTenant;
-import com.yahoo.vespa.hosted.controller.api.integration.archive.ArchiveBucket;
 import com.yahoo.vespa.hosted.controller.api.integration.archive.MockArchiveService;
 import com.yahoo.vespa.hosted.controller.tenant.ArchiveAccess;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
@@ -15,8 +14,6 @@ import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
 import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -37,7 +34,6 @@ public class ArchiveAccessMaintainerTest {
 
         ZoneId testZone = ZoneId.from("prod.aws-us-east-1c");
         tester.controller().archiveBucketDb().archiveUriFor(testZone, tenant1, true);
-        var testBucket = new ArchiveBucket("bucketName", "keyArn").withTenant(tenant1);
 
         MockArchiveService archiveService = (MockArchiveService) tester.controller().serviceRegistry().archiveService();
 

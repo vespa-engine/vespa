@@ -37,11 +37,11 @@ import com.yahoo.vespa.hosted.controller.api.integration.organization.MockIssueH
 import com.yahoo.vespa.hosted.controller.api.integration.resource.CostReportConsumerMock;
 import com.yahoo.vespa.hosted.controller.api.integration.resource.ResourceDatabaseClient;
 import com.yahoo.vespa.hosted.controller.api.integration.resource.ResourceDatabaseClientMock;
-import com.yahoo.vespa.hosted.controller.api.integration.secrets.GcpSecretStore;
-import com.yahoo.vespa.hosted.controller.api.integration.secrets.NoopGcpSecretStore;
-import com.yahoo.vespa.hosted.controller.api.integration.secrets.NoopEndpointSecretManager;
-import com.yahoo.vespa.hosted.controller.api.integration.secrets.NoopTenantSecretService;
 import com.yahoo.vespa.hosted.controller.api.integration.secrets.EndpointSecretManager;
+import com.yahoo.vespa.hosted.controller.api.integration.secrets.GcpSecretStore;
+import com.yahoo.vespa.hosted.controller.api.integration.secrets.NoopEndpointSecretManager;
+import com.yahoo.vespa.hosted.controller.api.integration.secrets.NoopGcpSecretStore;
+import com.yahoo.vespa.hosted.controller.api.integration.secrets.NoopTenantSecretService;
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.DummyOwnershipIssues;
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.DummySystemMonitor;
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.LoggingDeploymentIssues;
@@ -89,7 +89,7 @@ public class ServiceRegistryMock extends AbstractComponent implements ServiceReg
     private final ArtifactRegistryMock containerRegistry = new ArtifactRegistryMock();
     private final NoopTenantSecretService tenantSecretService = new NoopTenantSecretService();
     private final NoopEndpointSecretManager secretManager = new NoopEndpointSecretManager();
-    private final ArchiveService archiveService = new MockArchiveService();
+    private final ArchiveService archiveService = new MockArchiveService(clock);
     private final MockChangeRequestClient changeRequestClient = new MockChangeRequestClient();
     private final AccessControlService accessControlService = new MockAccessControlService();
     private final HorizonClient horizonClient = new MockHorizonClient();

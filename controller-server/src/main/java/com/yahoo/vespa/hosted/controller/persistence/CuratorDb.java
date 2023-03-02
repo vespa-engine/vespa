@@ -19,7 +19,7 @@ import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.api.identifiers.ClusterId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.ControllerVersion;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
-import com.yahoo.vespa.hosted.controller.api.integration.archive.ArchiveBucket;
+import com.yahoo.vespa.hosted.controller.api.integration.archive.ArchiveBuckets;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateMetadata;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
@@ -632,12 +632,12 @@ public class CuratorDb {
 
     // -------------- Archive buckets -----------------------------------------
 
-    public Set<ArchiveBucket> readArchiveBuckets(ZoneId zoneId) {
-        return curator.getData(archiveBucketsPath(zoneId)).map(String::new).map(ArchiveBucketsSerializer::fromJsonString)
-                .orElseGet(Set::of);
+    public ArchiveBuckets readArchiveBuckets(ZoneId zoneId) {
+        return readSlime(archiveBucketsPath(zoneId)).map(ArchiveBucketsSerializer::fromSlime)
+                .orElse(ArchiveBuckets.EMPTY);
     }
 
-    public void writeArchiveBuckets(ZoneId zoneid, Set<ArchiveBucket> archiveBuckets) {
+    public void writeArchiveBuckets(ZoneId zoneid, ArchiveBuckets archiveBuckets) {
         curator.set(archiveBucketsPath(zoneid), asJson(ArchiveBucketsSerializer.toSlime(archiveBuckets)));
     }
 
