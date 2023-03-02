@@ -241,8 +241,7 @@ public final class ThreadLocalDirectory<AGGREGATOR, SAMPLE> {
         synchronized (directoryLock) {
             previousIntervalSize = directory.size();
             previous = directory;
-            directory = new ArrayList<>(
-                    previousIntervalSize);
+            directory = new ArrayList<>(previousIntervalSize);
         }
         contained = new ArrayList<>(previousIntervalSize);
         // Yes, this is an inconsistence about when the registered state is
@@ -268,12 +267,10 @@ public final class ThreadLocalDirectory<AGGREGATOR, SAMPLE> {
             throw new IllegalStateException("Does not use observable updaters.");
         }
         List<LocalInstance<AGGREGATOR, SAMPLE>> current;
-        List<AGGREGATOR> view;
         synchronized (directoryLock) {
-            current = new ArrayList<>(
-                    directory);
+            current = new ArrayList<>(directory);
         }
-        view = new ArrayList<>(current.size());
+        List<AGGREGATOR> view = new ArrayList<>(current.size());
         for (LocalInstance<AGGREGATOR, SAMPLE> x : current) {
             view.add(x.copyCurrent(observableUpdater));
         }

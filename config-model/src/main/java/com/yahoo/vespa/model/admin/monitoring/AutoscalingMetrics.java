@@ -31,7 +31,7 @@ public class AutoscalingMetrics {
         metrics.add("disk.util"); // node level -default
         metrics.add(SearchNodeMetrics.CONTENT_PROTON_RESOURCE_USAGE_DISK.average()); // better for content as it is the basis for blocking
 
-        metrics.add("application_generation");
+        metrics.add(ContainerMetrics.APPLICATION_GENERATION.baseName());
 
         metrics.add("in_service");
 

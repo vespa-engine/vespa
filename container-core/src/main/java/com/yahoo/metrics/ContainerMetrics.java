@@ -11,6 +11,8 @@ public enum ContainerMetrics implements VespaMetrics {
     HTTP_STATUS_4XX("http.status.4xx", Unit.RESPONSE, "Number of responses with a 4xx status"),
     HTTP_STATUS_5XX("http.status.5xx", Unit.RESPONSE, "Number of responses with a 5xx status"),
 
+    APPLICATION_GENERATION("application_generation", Unit.VERSION, "The currently live application config generation (aka session id)"),
+
     JDISC_GC_COUNT("jdisc.gc.count", Unit.OPERATION, "Number of JVM garbage collections done"),
     JDISC_GC_MS("jdisc.gc.ms", Unit.MILLISECOND, "Time spent in JVM garbage collection"),
     JDISC_JVM("jdisc.jvm", Unit.VERSION, "JVM runtime version"),
