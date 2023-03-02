@@ -186,7 +186,7 @@ public class NodesV2ApiHandler extends ThreadedHttpRequestHandler {
                 return new MessageResponse("Updated " + patcher.application());
             }
         }
-        else if (path.matches("/nodes/v2/archive/account/{key}") || path.matches("/nodes/v2/archive/tenant/{key}") || path.matches("/nodes/v2/archive/{key}") /* TODO (freva): Remove March 2023 */) {
+        else if (path.matches("/nodes/v2/archive/account/{key}") || path.matches("/nodes/v2/archive/tenant/{key}")) {
             String uri = requiredField(toSlime(request), "uri", Inspector::asString);
             return setArchiveUri(path.get("key"), Optional.of(uri), !path.getPath().segments().get(3).equals("account"));
         }
@@ -229,7 +229,7 @@ public class NodesV2ApiHandler extends ThreadedHttpRequestHandler {
     private HttpResponse handleDELETE(HttpRequest request) {
         Path path = new Path(request.getUri());
         if (path.matches("/nodes/v2/node/{hostname}")) return deleteNode(path.get("hostname"));
-        if (path.matches("/nodes/v2/archive/account/{key}") || path.matches("/nodes/v2/archive/tenant/{key}") || path.matches("/nodes/v2/archive/{key}") /* TODO (freva): Remove March 2023) */)
+        if (path.matches("/nodes/v2/archive/account/{key}") || path.matches("/nodes/v2/archive/tenant/{key}"))
             return setArchiveUri(path.get("key"), Optional.empty(), !path.getPath().segments().get(3).equals("account"));
         if (path.matches("/nodes/v2/upgrade/firmware")) return cancelFirmwareCheckResponse();
 

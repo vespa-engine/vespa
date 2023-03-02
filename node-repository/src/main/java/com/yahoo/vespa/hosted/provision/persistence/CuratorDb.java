@@ -102,7 +102,6 @@ public class CuratorDb {
         db.create(archiveUrisPath);
         db.create(loadBalancersPath);
         provisionIndexCounter.initialize(100);
-        CuratorOperations.delete(root.append("archiveUris").toString()); // TODO (freva): March 2023
     }
 
     /** Adds a set of nodes. Rollbacks/fails transaction if any node is not in the expected state. */

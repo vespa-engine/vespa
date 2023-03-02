@@ -39,7 +39,7 @@ public class ArchiveApiTest {
 
         assertResponse(new Request("http://localhost:8080/nodes/v2/archive/tenant/tenant3", Utf8.toBytes("{\"uri\": \"ftp://host/dir\"}"), Request.Method.PATCH),
                 "{\"message\":\"Updated archive URI for tenant3\"}");
-        assertResponse(new Request("http://localhost:8080/nodes/v2/archive/tenant2", Utf8.toBytes("{\"uri\": \"s3://my-bucket/dir\"}"), Request.Method.PATCH),
+        assertResponse(new Request("http://localhost:8080/nodes/v2/archive/tenant/tenant2", Utf8.toBytes("{\"uri\": \"s3://my-bucket/dir\"}"), Request.Method.PATCH),
                 "{\"message\":\"Updated archive URI for tenant2\"}");
         assertResponse(new Request("http://localhost:8080/nodes/v2/archive/account/777888999000", Utf8.toBytes("{\"uri\": \"s3://acc-bucket\"}"), Request.Method.PATCH),
                 "{\"message\":\"Updated archive URI for 777888999000\"}");

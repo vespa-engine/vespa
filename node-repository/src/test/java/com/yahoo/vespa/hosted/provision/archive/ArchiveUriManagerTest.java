@@ -60,18 +60,6 @@ public class ArchiveUriManagerTest {
         assertEquals("scheme://tenant-bucket/dir/vespa/music/main/default/h432a/", archiveUriManager.archiveUriFor(createNode(app1, accountSystem)).get()); // URI for tenant because non-enclave acocunt
     }
 
-    @Test
-    public void handles_uri_with_tenant_name() {
-        ApplicationId app1 = ApplicationId.from("vespa", "music", "main");
-        ArchiveUriManager archiveUriManager = new ProvisioningTester.Builder().build().nodeRepository().archiveUriManager();
-        archiveUriManager.setArchiveUri(app1.tenant(), Optional.of("scheme://tenant-bucket/vespa"));
-        assertEquals("scheme://tenant-bucket/vespa/music/main/default/h432a/", archiveUriManager.archiveUriFor(createNode(app1, null)).get());
-
-        // Archive URI ends with the tenant name
-        archiveUriManager.setArchiveUri(app1.tenant(), Optional.of("scheme://tenant-vespa/"));
-        assertEquals("scheme://tenant-vespa/vespa/music/main/default/h432a/", archiveUriManager.archiveUriFor(createNode(app1, null)).get());
-    }
-
     private Node createNode(ApplicationId appId, CloudAccount account) {
         Node.Builder nodeBuilder = Node.create("id", "h432a.prod.us-south-1.vespa.domain.tld", new Flavor(NodeResources.unspecified()), Node.State.parked, NodeType.tenant);
         Optional.ofNullable(appId)
