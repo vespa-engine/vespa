@@ -140,6 +140,7 @@ vespa_define_module(
     src/tests/process
     src/tests/programoptions
     src/tests/random
+    src/tests/ref_counted
     src/tests/referencecounter
     src/tests/regex
     src/tests/rendezvous
