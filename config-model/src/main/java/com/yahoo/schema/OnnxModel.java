@@ -55,7 +55,7 @@ public class OnnxModel extends DistributableResource {
                 return ref.toString();
             }
             // or a function (evaluated by backend)
-            if (ref.isSimple() && "rankingExpression".equals(ref.name())) {
+            if (ref.isSimpleRankingExpressionWrapper()) {
                 var arg = ref.simpleArgument();
                 if (arg.isPresent()) {
                     return ref.toString();

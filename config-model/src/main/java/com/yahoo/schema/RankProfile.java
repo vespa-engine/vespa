@@ -1169,7 +1169,7 @@ public class RankProfile implements Cloneable {
             // Source is either a simple reference (query/attribute/constant/rankingExpression)...
             Optional<Reference> reference = Reference.simple(source);
             if (reference.isPresent()) {
-                if (reference.get().name().equals("rankingExpression") && reference.get().simpleArgument().isPresent()) {
+                if (reference.get().isSimpleRankingExpressionWrapper()) {
                     source = reference.get().simpleArgument().get();  // look up function below
                 } else {
                     return Optional.of(context.getType(reference.get()));
