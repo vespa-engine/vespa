@@ -36,7 +36,7 @@ using IReplayPacketHandlerUP = std::unique_ptr<IReplayPacketHandler>;
 struct DummyFileHeaderContext : public FileHeaderContext
 {
     using UP = std::unique_ptr<DummyFileHeaderContext>;
-    virtual void addTags(vespalib::GenericHeader &, const vespalib::string &) const override {}
+    void addTags(vespalib::GenericHeader &, const vespalib::string &) const override {}
 };
 
 
@@ -47,29 +47,18 @@ class ConfigFile
     using SP = std::shared_ptr<ConfigFile>;
 
     vespalib::string _name;
-    time_t _modTime;
     std::vector<char> _content;
 
 public:
     ConfigFile();
-
-    const vespalib::string &
-    getName() const
-    {
-        return _name;
-    }
-
-    vespalib::nbostream &
-    deserialize(vespalib::nbostream &stream);
-
-    void
-    print() const;
+    const vespalib::string & getName() const { return _name; }
+    vespalib::nbostream & deserialize(vespalib::nbostream &stream);
+    void print() const;
 };
 
 
 ConfigFile::ConfigFile()
     : _name(),
-      _modTime(0),
       _content()
 {
 }
@@ -79,10 +68,9 @@ vespalib::nbostream &
 ConfigFile::deserialize(vespalib::nbostream &stream)
 {
     stream >> _name;
-    assert(strchr(_name.c_str(), '/') == NULL);
+    assert(strchr(_name.c_str(), '/') == nullptr);
     int64_t modTime;
     stream >> modTime;
-    _modTime = modTime;
     uint32_t sz;
     stream >> sz;
     _content.resize(sz);
@@ -95,9 +83,8 @@ ConfigFile::deserialize(vespalib::nbostream &stream)
 void
 ConfigFile::print() const
 {
-    std::cout << "Name: " << _name << "\n" <<
-        "ModTime: " << _modTime << "\n" <<
-        "Content-Length: " << _content.size() << "\n\n";
+    std::cout << "Name: " << _name << "\n"
+              << "Content-Length: " << _content.size() << "\n\n";
     std::cout.write(&_content[0], _content.size()); 
     std::cout << "\n-----------------------------" << std::endl;
 }
@@ -120,12 +107,9 @@ struct DummyStreamHandler : public NewConfigOperation::IStreamHandler {
     {
     }
 
-    virtual void
-    serializeConfig(SerialNum, vespalib::nbostream &) override
-    {
-    }
+    void serializeConfig(SerialNum, vespalib::nbostream &) override { }
 
-    virtual void
+    void
     deserializeConfig(SerialNum, vespalib::nbostream &is) override
     {
         _cfs.clear();
@@ -153,7 +137,7 @@ DocTypeRepo::DocTypeRepo(const std::string &configDir)
 {
 }
 
-DocTypeRepo::~DocTypeRepo() {}
+DocTypeRepo::~DocTypeRepo() = default;
 
 
 /**
@@ -186,10 +170,8 @@ public:
     void replay(const NewConfigOperation &op) override
     {
         print(op);
-        using I = std::map<std::string, ConfigFile>::const_iterator;
-        for (I i(_streamHandler._cfs.begin()), ie(_streamHandler._cfs.end());
-             i != ie; ++i) {
-            i->second.print();
+        for (const auto & entry : _streamHandler._cfs) {
+            entry.second.print();
         }
     }
 
@@ -368,7 +350,7 @@ BaseOptions::BaseOptions(int argc, const char* const* argv)
     _opts.addOption("tlsname", tlsName, std::string("tls"), "Name of the tls");
     _opts.addOption("listenport", listenPort, 13701, "Tcp listen port");
 }
-BaseOptions::~BaseOptions() {}
+BaseOptions::~BaseOptions() = default;
 
 /**
  * Base class for a utility with tls server and tls client.
@@ -395,7 +377,7 @@ public:
     ~BaseUtility() override {
         _transport.ShutDown(true);
     }
-    virtual int run() override = 0;
+    int run() override = 0;
 };
 
 
@@ -410,7 +392,7 @@ struct ListDomainsOptions : public BaseOptions
         _opts.setSyntaxMessage("Utility to list all domains in a tls");
     }
     static std::string command() { return "listdomains"; }
-    virtual Utility::UP createUtility() const override;
+    Utility::UP createUtility() const override;
 };
 
 /**
@@ -423,7 +405,7 @@ public:
         : BaseUtility(opts)
     {
     }
-    virtual int run() override {
+    int run() override {
         std::cout << ListDomainsOptions::command() << ": " << _bopts.toString() << std::endl;
 
         std::vector<vespalib::string> domains;
@@ -445,7 +427,7 @@ public:
 Utility::UP
 ListDomainsOptions::createUtility() const
 {
-    return Utility::UP(new ListDomainsUtility(*this));
+    return std::make_unique<ListDomainsUtility>(*this);
 }
 
 
@@ -479,7 +461,7 @@ DumpOperationsOptions::DumpOperationsOptions(int argc, const char* const* argv)
     _opts.addOption("configdir", configDir, "Config directory (with documenttypes.cfg)");
     _opts.setSyntaxMessage("Utility to dump a range of operations ([first,last]) in a tls domain");
 }
-DumpOperationsOptions::~DumpOperationsOptions() {}
+DumpOperationsOptions::~DumpOperationsOptions() = default;
 
 
 /**
@@ -491,7 +473,7 @@ protected:
     const DumpOperationsOptions &_oopts;
 
     virtual IReplayPacketHandlerUP createHandler(DocumentTypeRepo &repo) {
-        return IReplayPacketHandlerUP(new OperationPrinter(repo));
+        return std::make_unique<OperationPrinter>(repo);
     }
 
     int doRun() {
@@ -517,7 +499,7 @@ public:
         _oopts(oopts)
     {
     }
-    virtual int run() override {
+    int run() override {
         std::cout << DumpOperationsOptions::command() << ": " << _oopts.toString() << std::endl;
         return doRun();
     }
@@ -526,7 +508,7 @@ public:
 Utility::UP
 DumpOperationsOptions::createUtility() const
 {
-    return Utility::UP(new DumpOperationsUtility(*this));
+    return std::make_unique<DumpOperationsUtility>(*this);
 }
 
 
@@ -540,18 +522,18 @@ struct DumpDocumentsOptions : public DumpOperationsOptions
     DumpDocumentsOptions(int argc, const char* const* argv);
     ~DumpDocumentsOptions();
     static std::string command() { return "dumpdocuments"; }
-    virtual void parse() override {
+    void parse() override {
         DumpOperationsOptions::parse();
         if (format != "xml" && format != "text") {
             throw vespalib::InvalidCommandLineArgumentsException("Expected 'format' to be 'xml' or 'text'");
         }
     }
-    virtual std::string toString() const override {
+    std::string toString() const override {
         return vespalib::make_string("%s, format=%s, verbose=%s",
                                      DumpOperationsOptions::toString().c_str(),
                                      format.c_str(), (verbose ? "true" : "false"));
     }
-    virtual Utility::UP createUtility() const override;
+    Utility::UP createUtility() const override;
 };
 
 DumpDocumentsOptions::DumpDocumentsOptions(int argc, const char* const* argv)
@@ -571,7 +553,7 @@ class DumpDocumentsUtility : public DumpOperationsUtility
 {
 protected:
     const DumpDocumentsOptions &_dopts;
-    virtual IReplayPacketHandlerUP createHandler(DocumentTypeRepo &repo) override {
+    IReplayPacketHandlerUP createHandler(DocumentTypeRepo &repo) override {
         return IReplayPacketHandlerUP(new DocumentPrinter(repo, _dopts.format == "xml", _dopts.verbose));
     }
 
@@ -581,7 +563,7 @@ public:
           _dopts(dopts)
     {
     }
-    virtual int run() override {
+    int run() override {
         std::cout << DumpDocumentsOptions::command() << ": " << _oopts.toString() << std::endl;
         return doRun();
     }
@@ -590,7 +572,7 @@ public:
 Utility::UP
 DumpDocumentsOptions::createUtility() const
 {
-    return Utility::UP(new DumpDocumentsUtility(*this));
+    return std::make_unique<DumpDocumentsUtility>(*this);
 }
 
 
@@ -630,8 +612,8 @@ public:
     int main(int argc, char **argv);
 };
 
-App::App() {}
-App::~App() {}
+App::App() = default;
+App::~App() = default;
 
 int
 App::main(int argc, char **argv) {
@@ -651,7 +633,7 @@ App::main(int argc, char **argv) {
         combineFirstArgs(argv);
         opts.reset(new DumpDocumentsOptions(argc-1, argv+1));
     }
-    if (opts.get() != NULL) {
+    if (opts) {
         try {
             opts->parse();
         } catch (const vespalib::InvalidCommandLineArgumentsException &e) {
