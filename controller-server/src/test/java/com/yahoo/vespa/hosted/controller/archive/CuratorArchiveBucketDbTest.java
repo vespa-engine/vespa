@@ -1,16 +1,21 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.archive;
 
+import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.zone.ZoneId;
+import com.yahoo.test.ManualClock;
+import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.api.integration.archive.ArchiveBuckets;
+import com.yahoo.vespa.hosted.controller.api.integration.archive.MockArchiveService;
 import com.yahoo.vespa.hosted.controller.api.integration.archive.VespaManagedArchiveBucket;
 import org.apache.curator.shaded.com.google.common.collect.Streams;
 import org.junit.jupiter.api.Test;
 
 import java.net.URI;
+import java.time.Duration;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -57,5 +62,30 @@ public class CuratorArchiveBucketDbTest {
         assertEquals(
                 Set.of(new VespaManagedArchiveBucket("bucketName", "keyArn").withTenant(TenantName.from("firstInZone"))),
                 bucketDb.buckets(ZoneId.from("prod.us-east-3")).vespaManaged());
+    }
+
+    @Test
+    void archiveUriForAccount() {
+        Controller controller = new ControllerTester(SystemName.Public).controller();
+        CuratorArchiveBucketDb bucketDb = new CuratorArchiveBucketDb(controller);
+        MockArchiveService service = (MockArchiveService) controller.serviceRegistry().archiveService();
+        ManualClock clock = (ManualClock) controller.clock();
+
+        CloudAccount acc1 = CloudAccount.from("001122334455");
+        ZoneId z1 = ZoneId.from("prod.us-east-3");
+
+        assertEquals(Optional.empty(), bucketDb.archiveUriFor(z1, acc1, true)); // Initially not set
+        service.setEnclaveArchiveBucket(z1, acc1, "bucket-1");
+        assertEquals(Optional.empty(), bucketDb.archiveUriFor(z1, acc1, false));
+        assertEquals(Optional.of(URI.create("s3://bucket-1/")), bucketDb.archiveUriFor(z1, acc1, true));
+        assertEquals(Optional.of(URI.create("s3://bucket-1/")), bucketDb.archiveUriFor(z1, acc1, false));
+
+        service.setEnclaveArchiveBucket(z1, acc1, "bucket-2");
+        assertEquals(Optional.of(URI.create("s3://bucket-1/")), bucketDb.archiveUriFor(z1, acc1, true)); // Returns old value even with search
+
+        clock.advance(Duration.ofMinutes(61)); // After expiry the cache is expired, new search is performed
+        assertEquals(Optional.of(URI.create("s3://bucket-1/")), bucketDb.archiveUriFor(z1, acc1, false)); // When requesting without search, return previous value even if expired
+        assertEquals(Optional.of(URI.create("s3://bucket-2/")), bucketDb.archiveUriFor(z1, acc1, true));
+        assertEquals(Optional.of(URI.create("s3://bucket-2/")), bucketDb.archiveUriFor(z1, acc1, false));
     }
 }
