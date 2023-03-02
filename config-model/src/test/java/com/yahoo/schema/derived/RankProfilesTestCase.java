@@ -17,4 +17,9 @@ public class RankProfilesTestCase extends AbstractExportingTestCase {
     void testRankProfiles() throws IOException, ParseException {
         assertCorrectDeriving("rankprofiles", null, new TestProperties(), new TestableDeployLogger());
     }
+
+    @Test
+    void testMacrosInRankProfiles() throws IOException, ParseException {
+        assertCorrectDeriving("rankingmacros", null, new TestProperties(), new TestableDeployLogger());
+    }
 }

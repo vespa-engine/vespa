@@ -20,6 +20,7 @@ import com.yahoo.searchlib.rankingexpression.parser.ParseException;
 import com.yahoo.searchlib.rankingexpression.rule.ReferenceNode;
 import com.yahoo.searchlib.rankingexpression.rule.SerializationContext;
 import com.yahoo.vespa.config.search.RankProfilesConfig;
+import static com.yahoo.searchlib.rankingexpression.Reference.wrapInRankingExpression;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
@@ -273,9 +274,9 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
                     String propertyName = RankingExpression.propertyName(referenceNode.getName());
                     String expressionString = function.getBody().getRoot().toString(context).toString();
                     context.addFunctionSerialization(propertyName, expressionString);
-                    ReferenceNode backendReferenceNode = new ReferenceNode("rankingExpression(" + referenceNode.getName() + ")",
-                                                                           referenceNode.getArguments().expressions(),
-                                                                           referenceNode.getOutput());
+                    var backendReferenceNode = new ReferenceNode(wrapInRankingExpression(referenceNode.getName()),
+                                                                 referenceNode.getArguments().expressions(),
+                                                                 referenceNode.getOutput());
                     // tell backend to map back to the name the user expects:
                     featureRenames.put(backendReferenceNode.toString(), referenceNode.toString());
                     functionFeatures.put(referenceNode.getName(), backendReferenceNode);
@@ -499,7 +500,7 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
             if (expression.getRoot() instanceof ReferenceNode) {
                 properties.add(new Pair<>("vespa.rank." + phase, expression.getRoot().toString()));
             } else {
-                properties.add(new Pair<>("vespa.rank." + phase, "rankingExpression(" + name + ")"));
+                properties.add(new Pair<>("vespa.rank." + phase, wrapInRankingExpression(name)));
                 properties.add(new Pair<>(RankingExpression.propertyName(name), expression.getRoot().toString()));
             }
             return properties;
@@ -520,7 +521,7 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
                 for (Map.Entry<String, String> mapping : onnxModel.getInputMap().entrySet()) {
                     String source = mapping.getValue();
                     if (functionNames.contains(source)) {
-                        onnxModel.addInputNameMapping(mapping.getKey(), "rankingExpression(" + source + ")");
+                        onnxModel.addInputNameMapping(mapping.getKey(), wrapInRankingExpression(source));
                     }
                 }
             }

@@ -2,6 +2,7 @@
 package ai.vespa.models.evaluation;
 
 import com.yahoo.collections.Pair;
+import static com.yahoo.searchlib.rankingexpression.Reference.wrapInRankingExpression;
 
 import java.util.Objects;
 import java.util.Optional;
@@ -51,7 +52,8 @@ class FunctionReference {
     }
 
     String serialForm() {
-        return "rankingExpression(" + name + (instance != null ? instance : "") + ")";
+        String extra = (instance != null ? instance : "");
+        return wrapInRankingExpression(name + extra);
     }
 
     @Override

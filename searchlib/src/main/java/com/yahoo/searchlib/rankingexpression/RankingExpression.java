@@ -11,6 +11,7 @@ import com.yahoo.searchlib.rankingexpression.rule.SerializationContext;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.tensor.evaluation.TypeContext;
 import com.yahoo.text.Text;
+import static com.yahoo.searchlib.rankingexpression.Reference.RANKING_EXPRESSION_WRAPPER;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -80,7 +81,7 @@ public class RankingExpression implements Serializable {
 
     private String name = "";
     private ExpressionNode root;
-    private final static String RANKEXPRESSION = "rankingExpression(";
+    private final static String RANKEXPRESSION = RANKING_EXPRESSION_WRAPPER + "(";
     private final static String RANKINGSCRIPT = ").rankingScript";
     private final static String EXPRESSION_NAME = ").expressionName";
 

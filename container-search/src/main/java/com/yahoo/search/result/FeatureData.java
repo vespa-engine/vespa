@@ -11,6 +11,7 @@ import com.yahoo.io.GrowableByteBuffer;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.serialization.JsonFormat;
 import com.yahoo.tensor.serialization.TypedBinaryFormat;
+import static com.yahoo.searchlib.rankingexpression.Reference.wrapInRankingExpression;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
@@ -144,7 +145,7 @@ public class FeatureData implements Inspectable, JsonProducer {
         if (featureValue.valid()) return featureValue;
 
         // Try to wrap by rankingExpression(name)
-        return value.field("rankingExpression(" + featureName + ")");
+        return value.field(wrapInRankingExpression(featureName));
     }
 
     /** Returns the names of the features available in this */

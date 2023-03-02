@@ -16,6 +16,7 @@ import com.yahoo.searchlib.rankingexpression.rule.ReferenceNode;
 import com.yahoo.stream.CustomCollectors;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
+import static com.yahoo.searchlib.rankingexpression.Reference.RANKING_EXPRESSION_WRAPPER;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -233,7 +234,11 @@ public final class LazyArrayContext extends Context implements ContextIndex {
                                         List<OnnxModel> onnxModels,
                                         Map<String, OnnxModel> onnxModelsInUse) {
             if (isFunctionReference(node)) {
-                FunctionReference reference = FunctionReference.fromSerial(node.toString()).get();
+                var opt = FunctionReference.fromSerial(node.toString());
+                if (opt.isEmpty()) {
+                    throw new IllegalArgumentException("Could not extract function " + node + " from serialized form '" + node.toString() +"'");
+                }
+                FunctionReference reference = opt.get();
                 bindTargets.add(reference.serialForm());
 
                 ExpressionFunction function = functions.get(reference);
@@ -313,7 +318,7 @@ public final class LazyArrayContext extends Context implements ContextIndex {
 
         private boolean isFunctionReference(ExpressionNode node) {
             if ( ! (node instanceof ReferenceNode reference)) return false;
-            return reference.getName().equals("rankingExpression") && reference.getArguments().size() == 1;
+            return reference.getName().equals(RANKING_EXPRESSION_WRAPPER) && reference.getArguments().size() == 1;
         }
 
         private boolean isOnnx(ExpressionNode node) {

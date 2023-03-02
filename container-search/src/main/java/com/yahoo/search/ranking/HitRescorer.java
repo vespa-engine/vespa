@@ -3,6 +3,7 @@ package com.yahoo.search.ranking;
 
 import com.yahoo.search.result.FeatureData;
 import com.yahoo.search.result.Hit;
+import static com.yahoo.searchlib.rankingexpression.Reference.RANKING_EXPRESSION_WRAPPER;
 
 import java.util.function.Supplier;
 import java.util.logging.Logger;
@@ -42,7 +43,7 @@ class HitRescorer {
         }
     }
 
-    private static final String RE_PREFIX = "rankingExpression(";
+    private static final String RE_PREFIX = RANKING_EXPRESSION_WRAPPER + "(";
     private static final String RE_SUFFIX = ")";
     private static final int RE_PRE_LEN = RE_PREFIX.length();
     private static final int RE_SUF_LEN = RE_SUFFIX.length();

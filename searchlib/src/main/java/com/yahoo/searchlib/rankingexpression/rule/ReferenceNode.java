@@ -8,6 +8,7 @@ import com.yahoo.searchlib.rankingexpression.evaluation.Context;
 import com.yahoo.searchlib.rankingexpression.evaluation.Value;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.tensor.evaluation.TypeContext;
+import static com.yahoo.searchlib.rankingexpression.Reference.wrapInRankingExpression;
 
 import java.util.ArrayDeque;
 import java.util.Deque;
@@ -95,7 +96,7 @@ public final class ReferenceNode extends CompositeNode {
                     context.addFunctionTypeSerialization(functionName, function.returnType().get());
             }
             path.removeLast();
-            return string.append("rankingExpression(").append(functionName).append(')');
+            return string.append(wrapInRankingExpression(functionName));
         }
 
         // Not resolved in this context: output as-is

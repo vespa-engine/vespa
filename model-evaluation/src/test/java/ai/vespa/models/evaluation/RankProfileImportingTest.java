@@ -49,4 +49,9 @@ public class RankProfileImportingTest {
         assertEquals("tensor()", rt.get().toString());
     }
 
+    @Test
+    public void testImportingExpressionsAsArguments() {
+        ModelTester tester = new ModelTester("src/test/resources/config/expressions-as-arguments/");
+        assertEquals(3, tester.models().size());
+    }
 }

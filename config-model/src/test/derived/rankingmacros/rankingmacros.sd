@@ -1,0 +1,105 @@
+# Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+schema rankingmacros {
+
+  document rankingmacros {
+    field title type string {
+      indexing: index
+    }
+    field timestamp type long {
+      indexing: attribute
+    }
+    field description type string {
+      indexing: index
+    }
+    field num type int {
+      indexing: attribute
+    }
+    field abstract type string {
+      indexing: index
+    }
+    field body type string {
+      indexing: index
+    }
+    field usstaticrank type string {
+      indexing: attribute
+    }
+    field boostmax type string {
+      indexing: index
+    }
+    field entitytitle type string {
+      indexing: index
+    }
+  }
+
+  rank-profile standalone {
+    macro fourtimessum(var1, var2) {
+      expression: 4*(var1+var2)
+    }
+    macro myfeature() {
+       expression {
+         7 * attribute(num)
+       }
+    }
+    macro anotherfeature() {
+      expression: 10*myfeature
+    }
+    macro yetanotherfeature() {
+      expression: 100*rankingExpression(myfeature) # legacy form
+    }
+    macro macro_with_dollar$() { # Not allowed
+      expression: 69
+    }
+    first-phase {
+      expression: match + fieldMatch(title) + myfeature
+    }
+    second-phase {
+      expression: fourtimessum(match,match) + 0 * macro_with_dollar$
+    }
+    summary-features {
+      firstPhase
+      rankingExpression(myfeature)
+      anotherfeature
+      yetanotherfeature
+      macro_with_dollar$
+    }
+  }
+
+  # Profile with macro and constants
+  rank-profile constantsAndMacro {
+    macro c() {
+      expression: attribute(num)
+    }
+
+    constants {
+      a: 2
+      b: 3
+    }
+
+    first-phase {
+      expression: attribute(num) * a + b
+    }
+
+    summary-features {
+      firstPhase
+    }
+  }
+
+  # The example in the docs
+  rank-profile doc inherits default {
+    macro myfeature() {
+      expression: fieldMatch(title) + freshness(timestamp)
+    }
+    macro otherfeature(foo) {
+      expression{ nativeRank(foo, body) }
+    }
+
+    first-phase {
+      expression: myfeature * 10
+    }
+    second-phase {
+      expression: otherfeature(title) * myfeature
+    }
+    summary-features: myfeature
+  }
+
+}
