@@ -120,17 +120,30 @@ public class Reference extends Name implements Comparable<Reference> {
         return toString(new StringBuilder(), new SerializationContext(), null, null).toString();
     }
 
+    public static final String RANKING_EXPRESSION_WRAPPER = "rankingExpression";
+
+    public static String wrapInRankingExpression(String name) {
+        return RANKING_EXPRESSION_WRAPPER + "(" + name + ")";
+    }
+
+    public boolean isSimpleRankingExpressionWrapper() {
+        return name().equals(RANKING_EXPRESSION_WRAPPER) && isSimple();
+    }
+
     public StringBuilder toString(StringBuilder b, SerializationContext context, Deque<String> path, CompositeNode parent) {
         b.append(name());
         if (arguments.expressions().size() > 0) {
             b.append("(");
-            for (int i = 0; i < arguments.expressions().size(); i++) {
-                ExpressionNode e = arguments.expressions().get(i);
-                e.toString(b, context, path, parent);
-                if (i+1 < arguments.expressions().size()) {
-                    b.append(',');
+            if (isSimpleRankingExpressionWrapper()) {
+                b.append(simpleArgument().get());
+            } else {
+                for (int i = 0; i < arguments.expressions().size(); i++) {
+                    ExpressionNode e = arguments.expressions().get(i);
+                    e.toString(b, context, path, parent);
+                    if (i+1 < arguments.expressions().size()) {
+                        b.append(',');
+                    }
                 }
-
             }
             b.append(")");
         }
