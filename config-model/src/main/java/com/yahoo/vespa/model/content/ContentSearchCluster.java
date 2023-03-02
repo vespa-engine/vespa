@@ -426,6 +426,16 @@ public class ContentSearchCluster extends TreeConfigProducer<AnyConfigProducer> 
         }
 
         builder.indexing.optimize(feedSequencerType);
+        setMaxFlushed(builder);
+    }
+
+    private void setMaxFlushed(ProtonConfig.Builder builder) {
+        // maxflushed should be moved down to proton
+        double concurrency = builder.feeding.build().concurrency();
+        if (concurrency > defaultFeedConcurrency) {
+            int maxFlushes = (int)Math.ceil(4 * concurrency);
+            builder.index.maxflushed(maxFlushes);
+        }
     }
 
     private boolean isGloballyDistributed(NewDocumentType docType) {
