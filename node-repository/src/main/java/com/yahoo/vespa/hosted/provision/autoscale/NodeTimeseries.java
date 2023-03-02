@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.provision.autoscale;
 
 import com.yahoo.vespa.hosted.provision.Node;
+import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.node.History;
 
 import java.time.Instant;
@@ -108,6 +109,13 @@ public class NodeTimeseries {
     private boolean recentlyCameUp(NodeMetricSnapshot snapshot, Node node) {
         Optional<History.Event> up = node.history().event(History.Event.Type.up);
         return up.isPresent() && snapshot.at().isBefore(up.get().at().plus(warmupDuration));
+    }
+
+    String description(long generation, NodeList clusterNodes) {
+        var node = clusterNodes.node(hostname);
+        if (node.isEmpty()) return "(no node " + hostname + ")";
+        return "gen " + generation + " since " + generationChange(generation) + ", up " + node.get().history().event(History.Event.Type.up) +
+               ": " + (snapshots.isEmpty() ? "(no snapshots)" : snapshots.get(snapshots.size()-1));
     }
 
 }
