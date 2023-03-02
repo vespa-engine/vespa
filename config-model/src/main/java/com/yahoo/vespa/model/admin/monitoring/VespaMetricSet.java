@@ -131,6 +131,8 @@ public class VespaMetricSet {
     private static Set<Metric> getContainerMetrics() {
         Set<Metric> metrics = new LinkedHashSet<>();
 
+        addMetric(metrics, ContainerMetrics.APPLICATION_GENERATION.baseName());
+
         addMetric(metrics, ContainerMetrics.HANDLED_REQUESTS.count());
         addMetric(metrics, ContainerMetrics.HANDLED_LATENCY, EnumSet.of(sum, count, max));
         

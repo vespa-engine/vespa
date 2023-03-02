@@ -341,10 +341,10 @@ public final class ConfiguredApplication implements Application {
                 tryReportFailedComponentGraphConstructionMetric(configurer, e);
                 log.log(Level.SEVERE,
                         "Reconfiguration failed, your application package must be fixed, unless this is a " +
-                                "JNI reload issue: " + Exceptions.toMessageString(e), e);
+                        "JNI reload issue: " + Exceptions.toMessageString(e), e);
             } catch (Error e) {
                 com.yahoo.protect.Process.logAndDie("java.lang.Error on reconfiguration: We are probably in " +
-                        "a bad state and will terminate", e);
+                                                    "a bad state and will terminate", e);
             }
         }
         log.fine("Reconfiguration loop exited");
