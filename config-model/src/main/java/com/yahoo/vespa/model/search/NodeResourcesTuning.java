@@ -97,8 +97,10 @@ public class NodeResourcesTuning implements ProtonConfig.Producer {
         if (usableMemoryGb() < MIN_MEMORY_PER_FLUSH_THREAD_GB) {
             builder.maxconcurrent(1);
         }
+        double min_concurrent_mem = usableMemoryGb() / (2*MIN_MEMORY_PER_FLUSH_THREAD_GB);
+        double min_concurrent_cpu = resources.vcpu() * MAX_FLUSH_THREAD_RATIO;
         builder.maxconcurrent(Math.min(builder.build().maxconcurrent(),
-                                       Math.max(1, (int)Math.ceil(resources.vcpu()*MAX_FLUSH_THREAD_RATIO))));
+                (int)Math.ceil(Math.max(min_concurrent_mem, min_concurrent_cpu))));
     }
 
     private void tuneFlushStrategyTlsSize(ProtonConfig.Flush.Memory.Builder builder) {
