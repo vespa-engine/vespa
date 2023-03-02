@@ -37,7 +37,7 @@ struct DomainExplorer : vespalib::StateExplorer {
                 {
                     FastOS_StatInfo stat_info;
                     FastOS_File::Stat(part_in.file.c_str(), &stat_info);
-                    part.setString("lastModified", vespalib::to_string(vespalib::system_time(std::chrono::duration_cast<vespalib::system_time::duration>(std::chrono::nanoseconds(stat_info._modifiedTimeNS)))));
+                    part.setString("lastModified", vespalib::to_string(stat_info._modifiedTime));
                 }
             }
         }

@@ -4,12 +4,11 @@
 #include <vespa/defaults.h>
 #include <vespa/vespalib/util/backtrace.h>
 #include <vespa/vespalib/util/stringfmt.h>
+#include <vespa/vespalib/util/time.h>
 #include <vespa/vespalib/component/vtag.h>
 #include <fstream>
 #include <map>
 #include <mutex>
-#include <chrono>
-#include <iomanip>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".vespa.assert");
@@ -63,9 +62,7 @@ assertOnceOrLog(const char *expr, const char *key, size_t freq)
                 LOG(error, "assert(%s) named '%s' failed first time. Stacktrace = %s",
                     expr, key, vespalib::getStackTrace(0).c_str());
                 std::ofstream assertStream(rememberAssert.c_str());
-                std::chrono::time_point now = std::chrono::system_clock::now();
-                std::time_t now_c = std::chrono::system_clock::to_time_t(now);
-                assertStream << std::put_time(std::gmtime(&now_c), "%F %T") << " assert(" << expr
+                assertStream << to_string(system_clock::now()) << " assert(" << expr
                              << ") named " << key << " failed" << std::endl;
                 assertStream.close();
             }

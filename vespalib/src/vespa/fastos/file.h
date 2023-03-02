@@ -597,12 +597,7 @@ public:
     /**
      * Time of last modification in seconds.
      */
-    time_t _modifiedTime;
-
-    /**
-     * Time of last modification in seconds.
-     */
-    uint64_t _modifiedTimeNS;
+    vespalib::system_time _modifiedTime;
 };
 
 

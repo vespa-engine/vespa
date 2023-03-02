@@ -4,7 +4,6 @@
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/document/fieldvalue/stringfieldvalue.h>
 #include <vespa/document/repo/configbuilder.h>
-#include <vespa/document/fieldvalue/document.h>
 #include <vespa/searchcore/proton/test/transport_helper.h>
 #include <vespa/searchcorespi/index/index_manager_stats.h>
 #include <vespa/searchcorespi/index/indexcollection.h>
@@ -305,7 +304,7 @@ TEST_F(IndexManagerTest, require_that_memory_index_is_flushed)
         runAsMaster([&]() { flushTask = target.initFlush(1, std::make_shared<search::FlushToken>()); });
         flushTask->run();
         EXPECT_TRUE(FastOS_File::Stat("test_data/index.flush.1", &stat));
-        EXPECT_EQ(seconds(stat._modifiedTime), duration_cast<seconds>(target.getLastFlushTime().time_since_epoch()));
+        EXPECT_EQ(stat._modifiedTime, target.getLastFlushTime());
 
         sources = get_source_collection();
         EXPECT_EQ(2u, sources->getSourceCount());
@@ -323,7 +322,7 @@ TEST_F(IndexManagerTest, require_that_memory_index_is_flushed)
     { // verify last flush time when loading disk index
         resetIndexManager();
         IndexFlushTarget target(_index_manager->getMaintainer());
-        EXPECT_EQ(seconds(stat._modifiedTime), duration_cast<seconds>(target.getLastFlushTime().time_since_epoch()));
+        EXPECT_EQ(stat._modifiedTime, target.getLastFlushTime());
 
         // updated serial number & flush time when nothing to flush
         std::this_thread::sleep_for(2s);
@@ -332,7 +331,7 @@ TEST_F(IndexManagerTest, require_that_memory_index_is_flushed)
         runAsMaster([&]() { task = target.initFlush(2, std::make_shared<search::FlushToken>()); });
         EXPECT_FALSE(task);
         EXPECT_EQ(2u, target.getFlushedSerialNum());
-        EXPECT_LT(seconds(stat._modifiedTime), duration_cast<seconds>(target.getLastFlushTime().time_since_epoch()));
+        EXPECT_LT(stat._modifiedTime, target.getLastFlushTime());
         EXPECT_NEAR(now.count(), duration_cast<seconds>(target.getLastFlushTime().time_since_epoch()).count(), 2);
     }
 }

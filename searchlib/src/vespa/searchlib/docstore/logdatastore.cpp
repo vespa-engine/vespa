@@ -35,6 +35,7 @@ using vespalib::IllegalStateException;
 using vespalib::getErrorString;
 using vespalib::getLastErrorString;
 using vespalib::make_string;
+using vespalib::to_string;
 
 using CpuCategory = CpuUsage::Category;
 
@@ -665,7 +666,7 @@ lsSingleFile(const vespalib::string & fileName)
     vespalib::string s;
     FastOS_StatInfo stat;
     if ( FastOS_File::Stat(fileName.c_str(), &stat)) {
-        s += make_string("%s  %20" PRIu64 "  %12" PRId64, fileName.c_str(), stat._modifiedTimeNS, stat._size);
+        s += make_string("%s  %20" PRIu64 "  %12" PRId64, fileName.c_str(), vespalib::count_ns(stat._modifiedTime.time_since_epoch()), stat._size);
     } else {
         s = make_string("%s 'stat' FAILED !!", fileName.c_str());
     }
@@ -744,16 +745,16 @@ LogDataStore::verifyModificationTime(const NameIdSet & partList)
             throw runtime_error(make_string("Failed to Stat '%s'\nDirectory =\n%s", idxName.c_str(), ls(partList).c_str()));
         }
         ns_log::Logger::LogLevel logLevel = ns_log::Logger::debug;
-        if ((datStat._modifiedTimeNS < prevDatStat._modifiedTimeNS) && hasNonHeaderData(datName)) {
-            VLOG(logLevel, "Older file '%s' is newer (%" PRIu64 ") than file '%s' (%" PRIu64 ")\nDirectory =\n%s",
-                         prevDatNam.c_str(), prevDatStat._modifiedTimeNS,
-                         datName.c_str(), datStat._modifiedTimeNS,
+        if ((datStat._modifiedTime < prevDatStat._modifiedTime) && hasNonHeaderData(datName)) {
+            VLOG(logLevel, "Older file '%s' is newer (%s) than file '%s' (%s)\nDirectory =\n%s",
+                         prevDatNam.c_str(), to_string(prevDatStat._modifiedTime).c_str(),
+                         datName.c_str(), to_string(datStat._modifiedTime).c_str(),
                          ls(partList).c_str());
         }
-        if ((idxStat._modifiedTimeNS < prevIdxStat._modifiedTimeNS) && hasNonHeaderData(idxName)) {
-            VLOG(logLevel, "Older file '%s' is newer (%" PRIu64 ") than file '%s' (%" PRIu64 ")\nDirectory =\n%s",
-                         prevIdxNam.c_str(), prevIdxStat._modifiedTimeNS,
-                         idxName.c_str(), idxStat._modifiedTimeNS,
+        if ((idxStat._modifiedTime < prevIdxStat._modifiedTime) && hasNonHeaderData(idxName)) {
+            VLOG(logLevel, "Older file '%s' is newer (%s) than file '%s' (%s)\nDirectory =\n%s",
+                         prevIdxNam.c_str(), to_string(prevIdxStat._modifiedTime).c_str(),
+                         idxName.c_str(), to_string(idxStat._modifiedTime).c_str(),
                          ls(partList).c_str());
         }
         prevDatStat = datStat;

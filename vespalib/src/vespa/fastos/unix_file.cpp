@@ -29,6 +29,10 @@
 
 using fastos::File_RW_Ops;
 
+namespace {
+    constexpr uint64_t ONE_G = 1000 * 1000 * 1000;
+}
+
 int FastOS_UNIX_File::GetLastOSError() {
     return errno;
 }
@@ -61,8 +65,7 @@ FastOS_UNIX_File::GetPosition()
     return lseek(_filedes, 0, SEEK_CUR);
 }
 
-void FastOS_UNIX_File::ReadBuf(void *buffer, size_t length,
-                               int64_t readOffset)
+void FastOS_UNIX_File::ReadBuf(void *buffer, size_t length, int64_t readOffset)
 {
     ssize_t readResult;
 
@@ -94,19 +97,13 @@ FastOS_UNIX_File::Stat(const char *filename, FastOS_StatInfo *statInfo)
         statInfo->_isRegular = S_ISREG(stbuf.st_mode);
         statInfo->_isDirectory = S_ISDIR(stbuf.st_mode);
         statInfo->_size = static_cast<int64_t>(stbuf.st_size);
-        statInfo->_modifiedTime = stbuf.st_mtime;
+        uint64_t modTimeNS = stbuf.st_mtime * ONE_G;
 #ifdef __linux__
-        statInfo->_modifiedTimeNS = stbuf.st_mtim.tv_sec;
-        statInfo->_modifiedTimeNS *= 1000000000;
-        statInfo->_modifiedTimeNS += stbuf.st_mtim.tv_nsec;
+        modTimeNS += stbuf.st_mtim.tv_nsec;
 #elif defined(__APPLE__)
-        statInfo->_modifiedTimeNS = stbuf.st_mtimespec.tv_sec;
-        statInfo->_modifiedTimeNS *= 1000000000;
-        statInfo->_modifiedTimeNS += stbuf.st_mtimespec.tv_nsec;
-#else
-        statInfo->_modifiedTimeNS = stbuf.st_mtime;
-        statInfo->_modifiedTimeNS *= 1000000000;
+        modTimeNS += stbuf.st_mtimespec.tv_nsec;
 #endif
+        statInfo->_modifiedTime = vespalib::system_time(std::chrono::nanoseconds(modTimeNS));
         rc = true;
     } else {
         if (errno == ENOENT) {
