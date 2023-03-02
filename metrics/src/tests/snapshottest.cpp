@@ -4,7 +4,6 @@
 #include <vespa/metrics/metrics.h>
 #include <vespa/metrics/summetric.hpp>
 #include <vespa/vespalib/gtest/gtest.h>
-#include <vespa/vespalib/util/size_literals.h>
 
 namespace metrics {
 
@@ -166,8 +165,8 @@ void ASSERT_VALUE(int32_t value, const MetricSnapshot & snapshot, const char *na
 }
 
 struct SnapshotTest : public ::testing::Test {
-    time_t tick(MetricManager& mgr, time_t currentTime) {
-        return mgr.tick(mgr.getMetricLock(), currentTime);
+    void tick(MetricManager& mgr, time_t currentTime) {
+        mgr.tick(mgr.getMetricLock(), time_point(vespalib::from_s(currentTime)));
     }
 };
 
@@ -221,7 +220,7 @@ TEST_F(SnapshotTest, test_snapshot_two_days)
     ASSERT_VALUE(0, *snap, "test.set1.set1.countSum");
 
     // 5 minute snapshot
-    snap = &mm.getMetricSnapshot(lockGuard, 5 * 60);
+    snap = &mm.getMetricSnapshot(lockGuard, 5 * 60s);
     ASSERT_VALUE(1, *snap, "test.set1.set1.count1");
     ASSERT_VALUE(2, *snap, "test.set1.set1.countSum");
 
@@ -229,7 +228,7 @@ TEST_F(SnapshotTest, test_snapshot_two_days)
     ASSERT_VALUE(1, *snap, "test.set1.set1.averageSum");
 
     // 1 hour snapshot
-    snap = &mm.getMetricSnapshot(lockGuard, 60 * 60);
+    snap = &mm.getMetricSnapshot(lockGuard, 60 * 60s);
     ASSERT_VALUE(12, *snap, "test.set1.set1.count1");
     ASSERT_VALUE(24, *snap, "test.set1.set1.countSum");
 
@@ -237,7 +236,7 @@ TEST_F(SnapshotTest, test_snapshot_two_days)
     ASSERT_VALUE(1, *snap, "test.set1.set1.averageSum");
 
     // 1 day snapshot
-    snap = &mm.getMetricSnapshot(lockGuard, 24 * 60 * 60);
+    snap = &mm.getMetricSnapshot(lockGuard, 24 * 60 * 60s);
     ASSERT_VALUE(288, *snap, "test.set1.set1.count1");
     ASSERT_VALUE(576, *snap, "test.set1.set1.countSum");
 

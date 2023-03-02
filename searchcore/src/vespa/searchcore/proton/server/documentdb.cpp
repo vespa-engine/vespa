@@ -94,7 +94,7 @@ class MetricsUpdateHook : public metrics::UpdateHook {
     DocumentDB &_db;
 public:
     explicit MetricsUpdateHook(DocumentDB &s)
-        : metrics::UpdateHook("documentdb-hook"),
+        : metrics::UpdateHook("documentdb-hook", 5s),
           _db(s)
     {}
     void updateMetrics(const MetricLockGuard & guard) override {

@@ -185,7 +185,7 @@ void MetricsTest::createFakeLoad()
     }
     _clock->addSecondsToTime(60);
     _metricManager->timeChangedNotification();
-    while (int64_t(_metricManager->getLastProcessedTime()) < vespalib::count_s(_clock->getMonotonicTime().time_since_epoch())) {
+    while (_metricManager->getLastProcessedTime() < _clock->getSystemTime()) {
         std::this_thread::sleep_for(5ms);
         _metricManager->timeChangedNotification();
     }
@@ -235,7 +235,7 @@ TEST_F(MetricsTest, snapshot_presenting) {
     for (uint32_t i=0; i<6; ++i) {
         _clock->addSecondsToTime(60);
         _metricManager->timeChangedNotification();
-        while (int64_t(_metricManager->getLastProcessedTime()) < vespalib::count_s(_clock->getMonotonicTime().time_since_epoch())) {
+        while (_metricManager->getLastProcessedTime() < _clock->getSystemTime()) {
             std::this_thread::sleep_for(1ms);
         }
     }
@@ -295,8 +295,8 @@ MetricsTest::createSnapshotForPeriod(std::chrono::seconds secs) const
 {
     _clock->addSecondsToTime(secs.count());
     _metricManager->timeChangedNotification();
-    while (int64_t(_metricManager->getLastProcessedTime()) < vespalib::count_s(_clock->getMonotonicTime().time_since_epoch())) {
-        std::this_thread::sleep_for(100ms);
+    while (_metricManager->getLastProcessedTime() < _clock->getSystemTime()) {
+        std::this_thread::sleep_for(5ms);
     }
 }
 

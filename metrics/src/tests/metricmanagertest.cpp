@@ -29,7 +29,7 @@ struct MetricManagerTest : public ::testing::Test {
     // MetricManager that aren't accessible to "freestanding" fixtures. So we
     // get the test to do the necessary poking and prodding for us instead.
     void takeSnapshots(MetricManager& mm, time_t timeToProcess) {
-        mm.takeSnapshots(mm.getMetricLock(), timeToProcess);
+        mm.takeSnapshots(mm.getMetricLock(), system_time(vespalib::from_s(timeToProcess)));
     }
 };
 
@@ -165,7 +165,7 @@ getMatchedMetrics(const vespalib::string& config)
 
     MetricLockGuard g(mm.getMetricLock());
     mm.visit(g, mm.getActiveMetrics(g), visitor, "consumer");
-    MetricManager::ConsumerSpec::SP consumerSpec(mm.getConsumerSpec(g, "consumer"));
+    const MetricManager::ConsumerSpec * consumerSpec = mm.getConsumerSpec(g, "consumer");
     return { visitor.toString(), consumerSpec ? consumerSpec->toString() : "Non-existing consumer" };
 }
 
@@ -384,11 +384,11 @@ struct BriefValuePrinter : public MetricVisitor {
     }
 };
 
-bool waitForTimeProcessed(const MetricManager& mm, time_t processtime, uint32_t timeout = 120)
+bool waitForTimeProcessed(const MetricManager& mm, vespalib::duration processtime, uint32_t timeout = 120)
 {
     uint32_t lastchance = time(0) + timeout;
     while (time(0) < lastchance) {
-        if (mm.getLastProcessedTime() >= processtime) return true;
+        if (mm.getLastProcessedTime() >= time_point(processtime)) return true;
         mm.timeChangedNotification();
         std::this_thread::sleep_for(10ms);
     }
@@ -411,14 +411,11 @@ std::string dumpAllSnapshots(const MetricManager& mm, const std::string& consume
         mm.visit(metricLock, mm.getTotalMetricSnapshot(metricLock), briefValuePrinter, consumer);
         ost << "Total: " << briefValuePrinter.ost.str() << "\n";
     }
-    std::vector<uint32_t> periods;
-    {
-        MetricLockGuard metricLock(mm.getMetricLock());
-        periods = mm.getSnapshotPeriods(metricLock);
-    }
-    for (uint32_t i=0; i<periods.size(); ++i) {
-        MetricLockGuard metricLock(mm.getMetricLock());
-        const MetricSnapshotSet& set(mm.getMetricSnapshotSet(metricLock, periods[i]));
+
+    MetricLockGuard metricLock(mm.getMetricLock());
+    auto periods = mm.getSnapshotPeriods(metricLock);
+    for (vespalib::duration period : periods) {
+        const MetricSnapshotSet& set(mm.getMetricSnapshotSet(metricLock, period));
         ost << set.getName() << "\n";
         for (uint32_t count=0,j=0; j<2; ++j) {
             if (set.getCount() == 1 && j == 1) continue;
@@ -438,9 +435,9 @@ std::string dumpAllSnapshots(const MetricManager& mm, const std::string& consume
 { \
     MetricLockGuard lockGuard(mm.getMetricLock()); \
     BriefValuePrinter briefValuePrinter; \
-    if (period == -1) { \
+    if (period < vespalib::duration::zero()) { \
         mm.visit(lockGuard, mm.getActiveMetrics(lockGuard), briefValuePrinter, "snapper"); \
-    } else if (period == 0) { \
+    } else if (period == vespalib::duration::zero()) { \
         mm.visit(lockGuard, mm.getTotalMetricSnapshot(lockGuard), briefValuePrinter, "snapper"); \
     } else { \
         mm.visit(lockGuard, mm.getMetricSnapshot(lockGuard, period), briefValuePrinter, "snapper"); \
@@ -450,8 +447,8 @@ std::string dumpAllSnapshots(const MetricManager& mm, const std::string& consume
 
 #define ASSERT_PROCESS_TIME(mm, time) \
 { \
-    LOG(info, "Waiting for processed time %u.", time); \
-    bool gotToCorrectProgress = waitForTimeProcessed(mm, time); \
+    LOG(info, "Waiting for processed time %s.", vespalib::to_string(time_point(time)).c_str()); \
+    bool gotToCorrectProgress = waitForTimeProcessed(mm, (time)); \
     if (!gotToCorrectProgress) \
         FAIL() << "Failed to get to processed time within timeout"; \
 }
@@ -478,8 +475,7 @@ TEST_F(MetricManagerTest, test_snapshots)
     {
         MetricLockGuard lockGuard(mm.getMetricLock());
         mm.visit(lockGuard, mm.getActiveMetrics(lockGuard), visitor, "snapper");
-        MetricManager::ConsumerSpec::SP consumerSpec(
-                mm.getConsumerSpec(lockGuard, "snapper"));
+        const MetricManager::ConsumerSpec * consumerSpec = mm.getConsumerSpec(lockGuard, "snapper");
         EXPECT_EQ(std::string("\n"
                               "temp.val6\n"
                               "temp.sub.val1\n"
@@ -492,12 +488,11 @@ TEST_F(MetricManagerTest, test_snapshots)
                               "*temp.multisub.sum.val1\n"
                               "*temp.multisub.sum.val2\n"
                               "*temp.multisub.sum.valsum\n"),
-                  "\n" + visitor.toString()) << (consumerSpec.get() ? consumerSpec->toString()
-                                                                    : "Non-existing consumer");
+                  "\n" + visitor.toString()) << (consumerSpec ? consumerSpec->toString() : "Non-existing consumer");
     }
     // Initially, there should be no metrics logged
-    ASSERT_PROCESS_TIME(mm, 1000);
-    ASSERT_VALUES(mm, 5 * 60, "");
+    ASSERT_PROCESS_TIME(mm, 1000s);
+    ASSERT_VALUES(mm, 5 * 60s, "");
 
     // Adding metrics done in first five minutes.
     mySet.val6.addValue(2);
@@ -507,10 +502,10 @@ TEST_F(MetricManagerTest, test_snapshots)
     mySet.val10.a.val2.addValue(2);
     mySet.val10.b.val1.addValue(1);
     timer.add_time(5 * 60);
-    ASSERT_PROCESS_TIME(mm, 1000 + 5 * 60);
-    ASSERT_VALUES(mm,  5 * 60, "2,4,4,1,7,9,1,1,8,2,10");
-    ASSERT_VALUES(mm, 60 * 60, "");
-    ASSERT_VALUES(mm,  0 * 60, "2,4,4,1,7,9,1,1,8,2,10");
+    ASSERT_PROCESS_TIME(mm, 1000s + 5 * 60s);
+    ASSERT_VALUES(mm,  5 * 60s, "2,4,4,1,7,9,1,1,8,2,10");
+    ASSERT_VALUES(mm, 60 * 60s, "");
+    ASSERT_VALUES(mm,  0 * 60s, "2,4,4,1,7,9,1,1,8,2,10");
 
     // Adding metrics done in second five minute period. Total should
     // be updated to account for both
@@ -521,18 +516,18 @@ TEST_F(MetricManagerTest, test_snapshots)
     mySet.val10.a.val2.addValue(3);
     mySet.val10.b.val1.addValue(2);
     timer.add_time(5 * 60);
-    ASSERT_PROCESS_TIME(mm, 1000 + 5 * 60 * 2);
-    ASSERT_VALUES(mm,  5 * 60, "4,5,5,1,8,11,2,2,10,3,13");
-    ASSERT_VALUES(mm, 60 * 60, "");
-    ASSERT_VALUES(mm,  0 * 60, "4,5,5,2,8,11,2,2,10,3,13");
+    ASSERT_PROCESS_TIME(mm, 1000s + 5 * 60 * 2s);
+    ASSERT_VALUES(mm,  5 * 60s, "4,5,5,1,8,11,2,2,10,3,13");
+    ASSERT_VALUES(mm, 60 * 60s, "");
+    ASSERT_VALUES(mm,  0 * 60s, "4,5,5,2,8,11,2,2,10,3,13");
 
     // Adding another five minute period where nothing have happened.
     // Metric for last 5 minutes should be 0.
     timer.add_time(5 * 60);
-    ASSERT_PROCESS_TIME(mm, 1000 + 5 * 60 * 3);
-    ASSERT_VALUES(mm,  5 * 60, "0,0,0,0,0,0,0,0,0,0,0");
-    ASSERT_VALUES(mm, 60 * 60, "");
-    ASSERT_VALUES(mm,  0 * 60, "4,5,5,2,8,11,2,2,10,3,13");
+    ASSERT_PROCESS_TIME(mm, 1000s + 5 * 60s * 3);
+    ASSERT_VALUES(mm,  5 * 60s, "0,0,0,0,0,0,0,0,0,0,0");
+    ASSERT_VALUES(mm, 60 * 60s, "");
+    ASSERT_VALUES(mm,  0 * 60s, "4,5,5,2,8,11,2,2,10,3,13");
 
     // Advancing time to 60 minute period, we should create a proper
     // 60 minute period timer.
@@ -540,18 +535,18 @@ TEST_F(MetricManagerTest, test_snapshots)
     for (uint32_t i=0; i<9; ++i) { // 9 x 5 minutes. Avoid snapshot bumping
                                    // due to taking snapshots in the past
         timer.add_time(5 * 60);
-        ASSERT_PROCESS_TIME(mm, 1000 + 5 * 60 * (4 + i));
+        ASSERT_PROCESS_TIME(mm, 1000s + 5 * 60s * (4 + i));
     }
-    ASSERT_VALUES(mm,  5 * 60, "0,0,0,0,0,0,0,0,0,0,0");
-    ASSERT_VALUES(mm, 60 * 60, "6,5,5,2,8,11,2,2,10,3,13");
-    ASSERT_VALUES(mm,  0 * 60, "6,5,5,2,8,11,2,2,10,3,13");
+    ASSERT_VALUES(mm,  5 * 60s, "0,0,0,0,0,0,0,0,0,0,0");
+    ASSERT_VALUES(mm, 60 * 60s, "6,5,5,2,8,11,2,2,10,3,13");
+    ASSERT_VALUES(mm,  0 * 60s, "6,5,5,2,8,11,2,2,10,3,13");
 
     // Test that reset works
-    mm.reset(1000);
-    ASSERT_VALUES(mm,      -1, "0,0,0,0,0,0,0,0,0,0,0");
-    ASSERT_VALUES(mm,  5 * 60, "0,0,0,0,0,0,0,0,0,0,0");
-    ASSERT_VALUES(mm, 60 * 60, "0,0,0,0,0,0,0,0,0,0,0");
-    ASSERT_VALUES(mm,  0 * 60, "0,0,0,0,0,0,0,0,0,0,0");
+    mm.reset(system_time(1000s));
+    ASSERT_VALUES(mm,      -1s, "0,0,0,0,0,0,0,0,0,0,0");
+    ASSERT_VALUES(mm,  5 * 60s, "0,0,0,0,0,0,0,0,0,0,0");
+    ASSERT_VALUES(mm, 60 * 60s, "0,0,0,0,0,0,0,0,0,0,0");
+    ASSERT_VALUES(mm,  0 * 60s, "0,0,0,0,0,0,0,0,0,0,0");
 }
 
 TEST_F(MetricManagerTest, test_json_output)
@@ -591,7 +586,7 @@ TEST_F(MetricManagerTest, test_json_output)
     JsonWriter writer(jsonStream);
     {
         MetricLockGuard lockGuard(mm.getMetricLock());
-        mm.visit(lockGuard, mm.getMetricSnapshot(lockGuard, 300, false), writer, "snapper");
+        mm.visit(lockGuard, mm.getMetricSnapshot(lockGuard, 300s, false), writer, "snapper");
     }
     jsonStream.finalize();
     std::string jsonData = as.str();
@@ -680,7 +675,7 @@ struct MetricSnapshotTestFixture
         JsonWriter writer(jsonStream);
         {
             MetricLockGuard lockGuard(manager.getMetricLock());
-            manager.visit(lockGuard, manager.getMetricSnapshot(lockGuard, 300, false), writer, "snapper");
+            manager.visit(lockGuard, manager.getMetricSnapshot(lockGuard, 300s, false), writer, "snapper");
         }
         jsonStream.finalize();
         return as.str();
@@ -689,10 +684,10 @@ struct MetricSnapshotTestFixture
     std::string renderLastSnapshotAsText(const std::string& matchPattern = ".*") const
     {
         std::ostringstream ss;
-        TextWriter writer(ss, 300, matchPattern, true);
+        TextWriter writer(ss, 300s, matchPattern, true);
         {
             MetricLockGuard lockGuard(manager.getMetricLock());
-            manager.visit(lockGuard, manager.getMetricSnapshot(lockGuard, 300, false), writer, "snapper");
+            manager.visit(lockGuard, manager.getMetricSnapshot(lockGuard, 300s, false), writer, "snapper");
         }
         return ss.str();
     }
@@ -902,7 +897,7 @@ TEST_F(MetricManagerTest, test_text_output)
                       "consumer[1].tags[1]\n"
                       "consumer[1].tags[0] snaptest\n"));
     std::string expected(
-        "snapshot \"Active metrics showing updates since last snapshot\" from 1000 to 0 period 0\n"
+        "snapshot \"Active metrics showing updates since last snapshot\" from 1970-01-01 00:16:40.000 UTC to 1970-01-01 00:00:00.000 UTC period 0\n"
         "temp.val6 average=2 last=2 min=2 max=2 count=1 total=2\n"
         "temp.sub.val1 average=4 last=4 min=4 max=4 count=1 total=4\n"
         "temp.sub.valsum average=4 last=4 min=4 max=4 count=1 total=4\n"
@@ -915,7 +910,7 @@ TEST_F(MetricManagerTest, test_text_output)
         "temp.multisub.sum.val2 average=2 last=2 min=2 max=2 count=1 total=2\n"
         "temp.multisub.sum.valsum average=10 last=10");
     std::ostringstream ost;
-    TextWriter writer(ost, 300, ".*", true);
+    TextWriter writer(ost, 300s, ".*", true);
     {
         MetricLockGuard lockGuard(mm.getMetricLock());
         mm.visit(lockGuard, mm.getActiveMetrics(lockGuard), writer, "snapper");
@@ -938,11 +933,9 @@ TEST_F(MetricManagerTest, text_output_supports_dimensions)
     fixture.takeSnapshotsOnce();
     std::string actual = fixture.renderLastSnapshotAsText("outer.*temp.*val");
     std::string expected(
-            "snapshot \"5 minute\" from 1000 to 1300 period 300\n"
-            "outer{fancy:stuff}.temp{bar:hyperbar,foo:megafoo}.val1 "
-                "average=2 last=2 min=2 max=2 count=1 total=2\n"
-            "outer{fancy:stuff}.temp{bar:hyperbar,foo:megafoo}.val2"
-                "{baz:superbaz} count=1");
+            "snapshot \"5 minute\" from 1970-01-01 00:16:40.000 UTC to 1970-01-01 00:21:40.000 UTC period 300\n"
+            "outer{fancy:stuff}.temp{bar:hyperbar,foo:megafoo}.val1 average=2 last=2 min=2 max=2 count=1 total=2\n"
+            "outer{fancy:stuff}.temp{bar:hyperbar,foo:megafoo}.val2{baz:superbaz} count=1");
     EXPECT_EQ(expected, actual);
 }
 
@@ -952,8 +945,8 @@ namespace {
         std::mutex&         _output_mutex;
         FakeTimer&          _timer;
 
-        MyUpdateHook(std::ostringstream& output, std::mutex& output_mutex, const char* name, FakeTimer& timer)
-            : UpdateHook(name),
+        MyUpdateHook(std::ostringstream& output, std::mutex& output_mutex, const char* name, vespalib::duration period, FakeTimer& timer)
+            : UpdateHook(name, period),
               _output(output),
               _output_mutex(output_mutex),
               _timer(timer)
@@ -981,12 +974,12 @@ TEST_F(MetricManagerTest, test_update_hooks)
         mm.registerMetric(lockGuard, mySet.set);
     }
 
-    MyUpdateHook preInitShort(output, output_mutex, "BIS", timer);
-    MyUpdateHook preInitLong(output, output_mutex, "BIL", timer);
-    MyUpdateHook preInitInfinite(output, output_mutex, "BII", timer);
-    mm.addMetricUpdateHook(preInitShort, 5);
-    mm.addMetricUpdateHook(preInitLong, 300);
-    mm.addMetricUpdateHook(preInitInfinite, 0);
+    MyUpdateHook preInitShort(output, output_mutex, "BIS", 5s, timer);
+    MyUpdateHook preInitLong(output, output_mutex, "BIL", 300s, timer);
+    MyUpdateHook preInitInfinite(output, output_mutex, "BII", 0s, timer);
+    mm.addMetricUpdateHook(preInitShort);
+    mm.addMetricUpdateHook(preInitLong);
+    mm.addMetricUpdateHook(preInitInfinite);
 
     // All hooks should get called during initialization
 
@@ -1002,56 +995,56 @@ TEST_F(MetricManagerTest, test_update_hooks)
                       "consumer[1].tags[0] snaptest\n"));
     output << "Init done\n";
 
-    MyUpdateHook postInitShort(output, output_mutex, "AIS", timer);
-    MyUpdateHook postInitLong(output, output_mutex, "AIL", timer);
-    MyUpdateHook postInitInfinite(output, output_mutex, "AII", timer);
-    mm.addMetricUpdateHook(postInitShort, 5);
-    mm.addMetricUpdateHook(postInitLong, 400);
-    mm.addMetricUpdateHook(postInitInfinite, 0);
+    MyUpdateHook postInitShort(output, output_mutex, "AIS", 5s, timer);
+    MyUpdateHook postInitLong(output, output_mutex, "AIL", 400s, timer);
+    MyUpdateHook postInitInfinite(output, output_mutex, "AII", 0s, timer);
+    mm.addMetricUpdateHook(postInitShort);
+    mm.addMetricUpdateHook(postInitLong);
+    mm.addMetricUpdateHook(postInitInfinite);
 
     // After 5 seconds the short ones should get another.
 
     timer.set_time(1006);
-    waitForTimeProcessed(mm, 1006);
+    waitForTimeProcessed(mm, 1006s);
 
     // After 4 more seconds the short ones should get another
     // since last update was a second late. (Stable periods, process time
     // should not affect how often they are updated)
 
     timer.set_time(1010);
-    waitForTimeProcessed(mm, 1010);
+    waitForTimeProcessed(mm, 1010s);
 
     // Bumping considerably ahead, such that next update is in the past,
     // we should only get one update called in this period.
 
     timer.set_time(1200);
-    waitForTimeProcessed(mm, 1200);
+    waitForTimeProcessed(mm, 1200s);
 
     // No updates at this time.
     timer.set_time(1204);
-    waitForTimeProcessed(mm, 1204);
+    waitForTimeProcessed(mm, 1204s);
 
     // Give all hooks an update
-    mm.updateMetrics(true);
+    mm.updateMetrics();
 
     // Last update should not have interfered with periods
     timer.set_time(1205);
-    waitForTimeProcessed(mm, 1205);
+    waitForTimeProcessed(mm, 1205s);
 
     // Time is just ahead of a snapshot.
     timer.set_time(1299);
-    waitForTimeProcessed(mm, 1299);
+    waitForTimeProcessed(mm, 1299s);
 
     // At time 1300 we are at a 5 minute snapshot bump
     // All hooks should thus get an update. The one with matching period
     // should only get one
     timer.set_time(1300);
-    waitForTimeProcessed(mm, 1300);
+    waitForTimeProcessed(mm, 1300s);
 
     // The snapshot time currently doesn't count for the metric at period
     // 400. It will get an event at this time.
     timer.set_time(1450);
-    waitForTimeProcessed(mm, 1450);
+    waitForTimeProcessed(mm, 1450s);
 
     std::string expected(
         "Running init\n"

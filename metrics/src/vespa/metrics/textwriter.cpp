@@ -7,9 +7,11 @@
 #include "valuemetric.h"
 #include <sstream>
 
+using vespalib::to_string;
+
 namespace metrics {
 
-TextWriter::TextWriter(std::ostream& out, uint32_t period,
+TextWriter::TextWriter(std::ostream& out, vespalib::duration period,
                        const std::string& regex, bool verbose)
     : _period(period), _out(out), _regex(), _verbose(verbose)
 {
@@ -19,14 +21,14 @@ TextWriter::TextWriter(std::ostream& out, uint32_t period,
     }
 }
 
-TextWriter::~TextWriter() { }
+TextWriter::~TextWriter() = default;
 
 bool
 TextWriter::visitSnapshot(const MetricSnapshot& snapshot)
 {
     _out << "snapshot \"" << snapshot.getName() << "\" from "
-         << snapshot.getFromTime() << " to " << snapshot.getToTime()
-         << " period " << snapshot.getPeriod();
+         << to_string(snapshot.getFromTime()) << " to " << to_string(snapshot.getToTime())
+         << " period " << vespalib::count_s(snapshot.getPeriod());
     return true;
 }
 
@@ -82,7 +84,7 @@ bool
 TextWriter::visitValueMetric(const AbstractValueMetric& m, bool)
 {
     if (writeCommon(m)) {
-        m.print(_out, _verbose, "  ", _period);
+        m.print(_out, _verbose, "  ", vespalib::count_s(_period));
     }
     return true;
 }

@@ -3,20 +3,21 @@
 #pragma once
 
 #include "metric.h"
+#include <vespa/vespalib/util/time.h>
 #include <regex>
 #include <optional>
 
 namespace metrics {
 
 class TextWriter : public MetricVisitor {
-    uint32_t _period;
+    vespalib::duration _period;
     std::ostream& _out;
     std::vector<std::string> _path;
     std::optional<std::regex> _regex;
     bool _verbose;
 
 public:
-    TextWriter(std::ostream& out, uint32_t period,
+    TextWriter(std::ostream& out, vespalib::duration period,
                const std::string& regex, bool verbose);
     ~TextWriter();
 

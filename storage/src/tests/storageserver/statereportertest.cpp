@@ -211,7 +211,7 @@ TEST_F(StateReporterTest, report_metrics) {
     for (uint32_t i = 0; i < 6; ++i) {
         _clock->addSecondsToTime(60);
         _metricManager->timeChangedNotification();
-        while (int64_t(_metricManager->getLastProcessedTime()) < vespalib::count_s(_clock->getMonotonicTime().time_since_epoch())) {
+        while (_metricManager->getLastProcessedTime() < _clock->getSystemTime()) {
             std::this_thread::sleep_for(1ms);
         }
     }
