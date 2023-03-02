@@ -29,6 +29,10 @@
 
 using fastos::File_RW_Ops;
 
+namespace {
+    constexpr uint64_t ONE_G = 1000 * 1000 * 1000;
+}
+
 int FastOS_UNIX_File::GetLastOSError() {
     return errno;
 }
@@ -61,8 +65,7 @@ FastOS_UNIX_File::GetPosition()
     return lseek(_filedes, 0, SEEK_CUR);
 }
 
-void FastOS_UNIX_File::ReadBuf(void *buffer, size_t length,
-                               int64_t readOffset)
+void FastOS_UNIX_File::ReadBuf(void *buffer, size_t length, int64_t readOffset)
 {
     ssize_t readResult;
 
@@ -94,7 +97,7 @@ FastOS_UNIX_File::Stat(const char *filename, FastOS_StatInfo *statInfo)
         statInfo->_isRegular = S_ISREG(stbuf.st_mode);
         statInfo->_isDirectory = S_ISDIR(stbuf.st_mode);
         statInfo->_size = static_cast<int64_t>(stbuf.st_size);
-        uint64_t modTimeNS = stbuf.st_mtime * 1000 * 1000 * 1000lu;
+        uint64_t modTimeNS = stbuf.st_mtime * ONE_G;
 #ifdef __linux__
         modTimeNS += stbuf.st_mtim.tv_nsec;
 #elif defined(__APPLE__)
