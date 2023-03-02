@@ -19,11 +19,11 @@ import java.util.Set;
  */
 public interface ArchiveService {
 
-    ArchiveBucket createArchiveBucketFor(ZoneId zoneId);
+    VespaManagedArchiveBucket createArchiveBucketFor(ZoneId zoneId);
 
-    void updatePolicies(ZoneId zoneId, Set<ArchiveBucket> buckets, Map<TenantName,ArchiveAccess> authorizeAccessByTenantName);
+    void updatePolicies(ZoneId zoneId, Set<VespaManagedArchiveBucket> buckets, Map<TenantName,ArchiveAccess> authorizeAccessByTenantName);
 
-    boolean canAddTenantToBucket(ZoneId zoneId, ArchiveBucket bucket);
+    boolean canAddTenantToBucket(ZoneId zoneId, VespaManagedArchiveBucket bucket);
 
     Optional<String> findEnclaveArchiveBucket(ZoneId zoneId, CloudAccount cloudAccount);
 

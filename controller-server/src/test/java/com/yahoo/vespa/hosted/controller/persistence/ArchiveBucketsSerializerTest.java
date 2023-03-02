@@ -1,11 +1,15 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.persistence;
 
+import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.TenantName;
-import com.yahoo.vespa.hosted.controller.api.integration.archive.ArchiveBucket;
+import com.yahoo.vespa.hosted.controller.api.integration.archive.ArchiveBuckets;
+import com.yahoo.vespa.hosted.controller.api.integration.archive.TenantManagedArchiveBucket;
+import com.yahoo.vespa.hosted.controller.api.integration.archive.VespaManagedArchiveBucket;
 import org.junit.jupiter.api.Test;
 
-import java.util.LinkedHashSet;
+import java.time.Instant;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -13,17 +17,12 @@ public class ArchiveBucketsSerializerTest {
 
     @Test
     void serdes() {
-        var testTenants = new LinkedHashSet<TenantName>();
-        testTenants.add(TenantName.from("tenant1"));
-        testTenants.add(TenantName.from("tenant2"));
+        ArchiveBuckets archiveBuckets = new ArchiveBuckets(
+                Set.of(new VespaManagedArchiveBucket("bucket1Name", "key1Arn").withTenants(Set.of(TenantName.from("t1"), TenantName.from("t2"))),
+                       new VespaManagedArchiveBucket("bucket2Name", "key2Arn").withTenant(TenantName.from("t3"))),
+                Set.of(new TenantManagedArchiveBucket("bucket3Name", CloudAccount.from("acct-1"), Instant.ofEpochMilli(1234)),
+                       new TenantManagedArchiveBucket("bucket4Name", CloudAccount.from("acct-2"), Instant.ofEpochMilli(5678))));
 
-        var testBuckets = new LinkedHashSet<ArchiveBucket>();
-        testBuckets.add(new ArchiveBucket("bucket1Name", "key1Arn").withTenants(testTenants));
-        testBuckets.add(new ArchiveBucket("bucket2Name", "key2Arn"));
-
-        String zkData = "{\"buckets\":[{\"bucketName\":\"bucket1Name\",\"keyArn\":\"key1Arn\",\"tenantIds\":[\"tenant1\",\"tenant2\"]},{\"bucketName\":\"bucket2Name\",\"keyArn\":\"key2Arn\",\"tenantIds\":[]}]}";
-
-        assertEquals(testBuckets, ArchiveBucketsSerializer.fromJsonString(zkData));
-        assertEquals(testBuckets, ArchiveBucketsSerializer.fromJsonString(ArchiveBucketsSerializer.toSlime(testBuckets).toString()));
+        assertEquals(archiveBuckets, ArchiveBucketsSerializer.fromSlime(ArchiveBucketsSerializer.toSlime(archiveBuckets)));
     }
 }

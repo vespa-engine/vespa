@@ -1,12 +1,15 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.maintenance;
 
+import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
-import com.yahoo.vespa.hosted.controller.api.integration.archive.ArchiveBucket;
+import com.yahoo.vespa.hosted.controller.api.integration.archive.ArchiveBuckets;
 import com.yahoo.vespa.hosted.controller.api.integration.archive.ArchiveUriUpdate;
+import com.yahoo.vespa.hosted.controller.api.integration.archive.VespaManagedArchiveBucket;
+import com.yahoo.vespa.hosted.controller.api.integration.configserver.ArchiveUris;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.NodeRepository;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
@@ -17,7 +20,6 @@ import org.junit.jupiter.api.Test;
 
 import java.net.URI;
 import java.time.Duration;
-import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -42,36 +44,35 @@ public class ArchiveUriUpdaterTest {
 
         // Initially we should only is the bucket for hosted-vespa tenant
         updater.maintain();
-        assertArchiveUris(Map.of(TenantName.from("hosted-vespa"), "s3://bucketName/"), zone);
-        assertArchiveUris(Map.of(TenantName.from("hosted-vespa"), "s3://bucketName/"), ZoneId.from("prod", "controller"));
+        assertArchiveUris(zone, Map.of(TenantName.from("hosted-vespa"), "s3://bucketName/"), Map.of());
+        assertArchiveUris(ZoneId.from("prod", "controller"), Map.of(TenantName.from("hosted-vespa"), "s3://bucketName/"), Map.of());
 
         // Archive service now has URI for tenant1, but tenant1 is not deployed in zone
         setBucketNameInService(Map.of(tenant1, "uri-1"), zone);
         updater.maintain();
-        assertArchiveUris(Map.of(TenantName.from("hosted-vespa"), "s3://bucketName/"), zone);
+        assertArchiveUris(zone, Map.of(TenantName.from("hosted-vespa"), "s3://bucketName/"), Map.of());
 
         deploy(application, zone);
         updater.maintain();
-        assertArchiveUris(Map.of(tenant1, "s3://uri-1/", tenantInfra, "s3://bucketName/"), zone);
+        assertArchiveUris(zone, Map.of(tenant1, "s3://uri-1/", tenantInfra, "s3://bucketName/"), Map.of());
 
         // URI for tenant1 should be updated and removed for tenant2
         setArchiveUriInNodeRepo(Map.of(tenant1, "wrong-uri", tenant2, "uri-2"), zone);
         updater.maintain();
-        assertArchiveUris(Map.of(tenant1, "s3://uri-1/", tenantInfra, "s3://bucketName/"), zone);
+        assertArchiveUris(zone, Map.of(tenant1, "s3://uri-1/", tenantInfra, "s3://bucketName/"), Map.of());
     }
 
-    private void assertArchiveUris(Map<TenantName, String> expectedUris, ZoneId zone) {
-        Map<TenantName, String> actualUris = tester.controller().serviceRegistry().configServer().nodeRepository()
-                .getArchiveUris(zone).tenantArchiveUris().entrySet().stream()
-                .collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().toString()));
-        assertEquals(expectedUris, actualUris);
+    private void assertArchiveUris(ZoneId zone, Map<TenantName, String> expectedTenantUris, Map<CloudAccount, String> expectedAccountUris) {
+        ArchiveUris archiveUris = tester.controller().serviceRegistry().configServer().nodeRepository().getArchiveUris(zone);
+        assertEquals(expectedTenantUris, archiveUris.tenantArchiveUris().entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().toString())));
+        assertEquals(expectedAccountUris, archiveUris.accountArchiveUris().entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().toString())));
     }
 
     private void setBucketNameInService(Map<TenantName, String> bucketNames, ZoneId zone) {
-        var archiveBuckets = new LinkedHashSet<>(tester.controller().curator().readArchiveBuckets(zone));
-        bucketNames.forEach((tenantName, bucketName) ->
-                archiveBuckets.add(new ArchiveBucket(bucketName, "keyArn").withTenant(tenantName)));
-        tester.controller().curator().writeArchiveBuckets(zone, archiveBuckets);
+        ArchiveBuckets buckets = tester.controller().curator().readArchiveBuckets(zone);
+        for (var entry : bucketNames.entrySet())
+            buckets = buckets.with(new VespaManagedArchiveBucket(entry.getValue(), "keyArn").withTenant(entry.getKey()));
+        tester.controller().curator().writeArchiveBuckets(zone, buckets);
     }
 
     private void setArchiveUriInNodeRepo(Map<TenantName, String> archiveUris, ZoneId zone) {

@@ -19,24 +19,22 @@ import java.util.Set;
  */
 public class MockArchiveService implements ArchiveService {
 
-
-    public Set<ArchiveBucket> archiveBuckets = new HashSet<>();
+    public Set<VespaManagedArchiveBucket> archiveBuckets = new HashSet<>();
     public Map<TenantName, ArchiveAccess> authorizeAccessByTenantName = new HashMap<>();
 
-
     @Override
-    public ArchiveBucket createArchiveBucketFor(ZoneId zoneId) {
-        return new ArchiveBucket("bucketName", "keyArn");
+    public VespaManagedArchiveBucket createArchiveBucketFor(ZoneId zoneId) {
+        return new VespaManagedArchiveBucket("bucketName", "keyArn");
     }
 
     @Override
-    public void updatePolicies(ZoneId zoneId, Set<ArchiveBucket> buckets, Map<TenantName, ArchiveAccess> authorizeAccessByTenantName) {
+    public void updatePolicies(ZoneId zoneId, Set<VespaManagedArchiveBucket> buckets, Map<TenantName, ArchiveAccess> authorizeAccessByTenantName) {
         this.archiveBuckets = new HashSet<>(buckets);
         this.authorizeAccessByTenantName = new HashMap<>(authorizeAccessByTenantName);
     }
 
     @Override
-    public boolean canAddTenantToBucket(ZoneId zoneId, ArchiveBucket bucket) {
+    public boolean canAddTenantToBucket(ZoneId zoneId, VespaManagedArchiveBucket bucket) {
         return bucket.tenants().size() < 5;
     }
 

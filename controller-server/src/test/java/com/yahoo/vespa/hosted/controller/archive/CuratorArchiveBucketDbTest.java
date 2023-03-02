@@ -5,7 +5,8 @@ import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
-import com.yahoo.vespa.hosted.controller.api.integration.archive.ArchiveBucket;
+import com.yahoo.vespa.hosted.controller.api.integration.archive.ArchiveBuckets;
+import com.yahoo.vespa.hosted.controller.api.integration.archive.VespaManagedArchiveBucket;
 import org.apache.curator.shaded.com.google.common.collect.Streams;
 import org.junit.jupiter.api.Test;
 
@@ -21,12 +22,12 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 public class CuratorArchiveBucketDbTest {
 
     @Test
-    void archiveUriFor() {
+    void archiveUriForTenant() {
         ControllerTester tester = new ControllerTester(SystemName.Public);
         CuratorArchiveBucketDb bucketDb = new CuratorArchiveBucketDb(tester.controller());
 
         tester.curator().writeArchiveBuckets(ZoneId.defaultId(),
-                Set.of(new ArchiveBucket("existingBucket", "keyArn").withTenant(TenantName.defaultName())));
+                ArchiveBuckets.EMPTY.with(new VespaManagedArchiveBucket("existingBucket", "keyArn").withTenant(TenantName.defaultName())));
 
         // Finds existing bucket in db
         assertEquals(Optional.of(URI.create("s3://existingBucket/")), bucketDb.archiveUriFor(ZoneId.defaultId(), TenantName.defaultName(), true));
@@ -50,11 +51,11 @@ public class CuratorArchiveBucketDbTest {
         Set<TenantName> existingBucketTenants = Streams.concat(Stream.of(TenantName.defaultName()), IntStream.range(0, 4).mapToObj(i -> TenantName.from("tenant" + i))).collect(Collectors.toUnmodifiableSet());
         assertEquals(
                 Set.of(
-                        new ArchiveBucket("existingBucket", "keyArn").withTenants(existingBucketTenants),
-                        new ArchiveBucket("bucketName", "keyArn").withTenant(TenantName.from("lastDrop"))),
-                bucketDb.buckets(ZoneId.defaultId()));
+                        new VespaManagedArchiveBucket("existingBucket", "keyArn").withTenants(existingBucketTenants),
+                        new VespaManagedArchiveBucket("bucketName", "keyArn").withTenant(TenantName.from("lastDrop"))),
+                bucketDb.buckets(ZoneId.defaultId()).vespaManaged());
         assertEquals(
-                Set.of(new ArchiveBucket("bucketName", "keyArn").withTenant(TenantName.from("firstInZone"))),
-                bucketDb.buckets(ZoneId.from("prod.us-east-3")));
+                Set.of(new VespaManagedArchiveBucket("bucketName", "keyArn").withTenant(TenantName.from("firstInZone"))),
+                bucketDb.buckets(ZoneId.from("prod.us-east-3")).vespaManaged());
     }
 }

@@ -8,20 +8,21 @@ import java.util.Objects;
 import java.util.Set;
 
 /**
- * Represents an S3 bucket used to store archive data - logs, heap/core dumps, etc.
+ * Represents a cloud storage bucket (e.g. AWS S3 or Google Storage) used to store archive data - logs, heap/core dumps, etc.
+ * that is managed by the Vespa controller.
  *
  * @author andreer
  */
-public class ArchiveBucket {
+public class VespaManagedArchiveBucket {
     private final String bucketName;
     private final String keyArn;
     private final Set<TenantName> tenants;
 
-    public ArchiveBucket(String bucketName, String keyArn) {
+    public VespaManagedArchiveBucket(String bucketName, String keyArn) {
         this(bucketName, keyArn, Set.of());
     }
 
-    private ArchiveBucket(String bucketName, String keyArn, Set<TenantName> tenants) {
+    private VespaManagedArchiveBucket(String bucketName, String keyArn, Set<TenantName> tenants) {
         this.bucketName = bucketName;
         this.keyArn = keyArn;
         this.tenants = Set.copyOf(tenants);
@@ -39,19 +40,19 @@ public class ArchiveBucket {
         return tenants;
     }
 
-    public ArchiveBucket withTenant(TenantName tenant) {
+    public VespaManagedArchiveBucket withTenant(TenantName tenant) {
         return withTenants(Set.of(tenant));
     }
 
-    public ArchiveBucket withTenants(Set<TenantName> tenants) {
-        return new ArchiveBucket(bucketName, keyArn, Sets.union(this.tenants, tenants));
+    public VespaManagedArchiveBucket withTenants(Set<TenantName> tenants) {
+        return new VespaManagedArchiveBucket(bucketName, keyArn, Sets.union(this.tenants, tenants));
     }
 
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        ArchiveBucket that = (ArchiveBucket) o;
+        VespaManagedArchiveBucket that = (VespaManagedArchiveBucket) o;
         return bucketName.equals(that.bucketName) && keyArn.equals(that.keyArn) && tenants.equals(that.tenants);
     }
 
