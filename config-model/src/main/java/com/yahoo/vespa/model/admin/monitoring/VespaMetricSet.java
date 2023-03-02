@@ -1,14 +1,15 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.admin.monitoring;
 
+import com.yahoo.metrics.ConfigServerMetrics;
 import com.yahoo.metrics.ContainerMetrics;
 import com.yahoo.metrics.DistributorMetrics;
-import com.yahoo.metrics.SearchNodeMetrics;
-import com.yahoo.metrics.StorageMetrics;
 import com.yahoo.metrics.LogdMetrics;
+import com.yahoo.metrics.SearchNodeMetrics;
 import com.yahoo.metrics.SentinelMetrics;
 import com.yahoo.metrics.SlobrokMetrics;
-import com.yahoo.metrics.ConfigServerMetrics;
+import com.yahoo.metrics.StorageMetrics;
+import com.yahoo.metrics.NodeAdminMetrics;
 import com.yahoo.metrics.Suffix;
 
 import java.util.Collections;
@@ -74,8 +75,6 @@ public class VespaMetricSet {
         addMetric(metrics, SlobrokMetrics.SLOBROK_MISSING_CONSENSUS.count());
 
         addMetric(metrics, LogdMetrics.LOGD_PROCESSED_LINES.count());
-        addMetric(metrics, "worker.connections.max"); // Internal (routing layer)
-        addMetric(metrics, "endpoint.certificate.expiry.seconds");
 
         // Java (JRT) TLS metrics
         addMetric(metrics, ContainerMetrics.JRT_TRANSPORT_TLS_CERTIFICATE_VERIFICATION_FAILURES.baseName());
@@ -101,8 +100,10 @@ public class VespaMetricSet {
         // C++ Fnet metrics
         addMetric(metrics, StorageMetrics.VDS_SERVER_FNET_NUM_CONNECTIONS.count());
 
-        // Node certificate
-        addMetric(metrics, "node-certificate.expiry.seconds");
+        // NodeAdmin certificate
+        addMetric(metrics, NodeAdminMetrics.WORKER_CONNECTIONS.max()); // Hosted Vespa only (routing layer)
+        addMetric(metrics, NodeAdminMetrics.ENDPOINT_CERTIFICATE_EXPIRY_SECONDS.baseName());
+        addMetric(metrics, NodeAdminMetrics.NODE_CERTIFICATE_EXPIRY_SECONDS.baseName());
 
         return metrics;
     }
