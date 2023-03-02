@@ -87,7 +87,7 @@ public class DocumentDatabaseTestCase {
         verifyConcurrency(nameAndModes, xmlTuning, expectedConcurrency, null);
     }
 
-    private void verifyConcurrency(List<DocType> nameAndModes, String xmlTuning, double expectedConcurrency, Double featureFlagConcurrency) {
+    private ProtonConfig getConfig(List<DocType> nameAndModes, String xmlTuning, Double featureFlagConcurrency) {
         TestProperties properties = new TestProperties();
         if (featureFlagConcurrency != null) {
             properties.setFeedConcurrency(featureFlagConcurrency);
@@ -95,8 +95,28 @@ public class DocumentDatabaseTestCase {
         var tester = new SchemaTester();
         VespaModel model = tester.createModel(nameAndModes, xmlTuning, new DeployState.Builder().properties(properties));
         ContentSearchCluster contentSearchCluster = model.getContentClusters().get("test").getSearch();
-        ProtonConfig proton = tester.getProtonConfig(contentSearchCluster);
+        return tester.getProtonConfig(contentSearchCluster);
+    }
+
+    private void verifyConcurrency(List<DocType> nameAndModes, String xmlTuning, double expectedConcurrency, Double featureFlagConcurrency) {
+        ProtonConfig proton = getConfig(nameAndModes, xmlTuning, featureFlagConcurrency);
         assertEquals(expectedConcurrency, proton.feeding().concurrency(), SMALL);
+    }
+
+    private void verifyMaxflushedFollowsConcurrency(double concurrency, int maxFlushed) {
+        String feedTuning = "<feeding>  <concurrency>" + concurrency +"</concurrency>" + "</feeding>\n";
+        ProtonConfig proton = getConfig(List.of(DocType.create("a", "index")), feedTuning, null);
+        assertEquals(maxFlushed, proton.index().maxflushed());
+    }
+
+    @Test
+    public void verifyThatMaxFlushedFollowsConcurrency() {
+        verifyMaxflushedFollowsConcurrency(0.1, 2);
+        verifyMaxflushedFollowsConcurrency(0.50, 2);
+        verifyMaxflushedFollowsConcurrency(0.51, 3);
+        verifyMaxflushedFollowsConcurrency(0.75, 3);
+        verifyMaxflushedFollowsConcurrency(0.76, 4);
+        verifyMaxflushedFollowsConcurrency(1.0, 4);
     }
 
     private void verifyFeedNiceness(List<DocType> nameAndModes, Double expectedNiceness, Double featureFlagNiceness) {
