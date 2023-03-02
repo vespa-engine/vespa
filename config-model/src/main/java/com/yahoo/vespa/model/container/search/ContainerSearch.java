@@ -148,17 +148,17 @@ public class ContainerSearch extends ContainerSubsystem<SearchChains>
     public void getConfig(QrSearchersConfig.Builder builder) {
         for (int i = 0; i < searchClusters.size(); i++) {
             SearchCluster sys = findClusterWithId(searchClusters, i);
-                QrSearchersConfig.Searchcluster.Builder scB = new QrSearchersConfig.Searchcluster.Builder().
-                                name(sys.getClusterName());
-                for (SchemaInfo spec : sys.schemas().values()) {
-                        scB.searchdef(spec.fullSchema().getName());
-                }
-                scB.rankprofiles(new QrSearchersConfig.Searchcluster.Rankprofiles.Builder().configid(sys.getConfigId()));
-                scB.indexingmode(QrSearchersConfig.Searchcluster.Indexingmode.Enum.valueOf(sys.getIndexingModeName()));
-                if ( ! (sys instanceof IndexedSearchCluster)) {
+            QrSearchersConfig.Searchcluster.Builder scB = new QrSearchersConfig.Searchcluster.Builder().
+                    name(sys.getClusterName());
+            for (SchemaInfo spec : sys.schemas().values()) {
+                scB.searchdef(spec.fullSchema().getName());
+            }
+            scB.rankprofiles(new QrSearchersConfig.Searchcluster.Rankprofiles.Builder().configid(sys.getConfigId()));
+            scB.indexingmode(QrSearchersConfig.Searchcluster.Indexingmode.Enum.valueOf(sys.getIndexingModeName()));
+            scB.globalphase(globalPhase);
+            if ( ! (sys instanceof IndexedSearchCluster)) {
                 scB.storagecluster(new QrSearchersConfig.Searchcluster.Storagecluster.Builder().
-                                routespec(((StreamingSearchCluster)sys).getStorageRouteSpec()));
-                scB.globalphase(globalPhase);
+                                           routespec(((StreamingSearchCluster)sys).getStorageRouteSpec()));
             }
             builder.searchcluster(scB);
         }
