@@ -162,8 +162,7 @@ public class ControllerMaintenance extends AbstractComponent {
             this.resourceMeterMaintainer = duration(3, MINUTES);
             this.resourceTagMaintainer = duration(30, MINUTES);
             this.applicationMetaDataGarbageCollector = duration(12, HOURS);
-            // TODO: Temporarily use another duration in cd systems
-            this.containerImageExpirer = system.isCd() ? duration(15, MINUTES) : duration(12, HOURS);
+            this.containerImageExpirer = duration(12, HOURS);
             this.hostInfoUpdater = duration(12, HOURS);
             this.reindexingTriggerer = duration(1, HOURS);
             this.endpointCertificateMaintainer = duration(1, HOURS);
