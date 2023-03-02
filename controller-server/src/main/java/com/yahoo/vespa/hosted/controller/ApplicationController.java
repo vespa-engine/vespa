@@ -891,16 +891,17 @@ public class ApplicationController {
      */
     private Optional<LockedApplication> deactivate(ApplicationId instanceId, ZoneId zone, Optional<LockedApplication> application) {
         DeploymentId id = new DeploymentId(instanceId, zone);
-        try {
-            configServer.deactivate(id);
-        } finally {
+        interface CleanCloseable extends AutoCloseable { void close(); }
+        try (CleanCloseable postDeactivation = () -> {
             application.ifPresent(app -> controller.routing().of(id).configure(app.get().deploymentSpec()));
             if (id.zoneId().environment().isManuallyDeployed())
                 applicationStore.putMetaTombstone(id, clock.instant());
-            if (!id.zoneId().environment().isTest())
+            if ( ! id.zoneId().environment().isTest())
                 controller.notificationsDb().removeNotifications(NotificationSource.from(id));
+        }) {
+            configServer.deactivate(id);
+            return application.map(app -> app.with(instanceId.instance(), instance -> instance.withoutDeploymentIn(id.zoneId())));
         }
-        return application.map(app -> app.with(instanceId.instance(), instance -> instance.withoutDeploymentIn(id.zoneId())));
     }
 
     public DeploymentTrigger deploymentTrigger() { return deploymentTrigger; }
