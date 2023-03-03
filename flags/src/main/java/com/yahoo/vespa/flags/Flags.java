@@ -203,9 +203,10 @@ public class Flags {
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
 
+    // TODO: Move to a permanent flag
     public static final UnboundListFlag<String> ALLOWED_ATHENZ_PROXY_IDENTITIES = defineListFlag(
             "allowed-athenz-proxy-identities", List.of(), String.class,
-            List.of("bjorncs", "tokle"), "2021-02-10", "2023-03-01",
+            List.of("bjorncs", "tokle"), "2021-02-10", "2023-05-01",
             "Allowed Athenz proxy identities",
             "takes effect at redeployment");
 
