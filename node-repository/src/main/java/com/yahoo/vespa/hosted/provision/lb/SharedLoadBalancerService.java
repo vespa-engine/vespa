@@ -33,8 +33,8 @@ public class SharedLoadBalancerService implements LoadBalancerService {
     }
 
     @Override
-    public LoadBalancerInstance configure(LoadBalancerSpec spec, boolean force) {
-        return create(spec);
+    public LoadBalancerInstance configure(LoadBalancerInstance instance, LoadBalancerSpec spec, boolean force) {
+        return instance.with(spec.reals(), spec.settings(), Optional.empty());
     }
 
     private LoadBalancerInstance create(LoadBalancerSpec spec) {

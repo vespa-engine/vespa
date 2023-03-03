@@ -259,7 +259,7 @@ public class LoadBalancerProvisioner {
         return Optional.empty(); // Will cause activation to fail, but lets us proceed with more preparations.
     }
 
-    /** Provision or reconfigure a load balancer instance, if necessary */
+    /** Reconfigure a load balancer instance, if necessary */
     private Optional<LoadBalancerInstance> configureInstance(LoadBalancerId id, NodeList nodes,
                                                              LoadBalancer currentLoadBalancer,
                                                              ZoneEndpoint zoneEndpoint,
@@ -268,14 +268,11 @@ public class LoadBalancerProvisioner {
                                                                  id.application().serializedForm())
                                                            .value();
         Set<Real> reals = shouldDeactivateRouting ? Set.of() : realsOf(nodes);
-        if (isUpToDate(currentLoadBalancer, reals, zoneEndpoint))
-            return currentLoadBalancer.instance();
-
         log.log(Level.INFO, () -> "Configuring instance for " + id + ", targeting: " + reals);
         try {
-            return Optional.of(service.configure(new LoadBalancerSpec(id.application(), id.cluster(), reals, zoneEndpoint, cloudAccount),
-                                                 shouldDeactivateRouting || currentLoadBalancer.state() != LoadBalancer.State.active)
-                                      .withServiceIds(currentLoadBalancer.instance().map(LoadBalancerInstance::serviceIds).orElse(List.of())));
+            return Optional.of(service.configure(currentLoadBalancer.instance().orElseThrow(() -> new IllegalArgumentException("expected existing instance for " + id)),
+                                                 new LoadBalancerSpec(id.application(), id.cluster(), reals, zoneEndpoint, cloudAccount),
+                                                 shouldDeactivateRouting || currentLoadBalancer.state() != LoadBalancer.State.active));
         } catch (Exception e) {
             log.log(Level.WARNING, e, () -> "Could not (re)configure " + id + ", targeting: " +
                                             reals + ". The operation will be retried on next deployment");

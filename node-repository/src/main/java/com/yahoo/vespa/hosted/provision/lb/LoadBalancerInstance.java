@@ -110,9 +110,18 @@ public class LoadBalancerInstance {
         return ports;
     }
 
-    /** Prepends the given service IDs, possibly replacing those we have in this. */
+    /** Updates this with new data, from a reconfiguration. */
+    public LoadBalancerInstance with(Set<Real> reals, ZoneEndpoint settings, Optional<PrivateServiceId> serviceId) {
+        List<PrivateServiceId> ids = new ArrayList<>(serviceIds);
+        serviceId.filter(id -> ! ids.contains(id)).ifPresent(ids::add);
+        return new LoadBalancerInstance(hostname, ipAddress, dnsZone, ports, networks,
+                                        reals, settings, ids,
+                                        cloudAccount);
+    }
+
+    /** Prepends the given service IDs, possibly changing the order of those we have in this. */
     public LoadBalancerInstance withServiceIds(List<PrivateServiceId> serviceIds) {
-        List<PrivateServiceId> ids = new ArrayList<>(serviceIds());
+        List<PrivateServiceId> ids = new ArrayList<>(serviceIds);
         for (PrivateServiceId id : this.serviceIds) if ( ! ids.contains(id)) ids.add(id);
         return new LoadBalancerInstance(hostname, ipAddress, dnsZone, ports, networks, reals, settings, ids, cloudAccount);
     }
