@@ -3,6 +3,7 @@ package com.yahoo.vespa.model.admin.monitoring;
 import com.yahoo.metrics.ContainerMetrics;
 import com.yahoo.metrics.SearchNodeMetrics;
 import com.yahoo.metrics.StorageMetrics;
+import com.yahoo.metrics.HostedNodeAdminMetrics;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -21,19 +22,19 @@ public class AutoscalingMetrics {
     private static MetricSet create() {
         List<String> metrics = new ArrayList<>();
 
-        metrics.add("cpu.util");
+        metrics.add(HostedNodeAdminMetrics.CPU_UTIL.baseName());
 
         // Memory util
-        metrics.add("mem.util"); // node level - default
+        metrics.add(HostedNodeAdminMetrics.MEM_UTIL.baseName()); // node level - default
         metrics.add(SearchNodeMetrics.CONTENT_PROTON_RESOURCE_USAGE_MEMORY.average()); // better for content as it is the basis for blocking
 
         // Disk util
-        metrics.add("disk.util"); // node level -default
+        metrics.add(HostedNodeAdminMetrics.DISK_UTIL.baseName()); // node level -default
         metrics.add(SearchNodeMetrics.CONTENT_PROTON_RESOURCE_USAGE_DISK.average()); // better for content as it is the basis for blocking
 
         metrics.add(ContainerMetrics.APPLICATION_GENERATION.baseName());
 
-        metrics.add("in_service");
+        metrics.add(ContainerMetrics.IN_SERVICE.baseName());
 
         // Query rate
         metrics.add(ContainerMetrics.QUERIES.rate()); // container
