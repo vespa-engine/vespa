@@ -74,7 +74,6 @@ public final class ConfiguredApplication implements Application {
     private final Set<ClientProvider> startedClients = createIdentityHashSet();
     private final Set<ServerProvider> startedServers = createIdentityHashSet();
     private final SubscriberFactory subscriberFactory;
-    private final Metric metric;
     private final ContainerActivator activator;
     private final String configId;
     private final OsgiFramework osgiFramework;
@@ -100,6 +99,7 @@ public final class ConfiguredApplication implements Application {
     private final Thread portWatcher;
     private HandlersConfigurerDi configurer;
     private QrConfig qrConfig;
+    private Metric metric; // Cannot be injected before the application is set up
 
     private Register slobrokRegistrator = null;
     private Supervisor supervisor = null;
@@ -141,13 +141,11 @@ public final class ConfiguredApplication implements Application {
     public ConfiguredApplication(ContainerActivator activator,
                                  OsgiFramework osgiFramework,
                                  com.yahoo.jdisc.Timer timer,
-                                 SubscriberFactory subscriberFactory,
-                                 Metric metric) {
+                                 SubscriberFactory subscriberFactory) {
         this.activator = activator;
         this.osgiFramework = osgiFramework;
         this.timerSingleton = timer;
         this.subscriberFactory = subscriberFactory;
-        this.metric = metric;
         this.configId = System.getProperty("config.id");
         this.slobrokConfigSubscriber = (subscriberFactory instanceof CloudSubscriberFactory)
                 ? new SlobrokConfigSubscriber(configId)
@@ -166,6 +164,7 @@ public final class ConfiguredApplication implements Application {
 
         ContainerBuilder builder = createBuilderWithGuiceBindings();
         configurer = createConfigurer(builder.guiceModules().activate());
+        metric = configurer.getComponent(Metric.class);
         initializeAndActivateContainer(builder, () -> {});
         reconfigurerThread.setDaemon(true);
         reconfigurerThread.start();

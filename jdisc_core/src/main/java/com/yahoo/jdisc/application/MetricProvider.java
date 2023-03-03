@@ -21,4 +21,5 @@ public class MetricProvider implements Provider<Metric> {
     public Metric get() {
         return new MetricImpl(consumerProvider);
     }
+
 }

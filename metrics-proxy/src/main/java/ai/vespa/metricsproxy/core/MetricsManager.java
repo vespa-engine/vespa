@@ -79,7 +79,7 @@ public class MetricsManager {
      * @return metrics for all matching services
      */
     public List<MetricsPacket> getMetrics(List<VespaService> services, Instant startTime) {
-        MetricsPacket.Builder [] builderArray = getMetricsBuildersAsArray(services, startTime, null);
+        MetricsPacket.Builder[] builderArray = getMetricsBuildersAsArray(services, startTime, null);
         List<MetricsPacket> metricsPackets = new ArrayList<>(builderArray.length);
         for (int i = 0; i < builderArray.length; i++) {
             metricsPackets.add(builderArray[i].build());
@@ -87,6 +87,7 @@ public class MetricsManager {
         }
         return metricsPackets;
     }
+
     public List<MetricsPacket> getMetrics(List<VespaService> services, Instant startTime, ConsumerId consumerId) {
         MetricsPacket.Builder [] builderArray = getMetricsBuildersAsArray(services, startTime, consumerId);
         List<MetricsPacket> metricsPackets = new ArrayList<>(builderArray.length);

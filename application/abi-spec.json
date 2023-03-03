@@ -38,7 +38,8 @@
       "public com.yahoo.application.Application$Builder rankExpression(java.lang.String, java.lang.String)",
       "public com.yahoo.application.Application$Builder queryProfile(java.lang.String, java.lang.String)",
       "public com.yahoo.application.Application$Builder queryProfileType(java.lang.String, java.lang.String)",
-      "public com.yahoo.application.Application$Builder networking(com.yahoo.application.Networking)"
+      "public com.yahoo.application.Application$Builder networking(com.yahoo.application.Networking)",
+      "public com.yahoo.application.Application build()"
     ],
     "fields" : [ ]
   },
