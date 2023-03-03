@@ -2,6 +2,7 @@
 package com.yahoo.application;
 
 import com.yahoo.application.container.MockServer;
+import com.yahoo.application.container.components.ComponentWithMetrics;
 import com.yahoo.application.container.docprocs.MockDocproc;
 import com.yahoo.application.container.handler.Request;
 import com.yahoo.application.container.handler.Response;
@@ -15,6 +16,8 @@ import com.yahoo.docproc.Processing;
 import com.yahoo.document.DocumentRemove;
 import com.yahoo.document.DocumentType;
 import com.yahoo.jdisc.handler.RequestHandler;
+import com.yahoo.metrics.simple.Bucket;
+import com.yahoo.metrics.simple.jdisc.SimpleMetricConsumer;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.handler.SearchHandler;
@@ -259,6 +262,25 @@ public class ApplicationTest {
                 .component(MockSearcher.class))))) {
             Component c = app.getComponentById(MockSearcher.class.getName());
             assertNotNull(c);
+        }
+    }
+
+    @Test
+    void application_generation_metric() throws Exception {
+        try (ApplicationFacade app = new ApplicationFacade(Application.fromBuilder(new Application.Builder().container("default", new Application.Builder.Container()
+                                                                                                                                          .component(ComponentWithMetrics.class))))) {
+            var component = (ComponentWithMetrics)app.getComponentById(ComponentWithMetrics.class.getName());
+            assertNotNull(component);
+            var metrics = (SimpleMetricConsumer)component.metrics().newInstance(); // not actually a new instance
+            assertNotNull(metrics);
+            int maxWaitMs = 10000;
+            Bucket snapshot = null;
+            while (maxWaitMs-- > 0 && ( snapshot = metrics.receiver().getSnapshot() ) == null) {
+                Thread.sleep(1);
+            }
+            assertNotNull(snapshot);
+            assertEquals(1, snapshot.getValuesForMetric("application_generation").size());
+            assertEquals(0, snapshot.getValuesForMetric("application_generation").iterator().next().getValue().getLast());
         }
     }
 

@@ -46,9 +46,7 @@ class MetricAggregator implements Runnable {
     private void createSnapshot(Bucket toDelete) {
         Bucket toPresent = new Bucket();
         for (Bucket b : buffer) {
-            if (b == null) {
-                continue;
-            }
+            if (b == null) continue;
             toPresent.merge(b);
         }
         dimensions.updateDimensionPersistence(toDelete, toPresent);

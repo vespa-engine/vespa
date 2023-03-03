@@ -30,138 +30,6 @@ public class MetricReceiver {
     private final Object histogramDefinitionsLock = new Object();
     private volatile Map<String, MetricSettings> metricSettings;
 
-    private static final class NullCounter extends Counter {
-
-        NullCounter() {
-            super(null, null, null);
-        }
-
-        @Override
-        public void add() {
-        }
-
-        @Override
-        public void add(long n) {
-        }
-
-        @Override
-        public void add(Point p) {
-        }
-
-        @Override
-        public void add(long n, Point p) {
-        }
-
-        @Override
-        public PointBuilder builder() {
-            return super.builder();
-        }
-    }
-
-    private static final class NullGauge extends Gauge {
-        NullGauge() {
-            super(null, null, null);
-        }
-
-        @Override
-        public void sample(double x) {
-        }
-
-        @Override
-        public void sample(double x, Point p) {
-        }
-
-        @Override
-        public PointBuilder builder() {
-            return super.builder();
-        }
-
-    }
-
-    public static final class MockReceiver extends MetricReceiver {
-
-        private final ThreadLocalDirectory<Bucket, Sample> collection;
-
-        private MockReceiver(ThreadLocalDirectory<Bucket, Sample> collection) {
-            super(collection, null);
-            this.collection = collection;
-        }
-
-        public MockReceiver() {
-            this(new ThreadLocalDirectory<>(new MetricUpdater()));
-        }
-
-        /** Gathers all data since last snapshot */
-        public Bucket getSnapshot() {
-            Bucket merged = new Bucket();
-            for (Bucket b : collection.fetch()) {
-                merged.merge(b, true);
-            }
-            return merged;
-        }
-
-        /** Utility method for testing */
-        public Point point(String dim, String val) {
-            return pointBuilder().set(dim, val).build();
-        }
-
-    }
-
-    private static final class NullReceiver extends MetricReceiver {
-
-        NullReceiver() {
-            super(null, null);
-        }
-
-        @Override
-        public void update(Sample s) {
-        }
-
-        @Override
-        public Counter declareCounter(String name) {
-            return new NullCounter();
-        }
-
-        @Override
-        public Counter declareCounter(String name, Point boundDimensions) {
-            return new NullCounter();
-        }
-
-        @Override
-        public Gauge declareGauge(String name) {
-            return new NullGauge();
-        }
-
-        @Override
-        public Gauge declareGauge(String name, Point boundDimensions) {
-            return new NullGauge();
-        }
-
-        @Override
-        public Gauge declareGauge(String name, Optional<Point> boundDimensions, MetricSettings customSettings) {
-            return null;
-        }
-
-        @Override
-        public PointBuilder pointBuilder() {
-            return null;
-        }
-
-        @Override
-        public Bucket getSnapshot() {
-            return null;
-        }
-
-        @Override
-        void addMetricDefinition(String metricName, MetricSettings definition) {
-        }
-
-        @Override
-        MetricSettings getMetricDefinition(String metricName) {
-            return null;
-        }
-    }
-
     public MetricReceiver(ThreadLocalDirectory<Bucket, Sample> metricsCollection, AtomicReference<Bucket> currentSnapshot) {
         this.metricsCollection = metricsCollection;
         this.currentSnapshot = currentSnapshot;
@@ -297,4 +165,137 @@ public class MetricReceiver {
     MetricSettings getMetricDefinition(String metricName) {
         return metricSettings.get(metricName);
     }
+
+    private static final class NullCounter extends Counter {
+
+        NullCounter() {
+            super(null, null, null);
+        }
+
+        @Override
+        public void add() {
+        }
+
+        @Override
+        public void add(long n) {
+        }
+
+        @Override
+        public void add(Point p) {
+        }
+
+        @Override
+        public void add(long n, Point p) {
+        }
+
+        @Override
+        public PointBuilder builder() {
+            return super.builder();
+        }
+    }
+
+    private static final class NullGauge extends Gauge {
+        NullGauge() {
+            super(null, null, null);
+        }
+
+        @Override
+        public void sample(double x) {
+        }
+
+        @Override
+        public void sample(double x, Point p) {
+        }
+
+        @Override
+        public PointBuilder builder() {
+            return super.builder();
+        }
+
+    }
+
+    public static final class MockReceiver extends MetricReceiver {
+
+        private final ThreadLocalDirectory<Bucket, Sample> collection;
+
+        private MockReceiver(ThreadLocalDirectory<Bucket, Sample> collection) {
+            super(collection, null);
+            this.collection = collection;
+        }
+
+        public MockReceiver() {
+            this(new ThreadLocalDirectory<>(new MetricUpdater()));
+        }
+
+        /** Gathers all data since last snapshot */
+        public Bucket getSnapshot() {
+            Bucket merged = new Bucket();
+            for (Bucket b : collection.fetch()) {
+                merged.merge(b, true);
+            }
+            return merged;
+        }
+
+        /** Utility method for testing */
+        public Point point(String dim, String val) {
+            return pointBuilder().set(dim, val).build();
+        }
+
+    }
+
+    private static final class NullReceiver extends MetricReceiver {
+
+        NullReceiver() {
+            super(null, null);
+        }
+
+        @Override
+        public void update(Sample s) {
+        }
+
+        @Override
+        public Counter declareCounter(String name) {
+            return new NullCounter();
+        }
+
+        @Override
+        public Counter declareCounter(String name, Point boundDimensions) {
+            return new NullCounter();
+        }
+
+        @Override
+        public Gauge declareGauge(String name) {
+            return new NullGauge();
+        }
+
+        @Override
+        public Gauge declareGauge(String name, Point boundDimensions) {
+            return new NullGauge();
+        }
+
+        @Override
+        public Gauge declareGauge(String name, Optional<Point> boundDimensions, MetricSettings customSettings) {
+            return null;
+        }
+
+        @Override
+        public PointBuilder pointBuilder() {
+            return null;
+        }
+
+        @Override
+        public Bucket getSnapshot() {
+            return null;
+        }
+
+        @Override
+        void addMetricDefinition(String metricName, MetricSettings definition) {
+        }
+
+        @Override
+        MetricSettings getMetricDefinition(String metricName) {
+            return null;
+        }
+    }
+
 }

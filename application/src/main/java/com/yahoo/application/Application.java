@@ -345,7 +345,7 @@ public final class Application implements AutoCloseable {
         }
 
         // generate the services xml and load the container
-        private Application build() throws Exception {
+        public Application build() throws Exception {
             Application app = null;
             Exception exception = null;
 

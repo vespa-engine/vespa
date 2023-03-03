@@ -50,4 +50,6 @@ public class SimpleMetricConsumer implements MetricConsumer {
         return new Point(properties);
     }
 
+    public MetricReceiver receiver() { return receiver; }
+
 }
