@@ -63,6 +63,7 @@ vespa_add_library(vespalib_vespalib_util OBJECT
     programoptions.cpp
     random.cpp
     rcuvector.cpp
+    ref_counted.cpp
     regexp.cpp
     require.cpp
     resource_limits.cpp
