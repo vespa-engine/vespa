@@ -1,8 +1,10 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.container.jdisc.metric;
 
+// import com.yahoo.jdisc.Container;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.jrt.TransportMetrics;
+import com.yahoo.metrics.ContainerMetrics;
 
 import static com.yahoo.jrt.TransportMetrics.Snapshot;
 
@@ -24,12 +26,12 @@ class JrtMetrics {
     void emitMetrics() {
         Snapshot snapshot = transportMetrics.snapshot();
         Snapshot changesSincePrevious = snapshot.changesSince(previousSnapshot);
-        increment("jrt.transport.tls-certificate-verification-failures", changesSincePrevious.tlsCertificateVerificationFailures());
-        increment("jrt.transport.peer-authorization-failures", changesSincePrevious.peerAuthorizationFailures());
-        increment("jrt.transport.server.tls-connections-established", changesSincePrevious.serverTlsConnectionsEstablished());
-        increment("jrt.transport.client.tls-connections-established", changesSincePrevious.clientTlsConnectionsEstablished());
-        increment("jrt.transport.server.unencrypted-connections-established", changesSincePrevious.serverUnencryptedConnectionsEstablished());
-        increment("jrt.transport.client.unencrypted-connections-established", changesSincePrevious.clientUnencryptedConnectionsEstablished());
+        increment(ContainerMetrics.JRT_TRANSPORT_TLS_CERTIFICATE_VERIFICATION_FAILURES.baseName(), changesSincePrevious.tlsCertificateVerificationFailures());
+        increment(ContainerMetrics.JRT_TRANSPORT_PEER_AUTHORIZATION_FAILURES.baseName(), changesSincePrevious.peerAuthorizationFailures());
+        increment(ContainerMetrics.JRT_TRANSPORT_SERVER_TLS_CONNECIONTS_ESTABLISHED.baseName(), changesSincePrevious.serverTlsConnectionsEstablished());
+        increment(ContainerMetrics.JRT_TRANSPORT_CLIENT_TLS_CONNECTIONS_ESTABLISHED.baseName(), changesSincePrevious.clientTlsConnectionsEstablished());
+        increment(ContainerMetrics.JRT_TRANSPORT_CLIENT_UNENCRYPTED_CONNECTIONS_ESTABLISHED.baseName(), changesSincePrevious.serverUnencryptedConnectionsEstablished());
+        increment(ContainerMetrics.JRT_TRANSPORT_CLIENT_UNENCRYPTED_CONNECTIONS_ESTABLISHED.baseName(), changesSincePrevious.clientUnencryptedConnectionsEstablished());
         previousSnapshot = snapshot;
     }
 

@@ -75,7 +75,26 @@ public enum StorageMetrics implements VespaMetrics {
     VDS_MERGETHROTTLER_LOCALLYEXECUTEDMERGES_OK("vds.mergethrottler.locallyexecutedmerges.ok", Unit.INSTANCE, "The number of successful merges for 'locallyexecutedmerges'"),
     VDS_MERGETHROTTLER_MERGECHAINS_OK("vds.mergethrottler.mergechains.ok", Unit.INSTANCE, "The number of successful merges for 'mergechains'"),
     VDS_MERGETHROTTLER_MERGECHAINS_FAILURES_BUSY("vds.mergethrottler.mergechains.failures.busy", Unit.INSTANCE, "The number of merges that failed because the storage node was busy"),
-    VDS_MERGETHROTTLER_MERGECHAINS_FAILURES_TOTAL("vds.mergethrottler.mergechains.failures.total", Unit.INSTANCE, "Sum of all failures");
+    VDS_MERGETHROTTLER_MERGECHAINS_FAILURES_TOTAL("vds.mergethrottler.mergechains.failures.total", Unit.INSTANCE, "Sum of all failures"),
+
+
+    // C++ TLS metrics - these come from both the distributor and storage
+    VDS_SERVER_NETWORK_TLS_HANDSHAKES_FAILED("vds.server.network.tls-handshakes-failed", Unit.OPERATION, "Number of client or server connection attempts that failed during TLS handshaking"),
+    VDS_SERVER_NETWORK_PEER_AUTHORIZATION_FAILURES("vds.server.network.peer-authorization-failures", Unit.FAILURE, "Number of TLS connection attempts failed due to bad or missing peer certificate credentials"),
+    VDS_SERVER_NETWORK_CLIENT_TLS_CONNECTIONS_ESTABLISHED("vds.server.network.client.tls-connections-established", Unit.CONNECTION, "Number of secure mTLS connections established"),
+    VDS_SERVER_NETWORK_SERVER_TLS_CONNECTIONS_ESTABLISHED("vds.server.network.server.tls-connections-established", Unit.CONNECTION, "Number of secure mTLS connections established"),
+    VDS_SERVER_NETWORK_CLIENT_INSECURE_CONNECTIONS_ESTABLISHED("vds.server.network.client.insecure-connections-established", Unit.CONNECTION, "Number of insecure (plaintext) connections established"),
+    VDS_SERVER_NETWORK_SERVER_INSECURE_CONNECTIONS_ESTABLISHED("vds.server.network.server.insecure-connections-established", Unit.CONNECTION, "Number of insecure (plaintext) connections established"),
+    VDS_SERVER_NETWORK_TLS_CONNECTIONS_BROKEN("vds.server.network.tls-connections-broken", Unit.CONNECTION, "Number of TLS connections broken due to failures during frame encoding or decoding"),
+    VDS_SERVER_NETWORK_FAILED_TLS_CONFIG_RELOADS("vds.server.network.failed-tls-config-reloads", Unit.FAILURE, "Number of times background reloading of TLS config has failed"),
+
+    // C++ capability metrics
+    VDS_SERVER_NETWORK_RPC_CAPABILITY_CHECKS_FAILED("vds.server.network.rpc-capability-checks-failed", Unit.FAILURE, "Number of RPC operations that failed to due one or more missing capabilities"),
+    VDS_SERVER_NETWORK_STATUS_CAPABILITY_CHECKS_FAILED("vds.server.network.status-capability-checks-failed", Unit.FAILURE, "Number of status page operations that failed to due one or more missing capabilities"),
+
+    // C++ Fnet metrics
+    VDS_SERVER_FNET_NUM_CONNECTIONS("vds.server.fnet.num-connections", Unit.CONNECTION, "Total number of connection objects");
+
 
     private final String name;
     private final Unit unit;

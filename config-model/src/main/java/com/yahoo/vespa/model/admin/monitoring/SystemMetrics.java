@@ -1,6 +1,8 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.admin.monitoring;
 
+import com.yahoo.metrics.HostedNodeAdminMetrics;
+
 import com.google.common.collect.ImmutableSet;
 
 import java.util.Set;
@@ -8,56 +10,39 @@ import java.util.Set;
 /**
  * @author gjoranv
  */
-public class SystemMetrics {
+// TODO: Move to hosted repo.
 
-    public static final String CPU_UTIL = "cpu.util";
-    public static final String CPU_SYS_UTIL = "cpu.sys.util";
-    public static final String CPU_THROTTLED_TIME = "cpu.throttled_time.rate";
-    public static final String CPU_THROTTLED_CPU_TIME = "cpu.throttled_cpu_time.rate";
-    public static final String CPU_VCPUS = "cpu.vcpus";
-    public static final String DISK_LIMIT = "disk.limit";
-    public static final String DISK_USED = "disk.used";
-    public static final String DISK_UTIL = "disk.util";
-    public static final String MEM_LIMIT = "mem.limit";
-    public static final String MEM_USED = "mem.used";
-    public static final String MEM_UTIL = "mem.util";
-    public static final String MEM_TOTAL_USED = "mem_total.used";
-    public static final String MEM_TOTAL_UTIL = "mem_total.util";
-    public static final String BANDWIDTH_LIMIT = "bandwidth.limit";
-    public static final String GPU_UTIL = "gpu.util";
-    public static final String GPU_MEM_USED = "gpu.memory.used";
-    public static final String GPU_MEM_TOTAL = "gpu.memory.total";
+public class SystemMetrics {
 
     public static final MetricSet systemMetricSet = createSystemMetricSet();
 
     private static MetricSet createSystemMetricSet() {
         Set<Metric> dockerNodeMetrics =
-                ImmutableSet.of(new Metric(CPU_UTIL),
-                                new Metric(CPU_SYS_UTIL),
-                                new Metric(CPU_THROTTLED_TIME),
-                                new Metric(CPU_THROTTLED_CPU_TIME),
-                                new Metric(CPU_VCPUS),
-                                new Metric(DISK_LIMIT),
-                                new Metric(DISK_USED),
-                                new Metric(DISK_UTIL),
-                                new Metric(MEM_LIMIT),
-                                new Metric(MEM_USED),
-                                new Metric(MEM_UTIL),
-                                new Metric(MEM_TOTAL_USED),
-                                new Metric(MEM_TOTAL_UTIL),
-                                new Metric(BANDWIDTH_LIMIT),
-                                new Metric(GPU_UTIL),
-                                new Metric(GPU_MEM_USED),
-                                new Metric(GPU_MEM_TOTAL)
+                ImmutableSet.of(new Metric(HostedNodeAdminMetrics.CPU_UTIL.baseName()),
+                                new Metric(HostedNodeAdminMetrics.CPU_SYS_UTIL.baseName()),
+                                new Metric(HostedNodeAdminMetrics.CPU_THROTTLED_TIME.baseName()),
+                                new Metric(HostedNodeAdminMetrics.CPU_THROTTLED_CPU_TIME.baseName()),
+                                new Metric(HostedNodeAdminMetrics.CPU_VCPUS.baseName()),
+                                new Metric(HostedNodeAdminMetrics.DISK_LIMIT.baseName()),
+                                new Metric(HostedNodeAdminMetrics.DISK_USED.baseName()),
+                                new Metric(HostedNodeAdminMetrics.DISK_UTIL.baseName()),
+                                new Metric(HostedNodeAdminMetrics.MEM_LIMIT.baseName()),
+                                new Metric(HostedNodeAdminMetrics.MEM_USED.baseName()),
+                                new Metric(HostedNodeAdminMetrics.MEM_UTIL.baseName()),
+                                new Metric(HostedNodeAdminMetrics.MEM_TOTAL_USED.baseName()),
+                                new Metric(HostedNodeAdminMetrics.MEM_TOTAL_UTIL.baseName()),
+                                new Metric(HostedNodeAdminMetrics.GPU_UTIL.baseName()),
+                                new Metric(HostedNodeAdminMetrics.GPU_MEM_USED.baseName()),
+                                new Metric(HostedNodeAdminMetrics.GPU_MEM_TOTAL.baseName())
                 );
 
         Set<Metric> nonDockerNodeMetrics =
                 // Disk metrics should be based on /home, or else '/' - or simply add filesystem as dimension
-                ImmutableSet.of(new Metric("cpu.busy.pct", CPU_UTIL),
-                                new Metric("mem.used.pct", MEM_UTIL),
-                                new Metric("mem.active.kb", MEM_USED),
-                                new Metric("mem.total.kb", MEM_LIMIT),
-                                new Metric("used.kb", DISK_USED)
+                ImmutableSet.of(new Metric("cpu.busy.pct", HostedNodeAdminMetrics.CPU_UTIL.baseName()),
+                                new Metric("mem.used.pct", HostedNodeAdminMetrics.MEM_UTIL.baseName()),
+                                new Metric("mem.active.kb", HostedNodeAdminMetrics.MEM_USED.baseName()),
+                                new Metric("mem.total.kb", HostedNodeAdminMetrics.MEM_LIMIT.baseName()),
+                                new Metric("used.kb", HostedNodeAdminMetrics.DISK_USED.baseName())
                 );
 
         Set<Metric> systemMetrics = ImmutableSet.<Metric>builder()

@@ -1,10 +1,15 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.admin.monitoring;
 
+import com.yahoo.metrics.ConfigServerMetrics;
 import com.yahoo.metrics.ContainerMetrics;
 import com.yahoo.metrics.DistributorMetrics;
+import com.yahoo.metrics.LogdMetrics;
 import com.yahoo.metrics.SearchNodeMetrics;
+import com.yahoo.metrics.SentinelMetrics;
+import com.yahoo.metrics.SlobrokMetrics;
 import com.yahoo.metrics.StorageMetrics;
+import com.yahoo.metrics.NodeAdminMetrics;
 import com.yahoo.metrics.Suffix;
 
 import java.util.Collections;
@@ -55,12 +60,10 @@ public class VespaMetricSet {
     private static Set<Metric> getSentinelMetrics() {
         Set<Metric> metrics = new LinkedHashSet<>();
 
-        addMetric(metrics, "sentinel.restarts.count");
-        addMetric(metrics, "sentinel.totalRestarts.last");
-        addMetric(metrics, "sentinel.uptime.last");
-
-        addMetric(metrics, "sentinel.running.count");
-        addMetric(metrics, "sentinel.running.last");
+        addMetric(metrics, SentinelMetrics.SENTINEL_RESTARTS.count());
+        addMetric(metrics, SentinelMetrics.SENTINEL_TOTAL_RESTARTS.last());
+        addMetric(metrics, SentinelMetrics.SENTINEL_UPTIME.last());
+        addMetric(metrics, SentinelMetrics.SENTINEL_RUNNING, EnumSet.of(count, last));
 
         return metrics;
     }
@@ -68,39 +71,39 @@ public class VespaMetricSet {
     private static Set<Metric> getOtherMetrics() {
         Set<Metric> metrics = new LinkedHashSet<>();
 
-        addMetric(metrics, "slobrok.heartbeats.failed.count");
-        addMetric(metrics, "slobrok.missing.consensus.count");
+        addMetric(metrics, SlobrokMetrics.SLOBROK_HEARTBEATS_FAILED.count());
+        addMetric(metrics, SlobrokMetrics.SLOBROK_MISSING_CONSENSUS.count());
 
-        addMetric(metrics, "logd.processed.lines.count");
-        addMetric(metrics, "worker.connections.max");
-        addMetric(metrics, "endpoint.certificate.expiry.seconds");
+        addMetric(metrics, LogdMetrics.LOGD_PROCESSED_LINES.count());
 
         // Java (JRT) TLS metrics
-        addMetric(metrics, "jrt.transport.tls-certificate-verification-failures");
-        addMetric(metrics, "jrt.transport.peer-authorization-failures");
-        addMetric(metrics, "jrt.transport.server.tls-connections-established");
-        addMetric(metrics, "jrt.transport.client.tls-connections-established");
-        addMetric(metrics, "jrt.transport.server.unencrypted-connections-established");
-        addMetric(metrics, "jrt.transport.client.unencrypted-connections-established");
+        addMetric(metrics, ContainerMetrics.JRT_TRANSPORT_TLS_CERTIFICATE_VERIFICATION_FAILURES.baseName());
+        addMetric(metrics, ContainerMetrics.JRT_TRANSPORT_PEER_AUTHORIZATION_FAILURES.baseName());
+        addMetric(metrics, ContainerMetrics.JRT_TRANSPORT_SERVER_TLS_CONNECIONTS_ESTABLISHED.baseName());
+        addMetric(metrics, ContainerMetrics.JRT_TRANSPORT_CLIENT_TLS_CONNECTIONS_ESTABLISHED.baseName());
+        addMetric(metrics, ContainerMetrics.JRT_TRANSPORT_SERVER_UNENCRYPTED_CONNECTIONS_ESTABLISHED.baseName());
+        addMetric(metrics, ContainerMetrics. JRT_TRANSPORT_CLIENT_UNENCRYPTED_CONNECTIONS_ESTABLISHED. baseName());
 
         // C++ TLS metrics
-        addMetric(metrics, "vds.server.network.tls-handshakes-failed");
-        addMetric(metrics, "vds.server.network.peer-authorization-failures");
-        addMetric(metrics, "vds.server.network.client.tls-connections-established");
-        addMetric(metrics, "vds.server.network.server.tls-connections-established");
-        addMetric(metrics, "vds.server.network.client.insecure-connections-established");
-        addMetric(metrics, "vds.server.network.server.insecure-connections-established");
-        addMetric(metrics, "vds.server.network.tls-connections-broken");
-        addMetric(metrics, "vds.server.network.failed-tls-config-reloads");
+        addMetric(metrics, StorageMetrics.VDS_SERVER_NETWORK_TLS_HANDSHAKES_FAILED.count());
+        addMetric(metrics, StorageMetrics.VDS_SERVER_NETWORK_PEER_AUTHORIZATION_FAILURES.count());
+        addMetric(metrics, StorageMetrics.VDS_SERVER_NETWORK_CLIENT_TLS_CONNECTIONS_ESTABLISHED.count());
+        addMetric(metrics, StorageMetrics.VDS_SERVER_NETWORK_SERVER_TLS_CONNECTIONS_ESTABLISHED.count());
+        addMetric(metrics, StorageMetrics.VDS_SERVER_NETWORK_CLIENT_INSECURE_CONNECTIONS_ESTABLISHED.count());
+        addMetric(metrics, StorageMetrics.VDS_SERVER_NETWORK_SERVER_INSECURE_CONNECTIONS_ESTABLISHED.count());
+        addMetric(metrics, StorageMetrics.VDS_SERVER_NETWORK_TLS_CONNECTIONS_BROKEN.count());
+        addMetric(metrics, StorageMetrics.VDS_SERVER_NETWORK_FAILED_TLS_CONFIG_RELOADS.count());
         // C++ capability metrics
-        addMetric(metrics, "vds.server.network.rpc-capability-checks-failed");
-        addMetric(metrics, "vds.server.network.status-capability-checks-failed");
+        addMetric(metrics, StorageMetrics.VDS_SERVER_NETWORK_RPC_CAPABILITY_CHECKS_FAILED.count());
+        addMetric(metrics, StorageMetrics.VDS_SERVER_NETWORK_STATUS_CAPABILITY_CHECKS_FAILED.count());
 
         // C++ Fnet metrics
-        addMetric(metrics, "vds.server.fnet.num-connections");
+        addMetric(metrics, StorageMetrics.VDS_SERVER_FNET_NUM_CONNECTIONS.count());
 
-        // Node certificate
-        addMetric(metrics, "node-certificate.expiry.seconds");
+        // NodeAdmin certificate
+        addMetric(metrics, NodeAdminMetrics.WORKER_CONNECTIONS.max()); // Hosted Vespa only (routing layer)
+        addMetric(metrics, NodeAdminMetrics.ENDPOINT_CERTIFICATE_EXPIRY_SECONDS.baseName());
+        addMetric(metrics, NodeAdminMetrics.NODE_CERTIFICATE_EXPIRY_SECONDS.baseName());
 
         return metrics;
     }
@@ -108,22 +111,20 @@ public class VespaMetricSet {
     private static Set<Metric> getConfigServerMetrics() {
         Set<Metric> metrics =new LinkedHashSet<>();
 
-        addMetric(metrics, "configserver.requests.count");
-        addMetric(metrics, "configserver.failedRequests.count");
-        addMetric(metrics, "configserver.latency.max");
-        addMetric(metrics, "configserver.latency.sum");
-        addMetric(metrics, "configserver.latency.count");
-        addMetric(metrics, "configserver.cacheConfigElems.last");
-        addMetric(metrics, "configserver.cacheChecksumElems.last");
-        addMetric(metrics, "configserver.hosts.last");
-        addMetric(metrics, "configserver.delayedResponses.count");
-        addMetric(metrics, "configserver.sessionChangeErrors.count");
+        addMetric(metrics, ConfigServerMetrics.CONFIGSERVER_REQUESTS.count());
+        addMetric(metrics, ConfigServerMetrics.CONFIGSERVER_FAILED_REQUESTS.count());
+        addMetric(metrics, ConfigServerMetrics.CONFIGSERVER_LATENCY, EnumSet.of(max, sum, count));
+        addMetric(metrics, ConfigServerMetrics.CONFIGSERVER_CACHE_CONFIG_ELEMS.last());
+        addMetric(metrics, ConfigServerMetrics.CONFIGSERVER_CACHE_CHECKSUM_ELEMS.last());
+        addMetric(metrics, ConfigServerMetrics.CONFIGSERVER_HOSTS.last());
+        addMetric(metrics, ConfigServerMetrics.CONFIGSERVER_DELAYED_RESPONSES.count());
+        addMetric(metrics, ConfigServerMetrics.CONFIGSERVER_SESSION_CHANGE_ERRORS.count());
 
-        addMetric(metrics, "configserver.zkZNodes.last");
-        addMetric(metrics, "configserver.zkAvgLatency.last");
-        addMetric(metrics, "configserver.zkMaxLatency.last");
-        addMetric(metrics, "configserver.zkConnections.last");
-        addMetric(metrics, "configserver.zkOutstandingRequests.last");
+        addMetric(metrics, ConfigServerMetrics.CONFIGSERVER_ZK_Z_NODES.last());
+        addMetric(metrics, ConfigServerMetrics.CONFIGSERVER_ZK_AVG_LATENCY.last());
+        addMetric(metrics, ConfigServerMetrics.CONFIGSERVER_ZK_MAX_LATENCY.last());
+        addMetric(metrics, ConfigServerMetrics.CONFIGSERVER_ZK_CONNECTIONS.last());
+        addMetric(metrics, ConfigServerMetrics.CONFIGSERVER_ZK_OUTSTANDING_REQUESTS.last());
 
         return metrics;
     }
@@ -719,6 +720,18 @@ public class VespaMetricSet {
     }
 
     private static void addMetric(Set<Metric> metrics, DistributorMetrics metric, EnumSet<Suffix> suffixes) {
+        suffixes.forEach(suffix -> metrics.add(new Metric(metric.baseName() + "." + suffix.suffix())));
+    }
+    private static void addMetric(Set<Metric> metrics, SentinelMetrics metric, EnumSet<Suffix> suffixes) {
+        suffixes.forEach(suffix -> metrics.add(new Metric(metric.baseName() + "." + suffix.suffix())));
+    }
+    private static void addMetric(Set<Metric> metrics, SlobrokMetrics metric, EnumSet<Suffix> suffixes) {
+        suffixes.forEach(suffix -> metrics.add(new Metric(metric.baseName() + "." + suffix.suffix())));
+    }
+    private static void addMetric(Set<Metric> metrics, LogdMetrics metric, EnumSet<Suffix> suffixes) {
+        suffixes.forEach(suffix -> metrics.add(new Metric(metric.baseName() + "." + suffix.suffix())));
+    }
+    private static void addMetric(Set<Metric> metrics, ConfigServerMetrics metric, EnumSet<Suffix> suffixes) {
         suffixes.forEach(suffix -> metrics.add(new Metric(metric.baseName() + "." + suffix.suffix())));
     }
     private static void addMetric(Set<Metric> metrics, String metricName, Iterable<String> aggregateSuffices) {

@@ -12,6 +12,7 @@ public enum ContainerMetrics implements VespaMetrics {
     HTTP_STATUS_5XX("http.status.5xx", Unit.RESPONSE, "Number of responses with a 5xx status"),
 
     APPLICATION_GENERATION("application_generation", Unit.VERSION, "The currently live application config generation (aka session id)"),
+    IN_SERVICE("in_service", Unit.BINARY, "This will have the value 1 if the node is in service, 0 if not."),
 
     JDISC_GC_COUNT("jdisc.gc.count", Unit.OPERATION, "Number of JVM garbage collections done"),
     JDISC_GC_MS("jdisc.gc.ms", Unit.MILLISECOND, "Time spent in JVM garbage collection"),
@@ -184,7 +185,15 @@ public enum ContainerMetrics implements VespaMetrics {
     CLUSTER_CONTROLLER_RESOURCE_USAGE_MAX_DISK_UTILIZATION("cluster-controller.resource_usage.max_disk_utilization", Unit.FRACTION, "Current disk space utilisation, per content node"),
     CLUSTER_CONTROLLER_RESOURCE_USAGE_MEMORY_LIMIT("cluster-controller.resource_usage.memory_limit", Unit.FRACTION, "Disk space limit as a fraction of available disk space"),
     CLUSTER_CONTROLLER_RESOURCE_USAGE_DISK_LIMIT("cluster-controller.resource_usage.disk_limit", Unit.FRACTION, "Memory space limit as a fraction of available memory"),
-    CLUSTER_CONTROLLER_REINDEXING_PROGRESS("reindexing.progress", Unit.FRACTION, "Re-indexing progress");
+    CLUSTER_CONTROLLER_REINDEXING_PROGRESS("reindexing.progress", Unit.FRACTION, "Re-indexing progress"),
+
+    // Java (JRT) TLS metrics
+    JRT_TRANSPORT_TLS_CERTIFICATE_VERIFICATION_FAILURES("jrt.transport.tls-certificate-verification-failures", Unit.FAILURE, "TLS certificate verification failures"),
+    JRT_TRANSPORT_PEER_AUTHORIZATION_FAILURES("jrt.transport.peer-authorization-failures", Unit.FAILURE, "TLS peer authorization failures"),
+    JRT_TRANSPORT_SERVER_TLS_CONNECIONTS_ESTABLISHED("jrt.transport.server.tls-connections-established", Unit.CONNECTION, "TLS server connections established"),
+    JRT_TRANSPORT_CLIENT_TLS_CONNECTIONS_ESTABLISHED("jrt.transport.client.tls-connections-established", Unit.CONNECTION, "TLS client connections established"),
+    JRT_TRANSPORT_SERVER_UNENCRYPTED_CONNECTIONS_ESTABLISHED("jrt.transport.server.unencrypted-connections-established", Unit.CONNECTION, "Unencrypted server connections established"),
+    JRT_TRANSPORT_CLIENT_UNENCRYPTED_CONNECTIONS_ESTABLISHED("jrt.transport.client.unencrypted-connections-established", Unit.CONNECTION, "Unencrypted client connections established");
 
 
     private final String name;
