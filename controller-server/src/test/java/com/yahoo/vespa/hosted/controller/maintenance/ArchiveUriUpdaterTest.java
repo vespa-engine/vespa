@@ -43,7 +43,6 @@ public class ArchiveUriUpdaterTest {
         var tenant2 = TenantName.from("tenant2");
         var account1 = CloudAccount.from("001122334455");
         var tenantInfra = SystemApplication.TENANT;
-        var application = tester.newDeploymentContext(tenant1.value(), "app1", "instance1");
         ZoneId zone = ZoneId.from("prod", "aws-us-east-1c");
 
         // Initially we should only is the bucket for hosted-vespa tenant
@@ -52,21 +51,23 @@ public class ArchiveUriUpdaterTest {
         assertArchiveUris(ZoneId.from("prod", "controller"), Map.of(TenantName.from("hosted-vespa"), "s3://bucketName/"), Map.of());
 
         // Archive service now has URI for tenant1, but tenant1 is not deployed in zone
-        setBucketNameInService(Map.of(tenant1, "uri-1"), zone);
+        setBucketNameInService(Map.of(tenant2, "uri-1"), zone);
         setAccountBucketNameInService(zone, account1, "bkt-1");
         updater.maintain();
         assertArchiveUris(zone, Map.of(TenantName.from("hosted-vespa"), "s3://bucketName/"), Map.of());
 
         ((InMemoryFlagSource) tester.controller().flagSource())
                 .withListFlag(PermanentFlags.CLOUD_ACCOUNTS.id(), List.of(account1.value()), String.class);
-        deploy(application, zone, account1);
+        deploy(tester.newDeploymentContext(tenant1.value(), "app1", "instance1"), zone, account1);
+        deploy(tester.newDeploymentContext(tenant2.value(), "app1", "instance1"), zone, CloudAccount.empty);
+
         updater.maintain();
-        assertArchiveUris(zone, Map.of(tenant1, "s3://uri-1/", tenantInfra, "s3://bucketName/"), Map.of(account1, "s3://bkt-1/"));
+        assertArchiveUris(zone, Map.of(tenant2, "s3://uri-1/", tenantInfra, "s3://bucketName/"), Map.of(account1, "s3://bkt-1/"));
 
         // URI for tenant1 should be updated and removed for tenant2
         setArchiveUriInNodeRepo(Map.of(tenant1, "wrong-uri", tenant2, "uri-2"), zone);
         updater.maintain();
-        assertArchiveUris(zone, Map.of(tenant1, "s3://uri-1/", tenantInfra, "s3://bucketName/"), Map.of(account1, "s3://bkt-1/"));
+        assertArchiveUris(zone, Map.of(tenant2, "s3://uri-1/", tenantInfra, "s3://bucketName/"), Map.of(account1, "s3://bkt-1/"));
     }
 
     private void assertArchiveUris(ZoneId zone, Map<TenantName, String> expectedTenantUris, Map<CloudAccount, String> expectedAccountUris) {

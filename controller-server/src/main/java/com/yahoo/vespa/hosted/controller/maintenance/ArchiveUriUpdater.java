@@ -55,9 +55,9 @@ public class ArchiveUriUpdater extends ControllerMaintainer {
         for (var application : applications.asList()) {
             for (var instance : application.instances().values()) {
                 for (var deployment : instance.deployments().values()) {
-                    tenantsByZone.get(deployment.zone()).add(instance.id().tenant());
                     applications.decideCloudAccountOf(new DeploymentId(instance.id(), deployment.zone()), application.deploymentSpec())
-                            .ifPresent(account -> accountsByZone.get(deployment.zone()).add(account));
+                            .ifPresentOrElse(account -> accountsByZone.get(deployment.zone()).add(account),
+                                             () -> tenantsByZone.get(deployment.zone()).add(instance.id().tenant()));
                 }
             }
         }
