@@ -52,40 +52,40 @@ private:
     T *_ptr;
     ref_counted(T *ptr) noexcept : _ptr(ptr) {}
     void maybe_subref() noexcept {
-        if (_ptr) {
+        if (_ptr) [[likely]] {
             _ptr->internal_subref();
         }
     }
     static T *maybe_addref(T *ptr) noexcept {
-        if (ptr) {
+        if (ptr) [[likely]] {
             ptr->internal_addref();
         }
         return ptr;
+    }
+    void replace_with(T *ptr) noexcept {
+        maybe_subref();
+        _ptr = ptr;
     }
 public:
     ref_counted() noexcept : _ptr(nullptr) {}
     ref_counted(ref_counted &&rhs) noexcept : _ptr(std::exchange(rhs._ptr, nullptr)) {}
     ref_counted(const ref_counted &rhs) noexcept : _ptr(maybe_addref(rhs._ptr)) {}
     ref_counted &operator=(ref_counted &&rhs) noexcept {
-        maybe_subref();
-        _ptr = std::exchange(rhs._ptr, nullptr);
+        replace_with(std::exchange(rhs._ptr, nullptr));
         return *this;
     }
     ref_counted &operator=(const ref_counted &rhs) noexcept {
-        maybe_subref();
-        _ptr = maybe_addref(rhs._ptr);
+        replace_with(maybe_addref(rhs._ptr));
         return *this;
     }
     template <typename X> ref_counted(ref_counted<X> &&rhs) noexcept : _ptr(std::exchange(rhs._ptr, nullptr)) {}
     template <typename X> ref_counted(const ref_counted<X> &rhs) noexcept : _ptr(maybe_addref(rhs._ptr)) {}
     template <typename X> ref_counted &operator=(ref_counted<X> &&rhs) noexcept {
-        maybe_subref();
-        _ptr = std::exchange(rhs._ptr, nullptr);
+        replace_with(std::exchange(rhs._ptr, nullptr));
         return *this;
     }
     template <typename X> ref_counted &operator=(const ref_counted<X> &rhs) noexcept {
-        maybe_subref();
-        _ptr = maybe_addref(rhs._ptr);
+        replace_with(maybe_addref(rhs._ptr));
         return *this;
     }
     T *operator->() const noexcept { return _ptr; }
@@ -109,7 +109,7 @@ ref_counted<T> make_ref_counted(Args && ... args) {
 // create a new handle to a reference counted object
 // (NB: object must still be valid)
 template <typename T>
-ref_counted<T> ref_counted_from(T &t) {
+ref_counted<T> ref_counted_from(T &t) noexcept {
     t.internal_addref();
     return ref_counted<T>::internal_attach(std::addressof(t));
 }

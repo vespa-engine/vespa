@@ -183,12 +183,24 @@ TEST(RefCountedTest, copy_ref_counted) {
     }
 }
 
+struct Other : enable_ref_counted {};
+
 TEST(RefCountedTest, compile_errors_when_uncommented) {
     struct Foo {};
     [[maybe_unused]] Foo foo;
+    [[maybe_unused]] ref_counted<Other> other = make_ref_counted<Other>();
     // ref_counted<Foo> empty;
     // auto ref1 = make_ref_counted<Foo>();
     // auto ref2 = ref_counted_from(foo);
+    // ref_counted<Base> base = other;
+}
+
+TEST(RefCountedTest, self_assign) {
+    ref_counted<Leaf> ref = make_ref_counted<Leaf>(10);
+    ref = ref;
+    ref = std::move(ref);
+    EXPECT_EQ(ref->count_refs(), 1);
+    EXPECT_EQ(ref->val, 10);
 }
 
 TEST(RefCountedTest, with_threads) {
