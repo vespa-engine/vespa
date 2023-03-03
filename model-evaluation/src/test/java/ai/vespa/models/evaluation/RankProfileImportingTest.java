@@ -54,4 +54,10 @@ public class RankProfileImportingTest {
         ModelTester tester = new ModelTester("src/test/resources/config/expressions-as-arguments/");
         assertEquals(3, tester.models().size());
     }
+
+    @Test
+    public void testImportingWithMacros() {
+        ModelTester tester = new ModelTester("src/test/resources/config/ranking-macros/");
+        assertEquals(5, tester.models().size());
+    }
 }
