@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.athenz.identityprovider.api;
 
+import com.yahoo.vespa.athenz.api.AthenzIdentity;
 import com.yahoo.vespa.athenz.api.AthenzService;
 
 import java.net.URL;
@@ -18,7 +19,8 @@ import java.util.Set;
 public record SignedIdentityDocument(String signature, int signingKeyVersion, VespaUniqueInstanceId providerUniqueId,
                                      AthenzService providerService, int documentVersion, String configServerHostname,
                                      String instanceHostname, Instant createdAt, Set<String> ipAddresses,
-                                     IdentityType identityType, ClusterType clusterType, String ztsUrl, Map<String, Object> unknownAttributes) {
+                                     IdentityType identityType, ClusterType clusterType, String ztsUrl,
+                                     AthenzIdentity serviceIdentity, Map<String, Object> unknownAttributes) {
 
     public SignedIdentityDocument {
         ipAddresses = Set.copyOf(ipAddresses);
@@ -34,12 +36,12 @@ public record SignedIdentityDocument(String signature, int signingKeyVersion, Ve
     public SignedIdentityDocument(String signature, int signingKeyVersion, VespaUniqueInstanceId providerUniqueId,
                                   AthenzService providerService, int documentVersion, String configServerHostname,
                                   String instanceHostname, Instant createdAt, Set<String> ipAddresses,
-                                  IdentityType identityType, ClusterType clusterType, String ztsUrl) {
+                                  IdentityType identityType, ClusterType clusterType, String ztsUrl, AthenzIdentity serviceIdentity) {
         this(signature, signingKeyVersion, providerUniqueId, providerService, documentVersion, configServerHostname,
-            instanceHostname, createdAt, ipAddresses, identityType, clusterType, ztsUrl, Map.of());
+            instanceHostname, createdAt, ipAddresses, identityType, clusterType, ztsUrl, serviceIdentity, Map.of());
     }
 
-    public static final int DEFAULT_DOCUMENT_VERSION = 2;
+    public static final int DEFAULT_DOCUMENT_VERSION = 3;
 
     public boolean outdated() { return documentVersion < DEFAULT_DOCUMENT_VERSION; }
 

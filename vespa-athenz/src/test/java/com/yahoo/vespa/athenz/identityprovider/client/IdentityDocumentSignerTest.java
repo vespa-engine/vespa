@@ -3,11 +3,13 @@ package com.yahoo.vespa.athenz.identityprovider.client;
 
 import com.yahoo.security.KeyAlgorithm;
 import com.yahoo.security.KeyUtils;
+import com.yahoo.vespa.athenz.api.AthenzIdentity;
 import com.yahoo.vespa.athenz.api.AthenzService;
 import com.yahoo.vespa.athenz.identityprovider.api.ClusterType;
 import com.yahoo.vespa.athenz.identityprovider.api.IdentityType;
 import com.yahoo.vespa.athenz.identityprovider.api.SignedIdentityDocument;
 import com.yahoo.vespa.athenz.identityprovider.api.VespaUniqueInstanceId;
+import com.yahoo.vespa.athenz.utils.AthenzIdentities;
 import org.junit.jupiter.api.Test;
 
 import java.security.KeyPair;
@@ -37,17 +39,18 @@ public class IdentityDocumentSignerTest {
     private static final HashSet<String> ipAddresses = new HashSet<>(Arrays.asList("1.2.3.4", "::1"));
     private static final ClusterType clusterType = ClusterType.CONTAINER;
     private static final String ztsUrl = "https://foo";
+    private static final AthenzIdentity serviceIdentity = new AthenzService("vespa", "node");
 
     @Test
     void generates_and_validates_signature() {
         IdentityDocumentSigner signer = new IdentityDocumentSigner();
         String signature =
                 signer.generateSignature(id, providerService, configserverHostname, instanceHostname, createdAt,
-                                         ipAddresses, identityType, keyPair.getPrivate());
+                                         ipAddresses, identityType, keyPair.getPrivate(), serviceIdentity);
 
         SignedIdentityDocument signedIdentityDocument = new SignedIdentityDocument(
                 signature, KEY_VERSION, id, providerService, DEFAULT_DOCUMENT_VERSION, configserverHostname,
-                instanceHostname, createdAt, ipAddresses, identityType, clusterType, ztsUrl);
+                instanceHostname, createdAt, ipAddresses, identityType, clusterType, ztsUrl, serviceIdentity);
 
         assertTrue(signer.hasValidSignature(signedIdentityDocument, keyPair.getPublic()));
     }
@@ -57,17 +60,32 @@ public class IdentityDocumentSignerTest {
         IdentityDocumentSigner signer = new IdentityDocumentSigner();
         String signature =
                 signer.generateSignature(id, providerService, configserverHostname, instanceHostname, createdAt,
-                                         ipAddresses, identityType, keyPair.getPrivate());
+                                         ipAddresses, identityType, keyPair.getPrivate(), serviceIdentity);
 
         var docWithoutIgnoredFields = new SignedIdentityDocument(
                 signature, KEY_VERSION, id, providerService, DEFAULT_DOCUMENT_VERSION, configserverHostname,
-                instanceHostname, createdAt, ipAddresses, identityType, null, null);
+                instanceHostname, createdAt, ipAddresses, identityType, null, null, serviceIdentity);
         var docWithIgnoredFields = new SignedIdentityDocument(
                 signature, KEY_VERSION, id, providerService, DEFAULT_DOCUMENT_VERSION, configserverHostname,
-                instanceHostname, createdAt, ipAddresses, identityType, clusterType, ztsUrl);
+                instanceHostname, createdAt, ipAddresses, identityType, clusterType, ztsUrl, serviceIdentity);
 
         assertTrue(signer.hasValidSignature(docWithoutIgnoredFields, keyPair.getPublic()));
         assertEquals(docWithIgnoredFields.signature(), docWithoutIgnoredFields.signature());
+    }
+
+    @Test
+    void validates_signature_for_new_and_old_versions() {
+        IdentityDocumentSigner signer = new IdentityDocumentSigner();
+        String signature =
+                signer.generateSignature(id, providerService, configserverHostname, instanceHostname, createdAt,
+                                         ipAddresses, identityType, keyPair.getPrivate(), serviceIdentity);
+
+        SignedIdentityDocument signedIdentityDocument = new SignedIdentityDocument(
+                signature, KEY_VERSION, id, providerService, DEFAULT_DOCUMENT_VERSION, configserverHostname,
+                instanceHostname, createdAt, ipAddresses, identityType, clusterType, ztsUrl, serviceIdentity);
+
+        assertTrue(signer.hasValidSignature(signedIdentityDocument, keyPair.getPublic()));
+
     }
 
 }

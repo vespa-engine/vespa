@@ -4,8 +4,10 @@ package com.yahoo.vespa.athenz.identityprovider.api;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.yahoo.vespa.athenz.api.AthenzIdentity;
 import com.yahoo.vespa.athenz.api.AthenzService;
 import com.yahoo.vespa.athenz.identityprovider.api.bindings.SignedIdentityDocumentEntity;
+import com.yahoo.vespa.athenz.utils.AthenzIdentities;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -59,6 +61,7 @@ public class EntityBindingsMapper {
                 IdentityType.fromId(entity.identityType()),
                 Optional.ofNullable(entity.clusterType()).map(ClusterType::from).orElse(null),
                 entity.ztsUrl(),
+                Optional.ofNullable(entity.serviceIdentity()).map(AthenzIdentities::from).orElse(null),
                 entity.unknownAttributes());
     }
 
@@ -76,6 +79,7 @@ public class EntityBindingsMapper {
                 model.identityType().id(),
                 Optional.ofNullable(model.clusterType()).map(ClusterType::toConfigValue).orElse(null),
                 model.ztsUrl(),
+                Optional.ofNullable(model.serviceIdentity()).map(AthenzIdentity::getFullName).orElse(null),
                 model.unknownAttributes());
     }
 
