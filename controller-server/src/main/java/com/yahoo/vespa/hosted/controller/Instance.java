@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.controller;
 
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.zone.ZoneId;
@@ -63,16 +64,16 @@ public class Instance {
         this.change = Objects.requireNonNull(change, "change cannot be null");
     }
 
-    public Instance withNewDeployment(ZoneId zone, RevisionId revision, Version version,
-                                      Instant instant, Map<DeploymentMetrics.Warning, Integer> warnings, QuotaUsage quotaUsage) {
+    public Instance withNewDeployment(ZoneId zone, RevisionId revision, Version version, Instant instant,
+                                      Map<DeploymentMetrics.Warning, Integer> warnings, QuotaUsage quotaUsage, CloudAccount cloudAccount) {
         // Use info from previous deployment if available, otherwise create a new one.
-        Deployment previousDeployment = deployments.getOrDefault(zone, new Deployment(zone, revision,
+        Deployment previousDeployment = deployments.getOrDefault(zone, new Deployment(zone, cloudAccount, revision,
                                                                                       version, instant,
                                                                                       DeploymentMetrics.none,
                                                                                       DeploymentActivity.none,
                                                                                       QuotaUsage.none,
                                                                                       OptionalDouble.empty()));
-        Deployment newDeployment = new Deployment(zone, revision, version, instant,
+        Deployment newDeployment = new Deployment(zone, cloudAccount, revision, version, instant,
                                                   previousDeployment.metrics().with(warnings),
                                                   previousDeployment.activity(),
                                                   quotaUsage,

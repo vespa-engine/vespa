@@ -5,6 +5,7 @@ import com.yahoo.component.Version;
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.zone.ZoneId;
@@ -111,9 +112,9 @@ public class ApplicationSerializerTest {
                 Version.fromString("6.3.1"),
                 Instant.ofEpochMilli(496));
         Instant activityAt = Instant.parse("2018-06-01T10:15:30.00Z");
-        deployments.add(new Deployment(zone1, applicationVersion1.id(), Version.fromString("1.2.3"), Instant.ofEpochMilli(3),
+        deployments.add(new Deployment(zone1, CloudAccount.empty, applicationVersion1.id(), Version.fromString("1.2.3"), Instant.ofEpochMilli(3),
                 DeploymentMetrics.none, DeploymentActivity.none, QuotaUsage.none, OptionalDouble.empty()));
-        deployments.add(new Deployment(zone2, applicationVersion2.id(), Version.fromString("1.2.3"), Instant.ofEpochMilli(5),
+        deployments.add(new Deployment(zone2, CloudAccount.from("001122334455"), applicationVersion2.id(), Version.fromString("1.2.3"), Instant.ofEpochMilli(5),
                 new DeploymentMetrics(2, 3, 4, 5, 6,
                         Optional.of(Instant.now().truncatedTo(ChronoUnit.MILLIS)),
                         Map.of(DeploymentMetrics.Warning.all, 3)),

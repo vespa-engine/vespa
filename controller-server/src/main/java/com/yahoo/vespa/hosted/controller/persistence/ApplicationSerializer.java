@@ -5,6 +5,7 @@ import com.yahoo.component.Version;
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.RegionName;
@@ -103,6 +104,7 @@ public class ApplicationSerializer {
 
     // Deployment fields
     private static final String zoneField = "zone";
+    private static final String cloudAccountField = "cloudAccount";
     private static final String environmentField = "environment";
     private static final String regionField = "region";
     private static final String deployTimeField = "deployTime";
@@ -202,6 +204,7 @@ public class ApplicationSerializer {
 
     private void deploymentToSlime(Deployment deployment, Cursor object) {
         zoneIdToSlime(deployment.zone(), object.setObject(zoneField));
+        if (!deployment.cloudAccount().isUnspecified()) object.setString(cloudAccountField, deployment.cloudAccount().value());
         object.setString(versionField, deployment.version().toString());
         object.setLong(deployTimeField, deployment.at().toEpochMilli());
         toSlime(deployment.revision(), object.setObject(applicationPackageRevisionField));
@@ -409,6 +412,7 @@ public class ApplicationSerializer {
     private Deployment deploymentFromSlime(Inspector deploymentObject, ApplicationId id) {
         ZoneId zone = zoneIdFromSlime(deploymentObject.field(zoneField));
         return new Deployment(zone,
+                              SlimeUtils.optionalString(deploymentObject.field(cloudAccountField)).map(CloudAccount::from).orElse(CloudAccount.empty),
                               revisionFromSlime(deploymentObject.field(applicationPackageRevisionField), new JobId(id, JobType.deploymentTo(zone))),
                               Version.fromString(deploymentObject.field(versionField).asString()),
                               SlimeUtils.instant(deploymentObject.field(deployTimeField)),
