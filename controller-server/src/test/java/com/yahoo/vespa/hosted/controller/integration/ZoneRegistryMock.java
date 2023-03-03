@@ -50,6 +50,7 @@ public class ZoneRegistryMock extends AbstractComponent implements ZoneRegistry 
     private final SystemName system; // Don't even think about making it non-final!   ƪ(`▿▿▿▿´ƪ)
 
     private List<? extends ZoneApi> zones;
+    private CloudAccount systemCloudAccount = CloudAccount.from("111333555777");
     private UpgradePolicy upgradePolicy = null;
 
     /**
@@ -267,6 +268,11 @@ public class ZoneRegistryMock extends AbstractComponent implements ZoneRegistry 
     @Override
     public boolean hasZone(ZoneId zoneId, CloudAccount cloudAccount) {
         return hasZone(zoneId) && (system.isPublic() || cloudAccountZones.getOrDefault(cloudAccount, Set.of()).contains(zoneId));
+    }
+
+    @Override
+    public boolean isEnclave(CloudAccount cloudAccount) {
+        return system.isPublic() && !cloudAccount.isUnspecified() && !cloudAccount.equals(systemCloudAccount);
     }
 
     @Override
