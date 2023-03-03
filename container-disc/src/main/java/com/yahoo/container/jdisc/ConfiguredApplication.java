@@ -62,6 +62,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static com.yahoo.collections.CollectionUtil.first;
+import static com.yahoo.metrics.ContainerMetrics.APPLICATION_GENERATION;
 
 /**
  * @author Tony Vaagenes
@@ -304,7 +305,7 @@ public final class ConfiguredApplication implements Application {
 
         log.info("Switching to the latest deployed set of configurations and components. " +
                  "Application config generation: " + configurer.generation());
-        metric.set("application_generation", configurer.generation(), metric.createContext(Map.of()));
+        metric.set(APPLICATION_GENERATION.baseName(), configurer.generation(), metric.createContext(Map.of()));
     }
 
     private void activateContainer(ContainerBuilder builder, Runnable onPreviousContainerTermination) {

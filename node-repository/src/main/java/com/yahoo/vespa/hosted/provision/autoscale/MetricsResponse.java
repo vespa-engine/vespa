@@ -20,6 +20,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import static com.yahoo.metrics.ContainerMetrics.APPLICATION_GENERATION;
+
 /**
  * A response containing metrics for a collection of nodes.
  *
@@ -163,7 +165,7 @@ public class MetricsResponse {
 
             @Override
             public List<String> metricResponseNames() {
-                return List.of("application_generation" /*, "content.proton.config.generation" */);
+                return List.of(APPLICATION_GENERATION.baseName() /*, "content.proton.config.generation" */);
             }
 
             @Override
