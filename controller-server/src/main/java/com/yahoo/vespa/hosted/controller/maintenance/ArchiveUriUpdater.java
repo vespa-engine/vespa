@@ -6,10 +6,10 @@ import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.ApplicationController;
 import com.yahoo.vespa.hosted.controller.Controller;
-import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.archive.ArchiveUriUpdate;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ArchiveUris;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.NodeRepository;
+import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneRegistry;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
 import com.yahoo.vespa.hosted.controller.archive.CuratorArchiveBucketDb;
 import com.yahoo.yolean.Exceptions;
@@ -34,12 +34,14 @@ public class ArchiveUriUpdater extends ControllerMaintainer {
     private final ApplicationController applications;
     private final NodeRepository nodeRepository;
     private final CuratorArchiveBucketDb archiveBucketDb;
+    private final ZoneRegistry zoneRegistry;
 
     public ArchiveUriUpdater(Controller controller, Duration interval) {
         super(controller, interval);
         this.applications = controller.applications();
         this.nodeRepository = controller.serviceRegistry().configServer().nodeRepository();
         this.archiveBucketDb = controller.archiveBucketDb();
+        this.zoneRegistry = controller.zoneRegistry();
     }
 
     @Override
@@ -55,9 +57,8 @@ public class ArchiveUriUpdater extends ControllerMaintainer {
         for (var application : applications.asList()) {
             for (var instance : application.instances().values()) {
                 for (var deployment : instance.deployments().values()) {
-                    tenantsByZone.get(deployment.zone()).add(instance.id().tenant());
-                    applications.decideCloudAccountOf(new DeploymentId(instance.id(), deployment.zone()), application.deploymentSpec())
-                            .ifPresent(account -> accountsByZone.get(deployment.zone()).add(account));
+                    if (zoneRegistry.isEnclave(deployment.cloudAccount())) accountsByZone.get(deployment.zone()).add(deployment.cloudAccount());
+                    else tenantsByZone.get(deployment.zone()).add(instance.id().tenant());
                 }
             }
         }

@@ -526,8 +526,8 @@ public class ApplicationController {
             };
 
             // Carry out deployment without holding the application lock.
-            DeploymentResult result = deploy(job.application(), applicationPackage, zone, platform, containerEndpoints,
-                                             endpointCertificateMetadata, run.isDryRun(), run.testerCertificate());
+            DeploymentDataAndResult dataAndResult = deploy(job.application(), applicationPackage, zone, platform, containerEndpoints,
+                                                           endpointCertificateMetadata, run.isDryRun(), run.testerCertificate());
 
 
             // Record the quota usage for this application
@@ -540,7 +540,7 @@ public class ApplicationController {
                                         ? NotificationSource.from(deployment)
                                         : revision.equals(lastRevision.get()) ? NotificationSource.from(applicationId) : null;
             if (source != null) {
-                List<String> warnings = Optional.ofNullable(result.log())
+                List<String> warnings = Optional.ofNullable(dataAndResult.result().log())
                                                 .map(logs -> logs.stream()
                                                                  .filter(LogEntry::concernsPackage)
                                                                  .filter(log -> log.level().intValue() >= Level.WARNING.intValue())
@@ -558,9 +558,9 @@ public class ApplicationController {
             lockApplicationOrThrow(applicationId, application ->
                     store(application.with(job.application().instance(),
                                            i -> i.withNewDeployment(zone, revision, platform,
-                                                                    clock.instant(), warningsFrom(result.log()),
-                                                                    quotaUsage))));
-            return result;
+                                                                    clock.instant(), warningsFrom(dataAndResult.result().log()),
+                                                                    quotaUsage, dataAndResult.data().cloudAccount().orElse(CloudAccount.empty)))));
+            return dataAndResult.result();
         }
     }
 
@@ -618,7 +618,7 @@ public class ApplicationController {
             ApplicationPackageStream applicationPackage = new ApplicationPackageStream(
                     () -> new ByteArrayInputStream(artifactRepository.getSystemApplicationPackage(application.id(), zone, version))
             );
-            return deploy(application.id(), applicationPackage, zone, version, Set.of(), Optional::empty, false, Optional.empty());
+            return deploy(application.id(), applicationPackage, zone, version, Set.of(), Optional::empty, false, Optional.empty()).result();
         } else {
            throw new RuntimeException("This system application does not have an application package: " + application.id().toShortString());
         }
@@ -626,13 +626,14 @@ public class ApplicationController {
 
     /** Deploys the given tester application to the given zone. */
     public DeploymentResult deployTester(TesterId tester, ApplicationPackageStream applicationPackage, ZoneId zone, Version platform) {
-        return deploy(tester.id(), applicationPackage, zone, platform, Set.of(), Optional::empty, false, Optional.empty());
+        return deploy(tester.id(), applicationPackage, zone, platform, Set.of(), Optional::empty, false, Optional.empty()).result();
     }
 
-    private DeploymentResult deploy(ApplicationId application, ApplicationPackageStream applicationPackage,
-                                    ZoneId zone, Version platform, Set<ContainerEndpoint> endpoints,
-                                    Supplier<Optional<EndpointCertificateMetadata>> endpointCertificateMetadata,
-                                    boolean dryRun, Optional<X509Certificate> testerCertificate) {
+    private record DeploymentDataAndResult(DeploymentData data, DeploymentResult result) {}
+    private DeploymentDataAndResult deploy(ApplicationId application, ApplicationPackageStream applicationPackage,
+                                           ZoneId zone, Version platform, Set<ContainerEndpoint> endpoints,
+                                           Supplier<Optional<EndpointCertificateMetadata>> endpointCertificateMetadata,
+                                           boolean dryRun, Optional<X509Certificate> testerCertificate) {
         DeploymentId deployment = new DeploymentId(application, zone);
         // Routing and metadata may have changed, so we need to refresh state after deployment, even if deployment fails.
         interface CleanCloseable extends AutoCloseable { void close(); }
@@ -664,13 +665,12 @@ public class ApplicationController {
                 operatorCertificates = Stream.concat(operatorCertificates.stream(), testerCertificate.stream()).toList();
             }
             Supplier<Optional<CloudAccount>> cloudAccount = () -> decideCloudAccountOf(deployment, applicationPackage.truncatedPackage().deploymentSpec());
-            ConfigServer.PreparedApplication preparedApplication =
-                    configServer.deploy(new DeploymentData(application, zone, applicationPackage::zipStream, platform,
-                                                           endpoints, endpointCertificateMetadata, dockerImageRepo, domain,
-                                                           deploymentQuota, tenantSecretStores, operatorCertificates,
-                                                           cloudAccount, dryRun));
+            DeploymentData deploymentData = new DeploymentData(application, zone, applicationPackage::zipStream, platform,
+                    endpoints, endpointCertificateMetadata, dockerImageRepo, domain,
+                    deploymentQuota, tenantSecretStores, operatorCertificates, cloudAccount, dryRun);
+            ConfigServer.PreparedApplication preparedApplication = configServer.deploy(deploymentData);
 
-            return preparedApplication.deploymentResult();
+            return new DeploymentDataAndResult(deploymentData, preparedApplication.deploymentResult());
         }
     }
 

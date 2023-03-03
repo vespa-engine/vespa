@@ -38,6 +38,9 @@ public interface ZoneRegistry {
     /** Returns whether cloudAccount in this system supports given zone */
     boolean hasZone(ZoneId zoneId, CloudAccount cloudAccount);
 
+    /** Returns whether the given cloud account is an enclave */
+    boolean isEnclave(CloudAccount cloudAccount);
+
     /** Returns a list containing the id of all zones in this registry */
     ZoneFilter zones();
 

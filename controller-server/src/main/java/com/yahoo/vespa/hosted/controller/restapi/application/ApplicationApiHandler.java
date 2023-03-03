@@ -1869,6 +1869,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
 
         application.projectId().ifPresent(i -> response.setString("screwdriverId", String.valueOf(i)));
 
+        // TODO (freva): Get cloudAccount from deployment once all applications have redeployed once
         controller.applications().decideCloudAccountOf(deploymentId, application.deploymentSpec()).ifPresent(cloudAccount -> {
             Cursor enclave = response.setObject("enclave");
             enclave.setString("cloudAccount", cloudAccount.value());
@@ -1904,7 +1905,9 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         response.setDouble("quota", deployment.quota().rate());
         deployment.cost().ifPresent(cost -> response.setDouble("cost", cost));
 
-        controller.archiveBucketDb().archiveUriFor(deploymentId.zoneId(), deploymentId.applicationId().tenant(), false)
+        (controller.zoneRegistry().isEnclave(deployment.cloudAccount()) ?
+                controller.archiveBucketDb().archiveUriFor(deploymentId.zoneId(), deployment.cloudAccount(), false) :
+                controller.archiveBucketDb().archiveUriFor(deploymentId.zoneId(), deploymentId.applicationId().tenant(), false))
                 .ifPresent(archiveUri -> response.setString("archiveUri", archiveUri.toString()));
 
         Cursor activity = response.setObject("activity");
