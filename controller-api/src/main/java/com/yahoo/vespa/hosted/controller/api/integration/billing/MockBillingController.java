@@ -14,7 +14,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 /**
  * @author olaa
@@ -122,16 +121,19 @@ public class MockBillingController implements BillingController {
     }
 
     @Override
-    public void addLineItem(TenantName tenant, String description, BigDecimal amount, String agent) {
-        unusedLineItems.computeIfAbsent(tenant, l -> new ArrayList<>())
-                .add(new Bill.LineItem(
-                        "line-item-id",
-                        description,
-                        amount,
-                        "some-plan",
-                        agent,
-                        ZonedDateTime.now()
-                ));
+    public void addLineItem(TenantName tenant, String description, BigDecimal amount, Optional<Bill.Id> billId, String agent) {
+        if (billId.isPresent()) {
+            throw new UnsupportedOperationException();
+        } else {
+            unusedLineItems.computeIfAbsent(tenant, l -> new ArrayList<>())
+                    .add(new Bill.LineItem(
+                            "line-item-id",
+                            description,
+                            amount,
+                            "some-plan",
+                            agent,
+                            ZonedDateTime.now()));
+        }
     }
 
     @Override

@@ -22,6 +22,7 @@ import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
 
@@ -170,7 +171,7 @@ public class BillingApiHandlerTest extends ControllerContainerCloudTest {
         billingController.setPlan(tenant, PlanId.from("some-plan"), true, false);
         billingController.setPlan(tenant2, PlanId.from("some-plan"), true, false);
         billingController.addBill(tenant, bill, false);
-        billingController.addLineItem(tenant, "support", new BigDecimal("42"), "Smith");
+        billingController.addLineItem(tenant, "support", new BigDecimal("42"), Optional.empty(), "Smith");
         billingController.addBill(tenant2, bill, false);
 
         var request = request("/billing/v1/billing?until=2020-05-28").roles(financeAdmin);
