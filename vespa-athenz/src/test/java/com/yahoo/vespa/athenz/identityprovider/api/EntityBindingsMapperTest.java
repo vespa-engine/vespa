@@ -30,6 +30,7 @@ class EntityBindingsMapperTest {
                   "ip-addresses": [],
                   "identity-type": "node",
                   "cluster-type": "admin",
+                  "zts-url": "https://zts.url/",
                   "unknown-string": "string-value",
                   "unknown-object": { "member-in-unknown-object": 123 }
                 }

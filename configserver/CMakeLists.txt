@@ -12,7 +12,6 @@ install(DIRECTORY DESTINATION conf/configserver)
 
 install(DIRECTORY DESTINATION conf/configserver-app/components)
 install(DIRECTORY DESTINATION conf/configserver-app/config-models)
-install_symlink(lib/jars/athenz-identity-provider-service-jar-with-dependencies.jar conf/configserver-app/components/athenz-identity-provider-service.jar)
 install_symlink(lib/jars/config-model-fat.jar conf/configserver-app/components/config-model-fat.jar)
 install_symlink(lib/jars/configserver-flags-jar-with-dependencies.jar conf/configserver-app/components/configserver-flags.jar)
 install_symlink(lib/jars/flags-jar-with-dependencies.jar conf/configserver-app/components/flags.jar)
