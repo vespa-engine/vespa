@@ -52,9 +52,7 @@ public abstract class ApplicationMaintainer extends NodeRepositoryMaintainer {
     }
 
     /** Returns whether given application should be deployed at this moment in time */
-    protected boolean canDeployNow(ApplicationId application) {
-        return true;
-    }
+    protected abstract boolean canDeployNow(ApplicationId application);
 
     /**
      * Redeploy this application.
