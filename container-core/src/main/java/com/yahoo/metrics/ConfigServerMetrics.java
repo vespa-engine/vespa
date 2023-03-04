@@ -9,7 +9,7 @@ public enum ConfigServerMetrics implements VespaMetrics {
     CONFIGSERVER_FAILED_REQUESTS("configserver.failedRequests", Unit.REQUEST, "Number of requests that failed"),
     CONFIGSERVER_LATENCY("configserver.latency", Unit.MILLISECOND, "Time to complete requests"),
     CONFIGSERVER_CACHE_CONFIG_ELEMS("configserver.cacheConfigElems", Unit.ITEM, "Time to complete requests"),
-    CONFIGSERVER_CACHE_CHECKSUM_ELEMS("", Unit.ITEM, "Number of checksum elements in the cache"),
+    CONFIGSERVER_CACHE_CHECKSUM_ELEMS("configserver.cacheChecksumElems", Unit.ITEM, "Number of checksum elements in the cache"),
     CONFIGSERVER_HOSTS("configserver.hosts", Unit.NODE, "The number of nodes being served configuration from the config server cluster"),
     CONFIGSERVER_TENANTS("configserver.tenants", Unit.INSTANCE, "The number of tenants being served configuration from the config server cluster"),
     CONFIGSERVER_APPLICATIONS("configserver.applications", Unit.INSTANCE, "The number of applications being served configuration from the config server cluster"),
