@@ -54,7 +54,7 @@ BuildRequires: gcc-toolset-12-libatomic-devel
 BuildRequires: maven
 BuildRequires: maven-openjdk17
 BuildRequires: vespa-pybind11-devel
-BuildRequires: python38-devel
+BuildRequires: python39-devel
 BuildRequires: glibc-langpack-en
 %endif
 %if 0%{?el9}
@@ -376,7 +376,7 @@ Summary: Vespa - The open big data serving engine - ann-benchmark
 Requires: %{name}-base-libs = %{version}-%{release}
 Requires: %{name}-libs = %{version}-%{release}
 %if 0%{?el8}
-Requires: python38
+Requires: python39
 %endif
 %if 0%{?el9}
 Requires: python3
