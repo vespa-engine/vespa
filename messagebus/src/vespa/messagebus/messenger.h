@@ -9,6 +9,7 @@
 #include <vespa/vespalib/util/arrayqueue.hpp>
 #include <condition_variable>
 #include <mutex>
+#include <thread>
 
 namespace mbus {
 
