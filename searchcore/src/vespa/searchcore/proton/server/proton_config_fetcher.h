@@ -8,6 +8,7 @@
 #include <vespa/config/retriever/configretriever.h>
 #include <vespa/config/subscription/configuri.h>
 #include <deque>
+#include <thread>
 
 class FNET_Transport;
 
