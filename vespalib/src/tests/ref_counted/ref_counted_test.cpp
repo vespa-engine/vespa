@@ -43,7 +43,7 @@ void (*copy_assign_ref_counted_leaf)(ref_counted<Leaf>& lhs, const ref_counted<L
 
 void move_assign_ref_counted_leaf_real(ref_counted<Leaf>& lhs, ref_counted<Leaf>&& rhs)
 {
-    lhs = rhs;
+    lhs = std::move(rhs);
 }
 
 void (*move_assign_ref_counted_leaf)(ref_counted<Leaf>& lhs, ref_counted<Leaf>&& rhs) = move_assign_ref_counted_leaf_real;
