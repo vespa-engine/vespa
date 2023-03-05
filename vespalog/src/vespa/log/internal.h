@@ -22,7 +22,7 @@ public:
 };
 
 using system_time = std::chrono::system_clock::time_point;
-using duration = std::chrono::nanoseconds;
+using duration = system_time::duration;
 
 constexpr int64_t
 count_s(duration d) noexcept {
