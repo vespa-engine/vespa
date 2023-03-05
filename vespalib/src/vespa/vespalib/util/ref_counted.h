@@ -4,6 +4,7 @@
 
 #include <atomic>
 #include <concepts>
+#include <memory>
 #include <utility>
 
 // This file contains code that implements intrusive reference
