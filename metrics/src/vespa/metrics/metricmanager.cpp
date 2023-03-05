@@ -11,6 +11,7 @@
 #include <vespa/vespalib/util/time.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/config/subscription/configsubscriber.hpp>
+#include <cinttypes>
 #include <set>
 #include <sstream>
 #include <cassert>
@@ -639,7 +640,7 @@ MetricManager::updatePeriodicMetrics(const MetricLockGuard & guard, time_point u
             hook->updateMetrics(guard);
             if (hook->expired(updateTime - hook->getPeriod())) {
                 if (hook->has_valid_expiry()) {
-                    LOG(debug, "Updated hook %s at time %s, but next run in %ld seconds have already passed as "
+                    LOG(debug, "Updated hook %s at time %s, but next run in %" PRId64 " seconds have already passed as "
                                "time is %s. Bumping next call to current time + period.",
                         hook->getName(), to_string(hook->getNextCall()).c_str(),
                         count_s(hook->getPeriod()), to_string(updateTime).c_str());
