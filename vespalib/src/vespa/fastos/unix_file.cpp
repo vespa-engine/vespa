@@ -103,7 +103,7 @@ FastOS_UNIX_File::Stat(const char *filename, FastOS_StatInfo *statInfo)
 #elif defined(__APPLE__)
         modTimeNS += stbuf.st_mtimespec.tv_nsec;
 #endif
-        statInfo->_modifiedTime = vespalib::system_time(std::chrono::nanoseconds(modTimeNS));
+        statInfo->_modifiedTime = vespalib::system_time(std::chrono::duration_cast<vespalib::system_time::duration>(std::chrono::nanoseconds(modTimeNS)));
         rc = true;
     } else {
         if (errno == ENOENT) {
