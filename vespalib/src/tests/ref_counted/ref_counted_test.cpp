@@ -34,6 +34,20 @@ struct Leaf : Base {
 std::atomic<int> Leaf::ctor_cnt = 0;
 std::atomic<int> Leaf::dtor_cnt = 0;
 
+void copy_assign_ref_counted_leaf_real(ref_counted<Leaf>& lhs, const ref_counted<Leaf> &rhs)
+{
+    lhs = rhs;
+}
+
+void (*copy_assign_ref_counted_leaf)(ref_counted<Leaf>& lhs, const ref_counted<Leaf> &rhs) = copy_assign_ref_counted_leaf_real;
+
+void move_assign_ref_counted_leaf_real(ref_counted<Leaf>& lhs, ref_counted<Leaf>&& rhs)
+{
+    lhs = std::move(rhs);
+}
+
+void (*move_assign_ref_counted_leaf)(ref_counted<Leaf>& lhs, ref_counted<Leaf>&& rhs) = move_assign_ref_counted_leaf_real;
+
 // check that the expected number of objects have been created and
 // destroyed while this object was in scope.
 struct CheckObjects {
@@ -197,8 +211,8 @@ TEST(RefCountedTest, compile_errors_when_uncommented) {
 
 TEST(RefCountedTest, self_assign) {
     ref_counted<Leaf> ref = make_ref_counted<Leaf>(10);
-    ref = ref;
-    ref = std::move(ref);
+    copy_assign_ref_counted_leaf(ref, ref);
+    move_assign_ref_counted_leaf(ref, std::move(ref));
     EXPECT_EQ(ref->count_refs(), 1);
     EXPECT_EQ(ref->val, 10);
 }
