@@ -3,6 +3,7 @@ package com.yahoo.vespa.config.server;
 
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.component.AbstractComponent;
+import com.yahoo.component.Version;
 import com.yahoo.component.annotation.Inject;
 import com.yahoo.concurrent.DaemonThreadFactory;
 import com.yahoo.config.provision.ApplicationId;
@@ -127,12 +128,13 @@ public class ConfigServerBootstrap extends AbstractComponent implements Runnable
     public void start() {
         startRpcServerWithFileDistribution(); // No config requests allowed yet, will be allowed after bootstrapping done
         if (versionState.isUpgraded()) {
-            log.log(Level.INFO, "Config server upgrading from " + versionState.storedVersion() + " to "
-                    + versionState.currentVersion() + ". Redeploying all applications");
+            if (versionState.storedVersion() != Version.emptyVersion)
+                log.log(Level.INFO, "Config server upgrading from " + versionState.storedVersion() + " to "
+                        + versionState.currentVersion() + ". Redeploying all applications");
             try {
                 redeployAllApplications();
                 versionState.saveNewVersion();
-                log.log(Level.INFO, "All applications redeployed successfully");
+                log.log(Level.FINE, "All applications redeployed successfully");
             } catch (Exception e) {
                 log.log(Level.SEVERE, "Redeployment of applications failed", e);
                 redeployingApplicationsFailed();
@@ -217,14 +219,16 @@ public class ConfigServerBootstrap extends AbstractComponent implements Runnable
                                                                 new DaemonThreadFactory("redeploy-apps-"));
         // Keep track of deployment status per application
         Map<ApplicationId, Future<?>> deployments = new HashMap<>();
-        log.log(Level.INFO, () -> "Redeploying " + applicationIds.size() + " apps " + applicationIds + " with " +
-                configserverConfig.numRedeploymentThreads() + " threads");
-        applicationIds.forEach(appId -> deployments.put(appId, executor.submit(() -> {
-            log.log(Level.INFO, () -> "Starting redeployment of " + appId);
-            applicationRepository.deployFromLocalActive(appId, true /* bootstrap */)
-                                 .ifPresent(Deployment::activate);
-            log.log(Level.INFO, () -> appId + " redeployed");
-        })));
+        if (applicationIds.size() > 0) {
+            log.log(Level.INFO, () -> "Redeploying " + applicationIds.size() + " apps " + applicationIds + " with " +
+                    configserverConfig.numRedeploymentThreads() + " threads");
+            applicationIds.forEach(appId -> deployments.put(appId, executor.submit(() -> {
+                log.log(Level.INFO, () -> "Starting redeployment of " + appId);
+                applicationRepository.deployFromLocalActive(appId, true /* bootstrap */)
+                                     .ifPresent(Deployment::activate);
+                log.log(Level.INFO, () -> appId + " redeployed");
+            })));
+        }
 
         List<ApplicationId> failedDeployments = checkDeployments(deployments);
 
