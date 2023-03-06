@@ -19,7 +19,8 @@ const BasicType::TypeInfo BasicType::_typeTable[BasicType::MAX_TYPE] = {
     { BasicType::DOUBLE,    sizeof(double),   "double" },
     { BasicType::PREDICATE, 0,                "predicate" },
     { BasicType::TENSOR,    0,                "tensor" },
-    { BasicType::REFERENCE, 12,               "reference" }
+    { BasicType::REFERENCE, 12,               "reference" },
+    { BasicType::RAW,       0,                "raw" }
 };
 
 BasicType::Type
