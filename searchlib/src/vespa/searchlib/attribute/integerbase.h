@@ -37,6 +37,7 @@ protected:
     ChangeVector _changes;
 private:
     const char * getString(DocId doc, char * s, size_t sz) const override;
+    vespalib::ConstArrayRef<char> get_raw(DocId) const override;
     uint32_t get(DocId doc, vespalib::string * v, uint32_t sz) const override;
     uint32_t get(DocId doc, const char ** v, uint32_t sz) const override;
     uint32_t get(DocId doc, WeightedString * v, uint32_t sz) const override;

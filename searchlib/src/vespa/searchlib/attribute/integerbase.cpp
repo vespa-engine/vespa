@@ -68,6 +68,13 @@ IntegerAttribute::getString(DocId doc, char * s, size_t sz) const {
     }
     return s;
 }
+
+vespalib::ConstArrayRef<char>
+IntegerAttribute::get_raw(DocId) const
+{
+    return {};
+}
+
 uint32_t IntegerAttribute::get(DocId doc, vespalib::string * s, uint32_t sz) const
 {
     largeint_t * v = new largeint_t[sz];
