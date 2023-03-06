@@ -32,9 +32,9 @@ public class AutoscalingMetrics {
         metrics.add(HostedNodeAdminMetrics.DISK_UTIL.baseName()); // node level -default
         metrics.add(SearchNodeMetrics.CONTENT_PROTON_RESOURCE_USAGE_DISK.average()); // better for content as it is the basis for blocking
 
-        metrics.add(ContainerMetrics.APPLICATION_GENERATION.baseName());
+        metrics.add(ContainerMetrics.APPLICATION_GENERATION.last());
 
-        metrics.add(ContainerMetrics.IN_SERVICE.baseName());
+        metrics.add(ContainerMetrics.IN_SERVICE.last());
 
         // Query rate
         metrics.add(ContainerMetrics.QUERIES.rate()); // container
