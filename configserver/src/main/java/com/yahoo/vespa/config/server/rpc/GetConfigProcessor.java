@@ -152,12 +152,12 @@ class GetConfigProcessor implements Runnable {
 
         delayed.ifPresent(d -> {
             GetConfigContext context = d.context();
-            rpcServer.delayResponse(request, context);
-            if (rpcServer.hasNewerGeneration(context.applicationId(), d.generation())) {
+            if (rpcServer.hasNewerGeneration(context.applicationId(), d.generation()))
                 // This will ensure that if the config activation train left the station while I was boarding,
-                // another train will immediately be scheduled.
-                rpcServer.configActivated(context.applicationId());
-            }
+                // we will resolve config again with new generation
+                resolveConfig(request);
+            else
+                rpcServer.delayResponse(request, context);
         });
     }
 
