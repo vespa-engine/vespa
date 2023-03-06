@@ -268,7 +268,7 @@ public class LoadBalancerProvisioner {
                                                                  id.application().serializedForm())
                                                            .value();
         Set<Real> reals = shouldDeactivateRouting ? Set.of() : realsOf(nodes);
-        log.log(Level.INFO, () -> "Configuring instance for " + id + ", targeting: " + reals);
+        log.log(Level.FINE, () -> "Configuring instance for " + id + ", targeting: " + reals);
         try {
             return Optional.of(service.configure(currentLoadBalancer.instance().orElseThrow(() -> new IllegalArgumentException("expected existing instance for " + id)),
                                                  new LoadBalancerSpec(id.application(), id.cluster(), reals, zoneEndpoint, cloudAccount),
