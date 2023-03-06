@@ -84,14 +84,14 @@ class RpcConfigSourceClient implements ConfigSourceClient, Runnable {
         for (String configSource : configSourceSet.getSources()) {
             Spec spec = new Spec(configSource);
             Target target = supervisor.connect(spec);
-            target.invokeSync(req, Duration.ofSeconds(30));
+            target.invokeSync(req, Duration.ofSeconds(60));
             if (target.isValid())
                 return;
 
-            log.log(Level.INFO, "Could not connect to config source at " + spec.toString());
+            log.log(Level.INFO, "Could not connect to config source at " + spec);
             target.close();
         }
-        log.log(Level.INFO, "Could not connect to any config source in set " + configSourceSet.toString() +
+        log.log(Level.INFO, "Could not connect to any config source in set " + configSourceSet +
                 ", please make sure config server(s) are running.");
     }
 
@@ -153,7 +153,7 @@ class RpcConfigSourceClient implements ConfigSourceClient, Runnable {
                 subscriber.subscribe();
                 subscribers.put(configCacheKey, subscriber);
             } catch (ConfigurationRuntimeException e) {
-                log.log(Level.INFO, "Subscribe for '" + configCacheKey + "' failed, closing subscriber", e);
+                log.log(Level.INFO, "Subscribe for '" + configCacheKey + "' failed, closing subscriber: " + e.getMessage());
                 subscriber.cancel();
             }
         }
