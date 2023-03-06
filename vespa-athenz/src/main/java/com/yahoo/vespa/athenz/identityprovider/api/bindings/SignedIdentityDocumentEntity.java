@@ -4,6 +4,7 @@ package com.yahoo.vespa.athenz.identityprovider.api.bindings;
 import com.fasterxml.jackson.annotation.JsonAnyGetter;
 import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.time.Instant;
@@ -14,10 +15,11 @@ import java.util.Set;
 /**
  * @author bjorncs
  */
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public record SignedIdentityDocumentEntity(
         String signature, int signingKeyVersion, String providerUniqueId, String providerService, int documentVersion,
         String configServerHostname, String instanceHostname, Instant createdAt, Set<String> ipAddresses,
-        String identityType, String clusterType, Map<String, Object> unknownAttributes) {
+        String identityType, String clusterType, String ztsUrl, String serviceIdentity, Map<String, Object> unknownAttributes) {
 
     @JsonCreator
     public SignedIdentityDocumentEntity(@JsonProperty("signature") String signature,
@@ -30,9 +32,11 @@ public record SignedIdentityDocumentEntity(
                                         @JsonProperty("created-at") Instant createdAt,
                                         @JsonProperty("ip-addresses") Set<String> ipAddresses,
                                         @JsonProperty("identity-type") String identityType,
-                                        @JsonProperty("cluster-type") String clusterType) {
+                                        @JsonProperty("cluster-type") String clusterType,
+                                        @JsonProperty("zts-url") String ztsUrl,
+                                        @JsonProperty("service-identity") String serviceIdentity) {
         this(signature, signingKeyVersion, providerUniqueId, providerService, documentVersion, configServerHostname,
-             instanceHostname, createdAt, ipAddresses, identityType, clusterType, new HashMap<>());
+             instanceHostname, createdAt, ipAddresses, identityType, clusterType, ztsUrl, serviceIdentity, new HashMap<>());
     }
 
     @JsonProperty("signature") @Override public String signature() { return signature; }
@@ -46,6 +50,8 @@ public record SignedIdentityDocumentEntity(
     @JsonProperty("ip-addresses") @Override public Set<String> ipAddresses() { return ipAddresses; }
     @JsonProperty("identity-type") @Override public String identityType() { return identityType; }
     @JsonProperty("cluster-type") @Override public String clusterType() { return clusterType; }
+    @JsonProperty("zts-url") @Override public String ztsUrl() { return ztsUrl; }
+    @JsonProperty("service-identity") @Override public String serviceIdentity() { return serviceIdentity; }
     @JsonAnyGetter @Override public Map<String, Object> unknownAttributes() { return unknownAttributes; }
     @JsonAnySetter public void set(String name, Object value) { unknownAttributes.put(name, value); }
 }

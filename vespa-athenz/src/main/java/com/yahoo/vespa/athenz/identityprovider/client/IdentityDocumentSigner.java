@@ -2,6 +2,7 @@
 package com.yahoo.vespa.athenz.identityprovider.client;
 
 import com.yahoo.security.SignatureUtils;
+import com.yahoo.vespa.athenz.api.AthenzIdentity;
 import com.yahoo.vespa.athenz.api.AthenzService;
 import com.yahoo.vespa.athenz.identityprovider.api.IdentityType;
 import com.yahoo.vespa.athenz.identityprovider.api.SignedIdentityDocument;
@@ -18,6 +19,7 @@ import java.util.Base64;
 import java.util.Set;
 import java.util.TreeSet;
 
+import static com.yahoo.vespa.athenz.identityprovider.api.SignedIdentityDocument.DEFAULT_DOCUMENT_VERSION;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
@@ -35,13 +37,15 @@ public class IdentityDocumentSigner {
                                     Instant createdAt,
                                     Set<String> ipAddresses,
                                     IdentityType identityType,
-                                    PrivateKey privateKey) {
+                                    PrivateKey privateKey,
+                                    AthenzIdentity serviceIdentity) {
         try {
             Signature signer = SignatureUtils.createSigner(privateKey);
             signer.initSign(privateKey);
             writeToSigner(
                     signer, providerUniqueId, providerService, configServerHostname, instanceHostname, createdAt,
                     ipAddresses, identityType);
+            writeToSigner(signer, serviceIdentity);
             byte[] signature = signer.sign();
             return Base64.getEncoder().encodeToString(signature);
         } catch (GeneralSecurityException e) {
@@ -56,6 +60,9 @@ public class IdentityDocumentSigner {
             writeToSigner(
                     signer, doc.providerUniqueId(), doc.providerService(), doc.configServerHostname(),
                     doc.instanceHostname(), doc.createdAt(), doc.ipAddresses(), doc.identityType());
+            if (doc.documentVersion() >= DEFAULT_DOCUMENT_VERSION) {
+                writeToSigner(signer, doc.serviceIdentity());
+            }
             return signer.verify(Base64.getDecoder().decode(doc.signature()));
         } catch (GeneralSecurityException e) {
             throw new RuntimeException(e);
@@ -81,5 +88,9 @@ public class IdentityDocumentSigner {
             signer.update(ipAddress.getBytes(UTF_8));
         }
         signer.update(identityType.id().getBytes(UTF_8));
+    }
+
+    private static void writeToSigner(Signature signer, AthenzIdentity serviceIdentity) throws SignatureException{
+        signer.update(serviceIdentity.getFullName().getBytes(UTF_8));
     }
 }

@@ -27,7 +27,6 @@
         <module>airlift-zstd</module>
         <module>application</module>
         <module>application-model</module>
-        <module>athenz-identity-provider-service</module>
         <module>bundle-plugin-test</module>
         <module>client</module>
         <module>cloud-tenant-base</module>
