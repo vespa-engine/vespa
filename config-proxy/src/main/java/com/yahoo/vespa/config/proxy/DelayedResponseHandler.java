@@ -53,7 +53,7 @@ public class DelayedResponseHandler implements Runnable {
                     responseHandler.returnOkResponse(request, config.get());
                     sentResponses.incrementAndGet();
                 } else {
-                    log.log(Level.WARNING, "Timed out (timeout " + request.getTimeout() + ") getting config " +
+                    log.log(Level.INFO, "Timed out (timeout " + request.getTimeout() + ") getting config " +
                             request.getConfigKey() + ", will retry");
                 }
             }
