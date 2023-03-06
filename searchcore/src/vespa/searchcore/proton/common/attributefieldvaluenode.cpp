@@ -83,6 +83,7 @@ getValue(const Context &context) const
         case BasicType::PREDICATE:
         case BasicType::TENSOR:
         case BasicType::REFERENCE:
+        case BasicType::RAW:
             throw IllegalArgumentException(make_string("Attribute '%s' of type '%s' can not be used for selection",
                                                        v.getName().c_str(), BasicType(v.getBasicType()).asString()));
         case BasicType::MAX_TYPE:

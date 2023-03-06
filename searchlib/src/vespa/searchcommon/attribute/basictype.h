@@ -24,6 +24,7 @@ class BasicType
         PREDICATE = 11,
         TENSOR    = 12,
         REFERENCE = 13,
+        RAW       = 14,
         MAX_TYPE
     };
 
