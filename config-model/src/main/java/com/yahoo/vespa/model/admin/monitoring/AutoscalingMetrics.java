@@ -26,25 +26,26 @@ public class AutoscalingMetrics {
 
         // Memory util
         metrics.add(HostedNodeAdminMetrics.MEM_UTIL.baseName()); // node level - default
-        metrics.add(SearchNodeMetrics.CONTENT_PROTON_RESOURCE_USAGE_MEMORY.average()); // better for content as it is the basis for blocking
+        metrics.add(SearchNodeMetrics.CONTENT_PROTON_RESOURCE_USAGE_MEMORY.average()); // the basis for blocking
 
         // Disk util
         metrics.add(HostedNodeAdminMetrics.DISK_UTIL.baseName()); // node level -default
-        metrics.add(SearchNodeMetrics.CONTENT_PROTON_RESOURCE_USAGE_DISK.average()); // better for content as it is the basis for blocking
+        metrics.add(SearchNodeMetrics.CONTENT_PROTON_RESOURCE_USAGE_DISK.average()); // the basis for blocking
 
         metrics.add(ContainerMetrics.APPLICATION_GENERATION.last());
+        metrics.add(SearchNodeMetrics.CONTENT_PROTON_CONFIG_GENERATION.last());
 
         metrics.add(ContainerMetrics.IN_SERVICE.last());
 
         // Query rate
-        metrics.add(ContainerMetrics.QUERIES.rate()); // container
-        metrics.add(SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_MATCHING_QUERIES.rate()); // content
+        metrics.add(ContainerMetrics.QUERIES.rate());
+        metrics.add(SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_MATCHING_QUERIES.rate());
 
         // Write rate
-        metrics.add(ContainerMetrics.FEED_HTTP_REQUESTS.rate()); // container
-        metrics.add(StorageMetrics.VDS_FILESTOR_ALLTHREADS_PUT_COUNT.rate()); // content
-        metrics.add(StorageMetrics.VDS_FILESTOR_ALLTHREADS_REMOVE_COUNT.rate()); // content
-        metrics.add(StorageMetrics.VDS_FILESTOR_ALLTHREADS_UPDATE_COUNT.rate()); // content
+        metrics.add(ContainerMetrics.FEED_HTTP_REQUESTS.rate());
+        metrics.add(StorageMetrics.VDS_FILESTOR_ALLTHREADS_PUT_COUNT.rate());
+        metrics.add(StorageMetrics.VDS_FILESTOR_ALLTHREADS_REMOVE_COUNT.rate());
+        metrics.add(StorageMetrics.VDS_FILESTOR_ALLTHREADS_UPDATE_COUNT.rate());
 
         return new MetricSet("autoscaling", toMetrics(metrics));
     }

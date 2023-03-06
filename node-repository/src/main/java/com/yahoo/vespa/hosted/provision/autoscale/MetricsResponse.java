@@ -4,6 +4,10 @@ package com.yahoo.vespa.hosted.provision.autoscale;
 import com.yahoo.collections.ListMap;
 import com.yahoo.collections.Pair;
 import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.metrics.ContainerMetrics;
+import com.yahoo.metrics.HostedNodeAdminMetrics;
+import com.yahoo.metrics.SearchNodeMetrics;
+import com.yahoo.metrics.StorageMetrics;
 import com.yahoo.slime.ArrayTraverser;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.ObjectTraverser;
@@ -116,7 +120,7 @@ public class MetricsResponse {
         cpu { // a node resource
 
             @Override
-            public List<String> metricResponseNames() { return List.of("cpu.util"); }
+            public List<String> metricResponseNames() { return List.of(HostedNodeAdminMetrics.CPU_UTIL.baseName()); }
 
             @Override
             double computeFinal(ListMap<String, Double> values) {
@@ -128,15 +132,16 @@ public class MetricsResponse {
 
             @Override
             public List<String> metricResponseNames() {
-                return List.of("content.proton.resource_usage.memory.average", "mem.util");
+                return List.of(HostedNodeAdminMetrics.MEM_UTIL.baseName(),
+                               SearchNodeMetrics.CONTENT_PROTON_RESOURCE_USAGE_MEMORY.average());
             }
 
             @Override
             double computeFinal(ListMap<String, Double> values) {
-                var valueList = values.get("content.proton.resource_usage.memory.average"); // prefer over mem.util
+                var valueList = values.get(SearchNodeMetrics.CONTENT_PROTON_RESOURCE_USAGE_MEMORY.average()); // prefer over mem.util
                 if ( ! valueList.isEmpty()) return valueList.get(0);
 
-                valueList = values.get("mem.util");
+                valueList = values.get(HostedNodeAdminMetrics.MEM_UTIL.baseName());
                 if ( ! valueList.isEmpty()) return valueList.get(0) / 100; // % to ratio
 
                 return 0;
@@ -147,15 +152,16 @@ public class MetricsResponse {
 
             @Override
             public List<String> metricResponseNames() {
-                return List.of("content.proton.resource_usage.disk.average", "disk.util");
+                return List.of(HostedNodeAdminMetrics.DISK_UTIL.baseName(),
+                               SearchNodeMetrics.CONTENT_PROTON_RESOURCE_USAGE_DISK.average());
             }
 
             @Override
             double computeFinal(ListMap<String, Double> values) {
-                var valueList = values.get("content.proton.resource_usage.disk.average"); // prefer over mem.util
+                var valueList = values.get(SearchNodeMetrics.CONTENT_PROTON_RESOURCE_USAGE_DISK.average()); // prefer over mem.util
                 if ( ! valueList.isEmpty()) return valueList.get(0);
 
-                valueList = values.get("disk.util");
+                valueList = values.get(HostedNodeAdminMetrics.DISK_UTIL.baseName());
                 if ( ! valueList.isEmpty()) return valueList.get(0) / 100; // % to ratio
 
                 return 0;
@@ -166,7 +172,7 @@ public class MetricsResponse {
 
             @Override
             public List<String> metricResponseNames() {
-                return List.of(APPLICATION_GENERATION.last() /*, "content.proton.config.generation" */);
+                return List.of(APPLICATION_GENERATION.last(), SearchNodeMetrics.CONTENT_PROTON_CONFIG_GENERATION.last());
             }
 
             @Override
@@ -191,8 +197,8 @@ public class MetricsResponse {
 
             @Override
             public List<String> metricResponseNames() {
-                return List.of("queries.rate",
-                               "content.proton.documentdb.matching.queries.rate");
+                return List.of(ContainerMetrics.QUERIES.rate(),
+                               SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_MATCHING_QUERIES.rate());
             }
 
         },
@@ -200,10 +206,11 @@ public class MetricsResponse {
 
             @Override
             public List<String> metricResponseNames() {
-                return List.of("feed.http-requests.rate",
-                               "vds.filestor.allthreads.put.count.rate",
-                               "vds.filestor.allthreads.remove.count.rate",
-                               "vds.filestor.allthreads.update.count.rate"); }
+                return List.of(ContainerMetrics.FEED_HTTP_REQUESTS.rate(),
+                               StorageMetrics.VDS_FILESTOR_ALLTHREADS_PUT_COUNT.rate(),
+                               StorageMetrics.VDS_FILESTOR_ALLTHREADS_REMOVE_COUNT.rate(),
+                               StorageMetrics.VDS_FILESTOR_ALLTHREADS_UPDATE_COUNT.rate());
+            }
 
         };
 
