@@ -123,6 +123,7 @@ vespa_add_library(searchlib_attribute OBJECT
     single_enum_search_context.cpp
     single_numeric_enum_search_context.cpp
     single_numeric_search_context.cpp
+    single_raw_attribute.cpp
     single_small_numeric_search_context.cpp
     single_string_enum_search_context.cpp
     single_string_enum_hint_search_context.cpp
