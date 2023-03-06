@@ -23,8 +23,10 @@ class ResultReranker {
         private double finalScores_high = -Double.MAX_VALUE;
         private double finalScores_low = Double.MAX_VALUE;
 
-        boolean valid() {
-            return (initialScores_high >= initialScores_low
+        boolean rescaleNeeded() {
+            return (initialScores_low > finalScores_low
+                    &&
+                    initialScores_high >= initialScores_low
                     &&
                     finalScores_high >= finalScores_low);
         }
@@ -76,8 +78,8 @@ class ResultReranker {
                 iterator.remove();
             }
         }
-        // if any hits are left in the list, they need rescaling:
-        if (ranges.valid()) {
+        // if any hits are left in the list, they may need rescaling:
+        if (ranges.rescaleNeeded()) {
             double scale = ranges.scale();
             double bias = ranges.bias();
             for (Hit hit : hitsToRescore) {
