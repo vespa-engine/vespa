@@ -148,7 +148,7 @@ TestMetricSet::incValues() {
 struct FakeTimer : public MetricManager::Timer {
     uint32_t _timeInSecs;
     FakeTimer() : _timeInSecs(1) {}
-    time_point getTime() const override { return time_point(vespalib::from_s(_timeInSecs)); }
+    time_point getTime() const override { return time_point(vespalib::from_s<time_point::duration>(_timeInSecs)); }
 };
 
 void ASSERT_VALUE(int32_t value, const MetricSnapshot & snapshot, const char *name) __attribute__((noinline));
@@ -166,7 +166,7 @@ void ASSERT_VALUE(int32_t value, const MetricSnapshot & snapshot, const char *na
 
 struct SnapshotTest : public ::testing::Test {
     void tick(MetricManager& mgr, time_t currentTime) {
-        mgr.tick(mgr.getMetricLock(), time_point(vespalib::from_s(currentTime)));
+        mgr.tick(mgr.getMetricLock(), time_point(vespalib::from_s<time_point::duration>(currentTime)));
     }
 };
 

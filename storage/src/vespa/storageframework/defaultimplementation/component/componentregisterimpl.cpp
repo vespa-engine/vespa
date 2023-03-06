@@ -126,7 +126,7 @@ namespace {
     struct MetricHookWrapper : public metrics::UpdateHook {
         MetricUpdateHook& _hook;
 
-        MetricHookWrapper(vespalib::stringref name, MetricUpdateHook& hook, vespalib::duration period)
+        MetricHookWrapper(vespalib::stringref name, MetricUpdateHook& hook, vespalib::system_time::duration period)
             : metrics::UpdateHook(name.data(), period), // Expected to point to static name
               _hook(hook)
         {
@@ -139,7 +139,7 @@ namespace {
 void
 ComponentRegisterImpl::registerUpdateHook(vespalib::stringref name,
                                           MetricUpdateHook& hook,
-                                          vespalib::duration period)
+                                          vespalib::system_time::duration period)
 {
     std::lock_guard lock(_componentLock);
     auto hookPtr = std::make_unique<MetricHookWrapper>(name, hook, period);

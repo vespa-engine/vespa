@@ -52,7 +52,7 @@ Component::registerMetric(metrics::Metric& m)
 }
 
 void
-Component::registerMetricUpdateHook(MetricUpdateHook& hook, vespalib::duration period)
+Component::registerMetricUpdateHook(MetricUpdateHook& hook, vespalib::system_time::duration period)
 {
     assert(_metricUpdateHook.first == 0);
     _metricUpdateHook = std::make_pair(&hook, period);

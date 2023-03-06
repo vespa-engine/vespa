@@ -43,8 +43,9 @@ constexpr double to_s(duration d) {
 
 system_time to_utc(steady_time ts);
 
-constexpr duration from_s(double seconds) {
-    return std::chrono::duration_cast<duration>(std::chrono::duration<double>(seconds));
+template <typename duration_type = duration>
+constexpr duration_type from_s(double seconds) {
+    return std::chrono::duration_cast<duration_type>(std::chrono::duration<double>(seconds));
 }
 
 constexpr int64_t count_s(duration d) {

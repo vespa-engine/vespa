@@ -24,7 +24,7 @@ struct MetricRegistrator {
     virtual ~MetricRegistrator() = default;
 
     virtual void registerMetric(metrics::Metric&) = 0;
-    virtual void registerUpdateHook(vespalib::stringref name, MetricUpdateHook& hook, vespalib::duration period) = 0;
+    virtual void registerUpdateHook(vespalib::stringref name, MetricUpdateHook& hook, vespalib::system_time::duration period) = 0;
 };
 
 }

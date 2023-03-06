@@ -73,7 +73,7 @@ public:
     std::vector<const StatusReporter*> getStatusReporters() override;
 
     void registerMetric(metrics::Metric&) override;
-    void registerUpdateHook(vespalib::stringref name, MetricUpdateHook& hook, vespalib::duration period) override;
+    void registerUpdateHook(vespalib::stringref name, MetricUpdateHook& hook, vespalib::system_time::duration period) override;
     void registerShutdownListener(ShutdownListener&);
 
 };

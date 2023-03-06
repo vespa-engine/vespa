@@ -73,7 +73,7 @@ StateReporter::getMetrics(const vespalib::string &consumer)
     if (periods.empty()) {
         return ""; // no configuration yet
     }
-    vespalib::duration interval = periods[0];
+    auto interval = periods[0];
 
     // To get unset metrics, we have to copy active metrics, clear them
     // and then assign the snapshot

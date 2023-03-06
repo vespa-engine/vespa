@@ -86,7 +86,7 @@ class Component : private ManagedComponent
     metrics::Metric* _metric;
     ThreadPool* _threadPool;
     MetricRegistrator* _metricReg;
-    std::pair<MetricUpdateHook*, vespalib::duration> _metricUpdateHook;
+    std::pair<MetricUpdateHook*, vespalib::system_time::duration> _metricUpdateHook;
     const Clock* _clock;
 
     // ManagedComponent implementation
@@ -124,7 +124,7 @@ public:
      * update hook will only be called if there actually is a metric mananger
      * component registered in the application.
      */
-    void registerMetricUpdateHook(MetricUpdateHook&, vespalib::duration period);
+    void registerMetricUpdateHook(MetricUpdateHook&, vespalib::system_time::duration period);
 
     /** Get the name of the component. Must be a unique name. */
     [[nodiscard]] const vespalib::string& getName() const override { return _name; }

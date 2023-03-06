@@ -427,7 +427,7 @@ MetricManager::createSnapshotPeriods(const Config& config)
             } else {
                 name << length << " seconds";
             }
-            result.emplace_back(vespalib::from_s(length), name.str());
+            result.emplace_back(vespalib::from_s<time_point::duration>(length), name.str());
         }
         for (uint32_t i=1; i<result.size(); ++i) {
             if (result[i].first % result[i-1].first != vespalib::duration::zero()) {
@@ -473,7 +473,7 @@ MetricManager::configure(const MetricLockGuard & , std::unique_ptr<Config> confi
             uint32_t nextCount = 1;
             if (i + 1 < snapshotPeriods.size()) {
                 nextCount = snapshotPeriods[i + 1].first / snapshotPeriods[i].first;
-                if ((snapshotPeriods[i + 1].first % snapshotPeriods[i].first) != vespalib::duration::zero()) {
+                if ((snapshotPeriods[i + 1].first % snapshotPeriods[i].first) != time_point::duration::zero()) {
                     throw IllegalStateException("Snapshot periods must be multiplum of each other",VESPA_STRLOC);
                 }
             }
@@ -570,11 +570,11 @@ MetricManager::visit(const MetricLockGuard & guard, const MetricSnapshot& snapsh
     visitor.doneVisiting();
 }
 
-std::vector<vespalib::duration>
+std::vector<time_point::duration>
 MetricManager::getSnapshotPeriods(const MetricLockGuard& l) const
 {
     assertMetricLockLocked(l);
-    std::vector<vespalib::duration> result;
+    std::vector<time_point::duration> result;
     result.reserve(_snapshots.size());
     for (const auto & snapshot : _snapshots) {
         result.emplace_back(snapshot->getPeriod());
