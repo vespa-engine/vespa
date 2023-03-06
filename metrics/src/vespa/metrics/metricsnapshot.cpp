@@ -24,7 +24,7 @@ MetricSnapshot::MetricSnapshot(const Metric::String& name)
 {
 }
 
-MetricSnapshot::MetricSnapshot(const Metric::String& name, vespalib::duration period, const MetricSet& source, bool copyUnset)
+MetricSnapshot::MetricSnapshot(const Metric::String& name, system_time::duration period, const MetricSet& source, bool copyUnset)
     : _name(name),
       _period(period),
       _fromTime(system_time_epoch),
@@ -73,7 +73,7 @@ MetricSnapshot::addMemoryUsage(MemoryConsumption& mc) const
     _snapshot->addMemoryUsage(mc);
 }
 
-MetricSnapshotSet::MetricSnapshotSet(const Metric::String& name, vespalib::duration period, uint32_t count,
+MetricSnapshotSet::MetricSnapshotSet(const Metric::String& name, system_time::duration period, uint32_t count,
                                      const MetricSet& source, bool snapshotUnsetMetrics)
     : _count(count),
       _builderCount(0),

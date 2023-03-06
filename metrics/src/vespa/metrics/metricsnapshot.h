@@ -23,7 +23,7 @@ class MetricSnapshot
 {
     Metric::String _name;
         // Period length of this snapshot
-    vespalib::duration _period;
+    system_time::duration _period;
         // Time this snapshot was last updated.
     system_time _fromTime;
         // If set to 0, use _fromTime + _period.
@@ -37,7 +37,7 @@ public:
     /** Create a fresh empty top level snapshot. */
     MetricSnapshot(const Metric::String& name);
     /** Create a snapshot of another metric source. */
-    MetricSnapshot(const Metric::String& name, vespalib::duration period,
+    MetricSnapshot(const Metric::String& name, system_time::duration period,
                    const MetricSet& source, bool copyUnset);
     ~MetricSnapshot();
 
@@ -54,7 +54,7 @@ public:
     void setToTime(system_time toTime) { _toTime = toTime; }
 
     const Metric::String& getName() const { return _name; }
-    vespalib::duration getPeriod() const { return _period; }
+    system_time::duration getPeriod() const { return _period; }
     system_time getFromTime() const { return _fromTime; }
     system_time getToTime() const { return _toTime; }
     const MetricSet& getMetrics() const { return *_snapshot; }
@@ -78,11 +78,11 @@ class MetricSnapshotSet {
     std::unique_ptr<MetricSnapshot> _current; // The last full period
     std::unique_ptr<MetricSnapshot> _building; // The building period
 public:
-    MetricSnapshotSet(const Metric::String& name, vespalib::duration period, uint32_t count,
+    MetricSnapshotSet(const Metric::String& name, system_time::duration period, uint32_t count,
                       const MetricSet& source, bool snapshotUnsetMetrics);
 
     const Metric::String& getName() const { return _current->getName(); }
-    vespalib::duration getPeriod() const { return _current->getPeriod(); }
+    system_time::duration getPeriod() const { return _current->getPeriod(); }
     system_time getFromTime() const { return _current->getFromTime(); }
     system_time getToTime() const { return _current->getToTime(); }
     system_time getNextWorkTime() const { return getToTime() + getPeriod(); }

@@ -29,7 +29,7 @@ struct MetricManagerTest : public ::testing::Test {
     // MetricManager that aren't accessible to "freestanding" fixtures. So we
     // get the test to do the necessary poking and prodding for us instead.
     void takeSnapshots(MetricManager& mm, time_t timeToProcess) {
-        mm.takeSnapshots(mm.getMetricLock(), system_time(vespalib::from_s(timeToProcess)));
+        mm.takeSnapshots(mm.getMetricLock(), system_time(vespalib::from_s<system_time::duration>(timeToProcess)));
     }
 };
 
@@ -364,7 +364,7 @@ class FakeTimer : public MetricManager::Timer {
     std::atomic<time_t> _time;
 public:
     FakeTimer(time_t startTime = 0) : _time(startTime) {}
-    time_point getTime() const override { return time_point(vespalib::from_s(load_relaxed(_time))); }
+    time_point getTime() const override { return time_point(vespalib::from_s<time_point::duration>(load_relaxed(_time))); }
     void set_time(time_t t) noexcept { store_relaxed(_time, t); }
     // Not safe for multiple writers, only expected to be called by test.
     void add_time(time_t t) noexcept { set_time(load_relaxed(_time) + t); }
@@ -384,7 +384,7 @@ struct BriefValuePrinter : public MetricVisitor {
     }
 };
 
-bool waitForTimeProcessed(const MetricManager& mm, vespalib::duration processtime, uint32_t timeout = 120)
+bool waitForTimeProcessed(const MetricManager& mm, time_point::duration processtime, uint32_t timeout = 120)
 {
     uint32_t lastchance = time(0) + timeout;
     while (time(0) < lastchance) {
@@ -945,7 +945,7 @@ namespace {
         std::mutex&         _output_mutex;
         FakeTimer&          _timer;
 
-        MyUpdateHook(std::ostringstream& output, std::mutex& output_mutex, const char* name, vespalib::duration period, FakeTimer& timer)
+        MyUpdateHook(std::ostringstream& output, std::mutex& output_mutex, const char* name, vespalib::system_clock::duration period, FakeTimer& timer)
             : UpdateHook(name, period),
               _output(output),
               _output_mutex(output_mutex),
