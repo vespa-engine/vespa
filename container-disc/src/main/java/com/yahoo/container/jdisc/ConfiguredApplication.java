@@ -99,7 +99,6 @@ public final class ConfiguredApplication implements Application {
     private final Thread portWatcher;
     private HandlersConfigurerDi configurer;
     private QrConfig qrConfig;
-    private Metric metric; // Cannot be injected before the application is set up
 
     private Register slobrokRegistrator = null;
     private Supervisor supervisor = null;
@@ -164,7 +163,6 @@ public final class ConfiguredApplication implements Application {
 
         ContainerBuilder builder = createBuilderWithGuiceBindings();
         configurer = createConfigurer(builder.guiceModules().activate());
-        metric = configurer.getComponent(Metric.class);
         initializeAndActivateContainer(builder, () -> {});
         reconfigurerThread.setDaemon(true);
         reconfigurerThread.start();
@@ -301,10 +299,7 @@ public final class ConfiguredApplication implements Application {
         startAndStopServers(currentServers);
 
         startAndRemoveClients(Container.get().getClientProviderRegistry().allComponents());
-
-        log.info("Switching to the latest deployed set of configurations and components. " +
-                 "Application config generation: " + configurer.generation());
-        metric.set(APPLICATION_GENERATION.baseName(), configurer.generation(), metric.createContext(Map.of()));
+        signalActivation();
     }
 
     private void activateContainer(ContainerBuilder builder, Runnable onPreviousContainerTermination) {
@@ -319,6 +314,13 @@ public final class ConfiguredApplication implements Application {
                 }
             });
         }
+    }
+
+    private void signalActivation() {
+        log.info("Switching to the latest deployed set of configurations and components. " +
+                 "Application config generation: " + configurer.generation());
+        var metric = configurer.getComponent(Metric.class);
+        metric.set(APPLICATION_GENERATION.baseName(), configurer.generation(), metric.createContext(Map.of()));
     }
 
     private ContainerBuilder createBuilderWithGuiceBindings() {
