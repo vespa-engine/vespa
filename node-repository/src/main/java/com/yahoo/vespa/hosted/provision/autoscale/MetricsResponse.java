@@ -21,6 +21,7 @@ import java.util.Map;
 import java.util.Optional;
 
 import static com.yahoo.metrics.ContainerMetrics.APPLICATION_GENERATION;
+import static com.yahoo.metrics.ContainerMetrics.IN_SERVICE;
 
 /**
  * A response containing metrics for a collection of nodes.
@@ -165,7 +166,7 @@ public class MetricsResponse {
 
             @Override
             public List<String> metricResponseNames() {
-                return List.of(APPLICATION_GENERATION.baseName() /*, "content.proton.config.generation" */);
+                return List.of(APPLICATION_GENERATION.last() /*, "content.proton.config.generation" */);
             }
 
             @Override
@@ -177,7 +178,7 @@ public class MetricsResponse {
         inService {
 
             @Override
-            public List<String> metricResponseNames() { return List.of("in_service"); }
+            public List<String> metricResponseNames() { return List.of(IN_SERVICE.last()); }
 
             @Override
             double computeFinal(ListMap<String, Double> values) {

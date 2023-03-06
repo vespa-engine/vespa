@@ -6,6 +6,7 @@ import com.yahoo.container.QrSearchersConfig;
 import com.yahoo.container.core.VipStatusConfig;
 import com.yahoo.container.jdisc.state.StateMonitor;
 import com.yahoo.jdisc.Metric;
+import com.yahoo.metrics.ContainerMetrics;
 
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -119,7 +120,7 @@ public class VipStatus {
             else if (healthState.status() == StateMonitor.Status.up)
                 healthState.status(StateMonitor.Status.down);
 
-            metric.set("in_service", currentlyInRotation ? 1 : 0, metric.createContext(Map.of()));
+            metric.set(ContainerMetrics.IN_SERVICE.baseName(), currentlyInRotation ? 1 : 0, metric.createContext(Map.of()));
         }
     }
 
