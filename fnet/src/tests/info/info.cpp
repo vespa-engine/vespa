@@ -63,9 +63,9 @@ TEST("info") {
     fprintf(stderr, "FD_SETSIZE: %d\n", l[2]._intval32);
     fprintf(stderr, "sizeof(FRT_RPCRequest): %d\n", l[3]._intval32);
 
-    target->SubRef();
-    local_info->SubRef();
-    remote_info->SubRef();
+    target->internal_subref();
+    local_info->internal_subref();
+    remote_info->internal_subref();
 };
 
 TEST("size of important objects")

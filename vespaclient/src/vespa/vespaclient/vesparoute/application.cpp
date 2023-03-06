@@ -501,8 +501,8 @@ Application::isService(FRT_Supervisor &frt, const std::string &spec) const
         }
     }
 
-    req->SubRef();
-    target->SubRef();
+    req->internal_subref();
+    target->internal_subref();
     return ret;
 }
 

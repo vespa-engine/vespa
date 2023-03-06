@@ -27,7 +27,7 @@ class enable_ref_counted
     static constexpr uint32_t MAGIC = 0xcc56a933;
 private:
     uint32_t _guard;
-    mutable std::atomic<int32_t> _refs;
+    mutable std::atomic<uint32_t> _refs;
 protected:
     enable_ref_counted() noexcept : _guard(MAGIC), _refs(1) {}
 public:
@@ -36,9 +36,11 @@ public:
     enable_ref_counted(const enable_ref_counted &) = delete;
     enable_ref_counted &operator=(enable_ref_counted &&) = delete;
     enable_ref_counted &operator=(const enable_ref_counted &) = delete;
-    void internal_addref() const noexcept;
-    void internal_subref() const noexcept;
-    int32_t count_refs() const noexcept;
+    void internal_addref(uint32_t cnt) const noexcept;
+    void internal_addref() const noexcept { internal_addref(1); }
+    void internal_subref(uint32_t cnt, uint32_t reserve) const noexcept;
+    void internal_subref() const noexcept { internal_subref(1, 0); }
+    uint32_t count_refs() const noexcept;
 };
 
 // This is the handle to a shared object. The handle itself is not

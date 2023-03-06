@@ -79,8 +79,8 @@ public:
     } else {
       printf("Return values != parameters.\n");
     }
-    req->SubRef();
-    target->SubRef();
+    req->internal_subref();
+    target->internal_subref();
     return 0;
   }
 };

@@ -44,10 +44,10 @@ MirrorAPI::~MirrorAPI()
     _configurator.reset(0);
     if (_req != 0) {
         _req->Abort();
-        _req->SubRef();
+        _req->internal_subref();
     }
     if (_target != 0) {
-        _target->SubRef();
+        _target->internal_subref();
     }
 }
 
@@ -208,7 +208,7 @@ MirrorAPI::handleReconfig()
             std::string cps = _slobrokSpecs.logString();
             LOG(warning, "current server %s not in list of location brokers: %s",
                 _currSlobrok.c_str(), cps.c_str());
-            _target->SubRef();
+            _target->internal_subref();
             _target = 0;
         }
     }
@@ -224,7 +224,7 @@ MirrorAPI::handleReqDone()
 
         if (reconn) {
             if (_target != 0) {
-                _target->SubRef();
+                _target->internal_subref();
             }
             _target = 0;
         } else {

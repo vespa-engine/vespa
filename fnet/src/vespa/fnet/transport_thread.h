@@ -97,7 +97,7 @@ private:
 
 
     /**
-     * Delete (call SubRef on) all IO Components in the delete list.
+     * Delete (call internal_subref on) all IO Components in the delete list.
      **/
     void FlushDeleteList();
 
@@ -277,7 +277,7 @@ public:
      * @param needRef should be set to false if the caller of this
      *        method already has obtained an extra reference to the
      *        component. If this flag is true, this method will call the
-     *        AddRef method on the component.
+     *        internal_addref method on the component.
      **/
     void Add(FNET_IOComponent *comp, bool needRef = true);
 
@@ -294,7 +294,7 @@ public:
      * @param needRef should be set to false if the caller of this
      *        method already has obtained an extra reference to the
      *        component. If this flag is true, this method will call the
-     *        AddRef method on the component.
+     *        internal_addref method on the component.
      **/
     void EnableWrite(FNET_IOComponent *comp, bool needRef = true);
 
@@ -312,7 +312,7 @@ public:
      * @param needRef should be set to false if the caller of this
      *        method already has obtained an extra reference to the
      *        component. If this flag is true, this method will call the
-     *        AddRef method on the component.
+     *        internal_addref method on the component.
      **/
     void handshake_act(FNET_IOComponent *comp, bool needRef = true);
 
@@ -330,7 +330,7 @@ public:
      * @param needRef should be set to false if the caller of this
      *        method already has obtained an extra reference to the
      *        component. If this flag is true, this method will call the
-     *        AddRef method on the component.
+     *        internal_addref method on the component.
      **/
     void Close(FNET_IOComponent *comp, bool needRef = true);
 

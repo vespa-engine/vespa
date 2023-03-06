@@ -54,7 +54,7 @@ Session::commit(const vespalib::ConstBufferRef & buf)
         int retcode = _tlc.rpc(req);
         retval = (retcode == 0);
         if (retval) {
-            req->SubRef();
+            req->internal_subref();
         } else {
             vespalib::string msg;
             if (req->GetReturn() != nullptr) {
@@ -62,7 +62,7 @@ Session::commit(const vespalib::ConstBufferRef & buf)
             } else {
                 msg = vespalib::make_string("Clientside error %s: error(%d): %s", req->GetMethodName(), req->GetErrorCode(), req->GetErrorMessage());
             }
-            req->SubRef();
+            req->internal_subref();
             throw std::runtime_error(vespalib::make_string("commit failed with code %d. server says: %s", retcode, msg.c_str()));
         }
     }
@@ -81,7 +81,7 @@ Session::status(SerialNum & b, SerialNum & e, size_t & count)
         e = req->GetReturn()->GetValue(2)._intval64;
         count = req->GetReturn()->GetValue(3)._intval64;
     }
-    req->SubRef();
+    req->internal_subref();
     return (retval == 0);
 }
 
@@ -93,7 +93,7 @@ Session::erase(const SerialNum & to)
     req->GetParams()->AddString(_domain.c_str());
     req->GetParams()->AddInt64(to);
     int32_t retval(_tlc.rpc(req));
-    req->SubRef();
+    req->internal_subref();
     if (retval == 1) {
         LOG(warning, "Prune to %" PRIu64 " denied since there were active visitors in that area", to);
     }
@@ -113,7 +113,7 @@ Session::sync(const SerialNum &syncTo, SerialNum &syncedTo)
     if (retval == 0) {
         syncedTo = req->GetReturn()->GetValue(1)._intval64;
     }
-    req->SubRef();
+    req->internal_subref();
     return (retval == 0);
 }
 
@@ -138,7 +138,7 @@ bool
 Session::init(FRT_RPCRequest *req)
 {
     int32_t retval(_tlc.rpc(req));
-    req->SubRef();
+    req->internal_subref();
     if (retval > 0) {
         clear();
         _sessionId = retval;
@@ -171,7 +171,7 @@ Session::run()
     req->GetParams()->AddString(_domain.c_str());
     req->GetParams()->AddInt32(_sessionId);
     int32_t retval(_tlc.rpc(req));
-    req->SubRef();
+    req->internal_subref();
     return (retval == 0);
 }
 
@@ -188,7 +188,7 @@ Session::close()
             if ( (retval = _tlc.rpc(req)) > 0) {
                 std::this_thread::sleep_for(10ms);
             }
-            req->SubRef();
+            req->internal_subref();
         } while ( retval == 1 );
     }
     return (retval == 0);

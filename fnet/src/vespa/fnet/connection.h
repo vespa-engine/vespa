@@ -21,30 +21,6 @@ class FNET_IPacketHandler;
 namespace vespalib::net { class ConnectionAuthContext; }
 
 /**
- * Interface implemented by objects that want to perform connection
- * cleanup. Use the SetCleanupHandler method to register with a
- * connection. Currently, there can only be one cleanup handler per
- * connection.
- **/
-class FNET_IConnectionCleanupHandler
-{
-public:
-
-    /**
-     * Destructor.  No cleanup needed for base class.
-     */
-    virtual ~FNET_IConnectionCleanupHandler(void) {}
-
-    /**
-     * Perform connection cleanup.
-     *
-     * @param conn the connection
-     **/
-    virtual void Cleanup(FNET_Connection *conn) = 0;
-};
-
-
-/**
  * This class represents a single connection with another
  * computer. The binary format on a connection is defined by the
  * PacketStreamer given to the constructor. Each connection object may
@@ -114,8 +90,6 @@ private:
     FNET_DataBuffer          _output;          // output buffer
     FNET_ChannelLookup       _channels;        // channel 'DB'
     FNET_Channel            *_callbackTarget;  // target of current callback
-
-    FNET_IConnectionCleanupHandler *_cleanup;  // cleanup handler
 
     std::unique_ptr<vespalib::net::ConnectionAuthContext> _auth_context;
 
@@ -377,14 +351,6 @@ public:
      **/
     bool handle_handshake_act() override;
 
-    /**
-     * Register a cleanup handler to be invoked when this connection is
-     * about to be destructed.
-     *
-     * @param handler the cleanup handler
-     **/
-    void SetCleanupHandler(FNET_IConnectionCleanupHandler *handler);
-
 
     /**
      * Open a new channel on this connection. This method will return
@@ -465,14 +431,6 @@ public:
      * FNET_Connection::FNET_WRITE_SIZE.
      **/
     void Sync();
-
-
-    /**
-     * Invoked by the io component superclass before the object is
-     * destructed. Will invoke the Cleanup method on the cleanup handler
-     * for this connection, if present.
-     **/
-    void CleanupHook() override;
 
 
     /**

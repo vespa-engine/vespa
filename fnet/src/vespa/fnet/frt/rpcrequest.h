@@ -6,6 +6,7 @@
 #include "error.h"
 #include <vespa/fnet/context.h>
 #include <vespa/vespalib/util/stash.h>
+#include <vespa/vespalib/util/ref_counted.h>
 #include <atomic>
 
 class FNET_Packet;
@@ -37,20 +38,7 @@ public:
 };
 
 
-class FRT_ICleanupHandler
-{
-public:
-
-    /**
-     * Destructor.  No cleanup needed for base class.
-     */
-    virtual ~FRT_ICleanupHandler(void) {}
-
-    virtual void HandleCleanup() = 0;
-};
-
-
-class FRT_RPCRequest
+class FRT_RPCRequest : public vespalib::enable_ref_counted
 {
 private:
     using Stash = vespalib::Stash;
@@ -58,7 +46,6 @@ private:
     FNET_Context     _context;
     FRT_Values       _params;
     FRT_Values       _return;
-    std::atomic<int> _refcnt;
     std::atomic<int> _completed;
     uint32_t         _errorCode;
     uint32_t         _errorMessageLen;
@@ -69,7 +56,6 @@ private:
     bool                *_detachedPT;
     FRT_IAbortHandler   *_abortHandler;
     FRT_IReturnHandler  *_returnHandler;
-    FRT_ICleanupHandler *_cleanupHandler;
 
 public:
     FRT_RPCRequest(const FRT_RPCRequest &) = delete;
@@ -85,9 +71,6 @@ public:
         _params.DiscardBlobs();
         _return.DiscardBlobs();
     }
-
-    void AddRef() { _refcnt.fetch_add(1); }
-    void SubRef();
 
     void SetContext(FNET_Context context) { _context = context; }
     FNET_Context GetContext() { return _context; }
@@ -137,10 +120,8 @@ public:
 
     void SetAbortHandler(FRT_IAbortHandler *handler) { _abortHandler = handler; }
     void SetReturnHandler(FRT_IReturnHandler *handler) { _returnHandler = handler; }
-    void SetCleanupHandler(FRT_ICleanupHandler *handler) { _cleanupHandler = handler; }
 
     bool Abort();
     void Return();
     FNET_Connection *GetConnection();
-    void Cleanup();
 };

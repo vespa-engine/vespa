@@ -17,7 +17,7 @@ struct Metrics;
 
 struct RpcTargetSubRef {
     void operator()(FRT_Target* target) const noexcept {
-        target->SubRef();
+        target->internal_subref();
     }
 };
 using RpcTargetGuard = std::unique_ptr<FRT_Target, RpcTargetSubRef>;

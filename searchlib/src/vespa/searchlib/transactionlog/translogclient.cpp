@@ -80,7 +80,7 @@ void
 TransLogClient::disconnect()
 {
     if (_target) {
-        _target->SubRef();
+        _target->internal_subref();
     }
 }
 
@@ -91,7 +91,7 @@ TransLogClient::create(const vespalib::string & domain)
     req->SetMethodName("createDomain");
     req->GetParams()->AddString(domain.c_str());
     int32_t retval(rpc(req));
-    req->SubRef();
+    req->internal_subref();
     return (retval == 0);
 }
 
@@ -102,7 +102,7 @@ TransLogClient::remove(const vespalib::string & domain)
     req->SetMethodName("deleteDomain");
     req->GetParams()->AddString(domain.c_str());
     int32_t retval(rpc(req));
-    req->SubRef();
+    req->internal_subref();
     return (retval == 0);
 }
 
@@ -113,7 +113,7 @@ TransLogClient::open(const vespalib::string & domain)
     req->SetMethodName("openDomain");
     req->GetParams()->AddString(domain.c_str());
     int32_t retval(rpc(req));
-    req->SubRef();
+    req->internal_subref();
     if (retval == 0) {
         return std::make_unique<Session>(domain, *this);
     }
@@ -138,7 +138,7 @@ TransLogClient::listDomains(std::vector<vespalib::string> & dir)
             dir.push_back(d);
         }
     }
-    req->SubRef();
+    req->internal_subref();
     return (retval == 0);
 }
 

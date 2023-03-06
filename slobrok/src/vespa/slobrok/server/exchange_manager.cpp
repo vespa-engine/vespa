@@ -160,7 +160,7 @@ ExchangeManager::WorkPackage::WorkItem::RequestDone(FRT_RPCRequest *req)
         LOG(warning, "error doing workitem: %s", req->GetErrorMessage());
         // XXX tell remslob?
     }
-    req->SubRef();
+    req->internal_subref();
     _pendingReq = nullptr;
     _pkg.doneItem(denied);
 }

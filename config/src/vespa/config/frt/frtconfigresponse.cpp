@@ -10,12 +10,12 @@ FRTConfigResponse::FRTConfigResponse(FRT_RPCRequest * request)
       _responseState(EMPTY),
       _returnValues(_request->GetReturn())
 {
-    _request->AddRef();
+    _request->internal_addref();
 }
 
 FRTConfigResponse::~FRTConfigResponse()
 {
-    _request->SubRef();
+    _request->internal_subref();
 }
 
 bool

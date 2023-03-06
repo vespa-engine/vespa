@@ -96,7 +96,7 @@ struct Response {
 
         ~RPCFixture() {
             for (size_t i = 0; i < requests.size(); i++) {
-                requests[i]->SubRef();
+                requests[i]->internal_subref();
             }
         }
     };
@@ -340,7 +340,7 @@ struct V3RequestFixture {
     }
 
     ~V3RequestFixture() {
-        req->SubRef();
+        req->internal_subref();
     }
 
     void encodePayload(const char * payload, uint32_t payloadSize, uint32_t uncompressedSize, const CompressionType & compressionType) {

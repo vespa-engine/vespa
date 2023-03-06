@@ -49,7 +49,7 @@ RPCClient::main(int argc, char **argv)
     }
 
     fprintf(stdout, "\nTesting addFloat method\n");
-    req->SubRef();
+    req->internal_subref();
     req = supervisor.AllocRPCRequest();
     req->SetMethodName("addFloat");
     req->GetParams()->AddFloat(float1);
@@ -65,7 +65,7 @@ RPCClient::main(int argc, char **argv)
     }
 
     fprintf(stdout, "\nTesting addDouble method\n");
-    req->SubRef();
+    req->internal_subref();
     req = supervisor.AllocRPCRequest();
     req->SetMethodName("addDouble");
     req->GetParams()->AddDouble(double1);
@@ -80,8 +80,8 @@ RPCClient::main(int argc, char **argv)
                 req->GetErrorMessage());
     }
 
-    req->SubRef();
-    target->SubRef();
+    req->internal_subref();
+    target->internal_subref();
     return 0;
 }
 

@@ -31,7 +31,7 @@ public:
         : _request(new FRT_RPCRequest())
     {}
     ~GuardedRequest() {
-        _request->SubRef();
+        _request->internal_subref();
     }
     FRT_RPCRequest& operator*() const { return *_request; }
     FRT_RPCRequest* get() const { return _request; }

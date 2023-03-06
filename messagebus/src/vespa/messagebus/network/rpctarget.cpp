@@ -19,7 +19,7 @@ RPCTarget::RPCTarget(const string &spec, FRT_Supervisor &orb) :
 
 RPCTarget::~RPCTarget()
 {
-    _target.SubRef();
+    _target.internal_subref();
 }
 
 void
@@ -94,7 +94,7 @@ RPCTarget::RequestDone(FRT_RPCRequest *req)
         _state = (_version.get() ? VERSION_RESOLVED : VERSION_NOT_RESOLVED);
     }
     _cond.notify_all();
-    req->SubRef();
+    req->internal_subref();
 }
 
 } // namespace mbus

@@ -107,7 +107,7 @@ FNET_TransportThread::FlushDeleteList()
         FNET_IOComponent *tmp = _deleteList;
         _deleteList = tmp->_ioc_next;
         assert(tmp->_flags._ioc_delete);
-        tmp->SubRef();
+        tmp->internal_subref();
     }
 }
 
@@ -143,12 +143,12 @@ FNET_TransportThread::DiscardEvent(FNET_ControlPacket *cpacket,
     switch (cpacket->GetCommand()) {
     case FNET_ControlPacket::FNET_CMD_IOC_ADD:
         context._value.IOC->Close();
-        context._value.IOC->SubRef();
+        context._value.IOC->internal_subref();
         break;
     case FNET_ControlPacket::FNET_CMD_IOC_ENABLE_WRITE:
     case FNET_ControlPacket::FNET_CMD_IOC_HANDSHAKE_ACT:
     case FNET_ControlPacket::FNET_CMD_IOC_CLOSE:
-        context._value.IOC->SubRef();
+        context._value.IOC->internal_subref();
         break;
     }
 }
@@ -173,7 +173,7 @@ FNET_TransportThread::handle_close_cmd(FNET_IOComponent *ioc)
 {
     if (ioc->_flags._ioc_added) {
         RemoveComponent(ioc);
-        ioc->SubRef();
+        ioc->internal_subref();
     }
     ioc->Close();
     AddDeleteComponent(ioc);
@@ -288,7 +288,7 @@ FNET_TransportThread::Listen(const char *spec, FNET_IPacketStreamer *streamer,
     if (server_socket.valid() && server_socket.set_blocking(false)) {
         FNET_Connector *connector = new FNET_Connector(this, streamer, serverAdapter, spec, std::move(server_socket));
         connector->EnableReadEvent(true);
-        connector->AddRef_NoLock();
+        connector->internal_addref();
         Add(connector, /* needRef = */ false);
         return connector;
     }
@@ -314,7 +314,7 @@ void
 FNET_TransportThread::Add(FNET_IOComponent *comp, bool needRef)
 {
     if (needRef) {
-        comp->AddRef();
+        comp->internal_addref();
     }
     PostEvent(&FNET_ControlPacket::IOCAdd, FNET_Context(comp));
 }
@@ -324,7 +324,7 @@ void
 FNET_TransportThread::EnableWrite(FNET_IOComponent *comp, bool needRef)
 {
     if (needRef) {
-        comp->AddRef();
+        comp->internal_addref();
     }
     PostEvent(&FNET_ControlPacket::IOCEnableWrite, FNET_Context(comp));
 }
@@ -333,7 +333,7 @@ void
 FNET_TransportThread::handshake_act(FNET_IOComponent *comp, bool needRef)
 {
     if (needRef) {
-        comp->AddRef();
+        comp->internal_addref();
     }
     PostEvent(&FNET_ControlPacket::IOCHandshakeACT, FNET_Context(comp));
 }
@@ -342,7 +342,7 @@ void
 FNET_TransportThread::Close(FNET_IOComponent *comp, bool needRef)
 {
     if (needRef) {
-        comp->AddRef();
+        comp->internal_addref();
     }
     PostEvent(&FNET_ControlPacket::IOCClose, FNET_Context(comp));
 }
@@ -449,7 +449,7 @@ FNET_TransportThread::handle_wakeup()
         }
 
         if (context._value.IOC->_flags._ioc_delete) {
-            context._value.IOC->SubRef();
+            context._value.IOC->internal_subref();
             continue;
         }
 
@@ -460,14 +460,14 @@ FNET_TransportThread::handle_wakeup()
         case FNET_ControlPacket::FNET_CMD_IOC_ENABLE_WRITE:
             context._value.IOC->EnableWriteEvent(true);
             if (context._value.IOC->HandleWriteEvent()) {
-                context._value.IOC->SubRef();
+                context._value.IOC->internal_subref();
             } else {
                 handle_close_cmd(context._value.IOC);
             }
             break;
         case FNET_ControlPacket::FNET_CMD_IOC_HANDSHAKE_ACT:
             if (context._value.IOC->handle_handshake_act()) {
-                context._value.IOC->SubRef();
+                context._value.IOC->internal_subref();
             } else {
                 handle_close_cmd(context._value.IOC);
             }
@@ -577,7 +577,7 @@ FNET_TransportThread::endEventLoop() {
         component = component->_ioc_next;
         RemoveComponent(tmp);
         tmp->Close();
-        tmp->SubRef();
+        tmp->internal_subref();
     }
     assert(_componentsHead == nullptr &&
            _componentsTail == nullptr &&

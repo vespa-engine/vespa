@@ -36,7 +36,7 @@ struct RpcFixture : FRT_Invokable {
     }
     ~RpcFixture() {
         if (back_conn.load() != nullptr) {
-            back_conn.load()->SubRef();
+            back_conn.load()->internal_subref();
         }
     }
     uint32_t port() const { return orb.GetListenPort(); }
@@ -61,7 +61,7 @@ struct RpcFixture : FRT_Invokable {
         ASSERT_TRUE(back_conn.load() == nullptr);
         back_conn.store(req->GetConnection());
         ASSERT_TRUE(back_conn.load() != nullptr);
-        back_conn.load()->AddRef();
+        back_conn.load()->internal_addref();
     }
     FRT_Target *meta_connect(uint32_t port) {
         auto *target = orb.Get2WayTarget(fmt("tcp/localhost:%u", port).c_str());
@@ -69,7 +69,7 @@ struct RpcFixture : FRT_Invokable {
         req->SetMethodName("connect");
         target->InvokeSync(req, 300.0);
         ASSERT_TRUE(req->CheckReturnTypes(""));
-        req->SubRef();
+        req->internal_subref();
         return target;
     };
     static int check_result(FRT_RPCRequest *req, uint64_t expect) {
@@ -81,7 +81,7 @@ struct RpcFixture : FRT_Invokable {
             ASSERT_EQUAL(ret, expect);
             ++num_ok;
         }
-        req->SubRef();
+        req->internal_subref();
         return num_ok;
     }
     static int verify_rpc(FNET_Connection *conn) {
@@ -101,7 +101,7 @@ struct RpcFixture : FRT_Invokable {
     int verify_rpc(FRT_Target *target, uint32_t port) {
         auto *my_target = connect(port);
         int num_ok = verify_rpc(target) + verify_rpc(my_target) + verify_rpc(back_conn.load());
-        my_target->SubRef();
+        my_target->internal_subref();
         return num_ok;
     }
 };
@@ -135,8 +135,8 @@ TEST_MT_FFFFF("require that supervisor can be detached from transport", 4, Basic
         EXPECT_EQUAL(RpcFixture::verify_rpc(target), 0); // outgoing 2way target should be closed
         EXPECT_EQUAL(RpcFixture::verify_rpc(client_target), 1); // pure client target should not be closed
         TEST_BARRIER(); // #5
-        target->SubRef();
-        client_target->SubRef();
+        target->internal_subref();
+        client_target->internal_subref();
     } else if (thread_id == 1) { // server 2 (talks to client 2)
         auto self = std::make_unique<RpcFixture>(f1);
         f3 = self->port();
@@ -146,7 +146,7 @@ TEST_MT_FFFFF("require that supervisor can be detached from transport", 4, Basic
         TEST_BARRIER(); // #3
         TEST_BARRIER(); // #4
         TEST_BARRIER(); // #5
-        target->SubRef();
+        target->internal_subref();
     } else if (thread_id == 2) { // client 1 (talks to server 1)
         auto self = std::make_unique<RpcFixture>(f1);
         f4 = self->port();
@@ -165,7 +165,7 @@ TEST_MT_FFFFF("require that supervisor can be detached from transport", 4, Basic
         TEST_BARRIER(); // #4
         EXPECT_EQUAL(self->verify_rpc(target, f2), 0);
         TEST_BARRIER(); // #5
-        target->SubRef();
+        target->internal_subref();
     } else {                     // client 2 (talks to server 2)
         ASSERT_EQUAL(thread_id, 3u);
         auto self = std::make_unique<RpcFixture>(f1);
@@ -179,7 +179,7 @@ TEST_MT_FFFFF("require that supervisor can be detached from transport", 4, Basic
         TEST_BARRIER(); // #4
         EXPECT_EQUAL(self->verify_rpc(target, f3), 3);
         TEST_BARRIER(); // #5
-        target->SubRef();
+        target->internal_subref();
     }
 }
 

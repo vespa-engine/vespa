@@ -86,25 +86,22 @@ struct BlockingCryptoEngine : public CryptoEngine {
 
 //-----------------------------------------------------------------------------
 
-struct TransportFixture : FNET_IPacketHandler, FNET_IConnectionCleanupHandler {
+struct TransportFixture : FNET_IPacketHandler {
     FNET_SimplePacketStreamer streamer;
     FNET_Transport transport;
     Gate conn_lost;
-    Gate conn_deleted;
-    TransportFixture() : streamer(nullptr), transport(),
-                         conn_lost(), conn_deleted()
-    {
+    TransportFixture() : streamer(nullptr), transport(), conn_lost() {
         transport.Start();
     }
     TransportFixture(AsyncResolver::HostResolver::SP host_resolver)
         : streamer(nullptr), transport(fnet::TransportConfig().resolver(make_resolver(std::move(host_resolver)))),
-          conn_lost(), conn_deleted()
+          conn_lost()
     {
         transport.Start();
     }
     TransportFixture(CryptoEngine::SP crypto)
         : streamer(nullptr), transport(fnet::TransportConfig().crypto(std::move(crypto))),
-          conn_lost(), conn_deleted()
+          conn_lost()
     {
         transport.Start();
     }
@@ -114,14 +111,12 @@ struct TransportFixture : FNET_IPacketHandler, FNET_IConnectionCleanupHandler {
         packet->Free();
         return FNET_FREE_CHANNEL;
     }
-    void Cleanup(FNET_Connection *) override { conn_deleted.countDown(); }
     FNET_Connection *connect(const vespalib::string &spec) {
         FNET_Connection *conn = transport.Connect(spec.c_str(), &streamer);
         ASSERT_TRUE(conn != nullptr);
         if (conn->OpenChannel(this, FNET_Context()) == nullptr) {
             conn_lost.countDown();
         }
-        conn->SetCleanupHandler(this);
         return conn;
     }
     ~TransportFixture() override {
@@ -131,8 +126,26 @@ struct TransportFixture : FNET_IPacketHandler, FNET_IConnectionCleanupHandler {
 
 //-----------------------------------------------------------------------------
 
-TEST_MT_FFF("require that normal connect works", 2,
-            ServerSocket("tcp/0"), TransportFixture(), TimeBomb(60))
+struct ConnCheck {
+    uint64_t target;
+    ConnCheck() : target(FNET_Connection::get_num_connections()) {
+        EXPECT_EQUAL(target, uint64_t(0));
+    }
+    bool at_target() const { return (FNET_Connection::get_num_connections() == target); };
+    bool await(duration max_wait) const {
+        auto until = saturated_add(steady_clock::now(), max_wait);
+        while (!at_target() && steady_clock::now() < until) {
+            std::this_thread::sleep_for(1ms);
+        }
+        return at_target();
+    }
+    void await() const {
+        ASSERT_TRUE(await(3600s));
+    }
+};
+
+TEST_MT_FFFF("require that normal connect works", 2,
+             ServerSocket("tcp/0"), TransportFixture(), ConnCheck(), TimeBomb(60))
 {
     if (thread_id == 0) {
         SocketHandle socket = f1.accept();
@@ -144,23 +157,23 @@ TEST_MT_FFF("require that normal connect works", 2,
         TEST_BARRIER();
         conn->Owner()->Close(conn);
         f2.conn_lost.await();
-        EXPECT_TRUE(!f2.conn_deleted.await(short_time));
-        conn->SubRef();
-        f2.conn_deleted.await();
+        EXPECT_TRUE(!f3.await(short_time));
+        conn->internal_subref();
+        f3.await();
     }
 }
 
-TEST_FF("require that bogus connect fail asynchronously", TransportFixture(), TimeBomb(60)) {
+TEST_FFF("require that bogus connect fail asynchronously", TransportFixture(), ConnCheck(), TimeBomb(60)) {
     FNET_Connection *conn = f1.connect("invalid");
     f1.conn_lost.await();
-    EXPECT_TRUE(!f1.conn_deleted.await(short_time));
-    conn->SubRef();
-    f1.conn_deleted.await();
+    EXPECT_TRUE(!f2.await(short_time));
+    conn->internal_subref();
+    f2.await();
 }
 
-TEST_MT_FFFF("require that async close can be called before async resolve completes", 2,
-             ServerSocket("tcp/0"), std::shared_ptr<BlockingHostResolver>(new BlockingHostResolver()),
-             TransportFixture(f2), TimeBomb(60))
+TEST_MT_FFFFF("require that async close can be called before async resolve completes", 2,
+              ServerSocket("tcp/0"), std::shared_ptr<BlockingHostResolver>(new BlockingHostResolver()),
+              TransportFixture(f2), ConnCheck(), TimeBomb(60))
 {
     if (thread_id == 0) {
         SocketHandle socket = f1.accept();
@@ -172,16 +185,16 @@ TEST_MT_FFFF("require that async close can be called before async resolve comple
         conn->Owner()->Close(conn);
         f3.conn_lost.await();
         f2->release_caller();
-        EXPECT_TRUE(!f3.conn_deleted.await(short_time));
-        conn->SubRef();
-        f3.conn_deleted.await();
+        EXPECT_TRUE(!f4.await(short_time));
+        conn->internal_subref();
+        f4.await();
         f1.shutdown();
     }
 }
 
-TEST_MT_FFFF("require that async close during async do_handshake_work works", 2,
-             ServerSocket("tcp/0"), std::shared_ptr<BlockingCryptoEngine>(new BlockingCryptoEngine()),
-             TransportFixture(f2), TimeBomb(60))
+TEST_MT_FFFFF("require that async close during async do_handshake_work works", 2,
+              ServerSocket("tcp/0"), std::shared_ptr<BlockingCryptoEngine>(new BlockingCryptoEngine()),
+              TransportFixture(f2), ConnCheck(), TimeBomb(60))
 {
     if (thread_id == 0) {
         SocketHandle socket = f1.accept();
@@ -196,10 +209,10 @@ TEST_MT_FFFF("require that async close during async do_handshake_work works", 2,
         f3.conn_lost.await();
         TEST_BARRIER(); // #1
         // verify that pending work keeps relevant objects alive
-        EXPECT_TRUE(!f3.conn_deleted.await(short_time));
+        EXPECT_TRUE(!f4.await(short_time));
         EXPECT_TRUE(!f2->handshake_socket_deleted.await(short_time));
         f2->handshake_work_exit.countDown();
-        f3.conn_deleted.await();
+        f4.await();
         f2->handshake_socket_deleted.await();
     }
 }

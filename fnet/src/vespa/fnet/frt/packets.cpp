@@ -14,7 +14,7 @@ FRT_RPCPacket::Free()
 {
     if (_ownsRef) {
         _req->DiscardBlobs();
-        _req->SubRef();
+        _req->internal_subref();
     }
 }
 

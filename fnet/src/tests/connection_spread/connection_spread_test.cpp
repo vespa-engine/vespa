@@ -84,9 +84,9 @@ TEST_F("require that connections are spread among transport threads", Fixture)
     f1.wait_for_components(256, 257);    
     check_threads(f1.client, 8, "client");
     check_threads(f1.server, 8, "server");
-    listener->SubRef();
+    listener->internal_subref();
     for (FNET_Connection *conn: connections) {
-        conn->SubRef();
+        conn->internal_subref();
     }
 }
 

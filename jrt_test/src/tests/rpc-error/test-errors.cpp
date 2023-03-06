@@ -20,7 +20,7 @@ public:
     }
 
     void fini() {
-	    target->SubRef();
+	    target->internal_subref();
         target = nullptr;
         client = nullptr;
     }
@@ -51,7 +51,7 @@ TestErrors::testNoError()
     } else {
         EXPECT_TRUE(false);
     }
-    req1->SubRef();
+    req1->internal_subref();
 }
 
 
@@ -64,7 +64,7 @@ TestErrors::testNoSuchMethod()
     EXPECT_TRUE(req1->IsError());
     EXPECT_TRUE(0 == req1->GetReturn()->GetNumValues());
     EXPECT_TRUE(FRTE_RPC_NO_SUCH_METHOD == req1->GetErrorCode());
-    req1->SubRef();
+    req1->internal_subref();
 }
 
 
@@ -80,7 +80,7 @@ TestErrors::testWrongParameters()
     EXPECT_TRUE(req1->IsError());
     EXPECT_TRUE(0 == req1->GetReturn()->GetNumValues());
     EXPECT_TRUE(FRTE_RPC_WRONG_PARAMS == req1->GetErrorCode());
-    req1->SubRef();
+    req1->internal_subref();
 
     FRT_RPCRequest *req2 = client->AllocRPCRequest();
     req2->SetMethodName("test");
@@ -90,7 +90,7 @@ TestErrors::testWrongParameters()
     EXPECT_TRUE(req2->IsError());
     EXPECT_TRUE(0 == req2->GetReturn()->GetNumValues());
     EXPECT_TRUE(FRTE_RPC_WRONG_PARAMS == req2->GetErrorCode());
-    req2->SubRef();
+    req2->internal_subref();
 
     FRT_RPCRequest *req3 = client->AllocRPCRequest();
     req3->SetMethodName("test");
@@ -102,7 +102,7 @@ TestErrors::testWrongParameters()
     EXPECT_TRUE(req3->IsError());
     EXPECT_TRUE(0 == req3->GetReturn()->GetNumValues());
     EXPECT_TRUE(FRTE_RPC_WRONG_PARAMS == req3->GetErrorCode());
-    req3->SubRef();
+    req3->internal_subref();
 }
 
 
@@ -118,7 +118,7 @@ TestErrors::testWrongReturnValues()
     EXPECT_TRUE(req1->IsError());
     EXPECT_TRUE(0 == req1->GetReturn()->GetNumValues());
     EXPECT_TRUE(FRTE_RPC_WRONG_RETURN == req1->GetErrorCode());	
-    req1->SubRef();
+    req1->internal_subref();
 }
 
 
@@ -134,7 +134,7 @@ TestErrors::testMethodFailed()
     EXPECT_TRUE(req1->IsError());
     EXPECT_TRUE(0 == req1->GetReturn()->GetNumValues());
     EXPECT_TRUE(75000 == req1->GetErrorCode());	
-    req1->SubRef();
+    req1->internal_subref();
 
     FRT_RPCRequest *req2 = client->AllocRPCRequest();
     req2->SetMethodName("test");
@@ -145,7 +145,7 @@ TestErrors::testMethodFailed()
     EXPECT_TRUE(req2->IsError());
     EXPECT_TRUE(0 == req2->GetReturn()->GetNumValues());
     EXPECT_TRUE(75000 == req2->GetErrorCode());	
-    req2->SubRef();
+    req2->internal_subref();
 }
 
 

@@ -59,7 +59,7 @@ void
 PingProxy::finiRPC()
 {
     if (_target != nullptr) {
-        _target->SubRef();
+        _target->internal_subref();
         _target = nullptr;
     }
     _server.reset();
@@ -146,7 +146,7 @@ PingProxy::main(int argc, char **argv)
             retval = 1;
         }
     }
-    req->SubRef();
+    req->internal_subref();
     finiRPC();
     return retval;
 }

@@ -31,14 +31,14 @@ struct Server : public FRT_Invokable
 
     void rpc_hook(FRT_RPCRequest *req) {
         FNET_Connection *conn = req->GetConnection();
-        conn->AddRef(); // need to keep it alive
+        conn->internal_addref(); // need to keep it alive
         req->Detach();
         req->Return();  // will free request channel
         FRT_RPCRequest *r = orb.AllocRPCRequest();
         r->SetMethodName("frt.rpc.ping");
         // might re-use request channel before it is unlinked from hashmap
         orb.InvokeAsync(orb.GetTransport(), conn, r, 5.0, &receptor);
-        conn->SubRef(); // invocation will now keep the connection alive as needed
+        conn->internal_subref(); // invocation will now keep the connection alive as needed
     }
 };
 
@@ -61,11 +61,11 @@ TEST("detach return invoke") {
         }
         std::this_thread::sleep_for(10ms);
     }
-    req->SubRef();
-    target->SubRef();
+    req->internal_subref();
+    target->internal_subref();
     if (receptor.req.load() != nullptr) {
         EXPECT_TRUE(!receptor.req.load()->IsError());
-        receptor.req.load()->SubRef();
+        receptor.req.load()->internal_subref();
     }
     EXPECT_TRUE(receptor.req.load() != nullptr);
 };

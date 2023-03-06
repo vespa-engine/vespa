@@ -72,11 +72,11 @@ public:
     void finiRPC()
     {
         if (_req != nullptr) {
-            _req->SubRef();
+            _req->internal_subref();
             _req = nullptr;
         }
         if (_target != nullptr) {
-            _target->SubRef();
+            _target->internal_subref();
             _target = nullptr;
         }
         if (_frt) {

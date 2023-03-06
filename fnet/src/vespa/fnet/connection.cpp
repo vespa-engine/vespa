@@ -63,7 +63,7 @@ struct DoHandshakeWork : vespalib::Executor::Task {
     DoHandshakeWork(FNET_Connection *conn_in, vespalib::CryptoSocket *socket_in)
         : conn(conn_in), socket(socket_in)
     {
-        conn->AddRef();
+        conn->internal_addref();
     }
     void run() override {
         socket->do_handshake_work();
@@ -82,7 +82,7 @@ FNET_Connection::ResolveHandler::ResolveHandler(FNET_Connection *conn)
     : connection(conn),
       address()
 {
-    connection->AddRef();
+    connection->internal_addref();
 }
 
 void
@@ -94,7 +94,7 @@ FNET_Connection::ResolveHandler::handle_result(vespalib::SocketAddress result)
 
 FNET_Connection::ResolveHandler::~ResolveHandler()
 {
-    connection->SubRef();
+    connection->internal_subref();
 }
 
 
@@ -149,10 +149,9 @@ FNET_Connection::SetState(State state)
     }
 
     if ( ! toDelete.empty() ) {
-        for (const FNET_Channel::UP & ch : toDelete) {
-            (void) ch;
-            SubRef_NoLock();
-        }
+        const uint32_t cnt = toDelete.size();
+        const uint32_t reserve = 1;
+        internal_subref(cnt, reserve);
     }
 }
 
@@ -185,14 +184,14 @@ FNET_Connection::HandlePacket(uint32_t plen, uint32_t pcode,
             _channels.Unregister(channel);
 
             if (hp_rc == FNET_IPacketHandler::FNET_FREE_CHANNEL) {
-                SubRef_NoLock();
+                internal_subref(1, 1);
                 toDelete.reset(channel);
             }
         }
     } else if (CanAcceptChannels() && IsFromPeer(chid)) { // open new channel
         FNET_Channel::UP newChannel(new FNET_Channel(chid, this));
         channel = newChannel.get();
-        AddRef_NoLock();
+        internal_addref();
         BeforeCallback(guard, channel);
 
         if (_serverAdapter->InitChannel(channel, pcode)) {
@@ -203,7 +202,7 @@ FNET_Connection::HandlePacket(uint32_t plen, uint32_t pcode,
             AfterCallback(guard);
 
             if (hp_rc == FNET_IPacketHandler::FNET_FREE_CHANNEL) {
-                SubRef_NoLock();
+                internal_subref(1, 1);
             } else if (hp_rc == FNET_IPacketHandler::FNET_KEEP_CHANNEL) {
                 _channels.Register(newChannel.release());
             } else {
@@ -212,7 +211,7 @@ FNET_Connection::HandlePacket(uint32_t plen, uint32_t pcode,
         } else {
 
             AfterCallback(guard);
-            SubRef_NoLock();
+            internal_subref(1, 1);
             guard.unlock();
 
             LOG(debug, "Connection(%s): channel init failed", GetSpec());
@@ -489,8 +488,7 @@ FNET_Connection::FNET_Connection(FNET_TransportThread *owner,
       _myQueue(256),
       _output(0),
       _channels(),
-      _callbackTarget(nullptr),
-      _cleanup(nullptr)
+      _callbackTarget(nullptr)
 {
     assert(_socket && (_socket->get_fd() >= 0));
     _num_connections.fetch_add(1, std::memory_order_relaxed);
@@ -520,8 +518,7 @@ FNET_Connection::FNET_Connection(FNET_TransportThread *owner,
       _myQueue(256),
       _output(0),
       _channels(),
-      _callbackTarget(nullptr),
-      _cleanup(nullptr)
+      _callbackTarget(nullptr)
 {
     _num_connections.fetch_add(1, std::memory_order_relaxed);
 }
@@ -530,7 +527,6 @@ FNET_Connection::FNET_Connection(FNET_TransportThread *owner,
 FNET_Connection::~FNET_Connection()
 {
     assert(!_resolve_handler);
-    assert(_cleanup == nullptr);
     _num_connections.fetch_sub(1, std::memory_order_relaxed);
 }
 
@@ -576,12 +572,6 @@ FNET_Connection::handle_handshake_act()
     return ((GetState() == FNET_CONNECTING) && handshake());
 }
 
-void
-FNET_Connection::SetCleanupHandler(FNET_IConnectionCleanupHandler *handler)
-{
-    _cleanup = handler;
-}
-
 
 FNET_Channel*
 FNET_Connection::OpenChannel(FNET_IPacketHandler *handler,
@@ -598,7 +588,7 @@ FNET_Connection::OpenChannel(FNET_IPacketHandler *handler,
             *chid = newChannel->GetID();
         }
         WaitCallback(guard, nullptr);
-        AddRef_NoLock();
+        internal_addref();
         ret = newChannel.release();
         _channels.Register(ret);
     }
@@ -614,7 +604,7 @@ FNET_Connection::OpenChannel()
     {
         std::lock_guard<std::mutex> guard(_ioc_lock);
         chid = GetNextID();
-        AddRef_NoLock();
+        internal_addref();
     }
     return new FNET_Channel(chid, this);
 }
@@ -633,18 +623,20 @@ void
 FNET_Connection::FreeChannel(FNET_Channel *channel)
 {
     delete channel;
-    SubRef_HasLock(std::unique_lock<std::mutex>(_ioc_lock));
+    internal_subref();
 }
 
 
 void
 FNET_Connection::CloseAndFreeChannel(FNET_Channel *channel)
 {
-    std::unique_lock<std::mutex> guard(_ioc_lock);
-    WaitCallback(guard, channel);
-    _channels.Unregister(channel);
-    SubRef_HasLock(std::move(guard));
-    delete channel;
+    {
+        std::unique_lock<std::mutex> guard(_ioc_lock);
+        WaitCallback(guard, channel);
+        _channels.Unregister(channel);
+        delete channel;
+    }
+    internal_subref();
 }
 
 
@@ -668,7 +660,7 @@ FNET_Connection::PostPacket(FNET_Packet *packet, uint32_t chid)
     _writeWork++;
     _queue.QueuePacket_NoLock(packet, FNET_Context(chid));
     if ((writeWork == 0) && (GetState() == FNET_CONNECTED)) {
-        AddRef_NoLock();
+        internal_addref();
         guard.unlock();
         Owner()->EnableWrite(this, /* needRef = */ false);
     }
@@ -682,16 +674,6 @@ FNET_Connection::Sync()
     SyncPacket sp;
     PostPacket(&sp, FNET_NOID);
     sp.WaitFree();
-}
-
-
-void
-FNET_Connection::CleanupHook()
-{
-    if (_cleanup != nullptr) {
-        _cleanup->Cleanup(this);
-        _cleanup = nullptr;
-    }
 }
 
 

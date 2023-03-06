@@ -122,7 +122,7 @@ struct ServerSampler : public FRT_Invokable
         dataSet.sample(*req->GetReturn()); // server return before drop
 
         // keep request to sample return after drop
-        req->AddRef();
+        req->internal_addref();
         serverReq = req;
     }
 };
@@ -176,7 +176,7 @@ TEST("testExplicitShared") {
     req->GetParams()->AddSharedData(&blob);
 
     EXPECT_EQUAL(4, blob.refcnt);
-    req->SubRef();
+    req->internal_subref();
     EXPECT_EQUAL(1, blob.refcnt);
 }
 
@@ -262,10 +262,10 @@ TEST("testImplicitShared") {
     }
 
     if (serverSampler.serverReq != 0) {
-        serverSampler.serverReq->SubRef();
+        serverSampler.serverReq->internal_subref();
     }
-    req->SubRef();
-    target->SubRef();
+    req->internal_subref();
+    target->internal_subref();
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }

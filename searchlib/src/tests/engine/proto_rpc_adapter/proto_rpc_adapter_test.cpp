@@ -124,8 +124,8 @@ TEST_F(ProtoRpcAdapterTest, require_that_plain_rpc_ping_works) {
     req->SetMethodName("frt.rpc.ping");
     target->InvokeSync(req, 60.0);
     EXPECT_TRUE(req->CheckReturnTypes(""));
-    req->SubRef();
-    target->SubRef();
+    req->internal_subref();
+    target->internal_subref();
 }
 
 TEST_F(ProtoRpcAdapterTest, require_that_proto_rpc_search_works) {
@@ -145,9 +145,9 @@ TEST_F(ProtoRpcAdapterTest, require_that_proto_rpc_search_works) {
             EXPECT_EQ(std::string(rpc->GetErrorMessage()), std::string("Server not online"));
             adapter.set_online();
         }
-        rpc->SubRef();
+        rpc->internal_subref();
     }
-    target->SubRef();
+    target->internal_subref();
     SearchProtocolMetrics &metrics = adapter.metrics();
     EXPECT_EQ(metrics.query().latency.getCount(), 2);
     EXPECT_GT(metrics.query().latency.getTotal(), 0.0);
@@ -180,9 +180,9 @@ TEST_F(ProtoRpcAdapterTest, require_that_proto_rpc_getDocsums_works) {
             EXPECT_EQ(std::string(rpc->GetErrorMessage()), std::string("Server not online"));
             adapter.set_online();
         }
-        rpc->SubRef();
+        rpc->internal_subref();
     }
-    target->SubRef();
+    target->internal_subref();
     SearchProtocolMetrics &metrics = adapter.metrics();
     EXPECT_EQ(metrics.query().latency.getCount(), 0);
     EXPECT_EQ(metrics.docsum().latency.getCount(), 2);
@@ -208,9 +208,9 @@ TEST_F(ProtoRpcAdapterTest, require_that_proto_rpc_ping_works) {
             EXPECT_EQ(std::string(rpc->GetErrorMessage()), std::string("Server not online"));
             adapter.set_online();
         }
-        rpc->SubRef();
+        rpc->internal_subref();
     }
-    target->SubRef();
+    target->internal_subref();
     SearchProtocolMetrics &metrics = adapter.metrics();
     EXPECT_EQ(metrics.query().latency.getCount(), 0);
     EXPECT_EQ(metrics.docsum().latency.getCount(), 0);

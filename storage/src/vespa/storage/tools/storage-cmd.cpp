@@ -90,7 +90,7 @@ public:
                         req->GetErrorMessage());
                     continue;
                 }
-                req->SubRef();
+                req->internal_subref();
             }
 
             FRT_RPCRequest *req = supervisor.supervisor().AllocRPCRequest();
@@ -115,8 +115,8 @@ public:
                         req->GetErrorMessage());
                 }
             }
-            req->SubRef();
-            target->SubRef();
+            req->internal_subref();
+            target->internal_subref();
         }
         return retCode;
     }

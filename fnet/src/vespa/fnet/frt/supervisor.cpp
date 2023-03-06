@@ -31,7 +31,7 @@ FRT_Supervisor::~FRT_Supervisor()
 {
     _transport->detach(this);
     if (_connector != nullptr) {
-        _connector->SubRef();
+        _connector->internal_subref();
     }
 }
 
@@ -99,7 +99,7 @@ FRT_Supervisor::AllocRPCRequest(FRT_RPCRequest *tradein)
         if (tradein->Recycle()) {
             return tradein;
         }
-        tradein->SubRef();
+        tradein->internal_subref();
     }
     return new FRT_RPCRequest();
 }
@@ -113,7 +113,7 @@ FRT_Supervisor::InvokeVoid(FNET_Connection *conn, FRT_RPCRequest *req)
         ch->Send(req->CreateRequestPacket(false));
         ch->Free();
     } else {
-        req->SubRef();
+        req->internal_subref();
     }
 }
 

@@ -125,8 +125,8 @@ void perform_test(size_t thread_id, Client &client, Result &result, bool vital =
     BenchmarkTimer::benchmark(invoke, invoke, 0.5);
     EXPECT_GREATER_EQUAL(seq, loop_cnt);
     result.req_per_sec[thread_id] = double(loop_cnt) / t;
-    req->SubRef();
-    target->SubRef();
+    req->internal_subref();
+    target->internal_subref();
     TEST_BARRIER();
     if (thread_id == 0) {
         result.print();

@@ -31,8 +31,8 @@ RpcFileAcquirer::wait_for(const vespalib::string &file_ref, double timeout_s)
         LOG(warning, "could not acquire file '%s' (%d: %s)",
             file_ref.c_str(), req->GetErrorCode(), req->GetErrorMessage());
     }
-    req->SubRef();
-    target->SubRef();
+    req->internal_subref();
+    target->internal_subref();
     return path;
 }
 

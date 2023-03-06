@@ -85,7 +85,7 @@ void
 GetConfig::finiRPC()
 {
     if (_target != nullptr) {
-        _target->SubRef();
+        _target->internal_subref();
         _target = nullptr;
     }
     _server.reset();

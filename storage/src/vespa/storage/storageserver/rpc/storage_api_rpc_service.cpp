@@ -83,7 +83,7 @@ namespace {
 struct SubRefDeleter {
     template <typename T>
     void operator()(T* v) const noexcept {
-        v->SubRef();
+        v->internal_subref();
     }
 };
 

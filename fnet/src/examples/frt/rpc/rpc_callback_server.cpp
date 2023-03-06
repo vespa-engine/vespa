@@ -27,7 +27,7 @@ void do_callback(FRT_RPCRequest *req) {
                cb->GetErrorCode(),
                cb->GetErrorMessage());
     }
-    cb->SubRef();
+    cb->internal_subref();
     req->Return();
 }
 

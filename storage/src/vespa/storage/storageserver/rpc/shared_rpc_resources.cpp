@@ -35,7 +35,7 @@ public:
           _spec(spec)
     {}
     ~RpcTargetImpl() override {
-        _target->SubRef();
+        _target->internal_subref();
     }
     FRT_Target* get() noexcept override { return _target; }
     bool is_valid() const noexcept override { return _target->IsValid(); }

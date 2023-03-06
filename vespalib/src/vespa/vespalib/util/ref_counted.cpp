@@ -6,22 +6,22 @@
 namespace vespalib {
 
 void
-enable_ref_counted::internal_addref() const noexcept
+enable_ref_counted::internal_addref(uint32_t cnt) const noexcept
 {
     // relaxed because:
     // the thread obtaining the new reference already has a reference
-    auto prev = _refs.fetch_add(1, std::memory_order_relaxed);
+    auto prev = _refs.fetch_add(cnt, std::memory_order_relaxed);
     assert(prev > 0);
 }
 
 void
-enable_ref_counted::internal_subref() const noexcept
+enable_ref_counted::internal_subref(uint32_t cnt, [[maybe_unused]] uint32_t reserve) const noexcept
 {
     // release because:
     // our changes to the object must be visible to the deleter
-    auto prev = _refs.fetch_sub(1, std::memory_order_release);
-    assert(prev > 0);
-    if (prev == 1) {
+    auto prev = _refs.fetch_sub(cnt, std::memory_order_release);
+    assert(prev >= (reserve + cnt));
+    if (prev == cnt) {
         // acquire because:
         // we need to see all object changes before deleting it
         std::atomic_thread_fence(std::memory_order_acquire);
@@ -29,7 +29,7 @@ enable_ref_counted::internal_subref() const noexcept
     }
 }
 
-int32_t
+uint32_t
 enable_ref_counted::count_refs() const noexcept {
     auto result = _refs.load(std::memory_order_relaxed);
     assert(result > 0);
