@@ -55,6 +55,12 @@ const char *ImportedAttributeVectorReadGuard::getString(DocId doc, char *buffer,
     return _target_attribute.getString(getTargetLid(doc), buffer, sz);
 }
 
+vespalib::ConstArrayRef<char>
+ImportedAttributeVectorReadGuard::get_raw(DocId doc) const
+{
+    return _target_attribute.get_raw(getTargetLid(doc));
+}
+
 IAttributeVector::EnumHandle ImportedAttributeVectorReadGuard::getEnum(DocId doc) const {
     return _target_attribute.getEnum(getTargetLid(doc));
 }

@@ -43,6 +43,7 @@ public:
     largeint_t getInt(DocId doc) const override;
     double getFloat(DocId doc) const override;
     const char *getString(DocId doc, char *buffer, size_t sz) const override;
+    vespalib::ConstArrayRef<char> get_raw(DocId doc) const override;
     EnumHandle getEnum(DocId doc) const override;
     uint32_t get(DocId docId, largeint_t *buffer, uint32_t sz) const override;
     uint32_t get(DocId docId, double *buffer, uint32_t sz) const override;

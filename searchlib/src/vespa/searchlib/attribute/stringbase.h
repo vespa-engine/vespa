@@ -81,6 +81,7 @@ private:
 
     largeint_t getInt(DocId doc)  const override { return strtoll(get(doc), nullptr, 0); }
     double getFloat(DocId doc)    const override;
+    vespalib::ConstArrayRef<char> get_raw(DocId) const override;
     const char * getString(DocId doc, char * v, size_t sz) const override { (void) v; (void) sz; return get(doc); }
 
     long onSerializeForAscendingSort(DocId doc, void * serTo, long available, const common::BlobConverter * bc) const override;

@@ -48,6 +48,12 @@ NotImplementedAttribute::getString(DocId, char *, size_t) const {
     notImplemented();
 }
 
+vespalib::ConstArrayRef<char>
+NotImplementedAttribute::get_raw(DocId) const
+{
+    notImplemented();
+}
+
 uint32_t
 NotImplementedAttribute::get(DocId, largeint_t *, uint32_t) const {
     notImplemented();

@@ -95,6 +95,12 @@ FloatingPointAttribute::getString(DocId doc, char * s, size_t sz) const {
     return s;
 }
 
+vespalib::ConstArrayRef<char>
+FloatingPointAttribute::get_raw(DocId) const
+{
+    return {};
+}
+
 vespalib::MemoryUsage
 FloatingPointAttribute::getChangeVectorMemoryUsage() const
 {

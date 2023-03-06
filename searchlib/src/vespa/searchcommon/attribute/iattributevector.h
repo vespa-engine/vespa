@@ -140,6 +140,13 @@ public:
     virtual const char * getString(DocId doc, char * buffer, size_t sz) const = 0;
 
     /**
+     * Return raw value.
+     *
+     * TODO: Consider accessing via new IRawAttribute interface class.
+     */
+    virtual vespalib::ConstArrayRef<char> get_raw(DocId doc) const = 0;
+
+    /**
      * Returns the first value stored for the given document as an enum value.
      *
      * @param docId document identifier
@@ -370,6 +377,7 @@ public:
     virtual bool isPredicateType() const { return getBasicType() == BasicType::PREDICATE; }
     virtual bool isTensorType() const { return getBasicType() == BasicType::TENSOR; }
     virtual bool isReferenceType() const { return getBasicType() == BasicType::REFERENCE; }
+    virtual bool is_raw_type() const noexcept { return getBasicType() == BasicType::RAW; }
 
     /**
      * Returns whether this is a multi value attribute.
