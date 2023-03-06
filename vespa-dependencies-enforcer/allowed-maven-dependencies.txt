@@ -28,7 +28,6 @@ com.google.code.findbugs:jsr305:3.0.2
 com.google.errorprone:error_prone_annotations:2.18.0
 com.google.guava:failureaccess:1.0.1
 com.google.guava:guava:27.1-jre
-com.google.inject:guice:4.2.3
 com.google.inject:guice:4.2.3:no_aop
 com.google.j2objc:j2objc-annotations:1.1
 com.google.protobuf:protobuf-java:3.21.7
@@ -221,6 +220,7 @@ xml-apis:xml-apis:1.4.01
 com.github.luben:zstd-jni:1.5.2-1
 com.github.tomakehurst:wiremock-jre8-standalone:2.35.0
 com.google.guava:guava-testlib:27.1-jre
+com.google.inject:guice:4.2.3
 com.google.jimfs:jimfs:1.2
 junit:junit:4.13.2
 net.bytebuddy:byte-buddy:1.11.19
