@@ -17,6 +17,8 @@ import com.yahoo.vespa.config.search.vsm.VsmfieldsConfig;
 import com.yahoo.vespa.config.search.vsm.VsmsummaryConfig;
 import com.yahoo.vespa.configdefinition.IlscriptsConfig;
 
+import java.util.List;
+
 /**
  * A search cluster of type streaming.
  * 
@@ -77,6 +79,15 @@ public class StreamingSearchCluster extends SearchCluster implements
             throw new IllegalArgumentException("Document type name '" + docTypeName +
                                                "' must be the same as the schema name '" + schema.getName() + "'");
         this.derivedConfig = new DerivedConfiguration(schema, deployState);
+    }
+
+    @Override
+    public List<DocumentDatabase> getDocumentDbs() {
+        if (derived() == null) {
+            throw new IllegalArgumentException("missing derivedConfig");
+        }
+        var db = new DocumentDatabase(this, docTypeName, derived());
+        return List.of(db);
     }
 
     @Override

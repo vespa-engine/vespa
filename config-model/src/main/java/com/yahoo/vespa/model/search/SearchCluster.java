@@ -55,6 +55,9 @@ public abstract class SearchCluster extends TreeConfigProducer<AnyConfigProducer
      */
     public abstract void deriveFromSchemas(DeployState deployState);
 
+    /** Returns the document databases contained in this cluster */
+    public abstract List<DocumentDatabase> getDocumentDbs();
+
     /** Returns a list of the document type names used in this search cluster */
     public List<String> getDocumentNames() {
         return schemas.values()

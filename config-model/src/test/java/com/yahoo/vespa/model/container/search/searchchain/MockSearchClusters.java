@@ -9,8 +9,10 @@ import com.yahoo.config.model.producer.AbstractConfigProducerRoot;
 import com.yahoo.prelude.fastsearch.DocumentdbInfoConfig;
 import com.yahoo.search.config.IndexInfoConfig;
 import com.yahoo.vespa.configdefinition.IlscriptsConfig;
+import com.yahoo.vespa.model.search.DocumentDatabase;
 import com.yahoo.vespa.model.search.SearchCluster;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class MockSearchClusters {
@@ -26,6 +28,11 @@ public class MockSearchClusters {
 
         @Override
         public void deriveFromSchemas(DeployState deployState) { }
+
+        @Override
+        public List<DocumentDatabase> getDocumentDbs() {
+            return List.of();
+        }
 
         @Override
         public int getRowBits() {
