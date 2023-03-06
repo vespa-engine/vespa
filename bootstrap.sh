@@ -42,7 +42,7 @@ echo "Using maven command: ${MAVEN_CMD}"
 echo "Using maven extra opts: ${MAVEN_EXTRA_OPTS}"
 
 mvn_install() {
-    ${MAVEN_CMD} --no-snapshot-updates -Dmaven.wagon.http.retryHandler.count=5 clean install ${MAVEN_EXTRA_OPTS} "$@"
+    ${MAVEN_CMD} --batch-mode --no-snapshot-updates -Dmaven.wagon.http.retryHandler.count=5 clean install ${MAVEN_EXTRA_OPTS} "$@"
 }
 
 # Generate vtag map
