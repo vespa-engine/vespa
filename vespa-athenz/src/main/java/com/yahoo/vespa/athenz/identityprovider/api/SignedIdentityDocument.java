@@ -45,4 +45,10 @@ public record SignedIdentityDocument(String signature, int signingKeyVersion, Ve
 
     public boolean outdated() { return documentVersion < DEFAULT_DOCUMENT_VERSION; }
 
+    public SignedIdentityDocument withServiceIdentity(AthenzIdentity identity) {
+        return new SignedIdentityDocument(signature, signingKeyVersion, providerUniqueId, providerService, documentVersion, configServerHostname, instanceHostname, createdAt,
+             ipAddresses, identityType, clusterType, ztsUrl, identity);
+    }
+
+
 }
