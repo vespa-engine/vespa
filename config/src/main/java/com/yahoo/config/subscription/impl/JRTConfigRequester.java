@@ -26,6 +26,7 @@ import java.util.logging.Logger;
 import static com.yahoo.jrt.ErrorCode.CONNECTION;
 import static java.util.logging.Level.FINE;
 import static java.util.logging.Level.FINEST;
+import static java.util.logging.Level.INFO;
 import static java.util.logging.Level.SEVERE;
 import static java.util.logging.Level.WARNING;
 
@@ -148,6 +149,9 @@ public class JRTConfigRequester implements RequestWaiter {
 
         if (jrtReq.errorCode() == CONNECTION) {
             log.log(FINE, () -> "Request failed: " + jrtReq.errorMessage() +
+                    "\nConnection spec: " + connection);
+        } else if (jrtReq.errorCode() == ErrorCode.APPLICATION_NOT_LOADED) {
+            log.log(INFO, () -> "Request failed: " + jrtReq.errorMessage() +
                     "\nConnection spec: " + connection);
         } else if (timeForLastLogWarning.isBefore(Instant.now().minus(delayBetweenWarnings))) {
             log.log(WARNING, "Request failed: " + ErrorCode.getName(jrtReq.errorCode()) +

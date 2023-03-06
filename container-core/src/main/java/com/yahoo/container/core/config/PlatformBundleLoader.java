@@ -7,6 +7,7 @@ import org.osgi.framework.Bundle;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -41,7 +42,7 @@ public class PlatformBundleLoader {
 
     public void useBundles(List<String> bundlePaths) {
         if (hasLoadedBundles) {
-            log.fine(() -> "Platform bundles have already been installed." +
+            log.log(Level.FINE, () -> "Platform bundles have already been installed." +
                     "\nInstalled bundles: " + installedBundles +
                     "\nGiven files: " + bundlePaths);
             return;
@@ -65,9 +66,9 @@ public class PlatformBundleLoader {
     }
 
     private List<Bundle> installBundleFromDisk(String bundlePath) {
-        log.info("Installing bundle from disk: " + bundlePath);
+        log.log(Level.FINE, "Installing bundle from disk: " + bundlePath);
         List<Bundle> bundles = installer.installBundles(bundlePath, osgi);
-        log.fine("Installed " + bundles.size() + " bundles for file " + bundlePath);
+        log.log(Level.FINE, "Installed " + bundles.size() + " bundles for file " + bundlePath);
         return bundles;
     }
 
