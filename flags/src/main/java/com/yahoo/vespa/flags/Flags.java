@@ -46,6 +46,16 @@ public class Flags {
 
     private static volatile TreeMap<FlagId, FlagDefinition> flags = new TreeMap<>();
 
+    public static final UnboundBooleanFlag DROP_CACHES = defineFeatureFlag(
+            "drop-caches", false,
+            List.of("hakonhall", "baldersheim"), "2023-03-06", "2023-04-05",
+            "Drop caches on tenant hosts",
+            "Takes effect on next tick",
+            ZONE_ID,
+            // The application ID is the exclusive application ID associated with the host,
+            // if any, or otherwise hosted-vespa:tenant-host:default.
+            APPLICATION_ID);
+
     public static final UnboundDoubleFlag DEFAULT_TERM_WISE_LIMIT = defineDoubleFlag(
             "default-term-wise-limit", 1.0,
             List.of("baldersheim"), "2020-12-02", "2023-12-31",
