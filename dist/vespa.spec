@@ -466,6 +466,15 @@ VERSION=%{version} CI=true make -C client/go install-all
 
 %check
 %if ! 0%{?installdir:1}
+%if 0%{?_java_home:1}
+export JAVA_HOME=%{?_java_home}
+%else
+export JAVA_HOME=/usr/lib/jvm/java-17-openjdk
+%endif
+export PATH="$JAVA_HOME/bin:$PATH"
+%if 0%{?el8}
+python3.9 -m pip install --user pytest
+%endif
 export PYTHONPATH="$PYTHONPATH:/usr/local/lib/$(basename $(readlink -f $(which python3)))/site-packages"
 #%{?_use_mvn_wrapper:./mvnw}%{!?_use_mvn_wrapper:mvn} --batch-mode -nsu -T 1C -Dmaven.javadoc.skip=true test
 make test ARGS="--output-on-failure %{_smp_mflags}"
