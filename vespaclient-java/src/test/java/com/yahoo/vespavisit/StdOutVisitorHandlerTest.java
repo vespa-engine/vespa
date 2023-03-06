@@ -156,4 +156,27 @@ public class StdOutVisitorHandlerTest {
         }
     }
 
+    @Test
+    void nothing_is_rendered_if_null_render_option_is_specified() {
+        var docType = new DocumentType("foo");
+        docType.addField("bar", DataType.STRING);
+
+        var params = createHandlerParams(true, true, true);
+        params.nullRender = true;
+
+        var out            = new ByteArrayOutputStream();
+        var visitorHandler = new StdOutVisitorHandler(params, new PrintStream(out, true));
+        var dataHandler    = visitorHandler.getDataHandler();
+        var controlSession = mock(VisitorControlSession.class);
+        dataHandler.setSession(controlSession);
+
+        dataHandler.onMessage(createPutWithDocAndValue(docType, "id:baz:foo::1", "fluffy\nbunnies"),  mock(AckToken.class));
+        dataHandler.onMessage(createRemoveForDoc("id:baz:foo::2"),                                    mock(AckToken.class));
+        dataHandler.onMessage(createPutWithDocAndValue(docType, "id:baz:foo::3", "\r\ncool fox\r\n"), mock(AckToken.class));
+        dataHandler.onDone();
+
+        String output = out.toString().trim();
+        assertEquals("", output);
+    }
+
 }
