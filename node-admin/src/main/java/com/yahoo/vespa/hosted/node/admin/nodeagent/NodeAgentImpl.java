@@ -483,6 +483,8 @@ public class NodeAgentImpl implements NodeAgent {
                 storageMaintainer.cleanDiskIfFull(context);
                 storageMaintainer.handleCoreDumpsForContainer(context, container, false);
 
+                wireguardTasks.forEach(task -> task.converge(context));
+
                 if (downloadImageIfNeeded(context, container)) {
                     context.log(logger, "Waiting for image to download " + context.node().wantedDockerImage().get().asString());
                     return;
@@ -498,7 +500,6 @@ public class NodeAgentImpl implements NodeAgent {
                 }
 
                 aclMaintainer.ifPresent(maintainer -> maintainer.converge(context));
-                wireguardTasks.forEach(task -> task.converge(context));
                 startServicesIfNeeded(context);
                 resumeNodeIfNeeded(context);
                 if (healthChecker.isPresent()) {
