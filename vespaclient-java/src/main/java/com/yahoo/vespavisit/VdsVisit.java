@@ -381,6 +381,13 @@ public class VdsVisit {
                 .type(Number.class)
                 .build());
 
+        options.addOption(Option.builder()
+                .longOpt("nullrender")
+                .desc("Process documents, but do not render any output. Overrides all other output options. " +
+                      "Used to benchmark whether document rendering is the bottleneck when processing documents.")
+                .hasArg(false)
+                .build());
+
         return options;
     }
 
@@ -399,6 +406,7 @@ public class VdsVisit {
         private boolean jsonLinesOutput = false;
         private boolean tensorShortForm = false; // TODO Vespa 9: change default to true
         private boolean tensorDirectValues = false; // TODO Vespa 9: change default to true
+        private boolean nullRender = false;
         private int slices = 1;
         private int sliceId = 0;
 
@@ -506,6 +514,14 @@ public class VdsVisit {
 
         public void setTensorDirectValues(boolean tensorDirectValues) {
             this.tensorDirectValues = tensorDirectValues;
+        }
+
+        public boolean nullRender() {
+            return nullRender;
+        }
+
+        public void setNullRender(boolean nullRender) {
+            this.nullRender = nullRender;
         }
 
         public int slices() {
@@ -659,6 +675,9 @@ public class VdsVisit {
             }
             if (line.hasOption("tensorvalues")) {
                 allParams.setTensorDirectValues(true);
+            }
+            if (line.hasOption("nullrender")) {
+                allParams.setNullRender(true);
             }
             if (line.hasOption("slices") != line.hasOption("sliceid")) {
                 throw new IllegalArgumentException("Both --slices and --sliceid must be specified when visiting with slicing");
@@ -848,6 +867,7 @@ public class VdsVisit {
         handlerParams.outputFormat         = params.stdOutHandlerOutputFormat();
         handlerParams.tensorShortForm      = params.tensorShortForm();
         handlerParams.tensorDirectValues   = params.tensorDirectValues();
+        handlerParams.nullRender           = params.nullRender();
         handler = new StdOutVisitorHandler(handlerParams);
 
         if (visitorParameters.getResumeFileName() != null) {

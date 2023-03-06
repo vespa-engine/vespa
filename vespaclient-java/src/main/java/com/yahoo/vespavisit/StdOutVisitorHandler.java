@@ -55,6 +55,7 @@ public class StdOutVisitorHandler extends VdsVisitHandler {
         OutputFormat outputFormat  = OutputFormat.JSON;
         boolean tensorShortForm    = false; // TODO Vespa 9: change default to true
         boolean tensorDirectValues = false; // TODO Vespa 9: change default to true
+        boolean nullRender         = false;
 
         boolean usesJson() {
             return outputFormat == OutputFormat.JSON || outputFormat == OutputFormat.JSONL;
@@ -157,6 +158,9 @@ public class StdOutVisitorHandler extends VdsVisitHandler {
         @Override
         public void onDocument(Document doc, long timestamp) {
             try {
+                if (params.nullRender) {
+                    return;
+                }
                 if (lastLineIsProgress) {
                     System.err.print('\r');
                 }
@@ -187,6 +191,9 @@ public class StdOutVisitorHandler extends VdsVisitHandler {
         @Override
         public void onRemove(DocumentId docId) {
             try {
+                if (params.nullRender) {
+                    return;
+                }
                 if (lastLineIsProgress) {
                     System.err.print('\r');
                 }
@@ -263,7 +270,7 @@ public class StdOutVisitorHandler extends VdsVisitHandler {
 
         @Override
         public synchronized void onDone() {
-            if ((params.outputFormat == OutputFormat.JSON) && !params.printIds) {
+            if ((params.outputFormat == OutputFormat.JSON) && !params.printIds && !params.nullRender) {
                 if (first) {
                     out.print('[');
                 }
