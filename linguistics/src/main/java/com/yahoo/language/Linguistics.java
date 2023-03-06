@@ -47,7 +47,7 @@ public interface Linguistics {
 
     /**
      * Returns a thread-unsafe tokenizer.
-     * This is used at indexing time to produce a optionally stemmed and
+     * This is used at indexing time to produce an optionally stemmed and
      * transformed (accent normalized) stream of indexable tokens.
      */
     Tokenizer getTokenizer();

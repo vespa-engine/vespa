@@ -3,7 +3,6 @@ package com.yahoo.vespa.hosted.provision.autoscale;
 
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.applications.Cluster;
-import com.yahoo.vespa.hosted.provision.applications.ScalingEvent;
 
 import java.time.Duration;
 import java.util.List;
@@ -24,8 +23,6 @@ public class ClusterNodesTimeseries {
     /** The measurements for all nodes in this snapshot */
     private final List<NodeTimeseries> timeseries;
 
-    private final String description;
-
     public ClusterNodesTimeseries(Duration period, Cluster cluster, NodeList clusterNodes, MetricsDb db) {
         this.clusterNodes = clusterNodes;
 
@@ -34,7 +31,6 @@ public class ClusterNodesTimeseries {
         // If either this is the case, or there is a generation change, we ignore
         // the first warmupWindow metrics.
         var timeseries = db.getNodeTimeseries(period.plus(warmupDuration.multipliedBy(4)), clusterNodes);
-        var initialTimeseries = timeseries;
         if (cluster.lastScalingEvent().isPresent()) {
             long currentGeneration = cluster.lastScalingEvent().get().generation();
             timeseries = keepGenerationAfterWarmup(timeseries, currentGeneration);
@@ -42,20 +38,11 @@ public class ClusterNodesTimeseries {
         timeseries = keep(timeseries, snapshot -> snapshot.inService() && snapshot.stable());
         timeseries = keep(timeseries, snapshot -> ! snapshot.at().isBefore(db.clock().instant().minus(period)));
         this.timeseries = timeseries;
-        if (isEmpty() && initialTimeseries.size() > 0)
-            description = initialTimeseries.get(0).description(cluster.lastScalingEvent().map(ScalingEvent::generation).orElse(-1L), clusterNodes);
-        else
-            description = "";
     }
 
     private ClusterNodesTimeseries(NodeList clusterNodes, List<NodeTimeseries> timeseries) {
         this.clusterNodes = clusterNodes;
         this.timeseries = timeseries;
-        this.description = "";
-    }
-
-    public String description() {
-        return description;
     }
 
     public boolean isEmpty() {
