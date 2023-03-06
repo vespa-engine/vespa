@@ -62,7 +62,7 @@ public class Autoscaler {
                                                      clusterNodes,
                                                      nodeRepository.metricsDb(),
                                                      nodeRepository.clock());
-        if (clusterModel.isEmpty()) return Autoscaling.empty(clusterModel.description());
+        if (clusterModel.isEmpty()) return Autoscaling.empty();
 
         if (! limits.isEmpty() && cluster.minResources().equals(cluster.maxResources()))
             return Autoscaling.dontScale(Autoscaling.Status.unavailable, "Autoscaling is not enabled", clusterModel);
