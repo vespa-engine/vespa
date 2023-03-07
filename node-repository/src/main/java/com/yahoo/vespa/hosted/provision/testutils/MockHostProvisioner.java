@@ -65,8 +65,8 @@ public class MockHostProvisioner implements HostProvisioner {
     @Override
     public void provisionHosts(List<Integer> provisionIndices, NodeType hostType, NodeResources resources,
                                ApplicationId applicationId, Version osVersion, HostSharing sharing,
-                               Optional<ClusterSpec.Type> clusterType, CloudAccount cloudAccount,
-                               Consumer<List<ProvisionedHost>> provisionedHostsConsumer) {
+                               Optional<ClusterSpec.Type> clusterType, Optional<ClusterSpec.Id> clusterId,
+                               CloudAccount cloudAccount, Consumer<List<ProvisionedHost>> provisionedHostsConsumer) {
         Flavor hostFlavor = hostFlavors.get(clusterType.orElse(ClusterSpec.Type.content));
         if (hostFlavor == null)
             hostFlavor = flavors.stream()
