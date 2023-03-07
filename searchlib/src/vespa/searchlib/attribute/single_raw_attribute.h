@@ -3,8 +3,7 @@
 #pragma once
 
 #include "not_implemented_attribute.h"
-#include "raw_buffer_type_mapper.h"
-#include <vespa/vespalib/datastore/array_store.h>
+#include "raw_buffer_store.h"
 #include <vespa/vespalib/util/rcuvector.h>
 
 namespace search::attribute {
@@ -17,17 +16,12 @@ class SingleRawAttribute : public NotImplementedAttribute
     using AtomicEntryRef = vespalib::datastore::AtomicEntryRef;
     using EntryRef = vespalib::datastore::EntryRef;
     using RefVector = vespalib::RcuVectorBase<AtomicEntryRef>;
-    using RefType = vespalib::datastore::EntryRefT<19>;
-    using ArrayStoreType = vespalib::datastore::ArrayStore<char, RefType, RawBufferTypeMapper>;
 
     RefVector                           _ref_vector;
-    ArrayStoreType                      _array_store;
-    vespalib::datastore::CompactionSpec _compaction_spec;
+    RawBufferStore                      _raw_store;
 
     vespalib::MemoryUsage update_stat();
     EntryRef acquire_entry_ref(DocId docid) const noexcept { return _ref_vector.acquire_elem_ref(docid).load_acquire(); }
-    EntryRef set_raw(vespalib::ConstArrayRef<char> raw);
-    vespalib::ConstArrayRef<char> get_raw(EntryRef ref) const;
 public:
     SingleRawAttribute(const vespalib::string& name, const Config& config);
     ~SingleRawAttribute() override;
