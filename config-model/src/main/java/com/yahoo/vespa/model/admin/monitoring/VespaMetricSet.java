@@ -5,6 +5,7 @@ import com.yahoo.metrics.ConfigServerMetrics;
 import com.yahoo.metrics.ContainerMetrics;
 import com.yahoo.metrics.DistributorMetrics;
 import com.yahoo.metrics.LogdMetrics;
+import com.yahoo.metrics.RoutingLayerMetrics;
 import com.yahoo.metrics.SearchNodeMetrics;
 import com.yahoo.metrics.SentinelMetrics;
 import com.yahoo.metrics.SlobrokMetrics;
@@ -101,9 +102,11 @@ public class VespaMetricSet {
         addMetric(metrics, StorageMetrics.VDS_SERVER_FNET_NUM_CONNECTIONS.count());
 
         // NodeAdmin certificate
-        addMetric(metrics, NodeAdminMetrics.WORKER_CONNECTIONS.max()); // Hosted Vespa only (routing layer)
         addMetric(metrics, NodeAdminMetrics.ENDPOINT_CERTIFICATE_EXPIRY_SECONDS.baseName());
         addMetric(metrics, NodeAdminMetrics.NODE_CERTIFICATE_EXPIRY_SECONDS.baseName());
+
+        // Routing layer metrics
+        addMetric(metrics, RoutingLayerMetrics.WORKER_CONNECTIONS.max()); // Hosted Vespa only (routing layer)
 
         return metrics;
     }
