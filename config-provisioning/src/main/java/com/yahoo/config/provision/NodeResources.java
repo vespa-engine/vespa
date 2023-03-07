@@ -15,7 +15,7 @@ public class NodeResources {
     private static final double cpuUnitCost =    0.11;
     private static final double memoryUnitCost = 0.011;
     private static final double diskUnitCost =   0.0004;
-    private static final double gpuUnitCost =    0; // TODO(mpolden): Decide cost of this
+    private static final double gpuUnitCost =    0.075;
 
     private static final NodeResources zero = new NodeResources(0, 0, 0, 0);
     private static final NodeResources unspecified = new NodeResources(0, 0, 0, 0);
@@ -129,10 +129,6 @@ public class NodeResources {
             validate(memoryGb, "memory");
         }
 
-        private double totalMemory() {
-            return count * memoryGb;
-        }
-
         private boolean lessThan(GpuResources other) {
             return this.count < other.count ||
                    this.memoryGb < other.memoryGb;
@@ -219,7 +215,7 @@ public class NodeResources {
         return (vcpu * cpuUnitCost) +
                (memoryGb * memoryUnitCost) +
                (diskGb * diskUnitCost) +
-               (gpuResources.totalMemory() * gpuUnitCost);
+               (gpuResources.count * gpuResources.memoryGb * gpuUnitCost);
     }
 
     public NodeResources withVcpu(double vcpu) {
