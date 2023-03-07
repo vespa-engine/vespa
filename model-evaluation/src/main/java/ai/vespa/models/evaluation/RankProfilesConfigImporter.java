@@ -129,11 +129,15 @@ public class RankProfilesConfigImporter {
                 referencedFunctions.put(argReference, function);
             }
             else if (returnType.isPresent()) { // Return type always follows the function in properties
-                ExpressionFunction function = referencedFunctions.get(returnType.get());
-                function = function.withReturnType(TensorType.fromSpec(property.value()));
-                if (returnType.get().isFree())
-                    functions.put(returnType.get(), function);
-                referencedFunctions.put(returnType.get(), function);
+                FunctionReference functionRef = returnType.get();
+                ExpressionFunction function = referencedFunctions.get(functionRef);
+                TensorType type = TensorType.fromSpec(property.value());
+                function = function.withReturnType(type);
+                if (functionRef.isFree())
+                    functions.put(functionRef, function);
+                referencedFunctions.put(functionRef, function);
+                declaredTypes.put(function.getName(), type); // "foo"
+                declaredTypes.put(functionRef.serialForm(), type); // "rankingExpression(foo)"
             }
             else if (property.name().equals("vespa.rank.firstphase")) { // Include in addition to functions
                 firstPhase = new ExpressionFunction("firstphase", new ArrayList<>(),
