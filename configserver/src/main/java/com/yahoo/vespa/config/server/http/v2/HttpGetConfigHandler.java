@@ -4,31 +4,27 @@ package com.yahoo.vespa.config.server.http.v2;
 import com.yahoo.component.annotation.Inject;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
-import java.util.logging.Level;
 import com.yahoo.vespa.config.protocol.ConfigResponse;
 import com.yahoo.vespa.config.server.RequestHandler;
-import com.yahoo.vespa.config.server.http.v2.request.HttpConfigRequests;
-import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.config.server.http.HttpConfigRequest;
 import com.yahoo.vespa.config.server.http.HttpConfigResponse;
 import com.yahoo.vespa.config.server.http.HttpHandler;
-
+import com.yahoo.vespa.config.server.http.v2.request.HttpConfigRequests;
+import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import java.util.Optional;
+import java.util.logging.Level;
 
 /**
  * HTTP handler for a getConfig operation
  *
  * @author Ulf Lilleengen
- * @since 5.1
  */
 public class HttpGetConfigHandler extends HttpHandler {
 
     private final TenantRepository tenantRepository;
 
     @Inject
-    public HttpGetConfigHandler(HttpHandler.Context ctx,
-                                TenantRepository tenantRepository)
-    {
+    public HttpGetConfigHandler(HttpHandler.Context ctx, TenantRepository tenantRepository) {
         super(ctx);
         this.tenantRepository = tenantRepository;
     }
@@ -45,6 +41,8 @@ public class HttpGetConfigHandler extends HttpHandler {
         log.log(Level.FINE, () -> "nocache=" + request.noCache());
         ConfigResponse config = requestHandler.resolveConfig(request.getApplicationId(), request, Optional.empty());
         if (config == null) HttpConfigRequest.throwModelNotReady();
+        if (request.requiredGeneration().isPresent() && request.requiredGeneration().get() != config.getGeneration())
+            HttpConfigRequest.throwPreconditionFailed(request.requiredGeneration().get());
         return config;
     }
 }

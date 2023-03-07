@@ -30,15 +30,18 @@ import java.util.Set;
  */
 public class HttpConfigRequest implements GetConfigRequest, TenantRequest {
 
-    private static final String HTTP_PROPERTY_NOCACHE = "noCache";
+    private static final String NOCACHE = "noCache";
+    private static final String REQUIRED_GENERATION = "requiredGeneration";
     private final ConfigKey<?> key;
     private final ApplicationId appId;
     private final boolean noCache;
+    private final Optional<Long> requiredGeneration;
 
-    private HttpConfigRequest(ConfigKey<?> key, ApplicationId appId, boolean noCache) {
+    private HttpConfigRequest(ConfigKey<?> key, ApplicationId appId, boolean noCache, Optional<Long> requiredGeneration) {
         this.key = key;
         this.appId = appId;
         this.noCache = noCache;
+        this.requiredGeneration = requiredGeneration;
     }
 
     private static ConfigKey<?> fromRequestV1(HttpRequest req) {
@@ -59,7 +62,10 @@ public class HttpConfigRequest implements GetConfigRequest, TenantRequest {
     }
 
     public static HttpConfigRequest createFromRequestV1(HttpRequest req) {
-        return new HttpConfigRequest(fromRequestV1(req), ApplicationId.defaultId(), req.getBooleanProperty(HTTP_PROPERTY_NOCACHE));
+        return new HttpConfigRequest(fromRequestV1(req),
+                                     ApplicationId.defaultId(),
+                                     req.getBooleanProperty(NOCACHE),
+                                     requiredGeneration(req));
     }
 
     public static HttpConfigRequest createFromRequestV2(HttpRequest req) {
@@ -89,7 +95,8 @@ public class HttpConfigRequest implements GetConfigRequest, TenantRequest {
         cNamespace = nns.second;
         return new HttpConfigRequest(new ConfigKey<>(cName, cId, cNamespace),
                                      new ApplicationId.Builder().applicationName(application).tenant(tenant).build(),
-                                     req.getBooleanProperty(HTTP_PROPERTY_NOCACHE));
+                                     req.getBooleanProperty(NOCACHE),
+                                     requiredGeneration(req));
     }
 
     // The URL pattern with full app id given
@@ -117,7 +124,10 @@ public class HttpConfigRequest implements GetConfigRequest, TenantRequest {
                               .applicationName(application)
                               .instanceName(instance)
                               .build();
-        return new HttpConfigRequest(new ConfigKey<>(cName, cId, cNamespace), appId, req.getBooleanProperty(HTTP_PROPERTY_NOCACHE));
+        return new HttpConfigRequest(new ConfigKey<>(cName, cId, cNamespace),
+                                     appId,
+                                     req.getBooleanProperty(NOCACHE),
+                                     requiredGeneration(req));
     }
 
     /**
@@ -144,7 +154,11 @@ public class HttpConfigRequest implements GetConfigRequest, TenantRequest {
     public static void throwModelNotReady() {
         throw new NotFoundException("Config not available, verify that an application package has been deployed and activated.");
     }
-    
+
+    public static void throwPreconditionFailed(long requiredGeneration) {
+        throw new PreconditionFailedException("Config for required generation " + requiredGeneration + " could not be found.");
+    }
+
     /**
      * If the given config is produced by the model at all
      *
@@ -198,5 +212,12 @@ public class HttpConfigRequest implements GetConfigRequest, TenantRequest {
 
     @Override
     public PayloadChecksums configPayloadChecksums() { return PayloadChecksums.empty(); }
+
+    public Optional<Long> requiredGeneration() { return requiredGeneration; }
+
+    static Optional<Long> requiredGeneration(HttpRequest req) {
+        Optional<String> requiredGeneration = Optional.ofNullable(req.getProperty(REQUIRED_GENERATION));
+        return requiredGeneration.map(Long::parseLong);
+    }
 
 }
