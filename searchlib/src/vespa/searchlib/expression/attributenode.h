@@ -46,7 +46,7 @@ public:
     AttributeNode(const search::attribute::IAttributeVector & attribute);
     AttributeNode(const AttributeNode & attribute);
     AttributeNode & operator = (const AttributeNode & attribute);
-    ~AttributeNode();
+    ~AttributeNode() override;
     void setDocId(DocId docId) const { _scratchResult->setDocId(docId); }
     const search::attribute::IAttributeVector *getAttribute() const {
         return _scratchResult ? _scratchResult->getAttribute() : nullptr;
@@ -59,7 +59,7 @@ public:
     class Handler
     {
     public:
-        virtual ~Handler() { }
+        virtual ~Handler() = default;
         virtual void handle(const AttributeResult & r) = 0;
     };
 private:

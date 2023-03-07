@@ -140,7 +140,8 @@ DocumentFieldNode::onPrepare(bool preserveAccurateTypes)
     }
 }
 
-void DocumentFieldNode::onDocType(const DocumentType & docType)
+void
+DocumentFieldNode::onDocType(const DocumentType & docType)
 {
     LOG(debug, "DocumentFieldNode::onDocType(this=%p)", this);
     _fieldPath.clear();
@@ -173,12 +174,14 @@ private:
 
 char DefaultValue::null = 0;
 
-void DefaultValue::set(const ResultNode&)
+void
+DefaultValue::set(const ResultNode&)
 {
     throw std::runtime_error("DefaultValue::set(const ResultNode&) is not possible.");
 }
 
-void FieldValue2ResultNode::set(const ResultNode&)
+void
+FieldValue2ResultNode::set(const ResultNode&)
 {
     throw std::runtime_error("FieldValue2ResultNode::set(const ResultNode&) is not possible.");
 }
@@ -192,7 +195,8 @@ void DocumentFieldNode::onDoc(const Document & doc)
     _handler->reset();
 }
 
-bool DocumentFieldNode::onExecute() const
+bool
+DocumentFieldNode::onExecute() const
 {
     _doc->iterateNested(_fieldPath.getFullRange(), *_handler);
     return true;
@@ -237,12 +241,14 @@ DocumentFieldNode::Handler::onStructStart(const Content & c)
 }
 
 
-Serializer & DocumentFieldNode::onSerialize(Serializer & os) const
+Serializer &
+DocumentFieldNode::onSerialize(Serializer & os) const
 {
     return os << _fieldName << _value;
 }
 
-Deserializer & DocumentFieldNode::onDeserialize(Deserializer & is)
+Deserializer &
+DocumentFieldNode::onDeserialize(Deserializer & is)
 {
     return is >> _fieldName >> _value;
 }

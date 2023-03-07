@@ -4,8 +4,7 @@
 #include "numericresultnode.h"
 #include <vespa/vespalib/util/sort.h>
 
-namespace search {
-namespace expression {
+namespace search ::expression {
 
 class FloatResultNode final : public NumericResultNode
 {
@@ -54,5 +53,3 @@ private:
 };
 
 }
-}
-

@@ -3,8 +3,7 @@
 
 #include "multiargfunctionnode.h"
 
-namespace search {
-namespace expression {
+namespace search::expression {
 
 class CatFunctionNode : public MultiArgFunctionNode
 {
@@ -19,5 +18,3 @@ private:
 };
 
 }
-}
-

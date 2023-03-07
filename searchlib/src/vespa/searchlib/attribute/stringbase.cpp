@@ -86,9 +86,10 @@ StringAttribute::getFloat(DocId doc) const {
 }
 
 vespalib::ConstArrayRef<char>
-StringAttribute::get_raw(DocId) const
+StringAttribute::get_raw(DocId doc) const
 {
-    return {};
+    const char * s = get(doc);
+    return {s, s ? ::strlen(s) : 0u};
 }
 
 uint32_t

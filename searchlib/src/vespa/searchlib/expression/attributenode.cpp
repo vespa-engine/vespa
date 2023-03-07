@@ -77,7 +77,9 @@ createResult(const IAttributeVector * attribute)
 {
     IAttributeVector::EnumRefs enumRefs = attribute->make_enum_read_view();
     return (enumRefs.empty())
-        ? std::make_unique<AttributeResult>(attribute, 0)
+        ? attribute->is_raw_type()
+            ? std::make_unique<RawAttributeResult>(attribute, 0)
+            : std::make_unique<AttributeResult>(attribute, 0)
         : std::make_unique<EnumAttributeResult>(enumRefs, attribute, 0);
 }
 
@@ -220,6 +222,13 @@ AttributeNode::onPrepare(bool preserveAccurateTypes)
                 } else {
                     setResultType(std::make_unique<StringResultNode>());
                 }
+            }
+        } else if (attribute->is_raw_type()) {
+            if (_hasMultiValue) {
+                throw std::runtime_error(make_string("Does not support multivalue raw attribute vector '%s'",
+                                                     attribute->getName().c_str()));
+            } else {
+                setResultType(std::make_unique<RawResultNode>());
             }
         } else {
             throw std::runtime_error(make_string("Can not deduce correct resultclass for attribute vector '%s'",

@@ -3,8 +3,7 @@
 
 #include "bucketresultnode.h"
 
-namespace search {
-namespace expression {
+namespace search::expression {
 
 class IntegerBucketResultNode : public BucketResultNode
 {
@@ -48,5 +47,3 @@ public:
 };
 
 }
-}
-
