@@ -104,7 +104,11 @@ public class SerializationContext extends FunctionReferenceContext {
     /** Adds the serialization of the return type of a function */
     public void addFunctionTypeSerialization(String functionName, TensorType type) {
         if (type.rank() == 0) return; // no explicit type implies scalar (aka rank 0 tensor)
-        serializedFunctions.put(wrapInRankingExpression(functionName) + ".type", type.toString());
+        String key = wrapInRankingExpression(functionName) + ".type";
+        var old = serializedFunctions.put(key, type.toString());
+        if (old != null && !old.equals(type.toString())) {
+            throw new IllegalArgumentException("conflicting values for " + key + ": " + old + " != " + type.toString());
+        }
     }
 
     @Override
