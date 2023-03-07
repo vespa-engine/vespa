@@ -196,8 +196,8 @@ public class HostCapacityMaintainer extends NodeRepositoryMaintainer {
             Version osVersion = nodeRepository().osVersions().targetFor(NodeType.host).orElse(Version.emptyVersion);
             List<Integer> provisionIndices = nodeRepository().database().readProvisionIndices(count);
             List<Node> hosts = new ArrayList<>();
-            hostProvisioner.provisionHosts(provisionIndices, NodeType.host, nodeResources, ApplicationId.defaultId(),
-                                           osVersion, HostSharing.shared, Optional.empty(), nodeRepository().zone().cloud().account(),
+            hostProvisioner.provisionHosts(provisionIndices, NodeType.host, nodeResources, ApplicationId.defaultId(), osVersion,
+                                           HostSharing.shared, Optional.empty(), Optional.empty(), nodeRepository().zone().cloud().account(),
                                            provisionedHosts -> {
                                                hosts.addAll(provisionedHosts.stream().map(ProvisionedHost::generateHost).toList());
                                                nodeRepository().nodes().addNodes(hosts, Agent.HostCapacityMaintainer);

@@ -115,7 +115,7 @@ public class GroupPreparer {
                 try {
                     hostProvisioner.get().provisionHosts(
                             allocation.provisionIndices(deficit.count()), hostType, deficit.resources(), application,
-                            osVersion, sharing, Optional.of(cluster.type()), requestedNodes.cloudAccount(),
+                            osVersion, sharing, Optional.of(cluster.type()), Optional.of(cluster.id()), requestedNodes.cloudAccount(),
                             provisionedHostsConsumer);
                 } catch (NodeAllocationException e) {
                     // Mark the nodes that were written to ZK in the consumer for deprovisioning. While these hosts do

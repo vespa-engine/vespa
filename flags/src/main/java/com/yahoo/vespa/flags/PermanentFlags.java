@@ -85,7 +85,7 @@ public class PermanentFlags {
             "host-flavor", "",
             "Specifies the Vespa flavor name that the hosts of the matching nodes should have.",
             "Takes effect on next deployment (including internal redeployment).",
-            APPLICATION_ID, CLUSTER_TYPE);
+            APPLICATION_ID, CLUSTER_TYPE, CLUSTER_ID);
 
     public static final UnboundBooleanFlag SKIP_MAINTENANCE_DEPLOYMENT = defineFeatureFlag(
             "node-repository-skip-maintenance-deployment", false,

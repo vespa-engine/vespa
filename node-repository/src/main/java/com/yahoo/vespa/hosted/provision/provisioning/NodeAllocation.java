@@ -95,6 +95,7 @@ class NodeAllocation {
         this.requiredHostFlavor = Optional.of(PermanentFlags.HOST_FLAVOR.bindTo(nodeRepository.flagSource())
                         .with(FetchVector.Dimension.APPLICATION_ID, application.serializedForm())
                         .with(FetchVector.Dimension.CLUSTER_TYPE, cluster.type().name())
+                        .with(FetchVector.Dimension.CLUSTER_ID, cluster.id().value())
                         .value())
                 .filter(s -> !s.isBlank());
     }
