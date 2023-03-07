@@ -118,6 +118,7 @@ TEST(RefCountedTest, use_internal_api) {
     EXPECT_EQ(raw->count_refs(), 1);
     ref_counted<Base> ref = ref_counted<Base>::internal_attach(raw);
     EXPECT_EQ(ref->count_refs(), 1);
+    EXPECT_EQ(ref->val, 20);
     EXPECT_EQ(ref.internal_detach(), raw);
     EXPECT_EQ(raw->count_refs(), 1);
     raw->internal_addref();
@@ -125,6 +126,18 @@ TEST(RefCountedTest, use_internal_api) {
     raw->internal_subref();
     EXPECT_EQ(raw->count_refs(), 1);
     raw->internal_subref();
+}
+
+TEST(RefCountedTest, use_multi_ref_internal_api) {
+    CheckObjects check(1);
+    Base *raw = new Base(20);
+    EXPECT_EQ(raw->count_refs(), 1);
+    raw->internal_addref(9);
+    EXPECT_EQ(raw->count_refs(), 10);
+    EXPECT_EQ(raw->val, 20);
+    raw->internal_subref(6, 4);
+    EXPECT_EQ(raw->count_refs(), 4);
+    raw->internal_subref(4, 0);
 }
 
 TEST(RefCountedTest, move_ref_counted) {

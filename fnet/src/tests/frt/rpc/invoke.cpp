@@ -65,7 +65,7 @@ public:
     }
     ~MyReq() {
         if (_req != nullptr) {
-            _req->SubRef();
+            _req->internal_subref();
         }
     }
     MyReq(const MyReq &rhs) = delete;
@@ -331,7 +331,7 @@ public:
     }
 
     ~Fixture() {
-        _target->SubRef();
+        _target->internal_subref();
     }
 };
 
@@ -410,7 +410,7 @@ TEST_F("require that a bad target gives connection error", Fixture()) {
     {
         FRT_Target *bad_target = f1.make_bad_target();
         bad_target->InvokeSync(req.borrow(), timeout);
-        bad_target->SubRef();
+        bad_target->internal_subref();
     }
     EXPECT_EQUAL(req.get().GetErrorCode(), FRTE_RPC_CONNECTION);
 }

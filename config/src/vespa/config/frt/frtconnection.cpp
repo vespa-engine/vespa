@@ -30,7 +30,7 @@ FRTConnection::~FRTConnection()
 {
     if (_target != nullptr) {
         LOG(debug, "Shutting down %s", _address.c_str());
-        _target->SubRef();
+        _target->internal_subref();
         _target = nullptr;
     }
 }
@@ -42,10 +42,10 @@ FRTConnection::getTarget()
     if (_target == nullptr) {
         _target = _supervisor.GetTarget(_address.c_str());
     } else if ( ! _target->IsValid()) {
-        _target->SubRef();
+        _target->internal_subref();
         _target = _supervisor.GetTarget(_address.c_str());
     }
-    _target->AddRef();
+    _target->internal_addref();
     return _target;
 }
 
@@ -54,7 +54,7 @@ FRTConnection::invoke(FRT_RPCRequest * req, duration timeout, FRT_IRequestWait *
 {
     FRT_Target * target = getTarget();
     target->InvokeAsync(req, vespalib::to_s(timeout), waiter);
-    target->SubRef();
+    target->internal_subref();
 }
 
 void

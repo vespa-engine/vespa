@@ -361,9 +361,9 @@ public:
     RPCDestination(FRT_Supervisor & supervisor, FNET_Connection * connection)
         : _supervisor(supervisor), _connection(connection), _ok(true)
     {
-        _connection->AddRef();
+        _connection->internal_addref();
     }
-    ~RPCDestination() override { _connection->SubRef(); }
+    ~RPCDestination() override { _connection->internal_subref(); }
 
     bool ok() const override {
         return _ok;
@@ -395,7 +395,7 @@ private:
         if ( ! ((retval == client::RPC::OK) || (retval == FRTE_RPC_CONNECTION)) ) {
             LOG(error, "Return value != OK(%d) in send for method 'visitCallback'.", retval);
         }
-        req->SubRef();
+        req->internal_subref();
 
         return (retval == client::RPC::OK);
     }

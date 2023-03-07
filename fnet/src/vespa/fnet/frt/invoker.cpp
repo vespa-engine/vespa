@@ -98,7 +98,7 @@ FRT_RPCInvoker::HandleDone(bool freeChannel)
     }
     // send response to client or get rid of it
     if (_noReply || (_req->GetErrorCode() == FRTE_RPC_BAD_REQUEST))
-        _req->SubRef();
+        _req->internal_subref();
     else
         ch->Send(_req->CreateReplyPacket());
 
@@ -128,7 +128,7 @@ void FRT_HookInvoker::Invoke()
     _req->SetDetachedPT(&detached);
     (_hook->GetHandler()->*_hook->GetMethod())(_req);
     assert(!detached);
-    _req->SubRef();
+    _req->internal_subref();
 }
 
 void

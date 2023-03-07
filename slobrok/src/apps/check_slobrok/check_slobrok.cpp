@@ -55,7 +55,7 @@ void
 Slobrok_Checker::finiRPC()
 {
     if (_target != nullptr) {
-        _target->SubRef();
+        _target->internal_subref();
         _target = nullptr;
     }
     if (_server) {

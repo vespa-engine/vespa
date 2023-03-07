@@ -37,7 +37,7 @@ TEST("rpc packets in a queue") {
         q2.QueuePacket(&req->getStash().create<FRT_RPCRequestPacket>(req, 0, false), FNET_Context());
         q2.Print();
     }
-    req->SubRef();
+    req->internal_subref();
 }
 
 TEST("info") {

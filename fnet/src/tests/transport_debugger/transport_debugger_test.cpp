@@ -113,9 +113,9 @@ TEST_FF("transport layers can be run with transport debugger", Fixture(), vespal
     EXPECT_EQUAL(req4->GetErrorCode(), FRTE_RPC_TIMEOUT);
     ASSERT_TRUE(req6->CheckReturnTypes("l"));
     EXPECT_EQUAL(req6->GetReturn()->GetValue(0)._intval64, 8u);
-    target->SubRef();
-    req4->SubRef();
-    req6->SubRef();
+    target->internal_subref();
+    req4->internal_subref();
+    req6->internal_subref();
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }

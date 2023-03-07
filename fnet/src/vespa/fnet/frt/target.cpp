@@ -6,7 +6,6 @@
 
 FRT_Target::~FRT_Target()
 {
-    assert(_refcnt == 0);
     FNET_Connection * conn(_conn);
     _conn = nullptr;
     if (conn != nullptr) {

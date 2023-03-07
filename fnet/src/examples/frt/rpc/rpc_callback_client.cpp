@@ -102,8 +102,8 @@ MyApp::main(int argc, char **argv)
         ok = false;
     }
 
-    req->SubRef();
-    target->SubRef();
+    req->internal_subref();
+    target->internal_subref();
     return ok ? 0 : 1;
 }
 

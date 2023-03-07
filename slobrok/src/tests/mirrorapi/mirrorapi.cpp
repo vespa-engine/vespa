@@ -66,8 +66,8 @@ Server::reg()
 
     FRT_Target *sb = _server.supervisor().GetTarget(_slobrokSpec.c_str());
     sb->InvokeSync(req, 5.0);
-    sb->SubRef();
-    req->SubRef();
+    sb->internal_subref();
+    req->internal_subref();
 }
 
 

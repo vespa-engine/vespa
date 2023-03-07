@@ -56,7 +56,7 @@ BmClusterController::propagate_cluster_state(uint32_t node_idx, bool distributor
     auto target = target_resolver->resolve_rpc_target(storage_address, fake_bucket_id);
     target->get()->InvokeSync(req, 10.0); // 10 seconds timeout
     assert(!req->IsError());
-    req->SubRef();
+    req->internal_subref();
 }
 
 void

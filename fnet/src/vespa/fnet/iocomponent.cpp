@@ -16,7 +16,6 @@ FNET_IOComponent::FNET_IOComponent(FNET_TransportThread *owner,
       _ioc_spec(spec),
       _flags(shouldTimeOut),
       _ioc_socket_fd(socket_fd),
-      _ioc_refcnt(1),
       _ioc_timestamp(vespalib::steady_clock::now()),
       _ioc_lock(),
       _ioc_cond()
@@ -37,58 +36,6 @@ FNET_IOComponent::getConfig() const {
 void
 FNET_IOComponent::UpdateTimeOut() {
     _ioc_owner->UpdateTimeOut(this);
-}
-
-void
-FNET_IOComponent::AddRef()
-{
-    std::lock_guard<std::mutex> guard(_ioc_lock);
-    assert(_ioc_refcnt > 0);
-    _ioc_refcnt++;
-}
-
-
-void
-FNET_IOComponent::AddRef_NoLock()
-{
-    assert(_ioc_refcnt > 0);
-    _ioc_refcnt++;
-}
-
-
-void
-FNET_IOComponent::SubRef()
-{
-    {
-        std::lock_guard<std::mutex> guard(_ioc_lock);
-        assert(_ioc_refcnt > 0);
-        if (--_ioc_refcnt > 0) {
-            return;
-        }
-    }
-    CleanupHook();
-    delete this;
-}
-
-
-void
-FNET_IOComponent::SubRef_HasLock(std::unique_lock<std::mutex> guard)
-{
-    assert(_ioc_refcnt > 0);
-    if (--_ioc_refcnt > 0) {
-        return;
-    }
-    guard.unlock();
-    CleanupHook();
-    delete this;
-}
-
-
-void
-FNET_IOComponent::SubRef_NoLock()
-{
-    assert(_ioc_refcnt > 1);
-    _ioc_refcnt--;
 }
 
 
@@ -140,9 +87,4 @@ bool
 FNET_IOComponent::handle_handshake_act()
 {
     return true;
-}
-
-void
-FNET_IOComponent::CleanupHook()
-{
 }

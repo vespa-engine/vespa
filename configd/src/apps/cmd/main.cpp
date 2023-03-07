@@ -74,7 +74,7 @@ void
 Cmd::finiRPC()
 {
     if (_target != nullptr) {
-        _target->SubRef();
+        _target->internal_subref();
         _target = nullptr;
     }
     _server.reset();
@@ -150,7 +150,7 @@ Cmd::run(const Method &cmd, const char *arg)
             }
         }
     }
-    req->SubRef();
+    req->internal_subref();
     finiRPC();
     return retval;
 }

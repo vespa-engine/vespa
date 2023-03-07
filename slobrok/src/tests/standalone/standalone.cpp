@@ -77,7 +77,7 @@ private:
 public:
     SubReferer(T* &t) : _t(t) {}
     ~SubReferer() {
-        if (_t != nullptr) _t->SubRef();
+        if (_t != nullptr) _t->internal_subref();
     }
 };
 
@@ -134,7 +134,7 @@ TEST("standalone") {
         }
         fprintf(stderr, "ping failed [retry %d]\n", retry);
         std::this_thread::sleep_for(200ms);
-        sb->SubRef();
+        sb->internal_subref();
         sb = orb.GetTarget(18541);
     }
     ASSERT_TRUE(checkOk(req));

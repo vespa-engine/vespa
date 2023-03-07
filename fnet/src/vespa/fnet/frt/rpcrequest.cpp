@@ -10,7 +10,6 @@ FRT_RPCRequest::FRT_RPCRequest()
       _context(),
       _params(_stash),
       _return(_stash),
-      _refcnt(1),
       _completed(0),
       _errorCode(FRTE_NO_ERROR),
       _errorMessageLen(0),
@@ -19,14 +18,10 @@ FRT_RPCRequest::FRT_RPCRequest()
       _methodName(nullptr),
       _detachedPT(nullptr),
       _abortHandler(nullptr),
-      _returnHandler(nullptr),
-      _cleanupHandler(nullptr)
+      _returnHandler(nullptr)
 { }
 
-FRT_RPCRequest::~FRT_RPCRequest()
-{
-    assert(_refcnt == 0);
-}
+FRT_RPCRequest::~FRT_RPCRequest() = default;
 
 void
 FRT_RPCRequest::SetError(uint32_t errorCode, const char *errorMessage, uint32_t errorMessageLen)
@@ -87,18 +82,9 @@ FRT_RPCRequest::GetConnection() {
     return _returnHandler->GetConnection();
 }
 
-void
-FRT_RPCRequest::Cleanup() {
-    if (_cleanupHandler != nullptr) {
-        _cleanupHandler->HandleCleanup();
-        _cleanupHandler = nullptr;
-    }
-}
 
 void
 FRT_RPCRequest::Reset() {
-    assert(_refcnt <= 1);
-    Cleanup();
     _context = FNET_Context();
     _params.Reset();
     _return.Reset();
@@ -118,22 +104,10 @@ FRT_RPCRequest::Reset() {
 bool
 FRT_RPCRequest::Recycle()
 {
-    if (_refcnt > 1 || _errorCode != FRTE_NO_ERROR)
+    if (count_refs() > 1 || _errorCode != FRTE_NO_ERROR)
         return false;
     Reset();
     return true;
-}
-
-
-void
-FRT_RPCRequest::SubRef()
-{
-    int oldVal = _refcnt.fetch_sub(1);
-    assert(oldVal > 0);
-    if (oldVal == 1) {
-        Reset();
-        delete this;
-    }
 }
 
 
@@ -163,7 +137,7 @@ FRT_RPCRequest::CreateRequestPacket(bool wantReply)
         flags |= FLAG_FRT_RPC_LITTLE_ENDIAN;
 
     if (wantReply)
-        AddRef();
+        internal_addref();
     else
         flags |= FLAG_FRT_RPC_NOREPLY;
 

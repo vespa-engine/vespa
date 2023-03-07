@@ -113,8 +113,8 @@ RPCClient::run(int argc, char **argv)
             retCode = 3;
         }
     }
-    req->SubRef();
-    target->SubRef();
+    req->internal_subref();
+    target->internal_subref();
     return retCode;
 }
 

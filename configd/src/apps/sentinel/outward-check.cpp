@@ -53,9 +53,9 @@ void OutwardCheck::RequestDone(FRT_RPCRequest *req) {
             req->GetErrorMessage(), req->GetErrorCode());
         _result = CcResult::CONN_FAIL;
     }
-    _req->SubRef();
+    _req->internal_subref();
     _req = nullptr;
-    _target->SubRef();
+    _target->internal_subref();
     _target = nullptr;
     _context.latch.countDown();
 }

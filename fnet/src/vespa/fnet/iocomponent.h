@@ -4,6 +4,7 @@
 
 #include "scheduler.h"
 #include <vespa/vespalib/net/selector.h>
+#include <vespa/vespalib/util/ref_counted.h>
 #include <mutex>
 #include <condition_variable>
 #include <chrono>
@@ -18,7 +19,7 @@ class FNET_Config;
  * Components do IO against the network and that they use sockets to
  * perform that IO.
  **/
-class FNET_IOComponent
+class FNET_IOComponent : public vespalib::enable_ref_counted
 {
     friend class FNET_TransportThread;
 
@@ -46,7 +47,6 @@ protected:
     std::string              _ioc_spec;          // connect/listen spec
     Flags                    _flags;             // Compressed representation of boolean flags;
     int                      _ioc_socket_fd;     // source of events.
-    uint32_t                 _ioc_refcnt;        // reference counter
     vespalib::steady_time    _ioc_timestamp;     // last I/O activity
     std::mutex               _ioc_lock;          // synchronization
     std::condition_variable  _ioc_cond;          // synchronization
@@ -86,43 +86,6 @@ public:
      * Get a guard to gain exclusive access.
      */
     std::unique_lock<std::mutex> getGuard() { return std::unique_lock<std::mutex>(_ioc_lock); }
-
-    /**
-     * Allocate a reference to this component. This method locks the
-     * object to protect the reference counter.
-     **/
-    void AddRef();
-
-
-    /**
-     * Allocate a reference to this component without locking the
-     * object. Caller already has lock on object.
-     **/
-    void AddRef_NoLock();
-
-
-    /**
-     * Free a reference to this component. This method locks the object
-     * to protect the reference counter.
-     **/
-    void SubRef();
-
-
-    /**
-     * Free a reference to this component. This method uses locking to
-     * protect the reference counter, but assumes that the lock has
-     * already been obtained when this method is called.
-     **/
-    void SubRef_HasLock(std::unique_lock<std::mutex> guard);
-
-
-    /**
-     * Free a reference to this component without locking the
-     * object. NOTE: this method may only be called on objects with more
-     * than one reference.
-     **/
-    void SubRef_NoLock();
-
 
     /**
      * @return the owning TransportThread object.
@@ -216,13 +179,6 @@ public:
      * @return false if broken, true otherwise.
      **/
     virtual bool handle_handshake_act();
-
-    /**
-     * This method is called by the SubRef methods just before the
-     * object is deleted. It may be used to perform cleanup tasks that
-     * must be done before the destructor is invoked.
-     **/
-    virtual void CleanupHook();
 
 
     /**

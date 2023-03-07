@@ -86,7 +86,7 @@ PingClient::main(int argc, char **argv)
         packet->Free();
     }
     if (conn != nullptr)
-        conn->SubRef();
+        conn->internal_subref();
     transport.ShutDown(true);
     return 0;
 }

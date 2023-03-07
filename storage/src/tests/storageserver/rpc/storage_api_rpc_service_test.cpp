@@ -204,8 +204,8 @@ public:
         EXPECT_TRUE(req->IsError());
         EXPECT_EQ(req->GetErrorCode(), FRTE_RPC_METHOD_FAILED);
         EXPECT_EQ(req->GetErrorMessage(), expected_msg);
-        target->SubRef();
-        req->SubRef();
+        target->internal_subref();
+        req->internal_subref();
     }
 };
 

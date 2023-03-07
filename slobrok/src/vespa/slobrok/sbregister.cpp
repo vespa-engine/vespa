@@ -90,10 +90,10 @@ RegisterAPI::~RegisterAPI()
     _configurator.reset(0);
     if (_req != 0) {
         _req->Abort();
-        _req->SubRef();
+        _req->internal_subref();
     }
     if (_target != 0) {
-        _target->SubRef();
+        _target->internal_subref();
     }
 }
 
@@ -139,7 +139,7 @@ RegisterAPI::handleReqDone()
                 // unexpected error; close our connection to this
                 // slobrok server and try again with a fresh slate
                 if (_target != 0) {
-                    _target->SubRef();
+                    _target->internal_subref();
                 }
                 _target = 0;
                 _busy.store(true, std::memory_order_relaxed);
@@ -159,7 +159,7 @@ RegisterAPI::handleReqDone()
             // reset backoff strategy on any successful request
             _backOff.reset();
         }
-        _req->SubRef();
+        _req->internal_subref();
         _req = 0;
     }
 }
@@ -173,7 +173,7 @@ RegisterAPI::handleReconnect()
             vespalib::string cps = _slobrokSpecs.logString();
             LOG(warning, "[RPC @ %s] location broker %s removed, will disconnect and use one of: %s",
                 createSpec(_orb).c_str(), _currSlobrok.c_str(), cps.c_str());
-            _target->SubRef();
+            _target->internal_subref();
             _target = 0;
         }
     }

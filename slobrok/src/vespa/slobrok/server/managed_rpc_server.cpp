@@ -59,7 +59,7 @@ ManagedRpcServer::cleanupMonitor()
 {
     _monitor.disable();
     if (_monitoredServer != nullptr) {
-        _monitoredServer->SubRef();
+        _monitoredServer->internal_subref();
         _monitoredServer = nullptr;
     }
     if (_checkServerReq != nullptr) {
@@ -100,7 +100,7 @@ ManagedRpcServer::RequestDone(FRT_RPCRequest *req)
 
     if (req->GetErrorCode() == FRTE_RPC_ABORT) {
         LOG(debug, "rpcserver[%s].check aborted", getName().c_str());
-        req->SubRef();
+        req->internal_subref();
         _checkServerReq = nullptr;
         return;
     }
@@ -119,7 +119,7 @@ ManagedRpcServer::RequestDone(FRT_RPCRequest *req)
         } else {
             errmsg = "checkServer failed validation";
         }
-        req->SubRef();
+        req->internal_subref();
         _checkServerReq = nullptr;
         cleanupMonitor();
         _mmanager.notifyFailedRpcSrv(this, errmsg);
@@ -130,7 +130,7 @@ ManagedRpcServer::RequestDone(FRT_RPCRequest *req)
     LOG_ASSERT(_monitoredServer != nullptr);
     _monitor.enable(_monitoredServer);
 
-    req->SubRef();
+    req->internal_subref();
     _checkServerReq = nullptr;
     _mmanager.notifyOkRpcSrv(this);
 }

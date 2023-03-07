@@ -93,7 +93,7 @@ RPCSend::handleDiscard(Context ctx)
     ReplyContext::UP tmp(static_cast<ReplyContext*>(ctx.value.PTR));
     FRT_RPCRequest &req = tmp->getRequest();
     FNET_Channel *chn = req.GetContext()._value.CHANNEL;
-    req.SubRef();
+    req.internal_subref();
     chn->Free();
 }
 
@@ -189,7 +189,7 @@ RPCSend::doRequestDone(FRT_RPCRequest *req) {
         reply->addError(error);
     }
     _net->getOwner().deliverReply(std::move(reply), ctx->getRecipient());
-    req->SubRef();
+    req->internal_subref();
 }
 
 std::unique_ptr<Reply>

@@ -67,7 +67,7 @@ struct FixtureBase {
         // instance _before_ we destroy the request itself.
         dispatcher._enqueued.clear();
         if (bound_request) {
-            bound_request->SubRef();
+            bound_request->internal_subref();
         }
     }
 };

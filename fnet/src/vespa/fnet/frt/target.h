@@ -3,16 +3,16 @@
 #pragma once
 
 #include <vespa/fnet/connection.h>
+#include <vespa/vespalib/util/ref_counted.h>
 #include <atomic>
 
 class FNET_Scheduler;
 class FRT_RPCRequest;
 class FRT_IRequestWait;
 
-class FRT_Target
+class FRT_Target : public vespalib::enable_ref_counted
 {
 private:
-    std::atomic<int> _refcnt;
     FNET_Scheduler  *_scheduler;
     FNET_Connection *_conn;
 
@@ -21,23 +21,12 @@ private:
 
 public:
     FRT_Target(FNET_Scheduler *scheduler, FNET_Connection *conn)
-        : _refcnt(1),
-          _scheduler(scheduler),
+        : _scheduler(scheduler),
           _conn(conn) {}
 
     ~FRT_Target();
 
     FNET_Connection *GetConnection() const { return _conn; }
-
-    void AddRef() { _refcnt.fetch_add(1); }
-    void SubRef() {
-        if (_refcnt.fetch_sub(1) == 1) {
-            delete this;
-        }
-    }
-
-    int GetRefCnt() const { return _refcnt; }
-
     bool IsValid() {
         return ((_conn != nullptr) &&
                 (_conn->GetState() <= FNET_Connection::FNET_CONNECTED));

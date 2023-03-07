@@ -86,7 +86,7 @@ void benchmark_rpc(Fixture &fixture, bool reconnect) {
     auto invoke = [&seq, &target, &req, &fixture, reconnect](){
         TT_Sample sample(req_tag);
         if (reconnect) {
-            target->SubRef();
+            target->internal_subref();
             target = fixture.connect();
         }
         req = fixture.orb.AllocRPCRequest(req);
@@ -101,8 +101,8 @@ void benchmark_rpc(Fixture &fixture, bool reconnect) {
     auto before = TimeTracer::now();
     double t = BenchmarkTimer::benchmark(invoke, 5.0);
     auto after = TimeTracer::now();
-    target->SubRef();
-    req->SubRef();
+    target->internal_subref();
+    req->internal_subref();
     auto stats = TimeTracer::extract().by_time(before, after).by_tag(req_tag.id()).get();
     ASSERT_TRUE(stats.size() > 0);
     std::sort(stats.begin(), stats.end(), DurationCmp());

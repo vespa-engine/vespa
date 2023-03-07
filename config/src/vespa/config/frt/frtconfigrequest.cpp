@@ -17,7 +17,7 @@ FRTConfigRequest::FRTConfigRequest(Connection * connection, const ConfigKey & ke
 
 FRTConfigRequest::~FRTConfigRequest()
 {
-    _request->SubRef();
+    _request->internal_subref();
 }
 
 bool

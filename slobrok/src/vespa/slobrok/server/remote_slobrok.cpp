@@ -32,7 +32,7 @@ void RemoteSlobrok::shutdown() {
     _reconnecter.disable();
 
     if (_remote != nullptr) {
-        _remote->SubRef();
+        _remote->internal_subref();
         _remote = nullptr;
     }
 
@@ -110,7 +110,7 @@ void RemoteSlobrok::handleFetchResult() {
         _serviceMapMirror.clear();
         success = false;
     }
-    _remFetchReq->SubRef();
+    _remFetchReq->internal_subref();
     _remFetchReq = nullptr;
     if (success) {
         maybeStartFetch();
@@ -132,12 +132,12 @@ RemoteSlobrok::RequestDone(FRT_RPCRequest *req)
             const char *myspec = args[1]._string._str;
             LOG(info, "addPeer(%s, %s) on remote slobrok %s at %s: %s",
                 myname, myspec, getName().c_str(), getSpec().c_str(), req->GetErrorMessage());
-            req->SubRef();
+            req->internal_subref();
             _remAddPeerReq = nullptr;
             fail();
             return;
         }
-        req->SubRef();
+        req->internal_subref();
         _remAddPeerReq = nullptr;
     } else {
         LOG(error, "got unknown request back in RequestDone()");
@@ -166,7 +166,7 @@ RemoteSlobrok::fail()
 {
     // disconnect
     if (_remote != nullptr) {
-        _remote->SubRef();
+        _remote->internal_subref();
         _remote = nullptr;
     }
     // schedule reconnect attempt

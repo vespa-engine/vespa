@@ -174,7 +174,7 @@ void finiTest() {
   delete _complexHandler;
   delete _mediumHandler;
   delete _simpleHandler;
-  _target->SubRef();
+  _target->internal_subref();
   _server.reset();
 }
 
@@ -187,7 +187,7 @@ TEST("method pt") {
 
   //-------------------------------- MEDIUM
 
-  req->SubRef();
+  req->internal_subref();
   req = FRT_Supervisor::AllocRPCRequest();
   req->SetMethodName("mediumMethod");
   _target->InvokeSync(req, 60.0);
@@ -195,7 +195,7 @@ TEST("method pt") {
 
   //-------------------------------- COMPLEX
 
-  req->SubRef();
+  req->internal_subref();
   req = FRT_Supervisor::AllocRPCRequest();
   req->SetMethodName("complexMethod");
   _target->InvokeSync(req, 60.0);
@@ -213,7 +213,7 @@ TEST("method pt") {
       fprintf(stderr, "Object inheritance NOT ok for method handlers\n");
   }
 
-  req->SubRef();
+  req->internal_subref();
 }
 
 //-------------------------------------------------------------

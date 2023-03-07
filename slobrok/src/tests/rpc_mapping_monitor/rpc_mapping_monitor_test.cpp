@@ -21,11 +21,11 @@ struct Server : FRT_Invokable {
     FNET_Connection *last_conn;
     void set_last_conn(FNET_Connection *conn) {
         if (last_conn) {
-            last_conn->SubRef();
+            last_conn->internal_subref();
         }
         last_conn = conn;
         if (last_conn) {
-            last_conn->AddRef();
+            last_conn->internal_addref();
         }
     }
     Server(fnet::TimeTools::SP time_tools)
@@ -210,7 +210,7 @@ TEST_F(RpcMappingMonitorTest, up_connection_is_reused) {
     a.last_conn = nullptr;
     EXPECT_TRUE(debugger.step_until([&]() { return (a.last_conn); }));
     EXPECT_EQ(a.last_conn, my_conn);
-    my_conn->SubRef();
+    my_conn->internal_subref();
     EXPECT_EQ(hist.map[foo_a].state(), State::UP);
 }
 

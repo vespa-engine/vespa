@@ -39,9 +39,9 @@ void PeerCheck::RequestDone(FRT_RPCRequest *req) {
         LOG(debug, "OK ping to %s [port %d]", _hostname.c_str(), _portnum);
         _statusOk = true;
     }
-    _req->SubRef();
+    _req->internal_subref();
     _req = nullptr;
-    _target->SubRef();
+    _target->internal_subref();
     _target = nullptr;
     // Note: will delete this object, so must be called as final step:
     _callback.returnStatus(_statusOk);

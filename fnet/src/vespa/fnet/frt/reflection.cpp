@@ -153,7 +153,7 @@ FRT_ReflectionBuilder::FRT_ReflectionBuilder(FRT_Supervisor *supervisor)
 FRT_ReflectionBuilder::~FRT_ReflectionBuilder()
 {
     Flush();
-    _req->SubRef();
+    _req->internal_subref();
 }
 
 

@@ -65,7 +65,7 @@ void
 Slobrok_CMD::finiRPC()
 {
     if (_target != nullptr) {
-        _target->SubRef();
+        _target->internal_subref();
         _target = nullptr;
     }
     if (_server) {
@@ -181,7 +181,7 @@ Slobrok_CMD::main(int argc, char **argv)
             }
         }
     }
-    req->SubRef();
+    req->internal_subref();
     finiRPC();
     return 0;
 }

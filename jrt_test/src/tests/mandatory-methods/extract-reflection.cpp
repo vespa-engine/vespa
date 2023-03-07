@@ -14,16 +14,16 @@ public:
   void GetReq(FRT_RPCRequest **req, FRT_Supervisor *supervisor)
   {
     if ((*req) != nullptr)
-      (*req)->SubRef();
+      (*req)->internal_subref();
     (*req) = supervisor->AllocRPCRequest();
   }
 
   void FreeReqs(FRT_RPCRequest *r1, FRT_RPCRequest *r2)
   {
     if (r1 != nullptr)
-      r1->SubRef();
+      r1->internal_subref();
     if (r2 != nullptr)
-      r2->SubRef();
+      r2->internal_subref();
   }
 
   void DumpMethodInfo(const char *indent, FRT_RPCRequest *info,
@@ -90,7 +90,7 @@ public:
             break;
         }
         std::this_thread::sleep_for(1s);
-        target->SubRef();
+        target->internal_subref();
         target = supervisor.GetTarget(argv[1]);
     }
     if (info->IsError()) {
@@ -133,7 +133,7 @@ public:
               m_list->GetErrorMessage());
     }
     FreeReqs(m_list, info);
-    target->SubRef();
+    target->internal_subref();
     return 0;
   }
 };
