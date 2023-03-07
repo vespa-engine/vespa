@@ -50,7 +50,7 @@ shared:
 
 jobs:
   build-vespa:
-    #requires: [~pr]
+    requires: [~pr]
     annotations:
       screwdriver.cd/cpu: 7
       screwdriver.cd/ram: 16
@@ -237,17 +237,16 @@ jobs:
           screwdriver/update-vespa-version-in-sample-apps.sh $VESPA_VERSION
 
   publish-legacy-release:
-    requires: [~pr]
     image: docker.io/vespaengine/vespa-build-centos-stream8:latest
 
     annotations:
-      screwdriver.cd/cpu: LOW
-      screwdriver.cd/ram: LOW
+      screwdriver.cd/cpu: 7
+      screwdriver.cd/ram: 16
       screwdriver.cd/disk: HIGH
       screwdriver.cd/timeout: 300
       screwdriver.cd/dockerEnabled: true
-      screwdriver.cd/dockerCpu: LOW
-      screwdriver.cd/dockerRam: LOW
+      screwdriver.cd/dockerCpu: TURBO
+      screwdriver.cd/dockerRam: HIGH
       screwdriver.cd/buildPeriodically: H 6 1 * *
 
     environment:
@@ -259,17 +258,12 @@ jobs:
     steps:
       - get-vespa-version: |
           set -x
-          meta set test.id 123
-          meta get test.id
-          meta get vespa.version --external sd@8683:publish-release || true
-          meta get vespa.version --external publish-release
-          VESPA_VERSION=$(meta get vespa.version --external sd@8683:publish-release)
+          VESPA_VERSION=$(meta get vespa.version --external publish-release)
           if [[ $VESPA_VERSION == null ]] || [[ $VESPA_REF == null ]]; then
             echo "Must have valid Vespa version to continue (got VESPA_VERSION=$VESPA_VERSION)."
             return 1
           fi
       - install-dependencies: |
-          return 1
           dnf config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
           dnf install -y docker-ce docker-ce-cli containerd.io
           docker system info
