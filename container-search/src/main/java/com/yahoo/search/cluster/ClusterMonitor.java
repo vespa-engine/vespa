@@ -96,9 +96,19 @@ public class ClusterMonitor<T> {
      * Ping all nodes which needs pinging to discover state changes
      */
     public void ping(Executor executor) {
+        ping(executor, false);
+    }
+
+    private void pingNonWorking(Executor executor) {
+        ping(executor, true);
+    }
+
+    private void ping(Executor executor, boolean nonWorkingOnly) {
         for (Iterator<BaseNodeMonitor<T>> i = nodeMonitorIterator(); i.hasNext() && !closed.get(); ) {
             BaseNodeMonitor<T> monitor= i.next();
-            nodeManager.ping(this, monitor.getNode(), executor); // Cause call to failed or responded
+            if (!nonWorkingOnly || !monitor.isWorking()) {
+                nodeManager.ping(this, monitor.getNode(), executor); // Cause call to failed or responded
+            }
         }
         if (closed.get()) return; // Do nothing to change state if close has started.
         nodeManager.pingIterationCompleted();
@@ -130,7 +140,16 @@ public class ClusterMonitor<T> {
         } catch (InterruptedException e) {}
     }
 
+    private int countFailedNodes() {
+        int failedCount = 0;
+        for (Iterator<BaseNodeMonitor<T>> i = nodeMonitorIterator(); i.hasNext() && !closed.get(); ) {
+            if ( ! i.next().isWorking()) failedCount++;
+        }
+        return failedCount;
+    }
+
     private class MonitorThread extends Thread {
+        private static final long CHECK_SPEEDUP_OF_FAILED_NODES = 5;
         MonitorThread(String name) {
             super(name);
             setDaemon(true);
@@ -144,12 +163,24 @@ public class ClusterMonitor<T> {
             // any thread local connections are reused) 2) a new thread will be started to execute
             // new pings when a ping is not responding
             ExecutorService pingExecutor=Executors.newCachedThreadPool(ThreadFactoryFactory.getDaemonThreadFactory("search.ping"));
+            int failedCount  = countFailedNodes();
+            long retries = CHECK_SPEEDUP_OF_FAILED_NODES;
             while (!closed.get()) {
                 try {
-                    log.finest("Activating ping");
-                    ping(pingExecutor);
+                    log.finest("Activating ping failedCount = " + failedCount + ", retries = " + retries);
+                    if ((failedCount > 0) && (retries > 0)) {
+                        pingNonWorking(pingExecutor);
+                        retries--;
+                    } else {
+                        ping(pingExecutor);
+                        retries = CHECK_SPEEDUP_OF_FAILED_NODES;
+                    }
                     synchronized (nodeManager) {
-                        nodeManager.wait(configuration.getCheckInterval());
+                        long napTimeMS = (failedCount > 0)
+                                ? Math.max(100, configuration.getCheckInterval()/CHECK_SPEEDUP_OF_FAILED_NODES)
+                                : configuration.getCheckInterval();
+                        nodeManager.wait(napTimeMS);
+                        failedCount = countFailedNodes();
                     }
                 }
                 catch (Throwable e) {
