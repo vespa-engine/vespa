@@ -104,6 +104,7 @@ vespa_add_library(searchlib_attribute OBJECT
     postinglisttraits.cpp
     postingstore.cpp
     predicate_attribute.cpp
+    raw_buffer_store.cpp
     raw_buffer_type_mapper.cpp
     raw_multi_value_read_view.cpp
     readerbase.cpp
