@@ -38,6 +38,8 @@ public:
     vespalib::ConstArrayRef<char> get_raw(DocId docid) const override;
     void set_raw(DocId docid, vespalib::ConstArrayRef<char> raw);
     uint32_t clearDoc(DocId docId) override;
+    long onSerializeForAscendingSort(DocId, void *, long, const common::BlobConverter *) const override;
+    long onSerializeForDescendingSort(DocId, void *, long, const common::BlobConverter *) const override;
 };
 
 }

@@ -69,4 +69,24 @@ TEST_F(RawAttributeTest, can_set_and_clear_value)
     EXPECT_EQ(empty, get_raw(1));
 }
 
+TEST_F(RawAttributeTest, implements_serialize_for_sort) {
+    vespalib::string long_hello("hello, is there anybody out there");
+    vespalib::ConstArrayRef<char> raw_long_hello(long_hello.c_str(), long_hello.size());
+    uint8_t buf[8];
+    memset(buf, 0, sizeof(buf));
+    _attr->addDocs(10);
+    _attr->commit();
+    EXPECT_EQ(0, _attr->serializeForAscendingSort(1, buf, sizeof(buf)));
+    EXPECT_EQ(0, _attr->serializeForDescendingSort(1, buf, sizeof(buf)));
+    _raw->set_raw(1, raw_hello);
+    EXPECT_EQ(5, _attr->serializeForAscendingSort(1, buf, sizeof(buf)));
+    EXPECT_EQ(0, memcmp("hello", buf, 5));
+    EXPECT_EQ(5, _attr->serializeForDescendingSort(1, buf, sizeof(buf)));
+    uint8_t expected [] = {0xff-'h', 0xff-'e', 0xff-'l', 0xff-'l', 0xff-'o'};
+    EXPECT_EQ(0, memcmp(expected, buf, 5));
+    _raw->set_raw(1, raw_long_hello);
+    EXPECT_EQ(-1, _attr->serializeForAscendingSort(1, buf, sizeof(buf)));
+    EXPECT_EQ(-1, _attr->serializeForDescendingSort(1, buf, sizeof(buf)));
+}
+
 GTEST_MAIN_RUN_ALL_TESTS()
