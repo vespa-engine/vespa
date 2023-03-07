@@ -248,15 +248,15 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
                                               SerializationContext context) {
             for (Map.Entry<String, RankProfile.RankingExpressionFunction> e : functions.entrySet()) {
                 String propertyName = RankingExpression.propertyName(e.getKey());
-                if (context.serializedFunctions().containsKey(propertyName)) continue;
+                if (! context.serializedFunctions().containsKey(propertyName)) {
 
-                String expressionString = e.getValue().function().getBody().getRoot().toString(context).toString();
+                    String expressionString = e.getValue().function().getBody().getRoot().toString(context).toString();
+                    context.addFunctionSerialization(propertyName, expressionString);
+                    e.getValue().function().argumentTypes().entrySet().stream().sorted(Map.Entry.comparingByKey())
+                            .forEach(argumentType -> context.addArgumentTypeSerialization(e.getKey(), argumentType.getKey(), argumentType.getValue()));
+                }
+                e.getValue().function().returnType().ifPresent(t -> context.addFunctionTypeSerialization(e.getKey(), t));
 
-                context.addFunctionSerialization(propertyName, expressionString);
-                e.getValue().function().argumentTypes().entrySet().stream().sorted(Map.Entry.comparingByKey())
-                        .forEach(argumentType -> context.addArgumentTypeSerialization(e.getKey(), argumentType.getKey(), argumentType.getValue()));
-                if (e.getValue().function().returnType().isPresent())
-                    context.addFunctionTypeSerialization(e.getKey(), e.getValue().function().returnType().get());
                 // else if (e.getValue().function().arguments().isEmpty()) TODO: Enable this check when we resolve all types
                 //     throw new IllegalStateException("Type of function '" + e.getKey() + "' is not resolved");
             }
@@ -274,6 +274,7 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
                     String propertyName = RankingExpression.propertyName(referenceNode.getName());
                     String expressionString = function.getBody().getRoot().toString(context).toString();
                     context.addFunctionSerialization(propertyName, expressionString);
+                    function.returnType().ifPresent(t -> context.addFunctionTypeSerialization(referenceNode.getName(), t));
                     var backendReferenceNode = new ReferenceNode(wrapInRankingExpression(referenceNode.getName()),
                                                                  referenceNode.getArguments().expressions(),
                                                                  referenceNode.getOutput());
