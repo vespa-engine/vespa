@@ -9,13 +9,13 @@
 namespace search::tensor {
 
 TensorBufferTypeMapper::TensorBufferTypeMapper()
-    : ArrayStoreTypeMapper(),
+    : vespalib::datastore::ArrayStoreTypeMapper(),
       _ops(nullptr)
 {
 }
 
 TensorBufferTypeMapper::TensorBufferTypeMapper(uint32_t max_small_subspaces_type_id, double grow_factor, TensorBufferOperations* ops)
-    : ArrayStoreTypeMapper(),
+    : vespalib::datastore::ArrayStoreTypeMapper(),
       _ops(ops)
 {
     _array_sizes.reserve(max_small_subspaces_type_id + 1);
