@@ -77,7 +77,7 @@ TEST("size of important objects")
 #else
     constexpr size_t MUTEX_SIZE = 40u;
 #endif
-    EXPECT_EQUAL(MUTEX_SIZE + sizeof(std::string) + 112u, sizeof(FNET_IOComponent));
+    EXPECT_EQUAL(MUTEX_SIZE + sizeof(std::string) + 120u, sizeof(FNET_IOComponent));
     EXPECT_EQUAL(32u, sizeof(FNET_Channel));
     EXPECT_EQUAL(40u, sizeof(FNET_PacketQueue_NoLock));
     EXPECT_EQUAL(MUTEX_SIZE + sizeof(std::string) + 416u, sizeof(FNET_Connection));
