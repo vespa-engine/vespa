@@ -167,4 +167,40 @@ SingleRawAttribute::clearDoc(DocId docId)
     return 0u;
 }
 
+long
+SingleRawAttribute::onSerializeForAscendingSort(DocId doc, void * serTo, long available, const common::BlobConverter * bc) const
+{
+    auto raw = get_raw(doc);
+    vespalib::ConstBufferRef buf(raw.data(), raw.size());
+    if (bc != nullptr) {
+        buf = bc->convert(buf);
+    }
+    if (available >= (long)buf.size()) {
+        memcpy(serTo, buf.data(), buf.size());
+    } else {
+        return -1;
+    }
+    return buf.size();
+}
+
+long
+SingleRawAttribute::onSerializeForDescendingSort(DocId doc, void * serTo, long available, const common::BlobConverter * bc) const
+{
+    auto raw = get_raw(doc);
+    vespalib::ConstBufferRef buf(raw.data(), raw.size());
+    if (bc != nullptr) {
+        buf = bc->convert(buf);
+    }
+    if (available >= (long)buf.size()) {
+        auto *dst = static_cast<unsigned char *>(serTo);
+        const auto * src(static_cast<const uint8_t *>(buf.data()));
+        for (size_t i(0); i < buf.size(); ++i) {
+            dst[i] = 0xff - src[i];
+        }
+    } else {
+        return -1;
+    }
+    return buf.size();
+}
+
 }
