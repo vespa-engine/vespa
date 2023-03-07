@@ -418,8 +418,9 @@ public class TenantApplications implements RequestHandler, HostValidator {
 
     /**
      * Waiter for removing application. Will wait for some time for all servers to remove application,
-     * but will accept majority of servers to have removed app if it takes a long time.
+     * but will accept the majority of servers to have removed app if it takes a long time.
      */
+    // TODO: Merge with CuratorCompletionWaiter
     static class RemoveApplicationWaiter implements CompletionWaiter {
 
         private static final java.util.logging.Logger log = Logger.getLogger(RemoveApplicationWaiter.class.getName());
@@ -485,7 +486,7 @@ public class TenantApplications implements RequestHandler, HostValidator {
                         gotQuorumTime = clock.instant();
 
                     // Give up if more than some time has passed since we got quorum, otherwise continue
-                    if (Duration.between(Instant.now(), gotQuorumTime.plus(waitForAll)).isNegative()) {
+                    if (Duration.between(clock.instant(), gotQuorumTime.plus(waitForAll)).isNegative()) {
                         logBarrierCompleted(respondents, startTime);
                         break;
                     }
