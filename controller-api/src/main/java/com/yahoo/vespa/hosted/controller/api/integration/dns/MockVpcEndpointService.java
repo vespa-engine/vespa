@@ -18,7 +18,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class MockVpcEndpointService implements VpcEndpointService {
 
     public final AtomicBoolean enabled = new AtomicBoolean();
-    public final Map<RecordName, State> outcomes = new ConcurrentHashMap<>();
+    public final Map<RecordName, ChallengeState> outcomes = new ConcurrentHashMap<>();
 
     private final Clock clock;
     private final NameService nameService;
@@ -36,20 +36,20 @@ public class MockVpcEndpointService implements VpcEndpointService {
                                                   "service-id",
                                                   account,
                                                   clock.instant(),
-                                                  State.pending);
+                                                  ChallengeState.pending);
         return Optional.ofNullable(enabled.get() && nameService.findRecords(Type.TXT, challenge.name()).isEmpty() ? challenge : null);
     }
 
     @Override
-    public synchronized State process(DnsChallenge challenge) {
+    public synchronized ChallengeState process(DnsChallenge challenge) {
         if (outcomes.containsKey(challenge.name())) return outcomes.get(challenge.name());
         if (nameService.findRecords(Type.TXT, challenge.name()).isEmpty()) throw new RuntimeException("No TXT record found for " + challenge.name());
-        return State.done;
+        return ChallengeState.done;
     }
 
     @Override
     public synchronized List<VpcEndpoint> getConnections(ClusterId cluster, Optional<CloudAccount> account) {
-        return List.of(new VpcEndpoint("endpoint-1", "available"));
+        return List.of(new VpcEndpoint("endpoint-1", "available", EndpointState.open));
     }
 
 }

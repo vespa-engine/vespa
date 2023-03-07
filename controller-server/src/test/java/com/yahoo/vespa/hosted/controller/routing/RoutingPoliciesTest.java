@@ -9,7 +9,6 @@ import com.yahoo.config.application.api.ValidationId;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.AthenzDomain;
 import com.yahoo.config.provision.AthenzService;
-import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.HostName;
@@ -25,8 +24,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.dns.Record;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.Record.Type;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordData;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordName;
-import com.yahoo.vespa.hosted.controller.api.integration.dns.VpcEndpointService.DnsChallenge;
-import com.yahoo.vespa.hosted.controller.api.integration.dns.VpcEndpointService.State;
+import com.yahoo.vespa.hosted.controller.api.integration.dns.VpcEndpointService.ChallengeState;
 import com.yahoo.vespa.hosted.controller.application.Endpoint;
 import com.yahoo.vespa.hosted.controller.application.EndpointId;
 import com.yahoo.vespa.hosted.controller.application.EndpointList;
@@ -52,8 +50,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -537,7 +533,7 @@ public class RoutingPoliciesTest {
 
 
         tester.tester.controllerTester().serviceRegistry().vpcEndpointService().outcomes
-                .put(RecordName.from("challenge--a.t.aws-us-east-1a.vespa.oath.cloud"), State.running);
+                .put(RecordName.from("challenge--a.t.aws-us-east-1a.vespa.oath.cloud"), ChallengeState.running);
 
         // Deployment fails because challenge is not answered (immediately).
         assertEquals("Status of run 2 of production-aws-us-east-1a for t.a ==> expected: <succeeded> but was: <unfinished>",

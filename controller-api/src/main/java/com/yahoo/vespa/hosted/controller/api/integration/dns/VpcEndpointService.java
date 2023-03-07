@@ -17,7 +17,7 @@ public interface VpcEndpointService {
 
     /** Create a TXT record with this name and token, and then complete the challenge. */
     record DnsChallenge(RecordName name, RecordData data, ClusterId clusterId, String serviceId,
-                        Optional<CloudAccount> account, Instant createdAt, State state) {
+                        Optional<CloudAccount> account, Instant createdAt, ChallengeState state) {
 
             public DnsChallenge {
                 requireNonNull(name, "name must be non-null");
@@ -29,22 +29,24 @@ public interface VpcEndpointService {
                 requireNonNull(state, "state must be non-null");
             }
 
-            public DnsChallenge withState(State state) {
+            public DnsChallenge withState(ChallengeState state) {
                 return new DnsChallenge(name, data, clusterId, serviceId, account, createdAt, state);
             }
 
     }
 
-    enum State { pending, ready, running, done }
+    enum ChallengeState { pending, ready, running, done }
 
     /** Sets the private DNS name for any VPC endpoint for the given cluster, potentially guarded by a challenge. */
     Optional<DnsChallenge> setPrivateDns(DomainName privateDnsName, ClusterId clusterId, Optional<CloudAccount> account);
 
     /** Attempts to complete the challenge, and returns the updated challenge state. */
-    State process(DnsChallenge challenge);
+    ChallengeState process(DnsChallenge challenge);
 
     /** A connection made to an endpoint service. */
-    record VpcEndpoint(String endpointId, String state) { }
+    record VpcEndpoint(String endpointId, String stateString, EndpointState stateValue) { }
+
+    enum EndpointState { pending, open, failed, closed }
 
     /** Lists all endpoints connected to an endpoint service (owned by account) for the given cluster. */
     List<VpcEndpoint> getConnections(ClusterId cluster, Optional<CloudAccount> account);

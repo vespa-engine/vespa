@@ -9,7 +9,7 @@ import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordData;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordName;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.VpcEndpointService.DnsChallenge;
-import com.yahoo.vespa.hosted.controller.api.integration.dns.VpcEndpointService.State;
+import com.yahoo.vespa.hosted.controller.api.integration.dns.VpcEndpointService.ChallengeState;
 import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
@@ -32,13 +32,13 @@ class DnsChallengeSerializerTest {
                                                             "deadbeef",
                                                             Optional.of(CloudAccount.from("123321123321")),
                                                             Instant.ofEpochMilli(123),
-                                                            State.pending);
+                                                            ChallengeState.pending);
 
     @Test
     void testSerialization() {
         DnsChallenge deserialized = serializer.fromJson(serializer.toJson(challenge), clusterId);
         assertEquals(challenge, deserialized);
-        for (State state : State.values())
+        for (ChallengeState state : ChallengeState.values())
             assertEquals(challenge.withState(state), serializer.fromJson(serializer.toJson(challenge.withState(state)), clusterId));
     }
 
