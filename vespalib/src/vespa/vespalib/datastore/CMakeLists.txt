@@ -3,6 +3,7 @@ vespa_add_library(vespalib_vespalib_datastore OBJECT
     SOURCES
     array_store.cpp
     array_store_config.cpp
+    array_store_type_mapper.cpp
     atomic_entry_ref.cpp
     buffer_free_list.cpp
     buffer_stats.cpp
