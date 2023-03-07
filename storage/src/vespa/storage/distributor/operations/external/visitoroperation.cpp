@@ -12,6 +12,7 @@
 #include <vespa/document/base/exceptions.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <sstream>
+#include <optional>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".visitoroperation");
@@ -88,7 +89,7 @@ VisitorOperation::VisitorOperation(
 {
     const std::vector<document::BucketId>& buckets = m->getBuckets();
 
-    if (buckets.size() > 0) {
+    if (!buckets.empty()) {
         _superBucket = SuperBucketInfo(buckets[0]);
     }
 
@@ -114,12 +115,10 @@ VisitorOperation::getLastBucketVisited()
 
     LOG(spam, "getLastBucketVisited(): Sub bucket count: %zu",
         _superBucket.subBucketsVisitOrder.size());
-    for (uint32_t i=0; i<_superBucket.subBucketsVisitOrder.size(); i++) {
-        auto found = _superBucket.subBuckets.find(_superBucket.subBucketsVisitOrder[i]);
+    for (const auto& sub_bucket : _superBucket.subBucketsVisitOrder) {
+        auto found = _superBucket.subBuckets.find(sub_bucket);
         assert(found != _superBucket.subBuckets.end());
-        LOG(spam, "%s => %s",
-            found->first.toString().c_str(),
-            found->second.toString().c_str());
+        LOG(spam, "%s => %s", found->first.toString().c_str(), found->second.toString().c_str());
 
         if (found->second.done) {
             foundDone = true;
@@ -151,9 +150,7 @@ VisitorOperation::timeLeft() const noexcept
 {
     const auto elapsed = _operationTimer.getElapsedTime();
 
-
-    LOG(spam,
-        "Checking if visitor has timed out: elapsed=%" PRId64 " ms, timeout=%" PRId64 " ms",
+    LOG(spam, "Checking if visitor has timed out: elapsed=%" PRId64 " ms, timeout=%" PRId64 " ms",
         vespalib::count_ms(elapsed),
         vespalib::count_ms(_msg->getTimeout()));
 
@@ -168,7 +165,7 @@ void
 VisitorOperation::markCompleted(const document::BucketId& bid,
                                 const api::ReturnCode& code)
 {
-    VisitBucketMap::iterator found = _superBucket.subBuckets.find(bid);
+    auto found = _superBucket.subBuckets.find(bid);
     assert(found != _superBucket.subBuckets.end());
 
     BucketInfo& info = found->second;
@@ -196,11 +193,11 @@ VisitorOperation::onReceive(
         DistributorStripeMessageSender& sender,
         const api::StorageReply::SP& r)
 {
-    api::CreateVisitorReply& reply = static_cast<api::CreateVisitorReply&>(*r);
+    auto& reply = dynamic_cast<api::CreateVisitorReply&>(*r);
 
     _trace.add(reply.steal_trace());
 
-    SentMessagesMap::iterator iter = _sentMessages.find(reply.getMsgId());
+    auto iter = _sentMessages.find(reply.getMsgId());
     assert(iter != _sentMessages.end());
 
     api::CreateVisitorCommand& storageVisitor = *iter->second;
@@ -223,9 +220,8 @@ VisitorOperation::onReceive(
     }
     // else: will lose code for non-critical events, degenerates to "not found".
 
-    for (uint32_t i = 0; i < storageVisitor.getBuckets().size(); i++) {
-        const document::BucketId& bid(storageVisitor.getBuckets()[i]);
-        markCompleted(bid, result);
+    for (const auto& bucket : storageVisitor.getBuckets()) {
+        markCompleted(bucket, result);
     }
 
     _sentMessages.erase(iter);
@@ -234,15 +230,14 @@ VisitorOperation::onReceive(
 
 namespace {
 
-class VisitorVerificationException
-{
+class VisitorVerificationException {
 public:
     VisitorVerificationException(api::ReturnCode::Result result,
                                  vespalib::stringref message)
         : _code(result, message)
     {}
 
-    const api::ReturnCode& getReturnCode() const {
+    const api::ReturnCode& getReturnCode() const noexcept {
         return _code;
     }
 
@@ -438,10 +433,11 @@ namespace {
 struct NextEntryFinder : public BucketDatabase::EntryProcessor {
     bool _first;
     document::BucketId _last;
-    std::unique_ptr<document::BucketId> _next;
+    std::optional<document::BucketId> _next;
 
-    NextEntryFinder(const document::BucketId& id)
-        : _first(true), _last(id), _next() {}
+    explicit NextEntryFinder(const document::BucketId& id) noexcept
+        : _first(true), _last(id), _next()
+    {}
 
     bool process(const BucketDatabase::ConstEntryRef& e) override {
         document::BucketId bucket(e.getBucketId());
@@ -450,27 +446,26 @@ struct NextEntryFinder : public BucketDatabase::EntryProcessor {
             _first = false;
             return true;
         } else {
-            _next.reset(new document::BucketId(bucket));
+            _next.emplace(bucket);
             return false;
         }
     }
 };
 
 
-std::unique_ptr<document::BucketId>
-getBucketIdAndLast(
-        BucketDatabase& database,
-        const document::BucketId& super,
-        const document::BucketId& last)
+std::optional<document::BucketId>
+getBucketIdAndLast(BucketDatabase& database,
+                   const document::BucketId& super,
+                   const document::BucketId& last)
 {
     if (!super.contains(last)) {
         NextEntryFinder proc(super);
         database.forEach(proc, super);
-        return std::move(proc._next);
+        return proc._next;
     } else {
         NextEntryFinder proc(last);
         database.forEach(proc, last);
-        return std::move(proc._next);
+        return proc._next;
     }
 }
 
@@ -481,12 +476,12 @@ VisitorOperation::expandBucketContained()
 {
     uint32_t maxBuckets = _msg->getMaxBucketsPerVisitor();
 
-    std::unique_ptr<document::BucketId> bid = getBucketIdAndLast(
+    std::optional<document::BucketId> bid = getBucketIdAndLast(
             _bucketSpace.getBucketDatabase(),
             _superBucket.bid,
             _lastBucket);
 
-    while (bid.get() && _superBucket.subBuckets.size() < maxBuckets) {
+    while (bid.has_value() && _superBucket.subBuckets.size() < maxBuckets) {
         if (!_superBucket.bid.contains(*bid)) {
             LOG(spam,
                 "Iterating: Found bucket %s is not contained in bucket %s",
@@ -502,7 +497,7 @@ VisitorOperation::expandBucketContained()
         bid = getBucketIdAndLast(_bucketSpace.getBucketDatabase(), _superBucket.bid, *bid);
     }
 
-    bool doneExpand = (!bid.get() || !_superBucket.bid.contains(*bid));
+    bool doneExpand = (!bid.has_value() || !_superBucket.bid.contains(*bid));
     return doneExpand;
 }
 
@@ -541,15 +536,8 @@ VisitorOperation::expandBucket()
 
 namespace {
 
-bool
-alreadyTried(const std::vector<uint16_t>& triedNodes, uint16_t node)
-{
-    for (uint32_t j = 0; j < triedNodes.size(); j++) {
-        if (triedNodes[j] == node) {
-            return true;
-        }
-    }
-    return false;
+[[nodiscard]] bool alreadyTried(const std::vector<uint16_t>& triedNodes, uint16_t node) noexcept {
+    return std::find(triedNodes.begin(), triedNodes.end(), node) != triedNodes.end();
 }
 
 int
