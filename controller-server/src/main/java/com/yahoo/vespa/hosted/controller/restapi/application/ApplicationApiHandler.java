@@ -758,7 +758,9 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
     }
 
     private String getString(Inspector field, String defaultVale) {
-        return field.valid() ? field.asString().trim() : defaultVale;
+        var string = field.valid() ? field.asString().trim() : defaultVale;
+        if (string.length() > 512) throw new IllegalArgumentException("Input value too long");
+        return string;
     }
 
     private SlimeJsonResponse updateTenantInfo(CloudTenant tenant, HttpRequest request) {

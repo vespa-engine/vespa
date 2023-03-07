@@ -81,6 +81,14 @@ public class ApplicationApiCloudTest extends ControllerContainerCloudTest {
     }
 
     @Test
+    void tenant_info_profile_too_long() {
+        var request = request("/application/v4/tenant/scoober/info/profile", PUT)
+                .data("{\"contact\":{\"name\":\"" + "a".repeat(513) + "\",\"email\":\"foo@example.com\"},\"tenant\":{\"company\":\"Scoober, Inc.\",\"website\":\"https://example.com/\"}}")
+                .roles(Set.of(Role.administrator(tenantName)));
+        tester.assertResponse(request, "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Input value too long\"}", 400);
+    }
+
+    @Test
     void tenant_info_billing() {
         var request = request("/application/v4/tenant/scoober/info/billing", GET)
                 .roles(Set.of(Role.reader(tenantName)));
