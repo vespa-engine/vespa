@@ -8,7 +8,10 @@
 
 namespace search::attribute {
 
-class SingleRawAttribute: public NotImplementedAttribute
+/**
+ * Attribute vector storing a single raw value per document.
+ */
+class SingleRawAttribute : public NotImplementedAttribute
 {
     using AtomicEntryRef = vespalib::datastore::AtomicEntryRef;
     using EntryRef = vespalib::datastore::EntryRef;
