@@ -7,6 +7,7 @@
 #include "singlestringattribute.h"
 #include "singleboolattribute.h"
 #include "singlenumericattribute.hpp"
+#include "single_raw_attribute.h"
 #include <vespa/eval/eval/fast_value.h>
 #include <vespa/searchlib/tensor/dense_tensor_attribute.h>
 #include <vespa/searchlib/tensor/serialized_fast_value_attribute.h>
@@ -51,6 +52,8 @@ AttributeFactory::createSingleStd(stringref name, const Config & info)
         }
     case BasicType::REFERENCE:
         return std::make_shared<attribute::ReferenceAttribute>(name, info);
+    case BasicType::RAW:
+        return std::make_shared<attribute::SingleRawAttribute>(name, info);
     default:
         break;
     }
