@@ -349,7 +349,7 @@ public class ModelsEvaluationHandlerTest {
         RankingExpressionsConfig expressionsConfig = ConfigGetter.getConfig(RankingExpressionsConfig.class, fileConfigId("ranking-expressions.cfg"));
         OnnxModelsConfig onnxModelsConfig = ConfigGetter.getConfig(OnnxModelsConfig.class, fileConfigId("onnx-models.cfg"));
 
-        return new ModelsEvaluator(new RankProfilesConfigImporterWithMockedConstants(Path.fromString(MODELS_DIR).append("constants"), MockFileAcquirer.returnFile(null)),
+        return new ModelsEvaluator(new RankProfilesConfigImporterWithMockedConstants(Path.fromString(MODELS_DIR), MockFileAcquirer.returnFile(null)),
                 config, constantsConfig, expressionsConfig, onnxModelsConfig);
     }
 

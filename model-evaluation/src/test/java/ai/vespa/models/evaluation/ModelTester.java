@@ -37,7 +37,7 @@ public class ModelTester {
         OnnxModelsConfig onnxModelsConfig = ConfigGetter.getConfig(OnnxModelsConfig.class, fileConfigId(path, "onnx-models.cfg"));
 
 
-        return new RankProfilesConfigImporterWithMockedConstants(Path.fromString(path).append("constants"), MockFileAcquirer.returnFile(null))
+        return new RankProfilesConfigImporterWithMockedConstants(Path.fromString(path), MockFileAcquirer.returnFile(null))
                        .importFrom(config, constantsConfig, expressionsConfig, onnxModelsConfig);
     }
 
