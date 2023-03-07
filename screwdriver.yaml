@@ -267,6 +267,17 @@ jobs:
           dnf config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
           dnf install -y docker-ce docker-ce-cli containerd.io
           docker system info
+          docker build --help || true
+          cat <<EOF > Dockerfile
+          ARG VESPA_VERSION
+          FROM docker.io/vespaengine/vespa:\$VESPA_VERSION
+          USER root
+          RUN whoami
+          USER vespa
+          EOF
+          docker build --squash --progress plain --build-arg VESPA_VERSION=$VESPA_VERSION --tag docker.io/$IMAGE_NAME:$VESPA_VERSION \
+            --tag docker.io/$IMAGE_NAME:latest --file Dockerfile .
+          return 1
       - checkout: |
           mkdir -p workdir
           cd workdir
@@ -311,7 +322,7 @@ jobs:
           ln -sf /opt/vespa-cli_${VESPA_CLI_VERSION}_linux_amd64/bin/vespa /usr/local/bin/
           # Run test
           test/test.py -c test/_quick-start.yaml
-      - publish-test-image: |
+      - publish-container-image: |
           if [[ -z $SD_PULL_REQUEST ]]; then
             if curl -fsSL https://index.docker.io/v1/repositories/$IMAGE_NAME/tags/$VESPA_VERSION &> /dev/null; then
               echo "Container image docker.io/$IMAGE_NAME:$VESPA_VERSION aldready exists."
