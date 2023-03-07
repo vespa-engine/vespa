@@ -77,12 +77,12 @@ public class ContainerSearch extends ContainerSubsystem<SearchChains>
             if (searchCluster instanceof IndexedSearchCluster indexed) {
                 var dispatcher = new DispatcherComponent(indexed);
                 owningCluster.addComponent(dispatcher);
-                if (globalPhase) {
-                    for (var documentDb : indexed.getDocumentDbs()) {
-                        var factory = new RankProfilesEvaluatorComponent(documentDb);
-                        if (! owningCluster.getComponentsMap().containsKey(factory.getComponentId())) {
-                            owningCluster.addComponent(factory);
-                        }
+            }
+            if (globalPhase) {
+                for (var documentDb : searchCluster.getDocumentDbs()) {
+                    var factory = new RankProfilesEvaluatorComponent(documentDb);
+                    if (! owningCluster.getComponentsMap().containsKey(factory.getComponentId())) {
+                        owningCluster.addComponent(factory);
                     }
                 }
             }
