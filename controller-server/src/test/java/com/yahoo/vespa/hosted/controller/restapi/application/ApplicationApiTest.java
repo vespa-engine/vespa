@@ -701,7 +701,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1/environment/prod/region/us-central-1/private-services", GET)
                                       .userIdentity(USER_ID),
                               """
-                              {"privateServices":[{"cluster":"default","serviceId":"service","type":"unknown","allowedUrns":[{"type":"aws-private-link","urn":"arne"}],"endpoints":[{"endpointId":"endpoint-1","state":"available"}]}]}""");
+                              {"privateServices":[{"cluster":"default","serviceId":"service","type":"unknown","allowedUrns":[{"type":"aws-private-link","urn":"arne"}],"endpoints":[{"endpointId":"endpoint-1","state":"open","detail":"available"}]}]}""");
 
         // GET service/state/v1
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1/environment/prod/region/us-central-1/service/storagenode/host.com/state/v1/?foo=bar", GET)

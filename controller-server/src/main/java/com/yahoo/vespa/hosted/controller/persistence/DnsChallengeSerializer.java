@@ -1,18 +1,14 @@
 package com.yahoo.vespa.hosted.controller.persistence;
 
-import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.CloudAccount;
-import com.yahoo.config.provision.ClusterSpec;
-import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Slime;
 import com.yahoo.slime.SlimeUtils;
 import com.yahoo.vespa.hosted.controller.api.identifiers.ClusterId;
-import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordData;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordName;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.VpcEndpointService.DnsChallenge;
-import com.yahoo.vespa.hosted.controller.api.integration.dns.VpcEndpointService.State;
+import com.yahoo.vespa.hosted.controller.api.integration.dns.VpcEndpointService.ChallengeState;
 
 import java.time.Instant;
 
@@ -53,17 +49,17 @@ class DnsChallengeSerializer {
         return uncheck(() -> SlimeUtils.toJsonBytes(slime));
     }
 
-    private static State toState(String value) {
+    private static ChallengeState toState(String value) {
         return switch (value) {
-            case "pending" -> State.pending;
-            case "ready" -> State.ready;
-            case "running" -> State.running;
-            case "done" -> State.done;
+            case "pending" -> ChallengeState.pending;
+            case "ready" -> ChallengeState.ready;
+            case "running" -> ChallengeState.running;
+            case "done" -> ChallengeState.done;
             default -> throw new IllegalArgumentException("invalid serialized state: " + value);
         };
     }
 
-    private static String toString(State state) {
+    private static String toString(ChallengeState state) {
         return switch (state) {
             case pending -> "pending";
             case ready -> "ready";

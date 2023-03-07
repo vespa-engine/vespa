@@ -2,10 +2,8 @@
 package com.yahoo.vespa.hosted.controller.routing;
 
 import ai.vespa.http.DomainName;
-import com.yahoo.concurrent.UncheckedTimeoutException;
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.zone.RoutingMethod;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.transaction.Mutex;
@@ -22,7 +20,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.dns.Record.Type;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordData;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordName;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.VpcEndpointService.DnsChallenge;
-import com.yahoo.vespa.hosted.controller.api.integration.dns.VpcEndpointService.State;
+import com.yahoo.vespa.hosted.controller.api.integration.dns.VpcEndpointService.ChallengeState;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.WeightedAliasTarget;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.WeightedDirectTarget;
 import com.yahoo.vespa.hosted.controller.application.Endpoint;
@@ -30,13 +28,10 @@ import com.yahoo.vespa.hosted.controller.application.EndpointId;
 import com.yahoo.vespa.hosted.controller.application.EndpointList;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.dns.NameServiceForwarder;
-import com.yahoo.vespa.hosted.controller.dns.NameServiceQueue;
 import com.yahoo.vespa.hosted.controller.dns.NameServiceQueue.Priority;
 import com.yahoo.vespa.hosted.controller.dns.NameServiceRequest;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
-import com.yahoo.yolean.UncheckedInterruptedException;
 
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -415,12 +410,12 @@ public class RoutingPolicies {
                                                         .collect(Collectors.toSet());
             try {
                 challenges.removeIf(challenge -> {
-                    if (challenge.state() == State.pending) {
+                    if (challenge.state() == ChallengeState.pending) {
                         if (pendingRequests.contains(challenge.name())) return false;
-                        challenge = challenge.withState(State.ready);
+                        challenge = challenge.withState(ChallengeState.ready);
                     }
-                    State state = controller.serviceRegistry().vpcEndpointService().process(challenge);
-                    if (state == State.done) {
+                    ChallengeState state = controller.serviceRegistry().vpcEndpointService().process(challenge);
+                    if (state == ChallengeState.done) {
                         removeDnsChallenge(challenge);
                         return true;
                     }

@@ -2000,7 +2000,8 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
                         .forEach(endpoint -> {
                             Cursor endpointObject = endpointsArray.addObject();
                             endpointObject.setString("endpointId", endpoint.endpointId());
-                            endpointObject.setString("state", endpoint.state());
+                            endpointObject.setString("state", endpoint.stateValue().name());
+                            endpointObject.setString("detail", endpoint.stateString());
                         });
             });
         }
