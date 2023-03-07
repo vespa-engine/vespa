@@ -51,10 +51,6 @@ double ImportedAttributeVectorReadGuard::getFloat(DocId doc) const {
     return _target_attribute.getFloat(getTargetLid(doc));
 }
 
-const char *ImportedAttributeVectorReadGuard::getString(DocId doc, char *buffer, size_t sz) const {
-    return _target_attribute.getString(getTargetLid(doc), buffer, sz);
-}
-
 vespalib::ConstArrayRef<char>
 ImportedAttributeVectorReadGuard::get_raw(DocId doc) const
 {

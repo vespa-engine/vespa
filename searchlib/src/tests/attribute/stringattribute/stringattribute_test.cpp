@@ -303,7 +303,7 @@ testDefaultValueOnAddDoc(AttributeVector & v)
     EXPECT_EQUAL(1u, doc);
     EXPECT_EQUAL(2u, v.getNumDocs());
     EXPECT_TRUE( IEnumStore::Index(EntryRef(v.getEnum(doc))).valid() );
-    EXPECT_EQUAL(0u, strlen(v.getString(doc, NULL, 0)));
+    EXPECT_EQUAL(0u, v.get_raw(doc).size());
 }
 
 template <typename Attribute>

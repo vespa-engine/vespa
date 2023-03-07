@@ -76,11 +76,12 @@ std::unique_ptr<AttributeResult>
 createResult(const IAttributeVector * attribute)
 {
     IAttributeVector::EnumRefs enumRefs = attribute->make_enum_read_view();
-    return (enumRefs.empty())
-        ? attribute->is_raw_type()
-            ? std::make_unique<RawAttributeResult>(attribute, 0)
-            : std::make_unique<AttributeResult>(attribute, 0)
-        : std::make_unique<EnumAttributeResult>(enumRefs, attribute, 0);
+    if (enumRefs.empty()) {
+        if (attribute->isIntegerType()) return std::make_unique<IntegerAttributeResult>(attribute, 0);
+        if (attribute->isFloatingPointType()) return std::make_unique<FloatAttributeResult>(attribute, 0);
+        return std::make_unique<AttributeResult>(attribute, 0);
+    }
+    return std::make_unique<EnumAttributeResult>(enumRefs, attribute, 0);
 }
 
 }

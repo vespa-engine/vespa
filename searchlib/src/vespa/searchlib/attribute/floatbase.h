@@ -30,7 +30,6 @@ public:
     bool applyWeight(DocId doc, const FieldValue& fv, const document::AssignValueUpdate& wAdjust) override;
     uint32_t clearDoc(DocId doc) override;
 protected:
-    const char * getString(DocId doc, char * s, size_t sz) const override;
     FloatingPointAttribute(const vespalib::string & name, const Config & c);
     using Change = ChangeTemplate<NumericChangeData<double>>;
     using ChangeVector = ChangeVectorT<Change>;

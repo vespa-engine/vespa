@@ -14,7 +14,6 @@ struct NotImplementedAttribute : AttributeVector {
     uint32_t getValueCount(DocId) const override;
     largeint_t getInt(DocId) const override;
     double getFloat(DocId) const override;
-    const char * getString(DocId, char *, size_t) const override;
     vespalib::ConstArrayRef<char> get_raw(DocId) const override;
     uint32_t get(DocId, largeint_t *, uint32_t) const override;
     uint32_t get(DocId, double *, uint32_t) const override;

@@ -88,13 +88,6 @@ bool FloatingPointAttribute::apply(DocId doc, const ArithmeticValueUpdate & op)
     return retval;
 }
 
-const char *
-FloatingPointAttribute::getString(DocId doc, char * s, size_t sz) const {
-    double v = getFloat(doc);
-    snprintf(s, sz, "%g", v);
-    return s;
-}
-
 vespalib::ConstArrayRef<char>
 FloatingPointAttribute::get_raw(DocId) const
 {

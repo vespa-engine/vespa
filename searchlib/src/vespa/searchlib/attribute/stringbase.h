@@ -54,7 +54,6 @@ public:
     largeint_t getInt(DocId doc)  const override { return strtoll(get(doc), nullptr, 0); }
     double getFloat(DocId doc)    const override;
     vespalib::ConstArrayRef<char> get_raw(DocId) const override;
-    const char * getString(DocId doc, char * v, size_t sz) const override { (void) v; (void) sz; return get(doc); }
 protected:
     StringAttribute(const vespalib::string & name);
     StringAttribute(const vespalib::string & name, const Config & c);

@@ -55,19 +55,6 @@ uint32_t IntegerAttribute::get(DocId doc, WeightedConstChar * v, uint32_t sz) co
     (void) sz;
     return 0;
 }
-const char *
-IntegerAttribute::getString(DocId doc, char * s, size_t sz) const {
-    if (sz > 1) {
-        largeint_t v = getInt(doc);
-        auto res = std::to_chars(s, s + sz - 1, v, 10);
-        if (res.ec == std::errc()) {
-            res.ptr[0] = 0;
-        } else {
-            s[0] = 0;
-        }
-    }
-    return s;
-}
 
 vespalib::ConstArrayRef<char>
 IntegerAttribute::get_raw(DocId) const
