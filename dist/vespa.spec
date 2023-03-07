@@ -95,7 +95,7 @@ BuildRequires: vespa-lz4-devel >= 1.9.4-1
 BuildRequires: vespa-onnxruntime-devel = 1.13.1
 BuildRequires: vespa-protobuf-devel = 3.21.7
 %define _use_vespa_protobuf 1
-BuildRequires: vespa-libzstd-devel >= 1.5.4-1
+BuildRequires: vespa-libzstd-devel >= 1.5.2-1
 %endif
 %if 0%{?el9}
 BuildRequires: cmake >= 3.20.2
@@ -104,7 +104,7 @@ BuildRequires: maven-openjdk17
 BuildRequires: openssl-devel
 BuildRequires: vespa-lz4-devel >= 1.9.4-1
 BuildRequires: vespa-onnxruntime-devel = 1.13.1
-BuildRequires: vespa-libzstd-devel >= 1.5.4-1
+BuildRequires: vespa-libzstd-devel >= 1.5.2-1
 BuildRequires: vespa-protobuf-devel = 3.21.7
 %define _use_vespa_protobuf 1
 BuildRequires: llvm-devel
@@ -126,7 +126,7 @@ BuildRequires: maven-openjdk17
 BuildRequires: openssl-devel
 BuildRequires: vespa-lz4-devel >= 1.9.4-1
 BuildRequires: vespa-onnxruntime-devel = 1.13.1
-BuildRequires: vespa-libzstd-devel >= 1.5.4-1
+BuildRequires: vespa-libzstd-devel >= 1.5.2-1
 BuildRequires: protobuf-devel
 BuildRequires: llvm-devel
 BuildRequires: boost-devel
@@ -254,7 +254,7 @@ Requires: vespa-openssl >= 1.1.1o-1
 Requires: openssl-libs
 %endif
 Requires: vespa-lz4 >= 1.9.4-1
-Requires: vespa-libzstd >= 1.5.4-1
+Requires: vespa-libzstd >= 1.5.2-1
 %if 0%{?el8}
 Requires: vespa-openblas = 0.3.21
 %else
