@@ -1,24 +1,16 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.ranking;
 
-import ai.vespa.models.evaluation.FunctionEvaluator;
-import ai.vespa.models.evaluation.Model;
 import com.yahoo.component.annotation.Inject;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.ranking.RankProfilesEvaluator.GlobalPhaseData;
-import com.yahoo.search.result.Hit;
-import com.yahoo.search.result.HitGroup;
 import com.yahoo.tensor.Tensor;
 
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.logging.Logger;
 import java.util.function.Supplier;
+import java.util.logging.Logger;
 
 public class GlobalPhaseRanker {
 
@@ -32,12 +24,11 @@ public class GlobalPhaseRanker {
     }
 
     public void process(Query query, Result result, String schema) {
-        var proxy = factory.proxyForSchema(schema);
         String rankProfile = query.getRanking().getProfile();
-        var optData = proxy.getGlobalPhaseData(rankProfile);
-        if (optData.isEmpty())
-            return;
-        GlobalPhaseData data = optData.get();
+        GlobalPhaseData data = factory.evaluatorForSchema(schema)
+                .flatMap(evaluator -> evaluator.getGlobalPhaseData(rankProfile))
+                .orElse(null);
+        if (data == null) return;
         var functionEvaluatorSource = data.functionEvaluatorSource();
         var prepared = findFromQuery(query, data.needInputs());
         Supplier<Evaluator> supplier = () -> {

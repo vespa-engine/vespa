@@ -46,6 +46,7 @@ public class ContainerSearch extends ContainerSubsystem<SearchChains>
 
     private final ApplicationContainerCluster owningCluster;
     private final List<SearchCluster> searchClusters = new LinkedList<>();
+    private final Collection<String> schemasWithGlobalPhase;
     private final boolean globalPhase;
 
     private QueryProfiles queryProfiles;
@@ -55,6 +56,7 @@ public class ContainerSearch extends ContainerSubsystem<SearchChains>
     public ContainerSearch(DeployState deployState, ApplicationContainerCluster cluster, SearchChains chains) {
         super(chains);
         this.globalPhase = deployState.featureFlags().enableGlobalPhase();
+        this.schemasWithGlobalPhase = getSchemasWithGlobalPhase(deployState);
         this.owningCluster = cluster;
 
         owningCluster.addComponent(Component.fromClassAndBundle(CompiledQueryProfileRegistry.class, SEARCH_AND_DOCPROC_BUNDLE));
@@ -63,6 +65,11 @@ public class ContainerSearch extends ContainerSubsystem<SearchChains>
         owningCluster.addComponent(Component.fromClassAndBundle(RankProfilesEvaluatorFactory.class, SEARCH_AND_DOCPROC_BUNDLE));
         owningCluster.addComponent(Component.fromClassAndBundle(com.yahoo.search.ranking.GlobalPhaseRanker.class, SEARCH_AND_DOCPROC_BUNDLE));
         cluster.addSearchAndDocprocBundles();
+    }
+
+    private static Collection<String> getSchemasWithGlobalPhase(DeployState state) {
+        return state.rankProfileRegistry().all().stream()
+                .filter(rp -> rp.getGlobalPhase() != null).map(rp -> rp.schema().getName()).toList();
     }
 
     public void connectSearchClusters(Map<String, SearchCluster> searchClusters) {
@@ -80,6 +87,7 @@ public class ContainerSearch extends ContainerSubsystem<SearchChains>
             }
             if (globalPhase) {
                 for (var documentDb : searchCluster.getDocumentDbs()) {
+                    if (!schemasWithGlobalPhase.contains(documentDb.getSchemaName())) continue;
                     var factory = new RankProfilesEvaluatorComponent(documentDb);
                     if (! owningCluster.getComponentsMap().containsKey(factory.getComponentId())) {
                         owningCluster.addComponent(factory);
