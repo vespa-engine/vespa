@@ -6,9 +6,9 @@ package com.yahoo.vespa.config.server.http;
  *
  * @author hmusum
  */
-public class NotFoundException extends RuntimeException {
+public class PreconditionFailedException extends RuntimeException {
 
-    public NotFoundException(String message) {
+    public PreconditionFailedException(String message) {
         super(message);
     }
 

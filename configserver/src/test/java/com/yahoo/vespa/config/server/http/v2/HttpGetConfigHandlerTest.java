@@ -25,6 +25,7 @@ import org.junit.rules.TemporaryFolder;
 import java.io.File;
 import java.io.IOException;
 import java.util.Collections;
+import java.util.Map;
 
 import static com.yahoo.jdisc.Response.Status.BAD_REQUEST;
 import static com.yahoo.jdisc.Response.Status.NOT_FOUND;
@@ -129,6 +130,20 @@ public class HttpGetConfigHandlerTest {
         HttpResponse response = handler.handle(request);
         String renderedString = SessionHandlerTest.getRenderedString(response);
         assertTrue(renderedString, renderedString.startsWith(expected));
+    }
+
+    @Test
+    public void require_that_required_generation_property_works() throws IOException {
+        HttpRequest request = HttpRequest.createTestRequest(configUri, GET, null, Map.of("requiredGeneration", "2"));
+        HttpResponse response = handler.handle(request);
+        String renderedString = SessionHandlerTest.getRenderedString(response);
+        assertTrue(renderedString, renderedString.startsWith(expected));
+
+        request = HttpRequest.createTestRequest(configUri, GET, null, Map.of("requiredGeneration", "3"));
+        response = handler.handle(request);
+        assertEquals(412, response.getStatus());
+        renderedString = SessionHandlerTest.getRenderedString(response);
+        assertEquals("{\"error-code\":\"PRECONDITION_FAILED\",\"message\":\"Config for required generation 3 could not be found.\"}", renderedString);
     }
 
     private PrepareParams prepareParams() {

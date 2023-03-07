@@ -16,6 +16,7 @@ import static com.yahoo.jdisc.Response.Status.CONFLICT;
 import static com.yahoo.jdisc.Response.Status.INTERNAL_SERVER_ERROR;
 import static com.yahoo.jdisc.Response.Status.METHOD_NOT_ALLOWED;
 import static com.yahoo.jdisc.Response.Status.NOT_FOUND;
+import static com.yahoo.jdisc.Response.Status.PRECONDITION_FAILED;
 import static com.yahoo.jdisc.Response.Status.REQUEST_TIMEOUT;
 
 /**
@@ -51,7 +52,8 @@ public class HttpErrorResponse extends HttpResponse {
         CERTIFICATE_NOT_READY,
         LOAD_BALANCER_NOT_READY,
         CONFIG_NOT_CONVERGED,
-        REINDEXING_STATUS_UNAVAILABLE
+        REINDEXING_STATUS_UNAVAILABLE,
+        PRECONDITION_FAILED
     }
 
     public static HttpErrorResponse notFoundError(String msg) {
@@ -112,6 +114,10 @@ public class HttpErrorResponse extends HttpResponse {
 
     public static HttpResponse reindexingStatusUnavailable(String msg) {
         return new HttpErrorResponse(CONFLICT, ErrorCode.REINDEXING_STATUS_UNAVAILABLE.name(), msg);
+    }
+
+    public static HttpResponse preconditionFailed(String msg) {
+        return new HttpErrorResponse(PRECONDITION_FAILED, ErrorCode.PRECONDITION_FAILED.name(), msg);
     }
 
     @Override
