@@ -111,20 +111,20 @@ public class VespaMetricSet {
     private static Set<Metric> getConfigServerMetrics() {
         Set<Metric> metrics =new LinkedHashSet<>();
 
-        addMetric(metrics, ConfigServerMetrics.CONFIGSERVER_REQUESTS.count());
-        addMetric(metrics, ConfigServerMetrics.CONFIGSERVER_FAILED_REQUESTS.count());
-        addMetric(metrics, ConfigServerMetrics.CONFIGSERVER_LATENCY, EnumSet.of(max, sum, count));
-        addMetric(metrics, ConfigServerMetrics.CONFIGSERVER_CACHE_CONFIG_ELEMS.last());
-        addMetric(metrics, ConfigServerMetrics.CONFIGSERVER_CACHE_CHECKSUM_ELEMS.last());
-        addMetric(metrics, ConfigServerMetrics.CONFIGSERVER_HOSTS.last());
-        addMetric(metrics, ConfigServerMetrics.CONFIGSERVER_DELAYED_RESPONSES.count());
-        addMetric(metrics, ConfigServerMetrics.CONFIGSERVER_SESSION_CHANGE_ERRORS.count());
+        addMetric(metrics, ConfigServerMetrics.REQUESTS.count());
+        addMetric(metrics, ConfigServerMetrics.FAILED_REQUESTS.count());
+        addMetric(metrics, ConfigServerMetrics.LATENCY, EnumSet.of(max, sum, count));
+        addMetric(metrics, ConfigServerMetrics.CACHE_CONFIG_ELEMS.last());
+        addMetric(metrics, ConfigServerMetrics.CACHE_CHECKSUM_ELEMS.last());
+        addMetric(metrics, ConfigServerMetrics.HOSTS.last());
+        addMetric(metrics, ConfigServerMetrics.DELAYED_RESPONSES.count());
+        addMetric(metrics, ConfigServerMetrics.SESSION_CHANGE_ERRORS.count());
 
-        addMetric(metrics, ConfigServerMetrics.CONFIGSERVER_ZK_Z_NODES.last());
-        addMetric(metrics, ConfigServerMetrics.CONFIGSERVER_ZK_AVG_LATENCY.last());
-        addMetric(metrics, ConfigServerMetrics.CONFIGSERVER_ZK_MAX_LATENCY.last());
-        addMetric(metrics, ConfigServerMetrics.CONFIGSERVER_ZK_CONNECTIONS.last());
-        addMetric(metrics, ConfigServerMetrics.CONFIGSERVER_ZK_OUTSTANDING_REQUESTS.last());
+        addMetric(metrics, ConfigServerMetrics.ZK_Z_NODES.last());
+        addMetric(metrics, ConfigServerMetrics.ZK_AVG_LATENCY.last());
+        addMetric(metrics, ConfigServerMetrics.ZK_MAX_LATENCY.last());
+        addMetric(metrics, ConfigServerMetrics.ZK_CONNECTIONS.last());
+        addMetric(metrics, ConfigServerMetrics.ZK_OUTSTANDING_REQUESTS.last());
 
         return metrics;
     }
