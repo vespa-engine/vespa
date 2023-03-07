@@ -13,7 +13,7 @@ constexpr float ALLOC_GROW_FACTOR = 0.2;
 
 constexpr double mapper_grow_factor = 1.03;
 
-constexpr uint32_t max_small_subspaces_type_id = 500u;
+constexpr uint32_t max_small_buffer_type_id = 500u;
 
 }
 
@@ -22,12 +22,12 @@ namespace search::attribute {
 SingleRawAttribute::SingleRawAttribute(const vespalib::string& name, const Config& config)
     : NotImplementedAttribute(name, config),
       _ref_vector(config.getGrowStrategy(), getGenerationHolder()),
-      _array_store(ArrayStoreType::optimizedConfigForHugePage(max_small_subspaces_type_id,
-                                                              RawBufferTypeMapper(max_small_subspaces_type_id, mapper_grow_factor),
+      _array_store(ArrayStoreType::optimizedConfigForHugePage(max_small_buffer_type_id,
+                                                              RawBufferTypeMapper(max_small_buffer_type_id, mapper_grow_factor),
                                                               MemoryAllocator::HUGEPAGE_SIZE,
                                                               MemoryAllocator::PAGE_SIZE,
                                                               8_Ki, ALLOC_GROW_FACTOR),
-                   get_memory_allocator(), RawBufferTypeMapper(max_small_subspaces_type_id, mapper_grow_factor))
+                   get_memory_allocator(), RawBufferTypeMapper(max_small_buffer_type_id, mapper_grow_factor))
 {
 }
 

@@ -16,7 +16,7 @@ protected:
     std::vector<size_t> get_array_sizes(uint32_t num_array_sizes);
     std::vector<size_t> get_large_array_sizes(uint32_t num_large_arrays);
     void select_type_ids(std::vector<size_t> array_sizes);
-    void setup_mapper(uint32_t max_small_subspaces_type_id, double grow_factor);
+    void setup_mapper(uint32_t max_small_buffer_type_id, double grow_factor);
     static uint32_t calc_max_small_array_type_id(double grow_factor);
 };
 
@@ -29,9 +29,9 @@ RawBufferTypeMapperTest::RawBufferTypeMapperTest()
 RawBufferTypeMapperTest::~RawBufferTypeMapperTest() = default;
 
 void
-RawBufferTypeMapperTest::setup_mapper(uint32_t max_small_subspaces_type_id, double grow_factor)
+RawBufferTypeMapperTest::setup_mapper(uint32_t max_small_buffer_type_id, double grow_factor)
 {
-    _mapper = RawBufferTypeMapper(max_small_subspaces_type_id, grow_factor);
+    _mapper = RawBufferTypeMapper(max_small_buffer_type_id, grow_factor);
 }
 
 std::vector<size_t>

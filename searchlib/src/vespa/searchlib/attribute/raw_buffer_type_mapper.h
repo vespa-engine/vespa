@@ -24,7 +24,7 @@ public:
     using LargeBufferType = vespalib::datastore::LargeArrayBufferType<char>;
 
     RawBufferTypeMapper();
-    RawBufferTypeMapper(uint32_t max_small_subspaces_type_id, double grow_factor);
+    RawBufferTypeMapper(uint32_t max_small_buffer_type_id, double grow_factor);
     ~RawBufferTypeMapper();
 };
 
