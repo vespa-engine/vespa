@@ -339,6 +339,9 @@ testSingleValue(Attribute & svsa, Config &cfg)
             for (uint32_t j = i - 9; j <= i; ++j) {
                 snprintf(tmp, sizeof(tmp), "enum%u", j % 10);
                 EXPECT_TRUE( strcmp(t = v.get(j), tmp) == 0 );
+                auto raw = v.get_raw(j);
+                EXPECT_EQUAL(strlen(tmp), raw.size());
+                EXPECT_EQUAL(0, memcmp(raw.data(), tmp, raw.size()));
                 e1 = v.getEnum(j);
                 EXPECT_TRUE( v.findEnum(t, e2) );
                 EXPECT_TRUE( e1 == e2 );
