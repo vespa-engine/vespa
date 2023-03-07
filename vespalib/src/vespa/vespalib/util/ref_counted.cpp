@@ -12,6 +12,7 @@ enable_ref_counted::internal_addref(uint32_t cnt) const noexcept
     // the thread obtaining the new reference already has a reference
     auto prev = _refs.fetch_add(cnt, std::memory_order_relaxed);
     assert(prev > 0);
+    assert(_guard == MAGIC);
 }
 
 void
@@ -21,6 +22,7 @@ enable_ref_counted::internal_subref(uint32_t cnt, [[maybe_unused]] uint32_t rese
     // our changes to the object must be visible to the deleter
     auto prev = _refs.fetch_sub(cnt, std::memory_order_release);
     assert(prev >= (reserve + cnt));
+    assert(_guard == MAGIC);
     if (prev == cnt) {
         // acquire because:
         // we need to see all object changes before deleting it
@@ -33,6 +35,7 @@ uint32_t
 enable_ref_counted::count_refs() const noexcept {
     auto result = _refs.load(std::memory_order_relaxed);
     assert(result > 0);
+    assert(_guard == MAGIC);
     return result;
 }
 
