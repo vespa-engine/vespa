@@ -50,7 +50,7 @@ shared:
 
 jobs:
   build-vespa:
-    requires: [~pr]
+    #requires: [~pr]
     annotations:
       screwdriver.cd/cpu: 7
       screwdriver.cd/ram: 16
@@ -237,6 +237,7 @@ jobs:
           screwdriver/update-vespa-version-in-sample-apps.sh $VESPA_VERSION
 
   publish-legacy-release:
+    requires: [~pr]
     image: docker.io/vespaengine/vespa-build-centos-stream8:latest
 
     annotations:
