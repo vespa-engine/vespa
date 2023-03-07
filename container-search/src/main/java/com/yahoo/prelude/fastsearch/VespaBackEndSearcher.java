@@ -40,8 +40,6 @@ public abstract class VespaBackEndSearcher extends PingableSearcher {
     /** for vespa-internal use only; consider renaming the summary class */
     public static final String SORTABLE_ATTRIBUTES_SUMMARY_CLASS = "attributeprefetch";
 
-    private static final CompoundName TRACE_DISABLE = new CompoundName("trace.disable");
-
     private String serverId;
 
     /** The set of all document databases available in the backend handled by this searcher */
@@ -240,7 +238,7 @@ public abstract class VespaBackEndSearcher extends PingableSearcher {
     }
 
     void traceQuery(String sourceName, String type, Query query, int offset, int hits, int level, Optional<String> quotedSummaryClass) {
-        if ((query.getTrace().getLevel()<level) || query.properties().getBoolean(TRACE_DISABLE)) return;
+        if ((query.getTrace().getLevel()<level) || !query.getTrace().getQuery()) return;
 
         StringBuilder s = new StringBuilder();
         s.append(sourceName).append(" ").append(type).append(" to dispatch: ")
@@ -309,12 +307,12 @@ public abstract class VespaBackEndSearcher extends PingableSearcher {
         quotedSummaryClass.ifPresent((String summaryClass) -> s.append(" summary=").append(summaryClass));
 
         query.trace(s.toString(), false, level);
-        if (query.getTrace().isTraceable(level + 1)) {
+        if (query.getTrace().isTraceable(level + 1) && query.getTrace().getQuery()) {
             query.trace("Current state of query tree: "
                             + new TextualQueryRepresentation(query.getModel().getQueryTree().getRoot()),
                     false, level+1);
         }
-        if (query.getTrace().isTraceable(level + 2)) {
+        if (query.getTrace().isTraceable(level + 2) && query.getTrace().getQuery()) {
             query.trace("YQL+ representation: " + query.yqlRepresentation(), level+2);
         }
     }
