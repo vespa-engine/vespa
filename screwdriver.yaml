@@ -258,7 +258,7 @@ jobs:
     steps:
       - get-vespa-version: |
           set -x
-          VESPA_VERSION=$(meta get vespa.version --external sd@8683:publish-release)
+          VESPA_VERSION=$(meta get vespa.version --external publish-release)
           if [[ $VESPA_VERSION == null ]] || [[ $VESPA_REF == null ]]; then
             echo "Must have valid Vespa version to continue (got VESPA_VERSION=$VESPA_VERSION)."
             return 1
