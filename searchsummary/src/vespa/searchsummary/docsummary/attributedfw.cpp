@@ -97,8 +97,8 @@ SingleAttrDFW::insertField(uint32_t docid, GetDocsumsState& state, Inserter &tar
         break;
     }
     case BasicType::STRING: {
-        const char *s = v.getString(docid, nullptr, 0); // no need to pass in a buffer, this attribute has a string storage.
-        target.insertString(vespalib::Memory(s));
+        auto s = v.get_raw(docid);
+        target.insertString(vespalib::Memory(s.data(), s.size()));
         break;
     }
     case BasicType::REFERENCE:

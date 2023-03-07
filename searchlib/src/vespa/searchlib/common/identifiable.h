@@ -151,6 +151,7 @@
 #define CID_search_expression_AttributeMapLookupNode        SEARCHLIB_CID(145)
 #define CID_search_expression_BoolResultNode                SEARCHLIB_CID(146)
 #define CID_search_expression_BoolResultNodeVector          SEARCHLIB_CID(147)
+#define CID_search_expression_RawAttributeResult            SEARCHLIB_CID(148)
 
 
 #define CID_search_QueryNode                                SEARCHLIB_CID(150)

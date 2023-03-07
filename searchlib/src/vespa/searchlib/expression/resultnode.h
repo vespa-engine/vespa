@@ -53,7 +53,6 @@ private:
 
 public:
     DECLARE_ABSTRACT_RESULTNODE(ResultNode);
-    ~ResultNode() { }
     using UP = std::unique_ptr<ResultNode>;
     using CP = vespalib::IdentifiablePtr<ResultNode>;
     virtual void set(const ResultNode & rhs) = 0;

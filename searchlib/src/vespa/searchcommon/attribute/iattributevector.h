@@ -377,7 +377,11 @@ public:
     virtual bool isPredicateType() const { return getBasicType() == BasicType::PREDICATE; }
     virtual bool isTensorType() const { return getBasicType() == BasicType::TENSOR; }
     virtual bool isReferenceType() const { return getBasicType() == BasicType::REFERENCE; }
-    virtual bool is_raw_type() const noexcept { return getBasicType() == BasicType::RAW; }
+    virtual bool is_raw_type() const noexcept {
+        BasicType::Type t = getBasicType();
+        return t == BasicType::RAW ||
+               t == BasicType::STRING;
+    }
 
     /**
      * Returns whether this is a multi value attribute.

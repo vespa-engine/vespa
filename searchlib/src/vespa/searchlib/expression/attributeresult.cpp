@@ -5,5 +5,6 @@
 namespace search::expression {
 
 IMPLEMENT_RESULTNODE(AttributeResult, ResultNode);
+IMPLEMENT_RESULTNODE(RawAttributeResult, ResultNode);
 
 }

@@ -3,8 +3,7 @@
 
 #include "integerresultnode.h"
 
-namespace search {
-namespace expression {
+namespace search::expression {
 
 class EnumResultNode : public IntegerResultNodeT<int64_t>
 {
@@ -20,5 +19,3 @@ private:
 };
 
 }
-}
-
