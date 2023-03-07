@@ -3,6 +3,7 @@
 #pragma once
 
 #include "not_implemented_attribute.h"
+#include "raw_buffer_type_mapper.h"
 #include <vespa/vespalib/datastore/array_store.h>
 #include <vespa/vespalib/util/rcuvector.h>
 
@@ -17,7 +18,7 @@ class SingleRawAttribute : public NotImplementedAttribute
     using EntryRef = vespalib::datastore::EntryRef;
     using RefVector = vespalib::RcuVectorBase<AtomicEntryRef>;
     using RefType = vespalib::datastore::EntryRefT<19>;
-    using ArrayStoreType = vespalib::datastore::ArrayStore<char, RefType>;
+    using ArrayStoreType = vespalib::datastore::ArrayStore<char, RefType, RawBufferTypeMapper>;
 
     RefVector                           _ref_vector;
     ArrayStoreType                      _array_store;
