@@ -28,10 +28,8 @@ protected:
 private:
     int64_t onGetInteger(size_t index) const override { (void) index; return _attribute->getInt(_docId); }
     double onGetFloat(size_t index)    const override { (void) index; return _attribute->getFloat(_docId); }
-    ConstBufferRef onGetString(size_t index, BufferRef buf) const override {
-        (void) index;
-        const char * t = _attribute->getString(_docId, buf.str(), buf.size());
-        return ConstBufferRef(t, strlen(t));
+    ConstBufferRef onGetString(size_t, BufferRef) const override {
+        return get_raw();
     }
     int64_t onGetEnum(size_t index) const override { (void) index; return (static_cast<int64_t>(_attribute->getEnum(_docId))); }
     void set(const search::expression::ResultNode&) override { }
@@ -41,17 +39,24 @@ private:
     DocId                                      _docId;
 };
 
-class RawAttributeResult : public AttributeResult {
+class IntegerAttributeResult : public AttributeResult {
 public:
-    DECLARE_RESULTNODE(RawAttributeResult);
-    RawAttributeResult() : AttributeResult() {}
-    RawAttributeResult(const attribute::IAttributeVector * attribute, DocId docId)
+    DECLARE_RESULTNODE(IntegerAttributeResult);
+    IntegerAttributeResult() : AttributeResult() {}
+    IntegerAttributeResult(const attribute::IAttributeVector * attribute, DocId docId)
         : AttributeResult(attribute, docId)
     { }
-    ConstBufferRef onGetString(size_t index, BufferRef buf) const override {
-        (void) index; (void) buf;
-        return get_raw();
-    }
+    ConstBufferRef onGetString(size_t index, BufferRef buf) const override;
+};
+
+class FloatAttributeResult : public AttributeResult {
+public:
+    DECLARE_RESULTNODE(FloatAttributeResult);
+    FloatAttributeResult() : AttributeResult() {}
+    FloatAttributeResult(const attribute::IAttributeVector * attribute, DocId docId)
+        : AttributeResult(attribute, docId)
+    { }
+    ConstBufferRef onGetString(size_t index, BufferRef buf) const override;
 };
 
 }

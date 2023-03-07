@@ -43,11 +43,6 @@ NotImplementedAttribute::getFloat(DocId) const {
     notImplemented();
 }
 
-const char *
-NotImplementedAttribute::getString(DocId, char *, size_t) const {
-    notImplemented();
-}
-
 vespalib::ConstArrayRef<char>
 NotImplementedAttribute::get_raw(DocId) const
 {

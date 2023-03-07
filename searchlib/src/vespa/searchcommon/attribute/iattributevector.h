@@ -128,18 +128,6 @@ public:
     virtual double getFloat(DocId doc)   const = 0;
 
     /**
-     * Returns the first value stored for the given document as a string.
-     * Uses the given buffer to store the actual string if no underlying
-     * string storage is used for this attribute vector.
-     *
-     * @param docId document identifier
-     * @param buffer content buffer to optionally store the string
-     * @param sz the size of the buffer
-     * @return the string value
-     **/
-    virtual const char * getString(DocId doc, char * buffer, size_t sz) const = 0;
-
-    /**
      * Return raw value.
      *
      * TODO: Consider accessing via new IRawAttribute interface class.

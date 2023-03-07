@@ -101,9 +101,11 @@ void ExtendAttributeTest::testExtendString(Attribute & attr)
     EXPECT_EQ(docId, 0u);
     EXPECT_EQ(attr.getNumDocs(), 1u);
     attr.add("1.7", 10);
-    EXPECT_EQ(std::string(attr.getString(0, NULL, 0)), "1.7");
+    auto buf = attr.get_raw(0);
+    EXPECT_EQ(std::string(buf.data(), buf.size()), "1.7");
     attr.add("2.3", 20);
-    EXPECT_EQ(std::string(attr.getString(0, NULL, 0)), attr.hasMultiValue() ? "1.7" : "2.3");
+    buf = attr.get_raw(0);
+    EXPECT_EQ(std::string(buf.data(), buf.size()), attr.hasMultiValue() ? "1.7" : "2.3");
     if (attr.hasMultiValue()) {
         AttributeVector::WeightedString v[2];
         EXPECT_EQ((static_cast<AttributeVector &>(attr)).get(0, v, 2), 2u);
@@ -118,7 +120,8 @@ void ExtendAttributeTest::testExtendString(Attribute & attr)
     EXPECT_EQ(docId, 1u);
     EXPECT_EQ(attr.getNumDocs(), 2u);
     attr.add("3.6", 30);
-    EXPECT_EQ(std::string(attr.getString(1, NULL, 0)), "3.6");
+    buf = attr.get_raw(1);
+    EXPECT_EQ(std::string(buf.data(), buf.size()), "3.6");
     if (attr.hasMultiValue()) {
         AttributeVector::WeightedString v[1];
         EXPECT_EQ((static_cast<AttributeVector &>(attr)).get(1, v, 1), 1u);
