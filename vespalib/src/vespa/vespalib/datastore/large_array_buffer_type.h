@@ -11,8 +11,6 @@ namespace vespalib::alloc { class MemoryAllocator; }
 
 namespace vespalib::datastore {
 
-template <typename EntryT> class ArrayStoreTypeMapper;
-
 /*
  * Class representing buffer type for large arrays in ArrayStore
  */
@@ -26,7 +24,12 @@ class LargeArrayBufferType : public BufferType<Array<EntryT>>
     using CleanContext = typename ParentType::CleanContext;
     std::shared_ptr<alloc::MemoryAllocator> _memory_allocator;
 public:
-    LargeArrayBufferType(const AllocSpec& spec, std::shared_ptr<alloc::MemoryAllocator> memory_allocator, ArrayStoreTypeMapper<EntryT>& mapper) noexcept;
+    LargeArrayBufferType(const AllocSpec& spec, std::shared_ptr<alloc::MemoryAllocator> memory_allocator) noexcept;
+    template <typename TypeMapper>
+    LargeArrayBufferType(const AllocSpec& spec, std::shared_ptr<alloc::MemoryAllocator> memory_allocator, TypeMapper&) noexcept
+        : LargeArrayBufferType(spec, std::move(memory_allocator))
+    {
+    }
     ~LargeArrayBufferType() override;
     void cleanHold(void* buffer, size_t offset, ElemCount numElems, CleanContext cleanCtx) override;
     const vespalib::alloc::MemoryAllocator* get_memory_allocator() const override;

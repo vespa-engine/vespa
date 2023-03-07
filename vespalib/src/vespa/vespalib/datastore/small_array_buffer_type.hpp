@@ -7,7 +7,7 @@
 namespace vespalib::datastore {
 
 template <typename EntryT>
-SmallArrayBufferType<EntryT>::SmallArrayBufferType(uint32_t array_size, const AllocSpec& spec, std::shared_ptr<alloc::MemoryAllocator> memory_allocator, ArrayStoreTypeMapper<EntryT>&) noexcept
+SmallArrayBufferType<EntryT>::SmallArrayBufferType(uint32_t array_size, const AllocSpec& spec, std::shared_ptr<alloc::MemoryAllocator> memory_allocator) noexcept
     : BufferType<EntryT>(array_size, spec.minArraysInBuffer, spec.maxArraysInBuffer, spec.numArraysForNewBuffer, spec.allocGrowFactor),
       _memory_allocator(std::move(memory_allocator))
 {

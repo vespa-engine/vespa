@@ -2,28 +2,30 @@
 
 #pragma once
 
-#include "large_array_buffer_type.h"
-#include "small_array_buffer_type.h"
+#include <cstddef>
+#include <cstdint>
+#include <vector>
 
 namespace vespalib::datastore {
 
-/**
- * This class provides a 1-to-1 mapping between type ids and array sizes for small arrays in an array store.
+/*
+ * This class provides mapping between type ids and array sizes needed for
+ * storing a value with size smaller than or equal to the array size.
  *
- * This means that buffers for type id 1 stores arrays of size 1, buffers for type id 2 stores arrays of size 2, and so on.
- * Type id 0 is always reserved for large arrays allocated on the heap.
- *
- * A more complex mapping can be used by creating a custom mapper and BufferType implementations.
+ * The array sizes vector is a monotic increasing sequence that might end
+ * with exponential growth.
  */
-template <typename EntryT>
-class ArrayStoreTypeMapper {
+class ArrayStoreTypeMapper
+{
+protected:
+    std::vector<size_t> _array_sizes;
 public:
-    using SmallBufferType = SmallArrayBufferType<EntryT>;
-    using LargeBufferType = LargeArrayBufferType<EntryT>;
+    ArrayStoreTypeMapper();
+    ~ArrayStoreTypeMapper();
 
-    uint32_t get_type_id(size_t array_size) const { return array_size; }
-    size_t get_array_size(uint32_t type_id) const { return type_id; }
-    static uint32_t get_max_small_array_type_id(uint32_t max_small_array_type_id) noexcept { return max_small_array_type_id; }
+    uint32_t get_type_id(size_t array_size) const;
+    size_t get_array_size(uint32_t type_id) const;
+    uint32_t get_max_small_array_type_id(uint32_t max_small_array_type_id) const noexcept;
 };
 
 }

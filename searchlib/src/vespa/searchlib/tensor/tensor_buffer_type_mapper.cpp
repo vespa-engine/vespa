@@ -9,13 +9,13 @@
 namespace search::tensor {
 
 TensorBufferTypeMapper::TensorBufferTypeMapper()
-    : _array_sizes(),
+    : vespalib::datastore::ArrayStoreTypeMapper(),
       _ops(nullptr)
 {
 }
 
 TensorBufferTypeMapper::TensorBufferTypeMapper(uint32_t max_small_subspaces_type_id, double grow_factor, TensorBufferOperations* ops)
-    : _array_sizes(),
+    : vespalib::datastore::ArrayStoreTypeMapper(),
       _ops(ops)
 {
     _array_sizes.reserve(max_small_subspaces_type_id + 1);
@@ -41,30 +41,5 @@ TensorBufferTypeMapper::TensorBufferTypeMapper(uint32_t max_small_subspaces_type
 }
 
 TensorBufferTypeMapper::~TensorBufferTypeMapper() = default;
-
-uint32_t
-TensorBufferTypeMapper::get_type_id(size_t array_size) const
-{
-    assert(!_array_sizes.empty());
-    auto result = std::lower_bound(_array_sizes.begin() + 1, _array_sizes.end(), array_size);
-    if (result == _array_sizes.end()) {
-        return 0; // type id 0 uses LargeSubspacesBufferType
-    }
-    return result - _array_sizes.begin();
-}
-
-size_t
-TensorBufferTypeMapper::get_array_size(uint32_t type_id) const
-{
-    assert(type_id > 0 && type_id < _array_sizes.size());
-    return _array_sizes[type_id];
-}
-
-uint32_t
-TensorBufferTypeMapper::get_max_small_array_type_id(uint32_t max_small_array_type_id) const noexcept
-{
-    auto clamp_type_id = _array_sizes.size() - 1;
-    return (clamp_type_id < max_small_array_type_id) ? clamp_type_id : max_small_array_type_id;
-}
 
 }

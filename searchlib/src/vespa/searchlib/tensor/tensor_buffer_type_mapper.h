@@ -2,9 +2,7 @@
 
 #pragma once
 
-#include <cstddef>
-#include <cstdint>
-#include <vector>
+#include <vespa/vespalib/datastore/array_store_type_mapper.h>
 
 namespace search::tensor {
 
@@ -16,9 +14,8 @@ class TensorBufferOperations;
  * This class provides mapping between type ids and array sizes needed for
  * storing a tensor.
  */
-class TensorBufferTypeMapper
+class TensorBufferTypeMapper : public vespalib::datastore::ArrayStoreTypeMapper
 {
-    std::vector<size_t> _array_sizes;
     TensorBufferOperations* _ops;
 public:
     using SmallBufferType = SmallSubspacesBufferType;
@@ -28,10 +25,7 @@ public:
     TensorBufferTypeMapper(uint32_t max_small_subspaces_type_id, double grow_factor, TensorBufferOperations* ops);
     ~TensorBufferTypeMapper();
 
-    uint32_t get_type_id(size_t array_size) const;
-    size_t get_array_size(uint32_t type_id) const;
     TensorBufferOperations& get_tensor_buffer_operations() const noexcept { return *_ops; }
-    uint32_t get_max_small_array_type_id(uint32_t max_small_array_type_id) const noexcept;
 };
 
 }
