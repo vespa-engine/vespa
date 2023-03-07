@@ -32,8 +32,10 @@ public class RankProfilesConfigImporterWithMockedConstants extends RankProfilesC
     @Override
     protected Tensor readTensorFromFile(String name, TensorType type, FileReference fileReference) {
         try {
+            var path = constantsPath.append(fileReference.value());
+            var file = path.toFile();
             return TypedBinaryFormat.decode(Optional.of(type),
-                    GrowableByteBuffer.wrap(IOUtils.readFileBytes(constantsPath.append(name).toFile())));
+                                            GrowableByteBuffer.wrap(IOUtils.readFileBytes(file)));
         }
         catch (IOException e) {
             log.warning("Missing a mocked tensor constant for '" + name + "': " + e.getMessage() +
