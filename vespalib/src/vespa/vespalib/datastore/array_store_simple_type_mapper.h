@@ -16,7 +16,7 @@ namespace vespalib::datastore {
  * A more complex mapping can be used by creating a custom mapper and BufferType implementations.
  */
 template <typename EntryT>
-class ArrayStoreTypeMapper {
+class ArrayStoreSimpleTypeMapper {
 public:
     using SmallBufferType = SmallArrayBufferType<EntryT>;
     using LargeBufferType = LargeArrayBufferType<EntryT>;

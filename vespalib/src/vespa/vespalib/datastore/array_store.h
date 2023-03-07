@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include "array_store_type_mapper.h"
+#include "array_store_simple_type_mapper.h"
 #include "array_store_config.h"
 #include "buffer_type.h"
 #include "bufferstate.h"
@@ -29,7 +29,7 @@ namespace vespalib::datastore {
  *
  * The max value of maxSmallArrayTypeId is (2^bufferBits - 1).
  */
-template <typename EntryT, typename RefT = EntryRefT<19>, typename TypeMapperT = ArrayStoreTypeMapper<EntryT> >
+template <typename EntryT, typename RefT = EntryRefT<19>, typename TypeMapperT = ArrayStoreSimpleTypeMapper<EntryT> >
 class ArrayStore : public ICompactable
 {
 public:

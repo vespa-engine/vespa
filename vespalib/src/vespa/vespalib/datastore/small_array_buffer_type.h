@@ -10,8 +10,6 @@ namespace vespalib::alloc { class MemoryAllocator; }
 
 namespace vespalib::datastore {
 
-template <typename EntryT> class ArrayStoreTypeMapper;
-
 /*
  * Class representing buffer type for small arrays in ArrayStore
  */
@@ -25,7 +23,12 @@ public:
     SmallArrayBufferType& operator=(const SmallArrayBufferType&) = delete;
     SmallArrayBufferType(SmallArrayBufferType&&) noexcept = default;
     SmallArrayBufferType& operator=(SmallArrayBufferType&&) noexcept = default;
-    SmallArrayBufferType(uint32_t array_size, const AllocSpec& spec, std::shared_ptr<alloc::MemoryAllocator> memory_allocator, ArrayStoreTypeMapper<EntryT>& mapper) noexcept;
+    SmallArrayBufferType(uint32_t array_size, const AllocSpec& spec, std::shared_ptr<alloc::MemoryAllocator> memory_allocator) noexcept;
+    template <typename TypeMapper>
+    SmallArrayBufferType(uint32_t array_size, const AllocSpec& spec, std::shared_ptr<alloc::MemoryAllocator> memory_allocator, TypeMapper&) noexcept
+        : SmallArrayBufferType(array_size, spec, std::move(memory_allocator))
+    {
+    }
     ~SmallArrayBufferType() override;
     const vespalib::alloc::MemoryAllocator* get_memory_allocator() const override;
 };
