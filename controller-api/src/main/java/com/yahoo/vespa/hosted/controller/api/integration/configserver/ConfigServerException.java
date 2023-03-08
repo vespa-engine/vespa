@@ -6,6 +6,8 @@ import com.yahoo.slime.SlimeUtils;
 
 import java.util.stream.Stream;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 /**
  * An exception due to server error, a bad request, or similar.
  *
@@ -56,7 +58,7 @@ public class ConfigServerException extends RuntimeException {
         ErrorCode code = Stream.of(ErrorCode.values())
                                .filter(value -> value.name().equals(codeName))
                                .findAny().orElse(ErrorCode.INCOMPLETE_RESPONSE);
-        String message = root.field("message").valid() ? root.field("message").asString() : "(no message)";
+        String message = root.field("message").valid() ? root.field("message").asString() : new String(body, UTF_8);
         return new ConfigServerException(code, message, context);
     }
 
