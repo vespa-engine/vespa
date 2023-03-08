@@ -4,11 +4,11 @@
 #include "reply.h"
 #include "imessagehandler.h"
 #include "intermediatesessionparams.h"
+#include "replygate.h"
 
 namespace mbus {
 
 class MessageBus;
-class ReplyGate;
 class Message;
 
 /**
@@ -21,12 +21,13 @@ class IntermediateSession : public IMessageHandler,
 private:
     friend class MessageBus;
     using MessageUP = std::unique_ptr<Message>;
+    template <typename T> using ref_counted = vespalib::ref_counted<T>;
 
-    MessageBus      &_mbus;
-    string           _name;
-    IMessageHandler &_msgHandler;
-    IReplyHandler   &_replyHandler;
-    ReplyGate       *_gate;
+    MessageBus            &_mbus;
+    string                 _name;
+    IMessageHandler       &_msgHandler;
+    IReplyHandler         &_replyHandler;
+    ref_counted<ReplyGate> _gate;
 
     /**
      * This constructor is declared package private since only MessageBus is supposed to instantiate it.

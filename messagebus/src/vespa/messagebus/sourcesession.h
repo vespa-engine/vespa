@@ -5,13 +5,13 @@
 #include "result.h"
 #include "sequencer.h"
 #include "sourcesessionparams.h"
+#include "replygate.h"
 #include <atomic>
 #include <condition_variable>
 
 namespace mbus {
 
 class MessageBus;
-class ReplyGate;
 
 /**
  * A SourceSession is used to send Message objects along a named or explicitly defined route and get Reply
@@ -21,11 +21,12 @@ class ReplyGate;
 class SourceSession : public IReplyHandler {
 private:
     friend class MessageBus;
+    template <typename T> using ref_counted = vespalib::ref_counted<T>;
 
     std::mutex              _lock;
     std::condition_variable _cond;
     MessageBus             &_mbus;
-    ReplyGate              *_gate;
+    ref_counted<ReplyGate>  _gate;
     Sequencer               _sequencer;
     IReplyHandler          &_replyHandler;
     IThrottlePolicy::SP     _throttlePolicy;

@@ -59,7 +59,7 @@ TEST("replygate_test") {
     {
         RoutableQueue q;
         MySender      sender;
-        MyGate       *gate = new MyGate(sender);
+        auto gate = vespalib::make_ref_counted<MyGate>(sender);
         {
             auto msg = std::make_unique<SimpleMessage>("test");
             msg->pushHandler(q);
@@ -79,7 +79,7 @@ TEST("replygate_test") {
         EXPECT_TRUE(MyReply::dtorCnt == 1);
         EXPECT_TRUE(MyGate::ctorCnt == 1);
         EXPECT_TRUE(MyGate::dtorCnt == 0);
-        gate->subRef();
+        gate = vespalib::ref_counted<MyGate>();
         EXPECT_TRUE(MyGate::ctorCnt == 1);
         EXPECT_TRUE(MyGate::dtorCnt == 1);
     }

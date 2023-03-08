@@ -6,7 +6,6 @@
 namespace mbus {
 
 ReplyGate::ReplyGate(IMessageHandler &sender) :
-    vespalib::ReferenceCounter(),
     _sender(sender),
     _open(true)
 { }
@@ -14,7 +13,7 @@ ReplyGate::ReplyGate(IMessageHandler &sender) :
 void
 ReplyGate::handleMessage(Message::UP msg)
 {
-    addRef();
+    internal_addref();
     msg->pushHandler(*this, *this);
     _sender.handleMessage(std::move(msg));
 }
@@ -34,13 +33,13 @@ ReplyGate::handleReply(Reply::UP reply)
     } else {
         reply->discard();
     }
-    subRef();
+    internal_subref();
 }
 
 void
 ReplyGate::handleDiscard(Context)
 {
-    subRef();
+    internal_subref();
 }
 
 } // namespace mbus

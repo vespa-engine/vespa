@@ -6,15 +6,17 @@
 #include "tracelevel.h"
 #include <vespa/messagebus/routing/routingtable.h>
 #include <vespa/vespalib/util/stringfmt.h>
+#include <cassert>
 
 using vespalib::make_string;
+using vespalib::make_ref_counted;
 
 namespace mbus {
 
 SourceSession::SourceSession(MessageBus &mbus, const SourceSessionParams &params)
     : _lock(),
       _mbus(mbus),
-      _gate(new ReplyGate(_mbus)),
+      _gate(make_ref_counted<ReplyGate>(_mbus)),
       _sequencer(*_gate),
       _replyHandler(params.getReplyHandler()),
       _throttlePolicy(params.getThrottlePolicy()),
@@ -31,9 +33,6 @@ SourceSession::~SourceSession()
     // Ensure that no more replies propagate from mbus.
     _gate->close();
     _mbus.sync();
-
-    // Tell gate that we will no longer use it.
-    _gate->subRef();
 }
 
 Result
