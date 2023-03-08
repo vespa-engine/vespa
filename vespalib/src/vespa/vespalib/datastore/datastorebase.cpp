@@ -47,11 +47,8 @@ primary_buffer_too_dead(const BufferState &state)
 
 }
 
-DataStoreBase::FallbackHold::FallbackHold(size_t bytesSize,
-                                          BufferState::Alloc &&buffer,
-                                          size_t usedElems,
-                                          BufferTypeBase *typeHandler,
-                                          uint32_t typeId)
+DataStoreBase::FallbackHold::FallbackHold(size_t bytesSize, BufferState::Alloc &&buffer, size_t usedElems,
+                                          BufferTypeBase *typeHandler, uint32_t typeId)
     : GenerationHeldBase(bytesSize),
       _buffer(std::move(buffer)),
       _usedElems(usedElems),
@@ -84,20 +81,20 @@ public:
 };
 
 DataStoreBase::DataStoreBase(uint32_t numBuffers, uint32_t offset_bits, size_t maxArrays)
-    : _buffers(numBuffers),
+    : _entry_ref_hold_list(),
+      _buffers(numBuffers),
       _primary_buffer_ids(),
       _states(numBuffers),
       _typeHandlers(),
       _free_lists(),
-      _freeListsEnabled(false),
-      _initializing(false),
-      _entry_ref_hold_list(),
+      _compaction_count(0u),
+      _genHolder(),
+      _maxArrays(maxArrays),
       _numBuffers(numBuffers),
       _offset_bits(offset_bits),
       _hold_buffer_count(0u),
-      _maxArrays(maxArrays),
-      _compaction_count(0u),
-      _genHolder()
+      _freeListsEnabled(false),
+      _initializing(false)
 {
 }
 
@@ -109,7 +106,7 @@ DataStoreBase::~DataStoreBase()
 void
 DataStoreBase::switch_primary_buffer(uint32_t typeId, size_t elemsNeeded)
 {
-    size_t buffer_id = _primary_buffer_ids[typeId];
+    size_t buffer_id = primary_buffer_id(typeId);
     for (size_t i = 0; i < getNumBuffers(); ++i) {
         // start using next buffer
         buffer_id = nextBufferId(buffer_id);
@@ -129,7 +126,7 @@ bool
 DataStoreBase::consider_grow_active_buffer(uint32_t type_id, size_t elems_needed)
 {
     auto type_handler = _typeHandlers[type_id];
-    uint32_t buffer_id = _primary_buffer_ids[type_id];
+    uint32_t buffer_id = primary_buffer_id(type_id);
     uint32_t active_buffers_count = type_handler->get_active_buffers_count();
     constexpr uint32_t min_active_buffers = 4u;
     if (active_buffers_count < min_active_buffers) {
@@ -174,10 +171,10 @@ DataStoreBase::switch_or_grow_primary_buffer(uint32_t typeId, size_t elemsNeeded
     uint32_t arraySize = typeHandler->getArraySize();
     size_t numArraysForNewBuffer = typeHandler->get_scaled_num_arrays_for_new_buffer();
     size_t numEntriesForNewBuffer = numArraysForNewBuffer * arraySize;
-    uint32_t bufferId = _primary_buffer_ids[typeId];
+    uint32_t bufferId = primary_buffer_id(typeId);
     if (elemsNeeded + getBufferState(bufferId).size() >= numEntriesForNewBuffer) {
         if (consider_grow_active_buffer(typeId, elemsNeeded)) {
-            bufferId = _primary_buffer_ids[typeId];
+            bufferId = primary_buffer_id(typeId);
             if (elemsNeeded > getBufferState(bufferId).remaining()) {
                 fallbackResize(bufferId, elemsNeeded);
             }
@@ -428,7 +425,7 @@ DataStoreBase::markCompacting(uint32_t bufferId)
 {
     auto &state = getBufferState(bufferId);
     uint32_t typeId = state.getTypeId();
-    uint32_t buffer_id = get_primary_buffer_id(typeId);
+    uint32_t buffer_id = primary_buffer_id(typeId);
     if ((bufferId == buffer_id) || primary_buffer_too_dead(getBufferState(buffer_id))) {
         switch_primary_buffer(typeId, 0u);
     }

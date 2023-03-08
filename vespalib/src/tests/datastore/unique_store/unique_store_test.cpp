@@ -470,7 +470,7 @@ TEST_F(DoubleTest, nan_is_handled)
 }
 
 TEST_F(DoubleTest, control_memory_usage) {
-    EXPECT_EQ(472u, sizeof(store));
+    EXPECT_EQ(464, sizeof(store));
     EXPECT_EQ(32u, store.get_values_memory_usage().allocatedBytes());
     EXPECT_EQ(98208u, store.get_dictionary_memory_usage().allocatedBytes());
     EXPECT_EQ(98240u, store.getMemoryUsage().allocatedBytes());

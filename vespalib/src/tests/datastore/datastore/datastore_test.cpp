@@ -44,7 +44,7 @@ public:
     void switch_primary_buffer() {
         ParentType::switch_primary_buffer(0, 0u);
     }
-    size_t primary_buffer_id() const { return get_primary_buffer_id(0); }
+    size_t primary_buffer_id() const { return DataStoreBase::primary_buffer_id(0); }
     BufferState& get_active_buffer_state() {
         return ParentType::getBufferState(primary_buffer_id());
     }
