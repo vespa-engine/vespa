@@ -22,9 +22,9 @@ schema test {
         }
         onnx-model inside {
             file: files/ax_plus_b.onnx
-            input vector_A: attribute(aa)
-            input matrix_X: constant(xx)
-            input vector_B: query(bb)
+            input vector_A: indirect_a
+            input matrix_X: indirect_x
+            input vector_B: indirect_b
             output vector_Y: foobar
         }
         first-phase {
@@ -36,6 +36,15 @@ schema test {
         global-phase {
             rerank-count: 13
             expression: sum(constant(ww) * (onnx(inside).foobar - handicap))
+        }
+        function indirect_a() {
+            expression: attribute(aa)
+        }
+        function indirect_x() {
+            expression: constant(xx)
+        }
+        function indirect_b() {
+            expression: query(bb)
         }
     }
 

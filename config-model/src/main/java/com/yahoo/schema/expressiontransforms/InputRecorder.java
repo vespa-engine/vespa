@@ -46,7 +46,12 @@ public class InputRecorder extends ExpressionTransformer<RankProfileTransformCon
         Reference ref = feature.reference();
         String name = ref.name();
         var args = ref.arguments();
-        if (args.size() == 0) {
+        boolean simpleFunctionOrIdentifier = (args.size() == 0) && (ref.output() == null);
+        if (ref.isSimpleRankingExpressionWrapper()) {
+            name = ref.simpleArgument().get();
+            simpleFunctionOrIdentifier = true;
+        }
+        if (simpleFunctionOrIdentifier) {
             var f = context.rankProfile().getFunctions().get(name);
             if (f != null && f.function().arguments().size() == 0) {
                 transform(f.function().getBody().getRoot(), context);
@@ -55,7 +60,7 @@ public class InputRecorder extends ExpressionTransformer<RankProfileTransformCon
             neededInputs.add(feature.toString());
             return;
         }
-        if (args.size() == 1) {
+        if (FeatureNames.isSimpleFeature(ref)) {
             if (FeatureNames.isAttributeFeature(ref)) {
                 neededInputs.add(feature.toString());
                 return;
@@ -96,6 +101,6 @@ public class InputRecorder extends ExpressionTransformer<RankProfileTransformCon
             }
             return;
         }
-        throw new IllegalArgumentException("cannot handle feature: " + feature);
+        neededInputs.add(feature.toString());
     }
 }
