@@ -147,9 +147,7 @@ public:
      * @param elemsNeeded Number of elements needed to be free.
      */
     void ensureBufferCapacity(uint32_t typeId, size_t elemsNeeded) {
-        if (__builtin_expect(elemsNeeded >
-                             _states[_primary_buffer_ids[typeId]].remaining(),
-                             false)) {
+        if (__builtin_expect(elemsNeeded > getBufferState(_primary_buffer_ids[typeId]).remaining(), false)) {
             switch_or_grow_primary_buffer(typeId, elemsNeeded);
         }
     }

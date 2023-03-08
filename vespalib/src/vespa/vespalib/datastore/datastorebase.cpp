@@ -78,8 +78,7 @@ public:
         _dsb.inc_hold_buffer_count();
     }
 
-    ~BufferHold() override
-    {
+    ~BufferHold() override {
         _dsb.doneHoldBuffer(_bufferId);
     }
 };
@@ -114,11 +113,11 @@ DataStoreBase::switch_primary_buffer(uint32_t typeId, size_t elemsNeeded)
     for (size_t i = 0; i < getNumBuffers(); ++i) {
         // start using next buffer
         buffer_id = nextBufferId(buffer_id);
-        if (_states[buffer_id].isFree()) {
+        if (getBufferState(buffer_id).isFree()) {
             break;
         }
     }
-    if (!_states[buffer_id].isFree()) {
+    if (!getBufferState(buffer_id).isFree()) {
         LOG_ABORT(vespalib::make_string("switch_primary_buffer(%u, %zu): did not find a free buffer",
                                         typeId, elemsNeeded).c_str());
     }
@@ -139,16 +138,17 @@ DataStoreBase::consider_grow_active_buffer(uint32_t type_id, size_t elems_needed
     if (type_handler->get_num_arrays_for_new_buffer() == 0u) {
         return false;
     }
-    assert(!_states[buffer_id].getCompacting());
+    assert(!getBufferState(buffer_id).getCompacting());
     uint32_t min_buffer_id = buffer_id;
-    size_t min_used = _states[buffer_id].size();
+    size_t min_used = getBufferState(buffer_id).size();
     uint32_t checked_active_buffers = 1u;
-    for (auto &alt_buffer_id : type_handler->get_active_buffers()) {
-        if (alt_buffer_id != buffer_id && !_states[alt_buffer_id].getCompacting()) {
+    for (auto alt_buffer_id : type_handler->get_active_buffers()) {
+        const BufferState & state = getBufferState(alt_buffer_id);
+        if (alt_buffer_id != buffer_id && !state.getCompacting()) {
             ++checked_active_buffers;
-            if (_states[alt_buffer_id].size() < min_used) {
+            if (state.size() < min_used) {
                 min_buffer_id = alt_buffer_id;
-                min_used = _states[alt_buffer_id].size();
+                min_used = state.size();
             }
         }
     }
@@ -162,7 +162,7 @@ DataStoreBase::consider_grow_active_buffer(uint32_t type_id, size_t elems_needed
     if (min_buffer_id != buffer_id) {
         // Resume another active buffer for same type as primary buffer
         _primary_buffer_ids[type_id] = min_buffer_id;
-        _states[min_buffer_id].resume_primary_buffer(min_buffer_id);
+        getBufferState(min_buffer_id).resume_primary_buffer(min_buffer_id);
     }
     return true;
 }
@@ -175,10 +175,10 @@ DataStoreBase::switch_or_grow_primary_buffer(uint32_t typeId, size_t elemsNeeded
     size_t numArraysForNewBuffer = typeHandler->get_scaled_num_arrays_for_new_buffer();
     size_t numEntriesForNewBuffer = numArraysForNewBuffer * arraySize;
     uint32_t bufferId = _primary_buffer_ids[typeId];
-    if (elemsNeeded + _states[bufferId].size() >= numEntriesForNewBuffer) {
+    if (elemsNeeded + getBufferState(bufferId).size() >= numEntriesForNewBuffer) {
         if (consider_grow_active_buffer(typeId, elemsNeeded)) {
             bufferId = _primary_buffer_ids[typeId];
-            if (elemsNeeded > _states[bufferId].remaining()) {
+            if (elemsNeeded > getBufferState(bufferId).remaining()) {
                 fallbackResize(bufferId, elemsNeeded);
             }
         } else {
@@ -196,13 +196,13 @@ DataStoreBase::init_primary_buffers()
     for (uint32_t typeId = 0; typeId < numTypes; ++typeId) {
         size_t buffer_id = 0;
         for (size_t i = 0; i < getNumBuffers(); ++i) {
-            if (_states[buffer_id].isFree()) {
+            if (getBufferState(buffer_id).isFree()) {
                  break;
             }
             // start using next buffer
             buffer_id = nextBufferId(buffer_id);
         }
-        assert(_states[buffer_id].isFree());
+        assert(getBufferState(buffer_id).isFree());
         onActive(buffer_id, typeId, 0u);
         _primary_buffer_ids[typeId] = buffer_id;
     }
@@ -232,7 +232,7 @@ DataStoreBase::doneHoldBuffer(uint32_t bufferId)
 {
     assert(_hold_buffer_count > 0);
     --_hold_buffer_count;
-    _states[bufferId].onFree(_buffers[bufferId].get_atomic_buffer());
+    getBufferState(bufferId).onFree(_buffers[bufferId].get_atomic_buffer());
 }
 
 void
@@ -255,7 +255,7 @@ DataStoreBase::dropBuffers()
 {
     uint32_t numBuffers = _buffers.size();
     for (uint32_t bufferId = 0; bufferId < numBuffers; ++bufferId) {
-        _states[bufferId].dropBuffer(bufferId, _buffers[bufferId].get_atomic_buffer());
+        getBufferState(bufferId).dropBuffer(bufferId, _buffers[bufferId].get_atomic_buffer());
     }
     _genHolder.reclaim_all();
 }
@@ -284,7 +284,7 @@ DataStoreBase::getMemoryUsage() const
 void
 DataStoreBase::holdBuffer(uint32_t bufferId)
 {
-    _states[bufferId].onHold(bufferId);
+    getBufferState(bufferId).onHold(bufferId);
     size_t holdBytes = 0u;  // getMemStats() still accounts held buffers
     auto hold = std::make_unique<BufferHold>(holdBytes, *this, bufferId);
     _genHolder.insert(std::move(hold));
@@ -314,10 +314,8 @@ DataStoreBase::disableFreeLists()
 void
 DataStoreBase::enableFreeList(uint32_t bufferId)
 {
-    BufferState &state = _states[bufferId];
-    if (_freeListsEnabled &&
-        state.isActive() &&
-        !state.getCompacting()) {
+    BufferState &state = getBufferState(bufferId);
+    if (_freeListsEnabled && state.isActive() && !state.getCompacting()) {
         state.enable_free_list(_free_lists[state.getTypeId()]);
     }
 }
@@ -392,11 +390,8 @@ DataStoreBase::onActive(uint32_t bufferId, uint32_t typeId, size_t elemsNeeded)
     assert(typeId < _typeHandlers.size());
     assert(bufferId < _numBuffers);
     _buffers[bufferId].setTypeId(typeId);
-    BufferState &state = _states[bufferId];
-    state.onActive(bufferId, typeId,
-                   _typeHandlers[typeId],
-                   elemsNeeded,
-                   _buffers[bufferId].get_atomic_buffer());
+    BufferState &state = getBufferState(bufferId);
+    state.onActive(bufferId, typeId, _typeHandlers[typeId], elemsNeeded, _buffers[bufferId].get_atomic_buffer());
     enableFreeList(bufferId);
 }
 
@@ -404,7 +399,7 @@ void
 DataStoreBase::finishCompact(const std::vector<uint32_t> &toHold)
 {
     for (uint32_t bufferId : toHold) {
-        assert(_states[bufferId].getCompacting());
+        assert(getBufferState(bufferId).getCompacting());
         holdBuffer(bufferId);
     }
 }
@@ -417,9 +412,7 @@ DataStoreBase::fallbackResize(uint32_t bufferId, size_t elemsNeeded)
     size_t oldUsedElems = state.size();
     size_t oldAllocElems = state.capacity();
     size_t elementSize = state.getTypeHandler()->elementSize();
-    state.fallbackResize(bufferId, elemsNeeded,
-                         _buffers[bufferId].get_atomic_buffer(),
-                         toHoldBuffer);
+    state.fallbackResize(bufferId, elemsNeeded, _buffers[bufferId].get_atomic_buffer(), toHoldBuffer);
     auto hold = std::make_unique<FallbackHold>(oldAllocElems * elementSize,
                                                std::move(toHoldBuffer),
                                                oldUsedElems,
@@ -501,4 +494,3 @@ DataStoreBase::inc_hold_buffer_count()
 }
 
 }
-
