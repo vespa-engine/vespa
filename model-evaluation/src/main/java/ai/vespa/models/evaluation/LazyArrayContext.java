@@ -44,12 +44,12 @@ public final class LazyArrayContext extends Context implements ContextIndex {
 
     /** Create a fast lookup, lazy context for a function */
     LazyArrayContext(ExpressionFunction function,
+                     BindingExtractor bindingExtractor,
                      Map<FunctionReference, ExpressionFunction> referencedFunctions,
                      List<Constant> constants,
-                     List<OnnxModel> onnxModels,
                      Model model) {
         this.function = function;
-        this.indexedBindings = new IndexedBindings(function, referencedFunctions, constants, onnxModels, this, model);
+        this.indexedBindings = new IndexedBindings(function, bindingExtractor, referencedFunctions, constants, this, model);
     }
 
     /**
@@ -186,19 +186,19 @@ public final class LazyArrayContext extends Context implements ContextIndex {
          * The given expression and functions may be inspected but cannot be stored.
          */
         IndexedBindings(ExpressionFunction function,
+                        BindingExtractor bindingExtractor,
                         Map<FunctionReference, ExpressionFunction> referencedFunctions,
                         List<Constant> constants,
-                        List<OnnxModel> onnxModels,
                         LazyArrayContext owner,
-                        Model model) {
+                        Model model)
+        {
             // 1. Determine and prepare bind targets
-            Set<String> bindTargets = new LinkedHashSet<>();
-            Set<String> arguments = new LinkedHashSet<>(); // Arguments: Bind targets which need to be bound before invocation
-            Map<String, OnnxModel> onnxModelsInUse = new HashMap<>();
-            extractBindTargets(function.getBody().getRoot(), referencedFunctions, bindTargets, arguments, onnxModels, onnxModelsInUse);
+            var functionInfo = bindingExtractor.extractFrom(function);
+            Set<String> bindTargets = functionInfo.bindTargets;
 
-            this.onnxModels = Map.copyOf(onnxModelsInUse);
-            this.arguments = Set.copyOf(arguments);
+            this.onnxModels = Map.copyOf(functionInfo.onnxModelsInUse);
+            this.arguments = Set.copyOf(functionInfo.arguments); // Arguments: Bind targets which need to be bound before invocation
+
             values = new Value[bindTargets.size()];
             Arrays.fill(values, missing);
 
@@ -215,120 +215,16 @@ public final class LazyArrayContext extends Context implements ContextIndex {
                 }
             }
 
-            for (Map.Entry<FunctionReference, ExpressionFunction> referencedFunction : referencedFunctions.entrySet()) {
-                Integer index = nameToIndex.get(referencedFunction.getKey().serialForm());
+            for (FunctionReference referencedFunction : referencedFunctions.keySet()) {
+                Integer index = nameToIndex.get(referencedFunction.serialForm());
                 if (index != null) { // Referenced in this, so bind it
-                    values[index] = new LazyValue(referencedFunction.getKey(), owner, model);
+                    values[index] = new LazyValue(referencedFunction, owner, model);
                 }
             }
         }
 
         private void setMissingValue(Tensor value) {
             missingValue = new TensorValue(value).freeze();
-        }
-
-        private void extractBindTargets(ExpressionNode node,
-                                        Map<FunctionReference, ExpressionFunction> functions,
-                                        Set<String> bindTargets,
-                                        Set<String> arguments,
-                                        List<OnnxModel> onnxModels,
-                                        Map<String, OnnxModel> onnxModelsInUse) {
-            if (isFunctionReference(node)) {
-                var opt = FunctionReference.fromSerial(node.toString());
-                if (opt.isEmpty()) {
-                    throw new IllegalArgumentException("Could not extract function " + node + " from serialized form '" + node.toString() +"'");
-                }
-                FunctionReference reference = opt.get();
-                bindTargets.add(reference.serialForm());
-
-                ExpressionFunction function = functions.get(reference);
-                if (function == null) return; // Function not included in this model: Not all models are for standalone use
-                ExpressionNode functionNode = function.getBody().getRoot();
-                extractBindTargets(functionNode, functions, bindTargets, arguments, onnxModels, onnxModelsInUse);
-            }
-            else if (isOnnx(node)) {
-                extractOnnxTargets(node, bindTargets, arguments, onnxModels, onnxModelsInUse);
-            }
-            else if (isConstant(node)) {
-                bindTargets.add(node.toString());
-            }
-            else if (node instanceof ReferenceNode) {
-                bindTargets.add(node.toString());
-                arguments.add(node.toString());
-            }
-            else if (node instanceof CompositeNode cNode) {
-                for (ExpressionNode child : cNode.children())
-                    extractBindTargets(child, functions, bindTargets, arguments, onnxModels, onnxModelsInUse);
-            }
-        }
-
-        /**
-         * Extract the feature used to evaluate the onnx model. e.g. onnx(name) and add
-         * that as a bind target and argument. During evaluation, this will be evaluated before
-         * the rest of the expression and the result is added to the context. Also extract the
-         * inputs to the model and add them as bind targets and arguments.
-         */
-        private void extractOnnxTargets(ExpressionNode node,
-                                        Set<String> bindTargets,
-                                        Set<String> arguments,
-                                        List<OnnxModel> onnxModels,
-                                        Map<String, OnnxModel> onnxModelsInUse) {
-            Optional<String> modelName = getArgument(node);
-            if (modelName.isPresent()) {
-                for (OnnxModel onnxModel : onnxModels) {
-                    if (onnxModel.name().equals(modelName.get())) {
-                        String onnxFeature = node.toString();
-                        bindTargets.add(onnxFeature);
-
-                        // Load the model (if not already loaded) to extract inputs
-                        onnxModel.load();
-
-                        for(String input : onnxModel.inputs().keySet()) {
-                            bindTargets.add(input);
-                            arguments.add(input);
-                        }
-                        onnxModelsInUse.put(onnxFeature, onnxModel);
-                    }
-                }
-            }
-        }
-
-        private Optional<String> getArgument(ExpressionNode node) {
-            if (node instanceof ReferenceNode reference) {
-                if (reference.getArguments().size() > 0) {
-                    if (reference.getArguments().expressions().get(0) instanceof ConstantNode) {
-                        ExpressionNode constantNode = reference.getArguments().expressions().get(0);
-                        return Optional.of(stripQuotes(constantNode.toString()));
-                    }
-                    if (reference.getArguments().expressions().get(0) instanceof ReferenceNode refNode) {
-                        return Optional.of(refNode.getName());
-                    }
-                }
-            }
-            return Optional.empty();
-        }
-
-        public static String stripQuotes(String s) {
-            if (s.codePointAt(0) == '"' && s.codePointAt(s.length()-1) == '"')
-                return s.substring(1, s.length()-1);
-            if (s.codePointAt(0) == '\'' && s.codePointAt(s.length()-1) == '\'')
-                return s.substring(1, s.length()-1);
-            return s;
-        }
-
-        private boolean isFunctionReference(ExpressionNode node) {
-            if ( ! (node instanceof ReferenceNode reference)) return false;
-            return reference.getName().equals(RANKING_EXPRESSION_WRAPPER) && reference.getArguments().size() == 1;
-        }
-
-        private boolean isOnnx(ExpressionNode node) {
-            if ( ! (node instanceof ReferenceNode reference)) return false;
-            return reference.getName().equals("onnx") || reference.getName().equals("onnxModel");
-        }
-
-        private boolean isConstant(ExpressionNode node) {
-            if ( ! (node instanceof ReferenceNode reference)) return false;
-            return reference.getName().equals("constant") && reference.getArguments().size() == 1;
         }
 
         Value get(int index) {

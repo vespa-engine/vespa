@@ -62,11 +62,13 @@ public class Model implements AutoCloseable {
           List<OnnxModel> onnxModels) {
         this.name = name;
 
+        var bindingExtractor = new BindingExtractor(referencedFunctions, onnxModels);
+
         // Build context and add missing function arguments (missing because it is legal to omit scalar type arguments)
         Map<String, LazyArrayContext> contextBuilder = new LinkedHashMap<>();
         for (Map.Entry<FunctionReference, ExpressionFunction> function : functions.entrySet()) {
             try {
-                LazyArrayContext context = new LazyArrayContext(function.getValue(), referencedFunctions, constants, onnxModels, this);
+                LazyArrayContext context = new LazyArrayContext(function.getValue(), bindingExtractor, referencedFunctions, constants, this);
                 contextBuilder.put(function.getValue().getName(), context);
                 if (function.getValue().returnType().isEmpty()) {
                     functions.put(function.getKey(), function.getValue().withReturnType(TensorType.empty));
