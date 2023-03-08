@@ -8,8 +8,8 @@ namespace search::attribute {
 EntryRefVector
 make_entry_ref_vector_snapshot(const vespalib::RcuVectorBase<vespalib::datastore::AtomicEntryRef>& ref_vector, uint32_t size)
 {
-    assert(size <= ref_vector.get_size());      // Called from writer only
-    auto* source = &ref_vector.get_elem_ref(0); // Called from writer only
+    assert(size <= ref_vector.get_size());
+    auto* source = &ref_vector.get_elem_ref(0);
     EntryRefVector result;
     result.reserve(size);
     for (uint32_t lid = 0; lid < size; ++lid) {
