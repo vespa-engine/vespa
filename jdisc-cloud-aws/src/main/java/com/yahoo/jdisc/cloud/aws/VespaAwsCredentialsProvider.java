@@ -39,7 +39,7 @@ public class VespaAwsCredentialsProvider implements AWSCredentialsProvider {
         try {
             credentials.set(readCredentials());
         } catch (Exception e) {
-            throw new RuntimeException("Unable to get credentials in " + credentialsPath.toString(), e);
+            throw new RuntimeException("Unable to get credentials. Please ensure cluster is configured as exclusive. See: https://cloud.vespa.ai/en/reference/services#nodes");
         }
     }
 
