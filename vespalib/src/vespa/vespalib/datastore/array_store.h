@@ -112,7 +112,7 @@ public:
     // Use this if references to array store is not an array of AtomicEntryRef
     std::unique_ptr<CompactingBuffers> start_compact_worst_buffers(const CompactionStrategy &compaction_strategy);
 
-    vespalib::MemoryUsage getMemoryUsage() const { return _store.getMemoryUsage(); }
+    vespalib::MemoryUsage getMemoryUsage() const;
     vespalib::MemoryUsage update_stat(const CompactionStrategy& compaction_strategy);
     bool consider_compact() const noexcept { return _compaction_spec.compact() && !_store.has_held_buffers(); }
 

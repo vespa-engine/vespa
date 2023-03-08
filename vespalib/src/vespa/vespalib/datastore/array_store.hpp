@@ -57,6 +57,15 @@ ArrayStore<EntryT, RefT, TypeMapperT>::ArrayStore(const ArrayStoreConfig &cfg, s
 }
 
 template <typename EntryT, typename RefT, typename TypeMapperT>
+vespalib::MemoryUsage
+ArrayStore<EntryT, RefT, TypeMapperT>::getMemoryUsage() const {
+    vespalib::MemoryUsage usage =  _store.getMemoryUsage();
+    //TODO Must be accounted
+    // usage.incAllocatedBytes(_smallArrayTypes.capacity() * sizeof(SmallBufferType));
+    return usage;
+}
+
+template <typename EntryT, typename RefT, typename TypeMapperT>
 ArrayStore<EntryT, RefT, TypeMapperT>::~ArrayStore()
 {
     _store.reclaim_all_memory();
@@ -181,7 +190,7 @@ vespalib::MemoryUsage
 ArrayStore<EntryT, RefT, TypeMapperT>::update_stat(const CompactionStrategy& compaction_strategy)
 {
     auto address_space_usage = _store.getAddressSpaceUsage();
-    auto memory_usage = _store.getMemoryUsage();
+    auto memory_usage = getMemoryUsage();
     _compaction_spec = compaction_strategy.should_compact(memory_usage, address_space_usage);
     return memory_usage;
 }

@@ -264,6 +264,15 @@ vespalib::MemoryUsage
 DataStoreBase::getMemoryUsage() const
 {
     auto stats = getMemStats();
+
+    size_t extra = 0;
+    extra += _buffers.capacity() * sizeof(BufferAndTypeId);
+    extra += _primary_buffer_ids.capacity() * sizeof(uint32_t);
+    extra += _states.capacity() * sizeof(BufferState);
+    extra += _typeHandlers.capacity() * sizeof(BufferTypeBase *);
+    extra += _free_lists.capacity() * sizeof(FreeList);
+    (void) extra; //TODO Must be accounted as static cost
+
     vespalib::MemoryUsage usage;
     usage.setAllocatedBytes(stats._allocBytes);
     usage.setUsedBytes(stats._usedBytes);

@@ -467,6 +467,14 @@ TEST_F(DoubleTest, nan_is_handled)
     }
     std::vector<uint32_t> exp_enumerated = { 0, 1, 4, 2, 3, 1, 4, 2 };
     EXPECT_EQ(exp_enumerated, enumerated);
-}    
+}
+
+TEST_F(DoubleTest, control_memory_usage) {
+    EXPECT_EQ(472u, sizeof(store));
+    EXPECT_EQ(32u, store.get_values_memory_usage().allocatedBytes());
+    EXPECT_EQ(98208u, store.get_dictionary_memory_usage().allocatedBytes());
+    EXPECT_EQ(98240u, store.getMemoryUsage().allocatedBytes());
+    EXPECT_EQ(144u, sizeof(BufferState));
+}
                 
 GTEST_MAIN_RUN_ALL_TESTS()
