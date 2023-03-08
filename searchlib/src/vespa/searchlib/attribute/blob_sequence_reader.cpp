@@ -3,7 +3,7 @@
 #include "blob_sequence_reader.h"
 #include <vespa/fastos/file.h>
 
-namespace search::tensor {
+namespace search::attribute {
 
 void
 BlobSequenceReader::readBlob(void *buf, size_t len) {

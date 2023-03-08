@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "tensor_attribute_loader.h"
-#include "blob_sequence_reader.h"
 #include "dense_tensor_store.h"
 #include "nearest_neighbor_index.h"
 #include "nearest_neighbor_index_loader.h"
@@ -10,6 +9,7 @@
 #include <vespa/fastlib/io/bufferedfile.h>
 #include <vespa/searchcommon/attribute/config.h>
 #include <vespa/searchlib/attribute/attribute_header.h>
+#include <vespa/searchlib/attribute/blob_sequence_reader.h>
 #include <vespa/searchlib/attribute/load_utils.h>
 #include <vespa/searchlib/attribute/readerbase.h>
 #include <vespa/vespalib/util/arrayqueue.hpp>
@@ -22,6 +22,7 @@
 LOG_SETUP(".searchlib.tensor.tensor_attribute_loader");
 
 using search::attribute::AttributeHeader;
+using search::attribute::BlobSequenceReader;
 using search::attribute::LoadUtils;
 using vespalib::CpuUsage;
 using vespalib::datastore::EntryRef;

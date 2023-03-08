@@ -4,7 +4,7 @@
 
 #include <vespa/searchlib/attribute/readerbase.h>
 
-namespace search::tensor {
+namespace search::attribute {
 
 /**
  *  Utility for reading an attribute data file where

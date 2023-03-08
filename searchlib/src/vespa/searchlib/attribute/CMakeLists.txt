@@ -25,6 +25,7 @@ vespa_add_library(searchlib_attribute OBJECT
     attrvector.cpp
     basename.cpp
     bitvector_search_cache.cpp
+    blob_sequence_reader.cpp
     changevector.cpp
     configconverter.cpp
     copy_multi_value_read_view.cpp
