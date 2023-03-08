@@ -82,7 +82,7 @@ class OnnxExpressionNode extends CompositeNode {
             Value inputValue = inputRefs.get(i).evaluate(context);
             inputs.put(modelInputs.get(i), inputValue.asTensor());
         }
-        return new TensorValue(model.evaluate(inputs, onnxOutputName));
+        return new TensorValue(model.unmappedEvaluate(inputs, onnxOutputName));
     }
 
     @Override
@@ -94,9 +94,9 @@ class OnnxExpressionNode extends CompositeNode {
     @Override
     public StringBuilder toString(StringBuilder b, SerializationContext context, Deque<String> path, CompositeNode parent) {
         b.append("onnx_expression_node(").append(model.name()).append(")");
-	if (outputAs != null && ! outputAs.equals("")) {
+        if (outputAs != null && ! outputAs.equals("")) {
             b.append(".").append(outputAs);
-	}
-	return b;
+        }
+        return b;
     }
 }
