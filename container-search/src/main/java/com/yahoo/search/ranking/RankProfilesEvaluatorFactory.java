@@ -6,6 +6,8 @@ import com.yahoo.api.annotations.Beta;
 import com.yahoo.component.annotation.Inject;
 import com.yahoo.component.provider.ComponentRegistry;
 
+import java.util.Optional;
+
 /**
  * factory for model-evaluation proxies
  * @author arnej
@@ -20,14 +22,11 @@ public class RankProfilesEvaluatorFactory {
         this.registry = registry;
     }
 
-    public RankProfilesEvaluator proxyForSchema(String schemaName) {
-        var component = registry.getComponent("ranking-expression-evaluator." + schemaName);
-        if (component == null) {
-            throw new IllegalArgumentException("ranking expression evaluator for schema '" + schemaName + "' not found");
-        }
-        return component;
+    public Optional<RankProfilesEvaluator> evaluatorForSchema(String schemaName) {
+        return Optional.ofNullable(registry.getComponent("ranking-expression-evaluator." + schemaName));
     }
 
+    @Override
     public String toString() {
         var buf = new StringBuilder();
         buf.append(this.getClass().getName()).append(" containing: [");
