@@ -79,7 +79,7 @@ TEST("replygate_test") {
         EXPECT_TRUE(MyReply::dtorCnt == 1);
         EXPECT_TRUE(MyGate::ctorCnt == 1);
         EXPECT_TRUE(MyGate::dtorCnt == 0);
-        gate = vespalib::ref_counted<MyGate>();
+        gate.reset();
         EXPECT_TRUE(MyGate::ctorCnt == 1);
         EXPECT_TRUE(MyGate::dtorCnt == 1);
     }

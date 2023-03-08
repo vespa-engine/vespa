@@ -230,6 +230,17 @@ TEST(RefCountedTest, self_assign) {
     EXPECT_EQ(ref->val, 10);
 }
 
+TEST(RefCountedTest, reset) {
+    CheckObjects check(1);
+    auto ref = make_ref_counted<Base>(10);
+    auto pre_cnt = Base::dtor_cnt.load(std::memory_order_relaxed);
+    EXPECT_TRUE(ref);
+    ref.reset();
+    EXPECT_FALSE(ref);
+    auto post_cnt = Base::dtor_cnt.load(std::memory_order_relaxed);
+    EXPECT_EQ(post_cnt, pre_cnt + 1);
+}
+
 TEST(RefCountedTest, with_threads) {
     CheckObjects check(2,1);
     ThreadPool pool;

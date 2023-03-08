@@ -94,6 +94,7 @@ public:
     T *operator->() const noexcept { return _ptr; }
     T &operator*() const noexcept { return *_ptr; }
     operator bool() const noexcept { return (_ptr != nullptr); }
+    void reset() noexcept { replace_with(nullptr); }
     ~ref_counted() noexcept { maybe_subref(); }
     // NB: will not call subref
     T *internal_detach() noexcept { return std::exchange(_ptr, nullptr); }
