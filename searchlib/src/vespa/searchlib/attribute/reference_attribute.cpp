@@ -218,7 +218,7 @@ ReferenceAttribute::onInitSave(vespalib::stringref fileName)
     return std::make_unique<ReferenceAttributeSaver>
         (std::move(guard),
          createAttributeHeader(fileName),
-         getIndicesCopy(getCommittedDocIdLimit()),
+         make_entry_ref_vector_snapshot(_indices, getCommittedDocIdLimit()),
          _store);
 }
 
@@ -336,19 +336,6 @@ uint64_t
 ReferenceAttribute::getUniqueValueCount() const
 {
     return _store.getNumUniques();
-}
-
-ReferenceAttribute::IndicesCopyVector
-ReferenceAttribute::getIndicesCopy(uint32_t size) const
-{
-    assert(size <= _indices.get_size());       // Called from writer only
-    auto* indices = &_indices.get_elem_ref(0); // Called from writer only
-    IndicesCopyVector result;
-    result.reserve(size);
-    for (uint32_t i = 0; i < size; ++i) {
-        result.push_back(indices[i].load_relaxed());
-    }
-    return result;
 }
 
 void

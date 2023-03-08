@@ -3,6 +3,7 @@
 #include <vespa/searchlib/attribute/multi_value_mapping.h>
 #include <vespa/searchlib/attribute/multi_value_mapping.hpp>
 #include <vespa/searchlib/attribute/not_implemented_attribute.h>
+#include <vespa/searchlib/attribute/save_utils.h>
 #include <vespa/vespalib/datastore/compaction_strategy.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/stllike/hash_set.h>
@@ -139,8 +140,7 @@ public:
     const AllocStats &get_stats() const noexcept { return _stats; }
 
     uint32_t countBuffers() {
-        using RefVector = typename MvMapping::RefCopyVector;
-        RefVector refs = _mvMapping->getRefCopy(_mvMapping->size());
+        auto refs = search::attribute::make_entry_ref_vector_snapshot(_mvMapping->get_ref_vector(), _mvMapping->size());
         vespalib::hash_set<uint32_t> buffers;
         for (const auto &ref : refs) {
             if (ref.valid()) {

@@ -337,20 +337,6 @@ TensorAttribute::getVersion() const
     return (_tensorStore.as_dense() != nullptr) ? DENSE_TENSOR_ATTRIBUTE_VERSION : TENSOR_ATTRIBUTE_VERSION;
 }
 
-TensorAttribute::RefCopyVector
-TensorAttribute::getRefCopy() const
-{
-    uint32_t size = getCommittedDocIdLimit();
-    assert(size <= _refVector.get_size());          // Called from writer only
-    auto* ref_vector = &_refVector.get_elem_ref(0); // Called from writer only
-    RefCopyVector result;
-    result.reserve(size);
-    for (uint32_t i = 0; i < size; ++i) {
-        result.push_back(ref_vector[i].load_relaxed());
-    }
-    return result;
-}
-
 bool
 TensorAttribute::onLoad(vespalib::Executor* executor)
 {
@@ -367,7 +353,7 @@ TensorAttribute::onInitSave(vespalib::stringref fileName)
     return std::make_unique<TensorAttributeSaver>
         (std::move(guard),
          this->createAttributeHeader(fileName),
-         getRefCopy(),
+         attribute::make_entry_ref_vector_snapshot(_refVector, getCommittedDocIdLimit()),
          _tensorStore,
          std::move(index_saver));
 }

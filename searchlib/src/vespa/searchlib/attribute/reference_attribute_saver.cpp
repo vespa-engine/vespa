@@ -11,14 +11,12 @@ using document::GlobalId;
 using vespalib::datastore::AtomicEntryRef;
 using vespalib::datastore::EntryRef;
 
-namespace search {
-namespace attribute {
+namespace search::attribute {
 
-ReferenceAttributeSaver::
-ReferenceAttributeSaver(GenerationHandler::Guard &&guard,
-                        const attribute::AttributeHeader &header,
-                        IndicesCopyVector &&indices,
-                        const Store &store)
+ReferenceAttributeSaver::ReferenceAttributeSaver(GenerationHandler::Guard &&guard,
+                                                 const AttributeHeader &header,
+                                                 EntryRefVector&& indices,
+                                                 const Store &store)
     : AttributeSaver(std::move(guard), header),
       _indices(std::move(indices)),
       _store(store),
@@ -78,5 +76,4 @@ ReferenceAttributeSaver::onSave(IAttributeSaveTarget &saveTarget)
     return true;
 }
 
-}  // namespace search::attribute
-}  // namespace search
+}

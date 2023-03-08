@@ -341,7 +341,7 @@ SingleValueEnumAttribute<B>::onInitSave(vespalib::stringref fileName)
     return std::make_unique<SingleValueEnumAttributeSaver>
         (std::move(guard),
          this->createAttributeHeader(fileName),
-         getIndicesCopy(this->getCommittedDocIdLimit()),
+         attribute::make_entry_ref_vector_snapshot(this->_enumIndices, this->getCommittedDocIdLimit()),
          this->_enumStore);
 }
 

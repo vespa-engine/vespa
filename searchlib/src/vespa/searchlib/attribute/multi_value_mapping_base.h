@@ -38,13 +38,13 @@ protected:
 
     EntryRef acquire_entry_ref(uint32_t docId) const noexcept { return _indices.acquire_elem_ref(docId).load_acquire(); }
 public:
-    using RefCopyVector = vespalib::Array<EntryRef>;
-
     virtual vespalib::MemoryUsage getArrayStoreMemoryUsage() const = 0;
     virtual vespalib::AddressSpace getAddressSpaceUsage() const = 0;
     vespalib::MemoryUsage getMemoryUsage() const;
     size_t getTotalValueCnt() const { return _totalValues; }
-    RefCopyVector getRefCopy(uint32_t size) const;
+
+    // Called when making snapshot of indices in saver or unit test.
+    const RefVector& get_ref_vector() const noexcept { return _indices; }
 
     /*
      * isFull() should be called from writer only.

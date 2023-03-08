@@ -1,11 +1,11 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "singleenumattributesaver.h"
-#include <vespa/vespalib/util/array.hpp>
-#include <vespa/searchlib/util/bufferwriter.h>
 #include "iattributesavetarget.h"
+#include <vespa/searchlib/util/bufferwriter.h>
 
 
+using search::attribute::EntryRefVector;
 using vespalib::GenerationHandler;
 
 namespace search {
@@ -13,7 +13,7 @@ namespace search {
 SingleValueEnumAttributeSaver::
 SingleValueEnumAttributeSaver(GenerationHandler::Guard &&guard,
                               const attribute::AttributeHeader &header,
-                              EnumIndexCopyVector &&indices,
+                              EntryRefVector &&indices,
                               const IEnumStore &enumStore)
     : AttributeSaver(std::move(guard), header),
       _indices(std::move(indices)),

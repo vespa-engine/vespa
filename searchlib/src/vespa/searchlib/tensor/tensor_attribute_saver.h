@@ -4,6 +4,7 @@
 
 #include "tensor_attribute.h"
 #include <vespa/searchlib/attribute/attributesaver.h>
+#include <vespa/searchlib/attribute/save_utils.h>
 
 namespace search { class BufferWriter; }
 
@@ -17,13 +18,10 @@ class NearestNeighborIndexSaver;
  * Will also save the nearest neighbor index if existing.
  */
 class TensorAttributeSaver : public AttributeSaver {
-public:
-    using RefCopyVector = TensorAttribute::RefCopyVector;
-private:
     using GenerationHandler = vespalib::GenerationHandler;
     using IndexSaverUP = std::unique_ptr<NearestNeighborIndexSaver>;
 
-    RefCopyVector      _refs;
+    attribute::EntryRefVector _refs;
     const TensorStore& _tensor_store;
     IndexSaverUP _index_saver;
 
@@ -33,10 +31,10 @@ private:
 
 public:
     TensorAttributeSaver(GenerationHandler::Guard &&guard,
-                              const attribute::AttributeHeader &header,
-                              RefCopyVector &&refs,
-                              const TensorStore &tensor_store,
-                              IndexSaverUP index_saver);
+                         const attribute::AttributeHeader &header,
+                         attribute::EntryRefVector&& refs,
+                         const TensorStore &tensor_store,
+                         IndexSaverUP index_saver);
 
     ~TensorAttributeSaver() override;
 

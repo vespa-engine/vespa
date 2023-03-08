@@ -3,6 +3,7 @@
 #pragma once
 
 #include "multivalueattributesaver.h"
+#include "multi_value_mapping.h"
 #include <vespa/searchcommon/attribute/multi_value_traits.h>
 
 namespace search {
