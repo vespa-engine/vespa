@@ -484,10 +484,10 @@ public class NodeAgentImpl implements NodeAgent {
                 storageMaintainer.handleCoreDumpsForContainer(context, container, false);
 
                 // TODO: this is a workaround for restarting wireguard as early as possible after host-admin has been down.
-                var wireguardTasksRun = false;
+                var runOrdinaryWireguardTasks = true;
                 if (container.isPresent() && container.get().state().isRunning()) {
                     wireguardTasks.forEach(task -> task.converge(context));
-                    wireguardTasksRun = true;
+                    runOrdinaryWireguardTasks = false;
                 }
 
                 if (downloadImageIfNeeded(context, container)) {
@@ -500,12 +500,13 @@ public class NodeAgentImpl implements NodeAgent {
                     containerState = STARTING;
                     container = Optional.of(startContainer(context));
                     containerState = UNKNOWN;
+                    runOrdinaryWireguardTasks = true;
                 } else {
                     container = Optional.of(updateContainerIfNeeded(context, container.get()));
                 }
 
                 aclMaintainer.ifPresent(maintainer -> maintainer.converge(context));
-                if (! wireguardTasksRun) wireguardTasks.forEach(task -> task.converge(context));
+                if (runOrdinaryWireguardTasks) wireguardTasks.forEach(task -> task.converge(context));
                 startServicesIfNeeded(context);
                 resumeNodeIfNeeded(context);
                 if (healthChecker.isPresent()) {
