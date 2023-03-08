@@ -5,7 +5,7 @@
 #include "idiscardhandler.h"
 #include "imessagehandler.h"
 #include "ireplyhandler.h"
-#include <vespa/vespalib/util/referencecounter.h>
+#include <vespa/vespalib/util/ref_counted.h>
 #include <atomic>
 
 namespace mbus {
@@ -20,7 +20,7 @@ namespace mbus {
  * is handled outside this class. Note that this class is only intended for
  * internal use.
  */
-class ReplyGate : public vespalib::ReferenceCounter,
+class ReplyGate : public vespalib::enable_ref_counted,
                   public IDiscardHandler,
                   public IMessageHandler,
                   public IReplyHandler

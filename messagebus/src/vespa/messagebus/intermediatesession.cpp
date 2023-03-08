@@ -4,6 +4,8 @@
 #include "messagebus.h"
 #include "replygate.h"
 
+using vespalib::make_ref_counted;
+
 namespace mbus {
 
 IntermediateSession::IntermediateSession(MessageBus &mbus, const IntermediateSessionParams &params) :
@@ -11,14 +13,13 @@ IntermediateSession::IntermediateSession(MessageBus &mbus, const IntermediateSes
     _name(params.getName()),
     _msgHandler(params.getMessageHandler()),
     _replyHandler(params.getReplyHandler()),
-    _gate(new ReplyGate(_mbus))
+    _gate(make_ref_counted<ReplyGate>(_mbus))
 { }
 
 IntermediateSession::~IntermediateSession()
 {
     _gate->close();
     close();
-    _gate->subRef();
 }
 
 void
