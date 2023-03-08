@@ -64,11 +64,10 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
 
     private final URI ztsEndpoint;
     private final Path ztsTrustStorePath;
-    private final AthenzIdentity configserverIdentity;
     private final Clock clock;
+    private final String certificateDnsSuffix;
     private final ServiceIdentityProvider hostIdentityProvider;
     private final IdentityDocumentClient identityDocumentClient;
-    private final CsrGenerator csrGenerator;
     private final boolean useInternalZts;
 
     // Used as an optimization to ensure ZTS is not DDoS'ed on continuously failing refresh attempts
@@ -83,13 +82,12 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
                                        Clock clock) {
         this.ztsEndpoint = ztsEndpoint;
         this.ztsTrustStorePath = ztsTrustStorePath;
-        this.configserverIdentity = configServerInfo.getConfigServerIdentity();
-        this.csrGenerator = new CsrGenerator(certificateDnsSuffix, configserverIdentity.getFullName());
+        this.certificateDnsSuffix = certificateDnsSuffix;
         this.hostIdentityProvider = hostIdentityProvider;
         this.identityDocumentClient = new DefaultIdentityDocumentClient(
                 configServerInfo.getLoadBalancerEndpoint(),
                 hostIdentityProvider,
-                new AthenzIdentityVerifier(Set.of(configserverIdentity)));
+                new AthenzIdentityVerifier(Set.of(configServerInfo.getConfigServerIdentity())));
         this.clock = clock;
         this.useInternalZts = useInternalZts;
     }
@@ -186,7 +184,8 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
 
     private void registerIdentity(NodeAgentContext context, ContainerPath privateKeyFile, ContainerPath certificateFile, ContainerPath identityDocumentFile) {
         KeyPair keyPair = KeyUtils.generateKeypair(KeyAlgorithm.RSA);
-        var doc = identityDocumentClient.getNodeIdentityDocument(context.hostname().value());
+        SignedIdentityDocument doc = identityDocumentClient.getNodeIdentityDocument(context.hostname().value());
+        CsrGenerator csrGenerator = new CsrGenerator(certificateDnsSuffix, doc.providerService().getFullName());
         Pkcs10Csr csr = csrGenerator.generateInstanceCsr(
                 context.identity(), doc.providerUniqueId(), doc.ipAddresses(), doc.clusterType(), keyPair);
 
@@ -195,7 +194,7 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
         try (ZtsClient ztsClient = new DefaultZtsClient.Builder(ztsEndpoint(doc)).withIdentityProvider(hostIdentityProvider).withHostnameVerifier(ztsHostNameVerifier).build()) {
             InstanceIdentity instanceIdentity =
                     ztsClient.registerInstance(
-                            configserverIdentity,
+                            doc.providerService(),
                             context.identity(),
                             EntityBindingsMapper.toAttestationData(doc),
                             csr);
@@ -217,6 +216,7 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
     private void refreshIdentity(NodeAgentContext context, ContainerPath privateKeyFile, ContainerPath certificateFile,
                                  ContainerPath identityDocumentFile, SignedIdentityDocument doc) {
         KeyPair keyPair = KeyUtils.generateKeypair(KeyAlgorithm.RSA);
+        CsrGenerator csrGenerator = new CsrGenerator(certificateDnsSuffix, doc.providerService().getFullName());
         Pkcs10Csr csr = csrGenerator.generateInstanceCsr(
                 context.identity(), doc.providerUniqueId(), doc.ipAddresses(), doc.clusterType(), keyPair);
 
@@ -230,7 +230,7 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
             try (ZtsClient ztsClient = new DefaultZtsClient.Builder(ztsEndpoint(doc)).withSslContext(containerIdentitySslContext).withHostnameVerifier(ztsHostNameVerifier).build()) {
                 InstanceIdentity instanceIdentity =
                         ztsClient.refreshInstance(
-                                configserverIdentity,
+                                doc.providerService(),
                                 context.identity(),
                                 doc.providerUniqueId().asDottedString(),
                                 csr);
