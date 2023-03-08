@@ -17,24 +17,28 @@ public class CostInfo {
     private final BigDecimal cpuHours;
     private final BigDecimal memoryHours;
     private final BigDecimal diskHours;
+    private final BigDecimal gpuHours;
     private final BigDecimal cpuCost;
     private final BigDecimal memoryCost;
     private final BigDecimal diskCost;
+    private final BigDecimal gpuCost;
     private final NodeResources.Architecture architecture;
     private final int majorVersion;
 
 
     public CostInfo(ApplicationId applicationId, ZoneId zoneId,
-                    BigDecimal cpuHours, BigDecimal memoryHours, BigDecimal diskHours,
-                    BigDecimal cpuCost, BigDecimal memoryCost, BigDecimal diskCost, NodeResources.Architecture architecture, int majorVersion) {
+                    BigDecimal cpuHours, BigDecimal memoryHours, BigDecimal diskHours, BigDecimal gpuHours,
+                    BigDecimal cpuCost, BigDecimal memoryCost, BigDecimal diskCost, BigDecimal gpuCost, NodeResources.Architecture architecture, int majorVersion) {
         this.applicationId = applicationId;
         this.zoneId = zoneId;
         this.cpuHours = cpuHours;
         this.memoryHours = memoryHours;
         this.diskHours = diskHours;
+        this.gpuHours = gpuHours;
         this.cpuCost = cpuCost;
         this.memoryCost = memoryCost;
         this.diskCost = diskCost;
+        this.gpuCost = gpuCost;
         this.architecture = architecture;
         this.majorVersion = majorVersion;
     }
@@ -59,6 +63,10 @@ public class CostInfo {
         return diskHours;
     }
 
+    public BigDecimal getGpuHours() {
+        return gpuHours;
+    }
+
     public BigDecimal getCpuCost() {
         return cpuCost;
     }
@@ -71,8 +79,12 @@ public class CostInfo {
         return diskCost;
     }
 
+    public BigDecimal getGpuCost() {
+        return gpuCost;
+    }
+
     public BigDecimal getTotalCost() {
-        return cpuCost.add(memoryCost).add(diskCost);
+        return cpuCost.add(memoryCost).add(diskCost).add(gpuCost);
     }
 
     public NodeResources.Architecture getArchitecture() {
