@@ -30,19 +30,6 @@ SingleValueEnumAttributeBase::addDoc(bool &incGeneration)
     return _enumIndices.size() - 1;
 }
 
-SingleValueEnumAttributeBase::EnumIndexCopyVector
-SingleValueEnumAttributeBase::getIndicesCopy(uint32_t size) const
-{
-    assert(size <= _enumIndices.get_size());            // Called from writer only
-    auto* enum_indices = &_enumIndices.get_elem_ref(0); // Called from writer only
-    EnumIndexCopyVector result;
-    result.reserve(size);
-    for (uint32_t lid = 0; lid < size; ++lid) {
-        result.push_back(enum_indices[lid].load_relaxed());
-    }
-    return result;
-}
-
 void
 SingleValueEnumAttributeBase::remap_enum_store_refs(const EnumIndexRemapper& remapper, AttributeVector& v)
 {

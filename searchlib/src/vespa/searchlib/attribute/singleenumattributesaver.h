@@ -3,8 +3,8 @@
 #pragma once
 
 #include "attributesaver.h"
-#include "singleenumattribute.h"
 #include "enumattributesaver.h"
+#include "save_utils.h"
 
 namespace search {
 
@@ -14,15 +14,14 @@ namespace search {
 class SingleValueEnumAttributeSaver : public AttributeSaver
 {
 private:
-    using EnumIndexCopyVector = SingleValueEnumAttributeBase::EnumIndexCopyVector;
-    EnumIndexCopyVector _indices;
-    EnumAttributeSaver  _enumSaver;
+    attribute::EntryRefVector _indices;
+    EnumAttributeSaver        _enumSaver;
 
     bool onSave(IAttributeSaveTarget &saveTarget) override;
 public:
     SingleValueEnumAttributeSaver(vespalib::GenerationHandler::Guard &&guard,
                                   const attribute::AttributeHeader &header,
-                                  EnumIndexCopyVector &&indices,
+                                  attribute::EntryRefVector &&indices,
                                   const IEnumStore &enumStore);
 
     ~SingleValueEnumAttributeSaver() override;

@@ -112,6 +112,7 @@ vespa_add_library(searchlib_attribute OBJECT
     reference_attribute.cpp
     reference_attribute_saver.cpp
     reference_mappings.cpp
+    save_utils.cpp
     search_context.cpp
     singleboolattribute.cpp
     singleenumattribute.cpp

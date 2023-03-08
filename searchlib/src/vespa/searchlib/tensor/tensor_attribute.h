@@ -48,7 +48,6 @@ protected:
     bool tensor_cells_are_unchanged(DocId docid, VectorBundle vectors) const;
 
 public:
-    using RefCopyVector = vespalib::Array<EntryRef>;
     TensorAttribute(vespalib::stringref name, const Config &cfg, TensorStore &tensorStore, const NearestNeighborIndexFactory& index_factory);
     ~TensorAttribute() override;
     const ITensorAttribute *asTensorAttribute() const override;
@@ -73,7 +72,6 @@ public:
     void clearDocs(DocId lidLow, DocId lidLimit, bool in_shrink_lid_space) override;
     void onShrinkLidSpace() override;
     uint32_t getVersion() const override;
-    RefCopyVector getRefCopy() const;
     virtual void setTensor(DocId docId, const vespalib::eval::Value &tensor);
     virtual void update_tensor(DocId docId,
                                const document::TensorUpdate &update,

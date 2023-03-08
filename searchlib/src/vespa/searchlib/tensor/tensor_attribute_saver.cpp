@@ -12,12 +12,11 @@ using vespalib::GenerationHandler;
 
 namespace search::tensor {
 
-TensorAttributeSaver::
-TensorAttributeSaver(GenerationHandler::Guard &&guard,
-                     const attribute::AttributeHeader &header,
-                     RefCopyVector &&refs,
-                     const TensorStore &tensor_store,
-                     IndexSaverUP index_saver)
+TensorAttributeSaver::TensorAttributeSaver(GenerationHandler::Guard &&guard,
+                                           const attribute::AttributeHeader &header,
+                                           attribute::EntryRefVector&& refs,
+                                           const TensorStore &tensor_store,
+                                           IndexSaverUP index_saver)
     : AttributeSaver(std::move(guard), header),
       _refs(std::move(refs)),
       _tensor_store(tensor_store),

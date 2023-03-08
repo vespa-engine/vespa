@@ -21,18 +21,6 @@ MultiValueMappingBase::MultiValueMappingBase(const vespalib::GrowStrategy &gs,
 
 MultiValueMappingBase::~MultiValueMappingBase() = default;
 
-MultiValueMappingBase::RefCopyVector
-MultiValueMappingBase::getRefCopy(uint32_t size) const {
-    assert(size <= _indices.get_size());       // Called from writer only
-    auto* indices = &_indices.get_elem_ref(0); // Called from writer only
-    RefCopyVector result;
-    result.reserve(size);
-    for (uint32_t lid = 0; lid < size; ++lid) {
-        result.push_back(indices[lid].load_relaxed());
-    }
-    return result;
-}
-
 void
 MultiValueMappingBase::addDoc(uint32_t & docId)
 {
