@@ -283,6 +283,7 @@ jobs:
                    --define="_topdir $WORKDIR/vespa-rpmbuild" \
                    --define "debug_package %{nil}" \
                    --define "_debugsource_template %{nil}" \
+                   --define "_run_unit_tests 1" \
                    --define '_cmake_extra_opts "-DDEFAULT_VESPA_CPU_ARCH_FLAGS=-msse3 -mcx16 -mtune=intel"' \
                    *.src.rpm
           rm -f *.src.rpm
