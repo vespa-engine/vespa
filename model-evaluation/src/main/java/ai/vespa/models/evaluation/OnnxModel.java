@@ -193,7 +193,11 @@ class OnnxModel implements AutoCloseable {
         if (onnxName == null) {
             throw new IllegalArgumentException("evaluate ONNX model " + name() + ": no output available as: " + output);
         }
-        return evaluator().evaluate(mapped, onnxName);
+        return unmappedEvaluate(mapped, onnxName);
+    }
+
+    Tensor unmappedEvaluate(Map<String, Tensor> inputs, String onnxOutputName) {
+        return evaluator().evaluate(inputs, onnxOutputName);
     }
 
     private OnnxEvaluator evaluator() {

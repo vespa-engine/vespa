@@ -60,4 +60,18 @@ public class RankProfileImportingTest {
         ModelTester tester = new ModelTester("src/test/resources/config/ranking-macros/");
         assertEquals(5, tester.models().size());
     }
+
+    @Test
+    public void testImportingAdvancedGlobalPhase() {
+        ModelTester tester = new ModelTester("src/test/resources/config/advanced-global-phase/");
+        assertEquals(6, tester.models().size());
+        Model m = tester.models().get("global_phase");
+        assertEquals("global_phase", m.name());
+        var func = m.function("globalphase");
+        assertEquals("globalphase", func.getName());
+        var args = func.argumentTypes();
+        assertEquals(2, args.size());
+        assertEquals("tensor(d0[2])", args.get("attribute(doc_vec)").toString());
+        assertEquals("tensor(d0[2])", args.get("query(query_vec)").toString());
+    }
 }

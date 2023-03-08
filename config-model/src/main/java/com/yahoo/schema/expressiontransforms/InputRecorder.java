@@ -3,13 +3,16 @@ package com.yahoo.schema.expressiontransforms;
 
 import com.yahoo.schema.FeatureNames;
 import com.yahoo.schema.RankProfile;
+import com.yahoo.searchlib.rankingexpression.RankingExpression;
 import com.yahoo.searchlib.rankingexpression.Reference;
+import com.yahoo.searchlib.rankingexpression.parser.ParseException;
 import com.yahoo.searchlib.rankingexpression.rule.CompositeNode;
 import com.yahoo.searchlib.rankingexpression.rule.ConstantNode;
 import com.yahoo.searchlib.rankingexpression.rule.ExpressionNode;
 import com.yahoo.searchlib.rankingexpression.rule.ReferenceNode;
 import com.yahoo.searchlib.rankingexpression.transform.ExpressionTransformer;
 
+import java.io.StringReader;
 import java.util.Set;
 
 /**
@@ -43,7 +46,12 @@ public class InputRecorder extends ExpressionTransformer<RankProfileTransformCon
         Reference ref = feature.reference();
         String name = ref.name();
         var args = ref.arguments();
-        if (args.size() == 0) {
+        boolean simpleFunctionOrIdentifier = (args.size() == 0) && (ref.output() == null);
+        if (ref.isSimpleRankingExpressionWrapper()) {
+            name = ref.simpleArgument().get();
+            simpleFunctionOrIdentifier = true;
+        }
+        if (simpleFunctionOrIdentifier) {
             var f = context.rankProfile().getFunctions().get(name);
             if (f != null && f.function().arguments().size() == 0) {
                 transform(f.function().getBody().getRoot(), context);
@@ -52,7 +60,7 @@ public class InputRecorder extends ExpressionTransformer<RankProfileTransformCon
             neededInputs.add(feature.toString());
             return;
         }
-        if (args.size() == 1) {
+        if (FeatureNames.isSimpleFeature(ref)) {
             if (FeatureNames.isAttributeFeature(ref)) {
                 neededInputs.add(feature.toString());
                 return;
@@ -83,10 +91,16 @@ public class InputRecorder extends ExpressionTransformer<RankProfileTransformCon
                 throw new IllegalArgumentException("missing onnx model: " + arg);
             }
             for (String onnxInput : model.getInputMap().values()) {
-                neededInputs.add(onnxInput);
+                var reader = new StringReader(onnxInput);
+                try {
+                    var asExpression = new RankingExpression(reader);
+                    transform(asExpression.getRoot(), context);
+                } catch (ParseException e) {
+                    throw new IllegalArgumentException("illegal onnx input '" + onnxInput + "': " + e.getMessage());
+                }
             }
             return;
         }
-        throw new IllegalArgumentException("cannot handle feature: " + feature);
+        neededInputs.add(feature.toString());
     }
 }
