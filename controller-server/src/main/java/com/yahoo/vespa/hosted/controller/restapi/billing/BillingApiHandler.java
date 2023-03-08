@@ -35,8 +35,6 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.security.Principal;
 import java.time.LocalDate;
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.Comparator;
@@ -44,7 +42,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.Executor;
-import java.util.stream.Collectors;
 
 /**
  * @author andreer
@@ -420,6 +417,12 @@ public class BillingApiHandler extends ThreadedHttpRequestHandler {
         lineItem.zoneId().ifPresent(zoneId ->
             cursor.setString("zone", zoneId.value())
         );
+
+        lineItem.getArchitecture().ifPresent(architecture -> {
+            cursor.setString("architecture", architecture.name());
+        });
+
+        cursor.setLong("majorVersion", lineItem.getMajorVersion());
 
         lineItem.getCpuHours().ifPresent(cpuHours ->
                 cursor.setString("cpuHours", cpuHours.toString())

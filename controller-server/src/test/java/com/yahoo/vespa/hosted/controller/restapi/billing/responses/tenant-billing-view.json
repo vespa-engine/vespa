@@ -12,7 +12,8 @@
         "description": "description",
         "amount": "123.00",
         "plan": "paid",
-        "planName": "Plan with id: paid"
+        "planName": "Plan with id: paid",
+        "majorVersion": 0
       }
     ]
   },
@@ -38,7 +39,8 @@
           "description": "description",
           "amount": "123.00",
           "plan": "paid",
-          "planName": "Plan with id: paid"
+          "planName": "Plan with id: paid",
+          "majorVersion": 0
         }
       ]
     }

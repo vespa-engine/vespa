@@ -124,7 +124,8 @@ public class PlanRegistryMock implements PlanRegistry {
                     cpuCost,
                     memCost,
                     dgbCost,
-                    usage.getArchitecture()
+                    usage.getArchitecture(),
+                    usage.getMajorVersion()
             );
         }
 

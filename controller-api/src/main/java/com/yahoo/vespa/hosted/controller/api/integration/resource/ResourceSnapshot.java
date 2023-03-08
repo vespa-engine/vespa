@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.api.integration.resource;
 
+import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.zone.ZoneId;
@@ -20,19 +21,21 @@ import java.util.stream.Collectors;
 public class ResourceSnapshot {
 
     private final ApplicationId applicationId;
-    private final ResourceAllocation resourceAllocation;
+    private final NodeResources resources;
     private final Instant timestamp;
     private final ZoneId zoneId;
+    private final Version version;
 
-    public ResourceSnapshot(ApplicationId applicationId, double cpuCores, double memoryGb, double diskGb, NodeResources.Architecture architecture, Instant timestamp, ZoneId zoneId) {
+    public ResourceSnapshot(ApplicationId applicationId, NodeResources resources, Instant timestamp, ZoneId zoneId, Version version) {
         this.applicationId = applicationId;
-        this.resourceAllocation = new ResourceAllocation(cpuCores, memoryGb, diskGb, architecture);
+        this.resources = resources;
         this.timestamp = timestamp;
         this.zoneId = zoneId;
+        this.version = version;
     }
 
-    public static ResourceSnapshot from(ApplicationId applicationId, int nodes, double cpuCores, double memoryGb, double diskGb, NodeResources.Architecture architecture, Instant timestamp, ZoneId zoneId) {
-        return new ResourceSnapshot(applicationId, cpuCores * nodes, memoryGb * nodes, diskGb * nodes, architecture, timestamp, zoneId);
+    public static ResourceSnapshot from(ApplicationId applicationId, int nodes, NodeResources resources, Instant timestamp, ZoneId zoneId) {
+        return new ResourceSnapshot(applicationId, resources.multipliedBy(nodes), timestamp, zoneId, Version.emptyVersion);
     }
 
     public static ResourceSnapshot from(List<Node> nodes, Instant timestamp, ZoneId zoneId) {
@@ -41,37 +44,26 @@ public class ResourceSnapshot {
                                                  .map(node -> node.owner().get())
                                                  .collect(Collectors.toSet());
 
-        if (applicationIds.size() != 1) throw new IllegalArgumentException("List of nodes can only represent one application");
+        Set<Version> versions = nodes.stream()
+                .map(Node::currentVersion)
+                .collect(Collectors.toSet());
 
-        return new ResourceSnapshot(
-                applicationIds.iterator().next(),
-                nodes.stream().map(Node::resources).mapToDouble(NodeResources::vcpu).sum(),
-                nodes.stream().map(Node::resources).mapToDouble(NodeResources::memoryGb).sum(),
-                nodes.stream().map(Node::resources).mapToDouble(NodeResources::diskGb).sum(),
-                nodes.stream().map(node -> node.resources().architecture()).findFirst().orElse(NodeResources.Architecture.getDefault()),
-                timestamp,
-                zoneId
-        );
+        if (applicationIds.size() != 1) throw new IllegalArgumentException("List of nodes can only represent one application");
+        if (versions.size() != 1) throw new IllegalArgumentException("List of nodes can only represent one version");
+
+        var resources = nodes.stream()
+                .map(Node::resources)
+                .reduce(NodeResources.zero(), NodeResources::add);
+
+        return new ResourceSnapshot(applicationIds.iterator().next(), resources, timestamp, zoneId, versions.iterator().next());
     }
 
     public ApplicationId getApplicationId() {
         return applicationId;
     }
 
-    public ResourceAllocation allocation() {
-        return resourceAllocation;
-    }
-
-    public double getCpuCores() {
-        return resourceAllocation.getCpuCores();
-    }
-
-    public double getMemoryGb() {
-        return resourceAllocation.getMemoryGb();
-    }
-
-    public double getDiskGb() {
-        return resourceAllocation.getDiskGb();
+    public NodeResources resources() {
+        return resources;
     }
 
     public Instant getTimestamp() {
@@ -82,8 +74,8 @@ public class ResourceSnapshot {
         return zoneId;
     }
 
-    public NodeResources.Architecture getArchitecture() {
-        return resourceAllocation.getArchitecture();
+    public Version getVersion() {
+        return version;
     }
 
     @Override
@@ -93,13 +85,14 @@ public class ResourceSnapshot {
 
         ResourceSnapshot other = (ResourceSnapshot) o;
         return this.applicationId.equals(other.applicationId) &&
-                this.resourceAllocation.equals(other.resourceAllocation) &&
+                this.resources.equals(other.resources) &&
                 this.timestamp.equals(other.timestamp) &&
-                this.zoneId.equals(other.zoneId);
+                this.zoneId.equals(other.zoneId) &&
+                this.version.equals(other.version);
     }
 
     @Override
     public int hashCode(){
-        return Objects.hash(applicationId, resourceAllocation, timestamp, zoneId);
+        return Objects.hash(applicationId, resources, timestamp, zoneId, version);
     }
 }

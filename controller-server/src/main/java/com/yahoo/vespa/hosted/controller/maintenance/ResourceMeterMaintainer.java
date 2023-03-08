@@ -120,7 +120,7 @@ public class ResourceMeterMaintainer extends ControllerMaintainer {
                     Map<ZoneId, Double> deploymentCosts = snapshotsByInstance.getOrDefault(instanceName, List.of()).stream()
                             .collect(Collectors.toUnmodifiableMap(
                                     ResourceSnapshot::getZoneId,
-                                    snapshot -> cost(snapshot.allocation(), systemName),
+                                    snapshot -> cost(snapshot.resources(), systemName),
                                     Double::sum));
                     locked = locked.with(instanceName, i -> i.withDeploymentCosts(deploymentCosts));
                     updateCostMetrics(tenantAndApplication.instance(instanceName), deploymentCosts);
@@ -201,10 +201,11 @@ public class ResourceMeterMaintainer extends ControllerMaintainer {
                 // Grouping by ApplicationId -> Architecture -> ResourceSnapshot
                 .collect(Collectors.groupingBy(node ->
                         node.owner().get(),
-                        groupSnapshotsByArchitecture(zoneId)))
+                        groupSnapshotsByArchitectureAndMajorVersion(zoneId)))
                 .values()
                 .stream()
-                .flatMap(list -> list.values().stream())
+                .flatMap(byArch -> byArch.values().stream())
+                .flatMap(byMajor -> byMajor.values().stream())
                 .toList();
     }
 
@@ -234,10 +235,14 @@ public class ResourceMeterMaintainer extends ControllerMaintainer {
     }
 
     private static double cost(ResourceAllocation allocation, SystemName systemName) {
+        var resources = new NodeResources(allocation.getCpuCores(), allocation.getMemoryGb(), allocation.getDiskGb(), 0);
+        return cost(resources, systemName);
+    }
+
+    private static double cost(NodeResources resources, SystemName systemName) {
         // Divide cost by 3 in non-public zones to show approx. AWS equivalent cost
         double costDivisor = systemName.isPublic() ? 1.0 : 3.0;
-        double cost = new NodeResources(allocation.getCpuCores(), allocation.getMemoryGb(), allocation.getDiskGb(), 0).cost();
-        return Math.round(cost * 100.0 / costDivisor) / 100.0;
+        return Math.round(resources.cost() * 100.0 / costDivisor) / 100.0;
     }
 
     private void updateMeteringMetrics(Collection<ResourceSnapshot> resourceSnapshots) {
@@ -245,14 +250,14 @@ public class ResourceMeterMaintainer extends ControllerMaintainer {
         // total metered resource usage, for alerting on drastic changes
         metric.set(METERING_TOTAL_REPORTED,
                 resourceSnapshots.stream()
-                        .mapToDouble(r -> r.getCpuCores() + r.getMemoryGb() + r.getDiskGb()).sum(),
+                        .mapToDouble(r -> r.resources().vcpu() + r.resources().memoryGb() + r.resources().diskGb()).sum(),
                 metric.createContext(Collections.emptyMap()));
 
         resourceSnapshots.forEach(snapshot -> {
             var context = getMetricContext(snapshot);
-            metric.set("metering.vcpu", snapshot.getCpuCores(), context);
-            metric.set("metering.memoryGB", snapshot.getMemoryGb(), context);
-            metric.set("metering.diskGB", snapshot.getDiskGb(), context);
+            metric.set("metering.vcpu", snapshot.resources().vcpu(), context);
+            metric.set("metering.memoryGB", snapshot.resources().memoryGb(), context);
+            metric.set("metering.diskGB", snapshot.resources().diskGb(), context);
         });
     }
 
@@ -276,23 +281,26 @@ public class ResourceMeterMaintainer extends ControllerMaintainer {
                 "tenant", snapshot.getApplicationId().tenant().value(),
                 "applicationId", snapshot.getApplicationId().toFullString(),
                 "zoneId", snapshot.getZoneId().value(),
-                "architecture", snapshot.getArchitecture()
+                "architecture", snapshot.resources().architecture()
         ));
     }
 
-    private Collector<Node, ?, Map<NodeResources.Architecture, ResourceSnapshot>> groupSnapshotsByArchitecture(ZoneId zoneId) {
-        return Collectors.collectingAndThen(
-                Collectors.groupingBy(node -> node.resources().architecture()),
-                convertNodeListToResourceSnapshot(zoneId)
-        );
+    private Collector<Node, ?, Map<NodeResources.Architecture, Map<Integer, ResourceSnapshot>>> groupSnapshotsByArchitectureAndMajorVersion(ZoneId zoneId) {
+        return Collectors.groupingBy(
+                (Node node) -> node.resources().architecture(),
+                Collectors.collectingAndThen(
+                        Collectors.groupingBy(
+                                (Node node) -> node.currentVersion().getMajor(),
+                                Collectors.toList()),
+                        convertNodeListToResourceSnapshot(zoneId)));
     }
 
-    private Function<Map<NodeResources.Architecture, List<Node>>, Map<NodeResources.Architecture, ResourceSnapshot>> convertNodeListToResourceSnapshot(ZoneId zoneId) {
-        return nodeMap -> nodeMap.entrySet()
-                .stream()
-                .collect(Collectors.toMap(
-                        Map.Entry::getKey,
-                        entry -> ResourceSnapshot.from(entry.getValue(), clock.instant(), zoneId))
-                );
+    private Function<Map<Integer, List<Node>>, Map<Integer, ResourceSnapshot>> convertNodeListToResourceSnapshot(ZoneId zoneId) {
+        return nodesByMajor -> {
+            return nodesByMajor.entrySet().stream()
+                    .collect(Collectors.toMap(
+                            entry -> entry.getKey(),
+                            entry -> ResourceSnapshot.from(entry.getValue(), clock.instant(), zoneId)));
+        };
     }
 }

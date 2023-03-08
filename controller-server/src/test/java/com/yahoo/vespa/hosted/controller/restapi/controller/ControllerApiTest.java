@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.controller.restapi.controller;
 
 import com.yahoo.application.container.handler.Request;
+import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.zone.ZoneId;
@@ -157,10 +158,12 @@ public class ControllerApiTest extends ControllerContainerTest {
         ApplicationId applicationId = ApplicationId.from("tenant", "app", "instance");
         Instant timestamp = Instant.ofEpochMilli(123456789);
         ZoneId zoneId = ZoneId.defaultId();
-        List<ResourceSnapshot> snapshots = List.of(
-                new ResourceSnapshot(applicationId, 12, 48, 1200, NodeResources.Architecture.arm64, timestamp, zoneId),
-                new ResourceSnapshot(applicationId, 24, 96, 2400,  NodeResources.Architecture.x86_64, timestamp, zoneId)
-        );
+        var resources = List.of(
+                new NodeResources(12, 48, 1200, 0, NodeResources.DiskSpeed.any, NodeResources.StorageType.any, NodeResources.Architecture.arm64),
+                new NodeResources(24, 96, 2400, 0, NodeResources.DiskSpeed.any, NodeResources.StorageType.any, NodeResources.Architecture.x86_64));
+
+        var snapshots = resources.stream().map(x -> new ResourceSnapshot(applicationId, x, timestamp, zoneId, Version.emptyVersion)).toList();
+
         tester.controller().serviceRegistry().resourceDatabase().writeResourceSnapshots(snapshots);
         tester.assertResponse(
                 operatorRequest("http://localhost:8080/controller/v1/metering/tenant/tenantName/month/2020-02", "", Request.Method.GET),

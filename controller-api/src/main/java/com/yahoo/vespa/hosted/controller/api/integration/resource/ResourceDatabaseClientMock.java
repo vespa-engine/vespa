@@ -78,10 +78,11 @@ public class ResourceDatabaseClientMock implements ResourceDatabaseClient {
                             a.getApplicationId(),
                             a.getZoneId(),
                             plan,
-                            a.getArchitecture(),
-                            BigDecimal.valueOf(a.getCpuCores()).multiply(d),
-                            BigDecimal.valueOf(a.getMemoryGb()).multiply(d),
-                            BigDecimal.valueOf(a.getDiskGb()).multiply(d)
+                            a.resources().architecture(),
+                            a.getVersion().getMajor(),
+                            BigDecimal.valueOf(a.resources().vcpu()).multiply(d),
+                            BigDecimal.valueOf(a.resources().memoryGb()).multiply(d),
+                            BigDecimal.valueOf(a.resources().diskGb()).multiply(d)
                     );
                 })
                 .toList();
@@ -97,6 +98,7 @@ public class ResourceDatabaseClientMock implements ResourceDatabaseClient {
                 a.getZoneId(),
                 a.getPlan(),
                 a.getArchitecture(),
+                a.getMajorVersion(),
                 a.getCpuMillis().add(b.getCpuMillis()),
                 a.getMemoryMillis().add(b.getMemoryMillis()),
                 a.getDiskMillis().add(b.getDiskMillis())
@@ -112,7 +114,7 @@ public class ResourceDatabaseClientMock implements ResourceDatabaseClient {
                 .filter(snapshot -> snapshot.getTimestamp().isBefore(Instant.ofEpochMilli(end)))
                 .filter(snapshot -> snapshot.getApplicationId().tenant().equals(tenantName))
                 .collect(Collectors.groupingBy(
-                        usage -> Objects.hash(usage.getApplicationId(), usage.getZoneId(), tenantPlan.id().value())
+                        usage -> Objects.hash(usage.getApplicationId(), usage.getZoneId(), tenantPlan.id().value(), usage.resources().architecture(), usage.getVersion().getMajor())
                 ))
                 .values().stream()
                 .map(snapshots -> resourceUsageFromSnapshots(tenantPlan, snapshots))

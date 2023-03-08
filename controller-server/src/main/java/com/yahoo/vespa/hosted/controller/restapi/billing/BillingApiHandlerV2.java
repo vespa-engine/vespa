@@ -311,6 +311,8 @@ public class BillingApiHandlerV2 extends RestApiRequestHandler<BillingApiHandler
         slime.setString("description", item.description());
         slime.setString("amount",item.amount().toString());
         toSlime(slime.setObject("plan"), planRegistry.plan(item.plan()).orElseThrow(() -> new RuntimeException("No such plan: '" + item.plan() + "'")));
+        item.getArchitecture().ifPresent(arch -> slime.setString("architecture", arch.name()));
+        slime.setLong("majorVersion", item.getMajorVersion());
 
         item.applicationId().ifPresent(appId -> {
             slime.setString("application", appId.application().value());
