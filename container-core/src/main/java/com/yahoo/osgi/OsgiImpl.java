@@ -43,7 +43,7 @@ public class OsgiImpl implements Osgi {
         alwaysCurrentBundle = firstNonFrameworkBundle(initialBundles);
         if (alwaysCurrentBundle == null)
             throw new IllegalStateException("The initial bundles only contained the framework bundle!");
-        log.info("Using " + alwaysCurrentBundle + " to lookup current bundles.");
+        log.fine("Using " + alwaysCurrentBundle + " to lookup current bundles.");
     }
 
     @Override
