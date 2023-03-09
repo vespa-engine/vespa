@@ -102,7 +102,7 @@ public class FelixFramework implements OsgiFramework {
             }
             bundle.start();
         }
-        log.info(startedBundlesMessage(bundles));
+        log.fine(startedBundlesMessage(bundles));
     }
 
     private String startedBundlesMessage(List<Bundle> bundles) {
