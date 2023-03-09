@@ -73,12 +73,12 @@ public class VespaZooKeeperAdminImpl implements VespaZooKeeperAdmin {
                             zooKeeperAdmin.setData("/dummy-node-" + HostName.getLocalhost(), new byte[0], -1);
                             return;
                         } catch (KeeperException ex) {
-                            log.log(Level.INFO, e.getMessage());
+                            log.log(Level.FINE, e.getMessage());
                             Thread.sleep(sleepTime);
                             continue;
                         }
                     }
-                    log.log(Level.INFO, e.getMessage());
+                    log.log(Level.FINE, e.getMessage());
                     exception = e;
                     Thread.sleep(sleepTime);
                 }
