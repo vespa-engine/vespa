@@ -1,6 +1,8 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "single_raw_attribute.h"
+#include "single_raw_attribute_loader.h"
+#include "single_raw_attribute_saver.h"
 #include <vespa/searchcommon/attribute/config.h>
 #include <vespa/vespalib/datastore/array_store.hpp>
 
@@ -169,6 +171,24 @@ SingleRawAttribute::onSerializeForDescendingSort(DocId doc, void * serTo, long a
         return -1;
     }
     return buf.size();
+}
+
+std::unique_ptr<AttributeSaver>
+SingleRawAttribute::onInitSave(vespalib::stringref fileName)
+{
+    vespalib::GenerationHandler::Guard guard(getGenerationHandler().takeGuard());
+    return std::make_unique<SingleRawAttributeSaver>
+        (std::move(guard),
+         this->createAttributeHeader(fileName),
+         make_entry_ref_vector_snapshot(_ref_vector, getCommittedDocIdLimit()),
+         _raw_store);
+}
+
+bool
+SingleRawAttribute::onLoad(vespalib::Executor* executor)
+{
+    SingleRawAttributeLoader loader(*this, _ref_vector, _raw_store);
+    return loader.on_load(executor);
 }
 
 }

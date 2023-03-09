@@ -30,6 +30,7 @@ public:
     std::unique_ptr<vespalib::datastore::ICompactionContext> start_compact(const vespalib::datastore::CompactionStrategy& compaction_strategy);
     void reclaim_memory(generation_t oldest_used_gen) { _array_store.reclaim_memory(oldest_used_gen); }
     void assign_generation(generation_t current_gen) { _array_store.assign_generation(current_gen); }
+    void set_initializing(bool initializing) { _array_store.setInitializing(initializing); }
 };
 
 }

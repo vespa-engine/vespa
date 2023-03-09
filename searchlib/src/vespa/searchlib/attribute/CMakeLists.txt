@@ -106,6 +106,8 @@ vespa_add_library(searchlib_attribute OBJECT
     postingstore.cpp
     predicate_attribute.cpp
     raw_buffer_store.cpp
+    raw_buffer_store_reader.cpp
+    raw_buffer_store_writer.cpp
     raw_buffer_type_mapper.cpp
     raw_multi_value_read_view.cpp
     readerbase.cpp
@@ -128,6 +130,8 @@ vespa_add_library(searchlib_attribute OBJECT
     single_numeric_enum_search_context.cpp
     single_numeric_search_context.cpp
     single_raw_attribute.cpp
+    single_raw_attribute_loader.cpp
+    single_raw_attribute_saver.cpp
     single_small_numeric_search_context.cpp
     single_string_enum_search_context.cpp
     single_string_enum_hint_search_context.cpp
