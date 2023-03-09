@@ -106,7 +106,7 @@ public final class ConfiguredApplication implements Application {
     private volatile boolean shutdownReconfiguration = false;
 
     static {
-        log.log(Level.INFO, "Starting jdisc" + (Vtag.currentVersion.isEmpty() ? "" : " at version " + Vtag.currentVersion));
+        log.log(Level.FINE, "Starting jdisc" + (Vtag.currentVersion.isEmpty() ? "" : " at version " + Vtag.currentVersion));
         installBouncyCastleSecurityProvider();
     }
 
@@ -118,7 +118,7 @@ public final class ConfiguredApplication implements Application {
     private static void installBouncyCastleSecurityProvider() {
         BouncyCastleProvider bcProvider = new BouncyCastleProvider();
         if (Security.addProvider(bcProvider) != -1) {
-            log.info("Installed '" + bcProvider.getInfo() + "' as Java Security Provider");
+            log.fine("Installed '" + bcProvider.getInfo() + "' as Java Security Provider");
         } else {
             Provider alreadyInstalledBcProvider = Security.getProvider(BouncyCastleProvider.PROVIDER_NAME);
             log.warning("Unable to install '" + bcProvider.getInfo() + "' as Java Security Provider. " +
