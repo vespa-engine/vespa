@@ -4,6 +4,7 @@
 #include <vespa/searchlib/attribute/attributefactory.h>
 #include <vespa/searchcommon/attribute/config.h>
 #include <vespa/vespalib/gtest/gtest.h>
+#include <filesystem>
 #include <memory>
 
 using search::AttributeFactory;
@@ -19,12 +20,18 @@ std::vector<char> empty;
 vespalib::string hello("hello");
 vespalib::ConstArrayRef<char> raw_hello(hello.c_str(), hello.size());
 
+std::filesystem::path attr_path("raw.dat");
+
 std::vector<char> as_vector(vespalib::stringref value) {
     return {value.data(), value.data() + value.size()};
 }
 
 std::vector<char> as_vector(vespalib::ConstArrayRef<char> value) {
     return {value.data(), value.data() + value.size()};
+}
+
+void remove_saved_attr() {
+    std::filesystem::remove(attr_path);
 }
 
 class RawAttributeTest : public ::testing::Test
@@ -36,6 +43,7 @@ protected:
     RawAttributeTest();
     ~RawAttributeTest() override;
     std::vector<char> get_raw(uint32_t docid);
+    void reset_attr(bool add_reserved);
 };
 
 
@@ -44,10 +52,7 @@ RawAttributeTest::RawAttributeTest()
     _attr(),
     _raw(nullptr)
 {
-    Config cfg(BasicType::RAW, CollectionType::SINGLE);
-    _attr = AttributeFactory::createAttribute("raw", cfg);
-    _raw = &dynamic_cast<SingleRawAttribute&>(*_attr);
-    _attr->addReservedDoc();
+    reset_attr(true);
 }
 
 RawAttributeTest::~RawAttributeTest() = default;
@@ -56,6 +61,17 @@ std::vector<char>
 RawAttributeTest::get_raw(uint32_t docid)
 {
     return as_vector(_raw->get_raw(docid));
+}
+
+void
+RawAttributeTest::reset_attr(bool add_reserved)
+{
+    Config cfg(BasicType::RAW, CollectionType::SINGLE);
+    _attr = AttributeFactory::createAttribute("raw", cfg);
+    _raw = &dynamic_cast<SingleRawAttribute&>(*_attr);
+    if (add_reserved) {
+        _attr->addReservedDoc();
+    }
 }
 
 TEST_F(RawAttributeTest, can_set_and_clear_value)
@@ -87,6 +103,26 @@ TEST_F(RawAttributeTest, implements_serialize_for_sort) {
     _raw->set_raw(1, raw_long_hello);
     EXPECT_EQ(-1, _attr->serializeForAscendingSort(1, buf, sizeof(buf)));
     EXPECT_EQ(-1, _attr->serializeForDescendingSort(1, buf, sizeof(buf)));
+}
+
+TEST_F(RawAttributeTest, save_and_load)
+{
+    auto mini_test = as_vector("mini test");
+    remove_saved_attr();
+    _attr->addDocs(10);
+    _attr->commit();
+    _raw->set_raw(1, raw_hello);
+    _raw->set_raw(2, mini_test);
+    _attr->setCreateSerialNum(20);
+    _attr->save();
+    reset_attr(false);
+    _attr->load();
+    EXPECT_EQ(11, _attr->getCommittedDocIdLimit());
+    EXPECT_EQ(11, _attr->getStatus().getNumDocs());
+    EXPECT_EQ(20, _attr->getCreateSerialNum());
+    EXPECT_EQ(as_vector("hello"), as_vector(_raw->get_raw(1)));
+    EXPECT_EQ(mini_test, as_vector(_raw->get_raw(2)));
+    remove_saved_attr();
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()
