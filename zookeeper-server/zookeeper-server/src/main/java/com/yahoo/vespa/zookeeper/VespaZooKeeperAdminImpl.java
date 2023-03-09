@@ -54,7 +54,7 @@ public class VespaZooKeeperAdminImpl implements VespaZooKeeperAdmin {
 
     private ZooKeeperAdmin createAdmin(String connectionSpec) {
         return uncheck(() -> new ZooKeeperAdmin(connectionSpec, (int) sessionTimeout().toMillis(),
-                                                (event) -> log.log(Level.INFO, event.toString()), new ZkClientConfigBuilder().toConfig()));
+                                                (event) -> log.log(Level.FINE, event.toString()), new ZkClientConfigBuilder().toConfig()));
     }
 
     /** Creates a node in zookeeper, with hostname as part of node name, this ensures that server is up and working before returning */
