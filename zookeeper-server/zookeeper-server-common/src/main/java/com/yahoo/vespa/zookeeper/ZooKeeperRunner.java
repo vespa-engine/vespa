@@ -71,8 +71,6 @@ public class ZooKeeperRunner implements Runnable {
                 log.log(Level.INFO, "Starting ZooKeeper server with " + path.toFile().getAbsolutePath() +
                                     ". Trying to establish ZooKeeper quorum (members: " +
                                     zookeeperServerHostnames(zookeeperServerConfig) + ", attempt "  + attempt + ")");
-                log.log(Level.INFO, "Current content of zookeeper config file at '" + path + "':\n" +
-                                    Exceptions.uncheck(() -> Files.readString(path)));
                 startServer(path); // Will block in a real implementation of VespaZooKeeperServer
                 return;
             } catch (RuntimeException e) {
@@ -89,6 +87,9 @@ public class ZooKeeperRunner implements Runnable {
                 now = Instant.now();
             }
         }
+        // Failed, log config
+        log.log(Level.INFO, "Current content of zookeeper config file at '" + path + "':\n" +
+                Exceptions.uncheck(() -> Files.readString(path)));
     }
 
     private String serverDescription() {
