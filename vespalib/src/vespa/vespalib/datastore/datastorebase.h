@@ -65,6 +65,7 @@ public:
     void switch_primary_buffer(uint32_t typeId, size_t elemsNeeded);
 
     vespalib::MemoryUsage getMemoryUsage() const;
+    vespalib::MemoryUsage getDynamicMemoryUsage() const;
 
     vespalib::AddressSpace getAddressSpaceUsage() const;
 

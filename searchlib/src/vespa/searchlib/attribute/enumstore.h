@@ -91,7 +91,12 @@ public:
     uint32_t get_num_uniques() const override { return _dict->get_num_uniques(); }
     bool is_folded() const { return _is_folded;}
 
-    vespalib::MemoryUsage get_values_memory_usage() const override { return _store.get_allocator().get_data_store().getMemoryUsage(); }
+    vespalib::MemoryUsage get_values_memory_usage() const override {
+        return _store.get_allocator().get_data_store().getMemoryUsage();
+    }
+    vespalib::MemoryUsage get_dynamic_values_memory_usage() const {
+        return _store.get_allocator().get_data_store().getDynamicMemoryUsage();
+    }
     vespalib::MemoryUsage get_dictionary_memory_usage() const override { return _dict->get_memory_usage(); }
 
     vespalib::AddressSpace get_values_address_space_usage() const override;

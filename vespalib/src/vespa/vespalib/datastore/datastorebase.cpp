@@ -258,23 +258,35 @@ DataStoreBase::dropBuffers()
 }
 
 vespalib::MemoryUsage
-DataStoreBase::getMemoryUsage() const
+DataStoreBase::getDynamicMemoryUsage() const
 {
     auto stats = getMemStats();
-
-    size_t extra = 0;
-    extra += _buffers.capacity() * sizeof(BufferAndTypeId);
-    extra += _primary_buffer_ids.capacity() * sizeof(uint32_t);
-    extra += _states.capacity() * sizeof(BufferState);
-    extra += _typeHandlers.capacity() * sizeof(BufferTypeBase *);
-    extra += _free_lists.capacity() * sizeof(FreeList);
-    (void) extra; //TODO Must be accounted as static cost
-
     vespalib::MemoryUsage usage;
     usage.setAllocatedBytes(stats._allocBytes);
     usage.setUsedBytes(stats._usedBytes);
     usage.setDeadBytes(stats._deadBytes);
     usage.setAllocatedBytesOnHold(stats._holdBytes);
+    return usage;
+}
+
+vespalib::MemoryUsage
+DataStoreBase::getMemoryUsage() const {
+    auto usage = getDynamicMemoryUsage();
+    size_t extra_allocated = 0;
+    extra_allocated += _buffers.capacity() * sizeof(BufferAndTypeId);
+    extra_allocated += _primary_buffer_ids.capacity() * sizeof(uint32_t);
+    extra_allocated += _states.capacity() * sizeof(BufferState);
+    extra_allocated += _typeHandlers.capacity() * sizeof(BufferTypeBase *);
+    extra_allocated += _free_lists.capacity() * sizeof(FreeList);
+
+    size_t extra_used = 0;
+    extra_used += _buffers.size() * sizeof(BufferAndTypeId);
+    extra_used += _primary_buffer_ids.size() * sizeof(uint32_t);
+    extra_used += _states.size() * sizeof(BufferState);
+    extra_used += _typeHandlers.size() * sizeof(BufferTypeBase *);
+    extra_used += _free_lists.size() * sizeof(FreeList);
+    usage.incAllocatedBytes(extra_allocated);
+    usage.incUsedBytes(extra_used);
     return usage;
 }
 

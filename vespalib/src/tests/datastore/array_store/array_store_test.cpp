@@ -218,8 +218,8 @@ TEST_P(NumberStoreTest, control_static_sizes) {
 #endif
     EXPECT_EQ(112u, sizeof(NumberStoreTest::ArrayStoreType::SmallBufferType));
     MemoryUsage usage = store.getMemoryUsage();
-    EXPECT_EQ(960u, usage.allocatedBytes());
-    EXPECT_EQ(32u, usage.usedBytes());
+    EXPECT_EQ(1312160u, usage.allocatedBytes());
+    EXPECT_EQ(1311232u, usage.usedBytes());
 }
 
 TEST_P(NumberStoreTest, add_and_get_small_arrays_of_trivial_type)

@@ -74,7 +74,7 @@ template <typename B>
 vespalib::MemoryUsage
 EnumAttribute<B>::getEnumStoreValuesMemoryUsage() const
 {
-    return _enumStore.get_values_memory_usage();
+    return _enumStore.get_dynamic_values_memory_usage();
 }
 
 template <typename B>

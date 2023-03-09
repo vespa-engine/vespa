@@ -42,14 +42,14 @@ public:
     using SmallBufferType = typename TypeMapperT::SmallBufferType;
     using TypeMapper = TypeMapperT;
 private:
-    uint32_t _largeArrayTypeId;
-    uint32_t _maxSmallArrayTypeId;
-    size_t _maxSmallArraySize;
-    DataStoreType _store;
-    TypeMapper _mapper;
+    uint32_t                     _largeArrayTypeId;
+    uint32_t                     _maxSmallArrayTypeId;
+    size_t                       _maxSmallArraySize;
+    DataStoreType                _store;
+    TypeMapper                   _mapper;
     std::vector<SmallBufferType> _smallArrayTypes;
-    LargeBufferType _largeArrayType;
-    CompactionSpec _compaction_spec;
+    LargeBufferType              _largeArrayType;
+    CompactionSpec               _compaction_spec;
     using generation_t = vespalib::GenerationHandler::generation_t;
 
     void initArrayTypes(const ArrayStoreConfig &cfg, std::shared_ptr<alloc::MemoryAllocator> memory_allocator);

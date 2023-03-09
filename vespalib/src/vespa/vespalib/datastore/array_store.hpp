@@ -59,9 +59,9 @@ ArrayStore<EntryT, RefT, TypeMapperT>::ArrayStore(const ArrayStoreConfig &cfg, s
 template <typename EntryT, typename RefT, typename TypeMapperT>
 vespalib::MemoryUsage
 ArrayStore<EntryT, RefT, TypeMapperT>::getMemoryUsage() const {
-    vespalib::MemoryUsage usage =  _store.getMemoryUsage();
-    //TODO Must be accounted
-    // usage.incAllocatedBytes(_smallArrayTypes.capacity() * sizeof(SmallBufferType));
+    vespalib::MemoryUsage usage = _store.getMemoryUsage();
+    usage.incAllocatedBytes(_smallArrayTypes.capacity() * sizeof(SmallBufferType));
+    usage.incUsedBytes(_smallArrayTypes.size() * sizeof(SmallBufferType));
     return usage;
 }
 
