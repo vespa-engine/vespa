@@ -70,7 +70,7 @@ public class ApplicationBundleLoader {
 
         bundlesFromNewGeneration = installBundles(newFileReferences);
         BundleStarter.startBundles(activeBundles.values());
-        log.info(installedBundlesMessage());
+        log.fine(installedBundlesMessage());
 
         readyForNewBundles = false;
     }
@@ -168,7 +168,7 @@ public class ApplicationBundleLoader {
 
         for (FileReference reference : bundlesToInstall) {
             try {
-                log.info("Installing bundle with reference '" + reference.value() + "'");
+                log.fine("Installing bundle with reference '" + reference.value() + "'");
                 List<Bundle> bundles = bundleInstaller.installBundles(reference, osgi);
 
                 // If more than one bundle was installed, and the OSGi framework is the real Felix one,
