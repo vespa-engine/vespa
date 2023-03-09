@@ -244,9 +244,6 @@ jobs:
       screwdriver.cd/ram: 16
       screwdriver.cd/disk: HIGH
       screwdriver.cd/timeout: 300
-      screwdriver.cd/dockerEnabled: true
-      screwdriver.cd/dockerCpu: TURBO
-      screwdriver.cd/dockerRam: HIGH
       screwdriver.cd/buildPeriodically: H 6 1 * *
 
     environment:
@@ -264,9 +261,8 @@ jobs:
             return 1
           fi
       - install-dependencies: |
-          dnf config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
-          dnf install -y docker-ce docker-ce-cli containerd.io
-          docker system info
+          dnf install -y podman podman-docker buildah skopeo
+          touch /etc/containers/nodocker
       - checkout: |
           mkdir -p workdir
           cd workdir
@@ -296,11 +292,11 @@ jobs:
           RUN --mount=type=bind,target=/rpms/,source=. dnf reinstall -y /rpms/vespa*rpm && dnf clean all
           USER vespa
           EOF
-          docker build --progress plain --build-arg VESPA_VERSION=$VESPA_VERSION --tag docker.io/$IMAGE_NAME:$VESPA_VERSION \
+          buildah bud --security-opt label=disable --network host --squash --build-arg VESPA_VERSION=$VESPA_VERSION --tag docker.io/$IMAGE_NAME:$VESPA_VERSION \
             --tag docker.io/$IMAGE_NAME:latest --file Dockerfile .
       - verify-container-image: |
           # Trick to be able to use the documentation testing to verify the image built locally
-          docker tag docker.io/$IMAGE_NAME:$VESPA_VERSION vespaengine/vespa:latest
+          buildah tag docker.io/$IMAGE_NAME:$VESPA_VERSION vespaengine/vespa:latest
           # Clone and setup doc tests
           git clone -q --depth 1 https://github.com/vespa-engine/documentation
           cd documentation
@@ -319,10 +315,10 @@ jobs:
             else
               OPT_STATE="$(set +o)"
               set +x
-              docker login --username aressem --password "$DOCKER_HUB_DEPLOY_KEY"
+              buildah login --username aressem --password "$DOCKER_HUB_DEPLOY_KEY" docker.io
               eval "$OPT_STATE"
-              docker push docker.io/$IMAGE_NAME:$VESPA_VERSION
-              docker push docker.io/$IMAGE_NAME:latest
+              buildah push --format v2s2 docker.io/$IMAGE_NAME:$VESPA_VERSION docker://docker.io/$IMAGE_NAME:$VESPA_VERSION
+              buildah push --format v2s2 docker.io/$IMAGE_NAME:$VESPA_VERSION docker://docker.io/$IMAGE_NAME:latest
             fi
           fi
 
