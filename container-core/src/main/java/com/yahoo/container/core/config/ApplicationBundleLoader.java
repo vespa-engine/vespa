@@ -71,7 +71,7 @@ public class ApplicationBundleLoader {
         bundlesFromNewGeneration = installBundles(newFileReferences);
         BundleStarter.startBundles(activeBundles.values());
 
-        if (! (obsoleteBundles.isEmpty() && newFileReferences.isEmpty())) log.info(installedBundlesMessage());
+        if (obsoleteBundles.size() > 0 || newFileReferences.size() > 0) log.info(installedBundlesMessage());
 
         readyForNewBundles = false;
     }
