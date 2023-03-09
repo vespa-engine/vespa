@@ -53,7 +53,7 @@ public class ResourceSnapshot {
 
         var resources = nodes.stream()
                 .map(Node::resources)
-                .reduce(NodeResources.zero(), NodeResources::add);
+                .reduce(NodeResources.zero(), ResourceSnapshot::addResources);
 
         return new ResourceSnapshot(applicationIds.iterator().next(), resources, timestamp, zoneId, versions.iterator().next());
     }
@@ -94,5 +94,25 @@ public class ResourceSnapshot {
     @Override
     public int hashCode(){
         return Objects.hash(applicationId, resources, timestamp, zoneId, version);
+    }
+
+    /* This function does pretty much the same thing as NodeResources::add, but it allows adding resources
+     * where some dimensions that are not relevant for billing (yet) are not the same.
+     *
+     * TODO: Make this code respect all dimensions.
+     */
+    private static NodeResources addResources(NodeResources a, NodeResources b) {
+        if (a.architecture() != b.architecture() && a.architecture() != NodeResources.Architecture.any && b.architecture() != NodeResources.Architecture.any) {
+            throw new IllegalArgumentException(a + " and " + b + " are not interchangeable for resource snapshots");
+        }
+        return new NodeResources(
+                a.vcpu() + b.vcpu(),
+                a.memoryGb() + b.memoryGb(),
+                a.diskGb() + b.diskGb(),
+                0,
+                NodeResources.DiskSpeed.any,
+                NodeResources.StorageType.any,
+                a.architecture(),
+                a.gpuResources().plus(b.gpuResources()));
     }
 }
