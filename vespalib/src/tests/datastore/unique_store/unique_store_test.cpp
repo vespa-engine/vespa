@@ -471,10 +471,11 @@ TEST_F(DoubleTest, nan_is_handled)
 
 TEST_F(DoubleTest, control_memory_usage) {
     EXPECT_EQ(464, sizeof(store));
+    EXPECT_EQ(144u, sizeof(BufferState));
     EXPECT_EQ(32u, store.get_values_memory_usage().allocatedBytes());
     EXPECT_EQ(98208u, store.get_dictionary_memory_usage().allocatedBytes());
     EXPECT_EQ(98240u, store.getMemoryUsage().allocatedBytes());
-    EXPECT_EQ(144u, sizeof(BufferState));
+    EXPECT_EQ(280u, store.getMemoryUsage().usedBytes());
 }
                 
 GTEST_MAIN_RUN_ALL_TESTS()
