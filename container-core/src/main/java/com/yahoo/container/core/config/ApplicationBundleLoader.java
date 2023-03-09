@@ -96,7 +96,8 @@ public class ApplicationBundleLoader {
      */
     private Set<Bundle> commitBundles() {
         var bundlesToUninstall = new LinkedHashSet<>(obsoleteBundles.values());
-        log.info("Bundles to be uninstalled from previous generation: " + bundlesToUninstall);
+        if (bundlesToUninstall.size() > 0)
+            log.info("Bundles to be uninstalled from previous generation: " + bundlesToUninstall);
 
         bundlesFromNewGeneration = Map.of();
         obsoleteBundles = Map.of();
