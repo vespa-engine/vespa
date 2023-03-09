@@ -15,8 +15,8 @@ import com.yahoo.container.di.componentgraph.core.ComponentGraph;
 import com.yahoo.container.di.config.SubscriberFactory;
 import com.yahoo.container.logging.AccessLog;
 import com.yahoo.filedistribution.fileacquirer.FileAcquirer;
-import com.yahoo.jdisc.application.OsgiFramework;
 import com.yahoo.jdisc.application.BsnVersion;
+import com.yahoo.jdisc.application.OsgiFramework;
 import com.yahoo.jdisc.handler.RequestHandler;
 import com.yahoo.jdisc.service.ClientProvider;
 import com.yahoo.jdisc.service.ServerProvider;
@@ -104,7 +104,7 @@ public class HandlersConfigurerDi {
 
         @Override
         public void useApplicationBundles(Collection<FileReference> bundles, long generation) {
-            log.info("Installing bundles for application generation " + generation);
+            if (! bundles.isEmpty()) log.info("Installing bundles for application generation " + generation);
             applicationBundleLoader.useBundles(new ArrayList<>(bundles));
         }
 
