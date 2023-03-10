@@ -101,6 +101,11 @@ SingleAttrDFW::insertField(uint32_t docid, GetDocsumsState& state, Inserter &tar
         target.insertString(vespalib::Memory(s.data(), s.size()));
         break;
     }
+    case BasicType::RAW: {
+        auto s = v.get_raw(docid);
+        target.insertData(vespalib::Memory(s.data(), s.size()));
+        break;
+    }
     case BasicType::REFERENCE:
     case BasicType::PREDICATE:
         break; // Should never use attribute docsum field writer

@@ -23,6 +23,10 @@ using search::docsummary::test::SlimeValue;
 
 using ElementVector = std::vector<uint32_t>;
 
+std::vector<char> as_vector(vespalib::stringref value) {
+    return {value.data(), value.data() + value.size()};
+}
+
 class AttributeDFWTest : public ::testing::Test {
 protected:
     MockAttributeManager _attrs;
@@ -48,7 +52,8 @@ public:
         _attrs.build_string_attribute("wset_str", { {"a", "b", "c"}, {} }, CollectionType::WSET);
         _attrs.build_int_attribute("wset_int", BasicType::INT32, { {10, 20, 30}, {} }, CollectionType::WSET);
         _attrs.build_float_attribute("wset_float", { {10.5, 20.5, 30.5}, {} }, CollectionType::WSET);
-
+        _attrs.build_string_attribute("single_str", { {"world"}, {}}, CollectionType::SINGLE);
+        _attrs.build_raw_attribute("single_raw", { {as_vector("hello")}, {} });
         _state._attrCtx = _attrs.mgr().createContext();
     }
     ~AttributeDFWTest() {}
@@ -59,17 +64,24 @@ public:
         }
         _writer = AttributeDFWFactory::create(_attrs.mgr(), field_name, filter_elements, _matching_elems_fields);
         _writer->setIndex(0);
-        EXPECT_TRUE(_writer->setFieldWriterStateIndex(0));
-        _state._fieldWriterStates.resize(1);
+        auto attr = _state._attrCtx->getAttribute(field_name);
+        if (attr->hasMultiValue()) {
+            EXPECT_TRUE(_writer->setFieldWriterStateIndex(0));
+            _state._fieldWriterStates.resize(1);
+        } else {
+            EXPECT_FALSE(_writer->setFieldWriterStateIndex(0));
+        }
         _field_name = field_name;
         _state._attributes.resize(1);
-        _state._attributes[0] = _state._attrCtx->getAttribute(field_name);
+        _state._attributes[0] = attr;
     }
 
     void expect_field(const vespalib::string& exp_slime_as_json, uint32_t docid) {
         vespalib::Slime act;
         vespalib::slime::SlimeInserter inserter(act);
-        _writer->insertField(docid, nullptr, _state, inserter);
+        if (!_writer->isDefaultValue(docid, _state)) {
+            _writer->insertField(docid, nullptr, _state, inserter);
+        }
 
         SlimeValue exp(exp_slime_as_json);
         EXPECT_EQ(exp.slime, act);
@@ -148,6 +160,20 @@ TEST_F(AttributeDFWTest, filteres_matched_elements_in_wset_attribute)
     expect_filtered({0}, "[ {'item':'a', 'weight':1} ]");
     expect_filtered({1, 2}, "[ {'item':'b', 'weight':1}, {'item':'c', 'weight':1} ]");
     expect_filtered({3}, "null");
+}
+
+TEST_F(AttributeDFWTest, single_string)
+{
+    setup("single_str", false);
+    expect_field(R"("world")", 1);
+    expect_field("null", 2);
+}
+
+TEST_F(AttributeDFWTest, single_value_raw)
+{
+    setup("single_raw", false);
+    expect_field("x68656C6C6F", 1);
+    expect_field("null", 2);
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()

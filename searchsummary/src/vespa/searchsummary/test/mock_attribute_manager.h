@@ -31,7 +31,8 @@ public:
     void build_int_attribute(const vespalib::string& name, search::attribute::BasicType type,
                              const std::vector<std::vector<int64_t>>& values,
                              search::attribute::CollectionType col_type = search::attribute::CollectionType::ARRAY);
-
+    void build_raw_attribute(const vespalib::string& name,
+                             const std::vector<std::vector<std::vector<char>>>& values);
 };
 
 }

@@ -5,12 +5,14 @@
 #include <vespa/searchlib/attribute/floatbase.h>
 #include <vespa/searchlib/attribute/integerbase.h>
 #include <vespa/searchlib/attribute/stringbase.h>
+#include <vespa/searchlib/attribute/single_raw_attribute.h>
 #include <vespa/searchcommon/attribute/config.h>
 #include <cassert>
 
 using search::attribute::BasicType;
 using search::attribute::CollectionType;
 using search::attribute::Config;
+using search::attribute::SingleRawAttribute;
 
 namespace search::docsummary::test {
 
@@ -29,8 +31,14 @@ MockAttributeManager::build_attribute(const vespalib::string& name, BasicType ty
     for (const auto& docValues : values) {
         uint32_t docId = 0;
         attr->addDoc(docId);
-        for (const auto& value : docValues) {
-            attr->append(docId, value, 1);
+        attr->clearDoc(docId);
+        if (attr->hasMultiValue()) {
+            for (const auto& value : docValues) {
+                attr->append(docId, value, 1);
+            }
+        } else if (!docValues.empty()) {
+            assert(docValues.size() == 1);
+            attr->update(docId, docValues[0]);
         }
         attr->commit();
     }
@@ -66,6 +74,13 @@ MockAttributeManager::build_int_attribute(const vespalib::string& name, BasicTyp
                                           CollectionType col_type)
 {
     build_attribute<IntegerAttribute, int64_t>(name, type, col_type, values);
+}
+
+void
+MockAttributeManager::build_raw_attribute(const vespalib::string& name,
+                                          const std::vector<std::vector<std::vector<char>>>& values)
+{
+    build_attribute<SingleRawAttribute, std::vector<char>>(name, BasicType::Type::RAW, CollectionType::SINGLE, values);
 }
 
 }

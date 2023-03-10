@@ -34,6 +34,13 @@ public:
     bool addDoc(DocId &docId) override;
     vespalib::ConstArrayRef<char> get_raw(DocId docid) const override;
     void set_raw(DocId docid, vespalib::ConstArrayRef<char> raw);
+    void update(DocId docid, vespalib::ConstArrayRef<char> raw) { set_raw(docid, raw); }
+    void append(DocId docid, vespalib::ConstArrayRef<char> raw, int32_t weight) {
+        (void) docid;
+        (void) raw;
+        (void) weight;
+    }
+    bool isUndefined(DocId docid) const override;
     uint32_t clearDoc(DocId docId) override;
     long onSerializeForAscendingSort(DocId, void *, long, const common::BlobConverter *) const override;
     long onSerializeForDescendingSort(DocId, void *, long, const common::BlobConverter *) const override;
