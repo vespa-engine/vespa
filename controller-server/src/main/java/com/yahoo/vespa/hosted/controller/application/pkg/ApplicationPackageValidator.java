@@ -225,14 +225,15 @@ public class ApplicationPackageValidator {
                                                                           oldEndpoint.allowedUrns().stream().map(AllowedUrn::toString).collect(joining(", ", "[", "]")) +
                                                                           ", but does not include all these in the new deployment spec. " +
                                                                           "Deploying with the new settings will allow access to " +
-                                                                          (newEndpoint.allowedUrns().isEmpty() ? "no one" : newEndpoint.allowedUrns().stream().map(AllowedUrn::toString).collect(joining(", ", "[", "]"))));
+                                                                          (newEndpoint.allowedUrns().isEmpty() ? "no one" : newEndpoint.allowedUrns().stream().map(AllowedUrn::toString).collect(joining(", ", "[", "]")) +
+                                                                           ". " + ValidationOverrides.toAllowMessage(validationId)));
                                });
                                newEndpoints.forEach((cluster, newEndpoint) -> {
                                     ZoneEndpoint oldEndpoint = oldEndpoints.getOrDefault(cluster, ZoneEndpoint.defaultEndpoint);
                                     if (oldEndpoint.isPublicEndpoint() && ! newEndpoint.isPublicEndpoint())
                                         throw new IllegalArgumentException(prefix + "has a public endpoint for cluster '" + cluster.value() +
                                                                            "' in '" + zone.region().get().value() + "', but the new deployment spec " +
-                                                                           "disables this");
+                                                                           "disables this. " + ValidationOverrides.toAllowMessage(validationId));
                                });
                            });
             }
