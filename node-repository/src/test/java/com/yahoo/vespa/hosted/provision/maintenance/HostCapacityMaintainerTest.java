@@ -402,8 +402,8 @@ public class HostCapacityMaintainerTest {
         // Config server becomes removable (done by RetiredExpirer in a real system) and redeployment moves it
         // to parked
         int removedIndex = nodeToRemove.get().allocation().get().membership().index();
-        tester.nodeRepository().nodes().setRemovable(configSrvApp, List.of(nodeToRemove.get()), true);
-        tester.nodeRepository().nodes().setRemovable(hostApp, List.of(hostToRemove.get()), true);
+        tester.nodeRepository().nodes().setRemovable(NodeList.of(nodeToRemove.get()), true);
+        tester.nodeRepository().nodes().setRemovable(NodeList.of(hostToRemove.get()), true);
         tester.prepareAndActivateInfraApplication(configSrvApp, hostType.childNodeType());
         tester.prepareAndActivateInfraApplication(hostApp, hostType);
         tester.nodeRepository().nodes().markNodeAvailableForNewAllocation(nodeToRemove.get().hostname(), Agent.operator, "Readied by host-admin");

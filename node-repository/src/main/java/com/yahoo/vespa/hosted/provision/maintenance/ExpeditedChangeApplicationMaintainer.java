@@ -63,7 +63,7 @@ public class ExpeditedChangeApplicationMaintainer extends ApplicationMaintainer 
      */
     @Override
     protected void deploy(ApplicationId application, String reason) {
-        deployWithLock(application, reason);
+        deployNow(application, reason);
     }
 
     /** Returns the reason for doing an expedited deploy. */
@@ -73,11 +73,11 @@ public class ExpeditedChangeApplicationMaintainer extends ApplicationMaintainer 
 
         List<String> reasons = nodes.stream()
                                     .flatMap(node -> node.history()
-                                                            .events()
-                                                            .stream()
-                                                            .filter(event -> expediteChangeBy(event.agent()))
-                                                            .filter(event -> lastDeployTime.get().isBefore(event.at()))
-                                                            .map(event -> event.type() + (event.agent() == Agent.system ? "" : " by " + event.agent())))
+                                                         .events()
+                                                         .stream()
+                                                         .filter(event -> expediteChangeBy(event.agent()))
+                                                         .filter(event -> lastDeployTime.get().isBefore(event.at()))
+                                                         .map(event -> event.type() + (event.agent() == Agent.system ? "" : " by " + event.agent())))
                                     .sorted()
                                     .distinct()
                                     .toList();

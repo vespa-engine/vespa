@@ -8,6 +8,7 @@ import com.yahoo.config.provision.NodeResources;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
+import com.yahoo.vespa.hosted.provision.NodeMutex;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.maintenance.MaintenanceDeployment.Move;
 import com.yahoo.vespa.hosted.provision.node.Agent;
@@ -49,9 +50,7 @@ public class SpareCapacityMaintainer extends NodeRepositoryMaintainer {
                                    NodeRepository nodeRepository,
                                    Metric metric,
                                    Duration interval) {
-        this(deployer, nodeRepository, metric, interval,
-             10_000 // Should take less than a few minutes
-            );
+        this(deployer, nodeRepository, metric, interval, 10_000 /* Should take less than a few minutes */);
     }
 
     public SpareCapacityMaintainer(Deployer deployer,
@@ -160,19 +159,29 @@ public class SpareCapacityMaintainer extends NodeRepositoryMaintainer {
                 .filter(node -> node.state() == Node.State.active)
                 .min(this::retireOvercomittedComparator);
         if (nodeToRetire.isEmpty()) return;
+        retire(nodeToRetire.get());
+    }
 
-        ApplicationId application = nodeToRetire.get().allocation().get().owner();
-        try (MaintenanceDeployment deployment = new MaintenanceDeployment(application, deployer, metric, nodeRepository())) {
-            if ( ! deployment.isValid()) return;
-
-            Optional<Node> nodeWithWantToRetire = nodeRepository().nodes().node(nodeToRetire.get().hostname())
-                    .map(node -> node.withWantToRetire(true, Agent.SpareCapacityMaintainer, nodeRepository().clock().instant()));
-            if (nodeWithWantToRetire.isEmpty()) return;
-
-            nodeRepository().nodes().write(nodeWithWantToRetire.get(), deployment.applicationLock().get());
-            log.log(Level.INFO, String.format("Redeploying %s to move %s from overcommitted host",
-                                              application, nodeToRetire.get().hostname()));
+    /** Mark node for retirement and redeploy its application */
+    private void retire(Node node) {
+        ApplicationId owner = node.allocation().get().owner();
+        try (MaintenanceDeployment deployment = new MaintenanceDeployment(owner, deployer, metric, nodeRepository())) {
+            if (!deployment.isValid()) return;
+            if (!markWantToRetire(node.hostname())) return;
+            log.log(Level.INFO, String.format("Redeploying %s to move %s from over-committed host",
+                                              owner, node.hostname()));
             deployment.activate();
+        }
+    }
+
+    private boolean markWantToRetire(String hostname) {
+        Optional<NodeMutex> optionalNodeMutex = nodeRepository().nodes().lockAndGet(hostname);
+        if (optionalNodeMutex.isEmpty()) return false;
+        try (var nodeMutex = optionalNodeMutex.get()) {
+            Node retiredNode = nodeMutex.node().withWantToRetire(true, Agent.SpareCapacityMaintainer,
+                                                                 nodeRepository().clock().instant());
+            nodeRepository().nodes().write(retiredNode, nodeMutex);
+            return true;
         }
     }
 

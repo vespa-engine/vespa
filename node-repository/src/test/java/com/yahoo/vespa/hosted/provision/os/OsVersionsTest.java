@@ -515,9 +515,9 @@ public class OsVersionsTest {
     private void replaceNodes(ApplicationId application) {
         // Deploy to retire nodes
         deployApplication(application);
-        List<Node> retired = tester.nodeRepository().nodes().list().owner(application).retired().asList();
+        NodeList retired = tester.nodeRepository().nodes().list().owner(application).retired();
         assertFalse("At least one node is retired", retired.isEmpty());
-        tester.nodeRepository().nodes().setRemovable(application, retired, false);
+        tester.nodeRepository().nodes().setRemovable(retired, false);
 
         // Redeploy to deactivate removable nodes and allocate new ones
         deployApplication(application);

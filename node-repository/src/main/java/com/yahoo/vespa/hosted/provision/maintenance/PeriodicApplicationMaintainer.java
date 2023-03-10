@@ -47,13 +47,12 @@ public class PeriodicApplicationMaintainer extends ApplicationMaintainer {
                 .orElse(false);
     }
 
-    // Returns the applications that need to be redeployed by this config server at this point in time.
     @Override
     protected Map<ApplicationId, String> applicationsNeedingMaintenance() {
         if (deployer().bootstrapping()) return Map.of();
 
         // Collect all deployment times before sorting as deployments may happen while we build the set, breaking
-        // the comparable contract. Stale times are fine as the time is rechecked in ApplicationMaintainer#deployWithLock
+        // the comparable contract. Stale times are fine as the time is rechecked in ApplicationMaintainer#deployNow
         Map<ApplicationId, Instant> deploymentTimes = nodesNeedingMaintenance().stream()
                                                                                .map(node -> node.allocation().get().owner())
                                                                                .distinct()

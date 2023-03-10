@@ -391,6 +391,11 @@ public class CuratorDb {
         return db.lock(lockPath.append("archiveUris"), defaultLockTimeout);
     }
 
+    public Lock lockMaintenance(ApplicationId application) {
+        return db.lock(lockPath.append("maintenanceDeployment").append(application.serializedForm()),
+                       Duration.ofSeconds(3));
+    }
+
     // Load balancers -----------------------------------------------------------
 
     public List<LoadBalancerId> readLoadBalancerIds() {
