@@ -77,6 +77,11 @@ public class AutoscalingTest {
 
         fixture.tester().clock().advance(Duration.ofDays(2));
         fixture.loader().applyCpuLoad(0.1f, 10);
+        assertTrue("Last scaling not completed", fixture.autoscale().resources().isEmpty());
+
+        fixture.completeLastScaling();
+        fixture.tester().clock().advance(Duration.ofDays(7));
+        fixture.loader().applyCpuLoad(0.1f, 10);
         fixture.tester().assertResources("Scaling cpu down since usage has gone down significantly",
                                          8, 1, 1.0, 7.3, 22.1,
                                          fixture.autoscale());
@@ -243,14 +248,15 @@ public class AutoscalingTest {
         var fixture = DynamicProvisioningTester.fixture().awsProdSetup(true).clusterType(ClusterSpec.Type.container).build();
 
         fixture.loader().applyCpuLoad(0.25f, 120);
-        ClusterResources scaledResources = fixture.tester().assertResources("Scaling cpu up",
-                                                                  4, 1, 4,  16.0, 40.8,
-                                                                  fixture.autoscale());
+        var scaledResources = fixture.tester().assertResources("Scaling cpu up",
+                                                               3, 1, 4,  16.0, 40.8,
+                                                               fixture.autoscale());
         fixture.deploy(Capacity.from(scaledResources));
         fixture.deactivateRetired(Capacity.from(scaledResources));
+        fixture.completeLastScaling();
         fixture.loader().applyCpuLoad(0.1f, 120);
         fixture.tester().assertResources("Scaling down since cpu usage has gone down",
-                                         3, 1, 4, 16, 30.6,
+                                         3, 1, 2, 16, 27.2,
                                          fixture.autoscale());
     }
 
@@ -585,7 +591,7 @@ public class AutoscalingTest {
         var fixture = DynamicProvisioningTester.fixture().awsProdSetup(true).build();
         fixture.loader().applyCpuLoad(0.02, 120);
         assertTrue("Too soon  after initial deployment", fixture.autoscale().resources().isEmpty());
-        fixture.tester().clock().advance(Duration.ofDays(2));
+        fixture.tester().clock().advance(Duration.ofHours(12 * 3 + 1));
         fixture.loader().applyCpuLoad(0.02, 120);
         fixture.tester().assertResources("Scaling down since enough time has passed",
                                          3, 1, 1.0, 24.6, 101.4,

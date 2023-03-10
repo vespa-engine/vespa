@@ -64,8 +64,7 @@ public class ScalingEvent {
     @Override
     public boolean equals(Object o) {
         if (o == this) return true;
-        if ( ! (o instanceof ScalingEvent)) return true;
-        ScalingEvent other = (ScalingEvent)o;
+        if ( ! (o instanceof ScalingEvent other)) return true;
         if ( other.generation != this.generation) return false;
         if ( ! other.at.equals(this.at)) return false;
         if ( ! other.from.equals(this.from)) return false;

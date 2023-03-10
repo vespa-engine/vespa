@@ -48,9 +48,8 @@ public class GBDTForestOptimizer extends Optimizer {
      */
     private ExpressionNode findAndOptimize(ExpressionNode node) {
         ExpressionNode newNode = optimize(node);
-        if ( ! (newNode instanceof CompositeNode)) return newNode; //
+        if ( ! (newNode instanceof CompositeNode newComposite)) return newNode;
 
-        CompositeNode newComposite = (CompositeNode)newNode;
         List<ExpressionNode> newChildren = new ArrayList<>();
         for (ExpressionNode child : newComposite.children()) {
             newChildren.add(findAndOptimize(child));
@@ -84,10 +83,9 @@ public class GBDTForestOptimizer extends Optimizer {
             currentTreesOptimized++;
             return true;
         }
-        if (!(node instanceof OperationNode)) {
+        if (!(node instanceof OperationNode aNode)) {
             return false;
         }
-        OperationNode aNode = (OperationNode)node;
         for (Operator op : aNode.operators()) {
             if (op != Operator.plus) {
                 return false;

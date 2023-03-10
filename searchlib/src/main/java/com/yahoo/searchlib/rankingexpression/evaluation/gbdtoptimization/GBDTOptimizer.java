@@ -95,8 +95,7 @@ public class GBDTOptimizer extends Optimizer {
      */
     private int consumeNode(ExpressionNode node, List<Double> values, ContextIndex context) {
         int beforeIndex = values.size();
-        if ( node instanceof IfNode) {
-            IfNode ifNode = (IfNode)node;
+        if (node instanceof IfNode ifNode) {
             int jumpValueIndex = consumeIfCondition(ifNode.getCondition(), values, context);
             values.add(0d); // jumpValue goes here after the next line
             int jumpValue = consumeNode(ifNode.getTrueExpression(), values, context) + 1;
