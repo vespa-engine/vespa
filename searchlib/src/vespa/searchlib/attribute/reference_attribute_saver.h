@@ -43,7 +43,7 @@ public:
                             EntryRefVector&& indices,
                             const Store &store);
 
-    virtual ~ReferenceAttributeSaver();
+    ~ReferenceAttributeSaver() override;
 };
 
 }

@@ -38,8 +38,8 @@ public:
     EntryRefT(const EntryRef & ref_) noexcept : EntryRef(ref_.ref()) {}
     size_t offset() const noexcept { return _ref & (offsetSize() - 1); }
     uint32_t bufferId() const noexcept { return _ref >> OffsetBits; }
-    static size_t offsetSize() noexcept { return 1ul << OffsetBits; }
-    static uint32_t numBuffers() noexcept { return 1 << BufferBits; }
+    static constexpr size_t offsetSize() noexcept { return 1ul << OffsetBits; }
+    static constexpr uint32_t numBuffers() noexcept { return 1 << BufferBits; }
 };
 
 vespalib::asciistream& operator<<(vespalib::asciistream& os, const EntryRef& ref);

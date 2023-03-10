@@ -273,14 +273,14 @@ vespalib::MemoryUsage
 DataStoreBase::getMemoryUsage() const {
     auto usage = getDynamicMemoryUsage();
     size_t extra_allocated = 0;
-    extra_allocated += _buffers.capacity() * sizeof(BufferAndTypeId);
+    extra_allocated += _buffers.capacity() * sizeof(BufferAndMeta);
     extra_allocated += _primary_buffer_ids.capacity() * sizeof(uint32_t);
     extra_allocated += _states.capacity() * sizeof(BufferState);
     extra_allocated += _typeHandlers.capacity() * sizeof(BufferTypeBase *);
     extra_allocated += _free_lists.capacity() * sizeof(FreeList);
 
     size_t extra_used = 0;
-    extra_used += _buffers.size() * sizeof(BufferAndTypeId);
+    extra_used += _buffers.size() * sizeof(BufferAndMeta);
     extra_used += _primary_buffer_ids.size() * sizeof(uint32_t);
     extra_used += _states.size() * sizeof(BufferState);
     extra_used += _typeHandlers.size() * sizeof(BufferTypeBase *);
@@ -398,9 +398,11 @@ DataStoreBase::onActive(uint32_t bufferId, uint32_t typeId, size_t elemsNeeded)
 {
     assert(typeId < _typeHandlers.size());
     assert(bufferId < _numBuffers);
-    _buffers[bufferId].setTypeId(typeId);
     BufferState &state = getBufferState(bufferId);
-    state.onActive(bufferId, typeId, _typeHandlers[typeId], elemsNeeded, _buffers[bufferId].get_atomic_buffer());
+    BufferAndMeta & bufferMeta = _buffers[bufferId];
+    state.onActive(bufferId, typeId, _typeHandlers[typeId], elemsNeeded, bufferMeta.get_atomic_buffer());
+    bufferMeta.setTypeId(typeId);
+    bufferMeta.setArraySize(state.getArraySize());
     enableFreeList(bufferId);
 }
 
