@@ -73,6 +73,7 @@ public class AutoscalingMaintainer extends NodeRepositoryMaintainer {
             if (application.isEmpty()) return true;
             if (application.get().cluster(clusterId).isEmpty()) return true;
             Cluster cluster = application.get().cluster(clusterId).get();
+            Cluster unchangedCluster = cluster;
 
             NodeList clusterNodes = nodeRepository().nodes().list(Node.State.active).owner(applicationId).cluster(clusterId);
             cluster = updateCompletion(cluster, clusterNodes);
@@ -81,17 +82,20 @@ public class AutoscalingMaintainer extends NodeRepositoryMaintainer {
 
             // Autoscale unless an autoscaling is already in progress
             Autoscaling autoscaling = null;
-            if (cluster.target().resources().isEmpty() || current.equals(cluster.target().resources().get())) {
+            if (cluster.target().resources().isEmpty() && !cluster.scalingInProgress()) {
                 autoscaling = autoscaler.autoscale(application.get(), cluster, clusterNodes);
-                if ( autoscaling.isPresent() || cluster.target().isEmpty()) // Ignore empty from recently started servers
+                if (autoscaling.isPresent() || cluster.target().isEmpty()) // Ignore empty from recently started servers
                     cluster = cluster.withTarget(autoscaling);
             }
 
-            // Always store updates
-            applications().put(application.get().with(cluster), lock);
+            // Always store any updates
+            if (cluster != unchangedCluster)
+                applications().put(application.get().with(cluster), lock);
 
             // Attempt to perform the autoscaling immediately, and log it regardless
-            if (autoscaling != null && autoscaling.resources().isPresent() && !current.equals(autoscaling.resources().get())) {
+            if (autoscaling != null
+                && autoscaling.resources().isPresent()
+                && !current.equals(autoscaling.resources().get())) {
                 try (MaintenanceDeployment deployment = new MaintenanceDeployment(applicationId, deployer, metric, nodeRepository())) {
                     if (deployment.isValid())
                         deployment.activate();
@@ -123,7 +127,7 @@ public class AutoscalingMaintainer extends NodeRepositoryMaintainer {
         if (clusterNodes.retired().stream()
                         .anyMatch(node -> node.history().hasEventAt(History.Event.Type.retired, event.at())))
             return cluster;
-        // - 2. all nodes have switched to the right config generation (currently only measured on containers)
+        // - 2. all nodes have switched to the right config generation
         for (var nodeTimeseries : nodeRepository().metricsDb().getNodeTimeseries(Duration.between(event.at(), clock().instant()),
                                                                                  clusterNodes)) {
             Optional<NodeMetricSnapshot> onNewGeneration =

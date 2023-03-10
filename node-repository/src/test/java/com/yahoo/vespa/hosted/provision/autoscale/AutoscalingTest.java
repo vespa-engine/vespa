@@ -585,7 +585,7 @@ public class AutoscalingTest {
         var fixture = DynamicProvisioningTester.fixture().awsProdSetup(true).build();
         fixture.loader().applyCpuLoad(0.02, 120);
         assertTrue("Too soon  after initial deployment", fixture.autoscale().resources().isEmpty());
-        fixture.tester().clock().advance(Duration.ofDays(2));
+        fixture.tester().clock().advance(Duration.ofHours(12 * 3 + 1));
         fixture.loader().applyCpuLoad(0.02, 120);
         fixture.tester().assertResources("Scaling down since enough time has passed",
                                          3, 1, 1.0, 24.6, 101.4,

@@ -122,6 +122,11 @@ public class Cluster {
         return Optional.of(scalingEvents.get(scalingEvents.size() - 1));
     }
 
+    /** Returns whether the last scaling event in this has yet to complete. */
+    public boolean scalingInProgress() {
+        return lastScalingEvent().isPresent() && lastScalingEvent().get().completion().isEmpty();
+    }
+
     public Cluster withConfiguration(boolean exclusive, Capacity capacity) {
         return new Cluster(id, exclusive,
                            capacity.minResources(), capacity.maxResources(), capacity.groupSize(), capacity.isRequired(),

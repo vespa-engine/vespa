@@ -155,7 +155,7 @@ public class Autoscaling {
         /** The cluster should be rescaled further, but no better configuration is allowed by the current limits */
         insufficient,
 
-        /** Rescaling of this cluster has been scheduled */
+        /** This cluster should be rescaled */
         rescaling
 
     }
