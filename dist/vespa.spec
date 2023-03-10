@@ -594,7 +594,6 @@ fi
 %exclude %{_prefix}/conf/configserver-app/components/config-model-fat.jar
 %exclude %{_prefix}/conf/configserver-app/config-models.xml
 %dir %{_prefix}/conf/logd
-%dir %attr(-,%{_vespa_user},%{_vespa_group}) %{_prefix}/conf/telegraf
 %dir %{_prefix}/conf/vespa
 %dir %attr(-,%{_vespa_user},%{_vespa_group}) %{_prefix}/var/zookeeper/conf
 %dir %{_prefix}/etc
@@ -637,7 +636,6 @@ fi
 %exclude %{_prefix}/libexec/vespa/standalone-container.sh
 %exclude %{_prefix}/libexec/vespa/vespa-curl-wrapper
 %dir %attr(-,%{_vespa_user},%{_vespa_group}) %{_prefix}/logs
-%dir %attr(-,%{_vespa_user},%{_vespa_group}) %{_prefix}/logs/telegraf
 %dir %attr(-,%{_vespa_user},%{_vespa_group}) %{_prefix}/logs/vespa
 %dir %attr(-,%{_vespa_user},%{_vespa_group}) %{_prefix}/logs/vespa/access
 %dir %attr(-,%{_vespa_user},%{_vespa_group}) %{_prefix}/logs/vespa/configserver
