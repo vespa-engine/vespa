@@ -122,7 +122,7 @@ public abstract class LoggingRequestHandler extends ThreadedHttpRequestHandler {
 
         if (totalTime <= timeoutInterval) return;
 
-        log.log(Level.WARNING, () -> {
+        log.log(Level.FINE, () -> {
             StringBuilder b = new StringBuilder();
             b.append(normalizedQuery);
             b.append(" from ").append(sourceIP).append(". ");
