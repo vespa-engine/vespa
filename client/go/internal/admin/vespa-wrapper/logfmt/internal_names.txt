@@ -41,7 +41,6 @@ Container.ai.vespa.metricsproxy.metric.model.prometheus.Test
 Container.ai.vespa.metricsproxy.node.Test
 Container.ai.vespa.metricsproxy.rpc.Test
 Container.ai.vespa.metricsproxy.service.Test
-Container.ai.vespa.metricsproxy.telegraf.Test
 Container.ai.vespa.modelintegration.evaluator.Test
 Container.ai.vespa.models.evaluation.Test
 Container.ai.vespa.models.handler.Test
