@@ -203,17 +203,12 @@ public class Nodes {
     /**
      * Sets a list of nodes to have their allocation removable (active to inactive) in the node repository.
      *
-     * @param application the application the nodes belong to
      * @param nodes the nodes to make removable. These nodes MUST be in the active state
      * @param reusable move the node directly to {@link Node.State#dirty} after removal
      */
-    public void setRemovable(ApplicationId application, List<Node> nodes, boolean reusable) {
-        try (Mutex lock = applications.lock(application)) {
-            List<Node> removableNodes = nodes.stream()
-                                             .map(node -> node.with(node.allocation().get().removable(true, reusable)))
-                                             .toList();
-            write(removableNodes, lock);
-        }
+    public void setRemovable(NodeList nodes, boolean reusable) {
+        performOn(nodes, (node, mutex) -> write(node.with(node.allocation().get().removable(true, reusable)),
+                                                mutex));
     }
 
     /**

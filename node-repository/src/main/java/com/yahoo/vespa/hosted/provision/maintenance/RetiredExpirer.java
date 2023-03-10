@@ -14,9 +14,10 @@ import com.yahoo.vespa.orchestrator.OrchestrationException;
 import com.yahoo.yolean.Exceptions;
 
 import java.time.Duration;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.OptionalLong;
 
 /**
  * Maintenance job which deactivates retired nodes, if given permission by orchestrator, or
@@ -47,40 +48,55 @@ public class RetiredExpirer extends NodeRepositoryMaintainer {
     protected double maintain() {
         int attempts = 0;
         int successes = 0;
-
-        NodeList activeNodes = nodeRepository().nodes().list(Node.State.active);
-        Map<ApplicationId, NodeList> retiredNodesByApplication = activeNodes.retired().groupingBy(node -> node.allocation().get().owner());
-        for (Map.Entry<ApplicationId, NodeList> entry : retiredNodesByApplication.entrySet()) {
-            ApplicationId application = entry.getKey();
-            NodeList retiredNodes = entry.getValue();
-            Map<Removal, NodeList> nodesByRemovalReason = retiredNodes.groupingBy(node -> removalOf(node, activeNodes));
-            if (nodesByRemovalReason.isEmpty()) continue;
-
-            for (var kv : nodesByRemovalReason.entrySet()) {
-                Removal removal = kv.getKey();
-                if (removal.equals(Removal.none())) continue;
-
-                NodeList nodes = kv.getValue();
-                attempts++;
-                try (MaintenanceDeployment deployment = new MaintenanceDeployment(application, deployer, metric, nodeRepository())) {
-                    if (!deployment.isValid()) {
-                        log.info("Skipping invalid deployment for " + application);
-                        continue;
-                    }
-
-                    nodeRepository().nodes().setRemovable(application, nodes.asList(), removal.isReusable());
-                    Optional<Long> session = deployment.activate();
-                    String nodeList = String.join(", ", nodes.mapToList(Node::hostname));
-                    if (session.isEmpty()) {
-                        log.info("Failed to redeploy " + application);
-                        continue;
-                    }
-                    log.info("Redeployed " + application + " at session " + session.get() + " to deactivate retired nodes: " + nodeList);
-                    successes++;
-                }
+        List<ApplicationId> applicationsWithRetiredNodes = nodeRepository().nodes().list(Node.State.active)
+                                                                           .retired()
+                                                                           .stream()
+                                                                           .map(node -> node.allocation().get().owner())
+                                                                           .distinct()
+                                                                           .toList();
+        for (var application : applicationsWithRetiredNodes) {
+            attempts++;
+            if (removeRetiredNodes(application)) {
+                successes++;
             }
         }
         return attempts == 0 ? 1.0 : ((double)successes / attempts);
+    }
+
+    /** Mark retired nodes as removable and redeploy application */
+    private boolean removeRetiredNodes(ApplicationId application) {
+        try (MaintenanceDeployment deployment = new MaintenanceDeployment(application, deployer, metric, nodeRepository())) {
+            if (!deployment.isValid()) {
+                log.info("Skipping invalid deployment for " + application);
+                return false;
+            }
+            boolean redeploy = false;
+            List<String> nodesToDeactivate = new ArrayList<>();
+            try (var lock = nodeRepository().applications().lock(application)) {
+                NodeList activeNodes = nodeRepository().nodes().list(Node.State.active);
+                Map<Removal, NodeList> nodesByRemovalReason = activeNodes.owner(application)
+                                                                         .retired()
+                                                                         .groupingBy(node -> removalOf(node, activeNodes));
+                for (var kv : nodesByRemovalReason.entrySet()) {
+                    Removal reason = kv.getKey();
+                    if (reason.equals(Removal.none())) continue;
+                    redeploy = true;
+                    nodesToDeactivate.addAll(kv.getValue().hostnames());
+                    nodeRepository().nodes().setRemovable(kv.getValue(), reason.isReusable());
+                }
+            }
+            if (!redeploy) {
+                return true;
+            }
+            Optional<Long> session = deployment.activate();
+            String nodeList = String.join(", ", nodesToDeactivate);
+            if (session.isEmpty()) {
+                log.info("Failed to redeploy " + application);
+                return false;
+            }
+            log.info("Redeployed " + application + " at session " + session.get() + " to deactivate retired nodes: " + nodeList);
+            return true;
+        }
     }
 
     /**

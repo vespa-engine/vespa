@@ -46,15 +46,18 @@ public abstract class ApplicationMaintainer extends NodeRepositoryMaintainer {
         return 1.0;
     }
 
+    protected final Deployer deployer() { return deployer; }
+
     /** Returns the number of deployments that are pending execution */
     public int pendingDeployments() {
         return pendingDeployments.size();
     }
 
     /** Returns whether given application should be deployed at this moment in time */
-    protected boolean canDeployNow(ApplicationId application) {
-        return true;
-    }
+    protected abstract boolean canDeployNow(ApplicationId application);
+
+    /** Returns the applications that should be maintained by this now. */
+    protected abstract Map<ApplicationId, String> applicationsNeedingMaintenance();
 
     /**
      * Redeploy this application.
@@ -64,19 +67,14 @@ public abstract class ApplicationMaintainer extends NodeRepositoryMaintainer {
      */
     protected void deploy(ApplicationId application, String reason) {
         if (pendingDeployments.addIfAbsent(application)) { // Avoid queuing multiple deployments for same application
-            deploymentExecutor.execute(() -> deployWithLock(application, reason));
+            deploymentExecutor.execute(() -> deployNow(application, reason));
         }
     }
-
-    protected Deployer deployer() { return deployer; }
-
-    /** Returns the applications that should be maintained by this now. */
-    protected abstract Map<ApplicationId, String> applicationsNeedingMaintenance();
 
     /**
      * Redeploy this application. A lock will be taken for the duration of the deployment activation
      */
-    protected final void deployWithLock(ApplicationId application, String reason) {
+    protected final void deployNow(ApplicationId application, String reason) {
         try (MaintenanceDeployment deployment = new MaintenanceDeployment(application, deployer, metric, nodeRepository())) {
             if ( ! deployment.isValid()) return; // this will be done at another config server
             if ( ! canDeployNow(application)) return; // redeployment is no longer needed
@@ -97,7 +95,7 @@ public abstract class ApplicationMaintainer extends NodeRepositoryMaintainer {
     @Override
     public void shutdown() {
         super.shutdown();
-        this.deploymentExecutor.shutdownNow();
+        deploymentExecutor.shutdownNow();
     }
 
     @Override
@@ -105,7 +103,9 @@ public abstract class ApplicationMaintainer extends NodeRepositoryMaintainer {
         super.awaitShutdown();
         try {
             // Give deployments in progress some time to complete
-            this.deploymentExecutor.awaitTermination(1, TimeUnit.MINUTES);
+            if (!deploymentExecutor.awaitTermination(1, TimeUnit.MINUTES)) {
+                log.log(Level.WARNING, "Failed to shut down deployment executor within deadline");
+            }
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }

@@ -636,7 +636,7 @@ public class VirtualNodeProvisioningTest {
         tester.activate(app1, cluster1, Capacity.from(new ClusterResources(2, 1, r)));
 
         // Deactivate any retired nodes - usually done by the RetiredExpirer
-        tester.nodeRepository().nodes().setRemovable(app1, tester.getNodes(app1).retired().asList(), false);
+        tester.nodeRepository().nodes().setRemovable(tester.getNodes(app1).retired(), false);
         tester.activate(app1, cluster1, Capacity.from(new ClusterResources(2, 1, r)));
 
         if (expectedReuse) {
