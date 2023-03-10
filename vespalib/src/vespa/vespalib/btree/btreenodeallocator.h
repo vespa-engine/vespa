@@ -163,7 +163,7 @@ public:
     vespalib::string toString(BTreeNode::Ref ref) const;
     vespalib::string toString(const BTreeNode * node) const;
 
-    bool getCompacting(EntryRef ref) const { return _nodeStore.getCompacting(ref); }
+    bool getCompacting(EntryRef ref) { return _nodeStore.getCompacting(ref); }
 
     std::unique_ptr<vespalib::datastore::CompactingBuffers> start_compact_worst(const CompactionStrategy& compaction_strategy) { return _nodeStore.start_compact_worst(compaction_strategy); }
 

@@ -106,15 +106,8 @@ DataStoreBase::~DataStoreBase()
 void
 DataStoreBase::switch_primary_buffer(uint32_t typeId, size_t elemsNeeded)
 {
-    size_t buffer_id = primary_buffer_id(typeId);
-    for (size_t i = 0; i < getNumBuffers(); ++i) {
-        // start using next buffer
-        buffer_id = nextBufferId(buffer_id);
-        if (getBufferState(buffer_id).isFree()) {
-            break;
-        }
-    }
-    if (!getBufferState(buffer_id).isFree()) {
+    size_t buffer_id = getFirstFreeBufferId();
+    if ((buffer_id < _states.size()) && !getBufferState(buffer_id).isFree()) {
         LOG_ABORT(vespalib::make_string("switch_primary_buffer(%u, %zu): did not find a free buffer",
                                         typeId, elemsNeeded).c_str());
     }
@@ -164,6 +157,23 @@ DataStoreBase::consider_grow_active_buffer(uint32_t type_id, size_t elems_needed
     return true;
 }
 
+uint32_t
+DataStoreBase::getFirstFreeBufferId() {
+    for (uint32_t buffer_id = 0; buffer_id < _states.size(); buffer_id++) {
+        if (getBufferState(buffer_id).isFree()) {
+            return buffer_id;
+        }
+    }
+    // Need next(new) buffer
+    return _states.size();
+}
+
+BufferState &
+DataStoreBase::getBufferState(uint32_t buffer_id) noexcept {
+    assert(buffer_id < _states.size());
+    return _states[buffer_id];
+}
+
 void
 DataStoreBase::switch_or_grow_primary_buffer(uint32_t typeId, size_t elemsNeeded)
 {
@@ -191,15 +201,8 @@ DataStoreBase::init_primary_buffers()
 {
     uint32_t numTypes = _primary_buffer_ids.size();
     for (uint32_t typeId = 0; typeId < numTypes; ++typeId) {
-        size_t buffer_id = 0;
-        for (size_t i = 0; i < getNumBuffers(); ++i) {
-            if (getBufferState(buffer_id).isFree()) {
-                 break;
-            }
-            // start using next buffer
-            buffer_id = nextBufferId(buffer_id);
-        }
-        assert(getBufferState(buffer_id).isFree());
+        size_t buffer_id = getFirstFreeBufferId();
+        assert((buffer_id == _states.size()) || getBufferState(buffer_id).isFree());
         onActive(buffer_id, typeId, 0u);
         _primary_buffer_ids[typeId] = buffer_id;
     }
@@ -273,14 +276,14 @@ vespalib::MemoryUsage
 DataStoreBase::getMemoryUsage() const {
     auto usage = getDynamicMemoryUsage();
     size_t extra_allocated = 0;
-    extra_allocated += _buffers.capacity() * sizeof(BufferAndTypeId);
+    extra_allocated += _buffers.capacity() * sizeof(BufferAndMeta);
     extra_allocated += _primary_buffer_ids.capacity() * sizeof(uint32_t);
     extra_allocated += _states.capacity() * sizeof(BufferState);
     extra_allocated += _typeHandlers.capacity() * sizeof(BufferTypeBase *);
     extra_allocated += _free_lists.capacity() * sizeof(FreeList);
 
     size_t extra_used = 0;
-    extra_used += _buffers.size() * sizeof(BufferAndTypeId);
+    extra_used += _buffers.size() * sizeof(BufferAndMeta);
     extra_used += _primary_buffer_ids.size() * sizeof(uint32_t);
     extra_used += _states.size() * sizeof(BufferState);
     extra_used += _typeHandlers.size() * sizeof(BufferTypeBase *);
@@ -398,9 +401,11 @@ DataStoreBase::onActive(uint32_t bufferId, uint32_t typeId, size_t elemsNeeded)
 {
     assert(typeId < _typeHandlers.size());
     assert(bufferId < _numBuffers);
-    _buffers[bufferId].setTypeId(typeId);
     BufferState &state = getBufferState(bufferId);
-    state.onActive(bufferId, typeId, _typeHandlers[typeId], elemsNeeded, _buffers[bufferId].get_atomic_buffer());
+    BufferAndMeta & bufferMeta = _buffers[bufferId];
+    state.onActive(bufferId, typeId, _typeHandlers[typeId], elemsNeeded, bufferMeta.get_atomic_buffer());
+    bufferMeta.setTypeId(typeId);
+    bufferMeta.setArraySize(state.getArraySize());
     enableFreeList(bufferId);
 }
 
@@ -461,7 +466,7 @@ DataStoreBase::start_compact_worst_buffers(CompactionSpec compaction_spec, const
                                           compaction_strategy.get_active_buffers_ratio(),
                                           compaction_strategy.getMaxDeadAddressSpaceRatio() / 2,
                                           CompactionStrategy::DEAD_ADDRESS_SPACE_SLACK);
-    uint32_t free_buffers = 0;
+    uint32_t free_buffers = _buffers.size() - _states.size();
     for (uint32_t bufferId = 0; bufferId < _numBuffers; ++bufferId) {
         const auto &state = getBufferState(bufferId);
         if (state.isActive()) {

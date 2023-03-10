@@ -6,7 +6,6 @@ import com.yahoo.config.provision.ApplicationLockException;
 import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Deployer;
-import com.yahoo.config.provision.Environment;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
@@ -19,6 +18,7 @@ import com.yahoo.vespa.hosted.provision.autoscale.Autoscaler;
 import com.yahoo.vespa.hosted.provision.autoscale.Autoscaling;
 import com.yahoo.vespa.hosted.provision.autoscale.NodeMetricSnapshot;
 import com.yahoo.vespa.hosted.provision.node.History;
+
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Map;
@@ -68,6 +68,7 @@ public class AutoscalingMaintainer extends NodeRepositoryMaintainer {
      * @return true if an autoscaling decision was made or nothing should be done, false if there was an error
      */
     private boolean autoscale(ApplicationId applicationId, ClusterSpec.Id clusterId) {
+        boolean redeploy = false;
         try (var lock = nodeRepository().applications().lock(applicationId)) {
             Optional<Application> application = nodeRepository().applications().get(applicationId);
             if (application.isEmpty()) return true;
@@ -93,16 +94,10 @@ public class AutoscalingMaintainer extends NodeRepositoryMaintainer {
                 applications().put(application.get().with(cluster), lock);
 
             // Attempt to perform the autoscaling immediately, and log it regardless
-            if (autoscaling != null
-                && autoscaling.resources().isPresent()
-                && !current.equals(autoscaling.resources().get())) {
-                try (MaintenanceDeployment deployment = new MaintenanceDeployment(applicationId, deployer, metric, nodeRepository())) {
-                    if (deployment.isValid())
-                        deployment.activate();
-                    logAutoscaling(current, autoscaling.resources().get(), applicationId, clusterNodes.not().retired());
-                }
+            if (autoscaling != null && autoscaling.resources().isPresent() && !current.equals(autoscaling.resources().get())) {
+                redeploy = true;
+                logAutoscaling(current, autoscaling.resources().get(), applicationId, clusterNodes.not().retired());
             }
-            return true;
         }
         catch (ApplicationLockException e) {
             return false;
@@ -110,6 +105,13 @@ public class AutoscalingMaintainer extends NodeRepositoryMaintainer {
         catch (IllegalArgumentException e) {
             throw new IllegalArgumentException("Illegal arguments for " + applicationId + " cluster " + clusterId, e);
         }
+        if (redeploy) {
+            try (MaintenanceDeployment deployment = new MaintenanceDeployment(applicationId, deployer, metric, nodeRepository())) {
+                if (deployment.isValid())
+                    deployment.activate();
+            }
+        }
+        return true;
     }
 
     private Applications applications() {

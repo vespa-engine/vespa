@@ -13,6 +13,7 @@ import com.yahoo.searchlib.rankingexpression.rule.ReferenceNode;
 import com.yahoo.searchlib.rankingexpression.transform.ExpressionTransformer;
 
 import java.io.StringReader;
+import java.util.HashSet;
 import java.util.Set;
 
 /**
@@ -23,6 +24,7 @@ import java.util.Set;
 public class InputRecorder extends ExpressionTransformer<RankProfileTransformContext> {
 
     private final Set<String> neededInputs;
+    private final Set<String> handled = new HashSet<>();
 
     public InputRecorder(Set<String> target) {
         this.neededInputs = target;
@@ -52,9 +54,13 @@ public class InputRecorder extends ExpressionTransformer<RankProfileTransformCon
             simpleFunctionOrIdentifier = true;
         }
         if (simpleFunctionOrIdentifier) {
+            if (handled.contains(name)) {
+                return;
+            }
             var f = context.rankProfile().getFunctions().get(name);
             if (f != null && f.function().arguments().size() == 0) {
                 transform(f.function().getBody().getRoot(), context);
+                handled.add(name);
                 return;
             }
             neededInputs.add(feature.toString());

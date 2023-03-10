@@ -80,7 +80,7 @@ MultiValueEnumAttributeSaver<MultiValueT>::
 MultiValueEnumAttributeSaver(GenerationHandler::Guard &&guard,
                              const attribute::AttributeHeader &header,
                              const MultiValueMapping &mvMapping,
-                             const IEnumStore &enumStore)
+                             IEnumStore &enumStore)
     : Parent(std::move(guard), header, mvMapping),
       _mvMapping(mvMapping),
       _enumSaver(enumStore),

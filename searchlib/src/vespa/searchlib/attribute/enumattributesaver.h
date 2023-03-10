@@ -24,7 +24,7 @@ private:
     std::unique_ptr<Enumerator> _enumerator;
 
 public:
-    EnumAttributeSaver(const IEnumStore &enumStore);
+    EnumAttributeSaver(IEnumStore &enumStore);
     ~EnumAttributeSaver();
 
     void writeUdat(IAttributeSaveTarget &saveTarget);

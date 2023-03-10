@@ -67,7 +67,8 @@ public:
     Allocator& get_allocator() { return _allocator; }
     const Allocator& get_allocator() const { return _allocator; }
     IUniqueStoreDictionary& get_dictionary() { return *_dict; }
-    inline const DataStoreType& get_data_store() const noexcept { return _allocator.get_data_store(); }
+    const DataStoreType& get_data_store() const noexcept { return _allocator.get_data_store(); }
+    DataStoreType& get_data_store() noexcept { return _allocator.get_data_store(); }
 
     // Pass on hold list management to underlying store
     void assign_generation(generation_t current_gen);
@@ -78,7 +79,7 @@ public:
     uint32_t getNumUniques() const;
 
     Builder getBuilder(uint32_t uniqueValuesHint);
-    Enumerator getEnumerator(bool sort_unique_values) const;
+    Enumerator getEnumerator(bool sort_unique_values);
 
     // Should only be used for unit testing
     const BufferState &bufferState(EntryRef ref) const;

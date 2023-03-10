@@ -10,8 +10,8 @@ import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.Provisioner;
 import com.yahoo.config.provision.Zone;
-import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.hosted.provision.Node;
+import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.NodeRepositoryTester;
 import com.yahoo.vespa.hosted.provision.maintenance.InfrastructureVersions;
@@ -122,7 +122,7 @@ public class InfraDeployerImplTest {
         addNode(5, Node.State.dirty, Optional.empty());
         addNode(6, Node.State.ready, Optional.empty());
         Node node7 = addNode(7, Node.State.active, Optional.of(target));
-        nodeRepository.nodes().setRemovable(application.getApplicationId(), List.of(node7), false);
+        nodeRepository.nodes().setRemovable(NodeList.of(node7), false);
 
         infraDeployer.getDeployment(application.getApplicationId()).orElseThrow().activate();
 

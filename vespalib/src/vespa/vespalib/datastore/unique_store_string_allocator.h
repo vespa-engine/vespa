@@ -114,7 +114,7 @@ public:
     EntryRef move_on_compact(EntryRef ref) override;
     const UniqueStoreEntryBase& get_wrapped(EntryRef ref) const {
         RefType iRef(ref);
-        auto &state = _store.getBufferState(iRef.bufferId());
+        auto &state = _store.getBufferMeta(iRef.bufferId());
         auto type_id = state.getTypeId();
         if (type_id != 0) {
             return *reinterpret_cast<const UniqueStoreEntryBase *>(_store.template getEntryArray<char>(iRef, state.getArraySize()));
@@ -124,7 +124,7 @@ public:
     }
     const char *get(EntryRef ref) const {
         RefType iRef(ref);
-        auto &state = _store.getBufferState(iRef.bufferId());
+        auto &state = _store.getBufferMeta(iRef.bufferId());
         auto type_id = state.getTypeId();
         if (type_id != 0) {
             return reinterpret_cast<const UniqueStoreSmallStringEntry *>(_store.template getEntryArray<char>(iRef, state.getArraySize()))->value();

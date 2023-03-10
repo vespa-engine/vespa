@@ -73,8 +73,8 @@ public:
      * Get the primary buffer id for the given type id.
      */
     uint32_t primary_buffer_id(uint32_t typeId) const { return _primary_buffer_ids[typeId]; }
-    const BufferState &getBufferState(uint32_t bufferId) const { return _states[bufferId]; }
-    BufferState &getBufferState(uint32_t bufferId) { return _states[bufferId]; }
+    BufferState &getBufferState(uint32_t buffer_id) noexcept;
+    const BufferAndMeta & getBufferMeta(uint32_t buffer_id) const { return _buffers[buffer_id]; }
     uint32_t getNumBuffers() const { return _numBuffers; }
 
     /**
@@ -211,15 +211,6 @@ private:
 
     class BufferHold;
 
-    /**
-     * Get the next buffer id after the given buffer id.
-     */
-    uint32_t nextBufferId(uint32_t bufferId) {
-        uint32_t ret = bufferId + 1;
-        if (ret == _numBuffers)
-            ret = 0;
-        return ret;
-    }
     bool consider_grow_active_buffer(uint32_t type_id, size_t elems_needed);
     void switch_or_grow_primary_buffer(uint32_t typeId, size_t elemsNeeded);
     void markCompacting(uint32_t bufferId);
@@ -243,24 +234,11 @@ private:
 
     void inc_hold_buffer_count();
     void fallbackResize(uint32_t bufferId, size_t elementsNeeded);
+    uint32_t getFirstFreeBufferId();
 
     virtual void reclaim_all_entry_refs() = 0;
 
-    class BufferAndTypeId {
-    public:
-        BufferAndTypeId() : BufferAndTypeId(nullptr, 0) { }
-        BufferAndTypeId(void* buffer, uint32_t typeId) : _buffer(buffer), _typeId(typeId) { }
-        std::atomic<void*>& get_atomic_buffer() noexcept { return _buffer; }
-        void* get_buffer_relaxed() noexcept { return _buffer.load(std::memory_order_relaxed); }
-        const void* get_buffer_acquire() const noexcept { return _buffer.load(std::memory_order_acquire); }
-        uint32_t getTypeId() const { return _typeId; }
-        void setTypeId(uint32_t typeId) { _typeId = typeId; }
-    private:
-        std::atomic<void*> _buffer;
-        uint32_t   _typeId;
-    };
-
-    std::vector<BufferAndTypeId>  _buffers; // For fast mapping with known types
+    std::vector<BufferAndMeta>  _buffers; // For fast mapping with known types
 
     // Provides a mapping from typeId -> primary buffer for that type.
     // The primary buffer is used for allocations of new element(s) if no available slots are found in free lists.

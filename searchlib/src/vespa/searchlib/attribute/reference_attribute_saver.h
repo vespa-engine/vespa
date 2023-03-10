@@ -41,9 +41,9 @@ public:
     ReferenceAttributeSaver(vespalib::GenerationHandler::Guard &&guard,
                             const AttributeHeader &header,
                             EntryRefVector&& indices,
-                            const Store &store);
+                            Store &store);
 
-    virtual ~ReferenceAttributeSaver();
+    ~ReferenceAttributeSaver() override;
 };
 
 }

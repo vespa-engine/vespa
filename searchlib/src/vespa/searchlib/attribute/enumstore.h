@@ -212,7 +212,7 @@ public:
     void inc_compaction_count() override {
         _store.get_allocator().get_data_store().inc_compaction_count();
     }
-    std::unique_ptr<Enumerator> make_enumerator() const override;
+    std::unique_ptr<Enumerator> make_enumerator() override;
     std::unique_ptr<EntryComparator> allocate_comparator() const override;
 
     // Methods below are only relevant for strings, and are templated to only be instantiated on demand.

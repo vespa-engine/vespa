@@ -4,7 +4,6 @@
 #include "iattributesavetarget.h"
 #include <vespa/searchlib/util/bufferwriter.h>
 
-
 using search::attribute::EntryRefVector;
 using vespalib::GenerationHandler;
 
@@ -14,25 +13,20 @@ SingleValueEnumAttributeSaver::
 SingleValueEnumAttributeSaver(GenerationHandler::Guard &&guard,
                               const attribute::AttributeHeader &header,
                               EntryRefVector &&indices,
-                              const IEnumStore &enumStore)
+                              IEnumStore &enumStore)
     : AttributeSaver(std::move(guard), header),
       _indices(std::move(indices)),
       _enumSaver(enumStore)
 {
 }
 
-
-SingleValueEnumAttributeSaver::~SingleValueEnumAttributeSaver()
-{
-}
-
+SingleValueEnumAttributeSaver::~SingleValueEnumAttributeSaver() = default;
 
 bool
 SingleValueEnumAttributeSaver::onSave(IAttributeSaveTarget &saveTarget)
 {
     _enumSaver.writeUdat(saveTarget);
-    std::unique_ptr<search::BufferWriter> datWriter(saveTarget.datWriter().
-                                                    allocBufferWriter());
+    std::unique_ptr<search::BufferWriter> datWriter(saveTarget.datWriter().allocBufferWriter());
     assert(saveTarget.getEnumerated());
     auto &enumerator = _enumSaver.get_enumerator();
     enumerator.enumerateValues();
@@ -48,6 +42,5 @@ SingleValueEnumAttributeSaver::onSave(IAttributeSaveTarget &saveTarget)
     _enumSaver.clear();
     return true;
 }
-
 
 }  // namespace search

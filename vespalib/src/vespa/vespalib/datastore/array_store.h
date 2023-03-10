@@ -139,7 +139,7 @@ public:
     static DataStoreBase& get_data_store_base(ArrayStore &self) { return self._store; }
 
     // Should only be used for unit testing
-    const BufferState &bufferState(EntryRef ref) const;
+    const BufferState &bufferState(EntryRef ref);
 
     bool has_free_lists_enabled() const { return _store.has_free_lists_enabled(); }
     bool has_held_buffers() const noexcept { return _store.has_held_buffers(); }
