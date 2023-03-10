@@ -55,6 +55,7 @@ public class Fixture {
         var deployCapacity = initialResources.isPresent() ? Capacity.from(initialResources.get()) : capacity;
         tester.deploy(builder.application, builder.cluster, deployCapacity);
         this.loader = new Loader(this);
+        store(cluster().with(cluster().lastScalingEvent().get().withCompletion(tester.clock().instant())));
     }
 
     public DynamicProvisioningTester tester() { return tester; }
@@ -141,6 +142,16 @@ public class Fixture {
         tester.nodeRepository().applications().put(application, tester.nodeRepository().applications().lock(applicationId));
     }
 
+    public void store(Cluster cluster) {
+        var application = application();
+        application = application.with(cluster);
+        tester.nodeRepository().applications().put(application, tester.nodeRepository().applications().lock(applicationId));
+    }
+
+    public void completeLastScaling() {
+        store(cluster().with(cluster().lastScalingEvent().get().withCompletion(tester().clock().instant())));
+    }
+
     public static class Builder {
 
         ApplicationId application = DynamicProvisioningTester.applicationId("application1");
@@ -162,7 +173,7 @@ public class Fixture {
         }
 
         /** Set to true to behave as if hosts are provisioned dynamically. */
-        public Fixture. Builder dynamicProvisioning(boolean dynamicProvisioning) {
+        public Fixture.Builder dynamicProvisioning(boolean dynamicProvisioning) {
             this.zone = new Zone(Cloud.builder()
                                       .dynamicProvisioning(dynamicProvisioning)
                                       .allowHostSharing(zone.cloud().allowHostSharing())
@@ -174,7 +185,7 @@ public class Fixture {
         }
 
         /** Set to true to allow multiple nodes be provisioned on the same host. */
-        public Fixture. Builder allowHostSharing(boolean allowHostSharing) {
+        public Fixture.Builder allowHostSharing(boolean allowHostSharing) {
             this.zone = new Zone(Cloud.builder()
                                       .dynamicProvisioning(zone.cloud().dynamicProvisioning())
                                       .allowHostSharing(allowHostSharing)

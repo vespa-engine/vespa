@@ -58,10 +58,11 @@ public class ScalingSuggestionsMaintainerTest {
         tester.deploy(app1, cluster1, Capacity.from(new ClusterResources(5, 1, new NodeResources(4, 4, 10, 0.1)),
                                                     new ClusterResources(5, 1, new NodeResources(4, 4, 10, 0.1)),
                                                     IntRange.empty(), false, true, Optional.empty(), ClusterInfo.empty()));
+        storeCompletion(app1, cluster1.id(), tester.nodeRepository());
         tester.deploy(app2, cluster2, Capacity.from(new ClusterResources(5, 1, new NodeResources(4, 4, 10, 0.1)),
                                                     new ClusterResources(10, 1, new NodeResources(6.5, 5, 15, 0.1)),
                                                     IntRange.empty(), false, true, Optional.empty(), ClusterInfo.empty()));
-
+        storeCompletion(app2, cluster2.id(), tester.nodeRepository());
         tester.clock().advance(Duration.ofHours(13));
         Duration timeAdded = addMeasurements(0.90f, 0.90f, 0.90f, 0, 500, app1, tester.nodeRepository());
         tester.clock().advance(timeAdded.negated());
@@ -107,6 +108,16 @@ public class ScalingSuggestionsMaintainerTest {
                      suggested,
                      suggestionOf(app1, cluster1, tester).resources().get());
         assertFalse("Suggestion is not made as it matches what we have", shouldSuggest(app1, cluster1, tester));
+    }
+
+    private void storeCompletion(ApplicationId appId, ClusterSpec.Id clusterId, NodeRepository nodeRepository) {
+        try (var lock = nodeRepository.applications().lock(appId)) {
+            var app = nodeRepository.applications().require(appId);
+            var cluster = app.cluster(clusterId).get();
+            cluster = cluster.with(cluster.lastScalingEvent().get().withCompletion(nodeRepository.clock().instant()));
+            app = app.with(cluster);
+            nodeRepository.applications().put(app, lock);
+        }
     }
 
     private Autoscaling suggestionOf(ApplicationId app, ClusterSpec cluster, ProvisioningTester tester) {
