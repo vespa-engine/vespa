@@ -898,6 +898,7 @@ AttributeTest::testSingle()
             AttributePtr ptr = createAttribute("sv-int32", Config(BasicType::INT32, CollectionType::SINGLE));
             ptr->updateStat(true);
             EXPECT_EQ(12288u, ptr->getStatus().getAllocated());
+            EXPECT_EQ(0u, ptr->getStatus().getUsed());
             addDocs(ptr, numDocs);
             testSingle<IntegerAttribute, AttributeVector::largeint_t, int32_t>(ptr, values);
         }
@@ -911,7 +912,8 @@ AttributeTest::testSingle()
             cfg.setFastSearch(true);
             AttributePtr ptr = createAttribute("sv-post-int32", cfg);
             ptr->updateStat(true);
-            EXPECT_EQ(231640u, ptr->getStatus().getAllocated());
+            EXPECT_EQ(887756u, ptr->getStatus().getAllocated());
+            EXPECT_EQ(656444u, ptr->getStatus().getUsed());
             addDocs(ptr, numDocs);
             testSingle<IntegerAttribute, AttributeVector::largeint_t, int32_t>(ptr, values);
         }
@@ -923,6 +925,7 @@ AttributeTest::testSingle()
             AttributePtr ptr = createAttribute("sv-float", Config(BasicType::FLOAT, CollectionType::SINGLE));
             ptr->updateStat(true);
             EXPECT_EQ(12288u, ptr->getStatus().getAllocated());
+            EXPECT_EQ(0u, ptr->getStatus().getUsed());
             addDocs(ptr, numDocs);
             testSingle<FloatingPointAttribute, double, float>(ptr, values);
         }
@@ -931,7 +934,8 @@ AttributeTest::testSingle()
             cfg.setFastSearch(true);
             AttributePtr ptr = createAttribute("sv-post-float", cfg);
             ptr->updateStat(true);
-            EXPECT_EQ(231640u, ptr->getStatus().getAllocated());
+            EXPECT_EQ(887756u, ptr->getStatus().getAllocated());
+            EXPECT_EQ(656444u, ptr->getStatus().getUsed());
             addDocs(ptr, numDocs);
             testSingle<FloatingPointAttribute, double, float>(ptr, values);
         }
@@ -943,7 +947,8 @@ AttributeTest::testSingle()
         {
             AttributePtr ptr = createAttribute("sv-string", Config(BasicType::STRING, CollectionType::SINGLE));
             ptr->updateStat(true);
-            EXPECT_EQ(74648u, ptr->getStatus().getAllocated());
+            EXPECT_EQ(403552u, ptr->getStatus().getAllocated());
+            EXPECT_EQ(328576u, ptr->getStatus().getUsed());
             addDocs(ptr, numDocs);
             testSingle<StringAttribute, string, string>(ptr, values);
         }
@@ -952,7 +957,8 @@ AttributeTest::testSingle()
             cfg.setFastSearch(true);
             AttributePtr ptr = createAttribute("sv-fs-string", cfg);
             ptr->updateStat(true);
-            EXPECT_EQ(245024u, ptr->getStatus().getAllocated());
+            EXPECT_EQ(902256u, ptr->getStatus().getAllocated());
+            EXPECT_EQ(657088u, ptr->getStatus().getUsed());
             addDocs(ptr, numDocs);
             testSingle<StringAttribute, string, string>(ptr, values);
         }
@@ -1083,7 +1089,8 @@ AttributeTest::testArray()
         {
             AttributePtr ptr = createAttribute("a-int32", Config(BasicType::INT32, CollectionType::ARRAY));
             ptr->updateStat(true);
-            EXPECT_EQ(12320u, ptr->getStatus().getAllocated());
+            EXPECT_EQ(1474480u, ptr->getStatus().getAllocated());
+            EXPECT_EQ(1462192u, ptr->getStatus().getUsed());
             addDocs(ptr, numDocs);
             testArray<IntegerAttribute, AttributeVector::largeint_t>(ptr, values);
         }
@@ -1092,7 +1099,8 @@ AttributeTest::testArray()
             cfg.setFastSearch(true);
             AttributePtr ptr = createAttribute("flags", cfg);
             ptr->updateStat(true);
-            EXPECT_EQ(12320u, ptr->getStatus().getAllocated());
+            EXPECT_EQ(1474480u, ptr->getStatus().getAllocated());
+            EXPECT_EQ(1462192u, ptr->getStatus().getUsed());
             addDocs(ptr, numDocs);
             testArray<IntegerAttribute, AttributeVector::largeint_t>(ptr, values);
         }
@@ -1101,7 +1109,8 @@ AttributeTest::testArray()
             cfg.setFastSearch(true);
             AttributePtr ptr = createAttribute("a-fs-int32", cfg);
             ptr->updateStat(true);
-            EXPECT_EQ(253608u, ptr->getStatus().getAllocated());
+            EXPECT_EQ(2371884u, ptr->getStatus().getAllocated());
+            EXPECT_EQ(2118656u, ptr->getStatus().getUsed());
             addDocs(ptr, numDocs);
             testArray<IntegerAttribute, AttributeVector::largeint_t>(ptr, values);
         }
@@ -1119,7 +1128,8 @@ AttributeTest::testArray()
             cfg.setFastSearch(true);
             AttributePtr ptr = createAttribute("a-fs-float", cfg);
             ptr->updateStat(true);
-            EXPECT_EQ(253608u, ptr->getStatus().getAllocated());
+            EXPECT_EQ(2371884u, ptr->getStatus().getAllocated());
+            EXPECT_EQ(2118656u, ptr->getStatus().getUsed());
             addDocs(ptr, numDocs);
             testArray<FloatingPointAttribute, double>(ptr, values);
         }
@@ -1130,7 +1140,8 @@ AttributeTest::testArray()
         {
             AttributePtr ptr = createAttribute("a-string", Config(BasicType::STRING, CollectionType::ARRAY));
             ptr->updateStat(true);
-            EXPECT_EQ(74680u, ptr->getStatus().getAllocated());
+            EXPECT_EQ(1865744u, ptr->getStatus().getAllocated());
+            EXPECT_EQ(1790768u, ptr->getStatus().getUsed());
             addDocs(ptr, numDocs);
             testArray<StringAttribute, string>(ptr, values);
         }
@@ -1139,7 +1150,8 @@ AttributeTest::testArray()
             cfg.setFastSearch(true);
             AttributePtr ptr = createAttribute("afs-string", cfg);
             ptr->updateStat(true);
-            EXPECT_EQ(266992u, ptr->getStatus().getAllocated());
+            EXPECT_EQ(2386384u, ptr->getStatus().getAllocated());
+            EXPECT_EQ(2119300u, ptr->getStatus().getUsed());
             addDocs(ptr, numDocs);
             testArray<StringAttribute, string>(ptr, values);
         }
