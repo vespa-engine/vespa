@@ -3,7 +3,6 @@ package com.yahoo.container.jdisc;
 
 import com.yahoo.component.annotation.Inject;
 import com.yahoo.container.handler.Timing;
-import com.yahoo.container.logging.AccessLog;
 import com.yahoo.container.logging.AccessLogEntry;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.jdisc.Response;
@@ -107,49 +106,48 @@ public abstract class LoggingRequestHandler extends ThreadedHttpRequestHandler {
         // note: intentionally only taking time since request was received
         long totalTime = endTime - startTime;
 
-        long timeoutInterval = Long.MAX_VALUE;
-        long requestOverhead = 0;
-        long summaryStartTime = 0;
+        long timeoutInterval;
+        long requestOverhead;
+        long summaryStartTime;
         if (t != null) {
             timeoutInterval = t.getTimeout();
             long queryStartTime = t.getQueryStartTime();
-            if (queryStartTime > 0) {
-                requestOverhead = queryStartTime - startTime;
-            }
+            requestOverhead = (queryStartTime > 0) ? queryStartTime - startTime : 0;
             summaryStartTime = t.getSummaryStartTime();
-        }
-
-        if (totalTime <= timeoutInterval) {
-            return;
-        }
-
-        StringBuilder b = new StringBuilder();
-        b.append(normalizedQuery);
-        b.append(" from ").append(sourceIP).append(". ");
-
-        if (requestOverhead > 0) {
-            b.append("Time from HTTP connection open to request reception ");
-            b.append(requestOverhead).append(" ms. ");
-        }
-        if (summaryStartTime != 0) {
-            b.append("Request time: ");
-            b.append(summaryStartTime - startTime).append(" ms. ");
-            b.append("Summary fetch time: ");
-            b.append(renderStartTime - summaryStartTime).append(" ms. ");
         } else {
-            long spentSearching = renderStartTime - startTime;
-            b.append("Processing time: ").append(spentSearching).append(" ms. ");
+            requestOverhead = 0;
+            summaryStartTime = 0;
+            timeoutInterval = Long.MAX_VALUE;
         }
 
-        b.append("Result rendering/transfer: ");
-        b.append(commitStartTime - renderStartTime).append(" ms. ");
-        b.append("End transaction: ");
-        b.append(endTime - commitStartTime).append(" ms. ");
-        b.append("Total: ").append(totalTime).append(" ms. ");
-        b.append("Timeout: ").append(timeoutInterval).append(" ms. ");
-        b.append("Request string: ").append(req);
+        if (totalTime <= timeoutInterval) return;
 
-        log.log(Level.WARNING, "Slow execution. " + b);
+        log.log(Level.WARNING, () -> {
+            StringBuilder b = new StringBuilder();
+            b.append(normalizedQuery);
+            b.append(" from ").append(sourceIP).append(". ");
+            if (requestOverhead > 0) {
+                b.append("Time from HTTP connection open to request reception ");
+                b.append(requestOverhead).append(" ms. ");
+            }
+            if (summaryStartTime != 0) {
+                b.append("Request time: ");
+                b.append(summaryStartTime - startTime).append(" ms. ");
+                b.append("Summary fetch time: ");
+                b.append(renderStartTime - summaryStartTime).append(" ms. ");
+            } else {
+                long spentSearching = renderStartTime - startTime;
+                b.append("Processing time: ").append(spentSearching).append(" ms. ");
+            }
+            b.append("Result rendering/transfer: ");
+            b.append(commitStartTime - renderStartTime).append(" ms. ");
+            b.append("End transaction: ");
+            b.append(endTime - commitStartTime).append(" ms. ");
+            b.append("Total: ").append(totalTime).append(" ms. ");
+            b.append("Timeout: ").append(timeoutInterval).append(" ms. ");
+            b.append("Request string: ").append(req);
+            return b.toString();
+        });
     }
 
     private static class NullResponse extends ExtendedResponse {
