@@ -191,4 +191,11 @@ SingleRawAttribute::onLoad(vespalib::Executor* executor)
     return loader.on_load(executor);
 }
 
+bool
+SingleRawAttribute::isUndefined(DocId docid) const
+{
+    auto raw = get_raw(docid);
+    return raw.empty();
+}
+
 }
