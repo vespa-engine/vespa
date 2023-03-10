@@ -1128,7 +1128,10 @@ public class ControllerTest {
                                                                  </prod>
                                                                </deployment>"""));
 
-        assertEquals("zone-endpoint-change: application 'tenant.application' has a public endpoint for cluster 'foo' in 'us-east-3', but the new deployment spec disables this",
+        assertEquals("zone-endpoint-change: application 'tenant.application' has a public endpoint for " +
+                     "cluster 'foo' in 'us-east-3', but the new deployment spec disables this. " +
+                     "To allow this add <allow until='yyyy-mm-dd'>zone-endpoint-change</allow> to validation-overrides.xml, " +
+                     "see https://docs.vespa.ai/en/reference/validation-overrides.html",
                      assertThrows(IllegalArgumentException.class,
                                   () -> app.submit(ApplicationPackageBuilder.fromDeploymentXml("""
                                                                                                <deployment>
@@ -1168,9 +1171,12 @@ public class ControllerTest {
                                                                ValidationId.zoneEndpointChange));
 
         // Changing URNs is guarded.
-        assertEquals("zone-endpoint-change: application 'tenant.application' allows access to cluster 'foo' in 'us-east-3' to " +
-                     "['yarn' through 'aws-private-link'], but does not include all these in the new deployment spec. " +
-                     "Deploying with the new settings will allow access to ['yarn' through 'gcp-service-connect']",
+        assertEquals("zone-endpoint-change: application 'tenant.application' allows access to cluster " +
+                     "'foo' in 'us-east-3' to ['yarn' through 'aws-private-link'], " +
+                     "but does not include all these in the new deployment spec. " +
+                     "Deploying with the new settings will allow access to ['yarn' through 'gcp-service-connect']. " +
+                     "To allow this add <allow until='yyyy-mm-dd'>zone-endpoint-change</allow> to validation-overrides.xml, " +
+                     "see https://docs.vespa.ai/en/reference/validation-overrides.html",
                      assertThrows(IllegalArgumentException.class,
                                   () -> app.submit(ApplicationPackageBuilder.fromDeploymentXml("""
                                                                                                <deployment>
