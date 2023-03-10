@@ -154,11 +154,8 @@ public:
     void setupForReadFeatures(vespalib::datastore::EntryRef ref, DecodeContextCooked &decoder) const {
         const uint8_t * bits = getBits(ref);
         decoder.setByteCompr(bits);
-        uint32_t bufferId = RefType(ref).bufferId();
-        const auto &state = _store.getBufferState(bufferId);
-        decoder.setEnd(
-                ((_store.getEntryArray<uint8_t>(RefType(0, bufferId), buffer_array_size) + state.size() - bits) + 7) / 8,
-                false);
+        constexpr uint32_t maxOffset = RefType::offsetSize() * buffer_array_size;
+        decoder.setEnd(maxOffset, false);
     }
 
     /**
