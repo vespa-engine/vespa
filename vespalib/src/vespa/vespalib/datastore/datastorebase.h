@@ -73,8 +73,8 @@ public:
      * Get the primary buffer id for the given type id.
      */
     uint32_t primary_buffer_id(uint32_t typeId) const { return _primary_buffer_ids[typeId]; }
-    BufferState &getBufferState(uint32_t bufferId) { return _states[bufferId]; }
-    const BufferAndMeta & getBufferMeta(uint32_t bufferId) const { return _buffers[bufferId]; }
+    BufferState &getBufferState(uint32_t buffer_id) noexcept;
+    const BufferAndMeta & getBufferMeta(uint32_t buffer_id) const { return _buffers[buffer_id]; }
     uint32_t getNumBuffers() const { return _numBuffers; }
 
     /**
@@ -211,15 +211,6 @@ private:
 
     class BufferHold;
 
-    /**
-     * Get the next buffer id after the given buffer id.
-     */
-    uint32_t nextBufferId(uint32_t bufferId) {
-        uint32_t ret = bufferId + 1;
-        if (ret == _numBuffers)
-            ret = 0;
-        return ret;
-    }
     bool consider_grow_active_buffer(uint32_t type_id, size_t elems_needed);
     void switch_or_grow_primary_buffer(uint32_t typeId, size_t elemsNeeded);
     void markCompacting(uint32_t bufferId);
@@ -243,6 +234,7 @@ private:
 
     void inc_hold_buffer_count();
     void fallbackResize(uint32_t bufferId, size_t elementsNeeded);
+    uint32_t getFirstFreeBufferId();
 
     virtual void reclaim_all_entry_refs() = 0;
 
