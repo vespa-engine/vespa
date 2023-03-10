@@ -101,7 +101,7 @@ public abstract class LoggingRequestHandler extends ThreadedHttpRequestHandler {
 
     private void logTimes(long startTime, String sourceIP,
                           long renderStartTime, long commitStartTime, long endTime,
-                          String req, String normalizedQuery, Timing t) {
+                          String req, ExtendedResponse response) {
 
         // note: intentionally only taking time since request was received
         long totalTime = endTime - startTime;
@@ -109,6 +109,7 @@ public abstract class LoggingRequestHandler extends ThreadedHttpRequestHandler {
         long timeoutInterval;
         long requestOverhead;
         long summaryStartTime;
+        Timing t = response.getTiming();
         if (t != null) {
             timeoutInterval = t.getTimeout();
             long queryStartTime = t.getQueryStartTime();
@@ -124,7 +125,7 @@ public abstract class LoggingRequestHandler extends ThreadedHttpRequestHandler {
 
         log.log(Level.FINE, () -> {
             StringBuilder b = new StringBuilder();
-            b.append(normalizedQuery);
+            b.append(response.getParsedQuery());
             b.append(" from ").append(sourceIP).append(". ");
             if (requestOverhead > 0) {
                 b.append("Time from HTTP connection open to request reception ");
@@ -222,8 +223,7 @@ public abstract class LoggingRequestHandler extends ThreadedHttpRequestHandler {
                      commitStartTime,
                      endTime,
                      getUri(jdiscRequest),
-                     extendedResponse.getParsedQuery(),
-                     extendedResponse.getTiming());
+                     extendedResponse);
 
             Optional<AccessLogEntry> jdiscRequestAccessLogEntry =
                     AccessLoggingRequestHandler.getAccessLogEntry(jdiscRequest);
