@@ -197,7 +197,7 @@ ArrayStore<EntryT, RefT, TypeMapperT>::update_stat(const CompactionStrategy& com
 
 template <typename EntryT, typename RefT, typename TypeMapperT>
 const BufferState &
-ArrayStore<EntryT, RefT, TypeMapperT>::bufferState(EntryRef ref) const
+ArrayStore<EntryT, RefT, TypeMapperT>::bufferState(EntryRef ref)
 {
     RefT internalRef(ref);
     return _store.getBufferState(internalRef.bufferId());
