@@ -171,6 +171,8 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
     private static final String SLICES = "slices";
     private static final String SLICE_ID = "sliceId";
     private static final String DRY_RUN = "dryRun";
+    private static final String FROM_TIMESTAMP = "fromTimestamp";
+    private static final String TO_TIMESTAMP = "toTimestamp";
 
     private final Clock clock;
     private final Duration handlerTimeout;
@@ -1226,6 +1228,9 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
 
         getProperty(request, CONTINUATION).map(ProgressToken::fromSerializedString).ifPresent(parameters::setResumeToken);
         parameters.setPriority(DocumentProtocol.Priority.NORMAL_4);
+
+        getProperty(request, FROM_TIMESTAMP, unsignedLongParser).ifPresent(parameters::setFromTimestamp);
+        getProperty(request, TO_TIMESTAMP, unsignedLongParser).ifPresent(parameters::setToTimestamp);
 
         StorageCluster storageCluster = resolveCluster(cluster, clusters);
         parameters.setRoute(storageCluster.name());
