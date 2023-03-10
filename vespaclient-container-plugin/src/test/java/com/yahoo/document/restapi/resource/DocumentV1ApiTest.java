@@ -504,6 +504,15 @@ public class DocumentV1ApiTest {
                        "}", response.readAll());
         assertEquals(200, response.getStatus());
 
+        // GET with from timestamp > to timestamp is an error
+        access.expect(parameters -> { fail("unreachable"); });
+        response = driver.sendRequest("http://localhost/document/v1/?cluster=content&fromTimestamp=100&toTimestamp=99");
+        assertSameJson("{" +
+                "  \"pathId\": \"/document/v1/\"," +
+                "  \"message\": \"toTimestamp must be greater than, or equal to, fromTimestamp\"" +
+                "}", response.readAll());
+        assertEquals(400, response.getStatus());
+
         // GET with full document ID is a document get operation which returns 404 when no document is found
         access.session.expect((id, parameters) -> {
             assertEquals(doc1.getId(), id);
