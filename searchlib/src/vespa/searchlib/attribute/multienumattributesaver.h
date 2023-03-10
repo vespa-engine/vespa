@@ -35,7 +35,7 @@ public:
     MultiValueEnumAttributeSaver(GenerationHandler::Guard &&guard,
                                  const attribute::AttributeHeader &header,
                                  const MultiValueMapping &mvMapping,
-                                 const IEnumStore &enumStore);
+                                 IEnumStore &enumStore);
     ~MultiValueEnumAttributeSaver() override;
 };
 

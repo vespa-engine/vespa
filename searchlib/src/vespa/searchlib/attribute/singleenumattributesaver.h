@@ -22,7 +22,7 @@ public:
     SingleValueEnumAttributeSaver(vespalib::GenerationHandler::Guard &&guard,
                                   const attribute::AttributeHeader &header,
                                   attribute::EntryRefVector &&indices,
-                                  const IEnumStore &enumStore);
+                                  IEnumStore &enumStore);
 
     ~SingleValueEnumAttributeSaver() override;
 };

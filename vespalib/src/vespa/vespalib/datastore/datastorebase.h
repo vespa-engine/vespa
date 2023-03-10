@@ -73,7 +73,6 @@ public:
      * Get the primary buffer id for the given type id.
      */
     uint32_t primary_buffer_id(uint32_t typeId) const { return _primary_buffer_ids[typeId]; }
-    const BufferState &getBufferState(uint32_t bufferId) const { return _states[bufferId]; }
     BufferState &getBufferState(uint32_t bufferId) { return _states[bufferId]; }
     const BufferAndMeta & getBufferMeta(uint32_t bufferId) const { return _buffers[bufferId]; }
     uint32_t getNumBuffers() const { return _numBuffers; }

@@ -8,16 +8,13 @@
 
 namespace search {
 
-EnumAttributeSaver::
-EnumAttributeSaver(const IEnumStore &enumStore)
+EnumAttributeSaver::EnumAttributeSaver(IEnumStore &enumStore)
     : _enumStore(enumStore),
       _enumerator(enumStore.make_enumerator())
 {
 }
 
-EnumAttributeSaver::~EnumAttributeSaver()
-{
-}
+EnumAttributeSaver::~EnumAttributeSaver() = default;
 
 void
 EnumAttributeSaver::writeUdat(IAttributeSaveTarget &saveTarget)

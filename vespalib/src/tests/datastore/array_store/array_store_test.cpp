@@ -97,13 +97,13 @@ struct ArrayStoreTest : public TestT
     uint32_t getBufferId(EntryRef ref) const {
         return EntryRefType(ref).bufferId();
     }
-    void assertBufferState(EntryRef ref, const MemStats& expStats) const {
+    void assertBufferState(EntryRef ref, const MemStats& expStats) {
         EXPECT_EQ(expStats._used, store.bufferState(ref).size());
         EXPECT_EQ(expStats._hold, store.bufferState(ref).stats().hold_elems());
         EXPECT_EQ(expStats._dead, store.bufferState(ref).stats().dead_elems());
     }
-    void assert_buffer_stats(EntryRef ref, const TestBufferStats& exp_stats) const {
-        auto& state = store.bufferState(ref);
+    void assert_buffer_stats(EntryRef ref, const TestBufferStats& exp_stats) {
+        const auto& state = store.bufferState(ref);
         EXPECT_EQ(exp_stats._used, state.size());
         EXPECT_EQ(exp_stats._hold, state.stats().hold_elems());
         EXPECT_EQ(exp_stats._dead, state.stats().dead_elems());

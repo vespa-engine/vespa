@@ -259,7 +259,7 @@ EnumStoreT<EntryT>::consider_compact_dictionary(const CompactionStrategy& compac
 
 template <typename EntryT>
 std::unique_ptr<IEnumStore::Enumerator>
-EnumStoreT<EntryT>::make_enumerator() const
+EnumStoreT<EntryT>::make_enumerator()
 {
     return std::make_unique<Enumerator>(*_dict, _store.get_data_store(), false);
 }

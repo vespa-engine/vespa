@@ -16,7 +16,7 @@ namespace search::attribute {
 ReferenceAttributeSaver::ReferenceAttributeSaver(GenerationHandler::Guard &&guard,
                                                  const AttributeHeader &header,
                                                  EntryRefVector&& indices,
-                                                 const Store &store)
+                                                 Store &store)
     : AttributeSaver(std::move(guard), header),
       _indices(std::move(indices)),
       _store(store),
@@ -25,9 +25,7 @@ ReferenceAttributeSaver::ReferenceAttributeSaver(GenerationHandler::Guard &&guar
 }
 
 
-ReferenceAttributeSaver::~ReferenceAttributeSaver()
-{
-}
+ReferenceAttributeSaver::~ReferenceAttributeSaver() = default;
 
 namespace {
 
