@@ -182,7 +182,7 @@ public:
     }
 
     // Inherit doc from DataStoreT
-    bool getCompacting(EntryRef ref) const {
+    bool getCompacting(EntryRef ref) {
         return _store.getCompacting(ref);
     }
 
