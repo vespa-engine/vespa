@@ -75,7 +75,7 @@ public:
     uint32_t primary_buffer_id(uint32_t typeId) const { return _primary_buffer_ids[typeId]; }
     BufferState &getBufferState(uint32_t buffer_id) noexcept;
     const BufferAndMeta & getBufferMeta(uint32_t buffer_id) const { return _buffers[buffer_id]; }
-    uint32_t getNumBuffers() const { return _numBuffers; }
+    uint32_t getNumBuffers() noexcept { return _states.size(); }
 
     /**
      * Assign generation on data elements on hold lists added since the last time this function was called.
@@ -238,21 +238,21 @@ private:
 
     virtual void reclaim_all_entry_refs() = 0;
 
-    std::vector<BufferAndMeta>  _buffers; // For fast mapping with known types
+    std::vector<BufferAndMeta>    _buffers; // For fast mapping with known types
 
     // Provides a mapping from typeId -> primary buffer for that type.
     // The primary buffer is used for allocations of new element(s) if no available slots are found in free lists.
     std::vector<uint32_t>         _primary_buffer_ids;
 
-    std::vector<BufferState>      _states;
+    std::deque<BufferState>       _states;
     std::vector<BufferTypeBase *> _typeHandlers; // TypeId -> handler
     std::vector<FreeList>         _free_lists;
     mutable std::atomic<uint64_t> _compaction_count;
     vespalib::GenerationHolder    _genHolder;
     const uint32_t                _maxArrays;
     const uint32_t                _numBuffers;
-    const uint32_t                _offset_bits;
     uint32_t                      _hold_buffer_count;
+    const uint8_t                 _offset_bits;
     bool                          _freeListsEnabled;
     bool                          _initializing;
 };

@@ -52,5 +52,23 @@ BufferFreeList::disable()
     _free_list = nullptr;
 }
 
+void
+BufferFreeList::push_entry(EntryRef ref) {
+    if (empty()) {
+        attach();
+    }
+    _free_refs.push_back(ref);
+}
+EntryRef
+BufferFreeList::pop_entry() {
+    EntryRef ret = _free_refs.back();
+    _free_refs.pop_back();
+    if (empty()) {
+        detach();
+    }
+    _dead_elems.store(_dead_elems.load(std::memory_order_relaxed) - _array_size, std::memory_order_relaxed);
+    return ret;
+}
+
 }
 

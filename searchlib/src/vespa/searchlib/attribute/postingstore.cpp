@@ -727,7 +727,6 @@ template <typename DataT>
 void
 PostingStore<DataT>::compact_worst_buffers(CompactionSpec compaction_spec, const CompactionStrategy& compaction_strategy)
 {
-
     auto compacting_buffers = this->start_compact_worst_buffers(compaction_spec, compaction_strategy);
     bool compact_btree_roots = false;
     auto filter = compacting_buffers->make_entry_ref_filter();

@@ -42,8 +42,9 @@ template <typename RefT>
 void
 UniqueStoreEnumerator<RefT>::allocate_enum_values(DataStoreBase & store)
 {
-    _enumValues.resize(RefType::numBuffers());
-    for (uint32_t bufferId = 0; bufferId < RefType::numBuffers(); ++bufferId) {
+    size_t numBuffers = store.getNumBuffers();
+    _enumValues.resize(numBuffers);
+    for (uint32_t bufferId = 0; bufferId < numBuffers; ++bufferId) {
         const BufferState &state = store.getBufferState(bufferId);
         if (state.isActive()) {
             _enumValues[bufferId].resize(state.get_used_arrays());

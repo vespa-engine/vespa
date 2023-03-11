@@ -1064,7 +1064,7 @@ adjustAllocatedBytes(size_t nodeCount, size_t nodeSize)
 
 TEST_F(BTreeTest, require_that_memory_usage_is_calculated)
 {
-    constexpr size_t BASE = 163912;
+    constexpr size_t BASE = 16744u;
     typedef BTreeNodeAllocator<int32_t, int8_t,
         btree::NoAggregated,
         MyTraits::INTERNAL_SLOTS, MyTraits::LEAF_SLOTS> NodeAllocator;

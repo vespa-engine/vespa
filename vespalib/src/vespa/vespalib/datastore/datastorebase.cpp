@@ -84,15 +84,15 @@ DataStoreBase::DataStoreBase(uint32_t numBuffers, uint32_t offset_bits, size_t m
     : _entry_ref_hold_list(),
       _buffers(numBuffers),
       _primary_buffer_ids(),
-      _states(numBuffers),
+      _states(),
       _typeHandlers(),
       _free_lists(),
       _compaction_count(0u),
       _genHolder(),
       _maxArrays(maxArrays),
       _numBuffers(numBuffers),
-      _offset_bits(offset_bits),
       _hold_buffer_count(0u),
+      _offset_bits(offset_bits),
       _freeListsEnabled(false),
       _initializing(false)
 {
@@ -253,7 +253,7 @@ DataStoreBase::reclaim_all_memory()
 void
 DataStoreBase::dropBuffers()
 {
-    uint32_t numBuffers = _buffers.size();
+    uint32_t numBuffers = _states.size();
     for (uint32_t bufferId = 0; bufferId < numBuffers; ++bufferId) {
         getBufferState(bufferId).dropBuffer(bufferId, _buffers[bufferId].get_atomic_buffer());
     }
@@ -278,7 +278,7 @@ DataStoreBase::getMemoryUsage() const {
     size_t extra_allocated = 0;
     extra_allocated += _buffers.capacity() * sizeof(BufferAndMeta);
     extra_allocated += _primary_buffer_ids.capacity() * sizeof(uint32_t);
-    extra_allocated += _states.capacity() * sizeof(BufferState);
+    extra_allocated += _states.size() * sizeof(BufferState);
     extra_allocated += _typeHandlers.capacity() * sizeof(BufferTypeBase *);
     extra_allocated += _free_lists.capacity() * sizeof(FreeList);
 
@@ -401,6 +401,9 @@ DataStoreBase::onActive(uint32_t bufferId, uint32_t typeId, size_t elemsNeeded)
 {
     assert(typeId < _typeHandlers.size());
     assert(bufferId < _numBuffers);
+    if (bufferId == _states.size()) {
+        _states.emplace_back();
+    }
     BufferState &state = getBufferState(bufferId);
     BufferAndMeta & bufferMeta = _buffers[bufferId];
     state.onActive(bufferId, typeId, _typeHandlers[typeId], elemsNeeded, bufferMeta.get_atomic_buffer());
@@ -467,7 +470,7 @@ DataStoreBase::start_compact_worst_buffers(CompactionSpec compaction_spec, const
                                           compaction_strategy.getMaxDeadAddressSpaceRatio() / 2,
                                           CompactionStrategy::DEAD_ADDRESS_SPACE_SLACK);
     uint32_t free_buffers = _buffers.size() - _states.size();
-    for (uint32_t bufferId = 0; bufferId < _numBuffers; ++bufferId) {
+    for (uint32_t bufferId = 0; bufferId < _states.size(); ++bufferId) {
         const auto &state = getBufferState(bufferId);
         if (state.isActive()) {
             auto typeHandler = state.getTypeHandler();
