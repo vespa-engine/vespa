@@ -474,7 +474,8 @@ TEST(DataStoreTest, require_that_memory_stats_are_calculated)
 
 TEST(DataStoreTest, require_that_memory_usage_is_calculated)
 {
-    constexpr size_t BASE = 676;
+    constexpr size_t BASE_ALLOCATED = 4228;
+    constexpr size_t BASE_USED = 308;
     MyStore s;
     MyRef r = s.addEntry(10);
     s.addEntry(20);
@@ -483,8 +484,8 @@ TEST(DataStoreTest, require_that_memory_usage_is_calculated)
     s.holdBuffer(r.bufferId());
     s.assign_generation(100);
     vespalib::MemoryUsage m = s.getMemoryUsage();
-    EXPECT_EQ(MyRef::offsetSize() * sizeof(int) + BASE, m.allocatedBytes());
-    EXPECT_EQ(5 * sizeof(int) + BASE, m.usedBytes());
+    EXPECT_EQ(MyRef::offsetSize() * sizeof(int) + BASE_ALLOCATED, m.allocatedBytes());
+    EXPECT_EQ(5 * sizeof(int) + BASE_USED, m.usedBytes());
     EXPECT_EQ(0 * sizeof(int), m.deadBytes());
     EXPECT_EQ(5 * sizeof(int), m.allocatedBytesOnHold());
     s.reclaim_memory(101);
@@ -492,28 +493,29 @@ TEST(DataStoreTest, require_that_memory_usage_is_calculated)
 
 TEST(DataStoreTest, require_that_we_can_disable_elemement_hold_list)
 {
-    constexpr size_t BASE = 676;
+    constexpr size_t BASE_ALLOCATED = 4228;
+    constexpr size_t BASE_USED = 308;
     MyStore s;
     MyRef r1 = s.addEntry(10);
     MyRef r2 = s.addEntry(20);
     MyRef r3 = s.addEntry(30);
     (void) r3;
     vespalib::MemoryUsage m = s.getMemoryUsage();
-    EXPECT_EQ(MyRef::offsetSize() * sizeof(int) + BASE, m.allocatedBytes());
-    EXPECT_EQ(4 * sizeof(int) + BASE, m.usedBytes());
+    EXPECT_EQ(MyRef::offsetSize() * sizeof(int) + BASE_ALLOCATED, m.allocatedBytes());
+    EXPECT_EQ(4 * sizeof(int) + BASE_USED, m.usedBytes());
     EXPECT_EQ(1 * sizeof(int), m.deadBytes());
     EXPECT_EQ(0 * sizeof(int), m.allocatedBytesOnHold());
     s.holdElem(r1, 1);
     m = s.getMemoryUsage();
-    EXPECT_EQ(MyRef::offsetSize() * sizeof(int) + BASE, m.allocatedBytes());
-    EXPECT_EQ(4 * sizeof(int) + BASE, m.usedBytes());
+    EXPECT_EQ(MyRef::offsetSize() * sizeof(int) + BASE_ALLOCATED, m.allocatedBytes());
+    EXPECT_EQ(4 * sizeof(int) + BASE_USED, m.usedBytes());
     EXPECT_EQ(1 * sizeof(int), m.deadBytes());
     EXPECT_EQ(1 * sizeof(int), m.allocatedBytesOnHold());
     s.disableElemHoldList();
     s.holdElem(r2, 1);
     m = s.getMemoryUsage();
-    EXPECT_EQ(MyRef::offsetSize() * sizeof(int) + BASE, m.allocatedBytes());
-    EXPECT_EQ(4 * sizeof(int) + BASE, m.usedBytes());
+    EXPECT_EQ(MyRef::offsetSize() * sizeof(int) + BASE_ALLOCATED, m.allocatedBytes());
+    EXPECT_EQ(4 * sizeof(int) + BASE_USED, m.usedBytes());
     EXPECT_EQ(2 * sizeof(int), m.deadBytes());
     EXPECT_EQ(1 * sizeof(int), m.allocatedBytesOnHold());
     s.assign_generation(100);
@@ -538,7 +540,7 @@ void assertGrowStats(GrowthStats expSizes,
 
 TEST(DataStoreTest, require_that_buffer_growth_works)
 {
-    constexpr size_t BASE = 41032u;
+    constexpr size_t BASE = 10312;
     // Always switch to new buffer, min size 4
     assertGrowStats({ 4, 4, 4, 4, 8, 16, 16, 32, 64, 64 },
                     { 4 }, 20 + BASE, 4, 0);

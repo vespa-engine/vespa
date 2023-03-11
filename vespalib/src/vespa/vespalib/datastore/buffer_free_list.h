@@ -41,21 +41,8 @@ public:
     bool enabled() const { return _free_list != nullptr; }
     bool empty() const { return _free_refs.empty(); }
     uint32_t array_size() const { return _array_size; }
-    void push_entry(EntryRef ref) {
-        if (empty()) {
-            attach();
-        }
-        _free_refs.push_back(ref);
-    }
-    EntryRef pop_entry() {
-        EntryRef ret = _free_refs.back();
-        _free_refs.pop_back();
-        if (empty()) {
-            detach();
-        }
-        _dead_elems.store(_dead_elems.load(std::memory_order_relaxed) - _array_size, std::memory_order_relaxed);
-        return ret;
-    }
+    void push_entry(EntryRef ref);
+    EntryRef pop_entry();
 };
 
 }
