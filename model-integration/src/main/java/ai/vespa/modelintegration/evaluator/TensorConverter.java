@@ -180,25 +180,12 @@ class TensorConverter {
     }
 
     static private TensorType.Value toVespaValueType(TensorInfo.OnnxTensorType onnxType) {
-        // NOTE:
-        // should match best_cell_type in onnx_wrapper.cpp
         switch (onnxType) {
-            case ONNX_TENSOR_ELEMENT_DATA_TYPE_BOOL:
-            case ONNX_TENSOR_ELEMENT_DATA_TYPE_INT8:
-                return TensorType.Value.INT8;
-
-            case ONNX_TENSOR_ELEMENT_DATA_TYPE_BFLOAT16:
-                return TensorType.Value.BFLOAT16;
-
-            case ONNX_TENSOR_ELEMENT_DATA_TYPE_UINT8:
-            case ONNX_TENSOR_ELEMENT_DATA_TYPE_INT16:
-            case ONNX_TENSOR_ELEMENT_DATA_TYPE_UINT16:
-            case ONNX_TENSOR_ELEMENT_DATA_TYPE_FLOAT:
-                return TensorType.Value.FLOAT;
-
-            case ONNX_TENSOR_ELEMENT_DATA_TYPE_DOUBLE:
-                return TensorType.Value.DOUBLE;
-            }
+            case ONNX_TENSOR_ELEMENT_DATA_TYPE_INT8: return TensorType.Value.INT8;
+            case ONNX_TENSOR_ELEMENT_DATA_TYPE_BFLOAT16: return TensorType.Value.BFLOAT16;
+            case ONNX_TENSOR_ELEMENT_DATA_TYPE_FLOAT: return TensorType.Value.FLOAT;
+            case ONNX_TENSOR_ELEMENT_DATA_TYPE_DOUBLE: return TensorType.Value.DOUBLE;
+        }
         return TensorType.Value.DOUBLE;
     }
 
