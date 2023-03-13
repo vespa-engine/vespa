@@ -119,7 +119,7 @@ public class ResourceSnapshot {
                 0,
                 NodeResources.DiskSpeed.any,
                 NodeResources.StorageType.any,
-                a.architecture(),
+                a.architecture() == NodeResources.Architecture.any ? b.architecture() : a.architecture(),
                 a.gpuResources().plus(b.gpuResources()));
     }
 }
