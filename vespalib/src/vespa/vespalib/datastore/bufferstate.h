@@ -140,8 +140,8 @@ public:
     const void* get_buffer_acquire() const noexcept { return _buffer.load(std::memory_order_acquire); }
     uint32_t getTypeId() const { return _typeId; }
     uint32_t getArraySize() const { return _arraySize; }
-    BufferState * get_state_relaxed() const { return _state.load(std::memory_order_relaxed); }
-    BufferState * get_state_acquire() const { return _state.load(std::memory_order_acquire); }
+    BufferState * get_state_relaxed() { return _state.load(std::memory_order_relaxed); }
+    const BufferState * get_state_acquire() const { return _state.load(std::memory_order_acquire); }
     void setTypeId(uint32_t typeId) { _typeId = typeId; }
     void setArraySize(uint32_t arraySize) { _arraySize = arraySize; }
     void set_state(BufferState * state) { _state.store(state, std::memory_order_release); }

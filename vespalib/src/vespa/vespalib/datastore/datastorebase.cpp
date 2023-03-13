@@ -161,7 +161,7 @@ DataStoreBase::consider_grow_active_buffer(uint32_t type_id, size_t elems_needed
 uint32_t
 DataStoreBase::getFirstFreeBufferId() {
     uint32_t buffer_id = 0;
-    for (const auto & buffer : _buffers) {
+    for (auto & buffer : _buffers) {
         if (buffer.get_state_relaxed() == nullptr || buffer.get_state_relaxed()->isFree()) {
             return buffer_id;
         }
@@ -312,7 +312,7 @@ DataStoreBase::holdBuffer(uint32_t bufferId)
 void
 DataStoreBase::enableFreeLists()
 {
-    for (const auto& buffer : _buffers) {
+    for (auto& buffer : _buffers) {
         BufferState * bState = buffer.get_state_relaxed();
         if (!bState || !bState->isActive() || bState->getCompacting()) {
             continue;
@@ -325,7 +325,7 @@ DataStoreBase::enableFreeLists()
 void
 DataStoreBase::disableFreeLists()
 {
-    for (const auto& buffer : _buffers) {
+    for (auto& buffer : _buffers) {
         BufferState * bState = buffer.get_state_relaxed();
         if (bState) {
             bState->disable_free_list();
@@ -337,7 +337,7 @@ DataStoreBase::disableFreeLists()
 void
 DataStoreBase::disableElemHoldList()
 {
-    for (const auto& buffer : _buffers) {
+    for (auto& buffer : _buffers) {
         BufferState * state = buffer.get_state_relaxed();
         if (state && !state->isFree()) {
             state->disableElemHoldList();
@@ -354,7 +354,7 @@ DataStoreBase::getMemStats() const
     uint32_t buffer_id_limit = getBufferIdLimit();
     stats._freeBuffers = (getMaxNumBuffers() - buffer_id_limit);
     for (uint32_t bufferId = 0; bufferId < buffer_id_limit; ++bufferId) {
-        BufferState * bState = _buffers[bufferId].get_state_acquire();
+        const BufferState * bState = _buffers[bufferId].get_state_acquire();
         if (bState != nullptr) {
             auto typeHandler = bState->getTypeHandler();
             auto state = bState->getState();
@@ -390,7 +390,7 @@ DataStoreBase::getAddressSpaceUsage() const
     size_t deadArrays = 0;
     size_t limitArrays = size_t(_maxArrays) * (getMaxNumBuffers() - buffer_id_limit);
     for (uint32_t bufferId = 0; bufferId < buffer_id_limit; ++bufferId) {
-        BufferState * bState = _buffers[bufferId].get_state_acquire();
+        const BufferState * bState = _buffers[bufferId].get_state_acquire();
         if (bState == nullptr || bState->isFree()) {
             limitArrays += _maxArrays;
         } else if (bState->isActive()) {
