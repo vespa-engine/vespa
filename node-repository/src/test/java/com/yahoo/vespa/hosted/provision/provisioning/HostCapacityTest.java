@@ -2,12 +2,12 @@
 package com.yahoo.vespa.hosted.provision.provisioning;
 
 import com.yahoo.config.provision.Flavor;
+import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.hosted.provision.LockedNodeList;
 import com.yahoo.vespa.hosted.provision.Node;
-import com.yahoo.vespa.hosted.provision.node.Address;
 import com.yahoo.vespa.hosted.provision.node.IP;
 import org.junit.Before;
 import org.junit.Test;
@@ -16,7 +16,6 @@ import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.junit.Assert.assertEquals;
@@ -167,7 +166,7 @@ public class HostCapacityTest {
     }
 
     private Node setupHostWithAdditionalHostnames(String hostHostname, String... additionalHostnames) {
-        List<Address> addresses = Stream.of(additionalHostnames).map(Address::new).toList();
+        List<HostName> hostnames = Stream.of(additionalHostnames).map(HostName::of).toList();
 
         doAnswer(invocation -> ((Flavor)invocation.getArguments()[0]).resources())
                 .when(hostResourcesCalculator).advertisedResourcesOf(any());
@@ -176,7 +175,7 @@ public class HostCapacityTest {
                 "host",     // 7-100-120-5
                 "docker"); // 2- 40- 40-0.5 = resources1
 
-        return Node.create(hostHostname, IP.Config.of(Set.of("::1"), Set.of(), addresses), hostHostname,
+        return Node.create(hostHostname, IP.Config.of(Set.of("::1"), Set.of(), hostnames), hostHostname,
                 nodeFlavors.getFlavorOrThrow("host"), NodeType.host).build();
     }
 

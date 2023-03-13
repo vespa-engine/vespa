@@ -124,9 +124,9 @@ public class DynamicProvisioningTester {
 
     public void makeReady(String hostname) {
         Node node = nodeRepository().nodes().node(hostname).get();
-        provisioningTester.patchNode(node, (n) -> n.with(new IP.Config(Set.of("::" + 0 + ":0"), Set.of())));
+        provisioningTester.patchNode(node, (n) -> n.with(IP.Config.of(Set.of("::" + 0 + ":0"), Set.of())));
         Node host = nodeRepository().nodes().node(node.parentHostname().get()).get();
-        host = host.with(new IP.Config(Set.of("::" + 0 + ":0"), Set.of("::" + 0 + ":2")));
+        host = host.with(IP.Config.of(Set.of("::" + 0 + ":0"), Set.of("::" + 0 + ":2")));
         if (host.state() == Node.State.provisioned)
             provisioningTester.move(Node.State.ready, host);
     }

@@ -327,8 +327,8 @@ public class SpareCapacityMaintainerTest {
         }
 
         private IP.Config ipConfig(int id, boolean host) {
-            return new IP.Config(Set.of(String.format("%04X::%04X", id, 0)),
-                                 host ? IntStream.range(0, 10)
+            return IP.Config.of(Set.of(String.format("%04X::%04X", id, 0)),
+                                host ? IntStream.range(0, 10)
                                                  .mapToObj(n -> String.format("%04X::%04X", id, n))
                                                  .collect(Collectors.toSet())
                                       : Set.of());
