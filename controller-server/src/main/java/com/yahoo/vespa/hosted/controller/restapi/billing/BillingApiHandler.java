@@ -433,6 +433,9 @@ public class BillingApiHandler extends ThreadedHttpRequestHandler {
         lineItem.getDiskHours().ifPresent(diskHours ->
                 cursor.setString("diskHours", diskHours.toString())
         );
+        lineItem.getGpuHours().ifPresent(gpuHours ->
+                cursor.setString("gpuHours", gpuHours.toString())
+        );
         lineItem.getCpuCost().ifPresent(cpuCost ->
                 cursor.setString("cpuCost", cpuCost.toString())
         );
@@ -442,7 +445,9 @@ public class BillingApiHandler extends ThreadedHttpRequestHandler {
         lineItem.getDiskCost().ifPresent(diskCost ->
                 cursor.setString("diskCost", diskCost.toString())
         );
-
+        lineItem.getGpuCost().ifPresent(gpuCost ->
+                cursor.setString("gpuCost", gpuCost.toString())
+        );
     }
 
     private HttpResponse deleteInstrument(String tenant, String userId, String instrument) {
