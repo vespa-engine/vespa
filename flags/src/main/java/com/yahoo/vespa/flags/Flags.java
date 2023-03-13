@@ -350,7 +350,7 @@ public class Flags {
             ZONE_ID, NODE_TYPE, HOSTNAME);
 
     public static final UnboundBooleanFlag ENABLE_GLOBAL_PHASE = defineFeatureFlag(
-            "enable-global-phase", false,
+            "enable-global-phase", true,
             List.of("arnej", "bjorncs"), "2023-02-28", "2024-01-10",
             "Enable global phase ranking",
             "Takes effect at redeployment",
