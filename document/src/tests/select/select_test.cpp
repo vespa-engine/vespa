@@ -85,7 +85,7 @@ DocumentSelectTest::check_select(const Document& doc, const vespalib::string& ex
 
 TEST_F(DocumentSelectTest, check_existing_reference_field)
 {
-    auto document = std::make_unique<Document>(*_child_document_type, DocumentId("id::child::0"));
+    auto document = std::make_unique<Document>(*_repo, *_child_document_type, DocumentId("id::child::0"));
     document->setFieldValue(_child_ref_field, std::make_unique<ReferenceFieldValue>(_child_ref_field_type, DocumentId("id::parent::1")));
     EXPECT_TRUE(document->hasValue(_child_ref_field));
     check_select(*document, "child.ref == null", Result::False);
@@ -102,7 +102,7 @@ TEST_F(DocumentSelectTest, check_existing_reference_field)
 
 TEST_F(DocumentSelectTest, check_missing_reference_field)
 {
-    auto document = std::make_unique<Document>(*_child_document_type, DocumentId("id::child::0"));
+    auto document = std::make_unique<Document>(*_repo, *_child_document_type, DocumentId("id::child::0"));
     EXPECT_FALSE(document->hasValue(_child_ref_field));
     check_select(*document, "child.ref == null", Result::True);
     check_select(*document, "child.ref != null", Result::False);

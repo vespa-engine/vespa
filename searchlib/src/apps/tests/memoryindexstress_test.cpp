@@ -153,8 +153,7 @@ makeDoc(const DocumentTypeRepo &repo, uint32_t i,
     idstr << "id:test:test:: " << i;
     DocumentId id(idstr.str());
     const DocumentType *docType = repo.getDocumentType(doc_type_name);
-    auto doc(std::make_unique<Document>(*docType, id));
-    doc->setRepo(repo);
+    auto doc(std::make_unique<Document>(repo, *docType, id));
     if (!titleString.empty()) {
         setFieldValue(*doc, title, titleString);
     }

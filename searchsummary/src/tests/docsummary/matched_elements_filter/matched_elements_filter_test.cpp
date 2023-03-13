@@ -102,7 +102,7 @@ public:
     }
     ~DocsumStore();
     std::unique_ptr<IDocsumStoreDocument> getMappedDocsum() {
-        auto doc = std::make_unique<Document>(_doc_type, DocumentId("id:test:test::0"));
+        auto doc = Document::make_without_repo(_doc_type, DocumentId("id:test:test::0"));
         {
             ArrayFieldValue array_value(_array_type);
             if (!_empty_values) {

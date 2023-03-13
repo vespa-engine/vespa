@@ -515,7 +515,7 @@ TEST("requireThatDocumentCanBeSerialized") {
     const DocumentType &type = repo.getDocumentType();
 
     DocumentId doc_id("id:ns:" + type.getName() + "::");
-    Document value(type, doc_id);
+    Document value(repo.getDocumentTypeRepo(), type, doc_id);
 
     value.setValue(type.getField("header field"), IntFieldValue(42));
     value.setValue(type.getField("body field"), StringFieldValue("foobar"));
@@ -580,7 +580,7 @@ TEST("requireThatUnmodifiedDocumentRetainsUnknownFieldOnSerialization") {
     DocumentTypeRepo repo2Fields(builder2.config());
 
     DocumentId doc_id("id:ns:my_doctype::");
-    Document value(*repo2Fields.getDocumentType(doc_type_id), doc_id);
+    Document value(repo2Fields, *repo2Fields.getDocumentType(doc_type_id), doc_id);
 
     value.setValue("field1", IntFieldValue(42));
     value.setValue("field2", StringFieldValue("megafoo"));
@@ -632,12 +632,12 @@ TEST("requireThatDocumentWithDocumentCanBeSerialized") {
     setSpanTree(str, *tree);
     const Field str_field("str", *DataType::STRING);
 
-    Document inner(*inner_type, DocumentId("id:ns:" + inner_type->getName() + "::"));
+    Document inner(my_repo, *inner_type, DocumentId("id:ns:" + inner_type->getName() + "::"));
     inner.setValue(str_field, str);
     const DocumentType *type = my_repo.getDocumentType(outer_type_id);
     ASSERT_TRUE(type);
     DocumentId doc_id("id:ns:" + type->getName() + "::");
-    Document value(*type, doc_id);
+    Document value(my_repo, *type, doc_id);
     const Field doc_field(inner_name, *inner_type);
     value.setValue(doc_field, inner);
 
@@ -659,9 +659,10 @@ TEST("requireThatReadDocumentTypeThrowsIfUnknownType") {
 
 template <typename FieldValueT>
 void serializeToFile(FieldValueT &value, const string &file_name,
+                     const DocumentTypeRepo& my_repo,
                      const DocumentType *type, const string &field_name) {
     DocumentId doc_id("id:test:" + type->getName() + "::foo");
-    Document doc(*type, doc_id);
+    Document doc(my_repo, *type, doc_id);
     doc.setValue(type->getField(field_name), value);
 
     nbostream stream;
@@ -675,7 +676,7 @@ void serializeToFile(FieldValueT &value, const string &file_name,
 
 void serializeToFile(PredicateFieldValue &value, const string &file_name) {
     const DocumentType *type = doc_repo.getDocumentType(predicate_doc_type_id);
-    serializeToFile(value, file_name, type, predicate_field_name);
+    serializeToFile(value, file_name, doc_repo, type, predicate_field_name);
 }
 
 template <typename FieldValueT>
@@ -819,7 +820,7 @@ const DocumentTypeRepo tensor_doc_repo1(getTensorDocTypesConfig("tensor(dimX{})"
 void serializeToFile(TensorFieldValue &value, const string &file_name) {
     const DocumentType *type =
         tensor_doc_repo.getDocumentType(tensor_doc_type_id);
-    serializeToFile(value, file_name, type, tensor_field_name);
+    serializeToFile(value, file_name, tensor_doc_repo, type, tensor_field_name);
 }
 
 void deserializeAndCheck(const string &file_name, TensorFieldValue &value) {
@@ -870,7 +871,7 @@ TensorDocFixture::TensorDocFixture(const DocumentTypeRepo &docTypeRepo,
     : _docTypeRepo(docTypeRepo),
       _docType(_docTypeRepo.getDocumentType(tensor_doc_type_id)),
       _tensor(std::move(tensor)),
-      _doc(*_docType, DocumentId("id:test:my_type::foo")),
+      _doc(_docTypeRepo, *_docType, DocumentId("id:test:my_type::foo")),
       _blob()
 {
     auto fv = _doc.getField(tensor_field_name).createValue();
@@ -963,7 +964,7 @@ struct RefFixture {
         const string data_dir = TEST_PATH("../../test/resources/reference/");
         const string field_name = "ref_field";
         serializeToFile(value, data_dir + file_base_name + "__cpp.new",
-                        ref_doc_type, field_name);
+                        fixed_repo.getDocumentTypeRepo(), ref_doc_type, field_name);
         vespalib::rename(data_dir + file_base_name + "__cpp.new",
                          data_dir + file_base_name + "__cpp");
 
@@ -999,7 +1000,7 @@ TEST_F("ReferenceFieldValue with ID serialization matches Java", RefFixture) {
 struct AssociatedDocumentRepoFixture {
     const DocumentType& doc_type{repo.getDocumentType()};
     DocumentId doc_id{"id:ns:" + doc_type.getName() + "::"};
-    Document source_doc{doc_type, doc_id};
+    Document source_doc{doc_repo, doc_type, doc_id};
 
     std::unique_ptr<Document> roundtrip_serialize_source_document() {
         nbostream stream;

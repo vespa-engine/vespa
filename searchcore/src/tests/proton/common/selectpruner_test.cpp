@@ -222,8 +222,7 @@ TestFixture::testPrune(const string &selection, const string &exp, const string 
     LOG(info, "ParseTree: '%s'", os.str().c_str());
     const DocumentType *docType = repo.getDocumentType(docTypeName);
     ASSERT_TRUE(docType != nullptr);
-    auto emptyDoc = std::make_unique<Document>(*docType, document::DocumentId("id:ns:" + docTypeName + "::1"));
-    emptyDoc->setRepo(repo);
+    auto emptyDoc = std::make_unique<Document>(repo, *docType, document::DocumentId("id:ns:" + docTypeName + "::1"));
     SelectPruner pruner(docTypeName, &_amgr, *emptyDoc, repo, _hasFields, _hasDocuments);
     pruner.process(*select);
     std::ostringstream pos;

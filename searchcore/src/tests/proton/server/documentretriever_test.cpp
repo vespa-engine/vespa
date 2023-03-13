@@ -161,7 +161,7 @@ struct MyDocumentStore : proton::test::DummyDocumentStore {
             return std::move(_testDoc);
         }
         const DocumentType *doc_type = r.getDocumentType(doc_type_name);
-        auto doc = std::make_unique<Document>(*doc_type, doc_id);
+        auto doc = std::make_unique<Document>(r, *doc_type, doc_id);
         ASSERT_TRUE(doc);
         doc->setValue(static_field, IntFieldValue::make(static_value));
         doc->setValue(dyn_field_i, IntFieldValue::make(static_value));

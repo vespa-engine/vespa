@@ -244,7 +244,7 @@ DocumentRetriever::getPartialDocument(search::DocumentIdT lid, const document::D
             FieldSet::stripFields(*doc, fieldSet);
         }
     } else {
-        doc = std::make_unique<Document>(getDocumentType(), docId);
+        doc = std::make_unique<Document>(getDocumentTypeRepo(), getDocumentType(), docId);
         switch (fieldSet.getType()) {
             case FieldSet::Type::ALL:
                 populate(lid, *doc);
@@ -271,7 +271,6 @@ DocumentRetriever::getPartialDocument(search::DocumentIdT lid, const document::D
             case FieldSet::Type::DOCID:
                 break;
         }
-        doc->setRepo(getDocumentTypeRepo());
     }
     return doc;
 }

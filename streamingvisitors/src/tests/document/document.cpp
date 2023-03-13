@@ -29,7 +29,7 @@ DocumentTest::testStorageDocument()
     dt.addField(fa);
     dt.addField(fb);
 
-    document::Document::UP doc(new document::Document(dt, DocumentId()));
+    auto doc = document::Document::make_without_repo(dt, DocumentId());
     doc->setValue(fa, StringFieldValue("foo"));
     doc->setValue(fb, StringFieldValue("bar"));
 

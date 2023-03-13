@@ -217,8 +217,8 @@ FeedHandler::performInternalUpdate(FeedToken token, UpdateOperation &op)
 void
 FeedHandler::createNonExistingDocument(FeedToken token, const UpdateOperation &op)
 {
-    auto doc = make_shared<Document>(op.getUpdate()->getType(), op.getUpdate()->getId());
-    doc->setRepo(*_activeFeedView->getDocumentTypeRepo());
+    auto doc = make_shared<Document>(*_activeFeedView->getDocumentTypeRepo(),
+                                     op.getUpdate()->getType(), op.getUpdate()->getId());
     op.getUpdate()->applyTo(*doc);
     PutOperation putOp(op.getBucketId(), op.getTimestamp(), std::move(doc));
     putOp.set_prepare_serial_num(op.get_prepare_serial_num());

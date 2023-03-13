@@ -136,8 +136,8 @@ TEST(DocumentTest, testTraversing)
     type.addField(primitive1);
     type.addField(structl1s1);
 
-    Document doc(type, DocumentId("id:ns:test::1"));
-    doc.setValue(primitive1, IntFieldValue(1));
+    auto doc = Document::make_without_repo(type, DocumentId("id:ns:test::1"));
+    doc->setValue(primitive1, IntFieldValue(1));
 
     StructFieldValue l1s1(struct3);
     l1s1.setValue(primitive1, IntFieldValue(2));
@@ -159,11 +159,11 @@ TEST(DocumentTest, testTraversing)
     l2s1.setValue(sarrF, sarr1);
 
     l1s1.setValue(s2, l2s1);
-    doc.setValue(structl1s1, l1s1);
+    doc->setValue(structl1s1, l1s1);
 
     Handler fullTraverser;
     FieldPath empty;
-    doc.iterateNested(empty.getFullRange(), fullTraverser);
+    doc->iterateNested(empty.getFullRange(), fullTraverser);
     EXPECT_EQ(fullTraverser.getResult(),
                          std::string("<0:P-0<0:P-0<0:P-0P-0[P-0P-1P-2][<0:P-0P-0><1:P-1P-1>]>>>"));
 }
@@ -208,14 +208,14 @@ TEST(DocumentTest, testVariables)
         iiiaV.add(iiaV);
     }
 
-    Document doc(type, DocumentId("id:ns:test::1"));
-    doc.setValue(iiiarrF, iiiaV);
+    auto doc = Document::make_without_repo(type, DocumentId("id:ns:test::1"));
+    doc->setValue(iiiarrF, iiiaV);
 
     {
         VariableIteratorHandler handler;
         FieldPath path;
         type.buildFieldPath(path, "iiiarray[$x][$y][$z]");
-        doc.iterateNested(path.getFullRange(), handler);
+        doc->iterateNested(path.getFullRange(), handler);
 
         std::string fasit =
             "x: 0,y: 0,z: 0, - 1\n"
@@ -315,7 +315,7 @@ TEST(DocumentTest, testModifyDocument)
     type.addField(primitive1);
     type.addField(structl1s1);
 
-    Document::UP doc(new Document(type, DocumentId("id:ns:test::1")));
+    auto doc = Document::make_without_repo(type, DocumentId("id:ns:test::1"));
     doc->setValue(primitive1, IntFieldValue(1));
 
     StructFieldValue l1s1(struct3);
@@ -389,7 +389,7 @@ TEST(DocumentTest, testSimpleUsage)
     type->addField(strF);
 
     DocumentTypeRepo repo(*type);
-    Document value(*repo.getDocumentType("test"), DocumentId("id:ns:test::1"));
+    Document value(repo, *repo.getDocumentType("test"), DocumentId("id:ns:test::1"));
 
         // Initially empty
     EXPECT_EQ(size_t(0), value.getSetFieldCount());
@@ -412,7 +412,7 @@ TEST(DocumentTest, testSimpleUsage)
     // Serialize & equality
     nbostream buffer;
     value.serialize(buffer);
-    Document value2(*repo.getDocumentType("test"),
+    Document value2(repo, *repo.getDocumentType("test"),
                     DocumentId("id::test:n=3:foo"));
     EXPECT_TRUE(value != value2);
     value2.deserialize(repo, buffer);
@@ -508,7 +508,7 @@ TEST(DocumentTest, testSimpleUsage)
         // Refuse to accept non-document types
     try{
         StructDataType otherType("foo", 4);
-        Document value6(otherType, DocumentId("id:ns:foo::1"));
+        auto doc = Document::make_without_repo(otherType, DocumentId("id:ns:foo::1"));
         FAIL() << "Didn't complain about non-document type";
     } catch (std::exception& e) {
         EXPECT_THAT(e.what(), HasSubstr("Cannot generate a document with non-document type"));
@@ -706,7 +706,7 @@ TEST(DocumentTest,testReadSerializedAllVersions)
 
         // Create a memory instance of document
     {
-        Document doc(*docType, DocumentId("id:ns:serializetest::http://test.doc.id/"));
+        Document doc(repo, *docType, DocumentId("id:ns:serializetest::http://test.doc.id/"));
         doc.setValue("intfield", IntFieldValue::make(5));
         doc.setValue("floatfield", FloatFieldValue::make(-9.23));
         doc.setValue("stringfield", StringFieldValue::make("This is a string."));
@@ -714,7 +714,7 @@ TEST(DocumentTest,testReadSerializedAllVersions)
         doc.setValue("doublefield", DoubleFieldValue::make(98374532.398820));
         doc.setValue("bytefield", ByteFieldValue::make(-2));
         doc.setValue("rawfield", std::make_unique<RawFieldValue>("RAW DATA", 8));
-        Document docInDoc(*docInDocType, DocumentId("id:ns:docindoc::http://doc.in.doc/"));
+        Document docInDoc(repo, *docInDocType, DocumentId("id:ns:docindoc::http://doc.in.doc/"));
         docInDoc.setValue("stringindocfield", StringFieldValue::make("Elvis is dead"));
         doc.setValue("docfield", docInDoc);
         ArrayFieldValue floatArray(*arrayOfFloatDataType);
@@ -828,7 +828,7 @@ TEST(DocumentTest, testGenerateSerializedFile)
 {
     const std::string file_name = TEST_PATH("data/crossplatform-java-cpp-doctypes.cfg");
     DocumentTypeRepo repo(readDocumenttypesConfig(file_name));
-    Document doc(*repo.getDocumentType("serializetest"), DocumentId("id:ns:serializetest::http://test.doc.id/"));
+    Document doc(repo, *repo.getDocumentType("serializetest"), DocumentId("id:ns:serializetest::http://test.doc.id/"));
 
     doc.setValue("intfield", IntFieldValue::make(5));
     doc.setValue("floatfield", FloatFieldValue::make(-9.23));
@@ -841,7 +841,7 @@ TEST(DocumentTest, testGenerateSerializedFile)
 
     const DocumentType *docindoc_type = repo.getDocumentType("docindoc");
     EXPECT_TRUE(docindoc_type);
-    Document embedDoc(*docindoc_type, DocumentId("id:ns:docindoc::http://embedded"));
+    Document embedDoc(repo, *docindoc_type, DocumentId("id:ns:docindoc::http://embedded"));
 
     doc.setValue("docfield", embedDoc);
 
@@ -949,7 +949,7 @@ TEST(DocumentTest, testUnknownEntries)
 
     DocumentTypeRepo repo(type2);
 
-    Document doc1(type1, DocumentId("id:ns:test::1"));
+    Document doc1(repo, type1, DocumentId("id:ns:test::1"));
     doc1.setValue(field1, IntFieldValue(1));
     doc1.setValue(field2, IntFieldValue(2));
     doc1.setValue(field3, IntFieldValue(3));

@@ -586,8 +586,7 @@ StoreOnlyFeedView::internalRemove(FeedToken token, const RemoveOperationWithDocI
     adjustMetaStore(rmOp, docId.getGlobalId(), docId);
 
     if (rmOp.getValidDbdId(_params._subDbId)) {
-        auto clearDoc = std::make_unique<Document>(*_docType, docId);
-        clearDoc->setRepo(*_repo);
+        auto clearDoc = std::make_unique<Document>(*_repo, *_docType, docId);
 
         putSummary(serialNum, rmOp.getLid(), std::move(clearDoc), std::make_shared<SummaryPutDoneContext>(std::move(token), get_pending_lid_token(rmOp)));
     }

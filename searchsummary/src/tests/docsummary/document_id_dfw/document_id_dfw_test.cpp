@@ -95,8 +95,7 @@ DocumentIdDFWTest::~DocumentIdDFWTest() = default;
 std::unique_ptr<IDocsumStoreDocument>
 DocumentIdDFWTest::make_docsum_store_document(const vespalib::string& id)
 {
-    auto doc = std::make_unique<Document>(*_document_type, DocumentId(id));
-    doc->setRepo(*_repo);
+    auto doc = std::make_unique<Document>(*_repo, *_document_type, DocumentId(id));
     return std::make_unique<DocsumStoreDocument>(std::move(doc));
 }
 
