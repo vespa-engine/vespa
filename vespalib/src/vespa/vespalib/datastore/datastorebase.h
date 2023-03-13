@@ -75,11 +75,12 @@ public:
     BufferState &getBufferState(uint32_t buffer_id) noexcept;
     const BufferAndMeta & getBufferMeta(uint32_t buffer_id) const { return _buffers[buffer_id]; }
     uint32_t getMaxNumBuffers() const noexcept { return _buffers.size(); }
-    uint32_t getBufferIdLimit() const noexcept { return _bufferIdLimit.load(std::memory_order_relaxed); }
+    uint32_t get_bufferid_limit_acquire() const noexcept { return _bufferIdLimit.load(std::memory_order_acquire); }
+    uint32_t get_bufferid_limit_relaxed() noexcept { return _bufferIdLimit.load(std::memory_order_relaxed); }
 
     template<typename FuncType>
     void for_each_active_buffer(FuncType func) {
-        uint32_t buffer_id_limit = getBufferIdLimit();
+        uint32_t buffer_id_limit = get_bufferid_limit_relaxed();
         for (uint32_t i = 0; i < buffer_id_limit; i++) {
             const BufferState * state = _buffers[i].get_state_relaxed();
             if (state && state->isActive()) {
@@ -242,6 +243,14 @@ private:
     void inc_hold_buffer_count();
     void fallbackResize(uint32_t bufferId, size_t elementsNeeded);
     uint32_t getFirstFreeBufferId();
+
+    template<typename FuncType>
+    void for_each_buffer(FuncType func) {
+        uint32_t buffer_id_limit = get_bufferid_limit_relaxed();
+        for (uint32_t i = 0; i < buffer_id_limit; i++) {
+            func(*(_buffers[i].get_state_relaxed()));
+        }
+    }
 
     virtual void reclaim_all_entry_refs() = 0;
 

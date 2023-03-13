@@ -108,7 +108,7 @@ void
 DataStoreBase::switch_primary_buffer(uint32_t typeId, size_t elemsNeeded)
 {
     size_t buffer_id = getFirstFreeBufferId();
-    if (buffer_id > getMaxNumBuffers()) {
+    if (buffer_id >= getMaxNumBuffers()) {
         LOG_ABORT(vespalib::make_string("switch_primary_buffer(%u, %zu): did not find a free buffer",
                                         typeId, elemsNeeded).c_str());
     }
@@ -174,7 +174,7 @@ DataStoreBase::getFirstFreeBufferId() {
 
 BufferState &
 DataStoreBase::getBufferState(uint32_t buffer_id) noexcept {
-    assert(buffer_id < getBufferIdLimit());
+    assert(buffer_id < get_bufferid_limit_relaxed());
     BufferState * state = _buffers[buffer_id].get_state_relaxed();
     assert(state != nullptr);
     return *state;
@@ -208,7 +208,7 @@ DataStoreBase::init_primary_buffers()
     uint32_t numTypes = _primary_buffer_ids.size();
     for (uint32_t typeId = 0; typeId < numTypes; ++typeId) {
         size_t buffer_id = getFirstFreeBufferId();
-        assert(buffer_id <= getBufferIdLimit());
+        assert(buffer_id <= get_bufferid_limit_relaxed());
         onActive(buffer_id, typeId, 0u);
         _primary_buffer_ids[typeId] = buffer_id;
     }
@@ -259,13 +259,12 @@ DataStoreBase::reclaim_all_memory()
 void
 DataStoreBase::dropBuffers()
 {
-    uint32_t buffer_id_limit = getBufferIdLimit();
+    uint32_t buffer_id_limit = get_bufferid_limit_relaxed();
     for (uint32_t bufferId = 0; bufferId < buffer_id_limit; ++bufferId) {
         BufferAndMeta & buffer = _buffers[bufferId];
         BufferState * state = buffer.get_state_relaxed();
-        if (state) {
-            state->dropBuffer(bufferId, buffer.get_atomic_buffer());
-        }
+        assert(state != nullptr);
+        state->dropBuffer(bufferId, buffer.get_atomic_buffer());
     }
     _genHolder.reclaim_all();
 }
@@ -314,37 +313,26 @@ DataStoreBase::holdBuffer(uint32_t bufferId)
 void
 DataStoreBase::enableFreeLists()
 {
-    for (auto& buffer : _buffers) {
-        BufferState * bState = buffer.get_state_relaxed();
-        if (!bState || !bState->isActive() || bState->getCompacting()) {
-            continue;
-        }
-        bState->enable_free_list(_free_lists[bState->getTypeId()]);
-    }
+    for_each_buffer([this](BufferState & state) {
+        if (!state.isActive() || state.getCompacting()) return;
+        state.enable_free_list(_free_lists[state.getTypeId()]);
+    });
     _freeListsEnabled = true;
 }
 
 void
 DataStoreBase::disableFreeLists()
 {
-    for (auto& buffer : _buffers) {
-        BufferState * bState = buffer.get_state_relaxed();
-        if (bState) {
-            bState->disable_free_list();
-        }
-    }
+    for_each_buffer([](BufferState & state) { state.disable_free_list(); });
     _freeListsEnabled = false;
 }
 
 void
 DataStoreBase::disableElemHoldList()
 {
-    for (auto& buffer : _buffers) {
-        BufferState * state = buffer.get_state_relaxed();
-        if (state && !state->isFree()) {
-            state->disableElemHoldList();
-        }
-    }
+    for_each_buffer([](BufferState & state) {
+        if (!state.isFree()) state.disable_free_list();
+    });
     _disableElemHoldList = true;
 }
 
@@ -353,28 +341,25 @@ DataStoreBase::getMemStats() const
 {
     MemoryStats stats;
 
-    uint32_t buffer_id_limit = getBufferIdLimit();
+    uint32_t buffer_id_limit = get_bufferid_limit_acquire();
     stats._freeBuffers = (getMaxNumBuffers() - buffer_id_limit);
     for (uint32_t bufferId = 0; bufferId < buffer_id_limit; ++bufferId) {
         const BufferState * bState = _buffers[bufferId].get_state_acquire();
-        if (bState != nullptr) {
-            auto typeHandler = bState->getTypeHandler();
-            auto state = bState->getState();
-            if ((state == BufferState::State::FREE) || (typeHandler == nullptr)) {
-                ++stats._freeBuffers;
-            } else if (state == BufferState::State::ACTIVE) {
-                size_t elementSize = typeHandler->elementSize();
-                ++stats._activeBuffers;
-                bState->stats().add_to_mem_stats(elementSize, stats);
-            } else if (state == BufferState::State::HOLD) {
-                size_t elementSize = typeHandler->elementSize();
-                ++stats._holdBuffers;
-                bState->stats().add_to_mem_stats(elementSize, stats);
-            } else {
-                LOG_ABORT("should not be reached");
-            }
-        } else {
+        assert(bState != nullptr);
+        auto typeHandler = bState->getTypeHandler();
+        auto state = bState->getState();
+        if ((state == BufferState::State::FREE) || (typeHandler == nullptr)) {
             ++stats._freeBuffers;
+        } else if (state == BufferState::State::ACTIVE) {
+            size_t elementSize = typeHandler->elementSize();
+            ++stats._activeBuffers;
+            bState->stats().add_to_mem_stats(elementSize, stats);
+        } else if (state == BufferState::State::HOLD) {
+            size_t elementSize = typeHandler->elementSize();
+            ++stats._holdBuffers;
+            bState->stats().add_to_mem_stats(elementSize, stats);
+        } else {
+            LOG_ABORT("should not be reached");
         }
     }
     size_t genHolderHeldBytes = _genHolder.get_held_bytes();
@@ -387,13 +372,14 @@ DataStoreBase::getMemStats() const
 vespalib::AddressSpace
 DataStoreBase::getAddressSpaceUsage() const
 {
-    uint32_t buffer_id_limit = getBufferIdLimit();
+    uint32_t buffer_id_limit = get_bufferid_limit_acquire();
     size_t usedArrays = 0;
     size_t deadArrays = 0;
     size_t limitArrays = size_t(_maxArrays) * (getMaxNumBuffers() - buffer_id_limit);
     for (uint32_t bufferId = 0; bufferId < buffer_id_limit; ++bufferId) {
         const BufferState * bState = _buffers[bufferId].get_state_acquire();
-        if (bState == nullptr || bState->isFree()) {
+        assert(bState != nullptr);
+        if (bState->isFree()) {
             limitArrays += _maxArrays;
         } else if (bState->isActive()) {
             uint32_t arraySize = bState->getArraySize();
@@ -429,7 +415,7 @@ DataStoreBase::onActive(uint32_t bufferId, uint32_t typeId, size_t elemsNeeded)
         }
         state = & newState;
         bufferMeta.set_state(state);
-        _bufferIdLimit.store(bufferId + 1);
+        _bufferIdLimit.store(bufferId + 1, std::memory_order_release);
     }
     assert(state->isFree());
     state->onActive(bufferId, typeId, _typeHandlers[typeId], elemsNeeded, bufferMeta.get_atomic_buffer());
@@ -487,7 +473,7 @@ DataStoreBase::markCompacting(uint32_t bufferId)
 std::unique_ptr<CompactingBuffers>
 DataStoreBase::start_compact_worst_buffers(CompactionSpec compaction_spec, const CompactionStrategy& compaction_strategy)
 {
-    uint32_t buffer_id_limit = getBufferIdLimit();
+    uint32_t buffer_id_limit = get_bufferid_limit_relaxed();
     // compact memory usage
     CompactBufferCandidates elem_buffers(buffer_id_limit, compaction_strategy.get_max_buffers(),
                                          compaction_strategy.get_active_buffers_ratio(),
@@ -501,7 +487,8 @@ DataStoreBase::start_compact_worst_buffers(CompactionSpec compaction_spec, const
     uint32_t free_buffers = getMaxNumBuffers() - buffer_id_limit;
     for (uint32_t bufferId = 0; bufferId < buffer_id_limit; ++bufferId) {
         BufferState * state = _buffers[bufferId].get_state_relaxed();
-        if (state == nullptr || state->isFree()) {
+        assert(state != nullptr);
+        if (state->isFree()) {
             free_buffers++;
         } else if (state->isActive()) {
             auto typeHandler = state->getTypeHandler();
