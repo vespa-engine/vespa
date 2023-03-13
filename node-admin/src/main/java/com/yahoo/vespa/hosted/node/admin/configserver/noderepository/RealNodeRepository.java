@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.node.admin.configserver.noderepository;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.NodeResources;
@@ -202,6 +203,7 @@ public class RealNodeRepository implements NodeRepository {
                 Optional.ofNullable(node.currentDockerImage).map(DockerImage::fromString),
                 nodeState,
                 nodeType,
+                Optional.ofNullable(node.cloudAccount).map(CloudAccount::from).orElse(CloudAccount.empty),
                 node.flavor,
                 Optional.ofNullable(node.wantedVespaVersion).map(Version::fromString),
                 Optional.ofNullable(node.vespaVersion).map(Version::fromString),
