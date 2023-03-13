@@ -7,3 +7,6 @@ vespa_add_executable(searchlib_engine_proto_converter_test_app TEST
     GTest::GTest
 )
 vespa_add_test(NAME searchlib_engine_proto_converter_test_app COMMAND searchlib_engine_proto_converter_test_app)
+if(Protobuf_VERSION VERSION_LESS_EQUAL 3.12.4)
+  set_source_files_properties(proto_converter_test.cpp PROPERTIES COMPILE_OPTIONS "-Wno-inline")
+endif()
