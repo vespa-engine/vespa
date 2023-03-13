@@ -25,7 +25,6 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
  * Writes tensors on the JSON format used in Vespa tensor document fields:
@@ -113,14 +112,14 @@ public class JsonFormat {
             Tensor.Cell cell = i.next();
             Cursor cellObject = cellsArray.addObject();
             encodeAddress(tensor.type(), cell.getKey(), cellObject.setObject("address"));
-            cellObject.setDouble("value", cell.getValue());
+            setValue("value", cell.getValue(), tensor.type().valueType(), cellObject);
         }
     }
 
     private static void encodeSingleDimensionCells(MappedTensor tensor, Cursor cells) {
         if (tensor.type().dimensions().size() > 1)
             throw new IllegalStateException("JSON encode of mapped tensor can only contain a single dimension");
-        tensor.cells().forEach((k,v) -> cells.setDouble(k.label(0), v));
+        tensor.cells().forEach((k,v) -> setValue(k.label(0), v, tensor.type().valueType(), cells));
     }
 
     private static void encodeAddress(TensorType type, TensorAddress address, Cursor addressObject) {
@@ -131,13 +130,13 @@ public class JsonFormat {
     private static void encodeValues(IndexedTensor tensor, Cursor cursor, long[] indexes, int dimension) {
         DimensionSizes sizes = tensor.dimensionSizes();
         if (indexes.length == 0) {
-            cursor.addDouble(tensor.get(0));
+            addValue(tensor.get(0), tensor.type().valueType(), cursor);
         } else {
             for (indexes[dimension] = 0; indexes[dimension] < sizes.size(dimension); ++indexes[dimension]) {
                 if (dimension < (sizes.dimensions() - 1)) {
                     encodeValues(tensor, cursor.addArray(), indexes, dimension + 1);
                 } else {
-                    cursor.addDouble(tensor.get(indexes));
+                    addValue(tensor.get(indexes), tensor.type().valueType(), cursor);
                 }
             }
         }
@@ -172,6 +171,20 @@ public class JsonFormat {
             }
 
         }
+    }
+
+    private static void addValue(double value, TensorType.Value valueType, Cursor cursor) {
+        if (valueType == TensorType.Value.INT8)
+            cursor.addLong((long)value);
+        else
+            cursor.addDouble(value);
+    }
+
+    private static void setValue(String field, double value, TensorType.Value valueType, Cursor cursor) {
+        if (valueType == TensorType.Value.INT8)
+            cursor.setLong(field, (long)value);
+        else
+            cursor.setDouble(field, value);
     }
 
     private static TensorAddress subAddress(TensorAddress address, TensorType subType, TensorType origType) {
