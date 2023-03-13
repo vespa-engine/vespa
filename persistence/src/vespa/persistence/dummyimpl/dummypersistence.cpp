@@ -477,7 +477,7 @@ DummyPersistence::updateAsync(const Bucket& bucket, Timestamp ts, DocumentUpdate
             onComplete->onComplete(std::make_unique<UpdateResult>());
             return;
         } else {
-            docToUpdate = std::make_shared<document::Document>(upd->getType(), upd->getId());
+            docToUpdate = std::make_shared<document::Document>(*upd->getRepoPtr(), upd->getType(), upd->getId());
             updatedTs = ts;
         }
     }
@@ -680,7 +680,7 @@ DummyPersistence::iterate(IteratorId id, uint64_t maxByteSize) const
             {
                 assert(entry->getDocument());
                 // Create new document with only wanted fields.
-                Document::UP filtered(FieldSet::createDocumentSubsetCopy(*entry->getDocument(), *it->_fieldSet));
+                auto filtered = FieldSet::createDocumentSubsetCopy(*_repo, *entry->getDocument(), *it->_fieldSet);
                 auto ret = DocEntry::create(entry->getTimestamp(), std::move(filtered), entry->getSize());
                 entries.push_back(std::move(ret));
             } else {

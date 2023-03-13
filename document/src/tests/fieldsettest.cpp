@@ -144,7 +144,7 @@ FieldSetTest::doCopyFields(const Document& src,
                            const std::string& fieldSetStr,
                            Document* dest)
 {
-    Document destDoc(src.getType(), DocumentId("id:ns:" + src.getType().getName() + "::fieldset"));
+    Document destDoc(docRepo, src.getType(), DocumentId("id:ns:" + src.getType().getName() + "::fieldset"));
     if (!dest) {
         dest = &destDoc;
     }
@@ -196,7 +196,7 @@ TEST_F(FieldSetTest, testCopyDocumentFields)
               doCopyFields(*src, repo, "testdoctype1:hstringval,content"));
     // Test that we overwrite already set fields in destination document
     {
-        Document dest(src->getType(), DocumentId("id:ns:" + src->getType().getName() + "::bar"));
+        Document dest(repo, src->getType(), DocumentId("id:ns:" + src->getType().getName() + "::bar"));
         dest.setValue(dest.getField("content"), StringFieldValue("overwriteme"));
         EXPECT_EQ(std::string("content: megafoo megabar\n"),
                   doCopyFields(*src, repo, src->getType().getName() + ":content", &dest));
@@ -209,7 +209,7 @@ FieldSetTest::doCopyDocument(const Document& src,
                              const std::string& fieldSetStr)
 {
     auto fset = FieldSetRepo::parse(docRepo, fieldSetStr);
-    Document::UP doc(FieldSet::createDocumentSubsetCopy(src, *fset));
+    Document::UP doc(FieldSet::createDocumentSubsetCopy(docRepo, src, *fset));
     return stringifyFields(*doc);
 }
 
@@ -221,7 +221,7 @@ TEST_F(FieldSetTest, testDocumentSubsetCopy)
     Document::UP src(createTestDocument(testDocMan));
 
     {
-        Document::UP doc(FieldSet::createDocumentSubsetCopy(*src, AllFields()));
+        Document::UP doc(FieldSet::createDocumentSubsetCopy(repo, *src, AllFields()));
         // Test that document id and type are copied correctly.
         EXPECT_TRUE(doc.get());
         EXPECT_EQ(src->getId(), doc->getId());
@@ -230,7 +230,7 @@ TEST_F(FieldSetTest, testDocumentSubsetCopy)
                   stringifyFields(*doc));
     }
     {
-        Document::UP doc(FieldSet::createDocumentSubsetCopy(*src, DocumentOnly()));
+        Document::UP doc(FieldSet::createDocumentSubsetCopy(repo, *src, DocumentOnly()));
         // Test that document id and type are copied correctly.
         EXPECT_TRUE(doc.get());
         EXPECT_EQ(src->getId(), doc->getId());

@@ -106,7 +106,7 @@ struct DocumentApiConverterTest : Test {
 };
 
 TEST_F(DocumentApiConverterTest, put) {
-    auto doc = std::make_shared<Document>(_html_type, defaultDocId);
+    auto doc = std::make_shared<Document>(*_repo, _html_type, defaultDocId);
 
     documentapi::PutDocumentMessage putmsg(doc);
     putmsg.setTimestamp(1234);
@@ -126,7 +126,7 @@ TEST_F(DocumentApiConverterTest, put) {
 }
 
 TEST_F(DocumentApiConverterTest, forwarded_put) {
-    auto doc = std::make_shared<Document>(_html_type, DocumentId("id:ns:" + _html_type.getName() + "::test"));
+    auto doc = std::make_shared<Document>(*_repo, _html_type, DocumentId("id:ns:" + _html_type.getName() + "::test"));
 
     auto putmsg = std::make_unique<documentapi::PutDocumentMessage>(doc);
     auto* putmsg_raw = putmsg.get();

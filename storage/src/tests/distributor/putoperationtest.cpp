@@ -83,8 +83,12 @@ public:
         return *_testDocMan.getTypeRepo().getDocumentType("testdoctype1");
     }
 
+    const document::DocumentTypeRepo& type_repo() const {
+        return _testDocMan.getTypeRepo();
+    }
+
     Document::SP createDummyDocument(const char* ns, const char* id) const {
-        return std::make_shared<Document>(doc_type(), DocumentId(vespalib::make_string("id:%s:testdoctype1::%s", ns, id)));
+        return std::make_shared<Document>(type_repo(), doc_type(), DocumentId(vespalib::make_string("id:%s:testdoctype1::%s", ns, id)));
     }
 
     static std::shared_ptr<api::PutCommand> createPut(Document::SP doc) {
@@ -98,7 +102,7 @@ PutOperationTest::~PutOperationTest() = default;
 
 document::BucketId
 PutOperationTest::createAndSendSampleDocument(vespalib::duration timeout) {
-    auto doc = std::make_shared<Document>(doc_type(), DocumentId("id:test:testdoctype1::"));
+    auto doc = std::make_shared<Document>(type_repo(), doc_type(), DocumentId("id:test:testdoctype1::"));
 
     document::BucketId id = operation_context().make_split_bit_constrained_bucket_id(doc->getId());
     addIdealNodes(id);
@@ -453,7 +457,7 @@ TEST_F(PutOperationTest, no_storage_nodes) {
 TEST_F(PutOperationTest, update_correct_bucket_on_remapped_put) {
     setup_stripe(2, 2, "storage:2 distributor:1");
 
-    auto doc = std::make_shared<Document>(doc_type(), DocumentId("id:test:testdoctype1:n=13:uri"));
+    auto doc = std::make_shared<Document>(type_repo(), doc_type(), DocumentId("id:test:testdoctype1:n=13:uri"));
     addNodesToBucketDB(document::BucketId(16,13), "0=0,1=0");
     sendPut(createPut(doc));
 

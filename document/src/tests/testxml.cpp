@@ -22,8 +22,7 @@ namespace {
 Document::UP createTestDocument(const DocumentTypeRepo& repo)
 {
     const DocumentType* type(repo.getDocumentType("testdoc"));
-    auto doc = std::make_unique<Document>(*type,DocumentId("id:ns:testdoc::crawler/http://www.ntnu.no/"));
-    doc->setRepo(repo);
+    auto doc = std::make_unique<Document>(repo, *type, DocumentId("id:ns:testdoc::crawler/http://www.ntnu.no/"));
     std::string s("humlepungens buffer");
     ByteBuffer bb(s.c_str(), s.size());
 
@@ -45,7 +44,7 @@ Document::UP createTestDocument(const DocumentTypeRepo& repo)
     val.add(rawVal3);
     doc->setValue(doc->getField("rawarrayattr"), val);
 
-    auto doc2 = std::make_unique<Document>(*type, DocumentId("id:ns:testdoc::crawler/http://www.ntnu.no/2"));
+    auto doc2 = std::make_unique<Document>(repo, *type, DocumentId("id:ns:testdoc::crawler/http://www.ntnu.no/2"));
     doc2->setValue(doc2->getField("stringattr"), StringFieldValue("tjo hei paa du"));
     doc->setValue(doc->getField("docfield"), *doc2);
 

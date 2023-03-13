@@ -61,7 +61,7 @@ createDocType(const vespalib::string &name, int32_t id)
 Document::SP
 createDoc(const DocumentType &docType, const DocumentId &docId)
 {
-    return std::make_shared<Document>(docType, docId);
+    return Document::SP(Document::make_without_repo(docType, docId).release());
 }
 
 

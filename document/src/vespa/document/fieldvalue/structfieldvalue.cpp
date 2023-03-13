@@ -36,6 +36,16 @@ StructFieldValue::StructFieldValue(const DataType &type)
 {
 }
 
+StructFieldValue::StructFieldValue(const DocumentTypeRepo& repo, const DataType& type)
+    : StructuredFieldValue(Type::STRUCT, type),
+      _fields(),
+      _repo(&repo),
+      _doc_type(nullptr),
+      _version(Document::getNewestSerializationVersion()),
+      _hasChanged(true)
+{
+}
+
 StructFieldValue::StructFieldValue(const StructFieldValue & rhs) = default;
 StructFieldValue & StructFieldValue::operator = (const StructFieldValue & rhs) = default;
 

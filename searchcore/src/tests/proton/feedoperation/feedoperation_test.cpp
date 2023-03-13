@@ -126,7 +126,7 @@ public:
         return upd;
     }
     auto makeDoc() {
-        auto doc(std::make_shared<Document>(_docType, docId));
+        auto doc(std::make_shared<Document>(*_repo, _docType, docId));
         doc->setValue("string", StringFieldValue("stringval"));
         return doc;
     }

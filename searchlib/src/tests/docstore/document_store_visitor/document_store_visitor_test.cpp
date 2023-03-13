@@ -60,7 +60,7 @@ makeDoc(const DocumentTypeRepo &repo, uint32_t i, bool before)
     idstr << "id:test:test:: " << i;
     DocumentId id(idstr.str());
     const DocumentType *docType = repo.getDocumentType(doc_type_name);
-    Document::UP doc(new Document(*docType, id));
+    Document::UP doc(new Document(repo, *docType, id));
     ASSERT_TRUE(doc.get());
     asciistream mainstr;
     mainstr << "static text" << i << " body something";

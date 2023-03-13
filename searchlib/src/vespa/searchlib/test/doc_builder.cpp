@@ -59,8 +59,7 @@ DocBuilder::~DocBuilder() = default;
 std::unique_ptr<Document>
 DocBuilder::make_document(vespalib::string document_id)
 {
-    auto doc = std::make_unique<Document>(get_document_type(), DocumentId(document_id));
-    doc->setRepo(get_repo());
+    auto doc = std::make_unique<Document>(get_repo(), get_document_type(), DocumentId(document_id));
     return doc;
 }
 

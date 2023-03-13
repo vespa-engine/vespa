@@ -141,7 +141,7 @@ TEST(DocumentUpdateTest, testSimpleUsage)
     auto docUpdateCopy(DocumentUpdate::createHEAD(repo, docBuf));
 
         // Create a test document
-    Document doc(*docType, DocumentId("id:ns:test::1"));
+    Document doc(repo, *docType, DocumentId("id:ns:test::1"));
     doc.setValue("bytef", ByteFieldValue::make(0));
     doc.setValue("intf", IntFieldValue::make(5));
     ArrayFieldValue array(*arrayType);
@@ -417,7 +417,7 @@ WeightedSetAutoCreateFixture::~WeightedSetAutoCreateFixture() = default;
 WeightedSetAutoCreateFixture::WeightedSetAutoCreateFixture()
     : repo(makeConfig()),
       docType(repo.getDocumentType("test")),
-      doc(*docType, DocumentId("id:ns:test::1")),
+      doc(repo, *docType, DocumentId("id:ns:test::1")),
       field(docType->getField("strwset")),
       update(repo, *docType, DocumentId("id:ns:test::1"))
 {
@@ -1355,7 +1355,7 @@ struct UpdateToEmptyDocumentFixture {
     Document::UP make_empty_doc() {
         vespalib::nbostream stream;
         {
-            Document doc(doc_type, DocumentId("id:test:test::0"));
+            Document doc(*repo, doc_type, DocumentId("id:test:test::0"));
             VespaDocumentSerializer serializer(stream);
             serializer.write(doc);
         }

@@ -211,7 +211,7 @@ MyDocType::make_field_path(vespalib::string path) const
 std::unique_ptr<document::Document>
 MyDocType::make_test_doc() const
 {
-    auto doc = std::make_unique<document::Document>(_document_type, DocumentId("id::test::1"));
+    auto doc = document::Document::make_without_repo(_document_type, DocumentId("id::test::1"));
     doc->setValue("elem_array", *make_elem_array({{"foo", 10},{"bar", 20},{"baz", 30},{"foo", 40}, {"zap", 20}, {"zap", 20}}));
     // the elements in maps are ordered on the key
     doc->setValue("elem_map", *make_elem_map({{"@foo", {"foo", 10}}, {"@bar", {"bar", 20}},{"@baz", {"baz", 30}},{"@foo@", {"foo", 40}},{"@zap", {"zap", 20}}, {"@zap@", {"zap", 20}}}));

@@ -60,7 +60,7 @@ struct DocContext
     std::shared_ptr<Document> create(uint32_t id, int64_t fieldValue) {
         vespalib::string docId =
                 vespalib::make_string("id:searchdocument:searchdocument::%u", id);
-        auto doc = std::make_shared<Document>(*_repo->getDocumentType("searchdocument"), DocumentId(docId));
+        auto doc = std::make_shared<Document>(*_repo, *_repo->getDocumentType("searchdocument"), DocumentId(docId));
         doc->setValue("a1", IntFieldValue(fieldValue));
         return doc;
     }

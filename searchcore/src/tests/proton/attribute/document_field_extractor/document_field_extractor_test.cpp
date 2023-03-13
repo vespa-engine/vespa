@@ -109,7 +109,7 @@ struct FixtureBase
     Document *
     makeDoc()
     {
-        doc = std::make_unique<Document>(type, DocumentId("id::test::1"));
+        doc = Document::make_without_repo(type, DocumentId("id::test::1"));
         extractor = std::make_unique<DocumentFieldExtractor>(*doc);
         return doc.get();
     }

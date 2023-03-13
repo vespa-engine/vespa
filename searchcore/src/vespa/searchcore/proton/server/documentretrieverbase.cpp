@@ -26,8 +26,7 @@ DocumentRetrieverBase::DocumentRetrieverBase(
       _hasFields(hasFields)
 {
     const document::DocumentType * docType(_repo.getDocumentType(_docTypeName.getName()));
-    _emptyDoc = std::make_unique<document::Document>(*docType, DocumentId("id:empty:" + _docTypeName.getName() + "::empty"));
-    _emptyDoc->setRepo(_repo);
+    _emptyDoc = std::make_unique<document::Document>(_repo, *docType, DocumentId("id:empty:" + _docTypeName.getName() + "::empty"));
 }
 
 DocumentRetrieverBase::~DocumentRetrieverBase() = default;

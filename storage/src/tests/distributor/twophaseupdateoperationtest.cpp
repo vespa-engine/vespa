@@ -237,7 +237,7 @@ TwoPhaseUpdateOperationTest::replyToGet(
     std::shared_ptr<api::StorageReply> reply;
 
     if (haveDocument) {
-        auto doc(std::make_shared<Document>(*_doc_type, DocumentId("id:ns:" + _doc_type->getName() + "::1")));
+        auto doc(std::make_shared<Document>(*_repo, *_doc_type, DocumentId("id:ns:" + _doc_type->getName() + "::1")));
         doc->setValue("headerval", IntFieldValue(oldTimestamp));
 
         reply = std::make_shared<api::GetReply>(get, doc, oldTimestamp);

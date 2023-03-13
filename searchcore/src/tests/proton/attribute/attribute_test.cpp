@@ -1050,7 +1050,7 @@ public:
     }
 
     std::unique_ptr<Document> makeDoc() {
-        return std::make_unique<Document>(_type, DocumentId("id::test::1"));
+        return Document::make_without_repo(_type, DocumentId("id::test::1"));
     }
 };
 

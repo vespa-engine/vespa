@@ -120,7 +120,7 @@ Document::SP DocumentSelectParserTest::createDoc(
         uint64_t hlong)
 {
     const DocumentType* type = _repo->getDocumentType(doctype);
-    auto doc = std::make_shared<Document>(*type, DocumentId(id));
+    auto doc = std::make_shared<Document>(*_repo, *type, DocumentId(id));
     doc->setValue(doc->getField("headerval"), IntFieldValue(hint));
 
     if (hlong != 0) {
@@ -1662,7 +1662,7 @@ TEST_F(DocumentSelectParserTest, test_parse_utilities_handle_malformed_input)
 TEST_F(DocumentSelectParserTest, imported_field_references_are_treated_as_valid_field_with_missing_value) {
     const DocumentType* type = _repo->getDocumentType("with_imported");
     ASSERT_TRUE(type != nullptr);
-    Document doc(*type, DocumentId("id::with_imported::foo"));
+    Document doc(*_repo, *type, DocumentId("id::with_imported::foo"));
 
     PARSE("with_imported.my_imported_field == null", doc, True);
     PARSE("with_imported.my_imported_field != null", doc, False);
@@ -1674,7 +1674,7 @@ TEST_F(DocumentSelectParserTest, imported_field_references_are_treated_as_valid_
 TEST_F(DocumentSelectParserTest, imported_field_references_only_support_for_simple_expressions) {
     const DocumentType* type = _repo->getDocumentType("with_imported");
     ASSERT_TRUE(type != nullptr);
-    Document doc(*type, DocumentId("id::with_imported::foo"));
+    Document doc(*_repo, *type, DocumentId("id::with_imported::foo"));
 
     PARSE("with_imported.my_imported_field.foo", doc, Invalid);
     PARSE("with_imported.my_imported_field[0]", doc, Invalid);

@@ -77,8 +77,8 @@ HitCollectorTest::assertHit(SearchResult::RankType expRank, uint32_t expDocId, u
 void
 HitCollectorTest::addHit(HitCollector &hc, uint32_t docId, double score, const char *sortData, size_t sortDataSize)
 {
-    document::Document::UP doc(new document::Document(_docType, DocumentId("id:ns:testdoc::")));
-    StorageDocument::UP sdoc(new StorageDocument(std::move(doc), SharedFieldPathMap(), 0));
+    auto doc = document::Document::make_without_repo(_docType, DocumentId("id:ns:testdoc::"));
+    auto sdoc = std::make_unique<StorageDocument>(std::move(doc), SharedFieldPathMap(), 0);
     ASSERT_TRUE(sdoc->valid());
     MatchData md(MatchData::params());
     hc.addHit(sdoc.get(), docId, md, score, sortData, sortDataSize);
