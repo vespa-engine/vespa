@@ -171,7 +171,7 @@ BufferState::dropBuffer(uint32_t buffer_id, std::atomic<void*>& buffer)
 }
 
 void
-BufferState::disableElemHoldList()
+BufferState::disable_elem_hold_list()
 {
     _disableElemHoldList = true;
 }

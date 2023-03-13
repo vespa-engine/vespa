@@ -76,10 +76,9 @@ public:
             return ConstArrayRef();
         }
         RefT internalRef(ref);
-        uint32_t typeId = _store.getTypeId(internalRef.bufferId());
-        if (typeId != _largeArrayTypeId) [[likely]] {
-            size_t arraySize = _mapper.get_array_size(typeId);
-            return getSmallArray(internalRef, arraySize);
+        const BufferAndMeta & bufferAndMeta = _store.getBufferMeta(internalRef.bufferId());
+        if (bufferAndMeta.getTypeId() != _largeArrayTypeId) [[likely]] {
+            return getSmallArray(internalRef, bufferAndMeta.getArraySize());
         } else {
             return getLargeArray(internalRef);
         }

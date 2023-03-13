@@ -210,16 +210,16 @@ INSTANTIATE_TEST_SUITE_P(NumberStoreFreeListsDisabledMultiTest,
 
 TEST_P(NumberStoreTest, control_static_sizes) {
 #ifdef _LIBCPP_VERSION
-    EXPECT_EQ(472u, sizeof(store));
-    EXPECT_EQ(296u, sizeof(NumberStoreTest::ArrayStoreType::DataStoreType));
+    EXPECT_EQ(464u, sizeof(store));
+    EXPECT_EQ(280u, sizeof(NumberStoreTest::ArrayStoreType::DataStoreType));
 #else
-    EXPECT_EQ(504u, sizeof(store));
-    EXPECT_EQ(328u, sizeof(NumberStoreTest::ArrayStoreType::DataStoreType));
+    EXPECT_EQ(496u, sizeof(store));
+    EXPECT_EQ(320u, sizeof(NumberStoreTest::ArrayStoreType::DataStoreType));
 #endif
     EXPECT_EQ(112u, sizeof(NumberStoreTest::ArrayStoreType::SmallBufferType));
     MemoryUsage usage = store.getMemoryUsage();
-    EXPECT_EQ(1312160u, usage.allocatedBytes());
-    EXPECT_EQ(1311232u, usage.usedBytes());
+    EXPECT_EQ(202144u, usage.allocatedBytes());
+    EXPECT_EQ(197776u, usage.usedBytes());
 }
 
 TEST_P(NumberStoreTest, add_and_get_small_arrays_of_trivial_type)

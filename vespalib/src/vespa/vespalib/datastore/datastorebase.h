@@ -8,9 +8,8 @@
 #include <vespa/vespalib/util/address_space.h>
 #include <vespa/vespalib/util/generationholder.h>
 #include <vespa/vespalib/util/generation_hold_list.h>
-#include <vespa/vespalib/util/memoryusage.h>
+#include <vespa/vespalib/util/stash.h>
 #include <atomic>
-#include <deque>
 #include <vector>
 
 namespace vespalib::datastore {
@@ -75,7 +74,20 @@ public:
     uint32_t primary_buffer_id(uint32_t typeId) const { return _primary_buffer_ids[typeId]; }
     BufferState &getBufferState(uint32_t buffer_id) noexcept;
     const BufferAndMeta & getBufferMeta(uint32_t buffer_id) const { return _buffers[buffer_id]; }
-    uint32_t getNumBuffers() const { return _numBuffers; }
+    uint32_t getMaxNumBuffers() const noexcept { return _buffers.size(); }
+    uint32_t get_bufferid_limit_acquire() const noexcept { return _bufferIdLimit.load(std::memory_order_acquire); }
+    uint32_t get_bufferid_limit_relaxed() noexcept { return _bufferIdLimit.load(std::memory_order_relaxed); }
+
+    template<typename FuncType>
+    void for_each_active_buffer(FuncType func) {
+        uint32_t buffer_id_limit = get_bufferid_limit_relaxed();
+        for (uint32_t i = 0; i < buffer_id_limit; i++) {
+            const BufferState * state = _buffers[i].get_state_relaxed();
+            if (state && state->isActive()) {
+                func(i, *state);
+            }
+        }
+    }
 
     /**
      * Assign generation on data elements on hold lists added since the last time this function was called.
@@ -218,11 +230,7 @@ private:
      * Hold of buffer has ended.
      */
     void doneHoldBuffer(uint32_t bufferId);
-    /**
-     * Enable free list management.
-     * This only works for fixed size elements.
-     */
-    void enableFreeList(uint32_t bufferId);
+
     /**
      * Switch buffer state to active for the given buffer.
      *
@@ -236,24 +244,33 @@ private:
     void fallbackResize(uint32_t bufferId, size_t elementsNeeded);
     uint32_t getFirstFreeBufferId();
 
+    template<typename FuncType>
+    void for_each_buffer(FuncType func) {
+        uint32_t buffer_id_limit = get_bufferid_limit_relaxed();
+        for (uint32_t i = 0; i < buffer_id_limit; i++) {
+            func(*(_buffers[i].get_state_relaxed()));
+        }
+    }
+
     virtual void reclaim_all_entry_refs() = 0;
 
-    std::vector<BufferAndMeta>  _buffers; // For fast mapping with known types
+    std::vector<BufferAndMeta>    _buffers; // For fast mapping with known types
 
     // Provides a mapping from typeId -> primary buffer for that type.
     // The primary buffer is used for allocations of new element(s) if no available slots are found in free lists.
     std::vector<uint32_t>         _primary_buffer_ids;
 
-    std::vector<BufferState>      _states;
+    Stash                         _stash;
     std::vector<BufferTypeBase *> _typeHandlers; // TypeId -> handler
     std::vector<FreeList>         _free_lists;
     mutable std::atomic<uint64_t> _compaction_count;
     vespalib::GenerationHolder    _genHolder;
     const uint32_t                _maxArrays;
-    const uint32_t                _numBuffers;
-    const uint32_t                _offset_bits;
+    std::atomic<uint32_t>         _bufferIdLimit;
     uint32_t                      _hold_buffer_count;
+    const uint8_t                 _offset_bits;
     bool                          _freeListsEnabled;
+    bool                          _disableElemHoldList;
     bool                          _initializing;
 };
 
