@@ -17,6 +17,7 @@ import com.yahoo.config.provision.Zone;
 import com.yahoo.container.jdisc.config.HealthMonitorConfig;
 import com.yahoo.net.HostName;
 import com.yahoo.vespa.config.core.StateserverConfig;
+import com.yahoo.vespa.model.LogctlSpec;
 import com.yahoo.vespa.model.Service;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.container.ApplicationContainerCluster;
@@ -24,6 +25,7 @@ import com.yahoo.vespa.model.test.utils.VespaModelCreatorWithFilePkg;
 import com.yahoo.vespa.model.test.utils.VespaModelCreatorWithMockPkg;
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
 import java.util.Set;
 
 import static com.yahoo.config.model.api.container.ContainerServiceType.METRICS_PROXY_CONTAINER;
@@ -241,6 +243,29 @@ public class AdminTestCase {
         Set<String> configIds = vespaModel.getConfigIds();
         // 1 logforwarder on each host
         assertTrue(configIds.contains("hosts/myhost0/logforwarder"), configIds.toString());
+    }
+
+    @Test
+    void testDefaultLogCtlSpecs() {
+        String hosts = "<hosts>"
+                + "  <host name=\"myhost0\">"
+                + "    <alias>node0</alias>"
+                + "  </host>"
+                + "</hosts>";
+
+        String services = "<services>" +
+                "  <admin version='2.0'>" +
+                "    <adminserver hostalias='node0' />" +
+                "  </admin>" +
+                "</services>";
+
+        VespaModel vespaModel = new VespaModelCreatorWithMockPkg(hosts, services).create();
+        List<LogctlSpec> logctlSpecs = vespaModel.getAdmin().getLogctlSpecs();
+        assertEquals(20, logctlSpecs.size());  // Default logctl specs: 4 logctl specs for 5 services => 20
+        assertEquals(1, logctlSpecs
+                .stream()
+                .filter(l -> (l.componentSpec.equals("configserver:com.yahoo.vespa.spifly.repackaged.spifly.BaseActivator")
+                        && l.levelsModSpec.equals("info=off"))).count());
     }
 
 }

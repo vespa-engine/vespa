@@ -24,12 +24,14 @@ import com.yahoo.vespa.model.admin.monitoring.Monitoring;
 import com.yahoo.vespa.model.admin.monitoring.builder.Metrics;
 import com.yahoo.vespa.model.filedistribution.FileDistributionConfigProducer;
 import com.yahoo.vespa.model.filedistribution.FileDistributionConfigProvider;
-
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static com.yahoo.vespa.model.admin.monitoring.MetricSet.empty;
 
@@ -40,8 +42,6 @@ import static com.yahoo.vespa.model.admin.monitoring.MetricSet.empty;
  * @author gjoranv
  */
 public class Admin extends TreeConfigProducer<AnyConfigProducer> implements Serializable {
-
-    private static final long serialVersionUID = 1L;
 
     private final boolean isHostedVespa;
     private final Monitoring monitoring;
@@ -101,6 +101,7 @@ public class Admin extends TreeConfigProducer<AnyConfigProducer> implements Seri
         this.multitenant = multitenant;
         this.fileDistribution = new FileDistributionConfigProducer(parent);
         this.applicationType = applicationType;
+        this.logctlSpecs.addAll(setDefaultLogctlSpecs());
     }
 
     public Configserver getConfigserver() { return defaultConfigserver; }
@@ -330,5 +331,17 @@ public class Admin extends TreeConfigProducer<AnyConfigProducer> implements Seri
     }
 
     public ApplicationType getApplicationType() { return applicationType; }
+
+    private static Set<LogctlSpec> setDefaultLogctlSpecs() {
+        // Turn off info logging for all container services for some classes (unimportant log messages that create noise in vespa log)
+        return Stream.of("configserver", "container", "container-clustercontroller", "logserver-container", "metricsproxy-container").map(
+                service -> List.of(
+                        new LogctlSpec(service + ":com.yahoo.vespa.spifly.repackaged.spifly.BaseActivator", "info=off"),
+                        new LogctlSpec(service + ":org.eclipse.jetty.server.Server", "info=off"),
+                        new LogctlSpec(service + ":org.eclipse.jetty.server.handler.ContextHandler", "info=off"),
+                        new LogctlSpec(service + ":org.eclipse.jetty.server.AbstractConnector", "info=off")))
+                     .flatMap(List::stream)
+                     .collect(Collectors.toSet());
+    }
 
 }
