@@ -331,7 +331,7 @@ void
 DataStoreBase::disableElemHoldList()
 {
     for_each_buffer([](BufferState & state) {
-        if (!state.isFree()) state.disable_free_list();
+        if (!state.isFree()) state.disable_elem_hold_list();
     });
     _disableElemHoldList = true;
 }
@@ -408,7 +408,7 @@ DataStoreBase::onActive(uint32_t bufferId, uint32_t typeId, size_t elemsNeeded)
     if (state == nullptr) {
         BufferState & newState = _stash.create<BufferState>();
         if (_disableElemHoldList) {
-            newState.disableElemHoldList();
+            newState.disable_elem_hold_list();
         }
         if ( ! _freeListsEnabled) {
             newState.disable_free_list();
@@ -465,7 +465,7 @@ DataStoreBase::markCompacting(uint32_t bufferId)
     }
     assert(!state.getCompacting());
     state.setCompacting();
-    state.disableElemHoldList();
+    state.disable_elem_hold_list();
     state.disable_free_list();
     inc_compaction_count();
 }

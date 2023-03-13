@@ -86,7 +86,7 @@ public:
      * Disable hold of elements, just mark elements as dead without cleanup.
      * Typically used when tearing down data structure in a controlled manner.
      */
-    void disableElemHoldList();
+    void disable_elem_hold_list();
 
     /**
      * Update stats to reflect that the given elements are put on hold.
