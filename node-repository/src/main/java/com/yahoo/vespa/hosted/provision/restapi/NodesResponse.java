@@ -6,18 +6,17 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.DockerImage;
+import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.serialization.NetworkPortsSerializer;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.restapi.SlimeJsonResponse;
 import com.yahoo.slime.Cursor;
-import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.flags.FetchVector;
 import com.yahoo.vespa.flags.PermanentFlags;
 import com.yahoo.vespa.flags.StringFlag;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
-import com.yahoo.vespa.hosted.provision.node.Address;
 import com.yahoo.vespa.hosted.provision.node.Allocation;
 import com.yahoo.vespa.hosted.provision.node.History;
 import com.yahoo.vespa.hosted.provision.node.TrustStoreItem;
@@ -52,7 +51,7 @@ class NodesResponse extends SlimeJsonResponse {
 
     private final NodeFilter filter;
     private final boolean recursive;
-    private final Function<HostName, Optional<HostInfo>> orchestrator;
+    private final Function<com.yahoo.vespa.applicationmodel.HostName, Optional<HostInfo>> orchestrator;
     private final NodeRepository nodeRepository;
     private final StringFlag wantedDockerTagFlag;
 
@@ -151,7 +150,7 @@ class NodesResponse extends SlimeJsonResponse {
             object.setString("wantedVespaVersion", allocation.membership().cluster().vespaVersion().toFullString());
             NodeResourcesSerializer.toSlime(allocation.requestedResources(), object.setObject("requestedResources"));
             allocation.networkPorts().ifPresent(ports -> NetworkPortsSerializer.toSlime(ports, object.setArray("networkPorts")));
-            orchestrator.apply(new HostName(node.hostname()))
+            orchestrator.apply(new com.yahoo.vespa.applicationmodel.HostName(node.hostname()))
                         .ifPresent(info -> {
                             if (info.status() != HostStatus.NO_REMARKS) {
                                 object.setString("orchestratorStatus", info.status().asString());
@@ -180,8 +179,8 @@ class NodesResponse extends SlimeJsonResponse {
         toSlime(node.history().events(), object.setArray("history"));
         toSlime(node.history().log(), object.setArray("log"));
         ipAddressesToSlime(node.ipConfig().primary(), object.setArray("ipAddresses"));
-        ipAddressesToSlime(node.ipConfig().pool().ipSet(), object.setArray("additionalIpAddresses"));
-        addressesToSlime(node.ipConfig().pool().getAddressList(), object);
+        ipAddressesToSlime(node.ipConfig().pool().asSet(), object.setArray("additionalIpAddresses"));
+        hostnamesToSlime(node.ipConfig().pool().hostnames(), object);
         node.reports().toSlime(object, "reports");
         node.modelName().ifPresent(modelName -> object.setString("modelName", modelName));
         node.switchHostname().ifPresent(switchHostname -> object.setString("switchHostname", switchHostname));
@@ -249,11 +248,11 @@ class NodesResponse extends SlimeJsonResponse {
         ipAddresses.forEach(array::addString);
     }
 
-    private void addressesToSlime(List<Address> addresses, Cursor object) {
-        if (addresses.isEmpty()) return;
+    private void hostnamesToSlime(List<HostName> hostnames, Cursor object) {
+        if (hostnames.isEmpty()) return;
         // When/if Address becomes richer: add another field (e.g. "addresses") and expand to array of objects
         Cursor addressesArray = object.setArray("additionalHostnames");
-        addresses.forEach(address -> addressesArray.addString(address.hostname()));
+        hostnames.forEach(hostname -> addressesArray.addString(hostname.value()));
     }
 
     private void trustedCertsToSlime(List<TrustStoreItem> trustStoreItems, Cursor object) {

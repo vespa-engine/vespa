@@ -280,23 +280,6 @@ public class SessionPreparer {
                 vespaPreprocess(applicationPackageDir.getAbsoluteFile(), hostsXml, meta, tags);
             }
 
-            if (zone.system().isPublic()) {
-                // Validate all other XML files
-                try (var paths = Files.find(applicationPackageDir.getAbsoluteFile().toPath(), Integer.MAX_VALUE,
-                        (path, attr) -> attr.isRegularFile() && path.getFileName().toString().matches(".*\\.[Xx][Mm][Ll]"))) {
-                    paths.filter(p -> !(p.equals(servicesXml.getAbsoluteFile().toPath()) || p.equals(hostsXml.getAbsoluteFile().toPath())))
-                            .forEach(xmlPath -> {
-                                try {
-                                    new ValidationProcessor().process(XML.getDocument(xmlPath.toFile()));
-                                } catch (IOException | TransformerException e) {
-                                    throw new RuntimeException(e);
-                                }
-                            });
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
-            }
-
             // Validate pom.xml files in OSGi bundles
             try (var paths = Files.find(applicationPackageDir.getAbsoluteFile().toPath(), Integer.MAX_VALUE,
                     (path, attr) -> attr.isRegularFile() && path.getFileName().toString().matches(".*\\.[Jj][Aa][Rr]"))) {
