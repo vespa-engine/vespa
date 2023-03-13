@@ -99,9 +99,15 @@ public:
 
     virtual void process_update(const document::BucketId& bucket, EntryUpdateProcessor &processor, bool create_if_nonexisting) = 0;
 
-    virtual void forEach(
-            EntryProcessor&,
-            const document::BucketId& after = document::BucketId()) const = 0;
+    virtual void for_each_lower_bound(EntryProcessor&, const document::BucketId& at_or_after) const = 0;
+    void for_each_lower_bound(EntryProcessor& proc) const {
+        for_each_lower_bound(proc, document::BucketId());
+    }
+
+    virtual void for_each_upper_bound(EntryProcessor&, const document::BucketId& after) const = 0;
+    void for_each_upper_bound(EntryProcessor& proc) const {
+        for_each_upper_bound(proc, document::BucketId());
+    }
 
     using TrailingInserter = bucketdb::TrailingInserter<Entry>;
     using Merger           = bucketdb::Merger<Entry>;

@@ -87,7 +87,7 @@ struct ListAllProcessor : public BucketDatabase::EntryProcessor {
 
 std::string dump_db(const BucketDatabase& db) {
     ListAllProcessor proc;
-    db.forEach(proc, document::BucketId());
+    db.for_each_upper_bound(proc, document::BucketId());
     return proc.ost.str();
 }
 
@@ -122,41 +122,70 @@ TEST_P(BucketDatabaseTest, iterating) {
 
     {
         ListAllProcessor proc;
-        db().forEach(proc, document::BucketId());
+        db().for_each_upper_bound(proc, document::BucketId());
 
-        EXPECT_EQ(
-                std::string(
-                        "BucketId(0x4000000000000010) : "
-                        "node(idx=1,crc=0x0,docs=0/0,bytes=1/1,trusted=false,active=false,ready=false)\n"
-                        "BucketId(0x400000000000002a) : "
-                        "node(idx=3,crc=0x0,docs=0/0,bytes=1/1,trusted=false,active=false,ready=false)\n"
-                        "BucketId(0x400000000000000b) : "
-                        "node(idx=2,crc=0x0,docs=0/0,bytes=1/1,trusted=false,active=false,ready=false)\n"),
-                proc.ost.str());
+        EXPECT_EQ("BucketId(0x4000000000000010) : "
+                  "node(idx=1,crc=0x0,docs=0/0,bytes=1/1,trusted=false,active=false,ready=false)\n"
+                  "BucketId(0x400000000000002a) : "
+                  "node(idx=3,crc=0x0,docs=0/0,bytes=1/1,trusted=false,active=false,ready=false)\n"
+                  "BucketId(0x400000000000000b) : "
+                  "node(idx=2,crc=0x0,docs=0/0,bytes=1/1,trusted=false,active=false,ready=false)\n",
+                  proc.ost.str());
     }
 
     {
         ListAllProcessor proc;
-        db().forEach(proc, document::BucketId(16, 0x2a));
+        db().for_each_lower_bound(proc, document::BucketId()); // lbound (in practice) equal to ubound when starting at zero
 
-        EXPECT_EQ(
-                std::string(
-                        "BucketId(0x400000000000000b) : "
-                        "node(idx=2,crc=0x0,docs=0/0,bytes=1/1,trusted=false,active=false,ready=false)\n"),
-                proc.ost.str());
+        EXPECT_EQ("BucketId(0x4000000000000010) : "
+                  "node(idx=1,crc=0x0,docs=0/0,bytes=1/1,trusted=false,active=false,ready=false)\n"
+                  "BucketId(0x400000000000002a) : "
+                  "node(idx=3,crc=0x0,docs=0/0,bytes=1/1,trusted=false,active=false,ready=false)\n"
+                  "BucketId(0x400000000000000b) : "
+                  "node(idx=2,crc=0x0,docs=0/0,bytes=1/1,trusted=false,active=false,ready=false)\n",
+                  proc.ost.str());
+    }
+
+    {
+        ListAllProcessor proc;
+        db().for_each_upper_bound(proc, document::BucketId(16, 0x2a));
+
+        EXPECT_EQ("BucketId(0x400000000000000b) : "
+                  "node(idx=2,crc=0x0,docs=0/0,bytes=1/1,trusted=false,active=false,ready=false)\n",
+                  proc.ost.str());
+    }
+
+    {
+        ListAllProcessor proc;
+        db().for_each_lower_bound(proc, document::BucketId(16, 0x2a));
+        // Includes 0x2a
+        EXPECT_EQ("BucketId(0x400000000000002a) : "
+                  "node(idx=3,crc=0x0,docs=0/0,bytes=1/1,trusted=false,active=false,ready=false)\n"
+                  "BucketId(0x400000000000000b) : "
+                  "node(idx=2,crc=0x0,docs=0/0,bytes=1/1,trusted=false,active=false,ready=false)\n",
+                  proc.ost.str());
     }
 
     {
         StoppingProcessor proc;
-        db().forEach(proc, document::BucketId());
+        db().for_each_upper_bound(proc, document::BucketId());
 
-        EXPECT_EQ(
-                std::string(
-                        "BucketId(0x4000000000000010) : "
-                        "node(idx=1,crc=0x0,docs=0/0,bytes=1/1,trusted=false,active=false,ready=false)\n"
-                        "BucketId(0x400000000000002a) : "
-                        "node(idx=3,crc=0x0,docs=0/0,bytes=1/1,trusted=false,active=false,ready=false)\n"),
-                proc.ost.str());
+        EXPECT_EQ("BucketId(0x4000000000000010) : "
+                  "node(idx=1,crc=0x0,docs=0/0,bytes=1/1,trusted=false,active=false,ready=false)\n"
+                  "BucketId(0x400000000000002a) : "
+                  "node(idx=3,crc=0x0,docs=0/0,bytes=1/1,trusted=false,active=false,ready=false)\n",
+                  proc.ost.str());
+    }
+
+    {
+        StoppingProcessor proc;
+        db().for_each_lower_bound(proc, document::BucketId());
+
+        EXPECT_EQ("BucketId(0x4000000000000010) : "
+                  "node(idx=1,crc=0x0,docs=0/0,bytes=1/1,trusted=false,active=false,ready=false)\n"
+                  "BucketId(0x400000000000002a) : "
+                  "node(idx=3,crc=0x0,docs=0/0,bytes=1/1,trusted=false,active=false,ready=false)\n",
+                  proc.ost.str());
     }
 }
 
@@ -761,7 +790,7 @@ TEST_P(BucketDatabaseTest, DISABLED_benchmark_const_iteration) {
 
     auto elapsed = vespalib::BenchmarkTimer::benchmark([&] {
         DummyProcessor proc;
-        db().forEach(proc, document::BucketId());
+        db().for_each_upper_bound(proc, document::BucketId());
     }, 5);
     fprintf(stderr, "Full DB iteration of %s takes %g seconds\n",
             db().toString(false).c_str(), elapsed);

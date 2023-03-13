@@ -388,23 +388,19 @@ VisitorOperation::pickBucketsToVisit(const std::vector<BucketDatabase::Entry>& b
 
     std::vector<document::BucketId> bucketVisitOrder;
 
-    for (uint32_t i = 0; i < buckets.size(); ++i) {
-        bucketVisitOrder.push_back(buckets[i].getBucketId());
+    for (const auto& bucket : buckets) {
+        bucketVisitOrder.push_back(bucket.getBucketId());
     }
 
     VisitorOrder bucketLessThan;
     std::sort(bucketVisitOrder.begin(), bucketVisitOrder.end(), bucketLessThan);
 
-    std::vector<document::BucketId>::const_iterator iter(bucketVisitOrder.begin());
-    std::vector<document::BucketId>::const_iterator end(bucketVisitOrder.end());
+    auto iter = bucketVisitOrder.begin();
+    auto end  = bucketVisitOrder.end();
     for (; iter != end; ++iter) {
-        if (bucketLessThan(*iter, _lastBucket) ||
-            *iter == _lastBucket)
-        {
-            LOG(spam,
-                "Skipping bucket %s because it is lower than or equal to progress bucket %s",
-                iter->toString().c_str(),
-                _lastBucket.toString().c_str());
+        if (bucketLessThan(*iter, _lastBucket) || *iter == _lastBucket) {
+            LOG(spam, "Skipping bucket %s because it is lower than or equal to progress bucket %s",
+                iter->toString().c_str(), _lastBucket.toString().c_str());
             continue;
         }
         LOG(spam, "Iterating: Found in db: %s", iter->toString().c_str());
@@ -460,11 +456,11 @@ getBucketIdAndLast(BucketDatabase& database,
 {
     if (!super.contains(last)) {
         NextEntryFinder proc(super);
-        database.forEach(proc, super);
+        database.for_each_upper_bound(proc, super);
         return proc._next;
     } else {
         NextEntryFinder proc(last);
-        database.forEach(proc, last);
+        database.for_each_upper_bound(proc, last);
         return proc._next;
     }
 }
