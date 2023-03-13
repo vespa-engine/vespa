@@ -94,6 +94,7 @@ DataStoreBase::DataStoreBase(uint32_t numBuffers, uint32_t offset_bits, size_t m
       _hold_buffer_count(0u),
       _offset_bits(offset_bits),
       _freeListsEnabled(false),
+      _disableElemHoldList(false),
       _initializing(false)
 {
 }
@@ -334,15 +335,6 @@ DataStoreBase::disableFreeLists()
 }
 
 void
-DataStoreBase::enableFreeList(uint32_t bufferId)
-{
-    BufferState &state = getBufferState(bufferId);
-    if (_freeListsEnabled && state.isActive() && !state.getCompacting()) {
-        state.enable_free_list(_free_lists[state.getTypeId()]);
-    }
-}
-
-void
 DataStoreBase::disableElemHoldList()
 {
     for (const auto& buffer : _buffers) {
@@ -351,6 +343,7 @@ DataStoreBase::disableElemHoldList()
             state->disableElemHoldList();
         }
     }
+    _disableElemHoldList = true;
 }
 
 MemoryStats
@@ -426,6 +419,12 @@ DataStoreBase::onActive(uint32_t bufferId, uint32_t typeId, size_t elemsNeeded)
     BufferState *state = bufferMeta.get_state_relaxed();
     if (state == nullptr) {
         BufferState & newState = _stash.create<BufferState>();
+        if (_disableElemHoldList) {
+            newState.disableElemHoldList();
+        }
+        if ( ! _freeListsEnabled) {
+            newState.disable_free_list();
+        }
         state = & newState;
         bufferMeta.set_state(state);
         _bufferIdLimit.store(bufferId + 1);
@@ -434,7 +433,9 @@ DataStoreBase::onActive(uint32_t bufferId, uint32_t typeId, size_t elemsNeeded)
     state->onActive(bufferId, typeId, _typeHandlers[typeId], elemsNeeded, bufferMeta.get_atomic_buffer());
     bufferMeta.setTypeId(typeId);
     bufferMeta.setArraySize(state->getArraySize());
-    enableFreeList(bufferId);
+    if (_freeListsEnabled && state->isActive() && !state->getCompacting()) {
+        state->enable_free_list(_free_lists[state->getTypeId()]);
+    }
 }
 
 void

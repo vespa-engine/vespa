@@ -265,6 +265,7 @@ private:
     uint32_t                      _hold_buffer_count;
     const uint8_t                 _offset_bits;
     bool                          _freeListsEnabled;
+    bool                          _disableElemHoldList;
     bool                          _initializing;
 };
 
