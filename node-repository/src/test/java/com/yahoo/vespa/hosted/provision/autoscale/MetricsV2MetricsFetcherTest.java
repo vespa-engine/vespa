@@ -80,7 +80,7 @@ public class MetricsV2MetricsFetcherTest {
             assertTrue(values.get(0).getSecond().stable());
         }
 
-        {
+        { // read response 2 when unstable
             httpClient.cannedResponse = cannedResponseForApplication2;
             try (Mutex lock = tester.nodeRepository().applications().lock(application1)) {
                 tester.nodeRepository().nodes().write(tester.nodeRepository().nodes().list(Node.State.active).owner(application2)
@@ -89,6 +89,18 @@ public class MetricsV2MetricsFetcherTest {
             List<Pair<String, NodeMetricSnapshot>> values = new ArrayList<>(fetcher.fetchMetrics(application2).get().nodeMetrics());
             assertFalse(values.get(0).getSecond().stable());
         }
+
+        {
+            httpClient.cannedResponse = cannedResponseForApplication3;
+            List<Pair<String, NodeMetricSnapshot>> values = new ArrayList<>(fetcher.fetchMetrics(application2).get().nodeMetrics());
+            assertEquals("http://host-3.yahoo.com:4080/metrics/v2/values?consumer=autoscaling",
+                         httpClient.requestsReceived.get(1));
+            assertEquals(1, values.size());
+            assertEquals("host-3.yahoo.com", values.get(0).getFirst());
+            assertEquals(0.13, values.get(0).getSecond().load().cpu(), delta);
+            assertEquals(0.9375, values.get(0).getSecond().load().memory(), delta);
+        }
+
     }
 
     private static class MockHttpClient implements MetricsV2MetricsFetcher.AsyncHttpClient {
@@ -208,7 +220,42 @@ public class MetricsV2MetricsFetcherTest {
                               {
                                 "values": {
                                   "cpu.util": 10,
+                                  "gpu.util": 8,
                                   "mem.util": 15,
+                                  "gpu.memory.used": 0,
+                                  "gpu.memory.total": 8,
+                                  "disk.util": 20,
+                                  "application_generation.last": 3,
+                                  "in_service.last": 0
+                                },
+                                "dimensions": {
+                                  "state": "active"
+                                }
+                              }
+                            ]
+                          }
+                        }
+                      ]
+                    }
+                    """;
+
+    final String cannedResponseForApplication3 =
+            """
+                    {
+                      "nodes": [
+                        {
+                          "hostname": "host-3.yahoo.com",
+                          "role": "role0",
+                          "node": {
+                            "timestamp": 1300,
+                            "metrics": [
+                              {
+                                "values": {
+                                  "cpu.util": 10,
+                                  "gpu.util": 13,
+                                  "mem.util": 15,
+                                  "gpu.memory.used": 7.5,
+                                  "gpu.memory.total": 8,
                                   "disk.util": 20,
                                   "application_generation.last": 3,
                                   "in_service.last": 0
