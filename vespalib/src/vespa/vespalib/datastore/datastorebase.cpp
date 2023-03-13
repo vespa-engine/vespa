@@ -162,7 +162,8 @@ uint32_t
 DataStoreBase::getFirstFreeBufferId() {
     uint32_t buffer_id = 0;
     for (auto & buffer : _buffers) {
-        if (buffer.get_state_relaxed() == nullptr || buffer.get_state_relaxed()->isFree()) {
+        BufferState * state = buffer.get_state_relaxed();
+        if (state == nullptr || state->isFree()) {
             return buffer_id;
         }
         buffer_id++;
@@ -174,8 +175,9 @@ DataStoreBase::getFirstFreeBufferId() {
 BufferState &
 DataStoreBase::getBufferState(uint32_t buffer_id) noexcept {
     assert(buffer_id < getBufferIdLimit());
-    assert(_buffers[buffer_id].get_state_relaxed() != nullptr);
-    return *_buffers[buffer_id].get_state_relaxed();
+    BufferState * state = _buffers[buffer_id].get_state_relaxed();
+    assert(state != nullptr);
+    return *state;
 }
 
 void
