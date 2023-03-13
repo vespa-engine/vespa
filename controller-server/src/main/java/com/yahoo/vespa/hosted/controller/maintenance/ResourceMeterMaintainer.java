@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.maintenance;
 
+import com.yahoo.component.Version;
 import com.yahoo.concurrent.UncheckedTimeoutException;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterResources;
@@ -285,17 +286,17 @@ public class ResourceMeterMaintainer extends ControllerMaintainer {
         ));
     }
 
-    private Collector<Node, ?, Map<NodeResources.Architecture, Map<Integer, ResourceSnapshot>>> groupSnapshotsByArchitectureAndMajorVersion(ZoneId zoneId) {
+    private Collector<Node, ?, Map<NodeResources.Architecture, Map<Version, ResourceSnapshot>>> groupSnapshotsByArchitectureAndMajorVersion(ZoneId zoneId) {
         return Collectors.groupingBy(
                 (Node node) -> node.resources().architecture(),
                 Collectors.collectingAndThen(
                         Collectors.groupingBy(
-                                (Node node) -> node.currentVersion().getMajor(),
+                                (Node node) -> node.currentVersion(),
                                 Collectors.toList()),
                         convertNodeListToResourceSnapshot(zoneId)));
     }
 
-    private Function<Map<Integer, List<Node>>, Map<Integer, ResourceSnapshot>> convertNodeListToResourceSnapshot(ZoneId zoneId) {
+    private Function<Map<Version, List<Node>>, Map<Version, ResourceSnapshot>> convertNodeListToResourceSnapshot(ZoneId zoneId) {
         return nodesByMajor -> {
             return nodesByMajor.entrySet().stream()
                     .collect(Collectors.toMap(

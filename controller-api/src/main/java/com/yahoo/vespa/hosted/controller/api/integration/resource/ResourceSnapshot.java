@@ -44,8 +44,8 @@ public class ResourceSnapshot {
                                                  .map(node -> node.owner().get())
                                                  .collect(Collectors.toSet());
 
-        Set<Integer> versions = nodes.stream()
-                .map(n -> n.currentVersion().getMajor())
+        Set<Version> versions = nodes.stream()
+                .map(Node::currentVersion)
                 .collect(Collectors.toSet());
 
         if (applicationIds.size() != 1) throw new IllegalArgumentException("List of nodes can only represent one application");
