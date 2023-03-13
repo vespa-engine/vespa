@@ -229,11 +229,7 @@ private:
      * Hold of buffer has ended.
      */
     void doneHoldBuffer(uint32_t bufferId);
-    /**
-     * Enable free list management.
-     * This only works for fixed size elements.
-     */
-    void enableFreeList(uint32_t bufferId);
+
     /**
      * Switch buffer state to active for the given buffer.
      *
