@@ -265,7 +265,7 @@ IdealStateManager::getBucketStatus(
 void IdealStateManager::dump_bucket_space_db_status(document::BucketSpace bucket_space, std::ostream& out) const {
     StatusBucketVisitor proc(*this, bucket_space, out);
     auto& distributorBucketSpace = _op_ctx.bucket_space_repo().get(bucket_space);
-    distributorBucketSpace.getBucketDatabase().forEach(proc);
+    distributorBucketSpace.getBucketDatabase().for_each_upper_bound(proc);
 }
 
 void IdealStateManager::getBucketStatus(std::ostream& out) const {

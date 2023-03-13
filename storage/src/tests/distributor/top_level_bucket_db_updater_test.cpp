@@ -1697,7 +1697,7 @@ TopLevelBucketDBUpdaterTest::merge_bucket_lists(
     BucketDumper dumper_tmp(true);
     for (auto* s : distributor_stripes()) {
         auto& db = s->getBucketSpaceRepo().get(document::FixedBucketSpaces::default_space()).getBucketDatabase();
-        db.forEach(dumper_tmp);
+        db.for_each_upper_bound(dumper_tmp);
     }
 
     {
@@ -1717,7 +1717,7 @@ TopLevelBucketDBUpdaterTest::merge_bucket_lists(
     BucketDumper dumper(include_bucket_info);
     for (auto* s : distributor_stripes()) {
         auto& db = s->getBucketSpaceRepo().get(document::FixedBucketSpaces::default_space()).getBucketDatabase();
-        db.forEach(dumper);
+        db.for_each_upper_bound(dumper);
         db.clear();
     }
     return dumper.ost.str();
