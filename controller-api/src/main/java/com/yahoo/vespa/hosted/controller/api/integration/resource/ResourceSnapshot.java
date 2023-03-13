@@ -20,6 +20,13 @@ import java.util.stream.Collectors;
  */
 public class ResourceSnapshot {
 
+    private static final NodeResources zero = new NodeResources(
+            0, 0, 0, 0,
+            NodeResources.DiskSpeed.any,
+            NodeResources.StorageType.any,
+            NodeResources.Architecture.any,
+            NodeResources.GpuResources.zero());
+
     private final ApplicationId applicationId;
     private final NodeResources resources;
     private final Instant timestamp;
@@ -53,7 +60,7 @@ public class ResourceSnapshot {
 
         var resources = nodes.stream()
                 .map(Node::resources)
-                .reduce(NodeResources.zero(), ResourceSnapshot::addResources);
+                .reduce(zero, ResourceSnapshot::addResources);
 
         return new ResourceSnapshot(applicationIds.iterator().next(), resources, timestamp, zoneId, versions.iterator().next());
     }
@@ -112,7 +119,7 @@ public class ResourceSnapshot {
                 0,
                 NodeResources.DiskSpeed.any,
                 NodeResources.StorageType.any,
-                a.architecture(),
+                a.architecture() == NodeResources.Architecture.any ? b.architecture() : a.architecture(),
                 a.gpuResources().plus(b.gpuResources()));
     }
 }
