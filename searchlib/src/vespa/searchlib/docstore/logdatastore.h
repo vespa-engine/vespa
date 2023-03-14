@@ -254,7 +254,7 @@ private:
     mutable vespalib::GenerationHandler      _genHandler;
     LidInfoVector                            _lidInfo;
     FileChunkVector                          _fileChunks;
-    std::vector<uint32_t>                    _holdFileChunks;
+    vespalib::hash_map<uint32_t, uint32_t>   _holdFileChunks;
     FileId                                   _active;
     FileId                                   _prevActive;
     mutable std::mutex                       _updateLock;

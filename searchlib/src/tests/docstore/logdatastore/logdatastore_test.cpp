@@ -1013,9 +1013,9 @@ TEST_F("require that lid space can be increased after being compacted and then s
 TEST_F("require that there is control of static memory usage", Fixture)
 {
     vespalib::MemoryUsage usage = f.store.getMemoryUsage();
-    EXPECT_EQUAL(584u, sizeof(LogDataStore));
-    EXPECT_EQUAL(2892160u, usage.allocatedBytes());
-    EXPECT_EQUAL(262536u, usage.usedBytes());
+    EXPECT_EQUAL(624u, sizeof(LogDataStore));
+    EXPECT_EQUAL(2630020u, usage.allocatedBytes());
+    EXPECT_EQUAL(392u, usage.usedBytes());
 }
 
 TEST_F("require that lid space can be shrunk only after read guards are deleted", Fixture)

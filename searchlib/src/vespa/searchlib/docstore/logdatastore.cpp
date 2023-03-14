@@ -83,7 +83,6 @@ LogDataStore::LogDataStore(vespalib::Executor &executor, const vespalib::string 
 {
     // Reserve space for 1TB summary in order to avoid locking.
     _fileChunks.reserve(LidInfo::getFileIdLimit());
-    _holdFileChunks.resize(LidInfo::getFileIdLimit());
 
     preload();
     updateLidMap(getLastFileChunkDocIdLimit());
@@ -1129,9 +1128,13 @@ std::unique_ptr<LogDataStore::FileChunkHolder>
 LogDataStore::holdFileChunk(const MonitorGuard & guard, FileId fileId)
 {
     assert(guard.owns_lock());
-    assert(fileId.getId() < _holdFileChunks.size());
-    assert(_holdFileChunks[fileId.getId()] < 2000u);
-    ++_holdFileChunks[fileId.getId()];
+    auto found = _holdFileChunks.find(fileId.getId());
+    if (found == _holdFileChunks.end()) {
+        _holdFileChunks[fileId.getId()] = 1;
+    } else {
+        assert(found->second < 2000u);
+        found->second++;
+    }
     return std::make_unique<FileChunkHolder>(*this, fileId);
 }
 
@@ -1139,15 +1142,18 @@ void
 LogDataStore::unholdFileChunk(FileId fileId)
 {
     MonitorGuard guard(_updateLock);
-    assert(fileId.getId() < _holdFileChunks.size());
-    assert(_holdFileChunks[fileId.getId()] > 0u);
-    --_holdFileChunks[fileId.getId()];
+    auto found = _holdFileChunks.find(fileId.getId());
+    assert(found != _holdFileChunks.end());
+    assert(found->second > 0u);
+    if (--found->second == 0u) {
+        _holdFileChunks.erase(found);
+    }
     // No signalling, compactWorst() sleeps and retries
 }
 
 bool LogDataStore::canFileChunkBeDropped(const MonitorGuard & guard, FileId fileId) const {
     assert(guard.owns_lock());
-    return _holdFileChunks[fileId.getId()] == 0u;
+    return ! _holdFileChunks.contains(fileId.getId());
 }
 
 DataStoreStorageStats
