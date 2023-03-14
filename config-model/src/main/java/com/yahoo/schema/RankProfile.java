@@ -1017,7 +1017,7 @@ public class RankProfile implements Cloneable {
                                                           inlineFunctions);
             var needInputs = new HashSet<String>();
             var recorder = new InputRecorder(needInputs);
-            recorder.transform(globalPhaseRanking.function().getBody(), context);
+            recorder.process(globalPhaseRanking.function().getBody(), context);
             for (String input : needInputs) {
                 if (input.startsWith("constant(") || input.startsWith("query(")) {
                     continue;
