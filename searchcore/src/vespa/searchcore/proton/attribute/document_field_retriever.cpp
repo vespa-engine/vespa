@@ -3,6 +3,7 @@
 #include "document_field_retriever.h"
 #include <vespa/document/fieldvalue/fieldvalues.h>
 #include <vespa/searchcommon/attribute/attributecontent.h>
+#include <vespa/searchlib/attribute/single_raw_attribute.h>
 #include <vespa/searchlib/tensor/tensor_attribute.h>
 #include <vespa/eval/eval/value.h>
 #include <vespa/vespalib/util/exceptions.h>
@@ -14,6 +15,7 @@ using document::ArrayFieldValue;
 using document::Document;
 using document::Field;
 using document::FieldValue;
+using document::RawFieldValue;
 using document::TensorFieldValue;
 using document::WeightedSetFieldValue;
 using search::DocumentIdT;
@@ -21,6 +23,7 @@ using search::attribute::AttributeContent;
 using search::attribute::BasicType;
 using search::attribute::CollectionType;
 using search::attribute::IAttributeVector;
+using search::attribute::SingleRawAttribute;
 using search::attribute::WeightedType;
 using search::tensor::TensorAttribute;
 using vespalib::IllegalStateException;
@@ -98,6 +101,20 @@ setValue(DocumentIdT lid, Document &doc, const document::Field & field, const IA
 }
 
 void
+set_raw_value(DocumentIdT lid, Document& doc, const document::Field& field,
+              const IAttributeVector& attr)
+{
+    auto& raw_attr = static_cast<const SingleRawAttribute&>(attr);
+    auto raw = raw_attr.get_raw(lid);
+    if (raw.empty()) {
+        doc.remove(field);
+    } else {
+        RawFieldValue raw_field(raw.data(), raw.size());
+        doc.setValue(field, raw_field);
+    }
+}
+
+void
 setTensorValue(DocumentIdT lid, Document &doc,
                const document::Field &field,
                const IAttributeVector &attr)
@@ -140,6 +157,8 @@ DocumentFieldRetriever::populate(DocumentIdT lid,
         return setValue<double, document::DoubleFieldValue>(lid, doc, field, attr);
     case BasicType::STRING:
         return setValue<const char *, document::StringFieldValue>(lid, doc, field, attr);
+    case BasicType::RAW:
+        return set_raw_value(lid, doc, field, attr);
     case BasicType::PREDICATE:
         // Predicate attribute doesn't store documents, it only indexes them.
         break;
