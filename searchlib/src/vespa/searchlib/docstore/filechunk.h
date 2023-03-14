@@ -163,7 +163,6 @@ public:
     virtual vespalib::system_time getModificationTime() const;
     virtual bool frozen() const { return true; }
     const vespalib::string & getName() const { return _name; }
-    void compact(const IGetLid & iGetLid);
     void appendTo(vespalib::Executor & executor, const IGetLid & db, IWriteData & dest,
                   uint32_t numChunks, IFileChunkVisitorProgress *visitorProgress,
                   vespalib::CpuUsage::Category cpu_category);
@@ -202,7 +201,6 @@ public:
     static vespalib::string createDatFileName(const vespalib::string & name);
 private:
     using File = std::unique_ptr<FileRandRead>;
-    void loadChunkInfo();
     const FileId           _fileId;
     const NameId           _nameId;
     const vespalib::string _name;
@@ -221,8 +219,8 @@ protected:
     class ChunkInfo
     {
     public:
-        ChunkInfo() : _lastSerial(0), _offset(0), _size(0) { }
-        ChunkInfo(uint64_t offset, uint32_t size, uint64_t lastSerial);
+        ChunkInfo() noexcept : _lastSerial(0), _offset(0), _size(0) { }
+        ChunkInfo(uint64_t offset, uint32_t size, uint64_t lastSerial) noexcept;
         uint64_t       getOffset() const { return _offset; }
         uint32_t       getSize() const { return _size; }
         uint64_t getLastSerial() const { return _lastSerial; }

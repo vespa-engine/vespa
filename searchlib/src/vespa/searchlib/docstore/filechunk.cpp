@@ -14,7 +14,6 @@
 #include <vespa/vespalib/util/executor.h>
 #include <vespa/vespalib/util/arrayqueue.hpp>
 #include <vespa/vespalib/util/array.hpp>
-#include <vespa/vespalib/stllike/hash_map.hpp>
 #include <vespa/fastos/file.h>
 #include <future>
 
@@ -37,7 +36,7 @@ const vespalib::string DOC_ID_LIMIT_KEY("docIdLimit");
 
 using vespalib::make_string;
 
-FileChunk::ChunkInfo::ChunkInfo(uint64_t offset, uint32_t size, uint64_t lastSerial)
+FileChunk::ChunkInfo::ChunkInfo(uint64_t offset, uint32_t size, uint64_t lastSerial) noexcept
     : _lastSerial(lastSerial),
       _offset(offset),
       _size(size)
@@ -531,7 +530,7 @@ FileChunk::getMemoryFootprint() const
 size_t
 FileChunk::getMemoryMetaFootprint() const
 {
-    return sizeof(*this) + _chunkInfo.byteCapacity();
+    return sizeof(*this) + _chunkInfo.capacity()*sizeof(ChunkInfoVector::value_type);
 }
 
 vespalib::MemoryUsage
@@ -540,8 +539,8 @@ FileChunk::getMemoryUsage() const
     vespalib::MemoryUsage result;
     result.incAllocatedBytes(sizeof(*this));
     result.incUsedBytes(sizeof(*this));
-    result.incAllocatedBytes(_chunkInfo.byteCapacity());
-    result.incUsedBytes(_chunkInfo.byteSize());
+    result.incAllocatedBytes(_chunkInfo.capacity()*sizeof(ChunkInfoVector::value_type));
+    result.incUsedBytes(_chunkInfo.size()*sizeof(ChunkInfoVector::value_type));
     return result;
 }
 

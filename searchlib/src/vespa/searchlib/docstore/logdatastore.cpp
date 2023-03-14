@@ -82,7 +82,11 @@ LogDataStore::LogDataStore(vespalib::Executor &executor, const vespalib::string 
       _compactLidSpaceGeneration()
 {
     // Reserve space for 1TB summary in order to avoid locking.
-    _fileChunks.reserve(LidInfo::getFileIdLimit());
+    // Even if we have reserved 16 bits for file id ther is no chance that we will even get close to that.
+    // Size of files grows with disk size, so 8k files should be more than sufficient.
+    // File ids are reused so there should be no chance of running empty.
+    static_assert(LidInfo::getFileIdLimit() == 65536u);
+    _fileChunks.reserve(8_Ki);
 
     preload();
     updateLidMap(getLastFileChunkDocIdLimit());
@@ -535,7 +539,7 @@ LogDataStore::memoryMeta() const
 FileChunk::FileId
 LogDataStore::allocateFileId(const MonitorGuard & guard)
 {
-    (void) guard;
+    assert(guard.owns_lock());
     for (size_t i(0); i < _fileChunks.size(); i++) {
         if ( ! _fileChunks[i] ) {
             return FileId(i);
