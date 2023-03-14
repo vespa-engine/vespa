@@ -9,16 +9,6 @@ namespace vespalib {
 
 template <typename T>
 Serializer &
-Serializer::operator << (const vespalib::Array<T> & v) {
-    uint32_t sz(v.size());
-    put(sz);
-    for(size_t i(0); i < sz; i++) {
-        (*this) << v[i];
-    }
-    return *this;
-}
-template <typename T>
-Serializer &
 Serializer::operator << (const std::vector<T> & v) {
     uint32_t sz(v.size());
     put(sz);

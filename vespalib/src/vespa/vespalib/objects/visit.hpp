@@ -2,9 +2,9 @@
 #pragma once
 
 #include "visit.h"
-#include <vector>
-#include <vespa/vespalib/util/stringfmt.h>
 #include "objectvisitor.h"
+#include <vespa/vespalib/util/stringfmt.h>
+#include <vespa/vespalib/util/array.h>
 #include "identifiable.hpp"
 
 template<typename T>
