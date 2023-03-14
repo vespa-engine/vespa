@@ -31,18 +31,18 @@ public class ResourceSnapshot {
     private final NodeResources resources;
     private final Instant timestamp;
     private final ZoneId zoneId;
-    private final Version version;
+    private final int majorVersion;
 
-    public ResourceSnapshot(ApplicationId applicationId, NodeResources resources, Instant timestamp, ZoneId zoneId, Version version) {
+    public ResourceSnapshot(ApplicationId applicationId, NodeResources resources, Instant timestamp, ZoneId zoneId, int majorVersion) {
         this.applicationId = applicationId;
         this.resources = resources;
         this.timestamp = timestamp;
         this.zoneId = zoneId;
-        this.version = version;
+        this.majorVersion = majorVersion;
     }
 
     public static ResourceSnapshot from(ApplicationId applicationId, int nodes, NodeResources resources, Instant timestamp, ZoneId zoneId) {
-        return new ResourceSnapshot(applicationId, resources.multipliedBy(nodes), timestamp, zoneId, Version.emptyVersion);
+        return new ResourceSnapshot(applicationId, resources.multipliedBy(nodes), timestamp, zoneId, 0);
     }
 
     public static ResourceSnapshot from(List<Node> nodes, Instant timestamp, ZoneId zoneId) {
@@ -51,8 +51,8 @@ public class ResourceSnapshot {
                                                  .map(node -> node.owner().get())
                                                  .collect(Collectors.toSet());
 
-        Set<Version> versions = nodes.stream()
-                .map(Node::currentVersion)
+        Set<Integer> versions = nodes.stream()
+                .map(n -> n.wantedVersion().getMajor())
                 .collect(Collectors.toSet());
 
         if (applicationIds.size() != 1) throw new IllegalArgumentException("List of nodes can only represent one application");
@@ -81,8 +81,8 @@ public class ResourceSnapshot {
         return zoneId;
     }
 
-    public Version getVersion() {
-        return version;
+    public int getMajorVersion() {
+        return majorVersion;
     }
 
     @Override
@@ -95,12 +95,12 @@ public class ResourceSnapshot {
                 this.resources.equals(other.resources) &&
                 this.timestamp.equals(other.timestamp) &&
                 this.zoneId.equals(other.zoneId) &&
-                this.version.equals(other.version);
+                this.majorVersion == other.majorVersion;
     }
 
     @Override
     public int hashCode(){
-        return Objects.hash(applicationId, resources, timestamp, zoneId, version);
+        return Objects.hash(applicationId, resources, timestamp, zoneId, majorVersion);
     }
 
     /* This function does pretty much the same thing as NodeResources::add, but it allows adding resources

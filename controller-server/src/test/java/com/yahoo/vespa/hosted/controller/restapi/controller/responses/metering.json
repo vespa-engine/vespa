@@ -7,7 +7,7 @@
     "memory": 48.0,
     "disk": 1200.0,
     "architecture": "arm64",
-    "version": "0.0.0",
+    "version": 0,
     "gpuMemoryGb": 0.0,
     "gpuCount": 0
   },
@@ -19,7 +19,7 @@
     "memory": 96.0,
     "disk": 2400.0,
     "architecture": "x86_64",
-    "version": "0.0.0",
+    "version": 0,
     "gpuMemoryGb": 0.0,
     "gpuCount": 0
   }

@@ -286,17 +286,17 @@ public class ResourceMeterMaintainer extends ControllerMaintainer {
         ));
     }
 
-    private Collector<Node, ?, Map<NodeResources.Architecture, Map<Version, ResourceSnapshot>>> groupSnapshotsByArchitectureAndMajorVersion(ZoneId zoneId) {
+    private Collector<Node, ?, Map<NodeResources.Architecture, Map<Integer, ResourceSnapshot>>> groupSnapshotsByArchitectureAndMajorVersion(ZoneId zoneId) {
         return Collectors.groupingBy(
                 (Node node) -> node.resources().architecture(),
                 Collectors.collectingAndThen(
                         Collectors.groupingBy(
-                                (Node node) -> node.currentVersion(),
+                                (Node node) -> node.wantedVersion().getMajor(),
                                 Collectors.toList()),
                         convertNodeListToResourceSnapshot(zoneId)));
     }
 
-    private Function<Map<Version, List<Node>>, Map<Version, ResourceSnapshot>> convertNodeListToResourceSnapshot(ZoneId zoneId) {
+    private Function<Map<Integer, List<Node>>, Map<Integer, ResourceSnapshot>> convertNodeListToResourceSnapshot(ZoneId zoneId) {
         return nodesByMajor -> {
             return nodesByMajor.entrySet().stream()
                     .collect(Collectors.toMap(

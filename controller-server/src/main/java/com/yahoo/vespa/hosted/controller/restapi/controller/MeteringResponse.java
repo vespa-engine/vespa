@@ -33,7 +33,7 @@ public class MeteringResponse extends SlimeJsonResponse {
             object.setDouble("memory", snapshot.resources().memoryGb());
             object.setDouble("disk", snapshot.resources().diskGb());
             object.setString("architecture", snapshot.resources().architecture().name());
-            object.setString("version", snapshot.getVersion().toFullString());
+            object.setLong("version", snapshot.getMajorVersion());
             object.setDouble("gpuMemoryGb", snapshot.resources().gpuResources().memoryGb());
             object.setLong("gpuCount", snapshot.resources().gpuResources().count());
         });

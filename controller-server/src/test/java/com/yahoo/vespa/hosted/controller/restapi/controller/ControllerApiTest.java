@@ -162,7 +162,7 @@ public class ControllerApiTest extends ControllerContainerTest {
                 new NodeResources(12, 48, 1200, 0, NodeResources.DiskSpeed.any, NodeResources.StorageType.any, NodeResources.Architecture.arm64),
                 new NodeResources(24, 96, 2400, 0, NodeResources.DiskSpeed.any, NodeResources.StorageType.any, NodeResources.Architecture.x86_64));
 
-        var snapshots = resources.stream().map(x -> new ResourceSnapshot(applicationId, x, timestamp, zoneId, Version.emptyVersion)).toList();
+        var snapshots = resources.stream().map(x -> new ResourceSnapshot(applicationId, x, timestamp, zoneId, 0)).toList();
 
         tester.controller().serviceRegistry().resourceDatabase().writeResourceSnapshots(snapshots);
         tester.assertResponse(
