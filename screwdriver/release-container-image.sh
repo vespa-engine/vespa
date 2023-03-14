@@ -61,6 +61,11 @@ for data in "Dockerfile vespa"; do
     if curl -fsSL https://index.docker.io/v1/repositories/vespaengine/$IMAGE_NAME/tags/$VESPA_VERSION &> /dev/null; then
         echo "Container image docker.io/vespaengine/$IMAGE_NAME:$VESPA_VERSION aldready exists."
     else
+        # Build the image and run through the quick start guide
+        docker buildx build --progress plain --load --platform linux/amd64 --build-arg VESPA_VERSION=$VESPA_VERSION \
+               --file $DOCKER_FILE --tag vespaengine/$IMAGE_NAME:latest .
+        $SD_SOURCE_DIR/screwdriver/test-quick-start-guide.sh
+
         docker login --username aressem --password "$DOCKER_HUB_DEPLOY_KEY"
         docker buildx build --progress plain --push --platform linux/amd64,linux/arm64 --build-arg VESPA_VERSION=$VESPA_VERSION \
                --file $DOCKER_FILE --tag docker.io/vespaengine/$IMAGE_NAME:$VESPA_VERSION \

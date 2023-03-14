@@ -296,17 +296,8 @@ jobs:
       - verify-container-image: |
           # Trick to be able to use the documentation testing to verify the image built locally
           buildah tag docker.io/$IMAGE_NAME:$VESPA_VERSION vespaengine/vespa:latest
-          # Clone and setup doc tests
-          git clone -q --depth 1 https://github.com/vespa-engine/documentation
-          cd documentation
-          python3 -m pip install -qqq -r test/requirements.txt --user
-          echo -e "urls:\n    - en/vespa-quick-start.html" > test/_quick-start.yaml
-          # Get the required vespa CLI
-          VESPA_CLI_VERSION=$(curl -fsSL https://api.github.com/repos/vespa-engine/vespa/releases/latest | grep -Po '"tag_name": "v\K.*?(?=")') && \
-          curl -fsSL https://github.com/vespa-engine/vespa/releases/download/v${VESPA_CLI_VERSION}/vespa-cli_${VESPA_CLI_VERSION}_linux_amd64.tar.gz | tar -zxf - -C /opt && \
-          ln -sf /opt/vespa-cli_${VESPA_CLI_VERSION}_linux_amd64/bin/vespa /usr/local/bin/
-          # Run test
-          test/test.py -c test/_quick-start.yaml
+          # Run quick start guide
+          $SD_SOURCE_DIR/screwdriver/test-quick-start-guide.sh
       - publish-test-image: |
           if [[ -z $SD_PULL_REQUEST ]]; then
             if curl -fsSL https://index.docker.io/v1/repositories/$IMAGE_NAME/tags/$VESPA_VERSION &> /dev/null; then
