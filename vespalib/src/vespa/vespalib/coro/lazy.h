@@ -75,6 +75,9 @@ private:
     struct Result {
         static Received<T>&& get(auto &&promise) { return std::move(promise.result); }
     };
+    struct Nothing {
+        static void get(auto &&) {}
+    };
 
 public:
     Lazy(const Lazy &) = delete;
@@ -84,6 +87,7 @@ public:
     auto operator co_await() & noexcept { return WaitFor<LValue>(_handle); }
     auto operator co_await() && noexcept { return WaitFor<RValue>(_handle); }
     auto forward() noexcept { return WaitFor<Result>(_handle); }
+    auto done() noexcept { return WaitFor<Nothing>(_handle); }
     ~Lazy() {
         if (_handle) {
             _handle.destroy();
