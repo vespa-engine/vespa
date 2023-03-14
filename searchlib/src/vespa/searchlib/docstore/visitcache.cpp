@@ -262,6 +262,18 @@ VisitCache::Cache::onRemove(const K & key) {
 vespalib::MemoryUsage
 VisitCache::Cache::getStaticMemoryUsage() const {
     vespalib::MemoryUsage usage = Parent::getStaticMemoryUsage();
+    auto cacheGuard = getGuard();
+    size_t baseSelf = sizeof(_lid2Id) + sizeof(_id2KeySet);
+    usage.incAllocatedBytes(baseSelf);
+    usage.incAllocatedBytes(_lid2Id.capacity() * sizeof(LidUniqueKeySetId::value_type));
+    usage.incAllocatedBytes(_id2KeySet.capacity() * sizeof(IdKeySetMap::value_type));
+    usage.incUsedBytes(baseSelf);
+    usage.incAllocatedBytes(_lid2Id.size() * sizeof(LidUniqueKeySetId::value_type));
+    usage.incUsedBytes(_id2KeySet.size() * sizeof(IdKeySetMap::value_type));
+    for (const auto & entry: _id2KeySet) {
+        usage.incAllocatedBytes(entry.second.getKeys().capacity() * sizeof(uint32_t));
+        usage.incUsedBytes(entry.second.getKeys().size() * sizeof(uint32_t));
+    }
     return usage;
 }
 

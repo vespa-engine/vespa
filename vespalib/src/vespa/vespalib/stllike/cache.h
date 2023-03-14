@@ -127,7 +127,7 @@ public:
 
 protected:
     using UniqueLock = std::unique_lock<std::mutex>;
-    UniqueLock getGuard();
+    UniqueLock getGuard() const;
     void invalidate(const UniqueLock & guard, const K & key);
     bool hasKey(const UniqueLock & guard, const K & key) const;
 private:

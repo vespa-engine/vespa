@@ -564,8 +564,8 @@ TEST("Control static memory usage") {
     VisitCacheStore vcs(DocumentStore::Config::UpdateStrategy::UPDATE);
     IDocumentStore &ds = vcs.getStore();
     vespalib::MemoryUsage usage = ds.getMemoryUsage();
-    EXPECT_EQUAL(74116u, usage.allocatedBytes());
-    EXPECT_EQUAL(392u, usage.usedBytes());
+    EXPECT_EQUAL(83700u, usage.allocatedBytes());
+    EXPECT_EQUAL(10072u, usage.usedBytes());
 }
 
 TEST("test the update cache strategy") {
