@@ -50,7 +50,7 @@ struct NullDataStore : IDataStore {
 NullDataStore::~NullDataStore() = default;
 
 TEST_FFF("require that uncache docstore lookups are counted",
-         DocumentStore::Config(CompressionConfig::NONE, 0, 0),
+         DocumentStore::Config(CompressionConfig::NONE, 0),
          NullDataStore(), DocumentStore(f1, f2))
 {
     EXPECT_EQUAL(0u, f3.getCacheStats().misses);
@@ -59,7 +59,7 @@ TEST_FFF("require that uncache docstore lookups are counted",
 }
 
 TEST_FFF("require that cached docstore lookups are counted",
-         DocumentStore::Config(CompressionConfig::NONE, 100000, 100),
+         DocumentStore::Config(CompressionConfig::NONE, 100000),
          NullDataStore(), DocumentStore(f1, f2))
 {
     EXPECT_EQUAL(0u, f3.getCacheStats().misses);
@@ -70,10 +70,9 @@ TEST_FFF("require that cached docstore lookups are counted",
 TEST("require that DocumentStore::Config equality operator detects inequality") {
     using C = DocumentStore::Config;
     EXPECT_TRUE(C() == C());
-    EXPECT_TRUE(C(CompressionConfig::NONE, 100000, 100) == C(CompressionConfig::NONE, 100000, 100));
-    EXPECT_FALSE(C(CompressionConfig::NONE, 100000, 100) == C(CompressionConfig::NONE, 100000, 99));
-    EXPECT_FALSE(C(CompressionConfig::NONE, 100000, 100) == C(CompressionConfig::NONE, 100001, 100));
-    EXPECT_FALSE(C(CompressionConfig::NONE, 100000, 100) == C(CompressionConfig::LZ4, 100000, 100));
+    EXPECT_TRUE(C(CompressionConfig::NONE, 100000) == C(CompressionConfig::NONE, 100000));
+    EXPECT_FALSE(C(CompressionConfig::NONE, 100000) == C(CompressionConfig::NONE, 100001));
+    EXPECT_FALSE(C(CompressionConfig::NONE, 100000) == C(CompressionConfig::LZ4, 100000));
 }
 
 TEST("require that LogDocumentStore::Config equality operator detects inequality") {
@@ -82,7 +81,7 @@ TEST("require that LogDocumentStore::Config equality operator detects inequality
     using DC = DocumentStore::Config;
     EXPECT_TRUE(C() == C());
     EXPECT_FALSE(C() != C());
-    EXPECT_FALSE(C(DC(CompressionConfig::NONE, 100000, 100), LC()) == C());
+    EXPECT_FALSE(C(DC(CompressionConfig::NONE, 100000), LC()) == C());
     EXPECT_FALSE(C(DC(), LC().setMaxBucketSpread(7)) == C());
 }
 

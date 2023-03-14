@@ -36,9 +36,8 @@ public:
      * Will deserialize and create a representation of the uncompressed data.
      * param buffer Pointer to the serialized data
      * @param len Length of serialized data
-     * @param indicate if crc verification shall be skipped.
      */
-    static ChunkFormat::UP deserialize(const void * buffer, size_t len, bool skipcrc);
+    static ChunkFormat::UP deserialize(const void * buffer, size_t len);
     /**
      * return the maximum size a packet can have. It allows correct size estimation
      * need for direct io alignment.

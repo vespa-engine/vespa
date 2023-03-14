@@ -174,7 +174,7 @@ getStoreConfig(const ProtonConfig::Summary::Cache & cache, const HwInfo & hwInfo
     size_t maxBytes = (cache.maxbytes < 0)
                       ? (hwInfo.memory().sizeBytes()*std::min(INT64_C(50), -cache.maxbytes))/100l
                       : cache.maxbytes;
-    return DocumentStore::Config(deriveCompression(cache.compression), maxBytes, cache.initialentries)
+    return DocumentStore::Config(deriveCompression(cache.compression), maxBytes)
             .updateStrategy(derive(cache.updateStrategy));
 }
 
@@ -189,7 +189,7 @@ deriveConfig(const ProtonConfig::Summary & summary, const HwInfo & hwInfo) {
             .setMaxNumLids(log.maxnumlids)
             .setMaxBucketSpread(log.maxbucketspread).setMinFileSizeFactor(log.minfilesizefactor)
             .compactCompression(deriveCompression(log.compact.compression))
-            .setFileConfig(fileConfig).disableCrcOnRead(chunk.skipcrconread);
+            .setFileConfig(fileConfig);
     return {config, logConfig};
 }
 

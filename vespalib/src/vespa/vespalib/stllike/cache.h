@@ -69,10 +69,6 @@ public:
      * Can be used for controlling max number of elements.
      */
     cache & maxElements(size_t elems);
-    /**
-     * Can be used for reserving space for elements.
-     */
-    cache & reserveElements(size_t elems);
 
     cache & setCapacityBytes(size_t sz);
 

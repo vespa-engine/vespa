@@ -82,9 +82,8 @@ WriteableFileChunk(vespalib::Executor &executor,
                    const Config &config,
                    const TuneFileSummary &tune,
                    const FileHeaderContext &fileHeaderContext,
-                   const IBucketizer * bucketizer,
-                   bool skipCrcOnRead)
-    : FileChunk(fileId, nameId, baseName, tune, bucketizer, skipCrcOnRead),
+                   const IBucketizer * bucketizer)
+    : FileChunk(fileId, nameId, baseName, tune, bucketizer),
       _config(config),
       _serialNum(initialSerialNum),
       _frozen(false),

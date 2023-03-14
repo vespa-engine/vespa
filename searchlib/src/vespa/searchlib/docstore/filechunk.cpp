@@ -62,11 +62,10 @@ FileChunk::createDatFileName(const vespalib::string & name) {
 }
 
 FileChunk::FileChunk(FileId fileId, NameId nameId, const vespalib::string & baseName,
-                     const TuneFileSummary & tune, const IBucketizer * bucketizer, bool skipCrcOnRead)
+                     const TuneFileSummary & tune, const IBucketizer * bucketizer)
     : _fileId(fileId),
       _nameId(nameId),
       _name(nameId.createName(baseName)),
-      _skipCrcOnRead(skipCrcOnRead),
       _erasedCount(0),
       _erasedBytes(0),
       _diskFootprint(0),
@@ -394,7 +393,7 @@ FileChunk::read(LidInfoWithLidV::const_iterator begin, size_t count, ChunkInfo c
 {
     vespalib::DataBuffer whole(0ul, ALIGNMENT);
     FileRandRead::FSP keepAlive = _file->read(ci.getOffset(), whole, ci.getSize());
-    Chunk chunk(begin->getChunkId(), whole.getData(), whole.getDataLen(), _skipCrcOnRead);
+    Chunk chunk(begin->getChunkId(), whole.getData(), whole.getDataLen());
     for (size_t i(0); i < count; i++) {
         const LidInfoWithLid & li = *(begin + i);
         vespalib::ConstBufferRef buf = chunk.getLid(li.getLid());
@@ -419,7 +418,7 @@ FileChunk::read(uint32_t lid, SubChunkId chunkId, const ChunkInfo & chunkInfo,
 {
     vespalib::DataBuffer whole(0ul, ALIGNMENT);
     FileRandRead::FSP keepAlive(_file->read(chunkInfo.getOffset(), whole, chunkInfo.getSize()));
-    Chunk chunk(chunkId, whole.getData(), whole.getDataLen(), _skipCrcOnRead);
+    Chunk chunk(chunkId, whole.getData(), whole.getDataLen());
     return chunk.read(lid, buffer);
 }
 

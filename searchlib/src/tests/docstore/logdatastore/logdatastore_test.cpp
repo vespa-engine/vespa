@@ -528,7 +528,7 @@ VisitCacheStore::VerifyVisitor::~VerifyVisitor() {
 VisitCacheStore::VisitCacheStore(UpdateStrategy strategy) :
     _myDir("visitcache"),
     _repo(makeDocTypeRepoConfig()),
-    _config(DocumentStore::Config(CompressionConfig::LZ4, 1000000, 0).updateStrategy(strategy),
+    _config(DocumentStore::Config(CompressionConfig::LZ4, 1000000).updateStrategy(strategy),
             LogDataStore::Config().setMaxFileSize(50000).setMaxBucketSpread(3.0)
                     .setFileConfig(WriteableFileChunk::Config(CompressionConfig(), 16_Ki))),
     _fileHeaderContext(),
@@ -1074,7 +1074,6 @@ TEST("require that config equality operator detects inequality") {
     EXPECT_FALSE(C() == C().setMaxBucketSpread(0.3));
     EXPECT_FALSE(C() == C().setMinFileSizeFactor(0.3));
     EXPECT_FALSE(C() == C().setFileConfig(WriteableFileChunk::Config({}, 70)));
-    EXPECT_FALSE(C() == C().disableCrcOnRead(true));
     EXPECT_FALSE(C() == C().compactCompression({CompressionConfig::ZSTD}));
 }
 

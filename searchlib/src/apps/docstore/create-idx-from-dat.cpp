@@ -32,7 +32,7 @@ bool tryDecode(size_t chunks, size_t offset, const char * p, size_t sz, size_t n
     bool success(false);
     for (size_t lengthError(0); !success && (sz + lengthError <= nextSync); lengthError++) {
         try {
-            Chunk chunk(chunks, p, sz + lengthError, false);
+            Chunk chunk(chunks, p, sz + lengthError);
             success = true;
         } catch (const vespalib::Exception & e) {
             fprintf(stdout, "Chunk %ld, with size=%ld failed with lengthError %ld due to '%s'\n", offset, sz, lengthError, e.what());
@@ -62,7 +62,7 @@ generate(uint64_t serialNum, size_t chunks, FastOS_FileInterface & idxFile, size
     vespalib::nbostream os;
     for (size_t lengthError(0); int64_t(sz+lengthError) <= nextStart-start; lengthError++) {
         try {
-            Chunk chunk(chunks, current, sz + lengthError, false);
+            Chunk chunk(chunks, current, sz + lengthError);
             fprintf(stdout, "id=%d lastSerial=%" PRIu64 " count=%ld\n", chunk.getId(), chunk.getLastSerial(), chunk.count());
             const Chunk::LidList & lidlist = chunk.getLids();
             if (chunk.getLastSerial() < serialNum) {

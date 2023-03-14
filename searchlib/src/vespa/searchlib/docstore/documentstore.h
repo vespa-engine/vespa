@@ -25,28 +25,24 @@ public:
     public:
         enum UpdateStrategy {INVALIDATE, UPDATE };
         using CompressionConfig = vespalib::compression::CompressionConfig;
-        Config() :
+        Config() noexcept :
             _compression(CompressionConfig::LZ4, 9, 70),
             _maxCacheBytes(1000000000),
-            _initialCacheEntries(0),
             _updateStrategy(INVALIDATE)
         { }
-        Config(CompressionConfig compression, size_t maxCacheBytes, size_t initialCacheEntries) :
+        Config(CompressionConfig compression, size_t maxCacheBytes) noexcept :
             _compression((maxCacheBytes != 0) ? compression : CompressionConfig::NONE),
             _maxCacheBytes(maxCacheBytes),
-            _initialCacheEntries(initialCacheEntries),
             _updateStrategy(INVALIDATE)
         { }
         CompressionConfig getCompression() const { return _compression; }
         size_t getMaxCacheBytes()   const { return _maxCacheBytes; }
-        size_t getInitialCacheEntries() const { return _initialCacheEntries; }
         Config & updateStrategy(UpdateStrategy strategy) { _updateStrategy = strategy; return *this; }
         UpdateStrategy updateStrategy() const { return _updateStrategy; }
         bool operator == (const Config &) const;
     private:
         CompressionConfig _compression;
         size_t            _maxCacheBytes;
-        size_t            _initialCacheEntries;
         UpdateStrategy    _updateStrategy;
     };
 

@@ -44,7 +44,6 @@ LogDataStore::Config::Config()
       _maxBucketSpread(2.5),
       _minFileSizeFactor(0.2),
       _maxNumLids(DEFAULT_MAX_LIDS_PER_FILE),
-      _skipCrcOnRead(false),
       _compactCompression(CompressionConfig::LZ4),
       _fileConfig()
 { }
@@ -54,7 +53,6 @@ LogDataStore::Config::operator == (const Config & rhs) const {
     return (_maxBucketSpread == rhs._maxBucketSpread) &&
             (_maxFileSize == rhs._maxFileSize) &&
             (_minFileSizeFactor == rhs._minFileSizeFactor) &&
-            (_skipCrcOnRead == rhs._skipCrcOnRead) &&
             (_compactCompression == rhs._compactCompression) &&
             (_fileConfig == rhs._fileConfig);
 }
@@ -632,7 +630,7 @@ LogDataStore::createIdxFileName(NameId id) const {
 FileChunk::UP
 LogDataStore::createReadOnlyFile(FileId fileId, NameId nameId) {
     auto file = std::make_unique<FileChunk>(fileId, nameId, getBaseDir(), _tune,
-                                            _bucketizer.get(), _config.crcOnReadDisabled());
+                                            _bucketizer.get());
     file->enableRead();
     return file;
 }
@@ -650,7 +648,7 @@ LogDataStore::createWritableFile(FileId fileId, SerialNum serialNum, NameId name
     uint32_t docIdLimit = (getDocIdLimit() != 0) ? getDocIdLimit() : std::numeric_limits<uint32_t>::max();
     auto file = std::make_unique< WriteableFileChunk>(_executor, fileId, nameId, getBaseDir(), serialNum,docIdLimit,
                                                       _config.getFileConfig(), _tune, _fileHeaderContext,
-                                                      _bucketizer.get(), _config.crcOnReadDisabled());
+                                                      _bucketizer.get());
     file->enableRead();
     return file;
 }
