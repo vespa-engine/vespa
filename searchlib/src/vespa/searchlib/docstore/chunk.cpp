@@ -15,7 +15,7 @@ Chunk::append(uint32_t lid, const void * buffer, size_t len)
     std::lock_guard guard(_lock);
     os << lid << static_cast<uint32_t>(len);
     os.write(buffer, len);
-    _lids.push_back(Entry(lid, len, oldSz));
+    _lids.emplace_back(lid, len, oldSz);
     return LidMeta(lid, len);
 }
 
@@ -91,7 +91,7 @@ Chunk::Chunk(uint32_t id, const void * buffer, size_t len, bool skipcrc) :
         ssize_t oldRp(os.rp());
         os >> lid >> sz;
         os.adjustReadPos(sz);
-        _lids.push_back(Entry(lid, sz, oldRp));
+        _lids.emplace_back(lid, sz, oldRp);
     }
     os >> _lastSerial;
 }
@@ -143,8 +143,8 @@ Chunk::getUniqueLids() const
     }
     LidList unique;
     unique.reserve(last.size());
-    for (auto it(last.begin()), mt(last.end()); it != mt; it++) {
-        unique.push_back(it->second);
+    for (const auto & entry : last) {
+        unique.emplace_back(entry.second);
     }
     return unique;
 }

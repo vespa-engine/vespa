@@ -31,16 +31,16 @@ struct CompressionConfig {
     CompressionConfig(Type t, uint8_t lvl, uint8_t minRes, size_t minSz) noexcept
         : minSize(minSz), type(t), compressionLevel(lvl), threshold(minRes) {}
 
-    bool operator==(const CompressionConfig& o) const {
+    bool operator==(const CompressionConfig& o) const noexcept {
         return (type == o.type
                 && compressionLevel == o.compressionLevel
                 && threshold == o.threshold);
     }
-    bool operator!=(const CompressionConfig& o) const {
+    bool operator!=(const CompressionConfig& o) const noexcept {
         return !operator==(o);
     }
 
-    static Type toType(uint32_t val) {
+    static Type toType(uint32_t val) noexcept {
         switch (val) {
         case 1: return NONE_MULTI;
         case 2: return HISTORIC_2;
@@ -52,7 +52,7 @@ struct CompressionConfig {
         default: return NONE;
         }
     }
-    static Type toType(const char * val) {
+    static Type toType(const char * val) noexcept {
         if (strncasecmp(val, "lz4", 3) == 0) {
             return LZ4;
         } if (strncasecmp(val, "zstd", 4) == 0) {
@@ -60,11 +60,11 @@ struct CompressionConfig {
         }
         return NONE;
     }
-    static bool isCompressed(Type type) {
+    static bool isCompressed(Type type) noexcept {
         return (type != CompressionConfig::NONE &&
                 type != CompressionConfig::UNCOMPRESSABLE);
     }
-    bool useCompression() const { return isCompressed(type); }
+    bool useCompression() const noexcept { return isCompressed(type); }
 
     uint32_t minSize;
     Type     type;

@@ -22,10 +22,10 @@ public:
     LoadedBuffer & operator =(const LoadedBuffer & rhs) = delete;
     using UP = std::unique_ptr<LoadedBuffer>;
 
-    LoadedBuffer(void * buf, size_t sz)
-            : _buffer(buf),
-              _size(sz),
-              _header(nullptr)
+    LoadedBuffer(void * buf, size_t sz) noexcept
+        : _buffer(buf),
+          _size(sz),
+          _header(nullptr)
     { }
 
     virtual ~LoadedBuffer() = default;

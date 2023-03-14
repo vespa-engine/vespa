@@ -14,29 +14,29 @@ public:
     LidInfo() noexcept : _value() { }
     LidInfo(uint64_t rep) noexcept { _value.r = rep; }
     LidInfo(uint32_t fileId, uint32_t chunkId, uint32_t size);
-    uint32_t getFileId()  const { return _value.v.fileId; }
-    uint32_t getChunkId() const { return _value.v.chunkId; }
-    uint32_t size()       const { return _value.v.size << SIZE_SHIFT; }
-    operator uint64_t ()  const { return _value.r; }
-    bool empty()          const { return size() == 0; }
-    bool valid() const { return _value.r != std::numeric_limits<uint64_t>::max(); }
+    uint32_t getFileId()  const noexcept { return _value.v.fileId; }
+    uint32_t getChunkId() const noexcept { return _value.v.chunkId; }
+    uint32_t size()       const noexcept { return _value.v.size << SIZE_SHIFT; }
+    operator uint64_t ()  const noexcept { return _value.r; }
+    bool empty()          const noexcept { return size() == 0; }
+    bool valid() const noexcept { return _value.r != std::numeric_limits<uint64_t>::max(); }
 
-    bool operator==(const LidInfo &b) const {
+    bool operator==(const LidInfo &b) const noexcept {
         return (getFileId() == b.getFileId()) &&
                (getChunkId() == b.getChunkId());
     }
-    bool operator < (const LidInfo &b) const {
+    bool operator < (const LidInfo &b) const noexcept {
         return (getFileId() == b.getFileId())
                    ? (getChunkId() < b.getChunkId())
                    : (getFileId() < b.getFileId());
     }
-    static uint32_t getFileIdLimit() { return 1 << NUM_FILE_BITS; }
-    static uint32_t getChunkIdLimit() { return 1 << NUM_CHUNK_BITS; }
+    static constexpr uint32_t getFileIdLimit() { return 1 << NUM_FILE_BITS; }
+    static constexpr uint32_t getChunkIdLimit() { return 1 << NUM_CHUNK_BITS; }
 private:
-    static uint32_t computeAlignedSize(uint32_t sz) {
+    static constexpr uint32_t computeAlignedSize(uint32_t sz) {
         return (sz+((1<<SIZE_SHIFT)-1)) >> SIZE_SHIFT;
     }
-    static uint32_t getSizeLimit() {
+    static constexpr uint32_t getSizeLimit() {
         return std::numeric_limits<uint32_t>::max() - ((2<<SIZE_SHIFT)-2);
     }
     static constexpr uint32_t NUM_FILE_BITS = 16;
