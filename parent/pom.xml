@@ -77,7 +77,6 @@
                     <configuration>
                         <release>17</release>
                         <showWarnings>true</showWarnings>
-                        <optimize>true</optimize>
                         <showDeprecation>false</showDeprecation>
                         <compilerArgs>
                             <arg>-Xlint:all</arg>
