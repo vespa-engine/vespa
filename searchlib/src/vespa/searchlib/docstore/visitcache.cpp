@@ -268,7 +268,7 @@ VisitCache::Cache::getStaticMemoryUsage() const {
     usage.incAllocatedBytes(_lid2Id.capacity() * sizeof(LidUniqueKeySetId::value_type));
     usage.incAllocatedBytes(_id2KeySet.capacity() * sizeof(IdKeySetMap::value_type));
     usage.incUsedBytes(baseSelf);
-    usage.incAllocatedBytes(_lid2Id.size() * sizeof(LidUniqueKeySetId::value_type));
+    usage.incUsedBytes(_lid2Id.size() * sizeof(LidUniqueKeySetId::value_type));
     usage.incUsedBytes(_id2KeySet.size() * sizeof(IdKeySetMap::value_type));
     for (const auto & entry: _id2KeySet) {
         usage.incAllocatedBytes(entry.second.getKeys().capacity() * sizeof(uint32_t));
