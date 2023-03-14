@@ -82,7 +82,7 @@ LogDataStore::LogDataStore(vespalib::Executor &executor, const vespalib::string 
       _compactLidSpaceGeneration()
 {
     // Reserve space for 1TB summary in order to avoid locking.
-    // Even if we have reserved 16 bits for file id ther is no chance that we will even get close to that.
+    // Even if we have reserved 16 bits for file id there is no chance that we will even get close to that.
     // Size of files grows with disk size, so 8k files should be more than sufficient.
     // File ids are reused so there should be no chance of running empty.
     static_assert(LidInfo::getFileIdLimit() == 65536u);
@@ -545,7 +545,7 @@ LogDataStore::allocateFileId(const MonitorGuard & guard)
             return FileId(i);
         }
     }
-    // This assert is verify that we have not gotten ourselves into a mess
+    // This assert is to verify that we have not gotten ourselves into a mess
     // that would require the use of locks to prevent. Just assure that the 
     // below resize is 'safe'.
     assert(_fileChunks.capacity() > _fileChunks.size());
