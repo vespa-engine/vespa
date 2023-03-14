@@ -497,20 +497,20 @@ private:
         }
         bool allowVisitCaching() const override { return _allowVisitCaching; }
     private:
-        VisitCacheStore              &_vcs;
-        vespalib::hash_set<uint32_t>  _expected;
-        vespalib::hash_set<uint32_t>  _actual;
-        bool                          _allowVisitCaching;
+        VisitCacheStore               &_vcs;
+        vespalib::hash_set<uint32_t>   _expected;
+        vespalib::hash_set<uint32_t>   _actual;
+        bool                           _allowVisitCaching;
     };
-    DirectoryHandler                 _myDir;
-    document::DocumentTypeRepo       _repo;
-    LogDocumentStore::Config         _config;
-    DummyFileHeaderContext           _fileHeaderContext;
-    vespalib::ThreadStackExecutor    _executor;
-    MyTlSyncer                       _tlSyncer;
+    DirectoryHandler                   _myDir;
+    document::DocumentTypeRepo         _repo;
+    LogDocumentStore::Config           _config;
+    DummyFileHeaderContext             _fileHeaderContext;
+    vespalib::ThreadStackExecutor      _executor;
+    MyTlSyncer                         _tlSyncer;
     std::unique_ptr<LogDocumentStore>  _datastore;
-    std::map<uint32_t, Document::UP> _inserted;
-    SerialNum                        _serial;
+    std::map<uint32_t, Document::UP>   _inserted;
+    SerialNum                          _serial;
 };
 
 VisitCacheStore::VerifyVisitor::VerifyVisitor(VisitCacheStore & vcs, std::vector<uint32_t> lids, bool allowCaching)
@@ -558,6 +558,14 @@ verifyCacheStats(CacheStats cs, size_t hits, size_t misses, size_t elements, siz
     EXPECT_EQUAL(elements, cs.elements);
     EXPECT_LESS_EQUAL(memory_used,  cs.memory_used + 20);  // We allow +- 20 as visitorder and hence compressability is non-deterministic.
     EXPECT_GREATER_EQUAL(memory_used+20,  cs.memory_used);
+}
+
+TEST("Control static memory usage") {
+    VisitCacheStore vcs(DocumentStore::Config::UpdateStrategy::UPDATE);
+    IDocumentStore &ds = vcs.getStore();
+    vespalib::MemoryUsage usage = ds.getMemoryUsage();
+    EXPECT_EQUAL(74116u, usage.allocatedBytes());
+    EXPECT_EQUAL(392u, usage.usedBytes());
 }
 
 TEST("test the update cache strategy") {

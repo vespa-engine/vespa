@@ -259,4 +259,10 @@ VisitCache::Cache::onRemove(const K & key) {
     _id2KeySet.erase(key.getKeys().front());
 }
 
+vespalib::MemoryUsage
+VisitCache::Cache::getStaticMemoryUsage() const {
+    vespalib::MemoryUsage usage = Parent::getStaticMemoryUsage();
+    return usage;
+}
+
 }

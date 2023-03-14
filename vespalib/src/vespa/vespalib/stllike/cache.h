@@ -2,6 +2,7 @@
 #pragma once
 
 #include "lrucache_map.h"
+#include <vespa/vespalib/util/memoryusage.h>
 #include <atomic>
 #include <mutex>
 
@@ -63,7 +64,7 @@ public:
      * @maxBytes is the maximum limit of bytes the store can hold, before eviction starts.
      */
     cache(BackingStore & b, size_t maxBytes);
-    ~cache();
+    ~cache() override;
     /**
      * Can be used for controlling max number of elements.
      */
@@ -80,6 +81,8 @@ public:
     size_t size()                      const { return Lru::size(); }
     size_t sizeBytes()                 const { return _sizeBytes.load(std::memory_order_relaxed); }
     bool empty()                       const { return Lru::empty(); }
+
+    virtual MemoryUsage getStaticMemoryUsage() const;
 
     /**
      * This simply erases the object.
@@ -151,9 +154,9 @@ private:
         v.store(v.load(std::memory_order_relaxed) + 1, std::memory_order_relaxed);
     }
 
-    Hash                _hasher;
-    SizeK               _sizeK;
-    SizeV               _sizeV;
+    Hash                        _hasher;
+    SizeK                       _sizeK;
+    SizeV                       _sizeV;
     std::atomic<size_t>         _maxBytes;
     std::atomic<size_t>         _sizeBytes;
     mutable std::atomic<size_t> _hit;
@@ -165,10 +168,10 @@ private:
     mutable std::atomic<size_t> _update;
     mutable std::atomic<size_t> _invalidate;
     mutable std::atomic<size_t> _lookup;
-    BackingStore      & _store;
-    mutable std::mutex  _hashLock;
+    BackingStore              & _store;
+    mutable std::mutex          _hashLock;
     /// Striped locks that can be used for having a locked access to the backing store.
-    std::mutex          _addLocks[113];
+    std::mutex                  _addLocks[113];
 };
 
 }

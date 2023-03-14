@@ -428,7 +428,10 @@ DocumentStore::getStorageStats() const
 vespalib::MemoryUsage
 DocumentStore::getMemoryUsage() const
 {
-    return _backingStore.getMemoryUsage();
+    vespalib::MemoryUsage usage = _backingStore.getMemoryUsage();
+    usage.merge(_cache->getStaticMemoryUsage());
+    usage.merge(_visitCache->getStaticMemoryUsage());
+    return usage;
 }
 
 std::vector<DataStoreFileChunkStats>

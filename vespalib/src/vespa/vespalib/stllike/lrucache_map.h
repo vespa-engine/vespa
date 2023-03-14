@@ -46,7 +46,6 @@ private:
     using HashTable = typename P::HashTable;
     using V = typename P::Value;
     using K = typename P::Key;
-    using value_type = typename P::value_type;
     using LV = typename P::LV;
     using internal_iterator = typename HashTable::iterator;
     using next_t = typename HashTable::next_t;
@@ -55,6 +54,7 @@ protected:
     static constexpr size_t UNLIMITED = std::numeric_limits<size_t>::max();
 public:
     using insert_result = typename HashTable::insert_result;
+    using value_type = typename P::value_type;
 
     class iterator {
     public:

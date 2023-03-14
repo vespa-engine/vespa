@@ -63,6 +63,13 @@ cache<P>::cache(BackingStore & b, size_t maxBytes) :
 { }
 
 template< typename P >
+MemoryUsage
+cache<P>::getStaticMemoryUsage() const {
+    MemoryUsage usage;
+    return usage;
+}
+
+template< typename P >
 bool
 cache<P>::removeOldest(const value_type & v) {
     bool remove(Lru::removeOldest(v) || (sizeBytes() >= capacityBytes()));

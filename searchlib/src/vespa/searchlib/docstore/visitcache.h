@@ -104,6 +104,7 @@ public:
     void invalidate(uint32_t key) { remove(key); }
 
     vespalib::CacheStats getCacheStats() const;
+    vespalib::MemoryUsage getStaticMemoryUsage() const { return _cache->getStaticMemoryUsage(); }
     void reconfigure(size_t cacheSize, CompressionConfig compression);
 private:
     /**
@@ -144,9 +145,10 @@ private:
     class Cache : public vespalib::cache<CacheParams> {
     public:
         Cache(BackingStore & b, size_t maxBytes);
-        ~Cache();
+        ~Cache() override;
         CompressedBlobSet readSet(const KeySet & keys);
         void removeKey(uint32_t key);
+        vespalib::MemoryUsage getStaticMemoryUsage() const override;
     private:
         void locateAndInvalidateOtherSubsets(const UniqueLock & cacheGuard, const KeySet & keys);
         using IdSet = vespalib::hash_set<uint64_t>;
