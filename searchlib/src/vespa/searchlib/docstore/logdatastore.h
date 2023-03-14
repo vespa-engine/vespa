@@ -57,11 +57,9 @@ public:
         double getMinFileSizeFactor() const { return _minFileSizeFactor; }
         uint32_t getMaxNumLids() const { return _maxNumLids; }
 
-        bool crcOnReadDisabled() const { return _skipCrcOnRead; }
         CompressionConfig compactCompression() const { return _compactCompression; }
 
         const WriteableFileChunk::Config & getFileConfig() const { return _fileConfig; }
-        Config & disableCrcOnRead(bool v) { _skipCrcOnRead = v; return *this;}
 
         bool operator == (const Config &) const;
     private:
@@ -69,7 +67,6 @@ public:
         AtomicValueWrapper<double>  _maxBucketSpread;
         double                      _minFileSizeFactor;
         uint32_t                    _maxNumLids;
-        bool                        _skipCrcOnRead;
         CompressionConfig           _compactCompression;
         WriteableFileChunk::Config  _fileConfig;
     };

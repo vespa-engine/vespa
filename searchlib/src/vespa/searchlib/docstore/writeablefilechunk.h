@@ -46,7 +46,7 @@ public:
                        const vespalib::string & baseName, uint64_t initialSerialNum,
                        uint32_t docIdLimit, const Config & config,
                        const TuneFileSummary &tune, const common::FileHeaderContext &fileHeaderContext,
-                       const IBucketizer * bucketizer, bool crcOnReadDisabled);
+                       const IBucketizer * bucketizer);
     ~WriteableFileChunk() override;
 
     ssize_t read(uint32_t lid, SubChunkId chunk, vespalib::DataBuffer & buffer) const override;

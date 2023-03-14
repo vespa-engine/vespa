@@ -100,12 +100,7 @@ struct ReadFixture : public FixtureBase {
 
     explicit ReadFixture(const vespalib::string &baseName, bool dirCleanup = true)
         : FixtureBase(baseName, dirCleanup),
-          chunk(FileChunk::FileId(0),
-                FileChunk::NameId(1234),
-                baseName,
-                tuneFile,
-                &bucketizer,
-                false)
+          chunk(FileChunk::FileId(0), FileChunk::NameId(1234), baseName, tuneFile, &bucketizer)
     {
         dir.cleanup(dirCleanup);
     }
@@ -123,17 +118,8 @@ struct WriteFixture : public FixtureBase {
                  uint32_t docIdLimit,
                  bool dirCleanup = true)
         : FixtureBase(baseName, dirCleanup),
-          chunk(executor,
-                FileChunk::FileId(0),
-                FileChunk::NameId(1234),
-                baseName,
-                serialNum,
-                docIdLimit,
-                WriteableFileChunk::Config(CompressionConfig(), 0x1000),
-                tuneFile,
-                fileHeaderCtx,
-                &bucketizer,
-                false)
+          chunk(executor, FileChunk::FileId(0), FileChunk::NameId(1234), baseName, serialNum, docIdLimit,
+                {CompressionConfig(), 0x1000}, tuneFile, fileHeaderCtx, &bucketizer)
     {
         dir.cleanup(dirCleanup);
     }

@@ -212,11 +212,13 @@ summary.cache.maxbytes long default=-4
 
 ## Include visits in the cache, if the visitoperation allows it.
 ## This will enable another separate cache of summary.cache.maxbytes size.
+## IGNORED and DEPRECATED Will go away soon
 summary.cache.allowvisitcaching bool default=true
 
 ## Control number of cache entries preallocated.
 ## Default is no preallocation.
 ## Can be set to a higher number to avoid resizing.
+## IGNORED and DEPRECATED Will go away soon
 summary.cache.initialentries long default=0 restart
 
 ## Control compression type of the summary while in the cache.
@@ -252,6 +254,7 @@ summary.log.chunk.compression.level int default=9
 summary.log.chunk.maxbytes int default=65536
 
 ## Skip crc32 check on read.
+## IGNORED and DEPRECATED Will go away soon
 summary.log.chunk.skipcrconread bool default=false
 
 ## Max size per summary file.

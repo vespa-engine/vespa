@@ -528,7 +528,7 @@ VisitCacheStore::VerifyVisitor::~VerifyVisitor() {
 VisitCacheStore::VisitCacheStore(UpdateStrategy strategy) :
     _myDir("visitcache"),
     _repo(makeDocTypeRepoConfig()),
-    _config(DocumentStore::Config(CompressionConfig::LZ4, 1000000, 0).updateStrategy(strategy),
+    _config(DocumentStore::Config(CompressionConfig::LZ4, 1000000).updateStrategy(strategy),
             LogDataStore::Config().setMaxFileSize(50000).setMaxBucketSpread(3.0)
                     .setFileConfig(WriteableFileChunk::Config(CompressionConfig(), 16_Ki))),
     _fileHeaderContext(),
@@ -565,8 +565,8 @@ TEST("Control static memory usage") {
     IDocumentStore &ds = vcs.getStore();
     vespalib::MemoryUsage usage = ds.getMemoryUsage();
     constexpr size_t mutex_size = sizeof(std::mutex) * 2 * (113 + 1); // sizeof(std::mutex) is platform dependent
-    EXPECT_EQUAL(74580 + mutex_size, usage.allocatedBytes());
-    EXPECT_EQUAL(952u + mutex_size, usage.usedBytes());
+    EXPECT_EQUAL(74572 + mutex_size, usage.allocatedBytes());
+    EXPECT_EQUAL(944u + mutex_size, usage.usedBytes());
 }
 
 TEST("test the update cache strategy") {
@@ -1023,8 +1023,8 @@ TEST_F("require that there is control of static memory usage", Fixture)
 {
     vespalib::MemoryUsage usage = f.store.getMemoryUsage();
     EXPECT_EQUAL(584u + sizeof(std::mutex), sizeof(LogDataStore));
-    EXPECT_EQUAL(74116u, usage.allocatedBytes());
-    EXPECT_EQUAL(392u, usage.usedBytes());
+    EXPECT_EQUAL(74108u, usage.allocatedBytes());
+    EXPECT_EQUAL(384u, usage.usedBytes());
 }
 
 TEST_F("require that lid space can be shrunk only after read guards are deleted", Fixture)
@@ -1074,7 +1074,6 @@ TEST("require that config equality operator detects inequality") {
     EXPECT_FALSE(C() == C().setMaxBucketSpread(0.3));
     EXPECT_FALSE(C() == C().setMinFileSizeFactor(0.3));
     EXPECT_FALSE(C() == C().setFileConfig(WriteableFileChunk::Config({}, 70)));
-    EXPECT_FALSE(C() == C().disableCrcOnRead(true));
     EXPECT_FALSE(C() == C().compactCompression({CompressionConfig::ZSTD}));
 }
 

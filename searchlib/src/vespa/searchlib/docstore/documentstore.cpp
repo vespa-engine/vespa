@@ -117,7 +117,6 @@ using docstore::Value;
 bool
 DocumentStore::Config::operator == (const Config &rhs) const {
     return  (_maxCacheBytes == rhs._maxCacheBytes) &&
-            (_initialCacheEntries == rhs._initialCacheEntries) &&
             (_updateStrategy == rhs._updateStrategy) &&
             (_compression == rhs._compression);
 }
@@ -131,9 +130,7 @@ DocumentStore::DocumentStore(const Config & config, IDataStore & store)
       _visitCache(std::make_unique<docstore::VisitCache>(store, config.getMaxCacheBytes(), config.getCompression())),
       _updateStrategy(config.updateStrategy()),
       _uncached_lookups(0)
-{
-    _cache->reserveElements(config.getInitialCacheEntries());
-}
+{ }
 
 DocumentStore::~DocumentStore() = default;
 

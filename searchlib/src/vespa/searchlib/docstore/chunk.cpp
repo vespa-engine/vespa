@@ -79,10 +79,10 @@ Chunk::Chunk(uint32_t id, const Config & config) :
     _lids.reserve(4_Ki/sizeof(Entry));
 }
 
-Chunk::Chunk(uint32_t id, const void * buffer, size_t len, bool skipcrc) :
+Chunk::Chunk(uint32_t id, const void * buffer, size_t len) :
     _id(id),
     _lastSerial(static_cast<uint64_t>(-1l)),
-    _format(ChunkFormat::deserialize(buffer, len, skipcrc))
+    _format(ChunkFormat::deserialize(buffer, len))
 {
     vespalib::nbostream &os = getData();
     while (os.size() > sizeof(_lastSerial)) {

@@ -106,7 +106,7 @@ public:
     using UP = std::unique_ptr<FileChunk>;
     using SubChunkId = uint32_t;
     FileChunk(FileId fileId, NameId nameId, const vespalib::string &baseName, const TuneFileSummary &tune,
-              const IBucketizer *bucketizer, bool skipCrcOnRead);
+              const IBucketizer *bucketizer);
     virtual ~FileChunk();
 
     virtual size_t updateLidMap(const unique_lock &guard, ISetLid &lidMap, uint64_t serialNum, uint32_t docIdLimit);
@@ -203,7 +203,6 @@ private:
     const FileId           _fileId;
     const NameId           _nameId;
     const vespalib::string _name;
-    const bool             _skipCrcOnRead;
     size_t                 _erasedCount;
     size_t                 _erasedBytes;
     std::atomic<size_t>    _diskFootprint;

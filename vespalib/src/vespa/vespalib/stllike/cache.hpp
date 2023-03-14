@@ -16,13 +16,6 @@ cache<P>::maxElements(size_t elems) {
 
 template< typename P >
 cache<P> &
-cache<P>::reserveElements(size_t elems) {
-    Lru::reserve(elems);
-    return *this;
-}
-
-template< typename P >
-cache<P> &
 cache<P>::setCapacityBytes(size_t sz) {
     _maxBytes.store(sz, std::memory_order_relaxed);
     return *this;

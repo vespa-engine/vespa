@@ -9,12 +9,6 @@ namespace search {
 
 using vespalib::make_string;
 
-ChunkFormatV1::ChunkFormatV1(vespalib::nbostream & is) :
-    ChunkFormat()
-{
-    deserializeBody(is);
-}
-
 ChunkFormatV1::ChunkFormatV1(vespalib::nbostream & is, uint32_t expectedCrc) :
     ChunkFormat()
 {
@@ -31,13 +25,6 @@ uint32_t
 ChunkFormatV1::computeCrc(const void * buf, size_t sz) const
 {
     return vespalib::crc_32_type::crc(buf, sz);
-}
-
-ChunkFormatV2::ChunkFormatV2(vespalib::nbostream & is) :
-    ChunkFormat()
-{
-    verifyMagic(is);
-    deserializeBody(is);
 }
 
 ChunkFormatV2::ChunkFormatV2(vespalib::nbostream & is, uint32_t expectedCrc) :

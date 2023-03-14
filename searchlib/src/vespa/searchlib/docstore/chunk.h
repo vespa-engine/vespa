@@ -82,7 +82,7 @@ public:
     };
     using LidList = std::vector<Entry>;
     Chunk(uint32_t id, const Config & config);
-    Chunk(uint32_t id, const void * buffer, size_t len, bool skipcrc=false);
+    Chunk(uint32_t id, const void * buffer, size_t len);
     ~Chunk();
     LidMeta append(uint32_t lid, const void * buffer, size_t len);
     ssize_t read(uint32_t lid, vespalib::DataBuffer & buffer) const;
