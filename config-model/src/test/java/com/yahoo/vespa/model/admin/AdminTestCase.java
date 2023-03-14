@@ -261,11 +261,11 @@ public class AdminTestCase {
 
         VespaModel vespaModel = new VespaModelCreatorWithMockPkg(hosts, services).create();
         List<LogctlSpec> logctlSpecs = vespaModel.getAdmin().getLogctlSpecs();
-        assertEquals(20, logctlSpecs.size());  // Default logctl specs: 4 logctl specs for 5 services => 20
+        assertEquals(4, logctlSpecs.size());  // Default logctl specs
         assertEquals(1, logctlSpecs
                 .stream()
-                .filter(l -> (l.componentSpec.equals("configserver:com.yahoo.vespa.spifly.repackaged.spifly.BaseActivator")
-                        && l.levelsModSpec.equals("info=off"))).count());
+                .filter(l -> (l.componentSpec.equals("com.yahoo.vespa.spifly.repackaged.spifly.BaseActivator")
+                        && l.levelsModSpec.equals("-info"))).count());
     }
 
 }
