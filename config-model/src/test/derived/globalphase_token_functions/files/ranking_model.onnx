@@ -1,0 +1,23 @@
+:þ
+(
+	input_ids
+attention_maskmasked"Mul
+'
+masked
+token_type_idsvector_Y"Add
+-
+vector_Yscore"	ReduceSum*
+keepdims ranking_modelZ
+	input_ids
+	
+€Z
+attention_mask
+	
+€Z
+token_type_ids
+	
+€b
+score
+
+
+B

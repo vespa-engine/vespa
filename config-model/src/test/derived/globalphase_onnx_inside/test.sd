@@ -4,6 +4,9 @@ schema test {
         field aa type tensor(d1[3]) {
             indexing: attribute
         }
+        field extra type float {
+            indexing: attribute
+        }
     }
 
     constant xx {
@@ -38,7 +41,7 @@ schema test {
             expression: sum(constant(ww) * (onnx(inside).foobar - handicap))
         }
         function indirect_a() {
-            expression: attribute(aa)
+            expression: attribute(aa) + tensor(d1[3])(d1+attribute(extra))
         }
         function indirect_x() {
             expression: constant(xx)
