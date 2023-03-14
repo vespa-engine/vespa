@@ -1169,6 +1169,14 @@ LogDataStore::getMemoryUsage() const
             result.merge(fileChunk->getMemoryUsage());
         }
     }
+    size_t extra_allocated = 0;
+    extra_allocated += _fileChunks.capacity() * sizeof(FileChunkVector::value_type);
+    extra_allocated += _holdFileChunks.capacity() * sizeof(uint32_t);
+    size_t extra_used = 0;
+    extra_used += _fileChunks.size() * sizeof(FileChunkVector::value_type);
+    extra_used += _holdFileChunks.size() * sizeof(uint32_t);
+    result.incAllocatedBytes(extra_allocated);
+    result.incUsedBytes(extra_used);
     return result;
 }
 
