@@ -1023,8 +1023,8 @@ TEST_F("require that there is control of static memory usage", Fixture)
 {
     vespalib::MemoryUsage usage = f.store.getMemoryUsage();
     EXPECT_EQUAL(584u + sizeof(std::mutex), sizeof(LogDataStore));
-    EXPECT_EQUAL(74116u, usage.allocatedBytes());
-    EXPECT_EQUAL(392u, usage.usedBytes());
+    EXPECT_EQUAL(74108u, usage.allocatedBytes());
+    EXPECT_EQUAL(384u, usage.usedBytes());
 }
 
 TEST_F("require that lid space can be shrunk only after read guards are deleted", Fixture)
