@@ -8,7 +8,6 @@
 #include "entryref.h"
 #include <vespa/vespalib/util/generationhandler.h>
 #include <vespa/vespalib/util/alloc.h>
-#include <vespa/vespalib/util/array.h>
 
 namespace vespalib::datastore {
 

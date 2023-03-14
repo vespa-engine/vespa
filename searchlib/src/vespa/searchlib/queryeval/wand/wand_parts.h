@@ -10,7 +10,6 @@
 #include <vespa/searchlib/queryeval/iterator_pack.h>
 #include <vespa/searchlib/attribute/iterator_pack.h>
 #include <vespa/vespalib/objects/objectvisitor.h>
-#include <vespa/vespalib/util/array.h>
 #include <vespa/vespalib/util/priority_queue.h>
 #include <vespa/searchlib/attribute/i_document_weight_attribute.h>
 #include <vespa/vespalib/util/stringfmt.h>
