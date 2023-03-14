@@ -27,6 +27,8 @@ public class NodeRepositoryNode {
     public Set<String> additionalIpAddresses;
     @JsonProperty("id")
     public String id;
+    @JsonProperty("cloudAccount")
+    public String cloudAccount;
     @JsonProperty("flavor")
     public String flavor;
     @JsonProperty("resources")

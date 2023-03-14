@@ -82,8 +82,11 @@ LogDataStore::LogDataStore(vespalib::Executor &executor, const vespalib::string 
       _compactLidSpaceGeneration()
 {
     // Reserve space for 1TB summary in order to avoid locking.
-    _fileChunks.reserve(LidInfo::getFileIdLimit());
-    _holdFileChunks.resize(LidInfo::getFileIdLimit());
+    // Even if we have reserved 16 bits for file id there is no chance that we will even get close to that.
+    // Size of files grows with disk size, so 8k files should be more than sufficient.
+    // File ids are reused so there should be no chance of running empty.
+    static_assert(LidInfo::getFileIdLimit() == 65536u);
+    _fileChunks.reserve(8_Ki);
 
     preload();
     updateLidMap(getLastFileChunkDocIdLimit());
@@ -216,7 +219,7 @@ LogDataStore::requireSpace(MonitorGuard guard, WriteableFileChunk & active, CpuU
         FileId fileId = allocateFileId(guard);
         setNewFileChunk(guard, createWritableFile(fileId, active.getSerialNum()));
         setActive(guard, fileId);
-        std::unique_ptr<FileChunkHolder> activeHolder = holdFileChunk(active.getFileId());
+        std::unique_ptr<FileChunkHolder> activeHolder = holdFileChunk(guard, active.getFileId());
         guard.unlock();
         // Write chunks to old .dat file 
         // Note: Feed latency spike
@@ -319,7 +322,7 @@ LogDataStore::flush(uint64_t syncToken)
         // but is a fundamental part of the WRITE pipeline of the data store.
         getActive(guard).flush(true, syncToken, CpuCategory::WRITE);
         active = &getActive(guard);
-        activeHolder = holdFileChunk(active->getFileId());
+        activeHolder = holdFileChunk(guard, active->getFileId());
     }
     active->flushPendingChunks(syncToken);
     activeHolder.reset();
@@ -488,7 +491,7 @@ void LogDataStore::compactFile(FileId fileId)
         MonitorGuard guard(_updateLock);
         _genHandler.update_oldest_used_generation();
         if (currentGeneration < _genHandler.get_oldest_used_generation()) {
-            if (_holdFileChunks[fc->getFileId().getId()] == 0u) {
+            if (canFileChunkBeDropped(guard, fc->getFileId())) {
                 toDie = std::move(fc);
                 break;
             }
@@ -536,13 +539,13 @@ LogDataStore::memoryMeta() const
 FileChunk::FileId
 LogDataStore::allocateFileId(const MonitorGuard & guard)
 {
-    (void) guard;
+    assert(guard.owns_lock());
     for (size_t i(0); i < _fileChunks.size(); i++) {
         if ( ! _fileChunks[i] ) {
             return FileId(i);
         }
     }
-    // This assert is verify that we have not gotten ourselves into a mess
+    // This assert is to verify that we have not gotten ourselves into a mess
     // that would require the use of locks to prevent. Just assure that the 
     // below resize is 'safe'.
     assert(_fileChunks.capacity() > _fileChunks.size());
@@ -1126,11 +1129,16 @@ public:
 };
 
 std::unique_ptr<LogDataStore::FileChunkHolder>
-LogDataStore::holdFileChunk(FileId fileId)
+LogDataStore::holdFileChunk(const MonitorGuard & guard, FileId fileId)
 {
-    assert(fileId.getId() < _holdFileChunks.size());
-    assert(_holdFileChunks[fileId.getId()] < 2000u);
-    ++_holdFileChunks[fileId.getId()];
+    assert(guard.owns_lock());
+    auto found = _holdFileChunks.find(fileId.getId());
+    if (found == _holdFileChunks.end()) {
+        _holdFileChunks[fileId.getId()] = 1;
+    } else {
+        assert(found->second < 2000u);
+        found->second++;
+    }
     return std::make_unique<FileChunkHolder>(*this, fileId);
 }
 
@@ -1138,10 +1146,18 @@ void
 LogDataStore::unholdFileChunk(FileId fileId)
 {
     MonitorGuard guard(_updateLock);
-    assert(fileId.getId() < _holdFileChunks.size());
-    assert(_holdFileChunks[fileId.getId()] > 0u);
-    --_holdFileChunks[fileId.getId()];
+    auto found = _holdFileChunks.find(fileId.getId());
+    assert(found != _holdFileChunks.end());
+    assert(found->second > 0u);
+    if (--found->second == 0u) {
+        _holdFileChunks.erase(found);
+    }
     // No signalling, compactWorst() sleeps and retries
+}
+
+bool LogDataStore::canFileChunkBeDropped(const MonitorGuard & guard, FileId fileId) const {
+    assert(guard.owns_lock());
+    return ! _holdFileChunks.contains(fileId.getId());
 }
 
 DataStoreStorageStats
@@ -1169,6 +1185,14 @@ LogDataStore::getMemoryUsage() const
             result.merge(fileChunk->getMemoryUsage());
         }
     }
+    size_t extra_allocated = 0;
+    extra_allocated += _fileChunks.capacity() * sizeof(FileChunkVector::value_type);
+    extra_allocated += _holdFileChunks.capacity() * sizeof(uint32_t);
+    size_t extra_used = 0;
+    extra_used += _fileChunks.size() * sizeof(FileChunkVector::value_type);
+    extra_used += _holdFileChunks.size() * sizeof(uint32_t);
+    result.incAllocatedBytes(extra_allocated);
+    result.incUsedBytes(extra_used);
     return result;
 }
 

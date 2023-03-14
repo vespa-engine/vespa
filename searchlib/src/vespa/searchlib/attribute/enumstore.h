@@ -16,7 +16,6 @@
 #include <vespa/vespalib/datastore/unique_store.h>
 #include <vespa/vespalib/datastore/unique_store_string_allocator.h>
 #include <vespa/vespalib/util/buffer.h>
-#include <vespa/vespalib/util/array.h>
 #include <vespa/vespalib/stllike/allocator.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <cmath>
