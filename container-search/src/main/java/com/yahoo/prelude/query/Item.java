@@ -67,6 +67,7 @@ public abstract class Item implements Cloneable {
     }
 
     // These must match the definitions in searchlib/src/vespa/searchlib/parsequery/item_creator.h
+    @Deprecated // TODO: Remove on Vespa 9
     public enum ItemCreator {
 
         ORIG(0),
@@ -141,9 +142,8 @@ public abstract class Item implements Cloneable {
     public abstract String getName();
 
     /**
-     * Sets whether this is a filter term.
-     * This indicates that the term origins from the filter parameter in the search API.
-     * The search backend does not handle filter terms any different than non-filter terms.
+     * Sets whether this is a filter term. Filter terms are treated just like other terms except that
+     * they will not be highlighted in dynamic summaries.
      */
     public void setFilter(boolean filter) {
         if (filter) {
@@ -158,12 +158,22 @@ public abstract class Item implements Cloneable {
         return creator == ItemCreator.FILTER;
     }
 
-    /** Returns the item creator value. */
+    /**
+     * Returns the item creator value.
+     *
+     * @deprecated use isFilter(boolean)
+     */
+    @Deprecated // TODO: Remove on Vespa 9
     public ItemCreator getCreator() {
         return creator;
     }
 
-    /** Sets the item creator value. */
+    /**
+     * Sets the item creator value.
+     *
+     * @deprecated use setFilter(boolean)
+     */
+    @Deprecated // TODO: Remove on Vespa 9
     public void setCreator(ItemCreator creator) {
         this.creator = creator;
     }

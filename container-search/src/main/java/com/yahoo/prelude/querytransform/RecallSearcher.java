@@ -100,22 +100,17 @@ public class RecallSearcher extends Searcher {
      * Returns the first word item contained in the given item tree that is an instance of {@link WordItem} with the
      * given word value.
      *
-     * @param root The root of the tree to check.
-     * @param value The word to look for.
-     * @return The first node found.
+     * @param root the root of the tree to check
+     * @param value the word to look for
+     * @return the first node found
      */
     private static WordItem findOrigWordItem(Item root, String value) {
         Deque<Item> stack = new ArrayDeque<>();
         stack.push(root);
         while (!stack.isEmpty()) {
             Item item = stack.pop();
-            if (item.getCreator() == Item.ItemCreator.ORIG &&
-                    item instanceof WordItem word)
-            {
-                if (word.getWord().equals(value)) {
-                    return word;
-                }
-            }
+            if (! item.isFilter() && item instanceof WordItem word && word.getWord().equals(value))
+                return word;
             if (item instanceof CompositeItem lst) {
                 for (Iterator<Item> it = lst.getItemIterator(); it.hasNext();) {
                     stack.push(it.next());
@@ -128,16 +123,15 @@ public class RecallSearcher extends Searcher {
     /**
      * Marks all filter terms in the given query tree as unranked.
      *
-     * @param root The root of the tree to update.
+     * @param root the root of the tree to update
      */
     private static void updateFilterTerms(Item root) {
         Deque<Item> stack = new ArrayDeque<>();
         stack.push(root);
         while (!stack.isEmpty()) {
             Item item = stack.pop();
-            if (item.getCreator() == Item.ItemCreator.FILTER) {
+            if (item.isFilter())
                 item.setRanked(false);
-            }
             if (item instanceof CompositeItem lst) {
                 for (Iterator<Item> it = lst.getItemIterator(); it.hasNext();) {
                     stack.push(it.next());

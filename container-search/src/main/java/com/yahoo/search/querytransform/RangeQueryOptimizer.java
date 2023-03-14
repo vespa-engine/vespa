@@ -61,8 +61,7 @@ public class RangeQueryOptimizer extends Searcher {
         List<FieldRange> fieldRanges = null;
         for (Iterator<Item> i = and.getItemIterator(); i.hasNext(); ) {
             Item item = i.next();
-            if ( ! (item instanceof IntItem)) continue;
-            IntItem intItem = (IntItem)item;
+            if ( ! (item instanceof IntItem intItem)) continue;
             if (intItem.getHitLimit() != 0) continue; // each such op gets a different partial set: Cannot be optimized
             if (intItem.getFromLimit().equals(intItem.getToLimit())) continue; // don't optimize searches for single numbers
             if (indexFacts.getIndex(intItem.getIndexName()).isMultivalue()) continue; // May match different values in each range
@@ -96,6 +95,7 @@ public class RangeQueryOptimizer extends Searcher {
     }
 
     /** Represents the ranges searched in a single field */
+    @SuppressWarnings("deprecation")
     private static final class FieldRange {
 
         private Range range = new Range(new Limit(Double.NEGATIVE_INFINITY, false), new Limit(Double.POSITIVE_INFINITY, false));
