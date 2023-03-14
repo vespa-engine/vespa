@@ -227,16 +227,12 @@ private:
 
     size_t computeNumberOfSignificantBucketIdBits(const IBucketizer & bucketizer, FileId fileId) const;
 
-    /*
-     * Protect against compactWorst() dropping file chunk.  Caller must hold
-     * _updateLock.
-     */
-    std::unique_ptr<FileChunkHolder> holdFileChunk(FileId fileId);
+    /// Protect against compactWorst() dropping file chunk.  Caller must hold _updateLock.
+    std::unique_ptr<FileChunkHolder> holdFileChunk(const MonitorGuard & guard, FileId fileId);
 
-    /*
-     * Drop protection against compactWorst() dropping file chunk.
-     */
+    /// Drop protection against compactWorst() dropping file chunk.
     void unholdFileChunk(FileId fileId);
+    bool canFileChunkBeDropped(const MonitorGuard & guard, FileId fileId) const;
 
     SerialNum flushFile(MonitorGuard guard, WriteableFileChunk & file, SerialNum syncToken,
                         vespalib::CpuUsage::Category cpu_category);

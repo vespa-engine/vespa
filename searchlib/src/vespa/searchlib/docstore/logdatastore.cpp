@@ -216,7 +216,7 @@ LogDataStore::requireSpace(MonitorGuard guard, WriteableFileChunk & active, CpuU
         FileId fileId = allocateFileId(guard);
         setNewFileChunk(guard, createWritableFile(fileId, active.getSerialNum()));
         setActive(guard, fileId);
-        std::unique_ptr<FileChunkHolder> activeHolder = holdFileChunk(active.getFileId());
+        std::unique_ptr<FileChunkHolder> activeHolder = holdFileChunk(guard, active.getFileId());
         guard.unlock();
         // Write chunks to old .dat file 
         // Note: Feed latency spike
@@ -319,7 +319,7 @@ LogDataStore::flush(uint64_t syncToken)
         // but is a fundamental part of the WRITE pipeline of the data store.
         getActive(guard).flush(true, syncToken, CpuCategory::WRITE);
         active = &getActive(guard);
-        activeHolder = holdFileChunk(active->getFileId());
+        activeHolder = holdFileChunk(guard, active->getFileId());
     }
     active->flushPendingChunks(syncToken);
     activeHolder.reset();
@@ -488,7 +488,7 @@ void LogDataStore::compactFile(FileId fileId)
         MonitorGuard guard(_updateLock);
         _genHandler.update_oldest_used_generation();
         if (currentGeneration < _genHandler.get_oldest_used_generation()) {
-            if (_holdFileChunks[fc->getFileId().getId()] == 0u) {
+            if (canFileChunkBeDropped(guard, fc->getFileId())) {
                 toDie = std::move(fc);
                 break;
             }
@@ -1126,8 +1126,9 @@ public:
 };
 
 std::unique_ptr<LogDataStore::FileChunkHolder>
-LogDataStore::holdFileChunk(FileId fileId)
+LogDataStore::holdFileChunk(const MonitorGuard & guard, FileId fileId)
 {
+    assert(guard.owns_lock());
     assert(fileId.getId() < _holdFileChunks.size());
     assert(_holdFileChunks[fileId.getId()] < 2000u);
     ++_holdFileChunks[fileId.getId()];
@@ -1142,6 +1143,11 @@ LogDataStore::unholdFileChunk(FileId fileId)
     assert(_holdFileChunks[fileId.getId()] > 0u);
     --_holdFileChunks[fileId.getId()];
     // No signalling, compactWorst() sleeps and retries
+}
+
+bool LogDataStore::canFileChunkBeDropped(const MonitorGuard & guard, FileId fileId) const {
+    assert(guard.owns_lock());
+    return _holdFileChunks[fileId.getId()] == 0u;
 }
 
 DataStoreStorageStats
