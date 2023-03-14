@@ -129,7 +129,7 @@ public:
     }
 };
 
-using TmpChunkMetaV = vespalib::Array<TmpChunkMeta>;
+using TmpChunkMetaV = std::vector<TmpChunkMeta>;
 
 namespace {
 
@@ -181,7 +181,7 @@ FileChunk::updateLidMap(const unique_lock &guard, ISetLid &ds, uint64_t serialNu
             tempVector.reserve(fileSize/(sizeof(ChunkMeta)+sizeof(LidMeta)));
             while ( ! is.empty() && is.good()) {
                 const int64_t lastKnownGoodPos = _idxHeaderLen + is.rp();
-                tempVector.push_back(TmpChunkMeta());
+                tempVector.emplace_back();
                 TmpChunkMeta & chunkMeta(tempVector.back());
                 try {
                     chunkMeta.deserialize(is);
@@ -238,7 +238,7 @@ FileChunk::updateLidMap(const unique_lock &guard, ISetLid &ds, uint64_t serialNu
                     }
                     serialNum = chunkMeta.getLastSerial();
                     addNumBuckets(bucketMap.getNumBuckets());
-                    _chunkInfo.push_back(ChunkInfo(chunkMeta.getOffset(), chunkMeta.getSize(), chunkMeta.getLastSerial()));
+                    _chunkInfo.emplace_back(chunkMeta.getOffset(), chunkMeta.getSize(), chunkMeta.getLastSerial());
                     assert(serialNum >= _lastPersistedSerialNum.load(std::memory_order_relaxed));
                     _lastPersistedSerialNum.store(serialNum, std::memory_order_relaxed);
                 }

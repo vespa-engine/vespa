@@ -8,7 +8,6 @@
 #include "randread.h"
 #include <vespa/searchlib/common/tunefileinfo.h>
 #include <vespa/vespalib/stllike/hash_map.h>
-#include <vespa/vespalib/util/array.h>
 #include <vespa/vespalib/util/cpu_usage.h>
 #include <vespa/vespalib/util/generationhandler.h>
 #include <vespa/vespalib/util/memoryusage.h>
@@ -238,7 +237,7 @@ protected:
     static uint32_t readDocIdLimit(vespalib::GenericHeader &header);
     static void writeDocIdLimit(vespalib::GenericHeader &header, uint32_t docIdLimit);
 
-    using ChunkInfoVector = vespalib::Array<ChunkInfo>;
+    using ChunkInfoVector = std::vector<ChunkInfo, vespalib::allocator_large<ChunkInfo>>;
     const IBucketizer   * _bucketizer;
     size_t                _addedBytes;
     TuneFileSummary       _tune;
