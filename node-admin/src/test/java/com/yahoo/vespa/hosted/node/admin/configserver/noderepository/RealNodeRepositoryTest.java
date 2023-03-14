@@ -68,7 +68,7 @@ public class RealNodeRepositoryTest {
         for (int i = 0; i < 3; i++) {
             try {
                 int port = findRandomOpenPort();
-                container = JDisc.fromServicesXml(ContainerConfig.servicesXmlV2(port, SystemName.main, CloudAccount.empty), Networking.enable);
+                container = JDisc.fromServicesXml(ContainerConfig.servicesXmlV2(port, SystemName.main, CloudAccount.from("123456789012")), Networking.enable);
                 ConfigServerApi configServerApi = ConfigServerApiImpl.createForTesting(
                         List.of(URI.create("http://127.0.0.1:" + port)));
                 waitForJdiscContainerToServe(configServerApi);
@@ -124,6 +124,7 @@ public class RealNodeRepositoryTest {
         Optional<NodeSpec> node = nodeRepositoryApi.getOptionalNode(hostname);
         assertTrue(node.isPresent());
         assertEquals(hostname, node.get().hostname());
+        assertEquals(CloudAccount.from("123456789012"), node.get().cloudAccount());
     }
 
     @Test
