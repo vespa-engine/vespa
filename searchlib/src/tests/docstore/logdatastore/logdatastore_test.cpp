@@ -564,8 +564,9 @@ TEST("Control static memory usage") {
     VisitCacheStore vcs(DocumentStore::Config::UpdateStrategy::UPDATE);
     IDocumentStore &ds = vcs.getStore();
     vespalib::MemoryUsage usage = ds.getMemoryUsage();
-    EXPECT_EQUAL(83700u, usage.allocatedBytes());
-    EXPECT_EQUAL(10072u, usage.usedBytes());
+    constexpr size_t mutex_size = sizeof(std::mutex) * 2 * (113 + 1); // sizeof(std::mutex) is platform dependent
+    EXPECT_EQUAL(74580 + mutex_size, usage.allocatedBytes());
+    EXPECT_EQUAL(952u + mutex_size, usage.usedBytes());
 }
 
 TEST("test the update cache strategy") {
