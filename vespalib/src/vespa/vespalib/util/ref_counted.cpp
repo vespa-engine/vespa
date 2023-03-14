@@ -20,13 +20,15 @@ enable_ref_counted::internal_subref(uint32_t cnt, [[maybe_unused]] uint32_t rese
 {
     // release because:
     // our changes to the object must be visible to the deleter
-    auto prev = _refs.fetch_sub(cnt, std::memory_order_release);
+    //
+    // acquire because:
+    // we need to see all object changes before deleting it
+    auto prev = _refs.fetch_sub(cnt, std::memory_order_acq_rel);
     assert(prev >= (reserve + cnt));
     assert(_guard == MAGIC);
     if (prev == cnt) {
-        // acquire because:
-        // we need to see all object changes before deleting it
-        std::atomic_thread_fence(std::memory_order_acquire);
+        // not using conditional atomic thread fence since thread
+        // sanitizer does not support it.
         delete this;
     }
 }
