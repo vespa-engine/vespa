@@ -18,6 +18,7 @@ enable_ref_counted::internal_addref(uint32_t cnt) const noexcept
 void
 enable_ref_counted::internal_subref(uint32_t cnt, [[maybe_unused]] uint32_t reserve) const noexcept
 {
+    assert(_guard == MAGIC);
     // release because:
     // our changes to the object must be visible to the deleter
     //
@@ -25,7 +26,6 @@ enable_ref_counted::internal_subref(uint32_t cnt, [[maybe_unused]] uint32_t rese
     // we need to see all object changes before deleting it
     auto prev = _refs.fetch_sub(cnt, std::memory_order_acq_rel);
     assert(prev >= (reserve + cnt));
-    assert(_guard == MAGIC);
     if (prev == cnt) {
         // not using conditional atomic thread fence since thread
         // sanitizer does not support it.
