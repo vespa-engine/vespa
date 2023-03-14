@@ -5,6 +5,7 @@
 #include <vespa/searchlib/query/streaming/query.h>
 #include <vespa/vsm/common/document.h>
 #include <vespa/vsm/common/storagedocument.h>
+#include <vespa/vespalib/util/array.h>
 
 namespace vsm {
 

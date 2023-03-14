@@ -7,18 +7,6 @@ namespace vespalib {
 
 template <typename T>
 Deserializer &
-Deserializer::operator >> (vespalib::Array<T> & v) {
-    uint32_t sz;
-    get(sz);
-    v.resize(sz);
-    for(size_t i(0); i < sz; i++) {
-        (*this) >> v[i];
-    }
-    return *this;
-}
-
-template <typename T>
-Deserializer &
 Deserializer::operator >> (std::vector<T> & v) {
     uint32_t sz;
     get(sz);

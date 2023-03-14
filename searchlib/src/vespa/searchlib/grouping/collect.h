@@ -3,9 +3,9 @@
 
 #include "groupref.h"
 #include <vespa/searchlib/aggregation/group.h>
+#include <vespa/vespalib/util/array.h>
 
-namespace search {
-namespace grouping {
+namespace search::grouping {
 
 class Collect
 {
@@ -104,5 +104,4 @@ private:
     std::vector<SortInfo> _sortInfo;     // Generated cheap sortInfo, to avoid accessing more complicated data.
 };
 
-}
 }

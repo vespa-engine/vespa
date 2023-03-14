@@ -87,25 +87,6 @@ public:
         return *this;
     }
     template <typename T>
-    nbostream & operator << (const vespalib::Array<T> & v) {
-        uint32_t sz(v.size());
-        (*this) << sz;
-        for(size_t i(0); i < sz; i++) {
-            (*this) << v[i];
-        }
-        return *this;
-    }
-    template <typename T>
-    nbostream & operator >> (vespalib::Array<T> & v) {
-        uint32_t sz;
-        (*this) >> sz;
-        v.resize(sz);
-        for(size_t i(0); i < sz; i++) {
-            (*this) >> v[i];
-        }
-        return *this;
-    }
-    template <typename T>
     nbostream & operator << (const std::vector<T> & v) {
         uint32_t sz(v.size());
         (*this) << sz;
@@ -175,8 +156,6 @@ public:
     }
     void swap(Buffer & buf);
     void swap(nbostream & os);
-    /** extract the underlying Array<char>; nbostream will be empty afterwards. */
-    Buffer extract_buffer() { Buffer rv; swap(rv); return rv; }
     /**
      * This flag can be used to tell that a buffer will live at least as long as
      * any objects it will be the backing for. In those cases there is no need for
