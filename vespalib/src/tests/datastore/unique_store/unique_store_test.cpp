@@ -471,7 +471,7 @@ TEST_F(DoubleTest, nan_is_handled)
 
 TEST_F(DoubleTest, control_memory_usage) {
     static constexpr size_t sizeof_deque = vespalib::datastore::DataStoreBase::sizeof_entry_ref_hold_list_deque;
-    EXPECT_EQ(376u + sizeof_deque, sizeof(store));
+    EXPECT_EQ(368u + sizeof_deque, sizeof(store));
     EXPECT_EQ(144u, sizeof(BufferState));
     EXPECT_EQ(28740u, store.get_values_memory_usage().allocatedBytes());
     EXPECT_EQ(24804u, store.get_values_memory_usage().usedBytes());
