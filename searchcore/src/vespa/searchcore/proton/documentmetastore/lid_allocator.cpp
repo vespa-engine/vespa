@@ -36,7 +36,7 @@ vespalib::MemoryUsage
 LidAllocator::getMemoryUsage() const {
     vespalib::MemoryUsage usage;
     size_t allocated = sizeof(*this) + _freeLids.byteSize() + _usedLids.byteSize() +
-                       _pendingHoldLids.byteSize() + _activeLids.byteSize();
+                       _pendingHoldLids.byteSize() + _activeLids.byteSize() + _holdLids.size();
     usage.incAllocatedBytes(allocated);
     usage.incUsedBytes(allocated);
     return usage;
