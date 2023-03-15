@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.admin.monitoring;
 
+import com.yahoo.metrics.ClusterControllerMetrics;
 import com.yahoo.metrics.ConfigServerMetrics;
 import com.yahoo.metrics.ContainerMetrics;
 import com.yahoo.metrics.DistributorMetrics;
@@ -254,31 +255,29 @@ public class VespaMetricSet {
     private static Set<Metric> getClusterControllerMetrics() {
         Set<Metric> metrics = new LinkedHashSet<>();
 
-        addMetric(metrics, ContainerMetrics.CLUSTER_CONTROLLER_DOWN_COUNT.last());
-        addMetric(metrics, ContainerMetrics.CLUSTER_CONTROLLER_INITIALIZING_COUNT.last());
-        addMetric(metrics, ContainerMetrics.CLUSTER_CONTROLLER_MAINTENANCE_COUNT.last());
-        addMetric(metrics, ContainerMetrics.CLUSTER_CONTROLLER_RETIRED_COUNT.last());
-        addMetric(metrics, ContainerMetrics.CLUSTER_CONTROLLER_STOPPING_COUNT.last());
-        addMetric(metrics, ContainerMetrics.CLUSTER_CONTROLLER_UP_COUNT.last());
-        addMetric(metrics, ContainerMetrics.CLUSTER_CONTROLLER_CLUSTER_STATE_CHANGE_COUNT.baseName());
-        addMetric(metrics, ContainerMetrics.CLUSTER_CONTROLLER_BUSY_TICK_TIME_MS, EnumSet.of(last, max, sum, count));
-        addMetric(metrics, ContainerMetrics.CLUSTER_CONTROLLER_IDLE_TICK_TIME_MS, EnumSet.of(last, max, sum, count));
+        addMetric(metrics, ClusterControllerMetrics.DOWN_COUNT.last());
+        addMetric(metrics, ClusterControllerMetrics.INITIALIZING_COUNT.last());
+        addMetric(metrics, ClusterControllerMetrics.MAINTENANCE_COUNT.last());
+        addMetric(metrics, ClusterControllerMetrics.RETIRED_COUNT.last());
+        addMetric(metrics, ClusterControllerMetrics.STOPPING_COUNT.last());
+        addMetric(metrics, ClusterControllerMetrics.UP_COUNT.last());
+        addMetric(metrics, ClusterControllerMetrics.CLUSTER_STATE_CHANGE_COUNT.baseName());
+        addMetric(metrics, ClusterControllerMetrics.BUSY_TICK_TIME_MS, EnumSet.of(last, max, sum, count));
+        addMetric(metrics, ClusterControllerMetrics.IDLE_TICK_TIME_MS, EnumSet.of(last, max, sum, count));
         
-        addMetric(metrics, ContainerMetrics.CLUSTER_CONTROLLER_WORK_MS, EnumSet.of(last, sum, count));
-        
-        addMetric(metrics, ContainerMetrics.CLUSTER_CONTROLLER_IS_MASTER.last());
-        addMetric(metrics, ContainerMetrics.CLUSTER_CONTROLLER_REMOTE_TASK_QUEUE_SIZE.last());
+        addMetric(metrics, ClusterControllerMetrics.WORK_MS, EnumSet.of(last, sum, count));
+
+        addMetric(metrics, ClusterControllerMetrics.IS_MASTER.last());
+        addMetric(metrics, ClusterControllerMetrics.REMOTE_TASK_QUEUE_SIZE.last());
         // TODO(hakonhall): Update this name once persistent "count" metrics has been implemented.
         // DO NOT RELY ON THIS METRIC YET.
-        addMetric(metrics, ContainerMetrics.CLUSTER_CONTROLLER_NODE_EVENT_COUNT.baseName());
-        
-        addMetric(metrics, ContainerMetrics.CLUSTER_CONTROLLER_RESOURCE_USAGE_NODES_ABOVE_LIMIT, EnumSet.of(last, max));
-        addMetric(metrics, ContainerMetrics.CLUSTER_CONTROLLER_RESOURCE_USAGE_MAX_MEMORY_UTILIZATION, EnumSet.of(last, max));
-        addMetric(metrics, ContainerMetrics.CLUSTER_CONTROLLER_RESOURCE_USAGE_MAX_DISK_UTILIZATION, EnumSet.of(last, max));
-        addMetric(metrics, ContainerMetrics.CLUSTER_CONTROLLER_RESOURCE_USAGE_MEMORY_LIMIT.last());
-        addMetric(metrics, ContainerMetrics.CLUSTER_CONTROLLER_RESOURCE_USAGE_DISK_LIMIT.last());
-
-        addMetric(metrics, ContainerMetrics.CLUSTER_CONTROLLER_REINDEXING_PROGRESS.last());
+        addMetric(metrics, ClusterControllerMetrics.NODE_EVENT_COUNT.baseName());
+        addMetric(metrics, ClusterControllerMetrics.RESOURCE_USAGE_NODES_ABOVE_LIMIT, EnumSet.of(last, max));
+        addMetric(metrics, ClusterControllerMetrics.RESOURCE_USAGE_MAX_MEMORY_UTILIZATION, EnumSet.of(last, max));
+        addMetric(metrics, ClusterControllerMetrics.RESOURCE_USAGE_MAX_DISK_UTILIZATION, EnumSet.of(last, max));
+        addMetric(metrics, ClusterControllerMetrics.RESOURCE_USAGE_MEMORY_LIMIT.last());
+        addMetric(metrics, ClusterControllerMetrics.RESOURCE_USAGE_DISK_LIMIT.last());
+        addMetric(metrics, ClusterControllerMetrics.REINDEXING_PROGRESS.last());
         
         return metrics;
     }
@@ -708,6 +707,10 @@ public class VespaMetricSet {
 
     private static void addMetric(Set<Metric> metrics, String nameWithSuffix) {
         metrics.add(new Metric(nameWithSuffix));
+    }
+
+    private static void addMetric(Set<Metric> metrics, ClusterControllerMetrics metric, EnumSet<Suffix> suffixes) {
+        suffixes.forEach(suffix -> metrics.add(new Metric(metric.baseName() + "." + suffix.suffix())));
     }
 
     private static void addMetric(Set<Metric> metrics, ContainerMetrics metric, EnumSet<Suffix> suffixes) {
