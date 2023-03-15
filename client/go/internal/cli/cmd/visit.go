@@ -99,11 +99,15 @@ $ vespa visit --content-cluster search # get documents from cluster named "searc
 		SilenceUsage:      true,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			vArgs.cli = cli
+			result := checkArguments(vArgs)
+			if !result.Success {
+				return fmt.Errorf("argument error: %s", result.Message)
+			}
 			service, err := documentService(cli)
 			if err != nil {
 				return err
 			}
-			result := probeHandler(service, cli)
+			result = probeHandler(service, cli)
 			if result.Success {
 				result = visitClusters(&vArgs, service)
 			}
@@ -127,6 +131,15 @@ $ vespa visit --content-cluster search # get documents from cluster named "searc
 	cmd.Flags().IntVar(&vArgs.sliceId, "slice-id", 0, `The slice number of the visit represented by this visitor`)
 	cmd.Flags().IntVar(&vArgs.slices, "slices", 0, `Split the document corpus into this number of independent slices`)
 	return cmd
+}
+
+func checkArguments(vArgs visitArgs) (res util.OperationResult) {
+	if vArgs.slices > 0 || vArgs.sliceId > 0 {
+		if !(vArgs.slices > 0 && vArgs.sliceId > 0) {
+			return util.Failure("Both 'slices' and 'slice-id' must be set")
+		}
+	}
+	return util.Success("")
 }
 
 type HandlersInfo struct {
@@ -294,12 +307,8 @@ func runOneVisit(vArgs *visitArgs, service *vespa.Service, contToken string) (*V
 	if vArgs.to > 0 {
 		urlPath = urlPath + fmt.Sprintf("&toTimestamp=%d", vArgs.to)
 	}
-	if vArgs.slices > 0 || vArgs.sliceId > 0 {
-		if vArgs.slices > 0 && vArgs.sliceId > 0 {
-			urlPath = urlPath + fmt.Sprintf("&slices=%d&sliceId=%d", vArgs.slices, vArgs.sliceId)
-		} else {
-			return nil, util.Failure("Argument error: Both 'slices' and 'slice-id' must be set")
-		}
+	if vArgs.sliceId > 0 {
+		urlPath = urlPath + fmt.Sprintf("&slices=%d&sliceId=%d", vArgs.slices, vArgs.sliceId)
 	}
 	url, urlParseError := url.Parse(urlPath)
 	if urlParseError != nil {
