@@ -78,7 +78,7 @@ UniqueStoreSmallStringBufferType::get_memory_allocator() const
 }
 
 UniqueStoreExternalStringBufferType::UniqueStoreExternalStringBufferType(uint32_t array_size, uint32_t max_arrays, std::shared_ptr<vespalib::alloc::MemoryAllocator> memory_allocator)
-    : BufferType<UniqueStoreEntry<std::string>>(array_size, 2u, max_arrays, NUM_ARRAYS_FOR_NEW_UNIQUESTORE_BUFFER, ALLOC_GROW_FACTOR),
+    : BufferType<UniqueStoreEntry<std::string>>(array_size, 0u, max_arrays, NUM_ARRAYS_FOR_NEW_UNIQUESTORE_BUFFER, ALLOC_GROW_FACTOR),
       _memory_allocator(std::move(memory_allocator))
 {
 }
