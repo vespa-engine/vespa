@@ -53,7 +53,10 @@ class ref_counted
     template <typename X> friend class ref_counted;
 private:
     T *_ptr;
-    ref_counted(T *ptr) noexcept : _ptr(ptr) {}
+    ref_counted(T *ptr) noexcept : _ptr(ptr) {
+        // verify that ptr points to a valid object
+        (void) ptr->count_refs();
+    }
     void maybe_subref() noexcept {
         if (_ptr) [[likely]] {
             _ptr->internal_subref();
