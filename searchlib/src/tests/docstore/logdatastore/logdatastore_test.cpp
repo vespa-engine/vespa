@@ -1022,7 +1022,7 @@ TEST_F("require that lid space can be increased after being compacted and then s
 TEST_F("require that there is control of static memory usage", Fixture)
 {
     vespalib::MemoryUsage usage = f.store.getMemoryUsage();
-    EXPECT_EQUAL(584u + sizeof(std::mutex), sizeof(LogDataStore));
+    EXPECT_EQUAL(536u + sizeof(LogDataStore::NameIdSet) + sizeof(std::mutex), sizeof(LogDataStore));
     EXPECT_EQUAL(74108u, usage.allocatedBytes());
     EXPECT_EQUAL(384u, usage.usedBytes());
 }
