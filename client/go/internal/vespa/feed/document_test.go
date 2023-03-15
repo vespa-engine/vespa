@@ -1,6 +1,10 @@
 package feed
 
 import (
+	"encoding/json"
+	"io"
+	"reflect"
+	"strings"
 	"testing"
 )
 
@@ -76,4 +80,56 @@ func TestParseDocumentId(t *testing.T) {
 			t.Errorf("#%d: ParseDocumentId(%q) = (%s, _), want %s", i, tt.in, parsed, tt.out)
 		}
 	}
+}
+
+func feedInput(jsonl bool) string {
+	operations := []string{
+		`
+{
+  "put": "id:ns:type::doc1",
+  "fields": {"foo": "123"}
+}`,
+		`
+{
+  "put": "id:ns:type::doc2",
+  "fields": {"bar": "456"}
+}`,
+		`
+{
+  "remove": "id:ns:type::doc1"
+}
+`}
+	if jsonl {
+		return strings.Join(operations, "\n")
+	}
+	return "   \n[" + strings.Join(operations, ",") + "]"
+}
+
+func testDocumentDecoder(t *testing.T, jsonLike string) {
+	t.Helper()
+	r := NewDecoder(strings.NewReader(jsonLike))
+	want := []Document{
+		{PutId: "id:ns:type::doc1", Fields: json.RawMessage(`{"foo": "123"}`)},
+		{PutId: "id:ns:type::doc2", Fields: json.RawMessage(`{"bar": "456"}`)},
+		{RemoveId: "id:ns:type::doc1", Fields: json.RawMessage(nil)},
+	}
+	got := []Document{}
+	for {
+		doc, err := r.Decode()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			t.Fatal(err)
+		}
+		got = append(got, doc)
+	}
+	if !reflect.DeepEqual(got, want) {
+		t.Errorf("got %+v, want %+v", got, want)
+	}
+}
+
+func TestDocumentDecoder(t *testing.T) {
+	testDocumentDecoder(t, feedInput(false))
+	testDocumentDecoder(t, feedInput(true))
 }
