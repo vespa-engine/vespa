@@ -57,12 +57,12 @@ import static com.yahoo.container.protect.Error.UNSPECIFIED;
 public class StatisticsSearcher extends Searcher {
 
     private static final CompoundName IGNORE_QUERY = new CompoundName("metrics.ignore");
-    private static final String MAX_QUERY_LATENCY_METRIC = "max_query_latency";
+    private static final String MAX_QUERY_LATENCY_METRIC = ContainerMetrics.MAX_QUERY_LATENCY.baseName();
     private static final String EMPTY_RESULTS_METRIC = ContainerMetrics.EMPTY_RESULTS.baseName();
     private static final String HITS_PER_QUERY_METRIC = ContainerMetrics.HITS_PER_QUERY.baseName();
     private static final String TOTALHITS_PER_QUERY_METRIC = ContainerMetrics.TOTAL_HITS_PER_QUERY.baseName();
     private static final String FAILED_QUERIES_METRIC = ContainerMetrics.FAILED_QUERIES.baseName();
-    private static final String MEAN_QUERY_LATENCY_METRIC = "mean_query_latency";
+    private static final String MEAN_QUERY_LATENCY_METRIC = ContainerMetrics.MEAN_QUERY_LATENCY.baseName();
     private static final String QUERY_LATENCY_METRIC = ContainerMetrics.QUERY_LATENCY.baseName();
     private static final String QUERY_TIMEOUT_METRIC = ContainerMetrics.QUERY_TIMEOUT.baseName();
     private static final String QUERY_HIT_OFFSET_METRIC = ContainerMetrics.QUERY_HIT_OFFSET.baseName();

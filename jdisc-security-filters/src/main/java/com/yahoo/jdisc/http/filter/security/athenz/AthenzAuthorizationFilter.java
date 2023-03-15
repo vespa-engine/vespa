@@ -7,6 +7,7 @@ import com.yahoo.jdisc.http.HttpRequest;
 import com.yahoo.jdisc.http.filter.DiscFilterRequest;
 import com.yahoo.jdisc.http.filter.security.athenz.RequestResourceMapper.ResourceNameAndAction;
 import com.yahoo.jdisc.http.filter.security.base.JsonSecurityRequestFilterBase;
+import com.yahoo.metrics.ContainerMetrics;
 import com.yahoo.vespa.athenz.api.AthenzAccessToken;
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
 import com.yahoo.vespa.athenz.api.AthenzPrincipal;
@@ -48,8 +49,8 @@ public class AthenzAuthorizationFilter extends JsonSecurityRequestFilterBase {
     public static final String MATCHED_ROLE_ATTRIBUTE = ATTRIBUTE_PREFIX + ".matched-role";
     public static final String IDENTITY_NAME_ATTRIBUTE = ATTRIBUTE_PREFIX + ".identity-name";
     public static final String MATCHED_CREDENTIAL_TYPE_ATTRIBUTE = ATTRIBUTE_PREFIX + ".credentials-type";
-    private static final String ACCEPTED_METRIC_NAME = "jdisc.http.filter.athenz.accepted_requests";
-    private static final String REJECTED_METRIC_NAME = "jdisc.http.filter.athenz.rejected_requests";
+    private static final String ACCEPTED_METRIC_NAME = ContainerMetrics.JDISC_HTTP_FILTER_ATHENZ_ACCEPTED_REQUESTS.baseName();
+    private static final String REJECTED_METRIC_NAME = ContainerMetrics.JDISC_HTTP_FILTER_ATHENZ_REJECTED_REQUESTS.baseName();
 
     private static final Logger log = Logger.getLogger(AthenzAuthorizationFilter.class.getName());
 
