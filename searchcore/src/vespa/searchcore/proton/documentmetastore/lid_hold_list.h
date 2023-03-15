@@ -37,6 +37,8 @@ public:
      **/
     size_t size() const { return _holdList.size(); }
 
+    size_t byteSize() const { return _holdList.size() * sizeof(Element); }
+
     /**
      * Clears the free list.
      **/

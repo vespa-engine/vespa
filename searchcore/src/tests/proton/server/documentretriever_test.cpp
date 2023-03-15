@@ -101,6 +101,7 @@ using vespalib::eval::SimpleValue;
 using vespalib::eval::TensorSpec;
 using vespalib::eval::ValueType;
 using vespalib::eval::Value;
+using proton::documentmetastore::IStore;
 using namespace document::config_builder;
 using namespace search::index;
 
@@ -296,7 +297,7 @@ struct Fixture {
     const GlobalId &gid;
     BucketId bucket_id;
     Timestamp timestamp;
-    DocumentMetaStore::DocId lid;
+    IStore::DocId lid;
     MyDocumentStore doc_store;
     search::AttributeManager attr_manager;
     Schema schema;
@@ -365,11 +366,10 @@ struct Fixture {
           _dtName(doc_type_name),
           _retriever()
     {
-        using Result = DocumentMetaStore::Result;
         meta_store.constructFreeList();
-        Result inspect = meta_store.get().inspect(gid, 0u);
+        IStore::Result inspect = meta_store.get().inspect(gid, 0u);
         uint32_t docSize = 1;
-        Result putRes(meta_store.get().put(gid, bucket_id, timestamp, docSize, inspect.getLid(), 0u));
+        IStore::Result putRes(meta_store.get().put(gid, bucket_id, timestamp, docSize, inspect.getLid(), 0u));
         meta_store.get().commit(search::CommitParam(0));
         lid = putRes.getLid();
         ASSERT_TRUE(putRes.ok());

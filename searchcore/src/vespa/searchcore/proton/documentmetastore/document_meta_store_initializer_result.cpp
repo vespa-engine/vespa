@@ -5,18 +5,14 @@
 namespace proton {
 
 DocumentMetaStoreInitializerResult::
-DocumentMetaStoreInitializerResult(DocumentMetaStore::SP
-                                   documentMetaStore_in,
-                                   const search::TuneFileAttributes &
-                                   tuneFile_in)
-    : _documentMetaStore(documentMetaStore_in),
+DocumentMetaStoreInitializerResult(std::shared_ptr<DocumentMetaStore> documentMetaStore_in,
+                                   const search::TuneFileAttributes & tuneFile_in)
+    : _documentMetaStore(std::move(documentMetaStore_in)),
       _tuneFile(tuneFile_in)
 {
 }
 
 
-DocumentMetaStoreInitializerResult::~DocumentMetaStoreInitializerResult()
-{
-}
+DocumentMetaStoreInitializerResult::~DocumentMetaStoreInitializerResult() = default;
 
 } // namespace proton

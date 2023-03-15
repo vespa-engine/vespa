@@ -2,11 +2,11 @@
 
 #pragma once
 
-#include "documentmetastore.h"
 #include <vespa/searchlib/common/tunefileinfo.h>
 
 namespace proton {
 
+class DocumentMetaStore;
 
 /**
  * The result after initializing document meta store component in a
@@ -15,20 +15,18 @@ namespace proton {
 class DocumentMetaStoreInitializerResult
 {
 private:
-    DocumentMetaStore::SP _documentMetaStore;
+    std::shared_ptr<DocumentMetaStore> _documentMetaStore;
     const search::TuneFileAttributes _tuneFile;
 
 public:
     using SP = std::shared_ptr<DocumentMetaStoreInitializerResult>;
 
-    DocumentMetaStoreInitializerResult(DocumentMetaStore::SP
-                                       documentMetaStore_in,
-                                       const search::TuneFileAttributes &
-                                       tuneFile_in);
+    DocumentMetaStoreInitializerResult(std::shared_ptr<DocumentMetaStore> documentMetaStore_in,
+                                       const search::TuneFileAttributes & tuneFile_in);
 
     virtual ~DocumentMetaStoreInitializerResult();
 
-    DocumentMetaStore::SP documentMetaStore() const {
+    std::shared_ptr<DocumentMetaStore> documentMetaStore() const {
         return _documentMetaStore;
     }
     const search::TuneFileAttributes &tuneFile() const { return _tuneFile; }

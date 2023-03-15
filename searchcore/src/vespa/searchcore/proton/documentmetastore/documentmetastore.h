@@ -6,7 +6,6 @@
 #include "documentmetastoreattribute.h"
 #include "lid_allocator.h"
 #include "lid_gid_key_comparator.h"
-#include "lid_hold_list.h"
 #include "raw_document_meta_data.h"
 #include <vespa/searchcore/proton/common/subdbtype.h>
 #include <vespa/searchlib/queryeval/blueprint.h>

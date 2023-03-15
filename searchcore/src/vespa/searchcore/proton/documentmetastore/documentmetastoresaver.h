@@ -2,8 +2,10 @@
 
 #pragma once
 
+#include "lid_gid_key_comparator.h"
+#include "i_store.h"
+#include <vespa/vespalib/btree/btreeiterator.h>
 #include <vespa/searchlib/attribute/attributesaver.h>
-#include "documentmetastore.h"
 
 namespace proton {
 
