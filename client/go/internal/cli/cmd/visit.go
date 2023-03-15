@@ -28,6 +28,10 @@ type visitArgs struct {
 	pretty         bool
 	debugMode      bool
 	chunkCount     int
+	from           uint64
+	to             uint64
+	slices         int
+	sliceId        int
 	cli            *CLI
 }
 
@@ -118,6 +122,10 @@ $ vespa visit --content-cluster search # get documents from cluster named "searc
 	cmd.Flags().BoolVar(&vArgs.makeFeed, "make-feed", false, `output JSON array suitable for vespa-feeder`)
 	cmd.Flags().BoolVar(&vArgs.pretty, "pretty-json", false, `format pretty JSON`)
 	cmd.Flags().IntVar(&vArgs.chunkCount, "chunk-count", 1000, `chunk by count`)
+	cmd.Flags().Uint64Var(&vArgs.from, "from", 0, `Timestamp to visit from, in microseconds`)
+	cmd.Flags().Uint64Var(&vArgs.to, "to", 0, `Timestamp to visit up to, in microseconds`)
+	cmd.Flags().IntVar(&vArgs.sliceId, "slice-id", 0, `The slice number of the visit represented by this visitor`)
+	cmd.Flags().IntVar(&vArgs.slices, "slices", 0, `Split the document corpus into this number of independent slices`)
 	return cmd
 }
 
@@ -170,7 +178,7 @@ func probeHandler(service *vespa.Service, cli *CLI) (res util.OperationResult) {
 				cli.printWarning(w)
 			}
 		}
-		cli.printWarning("Missing /document/v1/ API; add <document-api /> to the container cluster delcaration in services.xml")
+		cli.printWarning("Missing /document/v1/ API; add <document-api /> to the container cluster declaration in services.xml")
 		return util.Failure("Missing /document/v1 API")
 	} else {
 		return util.FailureWithPayload(service.Description()+" at "+request.URL.Host+": "+response.Status, util.ReaderToJSON(response.Body))
@@ -279,6 +287,19 @@ func runOneVisit(vArgs *visitArgs, service *vespa.Service, contToken string) (*V
 	}
 	if vArgs.chunkCount > 0 {
 		urlPath = urlPath + fmt.Sprintf("&wantedDocumentCount=%d", vArgs.chunkCount)
+	}
+	if vArgs.from > 0 {
+		urlPath = urlPath + fmt.Sprintf("&fromTimestamp=%d", vArgs.from)
+	}
+	if vArgs.to > 0 {
+		urlPath = urlPath + fmt.Sprintf("&toTimestamp=%d", vArgs.to)
+	}
+	if vArgs.slices > 0 || vArgs.sliceId > 0 {
+		if vArgs.slices > 0 && vArgs.sliceId > 0 {
+			urlPath = urlPath + fmt.Sprintf("&slices=%d&sliceId=%d", vArgs.slices, vArgs.sliceId)
+		} else {
+			return nil, util.Failure("Argument error: Both 'slices' and 'slice-id' must be set")
+		}
 	}
 	url, urlParseError := url.Parse(urlPath)
 	if urlParseError != nil {
