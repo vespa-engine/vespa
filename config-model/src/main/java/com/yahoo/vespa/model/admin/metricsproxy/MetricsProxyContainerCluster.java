@@ -137,9 +137,6 @@ public class MetricsProxyContainerCluster extends ContainerCluster<MetricsProxyC
     }
 
     @Override
-    protected void doPrepare(DeployState deployState) { }
-
-    @Override
     public void getConfig(MetricsNodesConfig.Builder builder) {
         builder.node.addAll(MetricsNodesConfigGenerator.generate(getContainers()));
     }
