@@ -158,7 +158,7 @@ public enum ContainerMetrics implements VespaMetrics {
     ERROR_UNSPECIFIED("error.unspecified", Unit.OPERATION, "Requests that failed for an unspecified reason"),
     ERROR_UNHANDLED_EXCEPTION("error.unhandled_exception", Unit.OPERATION, "Requests that failed due to an unhandled exception"),
 
-    // Deprecated metrics. TODO: Remove on Vespa 9.
+    // Deprecated metrics. TODO: Remove in Vespa 9.
     SERVER_REJECTED_REQUESTS("serverRejectedRequests", Unit.OPERATION, "Deprecated. Use jdisc.thread_pool.rejected_tasks instead."),
     SERVER_THREAD_POOL_SIZE("serverThreadPoolSize", Unit.THREAD, "Deprecated. Use jdisc.thread_pool.size instead."),
     SERVER_ACTIVE_THREADS("serverActiveThreads", Unit.THREAD, "Deprecated. Use jdisc.thread_pool.active_threads instead."),
@@ -193,7 +193,36 @@ public enum ContainerMetrics implements VespaMetrics {
     JRT_TRANSPORT_SERVER_TLS_CONNECIONTS_ESTABLISHED("jrt.transport.server.tls-connections-established", Unit.CONNECTION, "TLS server connections established"),
     JRT_TRANSPORT_CLIENT_TLS_CONNECTIONS_ESTABLISHED("jrt.transport.client.tls-connections-established", Unit.CONNECTION, "TLS client connections established"),
     JRT_TRANSPORT_SERVER_UNENCRYPTED_CONNECTIONS_ESTABLISHED("jrt.transport.server.unencrypted-connections-established", Unit.CONNECTION, "Unencrypted server connections established"),
-    JRT_TRANSPORT_CLIENT_UNENCRYPTED_CONNECTIONS_ESTABLISHED("jrt.transport.client.unencrypted-connections-established", Unit.CONNECTION, "Unencrypted client connections established");
+    JRT_TRANSPORT_CLIENT_UNENCRYPTED_CONNECTIONS_ESTABLISHED("jrt.transport.client.unencrypted-connections-established", Unit.CONNECTION, "Unencrypted client connections established"),
+
+    MAX_QUERY_LATENCY("max_query_latency", Unit.MILLISECOND, "Deprecated. Use query_latency.max instead"), // TODO: Remove in Vespa 9
+    MEAN_QUERY_LATENCY("mean_query_latency", Unit.MILLISECOND, "Deprecated. Use the expression (query_latency.sum / query_latency.count) instead"),// TODO: Remove in Vespa 9
+
+
+    // Metrics defined in com/yahoo/jdisc/http/filter/security/athenz/AthenzAuthorizationFilter.java
+    JDISC_HTTP_FILTER_ATHENZ_ACCEPTED_REQUESTS("jdisc.http.filter.athenz.accepted_requests", Unit.REQUEST, "Number of requests accepted by the AthenzAuthorization filter"),
+    JDISC_HTTP_FILTER_ATHENZ_REJECTED_REQUESTS("jdisc.http.filter.athenz.rejected_requests", Unit.REQUEST, "Number of requests rejected by the AthenzAuthorization filter"),
+
+
+    // Metrics defined in com/yahoo/jdisc/http/server/jetty/MetricDefinitions.java
+    SERVER_CONNECTIONS_OPEN_MAX("serverConnectionsOpenMax", Unit.CONNECTION, "Maximum number of open connections"),
+    SERVER_CONNECTION_DURATION_MAX("serverConnectionDurationMax", Unit.MILLISECOND, "Longest duration a connection is kept open"),
+
+    SERVER_CONNECTION_DURATION_MEAN("serverConnectionDurationMean", Unit.MILLISECOND, "Average duration a connection is kept open"),
+    SERVER_CONNECTION_DURATION_STD_DEV("serverConnectionDurationStdDev", Unit.MILLISECOND, "Standard deviation of open connection duration"),
+    SERVER_NUM_REQUESTS("serverNumRequests", Unit.REQUEST, "Number of requests"),
+    SERVER_NUM_SUCCESSFUL_RESPONSES("serverNumSuccessfulResponses", Unit.REQUEST, "Number of successful responses"),
+    SERVER_NUM_FAILED_RESPONSES("serverNumFailedResponses", Unit.REQUEST, "Number of failed responses"),
+
+    SERVER_NUM_SUCCESSFUL_RESPONSE_WRITES("serverNumSuccessfulResponseWrites", Unit.REQUEST, "Number of successful response writes"),
+    SERVER_NUM_FAILED_RESPONSE_WRITES("serverNumFailedResponseWrites", Unit.REQUEST, "Number of failed response writes"),
+
+    SERVER_TOTAL_SUCCESFUL_RESPONSE_LATENCY("serverTotalSuccessfulResponseLatency", Unit.MILLISECOND, "Total duration for execution of successful responses"),
+    SERVER_TOTAL_FAILED_RESPONSE_LATENCY("serverTotalFailedResponseLatency", Unit.MILLISECOND, "Total duration for execution of failed responses"),
+    SERVER_TIME_TO_FIRST_BYTE("serverTimeToFirstByte", Unit.MILLISECOND, "Time from request has been received by the server until the first byte is returned to the client"),
+
+    SERVER_STARTED_MILLIS("serverStartedMillis", Unit.MILLISECOND, "Time since the service was started");
+
 
 
     private final String name;

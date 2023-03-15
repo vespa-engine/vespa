@@ -22,10 +22,10 @@ class MetricDefinitions {
     static final String STATUS_CODE_DIMENSION = "statusCode";
 
     static final String NUM_OPEN_CONNECTIONS = ContainerMetrics.SERVER_NUM_OPEN_CONNECTIONS.baseName();
-    static final String NUM_CONNECTIONS_OPEN_MAX = "serverConnectionsOpenMax";
-    static final String CONNECTION_DURATION_MAX = "serverConnectionDurationMax";
-    static final String CONNECTION_DURATION_MEAN = "serverConnectionDurationMean";
-    static final String CONNECTION_DURATION_STD_DEV = "serverConnectionDurationStdDev";
+    static final String NUM_CONNECTIONS_OPEN_MAX = ContainerMetrics.SERVER_CONNECTIONS_OPEN_MAX.baseName();
+    static final String CONNECTION_DURATION_MAX = ContainerMetrics.SERVER_CONNECTION_DURATION_MAX.baseName();
+    static final String CONNECTION_DURATION_MEAN = ContainerMetrics.SERVER_CONNECTION_DURATION_MEAN.baseName();
+    static final String CONNECTION_DURATION_STD_DEV = ContainerMetrics.SERVER_CONNECTION_DURATION_STD_DEV.baseName();
     static final String NUM_PREMATURELY_CLOSED_CONNECTIONS = ContainerMetrics.JDISC_HTTP_REQUEST_PREMATURELY_CLOSED.baseName();
     static final String REQUESTS_PER_CONNECTION = ContainerMetrics.JDISC_HTTP_REQUEST_REQUESTS_PER_CONNECTION.baseName();
 
@@ -36,16 +36,16 @@ class MetricDefinitions {
 
     /* For historical reasons, these are all aliases for the same metric. 'jdisc.http' should ideally be the only one. */
     static final String JDISC_HTTP_REQUESTS = ContainerMetrics.JDISC_HTTP_REQUESTS.baseName();
-    static final String NUM_REQUESTS = "serverNumRequests";
+    static final String NUM_REQUESTS = ContainerMetrics.SERVER_NUM_REQUESTS.baseName();
 
-    static final String NUM_SUCCESSFUL_RESPONSES = "serverNumSuccessfulResponses";
-    static final String NUM_FAILED_RESPONSES = "serverNumFailedResponses";
-    static final String NUM_SUCCESSFUL_WRITES = "serverNumSuccessfulResponseWrites";
-    static final String NUM_FAILED_WRITES = "serverNumFailedResponseWrites";
+    static final String NUM_SUCCESSFUL_RESPONSES = ContainerMetrics.SERVER_NUM_SUCCESSFUL_RESPONSES.baseName();
+    static final String NUM_FAILED_RESPONSES = ContainerMetrics.SERVER_NUM_FAILED_RESPONSES.baseName();
+    static final String NUM_SUCCESSFUL_WRITES = ContainerMetrics.SERVER_NUM_SUCCESSFUL_RESPONSE_WRITES.baseName();
+    static final String NUM_FAILED_WRITES = ContainerMetrics.SERVER_NUM_FAILED_RESPONSE_WRITES.baseName();
 
-    static final String TOTAL_SUCCESSFUL_LATENCY = "serverTotalSuccessfulResponseLatency";
-    static final String TOTAL_FAILED_LATENCY = "serverTotalFailedResponseLatency";
-    static final String TIME_TO_FIRST_BYTE = "serverTimeToFirstByte";
+    static final String TOTAL_SUCCESSFUL_LATENCY = ContainerMetrics.SERVER_TOTAL_SUCCESFUL_RESPONSE_LATENCY.baseName();
+    static final String TOTAL_FAILED_LATENCY = ContainerMetrics.SERVER_TOTAL_FAILED_RESPONSE_LATENCY.baseName();
+    static final String TIME_TO_FIRST_BYTE = ContainerMetrics.SERVER_TIME_TO_FIRST_BYTE.baseName();
 
     static final String RESPONSES_1XX = ContainerMetrics.HTTP_STATUS_1XX.baseName();
     static final String RESPONSES_2XX = ContainerMetrics.HTTP_STATUS_2XX.baseName();
@@ -53,7 +53,7 @@ class MetricDefinitions {
     static final String RESPONSES_4XX = ContainerMetrics.HTTP_STATUS_4XX.baseName();
     static final String RESPONSES_5XX = ContainerMetrics.HTTP_STATUS_5XX.baseName();
 
-    static final String STARTED_MILLIS = "serverStartedMillis";
+    static final String STARTED_MILLIS = ContainerMetrics.SERVER_STARTED_MILLIS.baseName();
 
     static final String URI_LENGTH = ContainerMetrics.JDISC_HTTP_REQUEST_URI_LENGTH.baseName();
     static final String CONTENT_SIZE = ContainerMetrics.JDISC_HTTP_REQUEST_CONTENT_SIZE.baseName();
