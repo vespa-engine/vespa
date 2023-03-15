@@ -3,6 +3,7 @@
 #include "attribute_manager_initializer.h"
 #include "attributes_initializer_base.h"
 #include "attribute_collection_spec_factory.h"
+#include <vespa/searchcore/proton/documentmetastore/documentmetastoreattribute.h>
 #include <vespa/searchcorespi/index/i_thread_service.h>
 #include <future>
 
@@ -22,12 +23,12 @@ class AttributeInitializerTask : public InitializerTask
 {
 private:
     AttributeInitializer::UP _initializer;
-    DocumentMetaStore::SP _documentMetaStore;
+    std::shared_ptr<DocumentMetaStoreAttribute> _documentMetaStore;
     InitializedAttributesResult &_result;
 
 public:
     AttributeInitializerTask(AttributeInitializer::UP initializer,
-                             DocumentMetaStore::SP documentMetaStore,
+                             std::shared_ptr<DocumentMetaStoreAttribute> documentMetaStore,
                              InitializedAttributesResult &result)
         : _initializer(std::move(initializer)),
           _documentMetaStore(std::move(documentMetaStore)),
@@ -52,14 +53,14 @@ class AttributeManagerInitializerTask : public vespalib::Executor::Task
 {
     std::promise<void> _promise;
     search::SerialNum _configSerialNum;
-    DocumentMetaStore::SP _documentMetaStore;
+    std::shared_ptr<DocumentMetaStoreAttribute> _documentMetaStore;
     AttributeManager::SP _attrMgr;
     InitializedAttributesResult &_attributesResult;
 
 public:
     AttributeManagerInitializerTask(std::promise<void> &&promise,
                                     search::SerialNum configSerialNum,
-                                    DocumentMetaStore::SP documentMetaStore,
+                                    std::shared_ptr<DocumentMetaStoreAttribute> documentMetaStore,
                                     AttributeManager::SP attrMgr,
                                     InitializedAttributesResult &attributesResult);
     ~AttributeManagerInitializerTask() override;
@@ -69,7 +70,7 @@ public:
 
 AttributeManagerInitializerTask::AttributeManagerInitializerTask(std::promise<void> &&promise,
                                                                  search::SerialNum configSerialNum,
-                                                                 DocumentMetaStore::SP documentMetaStore,
+                                                                 std::shared_ptr<DocumentMetaStoreAttribute> documentMetaStore,
                                                                  AttributeManager::SP attrMgr,
                                                                  InitializedAttributesResult &attributesResult)
     : _promise(std::move(promise)),
@@ -96,13 +97,13 @@ class AttributeInitializerTasksBuilder : public IAttributeInitializerRegistry
 private:
     InitializerTask &_attrMgrInitTask;
     InitializerTask::SP _documentMetaStoreInitTask;
-    DocumentMetaStore::SP _documentMetaStore;
+    std::shared_ptr<DocumentMetaStoreAttribute> _documentMetaStore;
     InitializedAttributesResult &_attributesResult;
 
 public:
     AttributeInitializerTasksBuilder(InitializerTask &attrMgrInitTask,
                                      InitializerTask::SP documentMetaStoreInitTask,
-                                     DocumentMetaStore::SP documentMetaStore,
+                                     std::shared_ptr<DocumentMetaStoreAttribute> documentMetaStore,
                                      InitializedAttributesResult &attributesResult);
     ~AttributeInitializerTasksBuilder() override;
     void add(AttributeInitializer::UP initializer) override;
@@ -110,7 +111,7 @@ public:
 
 AttributeInitializerTasksBuilder::AttributeInitializerTasksBuilder(InitializerTask &attrMgrInitTask,
                                                                    InitializerTask::SP documentMetaStoreInitTask,
-                                                                   DocumentMetaStore::SP documentMetaStore,
+                                                                   std::shared_ptr<DocumentMetaStoreAttribute> documentMetaStore,
                                                                    InitializedAttributesResult &attributesResult)
     : _attrMgrInitTask(attrMgrInitTask),
       _documentMetaStoreInitTask(std::move(documentMetaStoreInitTask)),
@@ -142,7 +143,7 @@ AttributeManagerInitializer::createAttributeSpec() const
 
 AttributeManagerInitializer::AttributeManagerInitializer(SerialNum configSerialNum,
                                                          initializer::InitializerTask::SP documentMetaStoreInitTask,
-                                                         DocumentMetaStore::SP documentMetaStore,
+                                                         std::shared_ptr<DocumentMetaStoreAttribute> documentMetaStore,
                                                          const AttributeManager & baseAttrMgr,
                                                          const AttributesConfig &attrCfg,
                                                          const AllocStrategy& alloc_strategy,

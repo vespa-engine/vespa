@@ -6,6 +6,7 @@
 #include "lidstatevector.h"
 #include <vespa/searchlib/attribute/attributeguard.h>
 #include <vespa/searchlib/queryeval/blueprint.h>
+#include <vespa/vespalib/util/memoryusage.h>
 #include <atomic>
 
 namespace proton::documentmetastore {
@@ -24,9 +25,9 @@ private:
     LidStateVector              _freeLids;
     LidStateVector              _usedLids;
     LidStateVector              _pendingHoldLids;
-    bool                        _lidFreeListConstructed;
     LidStateVector              _activeLids;
     std::atomic<uint32_t>       _numActiveLids;
+    bool                        _lidFreeListConstructed;
 
 public:
     LidAllocator(uint32_t size,
@@ -40,7 +41,7 @@ public:
     void registerLid(DocId lid) { _usedLids.setBit(lid); }
     void unregisterLid(DocId lid);
     void unregister_lids(const std::vector<DocId>& lids);
-    size_t getUsedLidsSize() const { return _usedLids.byteSize(); }
+    vespalib::MemoryUsage getMemoryUsage() const;
     void reclaim_memory(generation_t oldest_used_gen) {
         _holdLids.reclaim_memory(oldest_used_gen, _freeLids);
     }

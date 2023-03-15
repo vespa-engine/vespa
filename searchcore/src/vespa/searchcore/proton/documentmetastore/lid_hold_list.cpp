@@ -14,7 +14,7 @@ LidHoldList::add(const uint32_t data, generation_t generation) {
     if (!_holdList.empty()) {
         assert(generation >= _holdList.back().second);
     }
-    _holdList.push_back(std::make_pair(data, generation));
+    _holdList.emplace_back(data, generation);
 }
 
 void

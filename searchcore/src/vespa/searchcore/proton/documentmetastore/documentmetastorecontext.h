@@ -2,10 +2,12 @@
 
 #pragma once
 
-#include "documentmetastore.h"
 #include "i_document_meta_store_context.h"
+#include <vespa/searchcommon/common/growstrategy.h>
 
 namespace proton {
+
+class DocumentMetaStore;
 
 /**
  * Class providing write and read interface to the document meta store.
@@ -19,12 +21,12 @@ public:
         search::AttributeGuard   _guard;
         const DocumentMetaStore &_store;
     public:
-        explicit ReadGuard(const search::AttributeVector::SP &metaStoreAttr);
-        const search::IDocumentMetaStore &get() const override { return _store; }
+        explicit ReadGuard(const std::shared_ptr<search::AttributeVector> &metaStoreAttr);
+        const search::IDocumentMetaStore &get() const override;
     };
 private:
-    search::AttributeVector::SP _metaStoreAttr;
-    IDocumentMetaStore::SP      _metaStore;
+    std::shared_ptr<search::AttributeVector>  _metaStoreAttr;
+    std::shared_ptr<IDocumentMetaStore>       _metaStore;
 public:
 
     explicit DocumentMetaStoreContext(std::shared_ptr<bucketdb::BucketDBOwner> bucketDB);
@@ -40,9 +42,9 @@ public:
      * Create a new context with the given document meta store encapsulated
      * as an attribute vector.
      */
-    explicit DocumentMetaStoreContext(const search::AttributeVector::SP &metaStoreAttr);
+    explicit DocumentMetaStoreContext(std::shared_ptr<search::AttributeVector> metaStoreAttr);
 
-    proton::IDocumentMetaStore::SP   getSP() const override { return _metaStore; }
+    std::shared_ptr<proton::IDocumentMetaStore>   getSP() const override { return _metaStore; }
     proton::IDocumentMetaStore &       get()       override { return *_metaStore; }
     IReadGuard::UP getReadGuard() const override {
         return std::make_unique<ReadGuard>(_metaStoreAttr);

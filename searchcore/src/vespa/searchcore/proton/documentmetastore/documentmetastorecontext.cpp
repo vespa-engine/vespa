@@ -1,13 +1,19 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "documentmetastorecontext.h"
+#include "documentmetastore.h"
 
 namespace proton {
 
-DocumentMetaStoreContext::ReadGuard::ReadGuard(const search::AttributeVector::SP &metaStoreAttr) :
+DocumentMetaStoreContext::ReadGuard::ReadGuard(const std::shared_ptr<search::AttributeVector> & metaStoreAttr) :
     _guard(metaStoreAttr),
     _store(static_cast<const DocumentMetaStore &>(*_guard))
 {
+}
+
+const search::IDocumentMetaStore &
+DocumentMetaStoreContext::ReadGuard::get() const {
+    return _store;
 }
 
 DocumentMetaStoreContext::DocumentMetaStoreContext(std::shared_ptr<bucketdb::BucketDBOwner> bucketDB)
@@ -23,8 +29,8 @@ DocumentMetaStoreContext::DocumentMetaStoreContext(std::shared_ptr<bucketdb::Buc
 }
 
 
-DocumentMetaStoreContext::DocumentMetaStoreContext(const search::AttributeVector::SP &metaStoreAttr) :
-    _metaStoreAttr(metaStoreAttr),
+DocumentMetaStoreContext::DocumentMetaStoreContext(std::shared_ptr<search::AttributeVector> metaStoreAttr) :
+    _metaStoreAttr(std::move(metaStoreAttr)),
     _metaStore(std::dynamic_pointer_cast<IDocumentMetaStore>(_metaStoreAttr))
 {
 }
