@@ -101,6 +101,8 @@ public:
 
     size_t get_held_bytes() const { return _held_bytes.load(std::memory_order_relaxed); }
 
+    // Static size of _phase_2_list might depend on std::deque implementation
+    static constexpr size_t sizeof_phase_2_list = sizeof(ElemWithGenList);
 };
 
 }

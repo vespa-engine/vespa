@@ -202,6 +202,10 @@ protected:
     using EntryRefHoldList = GenerationHoldList<EntryRefHoldElem, false, true>;
 
     EntryRefHoldList              _entry_ref_hold_list;
+public:
+    // Static size of dequeue in _entry_ref_hold_list._phase_2_list
+    // might depend on std::deque implementation
+    static constexpr size_t sizeof_entry_ref_hold_list_deque = EntryRefHoldList::sizeof_phase_2_list;
 private:
 
     /**

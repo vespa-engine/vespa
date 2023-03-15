@@ -209,13 +209,9 @@ INSTANTIATE_TEST_SUITE_P(NumberStoreFreeListsDisabledMultiTest,
                          testing::PrintToStringParamName());
 
 TEST_P(NumberStoreTest, control_static_sizes) {
-#ifdef _LIBCPP_VERSION
-    EXPECT_EQ(464u, sizeof(store));
-    EXPECT_EQ(280u, sizeof(NumberStoreTest::ArrayStoreType::DataStoreType));
-#else
-    EXPECT_EQ(496u, sizeof(store));
-    EXPECT_EQ(320u, sizeof(NumberStoreTest::ArrayStoreType::DataStoreType));
-#endif
+    static constexpr size_t sizeof_deque = vespalib::datastore::DataStoreBase::sizeof_entry_ref_hold_list_deque;
+    EXPECT_EQ(416u + sizeof_deque, sizeof(store));
+    EXPECT_EQ(240u + sizeof_deque, sizeof(NumberStoreTest::ArrayStoreType::DataStoreType));
     EXPECT_EQ(112u, sizeof(NumberStoreTest::ArrayStoreType::SmallBufferType));
     MemoryUsage usage = store.getMemoryUsage();
     EXPECT_EQ(202144u, usage.allocatedBytes());
