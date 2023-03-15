@@ -49,6 +49,8 @@ string tmpDir("tmp");
 string clsDir("clstmp");
 string asuDir("asutmp");
 
+constexpr size_t sizeof_large_string_entry = sizeof(vespalib::datastore::UniqueStoreEntry<std::string>);
+
 }
 
 namespace search {
@@ -947,8 +949,8 @@ AttributeTest::testSingle()
         {
             AttributePtr ptr = createAttribute("sv-string", Config(BasicType::STRING, CollectionType::SINGLE));
             ptr->updateStat(true);
-            EXPECT_EQ(133216u, ptr->getStatus().getAllocated());
-            EXPECT_EQ(53280u, ptr->getStatus().getUsed());
+            EXPECT_EQ(133096u + sizeof_large_string_entry, ptr->getStatus().getAllocated());
+            EXPECT_EQ(53240u + sizeof_large_string_entry, ptr->getStatus().getUsed());
             addDocs(ptr, numDocs);
             testSingle<StringAttribute, string, string>(ptr, values);
         }
@@ -957,8 +959,8 @@ AttributeTest::testSingle()
             cfg.setFastSearch(true);
             AttributePtr ptr = createAttribute("sv-fs-string", cfg);
             ptr->updateStat(true);
-            EXPECT_EQ(361584u, ptr->getStatus().getAllocated());
-            EXPECT_EQ(105216u, ptr->getStatus().getUsed());
+            EXPECT_EQ(361464u + sizeof_large_string_entry, ptr->getStatus().getAllocated());
+            EXPECT_EQ(105176u + sizeof_large_string_entry, ptr->getStatus().getUsed());
             addDocs(ptr, numDocs);
             testSingle<StringAttribute, string, string>(ptr, values);
         }
@@ -1140,8 +1142,8 @@ AttributeTest::testArray()
         {
             AttributePtr ptr = createAttribute("a-string", Config(BasicType::STRING, CollectionType::ARRAY));
             ptr->updateStat(true);
-            EXPECT_EQ(649232u, ptr->getStatus().getAllocated());
-            EXPECT_EQ(565856u, ptr->getStatus().getUsed());
+            EXPECT_EQ(649112u + sizeof_large_string_entry, ptr->getStatus().getAllocated());
+            EXPECT_EQ(565816u + sizeof_large_string_entry, ptr->getStatus().getUsed());
             addDocs(ptr, numDocs);
             testArray<StringAttribute, string>(ptr, values);
         }
@@ -1150,8 +1152,8 @@ AttributeTest::testArray()
             cfg.setFastSearch(true);
             AttributePtr ptr = createAttribute("afs-string", cfg);
             ptr->updateStat(true);
-            EXPECT_EQ(899536u, ptr->getStatus().getAllocated());
-            EXPECT_EQ(617812u, ptr->getStatus().getUsed());
+            EXPECT_EQ(899416u + sizeof_large_string_entry, ptr->getStatus().getAllocated());
+            EXPECT_EQ(617772u + sizeof_large_string_entry, ptr->getStatus().getUsed());
             addDocs(ptr, numDocs);
             testArray<StringAttribute, string>(ptr, values);
         }
