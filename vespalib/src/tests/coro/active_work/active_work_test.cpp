@@ -7,6 +7,7 @@
 #include <vespa/vespalib/util/time.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
 #include <vespa/vespalib/gtest/gtest.h>
+#include <cinttypes>
 
 using namespace vespalib;
 using namespace vespalib::coro;
@@ -49,7 +50,7 @@ TEST(ActiveWorkTest, run_expensive_subtasks_concurrently) {
             make_expensive_task));
     auto td = steady_clock::now() - t0;
     EXPECT_EQ(result, 136);
-    fprintf(stderr, "time spent: %zu ms\n", count_ms(td));
+    fprintf(stderr, "time spent: %" PRId64 " ms\n", count_ms(td));
 }
 
 TEST(ActiveWorkTest, run_cheap_subtasks_concurrently) {
@@ -60,7 +61,7 @@ TEST(ActiveWorkTest, run_cheap_subtasks_concurrently) {
             make_cheap_task));
     auto td = steady_clock::now() - t0;
     EXPECT_EQ(result, 136);
-    fprintf(stderr, "time spent: %zu ms\n", count_ms(td));
+    fprintf(stderr, "time spent: %" PRId64 " ms\n", count_ms(td));
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()
