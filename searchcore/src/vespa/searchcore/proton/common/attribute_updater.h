@@ -14,7 +14,10 @@ namespace tensor {
     class PrepareResult;
     class TensorAttribute;
 }
-namespace attribute {class ReferenceAttribute; }
+namespace attribute {
+class ReferenceAttribute;
+class SingleRawAttribute;
+}
 
 VESPA_DEFINE_EXCEPTION(UpdateException, vespalib::Exception);
 
@@ -56,6 +59,7 @@ private:
     static void updateValue(PredicateAttribute & vec, uint32_t lid, const FieldValue & val);
     static void updateValue(tensor::TensorAttribute & vec, uint32_t lid, const FieldValue & val);
     static void updateValue(attribute::ReferenceAttribute & vec, uint32_t lid, const FieldValue & val);
+    static void updateValue(attribute::SingleRawAttribute& vec, uint32_t lid, const FieldValue& val);
 };
 
 }

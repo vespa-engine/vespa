@@ -5,6 +5,7 @@
 #include <vespa/document/fieldvalue/arrayfieldvalue.h>
 #include <vespa/document/fieldvalue/literalfieldvalue.h>
 #include <vespa/document/fieldvalue/predicatefieldvalue.h>
+#include <vespa/document/fieldvalue/rawfieldvalue.h>
 #include <vespa/document/fieldvalue/referencefieldvalue.h>
 #include <vespa/document/fieldvalue/tensorfieldvalue.h>
 #include <vespa/document/fieldvalue/weightedsetfieldvalue.h>
@@ -22,6 +23,7 @@
 #include <vespa/searchlib/attribute/changevector.hpp>
 #include <vespa/searchlib/attribute/predicate_attribute.h>
 #include <vespa/searchlib/attribute/reference_attribute.h>
+#include <vespa/searchlib/attribute/single_raw_attribute.h>
 #include <vespa/searchlib/tensor/tensor_attribute.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/classname.h>
@@ -36,6 +38,7 @@ using vespalib::getClassName;
 using search::tensor::PrepareResult;
 using search::tensor::TensorAttribute;
 using search::attribute::ReferenceAttribute;
+using search::attribute::SingleRawAttribute;
 
 namespace {
     std::string toString(const FieldUpdate & update) {
@@ -253,6 +256,26 @@ AttributeUpdater::handleUpdate(ReferenceAttribute &vec, uint32_t lid, const Valu
     }
 }
 
+template <>
+void
+AttributeUpdater::handleUpdate(SingleRawAttribute& vec, uint32_t lid, const ValueUpdate& upd)
+{
+    LOG(spam, "handleUpdate(%s, %u): %s", vec.getName().c_str(), lid, toString(upd).c_str());
+    ValueUpdate::ValueUpdateType op = upd.getType();
+    assert(!vec.hasMultiValue());
+    if (op == ValueUpdate::Assign) {
+        const AssignValueUpdate &assign(static_cast<const AssignValueUpdate &>(upd));
+        if (assign.hasValue()) {
+            updateValue(vec, lid, assign.getValue());
+        }
+    } else if (op == ValueUpdate::Clear) {
+        vec.clearDoc(lid);
+    } else {
+        LOG(warning, "Unsupported value update operation %s on singlevalue raw attribute %s",
+            upd.className(), vec.getName().c_str());
+    }
+}
+
 void
 AttributeUpdater::handleUpdate(AttributeVector & vec, uint32_t lid, const FieldUpdate & fUpdate)
 {
@@ -284,6 +307,8 @@ AttributeUpdater::handleUpdate(AttributeVector & vec, uint32_t lid, const FieldU
             handleUpdate(static_cast<TensorAttribute &>(vec), lid, vUp);
         } else if (vec.isReferenceType()) {
             handleUpdate(static_cast<ReferenceAttribute &>(vec), lid, vUp);
+        } else if (vec.is_raw_type()) {
+            handleUpdate(static_cast<SingleRawAttribute&>(vec), lid, vUp);
         } else {
             LOG(warning, "Unsupported attribute vector '%s' (classname=%s)", vec.getName().c_str(), getClassName(vec).c_str());
             return;
@@ -310,6 +335,9 @@ AttributeUpdater::handleValue(AttributeVector & vec, uint32_t lid, const FieldVa
     } else if (vec.isReferenceType()) {
         // ReferenceAttribute is never multivalue.
         updateValue(static_cast<ReferenceAttribute &>(vec), lid, val);
+    } else if (vec.is_raw_type()) {
+        // SingleRawAttribute is never multivalue
+        updateValue(static_cast<SingleRawAttribute&>(vec), lid, val);
     } else {
         LOG(warning, "Unsupported attribute vector '%s' (classname=%s)", vec.getName().c_str(), getClassName(vec).c_str());
         return;
@@ -497,6 +525,20 @@ AttributeUpdater::updateValue(ReferenceAttribute &vec, uint32_t lid, const Field
     } else {
         vec.clearDoc(lid);
     }
+}
+
+void
+AttributeUpdater::updateValue(SingleRawAttribute& vec, uint32_t lid, const FieldValue& val)
+{
+    if (!val.isA(FieldValue::Type::RAW)) {
+        vec.clearDoc(lid);
+        throw UpdateException(
+                make_string("SingleRawAttribute must be updated with "
+                            "RawFieldValue, but was '%s'", val.toString(false).c_str()));
+    }
+    const auto& raw_fv = static_cast<const RawFieldValue &>(val);
+    auto raw = raw_fv.getValueRef();
+    vec.update(lid, {raw.data(), raw.size()});
 }
 
 namespace {
