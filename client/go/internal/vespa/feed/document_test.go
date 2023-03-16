@@ -132,4 +132,25 @@ func testDocumentDecoder(t *testing.T, jsonLike string) {
 func TestDocumentDecoder(t *testing.T) {
 	testDocumentDecoder(t, feedInput(false))
 	testDocumentDecoder(t, feedInput(true))
+
+	jsonLike := `
+{
+  "put": "id:ns:type::doc1",
+  "fields": {"foo": "123"}
+}
+{
+  "put": "id:ns:type::doc1",
+  "fields": {"foo": "invalid
+}
+`
+	r := NewDecoder(strings.NewReader(jsonLike))
+	_, err := r.Decode() // first object is valid
+	if err != nil {
+		t.Errorf("unexpected error: %s", err)
+	}
+	_, err = r.Decode()
+	wantErr := "invalid json at byte offset 60: invalid character '\\n' in string literal"
+	if err.Error() != wantErr {
+		t.Errorf("want error %q, got %q", wantErr, err.Error())
+	}
 }

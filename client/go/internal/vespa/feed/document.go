@@ -95,6 +95,14 @@ func (d *Decoder) readCloseToken() error {
 }
 
 func (d *Decoder) Decode() (Document, error) {
+	doc, err := d.decode()
+	if err != nil && err != io.EOF {
+		return Document{}, fmt.Errorf("invalid json at byte offset %d: %w", d.dec.InputOffset(), err)
+	}
+	return doc, err
+}
+
+func (d *Decoder) decode() (Document, error) {
 	if err := d.guessMode(); err != nil {
 		return Document{}, err
 	}
