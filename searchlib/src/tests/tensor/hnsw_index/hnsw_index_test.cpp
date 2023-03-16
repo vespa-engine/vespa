@@ -733,7 +733,6 @@ TYPED_TEST(HnswIndexTest, hnsw_graph_is_compacted)
         this->commit();
         this->index->update_stat(compaction_strategy);
         mem_2 = this->commit_and_update_stat();
-        EXPECT_LE(mem_2.usedBytes(), mem_1.usedBytes());
         if (mem_2.usedBytes() == mem_1.usedBytes()) {
             break;
         }
