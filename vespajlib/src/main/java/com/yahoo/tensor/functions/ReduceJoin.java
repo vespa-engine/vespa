@@ -106,6 +106,8 @@ public class ReduceJoin<NAMETYPE extends Name> extends CompositeTensorFunction<N
                 return false;
             if (b.type().dimensions().size() != commonDimensions.dimensions().size())
                 return false;
+        } else if (dimensions.size() != commonDimensions.dimensions().size()) {
+            return false;
         } else {
             for (TensorType.Dimension dimension : commonDimensions.dimensions()) {
                 if (!dimensions.contains(dimension.name()))
