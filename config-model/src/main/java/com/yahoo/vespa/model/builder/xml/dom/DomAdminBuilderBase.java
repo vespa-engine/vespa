@@ -117,7 +117,7 @@ public abstract class DomAdminBuilderBase extends VespaDomBuilder.DomConfigProdu
         String levels = loggingSpec.requiredStringAttribute("levels");
         var levelSpec = new LevelsModSpec();
         levelSpec.setLevels(levels);
-        admin.addLogctlCommand(componentSpec, levelSpec.toLogctlModSpec());
+        admin.addLogctlCommand(componentSpec, levelSpec);
     }
 
     void addLoggingSpecs(ModelElement loggingElement, Admin admin) {

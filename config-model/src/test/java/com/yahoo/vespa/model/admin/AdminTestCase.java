@@ -274,8 +274,13 @@ public class AdminTestCase {
         assertEquals(4, logctlSpecs.size());  // Default logctl specs
         assertEquals(1, logctlSpecs
                 .stream()
-                .filter(l -> (l.componentSpec.equals("com.yahoo.vespa.spifly.repackaged.spifly.BaseActivator")
-                        && l.levelsModSpec.equals("fatal=on,error=on,warning=on,info=off,event=on,config=on,debug=off,spam=off"))).count());
+                     .filter(l -> (l.componentSpec()
+                                   .equals("com.yahoo.vespa.spifly.repackaged.spifly.BaseActivator")
+                                   &&
+                                   l.levelsModSpec()
+                                   .toLogctlModSpec()
+                                   .equals("fatal=on,error=on,warning=on,info=off,event=on,config=on,debug=off,spam=off")))
+                     .count());
 
         String localhostConfigId = "hosts/myhost0";
         SentinelConfig sentinelConfig = vespaModel.getConfig(SentinelConfig.class, localhostConfigId);

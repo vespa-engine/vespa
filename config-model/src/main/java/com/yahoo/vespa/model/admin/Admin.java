@@ -30,7 +30,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 
 import static com.yahoo.vespa.model.admin.monitoring.MetricSet.empty;
 
@@ -328,22 +327,22 @@ public class Admin extends TreeConfigProducer<AnyConfigProducer> implements Seri
     public List<LogctlSpec> getLogctlSpecs() {
         return logctlSpecs;
     }
-    public void addLogctlCommand(String componentSpec, String levelsModSpec) {
-        logctlSpecs.add(new LogctlSpec(componentSpec,  levelsModSpec));
+    public void addLogctlCommand(String componentSpec, LevelsModSpec levelsModSpec) {
+        logctlSpecs.add(new LogctlSpec(componentSpec, levelsModSpec));
     }
 
-    private static Set<LogctlSpec> defaultLogctlSpecs() {
+    private static List<LogctlSpec> defaultLogctlSpecs() {
         // Turn off info logging for all containers for some classes (unimportant log messages that create noise in vespa log)
-        return Set.of(new LogctlSpec("com.yahoo.vespa.spifly.repackaged.spifly.BaseActivator", getLevelModSpec("-info")),
-                      new LogctlSpec("org.eclipse.jetty.server.Server", getLevelModSpec("-info")),
-                      new LogctlSpec("org.eclipse.jetty.server.handler.ContextHandler", getLevelModSpec("-info")),
-                      new LogctlSpec("org.eclipse.jetty.server.AbstractConnector", getLevelModSpec("-info")));
+        return List.of(new LogctlSpec("com.yahoo.vespa.spifly.repackaged.spifly.BaseActivator", getLevelModSpec("-info")),
+                       new LogctlSpec("org.eclipse.jetty.server.Server", getLevelModSpec("-info")),
+                       new LogctlSpec("org.eclipse.jetty.server.handler.ContextHandler", getLevelModSpec("-info")),
+                       new LogctlSpec("org.eclipse.jetty.server.AbstractConnector", getLevelModSpec("-info")));
     }
 
-    static String getLevelModSpec(String levels) {
+    static LevelsModSpec getLevelModSpec(String levels) {
         var levelSpec = new LevelsModSpec();
         levelSpec.setLevels(levels);
-        return levelSpec.toLogctlModSpec();
+        return levelSpec;
     }
 
 }
