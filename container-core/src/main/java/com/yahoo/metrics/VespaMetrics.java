@@ -3,7 +3,7 @@ package com.yahoo.metrics;
 /**
  * @author gjoranv
  */
-interface VespaMetrics {
+public interface VespaMetrics {
 
     String baseName();
     Unit unit();
