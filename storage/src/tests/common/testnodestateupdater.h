@@ -9,6 +9,7 @@
 #pragma once
 
 #include <vespa/storage/common/nodestateupdater.h>
+#include <mutex>
 
 namespace storage::lib {
     class ClusterState;
