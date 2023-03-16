@@ -371,6 +371,7 @@ jobs:
       screwdriver.cd/buildPeriodically: H 0 * * *
     steps:
       - install: |
+          dnf install -y dnf-plugins-core
           dnf config-manager --add-repo https://raw.githubusercontent.com/vespa-engine/vespa/master/dist/vespa-engine.repo
           dnf config-manager --enable powertools
           dnf install -y epel-release
