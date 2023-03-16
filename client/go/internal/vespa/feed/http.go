@@ -2,6 +2,8 @@ package feed
 
 import (
 	"bytes"
+	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -24,9 +26,6 @@ type ClientOptions struct {
 	TraceLevel *int
 }
 
-// Result represents the result of a feeding operation
-type Result struct{}
-
 func NewClient(options ClientOptions, httpClient util.HTTPClient) *Client {
 	return &Client{options: options, httpClient: httpClient}
 }
@@ -46,20 +45,47 @@ func (c *Client) queryParams() url.Values {
 }
 
 // Send given document the URL configured in this client.
-func (c *Client) Send(document Document) (Result, error) {
+func (c *Client) Send(document Document) Result {
 	method, url, err := document.FeedURL(c.options.BaseURL, c.queryParams())
 	if err != nil {
-		return Result{}, err
+		return Result{Status: StatusError, Err: err}
 	}
 	body := document.Body()
 	req, err := http.NewRequest(method, url.String(), bytes.NewReader(body))
 	if err != nil {
-		return Result{}, err
+		return Result{Status: StatusError, Err: err}
 	}
 	resp, err := c.httpClient.Do(req, c.options.Timeout)
 	if err != nil {
-		return Result{}, err
+		return Result{Status: StatusTransportFailure, Err: err}
 	}
 	defer resp.Body.Close()
-	return Result{}, nil
+	return createResult(resp)
+}
+
+func createResult(resp *http.Response) Result {
+	result := Result{}
+	switch resp.StatusCode {
+	case 200:
+		result.Status = StatusSuccess
+	case 412:
+		result.Status = StatusConditionNotMet
+	case 502, 504, 507:
+		result.Status = StatusVespaFailure
+	default:
+		result.Status = StatusTransportFailure
+	}
+	var body struct {
+		Message string          `json:"message"`
+		Trace   json.RawMessage `json:"trace"`
+	}
+	jsonDec := json.NewDecoder(resp.Body)
+	if err := jsonDec.Decode(&body); err != nil {
+		result.Status = StatusError
+		result.Err = fmt.Errorf("failed to decode json response: %w", err)
+		return result
+	}
+	result.Message = body.Message
+	result.Trace = string(body.Trace)
+	return result
 }

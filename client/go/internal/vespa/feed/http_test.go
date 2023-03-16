@@ -14,13 +14,14 @@ import (
 func TestClientSend(t *testing.T) {
 	doc := Document{Create: true, UpdateId: "id:ns:type::doc1", Fields: json.RawMessage(`{"foo": "123"}`)}
 	httpClient := mock.HTTPClient{}
-	client := NewClient(ClientOptions{
+	var client Feeder = NewClient(ClientOptions{
 		BaseURL: "https://example.com:1337",
 		Timeout: time.Duration(5 * time.Second),
 	}, &httpClient)
-	_, err := client.Send(doc)
-	if err != nil {
-		t.Fatalf("got unexpected error %q", err)
+	httpClient.NextResponseString(200, `{"message":"All good!"}`)
+	res := client.Send(doc)
+	if res.Err != nil {
+		t.Fatalf("got unexpected error %q", res.Err)
 	}
 	r := httpClient.LastRequest
 	if r.Method != http.MethodPut {
