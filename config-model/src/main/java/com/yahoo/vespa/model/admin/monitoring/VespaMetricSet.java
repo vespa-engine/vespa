@@ -13,6 +13,7 @@ import com.yahoo.metrics.SlobrokMetrics;
 import com.yahoo.metrics.StorageMetrics;
 import com.yahoo.metrics.NodeAdminMetrics;
 import com.yahoo.metrics.Suffix;
+import com.yahoo.metrics.VespaMetrics;
 
 import java.util.Collections;
 import java.util.EnumSet;
@@ -84,7 +85,7 @@ public class VespaMetricSet {
         addMetric(metrics, ContainerMetrics.JRT_TRANSPORT_SERVER_TLS_CONNECIONTS_ESTABLISHED.baseName());
         addMetric(metrics, ContainerMetrics.JRT_TRANSPORT_CLIENT_TLS_CONNECTIONS_ESTABLISHED.baseName());
         addMetric(metrics, ContainerMetrics.JRT_TRANSPORT_SERVER_UNENCRYPTED_CONNECTIONS_ESTABLISHED.baseName());
-        addMetric(metrics, ContainerMetrics. JRT_TRANSPORT_CLIENT_UNENCRYPTED_CONNECTIONS_ESTABLISHED. baseName());
+        addMetric(metrics, ContainerMetrics.JRT_TRANSPORT_CLIENT_UNENCRYPTED_CONNECTIONS_ESTABLISHED.baseName());
 
         // C++ TLS metrics
         addMetric(metrics, StorageMetrics.VDS_SERVER_NETWORK_TLS_HANDSHAKES_FAILED.count());
@@ -113,7 +114,7 @@ public class VespaMetricSet {
     }
 
     private static Set<Metric> getConfigServerMetrics() {
-        Set<Metric> metrics =new LinkedHashSet<>();
+        Set<Metric> metrics = new LinkedHashSet<>();
 
         addMetric(metrics, ConfigServerMetrics.REQUESTS.count());
         addMetric(metrics, ConfigServerMetrics.FAILED_REQUESTS.count());
@@ -140,9 +141,9 @@ public class VespaMetricSet {
 
         addMetric(metrics, ContainerMetrics.HANDLED_REQUESTS.count());
         addMetric(metrics, ContainerMetrics.HANDLED_LATENCY, EnumSet.of(sum, count, max));
-        
-        addMetric(metrics, ContainerMetrics.SERVER_NUM_OPEN_CONNECTIONS, EnumSet.of(max,last, average));
-        addMetric(metrics, ContainerMetrics.SERVER_NUM_CONNECTIONS, EnumSet.of(max,last, average));
+
+        addMetric(metrics, ContainerMetrics.SERVER_NUM_OPEN_CONNECTIONS, EnumSet.of(max, last, average));
+        addMetric(metrics, ContainerMetrics.SERVER_NUM_CONNECTIONS, EnumSet.of(max, last, average));
 
         addMetric(metrics, ContainerMetrics.SERVER_BYTES_RECEIVED, EnumSet.of(sum, count));
         addMetric(metrics, ContainerMetrics.SERVER_BYTES_SENT, EnumSet.of(sum, count));
@@ -187,7 +188,7 @@ public class VespaMetricSet {
         addMetric(metrics, ContainerMetrics.MEM_NATIVE_TOTAL.average());
         addMetric(metrics, ContainerMetrics.MEM_NATIVE_FREE.average());
         addMetric(metrics, ContainerMetrics.MEM_NATIVE_USED.average());
-                
+
         addMetric(metrics, ContainerMetrics.JDISC_MEMORY_MAPPINGS.max());
         addMetric(metrics, ContainerMetrics.JDISC_OPEN_FILE_DESCRIPTORS.max());
 
@@ -240,7 +241,7 @@ public class VespaMetricSet {
         addMetric(metrics, ContainerMetrics.JDISC_APPLICATION_FAILED_COMPONENT_GRAPHS.rate());
 
         addMetric(metrics, ContainerMetrics.JDISC_JVM.last());
-        
+
         // Deprecated metrics. TODO: Remove on Vespa 9.
         addMetric(metrics, ContainerMetrics.SERVER_REJECTED_REQUESTS, EnumSet.of(rate, count));             // TODO: Remove on Vespa 9. Use jdisc.thread_pool.rejected_tasks.
         addMetric(metrics, ContainerMetrics.SERVER_THREAD_POOL_SIZE, EnumSet.of(max, last));                // TODO: Remove on Vespa 9. Use jdisc.thread_pool.rejected_tasks.
@@ -264,7 +265,7 @@ public class VespaMetricSet {
         addMetric(metrics, ClusterControllerMetrics.CLUSTER_STATE_CHANGE_COUNT.baseName());
         addMetric(metrics, ClusterControllerMetrics.BUSY_TICK_TIME_MS, EnumSet.of(last, max, sum, count));
         addMetric(metrics, ClusterControllerMetrics.IDLE_TICK_TIME_MS, EnumSet.of(last, max, sum, count));
-        
+
         addMetric(metrics, ClusterControllerMetrics.WORK_MS, EnumSet.of(last, sum, count));
 
         addMetric(metrics, ClusterControllerMetrics.IS_MASTER.last());
@@ -278,7 +279,7 @@ public class VespaMetricSet {
         addMetric(metrics, ClusterControllerMetrics.RESOURCE_USAGE_MEMORY_LIMIT.last());
         addMetric(metrics, ClusterControllerMetrics.RESOURCE_USAGE_DISK_LIMIT.last());
         addMetric(metrics, ClusterControllerMetrics.REINDEXING_PROGRESS.last());
-        
+
         return metrics;
     }
 
@@ -321,7 +322,7 @@ public class VespaMetricSet {
         addMetric(metrics, ContainerMetrics.RELEVANCE_AT_1, EnumSet.of(sum, count));
         addMetric(metrics, ContainerMetrics.RELEVANCE_AT_3, EnumSet.of(sum, count));
         addMetric(metrics, ContainerMetrics.RELEVANCE_AT_10, EnumSet.of(sum, count));
-                
+
         // Errors from search container
         addMetric(metrics, ContainerMetrics.ERROR_TIMEOUT.rate());
         addMetric(metrics, ContainerMetrics.ERROR_BACKENDS_OOS.rate());
@@ -419,7 +420,7 @@ public class VespaMetricSet {
         addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_THREADING_SERVICE_SUMMARY_ACCEPTED.rate());
         addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_THREADING_SERVICE_SUMMARY_WAKEUPS.rate());
         addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_THREADING_SERVICE_SUMMARY_UTILIZATION, EnumSet.of(max, sum, count));
-        
+
         // lid space
         addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_READY_LID_SPACE_LID_BLOAT_FACTOR.average());
         addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_READY_LID_SPACE_LID_FRAGMENTATION_FACTOR.average());
@@ -616,6 +617,7 @@ public class VespaMetricSet {
 
         return metrics;
     }
+
     private static Set<Metric> getDistributorMetrics() {
         Set<Metric> metrics = new LinkedHashSet<>();
         addMetric(metrics, DistributorMetrics.VDS_IDEALSTATE_BUCKETS_RECHECKING.average());
@@ -709,37 +711,10 @@ public class VespaMetricSet {
         metrics.add(new Metric(nameWithSuffix));
     }
 
-    private static void addMetric(Set<Metric> metrics, ClusterControllerMetrics metric, EnumSet<Suffix> suffixes) {
+    private static void addMetric(Set<Metric> metrics, VespaMetrics metric, EnumSet<Suffix> suffixes) {
         suffixes.forEach(suffix -> metrics.add(new Metric(metric.baseName() + "." + suffix.suffix())));
     }
 
-    private static void addMetric(Set<Metric> metrics, ContainerMetrics metric, EnumSet<Suffix> suffixes) {
-        suffixes.forEach(suffix -> metrics.add(new Metric(metric.baseName() + "." + suffix.suffix())));
-    }
-
-    private static void addMetric(Set<Metric> metrics, SearchNodeMetrics metric, EnumSet<Suffix> suffixes) {
-        suffixes.forEach(suffix -> metrics.add(new Metric(metric.baseName() + "." + suffix.suffix())));
-    }
-
-    private static void addMetric(Set<Metric> metrics, StorageMetrics metric, EnumSet<Suffix> suffixes) {
-        suffixes.forEach(suffix -> metrics.add(new Metric(metric.baseName() + "." + suffix.suffix())));
-    }
-
-    private static void addMetric(Set<Metric> metrics, DistributorMetrics metric, EnumSet<Suffix> suffixes) {
-        suffixes.forEach(suffix -> metrics.add(new Metric(metric.baseName() + "." + suffix.suffix())));
-    }
-    private static void addMetric(Set<Metric> metrics, SentinelMetrics metric, EnumSet<Suffix> suffixes) {
-        suffixes.forEach(suffix -> metrics.add(new Metric(metric.baseName() + "." + suffix.suffix())));
-    }
-    private static void addMetric(Set<Metric> metrics, SlobrokMetrics metric, EnumSet<Suffix> suffixes) {
-        suffixes.forEach(suffix -> metrics.add(new Metric(metric.baseName() + "." + suffix.suffix())));
-    }
-    private static void addMetric(Set<Metric> metrics, LogdMetrics metric, EnumSet<Suffix> suffixes) {
-        suffixes.forEach(suffix -> metrics.add(new Metric(metric.baseName() + "." + suffix.suffix())));
-    }
-    private static void addMetric(Set<Metric> metrics, ConfigServerMetrics metric, EnumSet<Suffix> suffixes) {
-        suffixes.forEach(suffix -> metrics.add(new Metric(metric.baseName() + "." + suffix.suffix())));
-    }
     private static void addMetric(Set<Metric> metrics, String metricName, Iterable<String> aggregateSuffices) {
         for (String suffix : aggregateSuffices) {
             metrics.add(new Metric(metricName + "." + suffix));
