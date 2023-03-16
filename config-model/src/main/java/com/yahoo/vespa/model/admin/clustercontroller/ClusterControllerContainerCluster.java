@@ -37,6 +37,9 @@ public class ClusterControllerContainerCluster extends ContainerCluster<ClusterC
     @Override
     protected Set<Path> unnecessaryPlatformBundles() { return UNNECESSARY_BUNDLES; }
 
+    @Override
+    protected void doPrepare(DeployState deployState) { }
+
     @Override protected boolean messageBusEnabled() { return false; }
 
     @Override

@@ -9,7 +9,6 @@ import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AnyConfigProducer;
 import com.yahoo.config.model.producer.TreeConfigProducer;
 import com.yahoo.config.provision.ClusterSpec;
-import com.yahoo.container.logging.LevelsModSpec;
 import com.yahoo.vespa.model.AbstractService;
 import com.yahoo.vespa.model.ConfigProxy;
 import com.yahoo.vespa.model.ConfigSentinel;
@@ -25,12 +24,12 @@ import com.yahoo.vespa.model.admin.monitoring.Monitoring;
 import com.yahoo.vespa.model.admin.monitoring.builder.Metrics;
 import com.yahoo.vespa.model.filedistribution.FileDistributionConfigProducer;
 import com.yahoo.vespa.model.filedistribution.FileDistributionConfigProvider;
+
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 
 import static com.yahoo.vespa.model.admin.monitoring.MetricSet.empty;
 
@@ -41,6 +40,8 @@ import static com.yahoo.vespa.model.admin.monitoring.MetricSet.empty;
  * @author gjoranv
  */
 public class Admin extends TreeConfigProducer<AnyConfigProducer> implements Serializable {
+
+    private static final long serialVersionUID = 1L;
 
     private final boolean isHostedVespa;
     private final Monitoring monitoring;
@@ -67,6 +68,12 @@ public class Admin extends TreeConfigProducer<AnyConfigProducer> implements Seri
     }
 
     private final List<LogctlSpec> logctlSpecs = new ArrayList<>();
+    public List<LogctlSpec> getLogctlSpecs() {
+        return logctlSpecs;
+    }
+    public void addLogctlCommand(String componentSpec, String levelsModSpec) {
+        logctlSpecs.add(new LogctlSpec(componentSpec,  levelsModSpec));
+    }
 
     /**
      * The single cluster controller cluster shared by all content clusters by default when not multitenant.
@@ -94,7 +101,6 @@ public class Admin extends TreeConfigProducer<AnyConfigProducer> implements Seri
         this.multitenant = multitenant;
         this.fileDistribution = new FileDistributionConfigProducer(parent);
         this.applicationType = applicationType;
-        this.logctlSpecs.addAll(defaultLogctlSpecs());
     }
 
     public Configserver getConfigserver() { return defaultConfigserver; }
@@ -324,26 +330,5 @@ public class Admin extends TreeConfigProducer<AnyConfigProducer> implements Seri
     }
 
     public ApplicationType getApplicationType() { return applicationType; }
-
-    public List<LogctlSpec> getLogctlSpecs() {
-        return logctlSpecs;
-    }
-    public void addLogctlCommand(String componentSpec, String levelsModSpec) {
-        logctlSpecs.add(new LogctlSpec(componentSpec,  levelsModSpec));
-    }
-
-    private static Set<LogctlSpec> defaultLogctlSpecs() {
-        // Turn off info logging for all containers for some classes (unimportant log messages that create noise in vespa log)
-        return Set.of(new LogctlSpec("com.yahoo.vespa.spifly.repackaged.spifly.BaseActivator", getLevelModSpec("-info")),
-                      new LogctlSpec("org.eclipse.jetty.server.Server", getLevelModSpec("-info")),
-                      new LogctlSpec("org.eclipse.jetty.server.handler.ContextHandler", getLevelModSpec("-info")),
-                      new LogctlSpec("org.eclipse.jetty.server.AbstractConnector", getLevelModSpec("-info")));
-    }
-
-    static String getLevelModSpec(String levels) {
-        var levelSpec = new LevelsModSpec();
-        levelSpec.setLevels(levels);
-        return levelSpec.toLogctlModSpec();
-    }
 
 }

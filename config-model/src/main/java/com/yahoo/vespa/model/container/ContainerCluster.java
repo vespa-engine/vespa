@@ -61,6 +61,7 @@ import com.yahoo.vespa.model.container.search.ContainerSearch;
 import com.yahoo.vespa.model.container.search.searchchain.SearchChains;
 import com.yahoo.vespa.model.content.Content;
 import com.yahoo.vespa.model.search.SearchCluster;
+
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -300,16 +301,7 @@ public abstract class ContainerCluster<CONTAINER extends Container>
         doPrepare(deployState);
     }
 
-    protected void doPrepare(DeployState deployState) {
-        wireLogctlSpecs();
-    }
-
-    private void wireLogctlSpecs() {
-        getAdmin().ifPresent(admin -> {
-            for (var c : getContainers()) {
-                c.setLogctlSpecs(admin.getLogctlSpecs());
-            }});
-    }
+    protected abstract void doPrepare(DeployState deployState);
 
     public String getName() {
         return name;
