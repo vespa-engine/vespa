@@ -16,6 +16,7 @@ import com.yahoo.osgi.provider.model.ComponentModel;
 import com.yahoo.search.config.QrStartConfig;
 import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.vespa.model.AbstractService;
+import com.yahoo.vespa.model.LogctlSpec;
 import com.yahoo.vespa.model.PortAllocBridge;
 import com.yahoo.vespa.model.application.validation.RestartConfigs;
 import com.yahoo.vespa.model.container.component.Component;
@@ -34,6 +35,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -64,6 +66,8 @@ public abstract class Container extends AbstractService implements
 
     /** The cluster this container belongs to, or null if it is not added to any cluster */
     private ContainerCluster<?> owner = null;
+
+    private List<LogctlSpec> logctlSpecs = List.of();
 
     protected final TreeConfigProducer<?> parent;
     private final String name;
@@ -414,5 +418,12 @@ public abstract class Container extends AbstractService implements
     private static ContainerCluster containerClusterOrNull(AnyConfigProducer producer) {
         return producer instanceof ContainerCluster<?> ? (ContainerCluster<?>) producer : null;
     }
+
+    void setLogctlSpecs(List<LogctlSpec> logctlSpecs) {
+        this.logctlSpecs = logctlSpecs;
+    }
+
+    @Override
+    public List<LogctlSpec> getLogctlSpecs() { return logctlSpecs; }
 
 }

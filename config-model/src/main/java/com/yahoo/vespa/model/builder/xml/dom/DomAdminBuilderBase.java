@@ -21,11 +21,8 @@ import com.yahoo.vespa.model.admin.monitoring.builder.Metrics;
 import com.yahoo.vespa.model.admin.monitoring.builder.PredefinedMetricSets;
 import com.yahoo.vespa.model.admin.monitoring.builder.xml.MetricsBuilder;
 import org.w3c.dom.Element;
-
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -120,7 +117,7 @@ public abstract class DomAdminBuilderBase extends VespaDomBuilder.DomConfigProdu
         String levels = loggingSpec.requiredStringAttribute("levels");
         var levelSpec = new LevelsModSpec();
         levelSpec.setLevels(levels);
-        admin.addLogctlCommand(componentSpec, levelSpec.toLogctlModSpec());
+        admin.addLogctlCommand(componentSpec, levelSpec);
     }
 
     void addLoggingSpecs(ModelElement loggingElement, Admin admin) {
