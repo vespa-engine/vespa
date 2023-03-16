@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"net/url"
 	"strconv"
 	"strings"
 )
@@ -21,11 +22,10 @@ type Document struct {
 	Fields    json.RawMessage `json:"fields"`
 }
 
-// Operation returns the operator to perform and the target document ID of the operation.
-func (d Document) Operation() (string, DocumentId, error) {
+func (d Document) operation() (string, DocumentId, error) {
 	operation := ""
 	id := ""
-	if id != "" {
+	if d.Id != "" {
 		operation = "put"
 		id = d.Id
 	} else if d.PutId != "" {
@@ -45,6 +45,46 @@ func (d Document) Operation() (string, DocumentId, error) {
 		return "", DocumentId{}, err
 	}
 	return operation, docId, err
+}
+
+// FeedURL returns the HTTP method and URL to use for feeding this document.
+func (d Document) FeedURL(baseurl string, queryParams url.Values) (string, *url.URL, error) {
+	u, err := url.Parse(baseurl)
+	if err != nil {
+		return "", nil, fmt.Errorf("invalid base url: %w", err)
+	}
+	op, docId, err := d.operation()
+	if err != nil {
+		return "", nil, err
+	}
+	httpMethod := ""
+	switch op {
+	case "put":
+		httpMethod = "POST"
+	case "update":
+		httpMethod = "PUT"
+	case "remove":
+		httpMethod = "DELETE"
+	}
+	if d.Condition != "" {
+		queryParams.Set("condition", d.Condition)
+	}
+	if d.Create {
+		queryParams.Set("create", "true")
+	}
+	u.Path = docId.URLPath()
+	u.RawQuery = queryParams.Encode()
+	return httpMethod, u, nil
+}
+
+// Body returns the body part of this document, suitable for sending to the /document/v1 API.
+func (d Document) Body() []byte {
+	jsonObject := `{"fields":`
+	body := make([]byte, 0, len(jsonObject)+len(d.Fields)+1)
+	body = append(body, []byte(jsonObject)...)
+	body = append(body, d.Fields...)
+	body = append(body, byte('}'))
+	return body
 }
 
 // Decoder decodes documents from a JSON structure which is either an array of objects, or objects separated by newline.
@@ -159,6 +199,28 @@ func (d DocumentId) String() string {
 	}
 	sb.WriteString(":")
 	sb.WriteString(d.UserSpecific)
+	return sb.String()
+}
+
+// URLPaths returns the feeding path for this document.
+func (d DocumentId) URLPath() string {
+	var sb strings.Builder
+	sb.WriteString("/document/v1/")
+	sb.WriteString(url.PathEscape(d.Namespace))
+	sb.WriteString("/")
+	sb.WriteString(url.PathEscape(d.Type))
+	if d.Number != nil {
+		sb.WriteString("/number/")
+		n := uint64(*d.Number)
+		sb.WriteString(strconv.FormatUint(n, 10))
+	} else if d.Group != "" {
+		sb.WriteString("/group/")
+		sb.WriteString(url.PathEscape(d.Group))
+	} else {
+		sb.WriteString("/docid")
+	}
+	sb.WriteString("/")
+	sb.WriteString(url.PathEscape(d.UserSpecific))
 	return sb.String()
 }
 

@@ -1,8 +1,10 @@
 package feed
 
 import (
+	"bytes"
 	"encoding/json"
 	"io"
+	"net/url"
 	"reflect"
 	"strings"
 	"testing"
@@ -152,5 +154,113 @@ func TestDocumentDecoder(t *testing.T) {
 	wantErr := "invalid json at byte offset 60: invalid character '\\n' in string literal"
 	if err.Error() != wantErr {
 		t.Errorf("want error %q, got %q", wantErr, err.Error())
+	}
+}
+
+func TestDocumentIdURLPath(t *testing.T) {
+	tests := []struct {
+		in  DocumentId
+		out string
+	}{
+		{
+			DocumentId{
+				Namespace:    "ns-with-/",
+				Type:         "type-with-/",
+				UserSpecific: "user",
+			},
+			"/document/v1/ns-with-%2F/type-with-%2F/docid/user",
+		},
+		{
+			DocumentId{
+				Namespace:    "ns",
+				Type:         "type",
+				Number:       ptr(int64(123)),
+				UserSpecific: "user",
+			},
+			"/document/v1/ns/type/number/123/user",
+		},
+		{
+			DocumentId{
+				Namespace:    "ns",
+				Type:         "type",
+				Group:        "foo",
+				UserSpecific: "user",
+			},
+			"/document/v1/ns/type/group/foo/user",
+		},
+		{
+			DocumentId{
+				Namespace:    "ns",
+				Type:         "type",
+				UserSpecific: "user::specific",
+			},
+			"/document/v1/ns/type/docid/user::specific",
+		},
+		{
+			DocumentId{
+				Namespace:    "ns",
+				Type:         "type",
+				UserSpecific: ":",
+			},
+			"/document/v1/ns/type/docid/:",
+		},
+	}
+	for i, tt := range tests {
+		path := tt.in.URLPath()
+		if path != tt.out {
+			t.Errorf("#%d: documentPath(%q) = %s, want %s", i, tt.in, path, tt.out)
+		}
+	}
+}
+
+func TestDocumentURL(t *testing.T) {
+	tests := []struct {
+		in     Document
+		method string
+		url    string
+	}{
+		{
+			Document{
+				Id: "id:ns:type::user",
+			},
+			"POST",
+			"https://example.com/document/v1/ns/type/docid/user?foo=ba%2Fr",
+		},
+		{
+			Document{
+				UpdateId:  "id:ns:type::user",
+				Create:    true,
+				Condition: "false",
+			},
+			"PUT",
+			"https://example.com/document/v1/ns/type/docid/user?condition=false&create=true&foo=ba%2Fr",
+		},
+		{
+			Document{
+				RemoveId: "id:ns:type::user",
+			},
+			"DELETE",
+			"https://example.com/document/v1/ns/type/docid/user?foo=ba%2Fr",
+		},
+	}
+	for i, tt := range tests {
+		moreParams := url.Values{}
+		moreParams.Set("foo", "ba/r")
+		method, u, err := tt.in.FeedURL("https://example.com", moreParams)
+		if err != nil {
+			t.Errorf("#%d: got unexpected error = %s, want none", i, err)
+		}
+		if u.String() != tt.url || method != tt.method {
+			t.Errorf("#%d: URL() = (%s, %s), want (%s, %s)", i, method, u.String(), tt.method, tt.url)
+		}
+	}
+}
+
+func TestDocumentBody(t *testing.T) {
+	doc := Document{Fields: json.RawMessage([]byte(`{"foo": "123"}`))}
+	got := doc.Body()
+	want := []byte(`{"fields":{"foo": "123"}}`)
+	if !bytes.Equal(got, want) {
+		t.Errorf("got %q, want %q", got, want)
 	}
 }
