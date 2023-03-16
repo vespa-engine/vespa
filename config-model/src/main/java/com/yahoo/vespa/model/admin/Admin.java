@@ -94,7 +94,7 @@ public class Admin extends TreeConfigProducer<AnyConfigProducer> implements Seri
         this.multitenant = multitenant;
         this.fileDistribution = new FileDistributionConfigProducer(parent);
         this.applicationType = applicationType;
-        this.logctlSpecs.addAll(setDefaultLogctlSpecs());
+        this.logctlSpecs.addAll(defaultLogctlSpecs());
     }
 
     public Configserver getConfigserver() { return defaultConfigserver; }
@@ -332,7 +332,7 @@ public class Admin extends TreeConfigProducer<AnyConfigProducer> implements Seri
         logctlSpecs.add(new LogctlSpec(componentSpec,  levelsModSpec));
     }
 
-    private static Set<LogctlSpec> setDefaultLogctlSpecs() {
+    private static Set<LogctlSpec> defaultLogctlSpecs() {
         // Turn off info logging for all containers for some classes (unimportant log messages that create noise in vespa log)
         return Set.of(new LogctlSpec("com.yahoo.vespa.spifly.repackaged.spifly.BaseActivator", getLevelModSpec("-info")),
                       new LogctlSpec("org.eclipse.jetty.server.Server", getLevelModSpec("-info")),

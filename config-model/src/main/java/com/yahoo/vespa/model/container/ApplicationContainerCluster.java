@@ -126,10 +126,10 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
 
     @Override
     protected void doPrepare(DeployState deployState) {
+        super.doPrepare(deployState);
         addAndSendApplicationBundles(deployState);
         sendUserConfiguredFiles(deployState);
         createEndpointList(deployState);
-        super.doPrepare(deployState);
     }
 
     private void addAndSendApplicationBundles(DeployState deployState) {
