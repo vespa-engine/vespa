@@ -25,7 +25,8 @@ std::unique_ptr<SyncableThreadExecutor>
 createExecutorWithOneThread(const ThreadingServiceConfig & cfg, vespalib::Runnable::init_fun_t init_function) {
     uint32_t taskLimit = cfg.defaultTaskLimit();
     if (cfg.optimize() == OptimizeFor::THROUGHPUT) {
-        return std::make_unique<SingleExecutor>(std::move(init_function), taskLimit, cfg.is_task_limit_hard(), taskLimit/10, 100ms);
+        uint32_t watermark = (cfg.kindOfwatermark() == 0) ? taskLimit / 10 : cfg.kindOfwatermark();
+        return std::make_unique<SingleExecutor>(std::move(init_function), taskLimit, cfg.is_task_limit_hard(), watermark, 100ms);
     } else {
         if (cfg.is_task_limit_hard()) {
             return std::make_unique<BlockingThreadStackExecutor>(1, taskLimit, std::move(init_function));
