@@ -28,8 +28,8 @@ type visitArgs struct {
 	pretty         bool
 	debugMode      bool
 	chunkCount     int
-	from           uint64
-	to             uint64
+	fromTimestamp  uint64
+	toTimestamp    uint64
 	slices         int
 	sliceId        int
 	cli            *CLI
@@ -126,10 +126,10 @@ $ vespa visit --content-cluster search # get documents from cluster named "searc
 	cmd.Flags().BoolVar(&vArgs.makeFeed, "make-feed", false, `output JSON array suitable for vespa-feeder`)
 	cmd.Flags().BoolVar(&vArgs.pretty, "pretty-json", false, `format pretty JSON`)
 	cmd.Flags().IntVar(&vArgs.chunkCount, "chunk-count", 1000, `chunk by count`)
-	cmd.Flags().Uint64Var(&vArgs.from, "from", 0, `Timestamp to visit from, in microseconds`)
-	cmd.Flags().Uint64Var(&vArgs.to, "to", 0, `Timestamp to visit up to, in microseconds`)
-	cmd.Flags().IntVar(&vArgs.sliceId, "slice-id", 0, `The slice number of the visit represented by this visitor`)
-	cmd.Flags().IntVar(&vArgs.slices, "slices", 0, `Split the document corpus into this number of independent slices`)
+	cmd.Flags().Uint64Var(&vArgs.fromTimestamp, "from-timestamp", 0, `Timestamp to visit from, in microseconds`)
+	cmd.Flags().Uint64Var(&vArgs.toTimestamp, "to-timestamp", 0, `Timestamp to visit up to, in microseconds`)
+	cmd.Flags().IntVar(&vArgs.sliceId, "slice-id", -1, `The number of the slice this visit invocation should fetch`)
+	cmd.Flags().IntVar(&vArgs.slices, "slices", -1, `Split the document corpus into this number of independent slices`)
 	return cmd
 }
 
@@ -137,6 +137,9 @@ func checkArguments(vArgs visitArgs) (res util.OperationResult) {
 	if vArgs.slices > 0 || vArgs.sliceId > 0 {
 		if !(vArgs.slices > 0 && vArgs.sliceId > 0) {
 			return util.Failure("Both 'slices' and 'slice-id' must be set")
+		}
+		if vArgs.sliceId >= vArgs.slices {
+			return util.Failure("The 'slice-id' must be in range [0, slices)")
 		}
 	}
 	return util.Success("")
@@ -301,13 +304,13 @@ func runOneVisit(vArgs *visitArgs, service *vespa.Service, contToken string) (*V
 	if vArgs.chunkCount > 0 {
 		urlPath = urlPath + fmt.Sprintf("&wantedDocumentCount=%d", vArgs.chunkCount)
 	}
-	if vArgs.from > 0 {
-		urlPath = urlPath + fmt.Sprintf("&fromTimestamp=%d", vArgs.from)
+	if vArgs.fromTimestamp > 0 {
+		urlPath = urlPath + fmt.Sprintf("&fromTimestamp=%d", vArgs.fromTimestamp)
 	}
-	if vArgs.to > 0 {
-		urlPath = urlPath + fmt.Sprintf("&toTimestamp=%d", vArgs.to)
+	if vArgs.toTimestamp > 0 {
+		urlPath = urlPath + fmt.Sprintf("&toTimestamp=%d", vArgs.toTimestamp)
 	}
-	if vArgs.sliceId > 0 {
+	if vArgs.slices > 0 {
 		urlPath = urlPath + fmt.Sprintf("&slices=%d&sliceId=%d", vArgs.slices, vArgs.sliceId)
 	}
 	url, urlParseError := url.Parse(urlPath)
