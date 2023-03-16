@@ -11,6 +11,7 @@ import com.yahoo.tensor.evaluation.EvaluationContext;
 import com.yahoo.tensor.evaluation.Name;
 import com.yahoo.tensor.evaluation.TypeContext;
 
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
@@ -46,6 +47,14 @@ public class Slice<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMETY
 
     @Override
     public List<TensorFunction<NAMETYPE>> arguments() { return List.of(argument); }
+
+    public List<TensorFunction<NAMETYPE>> selectorFunctions() {
+        var result = new ArrayList<TensorFunction<NAMETYPE>>();
+        for (var dimVal : subspaceAddress) {
+            dimVal.index().ifPresent(fun -> fun.asTensorFunction().ifPresent(tf -> result.add(tf)));
+        }
+        return result;
+    }
 
     @Override
     public Slice<NAMETYPE> withArguments(List<TensorFunction<NAMETYPE>> arguments) {

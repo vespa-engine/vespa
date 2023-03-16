@@ -13,6 +13,7 @@ import com.yahoo.searchlib.rankingexpression.rule.ReferenceNode;
 import com.yahoo.searchlib.rankingexpression.rule.TensorFunctionNode;
 import com.yahoo.searchlib.rankingexpression.transform.ExpressionTransformer;
 import com.yahoo.tensor.functions.Generate;
+import com.yahoo.tensor.functions.Slice;
 
 import java.io.StringReader;
 import java.util.HashSet;
@@ -52,6 +53,13 @@ public class InputRecorder extends ExpressionTransformer<InputRecorderContext> {
                     childContext.localVariables().add(dim.name());
                 }
                 return transformChildren(t, childContext);
+            }
+            if (f instanceof Slice s) {
+                for (var tf : s.selectorFunctions()) {
+                    if (tf instanceof TensorFunctionNode.ExpressionTensorFunction expr) {
+                        transform(expr.wrappedExpression(), context);
+                    }
+                }
             }
         }
         if (node instanceof CompositeNode c)
