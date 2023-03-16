@@ -9,11 +9,8 @@ import com.yahoo.config.model.producer.TreeConfigProducer;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.search.config.QrStartConfig;
-import com.yahoo.vespa.model.LogctlSpec;
 import com.yahoo.vespa.model.container.component.SimpleComponent;
-
 import java.time.Duration;
-import java.util.List;
 import java.util.Optional;
 
 /**
@@ -41,15 +38,6 @@ public final class ApplicationContainer extends Container implements
         addComponent(new SimpleComponent("com.yahoo.container.jdisc.SystemInfoProvider"));
         addComponent(new SimpleComponent("com.yahoo.container.jdisc.ZoneInfoProvider"));
         addComponent(new SimpleComponent("com.yahoo.container.jdisc.ClusterInfoProvider"));
-    }
-
-    private List<LogctlSpec> logctlSpecs = List.of();
-    void setLogctlSpecs(List<LogctlSpec> logctlSpecs) {
-        this.logctlSpecs = logctlSpecs;
-    }
-    @Override
-    public List<LogctlSpec> getLogctlSpecs() {
-        return logctlSpecs;
     }
 
     @Override

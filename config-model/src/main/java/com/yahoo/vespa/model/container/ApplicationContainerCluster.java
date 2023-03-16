@@ -124,19 +124,12 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
                 : defaultHeapSizePercentageOfTotalNodeMemory;
     }
 
-    private void wireLogctlSpecs() {
-        getAdmin().ifPresent(admin -> {
-            for (var c : getContainers()) {
-                c.setLogctlSpecs(admin.getLogctlSpecs());
-            }});
-    }
-
     @Override
     protected void doPrepare(DeployState deployState) {
+        super.doPrepare(deployState);
         addAndSendApplicationBundles(deployState);
         sendUserConfiguredFiles(deployState);
         createEndpointList(deployState);
-        wireLogctlSpecs();
     }
 
     private void addAndSendApplicationBundles(DeployState deployState) {
