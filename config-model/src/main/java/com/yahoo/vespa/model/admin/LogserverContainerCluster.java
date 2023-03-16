@@ -25,9 +25,6 @@ public class LogserverContainerCluster extends ContainerCluster<LogserverContain
     }
 
     @Override
-    protected void doPrepare(DeployState deployState) { }
-
-    @Override
     public void getConfig(QrStartConfig.Builder builder) {
         super.getConfig(builder);
         builder.jvm.heapsize(128);
