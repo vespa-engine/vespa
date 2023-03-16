@@ -22,7 +22,6 @@ namespace vespalib {
  */
 class SingleExecutor final : public vespalib::SyncableThreadExecutor, vespalib::Runnable {
 public:
-    SingleExecutor(init_fun_t func, uint32_t reservedQueueSize);
     SingleExecutor(init_fun_t func, uint32_t reservedQueueSize, bool isQueueSizeHard, uint32_t watermark, duration reactionTime);
     ~SingleExecutor() override;
     Task::UP execute(Task::UP task) override;
