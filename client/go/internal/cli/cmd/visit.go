@@ -134,8 +134,8 @@ $ vespa visit --content-cluster search # get documents from cluster named "searc
 }
 
 func checkArguments(vArgs visitArgs) (res util.OperationResult) {
-	if vArgs.slices > 0 || vArgs.sliceId > 0 {
-		if !(vArgs.slices > 0 && vArgs.sliceId > 0) {
+	if vArgs.slices > 0 || vArgs.sliceId > -1 {
+		if !(vArgs.slices > 0 && vArgs.sliceId > -1) {
 			return util.Failure("Both 'slices' and 'slice-id' must be set")
 		}
 		if vArgs.sliceId >= vArgs.slices {
