@@ -21,6 +21,7 @@
 #include <vespa/vespalib/util/memory.h>
 #include <filesystem>
 #include <iomanip>
+#include <random>
 
 using document::BucketId;
 using document::StringFieldValue;
@@ -218,12 +219,13 @@ void verifyGrowing(const LogDataStore::Config & config, uint32_t minFiles, uint3
         unsigned int seed = 383451;
         char buffer[12000];
         SerialNum lastSyncToken(0);
+        std::minstd_rand rand_gen(seed);
         for (size_t i(0); i < sizeof(buffer); i++) {
-            buffer[i] = rand_r(&seed) & 0xff;
+            buffer[i] = rand_gen() & 0xff;
         }
 
         for (size_t i(1); i < 10000; i++) {
-            long r = rand_r(&seed)%10000;
+            long r = rand_gen()%10000;
             assert(i > lastSyncToken);
             lastSyncToken = i;
             datastore.write(i, i, &buffer[r], uint8_t(buffer[r])*4);
