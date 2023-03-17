@@ -289,6 +289,9 @@ public class TokenTransformer extends ExpressionTransformer<RankProfileTransform
                 operators.add(Operator.plus);
             }
         }
+        if (operators.isEmpty() && factors.size() == 1) {
+            return factors.get(0);
+        }
         return new OperationNode(factors, operators);
     }
 
