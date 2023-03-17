@@ -34,7 +34,7 @@ public interface LoadBalancerService {
     void remove(LoadBalancer loadBalancer);
 
     /** Returns the protocol supported by this load balancer service */
-    Protocol protocol();
+    Protocol protocol(boolean enclave);
 
     /** Returns whether load balancers created by this service can forward traffic to given node and cluster type */
     boolean supports(NodeType nodeType, ClusterSpec.Type clusterType);

@@ -57,7 +57,8 @@ public class SharedLoadBalancerService implements LoadBalancerService {
     }
 
     @Override
-    public Protocol protocol() {
+    public Protocol protocol(boolean enclave) {
+        if (enclave) throw new IllegalArgumentException("enclave is not supported with " + getClass());
         return Protocol.dualstack;
     }
 
