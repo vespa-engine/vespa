@@ -1673,6 +1673,7 @@
     ],
     "methods" : [
       "public void <init>(com.yahoo.searchlib.rankingexpression.rule.ExpressionNode)",
+      "public com.yahoo.searchlib.rankingexpression.rule.ExpressionNode wrappedExpression()",
       "public java.util.List arguments()",
       "public com.yahoo.tensor.functions.TensorFunction withArguments(java.util.List)",
       "public com.yahoo.tensor.functions.PrimitiveTensorFunction toPrimitive()",

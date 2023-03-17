@@ -8,6 +8,9 @@ schema test {
         field tokens type tensor(d0[128]) {
             indexing: attribute
         }
+        field outputidx type double {
+            indexing: attribute
+        }
     }
     fieldset default {
         fields: title
@@ -35,7 +38,7 @@ schema test {
         }
         global-phase {
             rerank-count: 1000
-            expression: onnx(my_ranking_model).score{d0:0}
+            expression: onnx(my_ranking_model).score{d0:attribute(outputidx)}
         }
     }
 

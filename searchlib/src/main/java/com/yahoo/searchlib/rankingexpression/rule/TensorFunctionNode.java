@@ -209,6 +209,8 @@ public class TensorFunctionNode extends CompositeNode {
             this.expression = expression;
         }
 
+        public ExpressionNode wrappedExpression() { return expression; }
+
         @Override
         public List<TensorFunction<Reference>> arguments() {
             if (expression instanceof CompositeNode)

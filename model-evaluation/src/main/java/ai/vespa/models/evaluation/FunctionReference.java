@@ -109,7 +109,7 @@ class FunctionReference {
 
     /**
      * Returns a function reference from the given return type serial form,
-     * or empty if the string is not a valid function return typoe serial form
+     * or empty if the string is not a valid function return type serial form
      */
     static Optional<FunctionReference> fromReturnTypeSerial(String serialForm) {
         Matcher expressionMatcher = returnTypePattern.matcher(serialForm);
