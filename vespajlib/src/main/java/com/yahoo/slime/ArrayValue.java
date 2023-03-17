@@ -7,6 +7,7 @@ package com.yahoo.slime;
 final class ArrayValue extends Value {
 
     static final int initial_capacity = 16;
+    static final Impl initial_impl = new EmptyImpl();
 
     private interface Impl {
         public void prepareFor(ArrayValue self, Type type);
@@ -91,7 +92,7 @@ final class ArrayValue extends Value {
         public Value get(int index) { return values[index]; }
     }
 
-    private Impl impl = new EmptyImpl();
+    private Impl impl = initial_impl;
     private int used = 0;
     private final SymbolTable names;
 
