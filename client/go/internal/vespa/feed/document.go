@@ -12,8 +12,19 @@ import (
 
 var asciiSpace = [256]uint8{'\t': 1, '\n': 1, '\v': 1, '\f': 1, '\r': 1, ' ': 1}
 
+type Operation int
+
+const (
+	OperationPut = iota
+	OperationUpdate
+	OperationRemove
+)
+
 type Document struct {
-	Id        string          `json:"id"`
+	Id        DocumentId
+	Operation Operation
+
+	IdString  string          `json:"id"`
 	PutId     string          `json:"put"`
 	UpdateId  string          `json:"update"`
 	RemoveId  string          `json:"remove"`
@@ -22,48 +33,19 @@ type Document struct {
 	Fields    json.RawMessage `json:"fields"`
 }
 
-func (d Document) operation() (string, DocumentId, error) {
-	operation := ""
-	id := ""
-	if d.Id != "" {
-		operation = "put"
-		id = d.Id
-	} else if d.PutId != "" {
-		operation = "put"
-		id = d.PutId
-	} else if d.UpdateId != "" {
-		operation = "update"
-		id = d.UpdateId
-	} else if d.RemoveId != "" {
-		operation = "remove"
-		id = d.RemoveId
-	} else {
-		return "", DocumentId{}, fmt.Errorf("invalid document: missing operation")
-	}
-	docId, err := ParseDocumentId(id)
-	if err != nil {
-		return "", DocumentId{}, err
-	}
-	return operation, docId, err
-}
-
 // FeedURL returns the HTTP method and URL to use for feeding this document.
 func (d Document) FeedURL(baseurl string, queryParams url.Values) (string, *url.URL, error) {
 	u, err := url.Parse(baseurl)
 	if err != nil {
 		return "", nil, fmt.Errorf("invalid base url: %w", err)
 	}
-	op, docId, err := d.operation()
-	if err != nil {
-		return "", nil, err
-	}
 	httpMethod := ""
-	switch op {
-	case "put":
+	switch d.Operation {
+	case OperationPut:
 		httpMethod = "POST"
-	case "update":
+	case OperationUpdate:
 		httpMethod = "PUT"
-	case "remove":
+	case OperationRemove:
 		httpMethod = "DELETE"
 	}
 	if d.Condition != "" {
@@ -72,7 +54,7 @@ func (d Document) FeedURL(baseurl string, queryParams url.Values) (string, *url.
 	if d.Create {
 		queryParams.Set("create", "true")
 	}
-	u.Path = docId.URLPath()
+	u.Path = d.Id.URLPath()
 	u.RawQuery = queryParams.Encode()
 	return httpMethod, u, nil
 }
@@ -154,8 +136,38 @@ func (d *Decoder) decode() (Document, error) {
 		return Document{}, err
 	}
 	doc := Document{}
-	err := d.dec.Decode(&doc)
-	return doc, err
+	if err := d.dec.Decode(&doc); err != nil {
+		return Document{}, err
+	}
+	if err := parseDocument(&doc); err != nil {
+		return Document{}, err
+	}
+	return doc, nil
+}
+
+func parseDocument(d *Document) error {
+	id := ""
+	if d.IdString != "" {
+		d.Operation = OperationPut
+		id = d.IdString
+	} else if d.PutId != "" {
+		d.Operation = OperationPut
+		id = d.PutId
+	} else if d.UpdateId != "" {
+		d.Operation = OperationUpdate
+		id = d.UpdateId
+	} else if d.RemoveId != "" {
+		d.Operation = OperationRemove
+		id = d.RemoveId
+	} else {
+		return fmt.Errorf("invalid document: missing operation: %v", d)
+	}
+	docId, err := ParseDocumentId(id)
+	if err != nil {
+		return err
+	}
+	d.Id = docId
+	return nil
 }
 
 func NewDecoder(r io.Reader) *Decoder {

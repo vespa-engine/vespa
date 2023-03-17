@@ -12,7 +12,7 @@ import (
 )
 
 func TestClientSend(t *testing.T) {
-	doc := Document{Create: true, UpdateId: "id:ns:type::doc1", Fields: json.RawMessage(`{"foo": "123"}`)}
+	doc := mustParseDocument(Document{Create: true, UpdateId: "id:ns:type::doc1", Fields: json.RawMessage(`{"foo": "123"}`)})
 	httpClient := mock.HTTPClient{}
 	var client Feeder = NewClient(ClientOptions{
 		BaseURL: "https://example.com:1337",

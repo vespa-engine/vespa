@@ -12,6 +12,13 @@ import (
 
 func ptr[T any](v T) *T { return &v }
 
+func mustParseDocument(d Document) Document {
+	if err := parseDocument(&d); err != nil {
+		panic(err)
+	}
+	return d
+}
+
 func TestParseDocumentId(t *testing.T) {
 	tests := []struct {
 		in   string
@@ -111,9 +118,9 @@ func testDocumentDecoder(t *testing.T, jsonLike string) {
 	t.Helper()
 	r := NewDecoder(strings.NewReader(jsonLike))
 	want := []Document{
-		{PutId: "id:ns:type::doc1", Fields: json.RawMessage(`{"foo": "123"}`)},
-		{PutId: "id:ns:type::doc2", Fields: json.RawMessage(`{"bar": "456"}`)},
-		{RemoveId: "id:ns:type::doc1", Fields: json.RawMessage(nil)},
+		mustParseDocument(Document{PutId: "id:ns:type::doc1", Fields: json.RawMessage(`{"foo": "123"}`)}),
+		mustParseDocument(Document{PutId: "id:ns:type::doc2", Fields: json.RawMessage(`{"bar": "456"}`)}),
+		mustParseDocument(Document{RemoveId: "id:ns:type::doc1", Fields: json.RawMessage(nil)}),
 	}
 	got := []Document{}
 	for {
@@ -220,25 +227,25 @@ func TestDocumentURL(t *testing.T) {
 		url    string
 	}{
 		{
-			Document{
-				Id: "id:ns:type::user",
-			},
+			mustParseDocument(Document{
+				IdString: "id:ns:type::user",
+			}),
 			"POST",
 			"https://example.com/document/v1/ns/type/docid/user?foo=ba%2Fr",
 		},
 		{
-			Document{
+			mustParseDocument(Document{
 				UpdateId:  "id:ns:type::user",
 				Create:    true,
 				Condition: "false",
-			},
+			}),
 			"PUT",
 			"https://example.com/document/v1/ns/type/docid/user?condition=false&create=true&foo=ba%2Fr",
 		},
 		{
-			Document{
+			mustParseDocument(Document{
 				RemoveId: "id:ns:type::user",
-			},
+			}),
 			"DELETE",
 			"https://example.com/document/v1/ns/type/docid/user?foo=ba%2Fr",
 		},
