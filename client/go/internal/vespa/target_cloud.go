@@ -118,9 +118,10 @@ func (t *cloudTarget) IsCloud() bool { return true }
 func (t *cloudTarget) Deployment() Deployment { return t.deploymentOptions.Deployment }
 
 func (t *cloudTarget) Service(name string, timeout time.Duration, runID int64, cluster string) (*Service, error) {
+	var service *Service
 	switch name {
 	case DeployService:
-		service := &Service{
+		service = &Service{
 			Name:       name,
 			BaseURL:    t.apiOptions.System.URL,
 			TLSOptions: t.apiOptions.TLSOptions,
@@ -136,7 +137,6 @@ func (t *cloudTarget) Service(name string, timeout time.Duration, runID int64, c
 				return nil, fmt.Errorf("got status %d from deploy service at %s", status, service.BaseURL)
 			}
 		}
-		return service, nil
 	case QueryService, DocumentService:
 		if t.deploymentOptions.ClusterURLs == nil {
 			if err := t.waitForEndpoints(timeout, runID); err != nil {
@@ -148,15 +148,22 @@ func (t *cloudTarget) Service(name string, timeout time.Duration, runID int64, c
 			return nil, err
 		}
 		t.deploymentOptions.TLSOptions.AthenzDomain = t.apiOptions.System.AthenzDomain
-		return &Service{
+		service = &Service{
 			Name:       name,
 			BaseURL:    url,
 			TLSOptions: t.deploymentOptions.TLSOptions,
 			zts:        t.zts,
 			httpClient: t.httpClient,
-		}, nil
+		}
+
+	default:
+		return nil, fmt.Errorf("unknown service: %s", name)
+
 	}
-	return nil, fmt.Errorf("unknown service: %s", name)
+	if service.TLSOptions.KeyPair.Certificate != nil {
+		util.SetCertificate(service, []tls.Certificate{service.TLSOptions.KeyPair})
+	}
+	return service, nil
 }
 
 func (t *cloudTarget) SignRequest(req *http.Request, keyID string) error {

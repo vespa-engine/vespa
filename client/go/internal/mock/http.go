@@ -2,7 +2,6 @@ package mock
 
 import (
 	"bytes"
-	"crypto/tls"
 	"io"
 	"net/http"
 	"strconv"
@@ -60,4 +59,4 @@ func (c *HTTPClient) Do(request *http.Request, timeout time.Duration) (*http.Res
 		nil
 }
 
-func (c *HTTPClient) UseCertificate(certificates []tls.Certificate) {}
+func (c *HTTPClient) Transport() *http.Transport { return &http.Transport{} }

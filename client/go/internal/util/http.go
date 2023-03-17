@@ -12,11 +12,12 @@ import (
 
 type HTTPClient interface {
 	Do(request *http.Request, timeout time.Duration) (response *http.Response, error error)
-	UseCertificate(certificate []tls.Certificate)
+	Transport() *http.Transport
 }
 
 type defaultHTTPClient struct {
-	client *http.Client
+	client    *http.Client
+	transport *http.Transport
 }
 
 func (c *defaultHTTPClient) Do(request *http.Request, timeout time.Duration) (response *http.Response, error error) {
@@ -30,13 +31,24 @@ func (c *defaultHTTPClient) Do(request *http.Request, timeout time.Duration) (re
 	return c.client.Do(request)
 }
 
-func (c *defaultHTTPClient) UseCertificate(certificates []tls.Certificate) {
-	c.client.Transport = &http.Transport{TLSClientConfig: &tls.Config{
+func (c *defaultHTTPClient) Transport() *http.Transport { return c.transport }
+
+func SetCertificate(client HTTPClient, certificates []tls.Certificate) {
+	client.Transport().TLSClientConfig = &tls.Config{
 		Certificates: certificates,
 		MinVersion:   tls.VersionTLS12,
-	}}
+	}
 }
 
 func CreateClient(timeout time.Duration) HTTPClient {
-	return &defaultHTTPClient{client: &http.Client{Timeout: timeout}}
+	transport := http.Transport{
+		ForceAttemptHTTP2: true,
+	}
+	return &defaultHTTPClient{
+		client: &http.Client{
+			Timeout:   timeout,
+			Transport: &transport,
+		},
+		transport: &transport,
+	}
 }

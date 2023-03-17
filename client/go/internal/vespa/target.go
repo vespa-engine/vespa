@@ -92,9 +92,6 @@ type LogOptions struct {
 
 // Do sends request to this service. Any required authentication happens automatically.
 func (s *Service) Do(request *http.Request, timeout time.Duration) (*http.Response, error) {
-	if s.TLSOptions.KeyPair.Certificate != nil {
-		s.httpClient.UseCertificate([]tls.Certificate{s.TLSOptions.KeyPair})
-	}
 	if s.TLSOptions.AthenzDomain != "" {
 		accessToken, err := s.zts.AccessToken(s.TLSOptions.AthenzDomain, s.TLSOptions.KeyPair)
 		if err != nil {
@@ -107,6 +104,8 @@ func (s *Service) Do(request *http.Request, timeout time.Duration) (*http.Respon
 	}
 	return s.httpClient.Do(request, timeout)
 }
+
+func (s *Service) Transport() *http.Transport { return s.httpClient.Transport() }
 
 // Wait polls the health check of this service until it succeeds or timeout passes.
 func (s *Service) Wait(timeout time.Duration) (int, error) {
@@ -153,7 +152,7 @@ func waitForOK(client util.HTTPClient, url string, certificate *tls.Certificate,
 
 func wait(client util.HTTPClient, fn responseFunc, reqFn requestFunc, certificate *tls.Certificate, timeout time.Duration) (int, error) {
 	if certificate != nil {
-		client.UseCertificate([]tls.Certificate{*certificate})
+		util.SetCertificate(client, []tls.Certificate{*certificate})
 	}
 	var (
 		httpErr    error
