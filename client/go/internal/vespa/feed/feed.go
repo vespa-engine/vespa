@@ -1,5 +1,9 @@
 package feed
 
+import (
+	"time"
+)
+
 type Status int
 
 const (
@@ -29,7 +33,65 @@ type Result struct {
 // Success returns whether status s is considered a success.
 func (s Status) Success() bool { return s == StatusSuccess || s == StatusConditionNotMet }
 
-// Feeder is the interface for code that perform a document operation and return its result.
+// Stats represents the summed statistics of a feeder.
+type Stats struct {
+	Requests        int64
+	Responses       int64
+	ResponsesByCode map[int]int64
+	Errors          int64
+	Inflight        int64
+	TotalLatency    time.Duration
+	MinLatency      time.Duration
+	MaxLatency      time.Duration
+	BytesSent       int64
+	BytesRecv       int64
+}
+
+func NewStats() Stats { return Stats{ResponsesByCode: make(map[int]int64)} }
+
+// AvgLatency returns the average latency for a request.
+func (s Stats) AvgLatency() time.Duration {
+	requests := s.Requests
+	if requests == 0 {
+		requests = 1
+	}
+	return s.TotalLatency / time.Duration(requests)
+}
+
+func (s Stats) Successes() int64 {
+	if s.ResponsesByCode == nil {
+		return 0
+	}
+	return s.ResponsesByCode[200]
+}
+
+// Add adds all statistics contained in other to this.
+func (s *Stats) Add(other Stats) {
+	s.Requests += other.Requests
+	s.Responses += other.Responses
+	for code, count := range other.ResponsesByCode {
+		_, ok := s.ResponsesByCode[code]
+		if ok {
+			s.ResponsesByCode[code] += count
+		} else {
+			s.ResponsesByCode[code] = count
+		}
+	}
+	s.Errors += other.Errors
+	s.Inflight += other.Inflight
+	s.TotalLatency += other.TotalLatency
+	if s.MinLatency == 0 || other.MinLatency < s.MinLatency {
+		s.MinLatency = other.MinLatency
+	}
+	if other.MaxLatency > s.MaxLatency {
+		s.MaxLatency = other.MaxLatency
+	}
+	s.BytesSent += other.BytesSent
+	s.BytesRecv += other.BytesRecv
+}
+
+// Feeder is the interface for code that can feed documents.
 type Feeder interface {
 	Send(Document) Result
+	Stats() Stats
 }
