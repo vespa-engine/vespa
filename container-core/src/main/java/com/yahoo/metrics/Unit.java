@@ -6,16 +6,16 @@ package com.yahoo.metrics;
 public enum Unit {
 
     AREA(BaseUnit.AREA),
-    BINARY(BaseUnit.BINARY),
+    BINARY(BaseUnit.BINARY, "Zero or one. Zero typically indicate \"false\" while one indicate \"true\""),
     BUCKET(BaseUnit.BUCKET),
     BYTE(BaseUnit.BYTE),
-    BYTE_PER_SECOND(BaseUnit.BYTE, BaseUnit.SECOND),
+    BYTE_PER_SECOND(BaseUnit.BYTE, BaseUnit.SECOND, "Number of bytes per second"),
     CONNECTION(BaseUnit.CONNECTION),
     DOCUMENT(BaseUnit.DOCUMENT),
     DOCUMENTID(BaseUnit.DOCUMENTID),
     FAILURE(BaseUnit.FAILURE),
     FILE(BaseUnit.FILE),
-    FRACTION(BaseUnit.FRACTION),
+    FRACTION(BaseUnit.FRACTION, "A value in the range [0..1]. Higher values can occur for some metrics, but would indicate the value is outside of the allowed range."),
     HIT(BaseUnit.HIT),
     HIT_PER_QUERY(BaseUnit.HIT, BaseUnit.QUERY),
     INSTANCE(BaseUnit.INSTANCE),
@@ -44,14 +44,26 @@ public enum Unit {
 
     private final BaseUnit unit;
     private final BaseUnit perUnit;
+    private final String description;
 
+    // TODO: Remove once we have description for all units
     Unit(BaseUnit unit) {
-        this(unit, null);
+        this(unit, null, null);
     }
 
+    // TODO: Remove once we have description for all units
     Unit(BaseUnit unit, BaseUnit perUnit) {
+        this(unit, perUnit, null);
+    }
+
+    Unit(BaseUnit unit, String description) {
+        this(unit, null, description);
+    }
+
+    Unit(BaseUnit unit, BaseUnit perUnit, String description) {
         this.unit = unit;
         this.perUnit = perUnit;
+        this.description = description;
     }
 
     public String fullName() {
@@ -64,6 +76,10 @@ public enum Unit {
         return perUnit == null ?
                 unit.shortName :
                 unit.shortName + "/" + perUnit.shortName;
+    }
+
+    public String getDescription() {
+        return description;
     }
 
     private enum BaseUnit {
