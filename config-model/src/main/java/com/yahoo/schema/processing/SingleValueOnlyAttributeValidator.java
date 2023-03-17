@@ -14,9 +14,9 @@ import com.yahoo.vespa.model.container.search.QueryProfiles;
  *
  * @author geirst
  */
-public class BoolAttributeValidator extends Processor {
+public class SingleValueOnlyAttributeValidator extends Processor {
 
-    public BoolAttributeValidator(Schema schema, DeployLogger deployLogger, RankProfileRegistry rankProfileRegistry, QueryProfiles queryProfiles) {
+    public SingleValueOnlyAttributeValidator(Schema schema, DeployLogger deployLogger, RankProfileRegistry rankProfileRegistry, QueryProfiles queryProfiles) {
         super(schema, deployLogger, rankProfileRegistry, queryProfiles);
     }
 
@@ -27,9 +27,10 @@ public class BoolAttributeValidator extends Processor {
             if (attribute == null) {
                 continue;
             }
-            if (attribute.getType().equals(Attribute.Type.BOOL) &&
+            if ((attribute.getType().equals(Attribute.Type.BOOL) ||
+                    attribute.getType().equals(Attribute.Type.RAW)) &&
                     !attribute.getCollectionType().equals(Attribute.CollectionType.SINGLE)) {
-                fail(schema, field, "Only single value bool attribute fields are supported");
+                fail(schema, field, "Only single value " + attribute.getType().getName() + " attribute fields are supported");
             }
         }
     }
