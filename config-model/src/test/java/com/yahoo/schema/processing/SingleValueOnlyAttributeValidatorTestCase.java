@@ -25,7 +25,6 @@ public class SingleValueOnlyAttributeValidatorTestCase {
         }
     }
 
-    @Test
     private static void weightedset_attribute_is_not_supported(String type) throws ParseException {
         try {
             createFromString(getSd("field b type weightedset<" + type + "> { indexing: attribute }"));
