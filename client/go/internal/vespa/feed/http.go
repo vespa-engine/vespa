@@ -60,11 +60,11 @@ func (c *Client) Send(document Document) Result {
 		return Result{Status: StatusTransportFailure, Err: err}
 	}
 	defer resp.Body.Close()
-	return createResult(resp)
+	return createResult(document.Id, resp)
 }
 
-func createResult(resp *http.Response) Result {
-	result := Result{}
+func createResult(id DocumentId, resp *http.Response) Result {
+	result := Result{Id: id}
 	switch resp.StatusCode {
 	case 200:
 		result.Status = StatusSuccess
