@@ -199,6 +199,8 @@ TEST("require that config can be converted")
     EXPECT_TRUE(assertDataType(AVBT::DOUBLE, CACAD::DOUBLE));
     EXPECT_TRUE(assertDataType(AVBT::PREDICATE, CACAD::PREDICATE));
     EXPECT_TRUE(assertDataType(AVBT::TENSOR, CACAD::TENSOR));
+    EXPECT_TRUE(assertDataType(AVBT::REFERENCE, CACAD::REFERENCE));
+    EXPECT_TRUE(assertDataType(AVBT::RAW, CACAD::RAW));
     EXPECT_TRUE(assertDataType(AVBT::NONE, CACAD::NONE));
 
     EXPECT_TRUE(assertCollectionType(AVCT::SINGLE, CACAC::SINGLE));
