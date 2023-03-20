@@ -26,10 +26,11 @@ type Client struct {
 
 // ClientOptions specifices the configuration options of a feed client.
 type ClientOptions struct {
-	BaseURL    string
-	Timeout    time.Duration
-	Route      string
-	TraceLevel *int
+	MaxConnsPerHost int
+	BaseURL         string
+	Timeout         time.Duration
+	Route           string
+	TraceLevel      *int
 }
 
 type countingReader struct {
@@ -44,12 +45,14 @@ func (r *countingReader) Read(p []byte) (int, error) {
 }
 
 func NewClient(options ClientOptions, httpClient util.HTTPClient) *Client {
-	return &Client{
+	c := &Client{
 		options:    options,
 		httpClient: httpClient,
 		stats:      NewStats(),
 		now:        time.Now,
 	}
+	httpClient.Transport().MaxConnsPerHost = options.MaxConnsPerHost
+	return c
 }
 
 func (c *Client) queryParams() url.Values {
