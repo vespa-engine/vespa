@@ -21,11 +21,11 @@ func mustParseDocument(d Document) Document {
 func TestParseId(t *testing.T) {
 	tests := []struct {
 		in   string
-		out  DocumentId
+		out  Id
 		fail bool
 	}{
 		{"id:ns:type::user",
-			DocumentId{
+			Id{
 				Namespace:    "ns",
 				Type:         "type",
 				UserSpecific: "user",
@@ -33,7 +33,7 @@ func TestParseId(t *testing.T) {
 			false,
 		},
 		{"id:ns:type:n=123:user",
-			DocumentId{
+			Id{
 				Namespace:    "ns",
 				Type:         "type",
 				Number:       ptr(int64(123)),
@@ -42,7 +42,7 @@ func TestParseId(t *testing.T) {
 			false,
 		},
 		{"id:ns:type:g=foo:user",
-			DocumentId{
+			Id{
 				Namespace:    "ns",
 				Type:         "type",
 				Group:        "foo",
@@ -51,7 +51,7 @@ func TestParseId(t *testing.T) {
 			false,
 		},
 		{"id:ns:type::user::specific",
-			DocumentId{
+			Id{
 				Namespace:    "ns",
 				Type:         "type",
 				UserSpecific: "user::specific",
@@ -59,22 +59,22 @@ func TestParseId(t *testing.T) {
 			false,
 		},
 		{"id:ns:type:::",
-			DocumentId{
+			Id{
 				Namespace:    "ns",
 				Type:         "type",
 				UserSpecific: ":",
 			},
 			false,
 		},
-		{"", DocumentId{}, true},
-		{"foobar", DocumentId{}, true},
-		{"idd:ns:type:user", DocumentId{}, true},
-		{"id:ns::user", DocumentId{}, true},
-		{"id::type:user", DocumentId{}, true},
-		{"id:ns:type:g=:user", DocumentId{}, true},
-		{"id:ns:type:n=:user", DocumentId{}, true},
-		{"id:ns:type:n=foo:user", DocumentId{}, true},
-		{"id:ns:type::", DocumentId{}, true},
+		{"", Id{}, true},
+		{"foobar", Id{}, true},
+		{"idd:ns:type:user", Id{}, true},
+		{"id:ns::user", Id{}, true},
+		{"id::type:user", Id{}, true},
+		{"id:ns:type:g=:user", Id{}, true},
+		{"id:ns:type:n=:user", Id{}, true},
+		{"id:ns:type:n=foo:user", Id{}, true},
+		{"id:ns:type::", Id{}, true},
 	}
 	for i, tt := range tests {
 		parsed, err := ParseId(tt.in)

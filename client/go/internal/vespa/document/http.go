@@ -66,7 +66,7 @@ func (c *Client) queryParams() url.Values {
 	return params
 }
 
-func urlPath(id DocumentId) string {
+func urlPath(id Id) string {
 	var sb strings.Builder
 	sb.WriteString("/document/v1/")
 	sb.WriteString(url.PathEscape(id.Namespace))
@@ -157,7 +157,7 @@ func (c *Client) addStats(stats *Stats) {
 	c.stats.Add(*stats)
 }
 
-func (c *Client) createResult(id DocumentId, stats *Stats, resp *http.Response) Result {
+func (c *Client) createResult(id Id, stats *Stats, resp *http.Response) Result {
 	result := Result{Id: id}
 	switch resp.StatusCode {
 	case 200:

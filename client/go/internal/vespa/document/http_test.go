@@ -88,11 +88,11 @@ func TestClientSend(t *testing.T) {
 
 func TestURLPath(t *testing.T) {
 	tests := []struct {
-		in  DocumentId
+		in  Id
 		out string
 	}{
 		{
-			DocumentId{
+			Id{
 				Namespace:    "ns-with-/",
 				Type:         "type-with-/",
 				UserSpecific: "user",
@@ -100,7 +100,7 @@ func TestURLPath(t *testing.T) {
 			"/document/v1/ns-with-%2F/type-with-%2F/docid/user",
 		},
 		{
-			DocumentId{
+			Id{
 				Namespace:    "ns",
 				Type:         "type",
 				Number:       ptr(int64(123)),
@@ -109,7 +109,7 @@ func TestURLPath(t *testing.T) {
 			"/document/v1/ns/type/number/123/user",
 		},
 		{
-			DocumentId{
+			Id{
 				Namespace:    "ns",
 				Type:         "type",
 				Group:        "foo",
@@ -118,7 +118,7 @@ func TestURLPath(t *testing.T) {
 			"/document/v1/ns/type/group/foo/user",
 		},
 		{
-			DocumentId{
+			Id{
 				Namespace:    "ns",
 				Type:         "type",
 				UserSpecific: "user::specific",
@@ -126,7 +126,7 @@ func TestURLPath(t *testing.T) {
 			"/document/v1/ns/type/docid/user::specific",
 		},
 		{
-			DocumentId{
+			Id{
 				Namespace:    "ns",
 				Type:         "type",
 				UserSpecific: ":",

@@ -23,7 +23,7 @@ const (
 
 // Result represents the result of a feeding operation.
 type Result struct {
-	Id      DocumentId
+	Id      Id
 	Status  Status
 	Message string
 	Trace   string
