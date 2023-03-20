@@ -96,25 +96,16 @@ class BindingExtractor {
             for (ExpressionNode child : tfn.children()) {
                 result.merge(extractBindTargets(child));
             }
+            // ignore return value:
+            tfn.withTransformedExpressions(expr -> {
+                    result.merge(extractBindTargets(expr));
+                    return expr;
+                });
             var f = tfn.function();
             if (f instanceof Generate) {
                 var tt = f.type(null);
                 for (var dim : tt.dimensions()) {
                     result.removeTarget(dim.name());
-                }
-            }
-            else if (f instanceof Slice<?> s) {
-                for (var selectorFunc : s.selectorFunctions()) {
-                    if (selectorFunc instanceof TensorFunctionNode.ExpressionTensorFunction expr) {
-                        result.merge(extractBindTargets(expr.wrappedExpression()));
-                    }
-                }
-            }
-            else if (f instanceof DynamicTensor<?> d) {
-                for (var tf : d.cellGeneratorFunctions()) {
-                    if (tf instanceof TensorFunctionNode.ExpressionTensorFunction expr) {
-                        result.merge(extractBindTargets(expr.wrappedExpression()));
-                    }
                 }
             }
             return result;
