@@ -413,6 +413,18 @@ public class DefaultZmsClient extends ClientBase implements ZmsClient {
     }
 
     @Override
+    public void updateProviderEndpoint(AthenzService athenzService, String endpoint) {
+        URI uri = zmsUrl.resolve(String.format("domain/%s/service/%s/meta/system/providerendpoint",
+                                               athenzService.getDomainName(), athenzService.getName()));
+
+        String payload = String.format("{\"providerEndpoint\": \"%s\"}", endpoint);
+        HttpUriRequest request = RequestBuilder.put(uri)
+                .setEntity(new StringEntity(payload, ContentType.APPLICATION_JSON))
+                .build();
+        execute(request, response -> readEntity(response, Void.class));
+    }
+
+    @Override
     public void deleteService(AthenzService athenzService) {
         URI uri = zmsUrl.resolve(String.format("domain/%s/service/%s", athenzService.getDomainName(), athenzService.getName()));
         execute(RequestBuilder.delete(uri).build(), response -> readEntity(response, Void.class));

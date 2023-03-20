@@ -257,6 +257,11 @@ public class ZmsClientMock implements ZmsClient {
     }
 
     @Override
+    public void updateProviderEndpoint(AthenzService athenzService, String endpoint) {
+
+    }
+
+    @Override
     public void deleteService(AthenzService athenzService) {
         athenz.getOrCreateDomain(athenzService.getDomain()).services.remove(athenzService.getName());
     }
