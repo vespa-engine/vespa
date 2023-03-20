@@ -2,6 +2,7 @@
 package com.yahoo.log;
 
 import java.io.UnsupportedEncodingException;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.logging.StreamHandler;
@@ -47,10 +48,10 @@ class VespaLogHandler extends StreamHandler {
      */
     @Override
     public synchronized void publish(LogRecord record) {
-        Level level = record.getLevel();
-        String component = record.getLoggerName();
+        String loggerName = record.getLoggerName();
+        Level level = possiblyReduceLogLevel(loggerName, record.getLevel());
 
-        LevelController ctrl = getLevelControl(component);
+        LevelController ctrl = getLevelControl(loggerName);
         if (!ctrl.shouldLog(level)) {
             return;
         }
@@ -73,12 +74,28 @@ class VespaLogHandler extends StreamHandler {
         closeFileTarget();
     }
 
+    // Reduce log level from info level to fine level for some loggers
+    private Level possiblyReduceLogLevel(String loggerName, Level level) {
+        if (loggerName == null)
+            return level;
+
+        if (Set.of("com.yahoo.vespa.spifly.repackaged.spifly.BaseActivator",
+                   "org.eclipse.jetty.server.Server",
+                   "org.eclipse.jetty.server.handler.ContextHandler",
+                   "org.eclipse.jetty.server.AbstractConnector")
+               .contains(loggerName)
+                && level == Level.INFO)
+            return Level.FINE;
+
+        return level;
+    }
+
     LevelController getLevelControl(String component) {
         return repo.getLevelController(component);
     }
 
     /**
-     * Initalize the handler.  The main invariant is that
+     * Initialize the handler.  The main invariant is that
      * outputStream is always set to something valid when this method
      * returns.
      */
