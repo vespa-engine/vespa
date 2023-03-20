@@ -5,7 +5,6 @@ package com.yahoo.metrics;
  */
 public enum Unit {
 
-    AREA(BaseUnit.AREA),
     BINARY(BaseUnit.BINARY, "Zero or one. Zero typically indicate \"false\" while one indicate \"true\""),
     BUCKET(BaseUnit.BUCKET),
     BYTE(BaseUnit.BYTE),
