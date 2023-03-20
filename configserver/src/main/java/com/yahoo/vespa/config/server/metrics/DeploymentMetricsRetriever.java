@@ -5,11 +5,9 @@ import com.yahoo.config.model.api.HostInfo;
 import com.yahoo.config.model.api.ServiceInfo;
 import com.yahoo.vespa.config.server.application.Application;
 import com.yahoo.vespa.config.server.http.v2.response.DeploymentMetricsResponse;
-
 import java.net.URI;
 import java.util.Collection;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
 
 /**
  * Finds all hosts we want to fetch metrics for, generates the appropriate URIs

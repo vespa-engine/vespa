@@ -8,7 +8,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.junit.Rule;
 import org.junit.Test;
@@ -20,7 +19,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.options;
 import static org.junit.Assert.assertEquals;
 
-public class ClusterProtonMetricsRetrieverTest {
+public class ClusterSearchNodeMetricsRetrieverTest {
 
     @Rule
     public final WireMockRule wireMock = new WireMockRule(options().dynamicPort(), true);
@@ -44,10 +43,10 @@ public class ClusterProtonMetricsRetrieverTest {
 
         String expectedClusterNameContent = "content/content/0/0";
         String expectedClusterNameMusic = "content/music/0/0";
-        Map<String, ProtonMetricsAggregator> aggregatorMap = new ClusterProtonMetricsRetriever().requestMetricsGroupedByCluster(hosts);
+        Map<String, SearchNodeMetricsAggregator> aggregatorMap = new ClusterProtonMetricsRetriever().requestMetricsGroupedByCluster(hosts);
 
         compareAggregators(
-                new ProtonMetricsAggregator()
+                new SearchNodeMetricsAggregator()
                 .addDocumentReadyCount(1275)
                 .addDocumentActiveCount(1275)
                 .addDocumentTotalCount(1275)
@@ -58,7 +57,7 @@ public class ClusterProtonMetricsRetrieverTest {
         );
 
         compareAggregators(
-                new ProtonMetricsAggregator()
+                new SearchNodeMetricsAggregator()
                 .addDocumentReadyCount(3008)
                 .addDocumentActiveCount(3008)
                 .addDocumentTotalCount(3008)
@@ -78,7 +77,7 @@ public class ClusterProtonMetricsRetrieverTest {
     // Same tolerance value as used internally in MetricsAggregator.isZero
     private static final double metricsTolerance = 0.001;
 
-    private void compareAggregators(ProtonMetricsAggregator expected, ProtonMetricsAggregator actual) {
+    private void compareAggregators(SearchNodeMetricsAggregator expected, SearchNodeMetricsAggregator actual) {
         assertEquals(expected.aggregateDocumentDiskUsage(), actual.aggregateDocumentDiskUsage(), metricsTolerance);
     }
 

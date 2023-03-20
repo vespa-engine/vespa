@@ -69,9 +69,9 @@ import com.yahoo.vespa.config.server.http.SimpleHttpFetcher;
 import com.yahoo.vespa.config.server.http.TesterClient;
 import com.yahoo.vespa.config.server.http.v2.PrepareResult;
 import com.yahoo.vespa.config.server.http.v2.response.DeploymentMetricsResponse;
-import com.yahoo.vespa.config.server.http.v2.response.ProtonMetricsResponse;
+import com.yahoo.vespa.config.server.http.v2.response.SearchNodeMetricsResponse;
 import com.yahoo.vespa.config.server.metrics.DeploymentMetricsRetriever;
-import com.yahoo.vespa.config.server.metrics.ProtonMetricsRetriever;
+import com.yahoo.vespa.config.server.metrics.SearchNodeMetricsRetriever;
 import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
 import com.yahoo.vespa.config.server.session.LocalSession;
 import com.yahoo.vespa.config.server.session.PrepareParams;
@@ -943,14 +943,13 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         return tenantRepository.getTenant(tenantName).getApplicationRepo().activeApplications();
     }
 
-    // ---------------- Proton Metrics V1 ------------------------------------------------------------------------
+    // ---------------- SearchNode Metrics ------------------------------------------------------------------------
 
-    public ProtonMetricsResponse getProtonMetrics(ApplicationId applicationId) {
+    public SearchNodeMetricsResponse getProtonMetrics(ApplicationId applicationId) {
         Application application = getApplication(applicationId);
-        ProtonMetricsRetriever protonMetricsRetriever = new ProtonMetricsRetriever();
-        return protonMetricsRetriever.getMetrics(application);
+        SearchNodeMetricsRetriever searchNodeMetricsRetriever = new SearchNodeMetricsRetriever();
+        return searchNodeMetricsRetriever.getMetrics(application);
     }
-
 
     // ---------------- Deployment Metrics V1 ------------------------------------------------------------------------
 

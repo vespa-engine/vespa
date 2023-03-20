@@ -3,7 +3,7 @@ package com.yahoo.vespa.config.server.metrics;
 
 import com.yahoo.slime.Inspector;
 
-public class ProtonMetricsAggregator {
+public class SearchNodeMetricsAggregator {
 
     private static final String DOCUMENT_ACTIVE = "content.proton.documentdb.documents.active.last";
     private static final String DOCUMENT_READY = "content.proton.documentdb.documents.ready.last";
@@ -20,7 +20,7 @@ public class ProtonMetricsAggregator {
     private final AverageMetric resourceDiskUsageAverage = new AverageMetric();
     private final AverageMetric resourceMemoryUsageAverage = new AverageMetric();
 
-    public synchronized ProtonMetricsAggregator addAll(Inspector metric) {
+    public synchronized SearchNodeMetricsAggregator addAll(Inspector metric) {
         if (metric.field(DOCUMENT_ACTIVE).valid()) addDocumentActiveCount(metric.field(DOCUMENT_ACTIVE).asDouble());
         if (metric.field(DOCUMENT_READY).valid()) addDocumentReadyCount(metric.field(DOCUMENT_READY).asDouble());
         if (metric.field(DOCUMENT_TOTAL).valid()) addDocumentTotalCount(metric.field(DOCUMENT_TOTAL).asDouble());
@@ -30,7 +30,7 @@ public class ProtonMetricsAggregator {
         return this;
     }
 
-    public ProtonMetricsAggregator addAll(ProtonMetricsAggregator aggregator) {
+    public SearchNodeMetricsAggregator addAll(SearchNodeMetricsAggregator aggregator) {
         this.documentActiveCount += aggregator.aggregateDocumentActiveCount();
         this.documentReadyCount += aggregator.aggregateDocumentReadyCount();
         this.documentTotalCount += aggregator.aggregateDocumentTotalCount();
@@ -40,45 +40,45 @@ public class ProtonMetricsAggregator {
         return this;
     }
 
-    public ProtonMetricsAggregator addResourceDiskUsageAverage(ProtonMetricsAggregator aggregator) {
+    public SearchNodeMetricsAggregator addResourceDiskUsageAverage(SearchNodeMetricsAggregator aggregator) {
         this.resourceDiskUsageAverage.averageCount += aggregator.resourceDiskUsageAverage.averageCount;
         this.resourceDiskUsageAverage.averageSum += aggregator.resourceDiskUsageAverage.averageSum;
         return this;
     }
 
-    public ProtonMetricsAggregator addResourceMemoryUsageAverage(ProtonMetricsAggregator aggregator) {
+    public SearchNodeMetricsAggregator addResourceMemoryUsageAverage(SearchNodeMetricsAggregator aggregator) {
         this.resourceMemoryUsageAverage.averageCount += aggregator.resourceMemoryUsageAverage.averageCount;
         this.resourceMemoryUsageAverage.averageSum += aggregator.resourceMemoryUsageAverage.averageSum;
         return this;
     }
 
-    public synchronized ProtonMetricsAggregator addDocumentActiveCount(double documentActiveCount) {
+    public synchronized SearchNodeMetricsAggregator addDocumentActiveCount(double documentActiveCount) {
         this.documentActiveCount += documentActiveCount;
         return this;
     }
 
-    public synchronized ProtonMetricsAggregator addDocumentReadyCount(double documentReadyCount) {
+    public synchronized SearchNodeMetricsAggregator addDocumentReadyCount(double documentReadyCount) {
         this.documentReadyCount += documentReadyCount;
         return this;
     }
 
-    public synchronized ProtonMetricsAggregator addDocumentTotalCount(double documentTotalCount) {
+    public synchronized SearchNodeMetricsAggregator addDocumentTotalCount(double documentTotalCount) {
         this.documentTotalCount += documentTotalCount;
         return this;
     }
 
-    public synchronized ProtonMetricsAggregator addDocumentDiskUsage(double documentDiskUsage) {
+    public synchronized SearchNodeMetricsAggregator addDocumentDiskUsage(double documentDiskUsage) {
         this.documentDiskUsage += documentDiskUsage;
         return this;
     }
 
-    public synchronized ProtonMetricsAggregator addResourceDiskUsageAverage(double resourceDiskUsageAverage) {
+    public synchronized SearchNodeMetricsAggregator addResourceDiskUsageAverage(double resourceDiskUsageAverage) {
         this.resourceDiskUsageAverage.averageCount++;
         this.resourceDiskUsageAverage.averageSum += resourceDiskUsageAverage;
         return this;
     }
 
-    public synchronized ProtonMetricsAggregator addResourceMemoryUsageAverage(double resourceMemoryUsageAverage) {
+    public synchronized SearchNodeMetricsAggregator addResourceMemoryUsageAverage(double resourceMemoryUsageAverage) {
         this.resourceMemoryUsageAverage.averageCount++;
         this.resourceMemoryUsageAverage.averageSum += resourceMemoryUsageAverage;
         return this;
