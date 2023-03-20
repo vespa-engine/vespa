@@ -1,4 +1,4 @@
-package feed
+package document
 
 import (
 	"time"
@@ -90,7 +90,7 @@ func (s *Stats) Add(other Stats) {
 	s.BytesRecv += other.BytesRecv
 }
 
-// Feeder is the interface for code that can feed documents.
+// Feeder is the interface for a consumer of documents.
 type Feeder interface {
 	Send(Document) Result
 	Stats() Stats

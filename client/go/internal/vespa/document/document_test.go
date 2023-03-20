@@ -1,4 +1,4 @@
-package feed
+package document
 
 import (
 	"bytes"
@@ -78,7 +78,7 @@ func TestParseDocumentId(t *testing.T) {
 		{"id:ns:type::", DocumentId{}, true},
 	}
 	for i, tt := range tests {
-		parsed, err := ParseDocumentId(tt.in)
+		parsed, err := ParseId(tt.in)
 		if err == nil && tt.fail {
 			t.Errorf("#%d: expected error for ParseDocumentId(%q), but got none", i, tt.in)
 		}

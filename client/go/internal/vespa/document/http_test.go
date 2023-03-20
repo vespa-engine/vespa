@@ -1,4 +1,4 @@
-package feed
+package document
 
 import (
 	"bytes"

@@ -1,4 +1,4 @@
-package feed
+package document
 
 import (
 	"bufio"
@@ -162,7 +162,7 @@ func parseDocument(d *Document) error {
 	} else {
 		return fmt.Errorf("invalid document: missing operation: %v", d)
 	}
-	docId, err := ParseDocumentId(id)
+	docId, err := ParseId(id)
 	if err != nil {
 		return err
 	}
@@ -240,8 +240,8 @@ func parseError(value string) error {
 	return fmt.Errorf("invalid document: expected id:<namespace>:<document-type>:[n=<number>|g=<group>]:<user-specific>, got %q", value)
 }
 
-// ParseDocumentId parses a serialized document ID string.
-func ParseDocumentId(serialized string) (DocumentId, error) {
+// ParseId parses a serialized document ID string.
+func ParseId(serialized string) (DocumentId, error) {
 	parts := strings.SplitN(serialized, ":", 4)
 	if len(parts) < 4 || parts[0] != "id" {
 		return DocumentId{}, parseError(serialized)
