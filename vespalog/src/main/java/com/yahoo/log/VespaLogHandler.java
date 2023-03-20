@@ -14,6 +14,13 @@ import java.util.logging.StreamHandler;
 @SuppressWarnings("deprecation")
 class VespaLogHandler extends StreamHandler {
 
+    // Reduce log level from info level to fine level for some loggers
+    private static final Set<String> loggersWithReducedLogLevel =
+            Set.of("com.yahoo.vespa.spifly.repackaged.spifly.BaseActivator",
+                   "org.eclipse.jetty.server.Server",
+                   "org.eclipse.jetty.server.handler.ContextHandler",
+                   "org.eclipse.jetty.server.AbstractConnector");
+
     private final LogTarget logTarget;
     private final String serviceName;
     private final String appPrefix;
@@ -74,20 +81,10 @@ class VespaLogHandler extends StreamHandler {
         closeFileTarget();
     }
 
-    // Reduce log level from info level to fine level for some loggers
-    private Level possiblyReduceLogLevel(String loggerName, Level level) {
-        if (loggerName == null)
-            return level;
+    private static Level possiblyReduceLogLevel(String loggerName, Level level) {
+        if (loggerName == null) return level;
 
-        if (Set.of("com.yahoo.vespa.spifly.repackaged.spifly.BaseActivator",
-                   "org.eclipse.jetty.server.Server",
-                   "org.eclipse.jetty.server.handler.ContextHandler",
-                   "org.eclipse.jetty.server.AbstractConnector")
-               .contains(loggerName)
-                && level == Level.INFO)
-            return Level.FINE;
-
-        return level;
+        return (loggersWithReducedLogLevel.contains(loggerName) && level == Level.INFO) ? Level.FINE : level;
     }
 
     LevelController getLevelControl(String component) {
