@@ -55,20 +55,7 @@ public class InputRecorder extends ExpressionTransformer<InputRecorderContext> {
                 }
                 return transformChildren(t, childContext);
             }
-            if (f instanceof DynamicTensor d) {
-                for (var tf : d.cellGeneratorFunctions()) {
-                    if (tf instanceof TensorFunctionNode.ExpressionTensorFunction expr) {
-                        transform(expr.wrappedExpression(), context);
-                    }
-                }
-            }
-            if (f instanceof Slice s) {
-                for (var tf : s.selectorFunctions()) {
-                    if (tf instanceof TensorFunctionNode.ExpressionTensorFunction expr) {
-                        transform(expr.wrappedExpression(), context);
-                    }
-                }
-            }
+            node = t.withTransformedExpressions(expr -> transform(expr, context));
         }
         if (node instanceof CompositeNode c)
             return transformChildren(c, context);

@@ -2765,6 +2765,7 @@
       "public void <init>(com.yahoo.tensor.functions.TensorFunction, java.util.List)",
       "public java.util.List arguments()",
       "public java.util.List selectorFunctions()",
+      "public com.yahoo.tensor.functions.TensorFunction withTransformedFunctions(java.util.function.Function)",
       "public com.yahoo.tensor.functions.Slice withArguments(java.util.List)",
       "public com.yahoo.tensor.functions.PrimitiveTensorFunction toPrimitive()",
       "public com.yahoo.tensor.Tensor evaluate(com.yahoo.tensor.evaluation.EvaluationContext)",
@@ -2810,7 +2811,8 @@
       "public abstract java.lang.String toString(com.yahoo.tensor.functions.ToStringContext)",
       "public java.util.Optional asScalarFunction()",
       "public java.lang.String toString()",
-      "public abstract int hashCode()"
+      "public abstract int hashCode()",
+      "public com.yahoo.tensor.functions.TensorFunction withTransformedFunctions(java.util.function.Function)"
     ],
     "fields" : [ ]
   },

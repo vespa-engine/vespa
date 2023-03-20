@@ -16,6 +16,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -54,6 +55,22 @@ public class Slice<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMETY
             dimVal.index().ifPresent(fun -> fun.asTensorFunction().ifPresent(tf -> result.add(tf)));
         }
         return result;
+    }
+
+    public TensorFunction<NAMETYPE> withTransformedFunctions(
+            Function<ScalarFunction<NAMETYPE>, ScalarFunction<NAMETYPE>> transformer)
+    {
+        List<DimensionValue<NAMETYPE>> transformedAddress = new ArrayList<>();
+        for (var orig : subspaceAddress) {
+            var idxFun = orig.index();
+            if (idxFun.isPresent()) {
+                var transformed = transformer.apply(idxFun.get());
+                transformedAddress.add(new DimensionValue<NAMETYPE>(orig.dimension(), transformed));
+            } else {
+                transformedAddress.add(orig);
+            }
+        }
+        return new Slice<>(argument, transformedAddress);
     }
 
     @Override

@@ -1,0 +1,33 @@
+schema test {
+    document test {
+        field extra type string {
+        }
+    }
+    constant xx {
+        file: const_xx.json
+        type: tensor(d0[2],d1[3])
+    }
+    rank-profile default {
+        constants {
+            constant(aa) tensor(d1[3]): [1,2,3]
+            bb           tensor(d0[2]): [4,5]
+	   dd           double:        2
+        }
+        function indirect_a() {
+            expression: tensor(d1[3]): [constant(dd), constant(aa){d1:0}, constant(bb){d0:(constant(dd))}]
+        }
+        onnx-model inside {
+            file: ax_plus_b.onnx
+            input vector_A: indirect_a
+            input matrix_X: constant(xx)
+            input vector_B: constant(bb)
+            output vector_Y: foobar
+        }
+        first-phase {
+            expression: sum(onnx(inside).foobar)
+        }
+        # function unused() {
+        #    expression: constant(aa)*constant(bb)
+        # }
+    }
+}
