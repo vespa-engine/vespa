@@ -52,21 +52,23 @@ public:
 
 //-------------------------------------------------------------
 
-#define UNUSED_MEMBER [[maybe_unused]]
-
 class ComplexA
 {
 private:
-  UNUSED_MEMBER uint32_t _fill1;
-  UNUSED_MEMBER uint32_t _fill2;
-  UNUSED_MEMBER uint32_t _fill3;
+    uint32_t _fill1;
+    uint32_t _fill2;
+    uint32_t _fill3;
 
 public:
 
   /**
    * Destructor.  No cleanup needed for base class.
    */
-  virtual ~ComplexA() = default;
+  virtual ~ComplexA() {
+      EXPECT_EQUAL(1u, _fill1);
+      EXPECT_EQUAL(2u, _fill2);
+      EXPECT_EQUAL(3u, _fill3);
+  }
 
   ComplexA() : _fill1(1), _fill2(2), _fill3(3) {}
   virtual void foo() {}
@@ -76,16 +78,19 @@ public:
 class ComplexB
 {
 private:
-  UNUSED_MEMBER uint32_t _fill1;
-  UNUSED_MEMBER uint32_t _fill2;
-  UNUSED_MEMBER uint32_t _fill3;
-
+    uint32_t _fill1;
+    uint32_t _fill2;
+    uint32_t _fill3;
 public:
 
   /**
    * Destructor.  No cleanup needed for base class.
    */
-  virtual ~ComplexB() = default;
+  virtual ~ComplexB() {
+      EXPECT_EQUAL(1u, _fill1);
+      EXPECT_EQUAL(2u, _fill2);
+      EXPECT_EQUAL(3u, _fill3);
+  }
 
   ComplexB() : _fill1(1), _fill2(2), _fill3(3) {}
   virtual void bar() {}
