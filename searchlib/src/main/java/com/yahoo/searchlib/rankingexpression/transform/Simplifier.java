@@ -53,6 +53,9 @@ public class Simplifier extends ExpressionTransformer<TransformContext> {
             List<Operator> operators = new ArrayList<>(node.operators());
             for (Operator operator : Operator.operatorsByPrecedence)
                 transform(operator, children, operators);
+            if (operators.isEmpty() && children.size() == 1) {
+                return children.get(0);
+            }
             node = new OperationNode(children, operators);
         }
 
@@ -69,7 +72,7 @@ public class Simplifier extends ExpressionTransformer<TransformContext> {
         int i = 0;
         while (i < children.size()-1) {
             boolean transformed = false;
-            if ( operators.get(i).equals(operatorToTransform)) {
+            if (operators.get(i).equals(operatorToTransform)) {
                 ExpressionNode child1 = children.get(i);
                 ExpressionNode child2 = children.get(i + 1);
                 if (isConstant(child1) && isConstant(child2) && hasPrecedence(operators, i)) {

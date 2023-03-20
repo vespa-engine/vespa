@@ -12,6 +12,7 @@ import com.yahoo.searchlib.rankingexpression.rule.ExpressionNode;
 import com.yahoo.searchlib.rankingexpression.rule.ReferenceNode;
 import com.yahoo.searchlib.rankingexpression.rule.TensorFunctionNode;
 import com.yahoo.searchlib.rankingexpression.transform.ExpressionTransformer;
+import com.yahoo.tensor.functions.DynamicTensor;
 import com.yahoo.tensor.functions.Generate;
 import com.yahoo.tensor.functions.Slice;
 
@@ -53,6 +54,13 @@ public class InputRecorder extends ExpressionTransformer<InputRecorderContext> {
                     childContext.localVariables().add(dim.name());
                 }
                 return transformChildren(t, childContext);
+            }
+            if (f instanceof DynamicTensor d) {
+                for (var tf : d.cellGeneratorFunctions()) {
+                    if (tf instanceof TensorFunctionNode.ExpressionTensorFunction expr) {
+                        transform(expr.wrappedExpression(), context);
+                    }
+                }
             }
             if (f instanceof Slice s) {
                 for (var tf : s.selectorFunctions()) {

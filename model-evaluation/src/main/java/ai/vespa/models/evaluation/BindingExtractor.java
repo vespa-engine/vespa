@@ -8,6 +8,7 @@ import com.yahoo.searchlib.rankingexpression.rule.ConstantNode;
 import com.yahoo.searchlib.rankingexpression.rule.ExpressionNode;
 import com.yahoo.searchlib.rankingexpression.rule.ReferenceNode;
 import com.yahoo.searchlib.rankingexpression.rule.TensorFunctionNode;
+import com.yahoo.tensor.functions.DynamicTensor;
 import com.yahoo.tensor.functions.Generate;
 import com.yahoo.tensor.functions.Slice;
 
@@ -105,6 +106,13 @@ class BindingExtractor {
             else if (f instanceof Slice<?> s) {
                 for (var selectorFunc : s.selectorFunctions()) {
                     if (selectorFunc instanceof TensorFunctionNode.ExpressionTensorFunction expr) {
+                        result.merge(extractBindTargets(expr.wrappedExpression()));
+                    }
+                }
+            }
+            else if (f instanceof DynamicTensor<?> d) {
+                for (var tf : d.cellGeneratorFunctions()) {
+                    if (tf instanceof TensorFunctionNode.ExpressionTensorFunction expr) {
                         result.merge(extractBindTargets(expr.wrappedExpression()));
                     }
                 }

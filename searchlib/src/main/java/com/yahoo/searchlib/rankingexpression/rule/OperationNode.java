@@ -14,6 +14,7 @@ import java.util.Deque;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
+import java.util.logging.Logger;
 
 /**
  * A sequence of binary operations.
@@ -22,12 +23,21 @@ import java.util.Objects;
  */
 public final class OperationNode extends CompositeNode {
 
+    private static final Logger logger = Logger.getLogger(OperationNode.class.getName());
+
     private final List<ExpressionNode> children;
     private final List<Operator> operators;
 
     public OperationNode(List<ExpressionNode> children, List<Operator> operators) {
         this.children = List.copyOf(children);
         this.operators = List.copyOf(operators);
+        if (operators.isEmpty()) {
+            logger.warning("Strange: no operators for OperationNode");
+        }
+        int needChildren = operators.size() + 1;
+        if (needChildren != children.size()) {
+            throw new IllegalArgumentException("Need " + needChildren + " children, but got " + children.size());
+        }
     }
 
     public OperationNode(ExpressionNode leftExpression, Operator operator, ExpressionNode rightExpression) {
@@ -70,12 +80,14 @@ public final class OperationNode extends CompositeNode {
         if ( parent == null) return false;
         if ( ! (parent instanceof OperationNode operationParent)) return false;
 
-        // The line below can only be correct in both only have one operator.
+        // The last line below can only be correct if both only have one operator.
         // Getting this correct is impossible without more work.
         // So for now we only handle the simple case correctly, and use a safe approach by adding
         // extra parenthesis just in case....
-        return operationParent.operators.get(0).hasPrecedenceOver(this.operators.get(0))
-                || ((operationParent.operators.size() > 1) || (operators.size() > 1));
+        if ((operationParent.operators.size() != 1) || (operators.size() != 1)) {
+            return true;
+        }
+        return operationParent.operators.get(0).hasPrecedenceOver(this.operators.get(0));
     }
 
     @Override
