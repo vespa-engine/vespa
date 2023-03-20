@@ -11,11 +11,17 @@
 class CreateAllocator
 {
 public:
-    CreateAllocator() : _initialized(0x192A3B4C) {
+    static constexpr unsigned CONSTRUCTED = 0x192A3B4C;
+    static constexpr unsigned DESTRUCTED = 0xd1d2d3d4;
+    CreateAllocator() : _initialized(CONSTRUCTED) {
         vespamalloc::createAllocator();
     }
+    ~CreateAllocator() {
+        assert(_initialized == CONSTRUCTED);
+        _initialized = DESTRUCTED;
+    }
 private:
-    [[maybe_unused]] unsigned _initialized;
+    unsigned _initialized;
 };
 
 static CreateAllocator _CreateAllocator __attribute__ ((init_priority (543)));
