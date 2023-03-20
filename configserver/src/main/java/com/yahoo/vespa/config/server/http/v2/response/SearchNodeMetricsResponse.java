@@ -12,13 +12,13 @@ import java.util.Map;
  */
 public class SearchNodeMetricsResponse extends SlimeJsonResponse {
 
-    public SearchNodeMetricsResponse(ApplicationId applicationId, Map<String, SearchNodeMetricsAggregator> aggregatedProtonMetrics) {
+    public SearchNodeMetricsResponse(ApplicationId applicationId, Map<String, SearchNodeMetricsAggregator> aggregatedMetrics) {
         Cursor application = slime.setObject();
         application.setString("applicationId", applicationId.serializedForm());
 
         Cursor clusters = application.setArray("clusters");
 
-        for (var entry : aggregatedProtonMetrics.entrySet()) {
+        for (var entry : aggregatedMetrics.entrySet()) {
             Cursor cluster = clusters.addObject();
             cluster.setString("clusterId", entry.getKey());
 

@@ -945,7 +945,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
 
     // ---------------- SearchNode Metrics ------------------------------------------------------------------------
 
-    public SearchNodeMetricsResponse getProtonMetrics(ApplicationId applicationId) {
+    public SearchNodeMetricsResponse getSearchNodeMetrics(ApplicationId applicationId) {
         Application application = getApplication(applicationId);
         SearchNodeMetricsRetriever searchNodeMetricsRetriever = new SearchNodeMetricsRetriever();
         return searchNodeMetricsRetriever.getMetrics(application);

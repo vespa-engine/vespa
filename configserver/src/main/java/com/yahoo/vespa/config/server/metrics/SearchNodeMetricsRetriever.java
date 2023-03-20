@@ -11,13 +11,13 @@ import java.util.function.Predicate;
 
 public class SearchNodeMetricsRetriever {
 
-    private final ClusterProtonMetricsRetriever metricsRetriever;
+    private final ClusterSearchNodeMetricsRetriever metricsRetriever;
 
     public SearchNodeMetricsRetriever() {
-        this( new ClusterProtonMetricsRetriever());
+        this( new ClusterSearchNodeMetricsRetriever());
     }
 
-    public SearchNodeMetricsRetriever(ClusterProtonMetricsRetriever metricsRetriever) {
+    public SearchNodeMetricsRetriever(ClusterSearchNodeMetricsRetriever metricsRetriever) {
         this.metricsRetriever = metricsRetriever;
     }
 
