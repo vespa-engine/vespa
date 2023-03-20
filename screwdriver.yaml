@@ -50,7 +50,7 @@ shared:
 
 jobs:
   build-vespa:
-    requires: [~pr]
+    #requires: [~pr]
     annotations:
       screwdriver.cd/cpu: 7
       screwdriver.cd/ram: 16
@@ -252,6 +252,7 @@ jobs:
     secrets:
       - DOCKER_HUB_DEPLOY_KEY
 
+    requires: [~pr]
     steps:
       - get-vespa-version: |
           set -x
@@ -263,6 +264,7 @@ jobs:
       - install-dependencies: |
           dnf install -y podman podman-docker buildah skopeo
           touch /etc/containers/nodocker
+          podman run --rm --network host --cap-add SYS_ADMIN docker.ouroath.com:4443/docker.io/multiarch/qemu-user-static --reset -p yes
       - checkout: |
           mkdir -p workdir
           cd workdir
