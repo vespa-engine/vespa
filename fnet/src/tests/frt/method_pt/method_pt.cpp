@@ -52,7 +52,11 @@ public:
 
 //-------------------------------------------------------------
 
+#if defined(__clang__) || __GNUC__ >= 12
 #define UNUSED_MEMBER [[maybe_unused]]
+#else
+#define UNUSED_MEMBER
+#endif
 
 class ComplexA
 {

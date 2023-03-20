@@ -15,7 +15,10 @@ public:
         vespamalloc::createAllocator();
     }
 private:
-    [[maybe_unused]] unsigned _initialized;
+#if defined(__clang__) || __GNUC__ >= 12
+    [[maybe_unused]]
+#endif
+    unsigned _initialized;
 };
 
 static CreateAllocator _CreateAllocator __attribute__ ((init_priority (543)));
