@@ -87,13 +87,12 @@ public class ConfigServerApiHandlerTest extends ControllerContainerTest {
 
     @Test
     void test_allowed_apis() {
-        // GET /configserver/v1/prod/us-north-1
         tester.assertResponse(() -> operatorRequest("http://localhost:8080/configserver/v1/prod/us-north-1/"),
-                "{\"error-code\":\"FORBIDDEN\",\"message\":\"Cannot access path '/' through /configserver/v1, following APIs are permitted: /flags/v1/, /nodes/v2/, /orchestrator/v1/\"}",
+                "{\"error-code\":\"FORBIDDEN\",\"message\":\"Cannot access path '/' through /configserver/v1, following APIs are permitted: /flags/v1/, /nodes/v2/, /orchestrator/v1/, /state/v1/\"}",
                 403);
 
         tester.assertResponse(() -> operatorRequest("http://localhost:8080/configserver/v1/prod/us-north-1/application/v2/tenant/vespa"),
-                "{\"error-code\":\"FORBIDDEN\",\"message\":\"Cannot access path '/application/v2/tenant/vespa' through /configserver/v1, following APIs are permitted: /flags/v1/, /nodes/v2/, /orchestrator/v1/\"}",
+                "{\"error-code\":\"FORBIDDEN\",\"message\":\"Cannot access path '/application/v2/tenant/vespa' through /configserver/v1, following APIs are permitted: /flags/v1/, /nodes/v2/, /orchestrator/v1/, /state/v1/\"}",
                 403);
     }
 

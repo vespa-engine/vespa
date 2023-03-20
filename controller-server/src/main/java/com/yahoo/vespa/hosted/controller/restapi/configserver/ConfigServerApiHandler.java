@@ -38,7 +38,8 @@ public class ConfigServerApiHandler extends AuditLoggingRequestHandler {
     private static final URI CONTROLLER_URI = URI.create("https://localhost:4443/");
     private static final List<HttpURL.Path> WHITELISTED_APIS = List.of(parse("/flags/v1/"),
                                                                        parse("/nodes/v2/"),
-                                                                       parse("/orchestrator/v1/"));
+                                                                       parse("/orchestrator/v1/"),
+                                                                       parse("/state/v1/"));
 
     private final ZoneRegistry zoneRegistry;
     private final ConfigServerRestExecutor proxy;
