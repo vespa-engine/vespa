@@ -4,6 +4,7 @@
 #include <memory>
 #include <string>
 #include <string_view>
+#include <utility>
 
 namespace vespalib {
 
@@ -37,7 +38,7 @@ namespace vespalib {
  */
 class Regex {
     class Impl;
-    std::unique_ptr<const Impl> _impl; // shared_ptr to allow for cheap copying.
+    std::unique_ptr<const Impl> _impl;
 
     explicit Regex(std::unique_ptr<const Impl> impl);
 public:
@@ -55,14 +56,22 @@ public:
     Regex(Regex&&) noexcept;
     Regex& operator=(Regex&&) noexcept;
 
-    bool valid() const { return bool(_impl); }
+    [[nodiscard]] bool valid() const noexcept { return bool(_impl); }
 
     [[nodiscard]] bool parsed_ok() const noexcept;
 
     [[nodiscard]] bool partial_match(std::string_view input) const noexcept;
     [[nodiscard]] bool full_match(std::string_view input) const noexcept;
 
-    static Regex from_pattern(std::string_view pattern, uint32_t opt_flags = Options::None);
+    // Returns a pair of <lower bound, upper bound> prefix strings that constrain the possible
+    // match-able range of inputs for this regex. If there is no shared prefix, or if extracting
+    // the range fails, the strings will be empty.
+    // Important: this is _only_ semantically valid if the regex is strictly start-anchored, i.e.
+    // all possible matching paths start with '^'.
+    // This method does _not_ validate that the regex is strictly start-anchored.
+    [[nodiscard]] std::pair<std::string, std::string> possible_anchored_match_prefix_range() const;
+
+    [[nodiscard]] static Regex from_pattern(std::string_view pattern, uint32_t opt_flags = Options::None);
 
     // Utility matchers for non-precompiled expressions.
     [[nodiscard]] static bool partial_match(std::string_view input, std::string_view pattern) noexcept;
