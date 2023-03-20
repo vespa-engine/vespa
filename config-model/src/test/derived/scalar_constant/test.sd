@@ -1,0 +1,20 @@
+# Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+
+schema test {
+    document test {
+        field title type string {
+            indexing: index | summary
+        }
+    }
+    rank-profile default {
+        constants {
+            constant(foobar) double: 0.5
+        }
+        function makevector() {
+            expression: tensor(x[3]):[0.25, constant(foobar), 0.75]
+        }
+        first-phase {
+            expression: sum(makevector())
+        }
+    }
+}
