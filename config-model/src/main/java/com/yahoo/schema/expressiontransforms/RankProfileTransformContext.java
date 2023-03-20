@@ -12,7 +12,7 @@ import com.yahoo.searchlib.rankingexpression.transform.TransformContext;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
 
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -27,7 +27,7 @@ public class RankProfileTransformContext extends TransformContext {
     private final QueryProfileRegistry queryProfiles;
     private final ImportedMlModels importedModels;
     private final Map<String, RankProfile.RankingExpressionFunction> inlineFunctions;
-    private final Map<String, String> rankProperties = new HashMap<>();
+    private final Map<String, String> rankProperties = new LinkedHashMap<>();
 
     public RankProfileTransformContext(RankProfile rankProfile,
                                        QueryProfileRegistry queryProfiles,

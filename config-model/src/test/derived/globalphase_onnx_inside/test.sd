@@ -23,6 +23,26 @@ schema test {
             query(bb) tensor(d0[2])
             query(yy) tensor(d0[2])
         }
+    }
+
+    rank-profile simple inherits default {
+        onnx-model direct {
+            file: files/ax_plus_b.onnx
+            input vector_A: attribute(aa)
+            input matrix_X: constant(xx)
+            input vector_B: query(bb)
+            output vector_Y: out
+        }
+        first-phase {
+            expression: sum(attribute(aa))
+        }
+        global-phase {
+            rerank-count: 13
+            expression: onnx(direct).out{d0:attribute(extra)}
+        }
+    }
+
+    rank-profile one inherits default {
         onnx-model inside {
             file: files/ax_plus_b.onnx
             input vector_A: indirect_a
@@ -41,7 +61,59 @@ schema test {
             expression: sum(constant(ww) * (onnx(inside).foobar - handicap))
         }
         function indirect_a() {
-            expression: attribute(aa) + tensor(d1[3])(d1+attribute(extra))
+            expression: attribute(aa)
+        }
+        function indirect_x() {
+            expression: constant(xx)
+        }
+        function indirect_b() {
+            expression: query(bb)
+        }
+    }
+
+    rank-profile two inherits default {
+        onnx-model twoside {
+            file: files/ax_plus_b.onnx
+            input vector_A: indirect_a
+            input matrix_X: indirect_x
+            input vector_B: indirect_b
+            output vector_Y: foobar
+        }
+        first-phase {
+            expression: sum(attribute(aa))
+        }
+        global-phase {
+            rerank-count: 42
+            expression: sum(constant(ww) * onnx(twoside).foobar)
+        }
+        function indirect_a() {
+            expression: tensor(d1[3])(d1+attribute(extra))
+        }
+        function indirect_x() {
+            expression: constant(xx)
+        }
+        function indirect_b() {
+            expression: query(bb)
+        }
+    }
+
+    rank-profile three inherits default {
+        onnx-model another {
+            file: files/ax_plus_b.onnx
+            input vector_A: indirect_a
+            input matrix_X: indirect_x
+            input vector_B: indirect_b
+            output vector_Y: foobar
+        }
+        first-phase {
+            expression: sum(attribute(aa))
+        }
+        global-phase {
+            rerank-count: 1001
+            expression: sum(constant(ww) * onnx(another).foobar)
+        }
+        function indirect_a() {
+            expression: tensor(d1[3]):[0.25, attribute(extra), 0.75]
         }
         function indirect_x() {
             expression: constant(xx)
