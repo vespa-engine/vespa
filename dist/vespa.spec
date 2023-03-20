@@ -116,7 +116,7 @@ BuildRequires: gmock-devel
 %if 0%{?fedora}
 BuildRequires: cmake >= 3.9.1
 BuildRequires: maven
-%if 0%{?amzn2022}
+%if 0%{?amzn2023}
 BuildRequires: maven-amazon-corretto17
 %define _java_home /usr/lib/jvm/java-17-amazon-corretto
 %else
@@ -134,7 +134,7 @@ BuildRequires: boost-devel
 BuildRequires: gtest-devel
 BuildRequires: gmock-devel
 %endif
-%if 0%{?amzn2022}
+%if 0%{?amzn2023}
 BuildRequires: vespa-xxhash-devel >= 0.8.1
 %define _use_vespa_xxhash 1
 %else
@@ -146,7 +146,7 @@ BuildRequires: vespa-openblas-devel = 0.3.21
 %else
 BuildRequires: openblas-devel
 %endif
-%if 0%{?amzn2022}
+%if 0%{?amzn2023}
 BuildRequires: vespa-re2-devel = 20210801
 %define _use_vespa_re2 1
 %else
@@ -154,7 +154,7 @@ BuildRequires: re2-devel
 %endif
 BuildRequires: zlib-devel
 BuildRequires: libicu-devel
-%if 0%{?amzn2022}
+%if 0%{?amzn2023}
 BuildRequires: java-17-amazon-corretto-devel
 BuildRequires: java-17-amazon-corretto
 %else
@@ -178,7 +178,7 @@ Requires: numactl
 BuildRequires: perl
 BuildRequires: valgrind
 BuildRequires: perf
-%if 0%{?amzn2022}
+%if 0%{?amzn2023}
 Requires: vespa-xxhash >= 0.8.1
 %else
 Requires: xxhash-libs >= 0.8.1
@@ -223,7 +223,7 @@ Vespa - The open big data serving engine
 
 Summary: Vespa - The open big data serving engine - base
 
-%if 0%{?amzn2022}
+%if 0%{?amzn2023}
 Requires: java-17-amazon-corretto-devel
 Requires: java-17-amazon-corretto
 %else
@@ -244,7 +244,7 @@ Summary: Vespa - The open big data serving engine - base C++ libraries
 %if 0%{?centos} || 0%{?rocky} || 0%{?oraclelinux}
 Requires: epel-release
 %endif
-%if 0%{?amzn2022}
+%if 0%{?amzn2023}
 Requires: vespa-xxhash >= 0.8.1
 %else
 Requires: xxhash-libs >= 0.8.1
@@ -261,7 +261,7 @@ Requires: vespa-openblas = 0.3.21
 %else
 Requires: openblas-serial
 %endif
-%if 0%{?amzn2022}
+%if 0%{?amzn2023}
 Requires: vespa-re2 = 20210801
 %else
 Requires: re2
