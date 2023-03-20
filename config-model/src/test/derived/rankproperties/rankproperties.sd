@@ -59,4 +59,28 @@ schema rankproperties {
     }
   }
 
+  rank-profile withconstants1 {
+    constants {
+      constant(a) tensor(x[2]) : [1,2]
+      constant(b) tensor(y[3]) : [3,4,5]
+    }
+    function inline usea() {
+      expression: constant(a)*1.0
+    }
+    function inline useb() {
+      expression: usea + constant(b)
+    }
+    first-phase {
+      expression: sum(nativeFieldMatch + useb)
+    }
+  }
+
+  rank-profile withconstants2 inherits withconstants1 {
+    function inline usec() {
+      expression: constant(a)+constant(b)
+    }
+    first-phase {
+      expression: sum(nativeFieldMatch + usec)
+    }
+  }
 }

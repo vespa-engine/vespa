@@ -21,6 +21,7 @@
 #include <vespa/vespalib/util/memory.h>
 #include <filesystem>
 #include <iomanip>
+#include <random>
 
 using document::BucketId;
 using document::StringFieldValue;
@@ -92,8 +93,7 @@ calcLastFlushedSerialNum(const std::vector<DataStoreFileChunkStats> &chunkStats)
 {
     SerialNum lastFlushedSerialNum = 0u;
     for (const auto &chunk : chunkStats) {
-        lastFlushedSerialNum = std::max(lastFlushedSerialNum,
-                                        chunk.lastFlushedSerialNum());
+        lastFlushedSerialNum = std::max(lastFlushedSerialNum, chunk.lastFlushedSerialNum());
     }
     return lastFlushedSerialNum;
 }
@@ -130,10 +130,8 @@ checkStats(IDataStore &store,
     EXPECT_EQUAL(expLastSerial, storageStats.lastSerialNum());
     EXPECT_EQUAL(expLastFlushedSerial, storageStats.lastFlushedSerialNum());
     EXPECT_EQUAL(storageStats.lastSerialNum(), calcLastSerialNum(chunkStats));
-    EXPECT_EQUAL(storageStats.lastFlushedSerialNum(),
-                 calcLastFlushedSerialNum(chunkStats));
-    EXPECT_EQUAL(storageStats.diskUsage(),
-                 calcDiskUsage(chunkStats));
+    EXPECT_EQUAL(storageStats.lastFlushedSerialNum(), calcLastFlushedSerialNum(chunkStats));
+    EXPECT_EQUAL(storageStats.diskUsage(), calcDiskUsage(chunkStats));
     EXPECT_EQUAL(storageStats.diskBloat(), calcDiskBloat(chunkStats));
 }
 
@@ -218,14 +216,16 @@ void verifyGrowing(const LogDataStore::Config & config, uint32_t minFiles, uint3
     {
         LogDataStore datastore(executor, "growing", config, GrowStrategy(),
                                TuneFileSummary(), fileHeaderContext, tlSyncer, nullptr);
-        srand(7);
+        unsigned int seed = 383451;
         char buffer[12000];
         SerialNum lastSyncToken(0);
+        std::minstd_rand rand_gen(seed);
         for (size_t i(0); i < sizeof(buffer); i++) {
-            buffer[i] = rand() & 0xff;
+            buffer[i] = rand_gen() & 0xff;
         }
+
         for (size_t i(1); i < 10000; i++) {
-            long r = rand()%10000;
+            long r = rand_gen()%10000;
             assert(i > lastSyncToken);
             lastSyncToken = i;
             datastore.write(i, i, &buffer[r], uint8_t(buffer[r])*4);
@@ -260,7 +260,7 @@ TEST("testGrowingChunkedBySize") {
     LogDataStore::Config config;
     config.setMaxFileSize(100000).setMaxBucketSpread(3.0).setMinFileSizeFactor(0.2)
             .compactCompression({CompressionConfig::LZ4})
-            .setFileConfig({{CompressionConfig::LZ4, 9, 60}, 1000});
+            .setFileConfig({{CompressionConfig::ZSTD, 9, 60}, 1000});
     verifyGrowing(config, 40, 120);
 }
 
@@ -268,7 +268,7 @@ TEST("testGrowingChunkedByNumLids") {
     LogDataStore::Config config;
     config.setMaxNumLids(1000).setMaxBucketSpread(3.0).setMinFileSizeFactor(0.2)
             .compactCompression({CompressionConfig::LZ4})
-            .setFileConfig({{CompressionConfig::LZ4, 9, 60}, 1000});
+            .setFileConfig({{CompressionConfig::ZSTD, 9, 60}, 1000});
     verifyGrowing(config,10, 10);
 }
 
@@ -488,7 +488,7 @@ private:
     class VerifyVisitor : public IDocumentVisitor {
     public:
         VerifyVisitor(VisitCacheStore & vcs, std::vector<uint32_t> lids, bool allowCaching);
-        ~VerifyVisitor();
+        ~VerifyVisitor() override;
         void visit(uint32_t lid, Document::UP doc) override {
             EXPECT_TRUE(_expected.find(lid) != _expected.end());
             EXPECT_TRUE(_actual.find(lid) == _actual.end());
@@ -514,7 +514,7 @@ private:
 };
 
 VisitCacheStore::VerifyVisitor::VerifyVisitor(VisitCacheStore & vcs, std::vector<uint32_t> lids, bool allowCaching)
-        : _vcs(vcs), _expected(), _actual(), _allowVisitCaching(allowCaching)
+    : _vcs(vcs), _expected(), _actual(), _allowVisitCaching(allowCaching)
 {
     for (uint32_t lid : lids) {
         _expected.insert(lid);
