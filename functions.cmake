@@ -161,6 +161,45 @@ function(vespa_generate_config TARGET RELATIVE_CONFIG_DEF_PATH)
     vespa_add_source_target("configgen_${TARGET}_${CONFIG_NAME}" DEPENDS ${CONFIG_H_PATH} ${CONFIG_CPP_PATH})
 endfunction()
 
+function(vespa_generate_protobuf_csi TARGET RELATIVE_PROTO_PATH)
+    # Generate from RELATIVE_PROTO_PATH
+    # Destination directory is always where generate is called (or, in the case of out-of-source builds, in the build-tree parallel)
+    # This may not be the same directory as where the .proto file is located.
+
+    get_filename_component(PROTO_FILENAME ${RELATIVE_PROTO_PATH} NAME)
+    get_filename_component(PROTO_NAME ${RELATIVE_PROTO_PATH} NAME_WE)
+    get_filename_component(PROTO_DIR ${RELATIVE_PROTO_PATH} DIRECTORY)
+
+    # Config destination is the current dir (in the build tree)
+    set(PROTO_DEST_DIR ${CMAKE_CURRENT_BINARY_DIR})
+
+    set(CSI_H_PATH ${PROTO_DEST_DIR}/${PROTO_NAME}.csi.h)
+    set(CSI_CPP_PATH ${PROTO_DEST_DIR}/${PROTO_NAME}.csi.cpp)
+
+    set(CSI_GEN_FILES ${CSI_H_PATH} ${CSI_CPP_PATH})
+
+    add_custom_command(
+        OUTPUT ${CSI_GEN_FILES}
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+        COMMAND protobuf::protoc -I ${PROTO_DIR} --plugin=${PROJECT_BINARY_DIR}/protoc-gen-csi/protoc-gen-csi --csi_out=${PROTO_DEST_DIR} ${PROTO_FILENAME}
+        COMMENT "Generating Coroutine Service Interface files for ${PROTO_NAME} in ${PROTO_DEST_DIR}"
+        MAIN_DEPENDENCY ${RELATIVE_PROTO_PATH}
+        DEPENDS protoc-gen-csi
+    )
+
+    # also generate basic protobuf files
+    protobuf_generate_cpp(CSI_PROTOBUF_SRCS CSI_PROTOBUF_HDRS ${PROTO_FILENAME})
+    vespa_suppress_warnings_for_protobuf_sources(SOURCES ${CSI_PROTOBUF_SRCS})
+
+    # Add generated to sources for target
+    target_sources(${TARGET} PRIVATE ${CSI_CPP_PATH})
+
+    # Needed to be able to do a #include for this target
+    target_include_directories(${TARGET} PUBLIC ${PROTO_DEST_DIR})
+
+    vespa_add_source_target("csi_gen_${TARGET}_${PROTO_NAME}" DEPENDS ${CSI_GEN_FILES} ${CSI_PROTOBUF_SRCS} ${CSI_PROTOBUF_HDRS})
+endfunction()
+
 macro(__split_sources_list)
     unset(SOURCE_FILES)
     unset(NON_TARGET_SOURCE_FILES)

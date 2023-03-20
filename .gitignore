@@ -53,3 +53,7 @@ install_manifest.txt
 /vespaConfigVersion.cmake
 *.cbp
 !/.copr/Makefile
+*.pb.h
+*.pb.cc
+*.csi.h
+*.csi.cpp

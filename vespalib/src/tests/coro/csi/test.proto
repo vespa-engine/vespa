@@ -1,0 +1,15 @@
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+
+syntax = "proto3";
+
+message TestRequest {
+    string name = 1;
+}
+
+message TestReply {
+    string name = 1;
+}
+
+service TestService {
+    rpc my_test (TestRequest) returns (TestReply) {}
+}
