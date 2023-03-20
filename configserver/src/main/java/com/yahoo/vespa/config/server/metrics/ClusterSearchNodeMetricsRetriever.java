@@ -22,9 +22,9 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Logger;
 
-public class ClusterProtonMetricsRetriever {
+public class ClusterSearchNodeMetricsRetriever {
 
-    private static final Logger log = Logger.getLogger(ClusterProtonMetricsRetriever.class.getName());
+    private static final Logger log = Logger.getLogger(ClusterSearchNodeMetricsRetriever.class.getName());
 
     private static final CloseableHttpClient httpClient = VespaHttpClientBuilder
             .custom()

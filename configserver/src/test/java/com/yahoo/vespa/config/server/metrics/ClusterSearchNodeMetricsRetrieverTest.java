@@ -43,7 +43,7 @@ public class ClusterSearchNodeMetricsRetrieverTest {
 
         String expectedClusterNameContent = "content/content/0/0";
         String expectedClusterNameMusic = "content/music/0/0";
-        Map<String, SearchNodeMetricsAggregator> aggregatorMap = new ClusterProtonMetricsRetriever().requestMetricsGroupedByCluster(hosts);
+        Map<String, SearchNodeMetricsAggregator> aggregatorMap = new ClusterSearchNodeMetricsRetriever().requestMetricsGroupedByCluster(hosts);
 
         compareAggregators(
                 new SearchNodeMetricsAggregator()

@@ -28,7 +28,7 @@ public class SearchNodeMetricsRetrieverTest {
     @Test
     public void getMetrics()  {
         SearchNodeMetricsRetrieverTest.MockModel mockModel = new MockModel(mockHosts());
-        SearchNodeMetricsRetrieverTest.MockProtonMetricsRetriever mockMetricsRetriever = new MockProtonMetricsRetriever();
+        MockSearchNodeMetricsRetriever mockMetricsRetriever = new MockSearchNodeMetricsRetriever();
         Application application = new Application(mockModel, null, 0,
                                                   null, null, ApplicationId.fromSerializedForm("tenant:app:instance"));
 
@@ -53,7 +53,7 @@ public class SearchNodeMetricsRetrieverTest {
         return List.of(hostInfo1, hostInfo2, hostInfo3);
     }
 
-    static class MockProtonMetricsRetriever extends ClusterProtonMetricsRetriever {
+    static class MockSearchNodeMetricsRetriever extends ClusterSearchNodeMetricsRetriever {
 
         Collection<URI> hosts = new ArrayList<>();
 
