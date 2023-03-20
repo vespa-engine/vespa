@@ -34,8 +34,8 @@ public class ClusterProtonMetricsRetriever {
             .build();
 
 
-    public Map<String, ProtonMetricsAggregator> requestMetricsGroupedByCluster(Collection<URI> hosts) {
-        Map<String, ProtonMetricsAggregator> clusterMetricsMap = new ConcurrentHashMap<>();
+    public Map<String, SearchNodeMetricsAggregator> requestMetricsGroupedByCluster(Collection<URI> hosts) {
+        Map<String, SearchNodeMetricsAggregator> clusterMetricsMap = new ConcurrentHashMap<>();
         for (URI uri : hosts) {
             addMetricsFromHost(uri, clusterMetricsMap);
         }
@@ -62,7 +62,7 @@ public class ClusterProtonMetricsRetriever {
         return clusterMetricsMap;
     }
 
-    private static void addMetricsFromHost(URI hostURI, Map<String, ProtonMetricsAggregator> clusterMetricsMap) {
+    private static void addMetricsFromHost(URI hostURI, Map<String, SearchNodeMetricsAggregator> clusterMetricsMap) {
         Slime hostResponseBody = doMetricsRequest(hostURI);
         Cursor error = hostResponseBody.get().field("error_message");
 
@@ -76,10 +76,10 @@ public class ClusterProtonMetricsRetriever {
         );
     }
 
-    private static void parseNode(Inspector node, Map<String, ProtonMetricsAggregator> clusterMetricsMap) {
+    private static void parseNode(Inspector node, Map<String, SearchNodeMetricsAggregator> clusterMetricsMap) {
         String nodeRole = node.field("role").asString();
         if(nodeRole.contains("content")) {
-            ProtonMetricsAggregator aggregator = new ProtonMetricsAggregator();
+            SearchNodeMetricsAggregator aggregator = new SearchNodeMetricsAggregator();
             clusterMetricsMap.put(nodeRole, aggregator);
             node.field("services").traverse((ArrayTraverser) (i, servicesInspector) ->
                     addServicesToAggregator(servicesInspector, aggregator)
@@ -87,13 +87,13 @@ public class ClusterProtonMetricsRetriever {
         }
     }
 
-    private static void addServicesToAggregator(Inspector services, ProtonMetricsAggregator aggregator) {
+    private static void addServicesToAggregator(Inspector services, SearchNodeMetricsAggregator aggregator) {
         services.field("metrics").traverse((ArrayTraverser) (i, metricsInspector) ->
                 addMetricsToAggregator(metricsInspector, aggregator)
         );
     }
 
-    private static void addMetricsToAggregator(Inspector metrics, ProtonMetricsAggregator aggregator) {
+    private static void addMetricsToAggregator(Inspector metrics, SearchNodeMetricsAggregator aggregator) {
         aggregator.addAll(metrics.field("values"));
     }
 

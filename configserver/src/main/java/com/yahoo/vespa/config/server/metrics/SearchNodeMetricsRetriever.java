@@ -4,41 +4,43 @@ package com.yahoo.vespa.config.server.metrics;
 import com.yahoo.config.model.api.HostInfo;
 import com.yahoo.config.model.api.ServiceInfo;
 import com.yahoo.vespa.config.server.application.Application;
-import com.yahoo.vespa.config.server.http.v2.response.ProtonMetricsResponse;
+import com.yahoo.vespa.config.server.http.v2.response.SearchNodeMetricsResponse;
 import java.net.URI;
 import java.util.Collection;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
 
-public class ProtonMetricsRetriever {
+public class SearchNodeMetricsRetriever {
 
     private final ClusterProtonMetricsRetriever metricsRetriever;
-    public ProtonMetricsRetriever() {
+
+    public SearchNodeMetricsRetriever() {
         this( new ClusterProtonMetricsRetriever());
     }
 
-    public ProtonMetricsRetriever(ClusterProtonMetricsRetriever metricsRetriever) {
+    public SearchNodeMetricsRetriever(ClusterProtonMetricsRetriever metricsRetriever) {
         this.metricsRetriever = metricsRetriever;
     }
 
-    public ProtonMetricsResponse getMetrics(Application application) {
+    public SearchNodeMetricsResponse getMetrics(Application application) {
         var hosts = getHostsOfApplication(application);
         var clusterMetrics = metricsRetriever.requestMetricsGroupedByCluster(hosts);
-        return new ProtonMetricsResponse(application.getId(), clusterMetrics);
+        return new SearchNodeMetricsResponse(application.getId(), clusterMetrics);
     }
 
     private static Collection<URI> getHostsOfApplication(Application application) {
         return application.getModel().getHosts().stream()
                 .filter(host -> host.getServices().stream().anyMatch(isSearchNode()))
                 .map(HostInfo::getHostname)
-                .map(ProtonMetricsRetriever::createMetricsProxyURI)
+                .map(SearchNodeMetricsRetriever::createMetricsProxyURI)
                 .toList();
     }
 
     private static Predicate<ServiceInfo> isSearchNode() {
         return serviceInfo -> serviceInfo.getServiceType().equalsIgnoreCase("searchnode");
     }
+
     private static URI createMetricsProxyURI(String hostname) {
         return URI.create("http://" + hostname + ":19092/metrics/v2/values");
     }
+
 }

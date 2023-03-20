@@ -13,7 +13,7 @@ import com.yahoo.vespa.flags.json.FlagData;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.ClusterMetrics;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.DeploymentData;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.EndpointStatus;
-import com.yahoo.vespa.hosted.controller.api.application.v4.model.ProtonMetrics;
+import com.yahoo.vespa.hosted.controller.api.application.v4.model.SearchNodeMetrics;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.LogEntry;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.TestReport;
@@ -71,7 +71,7 @@ public interface ConfigServer {
 
     /**
      * Gets the contents of a file inside the current application package for a given deployment. If the path is to
-     * a directly, a JSON list with URLs to contents is returned.
+     * a directory, a JSON list with URLs to contents is returned.
      *
      * @param deployment deployment to get application package content for
      * @param path path within package to get
@@ -81,7 +81,7 @@ public interface ConfigServer {
 
     List<ClusterMetrics> getDeploymentMetrics(DeploymentId deployment);
 
-    List<ProtonMetrics> getProtonMetrics(DeploymentId deployment);
+    List<SearchNodeMetrics> getSearchNodeMetrics(DeploymentId deployment);
 
     List<String> getContentClusters(DeploymentId deployment);
 

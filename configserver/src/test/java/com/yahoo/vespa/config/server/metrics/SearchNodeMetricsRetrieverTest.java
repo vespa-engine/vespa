@@ -23,16 +23,16 @@ import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
 
-public class ProtonMetricsRetrieverTest {
+public class SearchNodeMetricsRetrieverTest {
 
     @Test
     public void getMetrics()  {
-        ProtonMetricsRetrieverTest.MockModel mockModel = new MockModel(mockHosts());
-        ProtonMetricsRetrieverTest.MockProtonMetricsRetriever mockMetricsRetriever = new MockProtonMetricsRetriever();
+        SearchNodeMetricsRetrieverTest.MockModel mockModel = new MockModel(mockHosts());
+        SearchNodeMetricsRetrieverTest.MockProtonMetricsRetriever mockMetricsRetriever = new MockProtonMetricsRetriever();
         Application application = new Application(mockModel, null, 0,
                                                   null, null, ApplicationId.fromSerializedForm("tenant:app:instance"));
 
-        ProtonMetricsRetriever clusterMetricsRetriever = new ProtonMetricsRetriever(mockMetricsRetriever);
+        SearchNodeMetricsRetriever clusterMetricsRetriever = new SearchNodeMetricsRetriever(mockMetricsRetriever);
         clusterMetricsRetriever.getMetrics(application);
 
         assertEquals(1, mockMetricsRetriever.hosts.size()); // Verify that logserver was ignored
@@ -58,12 +58,12 @@ public class ProtonMetricsRetrieverTest {
         Collection<URI> hosts = new ArrayList<>();
 
         @Override
-        public Map<String, ProtonMetricsAggregator> requestMetricsGroupedByCluster(Collection<URI> hosts) {
+        public Map<String, SearchNodeMetricsAggregator> requestMetricsGroupedByCluster(Collection<URI> hosts) {
             this.hosts = hosts;
 
             return Map.of(
                     ("content_cluster_id"),
-                    new ProtonMetricsAggregator()
+                    new SearchNodeMetricsAggregator()
             );
         }
     }

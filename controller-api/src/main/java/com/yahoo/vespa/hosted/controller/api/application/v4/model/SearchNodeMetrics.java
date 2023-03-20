@@ -10,11 +10,11 @@ import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public class ProtonMetrics {
+public class SearchNodeMetrics {
 
     private static final ObjectMapper jsonMapper = new ObjectMapper();
 
-    private static final Logger logger = Logger.getLogger(ProtonMetrics.class.getName());
+    private static final Logger logger = Logger.getLogger(SearchNodeMetrics.class.getName());
 
     public static final String DOCUMENTS_ACTIVE_COUNT = "documentsActiveCount";
     public static final String DOCUMENTS_READY_COUNT = "documentsReadyCount";
@@ -26,7 +26,7 @@ public class ProtonMetrics {
     private final String clusterId;
     private final Map<String, Double> metrics;
 
-    public ProtonMetrics(String clusterId) {
+    public SearchNodeMetrics(String clusterId) {
         this.clusterId = clusterId;
         metrics = new HashMap<>();
     }
@@ -45,7 +45,7 @@ public class ProtonMetrics {
 
     public double resourceMemoryUsageAverage() { return metrics.get(RESOURCE_MEMORY_USAGE_AVERAGE); }
 
-    public ProtonMetrics addMetric(String name, double value) {
+    public SearchNodeMetrics addMetric(String name, double value) {
         metrics.put(name, value);
         return this;
     }

@@ -4,15 +4,15 @@ package com.yahoo.vespa.config.server.http.v2.response;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.restapi.SlimeJsonResponse;
 import com.yahoo.slime.Cursor;
-import com.yahoo.vespa.config.server.metrics.ProtonMetricsAggregator;
+import com.yahoo.vespa.config.server.metrics.SearchNodeMetricsAggregator;
 import java.util.Map;
 
 /**
  * @author akvalsvik
  */
-public class ProtonMetricsResponse extends SlimeJsonResponse {
+public class SearchNodeMetricsResponse extends SlimeJsonResponse {
 
-    public ProtonMetricsResponse(ApplicationId applicationId, Map<String, ProtonMetricsAggregator> aggregatedProtonMetrics) {
+    public SearchNodeMetricsResponse(ApplicationId applicationId, Map<String, SearchNodeMetricsAggregator> aggregatedProtonMetrics) {
         Cursor application = slime.setObject();
         application.setString("applicationId", applicationId.serializedForm());
 
@@ -22,7 +22,7 @@ public class ProtonMetricsResponse extends SlimeJsonResponse {
             Cursor cluster = clusters.addObject();
             cluster.setString("clusterId", entry.getKey());
 
-            ProtonMetricsAggregator aggregator = entry.getValue();
+            SearchNodeMetricsAggregator aggregator = entry.getValue();
             Cursor metrics = cluster.setObject("metrics");
             metrics.setDouble("documentsActiveCount", aggregator.aggregateDocumentActiveCount());
             metrics.setDouble("documentsReadyCount", aggregator.aggregateDocumentReadyCount());

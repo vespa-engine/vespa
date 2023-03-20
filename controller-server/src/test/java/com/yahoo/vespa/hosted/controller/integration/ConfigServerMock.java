@@ -6,7 +6,6 @@ import ai.vespa.http.HttpURL.Path;
 import ai.vespa.http.HttpURL.Query;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.component.Version;
-import com.yahoo.component.annotation.Inject;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.ClusterResources;
@@ -22,12 +21,11 @@ import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.ZoneEndpoint.AllowedUrn;
 import com.yahoo.config.provision.ZoneEndpoint.AccessType;
 import com.yahoo.config.provision.zone.ZoneId;
-import com.yahoo.rdl.UUID;
 import com.yahoo.vespa.flags.json.FlagData;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.ClusterMetrics;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.DeploymentData;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.EndpointStatus;
-import com.yahoo.vespa.hosted.controller.api.application.v4.model.ProtonMetrics;
+import com.yahoo.vespa.hosted.controller.api.application.v4.model.SearchNodeMetrics;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.LogEntry;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ApplicationReindexing;
@@ -70,7 +68,6 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Random;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -106,7 +103,7 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
     private final Map<DeploymentId, TestReport> testReport = new HashMap<>();
     private final Map<DeploymentId, CloudAccount> cloudAccounts = new HashMap<>();
     private final Map<DeploymentId, List<X509Certificate>> additionalCertificates = new HashMap<>();
-    private List<ProtonMetrics> protonMetrics;
+    private List<SearchNodeMetrics> searchnodeMetrics;
 
     private Version lastPrepareVersion = null;
     private Consumer<ApplicationId> prepareException = null;
@@ -310,8 +307,8 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
         this.clusterMetrics.put(deployment, clusterMetrics);
     }
 
-    public void setProtonMetrics(List<ProtonMetrics> protonMetrics) {
-        this.protonMetrics = protonMetrics;
+    public void setProtonMetrics(List<SearchNodeMetrics> searchnodeMetrics) {
+        this.searchnodeMetrics = searchnodeMetrics;
     }
 
     public void deferLoadBalancerProvisioningIn(Set<Environment> environments) {
@@ -511,8 +508,8 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
     }
 
     @Override
-    public List<ProtonMetrics> getProtonMetrics(DeploymentId deployment) {
-        return this.protonMetrics;
+    public List<SearchNodeMetrics> getSearchNodeMetrics(DeploymentId deployment) {
+        return this.searchnodeMetrics;
     }
 
     @Override
