@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -65,6 +66,52 @@ func (c *Client) queryParams() url.Values {
 	return params
 }
 
+func urlPath(id DocumentId) string {
+	var sb strings.Builder
+	sb.WriteString("/document/v1/")
+	sb.WriteString(url.PathEscape(id.Namespace))
+	sb.WriteString("/")
+	sb.WriteString(url.PathEscape(id.Type))
+	if id.Number != nil {
+		sb.WriteString("/number/")
+		n := uint64(*id.Number)
+		sb.WriteString(strconv.FormatUint(n, 10))
+	} else if id.Group != "" {
+		sb.WriteString("/group/")
+		sb.WriteString(url.PathEscape(id.Group))
+	} else {
+		sb.WriteString("/docid")
+	}
+	sb.WriteString("/")
+	sb.WriteString(url.PathEscape(id.UserSpecific))
+	return sb.String()
+}
+
+func (c *Client) feedURL(d Document, queryParams url.Values) (string, *url.URL, error) {
+	u, err := url.Parse(c.options.BaseURL)
+	if err != nil {
+		return "", nil, fmt.Errorf("invalid base url: %w", err)
+	}
+	httpMethod := ""
+	switch d.Operation {
+	case OperationPut:
+		httpMethod = "POST"
+	case OperationUpdate:
+		httpMethod = "PUT"
+	case OperationRemove:
+		httpMethod = "DELETE"
+	}
+	if d.Condition != "" {
+		queryParams.Set("condition", d.Condition)
+	}
+	if d.Create {
+		queryParams.Set("create", "true")
+	}
+	u.Path = urlPath(d.Id)
+	u.RawQuery = queryParams.Encode()
+	return httpMethod, u, nil
+}
+
 // Send given document the URL configured in this client.
 func (c *Client) Send(document Document) Result {
 	start := c.now()
@@ -77,7 +124,7 @@ func (c *Client) Send(document Document) Result {
 		stats.MaxLatency = latency
 		c.addStats(&stats)
 	}()
-	method, url, err := document.FeedURL(c.options.BaseURL, c.queryParams())
+	method, url, err := c.feedURL(document, c.queryParams())
 	if err != nil {
 		stats.Errors = 1
 		return Result{Status: StatusError, Err: err}

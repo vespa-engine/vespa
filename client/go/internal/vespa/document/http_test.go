@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"reflect"
 	"testing"
 	"time"
@@ -82,5 +83,108 @@ func TestClientSend(t *testing.T) {
 	}
 	if !reflect.DeepEqual(want, stats) {
 		t.Errorf("got %+v, want %+v", stats, want)
+	}
+}
+
+func TestURLPath(t *testing.T) {
+	tests := []struct {
+		in  DocumentId
+		out string
+	}{
+		{
+			DocumentId{
+				Namespace:    "ns-with-/",
+				Type:         "type-with-/",
+				UserSpecific: "user",
+			},
+			"/document/v1/ns-with-%2F/type-with-%2F/docid/user",
+		},
+		{
+			DocumentId{
+				Namespace:    "ns",
+				Type:         "type",
+				Number:       ptr(int64(123)),
+				UserSpecific: "user",
+			},
+			"/document/v1/ns/type/number/123/user",
+		},
+		{
+			DocumentId{
+				Namespace:    "ns",
+				Type:         "type",
+				Group:        "foo",
+				UserSpecific: "user",
+			},
+			"/document/v1/ns/type/group/foo/user",
+		},
+		{
+			DocumentId{
+				Namespace:    "ns",
+				Type:         "type",
+				UserSpecific: "user::specific",
+			},
+			"/document/v1/ns/type/docid/user::specific",
+		},
+		{
+			DocumentId{
+				Namespace:    "ns",
+				Type:         "type",
+				UserSpecific: ":",
+			},
+			"/document/v1/ns/type/docid/:",
+		},
+	}
+	for i, tt := range tests {
+		path := urlPath(tt.in)
+		if path != tt.out {
+			t.Errorf("#%d: documentPath(%q) = %s, want %s", i, tt.in, path, tt.out)
+		}
+	}
+}
+
+func TestClientFeedURL(t *testing.T) {
+	tests := []struct {
+		in     Document
+		method string
+		url    string
+	}{
+		{
+			mustParseDocument(Document{
+				IdString: "id:ns:type::user",
+			}),
+			"POST",
+			"https://example.com/document/v1/ns/type/docid/user?foo=ba%2Fr",
+		},
+		{
+			mustParseDocument(Document{
+				UpdateId:  "id:ns:type::user",
+				Create:    true,
+				Condition: "false",
+			}),
+			"PUT",
+			"https://example.com/document/v1/ns/type/docid/user?condition=false&create=true&foo=ba%2Fr",
+		},
+		{
+			mustParseDocument(Document{
+				RemoveId: "id:ns:type::user",
+			}),
+			"DELETE",
+			"https://example.com/document/v1/ns/type/docid/user?foo=ba%2Fr",
+		},
+	}
+	httpClient := mock.HTTPClient{}
+	client := NewClient(ClientOptions{
+		BaseURL: "https://example.com",
+	}, &httpClient)
+	for i, tt := range tests {
+		moreParams := url.Values{}
+		moreParams.Set("foo", "ba/r")
+		method, u, err := client.feedURL(tt.in, moreParams)
+		if err != nil {
+			t.Errorf("#%d: got unexpected error = %s, want none", i, err)
+		}
+		if u.String() != tt.url || method != tt.method {
+			t.Errorf("#%d: URL() = (%s, %s), want (%s, %s)", i, method, u.String(), tt.method, tt.url)
+		}
 	}
 }

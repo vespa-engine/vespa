@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"net/url"
 	"strconv"
 	"strings"
 )
@@ -31,32 +30,6 @@ type Document struct {
 	Condition string          `json:"condition"`
 	Create    bool            `json:"create"`
 	Fields    json.RawMessage `json:"fields"`
-}
-
-// FeedURL returns the HTTP method and URL to use for feeding this document.
-func (d Document) FeedURL(baseurl string, queryParams url.Values) (string, *url.URL, error) {
-	u, err := url.Parse(baseurl)
-	if err != nil {
-		return "", nil, fmt.Errorf("invalid base url: %w", err)
-	}
-	httpMethod := ""
-	switch d.Operation {
-	case OperationPut:
-		httpMethod = "POST"
-	case OperationUpdate:
-		httpMethod = "PUT"
-	case OperationRemove:
-		httpMethod = "DELETE"
-	}
-	if d.Condition != "" {
-		queryParams.Set("condition", d.Condition)
-	}
-	if d.Create {
-		queryParams.Set("create", "true")
-	}
-	u.Path = d.Id.URLPath()
-	u.RawQuery = queryParams.Encode()
-	return httpMethod, u, nil
 }
 
 // Body returns the body part of this document, suitable for sending to the /document/v1 API.
@@ -211,28 +184,6 @@ func (d DocumentId) String() string {
 	}
 	sb.WriteString(":")
 	sb.WriteString(d.UserSpecific)
-	return sb.String()
-}
-
-// URLPaths returns the feeding path for this document.
-func (d DocumentId) URLPath() string {
-	var sb strings.Builder
-	sb.WriteString("/document/v1/")
-	sb.WriteString(url.PathEscape(d.Namespace))
-	sb.WriteString("/")
-	sb.WriteString(url.PathEscape(d.Type))
-	if d.Number != nil {
-		sb.WriteString("/number/")
-		n := uint64(*d.Number)
-		sb.WriteString(strconv.FormatUint(n, 10))
-	} else if d.Group != "" {
-		sb.WriteString("/group/")
-		sb.WriteString(url.PathEscape(d.Group))
-	} else {
-		sb.WriteString("/docid")
-	}
-	sb.WriteString("/")
-	sb.WriteString(url.PathEscape(d.UserSpecific))
 	return sb.String()
 }
 
