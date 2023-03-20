@@ -12,8 +12,10 @@ import com.yahoo.tensor.evaluation.TypeContext;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.function.Function;
 
 /**
  * A function which is a tensor whose values are computed by individual lambda functions on evaluation.
@@ -82,6 +84,17 @@ public abstract class DynamicTensor<NAMETYPE extends Name> extends PrimitiveTens
             return result;
         }
 
+        public TensorFunction<NAMETYPE> withTransformedFunctions(
+                Function<ScalarFunction<NAMETYPE>, ScalarFunction<NAMETYPE>> transformer)
+        {
+            Map<TensorAddress, ScalarFunction<NAMETYPE>> transformedCells = new LinkedHashMap<>();
+            for (var orig : cells.entrySet()) {
+                var transformed = transformer.apply(orig.getValue());
+                transformedCells.put(orig.getKey(), transformed);
+            }
+            return new MappedDynamicTensor<>(type(), transformedCells);
+        }
+
         @Override
         public Tensor evaluate(EvaluationContext<NAMETYPE> context) {
             Tensor.Builder builder = Tensor.Builder.of(type());
@@ -132,6 +145,17 @@ public abstract class DynamicTensor<NAMETYPE extends Name> extends PrimitiveTens
                 fun.asTensorFunction().ifPresent(tf -> result.add(tf));
             }
             return result;
+        }
+
+        public TensorFunction<NAMETYPE> withTransformedFunctions(
+                Function<ScalarFunction<NAMETYPE>, ScalarFunction<NAMETYPE>> transformer)
+        {
+            List<ScalarFunction<NAMETYPE>> transformedCells = new ArrayList<>();
+            for (var orig : cells) {
+                var transformed = transformer.apply(orig);
+                transformedCells.add(transformed);
+            }
+            return new IndexedDynamicTensor<>(type(), transformedCells);
         }
 
         @Override
