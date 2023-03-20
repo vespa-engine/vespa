@@ -174,6 +174,11 @@ TEST("Can extract min/max prefix range from anchored regex") {
     min_max = Regex::from_pattern("^(hello|world)+").possible_anchored_match_prefix_range();
     EXPECT_EQUAL(min_max.first,  "hello");
     EXPECT_EQUAL(min_max.second, "worldwp");
+
+    // Bad regex; no range
+    min_max = Regex::from_pattern("*hello").possible_anchored_match_prefix_range();
+    EXPECT_EQUAL(min_max.first,  "");
+    EXPECT_EQUAL(min_max.second, "");
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }
