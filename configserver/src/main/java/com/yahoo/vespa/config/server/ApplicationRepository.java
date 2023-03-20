@@ -992,7 +992,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
 
     public ApplicationId getApplicationIdForHostname(String hostname) {
         Optional<ApplicationId> applicationId = tenantRepository.getAllTenantNames().stream()
-                .map(tenantName -> tenantRepository.getTenant(tenantName).getApplicationRepo().getApplicationIdForHostName(hostname))
+                .map(tenantName -> tenantRepository.getTenant(tenantName).getApplicationRepo().resolveApplicationId(hostname))
                 .filter(Objects::nonNull)
                 .findFirst();
         return applicationId.orElse(null);

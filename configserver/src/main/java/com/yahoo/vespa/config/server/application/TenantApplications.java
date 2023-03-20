@@ -401,11 +401,6 @@ public class TenantApplications implements RequestHandler, HostValidator {
         hostRegistry.verifyHosts(applicationId, newHosts);
     }
 
-    // TODO: Duplicate of resolveApplicationId() above
-    public ApplicationId getApplicationIdForHostName(String hostname) {
-        return hostRegistry.getApplicationId(hostname);
-    }
-
     public TenantFileSystemDirs getTenantFileSystemDirs() { return tenantFileSystemDirs; }
 
     public CompletionWaiter createRemoveApplicationWaiter(ApplicationId applicationId) {
