@@ -63,7 +63,7 @@ for data in "Dockerfile vespa"; do
         $SD_SOURCE_DIR/screwdriver/test-quick-start-guide.sh
 
         # Publish
-        buildah login --username aressem --password "$DOCKER_HUB_DEPLOY_KEY"
+        buildah login --username aressem --password "$DOCKER_HUB_DEPLOY_KEY" docker.io
         buildah manifest push --all --format v2s2 vespaengine/$IMAGE_NAME:$VESPA_VERSION docker://docker.io/vespaengine/$IMAGE_NAME:$VESPA_VERSION | cat
         buildah manifest push --all --format v2s2 vespaengine/$IMAGE_NAME:$VESPA_VERSION docker://docker.io/vespaengine/$IMAGE_NAME:$VESPA_MAJOR | cat
         buildah manifest push --all --format v2s2 vespaengine/$IMAGE_NAME:$VESPA_VERSION docker://docker.io/vespaengine/$IMAGE_NAME:latest | cat
