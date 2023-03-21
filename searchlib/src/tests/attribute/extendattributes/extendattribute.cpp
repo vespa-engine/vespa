@@ -148,31 +148,41 @@ void ExtendAttributeTest::testExtendString(Attribute & attr)
 template <typename Attribute>
 void ExtendAttributeTest::testExtendRaw(Attribute & attr)
 {
+    std::vector<char> empty;
     std::vector<char> zeros{10, 0, 0, 11};
     uint32_t docId(0);
     EXPECT_EQ(0u, attr.getNumDocs());
     attr.addDoc(docId);
     EXPECT_EQ(0u, docId);
     EXPECT_EQ(1u, attr.getNumDocs());
-    attr.add(as_vector("1.7"), 10);
+    attr.add(as_vector("1.7"));
     auto buf = attr.get_raw(0);
     EXPECT_EQ(as_vector("1.7"), as_vector(buf));
-    attr.add(as_vector("2.3"), 20);
+    attr.add(vespalib::ConstArrayRef<char>(as_vector("2.3")));
     buf = attr.get_raw(0);
     EXPECT_EQ(as_vector("2.3"), as_vector(buf));
     attr.addDoc(docId);
     EXPECT_EQ(1u, docId);
     EXPECT_EQ(attr.getNumDocs(), 2u);
-    attr.add(as_vector("3.6"), 30);
+    attr.add(as_vector("3.6"));
     buf = attr.get_raw(1);
     EXPECT_EQ(as_vector("3.6"), as_vector(buf));
     buf = attr.get_raw(0);
     EXPECT_EQ(as_vector("2.3"), as_vector(buf));
     attr.addDoc(docId);
     EXPECT_EQ(2u, docId);
-    attr.add(zeros, 40);
+    attr.add(zeros);
     buf = attr.get_raw(2);
     EXPECT_EQ(zeros, as_vector(buf));
+    attr.addDoc(docId);
+    EXPECT_EQ(3u, docId);
+    buf = attr.get_raw(3);
+    EXPECT_EQ(empty, as_vector(buf));
+    attr.addDoc(docId);
+    EXPECT_EQ(4u, docId);
+    attr.add(empty);
+    buf = attr.get_raw(4);
+    EXPECT_EQ(empty, as_vector(buf));
 }
 
 TEST_F(ExtendAttributeTest, single_integer_ext_attribute)

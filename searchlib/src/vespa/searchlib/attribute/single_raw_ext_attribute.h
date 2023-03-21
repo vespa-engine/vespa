@@ -21,7 +21,7 @@ public:
     void onCommit() override;
     void onUpdateStat() override;
     bool addDoc(DocId& docId) override;
-    bool add(vespalib::ConstArrayRef<char> v, int32_t) override;
+    bool add(vespalib::ConstArrayRef<char> v, int32_t = 1) override;
     vespalib::ConstArrayRef<char> get_raw(DocId docid) const override;
 };
 
