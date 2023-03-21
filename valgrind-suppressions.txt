@@ -386,3 +386,15 @@
    ...
    fun:_ZNK3re23RE25MatchERKNS_11StringPieceEmmNS0_6AnchorEPS1_i
 }
+{
+   RE2 sparse structures deliberately do not care about uninitialized memory (https://github.com/google/re2/issues/121)
+   Memcheck:Cond
+   ...
+   fun:_ZNK3re23RE218PossibleMatchRangeEPNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEES7_i
+}
+{
+   RE2 sparse structures deliberately do not care about uninitialized memory (https://github.com/google/re2/issues/121)
+   Memcheck:Value8
+   ...
+   fun:_ZNK3re23RE218PossibleMatchRangeEPNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEES7_i
+}
