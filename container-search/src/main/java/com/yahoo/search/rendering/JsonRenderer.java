@@ -730,7 +730,7 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
                     if (wset != null) return wset;
                 }
                 if (settings.convertDeep()) {
-                    var array = new Value.ArrayValue();
+                    var array = new Value.ArrayValue(data.entryCount());
                     for (int i = 0; i < data.entryCount(); i++) {
                         Inspector obj = data.entry(i);
                         array.add(deepMaybeConvert(obj));

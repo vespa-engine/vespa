@@ -1,7 +1,11 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.data.access.simple;
 
-import com.yahoo.data.access.*;
+import com.yahoo.data.access.ArrayTraverser;
+import com.yahoo.data.access.Inspector;
+import com.yahoo.data.access.ObjectTraverser;
+import com.yahoo.data.access.Type;
+
 import java.util.Collections;
 import java.util.Map;
 import java.util.LinkedHashMap;
@@ -54,7 +58,7 @@ public class Value implements Inspector {
         public byte[] asData() { return empty_array; }
     }
     static public class BoolValue extends Value {
-        private boolean value;
+        private final boolean value;
         public BoolValue(boolean v) { value = v; }
         public boolean valid() { return true; }
         public Type type() { return Type.BOOL; }
@@ -62,7 +66,7 @@ public class Value implements Inspector {
         public boolean asBool(boolean x) { return value; }
     }
     static public class LongValue extends Value {
-        private long value;
+        private final long value;
         public LongValue(long v) { value = v; }
         public boolean valid() { return true; }
         public Type type() { return Type.LONG; }
@@ -72,7 +76,7 @@ public class Value implements Inspector {
         public double asDouble(double x) { return (double)value; }
     }
     static public class DoubleValue extends Value {
-        private double value;
+        private final double value;
         public DoubleValue(double v) { value = v; }
         public boolean valid() { return true; }
         public Type type() { return Type.DOUBLE; }
@@ -129,7 +133,13 @@ public class Value implements Inspector {
         public byte[] asData(byte[] x) { return value; }
     }
     static public class ArrayValue extends Value {
-        private List<Inspector> values = new ArrayList<>();
+        private final List<Inspector> values;
+        public ArrayValue() {
+            values = new ArrayList<>();
+        }
+        public ArrayValue(int capacity) {
+            values = new ArrayList<>(capacity);
+        }
         public boolean valid() { return true; }
         public Type type() { return Type.ARRAY; }
         public int entryCount() { return values.size(); }
@@ -169,7 +179,7 @@ public class Value implements Inspector {
         }
     }
     static public class ObjectValue extends Value {
-        private Map<java.lang.String,Inspector> values = new LinkedHashMap<>();
+        private final Map<java.lang.String,Inspector> values = new LinkedHashMap<>();
         public boolean valid() { return true; }
         public Type type() { return Type.OBJECT; }
         public int fieldCount() { return values.size(); }
