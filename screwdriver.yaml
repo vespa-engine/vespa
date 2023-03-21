@@ -179,7 +179,7 @@ jobs:
           if [[ -z "$SD_PULL_REQUEST" ]]; then
             OPT_STATE="$(set +o)"
             set +x
-            docker login --username aressem --password "$DOCKER_HUB_DEPLOY_KEY"
+            docker login --username aressem --password "$DOCKER_HUB_DEPLOY_KEY" docker.io
             eval "$OPT_STATE"
             docker push docker.io/vespaengine/vespa-systemtest-centos-stream8:$VESPA_VERSION
             docker push docker.io/vespaengine/vespa-systemtest-centos-stream8:latest
