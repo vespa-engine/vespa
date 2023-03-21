@@ -323,7 +323,7 @@ func runOneVisit(vArgs *visitArgs, service *vespa.Service, contToken string) (*V
 		urlPath = urlPath + fmt.Sprintf("&fromTimestamp=%d", fromSeconds*1000000)
 	}
 	if vArgs.to != "" {
-		toSeconds, _ := strconv.ParseInt(vArgs.from, 10, 64)
+		toSeconds, _ := strconv.ParseInt(vArgs.to, 10, 64)
 		urlPath = urlPath + fmt.Sprintf("&toTimestamp=%d", toSeconds*1000000)
 	}
 	if vArgs.slices > 0 {
