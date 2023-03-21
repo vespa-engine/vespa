@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include "not_implemented_attribute.h"
+#include "raw_attribute.h"
 #include "raw_buffer_store.h"
 #include <vespa/vespalib/util/rcuvector.h>
 
@@ -11,7 +11,7 @@ namespace search::attribute {
 /**
  * Attribute vector storing a single raw value per document.
  */
-class SingleRawAttribute : public NotImplementedAttribute
+class SingleRawAttribute : public RawAttribute
 {
     using AtomicEntryRef = vespalib::datastore::AtomicEntryRef;
     using EntryRef = vespalib::datastore::EntryRef;
@@ -43,8 +43,6 @@ public:
     }
     bool isUndefined(DocId docid) const override;
     uint32_t clearDoc(DocId docId) override;
-    long onSerializeForAscendingSort(DocId, void *, long, const common::BlobConverter *) const override;
-    long onSerializeForDescendingSort(DocId, void *, long, const common::BlobConverter *) const override;
 };
 
 }
