@@ -11,6 +11,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 	"time"
 
@@ -28,8 +29,8 @@ type visitArgs struct {
 	pretty         bool
 	debugMode      bool
 	chunkCount     int
-	fromTimestamp  uint64
-	toTimestamp    uint64
+	from           string
+	to             string
 	slices         int
 	sliceId        int
 	cli            *CLI
@@ -126,8 +127,8 @@ $ vespa visit --content-cluster search # get documents from cluster named "searc
 	cmd.Flags().BoolVar(&vArgs.makeFeed, "make-feed", false, `output JSON array suitable for vespa-feeder`)
 	cmd.Flags().BoolVar(&vArgs.pretty, "pretty-json", false, `format pretty JSON`)
 	cmd.Flags().IntVar(&vArgs.chunkCount, "chunk-count", 1000, `chunk by count`)
-	cmd.Flags().Uint64Var(&vArgs.fromTimestamp, "from-timestamp", 0, `Timestamp to visit from, in microseconds`)
-	cmd.Flags().Uint64Var(&vArgs.toTimestamp, "to-timestamp", 0, `Timestamp to visit up to, in microseconds`)
+	cmd.Flags().StringVar(&vArgs.from, "from", "", `Timestamp to visit from, in seconds`)
+	cmd.Flags().StringVar(&vArgs.to, "to", "", `Timestamp to visit up to, in seconds`)
 	cmd.Flags().IntVar(&vArgs.sliceId, "slice-id", -1, `The number of the slice this visit invocation should fetch`)
 	cmd.Flags().IntVar(&vArgs.slices, "slices", -1, `Split the document corpus into this number of independent slices`)
 	return cmd
@@ -140,6 +141,19 @@ func checkArguments(vArgs visitArgs) (res util.OperationResult) {
 		}
 		if vArgs.sliceId >= vArgs.slices {
 			return util.Failure("The 'slice-id' must be in range [0, slices)")
+		}
+	}
+	// to and from will support RFC3339 format soon, add more validation then
+	if vArgs.from != "" {
+		_, err := strconv.ParseInt(vArgs.from, 10, 64)
+		if err != nil {
+			return util.Failure("Invalid 'from' argument: '" + vArgs.from + "': " + err.Error())
+		}
+	}
+	if vArgs.to != "" {
+		_, err := strconv.ParseInt(vArgs.from, 10, 64)
+		if err != nil {
+			return util.Failure("Invalid 'to' argument: '" + vArgs.from + "': " + err.Error())
 		}
 	}
 	return util.Success("")
@@ -304,11 +318,13 @@ func runOneVisit(vArgs *visitArgs, service *vespa.Service, contToken string) (*V
 	if vArgs.chunkCount > 0 {
 		urlPath = urlPath + fmt.Sprintf("&wantedDocumentCount=%d", vArgs.chunkCount)
 	}
-	if vArgs.fromTimestamp > 0 {
-		urlPath = urlPath + fmt.Sprintf("&fromTimestamp=%d", vArgs.fromTimestamp)
+	if vArgs.from != "" {
+		fromSeconds, _ := strconv.ParseInt(vArgs.from, 10, 64)
+		urlPath = urlPath + fmt.Sprintf("&fromTimestamp=%d", fromSeconds*1000000)
 	}
-	if vArgs.toTimestamp > 0 {
-		urlPath = urlPath + fmt.Sprintf("&toTimestamp=%d", vArgs.toTimestamp)
+	if vArgs.to != "" {
+		toSeconds, _ := strconv.ParseInt(vArgs.from, 10, 64)
+		urlPath = urlPath + fmt.Sprintf("&toTimestamp=%d", toSeconds*1000000)
 	}
 	if vArgs.slices > 0 {
 		urlPath = urlPath + fmt.Sprintf("&slices=%d&sliceId=%d", vArgs.slices, vArgs.sliceId)
