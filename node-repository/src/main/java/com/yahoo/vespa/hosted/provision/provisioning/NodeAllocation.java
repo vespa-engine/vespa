@@ -215,7 +215,7 @@ class NodeAllocation {
             // If any of the nodes on the host requires exclusivity to another application, allocating on it is a violation
             for (Node nodeOnHost : allNodes.childrenOf(candidate.parentHostname().get())) {
                 if (nodeOnHost.allocation().isEmpty()) continue;
-                if (requestedNodes.isExclusive() || nodeOnHost.allocation().get().membership().cluster().isExclusive()) {
+                if (nodeOnHost.allocation().get().membership().cluster().isExclusive()) {
                     if (!nodeOnHost.allocation().get().owner().equals(application))
                         return true;
                 }
