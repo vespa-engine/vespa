@@ -208,7 +208,7 @@ public class TokenTransformer extends ExpressionTransformer<RankProfileTransform
     }
 
     private String lengthFunctionName(ReferenceNode arg) {
-        return "__token_length@" + arg.hashCode();
+        return "__token_length@" + Integer.toHexString(arg.hashCode());
     }
 
     private List<ExpressionNode> createTokenSequence(ReferenceNode feature) {
