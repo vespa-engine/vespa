@@ -20,7 +20,7 @@ constexpr uint32_t max_small_buffer_type_id = 500u;
 namespace search::attribute {
 
 SingleRawAttribute::SingleRawAttribute(const vespalib::string& name, const Config& config)
-    : NotImplementedAttribute(name, config),
+    : RawAttribute(name, config),
       _ref_vector(config.getGrowStrategy(), getGenerationHolder()),
       _raw_store(get_memory_allocator(), max_small_buffer_type_id, mapper_grow_factor)
 {
@@ -135,42 +135,6 @@ SingleRawAttribute::clearDoc(DocId docId)
         return 1u;
     }
     return 0u;
-}
-
-long
-SingleRawAttribute::onSerializeForAscendingSort(DocId doc, void * serTo, long available, const common::BlobConverter * bc) const
-{
-    auto raw = get_raw(doc);
-    vespalib::ConstBufferRef buf(raw.data(), raw.size());
-    if (bc != nullptr) {
-        buf = bc->convert(buf);
-    }
-    if (available >= (long)buf.size()) {
-        memcpy(serTo, buf.data(), buf.size());
-    } else {
-        return -1;
-    }
-    return buf.size();
-}
-
-long
-SingleRawAttribute::onSerializeForDescendingSort(DocId doc, void * serTo, long available, const common::BlobConverter * bc) const
-{
-    auto raw = get_raw(doc);
-    vespalib::ConstBufferRef buf(raw.data(), raw.size());
-    if (bc != nullptr) {
-        buf = bc->convert(buf);
-    }
-    if (available >= (long)buf.size()) {
-        auto *dst = static_cast<unsigned char *>(serTo);
-        const auto * src(static_cast<const uint8_t *>(buf.data()));
-        for (size_t i(0); i < buf.size(); ++i) {
-            dst[i] = 0xff - src[i];
-        }
-    } else {
-        return -1;
-    }
-    return buf.size();
 }
 
 std::unique_ptr<AttributeSaver>
