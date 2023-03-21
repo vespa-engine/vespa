@@ -188,6 +188,7 @@ public class AllocatableClusterResources {
 
             if ( ! systemLimits.isWithinRealLimits(allocatableResources.realResources, applicationId, clusterSpec))
                 return Optional.empty();
+            System.out.println("  Any satisfies " + allocatableResources.realResources + "?");
             if ( ! anySatisfies(allocatableResources.realResources, availableRealHostResources))
                 return Optional.empty();
             return Optional.of(allocatableResources);

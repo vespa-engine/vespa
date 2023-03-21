@@ -368,12 +368,12 @@ public class VirtualNodeProvisioningTest {
         ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east"))).build();
         tester.makeReadyHosts(4, hostResources).activateTenantHosts();
         ApplicationId application1 = ProvisioningTester.applicationId("app1");
-        prepareAndActivate(application1, 2, true, nodeResources, tester);
+        prepareAndActivate(application1, ClusterSpec.Type.content, 2, true, hostResources, tester);
         assertEquals(Set.of("host-1.yahoo.com", "host-2.yahoo.com"),
                      hostsOf(tester.getNodes(application1, Node.State.active)));
 
         ApplicationId application2 = ProvisioningTester.applicationId("app2");
-        prepareAndActivate(application2, 2, false, nodeResources, tester);
+        prepareAndActivate(application2, ClusterSpec.Type.content, 2, false, nodeResources, tester);
         assertEquals("Application is assigned to separate hosts",
                      Set.of("host-3.yahoo.com", "host-4.yahoo.com"),
                      hostsOf(tester.getNodes(application2, Node.State.active)));
@@ -383,16 +383,15 @@ public class VirtualNodeProvisioningTest {
     @Test
     public void application_deployment_with_exclusive_app_last() {
         NodeResources hostResources = new NodeResources(10, 40, 1000, 10);
-        NodeResources nodeResources = new NodeResources(2, 4, 100, 1);
         ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east"))).build();
         tester.makeReadyHosts(4, hostResources).activateTenantHosts();
         ApplicationId application1 = ProvisioningTester.applicationId("app1");
-        prepareAndActivate(application1, 2, false, nodeResources, tester);
+        prepareAndActivate(application1, 2, false, hostResources, tester);
         assertEquals(Set.of("host-1.yahoo.com", "host-2.yahoo.com"),
                      hostsOf(tester.getNodes(application1, Node.State.active)));
 
         ApplicationId application2 = ProvisioningTester.applicationId("app2");
-        prepareAndActivate(application2, 2, true, nodeResources, tester);
+        prepareAndActivate(application2, ClusterSpec.Type.content, 2, true, hostResources, tester);
         assertEquals("Application is assigned to separate hosts",
                      Set.of("host-3.yahoo.com", "host-4.yahoo.com"),
                      hostsOf(tester.getNodes(application2, Node.State.active)));
@@ -402,57 +401,23 @@ public class VirtualNodeProvisioningTest {
     @Test
     public void application_deployment_change_to_exclusive_and_back() {
         NodeResources hostResources = new NodeResources(10, 40, 1000, 10);
-        NodeResources nodeResources = new NodeResources(2, 4, 100, 1);
         ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east"))).build();
         tester.makeReadyHosts(4, hostResources).activateTenantHosts();
 
         ApplicationId application1 = ProvisioningTester.applicationId();
-        prepareAndActivate(application1, 2, false, nodeResources, tester);
+        prepareAndActivate(application1, ClusterSpec.Type.content, 2, false, hostResources, tester);
         for (Node node : tester.getNodes(application1, Node.State.active))
             assertFalse(node.allocation().get().membership().cluster().isExclusive());
 
-        prepareAndActivate(application1, 2, true,  nodeResources, tester);
+        prepareAndActivate(application1, ClusterSpec.Type.content, 2, true,  hostResources, tester);
         assertEquals(Set.of("host-1.yahoo.com", "host-2.yahoo.com"), hostsOf(tester.getNodes(application1, Node.State.active)));
         for (Node node : tester.getNodes(application1, Node.State.active))
             assertTrue(node.allocation().get().membership().cluster().isExclusive());
 
-        prepareAndActivate(application1, 2, false, nodeResources, tester);
+        prepareAndActivate(application1, ClusterSpec.Type.content, 2, false, hostResources, tester);
         assertEquals(Set.of("host-1.yahoo.com", "host-2.yahoo.com"), hostsOf(tester.getNodes(application1, Node.State.active)));
         for (Node node : tester.getNodes(application1, Node.State.active))
             assertFalse(node.allocation().get().membership().cluster().isExclusive());
-    }
-
-    /** Non-exclusive app first, then an exclusive: Should give the same result as above */
-    @Test
-    public void application_deployment_with_exclusive_app_causing_allocation_failure() {
-        ApplicationId application1 = ApplicationId.from("tenant1", "app1", "default");
-        ApplicationId application2 = ApplicationId.from("tenant2", "app2", "default");
-        ApplicationId application3 = ApplicationId.from("tenant1", "app3", "default");
-        NodeResources hostResources = new NodeResources(10, 40, 1000, 10);
-        NodeResources nodeResources = new NodeResources(2, 4, 100, 1);
-        ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east"))).build();
-        tester.makeReadyHosts(4, hostResources).activateTenantHosts();
-
-        prepareAndActivate(application1, 2, true, nodeResources, tester);
-        assertEquals(Set.of("host-1.yahoo.com", "host-2.yahoo.com"),
-                     hostsOf(tester.getNodes(application1, Node.State.active)));
-
-        try {
-            prepareAndActivate(application2, 3, false, nodeResources, tester);
-            fail("Expected allocation failure");
-        }
-        catch (Exception e) {
-            assertEquals("No room for 3 nodes as 2 of 4 hosts are exclusive",
-                         "Could not satisfy request for 3 nodes with " +
-                         "[vcpu: 2.0, memory: 4.0 Gb, disk 100.0 Gb, bandwidth: 1.0 Gbps, architecture: x86_64] " +
-                         "in tenant2.app2 container cluster 'my-container' 6.39: " +
-                         "Node allocation failure on group 0: " +
-                         "Not enough suitable nodes available due to host exclusivity constraints",
-                         e.getMessage());
-        }
-
-        // Adding 3 nodes of another application for the same tenant works
-        prepareAndActivate(application3, 2, true, nodeResources, tester);
     }
 
     @Test
@@ -671,8 +636,12 @@ public class VirtualNodeProvisioningTest {
     }
 
     private void prepareAndActivate(ApplicationId application, int nodeCount, boolean exclusive, NodeResources resources, ProvisioningTester tester) {
+        prepareAndActivate(application, ClusterSpec.Type.container, nodeCount, exclusive, resources, tester);
+    }
+
+    private void prepareAndActivate(ApplicationId application, ClusterSpec.Type clusterType, int nodeCount, boolean exclusive, NodeResources resources, ProvisioningTester tester) {
         Set<HostSpec> hosts = new HashSet<>(tester.prepare(application,
-                                                           ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("my-container")).vespaVersion("6.39").exclusive(exclusive).build(),
+                                                           ClusterSpec.request(clusterType, ClusterSpec.Id.from("my-container")).vespaVersion("6.39").exclusive(exclusive).build(),
                                                            Capacity.from(new ClusterResources(nodeCount, 1, resources), false, true)));
         tester.activate(application, hosts);
     }

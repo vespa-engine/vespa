@@ -48,6 +48,7 @@ public class AllocationOptimizer {
                                          : nodeRepository.nodes().list().hosts().stream().map(host -> host.flavor().resources())
                                                          .map(hostResources -> maxResourcesOf(hostResources, clusterModel))
                                                          .toList();
+        System.out.println("Dynamic provisioning: " + (nodeRepository.zone().cloud().dynamicProvisioning()) + ". Finding best allocation given host resources " + availableRealHostResources);
         for (int groups = limits.min().groups(); groups <= limits.max().groups(); groups++) {
             for (int nodes = limits.min().nodes(); nodes <= limits.max().nodes(); nodes++) {
                 if (nodes % groups != 0) continue;
@@ -68,6 +69,7 @@ public class AllocationOptimizer {
                 }
             }
         }
+        System.out.println("... best allocation: " + bestAllocation);
         return bestAllocation;
     }
 
