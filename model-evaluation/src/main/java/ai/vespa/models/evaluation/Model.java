@@ -95,9 +95,11 @@ public class Model implements AutoCloseable {
                             logger.fine("Replacing " + node + " => " + expr);
                             node = expr;
                             for (var inputSpec : m.inputSpecs) {
-                                var old = declaredTypes.put(inputSpec.source, inputSpec.wantedType);
-                                if (old != null && ! old.equals(inputSpec.wantedType)) {
-                                    throw new IllegalArgumentException("Conflicting types needed for " + inputSpec.source + "; " + old + " != " + inputSpec.wantedType);
+                                var old = declaredTypes.get(inputSpec.source);
+                                if (old == null) {
+                                    declaredTypes.put(inputSpec.source, inputSpec.wantedType);
+                                } else if (! old.isAssignableTo(inputSpec.wantedType)) {
+                                    throw new IllegalArgumentException("Conflicting types needed for " + inputSpec.source + "; " + old + " cannot be assigned to " + inputSpec.wantedType);
                                 }
                             }
                         } else {
