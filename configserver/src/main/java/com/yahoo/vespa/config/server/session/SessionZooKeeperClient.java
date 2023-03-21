@@ -132,17 +132,12 @@ public class SessionZooKeeperClient {
         return sessionPath.append(barrierName);
     }
 
-    /** Returns the number of node members needed in a barrier */
-    private int getNumberOfMembers() {
-        return (curator.zooKeeperEnsembleCount() / 2) + 1; // majority
-    }
-
     private CompletionWaiter createCompletionWaiter(String waiterNode) {
-        return curator.createCompletionWaiter(sessionPath, waiterNode, getNumberOfMembers(), serverId);
+        return curator.createCompletionWaiter(sessionPath, waiterNode, serverId);
     }
 
     private CompletionWaiter getCompletionWaiter(Path path) {
-        return curator.getCompletionWaiter(path, getNumberOfMembers(), serverId);
+        return curator.getCompletionWaiter(path, serverId);
     }
 
     /** Returns a transaction deleting this session on commit */
