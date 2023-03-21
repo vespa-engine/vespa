@@ -151,9 +151,9 @@ func checkArguments(vArgs visitArgs) (res util.OperationResult) {
 		}
 	}
 	if vArgs.to != "" {
-		_, err := strconv.ParseInt(vArgs.from, 10, 64)
+		_, err := strconv.ParseInt(vArgs.to, 10, 64)
 		if err != nil {
-			return util.Failure("Invalid 'to' argument: '" + vArgs.from + "': " + err.Error())
+			return util.Failure("Invalid 'to' argument: '" + vArgs.to + "': " + err.Error())
 		}
 	}
 	return util.Success("")
