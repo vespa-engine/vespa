@@ -145,6 +145,7 @@
     ],
     "methods" : [
       "public void <init>()",
+      "public void <init>(int)",
       "public boolean valid()",
       "public com.yahoo.data.access.Type type()",
       "public int entryCount()",
