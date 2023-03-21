@@ -48,7 +48,6 @@ public:
     uint32_t get(DocId doc, WeightedFloat * v, uint32_t sz) const override;
     uint32_t clearDoc(DocId doc) override;
     static size_t countZero(const char * bt, size_t sz);
-    static void generateOffsets(const char * bt, size_t sz, OffsetVector & offsets);
     virtual const char * getFromEnum(EnumHandle e) const = 0;
     virtual const char *get(DocId doc) const = 0;
     largeint_t getInt(DocId doc)  const override { return strtoll(get(doc), nullptr, 0); }
