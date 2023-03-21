@@ -10,9 +10,11 @@ final class ArrayValue extends Value {
     static final Impl initial_impl = new EmptyImpl();
 
     private interface Impl {
-        public void prepareFor(ArrayValue self, Type type);
-        public Value add(Value value, int used);
-        public Value get(int index);
+        void prepareFor(ArrayValue self, Type type);
+        Value add(Value value, int used);
+        Value add(long value, int used);
+        Value add(double value, int used);
+        Value get(int index);
     }
 
     private static final class EmptyImpl implements Impl {
@@ -26,6 +28,8 @@ final class ArrayValue extends Value {
             }
         }
         public Value add(Value value, int used) { return NixValue.invalid(); }
+        public Value add(long value, int used) { return NixValue.invalid(); }
+        public Value add(double value, int used) { return NixValue.invalid(); }
         public Value get(int index) { return NixValue.invalid(); }
     }
 
@@ -36,15 +40,22 @@ final class ArrayValue extends Value {
                 self.impl = new GenericImpl(this, self.used);
             }
         }
+        private static long[] grow(long[] arr) {
+            long[] v = new long[arr.length << 1];
+            System.arraycopy(arr, 0, v, 0, arr.length);
+            return v;
+        }
         public Value add(Value value, int used) {
+            return NixValue.invalid();
+        }
+        public Value add(long value, int used) {
             if (used == values.length) {
-                long[] v = values;
-                values = new long[v.length << 1];
-                System.arraycopy(v, 0, values, 0, used);
+                values = grow(values);
             }
-            values[used] = value.asLong();
+            values[used] = value;
             return get(used);
         }
+        public Value add(double value, int used) { return NixValue.invalid(); }
         public Value get(int index) { return new LongValue(values[index]); }
     }
 
@@ -55,15 +66,22 @@ final class ArrayValue extends Value {
                 self.impl = new GenericImpl(this, self.used);
             }
         }
+        private static double[] grow(double[] arr) {
+            double[] v = new double[arr.length << 1];
+            System.arraycopy(arr, 0, v, 0, arr.length);
+            return v;
+        }
         public Value add(Value value, int used) {
+            return NixValue.invalid();
+        }
+        public Value add(double value, int used) {
             if (used == values.length) {
-                double[] v = values;
-                values = new double[v.length << 1];
-                System.arraycopy(v, 0, values, 0, used);
+                values = grow(values);
             }
-            values[used] = value.asDouble();
+            values[used] = value;
             return get(used);
         }
+        public Value add(long value, int used) { return NixValue.invalid(); }
         public Value get(int index) { return new DoubleValue(values[index]); }
     }
 
@@ -80,11 +98,20 @@ final class ArrayValue extends Value {
             }
         }
         public void prepareFor(ArrayValue self, Type type) {}
+        private static Value[] grow(Value[] arr) {
+            Value[] v = new Value[arr.length << 1];
+            System.arraycopy(arr, 0, v, 0, arr.length);
+            return v;
+        }
+        public Value add(long value, int used) {
+            return add(new LongValue(value), used);
+        }
+        public Value add(double value, int used) {
+            return add(new DoubleValue(value), used);
+        }
         public Value add(Value value, int used) {
             if (used == values.length) {
-                Value[] v = values;
-                values = new Value[v.length << 1];
-                System.arraycopy(v, 0, values, 0, used);
+                values = grow(values);
             }
             values[used] = value;
             return get(used);
@@ -110,6 +137,18 @@ final class ArrayValue extends Value {
         for (int i = 0; i < used; i++) {
             at.entry(i, impl.get(i));
         }
+    }
+
+    @Override
+    public Cursor addLong(long value) {
+        impl.prepareFor(this, Type.LONG);
+        return impl.add(value, used++);
+    }
+
+    @Override
+    public Cursor addDouble(double value) {
+        impl.prepareFor(this, Type.DOUBLE);
+        return impl.add(value, used++);
     }
 
     protected Value addLeaf(Value value) {
