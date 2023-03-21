@@ -80,6 +80,8 @@ public interface ZmsClient extends Closeable {
 
     void updateServicePublicKey(AthenzService athenzService, String publicKeyId, PublicKey publicKey);
 
+    void updateProviderEndpoint(AthenzService athenzService, String endpoint);
+
     void deleteService(AthenzService athenzService);
 
     void createRole(AthenzRole role, Map<String, Object> properties);

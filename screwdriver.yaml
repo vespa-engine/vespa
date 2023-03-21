@@ -48,6 +48,13 @@ shared:
           fi
         fi
 
+    install-podman-multi-arch: &install-podman-multi-arch
+      install-podman-multi-arch: |
+          dnf install -y podman podman-docker buildah skopeo
+          sed -i 's,.*netns.*=.*private.*,netns = "host",' /usr/share/containers/containers.conf
+          touch /etc/containers/nodocker
+          podman run --rm --cap-add SYS_ADMIN docker.io/multiarch/qemu-user-static --reset -p yes | cat
+
 jobs:
   build-vespa:
     requires: [~pr]
@@ -89,9 +96,6 @@ jobs:
       screwdriver.cd/ram: 16
       screwdriver.cd/disk: HIGH
       screwdriver.cd/timeout: 90
-      screwdriver.cd/dockerEnabled: true
-      screwdriver.cd/dockerCpu: TURBO
-      screwdriver.cd/dockerRam: HIGH
     environment:
       LOCAL_MVN_REPO: "/tmp/vespa/mvnrepo"
       VESPA_MAVEN_EXTRA_OPTS: "--show-version --batch-mode --no-snapshot-updates -Dmaven.repo.local=/tmp/vespa/mvnrepo"
@@ -106,16 +110,12 @@ jobs:
           VESPA_VERSION=$(meta get vespa.version)
           VESPA_REF=$(meta get vespa.ref)
           SYSTEM_TEST_REF=$(meta get system-test.ref)
-
           if [[ $VESPA_VERSION == null ]] || [[ $VESPA_REF == null ]] || [[ $SYSTEM_TEST_REF == null ]]; then
             echo "Must have valid Vespa version and reference to continue \
                   (got VESPA_VERSION=$VESPA_VERSION, VESPA_REF=$VESPA_REF, SYSTEM_TEST_REF=$SYSTEM_TEST_REF)."
             exit 1
           fi
-      - install-dependencies: |
-          dnf config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
-          dnf -y install docker-ce docker-ce-cli containerd.io
-          docker system info
+      - *install-podman-multi-arch
       - checkout: |
           mkdir -p workdir
           cd workdir
@@ -166,23 +166,22 @@ jobs:
           git archive HEAD --format tar | tar x -C docker/vespa-systemtests
           cp -a $LOCAL_MVN_REPO docker/repository
           cd docker
-          docker build --file Dockerfile.systemtest \
-                       --build-arg VESPA_BASE_IMAGE=vespaengine/vespa-systemtest-base-centos-stream8:latest \
-                       --build-arg SYSTEMTEST_BASE_IMAGE=vespa --build-arg SKIP_M2_POPULATE=false \
-                       --target systemtest \
-                       --tag vespaengine/vespa-systemtest-centos-stream8:$VESPA_VERSION \
-                       --tag vespaengine/vespa-systemtest-centos-stream8:latest .
+          buildah bud --file Dockerfile.systemtest \
+                      --build-arg VESPA_BASE_IMAGE=docker.io/vespaengine/vespa-systemtest-base-centos-stream8:latest \
+                      --build-arg SYSTEMTEST_BASE_IMAGE=vespa --build-arg SKIP_M2_POPULATE=false \
+                      --target systemtest \
+                      --tag docker.io/vespaengine/vespa-systemtest-centos-stream8:$VESPA_VERSION .
       - verify-test-image: |
-          docker run --rm -ti --entrypoint bash vespaengine/vespa-systemtest-centos-stream8:$VESPA_VERSION -lc \
+          podman run --rm -ti --entrypoint bash docker.io/vespaengine/vespa-systemtest-centos-stream8:$VESPA_VERSION -lc \
           "/opt/vespa-systemtests/lib/node_server.rb & sleep 3 && ruby /opt/vespa-systemtests/tests/search/basicsearch/basic_search.rb --run test_basicsearch__ELASTIC"
       - publish-test-image: |
           if [[ -z "$SD_PULL_REQUEST" ]]; then
             OPT_STATE="$(set +o)"
             set +x
-            docker login --username aressem --password "$DOCKER_HUB_DEPLOY_KEY" docker.io
+            buildah login --username aressem --password "$DOCKER_HUB_DEPLOY_KEY" docker.io
             eval "$OPT_STATE"
-            docker push docker.io/vespaengine/vespa-systemtest-centos-stream8:$VESPA_VERSION
-            docker push docker.io/vespaengine/vespa-systemtest-centos-stream8:latest
+            buildah push docker.io/vespaengine/vespa-systemtest-centos-stream8:$VESPA_VERSION docker://docker.io/vespaengine/vespa-systemtest-centos-stream8:$VESPA_VERSION
+            buildah push docker.io/vespaengine/vespa-systemtest-centos-stream8:$VESPA_VERSION docker://docker.io/vespaengine/vespa-systemtest-centos-stream8:latest
           fi
       - *save-cache
 
@@ -223,10 +222,7 @@ jobs:
             return 1
           fi
           meta set vespa.version $VESPA_VERSION
-      - install-dependencies: |
-          dnf config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
-          dnf install -y docker-ce docker-ce-cli containerd.io
-          docker system info
+      - *install-podman-multi-arch
       - release-java-artifacts: |
           screwdriver/release-java-artifacts.sh $VESPA_VERSION $VESPA_REF
       - release-rpms: |
@@ -260,9 +256,7 @@ jobs:
             echo "Must have valid Vespa version to continue (got VESPA_VERSION=$VESPA_VERSION)."
             return 1
           fi
-      - install-dependencies: |
-          dnf install -y podman podman-docker buildah skopeo
-          touch /etc/containers/nodocker
+      - *install-podman-multi-arch
       - checkout: |
           mkdir -p workdir
           cd workdir
