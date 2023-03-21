@@ -40,13 +40,13 @@ final class ArrayValue extends Value {
                 self.impl = new GenericImpl(this, self.used);
             }
         }
-        private static long [] grow(long [] arr) {
-            long [] v = new long[arr.length << 1];
+        private static long[] grow(long[] arr) {
+            long[] v = new long[arr.length << 1];
             System.arraycopy(arr, 0, v, 0, arr.length);
             return v;
         }
         public Value add(Value value, int used) {
-            return add(value.asLong(), used);
+            return NixValue.invalid();
         }
         public Value add(long value, int used) {
             if (used == values.length) {
@@ -66,13 +66,13 @@ final class ArrayValue extends Value {
                 self.impl = new GenericImpl(this, self.used);
             }
         }
-        private static double [] grow(double [] arr) {
-            double [] v = new double[arr.length << 1];
+        private static double[] grow(double[] arr) {
+            double[] v = new double[arr.length << 1];
             System.arraycopy(arr, 0, v, 0, arr.length);
             return v;
         }
         public Value add(Value value, int used) {
-            return add(value.asDouble(), used);
+            return NixValue.invalid();
         }
         public Value add(double value, int used) {
             if (used == values.length) {
@@ -98,8 +98,8 @@ final class ArrayValue extends Value {
             }
         }
         public void prepareFor(ArrayValue self, Type type) {}
-        private static Value [] grow(Value [] arr) {
-            Value [] v = new Value[arr.length << 1];
+        private static Value[] grow(Value[] arr) {
+            Value[] v = new Value[arr.length << 1];
             System.arraycopy(arr, 0, v, 0, arr.length);
             return v;
         }

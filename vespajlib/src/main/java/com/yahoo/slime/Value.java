@@ -48,8 +48,8 @@ abstract class Value implements Cursor {
 
     public final Cursor addNix() { return addLeaf(NixValue.instance()); }
     public final Cursor addBool(boolean bit) { return addLeaf(BoolValue.instance(bit)); }
-    public Cursor addLong(long l) { return addLeaf(new LongValue(l)); }
-    public Cursor addDouble(double d) { return addLeaf(new DoubleValue(d)); }
+    public Cursor addLong(long l) { return NixValue.invalid(); }
+    public Cursor addDouble(double d) { return NixValue.invalid(); }
     public final Cursor addString(String str) { return addLeaf(StringValue.create(str)); }
     public final Cursor addString(byte[] utf8) { return addLeaf(Utf8Value.create(utf8)); }
     public final Cursor addData(byte[] data) { return addLeaf(DataValue.create(data)); }
