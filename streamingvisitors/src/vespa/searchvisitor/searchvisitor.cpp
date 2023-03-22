@@ -10,6 +10,7 @@
 #include <vespa/document/datatype/weightedsetdatatype.h>
 #include <vespa/document/datatype/mapdatatype.h>
 #include <vespa/searchlib/aggregation/modifiers.h>
+#include <vespa/searchlib/attribute/single_raw_ext_attribute.h>
 #include <vespa/searchlib/common/packets.h>
 #include <vespa/searchlib/uca/ucaconverter.h>
 #include <vespa/searchlib/features/setup.h>
@@ -108,6 +109,8 @@ createAttribute(const vespalib::string & name, const document::FieldValue & fv)
         return std::make_shared<search::SingleFloatExtAttribute>(name);
     } else if (fv.isA(document::FieldValue::Type::STRING)) {
         return std::make_shared<search::SingleStringExtAttribute>(name);
+    } else if (fv.isA(document::FieldValue::Type::RAW)) {
+        return std::make_shared<search::attribute::SingleRawExtAttribute>(name);
     } else {
         LOG(debug, "Can not make an attribute out of %s of type '%s'.", name.c_str(), fv.className());
     }
@@ -438,6 +441,9 @@ SearchVisitor::AttributeInserter::onPrimitive(uint32_t, const Content & c)
         attr.add(value.getAsDouble(), c.getWeight());
     } else if (_attribute.isStringType()) {
         attr.add(value.getAsString().c_str(), c.getWeight());
+    } else if (_attribute.is_raw_type()) {
+        auto raw_value = value.getAsRaw();
+        attr.add(vespalib::ConstArrayRef<char>(raw_value.first, raw_value.second), c.getWeight());
     } else {
         assert(false && "We got an attribute vector that is of an unknown type");
     }
