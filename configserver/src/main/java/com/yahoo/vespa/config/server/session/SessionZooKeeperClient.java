@@ -36,6 +36,7 @@ import com.yahoo.vespa.curator.transaction.CuratorOperations;
 import com.yahoo.vespa.curator.transaction.CuratorTransaction;
 import org.apache.zookeeper.data.Stat;
 import java.security.cert.X509Certificate;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
@@ -67,6 +68,8 @@ public class SessionZooKeeperClient {
     private static final String TENANT_SECRET_STORES_PATH = "tenantSecretStores";
     private static final String OPERATOR_CERTIFICATES_PATH = "operatorCertificates";
     private static final String CLOUD_ACCOUNT_PATH = "cloudAccount";
+
+    private static final Duration barrierWaitForAll = Duration.ofSeconds(1);
 
     private final Curator curator;
     private final TenantName tenantName;
@@ -133,11 +136,11 @@ public class SessionZooKeeperClient {
     }
 
     private CompletionWaiter createCompletionWaiter(String waiterNode) {
-        return curator.createCompletionWaiter(sessionPath, waiterNode, serverId);
+        return curator.createCompletionWaiter(sessionPath, waiterNode, serverId, barrierWaitForAll);
     }
 
     private CompletionWaiter getCompletionWaiter(Path path) {
-        return curator.getCompletionWaiter(path, serverId);
+        return curator.getCompletionWaiter(path, serverId, barrierWaitForAll);
     }
 
     /** Returns a transaction deleting this session on commit */
