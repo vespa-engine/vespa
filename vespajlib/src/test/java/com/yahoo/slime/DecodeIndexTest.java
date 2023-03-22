@@ -2,9 +2,7 @@
 package com.yahoo.slime;
 
 import org.junit.Test;
-
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.CoreMatchers.is;
+import static org.junit.Assert.assertEquals;
 
 public class DecodeIndexTest {
 
@@ -14,10 +12,10 @@ public class DecodeIndexTest {
         int val1 = index.reserve(1);
         int val2 = index.reserve(3);
         int val3 = index.reserve(2);
-        assertThat(val1, is(0));
-        assertThat(val2, is(1));
-        assertThat(val3, is(4));
-        assertThat(index.size(), is(6));
+        assertEquals(0, val1);
+        assertEquals(1, val2);
+        assertEquals(4, val3);
+        assertEquals(6, index.size());
         index.set(val1 + 0,    0, val2, 0);
         index.set(val2 + 0,  100,    0, 1);
         index.set(val2 + 1,  200, val3, 2);
@@ -25,18 +23,18 @@ public class DecodeIndexTest {
         index.set(val3 + 0,  400,    0, 0);
         index.set(val3 + 1,  500,    0, 0);
         for (int i = 0; i < 6; i++) {
-            assertThat(index.getByteOffset(i), is(i * 100));
+            assertEquals(i * 100, index.getByteOffset(i));
             if (i == 0) {
-                assertThat(index.getFirstChild(i), is(1));
+                assertEquals(1, index.getFirstChild(i));
             } else if (i == 2) {
-                assertThat(index.getFirstChild(i), is(4));
+                assertEquals(4, index.getFirstChild(i));
             } else {
-                assertThat(index.getFirstChild(i), is(0));
+                assertEquals(0, index.getFirstChild(i));
             }
             if (i < 4) {
-                assertThat(index.getExtBits(i), is(i));
+                assertEquals(i, index.getExtBits(i));
             } else {
-                assertThat(index.getExtBits(i), is(0));
+                assertEquals(0, index.getExtBits(i));
             }
         }
     }
@@ -49,20 +47,20 @@ public class DecodeIndexTest {
         int expectOffset = 0;
         for (int i = 0; i < outer; i++) {
             int offset = index.reserve(inner);
-            assertThat(offset, is(expectOffset));
+            assertEquals(expectOffset, offset);
             expectOffset += inner;
             for (int j = 0; j < inner; j++) {
                 index.set(offset + j, (i * j), (i + j), (j & 3));
             }
         }
-        assertThat(expectOffset, is(inner * outer));
-        assertThat(index.size(), is(inner * outer));
+        assertEquals(inner * outer, expectOffset);
+        assertEquals(inner * outer, index.size());
         for (int i = 0; i < outer; i++) {
             for (int j = 0; j < inner; j++) {
                 int offset = i * inner + j;
-                assertThat(index.getByteOffset(offset), is(i * j));
-                assertThat(index.getFirstChild(offset), is(i + j));
-                assertThat(index.getExtBits(offset), is(j & 3));
+                assertEquals(i * j, index.getByteOffset(offset));
+                assertEquals(i + j, index.getFirstChild(offset));
+                assertEquals(j & 3, index.getExtBits(offset));
             }
         }
     }
@@ -74,14 +72,14 @@ public class DecodeIndexTest {
         index.set(0, 0xffff_ffff, 0, 0);
         index.set(1, 0, 0xffff_ffff, 0);
         index.set(2, 0, 0, 0xffff_ffff);
-        assertThat(index.getByteOffset(0), is(0x7fff_ffff));
-        assertThat(index.getByteOffset(1), is(0));
-        assertThat(index.getByteOffset(2), is(0));
-        assertThat(index.getFirstChild(0), is(0));
-        assertThat(index.getFirstChild(1), is(0x7fff_ffff));
-        assertThat(index.getFirstChild(2), is(0));
-        assertThat(index.getExtBits(0), is(0));
-        assertThat(index.getExtBits(1), is(0));
-        assertThat(index.getExtBits(2), is(3));
+        assertEquals(0x7fff_ffff, index.getByteOffset(0));
+        assertEquals(0, index.getByteOffset(1));
+        assertEquals(0, index.getByteOffset(2));
+        assertEquals(0, index.getFirstChild(0));
+        assertEquals(0x7fff_ffff, index.getFirstChild(1));
+        assertEquals(0, index.getFirstChild(2));
+        assertEquals(0, index.getExtBits(0));
+        assertEquals(0, index.getExtBits(1));
+        assertEquals(3, index.getExtBits(2));
     }
 }
