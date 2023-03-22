@@ -20,6 +20,16 @@ unsigned char remap(unsigned char val)
     return (desc ? (0xff - val) : val);
 }
 
+/*
+ * Serialize raw data to a sort blob that can be passed to memcmp.
+ *
+ * End of raw data is encoded as 0, while a bias of 1 is added to raw data byte values to
+ * differentiate from end of raw data. To avoid wraparound, 0xfe and 0xff are encoded
+ * as two bytes (0xfe => [0xff, 0xfe] and 0xff => [0xff, 0xff]).
+ *
+ * If sort order is descending, all encoded values are inverted, this
+ * is done by remap function above.
+ */
 template <bool desc>
 long serialize_for_sort(vespalib::ConstArrayRef<char> raw, void* serTo, long available)
 {
