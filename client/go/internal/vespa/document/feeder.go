@@ -65,7 +65,7 @@ func (s Stats) Successes() int64 {
 	return s.ResponsesByCode[200]
 }
 
-// Add adds all statistics contained in other to this.
+// Add all statistics contained in other to this.
 func (s *Stats) Add(other Stats) {
 	s.Requests += other.Requests
 	s.Responses += other.Responses
@@ -94,4 +94,5 @@ func (s *Stats) Add(other Stats) {
 type Feeder interface {
 	Send(Document) Result
 	Stats() Stats
+	AddStats(Stats)
 }

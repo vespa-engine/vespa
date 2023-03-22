@@ -123,7 +123,7 @@ func (c *Client) Send(document Document) Result {
 		stats.TotalLatency = latency
 		stats.MinLatency = latency
 		stats.MaxLatency = latency
-		c.addStats(&stats)
+		c.AddStats(stats)
 	}()
 	method, url, err := c.feedURL(document, c.queryParams())
 	if err != nil {
@@ -152,10 +152,10 @@ func (c *Client) Send(document Document) Result {
 
 func (c *Client) Stats() Stats { return c.stats }
 
-func (c *Client) addStats(stats *Stats) {
+func (c *Client) AddStats(stats Stats) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	c.stats.Add(*stats)
+	c.stats.Add(stats)
 }
 
 func (c *Client) createResult(id Id, stats *Stats, resp *http.Response) Result {
