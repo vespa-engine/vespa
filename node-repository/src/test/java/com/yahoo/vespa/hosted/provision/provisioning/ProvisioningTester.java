@@ -90,16 +90,16 @@ public class ProvisioningTester {
     private int nextIP = 0;
 
     private ProvisioningTester(Curator curator,
-                               NodeFlavors nodeFlavors,
-                               HostResourcesCalculator resourcesCalculator,
-                               Zone zone,
-                               NameResolver nameResolver,
-                               DockerImage containerImage,
-                               Orchestrator orchestrator,
-                               HostProvisioner hostProvisioner,
-                               LoadBalancerServiceMock loadBalancerService,
-                               FlagSource flagSource,
-                               int spareCount) {
+                              NodeFlavors nodeFlavors,
+                              HostResourcesCalculator resourcesCalculator,
+                              Zone zone,
+                              NameResolver nameResolver,
+                              DockerImage containerImage,
+                              Orchestrator orchestrator,
+                              HostProvisioner hostProvisioner,
+                              LoadBalancerServiceMock loadBalancerService,
+                              FlagSource flagSource,
+                              int spareCount) {
         this.curator = curator;
         this.nodeFlavors = nodeFlavors;
         this.clock = new ManualClock();

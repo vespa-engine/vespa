@@ -50,5 +50,4 @@ public class MockProvisionServiceProvider implements ProvisionServiceProvider {
     public HostResourcesCalculator getHostResourcesCalculator() {
         return hostResourcesCalculator;
     }
-
 }

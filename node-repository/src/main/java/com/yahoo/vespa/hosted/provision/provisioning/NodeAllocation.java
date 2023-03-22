@@ -194,34 +194,27 @@ class NodeAllocation {
         return false;
     }
 
-    /**
-     * Returns whether allocating the candidate on this host would violate exclusivity constraints.
-     * Note that while we currently require that exclusive allocations uses the entire host,
-     * this method also handles the case where smaller exclusive nodes are allocated on it.
-     */
     private boolean violatesExclusivity(NodeCandidate candidate) {
-        if (candidate.parent.isEmpty()) return false;
+        if (candidate.parentHostname().isEmpty()) return false;
 
-        if (nodeRepository.exclusiveAllocation(cluster)) {
-            // Node must allocate the host entirely and not violate application or cluster type constraints
-            var parent = candidate.parent.get();
-            if (!candidate.resources().isUnspecified() &&
-                ! nodeRepository.resourcesCalculator().advertisedResourcesOf(parent.flavor()).compatibleWith(candidate.resources())) return true;
-            if (parent.exclusiveToApplicationId().isPresent() && !parent.exclusiveToApplicationId().get().equals(application)) return true;
-            if (parent.exclusiveToClusterType().isPresent() && !parent.exclusiveToClusterType().get().equals(cluster.type())) return true;
-            return false;
+        // In nodes which does not allow host sharing, exclusivity is violated if...
+        if ( ! nodeRepository.zone().cloud().allowHostSharing()) {
+            // TODO: Write this in a way that is simple to read
+            // If either the parent is dedicated to a cluster type different from this cluster
+            return  ! candidate.parent.flatMap(Node::exclusiveToClusterType).map(cluster.type()::equals).orElse(true) ||
+                    // or this cluster is requiring exclusivity, but the host is exclusive to a different owner
+                    (requestedNodes.isExclusive() && !candidate.parent.flatMap(Node::exclusiveToApplicationId).map(application::equals).orElse(false));
         }
-        else {
-            // If any of the nodes on the host requires exclusivity to another application, allocating on it is a violation
-            for (Node nodeOnHost : allNodes.childrenOf(candidate.parentHostname().get())) {
-                if (nodeOnHost.allocation().isEmpty()) continue;
-                if (nodeOnHost.allocation().get().membership().cluster().isExclusive()) {
-                    if (!nodeOnHost.allocation().get().owner().equals(application))
-                        return true;
-                }
+
+        // In zones with shared hosts we require that if either of the nodes on the host requires exclusivity,
+        // then all the nodes on the host must have the same owner
+        for (Node nodeOnHost : allNodes.childrenOf(candidate.parentHostname().get())) {
+            if (nodeOnHost.allocation().isEmpty()) continue;
+            if (requestedNodes.isExclusive() || nodeOnHost.allocation().get().membership().cluster().isExclusive()) {
+                if ( ! nodeOnHost.allocation().get().owner().equals(application)) return true;
             }
-            return false;
         }
+        return false;
     }
 
     /**

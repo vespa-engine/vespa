@@ -22,8 +22,7 @@ public class LoadBalancersV1ApiTest {
 
     @After
     public void closeTester() {
-        if (tester != null)
-            tester.close();
+        tester.close();
     }
 
     @Test

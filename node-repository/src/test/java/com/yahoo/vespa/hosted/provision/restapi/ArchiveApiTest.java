@@ -16,7 +16,7 @@ import java.io.IOException;
  * 
  * Note: This class is referenced from our operations documentation and must not be renamed/moved without updating that.
  * 
- * @author freva
+ * @author bratseth
  */
 public class ArchiveApiTest {
 
@@ -54,6 +54,7 @@ public class ArchiveApiTest {
         tester.assertResponse(new Request("http://localhost:8080/nodes/v2/archive/account/777888999000", new byte[0], Request.Method.DELETE), "{\"message\":\"Removed archive URI for 777888999000\"}");
         tester.assertPartialResponse(new Request("http://localhost:8080/nodes/v2/node/dockerhost2.yahoo.com"), "archiveUri", false);
     }
+
 
     private void assertFile(Request request, String file) throws IOException {
         tester.assertFile(request, file);
