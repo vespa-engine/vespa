@@ -10,7 +10,7 @@ package com.yahoo.search.result;
 public class Coverage extends com.yahoo.container.handler.Coverage {
 
     public Coverage(long docs, long active) {
-        this(docs, active, docs > 1 ? 1 : 0, docs > 1 ? 1: 0);
+        this(docs, active, (docs > 0) ? 1 : 0, (docs > 0) ? 1: 0);
     }
 
     public Coverage(long docs, long active, int nodes) {

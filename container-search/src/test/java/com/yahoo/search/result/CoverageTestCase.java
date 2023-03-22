@@ -90,4 +90,13 @@ public class CoverageTestCase {
         verifyCoverageConversion(new Coverage(6, 10).setDegradedReason(7).setTargetActive(12));
     }
 
+    @Test
+    void testCoverageWorksForCorpusAboveZero() {
+        for (int i =1; i < 10; i++) {
+            Coverage coverage = new Coverage(i, i);
+            assertEquals(1, coverage.getNodes());
+            verifyCoverageConversion(coverage);
+        }
+    }
+
 }
