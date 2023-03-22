@@ -95,7 +95,6 @@
         <artifactId>maven-surefire-plugin</artifactId>
         <configuration>
           <redirectTestOutputToFile>${test.hide}</redirectTestOutputToFile>
-          <forkMode>once</forkMode>
         </configuration>
       </plugin>
     </plugins>

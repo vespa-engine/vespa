@@ -173,7 +173,6 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
-                    <forkMode>once</forkMode>
                     <redirectTestOutputToFile>${test.hide}</redirectTestOutputToFile>
                     <systemPropertyVariables>
                         <jdisc.logger.level>ALL</jdisc.logger.level>
