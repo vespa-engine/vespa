@@ -16,9 +16,12 @@ import java.util.logging.Logger;
  *
  * @author bratseth
  */
-public class FileDistributedOnnxModels {
+public class FileDistributedOnnxModels extends Derived implements OnnxModelsConfig.Producer {
 
     private static final Logger log = Logger.getLogger(FileDistributedOnnxModels.class.getName());
+
+    @Override
+    public String getDerivedName() { return "onnx-models"; }
 
     private final Map<String, OnnxModel> models;
 

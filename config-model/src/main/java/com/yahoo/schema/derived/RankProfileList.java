@@ -193,6 +193,12 @@ public class RankProfileList extends Derived implements RankProfilesConfig.Produ
     public String getDerivedName() { return "rank-profiles"; }
 
     @Override
+    public void export(String toDirectory) throws java.io.IOException {
+        super.export(toDirectory);
+        onnxModels.export(toDirectory);
+    }
+
+    @Override
     public void getConfig(RankProfilesConfig.Builder builder) {
         for (RawRankProfile rank : rankProfiles.values() ) {
             rank.getConfig(builder);

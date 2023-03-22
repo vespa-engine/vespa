@@ -49,6 +49,9 @@ schema test {
             input matrix_X: indirect_x
             input vector_B: indirect_b
             output vector_Y: foobar
+            intraop-threads: 3
+            interop-threads: 5
+            gpu-device: 2
         }
         first-phase {
             expression: sum(attribute(aa))
