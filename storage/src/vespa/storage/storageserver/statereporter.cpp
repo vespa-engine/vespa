@@ -6,6 +6,7 @@
 #include <vespa/metrics/metricmanager.h>
 #include <vespa/storage/common/nodestateupdater.h>
 #include <vespa/vdslib/state/nodestate.h>
+#include <vespa/vespalib/net/connection_auth_context.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 
 #include <vespa/log/log.h>
@@ -57,11 +58,18 @@ bool
 StateReporter::reportStatus(std::ostream& out,
                             const framework::HttpUrlPath& path) const
 {
-    vespalib::string status = _stateApi.get(path.getServerSpec(), path.getPath(), getParams(path));
-    if (status.empty()) {
+    // When we get here, capabilities have already been checked at a higher level, so
+    // this will never fail unless a state API handler requires other capabilities than
+    // we require for this reporter (in which case this will silently fail, but not
+    // expose any other information).
+    vespalib::net::ConnectionAuthContext dummy_ctx(vespalib::net::tls::PeerCredentials(), required_capabilities());
+    auto status = _stateApi.get(path.getServerSpec(), path.getPath(), getParams(path), dummy_ctx);
+    if (status.failed()) {
+        LOG(debug, "State API reporting for path '%s' failed with status HTTP %d: %s",
+            path.getPath().c_str(), status.status_code(), vespalib::string(status.status_message()).c_str());
         return false;
     }
-    out << status;
+    out << status.payload();
     return true;
 }
 

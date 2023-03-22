@@ -4,6 +4,7 @@ vespa_add_library(vespalib_vespalib_net_http OBJECT
     component_config_producer.cpp
     generic_state_handler.cpp
     http_server.cpp
+    json_get_handler.cpp
     json_handler_repo.cpp
     simple_component_config_producer.cpp
     simple_health_producer.cpp
