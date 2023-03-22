@@ -73,24 +73,23 @@ func ParseId(serialized string) (Id, error) {
 	if len(rest) < 2 {
 		return Id{}, parseError(serialized)
 	}
+	options := rest[0]
+	userSpecific := rest[1]
 	var number *int64
 	group := ""
-	userSpecific := ""
-	for _, part := range rest {
-		if number == nil && strings.HasPrefix(part, "n=") {
-			n, err := strconv.ParseInt(part[2:], 10, 64)
-			if err != nil {
-				return Id{}, parseError(serialized)
-			}
-			number = &n
-		} else if group == "" && strings.HasPrefix(part, "g=") {
-			group = part[2:]
-			if len(group) == 0 {
-				return Id{}, parseError(serialized)
-			}
-		} else {
-			userSpecific = part
+	if strings.HasPrefix(options, "n=") {
+		n, err := strconv.ParseInt(options[2:], 10, 64)
+		if err != nil {
+			return Id{}, parseError(serialized)
 		}
+		number = &n
+	} else if strings.HasPrefix(options, "g=") {
+		group = options[2:]
+		if len(group) == 0 {
+			return Id{}, parseError(serialized)
+		}
+	} else if options != "" {
+		return Id{}, parseError(serialized)
 	}
 	if userSpecific == "" {
 		return Id{}, parseError(serialized)

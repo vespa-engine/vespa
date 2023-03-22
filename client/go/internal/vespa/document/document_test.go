@@ -66,6 +66,22 @@ func TestParseId(t *testing.T) {
 			},
 			false,
 		},
+		{"id:ns:type::n=user-specific",
+			Id{
+				Namespace:    "ns",
+				Type:         "type",
+				UserSpecific: "n=user-specific",
+			},
+			false,
+		},
+		{"id:ns:type::g=user-specific",
+			Id{
+				Namespace:    "ns",
+				Type:         "type",
+				UserSpecific: "g=user-specific",
+			},
+			false,
+		},
 		{"", Id{}, true},
 		{"foobar", Id{}, true},
 		{"idd:ns:type:user", Id{}, true},
@@ -75,6 +91,7 @@ func TestParseId(t *testing.T) {
 		{"id:ns:type:n=:user", Id{}, true},
 		{"id:ns:type:n=foo:user", Id{}, true},
 		{"id:ns:type::", Id{}, true},
+		{"id:ns:type:user-specific:foo-bar", Id{}, true},
 	}
 	for i, tt := range tests {
 		parsed, err := ParseId(tt.in)
