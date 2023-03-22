@@ -77,7 +77,7 @@ if grep $VESPA_VERSION <<< "$IMAGE_TAGS" &> /dev/null; then
     echo "Container image ghcr.io/vespa-engine/vespa:$VESPA_VERSION aldready exists."
 else
     buildah login --username aressem --password "$GHCR_DEPLOY_KEY" ghcr.io
-    skopeo --insecure-policy copy --retry-times 5 --all --format v2s2 docker://docker.io/vespaengine/$IMAGE_NAME:$VESPA_VERSION docker://ghcr.io/vespaengine/vespa:$VESPA_VERSION
-    skopeo --insecure-policy copy --retry-times 5 --all --format v2s2 docker://docker.io/vespaengine/$IMAGE_NAME:$VESPA_VERSION docker://ghcr.io/vespaengine/vespa:$VESPA_MAJOR
-    skopeo --insecure-policy copy --retry-times 5 --all --format v2s2 docker://docker.io/vespaengine/$IMAGE_NAME:$VESPA_VERSION docker://ghcr.io/vespaengine/vespa:latest
+    skopeo --insecure-policy copy --retry-times 5 --all --format v2s2 docker://docker.io/vespaengine/$IMAGE_NAME:$VESPA_VERSION docker://ghcr.io/vespa-engine/vespa:$VESPA_VERSION
+    skopeo --insecure-policy copy --retry-times 5 --all --format v2s2 docker://docker.io/vespaengine/$IMAGE_NAME:$VESPA_VERSION docker://ghcr.io/vespa-engine/vespa:$VESPA_MAJOR
+    skopeo --insecure-policy copy --retry-times 5 --all --format v2s2 docker://docker.io/vespaengine/$IMAGE_NAME:$VESPA_VERSION docker://ghcr.io/vespa-engine/vespa:latest
 fi
