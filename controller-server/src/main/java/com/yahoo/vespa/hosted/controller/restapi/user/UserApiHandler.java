@@ -368,9 +368,8 @@ public class UserApiHandler extends ThreadedHttpRequestHandler {
 
     private boolean hasTrialCapacity() {
         if (! controller.system().isPublic()) return true;
-        var existing = controller.tenants().asList().stream().map(Tenant::name).toList();
-        var trialTenants = controller.serviceRegistry().billingController().tenantsWithPlan(existing, PlanId.from("trial"));
-        return maxTrialTenants.value() < 0 || trialTenants.size() < maxTrialTenants.value();
+        var plan = controller.serviceRegistry().planRegistry().plan("trial");
+        return controller.serviceRegistry().billingController().tenantsWithPlanUnderLimit(plan.get(), maxTrialTenants.value());
     }
 
     private static Inspector bodyInspector(HttpRequest request) {

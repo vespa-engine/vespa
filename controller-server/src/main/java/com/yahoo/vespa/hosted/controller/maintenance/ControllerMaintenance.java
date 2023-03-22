@@ -75,6 +75,7 @@ public class ControllerMaintenance extends AbstractComponent {
         maintainers.add(new TenantRoleCleanupMaintainer(controller, intervals.tenantRoleMaintainer));
         maintainers.add(new ChangeRequestMaintainer(controller, intervals.changeRequestMaintainer));
         maintainers.add(new VcmrMaintainer(controller, intervals.vcmrMaintainer, metric));
+        maintainers.add(new CloudDatabaseMaintainer(controller, intervals.defaultInterval));
         maintainers.add(new CloudTrialExpirer(controller, intervals.defaultInterval));
         maintainers.add(new RetriggerMaintainer(controller, intervals.retriggerMaintainer));
         maintainers.add(new UserManagementMaintainer(controller, intervals.userManagementMaintainer, controller.serviceRegistry().roleMaintainer()));

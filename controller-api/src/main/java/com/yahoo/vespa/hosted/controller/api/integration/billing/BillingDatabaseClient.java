@@ -107,6 +107,13 @@ public interface BillingDatabaseClient {
     Map<TenantName, Optional<Plan>> getPlans(List<TenantName> tenants);
 
     /**
+     * Returns a map with the count of plan usage.  Plans that are not in use will not appear in this result.
+     */
+    default Map<Plan, Long> getPlanCount(List<TenantName> tenants, Plan defaultPlan) {
+        return Map.of();
+    }
+
+    /**
      * Set the current plan for the given tenant
      *
      * @param tenantName The tenant to set the plan for
