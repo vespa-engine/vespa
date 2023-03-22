@@ -19,31 +19,27 @@ const (
 )
 
 func createCloudconfigDir() (string, error) {
-	userHome, err := os.UserHomeDir()
-	if err != nil {
+	dir := filepath.Join(os.TempDir(), cloudconfigDir)
+	if err := os.MkdirAll(dir, 0700); err != nil {
 		return "", err
 	}
-	home := filepath.Join(userHome, cloudconfigDir)
-	if err := os.MkdirAll(home, 0700); err != nil {
-		return "", err
-	}
-	return home, nil
+	return dir, nil
 }
 
 func configsourceUrlUsedFile() string {
-	home, err := createCloudconfigDir()
+	dir, err := createCloudconfigDir()
 	if err != nil {
-		home = "/tmp"
+		dir = "/tmp"
 	}
-	return filepath.Join(home, configsourceUrlUsedFileName)
+	return filepath.Join(dir, configsourceUrlUsedFileName)
 }
 
 func createTenantDir(tenant string) string {
-	home, err := createCloudconfigDir()
+	dir, err := createCloudconfigDir()
 	if err != nil {
 		util.JustExitWith(err)
 	}
-	tdir := filepath.Join(home, tenant)
+	tdir := filepath.Join(dir, tenant)
 	if err := os.MkdirAll(tdir, 0700); err != nil {
 		util.JustExitWith(err)
 	}
