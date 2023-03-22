@@ -91,7 +91,9 @@ HnswNodeidMapping::free_ids(uint32_t docid)
 {
     assert(docid < _refs.size());
     EntryRef ref = _refs[docid];
-    assert(ref.valid());
+    if (!ref.valid()) {
+        return;
+    }
     auto nodeids = _nodeids.get(ref);
     for (auto nodeid : nodeids) {
         _hold_list.insert(nodeid);
