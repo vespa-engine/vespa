@@ -86,20 +86,31 @@ TEST_F(RawAttributeTest, can_set_and_clear_value)
 }
 
 TEST_F(RawAttributeTest, implements_serialize_for_sort) {
+    std::vector<char> escapes{1, 0, char(0xff), char(0xfe), 1};
     vespalib::string long_hello("hello, is there anybody out there");
     vespalib::ConstArrayRef<char> raw_long_hello(long_hello.c_str(), long_hello.size());
     uint8_t buf[8];
     memset(buf, 0, sizeof(buf));
     _attr->addDocs(10);
     _attr->commit();
-    EXPECT_EQ(0, _attr->serializeForAscendingSort(1, buf, sizeof(buf)));
-    EXPECT_EQ(0, _attr->serializeForDescendingSort(1, buf, sizeof(buf)));
+    EXPECT_EQ(1, _attr->serializeForAscendingSort(1, buf, sizeof(buf)));
+    EXPECT_EQ(0, buf[0]);
+    EXPECT_EQ(1, _attr->serializeForDescendingSort(1, buf, sizeof(buf)));
+    EXPECT_EQ(0xff, buf[0]);
     _raw->set_raw(1, raw_hello);
-    EXPECT_EQ(5, _attr->serializeForAscendingSort(1, buf, sizeof(buf)));
-    EXPECT_EQ(0, memcmp("hello", buf, 5));
-    EXPECT_EQ(5, _attr->serializeForDescendingSort(1, buf, sizeof(buf)));
-    uint8_t expected [] = {0xff-'h', 0xff-'e', 0xff-'l', 0xff-'l', 0xff-'o'};
-    EXPECT_EQ(0, memcmp(expected, buf, 5));
+    EXPECT_EQ(6, _attr->serializeForAscendingSort(1, buf, sizeof(buf)));
+    uint8_t hello_asc[] = {0x01+'h', 0x01+'e', 0x01+'l', 0x01+'l', 0x01+'o', 0x00};
+    EXPECT_EQ(0, memcmp(hello_asc, buf, 6));
+    EXPECT_EQ(6, _attr->serializeForDescendingSort(1, buf, sizeof(buf)));
+    uint8_t hello_desc[] = {0xfe -'h', 0xfe -'e', 0xfe -'l', 0xfe -'l', 0xfe -'o', 0xff};
+    EXPECT_EQ(0, memcmp(hello_desc, buf, 6));
+    _raw->set_raw(1, escapes);
+    EXPECT_EQ(8, _attr->serializeForAscendingSort(1, buf, sizeof(buf)));
+    uint8_t escapes_asc[] = {0x02, 0x01, 0xff, 0xff, 0xff, 0xfe, 0x02, 0x00};
+    EXPECT_EQ(0, memcmp(escapes_asc, buf, 8));
+    EXPECT_EQ(8, _attr->serializeForDescendingSort(1, buf, sizeof(buf)));
+    uint8_t escapes_desc[] = {0xfd, 0xfe, 0x00, 0x00, 0x00, 0x01, 0xfd, 0xff};
+    EXPECT_EQ(0, memcmp(escapes_desc, buf, 8));
     _raw->set_raw(1, raw_long_hello);
     EXPECT_EQ(-1, _attr->serializeForAscendingSort(1, buf, sizeof(buf)));
     EXPECT_EQ(-1, _attr->serializeForDescendingSort(1, buf, sizeof(buf)));
