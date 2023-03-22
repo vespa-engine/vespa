@@ -816,6 +816,14 @@ TEST_F(HnswMultiIndexTest, duplicate_docid_is_removed)
     EXPECT_EQ(2, filter->max_docid());
 };
 
+TEST_F(HnswMultiIndexTest, docid_with_empty_tensor_can_be_removed)
+{
+    this->init(false);
+    this->vectors.set(1, {});
+    this->add_document(1);
+    this->remove_document(1);
+}
+
 TEST(LevelGeneratorTest, gives_various_levels)
 {
     InvLogLevelGenerator generator(4);
