@@ -122,7 +122,7 @@ public enum ContainerMetrics implements VespaMetrics {
     QUERIES("queries", Unit.OPERATION, "Query volume"),
     QUERY_CONTAINER_LATENCY("query_container_latency", Unit.MILLISECOND, "The query execution time consumed in the container"),
     QUERY_LATENCY("query_latency", Unit.MILLISECOND, "The overall query latency as seen by the container"),
-    QUERY_TIMEOUT("query_timeout", Unit.MILLISECOND, "The amount of time allowed for query execution, from the client"),
+    QUERY_TIMEOUT("query_timeout", Unit.MILLISECOND, "The amount of time allowed for query execytion, from the client"),
     FAILED_QUERIES("failed_queries", Unit.OPERATION, "The number of failed queries"),
     DEGRADED_QUERIES("degraded_queries", Unit.OPERATION, "The number of degraded queries, e.g. due to some conent nodes not responding in time"),
     HITS_PER_QUERY("hits_per_query", Unit.HIT_PER_QUERY, "The number of hits returned"),

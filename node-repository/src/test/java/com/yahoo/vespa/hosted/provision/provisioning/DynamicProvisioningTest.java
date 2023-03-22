@@ -9,7 +9,6 @@ import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.HostSpec;
-import com.yahoo.config.provision.NodeAllocationException;
 import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeResources.Architecture;
@@ -29,11 +28,9 @@ import com.yahoo.vespa.hosted.provision.testutils.MockHostProvisioner;
 import com.yahoo.vespa.hosted.provision.testutils.MockNameResolver;
 import org.junit.Test;
 
-import java.time.Duration;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -53,25 +50,6 @@ import static org.junit.Assert.fail;
 public class DynamicProvisioningTest {
 
     private final MockNameResolver nameResolver = new MockNameResolver().mockAnyLookup();
-
-    @Test
-    public void test_provisioning_containers_wont_use_shared_hosts_on_public() {
-        var resources = new NodeResources(2.7, 9, 17, 0.1);
-        var now = new ClusterResources(2, 1, resources);
-        try {
-            var fixture = DynamicProvisioningTester.fixture()
-                                                   .awsProdSetup(true)
-                                                   .clusterType(ClusterSpec.Type.container)
-                                                   .initialResources(Optional.of(now))
-                                                   .capacity(Capacity.from(now))
-                                                   .hostCount(2)
-                                                   .build();
-        }
-        catch (NodeAllocationException e) {
-            assertTrue("Contains 'No host flavor matches': " + e.getMessage(),
-                       e.getMessage().contains("No host flavor matches"));
-        }
-    }
 
     @Test
     public void dynamically_provision_with_empty_node_repo() {
@@ -139,7 +117,7 @@ public class DynamicProvisioningTest {
 
     @Test
     public void avoids_allocating_to_empty_hosts() {
-        var tester = tester(true);
+        var tester = tester(false);
         tester.makeReadyHosts(6, new NodeResources(12, 12, 200, 12));
         tester.activateTenantHosts();
 

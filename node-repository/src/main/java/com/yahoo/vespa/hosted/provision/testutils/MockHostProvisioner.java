@@ -47,7 +47,7 @@ public class MockHostProvisioner implements HostProvisioner {
 
     private int deprovisionedHosts = 0;
     private EnumSet<Behaviour> behaviours = EnumSet.noneOf(Behaviour.class);
-    private final Map<ClusterSpec.Type, Flavor> hostFlavors = new HashMap<>();
+    private Map<ClusterSpec.Type, Flavor> hostFlavors = new HashMap<>();
 
     public MockHostProvisioner(List<Flavor> flavors, MockNameResolver nameResolver, int memoryTaxGb) {
         this.flavors = List.copyOf(flavors);
