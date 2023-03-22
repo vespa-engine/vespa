@@ -80,7 +80,7 @@ func (s *Stats) Add(other Stats) {
 	s.Errors += other.Errors
 	s.Inflight += other.Inflight
 	s.TotalLatency += other.TotalLatency
-	if s.MinLatency == 0 || other.MinLatency < s.MinLatency {
+	if s.MinLatency == 0 || (other.MinLatency > 0 && other.MinLatency < s.MinLatency) {
 		s.MinLatency = other.MinLatency
 	}
 	if other.MaxLatency > s.MaxLatency {
