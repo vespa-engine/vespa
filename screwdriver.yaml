@@ -57,7 +57,7 @@ shared:
 
 jobs:
   build-vespa:
-    #requires: [~pr]
+    requires: [~pr]
     annotations:
       screwdriver.cd/cpu: 7
       screwdriver.cd/ram: 16
@@ -308,7 +308,6 @@ jobs:
 
   publish-el9-preview:
     image: docker.io/vespaengine/vespa-build-centos-stream8:latest
-    requires: [~pr]
     annotations:
       screwdriver.cd/cpu: 7
       screwdriver.cd/ram: 16
