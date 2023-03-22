@@ -302,6 +302,9 @@ public class VdsStreamingSearcher extends VespaBackEndSearcher {
         fastHit.setSource(getName());
         fastHit.setId(hit.getDocId());
         fastHit.setRelevance(new Relevance(hit.getRank()));
+        if (hit instanceof SearchResult.HitWithSortBlob sortedHit) {
+            fastHit.setSortData(sortedHit.getSortBlob(), query.getRanking().getSorting());
+        }
 
         fastHit.setFillable();
         return fastHit;
