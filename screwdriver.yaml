@@ -341,11 +341,11 @@ jobs:
                 --file Dockerfile \
                 --jobs 2  \
                 --layers=false \
-                --manifest "vespaengine/$IMAGE_NAME:$VESPA_VERSION" \
+                --manifest "$IMAGE_NAME:$VESPA_VERSION" \
                 --platform linux/amd64,linux/arm64
       - verify-container-image: |
           # Trick to be able to use the documentation testing to verify the image built locally
-          buildah tag docker.io/$IMAGE_NAME:$VESPA_VERSION vespaengine/vespa:latest
+          buildah tag $IMAGE_NAME:$VESPA_VERSION vespaengine/vespa:latest
           # Run quick start guide
           $SD_SOURCE_DIR/screwdriver/test-quick-start-guide.sh
       - publish-image: |
@@ -357,9 +357,9 @@ jobs:
               set +x
               buildah login --username aressem --password "$DOCKER_HUB_DEPLOY_KEY" docker.io
               eval "$OPT_STATE"
-              buildah manifest push --all --format v2s2 vespaengine/$IMAGE_NAME:$VESPA_VERSION docker://docker.io/vespaengine/$IMAGE_NAME:$VESPA_VERSION
-              buildah manifest push --all --format v2s2 vespaengine/$IMAGE_NAME:$VESPA_VERSION docker://docker.io/vespaengine/$IMAGE_NAME:$VESPA_MAJOR
-              buildah manifest push --all --format v2s2 vespaengine/$IMAGE_NAME:$VESPA_VERSION docker://docker.io/vespaengine/$IMAGE_NAME:latest
+              buildah manifest push --all --format v2s2 $IMAGE_NAME:$VESPA_VERSION docker://docker.io/$IMAGE_NAME:$VESPA_VERSION
+              buildah manifest push --all --format v2s2 $IMAGE_NAME:$VESPA_VERSION docker://docker.io/$IMAGE_NAME:$VESPA_MAJOR
+              buildah manifest push --all --format v2s2 $IMAGE_NAME:$VESPA_VERSION docker://docker.io/$IMAGE_NAME:latest
             fi
           fi
 
