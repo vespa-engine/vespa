@@ -89,7 +89,8 @@
         <artifactId>maven-surefire-plugin</artifactId>
         <configuration>
           <redirectTestOutputToFile>${test.hide}</redirectTestOutputToFile>
-          <forkMode>pertest</forkMode>
+          <forkCount>1</forkCount>
+          <reuseForks>false</reuseForks>
         </configuration>
       </plugin>
       <plugin>
