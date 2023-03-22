@@ -10,6 +10,7 @@ package com.yahoo.search.result;
 public class Coverage extends com.yahoo.container.handler.Coverage {
 
     public Coverage(long docs, long active) {
+        // TODO Wonder about this special handling.....
         this(docs, active, (docs > 0) ? 1 : 0, (docs > 0) ? 1: 0);
     }
 

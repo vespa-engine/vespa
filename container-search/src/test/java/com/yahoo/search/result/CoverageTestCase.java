@@ -92,6 +92,9 @@ public class CoverageTestCase {
 
     @Test
     void testCoverageWorksForCorpusAboveZero() {
+        Coverage zero = new Coverage(0, 0);
+        assertEquals(0, zero.getNodes()); // TODO Wonder about this special handling.....
+        assertEquals(0, zero.getFullResultSets());
         for (int i =1; i < 10; i++) {
             Coverage coverage = new Coverage(i, i);
             assertEquals(1, coverage.getNodes());
