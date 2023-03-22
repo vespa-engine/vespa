@@ -59,7 +59,7 @@ final class BufferedInput {
         return ret;
     }
 
-    byte [] getBacking() { return source; }
+    byte[] getBacking() { return source; }
     int getPosition() { return position; }
     void skip(int size) {
         if (position + size > end) {
@@ -79,5 +79,33 @@ final class BufferedInput {
             ret[i] = source[position++];
         }
         return ret;
+    }
+
+    int read_cmpr_int() {
+        long next = getByte();
+        long value = (next & 0x7f);
+        int shift = 7;
+        while (shift < 32 && (next & 0x80) != 0) {
+            next = getByte();
+            value |= ((next & 0x7f) << shift);
+            shift += 7;
+        }
+        if (value > 0x7fff_ffffL) {
+            fail("compressed int overflow");
+            value = 0;
+        }
+        return (int)value;
+    }
+
+    int skip_cmpr_int() {
+        int extBits = 0;
+        while ((getByte() & 0x80) != 0) {
+            ++extBits;
+        }
+        return extBits;
+    }
+
+    int read_size(int meta) {
+        return (meta == 0) ? read_cmpr_int() : (meta - 1);
     }
 }

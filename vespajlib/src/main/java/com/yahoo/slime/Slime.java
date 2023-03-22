@@ -13,6 +13,8 @@ public final class Slime {
     private final SymbolTable names = new SymbolTable();
     private Value root = NixValue.instance();
 
+    SymbolTable symbolTable() { return names; }
+
     /**
      * Construct an empty Slime with an empty top-level value.
      */
