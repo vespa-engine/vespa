@@ -19,6 +19,13 @@ template class MultiValueEnumAttribute<EnumAttribute<IntegerAttributeTemplate<in
 template class MultiValueEnumAttribute<EnumAttribute<IntegerAttributeTemplate<int64_t>>, vespalib::datastore::AtomicEntryRef>;
 template class MultiValueEnumAttribute<EnumAttribute<FloatingPointAttributeTemplate<float>>, vespalib::datastore::AtomicEntryRef>;
 template class MultiValueEnumAttribute<EnumAttribute<FloatingPointAttributeTemplate<double>>, vespalib::datastore::AtomicEntryRef>;
+template class MultiValueEnumAttribute<EnumAttribute<StringAttribute>, multivalue::WeightedValue<vespalib::datastore::AtomicEntryRef>>;
+template class MultiValueEnumAttribute<EnumAttribute<IntegerAttributeTemplate<int8_t>>, multivalue::WeightedValue<vespalib::datastore::AtomicEntryRef>>;
+template class MultiValueEnumAttribute<EnumAttribute<IntegerAttributeTemplate<int16_t>>, multivalue::WeightedValue<vespalib::datastore::AtomicEntryRef>>;
+template class MultiValueEnumAttribute<EnumAttribute<IntegerAttributeTemplate<int32_t>>, multivalue::WeightedValue<vespalib::datastore::AtomicEntryRef>>;
+template class MultiValueEnumAttribute<EnumAttribute<IntegerAttributeTemplate<int64_t>>, multivalue::WeightedValue<vespalib::datastore::AtomicEntryRef>>;
+template class MultiValueEnumAttribute<EnumAttribute<FloatingPointAttributeTemplate<float>>, multivalue::WeightedValue<vespalib::datastore::AtomicEntryRef>>;
+template class MultiValueEnumAttribute<EnumAttribute<FloatingPointAttributeTemplate<double>>, multivalue::WeightedValue<vespalib::datastore::AtomicEntryRef>>;
 
 }
 
