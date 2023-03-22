@@ -64,4 +64,10 @@ SingleRawExtAttribute::get_raw(DocId docid) const
     return {_buffer.data() + offset, size};
 }
 
+IExtendAttribute*
+SingleRawExtAttribute::getExtendInterface()
+{
+    return this;
+}
+
 }
