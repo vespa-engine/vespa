@@ -51,6 +51,7 @@ for data in "Dockerfile vespa"; do
     else
         # Build
         buildah bud \
+                --build-arg VESPA_BASE_IMAGE=el8 \
                 --build-arg VESPA_VERSION=$VESPA_VERSION \
                 --file $DOCKER_FILE \
                 --jobs 2  \
