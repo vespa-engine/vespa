@@ -13,6 +13,12 @@ import (
 	"github.com/vespa-engine/vespa/client/go/internal/admin/envvars"
 )
 
+func getComponent() string {
+	s := os.Args[0]
+	parts := strings.Split(s, "/")
+	return parts[len(parts)-1]
+}
+
 // make a vespa-format log line
 
 func logMessage(l outputLevel, msg string) {
@@ -24,7 +30,7 @@ func logMessage(l outputLevel, msg string) {
 	if service == "" {
 		service = "-"
 	}
-	component := "stderr"
+	component := getComponent()
 	level := "error"
 	switch l {
 	case levelWarning:

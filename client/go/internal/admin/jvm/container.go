@@ -68,8 +68,8 @@ func (cb *containerBase) Exec() {
 	if cb.propsFile != "" {
 		writeEnvAsProperties(p.EffectiveEnv(), cb.propsFile)
 	}
-	trace.Info("starting container; env:", readableEnv(p.Env))
-	trace.Info("starting container; exec:", argv)
+	trace.Info("JVM env:", readableEnv(p.Env))
+	trace.Info("JVM exec:", argv)
 	err := p.Run()
 	util.JustExitWith(err)
 }
