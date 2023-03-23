@@ -1,12 +1,15 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/searchlib/attribute/single_raw_attribute.h>
+#include <vespa/searchlib/attribute/address_space_components.h>
 #include <vespa/searchlib/attribute/attributefactory.h>
 #include <vespa/searchcommon/attribute/config.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <filesystem>
 #include <memory>
 
+using search::AddressSpaceComponents;
+using search::AddressSpaceUsage;
 using search::AttributeFactory;
 using search::AttributeVector;
 using search::attribute::BasicType;
@@ -134,6 +137,20 @@ TEST_F(RawAttributeTest, save_and_load)
     EXPECT_EQ(as_vector("hello"), as_vector(_raw->get_raw(1)));
     EXPECT_EQ(mini_test, as_vector(_raw->get_raw(2)));
     remove_saved_attr();
+}
+
+TEST_F(RawAttributeTest, address_space_usage_is_reported)
+{
+    auto& raw_store = AddressSpaceComponents::raw_store;
+    _attr->addDocs(1);
+    _attr->commit();
+    AddressSpaceUsage usage = _attr->getAddressSpaceUsage();
+    const auto& all = usage.get_all();
+    EXPECT_EQ(1u, all.size());
+    EXPECT_EQ(1u, all.count(raw_store));
+    EXPECT_EQ(1, all.at(raw_store).used());
+    _raw->set_raw(1, as_vector("foo"));
+    EXPECT_EQ(2, _attr->getAddressSpaceUsage().get_all().at(raw_store).used());
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()
