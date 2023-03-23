@@ -13,7 +13,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/vespa-engine/vespa/client/go/internal/admin/envvars"
 	"github.com/vespa-engine/vespa/client/go/internal/admin/trace"
-	"github.com/vespa-engine/vespa/client/go/internal/cli/build"
+	"github.com/vespa-engine/vespa/client/go/internal/build"
 )
 
 func NewGetClusterStateCmd() *cobra.Command {

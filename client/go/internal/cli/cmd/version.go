@@ -14,7 +14,7 @@ import (
 
 	"github.com/fatih/color"
 	"github.com/spf13/cobra"
-	"github.com/vespa-engine/vespa/client/go/internal/cli/build"
+	"github.com/vespa-engine/vespa/client/go/internal/build"
 	"github.com/vespa-engine/vespa/client/go/internal/version"
 )
 

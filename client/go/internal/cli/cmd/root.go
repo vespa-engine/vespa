@@ -17,9 +17,9 @@ import (
 	"github.com/mattn/go-isatty"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
+	"github.com/vespa-engine/vespa/client/go/internal/build"
 	"github.com/vespa-engine/vespa/client/go/internal/cli/auth/auth0"
 	"github.com/vespa-engine/vespa/client/go/internal/cli/auth/zts"
-	"github.com/vespa-engine/vespa/client/go/internal/cli/build"
 	"github.com/vespa-engine/vespa/client/go/internal/util"
 	"github.com/vespa-engine/vespa/client/go/internal/version"
 	"github.com/vespa-engine/vespa/client/go/internal/vespa"
@@ -277,6 +277,7 @@ func (c *CLI) configureCommands() {
 	rootCmd.AddCommand(newTestCmd(c))               // test
 	rootCmd.AddCommand(newVersionCmd(c))            // version
 	rootCmd.AddCommand(newVisitCmd(c))              // visit
+	rootCmd.AddCommand(newFeedCmd(c))               // feed
 }
 
 func (c *CLI) printErr(err error, hints ...string) {

@@ -37,7 +37,7 @@ func (c *Client) AccessToken(domain string, certificate tls.Certificate) (string
 	if err != nil {
 		return "", err
 	}
-	c.client.UseCertificate([]tls.Certificate{certificate})
+	util.SetCertificate(c.client, []tls.Certificate{certificate})
 	response, err := c.client.Do(req, 10*time.Second)
 	if err != nil {
 		return "", err
