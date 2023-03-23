@@ -4,6 +4,7 @@
 #include "single_raw_attribute_loader.h"
 #include "single_raw_attribute_saver.h"
 #include <vespa/searchcommon/attribute/config.h>
+#include <vespa/searchlib/attribute/address_space_components.h>
 #include <vespa/vespalib/datastore/array_store.hpp>
 
 using vespalib::alloc::MemoryAllocator;
@@ -160,6 +161,12 @@ SingleRawAttribute::isUndefined(DocId docid) const
 {
     auto raw = get_raw(docid);
     return raw.empty();
+}
+
+void
+SingleRawAttribute::populate_address_space_usage(AddressSpaceUsage& usage) const
+{
+    usage.set(AddressSpaceComponents::raw_store, _raw_store.get_address_space_usage());
 }
 
 }
