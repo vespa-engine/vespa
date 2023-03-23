@@ -1,7 +1,13 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "state_api.h"
+#include <vespa/vespalib/net/connection_auth_context.h>
+#include <vespa/vespalib/net/tls/capability.h>
 #include <vespa/vespalib/util/jsonwriter.h>
+#include <functional>
+
+using vespalib::net::tls::Capability;
+using vespalib::net::tls::CapabilitySet;
 
 namespace vespalib {
 
@@ -131,27 +137,59 @@ vespalib::string respond_config(ComponentConfigProducer &componentConfigProducer
     return json.toString();
 }
 
+JsonGetHandler::Response cap_checked(const net::ConnectionAuthContext &auth_ctx,
+                                     CapabilitySet required_caps,
+                                     std::function<vespalib::string()> fn)
+{
+    if (!auth_ctx.capabilities().contains_all(required_caps)) {
+        return JsonGetHandler::Response::make_failure(403, "Forbidden");
+    }
+    return JsonGetHandler::Response::make_ok_with_json(fn());
+}
+
+JsonGetHandler::Response cap_checked(const net::ConnectionAuthContext &auth_ctx,
+                                     Capability required_cap,
+                                     std::function<vespalib::string()> fn)
+{
+    return cap_checked(auth_ctx, CapabilitySet::of({required_cap}), std::move(fn));
+}
+
 } // namespace vespalib::<unnamed>
 
-vespalib::string
+JsonGetHandler::Response
 StateApi::get(const vespalib::string &host,
               const vespalib::string &path,
-              const std::map<vespalib::string,vespalib::string> &params) const
+              const std::map<vespalib::string,vespalib::string> &params,
+              const net::ConnectionAuthContext &auth_ctx) const
 {
     if (path == "/state/v1/" || path == "/state/v1") {
-        return respond_root(_handler_repo, host);
+        return cap_checked(auth_ctx, CapabilitySet::make_empty(), [&] { // TODO consider http_unclassified
+            return respond_root(_handler_repo, host);
+        });
     } else if (path == "/state/v1/health") {
-        return respond_health(_healthProducer);
+        return cap_checked(auth_ctx, CapabilitySet::make_empty(), [&] { // TODO consider http_unclassified
+            return respond_health(_healthProducer);
+        });
     } else if (path == "/state/v1/metrics") {
         // Using a 'statereporter' consumer by default removes many uninteresting per-thread
         // metrics but retains their aggregates.
-        return respond_metrics(get_consumer(params, "statereporter"), _healthProducer, _metricsProducer);
+        return cap_checked(auth_ctx, Capability::content_metrics_api(), [&] {
+            return respond_metrics(get_consumer(params, "statereporter"), _healthProducer, _metricsProducer);
+        });
     } else if (path == "/state/v1/config") {
-        return respond_config(_componentConfigProducer);
+        return cap_checked(auth_ctx, Capability::content_state_api(), [&] {
+            return respond_config(_componentConfigProducer);
+        });
     } else if (path == "/metrics/total") {
-        return _metricsProducer.getTotalMetrics(get_consumer(params, ""));
+        return cap_checked(auth_ctx, Capability::content_metrics_api(), [&] {
+            return _metricsProducer.getTotalMetrics(get_consumer(params, ""));
+        });
     } else {
-        return _handler_repo.get(host, path, params);
+        // Assume this is for the nested state v1 stuff; may delegate capability check to handler later if desired.
+        if (!auth_ctx.capabilities().contains(Capability::content_state_api())) {
+            return Response::make_failure(403, "Forbidden");
+        }
+        return _handler_repo.get(host, path, params, auth_ctx);
     }
 }
 

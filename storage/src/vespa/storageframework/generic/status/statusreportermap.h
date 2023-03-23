@@ -14,7 +14,7 @@ namespace storage::framework {
 struct StatusReporter;
 
 struct StatusReporterMap {
-    virtual ~StatusReporterMap() {}
+    virtual ~StatusReporterMap() = default;
 
     virtual const StatusReporter* getStatusReporter(vespalib::stringref id) = 0;
 

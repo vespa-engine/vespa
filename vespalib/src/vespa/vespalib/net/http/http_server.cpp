@@ -2,17 +2,18 @@
 
 #include "http_server.h"
 #include <vespa/vespalib/net/crypto_engine.h>
+#include <vespa/vespalib/net/connection_auth_context.h>
 
 namespace vespalib {
 
 void
 HttpServer::get(Portal::GetRequest req)
 {
-    vespalib::string json_result = _handler_repo.get(req.get_host(), req.get_path(), req.export_params());
-    if (json_result.empty()) {
-        req.respond_with_error(404, "Not Found");
+    auto response = _handler_repo.get(req.get_host(), req.get_path(), req.export_params(), req.auth_context());
+    if (response.failed()) {
+        req.respond_with_error(response.status_code(), response.status_message());
     } else {
-        req.respond_with_content("application/json", json_result);
+        req.respond_with_content("application/json", response.payload());
     }
 }
 

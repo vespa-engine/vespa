@@ -23,9 +23,10 @@ private:
 
 public:
     GenericStateHandler(const vespalib::string &root_path, const StateExplorer &state);
-    virtual vespalib::string get(const vespalib::string &host,
-                                 const vespalib::string &path,
-                                 const std::map<vespalib::string,vespalib::string> &params) const override;
+    Response get(const vespalib::string &host,
+                 const vespalib::string &path,
+                 const std::map<vespalib::string,vespalib::string> &params,
+                 const net::ConnectionAuthContext &auth_ctx) const override;
 };
 
 } // namespace vespalib

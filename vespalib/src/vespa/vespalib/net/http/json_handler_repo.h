@@ -79,12 +79,13 @@ private:
 
 public:
     JsonHandlerRepo();
-    ~JsonHandlerRepo();
+    ~JsonHandlerRepo() override;
     Token::UP bind(vespalib::stringref path_prefix, const JsonGetHandler &get_handler);
     Token::UP add_root_resource(vespalib::stringref path);
     [[nodiscard]] std::vector<vespalib::string> get_root_resources() const;
-    [[nodiscard]] vespalib::string get(const vespalib::string &host, const vespalib::string &path,
-                                       const std::map<vespalib::string,vespalib::string> &params) const override;
+    [[nodiscard]] Response get(const vespalib::string &host, const vespalib::string &path,
+                               const std::map<vespalib::string,vespalib::string> &params,
+                               const net::ConnectionAuthContext &auth_ctx) const override;
 };
 
 } // namespace vespalib
