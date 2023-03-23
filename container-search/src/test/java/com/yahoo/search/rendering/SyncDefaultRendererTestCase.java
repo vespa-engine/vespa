@@ -59,7 +59,7 @@ public class SyncDefaultRendererTestCase {
         Query q = new Query("/?query=a&tracelevel=5");
         q.getPresentation().setTiming(true);
         Result r = new Result(q);
-        r.setCoverage(new Coverage(500, 1));
+        r.setCoverage(new Coverage(500, 1, 1));
 
         TimeTracker t = new TimeTracker(new Chain<Searcher>(
                 new UselessSearcher("first"), new UselessSearcher("second"),

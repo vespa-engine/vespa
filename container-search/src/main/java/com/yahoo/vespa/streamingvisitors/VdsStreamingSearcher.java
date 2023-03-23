@@ -231,11 +231,11 @@ public class VdsStreamingSearcher extends VespaBackEndSearcher {
                 ", returned hit count = ", hits.size(), ", summary count = ",
                 summaryMap.size());
 
-        VisitorStatistics visitStats = visitor.getStatistics();
+        VisitorStatistics stats = visitor.getStatistics();
         result.setTotalHitCount(visitor.getTotalHitCount());
-        result.setCoverage(new Coverage(visitStats.getDocumentsVisited(), visitStats.getDocumentsVisited()));
+        result.setCoverage(new Coverage(stats.getDocumentsVisited(), stats.getDocumentsVisited(), 1, 1));
         query.trace(visitor.getStatistics().toString(), false, 2);
-        query.getContext(true).setProperty(STREAMING_STATISTICS, visitor.getStatistics());
+        query.getContext(true).setProperty(STREAMING_STATISTICS, stats);
 
         DocsumPacket[] summaryPackets = new DocsumPacket [hits.size()];
 
