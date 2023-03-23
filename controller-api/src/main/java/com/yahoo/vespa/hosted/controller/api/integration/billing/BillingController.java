@@ -118,4 +118,11 @@ public interface BillingController {
     default CollectionResult setCollectionMethod(TenantName tenant, CollectionMethod method) {
         return CollectionResult.error("Method not implemented");
     }
+
+    /** Test if the number of tenants with the given plan is under the given limit */
+    default boolean tenantsWithPlanUnderLimit(Plan plan, int limit) {
+        return true;
+    }
+
+    default void updateCache(List<TenantName> tenants) {}
 }
