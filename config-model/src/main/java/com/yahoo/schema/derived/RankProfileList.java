@@ -127,8 +127,9 @@ public class RankProfileList extends Derived implements RankProfilesConfig.Produ
             throw new IllegalStateException(e);
         }
         catch (ExecutionException e) {
-            throw e.getCause() instanceof IllegalArgumentException ? (IllegalArgumentException)e.getCause()
-                                                                   : new IllegalStateException(e);
+            if (e.getCause() instanceof IllegalArgumentException iArg) throw iArg;
+            if (e.getCause() instanceof IllegalStateException iState) throw iState;
+            throw new IllegalStateException(e);
         }
     }
 

@@ -79,7 +79,7 @@ public final class ReferenceNode extends CompositeNode {
                 path = new ArrayDeque<>();
             String myPath = getName() + getArguments().expressions();
             if (path.contains(myPath))
-                throw new IllegalStateException("Cycle in ranking expression function: " + path);
+                throw new IllegalStateException("Cycle in ranking expression function '" + getName() + "' called from: " + path);
             path.addLast(myPath);
 
             String functionName = getName();
