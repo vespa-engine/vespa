@@ -863,7 +863,7 @@ public class JsonRendererTestCase {
         Query q = new Query("/?query=a&tracelevel=5");
         Execution execution = new Execution(Execution.Context.createContextStub());
         Result r = new Result(q);
-        r.setCoverage(new Coverage(500, 600).setDegradedReason(5));
+        r.setCoverage(new Coverage(500, 600, 1).setDegradedReason(5));
 
         String summary = render(execution, r);
         assertEqualJsonContent(expected, summary);

@@ -59,7 +59,7 @@ public class XMLRendererTestCase {
         Query q = new Query("/?query=a");
 
         Result result = new Result(q);
-        result.setCoverage(new Coverage(500, 1));
+        result.setCoverage(new Coverage(500, 1, 1));
 
         FastHit h = new FastHit("http://localhost/", .95);
         h.setField("$a", "Hello, world.");
@@ -130,7 +130,7 @@ public class XMLRendererTestCase {
         q.getPresentation().setTiming(true);
 
         Result result = new Result(q);
-        result.setCoverage(new Coverage(500, 1));
+        result.setCoverage(new Coverage(500, 1, 1));
 
         TimeTracker t = new TimeTracker(new Chain<Searcher>(new NoopSearcher("first"),
                 new NoopSearcher("second"),
