@@ -3,6 +3,7 @@
 #pragma once
 
 #include "multinumericenumattribute.h"
+#include "enum_store_loaders.h"
 #include "load_utils.h"
 #include "loadednumericvalue.h"
 #include "enumerated_multi_value_read_view.h"
