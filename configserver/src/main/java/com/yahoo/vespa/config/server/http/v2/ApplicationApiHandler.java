@@ -115,7 +115,7 @@ public class ApplicationApiHandler extends SessionHandler {
 
     @Override
     public Duration getTimeout() {
-        return zookeeperBarrierTimeout.plus(Duration.ofSeconds(120));
+        return zookeeperBarrierTimeout.plus(Duration.ofSeconds(180));
     }
 
     private TenantName validateTenant(HttpRequest request) {
