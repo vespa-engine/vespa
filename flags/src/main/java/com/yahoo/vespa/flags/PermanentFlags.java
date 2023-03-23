@@ -121,6 +121,18 @@ public class PermanentFlags {
             "Takes effect on next node agent tick. Change is orchestrated, but does NOT require container restart",
             HOSTNAME, APPLICATION_ID, CLUSTER_ID, CLUSTER_TYPE);
 
+    public static final UnboundIntFlag MIN_DISK_THROUGHPUT_MB_S = defineIntFlag(
+            "min-disk-throughput-mb-s", 0,
+            "Minimum required disk throughput performance, 0 = default, Only when using remote disk",
+            "Takes effect when node is provisioned",
+            ZONE_ID, APPLICATION_ID, TENANT_ID, CLUSTER_ID, CLUSTER_TYPE);
+
+    public static final UnboundIntFlag MIN_DISK_IOPS_K = defineIntFlag(
+            "min-disk-iops-k", 0,
+            "Minimum required disk I/O operations per second, unit is kilo, 0 = default, Only when using remote disk",
+            "Takes effect when node is provisioned",
+            ZONE_ID, APPLICATION_ID, TENANT_ID, CLUSTER_ID, CLUSTER_TYPE);
+
     public static final UnboundListFlag<String> DISABLED_HOST_ADMIN_TASKS = defineListFlag(
             "disabled-host-admin-tasks", List.of(), String.class,
             "List of host-admin task names (as they appear in the log, e.g. root>main>UpgradeTask), or some node-agent " +
