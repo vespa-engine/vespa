@@ -534,7 +534,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         NestedTransaction transaction = new NestedTransaction();
         Optional<ApplicationTransaction> applicationTransaction = hostProvisioner.map(provisioner -> provisioner.lock(applicationId))
                                                                                  .map(lock -> new ApplicationTransaction(lock, transaction));
-        try (@SuppressWarnings("unused") var applicationLock = tenantApplications.lock(applicationId)) {
+        try (var applicationLock = tenantApplications.lock(applicationId)) {
             Optional<Long> activeSession = tenantApplications.activeSessionOf(applicationId);
             CompletionWaiter waiter;
             if (activeSession.isPresent()) {
@@ -544,7 +544,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
                 } catch (NotFoundException e) {
                     log.log(Level.INFO, TenantRepository.logPre(applicationId) + "Active session exists, but has not been deleted properly. Trying to cleanup");
                 }
-                waiter = tenantApplications.createDeleteApplicationWaiter(applicationId);
+                waiter = tenantApplications.createRemoveApplicationWaiter(applicationId);
             } else {
                 // If there's no active session, we still want to clean up any resources created in a failing prepare
                 waiter = new NoopCompletionWaiter();
@@ -796,7 +796,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         NestedTransaction transaction = new NestedTransaction();
         Optional<ApplicationTransaction> applicationTransaction = hostProvisioner.map(provisioner -> provisioner.lock(applicationId))
                                                                                  .map(lock -> new ApplicationTransaction(lock, transaction));
-        try (@SuppressWarnings("unused") var sessionLock = tenant.getApplicationRepo().lock(applicationId)) {
+        try (var sessionLock = tenant.getApplicationRepo().lock(applicationId)) {
             Optional<Session> activeSession = getActiveSession(applicationId);
             var sessionZooKeeperClient = tenant.getSessionRepository().createSessionZooKeeperClient(session.getSessionId());
             CompletionWaiter waiter = sessionZooKeeperClient.createActiveWaiter();
