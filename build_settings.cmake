@@ -86,9 +86,10 @@ else()
 endif()
 
 # Disable dangling reference and overloaded virtual warnings when using gcc 13
+# Disable stringop-oveflow and array-bounds warning when using gcc 13.
 if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
   if (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL "13")
-    set(CXX_SPECIFIC_WARN_OPTS "${CXX_SPECIFIC_WARN_OPTS} -Wno-dangling-reference -Wno-overloaded-virtual")
+    set(CXX_SPECIFIC_WARN_OPTS "${CXX_SPECIFIC_WARN_OPTS} -Wno-dangling-reference -Wno-overloaded-virtual -Wno-stringop-overflow -Wno-array-bounds")
   endif()
 endif()
 
