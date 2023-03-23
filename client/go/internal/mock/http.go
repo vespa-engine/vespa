@@ -58,5 +58,3 @@ func (c *HTTPClient) Do(request *http.Request, timeout time.Duration) (*http.Res
 		},
 		nil
 }
-
-func (c *HTTPClient) Transport() *http.Transport { return &http.Transport{} }
