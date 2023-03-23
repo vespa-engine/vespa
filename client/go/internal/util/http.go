@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/vespa-engine/vespa/client/go/internal/cli/build"
+	"github.com/vespa-engine/vespa/client/go/internal/build"
 )
 
 type HTTPClient interface {

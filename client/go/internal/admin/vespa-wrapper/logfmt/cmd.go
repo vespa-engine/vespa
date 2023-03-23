@@ -6,7 +6,7 @@ package logfmt
 
 import (
 	"github.com/spf13/cobra"
-	"github.com/vespa-engine/vespa/client/go/internal/cli/build"
+	"github.com/vespa-engine/vespa/client/go/internal/build"
 )
 
 func NewLogfmtCmd() *cobra.Command {
