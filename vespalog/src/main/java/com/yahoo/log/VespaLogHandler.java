@@ -2,10 +2,15 @@
 package com.yahoo.log;
 
 import java.io.UnsupportedEncodingException;
-import java.util.Set;
+import java.util.Map;
+import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.logging.StreamHandler;
+
+import static java.util.Map.entry;
+import static java.util.logging.Level.FINE;
+import static java.util.logging.Level.INFO;
 
 /**
  * @author Bjorn Borud
@@ -14,12 +19,15 @@ import java.util.logging.StreamHandler;
 @SuppressWarnings("deprecation")
 class VespaLogHandler extends StreamHandler {
 
-    // Reduce log level from info level to fine level for some loggers
-    private static final Set<String> loggersWithReducedLogLevel =
-            Set.of("com.yahoo.vespa.spifly.repackaged.spifly.BaseActivator",
-                   "org.eclipse.jetty.server.Server",
-                   "org.eclipse.jetty.server.handler.ContextHandler",
-                   "org.eclipse.jetty.server.AbstractConnector");
+    // Reduce log level for some loggers
+    private static final Function<Level, Level> INFO_TO_FINE = level -> level == INFO ? FINE : level;
+    private static final Map<String, Function<Level, Level>> loggersWithAlteredLogLevel = Map.ofEntries(
+            entry("com.yahoo.vespa.spifly.repackaged.spifly.BaseActivator", INFO_TO_FINE),
+            entry("org.eclipse.jetty.server.Server", INFO_TO_FINE),
+            entry("org.eclipse.jetty.server.handler.ContextHandler", INFO_TO_FINE),
+            entry("org.eclipse.jetty.server.AbstractConnector", INFO_TO_FINE),
+            entry("org.eclipse.jetty.util.HostPort", __ -> FINE)
+    );
 
     private final LogTarget logTarget;
     private final String serviceName;
@@ -84,7 +92,8 @@ class VespaLogHandler extends StreamHandler {
     private static Level possiblyReduceLogLevel(String loggerName, Level level) {
         if (loggerName == null) return level;
 
-        return (loggersWithReducedLogLevel.contains(loggerName) && level == Level.INFO) ? Level.FINE : level;
+        var levelMapper = loggersWithAlteredLogLevel.get(loggerName);
+        return levelMapper == null ? level : levelMapper.apply(level);
     }
 
     LevelController getLevelControl(String component) {
