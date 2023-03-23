@@ -130,8 +130,7 @@ func (c *Client) Send(document Document) Result {
 		stats.Errors = 1
 		return Result{Status: StatusError, Err: err}
 	}
-	body := document.Body()
-	req, err := http.NewRequest(method, url.String(), bytes.NewReader(body))
+	req, err := http.NewRequest(method, url.String(), bytes.NewReader(document.Body))
 	if err != nil {
 		stats.Errors = 1
 		return Result{Status: StatusError, Err: err}
@@ -146,7 +145,7 @@ func (c *Client) Send(document Document) Result {
 	stats.ResponsesByCode = map[int]int64{
 		resp.StatusCode: 1,
 	}
-	stats.BytesSent = int64(len(body))
+	stats.BytesSent = int64(len(document.Body))
 	return c.createResult(document.Id, &stats, resp)
 }
 

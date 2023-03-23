@@ -1,7 +1,6 @@
 package document
 
 import (
-	"encoding/json"
 	"sync"
 	"testing"
 
@@ -43,8 +42,8 @@ func TestDispatcher(t *testing.T) {
 	feeder := &mockFeeder{}
 	dispatcher := NewDispatcher(feeder, 2)
 	docs := []Document{
-		{PutId: "id:ns:type::doc1", Fields: json.RawMessage(`{"foo": "123"}`)},
-		{PutId: "id:ns:type::doc2", Fields: json.RawMessage(`{"bar": "456"}`)},
+		{Id: mustParseId("id:ns:type::doc1"), Operation: OperationPut, Body: []byte(`{"fields":{"foo": "123"}}`)},
+		{Id: mustParseId("id:ns:type::doc2"), Operation: OperationPut, Body: []byte(`{"fields":{"bar": "456"}}`)},
 	}
 	for _, d := range docs {
 		dispatcher.Enqueue(d)
@@ -57,19 +56,19 @@ func TestDispatcher(t *testing.T) {
 
 func TestDispatcherOrdering(t *testing.T) {
 	feeder := &mockFeeder{}
-	commonId := "id:ns:type::doc1"
+	commonId := mustParseId("id:ns:type::doc1")
 	docs := []Document{
-		mustParseDocument(Document{PutId: commonId}),
-		mustParseDocument(Document{PutId: "id:ns:type::doc2"}),
-		mustParseDocument(Document{PutId: "id:ns:type::doc3"}),
-		mustParseDocument(Document{PutId: "id:ns:type::doc4"}),
-		mustParseDocument(Document{UpdateId: commonId}),
-		mustParseDocument(Document{PutId: "id:ns:type::doc5"}),
-		mustParseDocument(Document{PutId: "id:ns:type::doc6"}),
-		mustParseDocument(Document{RemoveId: commonId}),
-		mustParseDocument(Document{PutId: "id:ns:type::doc7"}),
-		mustParseDocument(Document{PutId: "id:ns:type::doc8"}),
-		mustParseDocument(Document{PutId: "id:ns:type::doc9"}),
+		{Id: commonId, Operation: OperationPut},
+		{Id: mustParseId("id:ns:type::doc2"), Operation: OperationPut},
+		{Id: mustParseId("id:ns:type::doc3"), Operation: OperationPut},
+		{Id: mustParseId("id:ns:type::doc4"), Operation: OperationPut},
+		{Id: commonId, Operation: OperationUpdate},
+		{Id: mustParseId("id:ns:type::doc5"), Operation: OperationPut},
+		{Id: mustParseId("id:ns:type::doc6"), Operation: OperationPut},
+		{Id: commonId, Operation: OperationRemove},
+		{Id: mustParseId("id:ns:type::doc7"), Operation: OperationPut},
+		{Id: mustParseId("id:ns:type::doc8"), Operation: OperationPut},
+		{Id: mustParseId("id:ns:type::doc9"), Operation: OperationPut},
 	}
 	dispatcher := NewDispatcher(feeder, len(docs))
 	for _, d := range docs {
@@ -79,13 +78,13 @@ func TestDispatcherOrdering(t *testing.T) {
 
 	var wantDocs []Document
 	for _, d := range docs {
-		if d.Id.String() == commonId {
+		if d.Id.Equal(commonId) {
 			wantDocs = append(wantDocs, d)
 		}
 	}
 	var gotDocs []Document
 	for _, d := range feeder.documents {
-		if d.Id.String() == commonId {
+		if d.Id.Equal(commonId) {
 			gotDocs = append(gotDocs, d)
 		}
 	}
@@ -96,12 +95,12 @@ func TestDispatcherOrdering(t *testing.T) {
 
 func TestDispatcherOrderingWithFailures(t *testing.T) {
 	feeder := &mockFeeder{}
-	commonId := "id:ns:type::doc1"
+	commonId := mustParseId("id:ns:type::doc1")
 	docs := []Document{
-		mustParseDocument(Document{PutId: commonId}),
-		mustParseDocument(Document{PutId: commonId}),
-		mustParseDocument(Document{UpdateId: commonId}), // fails
-		mustParseDocument(Document{RemoveId: commonId}), // fails
+		{Id: commonId, Operation: OperationPut},
+		{Id: commonId, Operation: OperationPut},
+		{Id: commonId, Operation: OperationUpdate}, // fails
+		{Id: commonId, Operation: OperationRemove}, // fails
 	}
 	feeder.failAfterN(2)
 	dispatcher := NewDispatcher(feeder, len(docs))
@@ -116,11 +115,11 @@ func TestDispatcherOrderingWithFailures(t *testing.T) {
 	// Dispatching more documents for same ID fails implicitly
 	feeder.failAfterN(0)
 	dispatcher.start()
-	dispatcher.Enqueue(mustParseDocument(Document{PutId: commonId}))
-	dispatcher.Enqueue(mustParseDocument(Document{RemoveId: commonId}))
+	dispatcher.Enqueue(Document{Id: commonId, Operation: OperationPut})
+	dispatcher.Enqueue(Document{Id: commonId, Operation: OperationRemove})
 	// Other IDs are fine
-	doc2 := mustParseDocument(Document{PutId: "id:ns:type::doc2"})
-	doc3 := mustParseDocument(Document{PutId: "id:ns:type::doc3"})
+	doc2 := Document{Id: mustParseId("id:ns:type::doc2"), Operation: OperationPut}
+	doc3 := Document{Id: mustParseId("id:ns:type::doc3"), Operation: OperationPut}
 	dispatcher.Enqueue(doc2)
 	dispatcher.Enqueue(doc3)
 	dispatcher.Close()
