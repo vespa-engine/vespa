@@ -89,7 +89,7 @@ public class DerivedConfiguration implements AttributesConfig.Producer {
             Validation.validate(this, schema);
         }
         catch (IllegalArgumentException|IllegalStateException e) {
-            throw new IllegalArgumentException("Invalid " + schema + " -> " + e.getMessage(), e);
+            throw new IllegalArgumentException("Invalid " + schema, e);
         }
     }
 
