@@ -100,7 +100,7 @@ public class RankingExpressionTestCase {
         try {
             exp.getRankProperties(new SerializationContext(functions, Optional.empty()));
         } catch (RuntimeException e) {
-            assertEquals("Cycle in ranking expression function: [foo[]]", e.getMessage());
+            assertEquals("Cycle in ranking expression function 'foo' called from: [foo[]]", e.getMessage());
         }
     }
 
@@ -114,7 +114,7 @@ public class RankingExpressionTestCase {
         try {
             exp.getRankProperties(new SerializationContext(functions, Optional.empty()));
         } catch (RuntimeException e) {
-            assertEquals("Cycle in ranking expression function: [foo[], bar[]]", e.getMessage());
+            assertEquals("Cycle in ranking expression function 'foo' called from: [foo[], bar[]]", e.getMessage());
         }
     }
 
