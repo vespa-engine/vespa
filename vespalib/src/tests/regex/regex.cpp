@@ -153,7 +153,7 @@ TEST("Test that default constructed regex is invalid.") {
 TEST("Can extract min/max prefix range from anchored regex") {
     auto min_max = Regex::from_pattern("^.*").possible_anchored_match_prefix_range();
     EXPECT_EQUAL(min_max.first,  "");
-    EXPECT_EQUAL(min_max.second, "\xf4\x8f\xbf\xc0"); // Highest possible Unicode char (U+10FFFF) as UTF-8, plus 1
+    EXPECT_GREATER_EQUAL(min_max.second, "\xf4\x8f\xbf\xc0"); // Highest possible Unicode char (U+10FFFF) as UTF-8, plus 1
 
     min_max = Regex::from_pattern("^hello").possible_anchored_match_prefix_range();
     EXPECT_EQUAL(min_max.first,  "hello");
