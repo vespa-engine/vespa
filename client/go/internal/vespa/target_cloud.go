@@ -12,18 +12,15 @@ import (
 	"strings"
 	"time"
 
-	"github.com/vespa-engine/vespa/client/go/internal/cli/auth/auth0"
-	"github.com/vespa-engine/vespa/client/go/internal/cli/auth/zts"
 	"github.com/vespa-engine/vespa/client/go/internal/util"
 	"github.com/vespa-engine/vespa/client/go/internal/version"
 )
 
 // CloudOptions configures URL and authentication for a cloud target.
 type APIOptions struct {
-	System         System
-	TLSOptions     TLSOptions
-	APIKey         []byte
-	AuthConfigPath string
+	System     System
+	TLSOptions TLSOptions
+	APIKey     []byte
 }
 
 // CloudDeploymentOptions configures the deployment to manage through a cloud target.
@@ -38,7 +35,8 @@ type cloudTarget struct {
 	deploymentOptions CloudDeploymentOptions
 	logOptions        LogOptions
 	httpClient        util.HTTPClient
-	ztsClient         ztsClient
+	zts               zts
+	auth0             auth0
 }
 
 type deploymentEndpoint struct {
@@ -64,22 +62,23 @@ type logMessage struct {
 	Message string `json:"message"`
 }
 
-type ztsClient interface {
+type zts interface {
 	AccessToken(domain string, certficiate tls.Certificate) (string, error)
 }
 
+type auth0 interface {
+	AccessToken() (string, error)
+}
+
 // CloudTarget creates a Target for the Vespa Cloud or hosted Vespa platform.
-func CloudTarget(httpClient util.HTTPClient, apiOptions APIOptions, deploymentOptions CloudDeploymentOptions, logOptions LogOptions) (Target, error) {
-	ztsClient, err := zts.NewClient(zts.DefaultURL, httpClient)
-	if err != nil {
-		return nil, err
-	}
+func CloudTarget(httpClient util.HTTPClient, ztsClient zts, auth0Client auth0, apiOptions APIOptions, deploymentOptions CloudDeploymentOptions, logOptions LogOptions) (Target, error) {
 	return &cloudTarget{
 		httpClient:        httpClient,
 		apiOptions:        apiOptions,
 		deploymentOptions: deploymentOptions,
 		logOptions:        logOptions,
-		ztsClient:         ztsClient,
+		zts:               ztsClient,
+		auth0:             auth0Client,
 	}, nil
 }
 
@@ -125,7 +124,7 @@ func (t *cloudTarget) Service(name string, timeout time.Duration, runID int64, c
 			Name:       name,
 			BaseURL:    t.apiOptions.System.URL,
 			TLSOptions: t.apiOptions.TLSOptions,
-			ztsClient:  t.ztsClient,
+			zts:        t.zts,
 			httpClient: t.httpClient,
 		}
 		if timeout > 0 {
@@ -153,7 +152,7 @@ func (t *cloudTarget) Service(name string, timeout time.Duration, runID int64, c
 			Name:       name,
 			BaseURL:    url,
 			TLSOptions: t.deploymentOptions.TLSOptions,
-			ztsClient:  t.ztsClient,
+			zts:        t.zts,
 			httpClient: t.httpClient,
 		}, nil
 	}
@@ -207,11 +206,7 @@ func (t *cloudTarget) CheckVersion(clientVersion version.Version) error {
 }
 
 func (t *cloudTarget) addAuth0AccessToken(request *http.Request) error {
-	client, err := auth0.New(t.apiOptions.AuthConfigPath, t.apiOptions.System.Name, t.apiOptions.System.URL)
-	if err != nil {
-		return err
-	}
-	accessToken, err := client.GetAccessToken()
+	accessToken, err := t.auth0.AccessToken()
 	if err != nil {
 		return err
 	}

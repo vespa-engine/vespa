@@ -21,7 +21,7 @@ func TestConfigWriting(t *testing.T) {
   "oauth-token-endpoint": "https://example.com/oauth/token"
 }`
 	httpClient.NextResponseString(200, flowConfigResponse)
-	client, err := newClient(&httpClient, configPath, "public", "http://example.com")
+	client, err := NewClient(&httpClient, Options{ConfigPath: configPath, SystemName: "public", SystemURL: "http://example.com"})
 	require.Nil(t, err)
 	assert.Equal(t, "https://example.com/api/v2/", client.Authenticator.Audience)
 	assert.Equal(t, "some-id", client.Authenticator.ClientID)
@@ -56,7 +56,7 @@ func TestConfigWriting(t *testing.T) {
 
 	// Switch to another system
 	httpClient.NextResponseString(200, flowConfigResponse)
-	client, err = newClient(&httpClient, configPath, "publiccd", "http://example.com")
+	client, err = NewClient(&httpClient, Options{ConfigPath: configPath, SystemName: "publiccd", SystemURL: "http://example.com"})
 	require.Nil(t, err)
 	creds2 := Credentials{
 		AccessToken: "another-token",

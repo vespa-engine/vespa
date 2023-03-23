@@ -21,7 +21,7 @@ type Client struct {
 }
 
 // NewClient creates a new client for an Athenz ZTS service located at serviceURL.
-func NewClient(serviceURL string, client util.HTTPClient) (*Client, error) {
+func NewClient(client util.HTTPClient, serviceURL string) (*Client, error) {
 	tokenURL, err := url.Parse(serviceURL)
 	if err != nil {
 		return nil, err

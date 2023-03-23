@@ -2,6 +2,7 @@
 package cmd
 
 import (
+	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -16,6 +17,8 @@ import (
 	"github.com/mattn/go-isatty"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
+	"github.com/vespa-engine/vespa/client/go/internal/cli/auth/auth0"
+	"github.com/vespa-engine/vespa/client/go/internal/cli/auth/zts"
 	"github.com/vespa-engine/vespa/client/go/internal/cli/build"
 	"github.com/vespa-engine/vespa/client/go/internal/util"
 	"github.com/vespa-engine/vespa/client/go/internal/version"
@@ -45,10 +48,13 @@ type CLI struct {
 	config  *Config
 	version version.Version
 
-	httpClient util.HTTPClient
-	exec       executor
-	isTerminal func() bool
-	spinner    func(w io.Writer, message string, fn func() error) error
+	httpClient   util.HTTPClient
+	auth0Factory auth0Factory
+	ztsFactory   ztsFactory
+	exec         executor
+	isTerminal   func() bool
+	spinner      func(w io.Writer, message string, fn func() error) error
+	now          func() time.Time
 }
 
 // ErrCLI is an error returned to the user. It wraps an exit status, a regular error and optional hints for resolving
@@ -81,6 +87,19 @@ func (c *execSubprocess) LookPath(name string) (string, error) { return exec.Loo
 func (c *execSubprocess) Run(name string, args ...string) ([]byte, error) {
 	return exec.Command(name, args...).Output()
 }
+
+type ztsClient interface {
+	AccessToken(domain string, certficiate tls.Certificate) (string, error)
+}
+
+type auth0Client interface {
+	AccessToken() (string, error)
+	HasCredentials() bool
+}
+
+type auth0Factory func(httpClient util.HTTPClient, options auth0.Options) (auth0Client, error)
+
+type ztsFactory func(httpClient util.HTTPClient, url string) (ztsClient, error)
 
 // New creates the Vespa CLI, writing output to stdout and stderr, and reading environment variables from environment.
 func New(stdout, stderr io.Writer, environment []string) (*CLI, error) {
@@ -123,6 +142,13 @@ For detailed description of flags and configuration, see 'vespa help config'.
 		cmd:        cmd,
 		httpClient: util.CreateClient(time.Second * 10),
 		exec:       &execSubprocess{},
+		now:        time.Now,
+		auth0Factory: func(httpClient util.HTTPClient, options auth0.Options) (auth0Client, error) {
+			return auth0.NewClient(httpClient, options)
+		},
+		ztsFactory: func(httpClient util.HTTPClient, url string) (ztsClient, error) {
+			return zts.NewClient(httpClient, url)
+		},
 	}
 	cli.isTerminal = func() bool { return isTerminal(cli.Stdout) && isTerminal(cli.Stderr) }
 	if err := cli.loadConfig(); err != nil {
@@ -359,10 +385,9 @@ func (c *CLI) createCloudTarget(targetType string, opts targetOptions) (vespa.Ta
 		return nil, fmt.Errorf("invalid cloud target: %s", targetType)
 	}
 	apiOptions := vespa.APIOptions{
-		System:         system,
-		TLSOptions:     apiTLSOptions,
-		APIKey:         apiKey,
-		AuthConfigPath: authConfigPath,
+		System:     system,
+		TLSOptions: apiTLSOptions,
+		APIKey:     apiKey,
 	}
 	deploymentOptions := vespa.CloudDeploymentOptions{
 		Deployment:  deployment,
@@ -377,7 +402,15 @@ func (c *CLI) createCloudTarget(targetType string, opts targetOptions) (vespa.Ta
 		Writer: c.Stdout,
 		Level:  vespa.LogLevel(logLevel),
 	}
-	return vespa.CloudTarget(c.httpClient, apiOptions, deploymentOptions, logOptions)
+	auth0, err := c.auth0Factory(c.httpClient, auth0.Options{ConfigPath: authConfigPath, SystemName: apiOptions.System.Name, SystemURL: apiOptions.System.URL})
+	if err != nil {
+		return nil, err
+	}
+	zts, err := c.ztsFactory(c.httpClient, zts.DefaultURL)
+	if err != nil {
+		return nil, err
+	}
+	return vespa.CloudTarget(c.httpClient, zts, auth0, apiOptions, deploymentOptions, logOptions)
 }
 
 // system returns the appropiate system for the target configured in this CLI.

@@ -35,7 +35,7 @@ func newLoginCmd(cli *CLI) *cobra.Command {
 			if err != nil {
 				return err
 			}
-			a, err := auth0.New(cli.config.authConfigPath(), system.Name, system.URL)
+			a, err := auth0.NewClient(cli.httpClient, auth0.Options{ConfigPath: cli.config.authConfigPath(), SystemName: system.Name, SystemURL: system.URL})
 			if err != nil {
 				return err
 			}
@@ -68,16 +68,14 @@ func newLoginCmd(cli *CLI) *cobra.Command {
 				return fmt.Errorf("login error: %w", err)
 			}
 
-			log.Print("\n")
-			log.Println("Successfully logged in.")
-			log.Print("\n")
+			cli.printSuccess("Logged in")
 
 			// store the refresh token
 			secretsStore := &auth.Keyring{}
 			err = secretsStore.Set(auth.SecretsNamespace, system.Name, res.RefreshToken)
 			if err != nil {
 				// log the error but move on
-				log.Println("Could not store the refresh token locally, please expect to login again once your access token expired.")
+				cli.printWarning("Could not store the refresh token locally. You may need to login again once your access token expires")
 			}
 
 			creds := auth0.Credentials{
