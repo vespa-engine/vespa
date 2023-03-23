@@ -25,7 +25,7 @@ func createVespaDeployDir() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	vespaDeployTempDir := filepath.Join(tempDir, vespaDeployDir, currentUser.Username)
+	vespaDeployTempDir := filepath.Join(tempDir, currentUser.Username, vespaDeployDir)
 	if err := os.MkdirAll(vespaDeployTempDir, 0700); err != nil {
 		return "", err
 	}
