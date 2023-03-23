@@ -43,7 +43,8 @@ type Service struct {
 	BaseURL    string
 	Name       string
 	TLSOptions TLSOptions
-	ztsClient  ztsClient
+
+	zts        zts
 	httpClient util.HTTPClient
 }
 
@@ -95,7 +96,7 @@ func (s *Service) Do(request *http.Request, timeout time.Duration) (*http.Respon
 		s.httpClient.UseCertificate([]tls.Certificate{s.TLSOptions.KeyPair})
 	}
 	if s.TLSOptions.AthenzDomain != "" {
-		accessToken, err := s.ztsClient.AccessToken(s.TLSOptions.AthenzDomain, s.TLSOptions.KeyPair)
+		accessToken, err := s.zts.AccessToken(s.TLSOptions.AthenzDomain, s.TLSOptions.KeyPair)
 		if err != nil {
 			return nil, err
 		}
