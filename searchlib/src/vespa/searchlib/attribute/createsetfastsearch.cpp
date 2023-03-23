@@ -11,8 +11,6 @@ LOG_SETUP(".createsetfastsearch");
 #include "attributevector.hpp"
 #include "enumstore.hpp"
 #include "enumattribute.hpp"
-#include "multivalueattribute.hpp"
-#include "multienumattribute.hpp"
 #include "multinumericenumattribute.hpp"
 #include "multinumericpostattribute.hpp"
 #include "multistringpostattribute.hpp"
