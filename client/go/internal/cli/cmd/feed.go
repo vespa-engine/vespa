@@ -12,15 +12,13 @@ import (
 	"github.com/vespa-engine/vespa/client/go/internal/vespa/document"
 )
 
-func addFeedFlags(cmd *cobra.Command, maxConnections *int, concurrency *int) {
-	cmd.PersistentFlags().IntVarP(maxConnections, "max-connections", "N", 8, "Maximum number of HTTP connections to use")
+func addFeedFlags(cmd *cobra.Command, concurrency *int) {
 	cmd.PersistentFlags().IntVarP(concurrency, "concurrency", "T", 64, "Number of goroutines to use for dispatching")
 }
 
 func newFeedCmd(cli *CLI) *cobra.Command {
 	var (
-		maxConnections int
-		concurrency    int
+		concurrency int
 	)
 	cmd := &cobra.Command{
 		Use:   "feed FILE",
@@ -45,21 +43,20 @@ newline (JSONL).
 				return err
 			}
 			defer f.Close()
-			return feed(f, cli, maxConnections, concurrency)
+			return feed(f, cli, concurrency)
 		},
 	}
-	addFeedFlags(cmd, &maxConnections, &concurrency)
+	addFeedFlags(cmd, &concurrency)
 	return cmd
 }
 
-func feed(r io.Reader, cli *CLI, maxConnections, concurrency int) error {
+func feed(r io.Reader, cli *CLI, concurrency int) error {
 	service, err := documentService(cli)
 	if err != nil {
 		return err
 	}
 	client := document.NewClient(document.ClientOptions{
-		BaseURL:         service.BaseURL,
-		MaxConnsPerHost: maxConnections,
+		BaseURL: service.BaseURL,
 	}, service)
 	dispatcher := document.NewDispatcher(client, concurrency)
 	dec := document.NewDecoder(r)

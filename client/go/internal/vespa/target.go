@@ -74,7 +74,7 @@ type Target interface {
 
 // TLSOptions configures the client certificate to use for cloud API or service requests.
 type TLSOptions struct {
-	KeyPair         tls.Certificate
+	KeyPair         *tls.Certificate
 	CertificateFile string
 	PrivateKeyFile  string
 	AthenzDomain    string
@@ -92,8 +92,8 @@ type LogOptions struct {
 
 // Do sends request to this service. Any required authentication happens automatically.
 func (s *Service) Do(request *http.Request, timeout time.Duration) (*http.Response, error) {
-	if s.TLSOptions.AthenzDomain != "" {
-		accessToken, err := s.zts.AccessToken(s.TLSOptions.AthenzDomain, s.TLSOptions.KeyPair)
+	if s.TLSOptions.AthenzDomain != "" && s.TLSOptions.KeyPair != nil {
+		accessToken, err := s.zts.AccessToken(s.TLSOptions.AthenzDomain, *s.TLSOptions.KeyPair)
 		if err != nil {
 			return nil, err
 		}
@@ -104,8 +104,6 @@ func (s *Service) Do(request *http.Request, timeout time.Duration) (*http.Respon
 	}
 	return s.httpClient.Do(request, timeout)
 }
-
-func (s *Service) Transport() *http.Transport { return s.httpClient.Transport() }
 
 // Wait polls the health check of this service until it succeeds or timeout passes.
 func (s *Service) Wait(timeout time.Duration) (int, error) {
@@ -118,7 +116,7 @@ func (s *Service) Wait(timeout time.Duration) (int, error) {
 	default:
 		return 0, fmt.Errorf("invalid service: %s", s.Name)
 	}
-	return waitForOK(s.httpClient, url, &s.TLSOptions.KeyPair, timeout)
+	return waitForOK(s.httpClient, url, s.TLSOptions.KeyPair, timeout)
 }
 
 func (s *Service) Description() string {
