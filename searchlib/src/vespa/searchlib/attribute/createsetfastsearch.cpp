@@ -11,9 +11,8 @@ LOG_SETUP(".createsetfastsearch");
 #include "attributevector.hpp"
 #include "enumstore.hpp"
 #include "enumattribute.hpp"
-#include "multinumericenumattribute.hpp"
-#include "multinumericpostattribute.hpp"
-#include "multistringpostattribute.hpp"
+#include "multinumericpostattribute.h"
+#include "multistringpostattribute.h"
 
 namespace search {
 
