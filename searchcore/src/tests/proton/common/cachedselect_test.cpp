@@ -20,7 +20,6 @@
 #include <vespa/searchlib/attribute/singleenumattribute.hpp>
 #include <vespa/searchlib/attribute/singlenumericenumattribute.hpp>
 #include <vespa/searchlib/attribute/singlenumericpostattribute.h>
-#include <vespa/searchlib/attribute/singlenumericpostattribute.hpp>
 #include <vespa/searchlib/test/mock_attribute_manager.h>
 #include <vespa/vespalib/testkit/testapp.h>
 

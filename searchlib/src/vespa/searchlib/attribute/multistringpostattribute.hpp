@@ -4,6 +4,7 @@
 
 #include "multistringpostattribute.h"
 #include "multi_string_enum_search_context.h"
+#include <vespa/searchcommon/attribute/config.h>
 #include <vespa/searchlib/query/query_term_simple.h>
 
 namespace search {
