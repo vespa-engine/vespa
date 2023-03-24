@@ -382,4 +382,8 @@ extern template class BufferType<BTreeRoot<uint32_t, uint32_t, NoAggregated, std
 extern template class BufferType<BTreeRoot<uint32_t, BTreeNoLeafData, NoAggregated, std::less<uint32_t>, BTreeDefaultTraits>>;
 extern template class BufferType<BTreeRoot<uint32_t, int32_t, MinMaxAggregated, std::less<uint32_t>, BTreeDefaultTraits, MinMaxAggrCalc>>;
 
+extern template class BufferType<BTreeKeyData<uint32_t, uint32_t>>;
+extern template class BufferType<BTreeKeyData<uint32_t, int32_t>>;
+extern template class BufferType<BTreeKeyData<uint32_t, BTreeNoLeafData>>;
+
 }
