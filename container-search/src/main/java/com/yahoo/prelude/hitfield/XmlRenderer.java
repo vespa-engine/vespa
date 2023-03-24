@@ -44,10 +44,10 @@ public class XmlRenderer {
                 byte[] data = value.asData();
                 renderTarget.append("<data length=\"").append(data.length);
                 renderTarget.append("\" encoding=\"hex\">");
-                for (int i = 0; i < data.length; i++) {
+                for (byte datum : data) {
                     for (int sh = 4; sh >= 0; sh -= 4) {
-                        int val = (data[i] >> sh) & 0xF;
-                        char hexdigit = (val < 10) ? ((char)('0' + val)) : ((char)('A' + val - 10));
+                        int val = (datum >> sh) & 0xF;
+                        char hexdigit = (val < 10) ? ((char) ('0' + val)) : ((char) ('A' + val - 10));
                         renderTarget.append(hexdigit);
                     }
                 }
@@ -84,9 +84,7 @@ public class XmlRenderer {
         }
 
         private void indent(int nestingLevel) {
-            for (int i = 0; i < nestingLevel; ++i) {
-                renderTarget.append("  ");
-            }
+            renderTarget.append("  ".repeat(Math.max(0, nestingLevel)));
         }
 
         private void renderMap(Inspector sequence, int nestingLevel) {

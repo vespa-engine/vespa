@@ -21,7 +21,7 @@ public class HitField {
     private final String rawContent;
     private final boolean isCJK;
 
-    private boolean xmlProperty;
+    private final boolean xmlProperty;
 
     private List<FieldPart> tokenizedContent = null;
     private String content;
@@ -191,8 +191,8 @@ public class HitField {
     private List<FieldPart> tokenizePretokenized() {
         String[] pre = rawContent.split("\u001F+");
         List<FieldPart> tokenized = new ArrayList<>(pre.length);
-        for (int i = 0; i < pre.length; i++) {
-            tokenized.add(createToken(pre[i], true));
+        for (String s : pre) {
+            tokenized.add(createToken(s, true));
         }
         return tokenized;
     }
@@ -245,9 +245,7 @@ public class HitField {
      */
     public void setTokenizedContent(List<FieldPart> list) {
         tokenizedContent = new ArrayList<>(list.size());
-        for (Iterator<FieldPart> i = list.iterator(); i.hasNext(); ) {
-            tokenizedContent.add(i.next());
-        }
+        tokenizedContent.addAll(list);
         // Must null content reference _before_ calling getContent()
         content = null;
     }
@@ -262,9 +260,8 @@ public class HitField {
     public String getContent() {
         if (content == null) {
             StringBuilder buf = new StringBuilder();
-            Iterator<FieldPart> iter = ensureTokenized().iterator();
-            while(iter.hasNext()) {
-                buf.append(iter.next().getContent());
+            for (FieldPart fieldPart : ensureTokenized()) {
+                buf.append(fieldPart.getContent());
             }
             content = buf.toString();
         }
@@ -274,9 +271,7 @@ public class HitField {
     /** Returns the content of this field, using the arguments as bolding tags */
     public String getContent(String boldOpenTag, String boldCloseTag, String separatorTag) {
         StringBuilder b = new StringBuilder();
-        Iterator<FieldPart> iter = ensureTokenized().iterator();
-        while(iter.hasNext()) {
-            FieldPart f = iter.next();
+        for (FieldPart f : ensureTokenized()) {
             if (f instanceof BoldOpenFieldPart && boldOpenTag != null && boldOpenTag.length() > 0)
                 b.append(boldOpenTag);
             else if (f instanceof BoldCloseFieldPart && boldCloseTag != null && boldCloseTag.length() > 0)
@@ -316,9 +311,7 @@ public class HitField {
                                 String separatorTag,
                                 boolean inAttribute) {
         StringBuilder xml = new StringBuilder();
-        Iterator<FieldPart> iter = ensureTokenized().iterator();
-        while(iter.hasNext()) {
-            FieldPart f = iter.next();
+        for (FieldPart f : ensureTokenized()) {
             if (f instanceof BoldOpenFieldPart
                 && boldOpenTag != null
                 && boldOpenTag.length() > 0)
@@ -344,9 +337,7 @@ public class HitField {
      */
     public String bareContent(boolean XMLQuote, boolean inAttribute) {
         StringBuilder bareContent = new StringBuilder();
-        Iterator<FieldPart> iter = ensureTokenized().iterator();
-        while(iter.hasNext()) {
-            FieldPart f = iter.next();
+        for (FieldPart f : ensureTokenized()) {
             if (f instanceof MarkupFieldPart)
                 continue;
 

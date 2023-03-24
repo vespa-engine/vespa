@@ -31,7 +31,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /**
  * Test adding hits to a hit group during rendering.
  *
- * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  */
 public class AsyncGroupPopulationTestCase {
     private static class WrappedFuture<F> extends CompletableFuture<F> {

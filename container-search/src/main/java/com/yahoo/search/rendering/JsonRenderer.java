@@ -422,7 +422,7 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
     protected void renderGroupMetadata(GroupId id) throws IOException {
         if (!(id instanceof ValueGroupId || id instanceof BucketGroupId)) return;
 
-        if (id instanceof ValueGroupId valueId) {
+        if (id instanceof ValueGroupId<?> valueId) {
             generator.writeStringField(GROUPING_VALUE, getIdValue(valueId));
         } else {
             BucketGroupId<?> bucketId = (BucketGroupId<?>) id;

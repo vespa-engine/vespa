@@ -1482,7 +1482,7 @@ public class JsonRendererTestCase {
 
     @Test
     @Timeout(300)
-    void testWsetInFields() throws IOException, InterruptedException, ExecutionException {
+    void testWsetInFields() throws InterruptedException, ExecutionException {
         Result r = new Result(new Query("/?renderer.json.jsonWsets=true"));
         var expected = dataFromSimplified(
                 "{root: { id:'toplevel', relevance:1.0, fields: { totalCount: 1 }," +

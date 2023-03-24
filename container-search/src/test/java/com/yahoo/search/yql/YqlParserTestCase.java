@@ -1139,6 +1139,12 @@ public class YqlParserTestCase {
         parse("select * from sources * where (default contains ({stem: false}\"m\") AND default contains ({origin: {original: \"m\'s\", offset: 0, length: 3}, andSegmenting: true}phrase(\"m\", \"s\"))) timeout 472");
     }
 
+    @Test
+    void testBuiltinOrderingFields() {
+        parse("select * from sources * where default contains 'foo' order by '[relevance]'");
+        assertEquals("[relevance]", parser.getSorting().fieldOrders().get(0).getFieldName());
+    }
+
     private void assertUrlQuery(String field, Query query, boolean startAnchor, boolean endAnchor, boolean endAnchorIsDefault) {
         boolean startAnchorIsDefault = false; // Always
 
