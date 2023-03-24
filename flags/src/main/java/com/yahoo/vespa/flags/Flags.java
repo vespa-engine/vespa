@@ -48,7 +48,7 @@ public class Flags {
 
     public static final UnboundBooleanFlag RECONFIGURE_ALB_TARGETS = defineFeatureFlag(
             "reconfigure-alb-targets", false,
-            List.of("bjormel"), "2023-03-24", "2023-04-31",
+            List.of("bjormel"), "2023-03-24", "2023-04-30",
             "Reconfigure ALB targets",
             "Takes effect on next config server container start",
             ZONE_ID);
