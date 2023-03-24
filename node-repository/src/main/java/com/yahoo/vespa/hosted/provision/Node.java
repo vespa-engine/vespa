@@ -11,6 +11,7 @@ import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.WireguardKey;
+import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancers;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.Allocation;
@@ -573,8 +574,8 @@ public final class Node implements Nodelike {
     }
 
     /** Returns the ACL for the node (trusted nodes, networks and ports) */
-    public NodeAcl acl(NodeList allNodes, LoadBalancers loadBalancers) {
-        return NodeAcl.from(this, allNodes, loadBalancers);
+    public NodeAcl acl(NodeList allNodes, LoadBalancers loadBalancers, Zone zone) {
+        return NodeAcl.from(this, allNodes, loadBalancers, zone);
     }
 
     @Override

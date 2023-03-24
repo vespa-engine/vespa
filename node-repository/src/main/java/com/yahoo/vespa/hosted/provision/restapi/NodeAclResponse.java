@@ -34,7 +34,7 @@ public class NodeAclResponse extends SlimeJsonResponse {
                 .orElseThrow(() -> new NotFoundException("No node with hostname '" + hostname + "'"));
 
         List<NodeAcl> acls = aclsForChildren ? nodeRepository.getChildAcls(node) :
-                                               List.of(node.acl(nodeRepository.nodes().list(), nodeRepository.loadBalancers()));
+                                               List.of(node.acl(nodeRepository.nodes().list(), nodeRepository.loadBalancers(), nodeRepository.zone()));
 
         Cursor trustedNodesArray = object.setArray("trustedNodes");
         acls.forEach(nodeAcl -> toSlime(nodeAcl, trustedNodesArray));
