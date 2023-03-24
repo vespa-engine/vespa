@@ -892,7 +892,7 @@ public class SessionRepository {
         return new SessionZooKeeperClient(curator,
                                           tenantName,
                                           sessionId,
-                                          configserverConfig.serverId(),
+                                          configserverConfig,
                                           fileDistributionFactory.createFileManager(getSessionAppDir(sessionId)),
                                           maxNodeSize);
     }

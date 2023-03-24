@@ -47,7 +47,6 @@ import com.yahoo.vespa.config.server.tenant.Tenant;
 import com.yahoo.vespa.config.server.tenant.TenantMetaData;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.config.server.tenant.TestTenantRepository;
-import com.yahoo.vespa.config.util.ConfigUtils;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.mock.MockCurator;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
@@ -424,11 +423,10 @@ public class ApplicationRepositoryTest {
         Instant session6CreateTime = clock.instant();
         TenantFileSystemDirs tenantFileSystemDirs = new TenantFileSystemDirs(serverdb, tenantName);
         Files.createDirectory(tenantFileSystemDirs.getUserApplicationDir(sessionId).toPath());
-        String hostName = ConfigUtils.getCanonicalHostName();
         LocalSession localSession2 = new LocalSession(tenantName,
                                                       sessionId,
                                                       FilesApplicationPackage.fromFile(testApp),
-                                                      new SessionZooKeeperClient(curator, tenantName, sessionId, hostName));
+                                                      new SessionZooKeeperClient(curator, tenantName, sessionId, configserverConfig));
         sessionRepository.addLocalSession(localSession2);
         assertEquals(2, sessionRepository.getLocalSessions().size());
 

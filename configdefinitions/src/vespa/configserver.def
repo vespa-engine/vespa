@@ -13,6 +13,9 @@ zookeeperserver[].port int default=2181
 # ZK write timeout in seconds, must be long enough to write application packages to other nodes
 zookeeper.barrierTimeout long default=360
 zookeeperLocalhostAffinity bool default=true
+sessionLifetime long default=3600 # in seconds
+# How long to wait for all ZooKeeper servers to reach barrier after quorum has reached barrier. In seconds
+barrierWaitForAllTimeout long default=1
 
 # Directories
 configModelPluginDir[] string
@@ -25,7 +28,6 @@ fileReferencesDir string default="var/db/vespa/filedistribution/"
 maxApplicationPackageSize long default=8589934592
 
 # Misc
-sessionLifetime long default=3600 # in seconds
 masterGeneration long default=0
 multitenant bool default=false
 numDelayedResponseThreads int default=1
