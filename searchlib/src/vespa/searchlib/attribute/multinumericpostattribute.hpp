@@ -4,6 +4,7 @@
 
 #include "multinumericpostattribute.h"
 #include "multi_numeric_enum_search_context.h"
+#include <vespa/searchcommon/attribute/config.h>
 #include <charconv>
 
 namespace search {
