@@ -65,7 +65,7 @@ func (s Stats) Successes() int64 {
 	return s.ResponsesByCode[200]
 }
 
-// Add adds all statistics contained in other to this.
+// Add all statistics contained in other to this.
 func (s *Stats) Add(other Stats) {
 	s.Requests += other.Requests
 	s.Responses += other.Responses
@@ -80,7 +80,7 @@ func (s *Stats) Add(other Stats) {
 	s.Errors += other.Errors
 	s.Inflight += other.Inflight
 	s.TotalLatency += other.TotalLatency
-	if s.MinLatency == 0 || other.MinLatency < s.MinLatency {
+	if s.MinLatency == 0 || (other.MinLatency > 0 && other.MinLatency < s.MinLatency) {
 		s.MinLatency = other.MinLatency
 	}
 	if other.MaxLatency > s.MaxLatency {
@@ -94,4 +94,5 @@ func (s *Stats) Add(other Stats) {
 type Feeder interface {
 	Send(Document) Result
 	Stats() Stats
+	AddStats(Stats)
 }

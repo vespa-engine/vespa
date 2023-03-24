@@ -123,15 +123,14 @@ func (c *Client) Send(document Document) Result {
 		stats.TotalLatency = latency
 		stats.MinLatency = latency
 		stats.MaxLatency = latency
-		c.addStats(&stats)
+		c.AddStats(stats)
 	}()
 	method, url, err := c.feedURL(document, c.queryParams())
 	if err != nil {
 		stats.Errors = 1
 		return Result{Status: StatusError, Err: err}
 	}
-	body := document.Body()
-	req, err := http.NewRequest(method, url.String(), bytes.NewReader(body))
+	req, err := http.NewRequest(method, url.String(), bytes.NewReader(document.Body))
 	if err != nil {
 		stats.Errors = 1
 		return Result{Status: StatusError, Err: err}
@@ -146,16 +145,16 @@ func (c *Client) Send(document Document) Result {
 	stats.ResponsesByCode = map[int]int64{
 		resp.StatusCode: 1,
 	}
-	stats.BytesSent = int64(len(body))
+	stats.BytesSent = int64(len(document.Body))
 	return c.createResult(document.Id, &stats, resp)
 }
 
 func (c *Client) Stats() Stats { return c.stats }
 
-func (c *Client) addStats(stats *Stats) {
+func (c *Client) AddStats(stats Stats) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	c.stats.Add(*stats)
+	c.stats.Add(stats)
 }
 
 func (c *Client) createResult(id Id, stats *Stats, resp *http.Response) Result {

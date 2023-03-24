@@ -2,7 +2,6 @@ package document
 
 import (
 	"bytes"
-	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
@@ -27,9 +26,9 @@ func (c *manualClock) now() time.Time {
 
 func TestClientSend(t *testing.T) {
 	docs := []Document{
-		mustParseDocument(Document{Create: true, UpdateId: "id:ns:type::doc1", Fields: json.RawMessage(`{"foo": "123"}`)}),
-		mustParseDocument(Document{Create: true, UpdateId: "id:ns:type::doc2", Fields: json.RawMessage(`{"foo": "456"}`)}),
-		mustParseDocument(Document{Create: true, UpdateId: "id:ns:type::doc3", Fields: json.RawMessage(`{"baz": "789"}`)}),
+		{Create: true, Id: mustParseId("id:ns:type::doc1"), Operation: OperationUpdate, Body: []byte(`{"fields":{"foo": "123"}}`)},
+		{Create: true, Id: mustParseId("id:ns:type::doc2"), Operation: OperationUpdate, Body: []byte(`{"fields":{"foo": "456"}}`)},
+		{Create: true, Id: mustParseId("id:ns:type::doc3"), Operation: OperationUpdate, Body: []byte(`{"fields":{"baz": "789"}}`)},
 	}
 	httpClient := mock.HTTPClient{}
 	client := NewClient(ClientOptions{
@@ -60,7 +59,7 @@ func TestClientSend(t *testing.T) {
 		if err != nil {
 			t.Fatalf("got unexpected error %q", err)
 		}
-		wantBody := doc.Body()
+		wantBody := doc.Body
 		if !bytes.Equal(body, wantBody) {
 			t.Errorf("got r.Body = %q, want %q", string(body), string(wantBody))
 		}
@@ -149,25 +148,25 @@ func TestClientFeedURL(t *testing.T) {
 		url    string
 	}{
 		{
-			mustParseDocument(Document{
-				IdString: "id:ns:type::user",
-			}),
+			Document{Id: mustParseId("id:ns:type::user")},
 			"POST",
 			"https://example.com/document/v1/ns/type/docid/user?foo=ba%2Fr",
 		},
 		{
-			mustParseDocument(Document{
-				UpdateId:  "id:ns:type::user",
+			Document{
+				Id:        mustParseId("id:ns:type::user"),
+				Operation: OperationUpdate,
 				Create:    true,
 				Condition: "false",
-			}),
+			},
 			"PUT",
 			"https://example.com/document/v1/ns/type/docid/user?condition=false&create=true&foo=ba%2Fr",
 		},
 		{
-			mustParseDocument(Document{
-				RemoveId: "id:ns:type::user",
-			}),
+			Document{
+				Id:        mustParseId("id:ns:type::user"),
+				Operation: OperationRemove,
+			},
 			"DELETE",
 			"https://example.com/document/v1/ns/type/docid/user?foo=ba%2Fr",
 		},

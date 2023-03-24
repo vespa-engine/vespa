@@ -1,8 +1,6 @@
 package document
 
 import (
-	"bytes"
-	"encoding/json"
 	"io"
 	"reflect"
 	"strings"
@@ -11,11 +9,12 @@ import (
 
 func ptr[T any](v T) *T { return &v }
 
-func mustParseDocument(d Document) Document {
-	if err := parseDocument(&d); err != nil {
+func mustParseId(s string) Id {
+	id, err := ParseId(s)
+	if err != nil {
 		panic(err)
 	}
-	return d
+	return id
 }
 
 func TestParseId(t *testing.T) {
@@ -134,9 +133,9 @@ func testDocumentDecoder(t *testing.T, jsonLike string) {
 	t.Helper()
 	r := NewDecoder(strings.NewReader(jsonLike))
 	want := []Document{
-		mustParseDocument(Document{PutId: "id:ns:type::doc1", Fields: json.RawMessage(`{"foo": "123"}`)}),
-		mustParseDocument(Document{PutId: "id:ns:type::doc2", Fields: json.RawMessage(`{"bar": "456"}`)}),
-		mustParseDocument(Document{RemoveId: "id:ns:type::doc1", Fields: json.RawMessage(nil)}),
+		{Id: mustParseId("id:ns:type::doc1"), Operation: OperationPut, Body: []byte(`{"fields":{"foo": "123"}}`)},
+		{Id: mustParseId("id:ns:type::doc2"), Operation: OperationPut, Body: []byte(`{"fields":{"bar": "456"}}`)},
+		{Id: mustParseId("id:ns:type::doc1"), Operation: OperationRemove},
 	}
 	got := []Document{}
 	for {
@@ -177,14 +176,5 @@ func TestDocumentDecoder(t *testing.T) {
 	wantErr := "invalid json at byte offset 60: invalid character '\\n' in string literal"
 	if err.Error() != wantErr {
 		t.Errorf("want error %q, got %q", wantErr, err.Error())
-	}
-}
-
-func TestDocumentBody(t *testing.T) {
-	doc := Document{Fields: json.RawMessage([]byte(`{"foo": "123"}`))}
-	got := doc.Body()
-	want := []byte(`{"fields":{"foo": "123"}}`)
-	if !bytes.Equal(got, want) {
-		t.Errorf("got %q, want %q", got, want)
 	}
 }
