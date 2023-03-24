@@ -183,7 +183,7 @@ public class OrchestratorImpl implements Orchestrator {
         * and may therefore mistakenly report services as up, even if they still haven't initialized and
         * are not yet ready for serving. Erroneously reporting both host and services as up causes a race
         * where services on other hosts may be stopped prematurely. A delay here ensures that service
-        * monitoring will have had time to catch up. Since we don't want do the delay with the lock held,
+        * monitoring will have had time to catch up. Since we don't want to do the delay with the lock held,
         * and the host status service's locking functionality does not support something like condition
         * variables or Object.wait(), we break out here, releasing the lock before delaying.
         *
@@ -330,13 +330,13 @@ public class OrchestratorImpl implements Orchestrator {
      *  - Docker host 1 asks to suspend A1 and B1, while
      *  - Docker host 2 asks to suspend B2 and A2.
      *
-     * The Orchestrator may allow suspend of A1 and B2, before requesting the suspension of B1 and A2.
+     * The Orchestrator may allow suspension of A1 and B2, before requesting the suspension of B1 and A2.
      * None of these can be suspended (assuming max 1 suspended content node per content cluster),
      * and so both requests for suspension will fail.
      *
      * Note that it's not a deadlock - both client will fail immediately and resume both A1 and B2 before
      * responding to the client, and if host 1 asks later w/o host 2 asking at the same time,
-     * it will be given permission to suspend. However if both hosts were to request in lock-step,
+     * it will be given permission to suspend. However, if both hosts were to request in lock-step,
      * there would be starvation. And in general, it would fail requests for suspension more
      * than necessary.
      *

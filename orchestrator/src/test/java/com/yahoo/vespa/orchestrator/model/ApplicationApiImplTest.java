@@ -175,18 +175,18 @@ public class ApplicationApiImplTest {
     private void verifyNoRemarksConditionWith(HostStatus hostStatus, ServiceStatus serviceStatus, boolean expectUp) {
         HostName hostName1 = new HostName("host1");
         ApplicationInstance applicationInstance =
-                modelUtils.createApplicationInstance(Arrays.asList(
+                modelUtils.createApplicationInstance(List.of(
                         modelUtils.createServiceCluster(
                                 "cluster-1",
                                 ServiceType.STORAGE,
-                                Arrays.asList(modelUtils.createServiceInstance("config-id-1", hostName1, serviceStatus))
+                                List.of(modelUtils.createServiceInstance("config-id-1", hostName1, serviceStatus))
                         )
                 ));
 
         modelUtils.createNode("host1", hostStatus);
 
         try (var scopedApi = modelUtils.createScopedApplicationApi(applicationInstance, hostName1)) {
-            List<HostName> upStorageNodes = expectUp ? Arrays.asList(hostName1) : new ArrayList<>();
+            List<HostName> upStorageNodes = expectUp ? List.of(hostName1) : new ArrayList<>();
 
             List<HostName> actualStorageNodes = scopedApi.applicationApi()
                     .getNoRemarksStorageNodesInGroupInClusterOrder()
@@ -229,20 +229,20 @@ public class ApplicationApiImplTest {
 
         verifyNodesInGroupWithoutRemarks(
                 modelUtils.createScopedApplicationApi(applicationInstance, hostName1),
-                Arrays.asList(hostName1),
-                Arrays.asList());
+                List.of(hostName1),
+                List.of());
         verifyNodesInGroupWithoutRemarks(
                 modelUtils.createScopedApplicationApi(applicationInstance, hostName1, hostName2),
                 Arrays.asList(hostName1, hostName2),
-                Arrays.asList());
+                List.of());
         verifyNodesInGroupWithoutRemarks(
                 modelUtils.createScopedApplicationApi(applicationInstance, hostName1, hostName2, hostName3),
                 Arrays.asList(hostName1, hostName2),
-                Arrays.asList(hostName3));
+                List.of(hostName3));
         verifyNodesInGroupWithoutRemarks(
                 modelUtils.createScopedApplicationApi(applicationInstance, hostName3),
-                Arrays.asList(),
-                Arrays.asList(hostName3));
+                List.of(),
+                List.of(hostName3));
     }
 
     private void verifyNodesInGroupWithoutRemarks(ScopedApplicationApi scopedApi,
