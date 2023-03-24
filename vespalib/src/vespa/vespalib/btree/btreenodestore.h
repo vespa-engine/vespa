@@ -248,8 +248,4 @@ extern template class BufferType<BTreeLeafNode<uint32_t, BTreeNoLeafData, NoAggr
 extern template class BufferType<BTreeLeafNode<uint32_t, int32_t, MinMaxAggregated, BTreeDefaultTraits::LEAF_SLOTS>,
                                  FrozenBtreeNode<BTreeLeafNode<uint32_t, int32_t, MinMaxAggregated, BTreeDefaultTraits::LEAF_SLOTS>>>;
 
-extern template class BufferType<BTreeKeyData<uint32_t, uint32_t>>;
-extern template class BufferType<BTreeKeyData<uint32_t, int32_t>>;
-extern template class BufferType<BTreeKeyData<uint32_t, BTreeNoLeafData>>;
-
 }

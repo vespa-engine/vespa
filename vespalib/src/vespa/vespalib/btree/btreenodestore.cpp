@@ -52,9 +52,4 @@ VESPALIB_DATASTORE_INSTANTIATE_BUFFERTYPE_LEAFNODE(EntryRef, EntryRef, NoAggrega
 VESPALIB_DATASTORE_INSTANTIATE_BUFFERTYPE_LEAFNODE(uint32_t, EntryRef, NoAggregated, BTreeDefaultTraits::LEAF_SLOTS);
 VESPALIB_DATASTORE_INSTANTIATE_BUFFERTYPE_LEAFNODE(uint64_t, EntryRef, NoAggregated, BTreeDefaultTraits::LEAF_SLOTS);
 
-template class BufferType<BTreeKeyData<uint32_t, uint32_t>>;
-template class BufferType<BTreeKeyData<uint32_t, int32_t>>;
-template class BufferType<BTreeKeyData<uint32_t, BTreeNoLeafData>>;
-template class BufferType<BTreeKeyData<uint32_t, EntryRef>>;
-
 }
