@@ -76,7 +76,7 @@ class CloudHttpConnectorValidatorTest {
 
     @Test
     void allows_default_ssl_for_self_hosted() {
-        assertDoesNotThrow(() -> runValidatorOnApp(true, "", DEFAULT_SSL_ON_8080));
+        assertDoesNotThrow(() -> runValidatorOnApp(false, "", DEFAULT_SSL_ON_8080));
     }
 
     private static void runValidatorOnApp(boolean hosted, String appTypeAttribute, String serverXml) throws Exception {
