@@ -273,11 +273,6 @@ class ClusterApiImpl implements ClusterApi {
     }
 
     @Override
-    public Optional<StorageNode> upStorageNodeInGroup() {
-        return storageNodeInGroup(serviceInstance-> !serviceEffectivelyDown(serviceInstance));
-    }
-
-    @Override
     public String clusterInfo() {
         return "{ clusterId=" + clusterId() + ", serviceType=" + serviceType() + " }";
     }
@@ -294,19 +289,15 @@ class ClusterApiImpl implements ClusterApi {
     }
 
     private boolean serviceEffectivelyDown(ServiceInstance service) throws HostStateChangeDeniedException {
-        if (hostStatus(service.hostName()).isSuspended()) {
-            return true;
-        }
+        if (hostStatus(service.hostName()).isSuspended()) return true;
 
-        switch (service.serviceStatus()) {
-            case DOWN: return true;
-            case UNKNOWN:
-                throw new HostStateChangeDeniedException(
-                        nodeGroup,
-                        HostedVespaPolicy.UNKNOWN_SERVICE_STATUS,
-                        "Service status of " + service.descriptiveName() + " is not yet known");
-            default:
-                return false;
-        }
+        return switch (service.serviceStatus()) {
+            case DOWN -> true;
+            case UNKNOWN -> throw new HostStateChangeDeniedException(
+                    nodeGroup,
+                    HostedVespaPolicy.UNKNOWN_SERVICE_STATUS,
+                    "Service status of " + service.descriptiveName() + " is not yet known");
+            default -> false;
+        };
     }
 }

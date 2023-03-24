@@ -2,12 +2,11 @@
 
 package com.yahoo.vespa.orchestrator.status;
 
-import java.util.logging.Level;
 import com.yahoo.vespa.applicationmodel.ApplicationInstanceReference;
 import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.curator.Curator;
 import org.apache.zookeeper.KeeperException;
-
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -67,12 +66,8 @@ class ZkApplicationLock implements ApplicationLock {
 
         String path = statusService.applicationInstanceSuspendedPath(reference);
         switch (applicationInstanceStatus) {
-            case NO_REMARKS:
-                deleteNode_ignoreNoNodeException(path);
-                break;
-            case ALLOWED_TO_BE_DOWN:
-                createNode_ignoreNodeExistsException(path);
-                break;
+            case NO_REMARKS -> deleteNode_ignoreNoNodeException(path);
+            case ALLOWED_TO_BE_DOWN -> createNode_ignoreNodeExistsException(path);
         }
     }
 

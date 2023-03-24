@@ -165,7 +165,7 @@ public class VespaModelUtil {
      */
     public static int getStorageNodeIndex(ApplicationInstance application, HostName hostName) {
         Optional<ServiceInstance> storageNode = getStorageNodeAtHost(application, hostName);
-        if (!storageNode.isPresent()) {
+        if (storageNode.isEmpty()) {
             throw new IllegalArgumentException("Failed to find a storage node for application " +
                     application.applicationInstanceId() + " at host " + hostName);
         }
@@ -210,7 +210,7 @@ public class VespaModelUtil {
             throw new IllegalArgumentException("Unable to extract cluster controller index from config ID " + configId);
         }
 
-        return Integer.valueOf(matcher.group(1));
+        return Integer.parseInt(matcher.group(1));
     }
 
     // See getStorageNodeIndex()
@@ -227,6 +227,6 @@ public class VespaModelUtil {
             throw new IllegalArgumentException("Unable to extract node index from config ID " + configId);
         }
 
-        return Integer.valueOf(matcher.group(1));
+        return Integer.parseInt(matcher.group(1));
     }
 }

@@ -34,7 +34,6 @@ public interface ClusterApi {
     int percentageOfServicesDownIfGroupIsAllowedToBeDown();
 
     Optional<StorageNode> storageNodeInGroup();
-    Optional<StorageNode> upStorageNodeInGroup();
 
     String downDescription();
 }
