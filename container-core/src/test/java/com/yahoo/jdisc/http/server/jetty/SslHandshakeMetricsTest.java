@@ -172,9 +172,11 @@ class SslHandshakeMetricsTest {
             assertThat(e.getMessage()).contains(expectedExceptionSubstring);
         } catch (SocketException | SSLException e) {
             // This exception is thrown if Apache httpclient's write thread detects the handshake failure before the read thread.
-            log.log(Level.WARNING, "Client failed to get a proper TLS handshake response: " + e.getMessage(), e);
+            var msg = e.getMessage();
+            log.log(Level.WARNING, "Client failed to get a proper TLS handshake response: " + msg, e);
             // Only ignore a subset of exceptions
-            assertTrue(e.getMessage().contains("readHandshakeRecord") || e.getMessage().contains("Broken pipe"), e.getMessage());
+            assertTrue(msg.contains("readHandshakeRecord") || msg.contains("Broken pipe") || msg.contains("Connection reset"),
+                       e.toString());
         }
     }
 
