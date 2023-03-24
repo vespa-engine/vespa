@@ -46,6 +46,13 @@ public class Flags {
 
     private static volatile TreeMap<FlagId, FlagDefinition> flags = new TreeMap<>();
 
+    public static final UnboundBooleanFlag RECONFIGURE_ALB_TARGETS = defineFeatureFlag(
+            "reconfigure-alb-targets", false,
+            List.of("bjormel"), "2023-03-24", "2023-04-30",
+            "Reconfigure ALB targets",
+            "Takes effect on next config server container start",
+            ZONE_ID);
+
     public static final UnboundBooleanFlag DROP_CACHES = defineFeatureFlag(
             "drop-caches", false,
             List.of("hakonhall", "baldersheim"), "2023-03-06", "2023-04-05",
