@@ -242,7 +242,7 @@ class ClusterApiImpl implements ClusterApi {
 
             HostName hostName = serviceInstance.hostName();
             if (nodeGroup.contains(hostName)) {
-                if (storageNodes.contains(hostName)) {
+                if (storageNodes.stream().anyMatch(s -> s.hostName().equals(hostName))) {
                     throw new IllegalStateException("Found more than 1 storage service instance on " + hostName
                             + ": last service instance is " + serviceInstance.configId()
                             + " in storage cluster " + clusterInfo());
