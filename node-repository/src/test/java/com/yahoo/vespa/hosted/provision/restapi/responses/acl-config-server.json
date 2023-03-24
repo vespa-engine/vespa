@@ -277,9 +277,5 @@
     }
   ],
   "trustedUdpPorts": [
-    {
-      "port": 51820,
-      "trustedBy": "cfg1.yahoo.com"
-    }
   ]
 }
