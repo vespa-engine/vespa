@@ -88,3 +88,19 @@ template class EnumStoreT<float>;
 template class EnumStoreT<double>;
 
 } // namespace search
+
+namespace vespalib::datastore {
+
+using search::EnumStoreComparator;
+using search::EnumStoreStringComparator;
+using search::enumstore::InternalIndex;
+
+template class UniqueStore<const char*, InternalIndex, EnumStoreStringComparator, UniqueStoreStringAllocator<InternalIndex>>;
+template class UniqueStore<int8_t, InternalIndex, EnumStoreComparator<int8_t>>;
+template class UniqueStore<int16_t, InternalIndex, EnumStoreComparator<int16_t>>;
+template class UniqueStore<int32_t, InternalIndex, EnumStoreComparator<int32_t>>;
+template class UniqueStore<int64_t, InternalIndex, EnumStoreComparator<int64_t>>;
+template class UniqueStore<float, InternalIndex, EnumStoreComparator<float>>;
+template class UniqueStore<double, InternalIndex, EnumStoreComparator<double>>;
+
+}

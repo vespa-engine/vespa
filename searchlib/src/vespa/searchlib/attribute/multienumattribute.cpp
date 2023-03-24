@@ -6,7 +6,6 @@
 #include "floatbase.h"
 #include "integerbase.h"
 #include "stringbase.h"
-#include <vespa/vespalib/datastore/unique_store.hpp>
 #include <vespa/vespalib/datastore/unique_store_remapper.hpp>
 #include <stdexcept>
 
