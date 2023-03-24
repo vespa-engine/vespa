@@ -3,7 +3,7 @@
 #include "attributefactory.h"
 #include "defines.h"
 #include "attributevector.hpp"
-#include "multinumericattribute.hpp"
+#include "multinumericattribute.h"
 #include "multistringattribute.hpp"
 
 #include <vespa/log/log.h>
