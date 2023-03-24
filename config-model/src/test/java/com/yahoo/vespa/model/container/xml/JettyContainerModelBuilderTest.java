@@ -243,11 +243,7 @@ public class JettyContainerModelBuilderTest extends ContainerModelBuilderTestBas
         Element clusterElem = DomBuilderTest.parse(
                 "<container id='default' version='1.0'>",
                 "    <http>",
-                "        <server port='8080' id='ssl'>",
-                "            <ssl>",
-                "                <private-key-file>/foo/key</private-key-file>",
-                "                <certificate-file>/foo/cert</certificate-file>",
-                "            </ssl>",
+                "        <server port='8080' id='default'>",
                 "        </server>",
                 "    </http>",
                 multiNode,
@@ -272,8 +268,8 @@ public class JettyContainerModelBuilderTest extends ContainerModelBuilderTestBas
                 .build();
         MockRoot root = new MockRoot("root", deployState);
         createModel(root, deployState, null, clusterElem);
-        ConnectorConfig sslProvider = root.getConfig(ConnectorConfig.class, "default/http/jdisc-jetty/ssl");
-        assertTrue(sslProvider.ssl().enabled());
+        ConnectorConfig sslProvider = root.getConfig(ConnectorConfig.class, "default/http/jdisc-jetty/default");
+        assertFalse(sslProvider.ssl().enabled());
         assertEquals("", sslProvider.ssl().certificate());
         assertEquals("", sslProvider.ssl().privateKey());
 

@@ -137,7 +137,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     static final String HOSTED_VESPA_STATUS_FILE = Defaults.getDefaults().underVespaHome("var/vespa/load-balancer/status.html");
 
     // Data plane port for hosted Vespa
-    static final int HOSTED_VESPA_DATAPLANE_PORT = 4443;
+    public static final int HOSTED_VESPA_DATAPLANE_PORT = 4443;
 
     //Path to vip status file for container in Hosted Vespa. Only used if set, else use HOSTED_VESPA_STATUS_FILE
     private static final String HOSTED_VESPA_STATUS_FILE_SETTING = "VESPA_LB_STATUS_FILE";
