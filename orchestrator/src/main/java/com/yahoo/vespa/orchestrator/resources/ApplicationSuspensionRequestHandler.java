@@ -49,7 +49,7 @@ public class ApplicationSuspensionRequestHandler extends RestApiRequestHandler<A
     }
 
     /**
-     * Lists all applications that is currently suspended.
+     * Lists all applications that are currently suspended.
      *
      * HTTP Behavior:
      * Always 200

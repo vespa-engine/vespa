@@ -19,10 +19,8 @@ import com.yahoo.vespa.service.monitor.AntiServiceMonitor;
 import com.yahoo.vespa.service.monitor.CriticalRegion;
 import com.yahoo.vespa.service.monitor.ServiceModel;
 import com.yahoo.vespa.service.monitor.ServiceMonitor;
-
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -168,15 +166,13 @@ public class DummyServiceMonitor implements ServiceMonitor, AntiServiceMonitor {
     }
 
     public static Set<HostName> getContentHosts(ApplicationInstanceReference appRef) {
-        Set<HostName> hosts = apps.stream()
-                .filter(application -> application.reference().equals(appRef))
-                .flatMap(appReference -> appReference.serviceClusters().stream())
-                .filter(VespaModelUtil::isContent)
-                .flatMap(serviceCluster -> serviceCluster.serviceInstances().stream())
-                .map(ServiceInstance::hostName)
-                .collect(Collectors.toSet());
-
-        return hosts;
+        return apps.stream()
+                   .filter(application -> application.reference().equals(appRef))
+                   .flatMap(appReference -> appReference.serviceClusters().stream())
+                   .filter(VespaModelUtil::isContent)
+                   .flatMap(serviceCluster -> serviceCluster.serviceInstances().stream())
+                   .map(ServiceInstance::hostName)
+                   .collect(Collectors.toSet());
     }
 
     public static  List<ApplicationInstance> getApplications() {

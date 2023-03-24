@@ -3,7 +3,6 @@ package com.yahoo.vespa.orchestrator.model;
 
 import com.yahoo.vespa.applicationmodel.ApplicationInstance;
 import com.yahoo.vespa.applicationmodel.ClusterId;
-import com.yahoo.vespa.applicationmodel.ConfigId;
 import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.applicationmodel.ServiceInstance;
 import com.yahoo.vespa.orchestrator.OrchestratorContext;
@@ -11,7 +10,6 @@ import com.yahoo.vespa.orchestrator.controller.ClusterControllerClient;
 import com.yahoo.vespa.orchestrator.controller.ClusterControllerClientFactory;
 import com.yahoo.vespa.orchestrator.controller.ClusterControllerNodeState;
 import com.yahoo.vespa.orchestrator.policy.HostStateChangeDeniedException;
-
 import java.util.List;
 import java.util.Objects;
 import java.util.logging.Level;
@@ -89,8 +87,7 @@ public class StorageNodeImpl implements StorageNode {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof StorageNodeImpl)) return false;
-        StorageNodeImpl that = (StorageNodeImpl) o;
+        if (!(o instanceof StorageNodeImpl that)) return false;
         return Objects.equals(storageService, that.storageService);
     }
 
@@ -101,10 +98,9 @@ public class StorageNodeImpl implements StorageNode {
 
     @Override
     public int compareTo(StorageNode otherStorageNode) {
-        if (!(otherStorageNode instanceof StorageNodeImpl)) {
+        if (!(otherStorageNode instanceof StorageNodeImpl that)) {
             throw new IllegalArgumentException("Unable to compare our class to any StorageNode object");
         }
-        StorageNodeImpl that = (StorageNodeImpl) otherStorageNode;
 
         // We're guaranteed there's only one storage service per node.
         return this.storageService.hostName().compareTo(that.storageService.hostName());

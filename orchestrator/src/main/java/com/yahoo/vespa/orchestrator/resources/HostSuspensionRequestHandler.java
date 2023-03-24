@@ -15,11 +15,9 @@ import com.yahoo.vespa.orchestrator.BatchInternalErrorException;
 import com.yahoo.vespa.orchestrator.Orchestrator;
 import com.yahoo.vespa.orchestrator.policy.BatchHostStateChangeDeniedException;
 import com.yahoo.vespa.orchestrator.restapi.wire.BatchOperationResult;
-
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
 
 /**
  * @author hakonhall
@@ -53,10 +51,7 @@ public class HostSuspensionRequestHandler extends RestApiRequestHandler<HostSusp
         List<HostName> hostnames = hostnamesAsStrings.stream().map(HostName::new).toList();
         try {
             orchestrator.suspendAll(parentHostname, hostnames);
-        } catch (BatchHostStateChangeDeniedException e) {
-            log.log(Level.FINE, e, () -> "Failed to suspend nodes " + hostnames + " with parent host " + parentHostname);
-            throw createRestApiException(e.getMessage(), Response.Status.CONFLICT, e);
-        } catch (UncheckedTimeoutException e) {
+        } catch (BatchHostStateChangeDeniedException | UncheckedTimeoutException e) {
             log.log(Level.FINE, e, () -> "Failed to suspend nodes " + hostnames + " with parent host " + parentHostname);
             throw createRestApiException(e.getMessage(), Response.Status.CONFLICT, e);
         } catch (BatchHostNameNotFoundException e) {

@@ -9,14 +9,12 @@ import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.applicationmodel.ServiceCluster;
 import com.yahoo.vespa.applicationmodel.ServiceInstance;
 import com.yahoo.vespa.applicationmodel.ServiceType;
-
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -30,7 +28,6 @@ import static com.yahoo.collections.CollectionUtil.first;
  * @author hakonhall
  */
 public class VespaModelUtil {
-    private static final Logger log = Logger.getLogger(VespaModelUtil.class.getName());
 
     public static final ApplicationId TENANT_HOST_APPLICATION_ID =
             ApplicationId.from("hosted-vespa", "tenant-host", "default");
@@ -165,7 +162,7 @@ public class VespaModelUtil {
      */
     public static int getStorageNodeIndex(ApplicationInstance application, HostName hostName) {
         Optional<ServiceInstance> storageNode = getStorageNodeAtHost(application, hostName);
-        if (!storageNode.isPresent()) {
+        if (storageNode.isEmpty()) {
             throw new IllegalArgumentException("Failed to find a storage node for application " +
                     application.applicationInstanceId() + " at host " + hostName);
         }
@@ -210,7 +207,7 @@ public class VespaModelUtil {
             throw new IllegalArgumentException("Unable to extract cluster controller index from config ID " + configId);
         }
 
-        return Integer.valueOf(matcher.group(1));
+        return Integer.parseInt(matcher.group(1));
     }
 
     // See getStorageNodeIndex()
@@ -227,6 +224,6 @@ public class VespaModelUtil {
             throw new IllegalArgumentException("Unable to extract node index from config ID " + configId);
         }
 
-        return Integer.valueOf(matcher.group(1));
+        return Integer.parseInt(matcher.group(1));
     }
 }

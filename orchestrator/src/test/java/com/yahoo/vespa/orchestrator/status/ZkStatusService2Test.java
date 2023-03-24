@@ -85,7 +85,6 @@ public class ZkStatusService2Test {
 
         verify(mutex, times(2)).acquire(anyLong(), any());
         verify(mutex, times(2)).release();
-        ArgumentCaptor<Runnable> runnableCaptor = ArgumentCaptor.forClass(Runnable.class);
         verify(context, times(2)).hasLock(any());
         verify(context, times(2)).registerLockAcquisition(any(), any());
         verifyNoMoreInteractions(mutex, antiServiceMonitor, criticalRegion);
