@@ -4,7 +4,7 @@
 #include "defines.h"
 #include "attributevector.hpp"
 #include "multinumericattribute.h"
-#include "multistringattribute.hpp"
+#include "multistringattribute.h"
 
 #include <vespa/log/log.h>
 LOG_SETUP(".searchlib.attribute.create_array_std");
