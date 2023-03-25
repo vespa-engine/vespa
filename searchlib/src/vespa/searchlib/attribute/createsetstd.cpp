@@ -2,7 +2,6 @@
 
 #include "attributefactory.h"
 #include "defines.h"
-#include "attributevector.hpp"
 #include "multinumericattribute.h"
 #include "multistringattribute.h"
 
