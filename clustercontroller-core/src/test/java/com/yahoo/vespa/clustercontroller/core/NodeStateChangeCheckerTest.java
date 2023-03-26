@@ -486,18 +486,13 @@ public class NodeStateChangeCheckerTest {
         assertFalse(result.wantedStateAlreadySet());
     }
 
-    private Result transitionToMaintenanceWithOneStorageNodeDown(
-            int storageNodeIndex, boolean alternatingUpRetiredAndInitializing) {
+    private Result transitionToMaintenanceWithOneStorageNodeDown(int storageNodeIndex) {
         ContentCluster cluster = createCluster(4);
         NodeStateChangeChecker nodeStateChangeChecker = createChangeChecker(cluster);
 
         for (int x = 0; x < cluster.clusterInfo().getConfiguredNodes().size(); x++) {
             State state = UP;
             // Pick some retired and initializing nodes too
-            if (alternatingUpRetiredAndInitializing) { // TODO: Move this into the calling test
-                if (x % 3 == 1) state = State.RETIRED;
-                else if (x % 3 == 2) state = INITIALIZING;
-            }
             cluster.clusterInfo().getDistributorNodeInfo(x).setReportedState(new NodeState(DISTRIBUTOR, state), 0);
             cluster.clusterInfo().getDistributorNodeInfo(x).setHostInfo(HostInfo.createHostInfo(createDistributorHostInfo(4, 5, 6)));
             cluster.clusterInfo().getStorageNodeInfo(x).setReportedState(new NodeState(STORAGE, state), 0);
@@ -524,12 +519,8 @@ public class NodeStateChangeCheckerTest {
         }
     }
 
-    private Result transitionToMaintenanceWithOneStorageNodeDown(int storageNodeIndex) {
-        return transitionToMaintenanceWithOneStorageNodeDown(storageNodeIndex, false);
-    }
-
     private Result transitionToMaintenanceWithNoStorageNodesDown() {
-        return transitionToMaintenanceWithOneStorageNodeDown(-1, false);
+        return transitionToMaintenanceWithOneStorageNodeDown(-1);
     }
 
     @Test
