@@ -526,43 +526,4 @@ public class Distribution {
         return sb.toString();
     }
 
-    public static String getSimpleGroupConfig(int redundancy, int nodeCount) {
-        return getSimpleGroupConfig(redundancy, nodeCount, StorDistributionConfig.Disk_distribution.Enum.MODULO_BID);
-    }
-
-    private static String getSimpleGroupConfig(int redundancy, int nodeCount, StorDistributionConfig.Disk_distribution.Enum diskDistribution) {
-        StringBuilder sb = new StringBuilder();
-        sb.append("raw:redundancy ").append(redundancy).append("\n").append("group[4]\n");
-
-        int group = 0;
-        sb.append("group[" + group + "].index \"invalid\"\n")
-          .append("group[" + group + "].name \"invalid\"\n")
-          .append("group[" + group + "].partitions \"1|*\"\n");
-
-        ++group;
-        sb.append("group[" + group + "].index \"0\"\n")
-          .append("group[" + group + "].name \"east\"\n")
-          .append("group[" + group + "].partitions \"*\"\n");
-
-        ++group;
-        sb.append("group[" + group + "].index \"0.0\"\n")
-          .append("group[" + group + "].name \"g1\"\n")
-          .append("group[" + group + "].partitions \"*\"\n")
-          .append("group[" + group + "].nodes[").append((nodeCount + 1) / 2).append("]\n");
-        for (int i=0; i<nodeCount; i += 2) {
-            sb.append("group[" + group + "].nodes[").append(i / 2).append("].index ").append(i).append("\n");
-        }
-
-        ++group;
-        sb.append("group[" + group + "].index \"0.1\"\n")
-          .append("group[" + group + "].name \"g2\"\n")
-          .append("group[" + group + "].partitions \"*\"\n")
-          .append("group[" + group + "].nodes[").append(nodeCount / 2).append("]\n");
-        for (int i=1; i<nodeCount; i += 2) {
-            sb.append("group[" + group + "].nodes[").append(i / 2).append("].index ").append(i).append("\n");
-        }
-        sb.append("disk_distribution ").append(diskDistribution.toString()).append("\n");
-        return sb.toString();
-    }
-
 }
