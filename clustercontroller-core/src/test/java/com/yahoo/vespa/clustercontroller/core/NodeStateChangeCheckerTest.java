@@ -335,7 +335,7 @@ public class NodeStateChangeCheckerTest {
 
     @Test
     void testCanUpgradeStorageSafeYes() {
-        Result result = transitionToMaintenanceWithNoStorageNodesDown();
+        Result result = transitionToMaintenanceWithNoStorageNodesDown(createCluster(4), defaultAllUpClusterState());
         assertTrue(result.settingWantedStateIsAllowed());
         assertFalse(result.wantedStateAlreadySet());
     }
@@ -486,8 +486,7 @@ public class NodeStateChangeCheckerTest {
         assertFalse(result.wantedStateAlreadySet());
     }
 
-    private Result transitionToMaintenanceWithOneStorageNodeDown(int storageNodeIndex) {
-        ContentCluster cluster = createCluster(4);
+    private Result transitionToMaintenanceWithOneStorageNodeDown(ContentCluster cluster, ClusterState clusterState) {
         NodeStateChangeChecker nodeStateChangeChecker = createChangeChecker(cluster);
 
         for (int x = 0; x < cluster.clusterInfo().getConfiguredNodes().size(); x++) {
@@ -496,14 +495,6 @@ public class NodeStateChangeCheckerTest {
             cluster.clusterInfo().getDistributorNodeInfo(x).setReportedState(new NodeState(DISTRIBUTOR, state), 0);
             cluster.clusterInfo().getDistributorNodeInfo(x).setHostInfo(HostInfo.createHostInfo(createDistributorHostInfo(4, 5, 6)));
             cluster.clusterInfo().getStorageNodeInfo(x).setReportedState(new NodeState(STORAGE, state), 0);
-        }
-
-        ClusterState clusterState = defaultAllUpClusterState();
-
-        if (storageNodeIndex >= 0) { // TODO: Move this into the calling test
-            NodeState downNodeState = new NodeState(STORAGE, DOWN);
-            cluster.clusterInfo().getStorageNodeInfo(storageNodeIndex).setReportedState(downNodeState, 4 /* time */);
-            clusterState.setNodeState(new Node(STORAGE, storageNodeIndex), downNodeState);
         }
 
         return nodeStateChangeChecker.evaluateTransition(
@@ -519,27 +510,35 @@ public class NodeStateChangeCheckerTest {
         }
     }
 
-    private Result transitionToMaintenanceWithNoStorageNodesDown() {
-        return transitionToMaintenanceWithOneStorageNodeDown(-1);
+    private Result transitionToMaintenanceWithNoStorageNodesDown(ContentCluster cluster, ClusterState clusterState) {
+        return transitionToMaintenanceWithOneStorageNodeDown(cluster, clusterState);
     }
 
     @Test
     void testCanUpgradeWhenAllUp() {
-        Result result = transitionToMaintenanceWithNoStorageNodesDown();
+        Result result = transitionToMaintenanceWithNoStorageNodesDown(createCluster(4), defaultAllUpClusterState());
         assertTrue(result.settingWantedStateIsAllowed());
         assertFalse(result.wantedStateAlreadySet());
     }
 
     @Test
     void testCanUpgradeWhenAllUpOrRetired() {
-        Result result = transitionToMaintenanceWithNoStorageNodesDown();
+        Result result = transitionToMaintenanceWithNoStorageNodesDown(createCluster(4), defaultAllUpClusterState());
         assertTrue(result.settingWantedStateIsAllowed());
         assertFalse(result.wantedStateAlreadySet());
     }
 
     @Test
     void testCanUpgradeWhenStorageIsDown() {
-        Result result = transitionToMaintenanceWithOneStorageNodeDown(nodeStorage.getIndex());
+        ClusterState clusterState = defaultAllUpClusterState();
+        var storageNodeIndex = nodeStorage.getIndex();
+
+        ContentCluster cluster = createCluster(4);
+        NodeState downNodeState = new NodeState(STORAGE, DOWN);
+        cluster.clusterInfo().getStorageNodeInfo(storageNodeIndex).setReportedState(downNodeState, 4 /* time */);
+        clusterState.setNodeState(new Node(STORAGE, storageNodeIndex), downNodeState);
+
+        Result result = transitionToMaintenanceWithOneStorageNodeDown(cluster, clusterState);
         assertTrue(result.settingWantedStateIsAllowed());
         assertFalse(result.wantedStateAlreadySet());
     }
@@ -550,7 +549,13 @@ public class NodeStateChangeCheckerTest {
         // If this fails, just set otherIndex to some other valid index.
         assertNotEquals(nodeStorage.getIndex(), otherIndex);
 
-        Result result = transitionToMaintenanceWithOneStorageNodeDown(otherIndex);
+        ContentCluster cluster = createCluster(4);
+        ClusterState clusterState = defaultAllUpClusterState();
+        NodeState downNodeState = new NodeState(STORAGE, DOWN);
+        cluster.clusterInfo().getStorageNodeInfo(otherIndex).setReportedState(downNodeState, 4 /* time */);
+        clusterState.setNodeState(new Node(STORAGE, otherIndex), downNodeState);
+
+        Result result = transitionToMaintenanceWithOneStorageNodeDown(cluster, clusterState);
         assertFalse(result.settingWantedStateIsAllowed());
         assertFalse(result.wantedStateAlreadySet());
         assertTrue(result.getReason().contains("Another storage node has state DOWN: 2"));
