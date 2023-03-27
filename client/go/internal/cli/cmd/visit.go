@@ -94,6 +94,7 @@ By default prints each document received on its own line (JSON-L format).
 `,
 		Example: `$ vespa visit # get documents from any cluster
 $ vespa visit --content-cluster search # get documents from cluster named "search"
+$ vespa visit --field-set "[id]" # list document IDs
 `,
 		Args:              cobra.MaximumNArgs(0),
 		DisableAutoGenTag: true,
