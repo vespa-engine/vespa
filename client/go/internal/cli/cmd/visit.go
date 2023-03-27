@@ -33,6 +33,7 @@ type visitArgs struct {
 	to             string
 	slices         int
 	sliceId        int
+	bucketSpace    string
 	cli            *CLI
 }
 
@@ -132,6 +133,7 @@ $ vespa visit --field-set "[id]" # list document IDs
 	cmd.Flags().StringVar(&vArgs.to, "to", "", `Timestamp to visit up to, in seconds`)
 	cmd.Flags().IntVar(&vArgs.sliceId, "slice-id", -1, `The number of the slice this visit invocation should fetch`)
 	cmd.Flags().IntVar(&vArgs.slices, "slices", -1, `Split the document corpus into this number of independent slices`)
+	cmd.Flags().StringVar(&vArgs.bucketSpace, "bucket-space", "default", `"default" or "global" bucket space`)
 	return cmd
 }
 
@@ -155,6 +157,16 @@ func checkArguments(vArgs visitArgs) (res util.OperationResult) {
 		_, err := strconv.ParseInt(vArgs.to, 10, 64)
 		if err != nil {
 			return util.Failure("Invalid 'to' argument: '" + vArgs.to + "': " + err.Error())
+		}
+	}
+	if vArgs.bucketSpace != "" {
+		switch vArgs.bucketSpace {
+		case
+			"default",
+			"global":
+			// Do nothing
+		default:
+			return util.Failure("Invalid 'bucket-space' argument, must be 'default' or 'global'")
 		}
 	}
 	return util.Success("")
@@ -329,6 +341,9 @@ func runOneVisit(vArgs *visitArgs, service *vespa.Service, contToken string) (*V
 	}
 	if vArgs.slices > 0 {
 		urlPath = urlPath + fmt.Sprintf("&slices=%d&sliceId=%d", vArgs.slices, vArgs.sliceId)
+	}
+	if vArgs.bucketSpace != "" {
+		urlPath = urlPath + "&bucketSpace=" + vArgs.bucketSpace
 	}
 	url, urlParseError := url.Parse(urlPath)
 	if urlParseError != nil {

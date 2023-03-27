@@ -118,7 +118,7 @@ func TestVisitCommand(t *testing.T) {
 				document3 +
 				`],"documentCount":2}`,
 		},
-		"cluster=fooCC&continuation=CAFE&wantedDocumentCount=1000",
+		"cluster=fooCC&continuation=CAFE&wantedDocumentCount=1000&bucketSpace=default",
 		document1+"\n"+
 			document2+"\n"+
 			document3+"\n")
