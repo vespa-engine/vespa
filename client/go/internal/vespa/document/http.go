@@ -127,7 +127,7 @@ func (c *Client) Send(document Document) Result {
 		result.Err = err
 		return result
 	}
-	resp, err := c.httpClient.Do(req, c.options.Timeout)
+	resp, err := c.httpClient.Do(req, 190*time.Second)
 	if err != nil {
 		result.Stats.Errors = 1
 		result.Status = StatusTransportFailure
