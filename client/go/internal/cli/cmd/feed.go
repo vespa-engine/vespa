@@ -13,6 +13,7 @@ import (
 )
 
 func addFeedFlags(cmd *cobra.Command, concurrency *int) {
+	// TOOD(mpolden): Remove this flag
 	cmd.PersistentFlags().IntVarP(concurrency, "concurrency", "T", 64, "Number of goroutines to use for dispatching")
 }
 
@@ -58,7 +59,8 @@ func feed(r io.Reader, cli *CLI, concurrency int) error {
 	client := document.NewClient(document.ClientOptions{
 		BaseURL: service.BaseURL,
 	}, service)
-	dispatcher := document.NewDispatcher(client, concurrency)
+	throttler := document.NewThrottler()
+	dispatcher := document.NewDispatcher(client, throttler)
 	dec := document.NewDecoder(r)
 
 	start := cli.now()

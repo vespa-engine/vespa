@@ -23,11 +23,12 @@ const (
 
 // Result represents the result of a feeding operation.
 type Result struct {
-	Id      Id
-	Status  Status
-	Message string
-	Trace   string
-	Err     error
+	Id         Id
+	Status     Status
+	HTTPStatus int
+	Message    string
+	Trace      string
+	Err        error
 }
 
 // Success returns whether status s is considered a success.

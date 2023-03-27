@@ -3,6 +3,7 @@ package document
 import (
 	"sync"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -40,7 +41,9 @@ func (f *mockFeeder) AddStats(stats Stats) {
 
 func TestDispatcher(t *testing.T) {
 	feeder := &mockFeeder{}
-	dispatcher := NewDispatcher(feeder, 2)
+	clock := &manualClock{tick: time.Second}
+	throttler := newThrottler(clock.now)
+	dispatcher := NewDispatcher(feeder, throttler)
 	docs := []Document{
 		{Id: mustParseId("id:ns:type::doc1"), Operation: OperationPut, Body: []byte(`{"fields":{"foo": "123"}}`)},
 		{Id: mustParseId("id:ns:type::doc2"), Operation: OperationPut, Body: []byte(`{"fields":{"bar": "456"}}`)},
@@ -70,7 +73,9 @@ func TestDispatcherOrdering(t *testing.T) {
 		{Id: mustParseId("id:ns:type::doc8"), Operation: OperationPut},
 		{Id: mustParseId("id:ns:type::doc9"), Operation: OperationPut},
 	}
-	dispatcher := NewDispatcher(feeder, len(docs))
+	clock := &manualClock{tick: time.Second}
+	throttler := newThrottler(clock.now)
+	dispatcher := NewDispatcher(feeder, throttler)
 	for _, d := range docs {
 		dispatcher.Enqueue(d)
 	}
@@ -103,7 +108,9 @@ func TestDispatcherOrderingWithFailures(t *testing.T) {
 		{Id: commonId, Operation: OperationRemove}, // fails
 	}
 	feeder.failAfterN(2)
-	dispatcher := NewDispatcher(feeder, len(docs))
+	clock := &manualClock{tick: time.Second}
+	throttler := newThrottler(clock.now)
+	dispatcher := NewDispatcher(feeder, throttler)
 	for _, d := range docs {
 		dispatcher.Enqueue(d)
 	}
