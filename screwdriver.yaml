@@ -209,9 +209,7 @@ jobs:
       screwdriver.cd/ram: 16
       screwdriver.cd/disk: HIGH
       screwdriver.cd/timeout: 300
-      screwdriver.cd/dockerEnabled: true
-      screwdriver.cd/dockerCpu: TURBO
-      screwdriver.cd/dockerRam: HIGH
+      screwdriver.cd/buildPeriodically: H 4,10,16,22 * * 1,2,3,4
 
     secrets:
       - COPR_WEBHOOK
