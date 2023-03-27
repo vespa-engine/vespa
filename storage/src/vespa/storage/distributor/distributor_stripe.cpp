@@ -127,6 +127,12 @@ void DistributorStripe::send_shutdown_abort_reply(const std::shared_ptr<api::Sto
 }
 
 void DistributorStripe::flush_and_close() {
+    // This function is called from a different thread than that of the stripe
+    // itself, so we need to take the same mutex to form a memory visibility pair.
+    // It is important that no flushing ever sends any _requests_, as these
+    // will most likely synchronously be bounced by the already shut down RPC
+    // layer, causing a deadlock when the response call chain arrives back here.
+    std::lock_guard lock(_external_message_mutex);
     for (auto& msg : _messageQueue) {
         if (!msg->getType().isReply()) {
             send_shutdown_abort_reply(msg);
