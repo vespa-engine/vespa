@@ -125,7 +125,7 @@ public abstract class FleetControllerTest implements Waiter {
                 options.nodeStateRequestTimeoutLatestPercentage(),
                 options.nodeStateRequestRoundTripTimeMaxSeconds());
         var lookUp = new SlobrokClient(context, timer, new String[0]);
-        var rpcServer = new RpcServer(timer, options.clusterName(), options.fleetControllerIndex(), options.slobrokBackOffPolicy());
+        var rpcServer = new RpcServer(timer, options.clusterName(), options.fleetControllerIndex());
         var database = new DatabaseHandler(context, new ZooKeeperDatabaseFactory(context), timer, options.zooKeeperServerAddress(), timer);
 
         // Setting this <1000 ms causes ECONNREFUSED on socket trying to connect to ZK server, in ZooKeeper,
