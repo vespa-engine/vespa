@@ -11,7 +11,6 @@ import (
 type mockFeeder struct {
 	failAfterNDocs int
 	documents      []Document
-	stats          Stats
 	mu             sync.Mutex
 }
 
@@ -24,19 +23,16 @@ func (f *mockFeeder) failAfterN(docs int) {
 func (f *mockFeeder) Send(doc Document) Result {
 	f.mu.Lock()
 	defer f.mu.Unlock()
+	result := Result{Id: doc.Id}
 	if f.failAfterNDocs > 0 && len(f.documents) >= f.failAfterNDocs {
-		return Result{Id: doc.Id, Status: StatusVespaFailure}
+		result.Status = StatusVespaFailure
+	} else {
+		f.documents = append(f.documents, doc)
 	}
-	f.documents = append(f.documents, doc)
-	return Result{Id: doc.Id}
-}
-
-func (f *mockFeeder) Stats() Stats { return f.stats }
-
-func (f *mockFeeder) AddStats(stats Stats) {
-	f.mu.Lock()
-	defer f.mu.Unlock()
-	f.stats.Add(stats)
+	if !result.Status.Success() {
+		result.Stats.Errors = 1
+	}
+	return result
 }
 
 func TestDispatcher(t *testing.T) {
@@ -95,7 +91,7 @@ func TestDispatcherOrdering(t *testing.T) {
 	}
 	assert.Equal(t, len(docs), len(feeder.documents))
 	assert.Equal(t, wantDocs, gotDocs)
-	assert.Equal(t, int64(0), feeder.Stats().Errors)
+	assert.Equal(t, int64(0), dispatcher.Stats().Errors)
 }
 
 func TestDispatcherOrderingWithFailures(t *testing.T) {
@@ -117,7 +113,7 @@ func TestDispatcherOrderingWithFailures(t *testing.T) {
 	dispatcher.Close()
 	wantDocs := docs[:2]
 	assert.Equal(t, wantDocs, feeder.documents)
-	assert.Equal(t, int64(2), feeder.Stats().Errors)
+	assert.Equal(t, int64(2), dispatcher.Stats().Errors)
 
 	// Dispatching more documents for same ID succeed
 	feeder.failAfterN(0)
@@ -127,6 +123,6 @@ func TestDispatcherOrderingWithFailures(t *testing.T) {
 	dispatcher.Enqueue(Document{Id: mustParseId("id:ns:type::doc2"), Operation: OperationPut})
 	dispatcher.Enqueue(Document{Id: mustParseId("id:ns:type::doc3"), Operation: OperationPut})
 	dispatcher.Close()
-	assert.Equal(t, int64(2), feeder.Stats().Errors)
+	assert.Equal(t, int64(2), dispatcher.Stats().Errors)
 	assert.Equal(t, 6, len(feeder.documents))
 }

@@ -13,14 +13,17 @@ const maxAttempts = 10
 type Dispatcher struct {
 	feeder    Feeder
 	throttler Throttler
+	stats     Stats
 
 	closed        bool
 	ready         chan Id
+	results       chan Result
 	inflight      map[string]*documentGroup
 	inflightCount atomic.Int64
 
-	mu sync.RWMutex
-	wg sync.WaitGroup
+	mu       sync.RWMutex
+	wg       sync.WaitGroup
+	resultWg sync.WaitGroup
 }
 
 // documentGroup holds document operations which share their ID, and must be dispatched in order.
@@ -51,10 +54,9 @@ func NewDispatcher(feeder Feeder, throttler Throttler) *Dispatcher {
 	return d
 }
 
-func (d *Dispatcher) dispatchAll(g *documentGroup) int {
+func (d *Dispatcher) dispatchAll(g *documentGroup) {
 	g.mu.Lock()
 	defer g.mu.Unlock()
-	failCount := 0
 	for i := 0; i < len(g.operations); i++ {
 		op := g.operations[i]
 		ok := false
@@ -62,17 +64,14 @@ func (d *Dispatcher) dispatchAll(g *documentGroup) int {
 			op.attempts += 1
 			result := d.feeder.Send(op.document)
 			d.releaseSlot()
+			d.results <- result
 			ok = result.Status.Success()
 			if !d.shouldRetry(op, result) {
 				break
 			}
 		}
-		if !ok {
-			failCount++
-		}
 	}
 	g.operations = nil
-	return failCount
 }
 
 func (d *Dispatcher) shouldRetry(op documentOp, result Result) bool {
@@ -93,25 +92,40 @@ func (d *Dispatcher) shouldRetry(op documentOp, result Result) bool {
 func (d *Dispatcher) start() {
 	d.mu.Lock()
 	defer d.mu.Unlock()
-	d.closed = false
 	d.ready = make(chan Id, 4096)
+	d.results = make(chan Result, 4096)
+	d.closed = false
 	d.wg.Add(1)
 	go func() {
 		defer d.wg.Done()
-		for id := range d.ready {
-			d.mu.RLock()
-			group := d.inflight[id.String()]
-			d.mu.RUnlock()
-			if group != nil {
-				d.wg.Add(1)
-				go func() {
-					defer d.wg.Done()
-					failedDocs := d.dispatchAll(group)
-					d.feeder.AddStats(Stats{Errors: int64(failedDocs)})
-				}()
-			}
-		}
+		d.readDocuments()
 	}()
+	d.resultWg.Add(1)
+	go func() {
+		defer d.resultWg.Done()
+		d.readResults()
+	}()
+}
+
+func (d *Dispatcher) readDocuments() {
+	for id := range d.ready {
+		d.mu.RLock()
+		group := d.inflight[id.String()]
+		d.mu.RUnlock()
+		if group != nil {
+			d.wg.Add(1)
+			go func() {
+				defer d.wg.Done()
+				d.dispatchAll(group)
+			}()
+		}
+	}
+}
+
+func (d *Dispatcher) readResults() {
+	for result := range d.results {
+		d.stats.Add(result.Stats)
+	}
 }
 
 func (d *Dispatcher) Enqueue(doc Document) error {
@@ -134,6 +148,8 @@ func (d *Dispatcher) Enqueue(doc Document) error {
 	return nil
 }
 
+func (d *Dispatcher) Stats() Stats { return d.stats }
+
 func (d *Dispatcher) enqueueWithSlot(id Id) {
 	d.acquireSlot()
 	d.ready <- id
@@ -149,14 +165,21 @@ func (d *Dispatcher) acquireSlot() {
 
 func (d *Dispatcher) releaseSlot() { d.inflightCount.Add(-1) }
 
-// Close closes the dispatcher and waits for all inflight operations to complete.
-func (d *Dispatcher) Close() error {
+func closeAndWait[T any](ch chan T, wg *sync.WaitGroup, d *Dispatcher, markClosed bool) {
 	d.mu.Lock()
 	if !d.closed {
-		close(d.ready)
-		d.closed = true
+		close(ch)
+		if markClosed {
+			d.closed = true
+		}
 	}
 	d.mu.Unlock()
-	d.wg.Wait()
+	wg.Wait()
+}
+
+// Close closes the dispatcher and waits for all inflight operations to complete.
+func (d *Dispatcher) Close() error {
+	closeAndWait(d.ready, &d.wg, d, false)
+	closeAndWait(d.results, &d.resultWg, d, true)
 	return nil
 }

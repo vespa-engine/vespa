@@ -37,6 +37,7 @@ func TestClientSend(t *testing.T) {
 	}, &httpClient)
 	clock := manualClock{t: time.Now(), tick: time.Second}
 	client.now = clock.now
+	var stats Stats
 	for i, doc := range docs {
 		if i < 2 {
 			httpClient.NextResponseString(200, `{"message":"All good!"}`)
@@ -44,6 +45,7 @@ func TestClientSend(t *testing.T) {
 			httpClient.NextResponseString(502, `{"message":"Good bye, cruel world!"}`)
 		}
 		res := client.Send(doc)
+		stats.Add(res.Stats)
 		if res.Err != nil {
 			t.Fatalf("got unexpected error %q", res.Err)
 		}
@@ -64,7 +66,6 @@ func TestClientSend(t *testing.T) {
 			t.Errorf("got r.Body = %q, want %q", string(body), string(wantBody))
 		}
 	}
-	stats := client.Stats()
 	want := Stats{
 		Requests:  3,
 		Responses: 3,

@@ -7,7 +7,7 @@ import (
 )
 
 func TestStatsAdd(t *testing.T) {
-	got := NewStats()
+	var got Stats
 	got.Add(Stats{Requests: 1})
 	got.Add(Stats{Requests: 1})
 	got.Add(Stats{Responses: 1})

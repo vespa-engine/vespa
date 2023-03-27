@@ -80,7 +80,7 @@ func feed(r io.Reader, cli *CLI, concurrency int) error {
 		return err
 	}
 	elapsed := cli.now().Sub(start)
-	return writeSummaryJSON(cli.Stdout, client.Stats(), elapsed)
+	return writeSummaryJSON(cli.Stdout, dispatcher.Stats(), elapsed)
 }
 
 type number float32
