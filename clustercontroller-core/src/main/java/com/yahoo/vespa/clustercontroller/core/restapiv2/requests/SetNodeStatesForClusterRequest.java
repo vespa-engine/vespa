@@ -6,7 +6,6 @@ import com.yahoo.vdslib.distribution.ConfiguredNode;
 import com.yahoo.vdslib.state.Node;
 import com.yahoo.vdslib.state.NodeType;
 import com.yahoo.vespa.clustercontroller.core.RemoteClusterControllerTask;
-import com.yahoo.vespa.clustercontroller.core.restapiv2.Id;
 import com.yahoo.vespa.clustercontroller.core.restapiv2.Request;
 import com.yahoo.vespa.clustercontroller.utils.staterestapi.errors.InternalFailure;
 import com.yahoo.vespa.clustercontroller.utils.staterestapi.errors.InvalidContentException;
@@ -14,25 +13,20 @@ import com.yahoo.vespa.clustercontroller.utils.staterestapi.errors.StateRestApiE
 import com.yahoo.vespa.clustercontroller.utils.staterestapi.requests.SetUnitStateRequest;
 import com.yahoo.vespa.clustercontroller.utils.staterestapi.response.SetResponse;
 import com.yahoo.vespa.clustercontroller.utils.staterestapi.response.UnitState;
-
 import java.time.Instant;
 import java.util.Map;
 import java.util.Optional;
-import java.util.logging.Logger;
 
 public class SetNodeStatesForClusterRequest extends Request<SetResponse> {
-    private static final Logger log = Logger.getLogger(SetNodeStateRequest.class.getName());
 
-    private final Id.Cluster cluster;
     private final Map<String, UnitState> newStates;
     private final SetUnitStateRequest.Condition condition;
     private final TimeBudget timeBudget;
     private final boolean probe;
 
 
-    public SetNodeStatesForClusterRequest(Id.Cluster cluster, SetUnitStateRequest request) {
+    public SetNodeStatesForClusterRequest(SetUnitStateRequest request) {
         super(MasterState.MUST_BE_MASTER);
-        this.cluster = cluster;
         this.newStates = request.getNewState();
         this.condition = request.getCondition();
         this.timeBudget = request.timeBudget();
@@ -42,7 +36,7 @@ public class SetNodeStatesForClusterRequest extends Request<SetResponse> {
     @Override
     public SetResponse calculateResult(RemoteClusterControllerTask.Context context) throws StateRestApiException {
         if (condition != SetUnitStateRequest.Condition.FORCE) {
-            // Setting all nodes to e.g. maintainence is by design unsafe in the sense
+            // Setting all nodes to e.g. maintenance is by design unsafe in the sense
             // that it allows effective redundancy to drop to 0, many/all nodes may
             // go down, etc. This is prohibited in Condition.SAFE.
             throw new InvalidContentException(
