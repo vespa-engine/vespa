@@ -21,7 +21,6 @@ type Dispatcher struct {
 // documentGroup holds document operations which share their ID, and must be dispatched in order.
 type documentGroup struct {
 	id         Id
-	failed     bool
 	operations []documentOp
 	mu         sync.Mutex
 }
@@ -53,8 +52,8 @@ func NewDispatcher(feeder Feeder, workers int) *Dispatcher {
 func (d *Dispatcher) dispatchAll(g *documentGroup) int {
 	g.mu.Lock()
 	defer g.mu.Unlock()
-	failCount := len(g.operations)
-	for i := 0; !g.failed && i < len(g.operations); i++ {
+	failCount := 0
+	for i := 0; i < len(g.operations); i++ {
 		op := g.operations[i]
 		ok := false
 		for op.attempts <= maxAttempts && !ok {
@@ -63,11 +62,8 @@ func (d *Dispatcher) dispatchAll(g *documentGroup) int {
 			result := d.feeder.Send(op.document)
 			ok = result.Status.Success()
 		}
-		if ok {
-			failCount--
-		} else {
-			g.failed = true
-			failCount = len(g.operations) - i
+		if !ok {
+			failCount++
 		}
 	}
 	g.operations = nil

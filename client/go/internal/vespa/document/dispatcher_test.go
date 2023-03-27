@@ -112,17 +112,14 @@ func TestDispatcherOrderingWithFailures(t *testing.T) {
 	assert.Equal(t, wantDocs, feeder.documents)
 	assert.Equal(t, int64(2), feeder.Stats().Errors)
 
-	// Dispatching more documents for same ID fails implicitly
+	// Dispatching more documents for same ID succeed
 	feeder.failAfterN(0)
 	dispatcher.start()
 	dispatcher.Enqueue(Document{Id: commonId, Operation: OperationPut})
 	dispatcher.Enqueue(Document{Id: commonId, Operation: OperationRemove})
-	// Other IDs are fine
-	doc2 := Document{Id: mustParseId("id:ns:type::doc2"), Operation: OperationPut}
-	doc3 := Document{Id: mustParseId("id:ns:type::doc3"), Operation: OperationPut}
-	dispatcher.Enqueue(doc2)
-	dispatcher.Enqueue(doc3)
+	dispatcher.Enqueue(Document{Id: mustParseId("id:ns:type::doc2"), Operation: OperationPut})
+	dispatcher.Enqueue(Document{Id: mustParseId("id:ns:type::doc3"), Operation: OperationPut})
 	dispatcher.Close()
-	assert.Equal(t, int64(4), feeder.Stats().Errors)
-	assert.Equal(t, 4, len(feeder.documents))
+	assert.Equal(t, int64(2), feeder.Stats().Errors)
+	assert.Equal(t, 6, len(feeder.documents))
 }
