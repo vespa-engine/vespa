@@ -18,7 +18,7 @@ public class Node implements Comparable<Node> {
         int dot = serialized.lastIndexOf('.');
         if (dot < 0) throw new IllegalArgumentException("Not a legal node string '" + serialized + "'.");
         type = NodeType.get(serialized.substring(0, dot));
-        index = Integer.valueOf(serialized.substring(dot + 1));
+        index = Integer.parseInt(serialized.substring(dot + 1));
     }
 
     public static Node ofStorage(int index) {
@@ -52,8 +52,7 @@ public class Node implements Comparable<Node> {
 
     @Override
     public boolean equals(Object o) {
-        if (!(o instanceof Node)) return false;
-        Node n = (Node) o;
+        if (!(o instanceof Node n)) return false;
         return (type.equals(n.type) && index == n.index);
     }
 
