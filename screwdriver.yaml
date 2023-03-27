@@ -189,7 +189,7 @@ jobs:
           fi
       - *save-cache
       - update-build-status: |
-          meta set vespa.factory.build.status $FACTORY_BUILD_STATUS
+          meta set vespa.factory.build.status success
       - teardown-report-build-status: |
           FACTORY_BUILD_STATUS=$(meta get vespa.factory.build.status)
           if [[ $FACTORY_BUILD_STATUS == success ]]; then
