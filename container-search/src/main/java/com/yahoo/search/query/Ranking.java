@@ -16,10 +16,7 @@ import com.yahoo.search.query.ranking.RankProperties;
 import com.yahoo.search.query.ranking.SoftTimeout;
 import com.yahoo.search.result.ErrorMessage;
 
-import java.util.List;
-import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 
 /**
  * The ranking (hit ordering) settings of a query
@@ -30,8 +27,7 @@ import java.util.Optional;
 public class Ranking implements Cloneable {
 
     /** An alias for listing features */
-    public static final com.yahoo.processing.request.CompoundName RANKFEATURES =
-            new com.yahoo.processing.request.CompoundName("rankfeatures");
+    public static final CompoundName RANKFEATURES = new CompoundName("rankfeatures");
 
     /** The type representing the property arguments consumed by this */
     private static final QueryProfileType argumentType;
@@ -291,9 +287,7 @@ public class Ranking implements Cloneable {
     @Override
     public boolean equals(Object o) {
         if (o == this) return true;
-        if( ! (o instanceof Ranking)) return false;
-
-        Ranking other = (Ranking) o;
+        if( ! (o instanceof Ranking other)) return false;
 
         if ( ! QueryHelper.equals(rankProperties, other.rankProperties)) return false;
         if ( ! QueryHelper.equals(rankFeatures, other.rankFeatures)) return false;
