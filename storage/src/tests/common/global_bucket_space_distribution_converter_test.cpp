@@ -48,7 +48,6 @@ group[0].nodes[1].index 1
 group[0].nodes[1].retired false
 group[0].nodes[2].index 2
 group[0].nodes[2].retired false
-disk_distribution MODULO_BID
 )");
 
 }
@@ -117,7 +116,6 @@ group[2].nodes[1].index 4
 group[2].nodes[1].retired false
 group[2].nodes[2].index 5
 group[2].nodes[2].retired false
-disk_distribution MODULO_BID
 )");
     EXPECT_EQ(expected_global_config, default_to_global_config(default_config));
 }
@@ -200,7 +198,6 @@ group[6].capacity 1
 group[6].partitions ""
 group[6].nodes[0].index 3
 group[6].nodes[0].retired false
-disk_distribution MODULO_BID
 )");
     EXPECT_EQ(expected_global_config, default_to_global_config(default_config));
 }
@@ -253,7 +250,6 @@ group[2].capacity 1
 group[2].partitions ""
 group[2].nodes[0].index 2
 group[2].nodes[0].retired false
-disk_distribution MODULO_BID
 )");
     EXPECT_EQ(expected_global_config, default_to_global_config(default_config));
 }
