@@ -105,11 +105,13 @@ jobs:
       CCACHE_COMPRESS: "1"
     secrets:
       - DOCKER_HUB_DEPLOY_KEY
+      - SVC_OKTA_VESPA_FACTORY_TOKEN
     steps:
       - get-vespa-version: |
-          VESPA_VERSION=$(meta get vespa.version)
-          VESPA_REF=$(meta get vespa.ref)
-          SYSTEM_TEST_REF=$(meta get system-test.ref)
+          VERSION_INFO=$(screwdriver/factory-command.sh create-build)
+          VESPA_VERSION=$(jq -re '.version' <<< "$VERSION_INFO")
+          VESPA_REF=$(jq -re '.commits|.[]|select(.repo=="vespa")|.ref' <<< "$VERSION_INFO")
+          SYSTEM_TEST_REF=$(jq -re '.commits|.[]|select(.repo=="system-test")|.ref' <<< "$VERSION_INFO")
           if [[ $VESPA_VERSION == null ]] || [[ $VESPA_REF == null ]] || [[ $SYSTEM_TEST_REF == null ]]; then
             echo "Must have valid Vespa version and reference to continue \
                   (got VESPA_VERSION=$VESPA_VERSION, VESPA_REF=$VESPA_REF, SYSTEM_TEST_REF=$SYSTEM_TEST_REF)."
@@ -184,6 +186,18 @@ jobs:
             buildah push --format v2s2 docker.io/vespaengine/vespa-systemtest-centos-stream8:$VESPA_VERSION docker://docker.io/vespaengine/vespa-systemtest-centos-stream8:latest
           fi
       - *save-cache
+      - update-build-status: |
+          meta set vespa.factory.build.status $FACTORY_BUILD_STATUS
+      - teardown-report-build-status: |
+          FACTORY_BUILD_STATUS=$(meta get vespa.factory.build.status)
+          if [[ $FACTORY_BUILD_STATUS == success ]]; then
+            DESCRIPTION="Build success"
+          else
+            FACTORY_BUILD_STATUS=failure
+            DESCRIPTION="Build failed"
+          fi
+          echo "Reporting build status as $FACTORY_BUILD_STATUS"
+          $SD_SOURCE_DIR/screwdriver/factory-command.sh update-build-status $FACTORY_BUILD_STATUS "$DESCRIPTION"
 
   publish-release:
     image: docker.io/vespaengine/vespa-build-centos-stream8:latest
@@ -209,14 +223,18 @@ jobs:
       - DOCKER_IMAGE_DEPLOY_KEY
       - DOCKER_HUB_DEPLOY_KEY
       - GHCR_DEPLOY_KEY
+      - SVC_OKTA_VESPA_FACTORY_TOKEN
 
     environment:
        GIT_SSH_COMMAND: "ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no"
 
     steps:
       - get-vespa-version: |
-          VESPA_VERSION=$(meta get vespa.version)
-          VESPA_REF=$(meta get vespa.ref)
+          JSON=$(screwdriver/factory-command.sh create-release)
+          VESPA_VERSION=$(jq -re '.version' <<< "$JSON")
+          JSON=$(screwdriver/factory-command.sh get-version $VESPA_VERSION)
+          VESPA_REF=$(jq -re '.commits|.[]|select(.repo=="vespa")|.ref' <<< "$JSON")
+          echo "VESPA_VERSION=$VESPA_VERSION VESPA_REF=$VESPA_REF"
           if [[ $VESPA_VERSION == null ]] || [[ $VESPA_REF == null ]]; then
             echo "Must have valid Vespa version and reference to continue (got VESPA_VERSION=$VESPA_VERSION, VESPA_REF=$VESPA_REF)."
             return 1
@@ -231,6 +249,8 @@ jobs:
           screwdriver/release-container-image.sh $VESPA_VERSION
       - update-sample-apps: |
           screwdriver/update-vespa-version-in-sample-apps.sh $VESPA_VERSION
+      - update-released-time: |
+          screwdriver/factory-command.sh update-released-time
 
   publish-legacy-release:
     image: docker.io/vespaengine/vespa-build-centos-stream8:latest
