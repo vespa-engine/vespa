@@ -491,7 +491,6 @@ public class NodeStateChangeCheckerTest {
 
         for (int x = 0; x < cluster.clusterInfo().getConfiguredNodes().size(); x++) {
             State state = UP;
-            // Pick some retired and initializing nodes too
             cluster.clusterInfo().getDistributorNodeInfo(x).setReportedState(new NodeState(DISTRIBUTOR, state), 0);
             cluster.clusterInfo().getDistributorNodeInfo(x).setHostInfo(HostInfo.createHostInfo(createDistributorHostInfo(4, 5, 6)));
             cluster.clusterInfo().getStorageNodeInfo(x).setReportedState(new NodeState(STORAGE, state), 0);
