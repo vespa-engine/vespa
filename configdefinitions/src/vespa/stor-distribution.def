@@ -67,4 +67,5 @@ group[].nodes[].retired bool default=false
 ## MODULO_INDEX with node index in seed
 ## MODULO_KNUTH with random(node index) in seed
 ## MODULO_BID using all used bits, except count bits, and random(node index)
+## TODO: Deprecated and unused, remove in Vespa 9
 disk_distribution enum { MODULO, MODULO_INDEX, MODULO_KNUTH, MODULO_BID } default=MODULO_BID
