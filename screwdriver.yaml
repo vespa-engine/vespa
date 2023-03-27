@@ -132,6 +132,8 @@ jobs:
           (cd sample-apps && find . -name "pom.xml" -exec sed -i -e "s,<vespa_version>.*</vespa_version>,<vespa_version>$VESPA_VERSION</vespa_version>," {} \;)
           (cd sample-apps && find . -name "pom.xml" -exec sed -i -e "s:<version>[[]8,9[)]</version>:<version>$VESPA_VERSION</version>:" {} \;)
       - make-srpm: |
+          $SD_SOURCE_DIR/screwdriver/factory-command.sh update-build-status running "Building"
+
           make -C $WORKDIR/vespa -f .copr/Makefile srpm outdir=$WORKDIR
       - *restore-cache
       - build: |
@@ -187,7 +189,7 @@ jobs:
           fi
       - *save-cache
       - update-build-status: |
-          meta set vespa.factory.build.status $FACTORY_BUILD_STATUS
+          meta set vespa.factory.build.status success
       - teardown-report-build-status: |
           FACTORY_BUILD_STATUS=$(meta get vespa.factory.build.status)
           if [[ $FACTORY_BUILD_STATUS == success ]]; then
