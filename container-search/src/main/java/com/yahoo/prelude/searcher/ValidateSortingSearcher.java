@@ -3,16 +3,16 @@ package com.yahoo.prelude.searcher;
 
 import com.yahoo.component.chain.dependencies.After;
 import com.yahoo.component.chain.dependencies.Before;
-import com.yahoo.vespa.config.search.AttributesConfig;
-import com.yahoo.search.config.ClusterConfig;
 import com.yahoo.container.QrSearchersConfig;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.Searcher;
+import com.yahoo.search.config.ClusterConfig;
 import com.yahoo.search.query.Sorting;
 import com.yahoo.search.result.ErrorMessage;
 import com.yahoo.search.searchchain.Execution;
 import com.yahoo.search.searchchain.PhaseNames;
+import com.yahoo.vespa.config.search.AttributesConfig;
 
 import java.util.HashMap;
 import java.util.List;
