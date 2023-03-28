@@ -210,7 +210,7 @@ public abstract class CompositeItem extends Item {
     public CompositeItem clone() {
         CompositeItem copy = (CompositeItem) super.clone();
 
-        copy.subitems = new java.util.ArrayList<>();
+        copy.subitems = new java.util.ArrayList<>(subitems.size());
         for (Item subItem : subitems) {
             Item subItemCopy = subItem.clone();
             subItemCopy.setParent(copy);
@@ -221,14 +221,16 @@ public abstract class CompositeItem extends Item {
     }
 
     private void fixConnexity(CompositeItem copy) {
-        List<Item> flatland = new ArrayList<>();
-        List<Item> flatCopy = new ArrayList<>();
-        taggingFlatten(this, flatland);
+        int hasUniqueIdCount = countUniqueId(this);
+        if (hasUniqueIdCount == 0) return;
+        List<Item> flat = new ArrayList<>(hasUniqueIdCount);
+        List<Item> flatCopy = new ArrayList<>(hasUniqueIdCount);
+        taggingFlatten(this, flat);
         taggingFlatten(copy, flatCopy);
-        int barrier = flatland.size();
+        int barrier = flat.size();
         for (int i = 0; i < barrier; ++i) {
-            Item orig = flatland.get(i);
-            int connectedTo = find(orig.connectedItem, flatland);
+            Item orig = flat.get(i);
+            int connectedTo = find(orig.connectedItem, flat);
             if (connectedTo >= 0) {
                 TaggableItem tagged = (TaggableItem) flatCopy.get(i);
                 tagged.setConnectivity(flatCopy.get(connectedTo), orig.connectivity);
@@ -236,18 +238,28 @@ public abstract class CompositeItem extends Item {
         }
     }
 
-    private void taggingFlatten(Item tree, List<Item> container) {
+    private static int countUniqueId(Item tree) {
+        int sum = tree.hasUniqueID() ? 1 : 0;
+        if (tree instanceof CompositeItem asComposite) {
+            for (Iterator<Item> i = asComposite.getItemIterator(); i.hasNext();) {
+                sum += countUniqueId(i.next());
+            }
+        }
+        return sum;
+    }
+
+    private static void taggingFlatten(Item tree, List<Item> container) {
         if (tree.hasUniqueID()) {
             container.add(tree);
-        } else if (tree instanceof CompositeItem) {
-            CompositeItem asComposite = (CompositeItem) tree;
+        }
+        if (tree instanceof CompositeItem asComposite) {
             for (Iterator<Item> i = asComposite.getItemIterator(); i.hasNext();) {
                 taggingFlatten(i.next(), container);
             }
         }
     }
 
-    private int find(Item needle, List<Item> haystack) {
+    private static int find(Item needle, List<Item> haystack) {
         if (needle == null) {
             return -1;
         }
@@ -352,8 +364,7 @@ public abstract class CompositeItem extends Item {
         }
 
         @Override
-        public void set(Item o) {
-            Item newItem = o;
+        public void set(Item newItem) {
             owner.removing(current);
             owner.adding(newItem);
             current = newItem;
@@ -361,12 +372,10 @@ public abstract class CompositeItem extends Item {
         }
 
         @Override
-        public void add(Item o) {
-            Item newItem = o;
-
+        public void add(Item newItem) {
             owner.adding(newItem);
             // TODO: Change current here? Check javadoc
-            wrapped.add(o);
+            wrapped.add(newItem);
         }
 
     }
