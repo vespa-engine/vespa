@@ -5,7 +5,6 @@
 #include <vespa/searchcore/proton/attribute/attribute_manager_reconfig.h>
 #include <vespa/searchcore/proton/attribute/attribute_writer.h>
 #include <vespa/searchcore/proton/attribute/attributemanager.h>
-#include <vespa/searchcore/proton/attribute/exclusive_attribute_read_accessor.h>
 #include <vespa/searchcore/proton/attribute/imported_attributes_repo.h>
 #include <vespa/searchcore/proton/attribute/sequential_attributes_initializer.h>
 #include <vespa/searchcore/proton/bucketdb/bucket_db_owner.h>
@@ -753,15 +752,6 @@ TEST_F("require that we can call functions on all attributes via functor",
         std::make_shared<MyAttributeFunctor>();
     f._m.asyncForEachAttribute(functor);
     EXPECT_EQUAL("a1,a2,a3", functor->getSortedNames());
-}
-
-TEST_F("require that we can acquire exclusive read access to attribute", Fixture)
-{
-    f.addAttribute("attr");
-    ExclusiveAttributeReadAccessor::UP attrAccessor = f._m.getExclusiveReadAccessor("attr");
-    ExclusiveAttributeReadAccessor::UP noneAccessor = f._m.getExclusiveReadAccessor("none");
-    EXPECT_TRUE(attrAccessor.get() != nullptr);
-    EXPECT_TRUE(noneAccessor.get() == nullptr);
 }
 
 TEST_F("require that imported attributes are exposed via attribute context together with regular attributes", Fixture)

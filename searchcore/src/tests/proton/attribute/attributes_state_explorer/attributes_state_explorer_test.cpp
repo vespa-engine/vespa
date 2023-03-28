@@ -92,13 +92,13 @@ TEST_F(AttributesStateExplorerTest, require_that_attributes_are_exposed_as_child
 {
     StringVector children = _explorer.get_children_names();
     std::sort(children.begin(), children.end());
-    EXPECT_EQ(StringVector({"btree", "extra", "hash", "hybrid", "regular"}), children);
+    EXPECT_EQ(StringVector({"btree", "hash", "hybrid", "regular"}), children);
 }
 
 TEST_F(AttributesStateExplorerTest, require_that_attributes_are_explorable)
 {
     EXPECT_TRUE(_explorer.get_child("regular").get() != nullptr);
-    EXPECT_TRUE(_explorer.get_child("extra").get() != nullptr);
+    EXPECT_TRUE(_explorer.get_child("extra").get() == nullptr);
     EXPECT_TRUE(_explorer.get_child("not").get() == nullptr);
 }
 
