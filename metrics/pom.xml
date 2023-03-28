@@ -78,9 +78,6 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-install-plugin</artifactId>
-        <configuration>
-          <updateReleaseInfo>true</updateReleaseInfo>
-        </configuration>
       </plugin>
       <plugin>
         <!-- Remove when v2.1 is the default

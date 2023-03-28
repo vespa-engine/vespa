@@ -96,9 +96,6 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-install-plugin</artifactId>
-        <configuration>
-          <updateReleaseInfo>true</updateReleaseInfo>
-        </configuration>
       </plugin>
       <plugin> <!--  We're testing this plugin in this module. -->
         <groupId>com.yahoo.vespa</groupId>
