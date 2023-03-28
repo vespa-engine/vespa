@@ -225,12 +225,17 @@ public class BillingApiHandler extends ThreadedHttpRequestHandler {
 
         Optional<Bill.Id> billId = SlimeUtils.optionalString(inspector.field("billId")).map(Bill.Id::of);
 
-        billingController.addLineItem(
+        var lineItemId = billingController.addLineItem(
                 TenantName.from(tenant),
                 getInspectorFieldOrThrow(inspector, "description"),
                 new BigDecimal(getInspectorFieldOrThrow(inspector, "amount")),
                 billId,
                 userId);
+
+        var message = new Slime();
+        var root = message.setObject();
+        root.setString("message", "Added line item for tenant " + tenant);
+        root.setString("id", lineItemId);
 
         return new MessageResponse("Added line item for tenant " + tenant);
     }

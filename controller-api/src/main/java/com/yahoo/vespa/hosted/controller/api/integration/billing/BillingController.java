@@ -92,7 +92,7 @@ public interface BillingController {
     void updateBillStatus(Bill.Id billId, String agent, String status);
 
     /** Add a line item to the given bill */
-    void addLineItem(TenantName tenant, String description, BigDecimal amount, Optional<Bill.Id> billId, String agent);
+    String addLineItem(TenantName tenant, String description, BigDecimal amount, Optional<Bill.Id> billId, String agent);
 
     /** Delete a line item - only available for unused line items */
     void deleteLineItem(String lineItemId);

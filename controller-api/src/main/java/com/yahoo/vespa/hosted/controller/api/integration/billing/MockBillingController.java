@@ -125,7 +125,7 @@ public class MockBillingController implements BillingController {
     }
 
     @Override
-    public void addLineItem(TenantName tenant, String description, BigDecimal amount, Optional<Bill.Id> billId, String agent) {
+    public String addLineItem(TenantName tenant, String description, BigDecimal amount, Optional<Bill.Id> billId, String agent) {
         if (billId.isPresent()) {
             throw new UnsupportedOperationException();
         } else {
@@ -137,6 +137,7 @@ public class MockBillingController implements BillingController {
                             "some-plan",
                             agent,
                             ZonedDateTime.now()));
+            return "line-item-id";
         }
     }
 
