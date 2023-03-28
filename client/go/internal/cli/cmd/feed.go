@@ -60,7 +60,9 @@ func feed(r io.Reader, cli *CLI, concurrency int) error {
 		BaseURL: service.BaseURL,
 	}, service)
 	throttler := document.NewThrottler()
-	dispatcher := document.NewDispatcher(client, throttler)
+	// TODO(mpolden): Make doom duration configurable
+	circuitBreaker := document.NewCircuitBreaker(10*time.Second, 0)
+	dispatcher := document.NewDispatcher(client, throttler, circuitBreaker)
 	dec := document.NewDecoder(r)
 
 	start := cli.now()

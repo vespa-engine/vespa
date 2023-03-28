@@ -39,7 +39,8 @@ func TestDispatcher(t *testing.T) {
 	feeder := &mockFeeder{}
 	clock := &manualClock{tick: time.Second}
 	throttler := newThrottler(clock.now)
-	dispatcher := NewDispatcher(feeder, throttler)
+	breaker := NewCircuitBreaker(time.Second, 0)
+	dispatcher := NewDispatcher(feeder, throttler, breaker)
 	docs := []Document{
 		{Id: mustParseId("id:ns:type::doc1"), Operation: OperationPut, Body: []byte(`{"fields":{"foo": "123"}}`)},
 		{Id: mustParseId("id:ns:type::doc2"), Operation: OperationPut, Body: []byte(`{"fields":{"bar": "456"}}`)},
@@ -71,7 +72,8 @@ func TestDispatcherOrdering(t *testing.T) {
 	}
 	clock := &manualClock{tick: time.Second}
 	throttler := newThrottler(clock.now)
-	dispatcher := NewDispatcher(feeder, throttler)
+	breaker := NewCircuitBreaker(time.Second, 0)
+	dispatcher := NewDispatcher(feeder, throttler, breaker)
 	for _, d := range docs {
 		dispatcher.Enqueue(d)
 	}
@@ -106,7 +108,8 @@ func TestDispatcherOrderingWithFailures(t *testing.T) {
 	feeder.failAfterN(2)
 	clock := &manualClock{tick: time.Second}
 	throttler := newThrottler(clock.now)
-	dispatcher := NewDispatcher(feeder, throttler)
+	breaker := NewCircuitBreaker(time.Second, 0)
+	dispatcher := NewDispatcher(feeder, throttler, breaker)
 	for _, d := range docs {
 		dispatcher.Enqueue(d)
 	}

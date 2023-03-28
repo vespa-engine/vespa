@@ -11,9 +11,10 @@ const maxAttempts = 10
 
 // Dispatcher dispatches documents from a queue to a Feeder.
 type Dispatcher struct {
-	feeder    Feeder
-	throttler Throttler
-	stats     Stats
+	feeder         Feeder
+	throttler      Throttler
+	circuitBreaker CircuitBreaker
+	stats          Stats
 
 	closed        bool
 	ready         chan Id
@@ -44,11 +45,12 @@ func (g *documentGroup) append(op documentOp) {
 	g.operations = append(g.operations, op)
 }
 
-func NewDispatcher(feeder Feeder, throttler Throttler) *Dispatcher {
+func NewDispatcher(feeder Feeder, throttler Throttler, breaker CircuitBreaker) *Dispatcher {
 	d := &Dispatcher{
-		feeder:    feeder,
-		throttler: throttler,
-		inflight:  make(map[string]*documentGroup),
+		feeder:         feeder,
+		throttler:      throttler,
+		circuitBreaker: breaker,
+		inflight:       make(map[string]*documentGroup),
 	}
 	d.start()
 	return d
@@ -60,16 +62,16 @@ func (d *Dispatcher) dispatchAll(g *documentGroup) {
 	for i := 0; i < len(g.operations); i++ {
 		op := g.operations[i]
 		ok := false
-		for op.attempts <= maxAttempts && !ok {
-			op.attempts += 1
+		for !ok {
+			op.attempts++
 			result := d.feeder.Send(op.document)
-			d.releaseSlot()
 			d.results <- result
 			ok = result.Status.Success()
 			if !d.shouldRetry(op, result) {
 				break
 			}
 		}
+		d.releaseSlot()
 	}
 	g.operations = nil
 }
@@ -77,6 +79,7 @@ func (d *Dispatcher) dispatchAll(g *documentGroup) {
 func (d *Dispatcher) shouldRetry(op documentOp, result Result) bool {
 	if result.HTTPStatus/100 == 2 || result.HTTPStatus == 404 || result.HTTPStatus == 412 {
 		d.throttler.Success()
+		d.circuitBreaker.Success()
 		return false
 	}
 	if result.HTTPStatus == 429 || result.HTTPStatus == 503 {
@@ -84,7 +87,10 @@ func (d *Dispatcher) shouldRetry(op documentOp, result Result) bool {
 		return true
 	}
 	if result.HTTPStatus == 500 || result.HTTPStatus == 502 || result.HTTPStatus == 504 {
-		// TODO(mpolden): Trigger circuit-breaker
+		d.circuitBreaker.Error(fmt.Errorf("request failed with status %d", result.HTTPStatus))
+		if op.attempts <= maxAttempts {
+			return true
+		}
 	}
 	return false
 }
