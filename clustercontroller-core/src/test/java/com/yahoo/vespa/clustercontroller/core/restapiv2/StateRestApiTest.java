@@ -18,8 +18,6 @@ import com.yahoo.vespa.clustercontroller.core.hostinfo.HostInfo;
 import com.yahoo.vespa.clustercontroller.utils.staterestapi.StateRestAPI;
 import com.yahoo.vespa.clustercontroller.utils.staterestapi.requests.UnitStateRequest;
 import com.yahoo.vespa.clustercontroller.utils.staterestapi.server.JsonWriter;
-import com.yahoo.vespa.config.content.StorDistributionConfig;
-
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -169,12 +167,8 @@ public abstract class StateRestApiTest {
                 "}";
     }
 
-    private static String getSimpleGroupConfig(int redundancy, int nodeCount) {
-        return getSimpleGroupConfig(redundancy, nodeCount, StorDistributionConfig.Disk_distribution.Enum.MODULO_BID);
-    }
-
     // TODO: Use config builder instead of creating raw: config
-    private static String getSimpleGroupConfig(int redundancy, int nodeCount, StorDistributionConfig.Disk_distribution.Enum diskDistribution) {
+    private static String getSimpleGroupConfig(int redundancy, int nodeCount) {
         StringBuilder sb = new StringBuilder();
         sb.append("raw:redundancy ").append(redundancy).append("\n").append("group[4]\n");
 
@@ -205,7 +199,6 @@ public abstract class StateRestApiTest {
         for (int i=1; i<nodeCount; i += 2) {
             sb.append("group[" + group + "].nodes[").append(i / 2).append("].index ").append(i).append("\n");
         }
-        sb.append("disk_distribution ").append(diskDistribution.toString()).append("\n");
         return sb.toString();
     }
 
