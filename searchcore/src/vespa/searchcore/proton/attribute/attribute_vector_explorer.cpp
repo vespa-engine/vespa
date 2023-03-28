@@ -127,7 +127,7 @@ void
 AttributeVectorExplorer::get_state(const vespalib::slime::Inserter &inserter, bool full) const
 {
     auto& attr = _executor->get_attr();
-    _executor->run([this, &attr, &inserter, full] { get_state_helper(attr, inserter, full); });
+    _executor->run_sync([this, &attr, &inserter, full] { get_state_helper(attr, inserter, full); });
 }
 
 void

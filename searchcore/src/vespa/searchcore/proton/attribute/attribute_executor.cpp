@@ -20,7 +20,7 @@ AttributeExecutor::AttributeExecutor(std::shared_ptr<IAttributeManager> mgr,
 AttributeExecutor::~AttributeExecutor() = default;
 
 void
-AttributeExecutor::run(std::function<void()> task) const
+AttributeExecutor::run_sync(std::function<void()> task) const
 {
     vespalib::string name = _attr->getNamePrefix();
     auto& writer = _mgr->getAttributeFieldWriter();

@@ -25,7 +25,7 @@ public:
     AttributeExecutor(std::shared_ptr<IAttributeManager> mgr,
                       std::shared_ptr<search::AttributeVector> attr);
     ~AttributeExecutor();
-    void run(std::function<void()> task) const;
+    void run_sync(std::function<void()> task) const;
     const search::AttributeVector& get_attr() const noexcept { return *_attr; }
 };
 
