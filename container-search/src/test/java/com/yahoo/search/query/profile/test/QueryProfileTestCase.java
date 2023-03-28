@@ -486,7 +486,8 @@ public class QueryProfileTestCase {
         assertEquals("a.b-value", cp.get("a.b", QueryProfileVariantsTestCase.toMap(p, new String[]{"x1"})));
     }
 
-    public void testSettingNonLeaf4b() {
+    @Test
+    void testSettingNonLeaf4b() {
         QueryProfile p = new QueryProfile("test");
         p.setDimensions(new String[] {"x"});
         p.set("a","a-value", (QueryProfileRegistry)null);
@@ -646,6 +647,32 @@ public class QueryProfileTestCase {
         Query query = new Query("?foo=value&tracelevel=4", cProfile);
         assertEquals("value", query.properties().get("property"));
         assertTrue(traceContains("foo: value", query));
+    }
+
+    @Test
+    void benchQueryCreation() throws InterruptedException {
+        QueryProfile p = new QueryProfile("test");
+        p.setDimensions(new String[]{"x", "y"});
+        p.set("clustering.something", "bar", null);
+        p.set("clustering.something", "bar", new String[]{"x1", "y1"}, null);
+        p.freeze();
+        CompiledQueryProfile cqp = p.compile(null);
+        var httpRequest = HttpRequest.createTestRequest("?x=x1&y=y1&query=bar&clustering.timeline.kano=tur&" +
+                "clustering.enable=true&clustering.timeline.bucketspec=-" +
+                "7d/3h&clustering.timeline.tophit=false&clustering.timeli" +
+                "ne=true", Method.GET);
+        for (int i = 0; i < 30000; i++) {
+            Query q = new Query(httpRequest, cqp);
+            assertTrue(q.properties().getBoolean("clustering.timeline", false));
+        }
+        Thread.sleep(2000);
+        long start = System.nanoTime();
+        for (int i = 0; i < 100000; i++) {
+            Query q = new Query(httpRequest, cqp);
+            assertTrue(q.properties().getBoolean("clustering.timeline", false));
+        }
+        long now = System.nanoTime();
+        System.out.println("Duration = " + (now - start)/1_000_000 + " ms");
     }
 
     // NB: NOT RECURSIVE
