@@ -182,8 +182,6 @@ public:
     void asyncForEachAttribute(std::shared_ptr<IAttributeFunctor> func, OnDone onDone) const override;
     void asyncForAttribute(const vespalib::string &name, std::unique_ptr<IAttributeFunctor> func) const override;
 
-    ExclusiveAttributeReadAccessor::UP getExclusiveReadAccessor(const vespalib::string &name) const override;
-
     void setImportedAttributes(std::unique_ptr<ImportedAttributesRepo> attributes) override;
 
     const ImportedAttributesRepo *getImportedAttributes() const override { return _importedAttributes.get(); }
