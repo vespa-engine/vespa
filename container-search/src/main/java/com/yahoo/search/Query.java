@@ -426,28 +426,36 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
      * dependent objects for the appropriate subset of the given property values
      */
     private void setFieldsFrom(Properties properties, Map<String, String> context) {
-        setFrom(CompoundName.empty, properties, Query.getArgumentType(), context);
+        setFrom("", properties, Query.getArgumentType(), context);
+    }
+
+    private static String append(String a, String b) {
+        if (a.isEmpty()) return b;
+        if (b.isEmpty()) return a;
+        return a + "." + b;
     }
 
     /**
      * For each field in the given query profile type, take the corresponding value from originalProperties
      * (if any) set it to properties(), recursively.
      */
-    private void setFrom(CompoundName prefix, Properties originalProperties, QueryProfileType arguments, Map<String, String> context) {
-        prefix = prefix.append(getPrefix(arguments));
+    private void setFrom(String prefix, Properties originalProperties, QueryProfileType arguments, Map<String, String> context) {
+        prefix = append(prefix, getPrefix(arguments).toString());
         for (FieldDescription field : arguments.fields().values()) {
 
             if (field.getType() == FieldType.genericQueryProfileType) { // Generic map
-                CompoundName fullName = prefix.append(field.getCompoundName());
-                for (Map.Entry<String, Object> entry : originalProperties.listProperties(fullName, context).entrySet()) {
-                    properties().set(fullName.append(entry.getKey()), entry.getValue(), context);
+                String fullName = append(prefix, field.getCompoundName().toString());
+                for (Map.Entry<String, Object> entry : originalProperties.listProperties(CompoundName.of(fullName), context).entrySet()) {
+                    properties().set(CompoundName.of(append(fullName, entry.getKey())), entry.getValue(), context);
                 }
             }
             else if (field.getType() instanceof QueryProfileFieldType) { // Nested arguments
                 setFrom(prefix, originalProperties, ((QueryProfileFieldType)field.getType()).getQueryProfileType(), context);
             }
             else {
-                CompoundName fullName = prefix.append(field.getCompoundName());
+                CompoundName fullName = prefix.isEmpty()
+                        ? field.getCompoundName()
+                        : CompoundName.of(append(prefix, field.getCompoundName().toString()));
                 Object value = originalProperties.get(fullName, context);
                 if (value != null) {
                     properties().set(fullName, value, context);
