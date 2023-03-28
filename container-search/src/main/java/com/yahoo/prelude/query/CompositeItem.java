@@ -239,22 +239,20 @@ public abstract class CompositeItem extends Item {
     }
 
     private static int countUniqueId(Item tree) {
-        if (tree.hasUniqueID()) {
-            return 1;
-        } else if (tree instanceof CompositeItem asComposite) {
-            int sum = 0;
+        int sum = tree.hasUniqueID() ? 1 : 0;
+        if (tree instanceof CompositeItem asComposite) {
             for (Iterator<Item> i = asComposite.getItemIterator(); i.hasNext();) {
                 sum += countUniqueId(i.next());
             }
-            return sum;
         }
-        return 0;
+        return sum;
     }
 
     private static void taggingFlatten(Item tree, List<Item> container) {
         if (tree.hasUniqueID()) {
             container.add(tree);
-        } else if (tree instanceof CompositeItem asComposite) {
+        }
+        if (tree instanceof CompositeItem asComposite) {
             for (Iterator<Item> i = asComposite.getItemIterator(); i.hasNext();) {
                 taggingFlatten(i.next(), container);
             }
