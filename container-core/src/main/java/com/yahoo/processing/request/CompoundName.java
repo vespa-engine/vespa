@@ -1,10 +1,13 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.processing.request;
 
+import com.yahoo.concurrent.CopyOnWriteHashMap;
+
 import java.util.AbstractList;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
 import static com.yahoo.text.Lowercase.toLowerCase;
 
@@ -36,7 +39,8 @@ public final class CompoundName {
 
     /** The empty compound */
     public static final CompoundName empty = new CompoundName("");
-
+    private static final Map<String, CompoundName> cache = new CopyOnWriteHashMap<>();
+    private static final int MAX_CACHE_SIZE = 10_000;
     /**
      * Constructs this from a string which may contains dot-separated components
      *
@@ -298,7 +302,21 @@ public final class CompoundName {
         return b.length()==0 ? "" : b.substring(0, b.length()-1);
     }
 
-    public static CompoundName from(String name) { return new CompoundName(name); }
+    /** @deprecated Use of() instead */
+    @Deprecated
+    public static CompoundName from(String name) {
+        return of(name);
+    }
+    public static CompoundName of(String name) {
+        CompoundName found = cache.get(name);
+        if (found != null) return found;
+
+        CompoundName compound = new CompoundName(name);
+        if (cache.size() < MAX_CACHE_SIZE) {
+            cache.put(name, compound);
+        }
+        return compound;
+    }
 
     private static class ImmutableArrayList extends AbstractList<String> {
 
