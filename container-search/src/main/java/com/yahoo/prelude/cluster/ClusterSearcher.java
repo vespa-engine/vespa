@@ -1,8 +1,8 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.prelude.cluster;
 
-import com.yahoo.component.annotation.Inject;
 import com.yahoo.component.ComponentId;
+import com.yahoo.component.annotation.Inject;
 import com.yahoo.component.chain.dependencies.After;
 import com.yahoo.component.provider.ComponentRegistry;
 import com.yahoo.container.QrSearchersConfig;
@@ -28,9 +28,6 @@ import com.yahoo.vespa.streamingvisitors.VdsStreamingSearcher;
 import com.yahoo.yolean.Exceptions;
 
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -56,8 +53,7 @@ public class ClusterSearcher extends Searcher {
 
     private final String searchClusterName;
 
-    // The set of document types contained in this search cluster
-    private final Set<String> schemas;
+    private final SchemaResolver schemaResolver;
 
     private final long maxQueryTimeout; // in milliseconds
     private final long maxQueryCacheTimeout; // in milliseconds
@@ -84,7 +80,7 @@ public class ClusterSearcher extends Searcher {
         int searchClusterIndex = clusterConfig.clusterId();
         searchClusterName = clusterConfig.clusterName();
         QrSearchersConfig.Searchcluster searchClusterConfig = getSearchClusterConfigFromClusterName(qrsConfig, searchClusterName);
-        schemas = new LinkedHashSet<>();
+        this.schemaResolver = new SchemaResolver(documentDbConfig);
 
         maxQueryTimeout = ParameterParser.asMilliSeconds(clusterConfig.maxQueryTimeout(), DEFAULT_MAX_QUERY_TIMEOUT);
         maxQueryCacheTimeout = ParameterParser.asMilliSeconds(clusterConfig.maxQueryCacheTimeout(), DEFAULT_MAX_QUERY_CACHE_TIMEOUT);
@@ -92,9 +88,6 @@ public class ClusterSearcher extends Searcher {
         SummaryParameters docSumParams = new SummaryParameters(qrsConfig
                 .com().yahoo().prelude().fastsearch().FastSearcher().docsum()
                 .defaultclass());
-
-        for (DocumentdbInfoConfig.Documentdb docDb : documentDbConfig.documentdb())
-            schemas.add(docDb.name());
 
         String uniqueServerId = UUID.randomUUID().toString();
         if (searchClusterConfig.indexingmode() == STREAMING) {
@@ -158,7 +151,7 @@ public class ClusterSearcher extends Searcher {
 
     /** Do not use, for internal testing purposes only. **/
     ClusterSearcher(Set<String> schemas, VespaBackEndSearcher searcher, Executor executor) {
-        this.schemas = schemas;
+        this.schemaResolver = new SchemaResolver(schemas);
         searchClusterName = "testScenario";
         maxQueryTimeout = DEFAULT_MAX_QUERY_TIMEOUT;
         maxQueryCacheTimeout = DEFAULT_MAX_QUERY_CACHE_TIMEOUT;
@@ -231,8 +224,9 @@ public class ClusterSearcher extends Searcher {
     }
 
     private Result doSearch(Searcher searcher, Query query, Execution execution) {
+        var schemas = schemaResolver.resolve(query, execution);
         if (schemas.size() > 1) {
-            return searchMultipleDocumentTypes(searcher, query, execution);
+            return searchMultipleDocumentTypes(searcher, query, execution, schemas);
         } else {
             String docType = schemas.iterator().next();
             query.getModel().setRestrict(docType);
@@ -265,8 +259,7 @@ public class ClusterSearcher extends Searcher {
         }
     }
 
-    private Result searchMultipleDocumentTypes(Searcher searcher, Query query, Execution execution) {
-        Set<String> schemas = resolveSchemas(query, execution.context().getIndexFacts());
+    private Result searchMultipleDocumentTypes(Searcher searcher, Query query, Execution execution, Set<String> schemas) {
         List<Query> queries = createQueries(query, schemas);
         if (queries.size() == 1) {
             return perSchemaSearch(searcher, queries.get(0), execution);
@@ -300,25 +293,7 @@ public class ClusterSearcher extends Searcher {
     }
 
     Set<String> resolveSchemas(Query query, IndexFacts indexFacts) {
-        Set<String> restrict = query.getModel().getRestrict();
-        if (restrict == null || restrict.isEmpty()) {
-            Set<String> sources = query.getModel().getSources();
-            return (sources == null || sources.isEmpty())
-                    ? schemas
-                    : new HashSet<>(indexFacts.newSession(sources, Set.of(), schemas).documentTypes());
-        } else {
-            return filterValidDocumentTypes(restrict);
-        }
-    }
-
-    private Set<String> filterValidDocumentTypes(Collection<String> restrict) {
-        Set<String> retval = new LinkedHashSet<>();
-        for (String docType : restrict) {
-            if (docType != null && schemas.contains(docType)) {
-                retval.add(docType);
-            }
-        }
-        return retval;
+        return schemaResolver.resolve(query, indexFacts);
     }
 
     private List<Query> createQueries(Query query, Set<String> docTypes) {
