@@ -19,10 +19,11 @@ type manualClock struct {
 }
 
 func (c *manualClock) now() time.Time {
-	t := c.t
-	c.t = c.t.Add(c.tick)
-	return t
+	c.advance(c.tick)
+	return c.t
 }
+
+func (c *manualClock) advance(d time.Duration) { c.t = c.t.Add(d) }
 
 func TestClientSend(t *testing.T) {
 	docs := []Document{
