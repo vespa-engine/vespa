@@ -458,14 +458,15 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
 
     /** Calls properties.set on all entries in requestMap */
     private void setPropertiesFromRequestMap(Map<String, String> requestMap, Properties properties, boolean ignoreSelect) {
-        for (var entry : requestMap.entrySet()) {
+        var entrySet = requestMap.entrySet();
+        for (var entry : entrySet) {
             if (ignoreSelect && entry.getKey().equals(Select.SELECT)) continue;
             if (RankFeatures.isFeatureName(entry.getKey())) continue; // Set these last
-            properties.set(entry.getKey(), entry.getValue(), requestMap);
+            properties.set(CompoundName.of(entry.getKey()), entry.getValue(), requestMap);
         }
-        for (var entry : requestMap.entrySet()) {
+        for (var entry : entrySet) {
             if ( ! RankFeatures.isFeatureName(entry.getKey())) continue;
-            properties.set(entry.getKey(), entry.getValue(), requestMap);
+            properties.set(CompoundName.of(entry.getKey()), entry.getValue(), requestMap);
         }
     }
 
