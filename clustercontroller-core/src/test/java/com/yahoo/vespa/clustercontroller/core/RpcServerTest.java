@@ -9,7 +9,6 @@ import com.yahoo.jrt.StringValue;
 import com.yahoo.jrt.Supervisor;
 import com.yahoo.jrt.Target;
 import com.yahoo.jrt.Transport;
-import com.yahoo.jrt.slobrok.api.BackOffPolicy;
 import com.yahoo.vdslib.distribution.ConfiguredNode;
 import com.yahoo.vdslib.distribution.Distribution;
 import com.yahoo.vdslib.state.ClusterState;
@@ -564,14 +563,6 @@ public class RpcServerTest extends FleetControllerTest {
         req.parameters().add(new Int32Value(nodeIndex));
         connection.invokeSync(req, timeout());
         return req;
-    }
-
-    private static class BackOff implements BackOffPolicy {
-        private int counter = 0;
-        public void reset() { counter = 0; }
-        public double get() { ++counter; return 0.01; }
-        public boolean shouldWarn(double v) { return ((counter % 1000) == 10); }
-        public boolean shouldInform(double v) { return false; }
     }
 
 }

@@ -12,7 +12,6 @@ import com.yahoo.jrt.StringArray;
 import com.yahoo.jrt.StringValue;
 import com.yahoo.jrt.Supervisor;
 import com.yahoo.jrt.Transport;
-import com.yahoo.jrt.slobrok.api.BackOffPolicy;
 import com.yahoo.jrt.slobrok.api.Register;
 import com.yahoo.jrt.slobrok.api.SlobrokList;
 import com.yahoo.net.HostName;
@@ -50,13 +49,11 @@ public class RpcServer {
     private Register register;
     private final List<Request> rpcRequests = new LinkedList<>();
     private MasterElectionHandler masterHandler;
-    private final BackOffPolicy slobrokBackOffPolicy;
 
-    public RpcServer(Object monitor, String clusterName, int fleetControllerIndex, BackOffPolicy bop) {
+    public RpcServer(Object monitor, String clusterName, int fleetControllerIndex) {
         this.monitor = monitor;
         this.clusterName = clusterName;
         this.fleetControllerIndex = fleetControllerIndex;
-        this.slobrokBackOffPolicy = bop;
     }
 
     public void setMasterElectionHandler(MasterElectionHandler handler) { this.masterHandler = handler; }
@@ -104,11 +101,7 @@ public class RpcServer {
         slist.setup(slobrokConnectionSpecs);
         Spec spec = new Spec(HostName.getLocalhost(), acceptor.port());
         log.log(Level.INFO, "Registering " + spec + " with slobrok at " + String.join(" ", slobrokConnectionSpecs));
-        if (slobrokBackOffPolicy != null) {
-            register = new Register(supervisor, slist, spec, slobrokBackOffPolicy);
-        } else {
-            register = new Register(supervisor, slist, spec);
-        }
+        register = new Register(supervisor, slist, spec);
         register.registerName(getSlobrokName());
     }
 
