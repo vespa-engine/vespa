@@ -34,6 +34,7 @@ type visitArgs struct {
 	slices         int
 	sliceId        int
 	bucketSpace    string
+	bucketSpaces   []string
 	cli            *CLI
 }
 
@@ -133,7 +134,7 @@ $ vespa visit --field-set "[id]" # list document IDs
 	cmd.Flags().StringVar(&vArgs.to, "to", "", `Timestamp to visit up to, in seconds`)
 	cmd.Flags().IntVar(&vArgs.sliceId, "slice-id", -1, `The number of the slice this visit invocation should fetch`)
 	cmd.Flags().IntVar(&vArgs.slices, "slices", -1, `Split the document corpus into this number of independent slices`)
-	cmd.Flags().StringVar(&vArgs.bucketSpace, "bucket-space", "default", `"default" or "global" bucket space`)
+	cmd.Flags().StringSliceVar(&vArgs.bucketSpaces, "bucket-space", []string{"global", "default"}, `"default" or "global" bucket space`)
 	return cmd
 }
 
@@ -159,14 +160,14 @@ func checkArguments(vArgs visitArgs) (res util.OperationResult) {
 			return util.Failure("Invalid 'to' argument: '" + vArgs.to + "': " + err.Error())
 		}
 	}
-	if vArgs.bucketSpace != "" {
-		switch vArgs.bucketSpace {
+	for _, b := range vArgs.bucketSpaces {
+		switch b {
 		case
 			"default",
 			"global":
 			// Do nothing
 		default:
-			return util.Failure("Invalid 'bucket-space' argument, must be 'default' or 'global'")
+			return util.Failure("Invalid 'bucket-space' argument '" + b + "', must be 'default' or 'global'")
 		}
 	}
 	return util.Success("")
@@ -238,13 +239,16 @@ func visitClusters(vArgs *visitArgs, service *vespa.Service) (res util.Operation
 	if vArgs.makeFeed {
 		vArgs.writeString("[\n")
 	}
-	for _, c := range clusters {
-		vArgs.contentCluster = c
-		res = runVisit(vArgs, service)
-		if !res.Success {
-			return res
+	for _, b := range vArgs.bucketSpaces {
+		for _, c := range clusters {
+			vArgs.bucketSpace = b
+			vArgs.contentCluster = c
+			res = runVisit(vArgs, service)
+			if !res.Success {
+				return res
+			}
+			vArgs.debugPrint("Success: " + res.Message)
 		}
-		vArgs.debugPrint("Success: " + res.Message)
 	}
 	if vArgs.makeFeed {
 		vArgs.writeString("{}\n]\n")

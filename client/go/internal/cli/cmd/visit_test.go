@@ -105,6 +105,7 @@ func TestVisitCommand(t *testing.T) {
 	assertVisitResults(
 		[]string{
 			"visit",
+			"--bucket-space", "default",
 			"--json-lines",
 		},
 		t,
