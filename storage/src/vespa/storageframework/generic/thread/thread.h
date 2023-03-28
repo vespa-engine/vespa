@@ -32,15 +32,15 @@ class Thread : public ThreadHandle {
 public:
     using UP = std::unique_ptr<Thread>;
 
-    Thread(vespalib::stringref id) : _id(id) {}
-    virtual ~Thread() = default;
+    explicit Thread(vespalib::stringref id) : _id(id) {}
+    ~Thread() override = default;
 
-    virtual const vespalib::string& getId() const { return _id; }
+    [[nodiscard]] virtual const vespalib::string& getId() const { return _id; }
 
     /** Check whether thread have been interrupted or not. */
-    virtual bool interrupted() const override = 0;
+    [[nodiscard]] bool interrupted() const override = 0;
     /** Check whether thread have been joined or not. */
-    virtual bool joined() const  = 0;
+    [[nodiscard]] virtual bool joined() const  = 0;
 
     /**
      * Call this function to set interrupt flag, such that later calls to
