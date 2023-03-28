@@ -26,7 +26,15 @@ import java.util.concurrent.atomic.AtomicReference;
 
 public class Distribution {
 
-    private record Config(Group nodeGraph, int redundancy) { }
+    private static class Config {
+        Config(Group nodeGraph, int redundancy) {
+            this.nodeGraph = nodeGraph;
+            this.redundancy = redundancy;
+        }
+
+        private final Group nodeGraph;
+        private final int redundancy;
+    }
 
     private ConfigSubscriber configSub;
     private final AtomicReference<Config> config = new AtomicReference<>(new Config(null, 1));
@@ -201,10 +209,20 @@ public class Distribution {
         }
     }
 
-    private record ScoredNode(int index, double score) {
+    private static class ScoredNode {
+        final double score;
+        final int index;
+
+        ScoredNode(int index, double score) {
+            this.score = score;
+            this.index = index;
+        }
 
         boolean valid() { return index != -1; }
-        static ScoredNode makeInvalid() { return new ScoredNode(-1, 0.0); }
+
+        static ScoredNode makeInvalid() {
+            return new ScoredNode(-1, 0.0);
+        }
     }
 
     private static boolean allDistributorsDown(Group g, ClusterState clusterState) {
