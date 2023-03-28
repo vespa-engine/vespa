@@ -91,10 +91,10 @@ TEST("require that inserting empty vector does not affect the vector.") {
 TEST("require that we have control over buffer construction size") {
     CV a;
     EXPECT_EQUAL(0u, a.size());
-    EXPECT_EQUAL(256u, a.capacity());
+    EXPECT_EQUAL(4u, a.capacity());
     a.clear();
     EXPECT_EQUAL(0u, a.size());
-    EXPECT_EQUAL(256u, a.capacity());
+    EXPECT_EQUAL(4u, a.capacity());
 }
 
 TEST("require that buffer can grow some") {

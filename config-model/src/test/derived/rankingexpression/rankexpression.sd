@@ -380,7 +380,7 @@ schema rankexpression {
         expression: attribute(foo1)
       }
       global-phase {
-        expression: myplus()+sum(mymul())+firstPhase
+        expression: myplus()+sum(mymul())+firstPhase + term(0).significance + fieldLength(artist) + fieldTermMatch(title,0).occurrences + termDistance(title,1,2).reverse + closeness(field, t1)
         rerank-count: 42
       }
   }

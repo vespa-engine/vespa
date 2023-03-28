@@ -20,22 +20,29 @@ import java.util.stream.Collectors;
  */
 public class ResourceSnapshot {
 
+    private static final NodeResources zero = new NodeResources(
+            0, 0, 0, 0,
+            NodeResources.DiskSpeed.any,
+            NodeResources.StorageType.any,
+            NodeResources.Architecture.any,
+            NodeResources.GpuResources.zero());
+
     private final ApplicationId applicationId;
     private final NodeResources resources;
     private final Instant timestamp;
     private final ZoneId zoneId;
-    private final Version version;
+    private final int majorVersion;
 
-    public ResourceSnapshot(ApplicationId applicationId, NodeResources resources, Instant timestamp, ZoneId zoneId, Version version) {
+    public ResourceSnapshot(ApplicationId applicationId, NodeResources resources, Instant timestamp, ZoneId zoneId, int majorVersion) {
         this.applicationId = applicationId;
         this.resources = resources;
         this.timestamp = timestamp;
         this.zoneId = zoneId;
-        this.version = version;
+        this.majorVersion = majorVersion;
     }
 
     public static ResourceSnapshot from(ApplicationId applicationId, int nodes, NodeResources resources, Instant timestamp, ZoneId zoneId) {
-        return new ResourceSnapshot(applicationId, resources.multipliedBy(nodes), timestamp, zoneId, Version.emptyVersion);
+        return new ResourceSnapshot(applicationId, resources.multipliedBy(nodes), timestamp, zoneId, 0);
     }
 
     public static ResourceSnapshot from(List<Node> nodes, Instant timestamp, ZoneId zoneId) {
@@ -44,8 +51,8 @@ public class ResourceSnapshot {
                                                  .map(node -> node.owner().get())
                                                  .collect(Collectors.toSet());
 
-        Set<Version> versions = nodes.stream()
-                .map(Node::currentVersion)
+        Set<Integer> versions = nodes.stream()
+                .map(n -> n.wantedVersion().getMajor())
                 .collect(Collectors.toSet());
 
         if (applicationIds.size() != 1) throw new IllegalArgumentException("List of nodes can only represent one application");
@@ -53,7 +60,7 @@ public class ResourceSnapshot {
 
         var resources = nodes.stream()
                 .map(Node::resources)
-                .reduce(NodeResources.zero(), NodeResources::add);
+                .reduce(zero, ResourceSnapshot::addResources);
 
         return new ResourceSnapshot(applicationIds.iterator().next(), resources, timestamp, zoneId, versions.iterator().next());
     }
@@ -74,8 +81,8 @@ public class ResourceSnapshot {
         return zoneId;
     }
 
-    public Version getVersion() {
-        return version;
+    public int getMajorVersion() {
+        return majorVersion;
     }
 
     @Override
@@ -88,11 +95,31 @@ public class ResourceSnapshot {
                 this.resources.equals(other.resources) &&
                 this.timestamp.equals(other.timestamp) &&
                 this.zoneId.equals(other.zoneId) &&
-                this.version.equals(other.version);
+                this.majorVersion == other.majorVersion;
     }
 
     @Override
     public int hashCode(){
-        return Objects.hash(applicationId, resources, timestamp, zoneId, version);
+        return Objects.hash(applicationId, resources, timestamp, zoneId, majorVersion);
+    }
+
+    /* This function does pretty much the same thing as NodeResources::add, but it allows adding resources
+     * where some dimensions that are not relevant for billing (yet) are not the same.
+     *
+     * TODO: Make this code respect all dimensions.
+     */
+    private static NodeResources addResources(NodeResources a, NodeResources b) {
+        if (a.architecture() != b.architecture() && a.architecture() != NodeResources.Architecture.any && b.architecture() != NodeResources.Architecture.any) {
+            throw new IllegalArgumentException(a + " and " + b + " are not interchangeable for resource snapshots");
+        }
+        return new NodeResources(
+                a.vcpu() + b.vcpu(),
+                a.memoryGb() + b.memoryGb(),
+                a.diskGb() + b.diskGb(),
+                0,
+                NodeResources.DiskSpeed.any,
+                NodeResources.StorageType.any,
+                a.architecture() == NodeResources.Architecture.any ? b.architecture() : a.architecture(),
+                a.gpuResources().plus(b.gpuResources()));
     }
 }

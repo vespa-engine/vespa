@@ -17,8 +17,6 @@ import com.yahoo.vespa.orchestrator.restapi.wire.SlobrokEntryResponse;
 import com.yahoo.vespa.service.manager.UnionMonitorManager;
 import com.yahoo.vespa.service.monitor.SlobrokApi;
 import org.junit.jupiter.api.Test;
-
-import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 
@@ -58,7 +56,7 @@ class InstanceRequestHandlerTest {
     }
 
     @Test
-    void testGetServiceStatusInfo() throws IOException {
+    void testGetServiceStatusInfo() {
         ServiceType serviceType = new ServiceType("serviceType");
         ConfigId configId = new ConfigId("configId");
         ServiceStatus serviceStatus = ServiceStatus.UP;

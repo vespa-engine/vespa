@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.session;
 
+import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.component.Version;
 import com.yahoo.component.Vtag;
 import com.yahoo.config.FileReference;
@@ -36,6 +37,7 @@ import com.yahoo.vespa.curator.transaction.CuratorOperations;
 import com.yahoo.vespa.curator.transaction.CuratorTransaction;
 import org.apache.zookeeper.data.Stat;
 import java.security.cert.X509Certificate;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
@@ -76,21 +78,23 @@ public class SessionZooKeeperClient {
     private final String serverId;  // hostname
     private final int maxNodeSize;
     private final AddFileInterface fileManager;
+    private final Duration barrierWaitForAllTimeout;
 
-    public SessionZooKeeperClient(Curator curator, TenantName tenantName, long sessionId, String serverId, AddFileInterface fileManager, int maxNodeSize) {
+    public SessionZooKeeperClient(Curator curator, TenantName tenantName, long sessionId, ConfigserverConfig configserverConfig, AddFileInterface fileManager, int maxNodeSize) {
         this.curator = curator;
         this.tenantName = tenantName;
         this.sessionId = sessionId;
         this.sessionPath = getSessionPath(tenantName, sessionId);
-        this.serverId = serverId;
+        this.serverId = configserverConfig.serverId();
         this.sessionStatusPath = sessionPath.append(ZKApplication.SESSIONSTATE_ZK_SUBPATH);
         this.maxNodeSize = maxNodeSize;
         this.fileManager = fileManager;
+        this.barrierWaitForAllTimeout = Duration.ofSeconds(configserverConfig.barrierWaitForAllTimeout());
     }
 
     // For testing only
-    public SessionZooKeeperClient(Curator curator, TenantName tenantName, long sessionId, String serverId) {
-        this(curator, tenantName, sessionId, serverId, new MockFileManager(), 10 * 1024 * 1024);
+    public SessionZooKeeperClient(Curator curator, TenantName tenantName, long sessionId, ConfigserverConfig configserverConfig) {
+        this(curator, tenantName, sessionId, configserverConfig, new MockFileManager(), 10 * 1024 * 1024);
     }
 
     public void writeStatus(Session.Status sessionStatus) {
@@ -132,17 +136,12 @@ public class SessionZooKeeperClient {
         return sessionPath.append(barrierName);
     }
 
-    /** Returns the number of node members needed in a barrier */
-    private int getNumberOfMembers() {
-        return (curator.zooKeeperEnsembleCount() / 2) + 1; // majority
-    }
-
     private CompletionWaiter createCompletionWaiter(String waiterNode) {
-        return curator.createCompletionWaiter(sessionPath, waiterNode, getNumberOfMembers(), serverId);
+        return curator.createCompletionWaiter(sessionPath, waiterNode, serverId, barrierWaitForAllTimeout);
     }
 
     private CompletionWaiter getCompletionWaiter(Path path) {
-        return curator.getCompletionWaiter(path, getNumberOfMembers(), serverId);
+        return curator.getCompletionWaiter(path, serverId, barrierWaitForAllTimeout);
     }
 
     /** Returns a transaction deleting this session on commit */

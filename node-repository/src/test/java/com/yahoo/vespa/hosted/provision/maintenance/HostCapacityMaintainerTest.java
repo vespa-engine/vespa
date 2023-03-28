@@ -27,7 +27,6 @@ import com.yahoo.vespa.flags.custom.ClusterCapacity;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
-import com.yahoo.vespa.hosted.provision.node.Address;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.Allocation;
 import com.yahoo.vespa.hosted.provision.node.Generation;
@@ -402,8 +401,8 @@ public class HostCapacityMaintainerTest {
         // Config server becomes removable (done by RetiredExpirer in a real system) and redeployment moves it
         // to parked
         int removedIndex = nodeToRemove.get().allocation().get().membership().index();
-        tester.nodeRepository().nodes().setRemovable(configSrvApp, List.of(nodeToRemove.get()), true);
-        tester.nodeRepository().nodes().setRemovable(hostApp, List.of(hostToRemove.get()), true);
+        tester.nodeRepository().nodes().setRemovable(NodeList.of(nodeToRemove.get()), true);
+        tester.nodeRepository().nodes().setRemovable(NodeList.of(hostToRemove.get()), true);
         tester.prepareAndActivateInfraApplication(configSrvApp, hostType.childNodeType());
         tester.prepareAndActivateInfraApplication(hostApp, hostType);
         tester.nodeRepository().nodes().markNodeAvailableForNewAllocation(nodeToRemove.get().hostname(), Agent.operator, "Readied by host-admin");
@@ -651,9 +650,9 @@ public class HostCapacityMaintainerTest {
                             flavor.resources(),
                             Generation.initial(),
                             false));
-            List<Address> addresses = Stream.of(additionalHostnames).map(Address::new).toList();
+            List<com.yahoo.config.provision.HostName> hostnames = Stream.of(additionalHostnames).map(com.yahoo.config.provision.HostName::of).toList();
             Node.Builder builder = Node.create("fake-id-" + hostname, hostname, flavor, state, nodeType)
-                    .ipConfig(new IP.Config(state == Node.State.active ? Set.of("::1") : Set.of(), Set.of(), addresses));
+                    .ipConfig(IP.Config.of(state == Node.State.active ? Set.of("::1") : Set.of(), Set.of(), hostnames));
             parentHostname.ifPresent(builder::parentHostname);
             allocation.ifPresent(builder::allocation);
             if (hostname.equals("host2-1"))

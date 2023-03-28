@@ -14,6 +14,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Stream;
 
 /**
  * @author olaa
@@ -21,6 +22,9 @@ import java.util.Optional;
 public class MockBillingController implements BillingController {
 
     private final Clock clock;
+
+    PlanId defaultPlan = PlanId.from("trial");
+    List<TenantName> tenants = new ArrayList<>();
     Map<TenantName, PlanId> plans = new HashMap<>();
     Map<TenantName, PaymentInstrument> activeInstruments = new HashMap<>();
     Map<TenantName, List<Bill>> committedBills = new HashMap<>();
@@ -175,6 +179,23 @@ public class MockBillingController implements BillingController {
     public CollectionResult setCollectionMethod(TenantName tenant, CollectionMethod method) {
         collectionMethod.put(tenant, method);
         return CollectionResult.success();
+    }
+
+    @Override
+    public boolean tenantsWithPlanUnderLimit(Plan plan, int limit) {
+        if (limit < 0) return true;
+
+        var count = Stream.concat(tenants.stream(), plans.keySet().stream())
+                .distinct()
+                .map(tenant -> plans.getOrDefault(tenant, defaultPlan))
+                .filter(p -> p.equals(plan.id()))
+                .count();
+
+        return count < limit;
+    }
+
+    public void setTenants(List<TenantName> tenants) {
+        this.tenants = tenants;
     }
 
     private PaymentInstrument createInstrument(String id) {

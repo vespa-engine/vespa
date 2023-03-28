@@ -41,7 +41,7 @@ public class SharedLoadBalancerServiceTest {
 
     @Test
     public void test_protocol() {
-        assertEquals(LoadBalancerService.Protocol.dualstack, loadBalancerService.protocol());
+        assertEquals(LoadBalancerService.Protocol.dualstack, loadBalancerService.protocol(false));
     }
 
 }

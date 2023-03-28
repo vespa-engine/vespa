@@ -8,7 +8,6 @@
 #include "randread.h"
 #include <vespa/searchlib/common/tunefileinfo.h>
 #include <vespa/vespalib/stllike/hash_map.h>
-#include <vespa/vespalib/util/array.h>
 #include <vespa/vespalib/util/cpu_usage.h>
 #include <vespa/vespalib/util/generationhandler.h>
 #include <vespa/vespalib/util/memoryusage.h>
@@ -107,7 +106,7 @@ public:
     using UP = std::unique_ptr<FileChunk>;
     using SubChunkId = uint32_t;
     FileChunk(FileId fileId, NameId nameId, const vespalib::string &baseName, const TuneFileSummary &tune,
-              const IBucketizer *bucketizer, bool skipCrcOnRead);
+              const IBucketizer *bucketizer);
     virtual ~FileChunk();
 
     virtual size_t updateLidMap(const unique_lock &guard, ISetLid &lidMap, uint64_t serialNum, uint32_t docIdLimit);
@@ -163,7 +162,6 @@ public:
     virtual vespalib::system_time getModificationTime() const;
     virtual bool frozen() const { return true; }
     const vespalib::string & getName() const { return _name; }
-    void compact(const IGetLid & iGetLid);
     void appendTo(vespalib::Executor & executor, const IGetLid & db, IWriteData & dest,
                   uint32_t numChunks, IFileChunkVisitorProgress *visitorProgress,
                   vespalib::CpuUsage::Category cpu_category);
@@ -202,11 +200,9 @@ public:
     static vespalib::string createDatFileName(const vespalib::string & name);
 private:
     using File = std::unique_ptr<FileRandRead>;
-    void loadChunkInfo();
     const FileId           _fileId;
     const NameId           _nameId;
     const vespalib::string _name;
-    const bool             _skipCrcOnRead;
     size_t                 _erasedCount;
     size_t                 _erasedBytes;
     std::atomic<size_t>    _diskFootprint;
@@ -221,8 +217,8 @@ protected:
     class ChunkInfo
     {
     public:
-        ChunkInfo() : _lastSerial(0), _offset(0), _size(0) { }
-        ChunkInfo(uint64_t offset, uint32_t size, uint64_t lastSerial);
+        ChunkInfo() noexcept : _lastSerial(0), _offset(0), _size(0) { }
+        ChunkInfo(uint64_t offset, uint32_t size, uint64_t lastSerial) noexcept;
         uint64_t       getOffset() const { return _offset; }
         uint32_t       getSize() const { return _size; }
         uint64_t getLastSerial() const { return _lastSerial; }
@@ -240,7 +236,7 @@ protected:
     static uint32_t readDocIdLimit(vespalib::GenericHeader &header);
     static void writeDocIdLimit(vespalib::GenericHeader &header, uint32_t docIdLimit);
 
-    using ChunkInfoVector = vespalib::Array<ChunkInfo>;
+    using ChunkInfoVector = std::vector<ChunkInfo, vespalib::allocator_large<ChunkInfo>>;
     const IBucketizer   * _bucketizer;
     size_t                _addedBytes;
     TuneFileSummary       _tune;

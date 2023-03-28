@@ -4,9 +4,16 @@ package com.yahoo.vespa.hosted.provision.provisioning;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Capacity;
+import com.yahoo.config.provision.Cloud;
+import com.yahoo.config.provision.CloudAccount;
+import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.ClusterResources;
+import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
+import com.yahoo.config.provision.RegionName;
+import com.yahoo.config.provision.SystemName;
+import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.node.NodeAcl;
@@ -52,7 +59,7 @@ public class AclProvisioningTest {
         // Get trusted nodes for the first active node
         Node node = activeNodes.get(0);
         List<Node> hostOfNode = node.parentHostname().flatMap(tester.nodeRepository().nodes()::node).map(List::of).orElseGet(List::of);
-        Supplier<NodeAcl> nodeAcls = () -> node.acl(tester.nodeRepository().nodes().list(), tester.nodeRepository().loadBalancers());
+        Supplier<NodeAcl> nodeAcls = () -> node.acl(tester.nodeRepository().nodes().list(), tester.nodeRepository().loadBalancers(), tester.nodeRepository().zone());
 
         // Trusted nodes are active nodes in same application, proxy nodes and config servers
         assertAcls(trustedNodesOf(List.of(activeNodes, proxyNodes, configServers.asList(), hostOfNode)),
@@ -73,7 +80,7 @@ public class AclProvisioningTest {
 
         // Get trusted nodes for a ready tenant node
         Node node = tester.nodeRepository().nodes().list(Node.State.ready).nodeType(NodeType.tenant).first().get();
-        NodeAcl nodeAcl = node.acl(tester.nodeRepository().nodes().list(), tester.nodeRepository().loadBalancers());
+        NodeAcl nodeAcl = node.acl(tester.nodeRepository().nodes().list(), tester.nodeRepository().loadBalancers(), tester.nodeRepository().zone());
         NodeList tenantNodes = tester.nodeRepository().nodes().list().nodeType(NodeType.tenant);
 
         // Trusted nodes are all proxy-, config-, and, tenant-nodes
@@ -99,7 +106,7 @@ public class AclProvisioningTest {
         // Get trusted nodes for the first config server
         Node node = tester.nodeRepository().nodes().node("cfg1")
                 .orElseThrow(() -> new RuntimeException("Failed to find cfg1"));
-        NodeAcl nodeAcl = node.acl(nodes, tester.nodeRepository().loadBalancers());
+        NodeAcl nodeAcl = node.acl(nodes, tester.nodeRepository().loadBalancers(), tester.nodeRepository().zone());
 
         // Trusted nodes is all tenant nodes+hosts, all proxy nodes+hosts, all config servers and load balancer subnets
         assertAcls(List.of(TrustedNode.of(tenantHosts, Set.of(19070)),
@@ -110,7 +117,15 @@ public class AclProvisioningTest {
                    Set.of("10.2.3.0/24", "10.4.5.0/24"),
                    List.of(nodeAcl));
         assertEquals(Set.of(22, 4443), nodeAcl.trustedPorts());
-        assertEquals(Set.of(51820), nodeAcl.trustedUdpPorts());
+        assertEquals(Set.of(), nodeAcl.trustedUdpPorts());
+
+        // WireGuard UDP port is trusted in Public AWS zones
+        var publicTester = new ProvisioningTester.Builder().zone(new Zone(Cloud.builder().name(CloudName.AWS).account(CloudAccount.from("000000000000")).build(), SystemName.Public, Environment.defaultEnvironment(), RegionName.defaultName())).build();
+        publicTester.makeConfigServers(3, "default", Version.fromString("6.123.456"));
+        Node publicCfgNode = publicTester.nodeRepository().nodes().node("cfg1")
+                .orElseThrow(() -> new RuntimeException("Failed to find cfg1"));
+        NodeAcl publicNodeAcl = publicCfgNode.acl(nodes, publicTester.nodeRepository().loadBalancers(), publicTester.nodeRepository().zone());
+        assertEquals(Set.of(51820), publicNodeAcl.trustedUdpPorts());
     }
 
     @Test
@@ -128,7 +143,7 @@ public class AclProvisioningTest {
         // Get trusted nodes for first proxy node
         NodeList proxyNodes = tester.nodeRepository().nodes().list().owner(zoneApplication);
         Node node = proxyNodes.first().get();
-        NodeAcl nodeAcl = node.acl(tester.nodeRepository().nodes().list(), tester.nodeRepository().loadBalancers());
+        NodeAcl nodeAcl = node.acl(tester.nodeRepository().nodes().list(), tester.nodeRepository().loadBalancers(), tester.nodeRepository().zone());
 
         // Trusted nodes is all config servers and all proxy nodes
         assertAcls(trustedNodesOf(List.of(proxyNodes.asList(), configServers.asList())), List.of(nodeAcl));
@@ -170,7 +185,7 @@ public class AclProvisioningTest {
         List<Node> controllers = tester.deploy(controllerApplication, Capacity.fromRequiredNodeType(NodeType.controller));
 
         // Controllers and hosts all trust each other
-        NodeAcl controllerAcl = controllers.get(0).acl(tester.nodeRepository().nodes().list(), tester.nodeRepository().loadBalancers());
+        NodeAcl controllerAcl = controllers.get(0).acl(tester.nodeRepository().nodes().list(), tester.nodeRepository().loadBalancers(), tester.nodeRepository().zone());
         assertAcls(trustedNodesOf(List.of(controllers)), Set.of("10.2.3.0/24", "10.4.5.0/24"), List.of(controllerAcl));
         assertEquals(Set.of(22, 4443, 443), controllerAcl.trustedPorts());
         assertEquals(Set.of(), controllerAcl.trustedUdpPorts());
@@ -217,7 +232,7 @@ public class AclProvisioningTest {
         tester.makeConfigServers(3, "default", Version.fromString("6.123.456"));
 
         List<Node> readyNodes = tester.makeReadyNodes(1, "default", NodeType.proxy);
-        NodeAcl nodeAcl = readyNodes.get(0).acl(tester.nodeRepository().nodes().list(), tester.nodeRepository().loadBalancers());
+        NodeAcl nodeAcl = readyNodes.get(0).acl(tester.nodeRepository().nodes().list(), tester.nodeRepository().loadBalancers(), tester.nodeRepository().zone());
 
         assertEquals(3, nodeAcl.trustedNodes().size());
         assertEquals(List.of(Set.of("127.0.1.1"), Set.of("127.0.1.2"), Set.of("127.0.1.3")),

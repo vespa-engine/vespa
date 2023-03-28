@@ -7,7 +7,7 @@ package com.yahoo.vespa.orchestrator.status;
  * The naming and conventions follows the same pattern as with the HostStatus and is:
  *
  * When the node is suspended - the orchestration state is 'allowed to be down'. The application
- * is not necessarily suspended pr. se but it is allowed to start suspending - or is back up from suspension
+ * is not necessarily suspended pr. se, but it is allowed to start suspending - or is back up from suspension
  * but the flag is not revoked yet.
  *
  * @see HostStatus

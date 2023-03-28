@@ -21,7 +21,7 @@ typename Allocator<EntryT, RefT>::HandleType
 Allocator<EntryT, RefT>::alloc(Args && ... args)
 {
     _store.ensureBufferCapacity(_typeId, 1);
-    uint32_t buffer_id = _store.get_primary_buffer_id(_typeId);
+    uint32_t buffer_id = _store.primary_buffer_id(_typeId);
     BufferState &state = _store.getBufferState(buffer_id);
     assert(state.isActive());
     size_t oldBufferSize = state.size();
@@ -37,7 +37,7 @@ typename Allocator<EntryT, RefT>::HandleType
 Allocator<EntryT, RefT>::allocArray(ConstArrayRef array)
 {
     _store.ensureBufferCapacity(_typeId, array.size());
-    uint32_t buffer_id = _store.get_primary_buffer_id(_typeId);
+    uint32_t buffer_id = _store.primary_buffer_id(_typeId);
     BufferState &state = _store.getBufferState(buffer_id);
     assert(state.isActive());
     assert(state.getArraySize() == array.size());
@@ -57,7 +57,7 @@ typename Allocator<EntryT, RefT>::HandleType
 Allocator<EntryT, RefT>::allocArray(size_t size)
 {
     _store.ensureBufferCapacity(_typeId, size);
-    uint32_t buffer_id = _store.get_primary_buffer_id(_typeId);
+    uint32_t buffer_id = _store.primary_buffer_id(_typeId);
     BufferState &state = _store.getBufferState(buffer_id);
     assert(state.isActive());
     assert(state.getArraySize() == size);

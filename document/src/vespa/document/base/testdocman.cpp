@@ -79,7 +79,7 @@ TestDocMan::createDocument(
 {
     const DocumentType *type_ptr = _repo->getDocumentType(type);
     assert(type_ptr);
-    Document::UP doc(new Document(*type_ptr, DocumentId(id)));
+    Document::UP doc(new Document(*_repo, *type_ptr, DocumentId(id)));
     doc->setValue(doc->getField("content"), StringFieldValue(content.c_str()));
     return doc;
 }

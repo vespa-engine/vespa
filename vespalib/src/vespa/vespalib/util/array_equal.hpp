@@ -6,7 +6,7 @@
 namespace vespalib {
 
 template <typename T>
-bool Array<T>::operator ==(const Array & rhs) const
+bool Array<T>::operator ==(const Array & rhs) const noexcept
 {
     bool retval(size() == rhs.size());
     for (size_t i(0); retval && (i < _sz); i++) {
@@ -18,7 +18,7 @@ bool Array<T>::operator ==(const Array & rhs) const
 }
 
 template <typename T>
-bool Array<T>::operator != (const Array & rhs) const {
+bool Array<T>::operator != (const Array & rhs) const noexcept {
     return !(*this == rhs);
 }
 

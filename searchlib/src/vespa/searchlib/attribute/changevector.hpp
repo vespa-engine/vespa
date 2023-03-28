@@ -15,6 +15,7 @@ namespace {
 
 // This number is selected to be large enough to hold bursts between commits
 constexpr size_t NUM_ELEMS_TO_RESERVE = 200;
+constexpr size_t NUM_ELEMS_TO_RESERVE_INITIAL = 4;
 
 }
 
@@ -22,7 +23,7 @@ template <typename T>
 ChangeVectorT<T>::ChangeVectorT()
     : _v()
 {
-    _v.reserve(roundUp2inN<T>(NUM_ELEMS_TO_RESERVE));
+    _v.reserve(roundUp2inN<T>(NUM_ELEMS_TO_RESERVE_INITIAL));
 }
 
 template <typename T>

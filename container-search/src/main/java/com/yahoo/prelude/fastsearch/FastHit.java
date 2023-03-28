@@ -53,7 +53,7 @@ public class FastHit extends Hit {
      * This ensures that values set from code overwrites any value received as
      * summary data, and fetching a new summary overrides previous summaries.
      *
-     * The reason we keep this rather than eagerly decoding into a the field map
+     * The reason we keep this rather than eagerly decoding into a field map
      * is to reduce garbage collection and decoding cost, with the assumption
      * that most fields passes through the container with no processing most
      * of the time.

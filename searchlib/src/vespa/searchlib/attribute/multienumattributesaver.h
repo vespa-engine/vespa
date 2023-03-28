@@ -4,6 +4,7 @@
 
 #include "multivalueattributesaver.h"
 #include "enumattributesaver.h"
+#include "multi_value_mapping.h"
 #include <vespa/searchcommon/attribute/multi_value_traits.h>
 
 namespace search {
@@ -34,7 +35,7 @@ public:
     MultiValueEnumAttributeSaver(GenerationHandler::Guard &&guard,
                                  const attribute::AttributeHeader &header,
                                  const MultiValueMapping &mvMapping,
-                                 const IEnumStore &enumStore);
+                                 IEnumStore &enumStore);
     ~MultiValueEnumAttributeSaver() override;
 };
 

@@ -37,18 +37,6 @@ else
     git push origin "$RELEASE_TAG"
 fi
 
-docker info
-docker version
-docker buildx version
-docker buildx install
-
-unset DOCKER_HOST
-docker context create vespa-context --docker "host=tcp://localhost:2376,ca=/certs/client/ca.pem,cert=/certs/client/cert.pem,key=/certs/client/key.pem"
-docker context use vespa-context
-
-docker buildx create --name vespa-builder --driver docker-container --use
-docker buildx inspect --bootstrap
-
 #The minimal image seem to have issues building on cd.screwdriver.cd. Needs investigation.
 #for data in "Dockerfile vespa" "Dockerfile.minimal vespa-minimal"; do
 
@@ -61,10 +49,25 @@ for data in "Dockerfile vespa"; do
     if curl -fsSL https://index.docker.io/v1/repositories/vespaengine/$IMAGE_NAME/tags/$VESPA_VERSION &> /dev/null; then
         echo "Container image docker.io/vespaengine/$IMAGE_NAME:$VESPA_VERSION aldready exists."
     else
-        docker login --username aressem --password "$DOCKER_HUB_DEPLOY_KEY"
-        docker buildx build --progress plain --push --platform linux/amd64,linux/arm64 --build-arg VESPA_VERSION=$VESPA_VERSION \
-               --file $DOCKER_FILE --tag docker.io/vespaengine/$IMAGE_NAME:$VESPA_VERSION \
-               --tag docker.io/vespaengine/$IMAGE_NAME:$VESPA_MAJOR --tag docker.io/vespaengine/$IMAGE_NAME:latest .
+        # Build
+        buildah bud \
+                --build-arg VESPA_BASE_IMAGE=el8 \
+                --build-arg VESPA_VERSION=$VESPA_VERSION \
+                --file $DOCKER_FILE \
+                --jobs 2  \
+                --layers=false \
+                --manifest "vespaengine/$IMAGE_NAME:$VESPA_VERSION" \
+                --platform linux/amd64,linux/arm64 | cat
+
+        # Test
+        buildah tag vespaengine/$IMAGE_NAME:$VESPA_VERSION vespaengine/$IMAGE_NAME:latest
+        $SD_SOURCE_DIR/screwdriver/test-quick-start-guide.sh
+
+        # Publish
+        buildah login --username aressem --password "$DOCKER_HUB_DEPLOY_KEY" docker.io
+        buildah manifest push --all --format v2s2 vespaengine/$IMAGE_NAME:$VESPA_VERSION docker://docker.io/vespaengine/$IMAGE_NAME:$VESPA_VERSION | cat
+        buildah manifest push --all --format v2s2 vespaengine/$IMAGE_NAME:$VESPA_VERSION docker://docker.io/vespaengine/$IMAGE_NAME:$VESPA_MAJOR | cat
+        buildah manifest push --all --format v2s2 vespaengine/$IMAGE_NAME:$VESPA_VERSION docker://docker.io/vespaengine/$IMAGE_NAME:latest | cat
     fi
 done
 
@@ -74,8 +77,8 @@ IMAGE_TAGS=$(curl -sSL -H "Authorization: Bearer $JWT" https://ghcr.io/v2/vespa-
 if grep $VESPA_VERSION <<< "$IMAGE_TAGS" &> /dev/null; then
     echo "Container image ghcr.io/vespa-engine/vespa:$VESPA_VERSION aldready exists."
 else
-    docker login --username aressem --password "$GHCR_DEPLOY_KEY" ghcr.io
-    docker buildx build --progress plain --push --platform linux/amd64,linux/arm64 --build-arg VESPA_VERSION=$VESPA_VERSION \
-                        --tag ghcr.io/vespa-engine/vespa:$VESPA_VERSION --tag  ghcr.io/vespa-engine/vespa:$VESPA_MAJOR \
-                        --tag ghcr.io/vespa-engine/vespa:latest .
+    buildah login --username aressem --password "$GHCR_DEPLOY_KEY" ghcr.io
+    skopeo --insecure-policy copy --retry-times 5 --all --format v2s2 docker://docker.io/vespaengine/$IMAGE_NAME:$VESPA_VERSION docker://ghcr.io/vespa-engine/vespa:$VESPA_VERSION
+    skopeo --insecure-policy copy --retry-times 5 --all --format v2s2 docker://docker.io/vespaengine/$IMAGE_NAME:$VESPA_VERSION docker://ghcr.io/vespa-engine/vespa:$VESPA_MAJOR
+    skopeo --insecure-policy copy --retry-times 5 --all --format v2s2 docker://docker.io/vespaengine/$IMAGE_NAME:$VESPA_VERSION docker://ghcr.io/vespa-engine/vespa:latest
 fi

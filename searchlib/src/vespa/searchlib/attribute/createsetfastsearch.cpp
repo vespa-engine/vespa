@@ -1,21 +1,15 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "attributefactory.h"
-#include "integerbase.h"
-#include "floatbase.h"
 #include "defines.h"
+#include "floatbase.h"
+#include "integerbase.h"
+#include "multinumericpostattribute.h"
+#include "multistringpostattribute.h"
+#include <vespa/searchcommon/attribute/config.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".createsetfastsearch");
-
-#include "attributevector.hpp"
-#include "enumstore.hpp"
-#include "enumattribute.hpp"
-#include "multivalueattribute.hpp"
-#include "multienumattribute.hpp"
-#include "multinumericenumattribute.hpp"
-#include "multinumericpostattribute.hpp"
-#include "multistringpostattribute.hpp"
 
 namespace search {
 

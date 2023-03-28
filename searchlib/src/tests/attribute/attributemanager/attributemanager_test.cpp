@@ -6,7 +6,7 @@
 #include <vespa/searchlib/attribute/attributemanager.h>
 #include <vespa/searchlib/attribute/configconverter.h>
 #include <vespa/searchlib/attribute/multinumericattribute.h>
-#include <vespa/searchlib/attribute/multinumericattribute.hpp>
+#include <vespa/searchlib/attribute/multinumericattribute.h>
 #include <vespa/vespalib/testkit/testapp.h>
 
 #include <vespa/log/log.h>
@@ -199,6 +199,8 @@ TEST("require that config can be converted")
     EXPECT_TRUE(assertDataType(AVBT::DOUBLE, CACAD::DOUBLE));
     EXPECT_TRUE(assertDataType(AVBT::PREDICATE, CACAD::PREDICATE));
     EXPECT_TRUE(assertDataType(AVBT::TENSOR, CACAD::TENSOR));
+    EXPECT_TRUE(assertDataType(AVBT::REFERENCE, CACAD::REFERENCE));
+    EXPECT_TRUE(assertDataType(AVBT::RAW, CACAD::RAW));
     EXPECT_TRUE(assertDataType(AVBT::NONE, CACAD::NONE));
 
     EXPECT_TRUE(assertCollectionType(AVCT::SINGLE, CACAC::SINGLE));

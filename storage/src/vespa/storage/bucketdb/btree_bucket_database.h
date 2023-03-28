@@ -44,7 +44,8 @@ public:
                 std::vector<Entry>& entries) const override;
     void update(const Entry& newEntry) override;
     void process_update(const document::BucketId& bucket, EntryUpdateProcessor &processor, bool create_if_nonexisting) override;
-    void forEach(EntryProcessor&, const document::BucketId& after) const override;
+    void for_each_lower_bound(EntryProcessor&, const document::BucketId& at_or_after) const override;
+    void for_each_upper_bound(EntryProcessor&, const document::BucketId& after) const override;
     Entry upperBound(const document::BucketId& value) const override;
     uint64_t size() const override;
     void clear() override;

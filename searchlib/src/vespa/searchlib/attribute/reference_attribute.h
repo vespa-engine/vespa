@@ -32,7 +32,6 @@ public:
     using GlobalId = document::GlobalId;
     using ReferenceStore = vespalib::datastore::UniqueStore<Reference>;
     using ReferenceStoreIndices = vespalib::RcuVectorBase<AtomicEntryRef>;
-    using IndicesCopyVector = std::vector<EntryRef, vespalib::allocator_large<EntryRef>>;
     // Class used to map from target lid to source lids
     using ReverseMapping = vespalib::btree::BTreeStore<uint32_t, vespalib::btree::BTreeNoLeafData,
                                              vespalib::btree::NoAggregated,
@@ -61,7 +60,6 @@ private:
     bool consider_compact_values(const CompactionStrategy &compactionStrategy);
     void compact_worst_values(const CompactionStrategy& compaction_strategy);
     bool consider_compact_dictionary(const CompactionStrategy& compaction_strategy);
-    IndicesCopyVector getIndicesCopy(uint32_t size) const;
     void removeReverseMapping(EntryRef oldRef, uint32_t lid);
     void addReverseMapping(EntryRef newRef, uint32_t lid);
     void buildReverseMapping(EntryRef newRef, const std::vector<ReverseMapping::KeyDataType> &adds);

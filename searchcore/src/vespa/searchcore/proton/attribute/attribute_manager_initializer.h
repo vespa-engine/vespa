@@ -4,7 +4,6 @@
 
 #include "attributemanager.h"
 #include "initialized_attributes_result.h"
-#include <vespa/searchcore/proton/documentmetastore/documentmetastore.h>
 #include <vespa/searchcore/proton/initializer/initializer_task.h>
 #include <vespa/searchcore/proton/common/alloc_strategy.h>
 #include <vespa/searchlib/common/serialnum.h>
@@ -14,6 +13,8 @@ namespace searchcorespi::index { struct IThreadService; }
 
 namespace proton {
 
+class DocumentMetaStoreAttribute;
+
 /**
  * Class used to initialize an attribute manager.
  */
@@ -21,7 +22,7 @@ class AttributeManagerInitializer : public initializer::InitializerTask
 {
 private:
     search::SerialNum                       _configSerialNum;
-    DocumentMetaStore::SP                   _documentMetaStore;
+    std::shared_ptr<DocumentMetaStoreAttribute>  _documentMetaStore;
     AttributeManager::SP                    _attrMgr;
     vespa::config::search::AttributesConfig _attrCfg;
     AllocStrategy                           _alloc_strategy;
@@ -35,7 +36,7 @@ private:
 public:
     AttributeManagerInitializer(search::SerialNum configSerialNum,
                                 initializer::InitializerTask::SP documentMetaStoreInitTask,
-                                DocumentMetaStore::SP documentMetaStore,
+                                std::shared_ptr<DocumentMetaStoreAttribute> documentMetaStore,
                                 const AttributeManager & baseAttrMgr,
                                 const vespa::config::search::AttributesConfig &attrCfg,
                                 const AllocStrategy& alloc_strategy,

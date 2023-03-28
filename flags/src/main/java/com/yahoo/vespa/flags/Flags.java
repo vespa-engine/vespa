@@ -14,6 +14,8 @@ import java.util.TreeMap;
 import java.util.function.Predicate;
 
 import static com.yahoo.vespa.flags.FetchVector.Dimension.APPLICATION_ID;
+import static com.yahoo.vespa.flags.FetchVector.Dimension.CLUSTER_ID;
+import static com.yahoo.vespa.flags.FetchVector.Dimension.CLUSTER_TYPE;
 import static com.yahoo.vespa.flags.FetchVector.Dimension.CONSOLE_USER_EMAIL;
 import static com.yahoo.vespa.flags.FetchVector.Dimension.HOSTNAME;
 import static com.yahoo.vespa.flags.FetchVector.Dimension.NODE_TYPE;
@@ -46,6 +48,13 @@ public class Flags {
 
     private static volatile TreeMap<FlagId, FlagDefinition> flags = new TreeMap<>();
 
+    public static final UnboundBooleanFlag RECONFIGURE_ALB_TARGETS = defineFeatureFlag(
+            "reconfigure-alb-targets", false,
+            List.of("bjormel"), "2023-03-24", "2023-04-30",
+            "Reconfigure ALB targets",
+            "Takes effect on next config server container start",
+            ZONE_ID);
+
     public static final UnboundBooleanFlag DROP_CACHES = defineFeatureFlag(
             "drop-caches", false,
             List.of("hakonhall", "baldersheim"), "2023-03-06", "2023-04-05",
@@ -54,7 +63,7 @@ public class Flags {
             ZONE_ID,
             // The application ID is the exclusive application ID associated with the host,
             // if any, or otherwise hosted-vespa:tenant-host:default.
-            APPLICATION_ID);
+            APPLICATION_ID, TENANT_ID, CLUSTER_ID, CLUSTER_TYPE);
 
     public static final UnboundDoubleFlag DEFAULT_TERM_WISE_LIMIT = defineDoubleFlag(
             "default-term-wise-limit", 1.0,
@@ -350,7 +359,7 @@ public class Flags {
             ZONE_ID, NODE_TYPE, HOSTNAME);
 
     public static final UnboundBooleanFlag ENABLE_GLOBAL_PHASE = defineFeatureFlag(
-            "enable-global-phase", false,
+            "enable-global-phase", true,
             List.of("arnej", "bjorncs"), "2023-02-28", "2024-01-10",
             "Enable global phase ranking",
             "Takes effect at redeployment",
@@ -360,6 +369,13 @@ public class Flags {
             "vespa-athenz-provider", false,
             List.of("mortent"), "2023-02-22", "2023-05-01",
             "Enable athenz provider in public systems",
+            "Takes effect on next config server container start",
+            ZONE_ID);
+
+    public static final UnboundLongFlag ZOOKEEPER_BARRIER_WAIT_FOR_ALL_TIMEOUT = defineLongFlag(
+            "zookeeper-barrier-wait-for-all-timeout", 1,
+            List.of("hmusum"), "2023-03-28", "2023-04-28",
+            "Time to wait for all barrier members after getting response from quorum number of member",
             "Takes effect on next config server container start",
             ZONE_ID);
 

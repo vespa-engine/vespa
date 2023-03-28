@@ -216,16 +216,6 @@ TEST_F("Test serializing vespalib::string", Fixture)
     f.assertSerialize(exp, val);
 }
 
-TEST_F("Test serializing vespalib::Array", Fixture)
-{
-    vespalib::Array<int16_t> val;
-    val.resize(2);
-    val[0] = 0x0123;
-    val[1] = 0x4567;
-    ExpBuffer exp({ 0x00, 0x00, 0x00, 0x02, 0x01, 0x23, 0x45, 0x67 });
-    f.assertSerialize(exp, val);
-}
-
 TEST_F("Test serializing std::vector", Fixture)
 {
     std::vector<int16_t> val({ 0x0123, 0x4567 });

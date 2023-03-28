@@ -6,7 +6,7 @@ import com.yahoo.path.Path;
 import com.yahoo.vespa.curator.Curator;
 import org.apache.curator.framework.recipes.atomic.DistributedAtomicLong;
 import org.apache.curator.framework.recipes.locks.InterProcessLock;
-
+import java.time.Duration;
 import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 
@@ -82,12 +82,12 @@ public class MockCurator extends Curator {
     }
 
     @Override
-    public CompletionWaiter getCompletionWaiter(Path parentPath, int numMembers, String id) {
+    public CompletionWaiter getCompletionWaiter(Path parentPath, String id, Duration waitForAll) {
         return mockFramework().createCompletionWaiter();
     }
 
     @Override
-    public CompletionWaiter createCompletionWaiter(Path parentPath, String waiterNode, int numMembers, String id) {
+    public CompletionWaiter createCompletionWaiter(Path parentPath, String waiterNode, String id, Duration waitForAll) {
         return mockFramework().createCompletionWaiter();
     }
 

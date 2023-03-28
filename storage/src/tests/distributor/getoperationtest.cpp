@@ -85,7 +85,7 @@ struct GetOperationTest : Test, DistributorStripeTestUtil {
 
         if (!authorVal.empty()) {
             const document::DocumentType* type(_repo->getDocumentType("text/html"));
-            doc = std::make_unique<document::Document>(*type, docId);
+            doc = std::make_unique<document::Document>(*_repo, *type, docId);
 
             doc->setValue(doc->getField("author"),
                           document::StringFieldValue(authorVal));

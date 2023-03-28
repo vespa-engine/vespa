@@ -21,8 +21,6 @@ import java.util.logging.Logger;
  */
 public abstract class ControllerMaintainer extends Maintainer {
 
-    protected static final Logger log = Logger.getLogger(ControllerMaintainer.class.getName());
-
     private final Controller controller;
 
     /** The systems in which this maintainer should run */

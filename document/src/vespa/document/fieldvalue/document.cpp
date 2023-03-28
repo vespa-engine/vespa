@@ -95,6 +95,26 @@ Document::Document(const DataType &type, DocumentId documentId)
     }
 }
 
+Document::UP
+Document::make_without_repo(const DataType& type, DocumentId id)
+{
+    // Must use new as the constructor is private.
+    return Document::UP(new Document(type, id));
+}
+
+Document::Document(const DocumentTypeRepo& repo, const DataType &type, DocumentId documentId)
+    : StructuredFieldValue(Type::DOCUMENT, verifyDocumentType(&type)),
+      _id(std::move(documentId)),
+      _fields(repo, getType().getFieldsType()),
+      _backingBuffer(),
+      _lastModified(0)
+{
+    _fields.setDocumentType(getType());
+    if (_id.hasDocType() && (_id.getDocType() != type.getName())) {
+        throwTypeMismatch(type.getName(), _id.getDocType());
+    }
+}
+
 void Document::setRepo(const DocumentTypeRepo& repo)
 {
     _fields.setRepo(repo);

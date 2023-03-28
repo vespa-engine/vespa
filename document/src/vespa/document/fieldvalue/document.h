@@ -50,7 +50,13 @@ public:
     Document(Document &&) noexcept;
     Document & operator =(const Document &);
     Document & operator =(Document &&) noexcept;
+private:
     Document(const DataType &, DocumentId id);
+public:
+    // Should preferably only be used by unit tests.
+    // TODO: Remove all usage of this outside of unit tests.
+    static Document::UP make_without_repo(const DataType& type, DocumentId id);
+    Document(const DocumentTypeRepo& repo, const DataType&, DocumentId id);
     Document(const DocumentTypeRepo& repo, vespalib::nbostream& stream);
     Document(const DocumentTypeRepo& repo, vespalib::DataBuffer && buffer);
     ~Document() noexcept override;

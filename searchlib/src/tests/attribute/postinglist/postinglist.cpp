@@ -581,21 +581,15 @@ AttributePostingListTest::doCompactEnumStore(Tree &tree,
                                              TreeManager &treeMgr,
                                              ValueHandle &valueHandle)
 {
-    LOG(info,
-        "doCompactEnumStore start");
+    LOG(info,"doCompactEnumStore start");
 
     Tree::Iterator i = tree.begin(treeMgr);
 
-    uint32_t numBuffers = valueHandle.getNumBuffers();
     std::vector<uint32_t> toHold;
+    valueHandle.for_each_active_buffer([&toHold](uint32_t buffer_id, const vespalib::datastore::BufferState &) {
+        toHold.push_back(buffer_id);
+    });
 
-    for (uint32_t bufferId = 0; bufferId < numBuffers; ++bufferId) {
-        vespalib::datastore::BufferState &state = valueHandle.getBufferState(bufferId);
-        if (state.isActive()) {
-            toHold.push_back(bufferId);
-            // Freelists already disabled due to variable sized data
-        }
-    }
     valueHandle.switch_primary_buffer(0, 0u);
 
     for (; i.valid(); ++i)

@@ -53,7 +53,10 @@ class ref_counted
     template <typename X> friend class ref_counted;
 private:
     T *_ptr;
-    ref_counted(T *ptr) noexcept : _ptr(ptr) {}
+    ref_counted(T *ptr) noexcept : _ptr(ptr) {
+        // verify that ptr points to a valid object
+        (void) ptr->count_refs();
+    }
     void maybe_subref() noexcept {
         if (_ptr) [[likely]] {
             _ptr->internal_subref();
@@ -94,6 +97,7 @@ public:
     T *operator->() const noexcept { return _ptr; }
     T &operator*() const noexcept { return *_ptr; }
     operator bool() const noexcept { return (_ptr != nullptr); }
+    void reset() noexcept { replace_with(nullptr); }
     ~ref_counted() noexcept { maybe_subref(); }
     // NB: will not call subref
     T *internal_detach() noexcept { return std::exchange(_ptr, nullptr); }

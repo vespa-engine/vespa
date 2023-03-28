@@ -2,9 +2,15 @@
 package com.yahoo.log;
 
 import java.io.UnsupportedEncodingException;
+import java.util.Map;
+import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.logging.StreamHandler;
+
+import static java.util.Map.entry;
+import static java.util.logging.Level.FINE;
+import static java.util.logging.Level.INFO;
 
 /**
  * @author Bjorn Borud
@@ -12,6 +18,16 @@ import java.util.logging.StreamHandler;
  */
 @SuppressWarnings("deprecation")
 class VespaLogHandler extends StreamHandler {
+
+    // Reduce log level for some loggers
+    private static final Function<Level, Level> INFO_TO_FINE = level -> level == INFO ? FINE : level;
+    private static final Map<String, Function<Level, Level>> loggersWithAlteredLogLevel = Map.ofEntries(
+            entry("com.yahoo.vespa.spifly.repackaged.spifly.BaseActivator", INFO_TO_FINE),
+            entry("org.eclipse.jetty.server.Server", INFO_TO_FINE),
+            entry("org.eclipse.jetty.server.handler.ContextHandler", INFO_TO_FINE),
+            entry("org.eclipse.jetty.server.AbstractConnector", INFO_TO_FINE),
+            entry("org.eclipse.jetty.util.HostPort", __ -> FINE)
+    );
 
     private final LogTarget logTarget;
     private final String serviceName;
@@ -47,10 +63,10 @@ class VespaLogHandler extends StreamHandler {
      */
     @Override
     public synchronized void publish(LogRecord record) {
-        Level level = record.getLevel();
-        String component = record.getLoggerName();
+        String loggerName = record.getLoggerName();
+        Level level = possiblyReduceLogLevel(loggerName, record.getLevel());
 
-        LevelController ctrl = getLevelControl(component);
+        LevelController ctrl = getLevelControl(loggerName);
         if (!ctrl.shouldLog(level)) {
             return;
         }
@@ -73,12 +89,19 @@ class VespaLogHandler extends StreamHandler {
         closeFileTarget();
     }
 
+    private static Level possiblyReduceLogLevel(String loggerName, Level level) {
+        if (loggerName == null) return level;
+
+        var levelMapper = loggersWithAlteredLogLevel.get(loggerName);
+        return levelMapper == null ? level : levelMapper.apply(level);
+    }
+
     LevelController getLevelControl(String component) {
         return repo.getLevelController(component);
     }
 
     /**
-     * Initalize the handler.  The main invariant is that
+     * Initialize the handler.  The main invariant is that
      * outputStream is always set to something valid when this method
      * returns.
      */

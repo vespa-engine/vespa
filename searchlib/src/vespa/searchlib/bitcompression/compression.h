@@ -1248,9 +1248,7 @@ public:
     void setReadContext(search::ComprFileReadContext *readContext) {
         _readContext = readContext;
     }
-    search::ComprFileReadContext *getReadContext() const {
-        return _readContext;
-    }
+
     void readComprBuffer() {
         _readContext->readComprBuffer();
     }

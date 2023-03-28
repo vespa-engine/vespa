@@ -23,7 +23,7 @@ public class ClusterState implements Cloneable {
     private static final NodeState DEFAULT_DISTRIBUTOR_DOWN_NODE_STATE = new NodeState(NodeType.DISTRIBUTOR, State.DOWN);
 
     /**
-     * Maintains a bitset where all non-down nodes have a bit set. All nodes that differs from defaultUp
+     * Maintains a bitset where all non-down nodes have a bit set. All nodes that differ from defaultUp
      * and defaultDown are store explicit in a hash map.
      */
     private static class Nodes {
@@ -102,19 +102,19 @@ public class ClusterState implements Cloneable {
             }
         }
 
-        boolean similarToImpl(Nodes other, final NodeStateCmp nodeStateCmp) {
+        boolean notSimilarTo(Nodes other, final NodeStateCmp nodeStateCmp) {
             // TODO verify behavior of C++ impl against this
-            if (logicalNodeCount != other.logicalNodeCount) return false;
-            if (type != other.type) return false;
-            if ( ! upNodes.equals(other.upNodes)) return false;
+            if (logicalNodeCount != other.logicalNodeCount) return true;
+            if (type != other.type) return true;
+            if ( ! upNodes.equals(other.upNodes)) return true;
             for (Integer node : unionNodeSetWith(other.nodeStates.keySet())) {
                 final NodeState lhs = nodeStates.get(node);
                 final NodeState rhs = other.nodeStates.get(node);
                 if (!nodeStateCmp.similar(type, lhs, rhs)) {
-                    return false;
+                    return true;
                 }
             }
-            return true;
+            return false;
         }
 
         private Set<Integer> unionNodeSetWith(final Set<Integer> otherNodes) {
@@ -144,8 +144,7 @@ public class ClusterState implements Cloneable {
 
         @Override
         public boolean equals(Object obj) {
-            if (! (obj instanceof Nodes)) return false;
-            Nodes b = (Nodes) obj;
+            if (! (obj instanceof Nodes b)) return false;
             if (logicalNodeCount != b.logicalNodeCount) return false;
             if (type != b.type) return false;
             if (!upNodes.equals(b.upNodes)) return false;
@@ -218,8 +217,7 @@ public class ClusterState implements Cloneable {
 
     @Override
     public boolean equals(Object o) {
-        if (!(o instanceof ClusterState)) { return false; }
-        ClusterState other = (ClusterState) o;
+        if (!(o instanceof ClusterState other)) { return false; }
         if (version != other.version
             || !state.equals(other.state)
             || distributionBits != other.distributionBits
@@ -242,8 +240,7 @@ public class ClusterState implements Cloneable {
     }
 
     public boolean similarTo(Object o) {
-        if (!(o instanceof ClusterState)) { return false; }
-        final ClusterState other = (ClusterState) o;
+        if (!(o instanceof final ClusterState other)) { return false; }
 
         return similarToImpl(other, this::normalizedNodeStateSimilarTo);
     }
@@ -265,19 +262,15 @@ public class ClusterState implements Cloneable {
         if (!metaInformationSimilarTo(other)) {
             return false;
         }
-        if ( !distributorNodes.similarToImpl(other.distributorNodes, nodeStateCmp)) return false;
-        if ( !storageNodes.similarToImpl(other.storageNodes, nodeStateCmp)) return false;
+        if (distributorNodes.notSimilarTo(other.distributorNodes, nodeStateCmp)) return false;
+        if (storageNodes.notSimilarTo(other.storageNodes, nodeStateCmp)) return false;
         return true;
     }
 
     private boolean metaInformationSimilarTo(final ClusterState other) {
-        if (version != other.version || !state.equals(other.state)) {
-            return false;
-        }
-        if (distributionBits != other.distributionBits) {
-            return false;
-        }
-        return true;
+        return version == other.version
+                && state.equals(other.state)
+                && distributionBits == other.distributionBits;
     }
 
     private boolean normalizedNodeStateSimilarTo(final NodeType nodeType, final NodeState lhs, final NodeState rhs) {
@@ -356,8 +349,8 @@ public class ClusterState implements Cloneable {
                 break;
             case 'v':
                 if (key.equals("version")) {
-                    try{
-                        setVersion(Integer.valueOf(value));
+                    try {
+                        setVersion(Integer.parseInt(value));
                     } catch (Exception e) {
                         throw new ParseException("Illegal version '" + value + "'. Must be an integer, in state: " + serialized, 0);
                     }
@@ -382,7 +375,7 @@ public class ClusterState implements Cloneable {
                 if (dot < 0) {
                     int nodeCount;
                     try{
-                        nodeCount = Integer.valueOf(value);
+                        nodeCount = Integer.parseInt(value);
                     } catch (Exception e) {
                         throw new ParseException("Illegal node count '" + value + "' in state: " + serialized, 0);
                     }
@@ -392,9 +385,9 @@ public class ClusterState implements Cloneable {
                 int dot2 = key.indexOf('.', dot + 1);
                 Node node;
                 if (dot2 < 0) {
-                    node = new Node(nodeType, Integer.valueOf(key.substring(dot + 1)));
+                    node = new Node(nodeType, Integer.parseInt(key.substring(dot + 1)));
                 } else {
-                    node = new Node(nodeType, Integer.valueOf(key.substring(dot + 1, dot2)));
+                    node = new Node(nodeType, Integer.parseInt(key.substring(dot + 1, dot2)));
                 }
                 if (node.getIndex() >= getNodeCount(nodeType)) {
                     throw new ParseException("Cannot index " + nodeType + " node " + node.getIndex() + " of " + getNodeCount(nodeType) + " in state: " + serialized, 0);

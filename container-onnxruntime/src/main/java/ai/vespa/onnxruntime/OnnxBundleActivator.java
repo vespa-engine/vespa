@@ -40,7 +40,7 @@ public class OnnxBundleActivator implements BundleActivator {
                     System.loadLibrary(libName);
                     // this property also signals onnxruntime to skip loading:
                     System.setProperty(skipProp, SKIP_VALUE);
-                    log.info("loaded native library OK: "+libName);
+                    log.fine("loaded native library OK: "+libName);
                 } catch (Exception|UnsatisfiedLinkError e) {
                     log.info("Could not load native library '"+libName+"' because: "+e.getMessage());
                 }
@@ -55,7 +55,7 @@ public class OnnxBundleActivator implements BundleActivator {
         for (String libName : LIBRARY_NAMES) {
             String skipProp = ONNX_PREFIX + libName + SKIP_SUFFIX;
             if (SKIP_VALUE.equals(System.getProperty(skipProp))) {
-                log.info("will unload native library: "+libName);
+                log.fine("will unload native library: "+libName);
             }
             System.clearProperty(skipProp);
         }

@@ -52,6 +52,15 @@ public class CompoundNameTestCase {
         verifyStrict("e", new CompoundName("a.b.c.d.e").rest(4));
         verifyStrict(CompoundName.empty, new CompoundName("a.b.c.d.e").rest(5));
     }
+    @Test
+    final void testFirstN() {
+        verifyStrict("a.b.c.d.e", new CompoundName("a.b.c.d.e").first(5));
+        verifyStrict("a.b.c.d", new CompoundName("a.b.c.d.e").first(4));
+        verifyStrict("a.b.c", new CompoundName("a.b.c.d.e").first(3));
+        verifyStrict("a.b", new CompoundName("a.b.c.d.e").first(2));
+        verifyStrict("a", new CompoundName("a.b.c.d.e").first(1));
+        verifyStrict(CompoundName.empty, new CompoundName("a.b.c.d.e").first(0));
+    }
 
     @Test
     final void testPrefix() {
@@ -103,8 +112,8 @@ public class CompoundNameTestCase {
         Splitter peoplesFront = Splitter.on('.');
         Iterable<String> answer = peoplesFront.split(NAME);
         Iterator<String> expected = answer.iterator();
-        for (int i = 0; i < l.size(); ++i) {
-            assertEquals(expected.next(), l.get(i));
+        for (String s : l) {
+            assertEquals(expected.next(), s);
         }
         assertFalse(expected.hasNext());
     }

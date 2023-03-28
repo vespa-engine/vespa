@@ -17,6 +17,7 @@ AddressSpace AddressSpaceComponents::default_multi_value_usage() {
 
 const vespalib::string AddressSpaceComponents::enum_store = "enum-store";
 const vespalib::string AddressSpaceComponents::multi_value = "multi-value";
+const vespalib::string AddressSpaceComponents::raw_store = "raw-store";
 const vespalib::string AddressSpaceComponents::tensor_store = "tensor-store";
 const vespalib::string AddressSpaceComponents::shared_string_repo = "shared-string-repo";
 const vespalib::string AddressSpaceComponents::hnsw_levels_store = "hnsw-levels-store";

@@ -68,12 +68,7 @@ public class ZooKeeperRunner implements Runnable {
         Instant end = now.plus(START_TIMEOUT);
         for (int attempt = 1; now.isBefore(end) && !executorService.isShutdown(); attempt++) {
             try {
-                log.log(Level.INFO, "Starting ZooKeeper server with " + path.toFile().getAbsolutePath() +
-                                    ". Trying to establish ZooKeeper quorum (members: " +
-                                    zookeeperServerHostnames(zookeeperServerConfig) + ", attempt "  + attempt + ")");
-                log.log(Level.INFO, "Current content of zookeeper config file at '" + path + "':\n" +
-                                    Exceptions.uncheck(() -> Files.readString(path)));
-                startServer(path); // Will block in a real implementation of VespaZooKeeperServer
+                startServer(path, attempt); // Will block in a real implementation of VespaZooKeeperServer
                 return;
             } catch (RuntimeException e) {
                 String messagePart = "Starting " + serverDescription() + " failed on attempt " + attempt;
@@ -89,13 +84,21 @@ public class ZooKeeperRunner implements Runnable {
                 now = Instant.now();
             }
         }
+        // Failed, log config
+        log.log(Level.INFO, "Current content of zookeeper config file at '" + path + "':\n" +
+                Exceptions.uncheck(() -> Files.readString(path)));
     }
 
     private String serverDescription() {
         return (server.reconfigurable() ? "" : "non-") + "reconfigurable ZooKeeper server";
     }
 
-    private void startServer(Path path) {
+    private void startServer(Path path, int attempt) {
+        if (attempt > 1)
+            log.log(Level.INFO, "Starting ZooKeeper server with " + path.toFile().getAbsolutePath() +
+                    ". Trying to establish ZooKeeper quorum (members: " +
+                    zookeeperServerHostnames(zookeeperServerConfig) + ", attempt " + attempt + ")");
+
         // Note: Hack to make this work in ZooKeeper 3.6, where metrics provider class is
         // loaded by using Thread.currentThread().getContextClassLoader() which does not work
         // well in the container

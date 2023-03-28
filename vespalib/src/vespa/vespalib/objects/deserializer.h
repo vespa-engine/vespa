@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/vespalib/util/array.h>
 #include <vespa/vespalib/stllike/string.h>
 #include <vector>
 #include <cstdint>
@@ -44,11 +43,7 @@ public:
     Deserializer & operator >> (double & value)   { return get(value); }
     Deserializer & operator >> (string & value)   { return get(value); }
     template <typename T>
-    Deserializer & operator >> (vespalib::Array<T> & v);
-    template <typename T>
     Deserializer & operator >> (std::vector<T> & v);
-
 };
 
 }
-

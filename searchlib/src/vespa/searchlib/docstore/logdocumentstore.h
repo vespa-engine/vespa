@@ -26,7 +26,6 @@ public:
             _logConfig(log)
         { }
         const LogDataStore::Config & getLogConfig() const { return _logConfig; }
-        LogDataStore::Config & getLogConfig() { return _logConfig; }
         bool operator == (const Config & rhs) const;
         bool operator != (const Config & rhs) const { return ! (*this == rhs); }
     private:

@@ -153,7 +153,7 @@ public class FleetController implements NodeListener, SlobrokListener, SystemSta
         var timer = new RealTimer();
         var metricUpdater = new MetricUpdater(metricReporter, options.fleetControllerIndex(), options.clusterName());
         var log = new EventLog(timer, metricUpdater);
-        var cluster = new ContentCluster(options.clusterName(), options.nodes(), options.storageDistribution());
+        var cluster = new ContentCluster(options);
         var stateGatherer = new NodeStateGatherer(timer, timer, log);
         var communicator = new RPCCommunicator(
                 RPCCommunicator.createRealSupervisor(),

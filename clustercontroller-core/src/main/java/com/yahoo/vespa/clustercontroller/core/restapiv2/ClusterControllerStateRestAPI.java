@@ -17,7 +17,6 @@ import com.yahoo.vespa.clustercontroller.utils.staterestapi.requests.UnitStateRe
 import com.yahoo.vespa.clustercontroller.utils.staterestapi.response.SetResponse;
 import com.yahoo.vespa.clustercontroller.utils.staterestapi.response.UnitResponse;
 import java.util.Map;
-import java.util.Objects;
 import java.util.logging.Logger;
 
 public class ClusterControllerStateRestAPI implements StateRestAPI {
@@ -28,32 +27,8 @@ public class ClusterControllerStateRestAPI implements StateRestAPI {
         Map<String, RemoteClusterControllerTaskScheduler> getFleetControllers();
     }
 
-    public static class Socket {
-        public final String hostname;
-        public final int port;
-
-        public Socket(String hostname, int port) {
-            this.hostname = hostname;
-            this.port = port;
-        }
-
-        @Override
-        public String toString() {
-            return hostname + ":" + port;
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(hostname, port);
-        }
-
-        @Override
-        public boolean equals(Object object) {
-            if (this == object) return true;
-            if (!(object instanceof Socket)) return false;
-            Socket socket = (Socket) object;
-            return Objects.equals(hostname, socket.hostname) && port == socket.port;
-        }
+    public record Socket(String hostname, int port) {
+        @Override public String toString() { return hostname + ":" + port; }
     }
 
     private final FleetControllerResolver fleetControllerResolver;
@@ -98,9 +73,9 @@ public class ClusterControllerStateRestAPI implements StateRestAPI {
         } else {
             log.fine("Scheduling state request: " + req.getClass().toString());
             resolver.resolveFleetController(request.getUnitPath()).schedule(req);
-            log.finest("Scheduled state request: " + req.getClass().toString());
+            log.finest("Scheduled state request: " + req.getClass());
             req.waitForCompletion();
-            log.finest("Completed processing state request: " + req.getClass().toString());
+            log.finest("Completed processing state request: " + req.getClass());
         }
         try {
             return req.getResult();
@@ -119,7 +94,7 @@ public class ClusterControllerStateRestAPI implements StateRestAPI {
         {
             @Override
             public Request<? extends SetResponse> visitCluster(Id.Cluster id) {
-                return new SetNodeStatesForClusterRequest(id, request);
+                return new SetNodeStatesForClusterRequest(request);
             }
             @Override
             public Request<? extends SetResponse> visitNode(Id.Node id) {

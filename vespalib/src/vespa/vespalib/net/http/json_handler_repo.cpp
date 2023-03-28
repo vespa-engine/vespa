@@ -74,18 +74,19 @@ JsonHandlerRepo::get_root_resources() const
     return result;
 }
 
-vespalib::string
+JsonGetHandler::Response
 JsonHandlerRepo::get(const vespalib::string &host,
                      const vespalib::string &path,
-                     const std::map<vespalib::string,vespalib::string> &params) const
+                     const std::map<vespalib::string,vespalib::string> &params,
+                     const net::ConnectionAuthContext &auth_ctx) const
 {
     std::lock_guard<std::mutex> guard(_state->lock);
     for (const auto &hook: _state->hooks) {
         if (path.find(hook.path_prefix) == 0) {
-            return hook.handler->get(host, path, params);
+            return hook.handler->get(host, path, params, auth_ctx);
         }
     }
-    return "";
+    return Response::make_not_found();
 }
 
 } // namespace vespalib

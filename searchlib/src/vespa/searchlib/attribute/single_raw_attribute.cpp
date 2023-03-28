@@ -1,7 +1,11 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "single_raw_attribute.h"
+#include "empty_search_context.h"
+#include "single_raw_attribute_loader.h"
+#include "single_raw_attribute_saver.h"
 #include <vespa/searchcommon/attribute/config.h>
+#include <vespa/searchlib/attribute/address_space_components.h>
 #include <vespa/vespalib/datastore/array_store.hpp>
 
 using vespalib::alloc::MemoryAllocator;
@@ -18,7 +22,7 @@ constexpr uint32_t max_small_buffer_type_id = 500u;
 namespace search::attribute {
 
 SingleRawAttribute::SingleRawAttribute(const vespalib::string& name, const Config& config)
-    : NotImplementedAttribute(name, config),
+    : RawAttribute(name, config),
       _ref_vector(config.getGrowStrategy(), getGenerationHolder()),
       _raw_store(get_memory_allocator(), max_small_buffer_type_id, mapper_grow_factor)
 {
@@ -135,40 +139,41 @@ SingleRawAttribute::clearDoc(DocId docId)
     return 0u;
 }
 
-long
-SingleRawAttribute::onSerializeForAscendingSort(DocId doc, void * serTo, long available, const common::BlobConverter * bc) const
+std::unique_ptr<AttributeSaver>
+SingleRawAttribute::onInitSave(vespalib::stringref fileName)
 {
-    auto raw = get_raw(doc);
-    vespalib::ConstBufferRef buf(raw.data(), raw.size());
-    if (bc != nullptr) {
-        buf = bc->convert(buf);
-    }
-    if (available >= (long)buf.size()) {
-        memcpy(serTo, buf.data(), buf.size());
-    } else {
-        return -1;
-    }
-    return buf.size();
+    vespalib::GenerationHandler::Guard guard(getGenerationHandler().takeGuard());
+    return std::make_unique<SingleRawAttributeSaver>
+        (std::move(guard),
+         this->createAttributeHeader(fileName),
+         make_entry_ref_vector_snapshot(_ref_vector, getCommittedDocIdLimit()),
+         _raw_store);
 }
 
-long
-SingleRawAttribute::onSerializeForDescendingSort(DocId doc, void * serTo, long available, const common::BlobConverter * bc) const
+bool
+SingleRawAttribute::onLoad(vespalib::Executor* executor)
 {
-    auto raw = get_raw(doc);
-    vespalib::ConstBufferRef buf(raw.data(), raw.size());
-    if (bc != nullptr) {
-        buf = bc->convert(buf);
-    }
-    if (available >= (long)buf.size()) {
-        auto *dst = static_cast<unsigned char *>(serTo);
-        const auto * src(static_cast<const uint8_t *>(buf.data()));
-        for (size_t i(0); i < buf.size(); ++i) {
-            dst[i] = 0xff - src[i];
-        }
-    } else {
-        return -1;
-    }
-    return buf.size();
+    SingleRawAttributeLoader loader(*this, _ref_vector, _raw_store);
+    return loader.on_load(executor);
+}
+
+bool
+SingleRawAttribute::isUndefined(DocId docid) const
+{
+    auto raw = get_raw(docid);
+    return raw.empty();
+}
+
+void
+SingleRawAttribute::populate_address_space_usage(AddressSpaceUsage& usage) const
+{
+    usage.set(AddressSpaceComponents::raw_store, _raw_store.get_address_space_usage());
+}
+
+std::unique_ptr<attribute::SearchContext>
+SingleRawAttribute::getSearch(std::unique_ptr<QueryTermSimple>, const attribute::SearchContextParams&) const
+{
+    return std::make_unique<EmptySearchContext>(*this);
 }
 
 }

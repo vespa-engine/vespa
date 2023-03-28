@@ -32,8 +32,7 @@ public class ClusterInfo {
 
     @Override
     public boolean equals(Object o) {
-        if (!(o instanceof ClusterInfo)) return false;
-        ClusterInfo other = (ClusterInfo) o;
+        if (!(o instanceof ClusterInfo other)) return false;
         return clusterId.equals(other.clusterId) && clusterType.equals(other.clusterType);
     }
 

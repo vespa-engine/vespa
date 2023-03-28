@@ -20,7 +20,6 @@
 #include <vespa/searchlib/attribute/singleenumattribute.hpp>
 #include <vespa/searchlib/attribute/singlenumericenumattribute.hpp>
 #include <vespa/searchlib/attribute/singlenumericpostattribute.h>
-#include <vespa/searchlib/attribute/singlenumericpostattribute.hpp>
 #include <vespa/searchlib/test/mock_attribute_manager.h>
 #include <vespa/vespalib/testkit/testapp.h>
 
@@ -123,7 +122,7 @@ makeDoc(const DocumentTypeRepo &repo,
         int32_t ab)
 {
     const DocumentType *docType = repo.getDocumentType("test");
-    Document::UP doc(new Document(*docType, DocumentId(docId)));
+    auto doc = std::make_unique<Document>(repo, *docType, DocumentId(docId));
     if (ia != "null")
         doc->setValue("ia", StringFieldValue(ia));
     if (ib != "null")
@@ -348,7 +347,7 @@ TestFixture::testParse(const string &selection,
 
     const DocumentType *docType = repo.getDocumentType(docTypeName);
     ASSERT_TRUE(docType != nullptr);
-    Document::UP emptyDoc(new Document(*docType, DocumentId()));
+    auto emptyDoc = std::make_unique<Document>(repo, *docType, DocumentId());
 
     res->set(selection,
              docTypeName,

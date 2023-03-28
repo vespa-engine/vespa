@@ -1,11 +1,10 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "singleenumattributesaver.h"
-#include <vespa/vespalib/util/array.hpp>
-#include <vespa/searchlib/util/bufferwriter.h>
 #include "iattributesavetarget.h"
+#include <vespa/searchlib/util/bufferwriter.h>
 
-
+using search::attribute::EntryRefVector;
 using vespalib::GenerationHandler;
 
 namespace search {
@@ -13,26 +12,21 @@ namespace search {
 SingleValueEnumAttributeSaver::
 SingleValueEnumAttributeSaver(GenerationHandler::Guard &&guard,
                               const attribute::AttributeHeader &header,
-                              EnumIndexCopyVector &&indices,
-                              const IEnumStore &enumStore)
+                              EntryRefVector &&indices,
+                              IEnumStore &enumStore)
     : AttributeSaver(std::move(guard), header),
       _indices(std::move(indices)),
       _enumSaver(enumStore)
 {
 }
 
-
-SingleValueEnumAttributeSaver::~SingleValueEnumAttributeSaver()
-{
-}
-
+SingleValueEnumAttributeSaver::~SingleValueEnumAttributeSaver() = default;
 
 bool
 SingleValueEnumAttributeSaver::onSave(IAttributeSaveTarget &saveTarget)
 {
     _enumSaver.writeUdat(saveTarget);
-    std::unique_ptr<search::BufferWriter> datWriter(saveTarget.datWriter().
-                                                    allocBufferWriter());
+    std::unique_ptr<search::BufferWriter> datWriter(saveTarget.datWriter().allocBufferWriter());
     assert(saveTarget.getEnumerated());
     auto &enumerator = _enumSaver.get_enumerator();
     enumerator.enumerateValues();
@@ -48,6 +42,5 @@ SingleValueEnumAttributeSaver::onSave(IAttributeSaveTarget &saveTarget)
     _enumSaver.clear();
     return true;
 }
-
 
 }  // namespace search

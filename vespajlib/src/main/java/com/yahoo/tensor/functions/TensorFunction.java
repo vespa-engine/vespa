@@ -10,6 +10,7 @@ import com.yahoo.tensor.evaluation.TypeContext;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Function;
 
 /**
  * A representation of a tensor function which is able to be translated to a set of primitive
@@ -72,4 +73,9 @@ public abstract class TensorFunction<NAMETYPE extends Name> {
     @Override
     public abstract int hashCode();
 
+    public TensorFunction<NAMETYPE> withTransformedFunctions(
+            Function<ScalarFunction<NAMETYPE>, ScalarFunction<NAMETYPE>> transformer)
+    {
+        return this;
+    }
 }

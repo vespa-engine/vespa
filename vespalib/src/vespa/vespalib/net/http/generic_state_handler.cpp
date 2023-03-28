@@ -126,14 +126,14 @@ vespalib::string render(const StateExplorer &state, const Url &url) {
     return buf.get().make_string();
 }
 
-vespalib::string explore(const StateExplorer &state, const vespalib::string &host,
-                         const std::vector<vespalib::string> &items, size_t pos) {
+JsonGetHandler::Response explore(const StateExplorer &state, const vespalib::string &host,
+                                 const std::vector<vespalib::string> &items, size_t pos) {
     if (pos == items.size()) {
-        return render(state, Url(host, items));
+        return JsonGetHandler::Response::make_ok_with_json(render(state, Url(host, items)));
     }
     std::unique_ptr<StateExplorer> child = state.get_child(items[pos]);
     if (!child) {
-        return "";
+        return JsonGetHandler::Response::make_not_found();
     }
     return explore(*child, host, items, pos + 1);
 }
@@ -146,14 +146,15 @@ GenericStateHandler::GenericStateHandler(const vespalib::string &root_path, cons
 {
 }
 
-vespalib::string
+JsonGetHandler::Response
 GenericStateHandler::get(const vespalib::string &host,
                          const vespalib::string &path,
-                         const std::map<vespalib::string,vespalib::string> &) const
+                         const std::map<vespalib::string,vespalib::string> &,
+                         const net::ConnectionAuthContext &) const
 {
     std::vector<vespalib::string> items = split_path(path);
     if (!is_prefix(_root, items)) {
-        return "";
+        return Response::make_not_found();
     }
     return explore(_state, host, items, _root.size());
 }

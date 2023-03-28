@@ -150,4 +150,35 @@ TEST("Test that default constructed regex is invalid.") {
     ASSERT_FALSE(dummy.valid());
 }
 
+TEST("Can extract min/max prefix range from anchored regex") {
+    auto min_max = Regex::from_pattern("^.*").possible_anchored_match_prefix_range();
+    EXPECT_EQUAL(min_max.first,  "");
+    EXPECT_GREATER_EQUAL(min_max.second, "\xf4\x8f\xbf\xc0"); // Highest possible Unicode char (U+10FFFF) as UTF-8, plus 1
+
+    min_max = Regex::from_pattern("^hello").possible_anchored_match_prefix_range();
+    EXPECT_EQUAL(min_max.first,  "hello");
+    EXPECT_EQUAL(min_max.second, "hello");
+
+    min_max = Regex::from_pattern("^hello|^world").possible_anchored_match_prefix_range();
+    EXPECT_EQUAL(min_max.first,  "hello");
+    EXPECT_EQUAL(min_max.second, "world");
+
+    min_max = Regex::from_pattern("(^hello|^world|^zoidberg)").possible_anchored_match_prefix_range();
+    EXPECT_EQUAL(min_max.first,  "hello");
+    EXPECT_EQUAL(min_max.second, "zoidberg");
+
+    min_max = Regex::from_pattern("^hello (foo|bar|zoo)").possible_anchored_match_prefix_range();
+    EXPECT_EQUAL(min_max.first,  "hello bar");
+    EXPECT_EQUAL(min_max.second, "hello zoo");
+
+    min_max = Regex::from_pattern("^(hello|world)+").possible_anchored_match_prefix_range();
+    EXPECT_EQUAL(min_max.first,  "hello");
+    EXPECT_EQUAL(min_max.second, "worldwp");
+
+    // Bad regex; no range
+    min_max = Regex::from_pattern("*hello").possible_anchored_match_prefix_range();
+    EXPECT_EQUAL(min_max.first,  "");
+    EXPECT_EQUAL(min_max.second, "");
+}
+
 TEST_MAIN() { TEST_RUN_ALL(); }

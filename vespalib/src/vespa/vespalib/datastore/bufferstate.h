@@ -8,7 +8,6 @@
 #include "entryref.h"
 #include <vespa/vespalib/util/generationhandler.h>
 #include <vespa/vespalib/util/alloc.h>
-#include <vespa/vespalib/util/array.h>
 
 namespace vespalib::datastore {
 
@@ -40,14 +39,14 @@ public:
 
 private:
     InternalBufferStats _stats;
-    BufferFreeList _free_list;
+    BufferFreeList      _free_list;
     std::atomic<BufferTypeBase*> _typeHandler;
-    Alloc           _buffer;
-    uint32_t        _arraySize;
-    uint16_t        _typeId;
+    Alloc              _buffer;
+    uint32_t           _arraySize;
+    uint16_t           _typeId;
     std::atomic<State> _state;
-    bool            _disableElemHoldList : 1;
-    bool            _compacting : 1;
+    bool               _disableElemHoldList : 1;
+    bool               _compacting : 1;
 
 public:
     /**
@@ -86,7 +85,7 @@ public:
      * Disable hold of elements, just mark elements as dead without cleanup.
      * Typically used when tearing down data structure in a controlled manner.
      */
-    void disableElemHoldList();
+    void disable_elem_hold_list();
 
     /**
      * Update stats to reflect that the given elements are put on hold.
@@ -130,7 +129,32 @@ public:
     BufferTypeBase *getTypeHandler() { return _typeHandler.load(std::memory_order_relaxed); }
 
     void resume_primary_buffer(uint32_t buffer_id);
+};
 
+class BufferAndMeta {
+public:
+    BufferAndMeta() : BufferAndMeta(nullptr, nullptr, 0, 0) { }
+    std::atomic<void*>& get_atomic_buffer() noexcept { return _buffer; }
+    void* get_buffer_relaxed() noexcept { return _buffer.load(std::memory_order_relaxed); }
+    const void* get_buffer_acquire() const noexcept { return _buffer.load(std::memory_order_acquire); }
+    uint32_t getTypeId() const { return _typeId; }
+    uint32_t getArraySize() const { return _arraySize; }
+    BufferState * get_state_relaxed() { return _state.load(std::memory_order_relaxed); }
+    const BufferState * get_state_acquire() const { return _state.load(std::memory_order_acquire); }
+    void setTypeId(uint32_t typeId) { _typeId = typeId; }
+    void setArraySize(uint32_t arraySize) { _arraySize = arraySize; }
+    void set_state(BufferState * state) { _state.store(state, std::memory_order_release); }
+private:
+    BufferAndMeta(void* buffer, BufferState * state, uint32_t typeId, uint32_t arraySize)
+        : _buffer(buffer),
+          _state(state),
+          _typeId(typeId),
+          _arraySize(arraySize)
+    { }
+    std::atomic<void*>        _buffer;
+    std::atomic<BufferState*> _state;
+    uint32_t                  _typeId;
+    uint32_t                  _arraySize;
 };
 
 }

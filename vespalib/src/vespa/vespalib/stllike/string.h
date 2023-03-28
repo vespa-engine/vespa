@@ -26,7 +26,7 @@ public:
     constexpr stringref() noexcept : _s(""), _sz(0) { }
     stringref(const char * s) noexcept : _s(s), _sz(strlen(s)) { }
     constexpr stringref(const char * s, size_type sz) noexcept : _s(s), _sz(sz) { }
-    constexpr stringref(const std::string & s) noexcept : _s(s.c_str()), _sz(s.size()) { }
+    stringref(const std::string & s) noexcept : _s(s.c_str()), _sz(s.size()) { }
     stringref(const stringref &) noexcept = default;
     stringref & operator =(const stringref &) noexcept = default;
     stringref(stringref &&) noexcept = default;

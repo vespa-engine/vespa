@@ -25,7 +25,7 @@ public class Janitor extends AbstractComponent {
     @Inject
     public Janitor() {
         int threadPoolSize = Math.max(2, Runtime.getRuntime().availableProcessors()/4);
-        log.info("Creating janitor executor with " + threadPoolSize + " threads");
+        log.fine("Creating janitor executor with " + threadPoolSize + " threads");
         this.executor = Executors.newFixedThreadPool(threadPoolSize, new DaemonThreadFactory("jdisc-janitor-"));
     }
 

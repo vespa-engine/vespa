@@ -672,8 +672,7 @@ std::shared_ptr<document::Document>
 TwoPhaseUpdateOperation::createBlankDocument() const
 {
     const document::DocumentUpdate& up(*_updateCmd->getUpdate());
-    auto doc = std::make_shared<document::Document>(up.getType(), up.getId());
-    doc->setRepo(*up.getRepoPtr());
+    auto doc = std::make_shared<document::Document>(*up.getRepoPtr(), up.getType(), up.getId());
     return doc;
 }
 

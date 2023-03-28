@@ -14,11 +14,13 @@ import static org.junit.Assert.fail;
  */
 public class CuratorCompletionWaiterTest {
 
+    private static final Duration waitForAll = Duration.ofSeconds(1);
+
     @Test
     public void testCompletionWaiter() throws InterruptedException {
         Curator curator = new MockCurator();
-        Curator.CompletionWaiter waiter = CuratorCompletionWaiter.createAndInitialize(curator, Path.createRoot(), "foo", "foo");
-        Curator.CompletionWaiter notifier = CuratorCompletionWaiter.create(curator, Path.fromString("/foo"), "bar");
+        Curator.CompletionWaiter waiter = CuratorCompletionWaiter.createAndInitialize(curator, Path.createRoot(), "foo", "foo", waitForAll);
+        Curator.CompletionWaiter notifier = CuratorCompletionWaiter.create(curator, Path.fromString("/foo"), "bar", waitForAll);
         Thread t1 = new Thread(() -> {
             try {
                 waiter.awaitCompletion(Duration.ofSeconds(120));
@@ -34,7 +36,7 @@ public class CuratorCompletionWaiterTest {
     @Test(expected = CompletionTimeoutException.class)
     public void testCompletionWaiterFailure() {
         Curator curator = new MockCurator();
-        Curator.CompletionWaiter waiter = CuratorCompletionWaiter.createAndInitialize(curator, Path.createRoot(), "foo", "foo");
+        Curator.CompletionWaiter waiter = CuratorCompletionWaiter.createAndInitialize(curator, Path.createRoot(), "foo", "foo", waitForAll);
         waiter.awaitCompletion(Duration.ofMillis(100));
     }
 }

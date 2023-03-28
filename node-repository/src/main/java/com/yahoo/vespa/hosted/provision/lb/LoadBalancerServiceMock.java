@@ -5,7 +5,6 @@ import ai.vespa.http.DomainName;
 import com.google.common.collect.ImmutableSet;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.NodeType;
-import com.yahoo.config.provision.ZoneEndpoint;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -45,7 +44,7 @@ public class LoadBalancerServiceMock implements LoadBalancerService {
     }
 
     @Override
-    public Protocol protocol() {
+    public Protocol protocol(boolean enclave) {
         return Protocol.ipv4;
     }
 

@@ -4,7 +4,6 @@
 
 #include "filechunk.h"
 #include <vespa/vespalib/util/executor.h>
-#include <vespa/searchlib/transactionlog/syncproxy.h>
 #include <vespa/fastos/file.h>
 #include <map>
 #include <deque>
@@ -24,9 +23,9 @@ public:
     {
     public:
         using CompressionConfig = vespalib::compression::CompressionConfig;
-        Config() : Config({CompressionConfig::LZ4, 9, 60}, 0x10000) { }
+        Config() noexcept : Config({CompressionConfig::LZ4, 9, 60}, 0x10000) { }
 
-        Config(CompressionConfig compression, size_t maxChunkBytes)
+        Config(CompressionConfig compression, size_t maxChunkBytes) noexcept
             : _compression(compression),
               _maxChunkBytes(maxChunkBytes)
         { }
@@ -47,7 +46,7 @@ public:
                        const vespalib::string & baseName, uint64_t initialSerialNum,
                        uint32_t docIdLimit, const Config & config,
                        const TuneFileSummary &tune, const common::FileHeaderContext &fileHeaderContext,
-                       const IBucketizer * bucketizer, bool crcOnReadDisabled);
+                       const IBucketizer * bucketizer);
     ~WriteableFileChunk() override;
 
     ssize_t read(uint32_t lid, SubChunkId chunk, vespalib::DataBuffer & buffer) const override;
@@ -107,7 +106,7 @@ private:
     const Chunk& get_chunk(uint32_t chunk) const;
 
     Config            _config;
-    SerialNum         _serialNum;
+    uint64_t          _serialNum;
     std::atomic<bool> _frozen;
     // Lock order is _writeLock, _flushLock, _lock
     mutable std::mutex             _lock;

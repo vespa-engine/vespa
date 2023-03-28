@@ -11,6 +11,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 	"time"
 
@@ -28,6 +29,10 @@ type visitArgs struct {
 	pretty         bool
 	debugMode      bool
 	chunkCount     int
+	from           string
+	to             string
+	slices         int
+	sliceId        int
 	cli            *CLI
 }
 
@@ -89,17 +94,22 @@ By default prints each document received on its own line (JSON-L format).
 `,
 		Example: `$ vespa visit # get documents from any cluster
 $ vespa visit --content-cluster search # get documents from cluster named "search"
+$ vespa visit --field-set "[id]" # list document IDs
 `,
 		Args:              cobra.MaximumNArgs(0),
 		DisableAutoGenTag: true,
 		SilenceUsage:      true,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			vArgs.cli = cli
+			result := checkArguments(vArgs)
+			if !result.Success {
+				return fmt.Errorf("argument error: %s", result.Message)
+			}
 			service, err := documentService(cli)
 			if err != nil {
 				return err
 			}
-			result := probeHandler(service, cli)
+			result = probeHandler(service, cli)
 			if result.Success {
 				result = visitClusters(&vArgs, service)
 			}
@@ -118,7 +128,36 @@ $ vespa visit --content-cluster search # get documents from cluster named "searc
 	cmd.Flags().BoolVar(&vArgs.makeFeed, "make-feed", false, `output JSON array suitable for vespa-feeder`)
 	cmd.Flags().BoolVar(&vArgs.pretty, "pretty-json", false, `format pretty JSON`)
 	cmd.Flags().IntVar(&vArgs.chunkCount, "chunk-count", 1000, `chunk by count`)
+	cmd.Flags().StringVar(&vArgs.from, "from", "", `Timestamp to visit from, in seconds`)
+	cmd.Flags().StringVar(&vArgs.to, "to", "", `Timestamp to visit up to, in seconds`)
+	cmd.Flags().IntVar(&vArgs.sliceId, "slice-id", -1, `The number of the slice this visit invocation should fetch`)
+	cmd.Flags().IntVar(&vArgs.slices, "slices", -1, `Split the document corpus into this number of independent slices`)
 	return cmd
+}
+
+func checkArguments(vArgs visitArgs) (res util.OperationResult) {
+	if vArgs.slices > 0 || vArgs.sliceId > -1 {
+		if !(vArgs.slices > 0 && vArgs.sliceId > -1) {
+			return util.Failure("Both 'slices' and 'slice-id' must be set")
+		}
+		if vArgs.sliceId >= vArgs.slices {
+			return util.Failure("The 'slice-id' must be in range [0, slices)")
+		}
+	}
+	// to and from will support RFC3339 format soon, add more validation then
+	if vArgs.from != "" {
+		_, err := strconv.ParseInt(vArgs.from, 10, 64)
+		if err != nil {
+			return util.Failure("Invalid 'from' argument: '" + vArgs.from + "': " + err.Error())
+		}
+	}
+	if vArgs.to != "" {
+		_, err := strconv.ParseInt(vArgs.to, 10, 64)
+		if err != nil {
+			return util.Failure("Invalid 'to' argument: '" + vArgs.to + "': " + err.Error())
+		}
+	}
+	return util.Success("")
 }
 
 type HandlersInfo struct {
@@ -170,7 +209,7 @@ func probeHandler(service *vespa.Service, cli *CLI) (res util.OperationResult) {
 				cli.printWarning(w)
 			}
 		}
-		cli.printWarning("Missing /document/v1/ API; add <document-api /> to the container cluster delcaration in services.xml")
+		cli.printWarning("Missing /document/v1/ API; add <document-api /> to the container cluster declaration in services.xml")
 		return util.Failure("Missing /document/v1 API")
 	} else {
 		return util.FailureWithPayload(service.Description()+" at "+request.URL.Host+": "+response.Status, util.ReaderToJSON(response.Body))
@@ -279,6 +318,17 @@ func runOneVisit(vArgs *visitArgs, service *vespa.Service, contToken string) (*V
 	}
 	if vArgs.chunkCount > 0 {
 		urlPath = urlPath + fmt.Sprintf("&wantedDocumentCount=%d", vArgs.chunkCount)
+	}
+	if vArgs.from != "" {
+		fromSeconds, _ := strconv.ParseInt(vArgs.from, 10, 64)
+		urlPath = urlPath + fmt.Sprintf("&fromTimestamp=%d", fromSeconds*1000000)
+	}
+	if vArgs.to != "" {
+		toSeconds, _ := strconv.ParseInt(vArgs.to, 10, 64)
+		urlPath = urlPath + fmt.Sprintf("&toTimestamp=%d", toSeconds*1000000)
+	}
+	if vArgs.slices > 0 {
+		urlPath = urlPath + fmt.Sprintf("&slices=%d&sliceId=%d", vArgs.slices, vArgs.sliceId)
 	}
 	url, urlParseError := url.Parse(urlPath)
 	if urlParseError != nil {

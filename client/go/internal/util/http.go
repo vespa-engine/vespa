@@ -2,17 +2,18 @@
 package util
 
 import (
+	"bytes"
 	"crypto/tls"
 	"fmt"
 	"net/http"
 	"time"
 
-	"github.com/vespa-engine/vespa/client/go/internal/cli/build"
+	"github.com/vespa-engine/vespa/client/go/internal/build"
+	"golang.org/x/net/http2"
 )
 
 type HTTPClient interface {
 	Do(request *http.Request, timeout time.Duration) (response *http.Response, error error)
-	UseCertificate(certificate []tls.Certificate)
 }
 
 type defaultHTTPClient struct {
@@ -30,13 +31,55 @@ func (c *defaultHTTPClient) Do(request *http.Request, timeout time.Duration) (re
 	return c.client.Do(request)
 }
 
-func (c *defaultHTTPClient) UseCertificate(certificates []tls.Certificate) {
-	c.client.Transport = &http.Transport{TLSClientConfig: &tls.Config{
-		Certificates: certificates,
-		MinVersion:   tls.VersionTLS12,
-	}}
+func SetCertificate(client HTTPClient, certificates []tls.Certificate) {
+	c, ok := client.(*defaultHTTPClient)
+	if !ok {
+		return
+	}
+	// Use HTTP/2 transport explicitly. Connection reuse does not work properly when using regular http.Transport, even
+	// though it upgrades to HTTP/2 automatically
+	// https://github.com/golang/go/issues/16582
+	// https://github.com/golang/go/issues/22091
+	var transport *http2.Transport
+	if _, ok := c.client.Transport.(*http.Transport); ok {
+		transport = &http2.Transport{}
+		c.client.Transport = transport
+	} else if t, ok := c.client.Transport.(*http2.Transport); ok {
+		transport = t
+	} else {
+		panic(fmt.Sprintf("unknown transport type: %T", c.client.Transport))
+	}
+	if ok && !c.hasCertificates(transport.TLSClientConfig, certificates) {
+		transport.TLSClientConfig = &tls.Config{
+			Certificates: certificates,
+			MinVersion:   tls.VersionTLS12,
+		}
+	}
+}
+
+func (c *defaultHTTPClient) hasCertificates(tlsConfig *tls.Config, certs []tls.Certificate) bool {
+	if tlsConfig == nil {
+		return false
+	}
+	if len(tlsConfig.Certificates) != len(certs) {
+		return false
+	}
+	for i := 0; i < len(certs); i++ {
+		if len(tlsConfig.Certificates[i].Certificate) != len(certs[i].Certificate) {
+			return false
+		}
+		for j := 0; j < len(certs[i].Certificate); j++ {
+			if !bytes.Equal(tlsConfig.Certificates[i].Certificate[j], certs[i].Certificate[j]) {
+				return false
+			}
+		}
+	}
+	return true
 }
 
 func CreateClient(timeout time.Duration) HTTPClient {
-	return &defaultHTTPClient{client: &http.Client{Timeout: timeout}}
+	return &defaultHTTPClient{client: &http.Client{
+		Timeout:   timeout,
+		Transport: http.DefaultTransport,
+	}}
 }

@@ -25,10 +25,10 @@ protected:
     const char *get(EntryRef ref) const {
         if (ref.valid()) {
             RefType iRef(ref);
-            auto &state = _store.getBufferState(iRef.bufferId());
-            auto type_id = state.getTypeId();
+            const auto &meta = _store.getBufferMeta(iRef.bufferId());
+            auto type_id = meta.getTypeId();
             if (type_id != 0) {
-                return reinterpret_cast<const UniqueStoreSmallStringEntry *>(_store.template getEntryArray<char>(iRef, state.getArraySize()))->value();
+                return reinterpret_cast<const UniqueStoreSmallStringEntry *>(_store.template getEntryArray<char>(iRef, meta.getArraySize()))->value();
             } else {
                 return _store.template getEntry<WrappedExternalEntryType>(iRef)->value().c_str();
             }

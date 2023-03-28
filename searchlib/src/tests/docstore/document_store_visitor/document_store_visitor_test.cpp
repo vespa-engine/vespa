@@ -60,7 +60,7 @@ makeDoc(const DocumentTypeRepo &repo, uint32_t i, bool before)
     idstr << "id:test:test:: " << i;
     DocumentId id(idstr.str());
     const DocumentType *docType = repo.getDocumentType(doc_type_name);
-    Document::UP doc(new Document(*docType, id));
+    Document::UP doc(new Document(repo, *docType, id));
     ASSERT_TRUE(doc.get());
     asciistream mainstr;
     mainstr << "static text" << i << " body something";
@@ -237,7 +237,7 @@ struct Fixture
 Fixture::Fixture()
     : _baseDir("visitor"),
       _repo(makeDocTypeRepoConfig()),
-      _storeConfig(DocumentStore::Config(CompressionConfig::NONE, 0, 0),
+      _storeConfig(DocumentStore::Config(CompressionConfig::NONE, 0),
                    LogDataStore::Config().setMaxFileSize(50000).setMaxBucketSpread(3.0)
                            .setFileConfig(WriteableFileChunk::Config(CompressionConfig(), 16_Ki))),
       _executor(1),

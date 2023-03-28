@@ -95,7 +95,7 @@ public abstract class Derived implements Exportable {
      * @param toDirectory the directory to export to, or null
      *
      */
-    public final void export(String toDirectory) throws IOException {
+    public void export(String toDirectory) throws IOException {
         Writer writer = null;
         try {
             String fileName = getDerivedName() + ".cfg";

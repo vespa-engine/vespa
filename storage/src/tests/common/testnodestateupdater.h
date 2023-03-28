@@ -9,6 +9,7 @@
 #pragma once
 
 #include <vespa/storage/common/nodestateupdater.h>
+#include <mutex>
 
 namespace storage::lib {
     class ClusterState;
@@ -18,6 +19,7 @@ namespace storage {
 
 struct TestNodeStateUpdater : public NodeStateUpdater
 {
+    mutable std::mutex  _mutex;
     lib::NodeState::CSP _reported;
     lib::NodeState::CSP _current;
     std::shared_ptr<const lib::ClusterStateBundle> _clusterStateBundle;
@@ -29,13 +31,14 @@ public:
     explicit TestNodeStateUpdater(const lib::NodeType& type);
     ~TestNodeStateUpdater() override;
 
-    lib::NodeState::CSP getReportedNodeState() const override { return _reported; }
+    lib::NodeState::CSP getReportedNodeState() const override { std::lock_guard guard(_mutex); return _reported; }
     lib::NodeState::CSP getCurrentNodeState() const override { return _current; }
     std::shared_ptr<const lib::ClusterStateBundle> getClusterStateBundle() const override;
     void addStateListener(StateListener& s) override { _listeners.push_back(&s); }
     void removeStateListener(StateListener&) override {}
     Lock::SP grabStateChangeLock() override { return std::make_shared<Lock>(); }
     void setReportedNodeState(const lib::NodeState& state) override {
+        std::lock_guard guard(_mutex);
         _reported = std::make_shared<lib::NodeState>(state);
     }
     void immediately_send_get_node_state_replies() override {

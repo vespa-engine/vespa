@@ -1,8 +1,8 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.maintenance;
 
+import com.yahoo.concurrent.UncheckedTimeoutException;
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.ApplicationLockException;
 import com.yahoo.config.provision.Deployer;
 import com.yahoo.config.provision.Deployment;
 import com.yahoo.config.provision.TransientException;
@@ -16,7 +16,6 @@ import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.yolean.Exceptions;
 
 import java.io.Closeable;
-import java.time.Duration;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -63,18 +62,12 @@ class MaintenanceDeployment implements Closeable {
         return deployment.isPresent();
     }
 
-    /**
-     * Returns the application lock held by this, or empty if it is not held.
-     *
-     * @throws IllegalStateException id this is called when closed
-     */
-    public Optional<Mutex> applicationLock() {
-        if (closed) throw new IllegalStateException(this + " is closed");
-        return lock;
-    }
-
+    /** Prepare this deployment. Returns whether prepare was successful */
     public boolean prepare() {
-        return doStep(() -> { deployment.get().prepare(); return 0L; }).isPresent();
+        return doStep(() -> {
+            deployment.get().prepare();
+            return 0L;
+        }).isPresent();
     }
 
     /**
@@ -104,13 +97,10 @@ class MaintenanceDeployment implements Closeable {
     }
 
     private Optional<Mutex> tryLock(ApplicationId application, NodeRepository nodeRepository) {
-        Duration timeout = Duration.ofSeconds(3);
         try {
-            // Use a short lock to avoid interfering with change deployments
-            return Optional.of(nodeRepository.applications().lock(application, timeout));
-        }
-        catch (ApplicationLockException e) {
-            log.log(Level.INFO, () -> "Could not lock " + application + " for maintenance deployment within " + timeout);
+            return Optional.of(nodeRepository.applications().lockMaintenance(application));
+        } catch (UncheckedTimeoutException e) {
+            log.log(Level.INFO, () -> "Could not lock " + application + " for maintenance deployment within timeout");
             return Optional.empty();
         }
     }

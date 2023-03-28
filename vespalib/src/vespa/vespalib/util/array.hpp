@@ -17,7 +17,7 @@ void construct(T * dest, const T * source, size_t sz, std::false_type)
 }
 
 template <typename T>
-void construct(T * dest, const T * source, size_t sz, std::true_type)
+void construct(T * dest, const T * source, size_t sz, std::true_type) noexcept
 {
     memcpy(dest, source, sz*sizeof(T));
 }
@@ -32,7 +32,7 @@ void construct(T * dest, size_t sz, std::false_type)
 }
 
 template <typename T>
-void construct(T * dest, size_t sz, std::true_type)
+void construct(T * dest, size_t sz, std::true_type) noexcept
 {
     (void) dest;
     (void) sz;
@@ -123,7 +123,7 @@ void Array<T>::resize(size_t n)
 }
 
 template <typename T>
-void move(T * dest, T * source, size_t sz, std::false_type)
+void move(T * dest, T * source, size_t sz, std::false_type) noexcept
 {
     for (size_t i(0); i < sz; i++) {
         ::new (static_cast<void *>(dest + i)) T(std::move(*(source + i)));
@@ -132,7 +132,7 @@ void move(T * dest, T * source, size_t sz, std::false_type)
 }
 
 template <typename T>
-void move(T * dest, const T * source, size_t sz, std::true_type)
+void move(T * dest, const T * source, size_t sz, std::true_type) noexcept
 {
     memcpy(dest, source, sz*sizeof(T));
 }
@@ -154,7 +154,7 @@ Array<T>::Array(const Alloc & initial)
 { }
 
 template <typename T>
-Array<T>::Array(Alloc && buf, size_t sz) :
+Array<T>::Array(Alloc && buf, size_t sz) noexcept :
     _array(std::move(buf)),
     _sz(sz)
 {

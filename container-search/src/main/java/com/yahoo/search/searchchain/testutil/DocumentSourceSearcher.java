@@ -4,6 +4,7 @@ package com.yahoo.search.searchchain.testutil;
 
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Set;
 import java.util.Map;
 import java.util.HashMap;
@@ -145,9 +146,9 @@ public class DocumentSourceSearcher extends Searcher {
                     copyFieldValuesThatExist(filledHit,hitToFill,fieldsToFill);
                 } else {
                     // TODO: remove this block and update fieldsToFill above to throw an exception if no appropriate summary class is found
-                    for (Map.Entry<String,Object> propertyEntry : filledHit.fields().entrySet()) {
-                        hitToFill.setField(propertyEntry.getKey(),
-                                propertyEntry.getValue());
+                    for (var iter = filledHit.fieldIterator(); iter.hasNext();) {
+                        var propertyEntry = iter.next();
+                        hitToFill.setField(propertyEntry.getKey(), propertyEntry.getValue());
                     }
                 }
                 hitToFill.setFilled(summaryClass == null ? DEFAULT_SUMMARY_CLASS : summaryClass);

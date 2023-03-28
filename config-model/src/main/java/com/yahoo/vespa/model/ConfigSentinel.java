@@ -95,7 +95,8 @@ public class ConfigSentinel extends AbstractService implements SentinelConfig.Pr
             serviceBuilder.environ(b -> b.varname(entry.getKey()).varvalue(entry.getValue().toString()));
         }
         for (var entry : s.getLogctlSpecs()) {
-            serviceBuilder.logctl(b -> b.componentSpec(entry.componentSpec).levelsModSpec(entry.levelsModSpec));
+            serviceBuilder.logctl(b -> b.componentSpec(entry.componentSpec())
+                                        .levelsModSpec(entry.levelsModSpec().toLogctlModSpec()));
         }
         setPreShutdownCommand(serviceBuilder, s);
         return serviceBuilder;

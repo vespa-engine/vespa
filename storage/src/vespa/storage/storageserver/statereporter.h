@@ -34,10 +34,21 @@ public:
             metrics::MetricManager&,
             ApplicationGenerationFetcher& generationFetcher,
             const std::string& name = "status");
-    ~StateReporter();
+    ~StateReporter() override;
 
     vespalib::string getReportContentType(const framework::HttpUrlPath&) const override;
     bool reportStatus(std::ostream& out, const framework::HttpUrlPath& path) const override;
+
+    // Since we forward to the state API handlers, we require a union of the capabilities
+    // required for the content status pages _as well as_ those needed by the state API handlers.
+    // We only half-heartedly want to support the legacy state v1 mapping via the storagenode
+    // status HTTP server; everyone should use the searchnode HTTP server instead.
+    CapabilitySet required_capabilities() const noexcept override {
+        return StatusReporter::required_capabilities().union_of(CapabilitySet::of({
+            Capability::content_state_api(),
+            Capability::content_metrics_api()
+        }));
+    }
 private:
     metrics::MetricManager &_manager;
     metrics::StateApiAdapter _metricsAdapter;

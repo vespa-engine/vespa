@@ -8,7 +8,9 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/vespa-engine/vespa/client/go/internal/cli/auth/auth0"
 	"github.com/vespa-engine/vespa/client/go/internal/mock"
+	"github.com/vespa-engine/vespa/client/go/internal/util"
 	"github.com/vespa-engine/vespa/client/go/internal/vespa"
 )
 
@@ -184,24 +186,10 @@ func TestReadAPIKey(t *testing.T) {
 	assert.Equal(t, []byte("baz"), key)
 
 	// Auth0 is preferred when configured
-	authContent := `
-{
-    "version": 1,
-    "providers": {
-        "auth0": {
-            "version": 1,
-            "systems": {
-                "public": {
-					"access_token": "...",
-					"scopes": ["openid", "offline_access"],
-					"expires_at": "2030-01-01T01:01:01.000001+01:00"
-				}
-			}
-		}
-	}
-}`
 	cli, _, _ = newTestCLI(t)
-	require.Nil(t, os.WriteFile(filepath.Join(cli.config.homeDir, "auth.json"), []byte(authContent), 0600))
+	cli.auth0Factory = func(httpClient util.HTTPClient, options auth0.Options) (auth0Client, error) {
+		return &mockAuth0{hasCredentials: true}, nil
+	}
 	key, err = cli.config.readAPIKey(cli, vespa.PublicSystem, "t1")
 	require.Nil(t, err)
 	assert.Nil(t, key)

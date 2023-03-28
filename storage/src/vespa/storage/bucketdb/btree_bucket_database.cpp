@@ -151,9 +151,16 @@ BTreeBucketDatabase::process_update(const document::BucketId& bucket, EntryUpdat
 }
 
 // TODO need snapshot read with guarding
-// FIXME semantics of for-each in judy and bit tree DBs differ, former expects lbound, latter ubound..!
-// FIXME but bit-tree code says "lowerBound" in impl and "after" in declaration???
-void BTreeBucketDatabase::forEach(EntryProcessor& proc, const BucketId& after) const {
+void BTreeBucketDatabase::for_each_lower_bound(EntryProcessor& proc, const BucketId& at_or_after) const {
+    for (auto iter = _impl->lower_bound(at_or_after.toKey()); iter.valid(); ++iter) {
+        if (!proc.process(_impl->const_value_ref_from_valid_iterator(iter))) {
+            break;
+        }
+    }
+}
+
+// TODO need snapshot read with guarding
+void BTreeBucketDatabase::for_each_upper_bound(EntryProcessor& proc, const BucketId& after) const {
     for (auto iter = _impl->upper_bound(after.toKey()); iter.valid(); ++iter) {
         if (!proc.process(_impl->const_value_ref_from_valid_iterator(iter))) {
             break;

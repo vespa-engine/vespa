@@ -727,13 +727,12 @@ template <typename DataT>
 void
 PostingStore<DataT>::compact_worst_buffers(CompactionSpec compaction_spec, const CompactionStrategy& compaction_strategy)
 {
-
     auto compacting_buffers = this->start_compact_worst_buffers(compaction_spec, compaction_strategy);
     bool compact_btree_roots = false;
     auto filter = compacting_buffers->make_entry_ref_filter();
     // Start with looking at buffers being compacted
     for (uint32_t buffer_id : compacting_buffers->get_buffer_ids()) {
-        if (isBTree(_store.getBufferState(buffer_id).getTypeId())) {
+        if (isBTree(_store.getBufferMeta(buffer_id).getTypeId())) {
             compact_btree_roots = true;
         }
     }

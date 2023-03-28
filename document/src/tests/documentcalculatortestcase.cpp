@@ -24,7 +24,7 @@ TEST_F(DocumentCalculatorTest, testConstant) {
     auto variables = std::make_unique<select::VariableMap>();
     DocumentCalculator calc(getRepo(), "4.0");
 
-    Document doc(*_testRepo.getDocumentType("testdoctype1"), DocumentId("id:ns:testdoctype1::foo"));
+    Document doc(_testRepo.getTypeRepo(), *_testRepo.getDocumentType("testdoctype1"), DocumentId("id:ns:testdoctype1::foo"));
     EXPECT_EQ(4.0, calc.evaluate(doc, std::move(variables)));
 }
 
@@ -32,7 +32,7 @@ TEST_F(DocumentCalculatorTest, testSimple) {
     auto variables = std::make_unique<select::VariableMap>();
     DocumentCalculator calc(getRepo(), "(3 + 5) / 2");
 
-    Document doc(*_testRepo.getDocumentType("testdoctype1"), DocumentId("id:ns:testdoctype1::foo"));
+    Document doc(_testRepo.getTypeRepo(), *_testRepo.getDocumentType("testdoctype1"), DocumentId("id:ns:testdoctype1::foo"));
     EXPECT_EQ(4.0, calc.evaluate(doc, std::move(variables)));
 }
 
@@ -42,7 +42,7 @@ TEST_F(DocumentCalculatorTest, testVariables) {
     (*variables)["y"] = 5.0;
     DocumentCalculator calc(getRepo(), "($x + $y) / 2");
 
-    Document doc(*_testRepo.getDocumentType("testdoctype1"), DocumentId("id:ns:testdoctype1::foo"));
+    Document doc(_testRepo.getTypeRepo(), *_testRepo.getDocumentType("testdoctype1"), DocumentId("id:ns:testdoctype1::foo"));
     EXPECT_EQ(4.0, calc.evaluate(doc, std::move(variables)));
 }
 
@@ -53,7 +53,7 @@ TEST_F(DocumentCalculatorTest, testFields) {
     DocumentCalculator calc(getRepo(), "(testdoctype1.headerval + testdoctype1"
                             ".hfloatval) / testdoctype1.headerlongval");
 
-    Document doc(*_testRepo.getDocumentType("testdoctype1"), DocumentId("id:ns:testdoctype1::foo"));
+    Document doc(_testRepo.getTypeRepo(), *_testRepo.getDocumentType("testdoctype1"), DocumentId("id:ns:testdoctype1::foo"));
     doc.setValue(doc.getField("headerval"), IntFieldValue(5));
     doc.setValue(doc.getField("hfloatval"), FloatFieldValue(3.0));
     doc.setValue(doc.getField("headerlongval"), LongFieldValue(2));
@@ -67,7 +67,7 @@ TEST_F(DocumentCalculatorTest, testFieldsDivZero) {
     DocumentCalculator calc(getRepo(), "(testdoctype1.headerval + testdoctype1"
                             ".hfloatval) / testdoctype1.headerlongval");
 
-    Document doc(*_testRepo.getDocumentType("testdoctype1"), DocumentId("id:ns:testdoctype1::foo"));
+    Document doc(_testRepo.getTypeRepo(), *_testRepo.getDocumentType("testdoctype1"), DocumentId("id:ns:testdoctype1::foo"));
     doc.setValue(doc.getField("headerval"), IntFieldValue(5));
     doc.setValue(doc.getField("hfloatval"), FloatFieldValue(3.0));
     doc.setValue(doc.getField("headerlongval"), LongFieldValue(0));
@@ -79,7 +79,7 @@ TEST_F(DocumentCalculatorTest, testDivideByZero) {
     auto variables = std::make_unique<select::VariableMap>();
     DocumentCalculator calc(getRepo(), "(3 + 5) / 0");
 
-    Document doc(*_testRepo.getDocumentType("testdoctype1"), DocumentId("id:ns:testdoctype1::foo"));
+    Document doc(_testRepo.getTypeRepo(), *_testRepo.getDocumentType("testdoctype1"), DocumentId("id:ns:testdoctype1::foo"));
     EXPECT_THROW(calc.evaluate(doc, std::move(variables)),
                  vespalib::IllegalArgumentException);
 }
@@ -88,7 +88,7 @@ TEST_F(DocumentCalculatorTest, testModByZero) {
     auto variables = std::make_unique<select::VariableMap>();
     DocumentCalculator calc(getRepo(), "(3 + 5) % 0");
 
-    Document doc(*_testRepo.getDocumentType("testdoctype1"), DocumentId("id:ns:testdoctype1::foo"));
+    Document doc(_testRepo.getTypeRepo(), *_testRepo.getDocumentType("testdoctype1"), DocumentId("id:ns:testdoctype1::foo"));
     EXPECT_THROW(calc.evaluate(doc, std::move(variables)),
                  vespalib::IllegalArgumentException);
 }
@@ -98,7 +98,7 @@ TEST_F(DocumentCalculatorTest, testFieldNotSet) {
     DocumentCalculator calc(getRepo(), "(testdoctype1.headerval + testdoctype1"
                             ".hfloatval) / testdoctype1.headerlongval");
 
-    Document doc(*_testRepo.getDocumentType("testdoctype1"), DocumentId("id:ns:testdoctype1::foo"));
+    Document doc(_testRepo.getTypeRepo(), *_testRepo.getDocumentType("testdoctype1"), DocumentId("id:ns:testdoctype1::foo"));
     doc.setValue(doc.getField("hfloatval"), FloatFieldValue(3.0));
     doc.setValue(doc.getField("headerlongval"), LongFieldValue(2));
     EXPECT_THROW(calc.evaluate(doc, std::move(variables)),
@@ -111,7 +111,7 @@ TEST_F(DocumentCalculatorTest, testFieldNotFound) {
                             "(testdoctype1.mynotfoundfield + testdoctype1"
                             ".hfloatval) / testdoctype1.headerlongval");
 
-    Document doc(*_testRepo.getDocumentType("testdoctype1"), DocumentId("id:ns:testdoctype1::foo"));
+    Document doc(_testRepo.getTypeRepo(), *_testRepo.getDocumentType("testdoctype1"), DocumentId("id:ns:testdoctype1::foo"));
     doc.setValue(doc.getField("hfloatval"), FloatFieldValue(3.0));
     doc.setValue(doc.getField("headerlongval"), LongFieldValue(2));
     EXPECT_THROW(calc.evaluate(doc, std::move(variables)),
@@ -122,7 +122,7 @@ TEST_F(DocumentCalculatorTest, testByteSubtractionZeroResult) {
     auto variables = std::make_unique<select::VariableMap>();
     DocumentCalculator calc(getRepo(), "testdoctype1.byteval - 3");
 
-    Document doc(*_testRepo.getDocumentType("testdoctype1"), DocumentId("id:ns:testdoctype1::foo"));
+    Document doc(_testRepo.getTypeRepo(), *_testRepo.getDocumentType("testdoctype1"), DocumentId("id:ns:testdoctype1::foo"));
     doc.setValue(doc.getField("byteval"), ByteFieldValue(3));
     EXPECT_EQ(0.0, calc.evaluate(doc, std::move(variables)));
 }

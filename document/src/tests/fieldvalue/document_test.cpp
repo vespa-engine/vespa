@@ -16,9 +16,9 @@ TEST("require that document with id schema 'id' checks type") {
     const DataType *type = repo.getDocumentType("testdoctype1");
     ASSERT_TRUE(type);
 
-    Document(*type, DocumentId("id:ns:testdoctype1::"));  // Should not throw
+    Document(repo.getTypeRepo(), *type, DocumentId("id:ns:testdoctype1::"));  // Should not throw
 
-    EXPECT_EXCEPTION(Document(*type, DocumentId("id:ns:type::")),
+    EXPECT_EXCEPTION(Document(repo.getTypeRepo(), *type, DocumentId("id:ns:type::")),
                      vespalib::IllegalArgumentException,
                      "testdoctype1 that don't match the id (type type)");
 }

@@ -10,9 +10,12 @@ import com.yahoo.tensor.evaluation.EvaluationContext;
 import com.yahoo.tensor.evaluation.Name;
 import com.yahoo.tensor.evaluation.TypeContext;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.function.Function;
 
 /**
  * A function which is a tensor whose values are computed by individual lambda functions on evaluation.
@@ -32,6 +35,8 @@ public abstract class DynamicTensor<NAMETYPE extends Name> extends PrimitiveTens
 
     @Override
     public List<TensorFunction<NAMETYPE>> arguments() { return List.of(); }
+
+    public abstract List<TensorFunction<NAMETYPE>> cellGeneratorFunctions();
 
     @Override
     public TensorFunction<NAMETYPE> withArguments(List<TensorFunction<NAMETYPE>> arguments) {
@@ -69,6 +74,25 @@ public abstract class DynamicTensor<NAMETYPE extends Name> extends PrimitiveTens
         MappedDynamicTensor(TensorType type, Map<TensorAddress, ScalarFunction<NAMETYPE>> cells) {
             super(type);
             this.cells = ImmutableMap.copyOf(cells);
+        }
+
+        public List<TensorFunction<NAMETYPE>> cellGeneratorFunctions() {
+            var result = new ArrayList<TensorFunction<NAMETYPE>>();
+            for (var fun : cells.values()) {
+                fun.asTensorFunction().ifPresent(tf -> result.add(tf));
+            }
+            return result;
+        }
+
+        public TensorFunction<NAMETYPE> withTransformedFunctions(
+                Function<ScalarFunction<NAMETYPE>, ScalarFunction<NAMETYPE>> transformer)
+        {
+            Map<TensorAddress, ScalarFunction<NAMETYPE>> transformedCells = new LinkedHashMap<>();
+            for (var orig : cells.entrySet()) {
+                var transformed = transformer.apply(orig.getValue());
+                transformedCells.put(orig.getKey(), transformed);
+            }
+            return new MappedDynamicTensor<>(type(), transformedCells);
         }
 
         @Override
@@ -113,6 +137,25 @@ public abstract class DynamicTensor<NAMETYPE extends Name> extends PrimitiveTens
                 throw new IllegalArgumentException("A dynamic tensor can only be created from a list if the type has " +
                                                    "only indexed, bound dimensions, but this has " + type);
             this.cells = List.copyOf(cells);
+        }
+
+        public List<TensorFunction<NAMETYPE>> cellGeneratorFunctions() {
+            var result = new ArrayList<TensorFunction<NAMETYPE>>();
+            for (var fun : cells) {
+                fun.asTensorFunction().ifPresent(tf -> result.add(tf));
+            }
+            return result;
+        }
+
+        public TensorFunction<NAMETYPE> withTransformedFunctions(
+                Function<ScalarFunction<NAMETYPE>, ScalarFunction<NAMETYPE>> transformer)
+        {
+            List<ScalarFunction<NAMETYPE>> transformedCells = new ArrayList<>();
+            for (var orig : cells) {
+                var transformed = transformer.apply(orig);
+                transformedCells.add(transformed);
+            }
+            return new IndexedDynamicTensor<>(type(), transformedCells);
         }
 
         @Override

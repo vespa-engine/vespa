@@ -44,7 +44,7 @@ public class ClusterFeedBlockTest extends FleetControllerTest {
         communicator = new DummyCommunicator(nodes, timer);
         var metricUpdater = new MetricUpdater(new NoMetricReporter(), options.fleetControllerIndex(), options.clusterName());
         var eventLog = new EventLog(timer, metricUpdater);
-        var cluster = new ContentCluster(options.clusterName(), options.nodes(), options.storageDistribution());
+        var cluster = new ContentCluster(options);
         var stateGatherer = new NodeStateGatherer(timer, timer, eventLog);
         var database = new DatabaseHandler(context, new ZooKeeperDatabaseFactory(context), timer, options.zooKeeperServerAddress(), timer);
         var stateGenerator = new StateChangeHandler(context, timer, eventLog);

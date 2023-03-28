@@ -683,6 +683,25 @@ public class RankProfile implements Cloneable {
         addRankProperty(new RankProperty(name, parameter));
     }
 
+    /*
+     * set a rank-property that should be a single-value parameter;
+     * if the same name is used multiple times, that parameter must be identical each time.
+     */
+    public void setRankProperty(String name, String parameter) {
+        var old = rankProperties.get(name);
+        if (old != null) {
+            if (old.size() != 1) {
+                throw new IllegalStateException("setRankProperty used for multi-valued property " + name);
+            }
+            var oldVal = old.get(0).getValue();
+            if (! oldVal.equals(parameter)) {
+                throw new IllegalArgumentException("setRankProperty would change property " + name + " from " + oldVal + " to " + parameter);
+            }
+        } else {
+            addRankProperty(new RankProperty(name, parameter));
+        }
+    }
+
     private void addRankProperty(RankProperty rankProperty) {
         // Just the usual multimap semantics here
         rankProperties.computeIfAbsent(rankProperty.getName(), (String key) -> new ArrayList<>(1)).add(rankProperty);
@@ -1017,7 +1036,7 @@ public class RankProfile implements Cloneable {
                                                           inlineFunctions);
             var needInputs = new HashSet<String>();
             var recorder = new InputRecorder(needInputs);
-            recorder.transform(globalPhaseRanking.function().getBody(), context);
+            recorder.process(globalPhaseRanking.function().getBody(), context);
             for (String input : needInputs) {
                 if (input.startsWith("constant(") || input.startsWith("query(")) {
                     continue;
@@ -1091,7 +1110,7 @@ public class RankProfile implements Cloneable {
                                                                               inlineFunctions);
         RankingExpression expression = expressionTransforms.transform(function.function().getBody(), context);
         for (Map.Entry<String, String> rankProperty : context.rankProperties().entrySet()) {
-            addRankProperty(rankProperty.getKey(), rankProperty.getValue());
+            setRankProperty(rankProperty.getKey(), rankProperty.getValue());
         }
         return function.withExpression(expression);
     }

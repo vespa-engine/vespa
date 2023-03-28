@@ -9,6 +9,7 @@
 #include <vespa/vespalib/util/singleexecutor.h>
 
 using vespalib::BlockingThreadStackExecutor;
+using vespalib::ThreadStackExecutor;
 using vespalib::CpuUsage;
 using vespalib::SequencedTaskExecutor;
 using vespalib::SingleExecutor;
@@ -21,12 +22,17 @@ namespace proton {
 namespace {
 
 std::unique_ptr<SyncableThreadExecutor>
-createExecutorWithOneThread(uint32_t taskLimit, OptimizeFor optimize,
-                            vespalib::Runnable::init_fun_t init_function) {
-    if (optimize == OptimizeFor::THROUGHPUT) {
-        return std::make_unique<SingleExecutor>(std::move(init_function), taskLimit);
+createExecutorWithOneThread(const ThreadingServiceConfig & cfg, vespalib::Runnable::init_fun_t init_function) {
+    uint32_t taskLimit = cfg.defaultTaskLimit();
+    if (cfg.optimize() == OptimizeFor::THROUGHPUT) {
+        uint32_t watermark = (cfg.kindOfwatermark() == 0) ? taskLimit / 10 : cfg.kindOfwatermark();
+        return std::make_unique<SingleExecutor>(std::move(init_function), taskLimit, cfg.is_task_limit_hard(), watermark, 100ms);
     } else {
-        return std::make_unique<BlockingThreadStackExecutor>(1, taskLimit, std::move(init_function));
+        if (cfg.is_task_limit_hard()) {
+            return std::make_unique<BlockingThreadStackExecutor>(1, taskLimit, std::move(init_function));
+        } else {
+            return std::make_unique<ThreadStackExecutor>(1, std::move(init_function));
+        }
     }
 }
 
@@ -55,10 +61,8 @@ ExecutorThreadingService::ExecutorThreadingService(vespalib::Executor & sharedEx
       _clock(clock),
       _masterExecutor(1, CpuUsage::wrap(master_executor, CpuUsage::Category::WRITE)),
       _master_task_limit(cfg.master_task_limit()),
-      _indexExecutor(createExecutorWithOneThread(cfg.defaultTaskLimit(), cfg.optimize(),
-                                                 CpuUsage::wrap(index_executor, CpuUsage::Category::WRITE))),
-      _summaryExecutor(createExecutorWithOneThread(cfg.defaultTaskLimit(), cfg.optimize(),
-                                                   CpuUsage::wrap(summary_executor, CpuUsage::Category::WRITE))),
+      _indexExecutor(createExecutorWithOneThread(cfg, CpuUsage::wrap(index_executor, CpuUsage::Category::WRITE))),
+      _summaryExecutor(createExecutorWithOneThread(cfg, CpuUsage::wrap(summary_executor, CpuUsage::Category::WRITE))),
       _masterService(_masterExecutor),
       _indexService(*_indexExecutor),
       _index_field_inverter(field_writer),

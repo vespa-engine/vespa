@@ -276,6 +276,45 @@ public class ScriptTestCase {
     }
 
     @Test
+    public void testArrayEmbedWithConcatenation() throws ParseException {
+        Map<String, Embedder> embedders = Map.of("emb1", new MockEmbedder("myDocument.mySparseTensor"));
+
+        TensorType tensorType = TensorType.fromSpec("tensor(passage{}, d[4])");
+        var expression = Expression.fromString("input myTextArray | for_each { input title . \" \" . _ } | embed | attribute 'mySparseTensor'",
+                                               new SimpleLinguistics(),
+                                               embedders);
+
+        SimpleTestAdapter adapter = new SimpleTestAdapter();
+        adapter.createField(new Field("myTextArray", new ArrayDataType(DataType.STRING)));
+
+        var tensorField = new Field("mySparseTensor", new TensorDataType(tensorType));
+        adapter.createField(tensorField);
+
+        var array = new Array<StringFieldValue>(new ArrayDataType(DataType.STRING));
+        array.add(new StringFieldValue("first"));
+        array.add(new StringFieldValue("second"));
+        adapter.setValue("myTextArray", array);
+
+        var titleField = new Field("title", DataType.STRING);
+        adapter.createField(titleField);
+        adapter.setValue("title", new StringFieldValue("title1"));
+
+        expression.setStatementOutput(new DocumentType("myDocument"), tensorField);
+
+        // Necessary to resolve output type
+        VerificationContext verificationContext = new VerificationContext(adapter);
+        assertEquals(new TensorDataType(tensorType), expression.verify(verificationContext));
+
+        ExecutionContext context = new ExecutionContext(adapter);
+        context.setValue(array);
+        expression.execute(context);
+        assertTrue(adapter.values.containsKey("mySparseTensor"));
+        var sparseTensor = (TensorFieldValue)adapter.values.get("mySparseTensor");
+        assertEquals(Tensor.from(tensorType, "{ '0':[116.0, 105.0, 116.0, 108.0], 1:[116.0, 105.0, 116.0, 108.0]}"),
+                     sparseTensor.getTensor().get());
+    }
+
+    @Test
     public void testArrayEmbedToSparseTensor() throws ParseException {
         Map<String, Embedder> embedders = Map.of("emb1", new MockEmbedder("myDocument.mySparseTensor"));
 

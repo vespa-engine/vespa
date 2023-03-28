@@ -16,7 +16,6 @@
 #include <vespa/vespalib/datastore/unique_store.h>
 #include <vespa/vespalib/datastore/unique_store_string_allocator.h>
 #include <vespa/vespalib/util/buffer.h>
-#include <vespa/vespalib/util/array.h>
 #include <vespa/vespalib/stllike/allocator.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <cmath>
@@ -91,7 +90,12 @@ public:
     uint32_t get_num_uniques() const override { return _dict->get_num_uniques(); }
     bool is_folded() const { return _is_folded;}
 
-    vespalib::MemoryUsage get_values_memory_usage() const override { return _store.get_allocator().get_data_store().getMemoryUsage(); }
+    vespalib::MemoryUsage get_values_memory_usage() const override {
+        return _store.get_allocator().get_data_store().getMemoryUsage();
+    }
+    vespalib::MemoryUsage get_dynamic_values_memory_usage() const {
+        return _store.get_allocator().get_data_store().getDynamicMemoryUsage();
+    }
     vespalib::MemoryUsage get_dictionary_memory_usage() const override { return _dict->get_memory_usage(); }
 
     vespalib::AddressSpace get_values_address_space_usage() const override;
@@ -207,7 +211,7 @@ public:
     void inc_compaction_count() override {
         _store.get_allocator().get_data_store().inc_compaction_count();
     }
-    std::unique_ptr<Enumerator> make_enumerator() const override;
+    std::unique_ptr<Enumerator> make_enumerator() override;
     std::unique_ptr<EntryComparator> allocate_comparator() const override;
 
     // Methods below are only relevant for strings, and are templated to only be instantiated on demand.

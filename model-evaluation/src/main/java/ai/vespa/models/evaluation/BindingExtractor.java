@@ -7,6 +7,10 @@ import com.yahoo.searchlib.rankingexpression.rule.CompositeNode;
 import com.yahoo.searchlib.rankingexpression.rule.ConstantNode;
 import com.yahoo.searchlib.rankingexpression.rule.ExpressionNode;
 import com.yahoo.searchlib.rankingexpression.rule.ReferenceNode;
+import com.yahoo.searchlib.rankingexpression.rule.TensorFunctionNode;
+import com.yahoo.tensor.functions.DynamicTensor;
+import com.yahoo.tensor.functions.Generate;
+import com.yahoo.tensor.functions.Slice;
 
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -45,6 +49,11 @@ class BindingExtractor {
             arguments.addAll(other.arguments);
             onnxModelsInUse.putAll(other.onnxModelsInUse);
         }
+
+        void removeTarget(String name) {
+            bindTargets.remove(name);
+            arguments.remove(name);
+        }
     }
 
     private final Map<FunctionReference, FunctionInfo> functionsInfo = new LinkedHashMap<>();
@@ -80,6 +89,24 @@ class BindingExtractor {
                 result.arguments.add(reference.serialForm());
             } else {
                 result.merge(subInfo);
+            }
+            return result;
+        }
+        else if (node instanceof TensorFunctionNode tfn) {
+            for (ExpressionNode child : tfn.children()) {
+                result.merge(extractBindTargets(child));
+            }
+            // ignore return value:
+            tfn.withTransformedExpressions(expr -> {
+                    result.merge(extractBindTargets(expr));
+                    return expr;
+                });
+            var f = tfn.function();
+            if (f instanceof Generate) {
+                var tt = f.type(null);
+                for (var dim : tt.dimensions()) {
+                    result.removeTarget(dim.name());
+                }
             }
             return result;
         }

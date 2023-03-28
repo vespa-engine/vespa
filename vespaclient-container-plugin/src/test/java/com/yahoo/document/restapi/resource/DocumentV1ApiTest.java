@@ -223,6 +223,8 @@ public class DocumentV1ApiTest {
             assertEquals("(all the things)", parameters.getDocumentSelection());
             assertEquals(6000, parameters.getSessionTimeoutMs());
             assertEquals(9, parameters.getTraceLevel());
+            assertEquals(1_000_000, parameters.getFromTimestamp());
+            assertEquals(2_000_000, parameters.getToTimestamp());
             // Put some documents in the response
             parameters.getLocalDataHandler().onMessage(new PutDocumentMessage(new DocumentPut(doc1)), tokens.get(0));
             parameters.getLocalDataHandler().onMessage(new PutDocumentMessage(new DocumentPut(doc2)), tokens.get(1));
@@ -234,7 +236,7 @@ public class DocumentV1ApiTest {
             parameters.getControlHandler().onDone(VisitorControlHandler.CompletionCode.TIMEOUT, "timeout is OK");
         });
         response = driver.sendRequest("http://localhost/document/v1?cluster=content&bucketSpace=default&wantedDocumentCount=1025&concurrency=123" +
-                                      "&selection=all%20the%20things&fieldSet=[id]&timeout=6&tracelevel=9");
+                                      "&selection=all%20the%20things&fieldSet=[id]&timeout=6&tracelevel=9&fromTimestamp=1000000&toTimestamp=2000000");
         assertSameJson("""
                        {
                          "pathId": "/document/v1",
@@ -284,6 +286,8 @@ public class DocumentV1ApiTest {
             assertEquals(6000, parameters.getTimeoutMs());
             assertEquals(4, parameters.getSlices());
             assertEquals(1, parameters.getSliceId());
+            assertEquals(0, parameters.getFromTimestamp()); // not set; 0 is default
+            assertEquals(0, parameters.getToTimestamp()); // not set; 0 is default
             // Put some documents in the response
             parameters.getLocalDataHandler().onMessage(new PutDocumentMessage(new DocumentPut(doc1)), tokens.get(0));
             parameters.getLocalDataHandler().onMessage(new PutDocumentMessage(new DocumentPut(doc2)), tokens.get(1));
@@ -499,6 +503,15 @@ public class DocumentV1ApiTest {
                        "  \"documents\": []" +
                        "}", response.readAll());
         assertEquals(200, response.getStatus());
+
+        // GET with from timestamp > to timestamp is an error
+        access.expect(parameters -> { fail("unreachable"); });
+        response = driver.sendRequest("http://localhost/document/v1/?cluster=content&fromTimestamp=100&toTimestamp=99");
+        assertSameJson("{" +
+                "  \"pathId\": \"/document/v1/\"," +
+                "  \"message\": \"toTimestamp must be greater than, or equal to, fromTimestamp\"" +
+                "}", response.readAll());
+        assertEquals(400, response.getStatus());
 
         // GET with full document ID is a document get operation which returns 404 when no document is found
         access.session.expect((id, parameters) -> {

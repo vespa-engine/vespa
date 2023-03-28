@@ -20,9 +20,6 @@ import ai.vespa.metricsproxy.metric.dimensions.PublicDimensions;
 import ai.vespa.metricsproxy.rpc.RpcServer;
 import ai.vespa.metricsproxy.service.ConfigSentinelClient;
 import ai.vespa.metricsproxy.service.SystemPollerProvider;
-import ai.vespa.metricsproxy.telegraf.Telegraf;
-import ai.vespa.metricsproxy.telegraf.TelegrafConfig;
-import ai.vespa.metricsproxy.telegraf.TelegrafRegistry;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.TreeConfigProducer;
 import com.yahoo.config.provision.ApplicationId;
@@ -67,7 +64,6 @@ public class MetricsProxyContainerCluster extends ContainerCluster<MetricsProxyC
         ApplicationDimensionsConfig.Producer,
         ConsumersConfig.Producer,
         MonitoringConfig.Producer,
-        TelegrafConfig.Producer,
         MetricsNodesConfig.Producer
 {
     public static final Logger log = Logger.getLogger(MetricsProxyContainerCluster.class.getName());
@@ -124,8 +120,6 @@ public class MetricsProxyContainerCluster extends ContainerCluster<MetricsProxyC
 
         addHttpHandler(ApplicationMetricsHandler.class, ApplicationMetricsHandler.METRICS_V1_PATH);
         addMetricsProxyComponent(ApplicationMetricsRetriever.class);
-
-        addTelegrafComponents();
     }
 
     private void addHttpHandler(Class<? extends ThreadedHttpRequestHandler> clazz, String bindingPath) {
@@ -141,18 +135,6 @@ public class MetricsProxyContainerCluster extends ContainerCluster<MetricsProxyC
                 SystemBindingPattern.fromHttpPath(bindingPath + "/*"));
         return metricsHandler;
     }
-
-    private void addTelegrafComponents() {
-        getAdmin().ifPresent(admin -> {
-            if (admin.getUserMetrics().usesExternalMetricSystems()) {
-                addMetricsProxyComponent(Telegraf.class);
-                addMetricsProxyComponent(TelegrafRegistry.class);
-            }
-        });
-    }
-
-    @Override
-    protected void doPrepare(DeployState deployState) { }
 
     @Override
     public void getConfig(MetricsNodesConfig.Builder builder) {
@@ -180,31 +162,6 @@ public class MetricsProxyContainerCluster extends ContainerCluster<MetricsProxyC
         }
     }
 
-    @Override
-    public void getConfig(TelegrafConfig.Builder builder) {
-        builder.isHostedVespa(isHostedVespa());
-
-        var userConsumers = getUserMetricsConsumers();
-        for (var consumer : userConsumers.values()) {
-            for (var cloudWatch : consumer.cloudWatches()) {
-                var cloudWatchBuilder  = new TelegrafConfig.CloudWatch.Builder();
-                cloudWatchBuilder
-                        .region(cloudWatch.region())
-                        .namespace(cloudWatch.namespace())
-                        .consumer(cloudWatch.consumer());
-
-                cloudWatch.hostedAuth().ifPresent(hostedAuth -> cloudWatchBuilder
-                        .accessKeyName(hostedAuth.accessKeyName)
-                        .secretKeyName(hostedAuth.secretKeyName));
-
-                cloudWatch.sharedCredentials().ifPresent(sharedCredentials -> {
-                                                             cloudWatchBuilder.file(sharedCredentials.file);
-                                                             sharedCredentials.profile.ifPresent(cloudWatchBuilder::profile);
-                                                         });
-                builder.cloudWatch(cloudWatchBuilder);
-            }
-        }
-    }
 
     protected boolean messageBusEnabled() { return false; }
 

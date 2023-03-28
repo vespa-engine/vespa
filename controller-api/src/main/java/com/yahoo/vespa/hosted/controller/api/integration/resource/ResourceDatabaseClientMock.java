@@ -79,7 +79,7 @@ public class ResourceDatabaseClientMock implements ResourceDatabaseClient {
                             a.getZoneId(),
                             plan,
                             a.resources().architecture(),
-                            a.getVersion().getMajor(),
+                            a.getMajorVersion(),
                             BigDecimal.valueOf(a.resources().vcpu()).multiply(d),
                             BigDecimal.valueOf(a.resources().memoryGb()).multiply(d),
                             BigDecimal.valueOf(a.resources().diskGb()).multiply(d),
@@ -114,7 +114,7 @@ public class ResourceDatabaseClientMock implements ResourceDatabaseClient {
                 .filter(snapshot -> snapshot.getTimestamp().isBefore(Instant.ofEpochMilli(end)))
                 .filter(snapshot -> snapshot.getApplicationId().tenant().equals(tenantName))
                 .collect(Collectors.groupingBy(
-                        usage -> Objects.hash(usage.getApplicationId(), usage.getZoneId(), tenantPlan.id().value(), usage.resources().architecture(), usage.getVersion().getMajor())
+                        usage -> Objects.hash(usage.getApplicationId(), usage.getZoneId(), tenantPlan.id().value(), usage.resources().architecture(), usage.getMajorVersion())
                 ))
                 .values().stream()
                 .map(snapshots -> resourceUsageFromSnapshots(tenantPlan, snapshots))

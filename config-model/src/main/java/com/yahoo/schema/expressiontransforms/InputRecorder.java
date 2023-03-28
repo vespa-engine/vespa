@@ -3,13 +3,21 @@ package com.yahoo.schema.expressiontransforms;
 
 import com.yahoo.schema.FeatureNames;
 import com.yahoo.schema.RankProfile;
+import com.yahoo.searchlib.rankingexpression.RankingExpression;
 import com.yahoo.searchlib.rankingexpression.Reference;
+import com.yahoo.searchlib.rankingexpression.parser.ParseException;
 import com.yahoo.searchlib.rankingexpression.rule.CompositeNode;
 import com.yahoo.searchlib.rankingexpression.rule.ConstantNode;
 import com.yahoo.searchlib.rankingexpression.rule.ExpressionNode;
 import com.yahoo.searchlib.rankingexpression.rule.ReferenceNode;
+import com.yahoo.searchlib.rankingexpression.rule.TensorFunctionNode;
 import com.yahoo.searchlib.rankingexpression.transform.ExpressionTransformer;
+import com.yahoo.tensor.functions.DynamicTensor;
+import com.yahoo.tensor.functions.Generate;
+import com.yahoo.tensor.functions.Slice;
 
+import java.io.StringReader;
+import java.util.HashSet;
 import java.util.Set;
 
 /**
@@ -17,19 +25,37 @@ import java.util.Set;
  *
  * @author arnej
  */
-public class InputRecorder extends ExpressionTransformer<RankProfileTransformContext> {
+public class InputRecorder extends ExpressionTransformer<InputRecorderContext> {
 
     private final Set<String> neededInputs;
+    private final Set<String> handled = new HashSet<>();
 
     public InputRecorder(Set<String> target) {
         this.neededInputs = target;
     }
 
+    public void process(RankingExpression expression, RankProfileTransformContext context) {
+        transform(expression.getRoot(), new InputRecorderContext(context));
+    }
+
     @Override
-    public ExpressionNode transform(ExpressionNode node, RankProfileTransformContext context) {
+    public ExpressionNode transform(ExpressionNode node, InputRecorderContext context) {
         if (node instanceof ReferenceNode r) {
             handle(r, context);
             return node;
+        }
+        if (node instanceof TensorFunctionNode t) {
+            var f = t.function();
+            if (f instanceof Generate) {
+                var childContext = new InputRecorderContext(context);
+                var tt = f.type(context.types());
+                // expects only indexed dimensions, should we check?
+                for (var dim : tt.dimensions()) {
+                    childContext.localVariables().add(dim.name());
+                }
+                return transformChildren(t, childContext);
+            }
+            node = t.withTransformedExpressions(expr -> transform(expr, context));
         }
         if (node instanceof CompositeNode c)
             return transformChildren(c, context);
@@ -39,20 +65,32 @@ public class InputRecorder extends ExpressionTransformer<RankProfileTransformCon
         throw new IllegalArgumentException("Cannot handle node type: "+ node + " [" + node.getClass() + "]");
     }
 
-    private void handle(ReferenceNode feature, RankProfileTransformContext context) {
+    private void handle(ReferenceNode feature, InputRecorderContext context) {
         Reference ref = feature.reference();
         String name = ref.name();
         var args = ref.arguments();
-        if (args.size() == 0) {
+        boolean simpleFunctionOrIdentifier = (args.size() == 0) && (ref.output() == null);
+        if (simpleFunctionOrIdentifier && context.localVariables().contains(name)) {
+            return;
+        }
+        if (ref.isSimpleRankingExpressionWrapper()) {
+            name = ref.simpleArgument().get();
+            simpleFunctionOrIdentifier = true;
+        }
+        if (simpleFunctionOrIdentifier) {
+            if (handled.contains(name)) {
+                return;
+            }
             var f = context.rankProfile().getFunctions().get(name);
             if (f != null && f.function().arguments().size() == 0) {
                 transform(f.function().getBody().getRoot(), context);
+                handled.add(name);
                 return;
             }
             neededInputs.add(feature.toString());
             return;
         }
-        if (args.size() == 1) {
+        if (FeatureNames.isSimpleFeature(ref)) {
             if (FeatureNames.isAttributeFeature(ref)) {
                 neededInputs.add(feature.toString());
                 return;
@@ -83,10 +121,16 @@ public class InputRecorder extends ExpressionTransformer<RankProfileTransformCon
                 throw new IllegalArgumentException("missing onnx model: " + arg);
             }
             for (String onnxInput : model.getInputMap().values()) {
-                neededInputs.add(onnxInput);
+                var reader = new StringReader(onnxInput);
+                try {
+                    var asExpression = new RankingExpression(reader);
+                    transform(asExpression.getRoot(), context);
+                } catch (ParseException e) {
+                    throw new IllegalArgumentException("illegal onnx input '" + onnxInput + "': " + e.getMessage());
+                }
             }
             return;
         }
-        throw new IllegalArgumentException("cannot handle feature: " + feature);
+        neededInputs.add(feature.toString());
     }
 }

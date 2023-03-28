@@ -6,6 +6,7 @@
 #include "floatbase.h"
 #include "multivalueattribute.h"
 #include "search_context.h"
+#include <vespa/searchcommon/attribute/config.h>
 #include <limits>
 
 namespace search {

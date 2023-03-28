@@ -1,8 +1,6 @@
 package cmd
 
 import (
-	"log"
-
 	"github.com/spf13/cobra"
 	"github.com/vespa-engine/vespa/client/go/internal/cli/auth/auth0"
 )
@@ -24,17 +22,14 @@ func newLogoutCmd(cli *CLI) *cobra.Command {
 			if err != nil {
 				return err
 			}
-			a, err := auth0.New(cli.config.authConfigPath(), system.Name, system.URL)
+			a, err := auth0.NewClient(cli.httpClient, auth0.Options{ConfigPath: cli.config.authConfigPath(), SystemName: system.Name, SystemURL: system.URL})
 			if err != nil {
 				return err
 			}
 			if err := a.RemoveCredentials(); err != nil {
 				return err
 			}
-
-			log.Print("\n")
-			log.Println("Successfully logged out.")
-			log.Print("\n")
+			cli.printSuccess("Logged out")
 			return nil
 		},
 	}

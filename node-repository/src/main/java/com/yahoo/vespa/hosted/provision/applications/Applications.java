@@ -73,4 +73,9 @@ public class Applications {
         return db.lock(application, timeout);
     }
 
+    /** Create a lock which provides exclusive rights to perform a maintenance deployment */
+    public Mutex lockMaintenance(ApplicationId application) {
+        return db.lockMaintenance(application);
+    }
+
 }

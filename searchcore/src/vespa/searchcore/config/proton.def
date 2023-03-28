@@ -129,10 +129,6 @@ indexing.write.io enum {NORMAL, OSYNC, DIRECTIO} default=DIRECTIO restart
 ## Control io options during read both under dump and fusion.
 indexing.read.io enum {NORMAL, DIRECTIO} default=DIRECTIO restart
 
-## Overrides the number of threads used for writing fields across all document dbs.
-## See feeding.concurrency for details.
-indexing.threads int default=1 restart
-
 ## Option to specify what is most important during indexing.
 ## This is experimental and will most likely be temporary.
 indexing.optimize enum {LATENCY, THROUGHPUT, ADAPTIVE} default=THROUGHPUT restart
@@ -141,16 +137,12 @@ indexing.optimize enum {LATENCY, THROUGHPUT, ADAPTIVE} default=THROUGHPUT restar
 ## indexing threads.  Only used when visibility delay is zero.
 indexing.tasklimit int default=-1000
 
-## Deprecated and ignored, will soon go away
-indexing.semiunboundtasklimit int default = 1000
-
 ## Kind of watermark for when to activate extra manpower
 ## Utilized if optimize is set to either THROUGHPUT or ADAPTIVE
 indexing.kind_of_watermark int default = 0 restart
 
 ## Controls minimum reaction time in seconds if using THROUGHPUT
 indexing.reactiontime double default = 0.001 restart
-
 
 ## How long a freshly loaded index shall be warmed up
 ## before being used for serving
@@ -169,10 +161,6 @@ index.maxflushed int default=2
 ## Setting to 1 will force an immediate fusion.
 index.maxflushedretired int default=20
 
-## How much memory is set aside for caching.
-## Now only used for caching of dictionary lookups.
-index.cache.size long default=0 restart
-
 ## Control io options during flushing of attributes.
 attribute.write.io enum {NORMAL, OSYNC, DIRECTIO} default=DIRECTIO restart
 
@@ -180,10 +168,12 @@ attribute.write.io enum {NORMAL, OSYNC, DIRECTIO} default=DIRECTIO restart
 search.mmap.options[] enum {POPULATE, HUGETLB} restart
 
 ## Advise to give to os when mapping memory.
+## TODO Check if default should be random
 search.mmap.advise enum {NORMAL, RANDOM, SEQUENTIAL} default=NORMAL restart
 
 ## Max number of threads allowed to handle large queries concurrently
 ## Positive number means there is a limit, 0 or negative means no limit.
+## TODO Check if ever used in config.
 search.memory.limiter.maxthreads int default=0
 
 ## Minimum coverage of corpus to postprocess before applying above concurrency limit.
@@ -210,15 +200,6 @@ distribution.searchablecopies long default=1
 ## Negative numbers are a percentage of memory.
 summary.cache.maxbytes long default=-4
 
-## Include visits in the cache, if the visitoperation allows it.
-## This will enable another separate cache of summary.cache.maxbytes size.
-summary.cache.allowvisitcaching bool default=true
-
-## Control number of cache entries preallocated.
-## Default is no preallocation.
-## Can be set to a higher number to avoid resizing.
-summary.cache.initialentries long default=0 restart
-
 ## Control compression type of the summary while in the cache.
 summary.cache.compression.type enum {NONE, LZ4, ZSTD} default=LZ4
 
@@ -232,6 +213,7 @@ summary.cache.update_strategy enum {INVALIDATE, UPDATE} default=INVALIDATE
 
 ## Control compression type of the summary while in memory during compaction
 ## NB So far only stragey=LOG honours it.
+## TODO Use same as for store (chunk.compression).
 summary.log.compact.compression.type enum {NONE, LZ4, ZSTD} default=ZSTD
 
 ## Control compression level of the summary while in memory during compaction
@@ -251,13 +233,11 @@ summary.log.chunk.compression.level int default=9
 ## Max size in bytes per chunk.
 summary.log.chunk.maxbytes int default=65536
 
-## Skip crc32 check on read.
-summary.log.chunk.skipcrconread bool default=false
-
 ## Max size per summary file.
 summary.log.maxfilesize long default=1000000000
 
 ## Max number of lid entries per file
+## TODO Decide based on memory on node.
 summary.log.maxnumlids int default=40000000
 
 ## Max disk bloat factor. This will trigger compacting.
@@ -276,6 +256,7 @@ summary.write.io enum {NORMAL, OSYNC, DIRECTIO} default=DIRECTIO
 ## Control io options during read of stored documents.
 ## All summary.read options will take effect immediately on new files written.
 ## On old files it will take effect either upon compact or on restart.
+## TODO Default is probably DIRECTIO
 summary.read.io enum {NORMAL, DIRECTIO, MMAP } default=MMAP restart
 
 ## Multiple optional options for use with mmap
@@ -328,6 +309,7 @@ documentdb[].allocation.active_buffers_ratio double default=0.1
 periodic.interval double default=3600.0
 
 ## Connect spec for transactionlog server.
+## TODO Consider not using RPC at all
 tlsspec       string default="tcp/localhost:13700" restart
 
 ## ConfigId for transactionlogserver
@@ -421,6 +403,7 @@ visit.ignoremaxbytes bool default=true
 ## Number of initializer threads used for loading structures from disk at proton startup.
 ## The threads are shared between document databases when value is larger than 0.
 ## When set to 0 (default) we use 1 separate thread per document database.
+## TODO Consider if really necessary, could be automatic.
 initialize.threads int default = 0
 
 ## Portion of max address space used in components in attribute vectors
@@ -454,10 +437,12 @@ hwinfo.disk.writespeed double default = 200.0 restart
 
 ## Amount of data to write to temporary file when sampling disk write speed.
 ## Default is 1 GiB.
+## TODO Check if still in use
 hwinfo.disk.samplewritesize long default = 1073741824 restart
 
 ## Minimum write speed needed to avoid disk being considered slow.
 ## Unit is MiB/s, default is 100.0 MiB/s.
+## TODO Check if still in use
 hwinfo.disk.slowwritespeedlimit double default = 100.0 restart
 
 ## The size of physical memory (in bytes) available to proton.
@@ -493,6 +478,7 @@ feeding.niceness double default = 0.0 restart
 ## This limit is only considered when executing tasks for handling external feed operations.
 ## In that case the calling thread (persistence thread) is blocked until the master thread has capacity to handle more tasks.
 ## When this limit is set to 0 it is ignored.
+## TODO Check if still in use
 feeding.master_task_limit int default = 0
 
 ## Adjustment to resource limit when determining if maintenance jobs can run.
@@ -510,6 +496,45 @@ maintenancejobs.maxoutstandingmoveops int default=100
 ## in depth understanding is present.
 bucketdb.checksumtype enum {LEGACY, XXHASH64} default = LEGACY restart
 
+## Chooses the throttling policy used to control the window size
+## of the SharedOperationThrottler component used by the transaction log replay feed state.
+replay_throttling_policy.type enum { UNLIMITED, DYNAMIC } default=DYNAMIC
+## Only used if replay_throttling_policy.type == DYNAMIC:
+## TODO consider just hardcoding values as they have never been tuned.
+replay_throttling_policy.min_window_size int default=100
+replay_throttling_policy.max_window_size int default=10000
+replay_throttling_policy.window_size_increment int default=20
+
+## Everything below are deprecated and ignored. Will go away at any time.
+
+## Deprecated and ignored, will soon go away
+indexing.semiunboundtasklimit int default = 1000
+
+## Include visits in the cache, if the visitoperation allows it.
+## This will enable another separate cache of summary.cache.maxbytes size.
+## IGNORED and DEPRECATED Will go away soon
+summary.cache.allowvisitcaching bool default=true
+
+## Control number of cache entries preallocated.
+## Default is no preallocation.
+## Can be set to a higher number to avoid resizing.
+## IGNORED and DEPRECATED Will go away soon
+summary.cache.initialentries long default=0 restart
+
+## Skip crc32 check on read.
+## IGNORED and DEPRECATED Will go away soon
+summary.log.chunk.skipcrconread bool default=false
+
+## Overrides the number of threads used for writing fields across all document dbs.
+## See feeding.concurrency for details.
+## DEPRECATED - Remove usage
+indexing.threads int default=1 restart
+
+## How much memory is set aside for caching.
+## Now only used for caching of dictionary lookups.
+## TODO Still relevant, check config model, seems unused.
+index.cache.size long default=0 restart
+
 ## Specifies which tensor implementation to use for all backend code.
 ##
 ## TENSOR_ENGINE (default) uses DefaultTensorEngine, which has been the production implementation for years.
@@ -518,12 +543,6 @@ bucketdb.checksumtype enum {LEGACY, XXHASH64} default = LEGACY restart
 tensor_implementation enum {TENSOR_ENGINE, FAST_VALUE} default = FAST_VALUE
 
 ## Whether to report issues back to the container via protobuf field
+## TODO Remove always on
 forward_issues bool default = true
 
-## Chooses the throttling policy used to control the window size
-## of the SharedOperationThrottler component used by the transaction log replay feed state.
-replay_throttling_policy.type enum { UNLIMITED, DYNAMIC } default=DYNAMIC
-## Only used if replay_throttling_policy.type == DYNAMIC:
-replay_throttling_policy.min_window_size int default=100
-replay_throttling_policy.max_window_size int default=10000
-replay_throttling_policy.window_size_increment int default=20

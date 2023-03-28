@@ -58,6 +58,9 @@ private:
     static void assertMirrorReady(const IMirrorAPI &mirror);
     static void assertMirrorContains(const IMirrorAPI &mirror, const string &pattern, uint32_t numEntries);
     mbus::Message::UP newPutDocumentMessage(const string &documentId);
+    std::shared_ptr<Document> make_doc(DocumentId docid) {
+        return std::make_shared<Document>(*_repo, *_docType, docid);
+    }
 
 public:
     Test();
@@ -169,7 +172,7 @@ void
 Test::testAND()
 {
     TestFrame frame(_repo);
-    frame.setMessage(make_unique<PutDocumentMessage>(make_shared<Document>(*_docType, DocumentId("id:ns:testdoc::"))));
+    frame.setMessage(make_unique<PutDocumentMessage>(make_doc(DocumentId("id:ns:testdoc::"))));
     frame.setHop(mbus::HopSpec("test", "[AND]")
                  .addRecipient("foo")
                  .addRecipient("bar"));
@@ -255,7 +258,7 @@ Test::requireThatExternPolicyMergesOneReplyAsProtocol()
 mbus::Message::UP
 Test::newPutDocumentMessage(const string &documentId)
 {
-    return make_unique<PutDocumentMessage>(std::make_shared<Document>(*_docType, DocumentId(documentId)));
+    return make_unique<PutDocumentMessage>(make_doc(DocumentId(documentId)));
 }
 
 void
@@ -389,7 +392,7 @@ Test::testLocalService()
 {
     // Prepare message.
     TestFrame frame(_repo, "docproc/cluster.default");
-    frame.setMessage(make_unique<PutDocumentMessage>(make_shared<Document>(*_docType, DocumentId("id:ns:testdoc::"))));
+    frame.setMessage(make_unique<PutDocumentMessage>(make_doc(DocumentId("id:ns:testdoc::"))));
 
     // Test select with proper address.
     for (uint32_t i = 0; i < 10; ++i) {
@@ -470,7 +473,7 @@ Test::testRoundRobin()
 {
     // Prepare message.
     TestFrame frame(_repo, "docproc/cluster.default");
-    frame.setMessage(make_unique<PutDocumentMessage>(make_shared<Document>(*_docType, DocumentId("id:ns:testdoc::"))));
+    frame.setMessage(make_unique<PutDocumentMessage>(make_doc(DocumentId("id:ns:testdoc::"))));
 
     // Test select with proper address.
     for (uint32_t i = 0; i < 10; ++i) {
@@ -562,7 +565,7 @@ Test::multipleGetRepliesAreMergedToFoundDocument()
     for (uint32_t i = 0, len = selected.size(); i < len; ++i) {
         Document::SP doc;
         if (i == 0) {
-            doc = std::make_shared<Document>(*_docType, DocumentId("id:ns:testdoc::yarn"));
+            doc = make_doc(DocumentId("id:ns:testdoc::yarn"));
             doc->setLastModified(123456ULL);
         }
         auto reply = std::make_unique<GetDocumentReply>(std::move(doc));
@@ -611,7 +614,7 @@ Test::testDocumentRouteSelector()
     frame.setMessage(make_unique<GetDocumentMessage>(DocumentId("id:ns:testdoc::")));
     EXPECT_TRUE(frame.testSelect(StringList().add("foo")));
 
-    mbus::Message::UP put = make_unique<PutDocumentMessage>(make_shared<Document>(*_docType, DocumentId("id:ns:testdoc::")));
+    mbus::Message::UP put = make_unique<PutDocumentMessage>(make_doc(DocumentId("id:ns:testdoc::")));
     frame.setMessage(std::move(put));
     EXPECT_TRUE(frame.testSelect( StringList().add("foo")));
 
@@ -622,7 +625,7 @@ Test::testDocumentRouteSelector()
             make_shared<DocumentUpdate>(*_repo, *_docType, DocumentId("id:ns:testdoc::"))));
     EXPECT_TRUE(frame.testSelect(StringList().add("foo")));
 
-    put = make_unique<PutDocumentMessage>(make_shared<Document>(*_docType, DocumentId("id:ns:testdoc::")));
+    put = make_unique<PutDocumentMessage>(make_doc(DocumentId("id:ns:testdoc::")));
     frame.setMessage(std::move(put));
     EXPECT_TRUE(frame.testMergeOneReply("foo"));
 }
@@ -639,7 +642,7 @@ Test::testDocumentRouteSelectorIgnore()
                  .addRecipient("docproc/cluster.foo"));
 
     frame.setMessage(make_unique<PutDocumentMessage>(
-            make_shared<Document>(*_docType, DocumentId("id:yarn:testdoc:n=1234:fluff"))));
+            make_doc(DocumentId("id:yarn:testdoc:n=1234:fluff"))));
     std::vector<mbus::RoutingNode*> leaf;
     ASSERT_TRUE(frame.select(leaf, 0));
     mbus::Reply::UP reply = frame.getReceptor().getReply(TIMEOUT);
@@ -912,7 +915,7 @@ Test::testSubsetService()
 {
     // Prepare message.
     TestFrame frame(_repo, "docproc/cluster.default");
-    frame.setMessage(make_unique<PutDocumentMessage>(make_shared<Document>(*_docType, DocumentId("id:ns:testdoc::"))));
+    frame.setMessage(make_unique<PutDocumentMessage>(make_doc(DocumentId("id:ns:testdoc::"))));
 
     // Test requerying for adding nodes.
     frame.setHop(mbus::HopSpec("test", "docproc/cluster.default/[SubsetService:2]/chain.default"));

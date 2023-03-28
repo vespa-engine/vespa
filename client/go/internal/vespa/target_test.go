@@ -154,23 +154,19 @@ func TestCheckVersion(t *testing.T) {
 }
 
 func createCloudTarget(t *testing.T, url string, logWriter io.Writer) Target {
-	kp, err := CreateKeyPair()
-	assert.Nil(t, err)
-
-	x509KeyPair, err := tls.X509KeyPair(kp.Certificate, kp.PrivateKey)
-	assert.Nil(t, err)
 	apiKey, err := CreateAPIKey()
 	assert.Nil(t, err)
 
 	target, err := CloudTarget(
 		util.CreateClient(time.Second*10),
+		&mockZTS{},
+		&mockAuth0{},
 		APIOptions{APIKey: apiKey, System: PublicSystem},
 		CloudDeploymentOptions{
 			Deployment: Deployment{
 				Application: ApplicationID{Tenant: "t1", Application: "a1", Instance: "i1"},
 				Zone:        ZoneID{Environment: "dev", Region: "us-north-1"},
 			},
-			TLSOptions: TLSOptions{KeyPair: x509KeyPair},
 		},
 		LogOptions{Writer: logWriter},
 	)
@@ -179,7 +175,7 @@ func createCloudTarget(t *testing.T, url string, logWriter io.Writer) Target {
 	}
 	if ct, ok := target.(*cloudTarget); ok {
 		ct.apiOptions.System.URL = url
-		ct.ztsClient = &mockZTSClient{token: "foo bar"}
+		ct.zts = &mockZTS{token: "foo bar"}
 	} else {
 		t.Fatalf("Wrong target type %T", ct)
 	}
@@ -201,10 +197,14 @@ func assertServiceWait(t *testing.T, expectedStatus int, target Target, service 
 	assert.Equal(t, expectedStatus, status)
 }
 
-type mockZTSClient struct {
-	token string
-}
+type mockZTS struct{ token string }
 
-func (c *mockZTSClient) AccessToken(domain string, certificate tls.Certificate) (string, error) {
+func (c *mockZTS) AccessToken(domain string, certificate tls.Certificate) (string, error) {
 	return c.token, nil
 }
+
+type mockAuth0 struct{}
+
+func (a *mockAuth0) AccessToken() (string, error) { return "", nil }
+
+func (a *mockAuth0) HasCredentials() bool { return true }

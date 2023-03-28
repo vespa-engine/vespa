@@ -39,9 +39,10 @@ import static com.yahoo.security.hpke.LabeledKdfUtils.labeledExtractForSuite;
  * <ul>
  *     <li>Only the <code>DHKEM(X25519, HKDF-SHA256), HKDF-SHA256, AES-128-GCM</code> ciphersuite is
  *         implemented. This is expected to be a good default choice for any internal use of this class.</li>
- *     <li>Only the "base mode" (unauthenticated sender) is supported, i.e. no PSK support and no
- *         secret exporting. This implementation is only expected to be used for anonymous one-way
- *         encryption.</li>
+ *     <li>Only the "base" (unauthenticated sender) and "auth" (authentication using an asymmetric
+ *         key) modes are supported, i.e. no PSK support and no secret exporting. This implementation
+ *         is only expected to be used for one-way encryption (possibly authenticated, if using the
+ *         "auth" mode).</li>
  *     <li>The API only offers single-shot encryption to keep anyone from being tempted to
  *         use it to build their own multi-message protocol on top. This entirely avoids the
  *         risk of nonce reuse caused by accidentally repeating sequence numbers.</li>
@@ -253,6 +254,37 @@ public final class Hpke {
         return new ContextR(keySchedule(MODE_BASE, sharedSecret, info, DEFAULT_PSK, DEFAULT_PSK_ID));
     }
 
+    /**
+     * Section 5.1.3. Authentication Using an Asymmetric Key:
+     *
+     * <pre>
+     * def SetupAuthS(pkR, info, skS):
+     *   shared_secret, enc = AuthEncap(pkR, skS)
+     *   return enc, KeyScheduleS(mode_auth, shared_secret, info,
+     *                            default_psk, default_psk_id)
+     * </pre>
+     */
+    ContextS setupAuthS(XECPublicKey pkR, byte[] info, XECPrivateKey skS) {
+        var encapped = kem.authEncap(pkR, skS);
+        return new ContextS(encapped.enc(),
+                keySchedule(MODE_AUTH, encapped.sharedSecret(), info, DEFAULT_PSK, DEFAULT_PSK_ID));
+    }
+
+    /**
+     * Section 5.1.3. Authentication Using an Asymmetric Key:
+     *
+     * <pre>
+     * def SetupAuthR(enc, skR, info, pkS):
+     *   shared_secret = AuthDecap(enc, skR, pkS)
+     *   return KeyScheduleR(mode_auth, shared_secret, info,
+     *                       default_psk, default_psk_id)
+     * </pre>
+     */
+    ContextR setupAuthR(byte[] enc, XECPrivateKey skR, byte[] info, XECPublicKey pkS) {
+        byte[] sharedSecret = kem.authDecap(enc, skR, pkS);
+        return new ContextR(keySchedule(MODE_AUTH, sharedSecret, info, DEFAULT_PSK, DEFAULT_PSK_ID));
+    }
+
     public record Sealed(byte[] enc, byte[] ciphertext) {}
 
     /**
@@ -286,6 +318,13 @@ public final class Hpke {
         return new Sealed(encAndCtx.enc, ct);
     }
 
+    public Sealed sealAuth(XECPublicKey pkR, byte[] info, byte[] aad, byte[] pt, XECPrivateKey skS) {
+        var encAndCtx = setupAuthS(pkR, info, skS);
+        var base = encAndCtx.base;
+        byte[] ct = aead.seal(base.key(), base.nonce(), aad, pt);
+        return new Sealed(encAndCtx.enc, ct);
+    }
+
     /**
      * Section 6.1 Encryption and Decryption:
      *
@@ -311,6 +350,13 @@ public final class Hpke {
      */
     public byte[] openBase(byte[] enc, XECPrivateKey skR, byte[] info, byte[] aad, byte[] ct) {
         var ctx = setupBaseR(enc, skR, info);
+        var base = ctx.base;
+        // TODO wrap any exceptions in OpenError et al?
+        return aead.open(base.key(), base.nonce(), aad, ct);
+    }
+
+    public byte[] openAuth(byte[] enc, XECPrivateKey skR, byte[] info, byte[] aad, byte[] ct, XECPublicKey pkS) {
+        var ctx = setupAuthR(enc, skR, info, pkS);
         var base = ctx.base;
         // TODO wrap any exceptions in OpenError et al?
         return aead.open(base.key(), base.nonce(), aad, ct);

@@ -13,7 +13,6 @@ import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.application.api.DeploymentInstanceSpec;
 import com.yahoo.config.application.api.FileRegistry;
-import com.yahoo.config.application.api.xml.DeploymentSpecXmlReader;
 import com.yahoo.config.model.api.ConfigDefinitionRepo;
 import com.yahoo.config.model.api.ContainerEndpoint;
 import com.yahoo.config.model.api.EndpointCertificateMetadata;
@@ -32,7 +31,6 @@ import com.yahoo.config.provision.Zone;
 import com.yahoo.container.jdisc.secretstore.SecretStore;
 import com.yahoo.net.HostName;
 import com.yahoo.path.Path;
-import com.yahoo.text.XML;
 import com.yahoo.vespa.config.server.ConfigServerSpec;
 import com.yahoo.vespa.config.server.TimeoutBudget;
 import com.yahoo.vespa.config.server.application.ApplicationSet;
@@ -53,7 +51,6 @@ import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.model.application.validation.BundleValidator;
 import org.xml.sax.SAXException;
-
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.TransformerException;
 import java.io.File;
@@ -278,23 +275,6 @@ public class SessionPreparer {
             }
             if (hostsXml.exists()) {
                 vespaPreprocess(applicationPackageDir.getAbsoluteFile(), hostsXml, meta, tags);
-            }
-
-            if (zone.system().isPublic()) {
-                // Validate all other XML files
-                try (var paths = Files.find(applicationPackageDir.getAbsoluteFile().toPath(), Integer.MAX_VALUE,
-                        (path, attr) -> attr.isRegularFile() && path.getFileName().toString().matches(".*\\.[Xx][Mm][Ll]"))) {
-                    paths.filter(p -> !(p.equals(servicesXml.getAbsoluteFile().toPath()) || p.equals(hostsXml.getAbsoluteFile().toPath())))
-                            .forEach(xmlPath -> {
-                                try {
-                                    new ValidationProcessor().process(XML.getDocument(xmlPath.toFile()));
-                                } catch (IOException | TransformerException e) {
-                                    throw new RuntimeException(e);
-                                }
-                            });
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
             }
 
             // Validate pom.xml files in OSGi bundles

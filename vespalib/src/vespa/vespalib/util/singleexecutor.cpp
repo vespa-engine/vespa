@@ -6,10 +6,6 @@
 
 namespace vespalib {
 
-SingleExecutor::SingleExecutor(init_fun_t func, uint32_t taskLimit)
-    : SingleExecutor(func, taskLimit, true, taskLimit/10, 100ms)
-{ } 
-
 SingleExecutor::SingleExecutor(init_fun_t func, uint32_t reservedQueueSize, bool isQueueSizeHard, uint32_t watermark, duration reactionTime)
     : _watermarkRatio(watermark < reservedQueueSize ? double(watermark) / reservedQueueSize : 1.0),
       _taskLimit(vespalib::roundUp2inN(reservedQueueSize)),

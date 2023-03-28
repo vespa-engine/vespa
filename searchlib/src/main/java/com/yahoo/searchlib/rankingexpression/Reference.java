@@ -127,7 +127,7 @@ public class Reference extends Name implements Comparable<Reference> {
     }
 
     public boolean isSimpleRankingExpressionWrapper() {
-        return name().equals(RANKING_EXPRESSION_WRAPPER) && isSimple();
+        return name().equals(RANKING_EXPRESSION_WRAPPER) && output == null && isSimple();
     }
 
     public StringBuilder toString(StringBuilder b, SerializationContext context, Deque<String> path, CompositeNode parent) {

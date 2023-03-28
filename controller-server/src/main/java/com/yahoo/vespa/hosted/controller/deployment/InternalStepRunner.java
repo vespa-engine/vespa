@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.deployment;
 
-import ai.vespa.http.DomainName;
 import ai.vespa.http.HttpURL;
 import com.yahoo.component.Version;
 import com.yahoo.config.application.api.DeploymentSpec;
@@ -249,7 +248,7 @@ public class InternalStepRunner implements StepRunner {
                 }
                 case LOAD_BALANCER_NOT_READY, PARENT_HOST_NOT_READY -> {
                     logger.log(e.message()); // Consider splitting these messages in summary and details, on config server.
-                    Instant someTimeAfterStart = startTime.plusSeconds(450);
+                    Instant someTimeAfterStart = startTime.plusSeconds(200);
                     Instant inALittleWhile = controller.clock().instant().plusSeconds(90);
                     controller.jobController().locked(id, run -> run.sleepingUntil(someTimeAfterStart.isAfter(inALittleWhile) ? someTimeAfterStart : inALittleWhile));
                     return result;

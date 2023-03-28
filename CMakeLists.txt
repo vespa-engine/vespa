@@ -54,6 +54,8 @@ find_package(GTest REQUIRED)
 set(PYBIND11_FIND_PYTHON ON)
 find_package(pybind11 CONFIG REQUIRED)
 
+find_package(Protobuf REQUIRED)
+
 include(build_settings.cmake)
 
 # Enable CTest unit testing

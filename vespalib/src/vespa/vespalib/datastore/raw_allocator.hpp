@@ -19,7 +19,7 @@ typename RawAllocator<EntryT, RefT>::HandleType
 RawAllocator<EntryT, RefT>::alloc(size_t numElems, size_t extraElems)
 {
     _store.ensureBufferCapacity(_typeId, numElems + extraElems);
-    uint32_t buffer_id = _store.get_primary_buffer_id(_typeId);
+    uint32_t buffer_id = _store.primary_buffer_id(_typeId);
     BufferState &state = _store.getBufferState(buffer_id);
     assert(state.isActive());
     size_t oldBufferSize = state.size();

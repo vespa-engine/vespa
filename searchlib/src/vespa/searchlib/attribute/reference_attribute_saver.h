@@ -3,15 +3,15 @@
 #pragma once
 
 #include "attributesaver.h"
+#include "reference_attribute.h"
+#include "reference.h"
+#include "save_utils.h"
 #include <vespa/document/base/globalid.h>
 #include <vespa/vespalib/datastore/unique_store.h>
 #include <vespa/vespalib/datastore/unique_store_enumerator.h>
 #include <vespa/vespalib/util/rcuvector.h>
-#include "reference_attribute.h"
-#include "reference.h"
 
-namespace search {
-namespace attribute {
+namespace search::attribute {
 
 /*
  * Class for saving a reference attribute to disk or memory buffers.
@@ -30,22 +30,20 @@ class ReferenceAttributeSaver : public AttributeSaver
 private:
     using EntryRef = vespalib::datastore::EntryRef;
     using GlobalId = document::GlobalId;
-    using IndicesCopyVector = ReferenceAttribute::IndicesCopyVector;
     using Store = ReferenceAttribute::ReferenceStore;
     using Enumerator = Store::Enumerator;
-    IndicesCopyVector _indices;
+    EntryRefVector _indices;
     const Store &_store;
     Enumerator _enumerator;
 
     virtual bool onSave(IAttributeSaveTarget &saveTarget) override;
 public:
     ReferenceAttributeSaver(vespalib::GenerationHandler::Guard &&guard,
-                            const attribute::AttributeHeader &header,
-                            IndicesCopyVector &&indices,
-                            const Store &store);
+                            const AttributeHeader &header,
+                            EntryRefVector&& indices,
+                            Store &store);
 
-    virtual ~ReferenceAttributeSaver();
+    ~ReferenceAttributeSaver() override;
 };
 
-} // namespace search::attribute
-} // namespace search
+}

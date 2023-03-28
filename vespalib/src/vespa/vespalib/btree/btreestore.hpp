@@ -850,7 +850,7 @@ isSmallArray(const EntryRef ref) const
     if (!ref.valid())
         return true;
     RefType iRef(ref);
-    uint32_t typeId(_store.getBufferState(iRef.bufferId()).getTypeId());
+    uint32_t typeId(_store.getBufferMeta(iRef.bufferId()).getTypeId());
     return typeId < clusterLimit;
 }
 

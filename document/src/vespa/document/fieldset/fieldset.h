@@ -6,6 +6,7 @@
 namespace document {
 
 class Document;
+class DocumentTypeRepo;
 
 /**
  * FieldSet class. Represents a subset of fields in a document type.
@@ -57,7 +58,7 @@ public:
      * See comment for copyFields() for performance notes.
      * @return The new, (partially) copied document instance.
      */
-    static std::unique_ptr<Document> createDocumentSubsetCopy(const Document& src, const FieldSet& fields);
+    static std::unique_ptr<Document> createDocumentSubsetCopy(const DocumentTypeRepo& type_repo, const Document& src, const FieldSet& fields);
 
     /**
      * Strip all fields _except_ the ones that are contained within the

@@ -11,7 +11,8 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
- * Metrics used for autoscaling
+ * Metrics used for autoscaling.
+ * See com.yahoo.vespa.hosted.provision.autoscale.MetricsResponse
  *
  * @author bratseth
  */
@@ -23,9 +24,12 @@ public class AutoscalingMetrics {
         List<String> metrics = new ArrayList<>();
 
         metrics.add(HostedNodeAdminMetrics.CPU_UTIL.baseName());
+        metrics.add(HostedNodeAdminMetrics.GPU_UTIL.baseName());
 
         // Memory util
         metrics.add(HostedNodeAdminMetrics.MEM_UTIL.baseName()); // node level - default
+        metrics.add(HostedNodeAdminMetrics.GPU_MEM_USED.baseName());
+        metrics.add(HostedNodeAdminMetrics.GPU_MEM_TOTAL.baseName());
         metrics.add(SearchNodeMetrics.CONTENT_PROTON_RESOURCE_USAGE_MEMORY.average()); // the basis for blocking
 
         // Disk util

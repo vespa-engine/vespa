@@ -9,7 +9,6 @@ import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.hosted.provision.node.ClusterId;
-import com.yahoo.vespa.hosted.provision.node.IP;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -330,22 +329,22 @@ public class NodeList extends AbstractFilteringList<Node, NodeList> {
 
     /**
      * Returns the number of unused IP addresses in the pool, assuming any and all unaccounted for hostnames
-     * in the pool are resolved to exactly 1 IP address (or 2 with {@link IP.IpAddresses.Protocol#dualStack}).
+     * in the pool are resolved to exactly 1 IP address (or 2 if dual-stack).
      */
     public int eventuallyUnusedIpAddressCount(Node host) {
         // The count in this method relies on the size of the IP address pool if that's non-empty,
         // otherwise fall back to the address/hostname pool.
-        if (host.ipConfig().pool().ipSet().isEmpty()) {
+        if (host.ipConfig().pool().asSet().isEmpty()) {
             Set<String> allHostnames = cache().keySet();
-            return (int) host.ipConfig().pool().getAddressList().stream()
-                             .filter(address -> !allHostnames.contains(address.hostname()))
+            return (int) host.ipConfig().pool().hostnames().stream()
+                             .filter(hostname -> !allHostnames.contains(hostname.value()))
                              .count();
         }
         Set<String> allIps = ipCache.updateAndGet(old ->
             old != null ? old : stream().flatMap(node -> node.ipConfig().primary().stream())
                                         .collect(Collectors.toUnmodifiableSet())
         );
-        return (int) host.ipConfig().pool().ipSet().stream()
+        return (int) host.ipConfig().pool().asSet().stream()
                          .filter(address -> !allIps.contains(address))
                          .count();
     }

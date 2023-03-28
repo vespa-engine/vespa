@@ -462,22 +462,26 @@ TEST(MemoryIndexTest, require_that_num_docs_and_doc_id_limit_is_returned)
 
 TEST(MemoryIndexTest, require_that_we_understand_the_memory_footprint)
 {
-    constexpr size_t BASE_SIZE = 188172u;
+    constexpr size_t BASE_ALLOCATED = 361032u;
+    constexpr size_t BASE_USED = 151188u;
     {
         MySetup setup;
         Index index(setup);
         EXPECT_EQ(0u, index.index.getStaticMemoryFootprint());
         EXPECT_EQ(index.index.getStaticMemoryFootprint(), index.index.getMemoryUsage().allocatedBytes());
+        EXPECT_EQ(0u, index.index.getMemoryUsage().usedBytes());
     }
     {
         Index index(MySetup().field("f1"));
-        EXPECT_EQ(BASE_SIZE, index.index.getStaticMemoryFootprint());
+        EXPECT_EQ(BASE_ALLOCATED, index.index.getStaticMemoryFootprint());
         EXPECT_EQ(index.index.getStaticMemoryFootprint(), index.index.getMemoryUsage().allocatedBytes());
+        EXPECT_EQ(BASE_USED, index.index.getMemoryUsage().usedBytes());
     }
     {
         Index index(MySetup().field("f1").field("f2"));
-        EXPECT_EQ(2 * BASE_SIZE, index.index.getStaticMemoryFootprint());
+        EXPECT_EQ(2 * BASE_ALLOCATED, index.index.getStaticMemoryFootprint());
         EXPECT_EQ(index.index.getStaticMemoryFootprint(), index.index.getMemoryUsage().allocatedBytes());
+        EXPECT_EQ(2 * BASE_USED, index.index.getMemoryUsage().usedBytes());
     }
 }
 
@@ -511,12 +515,12 @@ TEST(MemoryIndexTest, require_that_we_can_fake_bit_vector)
 
         Searchable &searchable = index.index;
         Blueprint::UP res = searchable.createBlueprint(requestContext, fields, makeTerm(foo));
-        EXPECT_TRUE(res.get() != NULL);
+        EXPECT_TRUE(res);
 
         res->fetchPostings(search::queryeval::ExecuteInfo::TRUE);
         SearchIterator::UP search = res->createSearch(*match_data, true);
-        EXPECT_TRUE(search.get() != NULL);
-        EXPECT_TRUE(dynamic_cast<BooleanMatchIteratorWrapper *>(search.get()) != NULL);
+        EXPECT_TRUE(search);
+        EXPECT_TRUE(dynamic_cast<BooleanMatchIteratorWrapper *>(search.get()) != nullptr);
         search->initFullRange();
         EXPECT_EQ("1,3", toString(*search));
     }

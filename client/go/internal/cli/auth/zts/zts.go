@@ -21,7 +21,7 @@ type Client struct {
 }
 
 // NewClient creates a new client for an Athenz ZTS service located at serviceURL.
-func NewClient(serviceURL string, client util.HTTPClient) (*Client, error) {
+func NewClient(client util.HTTPClient, serviceURL string) (*Client, error) {
 	tokenURL, err := url.Parse(serviceURL)
 	if err != nil {
 		return nil, err
@@ -37,7 +37,7 @@ func (c *Client) AccessToken(domain string, certificate tls.Certificate) (string
 	if err != nil {
 		return "", err
 	}
-	c.client.UseCertificate([]tls.Certificate{certificate})
+	util.SetCertificate(c.client, []tls.Certificate{certificate})
 	response, err := c.client.Do(req, 10*time.Second)
 	if err != nil {
 		return "", err

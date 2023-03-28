@@ -84,7 +84,7 @@ void verifyChunkCompression(CompressionConfig::Type cfgType, const void * buf, s
     chunk.pack(7, buffer, cfg);
     EXPECT_EQUAL(expectedLen, buffer.getDataLen());
     vespalib::nbostream is(buffer.getData(), buffer.getDataLen());
-    ChunkFormat::UP deserialized = ChunkFormat::deserialize(buffer.getData(), buffer.getDataLen(), false);
+    ChunkFormat::UP deserialized = ChunkFormat::deserialize(buffer.getData(), buffer.getDataLen());
     uint64_t magic(0);
     deserialized->getBuffer() >> magic;
     EXPECT_EQUAL(MAGIC_CONTENT, magic);

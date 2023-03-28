@@ -16,13 +16,6 @@ cache<P>::maxElements(size_t elems) {
 
 template< typename P >
 cache<P> &
-cache<P>::reserveElements(size_t elems) {
-    Lru::reserve(elems);
-    return *this;
-}
-
-template< typename P >
-cache<P> &
 cache<P>::setCapacityBytes(size_t sz) {
     _maxBytes.store(sz, std::memory_order_relaxed);
     return *this;
@@ -63,6 +56,18 @@ cache<P>::cache(BackingStore & b, size_t maxBytes) :
 { }
 
 template< typename P >
+MemoryUsage
+cache<P>::getStaticMemoryUsage() const {
+    MemoryUsage usage;
+    auto cacheGuard = getGuard();
+    usage.incAllocatedBytes(sizeof(*this));
+    usage.incAllocatedBytes(Lru::capacity()*sizeof(typename Lru::value_type));
+    usage.incUsedBytes(sizeof(*this));
+    usage.incUsedBytes(Lru::size()*sizeof(typename Lru::value_type));
+    return usage;
+}
+
+template< typename P >
 bool
 cache<P>::removeOldest(const value_type & v) {
     bool remove(Lru::removeOldest(v) || (sizeBytes() >= capacityBytes()));
@@ -74,7 +79,7 @@ cache<P>::removeOldest(const value_type & v) {
 
 template< typename P >
 std::unique_lock<std::mutex>
-cache<P>::getGuard() {
+cache<P>::getGuard() const {
     return UniqueLock(_hashLock);
 }
 

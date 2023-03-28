@@ -21,7 +21,6 @@ import java.util.logging.Level;
 class CuratorCompletionWaiter implements Curator.CompletionWaiter {
 
     private static final java.util.logging.Logger log = java.util.logging.Logger.getLogger(CuratorCompletionWaiter.class.getName());
-    private static final Duration waitForAllDefault = Duration.ofSeconds(1); // Make this configurable?
 
     private final Curator curator;
     private final String barrierPath;
@@ -121,16 +120,8 @@ class CuratorCompletionWaiter implements Curator.CompletionWaiter {
         return "'" + barrierPath + "', " + barrierMemberCount() + " members";
     }
 
-    public static Curator.CompletionWaiter create(Curator curator, Path barrierPath, String id) {
-        return create(curator, barrierPath, id, waitForAllDefault);
-    }
-
     public static Curator.CompletionWaiter create(Curator curator, Path barrierPath, String id, Duration waitForAll) {
         return new CuratorCompletionWaiter(curator, barrierPath.getAbsolute(), id, Clock.systemUTC(), waitForAll);
-    }
-
-    public static Curator.CompletionWaiter createAndInitialize(Curator curator, Path parentPath, String waiterNode, String id) {
-        return createAndInitialize(curator, parentPath, waiterNode, id, waitForAllDefault);
     }
 
     public static Curator.CompletionWaiter createAndInitialize(Curator curator, Path parentPath, String waiterNode, String id, Duration waitForAll) {

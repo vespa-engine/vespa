@@ -181,11 +181,11 @@ public abstract class NodeCandidate implements Nodelike, Comparable<NodeCandidat
             if ( ! lessThanHalfTheHost(this) && lessThanHalfTheHost(other)) return 1;
         }
 
-        // Prefer host with least skew
+        // Prefer host with the least skew
         int hostPriority = hostPriority(other);
         if (hostPriority != 0) return hostPriority;
 
-        // Prefer node with cheapest flavor
+        // Prefer node with the cheapest flavor
         if (this.flavor().cost() < other.flavor().cost()) return -1;
         if (other.flavor().cost() < this.flavor().cost()) return 1;
 
@@ -199,7 +199,7 @@ public abstract class NodeCandidate implements Nodelike, Comparable<NodeCandidat
             return Integer.compare(this.allocation().get().membership().index(),
                                    other.allocation().get().membership().index());
 
-        // Prefer host with latest OS version
+        // Prefer host with the latest OS version
         Version thisHostOsVersion = this.parent.flatMap(host -> host.status().osVersion().current()).orElse(Version.emptyVersion);
         Version otherHostOsVersion = other.parent.flatMap(host -> host.status().osVersion().current()).orElse(Version.emptyVersion);
         if (thisHostOsVersion.isAfter(otherHostOsVersion)) return -1;

@@ -1673,6 +1673,7 @@
     ],
     "methods" : [
       "public void <init>(com.yahoo.searchlib.rankingexpression.rule.ExpressionNode)",
+      "public com.yahoo.searchlib.rankingexpression.rule.ExpressionNode wrappedExpression()",
       "public java.util.List arguments()",
       "public com.yahoo.tensor.functions.TensorFunction withArguments(java.util.List)",
       "public com.yahoo.tensor.functions.PrimitiveTensorFunction toPrimitive()",
@@ -1695,6 +1696,7 @@
       "public void <init>(com.yahoo.tensor.functions.TensorFunction)",
       "public com.yahoo.tensor.functions.TensorFunction function()",
       "public java.util.List children()",
+      "public com.yahoo.searchlib.rankingexpression.rule.ExpressionNode withTransformedExpressions(java.util.function.Function)",
       "public com.yahoo.searchlib.rankingexpression.rule.CompositeNode setChildren(java.util.List)",
       "public java.lang.StringBuilder toString(java.lang.StringBuilder, com.yahoo.searchlib.rankingexpression.rule.SerializationContext, java.util.Deque, com.yahoo.searchlib.rankingexpression.rule.CompositeNode)",
       "public com.yahoo.tensor.TensorType type(com.yahoo.tensor.evaluation.TypeContext)",

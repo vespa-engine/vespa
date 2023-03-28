@@ -14,7 +14,6 @@
 #include <vespa/vespalib/util/executor.h>
 #include <vespa/vespalib/util/arrayqueue.hpp>
 #include <vespa/vespalib/util/array.hpp>
-#include <vespa/vespalib/stllike/hash_map.hpp>
 #include <vespa/fastos/file.h>
 #include <future>
 
@@ -37,7 +36,7 @@ const vespalib::string DOC_ID_LIMIT_KEY("docIdLimit");
 
 using vespalib::make_string;
 
-FileChunk::ChunkInfo::ChunkInfo(uint64_t offset, uint32_t size, uint64_t lastSerial)
+FileChunk::ChunkInfo::ChunkInfo(uint64_t offset, uint32_t size, uint64_t lastSerial) noexcept
     : _lastSerial(lastSerial),
       _offset(offset),
       _size(size)
@@ -63,11 +62,10 @@ FileChunk::createDatFileName(const vespalib::string & name) {
 }
 
 FileChunk::FileChunk(FileId fileId, NameId nameId, const vespalib::string & baseName,
-                     const TuneFileSummary & tune, const IBucketizer * bucketizer, bool skipCrcOnRead)
+                     const TuneFileSummary & tune, const IBucketizer * bucketizer)
     : _fileId(fileId),
       _nameId(nameId),
       _name(nameId.createName(baseName)),
-      _skipCrcOnRead(skipCrcOnRead),
       _erasedCount(0),
       _erasedBytes(0),
       _diskFootprint(0),
@@ -130,7 +128,7 @@ public:
     }
 };
 
-using TmpChunkMetaV = vespalib::Array<TmpChunkMeta>;
+using TmpChunkMetaV = std::vector<TmpChunkMeta>;
 
 namespace {
 
@@ -182,7 +180,7 @@ FileChunk::updateLidMap(const unique_lock &guard, ISetLid &ds, uint64_t serialNu
             tempVector.reserve(fileSize/(sizeof(ChunkMeta)+sizeof(LidMeta)));
             while ( ! is.empty() && is.good()) {
                 const int64_t lastKnownGoodPos = _idxHeaderLen + is.rp();
-                tempVector.push_back(TmpChunkMeta());
+                tempVector.emplace_back();
                 TmpChunkMeta & chunkMeta(tempVector.back());
                 try {
                     chunkMeta.deserialize(is);
@@ -239,7 +237,7 @@ FileChunk::updateLidMap(const unique_lock &guard, ISetLid &ds, uint64_t serialNu
                     }
                     serialNum = chunkMeta.getLastSerial();
                     addNumBuckets(bucketMap.getNumBuckets());
-                    _chunkInfo.push_back(ChunkInfo(chunkMeta.getOffset(), chunkMeta.getSize(), chunkMeta.getLastSerial()));
+                    _chunkInfo.emplace_back(chunkMeta.getOffset(), chunkMeta.getSize(), chunkMeta.getLastSerial());
                     assert(serialNum >= _lastPersistedSerialNum.load(std::memory_order_relaxed));
                     _lastPersistedSerialNum.store(serialNum, std::memory_order_relaxed);
                 }
@@ -395,7 +393,7 @@ FileChunk::read(LidInfoWithLidV::const_iterator begin, size_t count, ChunkInfo c
 {
     vespalib::DataBuffer whole(0ul, ALIGNMENT);
     FileRandRead::FSP keepAlive = _file->read(ci.getOffset(), whole, ci.getSize());
-    Chunk chunk(begin->getChunkId(), whole.getData(), whole.getDataLen(), _skipCrcOnRead);
+    Chunk chunk(begin->getChunkId(), whole.getData(), whole.getDataLen());
     for (size_t i(0); i < count; i++) {
         const LidInfoWithLid & li = *(begin + i);
         vespalib::ConstBufferRef buf = chunk.getLid(li.getLid());
@@ -420,7 +418,7 @@ FileChunk::read(uint32_t lid, SubChunkId chunkId, const ChunkInfo & chunkInfo,
 {
     vespalib::DataBuffer whole(0ul, ALIGNMENT);
     FileRandRead::FSP keepAlive(_file->read(chunkInfo.getOffset(), whole, chunkInfo.getSize()));
-    Chunk chunk(chunkId, whole.getData(), whole.getDataLen(), _skipCrcOnRead);
+    Chunk chunk(chunkId, whole.getData(), whole.getDataLen());
     return chunk.read(lid, buffer);
 }
 
@@ -531,7 +529,7 @@ FileChunk::getMemoryFootprint() const
 size_t
 FileChunk::getMemoryMetaFootprint() const
 {
-    return sizeof(*this) + _chunkInfo.byteCapacity();
+    return sizeof(*this) + _chunkInfo.capacity()*sizeof(ChunkInfoVector::value_type);
 }
 
 vespalib::MemoryUsage
@@ -540,8 +538,8 @@ FileChunk::getMemoryUsage() const
     vespalib::MemoryUsage result;
     result.incAllocatedBytes(sizeof(*this));
     result.incUsedBytes(sizeof(*this));
-    result.incAllocatedBytes(_chunkInfo.byteCapacity());
-    result.incUsedBytes(_chunkInfo.byteSize());
+    result.incAllocatedBytes(_chunkInfo.capacity()*sizeof(ChunkInfoVector::value_type));
+    result.incUsedBytes(_chunkInfo.size()*sizeof(ChunkInfoVector::value_type));
     return result;
 }
 

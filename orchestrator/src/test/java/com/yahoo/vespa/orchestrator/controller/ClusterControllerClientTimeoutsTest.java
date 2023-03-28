@@ -29,12 +29,11 @@ public class ClusterControllerClientTimeoutsTest {
     private final ManualClock clock = new ManualClock();
 
     private Duration originalTimeout;
-    private TimeBudget timeBudget;
     private ClusterControllerClientTimeouts timeouts;
 
     private void makeTimeouts(Duration originalTimeout) {
         this.originalTimeout = originalTimeout;
-        this.timeBudget = TimeBudget.from(clock, clock.instant(), Optional.of(originalTimeout));
+        TimeBudget timeBudget = TimeBudget.from(clock, clock.instant(), Optional.of(originalTimeout));
         this.timeouts = new ClusterControllerClientTimeouts(timeBudget);
     }
 

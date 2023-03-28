@@ -67,7 +67,7 @@ ChunkFormat::verifyCompression(uint8_t type)
 }
 
 ChunkFormat::UP
-ChunkFormat::deserialize(const void * buffer, size_t len, bool skipcrc)
+ChunkFormat::deserialize(const void * buffer, size_t len)
 {
     uint8_t version(0);
     vespalib::nbostream raw(buffer, len);
@@ -82,17 +82,9 @@ ChunkFormat::deserialize(const void * buffer, size_t len, bool skipcrc)
     raw >> crc32;
     raw.rp(currPos);
     if (version == ChunkFormatV1::VERSION) {
-        if (skipcrc) {
-            return std::make_unique<ChunkFormatV1>(raw);
-        } else {
-            return std::make_unique<ChunkFormatV1>(raw, crc32);
-        }
+        return std::make_unique<ChunkFormatV1>(raw, crc32);
     } else if (version == ChunkFormatV2::VERSION) {
-        if (skipcrc) {
-            return std::make_unique<ChunkFormatV2>(raw);
-        } else {
             return std::make_unique<ChunkFormatV2>(raw, crc32);
-        }
     } else {
         throw ChunkException(make_string("Unknown version %d", version), VESPA_STRLOC);
     }

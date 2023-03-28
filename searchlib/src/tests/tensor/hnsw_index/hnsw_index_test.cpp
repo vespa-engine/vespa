@@ -733,7 +733,6 @@ TYPED_TEST(HnswIndexTest, hnsw_graph_is_compacted)
         this->commit();
         this->index->update_stat(compaction_strategy);
         mem_2 = this->commit_and_update_stat();
-        EXPECT_LE(mem_2.usedBytes(), mem_1.usedBytes());
         if (mem_2.usedBytes() == mem_1.usedBytes()) {
             break;
         }
@@ -816,6 +815,14 @@ TEST_F(HnswMultiIndexTest, duplicate_docid_is_removed)
     this->expect_top_3_by_docid("{2,2}", {2, 2}, {1, 2});
     EXPECT_EQ(2, filter->max_docid());
 };
+
+TEST_F(HnswMultiIndexTest, docid_with_empty_tensor_can_be_removed)
+{
+    this->init(false);
+    this->vectors.set(1, {});
+    this->add_document(1);
+    this->remove_document(1);
+}
 
 TEST(LevelGeneratorTest, gives_various_levels)
 {

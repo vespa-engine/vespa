@@ -58,7 +58,6 @@
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-plugin</artifactId>
         <configuration>
-          <forkMode>once</forkMode>
           <environmentVariables>
             <VESPA_HOME>${project.build.directory}</VESPA_HOME>
           </environmentVariables>
@@ -68,9 +67,6 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-install-plugin</artifactId>
-        <configuration>
-          <updateReleaseInfo>true</updateReleaseInfo>
-        </configuration>
       </plugin>
       <plugin>
         <groupId>com.yahoo.vespa</groupId>

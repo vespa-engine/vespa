@@ -173,12 +173,12 @@ public class Curator extends AbstractComponent implements AutoCloseable {
         });
     }
 
-    public CompletionWaiter getCompletionWaiter(Path waiterPath, int numMembers, String id) {
-        return CuratorCompletionWaiter.create(this, waiterPath, id);
+    public CompletionWaiter getCompletionWaiter(Path waiterPath, String id, Duration waitForAll) {
+        return CuratorCompletionWaiter.create(this, waiterPath, id, waitForAll);
     }
 
-    public CompletionWaiter createCompletionWaiter(Path parentPath, String waiterNode, int numMembers, String id) {
-        return CuratorCompletionWaiter.createAndInitialize(this, parentPath, waiterNode, id);
+    public CompletionWaiter createCompletionWaiter(Path parentPath, String waiterNode, String id, Duration waitForAll) {
+        return CuratorCompletionWaiter.createAndInitialize(this, parentPath, waiterNode, id, waitForAll);
     }
 
     /** Creates a listenable cache which keeps in sync with changes to all the immediate children of a path */

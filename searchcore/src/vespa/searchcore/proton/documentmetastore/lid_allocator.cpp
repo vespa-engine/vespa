@@ -27,11 +27,19 @@ LidAllocator::LidAllocator(uint32_t size,
       _freeLids(size, capacity, genHolder, true, false),
       _usedLids(size, capacity, genHolder, false, true),
       _pendingHoldLids(size, capacity, genHolder, false, false),
-      _lidFreeListConstructed(false),
       _activeLids(size, capacity, genHolder, false, false),
-      _numActiveLids(0u)
-{
+      _numActiveLids(0u),
+      _lidFreeListConstructed(false)
+{ }
 
+vespalib::MemoryUsage
+LidAllocator::getMemoryUsage() const {
+    vespalib::MemoryUsage usage;
+    size_t allocated = sizeof(*this) + _freeLids.byteSize() + _usedLids.byteSize() +
+                       _pendingHoldLids.byteSize() + _activeLids.byteSize() + _holdLids.size();
+    usage.incAllocatedBytes(allocated);
+    usage.incUsedBytes(allocated);
+    return usage;
 }
 
 LidAllocator::~LidAllocator() = default;

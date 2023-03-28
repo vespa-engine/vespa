@@ -7,6 +7,7 @@ import com.yahoo.searchlib.rankingexpression.rule.CompositeNode;
 import com.yahoo.searchlib.rankingexpression.rule.ConstantNode;
 import com.yahoo.searchlib.rankingexpression.rule.ExpressionNode;
 import com.yahoo.searchlib.rankingexpression.rule.ReferenceNode;
+import com.yahoo.searchlib.rankingexpression.rule.TensorFunctionNode;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -20,6 +21,9 @@ public class ConstantDereferencer extends ExpressionTransformer<TransformContext
 
     @Override
     public ExpressionNode transform(ExpressionNode node, TransformContext context) {
+        if (node instanceof TensorFunctionNode tfn) {
+            node = tfn.withTransformedExpressions(expr -> transform(expr, context));
+        }
         if (node instanceof ReferenceNode)
             return transformFeature((ReferenceNode) node, context);
         else if (node instanceof CompositeNode)

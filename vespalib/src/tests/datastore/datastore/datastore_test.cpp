@@ -44,7 +44,7 @@ public:
     void switch_primary_buffer() {
         ParentType::switch_primary_buffer(0, 0u);
     }
-    size_t primary_buffer_id() const { return get_primary_buffer_id(0); }
+    size_t primary_buffer_id() const { return DataStoreBase::primary_buffer_id(0); }
     BufferState& get_active_buffer_state() {
         return ParentType::getBufferState(primary_buffer_id());
     }
@@ -474,6 +474,8 @@ TEST(DataStoreTest, require_that_memory_stats_are_calculated)
 
 TEST(DataStoreTest, require_that_memory_usage_is_calculated)
 {
+    constexpr size_t BASE_ALLOCATED = 4228;
+    constexpr size_t BASE_USED = 308;
     MyStore s;
     MyRef r = s.addEntry(10);
     s.addEntry(20);
@@ -482,8 +484,8 @@ TEST(DataStoreTest, require_that_memory_usage_is_calculated)
     s.holdBuffer(r.bufferId());
     s.assign_generation(100);
     vespalib::MemoryUsage m = s.getMemoryUsage();
-    EXPECT_EQ(MyRef::offsetSize() * sizeof(int), m.allocatedBytes());
-    EXPECT_EQ(5 * sizeof(int), m.usedBytes());
+    EXPECT_EQ(MyRef::offsetSize() * sizeof(int) + BASE_ALLOCATED, m.allocatedBytes());
+    EXPECT_EQ(5 * sizeof(int) + BASE_USED, m.usedBytes());
     EXPECT_EQ(0 * sizeof(int), m.deadBytes());
     EXPECT_EQ(5 * sizeof(int), m.allocatedBytesOnHold());
     s.reclaim_memory(101);
@@ -491,27 +493,29 @@ TEST(DataStoreTest, require_that_memory_usage_is_calculated)
 
 TEST(DataStoreTest, require_that_we_can_disable_elemement_hold_list)
 {
+    constexpr size_t BASE_ALLOCATED = 4228;
+    constexpr size_t BASE_USED = 308;
     MyStore s;
     MyRef r1 = s.addEntry(10);
     MyRef r2 = s.addEntry(20);
     MyRef r3 = s.addEntry(30);
     (void) r3;
     vespalib::MemoryUsage m = s.getMemoryUsage();
-    EXPECT_EQ(MyRef::offsetSize() * sizeof(int), m.allocatedBytes());
-    EXPECT_EQ(4 * sizeof(int), m.usedBytes());
+    EXPECT_EQ(MyRef::offsetSize() * sizeof(int) + BASE_ALLOCATED, m.allocatedBytes());
+    EXPECT_EQ(4 * sizeof(int) + BASE_USED, m.usedBytes());
     EXPECT_EQ(1 * sizeof(int), m.deadBytes());
     EXPECT_EQ(0 * sizeof(int), m.allocatedBytesOnHold());
     s.holdElem(r1, 1);
     m = s.getMemoryUsage();
-    EXPECT_EQ(MyRef::offsetSize() * sizeof(int), m.allocatedBytes());
-    EXPECT_EQ(4 * sizeof(int), m.usedBytes());
+    EXPECT_EQ(MyRef::offsetSize() * sizeof(int) + BASE_ALLOCATED, m.allocatedBytes());
+    EXPECT_EQ(4 * sizeof(int) + BASE_USED, m.usedBytes());
     EXPECT_EQ(1 * sizeof(int), m.deadBytes());
     EXPECT_EQ(1 * sizeof(int), m.allocatedBytesOnHold());
     s.disableElemHoldList();
     s.holdElem(r2, 1);
     m = s.getMemoryUsage();
-    EXPECT_EQ(MyRef::offsetSize() * sizeof(int), m.allocatedBytes());
-    EXPECT_EQ(4 * sizeof(int), m.usedBytes());
+    EXPECT_EQ(MyRef::offsetSize() * sizeof(int) + BASE_ALLOCATED, m.allocatedBytes());
+    EXPECT_EQ(4 * sizeof(int) + BASE_USED, m.usedBytes());
     EXPECT_EQ(2 * sizeof(int), m.deadBytes());
     EXPECT_EQ(1 * sizeof(int), m.allocatedBytesOnHold());
     s.assign_generation(100);
@@ -536,30 +540,31 @@ void assertGrowStats(GrowthStats expSizes,
 
 TEST(DataStoreTest, require_that_buffer_growth_works)
 {
+    constexpr size_t BASE = 10312;
     // Always switch to new buffer, min size 4
     assertGrowStats({ 4, 4, 4, 4, 8, 16, 16, 32, 64, 64 },
-                    { 4 }, 20, 4, 0);
+                    { 4 }, 20 + BASE, 4, 0);
     // Resize if buffer size is less than 4, min size 0
     assertGrowStats({ 4, 4, 8, 32, 32, 64, 64, 128, 128, 128 },
-                    { 0, 1, 2, 4 }, 4, 0, 4);
+                    { 0, 1, 2, 4 }, 4 + BASE, 0, 4);
     // Always switch to new buffer, min size 16
     assertGrowStats({ 16, 16, 16, 32, 32, 64, 128, 128, 128 },
-                    { 16 }, 68, 16, 0);
+                    { 16 }, 68 + BASE, 16, 0);
     // Resize if buffer size is less than 16, min size 0
     assertGrowStats({ 16, 32, 32, 128, 128, 128, 128, 128, 128 },
-                    { 0, 1, 2, 4, 8, 16 }, 4, 0, 16);
+                    { 0, 1, 2, 4, 8, 16 }, 4 + BASE, 0, 16);
     // Resize if buffer size is less than 16, min size 4
     assertGrowStats({ 16, 32, 32, 128, 128, 128, 128, 128, 128 },
-                    { 4, 8, 16 }, 20, 4, 16);
+                    { 4, 8, 16 }, 20 + BASE, 4, 16);
     // Always switch to new buffer, min size 0
     assertGrowStats({ 1, 1, 1, 1, 1, 2, 2, 4, 8, 8, 16, 32 },
-                    { 0, 1 }, 4, 0, 0);
+                    { 0, 1 }, 4 + BASE, 0, 0);
 
     // Buffers with sizes larger than the huge page size of the mmap allocator.
     ASSERT_EQ(524288u, HUGE_PAGE_ARRAY_SIZE);
     assertGrowStats({ 262144, 524288, 524288, 524288 * 3, 524288 * 3, 524288 * 5, 524288 * 5, 524288 * 5, 524288 * 5, 524288 * 5 },
                     { 0, 1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768, 65536, 131072, 262144 },
-                    4, 0, HUGE_PAGE_ARRAY_SIZE / 2, HUGE_PAGE_ARRAY_SIZE * 5);
+                    4 + BASE, 0, HUGE_PAGE_ARRAY_SIZE / 2, HUGE_PAGE_ARRAY_SIZE * 5);
 }
 
 using RefType15 = EntryRefT<15>; // offsetSize=32768
@@ -660,7 +665,7 @@ TEST(DataStoreTest, can_reuse_active_buffer_as_primary_buffer)
 }
 
 TEST(DataStoreTest, control_static_sizes) {
-    EXPECT_EQ(96, sizeof(BufferTypeBase));
+    EXPECT_EQ(88, sizeof(BufferTypeBase));
     EXPECT_EQ(24, sizeof(FreeList));
     EXPECT_EQ(56, sizeof(BufferFreeList));
     EXPECT_EQ(1, sizeof(BufferState::State));

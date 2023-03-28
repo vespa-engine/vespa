@@ -31,6 +31,8 @@ public final class CompoundName {
 
     /** This name with the first component removed */
     private final CompoundName rest;
+    /** This name with the last component removed */
+    private final CompoundName first;
 
     /** The empty compound */
     public static final CompoundName empty = new CompoundName("");
@@ -51,7 +53,7 @@ public final class CompoundName {
 
     /** Constructs this from a list of compounds. */
     public CompoundName(List<String> compounds) {
-        this(compounds.toArray(new String[compounds.size()]));
+        this(compounds.toArray(new String[0]));
     }
 
     private CompoundName(String [] compounds) {
@@ -74,13 +76,18 @@ public final class CompoundName {
             this.compounds = List.of();
             this.hashCode = 0;
             rest = this;
+            first = this;
             return;
         }
         this.compounds = new ImmutableArrayList(compounds);
         this.hashCode = this.compounds.hashCode();
 
-        rest = compounds.length > 1 ? new CompoundName(name.substring(compounds[0].length()+1), Arrays.copyOfRange(compounds, 1, compounds.length))
-                        : empty;
+        rest = (compounds.length > 1)
+                ? new CompoundName(name.substring(compounds[0].length()+1), Arrays.copyOfRange(compounds, 1, compounds.length))
+                : empty;
+        first = (compounds.length > 1)
+                ? new CompoundName(name.substring(0, name.length() - (compounds[compounds.length-1].length()+1)), Arrays.copyOfRange(compounds, 0, compounds.length-1))
+                : empty;
     }
 
     private static List<String> parse(String s) {
@@ -177,7 +184,8 @@ public final class CompoundName {
                                                this + "' only have " + compounds.size() + " components.");
         if (compounds.size() == n) return this;
         if (compounds.size() == 0) return empty;
-        return new CompoundName(compounds.subList(0, n));
+        if (compounds.size() - 1 == n) return first;
+        return first.first(n);
     }
 
     /**
@@ -284,11 +292,9 @@ public final class CompoundName {
 
     private static String toCompoundString(String [] compounds) {
         int all = compounds.length;
-        for (int i = 0; i < compounds.length; i++)
-            all += compounds[i].length();
+        for (String compound : compounds) all += compound.length();
         StringBuilder b = new StringBuilder(all);
-        for (int i = 0; i < compounds.length; i++)
-            b.append(compounds[i]).append(".");
+        for (String compound : compounds) b.append(compound).append(".");
         return b.length()==0 ? "" : b.substring(0, b.length()-1);
     }
 

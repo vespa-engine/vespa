@@ -6,6 +6,7 @@ package deploy
 
 import (
 	"os"
+	"os/user"
 	"path/filepath"
 
 	"github.com/vespa-engine/vespa/client/go/internal/admin/trace"
@@ -13,37 +14,38 @@ import (
 )
 
 const (
-	cloudconfigDir              = ".cloudconfig"
+	vespaDeployDir              = "vespa-deploy"
 	configsourceUrlUsedFileName = "deploy-configsource-url-used"
 	sessionIdFileName           = "deploy-session-id"
 )
 
-func createCloudconfigDir() (string, error) {
-	userHome, err := os.UserHomeDir()
+func createVespaDeployDir() (string, error) {
+	tempDir := os.TempDir()
+	currentUser, err := user.Current()
 	if err != nil {
 		return "", err
 	}
-	home := filepath.Join(userHome, cloudconfigDir)
-	if err := os.MkdirAll(home, 0700); err != nil {
+	vespaDeployTempDir := filepath.Join(tempDir, currentUser.Username, vespaDeployDir)
+	if err := os.MkdirAll(vespaDeployTempDir, 0700); err != nil {
 		return "", err
 	}
-	return home, nil
+	return vespaDeployTempDir, nil
 }
 
 func configsourceUrlUsedFile() string {
-	home, err := createCloudconfigDir()
+	vespaDeployTempDir, err := createVespaDeployDir()
 	if err != nil {
-		home = "/tmp"
+		vespaDeployTempDir = "/tmp"
 	}
-	return filepath.Join(home, configsourceUrlUsedFileName)
+	return filepath.Join(vespaDeployTempDir, configsourceUrlUsedFileName)
 }
 
 func createTenantDir(tenant string) string {
-	home, err := createCloudconfigDir()
+	vespaDeployTempDir, err := createVespaDeployDir()
 	if err != nil {
 		util.JustExitWith(err)
 	}
-	tdir := filepath.Join(home, tenant)
+	tdir := filepath.Join(vespaDeployTempDir, tenant)
 	if err := os.MkdirAll(tdir, 0700); err != nil {
 		util.JustExitWith(err)
 	}

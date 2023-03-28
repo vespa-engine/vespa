@@ -25,6 +25,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
@@ -56,6 +57,25 @@ public class TensorFunctionNode extends CompositeNode {
             return ((ExpressionTensorFunction)f).expression;
         else
             return new TensorFunctionNode(f);
+    }
+
+    private static ScalarFunction<Reference> transform(ScalarFunction<Reference> input,
+                                                       Function<ExpressionNode, ExpressionNode> transformer)
+    {
+        if (input instanceof ExpressionScalarFunction wrapper) {
+            ExpressionNode transformed = transformer.apply(wrapper.expression);
+            return new ExpressionScalarFunction(transformed);
+        }
+        return input;
+    }
+
+    public ExpressionNode withTransformedExpressions(Function<ExpressionNode, ExpressionNode> transformer) {
+        if (function instanceof ExpressionTensorFunction etf) {
+            ExpressionNode orig = etf.expression;
+            return transformer.apply(orig);
+        }
+        TensorFunction<Reference> transformed = function.withTransformedFunctions(fun -> transform(fun, transformer));
+        return new TensorFunctionNode(transformed);
     }
 
     @Override
@@ -208,6 +228,8 @@ public class TensorFunctionNode extends CompositeNode {
         public ExpressionTensorFunction(ExpressionNode expression) {
             this.expression = expression;
         }
+
+        public ExpressionNode wrappedExpression() { return expression; }
 
         @Override
         public List<TensorFunction<Reference>> arguments() {

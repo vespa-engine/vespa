@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.query.ranking;
 
+import com.yahoo.concurrent.CopyOnWriteHashMap;
 import com.yahoo.fs4.MapEncoder;
 import com.yahoo.processing.request.CompoundName;
 import com.yahoo.search.query.Ranking;
@@ -24,6 +25,8 @@ public class RankFeatures implements Cloneable {
 
     private final Ranking parent;
     private final Map<String, Object> features;
+    /// This caches the
+    private static final Map<String, CompoundName> compoundNameCache = new CopyOnWriteHashMap<>();
 
     public RankFeatures(Ranking parent) {
         this(parent, new LinkedHashMap<>());
@@ -49,7 +52,9 @@ public class RankFeatures implements Cloneable {
     }
 
     private void verifyType(String name, Object value) {
-        parent.getParent().properties().requireSettable(new CompoundName(List.of("ranking", "features", name)), value, Map.of());
+        parent.getParent().properties().requireSettable(
+                compoundNameCache.computeIfAbsent(name, (key) -> new CompoundName(List.of("ranking", "features", key))),
+                value, Map.of());
     }
 
     /**

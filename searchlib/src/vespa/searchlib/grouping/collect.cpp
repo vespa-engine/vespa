@@ -4,12 +4,10 @@
 #include <vespa/vespalib/util/array.hpp>
 #include <cassert>
 
-namespace search {
+using namespace search::expression;
+using namespace search::aggregation;
 
-using namespace expression;
-using namespace aggregation;
-
-namespace grouping {
+namespace search::grouping {
 
 Collect::ResultAccessor::ResultAccessor(const AggregationResult & aggregator, size_t offset) :
     _bluePrint(&aggregator),
@@ -108,7 +106,6 @@ Collect::preFill(GroupRef gr, const Group & g)
     }
 }
 
-}
 }
 
 // this function was added by ../../forcelink.sh

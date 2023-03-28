@@ -22,11 +22,11 @@ public class CoverageTestCase {
 
     @Test
     void testActiveCoverage() {
-        Coverage c = new Coverage(6, 5);
+        Coverage c = new Coverage(6, 5, 1);
         assertEquals(5, c.getActive());
         assertEquals(6, c.getDocs());
 
-        Coverage d = new Coverage(7, 6);
+        Coverage d = new Coverage(7, 6, 1);
         c.merge(d);
         assertEquals(11, c.getActive());
         assertEquals(13, c.getDocs());
@@ -34,7 +34,7 @@ public class CoverageTestCase {
 
     @Test
     void testCoverageBasedOnTargetActive() {
-        var c = new Coverage(8, 10).setTargetActive(16);
+        var c = new Coverage(8, 10, 1).setTargetActive(16);
         assertEquals(50, c.getResultPercentage());
     }
 
@@ -67,7 +67,7 @@ public class CoverageTestCase {
 
         Result federationSearcherResult = new Result(new Query());
         Result singleSourceResult = new Result(new Query());
-        singleSourceResult.setCoverage(new Coverage(10, 1));
+        singleSourceResult.setCoverage(new Coverage(10, 1, 1));
         federationSearcherResult.mergeWith(singleSourceResult);
         assertEquals(1, federationSearcherResult.getCoverage(create).getResultSets());
     }
@@ -87,7 +87,20 @@ public class CoverageTestCase {
 
     @Test
     void testCoverageConversion() {
-        verifyCoverageConversion(new Coverage(6, 10).setDegradedReason(7).setTargetActive(12));
+        verifyCoverageConversion(new Coverage(6, 10, 1).setDegradedReason(7).setTargetActive(12));
+    }
+
+    @Test
+    void testCoverageWorksForCorpusAboveZero() {
+        Coverage zero = new Coverage(0, 0, 1);
+        assertEquals(1, zero.getNodes());
+        assertEquals(1, zero.getFullResultSets());
+        for (int i =1; i < 10; i++) {
+            Coverage coverage = new Coverage(i, i, 1);
+            assertEquals(1, coverage.getNodes());
+            assertEquals(1, coverage.getFullResultSets());
+            verifyCoverageConversion(coverage);
+        }
     }
 
 }

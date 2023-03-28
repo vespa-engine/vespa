@@ -30,9 +30,9 @@ private:
     EnumValues _enumValues;
     uint32_t _next_enum_val;
 
-    void allocate_enum_values();
+    void allocate_enum_values(DataStoreBase &store);
 public:
-    UniqueStoreEnumerator(const IUniqueStoreDictionary &dict, const DataStoreBase &store, bool sort_unique_values);
+    UniqueStoreEnumerator(const IUniqueStoreDictionary &dict, DataStoreBase &store, bool sort_unique_values);
     ~UniqueStoreEnumerator();
     void enumerateValue(EntryRef ref);
     void enumerateValues();

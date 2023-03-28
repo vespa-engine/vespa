@@ -9,7 +9,6 @@
 #include <vespa/vespalib/data/fileheader.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
-#include <vespa/vespalib/util/array.hpp>
 #include <vespa/vespalib/util/cpu_usage.h>
 #include <vespa/vespalib/util/lambdatask.h>
 #include <vespa/vespalib/util/size_literals.h>
@@ -78,14 +77,13 @@ WriteableFileChunk::
 WriteableFileChunk(vespalib::Executor &executor,
                    FileId fileId, NameId nameId,
                    const vespalib::string &baseName,
-                   SerialNum initialSerialNum,
+                   uint64_t initialSerialNum,
                    uint32_t docIdLimit,
                    const Config &config,
                    const TuneFileSummary &tune,
                    const FileHeaderContext &fileHeaderContext,
-                   const IBucketizer * bucketizer,
-                   bool skipCrcOnRead)
-    : FileChunk(fileId, nameId, baseName, tune, bucketizer, skipCrcOnRead),
+                   const IBucketizer * bucketizer)
+    : FileChunk(fileId, nameId, baseName, tune, bucketizer),
       _config(config),
       _serialNum(initialSerialNum),
       _frozen(false),
@@ -101,7 +99,7 @@ WriteableFileChunk(vespalib::Executor &executor,
       _idxFileSize(0),
       _currentDiskFootprint(0),
       _nextChunkId(1),
-      _active(new Chunk(0, Chunk::Config(config.getMaxChunkBytes()))),
+      _active(std::make_unique<Chunk>(0, Chunk::Config(config.getMaxChunkBytes()))),
       _alignment(1),
       _granularity(1),
       _maxChunkSize(0x100000),
@@ -185,7 +183,6 @@ WriteableFileChunk::updateLidMap(const unique_lock &guard, ISetLid &ds, uint64_t
     _serialNum = getLastPersistedSerialNum();
     _firstChunkIdToBeWritten = _active->getId();
     setDiskFootprint(0);
-    _chunkInfo.reserve(0x10000);
     return sz;
 }
 

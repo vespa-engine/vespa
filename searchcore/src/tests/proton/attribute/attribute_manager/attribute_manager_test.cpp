@@ -11,6 +11,7 @@
 #include <vespa/searchcore/proton/bucketdb/bucket_db_owner.h>
 #include <vespa/searchcore/proton/common/hw_info.h>
 #include <vespa/searchcore/proton/documentmetastore/documentmetastorecontext.h>
+#include <vespa/searchcore/proton/documentmetastore/documentmetastore.h>
 #include <vespa/searchcore/proton/flushengine/shrink_lid_space_flush_target.h>
 #include <vespa/searchcore/proton/initializer/initializer_task.h>
 #include <vespa/searchcore/proton/initializer/task_runner.h>
@@ -240,7 +241,7 @@ struct ParallelAttributeManager
 {
     InitializerTask::SP documentMetaStoreInitTask;
     std::shared_ptr<bucketdb::BucketDBOwner> bucketDbOwner;
-    DocumentMetaStore::SP documentMetaStore;
+    std::shared_ptr<DocumentMetaStore> documentMetaStore;
     AllocStrategy        alloc_strategy;
     bool fastAccessAttributesOnly;
     std::shared_ptr<AttributeManager::SP> mgr;

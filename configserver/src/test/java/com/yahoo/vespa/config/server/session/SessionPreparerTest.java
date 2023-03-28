@@ -43,7 +43,6 @@ import com.yahoo.vespa.config.server.tenant.EndpointCertificateMetadataStore;
 import com.yahoo.vespa.config.server.tenant.EndpointCertificateRetriever;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.config.server.zookeeper.ZKApplication;
-import com.yahoo.vespa.config.util.ConfigUtils;
 import com.yahoo.vespa.curator.mock.MockCurator;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
 import org.junit.Before;
@@ -407,10 +406,7 @@ public class SessionPreparerTest {
     }
 
     private SessionZooKeeperClient createSessionZooKeeperClient(long sessionId) {
-        return new SessionZooKeeperClient(curator,
-                                          applicationId().tenant(),
-                                          sessionId,
-                                          ConfigUtils.getCanonicalHostName());
+        return new SessionZooKeeperClient(curator, applicationId().tenant(), sessionId, configserverConfig);
     }
 
     private Path sessionPath(long sessionId) {

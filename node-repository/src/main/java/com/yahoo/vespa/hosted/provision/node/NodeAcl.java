@@ -2,7 +2,9 @@
 package com.yahoo.vespa.hosted.provision.node;
 
 import com.google.common.collect.ImmutableSet;
+import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.NodeType;
+import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancer;
@@ -40,7 +42,7 @@ public record NodeAcl(Node node,
         this.trustedUdpPorts = ImmutableSet.copyOf(Objects.requireNonNull(trustedUdpPorts, "trustedUdpPorts must be non-null"));
     }
 
-    public static NodeAcl from(Node node, NodeList allNodes, LoadBalancers loadBalancers) {
+    public static NodeAcl from(Node node, NodeList allNodes, LoadBalancers loadBalancers, Zone zone) {
         Set<TrustedNode> trustedNodes = new TreeSet<>(Comparator.comparing(TrustedNode::hostname));
         Set<Integer> trustedPorts = new LinkedHashSet<>();
         Set<Integer> trustedUdpPorts = new LinkedHashSet<>();
@@ -95,7 +97,9 @@ public record NodeAcl(Node node,
                                                                      NodeType.proxyhost, NodeType.proxy),
                                                    RPC_PORTS));
                 trustedPorts.add(4443);
-                trustedUdpPorts.add(WIREGUARD_PORT);
+                if (zone.system().isPublic() && zone.cloud().name().equals(CloudName.AWS)) {
+                    trustedUdpPorts.add(WIREGUARD_PORT);
+                }
             }
             case proxy -> {
                 // Proxy nodes trust:

@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.node.admin.configserver.noderepository;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
@@ -30,6 +31,7 @@ public class NodeSpec {
     private final String id;
     private final NodeState state;
     private final NodeType type;
+    private final CloudAccount cloudAccount;
     private final String flavor;
 
     private final Optional<DockerImage> wantedDockerImage;
@@ -82,6 +84,7 @@ public class NodeSpec {
             Optional<DockerImage> currentDockerImage,
             NodeState state,
             NodeType type,
+            CloudAccount cloudAccount,
             String flavor,
             Optional<Version> wantedVespaVersion,
             Optional<Version> currentVespaVersion,
@@ -125,6 +128,7 @@ public class NodeSpec {
         this.currentDockerImage = Objects.requireNonNull(currentDockerImage);
         this.state = Objects.requireNonNull(state);
         this.type = Objects.requireNonNull(type);
+        this.cloudAccount = Objects.requireNonNull(cloudAccount);
         this.flavor = Objects.requireNonNull(flavor);
         this.modelName = Objects.requireNonNull(modelName);
         this.wantedVespaVersion = Objects.requireNonNull(wantedVespaVersion);
@@ -169,6 +173,10 @@ public class NodeSpec {
 
     public NodeType type() {
         return type;
+    }
+
+    public CloudAccount cloudAccount() {
+        return cloudAccount;
     }
 
     public String flavor() {
@@ -318,6 +326,7 @@ public class NodeSpec {
                 Objects.equals(currentDockerImage, that.currentDockerImage) &&
                 Objects.equals(state, that.state) &&
                 Objects.equals(type, that.type) &&
+                Objects.equals(cloudAccount, that.cloudAccount) &&
                 Objects.equals(flavor, that.flavor) &&
                 Objects.equals(modelName, that.modelName) &&
                 Objects.equals(wantedVespaVersion, that.wantedVespaVersion) &&
@@ -356,6 +365,7 @@ public class NodeSpec {
                 currentDockerImage,
                 state,
                 type,
+                cloudAccount,
                 flavor,
                 modelName,
                 wantedVespaVersion,
@@ -394,6 +404,7 @@ public class NodeSpec {
                 + " currentDockerImage=" + currentDockerImage
                 + " state=" + state
                 + " type=" + type
+                + " cloudAccount=" + cloudAccount
                 + " flavor=" + flavor
                 + " modelName=" + modelName
                 + " wantedVespaVersion=" + wantedVespaVersion
@@ -429,6 +440,7 @@ public class NodeSpec {
         private String id;
         private NodeState state;
         private NodeType type;
+        private CloudAccount cloudAccount = CloudAccount.empty;
         private String flavor;
         private Optional<DockerImage> wantedDockerImage = Optional.empty();
         private Optional<DockerImage> currentDockerImage = Optional.empty();
@@ -523,6 +535,11 @@ public class NodeSpec {
 
         public Builder type(NodeType nodeType) {
             this.type = nodeType;
+            return this;
+        }
+
+        public Builder cloudAccount(CloudAccount cloudAccount) {
+            this.cloudAccount = cloudAccount;
             return this;
         }
 
@@ -720,6 +737,10 @@ public class NodeSpec {
             return type;
         }
 
+        public CloudAccount cloudAccount() {
+            return cloudAccount;
+        }
+
         public String flavor() {
             return flavor;
         }
@@ -801,7 +822,7 @@ public class NodeSpec {
         }
 
         public NodeSpec build() {
-            return new NodeSpec(hostname, id, wantedDockerImage, currentDockerImage, state, type, flavor,
+            return new NodeSpec(hostname, id, wantedDockerImage, currentDockerImage, state, type, cloudAccount, flavor,
                                 wantedVespaVersion, currentVespaVersion, wantedOsVersion, currentOsVersion, orchestratorStatus,
                                 owner, membership,
                                 wantedRestartGeneration, currentRestartGeneration,

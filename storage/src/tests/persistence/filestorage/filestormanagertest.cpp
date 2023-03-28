@@ -485,7 +485,7 @@ TEST_F(FileStorManagerTest, flush) {
     // Creating a document to test with
 
     document::DocumentId docId("id:ns:testdoctype1::crawler:http://www.ntnu.no/");
-    auto doc = std::make_shared<Document>(*_testdoctype1, docId);
+    auto doc = std::make_shared<Document>(*_node->getTypeRepo(), *_testdoctype1, docId);
     document::BucketId bid(4000);
 
     static const uint32_t msgCount = 10;
@@ -1032,7 +1032,7 @@ FileStorTestBase::putDoc(DummyStorageLink& top,
     document::BucketId bucket(16, factory.getBucketId(docId).getRawId());
     //std::cerr << "doc bucket is " << bucket << " vs source " << source << "\n";
     _node->getPersistenceProvider().createBucket(makeSpiBucket(target));
-    Document::SP doc(new Document(*_testdoctype1, docId));
+    auto doc = std::make_shared<Document>(*_node->getTypeRepo(), *_testdoctype1, docId);
     auto cmd = std::make_shared<api::PutCommand>(makeDocumentBucket(target), doc, docNum+1);
     cmd->setAddress(_Storage3);
     cmd->setPriority(120);
@@ -1073,7 +1073,7 @@ TEST_F(FileStorManagerTest, split_empty_target_with_remapped_ops) {
 
     document::DocumentId docId(
             vespalib::make_string("id:ns:testdoctype1:n=%d:1234", 0x100001));
-    auto doc = std::make_shared<Document>(*_testdoctype1, docId);
+    auto doc = std::make_shared<Document>(*_node->getTypeRepo(), *_testdoctype1, docId);
     auto putCmd = std::make_shared<api::PutCommand>(makeDocumentBucket(source), doc, 1001);
     putCmd->setAddress(_Storage3);
     putCmd->setPriority(120);
@@ -1399,7 +1399,7 @@ TEST_F(FileStorManagerTest, delete_bucket) {
     auto& top = c.top;
     // Creating a document to test with
     document::DocumentId docId("id:crawler:testdoctype1:n=4000:http://www.ntnu.no/");
-    auto doc = std::make_shared<Document>(*_testdoctype1, docId);
+    auto doc = std::make_shared<Document>(*_node->getTypeRepo(), *_testdoctype1, docId);
     document::BucketId bid(16, 4000);
 
     createBucket(bid);
@@ -1440,7 +1440,7 @@ TEST_F(FileStorManagerTest, delete_bucket_rejects_outdated_bucket_info) {
     auto& top = c.top;
     // Creating a document to test with
     document::DocumentId docId("id:crawler:testdoctype1:n=4000:http://www.ntnu.no/");
-    Document::SP doc(new Document(*_testdoctype1, docId));
+    auto doc = std::make_shared<Document>(*_node->getTypeRepo(), *_testdoctype1, docId);
     document::BucketId bid(16, 4000);
 
     createBucket(bid);
@@ -1487,7 +1487,7 @@ TEST_F(FileStorManagerTest, delete_bucket_with_invalid_bucket_info){
     auto& top = c.top;
     // Creating a document to test with
     document::DocumentId docId("id:crawler:testdoctype1:n=4000:http://www.ntnu.no/");
-    auto doc = std::make_shared<Document>(*_testdoctype1, docId);
+    auto doc = std::make_shared<Document>(*_node->getTypeRepo(), *_testdoctype1, docId);
     document::BucketId bid(16, 4000);
 
     createBucket(bid);

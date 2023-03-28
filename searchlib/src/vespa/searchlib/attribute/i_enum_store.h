@@ -72,7 +72,7 @@ public:
     enumstore::EnumeratedLoader make_enumerated_loader();
     enumstore::EnumeratedPostingsLoader make_enumerated_postings_loader();
 
-    virtual std::unique_ptr<Enumerator> make_enumerator() const = 0;
+    virtual std::unique_ptr<Enumerator> make_enumerator() = 0;
     virtual std::unique_ptr<vespalib::datastore::EntryComparator> allocate_comparator() const = 0;
 };
 

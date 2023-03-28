@@ -171,7 +171,7 @@ public class RankingExpressionWithOnnxModelTestCase {
 
         assertEquals("test_dynamic_model_with_transformer_tokens", config.rankprofile(7).name());
         assertEquals("rankingExpression(my_function).rankingScript", config.rankprofile(7).fef().property(1).name());
-        assertEquals("tensor<float>(d0[1],d1[10])((if (d1 < (1.0 + rankingExpression(__token_length@-1993461420) + 1.0), 0.0, if (d1 < (1.0 + rankingExpression(__token_length@-1993461420) + 1.0 + rankingExpression(__token_length@-1993461420) + 1.0), 1.0, 0.0))))", config.rankprofile(7).fef().property(1).value());
+        assertEquals("tensor<float>(d0[1],d1[10])((if (d1 < (1.0 + rankingExpression(__token_length@a2e4b6abdeb5fb3a) + 1.0), 0.0, if (d1 < (1.0 + rankingExpression(__token_length@a2e4b6abdeb5fb3a) + 1.0 + rankingExpression(__token_length@a2e4b6abdeb5fb3a) + 1.0), 1.0, 0.0))))", config.rankprofile(7).fef().property(1).value());
 
         assertEquals("test_unbound_model", config.rankprofile(8).name());
         assertEquals("rankingExpression(my_function).rankingScript", config.rankprofile(8).fef().property(0).name());

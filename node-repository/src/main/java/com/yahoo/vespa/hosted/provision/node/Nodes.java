@@ -21,6 +21,7 @@ import com.yahoo.vespa.hosted.provision.applications.Applications;
 import com.yahoo.vespa.hosted.provision.maintenance.NodeFailer;
 import com.yahoo.vespa.hosted.provision.node.filter.NodeFilter;
 import com.yahoo.vespa.hosted.provision.persistence.CuratorDb;
+import com.yahoo.vespa.hosted.provision.provisioning.HostIpConfig;
 import com.yahoo.vespa.orchestrator.HostNameNotFoundException;
 import com.yahoo.vespa.orchestrator.Orchestrator;
 
@@ -203,17 +204,12 @@ public class Nodes {
     /**
      * Sets a list of nodes to have their allocation removable (active to inactive) in the node repository.
      *
-     * @param application the application the nodes belong to
      * @param nodes the nodes to make removable. These nodes MUST be in the active state
      * @param reusable move the node directly to {@link Node.State#dirty} after removal
      */
-    public void setRemovable(ApplicationId application, List<Node> nodes, boolean reusable) {
-        try (Mutex lock = applications.lock(application)) {
-            List<Node> removableNodes = nodes.stream()
-                                             .map(node -> node.with(node.allocation().get().removable(true, reusable)))
-                                             .toList();
-            write(removableNodes, lock);
-        }
+    public void setRemovable(NodeList nodes, boolean reusable) {
+        performOn(nodes, (node, mutex) -> write(node.with(node.allocation().get().removable(true, reusable)),
+                                                mutex));
     }
 
     /**
@@ -352,6 +348,15 @@ public class Nodes {
         } else {
             return move(node.hostname(), Node.State.failed, agent, false, Optional.of(reason));
         }
+    }
+
+    /** Update IP config for nodes in given config */
+    public void setIpConfig(HostIpConfig hostIpConfig) {
+        Predicate<Node> nodeInConfig = (node) -> hostIpConfig.contains(node.hostname());
+        performOn(nodeInConfig, (node, lock) -> {
+            IP.Config ipConfig = hostIpConfig.require(node.hostname());
+            return write(node.with(ipConfig), lock);
+        });
     }
 
     /**

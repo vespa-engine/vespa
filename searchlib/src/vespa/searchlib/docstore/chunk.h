@@ -21,17 +21,12 @@ class ChunkFormat;
 
 class ChunkMeta {
 public:
-    ChunkMeta() :
-        _offset(0),
-        _lastSerial(0),
-        _size(0),
-        _numEntries(0)
-    { }
-    ChunkMeta(uint64_t offset, uint32_t size, uint64_t lastSerial, uint32_t numEntries) :
-        _offset(offset),
-        _lastSerial(lastSerial),
-        _size(size),
-        _numEntries(numEntries)
+    ChunkMeta() noexcept : ChunkMeta(0, 0, 0, 0) { }
+    ChunkMeta(uint64_t offset, uint32_t size, uint64_t lastSerial, uint32_t numEntries) noexcept
+        : _offset(offset),
+          _lastSerial(lastSerial),
+          _size(size),
+          _numEntries(numEntries)
     { }
     uint32_t getNumEntries() const { return _numEntries; }
     uint32_t getSize() const { return _size; }
@@ -49,8 +44,8 @@ private:
 
 class LidMeta {
 public:
-    LidMeta() noexcept : _lid(0), _size(0) { }
-    LidMeta(uint32_t lid, uint32_t sz) : _lid(lid), _size(sz) { }
+    LidMeta() noexcept : LidMeta(0, 0) { }
+    LidMeta(uint32_t lid, uint32_t sz) noexcept : _lid(lid), _size(sz) { }
     uint32_t     getLid() const { return _lid; }
     uint32_t       size() const { return _size; }
     vespalib::nbostream & deserialize(vespalib::nbostream & is);
@@ -66,15 +61,15 @@ public:
     using CompressionConfig = vespalib::compression::CompressionConfig;
     class Config {
     public:
-        Config(size_t maxBytes) : _maxBytes(maxBytes) { }
+        Config(size_t maxBytes) noexcept : _maxBytes(maxBytes) { }
         size_t getMaxBytes() const { return _maxBytes; }
     private:
       size_t _maxBytes;
     };
     class Entry {
     public:
-        Entry() : _lid(0), _sz(0), _offset(0) { }
-        Entry(uint32_t lid, uint32_t sz, uint32_t offset) : _lid(lid), _sz(sz), _offset(offset) { }
+        Entry() noexcept : Entry(0, 0, 0 ) { }
+        Entry(uint32_t lid, uint32_t sz, uint32_t offset) noexcept : _lid(lid), _sz(sz), _offset(offset) { }
         uint32_t       getLid() const { return _lid; }
         uint32_t         size() const { return _sz + 2*4; }
         uint32_t      netSize() const { return _sz; }
@@ -87,7 +82,7 @@ public:
     };
     using LidList = std::vector<Entry>;
     Chunk(uint32_t id, const Config & config);
-    Chunk(uint32_t id, const void * buffer, size_t len, bool skipcrc=false);
+    Chunk(uint32_t id, const void * buffer, size_t len);
     ~Chunk();
     LidMeta append(uint32_t lid, const void * buffer, size_t len);
     ssize_t read(uint32_t lid, vespalib::DataBuffer & buffer) const;
@@ -101,7 +96,6 @@ public:
     void pack(uint64_t lastSerial, vespalib::DataBuffer & buffer, CompressionConfig compression);
     uint64_t getLastSerial() const { return _lastSerial; }
     uint32_t getId() const { return _id; }
-    bool validSerial() const { return getLastSerial() != static_cast<uint64_t>(-1l); }
     vespalib::ConstBufferRef getLid(uint32_t lid) const;
     const vespalib::nbostream & getData() const;
     bool hasRoom(size_t len) const;

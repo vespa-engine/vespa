@@ -182,7 +182,7 @@ public:
     }
 
     // Inherit doc from DataStoreT
-    bool getCompacting(EntryRef ref) const {
+    bool getCompacting(EntryRef ref) {
         return _store.getCompacting(ref);
     }
 
@@ -247,9 +247,5 @@ extern template class BufferType<BTreeLeafNode<uint32_t, BTreeNoLeafData, NoAggr
                                  FrozenBtreeNode<BTreeLeafNode<uint32_t, BTreeNoLeafData, NoAggregated, BTreeDefaultTraits::LEAF_SLOTS>>>;
 extern template class BufferType<BTreeLeafNode<uint32_t, int32_t, MinMaxAggregated, BTreeDefaultTraits::LEAF_SLOTS>,
                                  FrozenBtreeNode<BTreeLeafNode<uint32_t, int32_t, MinMaxAggregated, BTreeDefaultTraits::LEAF_SLOTS>>>;
-
-extern template class BufferType<BTreeKeyData<uint32_t, uint32_t>>;
-extern template class BufferType<BTreeKeyData<uint32_t, int32_t>>;
-extern template class BufferType<BTreeKeyData<uint32_t, BTreeNoLeafData>>;
 
 }

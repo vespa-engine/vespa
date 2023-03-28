@@ -3,6 +3,7 @@
 #include <vespa/searchcore/proton/common/attribute_updater.h>
 #include <vespa/searchlib/attribute/attributefactory.h>
 #include <vespa/searchlib/attribute/reference_attribute.h>
+#include <vespa/searchlib/attribute/single_raw_attribute.h>
 #include <vespa/searchlib/tensor/dense_tensor_attribute.h>
 #include <vespa/searchlib/tensor/serialized_fast_value_attribute.h>
 #include <vespa/searchlib/test/weighted_type_test_utils.h>
@@ -13,6 +14,7 @@
 #include <vespa/document/fieldvalue/bytefieldvalue.h>
 #include <vespa/document/fieldvalue/floatfieldvalue.h>
 #include <vespa/document/fieldvalue/intfieldvalue.h>
+#include <vespa/document/fieldvalue/rawfieldvalue.h>
 #include <vespa/document/fieldvalue/referencefieldvalue.h>
 #include <vespa/document/fieldvalue/stringfieldvalue.h>
 #include <vespa/document/fieldvalue/tensorfieldvalue.h>
@@ -34,6 +36,7 @@
 #include <vespa/eval/eval/value.h>
 #include <vespa/eval/eval/value_codec.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
+#include <vespa/vespalib/test/insertion_operators.h>
 #include <vespa/vespalib/testkit/testapp.h>
 
 #include <vespa/log/log.h>
@@ -49,6 +52,7 @@ using search::attribute::CollectionType;
 using search::attribute::Config;
 using search::attribute::Reference;
 using search::attribute::ReferenceAttribute;
+using search::attribute::SingleRawAttribute;
 using search::tensor::ITensorAttribute;
 using search::tensor::DenseTensorAttribute;
 using search::tensor::SerializedFastValueAttribute;
@@ -57,6 +61,18 @@ using vespalib::eval::SimpleValue;
 using vespalib::eval::TensorSpec;
 using vespalib::eval::Value;
 using vespalib::eval::ValueType;
+
+namespace {
+
+std::vector<char> as_vector(vespalib::stringref value) {
+    return {value.data(), value.data() + value.size()};
+}
+
+std::vector<char> as_vector(vespalib::ConstArrayRef<char> value) {
+    return {value.data(), value.data() + value.size()};
+}
+
+}
 
 namespace search {
 
@@ -74,6 +90,7 @@ makeDocumentTypeRepo()
                              .addField("int", DataType::T_INT)
                              .addField("float", DataType::T_FLOAT)
                              .addField("string", DataType::T_STRING)
+                             .addField("raw", DataType::T_RAW)
                              .addField("aint", Array(DataType::T_INT))
                              .addField("afloat", Array(DataType::T_FLOAT))
                              .addField("astring", Array(DataType::T_STRING))
@@ -120,6 +137,10 @@ struct Fixture {
         applyValueUpdate(vec, 2, std::make_unique<RemoveValueUpdate>(std::move(first)));
         applyValueUpdate(vec, 3, std::make_unique<ClearValueUpdate>());
         applyValueUpdate(vec, 4, std::make_unique<MapValueUpdate>(std::move(copyOfFirst), std::make_unique<ArithmeticValueUpdate>(ArithmeticValueUpdate::Add, 10)));
+    }
+
+    void applyValue(AttributeVector& vec, uint32_t docid, std::unique_ptr<FieldValue> value) {
+        search::AttributeUpdater::handleValue(vec, docid, *value);
     }
 };
 
@@ -172,7 +193,6 @@ check(const AttributePtr &vec, uint32_t docId, const std::vector<T> &values)
     }
     return true;
 }
-
 
 GlobalId toGid(vespalib::stringref docId) {
     return DocumentId(docId).getGlobalId();
@@ -253,6 +273,20 @@ TEST_F("require that single attributes are updated", Fixture)
         TEST_DO(assertRef(*vec, doc2, 0));
         TEST_DO(assertRef(*vec, doc1, 1));
         TEST_DO(assertNoRef(*vec, 2));
+    }
+    {
+        BasicType bt(BasicType::RAW);
+        vespalib::string first_backing("first");
+        vespalib::ConstArrayRef<char> first(first_backing.data(), first_backing.size());
+        AttributePtr vec = create<vespalib::ConstArrayRef<char>, SingleRawAttribute>(4, first, 0, "in1/raw", Config(bt, ct));
+        f.applyValueUpdate(*vec, 0, std::make_unique<AssignValueUpdate>(std::make_unique<RawFieldValue>("second")));
+        f.applyValueUpdate(*vec, 2, std::make_unique<ClearValueUpdate>());
+        f.applyValue(*vec, 3, std::make_unique<RawFieldValue>("third"));
+        EXPECT_EQUAL(4u, vec->getNumDocs());
+        EXPECT_EQUAL(as_vector("second"), as_vector(vec->get_raw(0)));
+        EXPECT_EQUAL(as_vector("first"), as_vector(vec->get_raw(1)));
+        EXPECT_EQUAL(as_vector(""), as_vector(vec->get_raw(2)));
+        EXPECT_EQUAL(as_vector("third"), as_vector(vec->get_raw(3)));
     }
 }
 

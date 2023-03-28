@@ -146,7 +146,7 @@ public enum SearchNodeMetrics implements VespaMetrics {
     CONTENT_PROTON_RESOURCE_USAGE_MEMORY_USAGE_TOTAL("content.proton.resource_usage.memory_usage.total", Unit.FRACTION, "The total relative amount of memory used by this content node (value in the range [0, 1])"),
     CONTENT_PROTON_RESOURCE_USAGE_MEMORY_USAGE_TOTAL_UTILIZATION("content.proton.resource_usage.memory_usage.total_utilization", Unit.FRACTION, "The relative amount of memory used compared to the content node memory resource limit"),
     CONTENT_PROTON_RESOURCE_USAGE_MEMORY_USAGE_TRANSIENT("content.proton.resource_usage.memory_usage.transient", Unit.FRACTION, "The relative amount of transient memory used by this content node (value in the range [0, 1])"),
-    CONTENT_PROTON_RESOURCE_USAGE_MEMORY_MAPPINGS("content.proton.resource_usage.memory_mappings", Unit.AREA, "The number of mapped memory areas"),
+    CONTENT_PROTON_RESOURCE_USAGE_MEMORY_MAPPINGS("content.proton.resource_usage.memory_mappings", Unit.FILE, "The number of memory mapped files"),
     CONTENT_PROTON_RESOURCE_USAGE_OPEN_FILE_DESCRIPTORS("content.proton.resource_usage.open_file_descriptors", Unit.FILE, "The number of open files"),
     CONTENT_PROTON_RESOURCE_USAGE_FEEDING_BLOCKED("content.proton.resource_usage.feeding_blocked", Unit.BINARY, "Whether feeding is blocked due to resource limits being reached (value is either 0 or 1)"),
     CONTENT_PROTON_RESOURCE_USAGE_MALLOC_ARENA("content.proton.resource_usage.malloc_arena", Unit.BYTE, "Size of malloc arena"),

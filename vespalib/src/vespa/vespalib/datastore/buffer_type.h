@@ -85,7 +85,7 @@ protected:
         ElemCount dead_elems;
         BufferCounts() : used_elems(0), dead_elems(0) {}
         BufferCounts(ElemCount used_elems_in, ElemCount dead_elems_in)
-                : used_elems(used_elems_in), dead_elems(dead_elems_in)
+            : used_elems(used_elems_in), dead_elems(dead_elems_in)
         {}
     };
 
@@ -99,7 +99,7 @@ protected:
             const std::atomic<ElemCount>* dead_ptr;
             Element() noexcept : used_ptr(nullptr), dead_ptr(nullptr) {}
             Element(const std::atomic<ElemCount>* used_ptr_in, const std::atomic<ElemCount>* dead_ptr_in) noexcept
-                    : used_ptr(used_ptr_in), dead_ptr(dead_ptr_in)
+                : used_ptr(used_ptr_in), dead_ptr(dead_ptr_in)
             {}
         };
         std::vector<Element> _counts;
@@ -119,7 +119,6 @@ protected:
     // Number of arrays needed before allocating a new buffer instead of just resizing the first one
     uint32_t _numArraysForNewBuffer;
     float    _allocGrowFactor;
-    uint32_t _activeBuffers;
     uint32_t _holdBuffers;
     size_t   _holdUsedElems;  // Number of used elements in all held buffers for this type.
     AggregatedBufferCounts _aggr_counts;

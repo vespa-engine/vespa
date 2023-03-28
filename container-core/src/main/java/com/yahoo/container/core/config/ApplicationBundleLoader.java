@@ -70,7 +70,8 @@ public class ApplicationBundleLoader {
 
         bundlesFromNewGeneration = installBundles(newFileReferences);
         BundleStarter.startBundles(activeBundles.values());
-        log.info(installedBundlesMessage());
+
+        if (obsoleteBundles.size() > 0 || newFileReferences.size() > 0) log.info(installedBundlesMessage());
 
         readyForNewBundles = false;
     }
@@ -96,7 +97,8 @@ public class ApplicationBundleLoader {
      */
     private Set<Bundle> commitBundles() {
         var bundlesToUninstall = new LinkedHashSet<>(obsoleteBundles.values());
-        log.info("Bundles to be uninstalled from previous generation: " + bundlesToUninstall);
+        if (bundlesToUninstall.size() > 0)
+            log.info("Bundles to be uninstalled from previous generation: " + bundlesToUninstall);
 
         bundlesFromNewGeneration = Map.of();
         obsoleteBundles = Map.of();
@@ -168,7 +170,7 @@ public class ApplicationBundleLoader {
 
         for (FileReference reference : bundlesToInstall) {
             try {
-                log.info("Installing bundle with reference '" + reference.value() + "'");
+                log.fine("Installing bundle with reference '" + reference.value() + "'");
                 List<Bundle> bundles = bundleInstaller.installBundles(reference, osgi);
 
                 // If more than one bundle was installed, and the OSGi framework is the real Felix one,

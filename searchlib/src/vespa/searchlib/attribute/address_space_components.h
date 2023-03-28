@@ -16,6 +16,7 @@ public:
     static vespalib::AddressSpace default_multi_value_usage();
     static const vespalib::string enum_store;
     static const vespalib::string multi_value;
+    static const vespalib::string raw_store;
     static const vespalib::string tensor_store;
     static const vespalib::string shared_string_repo;
     static const vespalib::string hnsw_levels_store;

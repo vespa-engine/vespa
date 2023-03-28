@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.Optional;
 import java.util.OptionalDouble;
@@ -165,4 +166,81 @@ public class SlimeUtils {
                                     false);
     }
 
+    private static class Equal {
+        protected final Inspector rhsInspector;
+
+        protected boolean equal = true;
+
+        public Equal(Inspector rhsInspector) { this.rhsInspector = rhsInspector; }
+
+        public boolean isEqual() { return equal; }
+    }
+
+    private static class EqualArray extends Equal implements ArrayTraverser {
+        public EqualArray(Inspector rhsInspector) { super(rhsInspector); }
+
+        @Override
+        public void entry(int idx, Inspector inspector) {
+            if (equal) {
+                equal = inspector.equalTo(rhsInspector.entry(idx));
+            }
+        }
+    }
+
+    private static class EqualObject extends Equal implements ObjectTraverser {
+        public EqualObject(Inspector rhsInspector) { super(rhsInspector); }
+
+        @Override
+        public void field(String name, Inspector inspector) {
+            if (equal) {
+                equal = inspector.equalTo(rhsInspector.field(name));
+            }
+        }
+    }
+
+    public static boolean equalTo(Inspector a, Inspector b) {
+        boolean equal = a.type() == b.type();
+
+        if (equal) {
+            switch (a.type()) {
+                case NIX:
+                    equal = a.valid() == b.valid();
+                    break;
+                case BOOL:
+                    equal = a.asBool() == b.asBool();
+                    break;
+                case LONG:
+                    equal = a.asLong() == b.asLong();
+                    break;
+                case DOUBLE:
+                    equal = Double.compare(a.asDouble(), b.asDouble()) == 0;
+                    break;
+                case STRING:
+                    equal = a.asString().equals(b.asString());
+                    break;
+                case DATA:
+                    equal = Arrays.equals(a.asData(), b.asData());
+                    break;
+                case ARRAY:
+                {
+                    var traverser = new EqualArray(b);
+                    a.traverse(traverser);
+                    equal = traverser.isEqual() && (a.entries() == b.entries());
+                }
+                break;
+                case OBJECT:
+                {
+                    var traverser = new EqualObject(b);
+                    a.traverse(traverser);
+                    equal = traverser.isEqual() && (a.fields() == b.fields());
+                }
+                break;
+                default:
+                    assert(false);
+                    break;
+            }
+        }
+
+        return equal;
+    }
 }

@@ -1064,6 +1064,8 @@ adjustAllocatedBytes(size_t nodeCount, size_t nodeSize)
 
 TEST_F(BTreeTest, require_that_memory_usage_is_calculated)
 {
+    constexpr size_t BASE_ALLOCATED = 28744u;
+    constexpr size_t BASE_USED = 24984;
     typedef BTreeNodeAllocator<int32_t, int8_t,
         btree::NoAggregated,
         MyTraits::INTERNAL_SLOTS, MyTraits::LEAF_SLOTS> NodeAllocator;
@@ -1082,6 +1084,8 @@ TEST_F(BTreeTest, require_that_memory_usage_is_calculated)
     const uint32_t initialLeafNodes = 128u;
     mu.incAllocatedBytes(adjustAllocatedBytes(initialInternalNodes, sizeof(INode)));
     mu.incAllocatedBytes(adjustAllocatedBytes(initialLeafNodes, sizeof(LNode)));
+    mu.incAllocatedBytes(BASE_ALLOCATED);
+    mu.incUsedBytes(BASE_USED);
     mu.incUsedBytes(sizeof(INode));
     mu.incDeadBytes(sizeof(INode));
     EXPECT_TRUE(assertMemoryUsage(mu, tm.getMemoryUsage()));
@@ -1112,6 +1116,8 @@ TEST_F(BTreeTest, require_that_memory_usage_is_calculated)
     mu = vespalib::MemoryUsage();
     mu.incAllocatedBytes(adjustAllocatedBytes(initialInternalNodes, sizeof(INode)));
     mu.incAllocatedBytes(adjustAllocatedBytes(initialLeafNodes, sizeof(LNode)));
+    mu.incAllocatedBytes(BASE_ALLOCATED);
+    mu.incUsedBytes(BASE_USED);
     mu.incUsedBytes(sizeof(INode) * 2);
     mu.incDeadBytes(sizeof(INode) * 2);
     mu.incUsedBytes(sizeof(LNode));

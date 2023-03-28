@@ -516,8 +516,7 @@ MyDocumentSubDB::handleRemove(RemoveOperationWithDocId &op)
         assert(op.getLid() == putRes._lid);
         const document::DocumentType *docType =
             _repo->getDocumentType(_docTypeName.getName());
-        auto doc = std::make_unique<Document>(*docType, docId);
-        doc->setRepo(*_repo);
+        auto doc = std::make_unique<Document>(*_repo, *docType, docId);
         _docs[op.getLid()] = std::move(doc);
         needCommit = true;
     }

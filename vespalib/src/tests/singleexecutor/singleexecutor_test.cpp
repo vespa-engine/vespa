@@ -15,7 +15,7 @@ VESPA_THREAD_STACK_TAG(sequenced_executor)
 TEST("test that all tasks are executed") {
 
     std::atomic<uint64_t> counter(0);
-    SingleExecutor executor(sequenced_executor, 10);
+    SingleExecutor executor(sequenced_executor, 10, true, 1, 100ms);
 
     for (uint64_t i(0); i < 10; i++) {
         executor.execute(makeLambdaTask([&counter] {counter++;}));

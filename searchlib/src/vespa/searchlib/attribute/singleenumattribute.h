@@ -26,8 +26,6 @@ protected:
     using EnumIndexRemapper = IEnumStore::EnumIndexRemapper;
     using GenerationHolder = vespalib::GenerationHolder;
     using EnumRefs = attribute::IAttributeVector::EnumRefs;
-public:
-    using EnumIndexCopyVector = vespalib::Array<EnumIndex>;
 protected:
 
     EntryRef acquire_enum_entry_ref(DocId docId) const noexcept { return _enumIndices.acquire_elem_ref(docId).load_acquire(); }
@@ -39,7 +37,6 @@ protected:
 
     AtomicEntryRefVector _enumIndices;
 
-    EnumIndexCopyVector getIndicesCopy(uint32_t size) const;
     void remap_enum_store_refs(const EnumIndexRemapper& remapper, AttributeVector& v);
 };
 

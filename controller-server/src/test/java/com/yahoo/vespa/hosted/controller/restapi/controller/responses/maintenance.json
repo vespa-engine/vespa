@@ -28,6 +28,9 @@
       "name": "ChangeRequestMaintainer"
     },
     {
+      "name": "CloudDatabaseMaintainer"
+    },
+    {
       "name": "CloudTrialExpirer"
     },
     {

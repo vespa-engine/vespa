@@ -120,11 +120,13 @@ public class MetricsResponse {
         cpu { // a node resource
 
             @Override
-            public List<String> metricResponseNames() { return List.of(HostedNodeAdminMetrics.CPU_UTIL.baseName()); }
+            public List<String> metricResponseNames() {
+                return List.of(HostedNodeAdminMetrics.CPU_UTIL.baseName(), HostedNodeAdminMetrics.GPU_UTIL.baseName());
+            }
 
             @Override
             double computeFinal(ListMap<String, Double> values) {
-                return values.values().stream().flatMap(List::stream).mapToDouble(v -> v).average().orElse(0) / 100; // % to ratio
+                return values.values().stream().flatMap(List::stream).mapToDouble(v -> v).max().orElse(0) / 100; // % to ratio
             }
 
         },
@@ -133,11 +135,17 @@ public class MetricsResponse {
             @Override
             public List<String> metricResponseNames() {
                 return List.of(HostedNodeAdminMetrics.MEM_UTIL.baseName(),
-                               SearchNodeMetrics.CONTENT_PROTON_RESOURCE_USAGE_MEMORY.average());
+                               SearchNodeMetrics.CONTENT_PROTON_RESOURCE_USAGE_MEMORY.average(),
+                               HostedNodeAdminMetrics.GPU_MEM_USED.baseName(),
+                               HostedNodeAdminMetrics.GPU_MEM_TOTAL.baseName());
             }
 
             @Override
             double computeFinal(ListMap<String, Double> values) {
+                return Math.max(gpuMemUtil(values), cpuMemUtil(values));
+            }
+
+            private double cpuMemUtil(ListMap<String, Double> values) {
                 var valueList = values.get(SearchNodeMetrics.CONTENT_PROTON_RESOURCE_USAGE_MEMORY.average()); // prefer over mem.util
                 if ( ! valueList.isEmpty()) return valueList.get(0);
 
@@ -145,6 +153,12 @@ public class MetricsResponse {
                 if ( ! valueList.isEmpty()) return valueList.get(0) / 100; // % to ratio
 
                 return 0;
+            }
+
+            private double gpuMemUtil(ListMap<String, Double> values) {
+                var usedGpuMemory = values.get(HostedNodeAdminMetrics.GPU_MEM_USED.baseName()).stream().mapToDouble(v -> v).sum();
+                var totalGpuMemory = values.get(HostedNodeAdminMetrics.GPU_MEM_TOTAL.baseName()).stream().mapToDouble(v -> v).sum();
+                return totalGpuMemory > 0 ? usedGpuMemory / totalGpuMemory : 0;
             }
 
         },

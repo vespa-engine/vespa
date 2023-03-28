@@ -49,6 +49,16 @@ public:
         }
         return RE2::FullMatch(StringPiece(input.data(), input.size()), _regex);
     }
+
+    std::pair<std::string, std::string> possible_anchored_match_prefix_range() const {
+        constexpr int max_len = 128; // TODO determine a "reasonable" value. RE2 docs are not clear on this.
+        std::string min_prefix, max_prefix;
+
+        if (!_regex.PossibleMatchRange(&min_prefix, &max_prefix, max_len)) {
+            return {};
+        }
+        return {std::move(min_prefix), std::move(max_prefix)};
+    }
 };
 
 Regex Regex::from_pattern(std::string_view pattern, uint32_t opt_mask) {
@@ -74,6 +84,10 @@ bool Regex::partial_match(std::string_view input) const noexcept {
 
 bool Regex::full_match(std::string_view input) const noexcept {
     return _impl->full_match(input);
+}
+
+std::pair<std::string, std::string> Regex::possible_anchored_match_prefix_range() const {
+    return _impl->possible_anchored_match_prefix_range();
 }
 
 bool Regex::partial_match(std::string_view input, std::string_view pattern) noexcept {

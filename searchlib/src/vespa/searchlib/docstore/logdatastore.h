@@ -57,11 +57,9 @@ public:
         double getMinFileSizeFactor() const { return _minFileSizeFactor; }
         uint32_t getMaxNumLids() const { return _maxNumLids; }
 
-        bool crcOnReadDisabled() const { return _skipCrcOnRead; }
         CompressionConfig compactCompression() const { return _compactCompression; }
 
         const WriteableFileChunk::Config & getFileConfig() const { return _fileConfig; }
-        Config & disableCrcOnRead(bool v) { _skipCrcOnRead = v; return *this;}
 
         bool operator == (const Config &) const;
     private:
@@ -69,7 +67,6 @@ public:
         AtomicValueWrapper<double>  _maxBucketSpread;
         double                      _minFileSizeFactor;
         uint32_t                    _maxNumLids;
-        bool                        _skipCrcOnRead;
         CompressionConfig           _compactCompression;
         WriteableFileChunk::Config  _fileConfig;
     };
@@ -227,16 +224,12 @@ private:
 
     size_t computeNumberOfSignificantBucketIdBits(const IBucketizer & bucketizer, FileId fileId) const;
 
-    /*
-     * Protect against compactWorst() dropping file chunk.  Caller must hold
-     * _updateLock.
-     */
-    std::unique_ptr<FileChunkHolder> holdFileChunk(FileId fileId);
+    /// Protect against compactWorst() dropping file chunk.  Caller must hold _updateLock.
+    std::unique_ptr<FileChunkHolder> holdFileChunk(const MonitorGuard & guard, FileId fileId);
 
-    /*
-     * Drop protection against compactWorst() dropping file chunk.
-     */
+    /// Drop protection against compactWorst() dropping file chunk.
     void unholdFileChunk(FileId fileId);
+    bool canFileChunkBeDropped(const MonitorGuard & guard, FileId fileId) const;
 
     SerialNum flushFile(MonitorGuard guard, WriteableFileChunk & file, SerialNum syncToken,
                         vespalib::CpuUsage::Category cpu_category);
@@ -258,7 +251,7 @@ private:
     mutable vespalib::GenerationHandler      _genHandler;
     LidInfoVector                            _lidInfo;
     FileChunkVector                          _fileChunks;
-    std::vector<uint32_t>                    _holdFileChunks;
+    vespalib::hash_map<uint32_t, uint32_t>   _holdFileChunks;
     FileId                                   _active;
     FileId                                   _prevActive;
     mutable std::mutex                       _updateLock;

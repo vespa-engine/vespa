@@ -68,7 +68,7 @@ struct SlimeSummaryTest : testing::Test, IDocsumStore, GetDocsumsStateCallback {
         if (empty_get_mapped_docsum) {
             return std::make_unique<DocsumStoreDocument>(std::unique_ptr<Document>());
         }
-        auto doc = std::make_unique<Document>(doc_type, DocumentId("id:test:test::0"));
+        auto doc = Document::make_without_repo(doc_type, DocumentId("id:test:test::0"));
         doc->setValue("int_field", IntFieldValue(4));
         doc->setValue("short_field", ShortFieldValue(2));
         doc->setValue("byte_field", ByteFieldValue(1));

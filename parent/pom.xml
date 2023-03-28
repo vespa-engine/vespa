@@ -77,7 +77,6 @@
                     <configuration>
                         <release>17</release>
                         <showWarnings>true</showWarnings>
-                        <optimize>true</optimize>
                         <showDeprecation>false</showDeprecation>
                         <compilerArgs>
                             <arg>-Xlint:all</arg>
@@ -115,9 +114,6 @@
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-install-plugin</artifactId>
                     <version>${maven-install-plugin.version}</version>
-                    <configuration>
-                        <updateReleaseInfo>true</updateReleaseInfo>
-                    </configuration>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
@@ -1142,7 +1138,7 @@
         <felix.log.version>1.0.1</felix.log.version>
         <findbugs.version>3.0.2</findbugs.version> <!-- Should be kept in sync with guava -->
         <hdrhistogram.version>2.1.12</hdrhistogram.version>
-        <jetty.version>11.0.13</jetty.version>
+        <jetty.version>11.0.14</jetty.version>
         <jetty-servlet-api.version>5.0.2</jetty-servlet-api.version>
         <jjwt.version>0.11.2</jjwt.version>
         <jna.version>5.11.0</jna.version>

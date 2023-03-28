@@ -32,7 +32,6 @@ private:
     using EnumHandle = typename B::EnumHandle;
     NumericDirectAttribute(const NumericDirectAttribute &);
     NumericDirectAttribute & operator=(const NumericDirectAttribute &);
-    bool onLoad(vespalib::Executor *executor) override;
     typename B::BaseType getFromEnum(EnumHandle e) const override { return _data[e]; }
 protected:
     using BaseType = typename B::BaseType;
@@ -136,8 +135,6 @@ class StringDirectAttribute : public StringAttribute
 private:
     StringDirectAttribute(const StringDirectAttribute &);
     StringDirectAttribute & operator=(const StringDirectAttribute &);
-    void onSave(IAttributeSaveTarget & saveTarget) override;
-    bool onLoad(vespalib::Executor *executor) override;
     const char * getFromEnum(EnumHandle e) const override { return &_buffer[e]; }
     const char * getStringFromEnum(EnumHandle e) const override { return &_buffer[e]; }
     std::unique_ptr<attribute::SearchContext> getSearch(QueryTermSimpleUP term, const attribute::SearchContextParams & params) const override;

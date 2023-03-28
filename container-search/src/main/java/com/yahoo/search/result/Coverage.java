@@ -9,12 +9,17 @@ package com.yahoo.search.result;
  */
 public class Coverage extends com.yahoo.container.handler.Coverage {
 
+    /**
+     * @deprecated Nodes is required element
+     */
+    @Deprecated
     public Coverage(long docs, long active) {
-        this(docs, active, docs > 1 ? 1 : 0, docs > 1 ? 1: 0);
+        // TODO Wonder about this special handling.....
+        this(docs, active, (docs > 0) ? 1 : 0, (docs > 0) ? 1: 0);
     }
 
     public Coverage(long docs, long active, int nodes) {
-        super(docs, active, nodes, 1);
+        this(docs, active, nodes, 1);
     }
 
     public Coverage(long docs, long active, int nodes, int resultSets) {

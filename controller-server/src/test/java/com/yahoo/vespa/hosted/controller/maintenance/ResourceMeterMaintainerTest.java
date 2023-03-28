@@ -61,9 +61,9 @@ public class ResourceMeterMaintainerTest {
                         .collect(Collectors.toMap(Map.Entry::getKey, entry -> entry.getValue().cost().getAsDouble())));
 
         List<ResourceSnapshot> resourceSnapshots = List.of(
-                new ResourceSnapshot(app1, resources(12, 34, 56), Instant.EPOCH, z1, Version.emptyVersion),
-                new ResourceSnapshot(app1, resources(23, 45, 67), Instant.EPOCH, z2, Version.emptyVersion),
-                new ResourceSnapshot(app2, resources(34, 56, 78), Instant.EPOCH, z1, Version.emptyVersion));
+                new ResourceSnapshot(app1, resources(12, 34, 56), Instant.EPOCH, z1, 0),
+                new ResourceSnapshot(app1, resources(23, 45, 67), Instant.EPOCH, z2, 0),
+                new ResourceSnapshot(app2, resources(34, 56, 78), Instant.EPOCH, z1, 0));
 
         maintainer.updateDeploymentCost(resourceSnapshots);
         assertCost.accept(app1, Map.of(z1, 1.72, z2, 3.05));
@@ -71,9 +71,9 @@ public class ResourceMeterMaintainerTest {
 
         // Remove a region from app1 and add region to app2
         resourceSnapshots = List.of(
-                new ResourceSnapshot(app1, resources(23, 45, 67), Instant.EPOCH, z2, Version.emptyVersion),
-                new ResourceSnapshot(app2, resources(34, 56, 78), Instant.EPOCH, z1, Version.emptyVersion),
-                new ResourceSnapshot(app2, resources(45, 67, 89), Instant.EPOCH, z2, Version.emptyVersion));
+                new ResourceSnapshot(app1, resources(23, 45, 67), Instant.EPOCH, z2, 0),
+                new ResourceSnapshot(app2, resources(34, 56, 78), Instant.EPOCH, z1, 0),
+                new ResourceSnapshot(app2, resources(45, 67, 89), Instant.EPOCH, z2, 0));
 
         maintainer.updateDeploymentCost(resourceSnapshots);
         assertCost.accept(app1, Map.of(z2, 3.05));

@@ -11,6 +11,7 @@ import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.WireguardKey;
+import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancers;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.Allocation;
@@ -116,11 +117,11 @@ public final class Node implements Nodelike {
 
         if (state == State.ready && type.isHost()) {
             requireNonEmpty(ipConfig.primary(), "A " + type + " must have at least one primary IP address in state " + state);
-            requireNonEmpty(ipConfig.pool().ipSet(), "A " + type + " must have a non-empty IP address pool in state " + state);
+            requireNonEmpty(ipConfig.pool().asSet(), "A " + type + " must have a non-empty IP address pool in state " + state);
         }
 
         if (parentHostname.isPresent()) {
-            if (!ipConfig.pool().ipSet().isEmpty()) throw new IllegalArgumentException("A child node cannot have an IP address pool");
+            if (!ipConfig.pool().asSet().isEmpty()) throw new IllegalArgumentException("A child node cannot have an IP address pool");
             if (modelName.isPresent()) throw new IllegalArgumentException("A child node cannot have model name set");
             if (switchHostname.isPresent()) throw new IllegalArgumentException("A child node cannot have switch hostname set");
             if (status.wantToRebuild()) throw new IllegalArgumentException("A child node cannot be rebuilt");
@@ -573,8 +574,8 @@ public final class Node implements Nodelike {
     }
 
     /** Returns the ACL for the node (trusted nodes, networks and ports) */
-    public NodeAcl acl(NodeList allNodes, LoadBalancers loadBalancers) {
-        return NodeAcl.from(this, allNodes, loadBalancers);
+    public NodeAcl acl(NodeList allNodes, LoadBalancers loadBalancers, Zone zone) {
+        return NodeAcl.from(this, allNodes, loadBalancers, zone);
     }
 
     @Override

@@ -69,7 +69,7 @@ public class VersionState {
         try (FileReader reader = new FileReader(versionFile)) {
             return Version.fromString(IOUtils.readAll(reader));
         } catch (Exception e) {
-            return new Version(0, 0, 0); // Use an old value to signal we don't know
+            return Version.emptyVersion;
         }
     }
 

@@ -108,6 +108,40 @@ final class DHKemX25519HkdfSha256 implements Kem {
      * Section 4.1 DH-Based KEM (DHKEM):
      *
      * <pre>
+     * def AuthEncap(pkR, skS):
+     *   skE, pkE = GenerateKeyPair()
+     *   dh = concat(DH(skE, pkR), DH(skS, pkR))
+     *   enc = SerializePublicKey(pkE)
+     *
+     *   pkRm = SerializePublicKey(pkR)
+     *   pkSm = SerializePublicKey(pk(skS))
+     *   kem_context = concat(enc, pkRm, pkSm)
+     *
+     *   shared_secret = ExtractAndExpand(dh, kem_context)
+     *   return shared_secret, enc
+     * </pre>
+     */
+    @Override
+    public EncapResult authEncap(XECPublicKey pkR, XECPrivateKey skS) {
+        var kpE = keyPairGen.get();
+        var skE = (XECPrivateKey)kpE.getPrivate();
+        var pkE = (XECPublicKey)kpE.getPublic();
+
+        byte[] dh = concat(KeyUtils.ecdh(skE, pkR), KeyUtils.ecdh(skS, pkR));
+        byte[] enc = serializePublicKey(pkE);
+
+        byte[] pkRm = serializePublicKey(pkR);
+        byte[] pkSm = serializePublicKey(KeyUtils.extractX25519PublicKey(skS));
+        byte[] kemContext = concat(enc, pkRm, pkSm);
+
+        byte[] sharedSecret = extractAndExpand(dh, kemContext);
+        return new EncapResult(sharedSecret, enc);
+    }
+
+    /**
+     * Section 4.1 DH-Based KEM (DHKEM):
+     *
+     * <pre>
      * def Decap(enc, skR):
      *   pkE = DeserializePublicKey(enc)
      *   dh = DH(skR, pkE)
@@ -126,6 +160,33 @@ final class DHKemX25519HkdfSha256 implements Kem {
 
         byte[] pkRm = serializePublicKey(KeyUtils.extractX25519PublicKey(skR));
         byte[] kemContext = concat(enc, pkRm);
+
+        return extractAndExpand(dh, kemContext);
+    }
+
+    /**
+     * Section 4.1 DH-Based KEM (DHKEM):
+     *
+     * <pre>
+     * def AuthDecap(enc, skR, pkS):
+     *   pkE = DeserializePublicKey(enc)
+     *   dh = concat(DH(skR, pkE), DH(skR, pkS))
+     *
+     *   pkRm = SerializePublicKey(pk(skR))
+     *   pkSm = SerializePublicKey(pkS)
+     *   kem_context = concat(enc, pkRm, pkSm)
+     *
+     *   shared_secret = ExtractAndExpand(dh, kem_context)
+     *   return shared_secret
+     * </pre>
+     */
+    public byte[] authDecap(byte[] enc, XECPrivateKey skR, XECPublicKey pkS) {
+        var pkE = deserializePublicKey(enc);
+        byte[] dh = concat(KeyUtils.ecdh(skR, pkE), KeyUtils.ecdh(skR, pkS));
+
+        byte[] pkRm = serializePublicKey(KeyUtils.extractX25519PublicKey(skR));
+        byte[] pkSm = serializePublicKey(pkS);
+        byte[] kemContext = concat(enc, pkRm, pkSm);
 
         return extractAndExpand(dh, kemContext);
     }

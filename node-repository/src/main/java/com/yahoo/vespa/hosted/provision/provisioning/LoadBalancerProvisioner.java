@@ -332,7 +332,7 @@ public class LoadBalancerProvisioner {
     private Set<String> reachableIpAddresses(Node node) {
         Set<String> reachable = new LinkedHashSet<>(node.ipConfig().primary());
         // Remove addresses unreachable by the load balancer service
-        switch (service.protocol()) {
+        switch (service.protocol(node.cloudAccount().isEnclave(nodeRepository.zone()))) {
             case ipv4 -> reachable.removeIf(IP::isV6);
             case ipv6 -> reachable.removeIf(IP::isV4);
         }

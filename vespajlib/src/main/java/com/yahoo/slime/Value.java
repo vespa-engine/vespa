@@ -2,7 +2,6 @@
 package com.yahoo.slime;
 
 import java.io.ByteArrayOutputStream;
-import java.util.Arrays;
 import java.util.function.Consumer;
 
 /**
@@ -48,8 +47,8 @@ abstract class Value implements Cursor {
 
     public final Cursor addNix() { return addLeaf(NixValue.instance()); }
     public final Cursor addBool(boolean bit) { return addLeaf(BoolValue.instance(bit)); }
-    public final Cursor addLong(long l) { return addLeaf(new LongValue(l)); }
-    public final Cursor addDouble(double d) { return addLeaf(new DoubleValue(d)); }
+    public Cursor addLong(long l) { return NixValue.invalid(); }
+    public Cursor addDouble(double d) { return NixValue.invalid(); }
     public final Cursor addString(String str) { return addLeaf(StringValue.create(str)); }
     public final Cursor addString(byte[] utf8) { return addLeaf(Utf8Value.create(utf8)); }
     public final Cursor addData(byte[] data) { return addLeaf(DataValue.create(data)); }
@@ -90,84 +89,5 @@ abstract class Value implements Cursor {
         } catch (Exception e) {
             return "null";
         }
-    }
-
-    private static class Equal {
-        protected final Inspector rhsInspector;
-
-        protected boolean equal = true;
-
-        public Equal(Inspector rhsInspector) { this.rhsInspector = rhsInspector; }
-
-        public boolean isEqual() { return equal; }
-    }
-
-    private static class EqualArray extends Equal implements ArrayTraverser {
-        public EqualArray(Inspector rhsInspector) { super(rhsInspector); }
-
-        @Override
-        public void entry(int idx, Inspector inspector) {
-            if (equal) {
-                equal = inspector.equalTo(rhsInspector.entry(idx));
-            }
-        }
-    }
-
-    private static class EqualObject extends Equal implements ObjectTraverser {
-        public EqualObject(Inspector rhsInspector) { super(rhsInspector); }
-
-        @Override
-        public void field(String name, Inspector inspector) {
-            if (equal) {
-                equal = inspector.equalTo(rhsInspector.field(name));
-            }
-        }
-    }
-
-    @Override
-    public boolean equalTo(Inspector that) {
-        boolean equal = type() == that.type();
-
-        if (equal) {
-            switch (type()) {
-                case NIX:
-                    equal = valid() == that.valid();
-                    break;
-                case BOOL:
-                    equal = asBool() == that.asBool();
-                    break;
-                case LONG:
-                    equal = asLong() == that.asLong();
-                    break;
-                case DOUBLE:
-                    equal = Double.compare(asDouble(), that.asDouble()) == 0;
-                    break;
-                case STRING:
-                    equal = asString().equals(that.asString());
-                    break;
-                case DATA:
-                    equal = Arrays.equals(asData(), that.asData());
-                    break;
-                case ARRAY:
-                {
-                    var traverser = new EqualArray(that);
-                    traverse(traverser);
-                    equal = traverser.isEqual() && (entries() == that.entries());
-                }
-                break;
-                case OBJECT:
-                {
-                    var traverser = new EqualObject(that);
-                    traverse(traverser);
-                    equal = traverser.isEqual() && (fields() == that.fields());
-                }
-                break;
-                default:
-                    assert(false);
-                    break;
-            }
-        }
-
-        return equal;
     }
 }

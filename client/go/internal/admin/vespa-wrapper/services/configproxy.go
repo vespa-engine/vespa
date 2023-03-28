@@ -25,6 +25,7 @@ const (
 )
 
 func JustRunConfigproxy() int {
+	os.Setenv(envvars.VESPA_SERVICE_NAME, PROXY_SERVICE_NAME)
 	commonPreChecks()
 	vespa.CheckCorrectUser()
 	configsources := defaults.VespaConfigserverRpcAddrs()

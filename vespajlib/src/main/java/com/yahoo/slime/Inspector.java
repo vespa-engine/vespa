@@ -144,5 +144,5 @@ public interface Inspector {
      * @param that inspector.
      * @return true if they are equal.
      */
-    boolean equalTo(Inspector that);
+    default boolean equalTo(Inspector that) { return SlimeUtils.equalTo(this, that); }
 }

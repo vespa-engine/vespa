@@ -42,14 +42,14 @@ public:
     using SmallBufferType = typename TypeMapperT::SmallBufferType;
     using TypeMapper = TypeMapperT;
 private:
-    uint32_t _largeArrayTypeId;
-    uint32_t _maxSmallArrayTypeId;
-    size_t _maxSmallArraySize;
-    DataStoreType _store;
-    TypeMapper _mapper;
+    uint32_t                     _largeArrayTypeId;
+    uint32_t                     _maxSmallArrayTypeId;
+    size_t                       _maxSmallArraySize;
+    DataStoreType                _store;
+    TypeMapper                   _mapper;
     std::vector<SmallBufferType> _smallArrayTypes;
-    LargeBufferType _largeArrayType;
-    CompactionSpec _compaction_spec;
+    LargeBufferType              _largeArrayType;
+    CompactionSpec               _compaction_spec;
     using generation_t = vespalib::GenerationHandler::generation_t;
 
     void initArrayTypes(const ArrayStoreConfig &cfg, std::shared_ptr<alloc::MemoryAllocator> memory_allocator);
@@ -76,10 +76,9 @@ public:
             return ConstArrayRef();
         }
         RefT internalRef(ref);
-        uint32_t typeId = _store.getTypeId(internalRef.bufferId());
-        if (typeId != _largeArrayTypeId) [[likely]] {
-            size_t arraySize = _mapper.get_array_size(typeId);
-            return getSmallArray(internalRef, arraySize);
+        const BufferAndMeta & bufferAndMeta = _store.getBufferMeta(internalRef.bufferId());
+        if (bufferAndMeta.getTypeId() != _largeArrayTypeId) [[likely]] {
+            return getSmallArray(internalRef, bufferAndMeta.getArraySize());
         } else {
             return getLargeArray(internalRef);
         }
@@ -112,7 +111,7 @@ public:
     // Use this if references to array store is not an array of AtomicEntryRef
     std::unique_ptr<CompactingBuffers> start_compact_worst_buffers(const CompactionStrategy &compaction_strategy);
 
-    vespalib::MemoryUsage getMemoryUsage() const { return _store.getMemoryUsage(); }
+    vespalib::MemoryUsage getMemoryUsage() const;
     vespalib::MemoryUsage update_stat(const CompactionStrategy& compaction_strategy);
     bool consider_compact() const noexcept { return _compaction_spec.compact() && !_store.has_held_buffers(); }
 
@@ -139,7 +138,7 @@ public:
     static DataStoreBase& get_data_store_base(ArrayStore &self) { return self._store; }
 
     // Should only be used for unit testing
-    const BufferState &bufferState(EntryRef ref) const;
+    const BufferState &bufferState(EntryRef ref);
 
     bool has_free_lists_enabled() const { return _store.has_free_lists_enabled(); }
     bool has_held_buffers() const noexcept { return _store.has_held_buffers(); }

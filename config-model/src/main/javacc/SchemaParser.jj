@@ -186,6 +186,9 @@ TOKEN :
 | < SUFFIX: "suffix" >
 | < CONSTANT: "constant">
 | < ONNXMODEL: "onnx-model">
+| < INTRAOPTHREADS: "intraop-threads">
+| < INTEROPTHREADS: "interop-threads">
+| < GPUDEVICE: "gpu-device">
 | < MODEL: "model" >
 | < MUTATE: "mutate" >
 | < QUERY: "query" >
@@ -1594,11 +1597,15 @@ OnnxModel onnxModel() :
 void onnxModelItem(OnnxModel onnxModel) :
 {
     String path = null;
+    int num;
 }
 {
     (
         (path = fileItem()) { onnxModel.setFileName(path); } |
         (path = uriItem()) { onnxModel.setUri(path); } |
+        <GPUDEVICE> <COLON> num = integer() { onnxModel.setGpuDevice(num, false); } |
+        <INTRAOPTHREADS> <COLON> num = integer() { onnxModel.setStatelessIntraOpThreads(num); } |
+        <INTEROPTHREADS> <COLON> num = integer() { onnxModel.setStatelessInterOpThreads(num); } |
         (<ONNX_INPUT_SL>) {
             String name = token.image.substring(5, token.image.lastIndexOf(":")).trim();
             if (name.startsWith("\"")) { name = name.substring(1, name.length() - 1); }

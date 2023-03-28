@@ -97,13 +97,13 @@ struct ArrayStoreTest : public TestT
     uint32_t getBufferId(EntryRef ref) const {
         return EntryRefType(ref).bufferId();
     }
-    void assertBufferState(EntryRef ref, const MemStats& expStats) const {
+    void assertBufferState(EntryRef ref, const MemStats& expStats) {
         EXPECT_EQ(expStats._used, store.bufferState(ref).size());
         EXPECT_EQ(expStats._hold, store.bufferState(ref).stats().hold_elems());
         EXPECT_EQ(expStats._dead, store.bufferState(ref).stats().dead_elems());
     }
-    void assert_buffer_stats(EntryRef ref, const TestBufferStats& exp_stats) const {
-        auto& state = store.bufferState(ref);
+    void assert_buffer_stats(EntryRef ref, const TestBufferStats& exp_stats) {
+        const auto& state = store.bufferState(ref);
         EXPECT_EQ(exp_stats._used, state.size());
         EXPECT_EQ(exp_stats._hold, state.stats().hold_elems());
         EXPECT_EQ(exp_stats._dead, state.stats().dead_elems());
@@ -209,17 +209,13 @@ INSTANTIATE_TEST_SUITE_P(NumberStoreFreeListsDisabledMultiTest,
                          testing::PrintToStringParamName());
 
 TEST_P(NumberStoreTest, control_static_sizes) {
-#ifdef _LIBCPP_VERSION
-    EXPECT_EQ(480u, sizeof(store));
-    EXPECT_EQ(304u, sizeof(NumberStoreTest::ArrayStoreType::DataStoreType));
-#else
-    EXPECT_EQ(512u, sizeof(store));
-    EXPECT_EQ(336u, sizeof(NumberStoreTest::ArrayStoreType::DataStoreType));
-#endif
-    EXPECT_EQ(112u, sizeof(NumberStoreTest::ArrayStoreType::SmallBufferType));
+    static constexpr size_t sizeof_deque = vespalib::datastore::DataStoreBase::sizeof_entry_ref_hold_list_deque;
+    EXPECT_EQ(408u + sizeof_deque, sizeof(store));
+    EXPECT_EQ(240u + sizeof_deque, sizeof(NumberStoreTest::ArrayStoreType::DataStoreType));
+    EXPECT_EQ(104u, sizeof(NumberStoreTest::ArrayStoreType::SmallBufferType));
     MemoryUsage usage = store.getMemoryUsage();
-    EXPECT_EQ(960u, usage.allocatedBytes());
-    EXPECT_EQ(32u, usage.usedBytes());
+    EXPECT_EQ(202120u, usage.allocatedBytes());
+    EXPECT_EQ(197752u, usage.usedBytes());
 }
 
 TEST_P(NumberStoreTest, add_and_get_small_arrays_of_trivial_type)

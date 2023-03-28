@@ -56,11 +56,11 @@ struct TestBase : public ::testing::Test {
     uint32_t get_buffer_id(EntryRef ref) const {
         return EntryRefType(ref).bufferId();
     }
-    const BufferState &buffer_state(EntryRef ref) const {
+    BufferState &buffer_state(EntryRef ref) {
         return allocator.get_data_store().getBufferState(get_buffer_id(ref));
     }
-    void assert_buffer_state(EntryRef ref, const TestBufferStats expStats) const {
-        const auto & stats = buffer_state(ref).stats();
+    void assert_buffer_state(EntryRef ref, const TestBufferStats expStats) {
+        auto & stats = buffer_state(ref).stats();
         EXPECT_EQ(expStats._used, buffer_state(ref).size());
         EXPECT_EQ(expStats._hold, stats.hold_elems());
         EXPECT_EQ(expStats._dead, stats.dead_elems());

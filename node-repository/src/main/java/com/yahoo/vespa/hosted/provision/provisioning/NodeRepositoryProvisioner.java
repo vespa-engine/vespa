@@ -38,6 +38,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Stream;
 
 /**
  * Implementation of the host provisioner API for hosted Vespa, using the node repository to allocate nodes.
@@ -85,11 +86,7 @@ public class NodeRepositoryProvisioner implements Provisioner {
                                   ProvisionLogger logger) {
         log.log(Level.FINE, "Received deploy prepare request for " + requested +
                             " for application " + application + ", cluster " + cluster);
-
-        if (cluster.group().isPresent()) throw new IllegalArgumentException("Node requests cannot specify a group");
-
-        nodeResourceLimits.ensureWithinAdvertisedLimits("Min", requested.minResources().nodeResources(), application, cluster);
-        nodeResourceLimits.ensureWithinAdvertisedLimits("Max", requested.maxResources().nodeResources(), application, cluster);
+        validate(application, cluster, requested);
 
         int groups;
         NodeResources resources;
@@ -114,6 +111,16 @@ public class NodeRepositoryProvisioner implements Provisioner {
         }
         return asSortedHosts(preparer.prepare(application, cluster, nodeSpec, groups),
                              requireCompatibleResources(resources, cluster));
+    }
+
+    private void validate(ApplicationId application, ClusterSpec cluster, Capacity requested) {
+        if (cluster.group().isPresent()) throw new IllegalArgumentException("Node requests cannot specify a group");
+
+        nodeResourceLimits.ensureWithinAdvertisedLimits("Min", requested.minResources().nodeResources(), application, cluster);
+        nodeResourceLimits.ensureWithinAdvertisedLimits("Max", requested.maxResources().nodeResources(), application, cluster);
+
+        if ( ! requested.minResources().nodeResources().gpuResources().equals(requested.maxResources().nodeResources().gpuResources()))
+            throw new IllegalArgumentException(requested + " is invalid: Gpu capacity cannot have ranges");
     }
 
     private NodeResources getNodeResources(ClusterSpec cluster, NodeResources nodeResources, ApplicationId applicationId) {

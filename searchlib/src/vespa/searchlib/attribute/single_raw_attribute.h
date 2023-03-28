@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include "not_implemented_attribute.h"
+#include "raw_attribute.h"
 #include "raw_buffer_store.h"
 #include <vespa/vespalib/util/rcuvector.h>
 
@@ -11,7 +11,7 @@ namespace search::attribute {
 /**
  * Attribute vector storing a single raw value per document.
  */
-class SingleRawAttribute : public NotImplementedAttribute
+class SingleRawAttribute : public RawAttribute
 {
     using AtomicEntryRef = vespalib::datastore::AtomicEntryRef;
     using EntryRef = vespalib::datastore::EntryRef;
@@ -22,6 +22,9 @@ class SingleRawAttribute : public NotImplementedAttribute
 
     vespalib::MemoryUsage update_stat();
     EntryRef acquire_entry_ref(DocId docid) const noexcept { return _ref_vector.acquire_elem_ref(docid).load_acquire(); }
+    bool onLoad(vespalib::Executor *executor) override;
+    std::unique_ptr<AttributeSaver> onInitSave(vespalib::stringref fileName) override;
+    void populate_address_space_usage(AddressSpaceUsage& usage) const override;
 public:
     SingleRawAttribute(const vespalib::string& name, const Config& config);
     ~SingleRawAttribute() override;
@@ -32,9 +35,16 @@ public:
     bool addDoc(DocId &docId) override;
     vespalib::ConstArrayRef<char> get_raw(DocId docid) const override;
     void set_raw(DocId docid, vespalib::ConstArrayRef<char> raw);
+    bool update(DocId docid, vespalib::ConstArrayRef<char> raw) { set_raw(docid, raw); return true; }
+    bool append(DocId docid, vespalib::ConstArrayRef<char> raw, int32_t weight) {
+        (void) docid;
+        (void) raw;
+        (void) weight;
+        return false;
+    }
+    bool isUndefined(DocId docid) const override;
     uint32_t clearDoc(DocId docId) override;
-    long onSerializeForAscendingSort(DocId, void *, long, const common::BlobConverter *) const override;
-    long onSerializeForDescendingSort(DocId, void *, long, const common::BlobConverter *) const override;
+    std::unique_ptr<attribute::SearchContext> getSearch(std::unique_ptr<QueryTermSimple>, const attribute::SearchContextParams&) const override;
 };
 
 }

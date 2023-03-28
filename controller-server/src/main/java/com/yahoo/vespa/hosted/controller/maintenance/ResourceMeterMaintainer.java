@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.maintenance;
 
+import com.yahoo.component.Version;
 import com.yahoo.concurrent.UncheckedTimeoutException;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterResources;
@@ -290,7 +291,7 @@ public class ResourceMeterMaintainer extends ControllerMaintainer {
                 (Node node) -> node.resources().architecture(),
                 Collectors.collectingAndThen(
                         Collectors.groupingBy(
-                                (Node node) -> node.currentVersion().getMajor(),
+                                (Node node) -> node.wantedVersion().getMajor(),
                                 Collectors.toList()),
                         convertNodeListToResourceSnapshot(zoneId)));
     }

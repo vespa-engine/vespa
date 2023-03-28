@@ -31,7 +31,7 @@ import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.LockedTenant;
 import com.yahoo.vespa.hosted.controller.api.application.v4.EnvironmentResource;
-import com.yahoo.vespa.hosted.controller.api.application.v4.model.ProtonMetrics;
+import com.yahoo.vespa.hosted.controller.api.application.v4.model.SearchNodeMetrics;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.Property;
 import com.yahoo.vespa.hosted.controller.api.identifiers.PropertyId;
@@ -1860,20 +1860,20 @@ public class ApplicationApiTest extends ControllerContainerTest {
 
     private void updateMetrics() {
         tester.serviceRegistry().configServerMock().setProtonMetrics(List.of(
-                (new ProtonMetrics("content/doc/"))
-                        .addMetric(ProtonMetrics.DOCUMENTS_ACTIVE_COUNT, 11430)
-                        .addMetric(ProtonMetrics.DOCUMENTS_READY_COUNT, 11430)
-                        .addMetric(ProtonMetrics.DOCUMENTS_TOTAL_COUNT, 11430)
-                        .addMetric(ProtonMetrics.DOCUMENT_DISK_USAGE, 44021)
-                        .addMetric(ProtonMetrics.RESOURCE_DISK_USAGE_AVERAGE, 0.0168421)
-                        .addMetric(ProtonMetrics.RESOURCE_MEMORY_USAGE_AVERAGE, 0.103482),
-                (new ProtonMetrics("content/music/"))
-                        .addMetric(ProtonMetrics.DOCUMENTS_ACTIVE_COUNT, 32210)
-                        .addMetric(ProtonMetrics.DOCUMENTS_READY_COUNT, 32000)
-                        .addMetric(ProtonMetrics.DOCUMENTS_TOTAL_COUNT, 32210)
-                        .addMetric(ProtonMetrics.DOCUMENT_DISK_USAGE, 90113)
-                        .addMetric(ProtonMetrics.RESOURCE_DISK_USAGE_AVERAGE, 0.23912)
-                        .addMetric(ProtonMetrics.RESOURCE_MEMORY_USAGE_AVERAGE, 0.00912)
+                (new SearchNodeMetrics("content/doc/"))
+                        .addMetric(SearchNodeMetrics.DOCUMENTS_ACTIVE_COUNT, 11430)
+                        .addMetric(SearchNodeMetrics.DOCUMENTS_READY_COUNT, 11430)
+                        .addMetric(SearchNodeMetrics.DOCUMENTS_TOTAL_COUNT, 11430)
+                        .addMetric(SearchNodeMetrics.DOCUMENT_DISK_USAGE, 44021)
+                        .addMetric(SearchNodeMetrics.RESOURCE_DISK_USAGE_AVERAGE, 0.0168421)
+                        .addMetric(SearchNodeMetrics.RESOURCE_MEMORY_USAGE_AVERAGE, 0.103482),
+                (new SearchNodeMetrics("content/music/"))
+                        .addMetric(SearchNodeMetrics.DOCUMENTS_ACTIVE_COUNT, 32210)
+                        .addMetric(SearchNodeMetrics.DOCUMENTS_READY_COUNT, 32000)
+                        .addMetric(SearchNodeMetrics.DOCUMENTS_TOTAL_COUNT, 32210)
+                        .addMetric(SearchNodeMetrics.DOCUMENT_DISK_USAGE, 90113)
+                        .addMetric(SearchNodeMetrics.RESOURCE_DISK_USAGE_AVERAGE, 0.23912)
+                        .addMetric(SearchNodeMetrics.RESOURCE_MEMORY_USAGE_AVERAGE, 0.00912)
         ));
     }
 

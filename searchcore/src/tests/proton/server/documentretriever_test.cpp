@@ -11,6 +11,7 @@
 #include <vespa/searchlib/attribute/floatbase.h>
 #include <vespa/searchlib/attribute/integerbase.h>
 #include <vespa/searchlib/attribute/predicate_attribute.h>
+#include <vespa/searchlib/attribute/single_raw_attribute.h>
 #include <vespa/searchlib/attribute/stringbase.h>
 #include <vespa/searchlib/predicate/predicate_index.h>
 #include <vespa/searchlib/tensor/tensor_attribute.h>
@@ -28,6 +29,7 @@
 #include <vespa/document/fieldvalue/intfieldvalue.h>
 #include <vespa/document/fieldvalue/longfieldvalue.h>
 #include <vespa/document/fieldvalue/predicatefieldvalue.h>
+#include <vespa/document/fieldvalue/rawfieldvalue.h>
 #include <vespa/document/fieldvalue/stringfieldvalue.h>
 #include <vespa/document/fieldvalue/structfieldvalue.h>
 #include <vespa/document/fieldvalue/tensorfieldvalue.h>
@@ -37,6 +39,7 @@
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/document/test/fieldvalue_helpers.h>
 #include <vespa/vespalib/geo/zcurve.h>
+#include <vespa/vespalib/test/insertion_operators.h>
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/eval/eval/simple_value.h>
@@ -63,6 +66,7 @@ using document::IntFieldValue;
 using document::LongFieldValue;
 using document::PositionDataType;
 using document::PredicateFieldValue;
+using document::RawFieldValue;
 using document::StringFieldValue;
 using document::StructFieldValue;
 using document::TensorDataType;
@@ -83,6 +87,7 @@ using search::attribute::BasicType;
 using search::attribute::CollectionType;
 using search::attribute::Config;
 using search::attribute::IAttributeVector;
+using search::attribute::SingleRawAttribute;
 using search::index::Schema;
 using search::index::schema::DataType;
 using search::tensor::TensorAttribute;
@@ -96,6 +101,7 @@ using vespalib::eval::SimpleValue;
 using vespalib::eval::TensorSpec;
 using vespalib::eval::ValueType;
 using vespalib::eval::Value;
+using proton::documentmetastore::IStore;
 using namespace document::config_builder;
 using namespace search::index;
 
@@ -112,7 +118,11 @@ const char dyn_field_n[] = "dynamic null field"; // not in document, not in attr
 const char dyn_field_nai[] = "dynamic null attr int field"; // in document, not in attribute
 const char dyn_field_nas[] = "dynamic null attr string field"; // in document, not in attribute
 const char position_field[] = "position_field";
+vespalib::string dyn_field_raw("dynamic_raw_field");
 vespalib::string dyn_field_tensor("dynamic_tensor_field");
+vespalib::string static_raw_backing("static raw");
+vespalib::string dynamic_raw_backing("dynamic raw");
+vespalib::ConstArrayRef<char> dynamic_raw(dynamic_raw_backing.data(), dynamic_raw_backing.size());
 vespalib::string tensor_spec("tensor(x{})");
 std::unique_ptr<Value> static_tensor = SimpleValue::from_spec(TensorSpec(tensor_spec).add({{"x", "1"}}, 1.5));
 std::unique_ptr<Value> dynamic_tensor = SimpleValue::from_spec(TensorSpec(tensor_spec).add({{"x", "2"}}, 3.5));
@@ -140,6 +150,10 @@ const int64_t static_zcurve_value = 1118035438880ll;
 const int64_t dynamic_zcurve_value = 6145423666930817152ll;
 const TensorDataType tensorDataType(ValueType::from_spec(tensor_spec));
 
+std::vector<char> as_vector(vespalib::stringref value) {
+    return {value.data(), value.data() + value.size()};
+}
+
 struct MyDocumentStore : proton::test::DummyDocumentStore {
     mutable std::unique_ptr<Document> _testDoc;
     bool _set_position_struct_field;
@@ -161,7 +175,7 @@ struct MyDocumentStore : proton::test::DummyDocumentStore {
             return std::move(_testDoc);
         }
         const DocumentType *doc_type = r.getDocumentType(doc_type_name);
-        auto doc = std::make_unique<Document>(*doc_type, doc_id);
+        auto doc = std::make_unique<Document>(r, *doc_type, doc_id);
         ASSERT_TRUE(doc);
         doc->setValue(static_field, IntFieldValue::make(static_value));
         doc->setValue(dyn_field_i, IntFieldValue::make(static_value));
@@ -170,6 +184,7 @@ struct MyDocumentStore : proton::test::DummyDocumentStore {
         doc->setValue(dyn_field_nas, StringFieldValue::make(static_value_s));
         doc->setValue(zcurve_field, LongFieldValue::make(static_zcurve_value));
         doc->setValue(dyn_field_p, static_value_p);
+        doc->setValue(dyn_field_raw, RawFieldValue(static_raw_backing.data(), static_raw_backing.size()));
         TensorFieldValue tensorFieldValue(tensorDataType);
         tensorFieldValue = SimpleValue::from_value(*static_tensor);
         doc->setValue(dyn_field_tensor, tensorFieldValue);
@@ -217,6 +232,8 @@ DocumenttypesConfig getRepoConfig() {
                      .addField(dyn_wset_field_s, Wset(document::DataType::T_STRING))
                      .addField(dyn_wset_field_n, Wset(document::DataType::T_FLOAT))
                      .addField(position_field, PositionDataType::getInstance().getId())
+                     .addField(dyn_field_raw, document::DataType::T_RAW)
+
                      .addTensorField(dyn_field_tensor, tensor_spec)
                      .addField(zcurve_field, document::DataType::T_LONG)
                      .addField(position_array_field, Array(PositionDataType::getInstance().getId()))
@@ -242,6 +259,8 @@ convertDataType(Schema::DataType t)
         return BasicType::PREDICATE;
     case DataType::TENSOR:
         return BasicType::TENSOR;
+    case DataType::RAW:
+        return BasicType::RAW;
     default:
         throw std::runtime_error(make_string("Data type %u not handled", (uint32_t)t));
     }
@@ -278,7 +297,7 @@ struct Fixture {
     const GlobalId &gid;
     BucketId bucket_id;
     Timestamp timestamp;
-    DocumentMetaStore::DocId lid;
+    IStore::DocId lid;
     MyDocumentStore doc_store;
     search::AttributeManager attr_manager;
     Schema schema;
@@ -317,6 +336,12 @@ struct Fixture {
         attr->commit();
     }
 
+    void add_raw_attribute(const char *name, vespalib::ConstArrayRef<char> val) {
+        auto* attr = addAttribute<SingleRawAttribute>(name, schema::DataType::RAW, schema::CollectionType::SINGLE);
+        attr->set_raw(lid, val);
+        attr->commit();
+    }
+
     Fixture &
     addIndexField(const Schema::IndexField &field) {
         schema.addIndexField(field);
@@ -341,11 +366,10 @@ struct Fixture {
           _dtName(doc_type_name),
           _retriever()
     {
-        using Result = DocumentMetaStore::Result;
         meta_store.constructFreeList();
-        Result inspect = meta_store.get().inspect(gid, 0u);
+        IStore::Result inspect = meta_store.get().inspect(gid, 0u);
         uint32_t docSize = 1;
-        Result putRes(meta_store.get().put(gid, bucket_id, timestamp, docSize, inspect.getLid(), 0u));
+        IStore::Result putRes(meta_store.get().put(gid, bucket_id, timestamp, docSize, inspect.getLid(), 0u));
         meta_store.get().commit(search::CommitParam(0));
         lid = putRes.getLid();
         ASSERT_TRUE(putRes.ok());
@@ -357,6 +381,7 @@ struct Fixture {
         addAttribute<IntegerAttribute>(dyn_field_nai, DataType::INT32, ct);
         addAttribute<StringAttribute>(dyn_field_nas, DataType::STRING, ct);
         addAttribute<IntegerAttribute>(zcurve_field, dynamic_zcurve_value, DataType::INT64, ct);
+        add_raw_attribute(dyn_field_raw.c_str(), dynamic_raw);
         addTensorAttribute(dyn_field_tensor.c_str(), *dynamic_tensor);
         auto * attr = addAttribute<PredicateAttribute>(dyn_field_p, DataType::BOOLEANTREE, ct);
         attr->getIndex().indexEmptyDocument(lid);
@@ -581,6 +606,25 @@ TEST_F("require that tensor attribute can be retrieved", Fixture) {
     ASSERT_TRUE(value);
     auto * tensor_value = dynamic_cast<TensorFieldValue *>(value.get());
     ASSERT_EQUAL(*tensor_value->getAsTensorPtr(), *dynamic_tensor);
+}
+
+TEST_F("require that raw attribute can be retrieved", Fixture)
+{
+    DocumentMetaData meta_data = f._retriever->getDocumentMetaData(doc_id);
+    Document::UP doc = f._retriever->getDocument(meta_data.lid, doc_id);
+    ASSERT_TRUE(doc);
+
+    auto value = doc->getValue(dyn_field_raw);
+    ASSERT_TRUE(value);
+    auto& raw_value = dynamic_cast<RawFieldValue&>(*value);
+    auto raw_value_ref = raw_value.getValueRef();
+    ASSERT_EQUAL(as_vector(dynamic_raw_backing), as_vector(raw_value_ref));;
+
+    f.clearAttributes({ dyn_field_raw });
+    doc = f._retriever->getDocument(meta_data.lid, doc_id);
+    ASSERT_TRUE(doc);
+    value = doc->getValue(dyn_field_raw);
+    ASSERT_FALSE(value);
 }
 
 struct Lookup : public IFieldInfo

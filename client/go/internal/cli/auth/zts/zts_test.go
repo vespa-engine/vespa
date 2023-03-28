@@ -9,7 +9,7 @@ import (
 
 func TestAccessToken(t *testing.T) {
 	httpClient := mock.HTTPClient{}
-	client, err := NewClient("http://example.com", &httpClient)
+	client, err := NewClient(&httpClient, "http://example.com")
 	if err != nil {
 		t.Fatal(err)
 	}

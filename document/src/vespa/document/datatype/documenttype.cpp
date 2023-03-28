@@ -175,7 +175,7 @@ DocumentType::isA(const DataType& other) const
 FieldValue::UP
 DocumentType::createFieldValue() const
 {
-    return std::make_unique<Document>(*this, DocumentId("id::" + getName() + "::"));
+    return Document::make_without_repo(*this, DocumentId("id::" + getName() + "::"));
 }
 
 void

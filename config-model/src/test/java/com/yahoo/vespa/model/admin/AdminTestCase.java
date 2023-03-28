@@ -17,17 +17,22 @@ import com.yahoo.config.provision.Zone;
 import com.yahoo.container.jdisc.config.HealthMonitorConfig;
 import com.yahoo.net.HostName;
 import com.yahoo.vespa.config.core.StateserverConfig;
+import com.yahoo.vespa.model.LogctlSpec;
 import com.yahoo.vespa.model.Service;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.container.ApplicationContainerCluster;
 import com.yahoo.vespa.model.test.utils.VespaModelCreatorWithFilePkg;
 import com.yahoo.vespa.model.test.utils.VespaModelCreatorWithMockPkg;
 import org.junit.jupiter.api.Test;
-
+import java.util.List;
 import java.util.Set;
 
 import static com.yahoo.config.model.api.container.ContainerServiceType.METRICS_PROXY_CONTAINER;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 
 public class AdminTestCase {
@@ -241,6 +246,51 @@ public class AdminTestCase {
         Set<String> configIds = vespaModel.getConfigIds();
         // 1 logforwarder on each host
         assertTrue(configIds.contains("hosts/myhost0/logforwarder"), configIds.toString());
+    }
+
+    @Test
+    void testDefaultLogCtlSpecs() {
+        String hosts = "<hosts>"
+                + "  <host name=\"myhost0\">"
+                + "    <alias>node0</alias>"
+                + "  </host>"
+                + "</hosts>";
+
+        String services = "<services>" +
+                "  <admin version='2.0'>" +
+                "    <adminserver hostalias='node0' />" +
+                "  </admin>" +
+                "  <container version=\"1.0\">" +
+                "    <nodes>" +
+                "      <node hostalias=\"node0\" />" +
+                "    </nodes>" +
+                "    <search/>" +
+                "    <document-api/>" +
+                "  </container>" +
+                "</services>";
+
+        VespaModel vespaModel = new VespaModelCreatorWithMockPkg(hosts, services).create();
+        List<LogctlSpec> logctlSpecs = vespaModel.getAdmin().getLogctlSpecs();
+        assertEquals(4, logctlSpecs.size());  // Default logctl specs
+        assertEquals(1, logctlSpecs
+                .stream()
+                     .filter(l -> (l.componentSpec()
+                                   .equals("com.yahoo.vespa.spifly.repackaged.spifly.BaseActivator")
+                                   &&
+                                   l.levelsModSpec()
+                                   .toLogctlModSpec()
+                                   .equals("fatal=on,error=on,warning=on,info=off,event=on,config=on,debug=off,spam=off")))
+                     .count());
+
+        String localhostConfigId = "hosts/myhost0";
+        SentinelConfig sentinelConfig = vespaModel.getConfig(SentinelConfig.class, localhostConfigId);
+        System.out.println(sentinelConfig);
+        assertEquals(4, getConfigForService("container", sentinelConfig).logctl().size());
+        assertEquals(4, getConfigForService("metricsproxy-container", sentinelConfig).logctl().size());
+    }
+
+    private SentinelConfig.Service getConfigForService(String serviceName, SentinelConfig config) {
+        return config.service().stream().filter(service -> service.name().equals(serviceName)).findFirst().get();
     }
 
 }

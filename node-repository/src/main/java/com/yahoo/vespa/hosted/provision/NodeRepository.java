@@ -219,7 +219,7 @@ public class NodeRepository extends AbstractComponent {
         if ( ! host.type().isHost()) throw new IllegalArgumentException("Only hosts have children");
         NodeList allNodes = nodes().list();
         return allNodes.childrenOf(host)
-                       .mapToList(childNode -> childNode.acl(allNodes, loadBalancers));
+                       .mapToList(childNode -> childNode.acl(allNodes, loadBalancers, zone));
     }
 
     /** Removes this application: all nodes are set dirty. */

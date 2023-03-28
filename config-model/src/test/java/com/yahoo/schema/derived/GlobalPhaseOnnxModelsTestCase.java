@@ -19,4 +19,9 @@ public class GlobalPhaseOnnxModelsTestCase extends AbstractExportingTestCase {
         assertCorrectDeriving("globalphase_onnx_inside");
     }
 
+    @Test
+    void testWithTokenFunctions() throws IOException, ParseException {
+        assertCorrectDeriving("globalphase_token_functions");
+    }
+
 }

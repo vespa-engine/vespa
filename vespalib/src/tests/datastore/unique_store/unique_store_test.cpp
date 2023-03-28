@@ -467,6 +467,18 @@ TEST_F(DoubleTest, nan_is_handled)
     }
     std::vector<uint32_t> exp_enumerated = { 0, 1, 4, 2, 3, 1, 4, 2 };
     EXPECT_EQ(exp_enumerated, enumerated);
-}    
+}
+
+TEST_F(DoubleTest, control_memory_usage) {
+    static constexpr size_t sizeof_deque = vespalib::datastore::DataStoreBase::sizeof_entry_ref_hold_list_deque;
+    EXPECT_EQ(368u + sizeof_deque, sizeof(store));
+    EXPECT_EQ(144u, sizeof(BufferState));
+    EXPECT_EQ(28740u, store.get_values_memory_usage().allocatedBytes());
+    EXPECT_EQ(24804u, store.get_values_memory_usage().usedBytes());
+    EXPECT_EQ(126952u, store.get_dictionary_memory_usage().allocatedBytes());
+    EXPECT_EQ(25248u, store.get_dictionary_memory_usage().usedBytes());
+    EXPECT_EQ(155692u, store.getMemoryUsage().allocatedBytes());
+    EXPECT_EQ(50052, store.getMemoryUsage().usedBytes());
+}
                 
 GTEST_MAIN_RUN_ALL_TESTS()

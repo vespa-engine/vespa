@@ -8,6 +8,7 @@ import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.flags.PermanentFlags;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
+import com.yahoo.vespa.hosted.controller.api.integration.billing.MockBillingController;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.PlanId;
 import com.yahoo.jdisc.http.filter.security.misc.User;
 import com.yahoo.vespa.hosted.controller.api.integration.user.UserId;
@@ -19,6 +20,7 @@ import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 import org.junit.jupiter.api.Test;
 
 import java.io.File;
+import java.util.List;
 import java.util.Set;
 
 import static com.yahoo.application.container.handler.Request.Method.DELETE;
@@ -262,6 +264,7 @@ public class UserApiTest extends ControllerContainerCloudTest {
                     .withBooleanFlag(PermanentFlags.ENABLE_PUBLIC_SIGNUP_FLOW.id(), true);
             Set<Role> operator = Set.of(Role.hostedOperator(), Role.hostedSupporter(), Role.hostedAccountant());
             User user = new User("dev@domail", "Joe Developer", "dev", null);
+            tester.controller().serviceRegistry().billingController().updateCache(List.of());
 
             Role developer = Role.developer(TenantName.from("scoober"));
             tester.userManagement().createRole(developer);
@@ -292,6 +295,7 @@ public class UserApiTest extends ControllerContainerCloudTest {
             User user = new User("dev@domail", "Joe Developer", "dev", null);
 
             controller.createTenant("tenant1", Tenant.Type.cloud);
+            ((MockBillingController) controller.serviceRegistry().billingController()).setTenants(controller.controller().tenants().asList().stream().map(Tenant::name).toList());
 
             tester.assertResponse(
                     request("/user/v1/user").user(user),

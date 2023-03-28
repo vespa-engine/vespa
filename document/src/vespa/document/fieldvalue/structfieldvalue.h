@@ -36,6 +36,7 @@ public:
     using UP = std::unique_ptr<StructFieldValue>;
 
     explicit StructFieldValue(const DataType &type);
+    explicit StructFieldValue(const DocumentTypeRepo& repo, const DataType& type);
     StructFieldValue(const StructFieldValue & rhs);
     StructFieldValue & operator = (const StructFieldValue & rhs);
     StructFieldValue(StructFieldValue && rhs) noexcept = default;

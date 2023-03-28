@@ -102,8 +102,8 @@ private:
     std::unique_ptr<CompactingBuffers> _compacting_buffers;
 
     void allocMapping() {
-        _mapping.resize(RefT::numBuffers());
         auto& data_store = _compacting_buffers->get_store();
+        _mapping.resize(data_store.get_bufferid_limit_relaxed());
         for (const auto bufferId : _compacting_buffers->get_buffer_ids()) {
             BufferState &state = data_store.getBufferState(bufferId);
             _mapping[bufferId].resize(state.get_used_arrays());
@@ -221,7 +221,7 @@ UniqueStore<EntryT, RefT, Compare, Allocator>::getBuilder(uint32_t uniqueValuesH
 
 template <typename EntryT, typename RefT, typename Compare, typename Allocator>
 typename UniqueStore<EntryT, RefT, Compare, Allocator>::Enumerator
-UniqueStore<EntryT, RefT, Compare, Allocator>::getEnumerator(bool sort_unique_values) const
+UniqueStore<EntryT, RefT, Compare, Allocator>::getEnumerator(bool sort_unique_values)
 {
     return Enumerator(*_dict, _store, sort_unique_values);
 }

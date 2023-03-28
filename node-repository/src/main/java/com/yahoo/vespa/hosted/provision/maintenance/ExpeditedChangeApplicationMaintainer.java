@@ -16,7 +16,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 /**
  * This maintainer detects changes to nodes that must be expedited, and redeploys affected applications.
@@ -40,25 +39,21 @@ public class ExpeditedChangeApplicationMaintainer extends ApplicationMaintainer 
 
     @Override
     protected Map<ApplicationId, String> applicationsNeedingMaintenance() {
-        var applications = new HashMap<ApplicationId, String>();
-
-        nodeRepository().nodes()
-                        .list()
-                        .nodeType(NodeType.tenant, NodeType.proxy)
-                        .matching(node -> node.allocation().isPresent())
-                        .groupingBy(node -> node.allocation().get().owner())
-                        .forEach((applicationId, nodes) -> {
-                            hasNodesWithChanges(applicationId, nodes)
-                                    .ifPresent(reason -> applications.put(applicationId, reason));
-                        });
-
+        NodeList allNodes = nodeRepository().nodes().list();
+        Map<ApplicationId, String> applications = new HashMap<>();
+        allNodes.nodeType(NodeType.tenant, NodeType.proxy)
+                .matching(node -> node.allocation().isPresent())
+                .groupingBy(node -> node.allocation().get().owner())
+                .forEach((applicationId, nodes) -> {
+                    hasNodesWithChanges(applicationId, nodes)
+                            .ifPresent(reason -> applications.put(applicationId, reason));
+                });
         // A ready proxy node should trigger a redeployment as it will activate the node.
-        if (!nodeRepository().nodes().list(Node.State.ready, Node.State.reserved).nodeType(NodeType.proxy).isEmpty()) {
+        if (!allNodes.state(Node.State.ready, Node.State.reserved).nodeType(NodeType.proxy).isEmpty()) {
             applications.merge(ApplicationId.from("hosted-vespa", "routing", "default"),
                                "nodes being ready",
                                (oldValue, newValue) -> oldValue + ", " + newValue);
         }
-
         return applications;
     }
 
@@ -68,7 +63,7 @@ public class ExpeditedChangeApplicationMaintainer extends ApplicationMaintainer 
      */
     @Override
     protected void deploy(ApplicationId application, String reason) {
-        deployWithLock(application, reason);
+        deployNow(application, reason);
     }
 
     /** Returns the reason for doing an expedited deploy. */
@@ -78,11 +73,11 @@ public class ExpeditedChangeApplicationMaintainer extends ApplicationMaintainer 
 
         List<String> reasons = nodes.stream()
                                     .flatMap(node -> node.history()
-                                                            .events()
-                                                            .stream()
-                                                            .filter(event -> expediteChangeBy(event.agent()))
-                                                            .filter(event -> lastDeployTime.get().isBefore(event.at()))
-                                                            .map(event -> event.type() + (event.agent() == Agent.system ? "" : " by " + event.agent())))
+                                                         .events()
+                                                         .stream()
+                                                         .filter(event -> expediteChangeBy(event.agent()))
+                                                         .filter(event -> lastDeployTime.get().isBefore(event.at()))
+                                                         .map(event -> event.type() + (event.agent() == Agent.system ? "" : " by " + event.agent())))
                                     .sorted()
                                     .distinct()
                                     .toList();

@@ -27,19 +27,6 @@ StringAttribute::countZero(const char * bt, size_t sz)
     return size;
 }
 
-void
-StringAttribute::generateOffsets(const char * bt, size_t sz, OffsetVector & offsets)
-{
-    offsets.clear();
-    uint32_t start(0);
-    for (size_t i(0); i < sz; i++) {
-        if (bt[i] == '\0') {
-            offsets.push_back(start);
-            start = i + 1;
-        }
-    }
-}
-
 StringAttribute::StringAttribute(const vespalib::string & name) :
     AttributeVector(name, Config(BasicType::STRING)),
     _changes(),

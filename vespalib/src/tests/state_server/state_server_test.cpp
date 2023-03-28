@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/net/connection_auth_context.h>
 #include <vespa/vespalib/net/http/state_server.h>
 #include <vespa/vespalib/net/http/simple_health_producer.h>
 #include <vespa/vespalib/net/http/simple_metrics_producer.h>
@@ -46,15 +47,33 @@ vespalib::string getPage(int port, const vespalib::string &path, const vespalib:
 
 vespalib::string getFull(int port, const vespalib::string &path) { return getPage(port, path, "-D -"); }
 
+vespalib::string get_json(const JsonGetHandler &handler,
+                          const vespalib::string &host,
+                          const vespalib::string &path,
+                          const std::map<vespalib::string,vespalib::string> &params)
+{
+    net::ConnectionAuthContext dummy_ctx(net::tls::PeerCredentials(), net::tls::CapabilitySet::all());
+    auto res = handler.get(host, path, params, dummy_ctx);
+    if (res.ok()) {
+        return res.payload();
+    }
+    return {};
+}
+
 //-----------------------------------------------------------------------------
 
 struct DummyHandler : JsonGetHandler {
     vespalib::string result;
     DummyHandler(const vespalib::string &result_in) : result(result_in) {}
-    vespalib::string get(const vespalib::string &, const vespalib::string &,
-                         const std::map<vespalib::string,vespalib::string> &) const override
+    Response get(const vespalib::string &, const vespalib::string &,
+                 const std::map<vespalib::string,vespalib::string> &,
+                 const net::ConnectionAuthContext &) const override
     {
-        return result;
+        if (!result.empty()) {
+            return Response::make_ok_with_json(result);
+        } else {
+            return Response::make_not_found();
+        }
     }
 };
 
@@ -68,7 +87,7 @@ TEST_F("require that unknown url returns 404 response", HttpServer(0)) {
     EXPECT_EQUAL(expect, actual);
 }
 
-TEST_FF("require that empty known url returns 404 response", DummyHandler(""), HttpServer(0)) {
+TEST_FF("require that handler can return a 404 response", DummyHandler(""), HttpServer(0)) {
     auto token = f2.repo().bind(my_path, f1);
     std::string expect("HTTP/1.1 404 Not Found\r\n"
                        "Connection: close\r\n"
@@ -114,10 +133,11 @@ TEST_FFFF("require that handler is selected based on longest matching url prefix
 
 struct EchoHost : JsonGetHandler {
     ~EchoHost() override;
-    vespalib::string get(const vespalib::string &host, const vespalib::string &,
-                         const std::map<vespalib::string,vespalib::string> &) const override
+    Response get(const vespalib::string &host, const vespalib::string &,
+                 const std::map<vespalib::string,vespalib::string> &,
+                 const net::ConnectionAuthContext &) const override
     {
-        return "[\"" + host + "\"]";
+        return Response::make_ok_with_json("[\"" + host + "\"]");
     }
 };
 
@@ -140,8 +160,9 @@ struct SamplingHandler : JsonGetHandler {
     mutable vespalib::string my_path;
     mutable std::map<vespalib::string,vespalib::string> my_params;
     ~SamplingHandler() override;
-    vespalib::string get(const vespalib::string &host, const vespalib::string &path,
-                         const std::map<vespalib::string,vespalib::string> &params) const override
+    Response get(const vespalib::string &host, const vespalib::string &path,
+                 const std::map<vespalib::string,vespalib::string> &params,
+                 const net::ConnectionAuthContext &) const override
     {
         {
             auto guard = std::lock_guard(my_lock);
@@ -149,7 +170,7 @@ struct SamplingHandler : JsonGetHandler {
             my_path = path;
             my_params = params;
         }
-        return "[]";
+        return Response::make_ok_with_json("[]");
     }
 };
 
@@ -218,13 +239,13 @@ TEST_FFFF("require that json handlers can be removed from repo",
     auto token2 = f4.bind("/foo/bar", f2);
     auto token3 = f4.bind("/foo/bar/baz", f3);
     std::map<vespalib::string,vespalib::string> params;
-    EXPECT_EQUAL("[1]", f4.get("", "/foo", params));
-    EXPECT_EQUAL("[2]", f4.get("", "/foo/bar", params));
-    EXPECT_EQUAL("[3]", f4.get("", "/foo/bar/baz", params));
+    EXPECT_EQUAL("[1]", get_json(f4, "", "/foo", params));
+    EXPECT_EQUAL("[2]", get_json(f4, "", "/foo/bar", params));
+    EXPECT_EQUAL("[3]", get_json(f4, "", "/foo/bar/baz", params));
     token2.reset();
-    EXPECT_EQUAL("[1]", f4.get("", "/foo", params));
-    EXPECT_EQUAL("[1]", f4.get("", "/foo/bar", params));
-    EXPECT_EQUAL("[3]", f4.get("", "/foo/bar/baz", params));
+    EXPECT_EQUAL("[1]", get_json(f4, "", "/foo", params));
+    EXPECT_EQUAL("[1]", get_json(f4, "", "/foo/bar", params));
+    EXPECT_EQUAL("[3]", get_json(f4, "", "/foo/bar/baz", params));
 }
 
 TEST_FFFF("require that json handlers can be shadowed",
@@ -234,12 +255,12 @@ TEST_FFFF("require that json handlers can be shadowed",
     auto token1 = f4.bind("/foo", f1);
     auto token2 = f4.bind("/foo/bar", f2);
     std::map<vespalib::string,vespalib::string> params;
-    EXPECT_EQUAL("[1]", f4.get("", "/foo", params));
-    EXPECT_EQUAL("[2]", f4.get("", "/foo/bar", params));
+    EXPECT_EQUAL("[1]", get_json(f4, "", "/foo", params));
+    EXPECT_EQUAL("[2]", get_json(f4, "", "/foo/bar", params));
     auto token3 = f4.bind("/foo/bar", f3);
-    EXPECT_EQUAL("[3]", f4.get("", "/foo/bar", params));
+    EXPECT_EQUAL("[3]", get_json(f4, "", "/foo/bar", params));
     token3.reset();
-    EXPECT_EQUAL("[2]", f4.get("", "/foo/bar", params));
+    EXPECT_EQUAL("[2]", get_json(f4, "", "/foo/bar", params));
 }
 
 TEST_F("require that root resources can be tracked", JsonHandlerRepo())
@@ -262,14 +283,14 @@ TEST_FFFF("require that state api responds to the expected paths",
           StateApi(f1, f2, f3))
 {
     f2.setTotalMetrics("{}"); // avoid empty result
-    EXPECT_TRUE(!f4.get(host_tag, short_root_path, empty_params).empty());
-    EXPECT_TRUE(!f4.get(host_tag, root_path, empty_params).empty());
-    EXPECT_TRUE(!f4.get(host_tag, health_path, empty_params).empty());
-    EXPECT_TRUE(!f4.get(host_tag, metrics_path, empty_params).empty());
-    EXPECT_TRUE(!f4.get(host_tag, config_path, empty_params).empty());
-    EXPECT_TRUE(!f4.get(host_tag, total_metrics_path, empty_params).empty());
-    EXPECT_TRUE(f4.get(host_tag, unknown_path, empty_params).empty());
-    EXPECT_TRUE(f4.get(host_tag, unknown_state_path, empty_params).empty());
+    EXPECT_TRUE(!get_json(f4, host_tag, short_root_path, empty_params).empty());
+    EXPECT_TRUE(!get_json(f4, host_tag, root_path, empty_params).empty());
+    EXPECT_TRUE(!get_json(f4, host_tag, health_path, empty_params).empty());
+    EXPECT_TRUE(!get_json(f4, host_tag, metrics_path, empty_params).empty());
+    EXPECT_TRUE(!get_json(f4, host_tag, config_path, empty_params).empty());
+    EXPECT_TRUE(!get_json(f4, host_tag, total_metrics_path, empty_params).empty());
+    EXPECT_TRUE(get_json(f4, host_tag, unknown_path, empty_params).empty());
+    EXPECT_TRUE(get_json(f4, host_tag, unknown_state_path, empty_params).empty());
 }
 
 TEST_FFFF("require that top-level urls are generated correctly",
@@ -280,9 +301,9 @@ TEST_FFFF("require that top-level urls are generated correctly",
                  "{\"url\":\"http://HOST/state/v1/health\"},"
                  "{\"url\":\"http://HOST/state/v1/metrics\"},"
                  "{\"url\":\"http://HOST/state/v1/config\"}]}",
-                 f4.get(host_tag, root_path, empty_params));
-    EXPECT_EQUAL(f4.get(host_tag, root_path, empty_params),
-                 f4.get(host_tag, short_root_path, empty_params));
+                 get_json(f4, host_tag, root_path, empty_params));
+    EXPECT_EQUAL(get_json(f4, host_tag, root_path, empty_params),
+                 get_json(f4, host_tag, short_root_path, empty_params));
 }
 
 TEST_FFFF("require that top-level resource list can be extended",
@@ -295,7 +316,7 @@ TEST_FFFF("require that top-level resource list can be extended",
                  "{\"url\":\"http://HOST/state/v1/metrics\"},"
                  "{\"url\":\"http://HOST/state/v1/config\"},"
                  "{\"url\":\"http://HOST/state/v1/custom\"}]}",
-                 f4.get(host_tag, root_path, empty_params));
+                 get_json(f4, host_tag, root_path, empty_params));
 }
 
 TEST_FFFF("require that health resource works as expected",
@@ -303,10 +324,10 @@ TEST_FFFF("require that health resource works as expected",
           StateApi(f1, f2, f3))
 {
     EXPECT_EQUAL("{\"status\":{\"code\":\"up\"}}",
-                 f4.get(host_tag, health_path, empty_params));
+                 get_json(f4, host_tag, health_path, empty_params));
     f1.setFailed("FAIL MSG");
     EXPECT_EQUAL("{\"status\":{\"code\":\"down\",\"message\":\"FAIL MSG\"}}",
-                 f4.get(host_tag, health_path, empty_params));
+                 get_json(f4, host_tag, health_path, empty_params));
 }
 
 TEST_FFFF("require that metrics resource works as expected",
@@ -314,14 +335,14 @@ TEST_FFFF("require that metrics resource works as expected",
           StateApi(f1, f2, f3))
 {
     EXPECT_EQUAL("{\"status\":{\"code\":\"up\"}}",
-                 f4.get(host_tag, metrics_path, empty_params));
+                 get_json(f4, host_tag, metrics_path, empty_params));
     f1.setFailed("FAIL MSG");
     EXPECT_EQUAL("{\"status\":{\"code\":\"down\",\"message\":\"FAIL MSG\"}}",
-                 f4.get(host_tag, metrics_path, empty_params));
+                 get_json(f4, host_tag, metrics_path, empty_params));
     f1.setOk();
     f2.setMetrics("{\"foo\":\"bar\"}");
     EXPECT_EQUAL("{\"status\":{\"code\":\"up\"},\"metrics\":{\"foo\":\"bar\"}}",
-                 f4.get(host_tag, metrics_path, empty_params));
+                 get_json(f4, host_tag, metrics_path, empty_params));
 }
 
 TEST_FFFF("require that config resource works as expected",
@@ -329,17 +350,17 @@ TEST_FFFF("require that config resource works as expected",
           StateApi(f1, f2, f3))
 {
     EXPECT_EQUAL("{\"config\":{}}",
-                 f4.get(host_tag, config_path, empty_params));
+                 get_json(f4, host_tag, config_path, empty_params));
     f3.addConfig(SimpleComponentConfigProducer::Config("foo", 3));
     EXPECT_EQUAL("{\"config\":{\"generation\":3,\"foo\":{\"generation\":3}}}",
-                 f4.get(host_tag, config_path, empty_params));
+                 get_json(f4, host_tag, config_path, empty_params));
     f3.addConfig(SimpleComponentConfigProducer::Config("foo", 4));
     f3.addConfig(SimpleComponentConfigProducer::Config("bar", 4, "error"));
     EXPECT_EQUAL("{\"config\":{\"generation\":4,\"bar\":{\"generation\":4,\"message\":\"error\"},\"foo\":{\"generation\":4}}}",
-                 f4.get(host_tag, config_path, empty_params));
+                 get_json(f4, host_tag, config_path, empty_params));
     f3.removeConfig("bar");
     EXPECT_EQUAL("{\"config\":{\"generation\":4,\"foo\":{\"generation\":4}}}",
-                 f4.get(host_tag, config_path, empty_params));
+                 get_json(f4, host_tag, config_path, empty_params));
 }
 
 TEST_FFFF("require that state api also can return total metric",
@@ -348,18 +369,18 @@ TEST_FFFF("require that state api also can return total metric",
 {
     f2.setTotalMetrics("{\"foo\":\"bar\"}");
     EXPECT_EQUAL("{\"foo\":\"bar\"}",
-                 f4.get(host_tag, total_metrics_path, empty_params));
+                 get_json(f4, host_tag, total_metrics_path, empty_params));
 }
 
 TEST_FFFFF("require that custom handlers can be added to the state server",
           SimpleHealthProducer(), SimpleMetricsProducer(), SimpleComponentConfigProducer(),
           StateApi(f1, f2, f3), DummyHandler("[123]"))
 {
-    EXPECT_EQUAL("", f4.get(host_tag, my_path, empty_params));
+    EXPECT_EQUAL("", get_json(f4, host_tag, my_path, empty_params));
     auto token = f4.repo().bind(my_path, f5);
-    EXPECT_EQUAL("[123]", f4.get(host_tag, my_path, empty_params));
+    EXPECT_EQUAL("[123]", get_json(f4, host_tag, my_path, empty_params));
     token.reset();
-    EXPECT_EQUAL("", f4.get(host_tag, my_path, empty_params));
+    EXPECT_EQUAL("", get_json(f4, host_tag, my_path, empty_params));
 }
 
 struct EchoConsumer : MetricsProducer {
@@ -379,7 +400,8 @@ TEST_FFFF("require that empty v1 metrics consumer defaults to 'statereporter'",
           StateApi(f1, f2, f3))
 {
     std::map<vespalib::string,vespalib::string> my_params;
-    EXPECT_EQUAL("{\"status\":{\"code\":\"up\"},\"metrics\":[\"statereporter\"]}", f4.get(host_tag, metrics_path, empty_params));
+    EXPECT_EQUAL("{\"status\":{\"code\":\"up\"},\"metrics\":[\"statereporter\"]}",
+                 get_json(f4, host_tag, metrics_path, empty_params));
 }
 
 TEST_FFFF("require that empty total metrics consumer defaults to the empty string",
@@ -387,7 +409,7 @@ TEST_FFFF("require that empty total metrics consumer defaults to the empty strin
           StateApi(f1, f2, f3))
 {
     std::map<vespalib::string,vespalib::string> my_params;
-    EXPECT_EQUAL("[\"\"]", f4.get(host_tag, total_metrics_path, empty_params));
+    EXPECT_EQUAL("[\"\"]", get_json(f4, host_tag, total_metrics_path, empty_params));
 }
 
 TEST_FFFF("require that metrics consumer is passed correctly",
@@ -396,8 +418,8 @@ TEST_FFFF("require that metrics consumer is passed correctly",
 {
     std::map<vespalib::string,vespalib::string> my_params;
     my_params["consumer"] = "ME";
-    EXPECT_EQUAL("{\"status\":{\"code\":\"up\"},\"metrics\":[\"ME\"]}", f4.get(host_tag, metrics_path, my_params));
-    EXPECT_EQUAL("[\"ME\"]", f4.get(host_tag, total_metrics_path, my_params));
+    EXPECT_EQUAL("{\"status\":{\"code\":\"up\"},\"metrics\":[\"ME\"]}", get_json(f4, host_tag, metrics_path, my_params));
+    EXPECT_EQUAL("[\"ME\"]", get_json(f4, host_tag, total_metrics_path, my_params));
 }
 
 void check_json(const vespalib::string &expect_json, const vespalib::string &actual_json) {
@@ -496,15 +518,15 @@ TEST("require that generic state can be explored") {
     EXPECT_TRUE(slime::JsonFormat::decode(json_model, slime_state) > 0);
     SlimeExplorer slime_explorer(slime_state.get());
     GenericStateHandler state_handler(short_root_path, slime_explorer);
-    EXPECT_EQUAL("", state_handler.get(host_tag, unknown_path, empty_params));
-    EXPECT_EQUAL("", state_handler.get(host_tag, unknown_state_path, empty_params));
-    check_json(json_root, state_handler.get(host_tag, root_path, empty_params));
-    check_json(json_engine, state_handler.get(host_tag, root_path + "engine", empty_params));
-    check_json(json_engine_stats, state_handler.get(host_tag, root_path + "engine/stats", empty_params));
-    check_json(json_list, state_handler.get(host_tag, root_path + "list", empty_params));
-    check_json(json_list_one, state_handler.get(host_tag, root_path + "list/one", empty_params));
-    check_json(json_list_one_size, state_handler.get(host_tag, root_path + "list/one/size", empty_params));
-    check_json(json_list_two, state_handler.get(host_tag, root_path + "list/two", empty_params));
+    EXPECT_EQUAL("", get_json(state_handler, host_tag, unknown_path, empty_params));
+    EXPECT_EQUAL("", get_json(state_handler, host_tag, unknown_state_path, empty_params));
+    check_json(json_root, get_json(state_handler, host_tag, root_path, empty_params));
+    check_json(json_engine, get_json(state_handler, host_tag, root_path + "engine", empty_params));
+    check_json(json_engine_stats, get_json(state_handler, host_tag, root_path + "engine/stats", empty_params));
+    check_json(json_list, get_json(state_handler, host_tag, root_path + "list", empty_params));
+    check_json(json_list_one, get_json(state_handler, host_tag, root_path + "list/one", empty_params));
+    check_json(json_list_one_size, get_json(state_handler, host_tag, root_path + "list/one/size", empty_params));
+    check_json(json_list_two, get_json(state_handler, host_tag, root_path + "list/two", empty_params));
 }
 
 TEST_MAIN() {

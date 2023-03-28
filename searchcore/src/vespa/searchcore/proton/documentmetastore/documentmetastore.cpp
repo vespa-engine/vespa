@@ -228,10 +228,8 @@ DocumentMetaStore::onUpdateStat()
 {
     auto &compaction_strategy = getConfig().getCompactionStrategy();
     vespalib::MemoryUsage usage = _metaDataStore.getMemoryUsage();
+    usage.merge(_lidAlloc.getMemoryUsage());
     usage.incAllocatedBytesOnHold(getGenerationHolder().get_held_bytes());
-    size_t bvSize = _lidAlloc.getUsedLidsSize();
-    usage.incAllocatedBytes(bvSize);
-    usage.incUsedBytes(bvSize);
     auto gid_to_lid_map_memory_usage = _gidToLidMap.getMemoryUsage();
     _should_compact_gid_to_lid_map = compaction_strategy.should_compact_memory(gid_to_lid_map_memory_usage);
     usage.merge(gid_to_lid_map_memory_usage);

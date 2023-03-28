@@ -79,9 +79,9 @@ namespace {
 document::Document::SP
 createDoc(const DocumentTypeRepo &repo, const string &type_name, const string &id)
 {
-    return document::Document::SP(new document::Document(
+    return std::make_shared<document::Document>(repo,
                     *repo.getDocumentType(type_name),
-                    document::DocumentId(id)));
+                    document::DocumentId(id));
 }
 
 }  // namespace

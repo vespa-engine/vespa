@@ -6,7 +6,6 @@ import com.yahoo.jrt.RequestWaiter;
 import com.yahoo.jrt.Spec;
 import com.yahoo.jrt.Supervisor;
 import com.yahoo.jrt.Target;
-
 import java.time.Duration;
 import java.util.Objects;
 import java.util.logging.Level;
@@ -52,7 +51,8 @@ public class JRTConnection implements Connection {
      */
     public synchronized Target getTarget() {
         if (target == null || !target.isValid()) {
-            logger.log(Level.INFO, "Connecting to " + address);
+            if (target != null) // Don't log the first time
+                logger.log(Level.INFO, "Connecting to " + address);
             target = supervisor.connect(new Spec(address));
         }
         return target;

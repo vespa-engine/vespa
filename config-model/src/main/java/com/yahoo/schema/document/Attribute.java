@@ -100,7 +100,8 @@ public final class Attribute implements Cloneable, Serializable {
         BOOL("bool", "BOOL"),
         PREDICATE("predicate", "PREDICATE"),
         TENSOR("tensor", "TENSOR"),
-        REFERENCE("reference", "REFERENCE");
+        REFERENCE("reference", "REFERENCE"),
+        RAW("raw", "RAW");
 
         private final String myName;  // different from what name() returns.
         private final String exportAttributeTypeName;
@@ -290,7 +291,7 @@ public final class Attribute implements Cloneable, Serializable {
         } else if (fval instanceof ByteFieldValue) {
             return Type.BYTE;
         } else if (fval instanceof Raw) {
-            return Type.BYTE;
+            return Type.RAW;
         } else if (fval instanceof PredicateFieldValue) {
             return Type.PREDICATE;
         } else if (fval instanceof TensorFieldValue) {
@@ -344,6 +345,7 @@ public final class Attribute implements Cloneable, Serializable {
             case PREDICATE -> DataType.PREDICATE;
             case TENSOR -> DataType.getTensor(tensorType.orElseThrow(IllegalStateException::new));
             case REFERENCE-> createReferenceDataType();
+            case RAW -> DataType.RAW;
             default -> throw new IllegalArgumentException("Unknown attribute type " + attributeType);
         };
     }
