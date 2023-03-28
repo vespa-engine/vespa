@@ -138,18 +138,18 @@ private:
     void configure(std::unique_ptr<BucketspacesConfig>) override;
 
 protected:
-        // Lock taken while doing configuration of the server.
+    // Lock taken while doing configuration of the server.
     std::mutex _configLock;
     std::mutex _initial_config_mutex;
     using InitialGuard = std::lock_guard<std::mutex>;
-        // Current running config. Kept, such that we can see what has been
-        // changed in live config updates.
+    // Current running config. Kept, such that we can see what has been
+    // changed in live config updates.
     std::unique_ptr<StorServerConfig> _serverConfig;
     std::unique_ptr<UpgradingConfig> _clusterConfig;
     std::unique_ptr<StorDistributionConfig> _distributionConfig;
     std::unique_ptr<document::config::DocumenttypesConfig> _doctypesConfig;
     std::unique_ptr<BucketspacesConfig> _bucketSpacesConfig;
-        // New configs gotten that has yet to have been handled
+    // New configs gotten that has yet to have been handled
     std::unique_ptr<StorServerConfig> _newServerConfig;
     std::unique_ptr<UpgradingConfig> _newClusterConfig;
     std::unique_ptr<StorDistributionConfig> _newDistributionConfig;

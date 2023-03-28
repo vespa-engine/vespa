@@ -44,7 +44,7 @@ public:
                      ApplicationGenerationFetcher& generationFetcher,
                      spi::PersistenceProvider& persistenceProvider,
                      const VisitorFactory::Map& externalVisitors);
-    ~ServiceLayerNode();
+    ~ServiceLayerNode() override;
     /**
      * Init must be called exactly once after construction and before destruction.
      */
