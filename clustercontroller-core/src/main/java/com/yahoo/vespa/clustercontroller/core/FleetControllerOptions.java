@@ -127,6 +127,8 @@ public class FleetControllerOptions {
 
     private final double clusterFeedBlockNoiseLevel;
 
+    private final int maxNumberOfGroupsAllowedToBeDown;
+
     private FleetControllerOptions(String clusterName,
                                    int fleetControllerIndex,
                                    int fleetControllerCount,
@@ -167,7 +169,8 @@ public class FleetControllerOptions {
                                    int maxDivergentNodesPrintedInTaskErrorMessages,
                                    boolean clusterFeedBlockEnabled,
                                    Map<String, Double> clusterFeedBlockLimit,
-                                   double clusterFeedBlockNoiseLevel) {
+                                   double clusterFeedBlockNoiseLevel,
+                                   int maxNumberOfGroupsAllowedToBeDown) {
         this.clusterName = clusterName;
         this.fleetControllerIndex = fleetControllerIndex;
         this.fleetControllerCount = fleetControllerCount;
@@ -209,6 +212,7 @@ public class FleetControllerOptions {
         this.clusterFeedBlockEnabled = clusterFeedBlockEnabled;
         this.clusterFeedBlockLimit = clusterFeedBlockLimit;
         this.clusterFeedBlockNoiseLevel = clusterFeedBlockNoiseLevel;
+        this.maxNumberOfGroupsAllowedToBeDown = maxNumberOfGroupsAllowedToBeDown;
     }
 
     public Duration getMaxDeferredTaskVersionWaitTime() {
@@ -383,6 +387,8 @@ public class FleetControllerOptions {
         return clusterFeedBlockNoiseLevel;
     }
 
+    public int maxNumberOfGroupsAllowedToBeDown() { return maxNumberOfGroupsAllowedToBeDown; }
+
     public static class Builder {
 
         private String clusterName;
@@ -426,6 +432,7 @@ public class FleetControllerOptions {
         private boolean clusterFeedBlockEnabled = false;
         private Map<String, Double> clusterFeedBlockLimit = Collections.emptyMap();
         private double clusterFeedBlockNoiseLevel = 0.01;
+        private int maxNumberOfGroupsAllowedToBeDown = 1;
 
         public Builder(String clusterName, Collection<ConfiguredNode> nodes) {
             this.clusterName = clusterName;
@@ -686,6 +693,11 @@ public class FleetControllerOptions {
             return this;
         }
 
+        public Builder setMaxNumberOfGroupsAllowedToBeDown(int maxNumberOfGroupsAllowedToBeDown) {
+            this.maxNumberOfGroupsAllowedToBeDown = maxNumberOfGroupsAllowedToBeDown;
+            return this;
+        }
+
         public FleetControllerOptions build() {
             return new FleetControllerOptions(clusterName,
                                               index,
@@ -727,7 +739,8 @@ public class FleetControllerOptions {
                                               maxDivergentNodesPrintedInTaskErrorMessages,
                                               clusterFeedBlockEnabled,
                                               clusterFeedBlockLimit,
-                                              clusterFeedBlockNoiseLevel);
+                                              clusterFeedBlockNoiseLevel,
+                                              maxNumberOfGroupsAllowedToBeDown);
         }
 
         public static Builder copy(FleetControllerOptions options) {
@@ -773,6 +786,7 @@ public class FleetControllerOptions {
             builder.clusterFeedBlockEnabled = options.clusterFeedBlockEnabled;
             builder.clusterFeedBlockLimit = Map.copyOf(options.clusterFeedBlockLimit);
             builder.clusterFeedBlockNoiseLevel = options.clusterFeedBlockNoiseLevel;
+            builder.maxNumberOfGroupsAllowedToBeDown = options.maxNumberOfGroupsAllowedToBeDown;
 
             return builder;
         }

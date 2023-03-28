@@ -47,7 +47,8 @@ public class NodeStateChangeChecker {
             int requiredRedundancy,
             HierarchicalGroupVisiting groupVisiting,
             ClusterInfo clusterInfo,
-            boolean inMoratorium) {
+            boolean inMoratorium,
+            int maxNumberOfGroupsAllowedToBeDown) {
         this.requiredRedundancy = requiredRedundancy;
         this.groupVisiting = groupVisiting;
         this.clusterInfo = clusterInfo;
