@@ -15,8 +15,12 @@ import org.junit.jupiter.api.Test;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Tests using synthetic index names for IndexFacts class.
@@ -180,7 +184,7 @@ public class IndexFactsTestCase {
         query.getModel().getSources().add("one");
         query.getModel().getRestrict().add("two");
 
-        IndexFacts.Session indexFacts = createIndexFacts().newSession(List.of("clusterOne"), List.of());
+        IndexFacts.Session indexFacts = createIndexFacts().newSession(List.of("clusterOne"), Set.of());
         assertTrue(indexFacts.isIndex("a"));
         assertFalse(indexFacts.isIndex("b"));
         assertTrue(indexFacts.isIndex("d"));

@@ -8,7 +8,6 @@ import com.yahoo.prelude.Index;
 import com.yahoo.prelude.IndexFacts;
 import com.yahoo.prelude.query.Substring;
 
-import java.util.Collections;
 import java.util.List;
 
 import static com.yahoo.prelude.query.parser.Token.Kind.*;
@@ -63,7 +62,7 @@ public final class Tokenizer {
      * @return a read-only list of tokens. This list can only be used by this thread
      */
     public List<Token> tokenize(String string) {
-        return tokenize(string, new IndexFacts().newSession(Collections.emptySet(), Collections.emptySet()));
+        return tokenize(string, new IndexFacts().newSession());
     }
 
     /**
@@ -171,13 +170,10 @@ public final class Tokenizer {
         // this is a heuristic to check whether we probably have reached the end of an URL element
         for (int i = tokens.size() - 1; i >= 0; --i) {
             switch (tokens.get(i).kind) {
-                case COLON:
-                    if (i == indexLastExplicitlyChangedAt) return false;
-                    break;
-                case SPACE:
-                    return true;
-                default:
-                    // do nothing
+                case COLON -> { if (i == indexLastExplicitlyChangedAt) return false; }
+                case SPACE -> { return true; }
+                default -> { }
+                // do nothing
             }
         }
         // really not sure whether we should choose false instead, on cause of the guard at

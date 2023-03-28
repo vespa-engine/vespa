@@ -29,7 +29,6 @@ import com.yahoo.yolean.Exceptions;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -306,7 +305,7 @@ public class ClusterSearcher extends Searcher {
             Set<String> sources = query.getModel().getSources();
             return (sources == null || sources.isEmpty())
                     ? schemas
-                    : new HashSet<>(indexFacts.newSession(sources, Collections.emptyList(), schemas).documentTypes());
+                    : new HashSet<>(indexFacts.newSession(sources, Set.of(), schemas).documentTypes());
         } else {
             return filterValidDocumentTypes(restrict);
         }
