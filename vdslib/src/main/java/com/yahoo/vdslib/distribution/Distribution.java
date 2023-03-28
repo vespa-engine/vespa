@@ -508,10 +508,6 @@ public class Distribution {
     }
 
     public static String getDefaultDistributionConfig(int redundancy, int nodeCount) {
-        return getDefaultDistributionConfig(redundancy, nodeCount, StorDistributionConfig.Disk_distribution.MODULO_BID);
-    }
-
-    public static String getDefaultDistributionConfig(int redundancy, int nodeCount, StorDistributionConfig.Disk_distribution.Enum diskDistribution) {
         StringBuilder sb = new StringBuilder();
         sb.append("raw:redundancy ").append(redundancy).append("\n")
           .append("group[1]\n")
@@ -522,7 +518,6 @@ public class Distribution {
         for (int i=0; i<nodeCount; ++i) {
             sb.append("group[0].nodes[").append(i).append("].index ").append(i).append("\n");
         }
-        sb.append("disk_distribution ").append(diskDistribution.toString()).append("\n");
         return sb.toString();
     }
 
