@@ -24,7 +24,7 @@ final class BinaryEncoder implements ArrayTraverser, ObjectSymbolTraverser {
     }
 
 
-    void encode_cmpr_long(long value) {
+    void encode_cmpr_int(int value) {
         byte next = (byte)(value & 0x7f);
         value >>>= 7; // unsigned shift
         while (value != 0) {
@@ -36,12 +36,12 @@ final class BinaryEncoder implements ArrayTraverser, ObjectSymbolTraverser {
         out.put(next);
     }
 
-    void write_type_and_size(int type, long size) {
+    void write_type_and_size(int type, int size) {
         if (size <= 30) {
-            out.put(encode_type_and_meta(type, (int)(size + 1)));
+            out.put(encode_type_and_meta(type, size + 1));
         } else {
             out.put(encode_type_and_meta(type, 0));
-            encode_cmpr_long(size);
+            encode_cmpr_int(size);
         }
     }
 
@@ -125,11 +125,11 @@ final class BinaryEncoder implements ArrayTraverser, ObjectSymbolTraverser {
 
     void encodeSymbolTable(Slime slime) {
         int numSymbols = slime.symbols();
-        encode_cmpr_long(numSymbols);
+        encode_cmpr_int(numSymbols);
         for (int i = 0 ; i < numSymbols; ++i) {
             String name = slime.inspect(i);
             byte[] bytes = Utf8Codec.encode(name);
-            encode_cmpr_long(bytes.length);
+            encode_cmpr_int(bytes.length);
             out.put(bytes);
         }
     }
@@ -139,7 +139,7 @@ final class BinaryEncoder implements ArrayTraverser, ObjectSymbolTraverser {
     }
 
     public void field(int symbol, Inspector inspector) {
-        encode_cmpr_long(symbol);
+        encode_cmpr_int(symbol);
         encodeValue(inspector);
     }
 

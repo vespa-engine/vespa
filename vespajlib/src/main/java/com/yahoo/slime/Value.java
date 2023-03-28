@@ -13,8 +13,8 @@ import java.util.function.Consumer;
  */
 abstract class Value implements Cursor {
 
-    private static final String emptyString = "";
-    private static final byte[] emptyData = new byte[0];
+    static final String emptyString = "";
+    static final byte[] emptyData = new byte[0];
 
     public final boolean valid() { return this != NixValue.invalid(); }
 
