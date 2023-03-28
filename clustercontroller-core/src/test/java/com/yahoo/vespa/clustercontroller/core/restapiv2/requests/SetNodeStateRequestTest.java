@@ -24,6 +24,7 @@ import java.util.Optional;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -129,7 +130,7 @@ public class SetNodeStateRequestTest {
         when(unitState.getId()).thenReturn(wantedStateString);
         when(unitState.getReason()).thenReturn(REASON);
 
-        when(cluster.calculateEffectOfNewState(any(), any(), any(), any(), any(), anyBoolean())).thenReturn(result);
+        when(cluster.calculateEffectOfNewState(any(), any(), any(), any(), any(), anyBoolean(), anyInt())).thenReturn(result);
 
         when(storageNodeInfo.isStorage()).thenReturn(storageNode.getType() == NodeType.STORAGE);
         when(storageNodeInfo.getNodeIndex()).thenReturn(storageNode.getIndex());
