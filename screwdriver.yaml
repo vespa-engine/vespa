@@ -250,7 +250,7 @@ jobs:
       - update-sample-apps: |
           screwdriver/update-vespa-version-in-sample-apps.sh $VESPA_VERSION
       - update-released-time: |
-          screwdriver/factory-command.sh update-released-time
+          screwdriver/factory-command.sh update-released-time $VESPA_VERSION
 
   publish-legacy-release:
     image: docker.io/vespaengine/vespa-build-centos-stream8:latest
