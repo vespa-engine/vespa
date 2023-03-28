@@ -145,7 +145,7 @@ $ vespa prod submit`,
 				return err
 			}
 			if !cli.isCI() {
-				cli.printWarning("We recommend doing this only from a CD job", "See https://cloud.vespa.ai/en/getting-to-production")
+				cli.printDebug("We recommend doing this only from a CD job, See https://cloud.vespa.ai/en/getting-to-production")
 			}
 			opts, err := cli.createDeploymentOptions(pkg, target)
 			if err != nil {
