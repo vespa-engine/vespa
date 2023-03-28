@@ -26,20 +26,10 @@ import java.util.concurrent.atomic.AtomicReference;
 
 public class Distribution {
 
-    private static class Config {
-        Config(Group nodeGraph, int redundancy, boolean distributorAutoOwnershipTransferOnWholeGroupDown) {
-            this.nodeGraph = nodeGraph;
-            this.redundancy = redundancy;
-            this.distributorAutoOwnershipTransferOnWholeGroupDown = distributorAutoOwnershipTransferOnWholeGroupDown;
-        }
-
-        private final Group nodeGraph;
-        private final int redundancy;
-        private final boolean distributorAutoOwnershipTransferOnWholeGroupDown;
-    }
+    private record Config(Group nodeGraph, int redundancy) { }
 
     private ConfigSubscriber configSub;
-    private final AtomicReference<Config> config = new AtomicReference<>(new Config(null, 1, false));
+    private final AtomicReference<Config> config = new AtomicReference<>(new Config(null, 1));
 
     public Group getRootGroup() {
         return config.getAcquire().nodeGraph;
@@ -96,7 +86,7 @@ public class Distribution {
             if (root == null)
                 throw new IllegalStateException("Config does not specify a root group");
             root.calculateDistributionHashValues();
-            Distribution.this.config.setRelease(new Config(root, config.redundancy(), config.distributor_auto_ownership_transfer_on_whole_group_down()));
+            Distribution.this.config.setRelease(new Config(root, config.redundancy()));
         } catch (ParseException e) {
             throw new IllegalStateException("Failed to parse config", e);
         }
@@ -139,7 +129,7 @@ public class Distribution {
             if (root == null)
                 throw new IllegalStateException("Config does not specify a root group");
             root.calculateDistributionHashValues();
-            Distribution.this.config.setRelease(new Config(root, config.redundancy(), true));
+            Distribution.this.config.setRelease(new Config(root, config.redundancy()));
         } catch (ParseException e) {
             throw new IllegalStateException("Failed to parse config", e);
         }
@@ -211,20 +201,10 @@ public class Distribution {
         }
     }
 
-    private static class ScoredNode {
-        final double score;
-        final int index;
-
-        ScoredNode(int index, double score) {
-            this.score = score;
-            this.index = index;
-        }
+    private record ScoredNode(int index, double score) {
 
         boolean valid() { return index != -1; }
-
-        static ScoredNode makeInvalid() {
-            return new ScoredNode(-1, 0.0);
-        }
+        static ScoredNode makeInvalid() { return new ScoredNode(-1, 0.0); }
     }
 
     private static boolean allDistributorsDown(Group g, ClusterState clusterState) {
@@ -241,8 +221,7 @@ public class Distribution {
         return true;
     }
 
-    private Group getIdealDistributorGroup(boolean distributorAutoOwnershipTransferOnWholeGroupDown,
-                                           BucketId bucket, ClusterState clusterState, Group parent, int redundancy) {
+    private Group getIdealDistributorGroup(BucketId bucket, ClusterState clusterState, Group parent, int redundancy) {
         if (parent.isLeafGroup()) {
             return parent;
         }
@@ -259,15 +238,13 @@ public class Distribution {
             }
             results.add(new ScoredGroup(g, score));
         }
-        if (distributorAutoOwnershipTransferOnWholeGroupDown) {
-            while (!results.isEmpty() && allDistributorsDown(results.first().group, clusterState)) {
-                results.remove(results.first());
-            }
+        while (!results.isEmpty() && allDistributorsDown(results.first().group, clusterState)) {
+            results.remove(results.first());
         }
         if (results.isEmpty()) {
             return null;
         }
-        return getIdealDistributorGroup(distributorAutoOwnershipTransferOnWholeGroupDown, bucket, clusterState, results.first().group, redundancyArray[0]);
+        return getIdealDistributorGroup(bucket, clusterState, results.first().group, redundancyArray[0]);
     }
 
     private static class ResultGroup implements Comparable<ResultGroup> {
@@ -434,7 +411,7 @@ public class Distribution {
         }
 
         Config cfg = config.getAcquire();
-        Group idealGroup = getIdealDistributorGroup(cfg.distributorAutoOwnershipTransferOnWholeGroupDown, bucket, state, cfg.nodeGraph, cfg.redundancy);
+        Group idealGroup = getIdealDistributorGroup(bucket, state, cfg.nodeGraph, cfg.redundancy);
         if (idealGroup == null) {
             throw new NoDistributorsAvailableException("No distributors available in cluster state version " + state.getVersion());
         }
