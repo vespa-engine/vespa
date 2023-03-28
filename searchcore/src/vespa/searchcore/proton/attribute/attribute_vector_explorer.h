@@ -2,13 +2,10 @@
 
 #pragma once
 
+#include "exclusive_attribute_read_accessor.h"
 #include <vespa/vespalib/net/http/state_explorer.h>
 
-namespace search { class AttributeVector; }
-
 namespace proton {
-
-class AttributeExecutor;
 
 /**
  * Class used to explore the state of an attribute vector.
@@ -16,11 +13,10 @@ class AttributeExecutor;
 class AttributeVectorExplorer : public vespalib::StateExplorer
 {
 private:
-    std::unique_ptr<const AttributeExecutor> _executor;
+    ExclusiveAttributeReadAccessor::UP _attribute;
 
-    void get_state_helper(const search::AttributeVector& attr, const vespalib::slime::Inserter &inserter, bool full) const;
 public:
-    AttributeVectorExplorer(std::unique_ptr<AttributeExecutor> executor);
+    AttributeVectorExplorer(ExclusiveAttributeReadAccessor::UP attribute);
 
     // Implements vespalib::StateExplorer
     void get_state(const vespalib::slime::Inserter &inserter, bool full) const override;

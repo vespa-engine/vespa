@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "exclusive_attribute_read_accessor.h"
 #include "i_attribute_factory.h"
 #include <vespa/searchcommon/attribute/i_attribute_functor.h>
 #include <vespa/searchcore/proton/common/i_transient_resource_usage_provider.h>
@@ -100,6 +101,8 @@ struct IAttributeManager : public search::IAttributeManager
 
     virtual void asyncForEachAttribute(std::shared_ptr<IConstAttributeFunctor> func) const = 0;
     virtual void asyncForEachAttribute(std::shared_ptr<IAttributeFunctor> func, OnDone onDone) const = 0;
+
+    virtual ExclusiveAttributeReadAccessor::UP getExclusiveReadAccessor(const vespalib::string &name) const = 0;
 
     virtual void setImportedAttributes(std::unique_ptr<ImportedAttributesRepo> attributes) = 0;
 
