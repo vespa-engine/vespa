@@ -663,13 +663,13 @@ public class QueryProfileTestCase {
                 "ne=true", Method.GET);
         for (int i = 0; i < 30000; i++) {
             Query q = new Query(httpRequest, cqp);
-            assertTrue(q.properties().getBoolean(CompoundName.of("clustering.timeline"), false));
+            assertTrue(q.properties().getBoolean(CompoundName.from("clustering.timeline"), false));
         }
         Thread.sleep(2000);
         long start = System.nanoTime();
         for (int i = 0; i < 100000; i++) {
             Query q = new Query(httpRequest, cqp);
-            assertTrue(q.properties().getBoolean(CompoundName.of("clustering.timeline"), false));
+            assertTrue(q.properties().getBoolean(CompoundName.from("clustering.timeline"), false));
         }
         long now = System.nanoTime();
         System.out.println("Duration = " + (now - start)/1_000_000 + " ms");

@@ -302,12 +302,7 @@ public final class CompoundName {
         return b.length()==0 ? "" : b.substring(0, b.length()-1);
     }
 
-    /** @deprecated Use of() instead */
-    @Deprecated
     public static CompoundName from(String name) {
-        return of(name);
-    }
-    public static CompoundName of(String name) {
         CompoundName found = cache.get(name);
         if (found != null) return found;
 

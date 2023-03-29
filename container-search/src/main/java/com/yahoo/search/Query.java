@@ -445,8 +445,8 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
 
             if (field.getType() == FieldType.genericQueryProfileType) { // Generic map
                 String fullName = append(prefix, field.getCompoundName().toString());
-                for (Map.Entry<String, Object> entry : originalProperties.listProperties(CompoundName.of(fullName), context).entrySet()) {
-                    properties().set(CompoundName.of(append(fullName, entry.getKey())), entry.getValue(), context);
+                for (Map.Entry<String, Object> entry : originalProperties.listProperties(CompoundName.from(fullName), context).entrySet()) {
+                    properties().set(CompoundName.from(append(fullName, entry.getKey())), entry.getValue(), context);
                 }
             }
             else if (field.getType() instanceof QueryProfileFieldType) { // Nested arguments
@@ -455,7 +455,7 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
             else {
                 CompoundName fullName = prefix.isEmpty()
                         ? field.getCompoundName()
-                        : CompoundName.of(append(prefix, field.getCompoundName().toString()));
+                        : CompoundName.from(append(prefix, field.getCompoundName().toString()));
                 Object value = originalProperties.get(fullName, context);
                 if (value != null) {
                     properties().set(fullName, value, context);
@@ -470,11 +470,11 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
         for (var entry : entrySet) {
             if (ignoreSelect && entry.getKey().equals(Select.SELECT)) continue;
             if (RankFeatures.isFeatureName(entry.getKey())) continue; // Set these last
-            properties.set(CompoundName.of(entry.getKey()), entry.getValue(), requestMap);
+            properties.set(CompoundName.from(entry.getKey()), entry.getValue(), requestMap);
         }
         for (var entry : entrySet) {
             if ( ! RankFeatures.isFeatureName(entry.getKey())) continue;
-            properties.set(CompoundName.of(entry.getKey()), entry.getValue(), requestMap);
+            properties.set(CompoundName.from(entry.getKey()), entry.getValue(), requestMap);
         }
     }
 
