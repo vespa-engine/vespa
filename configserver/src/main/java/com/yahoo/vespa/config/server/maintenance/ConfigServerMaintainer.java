@@ -46,9 +46,9 @@ public abstract class ConfigServerMaintainer extends Maintainer {
         }
 
         @Override
-        public void completed(String job, double successFactor, long durationMs) {
+        public void completed(String job, double successFactorDeviation, long durationMs) {
             var context = metric.createContext(Map.of("job", job));
-            metric.set("maintenance.successFactor", successFactor, context);
+            metric.set("maintenance.successFactorDeviation", successFactorDeviation, context);
             metric.set("maintenance.duration", durationMs, context);
         }
 
