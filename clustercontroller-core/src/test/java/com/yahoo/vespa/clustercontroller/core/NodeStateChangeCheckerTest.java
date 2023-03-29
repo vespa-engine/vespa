@@ -715,10 +715,9 @@ public class NodeStateChangeCheckerTest {
 
     private StorDistributionConfig createDistributionConfig(int nodes) {
         var configBuilder = new StorDistributionConfig.Builder()
-                .active_per_leaf_group(true)
-                .ready_copies(2)
-                .redundancy(2)
-                .initial_redundancy(2);
+                .ready_copies(requiredRedundancy)
+                .redundancy(requiredRedundancy)
+                .initial_redundancy(requiredRedundancy);
 
         var groupBuilder = new StorDistributionConfig.Group.Builder()
                                     .index("invalid")
