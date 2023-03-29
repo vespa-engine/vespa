@@ -31,7 +31,7 @@ public:
  * @fn int Optimized::msbIdx(uint32_t v)
  * @brief Quickly find most significant bit.
  *
- * Finds the postion of the most significant '1'.
+ * Finds the position of the most significant '1'.
  * @param v is the value to search
  * @return index [0-31] of msb, 0 if none.
  **/
@@ -40,7 +40,7 @@ public:
  * @fn int Optimized::msbIdx(uint64_t v)
  * @brief Quickly find most significant bit.
  *
- * Finds the postion of the most significant '1'.
+ * Finds the position of the most significant '1'.
  * @param v is the value to search
  * @return index [0-63] of msb, 0 if none.
  **/
@@ -49,7 +49,7 @@ public:
  * @fn int Optimized::lsbIdx(uint32_t v)
  * @brief Quickly find least significant bit.
  *
- * Finds the postion of the least significant '1'.
+ * Finds the position of the least significant '1'.
  * @param v is the value to search
  * @return index [0-31] of lsb, 0 if none.
  **/
@@ -58,7 +58,7 @@ public:
  * @fn int Optimized::lsbIdx(uint64_t v)
  * @brief Quickly find least significant bit.
  *
- * Finds the postion of the least significant '1'.
+ * Finds the position of the least significant '1'.
  * @param v is the value to search
  * @return index [0-63] of lsb, 0 if none.
  **/
