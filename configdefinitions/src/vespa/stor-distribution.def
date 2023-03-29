@@ -36,6 +36,7 @@ active_per_leaf_group bool default=false
 ## these cases they use many small groups to be able to scale. In such cases,
 ## where groups are small, having distributors able to take over when none are
 ## available in a group is useful.
+# TODO: Deprecated and unused, remove in Vespa 9
 distributor_auto_ownership_transfer_on_whole_group_down bool default=true
 
 ## Hierarchical grouping divides the nodes into a tree of groups. Due to config
