@@ -47,9 +47,9 @@ public class RetriggerMaintainer extends ControllerMaintainer {
             controller().curator().writeRetriggerEntries(remaining);
         } catch (Exception e) {
             logger.log(Level.WARNING, "Exception while triggering jobs", e);
-            return 0.0;
+            return 1.0;
         }
-        return 1.0;
+        return 0.0;
     }
 
     /** Returns true if a job is ready to run, i.e. is currently not running */

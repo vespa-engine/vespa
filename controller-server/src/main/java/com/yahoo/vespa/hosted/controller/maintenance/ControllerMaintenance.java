@@ -40,6 +40,7 @@ public class ControllerMaintenance extends AbstractComponent {
     @SuppressWarnings("unused") // instantiated by Dependency Injection
     public ControllerMaintenance(Controller controller, Metric metric, UserManagement userManagement, AthenzClientFactory athenzClientFactory) {
         Intervals intervals = new Intervals(controller.system());
+        SuccessFactorBaseline successFactorBaseline = new SuccessFactorBaseline(controller.system());
         upgrader = new Upgrader(controller, intervals.defaultInterval);
         osUpgradeScheduler = new OsUpgradeScheduler(controller, intervals.osUpgradeScheduler);
         maintainers.add(upgrader);
@@ -68,7 +69,7 @@ public class ControllerMaintenance extends AbstractComponent {
         maintainers.add(new HostInfoUpdater(controller, intervals.hostInfoUpdater));
         maintainers.add(new ReindexingTriggerer(controller, intervals.reindexingTriggerer));
         maintainers.add(new EndpointCertificateMaintainer(controller, intervals.endpointCertificateMaintainer));
-        maintainers.add(new BcpGroupUpdater(controller, intervals.trafficFractionUpdater));
+        maintainers.add(new BcpGroupUpdater(controller, intervals.trafficFractionUpdater, successFactorBaseline.trafficFractionUpdater));
         maintainers.add(new ArchiveUriUpdater(controller, intervals.archiveUriUpdater));
         maintainers.add(new ArchiveAccessMaintainer(controller, metric, intervals.archiveAccessMaintainer));
         maintainers.add(new TenantRoleMaintainer(controller, intervals.tenantRoleMaintainer));
@@ -189,4 +190,15 @@ public class ControllerMaintenance extends AbstractComponent {
 
     }
 
+    private static class SuccessFactorBaseline {
+
+        private final Double defaultSuccessFactorBaseline;
+        private final Double trafficFractionUpdater;
+
+        public SuccessFactorBaseline(SystemName system) {
+            Objects.requireNonNull(system);
+            this.defaultSuccessFactorBaseline = 1.0;
+            this.trafficFractionUpdater = system.isCd() ? 0.5 : 0.7;
+        }
+    }
 }

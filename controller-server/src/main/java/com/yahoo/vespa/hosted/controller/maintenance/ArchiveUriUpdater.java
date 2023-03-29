@@ -98,7 +98,7 @@ public class ArchiveUriUpdater extends ControllerMaintainer {
             }
         }
 
-        return asSuccessFactor(tenantsByZone.size(), failures);
+        return asSuccessFactorDeviation(tenantsByZone.size(), failures);
     }
 
 }

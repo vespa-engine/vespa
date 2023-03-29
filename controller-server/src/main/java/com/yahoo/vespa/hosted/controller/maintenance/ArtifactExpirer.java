@@ -56,10 +56,10 @@ public class ArtifactExpirer extends ControllerMaintainer {
                 log.log(Level.INFO, "Expiring " + artifactsToExpire.size() + " artifacts in " + cloudName + ": " + artifactsToExpire);
                 artifactRegistry.deleteAll(artifactsToExpire);
             }
-            return 1;
+            return 0;
         } catch (RuntimeException e) {
             log.log(Level.WARNING, "Failed to expire artifacts in " + cloudName + ". Will retry in " + interval(), e);
-            return 0;
+            return 1;
         }
     }
 

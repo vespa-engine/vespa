@@ -19,8 +19,8 @@ public class CloudDatabaseMaintainer extends ControllerMaintainer {
             controller().serviceRegistry().billingController().updateCache(tenants);
         } catch (Exception e) {
             log.warning("Could not update cloud database cache: " + Exceptions.toMessageString(e));
-            return 0.0;
+            return 1.0;
         }
-        return 1.0;
+        return 0.0;
     }
 }

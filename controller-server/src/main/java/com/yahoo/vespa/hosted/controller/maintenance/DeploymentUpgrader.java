@@ -78,7 +78,7 @@ public class DeploymentUpgrader extends ControllerMaintainer {
                                                ": " + Exceptions.toMessageString(e) + ". Retrying in " +
                                                interval());
                     }
-        return asSuccessFactor(attempts.get(), failures.get());
+        return asSuccessFactorDeviation(attempts.get(), failures.get());
     }
 
     /** Returns whether query and feed metrics are ~zero, or currently platform has been deployed for a week. */

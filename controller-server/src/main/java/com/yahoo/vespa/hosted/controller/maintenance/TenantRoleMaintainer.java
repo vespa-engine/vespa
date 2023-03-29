@@ -37,7 +37,7 @@ public class TenantRoleMaintainer extends ControllerMaintainer {
             controller().tenants().updateLastTenantRolesMaintained(t.name(), updated);
         });
 
-        return 1.0;
+        return 0.0;
     }
 
 

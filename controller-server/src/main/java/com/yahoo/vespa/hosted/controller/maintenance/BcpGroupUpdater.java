@@ -43,8 +43,8 @@ public class BcpGroupUpdater extends ControllerMaintainer {
     private final ApplicationController applications;
     private final NodeRepository nodeRepository;
 
-    public BcpGroupUpdater(Controller controller, Duration duration) {
-        super(controller, duration);
+    public BcpGroupUpdater(Controller controller, Duration duration, Double successFactorBaseline) {
+        super(controller, duration, successFactorBaseline);
         this.applications = controller.applications();
         this.nodeRepository = controller.serviceRegistry().configServer().nodeRepository();
     }
@@ -58,7 +58,7 @@ public class BcpGroupUpdater extends ControllerMaintainer {
         for (var application : applications.asList()) {
             for (var instance : application.instances().values()) {
                 for (var deployment : instance.productionDeployments().values()) {
-                    if (shuttingDown()) return 1.0;
+                    if (shuttingDown()) return 0.0;
                     try {
                         attempts++;
                         var bcpGroups = BcpGroup.groupsFrom(instance, application.deploymentSpec());
@@ -75,12 +75,12 @@ public class BcpGroupUpdater extends ControllerMaintainer {
                 }
             }
         }
-        double successFactor = asSuccessFactor(attempts, failures);
-        if ( successFactor == 0 )
+        double successFactorDeviation = asSuccessFactorDeviation(attempts, failures);
+        if ( successFactorDeviation == 1.0 )
             log.log(Level.WARNING, "Could not update traffic share on any applications", lastException);
-        else if ( successFactor < 0.9 )
+        else if ( successFactorDeviation > 0.1 )
             log.log(Level.FINE, "Could not update traffic share on all applications", lastException);
-        return successFactor;
+        return successFactorDeviation;
     }
 
     /** Adds deployment traffic share to the given patch. */

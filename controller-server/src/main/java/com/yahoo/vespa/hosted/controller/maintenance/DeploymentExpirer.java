@@ -5,8 +5,6 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.Instance;
-import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobId;
-import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.yolean.Exceptions;
 
@@ -47,7 +45,7 @@ public class DeploymentExpirer extends ControllerMaintainer {
                     }
                 }
         }
-        return asSuccessFactor(attempts, failures);
+        return asSuccessFactorDeviation(attempts, failures);
     }
 
     /** Returns whether given deployment has expired according to its TTL */

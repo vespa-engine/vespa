@@ -96,7 +96,7 @@ public class DeploymentMetricsMaintainer extends ControllerMaintainer {
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
-        return asSuccessFactor(attempts.get(), failures.get());
+        return asSuccessFactorDeviation(attempts.get(), failures.get());
     }
 
     static DeploymentMetrics updateDeploymentMetrics(DeploymentMetrics current, List<ClusterMetrics> metrics) {

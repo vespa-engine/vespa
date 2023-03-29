@@ -51,6 +51,6 @@ public class DiskReplacer extends NodeRepositoryMaintainer {
                 log.log(Level.WARNING, "Failed to rebuild " + host.hostname() + ", will retry in " + interval(), e);
             }
         }
-        return this.asSuccessFactor(nodes.size(), failures);
+        return this.asSuccessFactorDeviation(nodes.size(), failures);
     }
 }
