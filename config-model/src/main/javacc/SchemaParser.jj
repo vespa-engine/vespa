@@ -2611,6 +2611,7 @@ String identifier() : { }
       | <ENABLEONLYBITVECTOR>
       | <EXACT>
       | <EXACTTERMINATOR>
+      | <EXECUTIONMODE>
       | <FALSE>
       | <FASTACCESS>
       | <FASTRANK>
@@ -2659,6 +2660,7 @@ String identifier() : { }
       | <ON>
       | <ONDEMAND>
       | <ORDER>
+      | <PARALLEL>
       | <PREFIX>
       | <PRIMARY>
       | <PROPERTIES>
@@ -2679,6 +2681,7 @@ String identifier() : { }
       | <SEARCH>
       | <SECONDARY>
       | <SECONDPHASE>
+      | <SEQUENTIAL>
       | <SORTING>
       | <SOURCE>
       | <PAGED>
