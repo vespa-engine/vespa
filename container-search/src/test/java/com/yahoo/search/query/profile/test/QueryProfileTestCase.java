@@ -534,7 +534,7 @@ public class QueryProfileTestCase {
         p.set("a.b", "a.b-value", null);
 
         {
-            Map<String, ValueWithSource> values = p.compile(null).listValuesWithSources(new CompoundName(""), new HashMap<>(), null);
+            Map<String, ValueWithSource> values = p.compile(null).listValuesWithSources(CompoundName.empty, new HashMap<>(), null);
             assertEquals(2, values.size());
             assertEquals("a-value", values.get("a").value());
             assertEquals("test", values.get("a").source());
@@ -543,7 +543,7 @@ public class QueryProfileTestCase {
         }
 
         {
-            Map<String, ValueWithSource> values = p.compile(null).listValuesWithSources(new CompoundName("a"), new HashMap<>(), null);
+            Map<String, ValueWithSource> values = p.compile(null).listValuesWithSources(CompoundName.from("a"), new HashMap<>(), null);
             assertEquals(1, values.size());
             assertEquals("a.b-value", values.get("b").value());
             assertEquals("test", values.get("b").source());

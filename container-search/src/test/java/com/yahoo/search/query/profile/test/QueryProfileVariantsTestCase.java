@@ -5,7 +5,6 @@ import ai.vespa.cloud.ApplicationId;
 import ai.vespa.cloud.Environment;
 import ai.vespa.cloud.Zone;
 import ai.vespa.cloud.ZoneInfo;
-import com.yahoo.jdisc.application.Application;
 import com.yahoo.jdisc.http.HttpRequest.Method;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.processing.request.CompoundName;
@@ -28,7 +27,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author bratseth
@@ -133,7 +134,7 @@ public class QueryProfileVariantsTestCase {
         base.set("a.b", 1, new String[]{null, null, "d3-val"}, registry);
         QueryProfileVariant aVariants = base.getVariants().getVariants().get(0);
         assertEquals("[d1, d2, d3]",
-                ((QueryProfile) base.getVariants().getVariants().get(0).values().get("a")).getDimensions().toString(),
+                ((QueryProfile) aVariants.values().get("a")).getDimensions().toString(),
                 "Variant dimensions are not overridden by the referenced dimensions");
     }
 
@@ -184,7 +185,7 @@ public class QueryProfileVariantsTestCase {
 
         {
             Map<String, ValueWithSource> values = cRegistry.findQueryProfile("test")
-                    .listValuesWithSources(new CompoundName(""),
+                    .listValuesWithSources(CompoundName.empty,
                             new HashMap<>(),
                             null);
             assertEquals(1, values.size());
@@ -195,7 +196,7 @@ public class QueryProfileVariantsTestCase {
 
         {
             Map<String, ValueWithSource> values = cRegistry.findQueryProfile("test")
-                    .listValuesWithSources(new CompoundName(""),
+                    .listValuesWithSources(CompoundName.empty,
                             toMap("x=x1", "y=y1", "z=z1"),
                             null);
             assertEquals(2, values.size());
@@ -1456,7 +1457,7 @@ public class QueryProfileVariantsTestCase {
         return context;
     }
 
-    public static final Map<String, String> toMap(String... bindings) {
+    public static Map<String, String> toMap(String... bindings) {
         Map<String, String> context = new HashMap<>();
         for (String binding : bindings) {
             String[] entry = binding.split("=");

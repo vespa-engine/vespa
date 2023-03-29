@@ -57,8 +57,8 @@ public class QueryProfileGetMicroBenchmark {
 
     private void getValues(int count,Query query) {
         final int dotInterval=10000000;
-        CompoundName found = new CompoundName(propertyPrefix + "property1");
-        CompoundName notFound = new CompoundName(propertyPrefix + "nonExisting");
+        CompoundName found = CompoundName.from(propertyPrefix + "property1");
+        CompoundName notFound = CompoundName.from(propertyPrefix + "nonExisting");
         for (int i=0; i<count; i++) {
             if (count>dotInterval && i%(count/dotInterval)==0)
                 System.out.print(".");

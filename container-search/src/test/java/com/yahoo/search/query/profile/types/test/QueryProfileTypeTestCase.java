@@ -761,7 +761,7 @@ public class QueryProfileTypeTestCase {
     }
 
     private void assertNotPermitted(QueryProfile profile,String name,Object value) {
-        String localName = new CompoundName(name).last();
+        String localName = CompoundName.from(name).last();
         try {
             profile.set(name, value, registry);
             fail("Should fail setting " + name + " to " + value);

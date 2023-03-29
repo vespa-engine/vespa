@@ -76,10 +76,10 @@ import static com.fasterxml.jackson.databind.SerializationFeature.FLUSH_AFTER_WR
 // NOTE: The JSON format is a public API. If new elements are added be sure to update the reference doc.
 public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
 
-    private static final CompoundName WRAP_DEEP_MAPS = new CompoundName("renderer.json.jsonMaps");
-    private static final CompoundName WRAP_WSETS = new CompoundName("renderer.json.jsonWsets");
-    private static final CompoundName DEBUG_RENDERING_KEY = new CompoundName("renderer.json.debug");
-    private static final CompoundName JSON_CALLBACK = new CompoundName("jsoncallback");
+    private static final CompoundName WRAP_DEEP_MAPS = CompoundName.from("renderer.json.jsonMaps");
+    private static final CompoundName WRAP_WSETS = CompoundName.from("renderer.json.jsonWsets");
+    private static final CompoundName DEBUG_RENDERING_KEY = CompoundName.from("renderer.json.debug");
+    private static final CompoundName JSON_CALLBACK = CompoundName.from("jsoncallback");
 
     // if this must be optimized, simply use com.fasterxml.jackson.core.SerializableString
     private static final String BUCKET_LIMITS = "limits";

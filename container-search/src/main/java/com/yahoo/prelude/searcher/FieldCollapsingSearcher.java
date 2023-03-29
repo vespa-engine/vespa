@@ -25,10 +25,10 @@ import java.util.Map;
 @Before(PhaseNames.TRANSFORMED_QUERY)
 public class FieldCollapsingSearcher extends Searcher {
 
-    private static final CompoundName collapse = new CompoundName("collapse");
-    private static final CompoundName collapsefield = new CompoundName("collapsefield");
-    private static final CompoundName collapsesize = new CompoundName("collapsesize");
-    private static final CompoundName collapseSummaryName = new CompoundName("collapse.summary");
+    private static final CompoundName collapse = CompoundName.from("collapse");
+    private static final CompoundName collapsefield = CompoundName.from("collapsefield");
+    private static final CompoundName collapsesize = CompoundName.from("collapsesize");
+    private static final CompoundName collapseSummaryName = CompoundName.from("collapse.summary");
 
     /** Maximum number of queries to send next searcher */
     private static final int maxQueries = 4;

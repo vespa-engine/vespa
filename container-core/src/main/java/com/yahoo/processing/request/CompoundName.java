@@ -21,9 +21,12 @@ import static com.yahoo.text.Lowercase.toLowerCase;
  */
 public final class CompoundName {
 
-    /**
-     * The string name of this compound.
-     */
+    private static final int MAX_CACHE_SIZE = 10_000;
+    private static final Map<String, CompoundName> cache = new CopyOnWriteHashMap<>();
+    /** The empty compound */
+    public static final CompoundName empty = CompoundName.from("");
+
+    /* The string name of this compound. */
     private final String name;
     private final String lowerCasedName;
 
@@ -37,10 +40,6 @@ public final class CompoundName {
     /** This name with the last component removed */
     private final CompoundName first;
 
-    /** The empty compound */
-    public static final CompoundName empty = new CompoundName("");
-    private static final Map<String, CompoundName> cache = new CopyOnWriteHashMap<>();
-    private static final int MAX_CACHE_SIZE = 10_000;
     /**
      * Constructs this from a string which may contains dot-separated components
      *

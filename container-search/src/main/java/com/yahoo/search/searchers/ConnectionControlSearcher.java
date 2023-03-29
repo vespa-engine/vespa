@@ -49,7 +49,7 @@ public class ConnectionControlSearcher extends Searcher {
 
     private final LongSupplier clock;
 
-    private static final CompoundName KEEPALIVE_MAXLIFETIMESECONDS = new CompoundName("connectioncontrol.maxlifetime");
+    private static final CompoundName KEEPALIVE_MAXLIFETIMESECONDS = CompoundName.from("connectioncontrol.maxlifetime");
     private static final String HTTP_CONNECTION_HEADER_NAME = "Connection";
     private static final String HTTP_CONNECTION_CLOSE_ARGUMENT = "Close";
 

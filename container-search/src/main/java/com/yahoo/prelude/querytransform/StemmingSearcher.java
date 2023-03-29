@@ -9,11 +9,33 @@ import com.yahoo.language.Language;
 import com.yahoo.language.Linguistics;
 import com.yahoo.language.process.StemMode;
 import com.yahoo.language.process.StemList;
+
+import java.util.ArrayList;
+import java.util.IdentityHashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.ListIterator;
+import java.util.Map;
+import java.util.Set;
 import java.util.logging.Level;
 import com.yahoo.prelude.Index;
 import com.yahoo.prelude.IndexFacts;
-import com.yahoo.prelude.query.*;
+import com.yahoo.prelude.query.AndItem;
+import com.yahoo.prelude.query.AndSegmentItem;
+import com.yahoo.prelude.query.BlockItem;
+import com.yahoo.prelude.query.CompositeItem;
+import com.yahoo.prelude.query.Highlight;
+import com.yahoo.prelude.query.Item;
+import com.yahoo.prelude.query.PhraseItem;
+import com.yahoo.prelude.query.PhraseSegmentItem;
+import com.yahoo.prelude.query.PrefixItem;
+import com.yahoo.prelude.query.SegmentingRule;
+import com.yahoo.prelude.query.Substring;
+import com.yahoo.prelude.query.TaggableItem;
+import com.yahoo.prelude.query.TermItem;
+import com.yahoo.prelude.query.WordAlternativesItem;
 import com.yahoo.prelude.query.WordAlternativesItem.Alternative;
+import com.yahoo.prelude.query.WordItem;
 import com.yahoo.processing.request.CompoundName;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
@@ -21,7 +43,6 @@ import com.yahoo.search.Searcher;
 import com.yahoo.search.searchchain.Execution;
 import com.yahoo.search.searchchain.PhaseNames;
 
-import java.util.*;
 
 import static com.yahoo.prelude.querytransform.CJKSearcher.TERM_ORDER_RELAXATION;
 
@@ -46,7 +67,7 @@ public class StemmingSearcher extends Searcher {
     }
 
     public static final String STEMMING = "Stemming";
-    public static final CompoundName DISABLE = new CompoundName("nostemming");
+    public static final CompoundName DISABLE = CompoundName.from("nostemming");
     private final Linguistics linguistics;
 
     public StemmingSearcher(Linguistics linguistics) {
@@ -107,15 +128,13 @@ public class StemmingSearcher extends Searcher {
     }
 
     private Map<Item, TaggableItem> populateReverseConnectivityMap(Item root, Map<Item, TaggableItem> reverseConnectivity) {
-        if (root instanceof TaggableItem) {
-            TaggableItem asTaggable = (TaggableItem) root;
+        if (root instanceof TaggableItem asTaggable) {
             Item connectsTo = asTaggable.getConnectedItem();
             if (connectsTo != null) {
                 reverseConnectivity.put(connectsTo, asTaggable);
             }
         }
-        if (root instanceof CompositeItem && !(root instanceof BlockItem)) {
-            CompositeItem c = (CompositeItem) root;
+        if (root instanceof CompositeItem c && !(root instanceof BlockItem)) {
             for (Iterator<Item> i = c.getItemIterator(); i.hasNext();) {
                 Item item = i.next();
                 populateReverseConnectivityMap(item, reverseConnectivity);
@@ -134,8 +153,7 @@ public class StemmingSearcher extends Searcher {
         }
         if (item instanceof BlockItem) {
             item = checkBlock((BlockItem) item, context);
-        } else if (item instanceof CompositeItem) {
-            CompositeItem comp = (CompositeItem) item;
+        } else if (item instanceof CompositeItem comp) {
             ListIterator<Item> i = comp.getItemIterator();
 
             while (i.hasNext()) {
@@ -220,8 +238,7 @@ public class StemmingSearcher extends Searcher {
         copyAttributes(blockAsItem, composite);
         composite.lock();
 
-        if (composite instanceof PhraseSegmentItem) {
-            PhraseSegmentItem replacement = (PhraseSegmentItem) composite;
+        if (composite instanceof PhraseSegmentItem replacement) {
             setSignificance(replacement, current);
             phraseSegmentConnectivity(current, context.reverseConnectivity, replacement);
         }
@@ -258,10 +275,9 @@ public class StemmingSearcher extends Searcher {
     }
 
     private Connectivity getConnectivity(BlockItem current) {
-        if (!(current instanceof TaggableItem)) {
+        if (!(current instanceof TaggableItem t)) {
             return null;
         }
-        TaggableItem t = (TaggableItem) current;
         if (t.getConnectedItem() == null) {
             return null;
         }
@@ -294,7 +310,7 @@ public class StemmingSearcher extends Searcher {
                                            Substring substring,
                                            boolean insidePhrase) {
         String indexName = current.getIndexName();
-        if (insidePhrase == false && ((index.getLiteralBoost() || index.getStemMode() == StemMode.ALL))) {
+        if (!insidePhrase && ((index.getLiteralBoost() || index.getStemMode() == StemMode.ALL))) {
             List<Alternative> terms = new ArrayList<>(segment.size() + 1);
             terms.add(new Alternative(current.stringValue(), 1.0d));
             for (String term : segment) {
@@ -305,8 +321,7 @@ public class StemmingSearcher extends Searcher {
                 return alternatives;
             }
         }
-        WordItem first = singleStemSegment((Item) current, segment.get(0), indexName, substring);
-        return first;
+        return singleStemSegment((Item) current, segment.get(0), indexName, substring);
     }
 
     private void setMetaData(BlockItem current, Map<Item, TaggableItem> reverseConnectivity, TaggableItem replacement) {
@@ -353,14 +368,13 @@ public class StemmingSearcher extends Searcher {
         if (current.getSegmentingRule() == SegmentingRule.LANGUAGE_DEFAULT)
             return chooseComposite(current, parent, indexName);
 
-        switch (current.getSegmentingRule()) { // TODO: Why for CJK only? The segmentingRule says nothing about being for CJK only
-            case PHRASE: return createPhraseSegment(current, indexName);
-            case BOOLEAN_AND: return createAndSegment(current);
-            default:
-                throw new IllegalArgumentException("Unknown segmenting rule: " + current.getSegmentingRule() +
-                                                   ". This is a bug in Vespa, as the implementation has gotten out of sync." +
-                                                   " Please create an issue.");
-        }
+        return switch (current.getSegmentingRule()) { // TODO: Why for CJK only? The segmentingRule says nothing about being for CJK only
+            case PHRASE -> createPhraseSegment(current, indexName);
+            case BOOLEAN_AND -> createAndSegment(current);
+            default -> throw new IllegalArgumentException("Unknown segmenting rule: " + current.getSegmentingRule() +
+                    ". This is a bug in Vespa, as the implementation has gotten out of sync." +
+                    " Please create an issue.");
+        };
     }
 
     private AndSegmentItem createAndSegment(BlockItem current) {
