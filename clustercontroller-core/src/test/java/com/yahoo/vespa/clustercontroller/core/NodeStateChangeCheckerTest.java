@@ -3,7 +3,6 @@ package com.yahoo.vespa.clustercontroller.core;
 
 import com.yahoo.vdslib.distribution.ConfiguredNode;
 import com.yahoo.vdslib.distribution.Distribution;
-import com.yahoo.vdslib.distribution.GroupVisitor;
 import com.yahoo.vdslib.state.ClusterState;
 import com.yahoo.vdslib.state.Node;
 import com.yahoo.vdslib.state.NodeState;
@@ -41,11 +40,6 @@ public class NodeStateChangeCheckerTest {
     private static final NodeState MAINTENANCE_NODE_STATE = createNodeState(State.MAINTENANCE, "Orchestrator");
     private static final NodeState DOWN_NODE_STATE = createNodeState(DOWN, "RetireEarlyExpirer");
 
-    private static final HierarchicalGroupVisiting noopVisiting = new HierarchicalGroupVisiting() {
-        @Override public boolean isHierarchical() { return false; }
-        @Override public void visit(GroupVisitor visitor) { }
-    };
-
     private static NodeState createNodeState(State state, String description) {
         return new NodeState(STORAGE, state).setDescription(description);
     }
@@ -63,7 +57,7 @@ public class NodeStateChangeCheckerTest {
     }
 
     private NodeStateChangeChecker createChangeChecker(ContentCluster cluster) {
-        return new NodeStateChangeChecker(requiredRedundancy, noopVisiting, cluster.clusterInfo(),
+        return new NodeStateChangeChecker(cluster.getDistribution(), cluster.clusterInfo(),
                                           false, cluster.maxNumberOfGroupsAllowedToBeDown());
     }
 
@@ -127,7 +121,7 @@ public class NodeStateChangeCheckerTest {
     void testDeniedInMoratorium() {
         ContentCluster cluster = createCluster(4);
         var nodeStateChangeChecker = new NodeStateChangeChecker(
-                requiredRedundancy, noopVisiting, cluster.clusterInfo(), true, cluster.maxNumberOfGroupsAllowedToBeDown());
+                cluster.getDistribution(), cluster.clusterInfo(), true, cluster.maxNumberOfGroupsAllowedToBeDown());
         Result result = nodeStateChangeChecker.evaluateTransition(
                 new Node(STORAGE, 10), defaultAllUpClusterState(), SAFE,
                 UP_NODE_STATE, MAINTENANCE_NODE_STATE);
@@ -169,7 +163,7 @@ public class NodeStateChangeCheckerTest {
 
     @Test
     void testSafeMaintenanceDisallowedWhenOtherDistributorInFlatClusterIsSuspended() {
-        // Nodes 0-3, storage node 0 being in maintenance with "Orchestrator" description.
+        // Nodes 0-3, distributor 0 being in maintenance with "Orchestrator" description.
         ContentCluster cluster = createCluster(4);
         cluster.clusterInfo().getDistributorNodeInfo(0)
                 .setWantedState(new NodeState(DISTRIBUTOR, DOWN).setDescription("Orchestrator"));
@@ -194,10 +188,8 @@ public class NodeStateChangeCheckerTest {
         ContentCluster cluster = createCluster(4, 2);
         cluster.clusterInfo().getDistributorNodeInfo(0)
                 .setWantedState(new NodeState(STORAGE, DOWN).setDescription("Orchestrator"));
-        HierarchicalGroupVisiting visiting = new HierarchicalGroupVisitingAdapter(cluster.getDistribution());
-
         var nodeStateChangeChecker = new NodeStateChangeChecker(
-                requiredRedundancy, visiting, cluster.clusterInfo(), false, cluster.maxNumberOfGroupsAllowedToBeDown());
+                cluster.getDistribution(), cluster.clusterInfo(), false, cluster.maxNumberOfGroupsAllowedToBeDown());
         ClusterState clusterStateWith0InMaintenance = clusterState(String.format(
                 "version:%d distributor:4 .0.s:d storage:4",
                 currentClusterStateVersion));
@@ -229,9 +221,8 @@ public class NodeStateChangeCheckerTest {
         // 2 groups: nodes 0-1 is group 0, 2-3 is group 1.
         ContentCluster cluster = createCluster(4, 2);
         cluster.clusterInfo().getStorageNodeInfo(0).setWantedState(new NodeState(STORAGE, State.MAINTENANCE).setDescription("Orchestrator"));
-        HierarchicalGroupVisiting visiting = new HierarchicalGroupVisitingAdapter(cluster.getDistribution());
         var nodeStateChangeChecker = new NodeStateChangeChecker(
-                requiredRedundancy, visiting, cluster.clusterInfo(), false, cluster.maxNumberOfGroupsAllowedToBeDown());
+                cluster.getDistribution(), cluster.clusterInfo(), false, cluster.maxNumberOfGroupsAllowedToBeDown());
         ClusterState clusterStateWith0InMaintenance = clusterState(String.format(
                 "version:%d distributor:4 storage:4 .0.s:m",
                 currentClusterStateVersion));

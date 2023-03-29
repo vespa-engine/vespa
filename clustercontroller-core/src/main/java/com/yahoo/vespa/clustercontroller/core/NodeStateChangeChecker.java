@@ -4,6 +4,7 @@ package com.yahoo.vespa.clustercontroller.core;
 import com.yahoo.lang.MutableBoolean;
 import com.yahoo.lang.SettableOptional;
 import com.yahoo.vdslib.distribution.ConfiguredNode;
+import com.yahoo.vdslib.distribution.Distribution;
 import com.yahoo.vdslib.distribution.Group;
 import com.yahoo.vdslib.state.ClusterState;
 import com.yahoo.vdslib.state.Node;
@@ -44,13 +45,12 @@ public class NodeStateChangeChecker {
     private final boolean inMoratorium;
 
     public NodeStateChangeChecker(
-            int requiredRedundancy,
-            HierarchicalGroupVisiting groupVisiting,
+            Distribution distribution,
             ClusterInfo clusterInfo,
             boolean inMoratorium,
             int maxNumberOfGroupsAllowedToBeDown) {
-        this.requiredRedundancy = requiredRedundancy;
-        this.groupVisiting = groupVisiting;
+        this.requiredRedundancy = distribution.getRedundancy();
+        this.groupVisiting = new HierarchicalGroupVisitingAdapter(distribution);
         this.clusterInfo = clusterInfo;
         this.inMoratorium = inMoratorium;
     }
@@ -392,8 +392,7 @@ public class NodeStateChangeChecker {
         return allowSettingOfWantedState();
     }
 
-    private Result checkStorageNodesForDistributor(
-            DistributorNodeInfo distributorNodeInfo, List<StorageNode> storageNodes, Node node) {
+    private Result checkStorageNodesForDistributor(DistributorNodeInfo distributorNodeInfo, List<StorageNode> storageNodes, Node node) {
         for (StorageNode storageNode : storageNodes) {
             if (storageNode.getIndex() == node.getIndex()) {
                 Integer minReplication = storageNode.getMinCurrentReplicationFactorOrNull();
