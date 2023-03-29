@@ -43,4 +43,7 @@ public interface ZoneApi {
     /** Returns the region name within the cloud, e.g. 'us-east-1' in AWS */
     String getCloudNativeRegionName();
 
+    /** Returns the availability zone within the cloud, e.g. 'use1-az2' in AWS */
+    default String getCloudNativeAvailabilityZone() { throw new UnsupportedOperationException(); }
+
 }
