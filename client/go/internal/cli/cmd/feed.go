@@ -13,6 +13,7 @@ import (
 )
 
 func addFeedFlags(cmd *cobra.Command, concurrency *int) {
+	// TOOD(mpolden): Remove this flag
 	cmd.PersistentFlags().IntVarP(concurrency, "concurrency", "T", 64, "Number of goroutines to use for dispatching")
 }
 
@@ -58,7 +59,10 @@ func feed(r io.Reader, cli *CLI, concurrency int) error {
 	client := document.NewClient(document.ClientOptions{
 		BaseURL: service.BaseURL,
 	}, service)
-	dispatcher := document.NewDispatcher(client, concurrency)
+	throttler := document.NewThrottler()
+	// TODO(mpolden): Make doom duration configurable
+	circuitBreaker := document.NewCircuitBreaker(10*time.Second, 0)
+	dispatcher := document.NewDispatcher(client, throttler, circuitBreaker)
 	dec := document.NewDecoder(r)
 
 	start := cli.now()
@@ -78,7 +82,7 @@ func feed(r io.Reader, cli *CLI, concurrency int) error {
 		return err
 	}
 	elapsed := cli.now().Sub(start)
-	return writeSummaryJSON(cli.Stdout, client.Stats(), elapsed)
+	return writeSummaryJSON(cli.Stdout, dispatcher.Stats(), elapsed)
 }
 
 type number float32
