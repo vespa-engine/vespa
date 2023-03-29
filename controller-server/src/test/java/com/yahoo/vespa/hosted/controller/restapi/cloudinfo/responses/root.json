@@ -1,0 +1,7 @@
+{
+  "resources": [
+    {
+      "url": "http://localhost:8080/cloudinfo/v1/zones/"
+    }
+  ]
+}

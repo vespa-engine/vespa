@@ -32,6 +32,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -296,6 +297,14 @@ public class ZoneRegistryMock extends AbstractComponent implements ZoneRegistry 
     @Override
     public Optional<RegionName> getDefaultRegion(Environment environment) {
         return Optional.ofNullable(defaultRegionForEnvironment.get(environment));
+    }
+
+    @Override
+    public ZoneApi get(ZoneId zoneId) {
+        return zones.stream()
+                .filter(zone -> zone.getId().equals(zoneId))
+                .findFirst()
+                .orElseThrow(() -> new NoSuchElementException("No zone with id '" + zoneId + "'"));
     }
 
     @Override
