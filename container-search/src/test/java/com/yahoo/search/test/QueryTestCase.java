@@ -327,6 +327,14 @@ public class QueryTestCase {
     }
 
     @Test
+    void testBooleanParameterNoQueryProfile() {
+        QueryProfile profile = new QueryProfile("myProfile");
+        Query query = new Query("/?query=something&ranking.softtimeout.enable=false");
+        assertFalse(query.properties().getBoolean("ranking.softtimeout.enable"));
+        assertFalse(query.getRanking().getSoftTimeout().getEnable());
+    }
+
+    @Test
     void testQueryProfileSubstitution2() {
         QueryProfile profile = new QueryProfile("myProfile");
         profile.set("model.language", "en-US", null);

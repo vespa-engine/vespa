@@ -426,28 +426,36 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
      * dependent objects for the appropriate subset of the given property values
      */
     private void setFieldsFrom(Properties properties, Map<String, String> context) {
-        setFrom(CompoundName.empty, properties, Query.getArgumentType(), context);
+        setFrom("", properties, Query.getArgumentType(), context);
+    }
+
+    private static String append(String a, String b) {
+        if (a.isEmpty()) return b;
+        if (b.isEmpty()) return a;
+        return a + "." + b;
     }
 
     /**
      * For each field in the given query profile type, take the corresponding value from originalProperties
      * (if any) set it to properties(), recursively.
      */
-    private void setFrom(CompoundName prefix, Properties originalProperties, QueryProfileType arguments, Map<String, String> context) {
-        prefix = prefix.append(getPrefix(arguments));
+    private void setFrom(String prefix, Properties originalProperties, QueryProfileType arguments, Map<String, String> context) {
+        prefix = append(prefix, getPrefix(arguments).toString());
         for (FieldDescription field : arguments.fields().values()) {
 
             if (field.getType() == FieldType.genericQueryProfileType) { // Generic map
-                CompoundName fullName = prefix.append(field.getCompoundName());
-                for (Map.Entry<String, Object> entry : originalProperties.listProperties(fullName, context).entrySet()) {
-                    properties().set(fullName.append(entry.getKey()), entry.getValue(), context);
+                String fullName = append(prefix, field.getCompoundName().toString());
+                for (Map.Entry<String, Object> entry : originalProperties.listProperties(CompoundName.from(fullName), context).entrySet()) {
+                    properties().set(CompoundName.from(append(fullName, entry.getKey())), entry.getValue(), context);
                 }
             }
             else if (field.getType() instanceof QueryProfileFieldType) { // Nested arguments
                 setFrom(prefix, originalProperties, ((QueryProfileFieldType)field.getType()).getQueryProfileType(), context);
             }
             else {
-                CompoundName fullName = prefix.append(field.getCompoundName());
+                CompoundName fullName = prefix.isEmpty()
+                        ? field.getCompoundName()
+                        : CompoundName.from(append(prefix, field.getCompoundName().toString()));
                 Object value = originalProperties.get(fullName, context);
                 if (value != null) {
                     properties().set(fullName, value, context);
@@ -458,14 +466,15 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
 
     /** Calls properties.set on all entries in requestMap */
     private void setPropertiesFromRequestMap(Map<String, String> requestMap, Properties properties, boolean ignoreSelect) {
-        for (var entry : requestMap.entrySet()) {
+        var entrySet = requestMap.entrySet();
+        for (var entry : entrySet) {
             if (ignoreSelect && entry.getKey().equals(Select.SELECT)) continue;
             if (RankFeatures.isFeatureName(entry.getKey())) continue; // Set these last
-            properties.set(entry.getKey(), entry.getValue(), requestMap);
+            properties.set(CompoundName.from(entry.getKey()), entry.getValue(), requestMap);
         }
-        for (var entry : requestMap.entrySet()) {
+        for (var entry : entrySet) {
             if ( ! RankFeatures.isFeatureName(entry.getKey())) continue;
-            properties.set(entry.getKey(), entry.getValue(), requestMap);
+            properties.set(CompoundName.from(entry.getKey()), entry.getValue(), requestMap);
         }
     }
 
