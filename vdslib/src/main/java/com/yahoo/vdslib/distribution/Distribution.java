@@ -26,15 +26,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 public class Distribution {
 
-    private static class Config {
-        Config(Group nodeGraph, int redundancy) {
-            this.nodeGraph = nodeGraph;
-            this.redundancy = redundancy;
-        }
-
-        private final Group nodeGraph;
-        private final int redundancy;
-    }
+    private record Config(Group nodeGraph, int redundancy) { }
 
     private ConfigSubscriber configSub;
     private final AtomicReference<Config> config = new AtomicReference<>(new Config(null, 1));
