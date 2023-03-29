@@ -161,7 +161,7 @@ public class NodeStateChangeCheckerTest {
 
     @Test
     void testSafeMaintenanceDisallowedWhenOtherDistributorInFlatClusterIsSuspended() {
-        // Nodes 0-3, distributor 0 being in maintenance with "Orchestrator" description.
+        // Nodes 0-3, distributor 0 being down with "Orchestrator" description.
         ContentCluster cluster = createCluster(4);
         cluster.clusterInfo().getDistributorNodeInfo(0)
                 .setWantedState(new NodeState(DISTRIBUTOR, DOWN).setDescription("Orchestrator"));
@@ -731,9 +731,9 @@ public class NodeStateChangeCheckerTest {
 
         var configBuilder = new StorDistributionConfig.Builder()
                 .active_per_leaf_group(true)
-                .ready_copies(2)
-                .redundancy(2)
-                .initial_redundancy(2);
+                .ready_copies(groups)
+                .redundancy(groups)
+                .initial_redundancy(groups);
 
         configBuilder.group(new StorDistributionConfig.Group.Builder()
                                     .index("invalid")
@@ -741,14 +741,13 @@ public class NodeStateChangeCheckerTest {
                                     .capacity(nodes)
                                     .partitions("1|*"));
 
-        int nodeIndex = 0;
         for (int i = 0; i < groups; ++i) {
             var groupBuilder = new StorDistributionConfig.Group.Builder()
                     .index(String.valueOf(i))
                     .name(String.valueOf(i))
                     .capacity(nodesPerGroup)
                     .partitions("");
-            for (int j = 0; j < nodesPerGroup; ++j, ++nodeIndex) {
+            for (int nodeIndex = 0; nodeIndex < nodesPerGroup; ++nodeIndex) {
                 groupBuilder.nodes(new StorDistributionConfig.Group.Nodes.Builder()
                                            .index(nodeIndex));
             }
