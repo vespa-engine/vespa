@@ -3,7 +3,6 @@ package com.yahoo.vespa.clustercontroller.core;
 
 import com.yahoo.vdslib.distribution.ConfiguredNode;
 import com.yahoo.vdslib.distribution.Distribution;
-import com.yahoo.vdslib.distribution.Group;
 import com.yahoo.vdslib.distribution.GroupVisitor;
 import com.yahoo.vdslib.state.ClusterState;
 import com.yahoo.vdslib.state.Node;
@@ -22,16 +21,13 @@ import static com.yahoo.vdslib.state.NodeType.STORAGE;
 import static com.yahoo.vdslib.state.State.DOWN;
 import static com.yahoo.vdslib.state.State.INITIALIZING;
 import static com.yahoo.vdslib.state.State.UP;
+import static com.yahoo.vespa.clustercontroller.core.NodeStateChangeChecker.Result;
 import static com.yahoo.vespa.clustercontroller.utils.staterestapi.requests.SetUnitStateRequest.Condition.FORCE;
 import static com.yahoo.vespa.clustercontroller.utils.staterestapi.requests.SetUnitStateRequest.Condition.SAFE;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-
-import static com.yahoo.vespa.clustercontroller.core.NodeStateChangeChecker.Result;
 
 public class NodeStateChangeCheckerTest {
 
@@ -72,10 +68,12 @@ public class NodeStateChangeCheckerTest {
     }
 
     private ContentCluster createCluster(int nodeCount) {
+        return createCluster(nodeCount, 1);
+    }
+
+    private ContentCluster createCluster(int nodeCount, int groupCount) {
         Collection<ConfiguredNode> nodes = createNodes(nodeCount);
-        Distribution distribution = mock(Distribution.class);
-        Group group = new Group(2, "two");
-        when(distribution.getRootGroup()).thenReturn(group);
+        Distribution distribution = new Distribution(createDistributionConfig(nodeCount, groupCount));
         return new ContentCluster("Clustername", nodes, distribution);
     }
 
@@ -193,10 +191,11 @@ public class NodeStateChangeCheckerTest {
     void testSafeMaintenanceDisallowedWhenDistributorInGroupIsDown() {
         // Nodes 0-3, distributor 0 being in maintenance with "Orchestrator" description.
         // 2 groups: nodes 0-1 is group 0, 2-3 is group 1.
-        ContentCluster cluster = createCluster(4);
+        ContentCluster cluster = createCluster(4, 2);
         cluster.clusterInfo().getDistributorNodeInfo(0)
                 .setWantedState(new NodeState(STORAGE, DOWN).setDescription("Orchestrator"));
-        HierarchicalGroupVisiting visiting = makeHierarchicalGroupVisitingWith2Groups(4);
+        HierarchicalGroupVisiting visiting = new HierarchicalGroupVisitingAdapter(cluster.getDistribution());
+
         var nodeStateChangeChecker = new NodeStateChangeChecker(
                 requiredRedundancy, visiting, cluster.clusterInfo(), false, cluster.maxNumberOfGroupsAllowedToBeDown());
         ClusterState clusterStateWith0InMaintenance = clusterState(String.format(
@@ -228,9 +227,9 @@ public class NodeStateChangeCheckerTest {
     void testSafeMaintenanceWhenOtherStorageNodeInGroupIsSuspended() {
         // Nodes 0-3, storage node 0 being in maintenance with "Orchestrator" description.
         // 2 groups: nodes 0-1 is group 0, 2-3 is group 1.
-        ContentCluster cluster = createCluster(4);
+        ContentCluster cluster = createCluster(4, 2);
         cluster.clusterInfo().getStorageNodeInfo(0).setWantedState(new NodeState(STORAGE, State.MAINTENANCE).setDescription("Orchestrator"));
-        HierarchicalGroupVisiting visiting = makeHierarchicalGroupVisitingWith2Groups(4);
+        HierarchicalGroupVisiting visiting = new HierarchicalGroupVisitingAdapter(cluster.getDistribution());
         var nodeStateChangeChecker = new NodeStateChangeChecker(
                 requiredRedundancy, visiting, cluster.clusterInfo(), false, cluster.maxNumberOfGroupsAllowedToBeDown());
         ClusterState clusterStateWith0InMaintenance = clusterState(String.format(
@@ -257,46 +256,6 @@ public class NodeStateChangeCheckerTest {
             assertTrue(result.settingWantedStateIsAllowed(), result.getReason());
             assertFalse(result.wantedStateAlreadySet());
         }
-    }
-
-    /**
-     * Make a HierarchicalGroupVisiting with the given number of nodes, with 2 groups:
-     * Group "0" is nodes 0-1, group "1" is 2-3.
-     */
-    private HierarchicalGroupVisiting makeHierarchicalGroupVisitingWith2Groups(int nodes) {
-        int groups = 2;
-        if (nodes % groups != 0) {
-            throw new IllegalArgumentException("Cannot have 2 groups with an odd number of nodes: " + nodes);
-        }
-        int nodesPerGroup = nodes / groups;
-
-        var configBuilder = new StorDistributionConfig.Builder()
-                .active_per_leaf_group(true)
-                .ready_copies(2)
-                .redundancy(2)
-                .initial_redundancy(2);
-
-        configBuilder.group(new StorDistributionConfig.Group.Builder()
-                .index("invalid")
-                .name("invalid")
-                .capacity(nodes)
-                .partitions("1|*"));
-
-        int nodeIndex = 0;
-        for (int i = 0; i < groups; ++i) {
-            var groupBuilder = new StorDistributionConfig.Group.Builder()
-                    .index(String.valueOf(i))
-                    .name(String.valueOf(i))
-                    .capacity(nodesPerGroup)
-                    .partitions("");
-            for (int j = 0; j < nodesPerGroup; ++j, ++nodeIndex) {
-                groupBuilder.nodes(new StorDistributionConfig.Group.Nodes.Builder()
-                        .index(nodeIndex));
-            }
-            configBuilder.group(groupBuilder);
-        }
-
-        return new HierarchicalGroupVisitingAdapter(new Distribution(configBuilder.build()));
     }
 
     @Test
@@ -753,4 +712,43 @@ public class NodeStateChangeCheckerTest {
             nodes.add(new ConfiguredNode(i, false));
         return nodes;
     }
+
+    private StorDistributionConfig createDistributionConfig(int nodes) {
+        return createDistributionConfig(nodes, 1);
+    }
+
+    private StorDistributionConfig createDistributionConfig(int nodes, int groups) {
+        if (nodes % groups != 0) {
+            throw new IllegalArgumentException("Cannot have " + groups + " groups with an odd number of nodes: " + nodes);
+        }
+        int nodesPerGroup = nodes / groups;
+
+        var configBuilder = new StorDistributionConfig.Builder()
+                .active_per_leaf_group(true)
+                .ready_copies(2)
+                .redundancy(2)
+                .initial_redundancy(2);
+
+        configBuilder.group(new StorDistributionConfig.Group.Builder()
+                                    .index("invalid")
+                                    .name("invalid")
+                                    .capacity(nodes)
+                                    .partitions("1|*"));
+
+        int nodeIndex = 0;
+        for (int i = 0; i < groups; ++i) {
+            var groupBuilder = new StorDistributionConfig.Group.Builder()
+                    .index(String.valueOf(i))
+                    .name(String.valueOf(i))
+                    .capacity(nodesPerGroup)
+                    .partitions("");
+            for (int j = 0; j < nodesPerGroup; ++j, ++nodeIndex) {
+                groupBuilder.nodes(new StorDistributionConfig.Group.Nodes.Builder()
+                                           .index(nodeIndex));
+            }
+            configBuilder.group(groupBuilder);
+        }
+        return configBuilder.build();
+    }
+
 }
