@@ -638,16 +638,6 @@ AttributeManager::asyncForAttribute(const vespalib::string &name, std::unique_pt
                                   [attr=std::move(attrsp), func=std::move(func)]() { (*func)(*attr); });
 }
 
-ExclusiveAttributeReadAccessor::UP
-AttributeManager::getExclusiveReadAccessor(const vespalib::string &name) const
-{
-    AttributeVector::SP attribute = findAttribute(name);
-    if (attribute) {
-        return std::make_unique<ExclusiveAttributeReadAccessor>(attribute, _attributeFieldWriter);
-    }
-    return {};
-}
-
 void
 AttributeManager::setImportedAttributes(std::unique_ptr<ImportedAttributesRepo> attributes)
 {
