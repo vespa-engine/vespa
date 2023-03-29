@@ -57,8 +57,7 @@ public class NodeStateChangeCheckerTest {
     }
 
     private NodeStateChangeChecker createChangeChecker(ContentCluster cluster) {
-        return new NodeStateChangeChecker(cluster.getDistribution(), cluster.clusterInfo(),
-                                          false, cluster.maxNumberOfGroupsAllowedToBeDown());
+        return new NodeStateChangeChecker(cluster, false);
     }
 
     private ContentCluster createCluster(int nodeCount) {
@@ -120,8 +119,7 @@ public class NodeStateChangeCheckerTest {
     @Test
     void testDeniedInMoratorium() {
         ContentCluster cluster = createCluster(4);
-        var nodeStateChangeChecker = new NodeStateChangeChecker(
-                cluster.getDistribution(), cluster.clusterInfo(), true, cluster.maxNumberOfGroupsAllowedToBeDown());
+        var nodeStateChangeChecker = new NodeStateChangeChecker(cluster, true);
         Result result = nodeStateChangeChecker.evaluateTransition(
                 new Node(STORAGE, 10), defaultAllUpClusterState(), SAFE,
                 UP_NODE_STATE, MAINTENANCE_NODE_STATE);
@@ -188,8 +186,7 @@ public class NodeStateChangeCheckerTest {
         ContentCluster cluster = createCluster(4, 2);
         cluster.clusterInfo().getDistributorNodeInfo(0)
                 .setWantedState(new NodeState(STORAGE, DOWN).setDescription("Orchestrator"));
-        var nodeStateChangeChecker = new NodeStateChangeChecker(
-                cluster.getDistribution(), cluster.clusterInfo(), false, cluster.maxNumberOfGroupsAllowedToBeDown());
+        var nodeStateChangeChecker = new NodeStateChangeChecker(cluster, false);
         ClusterState clusterStateWith0InMaintenance = clusterState(String.format(
                 "version:%d distributor:4 .0.s:d storage:4",
                 currentClusterStateVersion));
@@ -221,8 +218,7 @@ public class NodeStateChangeCheckerTest {
         // 2 groups: nodes 0-1 is group 0, 2-3 is group 1.
         ContentCluster cluster = createCluster(4, 2);
         cluster.clusterInfo().getStorageNodeInfo(0).setWantedState(new NodeState(STORAGE, State.MAINTENANCE).setDescription("Orchestrator"));
-        var nodeStateChangeChecker = new NodeStateChangeChecker(
-                cluster.getDistribution(), cluster.clusterInfo(), false, cluster.maxNumberOfGroupsAllowedToBeDown());
+        var nodeStateChangeChecker = new NodeStateChangeChecker(cluster, false);
         ClusterState clusterStateWith0InMaintenance = clusterState(String.format(
                 "version:%d distributor:4 storage:4 .0.s:m",
                 currentClusterStateVersion));

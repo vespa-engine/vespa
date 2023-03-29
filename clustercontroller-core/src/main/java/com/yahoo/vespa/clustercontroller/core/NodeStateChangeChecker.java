@@ -4,7 +4,6 @@ package com.yahoo.vespa.clustercontroller.core;
 import com.yahoo.lang.MutableBoolean;
 import com.yahoo.lang.SettableOptional;
 import com.yahoo.vdslib.distribution.ConfiguredNode;
-import com.yahoo.vdslib.distribution.Distribution;
 import com.yahoo.vdslib.distribution.Group;
 import com.yahoo.vdslib.state.ClusterState;
 import com.yahoo.vdslib.state.Node;
@@ -43,16 +42,14 @@ public class NodeStateChangeChecker {
     private final HierarchicalGroupVisiting groupVisiting;
     private final ClusterInfo clusterInfo;
     private final boolean inMoratorium;
+    private final int maxNumberOfGroupsAllowedToBeDown;
 
-    public NodeStateChangeChecker(
-            Distribution distribution,
-            ClusterInfo clusterInfo,
-            boolean inMoratorium,
-            int maxNumberOfGroupsAllowedToBeDown) {
-        this.requiredRedundancy = distribution.getRedundancy();
-        this.groupVisiting = new HierarchicalGroupVisitingAdapter(distribution);
-        this.clusterInfo = clusterInfo;
+    public NodeStateChangeChecker(ContentCluster cluster, boolean inMoratorium) {
+        this.requiredRedundancy = cluster.getDistribution().getRedundancy();
+        this.groupVisiting = new HierarchicalGroupVisitingAdapter(cluster.getDistribution());
+        this.clusterInfo = cluster.clusterInfo();
         this.inMoratorium = inMoratorium;
+        this.maxNumberOfGroupsAllowedToBeDown = cluster.maxNumberOfGroupsAllowedToBeDown();
     }
 
     public static class Result {
