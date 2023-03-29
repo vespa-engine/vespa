@@ -15,6 +15,7 @@ using search::attribute::Status;
 using search::AddressSpaceUsage;
 using search::AttributeVector;
 using search::IEnumStore;
+using search::StateExplorerUtils;
 using vespalib::AddressSpace;
 using vespalib::MemoryUsage;
 using search::attribute::MultiValueMappingBase;
@@ -25,26 +26,6 @@ using namespace vespalib::slime;
 namespace proton {
 
 namespace {
-
-void
-convertStatusToSlime(const Status &status, Cursor &object)
-{
-    object.setLong("numDocs", status.getNumDocs());
-    object.setLong("numValues", status.getNumValues());
-    object.setLong("numUniqueValues", status.getNumUniqueValues());
-    object.setLong("lastSerialNum", status.getLastSyncToken());
-    object.setLong("updateCount", status.getUpdateCount());
-    object.setLong("nonIdempotentUpdateCount", status.getNonIdempotentUpdateCount());
-    object.setLong("bitVectors", status.getBitVectors());
-    {
-        Cursor &memory = object.setObject("memoryUsage");
-        memory.setLong("allocatedBytes", status.getAllocated());
-        memory.setLong("usedBytes", status.getUsed());
-        memory.setLong("deadBytes", status.getDead());
-        memory.setLong("onHoldBytes", status.getOnHold());
-        memory.setLong("onHoldBytesMax", status.getOnHoldMax());
-    }
-}
 
 void
 convertGenerationToSlime(const AttributeVector &attr, Cursor &object)
@@ -73,7 +54,7 @@ convertAddressSpaceUsageToSlime(const AddressSpaceUsage &usage, Cursor &object)
 void
 convertMemoryUsageToSlime(const MemoryUsage &usage, Cursor &object)
 {
-    search::StateExplorerUtils::memory_usage_to_slime(usage, object);
+    StateExplorerUtils::memory_usage_to_slime(usage, object);
 }
 
 void
@@ -136,7 +117,7 @@ AttributeVectorExplorer::get_state_helper(const AttributeVector& attr, const ves
     const Status &status = attr.getStatus();
     Cursor &object = inserter.insertObject();
     if (full) {
-        convertStatusToSlime(status, object.setObject("status"));
+        StateExplorerUtils::status_to_slime(status, object.setObject("status"));
         convertGenerationToSlime(attr, object.setObject("generation"));
         convertAddressSpaceUsageToSlime(attr.getAddressSpaceUsage(), object.setObject("addressSpaceUsage"));
         // TODO: Consider making enum store, multivalue mapping, posting list attribute and tensor attribute
