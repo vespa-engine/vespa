@@ -112,7 +112,7 @@ public class QueryProfiles implements Serializable, QueryProfilesConfig.Producer
 
     private void addFieldChildren(QueryProfilesConfig.Queryprofile.Builder qpB, QueryProfile profile, String namePrefix) {
         List<Map.Entry<String, Object>> content = new ArrayList<>(profile.declaredContent().entrySet());
-        Collections.sort(content, new MapEntryKeyComparator());
+        content.sort(new MapEntryKeyComparator());
         if (profile.getValue() != null) { // Add "prefix with dot removed"=value:
             QueryProfilesConfig.Queryprofile.Property.Builder propB = new QueryProfilesConfig.Queryprofile.Property.Builder();
             String fullName = namePrefix.substring(0, namePrefix.length() - 1);
@@ -132,7 +132,7 @@ public class QueryProfiles implements Serializable, QueryProfilesConfig.Producer
                                          QueryProfile profile,
                                          String namePrefix) {
         List<Map.Entry<String, Object>> content = new ArrayList<>(profile.declaredContent().entrySet());
-        Collections.sort(content,new MapEntryKeyComparator());
+        content.sort(new MapEntryKeyComparator());
         if (profile.getValue() != null) { // Add "prefix with dot removed"=value:
             QueryProfilesConfig.Queryprofile.Queryprofilevariant.Property.Builder propB = new QueryProfilesConfig.Queryprofile.Queryprofilevariant.Property.Builder();
             String fullName = namePrefix.substring(0, namePrefix.length() - 1);
@@ -152,8 +152,7 @@ public class QueryProfiles implements Serializable, QueryProfilesConfig.Producer
     private void addField(QueryProfilesConfig.Queryprofile.Builder qpB,
             QueryProfile profile, Entry<String, Object> field, String namePrefix) {
         String fullName=namePrefix + field.getKey();
-        if (field.getValue() instanceof QueryProfile) {
-            QueryProfile subProfile=(QueryProfile)field.getValue();
+        if (field.getValue() instanceof QueryProfile subProfile) {
             if ( ! subProfile.isExplicit()) { // Implicitly defined profile - add content
                 addFieldChildren(qpB, subProfile,fullName + ".");
             }
@@ -172,8 +171,7 @@ public class QueryProfiles implements Serializable, QueryProfilesConfig.Producer
     private void addVariantField(QueryProfilesConfig.Queryprofile.Queryprofilevariant.Builder qpB,
                                  Entry<String, Object> field, Boolean overridable, String namePrefix) {
         String fullName = namePrefix + field.getKey();
-        if (field.getValue() instanceof QueryProfile) {
-            QueryProfile subProfile = (QueryProfile)field.getValue();
+        if (field.getValue() instanceof QueryProfile subProfile) {
             if ( ! subProfile.isExplicit()) { // Implicitly defined profile - add content
                 addVariantFieldChildren(qpB, subProfile,fullName + ".");
             }
@@ -203,7 +201,7 @@ public class QueryProfiles implements Serializable, QueryProfilesConfig.Producer
                 varB.inherit(inherited.getId().stringValue());
 
             List<Map.Entry<String,Object>> content = new ArrayList<>(variant.getValues().entrySet());
-            Collections.sort(content, new MapEntryKeyComparator());
+            content.sort(new MapEntryKeyComparator());
             for (Map.Entry<String, Object> entry : content) {
                 addVariantField(varB, entry, variant.getOverriable().get(entry.getKey()), "");
             }
