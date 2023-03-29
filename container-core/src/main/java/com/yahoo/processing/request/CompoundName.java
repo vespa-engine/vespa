@@ -302,6 +302,10 @@ public final class CompoundName {
         return b.length()==0 ? "" : b.substring(0, b.length()-1);
     }
 
+    /**
+     *  Creates a CompoundName from a string, possibly reusing from cache.
+     *  Prefer over constructing on the fly.
+     **/
     public static CompoundName from(String name) {
         CompoundName found = cache.get(name);
         if (found != null) return found;
