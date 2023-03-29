@@ -27,6 +27,7 @@ import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.ZoneEndpoint.AllowedUrn;
 import com.yahoo.config.provision.zone.RoutingMethod;
+import com.yahoo.config.provision.zone.ZoneApi;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.container.handler.metrics.JsonResponse;
 import com.yahoo.container.jdisc.EmptyResponse;
@@ -1659,6 +1660,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
             else {
                 deploymentObject.setString("environment", deployment.zone().environment().value());
                 deploymentObject.setString("region", deployment.zone().region().value());
+                addAvailabilityZone(deploymentObject, deployment.zone());
                 deploymentObject.setString("url", withPath(request.getUri().getPath() +
                                                            "/instance/" + instance.name().value() +
                                                            "/environment/" + deployment.zone().environment().value() +
@@ -1755,6 +1757,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
                 deploymentObject.setString("environment", deployment.zone().environment().value());
                 deploymentObject.setString("region", deployment.zone().region().value());
                 deploymentObject.setString("instance", instance.id().instance().value()); // pointless
+                addAvailabilityZone(deploymentObject, deployment.zone());
                 deploymentObject.setString("url", withPath(request.getUri().getPath() +
                                                            "/environment/" + deployment.zone().environment().value() +
                                                            "/region/" + deployment.zone().region().value(),
@@ -1837,6 +1840,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         response.setString("instance", deploymentId.applicationId().instance().value()); // pointless
         response.setString("environment", deploymentId.zoneId().environment().value());
         response.setString("region", deploymentId.zoneId().region().value());
+        addAvailabilityZone(response, deployment.zone());
         var application = controller.applications().requireApplication(TenantAndApplicationId.from(deploymentId.applicationId()));
 
         // Add zone endpoints
@@ -3018,6 +3022,12 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
                                                                     Optional.empty(), Optional.empty(), Optional.empty(), 0),
                                                      0);
         return new MessageResponse("All deployments removed");
+    }
+
+    private void addAvailabilityZone(Cursor object, ZoneId zoneId) {
+        ZoneApi zone = controller.zoneRegistry().get(zoneId);
+        if (!zone.getCloudName().equals(CloudName.AWS)) return;
+        object.setString("availabilityZone", zone.getCloudNativeAvailabilityZone());
     }
 
     private ZoneId requireZone(String environment, String region) {
