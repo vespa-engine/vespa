@@ -96,9 +96,6 @@ public class ControllerContainerTest {
                  <handler id='com.yahoo.vespa.hosted.controller.restapi.os.OsApiHandler'>
                    <binding>http://localhost/os/v1/*</binding>
                  </handler>
-                 <handler id='com.yahoo.vespa.hosted.controller.restapi.cloudinfo.CloudInfoApiHandler'>
-                   <binding>http://localhost/cloudinfo/v1/*</binding>
-                 </handler>
                  <handler id='com.yahoo.vespa.hosted.controller.restapi.zone.v2.ZoneApiHandler'>
                    <binding>http://localhost/zone/v2</binding>
                    <binding>http://localhost/zone/v2/*</binding>
