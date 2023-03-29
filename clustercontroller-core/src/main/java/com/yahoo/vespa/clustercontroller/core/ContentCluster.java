@@ -136,15 +136,9 @@ public class ContentCluster {
      */
     public NodeStateChangeChecker.Result calculateEffectOfNewState(
             Node node, ClusterState clusterState, SetUnitStateRequest.Condition condition,
-            NodeState oldState, NodeState newState, boolean inMoratorium, int maxNumberOfGroupsAllowedToBeDown) {
+            NodeState oldState, NodeState newState, boolean inMoratorium) {
 
-        NodeStateChangeChecker nodeStateChangeChecker = new NodeStateChangeChecker(
-                distribution.getRedundancy(),
-                new HierarchicalGroupVisitingAdapter(distribution),
-                clusterInfo,
-                inMoratorium,
-                maxNumberOfGroupsAllowedToBeDown
-        );
+        NodeStateChangeChecker nodeStateChangeChecker = new NodeStateChangeChecker(this, inMoratorium);
         return nodeStateChangeChecker.evaluateTransition(node, clusterState, condition, oldState, newState);
     }
 

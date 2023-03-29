@@ -42,17 +42,14 @@ public class NodeStateChangeChecker {
     private final HierarchicalGroupVisiting groupVisiting;
     private final ClusterInfo clusterInfo;
     private final boolean inMoratorium;
+    private final int maxNumberOfGroupsAllowedToBeDown;
 
-    public NodeStateChangeChecker(
-            int requiredRedundancy,
-            HierarchicalGroupVisiting groupVisiting,
-            ClusterInfo clusterInfo,
-            boolean inMoratorium,
-            int maxNumberOfGroupsAllowedToBeDown) {
-        this.requiredRedundancy = requiredRedundancy;
-        this.groupVisiting = groupVisiting;
-        this.clusterInfo = clusterInfo;
+    public NodeStateChangeChecker(ContentCluster cluster, boolean inMoratorium) {
+        this.requiredRedundancy = cluster.getDistribution().getRedundancy();
+        this.groupVisiting = new HierarchicalGroupVisitingAdapter(cluster.getDistribution());
+        this.clusterInfo = cluster.clusterInfo();
         this.inMoratorium = inMoratorium;
+        this.maxNumberOfGroupsAllowedToBeDown = cluster.maxNumberOfGroupsAllowedToBeDown();
     }
 
     public static class Result {
@@ -392,8 +389,7 @@ public class NodeStateChangeChecker {
         return allowSettingOfWantedState();
     }
 
-    private Result checkStorageNodesForDistributor(
-            DistributorNodeInfo distributorNodeInfo, List<StorageNode> storageNodes, Node node) {
+    private Result checkStorageNodesForDistributor(DistributorNodeInfo distributorNodeInfo, List<StorageNode> storageNodes, Node node) {
         for (StorageNode storageNode : storageNodes) {
             if (storageNode.getIndex() == node.getIndex()) {
                 Integer minReplication = storageNode.getMinCurrentReplicationFactorOrNull();
