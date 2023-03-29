@@ -714,13 +714,33 @@ public class NodeStateChangeCheckerTest {
     }
 
     private StorDistributionConfig createDistributionConfig(int nodes) {
-        return createDistributionConfig(nodes, 1);
+        var configBuilder = new StorDistributionConfig.Builder()
+                .active_per_leaf_group(true)
+                .ready_copies(2)
+                .redundancy(2)
+                .initial_redundancy(2);
+
+        var groupBuilder = new StorDistributionConfig.Group.Builder()
+                                    .index("invalid")
+                                    .name("invalid")
+                                    .capacity(nodes);
+        int nodeIndex = 0;
+        for (int j = 0; j < nodes; ++j, ++nodeIndex) {
+            groupBuilder.nodes(new StorDistributionConfig.Group.Nodes.Builder()
+                                       .index(nodeIndex));
+        }
+        configBuilder.group(groupBuilder);
+
+        return configBuilder.build();
     }
 
+    // When more than 1 group
     private StorDistributionConfig createDistributionConfig(int nodes, int groups) {
-        if (nodes % groups != 0) {
+        if (groups == 1) return createDistributionConfig(nodes);
+
+        if (nodes % groups != 0)
             throw new IllegalArgumentException("Cannot have " + groups + " groups with an odd number of nodes: " + nodes);
-        }
+
         int nodesPerGroup = nodes / groups;
 
         var configBuilder = new StorDistributionConfig.Builder()
