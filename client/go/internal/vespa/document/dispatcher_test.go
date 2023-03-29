@@ -3,7 +3,6 @@ package document
 import (
 	"sync"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -11,6 +10,7 @@ import (
 type mockFeeder struct {
 	failAfterNDocs int
 	documents      []Document
+	stats          Stats
 	mu             sync.Mutex
 }
 
@@ -23,24 +23,24 @@ func (f *mockFeeder) failAfterN(docs int) {
 func (f *mockFeeder) Send(doc Document) Result {
 	f.mu.Lock()
 	defer f.mu.Unlock()
-	result := Result{Id: doc.Id}
 	if f.failAfterNDocs > 0 && len(f.documents) >= f.failAfterNDocs {
-		result.Status = StatusVespaFailure
-	} else {
-		f.documents = append(f.documents, doc)
+		return Result{Id: doc.Id, Status: StatusVespaFailure}
 	}
-	if !result.Status.Success() {
-		result.Stats.Errors = 1
-	}
-	return result
+	f.documents = append(f.documents, doc)
+	return Result{Id: doc.Id}
+}
+
+func (f *mockFeeder) Stats() Stats { return f.stats }
+
+func (f *mockFeeder) AddStats(stats Stats) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	f.stats.Add(stats)
 }
 
 func TestDispatcher(t *testing.T) {
 	feeder := &mockFeeder{}
-	clock := &manualClock{tick: time.Second}
-	throttler := newThrottler(clock.now)
-	breaker := NewCircuitBreaker(time.Second, 0)
-	dispatcher := NewDispatcher(feeder, throttler, breaker)
+	dispatcher := NewDispatcher(feeder, 2)
 	docs := []Document{
 		{Id: mustParseId("id:ns:type::doc1"), Operation: OperationPut, Body: []byte(`{"fields":{"foo": "123"}}`)},
 		{Id: mustParseId("id:ns:type::doc2"), Operation: OperationPut, Body: []byte(`{"fields":{"bar": "456"}}`)},
@@ -70,10 +70,7 @@ func TestDispatcherOrdering(t *testing.T) {
 		{Id: mustParseId("id:ns:type::doc8"), Operation: OperationPut},
 		{Id: mustParseId("id:ns:type::doc9"), Operation: OperationPut},
 	}
-	clock := &manualClock{tick: time.Second}
-	throttler := newThrottler(clock.now)
-	breaker := NewCircuitBreaker(time.Second, 0)
-	dispatcher := NewDispatcher(feeder, throttler, breaker)
+	dispatcher := NewDispatcher(feeder, len(docs))
 	for _, d := range docs {
 		dispatcher.Enqueue(d)
 	}
@@ -93,7 +90,7 @@ func TestDispatcherOrdering(t *testing.T) {
 	}
 	assert.Equal(t, len(docs), len(feeder.documents))
 	assert.Equal(t, wantDocs, gotDocs)
-	assert.Equal(t, int64(0), dispatcher.Stats().Errors)
+	assert.Equal(t, int64(0), feeder.Stats().Errors)
 }
 
 func TestDispatcherOrderingWithFailures(t *testing.T) {
@@ -106,26 +103,26 @@ func TestDispatcherOrderingWithFailures(t *testing.T) {
 		{Id: commonId, Operation: OperationRemove}, // fails
 	}
 	feeder.failAfterN(2)
-	clock := &manualClock{tick: time.Second}
-	throttler := newThrottler(clock.now)
-	breaker := NewCircuitBreaker(time.Second, 0)
-	dispatcher := NewDispatcher(feeder, throttler, breaker)
+	dispatcher := NewDispatcher(feeder, len(docs))
 	for _, d := range docs {
 		dispatcher.Enqueue(d)
 	}
 	dispatcher.Close()
 	wantDocs := docs[:2]
 	assert.Equal(t, wantDocs, feeder.documents)
-	assert.Equal(t, int64(2), dispatcher.Stats().Errors)
+	assert.Equal(t, int64(2), feeder.Stats().Errors)
 
-	// Dispatching more documents for same ID succeed
+	// Dispatching more documents for same ID fails implicitly
 	feeder.failAfterN(0)
 	dispatcher.start()
 	dispatcher.Enqueue(Document{Id: commonId, Operation: OperationPut})
 	dispatcher.Enqueue(Document{Id: commonId, Operation: OperationRemove})
-	dispatcher.Enqueue(Document{Id: mustParseId("id:ns:type::doc2"), Operation: OperationPut})
-	dispatcher.Enqueue(Document{Id: mustParseId("id:ns:type::doc3"), Operation: OperationPut})
+	// Other IDs are fine
+	doc2 := Document{Id: mustParseId("id:ns:type::doc2"), Operation: OperationPut}
+	doc3 := Document{Id: mustParseId("id:ns:type::doc3"), Operation: OperationPut}
+	dispatcher.Enqueue(doc2)
+	dispatcher.Enqueue(doc3)
 	dispatcher.Close()
-	assert.Equal(t, int64(2), dispatcher.Stats().Errors)
-	assert.Equal(t, 6, len(feeder.documents))
+	assert.Equal(t, int64(4), feeder.Stats().Errors)
+	assert.Equal(t, 4, len(feeder.documents))
 }

@@ -9,6 +9,7 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/vespa-engine/vespa/client/go/internal/util"
@@ -18,6 +19,8 @@ import (
 type Client struct {
 	options    ClientOptions
 	httpClient util.HTTPClient
+	stats      Stats
+	mu         sync.Mutex
 	now        func() time.Time
 }
 
@@ -44,6 +47,7 @@ func NewClient(options ClientOptions, httpClient util.HTTPClient) *Client {
 	c := &Client{
 		options:    options,
 		httpClient: httpClient,
+		stats:      NewStats(),
 		now:        time.Now,
 	}
 	return c
@@ -112,42 +116,49 @@ func (c *Client) feedURL(d Document, queryParams url.Values) (string, *url.URL, 
 // Send given document the URL configured in this client.
 func (c *Client) Send(document Document) Result {
 	start := c.now()
-	result := Result{Id: document.Id}
-	result.Stats.Requests = 1
+	stats := NewStats()
+	stats.Requests = 1
+	defer func() {
+		latency := c.now().Sub(start)
+		stats.TotalLatency = latency
+		stats.MinLatency = latency
+		stats.MaxLatency = latency
+		c.AddStats(stats)
+	}()
 	method, url, err := c.feedURL(document, c.queryParams())
 	if err != nil {
-		result.Stats.Errors = 1
-		result.Err = err
-		return result
+		stats.Errors = 1
+		return Result{Status: StatusError, Err: err}
 	}
 	req, err := http.NewRequest(method, url.String(), bytes.NewReader(document.Body))
 	if err != nil {
-		result.Stats.Errors = 1
-		result.Status = StatusError
-		result.Err = err
-		return result
+		stats.Errors = 1
+		return Result{Status: StatusError, Err: err}
 	}
-	resp, err := c.httpClient.Do(req, 190*time.Second)
+	resp, err := c.httpClient.Do(req, c.options.Timeout)
 	if err != nil {
-		result.Stats.Errors = 1
-		result.Status = StatusTransportFailure
-		result.Err = err
-		return result
+		stats.Errors = 1
+		return Result{Status: StatusTransportFailure, Err: err}
 	}
 	defer resp.Body.Close()
-	result.Stats.Responses = 1
-	result.Stats.ResponsesByCode = map[int]int64{
+	stats.Responses = 1
+	stats.ResponsesByCode = map[int]int64{
 		resp.StatusCode: 1,
 	}
-	result.Stats.BytesSent = int64(len(document.Body))
-	elapsed := c.now().Sub(start)
-	result.Stats.TotalLatency = elapsed
-	result.Stats.MinLatency = elapsed
-	result.Stats.MaxLatency = elapsed
-	return c.resultWithResponse(resp, result)
+	stats.BytesSent = int64(len(document.Body))
+	return c.createResult(document.Id, &stats, resp)
 }
 
-func (c *Client) resultWithResponse(resp *http.Response, result Result) Result {
+func (c *Client) Stats() Stats { return c.stats }
+
+func (c *Client) AddStats(stats Stats) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.stats.Add(stats)
+}
+
+func (c *Client) createResult(id Id, stats *Stats, resp *http.Response) Result {
+	result := Result{Id: id}
 	switch resp.StatusCode {
 	case 200:
 		result.Status = StatusSuccess
@@ -170,9 +181,9 @@ func (c *Client) resultWithResponse(resp *http.Response, result Result) Result {
 	}
 	result.Message = body.Message
 	result.Trace = string(body.Trace)
-	result.Stats.BytesRecv = cr.bytesRead
+	stats.BytesRecv = cr.bytesRead
 	if !result.Status.Success() {
-		result.Stats.Errors = 1
+		stats.Errors = 1
 	}
 	return result
 }
