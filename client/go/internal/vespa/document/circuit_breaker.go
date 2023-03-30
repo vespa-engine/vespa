@@ -27,49 +27,51 @@ type timeCircuitBreaker struct {
 	graceDuration time.Duration
 	doomDuration  time.Duration
 
-	failingSinceMillis atomic.Int64
+	failingSinceMillis int64
 	lastError          atomic.Value
-	halfOpen           atomic.Bool
-	open               atomic.Bool
+	halfOpen           atomic.Value
+	open               atomic.Value
 
 	now func() time.Time
 }
 
 func (b *timeCircuitBreaker) Success() {
-	b.failingSinceMillis.Store(math.MaxInt64)
-	if !b.open.Load() {
+	atomic.StoreInt64(&b.failingSinceMillis, math.MaxInt64)
+	if !b.open.Load().(bool) {
 		b.halfOpen.CompareAndSwap(true, false)
 	}
 }
 
 func (b *timeCircuitBreaker) Error(err error) {
-	if b.failingSinceMillis.CompareAndSwap(math.MaxInt64, b.now().UnixMilli()) {
+	if atomic.CompareAndSwapInt64(&b.failingSinceMillis, math.MaxInt64, b.now().UnixMilli()) {
 		b.lastError.Store(err)
 	}
 }
 
 func (b *timeCircuitBreaker) State() CircuitState {
-	failingDuration := b.now().Sub(time.UnixMilli(b.failingSinceMillis.Load()))
+	failingDuration := b.now().Sub(time.UnixMilli(atomic.LoadInt64(&b.failingSinceMillis)))
 	if failingDuration > b.graceDuration {
 		b.halfOpen.CompareAndSwap(false, true)
 	}
 	if b.doomDuration > 0 && failingDuration > b.doomDuration {
 		b.open.CompareAndSwap(false, true)
 	}
-	if b.open.Load() {
+	if b.open.Load().(bool) {
 		return CircuitOpen
-	} else if b.halfOpen.Load() {
+	} else if b.halfOpen.Load().(bool) {
 		return CircuitHalfOpen
 	}
 	return CircuitClosed
 }
 
-func NewCircuitBreaker(graceDuration, doomDuration time.Duration) CircuitBreaker {
+func NewCircuitBreaker(graceDuration, doomDuration time.Duration) *timeCircuitBreaker {
 	b := &timeCircuitBreaker{
-		graceDuration: graceDuration,
-		doomDuration:  doomDuration,
-		now:           time.Now,
+		graceDuration:      graceDuration,
+		doomDuration:       doomDuration,
+		now:                time.Now,
+		failingSinceMillis: math.MaxInt64,
 	}
-	b.failingSinceMillis.Store(math.MaxInt64)
+	b.open.Store(false)
+	b.halfOpen.Store(false)
 	return b
 }

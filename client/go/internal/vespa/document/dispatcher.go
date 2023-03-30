@@ -20,7 +20,7 @@ type Dispatcher struct {
 	ready         chan Id
 	results       chan Result
 	inflight      map[string]*documentGroup
-	inflightCount atomic.Int64
+	inflightCount int64
 
 	mu       sync.RWMutex
 	wg       sync.WaitGroup
@@ -83,7 +83,7 @@ func (d *Dispatcher) shouldRetry(op documentOp, result Result) bool {
 		return false
 	}
 	if result.HTTPStatus == 429 || result.HTTPStatus == 503 {
-		d.throttler.Throttled(d.inflightCount.Load())
+		d.throttler.Throttled(atomic.LoadInt64(&d.inflightCount))
 		return true
 	}
 	if result.HTTPStatus == 500 || result.HTTPStatus == 502 || result.HTTPStatus == 504 {
@@ -163,13 +163,13 @@ func (d *Dispatcher) enqueueWithSlot(id Id) {
 }
 
 func (d *Dispatcher) acquireSlot() {
-	for d.inflightCount.Load() >= d.throttler.TargetInflight() {
+	for atomic.LoadInt64(&d.inflightCount) >= d.throttler.TargetInflight() {
 		time.Sleep(time.Millisecond)
 	}
-	d.inflightCount.Add(1)
+	atomic.AddInt64(&d.inflightCount, 1)
 }
 
-func (d *Dispatcher) releaseSlot() { d.inflightCount.Add(-1) }
+func (d *Dispatcher) releaseSlot() { atomic.AddInt64(&d.inflightCount, -1) }
 
 func closeAndWait[T any](ch chan T, wg *sync.WaitGroup, d *Dispatcher, markClosed bool) {
 	d.mu.Lock()

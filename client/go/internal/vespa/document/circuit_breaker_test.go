@@ -10,11 +10,8 @@ import (
 
 func TestCircuitBreaker(t *testing.T) {
 	clock := &manualClock{}
-	breaker := &timeCircuitBreaker{
-		graceDuration: time.Second,
-		doomDuration:  time.Minute,
-		now:           clock.now,
-	}
+	breaker := NewCircuitBreaker(time.Second, time.Minute)
+	breaker.now = clock.now
 	err := errors.New("error")
 
 	assert.Equal(t, CircuitClosed, breaker.State(), "Initial state is closed")
