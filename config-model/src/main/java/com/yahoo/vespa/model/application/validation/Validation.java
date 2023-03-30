@@ -82,7 +82,6 @@ public class Validation {
         new SecretStoreValidator().validate(model, deployState);
         new EndpointCertificateSecretsValidator().validate(model, deployState);
         new AccessControlFilterValidator().validate(model, deployState);
-        new CloudWatchValidator().validate(model, deployState);
         new QuotaValidator().validate(model, deployState);
         new UriBindingsValidator().validate(model, deployState);
         new CloudDataPlaneFilterValidator().validate(model, deployState);
