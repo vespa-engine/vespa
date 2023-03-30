@@ -21,6 +21,7 @@ import com.yahoo.search.result.ErrorMessage;
 import com.yahoo.search.result.Hit;
 import com.yahoo.slime.ArrayTraverser;
 import com.yahoo.slime.BinaryFormat;
+import com.yahoo.slime.BinaryView;
 
 import java.util.Iterator;
 import java.util.List;
@@ -49,6 +50,7 @@ public class RpcProtobufFillInvoker extends FillInvoker {
     private final boolean summaryNeedsQuery;
     private final String serverId;
     private final CompressPayload compressor;
+    private final DecodePolicy decodePolicy;
 
     private BlockingQueue<Pair<Client.ResponseOrError<ProtobufResponse>, List<FastHit>>> responses;
 
@@ -65,6 +67,7 @@ public class RpcProtobufFillInvoker extends FillInvoker {
         this.serverId = serverId;
         this.summaryNeedsQuery = summaryNeedsQuery;
         this.compressor = compressor;
+        this.decodePolicy = decodePolicy;
     }
 
     @Override
@@ -214,7 +217,9 @@ public class RpcProtobufFillInvoker extends FillInvoker {
     private int fill(Result result, List<FastHit> hits, String summaryClass, byte[] payload) {
         try {
             var protobuf = SearchProtocol.DocsumReply.parseFrom(payload);
-            var root = BinaryFormat.decode(protobuf.getSlimeSummaries().toByteArray()).get();
+            var root = (decodePolicy == DecodePolicy.ONDEMAND)
+                    ? BinaryView.inspect(protobuf.getSlimeSummaries().toByteArray())
+                    : BinaryFormat.decode(protobuf.getSlimeSummaries().toByteArray()).get();
             var errors = root.field("errors");
             boolean hasErrors = errors.valid() && (errors.entries() > 0);
             if (hasErrors) {
