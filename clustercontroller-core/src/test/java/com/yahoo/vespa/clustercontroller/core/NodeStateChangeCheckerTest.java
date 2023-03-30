@@ -741,13 +741,14 @@ public class NodeStateChangeCheckerTest {
                                     .capacity(nodes)
                                     .partitions("1|*"));
 
+        int nodeIndex = 0;
         for (int i = 0; i < groups; ++i) {
             var groupBuilder = new StorDistributionConfig.Group.Builder()
                     .index(String.valueOf(i))
                     .name(String.valueOf(i))
                     .capacity(nodesPerGroup)
                     .partitions("");
-            for (int nodeIndex = 0; nodeIndex < nodesPerGroup; ++nodeIndex) {
+            for (int j = 0; j < nodesPerGroup; ++j, ++nodeIndex) {
                 groupBuilder.nodes(new StorDistributionConfig.Group.Nodes.Builder()
                                            .index(nodeIndex));
             }
