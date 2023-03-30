@@ -24,8 +24,7 @@ public class SoftTimeout implements Cloneable {
     public static final String TAILCOST = "tailcost";
 
     /** The full property name for turning softtimeout on or off */
-    public static final CompoundName enableProperty =
-            CompoundName.fromComponents(Ranking.RANKING, Ranking.SOFTTIMEOUT, ENABLE);
+    public static final CompoundName enableProperty = CompoundName.from(Ranking.RANKING + "." + Ranking.SOFTTIMEOUT + "." + ENABLE);
 
     static {
         argumentType = new QueryProfileType(Ranking.SOFTTIMEOUT);

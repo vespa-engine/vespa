@@ -169,7 +169,7 @@ public class CompiledQueryProfile extends AbstractComponent implements Cloneable
     }
 
     public final Object get(String name) {
-        return get(name, Collections.emptyMap());
+        return get(name, Map.of());
     }
     public final Object get(String name, Map<String, String> context) {
         return get(name, context, new QueryProfileProperties(this));

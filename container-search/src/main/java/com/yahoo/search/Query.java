@@ -48,7 +48,6 @@ import com.yahoo.yolean.Exceptions;
 import java.net.URI;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -228,17 +227,17 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
     private static final Map<String, CompoundName> propertyAliases;
     static {
         Map<String, CompoundName> propertyAliasesBuilder = new HashMap<>();
-        addAliases(Query.getArgumentType(), CompoundName.empty, propertyAliasesBuilder);
+        addAliases(Query.getArgumentType(), "", propertyAliasesBuilder);
         propertyAliases = ImmutableMap.copyOf(propertyAliasesBuilder);
     }
-    private static void addAliases(QueryProfileType arguments, CompoundName prefix, Map<String, CompoundName> aliases) {
+    private static void addAliases(QueryProfileType arguments, String prefix, Map<String, CompoundName> aliases) {
         for (FieldDescription field : arguments.fields().values()) {
             for (String alias : field.getAliases())
-                aliases.put(alias, prefix.append(field.getName()));
+                aliases.put(alias, CompoundName.from(append(prefix, field.getName())));
             if (field.getType() instanceof QueryProfileFieldType) {
                 var type = ((QueryProfileFieldType) field.getType()).getQueryProfileType();
                 if (type != null)
-                    addAliases(type, prefix.append(type.getComponentIdAsCompoundName()), aliases);
+                    addAliases(type, append(prefix, type.getComponentIdAsCompoundName().toString()), aliases);
             }
         }
     }
@@ -261,18 +260,18 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
 
     /** Returns an unmodifiable list of all the native properties under a Query */
     public static final List<CompoundName> nativeProperties =
-            List.copyOf(namesUnder(CompoundName.empty, Query.getArgumentType()));
+            List.copyOf(namesUnder("", Query.getArgumentType()));
 
-    private static List<CompoundName> namesUnder(CompoundName prefix, QueryProfileType type) {
-        if (type == null) return Collections.emptyList(); // Names not known statically
+    private static List<CompoundName> namesUnder(String prefix, QueryProfileType type) {
+        if (type == null) return List.of(); // Names not known statically
         List<CompoundName> names = new ArrayList<>();
         for (Map.Entry<String, FieldDescription> field : type.fields().entrySet()) {
+            String name = append(prefix, field.getKey());
             if (field.getValue().getType() instanceof QueryProfileFieldType) {
-                names.addAll(namesUnder(prefix.append(field.getKey()),
-                                        ((QueryProfileFieldType) field.getValue().getType()).getQueryProfileType()));
+                names.addAll(namesUnder(name, ((QueryProfileFieldType) field.getValue().getType()).getQueryProfileType()));
             }
             else {
-                names.add(prefix.append(field.getKey()));
+                names.add(CompoundName.from(name));
             }
         }
         return names;

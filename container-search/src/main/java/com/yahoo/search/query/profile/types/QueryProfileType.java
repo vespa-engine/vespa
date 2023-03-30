@@ -52,7 +52,7 @@ public class QueryProfileType extends FreezableSimpleComponent {
     private QueryProfileType(ComponentId id, Map<String, FieldDescription> fields, List<QueryProfileType> inherited) {
         super(id);
         QueryProfile.validateName(id.getName());
-        componentIdAsCompoundName = new CompoundName(getId().getName());
+        componentIdAsCompoundName = CompoundName.from(getId().getName());
         this.fields = fields;
         this.inherited = inherited;
     }
@@ -318,10 +318,9 @@ public class QueryProfileType extends FreezableSimpleComponent {
         QueryProfileType type = null;
         FieldDescription fieldDescription = getField(name);
         if (fieldDescription != null) {
-            if ( ! (fieldDescription.getType() instanceof QueryProfileFieldType))
+            if ( ! (fieldDescription.getType() instanceof QueryProfileFieldType fieldType))
                 throw new IllegalArgumentException("Cannot use name '" + name + "' as a prefix because it is " +
                                                    "already a " + fieldDescription.getType());
-            QueryProfileFieldType fieldType = (QueryProfileFieldType) fieldDescription.getType();
             type = fieldType.getQueryProfileType();
         }
 
@@ -399,8 +398,7 @@ public class QueryProfileType extends FreezableSimpleComponent {
     @Override
     public boolean equals(Object o) {
         if (o == this) return true;
-        if ( ! (o instanceof QueryProfileType)) return false;
-        QueryProfileType other = (QueryProfileType)o;
+        if ( ! (o instanceof QueryProfileType other)) return false;
         return other.getId().equals(this.getId());
     }
 
