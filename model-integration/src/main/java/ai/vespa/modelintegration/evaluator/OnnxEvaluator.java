@@ -7,6 +7,7 @@ import ai.onnxruntime.OnnxTensor;
 import ai.onnxruntime.OnnxValue;
 import ai.onnxruntime.OrtException;
 import ai.onnxruntime.OrtSession;
+import ai.vespa.modelintegration.evaluator.OnnxRuntime.ModelPathOrData;
 import ai.vespa.modelintegration.evaluator.OnnxRuntime.ReferencedOrtSession;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
@@ -28,7 +29,11 @@ public class OnnxEvaluator implements AutoCloseable {
     private final ReferencedOrtSession session;
 
     OnnxEvaluator(String modelPath, OnnxEvaluatorOptions options, OnnxRuntime runtime) {
-        session = createSession(modelPath, runtime, options, true);
+        session = createSession(ModelPathOrData.of(modelPath), runtime, options, true);
+    }
+
+    OnnxEvaluator(byte[] data, OnnxEvaluatorOptions options, OnnxRuntime runtime) {
+        session = createSession(ModelPathOrData.of(data), runtime, options, true);
     }
 
     public Tensor evaluate(Map<String, Tensor> inputs, String output) {
@@ -125,19 +130,20 @@ public class OnnxEvaluator implements AutoCloseable {
         }
     }
 
-    private static ReferencedOrtSession createSession(String modelPath, OnnxRuntime runtime, OnnxEvaluatorOptions options, boolean tryCuda) {
+    private static ReferencedOrtSession createSession(
+            ModelPathOrData model, OnnxRuntime runtime, OnnxEvaluatorOptions options, boolean tryCuda) {
         if (options == null) {
             options = new OnnxEvaluatorOptions();
         }
         try {
-            return runtime.acquireSession(modelPath, options, tryCuda && options.requestingGpu());
+            return runtime.acquireSession(model, options, tryCuda && options.requestingGpu());
         } catch (OrtException e) {
             if (e.getCode() == OrtException.OrtErrorCode.ORT_NO_SUCHFILE) {
-                throw new IllegalArgumentException("No such file: " + modelPath);
+                throw new IllegalArgumentException("No such file: " + model.path().get());
             }
             if (tryCuda && isCudaError(e) && !options.gpuDeviceRequired()) {
                 // Failed in CUDA native code, but GPU device is optional, so we can proceed without it
-                return createSession(modelPath, runtime, options, false);
+                return createSession(model, runtime, options, false);
             }
             if (isCudaError(e)) {
                 throw new IllegalArgumentException("GPU device is required, but CUDA initialization failed", e);
@@ -145,6 +151,9 @@ public class OnnxEvaluator implements AutoCloseable {
             throw new RuntimeException("ONNX Runtime exception", e);
         }
     }
+
+    // For unit testing
+    OrtSession ortSession() { return session.instance(); }
 
     private String mapToInternalName(String outputName) throws OrtException {
         var info = session.instance().getOutputInfo();

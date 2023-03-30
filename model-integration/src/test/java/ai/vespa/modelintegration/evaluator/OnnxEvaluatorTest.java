@@ -6,6 +6,9 @@ import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
 import org.junit.Test;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -154,6 +157,17 @@ public class OnnxEvaluatorTest {
             System.out.println("produced output: " + entry.getKey() + " with type " + entry.getValue());
         }
         assertEquals(3, allResults.size());
+    }
+
+    @Test
+    public void testLoadModelFromBytes() throws IOException {
+        assumeTrue(OnnxRuntime.isRuntimeAvailable());
+        var runtime = new OnnxRuntime();
+        var model = Files.readAllBytes(Paths.get("src/test/models/onnx/simple/simple.onnx"));
+        var evaluator = runtime.evaluatorOf(model);
+        assertEquals(3, evaluator.getInputs().size());
+        assertEquals(1, evaluator.getOutputs().size());
+        evaluator.close();
     }
 
     private void assertEvaluate(OnnxRuntime runtime, String model, String output, String... input) {
