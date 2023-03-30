@@ -41,9 +41,6 @@ public class MetricsBuilder {
 
             MetricSet metricSet = buildMetricSet(consumerId, consumerElement);
             var consumer = new MetricsConsumer(consumerId, metricSet);
-            for (Element cloudwatchElement : XML.getChildren(consumerElement, "cloudwatch")) {
-                consumer.addCloudWatch(CloudWatchBuilder.buildCloudWatch(cloudwatchElement, consumer));
-            }
             metrics.addConsumer(consumer);
         }
         return metrics;

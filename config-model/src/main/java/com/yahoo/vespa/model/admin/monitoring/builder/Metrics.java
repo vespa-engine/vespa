@@ -29,12 +29,4 @@ public class Metrics {
                 .anyMatch(existing -> existing.equalsIgnoreCase(id));
     }
 
-    /**
-     * Returns true if any of the consumers have specified external metric systems.
-     */
-    public boolean usesExternalMetricSystems() {
-        return consumers.values().stream()
-                .anyMatch(consumer -> ! consumer.cloudWatches().isEmpty());
-    }
-
 }
