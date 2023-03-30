@@ -2571,7 +2571,37 @@ String identifierWithDash() :
 {
     ( identifier = identifier() { return identifier; } )
     |
-    ( <IDENTIFIER_WITH_DASH> { return token.image; } )
+    ( <IDENTIFIER_WITH_DASH>
+    | <CREATE_IF_NONEXISTENT>
+    | <DENSE_POSTING_LIST_THRESHOLD>
+    | <DOCUMENT_SUMMARY>
+    | <ENABLE_BIT_VECTORS>
+    | <ENABLE_ONLY_BIT_VECTOR>
+    | <EXACT_TERMINATOR>
+    | <EXECUTION_MODE>
+    | <FAST_ACCESS>
+    | <FAST_RANK>
+    | <FAST_SEARCH>
+    | <FIRST_PHASE>
+    | <GLOBAL_PHASE>
+    | <IGNORE_DEFAULT_RANK_FEATURES>
+    | <KEEP_RANK_COUNT>
+    | <LOWER_BOUND>
+    | <MATCH_PHASE>
+    | <MAX_FILTER_COVERAGE>
+    | <MAX_HITS>
+    | <ON_DEMAND>
+    | <QUERY_COMMAND>
+    | <RANK_PROFILE>
+    | <RANK_PROPERTIES>
+    | <RANK_SCORE_DROP_LIMIT>
+    | <RANK_TYPE>
+    | <REMOVE_IF_ZERO>
+    | <RERANK_COUNT>
+    | <SECOND_PHASE>
+    | <SUMMARY_TO>
+    | <UPPER_BOUND>
+    ) { return token.image; }
 }
 
 /**
@@ -2597,31 +2627,19 @@ String identifier() : { }
       | <CONSTANT>
       | <CONSTANTS>
       | <CONTEXT>
-      | <GLOBAL_PHASE>
-      | <CREATE_IF_NONEXISTENT>
-      | <DENSE_POSTING_LIST_THRESHOLD>
       | <DESCENDING>
       | <DICTIONARY>
       | <DIRECT>
       | <DOCUMENT>
-      | <DOCUMENT_SUMMARY>
       | <DOUBLE_KEYWORD>
       | <DYNAMIC>
-      | <ENABLE_BIT_VECTORS>
-      | <ENABLE_ONLY_BIT_VECTOR>
       | <EXACT>
-      | <EXACT_TERMINATOR>
-      | <EXECUTION_MODE>
       | <FALSE>
-      | <FAST_ACCESS>
-      | <FAST_RANK>
-      | <FAST_SEARCH>
       | <FIELD>
       | <FIELDS>
       | <FIELDSET>
       | <FILE>
       | <FILTER>
-      | <FIRST_PHASE>
       | <FULL>
       | <FUNCTION>
       | <GRAM>
@@ -2629,7 +2647,6 @@ String identifier() : { }
       | <ID>
       | <IDENTICAL>
       | <IDENTIFIER>
-      | <IGNORE_DEFAULT_RANK_FEATURES>
       | <IMPORT>
       | <INDEX>
       | <INDEXING>
@@ -2637,19 +2654,14 @@ String identifier() : { }
       | <INLINE>
       | <INPUTS>
       | <INTEGER>
-      | <KEEP_RANK_COUNT>
       | <LITERAL>
       | <LOCALE>
       | <LONG>
       | <LOOSE>
-      | <LOWER_BOUND>
       | <LOWERCASE>
       | <MACRO>
       | <MAP>
       | <MATCH>
-      | <MATCH_PHASE>
-      | <MAX_FILTER_COVERAGE>
-      | <MAX_HITS>
       | <MTOKEN>
       | <MUTABLE>
       | <NEVER>
@@ -2658,7 +2670,6 @@ String identifier() : { }
       | <NORMALIZING>
       | <OFF>
       | <ON>
-      | <ON_DEMAND>
       | <ORDER>
       | <PARALLEL>
       | <PREFIX>
@@ -2666,21 +2677,13 @@ String identifier() : { }
       | <PROPERTIES>
       | <QUATERNARY>
       | <QUERY>
-      | <QUERY_COMMAND>
       | <RANK>
       | <MODEL>
-      | <RANK_PROFILE>
-      | <RANK_PROPERTIES>
-      | <RANK_SCORE_DROP_LIMIT>
-      | <RANK_TYPE>
       | <RAW>
       | <REFERENCE>
-      | <REMOVE_IF_ZERO>
-      | <RERANK_COUNT>
       | <SCHEMA>
       | <SEARCH>
       | <SECONDARY>
-      | <SECOND_PHASE>
       | <SEQUENTIAL>
       | <SORTING>
       | <SOURCE>
@@ -2698,7 +2701,6 @@ String identifier() : { }
       | <SUBSTRING>
       | <SUFFIX>
       | <SUMMARY>
-      | <SUMMARY_TO>
       | <SYMMETRIC>
       | <TERTIARY>
       | <TEXT>
@@ -2708,7 +2710,6 @@ String identifier() : { }
       | <UCA>
       | <UNCASED>
       | <URI>
-      | <UPPER_BOUND>
       | <VARIABLE>
       | <WEIGHT>
       | <WEIGHTEDSET>
