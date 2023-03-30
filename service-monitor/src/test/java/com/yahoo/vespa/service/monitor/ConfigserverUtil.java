@@ -1,18 +1,18 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.service.monitor;
 
+import ai.vespa.http.DomainName;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.config.model.api.ApplicationInfo;
-import com.yahoo.config.provision.HostName;
 import com.yahoo.vespa.service.duper.ConfigServerApplication;
 
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
+import java.util.List;
 
 /**
  * @author hakon
  */
 public class ConfigserverUtil {
+
     /** Create a ConfigserverConfig with the given settings. */
     public static ConfigserverConfig create(
             boolean multitenant,
@@ -31,16 +31,10 @@ public class ConfigserverUtil {
         return create(true, "cfg1", "cfg2", "cfg3");
     }
 
-    public static ApplicationInfo makeConfigServerApplicationInfo(
-            String configServerHostname1,
-            String configServerHostname2,
-            String configServerHostname3) {
-        return new ConfigServerApplication().makeApplicationInfo(
-                Stream.of(configServerHostname1, configServerHostname2, configServerHostname3)
-                      .map(HostName::of).toList());
+    public static ApplicationInfo makeExampleConfigServer() {
+        return new ConfigServerApplication().makeApplicationInfo(List.of(DomainName.of("cfg1"),
+                                                                         DomainName.of("cfg2"),
+                                                                         DomainName.of("cfg3")));
     }
 
-    public static ApplicationInfo makeExampleConfigServer() {
-        return makeConfigServerApplicationInfo("cfg1", "cfg2", "cfg3");
-    }
 }
