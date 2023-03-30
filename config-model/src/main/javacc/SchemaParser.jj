@@ -2661,6 +2661,7 @@ String identifier() : { }
       | <DESCENDING>
       | <DICTIONARY>
       | <DIRECT>
+      | <DIVERSITY>
       | <DOCUMENT>
       | <DOUBLE_KEYWORD>
       | <DYNAMIC>
@@ -2675,6 +2676,7 @@ String identifier() : { }
       | <FUNCTION>
       | <GRAM>
       | <HASH>
+      | <HNSW>
       | <ID>
       | <IDENTICAL>
       | <IDENTIFIER>
@@ -2693,15 +2695,19 @@ String identifier() : { }
       | <MACRO>
       | <MAP>
       | <MATCH>
+      | <MODEL>
       | <MTOKEN>
       | <MUTABLE>
+      | <MUTATE>
       | <NEVER>
       | <NONE>
       | <NORMAL>
       | <NORMALIZING>
       | <OFF>
       | <ON>
+      | <OPERATION>
       | <ORDER>
+      | <PAGED>
       | <PARALLEL>
       | <PREFIX>
       | <PRIMARY>
@@ -2709,7 +2715,6 @@ String identifier() : { }
       | <QUATERNARY>
       | <QUERY>
       | <RANK>
-      | <MODEL>
       | <RAW>
       | <REFERENCE>
       | <SCHEMA>
@@ -2718,7 +2723,6 @@ String identifier() : { }
       | <SEQUENTIAL>
       | <SORTING>
       | <SOURCE>
-      | <PAGED>
       | <SSCONTEXTUAL>
       | <SSOVERRIDE>
       | <SSTITLE>
