@@ -78,6 +78,22 @@ public class CompoundNameTestCase {
     }
 
     @Test
+    void testIllegalCompound() {
+        assertEquals("'a.' is not a legal compound name. Names can not end with a dot.",
+                     assertThrows(IllegalArgumentException.class,
+                                  () -> CompoundName.from("a."))
+                             .getMessage());
+        assertEquals("'.b' is not a legal compound name. Consecutive, leading or trailing dots are not allowed.",
+                     assertThrows(IllegalArgumentException.class,
+                                  () -> CompoundName.from(".b"))
+                             .getMessage());
+        assertEquals("'a..b' is not a legal compound name. Consecutive, leading or trailing dots are not allowed.",
+                     assertThrows(IllegalArgumentException.class,
+                                  () -> CompoundName.from("a..b"))
+                             .getMessage());
+    }
+
+    @Test
     void testFromComponents() {
         verifyStrict("a", CompoundName.fromComponents("a"));
         verifyStrict("a.b", CompoundName.fromComponents("a", "b"));

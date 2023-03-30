@@ -94,16 +94,16 @@ public final class CompoundName {
             int start = 0, end = i == 0 ? -1 : children[0].name.length();
             for (int j = 0; j + i < children.length; j++) {
                 end += compounds[j + i].length() + 1;
+                if (end == start) throw new IllegalArgumentException("'" + name + "' is not a legal compound name. " +
+                                                                     "Consecutive, leading or trailing dots are not allowed.");
                 String subName = this.name.substring(start, end);
                 CompoundName cached = cache.get(subName);
-                children[j] = start == end ? empty
-                                           : cached != null
-                                           ? cached
-                                           : new CompoundName(subName,
-                                                              this.lowerCasedName.substring(start, end),
-                                                              Arrays.copyOfRange(compounds, j, j + i + 1),
-                                                              i == 0 ? empty : children[j + 1],
-                                                              i == 0 ? empty : children[j]);
+                children[j] = cached != null ? cached
+                                             : new CompoundName(subName,
+                                                                this.lowerCasedName.substring(start, end),
+                                                                Arrays.copyOfRange(compounds, j, j + i + 1),
+                                                                i == 0 ? empty : children[j + 1],
+                                                                i == 0 ? empty : children[j]);
                 if (useCache && cached == null) cache.put(subName, children[j]);
                 start += compounds[j].length() + 1;
             }
