@@ -3,11 +3,11 @@
 
 namespace=vespa.config.search
 
-# The active docs a group must have as a % of the average active docs of all other groups,
-# for that group to be included in queries
+## The active docs a group must have as a % of the average active docs of all other groups,
+## for that group to be included in queries
 minActivedocsPercentage double default=97.0
 
-# Distribution policy for group selection
+## Distribution policy for group selection
 distributionPolicy enum { ROUNDROBIN, BEST_OF_RANDOM_2, LATENCY_AMORTIZED_OVER_REQUESTS, LATENCY_AMORTIZED_OVER_TIME, ADAPTIVE } default=ADAPTIVE
 
 ## Maximum number of hits that will be requested from a single node
@@ -26,24 +26,28 @@ maxHitsPerNode int default=2147483647
 ## a setting of 1.0. This is a significant optimisation with with very little loss in presicion.
 topKProbability double default=0.9999
 
-# Number of document replicas _per group_ that will be present in a stable cluster.
-# Should always be >= searchableCopies.
+## Number of document replicas _per group_ that will be present in a stable cluster.
+## Should always be >= searchableCopies.
 redundancy long default=1
 
-# Minimum search coverage required before returning the results of a query
+## Minimum search coverage required before returning the results of a query
 minSearchCoverage double default=100
 
-# Minimum wait time for full coverage after minimum coverage is achieved, factored based on time left at minimum coverage
+## Minimum wait time for full coverage after minimum coverage is achieved, factored based on time left at minimum coverage
 minWaitAfterCoverageFactor double default=0
 
-# Maximum wait time for full coverage after minimum coverage is achieved, factored based on time left at minimum coverage
+## Maximum wait time for full coverage after minimum coverage is achieved, factored based on time left at minimum coverage
 maxWaitAfterCoverageFactor double default=1
 
-# Number of JRT transport threads
+## Number of JRT transport threads
 numJrtTransportThreads int default=8
 
-# Number of JRT connections per backend node
+## Number of JRT connections per backend node
 numJrtConnectionsPerNode int default=8
 
-# Number of seconds to spend warming up code to prevent JIT cold start issues.
+## Number of seconds to spend warming up code to prevent JIT cold start issues.
 warmuptime double default=0.1
+
+## Specifies how summary data are decoded
+## Eager will build java objects immediately, while ONDEMAND will do so when it is needed
+summaryDecodePolicy enum {EAGER, ONDEMAND} default=EAGER

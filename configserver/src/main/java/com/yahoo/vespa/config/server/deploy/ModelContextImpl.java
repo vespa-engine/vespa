@@ -203,6 +203,7 @@ public class ModelContextImpl implements ModelContext {
         private final boolean useRestrictedDataPlaneBindings;
         private final int heapPercentage;
         private final boolean enableGlobalPhase;
+        private final String summaryDecodePolicy;
 
         public FeatureFlags(FlagSource source, ApplicationId appId, Version version) {
             this.defaultTermwiseLimit = flagValue(source, appId, version, Flags.DEFAULT_TERM_WISE_LIMIT);
@@ -248,11 +249,13 @@ public class ModelContextImpl implements ModelContext {
             this.useRestrictedDataPlaneBindings = flagValue(source, appId, version, Flags.RESTRICT_DATA_PLANE_BINDINGS);
             this.heapPercentage = flagValue(source, appId, version, PermanentFlags.HEAP_SIZE_PERCENTAGE);
             this.enableGlobalPhase = flagValue(source, appId, version, Flags.ENABLE_GLOBAL_PHASE);
+            this.summaryDecodePolicy = flagValue(source, appId, version, Flags.SUMMARY_DECODE_POLICY);
         }
 
         @Override public int heapSizePercentage() { return heapPercentage; }
         @Override public String queryDispatchPolicy() { return queryDispatchPolicy; }
         @Override public double queryDispatchWarmup() { return queryDispatchWarmup; }
+        @Override public String summaryDecodePolicy() { return summaryDecodePolicy; }
         @Override public double defaultTermwiseLimit() { return defaultTermwiseLimit; }
         @Override public String feedSequencerType() { return feedSequencer; }
         @Override public String responseSequencerType() { return responseSequencer; }

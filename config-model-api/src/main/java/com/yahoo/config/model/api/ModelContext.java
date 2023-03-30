@@ -72,7 +72,7 @@ public interface ModelContext {
      *  - Remove all flag data files from hosted-feature-flag repository
      */
     interface FeatureFlags {
-        @ModelFeatureFlag(owners = {"baldersheim"}, comment = "Revisit in May or June 2021") default double defaultTermwiseLimit() { throw new UnsupportedOperationException("TODO specify default value"); }
+        @ModelFeatureFlag(owners = {"baldersheim"}, comment = "Revisit in May or June 2023") default double defaultTermwiseLimit() { throw new UnsupportedOperationException("TODO specify default value"); }
         @ModelFeatureFlag(owners = {"baldersheim"}, comment = "Select sequencer type use while feeding") default String feedSequencerType() { return "THROUGHPUT"; }
         @ModelFeatureFlag(owners = {"baldersheim"}) default String responseSequencerType() { throw new UnsupportedOperationException("TODO specify default value"); }
         @ModelFeatureFlag(owners = {"baldersheim"}) default String queryDispatchPolicy() { return "adaptive"; }
@@ -112,6 +112,7 @@ public interface ModelContext {
         @ModelFeatureFlag(owners = {"arnej","baldersheim"}, removeAfter = "8.110") default boolean useOldJdiscContainerStartup() { return false; }
         @ModelFeatureFlag(owners = {"tokle, bjorncs"}, removeAfter = "8.108") default boolean enableDataPlaneFilter() { return true; }
         @ModelFeatureFlag(owners = {"arnej, bjorncs"}) default boolean enableGlobalPhase() { return true; }
+        @ModelFeatureFlag(owners = {"baldersheim"}, comment = "Select summary decode type") default String summaryDecodePolicy() { return "eager"; }
 
         //Below are all flags that must be kept until 7 is out of the door
         @ModelFeatureFlag(owners = {"arnej"}, removeAfter="7.last") default boolean ignoreThreadStackSizes() { return false; }

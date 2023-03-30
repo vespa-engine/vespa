@@ -42,6 +42,8 @@ public class RpcProtobufFillInvoker extends FillInvoker {
 
     private static final Logger log = Logger.getLogger(RpcProtobufFillInvoker.class.getName());
 
+    enum DecodePolicy {EAGER, ONDEMAND}
+
     private final DocumentDatabase documentDb;
     private final RpcConnectionPool resourcePool;
     private final boolean summaryNeedsQuery;
@@ -56,7 +58,8 @@ public class RpcProtobufFillInvoker extends FillInvoker {
     /** The number of responses we should receive (and process) before this is complete */
     private int outstandingResponses;
 
-    RpcProtobufFillInvoker(RpcConnectionPool resourcePool, CompressPayload compressor, DocumentDatabase documentDb, String serverId, boolean summaryNeedsQuery) {
+    RpcProtobufFillInvoker(RpcConnectionPool resourcePool, CompressPayload compressor, DocumentDatabase documentDb,
+                           String serverId, DecodePolicy decodePolicy, boolean summaryNeedsQuery) {
         this.documentDb = documentDb;
         this.resourcePool = resourcePool;
         this.serverId = serverId;
