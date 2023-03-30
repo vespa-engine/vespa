@@ -20,15 +20,17 @@ public class ZoneApiMock implements ZoneApi {
     private final ZoneId virtualId;
     private final CloudName cloudName;
     private final String cloudNativeRegionName;
+    private final String cloudNativeAvailabilityZone;
 
     public static Builder newBuilder() { return new Builder(); }
 
-    private ZoneApiMock(SystemName systemName, ZoneId id, ZoneId virtualId, CloudName cloudName, String cloudNativeRegionName) {
+    private ZoneApiMock(SystemName systemName, ZoneId id, ZoneId virtualId, CloudName cloudName, String cloudNativeRegionName, String cloudNativeAvailabilityZone) {
         this.systemName = systemName;
         this.id = id;
         this.virtualId = virtualId;
         this.cloudName = cloudName;
         this.cloudNativeRegionName = cloudNativeRegionName;
+        this.cloudNativeAvailabilityZone = cloudNativeAvailabilityZone;
         if (virtualId != null && virtualId.equals(id)) {
             throw new IllegalArgumentException("Virtual ID cannot be equal to zone ID: " + id);
         }
@@ -64,6 +66,9 @@ public class ZoneApiMock implements ZoneApi {
     public String getCloudNativeRegionName() { return cloudNativeRegionName; }
 
     @Override
+    public String getCloudNativeAvailabilityZone() { return cloudNativeAvailabilityZone; }
+
+    @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
@@ -88,6 +93,7 @@ public class ZoneApiMock implements ZoneApi {
         private ZoneId virtualId = null;
         private CloudName cloudName = CloudName.DEFAULT;
         private String cloudNativeRegionName = id.region().value();
+        private String cloudNativeAvailabilityZone = "az1";
 
         public Builder with(ZoneId id) {
             this.id = id;
@@ -124,8 +130,13 @@ public class ZoneApiMock implements ZoneApi {
             return this;
         }
 
+        public Builder withCloudNativeAvailabilityZone(String cloudAvailabilityZone) {
+            this.cloudNativeAvailabilityZone = cloudAvailabilityZone;
+            return this;
+        }
+
         public ZoneApiMock build() {
-            return new ZoneApiMock(systemName, id, virtualId, cloudName, cloudNativeRegionName);
+            return new ZoneApiMock(systemName, id, virtualId, cloudName, cloudNativeRegionName, cloudNativeAvailabilityZone);
         }
     }
 

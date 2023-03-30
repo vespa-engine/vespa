@@ -25,7 +25,7 @@ public class JSONDebugSearcher extends Searcher {
     public static final String STRUCT_FIELD = "Structured data field (as json): ";
     public static final String FEATURE_FIELD = "Feature data field (as json): ";
 
-    private static CompoundName PROPERTYNAME = new CompoundName("dumpjson");
+    private static final CompoundName PROPERTYNAME = CompoundName.from("dumpjson");
 
     @Override
     public Result search(Query query, Execution execution) {

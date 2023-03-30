@@ -48,7 +48,6 @@ import com.yahoo.yolean.Exceptions;
 import java.net.URI;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -180,23 +179,23 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
 
     //---------------- Static property handling ------------------------------------
 
-    public static final CompoundName OFFSET = new CompoundName("offset");
-    public static final CompoundName HITS = new CompoundName("hits");
+    public static final CompoundName OFFSET = CompoundName.from("offset");
+    public static final CompoundName HITS = CompoundName.from("hits");
 
-    public static final CompoundName QUERY_PROFILE = new CompoundName("queryProfile");
-    public static final CompoundName SEARCH_CHAIN = new CompoundName("searchChain");
+    public static final CompoundName QUERY_PROFILE = CompoundName.from("queryProfile");
+    public static final CompoundName SEARCH_CHAIN = CompoundName.from("searchChain");
 
-    public static final CompoundName NO_CACHE = new CompoundName("noCache");
-    public static final CompoundName GROUPING_SESSION_CACHE = new CompoundName("groupingSessionCache");
-    public static final CompoundName TIMEOUT = new CompoundName("timeout");
+    public static final CompoundName NO_CACHE = CompoundName.from("noCache");
+    public static final CompoundName GROUPING_SESSION_CACHE = CompoundName.from("groupingSessionCache");
+    public static final CompoundName TIMEOUT = CompoundName.from("timeout");
 
     /** @deprecated use Trace.LEVEL */
     @Deprecated // TODO: Remove on Vespa 9
-    public static final CompoundName TRACE_LEVEL = new CompoundName("traceLevel");
+    public static final CompoundName TRACE_LEVEL = CompoundName.from("traceLevel");
 
     /** @deprecated use Trace.EXPLAIN_LEVEL */
     @Deprecated // TODO: Remove on Vespa 9
-    public static final CompoundName EXPLAIN_LEVEL = new CompoundName("explainLevel");
+    public static final CompoundName EXPLAIN_LEVEL = CompoundName.from("explainLevel");
 
     private static final QueryProfileType argumentType;
     static {
@@ -228,17 +227,17 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
     private static final Map<String, CompoundName> propertyAliases;
     static {
         Map<String, CompoundName> propertyAliasesBuilder = new HashMap<>();
-        addAliases(Query.getArgumentType(), CompoundName.empty, propertyAliasesBuilder);
+        addAliases(Query.getArgumentType(), "", propertyAliasesBuilder);
         propertyAliases = ImmutableMap.copyOf(propertyAliasesBuilder);
     }
-    private static void addAliases(QueryProfileType arguments, CompoundName prefix, Map<String, CompoundName> aliases) {
+    private static void addAliases(QueryProfileType arguments, String prefix, Map<String, CompoundName> aliases) {
         for (FieldDescription field : arguments.fields().values()) {
             for (String alias : field.getAliases())
-                aliases.put(alias, prefix.append(field.getName()));
+                aliases.put(alias, CompoundName.from(append(prefix, field.getName())));
             if (field.getType() instanceof QueryProfileFieldType) {
                 var type = ((QueryProfileFieldType) field.getType()).getQueryProfileType();
                 if (type != null)
-                    addAliases(type, prefix.append(type.getComponentIdAsCompoundName()), aliases);
+                    addAliases(type, append(prefix, type.getComponentIdAsCompoundName().toString()), aliases);
             }
         }
     }
@@ -261,18 +260,18 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
 
     /** Returns an unmodifiable list of all the native properties under a Query */
     public static final List<CompoundName> nativeProperties =
-            List.copyOf(namesUnder(CompoundName.empty, Query.getArgumentType()));
+            List.copyOf(namesUnder("", Query.getArgumentType()));
 
-    private static List<CompoundName> namesUnder(CompoundName prefix, QueryProfileType type) {
-        if (type == null) return Collections.emptyList(); // Names not known statically
+    private static List<CompoundName> namesUnder(String prefix, QueryProfileType type) {
+        if (type == null) return List.of(); // Names not known statically
         List<CompoundName> names = new ArrayList<>();
         for (Map.Entry<String, FieldDescription> field : type.fields().entrySet()) {
+            String name = append(prefix, field.getKey());
             if (field.getValue().getType() instanceof QueryProfileFieldType) {
-                names.addAll(namesUnder(prefix.append(field.getKey()),
-                                        ((QueryProfileFieldType) field.getValue().getType()).getQueryProfileType()));
+                names.addAll(namesUnder(name, ((QueryProfileFieldType) field.getValue().getType()).getQueryProfileType()));
             }
             else {
-                names.add(prefix.append(field.getKey()));
+                names.add(CompoundName.from(name));
             }
         }
         return names;
@@ -426,28 +425,36 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
      * dependent objects for the appropriate subset of the given property values
      */
     private void setFieldsFrom(Properties properties, Map<String, String> context) {
-        setFrom(CompoundName.empty, properties, Query.getArgumentType(), context);
+        setFrom("", properties, Query.getArgumentType(), context);
+    }
+
+    private static String append(String a, String b) {
+        if (a.isEmpty()) return b;
+        if (b.isEmpty()) return a;
+        return a + "." + b;
     }
 
     /**
      * For each field in the given query profile type, take the corresponding value from originalProperties
      * (if any) set it to properties(), recursively.
      */
-    private void setFrom(CompoundName prefix, Properties originalProperties, QueryProfileType arguments, Map<String, String> context) {
-        prefix = prefix.append(getPrefix(arguments));
+    private void setFrom(String prefix, Properties originalProperties, QueryProfileType arguments, Map<String, String> context) {
+        prefix = append(prefix, getPrefix(arguments).toString());
         for (FieldDescription field : arguments.fields().values()) {
 
             if (field.getType() == FieldType.genericQueryProfileType) { // Generic map
-                CompoundName fullName = prefix.append(field.getCompoundName());
-                for (Map.Entry<String, Object> entry : originalProperties.listProperties(fullName, context).entrySet()) {
-                    properties().set(fullName.append(entry.getKey()), entry.getValue(), context);
+                String fullName = append(prefix, field.getCompoundName().toString());
+                for (Map.Entry<String, Object> entry : originalProperties.listProperties(CompoundName.from(fullName), context).entrySet()) {
+                    properties().set(CompoundName.from(append(fullName, entry.getKey())), entry.getValue(), context);
                 }
             }
             else if (field.getType() instanceof QueryProfileFieldType) { // Nested arguments
                 setFrom(prefix, originalProperties, ((QueryProfileFieldType)field.getType()).getQueryProfileType(), context);
             }
             else {
-                CompoundName fullName = prefix.append(field.getCompoundName());
+                CompoundName fullName = prefix.isEmpty()
+                        ? field.getCompoundName()
+                        : CompoundName.from(append(prefix, field.getCompoundName().toString()));
                 Object value = originalProperties.get(fullName, context);
                 if (value != null) {
                     properties().set(fullName, value, context);
@@ -458,14 +465,15 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
 
     /** Calls properties.set on all entries in requestMap */
     private void setPropertiesFromRequestMap(Map<String, String> requestMap, Properties properties, boolean ignoreSelect) {
-        for (var entry : requestMap.entrySet()) {
+        var entrySet = requestMap.entrySet();
+        for (var entry : entrySet) {
             if (ignoreSelect && entry.getKey().equals(Select.SELECT)) continue;
             if (RankFeatures.isFeatureName(entry.getKey())) continue; // Set these last
-            properties.set(entry.getKey(), entry.getValue(), requestMap);
+            properties.set(CompoundName.from(entry.getKey()), entry.getValue(), requestMap);
         }
-        for (var entry : requestMap.entrySet()) {
+        for (var entry : entrySet) {
             if ( ! RankFeatures.isFeatureName(entry.getKey())) continue;
-            properties.set(entry.getKey(), entry.getValue(), requestMap);
+            properties.set(CompoundName.from(entry.getKey()), entry.getValue(), requestMap);
         }
     }
 

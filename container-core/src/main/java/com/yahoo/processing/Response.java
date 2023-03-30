@@ -35,7 +35,7 @@ import java.util.concurrent.TimeoutException;
  */
 public class Response extends ListenableFreezableClass {
 
-    private final static CompoundName freezeListenerKey =new CompoundName("processing.freezeListener");
+    private final static CompoundName freezeListenerKey = CompoundName.from("processing.freezeListener");
 
     private final DataList<?> data;
 

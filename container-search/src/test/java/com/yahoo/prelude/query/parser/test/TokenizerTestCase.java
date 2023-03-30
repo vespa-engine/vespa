@@ -13,7 +13,6 @@ import com.yahoo.prelude.query.parser.Tokenizer;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 import static com.yahoo.prelude.query.parser.Token.Kind.COLON;
@@ -29,7 +28,9 @@ import static com.yahoo.prelude.query.parser.Token.Kind.SPACE;
 import static com.yahoo.prelude.query.parser.Token.Kind.STAR;
 import static com.yahoo.prelude.query.parser.Token.Kind.UNDERSCORE;
 import static com.yahoo.prelude.query.parser.Token.Kind.WORD;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Tests the tokenizer
@@ -283,7 +284,7 @@ public class TokenizerTestCase {
         sd.addIndex(index2);
 
         IndexFacts facts = new IndexFacts(new IndexModel(sd));
-        IndexFacts.Session session = facts.newSession(Collections.emptySet(), Collections.emptySet());
+        IndexFacts.Session session = facts.newSession();
         Tokenizer tokenizer = new Tokenizer(new SimpleLinguistics());
         List<?> tokens = tokenizer.tokenize("normal a:b (normal testexact1:/,%#%&+-+ ) testexact2:ho_/&%&/()/aa*::*& b:c", "default", session);
         // tokenizer.print();
@@ -328,7 +329,7 @@ public class TokenizerTestCase {
 
         IndexFacts facts = new IndexFacts(new IndexModel(sd));
         Tokenizer tokenizer = new Tokenizer(new SimpleLinguistics());
-        IndexFacts.Session session = facts.newSession(Collections.emptySet(), Collections.emptySet());
+        IndexFacts.Session session = facts.newSession();
         List<?> tokens = tokenizer.tokenize("normal a:b (normal testexact1:/,%#%&+-+ ) testexact2:ho_/&%&/()/aa*::*&", session);
         assertEquals(new Token(WORD, "normal"), tokens.get(0));
         assertEquals(new Token(SPACE, " "), tokens.get(1));
@@ -365,7 +366,7 @@ public class TokenizerTestCase {
 
         IndexFacts facts = new IndexFacts(new IndexModel(sd));
         Tokenizer tokenizer = new Tokenizer(new SimpleLinguistics());
-        IndexFacts.Session session = facts.newSession(Collections.emptySet(), Collections.emptySet());
+        IndexFacts.Session session = facts.newSession();
         List<?> tokens = tokenizer.tokenize("normal a:b (normal testexact1:/,%#%&+-+ ) testexact2:ho_/&%&/()/aa*::*", session);
         assertEquals(new Token(WORD, "normal"), tokens.get(0));
         assertEquals(new Token(SPACE, " "), tokens.get(1));
@@ -402,7 +403,7 @@ public class TokenizerTestCase {
 
         IndexFacts facts = new IndexFacts(new IndexModel(sd));
         Tokenizer tokenizer = new Tokenizer(new SimpleLinguistics());
-        IndexFacts.Session session = facts.newSession(Collections.emptySet(), Collections.emptySet());
+        IndexFacts.Session session = facts.newSession();
         List<?> tokens = tokenizer.tokenize("normal a:b (normal testexact1:!/%#%&+-+ ) testexact2:ho_/&%&/()/aa*::*&b:", session);
         assertEquals(new Token(WORD, "normal"), tokens.get(0));
         assertEquals(new Token(SPACE, " "), tokens.get(1));
@@ -439,7 +440,7 @@ public class TokenizerTestCase {
         sd.addIndex(index2);
 
         IndexFacts indexFacts = new IndexFacts(new IndexModel(sd));
-        IndexFacts.Session facts = indexFacts.newSession(Collections.emptySet(), Collections.emptySet());
+        IndexFacts.Session facts = indexFacts.newSession();
 
         Tokenizer tokenizer = new Tokenizer(new SimpleLinguistics());
         List<?> tokens = tokenizer.tokenize("normal a:b (normal testexact1:foo) testexact2:bar", facts);

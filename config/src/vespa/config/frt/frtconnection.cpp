@@ -104,7 +104,7 @@ void FRTConnection::calculateSuspension(ErrorType type)
     switch(type) {
     case TRANSIENT:
         delay = std::min(MAX_DELAY_MULTIPLIER, ++_transientFailures) * _transientDelay;
-        LOG(warning, "Connection to %s failed or timed out", _address.c_str());
+        LOG(debug, "Connection to %s failed or timed out", _address.c_str());
         break;
     case FATAL:
         delay = std::min(MAX_DELAY_MULTIPLIER, ++_fatalFailures) * _fatalDelay;
@@ -112,7 +112,7 @@ void FRTConnection::calculateSuspension(ErrorType type)
     }
     _suspendedUntil = now + delay;
     if (_suspendWarned < (now - WARN_INTERVAL)) {
-        LOG(warning, "FRT Connection %s suspended until %s", _address.c_str(), vespalib::to_string(to_utc(_suspendedUntil)).c_str());
+        LOG(debug, "FRT Connection %s suspended until %s", _address.c_str(), vespalib::to_string(to_utc(_suspendedUntil)).c_str());
         _suspendWarned = now;
     }
 }

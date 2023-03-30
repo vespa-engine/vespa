@@ -379,7 +379,7 @@ public class GroupingExecutor extends Searcher {
     }
 
     private static CompoundName newCompoundName(String name) {
-        return new CompoundName(GroupingExecutor.class.getName() + "." + name);
+        return CompoundName.from(GroupingExecutor.class.getName() + "." + name);
     }
 
     private static class RequestContext {

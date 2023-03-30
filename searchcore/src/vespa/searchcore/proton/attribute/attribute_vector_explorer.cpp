@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "attribute_vector_explorer.h"
+#include "attribute_executor.h"
 #include <vespa/searchlib/attribute/i_enum_store.h>
 #include <vespa/searchlib/attribute/i_enum_store_dictionary.h>
 #include <vespa/searchlib/attribute/multi_value_mapping.h>
@@ -14,35 +15,17 @@ using search::attribute::Status;
 using search::AddressSpaceUsage;
 using search::AttributeVector;
 using search::IEnumStore;
+using search::StateExplorerUtils;
 using vespalib::AddressSpace;
 using vespalib::MemoryUsage;
 using search::attribute::MultiValueMappingBase;
+using search::attribute::IAttributeVector;
 using search::attribute::IPostingListAttributeBase;
 using namespace vespalib::slime;
 
 namespace proton {
 
 namespace {
-
-void
-convertStatusToSlime(const Status &status, Cursor &object)
-{
-    object.setLong("numDocs", status.getNumDocs());
-    object.setLong("numValues", status.getNumValues());
-    object.setLong("numUniqueValues", status.getNumUniqueValues());
-    object.setLong("lastSerialNum", status.getLastSyncToken());
-    object.setLong("updateCount", status.getUpdateCount());
-    object.setLong("nonIdempotentUpdateCount", status.getNonIdempotentUpdateCount());
-    object.setLong("bitVectors", status.getBitVectors());
-    {
-        Cursor &memory = object.setObject("memoryUsage");
-        memory.setLong("allocatedBytes", status.getAllocated());
-        memory.setLong("usedBytes", status.getUsed());
-        memory.setLong("deadBytes", status.getDead());
-        memory.setLong("onHoldBytes", status.getOnHold());
-        memory.setLong("onHoldBytesMax", status.getOnHoldMax());
-    }
-}
 
 void
 convertGenerationToSlime(const AttributeVector &attr, Cursor &object)
@@ -71,7 +54,7 @@ convertAddressSpaceUsageToSlime(const AddressSpaceUsage &usage, Cursor &object)
 void
 convertMemoryUsageToSlime(const MemoryUsage &usage, Cursor &object)
 {
-    search::StateExplorerUtils::memory_usage_to_slime(usage, object);
+    StateExplorerUtils::memory_usage_to_slime(usage, object);
 }
 
 void
@@ -116,20 +99,25 @@ convertPostingBaseToSlime(const IPostingListAttributeBase &postingBase, Cursor &
 
 }
 
-AttributeVectorExplorer::AttributeVectorExplorer(ExclusiveAttributeReadAccessor::UP attribute)
-    : _attribute(std::move(attribute))
+AttributeVectorExplorer::AttributeVectorExplorer(std::unique_ptr<AttributeExecutor> executor)
+    : _executor(std::move(executor))
 {
 }
 
 void
 AttributeVectorExplorer::get_state(const vespalib::slime::Inserter &inserter, bool full) const
 {
-    ExclusiveAttributeReadAccessor::Guard::UP readGuard = _attribute->takeGuard();
-    const AttributeVector &attr = readGuard->get();
+    auto& attr = _executor->get_attr();
+    _executor->run_sync([this, &attr, &inserter, full] { get_state_helper(attr, inserter, full); });
+}
+
+void
+AttributeVectorExplorer::get_state_helper(const AttributeVector& attr, const vespalib::slime::Inserter &inserter, bool full) const
+{
     const Status &status = attr.getStatus();
     Cursor &object = inserter.insertObject();
     if (full) {
-        convertStatusToSlime(status, object.setObject("status"));
+        StateExplorerUtils::status_to_slime(status, object.setObject("status"));
         convertGenerationToSlime(attr, object.setObject("generation"));
         convertAddressSpaceUsageToSlime(attr.getAddressSpaceUsage(), object.setObject("addressSpaceUsage"));
         // TODO: Consider making enum store, multivalue mapping, posting list attribute and tensor attribute

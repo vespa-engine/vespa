@@ -79,6 +79,12 @@ public class Flags {
                     " latency-amortized-over-requests, latency-amortized-over-time",
             "Takes effect at redeployment (requires restart)",
             ZONE_ID, APPLICATION_ID);
+    public static final UnboundStringFlag SUMMARY_DECODE_POLICY = defineStringFlag(
+            "summary-decode-policy", "eager",
+            List.of("baldersheim"), "2023-03-30", "2023-12-31",
+            "Select summary decoding policy, valid values are eager and on-demand/ondemand.",
+            "Takes effect at redeployment (requires restart)",
+            ZONE_ID, APPLICATION_ID);
 
     public static final UnboundStringFlag FEED_SEQUENCER_TYPE = defineStringFlag(
             "feed-sequencer-type", "THROUGHPUT",

@@ -232,12 +232,6 @@ FilterAttributeManager::asyncForAttribute(const vespalib::string &name, std::uni
 
 }
 
-ExclusiveAttributeReadAccessor::UP
-FilterAttributeManager::getExclusiveReadAccessor(const vespalib::string &name) const
-{
-    return (acceptAttribute(name)) ? _mgr->getExclusiveReadAccessor(name) : ExclusiveAttributeReadAccessor::UP();
-}
-
 void
 FilterAttributeManager::setImportedAttributes(std::unique_ptr<ImportedAttributesRepo>)
 {

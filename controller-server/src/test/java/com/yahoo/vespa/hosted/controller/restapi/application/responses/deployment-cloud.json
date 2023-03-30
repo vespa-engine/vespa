@@ -4,6 +4,7 @@
   "instance": "default",
   "environment": "prod",
   "region": "aws-us-east-1c",
+  "availabilityZone": "use1-az2",
   "endpoints": [
     {
       "cluster": "default",
@@ -30,7 +31,7 @@
   },
   "status": "complete",
   "quota": 1.304,
-  "activity": { },
+  "activity": {},
   "metrics": {
     "queriesPerSecond": 0.0,
     "writesPerSecond": 0.0,

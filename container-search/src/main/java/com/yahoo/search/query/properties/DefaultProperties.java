@@ -16,9 +16,9 @@ import java.util.Map;
  */
 public final class DefaultProperties extends Properties  {
 
-    public static final CompoundName MAX_OFFSET = new CompoundName("maxOffset");
-    public static final CompoundName MAX_HITS = new CompoundName("maxHits");
-    public static final CompoundName MAX_QUERY_ITEMS = new CompoundName("maxQueryItems");
+    public static final CompoundName MAX_OFFSET = CompoundName.from("maxOffset");
+    public static final CompoundName MAX_HITS = CompoundName.from("maxHits");
+    public static final CompoundName MAX_QUERY_ITEMS = CompoundName.from("maxQueryItems");
 
     public static final QueryProfileType argumentType = new QueryProfileType("DefaultProperties");
 

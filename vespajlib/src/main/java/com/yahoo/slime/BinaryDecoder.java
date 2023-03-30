@@ -23,7 +23,7 @@ final class BinaryDecoder {
     public Slime decode(byte[] bytes, int offset, int length) {
         Slime slime = new Slime();
         in = new BufferedInput(bytes, offset, length);
-        decodeSymbolTable(slime);
+        decodeSymbolTable(in, slime.symbolTable());
         decodeValue(slimeInserter.adjust(slime));
         if (in.failed()) {
             slime.wrap("partial_result");
@@ -31,22 +31,6 @@ final class BinaryDecoder {
             slime.get().setString("error_message", in.getErrorMessage());
         }
         return slime;
-    }
-
-    long read_cmpr_long() {
-        long next = in.getByte();
-        long value = (next & 0x7f);
-        int shift = 7;
-        while ((next & 0x80) != 0) {
-            next = in.getByte();
-            value |= ((next & 0x7f) << shift);
-            shift += 7;
-        }
-        return value;
-    }
-
-    long read_size(int meta) {
-        return (meta == 0) ? read_cmpr_long() : (meta - 1);
     }
 
     long read_bytes_le(int bytes) {
@@ -90,22 +74,20 @@ final class BinaryDecoder {
     }
 
     Cursor decodeSTRING(Inserter inserter, int meta) {
-        long size = read_size(meta);
-        int sz = (int)size; // XXX
-        byte[] image = in.getBytes(sz);
+        int size = in.read_size(meta);
+        byte[] image = in.getBytes(size);
         return inserter.insertSTRING(image);
     }
 
     Cursor decodeDATA(Inserter inserter, int meta) {
-        long size = read_size(meta);
-        int sz = (int)size; // XXX
-        byte[] image = in.getBytes(sz);
+        int size = in.read_size(meta);
+        byte[] image = in.getBytes(size);
         return inserter.insertDATA(image);
     }
 
     Cursor decodeARRAY(Inserter inserter, int meta) {
         Cursor cursor = inserter.insertARRAY();
-        long size = read_size(meta);
+        int size = in.read_size(meta);
         for (int i = 0; i < size; ++i) {
             decodeValue(arrayInserter.adjust(cursor));
         }
@@ -114,10 +96,9 @@ final class BinaryDecoder {
 
     Cursor decodeOBJECT(Inserter inserter, int meta) {
         Cursor cursor = inserter.insertOBJECT();
-        long size = read_size(meta);
+        int size = in.read_size(meta);
         for (int i = 0; i < size; ++i) {
-            long l = read_cmpr_long();
-            int symbol = (int)l; // check for overflow?
+            int symbol = in.read_cmpr_int();
             decodeValue(objectInserter.adjust(cursor, symbol));
         }
         return cursor;
@@ -146,20 +127,18 @@ final class BinaryDecoder {
         }
     }
 
-    void decodeSymbolTable(Slime slime) {
-        long numSymbols = read_cmpr_long();
-        final byte [] backing = in.getBacking();
+    static void decodeSymbolTable(BufferedInput input, SymbolTable names) {
+        int numSymbols = input.read_cmpr_int();
+        final byte[] backing = input.getBacking();
         for (int i = 0; i < numSymbols; ++i) {
-            long size = read_cmpr_long();
-            int sz = (int)size; // XXX
-            int offset = in.getPosition();
-            in.skip(sz);
-            int symbol = slime.insert(Utf8Codec.decode(backing, offset, sz));
+            int size = input.read_cmpr_int();
+            int offset = input.getPosition();
+            input.skip(size);
+            int symbol = names.insert(Utf8Codec.decode(backing, offset, size));
             if (symbol != i) {
-                in.fail("duplicate symbols in symbol table");
+                input.fail("duplicate symbols in symbol table");
                 return;
             }
         }
     }
-
 }

@@ -2,6 +2,7 @@
 
 #pragma once
 
+namespace search::attribute { class Status; }
 namespace vespalib { class MemoryUsage; }
 namespace vespalib::slime { struct Cursor; }
 
@@ -13,6 +14,7 @@ namespace search {
 class StateExplorerUtils {
 public:
     static void memory_usage_to_slime(const vespalib::MemoryUsage& usage, vespalib::slime::Cursor& object);
+    static void status_to_slime(const search::attribute::Status &status, vespalib::slime::Cursor &object);
 };
 
 }

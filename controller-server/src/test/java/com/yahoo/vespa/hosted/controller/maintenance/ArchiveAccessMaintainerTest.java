@@ -43,10 +43,12 @@ public class ArchiveAccessMaintainerTest {
         assertEquals(new ArchiveAccess().withAWSRole(tenant1role), archiveService.authorizeAccessByTenantName.get(tenant1));
         assertEquals(new ArchiveAccess().withAWSRole(tenant2role), archiveService.authorizeAccessByTenantName.get(tenant2));
 
+        var zoneRegistry = tester.controller().zoneRegistry();
         var expected = Map.of("archive.bucketCount",
-                tester.controller().zoneRegistry().zonesIncludingSystem().all().ids().stream()
+                zoneRegistry.zonesIncludingSystem().all().ids().stream()
                         .collect(Collectors.toMap(
-                                zone -> Map.of("zone", zone.value(), "cloud", "default"),
+                                zone -> Map.of("zone", zone.value(), "cloud",
+                                        zoneRegistry.hasZone(zone) ? zoneRegistry.get(zone).getCloudName().value() : "default"),
                                 zone -> zone.equals(testZone) ? 1d : 0d)));
 
         assertEquals(expected, metric.metrics());

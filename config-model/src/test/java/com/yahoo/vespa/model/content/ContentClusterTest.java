@@ -1099,6 +1099,30 @@ public class ContentClusterTest extends ContentBaseTest {
         }
     }
 
+    private void verifySummaryDecodeType(String policy, DispatchConfig.SummaryDecodePolicy.Enum expected) {
+        TestProperties properties = new TestProperties();
+        if (policy != null) {
+            properties.setSummaryDecodePolicy(policy);
+        }
+        VespaModel model = createEnd2EndOneNode(properties);
+
+        ContentCluster cc = model.getContentClusters().get("storage");
+        DispatchConfig.Builder builder = new DispatchConfig.Builder();
+        cc.getSearch().getConfig(builder);
+
+        DispatchConfig cfg = new DispatchConfig(builder);
+        assertEquals(expected, cfg.summaryDecodePolicy());
+    }
+
+    @Test
+    public void verify_summary_decoding_controlled_by_properties() {
+        verifySummaryDecodeType(null, DispatchConfig.SummaryDecodePolicy.EAGER);
+        verifySummaryDecodeType("illegal-config", DispatchConfig.SummaryDecodePolicy.EAGER);
+        verifySummaryDecodeType("eager", DispatchConfig.SummaryDecodePolicy.EAGER);
+        verifySummaryDecodeType("ondemand", DispatchConfig.SummaryDecodePolicy.ONDEMAND);
+        verifySummaryDecodeType("on-demand", DispatchConfig.SummaryDecodePolicy.ONDEMAND);
+    }
+
     private int resolveMaxCompactBuffers(OptionalInt maxCompactBuffers) {
         TestProperties testProperties = new TestProperties();
         if (maxCompactBuffers.isPresent()) {

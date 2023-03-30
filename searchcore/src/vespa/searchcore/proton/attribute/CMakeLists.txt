@@ -7,6 +7,7 @@ vespa_add_library(searchcore_attribute STATIC
     attribute_collection_spec.cpp
     attribute_config_inspector.cpp
     attribute_directory.cpp
+    attribute_executor.cpp
     attribute_factory.cpp
     attribute_initializer.cpp
     attribute_initializer_result.cpp
@@ -30,7 +31,6 @@ vespa_add_library(searchcore_attribute STATIC
     document_field_extractor.cpp
     document_field_populator.cpp
     document_field_retriever.cpp
-    exclusive_attribute_read_accessor.cpp
     filter_attribute_manager.cpp
     flushableattribute.cpp
     imported_attributes_context.cpp

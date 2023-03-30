@@ -22,7 +22,7 @@ import java.util.Iterator;
 @Before(GroupingExecutor.COMPONENT_NAME)
 public class FlatteningSearcher extends Searcher {
 
-    private final CompoundName flatten = CompoundName.fromComponents("grouping", "flatten");
+    private final CompoundName flatten = CompoundName.from("grouping.flatten");
 
     @Override
     public Result search(Query query, Execution execution) {

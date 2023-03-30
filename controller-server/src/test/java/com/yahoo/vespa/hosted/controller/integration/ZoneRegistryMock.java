@@ -32,6 +32,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -62,9 +63,9 @@ public class ZoneRegistryMock extends AbstractComponent implements ZoneRegistry 
         if (system.isPublic()) {
             this.zones = List.of(ZoneApiMock.fromId("test.us-east-1"),
                                  ZoneApiMock.fromId("staging.us-east-3"),
-                                 ZoneApiMock.fromId("prod.aws-us-east-1c"),
-                                 ZoneApiMock.fromId("prod.aws-eu-west-1a"),
-                                 ZoneApiMock.fromId("dev.aws-us-east-1c"));
+                                 ZoneApiMock.newBuilder().withId("prod.aws-us-east-1c").withCloud("aws").withCloudNativeAvailabilityZone("use1-az2").build(),
+                                 ZoneApiMock.newBuilder().withId("prod.aws-eu-west-1a").withCloud("aws").withCloudNativeAvailabilityZone("euw1-az3").build(),
+                                 ZoneApiMock.newBuilder().withId("dev.aws-us-east-1c").withCloud("aws").withCloudNativeAvailabilityZone("use1-az2").build());
                     setRoutingMethod(this.zones, RoutingMethod.exclusive);
         } else {
             this.zones = List.of(ZoneApiMock.fromId("test.us-east-1"),
@@ -296,6 +297,14 @@ public class ZoneRegistryMock extends AbstractComponent implements ZoneRegistry 
     @Override
     public Optional<RegionName> getDefaultRegion(Environment environment) {
         return Optional.ofNullable(defaultRegionForEnvironment.get(environment));
+    }
+
+    @Override
+    public ZoneApi get(ZoneId zoneId) {
+        return zones.stream()
+                .filter(zone -> zone.getId().equals(zoneId))
+                .findFirst()
+                .orElseThrow(() -> new NoSuchElementException("No zone with id '" + zoneId + "'"));
     }
 
     @Override

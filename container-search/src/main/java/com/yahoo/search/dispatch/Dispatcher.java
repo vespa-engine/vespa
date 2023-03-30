@@ -52,7 +52,7 @@ public class Dispatcher extends AbstractComponent {
     private static final int MAX_GROUP_SELECTION_ATTEMPTS = 3;
 
     /** If set will control computation of how many hits will be fetched from each partition.*/
-    public static final CompoundName topKProbability = CompoundName.fromComponents(DISPATCH, TOP_K_PROBABILITY);
+    public static final CompoundName topKProbability = CompoundName.from(DISPATCH + "." + TOP_K_PROBABILITY);
 
     private final DispatchConfig dispatchConfig;
     private final RpcResourcePool rpcResourcePool;

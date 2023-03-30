@@ -27,7 +27,7 @@ import java.util.Objects;
 public class Ranking implements Cloneable {
 
     /** An alias for listing features */
-    public static final CompoundName RANKFEATURES = new CompoundName("rankfeatures");
+    public static final CompoundName RANKFEATURES = CompoundName.from("rankfeatures");
 
     /** The type representing the property arguments consumed by this */
     private static final QueryProfileType argumentType;
@@ -70,7 +70,7 @@ public class Ranking implements Cloneable {
         argumentType.addField(new FieldDescription(FEATURES, "query-profile", "rankfeature input")); // Repeated at the end of RankFeatures
         argumentType.addField(new FieldDescription(PROPERTIES, "query-profile", "rankproperty"));
         argumentType.freeze();
-        argumentTypeName = new CompoundName(argumentType.getId().getName());
+        argumentTypeName = CompoundName.from(argumentType.getId().getName());
     }
     public static QueryProfileType getArgumentType() { return argumentType; }
 

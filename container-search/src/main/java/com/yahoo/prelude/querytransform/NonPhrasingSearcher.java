@@ -22,7 +22,7 @@ import java.util.List;
 @Before("transformedQuery")
 public class NonPhrasingSearcher extends Searcher {
 
-    private static final CompoundName suggestonly=new CompoundName("suggestonly");
+    private static final CompoundName suggestonly = CompoundName.from("suggestonly");
 
     private PhraseMatcher phraseMatcher;
 

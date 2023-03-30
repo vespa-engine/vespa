@@ -46,7 +46,7 @@ import static com.yahoo.component.chain.ChainsConfigurer.prepareChainRegistry;
 @SuppressWarnings("deprecation") // super class is deprecated
 public abstract class AbstractProcessingHandler<COMPONENT extends Processor> extends LoggingRequestHandler {
 
-    private final static CompoundName freezeListenerKey =new CompoundName("processing.freezeListener");
+    private final static CompoundName freezeListenerKey = CompoundName.from("processing.freezeListener");
 
     public final static String DEFAULT_RENDERER_ID = "default";
 
@@ -112,7 +112,7 @@ public abstract class AbstractProcessingHandler<COMPONENT extends Processor> ext
     public HttpResponse handle(HttpRequest request, ContentChannel channel) {
         com.yahoo.processing.Request processingRequest = new com.yahoo.processing.Request();
         populate("", request.propertyMap(), processingRequest.properties());
-        populate("context", request.getJDiscRequest().context(), processingRequest.properties());
+        populate("context.", request.getJDiscRequest().context(), processingRequest.properties());
         processingRequest.properties().set(Request.JDISC_REQUEST, request);
 
         FreezeListener freezeListener = new FreezeListener(processingRequest, renderers, defaultRenderer, channel, renderingExecutor);
@@ -183,10 +183,9 @@ public abstract class AbstractProcessingHandler<COMPONENT extends Processor> ext
         return properties.getString(Request.CHAIN,"default");
     }
 
-    private void populate(String prefixName,Map<String,?> parameters,Properties properties) {
-        CompoundName prefix = new CompoundName(prefixName);
+    private void populate(String prefixName, Map<String,?> parameters,Properties properties) {
         for (Map.Entry<String,?> entry : parameters.entrySet())
-            properties.set(prefix.append(entry.getKey()), entry.getValue());
+            properties.set(CompoundName.from(prefixName + entry.getKey()), entry.getValue());
     }
 
     private static class FreezeListener implements Runnable, ResponseReceiver {
