@@ -140,99 +140,43 @@ public class BinaryViewTest {
         }
     }
 
-    class MyVisitor implements Visitor {
-        enum Called { NONE, INVALID, NIX, BOOL, LONG, DOUBLE, UTF8, DATA, ARRAY, OBJECT }
-        Called called = Called.NONE;
-        boolean boolValue;
-        long longValue;
-        double doubleValue;
-        byte[] bytes;
-        Inspector stuff;
-        @Override public void visitInvalid() {
-            assertEquals(ctx, Called.NONE, called);
-            called = Called.INVALID;
-        }
-        @Override public void visitNix() {
-            assertEquals(ctx, Called.NONE, called);
-            called = Called.NIX;
-        }
-        @Override public void visitBool(boolean bit) {
-            assertEquals(ctx, Called.NONE, called);
-            called = Called.BOOL;
-            boolValue = bit;
-        }
-        @Override public void visitLong(long l) {
-            assertEquals(ctx, Called.NONE, called);
-            called = Called.LONG;
-            longValue = l;
-        }
-        @Override public void visitDouble(double d) {
-            assertEquals(ctx, Called.NONE, called);
-            called = Called.DOUBLE;
-            doubleValue = d;
-        }
-        @Override public void visitString(String str) {
-            fail(ctx + ", strings are never utf-16 in binary view");
-        }
-        @Override public void visitString(byte[] utf8) {
-            assertEquals(ctx, Called.NONE, called);
-            called = Called.UTF8;
-            bytes = utf8;
-        }
-        @Override public void visitData(byte[] data) {
-            assertEquals(ctx, Called.NONE, called);
-            called = Called.DATA;
-            bytes = data;
-        }
-        @Override public void visitArray(Inspector arr) {
-            assertEquals(ctx, Called.NONE, called);
-            called = Called.ARRAY;
-            stuff = arr;
-        }
-        @Override public void visitObject(Inspector obj) {
-            assertEquals(ctx, Called.NONE, called);
-            called = Called.OBJECT;
-            stuff = obj;
-        }
-    };
-
     void checkVisitor(Inspector view) {
-        var visitor = new MyVisitor();
+        var visitor = new MockVisitor(ctx);
         view.accept(visitor);
         if (!view.valid()) {
-            assertEquals(ctx, MyVisitor.Called.INVALID, visitor.called);
+            assertEquals(ctx, MockVisitor.Called.INVALID, visitor.called);
             return;
         }
         switch (view.type()) {
             case NIX:
-                assertEquals(ctx, MyVisitor.Called.NIX, visitor.called);
+                assertEquals(ctx, MockVisitor.Called.NIX, visitor.called);
                 break;
             case BOOL:
-                assertEquals(ctx, MyVisitor.Called.BOOL, visitor.called);
+                assertEquals(ctx, MockVisitor.Called.BOOL, visitor.called);
                 assertEquals(ctx, view.asBool(), visitor.boolValue);
                 break;
             case LONG:
-                assertEquals(ctx, MyVisitor.Called.LONG, visitor.called);
+                assertEquals(ctx, MockVisitor.Called.LONG, visitor.called);
                 assertEquals(ctx, view.asLong(), visitor.longValue);
                 break;
             case DOUBLE:
-                assertEquals(ctx, MyVisitor.Called.DOUBLE, visitor.called);
+                assertEquals(ctx, MockVisitor.Called.DOUBLE, visitor.called);
                 assertEquals(ctx, view.asDouble(), visitor.doubleValue, 0.0);
                 break;
             case STRING:
-                assertEquals(ctx, MyVisitor.Called.UTF8, visitor.called);
+                assertEquals(ctx, MockVisitor.Called.UTF8, visitor.called);
                 assertArrayEquals(ctx, view.asUtf8(), visitor.bytes);
                 break;
             case DATA:
-                assertEquals(ctx, MyVisitor.Called.DATA, visitor.called);
+                assertEquals(ctx, MockVisitor.Called.DATA, visitor.called);
                 assertArrayEquals(ctx, view.asData(), visitor.bytes);
                 break;
             case ARRAY:
-                assertEquals(ctx, MyVisitor.Called.ARRAY, visitor.called);
+                assertEquals(ctx, MockVisitor.Called.ARRAY, visitor.called);
                 assertSame(ctx, view, visitor.stuff);
                 break;
             case OBJECT:
-                assertEquals(ctx, MyVisitor.Called.OBJECT, visitor.called);
+                assertEquals(ctx, MockVisitor.Called.OBJECT, visitor.called);
                 assertSame(ctx, view, visitor.stuff);
                 break;
             default:

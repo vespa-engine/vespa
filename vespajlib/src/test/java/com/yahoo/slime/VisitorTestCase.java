@@ -2,100 +2,97 @@
 package com.yahoo.slime;
 
 import org.junit.Test;
-import org.mockito.Mockito;
-
-import static org.hamcrest.CoreMatchers.sameInstance;
-import static org.mockito.hamcrest.MockitoHamcrest.argThat;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertSame;
 
 public class VisitorTestCase {
 
     @Test
     public void testVisitInvalid() {
-        Visitor visitor = Mockito.mock(Visitor.class);
+        var visitor = new MockVisitor();
         Inspector inspector = new Slime().get().field("invalid");
         inspector.accept(visitor);
-        Mockito.verify(visitor).visitInvalid();
-        Mockito.verifyNoMoreInteractions(visitor);
+        assertEquals(MockVisitor.Called.INVALID, visitor.called);
     }
 
     @Test
     public void testVisitNix() {
-        Visitor visitor = Mockito.mock(Visitor.class);
+        var visitor = new MockVisitor();
         Inspector inspector = new Slime().get();
         inspector.accept(visitor);
-        Mockito.verify(visitor).visitNix();
-        Mockito.verifyNoMoreInteractions(visitor);
+        assertEquals(MockVisitor.Called.NIX, visitor.called);
     }
 
     @Test
     public void testVisitBool() {
-        Visitor visitor = Mockito.mock(Visitor.class);
+        var visitor = new MockVisitor();
         Inspector inspector = new Slime().setBool(true);
         inspector.accept(visitor);
-        Mockito.verify(visitor).visitBool(true);
-        Mockito.verifyNoMoreInteractions(visitor);
+        assertEquals(MockVisitor.Called.BOOL, visitor.called);
+        assertEquals(true, visitor.boolValue);
     }
 
     @Test
     public void testVisitLong() {
-        Visitor visitor = Mockito.mock(Visitor.class);
+        var visitor = new MockVisitor();
         Inspector inspector = new Slime().setLong(123);
         inspector.accept(visitor);
-        Mockito.verify(visitor).visitLong(123);
-        Mockito.verifyNoMoreInteractions(visitor);
+        assertEquals(MockVisitor.Called.LONG, visitor.called);
+        assertEquals(123, visitor.longValue);
     }
 
     @Test
     public void testVisitDouble() {
-        Visitor visitor = Mockito.mock(Visitor.class);
+        var visitor = new MockVisitor();
         Inspector inspector = new Slime().setDouble(123.0);
         inspector.accept(visitor);
-        Mockito.verify(visitor).visitDouble(123.0);
-        Mockito.verifyNoMoreInteractions(visitor);
+        assertEquals(MockVisitor.Called.DOUBLE, visitor.called);
+        assertEquals(123.0, visitor.doubleValue, 0.0);
     }
 
     @Test
     public void testVisitStringUtf16() {
-        Visitor visitor = Mockito.mock(Visitor.class);
+        var visitor = new MockVisitor();
         Inspector inspector = new Slime().setString("abc");
         inspector.accept(visitor);
-        Mockito.verify(visitor).visitString("abc");
-        Mockito.verifyNoMoreInteractions(visitor);
+        assertEquals(MockVisitor.Called.STRING, visitor.called);
+        assertEquals("abc", visitor.string);
     }
 
     @Test
     public void testVisitStringUtf8() {
-        Visitor visitor = Mockito.mock(Visitor.class);
+        var visitor = new MockVisitor();
         Inspector inspector = new Slime().setString(new byte[] {65,66,67});
         inspector.accept(visitor);
-        Mockito.verify(visitor).visitString(new byte[] {65,66,67});
-        Mockito.verifyNoMoreInteractions(visitor);
+        assertEquals(MockVisitor.Called.UTF8, visitor.called);
+        assertArrayEquals(new byte[] {65,66,67}, visitor.bytes);
     }
 
     @Test
     public void testVisitData() {
-        Visitor visitor = Mockito.mock(Visitor.class);
+        var visitor = new MockVisitor();
         Inspector inspector = new Slime().setData(new byte[] {1,2,3});
         inspector.accept(visitor);
-        Mockito.verify(visitor).visitData(new byte[] {1,2,3});
-        Mockito.verifyNoMoreInteractions(visitor);
+        assertEquals(MockVisitor.Called.DATA, visitor.called);
+        assertArrayEquals(new byte[] {1,2,3}, visitor.bytes);
     }
 
     @Test
     public void testVisitArray() {
-        Visitor visitor = Mockito.mock(Visitor.class);
+        var visitor = new MockVisitor();
         Inspector inspector = new Slime().setArray();
         inspector.accept(visitor);
-        Mockito.verify(visitor).visitArray(argThat(sameInstance(inspector)));
-        Mockito.verifyNoMoreInteractions(visitor);
+        assertEquals(MockVisitor.Called.ARRAY, visitor.called);
+        assertSame(inspector, visitor.stuff);
     }
 
     @Test
     public void testVisitObject() {
-        Visitor visitor = Mockito.mock(Visitor.class);
+        var visitor = new MockVisitor();
         Inspector inspector = new Slime().setObject();
         inspector.accept(visitor);
-        Mockito.verify(visitor).visitObject(argThat(sameInstance(inspector)));
-        Mockito.verifyNoMoreInteractions(visitor);
+        assertEquals(MockVisitor.Called.OBJECT, visitor.called);
+        assertSame(inspector, visitor.stuff);
     }
 }
