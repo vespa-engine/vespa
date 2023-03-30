@@ -189,6 +189,9 @@ TOKEN :
 | < INTRAOPTHREADS: "intraop-threads">
 | < INTEROPTHREADS: "interop-threads">
 | < GPUDEVICE: "gpu-device">
+| < EXECUTIONMODE: "execution-mode">
+| < PARALLEL: "parallel">
+| < SEQUENTIAL: "sequential">
 | < MODEL: "model" >
 | < MUTATE: "mutate" >
 | < QUERY: "query" >
@@ -1606,6 +1609,8 @@ void onnxModelItem(OnnxModel onnxModel) :
         <GPUDEVICE> <COLON> num = integer() { onnxModel.setGpuDevice(num, false); } |
         <INTRAOPTHREADS> <COLON> num = integer() { onnxModel.setStatelessIntraOpThreads(num); } |
         <INTEROPTHREADS> <COLON> num = integer() { onnxModel.setStatelessInterOpThreads(num); } |
+        <EXECUTIONMODE> <COLON> ( <PARALLEL> { onnxModel.setStatelessExecutionMode("parallel"); }
+                                  | <SEQUENTIAL> { onnxModel.setStatelessExecutionMode("sequential"); } ) |
         (<ONNX_INPUT_SL>) {
             String name = token.image.substring(5, token.image.lastIndexOf(":")).trim();
             if (name.startsWith("\"")) { name = name.substring(1, name.length() - 1); }
@@ -2606,6 +2611,7 @@ String identifier() : { }
       | <ENABLEONLYBITVECTOR>
       | <EXACT>
       | <EXACTTERMINATOR>
+      | <EXECUTIONMODE>
       | <FALSE>
       | <FASTACCESS>
       | <FASTRANK>
@@ -2654,6 +2660,7 @@ String identifier() : { }
       | <ON>
       | <ONDEMAND>
       | <ORDER>
+      | <PARALLEL>
       | <PREFIX>
       | <PRIMARY>
       | <PROPERTIES>
@@ -2674,6 +2681,7 @@ String identifier() : { }
       | <SEARCH>
       | <SECONDARY>
       | <SECONDPHASE>
+      | <SEQUENTIAL>
       | <SORTING>
       | <SOURCE>
       | <PAGED>
