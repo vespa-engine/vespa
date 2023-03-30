@@ -57,7 +57,8 @@ for data in "Dockerfile vespa"; do
                 --jobs 2  \
                 --layers=false \
                 --manifest "vespaengine/$IMAGE_NAME:$VESPA_VERSION" \
-                --platform linux/amd64,linux/arm64 | cat
+                --platform linux/amd64,linux/arm64 \
+                --squash | cat
 
         # Test
         buildah tag vespaengine/$IMAGE_NAME:$VESPA_VERSION vespaengine/$IMAGE_NAME:latest
