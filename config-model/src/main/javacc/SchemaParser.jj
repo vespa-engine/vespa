@@ -164,13 +164,13 @@ TOKEN :
 | < FIELD: "field" >
 | < FIELDS: "fields" >
 | < FIELDSET: "fieldset" >
-| < STRUCTFIELD: "struct-field" >
+| < STRUCT_FIELD: "struct-field" >
 | < IMPORT: "import" >
 | < AS: "as" >
 | < INDEXING: "indexing" >
-| < SUMMARYTO: "summary-to" >
-| < DOCUMENTSUMMARY: "document-summary" >
-| < RANKTYPE: "rank-type" >
+| < SUMMARY_TO: "summary-to" >
+| < DOCUMENT_SUMMARY: "document-summary" >
+| < RANK_TYPE: "rank-type" >
 | < WEIGHT: "weight" >
 | < TYPE: "type" >
 | < INDEX: "index" >
@@ -179,29 +179,29 @@ TOKEN :
 | < TEXT: "text" >
 | < WORD: "word" >
 | < GRAM: "gram" >
-| < GRAMSIZE: "gram-size" >
-| < MAXLENGTH: "max-length" >
+| < GRAM_SIZE: "gram-size" >
+| < MAX_LENGTH: "max-length" >
 | < PREFIX: "prefix" >
 | < SUBSTRING: "substring" >
 | < SUFFIX: "suffix" >
 | < CONSTANT: "constant">
-| < ONNXMODEL: "onnx-model">
-| < INTRAOPTHREADS: "intraop-threads">
-| < INTEROPTHREADS: "interop-threads">
-| < GPUDEVICE: "gpu-device">
-| < EXECUTIONMODE: "execution-mode">
+| < ONNX_MODEL: "onnx-model">
+| < INTRAOP_THREADS: "intraop-threads">
+| < INTEROP_THREADS: "interop-threads">
+| < GPU_DEVICE: "gpu-device">
+| < EXECUTION_MODE: "execution-mode">
 | < PARALLEL: "parallel">
 | < SEQUENTIAL: "sequential">
 | < MODEL: "model" >
 | < MUTATE: "mutate" >
 | < QUERY: "query" >
-| < RANKPROFILE: "rank-profile" >
+| < RANK_PROFILE: "rank-profile" >
 | < RAW_AS_BASE64_IN_SUMMARY: "raw-as-base64-in-summary" >
 | < SUMMARY: "summary" >
 | < FULL: "full" >
 | < STATIC: "static" >
 | < DYNAMIC: "dynamic" >
-| < MATCHEDELEMENTSONLY: "matched-elements-only" >
+| < MATCHED_ELEMENTS_ONLY: "matched-elements-only" >
 | < SSCONTEXTUAL: "contextual" >
 | < SSOVERRIDE: "override" >
 | < SSTITLE: "title" >
@@ -236,7 +236,7 @@ TOKEN :
 | < TRUE: "true" >
 | < FALSE: "false" >
 | < SYMMETRIC: "symmetric" >
-| < QUERYCOMMAND: "query-command" >
+| < QUERY_COMMAND: "query-command" >
 | < ALIAS: "alias" >
 | < MATCH: "match" >
 | < RANK: "rank" >
@@ -244,24 +244,24 @@ TOKEN :
 | < EXACT: "exact" >
 | < FILTER: "filter" >
 | < NORMAL: "normal" >
-| < EXACTTERMINATOR: "exact-terminator" >
-| < IGNOREDEFAULTRANKFEATURES: "ignore-default-rank-features" >
+| < EXACT_TERMINATOR: "exact-terminator" >
+| < IGNORE_DEFAULT_RANK_FEATURES: "ignore-default-rank-features" >
 | < ID: "id" >
 | < SOURCE: "source" >
 | < TO: "to" >
 | < DIRECT: "direct" >
-| < FROMDISK: "from-disk" >
-| < OMITSUMMARYFEATURES: "omit-summary-features" >
+| < FROM_DISK: "from-disk" >
+| < OMIT_SUMMARY_FEATURES: "omit-summary-features" >
 | < ALWAYS: "always" >
-| < ONDEMAND: "on-demand" >
+| < ON_DEMAND: "on-demand" >
 | < NEVER: "never" >
-| < ENABLEBITVECTORS: "enable-bit-vectors" >
-| < ENABLEONLYBITVECTOR: "enable-only-bit-vector" >
-| < FASTACCESS: "fast-access" >
+| < ENABLE_BIT_VECTORS: "enable-bit-vectors" >
+| < ENABLE_ONLY_BIT_VECTOR: "enable-only-bit-vector" >
+| < FAST_ACCESS: "fast-access" >
 | < MUTABLE: "mutable" >
 | < PAGED: "paged" >
-| < FASTRANK: "fast-rank" >
-| < FASTSEARCH: "fast-search" >
+| < FAST_RANK: "fast-rank" >
+| < FAST_SEARCH: "fast-search" >
 | < TENSOR_TYPE: "tensor" ("<" (~["<",">"])+ ">")? "(" (~["(",")"])* ")" >
 | < TENSOR_VALUE_SL: "value" (" ")* ":" (" ")* ("{"<BRACE_SL_LEVEL_1>) ("\n")? >
 | < TENSOR_VALUE_ML: "value" (<SEARCHLIB_SKIP>)? "{" (["\n"," "])* ("{"<BRACE_ML_LEVEL_1>) (["\n"," "])* "}" ("\n")? >
@@ -275,30 +275,30 @@ TOKEN :
 | < MAP: "map" >
 | < REFERENCE: "reference" >
 | < QUESTIONMARK: "?" >
-| < CREATEIFNONEXISTENT: "create-if-nonexistent" >
-| < REMOVEIFZERO: "remove-if-zero" >
-| < MATCHPHASE: "match-phase" >
+| < CREATE_IF_NONEXISTENT: "create-if-nonexistent" >
+| < REMOVE_IF_ZERO: "remove-if-zero" >
+| < MATCH_PHASE: "match-phase" >
 | < EVALUATION_POINT: "evaluation-point" >
 | < PRE_POST_FILTER_TIPPING_POINT: "pre-post-filter-tipping-point" >
 | < ORDER: "order" >
-| < MAXFILTERCOVERAGE: "max-filter-coverage" >
-| < MAXHITS: "max-hits" >
-| < FIRSTPHASE: "first-phase" >
-| < SECONDPHASE: "second-phase" >
-| < GLOBALPHASE: "global-phase" >
+| < MAX_FILTER_COVERAGE: "max-filter-coverage" >
+| < MAX_HITS: "max-hits" >
+| < FIRST_PHASE: "first-phase" >
+| < SECOND_PHASE: "second-phase" >
+| < GLOBAL_PHASE: "global-phase" >
 | < MACRO: "macro" >
 | < INLINE: "inline" >
 | < ARITY: "arity" >
-| < LOWERBOUND: "lower-bound" >
-| < UPPERBOUND: "upper-bound" >
-| < DENSEPOSTINGLISTTHRESHOLD: "dense-posting-list-threshold" >
+| < LOWER_BOUND: "lower-bound" >
+| < UPPER_BOUND: "upper-bound" >
+| < DENSE_POSTING_LIST_THRESHOLD: "dense-posting-list-threshold" >
 | < ENABLE_BM25: "enable-bm25" >
 | < HNSW: "hnsw" >
-| < MAXLINKSPERNODE: "max-links-per-node" >
+| < MAX_LINKS_PER_NODE: "max-links-per-node" >
 | < DOUBLE_KEYWORD: "double" >
-| < DISTANCEMETRIC: "distance-metric" >
-| < NEIGHBORSTOEXPLOREATINSERT: "neighbors-to-explore-at-insert" >
-| < MULTITHREADEDINDEXING: "multi-threaded-indexing" >
+| < DISTANCE_METRIC: "distance-metric" >
+| < NEIGHBORS_TO_EXPLORE_AT_INSERT: "neighbors-to-explore-at-insert" >
+| < MULTI_THREADED_INDEXING: "multi-threaded-indexing" >
 | < MATCHFEATURES_SL: "match-features" (" ")* ":" (~["}","\n"])* ("\n")? >
 | < MATCHFEATURES_ML: "match-features" (<SEARCHLIB_SKIP>)? "{" (~["}"])* "}" >
 | < MATCHFEATURES_ML_INHERITS: "match-features inherits " (<IDENTIFIER_WITH_DASH>) (<SEARCHLIB_SKIP>)? "{" (~["}"])* "}" >
@@ -318,16 +318,16 @@ TOKEN :
 | < #BRACE_ML_LEVEL_3: <BRACE_ML_CONTENT> "}" >
 | < #BRACE_ML_CONTENT: (~["{","}"])* >
 | < #SEARCHLIB_SKIP: ([" ","\f","\n","\r","\t"])+ >
-| < RANKPROPERTIES: "rank-properties" >
-| < RERANKCOUNT: "rerank-count" >
-| < NUMTHREADSPERSEARCH: "num-threads-per-search" >
-| < MINHITSPERTHREAD: "min-hits-per-thread" >
-| < NUMSEARCHPARTITIONS: "num-search-partitions" >
-| < TERMWISELIMIT: "termwise-limit" >
-| < POSTFILTERTHRESHOLD: "post-filter-threshold" >
-| < APPROXIMATETHRESHOLD: "approximate-threshold" >
-| < KEEPRANKCOUNT: "keep-rank-count" >
-| < RANKSCOREDROPLIMIT: "rank-score-drop-limit" >
+| < RANK_PROPERTIES: "rank-properties" >
+| < RERANK_COUNT: "rerank-count" >
+| < NUM_THREADS_PER_SEARCH: "num-threads-per-search" >
+| < MIN_HITS_PER_THREAD: "min-hits-per-thread" >
+| < NUM_SEARCH_PARTITIONS: "num-search-partitions" >
+| < TERMWISE_LIMIT: "termwise-limit" >
+| < POST_FILTER_THRESHOLD: "post-filter-threshold" >
+| < APPROXIMATE_THRESHOLD: "approximate-threshold" >
+| < KEEP_RANK_COUNT: "keep-rank-count" >
+| < RANK_SCORE_DROP_LIMIT: "rank-score-drop-limit" >
 | < CONSTANTS: "constants" >
 | < FILE: "file" >
 | < URI: "uri" >
@@ -611,7 +611,7 @@ void fieldSet(ParsedSchema schema) :
     ((
       ( <FIELDS><COLON> name = identifier() { fieldSet.addField(name); }
               ( <COMMA> name = identifier() { fieldSet.addField(name); } )* )
-    | ( <QUERYCOMMAND> <COLON> (queryCommand = identifierWithDash() | queryCommand = quotedString())) { fieldSet.addQueryCommand(queryCommand); }
+    | ( <QUERY_COMMAND> <COLON> (queryCommand = identifierWithDash() | queryCommand = quotedString())) { fieldSet.addQueryCommand(queryCommand); }
     | matchSettings(fieldSet.matchSettings())
     ) (<NL>)* )+
   <RBRACE>
@@ -828,7 +828,7 @@ void structField(ParsedField field) :
     ParsedField structField;
 }
 {
-    <STRUCTFIELD> name = identifier() {
+    <STRUCT_FIELD> name = identifier() {
         if (name != null && Schema.isReservedName(name.toLowerCase())) {
             throw new IllegalArgumentException("Reserved name '" + name + "' can not be used as a field name.");
         }
@@ -920,7 +920,7 @@ void summaryTo(ParsedField field) :
     ParsedSummaryField psf;
 }
 {
-    <SUMMARYTO> [name = identifier()] <COLON> destination = identifier()
+    <SUMMARY_TO> [name = identifier()] <COLON> destination = identifier()
     {
         psf = field.summaryFieldFor(name);
         psf.addDestination(destination);
@@ -959,8 +959,8 @@ void weightedset(ParsedType fieldType) : { }
  */
 void weightedsetBody(ParsedType type) : { }
 {
-    ( <CREATEIFNONEXISTENT> { type.setCreateIfNonExistent(true); }
-      | <REMOVEIFZERO>      { type.setRemoveIfZero(true); } )
+    ( <CREATE_IF_NONEXISTENT> { type.setCreateIfNonExistent(true); }
+      | <REMOVE_IF_ZERO>      { type.setRemoveIfZero(true); } )
 }
 
 /**
@@ -974,7 +974,7 @@ void rankType(ParsedField field) :
     String indexName = "";
 }
 {
-    <RANKTYPE> [indexName = identifier()] <COLON> typeName = identifier()
+    <RANK_TYPE> [indexName = identifier()] <COLON> typeName = identifier()
     {
         field.addRankType(indexName, typeName);
     }
@@ -1052,18 +1052,18 @@ void attributeSetting(ParsedAttribute attribute) :
 }
 {
     (
-        <FASTRANK>             { attribute.setFastRank(true); }
-      | <FASTSEARCH>           { attribute.setFastSearch(true); }
-      | <FASTACCESS>           { attribute.setFastAccess(true); }
+        <FAST_RANK>             { attribute.setFastRank(true); }
+      | <FAST_SEARCH>           { attribute.setFastSearch(true); }
+      | <FAST_ACCESS>           { attribute.setFastAccess(true); }
       | <MUTABLE>               { attribute.setMutable(true); }
       | <PAGED>                 { attribute.setPaged(true); }
-      | <ENABLEBITVECTORS>      { deployLogger.logApplicationPackage(Level.WARNING, "'enable-bit-vectors' is deprecated and void -> remove it. Will be removed in vespa-9"); }
-      | <ENABLEONLYBITVECTOR>  { attribute.setEnableOnlyBitVector(true); }
+      | <ENABLE_BIT_VECTORS>      { deployLogger.logApplicationPackage(Level.WARNING, "'enable-bit-vectors' is deprecated and void -> remove it. Will be removed in vespa-9"); }
+      | <ENABLE_ONLY_BIT_VECTOR>  { attribute.setEnableOnlyBitVector(true); }
       | attributeSorting(attribute)
       | <ALIAS> { String alias; String aliasedName=attribute.name(); } [aliasedName = identifier()] <COLON> alias = identifierWithDash() {
           attribute.addAlias(aliasedName, alias);
       }
-      | <DISTANCEMETRIC> <COLON> str = identifierWithDash() { attribute.setDistanceMetric(str); }
+      | <DISTANCE_METRIC> <COLON> str = identifierWithDash() { attribute.setDistanceMetric(str); }
     )
 }
 
@@ -1119,7 +1119,7 @@ void summaryInFieldShort(ParsedField field) :
         psf = field.summaryFieldFor(name);
     }
     <COLON> ( <DYNAMIC> { psf.setDynamic(); }
-              | <MATCHEDELEMENTSONLY> { psf.setMatchedElementsOnly(); }
+              | <MATCHED_ELEMENTS_ONLY> { psf.setMatchedElementsOnly(); }
               | (<FULL> | <STATIC>) { psf.setFull(); }
             )
 }
@@ -1164,7 +1164,7 @@ void summaryItem(ParsedSummaryField field) : { }
 void summaryTransform(ParsedSummaryField field) : { }
 {
     ( <DYNAMIC>              { field.setDynamic(); }
-     | <MATCHEDELEMENTSONLY> { field.setMatchedElementsOnly(); }
+     | <MATCHED_ELEMENTS_ONLY> { field.setMatchedElementsOnly(); }
      | (<FULL> | <STATIC>)   { field.setFull(); }
     )
 }
@@ -1298,7 +1298,7 @@ void queryCommand(ParsedField field) :
     String command;
 }
 {
-    <QUERYCOMMAND> <COLON> ( command = identifierWithDash() | command = quotedString() )
+    <QUERY_COMMAND> <COLON> ( command = identifierWithDash() | command = quotedString() )
     {
         field.addQueryCommand(command);
     }
@@ -1352,7 +1352,7 @@ void exactTerminator(ParsedMatchSettings matchInfo) :
     String terminator;
 }
 {
-    <EXACTTERMINATOR> <COLON> terminator = quotedString()
+    <EXACT_TERMINATOR> <COLON> terminator = quotedString()
     {
         matchInfo.setExactTerminator(terminator);
     }
@@ -1363,7 +1363,7 @@ void gramSize(ParsedMatchSettings matchInfo) :
     int gramSize;
 }
 {
-    <GRAMSIZE> <COLON> gramSize = integer()
+    <GRAM_SIZE> <COLON> gramSize = integer()
     {
         matchInfo.setGramSize(gramSize);
     }
@@ -1374,7 +1374,7 @@ void matchSize(ParsedMatchSettings matchInfo) :
     int matchSize;
 }
 {
-    <MAXLENGTH> <COLON> matchSize = integer() {
+    <MAX_LENGTH> <COLON> matchSize = integer() {
         matchInfo.setMaxLength(matchSize);
     }
 }
@@ -1429,13 +1429,13 @@ void documentSummary(ParsedSchema schema) :
     ParsedDocumentSummary summary;
 }
 {
-    ( <DOCUMENTSUMMARY>
+    ( <DOCUMENT_SUMMARY>
       name = identifierWithDash() { summary = new ParsedDocumentSummary(name); }
       [inheritsDocumentSummary(summary)]
       lbrace()
          (
-           <FROMDISK> { summary.setFromDisk(true); } |
-           <OMITSUMMARYFEATURES> { summary.setOmitSummaryFeatures(true); } |
+           <FROM_DISK> { summary.setFromDisk(true); } |
+           <OMIT_SUMMARY_FEATURES> { summary.setOmitSummaryFeatures(true); } |
            documentSummaryItem(summary) |
            <NL>
          )*
@@ -1532,9 +1532,9 @@ void indexBody(ParsedIndex index) :
       | <ALIAS> <COLON> str = identifierWithDash()                   { index.addAlias(str); }
       | <STEMMING> <COLON> str = identifierWithDash()                { index.setStemming(Stemming.get(str)); }
       | <ARITY> <COLON> arity = integer()                            { index.setArity(arity); }
-      | <LOWERBOUND> <COLON> num = longValue()                       { index.setLowerBound(num); }
-      | <UPPERBOUND> <COLON> num = longValue()                       { index.setUpperBound(num); }
-      | <DENSEPOSTINGLISTTHRESHOLD> <COLON> threshold = floatValue() { index.setDensePostingListThreshold(threshold); }
+      | <LOWER_BOUND> <COLON> num = longValue()                       { index.setLowerBound(num); }
+      | <UPPER_BOUND> <COLON> num = longValue()                       { index.setUpperBound(num); }
+      | <DENSE_POSTING_LIST_THRESHOLD> <COLON> threshold = floatValue() { index.setDensePostingListThreshold(threshold); }
       | <ENABLE_BM25>                                                { index.setEnableBm25(true); }
       | hnswIndex(index)                                             { }
     )
@@ -1559,9 +1559,9 @@ void hnswIndexBody(HnswIndexParams.Builder params) :
     boolean bool;
 }
 {
-    ( <MAXLINKSPERNODE> <COLON> num = integer() { params.setMaxLinksPerNode(num); }
-      | <NEIGHBORSTOEXPLOREATINSERT> <COLON> num = integer() { params.setNeighborsToExploreAtInsert(num); }
-      | <MULTITHREADEDINDEXING> <COLON> bool = bool() { params.setMultiThreadedIndexing(bool); } )
+    ( <MAX_LINKS_PER_NODE> <COLON> num = integer() { params.setMaxLinksPerNode(num); }
+      | <NEIGHBORS_TO_EXPLORE_AT_INSERT> <COLON> num = integer() { params.setNeighborsToExploreAtInsert(num); }
+      | <MULTI_THREADED_INDEXING> <COLON> bool = bool() { params.setMultiThreadedIndexing(bool); } )
 }
 
 void onnxModelInSchema(ParsedSchema schema) :
@@ -1587,7 +1587,7 @@ OnnxModel onnxModel() :
     OnnxModel onnxModel;
 }
 {
-    ( <ONNXMODEL> name = identifier() { onnxModel = new OnnxModel(name); }
+    ( <ONNX_MODEL> name = identifier() { onnxModel = new OnnxModel(name); }
       lbrace() (onnxModelItem(onnxModel) (<NL>)*)+ <RBRACE> )
     { return onnxModel; }
 }
@@ -1606,10 +1606,10 @@ void onnxModelItem(OnnxModel onnxModel) :
     (
         (path = fileItem()) { onnxModel.setFileName(path); } |
         (path = uriItem()) { onnxModel.setUri(path); } |
-        <GPUDEVICE> <COLON> num = integer() { onnxModel.setGpuDevice(num, false); } |
-        <INTRAOPTHREADS> <COLON> num = integer() { onnxModel.setStatelessIntraOpThreads(num); } |
-        <INTEROPTHREADS> <COLON> num = integer() { onnxModel.setStatelessInterOpThreads(num); } |
-        <EXECUTIONMODE> <COLON> ( <PARALLEL> { onnxModel.setStatelessExecutionMode("parallel"); }
+        <GPU_DEVICE> <COLON> num = integer() { onnxModel.setGpuDevice(num, false); } |
+        <INTRAOP_THREADS> <COLON> num = integer() { onnxModel.setStatelessIntraOpThreads(num); } |
+        <INTEROP_THREADS> <COLON> num = integer() { onnxModel.setStatelessInterOpThreads(num); } |
+        <EXECUTION_MODE> <COLON> ( <PARALLEL> { onnxModel.setStatelessExecutionMode("parallel"); }
                                   | <SEQUENTIAL> { onnxModel.setStatelessExecutionMode("sequential"); } ) |
         (<ONNX_INPUT_SL>) {
             String name = token.image.substring(5, token.image.lastIndexOf(":")).trim();
@@ -1685,7 +1685,7 @@ void rankProfile(ParsedSchema schema) :
     ParsedRankProfile profile;
 }
 {
-    ( <MODEL> | <RANKPROFILE> ) name = identifierWithDash()
+    ( <MODEL> | <RANK_PROFILE> ) name = identifierWithDash()
     { profile = new ParsedRankProfile(name); }
     [inheritsRankProfile(profile)]
     lbrace() (rankProfileItem(schema, profile) (<NL>)*)* <RBRACE>
@@ -1824,7 +1824,7 @@ void matchPhase(ParsedRankProfile profile) :
     MatchPhaseSettings settings = new MatchPhaseSettings();
 }
 {
-    <MATCHPHASE> lbrace() (matchPhaseItem(settings) (<NL>)*)* <RBRACE>
+    <MATCH_PHASE> lbrace() (matchPhaseItem(settings) (<NL>)*)* <RBRACE>
     {
         settings.checkValid();
         profile.setMatchPhaseSettings(settings);
@@ -1843,8 +1843,8 @@ void matchPhaseItem(MatchPhaseSettings settings) :
       | diversity(settings)
       | <ORDER> <COLON> ( <ASCENDING> { settings.setAscending(true); } 
                           | <DESCENDING> { settings.setAscending(false); } )
-      | <MAXHITS> <COLON> num = integer() { settings.setMaxHits(num); }
-      | <MAXFILTERCOVERAGE> <COLON> coverage = floatValue() { settings.setMaxFilterCoverage(coverage); }
+      | <MAX_HITS> <COLON> num = integer() { settings.setMaxHits(num); }
+      | <MAX_FILTER_COVERAGE> <COLON> coverage = floatValue() { settings.setMaxFilterCoverage(coverage); }
       | <EVALUATION_POINT> <COLON> multiplier = floatValue() { settings.setEvaluationPoint(multiplier); }
       | <PRE_POST_FILTER_TIPPING_POINT> <COLON> multiplier = floatValue() { settings.setPrePostFilterTippingPoint(multiplier); }
     )
@@ -1895,7 +1895,7 @@ void firstPhase(ParsedRankProfile profile) :
     String exp;
 }
 {
-    <FIRSTPHASE> lbrace() (firstPhaseItem(profile) (<NL>)*)* <RBRACE>
+    <FIRST_PHASE> lbrace() (firstPhaseItem(profile) (<NL>)*)* <RBRACE>
 }
 
 void firstPhaseItem(ParsedRankProfile profile) :
@@ -1906,8 +1906,8 @@ void firstPhaseItem(ParsedRankProfile profile) :
 }
 {
     ( expression = expression()                               { profile.setFirstPhaseRanking(expression); }
-    | (<KEEPRANKCOUNT> <COLON> keepRankCount = integer())     { profile.setKeepRankCount(keepRankCount); }
-    | (<RANKSCOREDROPLIMIT> <COLON> dropLimit = floatValue()) { profile.setRankScoreDropLimit(dropLimit); }
+    | (<KEEP_RANK_COUNT> <COLON> keepRankCount = integer())     { profile.setKeepRankCount(keepRankCount); }
+    | (<RANK_SCORE_DROP_LIMIT> <COLON> dropLimit = floatValue()) { profile.setRankScoreDropLimit(dropLimit); }
     )
 }
 
@@ -1918,7 +1918,7 @@ void firstPhaseItem(ParsedRankProfile profile) :
  */
 void secondPhase(ParsedRankProfile profile) : { }
 {
-    <SECONDPHASE> lbrace() (secondPhaseItem(profile) (<NL>)*)* <RBRACE>
+    <SECOND_PHASE> lbrace() (secondPhaseItem(profile) (<NL>)*)* <RBRACE>
 }
 
 /**
@@ -1933,7 +1933,7 @@ void secondPhaseItem(ParsedRankProfile profile) :
 }
 {
     ( expression = expression()                       { profile.setSecondPhaseRanking(expression); }
-    | (<RERANKCOUNT> <COLON> rerankCount = integer()) { profile.setRerankCount(rerankCount); }
+    | (<RERANK_COUNT> <COLON> rerankCount = integer()) { profile.setRerankCount(rerankCount); }
     )
 }
 
@@ -1944,7 +1944,7 @@ void secondPhaseItem(ParsedRankProfile profile) :
  */
 void globalPhase(ParsedRankProfile profile) : { }
 {
-    <GLOBALPHASE> lbrace() (globalPhaseItem(profile) (<NL>)*)* <RBRACE>
+    <GLOBAL_PHASE> lbrace() (globalPhaseItem(profile) (<NL>)*)* <RBRACE>
 }
 
 /**
@@ -1959,7 +1959,7 @@ void globalPhaseItem(ParsedRankProfile profile) :
 }
 {
     ( expression = expression()                       { profile.setGlobalPhaseExpression(expression); }
-    | (<RERANKCOUNT> <COLON> rerankCount = integer()) { profile.setGlobalPhaseRerankCount(rerankCount); }
+    | (<RERANK_COUNT> <COLON> rerankCount = integer()) { profile.setGlobalPhaseRerankCount(rerankCount); }
     )
 }
 
@@ -2097,7 +2097,7 @@ void rankFeatures(ParsedRankProfile profile) :
  */
 void ignoreRankFeatures(ParsedRankProfile profile) : { }
 {
-    <IGNOREDEFAULTRANKFEATURES> { profile.setIgnoreDefaultRankFeatures(true); }
+    <IGNORE_DEFAULT_RANK_FEATURES> { profile.setIgnoreDefaultRankFeatures(true); }
 }
 
 /**
@@ -2110,7 +2110,7 @@ void numThreadsPerSearch(ParsedRankProfile profile) :
     int num;
 }
 {
-    (<NUMTHREADSPERSEARCH> <COLON> num = integer()) { profile.setNumThreadsPerSearch(num); }
+    (<NUM_THREADS_PER_SEARCH> <COLON> num = integer()) { profile.setNumThreadsPerSearch(num); }
 }
 
 /**
@@ -2123,7 +2123,7 @@ void minHitsPerThread(ParsedRankProfile profile) :
     int num;
 }
 {
-    (<MINHITSPERTHREAD> <COLON> num = integer()) { profile.setMinHitsPerThread(num); }
+    (<MIN_HITS_PER_THREAD> <COLON> num = integer()) { profile.setMinHitsPerThread(num); }
 }
 
 /**
@@ -2136,7 +2136,7 @@ void numSearchPartitions(ParsedRankProfile profile) :
     int num;
 }
 {
-    (<NUMSEARCHPARTITIONS> <COLON> num = integer()) { profile.setNumSearchPartitions(num); }
+    (<NUM_SEARCH_PARTITIONS> <COLON> num = integer()) { profile.setNumSearchPartitions(num); }
 }
 
 /**
@@ -2149,7 +2149,7 @@ void termwiseLimit(ParsedRankProfile profile) :
     double num;
 }
 {
-    (<TERMWISELIMIT> <COLON> num = floatValue()) { profile.setTermwiseLimit(num); }
+    (<TERMWISE_LIMIT> <COLON> num = floatValue()) { profile.setTermwiseLimit(num); }
 }
 
 /**
@@ -2162,7 +2162,7 @@ void postFilterThreshold(ParsedRankProfile profile) :
     double threshold;
 }
 {
-    (<POSTFILTERTHRESHOLD> <COLON> threshold = floatValue()) { profile.setPostFilterThreshold(threshold); }
+    (<POST_FILTER_THRESHOLD> <COLON> threshold = floatValue()) { profile.setPostFilterThreshold(threshold); }
 }
 
 /**
@@ -2175,7 +2175,7 @@ void approximateThreshold(ParsedRankProfile profile) :
     double threshold;
 }
 {
-    (<APPROXIMATETHRESHOLD> <COLON> threshold = floatValue()) { profile.setApproximateThreshold(threshold); }
+    (<APPROXIMATE_THRESHOLD> <COLON> threshold = floatValue()) { profile.setApproximateThreshold(threshold); }
 }
 
 /**
@@ -2187,7 +2187,7 @@ void approximateThreshold(ParsedRankProfile profile) :
  */
 void rankProperties(ParsedRankProfile profile) : { }
 {
-    <RANKPROPERTIES> lbrace() (LOOKAHEAD(rankPropertyItem() <COLON> rankPropertyItem() <NL>)
+    <RANK_PROPERTIES> lbrace() (LOOKAHEAD(rankPropertyItem() <COLON> rankPropertyItem() <NL>)
                                rankProperty(profile) (<NL>)+)* [rankProperty(profile)] <RBRACE>
 }
 
@@ -2250,7 +2250,7 @@ void fieldRankType(ParsedRankProfile profile) :
     String type;
 }
 {
-    <RANKTYPE> name = identifier() <COLON> type = identifier()
+    <RANK_TYPE> name = identifier() <COLON> type = identifier()
     { profile.addFieldRankType(name, type); }
 }
 
@@ -2597,31 +2597,31 @@ String identifier() : { }
       | <CONSTANT>
       | <CONSTANTS>
       | <CONTEXT>
-      | <GLOBALPHASE>
-      | <CREATEIFNONEXISTENT>
-      | <DENSEPOSTINGLISTTHRESHOLD>
+      | <GLOBAL_PHASE>
+      | <CREATE_IF_NONEXISTENT>
+      | <DENSE_POSTING_LIST_THRESHOLD>
       | <DESCENDING>
       | <DICTIONARY>
       | <DIRECT>
       | <DOCUMENT>
-      | <DOCUMENTSUMMARY>
+      | <DOCUMENT_SUMMARY>
       | <DOUBLE_KEYWORD>
       | <DYNAMIC>
-      | <ENABLEBITVECTORS>
-      | <ENABLEONLYBITVECTOR>
+      | <ENABLE_BIT_VECTORS>
+      | <ENABLE_ONLY_BIT_VECTOR>
       | <EXACT>
-      | <EXACTTERMINATOR>
-      | <EXECUTIONMODE>
+      | <EXACT_TERMINATOR>
+      | <EXECUTION_MODE>
       | <FALSE>
-      | <FASTACCESS>
-      | <FASTRANK>
-      | <FASTSEARCH>
+      | <FAST_ACCESS>
+      | <FAST_RANK>
+      | <FAST_SEARCH>
       | <FIELD>
       | <FIELDS>
       | <FIELDSET>
       | <FILE>
       | <FILTER>
-      | <FIRSTPHASE>
+      | <FIRST_PHASE>
       | <FULL>
       | <FUNCTION>
       | <GRAM>
@@ -2629,7 +2629,7 @@ String identifier() : { }
       | <ID>
       | <IDENTICAL>
       | <IDENTIFIER>
-      | <IGNOREDEFAULTRANKFEATURES>
+      | <IGNORE_DEFAULT_RANK_FEATURES>
       | <IMPORT>
       | <INDEX>
       | <INDEXING>
@@ -2637,19 +2637,19 @@ String identifier() : { }
       | <INLINE>
       | <INPUTS>
       | <INTEGER>
-      | <KEEPRANKCOUNT>
+      | <KEEP_RANK_COUNT>
       | <LITERAL>
       | <LOCALE>
       | <LONG>
       | <LOOSE>
-      | <LOWERBOUND>
+      | <LOWER_BOUND>
       | <LOWERCASE>
       | <MACRO>
       | <MAP>
       | <MATCH>
-      | <MATCHPHASE>
-      | <MAXFILTERCOVERAGE>
-      | <MAXHITS>
+      | <MATCH_PHASE>
+      | <MAX_FILTER_COVERAGE>
+      | <MAX_HITS>
       | <MTOKEN>
       | <MUTABLE>
       | <NEVER>
@@ -2658,7 +2658,7 @@ String identifier() : { }
       | <NORMALIZING>
       | <OFF>
       | <ON>
-      | <ONDEMAND>
+      | <ON_DEMAND>
       | <ORDER>
       | <PARALLEL>
       | <PREFIX>
@@ -2666,21 +2666,21 @@ String identifier() : { }
       | <PROPERTIES>
       | <QUATERNARY>
       | <QUERY>
-      | <QUERYCOMMAND>
+      | <QUERY_COMMAND>
       | <RANK>
       | <MODEL>
-      | <RANKPROFILE>
-      | <RANKPROPERTIES>
-      | <RANKSCOREDROPLIMIT>
-      | <RANKTYPE>
+      | <RANK_PROFILE>
+      | <RANK_PROPERTIES>
+      | <RANK_SCORE_DROP_LIMIT>
+      | <RANK_TYPE>
       | <RAW>
       | <REFERENCE>
-      | <REMOVEIFZERO>
-      | <RERANKCOUNT>
+      | <REMOVE_IF_ZERO>
+      | <RERANK_COUNT>
       | <SCHEMA>
       | <SEARCH>
       | <SECONDARY>
-      | <SECONDPHASE>
+      | <SECOND_PHASE>
       | <SEQUENTIAL>
       | <SORTING>
       | <SOURCE>
@@ -2698,7 +2698,7 @@ String identifier() : { }
       | <SUBSTRING>
       | <SUFFIX>
       | <SUMMARY>
-      | <SUMMARYTO>
+      | <SUMMARY_TO>
       | <SYMMETRIC>
       | <TERTIARY>
       | <TEXT>
@@ -2708,7 +2708,7 @@ String identifier() : { }
       | <UCA>
       | <UNCASED>
       | <URI>
-      | <UPPERBOUND>
+      | <UPPER_BOUND>
       | <VARIABLE>
       | <WEIGHT>
       | <WEIGHTEDSET>
