@@ -1,13 +1,13 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.service.health;
 
+import ai.vespa.http.DomainName;
 import com.yahoo.config.model.api.ApplicationInfo;
-import com.yahoo.config.provision.HostName;
 import com.yahoo.vespa.applicationmodel.ServiceStatus;
 import com.yahoo.vespa.applicationmodel.ServiceStatusInfo;
 import com.yahoo.vespa.service.duper.ConfigServerApplication;
-import com.yahoo.vespa.service.monitor.ServiceId;
 import com.yahoo.vespa.service.monitor.ConfigserverUtil;
+import com.yahoo.vespa.service.monitor.ServiceId;
 import org.junit.Test;
 
 import java.util.HashMap;
@@ -87,7 +87,7 @@ public class ApplicationHealthMonitorTest {
         return new ServiceId(configServerApplication.getApplicationId(),
                 configServerApplication.getClusterId(),
                 configServerApplication.getServiceType(),
-                configServerApplication.configIdFor(HostName.of(hostname)));
+                configServerApplication.configIdFor(DomainName.of(hostname)));
     }
 
     private ServiceStatus getStatus(ApplicationHealthMonitor monitor, String hostname) {
@@ -95,7 +95,7 @@ public class ApplicationHealthMonitorTest {
                 configServerApplication.getApplicationId(),
                 configServerApplication.getClusterId(),
                 configServerApplication.getServiceType(),
-                configServerApplication.configIdFor(HostName.of(hostname)))
+                configServerApplication.configIdFor(DomainName.of(hostname)))
                 .serviceStatus();
     }
 }

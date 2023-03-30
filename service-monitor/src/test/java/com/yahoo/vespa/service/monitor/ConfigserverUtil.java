@@ -4,12 +4,9 @@ package com.yahoo.vespa.service.monitor;
 import ai.vespa.http.DomainName;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.config.model.api.ApplicationInfo;
-import com.yahoo.config.provision.HostName;
 import com.yahoo.vespa.service.duper.ConfigServerApplication;
 
 import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 /**
  * @author hakon

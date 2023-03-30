@@ -1,7 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.service.health;
 
-import com.yahoo.config.provision.HostName;
+import ai.vespa.http.DomainName;
 import com.yahoo.vespa.service.executor.RunletExecutor;
 import com.yahoo.vespa.service.monitor.ServiceId;
 
@@ -22,7 +22,7 @@ class StateV1HealthEndpoint implements HealthEndpoint {
     private final RunletExecutor executor;
 
     StateV1HealthEndpoint(ServiceId serviceId,
-                          HostName hostname,
+                          DomainName hostname,
                           int port,
                           Duration delay,
                           Duration requestTimeout,

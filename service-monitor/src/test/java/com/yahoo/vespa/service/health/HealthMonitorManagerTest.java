@@ -3,7 +3,6 @@ package com.yahoo.vespa.service.health;
 
 import ai.vespa.http.DomainName;
 import com.yahoo.config.model.api.ApplicationInfo;
-import com.yahoo.config.provision.HostName;
 import com.yahoo.vespa.applicationmodel.ServiceStatus;
 import com.yahoo.vespa.applicationmodel.ServiceStatusInfo;
 import com.yahoo.vespa.service.duper.ControllerHostApplication;
@@ -77,7 +76,7 @@ public class HealthMonitorManagerTest {
                 infraApplication.getApplicationId(),
                 infraApplication.getClusterId(),
                 infraApplication.getServiceType(),
-                infraApplication.configIdFor(HostName.of(hostname))).serviceStatus();
+                infraApplication.configIdFor(DomainName.of(hostname))).serviceStatus();
 
         assertEquals(expected, actual);
 
@@ -85,7 +84,7 @@ public class HealthMonitorManagerTest {
                 infraApplication.getApplicationId(),
                 infraApplication.getClusterId(),
                 infraApplication.getServiceType(),
-                infraApplication.configIdFor(HostName.of(hostname)));
+                infraApplication.configIdFor(DomainName.of(hostname)));
 
     }
 }
