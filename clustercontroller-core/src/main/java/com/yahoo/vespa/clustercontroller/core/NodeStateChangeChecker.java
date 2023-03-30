@@ -13,13 +13,18 @@ import com.yahoo.vespa.clustercontroller.core.hostinfo.HostInfo;
 import com.yahoo.vespa.clustercontroller.core.hostinfo.Metrics;
 import com.yahoo.vespa.clustercontroller.core.hostinfo.StorageNode;
 import com.yahoo.vespa.clustercontroller.utils.staterestapi.requests.SetUnitStateRequest;
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 import static com.yahoo.vdslib.state.NodeType.STORAGE;
 import static com.yahoo.vdslib.state.State.DOWN;
+import static com.yahoo.vdslib.state.State.MAINTENANCE;
 import static com.yahoo.vdslib.state.State.RETIRED;
 import static com.yahoo.vdslib.state.State.UP;
 import static com.yahoo.vespa.clustercontroller.core.NodeStateChangeChecker.Result.allowSettingOfWantedState;
@@ -27,6 +32,8 @@ import static com.yahoo.vespa.clustercontroller.core.NodeStateChangeChecker.Resu
 import static com.yahoo.vespa.clustercontroller.core.NodeStateChangeChecker.Result.createDisallowed;
 import static com.yahoo.vespa.clustercontroller.utils.staterestapi.requests.SetUnitStateRequest.Condition.FORCE;
 import static com.yahoo.vespa.clustercontroller.utils.staterestapi.requests.SetUnitStateRequest.Condition.SAFE;
+import static java.util.logging.Level.FINE;
+import static java.util.logging.Level.INFO;
 
 /**
  * Checks if a node can be upgraded.
@@ -35,8 +42,9 @@ import static com.yahoo.vespa.clustercontroller.utils.staterestapi.requests.SetU
  */
 public class NodeStateChangeChecker {
 
-    public static final String BUCKETS_METRIC_NAME = "vds.datastored.bucket_space.buckets_total";
-    public static final Map<String, String> BUCKETS_METRIC_DIMENSIONS = Map.of("bucketSpace", "default");
+    private static final Logger log = Logger.getLogger(NodeStateChangeChecker.class.getName());
+    private static final String BUCKETS_METRIC_NAME = "vds.datastored.bucket_space.buckets_total";
+    private static final Map<String, String> BUCKETS_METRIC_DIMENSIONS = Map.of("bucketSpace", "default");
 
     private final int requiredRedundancy;
     private final HierarchicalGroupVisiting groupVisiting;
@@ -50,6 +58,8 @@ public class NodeStateChangeChecker {
         this.clusterInfo = cluster.clusterInfo();
         this.inMoratorium = inMoratorium;
         this.maxNumberOfGroupsAllowedToBeDown = cluster.maxNumberOfGroupsAllowedToBeDown();
+        if ( ! groupVisiting.isHierarchical() && maxNumberOfGroupsAllowedToBeDown > 1)
+            throw new IllegalArgumentException("Cannot have both 1 group and maxNumberOfGroupsAllowedToBeDown > 1");
     }
 
     public static class Result {
@@ -214,26 +224,37 @@ public class NodeStateChangeChecker {
                     oldWantedState.getState() + ": " + oldWantedState.getDescription());
         }
 
-        Result otherGroupCheck = anotherNodeInAnotherGroupHasWantedState(nodeInfo);
-        if (!otherGroupCheck.settingWantedStateIsAllowed()) {
-            return otherGroupCheck;
+        if (moreThanOneGroupAllowedToBeDown()) {
+            Result otherGroupCheck = nodesInOtherGroups(nodeInfo.getNode());
+            if (!otherGroupCheck.settingWantedStateIsAllowed()) {
+                return otherGroupCheck;
+            }
+        } else {
+            Result otherGroupCheck = anotherNodeInAnotherGroupHasWantedState(nodeInfo);
+            if (!otherGroupCheck.settingWantedStateIsAllowed()) {
+                return otherGroupCheck;
+            }
         }
 
         if (clusterState.getNodeState(nodeInfo.getNode()).getState() == DOWN) {
+            log.log(FINE, "node is DOWN, allow");
             return allowSettingOfWantedState();
         }
 
         if (anotherNodeInGroupAlreadyAllowed(nodeInfo, newDescription)) {
+            log.log(FINE, "anotherNodeInGroupAlreadyAllowed, allow");
             return allowSettingOfWantedState();
         }
 
         Result allNodesAreUpCheck = checkAllNodesAreUp(clusterState);
         if (!allNodesAreUpCheck.settingWantedStateIsAllowed()) {
+            log.log(FINE, "allNodesAreUpCheck: " + allNodesAreUpCheck);
             return allNodesAreUpCheck;
         }
 
         Result checkDistributorsResult = checkDistributors(nodeInfo.getNode(), clusterState.getVersion());
         if (!checkDistributorsResult.settingWantedStateIsAllowed()) {
+            log.log(FINE, "checkDistributors: "+ checkDistributorsResult);
             return checkDistributorsResult;
         }
 
@@ -266,6 +287,29 @@ public class NodeStateChangeChecker {
             // Return a disallow-result if there is another node with a wanted state
             return otherNodeHasWantedState(nodeInfo);
         }
+    }
+
+    /**
+     * Returns a disallow-result if there is other groups with nodes that are allowed to be down
+     * so that the number of groups > maxNumberOfGroupsAllowedToBeDown
+     */
+    private Result nodesInOtherGroups(Node node) {
+        log.log(INFO, maxNumberOfGroupsAllowedToBeDown + " groups allowed to be down");
+        var groupsWithNodesInMaintenance = groupsWithStorageNodesInMaintenance();
+        log.log(INFO, "groupsWithStorageNodesInMaintenance " + groupsWithNodesInMaintenance);
+        if (! groupsWithNodesInMaintenance.isEmpty() && oneOfGroupsContainsNode(groupsWithNodesInMaintenance, node)) {
+            log.log(INFO, "a group with storage nodes in maintenance contains node " + node);
+            return allowSettingOfWantedState();
+        }
+        if (groupsWithNodesInMaintenance.size() >= maxNumberOfGroupsAllowedToBeDown)
+            return createDisallowed("Nodes in " + groupsWithNodesInMaintenance.size() + " groups are already down, cannot take down another node");
+        else {
+            return allowSettingOfWantedState();
+        }
+    }
+
+    private boolean moreThanOneGroupAllowedToBeDown() {
+        return maxNumberOfGroupsAllowedToBeDown > 1;
     }
 
     /** Returns a disallow-result, if there is a node in the group with wanted state != UP. */
@@ -354,7 +398,22 @@ public class NodeStateChangeChecker {
         return false;
     }
 
+    private static boolean oneOfGroupsContainsNode(Collection<Group> groups, Node node) {
+        for (Group group : groups) {
+            for (ConfiguredNode configuredNode : group.getNodes()) {
+                if (configuredNode.index() == node.getIndex()) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
     private Result checkAllNodesAreUp(ClusterState clusterState) {
+        // TODO Revisit this, check that all nodes in other groups are up?
+        if (moreThanOneGroupAllowedToBeDown()) return allowSettingOfWantedState();
+
         // This method verifies both storage nodes and distributors are up (or retired).
         // The complicated part is making a summary error message.
 
@@ -439,6 +498,27 @@ public class NodeStateChangeChecker {
         }
 
         return allowSettingOfWantedState();
+    }
+
+    private Collection<Group> groupsWithStorageNodesInMaintenance() {
+        var groupIndexes = clusterInfo.getStorageNodeInfos().stream()
+                                      .filter(sni -> MAINTENANCE.equals(sni.getWantedState().getState()))
+                                      .map(NodeInfo::getGroup)
+                                      .filter(Objects::nonNull)
+                                      .filter(Group::isLeafGroup)
+                                      .map(Group::getIndex)
+                                      .collect(Collectors.toSet());
+
+        // Groups are not equal even if they have the same index
+        var groups = new HashMap<Integer, Group>();
+        for (NodeInfo nodeInfo : clusterInfo.getStorageNodeInfos()) {
+            Group group = nodeInfo.getGroup();
+            int index = group.getIndex();
+            if (groupIndexes.contains(index) && !groups.containsKey(index))
+                groups.put(index, group);
+        }
+
+        return groups.values();
     }
 
 }
