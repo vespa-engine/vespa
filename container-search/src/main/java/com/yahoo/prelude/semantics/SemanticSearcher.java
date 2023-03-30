@@ -29,9 +29,9 @@ import static com.yahoo.prelude.querytransform.StemmingSearcher.STEMMING;
 @Before({PhaseNames.TRANSFORMED_QUERY, STEMMING})
 public class SemanticSearcher extends Searcher {
 
-    private static final CompoundName rulesRulebase = new CompoundName("rules.rulebase");
-    private static final CompoundName rulesOff = new CompoundName("rules.off");
-    private static final CompoundName tracelevelRules = new CompoundName("tracelevel.rules");
+    private static final CompoundName rulesRulebase = CompoundName.from("rules.rulebase");
+    private static final CompoundName rulesOff = CompoundName.from("rules.off");
+    private static final CompoundName tracelevelRules = CompoundName.from("tracelevel.rules");
 
     /** The default rule base of this */
     private RuleBase defaultRuleBase;

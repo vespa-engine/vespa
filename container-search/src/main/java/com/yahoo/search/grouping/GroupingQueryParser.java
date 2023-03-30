@@ -38,13 +38,13 @@ import java.util.TimeZone;
 public class GroupingQueryParser extends Searcher {
 
     public static final String SELECT_PARAMETER_PARSING = "SelectParameterParsing";
-    public static final CompoundName PARAM_CONTINUE = new CompoundName("continue");
-    public static final CompoundName PARAM_REQUEST = new CompoundName(Select.SELECT);
-    public static final CompoundName PARAM_TIMEZONE = new CompoundName("timezone");
-    @Beta public static final CompoundName PARAM_DEFAULT_MAX_HITS = new CompoundName("grouping.defaultMaxHits");
-    @Beta public static final CompoundName PARAM_DEFAULT_MAX_GROUPS = new CompoundName("grouping.defaultMaxGroups");
-    @Beta public static final CompoundName PARAM_DEFAULT_PRECISION_FACTOR = new CompoundName("grouping.defaultPrecisionFactor");
-    @Beta public static final CompoundName GROUPING_GLOBAL_MAX_GROUPS = new CompoundName("grouping.globalMaxGroups");
+    public static final CompoundName PARAM_CONTINUE = CompoundName.from("continue");
+    public static final CompoundName PARAM_REQUEST = CompoundName.from(Select.SELECT);
+    public static final CompoundName PARAM_TIMEZONE = CompoundName.from("timezone");
+    @Beta public static final CompoundName PARAM_DEFAULT_MAX_HITS = CompoundName.from("grouping.defaultMaxHits");
+    @Beta public static final CompoundName PARAM_DEFAULT_MAX_GROUPS = CompoundName.from("grouping.defaultMaxGroups");
+    @Beta public static final CompoundName PARAM_DEFAULT_PRECISION_FACTOR = CompoundName.from("grouping.defaultPrecisionFactor");
+    @Beta public static final CompoundName GROUPING_GLOBAL_MAX_GROUPS = CompoundName.from("grouping.globalMaxGroups");
     private static final ThreadLocal<ZoneCache> zoneCache = new ThreadLocal<>();
 
     @Override
@@ -121,7 +121,6 @@ public class GroupingQueryParser extends Searcher {
         return val != null ? OptionalDouble.of(val) : OptionalDouble.empty();
     }
 
-    @SuppressWarnings("serial")
     private static class ZoneCache extends LinkedHashMap<String, TimeZone> {
 
         ZoneCache() {

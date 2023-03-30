@@ -180,23 +180,23 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
 
     //---------------- Static property handling ------------------------------------
 
-    public static final CompoundName OFFSET = new CompoundName("offset");
-    public static final CompoundName HITS = new CompoundName("hits");
+    public static final CompoundName OFFSET = CompoundName.from("offset");
+    public static final CompoundName HITS = CompoundName.from("hits");
 
-    public static final CompoundName QUERY_PROFILE = new CompoundName("queryProfile");
-    public static final CompoundName SEARCH_CHAIN = new CompoundName("searchChain");
+    public static final CompoundName QUERY_PROFILE = CompoundName.from("queryProfile");
+    public static final CompoundName SEARCH_CHAIN = CompoundName.from("searchChain");
 
-    public static final CompoundName NO_CACHE = new CompoundName("noCache");
-    public static final CompoundName GROUPING_SESSION_CACHE = new CompoundName("groupingSessionCache");
-    public static final CompoundName TIMEOUT = new CompoundName("timeout");
+    public static final CompoundName NO_CACHE = CompoundName.from("noCache");
+    public static final CompoundName GROUPING_SESSION_CACHE = CompoundName.from("groupingSessionCache");
+    public static final CompoundName TIMEOUT = CompoundName.from("timeout");
 
     /** @deprecated use Trace.LEVEL */
     @Deprecated // TODO: Remove on Vespa 9
-    public static final CompoundName TRACE_LEVEL = new CompoundName("traceLevel");
+    public static final CompoundName TRACE_LEVEL = CompoundName.from("traceLevel");
 
     /** @deprecated use Trace.EXPLAIN_LEVEL */
     @Deprecated // TODO: Remove on Vespa 9
-    public static final CompoundName EXPLAIN_LEVEL = new CompoundName("explainLevel");
+    public static final CompoundName EXPLAIN_LEVEL = CompoundName.from("explainLevel");
 
     private static final QueryProfileType argumentType;
     static {

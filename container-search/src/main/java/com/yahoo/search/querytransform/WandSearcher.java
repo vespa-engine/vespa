@@ -63,12 +63,12 @@ public class WandSearcher extends Searcher {
      */
     private static class InputResolver {
 
-        private static final CompoundName WAND_FIELD = new CompoundName("wand.field");
-        private static final CompoundName WAND_TOKENS = new CompoundName("wand.tokens");
-        private static final CompoundName WAND_HEAP_SIZE = new CompoundName("wand.heapSize");
-        private static final CompoundName WAND_TYPE = new CompoundName("wand.type");
-        private static final CompoundName WAND_SCORE_THRESHOLD = new CompoundName("wand.scoreThreshold");
-        private static final CompoundName WAND_THRESHOLD_BOOST_FACTOR = new CompoundName("wand.thresholdBoostFactor");
+        private static final CompoundName WAND_FIELD = CompoundName.from("wand.field");
+        private static final CompoundName WAND_TOKENS = CompoundName.from("wand.tokens");
+        private static final CompoundName WAND_HEAP_SIZE = CompoundName.from("wand.heapSize");
+        private static final CompoundName WAND_TYPE = CompoundName.from("wand.type");
+        private static final CompoundName WAND_SCORE_THRESHOLD = CompoundName.from("wand.scoreThreshold");
+        private static final CompoundName WAND_THRESHOLD_BOOST_FACTOR = CompoundName.from("wand.thresholdBoostFactor");
         private final String fieldName;
         private final WandType wandType;
         private final Map<Object, Integer> tokens;

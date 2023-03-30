@@ -70,8 +70,8 @@ public class FederationSearcher extends ForkingSearcher {
     private static final Logger log = Logger.getLogger(FederationSearcher.class.getName());
 
     /** The name of the query property containing the source name added to the query to each source by this */
-    public final static CompoundName SOURCENAME = new CompoundName("sourceName");
-    public final static CompoundName PROVIDERNAME = new CompoundName("providerName");
+    public static final CompoundName SOURCENAME = CompoundName.from("sourceName");
+    public static final CompoundName PROVIDERNAME = CompoundName.from("providerName");
     public static final String FEDERATION = "Federation";
     public static final String LOG_COUNT_PREFIX = "count_";
 
@@ -684,33 +684,6 @@ public class FederationSearcher extends ForkingSearcher {
             return target.getFederationOptions();
         }
 
-    }
-
-    private static class CompoundKey {
-
-        private final String sourceName;
-        private final String propertyName;
-
-        CompoundKey(String sourceName, String propertyName) {
-            this.sourceName = sourceName;
-            this.propertyName = propertyName;
-        }
-
-        @Override
-        public int hashCode() {
-            return sourceName.hashCode() ^ propertyName.hashCode();
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            CompoundKey rhs = (CompoundKey) o;
-            return sourceName.equals(rhs.sourceName) && propertyName.equals(rhs.propertyName);
-        }
-
-        @Override
-        public String toString() {
-            return sourceName + '.' + propertyName;
-        }
     }
 
     private static class Window {

@@ -54,11 +54,11 @@ public class RateLimitingSearcher extends Searcher {
     /** Constant containing the name this Provides - "rateLimiting", for ordering constraints */
     public static final String RATE_LIMITING = "rateLimiting";
 
-    public static final CompoundName idKey = new CompoundName("rate.id");
-    public static final CompoundName costKey = new CompoundName("rate.cost");
-    public static final CompoundName quotaKey = new CompoundName("rate.quota");
-    public static final CompoundName idDimensionKey = new CompoundName("rate.idDimension");
-    public static final CompoundName dryRunKey = new CompoundName("rate.dryRun");
+    public static final CompoundName idKey = CompoundName.from("rate.id");
+    public static final CompoundName costKey = CompoundName.from("rate.cost");
+    public static final CompoundName quotaKey = CompoundName.from("rate.quota");
+    public static final CompoundName idDimensionKey = CompoundName.from("rate.idDimension");
+    public static final CompoundName dryRunKey = CompoundName.from("rate.dryRun");
 
     private static final String requestsOverQuotaMetricName = "requestsOverQuota";
 

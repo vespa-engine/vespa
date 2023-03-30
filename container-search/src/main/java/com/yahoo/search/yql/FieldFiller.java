@@ -27,7 +27,7 @@ public class FieldFiller extends Searcher {
 
     private final Set<String> intersectionOfAttributes;
     private final SchemaInfo schemaInfo;
-    public static final CompoundName FIELD_FILLER_DISABLE = new CompoundName("FieldFiller.disable");
+    public static final CompoundName FIELD_FILLER_DISABLE = CompoundName.from("FieldFiller.disable");
 
     public FieldFiller(SchemaInfo schemaInfo) {
         this.schemaInfo = schemaInfo;

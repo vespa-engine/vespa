@@ -75,8 +75,8 @@ public class SearchHandler extends LoggingRequestHandler {
     // max number of threads for the executor for this handler
     private final int maxThreads;
 
-    private static final CompoundName DETAILED_TIMING_LOGGING = new CompoundName("trace.timingDetails");
-    private static final CompoundName FORCE_TIMESTAMPS = new CompoundName("trace.timestamps");
+    private static final CompoundName DETAILED_TIMING_LOGGING = CompoundName.from("trace.timingDetails");
+    private static final CompoundName FORCE_TIMESTAMPS = CompoundName.from("trace.timestamps");
 
     /** Event name for number of connections to the search subsystem */
     private static final String SEARCH_CONNECTIONS = "search_connections";

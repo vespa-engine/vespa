@@ -55,7 +55,7 @@ public class NameTestCase {
     @Test
     void testComponentIdAsCompoundName() {
         String name = "a/b";
-        assertEquals(new CompoundName(name), new QueryProfileType(name).getComponentIdAsCompoundName());
+        assertEquals(CompoundName.from(name), new QueryProfileType(name).getComponentIdAsCompoundName());
     }
 
     private void assertLegalName(String name) {
@@ -87,10 +87,6 @@ public class NameTestCase {
             if (!name.isEmpty())
                 assertEquals("Illegal name '" + name + "'",e.getMessage());
         }
-    }
-
-    private void assertIllegalFieldName(String name) {
-        assertIllegalFieldName(name,"Could not set '" + name + "' to 'anyValue'","Illegal name '" + name + "'");
     }
 
     /** Checks that this is illegal both for profiles and types */

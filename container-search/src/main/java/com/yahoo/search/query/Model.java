@@ -71,13 +71,13 @@ public class Model implements Cloneable {
         argumentType.addField(new FieldDescription(SEARCH_PATH, "string", "searchpath"));
         argumentType.addField(new FieldDescription(RESTRICT, "string", "restrict"));
         argumentType.freeze();
-        argumentTypeName = new CompoundName(argumentType.getId().getName());
+        argumentTypeName = CompoundName.from(argumentType.getId().getName());
     }
 
     public static QueryProfileType getArgumentType() { return argumentType; }
 
     /** The name of the query property used for generating hit count estimate queries. */
-    public static final CompoundName ESTIMATE = new CompoundName("hitcountestimate"); // TODO: Cleanup
+    public static final CompoundName ESTIMATE = CompoundName.from("hitcountestimate"); // TODO: Cleanup
 
     private String encoding = null;
     private String queryString = "";

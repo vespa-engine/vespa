@@ -37,12 +37,11 @@ public class PosSearcher extends Searcher {
 
     public static final String POSITION_PARSING = "PositionParsing";
 
-    private static final CompoundName posBb = new CompoundName("pos.bb");
-    private static final CompoundName posLl = new CompoundName("pos.ll");
-    private static final CompoundName posXy = new CompoundName("pos.xy");
-    private static final CompoundName posAttributeName = new CompoundName("pos.attribute");
-    private static final CompoundName posRadius = new CompoundName("pos.radius");
-    private static final CompoundName posUnits = new CompoundName("pos.units");
+    private static final CompoundName posBb = CompoundName.from("pos.bb");
+    private static final CompoundName posLl = CompoundName.from("pos.ll");
+    private static final CompoundName posXy = CompoundName.from("pos.xy");
+    private static final CompoundName posAttributeName = CompoundName.from("pos.attribute");
+    private static final CompoundName posRadius = CompoundName.from("pos.radius");
 
     // according to wikipedia:
     // Earth's equatorial radius = 6378137 meter - not used
@@ -117,13 +116,13 @@ public class PosSearcher extends Searcher {
         if (radius == null) {
             radiusdegrees = 50.0 * km2deg;
         } else if (radius.endsWith("km")) {
-            double radiuskm = Double.valueOf(radius.substring(0, radius.length()-2));
+            double radiuskm = Double.parseDouble(radius.substring(0, radius.length()-2));
             radiusdegrees = radiuskm * km2deg;
         } else if (radius.endsWith("m")) {
-            double radiusm = Double.valueOf(radius.substring(0, radius.length()-1));
+            double radiusm = Double.parseDouble(radius.substring(0, radius.length()-1));
             radiusdegrees = radiusm * km2deg / 1000.0;
         } else if (radius.endsWith("mi")) {
-            double radiusmiles = Double.valueOf(radius.substring(0, radius.length()-2));
+            double radiusmiles = Double.parseDouble(radius.substring(0, radius.length()-2));
             radiusdegrees = radiusmiles * mi2deg;
         } else {
             radiusdegrees = Integer.parseInt(radius) * 0.000001;
@@ -151,15 +150,15 @@ public class PosSearcher extends Searcher {
             double radiusdegrees = radiuskm * km2deg;
             radiusUnits = (int)(radiusdegrees * 1000000);
         } else if (radius.endsWith("km")) {
-            double radiuskm = Double.valueOf(radius.substring(0, radius.length()-2));
+            double radiuskm = Double.parseDouble(radius.substring(0, radius.length()-2));
             double radiusdegrees = radiuskm * km2deg;
             radiusUnits = (int)(radiusdegrees * 1000000);
         } else if (radius.endsWith("m")) {
-            double radiusm = Double.valueOf(radius.substring(0, radius.length()-1));
+            double radiusm = Double.parseDouble(radius.substring(0, radius.length()-1));
             double radiusdegrees = radiusm * km2deg / 1000.0;
             radiusUnits = (int)(radiusdegrees * 1000000);
         } else if (radius.endsWith("mi")) {
-            double radiusmiles = Double.valueOf(radius.substring(0, radius.length()-2));
+            double radiusmiles = Double.parseDouble(radius.substring(0, radius.length()-2));
             double radiusdegrees = radiusmiles * mi2deg;
             radiusUnits = (int)(radiusdegrees * 1000000);
         } else {

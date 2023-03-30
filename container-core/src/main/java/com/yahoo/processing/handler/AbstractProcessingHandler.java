@@ -46,7 +46,7 @@ import static com.yahoo.component.chain.ChainsConfigurer.prepareChainRegistry;
 @SuppressWarnings("deprecation") // super class is deprecated
 public abstract class AbstractProcessingHandler<COMPONENT extends Processor> extends LoggingRequestHandler {
 
-    private final static CompoundName freezeListenerKey =new CompoundName("processing.freezeListener");
+    private final static CompoundName freezeListenerKey = CompoundName.from("processing.freezeListener");
 
     public final static String DEFAULT_RENDERER_ID = "default";
 
