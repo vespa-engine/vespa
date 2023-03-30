@@ -80,7 +80,7 @@ net.java.dev.jna:jna:5.11.0
 net.openhft:zero-allocation-hashing:0.16
 org.antlr:antlr-runtime:3.5.3
 org.antlr:antlr4-runtime:4.11.1
-org.apache.aries.spifly:org.apache.aries.spifly.dynamic.bundle:1.3.5
+org.apache.aries.spifly:org.apache.aries.spifly.dynamic.bundle:1.3.6
 org.apache.commons:commons-compress:1.22
 org.apache.commons:commons-csv:1.8
 org.apache.commons:commons-exec:1.3
