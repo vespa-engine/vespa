@@ -15,7 +15,7 @@ import java.util.Set;
 import java.util.TreeMap;
 
 /**
- * Detail information about the current state of all the distributor and storage nodes of the cluster.
+ * Detailed information about the current state of all the distributor and storage nodes of the cluster.
  *
  * @author hakonhall
  * @author bratseth
@@ -127,11 +127,10 @@ public class ClusterInfo {
 
     /** Returns the node info object for a given node identifier */
     private NodeInfo getInfo(Node node) {
-        switch (node.getType()) {
-            case DISTRIBUTOR : return getDistributorNodeInfo(node.getIndex());
-            case STORAGE : return getStorageNodeInfo(node.getIndex());
-            default : throw new IllegalArgumentException("No node type " + node.getType().toString());
-        }
+        return switch (node.getType()) {
+            case DISTRIBUTOR -> getDistributorNodeInfo(node.getIndex());
+            case STORAGE -> getStorageNodeInfo(node.getIndex());
+        };
     }
 
 }
