@@ -4,5 +4,6 @@ vespa_add_executable(searchcore_attribute_updater_test_app TEST
     attribute_updater_test.cpp
     DEPENDS
     searchcore_pcommon
+    searchlib_test
 )
 vespa_add_test(NAME searchcore_attribute_updater_test_app COMMAND searchcore_attribute_updater_test_app)
