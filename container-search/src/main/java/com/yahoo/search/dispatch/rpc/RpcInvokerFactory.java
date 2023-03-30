@@ -20,11 +20,20 @@ public class RpcInvokerFactory extends InvokerFactory {
 
     private final RpcConnectionPool rpcResourcePool;
     private final CompressPayload compressor;
+    private final RpcProtobufFillInvoker.DecodePolicy decodeType;
+
+    private static RpcProtobufFillInvoker.DecodePolicy convert(DispatchConfig.SummaryDecodePolicy.Enum decoding) {
+        return switch (decoding) {
+            case EAGER -> RpcProtobufFillInvoker.DecodePolicy.EAGER;
+            case ONDEMAND -> RpcProtobufFillInvoker.DecodePolicy.ONDEMAND;
+        };
+    }
 
     public RpcInvokerFactory(RpcConnectionPool rpcResourcePool, SearchGroups cluster, DispatchConfig dispatchConfig) {
         super(cluster, dispatchConfig);
         this.rpcResourcePool = rpcResourcePool;
         this.compressor = new CompressService();
+        decodeType = convert(dispatchConfig.summaryDecodePolicy());
     }
 
     @Override
@@ -37,6 +46,7 @@ public class RpcInvokerFactory extends InvokerFactory {
         Query query = result.getQuery();
 
         boolean summaryNeedsQuery = searcher.summaryNeedsQuery(query);
-        return new RpcProtobufFillInvoker(rpcResourcePool, compressor, searcher.getDocumentDatabase(query), searcher.getServerId(), summaryNeedsQuery);
+        return new RpcProtobufFillInvoker(rpcResourcePool, compressor, searcher.getDocumentDatabase(query),
+                                          searcher.getServerId(), decodeType, summaryNeedsQuery);
     }
 }

@@ -43,6 +43,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private double defaultTermwiseLimit = 1.0;
     private String jvmGCOptions = null;
     private String queryDispatchPolicy = "adaptive";
+    private String summaryDecodePolicy = "eager";
     private String sequencerType = "THROUGHPUT";
     private boolean firstTimeDeployment = false;
     private String responseSequencerType = "ADAPTIVE";
@@ -134,6 +135,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public int heapSizePercentage() { return heapSizePercentage; }
     @Override public int rpcEventsBeforeWakeup() { return rpc_events_before_wakeup; }
     @Override public String queryDispatchPolicy() { return queryDispatchPolicy; }
+    @Override public String summaryDecodePolicy() { return summaryDecodePolicy; }
     @Override public boolean useRestrictedDataPlaneBindings() { return useRestrictedDataPlaneBindings; }
     @Override public Optional<CloudAccount> cloudAccount() { return cloudAccount; }
     @Override public boolean allowUserFilters() { return allowUserFilters; }
@@ -189,6 +191,10 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     }
     public TestProperties setQueryDispatchPolicy(String policy) {
         queryDispatchPolicy = policy;
+        return this;
+    }
+    public TestProperties setSummaryDecodePolicy(String type) {
+        summaryDecodePolicy = type;
         return this;
     }
     public TestProperties setFeedSequencerType(String type) {
