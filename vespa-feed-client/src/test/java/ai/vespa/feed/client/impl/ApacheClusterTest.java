@@ -35,7 +35,7 @@ class ApacheClusterTest {
     final WireMockExtension server = new WireMockExtension();
 
     @Test
-    void testClient() throws IOException, ExecutionException, InterruptedException, TimeoutException {
+    void testClient() throws Exception {
         for (Compression compression : Compression.values()) {
             try (ApacheCluster cluster = new ApacheCluster(new FeedClientBuilderImpl(List.of(URI.create("http://localhost:" + server.port())))
                                                                    .setCompression(compression))) {
@@ -48,25 +48,28 @@ class ApacheClusterTest {
                                                  Map.of("name1", () -> "value1",
                                                         "name2", () -> "value2"),
                                                  "content".getBytes(UTF_8),
-                                                 Duration.ofSeconds(20)),
+                                                 Duration.ofSeconds(10)),
                                  vessel);
-                HttpResponse response = vessel.get(15, TimeUnit.SECONDS);
-                assertEquals("{}", new String(response.body(), UTF_8));
-                assertEquals(200, response.code());
 
-                ByteArrayOutputStream buffer = new ByteArrayOutputStream();
-                try (OutputStream zip = new GZIPOutputStream(buffer)) { zip.write("content".getBytes(UTF_8)); }
-                server.verify(1, anyRequestedFor(anyUrl()));
-                RequestPatternBuilder expected = postRequestedFor(urlEqualTo("/path")).withHeader("name1", equalTo("value1"))
-                                                                      .withHeader("name2", equalTo("value2"))
-                                                                      .withHeader("Content-Type", equalTo("application/json; charset=UTF-8"))
-                                                                      .withRequestBody(equalTo("content"));
-                expected = switch (compression) {
-                    case auto, none -> expected.withoutHeader("Content-Encoding");
-                    case gzip -> expected.withHeader("Content-Encoding", equalTo("gzip"));
+                AutoCloseable verifyResponse = () -> {
+                    HttpResponse response = vessel.get(15, TimeUnit.SECONDS);
+                    assertEquals("{}", new String(response.body(), UTF_8));
+                    assertEquals(200, response.code());
                 };
-                server.verify(1, expected);
-                server.resetRequests();
+                AutoCloseable verifyServer = () -> {
+                    server.verify(1, anyRequestedFor(anyUrl()));
+                    RequestPatternBuilder expected = postRequestedFor(urlEqualTo("/path")).withHeader("name1", equalTo("value1"))
+                                                                                          .withHeader("name2", equalTo("value2"))
+                                                                                          .withHeader("Content-Type", equalTo("application/json; charset=UTF-8"))
+                                                                                          .withRequestBody(equalTo("content"));
+                    expected = switch (compression) {
+                        case auto, none -> expected.withoutHeader("Content-Encoding");
+                        case gzip -> expected.withHeader("Content-Encoding", equalTo("gzip"));
+                    };
+                    server.verify(1, expected);
+                    server.resetRequests();
+                };
+                try (verifyServer; verifyResponse) { }
             }
         }
     }
