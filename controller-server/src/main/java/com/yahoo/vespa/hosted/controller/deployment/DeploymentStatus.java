@@ -390,7 +390,7 @@ public class DeploymentStatus {
     }
 
     /** The set of jobs that need to run for the given changes to be considered complete. */
-    private Map<JobId, List<Job>> jobsToRun(Map<InstanceName, Change> changes) {
+    public Map<JobId, List<Job>> jobsToRun(Map<InstanceName, Change> changes) {
         return jobsToRun(changes, false);
     }
 
