@@ -5,6 +5,7 @@
 #include "docsum_field_writer_factory.h"
 #include "resultclass.h"
 #include <vespa/config-summary.h>
+#include <vespa/searchlib/common/matching_elements_fields.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
 #include <vespa/vespalib/util/exceptions.h>
 #include <atomic>
@@ -124,6 +125,7 @@ ResultConfig::readConfig(const SummaryConfig &cfg, const char *configId, IDocsum
             break;
         }
         resClass->set_omit_summary_features(cfg_class.omitsummaryfeatures);
+        auto matching_elems_fields = std::make_shared<MatchingElementsFields>();
         for (const auto & field : cfg_class.fields) {
             const char *fieldname = field.name.c_str();
             vespalib::string command = field.command;
@@ -134,7 +136,8 @@ ResultConfig::readConfig(const SummaryConfig &cfg, const char *configId, IDocsum
                 try {
                     docsum_field_writer = docsum_field_writer_factory.create_docsum_field_writer(fieldname,
                                                                                                  command,
-                                                                                                 source_name);
+                                                                                                 source_name,
+                                                                                                 matching_elems_fields);
                 } catch (const vespalib::IllegalArgumentException& ex) {
                     LOG(error, "Exception during setup of summary result class '%s': field='%s', command='%s', source='%s': %s",
                         cfg_class.name.c_str(), fieldname, command.c_str(), source_name.c_str(), ex.getMessage().c_str());

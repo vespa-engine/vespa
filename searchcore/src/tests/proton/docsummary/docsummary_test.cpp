@@ -107,7 +107,10 @@ namespace proton {
 class MockDocsumFieldWriterFactory : public search::docsummary::IDocsumFieldWriterFactory
 {
 public:
-    std::unique_ptr<DocsumFieldWriter> create_docsum_field_writer(const vespalib::string&, const vespalib::string&, const vespalib::string&) override {
+    std::unique_ptr<DocsumFieldWriter> create_docsum_field_writer(const vespalib::string&,
+                                                                  const vespalib::string&,
+                                                                  const vespalib::string&,
+                                                                  std::shared_ptr<search::MatchingElementsFields>) override {
         return {};
     }
 
