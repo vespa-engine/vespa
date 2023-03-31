@@ -6,6 +6,7 @@ import com.yahoo.document.DocumentType;
 import com.yahoo.document.Field;
 import com.yahoo.document.datatypes.FieldValue;
 import com.yahoo.document.datatypes.NumericFieldValue;
+import com.yahoo.vespa.indexinglanguage.ExpressionConverter;
 import com.yahoo.vespa.objects.ObjectOperation;
 import com.yahoo.vespa.objects.ObjectPredicate;
 
@@ -54,6 +55,15 @@ public final class IfThenExpression extends CompositeExpression {
         this.rhs = rhs;
         this.ifTrue = ifTrue;
         this.ifFalse = ifFalse;
+    }
+
+    @Override
+    public IfThenExpression convertChildren(ExpressionConverter converter) {
+        return new IfThenExpression(converter.branch().convert(lhs),
+                                    cmp,
+                                    converter.branch().convert(rhs),
+                                    converter.branch().convert(ifTrue),
+                                    converter.branch().convert(ifFalse));
     }
 
     @Override

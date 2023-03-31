@@ -6,10 +6,12 @@ import com.yahoo.document.DataType;
 import com.yahoo.document.DocumentType;
 import com.yahoo.document.Field;
 import com.yahoo.document.datatypes.FieldValue;
+import com.yahoo.vespa.indexinglanguage.ExpressionConverter;
 import com.yahoo.vespa.objects.ObjectOperation;
 import com.yahoo.vespa.objects.ObjectPredicate;
 
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
@@ -29,6 +31,13 @@ public final class SelectInputExpression extends CompositeExpression {
     public SelectInputExpression(List<Pair<String, Expression>> cases) {
         super(null);
         this.cases = cases;
+    }
+
+    @Override
+    public SelectInputExpression convertChildren(ExpressionConverter converter) {
+        return new SelectInputExpression(cases.stream()
+                                              .map(c -> new Pair<>(c.getFirst(), converter.branch().convert(c.getSecond())))
+                                              .toList());
     }
 
     @Override

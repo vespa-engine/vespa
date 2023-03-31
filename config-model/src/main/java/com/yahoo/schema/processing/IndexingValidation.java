@@ -62,7 +62,7 @@ public class IndexingValidation extends Processor {
         final Set<String> prevNames = new HashSet<>();
 
         @Override
-        protected ExpressionConverter branch() {
+        public ExpressionConverter branch() {
             MyConverter ret = new MyConverter();
             ret.outputs.addAll(outputs);
             ret.prevNames.addAll(prevNames);
