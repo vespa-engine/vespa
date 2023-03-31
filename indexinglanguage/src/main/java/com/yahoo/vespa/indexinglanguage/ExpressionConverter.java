@@ -55,6 +55,11 @@ public abstract class ExpressionConverter implements Cloneable {
         return new CatExpression(lst);
     }
 
+    public Expression innerConvert(ChoiceExpression exp) {
+        var convertedInnerExpressions = exp.asList().stream().map(inner -> convert(inner)).toList();
+        return new ChoiceExpression(convertedInnerExpressions);
+    }
+
     public Expression innerConvert(ForEachExpression exp) {
         return new ForEachExpression(convert(exp.getInnerExpression()));
     }
