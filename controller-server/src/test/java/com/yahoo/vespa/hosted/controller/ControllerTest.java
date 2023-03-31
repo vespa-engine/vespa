@@ -1429,9 +1429,14 @@ public class ControllerTest {
 
         // Deployment fails because zone is not configured in requested cloud account
         tester.controllerTester().flagSource().withListFlag(PermanentFlags.CLOUD_ACCOUNTS.id(), List.of(cloudAccount), String.class);
-        context.submit(applicationPackage)
-               .runJobExpectingFailure(systemTest, "Zone test.us-east-1 is not configured in requested cloud account '012345678912'")
-               .abortJob(stagingTest);
+        assertEquals("Zone test.us-east-1 is not configured in requested cloud account '012345678912'",
+                     assertThrows(IllegalArgumentException.class,
+                                  () -> context.submit(applicationPackage))
+                             .getMessage());
+        assertEquals("Zone dev.us-east-1 is not configured in requested cloud account '012345678912'",
+                     assertThrows(IllegalArgumentException.class,
+                                  () -> context.runJob(devUsEast1, applicationPackage))
+                             .getMessage());
 
         // Deployment to prod succeeds once all zones are configured in requested account
         tester.controllerTester().zoneRegistry().configureCloudAccount(CloudAccount.from(cloudAccount),
