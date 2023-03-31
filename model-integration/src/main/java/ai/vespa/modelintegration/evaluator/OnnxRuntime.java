@@ -10,9 +10,15 @@ import com.yahoo.component.annotation.Inject;
 import com.yahoo.jdisc.ResourceReference;
 import com.yahoo.jdisc.refcount.DebugReferencesWithStack;
 import com.yahoo.jdisc.refcount.References;
+import net.jpountz.xxhash.XXHashFactory;
 
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -26,14 +32,22 @@ import static com.yahoo.yolean.Exceptions.throwUnchecked;
 public class OnnxRuntime extends AbstractComponent {
 
     // For unit testing
-    @FunctionalInterface interface OrtSessionFactory {
+    interface OrtSessionFactory {
         OrtSession create(String path, OrtSession.SessionOptions opts) throws OrtException;
+        OrtSession create(byte[] data, OrtSession.SessionOptions opts) throws OrtException;
     }
 
     private static final Logger log = Logger.getLogger(OnnxRuntime.class.getName());
 
     private static final OrtEnvironmentResult ortEnvironment = getOrtEnvironment();
-    private static final OrtSessionFactory defaultFactory = (path, opts) -> ortEnvironment().createSession(path, opts);
+    private static final OrtSessionFactory defaultFactory = new OrtSessionFactory() {
+        @Override public OrtSession create(String path, OrtSession.SessionOptions opts) throws OrtException {
+            return ortEnvironment().createSession(path, opts);
+        }
+        @Override public OrtSession create(byte[] data, OrtSession.SessionOptions opts) throws OrtException {
+            return ortEnvironment().createSession(data, opts);
+        }
+    };
 
     private final Object monitor = new Object();
     private final Map<OrtSessionId, SharedOrtSession> sessions = new HashMap<>();
@@ -42,6 +56,14 @@ public class OnnxRuntime extends AbstractComponent {
     @Inject public OnnxRuntime() { this(defaultFactory); }
 
     OnnxRuntime(OrtSessionFactory factory) { this.factory = factory; }
+
+    public OnnxEvaluator evaluatorOf(byte[] model) {
+        return new OnnxEvaluator(model, null, this);
+    }
+
+    public OnnxEvaluator evaluatorOf(byte[] model, OnnxEvaluatorOptions options) {
+        return new OnnxEvaluator(model, options, this);
+    }
 
     public OnnxEvaluator evaluatorOf(String modelPath) {
         return new OnnxEvaluator(modelPath, null, this);
@@ -105,8 +127,8 @@ public class OnnxRuntime extends AbstractComponent {
         };
     }
 
-    ReferencedOrtSession acquireSession(String modelPath, OnnxEvaluatorOptions options, boolean loadCuda) throws OrtException {
-        var sessionId = new OrtSessionId(modelPath, options, loadCuda);
+    ReferencedOrtSession acquireSession(ModelPathOrData model, OnnxEvaluatorOptions options, boolean loadCuda) throws OrtException {
+        var sessionId = new OrtSessionId(calculateModelHash(model), options, loadCuda);
         synchronized (monitor) {
             var sharedSession = sessions.get(sessionId);
             if (sharedSession != null) {
@@ -114,8 +136,9 @@ public class OnnxRuntime extends AbstractComponent {
             }
         }
 
+        var opts = options.getOptions(loadCuda);
         // Note: identical models loaded simultaneously will result in duplicate session instances
-        var session = factory.create(modelPath, options.getOptions(loadCuda));
+        var session = model.path().isPresent() ? factory.create(model.path().get(), opts) : factory.create(model.data().get(), opts);
         log.fine(() -> "Created new session (%s)".formatted(System.identityHashCode(session)));
 
         var sharedSession = new SharedOrtSession(sessionId, session);
@@ -125,25 +148,52 @@ public class OnnxRuntime extends AbstractComponent {
         return referencedSession;
     }
 
+    private static long calculateModelHash(ModelPathOrData model) {
+        if (model.path().isPresent()) {
+            try (var hasher = XXHashFactory.fastestInstance().newStreamingHash64(0);
+                 var in = Files.newInputStream(Paths.get(model.path().get()))) {
+                byte[] buffer = new byte[8192];
+                int bytesRead;
+                while ((bytesRead = in.read(buffer)) != -1) {
+                    hasher.update(buffer, 0, bytesRead);
+                }
+                return hasher.getValue();
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
+        } else {
+            var data = model.data().get();
+            return XXHashFactory.fastestInstance().hash64().hash(data, 0, data.length, 0);
+        }
+    }
+
     int sessionsCached() { synchronized(monitor) { return sessions.size(); } }
 
-    public static class ReferencedOrtSession implements AutoCloseable {
+    static class ReferencedOrtSession implements AutoCloseable {
         private final OrtSession instance;
         private final ResourceReference ref;
 
-        public ReferencedOrtSession(OrtSession instance, ResourceReference ref) {
+        ReferencedOrtSession(OrtSession instance, ResourceReference ref) {
             this.instance = instance;
             this.ref = ref;
         }
 
-        public OrtSession instance() { return instance; }
+        OrtSession instance() { return instance; }
         @Override public void close() { ref.close(); }
     }
 
-    // Assumes options are never modified after being stored in `onnxSessions`
-    record OrtSessionId(String modelPath, OnnxEvaluatorOptions options, boolean loadCuda) {}
+    record ModelPathOrData(Optional<String> path, Optional<byte[]> data) {
+        static ModelPathOrData of(String path) { return new ModelPathOrData(Optional.of(path), Optional.empty()); }
+        static ModelPathOrData of(byte[] data) { return new ModelPathOrData(Optional.empty(), Optional.of(data)); }
+        ModelPathOrData {
+            if (path.isEmpty() == data.isEmpty()) throw new IllegalArgumentException("Either path or data must be non-empty");
+        }
+    }
 
-    record OrtEnvironmentResult(OrtEnvironment env, Throwable failure) {}
+    // Assumes options are never modified after being stored in `onnxSessions`
+    private record OrtSessionId(long modelHash, OnnxEvaluatorOptions options, boolean loadCuda) {}
+
+    private record OrtEnvironmentResult(OrtEnvironment env, Throwable failure) {}
 
     private class SharedOrtSession {
         private final OrtSessionId id;
