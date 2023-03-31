@@ -166,81 +166,32 @@ public class SlimeUtils {
                                     false);
     }
 
-    private static class Equal {
-        protected final Inspector rhsInspector;
-
-        protected boolean equal = true;
-
-        public Equal(Inspector rhsInspector) { this.rhsInspector = rhsInspector; }
-
-        public boolean isEqual() { return equal; }
-    }
-
-    private static class EqualArray extends Equal implements ArrayTraverser {
-        public EqualArray(Inspector rhsInspector) { super(rhsInspector); }
-
-        @Override
-        public void entry(int idx, Inspector inspector) {
-            if (equal) {
-                equal = inspector.equalTo(rhsInspector.entry(idx));
-            }
-        }
-    }
-
-    private static class EqualObject extends Equal implements ObjectTraverser {
-        public EqualObject(Inspector rhsInspector) { super(rhsInspector); }
-
-        @Override
-        public void field(String name, Inspector inspector) {
-            if (equal) {
-                equal = inspector.equalTo(rhsInspector.field(name));
-            }
-        }
-    }
-
     public static boolean equalTo(Inspector a, Inspector b) {
-        boolean equal = a.type() == b.type();
+        if (a.type() != b.type()) return false;
 
-        if (equal) {
-            switch (a.type()) {
-                case NIX:
-                    equal = a.valid() == b.valid();
-                    break;
-                case BOOL:
-                    equal = a.asBool() == b.asBool();
-                    break;
-                case LONG:
-                    equal = a.asLong() == b.asLong();
-                    break;
-                case DOUBLE:
-                    equal = Double.compare(a.asDouble(), b.asDouble()) == 0;
-                    break;
-                case STRING:
-                    equal = a.asString().equals(b.asString());
-                    break;
-                case DATA:
-                    equal = Arrays.equals(a.asData(), b.asData());
-                    break;
-                case ARRAY:
-                {
-                    var traverser = new EqualArray(b);
-                    a.traverse(traverser);
-                    equal = traverser.isEqual() && (a.entries() == b.entries());
+        switch (a.type()) {
+            case NIX: return a.valid() == b.valid();
+            case BOOL: return a.asBool() == b.asBool();
+            case LONG: return a.asLong() == b.asLong();
+            case DOUBLE: return Double.compare(a.asDouble(), b.asDouble()) == 0;
+            case STRING: return a.asString().equals(b.asString());
+            case DATA: return Arrays.equals(a.asData(), b.asData());
+            case ARRAY: {
+                if (a.entries() != b.entries()) return false;
+                for (int i = 0; i < a.entries(); i++) {
+                    if (!equalTo(a.entry(i), b.entry(i))) return false;
                 }
-                break;
-                case OBJECT:
-                {
-                    var traverser = new EqualObject(b);
-                    a.traverse(traverser);
-                    equal = traverser.isEqual() && (a.fields() == b.fields());
-                }
-                break;
-                default:
-                    assert(false);
-                    break;
+                return true;
             }
+            case OBJECT: {
+                if (a.fields() != b.fields()) return false;
+                boolean[] equal = new boolean[]{ true };
+                a.traverse((String key, Inspector value) -> {
+                    if (equal[0] && !equalTo(value, b.field(key))) equal[0] = false;
+                });
+                return equal[0];
+            }
+            default: throw new IllegalStateException("Unexpected type: " + a.type());
         }
-
-        return equal;
     }
 }
