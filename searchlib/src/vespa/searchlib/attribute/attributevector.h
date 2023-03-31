@@ -38,6 +38,8 @@ namespace vespalib::alloc {
     class Alloc;
 }
 
+namespace vespalib::eval { struct Value; }
+
 namespace search {
 
     template <typename T> class ComponentGuard;
@@ -86,6 +88,7 @@ public:
     virtual bool add(double, int32_t = 1) { return false; }
     virtual bool add(const char *, int32_t = 1) { return false; }
     virtual bool add(vespalib::ConstArrayRef<char>, int32_t = 1) { return false; }
+    virtual bool add(const vespalib::eval::Value&, int32_t = 1) { return false; }
     
     virtual ~IExtendAttribute() = default;
 };
