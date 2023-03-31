@@ -21,7 +21,8 @@ public:
     std::unique_ptr<search::docsummary::DocsumFieldWriter>
     create_docsum_field_writer(const vespalib::string& field_name,
                                const vespalib::string& command,
-                               const vespalib::string& source) override;
+                               const vespalib::string& source,
+                               std::shared_ptr<search::MatchingElementsFields> matching_elems_fields) override;
 };
 
 }

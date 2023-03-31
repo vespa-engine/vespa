@@ -20,7 +20,6 @@ class DocsumFieldWriterFactory : public IDocsumFieldWriterFactory
     const IDocsumEnvironment& _env;
     const IQueryTermFilterFactory& _query_term_filter_factory;
 protected:
-    std::shared_ptr<MatchingElementsFields> _matching_elems_fields;
     const IDocsumEnvironment& getEnvironment() const noexcept { return _env; }
     bool has_attribute_manager() const noexcept;
 public:
@@ -28,7 +27,8 @@ public:
     ~DocsumFieldWriterFactory() override;
     std::unique_ptr<DocsumFieldWriter> create_docsum_field_writer(const vespalib::string& field_name,
                                                                   const vespalib::string& command,
-                                                                  const vespalib::string& source) override;
+                                                                  const vespalib::string& source,
+                                                                  std::shared_ptr<MatchingElementsFields> matching_elems_fields) override;
 };
 
 }
