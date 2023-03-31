@@ -4,7 +4,13 @@ package com.yahoo.vespa.indexinglanguage.expressions;
 import com.yahoo.document.DataType;
 import com.yahoo.document.Field;
 import com.yahoo.document.datatypes.StringFieldValue;
+import com.yahoo.language.Linguistics;
+import com.yahoo.language.process.Embedder;
+import com.yahoo.language.simple.SimpleLinguistics;
+import com.yahoo.vespa.indexinglanguage.ExpressionSearcher;
 import com.yahoo.vespa.indexinglanguage.SimpleTestAdapter;
+import com.yahoo.vespa.indexinglanguage.parser.ParseException;
+import com.yahoo.yolean.Exceptions;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
@@ -42,6 +48,26 @@ public class ChoiceTestCase {
             choice.execute(context);
             assertEquals("foo1", context.getValue().getWrappedValue());
         }
+    }
+
+    @Test
+    public void testIllegalChoiceExpression() throws ParseException {
+        try {
+            parse("input (foo || 99999999) | attribute");
+        }
+        catch (IllegalArgumentException e) {
+            assertEquals("'input' must be given a field name as argument", Exceptions.toMessageString(e));
+        }
+    }
+
+    @Test
+    public void testInnerConvert() throws ParseException {
+        var expression = parse("(input foo || 99999999) | attribute");
+        new ExpressionSearcher<>(AttributeExpression.class).searchIn(expression); // trigger innerConvert
+    }
+
+    private static Expression parse(String s) throws ParseException {
+        return Expression.fromString(s, new SimpleLinguistics(), Embedder.throwsOnUse.asMap());
     }
 
 }
