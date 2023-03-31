@@ -59,6 +59,15 @@ vec_mixed_2d(std::vector<std::vector<double>> val)
     return spec;
 }
 
+void add_doc(AttributeVector& attr, uint32_t exp_docid)
+{
+    uint32_t docid(0);
+    EXPECT_EQ(exp_docid, attr.getNumDocs());
+    attr.addDoc(docid);
+    EXPECT_EQ(exp_docid, docid);
+    EXPECT_EQ(exp_docid + 1, attr.getNumDocs());
+}
+
 class ExtendAttributeTest : public ::testing::Test
 {
     std::vector<std::unique_ptr<Value>> _tensors;
@@ -87,11 +96,7 @@ ExtendAttributeTest::create_tensor(const TensorSpec &spec)
 template <typename Attribute>
 void ExtendAttributeTest::testExtendInteger(Attribute & attr)
 {
-    uint32_t docId(0);
-    EXPECT_EQ(attr.getNumDocs(), 0u);
-    attr.addDoc(docId);
-    EXPECT_EQ(docId, 0u);
-    EXPECT_EQ(attr.getNumDocs(), 1u);
+    add_doc(attr, 0);
     attr.add(1, 10);
     EXPECT_EQ(attr.getInt(0), 1);
     attr.add(2, 20);
@@ -106,9 +111,7 @@ void ExtendAttributeTest::testExtendInteger(Attribute & attr)
             EXPECT_EQ(v[1].getWeight(), 20);
         }
     }
-    attr.addDoc(docId);
-    EXPECT_EQ(docId, 1u);
-    EXPECT_EQ(attr.getNumDocs(), 2u);
+    add_doc(attr, 1);
     attr.add(3, 30);
     EXPECT_EQ(attr.getInt(1), 3);
     if (attr.hasMultiValue()) {
@@ -124,11 +127,7 @@ void ExtendAttributeTest::testExtendInteger(Attribute & attr)
 template <typename Attribute>
 void ExtendAttributeTest::testExtendFloat(Attribute & attr)
 {
-    uint32_t docId(0);
-    EXPECT_EQ(attr.getNumDocs(), 0u);
-    attr.addDoc(docId);
-    EXPECT_EQ(docId, 0u);
-    EXPECT_EQ(attr.getNumDocs(), 1u);
+    add_doc(attr, 0);
     attr.add(1.7, 10);
     EXPECT_EQ(attr.getInt(0), 1);
     EXPECT_EQ(attr.getFloat(0), 1.7);
@@ -144,9 +143,7 @@ void ExtendAttributeTest::testExtendFloat(Attribute & attr)
             EXPECT_EQ(v[1].getWeight(), 20);
         }
     }
-    attr.addDoc(docId);
-    EXPECT_EQ(docId, 1u);
-    EXPECT_EQ(attr.getNumDocs(), 2u);
+    add_doc(attr, 1);
     attr.add(3.6, 30);
     EXPECT_EQ(attr.getFloat(1), 3.6);
     if (attr.hasMultiValue()) {
@@ -162,11 +159,7 @@ void ExtendAttributeTest::testExtendFloat(Attribute & attr)
 template <typename Attribute>
 void ExtendAttributeTest::testExtendString(Attribute & attr)
 {
-    uint32_t docId(0);
-    EXPECT_EQ(attr.getNumDocs(), 0u);
-    attr.addDoc(docId);
-    EXPECT_EQ(docId, 0u);
-    EXPECT_EQ(attr.getNumDocs(), 1u);
+    add_doc(attr, 0);
     attr.add("1.7", 10);
     auto buf = attr.get_raw(0);
     EXPECT_EQ(std::string(buf.data(), buf.size()), "1.7");
@@ -183,9 +176,7 @@ void ExtendAttributeTest::testExtendString(Attribute & attr)
             EXPECT_EQ(v[1].getWeight(), 20);
         }
     }
-    attr.addDoc(docId);
-    EXPECT_EQ(docId, 1u);
-    EXPECT_EQ(attr.getNumDocs(), 2u);
+    add_doc(attr, 1);
     attr.add("3.6", 30);
     buf = attr.get_raw(1);
     EXPECT_EQ(std::string(buf.data(), buf.size()), "3.6");
@@ -205,36 +196,27 @@ void ExtendAttributeTest::testExtendRaw(AttributeVector& attr)
     std::vector<char> zeros{10, 0, 0, 11};
     auto* ext_attr = attr.getExtendInterface();
     EXPECT_NE(nullptr, ext_attr);
-    uint32_t docId(0);
-    EXPECT_EQ(0u, attr.getNumDocs());
-    attr.addDoc(docId);
-    EXPECT_EQ(0u, docId);
-    EXPECT_EQ(1u, attr.getNumDocs());
+    add_doc(attr, 0);
     ext_attr->add(as_vector("1.7"));
     auto buf = attr.get_raw(0);
     EXPECT_EQ(as_vector("1.7"), as_vector(buf));
     ext_attr->add(vespalib::ConstArrayRef<char>(as_vector("2.3")));
     buf = attr.get_raw(0);
     EXPECT_EQ(as_vector("2.3"), as_vector(buf));
-    attr.addDoc(docId);
-    EXPECT_EQ(1u, docId);
-    EXPECT_EQ(attr.getNumDocs(), 2u);
+    add_doc(attr, 1);
     ext_attr->add(as_vector("3.6"));
     buf = attr.get_raw(1);
     EXPECT_EQ(as_vector("3.6"), as_vector(buf));
     buf = attr.get_raw(0);
     EXPECT_EQ(as_vector("2.3"), as_vector(buf));
-    attr.addDoc(docId);
-    EXPECT_EQ(2u, docId);
+    add_doc(attr, 2);
     ext_attr->add(zeros);
     buf = attr.get_raw(2);
     EXPECT_EQ(zeros, as_vector(buf));
-    attr.addDoc(docId);
-    EXPECT_EQ(3u, docId);
+    add_doc(attr, 3);
     buf = attr.get_raw(3);
     EXPECT_EQ(empty, as_vector(buf));
-    attr.addDoc(docId);
-    EXPECT_EQ(4u, docId);
+    add_doc(attr, 4);
     ext_attr->add(empty);
     buf = attr.get_raw(4);
     EXPECT_EQ(empty, as_vector(buf));
@@ -251,11 +233,7 @@ void ExtendAttributeTest::testExtendTensor(AttributeVector& attr)
     EXPECT_NE(nullptr, ext_attr);
     auto* tensor_attr = attr.asTensorAttribute();
     EXPECT_NE(nullptr, tensor_attr);
-    uint32_t docId(0);
-    EXPECT_EQ(0u, attr.getNumDocs());
-    attr.addDoc(docId);
-    EXPECT_EQ(0u, docId);
-    EXPECT_EQ(1u, attr.getNumDocs());
+    add_doc(attr, 0);
     TensorSpec spec0 = dense ? vec_2d(1.0, 2.0) : vec_mixed_2d({{3.0, 4.0}, {5.0, 6.0}});
     EXPECT_TRUE(ext_attr->add(create_tensor(spec0)));
     auto tensor = tensor_attr->getTensor(0);
@@ -282,9 +260,7 @@ void ExtendAttributeTest::testExtendTensor(AttributeVector& attr)
         EXPECT_EQ(spec0_mixed_cells1, as_vector(tensor_attr->get_vector(0, 1).typify<double>()));
         EXPECT_EQ(empty_cells, as_vector(tensor_attr->get_vector(0, 2).typify<double>()));
     }
-    attr.addDoc(docId);
-    EXPECT_EQ(1u, docId);
-    EXPECT_EQ(2u, attr.getNumDocs());
+    add_doc(attr, 1);
     vectors = tensor_attr->get_vectors(1);
     EXPECT_EQ(0, vectors.subspaces());
     EXPECT_EQ(empty_cells, as_vector(tensor_attr->get_vector(1, 0).typify<double>()));
