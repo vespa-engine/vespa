@@ -42,11 +42,13 @@ public class BcpGroupUpdater extends ControllerMaintainer {
 
     private final ApplicationController applications;
     private final NodeRepository nodeRepository;
+    private final Double successFactorBaseline;
 
     public BcpGroupUpdater(Controller controller, Duration duration, Double successFactorBaseline) {
         super(controller, duration, successFactorBaseline);
         this.applications = controller.applications();
         this.nodeRepository = controller.serviceRegistry().configServer().nodeRepository();
+        this.successFactorBaseline = successFactorBaseline;
     }
 
     @Override
@@ -76,7 +78,7 @@ public class BcpGroupUpdater extends ControllerMaintainer {
             }
         }
         double successFactorDeviation = asSuccessFactorDeviation(attempts, failures);
-        if ( successFactorDeviation == -1.0 )
+        if ( successFactorDeviation == -successFactorBaseline )
             log.log(Level.WARNING, "Could not update traffic share on any applications", lastException);
         else if ( successFactorDeviation < -0.1 )
             log.log(Level.FINE, "Could not update traffic share on all applications", lastException);
