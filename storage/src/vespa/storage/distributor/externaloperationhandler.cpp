@@ -144,7 +144,7 @@ void ExternalOperationHandler::bounce_with_result(api::StorageCommand& cmd, cons
 void ExternalOperationHandler::bounce_with_feed_blocked(api::StorageCommand& cmd) {
     const auto& feed_block = _op_ctx.cluster_state_bundle().feed_block();
     bounce_with_result(cmd, api::ReturnCode(api::ReturnCode::NO_SPACE,
-                                            "External feed is blocked due to resource exhaustion: " +
+                                            "External feed is blocked due to resource exhaustion, see https://docs.vespa.ai/en/operations/feed-block.html: " +
                                                     feed_block->description()));
 }
 
