@@ -18,9 +18,10 @@ func (p *ProgSpec) configureValgrind() {
 	p.shouldUseValgrind = false
 	p.shouldUseCallgrind = false
 	env := p.getenv(envvars.VESPA_USE_VALGRIND)
+	allValgrind := env == "all"
 	parts := strings.Split(env, " ")
 	for _, part := range parts {
-		if p.BaseName == part {
+		if p.BaseName == part || allValgrind {
 			trace.Trace("using valgrind as", p.Program, "has basename in", envvars.VESPA_USE_VALGRIND, "=>", env)
 			backticks := util.BackTicksWithStderr
 			out, err := backticks.Run("which", "valgrind")
