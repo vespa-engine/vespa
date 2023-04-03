@@ -19,7 +19,7 @@
 namespace vespalib::datastore {
 
 /**
- * Datastore for storing arrays of type EntryT that is accessed via a 32-bit EntryRef.
+ * Datastore for storing arrays of type ElemT that is accessed via a 32-bit EntryRef.
  *
  * The default EntryRef type uses 19 bits for offset (524288 values) and 13 bits for buffer id (8192 buffers).
  *
@@ -29,16 +29,18 @@ namespace vespalib::datastore {
  *
  * The max value of maxSmallArrayTypeId is (2^bufferBits - 1).
  */
-template <typename EntryT, typename RefT = EntryRefT<19>, typename TypeMapperT = ArrayStoreSimpleTypeMapper<EntryT> >
+template <typename ElemT, typename RefT = EntryRefT<19>, typename TypeMapperT = ArrayStoreSimpleTypeMapper<ElemT> >
 class ArrayStore : public ICompactable
 {
 public:
     using AllocSpec = ArrayStoreConfig::AllocSpec;
-    using ArrayRef = vespalib::ArrayRef<EntryT>;
-    using ConstArrayRef = vespalib::ConstArrayRef<EntryT>;
+    using ArrayRef = vespalib::ArrayRef<ElemT>;
+    using ConstArrayRef = vespalib::ConstArrayRef<ElemT>;
     using DataStoreType  = DataStoreT<RefT>;
-    using LargeArray = vespalib::Array<EntryT>;
+    using ElemType = ElemT;
+    using LargeArray = vespalib::Array<ElemT>;
     using LargeBufferType = typename TypeMapperT::LargeBufferType;
+    using RefType = RefT;
     using SmallBufferType = typename TypeMapperT::SmallBufferType;
     using TypeMapper = TypeMapperT;
 private:
@@ -58,7 +60,7 @@ private:
     EntryRef addLargeArray(const ConstArrayRef &array);
     EntryRef allocate_large_array(size_t array_size);
     ConstArrayRef getSmallArray(RefT ref, size_t arraySize) const {
-        const EntryT *buf = _store.template getEntryArray<EntryT>(ref, arraySize);
+        const ElemT *buf = _store.template getEntryArray<ElemT>(ref, arraySize);
         return ConstArrayRef(buf, arraySize);
     }
     ConstArrayRef getLargeArray(RefT ref) const {
@@ -85,7 +87,7 @@ public:
     }
 
     /**
-     * Allocate an array of the given size without any instantiation of EntryT elements.
+     * Allocate an array of the given size without any instantiation of ElemT elements.
      *
      * Use get_writable() to get a reference to the array for writing.
      *

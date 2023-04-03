@@ -126,13 +126,16 @@ protected:
 };
 
 /**
- * Concrete class used to manage allocation and de-allocation of elements of type EntryType in data store buffers.
+ * Concrete class used to manage allocation and de-allocation of elements of type ElemType in data store buffers.
  */
-template <typename EntryType, typename EmptyType = EntryType>
+template <typename ElemT, typename EmptyT = ElemT>
 class BufferType : public BufferTypeBase
 {
+public:
+    using ElemType = ElemT;
+    using EmptyType = EmptyT;
 protected:
-    static const EntryType& empty_entry() noexcept;
+    static const ElemType& empty_entry() noexcept;
 
 public:
     BufferType() noexcept : BufferType(1,1,1) {}
@@ -148,7 +151,7 @@ public:
     void fallbackCopy(void *newBuffer, const void *oldBuffer, ElemCount numElems) override;
     void initializeReservedElements(void *buffer, ElemCount reservedElements) override;
     void cleanHold(void *buffer, size_t offset, ElemCount numElems, CleanContext cleanCxt) override;
-    size_t elementSize() const override { return sizeof(EntryType); }
+    size_t elementSize() const override { return sizeof(ElemType); }
 };
 
 extern template class BufferType<char>;
