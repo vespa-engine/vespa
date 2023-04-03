@@ -264,7 +264,8 @@ TEST_F("require that array attributes are updated", Fixture)
 {
     CollectionType ct(CollectionType::ARRAY);
     {
-        auto vec = AttributeBuilder("in1/aint", Config(BasicType::INT32, ct)).fill_array({{32}, {32}, {32}, {32}, {32}}).get();
+        using IL = AttributeBuilder::IntList;
+        auto vec = AttributeBuilder("in1/aint", Config(BasicType::INT32, ct)).fill_array({IL{32}, {32}, {32}, {32}, {32}}).get();
         auto first = std::make_unique<IntFieldValue>(32);
         auto second = std::make_unique<IntFieldValue>(64);
         auto assign = std::make_unique<ArrayFieldValue>(f.docType->getField("aint").getDataType());
@@ -279,7 +280,8 @@ TEST_F("require that array attributes are updated", Fixture)
         EXPECT_TRUE(check(vec, 5, std::vector<WeightedInt>{WeightedInt(32)}));
     }
     {
-        auto vec = AttributeBuilder("in1/afloat", Config(BasicType::FLOAT, ct)).fill_array({{55.5}, {55.5}, {55.5}, {55.5}, {55.5}}).get();
+        using DL = AttributeBuilder::DoubleList;
+        auto vec = AttributeBuilder("in1/afloat", Config(BasicType::FLOAT, ct)).fill_array({DL{55.5}, {55.5}, {55.5}, {55.5}, {55.5}}).get();
         auto first = std::make_unique<FloatFieldValue>(55.5f);
         auto second = std::make_unique<FloatFieldValue>(77.7f);
         auto assign = std::make_unique<ArrayFieldValue>(f.docType->getField("afloat").getDataType());
