@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/vespa-engine/vespa/client/go/internal/mock"
 	"github.com/vespa-engine/vespa/client/go/internal/vespa"
 )
@@ -111,7 +112,7 @@ func assertDeploy(applicationPackage string, arguments []string, t *testing.T) {
 	cli, stdout, _ := newTestCLI(t)
 	client := &mock.HTTPClient{}
 	cli.httpClient = client
-	assert.Nil(t, cli.Run(arguments...))
+	require.Nil(t, cli.Run(arguments...))
 	assert.Equal(t,
 		"\nSuccess: Deployed "+applicationPackage+"\n",
 		stdout.String())

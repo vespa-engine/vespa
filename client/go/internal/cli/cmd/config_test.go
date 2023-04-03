@@ -104,7 +104,14 @@ func TestLocalConfig(t *testing.T) {
 	// get reads global option if unset locally
 	assertConfigCommand(t, configHome, "target = cloud\n", "config", "get", "target")
 
+	// get prints local config when in a a sub-directory of the application package
+	subDir := filepath.Join(rootDir, "a", "b")
+	require.Nil(t, os.MkdirAll(subDir, 0755))
+	require.Nil(t, os.Chdir(subDir))
+	assertConfigCommand(t, configHome, "instance = foo\n", "config", "get", "--local")
+
 	// get merges settings from local and global config
+	require.Nil(t, os.Chdir(rootDir))
 	assertConfigCommand(t, configHome, "", "config", "set", "--local", "application", "t1.a1")
 	assertConfigCommand(t, configHome, `application = t1.a1.default
 cluster = <unset>
