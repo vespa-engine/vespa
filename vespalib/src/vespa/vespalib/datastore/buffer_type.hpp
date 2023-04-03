@@ -6,63 +6,61 @@
 
 namespace vespalib::datastore {
 
-template <typename EntryType, typename EmptyType>
-BufferType<EntryType, EmptyType>::BufferType(uint32_t arraySize, uint32_t minArrays, uint32_t maxArrays) noexcept
+template <typename ElemT, typename EmptyT>
+BufferType<ElemT, EmptyT>::BufferType(uint32_t arraySize, uint32_t minArrays, uint32_t maxArrays) noexcept
     : BufferTypeBase(arraySize, minArrays, maxArrays)
 { }
 
-template <typename EntryType, typename EmptyType>
-BufferType<EntryType, EmptyType>::BufferType(uint32_t arraySize, uint32_t minArrays, uint32_t maxArrays,
+template <typename ElemT, typename EmptyT>
+BufferType<ElemT, EmptyT>::BufferType(uint32_t arraySize, uint32_t minArrays, uint32_t maxArrays,
                                   uint32_t numArraysForNewBuffer, float allocGrowFactor) noexcept
     : BufferTypeBase(arraySize, minArrays, maxArrays, numArraysForNewBuffer, allocGrowFactor)
 { }
 
-template <typename EntryType, typename EmptyType>
-BufferType<EntryType, EmptyType>::~BufferType() = default;
+template <typename ElemT, typename EmptyT>
+BufferType<ElemT, EmptyT>::~BufferType() = default;
 
-template <typename EntryType, typename EmptyType>
+template <typename ElemT, typename EmptyT>
 void
-BufferType<EntryType, EmptyType>::destroyElements(void *buffer, ElemCount numElems)
+BufferType<ElemT, EmptyT>::destroyElements(void *buffer, ElemCount numElems)
 {
-    EntryType *e = static_cast<EntryType *>(buffer);
+    ElemType *e = static_cast<ElemType *>(buffer);
     for (size_t j = numElems; j != 0; --j) {
-        e->~EntryType();
+        e->~ElemType();
         ++e;
     }
 }
 
-template <typename EntryType, typename EmptyType>
+template <typename ElemT, typename EmptyT>
 void
-BufferType<EntryType, EmptyType>::fallbackCopy(void *newBuffer,
-                                    const void *oldBuffer,
-                                    ElemCount numElems)
+BufferType<ElemT, EmptyT>::fallbackCopy(void *newBuffer, const void *oldBuffer, ElemCount numElems)
 {
-    EntryType *d = static_cast<EntryType *>(newBuffer);
-    const EntryType *s = static_cast<const EntryType *>(oldBuffer);
+    ElemType *d = static_cast<ElemType *>(newBuffer);
+    const ElemType *s = static_cast<const ElemType *>(oldBuffer);
     for (size_t j = numElems; j != 0; --j) {
-        new (static_cast<void *>(d)) EntryType(*s);
+        new (static_cast<void *>(d)) ElemType(*s);
         ++s;
         ++d;
     }
 }
 
-template <typename EntryType, typename EmptyType>
+template <typename ElemT, typename EmptyT>
 void
-BufferType<EntryType, EmptyType>::initializeReservedElements(void *buffer, ElemCount reservedElems)
+BufferType<ElemT, EmptyT>::initializeReservedElements(void *buffer, ElemCount reservedElems)
 {
-    EntryType *e = static_cast<EntryType *>(buffer);
+    ElemType *e = static_cast<ElemType *>(buffer);
     const auto& empty = empty_entry();
     for (size_t j = reservedElems; j != 0; --j) {
-        new (static_cast<void *>(e)) EntryType(empty);
+        new (static_cast<void *>(e)) ElemType(empty);
         ++e;
     }
 }
 
-template <typename EntryType, typename EmptyType>
+template <typename ElemT, typename EmptyT>
 void
-BufferType<EntryType, EmptyType>::cleanHold(void *buffer, size_t offset, ElemCount numElems, CleanContext)
+BufferType<ElemT, EmptyT>::cleanHold(void *buffer, size_t offset, ElemCount numElems, CleanContext)
 {
-    EntryType *e = static_cast<EntryType *>(buffer) + offset;
+    ElemType *e = static_cast<ElemType *>(buffer) + offset;
     const auto& empty = empty_entry();
     for (size_t j = numElems; j != 0; --j) {
         *e = empty;
@@ -70,14 +68,14 @@ BufferType<EntryType, EmptyType>::cleanHold(void *buffer, size_t offset, ElemCou
     }
 }
 
-template <typename EntryType, typename EmptyType>
-const EntryType&
-BufferType<EntryType, EmptyType>::empty_entry() noexcept
+template <typename ElemT, typename EmptyT>
+const ElemT&
+BufferType<ElemT, EmptyT>::empty_entry() noexcept
 {
-    // It's possible for EntryType to wrap e.g. an Alloc instance, which has a transitive
+    // It's possible for ElemType to wrap e.g. an Alloc instance, which has a transitive
     // dependency on globally constructed allocator object(s). To avoid issues with global
     // construction order, initialize the sentinel on the first access.
-    static EntryType empty = EmptyType();
+    static ElemType empty = EmptyType();
     return empty;
 }
 

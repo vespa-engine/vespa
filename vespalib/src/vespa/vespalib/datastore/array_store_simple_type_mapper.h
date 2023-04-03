@@ -15,11 +15,11 @@ namespace vespalib::datastore {
  *
  * A more complex mapping can be used by creating a custom mapper and BufferType implementations.
  */
-template <typename EntryT>
+template <typename ElemT>
 class ArrayStoreSimpleTypeMapper {
 public:
-    using SmallBufferType = SmallArrayBufferType<EntryT>;
-    using LargeBufferType = LargeArrayBufferType<EntryT>;
+    using SmallBufferType = SmallArrayBufferType<ElemT>;
+    using LargeBufferType = LargeArrayBufferType<ElemT>;
 
     uint32_t get_type_id(size_t array_size) const { return array_size; }
     size_t get_array_size(uint32_t type_id) const { return type_id; }

@@ -13,8 +13,8 @@ namespace vespalib::datastore {
 /*
  * Class representing buffer type for small arrays in ArrayStore
  */
-template <typename EntryT>
-class SmallArrayBufferType : public BufferType<EntryT>
+template <typename ElemT>
+class SmallArrayBufferType : public BufferType<ElemT>
 {
     using AllocSpec = ArrayStoreConfig::AllocSpec;
     std::shared_ptr<alloc::MemoryAllocator> _memory_allocator;

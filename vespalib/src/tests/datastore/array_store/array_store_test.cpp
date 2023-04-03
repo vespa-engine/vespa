@@ -29,16 +29,16 @@ constexpr float ALLOC_GROW_FACTOR = 0.2;
 
 }
 
-template <typename TestT, typename EntryT, typename RefT = EntryRefT<19> >
+template <typename TestT, typename ElemT, typename RefT = EntryRefT<19> >
 struct ArrayStoreTest : public TestT
 {
     using EntryRefType = RefT;
-    using ArrayStoreType = ArrayStore<EntryT, RefT>;
+    using ArrayStoreType = ArrayStore<ElemT, RefT>;
     using LargeArray = typename ArrayStoreType::LargeArray;
     using ConstArrayRef = typename ArrayStoreType::ConstArrayRef;
-    using EntryVector = std::vector<EntryT>;
-    using value_type = EntryT;
-    using ReferenceStore = vespalib::hash_map<EntryRef, EntryVector>;
+    using ElemVector = std::vector<ElemT>;
+    using value_type = ElemT;
+    using ReferenceStore = vespalib::hash_map<EntryRef, ElemVector>;
 
     AllocStats     stats;
     ArrayStoreType store;
@@ -61,11 +61,11 @@ struct ArrayStoreTest : public TestT
           add_using_allocate(false)
     {}
     ~ArrayStoreTest() override;
-    void assertAdd(const EntryVector &input) {
+    void assertAdd(const ElemVector &input) {
         EntryRef ref = add(input);
         assertGet(ref, input);
     }
-    EntryRef add(const EntryVector &input) {
+    EntryRef add(const ElemVector &input) {
         EntryRef result;
         if (add_using_allocate) {
             result = store.allocate(input.size());
@@ -82,16 +82,16 @@ struct ArrayStoreTest : public TestT
         refStore.insert(std::make_pair(result, input));
         return result;
     }
-    void assertGet(EntryRef ref, const EntryVector &exp) const {
+    void assertGet(EntryRef ref, const ElemVector &exp) const {
         ConstArrayRef act = store.get(ref);
-        EXPECT_EQ(exp, EntryVector(act.begin(), act.end()));
+        EXPECT_EQ(exp, ElemVector(act.begin(), act.end()));
     }
     void remove(EntryRef ref) {
         ASSERT_EQ(1u, refStore.count(ref));
         store.remove(ref);
         refStore.erase(ref);
     }
-    void remove(const EntryVector &input) {
+    void remove(const ElemVector &input) {
         remove(getEntryRef(input));
     }
     uint32_t getBufferId(EntryRef ref) const {
@@ -121,7 +121,7 @@ struct ArrayStoreTest : public TestT
             assertGet(elem.first, elem.second);
         }
     }
-    void assert_ref_reused(const EntryVector& first, const EntryVector& second, bool should_reuse) {
+    void assert_ref_reused(const ElemVector& first, const ElemVector& second, bool should_reuse) {
         EntryRef ref1 = add(first);
         remove(ref1);
         reclaim_memory();
@@ -129,7 +129,7 @@ struct ArrayStoreTest : public TestT
         EXPECT_EQ(should_reuse, (ref2 == ref1));
         assertGet(ref2, second);
     }
-    EntryRef getEntryRef(const EntryVector &input) {
+    EntryRef getEntryRef(const ElemVector &input) {
         for (auto itr = refStore.begin(); itr != refStore.end(); ++itr) {
             if (itr->second == input) {
                 return itr->first;
@@ -160,12 +160,12 @@ struct ArrayStoreTest : public TestT
         }
         refStore = compactedRefStore;
     }
-    size_t entrySize() const { return sizeof(EntryT); }
+    size_t elem_size() const { return sizeof(ElemT); }
     size_t largeArraySize() const { return sizeof(LargeArray); }
 };
 
-template <typename TestT, typename EntryT, typename RefT>
-ArrayStoreTest<TestT, EntryT, RefT>::~ArrayStoreTest() = default;
+template <typename TestT, typename ElemT, typename RefT>
+ArrayStoreTest<TestT, ElemT, RefT>::~ArrayStoreTest() = default;
 
 struct TestParam {
     bool add_using_allocate;
@@ -434,22 +434,22 @@ TEST_P(NumberStoreTest, used_onHold_and_dead_memory_usage_is_tracked_for_small_a
 {
     MemStats exp(store.getMemoryUsage());
     add({1,2,3});
-    assertMemoryUsage(exp.used(entrySize() * 3));
+    assertMemoryUsage(exp.used(elem_size() * 3));
     remove({1,2,3});
-    assertMemoryUsage(exp.hold(entrySize() * 3));
+    assertMemoryUsage(exp.hold(elem_size() * 3));
     reclaim_memory();
-    assertMemoryUsage(exp.holdToDead(entrySize() * 3));
+    assertMemoryUsage(exp.holdToDead(elem_size() * 3));
 }
 
 TEST_P(NumberStoreTest, used_onHold_and_dead_memory_usage_is_tracked_for_large_arrays)
 {
     MemStats exp(store.getMemoryUsage());
     add({1,2,3,4});
-    assertMemoryUsage(exp.used(largeArraySize() + entrySize() * 4));
+    assertMemoryUsage(exp.used(largeArraySize() + elem_size() * 4));
     remove({1,2,3,4});
-    assertMemoryUsage(exp.hold(largeArraySize() + entrySize() * 4));
+    assertMemoryUsage(exp.hold(largeArraySize() + elem_size() * 4));
     reclaim_memory();
-    assertMemoryUsage(exp.decUsed(entrySize() * 4).decHold(largeArraySize() + entrySize() * 4).
+    assertMemoryUsage(exp.decUsed(elem_size() * 4).decHold(largeArraySize() + elem_size() * 4).
             dead(largeArraySize()));
 }
 

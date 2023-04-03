@@ -50,8 +50,8 @@ public:
     using CompactionSpec = datastore::CompactionSpec;
     using CompactionStrategy = datastore::CompactionStrategy;
     using EntryRef = datastore::EntryRef;
-    template <typename EntryType>
-    using BufferType = datastore::BufferType<EntryType>;
+    template <typename ElemT>
+    using BufferType = datastore::BufferType<ElemT>;
     using BufferState = datastore::BufferState;
 
     static constexpr uint32_t clusterLimit = 8;

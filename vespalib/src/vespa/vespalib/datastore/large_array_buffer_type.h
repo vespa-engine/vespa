@@ -14,11 +14,11 @@ namespace vespalib::datastore {
 /*
  * Class representing buffer type for large arrays in ArrayStore
  */
-template <typename EntryT>
-class LargeArrayBufferType : public BufferType<Array<EntryT>>
+template <typename ElemT>
+class LargeArrayBufferType : public BufferType<Array<ElemT>>
 {
     using AllocSpec = ArrayStoreConfig::AllocSpec;
-    using ArrayType = Array<EntryT>;
+    using ArrayType = Array<ElemT>;
     using ParentType = BufferType<ArrayType>;
     using ParentType::empty_entry;
     using CleanContext = typename ParentType::CleanContext;
