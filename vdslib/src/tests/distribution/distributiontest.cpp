@@ -434,7 +434,8 @@ TEST(DistributionTest, test_distribution)
                 _distribution[i].second = distr.getIdealStorageNodes(
                         systemState, document::BucketId(26, i));
                 sort(_distribution[i].second.begin(), _distribution[i].second.end());
-                unique(_distribution[i].second.begin(), _distribution[i].second.end());
+                auto unique_nodes = unique(_distribution[i].second.begin(), _distribution[i].second.end()) - _distribution[i].second.begin();
+                _distribution[i].second.resize(unique_nodes);
 
                 for (unsigned j = 0; j < _distribution[i].second.size(); j++) {
                     _nodeCount[_distribution[i].second[j]]++;
