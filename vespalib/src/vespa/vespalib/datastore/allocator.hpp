@@ -54,13 +54,13 @@ Allocator<EntryT, RefT>::allocArray(ConstArrayRef array)
 
 template <typename EntryT, typename RefT>
 typename Allocator<EntryT, RefT>::HandleType
-Allocator<EntryT, RefT>::allocArray(size_t size)
+Allocator<EntryT, RefT>::allocArray()
 {
+    auto size = _store.getBufferState(_store.primary_buffer_id(_typeId)).getArraySize();
     _store.ensureBufferCapacity(_typeId, size);
     uint32_t buffer_id = _store.primary_buffer_id(_typeId);
     BufferState &state = _store.getBufferState(buffer_id);
     assert(state.isActive());
-    assert(state.getArraySize() == size);
     size_t oldBufferSize = state.size();
     assert((oldBufferSize % size) == 0);
     RefT ref((oldBufferSize / size), buffer_id);

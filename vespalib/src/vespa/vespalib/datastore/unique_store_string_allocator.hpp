@@ -42,7 +42,7 @@ UniqueStoreStringAllocator<RefT>::allocate(const char *value)
     uint32_t type_id = string_allocator::get_type_id(value_len);
     if (type_id != 0) {
         size_t array_size = string_allocator::array_sizes[type_id - 1];
-        auto handle = _store.template freeListRawAllocator<char>(type_id).alloc(array_size);
+        auto handle = _store.template freeListRawAllocator<char>(type_id).alloc(1);
         new (static_cast<void *>(handle.data)) UniqueStoreSmallStringEntry(value, value_len, array_size);
         return handle.ref;
     } else {
@@ -79,7 +79,7 @@ UniqueStoreStringAllocator<RefT>::move_on_compact(EntryRef ref)
         static_assert(std::is_trivially_copyable<UniqueStoreSmallStringEntry>::value,
                       "UniqueStoreSmallStringEntry must be trivially copyable");
         size_t array_size = string_allocator::array_sizes[type_id - 1];
-        auto handle = _store.template rawAllocator<char>(type_id).alloc(array_size);
+        auto handle = _store.template rawAllocator<char>(type_id).alloc(1);
         auto orig = _store.template getEntryArray<char>(iRef, array_size);
         memcpy(handle.data, orig, array_size);
         return handle.ref;

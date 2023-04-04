@@ -114,7 +114,7 @@ EntryRef
 ArrayStore<ElemT, RefT, TypeMapperT>::allocate_small_array(size_t array_size)
 {
     uint32_t type_id = _mapper.get_type_id(array_size);
-    return _store.template freeListRawAllocator<ElemT>(type_id).alloc(array_size).ref;
+    return _store.template freeListRawAllocator<ElemT>(type_id).alloc(1).ref;
 }
 
 template <typename ElemT, typename RefT, typename TypeMapperT>
