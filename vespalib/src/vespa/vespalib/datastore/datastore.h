@@ -75,7 +75,7 @@ class DataStore : public DataStoreT<RefT>
 {
 protected:
     using ParentType = DataStoreT<RefT>;
-    using ParentType::ensureBufferCapacity;
+    using ParentType::ensure_buffer_capacity;
     using ParentType::getEntry;
     using ParentType::dropBuffers;
     using ParentType::init_primary_buffers;

@@ -35,8 +35,8 @@ public:
     void reclaim_entry_refs(generation_t oldest_used_gen) override {
         ParentType::reclaim_entry_refs(oldest_used_gen);
     }
-    void ensureBufferCapacity(size_t sizeNeeded) {
-        ParentType::ensureBufferCapacity(0, sizeNeeded);
+    void ensure_buffer_capacity(size_t entries_needed) {
+        ParentType::ensure_buffer_capacity(0, entries_needed);
     }
     void enableFreeLists() {
         ParentType::enableFreeLists();

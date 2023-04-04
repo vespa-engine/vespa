@@ -105,19 +105,19 @@ DataStoreBase::~DataStoreBase()
 }
 
 void
-DataStoreBase::switch_primary_buffer(uint32_t typeId, size_t elemsNeeded)
+DataStoreBase::switch_primary_buffer(uint32_t typeId, size_t entries_needed)
 {
     size_t buffer_id = getFirstFreeBufferId();
     if (buffer_id >= getMaxNumBuffers()) {
         LOG_ABORT(vespalib::make_string("switch_primary_buffer(%u, %zu): did not find a free buffer",
-                                        typeId, elemsNeeded).c_str());
+                                        typeId, entries_needed).c_str());
     }
-    onActive(buffer_id, typeId, elemsNeeded);
+    on_active(buffer_id, typeId, entries_needed);
     _primary_buffer_ids[typeId] = buffer_id;
 }
 
 bool
-DataStoreBase::consider_grow_active_buffer(uint32_t type_id, size_t elems_needed)
+DataStoreBase::consider_grow_active_buffer(uint32_t type_id, size_t entries_needed)
 {
     auto type_handler = _typeHandlers[type_id];
     uint32_t buffer_id = primary_buffer_id(type_id);
@@ -147,7 +147,7 @@ DataStoreBase::consider_grow_active_buffer(uint32_t type_id, size_t elems_needed
         return false;
     }
     auto array_size = type_handler->getArraySize();
-    if (elems_needed + min_used > type_handler->getMaxArrays() * array_size) {
+    if (entries_needed * array_size + min_used > type_handler->getMaxArrays() * array_size) {
         return false;
     }
     if (min_buffer_id != buffer_id) {
@@ -181,24 +181,24 @@ DataStoreBase::getBufferState(uint32_t buffer_id) noexcept {
 }
 
 void
-DataStoreBase::switch_or_grow_primary_buffer(uint32_t typeId, size_t elemsNeeded)
+DataStoreBase::switch_or_grow_primary_buffer(uint32_t typeId, size_t entries_needed)
 {
     auto typeHandler = _typeHandlers[typeId];
     uint32_t arraySize = typeHandler->getArraySize();
     size_t numArraysForNewBuffer = typeHandler->get_scaled_num_arrays_for_new_buffer();
-    size_t numEntriesForNewBuffer = numArraysForNewBuffer * arraySize;
+    size_t numElemsForNewBuffer = numArraysForNewBuffer * arraySize;
     uint32_t bufferId = primary_buffer_id(typeId);
-    if (elemsNeeded + getBufferState(bufferId).size() >= numEntriesForNewBuffer) {
-        if (consider_grow_active_buffer(typeId, elemsNeeded)) {
+    if (entries_needed * arraySize + getBufferState(bufferId).size() >= numElemsForNewBuffer) {
+        if (consider_grow_active_buffer(typeId, entries_needed)) {
             bufferId = primary_buffer_id(typeId);
-            if (elemsNeeded > getBufferState(bufferId).remaining()) {
-                fallbackResize(bufferId, elemsNeeded);
+            if (entries_needed * arraySize > getBufferState(bufferId).remaining()) {
+                fallback_resize(bufferId, entries_needed);
             }
         } else {
-            switch_primary_buffer(typeId, elemsNeeded);
+            switch_primary_buffer(typeId, entries_needed);
         }
     } else {
-        fallbackResize(bufferId, elemsNeeded);
+        fallback_resize(bufferId, entries_needed);
     }
 }
 
@@ -209,7 +209,7 @@ DataStoreBase::init_primary_buffers()
     for (uint32_t typeId = 0; typeId < numTypes; ++typeId) {
         size_t buffer_id = getFirstFreeBufferId();
         assert(buffer_id <= get_bufferid_limit_relaxed());
-        onActive(buffer_id, typeId, 0u);
+        on_active(buffer_id, typeId, 0u);
         _primary_buffer_ids[typeId] = buffer_id;
     }
 }
@@ -398,7 +398,7 @@ DataStoreBase::getAddressSpaceUsage() const
 }
 
 void
-DataStoreBase::onActive(uint32_t bufferId, uint32_t typeId, size_t elemsNeeded)
+DataStoreBase::on_active(uint32_t bufferId, uint32_t typeId, size_t entries_needed)
 {
     assert(typeId < _typeHandlers.size());
     assert(bufferId <= _bufferIdLimit);
@@ -418,7 +418,9 @@ DataStoreBase::onActive(uint32_t bufferId, uint32_t typeId, size_t elemsNeeded)
         _bufferIdLimit.store(bufferId + 1, std::memory_order_release);
     }
     assert(state->isFree());
-    state->onActive(bufferId, typeId, _typeHandlers[typeId], elemsNeeded, bufferMeta.get_atomic_buffer());
+    auto type_handler = _typeHandlers[typeId];
+    size_t array_size = type_handler->getArraySize();
+    state->onActive(bufferId, typeId, type_handler, entries_needed * array_size, bufferMeta.get_atomic_buffer());
     bufferMeta.setTypeId(typeId);
     bufferMeta.setArraySize(state->getArraySize());
     if (_freeListsEnabled && state->isActive() && !state->getCompacting()) {
@@ -436,14 +438,15 @@ DataStoreBase::finishCompact(const std::vector<uint32_t> &toHold)
 }
 
 void
-DataStoreBase::fallbackResize(uint32_t bufferId, size_t elemsNeeded)
+DataStoreBase::fallback_resize(uint32_t bufferId, size_t entries_needed)
 {
     BufferState &state = getBufferState(bufferId);
     BufferState::Alloc toHoldBuffer;
     size_t oldUsedElems = state.size();
     size_t oldAllocElems = state.capacity();
     size_t elementSize = state.getTypeHandler()->elementSize();
-    state.fallbackResize(bufferId, elemsNeeded, _buffers[bufferId].get_atomic_buffer(), toHoldBuffer);
+    size_t array_size = state.getTypeHandler()->getArraySize();
+    state.fallbackResize(bufferId, entries_needed * array_size, _buffers[bufferId].get_atomic_buffer(), toHoldBuffer);
     auto hold = std::make_unique<FallbackHold>(oldAllocElems * elementSize,
                                                std::move(toHoldBuffer),
                                                oldUsedElems,
