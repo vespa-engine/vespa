@@ -60,8 +60,8 @@ public:
         _nodeStore.disableFreeLists();
     }
 
-    void disableElemHoldList() {
-        _nodeStore.disableElemHoldList();
+    void disable_entry_hold_list() {
+        _nodeStore.disable_entry_hold_list();
     }
 
     /**

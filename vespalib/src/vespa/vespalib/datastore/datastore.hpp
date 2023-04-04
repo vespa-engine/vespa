@@ -22,21 +22,21 @@ DataStoreT<RefT>::~DataStoreT() = default;
 
 template <typename RefT>
 void
-DataStoreT<RefT>::free_elem_internal(EntryRef ref, size_t numElems)
+DataStoreT<RefT>::free_entry_internal(EntryRef ref, size_t num_entries)
 {
     RefType intRef(ref);
     BufferState &state = getBufferState(intRef.bufferId());
-    state.free_elems(ref, numElems, intRef.offset());
+    state.free_entries(ref, num_entries, intRef.offset());
 }
 
 template <typename RefT>
 void
-DataStoreT<RefT>::holdElem(EntryRef ref, size_t numElems, size_t extraBytes)
+DataStoreT<RefT>::hold_entries(EntryRef ref, size_t num_entries, size_t extraBytes)
 {
     RefType intRef(ref);
     BufferState &state = getBufferState(intRef.bufferId());
-    if (!state.hold_elems(numElems, extraBytes)) {
-        _entry_ref_hold_list.insert({ref, numElems});
+    if (!state.hold_entries(num_entries, extraBytes)) {
+        _entry_ref_hold_list.insert({ref, num_entries});
     }
 }
 
@@ -45,7 +45,7 @@ void
 DataStoreT<RefT>::reclaim_entry_refs(generation_t oldest_used_gen)
 {
     _entry_ref_hold_list.reclaim(oldest_used_gen, [this](const auto& elem) {
-        free_elem_internal(elem.ref, elem.num_elems);
+        free_entry_internal(elem.ref, elem.num_entries);
     });
 }
 
@@ -54,7 +54,7 @@ void
 DataStoreT<RefT>::reclaim_all_entry_refs()
 {
     _entry_ref_hold_list.reclaim_all([this](const auto& elem) {
-        free_elem_internal(elem.ref, elem.num_elems);
+        free_entry_internal(elem.ref, elem.num_entries);
     });
 }
 

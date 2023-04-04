@@ -13,7 +13,7 @@ template <typename B>
 SingleValueNumericPostingAttribute<B>::~SingleValueNumericPostingAttribute()
 {
     this->disableFreeLists();
-    this->disableElemHoldList();
+    this->disable_entry_hold_list();
     clearAllPostings();
 }
 

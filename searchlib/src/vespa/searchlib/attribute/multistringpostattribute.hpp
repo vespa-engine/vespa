@@ -27,7 +27,7 @@ template <typename B, typename T>
 MultiValueStringPostingAttributeT<B, T>::~MultiValueStringPostingAttributeT()
 {
     this->disableFreeLists();
-    this->disableElemHoldList();
+    this->disable_entry_hold_list();
     clearAllPostings();
 }
 

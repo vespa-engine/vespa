@@ -27,7 +27,7 @@ template <typename B>
 SingleValueStringPostingAttributeT<B>::~SingleValueStringPostingAttributeT()
 {
     this->disableFreeLists();
-    this->disableElemHoldList();
+    this->disable_entry_hold_list();
     clearAllPostings();
 }
 

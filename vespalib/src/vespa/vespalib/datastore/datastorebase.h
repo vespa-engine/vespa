@@ -43,7 +43,7 @@ public:
      */
     void ensure_buffer_capacity(uint32_t typeId, size_t entries_needed) {
         auto &state = getBufferState(primary_buffer_id(typeId));
-        if (entries_needed * state.getArraySize() > state.remaining()) [[unlikely]] {
+        if (entries_needed > state.remaining()) [[unlikely]] {
             switch_or_grow_primary_buffer(typeId, entries_needed);
         }
     }
@@ -128,7 +128,7 @@ public:
 
     /**
      * Enable free list management.
-     * This only works for fixed size elements.
+     * This only works for fixed size entries.
      */
     void enableFreeLists();
 
@@ -136,7 +136,7 @@ public:
      * Disable free list management.
      */
     void disableFreeLists();
-    void disableElemHoldList();
+    void disable_entry_hold_list();
 
     bool has_free_lists_enabled() const { return _freeListsEnabled; }
 
@@ -178,7 +178,7 @@ public:
     bool has_held_buffers() const noexcept { return _hold_buffer_count != 0u; }
 
     /**
-     * Trim elem hold list, freeing elements that no longer needs to be held.
+     * Trim entry hold list, freeing entries that no longer needs to be held.
      *
      * @param oldest_used_gen the oldest generation that is still used.
      */
@@ -192,11 +192,11 @@ protected:
 
     struct EntryRefHoldElem {
         EntryRef ref;
-        size_t   num_elems;
+        size_t   num_entries;
 
-        EntryRefHoldElem(EntryRef ref_in, size_t num_elems_in)
+        EntryRefHoldElem(EntryRef ref_in, size_t num_entries_in)
             : ref(ref_in),
-              num_elems(num_elems_in)
+              num_entries(num_entries_in)
         {}
     };
 
@@ -216,11 +216,11 @@ private:
     {
     public:
         BufferState::Alloc _buffer;
-        size_t             _usedElems;
+        size_t             _used_entries;
         BufferTypeBase    *_typeHandler;
         uint32_t           _typeId;
 
-        FallbackHold(size_t bytesSize, BufferState::Alloc &&buffer, size_t usedElems,
+        FallbackHold(size_t bytesSize, BufferState::Alloc &&buffer, size_t used_entries,
                      BufferTypeBase *typeHandler, uint32_t typeId);
 
         ~FallbackHold() override;
@@ -275,7 +275,7 @@ private:
     uint32_t                      _hold_buffer_count;
     const uint8_t                 _offset_bits;
     bool                          _freeListsEnabled;
-    bool                          _disableElemHoldList;
+    bool                          _disable_entry_hold_list;
     bool                          _initializing;
 };
 

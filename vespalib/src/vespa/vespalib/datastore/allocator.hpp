@@ -41,14 +41,12 @@ Allocator<EntryT, RefT>::allocArray(ConstArrayRef array)
     BufferState &state = _store.getBufferState(buffer_id);
     assert(state.isActive());
     assert(state.getArraySize() == array.size());
-    size_t oldBufferSize = state.size();
-    assert((oldBufferSize % array.size()) == 0);
-    RefT ref((oldBufferSize / array.size()), buffer_id);
+    RefT ref(state.size(), buffer_id);
     EntryT *buf = _store.template getEntryArray<EntryT>(ref, array.size());
     for (size_t i = 0; i < array.size(); ++i) {
         new (static_cast<void *>(buf + i)) EntryT(array[i]);
     }
-    state.stats().pushed_back(array.size());
+    state.stats().pushed_back(1);
     return HandleType(ref, buf);
 }
 
@@ -60,15 +58,13 @@ Allocator<EntryT, RefT>::allocArray()
     uint32_t buffer_id = _store.primary_buffer_id(_typeId);
     BufferState &state = _store.getBufferState(buffer_id);
     assert(state.isActive());
-    size_t oldBufferSize = state.size();
-    auto size = state.getArraySize();
-    assert((oldBufferSize % size) == 0);
-    RefT ref((oldBufferSize / size), buffer_id);
-    EntryT *buf = _store.template getEntryArray<EntryT>(ref, size);
-    for (size_t i = 0; i < size; ++i) {
+    RefT ref(state.size(), buffer_id);
+    auto array_size = state.getArraySize();
+    EntryT *buf = _store.template getEntryArray<EntryT>(ref, array_size);
+    for (size_t i = 0; i < array_size; ++i) {
         new (static_cast<void *>(buf + i)) EntryT();
     }
-    state.stats().pushed_back(size);
+    state.stats().pushed_back(1);
     return HandleType(ref, buf);
 }
 

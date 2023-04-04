@@ -58,7 +58,7 @@ protected:
     void updatePostings(PostingMap &changePost, const vespalib::datastore::EntryComparator &cmp);
     void clearAllPostings();
     void disableFreeLists() { _postingList.disableFreeLists(); }
-    void disableElemHoldList() { _postingList.disableElemHoldList(); }
+    void disable_entry_hold_list() { _postingList.disable_entry_hold_list(); }
     void handle_load_posting_lists_and_update_enum_store(enumstore::EnumeratedPostingsLoader& loader);
     bool forwardedOnAddDoc(DocId doc, size_t wantSize, size_t wantCapacity);
 

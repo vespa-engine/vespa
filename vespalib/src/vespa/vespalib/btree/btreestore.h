@@ -105,9 +105,9 @@ public:
         _allocator.disableFreeLists();
     }
 
-    void disableElemHoldList() {
-        _store.disableElemHoldList();
-        _allocator.disableElemHoldList();
+    void disable_entry_hold_list() {
+        _store.disable_entry_hold_list();
+        _allocator.disable_entry_hold_list();
     }
 
     BTreeTypeRefPair allocNewBTree() {

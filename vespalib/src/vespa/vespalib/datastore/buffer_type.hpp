@@ -22,10 +22,11 @@ BufferType<ElemT, EmptyT>::~BufferType() = default;
 
 template <typename ElemT, typename EmptyT>
 void
-BufferType<ElemT, EmptyT>::destroyElements(void *buffer, ElemCount numElems)
+BufferType<ElemT, EmptyT>::destroy_entries(void *buffer, EntryCount num_entries)
 {
+    auto num_elems = num_entries * getArraySize();
     ElemType *e = static_cast<ElemType *>(buffer);
-    for (size_t j = numElems; j != 0; --j) {
+    for (size_t j = num_elems; j != 0; --j) {
         e->~ElemType();
         ++e;
     }
@@ -33,11 +34,12 @@ BufferType<ElemT, EmptyT>::destroyElements(void *buffer, ElemCount numElems)
 
 template <typename ElemT, typename EmptyT>
 void
-BufferType<ElemT, EmptyT>::fallbackCopy(void *newBuffer, const void *oldBuffer, ElemCount numElems)
+BufferType<ElemT, EmptyT>::fallback_copy(void *newBuffer, const void *oldBuffer, EntryCount num_entries)
 {
+    auto num_elems = num_entries * getArraySize();
     ElemType *d = static_cast<ElemType *>(newBuffer);
     const ElemType *s = static_cast<const ElemType *>(oldBuffer);
-    for (size_t j = numElems; j != 0; --j) {
+    for (size_t j = num_elems; j != 0; --j) {
         new (static_cast<void *>(d)) ElemType(*s);
         ++s;
         ++d;
@@ -46,11 +48,12 @@ BufferType<ElemT, EmptyT>::fallbackCopy(void *newBuffer, const void *oldBuffer, 
 
 template <typename ElemT, typename EmptyT>
 void
-BufferType<ElemT, EmptyT>::initializeReservedElements(void *buffer, ElemCount reservedElems)
+BufferType<ElemT, EmptyT>::initialize_reserved_entries(void *buffer, EntryCount reserved_entries)
 {
+    auto reserved_elems = reserved_entries * getArraySize();
     ElemType *e = static_cast<ElemType *>(buffer);
     const auto& empty = empty_entry();
-    for (size_t j = reservedElems; j != 0; --j) {
+    for (size_t j = reserved_elems; j != 0; --j) {
         new (static_cast<void *>(e)) ElemType(empty);
         ++e;
     }
@@ -58,11 +61,12 @@ BufferType<ElemT, EmptyT>::initializeReservedElements(void *buffer, ElemCount re
 
 template <typename ElemT, typename EmptyT>
 void
-BufferType<ElemT, EmptyT>::cleanHold(void *buffer, size_t offset, ElemCount numElems, CleanContext)
+BufferType<ElemT, EmptyT>::clean_hold(void *buffer, size_t offset, EntryCount num_entries, CleanContext)
 {
-    ElemType *e = static_cast<ElemType *>(buffer) + offset;
+    auto num_elems = num_entries * getArraySize();
+    ElemType *e = static_cast<ElemType *>(buffer) + offset * getArraySize();
     const auto& empty = empty_entry();
-    for (size_t j = numElems; j != 0; --j) {
+    for (size_t j = num_elems; j != 0; --j) {
         *e = empty;
         ++e;
     }

@@ -61,11 +61,10 @@ UniqueStoreStringAllocator<RefT>::hold(EntryRef ref)
     RefT iRef(ref);
     uint32_t type_id = _store.getTypeId(iRef.bufferId());
     if (type_id != 0) {
-        size_t array_size = string_allocator::array_sizes[type_id - 1];
-        _store.holdElem(ref, array_size);
+        _store.hold_entry(ref);
     } else {
         auto &value = _store.template getEntry<WrappedExternalEntryType>(iRef)->value();
-        _store.holdElem(ref, 1, value.size() + 1);
+        _store.hold_entry(ref, value.size() + 1);
     }
 }
 

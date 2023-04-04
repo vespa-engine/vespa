@@ -62,9 +62,9 @@ class UniqueStoreSmallStringBufferType : public BufferType<char> {
 public:
     UniqueStoreSmallStringBufferType(uint32_t array_size, uint32_t max_arrays, std::shared_ptr<vespalib::alloc::MemoryAllocator> memory_allocator);
     ~UniqueStoreSmallStringBufferType() override;
-    void destroyElements(void *, ElemCount) override;
-    void fallbackCopy(void *newBuffer, const void *oldBuffer, ElemCount numElems) override;
-    void cleanHold(void *buffer, size_t offset, ElemCount numElems, CleanContext) override;
+    void destroy_entries(void *, EntryCount) override;
+    void fallback_copy(void *newBuffer, const void *oldBuffer, EntryCount numElems) override;
+    void clean_hold(void *buffer, size_t offset, EntryCount num_entries, CleanContext) override;
     const vespalib::alloc::MemoryAllocator* get_memory_allocator() const override;
 };
 
@@ -76,7 +76,7 @@ class UniqueStoreExternalStringBufferType : public BufferType<UniqueStoreEntry<s
 public:
     UniqueStoreExternalStringBufferType(uint32_t array_size, uint32_t max_arrays, std::shared_ptr<vespalib::alloc::MemoryAllocator> memory_allocator);
     ~UniqueStoreExternalStringBufferType() override;
-    void cleanHold(void *buffer, size_t offset, ElemCount numElems, CleanContext cleanCtx) override;
+    void clean_hold(void *buffer, size_t offset, EntryCount num_entries, CleanContext cleanCtx) override;
     const vespalib::alloc::MemoryAllocator* get_memory_allocator() const override;
 };
 
