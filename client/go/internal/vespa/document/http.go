@@ -171,7 +171,7 @@ func (c *Client) resultWithResponse(resp *http.Response, result Result) Result {
 	result.Message = body.Message
 	result.Trace = string(body.Trace)
 	result.Stats.BytesRecv = cr.bytesRead
-	if !result.Status.Success() {
+	if !result.Success() {
 		result.Stats.Errors = 1
 	}
 	return result

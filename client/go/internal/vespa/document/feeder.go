@@ -32,8 +32,9 @@ type Result struct {
 	Stats      Stats
 }
 
-// Success returns whether status s is considered a success.
-func (s Status) Success() bool { return s == StatusSuccess || s == StatusConditionNotMet }
+func (r Result) Success() bool {
+	return r.Err == nil && (r.Status == StatusSuccess || r.Status == StatusConditionNotMet)
+}
 
 // Stats represents feeding operation statistics.
 type Stats struct {

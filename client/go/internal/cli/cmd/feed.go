@@ -12,14 +12,13 @@ import (
 	"github.com/vespa-engine/vespa/client/go/internal/vespa/document"
 )
 
-func addFeedFlags(cmd *cobra.Command, concurrency *int) {
-	// TOOD(mpolden): Remove this flag
-	cmd.PersistentFlags().IntVarP(concurrency, "concurrency", "T", 64, "Number of goroutines to use for dispatching")
+func addFeedFlags(cmd *cobra.Command, verbose *bool) {
+	cmd.PersistentFlags().BoolVarP(verbose, "verbose", "v", false, "Verbose mode. Print errors as they happen")
 }
 
 func newFeedCmd(cli *CLI) *cobra.Command {
 	var (
-		concurrency int
+		verbose bool
 	)
 	cmd := &cobra.Command{
 		Use:   "feed FILE",
@@ -44,14 +43,14 @@ newline (JSONL).
 				return err
 			}
 			defer f.Close()
-			return feed(f, cli, concurrency)
+			return feed(f, cli, verbose)
 		},
 	}
-	addFeedFlags(cmd, &concurrency)
+	addFeedFlags(cmd, &verbose)
 	return cmd
 }
 
-func feed(r io.Reader, cli *CLI, concurrency int) error {
+func feed(r io.Reader, cli *CLI, verbose bool) error {
 	service, err := documentService(cli)
 	if err != nil {
 		return err
@@ -63,7 +62,11 @@ func feed(r io.Reader, cli *CLI, concurrency int) error {
 	throttler := document.NewThrottler()
 	// TODO(mpolden): Make doom duration configurable
 	circuitBreaker := document.NewCircuitBreaker(10*time.Second, 0)
-	dispatcher := document.NewDispatcher(client, throttler, circuitBreaker)
+	errWriter := io.Discard
+	if verbose {
+		errWriter = cli.Stderr
+	}
+	dispatcher := document.NewDispatcher(client, throttler, circuitBreaker, errWriter)
 	dec := document.NewDecoder(r)
 
 	start := cli.now()

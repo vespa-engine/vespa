@@ -1,6 +1,7 @@
 package document
 
 import (
+	"io"
 	"sync"
 	"testing"
 	"time"
@@ -29,7 +30,7 @@ func (f *mockFeeder) Send(doc Document) Result {
 	} else {
 		f.documents = append(f.documents, doc)
 	}
-	if !result.Status.Success() {
+	if !result.Success() {
 		result.Stats.Errors = 1
 	}
 	return result
@@ -40,7 +41,7 @@ func TestDispatcher(t *testing.T) {
 	clock := &manualClock{tick: time.Second}
 	throttler := newThrottler(clock.now)
 	breaker := NewCircuitBreaker(time.Second, 0)
-	dispatcher := NewDispatcher(feeder, throttler, breaker)
+	dispatcher := NewDispatcher(feeder, throttler, breaker, io.Discard)
 	docs := []Document{
 		{Id: mustParseId("id:ns:type::doc1"), Operation: OperationPut, Body: []byte(`{"fields":{"foo": "123"}}`)},
 		{Id: mustParseId("id:ns:type::doc2"), Operation: OperationPut, Body: []byte(`{"fields":{"bar": "456"}}`)},
@@ -73,7 +74,7 @@ func TestDispatcherOrdering(t *testing.T) {
 	clock := &manualClock{tick: time.Second}
 	throttler := newThrottler(clock.now)
 	breaker := NewCircuitBreaker(time.Second, 0)
-	dispatcher := NewDispatcher(feeder, throttler, breaker)
+	dispatcher := NewDispatcher(feeder, throttler, breaker, io.Discard)
 	for _, d := range docs {
 		dispatcher.Enqueue(d)
 	}
@@ -109,7 +110,7 @@ func TestDispatcherOrderingWithFailures(t *testing.T) {
 	clock := &manualClock{tick: time.Second}
 	throttler := newThrottler(clock.now)
 	breaker := NewCircuitBreaker(time.Second, 0)
-	dispatcher := NewDispatcher(feeder, throttler, breaker)
+	dispatcher := NewDispatcher(feeder, throttler, breaker, io.Discard)
 	for _, d := range docs {
 		dispatcher.Enqueue(d)
 	}

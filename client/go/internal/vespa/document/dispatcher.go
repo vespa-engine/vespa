@@ -2,6 +2,7 @@ package document
 
 import (
 	"fmt"
+	"io"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -21,6 +22,7 @@ type Dispatcher struct {
 	results       chan Result
 	inflight      map[string]*documentGroup
 	inflightCount int64
+	errWriter     io.Writer
 
 	mu       sync.RWMutex
 	wg       sync.WaitGroup
@@ -45,12 +47,13 @@ func (g *documentGroup) append(op documentOp) {
 	g.operations = append(g.operations, op)
 }
 
-func NewDispatcher(feeder Feeder, throttler Throttler, breaker CircuitBreaker) *Dispatcher {
+func NewDispatcher(feeder Feeder, throttler Throttler, breaker CircuitBreaker, errWriter io.Writer) *Dispatcher {
 	d := &Dispatcher{
 		feeder:         feeder,
 		throttler:      throttler,
 		circuitBreaker: breaker,
 		inflight:       make(map[string]*documentGroup),
+		errWriter:      errWriter,
 	}
 	d.start()
 	return d
@@ -66,7 +69,7 @@ func (d *Dispatcher) dispatchAll(g *documentGroup) {
 			op.attempts++
 			result := d.feeder.Send(op.document)
 			d.results <- result
-			ok = result.Status.Success()
+			ok = result.Success()
 			if !d.shouldRetry(op, result) {
 				break
 			}
@@ -83,12 +86,26 @@ func (d *Dispatcher) shouldRetry(op documentOp, result Result) bool {
 		return false
 	}
 	if result.HTTPStatus == 429 || result.HTTPStatus == 503 {
+		fmt.Fprintf(d.errWriter, "feed: %s was throttled with status %d: retrying\n", op.document, result.HTTPStatus)
 		d.throttler.Throttled(atomic.LoadInt64(&d.inflightCount))
 		return true
 	}
-	if result.HTTPStatus == 500 || result.HTTPStatus == 502 || result.HTTPStatus == 504 {
+	if result.Err != nil || result.HTTPStatus == 500 || result.HTTPStatus == 502 || result.HTTPStatus == 504 {
+		retry := op.attempts <= maxAttempts
+		msg := "feed: " + op.document.String() + " failed with "
+		if result.Err != nil {
+			msg += "error " + result.Err.Error()
+		} else {
+			msg += fmt.Sprintf("status %d", result.HTTPStatus)
+		}
+		if retry {
+			msg += ": retrying"
+		} else {
+			msg += fmt.Sprintf(": giving up after %d attempts", maxAttempts)
+		}
+		fmt.Fprintln(d.errWriter, msg)
 		d.circuitBreaker.Error(fmt.Errorf("request failed with status %d", result.HTTPStatus))
-		if op.attempts <= maxAttempts {
+		if retry {
 			return true
 		}
 	}
