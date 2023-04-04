@@ -136,7 +136,6 @@ public class RealNodeRepository implements NodeRepository {
         final GetNodesResponse response = configServerApi.get(path, GetNodesResponse.class);
 
         return response.nodes.stream()
-                .filter(node -> node.wireguardPubkey != null && ! node.wireguardPubkey.isEmpty())
                 .map(RealNodeRepository::createTenantPeer)
                 .sorted()
                 .toList();
@@ -356,13 +355,13 @@ public class RealNodeRepository implements NodeRepository {
     private static WireguardPeer createTenantPeer(NodeRepositoryNode node) {
         return new WireguardPeer(HostName.of(node.hostname),
                                  node.ipAddresses.stream().map(VersionedIpAddress::from).toList(),
-                                 WireguardKey.from(node.wireguardPubkey));
+                                 node.wireguardKey());
     }
 
     private static WireguardPeer createConfigserverPeer(GetWireguardResponse.Configserver configServer) {
         return new WireguardPeer(HostName.of(configServer.hostname),
                                  configServer.ipAddresses.stream().map(VersionedIpAddress::from).toList(),
-                                 WireguardKey.from(configServer.wireguardPubkey));
+                                 configServer.wireguardKey());
     }
 
 }

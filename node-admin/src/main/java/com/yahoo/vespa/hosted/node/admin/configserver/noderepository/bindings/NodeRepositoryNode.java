@@ -5,9 +5,11 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.yahoo.config.provision.WireguardKey;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -95,6 +97,10 @@ public class NodeRepositoryNode {
     @JsonProperty("wireguardPubkey")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public String wireguardPubkey;
+
+    public Optional<WireguardKey> wireguardKey() {
+        return (wireguardPubkey == null || wireguardPubkey.isEmpty()) ? Optional.empty() : Optional.of(new WireguardKey(wireguardPubkey));
+    }
 
     @JsonProperty("reports")
     public Map<String, JsonNode> reports = null;
