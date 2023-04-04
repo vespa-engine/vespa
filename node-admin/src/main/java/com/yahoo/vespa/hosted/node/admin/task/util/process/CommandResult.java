@@ -5,7 +5,6 @@ package com.yahoo.vespa.hosted.node.admin.task.util.process;
 import java.util.List;
 import java.util.function.Function;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -53,10 +52,10 @@ public class CommandResult {
 
     /**
      * Map this CommandResult to an instance of type R.
-     *
+     * <p>
      * If a RuntimeException is thrown by the mapper, it is wrapped in an
      * UnexpectedOutputException that includes a snippet of the output in the message.
-     *
+     * <p>
      * This method is intended to be used as part of the verification of the output.
      */
     public <R> R map(Function<CommandResult, R> mapper) {
@@ -84,7 +83,7 @@ public class CommandResult {
     /**
      * Convenience method for getting the CommandLine, whose execution resulted in
      * this CommandResult instance.
-     *
+     * <p>
      * Warning: the CommandLine is mutable and may be changed by the caller of the execution
      * through other references! This is just a convenience method for getting that instance.
      */
