@@ -73,7 +73,7 @@ public:
     static vespalib::datastore::ArrayStoreConfig optimizedConfigForHugePage(size_t maxSmallArraySize,
                                                                   size_t hugePageSize,
                                                                   size_t smallPageSize,
-                                                                  size_t minNumArraysForNewBuffer,
+                                                                  size_t min_num_entries_for_new_buffer,
                                                                   float allocGrowFactor,
                                                                   bool enable_free_lists);
 };

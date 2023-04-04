@@ -66,10 +66,10 @@ class GrowStore
     BufferType<DataType> _type;
     uint32_t _typeId;
 public:
-    GrowStore(size_t arraySize, size_t minArrays, size_t maxArrays, size_t numArraysForNewBuffer)
+    GrowStore(size_t arraySize, size_t min_entries, size_t max_entries, size_t num_entries_for_new_buffer)
         : _store(),
-          _firstType(1, 1, maxArrays, 0, ALLOC_GROW_FACTOR),
-          _type(arraySize, minArrays, maxArrays, numArraysForNewBuffer, ALLOC_GROW_FACTOR),
+          _firstType(1, 1, max_entries, 0, ALLOC_GROW_FACTOR),
+          _type(arraySize, min_entries, max_entries, num_entries_for_new_buffer, ALLOC_GROW_FACTOR),
           _typeId(0)
     {
         (void) _store.addType(&_firstType);
@@ -529,11 +529,11 @@ namespace {
 void assertGrowStats(GrowthStats expSizes,
                      GrowthStats expFirstBufSizes,
                      size_t expInitMemUsage,
-                     size_t minArrays, size_t numArraysForNewBuffer, size_t maxArrays = 128)
+                     size_t min_entries, size_t num_entries_for_new_buffer, size_t max_entries = 128)
 {
-    EXPECT_EQ(expSizes, IntGrowStore(1, minArrays, maxArrays, numArraysForNewBuffer).getGrowthStats(expSizes.size()));
-    EXPECT_EQ(expFirstBufSizes, IntGrowStore(1, minArrays, maxArrays, numArraysForNewBuffer).getFirstBufGrowStats());
-    EXPECT_EQ(expInitMemUsage, IntGrowStore(1, minArrays, maxArrays, numArraysForNewBuffer).getMemoryUsage().allocatedBytes());
+    EXPECT_EQ(expSizes, IntGrowStore(1, min_entries, max_entries, num_entries_for_new_buffer).getGrowthStats(expSizes.size()));
+    EXPECT_EQ(expFirstBufSizes, IntGrowStore(1, min_entries, max_entries, num_entries_for_new_buffer).getFirstBufGrowStats());
+    EXPECT_EQ(expInitMemUsage, IntGrowStore(1, min_entries, max_entries, num_entries_for_new_buffer).getMemoryUsage().allocatedBytes());
 }
 
 }
@@ -574,10 +574,10 @@ namespace {
 template <typename DataType>
 void assertGrowStats(GrowthStats expSizes, uint32_t arraySize)
 {
-    uint32_t minArrays = 2048;
-    uint32_t maxArrays = RefType15::offsetSize();
-    uint32_t numArraysForNewBuffer = 2048;
-    GrowStore<DataType, RefType15> store(arraySize, minArrays, maxArrays, numArraysForNewBuffer);
+    uint32_t min_entries = 2048;
+    uint32_t max_entries = RefType15::offsetSize();
+    uint32_t num_entries_for_new_buffer = 2048;
+    GrowStore<DataType, RefType15> store(arraySize, min_entries, max_entries, num_entries_for_new_buffer);
     EXPECT_EQ(expSizes, store.getGrowthStats(expSizes.size()));
 }
 
@@ -594,7 +594,7 @@ TEST(DataStoreTest, require_that_offset_in_EntryRefT_is_within_bounds_when_alloc
      *   3) Round up bytes to alloc to match the underlying allocator (power of 2 if less than huge page size):
      *      After this we might end up with more bytes than the offset in EntryRef can handle. In this case this is 32768.
      *   4) Cap bytes to alloc to the max offset EntryRef can handle.
-     *      The max bytes to alloc is: maxArrays * arraySize * elementSize.
+     *      The max bytes to alloc is: max_entries * arraySize * elementSize.
      */
     assertGrowStats<uint8_t>({8192,16384,16384,65536,65536,98304,98304,98304,98304,98304,98304,98304}, 3);
     assertGrowStats<uint8_t>({16384,16384,65536,65536,131072,131072,163840,163840,163840,163840,163840,163840}, 5);

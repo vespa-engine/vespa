@@ -208,7 +208,7 @@ ArrayStoreConfig
 ArrayStore<ElemT, RefT, TypeMapperT>::optimizedConfigForHugePage(uint32_t maxSmallArrayTypeId,
                                                                   size_t hugePageSize,
                                                                   size_t smallPageSize,
-                                                                  size_t minNumArraysForNewBuffer,
+                                                                  size_t min_num_entries_for_new_buffer,
                                                                   float allocGrowFactor)
 {
     TypeMapper mapper;
@@ -216,7 +216,7 @@ ArrayStore<ElemT, RefT, TypeMapperT>::optimizedConfigForHugePage(uint32_t maxSma
                                       mapper,
                                       hugePageSize,
                                       smallPageSize,
-                                      minNumArraysForNewBuffer,
+                                      min_num_entries_for_new_buffer,
                                       allocGrowFactor);
 }
 
@@ -226,7 +226,7 @@ ArrayStore<ElemT, RefT, TypeMapperT>::optimizedConfigForHugePage(uint32_t maxSma
                                                                   const TypeMapper& mapper,
                                                                   size_t hugePageSize,
                                                                   size_t smallPageSize,
-                                                                  size_t minNumArraysForNewBuffer,
+                                                                  size_t min_num_entries_for_new_buffer,
                                                                   float allocGrowFactor)
 {
     return ArrayStoreConfig::optimizeForHugePage(mapper.get_max_small_array_type_id(maxSmallArrayTypeId),
@@ -235,7 +235,7 @@ ArrayStore<ElemT, RefT, TypeMapperT>::optimizedConfigForHugePage(uint32_t maxSma
                                                  smallPageSize,
                                                  sizeof(ElemT),
                                                  RefT::offsetSize(),
-                                                 minNumArraysForNewBuffer,
+                                                 min_num_entries_for_new_buffer,
                                                  allocGrowFactor);
 }
 

@@ -19,21 +19,21 @@ public:
      * Specification of buffer allocation strategy for arrays of a given size.
      */
     struct AllocSpec {
-        // Minimum number of arrays to allocate in a buffer.
-        size_t minArraysInBuffer;
-        // Maximum number of arrays to allocate in a buffer.
-        size_t maxArraysInBuffer;
-        // Number of arrays needed before allocating a new buffer instead of just resizing the first one.
-        size_t numArraysForNewBuffer;
+        // Minimum number of entries to allocate in a buffer.
+        size_t min_entries_in_buffer;
+        // Maximum number of entries to allocate in a buffer.
+        size_t max_entries_in_buffer;
+        // Number of entries needed before allocating a new buffer instead of just resizing the first one.
+        size_t num_entries_for_new_buffer;
         // Grow factor used when allocating a new buffer.
         float allocGrowFactor;
-        AllocSpec(size_t minArraysInBuffer_,
-                  size_t maxArraysInBuffer_,
-                  size_t numArraysForNewBuffer_,
+        AllocSpec(size_t min_entries_in_buffer_,
+                  size_t max_entries_in_buffer_,
+                  size_t num_entries_for_new_buffer_,
                   float allocGrowFactor_) noexcept
-            : minArraysInBuffer(minArraysInBuffer_),
-              maxArraysInBuffer(maxArraysInBuffer_),
-              numArraysForNewBuffer(numArraysForNewBuffer_),
+            : min_entries_in_buffer(min_entries_in_buffer_),
+              max_entries_in_buffer(max_entries_in_buffer_),
+              num_entries_for_new_buffer(num_entries_for_new_buffer_),
               allocGrowFactor(allocGrowFactor_) {}
     };
 
@@ -76,9 +76,9 @@ public:
                                                 std::function<size_t(uint32_t)> type_id_to_array_size,
                                                 size_t hugePageSize,
                                                 size_t smallPageSize,
-                                                size_t entrySize,
+                                                size_t elem_size,
                                                 size_t maxEntryRefOffset,
-                                                size_t minNumArraysForNewBuffer,
+                                                size_t min_num_entries_for_new_buffer,
                                                 float allocGrowFactor);
 };
 

@@ -32,8 +32,8 @@ class BTreeNodeBufferType : public datastore::BufferType<EntryType, FrozenBtreeN
     using ElemCount = typename ParentType::ElemCount;
     using CleanContext = typename ParentType::CleanContext;
 public:
-    BTreeNodeBufferType(uint32_t minArrays, uint32_t maxArrays)
-        : ParentType(1, minArrays, maxArrays)
+    BTreeNodeBufferType(uint32_t min_entries, uint32_t max_entries)
+        : ParentType(1, min_entries, max_entries)
     { }
 
     void initializeReservedElements(void *buffer, ElemCount reservedElements) override;

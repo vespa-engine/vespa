@@ -7,11 +7,11 @@ using namespace vespalib::datastore;
 
 using IntBufferType = BufferType<int>;
 constexpr uint32_t ARRAYS_SIZE(4);
-constexpr uint32_t MAX_ARRAYS(128);
-constexpr uint32_t NUM_ARRAYS_FOR_NEW_BUFFER(0);
+constexpr uint32_t MAX_ENTRIES(128);
+constexpr uint32_t NUM_ENTRIES_FOR_NEW_BUFFER(0);
 
 struct Setup {
-    uint32_t  _minArrays;
+    uint32_t  _min_entries;
     std::atomic<ElemCount> _usedElems;
     ElemCount _neededElems;
     std::atomic<ElemCount> _deadElems;
@@ -19,7 +19,7 @@ struct Setup {
     float     _allocGrowFactor;
     bool      _resizing;
     Setup()
-        : _minArrays(0),
+        : _min_entries(0),
           _usedElems(0),
           _neededElems(0),
           _deadElems(0),
@@ -28,7 +28,7 @@ struct Setup {
           _resizing(false)
     {}
     Setup(const Setup& rhs) noexcept;
-    Setup &minArrays(uint32_t value) { _minArrays = value; return *this; }
+    Setup &min_entries(uint32_t value) { _min_entries = value; return *this; }
     Setup &used(size_t value) { _usedElems = value; return *this; }
     Setup &needed(size_t value) { _neededElems = value; return *this; }
     Setup &dead(size_t value) { _deadElems = value; return *this; }
@@ -37,7 +37,7 @@ struct Setup {
 };
 
 Setup::Setup(const Setup& rhs) noexcept
-    : _minArrays(rhs._minArrays),
+    : _min_entries(rhs._min_entries),
       _usedElems(rhs._usedElems.load(std::memory_order_relaxed)),
       _neededElems(rhs._neededElems),
       _deadElems(rhs._deadElems.load(std::memory_order_relaxed)),
@@ -53,7 +53,7 @@ struct Fixture {
     int buffer[ARRAYS_SIZE];
     Fixture(const Setup &setup_)
         : setups(),
-          bufferType(ARRAYS_SIZE, setup_._minArrays, MAX_ARRAYS, NUM_ARRAYS_FOR_NEW_BUFFER, setup_._allocGrowFactor),
+          bufferType(ARRAYS_SIZE, setup_._min_entries, MAX_ENTRIES, NUM_ENTRIES_FOR_NEW_BUFFER, setup_._allocGrowFactor),
           buffer()
     {
         setups.reserve(4);
@@ -137,9 +137,9 @@ TEST("require that arrays to alloc is capped to max arrays")
 
 TEST("require that arrays to alloc is capped to min arrays")
 {
-    TEST_DO(assertArraysToAlloc(16, Setup().used(30 * 4).needed(4).minArrays(16)));
-    TEST_DO(assertArraysToAlloc(16, Setup().used(32 * 4).needed(4).minArrays(16)));
-    TEST_DO(assertArraysToAlloc(17, Setup().used(34 * 4).needed(4).minArrays(16)));
+    TEST_DO(assertArraysToAlloc(16, Setup().used(30 * 4).needed(4).min_entries(16)));
+    TEST_DO(assertArraysToAlloc(16, Setup().used(32 * 4).needed(4).min_entries(16)));
+    TEST_DO(assertArraysToAlloc(17, Setup().used(34 * 4).needed(4).min_entries(16)));
 }
 
 TEST("arrays to alloc considers used elements across all active buffers of same type (no resizing)")
