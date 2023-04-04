@@ -174,7 +174,7 @@ BufferTypeBase::calcArraysToAlloc(uint32_t bufferId, ElemCount elemsNeeded, bool
 }
 
 uint32_t
-BufferTypeBase::get_scaled_num_arrays_for_new_buffer() const
+BufferTypeBase::get_scaled_num_entries_for_new_buffer() const
 {
     uint32_t active_buffers_count = get_active_buffers_count();
     if (active_buffers_count <= 1u || _num_entries_for_new_buffer == 0u) {

@@ -76,8 +76,8 @@ public:
     uint32_t get_active_buffers_count() const { return _active_buffers.size(); }
     const std::vector<uint32_t>& get_active_buffers() const noexcept { return _active_buffers; }
     size_t getMaxArrays() const { return _max_entries; }
-    uint32_t get_scaled_num_arrays_for_new_buffer() const;
-    uint32_t get_num_arrays_for_new_buffer() const noexcept { return _num_entries_for_new_buffer; }
+    uint32_t get_scaled_num_entries_for_new_buffer() const;
+    uint32_t get_num_entries_for_new_buffer() const noexcept { return _num_entries_for_new_buffer; }
 protected:
 
     struct BufferCounts {

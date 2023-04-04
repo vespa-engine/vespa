@@ -126,7 +126,7 @@ DataStoreBase::consider_grow_active_buffer(uint32_t type_id, size_t entries_need
     if (active_buffers_count < min_active_buffers) {
         return false;
     }
-    if (type_handler->get_num_arrays_for_new_buffer() == 0u) {
+    if (type_handler->get_num_entries_for_new_buffer() == 0u) {
         return false;
     }
     assert(!getBufferState(buffer_id).getCompacting());
@@ -185,7 +185,7 @@ DataStoreBase::switch_or_grow_primary_buffer(uint32_t typeId, size_t entries_nee
 {
     auto typeHandler = _typeHandlers[typeId];
     uint32_t arraySize = typeHandler->getArraySize();
-    size_t num_entries_for_new_buffer = typeHandler->get_scaled_num_arrays_for_new_buffer();
+    size_t num_entries_for_new_buffer = typeHandler->get_scaled_num_entries_for_new_buffer();
     size_t numElemsForNewBuffer = num_entries_for_new_buffer * arraySize;
     uint32_t bufferId = primary_buffer_id(typeId);
     if (entries_needed * arraySize + getBufferState(bufferId).size() >= numElemsForNewBuffer) {
