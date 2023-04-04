@@ -51,15 +51,18 @@ public class IdentityProvider extends SimpleComponent implements IdentityConfig.
         builder.loadBalancerAddress(loadBalancerName.value());
         builder.ztsUrl(ztsUrl != null ? ztsUrl.toString() : "");
         builder.athenzDnsSuffix(athenzDnsSuffix != null ? athenzDnsSuffix : "");
-        builder.nodeIdentityName("vespa.vespa.tenant"); // TODO Move to Oath configmodel amender
+        builder.nodeIdentityName(configServerDomain() + ".tenant"); // TODO Move to Oath configmodel amender
         builder.configserverIdentityName(getConfigserverIdentityName());
     }
 
     // TODO Move to Oath configmodel amender
     private String getConfigserverIdentityName() {
         return String.format("%s.provider_%s_%s",
-                             zone.system() == SystemName.main ? "vespa.vespa" : "vespa.vespa.cd",
+                             configServerDomain(),
                              zone.environment().value(),
                              zone.region().value());
+    }
+    private String configServerDomain() {
+        return zone.system() == SystemName.main ? "vespa.vespa" : "vespa.vespa.cd";
     }
 }
