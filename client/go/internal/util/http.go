@@ -32,7 +32,7 @@ func (c *defaultHTTPClient) Do(request *http.Request, timeout time.Duration) (re
 	return c.client.Do(request)
 }
 
-func SetCertificate(client HTTPClient, certificates []tls.Certificate) {
+func SetCertificates(client HTTPClient, certificates []tls.Certificate) {
 	c, ok := client.(*defaultHTTPClient)
 	if !ok {
 		return
