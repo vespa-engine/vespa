@@ -35,15 +35,16 @@ public:
     void init_primary_buffers();
 
     /**
-     * Ensure that the primary buffer for the given type has a given number of elements free at end.
+     * Ensure that the primary buffer for the given type has a given number of entries free at end.
      * Switch to new buffer if current buffer is too full.
      *
-     * @param typeId      Registered data type for buffer.
-     * @param elemsNeeded Number of elements needed to be free.
+     * @param typeId         Registered data type for buffer.
+     * @param entries_needed Number of entries needed to be free.
      */
-    void ensureBufferCapacity(uint32_t typeId, size_t elemsNeeded) {
-        if (elemsNeeded > getBufferState(primary_buffer_id(typeId)).remaining()) [[unlikely]] {
-            switch_or_grow_primary_buffer(typeId, elemsNeeded);
+    void ensure_buffer_capacity(uint32_t typeId, size_t entries_needed) {
+        auto &state = getBufferState(primary_buffer_id(typeId));
+        if (entries_needed * state.getArraySize() > state.remaining()) [[unlikely]] {
+            switch_or_grow_primary_buffer(typeId, entries_needed);
         }
     }
 
@@ -58,10 +59,10 @@ public:
      * Switch to a new primary buffer, typically in preparation for compaction
      * or when the current primary buffer no longer has free space.
      *
-     * @param typeId      Registered data type for buffer.
-     * @param elemsNeeded Number of elements needed to be free.
+     * @param typeId         Registered data type for buffer.
+     * @param entries_needed Number of entries needed to be free.
      */
-    void switch_primary_buffer(uint32_t typeId, size_t elemsNeeded);
+    void switch_primary_buffer(uint32_t typeId, size_t entries_needed);
 
     vespalib::MemoryUsage getMemoryUsage() const;
     vespalib::MemoryUsage getDynamicMemoryUsage() const;
@@ -227,8 +228,8 @@ private:
 
     class BufferHold;
 
-    bool consider_grow_active_buffer(uint32_t type_id, size_t elems_needed);
-    void switch_or_grow_primary_buffer(uint32_t typeId, size_t elemsNeeded);
+    bool consider_grow_active_buffer(uint32_t type_id, size_t entries_needed);
+    void switch_or_grow_primary_buffer(uint32_t typeId, size_t entries_needed);
     void markCompacting(uint32_t bufferId);
     /**
      * Hold of buffer has ended.
@@ -238,14 +239,14 @@ private:
     /**
      * Switch buffer state to active for the given buffer.
      *
-     * @param bufferId    Id of buffer to be active.
-     * @param typeId      Registered data type for buffer.
-     * @param elemsNeeded Number of elements needed to be free.
+     * @param bufferId       Id of buffer to be active.
+     * @param typeId         Registered data type for buffer.
+     * @param entries_needed Number of entries needed to be free.
      */
-    void onActive(uint32_t bufferId, uint32_t typeId, size_t elemsNeeded);
+    void on_active(uint32_t bufferId, uint32_t typeId, size_t entries_needed);
 
     void inc_hold_buffer_count();
-    void fallbackResize(uint32_t bufferId, size_t elementsNeeded);
+    void fallback_resize(uint32_t bufferId, size_t entries_needed);
     uint32_t getFirstFreeBufferId();
 
     template<typename FuncType>
@@ -261,7 +262,7 @@ private:
     std::vector<BufferAndMeta>    _buffers; // For fast mapping with known types
 
     // Provides a mapping from typeId -> primary buffer for that type.
-    // The primary buffer is used for allocations of new element(s) if no available slots are found in free lists.
+    // The primary buffer is used for allocations of new entries if no available slots are found in free lists.
     std::vector<uint32_t>         _primary_buffer_ids;
 
     Stash                         _stash;

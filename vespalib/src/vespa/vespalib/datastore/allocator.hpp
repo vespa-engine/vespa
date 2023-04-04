@@ -20,7 +20,7 @@ template <typename ... Args>
 typename Allocator<EntryT, RefT>::HandleType
 Allocator<EntryT, RefT>::alloc(Args && ... args)
 {
-    _store.ensureBufferCapacity(_typeId, 1);
+    _store.ensure_buffer_capacity(_typeId, 1);
     uint32_t buffer_id = _store.primary_buffer_id(_typeId);
     BufferState &state = _store.getBufferState(buffer_id);
     assert(state.isActive());
@@ -36,7 +36,7 @@ template <typename EntryT, typename RefT>
 typename Allocator<EntryT, RefT>::HandleType
 Allocator<EntryT, RefT>::allocArray(ConstArrayRef array)
 {
-    _store.ensureBufferCapacity(_typeId, array.size());
+    _store.ensure_buffer_capacity(_typeId, 1);
     uint32_t buffer_id = _store.primary_buffer_id(_typeId);
     BufferState &state = _store.getBufferState(buffer_id);
     assert(state.isActive());
@@ -56,12 +56,12 @@ template <typename EntryT, typename RefT>
 typename Allocator<EntryT, RefT>::HandleType
 Allocator<EntryT, RefT>::allocArray()
 {
-    auto size = _store.getBufferState(_store.primary_buffer_id(_typeId)).getArraySize();
-    _store.ensureBufferCapacity(_typeId, size);
+    _store.ensure_buffer_capacity(_typeId, 1);
     uint32_t buffer_id = _store.primary_buffer_id(_typeId);
     BufferState &state = _store.getBufferState(buffer_id);
     assert(state.isActive());
     size_t oldBufferSize = state.size();
+    auto size = state.getArraySize();
     assert((oldBufferSize % size) == 0);
     RefT ref((oldBufferSize / size), buffer_id);
     EntryT *buf = _store.template getEntryArray<EntryT>(ref, size);
