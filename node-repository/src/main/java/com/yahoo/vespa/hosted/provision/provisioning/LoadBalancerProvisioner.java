@@ -109,7 +109,7 @@ public class LoadBalancerProvisioner {
     public void activate(Set<ClusterSpec> clusters, NodeList newActive, ApplicationTransaction transaction) {
         Map<ClusterSpec.Id, ZoneEndpoint> activatingClusters = clusters.stream()
                                                                        // .collect(Collectors.toMap(ClusterSpec::id, ClusterSpec::zoneEndpoint));
-                                                                       // TODO: this dies with combined clusters Ü
+                                                                       // TODO: this dies with combined clusters
                                                                        .collect(groupingBy(LoadBalancerProvisioner::effectiveId,
                                                                                           reducing(ZoneEndpoint.defaultEndpoint,
                                                                                                    ClusterSpec::zoneEndpoint,
@@ -193,14 +193,13 @@ public class LoadBalancerProvisioner {
         Optional<LoadBalancer> loadBalancer = db.readLoadBalancer(id);
         LoadBalancer newLoadBalancer;
         LoadBalancer.State fromState = loadBalancer.map(LoadBalancer::state).orElse(null);
-        if (   loadBalancer.isPresent()
-            && (   ! inAccount(cloudAccount, loadBalancer.get())
-                || ! hasCorrectVisibility(loadBalancer.get(), zoneEndpoint))) {
-                // We have a load balancer, but with the wrong account or visibility.
-                // Load balancer must be removed before we can provision a new one with the wanted visibility
-                newLoadBalancer = loadBalancer.get().with(LoadBalancer.State.removable, now);
-        }
-        else {
+        boolean recreateLoadBalancer = loadBalancer.isPresent() && (!inAccount(cloudAccount, loadBalancer.get())
+                                                                    || !hasCorrectVisibility(loadBalancer.get(), zoneEndpoint));
+        if (recreateLoadBalancer) {
+            // We have a load balancer, but with the wrong account or visibility.
+            // Load balancer must be removed before we can provision a new one with the wanted visibility
+            newLoadBalancer = loadBalancer.get().with(LoadBalancer.State.removable, now);
+        } else {
             Optional<LoadBalancerInstance> instance = provisionInstance(id, loadBalancer, zoneEndpoint, cloudAccount);
             newLoadBalancer = loadBalancer.isEmpty() ? new LoadBalancer(id, instance, LoadBalancer.State.reserved, now)
                                                      : loadBalancer.get().with(instance);
@@ -211,8 +210,8 @@ public class LoadBalancerProvisioner {
     }
 
     private static boolean hasCorrectVisibility(LoadBalancer newLoadBalancer, ZoneEndpoint zoneEndpoint) {
-        return    newLoadBalancer.instance().isEmpty()
-               || newLoadBalancer.instance().get().settings().isPublicEndpoint() == zoneEndpoint.isPublicEndpoint();
+        return newLoadBalancer.instance().isEmpty() ||
+               newLoadBalancer.instance().get().settings().isPublicEndpoint() == zoneEndpoint.isPublicEndpoint();
     }
 
     private void activate(ApplicationTransaction transaction, ClusterSpec.Id cluster, ZoneEndpoint settings, NodeList nodes) {
@@ -318,14 +317,6 @@ public class LoadBalancerProvisioner {
     /** Returns whether load balancer is provisioned in given account */
     private static boolean inAccount(CloudAccount cloudAccount, LoadBalancer loadBalancer) {
         return loadBalancer.instance().isEmpty() || loadBalancer.instance().get().cloudAccount().equals(cloudAccount);
-    }
-
-    /** Returns whether load balancer has given reals, and settings if specified */
-    private static boolean isUpToDate(LoadBalancer loadBalancer, Set<Real> reals, ZoneEndpoint zoneEndpoint) {
-        if (loadBalancer.instance().isEmpty())
-            throw new IllegalStateException("Expected a load balancer instance to be present, for " + loadBalancer.id());
-        return    loadBalancer.instance().get().reals().equals(reals)
-               && loadBalancer.instance().get().settings().equals(zoneEndpoint);
     }
 
     /** Find IP addresses reachable by the load balancer service */
