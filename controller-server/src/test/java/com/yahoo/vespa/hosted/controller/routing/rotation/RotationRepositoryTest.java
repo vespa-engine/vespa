@@ -18,7 +18,6 @@ import org.junit.jupiter.api.Test;
 import java.net.URI;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -155,7 +154,7 @@ public class RotationRepositoryTest {
         var application2 = tester.newDeploymentContext("tenant2", "app2", "default");
         application2.submit(applicationPackage).deploy();
         assertEquals(List.of(new RotationId("foo-1")), rotationIds(application2.instance().rotations()));
-        assertEquals("https://cd.app2.tenant2.global.vespa.oath.cloud/",
+        assertEquals("https://cd.app2.tenant2.global.cd.vespa.oath.cloud/",
                 tester.controller().routing().readDeclaredEndpointsOf(application2.instanceId()).primary().get().url().toString());
     }
 
