@@ -27,14 +27,14 @@ BufferTypeBase::CleanContext::extraBytesCleaned(size_t value)
 }
 
 BufferTypeBase::BufferTypeBase(uint32_t arraySize,
-                               uint32_t minArrays,
-                               uint32_t maxArrays,
-                               uint32_t numArraysForNewBuffer,
+                               uint32_t min_entries,
+                               uint32_t max_entries,
+                               uint32_t num_entries_for_new_buffer,
                                float allocGrowFactor) noexcept
     : _arraySize(arraySize),
-      _minArrays(std::min(minArrays, maxArrays)),
-      _maxArrays(maxArrays),
-      _numArraysForNewBuffer(std::min(numArraysForNewBuffer, maxArrays)),
+      _min_entries(std::min(min_entries, max_entries)),
+      _max_entries(max_entries),
+      _num_entries_for_new_buffer(std::min(num_entries_for_new_buffer, max_entries)),
       _allocGrowFactor(allocGrowFactor),
       _holdBuffers(0),
       _holdUsedElems(0),
@@ -44,9 +44,9 @@ BufferTypeBase::BufferTypeBase(uint32_t arraySize,
 }
 
 BufferTypeBase::BufferTypeBase(uint32_t arraySize,
-                               uint32_t minArrays,
-                               uint32_t maxArrays) noexcept
-    : BufferTypeBase(arraySize, minArrays, maxArrays, 0u, DEFAULT_ALLOC_GROW_FACTOR)
+                               uint32_t min_entries,
+                               uint32_t max_entries) noexcept
+    : BufferTypeBase(arraySize, min_entries, max_entries, 0u, DEFAULT_ALLOC_GROW_FACTOR)
 {
 }
 
@@ -115,11 +115,11 @@ BufferTypeBase::get_memory_allocator() const
 }
 
 void
-BufferTypeBase::clampMaxArrays(uint32_t maxArrays)
+BufferTypeBase::clampMaxArrays(uint32_t max_entries)
 {
-    _maxArrays = std::min(_maxArrays, maxArrays);
-    _minArrays = std::min(_minArrays, _maxArrays);
-    _numArraysForNewBuffer = std::min(_numArraysForNewBuffer, _maxArrays);
+    _max_entries = std::min(_max_entries, max_entries);
+    _min_entries = std::min(_min_entries, _max_entries);
+    _num_entries_for_new_buffer = std::min(_num_entries_for_new_buffer, _max_entries);
 }
 
 size_t
@@ -143,14 +143,14 @@ BufferTypeBase::calcArraysToAlloc(uint32_t bufferId, ElemCount elemsNeeded, bool
     size_t growArrays = (liveArrays * _allocGrowFactor);
     size_t usedArrays = last_bc.used_elems / _arraySize;
     size_t wantedArrays = std::max((resizing ? usedArrays : 0u) + growArrays,
-                                   static_cast<size_t>(_minArrays));
+                                   static_cast<size_t>(_min_entries));
 
     size_t result = wantedArrays;
     if (result < neededArrays) {
         result = neededArrays;
     }
-    if (result > _maxArrays) {
-        result = _maxArrays;
+    if (result > _max_entries) {
+        result = _max_entries;
     }
     if (result < neededArrays) {
         vespalib::asciistream s;
@@ -160,7 +160,7 @@ BufferTypeBase::calcArraysToAlloc(uint32_t bufferId, ElemCount elemsNeeded, bool
             ",resizing=" << (resizing ? "true" : "false") << ")" <<
             " wantedArrays=" << wantedArrays <<
             ", _arraySize=" << _arraySize <<
-            ", _maxArrays=" << _maxArrays <<
+            ", _max_entries=" << _max_entries <<
             ", reservedElems=" << reservedElems <<
             ", liveArrays=" << liveArrays <<
             ", growArrays=" << growArrays <<
@@ -177,13 +177,13 @@ uint32_t
 BufferTypeBase::get_scaled_num_arrays_for_new_buffer() const
 {
     uint32_t active_buffers_count = get_active_buffers_count();
-    if (active_buffers_count <= 1u || _numArraysForNewBuffer == 0u) {
-        return _numArraysForNewBuffer;
+    if (active_buffers_count <= 1u || _num_entries_for_new_buffer == 0u) {
+        return _num_entries_for_new_buffer;
     }
     double scale_factor = std::pow(1.0 + _allocGrowFactor, active_buffers_count - 1);
-    double scaled_result = _numArraysForNewBuffer * scale_factor;
-    if (scaled_result >= _maxArrays) {
-        return _maxArrays;
+    double scaled_result = _num_entries_for_new_buffer * scale_factor;
+    if (scaled_result >= _max_entries) {
+        return _max_entries;
     }
     return scaled_result;
 }

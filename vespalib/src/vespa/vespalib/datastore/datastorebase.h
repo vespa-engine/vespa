@@ -185,7 +185,7 @@ public:
     virtual void reclaim_entry_refs(generation_t oldest_used_gen) = 0;
 
 protected:
-    DataStoreBase(uint32_t numBuffers, uint32_t offset_bits, size_t maxArrays);
+    DataStoreBase(uint32_t numBuffers, uint32_t offset_bits, size_t max_entries);
     virtual ~DataStoreBase();
 
     void* getBuffer(uint32_t bufferId) { return _buffers[bufferId].get_buffer_relaxed(); }
@@ -270,7 +270,7 @@ private:
     std::vector<FreeList>         _free_lists;
     mutable std::atomic<uint64_t> _compaction_count;
     vespalib::GenerationHolder    _genHolder;
-    const uint32_t                _maxArrays;
+    const uint32_t                _max_entries;
     std::atomic<uint32_t>         _bufferIdLimit;
     uint32_t                      _hold_buffer_count;
     const uint8_t                 _offset_bits;

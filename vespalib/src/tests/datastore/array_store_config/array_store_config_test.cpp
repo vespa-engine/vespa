@@ -22,32 +22,32 @@ struct Fixture
     Fixture(uint32_t maxSmallArrayTypeId,
             size_t hugePageSize,
             size_t smallPageSize,
-            size_t minNumArraysForNewBuffer)
+            size_t min_num_entries_for_new_buffer)
         : cfg(ArrayStoreConfig::optimizeForHugePage(maxSmallArrayTypeId,
                                                     [](size_t type_id) noexcept { return type_id; },
                                                     hugePageSize, smallPageSize,
                                                     sizeof(int), EntryRefType::offsetSize(),
-                                                    minNumArraysForNewBuffer,
+                                                    min_num_entries_for_new_buffer,
                                                     ALLOC_GROW_FACTOR)) { }
-    void assertSpec(uint32_t type_id, uint32_t numArraysForNewBuffer) {
+    void assertSpec(uint32_t type_id, uint32_t num_entries_for_new_buffer) {
         assertSpec(type_id, AllocSpec(0, EntryRefType::offsetSize(),
-                                      numArraysForNewBuffer, ALLOC_GROW_FACTOR));
+                                      num_entries_for_new_buffer, ALLOC_GROW_FACTOR));
     }
     void assertSpec(uint32_t type_id, const AllocSpec &expSpec) {
         const auto& actSpec = cfg.spec_for_type_id(type_id);
-        EXPECT_EQUAL(expSpec.minArraysInBuffer, actSpec.minArraysInBuffer);
-        EXPECT_EQUAL(expSpec.maxArraysInBuffer, actSpec.maxArraysInBuffer);
-        EXPECT_EQUAL(expSpec.numArraysForNewBuffer, actSpec.numArraysForNewBuffer);
+        EXPECT_EQUAL(expSpec.min_entries_in_buffer, actSpec.min_entries_in_buffer);
+        EXPECT_EQUAL(expSpec.max_entries_in_buffer, actSpec.max_entries_in_buffer);
+        EXPECT_EQUAL(expSpec.num_entries_for_new_buffer, actSpec.num_entries_for_new_buffer);
         EXPECT_EQUAL(expSpec.allocGrowFactor, actSpec.allocGrowFactor);
     }
 };
 
 AllocSpec
-makeSpec(size_t minArraysInBuffer,
-         size_t maxArraysInBuffer,
-         size_t numArraysForNewBuffer)
+makeSpec(size_t min_entries_in_buffer,
+         size_t max_entries_in_buffer,
+         size_t num_entries_for_new_buffer)
 {
-    return AllocSpec(minArraysInBuffer, maxArraysInBuffer, numArraysForNewBuffer, ALLOC_GROW_FACTOR);
+    return AllocSpec(min_entries_in_buffer, max_entries_in_buffer, num_entries_for_new_buffer, ALLOC_GROW_FACTOR);
 }
 
 constexpr size_t KB = 1024;

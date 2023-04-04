@@ -39,9 +39,9 @@ public:
     BufferTypeBase & operator=(const BufferTypeBase &rhs) = delete;
     BufferTypeBase(BufferTypeBase &&rhs) noexcept = default;
     BufferTypeBase & operator=(BufferTypeBase &&rhs) noexcept = default;
-    BufferTypeBase(uint32_t arraySize, uint32_t minArrays, uint32_t maxArrays) noexcept;
-    BufferTypeBase(uint32_t arraySize, uint32_t minArrays, uint32_t maxArrays,
-                   uint32_t numArraysForNewBuffer, float allocGrowFactor) noexcept;
+    BufferTypeBase(uint32_t arraySize, uint32_t min_entries, uint32_t max_entries) noexcept;
+    BufferTypeBase(uint32_t arraySize, uint32_t min_entries, uint32_t max_entries,
+                   uint32_t num_entries_for_new_buffer, float allocGrowFactor) noexcept;
     virtual ~BufferTypeBase();
     virtual void destroyElements(void *buffer, ElemCount numElems) = 0;
     virtual void fallbackCopy(void *newBuffer, const void *oldBuffer, ElemCount numElems) = 0;
@@ -71,13 +71,13 @@ public:
      */
     virtual size_t calcArraysToAlloc(uint32_t bufferId, ElemCount elementsNeeded, bool resizing) const;
 
-    void clampMaxArrays(uint32_t maxArrays);
+    void clampMaxArrays(uint32_t max_entries);
 
     uint32_t get_active_buffers_count() const { return _active_buffers.size(); }
     const std::vector<uint32_t>& get_active_buffers() const noexcept { return _active_buffers; }
-    size_t getMaxArrays() const { return _maxArrays; }
+    size_t getMaxArrays() const { return _max_entries; }
     uint32_t get_scaled_num_arrays_for_new_buffer() const;
-    uint32_t get_num_arrays_for_new_buffer() const noexcept { return _numArraysForNewBuffer; }
+    uint32_t get_num_arrays_for_new_buffer() const noexcept { return _num_entries_for_new_buffer; }
 protected:
 
     struct BufferCounts {
@@ -114,10 +114,10 @@ protected:
     };
 
     uint32_t _arraySize;  // Number of elements in an allocation unit
-    uint32_t _minArrays;  // Minimum number of arrays to allocate in a buffer
-    uint32_t _maxArrays;  // Maximum number of arrays to allocate in a buffer
+    uint32_t _min_entries;  // Minimum number of arrays to allocate in a buffer
+    uint32_t _max_entries;  // Maximum number of arrays to allocate in a buffer
     // Number of arrays needed before allocating a new buffer instead of just resizing the first one
-    uint32_t _numArraysForNewBuffer;
+    uint32_t _num_entries_for_new_buffer;
     float    _allocGrowFactor;
     uint32_t _holdBuffers;
     size_t   _holdUsedElems;  // Number of used elements in all held buffers for this type.
@@ -143,9 +143,9 @@ public:
     BufferType & operator=(const BufferType &rhs) = delete;
     BufferType(BufferType && rhs) noexcept = default;
     BufferType & operator=(BufferType && rhs) noexcept = default;
-    BufferType(uint32_t arraySize, uint32_t minArrays, uint32_t maxArrays) noexcept;
-    BufferType(uint32_t arraySize, uint32_t minArrays, uint32_t maxArrays,
-               uint32_t numArraysForNewBuffer, float allocGrowFactor) noexcept;
+    BufferType(uint32_t arraySize, uint32_t min_entries, uint32_t max_entries) noexcept;
+    BufferType(uint32_t arraySize, uint32_t min_entries, uint32_t max_entries,
+               uint32_t num_entries_for_new_buffer, float allocGrowFactor) noexcept;
     ~BufferType() override;
     void destroyElements(void *buffer, ElemCount numElems) override;
     void fallbackCopy(void *newBuffer, const void *oldBuffer, ElemCount numElems) override;

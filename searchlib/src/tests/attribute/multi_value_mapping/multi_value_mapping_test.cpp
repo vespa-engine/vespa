@@ -99,9 +99,9 @@ public:
         _attr = std::make_unique<AttributeType>(*_mvMapping);
         _maxSmallArraySize = maxSmallArraySize;
     }
-    void setup(uint32_t maxSmallArraySize, size_t minArrays, size_t maxArrays, size_t numArraysForNewBuffer, bool enable_free_lists = true) {
+    void setup(uint32_t maxSmallArraySize, size_t min_entries, size_t max_entries, size_t num_entries_for_new_buffer, bool enable_free_lists = true) {
         ArrayStoreConfig config(maxSmallArraySize,
-                                ArrayStoreConfig::AllocSpec(minArrays, maxArrays, numArraysForNewBuffer, ALLOC_GROW_FACTOR));
+                                ArrayStoreConfig::AllocSpec(min_entries, max_entries, num_entries_for_new_buffer, ALLOC_GROW_FACTOR));
         config.enable_free_lists(enable_free_lists);
         _mvMapping = std::make_unique<MvMapping>(config, vespalib::GrowStrategy(), std::make_unique<MemoryAllocatorObserver>(_stats));
         _attr = std::make_unique<AttributeType>(*_mvMapping);

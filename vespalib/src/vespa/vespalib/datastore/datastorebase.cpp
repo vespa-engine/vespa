@@ -80,7 +80,7 @@ public:
     }
 };
 
-DataStoreBase::DataStoreBase(uint32_t numBuffers, uint32_t offset_bits, size_t maxArrays)
+DataStoreBase::DataStoreBase(uint32_t numBuffers, uint32_t offset_bits, size_t max_entries)
     : _entry_ref_hold_list(),
       _buffers(numBuffers),
       _primary_buffer_ids(),
@@ -89,7 +89,7 @@ DataStoreBase::DataStoreBase(uint32_t numBuffers, uint32_t offset_bits, size_t m
       _free_lists(),
       _compaction_count(0u),
       _genHolder(),
-      _maxArrays(maxArrays),
+      _max_entries(max_entries),
       _bufferIdLimit(0u),
       _hold_buffer_count(0u),
       _offset_bits(offset_bits),
@@ -185,8 +185,8 @@ DataStoreBase::switch_or_grow_primary_buffer(uint32_t typeId, size_t entries_nee
 {
     auto typeHandler = _typeHandlers[typeId];
     uint32_t arraySize = typeHandler->getArraySize();
-    size_t numArraysForNewBuffer = typeHandler->get_scaled_num_arrays_for_new_buffer();
-    size_t numElemsForNewBuffer = numArraysForNewBuffer * arraySize;
+    size_t num_entries_for_new_buffer = typeHandler->get_scaled_num_arrays_for_new_buffer();
+    size_t numElemsForNewBuffer = num_entries_for_new_buffer * arraySize;
     uint32_t bufferId = primary_buffer_id(typeId);
     if (entries_needed * arraySize + getBufferState(bufferId).size() >= numElemsForNewBuffer) {
         if (consider_grow_active_buffer(typeId, entries_needed)) {
@@ -219,7 +219,7 @@ DataStoreBase::addType(BufferTypeBase *typeHandler)
 {
     uint32_t typeId = _primary_buffer_ids.size();
     assert(typeId == _typeHandlers.size());
-    typeHandler->clampMaxArrays(_maxArrays);
+    typeHandler->clampMaxArrays(_max_entries);
     _primary_buffer_ids.push_back(0);
     _typeHandlers.push_back(typeHandler);
     _free_lists.emplace_back();
@@ -375,12 +375,12 @@ DataStoreBase::getAddressSpaceUsage() const
     uint32_t buffer_id_limit = get_bufferid_limit_acquire();
     size_t usedArrays = 0;
     size_t deadArrays = 0;
-    size_t limitArrays = size_t(_maxArrays) * (getMaxNumBuffers() - buffer_id_limit);
+    size_t limitArrays = size_t(_max_entries) * (getMaxNumBuffers() - buffer_id_limit);
     for (uint32_t bufferId = 0; bufferId < buffer_id_limit; ++bufferId) {
         const BufferState * bState = _buffers[bufferId].get_state_acquire();
         assert(bState != nullptr);
         if (bState->isFree()) {
-            limitArrays += _maxArrays;
+            limitArrays += _max_entries;
         } else if (bState->isActive()) {
             uint32_t arraySize = bState->getArraySize();
             usedArrays += bState->size() / arraySize;

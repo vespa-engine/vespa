@@ -10,7 +10,7 @@ using vespalib::alloc::MemoryAllocator;
 namespace search::tensor {
 
 SmallSubspacesBufferType::SmallSubspacesBufferType(uint32_t array_size, const AllocSpec& spec, std::shared_ptr<MemoryAllocator> memory_allocator, TensorBufferTypeMapper& type_mapper) noexcept
-    : ParentType(array_size, spec.minArraysInBuffer, spec.maxArraysInBuffer, spec.numArraysForNewBuffer, spec.allocGrowFactor),
+    : ParentType(array_size, spec.min_entries_in_buffer, spec.max_entries_in_buffer, spec.num_entries_for_new_buffer, spec.allocGrowFactor),
       _memory_allocator(std::move(memory_allocator)),
       _ops(type_mapper.get_tensor_buffer_operations())
 {

@@ -118,7 +118,7 @@ public:
      * overrun beyond the compressed data either goes into other features
      * already written or into the guard area.
      *
-     * If buffer type is changed to have a nonzero numArraysForNewBuffer then
+     * If buffer type is changed to have a nonzero num_entries_for_new_buffer then
      * extra logic to add guard bytes is needed when switching primary buffer
      * to avoid issues if the buffer is resumed as primary buffer later on.
      */
