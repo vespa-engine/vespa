@@ -126,7 +126,7 @@ public class EndpointTest {
                 Endpoint.of(instance1).target(cluster, prodZone).on(Port.tls()).in(SystemName.main),
 
                 // Prod endpoint in CD
-                "https://cd.a1.t1.us-north-1.vespa.oath.cloud/",
+                "https://cd.a1.t1.us-north-1.cd.vespa.oath.cloud/",
                 Endpoint.of(instance1).target(cluster, prodZone).on(Port.tls()).in(SystemName.cd),
 
                 // Test endpoint in main
@@ -300,7 +300,7 @@ public class EndpointTest {
                         .routingMethod(RoutingMethod.exclusive)
                         .on(Port.tls())
                         .in(SystemName.main),
-                "cd.a2.t2.us-east-3-r.vespa.oath.cloud",
+                "cd.a2.t2.us-east-3-r.cd.vespa.oath.cloud",
                 Endpoint.of(app2)
                         .targetApplication(EndpointId.defaultId(), ClusterSpec.Id.from("qrs"),
                                            Map.of(new DeploymentId(app2.instance("i1"), ZoneId.from("prod", "us-east-3")), 1))
@@ -335,7 +335,7 @@ public class EndpointTest {
                         .routingMethod(RoutingMethod.exclusive)
                         .on(Port.tls())
                         .in(SystemName.main),
-                "https://cd.a2.t2.a.vespa.oath.cloud/",
+                "https://cd.a2.t2.a.cd.vespa.oath.cloud/",
                 Endpoint.of(app2)
                         .targetApplication(EndpointId.defaultId(), ClusterSpec.Id.from("qrs"),
                                 Map.of(new DeploymentId(app2.instance("i1"), ZoneId.from("prod", "us-east-3")), 1))
