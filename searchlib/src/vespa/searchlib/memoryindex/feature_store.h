@@ -29,6 +29,7 @@ private:
     using PosOccFieldsParams = bitcompression::PosOccFieldsParams;
 
     static constexpr uint32_t DECODE_SAFETY = 16;
+    static constexpr uint32_t DECODE_SAFETY_ENTRIES = 16 / buffer_array_size;
 
     DataStoreType _store;
 

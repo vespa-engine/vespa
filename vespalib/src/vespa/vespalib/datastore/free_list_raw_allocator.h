@@ -27,7 +27,7 @@ private:
 public:
     FreeListRawAllocator(DataStoreBase &store, uint32_t typeId);
 
-    HandleType alloc(size_t numElems);
+    HandleType alloc(size_t num_entries);
 };
 
 }

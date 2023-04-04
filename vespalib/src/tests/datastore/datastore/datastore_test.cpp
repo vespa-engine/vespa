@@ -87,7 +87,7 @@ public:
         while (sizes.size() < bufs) {
             RefType iRef = (_type.getArraySize() == 1) ?
                            (_store.template allocator<DataType>(_typeId).alloc().ref) :
-                           (_store.template allocator<DataType>(_typeId).allocArray(_type.getArraySize()).ref);
+                           (_store.template allocator<DataType>(_typeId).allocArray().ref);
             int bufferId = iRef.bufferId();
             if (bufferId != prevBufferId) {
                 if (prevBufferId >= 0) {
@@ -126,7 +126,7 @@ public:
         while (buffers.size() < bufs) {
             RefType iRef = (_type.getArraySize() == 1) ?
                            (_store.template allocator<DataType>(_typeId).alloc().ref) :
-                           (_store.template allocator<DataType>(_typeId).allocArray(_type.getArraySize()).ref);
+                           (_store.template allocator<DataType>(_typeId).allocArray().ref);
             int buffer_id = iRef.bufferId();
             if (buffers.empty() || buffers.back() != buffer_id) {
                 buffers.push_back(buffer_id);
@@ -389,21 +389,21 @@ TEST(DataStoreTest, require_that_we_can_use_free_lists_with_raw_allocator)
     s.enableFreeLists();
     auto allocator = s.freeListRawAllocator<int>(grow_store.typeId());
 
-    auto h1 = allocator.alloc(3);
-    auto h2 = allocator.alloc(3);
+    auto h1 = allocator.alloc(1);
+    auto h2 = allocator.alloc(1);
     expect_successive_handles(h1, h2);
     s.holdElem(h1.ref, 3);
     s.holdElem(h2.ref, 3);
     s.assign_generation(10);
     s.reclaim_entry_refs(11);
 
-    auto h3 = allocator.alloc(3); // reuse h2.ref from free list
+    auto h3 = allocator.alloc(1); // reuse h2.ref from free list
     EXPECT_EQ(h2, h3);
 
-    auto h4 = allocator.alloc(3); // reuse h1.ref from free list
+    auto h4 = allocator.alloc(1); // reuse h1.ref from free list
     EXPECT_EQ(h1, h4);
 
-    auto h5 = allocator.alloc(3);
+    auto h5 = allocator.alloc(1);
     expect_successive_handles(h2, h5);
     expect_successive_handles(h3, h5);
 }
