@@ -56,6 +56,7 @@ func feed(r io.Reader, cli *CLI, concurrency int) error {
 	if err != nil {
 		return err
 	}
+	service.ForceHTTP2() // Feeding should always use HTTP/2
 	client := document.NewClient(document.ClientOptions{
 		BaseURL: service.BaseURL,
 	}, service)

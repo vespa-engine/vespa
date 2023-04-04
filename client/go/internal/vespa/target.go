@@ -119,6 +119,15 @@ func (s *Service) Wait(timeout time.Duration) (int, error) {
 	return waitForOK(s.httpClient, url, s.TLSOptions.KeyPair, timeout)
 }
 
+// ForceHTTP2 forces the underlying HTTP client to use HTTP/2.
+func (s *Service) ForceHTTP2() {
+	var certs []tls.Certificate
+	if s.TLSOptions.KeyPair != nil {
+		certs = []tls.Certificate{*s.TLSOptions.KeyPair}
+	}
+	util.ForceHTTP2(s.httpClient, certs)
+}
+
 func (s *Service) Description() string {
 	switch s.Name {
 	case QueryService:
