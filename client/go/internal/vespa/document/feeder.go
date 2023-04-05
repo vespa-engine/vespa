@@ -17,8 +17,6 @@ const (
 	// StatusTransportFailure indicates that there was failure in the transport layer error while sending the document
 	// operation to Vespa.
 	StatusTransportFailure
-	// StatusError is a catch-all status for any other error that might occur.
-	StatusError
 )
 
 // Result represents the result of a feeding operation.

@@ -72,16 +72,38 @@ func TestClientSend(t *testing.T) {
 	client.now = clock.now
 	var stats Stats
 	for i, doc := range docs {
+		wantRes := Result{
+			Id: doc.Id,
+			Stats: Stats{
+				Requests:     1,
+				Responses:    1,
+				TotalLatency: time.Second,
+				MinLatency:   time.Second,
+				MaxLatency:   time.Second,
+				BytesSent:    25,
+			},
+		}
 		if i < 2 {
 			httpClient.NextResponseString(200, `{"message":"All good!"}`)
+			wantRes.Status = StatusSuccess
+			wantRes.HTTPStatus = 200
+			wantRes.Message = "All good!"
+			wantRes.Stats.ResponsesByCode = map[int]int64{200: 1}
+			wantRes.Stats.BytesRecv = 23
 		} else {
 			httpClient.NextResponseString(502, `{"message":"Good bye, cruel world!"}`)
+			wantRes.Status = StatusVespaFailure
+			wantRes.HTTPStatus = 502
+			wantRes.Message = "Good bye, cruel world!"
+			wantRes.Stats.ResponsesByCode = map[int]int64{502: 1}
+			wantRes.Stats.Errors = 1
+			wantRes.Stats.BytesRecv = 36
 		}
 		res := client.Send(doc)
-		stats.Add(res.Stats)
-		if res.Err != nil {
-			t.Fatalf("got unexpected error %q", res.Err)
+		if !reflect.DeepEqual(res, wantRes) {
+			t.Fatalf("got result %+v, want %+v", res, wantRes)
 		}
+		stats.Add(res.Stats)
 		r := httpClient.LastRequest
 		if r.Method != http.MethodPut {
 			t.Errorf("got r.Method = %q, want %q", r.Method, http.MethodPut)

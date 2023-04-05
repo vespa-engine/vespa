@@ -151,42 +151,35 @@ func (c *Client) leastBusyClient() *countingHTTPClient {
 // Send given document to the endpoint configured in this client.
 func (c *Client) Send(document Document) Result {
 	start := c.now()
-	result := Result{Id: document.Id}
-	result.Stats.Requests = 1
+	result := Result{Id: document.Id, Stats: Stats{Requests: 1}}
 	method, url, err := c.feedURL(document, c.queryParams())
 	if err != nil {
-		result.Stats.Errors = 1
-		result.Err = err
-		return result
+		return resultWithErr(result, err)
 	}
 	req, err := http.NewRequest(method, url.String(), bytes.NewReader(document.Body))
 	if err != nil {
-		result.Stats.Errors = 1
-		result.Status = StatusError
-		result.Err = err
-		return result
+		return resultWithErr(result, err)
 	}
 	resp, err := c.leastBusyClient().Do(req, 190*time.Second)
 	if err != nil {
-		result.Stats.Errors = 1
-		result.Status = StatusTransportFailure
-		result.Err = err
-		return result
+		return resultWithErr(result, err)
 	}
 	defer resp.Body.Close()
-	result.Stats.Responses = 1
-	result.Stats.ResponsesByCode = map[int]int64{
-		resp.StatusCode: 1,
-	}
-	result.Stats.BytesSent = int64(len(document.Body))
 	elapsed := c.now().Sub(start)
-	result.Stats.TotalLatency = elapsed
-	result.Stats.MinLatency = elapsed
-	result.Stats.MaxLatency = elapsed
-	return c.resultWithResponse(resp, result)
+	return c.resultWithResponse(resp, result, document, elapsed)
 }
 
-func (c *Client) resultWithResponse(resp *http.Response, result Result) Result {
+func resultWithErr(result Result, err error) Result {
+	result.Stats.Errors++
+	result.Status = StatusTransportFailure
+	result.Err = err
+	return result
+}
+
+func (c *Client) resultWithResponse(resp *http.Response, result Result, document Document, elapsed time.Duration) Result {
+	result.HTTPStatus = resp.StatusCode
+	result.Stats.Responses++
+	result.Stats.ResponsesByCode = map[int]int64{resp.StatusCode: 1}
 	switch resp.StatusCode {
 	case 200:
 		result.Status = StatusSuccess
@@ -204,14 +197,18 @@ func (c *Client) resultWithResponse(resp *http.Response, result Result) Result {
 	cr := countingReader{reader: resp.Body}
 	jsonDec := json.NewDecoder(&cr)
 	if err := jsonDec.Decode(&body); err != nil {
-		result.Status = StatusError
+		result.Status = StatusVespaFailure
 		result.Err = fmt.Errorf("failed to decode json response: %w", err)
 	}
 	result.Message = body.Message
 	result.Trace = string(body.Trace)
+	result.Stats.BytesSent = int64(len(document.Body))
 	result.Stats.BytesRecv = cr.bytesRead
 	if !result.Success() {
-		result.Stats.Errors = 1
+		result.Stats.Errors++
 	}
+	result.Stats.TotalLatency = elapsed
+	result.Stats.MinLatency = elapsed
+	result.Stats.MaxLatency = elapsed
 	return result
 }
