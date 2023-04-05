@@ -65,7 +65,7 @@ public:
      * @param bufferId            Id of buffer to be active.
      * @param typeId              Registered data type id for buffer.
      * @param typeHandler         Type handler for registered data type.
-     * @param free_entries_needed Number of elements needed to be free in the memory allocated.
+     * @param free_entries_needed Number of entries needed to be free in the memory allocated.
      * @param buffer              Start of allocated buffer return value.
      */
     void on_active(uint32_t bufferId, uint32_t typeId, BufferTypeBase *typeHandler,
@@ -88,7 +88,7 @@ public:
     void disable_entry_hold_list();
 
     /**
-     * Update stats to reflect that the given elements are put on hold.
+     * Update stats to reflect that the given entries are put on hold.
      * Returns true if entry hold list is disabled for this buffer.
      */
     bool hold_entries(size_t num_entries, size_t extra_bytes);
