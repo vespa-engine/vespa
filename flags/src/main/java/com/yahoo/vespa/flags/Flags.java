@@ -57,7 +57,7 @@ public class Flags {
 
     public static final UnboundBooleanFlag DROP_CACHES = defineFeatureFlag(
             "drop-caches", false,
-            List.of("hakonhall", "baldersheim"), "2023-03-06", "2023-04-05",
+            List.of("hakonhall", "baldersheim"), "2023-03-06", "2023-06-05",
             "Drop caches on tenant hosts",
             "Takes effect on next tick",
             ZONE_ID,
