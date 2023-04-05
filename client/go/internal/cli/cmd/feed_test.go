@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"bytes"
 	"os"
 	"path/filepath"
 	"testing"
@@ -42,7 +43,7 @@ func TestFeed(t *testing.T) {
 	require.Nil(t, cli.Run("feed", jsonFile))
 
 	assert.Equal(t, "", stderr.String())
-	assert.Equal(t, `{
+	want := `{
   "feeder.seconds": 1.000,
   "feeder.ok.count": 1,
   "feeder.ok.rate": 1.000,
@@ -63,5 +64,15 @@ func TestFeed(t *testing.T) {
     "200": 1
   }
 }
-`, stdout.String())
+`
+	assert.Equal(t, want, stdout.String())
+
+	stdout.Reset()
+	cli.Stdin = bytes.NewBuffer([]byte(`{
+  "put": "id:ns:type::doc1",
+  "fields": {"foo": "123"}
+}`))
+	httpClient.NextResponseString(200, `{"message":"OK"}`)
+	require.Nil(t, cli.Run("feed", "-"))
+	assert.Equal(t, want, stdout.String())
 }

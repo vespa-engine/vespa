@@ -34,20 +34,29 @@ documents to a Vespa cluster efficiently.
 
 The contents of FILE must be either a JSON array or JSON objects separated by
 newline (JSONL).
+
+If FILE is a single dash ('-'), documents will be read from standard input.
 `,
 		Example: `$ vespa feed documents.jsonl
+$ cat documents.jsonl | vespa feed -
 `,
 		Args:              cobra.ExactArgs(1),
 		DisableAutoGenTag: true,
 		SilenceUsage:      true,
 		Hidden:            true, // TODO(mpolden): Remove when ready for public use
 		RunE: func(cmd *cobra.Command, args []string) error {
-			f, err := os.Open(args[0])
-			if err != nil {
-				return err
+			var r io.Reader
+			if args[0] == "-" {
+				r = cli.Stdin
+			} else {
+				f, err := os.Open(args[0])
+				if err != nil {
+					return err
+				}
+				defer f.Close()
+				r = f
 			}
-			defer f.Close()
-			return feed(f, cli, verbose, connections)
+			return feed(r, cli, verbose, connections)
 		},
 	}
 	addFeedFlags(cmd, &verbose, &connections)
