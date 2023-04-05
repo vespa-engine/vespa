@@ -26,8 +26,8 @@ public:
     void holdBuffer(uint32_t bufferId) {
         ParentType::holdBuffer(bufferId);
     }
-    void holdElem(EntryRef ref, uint64_t len) {
-        ParentType::holdElem(ref, len);
+    void hold_entry(EntryRef ref) {
+        ParentType::hold_entry(ref);
     }
     void assign_generation(generation_t current_gen) {
         ParentType::assign_generation(current_gen);
@@ -143,10 +143,10 @@ void
 assertMemStats(const MemoryStats &exp,
                const MemoryStats &act)
 {
-    EXPECT_EQ(exp._allocElems, act._allocElems);
-    EXPECT_EQ(exp._usedElems, act._usedElems);
-    EXPECT_EQ(exp._deadElems, act._deadElems);
-    EXPECT_EQ(exp._holdElems, act._holdElems);
+    EXPECT_EQ(exp._alloc_entries, act._alloc_entries);
+    EXPECT_EQ(exp._used_entries, act._used_entries);
+    EXPECT_EQ(exp._dead_entries, act._dead_entries);
+    EXPECT_EQ(exp._hold_entries, act._hold_entries);
     EXPECT_EQ(exp._freeBuffers, act._freeBuffers);
     EXPECT_EQ(exp._activeBuffers, act._activeBuffers);
     EXPECT_EQ(exp._holdBuffers, act._holdBuffers);
@@ -304,13 +304,13 @@ TEST(DataStoreTest, require_that_we_can_hold_and_trim_elements)
 {
     MyStore s;
     MyRef r1 = s.addEntry(1);
-    s.holdElem(r1, 1);
+    s.hold_entry(r1);
     s.assign_generation(10);
     MyRef r2 = s.addEntry(2);
-    s.holdElem(r2, 1);
+    s.hold_entry(r2);
     s.assign_generation(20);
     MyRef r3 = s.addEntry(3);
-    s.holdElem(r3, 1);
+    s.hold_entry(r3);
     s.assign_generation(30);
     EXPECT_EQ(1, s.getEntry(r1));
     EXPECT_EQ(2, s.getEntry(r2));
@@ -358,11 +358,11 @@ TEST(DataStoreTest, require_that_we_can_use_free_lists)
     MyStore s;
     s.enableFreeLists();
     auto r1 = s.addEntry(1);
-    s.holdElem(r1, 1);
+    s.hold_entry(r1);
     s.assign_generation(10);
     auto r2 = s.addEntry(2);
     expect_successive_refs(r1, r2);
-    s.holdElem(r2, 1);
+    s.hold_entry(r2);
     s.assign_generation(20);
     s.reclaim_entry_refs(11);
     auto r3 = s.addEntry(3); // reuse r1
@@ -392,8 +392,8 @@ TEST(DataStoreTest, require_that_we_can_use_free_lists_with_raw_allocator)
     auto h1 = allocator.alloc(1);
     auto h2 = allocator.alloc(1);
     expect_successive_handles(h1, h2);
-    s.holdElem(h1.ref, 3);
-    s.holdElem(h2.ref, 3);
+    s.hold_entry(h1.ref);
+    s.hold_entry(h2.ref);
     s.assign_generation(10);
     s.reclaim_entry_refs(11);
 
@@ -412,10 +412,10 @@ TEST(DataStoreTest, require_that_memory_stats_are_calculated)
 {
     MyStore s;
     MemoryStats m;
-    m._allocElems = MyRef::offsetSize();
-    m._usedElems = 1; // ref = 0 is reserved
-    m._deadElems = 1; // ref = 0 is reserved
-    m._holdElems = 0;
+    m._alloc_entries = MyRef::offsetSize();
+    m._used_entries = 1; // ref = 0 is reserved
+    m._dead_entries = 1; // ref = 0 is reserved
+    m._hold_entries = 0;
     m._activeBuffers = 1;
     m._freeBuffers = MyRef::numBuffers() - 1;
     m._holdBuffers = 0;
@@ -423,7 +423,7 @@ TEST(DataStoreTest, require_that_memory_stats_are_calculated)
 
     // add entry
     MyRef r = s.addEntry(10);
-    m._usedElems++;
+    m._used_entries++;
     assertMemStats(m, s.getMemStats());
 
     // hold buffer
@@ -431,9 +431,9 @@ TEST(DataStoreTest, require_that_memory_stats_are_calculated)
     s.addEntry(30);
     s.holdBuffer(r.bufferId());
     s.assign_generation(100);
-    m._usedElems += 2;
-    m._holdElems = m._usedElems;
-    m._deadElems = 0;
+    m._used_entries += 2;
+    m._hold_entries = m._used_entries;
+    m._dead_entries = 0;
     m._activeBuffers--;
     m._holdBuffers++;
     assertMemStats(m, s.getMemStats());
@@ -441,17 +441,17 @@ TEST(DataStoreTest, require_that_memory_stats_are_calculated)
     // new active buffer
     s.switch_primary_buffer();
     s.addEntry(40);
-    m._allocElems += MyRef::offsetSize();
-    m._usedElems++;
+    m._alloc_entries += MyRef::offsetSize();
+    m._used_entries++;
     m._activeBuffers++;
     m._freeBuffers--;
 
     // trim hold buffer
     s.reclaim_memory(101);
-    m._allocElems -= MyRef::offsetSize();
-    m._usedElems = 1;
-    m._deadElems = 0;
-    m._holdElems = 0;
+    m._alloc_entries -= MyRef::offsetSize();
+    m._used_entries = 1;
+    m._dead_entries = 0;
+    m._hold_entries = 0;
     m._freeBuffers = MyRef::numBuffers() - 1;
     m._holdBuffers = 0;
     assertMemStats(m, s.getMemStats());
@@ -466,7 +466,7 @@ TEST(DataStoreTest, require_that_memory_stats_are_calculated)
 
     { // increase extra hold bytes
         auto prev_stats = s.getMemStats();
-        s.get_active_buffer_state().hold_elems(0, 30);
+        s.get_active_buffer_state().hold_entries(0, 30);
         auto curr_stats = s.getMemStats();
         EXPECT_EQ(prev_stats._holdBytes + 30, curr_stats._holdBytes);
     }
@@ -475,7 +475,7 @@ TEST(DataStoreTest, require_that_memory_stats_are_calculated)
 TEST(DataStoreTest, require_that_memory_usage_is_calculated)
 {
     constexpr size_t BASE_ALLOCATED = 4228;
-    constexpr size_t BASE_USED = 308;
+    constexpr size_t BASE_USED = 292;
     MyStore s;
     MyRef r = s.addEntry(10);
     s.addEntry(20);
@@ -494,7 +494,7 @@ TEST(DataStoreTest, require_that_memory_usage_is_calculated)
 TEST(DataStoreTest, require_that_we_can_disable_elemement_hold_list)
 {
     constexpr size_t BASE_ALLOCATED = 4228;
-    constexpr size_t BASE_USED = 308;
+    constexpr size_t BASE_USED = 292;
     MyStore s;
     MyRef r1 = s.addEntry(10);
     MyRef r2 = s.addEntry(20);
@@ -505,14 +505,14 @@ TEST(DataStoreTest, require_that_we_can_disable_elemement_hold_list)
     EXPECT_EQ(4 * sizeof(int) + BASE_USED, m.usedBytes());
     EXPECT_EQ(1 * sizeof(int), m.deadBytes());
     EXPECT_EQ(0 * sizeof(int), m.allocatedBytesOnHold());
-    s.holdElem(r1, 1);
+    s.hold_entry(r1);
     m = s.getMemoryUsage();
     EXPECT_EQ(MyRef::offsetSize() * sizeof(int) + BASE_ALLOCATED, m.allocatedBytes());
     EXPECT_EQ(4 * sizeof(int) + BASE_USED, m.usedBytes());
     EXPECT_EQ(1 * sizeof(int), m.deadBytes());
     EXPECT_EQ(1 * sizeof(int), m.allocatedBytesOnHold());
-    s.disableElemHoldList();
-    s.holdElem(r2, 1);
+    s.disable_entry_hold_list();
+    s.hold_entry(r2);
     m = s.getMemoryUsage();
     EXPECT_EQ(MyRef::offsetSize() * sizeof(int) + BASE_ALLOCATED, m.allocatedBytes());
     EXPECT_EQ(4 * sizeof(int) + BASE_USED, m.usedBytes());
@@ -596,12 +596,12 @@ TEST(DataStoreTest, require_that_offset_in_EntryRefT_is_within_bounds_when_alloc
      *   4) Cap bytes to alloc to the max offset EntryRef can handle.
      *      The max bytes to alloc is: max_entries * arraySize * elementSize.
      */
-    assertGrowStats<uint8_t>({8192,16384,16384,65536,65536,98304,98304,98304,98304,98304,98304,98304}, 3);
-    assertGrowStats<uint8_t>({16384,16384,65536,65536,131072,131072,163840,163840,163840,163840,163840,163840}, 5);
-    assertGrowStats<uint8_t>({16384,32768,32768,131072,131072,229376,229376,229376,229376,229376,229376,229376}, 7);
-    assertGrowStats<uint32_t>({8192,16384,16384,65536,65536,98304,98304,98304,98304,98304,98304,98304}, 3);
-    assertGrowStats<uint32_t>({16384,16384,65536,65536,131072,131072,163840,163840,163840,163840,163840,163840}, 5);
-    assertGrowStats<uint32_t>({16384,32768,32768,131072,131072,229376,229376,229376,229376,229376,229376,229376}, 7);
+    assertGrowStats<uint8_t>({2730,5461,5461,21845,21845,32768,32768,32768,32768,32768,32768,32768}, 3);
+    assertGrowStats<uint8_t>({3276,3276,13107,13107,26214,26214,32768,32768,32768,32768,32768,32768}, 5);
+    assertGrowStats<uint8_t>({2340,4681,4681,18724,18724,32768,32768,32768,32768,32768,32768,32768}, 7);
+    assertGrowStats<uint32_t>({2730,5461,5461,21845,21845,32768,32768,32768,32768,32768,32768,32768}, 3);
+    assertGrowStats<uint32_t>({3276,3276,13107,13107,26214,26214,32768,32768,32768,32768,32768,32768}, 5);
+    assertGrowStats<uint32_t>({2340,4681,4681,18724,18724,32768,32768,32768,32768,32768,32768,32768}, 7);
 }
 
 namespace {
@@ -669,7 +669,7 @@ TEST(DataStoreTest, control_static_sizes) {
     EXPECT_EQ(24, sizeof(FreeList));
     EXPECT_EQ(56, sizeof(BufferFreeList));
     EXPECT_EQ(1, sizeof(BufferState::State));
-    EXPECT_EQ(144, sizeof(BufferState));
+    EXPECT_EQ(128, sizeof(BufferState));
     BufferState bs;
     EXPECT_EQ(0, bs.size());
 }
@@ -685,11 +685,11 @@ void test_free_element_to_held_buffer(bool before_hold_buffer)
     EXPECT_EQ(1u, s.primary_buffer_id());
     
     if (before_hold_buffer) {
-        s.holdElem(ref, 1);
+        s.hold_entry(ref);
     }
     s.holdBuffer(0); // hold last buffer
     if (!before_hold_buffer) {
-        ASSERT_DEATH({ s.holdElem(ref, 1); }, "isActive\\(\\)");
+        ASSERT_DEATH({ s.hold_entry(ref); }, "isActive\\(\\)");
     }
     s.assign_generation(100);
     s.reclaim_memory(101);

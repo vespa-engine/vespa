@@ -148,10 +148,9 @@ ArrayStore<ElemT, RefT, TypeMapperT>::remove(EntryRef ref)
         RefT internalRef(ref);
         uint32_t typeId = _store.getTypeId(internalRef.bufferId());
         if (typeId != _largeArrayTypeId) {
-            size_t arraySize = _mapper.get_array_size(typeId);
-            _store.holdElem(ref, arraySize);
+            _store.hold_entry(ref);
         } else {
-            _store.holdElem(ref, 1, sizeof(ElemT) * get(ref).size());
+            _store.hold_entry(ref, sizeof(ElemT) * get(ref).size());
         }
     }
 }

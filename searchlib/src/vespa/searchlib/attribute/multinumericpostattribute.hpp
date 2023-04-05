@@ -51,7 +51,7 @@ template <typename B, typename M>
 MultiValueNumericPostingAttribute<B, M>::~MultiValueNumericPostingAttribute()
 {
     this->disableFreeLists();
-    this->disableElemHoldList();
+    this->disable_entry_hold_list();
     clearAllPostings();
 }
 

@@ -19,7 +19,7 @@ class BufferFreeList {
 private:
     using EntryRefArray = vespalib::Array<EntryRef>;
 
-    std::atomic<ElemCount>& _dead_elems;
+    std::atomic<EntryCount>& _dead_entries;
     uint32_t _array_size;
     FreeList* _free_list;
     EntryRefArray _free_refs;
@@ -28,7 +28,7 @@ private:
     void detach();
 
 public:
-    BufferFreeList(std::atomic<ElemCount>& dead_elems);
+    BufferFreeList(std::atomic<EntryCount>& dead_entrie);
     ~BufferFreeList();
     BufferFreeList(BufferFreeList&&) = default; // Needed for emplace_back() during setup.
     BufferFreeList(const BufferFreeList&) = delete;

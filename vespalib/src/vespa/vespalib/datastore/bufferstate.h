@@ -23,8 +23,8 @@ namespace vespalib::datastore {
  * It is kept in this state until all reader threads are no longer accessing the buffer.
  * Finally, it transitions back to FREE via onFree() and memory is de-allocated.
  *
- * This class also supports use of free lists, where previously allocated elements in the buffer can be re-used.
- * First the element is put on hold, then on the free list (counted as dead) to be re-used.
+ * This class also supports use of free lists, where previously allocated entries in the buffer can be re-used.
+ * First the entry is put on hold, then on the free list (counted as dead) to be re-used.
  */
 class BufferState
 {
@@ -45,7 +45,7 @@ private:
     uint32_t           _arraySize;
     uint16_t           _typeId;
     std::atomic<State> _state;
-    bool               _disableElemHoldList : 1;
+    bool               _disable_entry_hold_list : 1;
     bool               _compacting : 1;
 
 public:
@@ -62,14 +62,14 @@ public:
     /**
      * Transition from FREE to ACTIVE state.
      *
-     * @param bufferId       Id of buffer to be active.
-     * @param typeId         Registered data type id for buffer.
-     * @param typeHandler    Type handler for registered data type.
-     * @param elementsNeeded Number of elements needed to be free in the memory allocated.
-     * @param buffer         Start of allocated buffer return value.
+     * @param bufferId            Id of buffer to be active.
+     * @param typeId              Registered data type id for buffer.
+     * @param typeHandler         Type handler for registered data type.
+     * @param free_entries_needed Number of entries needed to be free in the memory allocated.
+     * @param buffer              Start of allocated buffer return value.
      */
-    void onActive(uint32_t bufferId, uint32_t typeId, BufferTypeBase *typeHandler,
-                  size_t elementsNeeded, std::atomic<void*>& buffer);
+    void on_active(uint32_t bufferId, uint32_t typeId, BufferTypeBase *typeHandler,
+                   size_t free_entries_needed, std::atomic<void*>& buffer);
 
     /**
      * Transition from ACTIVE to HOLD state.
@@ -82,24 +82,24 @@ public:
     void onFree(std::atomic<void*>& buffer);
 
     /**
-     * Disable hold of elements, just mark elements as dead without cleanup.
+     * Disable hold of entries, just mark entries as dead without cleanup.
      * Typically used when tearing down data structure in a controlled manner.
      */
-    void disable_elem_hold_list();
+    void disable_entry_hold_list();
 
     /**
-     * Update stats to reflect that the given elements are put on hold.
-     * Returns true if element hold list is disabled for this buffer.
+     * Update stats to reflect that the given entries are put on hold.
+     * Returns true if entry hold list is disabled for this buffer.
      */
-    bool hold_elems(size_t num_elems, size_t extra_bytes);
+    bool hold_entries(size_t num_entries, size_t extra_bytes);
 
     /**
-     * Free the given elements and update stats accordingly.
+     * Free the given entries and update stats accordingly.
      *
      * The given entry ref is put on the free list (if enabled).
-     * Hold cleaning of elements is executed on the buffer type.
+     * Hold cleaning of entries is executed on the buffer type.
      */
-    void free_elems(EntryRef ref, size_t num_elems, size_t ref_offset);
+    void free_entries(EntryRef ref, size_t num_entries, size_t ref_offset);
 
     BufferStats& stats() { return _stats; }
     const BufferStats& stats() const { return _stats; }
@@ -115,8 +115,7 @@ public:
     uint32_t getArraySize() const { return _arraySize; }
     bool getCompacting() const { return _compacting; }
     void setCompacting() { _compacting = true; }
-    uint32_t get_used_arrays() const noexcept { return size() / _arraySize; }
-    void fallbackResize(uint32_t bufferId, size_t elementsNeeded, std::atomic<void*>& buffer, Alloc &holdBuffer);
+    void fallback_resize(uint32_t bufferId, size_t free_entries_needed, std::atomic<void*>& buffer, Alloc &holdBuffer);
 
     bool isActive(uint32_t typeId) const {
         return (isActive() && (_typeId == typeId));

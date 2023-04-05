@@ -99,14 +99,14 @@ struct ArrayStoreTest : public TestT
     }
     void assertBufferState(EntryRef ref, const MemStats& expStats) {
         EXPECT_EQ(expStats._used, store.bufferState(ref).size());
-        EXPECT_EQ(expStats._hold, store.bufferState(ref).stats().hold_elems());
-        EXPECT_EQ(expStats._dead, store.bufferState(ref).stats().dead_elems());
+        EXPECT_EQ(expStats._hold, store.bufferState(ref).stats().hold_entries());
+        EXPECT_EQ(expStats._dead, store.bufferState(ref).stats().dead_entries());
     }
     void assert_buffer_stats(EntryRef ref, const TestBufferStats& exp_stats) {
         const auto& state = store.bufferState(ref);
         EXPECT_EQ(exp_stats._used, state.size());
-        EXPECT_EQ(exp_stats._hold, state.stats().hold_elems());
-        EXPECT_EQ(exp_stats._dead, state.stats().dead_elems());
+        EXPECT_EQ(exp_stats._hold, state.stats().hold_entries());
+        EXPECT_EQ(exp_stats._dead, state.stats().dead_entries());
         EXPECT_EQ(exp_stats._extra_used, state.stats().extra_used_bytes());
         EXPECT_EQ(exp_stats._extra_hold, state.stats().extra_hold_bytes());
     }
@@ -214,8 +214,8 @@ TEST_P(NumberStoreTest, control_static_sizes) {
     EXPECT_EQ(240u + sizeof_deque, sizeof(NumberStoreTest::ArrayStoreType::DataStoreType));
     EXPECT_EQ(104u, sizeof(NumberStoreTest::ArrayStoreType::SmallBufferType));
     MemoryUsage usage = store.getMemoryUsage();
-    EXPECT_EQ(202120u, usage.allocatedBytes());
-    EXPECT_EQ(197752u, usage.usedBytes());
+    EXPECT_EQ(202116u, usage.allocatedBytes());
+    EXPECT_EQ(197688u, usage.usedBytes());
 }
 
 TEST_P(NumberStoreTest, add_and_get_small_arrays_of_trivial_type)
@@ -246,15 +246,15 @@ TEST_F(StringStoreTest, add_and_get_large_arrays_of_non_trivial_type)
     assertAdd({"ddd", "eee", "ffff", "gggg", "hhhh"});
 }
 
-TEST_P(NumberStoreTest, elements_are_put_on_hold_when_a_small_array_is_removed)
+TEST_P(NumberStoreTest, entries_are_put_on_hold_when_a_small_array_is_removed)
 {
     EntryRef ref = add({1,2,3});
-    assertBufferState(ref, MemStats().used(3).hold(0));
+    assertBufferState(ref, MemStats().used(1).hold(0));
     store.remove(ref);
-    assertBufferState(ref, MemStats().used(3).hold(3));
+    assertBufferState(ref, MemStats().used(1).hold(1));
 }
 
-TEST_P(NumberStoreTest, elements_are_put_on_hold_when_a_large_array_is_removed)
+TEST_P(NumberStoreTest, entries_are_put_on_hold_when_a_large_array_is_removed)
 {
     EntryRef ref = add({1,2,3,4});
     // Note: The first buffer has the first element reserved -> we expect 2 elements used here.
@@ -319,7 +319,7 @@ test_compaction(NumberStoreBasicTest &f)
     f.remove(f.add({5,5}));
     f.reclaim_memory();
     f.assertBufferState(size1Ref, MemStats().used(1).dead(0));
-    f.assertBufferState(size2Ref, MemStats().used(4).dead(2));
+    f.assertBufferState(size2Ref, MemStats().used(2).dead(1));
     f.assertBufferState(size3Ref, MemStats().used(2).dead(1)); // Note: First element is reserved
     uint32_t size1BufferId = f.getBufferId(size1Ref);
     uint32_t size2BufferId = f.getBufferId(size2Ref);
@@ -363,8 +363,8 @@ void testCompaction(NumberStoreTest &f, bool compactMemory, bool compactAddressS
     f.remove(f.add({7}));
     f.reclaim_memory();
     f.assertBufferState(size1Ref, MemStats().used(3).dead(2));
-    f.assertBufferState(size2Ref, MemStats().used(2).dead(0));
-    f.assertBufferState(size3Ref, MemStats().used(6).dead(3));
+    f.assertBufferState(size2Ref, MemStats().used(1).dead(0));
+    f.assertBufferState(size3Ref, MemStats().used(2).dead(1));
     uint32_t size1BufferId = f.getBufferId(size1Ref);
     uint32_t size2BufferId = f.getBufferId(size2Ref);
     uint32_t size3BufferId = f.getBufferId(size3Ref);

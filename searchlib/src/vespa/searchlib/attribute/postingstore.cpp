@@ -231,7 +231,7 @@ PostingStore<DataT>::dropBitVector(EntryRef &ref)
     (void) tree;
     (void) docFreq;
     _bvs.erase(ref.ref());
-    _store.holdElem(iRef, 1);
+    _store.hold_entry(iRef);
     _status.decBitVectors();
     _bvExtraBytes -= bv->writer().extraByteSize();
     ref = ref2;
@@ -267,7 +267,7 @@ PostingStore<DataT>::makeBitVector(EntryRef &ref)
     if (_enableOnlyBitVector) {
         BTreeType *tree = getWTreeEntry(iRef);
         tree->clear(_allocator);
-        _store.holdElem(ref, 1);
+        _store.hold_entry(ref);
     } else {
         bve->_tree = ref;
     }
@@ -590,19 +590,19 @@ PostingStore<DataT>::clear(const EntryRef ref)
                 assert(isBTree(iRef2));
                 BTreeType *tree = getWTreeEntry(iRef2);
                 tree->clear(_allocator);
-                _store.holdElem(iRef2, 1);
+                _store.hold_entry(iRef2);
             }
             _bvs.erase(ref.ref());
             _status.decBitVectors();
             _bvExtraBytes -= bve->_bv->writer().extraByteSize();
-            _store.holdElem(ref, 1);
+            _store.hold_entry(ref);
         } else {
             BTreeType *tree = getWTreeEntry(iRef);
             tree->clear(_allocator);
-            _store.holdElem(ref, 1);
+            _store.hold_entry(ref);
         }
     } else {
-        _store.holdElem(ref, clusterSize);
+        _store.hold_entry(ref);
     }
 }
 

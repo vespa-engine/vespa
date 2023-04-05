@@ -49,7 +49,7 @@ struct BTreeLockableMap<T>::ValueTraits {
         return store.addEntry(value).ref();
     }
     static void remove_by_wrapped_value(DataStoreType& store, uint64_t value) noexcept {
-        store.holdElem(entry_ref_from_value(value), 1);
+        store.hold_entry(entry_ref_from_value(value));
     }
     static ValueType unwrap_from_key_value(const DataStoreType& store, [[maybe_unused]] uint64_t key, uint64_t value) {
         return store.getEntry(entry_ref_from_value(value));

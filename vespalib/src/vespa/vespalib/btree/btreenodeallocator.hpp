@@ -162,7 +162,7 @@ holdNode(BTreeNode::Ref nodeRef,
          InternalNodeType *node)
 {
     if (node->getFrozen()) {
-        _nodeStore.holdElem(nodeRef);
+        _nodeStore.hold_entry(nodeRef);
     } else {
         node->clean();
         _internalHoldUntilFreeze.push_back(nodeRef);
@@ -178,7 +178,7 @@ holdNode(BTreeNode::Ref nodeRef,
          LeafNodeType *node)
 {
     if (node->getFrozen()) {
-        _nodeStore.holdElem(nodeRef);
+        _nodeStore.hold_entry(nodeRef);
     } else {
         node->clean();
         _leafHoldUntilFreeze.push_back(nodeRef);
@@ -235,7 +235,7 @@ freeze()
             InternalNodeType *inode = mapInternalRef(i);
             (void) inode;
             assert(inode->getFrozen());
-            _nodeStore.holdElem(i);
+            _nodeStore.hold_entry(i);
         }
         _internalHoldUntilFreeze.clear();
     }
@@ -245,7 +245,7 @@ freeze()
             LeafNodeType *lnode = mapLeafRef(i);
             (void) lnode;
             assert(lnode->getFrozen());
-            _nodeStore.holdElem(i);
+            _nodeStore.hold_entry(i);
         }
         _leafHoldUntilFreeze.clear();
     }

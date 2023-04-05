@@ -19,11 +19,11 @@ LargeArrayBufferType<ElemT>::~LargeArrayBufferType() = default;
 
 template <typename ElemT>
 void
-LargeArrayBufferType<ElemT>::cleanHold(void* buffer, size_t offset, ElemCount numElems, CleanContext cleanCtx)
+LargeArrayBufferType<ElemT>::clean_hold(void* buffer, size_t offset, EntryCount num_entries, CleanContext cleanCtx)
 {
     ArrayType* elem = static_cast<ArrayType*>(buffer) + offset;
     const auto& empty = empty_entry();
-    for (size_t i = 0; i < numElems; ++i) {
+    for (size_t i = 0; i < num_entries; ++i) {
         cleanCtx.extraBytesCleaned(sizeof(ElemT) * elem->size());
         *elem = empty;
         ++elem;

@@ -31,7 +31,7 @@ public:
     {
     }
     ~LargeArrayBufferType() override;
-    void cleanHold(void* buffer, size_t offset, ElemCount numElems, CleanContext cleanCtx) override;
+    void clean_hold(void* buffer, size_t offset, EntryCount num_entries, CleanContext cleanCtx) override;
     const vespalib::alloc::MemoryAllocator* get_memory_allocator() const override;
 };
 

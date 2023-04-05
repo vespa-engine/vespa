@@ -96,8 +96,8 @@ struct TestBase : public ::testing::Test {
     }
     void assertBufferState(EntryRef ref, const TestBufferStats expStats) const {
         EXPECT_EQ(expStats._used, store.bufferState(ref).size());
-        EXPECT_EQ(expStats._hold, store.bufferState(ref).stats().hold_elems());
-        EXPECT_EQ(expStats._dead, store.bufferState(ref).stats().dead_elems());
+        EXPECT_EQ(expStats._hold, store.bufferState(ref).stats().hold_entries());
+        EXPECT_EQ(expStats._dead, store.bufferState(ref).stats().dead_entries());
     }
     void assertStoreContent() const {
         for (const auto &elem : refStore) {
@@ -147,10 +147,7 @@ struct TestBase : public ::testing::Test {
     auto getBuilder(uint32_t uniqueValuesHint) { return store.getBuilder(uniqueValuesHint); }
     auto getEnumerator(bool sort_unique_values) { return store.getEnumerator(sort_unique_values); }
     size_t get_reserved(EntryRef ref) {
-        return store.bufferState(ref).getTypeHandler()->getReservedElements(getBufferId(ref));
-    }
-    size_t get_array_size(EntryRef ref) {
-        return store.bufferState(ref).getArraySize();
+        return store.bufferState(ref).getTypeHandler()->get_reserved_entries(getBufferId(ref));
     }
 };
 
@@ -309,29 +306,27 @@ TYPED_TEST(TestBase, can_add_and_get_values)
     }
 }
 
-TYPED_TEST(TestBase, elements_are_put_on_hold_when_value_is_removed)
+TYPED_TEST(TestBase, entries_are_put_on_hold_when_value_is_removed)
 {
     EntryRef ref = this->add(this->values()[0]);
     size_t reserved = this->get_reserved(ref);
-    size_t array_size = this->get_array_size(ref);
-    this->assertBufferState(ref, TestBufferStats().used(array_size + reserved).hold(0).dead(reserved));
+    this->assertBufferState(ref, TestBufferStats().used(1 + reserved).hold(0).dead(reserved));
     this->store.remove(ref);
-    this->assertBufferState(ref, TestBufferStats().used(array_size + reserved).hold(array_size).dead(reserved));
+    this->assertBufferState(ref, TestBufferStats().used(1 + reserved).hold(1).dead(reserved));
 }
 
-TYPED_TEST(TestBase, elements_are_reference_counted)
+TYPED_TEST(TestBase, entries_are_reference_counted)
 {
     EntryRef ref = this->add(this->values()[0]);
     EntryRef ref2 = this->add(this->values()[0]);
     EXPECT_EQ(ref.ref(), ref2.ref());
-    // Note: The first buffer have the first element reserved -> we expect 2 elements used here.
+    // Note: The first buffer have the first entry reserved -> we expect 2 entries used here.
     size_t reserved = this->get_reserved(ref);
-    size_t array_size = this->get_array_size(ref);
-    this->assertBufferState(ref, TestBufferStats().used(array_size + reserved).hold(0).dead(reserved));
+    this->assertBufferState(ref, TestBufferStats().used(1 + reserved).hold(0).dead(reserved));
     this->store.remove(ref);
-    this->assertBufferState(ref, TestBufferStats().used(array_size + reserved).hold(0).dead(reserved));
+    this->assertBufferState(ref, TestBufferStats().used(1 + reserved).hold(0).dead(reserved));
     this->store.remove(ref);
-    this->assertBufferState(ref, TestBufferStats().used(array_size + reserved).hold(array_size).dead(reserved));
+    this->assertBufferState(ref, TestBufferStats().used(1 + reserved).hold(1).dead(reserved));
 }
 
 TEST_F(SmallOffsetNumberTest, new_underlying_buffer_is_allocated_when_current_is_full)
@@ -360,8 +355,7 @@ TYPED_TEST(TestBase, store_can_be_compacted)
     this->remove(this->add(this->values()[2]));
     this->reclaim_memory();
     size_t reserved = this->get_reserved(val0Ref);
-    size_t array_size = this->get_array_size(val0Ref);
-    this->assertBufferState(val0Ref, TestBufferStats().used(reserved + 3 * array_size).dead(reserved + array_size));
+    this->assertBufferState(val0Ref, TestBufferStats().used(reserved + 3).dead(reserved + 1));
     uint32_t val1BufferId = this->getBufferId(val0Ref);
 
     EXPECT_EQ(2u, this->refStore.size());
@@ -389,8 +383,7 @@ TYPED_TEST(TestBase, store_can_be_instantiated_with_builder)
     EntryRef val0Ref = builder.mapEnumValueToEntryRef(1);
     EntryRef val1Ref = builder.mapEnumValueToEntryRef(2);
     size_t reserved = this->get_reserved(val0Ref);
-    size_t array_size = this->get_array_size(val0Ref);
-    this->assertBufferState(val0Ref, TestBufferStats().used(2 * array_size + reserved).dead(reserved)); // Note: First element is reserved
+    this->assertBufferState(val0Ref, TestBufferStats().used(2 + reserved).dead(reserved)); // Note: First entry is reserved
     EXPECT_TRUE(val0Ref.valid());
     EXPECT_TRUE(val1Ref.valid());
     EXPECT_NE(val0Ref.ref(), val1Ref.ref());
@@ -472,13 +465,13 @@ TEST_F(DoubleTest, nan_is_handled)
 TEST_F(DoubleTest, control_memory_usage) {
     static constexpr size_t sizeof_deque = vespalib::datastore::DataStoreBase::sizeof_entry_ref_hold_list_deque;
     EXPECT_EQ(368u + sizeof_deque, sizeof(store));
-    EXPECT_EQ(144u, sizeof(BufferState));
+    EXPECT_EQ(128u, sizeof(BufferState));
     EXPECT_EQ(28740u, store.get_values_memory_usage().allocatedBytes());
-    EXPECT_EQ(24804u, store.get_values_memory_usage().usedBytes());
+    EXPECT_EQ(24788u, store.get_values_memory_usage().usedBytes());
     EXPECT_EQ(126952u, store.get_dictionary_memory_usage().allocatedBytes());
-    EXPECT_EQ(25248u, store.get_dictionary_memory_usage().usedBytes());
+    EXPECT_EQ(25216u, store.get_dictionary_memory_usage().usedBytes());
     EXPECT_EQ(155692u, store.getMemoryUsage().allocatedBytes());
-    EXPECT_EQ(50052, store.getMemoryUsage().usedBytes());
+    EXPECT_EQ(50004, store.getMemoryUsage().usedBytes());
 }
                 
 GTEST_MAIN_RUN_ALL_TESTS()

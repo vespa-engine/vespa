@@ -42,28 +42,28 @@ UniqueStoreSmallStringBufferType::UniqueStoreSmallStringBufferType(uint32_t arra
 UniqueStoreSmallStringBufferType::~UniqueStoreSmallStringBufferType() = default;
 
 void
-UniqueStoreSmallStringBufferType::destroyElements(void *, ElemCount)
+UniqueStoreSmallStringBufferType::destroy_entries(void *, EntryCount)
 {
     static_assert(std::is_trivially_destructible<UniqueStoreSmallStringEntry>::value,
                   "UniqueStoreSmallStringEntry must be trivially destructable");
 }
 
 void
-UniqueStoreSmallStringBufferType::fallbackCopy(void *newBuffer, const void *oldBuffer, ElemCount numElems)
+UniqueStoreSmallStringBufferType::fallback_copy(void *newBuffer, const void *oldBuffer, EntryCount num_entries)
 {
     static_assert(std::is_trivially_copyable<UniqueStoreSmallStringEntry>::value,
                   "UniqueStoreSmallStringEntry must be trivially copyable");
-    if (numElems > 0) {
-        memcpy(newBuffer, oldBuffer, numElems);
+    if (num_entries > 0) {
+        memcpy(newBuffer, oldBuffer, num_entries * getArraySize());
     }
 }
 
 void
-UniqueStoreSmallStringBufferType::cleanHold(void *buffer, size_t offset, ElemCount numElems, CleanContext)
+UniqueStoreSmallStringBufferType::clean_hold(void *buffer, size_t offset, EntryCount num_entries, CleanContext)
 {
-    void *e = static_cast<char *>(buffer) + offset;
-    void *e_end = static_cast<char *>(e) + numElems;
     size_t array_size = getArraySize();
+    void *e = static_cast<char *>(buffer) + offset * array_size;
+    void *e_end = static_cast<char *>(e) + num_entries * array_size;
     while (e < e_end) {
         static_cast<UniqueStoreSmallStringEntry *>(e)->clean_hold(array_size);
         e = static_cast<char *>(e) + array_size;
@@ -86,10 +86,10 @@ UniqueStoreExternalStringBufferType::UniqueStoreExternalStringBufferType(uint32_
 UniqueStoreExternalStringBufferType::~UniqueStoreExternalStringBufferType() = default;
 
 void
-UniqueStoreExternalStringBufferType::cleanHold(void *buffer, size_t offset, ElemCount numElems, CleanContext cleanCtx)
+UniqueStoreExternalStringBufferType::clean_hold(void *buffer, size_t offset, EntryCount num_entries, CleanContext cleanCtx)
 {
     UniqueStoreEntry<std::string> *elem = static_cast<UniqueStoreEntry<std::string> *>(buffer) + offset;
-    for (size_t i = 0; i < numElems; ++i) {
+    for (size_t i = 0; i < num_entries; ++i) {
         cleanCtx.extraBytesCleaned(elem->value().size() + 1);
         std::string().swap(elem->value());
         ++elem;
