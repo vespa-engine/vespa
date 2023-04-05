@@ -28,6 +28,7 @@ func TestConfig(t *testing.T) {
 	assertConfigCommand(t, configHome, "", "config", "set", "target", "http://127.0.0.1:8080")
 	assertConfigCommand(t, configHome, "", "config", "set", "target", "https://127.0.0.1")
 	assertConfigCommand(t, configHome, "target = https://127.0.0.1\n", "config", "get", "target")
+	assertConfigCommand(t, configHome, "target = local\n", "config", "get", "-t", "local", "target")
 
 	// application
 	assertConfigCommandErr(t, configHome, "Error: invalid application: \"foo\"\n", "config", "set", "application", "foo")
@@ -103,7 +104,14 @@ func TestLocalConfig(t *testing.T) {
 	// get reads global option if unset locally
 	assertConfigCommand(t, configHome, "target = cloud\n", "config", "get", "target")
 
+	// get prints local config when in a a sub-directory of the application package
+	subDir := filepath.Join(rootDir, "a", "b")
+	require.Nil(t, os.MkdirAll(subDir, 0755))
+	require.Nil(t, os.Chdir(subDir))
+	assertConfigCommand(t, configHome, "instance = foo\n", "config", "get", "--local")
+
 	// get merges settings from local and global config
+	require.Nil(t, os.Chdir(rootDir))
 	assertConfigCommand(t, configHome, "", "config", "set", "--local", "application", "t1.a1")
 	assertConfigCommand(t, configHome, `application = t1.a1.default
 cluster = <unset>
