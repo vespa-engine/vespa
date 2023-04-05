@@ -15,6 +15,7 @@ import (
 
 type HTTPClient interface {
 	Do(request *http.Request, timeout time.Duration) (response *http.Response, error error)
+	Clone() HTTPClient
 }
 
 type defaultHTTPClient struct {
@@ -31,6 +32,8 @@ func (c *defaultHTTPClient) Do(request *http.Request, timeout time.Duration) (re
 	request.Header.Set("User-Agent", fmt.Sprintf("Vespa CLI/%s", build.Version))
 	return c.client.Do(request)
 }
+
+func (c *defaultHTTPClient) Clone() HTTPClient { return CreateClient(c.client.Timeout) }
 
 func SetCertificates(client HTTPClient, certificates []tls.Certificate) {
 	c, ok := client.(*defaultHTTPClient)

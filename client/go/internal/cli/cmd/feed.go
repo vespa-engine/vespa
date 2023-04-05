@@ -9,16 +9,20 @@ import (
 	"time"
 
 	"github.com/spf13/cobra"
+	"github.com/vespa-engine/vespa/client/go/internal/util"
+	"github.com/vespa-engine/vespa/client/go/internal/vespa"
 	"github.com/vespa-engine/vespa/client/go/internal/vespa/document"
 )
 
-func addFeedFlags(cmd *cobra.Command, verbose *bool) {
+func addFeedFlags(cmd *cobra.Command, verbose *bool, connections *int) {
+	cmd.PersistentFlags().IntVarP(connections, "connections", "N", 8, "The number of connections to use")
 	cmd.PersistentFlags().BoolVarP(verbose, "verbose", "v", false, "Verbose mode. Print errors as they happen")
 }
 
 func newFeedCmd(cli *CLI) *cobra.Command {
 	var (
-		verbose bool
+		verbose     bool
+		connections int
 	)
 	cmd := &cobra.Command{
 		Use:   "feed FILE",
@@ -26,7 +30,7 @@ func newFeedCmd(cli *CLI) *cobra.Command {
 		Long: `Feed documents to a Vespa cluster.
 
 A high performance feeding client. This can be used to feed large amounts of
-documents to Vespa cluster efficiently.
+documents to a Vespa cluster efficiently.
 
 The contents of FILE must be either a JSON array or JSON objects separated by
 newline (JSONL).
@@ -43,22 +47,32 @@ newline (JSONL).
 				return err
 			}
 			defer f.Close()
-			return feed(f, cli, verbose)
+			return feed(f, cli, verbose, connections)
 		},
 	}
-	addFeedFlags(cmd, &verbose)
+	addFeedFlags(cmd, &verbose, &connections)
 	return cmd
 }
 
-func feed(r io.Reader, cli *CLI, verbose bool) error {
+func createServiceClients(service *vespa.Service, n int) []util.HTTPClient {
+	clients := make([]util.HTTPClient, 0, n)
+	for i := 0; i < n; i++ {
+		client := service.Client().Clone()
+		util.ForceHTTP2(client, service.TLSOptions.KeyPair) // Feeding should always use HTTP/2
+		clients = append(clients, client)
+	}
+	return clients
+}
+
+func feed(r io.Reader, cli *CLI, verbose bool, connections int) error {
 	service, err := documentService(cli)
 	if err != nil {
 		return err
 	}
-	service.ForceHTTP2() // Feeding should always use HTTP/2
+	clients := createServiceClients(service, connections)
 	client := document.NewClient(document.ClientOptions{
 		BaseURL: service.BaseURL,
-	}, service)
+	}, clients)
 	throttler := document.NewThrottler()
 	// TODO(mpolden): Make doom duration configurable
 	circuitBreaker := document.NewCircuitBreaker(10*time.Second, 0)

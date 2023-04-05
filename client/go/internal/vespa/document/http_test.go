@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/vespa-engine/vespa/client/go/internal/mock"
+	"github.com/vespa-engine/vespa/client/go/internal/util"
 )
 
 type manualClock struct {
@@ -25,6 +26,37 @@ func (c *manualClock) now() time.Time {
 
 func (c *manualClock) advance(d time.Duration) { c.t = c.t.Add(d) }
 
+type mockHTTPClient struct {
+	id int
+	*mock.HTTPClient
+}
+
+func TestLeastBusyClient(t *testing.T) {
+	httpClient := mock.HTTPClient{}
+	var httpClients []util.HTTPClient
+	for i := 0; i < 4; i++ {
+		httpClients = append(httpClients, &mockHTTPClient{i, &httpClient})
+	}
+	client := NewClient(ClientOptions{}, httpClients)
+	client.httpClients[0].addInflight(1)
+	client.httpClients[1].addInflight(1)
+	assertLeastBusy(t, 2, client)
+	assertLeastBusy(t, 2, client)
+	assertLeastBusy(t, 3, client)
+	client.httpClients[3].addInflight(1)
+	client.httpClients[1].addInflight(-1)
+	assertLeastBusy(t, 1, client)
+}
+
+func assertLeastBusy(t *testing.T, id int, client *Client) {
+	t.Helper()
+	leastBusy := client.leastBusyClient()
+	got := leastBusy.client.(*mockHTTPClient).id
+	if got != id {
+		t.Errorf("got client.id=%d, want %d", got, id)
+	}
+}
+
 func TestClientSend(t *testing.T) {
 	docs := []Document{
 		{Create: true, Id: mustParseId("id:ns:type::doc1"), Operation: OperationUpdate, Body: []byte(`{"fields":{"foo": "123"}}`)},
@@ -35,7 +67,7 @@ func TestClientSend(t *testing.T) {
 	client := NewClient(ClientOptions{
 		BaseURL: "https://example.com:1337",
 		Timeout: time.Duration(5 * time.Second),
-	}, &httpClient)
+	}, []util.HTTPClient{&httpClient})
 	clock := manualClock{t: time.Now(), tick: time.Second}
 	client.now = clock.now
 	var stats Stats
@@ -176,7 +208,7 @@ func TestClientFeedURL(t *testing.T) {
 	httpClient := mock.HTTPClient{}
 	client := NewClient(ClientOptions{
 		BaseURL: "https://example.com",
-	}, &httpClient)
+	}, []util.HTTPClient{&httpClient})
 	for i, tt := range tests {
 		moreParams := url.Values{}
 		moreParams.Set("foo", "ba/r")
