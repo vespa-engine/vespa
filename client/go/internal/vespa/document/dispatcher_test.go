@@ -39,7 +39,7 @@ func (f *mockFeeder) Send(doc Document) Result {
 func TestDispatcher(t *testing.T) {
 	feeder := &mockFeeder{}
 	clock := &manualClock{tick: time.Second}
-	throttler := newThrottler(clock.now)
+	throttler := newThrottler(8, clock.now)
 	breaker := NewCircuitBreaker(time.Second, 0)
 	dispatcher := NewDispatcher(feeder, throttler, breaker, io.Discard)
 	docs := []Document{
@@ -72,7 +72,7 @@ func TestDispatcherOrdering(t *testing.T) {
 		{Id: mustParseId("id:ns:type::doc9"), Operation: OperationPut},
 	}
 	clock := &manualClock{tick: time.Second}
-	throttler := newThrottler(clock.now)
+	throttler := newThrottler(8, clock.now)
 	breaker := NewCircuitBreaker(time.Second, 0)
 	dispatcher := NewDispatcher(feeder, throttler, breaker, io.Discard)
 	for _, d := range docs {
@@ -108,7 +108,7 @@ func TestDispatcherOrderingWithFailures(t *testing.T) {
 	}
 	feeder.failAfterN(2)
 	clock := &manualClock{tick: time.Second}
-	throttler := newThrottler(clock.now)
+	throttler := newThrottler(8, clock.now)
 	breaker := NewCircuitBreaker(time.Second, 0)
 	dispatcher := NewDispatcher(feeder, throttler, breaker, io.Discard)
 	for _, d := range docs {

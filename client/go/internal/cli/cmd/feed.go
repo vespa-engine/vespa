@@ -73,7 +73,7 @@ func feed(r io.Reader, cli *CLI, verbose bool, connections int) error {
 	client := document.NewClient(document.ClientOptions{
 		BaseURL: service.BaseURL,
 	}, clients)
-	throttler := document.NewThrottler()
+	throttler := document.NewThrottler(connections)
 	// TODO(mpolden): Make doom duration configurable
 	circuitBreaker := document.NewCircuitBreaker(10*time.Second, 0)
 	errWriter := io.Discard
