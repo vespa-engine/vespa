@@ -19,6 +19,7 @@ import static com.yahoo.vdslib.state.NodeType.DISTRIBUTOR;
 import static com.yahoo.vdslib.state.NodeType.STORAGE;
 import static com.yahoo.vdslib.state.State.DOWN;
 import static com.yahoo.vdslib.state.State.INITIALIZING;
+import static com.yahoo.vdslib.state.State.MAINTENANCE;
 import static com.yahoo.vdslib.state.State.UP;
 import static com.yahoo.vespa.clustercontroller.core.NodeStateChangeChecker.Result;
 import static com.yahoo.vespa.clustercontroller.utils.staterestapi.requests.SetUnitStateRequest.Condition.FORCE;
@@ -37,7 +38,7 @@ public class NodeStateChangeCheckerTest {
     private static final Node nodeStorage = new Node(STORAGE, 1);
 
     private static final NodeState UP_NODE_STATE = new NodeState(STORAGE, UP);
-    private static final NodeState MAINTENANCE_NODE_STATE = createNodeState(State.MAINTENANCE, "Orchestrator");
+    private static final NodeState MAINTENANCE_NODE_STATE = createNodeState(MAINTENANCE, "Orchestrator");
     private static final NodeState DOWN_NODE_STATE = createNodeState(DOWN, "RetireEarlyExpirer");
 
     private static NodeState createNodeState(State state, String description) {
@@ -53,7 +54,14 @@ public class NodeStateChangeCheckerTest {
     }
 
     private static ClusterState defaultAllUpClusterState() {
-        return clusterState(String.format("version:%d distributor:4 storage:4", currentClusterStateVersion));
+        return defaultAllUpClusterState(4);
+    }
+
+    private static ClusterState defaultAllUpClusterState(int nodeCount) {
+        return clusterState(String.format("version:%d distributor:%d storage:%d",
+                                          currentClusterStateVersion,
+                                          nodeCount ,
+                                          nodeCount));
     }
 
     private NodeStateChangeChecker createChangeChecker(ContentCluster cluster) {
@@ -144,7 +152,7 @@ public class NodeStateChangeCheckerTest {
     void testSafeMaintenanceDisallowedWhenOtherStorageNodeInFlatClusterIsSuspended() {
         // Nodes 0-3, storage node 0 being in maintenance with "Orchestrator" description.
         ContentCluster cluster = createCluster(4);
-        cluster.clusterInfo().getStorageNodeInfo(0).setWantedState(new NodeState(STORAGE, State.MAINTENANCE).setDescription("Orchestrator"));
+        cluster.clusterInfo().getStorageNodeInfo(0).setWantedState(new NodeState(STORAGE, MAINTENANCE).setDescription("Orchestrator"));
         var nodeStateChangeChecker = createChangeChecker(cluster);
         ClusterState clusterStateWith0InMaintenance = clusterState(String.format(
                 "version:%d distributor:4 storage:4 .0.s:m",
@@ -163,8 +171,7 @@ public class NodeStateChangeCheckerTest {
     void testSafeMaintenanceDisallowedWhenOtherDistributorInFlatClusterIsSuspended() {
         // Nodes 0-3, distributor 0 being down with "Orchestrator" description.
         ContentCluster cluster = createCluster(4);
-        cluster.clusterInfo().getDistributorNodeInfo(0)
-                .setWantedState(new NodeState(DISTRIBUTOR, DOWN).setDescription("Orchestrator"));
+        setDistributorNodeWantedState(cluster, 0, DOWN, "Orchestrator");
         var nodeStateChangeChecker = createChangeChecker(cluster);
         ClusterState clusterStateWith0InMaintenance = clusterState(String.format(
                 "version:%d distributor:4 .0.s:d storage:4",
@@ -184,8 +191,7 @@ public class NodeStateChangeCheckerTest {
         // Nodes 0-3, distributor 0 being in maintenance with "Orchestrator" description.
         // 2 groups: nodes 0-1 is group 0, 2-3 is group 1.
         ContentCluster cluster = createCluster(4, 2);
-        cluster.clusterInfo().getDistributorNodeInfo(0)
-                .setWantedState(new NodeState(STORAGE, DOWN).setDescription("Orchestrator"));
+        setDistributorNodeWantedState(cluster, 0, DOWN, "Orchestrator");
         var nodeStateChangeChecker = new NodeStateChangeChecker(cluster, false);
         ClusterState clusterStateWith0InMaintenance = clusterState(String.format(
                 "version:%d distributor:4 .0.s:d storage:4",
@@ -217,7 +223,7 @@ public class NodeStateChangeCheckerTest {
         // Nodes 0-3, storage node 0 being in maintenance with "Orchestrator" description.
         // 2 groups: nodes 0-1 is group 0, 2-3 is group 1.
         ContentCluster cluster = createCluster(4, 2);
-        cluster.clusterInfo().getStorageNodeInfo(0).setWantedState(new NodeState(STORAGE, State.MAINTENANCE).setDescription("Orchestrator"));
+        setStorageNodeWantedState(cluster, 0, MAINTENANCE, "Orchestrator");
         var nodeStateChangeChecker = new NodeStateChangeChecker(cluster, false);
         ClusterState clusterStateWith0InMaintenance = clusterState(String.format(
                 "version:%d distributor:4 storage:4 .0.s:m",
@@ -406,7 +412,7 @@ public class NodeStateChangeCheckerTest {
     }
 
     private Result transitionToSameState(String oldDescription, String newDescription) {
-        return transitionToSameState(State.MAINTENANCE, oldDescription, newDescription);
+        return transitionToSameState(MAINTENANCE, oldDescription, newDescription);
     }
 
     @Test
@@ -755,6 +761,16 @@ public class NodeStateChangeCheckerTest {
             configBuilder.group(groupBuilder);
         }
         return configBuilder.build();
+    }
+
+    private void setStorageNodeWantedState(ContentCluster cluster, int nodeIndex, State state, String description) {
+        NodeState nodeState = new NodeState(STORAGE, state);
+        cluster.clusterInfo().getStorageNodeInfo(nodeIndex).setWantedState(nodeState.setDescription(description));
+    }
+
+    private void setDistributorNodeWantedState(ContentCluster cluster, int nodeIndex, State state, String description) {
+        NodeState nodeState = new NodeState(DISTRIBUTOR, state);
+        cluster.clusterInfo().getDistributorNodeInfo(nodeIndex).setWantedState(nodeState.setDescription(description));
     }
 
 }
