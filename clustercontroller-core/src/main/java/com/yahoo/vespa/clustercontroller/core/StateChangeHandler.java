@@ -9,7 +9,7 @@ import com.yahoo.vdslib.state.NodeType;
 import com.yahoo.vdslib.state.State;
 import com.yahoo.vespa.clustercontroller.core.database.DatabaseHandler;
 import com.yahoo.vespa.clustercontroller.core.listeners.NodeListener;
-
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
@@ -355,10 +355,12 @@ public class StateChangeHandler {
         return false;
     }
 
-    private boolean isNotControlledShutdown(NodeState state) {
-        return (state.getState() != STOPPING
-                || (!state.getDescription().contains("Received signal 15 (SIGTERM - Termination signal)")
-                && !state.getDescription().contains("controlled shutdown")));
+    private boolean isNotControlledShutdown(NodeState state) { return ! isControlledShutdown(state); }
+
+    private boolean isControlledShutdown(NodeState state) {
+        return state.getState() == State.STOPPING
+                && List.of("Received signal 15 (SIGTERM - Termination signal)", "controlled shutdown")
+                       .contains(state.getDescription());
     }
 
     /**

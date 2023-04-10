@@ -58,7 +58,10 @@ public class NodeStateChangeCheckerTest {
     }
 
     private static ClusterState defaultAllUpClusterState(int nodeCount) {
-        return clusterState(String.format("version:%d distributor:" + nodeCount + " storage:" + nodeCount, currentClusterStateVersion));
+        return clusterState(String.format("version:%d distributor:%d storage:%d",
+                                          currentClusterStateVersion,
+                                          nodeCount ,
+                                          nodeCount));
     }
 
     private NodeStateChangeChecker createChangeChecker(ContentCluster cluster) {
@@ -263,7 +266,7 @@ public class NodeStateChangeCheckerTest {
     void testSafeMaintenanceDisallowedWhenOtherDistributorInFlatClusterIsSuspended() {
         // Nodes 0-3, distributor 0 being down with "Orchestrator" description.
         ContentCluster cluster = createCluster(4);
-        setDistributorNodeWantedState(cluster, 0, new NodeState(DISTRIBUTOR, DOWN), "Orchestrator");
+        setDistributorNodeWantedState(cluster, 0, DOWN, "Orchestrator");
         var nodeStateChangeChecker = createChangeChecker(cluster);
         ClusterState clusterStateWith0InMaintenance = clusterState(String.format(
                 "version:%d distributor:4 .0.s:d storage:4",
@@ -283,7 +286,7 @@ public class NodeStateChangeCheckerTest {
         // Nodes 0-3, distributor 0 being in maintenance with "Orchestrator" description.
         // 2 groups: nodes 0-1 is group 0, 2-3 is group 1.
         ContentCluster cluster = createCluster(4, 2);
-        setDistributorNodeWantedState(cluster, 0, new NodeState(DISTRIBUTOR, DOWN), "Orchestrator");
+        setDistributorNodeWantedState(cluster, 0, DOWN, "Orchestrator");
         var nodeStateChangeChecker = new NodeStateChangeChecker(cluster, false);
         ClusterState clusterStateWith0InMaintenance = clusterState(String.format(
                 "version:%d distributor:4 .0.s:d storage:4",
@@ -315,7 +318,7 @@ public class NodeStateChangeCheckerTest {
         // Nodes 0-3, storage node 0 being in maintenance with "Orchestrator" description.
         // 2 groups: nodes 0-1 is group 0, 2-3 is group 1.
         ContentCluster cluster = createCluster(4, 2);
-        setStorageNodeWantedState(cluster, 0, new NodeState(STORAGE, MAINTENANCE), "Orchestrator");
+        setStorageNodeWantedState(cluster, 0, MAINTENANCE, "Orchestrator");
         var nodeStateChangeChecker = new NodeStateChangeChecker(cluster, false);
         ClusterState clusterStateWith0InMaintenance = clusterState(String.format(
                 "version:%d distributor:4 storage:4 .0.s:m",
@@ -863,19 +866,17 @@ public class NodeStateChangeCheckerTest {
     }
 
     private void setStorageNodeWantedStateToMaintenance(ContentCluster cluster, int nodeIndex) {
-        setStorageNodeWantedStateToMaintenance(cluster, nodeIndex, "Orchestrator");
+        cluster.clusterInfo().getStorageNodeInfo(nodeIndex).setWantedState(MAINTENANCE_NODE_STATE.setDescription("Orchestrator"));
     }
 
-    private void setStorageNodeWantedStateToMaintenance(ContentCluster cluster, int nodeIndex, String description) {
-        cluster.clusterInfo().getStorageNodeInfo(nodeIndex).setWantedState(MAINTENANCE_NODE_STATE.setDescription(description));
+    private void setStorageNodeWantedState(ContentCluster cluster, int nodeIndex, State state, String description) {
+        NodeState nodeState = new NodeState(STORAGE, state);
+        cluster.clusterInfo().getStorageNodeInfo(nodeIndex).setWantedState(nodeState.setDescription(description));
     }
 
-    private void setStorageNodeWantedState(ContentCluster cluster, int nodeIndex, NodeState state, String description) {
-        cluster.clusterInfo().getStorageNodeInfo(nodeIndex).setWantedState(state.setDescription(description));
-    }
-
-    private void setDistributorNodeWantedState(ContentCluster cluster, int nodeIndex, NodeState state, String description) {
-        cluster.clusterInfo().getDistributorNodeInfo(nodeIndex).setWantedState(state.setDescription(description));
+    private void setDistributorNodeWantedState(ContentCluster cluster, int nodeIndex, State state, String description) {
+        NodeState nodeState = new NodeState(DISTRIBUTOR, state);
+        cluster.clusterInfo().getDistributorNodeInfo(nodeIndex).setWantedState(nodeState.setDescription(description));
     }
 
 }
