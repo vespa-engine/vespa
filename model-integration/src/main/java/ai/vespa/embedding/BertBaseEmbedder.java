@@ -35,7 +35,6 @@ public class BertBaseEmbedder extends AbstractComponent implements Embedder {
     private final int    maxTokens;
     private final int    startSequenceToken;
     private final int    endSequenceToken;
-    private final int    separatorToken;
     private final String inputIdsName;
     private final String attentionMaskName;
     private final String tokenTypeIdsName;
@@ -100,7 +99,7 @@ public class BertBaseEmbedder extends AbstractComponent implements Embedder {
         if (!type.dimensions().get(0).isIndexed()) {
             throw new IllegalArgumentException("Error in embedding to type '" + type + "': dimension should be indexed.");
         }
-        List<Integer> tokens = embedWithSeperatorTokens(text, context, maxTokens);
+        List<Integer> tokens = embedWithSeparatorTokens(text, context, maxTokens);
         return embedTokens(tokens, type);
     }
 
@@ -140,7 +139,7 @@ public class BertBaseEmbedder extends AbstractComponent implements Embedder {
         return builder.build();
     }
 
-    private List<Integer> embedWithSeperatorTokens(String text, Context context, int maxLength) {
+    private List<Integer> embedWithSeparatorTokens(String text, Context context, int maxLength) {
         List<Integer> tokens = new ArrayList<>();
         tokens.add(startSequenceToken);
         tokens.addAll(embed(text, context));
