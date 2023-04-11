@@ -20,7 +20,6 @@ private:
     using EntryRefArray = vespalib::Array<EntryRef>;
 
     std::atomic<EntryCount>& _dead_entries;
-    uint32_t _array_size;
     FreeList* _free_list;
     EntryRefArray _free_refs;
 
@@ -37,10 +36,8 @@ public:
     void enable(FreeList& free_list);
     void disable();
 
-    void set_array_size(uint32_t value) { _array_size = value; }
     bool enabled() const { return _free_list != nullptr; }
     bool empty() const { return _free_refs.empty(); }
-    uint32_t array_size() const { return _array_size; }
     void push_entry(EntryRef ref);
     EntryRef pop_entry();
 };

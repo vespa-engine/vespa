@@ -71,8 +71,9 @@ FreeListAllocator<EntryT, RefT, ReclaimerT>::allocArray(ConstArrayRef array)
     if (free_list.empty()) {
         return ParentType::allocArray(array);
     }
-    assert(free_list.array_size() == array.size());
     RefT ref = free_list.pop_entry();
+    auto& state = _store.getBufferState(ref.bufferId());
+    assert(state.getArraySize() == array.size());
     EntryT *buf = _store.template getEntryArray<EntryT>(ref, array.size());
     for (size_t i = 0; i < array.size(); ++i) {
         *(buf + i) = array[i];
@@ -88,8 +89,9 @@ FreeListAllocator<EntryT, RefT, ReclaimerT>::allocArray()
     if (free_list.empty()) {
         return ParentType::allocArray();
     }
-    auto size = free_list.array_size();
     RefT ref = free_list.pop_entry();
+    auto& state = _store.getBufferState(ref.bufferId());
+    auto size = state.getArraySize();
     EntryT *buf = _store.template getEntryArray<EntryT>(ref, size);
     return HandleType(ref, buf);
 }

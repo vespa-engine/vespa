@@ -22,7 +22,6 @@ BufferFreeList::detach()
 
 BufferFreeList::BufferFreeList(std::atomic<EntryCount>& dead_entries)
     : _dead_entries(dead_entries),
-      _array_size(0),
       _free_list(),
       _free_refs()
 {

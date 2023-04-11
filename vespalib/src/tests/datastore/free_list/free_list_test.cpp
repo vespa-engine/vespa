@@ -21,7 +21,6 @@ struct FreeListTest : public testing::Test
     {
         for (size_t i = 0; i < 3; ++i) {
             bufs.emplace_back(dead_entries);
-            bufs.back().set_array_size(array_size);
         }
     }
     void TearDown() override {
