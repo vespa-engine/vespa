@@ -17,8 +17,6 @@ const (
 	// StatusTransportFailure indicates that there was failure in the transport layer error while sending the document
 	// operation to Vespa.
 	StatusTransportFailure
-	// StatusError is a catch-all status for any other error that might occur.
-	StatusError
 )
 
 // Result represents the result of a feeding operation.
@@ -32,8 +30,9 @@ type Result struct {
 	Stats      Stats
 }
 
-// Success returns whether status s is considered a success.
-func (s Status) Success() bool { return s == StatusSuccess || s == StatusConditionNotMet }
+func (r Result) Success() bool {
+	return r.Err == nil && (r.Status == StatusSuccess || r.Status == StatusConditionNotMet)
+}
 
 // Stats represents feeding operation statistics.
 type Stats struct {

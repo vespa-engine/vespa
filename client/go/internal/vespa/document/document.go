@@ -130,6 +130,27 @@ type Decoder struct {
 	jsonl bool
 }
 
+func (d Document) String() string {
+	var sb strings.Builder
+	switch d.Operation {
+	case OperationPut:
+		sb.WriteString("put ")
+	case OperationUpdate:
+		sb.WriteString("update ")
+	case OperationRemove:
+		sb.WriteString("remove ")
+	}
+	sb.WriteString(d.Id.String())
+	if d.Condition != "" {
+		sb.WriteString(", condition=")
+		sb.WriteString(d.Condition)
+	}
+	if d.Create {
+		sb.WriteString(", create=true")
+	}
+	return sb.String()
+}
+
 func (d *Decoder) guessMode() error {
 	for !d.array && !d.jsonl {
 		b, err := d.buf.ReadByte()
