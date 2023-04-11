@@ -544,12 +544,12 @@ func (c *Config) list(includeUnset bool) []string {
 }
 
 // flagValue returns the set value and default value of the named flag.
-func (c *Config) flagValue(name string) (string, string) {
+func (c *Config) flagValue(name string) (string, string, bool) {
 	f, ok := c.flags[name]
 	if !ok {
-		return "", ""
+		return "", "", ok
 	}
-	return f.Value.String(), f.DefValue
+	return f.Value.String(), f.DefValue, f.Changed
 }
 
 // getNonEmpty returns value of given option, if that value is non-empty
@@ -564,9 +564,9 @@ func (c *Config) getNonEmpty(option string) (string, bool) {
 // get returns the value associated with option, from the most preferred source in the following order: flag > local
 // config > global config.
 func (c *Config) get(option string) (string, bool) {
-	flagValue, flagDefault := c.flagValue(option)
+	flagValue, flagDefault, changed := c.flagValue(option)
 	// explicit flag value always takes precedence over everything else
-	if flagValue != flagDefault {
+	if changed {
 		return flagValue, true
 	}
 	// ... then local config, if option is explicitly defined there
