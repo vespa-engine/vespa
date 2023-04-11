@@ -18,8 +18,8 @@ transformerAttentionMask string default=attention_mask
 transformerTokenTypeIds  string default=token_type_ids
 
 # special token ids
-transformerStartSequenceToken int default=
-transformerEndSequenceToken   int default=
+transformerStartSequenceToken int default=101
+transformerEndSequenceToken   int default=102
 
 # Output name
 transformerOutput string default=output_0
