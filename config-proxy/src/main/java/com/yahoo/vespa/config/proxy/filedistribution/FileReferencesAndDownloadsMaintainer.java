@@ -23,7 +23,9 @@ import java.util.stream.Collectors;
 import static java.nio.file.Files.readAttributes;
 
 /**
- * Deletes file references and url downloads that have not been used for some time
+ * Deletes file references and url downloads that have not been used for some time.
+ * See {@link com.yahoo.vespa.config.proxy.filedistribution.RequestTracker} for how we track
+ * when a file reference or download was last used.
  *
  * @author hmusum
  */
@@ -32,7 +34,7 @@ class FileReferencesAndDownloadsMaintainer implements Runnable {
     private static final Logger log = Logger.getLogger(FileReferencesAndDownloadsMaintainer.class.getName());
     private static final File defaultUrlDownloadDir = UrlDownloadRpcServer.downloadDir;
     private static final File defaultFileReferencesDownloadDir = FileDownloader.defaultDownloadDirectory;
-    private static final Duration defaultDurationToKeepFiles = Duration.ofDays(14);
+    private static final Duration defaultDurationToKeepFiles = Duration.ofDays(21);
     private static final Duration interval = Duration.ofMinutes(1);
 
     private final ScheduledExecutorService executor =
