@@ -43,7 +43,7 @@ public class ResourceTagMaintainer extends ControllerMaintainer {
                     if (taggedResources > 0)
                         log.log(Level.INFO, "Tagged " + taggedResources + " resources in " + zone.getId());
         });
-        return 1.0;
+        return 0.0;
     }
 
     private Map<HostName, ApplicationId> getTenantOfParentHosts(ZoneId zoneId) {

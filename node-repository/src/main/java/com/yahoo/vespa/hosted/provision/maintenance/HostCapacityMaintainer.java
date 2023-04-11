@@ -113,7 +113,7 @@ public class HostCapacityMaintainer extends NodeRepositoryMaintainer {
             }
             success++;
         }
-        return asSuccessFactor(attempts, attempts - success);
+        return asSuccessFactorDeviation(attempts, attempts - success);
     }
 
     /**

@@ -73,7 +73,7 @@ public class HostInfoUpdater extends ControllerMaintainer {
                 LOG.info("Updated information for " + hostsUpdated + " hosts(s)");
             }
         }
-        return 1.0;
+        return 0.0;
     }
 
     private static Optional<String> modelNameOf(NodeEntity nodeEntity) {

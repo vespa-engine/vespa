@@ -88,7 +88,7 @@ public class ApplicationPackageMaintainer extends ConfigServerMaintainer {
                 createLocalSessionIfMissing(applicationId, sessionId);
             }
         }
-        return asSuccessFactor(attempts, failures);
+        return  asSuccessFactorDeviation(attempts, failures);
     }
 
     private static FileDownloader createFileDownloader(List<String> otherConfigServersInCluster,

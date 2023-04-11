@@ -94,7 +94,7 @@ public class LoadBalancerExpirer extends NodeRepositoryMaintainer {
                                                                                   .collect(Collectors.joining(", ")),
                                                                             interval()));
         }
-        return asSuccessFactor(attempts.get(), failed.size());
+        return asSuccessFactorDeviation(attempts.get(), failed.size());
     }
 
     /** Remove reals from inactive load balancers */
@@ -131,7 +131,7 @@ public class LoadBalancerExpirer extends NodeRepositoryMaintainer {
                                                  interval()),
                     lastException.get());
         }
-        return asSuccessFactor(attempts.get(), failed.size());
+        return asSuccessFactorDeviation(attempts.get(), failed.size());
     }
 
     /** Patch load balancers matching given filter, while holding lock */

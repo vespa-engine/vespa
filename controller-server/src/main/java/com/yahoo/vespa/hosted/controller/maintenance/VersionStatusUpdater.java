@@ -39,12 +39,12 @@ public class VersionStatusUpdater extends ControllerMaintainer {
                 controller().serviceRegistry().systemMonitor().reportSystemVersion(version.versionNumber(),
                                                                                    convert(version.confidence()));
             });
-            return 1.0;
+            return 0.0;
         } catch (Exception e) {
             log.log(Level.WARNING, "Failed to compute version status: " + Exceptions.toMessageString(e) +
                                    ". Retrying in " + interval());
         }
-        return 0.0;
+        return 1.0;
     }
 
     static SystemMonitor.Confidence convert(VespaVersion.Confidence confidence) {
