@@ -108,6 +108,7 @@ public class BertBaseEmbedder extends AbstractComponent implements Embedder {
     Tensor embedTokens(List<Integer> tokens, TensorType type) {
         Tensor inputSequence = createTensorRepresentation(tokens, "d1");
         Tensor attentionMask = createAttentionMask(inputSequence);
+        Tensor tokenTypeIds = createTokenTypeIds(inputSequence);
 
 
         Map<String, Tensor> inputs;
