@@ -20,9 +20,10 @@ FreeListRawAllocator<EntryT, RefT>::alloc(size_t num_entries)
     if (free_list.empty()) {
         return ParentType::alloc(num_entries);
     }
-    auto array_size = free_list.array_size();
     assert(num_entries == 1);
     RefT ref = free_list.pop_entry();
+    auto& state = _store.getBufferState(ref.bufferId());
+    auto array_size = state.getArraySize();
     // We must scale the offset according to array size as it was divided when the entry ref was created.
     EntryT *entry = _store.template getEntryArray<EntryT>(ref, array_size);
     return HandleType(ref, entry);

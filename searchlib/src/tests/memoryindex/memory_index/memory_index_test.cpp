@@ -463,7 +463,7 @@ TEST(MemoryIndexTest, require_that_num_docs_and_doc_id_limit_is_returned)
 TEST(MemoryIndexTest, require_that_we_understand_the_memory_footprint)
 {
     constexpr size_t BASE_ALLOCATED = 360936u;
-    constexpr size_t BASE_USED = 150932u;
+    constexpr size_t BASE_USED = 150804u;
     {
         MySetup setup;
         Index index(setup);

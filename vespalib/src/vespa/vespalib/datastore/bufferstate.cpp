@@ -108,7 +108,6 @@ BufferState::on_active(uint32_t bufferId, uint32_t typeId,
     assert(typeId <= std::numeric_limits<uint16_t>::max());
     _typeId = typeId;
     _arraySize = typeHandler->getArraySize();
-    _free_list.set_array_size(_arraySize);
     _state.store(State::ACTIVE, std::memory_order_release);
     typeHandler->on_active(bufferId, &_stats.used_entries_ref(), &_stats.dead_entries_ref(),
                            buffer.load(std::memory_order::relaxed));
@@ -145,7 +144,6 @@ BufferState::onFree(std::atomic<void*>& buffer)
     _state.store(State::FREE, std::memory_order_release);
     _typeHandler = nullptr;
     _arraySize = 0;
-    _free_list.set_array_size(_arraySize);
     assert(!_free_list.enabled());
     assert(_free_list.empty());
     _disable_entry_hold_list = false;
