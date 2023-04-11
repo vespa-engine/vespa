@@ -534,7 +534,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         NestedTransaction transaction = new NestedTransaction();
         Optional<ApplicationTransaction> applicationTransaction = hostProvisioner.map(provisioner -> provisioner.lock(applicationId))
                                                                                  .map(lock -> new ApplicationTransaction(lock, transaction));
-        try (var applicationLock = tenantApplications.lock(applicationId)) {
+        try (@SuppressWarnings("unused") var applicationLock = tenantApplications.lock(applicationId)) {
             Optional<Long> activeSession = tenantApplications.activeSessionOf(applicationId);
             CompletionWaiter waiter;
             if (activeSession.isPresent()) {
@@ -796,7 +796,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         NestedTransaction transaction = new NestedTransaction();
         Optional<ApplicationTransaction> applicationTransaction = hostProvisioner.map(provisioner -> provisioner.lock(applicationId))
                                                                                  .map(lock -> new ApplicationTransaction(lock, transaction));
-        try (var sessionLock = tenant.getApplicationRepo().lock(applicationId)) {
+        try (@SuppressWarnings("unused") var sessionLock = tenant.getApplicationRepo().lock(applicationId)) {
             Optional<Session> activeSession = getActiveSession(applicationId);
             var sessionZooKeeperClient = tenant.getSessionRepository().createSessionZooKeeperClient(session.getSessionId());
             CompletionWaiter waiter = sessionZooKeeperClient.createActiveWaiter();
