@@ -46,7 +46,6 @@ type CLI struct {
 
 	cmd     *cobra.Command
 	config  *Config
-	flags   map[string]*pflag.Flag
 	version version.Version
 
 	httpClient   util.HTTPClient
@@ -152,8 +151,7 @@ For detailed description of flags and configuration, see 'vespa help config'.
 		},
 	}
 	cli.isTerminal = func() bool { return isTerminal(cli.Stdout) && isTerminal(cli.Stderr) }
-	cli.flags = cli.configureFlags()
-	if err := cli.loadConfig(""); err != nil {
+	if err := cli.loadConfig(); err != nil {
 		return nil, err
 	}
 	cli.configureSpinner()
@@ -162,8 +160,8 @@ For detailed description of flags and configuration, see 'vespa help config'.
 	return &cli, nil
 }
 
-func (c *CLI) loadConfig(workDir string) error {
-	config, err := loadConfig(c.Environment, c.flags, workDir)
+func (c *CLI) loadConfig() error {
+	config, err := loadConfig(c.Environment, c.configureFlags())
 	if err != nil {
 		return err
 	}
@@ -542,7 +540,7 @@ func (c *CLI) applicationPackageFrom(args []string, requirePackaging bool) (vesp
 		}
 		if stat.IsDir() {
 			// Using an explicit application directory, look for local config in that directory too
-			if err := c.loadConfig(path); err != nil {
+			if err := c.config.loadLocalConfigFrom(path); err != nil {
 				return vespa.ApplicationPackage{}, err
 			}
 		}

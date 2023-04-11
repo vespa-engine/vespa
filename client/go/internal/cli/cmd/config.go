@@ -150,18 +150,6 @@ $ vespa config set --local wait 600
 				if _, err := cli.applicationPackageFrom(nil, false); err != nil {
 					return fmt.Errorf("failed to write local configuration: %w", err)
 				}
-				if cli.config.local == nil {
-					wd, err := os.Getwd()
-					if err != nil {
-						return nil
-					}
-					localDir := filepath.Join(wd, ".vespa")
-					newConfig, err := readConfigIn(localDir, cli.config.environment, cli.config.flags)
-					if err != nil {
-						return err
-					}
-					cli.config.local = newConfig
-				}
 				config = cli.config.local
 			}
 			if err := config.set(args[0], args[1]); err != nil {
@@ -199,10 +187,6 @@ $ vespa config unset --local application
 					return fmt.Errorf("failed to write local configuration: %w", err)
 				}
 				config = cli.config.local
-				if config == nil {
-					cli.printWarning("no local configuration present")
-					return nil
-				}
 			}
 			if err := config.unset(args[0]); err != nil {
 				return err
@@ -235,7 +219,7 @@ $ vespa config get --local
 		RunE: func(cmd *cobra.Command, args []string) error {
 			config := cli.config
 			if localArg {
-				if cli.config.local == nil {
+				if cli.config.local.isEmpty() {
 					cli.printWarning("no local configuration present")
 					return nil
 				}
@@ -271,36 +255,23 @@ type KeyPair struct {
 	PrivateKeyFile  string
 }
 
-func loadConfig(environment map[string]string, flags map[string]*pflag.Flag, workDir string) (*Config, error) {
-	dir, err := vespaCliHome(environment)
+func loadConfig(environment map[string]string, flags map[string]*pflag.Flag) (*Config, error) {
+	home, err := vespaCliHome(environment)
 	if err != nil {
 		return nil, fmt.Errorf("could not detect config directory: %w", err)
 	}
-	config, err := readConfigIn(dir, environment, flags)
+	config, err := loadConfigFrom(home, environment, flags)
 	if err != nil {
 		return nil, err
 	}
-	if workDir == "" {
-		workDir, err = os.Getwd()
-		if err != nil {
-			return nil, err
-		}
-	}
-	localDir, err := config.findLocalConfigDir(workDir)
-	if err != nil {
+	// Load local config from working directory by default
+	if err := config.loadLocalConfigFrom("."); err != nil {
 		return nil, err
-	}
-	if localDir != "" {
-		localConfig, err := readConfigIn(localDir, environment, flags)
-		if err != nil {
-			return nil, err
-		}
-		config.local = localConfig
 	}
 	return config, nil
 }
 
-func readConfigIn(dir string, environment map[string]string, flags map[string]*pflag.Flag) (*Config, error) {
+func loadConfigFrom(dir string, environment map[string]string, flags map[string]*pflag.Flag) (*Config, error) {
 	cacheDir, err := vespaCliCacheDir(environment)
 	if err != nil {
 		return nil, fmt.Errorf("could not detect cache directory: %w", err)
@@ -336,30 +307,18 @@ func athenzPath(filename string) (string, error) {
 	return filepath.Join(userHome, ".athenz", filename), nil
 }
 
-func (c *Config) findLocalConfigDir(dir string) (string, error) {
-	userHome, err := os.UserHomeDir()
+func (c *Config) loadLocalConfigFrom(parent string) error {
+	home := filepath.Join(parent, ".vespa")
+	_, err := os.Stat(home)
+	if err != nil && !os.IsNotExist(err) {
+		return err
+	}
+	config, err := loadConfigFrom(home, c.environment, c.flags)
 	if err != nil {
-		return "", err
+		return err
 	}
-	dir, err = filepath.Abs(dir)
-	if err != nil {
-		return "", err
-	}
-	for dir != userHome {
-		vespaDir := filepath.Join(dir, ".vespa")
-		_, err := os.Stat(vespaDir)
-		if err == nil {
-			return vespaDir, nil
-		} else if err != nil && !os.IsNotExist(err) {
-			return "", err
-		}
-		parent := filepath.Clean(filepath.Join(dir, ".."))
-		if parent == dir {
-			break
-		}
-		dir = parent
-	}
-	return "", nil
+	c.local = config
+	return nil
 }
 
 func (c *Config) write() error {
@@ -568,6 +527,8 @@ func (c *Config) applicationFilePath(app vespa.ApplicationID, name string) (stri
 	return filepath.Join(appDir, name), nil
 }
 
+func (c *Config) isEmpty() bool { return len(c.config.Keys()) == 0 }
+
 // list returns the options that have been set in this configuration. If includeUnset is true, also return options that
 // haven't been set.
 func (c *Config) list(includeUnset bool) []string {
@@ -583,12 +544,12 @@ func (c *Config) list(includeUnset bool) []string {
 }
 
 // flagValue returns the set value and default value of the named flag.
-func (c *Config) flagValue(name string) (string, string, bool) {
+func (c *Config) flagValue(name string) (string, string) {
 	f, ok := c.flags[name]
 	if !ok {
-		return "", "", ok
+		return "", ""
 	}
-	return f.Value.String(), f.DefValue, f.Changed
+	return f.Value.String(), f.DefValue
 }
 
 // getNonEmpty returns value of given option, if that value is non-empty
@@ -603,9 +564,9 @@ func (c *Config) getNonEmpty(option string) (string, bool) {
 // get returns the value associated with option, from the most preferred source in the following order: flag > local
 // config > global config.
 func (c *Config) get(option string) (string, bool) {
-	flagValue, flagDefault, changed := c.flagValue(option)
+	flagValue, flagDefault := c.flagValue(option)
 	// explicit flag value always takes precedence over everything else
-	if changed {
+	if flagValue != flagDefault {
 		return flagValue, true
 	}
 	// ... then local config, if option is explicitly defined there
