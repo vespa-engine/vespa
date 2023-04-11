@@ -120,6 +120,7 @@ public class VespaCliTestRunner implements TestRunner {
         builder.redirectErrorStream(true);
         // The CI environment variables tells Vespa CLI to omit certain warnings that do not apply to CI environments
         builder.environment().put("CI", "true");
+        builder.environment().put("HOME", System.getProperty("user.home"));
         builder.environment().put("VESPA_CLI_CLOUD_CI", "true");
         builder.environment().put("VESPA_CLI_HOME", ensureDirectoryForVespaCli("cli-home").toString());
         builder.environment().put("VESPA_CLI_CACHE_DIR", ensureDirectoryForVespaCli("cli-cache").toString());
