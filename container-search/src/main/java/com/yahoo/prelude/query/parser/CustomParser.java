@@ -6,6 +6,7 @@ import com.yahoo.prelude.IndexFacts;
 import com.yahoo.prelude.query.Item;
 import com.yahoo.search.query.parser.Parser;
 
+import java.util.Collections;
 import java.util.Set;
 
 /**
@@ -22,7 +23,7 @@ public interface CustomParser extends Parser {
                        Set<String> toSearch, IndexFacts indexFacts, String defaultIndexName) {
         if (indexFacts == null)
             indexFacts = new IndexFacts();
-        return parse(queryToParse, filterToParse, parsingLanguage, indexFacts.newSession(toSearch, Set.of()), defaultIndexName);
+        return parse(queryToParse, filterToParse, parsingLanguage, indexFacts.newSession(toSearch, Collections.emptySet()), defaultIndexName);
     }
 
     Item parse(String queryToParse, String filterToParse, Language parsingLanguage,
