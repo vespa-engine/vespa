@@ -1226,7 +1226,7 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
 
         getProperty(request, TRACELEVEL, integerParser).ifPresent(parameters::setTraceLevel);
 
-        getProperty(request, CONTINUATION).map(ProgressToken::fromSerializedString).ifPresent(parameters::setResumeToken);
+        getProperty(request, CONTINUATION, ProgressToken::fromSerializedString).ifPresent(parameters::setResumeToken);
         parameters.setPriority(DocumentProtocol.Priority.NORMAL_4);
 
         getProperty(request, FROM_TIMESTAMP, unsignedLongParser).ifPresent(parameters::setFromTimestamp);
