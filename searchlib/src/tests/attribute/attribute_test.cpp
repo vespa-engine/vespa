@@ -2334,6 +2334,10 @@ AttributeTest::test_paged_attribute(const vespalib::string& name, const vespalib
     size_t rounded_size = vespalib::round_up_to_page_size(1);
     size_t lid_mapping_size = 1200;
     size_t sv_maxlid = 1200;
+    if (rounded_size == 16_Ki) {
+        lid_mapping_size = 4200;
+        sv_maxlid = 1300;
+    }
     if (rounded_size == 64_Ki) {
         lid_mapping_size = 17000;
         sv_maxlid = 1500;
