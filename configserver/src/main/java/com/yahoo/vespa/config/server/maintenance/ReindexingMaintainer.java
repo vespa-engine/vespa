@@ -77,7 +77,7 @@ public class ReindexingMaintainer extends ConfigServerMaintainer {
                                          }
                                      });
         }
-        return asSuccessFactor(attempts.get(), failures.get());
+        return asSuccessFactorDeviation(attempts.get(), failures.get());
     }
 
     private Supplier<Long> lazyGeneration(Application application) {

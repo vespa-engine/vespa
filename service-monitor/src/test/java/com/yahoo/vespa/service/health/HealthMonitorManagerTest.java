@@ -1,8 +1,8 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.service.health;
 
+import ai.vespa.http.DomainName;
 import com.yahoo.config.model.api.ApplicationInfo;
-import com.yahoo.config.provision.HostName;
 import com.yahoo.vespa.applicationmodel.ServiceStatus;
 import com.yahoo.vespa.applicationmodel.ServiceStatusInfo;
 import com.yahoo.vespa.service.duper.ControllerHostApplication;
@@ -14,7 +14,6 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.util.List;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.junit.Assert.assertEquals;
@@ -48,7 +47,7 @@ public class HealthMonitorManagerTest {
     public void infrastructureApplication() {
         ProxyHostApplication proxyHostApplication = new ProxyHostApplication();
         when(duperModel.isSupportedInfraApplication(proxyHostApplication.getApplicationId())).thenReturn(true);
-        List<HostName> hostnames = Stream.of("proxyhost1", "proxyhost2").map(HostName::of).toList();
+        List<DomainName> hostnames = Stream.of("proxyhost1", "proxyhost2").map(DomainName::of).toList();
         ApplicationInfo proxyHostApplicationInfo = proxyHostApplication.makeApplicationInfo(hostnames);
 
         manager.applicationActivated(proxyHostApplicationInfo);
@@ -77,7 +76,7 @@ public class HealthMonitorManagerTest {
                 infraApplication.getApplicationId(),
                 infraApplication.getClusterId(),
                 infraApplication.getServiceType(),
-                infraApplication.configIdFor(HostName.of(hostname))).serviceStatus();
+                infraApplication.configIdFor(DomainName.of(hostname))).serviceStatus();
 
         assertEquals(expected, actual);
 
@@ -85,7 +84,7 @@ public class HealthMonitorManagerTest {
                 infraApplication.getApplicationId(),
                 infraApplication.getClusterId(),
                 infraApplication.getServiceType(),
-                infraApplication.configIdFor(HostName.of(hostname)));
+                infraApplication.configIdFor(DomainName.of(hostname)));
 
     }
 }

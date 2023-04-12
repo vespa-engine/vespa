@@ -23,7 +23,7 @@ ready_copies int default=0
 ## If this option is set true, the distributor will try to enforce one active copy
 ## of buckets per leaf hierarchical group. This is a simple implementation for
 ## search to be able to setup top level dispatcher to only send search to all
-## nodes in one group as they have a static cost per node used. It used,
+## nodes in one group as they have a static cost per node used. If used,
 ## hierarchical grouping can not be used for other purposes. Using this option
 ## implies that:
 ##   - ready_copies == redundancy
@@ -36,6 +36,7 @@ active_per_leaf_group bool default=false
 ## these cases they use many small groups to be able to scale. In such cases,
 ## where groups are small, having distributors able to take over when none are
 ## available in a group is useful.
+# TODO: Deprecated and unused, remove in Vespa 9
 distributor_auto_ownership_transfer_on_whole_group_down bool default=true
 
 ## Hierarchical grouping divides the nodes into a tree of groups. Due to config
@@ -67,4 +68,5 @@ group[].nodes[].retired bool default=false
 ## MODULO_INDEX with node index in seed
 ## MODULO_KNUTH with random(node index) in seed
 ## MODULO_BID using all used bits, except count bits, and random(node index)
+## TODO: Deprecated and unused, remove in Vespa 9
 disk_distribution enum { MODULO, MODULO_INDEX, MODULO_KNUTH, MODULO_BID } default=MODULO_BID

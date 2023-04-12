@@ -22,11 +22,11 @@ using vespalib::datastore::CompactionStrategy;
 using vespalib::alloc::test::MemoryAllocatorObserver;
 using AllocStats = MemoryAllocatorObserver::Stats;
 
-template <typename EntryT>
+template <typename ElemT>
 void
-assertArray(const std::vector<EntryT> &exp, vespalib::ConstArrayRef<EntryT> values)
+assertArray(const std::vector<ElemT> &exp, vespalib::ConstArrayRef<ElemT> values)
 {
-    EXPECT_EQ(exp, std::vector<EntryT>(values.cbegin(), values.cend()));
+    EXPECT_EQ(exp, std::vector<ElemT>(values.cbegin(), values.cend()));
 }
 
 template <class MvMapping>
@@ -69,10 +69,10 @@ public:
 
 constexpr float ALLOC_GROW_FACTOR = 0.2;
 
-template <typename EntryT>
+template <typename ElemT>
 class MappingTestBase : public ::testing::Test {
 protected:
-    using MvMapping = search::attribute::MultiValueMapping<EntryT>;
+    using MvMapping = search::attribute::MultiValueMapping<ElemT>;
     using AttributeType = MyAttribute<MvMapping>;
     AllocStats _stats;
     std::unique_ptr<MvMapping> _mvMapping;
@@ -82,8 +82,8 @@ protected:
     using generation_t = vespalib::GenerationHandler::generation_t;
 
 public:
-    using ArrayRef = vespalib::ArrayRef<EntryT>;
-    using ConstArrayRef = vespalib::ConstArrayRef<EntryT>;
+    using ArrayRef = vespalib::ArrayRef<ElemT>;
+    using ConstArrayRef = vespalib::ConstArrayRef<ElemT>;
     MappingTestBase()
         : _stats(),
           _mvMapping(),
@@ -99,9 +99,9 @@ public:
         _attr = std::make_unique<AttributeType>(*_mvMapping);
         _maxSmallArraySize = maxSmallArraySize;
     }
-    void setup(uint32_t maxSmallArraySize, size_t minArrays, size_t maxArrays, size_t numArraysForNewBuffer, bool enable_free_lists = true) {
+    void setup(uint32_t maxSmallArraySize, size_t min_entries, size_t max_entries, size_t num_entries_for_new_buffer, bool enable_free_lists = true) {
         ArrayStoreConfig config(maxSmallArraySize,
-                                ArrayStoreConfig::AllocSpec(minArrays, maxArrays, numArraysForNewBuffer, ALLOC_GROW_FACTOR));
+                                ArrayStoreConfig::AllocSpec(min_entries, max_entries, num_entries_for_new_buffer, ALLOC_GROW_FACTOR));
         config.enable_free_lists(enable_free_lists);
         _mvMapping = std::make_unique<MvMapping>(config, vespalib::GrowStrategy(), std::make_unique<MemoryAllocatorObserver>(_stats));
         _attr = std::make_unique<AttributeType>(*_mvMapping);
@@ -109,12 +109,12 @@ public:
     }
     ~MappingTestBase() { }
 
-    void set(uint32_t docId, const std::vector<EntryT> &values) { _mvMapping->set(docId, values); }
+    void set(uint32_t docId, const std::vector<ElemT> &values) { _mvMapping->set(docId, values); }
     ConstArrayRef get(uint32_t docId) { return _mvMapping->get(docId); }
     ArrayRef get_writable(uint32_t docId) { return _mvMapping->get_writable(docId); }
-    void assertGet(uint32_t docId, const std::vector<EntryT> &exp) {
+    void assertGet(uint32_t docId, const std::vector<ElemT> &exp) {
         ConstArrayRef act = get(docId);
-        EXPECT_EQ(exp, std::vector<EntryT>(act.cbegin(), act.cend()));
+        EXPECT_EQ(exp, std::vector<ElemT>(act.cbegin(), act.cend()));
     }
     void assign_generation(generation_t current_gen) { _mvMapping->assign_generation(current_gen); }
     void reclaim_memory(generation_t oldest_used_gen) { _mvMapping->reclaim_memory(oldest_used_gen); }

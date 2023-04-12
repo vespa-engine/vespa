@@ -5,11 +5,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"math"
 	"net/http"
 	"net/url"
 	"strconv"
 	"strings"
-	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/vespa-engine/vespa/client/go/internal/util"
@@ -17,20 +18,30 @@ import (
 
 // Client represents a HTTP client for the /document/v1/ API.
 type Client struct {
-	options    ClientOptions
-	httpClient util.HTTPClient
-	stats      Stats
-	mu         sync.Mutex
-	now        func() time.Time
+	options     ClientOptions
+	httpClients []countingHTTPClient
+	now         func() time.Time
+	sendCount   int32
 }
 
 // ClientOptions specifices the configuration options of a feed client.
 type ClientOptions struct {
-	MaxConnsPerHost int
-	BaseURL         string
-	Timeout         time.Duration
-	Route           string
-	TraceLevel      *int
+	BaseURL    string
+	Timeout    time.Duration
+	Route      string
+	TraceLevel *int
+}
+
+type countingHTTPClient struct {
+	client   util.HTTPClient
+	inflight int64
+}
+
+func (c *countingHTTPClient) addInflight(n int64) { atomic.AddInt64(&c.inflight, n) }
+
+func (c *countingHTTPClient) Do(req *http.Request, timeout time.Duration) (*http.Response, error) {
+	defer c.addInflight(-1)
+	return c.client.Do(req, timeout)
 }
 
 type countingReader struct {
@@ -44,15 +55,19 @@ func (r *countingReader) Read(p []byte) (int, error) {
 	return n, err
 }
 
-func NewClient(options ClientOptions, httpClient util.HTTPClient) *Client {
-	c := &Client{
-		options:    options,
-		httpClient: httpClient,
-		stats:      NewStats(),
-		now:        time.Now,
+func NewClient(options ClientOptions, httpClients []util.HTTPClient) *Client {
+	if len(httpClients) < 1 {
+		panic("need at least one HTTP client")
 	}
-	httpClient.Transport().MaxConnsPerHost = options.MaxConnsPerHost
-	return c
+	countingClients := make([]countingHTTPClient, 0, len(httpClients))
+	for _, client := range httpClients {
+		countingClients = append(countingClients, countingHTTPClient{client: client})
+	}
+	return &Client{
+		options:     options,
+		httpClients: countingClients,
+		now:         time.Now,
+	}
 }
 
 func (c *Client) queryParams() url.Values {
@@ -115,53 +130,56 @@ func (c *Client) feedURL(d Document, queryParams url.Values) (string, *url.URL, 
 	return httpMethod, u, nil
 }
 
-// Send given document the URL configured in this client.
+func (c *Client) leastBusyClient() *countingHTTPClient {
+	leastBusy := c.httpClients[0]
+	min := int64(math.MaxInt64)
+	next := atomic.AddInt32(&c.sendCount, 1)
+	start := int(next) % len(c.httpClients)
+	for i := range c.httpClients {
+		j := (i + start) % len(c.httpClients)
+		client := c.httpClients[j]
+		inflight := atomic.LoadInt64(&client.inflight)
+		if inflight < min {
+			leastBusy = client
+			min = inflight
+		}
+	}
+	leastBusy.addInflight(1)
+	return &leastBusy
+}
+
+// Send given document to the endpoint configured in this client.
 func (c *Client) Send(document Document) Result {
 	start := c.now()
-	stats := NewStats()
-	stats.Requests = 1
-	defer func() {
-		latency := c.now().Sub(start)
-		stats.TotalLatency = latency
-		stats.MinLatency = latency
-		stats.MaxLatency = latency
-		c.addStats(&stats)
-	}()
+	result := Result{Id: document.Id, Stats: Stats{Requests: 1}}
 	method, url, err := c.feedURL(document, c.queryParams())
 	if err != nil {
-		stats.Errors = 1
-		return Result{Status: StatusError, Err: err}
+		return resultWithErr(result, err)
 	}
-	body := document.Body()
-	req, err := http.NewRequest(method, url.String(), bytes.NewReader(body))
+	req, err := http.NewRequest(method, url.String(), bytes.NewReader(document.Body))
 	if err != nil {
-		stats.Errors = 1
-		return Result{Status: StatusError, Err: err}
+		return resultWithErr(result, err)
 	}
-	resp, err := c.httpClient.Do(req, c.options.Timeout)
+	resp, err := c.leastBusyClient().Do(req, 190*time.Second)
 	if err != nil {
-		stats.Errors = 1
-		return Result{Status: StatusTransportFailure, Err: err}
+		return resultWithErr(result, err)
 	}
 	defer resp.Body.Close()
-	stats.Responses = 1
-	stats.ResponsesByCode = map[int]int64{
-		resp.StatusCode: 1,
-	}
-	stats.BytesSent = int64(len(body))
-	return c.createResult(document.Id, &stats, resp)
+	elapsed := c.now().Sub(start)
+	return c.resultWithResponse(resp, result, document, elapsed)
 }
 
-func (c *Client) Stats() Stats { return c.stats }
-
-func (c *Client) addStats(stats *Stats) {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-	c.stats.Add(*stats)
+func resultWithErr(result Result, err error) Result {
+	result.Stats.Errors++
+	result.Status = StatusTransportFailure
+	result.Err = err
+	return result
 }
 
-func (c *Client) createResult(id Id, stats *Stats, resp *http.Response) Result {
-	result := Result{Id: id}
+func (c *Client) resultWithResponse(resp *http.Response, result Result, document Document, elapsed time.Duration) Result {
+	result.HTTPStatus = resp.StatusCode
+	result.Stats.Responses++
+	result.Stats.ResponsesByCode = map[int]int64{resp.StatusCode: 1}
 	switch resp.StatusCode {
 	case 200:
 		result.Status = StatusSuccess
@@ -179,14 +197,18 @@ func (c *Client) createResult(id Id, stats *Stats, resp *http.Response) Result {
 	cr := countingReader{reader: resp.Body}
 	jsonDec := json.NewDecoder(&cr)
 	if err := jsonDec.Decode(&body); err != nil {
-		result.Status = StatusError
+		result.Status = StatusVespaFailure
 		result.Err = fmt.Errorf("failed to decode json response: %w", err)
 	}
 	result.Message = body.Message
 	result.Trace = string(body.Trace)
-	stats.BytesRecv = cr.bytesRead
-	if !result.Status.Success() {
-		stats.Errors = 1
+	result.Stats.BytesSent = int64(len(document.Body))
+	result.Stats.BytesRecv = cr.bytesRead
+	if !result.Success() {
+		result.Stats.Errors++
 	}
+	result.Stats.TotalLatency = elapsed
+	result.Stats.MinLatency = elapsed
+	result.Stats.MaxLatency = elapsed
 	return result
 }

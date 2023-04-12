@@ -93,13 +93,13 @@ public class ClusterStatsAggregator {
         for (ContentNodeStats contentNode : aggregatedStats) {
             Integer nodeIndex = contentNode.getNodeIndex();
 
-            ContentNodeStats statsToAdd = clusterStats.getContentNode(nodeIndex);
+            ContentNodeStats statsToAdd = clusterStats.getNodeStats(nodeIndex);
             if (statsToAdd != null) {
                 contentNode.add(statsToAdd);
             }
 
             if (prevClusterStats != null) {
-                ContentNodeStats statsToSubtract = prevClusterStats.getContentNode(nodeIndex);
+                ContentNodeStats statsToSubtract = prevClusterStats.getNodeStats(nodeIndex);
                 if (statsToSubtract != null) {
                     contentNode.subtract(statsToSubtract);
                 }

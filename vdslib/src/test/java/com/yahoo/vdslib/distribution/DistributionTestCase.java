@@ -345,36 +345,6 @@ public class DistributionTestCase {
     }
 
     @Test
-    public void testDistributorNoGroupTakeover() throws Exception {
-        test = new DistributionTestFactory("hierarchical-grouping-distributor-notakeover")
-                .setDistribution(buildHierarchicalConfig(6, 3, 1, "1|2|*", 3).distributor_auto_ownership_transfer_on_whole_group_down(false))
-                .setNodeType(NodeType.DISTRIBUTOR)
-                .setClusterState(new ClusterState("distributor:2 storage:9"));
-        int [] counts = new int[10];
-        int noneExisting = 0;
-        for (BucketId bucket : getTestBuckets()) {
-            DistributionTestFactory.Test t = test.recordResult(bucket);
-            List<Integer> nodes = t.getNodes();
-            if (nodes.isEmpty()) {
-                ++noneExisting;
-                t.assertFailure(DistributionTestFactory.Failure.NO_DISTRIBUTORS_AVAILABLE);
-            } else {
-                t.assertNodeCount(1);
-                for (int i : nodes) {
-                    ++counts[i];
-                }
-            }
-        }
-        for (int i=2; i<10; ++i) {
-            assertEquals(0, counts[i]);
-        }
-        for (int i=0; i<2; ++i) {
-            assertTrue(counts[i] > 0);
-        }
-        assertEquals(15, noneExisting);
-    }
-
-    @Test
     public void testHierarchicalDistributionDeep() throws Exception {
         System.out.println(new StorDistributionConfig(buildHierarchicalConfig(8, 5, 3, "*|*", 3)));
         test = new DistributionTestFactory("hierarchical-grouping-deep")

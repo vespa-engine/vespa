@@ -1,10 +1,13 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.processing.request;
 
+import com.yahoo.concurrent.CopyOnWriteHashMap;
+
 import java.util.AbstractList;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
 import static com.yahoo.text.Lowercase.toLowerCase;
 
@@ -18,9 +21,12 @@ import static com.yahoo.text.Lowercase.toLowerCase;
  */
 public final class CompoundName {
 
-    /**
-     * The string name of this compound.
-     */
+    private static final int MAX_CACHE_SIZE = 10_000;
+    private static final Map<String, CompoundName> cache = new CopyOnWriteHashMap<>();
+    /** The empty compound */
+    public static final CompoundName empty = CompoundName.from("");
+
+    /* The string name of this compound. */
     private final String name;
     private final String lowerCasedName;
 
@@ -31,9 +37,8 @@ public final class CompoundName {
 
     /** This name with the first component removed */
     private final CompoundName rest;
-
-    /** The empty compound */
-    public static final CompoundName empty = new CompoundName("");
+    /** This name with the last component removed */
+    private final CompoundName first;
 
     /**
      * Constructs this from a string which may contains dot-separated components
@@ -41,7 +46,10 @@ public final class CompoundName {
      * @throws NullPointerException if name is null
      */
     public CompoundName(String name) {
-        this(name, parse(name).toArray(new String[1]));
+        this(name, false);
+    }
+    private CompoundName(String name, boolean useCache) {
+        this(name, parse(name).toArray(new String[0]), useCache);
     }
 
     /** Constructs this from an array of name components which are assumed not to contain dots */
@@ -51,11 +59,11 @@ public final class CompoundName {
 
     /** Constructs this from a list of compounds. */
     public CompoundName(List<String> compounds) {
-        this(compounds.toArray(new String[compounds.size()]));
+        this(compounds.toArray(new String[0]));
     }
 
     private CompoundName(String [] compounds) {
-        this(toCompoundString(compounds), compounds);
+        this(toCompoundString(compounds), compounds, false);
     }
 
     /**
@@ -65,7 +73,7 @@ public final class CompoundName {
      * @param name the string representation of the compounds
      * @param compounds the compounds of this name
      */
-    private CompoundName(String name, String [] compounds) {
+    private CompoundName(String name, String [] compounds, boolean useCache) {
         if (name == null) throw new NullPointerException("Name can not be null");
 
         this.name = name;
@@ -74,13 +82,33 @@ public final class CompoundName {
             this.compounds = List.of();
             this.hashCode = 0;
             rest = this;
+            first = this;
             return;
         }
         this.compounds = new ImmutableArrayList(compounds);
         this.hashCode = this.compounds.hashCode();
 
-        rest = compounds.length > 1 ? new CompoundName(name.substring(compounds[0].length()+1), Arrays.copyOfRange(compounds, 1, compounds.length))
-                        : empty;
+        if (compounds.length > 1) {
+            String restName = name.substring(compounds[0].length()+1);
+            if (useCache) {
+                rest = cache.computeIfAbsent(restName, (key) -> new CompoundName(key, Arrays.copyOfRange(compounds, 1, compounds.length), useCache));
+            } else {
+                rest = new CompoundName(restName, Arrays.copyOfRange(compounds, 1, compounds.length), useCache);
+            }
+        } else {
+            rest = empty;
+        }
+
+        if (compounds.length > 1) {
+            String firstName = name.substring(0, name.length() - (compounds[compounds.length-1].length()+1));
+            if (useCache) {
+                first = cache.computeIfAbsent(firstName, (key) -> new CompoundName(key, Arrays.copyOfRange(compounds, 0, compounds.length-1), useCache));
+            } else {
+                first = new CompoundName(firstName, Arrays.copyOfRange(compounds, 0, compounds.length-1), useCache);
+            }
+        } else {
+            first = empty;
+        }
     }
 
     private static List<String> parse(String s) {
@@ -127,7 +155,7 @@ public final class CompoundName {
         int count = 0;
         for (String s : compounds) { newCompounds[count++] = s; }
         for (String s : name.compounds) { newCompounds[count++] = s; }
-        return new CompoundName(concat(this.name, name.name), newCompounds);
+        return new CompoundName(concat(this.name, name.name), newCompounds, false);
     }
 
     private static String concat(String name1, String name2) {
@@ -177,7 +205,8 @@ public final class CompoundName {
                                                this + "' only have " + compounds.size() + " components.");
         if (compounds.size() == n) return this;
         if (compounds.size() == 0) return empty;
-        return new CompoundName(compounds.subList(0, n));
+        if (compounds.size() - 1 == n) return first;
+        return first.first(n);
     }
 
     /**
@@ -284,15 +313,27 @@ public final class CompoundName {
 
     private static String toCompoundString(String [] compounds) {
         int all = compounds.length;
-        for (int i = 0; i < compounds.length; i++)
-            all += compounds[i].length();
+        for (String compound : compounds) all += compound.length();
         StringBuilder b = new StringBuilder(all);
-        for (int i = 0; i < compounds.length; i++)
-            b.append(compounds[i]).append(".");
+        for (String compound : compounds) b.append(compound).append(".");
         return b.length()==0 ? "" : b.substring(0, b.length()-1);
     }
 
-    public static CompoundName from(String name) { return new CompoundName(name); }
+    /**
+     *  Creates a CompoundName from a string, possibly reusing from cache.
+     *  Prefer over constructing on the fly.
+     **/
+    public static CompoundName from(String name) {
+        CompoundName found = cache.get(name);
+        if (found != null) return found;
+
+        if (cache.size() < MAX_CACHE_SIZE) {
+            CompoundName compound = new CompoundName(name, true);
+            cache.put(name, compound);
+            return compound;
+        }
+        return new CompoundName(name, false);
+    }
 
     private static class ImmutableArrayList extends AbstractList<String> {
 

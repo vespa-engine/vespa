@@ -65,8 +65,7 @@ public class ClusterSearcher extends Searcher {
 
     private final VespaBackEndSearcher server;
     private final Executor executor;
-    private final GlobalPhaseRanker globalPhaseHelper;
-    private final boolean enableGlobalPhase;
+    private final GlobalPhaseRanker globalPhaseRanker;
 
     @Inject
     public ClusterSearcher(ComponentId id,
@@ -76,15 +75,15 @@ public class ClusterSearcher extends Searcher {
                            DocumentdbInfoConfig documentDbConfig,
                            SchemaInfo schemaInfo,
                            ComponentRegistry<Dispatcher> dispatchers,
-                           GlobalPhaseRanker globalPhaseHelper,
+                           GlobalPhaseRanker globalPhaseRanker,
                            VipStatus vipStatus,
                            VespaDocumentAccess access) {
         super(id);
         this.executor = executor;
-        this.globalPhaseHelper = globalPhaseHelper;
         int searchClusterIndex = clusterConfig.clusterId();
         searchClusterName = clusterConfig.clusterName();
         QrSearchersConfig.Searchcluster searchClusterConfig = getSearchClusterConfigFromClusterName(qrsConfig, searchClusterName);
+        this.globalPhaseRanker = searchClusterConfig.globalphase() ? globalPhaseRanker : null;
         schemas = new LinkedHashSet<>();
 
         maxQueryTimeout = ParameterParser.asMilliSeconds(clusterConfig.maxQueryTimeout(), DEFAULT_MAX_QUERY_TIMEOUT);
@@ -106,7 +105,6 @@ public class ClusterSearcher extends Searcher {
             server = searchDispatch(searchClusterIndex, searchClusterName, uniqueServerId,
                                     docSumParams, documentDbConfig, schemaInfo, dispatchers);
         }
-        enableGlobalPhase = searchClusterConfig.globalphase();
     }
 
     private static QrSearchersConfig.Searchcluster getSearchClusterConfigFromClusterName(QrSearchersConfig config, String name) {
@@ -165,8 +163,7 @@ public class ClusterSearcher extends Searcher {
         maxQueryCacheTimeout = DEFAULT_MAX_QUERY_CACHE_TIMEOUT;
         server = searcher;
         this.executor = executor;
-        this.globalPhaseHelper = null;
-        this.enableGlobalPhase = false;
+        this.globalPhaseRanker = null;
     }
 
     /** Do not use, for internal testing purposes only. **/
@@ -247,10 +244,13 @@ public class ClusterSearcher extends Searcher {
             throw new IllegalStateException("perSchemaSearch must always be called with 1 schema, got: " + restrict.size());
         }
         String schema = restrict.iterator().next();
-        Result result = searcher.search(query, execution);
-        if (globalPhaseHelper != null && enableGlobalPhase) {
-            globalPhaseHelper.process(query, result, schema);
+        boolean useGlobalPhase = globalPhaseRanker != null;
+        if (useGlobalPhase) {
+            var error = globalPhaseRanker.validateNoSorting(query, schema).orElse(null);
+            if (error != null) return new Result(query, error);
         }
+        Result result = searcher.search(query, execution);
+        if (useGlobalPhase) globalPhaseRanker.rerankHits(query, result, schema);
         return result;
     }
 

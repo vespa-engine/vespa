@@ -167,7 +167,7 @@ class HostRequestHandlerTest {
     }
 
     @Test
-    void returns_200_on_success() throws IOException {
+    void returns_200_on_success() {
         RestApiTestDriver testDriver = createTestDriver(alwaysAllowOrchestrator);
 
         HttpResponse response = executeRequest(testDriver, Method.PUT, "/orchestrator/v1/hosts/hostname/suspended", null);
@@ -176,7 +176,7 @@ class HostRequestHandlerTest {
     }
 
     @Test
-    void throws_404_when_host_unknown() throws IOException {
+    void throws_404_when_host_unknown() {
         RestApiTestDriver testDriver = createTestDriver(hostNotFoundOrchestrator);
 
         HttpResponse response = executeRequest(testDriver, Method.PUT, "/orchestrator/v1/hosts/hostname/suspended", null);
@@ -216,7 +216,7 @@ class HostRequestHandlerTest {
     }
 
     @Test
-    void throws_409_when_request_rejected_by_policies() throws IOException {
+    void throws_409_when_request_rejected_by_policies() {
         RestApiTestDriver testDriver = createTestDriver(alwaysRejectOrchestrator);
 
         HttpResponse response = executeRequest(testDriver, Method.PUT, "/orchestrator/v1/hosts/hostname/suspended", null);
@@ -224,7 +224,7 @@ class HostRequestHandlerTest {
     }
 
     @Test
-    void patch_state_may_throw_bad_request() throws IOException {
+    void patch_state_may_throw_bad_request() {
         Orchestrator orchestrator = mock(Orchestrator.class);
         RestApiTestDriver testDriver = createTestDriver(orchestrator);
 
@@ -236,7 +236,7 @@ class HostRequestHandlerTest {
     }
 
     @Test
-    void patch_works() throws OrchestrationException, IOException {
+    void patch_works() throws OrchestrationException {
         Orchestrator orchestrator = mock(Orchestrator.class);
         RestApiTestDriver testDriver = createTestDriver(orchestrator);
 
@@ -251,7 +251,7 @@ class HostRequestHandlerTest {
     }
 
     @Test
-    void patch_handles_exception_in_orchestrator() throws OrchestrationException, IOException {
+    void patch_handles_exception_in_orchestrator() throws OrchestrationException {
         Orchestrator orchestrator = mock(Orchestrator.class);
         RestApiTestDriver testDriver = createTestDriver(orchestrator);
 
@@ -265,7 +265,7 @@ class HostRequestHandlerTest {
     }
 
     @Test
-    void getHost_works() throws Exception {
+    void getHost_works() {
         Orchestrator orchestrator = mock(Orchestrator.class);
         RestApiTestDriver testDriver = createTestDriver(orchestrator);
 

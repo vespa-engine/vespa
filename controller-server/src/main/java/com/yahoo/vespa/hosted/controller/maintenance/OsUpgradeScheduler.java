@@ -40,7 +40,7 @@ public class OsUpgradeScheduler extends ControllerMaintainer {
             if (!change.get().scheduleAt(now)) continue;
             controller().upgradeOsIn(cloud, change.get().version(), false);
         }
-        return 1.0;
+        return 0.0;
     }
 
     /** Returns the wanted change for cloud at given instant, if any */

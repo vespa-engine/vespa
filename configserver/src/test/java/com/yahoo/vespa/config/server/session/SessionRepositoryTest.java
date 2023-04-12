@@ -26,8 +26,6 @@ import com.yahoo.vespa.config.server.http.InvalidApplicationException;
 import com.yahoo.vespa.config.server.modelfactory.ModelFactoryRegistry;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.config.server.tenant.TestTenantRepository;
-import com.yahoo.vespa.config.util.ConfigUtils;
-import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.mock.MockCurator;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.model.VespaModel;
@@ -270,12 +268,10 @@ public class SessionRepositoryTest {
         SessionZooKeeperClient zkc = new SessionZooKeeperClient(curator,
                                                                 tenantName,
                                                                 sessionId,
-                                                                ConfigUtils.getCanonicalHostName());
+                                                                applicationRepository.configserverConfig());
         zkc.createNewSession(Instant.now());
-        if (wait) {
-            Curator.CompletionWaiter waiter = zkc.getUploadWaiter();
-            waiter.awaitCompletion(Duration.ofSeconds(120));
-        }
+        if (wait)
+            zkc.getUploadWaiter().awaitCompletion(Duration.ofSeconds(120));
     }
 
     private void assertStatusChange(long sessionId, Session.Status status) throws Exception {

@@ -6,15 +6,15 @@ import com.yahoo.component.AbstractComponent;
 import com.yahoo.component.annotation.Inject;
 import com.yahoo.protect.Process;
 import com.yahoo.yolean.Exceptions;
+
 import java.time.Duration;
 import java.time.Instant;
-import java.util.List;
 import java.util.Objects;
 import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import static com.yahoo.vespa.zookeeper.Configurator.serverSpec;
+import static java.util.stream.Collectors.joining;
 
 /**
  * Starts zookeeper server and supports reconfiguring zookeeper cluster. Keep this as a component
@@ -26,9 +26,11 @@ public class Reconfigurer extends AbstractComponent {
 
     private static final Logger log = java.util.logging.Logger.getLogger(Reconfigurer.class.getName());
 
-    private static final Duration TIMEOUT = Duration.ofMinutes(15);
+    static final Duration TIMEOUT = Duration.ofMinutes(15);
 
     private final ExponentialBackoff backoff = new ExponentialBackoff(Duration.ofMillis(50), Duration.ofSeconds(10));
+    private final Duration timeout;
+    private final boolean haltOnFailure;
     private final VespaZooKeeperAdmin vespaZooKeeperAdmin;
     private final Sleeper sleeper;
 
@@ -38,12 +40,14 @@ public class Reconfigurer extends AbstractComponent {
 
     @Inject
     public Reconfigurer(VespaZooKeeperAdmin vespaZooKeeperAdmin) {
-        this(vespaZooKeeperAdmin, new Sleeper());
+        this(vespaZooKeeperAdmin, new Sleeper(), true, TIMEOUT);
     }
 
-    Reconfigurer(VespaZooKeeperAdmin vespaZooKeeperAdmin, Sleeper sleeper) {
+    public Reconfigurer(VespaZooKeeperAdmin vespaZooKeeperAdmin, Sleeper sleeper, boolean haltOnFailure, Duration timeout) {
         this.vespaZooKeeperAdmin = Objects.requireNonNull(vespaZooKeeperAdmin);
         this.sleeper = Objects.requireNonNull(sleeper);
+        this.haltOnFailure = haltOnFailure;
+        this.timeout = timeout;
     }
 
     @Override
@@ -86,14 +90,15 @@ public class Reconfigurer extends AbstractComponent {
     // TODO jonmv: wrap Curator in Provider, for Curator shutdown
     private void reconfigure(ZookeeperServerConfig newConfig) {
         Instant reconfigTriggered = Instant.now();
-        String newServers = String.join(",", servers(newConfig));
+        String newServers = servers(newConfig);
         log.log(Level.INFO, "Will reconfigure ZooKeeper cluster." +
                             "\nServers in active config:" + servers(activeConfig) +
-                            "\nServers in new config:" + servers(newConfig));
+                            "\nServers in new config:" + newServers);
         String connectionSpec = vespaZooKeeperAdmin.localConnectionSpec(activeConfig);
         Instant now = Instant.now();
-        Duration reconfigTimeout = reconfigTimeout();
-        Instant end = now.plus(reconfigTimeout);
+        // For reconfig to succeed, the current and resulting ensembles must have a majority. When an ensemble grows and
+        // the joining servers outnumber the existing ones, we have to wait for enough of them to start to have a majority.
+        Instant end = now.plus(timeout);
         // Loop reconfiguring since we might need to wait until another reconfiguration is finished before we can succeed
         for (int attempt = 1; ; attempt++) {
             try {
@@ -116,29 +121,20 @@ public class Reconfigurer extends AbstractComponent {
                 }
                 else {
                     log.log(Level.SEVERE, "Reconfiguration attempt " + attempt + " failed, and was failing for " +
-                                          reconfigTimeout + "; giving up now: " + Exceptions.toMessageString(e));
-                    shutdownAndDie(reconfigTimeout);
+                                          timeout + "; giving up now: " + Exceptions.toMessageString(e));
+                    shutdown();
+                    if (haltOnFailure)
+                        Process.logAndDie("Reconfiguration did not complete within timeout " + timeout + ". Forcing container shutdown.");
+                    else
+                        throw e;
                 }
             }
         }
     }
 
-    private void shutdownAndDie(Duration reconfigTimeout) {
-        shutdown();
-        Process.logAndDie("Reconfiguration did not complete within timeout " + reconfigTimeout + ". Forcing container shutdown.");
-    }
-
-    private static Duration reconfigTimeout() {
-        // For reconfig to succeed, the current and resulting ensembles must have a majority. When an ensemble grows and
-        // the joining servers outnumber the existing ones, we have to wait for enough of them to start to have a majority.
-        return TIMEOUT;
-    }
-
-    private static List<String> servers(ZookeeperServerConfig config) {
-        return config.server().stream()
-                     .filter(server -> ! server.retired())
-                     .map(server -> serverSpec(server, false))
-                     .toList();
+    private static String servers(ZookeeperServerConfig config) {
+        return Configurator.getServerConfig(config.server().stream().filter(server -> ! server.retired()).toList(), -1)
+                           .entrySet().stream().map(entry -> entry.getKey() + "=" + entry.getValue()).collect(joining(","));
     }
 
 }

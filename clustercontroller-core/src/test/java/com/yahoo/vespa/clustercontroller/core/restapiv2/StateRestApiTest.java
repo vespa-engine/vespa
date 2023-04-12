@@ -18,7 +18,6 @@ import com.yahoo.vespa.clustercontroller.core.hostinfo.HostInfo;
 import com.yahoo.vespa.clustercontroller.utils.staterestapi.StateRestAPI;
 import com.yahoo.vespa.clustercontroller.utils.staterestapi.requests.UnitStateRequest;
 import com.yahoo.vespa.clustercontroller.utils.staterestapi.server.JsonWriter;
-
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -51,7 +50,7 @@ public abstract class StateRestApiTest {
     }
 
     protected void setUp(boolean dontInitializeNode2) throws Exception {
-        Distribution distribution = new Distribution(Distribution.getSimpleGroupConfig(2, 10));
+        Distribution distribution = new Distribution(getSimpleGroupConfig(2, 10));
         jsonWriter.setDefaultPathPrefix("/cluster/v2");
         {
             Set<ConfiguredNode> nodes = FleetControllerTest.toNodes(0, 1, 2, 3);
@@ -94,7 +93,7 @@ public abstract class StateRestApiTest {
 
     protected void setUpMusicGroup(int nodeCount, String node1StateString) {
         books = null;
-        Distribution distribution = new Distribution(Distribution.getSimpleGroupConfig(2, nodeCount));
+        Distribution distribution = new Distribution(getSimpleGroupConfig(2, nodeCount));
         jsonWriter.setDefaultPathPrefix("/cluster/v2");
         ContentCluster cluster = new ContentCluster("music", distribution.getNodes(), distribution);
         initializeCluster(cluster, distribution.getNodes());
@@ -167,4 +166,40 @@ public abstract class StateRestApiTest {
                 "    }\n" +
                 "}";
     }
+
+    // TODO: Use config builder instead of creating raw: config
+    private static String getSimpleGroupConfig(int redundancy, int nodeCount) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("raw:redundancy ").append(redundancy).append("\n").append("group[4]\n");
+
+        int group = 0;
+        sb.append("group[" + group + "].index \"invalid\"\n")
+          .append("group[" + group + "].name \"invalid\"\n")
+          .append("group[" + group + "].partitions \"1|*\"\n");
+
+        ++group;
+        sb.append("group[" + group + "].index \"0\"\n")
+          .append("group[" + group + "].name \"east\"\n")
+          .append("group[" + group + "].partitions \"*\"\n");
+
+        ++group;
+        sb.append("group[" + group + "].index \"0.0\"\n")
+          .append("group[" + group + "].name \"g1\"\n")
+          .append("group[" + group + "].partitions \"*\"\n")
+          .append("group[" + group + "].nodes[").append((nodeCount + 1) / 2).append("]\n");
+        for (int i=0; i<nodeCount; i += 2) {
+            sb.append("group[" + group + "].nodes[").append(i / 2).append("].index ").append(i).append("\n");
+        }
+
+        ++group;
+        sb.append("group[" + group + "].index \"0.1\"\n")
+          .append("group[" + group + "].name \"g2\"\n")
+          .append("group[" + group + "].partitions \"*\"\n")
+          .append("group[" + group + "].nodes[").append(nodeCount / 2).append("]\n");
+        for (int i=1; i<nodeCount; i += 2) {
+            sb.append("group[" + group + "].nodes[").append(i / 2).append("].index ").append(i).append("\n");
+        }
+        return sb.toString();
+    }
+
 }

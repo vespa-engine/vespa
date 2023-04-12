@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.Optional;
 import java.util.OptionalDouble;
@@ -165,4 +166,32 @@ public class SlimeUtils {
                                     false);
     }
 
+    public static boolean equalTo(Inspector a, Inspector b) {
+        if (a.type() != b.type()) return false;
+
+        switch (a.type()) {
+            case NIX: return a.valid() == b.valid();
+            case BOOL: return a.asBool() == b.asBool();
+            case LONG: return a.asLong() == b.asLong();
+            case DOUBLE: return Double.compare(a.asDouble(), b.asDouble()) == 0;
+            case STRING: return a.asString().equals(b.asString());
+            case DATA: return Arrays.equals(a.asData(), b.asData());
+            case ARRAY: {
+                if (a.entries() != b.entries()) return false;
+                for (int i = 0; i < a.entries(); i++) {
+                    if (!equalTo(a.entry(i), b.entry(i))) return false;
+                }
+                return true;
+            }
+            case OBJECT: {
+                if (a.fields() != b.fields()) return false;
+                boolean[] equal = new boolean[]{ true };
+                a.traverse((String key, Inspector value) -> {
+                    if (equal[0] && !equalTo(value, b.field(key))) equal[0] = false;
+                });
+                return equal[0];
+            }
+            default: throw new IllegalStateException("Unexpected type: " + a.type());
+        }
+    }
 }

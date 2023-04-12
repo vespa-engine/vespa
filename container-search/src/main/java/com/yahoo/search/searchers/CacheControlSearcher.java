@@ -32,9 +32,9 @@ import com.yahoo.search.searchchain.Execution;
  */
 public class CacheControlSearcher extends Searcher {
 
-    private static final CompoundName cachecontrolNocache=new CompoundName("cachecontrol.nocache");
-    private static final CompoundName cachecontrolMaxage=new CompoundName("cachecontrol.maxage");
-    private static final CompoundName cachecontrolStaleage=new CompoundName("cachecontrol.staleage");
+    private static final CompoundName cachecontrolNocache=CompoundName.from("cachecontrol.nocache");
+    private static final CompoundName cachecontrolMaxage=CompoundName.from("cachecontrol.maxage");
+    private static final CompoundName cachecontrolStaleage=CompoundName.from("cachecontrol.staleage");
 
     public static final String CACHE_CONTROL_HEADER = "Cache-Control";
 

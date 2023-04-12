@@ -79,7 +79,7 @@ public class ApplicationOwnershipConfirmer extends ControllerMaintainer {
                                log.log(Level.INFO, "Exception caught when attempting to file an issue for '" + application.id() + "': " + Exceptions.toMessageString(e));
                            }
                        });
-        return asSuccessFactor(attempts.get(), failures.get());
+        return asSuccessFactorDeviation(attempts.get(), failures.get());
     }
 
     private boolean isInCurrentShard(TenantAndApplicationId id) {
@@ -122,7 +122,7 @@ public class ApplicationOwnershipConfirmer extends ControllerMaintainer {
                         log.log(Level.INFO, "Exception caught when attempting to escalate issue with id '" + issueId + "': " + Exceptions.toMessageString(e));
                     }
                 });
-        return asSuccessFactor(attempts.get(), failures.get());
+        return asSuccessFactorDeviation(attempts.get(), failures.get());
     }
 
     private double updateConfirmedApplicationOwners() {
@@ -149,7 +149,7 @@ public class ApplicationOwnershipConfirmer extends ControllerMaintainer {
                         log.log(Level.INFO, "Exception caught when attempting to find confirmed owner of issue with id '" + issueId + "': " + Exceptions.toMessageString(e));
                     }
                 });
-        return asSuccessFactor(attempts.get(), failures.get());
+        return asSuccessFactorDeviation(attempts.get(), failures.get());
     }
 
     private ApplicationList applications() {

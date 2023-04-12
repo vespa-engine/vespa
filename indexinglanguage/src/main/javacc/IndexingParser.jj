@@ -205,6 +205,7 @@ TOKEN :
     <ZCURVE: "zcurve"> |
     <TRUE: "true" > |
     <FALSE: "false" > |
+    <UNDERSCORE: "_"> |
     <IDENTIFIER: ["a"-"z","A"-"Z", "_"] (["a"-"z","A"-"Z","0"-"9","_","-"])*>
 }
 
@@ -343,6 +344,7 @@ Expression value() :
       val = trimExp()               |
       val = literalBoolExp()        |
       val = zcurveExp()             |
+      val = executionValueExp()     |
       ( <LPAREN> val = statement() <RPAREN> { val = new ParenthesisExpression(val); } ) )
     { return val; }
 }
@@ -750,6 +752,12 @@ Expression zcurveExp() : { }
 {
     ( <ZCURVE> )
     { return new ZCurveExpression(); }
+}
+
+Expression executionValueExp() : { }
+{
+    ( <UNDERSCORE> )
+    { return new ExecutionValueExpression(); }
 }
 
 String identifier() :

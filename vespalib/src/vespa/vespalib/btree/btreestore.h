@@ -50,8 +50,8 @@ public:
     using CompactionSpec = datastore::CompactionSpec;
     using CompactionStrategy = datastore::CompactionStrategy;
     using EntryRef = datastore::EntryRef;
-    template <typename EntryType>
-    using BufferType = datastore::BufferType<EntryType>;
+    template <typename ElemT>
+    using BufferType = datastore::BufferType<ElemT>;
     using BufferState = datastore::BufferState;
 
     static constexpr uint32_t clusterLimit = 8;
@@ -105,9 +105,9 @@ public:
         _allocator.disableFreeLists();
     }
 
-    void disableElemHoldList() {
-        _store.disableElemHoldList();
-        _allocator.disableElemHoldList();
+    void disable_entry_hold_list() {
+        _store.disable_entry_hold_list();
+        _allocator.disable_entry_hold_list();
     }
 
     BTreeTypeRefPair allocNewBTree() {
@@ -381,5 +381,9 @@ using namespace btree;
 extern template class BufferType<BTreeRoot<uint32_t, uint32_t, NoAggregated, std::less<uint32_t>, BTreeDefaultTraits>>;
 extern template class BufferType<BTreeRoot<uint32_t, BTreeNoLeafData, NoAggregated, std::less<uint32_t>, BTreeDefaultTraits>>;
 extern template class BufferType<BTreeRoot<uint32_t, int32_t, MinMaxAggregated, std::less<uint32_t>, BTreeDefaultTraits, MinMaxAggrCalc>>;
+
+extern template class BufferType<BTreeKeyData<uint32_t, uint32_t>>;
+extern template class BufferType<BTreeKeyData<uint32_t, int32_t>>;
+extern template class BufferType<BTreeKeyData<uint32_t, BTreeNoLeafData>>;
 
 }

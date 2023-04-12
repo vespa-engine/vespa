@@ -1,5 +1,4 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-
 package com.yahoo.vespa.clustercontroller.core.restapiv2.requests;
 
 import com.yahoo.vdslib.state.ClusterState;
@@ -17,7 +16,6 @@ import com.yahoo.vespa.clustercontroller.utils.staterestapi.response.SetResponse
 import com.yahoo.vespa.clustercontroller.utils.staterestapi.response.UnitState;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -31,7 +29,10 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 public class SetNodeStateRequestTest {
+
     private static final String REASON = "operator";
+    private static final boolean inMasterMoratorium = false;
+
     private final ContentCluster cluster = mock(ContentCluster.class);
     private final SetUnitStateRequest.Condition condition = SetUnitStateRequest.Condition.SAFE;
     private final Map<String, UnitState> newStates = new HashMap<>();
@@ -40,7 +41,7 @@ public class SetNodeStateRequestTest {
     private final Node storageNode = new Node(NodeType.STORAGE, NODE_INDEX);
     private final NodeListener stateListener = mock(NodeListener.class);
     private final ClusterState currentClusterState = mock(ClusterState.class);
-    private boolean inMasterMoratorium = false;
+
     private boolean probe = false;
 
     @BeforeEach

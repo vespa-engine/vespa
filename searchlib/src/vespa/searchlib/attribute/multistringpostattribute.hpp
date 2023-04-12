@@ -3,8 +3,8 @@
 #pragma once
 
 #include "multistringpostattribute.h"
-#include "multistringattribute.hpp"
 #include "multi_string_enum_search_context.h"
+#include <vespa/searchcommon/attribute/config.h>
 #include <vespa/searchlib/query/query_term_simple.h>
 
 namespace search {
@@ -27,7 +27,7 @@ template <typename B, typename T>
 MultiValueStringPostingAttributeT<B, T>::~MultiValueStringPostingAttributeT()
 {
     this->disableFreeLists();
-    this->disableElemHoldList();
+    this->disable_entry_hold_list();
     clearAllPostings();
 }
 

@@ -4,6 +4,7 @@
 
 #include "multinumericpostattribute.h"
 #include "multi_numeric_enum_search_context.h"
+#include <vespa/searchcommon/attribute/config.h>
 #include <charconv>
 
 namespace search {
@@ -50,7 +51,7 @@ template <typename B, typename M>
 MultiValueNumericPostingAttribute<B, M>::~MultiValueNumericPostingAttribute()
 {
     this->disableFreeLists();
-    this->disableElemHoldList();
+    this->disable_entry_hold_list();
     clearAllPostings();
 }
 

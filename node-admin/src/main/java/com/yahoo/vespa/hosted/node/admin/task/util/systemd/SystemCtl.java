@@ -91,7 +91,7 @@ public class SystemCtl {
     public String getServiceProperty(TaskContext context, String unit, String property) {
         return newCommandLine(context)
                 .add("systemctl", "show", "--property", property, "--value", unit + ".service")
-                .execute()
+                .executeSilently()
                 .getOutput();
     }
 

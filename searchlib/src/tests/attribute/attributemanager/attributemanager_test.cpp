@@ -6,7 +6,7 @@
 #include <vespa/searchlib/attribute/attributemanager.h>
 #include <vespa/searchlib/attribute/configconverter.h>
 #include <vespa/searchlib/attribute/multinumericattribute.h>
-#include <vespa/searchlib/attribute/multinumericattribute.hpp>
+#include <vespa/searchlib/attribute/multinumericattribute.h>
 #include <vespa/vespalib/testkit/testapp.h>
 
 #include <vespa/log/log.h>

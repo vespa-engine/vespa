@@ -3,12 +3,14 @@
 #pragma once
 
 #include "multinumericenumattribute.h"
+#include "enum_store_loaders.h"
 #include "load_utils.h"
 #include "loadednumericvalue.h"
 #include "enumerated_multi_value_read_view.h"
 #include "multi_numeric_enum_search_context.h"
 #include <vespa/searchlib/query/query_term_simple.h>
 #include <vespa/searchlib/util/fileutil.hpp>
+#include <vespa/vespalib/util/array.hpp>
 #include <vespa/vespalib/util/stash.h>
 
 namespace search {

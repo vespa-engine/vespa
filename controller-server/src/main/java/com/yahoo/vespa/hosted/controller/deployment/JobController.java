@@ -713,6 +713,7 @@ public class JobController {
             // TODO(mpolden): Enable for public CD once all tests have been updated
             if (controller.system() != SystemName.PublicCd) {
                 controller.applications().validatePackage(applicationPackage, application.get());
+                controller.applications().decideCloudAccountOf(new DeploymentId(id, type.zone()), applicationPackage.deploymentSpec());
             }
             controller.applications().store(application);
         });

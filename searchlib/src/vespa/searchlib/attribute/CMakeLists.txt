@@ -40,6 +40,7 @@ vespa_add_library(searchlib_attribute OBJECT
     dociditerator.cpp
     document_weight_or_filter_search.cpp
     searchcontextelementiterator.cpp
+    empty_search_context.cpp
     enumattribute.cpp
     enumattributesaver.cpp
     enumcomparator.cpp

@@ -17,7 +17,7 @@ namespace storage {
 
 struct AppKiller {
     using UP = std::unique_ptr<AppKiller>;
-    virtual ~AppKiller() {}
+    virtual ~AppKiller() = default;
     virtual void kill() = 0;
 };
 

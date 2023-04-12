@@ -63,7 +63,7 @@ public class HostResumeProvisioner extends NodeRepositoryMaintainer {
                 }
             }
         }
-        return asSuccessFactor(hosts.size(), failures);
+        return asSuccessFactorDeviation(hosts.size(), failures);
     }
 
     private void setIpConfig(Node host, NodeList children, HostIpConfig hostIpConfig) {

@@ -1,5 +1,5 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.search.query.properties.test;
+package com.yahoo.search.query.properties;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -9,11 +9,12 @@ import java.util.HashSet;
 
 import com.yahoo.processing.request.properties.PropertyMap;
 import org.junit.jupiter.api.Test;
-import com.yahoo.search.query.properties.SubProperties;
 
 /**
  * @author <a href="mailto:arnebef@yahoo-inc.com">Arne Bergene Fossaa</a>
  */
+@SuppressWarnings({"removal"})
+
 public class SubPropertiesTestCase {
 
     @Test

@@ -350,3 +350,10 @@ template WeightedPostingChangeMap PostingChangeComputerT<ValueIndex, WeightedPos
                                                 const EnumIndexMapper &);
 
 }
+
+namespace vespalib {
+
+template class Array<search::AttributePosting>;
+template class Array<search::AttributeWeightPosting>;
+
+}

@@ -144,11 +144,13 @@ public class ReconfigurerTest {
 
         TestableReconfigurer(TestableVespaZooKeeperAdmin zooKeeperAdmin) {
             super(zooKeeperAdmin, new Sleeper() {
-                @Override
-                public void sleep(Duration duration) {
-                    // Do nothing
-                }
-            });
+                      @Override
+                      public void sleep(Duration duration) {
+                          // Do nothing
+                      }
+                  },
+                  false,
+                  Reconfigurer.TIMEOUT);
             this.zooKeeperAdmin = zooKeeperAdmin;
             HostName.setHostNameForTestingOnly("node1");
         }

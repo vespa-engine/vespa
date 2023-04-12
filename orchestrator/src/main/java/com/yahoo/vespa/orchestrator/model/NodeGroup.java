@@ -61,8 +61,7 @@ public class NodeGroup {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof NodeGroup)) return false;
-        NodeGroup nodeGroup = (NodeGroup) o;
+        if (!(o instanceof NodeGroup nodeGroup)) return false;
         return Objects.equals(application, nodeGroup.application) &&
                 Objects.equals(hostNames, nodeGroup.hostNames);
     }
@@ -71,4 +70,5 @@ public class NodeGroup {
     public int hashCode() {
         return Objects.hash(application, hostNames);
     }
+
 }

@@ -4,6 +4,7 @@
 
 #include <vespa/searchcommon/attribute/config.h>
 #include <vespa/vespalib/stllike/string.h>
+#include <vespa/vespalib/util/arrayref.h>
 #include <memory>
 #include <utility>
 #include <vector>
@@ -51,6 +52,9 @@ public:
     AttributeBuilder& fill(std::initializer_list<vespalib::string> values);
     AttributeBuilder& fill_array(std::initializer_list<StringList> values);
     AttributeBuilder& fill_wset(std::initializer_list<WeightedStringList> values);
+
+    // Fill function for raw attributes
+    AttributeBuilder& fill(std::initializer_list<vespalib::ConstArrayRef<char>> values);
 
     /**
      * Fill this tensor attribute with the given tensor values.

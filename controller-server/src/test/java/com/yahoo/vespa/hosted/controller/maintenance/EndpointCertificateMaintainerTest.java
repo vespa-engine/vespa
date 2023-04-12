@@ -49,7 +49,7 @@ public class EndpointCertificateMaintainerTest {
     @Test
     void old_and_unused_cert_is_deleted() {
         tester.curator().writeEndpointCertificateMetadata(ApplicationId.defaultId(), exampleMetadata);
-        assertEquals(1.0, maintainer.maintain(), 0.0000001);
+        assertEquals(0.0, maintainer.maintain(), 0.0000001);
         assertTrue(tester.curator().readEndpointCertificateMetadata(ApplicationId.defaultId()).isEmpty());
     }
 
@@ -57,7 +57,7 @@ public class EndpointCertificateMaintainerTest {
     void unused_but_recently_used_cert_is_not_deleted() {
         EndpointCertificateMetadata recentlyRequestedCert = exampleMetadata.withLastRequested(tester.clock().instant().minusSeconds(3600).getEpochSecond());
         tester.curator().writeEndpointCertificateMetadata(ApplicationId.defaultId(), recentlyRequestedCert);
-        assertEquals(1.0, maintainer.maintain(), 0.0000001);
+        assertEquals(0.0, maintainer.maintain(), 0.0000001);
         assertEquals(Optional.of(recentlyRequestedCert), tester.curator().readEndpointCertificateMetadata(ApplicationId.defaultId()));
     }
 
@@ -69,7 +69,7 @@ public class EndpointCertificateMaintainerTest {
         secretStore.setSecret(exampleMetadata.keyName(), "foo", 1);
         secretStore.setSecret(exampleMetadata.certName(), "bar", 1);
 
-        assertEquals(1.0, maintainer.maintain(), 0.0000001);
+        assertEquals(0.0, maintainer.maintain(), 0.0000001);
 
         var updatedCert = Optional.of(recentlyRequestedCert.withLastRefreshed(tester.clock().instant().getEpochSecond()).withVersion(1));
 
@@ -90,7 +90,7 @@ public class EndpointCertificateMaintainerTest {
 
         deploymentContext.submit(applicationPackage).runJob(systemTest).runJob(stagingTest).runJob(productionUsWest1);
 
-        assertEquals(1.0, maintainer.maintain(), 0.0000001);
+        assertEquals(0.0, maintainer.maintain(), 0.0000001);
         var metadata = tester.curator().readEndpointCertificateMetadata(appId).orElseThrow();
         tester.controller().serviceRegistry().endpointCertificateProvider().certificateDetails(metadata.rootRequestId()); // cert should not be deleted, the app is deployed!
     }
@@ -110,7 +110,7 @@ public class EndpointCertificateMaintainerTest {
         var originalMetadata = tester.curator().readEndpointCertificateMetadata(appId).orElseThrow();
 
         // cert should not be deleted, the app is deployed!
-        assertEquals(1.0, maintainer.maintain(), 0.0000001);
+        assertEquals(0.0, maintainer.maintain(), 0.0000001);
         assertEquals(tester.curator().readEndpointCertificateMetadata(appId), Optional.of(originalMetadata));
         tester.controller().serviceRegistry().endpointCertificateProvider().certificateDetails(originalMetadata.rootRequestId());
 
@@ -121,7 +121,7 @@ public class EndpointCertificateMaintainerTest {
         tester.controller().serviceRegistry().endpointCertificateProvider().requestCaSignedCertificate(appId, originalMetadata.requestedDnsSans(), Optional.of(originalMetadata));
 
         // We should now pick up the new key and cert version + uuid, but not force trigger deployment yet
-        assertEquals(1.0, maintainer.maintain(), 0.0000001);
+        assertEquals(0.0, maintainer.maintain(), 0.0000001);
         deploymentContext.assertNotRunning(productionUsWest1);
         var updatedMetadata = tester.curator().readEndpointCertificateMetadata(appId).orElseThrow();
         assertNotEquals(originalMetadata.leafRequestId().orElseThrow(), updatedMetadata.leafRequestId().orElseThrow());
@@ -130,7 +130,7 @@ public class EndpointCertificateMaintainerTest {
         // after another 4 days, we should force trigger deployment if it hasn't already happened
         tester.clock().advance(Duration.ofDays(4).plusSeconds(1));
         deploymentContext.assertNotRunning(productionUsWest1);
-        assertEquals(1.0, maintainer.maintain(), 0.0000001);
+        assertEquals(0.0, maintainer.maintain(), 0.0000001);
         deploymentContext.assertRunning(productionUsWest1);
     }
 
@@ -156,7 +156,7 @@ public class EndpointCertificateMaintainerTest {
         ApplicationId unknown = ApplicationId.fromSerializedForm("applicationid:is:unknown");
         endpointCertificateProvider.requestCaSignedCertificate(unknown, List.of("a", "b", "c"), Optional.empty()); // Unknown to controller!
 
-        assertEquals(1.0, maintainer.maintain(), 0.0000001);
+        assertEquals(0.0, maintainer.maintain(), 0.0000001);
 
         assertTrue(endpointCertificateProvider.dnsNamesOf(unknown).isEmpty());
         assertTrue(endpointCertificateProvider.listCertificates().isEmpty());

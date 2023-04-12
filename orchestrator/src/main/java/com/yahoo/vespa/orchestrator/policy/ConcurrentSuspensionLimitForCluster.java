@@ -12,7 +12,7 @@ public enum ConcurrentSuspensionLimitForCluster {
     FIFTY_PERCENT(50),
     ALL_NODES(100);
 
-    int percentage;
+    final int percentage;
 
     ConcurrentSuspensionLimitForCluster(int percentage) {
         this.percentage = percentage;

@@ -6,9 +6,10 @@
 #include "reference_attribute.h"
 #include "singlestringattribute.h"
 #include "singleboolattribute.h"
-#include "singlenumericattribute.hpp"
+#include "singlenumericattribute.h"
 #include "single_raw_attribute.h"
 #include <vespa/eval/eval/fast_value.h>
+#include <vespa/searchcommon/attribute/config.h>
 #include <vespa/searchlib/tensor/dense_tensor_attribute.h>
 #include <vespa/searchlib/tensor/serialized_fast_value_attribute.h>
 

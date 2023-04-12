@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.session;
 
+import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.config.FileReference;
 import com.yahoo.config.model.api.Quota;
 import com.yahoo.config.model.api.TenantSecretStore;
@@ -9,14 +10,12 @@ import com.yahoo.config.provision.TenantName;
 import com.yahoo.path.Path;
 import com.yahoo.text.Utf8;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
-import com.yahoo.vespa.config.util.ConfigUtils;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.mock.MockCurator;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
-
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
@@ -169,7 +168,7 @@ public class SessionZooKeeperClientTest {
         SessionZooKeeperClient zkc = new SessionZooKeeperClient(curator,
                                                                 tenantName,
                                                                 sessionId,
-                                                                ConfigUtils.getCanonicalHostName());
+                                                                new ConfigserverConfig.Builder().build());
         zkc.createNewSession(Instant.now());
         return zkc;
     }

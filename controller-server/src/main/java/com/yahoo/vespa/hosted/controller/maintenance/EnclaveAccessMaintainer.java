@@ -17,17 +17,16 @@ public class EnclaveAccessMaintainer extends ControllerMaintainer {
     private static final Logger logger = Logger.getLogger(EnclaveAccessMaintainer.class.getName());
 
     EnclaveAccessMaintainer(Controller controller, Duration interval) {
-        super(controller, interval, null, Set.of(SystemName.PublicCd));
+        super(controller, interval, null, Set.of(SystemName.PublicCd, SystemName.Public));
     }
 
     @Override
     protected double maintain() {
         try {
             return controller().serviceRegistry().enclaveAccessService().allowAccessFor(externalAccounts());
-        }
-        catch (RuntimeException e) {
-            logger.log(WARNING, "Failed sharing AMIs", e);
-            return 0;
+        } catch (RuntimeException e) {
+            logger.log(WARNING, "Failed sharing resources with enclave", e);
+            return 1.0;
         }
     }
 
@@ -38,6 +37,5 @@ public class EnclaveAccessMaintainer extends ControllerMaintainer {
 
         return accounts;
     }
-
 
 }

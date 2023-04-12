@@ -9,6 +9,7 @@
 #include "posting_list_merger.h"
 #include <vespa/searchcommon/attribute/search_context_params.h>
 #include <vespa/searchcommon/common/range.h>
+#include <vespa/searchlib/query/query_term_ucs4.h>
 #include <vespa/vespalib/util/regexp.h>
 #include <vespa/vespalib/fuzzy/fuzzy_matcher.h>
 #include <regex>

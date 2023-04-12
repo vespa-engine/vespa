@@ -90,7 +90,7 @@ public class VcmrMaintainer extends ControllerMaintainer {
             }
         });
         updateMetrics();
-        return 1.0;
+        return 0.0;
     }
 
     /**

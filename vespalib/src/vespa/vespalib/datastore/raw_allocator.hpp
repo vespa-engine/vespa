@@ -16,19 +16,15 @@ RawAllocator<EntryT, RefT>::RawAllocator(DataStoreBase &store, uint32_t typeId)
 
 template <typename EntryT, typename RefT>
 typename RawAllocator<EntryT, RefT>::HandleType
-RawAllocator<EntryT, RefT>::alloc(size_t numElems, size_t extraElems)
+RawAllocator<EntryT, RefT>::alloc(size_t num_entries, size_t extra_entries)
 {
-    _store.ensureBufferCapacity(_typeId, numElems + extraElems);
+    _store.ensure_buffer_capacity(_typeId, num_entries + extra_entries);
     uint32_t buffer_id = _store.primary_buffer_id(_typeId);
     BufferState &state = _store.getBufferState(buffer_id);
     assert(state.isActive());
-    size_t oldBufferSize = state.size();
-    // Must perform scaling ourselves, according to array size
-    size_t arraySize = state.getArraySize();
-    assert((numElems % arraySize) == 0u);
-    RefT ref((oldBufferSize / arraySize), buffer_id);
-    EntryT *buffer = _store.getEntryArray<EntryT>(ref, arraySize);
-    state.stats().pushed_back(numElems);
+    RefT ref(state.size(), buffer_id);
+    EntryT *buffer = _store.getEntryArray<EntryT>(ref, state.getArraySize());
+    state.stats().pushed_back(num_entries);
     return HandleType(ref, buffer);
 }
 

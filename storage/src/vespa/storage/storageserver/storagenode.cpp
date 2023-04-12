@@ -364,7 +364,7 @@ StorageNode::shutdown()
         LOG(debug, "Storage killed before requestShutdown() was called. No "
                    "reason has been given for why we're stopping.");
     }
-        // Remove the subscription to avoid more callbacks from config
+    // Remove the subscription to avoid more callbacks from config
     removeConfigSubscriptions();
 
     if (_chain) {

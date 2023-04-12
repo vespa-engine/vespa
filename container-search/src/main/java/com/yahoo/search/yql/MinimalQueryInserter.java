@@ -39,10 +39,10 @@ public class MinimalQueryInserter extends Searcher {
 
     public static final String EXTERNAL_YQL = "ExternalYql";
 
-    public static final CompoundName YQL = new CompoundName("yql");
+    public static final CompoundName YQL = CompoundName.from("yql");
 
-    private static final CompoundName MAX_HITS = new CompoundName("maxHits");
-    private static final CompoundName MAX_OFFSET = new CompoundName("maxOffset");
+    private static final CompoundName MAX_HITS = CompoundName.from("maxHits");
+    private static final CompoundName MAX_OFFSET = CompoundName.from("maxOffset");
     private static final Logger log = Logger.getLogger(MinimalQueryInserter.class.getName());
 
     @Inject

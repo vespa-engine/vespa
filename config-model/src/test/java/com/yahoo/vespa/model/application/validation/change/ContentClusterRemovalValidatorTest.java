@@ -1,13 +1,17 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.application.validation.change;
 
+import com.yahoo.collections.Pair;
 import com.yahoo.config.application.api.ValidationId;
 import com.yahoo.config.application.api.ValidationOverrides;
+import com.yahoo.config.model.api.ConfigChangeAction;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.application.validation.ValidationTester;
 import com.yahoo.yolean.Exceptions;
 import org.junit.jupiter.api.Test;
+
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -36,7 +40,12 @@ public class ContentClusterRemovalValidatorTest {
     @Test
     void testOverridingContentRemovalValidation() {
         VespaModel previous = tester.deploy(null, getServices("contentClusterId"), Environment.prod, null).getFirst();
-        tester.deploy(previous, getServices("newContentClusterId"), Environment.prod, removalOverride); // Allowed due to override
+        var result = tester.deploy(previous, getServices("newContentClusterId"), Environment.prod, removalOverride); // Allowed due to override
+        assertEquals(result.getFirst().getContainerClusters().values().stream()
+                           .flatMap(cluster -> cluster.getContainers().stream())
+                           .map(container -> container.getServiceInfo())
+                           .toList(),
+                     result.getSecond().stream().flatMap(action -> action.getServices().stream()).toList());
     }
 
     private static String getServices(String contentClusterId) {

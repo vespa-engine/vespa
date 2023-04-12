@@ -50,7 +50,7 @@ public abstract class InfrastructureUpgrader<TARGET extends VersionTarget> exten
     @Override
     protected double maintain() {
         return target().map(target -> upgradeAll(target, managedApplications))
-                       .orElse(1.0);
+                       .orElse(0.0);
     }
 
     /** Deploy a list of system applications until they converge on the given version */
@@ -81,7 +81,7 @@ public abstract class InfrastructureUpgrader<TARGET extends VersionTarget> exten
                 break;
             }
         }
-        return asSuccessFactor(attempts, failures);
+        return asSuccessFactorDeviation(attempts, failures);
     }
 
     /** Returns whether all applications have converged to the target version in zone */

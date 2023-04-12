@@ -3,12 +3,12 @@
 #pragma once
 
 #include "multienumattribute.h"
-#include "multivalueattribute.hpp"
 #include "multienumattributesaver.h"
 #include "load_utils.h"
 #include "enum_store_loaders.h"
 #include "ipostinglistattributebase.h"
 #include "valuemodifier.h"
+#include <vespa/searchcommon/attribute/config.h>
 #include <vespa/vespalib/stllike/hashtable.hpp>
 #include <vespa/vespalib/datastore/unique_store_remapper.h>
 

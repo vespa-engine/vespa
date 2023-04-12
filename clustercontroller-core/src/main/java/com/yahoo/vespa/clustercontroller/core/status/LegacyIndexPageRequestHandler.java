@@ -233,7 +233,6 @@ public class LegacyIndexPageRequestHandler implements StatusPageServer.RequestHa
         sb.append("<tr><td><nobr>Cycle wait time</nobr></td><td align=\"right\">").append(options.cycleWaitTime()).append(" ms</td></tr>");
         sb.append("<tr><td><nobr>Minimum time before first clusterstate broadcast as master</nobr></td><td align=\"right\">").append(RealTimer.printDuration(options.minTimeBeforeFirstSystemStateBroadcast())).append("</td></tr>");
         sb.append("<tr><td><nobr>Minimum time between official cluster states</nobr></td><td align=\"right\">").append(RealTimer.printDuration(options.minTimeBetweenNewSystemStates())).append("</td></tr>");
-        sb.append("<tr><td><nobr>Slobrok mirror backoff policy</nobr></td><td align=\"right\">").append(options.slobrokBackOffPolicy() == null ? "default" : "overridden").append("</td></tr>");
 
         sb.append("<tr><td><nobr>Node state request timeout</nobr></td><td align=\"right\">").append(RealTimer.printDuration(options.nodeStateRequestTimeoutMS())).append("</td></tr>");
         sb.append("<tr><td><nobr>Maximum distributor transition time</nobr></td><td align=\"right\">").append(RealTimer.printDuration(options.maxTransitionTime().get(NodeType.DISTRIBUTOR))).append("</td></tr>");

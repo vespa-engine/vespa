@@ -1,14 +1,13 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "attributefactory.h"
-#include "integerbase.h"
-#include "floatbase.h"
 #include "defines.h"
-#include "singlestringattribute.h"
+#include "floatbase.h"
+#include "integerbase.h"
 #include "singleboolattribute.h"
+#include "singlenumericpostattribute.h"
+#include "singlestringpostattribute.h"
 #include <vespa/searchcommon/attribute/config.h>
-#include "singlestringpostattribute.hpp"
-#include "singlenumericpostattribute.hpp"
 #include <vespa/searchlib/tensor/direct_tensor_attribute.h>
 
 #define INTPOSTING(T)   SingleValueNumericPostingAttribute< ENUM_ATTRIBUTE(IntegerAttributeTemplate<T>) >

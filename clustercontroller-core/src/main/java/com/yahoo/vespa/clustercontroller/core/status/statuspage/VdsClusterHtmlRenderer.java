@@ -419,7 +419,7 @@ public class VdsClusterHtmlRenderer {
         private static ContentNodeStats.BucketSpaceStats getStatsForContentNode(ClusterStatsAggregator statsAggregator,
                                                                                 NodeInfo nodeInfo,
                                                                                 String bucketSpace) {
-            ContentNodeStats nodeStats = statsAggregator.getAggregatedStats().getStats().getContentNode(nodeInfo.getNodeIndex());
+            ContentNodeStats nodeStats = statsAggregator.getAggregatedStats().getStats().getNodeStats(nodeInfo.getNodeIndex());
             if (nodeStats != null) {
                 return nodeStats.getBucketSpace(bucketSpace);
             }

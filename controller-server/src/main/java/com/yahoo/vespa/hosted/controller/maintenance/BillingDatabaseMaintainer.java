@@ -19,6 +19,6 @@ public class BillingDatabaseMaintainer extends ControllerMaintainer {
     @Override
     protected double maintain() {
         controller().serviceRegistry().billingDatabase().maintain();
-        return 1;
+        return 0.0;
     }
 }

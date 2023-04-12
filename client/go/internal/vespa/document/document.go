@@ -103,11 +103,16 @@ func ParseId(serialized string) (Id, error) {
 	}, nil
 }
 
-// Document represents a Vespa document, and its operation.
+// Document represents a Vespa document operation.
 type Document struct {
 	Id        Id
 	Operation Operation
+	Condition string
+	Create    bool
+	Body      []byte
+}
 
+type jsonDocument struct {
 	IdString  string          `json:"id"`
 	PutId     string          `json:"put"`
 	UpdateId  string          `json:"update"`
@@ -117,22 +122,33 @@ type Document struct {
 	Fields    json.RawMessage `json:"fields"`
 }
 
-// Body returns the body part of this document, suitable for sending to the /document/v1 API.
-func (d Document) Body() []byte {
-	jsonObject := `{"fields":`
-	body := make([]byte, 0, len(jsonObject)+len(d.Fields)+1)
-	body = append(body, []byte(jsonObject)...)
-	body = append(body, d.Fields...)
-	body = append(body, byte('}'))
-	return body
-}
-
 // Decoder decodes documents from a JSON structure which is either an array of objects, or objects separated by newline.
 type Decoder struct {
 	buf   *bufio.Reader
 	dec   *json.Decoder
 	array bool
 	jsonl bool
+}
+
+func (d Document) String() string {
+	var sb strings.Builder
+	switch d.Operation {
+	case OperationPut:
+		sb.WriteString("put ")
+	case OperationUpdate:
+		sb.WriteString("update ")
+	case OperationRemove:
+		sb.WriteString("remove ")
+	}
+	sb.WriteString(d.Id.String())
+	if d.Condition != "" {
+		sb.WriteString(", condition=")
+		sb.WriteString(d.Condition)
+	}
+	if d.Create {
+		sb.WriteString(", create=true")
+	}
+	return sb.String()
 }
 
 func (d *Decoder) guessMode() error {
@@ -193,14 +209,11 @@ func (d *Decoder) decode() (Document, error) {
 		}
 		return Document{}, err
 	}
-	doc := Document{}
+	doc := jsonDocument{}
 	if err := d.dec.Decode(&doc); err != nil {
 		return Document{}, err
 	}
-	if err := parseDocument(&doc); err != nil {
-		return Document{}, err
-	}
-	return doc, nil
+	return parseDocument(&doc)
 }
 
 func NewDecoder(r io.Reader) *Decoder {
@@ -211,29 +224,43 @@ func NewDecoder(r io.Reader) *Decoder {
 	}
 }
 
-func parseDocument(d *Document) error {
+func parseDocument(d *jsonDocument) (Document, error) {
 	id := ""
+	var op Operation
 	if d.IdString != "" {
-		d.Operation = OperationPut
+		op = OperationPut
 		id = d.IdString
 	} else if d.PutId != "" {
-		d.Operation = OperationPut
+		op = OperationPut
 		id = d.PutId
 	} else if d.UpdateId != "" {
-		d.Operation = OperationUpdate
+		op = OperationUpdate
 		id = d.UpdateId
 	} else if d.RemoveId != "" {
-		d.Operation = OperationRemove
+		op = OperationRemove
 		id = d.RemoveId
 	} else {
-		return fmt.Errorf("invalid document: missing operation: %v", d)
+		return Document{}, fmt.Errorf("invalid document: missing operation: %v", d)
 	}
 	docId, err := ParseId(id)
 	if err != nil {
-		return err
+		return Document{}, err
 	}
-	d.Id = docId
-	return nil
+	var body []byte
+	if d.Fields != nil {
+		jsonObject := `{"fields":`
+		body = make([]byte, 0, len(jsonObject)+len(d.Fields)+1)
+		body = append(body, []byte(jsonObject)...)
+		body = append(body, d.Fields...)
+		body = append(body, byte('}'))
+	}
+	return Document{
+		Id:        docId,
+		Operation: op,
+		Condition: d.Condition,
+		Create:    d.Create,
+		Body:      body,
+	}, nil
 }
 
 func parseError(value string) error {

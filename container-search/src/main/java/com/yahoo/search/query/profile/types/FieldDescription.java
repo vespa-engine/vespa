@@ -64,7 +64,7 @@ public class FieldDescription implements Comparable<FieldDescription> {
     }
 
     public FieldDescription(String name, FieldType type, String aliases, boolean mandatory, boolean overridable) {
-        this(new CompoundName(name), type, aliases, mandatory, overridable);
+        this(CompoundName.from(name), type, aliases, mandatory, overridable);
     }
 
     /**

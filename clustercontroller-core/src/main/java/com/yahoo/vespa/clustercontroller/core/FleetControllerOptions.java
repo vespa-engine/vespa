@@ -2,7 +2,6 @@
 package com.yahoo.vespa.clustercontroller.core;
 
 import ai.vespa.validation.Validation;
-import com.yahoo.jrt.slobrok.api.BackOffPolicy;
 import com.yahoo.vdslib.distribution.ConfiguredNode;
 import com.yahoo.vdslib.distribution.Distribution;
 import com.yahoo.vdslib.state.NodeType;
@@ -107,9 +106,6 @@ public class FleetControllerOptions {
     /** Maximum time a node can be missing from slobrok before it is tagged down. */
     private final int maxSlobrokDisconnectGracePeriod;
 
-    /** Set by tests to retry often. */
-    private final BackOffPolicy slobrokBackOffPolicy;
-
     private final Distribution storageDistribution;
 
     // TODO: Get rid of this by always getting nodes by distribution.getNodes()
@@ -130,6 +126,8 @@ public class FleetControllerOptions {
     private final Map<String, Double> clusterFeedBlockLimit;
 
     private final double clusterFeedBlockNoiseLevel;
+
+    private final int maxNumberOfGroupsAllowedToBeDown;
 
     private FleetControllerOptions(String clusterName,
                                    int fleetControllerIndex,
@@ -162,7 +160,6 @@ public class FleetControllerOptions {
                                    int minTimeBetweenNewSystemStates,
                                    boolean showLocalSystemStatesInEventLog,
                                    int maxSlobrokDisconnectGracePeriod,
-                                   BackOffPolicy slobrokBackOffPolicy,
                                    Distribution storageDistribution,
                                    Set<ConfiguredNode> nodes,
                                    Duration maxDeferredTaskVersionWaitTime,
@@ -172,7 +169,8 @@ public class FleetControllerOptions {
                                    int maxDivergentNodesPrintedInTaskErrorMessages,
                                    boolean clusterFeedBlockEnabled,
                                    Map<String, Double> clusterFeedBlockLimit,
-                                   double clusterFeedBlockNoiseLevel) {
+                                   double clusterFeedBlockNoiseLevel,
+                                   int maxNumberOfGroupsAllowedToBeDown) {
         this.clusterName = clusterName;
         this.fleetControllerIndex = fleetControllerIndex;
         this.fleetControllerCount = fleetControllerCount;
@@ -204,7 +202,6 @@ public class FleetControllerOptions {
         this.minTimeBetweenNewSystemStates = minTimeBetweenNewSystemStates;
         this.showLocalSystemStatesInEventLog = showLocalSystemStatesInEventLog;
         this.maxSlobrokDisconnectGracePeriod = maxSlobrokDisconnectGracePeriod;
-        this.slobrokBackOffPolicy = slobrokBackOffPolicy;
         this.storageDistribution = storageDistribution;
         this.nodes = nodes;
         this.maxDeferredTaskVersionWaitTime = maxDeferredTaskVersionWaitTime;
@@ -215,6 +212,7 @@ public class FleetControllerOptions {
         this.clusterFeedBlockEnabled = clusterFeedBlockEnabled;
         this.clusterFeedBlockLimit = clusterFeedBlockLimit;
         this.clusterFeedBlockNoiseLevel = clusterFeedBlockNoiseLevel;
+        this.maxNumberOfGroupsAllowedToBeDown = maxNumberOfGroupsAllowedToBeDown;
     }
 
     public Duration getMaxDeferredTaskVersionWaitTime() {
@@ -349,10 +347,6 @@ public class FleetControllerOptions {
         return maxSlobrokDisconnectGracePeriod;
     }
 
-    public BackOffPolicy slobrokBackOffPolicy() {
-        return slobrokBackOffPolicy;
-    }
-
     public Distribution storageDistribution() {
         return storageDistribution;
     }
@@ -393,6 +387,8 @@ public class FleetControllerOptions {
         return clusterFeedBlockNoiseLevel;
     }
 
+    public int maxNumberOfGroupsAllowedToBeDown() { return maxNumberOfGroupsAllowedToBeDown; }
+
     public static class Builder {
 
         private String clusterName;
@@ -426,7 +422,6 @@ public class FleetControllerOptions {
         private int minTimeBetweenNewSystemStates = 0;
         private boolean showLocalSystemStatesInEventLog = true;
         private int maxSlobrokDisconnectGracePeriod = 1000;
-        private BackOffPolicy slobrokBackOffPolicy = null;
         private Distribution storageDistribution;
         private Set<ConfiguredNode> nodes;
         private Duration maxDeferredTaskVersionWaitTime = Duration.ofSeconds(30);
@@ -437,6 +432,7 @@ public class FleetControllerOptions {
         private boolean clusterFeedBlockEnabled = false;
         private Map<String, Double> clusterFeedBlockLimit = Collections.emptyMap();
         private double clusterFeedBlockNoiseLevel = 0.01;
+        private int maxNumberOfGroupsAllowedToBeDown = 1;
 
         public Builder(String clusterName, Collection<ConfiguredNode> nodes) {
             this.clusterName = clusterName;
@@ -697,6 +693,11 @@ public class FleetControllerOptions {
             return this;
         }
 
+        public Builder setMaxNumberOfGroupsAllowedToBeDown(int maxNumberOfGroupsAllowedToBeDown) {
+            this.maxNumberOfGroupsAllowedToBeDown = maxNumberOfGroupsAllowedToBeDown;
+            return this;
+        }
+
         public FleetControllerOptions build() {
             return new FleetControllerOptions(clusterName,
                                               index,
@@ -729,7 +730,6 @@ public class FleetControllerOptions {
                                               minTimeBetweenNewSystemStates,
                                               showLocalSystemStatesInEventLog,
                                               maxSlobrokDisconnectGracePeriod,
-                                              slobrokBackOffPolicy,
                                               storageDistribution,
                                               nodes,
                                               maxDeferredTaskVersionWaitTime,
@@ -739,7 +739,8 @@ public class FleetControllerOptions {
                                               maxDivergentNodesPrintedInTaskErrorMessages,
                                               clusterFeedBlockEnabled,
                                               clusterFeedBlockLimit,
-                                              clusterFeedBlockNoiseLevel);
+                                              clusterFeedBlockNoiseLevel,
+                                              maxNumberOfGroupsAllowedToBeDown);
         }
 
         public static Builder copy(FleetControllerOptions options) {
@@ -775,7 +776,6 @@ public class FleetControllerOptions {
             builder.minTimeBetweenNewSystemStates = options.minTimeBetweenNewSystemStates;
             builder.showLocalSystemStatesInEventLog = options.showLocalSystemStatesInEventLog;
             builder.maxSlobrokDisconnectGracePeriod = options.maxSlobrokDisconnectGracePeriod;
-            builder.slobrokBackOffPolicy = options.slobrokBackOffPolicy;
             builder.storageDistribution = options.storageDistribution;
             builder.nodes = Set.copyOf(options.nodes);
             builder.maxDeferredTaskVersionWaitTime = options.maxDeferredTaskVersionWaitTime;
@@ -786,6 +786,7 @@ public class FleetControllerOptions {
             builder.clusterFeedBlockEnabled = options.clusterFeedBlockEnabled;
             builder.clusterFeedBlockLimit = Map.copyOf(options.clusterFeedBlockLimit);
             builder.clusterFeedBlockNoiseLevel = options.clusterFeedBlockNoiseLevel;
+            builder.maxNumberOfGroupsAllowedToBeDown = options.maxNumberOfGroupsAllowedToBeDown;
 
             return builder;
         }

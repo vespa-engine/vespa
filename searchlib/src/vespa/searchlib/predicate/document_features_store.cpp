@@ -102,7 +102,7 @@ DocumentFeaturesStore::DocumentFeaturesStore(DataBuffer &buffer)
 
 DocumentFeaturesStore::~DocumentFeaturesStore() {
     _word_index.disableFreeLists();
-    _word_index.disableElemHoldList();
+    _word_index.disable_entry_hold_list();
     _word_index.getAllocator().freeze();
     _word_index.clear();
 }

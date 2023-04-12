@@ -366,7 +366,7 @@ func (c *CLI) createCloudTarget(targetType string, opts targetOptions) (vespa.Ta
 				return nil, errHint(err, "Deployment to cloud requires a certificate. Try 'vespa auth cert'")
 			}
 			deploymentTLSOptions = vespa.TLSOptions{
-				KeyPair:         kp.KeyPair,
+				KeyPair:         []tls.Certificate{kp.KeyPair},
 				CertificateFile: kp.CertificateFile,
 				PrivateKeyFile:  kp.PrivateKeyFile,
 			}
@@ -377,7 +377,7 @@ func (c *CLI) createCloudTarget(targetType string, opts targetOptions) (vespa.Ta
 			return nil, errHint(err, "Deployment to hosted requires an Athenz certificate", "Try renewing certificate with 'athenz-user-cert'")
 		}
 		apiTLSOptions = vespa.TLSOptions{
-			KeyPair:         kp.KeyPair,
+			KeyPair:         []tls.Certificate{kp.KeyPair},
 			CertificateFile: kp.CertificateFile,
 			PrivateKeyFile:  kp.PrivateKeyFile,
 		}

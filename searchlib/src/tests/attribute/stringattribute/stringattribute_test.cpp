@@ -7,7 +7,8 @@
 #include <vespa/searchlib/attribute/multistringpostattribute.h>
 
 #include <vespa/searchlib/attribute/enumstore.hpp>
-#include <vespa/searchlib/attribute/singlestringpostattribute.hpp>
+#include <vespa/searchlib/attribute/single_string_enum_search_context.h>
+#include <vespa/searchlib/attribute/singlestringpostattribute.h>
 #include <vespa/searchlib/attribute/multistringpostattribute.hpp>
 
 #include <vespa/log/log.h>

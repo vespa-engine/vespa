@@ -404,7 +404,7 @@ public class OrchestratorImplTest {
     }
 
     @Test
-    public void testIsQuiescent() throws Exception {
+    public void testIsQuiescent() {
         StatusService statusService = new ZkStatusService(new MockCurator(),
                                                           mock(Metric.class),
                                                           new TestTimer(),

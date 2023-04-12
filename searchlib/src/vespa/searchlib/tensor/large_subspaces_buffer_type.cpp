@@ -12,7 +12,7 @@ using vespalib::alloc::MemoryAllocator;
 namespace search::tensor {
 
 LargeSubspacesBufferType::LargeSubspacesBufferType(const AllocSpec& spec, std::shared_ptr<MemoryAllocator> memory_allocator, TensorBufferTypeMapper& type_mapper) noexcept
-    : ParentType(1u, spec.minArraysInBuffer, spec.maxArraysInBuffer, spec.numArraysForNewBuffer, spec.allocGrowFactor),
+    : ParentType(1u, spec.min_entries_in_buffer, spec.max_entries_in_buffer, spec.num_entries_for_new_buffer, spec.allocGrowFactor),
       _memory_allocator(std::move(memory_allocator)),
       _ops(type_mapper.get_tensor_buffer_operations())
 {
@@ -21,10 +21,10 @@ LargeSubspacesBufferType::LargeSubspacesBufferType(const AllocSpec& spec, std::s
 LargeSubspacesBufferType::~LargeSubspacesBufferType() = default;
 
 void
-LargeSubspacesBufferType::cleanHold(void* buffer, size_t offset, ElemCount numElems, CleanContext cleanCtx)
+LargeSubspacesBufferType::clean_hold(void* buffer, size_t offset, EntryCount num_entries, CleanContext cleanCtx)
 {
     auto elem = static_cast<ArrayType*>(buffer) + offset;
-    for (size_t i = 0; i < numElems; ++i) {
+    for (size_t i = 0; i < num_entries; ++i) {
         if (!elem->empty()) {
             cleanCtx.extraBytesCleaned(elem->size());
             _ops.reclaim_labels({elem->data(), elem->size()});
@@ -35,10 +35,10 @@ LargeSubspacesBufferType::cleanHold(void* buffer, size_t offset, ElemCount numEl
 }
 
 void
-LargeSubspacesBufferType::destroyElements(void *buffer, ElemCount numElems)
+LargeSubspacesBufferType::destroy_entries(void *buffer, EntryCount num_entries)
 {
     auto elem = static_cast<ArrayType*>(buffer);
-    for (size_t i = 0; i < numElems; ++i) {
+    for (size_t i = 0; i < num_entries; ++i) {
         if (!elem->empty()) {
             _ops.reclaim_labels({elem->data(), elem->size()});
             ArrayType().swap(*elem);
@@ -48,11 +48,11 @@ LargeSubspacesBufferType::destroyElements(void *buffer, ElemCount numElems)
 }
 
 void
-LargeSubspacesBufferType::fallbackCopy(void *newBuffer, const void *oldBuffer, ElemCount numElems)
+LargeSubspacesBufferType::fallback_copy(void *newBuffer, const void *oldBuffer, EntryCount num_entries)
 {
     auto old_elems = static_cast<const ArrayType*>(oldBuffer);
     auto new_elems = static_cast<ArrayType*>(newBuffer);
-    for (size_t i = 0; i < numElems; ++i) {
+    for (size_t i = 0; i < num_entries; ++i) {
         auto& old_elem = old_elems[i];
         new (new_elems + i) ArrayType(old_elem);
         if (!old_elem.empty()) {
@@ -62,12 +62,12 @@ LargeSubspacesBufferType::fallbackCopy(void *newBuffer, const void *oldBuffer, E
 }
 
 void
-LargeSubspacesBufferType::initializeReservedElements(void *buffer, ElemCount reservedElements)
+LargeSubspacesBufferType::initialize_reserved_entries(void *buffer, EntryCount reserved_entries)
 {
-    auto new_elems = static_cast<ArrayType*>(buffer);
+    auto new_entries = static_cast<ArrayType*>(buffer);
     const auto& empty = empty_entry();
-    for (size_t i = 0; i < reservedElements; ++i) {
-        new (new_elems + i) ArrayType(empty);
+    for (size_t i = 0; i < reserved_entries; ++i) {
+        new (new_entries + i) ArrayType(empty);
     }
 }
 

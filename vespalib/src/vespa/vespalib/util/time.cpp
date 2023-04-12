@@ -93,7 +93,7 @@ Timer::waitAtLeast(duration dur, bool busyWait) {
 
 }
 
-#if (defined(_LIBCPP_VERSION) && _LIBCPP_VERSION < 160000) || (!defined(_LIBCPP_VERSION) && defined(_GLIBCXX_RELEASE) && _GLIBCXX_RELEASE < 12)
+#if (defined(_LIBCPP_VERSION) && _LIBCPP_VERSION < 170000) || (!defined(_LIBCPP_VERSION) && defined(_GLIBCXX_RELEASE) && _GLIBCXX_RELEASE < 12)
 
 // Temporary workaround until libc++ supports stream operators for duration
 // Temporary workaround while using libstdc++ 11

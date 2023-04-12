@@ -53,11 +53,11 @@ public class ReindexingTriggerer extends ControllerMaintainer {
                             controller().applications().reindex(id, deployment.zone(), List.of(), List.of(), true, speed,
                                                                 "bakground reindexing, to account for changes in built-in linguistics components");
                 });
-            return 1.0;
+            return 0.0;
         }
         catch (RuntimeException e) {
             log.log(Level.WARNING, "Failed to trigger reindexing: " + Exceptions.toMessageString(e));
-            return 0.0;
+            return 1.0;
         }
     }
 

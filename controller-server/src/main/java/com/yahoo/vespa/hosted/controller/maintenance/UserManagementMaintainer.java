@@ -11,6 +11,7 @@ import java.util.Optional;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
+
 /**
  * Maintains user management resources.
  * For now, ensures there's no discrepnacy between expected tenant/application roles and auth0/athenz roles
@@ -46,7 +47,7 @@ public class UserManagementMaintainer extends ControllerMaintainer {
                     });
         }
 
-        return 1.0;
+        return 0.0;
     }
 
 }

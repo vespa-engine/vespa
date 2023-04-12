@@ -3,10 +3,8 @@ package com.yahoo.search.query.profile.config.test;
 
 import com.yahoo.jdisc.http.HttpRequest.Method;
 import com.yahoo.container.jdisc.HttpRequest;
-import com.yahoo.language.Language;
 import com.yahoo.language.process.Embedder;
 import com.yahoo.processing.request.CompoundName;
-import com.yahoo.search.query.profile.types.test.QueryProfileTypeTestCase;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.yolean.Exceptions;
@@ -25,7 +23,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * @author bratseth
@@ -77,8 +79,8 @@ public class XmlReadingTestCase {
         CompiledQueryProfile defaultProfile = cRegistry.getComponent("default");
         assertNull(defaultProfile.getType());
         assertEquals("20", defaultProfile.get("hits"));
-        assertFalse(defaultProfile.isOverridable(new CompoundName("hits"), null));
-        assertFalse(defaultProfile.isOverridable(new CompoundName("user.trusted"), null));
+        assertFalse(defaultProfile.isOverridable(CompoundName.from("hits"), null));
+        assertFalse(defaultProfile.isOverridable(CompoundName.from("user.trusted"), null));
         assertEquals("false", defaultProfile.get("user.trusted"));
 
         CompiledQueryProfile referencingProfile = cRegistry.getComponent("referencingModelSettings");
@@ -97,7 +99,7 @@ public class XmlReadingTestCase {
         assertEquals("rootType", rootProfile.getType().getId().getName());
         assertEquals(30, rootProfile.get("hits"));
         //assertEquals(3, rootProfile.get("traceLevel"));
-        assertTrue(rootProfile.isOverridable(new CompoundName("hits"), null));
+        assertTrue(rootProfile.isOverridable(CompoundName.from("hits"), null));
         query = new Query(request, rootProfile);
         assertEquals(3, query.getTrace().getLevel());
 
@@ -231,8 +233,8 @@ public class XmlReadingTestCase {
         assertEquals("a.b.c-value", new Query("?d1=d1v", profile).properties().get("a.b.c"));
         assertEquals("a.b.c-variant-value", new Query("?d1=d1v&d2=d2v", profile).properties().get("a.b.c"));
 
-        assertTrue(profile.isOverridable(new CompoundName("a.b.c"), Map.of("d1", "d1v")));
-        assertFalse(profile.isOverridable(new CompoundName("a.b.c"), Map.of("d1", "d1v", "d2", "d2v")));
+        assertTrue(profile.isOverridable(CompoundName.from("a.b.c"), Map.of("d1", "d1v")));
+        assertFalse(profile.isOverridable(CompoundName.from("a.b.c"), Map.of("d1", "d1v", "d2", "d2v")));
     }
 
     @Test
@@ -479,18 +481,18 @@ public class XmlReadingTestCase {
 
         QueryProfileType type1 = registry.getTypeRegistry().getComponent("type1");
         assertEquals(TensorType.fromSpec("tensor<float>(x[1])"),
-                type1.getFieldType(new CompoundName("ranking.features.query(tensor_1)")).asTensorType());
-        assertNull(type1.getFieldType(new CompoundName("ranking.features.query(tensor_2)")));
-        assertNull(type1.getFieldType(new CompoundName("ranking.features.query(tensor_3)")));
+                type1.getFieldType(CompoundName.from("ranking.features.query(tensor_1)")).asTensorType());
+        assertNull(type1.getFieldType(CompoundName.from("ranking.features.query(tensor_2)")));
+        assertNull(type1.getFieldType(CompoundName.from("ranking.features.query(tensor_3)")));
         assertEquals(TensorType.fromSpec("tensor(key{})"),
-                type1.getFieldType(new CompoundName("ranking.features.query(tensor_4)")).asTensorType());
+                type1.getFieldType(CompoundName.from("ranking.features.query(tensor_4)")).asTensorType());
 
         QueryProfileType type2 = registry.getTypeRegistry().getComponent("type2");
-        assertNull(type2.getFieldType(new CompoundName("ranking.features.query(tensor_1)")));
+        assertNull(type2.getFieldType(CompoundName.from("ranking.features.query(tensor_1)")));
         assertEquals(TensorType.fromSpec("tensor<float>(x[2])"),
-                type2.getFieldType(new CompoundName("ranking.features.query(tensor_2)")).asTensorType());
+                type2.getFieldType(CompoundName.from("ranking.features.query(tensor_2)")).asTensorType());
         assertEquals(TensorType.fromSpec("tensor<float>(x[3])"),
-                type2.getFieldType(new CompoundName("ranking.features.query(tensor_3)")).asTensorType());
+                type2.getFieldType(CompoundName.from("ranking.features.query(tensor_3)")).asTensorType());
 
         Query queryProfile1 = new Query.Builder().setQueryProfile(registry.getComponent("profile1"))
                 .setRequest("?query=test&ranking.features.query(tensor_1)=[1.200]")

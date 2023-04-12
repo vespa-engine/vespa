@@ -22,8 +22,8 @@ import static com.yahoo.vespa.streamingvisitors.VdsStreamingSearcher.STREAMING_S
  */
 public class MetricsSearcher extends Searcher {
 
-    private static final CompoundName metricsearcherId=new CompoundName("metricsearcher.id");
-    private static final CompoundName streamingLoadtype=new CompoundName("streaming.loadtype");
+    private static final CompoundName metricsearcherId = CompoundName.from("metricsearcher.id");
+    private static final CompoundName streamingLoadtype = CompoundName.from("streaming.loadtype");
 
     private static final Logger log = Logger.getLogger(MetricsSearcher.class.getName());
 
@@ -43,7 +43,8 @@ public class MetricsSearcher extends Searcher {
     public Result search(Query query, Execution execution) {
         long timeMs = System.currentTimeMillis();
 
-        /** Backwards compatibility - convert metricsearcher.id to streaming.loadtype */
+        // Backwards compatibility - convert metricsearcher.id to streaming.loadtype
+        // TODO Cleanup at some point
         String metricName = query.properties().getString(metricsearcherId);
         if (metricName != null) {
             query.properties().set(streamingLoadtype, metricName);

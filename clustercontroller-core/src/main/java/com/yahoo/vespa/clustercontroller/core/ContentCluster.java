@@ -15,7 +15,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.TreeMap;
-import java.util.stream.Collectors;
 
 import static com.yahoo.vdslib.state.NodeState.ORCHESTRATOR_RESERVED_DESCRIPTION;
 
@@ -33,11 +32,25 @@ public class ContentCluster {
 
     private Distribution distribution;
 
+    private final int maxNumberOfGroupsAllowedToBeDown;
+
     public ContentCluster(String clusterName, Collection<ConfiguredNode> configuredNodes, Distribution distribution) {
+        this(clusterName, configuredNodes, distribution, 1);
+    }
+
+    public ContentCluster(FleetControllerOptions options) {
+        this(options.clusterName(), options.nodes(), options.storageDistribution(), options.maxNumberOfGroupsAllowedToBeDown());
+    }
+
+    private ContentCluster(String clusterName,
+                          Collection<ConfiguredNode> configuredNodes,
+                          Distribution distribution,
+                          int maxNumberOfGroupsAllowedToBeDown) {
         if (configuredNodes == null) throw new IllegalArgumentException("Nodes must be set");
         this.clusterName = clusterName;
         this.distribution = distribution;
         setNodes(configuredNodes, new NodeListener() {});
+        this.maxNumberOfGroupsAllowedToBeDown = maxNumberOfGroupsAllowedToBeDown;
     }
 
     public Distribution getDistribution() { return distribution; }
@@ -95,6 +108,8 @@ public class ContentCluster {
 
     public NodeInfo getNodeInfo(Node node) { return clusterInfo.getNodeInfo(node); }
 
+    public int maxNumberOfGroupsAllowedToBeDown() { return maxNumberOfGroupsAllowedToBeDown; }
+
     public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append("ContentCluster(").append(clusterName).append(") {");
@@ -123,12 +138,7 @@ public class ContentCluster {
             Node node, ClusterState clusterState, SetUnitStateRequest.Condition condition,
             NodeState oldState, NodeState newState, boolean inMoratorium) {
 
-        NodeStateChangeChecker nodeStateChangeChecker = new NodeStateChangeChecker(
-                distribution.getRedundancy(),
-                new HierarchicalGroupVisitingAdapter(distribution),
-                clusterInfo,
-                inMoratorium
-        );
+        NodeStateChangeChecker nodeStateChangeChecker = new NodeStateChangeChecker(this, inMoratorium);
         return nodeStateChangeChecker.evaluateTransition(node, clusterState, condition, oldState, newState);
     }
 

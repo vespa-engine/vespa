@@ -2,10 +2,11 @@
 package com.yahoo.slime;
 
 import org.junit.Test;
-
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.sameInstance;
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertFalse;
 
 public class SlimeTestCase {
 
@@ -21,25 +22,25 @@ public class SlimeTestCase {
     public void testTypeIds() {
         System.out.println("testing type identifiers...");
 
-        assertThat(Type.NIX.ID,    is((byte)0));
-        assertThat(Type.BOOL.ID,   is((byte)1));
-        assertThat(Type.LONG.ID,   is((byte)2));
-        assertThat(Type.DOUBLE.ID, is((byte)3));
-        assertThat(Type.STRING.ID, is((byte)4));
-        assertThat(Type.DATA.ID,   is((byte)5));
-        assertThat(Type.ARRAY.ID,  is((byte)6));
-        assertThat(Type.OBJECT.ID, is((byte)7));
+        assertEquals((byte)0, Type.NIX.ID);
+        assertEquals((byte)1, Type.BOOL.ID);
+        assertEquals((byte)2, Type.LONG.ID);
+        assertEquals((byte)3, Type.DOUBLE.ID);
+        assertEquals((byte)4, Type.STRING.ID);
+        assertEquals((byte)5, Type.DATA.ID);
+        assertEquals((byte)6, Type.ARRAY.ID);
+        assertEquals((byte)7, Type.OBJECT.ID);
 
-        assertThat(Type.values().length, is(8));
+        assertEquals(8, Type.values().length);
 
-        assertThat(Type.values()[0], sameInstance(Type.NIX));
-        assertThat(Type.values()[1], sameInstance(Type.BOOL));
-        assertThat(Type.values()[2], sameInstance(Type.LONG));
-        assertThat(Type.values()[3], sameInstance(Type.DOUBLE));
-        assertThat(Type.values()[4], sameInstance(Type.STRING));
-        assertThat(Type.values()[5], sameInstance(Type.DATA));
-        assertThat(Type.values()[6], sameInstance(Type.ARRAY));
-        assertThat(Type.values()[7], sameInstance(Type.OBJECT));
+        assertSame(Type.NIX, Type.values()[0]);
+        assertSame(Type.BOOL, Type.values()[1]);
+        assertSame(Type.LONG, Type.values()[2]);
+        assertSame(Type.DOUBLE, Type.values()[3]);
+        assertSame(Type.STRING, Type.values()[4]);
+        assertSame(Type.DATA, Type.values()[5]);
+        assertSame(Type.ARRAY, Type.values()[6]);
+        assertSame(Type.OBJECT, Type.values()[7]);
     }
 
     @Test
@@ -50,41 +51,41 @@ public class SlimeTestCase {
         for (int i = 0; i < 2; i++) {
             if (i == 0) {
                 cur = slime.get();
-                assertThat(cur.valid(), is(true));
+                assertTrue(cur.valid());
             } else {
                 cur = NixValue.invalid();
-                assertThat(cur.valid(), is(false));
+                assertFalse(cur.valid());
             }
-            assertThat(cur.type(), is(Type.NIX));
-            assertThat(cur.children(), is(0));
-            assertThat(cur.asBool(), is(false));
-            assertThat(cur.asLong(), is((long)0));
-            assertThat(cur.asDouble(), is(0.0));
-            assertThat(cur.asString(), is(""));
-            assertThat(cur.asData(), is(new byte[0]));
-            assertThat(cur.entry(0).valid(), is(false));
-            assertThat(cur.field(0).valid(), is(false));
-            assertThat(cur.field("foo").valid(), is(false));
+            assertEquals(Type.NIX, cur.type());
+            assertEquals(0, cur.children());
+            assertFalse(cur.asBool());
+            assertEquals(0L, cur.asLong());
+            assertEquals(0.0, cur.asDouble(), 0.0);
+            assertEquals("", cur.asString());
+            assertArrayEquals(new byte[0], cur.asData());
+            assertFalse(cur.entry(0).valid());
+            assertFalse(cur.field(0).valid());
+            assertFalse(cur.field("foo").valid());
         }
         Inspector insp;
         for (int i = 0; i < 2; i++) {
             if (i == 0) {
                 insp = slime.get();
-                assertThat(insp.valid(), is(true));
+                assertTrue(insp.valid());
             } else {
                 insp = NixValue.invalid();
-                assertThat(insp.valid(), is(false));
+                assertFalse(insp.valid());
             }
-            assertThat(insp.type(), is(Type.NIX));
-            assertThat(insp.children(), is(0));
-            assertThat(insp.asBool(), is(false));
-            assertThat(insp.asLong(), is((long)0));
-            assertThat(insp.asDouble(), is(0.0));
-            assertThat(insp.asString(), is(""));
-            assertThat(insp.asData(), is(new byte[0]));
-            assertThat(insp.entry(0).valid(), is(false));
-            assertThat(insp.field(0).valid(), is(false));
-            assertThat(insp.field("foo").valid(), is(false));
+            assertEquals(Type.NIX, insp.type());
+            assertEquals(0, insp.children());
+            assertFalse(insp.asBool());
+            assertEquals(0L, insp.asLong());
+            assertEquals(0.0, insp.asDouble(), 0.0);
+            assertEquals("", insp.asString());
+            assertArrayEquals(new byte[0], insp.asData());
+            assertFalse(insp.entry(0).valid());
+            assertFalse(insp.field(0).valid());
+            assertFalse(insp.field("foo").valid());
         }
     }
 
@@ -96,63 +97,63 @@ public class SlimeTestCase {
         System.out.println("testing boolean value");
         slime.setBool(true);
         Inspector insp = slime.get();
-        assertThat(insp.valid(), is(true));
-        assertThat(insp.type(), sameInstance(Type.BOOL));
-        assertThat(insp.asBool(), is(true));
+        assertTrue(insp.valid());
+        assertSame(Type.BOOL, insp.type());
+        assertTrue(insp.asBool());
         Cursor cur = slime.get();
-        assertThat(cur.valid(), is(true));
-        assertThat(cur.type(), sameInstance(Type.BOOL));
-        assertThat(cur.asBool(), is(true));
+        assertTrue(cur.valid());
+        assertSame(Type.BOOL, cur.type());
+        assertTrue(cur.asBool());
 
         System.out.println("testing long value");
         slime.setLong(42);
         cur = slime.get();
         insp = slime.get();
-        assertThat(cur.valid(), is(true));
-        assertThat(insp.valid(), is(true));
-        assertThat(cur.type(), sameInstance(Type.LONG));
-        assertThat(insp.type(), sameInstance(Type.LONG));
-        assertThat(cur.asLong(), is((long)42));
-        assertThat(insp.asLong(), is((long)42));
+        assertTrue(cur.valid());
+        assertTrue(insp.valid());
+        assertSame(Type.LONG, cur.type());
+        assertSame(Type.LONG, insp.type());
+        assertEquals(42L, cur.asLong());
+        assertEquals(42L, insp.asLong());
 
         System.out.println("testing double value");
         slime.setDouble(4.2);
         cur = slime.get();
         insp = slime.get();
-        assertThat(cur.valid(), is(true));
-        assertThat(insp.valid(), is(true));
-        assertThat(cur.type(), sameInstance(Type.DOUBLE));
-        assertThat(insp.type(), sameInstance(Type.DOUBLE));
-        assertThat(cur.asDouble(), is(4.2));
-        assertThat(insp.asDouble(), is(4.2));
+        assertTrue(cur.valid());
+        assertTrue(insp.valid());
+        assertSame(Type.DOUBLE, cur.type());
+        assertSame(Type.DOUBLE, insp.type());
+        assertEquals(4.2, cur.asDouble(), 0.0);
+        assertEquals(4.2, insp.asDouble(), 0.0);
 
         System.out.println("testing string value");
         slime.setString("fortytwo");
         cur = slime.get();
         insp = slime.get();
-        assertThat(cur.valid(), is(true));
-        assertThat(insp.valid(), is(true));
-        assertThat(cur.type(), sameInstance(Type.STRING));
-        assertThat(insp.type(), sameInstance(Type.STRING));
-        assertThat(cur.asString(), is("fortytwo"));
-        assertThat(insp.asString(), is("fortytwo"));
+        assertTrue(cur.valid());
+        assertTrue(insp.valid());
+        assertSame(Type.STRING, cur.type());
+        assertSame(Type.STRING, insp.type());
+        assertEquals("fortytwo", cur.asString());
+        assertEquals("fortytwo", insp.asString());
 
         System.out.println("testing data value");
         byte[] data = { (byte)4, (byte)2 };
         slime.setData(data);
         cur = slime.get();
         insp = slime.get();
-        assertThat(cur.valid(), is(true));
-        assertThat(insp.valid(), is(true));
-        assertThat(cur.type(), sameInstance(Type.DATA));
-        assertThat(insp.type(), sameInstance(Type.DATA));
-        assertThat(cur.asData(), is(data));
-        assertThat(insp.asData(), is(data));
+        assertTrue(cur.valid());
+        assertTrue(insp.valid());
+        assertSame(Type.DATA, cur.type());
+        assertSame(Type.DATA, insp.type());
+        assertArrayEquals(data, cur.asData());
+        assertArrayEquals(data, insp.asData());
         data[0] = 10;
         data[1] = 20;
         byte[] data2 = { 10, 20 };
-        assertThat(cur.asData(), is(data2));
-        assertThat(insp.asData(), is(data2));
+        assertArrayEquals(data2, cur.asData());
+        assertArrayEquals(data2, insp.asData());
     }
 
     @Test
@@ -160,13 +161,13 @@ public class SlimeTestCase {
         System.out.println("testing array values...");
         Slime slime = new Slime();
         Cursor c = slime.setArray();
-        assertThat(c.valid(), is(true));
-        assertThat(c.type(), is(Type.ARRAY));
-        assertThat(c.children(), is(0));
+        assertTrue(c.valid());
+        assertEquals(Type.ARRAY, c.type());
+        assertEquals(0, c.children());
         Inspector i = slime.get();
-        assertThat(i.valid(), is(true));
-        assertThat(i.type(), is(Type.ARRAY));
-        assertThat(i.children(), is(0));
+        assertTrue(i.valid());
+        assertEquals(Type.ARRAY, i.type());
+        assertEquals(0, i.children());
         c.addNix();
         c.addBool(true);
         c.addLong(5);
@@ -174,23 +175,23 @@ public class SlimeTestCase {
         c.addString("string");
         byte[] data = { (byte)'d', (byte)'a', (byte)'t', (byte)'a' };
         c.addData(data);
-        assertThat(c.children(), is(6));
-        assertThat(c.entry(0).valid(), is(true));
-        assertThat(c.entry(1).asBool(), is(true));
-        assertThat(c.entry(2).asLong(), is((long)5));
-        assertThat(c.entry(3).asDouble(), is(3.5));
-        assertThat(c.entry(4).asString(), is("string"));
-        assertThat(c.entry(5).asData(), is(data));
-        assertThat(c.field(5).valid(), is(false)); // not OBJECT
+        assertEquals(6, c.children());
+        assertTrue(c.entry(0).valid());
+        assertTrue(c.entry(1).asBool());
+        assertEquals(5L, c.entry(2).asLong());
+        assertEquals(3.5, c.entry(3).asDouble(), 0.0);
+        assertEquals("string", c.entry(4).asString());
+        assertArrayEquals(data, c.entry(5).asData());
+        assertFalse(c.field(5).valid()); // not OBJECT
 
-        assertThat(i.children(), is(6));
-        assertThat(i.entry(0).valid(), is(true));
-        assertThat(i.entry(1).asBool(), is(true));
-        assertThat(i.entry(2).asLong(), is((long)5));
-        assertThat(i.entry(3).asDouble(), is(3.5));
-        assertThat(i.entry(4).asString(), is("string"));
-        assertThat(i.entry(5).asData(), is(data));
-        assertThat(i.field(5).valid(), is(false)); // not OBJECT
+        assertEquals(6, i.children());
+        assertTrue(i.entry(0).valid());
+        assertTrue(i.entry(1).asBool());
+        assertEquals(5L, i.entry(2).asLong());
+        assertEquals(3.5, i.entry(3).asDouble(), 0.0);
+        assertEquals("string", i.entry(4).asString());
+        assertArrayEquals(data, i.entry(5).asData());
+        assertFalse(i.field(5).valid()); // not OBJECT
     }
 
     @Test
@@ -199,13 +200,13 @@ public class SlimeTestCase {
         Slime slime = new Slime();
         Cursor c = slime.setObject();
 
-        assertThat(c.valid(), is(true));
-        assertThat(c.type(), is(Type.OBJECT));
-        assertThat(c.children(), is(0));
+        assertTrue(c.valid());
+        assertEquals(Type.OBJECT, c.type());
+        assertEquals(0, c.children());
         Inspector i = slime.get();
-        assertThat(i.valid(), is(true));
-        assertThat(i.type(), is(Type.OBJECT));
-        assertThat(i.children(), is(0));
+        assertTrue(i.valid());
+        assertEquals(Type.OBJECT, i.type());
+        assertEquals(0, i.children());
 
         c.setNix("a");
         c.setBool("b", true);
@@ -215,23 +216,23 @@ public class SlimeTestCase {
         byte[] data = { (byte)'d', (byte)'a', (byte)'t', (byte)'a' };
         c.setData("f", data);
 
-        assertThat(c.children(), is(6));
-        assertThat(c.field("a").valid(), is(true));
-        assertThat(c.field("b").asBool(), is(true));
-        assertThat(c.field("c").asLong(), is((long)5));
-        assertThat(c.field("d").asDouble(), is(3.5));
-        assertThat(c.field("e").asString(), is("string"));
-        assertThat(c.field("f").asData(), is(data));
-        assertThat(c.entry(4).valid(), is(false)); // not ARRAY
+        assertEquals(6, c.children());
+        assertTrue(c.field("a").valid());
+        assertTrue(c.field("b").asBool());
+        assertEquals(5L, c.field("c").asLong());
+        assertEquals(3.5, c.field("d").asDouble(), 0.0);
+        assertEquals("string", c.field("e").asString());
+        assertArrayEquals(data, c.field("f").asData());
+        assertFalse(c.entry(4).valid()); // not ARRAY
 
-        assertThat(i.children(), is(6));
-        assertThat(i.field("a").valid(), is(true));
-        assertThat(i.field("b").asBool(), is(true));
-        assertThat(i.field("c").asLong(), is((long)5));
-        assertThat(i.field("d").asDouble(), is(3.5));
-        assertThat(i.field("e").asString(), is("string"));
-        assertThat(i.field("f").asData(), is(data));
-        assertThat(i.entry(4).valid(), is(false)); // not ARRAY
+        assertEquals(6, i.children());
+        assertTrue(i.field("a").valid());
+        assertTrue(i.field("b").asBool());
+        assertEquals(5L, i.field("c").asLong());
+        assertEquals(3.5, i.field("d").asDouble(), 0.0);
+        assertEquals("string", i.field("e").asString());
+        assertArrayEquals(data, i.field("f").asData());
+        assertFalse(i.entry(4).valid()); // not ARRAY
     }
 
     @Test
@@ -240,12 +241,12 @@ public class SlimeTestCase {
         {
             Slime slime = new Slime();
             Cursor c = slime.setArray();
-            assertThat(c.addLong(5).asLong(), is((long)5));
+            assertEquals(5L, c.addLong(5).asLong());
         }
         {
             Slime slime = new Slime();
             Cursor c = slime.setObject();
-            assertThat(c.setLong("a", 5).asLong(), is((long)5));
+            assertEquals(5L, c.setLong("a", 5).asLong());
         }
     }
 
@@ -256,10 +257,10 @@ public class SlimeTestCase {
         Slime slime = new Slime();
         Cursor c = slime.setLong(10);
         Inspector i1 = c;
-        assertThat(i1.asLong(), is((long)10));
+        assertEquals(10L, i1.asLong());
 
         Inspector i2 = slime.get();
-        assertThat(i2.asLong(), is((long)10));
+        assertEquals(10L, i2.asLong());
     }
 
     @Test
@@ -275,14 +276,14 @@ public class SlimeTestCase {
             c3.setLong("answer", 42);
         }
         Inspector i = slime.get();
-        assertThat(i.field("bar").asLong(), is((long)10));
-        assertThat(i.field("foo").entry(0).asLong(), is((long)20));
-        assertThat(i.field("foo").entry(1).field("answer").asLong(), is((long)42));
+        assertEquals(10L, i.field("bar").asLong());
+        assertEquals(20L, i.field("foo").entry(0).asLong());
+        assertEquals(42L, i.field("foo").entry(1).field("answer").asLong());
 
         Cursor c = slime.get();
-        assertThat(c.field("bar").asLong(), is((long)10));
-        assertThat(c.field("foo").entry(0).asLong(), is((long)20));
-        assertThat(c.field("foo").entry(1).field("answer").asLong(), is((long)42));
+        assertEquals(10L, c.field("bar").asLong());
+        assertEquals(20L, c.field("foo").entry(0).asLong());
+        assertEquals(42L, c.field("foo").entry(1).field("answer").asLong());
     }
 
     @Test
@@ -293,19 +294,19 @@ public class SlimeTestCase {
         Cursor c = slime.setObject();
         for (int i = 0; i < n; i++) {
             String str = ("" + i + "_str_" + i);
-            assertThat(slime.lookup(str), is(SymbolTable.INVALID));
-            assertThat(c.field(str).type(), sameInstance(Type.NIX));
+            assertEquals(SymbolTable.INVALID, slime.lookup(str));
+            assertSame(Type.NIX, c.field(str).type());
             switch (i % 2) {
-            case 0: assertThat((int)c.setLong(str, i).asLong(), is(i)); break;
-            case 1: assertThat(slime.insert(str), is(i)); break;
+                case 0: assertEquals(i, (int)c.setLong(str, i).asLong()); break;
+                case 1: assertEquals(i, slime.insert(str)); break;
             }
         }
         for (int i = 0; i < n; i++) {
             String str = ("" + i + "_str_" + i);
-            assertThat(slime.lookup(str), is(i));
+            assertEquals(i, slime.lookup(str));
             switch (i % 2) {
-            case 0: assertThat((int)c.field(str).asLong(), is(i)); break;
-            case 1: assertThat((int)c.field(str).asLong(), is(0)); break;
+                case 0: assertEquals(i, (int)c.field(str).asLong()); break;
+                case 1: assertEquals(0, (int)c.field(str).asLong()); break;
             }
         }
     }
@@ -317,12 +318,12 @@ public class SlimeTestCase {
         Slime slime = new Slime();
         Cursor c = slime.setArray();
         for (int i = 0; i < n; i++) {
-            assertThat((int)c.addLong(i).asLong(), is(i));
+            assertEquals(i, (int)c.addLong(i).asLong());
         }
         for (int i = 0; i < n; i++) {
-            assertThat((int)c.entry(i).asLong(), is(i));
+            assertEquals(i, (int)c.entry(i).asLong());
         }
-        assertThat((int)c.entry(n).asLong(), is(0));
+        assertEquals(0, (int)c.entry(n).asLong());
     }
 
     @Test
@@ -332,8 +333,8 @@ public class SlimeTestCase {
         c1.addLong(20);
         Cursor c2 = c1.addObject();
         c2.setLong("answer", 42);
-        assertThat(slime.get().toString(), is("[20,{\"answer\":42}]"));
+        assertEquals("[20,{\"answer\":42}]", slime.get().toString());
         c1.addString("\u2008");
-        assertThat(slime.get().toString(), is("[20,{\"answer\":42},\"\u2008\"]"));
+        assertEquals("[20,{\"answer\":42},\"\u2008\"]", slime.get().toString());
     }
 }

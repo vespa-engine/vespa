@@ -2,7 +2,6 @@
 package com.yahoo.search.test;
 
 import com.yahoo.component.chain.Chain;
-import com.yahoo.data.JsonProducer;
 import com.yahoo.language.Language;
 import com.yahoo.language.Linguistics;
 import com.yahoo.language.detect.Detection;
@@ -16,7 +15,6 @@ import com.yahoo.prelude.Index;
 import com.yahoo.prelude.IndexFacts;
 import com.yahoo.prelude.IndexModel;
 import com.yahoo.prelude.SearchDefinition;
-import com.yahoo.prelude.fastsearch.FastHit;
 import com.yahoo.prelude.query.AndItem;
 import com.yahoo.prelude.query.AndSegmentItem;
 import com.yahoo.prelude.query.CompositeItem;
@@ -145,7 +143,7 @@ public class QueryTestCase {
     @Test
     void testCloneWithConnectivity() {
         List<String> l = List.of("a", "b", "c", "a");
-        printIt(l.stream().filter(i -> isA(i)).toList());
+        printIt(l.stream().filter(this::isA).toList());
         printIt(l.stream().filter(i -> !isA(i)).toList());
 
         Query q = new Query();
@@ -314,7 +312,7 @@ public class QueryTestCase {
         profile.set("myField", "Profile: %{queryProfile}", null);
         Query query = new Query(QueryTestCase.httpEncode("/search?queryProfile=myProfile"), profile.compile(null));
 
-        String source = query.properties().getInstance(com.yahoo.search.query.profile.QueryProfileProperties.class).getQueryProfile().listValuesWithSources(new CompoundName(""), query.getHttpRequest().propertyMap(), query.properties()).get("myField").source();
+        String source = query.properties().getInstance(com.yahoo.search.query.profile.QueryProfileProperties.class).getQueryProfile().listValuesWithSources(CompoundName.empty, query.getHttpRequest().propertyMap(), query.properties()).get("myField").source();
         assertEquals("myProfile", source);
     }
 
@@ -322,6 +320,14 @@ public class QueryTestCase {
     void testBooleanParameter() {
         QueryProfile profile = new QueryProfile("myProfile");
         Query query = new Query("/?query=something&ranking.softtimeout.enable=false", profile.compile(null));
+        assertFalse(query.properties().getBoolean("ranking.softtimeout.enable"));
+        assertFalse(query.getRanking().getSoftTimeout().getEnable());
+    }
+
+    @Test
+    void testBooleanParameterNoQueryProfile() {
+        QueryProfile profile = new QueryProfile("myProfile");
+        Query query = new Query("/?query=something&ranking.softtimeout.enable=false");
         assertFalse(query.properties().getBoolean("ranking.softtimeout.enable"));
         assertFalse(query.getRanking().getSoftTimeout().getEnable());
     }

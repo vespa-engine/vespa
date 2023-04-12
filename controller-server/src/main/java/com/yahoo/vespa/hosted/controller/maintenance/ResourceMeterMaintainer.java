@@ -98,13 +98,13 @@ public class ResourceMeterMaintainer extends ControllerMaintainer {
         } catch (Exception e) {
             log.log(Level.WARNING, "Failed to collect resource snapshots. Retrying in " + interval() + ". Error: " +
                                    Exceptions.toMessageString(e));
-            return 0.0;
+            return 1.0;
         }
 
         if (systemName.isPublic()) reportResourceSnapshots(resourceSnapshots);
         if (systemName.isPublic()) reportAllScalingEvents();
         updateDeploymentCost(resourceSnapshots);
-        return 1.0;
+        return 0.0;
     }
 
     void updateDeploymentCost(Collection<ResourceSnapshot> resourceSnapshots) {

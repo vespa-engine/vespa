@@ -64,6 +64,7 @@ public class IndexedSearchCluster extends SearchCluster
     private final List<SearchNode> searchNodes = new ArrayList<>();
     private final DispatchTuning.DispatchPolicy defaultDispatchPolicy;
     private final double dispatchWarmup;
+    private final String summaryDecodePolicy;
     /**
      * Returns the document selector that is able to resolve what documents are to be routed to this search cluster.
      * This string uses the document selector language as defined in the "document" module.
@@ -80,6 +81,7 @@ public class IndexedSearchCluster extends SearchCluster
         rootDispatch =  new DispatchGroup(this);
         defaultDispatchPolicy = DispatchTuning.Builder.toDispatchPolicy(featureFlags.queryDispatchPolicy());
         dispatchWarmup = featureFlags.queryDispatchWarmup();
+        summaryDecodePolicy = featureFlags.summaryDecodePolicy();
     }
 
     @Override
@@ -337,6 +339,15 @@ public class IndexedSearchCluster extends SearchCluster
                 builder.maxWaitAfterCoverageFactor(searchCoverage.getMaxWaitAfterCoverageFactor());
         }
         builder.warmuptime(dispatchWarmup);
+        builder.summaryDecodePolicy(toSummaryDecoding(summaryDecodePolicy));
+    }
+
+    private DispatchConfig.SummaryDecodePolicy.Enum toSummaryDecoding(String summaryDecodeType) {
+        return switch (summaryDecodeType.toLowerCase()) {
+            case "eager" -> DispatchConfig.SummaryDecodePolicy.EAGER;
+            case "ondemand","on-demand" -> DispatchConfig.SummaryDecodePolicy.Enum.ONDEMAND;
+            default -> DispatchConfig.SummaryDecodePolicy.Enum.EAGER;
+        };
     }
 
     @Override

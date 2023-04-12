@@ -49,8 +49,7 @@ public class NodeState implements Cloneable {
     }
 
     public boolean equals(Object o) {
-        if (!(o instanceof NodeState)) { return false; }
-        NodeState ns = (NodeState) o;
+        if (!(o instanceof NodeState ns)) { return false; }
         // Note that 'description' is not considered as it carries semantics.
         if (state != ns.state
             || Math.abs(capacity - ns.capacity)         > 0.0000000001
@@ -235,7 +234,7 @@ public class NodeState implements Cloneable {
                 if (key.length() > 1) break;
                 if (type != null && !type.equals(NodeType.STORAGE)) break;
                 try{
-                    newState.setCapacity(Float.valueOf(value));
+                    newState.setCapacity(Float.parseFloat(value));
                 } catch (Exception e) {
                     throw new ParseException("Illegal capacity '" + value + "'. Capacity must be a positive floating point number", 0);
                 }
@@ -243,7 +242,7 @@ public class NodeState implements Cloneable {
             case 'i':
                 if (key.length() > 1) break;
                 try{
-                    newState.setInitProgress(Float.valueOf(value));
+                    newState.setInitProgress(Float.parseFloat(value));
                 } catch (Exception e) {
                     throw new ParseException("Illegal init progress '" + value + "'. Init progress must be a floating point number from 0.0 to 1.0", 0);
                 }
@@ -251,7 +250,7 @@ public class NodeState implements Cloneable {
             case 't':
                 if (key.length() > 1) break;
                 try{
-                    newState.setStartTimestamp(Long.valueOf(value));
+                    newState.setStartTimestamp(Long.parseLong(value));
                     if (newState.getStartTimestamp() < 0) throw new Exception();
                 } catch (Exception e) {
                     throw new ParseException("Illegal start timestamp " + value + ". Start timestamp must be 0 or a positive long.", 0);
@@ -265,8 +264,8 @@ public class NodeState implements Cloneable {
                 if (type != null && !type.equals(NodeType.STORAGE)) break;
                 int size = 0;
                 if (key.length() == 1) {
-                    try{
-                        size = Integer.valueOf(value);
+                    try {
+                        size = Integer.parseInt(value);
                     } catch (Exception e) {
                         throw new ParseException("Invalid disk count '" + value + "'. Need a positive integer value", 0);
                     }
@@ -277,7 +276,7 @@ public class NodeState implements Cloneable {
                 int endp = key.indexOf('.', 2);
                 String indexStr = (endp < 0 ? key.substring(2) : key.substring(2, endp));
                 try{
-                    diskIndex = Integer.valueOf(indexStr);
+                    diskIndex = Integer.parseInt(indexStr);
                 } catch (Exception e) {
                     throw new ParseException("Invalid disk index '" + indexStr + "'. need a positive integer value", 0);
                 }

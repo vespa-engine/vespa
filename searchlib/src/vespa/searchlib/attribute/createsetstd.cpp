@@ -2,10 +2,8 @@
 
 #include "attributefactory.h"
 #include "defines.h"
-#include "attributevector.hpp"
-#include "multivalueattribute.hpp"
-#include "multinumericattribute.hpp"
-#include "multistringattribute.hpp"
+#include "multinumericattribute.h"
+#include "multistringattribute.h"
 
 #include <vespa/log/log.h>
 LOG_SETUP(".searchlib.attribute.create_set_std");

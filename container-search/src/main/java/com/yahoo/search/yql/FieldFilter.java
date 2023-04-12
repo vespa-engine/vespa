@@ -2,13 +2,11 @@
 package com.yahoo.search.yql;
 
 import java.util.Iterator;
-import java.util.Map.Entry;
 import java.util.Set;
 
 import com.yahoo.api.annotations.Beta;
 import com.yahoo.component.chain.dependencies.After;
 import com.yahoo.component.chain.dependencies.Before;
-import com.yahoo.prelude.fastsearch.FastHit;
 import com.yahoo.processing.request.CompoundName;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
@@ -27,7 +25,7 @@ import com.yahoo.search.searchchain.Execution;
 @Before("com.yahoo.search.yql.FieldFiller")
 public class FieldFilter extends Searcher {
 
-    public static final CompoundName FIELD_FILTER_DISABLE = new CompoundName("FieldFilter.disable");
+    public static final CompoundName FIELD_FILTER_DISABLE = CompoundName.from("FieldFilter.disable");
 
     /** Fields that should be kept even if not explicitly requested */
     private static final Set<String> syntheticFields = Set.of("matchfeatures", "rankfeatures", "summaryfeatures");

@@ -51,12 +51,14 @@ for data in "Dockerfile vespa"; do
     else
         # Build
         buildah bud \
+                --build-arg VESPA_BASE_IMAGE=el8 \
                 --build-arg VESPA_VERSION=$VESPA_VERSION \
                 --file $DOCKER_FILE \
                 --jobs 2  \
                 --layers=false \
                 --manifest "vespaengine/$IMAGE_NAME:$VESPA_VERSION" \
-                --platform linux/amd64,linux/arm64 | cat
+                --platform linux/amd64,linux/arm64 \
+                --squash | cat
 
         # Test
         buildah tag vespaengine/$IMAGE_NAME:$VESPA_VERSION vespaengine/$IMAGE_NAME:latest

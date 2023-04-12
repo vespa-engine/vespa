@@ -95,7 +95,7 @@ PredicateIntervalStore::remove(EntryRef ref) {
         // BufferState &state = _store.getBufferState(buffer_id);
         // uint32_t type_id = state.getTypeId();
         // uint32_t size = type_id <= MAX_ARRAY_SIZE ? type_id : 1;
-        // _store.holdElem(ref, size);
+        // _store.hold_entries(ref, size);
     }
 }
 

@@ -48,7 +48,7 @@ public class ScalingSuggestionsMaintainer extends NodeRepositoryMaintainer {
                     failures++;
             }
         }
-        return asSuccessFactor(attempts, failures);
+        return asSuccessFactorDeviation(attempts, failures);
     }
 
     private Applications applications() {

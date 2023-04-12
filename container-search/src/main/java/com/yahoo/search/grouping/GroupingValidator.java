@@ -37,7 +37,7 @@ import static com.yahoo.search.grouping.GroupingQueryParser.SELECT_PARAMETER_PAR
 public class GroupingValidator extends Searcher {
 
     public static final String GROUPING_VALIDATED = "GroupingValidated";
-    public static final CompoundName PARAM_ENABLED = new CompoundName("validate_" + GroupingQueryParser.PARAM_REQUEST);
+    public static final CompoundName PARAM_ENABLED = CompoundName.from("validate_" + GroupingQueryParser.PARAM_REQUEST);
     private final HashMap<String, AttributesConfig.Attribute> attributes = new HashMap<>();
     private final String clusterName;
     private final boolean enabled;

@@ -15,9 +15,9 @@
 
 namespace vespalib::datastore {
 
-template <typename EntryT, typename RefT, typename TypeMapperT>
+template <typename ElemT, typename RefT, typename TypeMapperT>
 void
-ArrayStore<EntryT, RefT, TypeMapperT>::initArrayTypes(const ArrayStoreConfig &cfg, std::shared_ptr<alloc::MemoryAllocator> memory_allocator)
+ArrayStore<ElemT, RefT, TypeMapperT>::initArrayTypes(const ArrayStoreConfig &cfg, std::shared_ptr<alloc::MemoryAllocator> memory_allocator)
 {
     _largeArrayTypeId = _store.addType(&_largeArrayType);
     assert(_largeArrayTypeId == 0);
@@ -31,14 +31,14 @@ ArrayStore<EntryT, RefT, TypeMapperT>::initArrayTypes(const ArrayStoreConfig &cf
     }
 }
 
-template <typename EntryT, typename RefT, typename TypeMapperT>
-ArrayStore<EntryT, RefT, TypeMapperT>::ArrayStore(const ArrayStoreConfig &cfg, std::shared_ptr<alloc::MemoryAllocator> memory_allocator)
+template <typename ElemT, typename RefT, typename TypeMapperT>
+ArrayStore<ElemT, RefT, TypeMapperT>::ArrayStore(const ArrayStoreConfig &cfg, std::shared_ptr<alloc::MemoryAllocator> memory_allocator)
     : ArrayStore(cfg, memory_allocator, TypeMapper())
 {
 }
 
-template <typename EntryT, typename RefT, typename TypeMapperT>
-ArrayStore<EntryT, RefT, TypeMapperT>::ArrayStore(const ArrayStoreConfig &cfg, std::shared_ptr<alloc::MemoryAllocator> memory_allocator,
+template <typename ElemT, typename RefT, typename TypeMapperT>
+ArrayStore<ElemT, RefT, TypeMapperT>::ArrayStore(const ArrayStoreConfig &cfg, std::shared_ptr<alloc::MemoryAllocator> memory_allocator,
                                                   TypeMapper&& mapper)
     : _largeArrayTypeId(0),
       _maxSmallArrayTypeId(cfg.maxSmallArrayTypeId()),
@@ -56,25 +56,25 @@ ArrayStore<EntryT, RefT, TypeMapperT>::ArrayStore(const ArrayStoreConfig &cfg, s
     }
 }
 
-template <typename EntryT, typename RefT, typename TypeMapperT>
+template <typename ElemT, typename RefT, typename TypeMapperT>
 vespalib::MemoryUsage
-ArrayStore<EntryT, RefT, TypeMapperT>::getMemoryUsage() const {
+ArrayStore<ElemT, RefT, TypeMapperT>::getMemoryUsage() const {
     vespalib::MemoryUsage usage = _store.getMemoryUsage();
     usage.incAllocatedBytes(_smallArrayTypes.capacity() * sizeof(SmallBufferType));
     usage.incUsedBytes(_smallArrayTypes.size() * sizeof(SmallBufferType));
     return usage;
 }
 
-template <typename EntryT, typename RefT, typename TypeMapperT>
-ArrayStore<EntryT, RefT, TypeMapperT>::~ArrayStore()
+template <typename ElemT, typename RefT, typename TypeMapperT>
+ArrayStore<ElemT, RefT, TypeMapperT>::~ArrayStore()
 {
     _store.reclaim_all_memory();
     _store.dropBuffers();
 }
 
-template <typename EntryT, typename RefT, typename TypeMapperT>
+template <typename ElemT, typename RefT, typename TypeMapperT>
 EntryRef
-ArrayStore<EntryT, RefT, TypeMapperT>::add(const ConstArrayRef &array)
+ArrayStore<ElemT, RefT, TypeMapperT>::add(const ConstArrayRef &array)
 {
     if (array.size() == 0) {
         return EntryRef();
@@ -86,9 +86,9 @@ ArrayStore<EntryT, RefT, TypeMapperT>::add(const ConstArrayRef &array)
     }
 }
 
-template <typename EntryT, typename RefT, typename TypeMapperT>
+template <typename ElemT, typename RefT, typename TypeMapperT>
 EntryRef
-ArrayStore<EntryT, RefT, TypeMapperT>::allocate(size_t array_size)
+ArrayStore<ElemT, RefT, TypeMapperT>::allocate(size_t array_size)
 {
     if (array_size == 0) {
         return EntryRef();
@@ -100,94 +100,93 @@ ArrayStore<EntryT, RefT, TypeMapperT>::allocate(size_t array_size)
     }
 }
 
-template <typename EntryT, typename RefT, typename TypeMapperT>
+template <typename ElemT, typename RefT, typename TypeMapperT>
 EntryRef
-ArrayStore<EntryT, RefT, TypeMapperT>::addSmallArray(const ConstArrayRef &array)
+ArrayStore<ElemT, RefT, TypeMapperT>::addSmallArray(const ConstArrayRef &array)
 {
     uint32_t typeId = _mapper.get_type_id(array.size());
-    using NoOpReclaimer = DefaultReclaimer<EntryT>;
-    return _store.template freeListAllocator<EntryT, NoOpReclaimer>(typeId).allocArray(array).ref;
+    using NoOpReclaimer = DefaultReclaimer<ElemT>;
+    return _store.template freeListAllocator<ElemT, NoOpReclaimer>(typeId).allocArray(array).ref;
 }
 
-template <typename EntryT, typename RefT, typename TypeMapperT>
+template <typename ElemT, typename RefT, typename TypeMapperT>
 EntryRef
-ArrayStore<EntryT, RefT, TypeMapperT>::allocate_small_array(size_t array_size)
+ArrayStore<ElemT, RefT, TypeMapperT>::allocate_small_array(size_t array_size)
 {
     uint32_t type_id = _mapper.get_type_id(array_size);
-    return _store.template freeListRawAllocator<EntryT>(type_id).alloc(array_size).ref;
+    return _store.template freeListRawAllocator<ElemT>(type_id).alloc(1).ref;
 }
 
-template <typename EntryT, typename RefT, typename TypeMapperT>
+template <typename ElemT, typename RefT, typename TypeMapperT>
 EntryRef
-ArrayStore<EntryT, RefT, TypeMapperT>::addLargeArray(const ConstArrayRef &array)
+ArrayStore<ElemT, RefT, TypeMapperT>::addLargeArray(const ConstArrayRef &array)
 {
     using NoOpReclaimer = DefaultReclaimer<LargeArray>;
     auto handle = _store.template freeListAllocator<LargeArray, NoOpReclaimer>(_largeArrayTypeId)
             .alloc(array.cbegin(), array.cend());
     auto& state = _store.getBufferState(RefT(handle.ref).bufferId());
-    state.stats().inc_extra_used_bytes(sizeof(EntryT) * array.size());
+    state.stats().inc_extra_used_bytes(sizeof(ElemT) * array.size());
     return handle.ref;
 }
 
-template <typename EntryT, typename RefT, typename TypeMapperT>
+template <typename ElemT, typename RefT, typename TypeMapperT>
 EntryRef
-ArrayStore<EntryT, RefT, TypeMapperT>::allocate_large_array(size_t array_size)
+ArrayStore<ElemT, RefT, TypeMapperT>::allocate_large_array(size_t array_size)
 {
     using NoOpReclaimer = DefaultReclaimer<LargeArray>;
     auto handle = _store.template freeListAllocator<LargeArray, NoOpReclaimer>(_largeArrayTypeId).alloc(array_size);
     auto& state = _store.getBufferState(RefT(handle.ref).bufferId());
-    state.stats().inc_extra_used_bytes(sizeof(EntryT) * array_size);
+    state.stats().inc_extra_used_bytes(sizeof(ElemT) * array_size);
     return handle.ref;
 }
 
-template <typename EntryT, typename RefT, typename TypeMapperT>
+template <typename ElemT, typename RefT, typename TypeMapperT>
 void
-ArrayStore<EntryT, RefT, TypeMapperT>::remove(EntryRef ref)
+ArrayStore<ElemT, RefT, TypeMapperT>::remove(EntryRef ref)
 {
     if (ref.valid()) {
         RefT internalRef(ref);
         uint32_t typeId = _store.getTypeId(internalRef.bufferId());
         if (typeId != _largeArrayTypeId) {
-            size_t arraySize = _mapper.get_array_size(typeId);
-            _store.holdElem(ref, arraySize);
+            _store.hold_entry(ref);
         } else {
-            _store.holdElem(ref, 1, sizeof(EntryT) * get(ref).size());
+            _store.hold_entry(ref, sizeof(ElemT) * get(ref).size());
         }
     }
 }
 
-template <typename EntryT, typename RefT, typename TypeMapperT>
+template <typename ElemT, typename RefT, typename TypeMapperT>
 EntryRef
-ArrayStore<EntryT, RefT, TypeMapperT>::move_on_compact(EntryRef ref)
+ArrayStore<ElemT, RefT, TypeMapperT>::move_on_compact(EntryRef ref)
 {
     return add(get(ref));
 }
 
-template <typename EntryT, typename RefT, typename TypeMapperT>
+template <typename ElemT, typename RefT, typename TypeMapperT>
 ICompactionContext::UP
-ArrayStore<EntryT, RefT, TypeMapperT>::compact_worst(const CompactionStrategy &compaction_strategy)
+ArrayStore<ElemT, RefT, TypeMapperT>::compact_worst(const CompactionStrategy &compaction_strategy)
 {
     auto compacting_buffers = _store.start_compact_worst_buffers(_compaction_spec, compaction_strategy);
     return std::make_unique<CompactionContext>(*this, std::move(compacting_buffers));
 }
 
-template <typename EntryT, typename RefT, typename TypeMapperT>
+template <typename ElemT, typename RefT, typename TypeMapperT>
 std::unique_ptr<CompactingBuffers>
-ArrayStore<EntryT, RefT, TypeMapperT>::start_compact_worst_buffers(const CompactionStrategy &compaction_strategy)
+ArrayStore<ElemT, RefT, TypeMapperT>::start_compact_worst_buffers(const CompactionStrategy &compaction_strategy)
 {
     return _store.start_compact_worst_buffers(_compaction_spec, compaction_strategy);
 }
 
-template <typename EntryT, typename RefT, typename TypeMapperT>
+template <typename ElemT, typename RefT, typename TypeMapperT>
 vespalib::AddressSpace
-ArrayStore<EntryT, RefT, TypeMapperT>::addressSpaceUsage() const
+ArrayStore<ElemT, RefT, TypeMapperT>::addressSpaceUsage() const
 {
     return _store.getAddressSpaceUsage();
 }
 
-template <typename EntryT, typename RefT, typename TypeMapperT>
+template <typename ElemT, typename RefT, typename TypeMapperT>
 vespalib::MemoryUsage
-ArrayStore<EntryT, RefT, TypeMapperT>::update_stat(const CompactionStrategy& compaction_strategy)
+ArrayStore<ElemT, RefT, TypeMapperT>::update_stat(const CompactionStrategy& compaction_strategy)
 {
     auto address_space_usage = _store.getAddressSpaceUsage();
     auto memory_usage = getMemoryUsage();
@@ -195,20 +194,20 @@ ArrayStore<EntryT, RefT, TypeMapperT>::update_stat(const CompactionStrategy& com
     return memory_usage;
 }
 
-template <typename EntryT, typename RefT, typename TypeMapperT>
+template <typename ElemT, typename RefT, typename TypeMapperT>
 const BufferState &
-ArrayStore<EntryT, RefT, TypeMapperT>::bufferState(EntryRef ref)
+ArrayStore<ElemT, RefT, TypeMapperT>::bufferState(EntryRef ref)
 {
     RefT internalRef(ref);
     return _store.getBufferState(internalRef.bufferId());
 }
 
-template <typename EntryT, typename RefT, typename TypeMapperT>
+template <typename ElemT, typename RefT, typename TypeMapperT>
 ArrayStoreConfig
-ArrayStore<EntryT, RefT, TypeMapperT>::optimizedConfigForHugePage(uint32_t maxSmallArrayTypeId,
+ArrayStore<ElemT, RefT, TypeMapperT>::optimizedConfigForHugePage(uint32_t maxSmallArrayTypeId,
                                                                   size_t hugePageSize,
                                                                   size_t smallPageSize,
-                                                                  size_t minNumArraysForNewBuffer,
+                                                                  size_t min_num_entries_for_new_buffer,
                                                                   float allocGrowFactor)
 {
     TypeMapper mapper;
@@ -216,26 +215,26 @@ ArrayStore<EntryT, RefT, TypeMapperT>::optimizedConfigForHugePage(uint32_t maxSm
                                       mapper,
                                       hugePageSize,
                                       smallPageSize,
-                                      minNumArraysForNewBuffer,
+                                      min_num_entries_for_new_buffer,
                                       allocGrowFactor);
 }
 
-template <typename EntryT, typename RefT, typename TypeMapperT>
+template <typename ElemT, typename RefT, typename TypeMapperT>
 ArrayStoreConfig
-ArrayStore<EntryT, RefT, TypeMapperT>::optimizedConfigForHugePage(uint32_t maxSmallArrayTypeId,
+ArrayStore<ElemT, RefT, TypeMapperT>::optimizedConfigForHugePage(uint32_t maxSmallArrayTypeId,
                                                                   const TypeMapper& mapper,
                                                                   size_t hugePageSize,
                                                                   size_t smallPageSize,
-                                                                  size_t minNumArraysForNewBuffer,
+                                                                  size_t min_num_entries_for_new_buffer,
                                                                   float allocGrowFactor)
 {
     return ArrayStoreConfig::optimizeForHugePage(mapper.get_max_small_array_type_id(maxSmallArrayTypeId),
                                                  [&](uint32_t type_id) noexcept { return mapper.get_array_size(type_id); },
                                                  hugePageSize,
                                                  smallPageSize,
-                                                 sizeof(EntryT),
+                                                 sizeof(ElemT),
                                                  RefT::offsetSize(),
-                                                 minNumArraysForNewBuffer,
+                                                 min_num_entries_for_new_buffer,
                                                  allocGrowFactor);
 }
 

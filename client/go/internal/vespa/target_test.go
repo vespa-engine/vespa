@@ -154,11 +154,6 @@ func TestCheckVersion(t *testing.T) {
 }
 
 func createCloudTarget(t *testing.T, url string, logWriter io.Writer) Target {
-	kp, err := CreateKeyPair()
-	assert.Nil(t, err)
-
-	x509KeyPair, err := tls.X509KeyPair(kp.Certificate, kp.PrivateKey)
-	assert.Nil(t, err)
 	apiKey, err := CreateAPIKey()
 	assert.Nil(t, err)
 
@@ -172,7 +167,6 @@ func createCloudTarget(t *testing.T, url string, logWriter io.Writer) Target {
 				Application: ApplicationID{Tenant: "t1", Application: "a1", Instance: "i1"},
 				Zone:        ZoneID{Environment: "dev", Region: "us-north-1"},
 			},
-			TLSOptions: TLSOptions{KeyPair: x509KeyPair},
 		},
 		LogOptions{Writer: logWriter},
 	)

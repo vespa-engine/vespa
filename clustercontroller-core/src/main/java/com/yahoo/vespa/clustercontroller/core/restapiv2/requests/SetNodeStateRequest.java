@@ -20,13 +20,14 @@ import com.yahoo.vespa.clustercontroller.utils.staterestapi.errors.StateRestApiE
 import com.yahoo.vespa.clustercontroller.utils.staterestapi.requests.SetUnitStateRequest;
 import com.yahoo.vespa.clustercontroller.utils.staterestapi.response.SetResponse;
 import com.yahoo.vespa.clustercontroller.utils.staterestapi.response.UnitState;
-
 import java.time.Instant;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static com.yahoo.vespa.clustercontroller.core.NodeStateChangeChecker.Result;
 
 public class SetNodeStateRequest extends Request<SetResponse> {
     private static final Logger log = Logger.getLogger(SetNodeStateRequest.class.getName());
@@ -125,8 +126,8 @@ public class SetNodeStateRequest extends Request<SetResponse> {
 
         NodeState wantedState = nodeInfo.getUserWantedState();
         NodeState newWantedState = getRequestedNodeState(newStates, node);
-        NodeStateChangeChecker.Result result = cluster.calculateEffectOfNewState(
-                node, currentClusterState, condition, wantedState, newWantedState, inMasterMoratorium);
+        Result result = cluster.calculateEffectOfNewState(node, currentClusterState, condition, wantedState,
+                                                          newWantedState, inMasterMoratorium);
 
         log.log(Level.FINE, () -> "node=" + node +
                 " current-cluster-state=" + currentClusterState + // Includes version in output format

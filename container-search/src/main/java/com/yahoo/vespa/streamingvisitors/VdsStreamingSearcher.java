@@ -45,9 +45,9 @@ import java.util.logging.Logger;
  */
 public class VdsStreamingSearcher extends VespaBackEndSearcher {
 
-    private static final CompoundName streamingUserid = new CompoundName("streaming.userid");
-    private static final CompoundName streamingGroupname = new CompoundName("streaming.groupname");
-    private static final CompoundName streamingSelection = new CompoundName("streaming.selection");
+    private static final CompoundName streamingUserid = CompoundName.from("streaming.userid");
+    private static final CompoundName streamingGroupname = CompoundName.from("streaming.groupname");
+    private static final CompoundName streamingSelection = CompoundName.from("streaming.selection");
 
     static final String STREAMING_STATISTICS = "streaming.statistics";
     private final VisitorFactory visitorFactory;
@@ -231,11 +231,11 @@ public class VdsStreamingSearcher extends VespaBackEndSearcher {
                 ", returned hit count = ", hits.size(), ", summary count = ",
                 summaryMap.size());
 
-        VisitorStatistics visitStats = visitor.getStatistics();
+        VisitorStatistics stats = visitor.getStatistics();
         result.setTotalHitCount(visitor.getTotalHitCount());
-        result.setCoverage(new Coverage(visitStats.getDocumentsVisited(), visitStats.getDocumentsVisited()));
+        result.setCoverage(new Coverage(stats.getDocumentsVisited(), stats.getDocumentsVisited(), 1, 1));
         query.trace(visitor.getStatistics().toString(), false, 2);
-        query.getContext(true).setProperty(STREAMING_STATISTICS, visitor.getStatistics());
+        query.getContext(true).setProperty(STREAMING_STATISTICS, stats);
 
         DocsumPacket[] summaryPackets = new DocsumPacket [hits.size()];
 

@@ -255,7 +255,7 @@ public class TenantApplicationsTest {
     }
 
     private Thread setupWaiter(TenantApplications applications) {
-        Curator.CompletionWaiter waiter = applications.createDeleteApplicationWaiter(createApplicationId());
+        Curator.CompletionWaiter waiter = applications.getRemoveApplicationWaiter(createApplicationId());
         Thread t1 = new Thread(() -> {
             try {
                 waiter.awaitCompletion(Duration.ofSeconds(120));
@@ -269,7 +269,7 @@ public class TenantApplicationsTest {
 
     private void notifyCompletion(TenantApplications applications, int respondentCount) {
         IntStream.range(0, respondentCount)
-                 .forEach(i -> applications.getDeleteApplicationWaiter(createApplicationId())
+                 .forEach(i -> applications.createRemoveApplicationWaiter(createApplicationId())
                                            .notifyCompletion());
     }
 

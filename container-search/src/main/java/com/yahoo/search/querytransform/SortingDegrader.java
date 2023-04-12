@@ -41,9 +41,9 @@ public class SortingDegrader extends Searcher {
 
     /** Set this to false in query.properties to turn off degrading. Default: on */
     // (this is not called ranking.sorting.degrading because it should not be part of the query object model
-    public static final CompoundName DEGRADING = new CompoundName("sorting.degrading");
+    public static final CompoundName DEGRADING = CompoundName.from("sorting.degrading");
 
-    public static final CompoundName PAGINATION = new CompoundName("to_be_removed_pagination");
+    public static final CompoundName PAGINATION = CompoundName.from("to_be_removed_pagination");
 
     @Override
     public Result search(Query query, Execution execution) {

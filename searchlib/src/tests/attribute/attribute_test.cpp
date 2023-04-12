@@ -912,8 +912,8 @@ AttributeTest::testSingle()
             cfg.setFastSearch(true);
             AttributePtr ptr = createAttribute("sv-post-int32", cfg);
             ptr->updateStat(true);
-            EXPECT_EQ(339020u, ptr->getStatus().getAllocated());
-            EXPECT_EQ(101852u, ptr->getStatus().getUsed());
+            EXPECT_EQ(338972u, ptr->getStatus().getAllocated());
+            EXPECT_EQ(101492u, ptr->getStatus().getUsed());
             addDocs(ptr, numDocs);
             testSingle<IntegerAttribute, AttributeVector::largeint_t, int32_t>(ptr, values);
         }
@@ -934,8 +934,8 @@ AttributeTest::testSingle()
             cfg.setFastSearch(true);
             AttributePtr ptr = createAttribute("sv-post-float", cfg);
             ptr->updateStat(true);
-            EXPECT_EQ(339020, ptr->getStatus().getAllocated());
-            EXPECT_EQ(101852u, ptr->getStatus().getUsed());
+            EXPECT_EQ(338972u, ptr->getStatus().getAllocated());
+            EXPECT_EQ(101492u, ptr->getStatus().getUsed());
             addDocs(ptr, numDocs);
             testSingle<FloatingPointAttribute, double, float>(ptr, values);
         }
@@ -947,8 +947,8 @@ AttributeTest::testSingle()
         {
             AttributePtr ptr = createAttribute("sv-string", Config(BasicType::STRING, CollectionType::SINGLE));
             ptr->updateStat(true);
-            EXPECT_EQ(117256u + sizeof_large_string_entry, ptr->getStatus().getAllocated());
-            EXPECT_EQ(53240u + sizeof_large_string_entry, ptr->getStatus().getUsed());
+            EXPECT_EQ(116528u + sizeof_large_string_entry, ptr->getStatus().getAllocated());
+            EXPECT_EQ(52760u + sizeof_large_string_entry, ptr->getStatus().getUsed());
             addDocs(ptr, numDocs);
             testSingle<StringAttribute, string, string>(ptr, values);
         }
@@ -957,8 +957,8 @@ AttributeTest::testSingle()
             cfg.setFastSearch(true);
             AttributePtr ptr = createAttribute("sv-fs-string", cfg);
             ptr->updateStat(true);
-            EXPECT_EQ(345624u + sizeof_large_string_entry, ptr->getStatus().getAllocated());
-            EXPECT_EQ(105176u + sizeof_large_string_entry, ptr->getStatus().getUsed());
+            EXPECT_EQ(344848u + sizeof_large_string_entry, ptr->getStatus().getAllocated());
+            EXPECT_EQ(104408u + sizeof_large_string_entry, ptr->getStatus().getUsed());
             addDocs(ptr, numDocs);
             testSingle<StringAttribute, string, string>(ptr, values);
         }
@@ -1089,8 +1089,8 @@ AttributeTest::testArray()
         {
             AttributePtr ptr = createAttribute("a-int32", Config(BasicType::INT32, CollectionType::ARRAY));
             ptr->updateStat(true);
-            EXPECT_EQ(512056u, ptr->getStatus().getAllocated());
-            EXPECT_EQ(504392u, ptr->getStatus().getUsed());
+            EXPECT_EQ(487480u, ptr->getStatus().getAllocated());
+            EXPECT_EQ(479720u, ptr->getStatus().getUsed());
             addDocs(ptr, numDocs);
             testArray<IntegerAttribute, AttributeVector::largeint_t>(ptr, values);
         }
@@ -1099,8 +1099,8 @@ AttributeTest::testArray()
             cfg.setFastSearch(true);
             AttributePtr ptr = createAttribute("flags", cfg);
             ptr->updateStat(true);
-            EXPECT_EQ(512056u, ptr->getStatus().getAllocated());
-            EXPECT_EQ(504392u, ptr->getStatus().getUsed());
+            EXPECT_EQ(487480u, ptr->getStatus().getAllocated());
+            EXPECT_EQ(479720u, ptr->getStatus().getUsed());
             addDocs(ptr, numDocs);
             testArray<IntegerAttribute, AttributeVector::largeint_t>(ptr, values);
         }
@@ -1109,8 +1109,8 @@ AttributeTest::testArray()
             cfg.setFastSearch(true);
             AttributePtr ptr = createAttribute("a-fs-int32", cfg);
             ptr->updateStat(true);
-            EXPECT_EQ(868788u, ptr->getStatus().getAllocated());
-            EXPECT_EQ(606264u, ptr->getStatus().getUsed());
+            EXPECT_EQ(844116u, ptr->getStatus().getAllocated());
+            EXPECT_EQ(581232u, ptr->getStatus().getUsed());
             addDocs(ptr, numDocs);
             testArray<IntegerAttribute, AttributeVector::largeint_t>(ptr, values);
         }
@@ -1128,8 +1128,8 @@ AttributeTest::testArray()
             cfg.setFastSearch(true);
             AttributePtr ptr = createAttribute("a-fs-float", cfg);
             ptr->updateStat(true);
-            EXPECT_EQ(868788u, ptr->getStatus().getAllocated());
-            EXPECT_EQ(606264u, ptr->getStatus().getUsed());
+            EXPECT_EQ(844116u, ptr->getStatus().getAllocated());
+            EXPECT_EQ(581232u, ptr->getStatus().getUsed());
             addDocs(ptr, numDocs);
             testArray<FloatingPointAttribute, double>(ptr, values);
         }
@@ -1140,8 +1140,8 @@ AttributeTest::testArray()
         {
             AttributePtr ptr = createAttribute("a-string", Config(BasicType::STRING, CollectionType::ARRAY));
             ptr->updateStat(true);
-            EXPECT_EQ(625088u + sizeof_large_string_entry, ptr->getStatus().getAllocated());
-            EXPECT_EQ(557632u + sizeof_large_string_entry, ptr->getStatus().getUsed());
+            EXPECT_EQ(599784u + sizeof_large_string_entry, ptr->getStatus().getAllocated());
+            EXPECT_EQ(532480u + sizeof_large_string_entry, ptr->getStatus().getUsed());
             addDocs(ptr, numDocs);
             testArray<StringAttribute, string>(ptr, values);
         }
@@ -1150,8 +1150,8 @@ AttributeTest::testArray()
             cfg.setFastSearch(true);
             AttributePtr ptr = createAttribute("afs-string", cfg);
             ptr->updateStat(true);
-            EXPECT_EQ(875392u + sizeof_large_string_entry, ptr->getStatus().getAllocated());
-            EXPECT_EQ(609588u + sizeof_large_string_entry, ptr->getStatus().getUsed());
+            EXPECT_EQ(849992u + sizeof_large_string_entry, ptr->getStatus().getAllocated());
+            EXPECT_EQ(584148u + sizeof_large_string_entry, ptr->getStatus().getUsed());
             addDocs(ptr, numDocs);
             testArray<StringAttribute, string>(ptr, values);
         }

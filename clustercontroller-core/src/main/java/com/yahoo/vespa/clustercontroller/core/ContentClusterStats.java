@@ -1,7 +1,12 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.core;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 
 /**
  * Class for storing pending content node stats for all content nodes in the cluster.
@@ -29,9 +34,7 @@ public class ContentClusterStats implements Iterable<ContentNodeStats> {
         return mapToNodeStats.values().iterator();
     }
 
-    public ContentNodeStats getContentNode(Integer index) {
-        return mapToNodeStats.get(index);
-    }
+    public ContentNodeStats getNodeStats(Integer index) { return mapToNodeStats.get(index);}
 
     public int size() {
         return mapToNodeStats.size();
@@ -52,7 +55,6 @@ public class ContentClusterStats implements Iterable<ContentNodeStats> {
 
     @Override
     public String toString() {
-        return String.format("{mapToNodeStats=[%s]}",
-                Arrays.toString(mapToNodeStats.entrySet().toArray()));
+        return String.format("{mapToNodeStats=[%s]}", Arrays.toString(mapToNodeStats.entrySet().toArray()));
     }
 }

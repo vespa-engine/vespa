@@ -106,7 +106,7 @@ private:
         _mapping.resize(data_store.get_bufferid_limit_relaxed());
         for (const auto bufferId : _compacting_buffers->get_buffer_ids()) {
             BufferState &state = data_store.getBufferState(bufferId);
-            _mapping[bufferId].resize(state.get_used_arrays());
+            _mapping[bufferId].resize(state.size());
         }
     }
 

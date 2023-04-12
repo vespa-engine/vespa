@@ -27,19 +27,17 @@ import java.util.concurrent.atomic.AtomicReference;
 public class Distribution {
 
     private static class Config {
-        Config(Group nodeGraph, int redundancy, boolean distributorAutoOwnershipTransferOnWholeGroupDown) {
+        Config(Group nodeGraph, int redundancy) {
             this.nodeGraph = nodeGraph;
             this.redundancy = redundancy;
-            this.distributorAutoOwnershipTransferOnWholeGroupDown = distributorAutoOwnershipTransferOnWholeGroupDown;
         }
 
         private final Group nodeGraph;
         private final int redundancy;
-        private final boolean distributorAutoOwnershipTransferOnWholeGroupDown;
     }
 
     private ConfigSubscriber configSub;
-    private final AtomicReference<Config> config = new AtomicReference<>(new Config(null, 1, false));
+    private final AtomicReference<Config> config = new AtomicReference<>(new Config(null, 1));
 
     public Group getRootGroup() {
         return config.getAcquire().nodeGraph;
@@ -96,7 +94,7 @@ public class Distribution {
             if (root == null)
                 throw new IllegalStateException("Config does not specify a root group");
             root.calculateDistributionHashValues();
-            Distribution.this.config.setRelease(new Config(root, config.redundancy(), config.distributor_auto_ownership_transfer_on_whole_group_down()));
+            Distribution.this.config.setRelease(new Config(root, config.redundancy()));
         } catch (ParseException e) {
             throw new IllegalStateException("Failed to parse config", e);
         }
@@ -139,7 +137,7 @@ public class Distribution {
             if (root == null)
                 throw new IllegalStateException("Config does not specify a root group");
             root.calculateDistributionHashValues();
-            Distribution.this.config.setRelease(new Config(root, config.redundancy(), true));
+            Distribution.this.config.setRelease(new Config(root, config.redundancy()));
         } catch (ParseException e) {
             throw new IllegalStateException("Failed to parse config", e);
         }
@@ -241,8 +239,7 @@ public class Distribution {
         return true;
     }
 
-    private Group getIdealDistributorGroup(boolean distributorAutoOwnershipTransferOnWholeGroupDown,
-                                           BucketId bucket, ClusterState clusterState, Group parent, int redundancy) {
+    private Group getIdealDistributorGroup(BucketId bucket, ClusterState clusterState, Group parent, int redundancy) {
         if (parent.isLeafGroup()) {
             return parent;
         }
@@ -259,15 +256,13 @@ public class Distribution {
             }
             results.add(new ScoredGroup(g, score));
         }
-        if (distributorAutoOwnershipTransferOnWholeGroupDown) {
-            while (!results.isEmpty() && allDistributorsDown(results.first().group, clusterState)) {
-                results.remove(results.first());
-            }
+        while (!results.isEmpty() && allDistributorsDown(results.first().group, clusterState)) {
+            results.remove(results.first());
         }
         if (results.isEmpty()) {
             return null;
         }
-        return getIdealDistributorGroup(distributorAutoOwnershipTransferOnWholeGroupDown, bucket, clusterState, results.first().group, redundancyArray[0]);
+        return getIdealDistributorGroup(bucket, clusterState, results.first().group, redundancyArray[0]);
     }
 
     private static class ResultGroup implements Comparable<ResultGroup> {
@@ -434,7 +429,7 @@ public class Distribution {
         }
 
         Config cfg = config.getAcquire();
-        Group idealGroup = getIdealDistributorGroup(cfg.distributorAutoOwnershipTransferOnWholeGroupDown, bucket, state, cfg.nodeGraph, cfg.redundancy);
+        Group idealGroup = getIdealDistributorGroup(bucket, state, cfg.nodeGraph, cfg.redundancy);
         if (idealGroup == null) {
             throw new NoDistributorsAvailableException("No distributors available in cluster state version " + state.getVersion());
         }
@@ -508,10 +503,6 @@ public class Distribution {
     }
 
     public static String getDefaultDistributionConfig(int redundancy, int nodeCount) {
-        return getDefaultDistributionConfig(redundancy, nodeCount, StorDistributionConfig.Disk_distribution.MODULO_BID);
-    }
-
-    public static String getDefaultDistributionConfig(int redundancy, int nodeCount, StorDistributionConfig.Disk_distribution.Enum diskDistribution) {
         StringBuilder sb = new StringBuilder();
         sb.append("raw:redundancy ").append(redundancy).append("\n")
           .append("group[1]\n")
@@ -522,46 +513,6 @@ public class Distribution {
         for (int i=0; i<nodeCount; ++i) {
             sb.append("group[0].nodes[").append(i).append("].index ").append(i).append("\n");
         }
-        sb.append("disk_distribution ").append(diskDistribution.toString()).append("\n");
-        return sb.toString();
-    }
-
-    public static String getSimpleGroupConfig(int redundancy, int nodeCount) {
-        return getSimpleGroupConfig(redundancy, nodeCount, StorDistributionConfig.Disk_distribution.Enum.MODULO_BID);
-    }
-
-    private static String getSimpleGroupConfig(int redundancy, int nodeCount, StorDistributionConfig.Disk_distribution.Enum diskDistribution) {
-        StringBuilder sb = new StringBuilder();
-        sb.append("raw:redundancy ").append(redundancy).append("\n").append("group[4]\n");
-
-        int group = 0;
-        sb.append("group[" + group + "].index \"invalid\"\n")
-          .append("group[" + group + "].name \"invalid\"\n")
-          .append("group[" + group + "].partitions \"1|*\"\n");
-
-        ++group;
-        sb.append("group[" + group + "].index \"0\"\n")
-          .append("group[" + group + "].name \"east\"\n")
-          .append("group[" + group + "].partitions \"*\"\n");
-
-        ++group;
-        sb.append("group[" + group + "].index \"0.0\"\n")
-          .append("group[" + group + "].name \"g1\"\n")
-          .append("group[" + group + "].partitions \"*\"\n")
-          .append("group[" + group + "].nodes[").append((nodeCount + 1) / 2).append("]\n");
-        for (int i=0; i<nodeCount; i += 2) {
-            sb.append("group[" + group + "].nodes[").append(i / 2).append("].index ").append(i).append("\n");
-        }
-
-        ++group;
-        sb.append("group[" + group + "].index \"0.1\"\n")
-          .append("group[" + group + "].name \"g2\"\n")
-          .append("group[" + group + "].partitions \"*\"\n")
-          .append("group[" + group + "].nodes[").append(nodeCount / 2).append("]\n");
-        for (int i=1; i<nodeCount; i += 2) {
-            sb.append("group[" + group + "].nodes[").append(i / 2).append("].index ").append(i).append("\n");
-        }
-        sb.append("disk_distribution ").append(diskDistribution.toString()).append("\n");
         return sb.toString();
     }
 

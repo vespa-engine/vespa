@@ -19,9 +19,7 @@ import com.yahoo.vespa.orchestrator.controller.ClusterControllerClientFactoryMoc
 import com.yahoo.vespa.orchestrator.status.ZkStatusService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-
 import java.io.ByteArrayInputStream;
-import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Set;
 
@@ -57,7 +55,7 @@ class ApplicationSuspensionRequestHandlerTest {
 
 
     @Test
-    void get_all_suspended_applications_return_empty_list_initially() throws IOException {
+    void get_all_suspended_applications_return_empty_list_initially() {
         HttpResponse httpResponse = executeRequest(Method.GET, "", null);
         assertEquals(200, httpResponse.getStatus());
         Set<String> set = parseResponseContent(httpResponse, new TypeReference<>() {});
@@ -65,13 +63,13 @@ class ApplicationSuspensionRequestHandlerTest {
     }
 
     @Test
-    void invalid_application_id_throws_http_400() throws IOException {
+    void invalid_application_id_throws_http_400() {
         HttpResponse httpResponse = executeRequest(Method.POST, "", INVALID_RESOURCE_NAME);
         assertEquals(400, httpResponse.getStatus());
     }
 
     @Test
-    void get_application_status_returns_404_for_not_suspended_and_204_for_suspended() throws IOException {
+    void get_application_status_returns_404_for_not_suspended_and_204_for_suspended() {
         // Get on application that is not suspended
         HttpResponse httpResponse = executeRequest(Method.GET, "/"+RESOURCE_1, null);
         assertEquals(404, httpResponse.getStatus());
@@ -86,7 +84,7 @@ class ApplicationSuspensionRequestHandlerTest {
     }
 
     @Test
-    void delete_works_on_suspended_and_not_suspended_applications() throws IOException {
+    void delete_works_on_suspended_and_not_suspended_applications() {
         // Delete an application that is not suspended
         HttpResponse httpResponse = executeRequest(Method.DELETE, "/"+RESOURCE_1, null);
         assertEquals(204, httpResponse.getStatus());
@@ -109,7 +107,7 @@ class ApplicationSuspensionRequestHandlerTest {
     }
 
     @Test
-    void list_applications_returns_the_correct_list_of_suspended_applications() throws IOException {
+    void list_applications_returns_the_correct_list_of_suspended_applications() {
         // Test that initially we have the empty set
         HttpResponse httpResponse = executeRequest(Method.GET, "", null);
         assertEquals(200, httpResponse.getStatus());

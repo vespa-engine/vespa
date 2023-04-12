@@ -30,10 +30,10 @@ class LargeSubspacesBufferType : public vespalib::datastore::BufferType<vespalib
 public:
     LargeSubspacesBufferType(const AllocSpec& spec, std::shared_ptr<vespalib::alloc::MemoryAllocator> memory_allocator, TensorBufferTypeMapper& type_mapper) noexcept;
     ~LargeSubspacesBufferType() override;
-    void cleanHold(void* buffer, size_t offset, ElemCount numElems, CleanContext cleanCtx) override;
-    void destroyElements(void *buffer, ElemCount numElems) override;
-    void fallbackCopy(void *newBuffer, const void *oldBuffer, ElemCount numElems) override;
-    void initializeReservedElements(void *buffer, ElemCount reservedElements) override;
+    void clean_hold(void* buffer, size_t offset, EntryCount num_entries, CleanContext cleanCtx) override;
+    void destroy_entries(void *buffer, EntryCount num_entries) override;
+    void fallback_copy(void *newBuffer, const void *oldBuffer, EntryCount num_entries) override;
+    void initialize_reserved_entries(void *buffer, EntryCount reserved_entries) override;
     const vespalib::alloc::MemoryAllocator* get_memory_allocator() const override;
 };
 

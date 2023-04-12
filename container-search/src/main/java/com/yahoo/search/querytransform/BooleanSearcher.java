@@ -28,9 +28,9 @@ import static com.yahoo.yolean.Exceptions.toMessageString;
 @Provides(BooleanSearcher.PREDICATE)
 public class BooleanSearcher extends Searcher {
 
-    private static final CompoundName FIELD = new CompoundName("boolean.field");
-    private static final CompoundName ATTRIBUTES = new CompoundName("boolean.attributes");
-    private static final CompoundName RANGE_ATTRIBUTES = new CompoundName("boolean.rangeAttributes");
+    private static final CompoundName FIELD = CompoundName.from("boolean.field");
+    private static final CompoundName ATTRIBUTES = CompoundName.from("boolean.attributes");
+    private static final CompoundName RANGE_ATTRIBUTES = CompoundName.from("boolean.rangeAttributes");
     public static final String PREDICATE = "predicate";
 
     @Override

@@ -13,5 +13,8 @@ StringEnumIndexMapper::map(IEnumStore::Index original) const
     return _dictionary.remap_index(original);
 }
 
+template class MultiValueStringPostingAttributeT<EnumAttribute<StringAttribute>, vespalib::datastore::AtomicEntryRef>;
+template class MultiValueStringPostingAttributeT<EnumAttribute<StringAttribute>, multivalue::WeightedValue<vespalib::datastore::AtomicEntryRef>>;
+
 } // namespace search
 

@@ -544,7 +544,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
                 } catch (NotFoundException e) {
                     log.log(Level.INFO, TenantRepository.logPre(applicationId) + "Active session exists, but has not been deleted properly. Trying to cleanup");
                 }
-                waiter = tenantApplications.createDeleteApplicationWaiter(applicationId);
+                waiter = tenantApplications.createRemoveApplicationWaiter(applicationId);
             } else {
                 // If there's no active session, we still want to clean up any resources created in a failing prepare
                 waiter = new NoopCompletionWaiter();

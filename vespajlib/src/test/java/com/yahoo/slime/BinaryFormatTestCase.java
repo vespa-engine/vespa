@@ -12,9 +12,10 @@ import static com.yahoo.slime.BinaryFormat.decode_zigzag;
 import static com.yahoo.slime.BinaryFormat.encode_double;
 import static com.yahoo.slime.BinaryFormat.encode_type_and_meta;
 import static com.yahoo.slime.BinaryFormat.encode_zigzag;
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.MatcherAssert.assertThat;
-
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertFalse;
 
 public class BinaryFormatTestCase {
 
@@ -31,26 +32,55 @@ public class BinaryFormatTestCase {
         return encode_type_and_meta(t.ID, meta);
     }
 
-    void verify_cmpr_long(long value, byte[] expect) {
+    void verify_cmpr_int(int value, byte[] expect) {
         BufferedOutput output = new BufferedOutput();
         BinaryEncoder bof = new BinaryEncoder(output);
-        bof.encode_cmpr_long(value);
+        bof.encode_cmpr_int(value);
         byte[] actual = output.toArray();
-        assertThat(actual, is(expect));
+        assertArrayEquals(expect, actual);
 
         BinaryDecoder bif = new BinaryDecoder();
         bif.in = new BufferedInput(expect);
-        long got = bif.read_cmpr_long();
-        assertThat(got, is(value));
+        int got = bif.in.read_cmpr_int();
+        assertEquals(value, got);
+        assertFalse(bif.in.failed());
+
+        bif = new BinaryDecoder();
+        bif.in = new BufferedInput(expect);
+        got = bif.in.skip_cmpr_int();
+        assertEquals(expect.length - 1, got);
+        assertEquals(expect.length, bif.in.getPosition());
+        assertFalse(bif.in.failed());
+
+        assertEquals(value, BinaryView.peek_cmpr_int_for_testing(expect, 0));
+        assertEquals(expect.length, BinaryView.skip_cmpr_int_for_testing(expect, 0));
+    }
+
+    void verify_read_cmpr_int_fails(byte[] data) {
+        BinaryDecoder bif = new BinaryDecoder();
+        bif.in = new BufferedInput(data);
+        int got = bif.in.read_cmpr_int();
+        assertEquals(0, got);
+        assertTrue(bif.in.failed());
+
+        bif = new BinaryDecoder();
+        bif.in = new BufferedInput(data);
+        got = bif.in.skip_cmpr_int();
+        assertEquals(data.length - 1, got);
+        assertEquals(data.length, bif.in.getPosition());
+        assertFalse(bif.in.failed());
+
+        assertEquals(data.length, BinaryView.skip_cmpr_int_for_testing(data, 0));
     }
 
     // was verifyBasic
     void verifyEncoding(Slime slime, byte[] expect) {
-        assertThat(BinaryFormat.encode(slime), is(expect));
+        assertArrayEquals(expect, BinaryFormat.encode(slime));
+        assertTrue(slime.get().equalTo(BinaryView.inspect(expect)));
         Compressor compressor = new Compressor(CompressionType.LZ4, 3, 2, 0);
         Compressor.Compression result = BinaryFormat.encode_and_compress(slime, compressor);
         byte [] decompressed = compressor.decompress(result);
-        assertThat(decompressed, is(expect));
+        assertArrayEquals(expect, decompressed);
         verifyMultiEncode(expect);
     }
 
@@ -61,65 +91,65 @@ public class BinaryFormatTestCase {
         for (int i = 0; i < 5; ++i) {
             Slime slime = BinaryFormat.decode(buffers[i]);
             buffers[i+1] = BinaryFormat.encode(slime);
-            assertThat(buffers[i+1], is(expect));
+            assertArrayEquals(expect, buffers[i+1]);
         }
     }
 
     @Test
     public void testZigZagConversion() {
-        assertThat(encode_zigzag(0), is((long)0));
-        assertThat(decode_zigzag(encode_zigzag(0)), is(0L));
+        assertEquals(0L, encode_zigzag(0));
+        assertEquals(0L, decode_zigzag(encode_zigzag(0)));
 
-        assertThat(encode_zigzag(-1), is(1L));
-        assertThat(decode_zigzag(encode_zigzag(-1)), is(-1L));
+        assertEquals(1L, encode_zigzag(-1));
+        assertEquals(-1L, decode_zigzag(encode_zigzag(-1)));
 
-        assertThat(encode_zigzag(1), is(2L));
-        assertThat(decode_zigzag(encode_zigzag(1)), is(1L));
+        assertEquals(2L, encode_zigzag(1));
+        assertEquals(1L, decode_zigzag(encode_zigzag(1)));
 
-        assertThat(encode_zigzag(-2), is(3L));
-        assertThat(decode_zigzag(encode_zigzag(-2)), is(-2L));
+        assertEquals(3L, encode_zigzag(-2));
+        assertEquals(-2L, decode_zigzag(encode_zigzag(-2)));
 
-        assertThat(encode_zigzag(2), is(4L));
-        assertThat(decode_zigzag(encode_zigzag(2)), is(2L));
+        assertEquals(4L, encode_zigzag(2));
+        assertEquals(2L, decode_zigzag(encode_zigzag(2)));
 
-        assertThat(encode_zigzag(-1000), is(1999L));
-        assertThat(decode_zigzag(encode_zigzag(-1000)), is(-1000L));
+        assertEquals(1999L, encode_zigzag(-1000));
+        assertEquals(-1000L, decode_zigzag(encode_zigzag(-1000)));
 
-        assertThat(encode_zigzag(1000), is(2000L));
-        assertThat(decode_zigzag(encode_zigzag(1000)), is(1000L));
+        assertEquals(2000L, encode_zigzag(1000));
+        assertEquals(1000L, decode_zigzag(encode_zigzag(1000)));
 
-        assertThat(encode_zigzag(-0x8000000000000000L), is(-1L));
-        assertThat(decode_zigzag(encode_zigzag(-0x8000000000000000L)), is(-0x8000000000000000L));
+        assertEquals(-1L, encode_zigzag(-0x8000000000000000L));
+        assertEquals(-0x8000000000000000L, decode_zigzag(encode_zigzag(-0x8000000000000000L)));
 
-        assertThat(encode_zigzag(0x7fffffffffffffffL), is(-2L));
-        assertThat(decode_zigzag(encode_zigzag(0x7fffffffffffffffL)), is(0x7fffffffffffffffL));
+        assertEquals(-2L, encode_zigzag(0x7fffffffffffffffL));
+        assertEquals(0x7fffffffffffffffL, decode_zigzag(encode_zigzag(0x7fffffffffffffffL)));
     }
 
     @Test
     public void testDoubleConversion() {
-        assertThat(encode_double(0.0), is(0L));
-        assertThat(decode_double(encode_double(0.0)), is(0.0));
+        assertEquals(0L, encode_double(0.0));
+        assertEquals(0.0, decode_double(encode_double(0.0)), 0.0);
 
-        assertThat(encode_double(1.0), is(0x3ff0000000000000L));
-        assertThat(decode_double(encode_double(1.0)), is(1.0));
+        assertEquals(0x3ff0000000000000L, encode_double(1.0));
+        assertEquals(1.0, decode_double(encode_double(1.0)), 0.0);
 
-        assertThat(encode_double(-1.0), is(0xbff0000000000000L));
-        assertThat(decode_double(encode_double(-1.0)), is(-1.0));
+        assertEquals(0xbff0000000000000L, encode_double(-1.0));
+        assertEquals(-1.0, decode_double(encode_double(-1.0)), 0.0);
 
-        assertThat(encode_double(2.0), is(0x4000000000000000L));
-        assertThat(decode_double(encode_double(2.0)), is(2.0));
+        assertEquals(0x4000000000000000L, encode_double(2.0));
+        assertEquals(2.0, decode_double(encode_double(2.0)), 0.0);
 
-        assertThat(encode_double(-2.0), is(0xc000000000000000L));
-        assertThat(decode_double(encode_double(-2.0)), is(-2.0));
+        assertEquals(0xc000000000000000L, encode_double(-2.0));
+        assertEquals(-2.0, decode_double(encode_double(-2.0)), 0.0);
 
-        assertThat(encode_double(-0.0), is(0x8000000000000000L));
-        assertThat(decode_double(encode_double(-0.0)), is(-0.0));
+        assertEquals(0x8000000000000000L, encode_double(-0.0));
+        assertEquals(-0.0, decode_double(encode_double(-0.0)), 0.0);
 
-        assertThat(encode_double(3.5), is(0x400c000000000000L));
-        assertThat(decode_double(encode_double(3.5)), is(3.5));
+        assertEquals(0x400c000000000000L, encode_double(3.5));
+        assertEquals(3.5, decode_double(encode_double(3.5)), 0.0);
 
-        assertThat(encode_double(65535.875), is(0x40EFFFFC00000000L));
-        assertThat(decode_double(encode_double(65535.875)), is(65535.875));
+        assertEquals(0x40EFFFFC00000000L, encode_double(65535.875));
+        assertEquals(65535.875, decode_double(encode_double(65535.875)), 0.0);
     }
 
     @Test
@@ -127,94 +157,66 @@ public class BinaryFormatTestCase {
         for (byte type = 0; type < TYPE_LIMIT; ++type) {
             for (int meta = 0; meta < META_LIMIT; ++meta) {
                 byte mangled = encode_type_and_meta(type, meta);
-                assertThat(decode_type(mangled).ID, is(type));
-                assertThat(decode_meta(mangled), is(meta));
+                assertEquals(type, decode_type(mangled).ID);
+                assertEquals(meta, decode_meta(mangled));
             }
         }
     }
 
     @Test
-    public void testCompressedLong() {
+    public void testCompressedInt() {
         {
-            long value = 0;
+            int value = 0;
             byte[] wanted = { 0 };
-            verify_cmpr_long(value, wanted);
+            verify_cmpr_int(value, wanted);
         }{
-            long value = 127;
+            int value = 127;
             byte[] wanted = { 127 };
-            verify_cmpr_long(value, wanted);
+            verify_cmpr_int(value, wanted);
         }{
-            long value = 128;
+            int value = 128;
             byte[] wanted = { -128, 1 };
-            verify_cmpr_long(value, wanted);
+            verify_cmpr_int(value, wanted);
         }{
-            long value = 16383;
+            int value = 16383;
             byte[] wanted = { -1, 127 };
-            verify_cmpr_long(value, wanted);
+            verify_cmpr_int(value, wanted);
         }{
-            long value = 16384;
+            int value = 16384;
             byte[] wanted = { -128, -128, 1 };
-            verify_cmpr_long(value, wanted);
+            verify_cmpr_int(value, wanted);
         }{
-            long value = 2097151;
+            int value = 2097151;
             byte[] wanted = { -1, -1, 127 };
-            verify_cmpr_long(value, wanted);
+            verify_cmpr_int(value, wanted);
         }{
-            long value = 2097152;
+            int value = 2097152;
             byte[] wanted = { -128, -128, -128, 1 };
-            verify_cmpr_long(value, wanted);
+            verify_cmpr_int(value, wanted);
         }{
-            long value = 268435455;
+            int value = 268435455;
             byte[] wanted = { -1, -1, -1, 127 };
-            verify_cmpr_long(value, wanted);
+            verify_cmpr_int(value, wanted);
         }{
-            long value = 268435456;
+            int value = 268435456;
             byte[] wanted = { -128, -128, -128, -128, 1 };
-            verify_cmpr_long(value, wanted);
+            verify_cmpr_int(value, wanted);
         }{
-            long value = 34359738367L;
-            byte[] wanted = { -1, -1, -1, -1, 127 };
-            verify_cmpr_long(value, wanted);
+            int value = 0x7fff_ffff;
+            byte[] wanted = { -1, -1, -1, -1, 7 };
+            verify_cmpr_int(value, wanted);
         }{
-            long value = 34359738368L;
-            byte[] wanted = { -128, -128, -128, -128, -128, 1 };
-            verify_cmpr_long(value, wanted);
+            byte[] data = { -1, -1, -1, -1, 8 };
+            verify_read_cmpr_int_fails(data);
         }{
-            long value = 4398046511103L;
-            byte[] wanted = { -1, -1, -1, -1, -1, 127 };
-            verify_cmpr_long(value, wanted);
+            byte[] data = { -1, -1, -1, -1, -1, -1, 1 };
+            verify_read_cmpr_int_fails(data);
         }{
-            long value = 4398046511104L;
-            byte[] wanted = { -128, -128, -128, -128, -128, -128, 1 };
-            verify_cmpr_long(value, wanted);
+            byte[] data = { -1, -1, -1, -1, -1, -1, -1, -1, 1 };
+            verify_read_cmpr_int_fails(data);
         }{
-            long value = 562949953421311L;
-            byte[] wanted = { -1, -1, -1, -1, -1, -1, 127 };
-            verify_cmpr_long(value, wanted);
-        }{
-            long value = 562949953421312L;
-            byte[] wanted = { -128, -128, -128, -128, -128, -128, -128, 1 };
-            verify_cmpr_long(value, wanted);
-        }{
-            long value = 72057594037927935L;
-            byte[] wanted = { -1, -1, -1, -1, -1, -1, -1, 127 };
-            verify_cmpr_long(value, wanted);
-        }{
-            long value = 72057594037927936L;
-            byte[] wanted = { -128, -128, -128, -128, -128, -128, -128, -128, 1 };
-            verify_cmpr_long(value, wanted);
-        }{
-            long value = 9223372036854775807L;
-            byte[] wanted = { -1, -1, -1, -1, -1, -1, -1, -1, 127 };
-            verify_cmpr_long(value, wanted);
-        }{
-            long value = -9223372036854775808L;
-            byte[] wanted = { -128, -128, -128, -128, -128, -128, -128, -128, -128, 1 };
-            verify_cmpr_long(value, wanted);
-        }{
-            long value = -1;
-            byte[] wanted = { -1, -1, -1, -1, -1, -1, -1, -1, -1, 1 };
-            verify_cmpr_long(value, wanted);
+            byte[] data = { -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 1 };
+            verify_read_cmpr_int_fails(data);
         }
     }
 
@@ -225,33 +227,35 @@ public class BinaryFormatTestCase {
     @Test
     public void testTypeAndSizeConversion() {
         for (byte type = 0; type < TYPE_LIMIT; ++type) {
-            for (long size = 0; size < 500; ++size) {
+            for (int size = 0; size < 500; ++size) {
                 BufferedOutput expect = new BufferedOutput();
                 BufferedOutput actual = new BufferedOutput();
 
                 if ((size + 1) < META_LIMIT) {
-                    expect.put(encode_type_and_meta((int)type, (int)(size +1)));
+                    expect.put(encode_type_and_meta(type, size +1));
                 } else {
                     expect.put(type);
                     BinaryEncoder encoder = new BinaryEncoder(expect);
-                    encoder.encode_cmpr_long(size);
+                    encoder.encode_cmpr_int(size);
                 }
                 {
                     BinaryEncoder encoder = new BinaryEncoder(actual);
                     encoder.write_type_and_size(type, size);
                 }
-                assertThat(actual.toArray(), is(expect.toArray()));
+                assertArrayEquals(expect.toArray(), actual.toArray());
 
                 byte[] got = expect.toArray();
                 BinaryDecoder bif = new BinaryDecoder();
                 bif.in = new BufferedInput(got);
                 byte b = bif.in.getByte();
                 Type decodedType = decode_type(b);
-                long decodedSize = bif.read_size(decode_meta(b));
-                assertThat(decodedType.ID, is(type));
-                assertThat(decodedSize, is(size));
-                assertThat(bif.in.getConsumedSize(), is(got.length));
-                assertThat(bif.in.failed(), is(false));
+                int decodedSize = bif.in.read_size(decode_meta(b));
+                assertEquals(type, decodedType.ID);
+                assertEquals(size, decodedSize);
+                assertEquals(got.length, bif.in.getConsumedSize());
+                assertFalse(bif.in.failed());
+
+                assertEquals(size, BinaryView.extract_children_for_testing(got, 0));
             }
         }
 
@@ -289,16 +293,22 @@ public class BinaryFormatTestCase {
                             bof.write_type_and_bytes_le(type, bits);
                         }
                         byte[] actual = output.toArray();
-                        assertThat(actual, is(expect));
+                        assertArrayEquals(expect, actual);
 
                         // test input:
                         BinaryDecoder bif = new BinaryDecoder();
                         bif.in = new BufferedInput(expect);
                         int size = decode_meta(bif.in.getByte());
                         long decodedBits = (hi != 0) ? bif.read_bytes_be(size) : bif.read_bytes_le(size);
-                        assertThat(decodedBits, is(bits));
-                        assertThat(bif.in.getConsumedSize(), is(expect.length));
-                        assertThat(bif.in.failed(), is(false));
+                        assertEquals(bits, decodedBits);
+                        assertEquals(expect.length, bif.in.getConsumedSize());
+                        assertFalse(bif.in.failed());
+
+                        if (hi != 0) {
+                            assertEquals(bits, encode_double(BinaryView.extract_double_for_testing(expect, 0)));
+                        } else {
+                            assertEquals(bits, encode_zigzag(BinaryView.extract_long_for_testing(expect, 0)));
+                        }
                     }
                 }
             }
@@ -313,7 +323,7 @@ public class BinaryFormatTestCase {
         expect.put((byte)0); // nix
         byte[] actual = BinaryFormat.encode(slime);
 
-        assertThat(actual, is(expect.toArray()));
+        assertArrayEquals(expect.toArray(), actual);
         verifyMultiEncode(expect.toArray());
     }
 
@@ -419,7 +429,7 @@ public class BinaryFormatTestCase {
         System.arraycopy(expect, 0, overlappingBuffer, 1, expect.length);
         overlappingBuffer[overlappingBuffer.length - 1] = 0;
         Slime copy = BinaryFormat.decode(overlappingBuffer, 1, expect.length);
-        assertThat(BinaryFormat.encode(slime), is(BinaryFormat.encode(copy)));
+        assertArrayEquals(BinaryFormat.encode(copy), BinaryFormat.encode(slime));
     }
 
     @Test
@@ -541,18 +551,17 @@ public class BinaryFormatTestCase {
         BinaryDecoder decoder = new BinaryDecoder();
         Slime slime = decoder.decode(data);
         int consumed = decoder.in.getConsumedSize();
-        assertThat(consumed, is(data.length));
+        assertEquals(data.length, consumed);
         Cursor c = slime.get();
-        assertThat(c.valid(), is(true));
-        assertThat(c.type(), is(Type.OBJECT));
-        assertThat(c.children(), is(5));
-        assertThat(c.field("b").asBool(), is(true));
-        assertThat(c.field("c").asLong(), is(5L));
-        assertThat(c.field("d").asDouble(), is(3.5));
-        assertThat(c.field("e").asString(), is("string"));
+        assertTrue(c.valid());
+        assertEquals(Type.OBJECT, c.type());
+        assertEquals(5, c.children());
+        assertTrue(c.field("b").asBool());
+        assertEquals(5L, c.field("c").asLong());
+        assertEquals(3.5, c.field("d").asDouble(), 0.0);
+        assertEquals("string", c.field("e").asString());
         byte[] expd = { 'd', 'a', 't', 'a' };
-        assertThat(c.field("f").asData(), is(expd));
-        assertThat(c.entry(5).valid(), is(false)); // not ARRAY
+        assertArrayEquals(expd, c.field("f").asData());
+        assertFalse(c.entry(5).valid()); // not ARRAY
     }
-
 }

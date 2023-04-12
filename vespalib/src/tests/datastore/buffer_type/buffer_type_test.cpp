@@ -7,40 +7,40 @@ using namespace vespalib::datastore;
 
 using IntBufferType = BufferType<int>;
 constexpr uint32_t ARRAYS_SIZE(4);
-constexpr uint32_t MAX_ARRAYS(128);
-constexpr uint32_t NUM_ARRAYS_FOR_NEW_BUFFER(0);
+constexpr uint32_t MAX_ENTRIES(128);
+constexpr uint32_t NUM_ENTRIES_FOR_NEW_BUFFER(0);
 
 struct Setup {
-    uint32_t  _minArrays;
-    std::atomic<ElemCount> _usedElems;
-    ElemCount _neededElems;
-    std::atomic<ElemCount> _deadElems;
+    uint32_t  _min_entries;
+    std::atomic<EntryCount> _used_entries;
+    EntryCount _needed_entries;
+    std::atomic<EntryCount> _dead_entries;
     uint32_t  _bufferId;
     float     _allocGrowFactor;
     bool      _resizing;
     Setup()
-        : _minArrays(0),
-          _usedElems(0),
-          _neededElems(0),
-          _deadElems(0),
+        : _min_entries(0),
+          _used_entries(0),
+          _needed_entries(0),
+          _dead_entries(0),
           _bufferId(1),
           _allocGrowFactor(0.5),
           _resizing(false)
     {}
     Setup(const Setup& rhs) noexcept;
-    Setup &minArrays(uint32_t value) { _minArrays = value; return *this; }
-    Setup &used(size_t value) { _usedElems = value; return *this; }
-    Setup &needed(size_t value) { _neededElems = value; return *this; }
-    Setup &dead(size_t value) { _deadElems = value; return *this; }
+    Setup &min_entries(uint32_t value) { _min_entries = value; return *this; }
+    Setup &used(size_t value) { _used_entries = value; return *this; }
+    Setup &needed(size_t value) { _needed_entries = value; return *this; }
+    Setup &dead(size_t value) { _dead_entries = value; return *this; }
     Setup &bufferId(uint32_t value) { _bufferId = value; return *this; }
     Setup &resizing(bool value) { _resizing = value; return *this; }
 };
 
 Setup::Setup(const Setup& rhs) noexcept
-    : _minArrays(rhs._minArrays),
-      _usedElems(rhs._usedElems.load(std::memory_order_relaxed)),
-      _neededElems(rhs._neededElems),
-      _deadElems(rhs._deadElems.load(std::memory_order_relaxed)),
+    : _min_entries(rhs._min_entries),
+      _used_entries(rhs._used_entries.load(std::memory_order_relaxed)),
+      _needed_entries(rhs._needed_entries),
+      _dead_entries(rhs._dead_entries.load(std::memory_order_relaxed)),
       _bufferId(rhs._bufferId),
       _allocGrowFactor(rhs._allocGrowFactor),
       _resizing(rhs._resizing)
@@ -53,7 +53,7 @@ struct Fixture {
     int buffer[ARRAYS_SIZE];
     Fixture(const Setup &setup_)
         : setups(),
-          bufferType(ARRAYS_SIZE, setup_._minArrays, MAX_ARRAYS, NUM_ARRAYS_FOR_NEW_BUFFER, setup_._allocGrowFactor),
+          bufferType(ARRAYS_SIZE, setup_._min_entries, MAX_ENTRIES, NUM_ENTRIES_FOR_NEW_BUFFER, setup_._allocGrowFactor),
           buffer()
     {
         setups.reserve(4);
@@ -61,121 +61,121 @@ struct Fixture {
     }
     ~Fixture() {
         for (auto& setup : setups) {
-            bufferType.onHold(setup._bufferId, &setup._usedElems, &setup._deadElems);
-            bufferType.onFree(setup._usedElems);
+            bufferType.on_hold(setup._bufferId, &setup._used_entries, &setup._dead_entries);
+            bufferType.on_free(setup._used_entries);
         }
     }
     Setup& curr_setup() {
         return setups.back();
     }
     void add_setup(const Setup& setup_in) {
-        // The buffer type stores pointers to ElemCount (from Setup) and we must ensure these do not move in memory.
+        // The buffer type stores pointers to EntryCount (from Setup) and we must ensure these do not move in memory.
         assert(setups.size() < setups.capacity());
         setups.push_back(setup_in);
     }
     void onActive() {
-        bufferType.onActive(curr_setup()._bufferId, &curr_setup()._usedElems, &curr_setup()._deadElems, &buffer[0]);
+        bufferType.on_active(curr_setup()._bufferId, &curr_setup()._used_entries, &curr_setup()._dead_entries, &buffer[0]);
     }
-    size_t arraysToAlloc() {
-        return bufferType.calcArraysToAlloc(curr_setup()._bufferId, curr_setup()._neededElems, curr_setup()._resizing);
+    size_t entries_to_alloc() {
+        return bufferType.calc_entries_to_alloc(curr_setup()._bufferId, curr_setup()._needed_entries, curr_setup()._resizing);
     }
-    void assertArraysToAlloc(size_t exp) {
+    void assert_entries_to_alloc(size_t exp) {
         onActive();
-        EXPECT_EQUAL(exp, arraysToAlloc());
+        EXPECT_EQUAL(exp, entries_to_alloc());
     }
 };
 
 void
-assertArraysToAlloc(size_t exp, const Setup &setup)
+assert_entries_to_alloc(size_t exp, const Setup &setup)
 {
     Fixture f(setup);
-    f.assertArraysToAlloc(exp);
+    f.assert_entries_to_alloc(exp);
 }
 
-TEST("require that complete arrays are allocated")
+TEST("require that entries are allocated")
 {
-    TEST_DO(assertArraysToAlloc(1, Setup().needed(1)));
-    TEST_DO(assertArraysToAlloc(1, Setup().needed(2)));
-    TEST_DO(assertArraysToAlloc(1, Setup().needed(3)));
-    TEST_DO(assertArraysToAlloc(1, Setup().needed(4)));
-    TEST_DO(assertArraysToAlloc(2, Setup().needed(5)));
+    TEST_DO(assert_entries_to_alloc(1, Setup().needed(1)));
+    TEST_DO(assert_entries_to_alloc(2, Setup().needed(2)));
+    TEST_DO(assert_entries_to_alloc(3, Setup().needed(3)));
+    TEST_DO(assert_entries_to_alloc(4, Setup().needed(4)));
+    TEST_DO(assert_entries_to_alloc(5, Setup().needed(5)));
 }
 
-TEST("require that reserved elements are taken into account when not resizing")
+TEST("require that reserved entries are taken into account when not resizing")
 {
-    TEST_DO(assertArraysToAlloc(2, Setup().needed(1).bufferId(0)));
-    TEST_DO(assertArraysToAlloc(2, Setup().needed(4).bufferId(0)));
-    TEST_DO(assertArraysToAlloc(3, Setup().needed(5).bufferId(0)));
+    TEST_DO(assert_entries_to_alloc(2, Setup().needed(1).bufferId(0)));
+    TEST_DO(assert_entries_to_alloc(5, Setup().needed(4).bufferId(0)));
+    TEST_DO(assert_entries_to_alloc(6, Setup().needed(5).bufferId(0)));
 }
 
-TEST("require that arrays to alloc is based on currently used elements (no resizing)")
+TEST("require that entries to alloc is based on currently used entries (no resizing)")
 {
-    TEST_DO(assertArraysToAlloc(2, Setup().used(4 * 4).needed(4)));
-    TEST_DO(assertArraysToAlloc(4, Setup().used(8 * 4).needed(4)));
+    TEST_DO(assert_entries_to_alloc(2, Setup().used(4).needed(1)));
+    TEST_DO(assert_entries_to_alloc(4, Setup().used(8).needed(1)));
 }
 
-TEST("require that arrays to alloc is based on currently used elements (with resizing)")
+TEST("require that entries to alloc is based on currently used entries (with resizing)")
 {
-    TEST_DO(assertArraysToAlloc(4 + 2, Setup().used(4 * 4).needed(4).resizing(true)));
-    TEST_DO(assertArraysToAlloc(8 + 4, Setup().used(8 * 4).needed(4).resizing(true)));
-    TEST_DO(assertArraysToAlloc(4 + 3, Setup().used(4 * 4).needed(3 * 4).resizing(true)));
+    TEST_DO(assert_entries_to_alloc(4 + 2, Setup().used(4).needed(1).resizing(true)));
+    TEST_DO(assert_entries_to_alloc(8 + 4, Setup().used(8).needed(1).resizing(true)));
+    TEST_DO(assert_entries_to_alloc(4 + 3, Setup().used(4).needed(3).resizing(true)));
 }
 
-TEST("require that arrays to alloc always contain elements needed")
+TEST("require that entries to alloc always contain entries needed")
 {
-    TEST_DO(assertArraysToAlloc(2, Setup().used(4 * 4).needed(2 * 4)));
-    TEST_DO(assertArraysToAlloc(3, Setup().used(4 * 4).needed(3 * 4)));
-    TEST_DO(assertArraysToAlloc(4, Setup().used(4 * 4).needed(4 * 4)));
+    TEST_DO(assert_entries_to_alloc(2, Setup().used(4).needed(2)));
+    TEST_DO(assert_entries_to_alloc(3, Setup().used(4).needed(3)));
+    TEST_DO(assert_entries_to_alloc(4, Setup().used(4).needed(4)));
 }
 
-TEST("require that arrays to alloc is capped to max arrays")
+TEST("require that entries to alloc is capped to max entries")
 {
-    TEST_DO(assertArraysToAlloc(127, Setup().used(254 * 4).needed(4)));
-    TEST_DO(assertArraysToAlloc(128, Setup().used(256 * 4).needed(4)));
-    TEST_DO(assertArraysToAlloc(128, Setup().used(258 * 4).needed(8)));
+    TEST_DO(assert_entries_to_alloc(127, Setup().used(254).needed(1)));
+    TEST_DO(assert_entries_to_alloc(128, Setup().used(256).needed(1)));
+    TEST_DO(assert_entries_to_alloc(128, Setup().used(258).needed(2)));
 }
 
 TEST("require that arrays to alloc is capped to min arrays")
 {
-    TEST_DO(assertArraysToAlloc(16, Setup().used(30 * 4).needed(4).minArrays(16)));
-    TEST_DO(assertArraysToAlloc(16, Setup().used(32 * 4).needed(4).minArrays(16)));
-    TEST_DO(assertArraysToAlloc(17, Setup().used(34 * 4).needed(4).minArrays(16)));
+    TEST_DO(assert_entries_to_alloc(16, Setup().used(30).needed(1).min_entries(16)));
+    TEST_DO(assert_entries_to_alloc(16, Setup().used(32).needed(1).min_entries(16)));
+    TEST_DO(assert_entries_to_alloc(17, Setup().used(34).needed(1).min_entries(16)));
 }
 
-TEST("arrays to alloc considers used elements across all active buffers of same type (no resizing)")
+TEST("entries to alloc considers used entries across all active buffers of same type (no resizing)")
 {
-    Fixture f(Setup().used(6 * 4));
-    f.assertArraysToAlloc(6 * 0.5);
-    f.add_setup(Setup().used(8 * 4).bufferId(2));
-    f.assertArraysToAlloc((6 + 8) * 0.5);
-    f.add_setup(Setup().used(10 * 4).bufferId(3));
-    f.assertArraysToAlloc((6 + 8 + 10) * 0.5);
+    Fixture f(Setup().used(6));
+    f.assert_entries_to_alloc(6 * 0.5);
+    f.add_setup(Setup().used(8).bufferId(2));
+    f.assert_entries_to_alloc((6 + 8) * 0.5);
+    f.add_setup(Setup().used(10).bufferId(3));
+    f.assert_entries_to_alloc((6 + 8 + 10) * 0.5);
 }
 
-TEST("arrays to alloc considers used elements across all active buffers of same type when resizing")
+TEST("entries to alloc considers used entries across all active buffers of same type when resizing")
 {
-    Fixture f(Setup().used(6 * 4));
-    f.assertArraysToAlloc(6 * 0.5);
-    f.add_setup(Setup().used(8 * 4).resizing(true).bufferId(2));
-    f.assertArraysToAlloc(8 + (6 + 8) * 0.5);
+    Fixture f(Setup().used(6));
+    f.assert_entries_to_alloc(6 * 0.5);
+    f.add_setup(Setup().used(8).resizing(true).bufferId(2));
+    f.assert_entries_to_alloc(8 + (6 + 8) * 0.5);
 }
 
-TEST("arrays to alloc considers (and subtracts) dead elements across all active buffers of same type (no resizing)")
+TEST("entries to alloc considers (and subtracts) dead entries across all active buffers of same type (no resizing)")
 {
-    Fixture f(Setup().used(6 * 4).dead(2 * 4));
-    f.assertArraysToAlloc((6 - 2) * 0.5);
-    f.add_setup(Setup().used(12 * 4).dead(4 * 4).bufferId(2));
-    f.assertArraysToAlloc((6 - 2 + 12 - 4) * 0.5);
-    f.add_setup(Setup().used(20 * 4).dead(6 * 4).bufferId(3));
-    f.assertArraysToAlloc((6 - 2 + 12 - 4 + 20 - 6) * 0.5);
+    Fixture f(Setup().used(6).dead(2));
+    f.assert_entries_to_alloc((6 - 2) * 0.5);
+    f.add_setup(Setup().used(12).dead(4).bufferId(2));
+    f.assert_entries_to_alloc((6 - 2 + 12 - 4) * 0.5);
+    f.add_setup(Setup().used(20).dead(6).bufferId(3));
+    f.assert_entries_to_alloc((6 - 2 + 12 - 4 + 20 - 6) * 0.5);
 }
 
 TEST("arrays to alloc considers (and subtracts) dead elements across all active buffers of same type when resizing")
 {
-    Fixture f(Setup().used(6 * 4).dead(2 * 4));
-    f.assertArraysToAlloc((6 - 2) * 0.5);
-    f.add_setup(Setup().used(12 * 4).dead(4 * 4).resizing(true).bufferId(2));
-    f.assertArraysToAlloc(12 + (6 - 2 + 12 - 4) * 0.5);
+    Fixture f(Setup().used(6).dead(2));
+    f.assert_entries_to_alloc((6 - 2) * 0.5);
+    f.add_setup(Setup().used(12).dead(4).resizing(true).bufferId(2));
+    f.assert_entries_to_alloc(12 + (6 - 2 + 12 - 4) * 0.5);
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }

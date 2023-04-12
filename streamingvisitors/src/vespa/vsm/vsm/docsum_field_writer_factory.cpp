@@ -48,7 +48,8 @@ DocsumFieldWriterFactory::~DocsumFieldWriterFactory() = default;
 std::unique_ptr<DocsumFieldWriter>
 DocsumFieldWriterFactory::create_docsum_field_writer(const vespalib::string& field_name,
                                                      const vespalib::string& command,
-                                                     const vespalib::string& source)
+                                                     const vespalib::string& source,
+                                                     std::shared_ptr<MatchingElementsFields> matching_elems_fields)
 {
     std::unique_ptr<DocsumFieldWriter> fieldWriter;
     using namespace search::docsummary;
@@ -65,10 +66,10 @@ DocsumFieldWriterFactory::create_docsum_field_writer(const vespalib::string& fie
     } else if ((command == command::matched_attribute_elements_filter) ||
                (command == command::matched_elements_filter)) {
         vespalib::string source_field = source.empty() ? field_name : source;
-        populate_fields(*_matching_elems_fields, _vsm_fields_config, source_field);
-        fieldWriter = MatchedElementsFilterDFW::create(source_field, _matching_elems_fields);
+        populate_fields(*matching_elems_fields, _vsm_fields_config, source_field);
+        fieldWriter = MatchedElementsFilterDFW::create(source_field, matching_elems_fields);
     } else {
-        return search::docsummary::DocsumFieldWriterFactory::create_docsum_field_writer(field_name, command, source);
+        return search::docsummary::DocsumFieldWriterFactory::create_docsum_field_writer(field_name, command, source, matching_elems_fields);
     }
     return fieldWriter;
 }
