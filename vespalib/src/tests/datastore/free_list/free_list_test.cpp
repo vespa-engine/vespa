@@ -8,7 +8,6 @@
 using namespace vespalib::datastore;
 
 using MyEntryRef = EntryRefT<8, 4>;
-constexpr uint32_t array_size = 6;
 
 struct FreeListTest : public testing::Test
 {
