@@ -114,7 +114,7 @@ public class NodeStateChangeCheckerTest {
     }
 
     @Test
-    void testCanUpgradeForce() {
+    void testCanUpgradeWithForce() {
         var nodeStateChangeChecker = createChangeChecker(createCluster(1));
         NodeState newState = new NodeState(STORAGE, INITIALIZING);
         Result result = nodeStateChangeChecker.evaluateTransition(
@@ -201,7 +201,7 @@ public class NodeStateChangeCheckerTest {
             Result result = nodeStateChangeChecker.evaluateTransition(node, clusterState, SAFE, UP_NODE_STATE, MAINTENANCE_NODE_STATE);
             assertFalse(result.settingWantedStateIsAllowed(), result.toString());
             assertFalse(result.wantedStateAlreadySet());
-            assertEquals("Nodes in 2 groups are already down, cannot take down another node", result.getReason());
+            assertEquals("At most nodes in 2 groups can have wanted state", result.getReason());
         }
 
     }
@@ -249,7 +249,7 @@ public class NodeStateChangeCheckerTest {
             Result result = nodeStateChangeChecker.evaluateTransition(node, clusterState, SAFE, UP_NODE_STATE, MAINTENANCE_NODE_STATE);
             assertFalse(result.settingWantedStateIsAllowed(), result.toString());
             assertFalse(result.wantedStateAlreadySet());
-            assertEquals("Nodes in 2 groups are already down, cannot take down another node", result.getReason());
+            assertEquals("At most nodes in 2 groups can have wanted state", result.getReason());
         }
 
         // 2 nodes in group 0 and 1 in group 1 in maintenance, try to set storage node 3 in group 1 to maintenance
