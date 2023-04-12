@@ -303,7 +303,7 @@ public class DeploymentStatus {
                                                   fallbackPlatform(change, job));
                 if (step.completedAt(change, firstProductionJobWithDeploymentInCloud).isEmpty()) {
                     JobType typeWithZone = job.type().isSystemTest() ? JobType.systemTest(zones, cloud) : JobType.stagingTest(zones, cloud);
-                    jobs.merge(job, List.of(new Job(typeWithZone, versions, step.readyAt(change), change)), DeploymentStatus::union);
+                    jobs.merge(job, List.of(new Job(typeWithZone, versions, step.readyAt(change, firstProductionJobWithDeploymentInCloud), change)), DeploymentStatus::union);
                 }
             });
         });
@@ -679,7 +679,7 @@ public class DeploymentStatus {
                                        .asList().isEmpty())
                                 testJobs.merge(testJob, List.of(new Job(testJob.type(),
                                                                         productionJob.versions(),
-                                                                        jobSteps().get(testJob).readyAt(productionJob.change),
+                                                                        jobSteps().get(testJob).readyAt(productionJob.change, Optional.of(job)),
                                                                         productionJob.change)),
                                                DeploymentStatus::union);
                     });
