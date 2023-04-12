@@ -31,6 +31,7 @@ public class ReportCoreDumpRequest {
 
     public List<String> backtrace;
     public List<String> backtrace_all_threads;
+    public String type;
     public String bin_path;
     public String coredump_path;
     public String cpu_microcode_version;
@@ -44,6 +45,7 @@ public class ReportCoreDumpRequest {
     /** Fill this from metadata and return this. */
     @JsonIgnore
     public ReportCoreDumpRequest fillFrom(CoreDumpMetadata metadata) {
+        metadata.type().ifPresent(type -> this.type = type.name());
         metadata.binPath().ifPresent(binPath -> this.bin_path = binPath);
         metadata.backtrace().ifPresent(backtrace -> this.backtrace = List.copyOf(backtrace));
         metadata.backtraceAllThreads().ifPresent(backtraceAllThreads -> this.backtrace_all_threads = List.copyOf(backtraceAllThreads));
