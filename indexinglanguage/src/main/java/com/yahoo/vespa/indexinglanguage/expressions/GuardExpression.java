@@ -4,6 +4,7 @@ package com.yahoo.vespa.indexinglanguage.expressions;
 import com.yahoo.document.DataType;
 import com.yahoo.document.DocumentType;
 import com.yahoo.document.Field;
+import com.yahoo.vespa.indexinglanguage.ExpressionConverter;
 import com.yahoo.vespa.indexinglanguage.ExpressionVisitor;
 import com.yahoo.vespa.indexinglanguage.UpdateAdapter;
 import com.yahoo.vespa.objects.ObjectOperation;
@@ -25,6 +26,11 @@ public final class GuardExpression extends CompositeExpression {
 
     public Expression getInnerExpression() {
         return exp;
+    }
+
+    @Override
+    public GuardExpression convertChildren(ExpressionConverter converter) {
+        return new GuardExpression(converter.convert(exp));
     }
 
     @Override

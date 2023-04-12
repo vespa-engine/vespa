@@ -4,6 +4,7 @@ package com.yahoo.vespa.indexinglanguage.expressions;
 import com.yahoo.document.DataType;
 import com.yahoo.document.NumericDataType;
 import com.yahoo.document.datatypes.*;
+import com.yahoo.vespa.indexinglanguage.ExpressionConverter;
 import com.yahoo.vespa.objects.ObjectOperation;
 import com.yahoo.vespa.objects.ObjectPredicate;
 
@@ -53,6 +54,12 @@ public final class ArithmeticExpression extends CompositeExpression {
         this.lhs = lhs;
         this.op = op;
         this.rhs = rhs;
+    }
+
+    @Override
+    public ArithmeticExpression convertChildren(ExpressionConverter converter) {
+        // TODO: branch()?
+        return new ArithmeticExpression(converter.convert(lhs), op, converter.convert(rhs));
     }
 
     public Expression getLeftHandSide() {

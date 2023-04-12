@@ -3,6 +3,7 @@ package com.yahoo.vespa.indexinglanguage.expressions;
 
 import com.yahoo.document.DataType;
 import com.yahoo.document.datatypes.FieldValue;
+import com.yahoo.vespa.indexinglanguage.ExpressionConverter;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -29,6 +30,11 @@ public class ChoiceExpression extends ExpressionList<Expression> {
 
     public ChoiceExpression(Collection<? extends Expression> choices) {
         super(choices, resolveInputType(choices));
+    }
+
+    @Override
+    public ChoiceExpression convertChildren(ExpressionConverter converter) {
+        return new ChoiceExpression(asList().stream().map(choice -> converter.branch().convert(choice)).toList());
     }
 
     @Override

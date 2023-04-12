@@ -6,6 +6,7 @@ import com.yahoo.document.datatypes.Array;
 import com.yahoo.document.datatypes.FieldValue;
 import com.yahoo.document.datatypes.Struct;
 import com.yahoo.document.datatypes.WeightedSet;
+import com.yahoo.vespa.indexinglanguage.ExpressionConverter;
 import com.yahoo.vespa.indexinglanguage.FieldValueConverter;
 import com.yahoo.vespa.objects.ObjectOperation;
 import com.yahoo.vespa.objects.ObjectPredicate;
@@ -24,6 +25,11 @@ public final class ForEachExpression extends CompositeExpression {
 
     public Expression getInnerExpression() {
         return exp;
+    }
+
+    @Override
+    public ForEachExpression convertChildren(ExpressionConverter converter) {
+        return new ForEachExpression(converter.convert(exp));
     }
 
     @Override

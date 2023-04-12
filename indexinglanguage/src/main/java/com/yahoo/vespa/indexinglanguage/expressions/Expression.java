@@ -35,6 +35,12 @@ public abstract class Expression extends Selectable {
         this.inputType = inputType;
     }
 
+    /**
+     * Returns an expression where the children of this has been converted using the given converter.
+     * This default implementation returns this as it has no children.
+     */
+    public Expression convertChildren(ExpressionConverter converter) { return this; }
+
     /** Sets the document type and field the statement this expression is part of will write to */
     public void setStatementOutput(DocumentType documentType, Field field) {}
 

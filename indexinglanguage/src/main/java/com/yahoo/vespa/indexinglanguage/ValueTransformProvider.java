@@ -20,7 +20,7 @@ public abstract class ValueTransformProvider extends ExpressionConverter {
     }
 
     @Override
-    protected final ExpressionConverter branch() {
+    public final ExpressionConverter branch() {
         return clone();
     }
 
