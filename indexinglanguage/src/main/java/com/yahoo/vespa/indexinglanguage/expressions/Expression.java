@@ -37,7 +37,7 @@ public abstract class Expression extends Selectable {
 
     /**
      * Returns an expression where the children of this has been converted using the given converter.
-     * This defauløt implementation returns this as it has no children.
+     * This default implementation returns this as it has no children.
      */
     public Expression convertChildren(ExpressionConverter converter) { return this; }
 
