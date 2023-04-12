@@ -349,6 +349,13 @@ public class VersionStatusTest {
         assertEquals(Confidence.high, confidence(tester.controller(), version0), "Confidence remains unchanged for version0: High");
         assertEquals(VespaVersion.Confidence.high, confidence(tester.controller(), version2), "90% of defaults deployed successfully: High");
 
+        // Canary failing a new revision does not affect confidence
+        canary0.submit(canaryPolicy).failDeployment(systemTest);
+        tester.controllerTester().computeVersionStatus();
+        assertEquals(Confidence.high, confidence(tester.controller(), version0), "Confidence remains unchanged for version0: High");
+        assertEquals(VespaVersion.Confidence.high, confidence(tester.controller(), version2), "90% of defaults deployed successfully: High");
+        canary0.deploy();
+
         // A new version is released, all canaries upgrade successfully, but enough "default" apps fail to mark version
         // as broken
         Version version3 = new Version("6.5");
