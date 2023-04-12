@@ -18,5 +18,5 @@ void my_cool_function(vespalib::CountDownLatch& arrival_latch, vespalib::CountDo
 }
 
 vespalib::string my_totally_tubular_and_groovy_function() {
-    return vespalib::SignalHandler::get_cross_thread_stack_trace(pthread_self());
+    return vespalib::SignalHandler::get_cross_thread_stack_trace(pthread_self())+ "";
 }
