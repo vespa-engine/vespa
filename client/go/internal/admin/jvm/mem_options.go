@@ -48,7 +48,7 @@ func (opts *Options) MaybeAddHugepages(heapSize AmountOfMemory) {
 	thpSize := getTransparentHugepageSize()
 	if thpSize.numBytes*2 < heapSize.numBytes {
 		trace.Trace("add UseTransparentHugePages, 2 * thpSize", thpSize, " < maxHeap", heapSize)
-		opts.AddOption("-XX:+UseTransparentHugePages")
+		// opts.AddOption("-XX:+UseTransparentHugePages")
 	} else {
 		trace.Trace("no UseTransparentHugePages, 2 * thpSize", thpSize, " >= maxHeap", heapSize)
 	}

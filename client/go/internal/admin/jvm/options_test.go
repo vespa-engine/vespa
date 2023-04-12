@@ -67,10 +67,10 @@ func TestHeapSizeAdd(t *testing.T) {
 	)
 	o := newDummyContainer().JvmOptions()
 	o.AddDefaultHeapSizeArgs(gg, hh)
-	assert.Equal(t, 3, len(o.jvmArgs))
+	assert.Equal(t, 2, len(o.jvmArgs))
 	assert.Equal(t, "-Xms12345m", o.jvmArgs[0])
 	assert.Equal(t, "-Xmx23456m", o.jvmArgs[1])
-	assert.Equal(t, "-XX:+UseTransparentHugePages", o.jvmArgs[2])
+	// assert.Equal(t, "-XX:+UseTransparentHugePages", o.jvmArgs[2])
 }
 
 func TestHeapSizeNoAdd(t *testing.T) {
