@@ -49,7 +49,7 @@ public record AuditLog(List<Entry> entries) {
     public record Entry(Instant at, String principal, Method method, String resource, Optional<String> data,
                         Client client) implements Comparable<Entry> {
 
-        private final static int maxDataLength = 1024;
+        final static int maxDataLength = 1024;
         private final static Comparator<Entry> comparator = Comparator.comparing(Entry::at).reversed();
 
         public Entry(Instant at, Client client, String principal, Method method, String resource, byte[] data) {
