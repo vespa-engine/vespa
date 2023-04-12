@@ -143,6 +143,7 @@ public class CoreCollectorTest {
                 String.join("\n", GDB_BACKTRACE));
 
         var expected = new CoreDumpMetadata().setBinPath(TEST_BIN_PATH)
+                                             .setType(CoreDumpMetadata.Type.CORE_DUMP)
                                              .setBacktrace(GDB_BACKTRACE)
                                              .setBacktraceAllThreads(GDB_BACKTRACE);
         assertEquals(expected, coreCollector.collect(context, TEST_CORE_PATH));
@@ -156,7 +157,7 @@ public class CoreCollectorTest {
         mockExec(new String[]{GDB_PATH_RHEL8 + " -n -ex set print frame-arguments none -ex bt -batch /usr/bin/program /tmp/core.1234"},
                 "", "Failure");
 
-        var expected = new CoreDumpMetadata().setBinPath(TEST_BIN_PATH);
+        var expected = new CoreDumpMetadata().setBinPath(TEST_BIN_PATH).setType(CoreDumpMetadata.Type.CORE_DUMP);
         assertEquals(expected, coreCollector.collect(context, TEST_CORE_PATH));
     }
 
@@ -174,6 +175,7 @@ public class CoreCollectorTest {
                 jstack);
 
         var expected = new CoreDumpMetadata().setBinPath(jdkPath)
+                                             .setType(CoreDumpMetadata.Type.CORE_DUMP)
                                              .setBacktraceAllThreads(List.of(jstack));
         assertEquals(expected, coreCollector.collect(context, TEST_CORE_PATH));
     }
@@ -181,6 +183,7 @@ public class CoreCollectorTest {
     @Test
     void metadata_for_java_heap_dump() {
         var expected = new CoreDumpMetadata().setBinPath("java")
+                                             .setType(CoreDumpMetadata.Type.JVM_HEAP)
                                              .setBacktrace(List.of("Heap dump, no backtrace available"));
 
         assertEquals(expected, coreCollector.collect(context, context.paths().of("/dump_java_pid123.hprof")));

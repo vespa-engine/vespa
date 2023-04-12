@@ -99,14 +99,15 @@ public class CoreCollector {
         var metadata = new CoreDumpMetadata();
 
         if (JAVA_HEAP_DUMP_PATTERN.matcher(coredumpPath.getFileName().toString()).find()) {
-            metadata.setBinPath("java")
+            metadata.setType(CoreDumpMetadata.Type.JVM_HEAP)
+                    .setBinPath("java")
                     .setBacktrace(List.of("Heap dump, no backtrace available"));
             return metadata;
         }
 
         try {
             String binPath = readBinPath(context, coredumpPath);
-            metadata.setBinPath(binPath);
+            metadata.setType(CoreDumpMetadata.Type.CORE_DUMP).setBinPath(binPath);
 
             if (Path.of(binPath).getFileName().toString().equals("java")) {
                 metadata.setBacktraceAllThreads(readJstack(context, coredumpPath, binPath));
