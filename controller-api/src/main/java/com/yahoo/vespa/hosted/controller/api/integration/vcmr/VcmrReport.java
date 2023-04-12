@@ -47,13 +47,13 @@ public class VcmrReport {
     /**
      * @return true if list of VCMRs is changed
      */
-    public boolean addVcmr(String id, ZonedDateTime plannedStartTime, ZonedDateTime plannedEndtime) {
-        var vcmr = new Vcmr(id, plannedStartTime, plannedEndtime);
+    public boolean addVcmr(ChangeRequestSource source) {
+        var vcmr = new Vcmr(source.getId(), source.getStatus().name(), source.getPlannedStartTime(), source.getPlannedEndTime());
         if (vcmrs.contains(vcmr))
             return false;
 
         // Remove to catch any changes in start/end time
-        removeVcmr(id);
+        removeVcmr(source.getId());
         return vcmrs.add(vcmr);
     }
 
@@ -96,15 +96,18 @@ public class VcmrReport {
     public static class Vcmr {
 
         private String id;
+        private String status;
         private ZonedDateTime plannedStartTime;
         private ZonedDateTime plannedEndTime;
 
         Vcmr(@JsonProperty("id") String id,
+             @JsonProperty("status") String status,
              @JsonProperty("plannedStartTime") ZonedDateTime plannedStartTime,
              @JsonProperty("plannedEndTime") ZonedDateTime plannedEndTime) {
             this.id = id;
             this.plannedStartTime = plannedStartTime;
             this.plannedEndTime = plannedEndTime;
+            this.status = status;
         }
 
         public String getId() {
@@ -119,6 +122,10 @@ public class VcmrReport {
             return plannedEndTime;
         }
 
+        public String getStatus() {
+            return status;
+        }
+
         @Override
         public boolean equals(Object o) {
             if (this == o) return true;
@@ -126,12 +133,13 @@ public class VcmrReport {
             Vcmr vcmr = (Vcmr) o;
             return Objects.equals(id, vcmr.id) &&
                     Objects.equals(plannedStartTime, vcmr.plannedStartTime) &&
-                    Objects.equals(plannedEndTime, vcmr.plannedEndTime);
+                    Objects.equals(plannedEndTime, vcmr.plannedEndTime) &&
+                    Objects.equals(status, vcmr.status);
         }
 
         @Override
         public int hashCode() {
-            return Objects.hash(id, plannedStartTime, plannedEndTime);
+            return Objects.hash(id, plannedStartTime, plannedEndTime, status);
         }
 
         @Override
@@ -140,6 +148,7 @@ public class VcmrReport {
                     "id='" + id + '\'' +
                     ", plannedStartTime=" + plannedStartTime +
                     ", plannedEndTime=" + plannedEndTime +
+                    ", status=" + status +
                     '}';
         }
     }
