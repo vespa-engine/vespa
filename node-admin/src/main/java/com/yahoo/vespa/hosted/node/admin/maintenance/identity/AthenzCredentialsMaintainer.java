@@ -19,6 +19,10 @@ import com.yahoo.vespa.athenz.identityprovider.client.CsrGenerator;
 import com.yahoo.vespa.athenz.identityprovider.client.DefaultIdentityDocumentClient;
 import com.yahoo.vespa.athenz.tls.AthenzIdentityVerifier;
 import com.yahoo.vespa.athenz.utils.SiaUtils;
+import com.yahoo.vespa.flags.BooleanFlag;
+import com.yahoo.vespa.flags.FetchVector;
+import com.yahoo.vespa.flags.FlagSource;
+import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.hosted.node.admin.component.ConfigServerInfo;
 import com.yahoo.vespa.hosted.node.admin.container.ContainerName;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContext;
@@ -64,7 +68,6 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
     private static final Duration REFRESH_BACKOFF = Duration.ofHours(1); // Backoff when refresh fails to ensure ZTS is not DDoS'ed.
 
     private static final String CONTAINER_SIA_DIRECTORY = "/var/lib/sia";
-    private static final String VESPA_SIA_DIRECTORY = "/var/vespa/sia";
 
     private final URI ztsEndpoint;
     private final Path ztsTrustStorePath;
@@ -72,6 +75,7 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
     private final String certificateDnsSuffix;
     private final ServiceIdentityProvider hostIdentityProvider;
     private final IdentityDocumentClient identityDocumentClient;
+    private final BooleanFlag tenantServiceIdentityFlag;
 
     // Used as an optimization to ensure ZTS is not DDoS'ed on continuously failing refresh attempts
     private final Map<ContainerName, Instant> lastRefreshAttempt = new ConcurrentHashMap<>();
@@ -81,6 +85,7 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
                                        ConfigServerInfo configServerInfo,
                                        String certificateDnsSuffix,
                                        ServiceIdentityProvider hostIdentityProvider,
+                                       FlagSource flagSource,
                                        Clock clock) {
         this.ztsEndpoint = ztsEndpoint;
         this.ztsTrustStorePath = ztsTrustStorePath;
@@ -91,12 +96,14 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
                 hostIdentityProvider,
                 new AthenzIdentityVerifier(Set.of(configServerInfo.getConfigServerIdentity())));
         this.clock = clock;
+        this.tenantServiceIdentityFlag = Flags.NODE_ADMIN_TENANT_SERVICE_REGISTRY.bindTo(flagSource);
     }
 
     public boolean converge(NodeAgentContext context) {
         var modified = false;
         modified |= maintain(context, NODE);
-        modified |= maintain(context, TENANT);
+        if (shouldWriteTenantServiceIdentity(context))
+            modified |= maintain(context, TENANT);
         return modified;
     }
 
@@ -105,7 +112,7 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
 
         try {
             context.log(logger, Level.FINE, "Checking certificate");
-            ContainerPath siaDirectory = context.paths().of(identityType.getSiaDirectory(), context.users().vespa());
+            ContainerPath siaDirectory = context.paths().of(CONTAINER_SIA_DIRECTORY, context.users().vespa());
             ContainerPath identityDocumentFile = siaDirectory.resolve(identityType.getIdentityDocument());
             AthenzIdentity athenzIdentity = getAthenzIdentity(context, identityType, identityDocumentFile);
             ContainerPath privateKeyFile = (ContainerPath) SiaUtils.getPrivateKeyFile(siaDirectory, athenzIdentity);
@@ -156,8 +163,6 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
 
     public void clearCredentials(NodeAgentContext context) {
         FileFinder.files(context.paths().of(CONTAINER_SIA_DIRECTORY))
-                .deleteRecursively(context);
-        FileFinder.files(context.paths().of(VESPA_SIA_DIRECTORY))
                 .deleteRecursively(context);
         lastRefreshAttempt.remove(context.containerName());
     }
@@ -306,19 +311,19 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
         }
     }
 
+    private boolean shouldWriteTenantServiceIdentity(NodeAgentContext context) {
+        return tenantServiceIdentityFlag
+                .with(FetchVector.Dimension.HOSTNAME, context.hostname().value())
+                .value();
+    }
+
     enum IdentityType {
-        NODE(CONTAINER_SIA_DIRECTORY, "vespa-node-identity-document.json"),
-        TENANT(VESPA_SIA_DIRECTORY, "vespa-tenant-identity-document.json");
+        NODE("vespa-node-identity-document.json"),
+        TENANT("vespa-tenant-identity-document.json");
 
-        private String siaDirectory;
         private String identityDocument;
-        IdentityType(String siaDirectory, String identityDocument) {
-            this.siaDirectory = siaDirectory;
+        IdentityType(String identityDocument) {
             this.identityDocument = identityDocument;
-        }
-
-        public String getSiaDirectory() {
-            return siaDirectory;
         }
 
         public String getIdentityDocument() {

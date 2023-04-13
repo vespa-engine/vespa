@@ -385,6 +385,14 @@ public class Flags {
             "Takes effect on next config server container start",
             ZONE_ID);
 
+    public static final UnboundBooleanFlag NODE_ADMIN_TENANT_SERVICE_REGISTRY = defineFeatureFlag(
+            "node-admin-tenant-service-registry", false,
+            List.of("olaa"), "2023-04-12", "2023-06-12",
+            "Whether AthenzCredentialsMaintainer in node-admin should create tenant service identity certificate",
+            "Takes effect on next tick",
+            ZONE_ID, HOSTNAME
+    );
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
                                                        String createdAt, String expiresAt, String description,
