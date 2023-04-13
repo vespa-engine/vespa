@@ -110,28 +110,40 @@ func (a *Client) getDeviceFlowConfig() (flowConfig, error) {
 	}
 	r, err := a.httpClient.Do(req, time.Second*30)
 	if err != nil {
-		return flowConfig{}, fmt.Errorf("failed to get device flow config: %w", err)
+		return flowConfig{}, fmt.Errorf("auth0: failed to get device flow config: %w", err)
 	}
 	defer r.Body.Close()
 	if r.StatusCode/100 != 2 {
-		return flowConfig{}, fmt.Errorf("failed to get device flow config: got response code %d from %s", r.StatusCode, url)
+		return flowConfig{}, fmt.Errorf("auth0: failed to get device flow config: got response code %d from %s", r.StatusCode, url)
 	}
 	var cfg flowConfig
 	if err := json.NewDecoder(r.Body).Decode(&cfg); err != nil {
-		return flowConfig{}, fmt.Errorf("failed to decode response: %w", err)
+		return flowConfig{}, fmt.Errorf("auth0: failed to decode response: %w", err)
 	}
 	return cfg, nil
+}
+
+func (a *Client) Authenticate(request *http.Request) error {
+	accessToken, err := a.AccessToken()
+	if err != nil {
+		return err
+	}
+	if request.Header == nil {
+		request.Header = make(http.Header)
+	}
+	request.Header.Set("Authorization", "Bearer "+accessToken)
+	return nil
 }
 
 // AccessToken returns an access token for the configured system, refreshing it if necessary.
 func (a *Client) AccessToken() (string, error) {
 	creds, ok := a.provider.Systems[a.options.SystemName]
 	if !ok {
-		return "", fmt.Errorf("system %s is not configured", a.options.SystemName)
+		return "", fmt.Errorf("auth0: system %s is not configured: %s", a.options.SystemName, reauthMessage)
 	} else if creds.AccessToken == "" {
-		return "", fmt.Errorf("access token missing: %s", reauthMessage)
+		return "", fmt.Errorf("auth0: access token missing: %s", reauthMessage)
 	} else if scopesChanged(creds) {
-		return "", fmt.Errorf("authentication scopes changed: %s", reauthMessage)
+		return "", fmt.Errorf("auth0: authentication scopes changed: %s", reauthMessage)
 	} else if isExpired(creds.ExpiresAt, accessTokenExpiry) {
 		// check if the stored access token is expired:
 		// use the refresh token to get a new access token:
@@ -142,7 +154,7 @@ func (a *Client) AccessToken() (string, error) {
 		}
 		resp, err := tr.Refresh(cancelOnInterrupt(), a.options.SystemName)
 		if err != nil {
-			return "", fmt.Errorf("failed to renew access token: %w: %s", err, reauthMessage)
+			return "", fmt.Errorf("auth0: failed to renew access token: %w: %s", err, reauthMessage)
 		} else {
 			// persist the updated system with renewed access token
 			creds.AccessToken = resp.AccessToken
@@ -173,12 +185,6 @@ func scopesChanged(s Credentials) bool {
 	return false
 }
 
-// HasCredentials returns true if this client has retrived credentials for the configured system.
-func (a *Client) HasCredentials() bool {
-	_, ok := a.provider.Systems[a.options.SystemName]
-	return ok
-}
-
 // WriteCredentials writes given credentials to the configuration file.
 func (a *Client) WriteCredentials(credentials Credentials) error {
 	if a.provider.Systems == nil {
@@ -186,7 +192,7 @@ func (a *Client) WriteCredentials(credentials Credentials) error {
 	}
 	a.provider.Systems[a.options.SystemName] = credentials
 	if err := writeConfig(a.provider, a.options.ConfigPath); err != nil {
-		return fmt.Errorf("failed to write config: %w", err)
+		return fmt.Errorf("auth0: failed to write config: %w", err)
 	}
 	return nil
 }
@@ -195,11 +201,11 @@ func (a *Client) WriteCredentials(credentials Credentials) error {
 func (a *Client) RemoveCredentials() error {
 	tr := &auth.TokenRetriever{Secrets: &auth.Keyring{}}
 	if err := tr.Delete(a.options.SystemName); err != nil {
-		return fmt.Errorf("failed to remove system %s from secret storage: %w", a.options.SystemName, err)
+		return fmt.Errorf("auth0: failed to remove system %s from secret storage: %w", a.options.SystemName, err)
 	}
 	delete(a.provider.Systems, a.options.SystemName)
 	if err := writeConfig(a.provider, a.options.ConfigPath); err != nil {
-		return fmt.Errorf("failed to write config: %w", err)
+		return fmt.Errorf("auth0: failed to write config: %w", err)
 	}
 	return nil
 }

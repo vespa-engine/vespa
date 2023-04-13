@@ -3,7 +3,6 @@ package vespa
 
 import (
 	"bytes"
-	"crypto/tls"
 	"fmt"
 	"io"
 	"net/http"
@@ -65,17 +64,17 @@ func (v *mockVespaApi) mockVespaHandler(w http.ResponseWriter, req *http.Request
 }
 
 func TestCustomTarget(t *testing.T) {
-	lt := LocalTarget(&mock.HTTPClient{})
+	lt := LocalTarget(&mock.HTTPClient{}, TLSOptions{})
 	assertServiceURL(t, "http://127.0.0.1:19071", lt, "deploy")
 	assertServiceURL(t, "http://127.0.0.1:8080", lt, "query")
 	assertServiceURL(t, "http://127.0.0.1:8080", lt, "document")
 
-	ct := CustomTarget(&mock.HTTPClient{}, "http://192.0.2.42")
+	ct := CustomTarget(&mock.HTTPClient{}, "http://192.0.2.42", TLSOptions{})
 	assertServiceURL(t, "http://192.0.2.42:19071", ct, "deploy")
 	assertServiceURL(t, "http://192.0.2.42:8080", ct, "query")
 	assertServiceURL(t, "http://192.0.2.42:8080", ct, "document")
 
-	ct2 := CustomTarget(&mock.HTTPClient{}, "http://192.0.2.42:60000")
+	ct2 := CustomTarget(&mock.HTTPClient{}, "http://192.0.2.42:60000", TLSOptions{})
 	assertServiceURL(t, "http://192.0.2.42:60000", ct2, "deploy")
 	assertServiceURL(t, "http://192.0.2.42:60000", ct2, "query")
 	assertServiceURL(t, "http://192.0.2.42:60000", ct2, "document")
@@ -85,7 +84,7 @@ func TestCustomTargetWait(t *testing.T) {
 	vc := mockVespaApi{}
 	srv := httptest.NewServer(http.HandlerFunc(vc.mockVespaHandler))
 	defer srv.Close()
-	target := CustomTarget(util.CreateClient(time.Second*10), srv.URL)
+	target := CustomTarget(util.CreateClient(time.Second*10), srv.URL, TLSOptions{})
 
 	_, err := target.Service("query", time.Millisecond, 42, "")
 	assert.NotNil(t, err)
@@ -157,10 +156,11 @@ func createCloudTarget(t *testing.T, url string, logWriter io.Writer) Target {
 	apiKey, err := CreateAPIKey()
 	assert.Nil(t, err)
 
+	auth := &mockAuthenticator{}
 	target, err := CloudTarget(
 		util.CreateClient(time.Second*10),
-		&mockZTS{},
-		&mockAuth0{},
+		auth,
+		auth,
 		APIOptions{APIKey: apiKey, System: PublicSystem},
 		CloudDeploymentOptions{
 			Deployment: Deployment{
@@ -175,7 +175,6 @@ func createCloudTarget(t *testing.T, url string, logWriter io.Writer) Target {
 	}
 	if ct, ok := target.(*cloudTarget); ok {
 		ct.apiOptions.System.URL = url
-		ct.zts = &mockZTS{token: "foo bar"}
 	} else {
 		t.Fatalf("Wrong target type %T", ct)
 	}
@@ -197,14 +196,6 @@ func assertServiceWait(t *testing.T, expectedStatus int, target Target, service 
 	assert.Equal(t, expectedStatus, status)
 }
 
-type mockZTS struct{ token string }
+type mockAuthenticator struct{}
 
-func (c *mockZTS) AccessToken(domain string, certificate tls.Certificate) (string, error) {
-	return c.token, nil
-}
-
-type mockAuth0 struct{}
-
-func (a *mockAuth0) AccessToken() (string, error) { return "", nil }
-
-func (a *mockAuth0) HasCredentials() bool { return true }
+func (a *mockAuthenticator) Authenticate(request *http.Request) error { return nil }

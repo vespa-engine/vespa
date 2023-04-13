@@ -19,7 +19,6 @@ import (
 	"github.com/fatih/color"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
-	"github.com/vespa-engine/vespa/client/go/internal/cli/auth/auth0"
 	"github.com/vespa-engine/vespa/client/go/internal/cli/config"
 	"github.com/vespa-engine/vespa/client/go/internal/vespa"
 )
@@ -250,9 +249,10 @@ type Config struct {
 }
 
 type KeyPair struct {
-	KeyPair         tls.Certificate
-	CertificateFile string
-	PrivateKeyFile  string
+	KeyPair          tls.Certificate
+	RootCertificates []byte
+	CertificateFile  string
+	PrivateKeyFile   string
 }
 
 func loadConfig(environment map[string]string, flags map[string]*pflag.Flag) (*Config, error) {
@@ -392,6 +392,10 @@ func (c *Config) deploymentIn(system vespa.System) (vespa.Deployment, error) {
 	return vespa.Deployment{System: system, Application: app, Zone: zone}, nil
 }
 
+func (c *Config) caCertificatePath() string {
+	return c.environment["VESPA_CLI_DATA_PLANE_CA_CERT_FILE"]
+}
+
 func (c *Config) certificatePath(app vespa.ApplicationID, targetType string) (string, error) {
 	if override, ok := c.environment["VESPA_CLI_DATA_PLANE_CERT_FILE"]; ok {
 		return override, nil
@@ -412,50 +416,68 @@ func (c *Config) privateKeyPath(app vespa.ApplicationID, targetType string) (str
 	return c.applicationFilePath(app, "data-plane-private-key.pem")
 }
 
-func (c *Config) x509KeyPair(app vespa.ApplicationID, targetType string) (KeyPair, error) {
+func (c *Config) readTLSOptions(app vespa.ApplicationID, targetType string) (vespa.TLSOptions, error) {
+	_, trustAll := c.environment["VESPA_CLI_DATA_PLANE_TRUST_ALL"]
 	cert, certOk := c.environment["VESPA_CLI_DATA_PLANE_CERT"]
 	key, keyOk := c.environment["VESPA_CLI_DATA_PLANE_KEY"]
-	var (
-		kp       tls.Certificate
-		err      error
-		certFile string
-		keyFile  string
-	)
-	if certOk && keyOk {
-		// Use key pair from environment
-		kp, err = tls.X509KeyPair([]byte(cert), []byte(key))
+	caCertText, caCertOk := c.environment["VESPA_CLI_DATA_PLANE_CA_CERT"]
+	options := vespa.TLSOptions{TrustAll: trustAll}
+	// CA certificate
+	if caCertOk {
+		options.CACertificate = []byte(caCertText)
 	} else {
-		keyFile, err = c.privateKeyPath(app, targetType)
-		if err != nil {
-			return KeyPair{}, err
+		caCertFile := c.caCertificatePath()
+		if caCertFile != "" {
+			b, err := os.ReadFile(caCertFile)
+			if err != nil {
+				return options, err
+			}
+			options.CACertificate = b
+			options.CACertificateFile = caCertFile
 		}
-		certFile, err = c.certificatePath(app, targetType)
+	}
+	// Certificate and private key
+	if certOk && keyOk {
+		kp, err := tls.X509KeyPair([]byte(cert), []byte(key))
 		if err != nil {
-			return KeyPair{}, err
+			return vespa.TLSOptions{}, err
 		}
-		kp, err = tls.LoadX509KeyPair(certFile, keyFile)
-	}
-	if err != nil {
-		return KeyPair{}, err
-	}
-	if targetType == vespa.TargetHosted {
-		cert, err := x509.ParseCertificate(kp.Certificate[0])
+		options.KeyPair = []tls.Certificate{kp}
+	} else {
+		keyFile, err := c.privateKeyPath(app, targetType)
 		if err != nil {
-			return KeyPair{}, err
+			return vespa.TLSOptions{}, err
+		}
+		certFile, err := c.certificatePath(app, targetType)
+		if err != nil {
+			return vespa.TLSOptions{}, err
+		}
+		kp, err := tls.LoadX509KeyPair(certFile, keyFile)
+		if err == nil {
+			options.KeyPair = []tls.Certificate{kp}
+			options.PrivateKeyFile = keyFile
+			options.CertificateFile = certFile
+		} else if err != nil && !os.IsNotExist(err) {
+			return vespa.TLSOptions{}, err
+		}
+	}
+	if options.KeyPair != nil {
+		cert, err := x509.ParseCertificate(options.KeyPair[0].Certificate[0])
+		if err != nil {
+			return vespa.TLSOptions{}, err
 		}
 		now := time.Now()
 		expiredAt := cert.NotAfter
 		if expiredAt.Before(now) {
 			delta := now.Sub(expiredAt).Truncate(time.Second)
-			return KeyPair{}, fmt.Errorf("certificate %s expired at %s (%s ago)", certFile, cert.NotAfter, delta)
+			source := options.CertificateFile
+			if source == "" {
+				source = "environment"
+			}
+			return vespa.TLSOptions{}, fmt.Errorf("certificate in %s expired at %s (%s ago)", source, cert.NotAfter, delta)
 		}
-		return KeyPair{KeyPair: kp, CertificateFile: certFile, PrivateKeyFile: keyFile}, nil
 	}
-	return KeyPair{
-		KeyPair:         kp,
-		CertificateFile: certFile,
-		PrivateKeyFile:  keyFile,
-	}, nil
+	return options, nil
 }
 
 func (c *Config) apiKeyFileFromEnv() (string, bool) {
@@ -490,11 +512,10 @@ func (c *Config) readAPIKey(cli *CLI, system vespa.System, tenantName string) ([
 		return nil, nil // Vespa Cloud CI only talks to data plane and does not have an API key
 	}
 	if !cli.isCI() {
-		client, err := cli.auth0Factory(cli.httpClient, auth0.Options{ConfigPath: c.authConfigPath(), SystemName: system.Name, SystemURL: system.URL})
-		if err == nil && client.HasCredentials() {
-			return nil, nil // use Auth0
+		if _, err := os.Stat(c.authConfigPath()); err == nil {
+			return nil, nil // We have auth config, so we should prefer Auth0 over API key
 		}
-		cli.printWarning("Authenticating with API key. This is discouraged in non-CI environments", "Authenticate with 'vespa auth login'")
+		cli.printWarning("Authenticating with API key. This is discouraged in non-CI environments", "Authenticate with 'vespa auth login' instead")
 	}
 	return os.ReadFile(c.apiKeyPath(tenantName))
 }

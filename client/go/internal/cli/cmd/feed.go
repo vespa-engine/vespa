@@ -75,7 +75,8 @@ func createServiceClients(service *vespa.Service, n int) []util.HTTPClient {
 	clients := make([]util.HTTPClient, 0, n)
 	for i := 0; i < n; i++ {
 		client := service.Client().Clone()
-		util.ForceHTTP2(client, service.TLSOptions.KeyPair) // Feeding should always use HTTP/2
+		// Feeding should always use HTTP/2
+		util.ForceHTTP2(client, service.TLSOptions.KeyPair, service.TLSOptions.CACertificate, service.TLSOptions.TrustAll)
 		clients = append(clients, client)
 	}
 	return clients

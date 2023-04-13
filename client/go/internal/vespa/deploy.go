@@ -263,10 +263,6 @@ func Submit(opts DeploymentOptions) error {
 	}
 	request.Header.Set("Content-Type", writer.FormDataContentType())
 	serviceDescription := "Submit service"
-	sigKeyId := opts.Target.Deployment().Application.SerializedForm()
-	if err := opts.Target.SignRequest(request, sigKeyId); err != nil {
-		return fmt.Errorf("failed to sign api request: %w", err)
-	}
 	response, err := opts.HTTPClient.Do(request, time.Minute*10)
 	if err != nil {
 		return err
@@ -335,10 +331,6 @@ func uploadApplicationPackage(url *url.URL, opts DeploymentOptions) (PrepareResu
 		return PrepareResult{}, err
 	}
 
-	keyID := opts.Target.Deployment().Application.SerializedForm()
-	if err := opts.Target.SignRequest(request, keyID); err != nil {
-		return PrepareResult{}, err
-	}
 	response, err := service.Do(request, time.Minute*10)
 	if err != nil {
 		return PrepareResult{}, err

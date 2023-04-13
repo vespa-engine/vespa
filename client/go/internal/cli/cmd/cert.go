@@ -34,13 +34,18 @@ package specified as an argument to this command (default '.').
 It's possible to override the private key and certificate used through
 environment variables. This can be useful in continuous integration systems.
 
-Example of setting the certificate and key in-line:
+It's also possible override the CA certificate which can be useful when using self-signed certificates with a
+self-hosted Vespa service. See https://docs.vespa.ai/en/mtls.html for more information.
 
+Example of setting the CA certificate, certificate and key in-line:
+
+    export VESPA_CLI_DATA_PLANE_CA_CERT="my CA cert"
     export VESPA_CLI_DATA_PLANE_CERT="my cert"
     export VESPA_CLI_DATA_PLANE_KEY="my private key"
 
-Example of loading certificate and key from custom paths:
+Example of loading CA certificate, certificate and key from custom paths:
 
+    export VESPA_CLI_DATA_PLANE_CA_CERT_FILE=/path/to/cacert
     export VESPA_CLI_DATA_PLANE_CERT_FILE=/path/to/cert
     export VESPA_CLI_DATA_PLANE_KEY_FILE=/path/to/key
 

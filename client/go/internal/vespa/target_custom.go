@@ -15,6 +15,7 @@ type customTarget struct {
 	targetType string
 	baseURL    string
 	httpClient util.HTTPClient
+	tlsOptions TLSOptions
 }
 
 type serviceConvergeResponse struct {
@@ -22,13 +23,13 @@ type serviceConvergeResponse struct {
 }
 
 // LocalTarget creates a target for a Vespa platform running locally.
-func LocalTarget(httpClient util.HTTPClient) Target {
-	return &customTarget{targetType: TargetLocal, baseURL: "http://127.0.0.1", httpClient: httpClient}
+func LocalTarget(httpClient util.HTTPClient, tlsOptions TLSOptions) Target {
+	return &customTarget{targetType: TargetLocal, baseURL: "http://127.0.0.1", httpClient: httpClient, tlsOptions: tlsOptions}
 }
 
 // CustomTarget creates a Target for a Vespa platform running at baseURL.
-func CustomTarget(httpClient util.HTTPClient, baseURL string) Target {
-	return &customTarget{targetType: TargetCustom, baseURL: baseURL, httpClient: httpClient}
+func CustomTarget(httpClient util.HTTPClient, baseURL string, tlsOptions TLSOptions) Target {
+	return &customTarget{targetType: TargetCustom, baseURL: baseURL, httpClient: httpClient, tlsOptions: tlsOptions}
 }
 
 func (t *customTarget) Type() string { return t.targetType }
@@ -44,7 +45,7 @@ func (t *customTarget) createService(name string) (*Service, error) {
 		if err != nil {
 			return nil, err
 		}
-		return &Service{BaseURL: url, Name: name, httpClient: t.httpClient}, nil
+		return &Service{BaseURL: url, Name: name, httpClient: t.httpClient, TLSOptions: t.tlsOptions}, nil
 	}
 	return nil, fmt.Errorf("unknown service: %s", name)
 }
@@ -76,8 +77,6 @@ func (t *customTarget) PrintLog(options LogOptions) error {
 	return fmt.Errorf("log access is only supported on cloud: run vespa-logfmt on the admin node instead")
 }
 
-func (t *customTarget) SignRequest(req *http.Request, sigKeyId string) error { return nil }
-
 func (t *customTarget) CheckVersion(version version.Version) error { return nil }
 
 func (t *customTarget) urlWithPort(serviceName string) (string, error) {
@@ -101,11 +100,11 @@ func (t *customTarget) urlWithPort(serviceName string) (string, error) {
 }
 
 func (t *customTarget) waitForConvergence(timeout time.Duration) error {
-	deployURL, err := t.urlWithPort(DeployService)
+	deployService, err := t.createService(DeployService)
 	if err != nil {
 		return err
 	}
-	url := fmt.Sprintf("%s/application/v2/tenant/default/application/default/environment/prod/region/default/instance/default/serviceconverge", deployURL)
+	url := fmt.Sprintf("%s/application/v2/tenant/default/application/default/environment/prod/region/default/instance/default/serviceconverge", deployService.BaseURL)
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return err
@@ -122,7 +121,7 @@ func (t *customTarget) waitForConvergence(timeout time.Duration) error {
 		converged = resp.Converged
 		return converged, nil
 	}
-	if _, err := wait(t.httpClient, convergedFunc, func() *http.Request { return req }, nil, timeout); err != nil {
+	if _, err := wait(deployService, convergedFunc, func() *http.Request { return req }, timeout); err != nil {
 		return err
 	}
 	if !converged {

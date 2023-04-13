@@ -19,7 +19,7 @@ import (
 
 func TestDeploy(t *testing.T) {
 	httpClient := mock.HTTPClient{}
-	target := LocalTarget(&httpClient)
+	target := LocalTarget(&httpClient, TLSOptions{})
 	appDir, _ := mock.ApplicationPackageDir(t, false, false)
 	opts := DeploymentOptions{
 		Target:             target,
