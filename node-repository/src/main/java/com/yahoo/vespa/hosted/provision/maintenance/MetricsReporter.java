@@ -176,6 +176,9 @@ public class MetricsReporter extends NodeRepositoryMaintainer {
             boolean converged = currentVersion.isPresent() &&
                     currentVersion.get().equals(wantedVersion);
             metric.set("wantToChangeVespaVersion", converged ? 0 : 1, context);
+            if (node.cloudAccount().isEnclave(nodeRepository().zone())) {
+                metric.set("hasWireguardKey", node.wireguardPubKey().isPresent() ? 1 : 0, context);
+            }
         } else {
             context = getContext(Map.of("state", node.state().name(),
                                         "host", node.hostname()));
