@@ -136,27 +136,25 @@ createWand(const wand::Terms &terms,
     using WandType = ParallelWeakAndSearchImpl<VectorizedIteratorTerms, FutureHeap, PastHeap, IS_STRICT>;
     if (should_monitor_wand()) {
         wand::Terms termsWithMonitoring = insertMonitoringSearchIterator(terms);
-        MonitoringSearchIterator::UP monitoringIterator =
-            MonitoringSearchIterator::UP(new MonitoringSearchIterator
-            (make_string("PWAND(%u,%" PRId64 "),strict=%u",
-                         matchParams.scores.getScoresToTrack(),
-                         matchParams.scoreThreshold,
-                         IS_STRICT),
-             SearchIterator::UP(new WandType(rankParams.rootMatchData,
-                                             VectorizedIteratorTerms(termsWithMonitoring,
-                                                     DotProductScorer(),
-                                                     matchParams.docIdLimit,
-                                                     std::move(rankParams.childrenMatchData)),
-                                             matchParams)),
-             false));
+        auto monitoringIterator = std::make_unique<MonitoringSearchIterator>(
+                make_string("PWAND(%u,%" PRId64 "),strict=%u",
+                            matchParams.scores.getScoresToTrack(),
+                            matchParams.scoreThreshold, IS_STRICT),
+                std::make_unique<WandType>(rankParams.rootMatchData,
+                                           VectorizedIteratorTerms(termsWithMonitoring,
+                                                                   DotProductScorer(),
+                                                                   matchParams.docIdLimit,
+                                                                   std::move(rankParams.childrenMatchData)),
+                                           matchParams),
+                false);
         return std::make_unique<MonitoringDumpIterator>(std::move(monitoringIterator));
     }
     return std::make_unique<WandType>(rankParams.rootMatchData,
-                        VectorizedIteratorTerms(terms,
-                                DotProductScorer(),
-                                matchParams.docIdLimit,
-                                std::move(rankParams.childrenMatchData)),
-                        matchParams);
+                                      VectorizedIteratorTerms(terms,
+                                                              DotProductScorer(),
+                                                              matchParams.docIdLimit,
+                                                              std::move(rankParams.childrenMatchData)),
+                                      matchParams);
 }
 
 } // namespace search::queryeval::wand::<unnamed>
