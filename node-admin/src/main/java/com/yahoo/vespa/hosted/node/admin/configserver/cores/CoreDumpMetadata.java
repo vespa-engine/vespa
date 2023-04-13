@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.node.admin.configserver.cores;
 import com.yahoo.config.provision.DockerImage;
 
 import java.nio.file.Path;
+import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -16,6 +17,7 @@ public class CoreDumpMetadata {
 
     private Type type;
     private String binPath;
+    private Instant created;
     private List<String> backtrace;
     private List<String> backtraceAllThreads;
     private Path coreDumpPath;
@@ -29,6 +31,7 @@ public class CoreDumpMetadata {
 
     public Optional<Type> type() { return Optional.ofNullable(type); }
     public Optional<String> binPath() { return Optional.ofNullable(binPath); }
+    public Optional<Instant> created() { return Optional.ofNullable(created); }
     public Optional<List<String>> backtrace() { return Optional.ofNullable(backtrace); }
     public Optional<List<String>> backtraceAllThreads() { return Optional.ofNullable(backtraceAllThreads); }
     public Optional<Path> coredumpPath() { return Optional.ofNullable(coreDumpPath); }
@@ -40,6 +43,7 @@ public class CoreDumpMetadata {
 
     public CoreDumpMetadata setType(Type type) { this.type = type; return this; }
     public CoreDumpMetadata setBinPath(String binPath) { this.binPath = binPath; return this; }
+    public CoreDumpMetadata setCreated(Instant created) { this.created = created; return this; }
     public CoreDumpMetadata setBacktrace(List<String> backtrace) { this.backtrace = backtrace; return this; }
     public CoreDumpMetadata setBacktraceAllThreads(List<String> backtraceAllThreads) { this.backtraceAllThreads = backtraceAllThreads; return this; }
     public CoreDumpMetadata setCoreDumpPath(Path coreDumpPath) { this.coreDumpPath = coreDumpPath; return this; }
@@ -54,6 +58,7 @@ public class CoreDumpMetadata {
         return "CoreDumpMetadata{" +
                "type=" + type +
                ", binPath=" + binPath +
+               ", created=" + created +
                ", backtrace=" + backtrace +
                ", backtraceAllThreads=" + backtraceAllThreads +
                ", coreDumpPath=" + coreDumpPath +
@@ -72,6 +77,7 @@ public class CoreDumpMetadata {
         CoreDumpMetadata metadata = (CoreDumpMetadata) o;
         return type == metadata.type &&
                Objects.equals(binPath, metadata.binPath) &&
+               Objects.equals(created, metadata.created) &&
                Objects.equals(backtrace, metadata.backtrace) &&
                Objects.equals(backtraceAllThreads, metadata.backtraceAllThreads) &&
                Objects.equals(coreDumpPath, metadata.coreDumpPath) &&
@@ -84,7 +90,7 @@ public class CoreDumpMetadata {
 
     @Override
     public int hashCode() {
-        return Objects.hash(type, binPath, backtrace, backtraceAllThreads, coreDumpPath, decryptionToken, kernelVersion,
+        return Objects.hash(type, binPath, created, backtrace, backtraceAllThreads, coreDumpPath, decryptionToken, kernelVersion,
                             cpuMicrocodeVersion, dockerImage, vespaVersion);
     }
 }
