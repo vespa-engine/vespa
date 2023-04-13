@@ -23,6 +23,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 /**
@@ -35,6 +36,8 @@ import java.util.stream.Collectors;
  * @author lesters
  */
 public class OnnxModelInfo {
+
+    private static final Logger log = Logger.getLogger(OnnxModelInfo.class.getName());
 
     private final ApplicationPackage app;
     private final String modelPath;
@@ -196,15 +199,27 @@ public class OnnxModelInfo {
     }
 
     static private String onnxModelToJson(Onnx.ModelProto model, Path path) throws IOException {
+        var initializerNames = model.getGraph().getInitializerList().stream()
+                .map(Onnx.TensorProto::getName).collect(Collectors.toSet());
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         JsonGenerator g = new JsonFactory().createGenerator(out, JsonEncoding.UTF8);
         g.writeStartObject();
 
         g.writeStringField("path", path.toString());
         g.writeArrayFieldStart("inputs");
+        int skippedInput = 0;
         for (Onnx.ValueInfoProto valueInfo : model.getGraph().getInputList()) {
+            if (initializerNames.contains(valueInfo.getName())) {
+                log.fine(() -> "For '%s': skipping name '%s' as it's an initializer"
+                        .formatted(path.getName(), valueInfo.getName()));
+                ++skippedInput;
+                continue;
+            }
             onnxTypeToJson(g, valueInfo);
         }
+        if (skippedInput > 0)
+            log.info("For '%s': skipped %d inputs that were also listed in initializers"
+                             .formatted(path.getName(), skippedInput));
         g.writeEndArray();
 
         g.writeArrayFieldStart("outputs");

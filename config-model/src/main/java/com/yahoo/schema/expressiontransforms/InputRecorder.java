@@ -120,11 +120,7 @@ public class InputRecorder extends ExpressionTransformer<InputRecorderContext> {
             if (model == null) {
                 throw new IllegalArgumentException("missing onnx model: " + arg);
             }
-            model.getInputMap().forEach((onnxName, onnxInput) -> {
-                if (model.getInitializers().contains(onnxName)) {
-                    log.fine(() -> "For input '%s': skipping name '%s' as it's an initializer".formatted(onnxInput, onnxName));
-                    return;
-                }
+            model.getInputMap().forEach((__, onnxInput) -> {
                 var reader = new StringReader(onnxInput);
                 try {
                     var asExpression = new RankingExpression(reader);
