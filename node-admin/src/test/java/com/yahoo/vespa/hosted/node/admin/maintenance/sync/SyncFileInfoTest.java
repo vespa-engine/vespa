@@ -74,8 +74,9 @@ public class SyncFileInfoTest {
 
     @Test
     void vespa_logs() {
+        new UnixPath(vespaLogPath1).createParents().createNewFile().setLastModifiedTime(Instant.parse("2022-05-09T14:22:11Z"));
         assertForLogFile(vespaLogPath1, "s3://vespa-data-bucket/vespa/music/main/h432a/logs/vespa/vespa.log.zst", ZSTD, Duration.ofHours(1), true);
-        assertForLogFile(vespaLogPath1, "s3://vespa-data-bucket/vespa/music/main/h432a/logs/vespa/vespa.log.zst", ZSTD, Duration.ZERO, false);
+        assertForLogFile(vespaLogPath1, "s3://vespa-data-bucket/vespa/music/main/h432a/logs/vespa/vespa.log-2022-05-09.14-22-11.zst", ZSTD, Duration.ZERO, false);
 
         assertForLogFile(vespaLogPath2, "s3://vespa-data-bucket/vespa/music/main/h432a/logs/vespa/vespa.log-2021-02-12.zst", ZSTD, true);
         assertForLogFile(vespaLogPath2, "s3://vespa-data-bucket/vespa/music/main/h432a/logs/vespa/vespa.log-2021-02-12.zst", ZSTD, false);
@@ -83,8 +84,9 @@ public class SyncFileInfoTest {
 
     @Test
     void zookeeper_logs() {
+        new UnixPath(zkLogPath0).createParents().createNewFile().setLastModifiedTime(Instant.parse("2022-05-13T13:13:45Z"));
         assertForLogFile(zkLogPath0, "s3://vespa-data-bucket/vespa/music/main/h432a/logs/zookeeper/zookeeper.log.zst", ZSTD, Duration.ofHours(1), true);
-        assertForLogFile(zkLogPath0, "s3://vespa-data-bucket/vespa/music/main/h432a/logs/zookeeper/zookeeper.log.zst", ZSTD, Duration.ZERO, false);
+        assertForLogFile(zkLogPath0, "s3://vespa-data-bucket/vespa/music/main/h432a/logs/zookeeper/zookeeper.log-2022-05-13.13-13-45.zst", ZSTD, Duration.ZERO, false);
 
         new UnixPath(zkLogPath1).createParents().createNewFile().setLastModifiedTime(Instant.parse("2022-05-09T14:22:11Z"));
         assertForLogFile(zkLogPath1, "s3://vespa-data-bucket/vespa/music/main/h432a/logs/zookeeper/zookeeper.log-2022-05-09.14-22-11.zst", ZSTD, true);

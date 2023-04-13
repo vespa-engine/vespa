@@ -71,11 +71,14 @@ public class SyncFileInfo {
         if (filename.startsWith("vespa.log")) {
             dir = "logs/vespa/";
             compression = Compression.ZSTD;
-            minDurationBetweenSync = filename.length() == 9 ? rotatedOnly ? Duration.ofHours(1) : Duration.ZERO : null;
+            if (filename.length() == 9) {
+                if (!rotatedOnly) remoteFilename = "vespa.log-" + DATE_TIME_FORMATTER.format(new UnixPath(logFile).getLastModifiedTime());
+                minDurationBetweenSync = rotatedOnly ? Duration.ofHours(1) : Duration.ZERO;
+            }
         } else if (filename.startsWith("zookeeper.") && filename.endsWith(".log")) {
             compression = Compression.ZSTD;
             dir = "logs/zookeeper/";
-            remoteFilename = filename.endsWith(".0.log") ? "zookeeper.log" :
+            remoteFilename = rotatedOnly && filename.endsWith(".0.log") ? "zookeeper.log" :
                     "zookeeper.log-" + DATE_TIME_FORMATTER.format(new UnixPath(logFile).getLastModifiedTime());
             minDurationBetweenSync = filename.endsWith(".0.log") ? rotatedOnly ? Duration.ofHours(1) : Duration.ZERO : null;
         } else {
