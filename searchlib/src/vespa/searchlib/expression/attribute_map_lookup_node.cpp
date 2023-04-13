@@ -340,7 +340,8 @@ AttributeMapLookupNode::onPrepare(bool preserveAccurateTypes)
                 auto resultNode = std::make_unique<EnumResultNode>();
                 const StringAttribute & sattr = dynamic_cast<const StringAttribute &>(*attribute);
                 EnumHandle undefined(0);
-                attribute->findEnum(sattr.defaultValue(), undefined);
+                bool found = attribute->findEnum(sattr.defaultValue(), undefined);
+                assert(found);
                 _handler = std::make_unique<EnumValueHandler>(std::move(keyHandler), *attribute, *resultNode, undefined);
                 setResultType(std::move(resultNode));
             } else {

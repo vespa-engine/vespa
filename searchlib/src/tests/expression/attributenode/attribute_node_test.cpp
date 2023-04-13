@@ -91,12 +91,12 @@ AttributeManagerFixture::AttributeManagerFixture()
     buildStringArrayAttribute("array.name", {{"n1.1", "n1.2"}, {"n2"}, {}});
     buildIntegerArrayAttribute("array.val", BasicType::INT8, {{ 10, 11}, {20, 21 }, {}});
     buildFloatArrayAttribute("array.fval", {{ 110.0}, { 120.0, 121.0 }, {}});
-    buildStringArrayAttribute("smap.key", {{"k1.1", "k1.2"}, {"k2", "default_value"}, {}});
-    buildStringArrayAttribute("smap.value.name", {{"n1.1", "n1.2"}, {"n2", ""}, {}});
+    buildStringArrayAttribute("smap.key", {{"k1.1", "k1.2"}, {"k2"}, {}});
+    buildStringArrayAttribute("smap.value.name", {{"n1.1", "n1.2"}, {"n2"}, {}});
     buildIntegerArrayAttribute("smap.value.val", BasicType::INT8, {{ 10, 11}, {20, 21 }, {}});
     buildFloatArrayAttribute("smap.value.fval", {{ 110.0}, { 120.0, 121.0 }, {}});
-    buildStringArrayAttribute("map.key", {{"k1.1", "k1.2"}, {"k2", "default_value"}, {}});
-    buildStringArrayAttribute("map.value", {{"n1.1", "n1.2"}, {"n2", "non_empty"}, {}});
+    buildStringArrayAttribute("map.key", {{"k1.1", "k1.2"}, {"k2"}, {}});
+    buildStringArrayAttribute("map.value", {{"n1.1", "n1.2"}, {"n2"}, {}});
     buildStringAttribute("keyfield1", {"k1.2", "k2", "k3"});
     buildStringAttribute("keyfield2", {"k1.1", "k1", "k1"});
 }
@@ -301,7 +301,7 @@ Fixture::assertStrings(std::vector<vespalib::string> expVals, const vespalib::st
         if (useEnumOptimization) {
             ASSERT_TRUE(result.inherits(EnumResultNode::classId));
             search::enumstore::EnumHandle enumVal(0);
-            node->getAttribute()->findEnum(expDocVal.c_str(), enumVal);
+            ASSERT_TRUE(node->getAttribute()->findEnum(expDocVal.c_str(), enumVal));
             EXPECT_EQUAL(result.getEnum(), enumVal);
         } else {
             ASSERT_TRUE(result.inherits(StringResultNode::classId));
@@ -424,12 +424,12 @@ TEST_F("Test array values", Fixture)
     TEST_DO(f.assertStringArrays({{"n1.1", "n1.2"}, {"n2"}, {}}, "array.name"));
     TEST_DO(f.assertStringArrays({{"n1.1", "n1.2"}, {"n2"}, {}}, "array.name", true));
     TEST_DO(f.assertFloatArrays({{ 110.0}, { 120.0, 121.0 }, {}}, "array.fval"));
-    TEST_DO(f.assertStringArrays({{"k1.1", "k1.2"}, {"k2", "default_value"}, {}}, "smap.key"));
-    TEST_DO(f.assertStringArrays({{"n1.1", "n1.2"}, {"n2", ""}, {}}, "smap.value.name"));
+    TEST_DO(f.assertStringArrays({{"k1.1", "k1.2"}, {"k2"}, {}}, "smap.key"));
+    TEST_DO(f.assertStringArrays({{"n1.1", "n1.2"}, {"n2"}, {}}, "smap.value.name"));
     TEST_DO(f.assertIntArrays({{ 10, 11}, {20, 21 }, {}}, "smap.value.val"));
     TEST_DO(f.assertFloatArrays({{ 110.0}, { 120.0, 121.0 }, {}}, "smap.value.fval"));
-    TEST_DO(f.assertStringArrays({{"k1.1", "k1.2"}, {"k2", "default_value"}, {}}, "map.key"));
-    TEST_DO(f.assertStringArrays({{"n1.1", "n1.2"}, {"n2", "non_empty"}, {}}, "map.value"));
+    TEST_DO(f.assertStringArrays({{"k1.1", "k1.2"}, {"k2"}, {}}, "map.key"));
+    TEST_DO(f.assertStringArrays({{"n1.1", "n1.2"}, {"n2"}, {}}, "map.value"));
 }
 
 TEST_F("test keyed values", Fixture)

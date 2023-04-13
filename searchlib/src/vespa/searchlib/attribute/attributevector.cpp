@@ -441,16 +441,20 @@ AttributeVector::addReservedDoc()
     assert(docId == 0u);
     assert(docId < getNumDocs());
     clearDoc(docId);
-    commit();
     if (hasMultiValue()) {
         if (isFloatingPointType()) {
-            FloatingPointAttribute * vec = dynamic_cast<FloatingPointAttribute *>(this);
+            auto * vec = dynamic_cast<FloatingPointAttribute *>(this);
             bool appendedUndefined = vec->append(0, attribute::getUndefined<double>(), 1);
             assert(appendedUndefined);
             (void) appendedUndefined;
-            commit();
+        } else if (isStringType()) {
+            auto * vec = dynamic_cast<StringAttribute *>(this);
+            bool appendedUndefined = vec->append(0, StringAttribute::defaultValue(), 1);
+            assert(appendedUndefined);
+            (void) appendedUndefined;
         }
     }
+    commit();
 }
 
 attribute::IPostingListAttributeBase *AttributeVector::getIPostingListAttributeBase() { return nullptr; }
