@@ -393,6 +393,11 @@ public class Flags {
             ZONE_ID, HOSTNAME
     );
 
+    public static final UnboundBooleanFlag ENABLE_CROWDSTRIKE = defineFeatureFlag(
+            "enable-crowdstrike", true, List.of("andreer"), "2023-04-13", "2023-06-13",
+            "Whether to enable CrowdStrike.", "Takes effect on next host admin tick",
+            HOSTNAME);
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
                                                        String createdAt, String expiresAt, String description,
