@@ -442,18 +442,14 @@ AttributeVector::addReservedDoc()
     assert(docId < getNumDocs());
     clearDoc(docId);
     commit();
-    FloatingPointAttribute * vec = dynamic_cast<FloatingPointAttribute *>(this);
-    if (vec) {
-        if (hasMultiValue()) {
+    if (hasMultiValue()) {
+        if (isFloatingPointType()) {
+            FloatingPointAttribute * vec = dynamic_cast<FloatingPointAttribute *>(this);
             bool appendedUndefined = vec->append(0, attribute::getUndefined<double>(), 1);
             assert(appendedUndefined);
             (void) appendedUndefined;
-        } else {
-            bool updatedUndefined = vec->update(0, attribute::getUndefined<double>());
-            assert(updatedUndefined);
-            (void) updatedUndefined;
+            commit();
         }
-        commit();
     }
 }
 
