@@ -2,7 +2,7 @@
 package com.yahoo.vespa.clustercontroller.core;
 
 /**
- * Base class for distributor/content node node RPC requests that are bound
+ * Base class for distributor/content node RPC requests that are bound
  * to a particular cluster state version.
  */
 public abstract class ClusterStateVersionSpecificRequest {

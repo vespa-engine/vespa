@@ -46,7 +46,7 @@ public class NodeStateChangeChecker {
 
     public NodeStateChangeChecker(ContentCluster cluster, boolean inMoratorium) {
         this.requiredRedundancy = cluster.getDistribution().getRedundancy();
-        this.groupVisiting = new HierarchicalGroupVisitingAdapter(cluster.getDistribution());
+        this.groupVisiting = new HierarchicalGroupVisiting(cluster.getDistribution());
         this.clusterInfo = cluster.clusterInfo();
         this.inMoratorium = inMoratorium;
         this.maxNumberOfGroupsAllowedToBeDown = cluster.maxNumberOfGroupsAllowedToBeDown();
