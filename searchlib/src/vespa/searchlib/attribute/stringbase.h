@@ -53,11 +53,11 @@ public:
     largeint_t getInt(DocId doc)  const override { return strtoll(get(doc), nullptr, 0); }
     double getFloat(DocId doc)    const override;
     vespalib::ConstArrayRef<char> get_raw(DocId) const override;
+    static const char * defaultValue() { return ""; }
 protected:
     StringAttribute(const vespalib::string & name);
     StringAttribute(const vespalib::string & name, const Config & c);
     ~StringAttribute() override;
-    static const char * defaultValue() { return ""; }
     using Change = ChangeTemplate<StringChangeData>;
     using ChangeVector = ChangeVectorT<Change>;
     using EnumEntryType = const char*;

@@ -54,8 +54,7 @@ namespace {
 vespalib::string stringValue(const ResultNode &result, const IAttributeVector &attr) {
     if (result.inherits(EnumResultNode::classId)) {
         auto enumHandle = result.getEnum();
-        auto &stringAttr = dynamic_cast<const StringAttribute &>(attr);
-        return vespalib::string(stringAttr.getFromEnum(enumHandle));
+        return vespalib::string(attr.getStringFromEnum(enumHandle));
     }
     char buf[100];
     BufferRef bref(&buf[0], sizeof(buf));
@@ -199,8 +198,9 @@ AttributeManagerFixture::buildIntegerArrayAttribute(const vespalib::string &name
 }
 
 
-struct Fixture
+class Fixture
 {
+public:
     AttributeManagerFixture             attrs;
     AttributeContext                    context;
     Fixture();
@@ -208,11 +208,13 @@ struct Fixture
     std::unique_ptr<AttributeNode> makeNode(const vespalib::string &attributeName, bool useEnumOptimiation = false, bool preserveAccurateTypes = false);
     void assertInts(std::vector<IAttributeVector::largeint_t> expVals, const vespalib::string &attributteName, bool preserveAccurateTypes = false);
     void assertBools(std::vector<bool> expVals, const vespalib::string &attributteName, bool preserveAccurateTypes = false);
-    void assertStrings(std::vector<vespalib::string> expVals, const vespalib::string &attributteName, bool useEnumOptimization = false);
+    void assertStrings(std::vector<vespalib::string> expVals, const vespalib::string &attributteName);
     void assertFloats(std::vector<double> expVals, const vespalib::string &attributteName);
     void assertIntArrays(std::vector<std::vector<IAttributeVector::largeint_t>> expVals, const vespalib::string &attributteName, bool preserveAccurateTypes = false);
     void assertStringArrays(std::vector<std::vector<vespalib::string>> expVals, const vespalib::string &attributteName, bool useEnumOptimization = false);
     void assertFloatArrays(std::vector<std::vector<double>> expVals, const vespalib::string &attributteName);
+private:
+    void assertStrings(std::vector<vespalib::string> expVals, const vespalib::string &attributteName, bool useEnumOptimization);
 };
 
 Fixture::Fixture()
@@ -280,6 +282,11 @@ Fixture::assertBools(std::vector<bool> expVals, const vespalib::string &attribut
     }
 }
 
+void
+Fixture::assertStrings(std::vector<vespalib::string> expVals, const vespalib::string &attributeName) {
+    assertStrings(expVals, attributeName, false);
+    assertStrings(expVals, attributeName, true);
+}
 
 void
 Fixture::assertStrings(std::vector<vespalib::string> expVals, const vespalib::string &attributeName, bool useEnumOptimization)
@@ -293,6 +300,9 @@ Fixture::assertStrings(std::vector<vespalib::string> expVals, const vespalib::st
         const auto &result = *node->getResult();
         if (useEnumOptimization) {
             ASSERT_TRUE(result.inherits(EnumResultNode::classId));
+            search::enumstore::EnumHandle enumVal(0);
+            ASSERT_TRUE(node->getAttribute()->findEnum(expDocVal.c_str(), enumVal));
+            EXPECT_EQUAL(result.getEnum(), enumVal);
         } else {
             ASSERT_TRUE(result.inherits(StringResultNode::classId));
         }
@@ -404,7 +414,6 @@ TEST_F("test single values", Fixture)
     TEST_DO(f.assertInts({ 10, getUndefined<int8_t>()}, "ifield"));
     TEST_DO(f.assertInts({ 10, getUndefined<int8_t>()}, "ifield", true));
     TEST_DO(f.assertStrings({ "n1", "" }, "sfield"));
-    TEST_DO(f.assertStrings({ "n1", "" }, "sfield", true));
     TEST_DO(f.assertFloats({ 110.0, getUndefined<double>() }, "ffield"));
 }
 

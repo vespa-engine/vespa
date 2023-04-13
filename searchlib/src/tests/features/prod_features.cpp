@@ -1252,7 +1252,7 @@ Test::testDotProduct()
             { // test funky syntax
                 dotproduct::wset::EnumVector out(sv);
                 WeightedSetParser::parse("( a: 1,  b:2 ,c: , :3)", out);
-                EXPECT_EQUAL(out.getVector().size(), 3u);
+                EXPECT_EQUAL(out.getVector().size(), 4u);
                 EXPECT_TRUE(sv->findEnum("a", e));
                 EXPECT_EQUAL(out.getVector()[0].first, e);
                 EXPECT_EQUAL(out.getVector()[0].second, 1);
@@ -1262,6 +1262,9 @@ Test::testDotProduct()
                 EXPECT_TRUE(sv->findEnum("c", e));
                 EXPECT_EQUAL(out.getVector()[2].first, e);
                 EXPECT_EQUAL(out.getVector()[2].second, 0);
+                EXPECT_TRUE(sv->findEnum("", e));
+                EXPECT_EQUAL(out.getVector()[3].first, e);
+                EXPECT_EQUAL(out.getVector()[3].second, 3);
             }
             { // strings not in attribute vector
                 dotproduct::wset::EnumVector out(sv);

@@ -1,11 +1,11 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "attribute_map_lookup_node.h"
-#include <vespa/vespalib/stllike/asciistream.h>
-#include <vespa/vespalib/util/exceptions.h>
+#include <vespa/searchlib/attribute/stringbase.h>
 #include <vespa/searchcommon/attribute/attributecontent.h>
 #include <vespa/searchcommon/attribute/iattributecontext.h>
-#include <vespa/searchcommon/common/undefinedvalues.h>
+#include <vespa/vespalib/stllike/asciistream.h>
+#include <vespa/vespalib/util/exceptions.h>
 
 using search::attribute::AttributeContent;
 using search::attribute::IAttributeVector;
@@ -35,8 +35,6 @@ public:
 };
 
 namespace {
-
-vespalib::string indirectKeyMarker("attribute(");
 
 class BadKeyHandler : public AttributeMapLookupNode::KeyHandler
 {
@@ -220,7 +218,6 @@ IAttributeVector::largeint_t getUndefinedValue(BasicType::Type basicType)
         return getUndefined<int32_t>();
     case BasicType::INT64:
         return getUndefined<int64_t>();
-        break;
     default:
         return 0;
     }
@@ -330,7 +327,6 @@ AttributeMapLookupNode::onPrepare(bool preserveAccurateTypes)
                     break;
                 default:
                     throw std::runtime_error("This is no valid integer attribute " + attribute->getName());
-                    break;
                 }
             } else {
                 prepareIntValues<Int64ResultNode>(std::move(keyHandler), *attribute, undefinedValue);
@@ -342,7 +338,11 @@ AttributeMapLookupNode::onPrepare(bool preserveAccurateTypes)
         } else if (attribute->isStringType()) {
             if (_useEnumOptimization) {
                 auto resultNode = std::make_unique<EnumResultNode>();
-                _handler = std::make_unique<EnumValueHandler>(std::move(keyHandler), *attribute, *resultNode, EnumHandle());
+                const StringAttribute & sattr = dynamic_cast<const StringAttribute &>(*attribute);
+                EnumHandle undefined(0);
+                bool found = attribute->findEnum(sattr.defaultValue(), undefined);
+                assert(found);
+                _handler = std::make_unique<EnumValueHandler>(std::move(keyHandler), *attribute, *resultNode, undefined);
                 setResultType(std::move(resultNode));
             } else {
                 auto resultNode = std::make_unique<StringResultNode>();
