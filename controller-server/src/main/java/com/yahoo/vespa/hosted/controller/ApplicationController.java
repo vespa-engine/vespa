@@ -1064,10 +1064,10 @@ public class ApplicationController {
         var planId = controller.serviceRegistry().billingController().getPlan(tenantName);
         Optional<Plan> plan = controller.serviceRegistry().planRegistry().plan(planId);
         if (plan.isEmpty())
-            throw new IllegalArgumentException("Tenant '" + tenantName.value() + "' has no plan, not allowed to deploy");
+            throw new IllegalArgumentException("Tenant '" + tenantName.value() + "' has no plan, not allowed to deploy. See https://cloud.vespa.ai/support");
         if (plan.get().quota().calculate().equals(Quota.zero()))
             throw new IllegalArgumentException("Tenant '" + tenantName.value() + "' has a plan '" +
-                                                       plan.get().displayName() + "' with zero quota, not allowed to deploy");
+                                                       plan.get().displayName() + "' with zero quota, not allowed to deploy. See https://cloud.vespa.ai/support");
     }
 
 }

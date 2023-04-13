@@ -1523,7 +1523,8 @@ public class ControllerTest {
             tester.controller().applications().verifyPlan(tenant);
             fail("should have thrown an exception");
         } catch (IllegalArgumentException e) {
-            assertEquals("Tenant 'tenant' has a plan 'None Plan - for testing purposes' with zero quota, not allowed to deploy", e.getMessage());
+            assertEquals("Tenant 'tenant' has a plan 'None Plan - for testing purposes' with zero quota, not allowed to deploy. " +
+                                 "See https://cloud.vespa.ai/support", e.getMessage());
         }
     }
 
