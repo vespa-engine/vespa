@@ -175,7 +175,7 @@ public class DeploymentApiHandler extends ThreadedHttpRequestHandler {
                       DeploymentStatus.StepStatus stepStatus = status.instanceSteps().get(instance.instance());
                       if (stepStatus != null) { // Instance may not have any steps, i.e. an empty deployment spec has been submitted
                           Readiness platformReadiness = stepStatus.blockedUntil(Change.of(statistics.version()));
-                          if (platformReadiness.cause() == DelayCause.blocked)
+                          if (platformReadiness.cause() == DelayCause.changeBlocked)
                                      instanceObject.setLong("blockedUntil", platformReadiness.at().toEpochMilli());
                       }
                       instanceObject.setString("upgradePolicy", toString(status.application().deploymentSpec().instance(instance.instance())

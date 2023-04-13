@@ -756,8 +756,8 @@ public class DeploymentTriggerTest {
 
         // Last job has a different deployment target, so tests need to run again.
         app1.runJob(productionEuWest1)      // Upgrade completes, and revision is the only change.
-                .runJob(productionUsCentral1)   // With only revision change, central should run to cover a previous failure.
-                .runJob(productionEuWest1);     // Finally, west changes revision.
+            .runJob(productionUsCentral1)   // With only revision change, central should run to cover a previous failure.
+            .runJob(productionEuWest1);     // Finally, west changes revision.
         assertEquals(Change.empty(), app1.instance().change());
         assertEquals(Optional.of(RunStatus.success), app1.instanceJobs().get(productionUsCentral1).lastStatus());
     }

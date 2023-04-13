@@ -43,6 +43,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -302,7 +303,11 @@ public class DeploymentStatus {
                                                   fallbackPlatform(change, job));
                 if (step.completedAt(change, firstProductionJobWithDeploymentInCloud).isEmpty()) {
                     JobType typeWithZone = job.type().isSystemTest() ? JobType.systemTest(zones, cloud) : JobType.stagingTest(zones, cloud);
-                    jobs.merge(job, List.of(new Job(typeWithZone, versions, step.readiness(change, firstProductionJobWithDeploymentInCloud), change)), DeploymentStatus::union);
+                    Readiness readiness = step.readiness(change, firstProductionJobWithDeploymentInCloud);
+                    jobs.merge(job, List.of(new Job(typeWithZone,
+                                                    versions,
+                                                    readiness.okAt(now) && jobs().get(job).get().isRunning() ? readiness.running() : readiness,
+                                                    change)), DeploymentStatus::union);
                 }
             });
         });
@@ -529,13 +534,15 @@ public class DeploymentStatus {
 
     private Map<JobId, List<Job>> productionJobs(InstanceName instance, Change change, boolean assumeUpgradesSucceed) {
         Map<JobId, List<Job>> jobs = new LinkedHashMap<>();
-        jobSteps.forEach((job, step) -> {
+        for (Entry<JobId, StepStatus> entry : reversed(List.copyOf(jobSteps.entrySet()))) {
+            JobId job = entry.getKey();
+            StepStatus step = entry.getValue();
             if ( ! job.application().instance().equals(instance) || ! job.type().isProduction())
-                return;
+                continue;
 
             // Signal strict completion criterion by depending on job itself.
             if (step.completedAt(change, Optional.of(job)).isPresent())
-                return;
+                continue;
 
             // When computing eager test jobs for outstanding changes, assume current change completes successfully.
             Optional<Deployment> deployment = deploymentFor(job);
@@ -545,7 +552,7 @@ public class DeploymentStatus {
                                                    || areIncompatible(change.platform(), existingRevision, job);
             if (assumeUpgradesSucceed) {
                 if (deployingCompatibilityChange) // No eager tests for this.
-                    return;
+                    continue;
 
                 Change currentChange = application.require(instance).change();
                 Versions target = Versions.from(currentChange, application, deployment, fallbackPlatform(currentChange, job));
@@ -555,21 +562,28 @@ public class DeploymentStatus {
             List<Job> toRun = new ArrayList<>();
             List<Change> changes =    deployingCompatibilityChange
                                    || allJobs.get(job).flatMap(status -> status.lastCompleted()).isEmpty()
-                                      ? List.of(change)
-                                      : changes(job, step, change);
+                                   ? List.of(change)
+                                   : changes(job, step, change);
             for (Change partial : changes) {
-                Job jobToRun = new Job(job.type(),
-                                       Versions.from(partial, application, existingPlatform, existingRevision, fallbackPlatform(partial, job)),
-                                       step.readiness(partial, Optional.of(job)),
-                                       partial);
-                toRun.add(jobToRun);
+                Versions versions = Versions.from(partial, application, existingPlatform, existingRevision, fallbackPlatform(partial, job));
+                Readiness readiness = step.readiness(partial, Optional.of(job));
+                // This job is blocked if it is already running ...
+                readiness = jobs().get(job).get().isRunning() && readiness.okAt(now) ? readiness.running() : readiness;
+                // ... or if it is a deployment, and a test job for the current state is not yet complete,
+                // which is the case when the next versions to run that test with is not the same as we want to deploy here.
+                List<Job> tests = job.type().isTest() ? null : jobs.get(new JobId(job.application(), JobType.productionTestOf(job.type().zone())));
+                readiness = tests != null && ! versions.targetsMatch(tests.get(0).versions) && readiness.okAt(now) ? readiness.blocked() : readiness;
+                toRun.add(new Job(job.type(), versions, readiness, partial));
                 // Assume first partial change is applied before the second.
-                existingPlatform = Optional.of(jobToRun.versions.targetPlatform());
-                existingRevision = Optional.of(jobToRun.versions.targetRevision());
+                existingPlatform = Optional.of(versions.targetPlatform());
+                existingRevision = Optional.of(versions.targetRevision());
             }
             jobs.put(job, toRun);
-        });
-        return jobs;
+        }
+        Map<JobId, List<Job>> jobsInOrder = new LinkedHashMap<>();
+        for (Entry<JobId, List<Job>> entry : reversed(List.copyOf(jobs.entrySet())))
+            jobsInOrder.put(entry.getKey(), entry.getValue());
+        return jobsInOrder;
     }
 
     private boolean areIncompatible(Optional<Version> platform, Optional<RevisionId> revision, JobId job) {
@@ -676,12 +690,15 @@ public class DeploymentStatus {
                         for (Job productionJob : versionsList)
                             if (allJobs.successOn(testType, productionJob.versions())
                                        .instance(testJob.application().instance())
-                                       .asList().isEmpty())
+                                       .asList().isEmpty()) {
+                                Readiness readiness = jobSteps().get(testJob).readiness(productionJob.change, Optional.of(job));
                                 testJobs.merge(testJob, List.of(new Job(testJob.type(),
                                                                         productionJob.versions(),
-                                                                        jobSteps().get(testJob).readiness(productionJob.change, Optional.of(job)),
+                                                                        readiness.okAt(now) && jobs().get(testJob).get().isRunning() ? readiness.running() : readiness,
                                                                         productionJob.change)),
                                                DeploymentStatus::union);
+
+                            }
                     });
                 }
             }
@@ -1001,9 +1018,9 @@ public class DeploymentStatus {
                     }
                 }
                 if ( ! blocked)
-                    return current == now ? Readiness.empty : new Readiness(current, DelayCause.blocked);
+                    return current == now ? Readiness.empty : new Readiness(current, DelayCause.changeBlocked);
             }
-            return new Readiness(now.plusSeconds(1 << 30), DelayCause.blocked); // Some time in the future that doesn't look like anything you'd expect.
+            return new Readiness(now.plusSeconds(1 << 30), DelayCause.changeBlocked); // Some time in the future that doesn't look like anything you'd expect.
         }
 
     }
@@ -1209,33 +1226,36 @@ public class DeploymentStatus {
 
     }
 
-    public enum DelayCause { none, unverified, notReady, blockedByTest, coolingDown, invalidPackage, blocked, paused }
+    public enum DelayCause { none, unverified, notReady, blocked, running, coolingDown, invalidPackage, changeBlocked, paused }
     public record Readiness(Instant at, DelayCause cause) implements Comparable<Readiness> {
         public static final Readiness unverified = new Readiness(null, DelayCause.unverified);
         public static final Readiness notReady = new Readiness(null, DelayCause.notReady);
         public static final Readiness empty = new Readiness(Instant.EPOCH, DelayCause.none);
         public Readiness(Instant at) { this(at, DelayCause.none); }
+        public Readiness blocked() { return new Readiness(at, DelayCause.blocked); }
+        public Readiness running() { return new Readiness(at, DelayCause.running); }
         public boolean ok() { return at != null; }
-        public boolean okAt(Instant at) { return ok() && ! at.isBefore(this.at); }
+        public boolean okAt(Instant at) { return ok() && cause != DelayCause.running && cause != DelayCause.blocked && ! at.isBefore(this.at); }
         @Override public int compareTo(Readiness o) {
             return at == null ? o.at == null ?  0 : 1
                               : o.at == null ? -1 : at.compareTo(o.at);
         }
         @Override public String toString() {
             return ok() ? "ready at " + at + switch (cause) {
-                            case none -> "";
-                            case blockedByTest -> ": waiting for verification test to complete";
-                            case coolingDown -> ": cooling down after repeated failures";
-                            case invalidPackage -> ": invalid application package, must resubmit";
-                            case blocked -> ": deployment configuration blocks changes";
-                            case paused -> ": manually paused";
-                            default -> throw new IllegalStateException(cause + " should not have an instant at which it is ready");
-                        }
-                        : "not ready: " + switch (cause) {
-                            case unverified -> "waiting for verification test to complete";
-                            case notReady -> "waiting for dependencies to complete";
-                            default -> throw new IllegalStateException(cause + " should have an instant at which it is ready");
-                        };
+                              case none -> "";
+                              case coolingDown -> ": cooling down after repeated failures";
+                              case blocked -> ": waiting for verification test to complete";
+                              case running -> ": waiting for current run to complete";
+                              case invalidPackage -> ": invalid application package, must resubmit";
+                              case changeBlocked -> ": deployment configuration blocks changes";
+                              case paused -> ": manually paused";
+                              default -> throw new IllegalStateException(cause + " should not have an instant at which it is ready");
+                          }
+                        : "not ready" + switch (cause) {
+                              case unverified -> ": waiting for verification test to complete";
+                              case notReady -> ": waiting for dependencies to complete";
+                              default -> throw new IllegalStateException(cause + " should have an instant at which it is ready");
+                          };
         }
     }
 

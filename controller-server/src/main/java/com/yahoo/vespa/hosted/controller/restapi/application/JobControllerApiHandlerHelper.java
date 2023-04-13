@@ -280,12 +280,12 @@ class JobControllerApiHandlerHelper {
                     switch (readiness.cause()) {
                         case paused -> stepObject.setLong("pausedUntil", until.toEpochMilli());
                         case coolingDown -> stepObject.setLong("coolingDownUntil", until.toEpochMilli());
-                        case blocked -> {
+                        case changeBlocked -> {
                             Readiness platformReadiness = stepStatus.readiness(Change.of(controller.systemVersion(versionStatus))); // Dummy version — just anything with a platform.
-                            if (platformReadiness.cause() == DelayCause.blocked)
+                            if (platformReadiness.cause() == DelayCause.changeBlocked)
                                 stepObject.setLong("platformBlockedUntil", platformReadiness.at().toEpochMilli());
                             Readiness applicationReadiness = stepStatus.readiness(Change.of(RevisionId.forProduction(1))); // Dummy version — just anything with an application.
-                            if (applicationReadiness.cause() == DelayCause.blocked)
+                            if (applicationReadiness.cause() == DelayCause.changeBlocked)
                                 stepObject.setLong("applicationBlockedUntil", applicationReadiness.at().toEpochMilli());
                         }
                     }
@@ -297,8 +297,9 @@ class JobControllerApiHandlerHelper {
                                      case invalidPackage -> "invalidPackage";
                                      case paused -> "paused";
                                      case coolingDown -> "coolingDown";
+                                     case changeBlocked -> "changeBlocked";
                                      case blocked -> "blocked";
-                                     case blockedByTest -> "blockedByTest";
+                                     case running -> "running";
                                      case notReady -> "notReady";
                                      case unverified -> "unverified";
                                  });
