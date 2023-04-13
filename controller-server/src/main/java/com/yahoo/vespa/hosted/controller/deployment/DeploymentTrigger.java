@@ -20,6 +20,7 @@ import com.yahoo.vespa.hosted.controller.application.ApplicationList;
 import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
+import com.yahoo.vespa.hosted.controller.deployment.DeploymentStatus.Readiness;
 
 import java.math.BigDecimal;
 import java.time.Clock;
@@ -80,8 +81,7 @@ public class DeploymentTrigger {
                 Change outstanding = status.outstandingChange(instanceName);
                 boolean deployOutstanding =    outstanding.hasTargets()
                                             && status.instanceSteps().get(instanceName)
-                                                     .readyAt(outstanding)
-                                                     .map(readyAt -> ! readyAt.isAfter(clock.instant())).orElse(false)
+                                                     .readiness(outstanding).okAt(clock.instant())
                                             && acceptNewRevision(status, instanceName, outstanding.revision().get());
                 application = application.with(instanceName,
                                                instance -> withRemainingChange(instance,
@@ -235,7 +235,7 @@ public class DeploymentTrigger {
         if ( ! upgradeRevision && change.revision().isPresent()) change = change.withoutApplication();
         if ( ! upgradePlatform && change.platform().isPresent()) change = change.withoutPlatform();
         Versions versions = Versions.from(change, application, status.deploymentFor(job), status.fallbackPlatform(change, job));
-        DeploymentStatus.Job toTrigger = new DeploymentStatus.Job(job.type(), versions, Optional.of(controller.clock().instant()), instance.change());
+        DeploymentStatus.Job toTrigger = new DeploymentStatus.Job(job.type(), versions, new Readiness(controller.clock().instant()), instance.change());
         Map<JobId, List<DeploymentStatus.Job>> testJobs = status.testJobs(Map.of(job, List.of(toTrigger)));
 
         Map<JobId, List<DeploymentStatus.Job>> jobs = testJobs.isEmpty() || ! requireTests
@@ -375,8 +375,7 @@ public class DeploymentTrigger {
         Map<JobId, List<DeploymentStatus.Job>> jobsToRun = status.jobsToRun();
         jobsToRun.forEach((jobId, jobsList) -> {
             DeploymentStatus.Job job = jobsList.get(0);
-            if (     job.readyAt().isPresent()
-                && ! clock.instant().isBefore(job.readyAt().get())
+            if (     job.readiness().okAt(clock.instant())
                 && ! controller.jobController().isDisabled(new JobId(jobId.application(), job.type()))
                 && ! (jobId.type().isProduction() && isUnhealthyInAnotherZone(status.application(), jobId))
                 &&   abortIfRunning(status, jobsToRun, jobId)) // Abort and trigger this later if running with outdated parameters.
@@ -384,7 +383,7 @@ public class DeploymentTrigger {
                                        job.versions(),
                                        job.type(),
                                        status.instanceJobs(jobId.application().instance()).get(jobId.type()).isNodeAllocationFailure(),
-                                       job.readyAt().get()));
+                                       job.readiness().at()));
         });
         return Collections.unmodifiableList(jobs);
     }

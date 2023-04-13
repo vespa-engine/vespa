@@ -39,7 +39,6 @@ import java.util.Collections;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -303,7 +302,7 @@ public class DeploymentStatus {
                                                   fallbackPlatform(change, job));
                 if (step.completedAt(change, firstProductionJobWithDeploymentInCloud).isEmpty()) {
                     JobType typeWithZone = job.type().isSystemTest() ? JobType.systemTest(zones, cloud) : JobType.stagingTest(zones, cloud);
-                    jobs.merge(job, List.of(new Job(typeWithZone, versions, step.readyAt(change, firstProductionJobWithDeploymentInCloud), change)), DeploymentStatus::union);
+                    jobs.merge(job, List.of(new Job(typeWithZone, versions, step.readiness(change, firstProductionJobWithDeploymentInCloud), change)), DeploymentStatus::union);
                 }
             });
         });
@@ -498,21 +497,23 @@ public class DeploymentStatus {
     }
 
     /** Earliest instant when job was triggered with given versions, or both system and staging tests were successful. */
-    public Optional<Instant> verifiedAt(JobId job, Versions versions) {
-        Optional<Instant> triggeredAt = allJobs.get(job)
-                                               .flatMap(status -> status.runs().values().stream()
-                                                                        .filter(run -> run.versions().equals(versions))
-                                                                        .findFirst())
-                                               .map(Run::start);
-        Optional<Instant> systemTestedAt = testedAt(job, systemTest(job.type()), versions);
-        Optional<Instant> stagingTestedAt = testedAt(job, stagingTest(job.type()), versions);
-        if (systemTestedAt.isEmpty() || stagingTestedAt.isEmpty()) return triggeredAt;
-        Optional<Instant> testedAt = systemTestedAt.get().isAfter(stagingTestedAt.get()) ? systemTestedAt : stagingTestedAt;
-        return triggeredAt.isPresent() && triggeredAt.get().isBefore(testedAt.get()) ? triggeredAt : testedAt;
+    public Readiness verifiedAt(JobId job, Versions versions) {
+        Readiness triggered = allJobs.get(job)
+                                     .flatMap(status -> status.runs().values().stream()
+                                                                .filter(run -> run.versions().equals(versions))
+                                                                .findFirst())
+                                     .map(Run::start)
+                                     .map(Readiness::new)
+                                     .orElse(Readiness.unverified);
+        Readiness systemTested = testedAt(job, systemTest(job.type()), versions);
+        Readiness stagingTested = testedAt(job, stagingTest(job.type()), versions);
+        if (! systemTested.ok() || ! stagingTested.ok()) return triggered;
+        Readiness tested = min(systemTested, stagingTested);
+        return triggered.ok() && triggered.at().isBefore(tested.at) ? triggered : tested;
     }
 
     /** Earliest instant when versions were tested for the given instance. */
-    private Optional<Instant> testedAt(JobId job, JobType type, Versions versions) {
+    private Readiness testedAt(JobId job, JobType type, Versions versions) {
         return prerequisiteTests(job, type).stream()
                                            .map(test -> allJobs.get(test).stream()
                                                                .flatMap(status -> RunList.from(status)
@@ -522,8 +523,8 @@ public class DeploymentStatus {
                                                                                          .asList().stream()
                                                                                          .map(run -> run.end().get()))
                                                                .min(naturalOrder()))
-                                           .reduce((o, n) -> o.isEmpty() || n.isEmpty() ? Optional.empty() : o.get().isBefore(n.get()) ? n : o)
-                                           .orElse(Optional.empty());
+                                           .map(testedAt -> testedAt.map(Readiness::new).orElse(Readiness.unverified))
+                                           .reduce(Readiness.empty, DeploymentStatus::max);
     }
 
     private Map<JobId, List<Job>> productionJobs(InstanceName instance, Change change, boolean assumeUpgradesSucceed) {
@@ -559,7 +560,7 @@ public class DeploymentStatus {
             for (Change partial : changes) {
                 Job jobToRun = new Job(job.type(),
                                        Versions.from(partial, application, existingPlatform, existingRevision, fallbackPlatform(partial, job)),
-                                       step.readyAt(partial, Optional.of(job)),
+                                       step.readiness(partial, Optional.of(job)),
                                        partial);
                 toRun.add(jobToRun);
                 // Assume first partial change is applied before the second.
@@ -606,8 +607,7 @@ public class DeploymentStatus {
             // the revision is now blocked by waiting for the production test to verify the upgrade.
             // In this case we must abandon the production test on the pure upgrade, so the revision can be deployed.
             if (platformDeployedAt.isPresent() && revisionDeployedAt.isEmpty()) {
-                if (jobSteps.get(deployment).readyAt(change, Optional.of(deployment))
-                            .map(ready -> ! now.isBefore(ready)).orElse(false)) {
+                if (jobSteps.get(deployment).readiness(change, Optional.of(deployment)).okAt(now)) {
                     return switch (rollout) {
                         // If separate rollout, this test should keep blocking the revision, unless there are failures.
                         case separate -> hasFailures(jobSteps.get(deployment), jobSteps.get(job)) ? List.of(change) : List.of(change.withoutApplication(), change);
@@ -679,7 +679,7 @@ public class DeploymentStatus {
                                        .asList().isEmpty())
                                 testJobs.merge(testJob, List.of(new Job(testJob.type(),
                                                                         productionJob.versions(),
-                                                                        jobSteps().get(testJob).readyAt(productionJob.change, Optional.of(job)),
+                                                                        jobSteps().get(testJob).readiness(productionJob.change, Optional.of(job)),
                                                                         productionJob.change)),
                                                DeploymentStatus::union);
                     });
@@ -894,16 +894,17 @@ public class DeploymentStatus {
         abstract Optional<Instant> completedAt(Change change, Optional<JobId> dependent);
 
         /** The time at which this step is ready to run the specified change and / or versions. */
-        public Optional<Instant> readyAt(Change change) { return readyAt(change, Optional.empty()); }
+        public Readiness readiness(Change change) { return readiness(change, Optional.empty()); }
 
         /** The time at which this step is ready to run the specified change and / or versions. */
-        Optional<Instant> readyAt(Change change, Optional<JobId> dependent) {
+        Readiness readiness(Change change, Optional<JobId> dependent) {
             return dependenciesCompletedAt(change, dependent)
+                    .map(Readiness::new)
                     .map(ready -> Stream.of(blockedUntil(change),
                                             pausedUntil(),
                                             coolingDownUntil(change, dependent))
-                                        .flatMap(Optional::stream)
-                                        .reduce(ready, maxBy(naturalOrder())));
+                                        .reduce(ready, maxBy(naturalOrder())))
+                    .orElse(Readiness.notReady);
         }
 
         /** The time at which all dependencies completed on the given change and / or versions. */
@@ -918,13 +919,13 @@ public class DeploymentStatus {
         }
 
         /** The time until which this step is blocked by a change blocker. */
-        public Optional<Instant> blockedUntil(Change change) { return Optional.empty(); }
+        public Readiness blockedUntil(Change change) { return Readiness.empty; }
 
         /** The time until which this step is paused by user intervention. */
-        public Optional<Instant> pausedUntil() { return Optional.empty(); }
+        public Readiness pausedUntil() { return Readiness.empty; }
 
         /** The time until which this step is cooling down, due to consecutive failures. */
-        public Optional<Instant> coolingDownUntil(Change change, Optional<JobId> dependent) { return Optional.empty(); }
+        public Readiness coolingDownUntil(Change change, Optional<JobId> dependent) { return Readiness.empty; }
 
         /** Whether this step is declared in the deployment spec, or is an implicit step. */
         public boolean isDeclared() { return true; }
@@ -940,7 +941,8 @@ public class DeploymentStatus {
 
         @Override
         Optional<Instant> completedAt(Change change, Optional<JobId> dependent) {
-            return readyAt(change, dependent).map(completion -> completion.plus(step().delay()));
+            return Optional.ofNullable(readiness(change, dependent).at())
+                           .map(completion -> completion.plus(step().delay()));
         }
 
     }
@@ -964,12 +966,12 @@ public class DeploymentStatus {
 
         /** The time at which this step is ready to run the specified change and / or versions. */
         @Override
-        public Optional<Instant> readyAt(Change change) {
+        public Readiness readiness(Change change) {
             return status.jobSteps.keySet().stream()
                                   .filter(job -> job.type().isProduction() && job.application().instance().equals(instance.name()))
-                                  .map(job -> super.readyAt(change, Optional.of(job)))
-                    .reduce((o, n) -> o.isEmpty() || n.isEmpty() ? Optional.empty() : n.get().isBefore(o.get()) ? n : o)
-                    .orElseGet(() -> super.readyAt(change, Optional.empty()));
+                                  .map(job -> super.readiness(change, Optional.of(job)))
+                                  .reduce((a, b) -> ! a.ok() ? a : ! b.ok() ? b : min(a, b))
+                                  .orElseGet(() -> super.readiness(change, Optional.empty()));
         }
 
         /**
@@ -986,7 +988,7 @@ public class DeploymentStatus {
         }
 
         @Override
-        public Optional<Instant> blockedUntil(Change change) {
+        public Readiness blockedUntil(Change change) {
             for (Instant current = now; now.plus(Duration.ofDays(7)).isAfter(current); ) {
                 boolean blocked = false;
                 for (DeploymentSpec.ChangeBlocker blocker : spec.changeBlocker()) {
@@ -999,9 +1001,9 @@ public class DeploymentStatus {
                     }
                 }
                 if ( ! blocked)
-                    return current == now ? Optional.empty() : Optional.of(current);
+                    return current == now ? Readiness.empty : new Readiness(current, DelayCause.blocked);
             }
-            return Optional.of(now.plusSeconds(1 << 30)); // Some time in the future that doesn't look like anything you'd expect.
+            return new Readiness(now.plusSeconds(1 << 30), DelayCause.blocked); // Some time in the future that doesn't look like anything you'd expect.
         }
 
     }
@@ -1023,31 +1025,34 @@ public class DeploymentStatus {
         public Optional<JobId> job() { return Optional.of(job.id()); }
 
         @Override
-        public Optional<Instant> pausedUntil() {
-            return status.application().require(job.id().application().instance()).jobPause(job.id().type());
+        public Readiness pausedUntil() {
+            return status.application().require(job.id().application().instance()).jobPause(job.id().type())
+                         .map(pause -> new Readiness(pause, DelayCause.paused))
+                         .orElse(Readiness.empty);
         }
 
         @Override
-        public Optional<Instant> coolingDownUntil(Change change, Optional<JobId> dependent) {
-            if (job.lastTriggered().isEmpty()) return Optional.empty();
-            if (job.lastCompleted().isEmpty()) return Optional.empty();
-            if (job.firstFailing().isEmpty() || ! job.firstFailing().get().hasEnded()) return Optional.empty();
+        public Readiness coolingDownUntil(Change change, Optional<JobId> dependent) {
+            if (job.lastTriggered().isEmpty()) return Readiness.empty;
+            if (job.lastCompleted().isEmpty()) return Readiness.empty;
+            if (job.firstFailing().isEmpty() || ! job.firstFailing().get().hasEnded()) return Readiness.empty;
             Versions lastVersions = job.lastCompleted().get().versions();
             Versions toRun = Versions.from(change, status.application, dependent.flatMap(status::deploymentFor), status.fallbackPlatform(change, job.id()));
-            if ( ! toRun.targetsMatch(lastVersions)) return Optional.empty();
+            if ( ! toRun.targetsMatch(lastVersions)) return Readiness.empty;
             if (     job.id().type().environment().isTest()
                 && ! dependent.map(JobId::type).map(status::findCloud).map(List.of(CloudName.AWS, CloudName.GCP)::contains).orElse(true)
-                &&   job.isNodeAllocationFailure()) return Optional.empty();
+                &&   job.isNodeAllocationFailure()) return Readiness.empty;
 
-            if (job.lastStatus().get() == invalidApplication) return Optional.of(status.now.plus(Duration.ofDays(36524))); // 100 years
+            if (job.lastStatus().get() == invalidApplication) return new Readiness(status.now.plus(Duration.ofSeconds(1 << 30)), DelayCause.invalidPackage);
             Instant firstFailing = job.firstFailing().get().end().get();
             Instant lastCompleted = job.lastCompleted().get().end().get();
 
-            return firstFailing.equals(lastCompleted) ? Optional.of(lastCompleted)
-                                                      : Optional.of(lastCompleted.plus(Duration.ofMinutes(10))
-                                                                                 .plus(Duration.between(firstFailing, lastCompleted)
-                                                                                               .dividedBy(2)))
-                    .filter(status.now::isBefore);
+            Duration penalty = firstFailing.equals(lastCompleted) ? Duration.ZERO
+                                                                 : Duration.ofMinutes(10)
+                                                                           .plus(Duration.between(firstFailing, lastCompleted)
+                                                                                         .dividedBy(2));
+            return lastCompleted.plus(penalty).isAfter(status.now) ? new Readiness(lastCompleted.plus(penalty), DelayCause.coolingDown)
+                                                                   : Readiness.empty;
         }
 
         private static JobStepStatus ofProductionDeployment(DeclaredZone step, List<StepStatus> dependencies,
@@ -1059,11 +1064,10 @@ public class DeploymentStatus {
             return new JobStepStatus(StepType.deployment, step, dependencies, job, status) {
 
                 @Override
-                public Optional<Instant> readyAt(Change change, Optional<JobId> dependent) {
-                    Optional<Instant> readyAt = super.readyAt(change, dependent);
-                    Optional<Instant> testedAt = status.verifiedAt(job.id(), Versions.from(change, status.application, existingDeployment, status.fallbackPlatform(change, job.id())));
-                    if (readyAt.isEmpty() || testedAt.isEmpty()) return Optional.empty();
-                    return readyAt.get().isAfter(testedAt.get()) ? readyAt : testedAt;
+                public Readiness readiness(Change change, Optional<JobId> dependent) {
+                    Readiness readyAt = super.readiness(change, dependent);
+                    Readiness testedAt = status.verifiedAt(job.id(), Versions.from(change, status.application, existingDeployment, status.fallbackPlatform(change, job.id())));
+                    return max(readyAt, testedAt);
                 }
 
                 /** Complete if deployment is on pinned version, and last successful deployment, or if given versions is strictly a downgrade, and this isn't forced by a pin. */
@@ -1103,11 +1107,11 @@ public class DeploymentStatus {
             JobId prodId = new JobId(job.id().application(), JobType.deploymentTo(job.id().type().zone()));
             return new JobStepStatus(StepType.test, step, dependencies, job, status) {
                 @Override
-                Optional<Instant> readyAt(Change change, Optional<JobId> dependent) {
-                    Optional<Instant> readyAt = super.readyAt(change, dependent);
-                    Optional<Instant> deployedAt = status.jobSteps().get(prodId).completedAt(change, Optional.of(prodId));
-                    if (readyAt.isEmpty() || deployedAt.isEmpty()) return Optional.empty();
-                    return readyAt.get().isAfter(deployedAt.get()) ? readyAt : deployedAt;
+                Readiness readiness(Change change, Optional<JobId> dependent) {
+                    Readiness readyAt = super.readiness(change, dependent);
+                    Readiness deployedAt = status.jobSteps().get(prodId).completedAt(change, Optional.of(prodId))
+                                                 .map(Readiness::new).orElse(Readiness.notReady);
+                    return max(readyAt, deployedAt);
                 }
 
                 @Override
@@ -1163,13 +1167,13 @@ public class DeploymentStatus {
 
         private final JobType type;
         private final Versions versions;
-        private final Optional<Instant> readyAt;
+        private final Readiness readiness;
         private final Change change;
 
-        public Job(JobType type, Versions versions, Optional<Instant> readyAt, Change change) {
+        public Job(JobType type, Versions versions, Readiness readiness, Change change) {
             this.type = type;
             this.versions = type.isSystemTest() ? versions.withoutSources() : versions;
-            this.readyAt = readyAt;
+            this.readiness = readiness;
             this.change = change;
         }
 
@@ -1181,8 +1185,8 @@ public class DeploymentStatus {
             return versions;
         }
 
-        public Optional<Instant> readyAt() {
-            return readyAt;
+        public Readiness readiness() {
+            return readiness;
         }
 
         @Override
@@ -1190,19 +1194,57 @@ public class DeploymentStatus {
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
             Job job = (Job) o;
-            return type.zone().equals(job.type.zone()) && versions.equals(job.versions) && readyAt.equals(job.readyAt) && change.equals(job.change);
+            return type.zone().equals(job.type.zone()) && versions.equals(job.versions) && readiness.equals(job.readiness) && change.equals(job.change);
         }
 
         @Override
         public int hashCode() {
-            return Objects.hash(type.zone(), versions, readyAt, change);
+            return Objects.hash(type.zone(), versions, readiness, change);
         }
 
         @Override
         public String toString() {
-            return change + " with versions " + versions + ", ready at " + readyAt;
+            return change + " with versions " + versions + ", " + readiness;
         }
 
+    }
+
+    public enum DelayCause { none, unverified, notReady, blockedByTest, coolingDown, invalidPackage, blocked, paused }
+    public record Readiness(Instant at, DelayCause cause) implements Comparable<Readiness> {
+        public static final Readiness unverified = new Readiness(null, DelayCause.unverified);
+        public static final Readiness notReady = new Readiness(null, DelayCause.notReady);
+        public static final Readiness empty = new Readiness(Instant.EPOCH, DelayCause.none);
+        public Readiness(Instant at) { this(at, DelayCause.none); }
+        public boolean ok() { return at != null; }
+        public boolean okAt(Instant at) { return ok() && ! at.isBefore(this.at); }
+        @Override public int compareTo(Readiness o) {
+            return at == null ? o.at == null ?  0 : 1
+                              : o.at == null ? -1 : at.compareTo(o.at);
+        }
+        @Override public String toString() {
+            return ok() ? "ready at " + at + switch (cause) {
+                            case none -> "";
+                            case blockedByTest -> ": waiting for verification test to complete";
+                            case coolingDown -> ": cooling down after repeated failures";
+                            case invalidPackage -> ": invalid application package, must resubmit";
+                            case blocked -> ": deployment configuration blocks changes";
+                            case paused -> ": manually paused";
+                            default -> throw new IllegalStateException(cause + " should not have an instant at which it is ready");
+                        }
+                        : "not ready: " + switch (cause) {
+                            case unverified -> "waiting for verification test to complete";
+                            case notReady -> "waiting for dependencies to complete";
+                            default -> throw new IllegalStateException(cause + " should have an instant at which it is ready");
+                        };
+        }
+    }
+
+    static <T extends Comparable<T>> T min(T a, T b) {
+        return a.compareTo(b) > 0 ? b : a;
+    }
+
+    static <T extends Comparable<T>> T max(T a, T b) {
+        return a.compareTo(b) < 0 ? b : a;
     }
 
 }
