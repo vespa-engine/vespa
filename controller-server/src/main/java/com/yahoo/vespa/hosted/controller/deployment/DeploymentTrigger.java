@@ -20,6 +20,8 @@ import com.yahoo.vespa.hosted.controller.application.ApplicationList;
 import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
+import com.yahoo.vespa.hosted.controller.deployment.DeploymentStatus.DelayCause;
+import com.yahoo.vespa.hosted.controller.deployment.DeploymentStatus.Readiness;
 
 import java.math.BigDecimal;
 import java.time.Clock;
@@ -39,6 +41,7 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 import static java.util.Comparator.comparing;
+import static java.util.Comparator.comparingDouble;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.toMap;
 
@@ -80,8 +83,7 @@ public class DeploymentTrigger {
                 Change outstanding = status.outstandingChange(instanceName);
                 boolean deployOutstanding =    outstanding.hasTargets()
                                             && status.instanceSteps().get(instanceName)
-                                                     .readyAt(outstanding)
-                                                     .map(readyAt -> ! readyAt.isAfter(clock.instant())).orElse(false)
+                                                     .readiness(outstanding).okAt(clock.instant())
                                             && acceptNewRevision(status, instanceName, outstanding.revision().get());
                 application = application.with(instanceName,
                                                instance -> withRemainingChange(instance,
@@ -235,7 +237,7 @@ public class DeploymentTrigger {
         if ( ! upgradeRevision && change.revision().isPresent()) change = change.withoutApplication();
         if ( ! upgradePlatform && change.platform().isPresent()) change = change.withoutPlatform();
         Versions versions = Versions.from(change, application, status.deploymentFor(job), status.fallbackPlatform(change, job));
-        DeploymentStatus.Job toTrigger = new DeploymentStatus.Job(job.type(), versions, Optional.of(controller.clock().instant()), instance.change());
+        DeploymentStatus.Job toTrigger = new DeploymentStatus.Job(job.type(), versions, new Readiness(controller.clock().instant()), instance.change());
         Map<JobId, List<DeploymentStatus.Job>> testJobs = status.testJobs(Map.of(job, List.of(toTrigger)));
 
         Map<JobId, List<DeploymentStatus.Job>> jobs = testJobs.isEmpty() || ! requireTests
@@ -374,17 +376,17 @@ public class DeploymentTrigger {
         List<Job> jobs = new ArrayList<>();
         Map<JobId, List<DeploymentStatus.Job>> jobsToRun = status.jobsToRun();
         jobsToRun.forEach((jobId, jobsList) -> {
+            abortIfOutdated(status, jobsToRun, jobId);
             DeploymentStatus.Job job = jobsList.get(0);
-            if (     job.readyAt().isPresent()
-                && ! clock.instant().isBefore(job.readyAt().get())
+            if (     job.readiness().okAt(clock.instant())
                 && ! controller.jobController().isDisabled(new JobId(jobId.application(), job.type()))
-                && ! (jobId.type().isProduction() && isUnhealthyInAnotherZone(status.application(), jobId))
-                &&   abortIfRunning(status, jobsToRun, jobId)) // Abort and trigger this later if running with outdated parameters.
+                && ! (jobId.type().isProduction() && isUnhealthyInAnotherZone(status.application(), jobId))) {
                 jobs.add(deploymentJob(status.application().require(jobId.application().instance()),
                                        job.versions(),
                                        job.type(),
                                        status.instanceJobs(jobId.application().instance()).get(jobId.type()).isNodeAllocationFailure(),
-                                       job.readyAt().get()));
+                                       job.readiness().at()));
+            }
         });
         return Collections.unmodifiableList(jobs);
     }
@@ -403,41 +405,29 @@ public class DeploymentTrigger {
         return false;
     }
 
-    private void abortIfOutdated(DeploymentStatus status, Map<JobId, List<DeploymentStatus.Job>> jobs, JobId job) {
-        status.jobs().get(job)
-              .flatMap(JobStatus::lastTriggered)
-              .filter(last -> ! last.hasEnded() && last.reason().isEmpty())
-              .ifPresent(last -> {
-                  if (jobs.get(job).stream().noneMatch(versions ->    versions.versions().targetsMatch(last.versions())
-                                                                   && versions.versions().sourcesMatchIfPresent(last.versions()))) {
-                      String blocked = jobs.get(job).stream()
-                                           .map(scheduled -> scheduled.versions().toString())
-                                           .collect(Collectors.joining(", "));
-                      log.log(Level.INFO, "Aborting outdated run " + last + ", which is blocking runs: " + blocked);
-                      controller.jobController().abort(last.id(), "run no longer scheduled, and is blocking scheduled runs: " + blocked);
-                  }
-              });
+    private void abortIfOutdated(JobStatus job, List<DeploymentStatus.Job> jobs) {
+        job.lastTriggered()
+           .filter(last -> ! last.hasEnded() && last.reason().isEmpty())
+           .ifPresent(last -> {
+               if (jobs.stream().noneMatch(versions ->    versions.versions().targetsMatch(last.versions())
+                                                       && versions.versions().sourcesMatchIfPresent(last.versions()))) {
+                   String blocked = jobs.stream()
+                                        .map(scheduled -> scheduled.versions().toString())
+                                        .collect(Collectors.joining(", "));
+                   log.log(Level.INFO, "Aborting outdated run " + last + ", which is blocking runs: " + blocked);
+                   controller.jobController().abort(last.id(), "run no longer scheduled, and is blocking scheduled runs: " + blocked);
+               }
+           });
     }
 
     /** Returns whether the job is free to start, and also aborts it if it's running with outdated versions. */
-    private boolean abortIfRunning(DeploymentStatus status, Map<JobId, List<DeploymentStatus.Job>> jobs, JobId job) {
-        abortIfOutdated(status, jobs, job);
-        boolean blocked = status.jobs().get(job).get().isRunning();
-
-        if ( ! job.type().isTest()) {
-            Optional<JobStatus> productionTest = status.jobs().get(new JobId(job.application(), JobType.productionTestOf(job.type().zone())));
-            if (productionTest.isPresent()) {
-                abortIfOutdated(status, jobs, productionTest.get().id());
-                // Production deployments are also blocked by their declared tests, if the next versions to run
-                // for those are not the same as the versions we're considering running in the deployment job now.
-                if (productionTest.map(JobStatus::id).map(jobs::get)
-                                  .map(versions -> ! versions.get(0).versions().targetsMatch(jobs.get(job).get(0).versions()))
-                                  .orElse(false))
-                    blocked = true;
-            }
-        }
-
-        return ! blocked;
+    private void abortIfOutdated(DeploymentStatus status, Map<JobId, List<DeploymentStatus.Job>> jobs, JobId job) {
+        Readiness readiness = jobs.get(job).get(0).readiness();
+        if (readiness.cause() == DelayCause.running)
+            abortIfOutdated(status.jobs().get(job).get(), jobs.get(job));
+        if (readiness.cause() == DelayCause.blocked && ! job.type().isTest())
+            status.jobs().get(new JobId(job.application(), JobType.productionTestOf(job.type().zone())))
+                  .ifPresent(jobStatus -> abortIfOutdated(jobStatus, jobs.get(jobStatus.id())));
     }
 
     // ---------- Change management o_O ----------
