@@ -13,7 +13,7 @@ vespalib::string indirectKeyMarker("attribute(");
 }
 
 std::unique_ptr<AttributeNode>
-makeAttributeMapLookupNode(const vespalib::string attributeName)
+makeAttributeMapLookupNode(vespalib::stringref attributeName)
 {
     vespalib::asciistream keyName;
     vespalib::asciistream valueName;
