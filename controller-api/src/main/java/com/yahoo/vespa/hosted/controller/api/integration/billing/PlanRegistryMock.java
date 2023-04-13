@@ -42,11 +42,15 @@ public class PlanRegistryMock implements PlanRegistry {
         private final boolean supported;
 
         public MockPlan(String planId, boolean billed, boolean supported, double cpuPrice, double memPrice, double dgbPrice, int quota, String description) {
-            this(PlanId.from(planId), billed, supported, new MockCostCalculator(cpuPrice, memPrice, dgbPrice), () -> Quota.unlimited().withBudget(quota), description);
+            this(PlanId.from(planId), billed, supported, new MockCostCalculator(cpuPrice, memPrice, dgbPrice), () -> createQuota(quota), description);
+        }
+
+        private static Quota createQuota(int quota) {
+            return quota == 0 ? Quota.zero() : Quota.unlimited().withBudget(quota);
         }
 
         public MockPlan(String planId, boolean billed, boolean supported, String cpuPrice, String memPrice, String dgbPrice, int quota, String description) {
-            this(PlanId.from(planId), billed, supported, new MockCostCalculator(cpuPrice, memPrice, dgbPrice), () -> Quota.unlimited().withBudget(quota), description);
+            this(PlanId.from(planId), billed, supported, new MockCostCalculator(cpuPrice, memPrice, dgbPrice), () -> createQuota(quota), description);
         }
 
         public MockPlan(PlanId planId, boolean billed, boolean supported, MockCostCalculator calculator, QuotaCalculator quota, String description) {

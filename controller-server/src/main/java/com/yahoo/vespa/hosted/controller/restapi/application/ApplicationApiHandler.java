@@ -131,7 +131,6 @@ import com.yahoo.vespa.hosted.controller.tenant.TenantInfo;
 import com.yahoo.vespa.hosted.controller.versions.VersionStatus;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
 import com.yahoo.yolean.Exceptions;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -3004,7 +3003,9 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         byte[] testPackage = dataParts.getOrDefault(EnvironmentResource.APPLICATION_TEST_ZIP, new byte[0]);
         Submission submission = new Submission(applicationPackage, testPackage, sourceUrl, sourceRevision, authorEmail, description, risk);
 
-        controller.applications().verifyApplicationIdentityConfiguration(TenantName.from(tenant),
+        TenantName tenantName = TenantName.from(tenant);
+        controller.applications().verifyPlan(tenantName);
+        controller.applications().verifyApplicationIdentityConfiguration(tenantName,
                                                                          Optional.empty(),
                                                                          Optional.empty(),
                                                                          applicationPackage,

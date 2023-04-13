@@ -30,6 +30,7 @@ import com.yahoo.vespa.hosted.controller.api.application.v4.model.DeploymentData
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.InstanceId;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.BillingController;
+import com.yahoo.vespa.hosted.controller.api.integration.billing.Plan;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.Quota;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateMetadata;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ApplicationReindexing;
@@ -78,7 +79,6 @@ import com.yahoo.vespa.hosted.controller.versions.VersionStatus;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion.Confidence;
 import com.yahoo.yolean.Exceptions;
-
 import java.io.ByteArrayInputStream;
 import java.security.Principal;
 import java.security.cert.X509Certificate;
@@ -1058,6 +1058,16 @@ public class ApplicationController {
                   //  category and typed log level
                   .collect(groupingBy(__ -> Warning.all,
                                       collectingAndThen(counting(), Long::intValue)));
+    }
+
+    public void verifyPlan(TenantName tenantName) {
+        var planId = controller.serviceRegistry().billingController().getPlan(tenantName);
+        Optional<Plan> plan = controller.serviceRegistry().planRegistry().plan(planId);
+        if (plan.isEmpty())
+            throw new IllegalArgumentException("Tenant '" + tenantName.value() + "' has no plan, not allowed to deploy");
+        if (plan.get().quota().calculate().equals(Quota.zero()))
+            throw new IllegalArgumentException("Tenant '" + tenantName.value() + "' has a plan '" +
+                                                       plan.get().displayName() + "' with zero quota, not allowed to deploy");
     }
 
 }
