@@ -54,8 +54,7 @@ namespace {
 vespalib::string stringValue(const ResultNode &result, const IAttributeVector &attr) {
     if (result.inherits(EnumResultNode::classId)) {
         auto enumHandle = result.getEnum();
-        auto &stringAttr = dynamic_cast<const StringAttribute &>(attr);
-        return vespalib::string(stringAttr.getFromEnum(enumHandle));
+        return vespalib::string(attr.getStringFromEnum(enumHandle));
     }
     char buf[100];
     BufferRef bref(&buf[0], sizeof(buf));
@@ -92,12 +91,12 @@ AttributeManagerFixture::AttributeManagerFixture()
     buildStringArrayAttribute("array.name", {{"n1.1", "n1.2"}, {"n2"}, {}});
     buildIntegerArrayAttribute("array.val", BasicType::INT8, {{ 10, 11}, {20, 21 }, {}});
     buildFloatArrayAttribute("array.fval", {{ 110.0}, { 120.0, 121.0 }, {}});
-    buildStringArrayAttribute("smap.key", {{"k1.1", "k1.2"}, {"k2"}, {}});
-    buildStringArrayAttribute("smap.value.name", {{"n1.1", "n1.2"}, {"n2"}, {}});
+    buildStringArrayAttribute("smap.key", {{"k1.1", "k1.2"}, {"k2", "default_value"}, {}});
+    buildStringArrayAttribute("smap.value.name", {{"n1.1", "n1.2"}, {"n2", ""}, {}});
     buildIntegerArrayAttribute("smap.value.val", BasicType::INT8, {{ 10, 11}, {20, 21 }, {}});
     buildFloatArrayAttribute("smap.value.fval", {{ 110.0}, { 120.0, 121.0 }, {}});
-    buildStringArrayAttribute("map.key", {{"k1.1", "k1.2"}, {"k2"}, {}});
-    buildStringArrayAttribute("map.value", {{"n1.1", "n1.2"}, {"n2"}, {}});
+    buildStringArrayAttribute("map.key", {{"k1.1", "k1.2"}, {"k2", "default_value"}, {}});
+    buildStringArrayAttribute("map.value", {{"n1.1", "n1.2"}, {"n2", "non_empty"}, {}});
     buildStringAttribute("keyfield1", {"k1.2", "k2", "k3"});
     buildStringAttribute("keyfield2", {"k1.1", "k1", "k1"});
 }
@@ -199,8 +198,9 @@ AttributeManagerFixture::buildIntegerArrayAttribute(const vespalib::string &name
 }
 
 
-struct Fixture
+class Fixture
 {
+public:
     AttributeManagerFixture             attrs;
     AttributeContext                    context;
     Fixture();
@@ -208,11 +208,13 @@ struct Fixture
     std::unique_ptr<AttributeNode> makeNode(const vespalib::string &attributeName, bool useEnumOptimiation = false, bool preserveAccurateTypes = false);
     void assertInts(std::vector<IAttributeVector::largeint_t> expVals, const vespalib::string &attributteName, bool preserveAccurateTypes = false);
     void assertBools(std::vector<bool> expVals, const vespalib::string &attributteName, bool preserveAccurateTypes = false);
-    void assertStrings(std::vector<vespalib::string> expVals, const vespalib::string &attributteName, bool useEnumOptimization = false);
+    void assertStrings(std::vector<vespalib::string> expVals, const vespalib::string &attributteName);
     void assertFloats(std::vector<double> expVals, const vespalib::string &attributteName);
     void assertIntArrays(std::vector<std::vector<IAttributeVector::largeint_t>> expVals, const vespalib::string &attributteName, bool preserveAccurateTypes = false);
     void assertStringArrays(std::vector<std::vector<vespalib::string>> expVals, const vespalib::string &attributteName, bool useEnumOptimization = false);
     void assertFloatArrays(std::vector<std::vector<double>> expVals, const vespalib::string &attributteName);
+private:
+    void assertStrings(std::vector<vespalib::string> expVals, const vespalib::string &attributteName, bool useEnumOptimization);
 };
 
 Fixture::Fixture()
@@ -280,6 +282,11 @@ Fixture::assertBools(std::vector<bool> expVals, const vespalib::string &attribut
     }
 }
 
+void
+Fixture::assertStrings(std::vector<vespalib::string> expVals, const vespalib::string &attributeName) {
+    assertStrings(expVals, attributeName, false);
+    assertStrings(expVals, attributeName, true);
+}
 
 void
 Fixture::assertStrings(std::vector<vespalib::string> expVals, const vespalib::string &attributeName, bool useEnumOptimization)
@@ -293,6 +300,9 @@ Fixture::assertStrings(std::vector<vespalib::string> expVals, const vespalib::st
         const auto &result = *node->getResult();
         if (useEnumOptimization) {
             ASSERT_TRUE(result.inherits(EnumResultNode::classId));
+            search::enumstore::EnumHandle enumVal(0);
+            node->getAttribute()->findEnum(expDocVal.c_str(), enumVal);
+            EXPECT_EQUAL(result.getEnum(), enumVal);
         } else {
             ASSERT_TRUE(result.inherits(StringResultNode::classId));
         }
@@ -404,7 +414,6 @@ TEST_F("test single values", Fixture)
     TEST_DO(f.assertInts({ 10, getUndefined<int8_t>()}, "ifield"));
     TEST_DO(f.assertInts({ 10, getUndefined<int8_t>()}, "ifield", true));
     TEST_DO(f.assertStrings({ "n1", "" }, "sfield"));
-    TEST_DO(f.assertStrings({ "n1", "" }, "sfield", true));
     TEST_DO(f.assertFloats({ 110.0, getUndefined<double>() }, "ffield"));
 }
 
@@ -415,12 +424,12 @@ TEST_F("Test array values", Fixture)
     TEST_DO(f.assertStringArrays({{"n1.1", "n1.2"}, {"n2"}, {}}, "array.name"));
     TEST_DO(f.assertStringArrays({{"n1.1", "n1.2"}, {"n2"}, {}}, "array.name", true));
     TEST_DO(f.assertFloatArrays({{ 110.0}, { 120.0, 121.0 }, {}}, "array.fval"));
-    TEST_DO(f.assertStringArrays({{"k1.1", "k1.2"}, {"k2"}, {}}, "smap.key"));
-    TEST_DO(f.assertStringArrays({{"n1.1", "n1.2"}, {"n2"}, {}}, "smap.value.name"));
+    TEST_DO(f.assertStringArrays({{"k1.1", "k1.2"}, {"k2", "default_value"}, {}}, "smap.key"));
+    TEST_DO(f.assertStringArrays({{"n1.1", "n1.2"}, {"n2", ""}, {}}, "smap.value.name"));
     TEST_DO(f.assertIntArrays({{ 10, 11}, {20, 21 }, {}}, "smap.value.val"));
     TEST_DO(f.assertFloatArrays({{ 110.0}, { 120.0, 121.0 }, {}}, "smap.value.fval"));
-    TEST_DO(f.assertStringArrays({{"k1.1", "k1.2"}, {"k2"}, {}}, "map.key"));
-    TEST_DO(f.assertStringArrays({{"n1.1", "n1.2"}, {"n2"}, {}}, "map.value"));
+    TEST_DO(f.assertStringArrays({{"k1.1", "k1.2"}, {"k2", "default_value"}, {}}, "map.key"));
+    TEST_DO(f.assertStringArrays({{"n1.1", "n1.2"}, {"n2", "non_empty"}, {}}, "map.value"));
 }
 
 TEST_F("test keyed values", Fixture)
