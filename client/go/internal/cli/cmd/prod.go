@@ -105,21 +105,17 @@ https://cloud.vespa.ai/en/reference/deployment`,
 func newProdSubmitCmd(cli *CLI) *cobra.Command {
 	return &cobra.Command{
 		Use:   "submit",
-		Short: "Submit your application for production deployment",
-		Long: `Submit your application for production deployment.
+		Short: "Submit an application for production deployment",
+		Long: `Submit an application for production deployment.
 
-This commands uploads your application package to Vespa Cloud and deploys it to
+This commands uploads an application package to Vespa Cloud and deploys it to
 the production zones specified in deployment.xml.
 
-Nodes are allocated to your application according to resources specified in
+Nodes are allocated to the application according to resources specified in
 services.xml.
 
-While submitting an application from a local development environment is
-supported, it's strongly recommended that production deployments are performed
-by a continuous build system.
-
 For more information about production deployments in Vespa Cloud see:
-https://cloud.vespa.ai/en/getting-to-production
+https://cloud.vespa.ai/en/production-deployment
 https://cloud.vespa.ai/en/automated-deployments`,
 		DisableAutoGenTag: true,
 		SilenceUsage:      true,
