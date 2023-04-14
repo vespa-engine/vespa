@@ -41,6 +41,7 @@ import com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentContext;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
+import com.yahoo.vespa.hosted.controller.deployment.JobController;
 import com.yahoo.vespa.hosted.controller.deployment.Submission;
 import com.yahoo.vespa.hosted.controller.integration.ZoneApiMock;
 import com.yahoo.vespa.hosted.controller.notification.Notification;
@@ -219,6 +220,59 @@ public class ControllerTest {
 
         assertNull(tester.controllerTester().serviceRegistry().applicationStore()
                 .getMeta(context.deploymentIdIn(productionUsWest1.zone())));
+    }
+
+    @Test
+    void testPackagePruning() {
+        DeploymentContext app = tester.newDeploymentContext().submit().deploy();
+        RevisionId revision1 = app.lastSubmission().get();
+        assertTrue(tester.controllerTester().serviceRegistry().applicationStore()
+                         .hasBuild(app.instanceId().tenant(), app.instanceId().application(), revision1.number()));
+
+        app.submit().deploy();
+        RevisionId revision2 = app.lastSubmission().get();
+        assertTrue(tester.controllerTester().serviceRegistry().applicationStore()
+                         .hasBuild(app.instanceId().tenant(), app.instanceId().application(), revision1.number()));
+        assertTrue(tester.controllerTester().serviceRegistry().applicationStore()
+                         .hasBuild(app.instanceId().tenant(), app.instanceId().application(), revision2.number()));
+
+        // Revision 1 is marked as obsolete now
+        app.submit().deploy();
+        RevisionId revision3 = app.lastSubmission().get();
+        assertTrue(tester.controllerTester().serviceRegistry().applicationStore()
+                         .hasBuild(app.instanceId().tenant(), app.instanceId().application(), revision1.number()));
+        assertTrue(tester.controllerTester().serviceRegistry().applicationStore()
+                         .hasBuild(app.instanceId().tenant(), app.instanceId().application(), revision2.number()));
+        assertTrue(tester.controllerTester().serviceRegistry().applicationStore()
+                         .hasBuild(app.instanceId().tenant(), app.instanceId().application(), revision3.number()));
+
+        // Time advances, and revision 2 is marked as obsolete now
+        tester.clock().advance(JobController.obsoletePackageExpiry);
+        app.submit().deploy();
+        RevisionId revision4 = app.lastSubmission().get();
+        assertTrue(tester.controllerTester().serviceRegistry().applicationStore()
+                         .hasBuild(app.instanceId().tenant(), app.instanceId().application(), revision1.number()));
+        assertTrue(tester.controllerTester().serviceRegistry().applicationStore()
+                         .hasBuild(app.instanceId().tenant(), app.instanceId().application(), revision2.number()));
+        assertTrue(tester.controllerTester().serviceRegistry().applicationStore()
+                         .hasBuild(app.instanceId().tenant(), app.instanceId().application(), revision3.number()));
+        assertTrue(tester.controllerTester().serviceRegistry().applicationStore()
+                         .hasBuild(app.instanceId().tenant(), app.instanceId().application(), revision4.number()));
+
+        // Time advances, and revision is now old enough to be pruned
+        tester.clock().advance(Duration.ofMillis(1));
+        app.submit().deploy();
+        RevisionId revision5 = app.lastSubmission().get();
+        assertFalse(tester.controllerTester().serviceRegistry().applicationStore()
+                         .hasBuild(app.instanceId().tenant(), app.instanceId().application(), revision1.number()));
+        assertTrue(tester.controllerTester().serviceRegistry().applicationStore()
+                         .hasBuild(app.instanceId().tenant(), app.instanceId().application(), revision2.number()));
+        assertTrue(tester.controllerTester().serviceRegistry().applicationStore()
+                         .hasBuild(app.instanceId().tenant(), app.instanceId().application(), revision3.number()));
+        assertTrue(tester.controllerTester().serviceRegistry().applicationStore()
+                         .hasBuild(app.instanceId().tenant(), app.instanceId().application(), revision4.number()));
+        assertTrue(tester.controllerTester().serviceRegistry().applicationStore()
+                         .hasBuild(app.instanceId().tenant(), app.instanceId().application(), revision5.number()));
     }
 
     @Test
