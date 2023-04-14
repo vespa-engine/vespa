@@ -7,6 +7,7 @@ import com.yahoo.config.provision.Deployment;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.TransientException;
 import com.yahoo.jdisc.Metric;
+import com.yahoo.slime.SlimeUtils;
 import com.yahoo.transaction.Mutex;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
@@ -109,7 +110,7 @@ public class NodeFailer extends NodeRepositoryMaintainer {
 
         for (Node node : activeNodes) {
             Instant graceTimeStart = clock().instant().minus(nodeRepository().nodes().suspended(node) ? suspendedDownTimeLimit : downTimeLimit);
-            if (node.isDown() && node.history().hasEventBefore(History.Event.Type.down, graceTimeStart) && !applicationSuspended(node)) {
+            if (node.isDown() && node.history().hasEventBefore(History.Event.Type.down, graceTimeStart) && !applicationSuspended(node) && !undergoingCmr(node)) {
                 // Allow a grace period after node re-activation
                 if (!node.history().hasEventAfter(History.Event.Type.activated, graceTimeStart))
                     failingNodes.add(new FailingNode(node, "Node has been down longer than " + downTimeLimit));
@@ -155,6 +156,19 @@ public class NodeFailer extends NodeRepositoryMaintainer {
             // Treat it as not suspended and allow to fail the node anyway
             return false;
         }
+    }
+
+    private boolean undergoingCmr(Node node) {
+        return node.reports().getReport("vcmr")
+                .map(report ->
+                        SlimeUtils.entriesStream(report.getInspector().field("upcoming"))
+                                .anyMatch(cmr -> {
+                                    var startTime = cmr.field("plannedStartTime").asLong();
+                                    var endTime = cmr.field("plannedEndTime").asLong();
+                                    var now = clock().instant().getEpochSecond();
+                                    return now > startTime && now < endTime;
+                                })
+                ).orElse(false);
     }
 
     /** Is the node and all active children suspended? */
