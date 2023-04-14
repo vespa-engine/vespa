@@ -269,7 +269,7 @@ std::unique_ptr<IEnumStore::EnumIndexRemapper>
 EnumStoreT<EntryT>::compact_worst_values(CompactionSpec compaction_spec, const CompactionStrategy& compaction_strategy)
 {
     auto remapper = _store.compact_worst(compaction_spec, compaction_strategy);
-    if (_default_value_ref.valid()) {
+    if (remapper && _default_value_ref.valid()) {
         if (remapper->get_entry_ref_filter().has(_default_value_ref)) {
             _default_value_ref = remapper->remap(_default_value_ref);
         }
