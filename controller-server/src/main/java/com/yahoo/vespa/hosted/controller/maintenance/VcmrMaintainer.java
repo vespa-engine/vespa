@@ -279,7 +279,7 @@ public class VcmrMaintainer extends ControllerMaintainer {
 
     private boolean shouldAddReport(Node node, String vcmrId, HostAction previousAction) {
         var vcmrReport = VcmrReport.fromReports(node.reports());
-        var hasReport = vcmrReport.getVcmrs().stream().map(VcmrReport.Vcmr::getId).anyMatch(id -> id.equals(vcmrId));
+        var hasReport = vcmrReport.getVcmrs().stream().map(VcmrReport.Vcmr::id).anyMatch(id -> id.equals(vcmrId));
         // Don't add report if none exists and this is not initial assessment
         // Presumably removed manually by operator.
         if (!hasReport && previousAction.getState() != State.NONE)

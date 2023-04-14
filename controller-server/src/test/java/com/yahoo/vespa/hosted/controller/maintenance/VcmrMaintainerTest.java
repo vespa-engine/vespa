@@ -181,7 +181,7 @@ public class VcmrMaintainerTest {
         activeNode = nodeRepo.list(zoneId, NodeFilter.all().hostnames(host2)).get(0);
         var report = VcmrReport.fromReports(activeNode.reports());
         var reportAdded = report.getVcmrs().stream()
-                .filter(vcmr -> vcmr.getId().equals(changeRequestId))
+                .filter(vcmr -> vcmr.id().equals(changeRequestId))
                 .count() == 1;
         assertTrue(reportAdded);
     }
