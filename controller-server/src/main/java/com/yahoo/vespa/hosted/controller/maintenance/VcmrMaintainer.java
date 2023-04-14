@@ -139,7 +139,10 @@ public class VcmrMaintainer extends ControllerMaintainer {
                         return Stream.empty();
                     }
                     var spareCapacity = hasSpareCapacity(zone, nodes);
-                    return nodes.stream().map(node -> nextAction(zone, node, changeRequest, spareCapacity));
+                    var impactedProxyCount = nodes.stream()
+                            .filter(node -> node.type() == NodeType.proxy)
+                            .count();
+                    return nodes.stream().map(node -> nextAction(zone, node, changeRequest, spareCapacity, impactedProxyCount));
                 }).toList();
 
     }
@@ -162,7 +165,7 @@ public class VcmrMaintainer extends ControllerMaintainer {
                 .findFirst();
     }
 
-    private HostAction nextAction(ZoneId zoneId, Node node, VespaChangeRequest changeRequest, boolean spareCapacity) {
+    private HostAction nextAction(ZoneId zoneId, Node node, VespaChangeRequest changeRequest, boolean spareCapacity, long impactedProxyCount) {
         var hostAction = getPreviousAction(node, changeRequest)
                 .orElse(new HostAction(node.hostname().value(), State.NONE, Instant.now()));
 
@@ -188,7 +191,13 @@ public class VcmrMaintainer extends ControllerMaintainer {
             return hostAction.withState(State.PENDING_RETIREMENT);
         }
 
-        if (node.type() != NodeType.host || !spareCapacity) {
+        if (!spareCapacity) {
+            return hostAction.withState(State.REQUIRES_OPERATOR_ACTION);
+        }
+
+        if (node.type() != NodeType.host) {
+            if (node.type() == NodeType.proxy && impactedProxyCount == 1)
+                return hostAction.withState(State.READY);
             return hostAction.withState(State.REQUIRES_OPERATOR_ACTION);
         }
 
