@@ -82,7 +82,8 @@ public class ApplicationSerializer {
     private static final String versionsField = "versions";
     private static final String prodVersionsField = "prodVersions";
     private static final String devVersionsField = "devVersions";
-    private static final String pinnedField = "pinned";
+    private static final String platformPinnedField = "pinned";
+    private static final String revisionPinnedField = "revisionPinned";
     private static final String deploymentIssueField = "deploymentIssueId";
     private static final String ownershipIssueIdField = "ownershipIssueId";
     private static final String ownerField = "confirmedOwner";
@@ -298,7 +299,9 @@ public class ApplicationSerializer {
         if (deploying.revision().isPresent())
             toSlime(deploying.revision().get(), object);
         if (deploying.isPlatformPinned())
-            object.setBool(pinnedField, true);
+            object.setBool(platformPinnedField, true);
+        if (deploying.isRevisionPinned())
+            object.setBool(revisionPinnedField, true);
     }
 
     private void toSlime(RotationStatus status, Cursor array) {
@@ -523,8 +526,10 @@ public class ApplicationSerializer {
             change = Change.of(Version.fromString(versionFieldValue.asString()));
         if (object.field(applicationBuildNumberField).valid())
             change = change.with(revisionFromSlime(object, null));
-        if (object.field(pinnedField).asBool())
+        if (object.field(platformPinnedField).asBool())
             change = change.withPlatformPin();
+        if (object.field(revisionPinnedField).asBool())
+            change = change.withRevisionPin();
         return change;
     }
 

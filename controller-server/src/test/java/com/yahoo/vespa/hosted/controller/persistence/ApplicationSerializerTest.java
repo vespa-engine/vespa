@@ -144,7 +144,7 @@ public class ApplicationSerializerTest {
                                      Map.of(),
                                      List.of(),
                                      RotationStatus.EMPTY,
-                                     Change.of(Version.fromString("6.7")).withPlatformPin()));
+                                     Change.of(Version.fromString("6.7")).withPlatformPin().withRevisionPin()));
 
         Application original = new Application(TenantAndApplicationId.from(id1),
                 Instant.now().truncatedTo(ChronoUnit.MILLIS),
