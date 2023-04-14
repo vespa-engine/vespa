@@ -118,6 +118,7 @@ public class ApplicationSerializer {
     private static final String riskField = "risk";
     private static final String authorEmailField = "authorEmailField";
     private static final String deployedDirectlyField = "deployedDirectly";
+    private static final String obsoleteAtField = "obsoleteAt";
     private static final String hasPackageField = "hasPackage";
     private static final String shouldSkipField = "shouldSkip";
     private static final String compileVersionField = "compileVersion";
@@ -265,6 +266,7 @@ public class ApplicationSerializer {
         applicationVersion.sourceUrl().ifPresent(url -> object.setString(sourceUrlField, url));
         applicationVersion.commit().ifPresent(commit -> object.setString(commitField, commit));
         object.setBool(deployedDirectlyField, applicationVersion.isDeployedDirectly());
+        applicationVersion.obsoleteAt().ifPresent(at -> object.setLong(obsoleteAtField, at.toEpochMilli()));
         object.setBool(hasPackageField, applicationVersion.hasPackage());
         object.setBool(shouldSkipField, applicationVersion.shouldSkip());
         applicationVersion.description().ifPresent(description -> object.setString(descriptionField, description));
@@ -487,6 +489,7 @@ public class ApplicationSerializer {
         Optional<Instant> buildTime = SlimeUtils.optionalInstant(object.field(buildTimeField));
         Optional<String> sourceUrl = SlimeUtils.optionalString(object.field(sourceUrlField));
         Optional<String> commit = SlimeUtils.optionalString(object.field(commitField));
+        Optional<Instant> obsoleteAt = SlimeUtils.optionalInstant(object.field(obsoleteAtField));
         boolean hasPackage = object.field(hasPackageField).asBool();
         boolean shouldSkip = object.field(shouldSkipField).asBool();
         Optional<String> description = SlimeUtils.optionalString(object.field(descriptionField));
@@ -494,7 +497,7 @@ public class ApplicationSerializer {
         Optional<String> bundleHash = SlimeUtils.optionalString(object.field(bundleHashField));
 
         return new ApplicationVersion(id, sourceRevision, authorEmail, compileVersion, allowedMajor, buildTime,
-                                      sourceUrl, commit, bundleHash, hasPackage, shouldSkip, description, risk);
+                                      sourceUrl, commit, bundleHash, obsoleteAt, hasPackage, shouldSkip, description, risk);
     }
 
     private Optional<SourceRevision> sourceRevisionFromSlime(Inspector object) {

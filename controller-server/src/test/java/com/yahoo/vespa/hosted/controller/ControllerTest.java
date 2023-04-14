@@ -106,9 +106,11 @@ public class ControllerTest {
         Version version1 = tester.configServer().initialVersion();
         var context = tester.newDeploymentContext();
         context.submit(applicationPackage);
-        assertEquals(ApplicationVersion.from(RevisionId.forProduction(1), DeploymentContext.defaultSourceRevision, "a@b", new Version("6.1"), Instant.ofEpochSecond(1)),
-                context.application().revisions().get(context.instance().change().revision().get()),
-                "Application version is known from completion of initial job");
+        RevisionId id = RevisionId.forProduction(1);
+        Version compileVersion = new Version("6.1");
+        assertEquals(new ApplicationVersion(id, Optional.of(DeploymentContext.defaultSourceRevision), Optional.of("a@b"), Optional.of(compileVersion), Optional.empty(), Optional.of(Instant.ofEpochSecond(1)), Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(), true, false, Optional.empty(), 0),
+                     context.application().revisions().get(context.instance().change().revision().get()),
+                     "Application version is known from completion of initial job");
         context.runJob(systemTest);
         context.runJob(stagingTest);
 

@@ -1,11 +1,9 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.api.integration.deployment;
 
-import ai.vespa.validation.Validation;
 import com.yahoo.component.Version;
 
 import java.time.Instant;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.OptionalLong;
 
@@ -33,6 +31,7 @@ public class ApplicationVersion implements Comparable<ApplicationVersion> {
     private final Optional<String> sourceUrl;
     private final Optional<String> commit;
     private final Optional<String> bundleHash;
+    private final Optional<Instant> obsoleteAt;
     private final boolean hasPackage;
     private final boolean shouldSkip;
     private final Optional<String> description;
@@ -41,7 +40,7 @@ public class ApplicationVersion implements Comparable<ApplicationVersion> {
     public ApplicationVersion(RevisionId id, Optional<SourceRevision> source, Optional<String> authorEmail,
                               Optional<Version> compileVersion, Optional<Integer> allowedMajor, Optional<Instant> buildTime,
                               Optional<String> sourceUrl, Optional<String> commit, Optional<String> bundleHash,
-                              boolean hasPackage, boolean shouldSkip, Optional<String> description, int risk) {
+                              Optional<Instant> obsoleteAt, boolean hasPackage, boolean shouldSkip, Optional<String> description, int risk) {
 
         if (commit.isPresent() && commit.get().length() > 128)
             throw new IllegalArgumentException("Commit may not be longer than 128 characters");
@@ -61,6 +60,7 @@ public class ApplicationVersion implements Comparable<ApplicationVersion> {
         this.sourceUrl = requireNonNull(sourceUrl, "sourceUrl cannot be null");
         this.commit = requireNonNull(commit, "commit cannot be null");
         this.bundleHash = bundleHash;
+        this.obsoleteAt = obsoleteAt;
         this.hasPackage = hasPackage;
         this.shouldSkip = shouldSkip;
         this.description = description;
@@ -71,19 +71,9 @@ public class ApplicationVersion implements Comparable<ApplicationVersion> {
         return id;
     }
 
-    /** Create an application package version from a completed build, without an author email */
-    public static ApplicationVersion from(RevisionId id, SourceRevision source) {
-        return new ApplicationVersion(id, Optional.of(source), Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(), true, false, Optional.empty(), 0);
-    }
-
-    /** Creates a version from a completed build, an author email, and build metadata. */
-    public static ApplicationVersion from(RevisionId id, SourceRevision source, String authorEmail, Version compileVersion, Instant buildTime) {
-        return new ApplicationVersion(id, Optional.of(source), Optional.of(authorEmail), Optional.of(compileVersion), Optional.empty(), Optional.of(buildTime), Optional.empty(), Optional.empty(), Optional.empty(), true, false, Optional.empty(), 0);
-    }
-
     /** Creates a minimal version for a development build. */
     public static ApplicationVersion forDevelopment(RevisionId id, Optional<Version> compileVersion, Optional<Integer> allowedMajor) {
-        return new ApplicationVersion(id, Optional.empty(), Optional.empty(), compileVersion, allowedMajor, Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(), true, false, Optional.empty(), 0);
+        return new ApplicationVersion(id, Optional.empty(), Optional.empty(), compileVersion, allowedMajor, Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(), true, false, Optional.empty(), 0);
     }
 
     /** Creates a version from a completed build, an author email, and build metadata. */
@@ -91,7 +81,7 @@ public class ApplicationVersion implements Comparable<ApplicationVersion> {
                                                    Optional<Version> compileVersion, Optional<Integer> allowedMajor, Optional<Instant> buildTime, Optional<String> sourceUrl,
                                                    Optional<String> commit, Optional<String> bundleHash, Optional<String> description, int risk) {
         return new ApplicationVersion(id, source, authorEmail, compileVersion, allowedMajor, buildTime,
-                                      sourceUrl, commit, bundleHash, true, false, description, risk);
+                                      sourceUrl, commit, bundleHash, Optional.empty(), true, false, description, risk);
     }
 
     /** Returns a unique identifier for this version or "unknown" if version is not known */
@@ -150,7 +140,17 @@ public class ApplicationVersion implements Comparable<ApplicationVersion> {
 
     /** Returns a copy of this without a package stored. */
     public ApplicationVersion withoutPackage() {
-        return new ApplicationVersion(id, source, authorEmail, compileVersion, allowedMajor, buildTime, sourceUrl, commit, bundleHash, false, shouldSkip, description, risk);
+        return new ApplicationVersion(id, source, authorEmail, compileVersion, allowedMajor, buildTime, sourceUrl, commit, bundleHash, obsoleteAt, false, shouldSkip, description, risk);
+    }
+
+    /** Returns a copy of this which is obsolete now. */
+    public ApplicationVersion obsoleteAt(Instant now) {
+        return new ApplicationVersion(id, source, authorEmail, compileVersion, allowedMajor, buildTime, sourceUrl, commit, bundleHash, Optional.of(now), hasPackage, shouldSkip, description, risk);
+    }
+
+    /** Returns the instant at which this became obsolete, i.e., no longer relevant for automated deployments. */
+    public Optional<Instant> obsoleteAt() {
+        return obsoleteAt;
     }
 
     /** Whether we still have the package for this revision. */
@@ -160,7 +160,7 @@ public class ApplicationVersion implements Comparable<ApplicationVersion> {
 
     /** Returns a copy of this which will not be rolled out to production. */
     public ApplicationVersion skipped() {
-        return new ApplicationVersion(id, source, authorEmail, compileVersion, allowedMajor, buildTime, sourceUrl, commit, bundleHash, hasPackage, true, description, risk);
+        return new ApplicationVersion(id, source, authorEmail, compileVersion, allowedMajor, buildTime, sourceUrl, commit, bundleHash, obsoleteAt, hasPackage, true, description, risk);
     }
 
     /** Whether we still have the package for this revision. */

@@ -101,16 +101,17 @@ public class ApplicationSerializerTest {
                 Optional.empty(),
                 Optional.of("best commit"),
                 Optional.of("hash1"),
+                Optional.of(Instant.ofEpochMilli(777)),
                 true,
                 false,
                 Optional.of("~(˘▾˘)~"),
                 3);
         assertEquals("https://github/org/repo/tree/commit1", applicationVersion1.sourceUrl().get());
 
-        ApplicationVersion applicationVersion2 = ApplicationVersion.from(RevisionId.forDevelopment(31, new JobId(id1, DeploymentContext.productionUsEast3)),
-                new SourceRevision("repo1", "branch1", "commit1"), "a@b",
-                Version.fromString("6.3.1"),
-                Instant.ofEpochMilli(496));
+        RevisionId id = RevisionId.forDevelopment(31, new JobId(id1, DeploymentContext.productionUsEast3));
+        SourceRevision source = new SourceRevision("repo1", "branch1", "commit1");
+        Version compileVersion = Version.fromString("6.3.1");
+        ApplicationVersion applicationVersion2 = new ApplicationVersion(id, Optional.of(source), Optional.of("a@b"), Optional.of(compileVersion), Optional.empty(), Optional.of(Instant.ofEpochMilli(496)), Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(), true, false, Optional.empty(), 0);
         Instant activityAt = Instant.parse("2018-06-01T10:15:30.00Z");
         deployments.add(new Deployment(zone1, CloudAccount.empty, applicationVersion1.id(), Version.fromString("1.2.3"), Instant.ofEpochMilli(3),
                 DeploymentMetrics.none, DeploymentActivity.none, QuotaUsage.none, OptionalDouble.empty()));
@@ -174,6 +175,7 @@ public class ApplicationSerializerTest {
         assertEquals(original.revisions().last().get().sourceUrl(), serialized.revisions().last().get().sourceUrl());
         assertEquals(original.revisions().last().get().commit(), serialized.revisions().last().get().commit());
         assertEquals(original.revisions().last().get().bundleHash(), serialized.revisions().last().get().bundleHash());
+        assertEquals(original.revisions().last().get().obsoleteAt(), serialized.revisions().last().get().obsoleteAt());
         assertEquals(original.revisions().last().get().hasPackage(), serialized.revisions().last().get().hasPackage());
         assertEquals(original.revisions().last().get().shouldSkip(), serialized.revisions().last().get().shouldSkip());
         assertEquals(original.revisions().last().get().description(), serialized.revisions().last().get().description());
