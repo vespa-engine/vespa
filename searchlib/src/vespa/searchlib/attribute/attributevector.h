@@ -478,6 +478,10 @@ public:
      * Add reserved initial document with docId 0 and undefined value.
      */
     void addReservedDoc();
+    /**
+     * set undefined values for reserved document 0.
+     */
+    void set_reserved_doc_values();
     bool getEnumeratedSave() const { return _hasEnum; }
 
     virtual attribute::IPostingListAttributeBase * getIPostingListAttributeBase();

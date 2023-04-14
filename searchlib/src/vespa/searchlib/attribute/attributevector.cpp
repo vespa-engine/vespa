@@ -440,6 +440,16 @@ AttributeVector::addReservedDoc()
     addDoc(docId);      // Reserved
     assert(docId == 0u);
     assert(docId < getNumDocs());
+    set_reserved_doc_values();
+}
+
+void
+AttributeVector::set_reserved_doc_values()
+{
+    uint32_t docId = 0;
+    if (docId >= getNumDocs()) {
+        return;
+    }
     clearDoc(docId);
     if (hasMultiValue()) {
         if (isFloatingPointType()) {
