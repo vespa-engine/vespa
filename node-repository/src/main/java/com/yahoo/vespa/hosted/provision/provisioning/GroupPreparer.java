@@ -21,7 +21,6 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
 
 /**
  * Performs preparation of node activation changes for a single host group in an application.
@@ -124,6 +123,14 @@ public class GroupPreparer {
                     hosts.forEach(host -> nodeRepository.nodes().deprovision(host.hostname(), Agent.system, nodeRepository.clock().instant()));
                     throw e;
                 }
+            } else if (allocation.hostDeficit().isPresent() && requestedNodes.canFail() &&
+                       allocation.hasRetiredJustNow() && requestedNodes instanceof NodeSpec.CountNodeSpec cns) {
+                // Non-dynamically provisioned zone with a deficit because we just now retired some nodes.
+                // Try again, but without retiring
+                indices.resetProbe();
+                List<Node> accepted = prepareWithLocks(application, cluster, cns.withoutRetiring(), surplusActiveNodes, indices, wantedGroups);
+                log.warning("Prepared " + application + " " + cluster.id() + " without retirement due to lack of capacity");
+                return accepted;
             }
 
             if (! allocation.fulfilled() && requestedNodes.canFail())
