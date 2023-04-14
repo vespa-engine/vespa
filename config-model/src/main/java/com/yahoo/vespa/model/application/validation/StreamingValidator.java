@@ -5,6 +5,7 @@ import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.document.DataType;
 import com.yahoo.document.NumericDataType;
+import com.yahoo.document.TensorDataType;
 import com.yahoo.documentmodel.NewDocumentReferenceDataType;
 import com.yahoo.schema.document.Attribute;
 import com.yahoo.schema.document.ImmutableSDField;
@@ -63,6 +64,8 @@ public class StreamingValidator extends Validator {
         // If the field is numeric, we can't print this, because we may have converted the field to
         // attribute indexing ourselves (IntegerIndex2Attribute)
         if (sd.getDataType() instanceof NumericDataType) return;
+        // Tensor fields are only searchable via nearest neighbor search, and match semantics are irrelevant.
+        if (sd.getDataType() instanceof TensorDataType) return;
         logger.logApplicationPackage(Level.WARNING, "For streaming search cluster '" + sc.getClusterName() +
                                                     "', SD field '" + sd.getName() +
                                                     "': 'attribute' has same match semantics as 'index'.");

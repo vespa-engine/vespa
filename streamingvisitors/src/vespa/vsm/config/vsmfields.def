@@ -12,7 +12,7 @@ searchall int default=1
 fieldspec[].name string
 
 ## The search method for a given field. Note: same field in 2 different document types must match on type if not a random result might be expected.
-fieldspec[].searchmethod enum { NONE, BOOL, AUTOUTF8, UTF8, SSE2UTF8, INT8, INT16, INT32, INT64, FLOAT16, FLOAT, DOUBLE, GEOPOS } default=AUTOUTF8
+fieldspec[].searchmethod enum { NONE, BOOL, AUTOUTF8, UTF8, SSE2UTF8, INT8, INT16, INT32, INT64, FLOAT16, FLOAT, DOUBLE, GEOPOS, NEAREST_NEIGHBOR } default=AUTOUTF8
 fieldspec[].arg1 string default=""
 
 ## Maximum number of chars to search per field.
