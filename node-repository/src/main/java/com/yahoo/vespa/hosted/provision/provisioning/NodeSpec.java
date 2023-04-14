@@ -185,7 +185,7 @@ public interface NodeSpec {
 
     }
 
-    /** A node spec specifying a node type. This will accept all nodes of this type. */
+    /** A node spec specifying a node type. */
     class TypeNodeSpec implements NodeSpec {
 
         private static final Map<NodeType, Integer> WANTED_NODE_COUNT = Map.of(NodeType.config, 3,
@@ -256,7 +256,7 @@ public interface NodeSpec {
         }
 
         @Override
-        public String toString() { return "request for all nodes of type '" + type + "'"; }
+        public String toString() { return "request for nodes of type '" + type + "'"; }
 
     }
 

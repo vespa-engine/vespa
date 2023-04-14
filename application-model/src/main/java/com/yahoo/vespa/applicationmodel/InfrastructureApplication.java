@@ -13,6 +13,7 @@ import java.util.stream.Stream;
  * @author hakonhall
  */
 public enum InfrastructureApplication {
+
     CONTROLLER_HOST("controller-host", NodeType.controllerhost),
     CONTROLLER("controller", NodeType.controller),
     CONFIG_SERVER_HOST("configserver-host", NodeType.confighost),
