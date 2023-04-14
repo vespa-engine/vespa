@@ -11,7 +11,6 @@ import java.time.ZonedDateTime;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 
 import static com.yahoo.yolean.Exceptions.uncheck;
@@ -47,18 +46,18 @@ public class VcmrReport {
     /**
      * @return true if list of VCMRs is changed
      */
-    public boolean addVcmr(String id, ZonedDateTime plannedStartTime, ZonedDateTime plannedEndtime) {
-        var vcmr = new Vcmr(id, plannedStartTime, plannedEndtime);
+    public boolean addVcmr(ChangeRequestSource source) {
+        var vcmr = new Vcmr(source.getId(), source.getStatus().name(), source.getPlannedStartTime(), source.getPlannedEndTime());
         if (vcmrs.contains(vcmr))
             return false;
 
         // Remove to catch any changes in start/end time
-        removeVcmr(id);
+        removeVcmr(source.getId());
         return vcmrs.add(vcmr);
     }
 
     public boolean removeVcmr(String id) {
-        return vcmrs.removeIf(vcmr -> id.equals(vcmr.getId()));
+        return vcmrs.removeIf(vcmr -> id.equals(vcmr.id()));
     }
 
     public static String getReportId() {
@@ -93,55 +92,9 @@ public class VcmrReport {
         return "VCMRReport{" + vcmrs + "}";
     }
 
-    public static class Vcmr {
-
-        private String id;
-        private ZonedDateTime plannedStartTime;
-        private ZonedDateTime plannedEndTime;
-
-        Vcmr(@JsonProperty("id") String id,
-             @JsonProperty("plannedStartTime") ZonedDateTime plannedStartTime,
-             @JsonProperty("plannedEndTime") ZonedDateTime plannedEndTime) {
-            this.id = id;
-            this.plannedStartTime = plannedStartTime;
-            this.plannedEndTime = plannedEndTime;
-        }
-
-        public String getId() {
-            return id;
-        }
-
-        public ZonedDateTime getPlannedStartTime() {
-            return plannedStartTime;
-        }
-
-        public ZonedDateTime getPlannedEndTime() {
-            return plannedEndTime;
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-            Vcmr vcmr = (Vcmr) o;
-            return Objects.equals(id, vcmr.id) &&
-                    Objects.equals(plannedStartTime, vcmr.plannedStartTime) &&
-                    Objects.equals(plannedEndTime, vcmr.plannedEndTime);
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(id, plannedStartTime, plannedEndTime);
-        }
-
-        @Override
-        public String toString() {
-            return "VCMR{" +
-                    "id='" + id + '\'' +
-                    ", plannedStartTime=" + plannedStartTime +
-                    ", plannedEndTime=" + plannedEndTime +
-                    '}';
-        }
-    }
+    public record Vcmr (@JsonProperty("id") String id,
+                        @JsonProperty("status") String status,
+                        @JsonProperty("plannedStartTime") ZonedDateTime plannedStartTime,
+                        @JsonProperty("plannedEndTime") ZonedDateTime plannedEndTime) {}
 
 }

@@ -58,7 +58,7 @@ public class VcmrMaintainerTest {
     @Test
     void recycle_hosts_after_completion() {
         var vcmrReport = new VcmrReport();
-        vcmrReport.addVcmr("id123", ZonedDateTime.now(), ZonedDateTime.now());
+        vcmrReport.addVcmr(new ChangeRequestSource("aws", "id123", "url", ChangeRequestSource.Status.WAITING_FOR_APPROVAL , ZonedDateTime.now(), ZonedDateTime.now()));
         var parkedNode = createNode(host1, NodeType.host, Node.State.parked, true);
         var failedNode = createNode(host2, NodeType.host, Node.State.failed, false);
         var reports = vcmrReport.toNodeReports();
@@ -181,7 +181,7 @@ public class VcmrMaintainerTest {
         activeNode = nodeRepo.list(zoneId, NodeFilter.all().hostnames(host2)).get(0);
         var report = VcmrReport.fromReports(activeNode.reports());
         var reportAdded = report.getVcmrs().stream()
-                .filter(vcmr -> vcmr.getId().equals(changeRequestId))
+                .filter(vcmr -> vcmr.id().equals(changeRequestId))
                 .count() == 1;
         assertTrue(reportAdded);
     }
