@@ -29,7 +29,7 @@ type ClientOptions struct {
 	BaseURL    string
 	Timeout    time.Duration
 	Route      string
-	TraceLevel *int
+	TraceLevel int
 }
 
 type countingHTTPClient struct {
@@ -78,8 +78,8 @@ func (c *Client) queryParams() url.Values {
 	if c.options.Route != "" {
 		params.Set("route", c.options.Route)
 	}
-	if c.options.TraceLevel != nil {
-		params.Set("tracelevel", strconv.Itoa(*c.options.TraceLevel))
+	if c.options.TraceLevel > 0 {
+		params.Set("tracelevel", strconv.Itoa(c.options.TraceLevel))
 	}
 	return params
 }
