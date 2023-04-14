@@ -43,7 +43,7 @@ template <typename EntryT, typename RefT>
 void
 UniqueStoreAllocator<EntryT, RefT>::hold(EntryRef ref)
 {
-    _store.holdElem(ref, 1);
+    _store.hold_entry(ref);
 }
 
 template <typename EntryT, typename RefT>

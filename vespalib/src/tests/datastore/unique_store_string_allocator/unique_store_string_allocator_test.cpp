@@ -62,8 +62,8 @@ struct TestBase : public ::testing::Test {
     void assert_buffer_state(EntryRef ref, const TestBufferStats expStats) {
         auto & stats = buffer_state(ref).stats();
         EXPECT_EQ(expStats._used, buffer_state(ref).size());
-        EXPECT_EQ(expStats._hold, stats.hold_elems());
-        EXPECT_EQ(expStats._dead, stats.dead_elems());
+        EXPECT_EQ(expStats._hold, stats.hold_entries());
+        EXPECT_EQ(expStats._dead, stats.dead_entries());
         EXPECT_EQ(expStats._extra_used, stats.extra_used_bytes());
         EXPECT_EQ(expStats._extra_hold, stats.extra_hold_bytes());
     }
@@ -83,14 +83,14 @@ TEST_F(StringTest, can_add_and_get_values)
     assert_add(spaces1000.c_str());
 }
 
-TEST_F(StringTest, elements_are_put_on_hold_when_value_is_removed)
+TEST_F(StringTest, entries_are_put_on_hold_when_value_is_removed)
 {
     EntryRef ref = add(small.c_str());
-    assert_buffer_state(ref, TestBufferStats().used(16).hold(0).dead(0));
+    assert_buffer_state(ref, TestBufferStats().used(1).hold(0).dead(0));
     remove(ref);
-    assert_buffer_state(ref, TestBufferStats().used(16).hold(16).dead(0));
+    assert_buffer_state(ref, TestBufferStats().used(1).hold(1).dead(0));
     reclaim_memory();
-    assert_buffer_state(ref, TestBufferStats().used(16).hold(0).dead(16));
+    assert_buffer_state(ref, TestBufferStats().used(1).hold(0).dead(1));
 }
 
 TEST_F(StringTest, extra_bytes_used_is_tracked)
@@ -139,7 +139,7 @@ TEST_F(StringTest, free_list_is_used_when_enabled)
     EntryRef ref4 = add(spaces1000.c_str());
     EXPECT_EQ(ref1, ref3);
     EXPECT_EQ(ref2, ref4);
-    assert_buffer_state(ref1, TestBufferStats().used(16).hold(0).dead(0));
+    assert_buffer_state(ref1, TestBufferStats().used(1).hold(0).dead(0));
     assert_buffer_state(ref2, TestBufferStats().used(2).hold(0).dead(1).extra_used(1001));
 }
 
@@ -155,7 +155,7 @@ TEST_F(StringTest, free_list_is_not_used_when_disabled)
     EntryRef ref4 = add(spaces1000.c_str());
     EXPECT_NE(ref1, ref3);
     EXPECT_NE(ref2, ref4);
-    assert_buffer_state(ref1, TestBufferStats().used(32).hold(0).dead(16));
+    assert_buffer_state(ref1, TestBufferStats().used(2).hold(0).dead(1));
     assert_buffer_state(ref2, TestBufferStats().used(3).hold(0).dead(2).extra_used(1001));
 }
 
@@ -173,7 +173,7 @@ TEST_F(StringTest, free_list_is_never_used_for_move_on_compact)
     EntryRef ref6 = move_on_compact(ref2);
     EXPECT_NE(ref5, ref3);
     EXPECT_NE(ref6, ref4);
-    assert_buffer_state(ref1, TestBufferStats().used(48).hold(0).dead(16));
+    assert_buffer_state(ref1, TestBufferStats().used(3).hold(0).dead(1));
     assert_buffer_state(ref2, TestBufferStats().used(4).hold(0).dead(2).extra_used(2002));
 }
 

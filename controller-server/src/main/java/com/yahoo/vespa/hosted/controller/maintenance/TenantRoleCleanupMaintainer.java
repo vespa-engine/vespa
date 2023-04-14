@@ -26,6 +26,6 @@ public class TenantRoleCleanupMaintainer extends ControllerMaintainer {
             controller().serviceRegistry().tenantSecretService().cleanupSecretStores(deletedTenants);
         }
 
-        return 1.0;
+        return 0.0;
     }
 }

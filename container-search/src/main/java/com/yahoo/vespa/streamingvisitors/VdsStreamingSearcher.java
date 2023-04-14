@@ -45,9 +45,9 @@ import java.util.logging.Logger;
  */
 public class VdsStreamingSearcher extends VespaBackEndSearcher {
 
-    private static final CompoundName streamingUserid = new CompoundName("streaming.userid");
-    private static final CompoundName streamingGroupname = new CompoundName("streaming.groupname");
-    private static final CompoundName streamingSelection = new CompoundName("streaming.selection");
+    private static final CompoundName streamingUserid = CompoundName.from("streaming.userid");
+    private static final CompoundName streamingGroupname = CompoundName.from("streaming.groupname");
+    private static final CompoundName streamingSelection = CompoundName.from("streaming.selection");
 
     static final String STREAMING_STATISTICS = "streaming.statistics";
     private final VisitorFactory visitorFactory;

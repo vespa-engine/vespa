@@ -100,3 +100,7 @@ vespa_add_library(vespalib_vespalib_util OBJECT
     zstdcompressor.cpp
     DEPENDS
 )
+
+# Don't convert call to jump when returning a value from a function with
+# a compatible stack.
+set_source_files_properties(signalhandler.cpp PROPERTIES COMPILE_OPTIONS "-fno-optimize-sibling-calls")

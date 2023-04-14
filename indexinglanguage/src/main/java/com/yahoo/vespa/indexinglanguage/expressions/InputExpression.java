@@ -21,7 +21,9 @@ public final class InputExpression extends Expression {
 
     public InputExpression(String fieldName) {
         super(null);
-        this.fieldName = Objects.requireNonNull(fieldName);
+        if (fieldName == null)
+            throw new IllegalArgumentException("'input' must be given a field name as argument");
+        this.fieldName = fieldName;
     }
 
     public String getFieldName() {

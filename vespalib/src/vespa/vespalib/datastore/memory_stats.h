@@ -13,10 +13,10 @@ namespace vespalib::datastore {
 class MemoryStats
 {
 public:
-    size_t _allocElems;
-    size_t _usedElems;
-    size_t _deadElems;
-    size_t _holdElems;
+    size_t _alloc_entries;
+    size_t _used_entries;
+    size_t _dead_entries;
+    size_t _hold_entries;
     size_t _allocBytes;
     size_t _usedBytes;
     size_t _deadBytes;

@@ -9,10 +9,10 @@ using namespace vespalib::datastore;
 TEST(BufferStatsTest, buffer_stats_to_memory_stats)
 {
     InternalBufferStats buf;
-    buf.set_alloc_elems(17);
+    buf.set_alloc_entries(17);
     buf.pushed_back(7);
-    buf.set_dead_elems(5);
-    buf.set_hold_elems(3);
+    buf.set_dead_entries(5);
+    buf.set_hold_entries(3);
     buf.inc_extra_used_bytes(13);
     buf.inc_extra_hold_bytes(11);
 
@@ -20,10 +20,10 @@ TEST(BufferStatsTest, buffer_stats_to_memory_stats)
     constexpr size_t es = 8;
     buf.add_to_mem_stats(es, mem);
 
-    EXPECT_EQ(17, mem._allocElems);
-    EXPECT_EQ(7, mem._usedElems);
-    EXPECT_EQ(5, mem._deadElems);
-    EXPECT_EQ(3, mem._holdElems);
+    EXPECT_EQ(17, mem._alloc_entries);
+    EXPECT_EQ(7, mem._used_entries);
+    EXPECT_EQ(5, mem._dead_entries);
+    EXPECT_EQ(3, mem._hold_entries);
     EXPECT_EQ(17 * es + 13, mem._allocBytes);
     EXPECT_EQ(7 * es + 13, mem._usedBytes);
     EXPECT_EQ(5 * es, mem._deadBytes);

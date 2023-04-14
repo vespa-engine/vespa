@@ -6,11 +6,11 @@ import com.yahoo.search.Query;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeSet;
 
 import static com.yahoo.text.Lowercase.toLowerCase;
 
@@ -31,6 +31,16 @@ import static com.yahoo.text.Lowercase.toLowerCase;
 public class IndexFacts {
 
     private Map<String, List<String>> clusterByDocument;
+
+    private static class DocumentTypeListOffset {
+        public final int offset;
+        public final SearchDefinition searchDefinition;
+
+        public DocumentTypeListOffset(int offset, SearchDefinition searchDefinition) {
+            this.offset = offset;
+            this.searchDefinition = searchDefinition;
+        }
+    }
 
     /** A Map of all known search definitions indexed by name */
     private Map<String, SearchDefinition> searchDefinitions = new LinkedHashMap<>();
@@ -100,32 +110,34 @@ public class IndexFacts {
     private boolean isIndexFromDocumentTypes(String indexName, List<String> documentTypes) {
         if ( ! isInitialized()) return true;
 
-        if (documentTypes.isEmpty()) return unionSearchDefinition.getIndex(indexName) != null;
-
-        for (String docName : documentTypes) {
-            SearchDefinition sd = searchDefinitions.get(docName);
-            if (sd != null) {
-                Index index = sd.getIndex(indexName);
-                if (index != null) return true;
-            }
+        if (documentTypes.isEmpty()) {
+            return unionSearchDefinition.getIndex(indexName) != null;
         }
+
+        DocumentTypeListOffset sd = chooseSearchDefinition(documentTypes, 0);
+        while (sd != null) {
+            Index index = sd.searchDefinition.getIndex(indexName);
+            if (index != null) {
+                return true;
+            }
+            sd = chooseSearchDefinition(documentTypes, sd.offset);
+        }
+
         return false;
     }
 
     private String getCanonicNameFromDocumentTypes(String indexName, List<String> documentTypes) {
         if (!isInitialized()) return indexName;
-        String lowerCased = toLowerCase(indexName);
 
         if (documentTypes.isEmpty()) {
-            Index index = unionSearchDefinition.getIndexByLowerCase(lowerCased);
+            Index index = unionSearchDefinition.getIndexByLowerCase(toLowerCase(indexName));
             return index == null ? indexName : index.getName();
         }
-        for (String docName : documentTypes) {
-            SearchDefinition sd = searchDefinitions.get(docName);
-            if (sd != null) {
-                Index index = sd.getIndexByLowerCase(lowerCased);
-                if (index != null) return index.getName();
-            }
+        DocumentTypeListOffset sd = chooseSearchDefinition(documentTypes, 0);
+        while (sd != null) {
+            Index index = sd.searchDefinition.getIndexByLowerCase(toLowerCase(indexName));
+            if (index != null) return index.getName();
+            sd = chooseSearchDefinition(documentTypes, sd.offset);
         }
         return indexName;
     }
@@ -146,12 +158,13 @@ public class IndexFacts {
             return index;
         }
 
-        for (String docName : documentTypes) {
-            SearchDefinition sd = searchDefinitions.get(docName);
-            if (sd != null) {
-                Index index = sd.getIndex(canonicName);
-                if (index != null) return index;
-            }
+        DocumentTypeListOffset sd = chooseSearchDefinition(documentTypes, 0);
+
+        while (sd != null) {
+            Index index = sd.searchDefinition.getIndex(canonicName);
+
+            if (index != null) return index;
+            sd = chooseSearchDefinition(documentTypes, sd.offset);
         }
         return Index.nullIndex;
     }
@@ -174,7 +187,7 @@ public class IndexFacts {
      * Given a search list which is a mixture of document types and cluster
      * names, and a restrict list which is a list of document types, return a
      * set of all valid document types for this combination. Most use-cases for
-     * fetching index settings will involve calling this method with the
+     * fetching index settings will involve calling this method with the the
      * incoming query's {@link com.yahoo.search.query.Model#getSources()} and
      * {@link com.yahoo.search.query.Model#getRestrict()} as input parameters
      * before calling any other method of this class.
@@ -183,20 +196,20 @@ public class IndexFacts {
      * @param restrict the restrict list for a query
      * @return a (possibly empty) set of valid document types
      */
-    private Set<String> resolveDocumentTypes(Collection<String> sources, Set<String> restrict,
+    private Set<String> resolveDocumentTypes(Collection<String> sources, Collection<String> restrict,
                                              Set<String> candidateDocumentTypes) {
         sources = emptyCollectionIfNull(sources);
-        restrict = emptySetIfNull(restrict);
+        restrict = emptyCollectionIfNull(restrict);
 
         if (sources.isEmpty()) {
             if ( ! restrict.isEmpty()) {
-                return Set.copyOf(restrict);
+                return new TreeSet<>(restrict);
             } else {
                 return candidateDocumentTypes;
             }
         }
 
-        Set<String> toSearch = new HashSet<>();
+        Set<String> toSearch = new TreeSet<>();
         for (String source : sources) { // source: a document type or a cluster containing them
             List<String> clusterDocTypes = clusters.get(source);
             if (clusterDocTypes == null) { // source was a document type
@@ -222,8 +235,21 @@ public class IndexFacts {
     private Collection<String> emptyCollectionIfNull(Collection<String> collection) {
         return collection == null ? List.of() : collection;
     }
-    private Set<String> emptySetIfNull(Set<String> collection) {
-        return collection == null ? Set.of() : collection;
+
+    /**
+     * Chooses the correct search definition, default if in doubt.
+     *
+     * @return the search definition to use
+     */
+    private DocumentTypeListOffset chooseSearchDefinition(List<String> documentTypes, int index) {
+        while (index < documentTypes.size()) {
+            String docName = documentTypes.get(index++);
+            SearchDefinition sd = searchDefinitions.get(docName);
+            if (sd != null) {
+                return new DocumentTypeListOffset(index, sd);
+            }
+        }
+        return null;
     }
 
     /**
@@ -253,6 +279,10 @@ public class IndexFacts {
         return frozen;
     }
 
+    private void ensureNotFrozen() {
+        if (frozen) throw new IllegalStateException("Tried to modify frozen IndexFacts instance.");
+    }
+
     public String getDefaultPosition(String sdName) {
         SearchDefinition sd;
         if (sdName == null) {
@@ -270,16 +300,12 @@ public class IndexFacts {
         return new Session(query);
     }
 
-    public Session newSession() {
-        return new Session(Set.of(), Set.of());
-    }
-
-    public Session newSession(Collection<String> sources, Set<String> restrict) {
+    public Session newSession(Collection<String> sources, Collection<String> restrict) {
         return new Session(sources, restrict);
     }
 
     public Session newSession(Collection<String> sources,
-                              Set<String> restrict,
+                              Collection<String> restrict,
                               Set<String> candidateDocumentTypes) {
         return new Session(sources, restrict, candidateDocumentTypes);
     }
@@ -297,12 +323,12 @@ public class IndexFacts {
             documentTypes = List.copyOf(resolveDocumentTypes(query));
         }
 
-        private Session(Collection<String> sources, Set<String> restrict) {
+        private Session(Collection<String> sources, Collection<String> restrict) {
             // Assumption: Search definition name equals document name.
             documentTypes = List.copyOf(resolveDocumentTypes(sources, restrict, searchDefinitions.keySet()));
         }
 
-        private Session(Collection<String> sources, Set<String> restrict, Set<String> candidateDocumentTypes) {
+        private Session(Collection<String> sources, Collection<String> restrict, Set<String> candidateDocumentTypes) {
             documentTypes = List.copyOf(resolveDocumentTypes(sources, restrict, candidateDocumentTypes));
         }
 

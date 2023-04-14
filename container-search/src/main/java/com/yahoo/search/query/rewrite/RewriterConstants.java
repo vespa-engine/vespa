@@ -42,7 +42,7 @@ public class RewriterConstants {
     public static final String REWRITER_CHAIN = "QRWChain";
 
     /** Name for rewrite metadata retrieval from query properties */
-    public static final CompoundName REWRITE_META = new CompoundName("RewriteMeta");
+    public static final CompoundName REWRITE_META = CompoundName.from("RewriteMeta");
 
     /** Name for rewritten field retrieval from query properties */
     public static final String REWRITTEN = "Rewritten";

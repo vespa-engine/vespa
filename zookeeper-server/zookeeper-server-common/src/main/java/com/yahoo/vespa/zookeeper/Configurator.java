@@ -2,20 +2,28 @@
 package com.yahoo.vespa.zookeeper;
 
 import com.yahoo.cloud.config.ZookeeperServerConfig;
+import com.yahoo.cloud.config.ZookeeperServerConfig.Server;
 import com.yahoo.security.tls.ConfigFileBasedTlsContext;
 import com.yahoo.security.tls.MixedMode;
 import com.yahoo.security.tls.TlsContext;
 import com.yahoo.security.tls.TransportSecurityUtils;
+
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
 
+import static com.yahoo.stream.CustomCollectors.toLinkedMap;
 import static com.yahoo.vespa.defaults.Defaults.getDefaults;
 
 public class Configurator {
@@ -64,7 +72,6 @@ public class Configurator {
     // override of Vespa TLS config for unit testing
     void writeConfigToDisk(VespaTlsConfig vespaTlsConfig) {
         configFilePath.toFile().getParentFile().mkdirs();
-
         try {
             writeZooKeeperConfigFile(zookeeperServerConfig, vespaTlsConfig);
             writeMyIdFile(zookeeperServerConfig);
@@ -75,36 +82,75 @@ public class Configurator {
 
     private void writeZooKeeperConfigFile(ZookeeperServerConfig config,
                                           VespaTlsConfig vespaTlsConfig) throws IOException {
+        String dynamicConfigPath = config.dynamicReconfiguration() ? parseConfigFile(configFilePath).get("dynamicConfigFile") : null;
+        Map<String, String> dynamicConfig = dynamicConfigPath != null ? parseConfigFile(Paths.get(dynamicConfigPath)) : Map.of();
         try (FileWriter writer = new FileWriter(configFilePath.toFile())) {
-            writer.write(transformConfigToString(config, vespaTlsConfig));
+            writer.write(transformConfigToString(config, vespaTlsConfig, dynamicConfig));
         }
     }
 
-    private String transformConfigToString(ZookeeperServerConfig config, VespaTlsConfig vespaTlsConfig) {
-        StringBuilder sb = new StringBuilder();
-        sb.append("tickTime=").append(config.tickTime()).append("\n");
-        sb.append("initLimit=").append(config.initLimit()).append("\n");
-        sb.append("syncLimit=").append(config.syncLimit()).append("\n");
-        sb.append("maxClientCnxns=").append(config.maxClientConnections()).append("\n");
-        sb.append("snapCount=").append(config.snapshotCount()).append("\n");
-        sb.append("dataDir=").append(getDefaults().underVespaHome(config.dataDir())).append("\n");
-        sb.append("autopurge.purgeInterval=").append(config.autopurge().purgeInterval()).append("\n");
-        sb.append("autopurge.snapRetainCount=").append(config.autopurge().snapRetainCount()).append("\n");
+    private String transformConfigToString(ZookeeperServerConfig config, VespaTlsConfig vespaTlsConfig, Map<String, String> dynamicConfig) {
+        Map<String, String> configEntries = new LinkedHashMap<>();
+        configEntries.put("tickTime", Integer.toString(config.tickTime()));
+        configEntries.put("initLimit", Integer.toString(config.initLimit()));
+        configEntries.put("syncLimit", Integer.toString(config.syncLimit()));
+        configEntries.put("maxClientCnxns", Integer.toString(config.maxClientConnections()));
+        configEntries.put("snapCount", Integer.toString(config.snapshotCount()));
+        configEntries.put("dataDir", getDefaults().underVespaHome(config.dataDir()));
+        configEntries.put("autopurge.purgeInterval", Integer.toString(config.autopurge().purgeInterval()));
+        configEntries.put("autopurge.snapRetainCount", Integer.toString(config.autopurge().snapRetainCount()));
         // See http://zookeeper.apache.org/doc/r3.6.3/zookeeperAdmin.html#sc_zkCommands
         // Includes all available commands in 3.6, except 'wchc' and 'wchp'
-        sb.append("4lw.commands.whitelist=conf,cons,crst,dirs,dump,envi,mntr,ruok,srst,srvr,stat,wchs").append("\n");
-        sb.append("admin.enableServer=false").append("\n");
+        configEntries.put("4lw.commands.whitelist", "conf,cons,crst,dirs,dump,envi,mntr,ruok,srst,srvr,stat,wchs");
+        configEntries.put("admin.enableServer", "false");
         // Use custom connection factory for TLS on client port - see class' Javadoc for rationale
-        sb.append("serverCnxnFactory=org.apache.zookeeper.server.VespaNettyServerCnxnFactory").append("\n");
-        sb.append("quorumListenOnAllIPs=true").append("\n");
-        sb.append("standaloneEnabled=false").append("\n");
-        sb.append("reconfigEnabled=").append(config.dynamicReconfiguration()).append("\n");
-        sb.append("skipACL=yes").append("\n");
-        ensureThisServerIsRepresented(config.myid(), config.server());
-        config.server().forEach(server -> sb.append(serverSpec(server, server.joining())).append("\n"));
-        sb.append(new TlsQuorumConfig().createConfig(vespaTlsConfig));
-        sb.append(new TlsClientServerConfig().createConfig(vespaTlsConfig));
-        return sb.toString();
+        configEntries.put("serverCnxnFactory", "org.apache.zookeeper.server.VespaNettyServerCnxnFactory");
+        configEntries.put("quorumListenOnAllIPs", "true");
+        configEntries.put("standaloneEnabled", "false");
+        configEntries.put("reconfigEnabled", Boolean.toString(config.dynamicReconfiguration()));
+        configEntries.put("skipACL", "yes");
+
+        addServerSpecs(configEntries, config, dynamicConfig);
+
+        new TlsQuorumConfig().createConfig(configEntries, vespaTlsConfig);
+        new TlsClientServerConfig().createConfig(configEntries, vespaTlsConfig);
+        return transformConfigToString(configEntries);
+    }
+
+    void addServerSpecs(Map<String, String> configEntries, ZookeeperServerConfig config, Map<String, String> dynamicConfig) {
+        int myIndex = ensureThisServerIsRepresented(config.myid(), config.server());
+
+        // If dynamic config refers to servers that are not in the current config, we must ignore it.
+        Set<String> currentServers = config.server().stream().map(Server::hostname).collect(Collectors.toSet());
+        if (dynamicConfig.values().stream().anyMatch(spec -> ! currentServers.contains(spec.split(":", 2)[0]))) {
+            log.log(Level.WARNING, "Existing dynamic config refers to unknown servers, ignoring it");
+            dynamicConfig = Map.of();
+        }
+
+        // If we have no existing, valid, dynamic config, we use all known servers as a starting point.
+        if (dynamicConfig.isEmpty()) {
+            configEntries.putAll(getServerConfig(config.server(), config.server(myIndex).joining() ? config.myid() : -1));
+        }
+        // Otherwise, we use the existing, dynamic config as a starting point, and add this as a joiner if not present.
+        else {
+            Map.Entry<String, String> thisAsAJoiner = getServerConfig(config.server().subList(myIndex, myIndex + 1), config.myid()).entrySet().iterator().next();
+            dynamicConfig.putIfAbsent(thisAsAJoiner.getKey(), thisAsAJoiner.getValue());
+            configEntries.putAll(dynamicConfig);
+        }
+
+    }
+    static Map<String, String> getServerConfig(List<ZookeeperServerConfig.Server> serversConfig, int joinerId) {
+        Map<String, String> configEntries = new LinkedHashMap<>();
+        for (Server server : serversConfig) {
+            configEntries.put("server." + server.id(), serverSpec(server, server.id() == joinerId));
+        }
+        return configEntries;
+    }
+
+    static String transformConfigToString(Map<String, String> config) {
+        return config.entrySet().stream()
+                .map(entry -> entry.getKey() + "=" + entry.getValue())
+                .collect(Collectors.joining("\n", "", "\n"));
     }
 
     private void writeMyIdFile(ZookeeperServerConfig config) throws IOException {
@@ -113,25 +159,17 @@ public class Configurator {
         }
     }
 
-    private void ensureThisServerIsRepresented(int myid, List<ZookeeperServerConfig.Server> servers) {
-        boolean found = false;
-        for (ZookeeperServerConfig.Server server : servers) {
-            if (myid == server.id()) {
-                found = true;
-                break;
-            }
+    private static int ensureThisServerIsRepresented(int myid, List<ZookeeperServerConfig.Server> servers) {
+        for (int i = 0; i < servers.size(); i++) {
+            Server server = servers.get(i);
+            if (myid == server.id()) return i;
         }
-        if (!found) {
-            throw new RuntimeException("No id in zookeeper server list that corresponds to my id (" + myid + ")");
-        }
+        throw new RuntimeException("No id in zookeeper server list that corresponds to my id (" + myid + ")");
     }
 
     static String serverSpec(ZookeeperServerConfig.Server server, boolean joining) {
         StringBuilder sb = new StringBuilder();
-        sb.append("server.")
-          .append(server.id())
-          .append("=")
-          .append(server.hostname())
+        sb.append(server.hostname())
           .append(":")
           .append(server.quorumPort())
           .append(":")
@@ -150,6 +188,19 @@ public class Configurator {
         return sb.toString();
     }
 
+    static Map<String, String> parseConfigFile(Path configFilePath) {
+        try {
+            return Files.exists(configFilePath) ? Files.readAllLines(configFilePath).stream()
+                                                       .filter(line -> ! line.startsWith("#"))
+                                                       .map(line -> line.split("=", 2))
+                                                       .collect(toLinkedMap(parts -> parts[0], parts -> parts[1]))
+                                                : Map.of();
+        }
+        catch (IOException e) {
+            throw new UncheckedIOException("error reading zookeeper config", e);
+        }
+    }
+
     static List<String> zookeeperServerHostnames(ZookeeperServerConfig zookeeperServerConfig) {
         return zookeeperServerConfig.server().stream()
                                     .map(ZookeeperServerConfig.Server::hostname)
@@ -165,15 +216,15 @@ public class Configurator {
     private interface TlsConfig {
         String configFieldPrefix();
 
-        default void appendSharedTlsConfig(StringBuilder builder, VespaTlsConfig vespaTlsConfig) {
+        default void appendSharedTlsConfig(Map<String, String> configEntries, VespaTlsConfig vespaTlsConfig) {
             vespaTlsConfig.context().ifPresent(ctx -> {
                 VespaSslContextProvider.set(ctx);
-                builder.append(configFieldPrefix()).append(".context.supplier.class=").append(VespaSslContextProvider.class.getName()).append("\n");
+                configEntries.put(configFieldPrefix() + ".context.supplier.class", VespaSslContextProvider.class.getName());
                 String enabledCiphers = Arrays.stream(ctx.parameters().getCipherSuites()).sorted().collect(Collectors.joining(","));
-                builder.append(configFieldPrefix()).append(".ciphersuites=").append(enabledCiphers).append("\n");
+                configEntries.put(configFieldPrefix() + ".ciphersuites", enabledCiphers);
                 String enabledProtocols = Arrays.stream(ctx.parameters().getProtocols()).sorted().collect(Collectors.joining(","));
-                builder.append(configFieldPrefix()).append(".enabledProtocols=").append(enabledProtocols).append("\n");
-                builder.append(configFieldPrefix()).append(".clientAuth=NEED\n");
+                configEntries.put(configFieldPrefix() + ".enabledProtocols", enabledProtocols);
+                configEntries.put(configFieldPrefix() + ".clientAuth", "NEED");
             });
         }
 
@@ -185,16 +236,13 @@ public class Configurator {
 
     static class TlsClientServerConfig implements TlsConfig {
 
-        public String createConfig(VespaTlsConfig vespaTlsConfig) {
-            StringBuilder sb = new StringBuilder()
-                    .append("client.portUnification=").append(enablePortUnification(vespaTlsConfig)).append("\n");
+        public void createConfig(Map<String, String> configEntries, VespaTlsConfig vespaTlsConfig) {
+            configEntries.put("client.portUnification", String.valueOf(enablePortUnification(vespaTlsConfig)));
             // ZooKeeper Dynamic Reconfiguration requires the "non-secure" client port to exist
             // This is a hack to override the secure parameter through our connection factory wrapper
             // https://issues.apache.org/jira/browse/ZOOKEEPER-3577
             VespaNettyServerCnxnFactory_isSecure = vespaTlsConfig.tlsEnabled() && vespaTlsConfig.mixedMode() == MixedMode.DISABLED;
-            appendSharedTlsConfig(sb, vespaTlsConfig);
-
-            return sb.toString();
+            appendSharedTlsConfig(configEntries, vespaTlsConfig);
         }
 
         @Override
@@ -205,12 +253,10 @@ public class Configurator {
 
     static class TlsQuorumConfig implements TlsConfig {
 
-        public String createConfig(VespaTlsConfig vespaTlsConfig) {
-            StringBuilder sb = new StringBuilder()
-                    .append("sslQuorum=").append(vespaTlsConfig.tlsEnabled()).append("\n")
-                    .append("portUnification=").append(enablePortUnification(vespaTlsConfig)).append("\n");
-            appendSharedTlsConfig(sb, vespaTlsConfig);
-            return sb.toString();
+        public void createConfig(Map<String, String> configEntries, VespaTlsConfig vespaTlsConfig) {
+            configEntries.put("sslQuorum", String.valueOf(vespaTlsConfig.tlsEnabled()));
+            configEntries.put("portUnification", String.valueOf(enablePortUnification(vespaTlsConfig)));
+            appendSharedTlsConfig(configEntries, vespaTlsConfig);
         }
 
         @Override

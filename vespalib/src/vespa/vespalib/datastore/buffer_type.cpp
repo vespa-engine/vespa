@@ -27,85 +27,85 @@ BufferTypeBase::CleanContext::extraBytesCleaned(size_t value)
 }
 
 BufferTypeBase::BufferTypeBase(uint32_t arraySize,
-                               uint32_t minArrays,
-                               uint32_t maxArrays,
-                               uint32_t numArraysForNewBuffer,
+                               uint32_t min_entries,
+                               uint32_t max_entries,
+                               uint32_t num_entries_for_new_buffer,
                                float allocGrowFactor) noexcept
     : _arraySize(arraySize),
-      _minArrays(std::min(minArrays, maxArrays)),
-      _maxArrays(maxArrays),
-      _numArraysForNewBuffer(std::min(numArraysForNewBuffer, maxArrays)),
+      _min_entries(std::min(min_entries, max_entries)),
+      _max_entries(max_entries),
+      _num_entries_for_new_buffer(std::min(num_entries_for_new_buffer, max_entries)),
       _allocGrowFactor(allocGrowFactor),
       _holdBuffers(0),
-      _holdUsedElems(0),
+      _hold_used_entries(0),
       _aggr_counts(),
       _active_buffers()
 {
 }
 
 BufferTypeBase::BufferTypeBase(uint32_t arraySize,
-                               uint32_t minArrays,
-                               uint32_t maxArrays) noexcept
-    : BufferTypeBase(arraySize, minArrays, maxArrays, 0u, DEFAULT_ALLOC_GROW_FACTOR)
+                               uint32_t min_entries,
+                               uint32_t max_entries) noexcept
+    : BufferTypeBase(arraySize, min_entries, max_entries, 0u, DEFAULT_ALLOC_GROW_FACTOR)
 {
 }
 
 BufferTypeBase::~BufferTypeBase()
 {
     assert(_holdBuffers == 0);
-    assert(_holdUsedElems == 0);
+    assert(_hold_used_entries == 0);
     assert(_aggr_counts.empty());
     assert(_active_buffers.empty());
 }
 
-ElemCount
-BufferTypeBase::getReservedElements(uint32_t bufferId) const
+EntryCount
+BufferTypeBase::get_reserved_entries(uint32_t bufferId) const
 {
-    return bufferId == 0 ? _arraySize : 0u;
+    return bufferId == 0 ? 1u : 0u;
 }
 
 void
-BufferTypeBase::onActive(uint32_t bufferId, std::atomic<ElemCount>* usedElems, std::atomic<ElemCount>* deadElems, void* buffer)
+BufferTypeBase::on_active(uint32_t bufferId, std::atomic<EntryCount>* used_entries, std::atomic<EntryCount>* dead_entries, void* buffer)
 {
-    _aggr_counts.add_buffer(usedElems, deadElems);
+    _aggr_counts.add_buffer(used_entries, dead_entries);
     assert(std::find(_active_buffers.begin(), _active_buffers.end(), bufferId) == _active_buffers.end());
     _active_buffers.emplace_back(bufferId);
-    size_t reservedElems = getReservedElements(bufferId);
-    if (reservedElems != 0u) {
-        initializeReservedElements(buffer, reservedElems);
-        *usedElems = reservedElems;
-        *deadElems = reservedElems;
+    auto reserved_entries = get_reserved_entries(bufferId);
+    if (reserved_entries != 0u) {
+        initialize_reserved_entries(buffer, reserved_entries);
+        *used_entries = reserved_entries;
+        *dead_entries = reserved_entries;
     }
 }
 
 void
-BufferTypeBase::onHold(uint32_t buffer_id, const std::atomic<ElemCount>* usedElems, const std::atomic<ElemCount>* deadElems)
+BufferTypeBase::on_hold(uint32_t buffer_id, const std::atomic<EntryCount>* used_entries, const std::atomic<EntryCount>* dead_entries)
 {
     ++_holdBuffers;
     auto itr = std::find(_active_buffers.begin(), _active_buffers.end(), buffer_id);
     assert(itr != _active_buffers.end());
     _active_buffers.erase(itr);
-    _aggr_counts.remove_buffer(usedElems, deadElems);
-    _holdUsedElems += *usedElems;
+    _aggr_counts.remove_buffer(used_entries, dead_entries);
+    _hold_used_entries += *used_entries;
 }
 
 void
-BufferTypeBase::onFree(ElemCount usedElems)
+BufferTypeBase::on_free(EntryCount used_entries)
 {
     --_holdBuffers;
-    assert(_holdUsedElems >= usedElems);
-    _holdUsedElems -= usedElems;
+    assert(_hold_used_entries >= used_entries);
+    _hold_used_entries -= used_entries;
 }
 
 void
-BufferTypeBase::resume_primary_buffer(uint32_t buffer_id, std::atomic<ElemCount>* used_elems, std::atomic<ElemCount>* dead_elems)
+BufferTypeBase::resume_primary_buffer(uint32_t buffer_id, std::atomic<EntryCount>* used_entries, std::atomic<EntryCount>* dead_entries)
 {
     auto itr = std::find(_active_buffers.begin(), _active_buffers.end(), buffer_id);
     assert(itr != _active_buffers.end());
     _active_buffers.erase(itr);
     _active_buffers.emplace_back(buffer_id);
-    _aggr_counts.remove_buffer(used_elems, dead_elems);
-    _aggr_counts.add_buffer(used_elems, dead_elems);
+    _aggr_counts.remove_buffer(used_entries, dead_entries);
+    _aggr_counts.add_buffer(used_entries, dead_entries);
 }
 
 const alloc::MemoryAllocator*
@@ -115,17 +115,17 @@ BufferTypeBase::get_memory_allocator() const
 }
 
 void
-BufferTypeBase::clampMaxArrays(uint32_t maxArrays)
+BufferTypeBase::clamp_max_entries(uint32_t max_entries)
 {
-    _maxArrays = std::min(_maxArrays, maxArrays);
-    _minArrays = std::min(_minArrays, _maxArrays);
-    _numArraysForNewBuffer = std::min(_numArraysForNewBuffer, _maxArrays);
+    _max_entries = std::min(_max_entries, max_entries);
+    _min_entries = std::min(_min_entries, _max_entries);
+    _num_entries_for_new_buffer = std::min(_num_entries_for_new_buffer, _max_entries);
 }
 
 size_t
-BufferTypeBase::calcArraysToAlloc(uint32_t bufferId, ElemCount elemsNeeded, bool resizing) const
+BufferTypeBase::calc_entries_to_alloc(uint32_t bufferId, EntryCount free_entries_needed, bool resizing) const
 {
-    size_t reservedElems = getReservedElements(bufferId);
+    size_t reserved_entries = get_reserved_entries(bufferId);
     BufferCounts last_bc;
     BufferCounts bc;
     if (resizing) {
@@ -134,56 +134,53 @@ BufferTypeBase::calcArraysToAlloc(uint32_t bufferId, ElemCount elemsNeeded, bool
         }
     }
     bc = _aggr_counts.all_buffers();
-    assert((bc.used_elems % _arraySize) == 0);
-    assert((bc.dead_elems % _arraySize) == 0);
-    assert(bc.used_elems >= bc.dead_elems);
-    size_t neededArrays = (elemsNeeded + (resizing ? last_bc.used_elems : reservedElems) + _arraySize - 1) / _arraySize;
+    assert(bc.used_entries >= bc.dead_entries);
+    size_t needed_entries = static_cast<size_t>(free_entries_needed) + (resizing ? last_bc.used_entries : reserved_entries);
+    size_t live_entries = (bc.used_entries - bc.dead_entries);
+    size_t grow_entries = (live_entries * _allocGrowFactor);
+    size_t used_entries = last_bc.used_entries;
+    size_t wanted_entries = std::max((resizing ? used_entries : 0u) + grow_entries,
+                                     static_cast<size_t>(_min_entries));
 
-    size_t liveArrays = (bc.used_elems - bc.dead_elems) / _arraySize;
-    size_t growArrays = (liveArrays * _allocGrowFactor);
-    size_t usedArrays = last_bc.used_elems / _arraySize;
-    size_t wantedArrays = std::max((resizing ? usedArrays : 0u) + growArrays,
-                                   static_cast<size_t>(_minArrays));
-
-    size_t result = wantedArrays;
-    if (result < neededArrays) {
-        result = neededArrays;
+    size_t result = wanted_entries;
+    if (result < needed_entries) {
+        result = needed_entries;
     }
-    if (result > _maxArrays) {
-        result = _maxArrays;
+    if (result > _max_entries) {
+        result = _max_entries;
     }
-    if (result < neededArrays) {
+    if (result < needed_entries) {
         vespalib::asciistream s;
         s << "BufferTypeBase::calcArraysToAlloc(" <<
             "bufferId=" << bufferId <<
-            ",elemsNeeeded=" << elemsNeeded <<
+            ",free_entries_needed=" << free_entries_needed <<
             ",resizing=" << (resizing ? "true" : "false") << ")" <<
-            " wantedArrays=" << wantedArrays <<
+            " wanted_entries=" << wanted_entries <<
             ", _arraySize=" << _arraySize <<
-            ", _maxArrays=" << _maxArrays <<
-            ", reservedElems=" << reservedElems <<
-            ", liveArrays=" << liveArrays <<
-            ", growArrays=" << growArrays <<
-            ", usedArrays=" << usedArrays <<
+            ", _max_entries=" << _max_entries <<
+            ", reserved_entries=" << reserved_entries <<
+            ", live_entries=" << live_entries <<
+            ", grow_entries=" << grow_entries <<
+            ", used_entries=" << used_entries <<
             ", typeid(*this).name=\"" << typeid(*this).name() << "\"" <<
-            ", newArrays=" << result <<
-            " < neededArrays=" << neededArrays;;
+            ", new_entries=" << result <<
+            " < needed_entries=" << needed_entries;
         throw vespalib::OverflowException(s.c_str());
     }
     return result;
 }
 
 uint32_t
-BufferTypeBase::get_scaled_num_arrays_for_new_buffer() const
+BufferTypeBase::get_scaled_num_entries_for_new_buffer() const
 {
     uint32_t active_buffers_count = get_active_buffers_count();
-    if (active_buffers_count <= 1u || _numArraysForNewBuffer == 0u) {
-        return _numArraysForNewBuffer;
+    if (active_buffers_count <= 1u || _num_entries_for_new_buffer == 0u) {
+        return _num_entries_for_new_buffer;
     }
     double scale_factor = std::pow(1.0 + _allocGrowFactor, active_buffers_count - 1);
-    double scaled_result = _numArraysForNewBuffer * scale_factor;
-    if (scaled_result >= _maxArrays) {
-        return _maxArrays;
+    double scaled_result = _num_entries_for_new_buffer * scale_factor;
+    if (scaled_result >= _max_entries) {
+        return _max_entries;
     }
     return scaled_result;
 }
@@ -194,22 +191,22 @@ BufferTypeBase::AggregatedBufferCounts::AggregatedBufferCounts()
 }
 
 void
-BufferTypeBase::AggregatedBufferCounts::add_buffer(const std::atomic<ElemCount>* used_elems, const std::atomic<ElemCount>* dead_elems)
+BufferTypeBase::AggregatedBufferCounts::add_buffer(const std::atomic<EntryCount>* used_entries, const std::atomic<EntryCount>* dead_entries)
 {
     for (const auto& elem : _counts) {
-        assert(elem.used_ptr != used_elems);
-        assert(elem.dead_ptr != dead_elems);
+        assert(elem.used_ptr != used_entries);
+        assert(elem.dead_ptr != dead_entries);
     }
-    _counts.emplace_back(used_elems, dead_elems);
+    _counts.emplace_back(used_entries, dead_entries);
 }
 
 void
-BufferTypeBase::AggregatedBufferCounts::remove_buffer(const std::atomic<ElemCount>* used_elems, const std::atomic<ElemCount>* dead_elems)
+BufferTypeBase::AggregatedBufferCounts::remove_buffer(const std::atomic<EntryCount>* used_entries, const std::atomic<EntryCount>* dead_entries)
 {
     auto itr = std::find_if(_counts.begin(), _counts.end(),
-                            [=](const auto& elem){ return elem.used_ptr == used_elems; });
+                            [=](const auto& elem){ return elem.used_ptr == used_entries; });
     assert(itr != _counts.end());
-    assert(itr->dead_ptr == dead_elems);
+    assert(itr->dead_ptr == dead_entries);
     _counts.erase(itr);
 }
 
@@ -219,8 +216,8 @@ BufferTypeBase::AggregatedBufferCounts::last_buffer() const
     BufferCounts result;
     assert(!_counts.empty());
     const auto& last = _counts.back();
-    result.used_elems += last.used_ptr->load(std::memory_order_relaxed);
-    result.dead_elems += last.dead_ptr->load(std::memory_order_relaxed);
+    result.used_entries += last.used_ptr->load(std::memory_order_relaxed);
+    result.dead_entries += last.dead_ptr->load(std::memory_order_relaxed);
     return result;
 }
 
@@ -229,8 +226,8 @@ BufferTypeBase::AggregatedBufferCounts::all_buffers() const
 {
     BufferCounts result;
     for (const auto& elem : _counts) {
-        result.used_elems += elem.used_ptr->load(std::memory_order_relaxed);
-        result.dead_elems += elem.dead_ptr->load(std::memory_order_relaxed);
+        result.used_entries += elem.used_ptr->load(std::memory_order_relaxed);
+        result.dead_entries += elem.dead_ptr->load(std::memory_order_relaxed);
     }
     return result;
 }

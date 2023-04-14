@@ -51,13 +51,13 @@ import java.util.logging.Level;
  */
 class VdsVisitor extends VisitorDataHandler implements Visitor {
 
-    private static final CompoundName streamingUserid=new CompoundName("streaming.userid");
-    private static final CompoundName streamingGroupname=new CompoundName("streaming.groupname");
-    private static final CompoundName streamingSelection=new CompoundName("streaming.selection");
-    private static final CompoundName streamingFromtimestamp=new CompoundName("streaming.fromtimestamp");
-    private static final CompoundName streamingTotimestamp=new CompoundName("streaming.totimestamp");
-    private static final CompoundName streamingPriority=new CompoundName("streaming.priority");
-    private static final CompoundName streamingMaxbucketspervisitor=new CompoundName("streaming.maxbucketspervisitor");
+    private static final CompoundName streamingUserid = CompoundName.from("streaming.userid");
+    private static final CompoundName streamingGroupname = CompoundName.from("streaming.groupname");
+    private static final CompoundName streamingSelection = CompoundName.from("streaming.selection");
+    private static final CompoundName streamingFromtimestamp = CompoundName.from("streaming.fromtimestamp");
+    private static final CompoundName streamingTotimestamp = CompoundName.from("streaming.totimestamp");
+    private static final CompoundName streamingPriority = CompoundName.from("streaming.priority");
+    private static final CompoundName streamingMaxbucketspervisitor = CompoundName.from("streaming.maxbucketspervisitor");
 
     protected static final int MAX_BUCKETS_PER_VISITOR = 1024;
 

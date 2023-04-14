@@ -42,7 +42,7 @@ import java.util.logging.Logger;
 @Before(PhaseNames.TRANSFORMED_QUERY)
 public class UniqueGroupingSearcher extends Searcher {
 
-    public static final CompoundName PARAM_UNIQUE = new CompoundName("unique");
+    public static final CompoundName PARAM_UNIQUE = CompoundName.from("unique");
     private static final Logger log = Logger.getLogger(UniqueGroupingSearcher.class.getName());
     private static final HitOrderer NOP_ORDERER = new HitOrderer() {
 
@@ -144,17 +144,13 @@ public class UniqueGroupingSearcher extends Searcher {
         for (Sorting.FieldOrder fieldOrder : sortingSpec.fieldOrders()) {
             Sorting.Order sortOrder = fieldOrder.getSortOrder();
             switch (sortOrder) {
-            case ASCENDING:
-            case UNDEFINED:
-                // When we want ascending order, the hit with the smallest value should come first (and be surfaced).
-                orderingClause.add(new MinAggregator(new AttributeValue(fieldOrder.getFieldName())));
-                break;
-            case DESCENDING:
-                // When we sort in descending order, the hit with the largest value should come first (and be surfaced).
-                orderingClause.add(new NegFunction(new MaxAggregator(new AttributeValue(fieldOrder.getFieldName()))));
-                break;
-            default:
-                throw new UnsupportedOperationException("Can not handle sort order " + sortOrder + ".");
+                case ASCENDING, UNDEFINED ->
+                    // When we want ascending order, the hit with the smallest value should come first (and be surfaced).
+                        orderingClause.add(new MinAggregator(new AttributeValue(fieldOrder.getFieldName())));
+                case DESCENDING ->
+                    // When we sort in descending order, the hit with the largest value should come first (and be surfaced).
+                        orderingClause.add(new NegFunction(new MaxAggregator(new AttributeValue(fieldOrder.getFieldName()))));
+                default -> throw new UnsupportedOperationException("Can not handle sort order " + sortOrder + ".");
             }
         }
         return orderingClause;
@@ -170,18 +166,13 @@ public class UniqueGroupingSearcher extends Searcher {
         GroupingExpression groupingClause = null;
         for (Sorting.FieldOrder fieldOrder : sortingSpec.fieldOrders()) {
             Sorting.Order sortOrder = fieldOrder.getSortOrder();
-            switch (sortOrder) {
-            case ASCENDING:
-            case UNDEFINED:
-                groupingClause = new AttributeValue(fieldOrder.getFieldName());
-                break;
-            case DESCENDING:
-                // To sort descending, just take the negative. This is the most common case
-                groupingClause = new NegFunction(new AttributeValue(fieldOrder.getFieldName()));
-                break;
-            default:
-                throw new UnsupportedOperationException("Can not handle sort order " + sortOrder + ".");
-            }
+            groupingClause = switch (sortOrder) {
+                case ASCENDING, UNDEFINED -> new AttributeValue(fieldOrder.getFieldName());
+                case DESCENDING ->
+                    // To sort descending, just take the negative. This is the most common case
+                        new NegFunction(new AttributeValue(fieldOrder.getFieldName()));
+                default -> throw new UnsupportedOperationException("Can not handle sort order " + sortOrder + ".");
+            };
         }
         return groupingClause;
     }

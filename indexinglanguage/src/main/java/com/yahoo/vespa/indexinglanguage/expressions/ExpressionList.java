@@ -4,6 +4,7 @@ package com.yahoo.vespa.indexinglanguage.expressions;
 import com.yahoo.document.DataType;
 import com.yahoo.document.DocumentType;
 import com.yahoo.document.Field;
+import com.yahoo.vespa.indexinglanguage.ExpressionConverter;
 import com.yahoo.vespa.objects.ObjectOperation;
 import com.yahoo.vespa.objects.ObjectPredicate;
 
@@ -11,6 +12,7 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * @author Simon Thoresen Hult
@@ -24,6 +26,10 @@ public abstract class ExpressionList<T extends Expression> extends CompositeExpr
         for (T exp : lst) {
             this.expressions.add(exp);
         }
+    }
+
+    protected List<Expression> convertChildList(ExpressionConverter converter) {
+        return asList().stream().map(converter::convert).filter(Objects::nonNull).toList();
     }
 
     @Override

@@ -55,9 +55,9 @@ template <bool interleaved_features>
 FieldIndex<interleaved_features>::~FieldIndex()
 {
     _postingListStore.disableFreeLists();
-    _postingListStore.disableElemHoldList();
+    _postingListStore.disable_entry_hold_list();
     _dict.disableFreeLists();
-    _dict.disableElemHoldList();
+    _dict.disable_entry_hold_list();
     // XXX: Kludge
     for (DictionaryTree::Iterator it = _dict.begin();
          it.valid(); ++it) {

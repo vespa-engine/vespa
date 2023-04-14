@@ -36,7 +36,7 @@ EntryRef
 FeatureStore::addFeatures(const uint8_t *src, uint64_t byteLen)
 {
     uint32_t pad = Aligner::pad(byteLen);
-    auto result = _store.rawAllocator<uint8_t>(_typeId).alloc(byteLen + pad, DECODE_SAFETY);
+    auto result = _store.rawAllocator<uint8_t>(_typeId).alloc((byteLen + pad) / buffer_array_size, DECODE_SAFETY_ENTRIES);
     uint8_t *dst = result.data;
     memcpy(dst, src, byteLen);
     dst += byteLen;
@@ -113,7 +113,7 @@ FeatureStore::add_features_guard_bytes()
 {
     uint32_t len = DECODE_SAFETY;
     uint32_t pad = Aligner::pad(len);
-    auto result = _store.rawAllocator<uint8_t>(_typeId).alloc(len + pad);
+    auto result = _store.rawAllocator<uint8_t>(_typeId).alloc((len + pad) / buffer_array_size);
     memset(result.data, 0, len + pad);
 }
 

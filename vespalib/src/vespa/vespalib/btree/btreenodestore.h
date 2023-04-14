@@ -29,16 +29,16 @@ class BTreeNodeBufferType : public datastore::BufferType<EntryType, FrozenBtreeN
     using ParentType = datastore::BufferType<EntryType, FrozenBtreeNode<EntryType>>;
     using ParentType::empty_entry;
     using ParentType::_arraySize;
-    using ElemCount = typename ParentType::ElemCount;
+    using EntryCount = typename ParentType::EntryCount;
     using CleanContext = typename ParentType::CleanContext;
 public:
-    BTreeNodeBufferType(uint32_t minArrays, uint32_t maxArrays)
-        : ParentType(1, minArrays, maxArrays)
+    BTreeNodeBufferType(uint32_t min_entries, uint32_t max_entries)
+        : ParentType(1, min_entries, max_entries)
     { }
 
-    void initializeReservedElements(void *buffer, ElemCount reservedElements) override;
+    void initialize_reserved_entries(void *buffer, EntryCount reserved_entries) override;
 
-    void cleanHold(void *buffer, size_t offset, ElemCount numElems, CleanContext cleanCtx) override;
+    void clean_hold(void *buffer, size_t offset, EntryCount num_entries, CleanContext cleanCtx) override;
 };
 
 
@@ -79,7 +79,7 @@ public:
     ~BTreeNodeStore();
 
     void disableFreeLists() { _store.disableFreeLists(); }
-    void disableElemHoldList() { _store.disableElemHoldList(); }
+    void disable_entry_hold_list() { _store.disable_entry_hold_list(); }
 
     static bool isValidRef(EntryRef ref) { return ref.valid(); }
 
@@ -152,8 +152,8 @@ public:
         return _store.freeListAllocator<InternalNodeType, BTreeNodeReclaimer>(NODETYPE_INTERNAL).alloc(rhs);
     }
 
-    void holdElem(EntryRef ref) {
-        _store.holdElem(ref, 1);
+    void hold_entry(EntryRef ref) {
+        _store.hold_entry(ref);
     }
 
     std::unique_ptr<vespalib::datastore::CompactingBuffers> start_compact_worst(const CompactionStrategy& compaction_strategy);

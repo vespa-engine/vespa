@@ -71,8 +71,9 @@ FreeListAllocator<EntryT, RefT, ReclaimerT>::allocArray(ConstArrayRef array)
     if (free_list.empty()) {
         return ParentType::allocArray(array);
     }
-    assert(free_list.array_size() == array.size());
     RefT ref = free_list.pop_entry();
+    auto& state = _store.getBufferState(ref.bufferId());
+    assert(state.getArraySize() == array.size());
     EntryT *buf = _store.template getEntryArray<EntryT>(ref, array.size());
     for (size_t i = 0; i < array.size(); ++i) {
         *(buf + i) = array[i];
@@ -82,14 +83,15 @@ FreeListAllocator<EntryT, RefT, ReclaimerT>::allocArray(ConstArrayRef array)
 
 template <typename EntryT, typename RefT, typename ReclaimerT>
 typename Allocator<EntryT, RefT>::HandleType
-FreeListAllocator<EntryT, RefT, ReclaimerT>::allocArray(size_t size)
+FreeListAllocator<EntryT, RefT, ReclaimerT>::allocArray()
 {
     auto& free_list = _store.getFreeList(_typeId);
     if (free_list.empty()) {
-        return ParentType::allocArray(size);
+        return ParentType::allocArray();
     }
-    assert(free_list.array_size() == size);
     RefT ref = free_list.pop_entry();
+    auto& state = _store.getBufferState(ref.bufferId());
+    auto size = state.getArraySize();
     EntryT *buf = _store.template getEntryArray<EntryT>(ref, size);
     return HandleType(ref, buf);
 }

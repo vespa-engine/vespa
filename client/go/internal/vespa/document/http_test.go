@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/vespa-engine/vespa/client/go/internal/mock"
+	"github.com/vespa-engine/vespa/client/go/internal/util"
 )
 
 type manualClock struct {
@@ -19,9 +20,41 @@ type manualClock struct {
 }
 
 func (c *manualClock) now() time.Time {
-	t := c.t
-	c.t = c.t.Add(c.tick)
-	return t
+	c.advance(c.tick)
+	return c.t
+}
+
+func (c *manualClock) advance(d time.Duration) { c.t = c.t.Add(d) }
+
+type mockHTTPClient struct {
+	id int
+	*mock.HTTPClient
+}
+
+func TestLeastBusyClient(t *testing.T) {
+	httpClient := mock.HTTPClient{}
+	var httpClients []util.HTTPClient
+	for i := 0; i < 4; i++ {
+		httpClients = append(httpClients, &mockHTTPClient{i, &httpClient})
+	}
+	client := NewClient(ClientOptions{}, httpClients)
+	client.httpClients[0].addInflight(1)
+	client.httpClients[1].addInflight(1)
+	assertLeastBusy(t, 2, client)
+	assertLeastBusy(t, 2, client)
+	assertLeastBusy(t, 3, client)
+	client.httpClients[3].addInflight(1)
+	client.httpClients[1].addInflight(-1)
+	assertLeastBusy(t, 1, client)
+}
+
+func assertLeastBusy(t *testing.T, id int, client *Client) {
+	t.Helper()
+	leastBusy := client.leastBusyClient()
+	got := leastBusy.client.(*mockHTTPClient).id
+	if got != id {
+		t.Errorf("got client.id=%d, want %d", got, id)
+	}
 }
 
 func TestClientSend(t *testing.T) {
@@ -34,19 +67,43 @@ func TestClientSend(t *testing.T) {
 	client := NewClient(ClientOptions{
 		BaseURL: "https://example.com:1337",
 		Timeout: time.Duration(5 * time.Second),
-	}, &httpClient)
+	}, []util.HTTPClient{&httpClient})
 	clock := manualClock{t: time.Now(), tick: time.Second}
 	client.now = clock.now
+	var stats Stats
 	for i, doc := range docs {
+		wantRes := Result{
+			Id: doc.Id,
+			Stats: Stats{
+				Requests:     1,
+				Responses:    1,
+				TotalLatency: time.Second,
+				MinLatency:   time.Second,
+				MaxLatency:   time.Second,
+				BytesSent:    25,
+			},
+		}
 		if i < 2 {
 			httpClient.NextResponseString(200, `{"message":"All good!"}`)
+			wantRes.Status = StatusSuccess
+			wantRes.HTTPStatus = 200
+			wantRes.Message = "All good!"
+			wantRes.Stats.ResponsesByCode = map[int]int64{200: 1}
+			wantRes.Stats.BytesRecv = 23
 		} else {
 			httpClient.NextResponseString(502, `{"message":"Good bye, cruel world!"}`)
+			wantRes.Status = StatusVespaFailure
+			wantRes.HTTPStatus = 502
+			wantRes.Message = "Good bye, cruel world!"
+			wantRes.Stats.ResponsesByCode = map[int]int64{502: 1}
+			wantRes.Stats.Errors = 1
+			wantRes.Stats.BytesRecv = 36
 		}
 		res := client.Send(doc)
-		if res.Err != nil {
-			t.Fatalf("got unexpected error %q", res.Err)
+		if !reflect.DeepEqual(res, wantRes) {
+			t.Fatalf("got result %+v, want %+v", res, wantRes)
 		}
+		stats.Add(res.Stats)
 		r := httpClient.LastRequest
 		if r.Method != http.MethodPut {
 			t.Errorf("got r.Method = %q, want %q", r.Method, http.MethodPut)
@@ -64,7 +121,6 @@ func TestClientSend(t *testing.T) {
 			t.Errorf("got r.Body = %q, want %q", string(body), string(wantBody))
 		}
 	}
-	stats := client.Stats()
 	want := Stats{
 		Requests:  3,
 		Responses: 3,
@@ -174,7 +230,7 @@ func TestClientFeedURL(t *testing.T) {
 	httpClient := mock.HTTPClient{}
 	client := NewClient(ClientOptions{
 		BaseURL: "https://example.com",
-	}, &httpClient)
+	}, []util.HTTPClient{&httpClient})
 	for i, tt := range tests {
 		moreParams := url.Values{}
 		moreParams.Set("foo", "ba/r")

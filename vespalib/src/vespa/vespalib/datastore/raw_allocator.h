@@ -25,10 +25,10 @@ protected:
 public:
     RawAllocator(DataStoreBase &store, uint32_t typeId);
 
-    HandleType alloc(size_t numElems) {
-        return alloc(numElems, 0);
+    HandleType alloc(size_t num_entries) {
+        return alloc(num_entries, 0);
     }
-    HandleType alloc(size_t numElems, size_t extraElems);
+    HandleType alloc(size_t num_entries, size_t extra_entries);
 };
 
 }

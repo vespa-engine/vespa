@@ -2,11 +2,15 @@
 package com.yahoo.vespa.indexinglanguage.expressions;
 
 import com.yahoo.document.DataType;
+import com.yahoo.vespa.indexinglanguage.ExpressionConverter;
 
 /**
  * @author Simon Thoresen Hult
  */
 public abstract class CompositeExpression extends Expression {
+
+    @Override
+    public abstract CompositeExpression convertChildren(ExpressionConverter converter);
 
     protected CompositeExpression(DataType inputType) {
         super(inputType);

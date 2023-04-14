@@ -4,11 +4,12 @@ package com.yahoo.vespa.hosted.controller.auditlog;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.jdisc.http.HttpHeaders;
 import com.yahoo.transaction.Mutex;
+import com.yahoo.vespa.hosted.controller.auditlog.AuditLog.Entry;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 
 import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.UncheckedIOException;
+import java.io.InputStream;
+import java.io.SequenceInputStream;
 import java.net.URI;
 import java.security.Principal;
 import java.time.Clock;
@@ -16,6 +17,9 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Objects;
 import java.util.Optional;
+
+import static com.yahoo.yolean.Exceptions.uncheck;
+import static java.util.Objects.requireNonNullElse;
 
 /**
  * This provides read and write operations for the audit log.
@@ -58,14 +62,8 @@ public class AuditLogger {
                                             "misconfiguration and should not happen");
         }
 
-        byte[] data = new byte[0];
-        try {
-            if (request.getData() != null) {
-                data = request.getData().readAllBytes();
-            }
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
+        InputStream requestData = requireNonNullElse(request.getData(), InputStream.nullInputStream());
+        byte[] data = uncheck(() -> requestData.readNBytes(Entry.maxDataLength));
 
         AuditLog.Entry.Client client = parseClient(request);
         Instant now = clock.instant();
@@ -80,7 +78,9 @@ public class AuditLogger {
         }
 
         // Create a new input stream to allow callers to consume request body
-        return new HttpRequest(request.getJDiscRequest(), new ByteArrayInputStream(data), request.propertyMap());
+        return new HttpRequest(request.getJDiscRequest(),
+                               new SequenceInputStream(new ByteArrayInputStream(data), requestData),
+                               request.propertyMap());
     }
 
     private static AuditLog.Entry.Client parseClient(HttpRequest request) {

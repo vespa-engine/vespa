@@ -57,7 +57,7 @@ public class Flags {
 
     public static final UnboundBooleanFlag DROP_CACHES = defineFeatureFlag(
             "drop-caches", false,
-            List.of("hakonhall", "baldersheim"), "2023-03-06", "2023-04-05",
+            List.of("hakonhall", "baldersheim"), "2023-03-06", "2023-06-05",
             "Drop caches on tenant hosts",
             "Takes effect on next tick",
             ZONE_ID,
@@ -77,6 +77,12 @@ public class Flags {
             List.of("baldersheim"), "2022-08-20", "2023-12-31",
             "Select query dispatch policy, valid values are adaptive, round-robin, best-of-random-2," +
                     " latency-amortized-over-requests, latency-amortized-over-time",
+            "Takes effect at redeployment (requires restart)",
+            ZONE_ID, APPLICATION_ID);
+    public static final UnboundStringFlag SUMMARY_DECODE_POLICY = defineStringFlag(
+            "summary-decode-policy", "eager",
+            List.of("baldersheim"), "2023-03-30", "2023-12-31",
+            "Select summary decoding policy, valid values are eager and on-demand/ondemand.",
             "Takes effect at redeployment (requires restart)",
             ZONE_ID, APPLICATION_ID);
 
@@ -303,7 +309,7 @@ public class Flags {
 
     public static final UnboundBooleanFlag ENABLE_PROXY_PROTOCOL_MIXED_MODE = defineFeatureFlag(
             "enable-proxy-protocol-mixed-mode", true,
-            List.of("tokle"), "2022-05-09", "2023-03-31",
+            List.of("tokle"), "2022-05-09", "2023-04-30",
             "Enable or disable proxy protocol mixed mode",
             "Takes effect on redeployment",
             APPLICATION_ID);
@@ -378,6 +384,19 @@ public class Flags {
             "Time to wait for all barrier members after getting response from quorum number of member",
             "Takes effect on next config server container start",
             ZONE_ID);
+
+    public static final UnboundBooleanFlag NODE_ADMIN_TENANT_SERVICE_REGISTRY = defineFeatureFlag(
+            "node-admin-tenant-service-registry", false,
+            List.of("olaa"), "2023-04-12", "2023-06-12",
+            "Whether AthenzCredentialsMaintainer in node-admin should create tenant service identity certificate",
+            "Takes effect on next tick",
+            ZONE_ID, HOSTNAME
+    );
+
+    public static final UnboundBooleanFlag ENABLE_CROWDSTRIKE = defineFeatureFlag(
+            "enable-crowdstrike", true, List.of("andreer"), "2023-04-13", "2023-06-13",
+            "Whether to enable CrowdStrike.", "Takes effect on next host admin tick",
+            HOSTNAME);
 
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,

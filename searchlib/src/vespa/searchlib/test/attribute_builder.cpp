@@ -7,6 +7,7 @@
 #include <vespa/searchlib/attribute/attributevector.h>
 #include <vespa/searchlib/attribute/floatbase.h>
 #include <vespa/searchlib/attribute/integerbase.h>
+#include <vespa/searchlib/attribute/single_raw_attribute.h>
 #include <vespa/searchlib/attribute/stringbase.h>
 #include <vespa/searchlib/tensor/tensor_attribute.h>
 #include <cassert>
@@ -154,6 +155,13 @@ AttributeBuilder&
 AttributeBuilder::fill_wset(std::initializer_list<WeightedStringList> values)
 {
     fill_wset_helper<StringAttribute, vespalib::string>(_attr, values);
+    return *this;
+}
+
+AttributeBuilder&
+AttributeBuilder::fill(std::initializer_list<vespalib::ConstArrayRef<char>> values)
+{
+    fill_helper<SingleRawAttribute, vespalib::ConstArrayRef<char>>(_attr, values);
     return *this;
 }
 

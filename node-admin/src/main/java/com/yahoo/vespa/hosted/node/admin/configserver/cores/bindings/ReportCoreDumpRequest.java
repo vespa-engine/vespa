@@ -14,6 +14,7 @@ import java.nio.file.FileSystem;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
@@ -31,6 +32,8 @@ public class ReportCoreDumpRequest {
 
     public List<String> backtrace;
     public List<String> backtrace_all_threads;
+    public Long created;
+    public String type;
     public String bin_path;
     public String coredump_path;
     public String cpu_microcode_version;
@@ -44,7 +47,9 @@ public class ReportCoreDumpRequest {
     /** Fill this from metadata and return this. */
     @JsonIgnore
     public ReportCoreDumpRequest fillFrom(CoreDumpMetadata metadata) {
+        metadata.type().ifPresent(type -> this.type = type.name());
         metadata.binPath().ifPresent(binPath -> this.bin_path = binPath);
+        metadata.created().ifPresent(created -> this.created = created.toEpochMilli());
         metadata.backtrace().ifPresent(backtrace -> this.backtrace = List.copyOf(backtrace));
         metadata.backtraceAllThreads().ifPresent(backtraceAllThreads -> this.backtrace_all_threads = List.copyOf(backtraceAllThreads));
         metadata.coredumpPath().ifPresent(coredumpPath -> this.coredump_path = coredumpPath.toString());
@@ -58,7 +63,9 @@ public class ReportCoreDumpRequest {
 
     @JsonIgnore
     public void populateMetadata(CoreDumpMetadata metadata, FileSystem fileSystem) {
+        if (type != null) metadata.setType(CoreDumpMetadata.Type.valueOf(type));
         if (bin_path != null) metadata.setBinPath(bin_path);
+        if (created != null) metadata.setCreated(Instant.ofEpochMilli(created));
         if (backtrace != null) metadata.setBacktrace(backtrace);
         if (backtrace_all_threads != null) metadata.setBacktraceAllThreads(backtrace_all_threads);
         if (coredump_path != null) metadata.setCoreDumpPath(fileSystem.getPath(coredump_path));

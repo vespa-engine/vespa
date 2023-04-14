@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.service.duper;
 
+import ai.vespa.http.DomainName;
 import com.yahoo.component.Version;
 import com.yahoo.config.model.api.ApplicationInfo;
 import com.yahoo.config.model.api.HostInfo;
@@ -9,7 +10,6 @@ import com.yahoo.config.model.api.ServiceInfo;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterSpec;
-import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.applicationmodel.ApplicationInstanceId;
 import com.yahoo.vespa.applicationmodel.ClusterId;
@@ -93,12 +93,12 @@ public abstract class InfraApplication implements InfraApplicationApi {
         return new TenantId(application.id().tenant().value());
     }
 
-    public ApplicationInfo makeApplicationInfo(List<HostName> hostnames) {
+    public ApplicationInfo makeApplicationInfo(List<DomainName> hostnames) {
         List<HostInfo> hostInfos = hostnames.stream().map(this::makeHostInfo).toList();
         return new ApplicationInfo(application.id(), 0, new HostsModel(hostInfos));
     }
 
-    private HostInfo makeHostInfo(HostName hostname) {
+    private HostInfo makeHostInfo(DomainName hostname) {
         PortInfo portInfo = new PortInfo(healthPort, StateV1HealthModel.HTTP_HEALTH_PORT_TAGS);
 
         Map<String, String> properties = new HashMap<>();
@@ -116,7 +116,7 @@ public abstract class InfraApplication implements InfraApplicationApi {
         return new HostInfo(hostname.value(), Collections.singletonList(serviceInfo));
     }
 
-    public ConfigId configIdFor(HostName hostname) {
+    public ConfigId configIdFor(DomainName hostname) {
         // Not necessarily unique, but service monitor doesn't require it to be unique.
         return new ConfigId(String.format("%s/%s", clusterSpecId.value(), prefixTo(hostname.value(), '.')));
     }

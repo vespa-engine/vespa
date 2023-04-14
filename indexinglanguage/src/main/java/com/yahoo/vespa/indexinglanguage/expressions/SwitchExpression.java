@@ -7,6 +7,7 @@ import com.yahoo.document.Field;
 import com.yahoo.document.datatypes.FieldValue;
 import com.yahoo.document.datatypes.StringFieldValue;
 import com.yahoo.text.StringUtilities;
+import com.yahoo.vespa.indexinglanguage.ExpressionConverter;
 import com.yahoo.vespa.objects.ObjectOperation;
 import com.yahoo.vespa.objects.ObjectPredicate;
 
@@ -30,6 +31,17 @@ public final class SwitchExpression extends CompositeExpression {
         super(null);
         this.defaultExp = defaultExp;
         this.cases.putAll(cases);
+    }
+
+    @Override
+    public SwitchExpression convertChildren(ExpressionConverter converter) {
+        var convertedCases = new LinkedHashMap<String, Expression>();
+        for (var entry : cases.entrySet()) {
+            var converted = converter.branch().convert(entry.getValue());
+            if (converted != null)
+                convertedCases.put(entry.getKey(), converted);
+        }
+        return new SwitchExpression(convertedCases, converter.branch().convert(defaultExp));
     }
 
     public boolean isEmpty() {

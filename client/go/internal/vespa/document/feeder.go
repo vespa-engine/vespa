@@ -17,23 +17,24 @@ const (
 	// StatusTransportFailure indicates that there was failure in the transport layer error while sending the document
 	// operation to Vespa.
 	StatusTransportFailure
-	// StatusError is a catch-all status for any other error that might occur.
-	StatusError
 )
 
 // Result represents the result of a feeding operation.
 type Result struct {
-	Id      Id
-	Status  Status
-	Message string
-	Trace   string
-	Err     error
+	Id         Id
+	Status     Status
+	HTTPStatus int
+	Message    string
+	Trace      string
+	Err        error
+	Stats      Stats
 }
 
-// Success returns whether status s is considered a success.
-func (s Status) Success() bool { return s == StatusSuccess || s == StatusConditionNotMet }
+func (r Result) Success() bool {
+	return r.Err == nil && (r.Status == StatusSuccess || r.Status == StatusConditionNotMet)
+}
 
-// Stats represents the summed statistics of a feeder.
+// Stats represents feeding operation statistics.
 type Stats struct {
 	Requests        int64
 	Responses       int64
@@ -46,8 +47,6 @@ type Stats struct {
 	BytesSent       int64
 	BytesRecv       int64
 }
-
-func NewStats() Stats { return Stats{ResponsesByCode: make(map[int]int64)} }
 
 // AvgLatency returns the average latency for a request.
 func (s Stats) AvgLatency() time.Duration {
@@ -69,6 +68,9 @@ func (s Stats) Successes() int64 {
 func (s *Stats) Add(other Stats) {
 	s.Requests += other.Requests
 	s.Responses += other.Responses
+	if s.ResponsesByCode == nil && other.ResponsesByCode != nil {
+		s.ResponsesByCode = make(map[int]int64)
+	}
 	for code, count := range other.ResponsesByCode {
 		_, ok := s.ResponsesByCode[code]
 		if ok {
@@ -91,8 +93,4 @@ func (s *Stats) Add(other Stats) {
 }
 
 // Feeder is the interface for a consumer of documents.
-type Feeder interface {
-	Send(Document) Result
-	Stats() Stats
-	AddStats(Stats)
-}
+type Feeder interface{ Send(Document) Result }

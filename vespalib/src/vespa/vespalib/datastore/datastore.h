@@ -27,7 +27,7 @@ template <typename RefT = EntryRefT<22> >
 class DataStoreT : public DataStoreBase
 {
 private:
-    void free_elem_internal(EntryRef ref, size_t numElems);
+    void free_entry_internal(EntryRef ref, size_t num_entries);
 
 public:
     using RefType = RefT;
@@ -38,12 +38,12 @@ public:
     ~DataStoreT() override;
 
     /**
-     * Hold element(s).
+     * Hold entries.
      */
-    void holdElem(EntryRef ref, size_t numElems) {
-        holdElem(ref, numElems, 0);
-    }
-    void holdElem(EntryRef ref, size_t numElems, size_t extraBytes);
+    void hold_entry(EntryRef ref) { hold_entries(ref, 1, 0); }
+    void hold_entry(EntryRef ref, size_t extra_bytes) { hold_entries(ref, 1, extra_bytes); }
+    void hold_entries(EntryRef ref, size_t num_entries) { hold_entries(ref, num_entries, 0); }
+    void hold_entries(EntryRef ref, size_t num_entries, size_t extraBytes);
 
     void reclaim_entry_refs(generation_t oldest_used_gen) override;
 
@@ -75,7 +75,7 @@ class DataStore : public DataStoreT<RefT>
 {
 protected:
     using ParentType = DataStoreT<RefT>;
-    using ParentType::ensureBufferCapacity;
+    using ParentType::ensure_buffer_capacity;
     using ParentType::getEntry;
     using ParentType::dropBuffers;
     using ParentType::init_primary_buffers;

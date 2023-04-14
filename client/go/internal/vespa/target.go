@@ -74,7 +74,7 @@ type Target interface {
 
 // TLSOptions configures the client certificate to use for cloud API or service requests.
 type TLSOptions struct {
-	KeyPair         *tls.Certificate
+	KeyPair         []tls.Certificate
 	CertificateFile string
 	PrivateKeyFile  string
 	AthenzDomain    string
@@ -93,7 +93,7 @@ type LogOptions struct {
 // Do sends request to this service. Any required authentication happens automatically.
 func (s *Service) Do(request *http.Request, timeout time.Duration) (*http.Response, error) {
 	if s.TLSOptions.AthenzDomain != "" && s.TLSOptions.KeyPair != nil {
-		accessToken, err := s.zts.AccessToken(s.TLSOptions.AthenzDomain, *s.TLSOptions.KeyPair)
+		accessToken, err := s.zts.AccessToken(s.TLSOptions.AthenzDomain, s.TLSOptions.KeyPair[0])
 		if err != nil {
 			return nil, err
 		}
@@ -104,6 +104,8 @@ func (s *Service) Do(request *http.Request, timeout time.Duration) (*http.Respon
 	}
 	return s.httpClient.Do(request, timeout)
 }
+
+func (s *Service) Client() util.HTTPClient { return s.httpClient }
 
 // Wait polls the health check of this service until it succeeds or timeout passes.
 func (s *Service) Wait(timeout time.Duration) (int, error) {
@@ -139,18 +141,18 @@ type requestFunc func() *http.Request
 
 // waitForOK queries url and returns its status code. If the url returns a non-200 status code, it is repeatedly queried
 // until timeout elapses.
-func waitForOK(client util.HTTPClient, url string, certificate *tls.Certificate, timeout time.Duration) (int, error) {
+func waitForOK(client util.HTTPClient, url string, certificates []tls.Certificate, timeout time.Duration) (int, error) {
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return 0, err
 	}
 	okFunc := func(status int, response []byte) (bool, error) { return isOK(status), nil }
-	return wait(client, okFunc, func() *http.Request { return req }, certificate, timeout)
+	return wait(client, okFunc, func() *http.Request { return req }, certificates, timeout)
 }
 
-func wait(client util.HTTPClient, fn responseFunc, reqFn requestFunc, certificate *tls.Certificate, timeout time.Duration) (int, error) {
-	if certificate != nil {
-		util.SetCertificate(client, []tls.Certificate{*certificate})
+func wait(client util.HTTPClient, fn responseFunc, reqFn requestFunc, certificates []tls.Certificate, timeout time.Duration) (int, error) {
+	if certificates != nil {
+		util.SetCertificates(client, certificates)
 	}
 	var (
 		httpErr    error

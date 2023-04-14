@@ -55,10 +55,10 @@ public class NodeMetricsDbMaintainer extends NodeRepositoryMaintainer {
 
             nodeRepository().metricsDb().gc();
 
-            return asSuccessFactor(attempts, failures.get());
+            return asSuccessFactorDeviation(attempts, failures.get());
         }
         catch (InterruptedException e) {
-            return asSuccessFactor(attempts, failures.get());
+            return asSuccessFactorDeviation(attempts, failures.get());
         }
     }
 

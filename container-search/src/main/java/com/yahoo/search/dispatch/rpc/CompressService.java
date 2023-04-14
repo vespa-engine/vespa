@@ -13,7 +13,7 @@ import com.yahoo.search.Query;
  */
 public class CompressService implements CompressPayload {
     /** The compression method which will be used with rpc dispatch. "lz4" (default) and "none" is supported. */
-    public final static CompoundName dispatchCompression = new CompoundName("dispatch.compression");
+    public static final CompoundName dispatchCompression = CompoundName.from("dispatch.compression");
     private final Compressor compressor = new Compressor(CompressionType.LZ4, 5, 0.95, 256);
 
 

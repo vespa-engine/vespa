@@ -35,15 +35,16 @@ public:
     void init_primary_buffers();
 
     /**
-     * Ensure that the primary buffer for the given type has a given number of elements free at end.
+     * Ensure that the primary buffer for the given type has a given number of entries free at end.
      * Switch to new buffer if current buffer is too full.
      *
-     * @param typeId      Registered data type for buffer.
-     * @param elemsNeeded Number of elements needed to be free.
+     * @param typeId         Registered data type for buffer.
+     * @param entries_needed Number of entries needed to be free.
      */
-    void ensureBufferCapacity(uint32_t typeId, size_t elemsNeeded) {
-        if (elemsNeeded > getBufferState(primary_buffer_id(typeId)).remaining()) [[unlikely]] {
-            switch_or_grow_primary_buffer(typeId, elemsNeeded);
+    void ensure_buffer_capacity(uint32_t typeId, size_t entries_needed) {
+        auto &state = getBufferState(primary_buffer_id(typeId));
+        if (entries_needed > state.remaining()) [[unlikely]] {
+            switch_or_grow_primary_buffer(typeId, entries_needed);
         }
     }
 
@@ -58,10 +59,10 @@ public:
      * Switch to a new primary buffer, typically in preparation for compaction
      * or when the current primary buffer no longer has free space.
      *
-     * @param typeId      Registered data type for buffer.
-     * @param elemsNeeded Number of elements needed to be free.
+     * @param typeId         Registered data type for buffer.
+     * @param entries_needed Number of entries needed to be free.
      */
-    void switch_primary_buffer(uint32_t typeId, size_t elemsNeeded);
+    void switch_primary_buffer(uint32_t typeId, size_t entries_needed);
 
     vespalib::MemoryUsage getMemoryUsage() const;
     vespalib::MemoryUsage getDynamicMemoryUsage() const;
@@ -127,7 +128,7 @@ public:
 
     /**
      * Enable free list management.
-     * This only works for fixed size elements.
+     * This only works for fixed size entries.
      */
     void enableFreeLists();
 
@@ -135,7 +136,7 @@ public:
      * Disable free list management.
      */
     void disableFreeLists();
-    void disableElemHoldList();
+    void disable_entry_hold_list();
 
     bool has_free_lists_enabled() const { return _freeListsEnabled; }
 
@@ -177,25 +178,25 @@ public:
     bool has_held_buffers() const noexcept { return _hold_buffer_count != 0u; }
 
     /**
-     * Trim elem hold list, freeing elements that no longer needs to be held.
+     * Trim entry hold list, freeing entries that no longer needs to be held.
      *
      * @param oldest_used_gen the oldest generation that is still used.
      */
     virtual void reclaim_entry_refs(generation_t oldest_used_gen) = 0;
 
 protected:
-    DataStoreBase(uint32_t numBuffers, uint32_t offset_bits, size_t maxArrays);
+    DataStoreBase(uint32_t numBuffers, uint32_t offset_bits, size_t max_entries);
     virtual ~DataStoreBase();
 
     void* getBuffer(uint32_t bufferId) { return _buffers[bufferId].get_buffer_relaxed(); }
 
     struct EntryRefHoldElem {
         EntryRef ref;
-        size_t   num_elems;
+        size_t   num_entries;
 
-        EntryRefHoldElem(EntryRef ref_in, size_t num_elems_in)
+        EntryRefHoldElem(EntryRef ref_in, size_t num_entries_in)
             : ref(ref_in),
-              num_elems(num_elems_in)
+              num_entries(num_entries_in)
         {}
     };
 
@@ -215,11 +216,11 @@ private:
     {
     public:
         BufferState::Alloc _buffer;
-        size_t             _usedElems;
+        size_t             _used_entries;
         BufferTypeBase    *_typeHandler;
         uint32_t           _typeId;
 
-        FallbackHold(size_t bytesSize, BufferState::Alloc &&buffer, size_t usedElems,
+        FallbackHold(size_t bytesSize, BufferState::Alloc &&buffer, size_t used_entries,
                      BufferTypeBase *typeHandler, uint32_t typeId);
 
         ~FallbackHold() override;
@@ -227,8 +228,8 @@ private:
 
     class BufferHold;
 
-    bool consider_grow_active_buffer(uint32_t type_id, size_t elems_needed);
-    void switch_or_grow_primary_buffer(uint32_t typeId, size_t elemsNeeded);
+    bool consider_grow_active_buffer(uint32_t type_id, size_t entries_needed);
+    void switch_or_grow_primary_buffer(uint32_t typeId, size_t entries_needed);
     void markCompacting(uint32_t bufferId);
     /**
      * Hold of buffer has ended.
@@ -238,14 +239,14 @@ private:
     /**
      * Switch buffer state to active for the given buffer.
      *
-     * @param bufferId    Id of buffer to be active.
-     * @param typeId      Registered data type for buffer.
-     * @param elemsNeeded Number of elements needed to be free.
+     * @param bufferId       Id of buffer to be active.
+     * @param typeId         Registered data type for buffer.
+     * @param entries_needed Number of entries needed to be free.
      */
-    void onActive(uint32_t bufferId, uint32_t typeId, size_t elemsNeeded);
+    void on_active(uint32_t bufferId, uint32_t typeId, size_t entries_needed);
 
     void inc_hold_buffer_count();
-    void fallbackResize(uint32_t bufferId, size_t elementsNeeded);
+    void fallback_resize(uint32_t bufferId, size_t entries_needed);
     uint32_t getFirstFreeBufferId();
 
     template<typename FuncType>
@@ -261,7 +262,7 @@ private:
     std::vector<BufferAndMeta>    _buffers; // For fast mapping with known types
 
     // Provides a mapping from typeId -> primary buffer for that type.
-    // The primary buffer is used for allocations of new element(s) if no available slots are found in free lists.
+    // The primary buffer is used for allocations of new entries if no available slots are found in free lists.
     std::vector<uint32_t>         _primary_buffer_ids;
 
     Stash                         _stash;
@@ -269,12 +270,12 @@ private:
     std::vector<FreeList>         _free_lists;
     mutable std::atomic<uint64_t> _compaction_count;
     vespalib::GenerationHolder    _genHolder;
-    const uint32_t                _maxArrays;
+    const uint32_t                _max_entries;
     std::atomic<uint32_t>         _bufferIdLimit;
     uint32_t                      _hold_buffer_count;
     const uint8_t                 _offset_bits;
     bool                          _freeListsEnabled;
-    bool                          _disableElemHoldList;
+    bool                          _disable_entry_hold_list;
     bool                          _initializing;
 };
 

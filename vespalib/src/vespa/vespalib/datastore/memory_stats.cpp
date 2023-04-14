@@ -5,10 +5,10 @@
 namespace vespalib::datastore {
 
 MemoryStats::MemoryStats()
-    : _allocElems(0),
-      _usedElems(0),
-      _deadElems(0),
-      _holdElems(0),
+    : _alloc_entries(0),
+      _used_entries(0),
+      _dead_entries(0),
+      _hold_entries(0),
       _allocBytes(0),
       _usedBytes(0),
       _deadBytes(0),
@@ -22,10 +22,10 @@ MemoryStats::MemoryStats()
 MemoryStats&
 MemoryStats::operator+=(const MemoryStats& rhs)
 {
-    _allocElems += rhs._allocElems;
-    _usedElems += rhs._usedElems;
-    _deadElems += rhs._deadElems;
-    _holdElems += rhs._holdElems;
+    _alloc_entries += rhs._alloc_entries;
+    _used_entries += rhs._used_entries;
+    _dead_entries += rhs._dead_entries;
+    _hold_entries += rhs._hold_entries;
     _allocBytes += rhs._allocBytes;
     _usedBytes += rhs._usedBytes;
     _deadBytes += rhs._deadBytes;

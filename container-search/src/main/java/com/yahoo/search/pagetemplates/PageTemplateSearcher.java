@@ -72,13 +72,13 @@ import java.util.Map;
 public class PageTemplateSearcher extends Searcher {
 
     /** The name of the query property containing the resolved candidate page template list */
-    public static final CompoundName pagePageTemplateListName=new CompoundName("page.PageTemplateList");
+    public static final CompoundName pagePageTemplateListName = CompoundName.from("page.PageTemplateList");
     /** The name of the query property containing a list of candidate pages to consider */
-    public static final CompoundName pageIdListName=new CompoundName("page.idList");
+    public static final CompoundName pageIdListName = CompoundName.from("page.idList");
     /** The name of the query property containing the page id to use */
-    public static final CompoundName pageIdName=new CompoundName("page.id");
+    public static final CompoundName pageIdName = CompoundName.from("page.id");
     /** The name of the query property containing the resolver id to use */
-    public static final CompoundName pageResolverName=new CompoundName("page.resolver");
+    public static final CompoundName pageResolverName = CompoundName.from("page.resolver");
 
     private final ResolverRegistry resolverRegistry;
 

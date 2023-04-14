@@ -30,13 +30,13 @@ public class Request extends FreezableClass implements Cloneable {
      * The name of the chain of Processor instances which will be invoked when
      * executing a request.
      */
-    public static final CompoundName CHAIN = new CompoundName("chain");
+    public static final CompoundName CHAIN = CompoundName.from("chain");
 
     /**
      * The name of the request property used in the processing framework to
      * store the incoming JDisc request.
      */
-    public static final CompoundName JDISC_REQUEST = new CompoundName("jdisc.request");
+    public static final CompoundName JDISC_REQUEST = CompoundName.from("jdisc.request");
 
     /**
      * Creates a request with no properties

@@ -1,10 +1,10 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.service.health;
 
+import ai.vespa.http.DomainName;
 import com.yahoo.config.model.api.ApplicationInfo;
 import com.yahoo.config.model.api.PortInfo;
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.HostName;
 import com.yahoo.vespa.applicationmodel.ClusterId;
 import com.yahoo.vespa.applicationmodel.ConfigId;
 import com.yahoo.vespa.applicationmodel.ServiceStatus;
@@ -18,7 +18,6 @@ import org.junit.Test;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.junit.Assert.assertEquals;
@@ -38,7 +37,7 @@ public class StateV1HealthModelTest {
     private final Duration requestTimeout = Duration.ofSeconds(2);
     private final Duration keepAlive = Duration.ofSeconds(3);
     private final ProxyHostApplication proxyHostApplication = new ProxyHostApplication();
-    private final List<HostName> hostnames = Stream.of("host1", "host2").map(HostName::of).toList();
+    private final List<DomainName> hostnames = Stream.of("host1", "host2").map(DomainName::of).toList();
     private final ApplicationInfo proxyHostApplicationInfo = proxyHostApplication.makeApplicationInfo(hostnames);
 
     private final StateV1HealthModel model = new StateV1HealthModel(healthStaleness, requestTimeout, keepAlive, executor);

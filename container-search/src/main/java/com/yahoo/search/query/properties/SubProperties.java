@@ -10,14 +10,16 @@ import java.util.Map;
  * A wrapper around a chain of property objects that prefixes all gets/sets with a given path
  *
  * @author Arne Bergene Fossaa
+ * @deprecated Unused and will go away on vespa 9
  */
+@Deprecated (forRemoval = true)
 public class SubProperties extends com.yahoo.search.query.Properties {
 
     final private CompoundName pathPrefix;
     final private Properties parent;
 
     public SubProperties(String pathPrefix, Properties properties) {
-        this(new CompoundName(pathPrefix),properties);
+        this(CompoundName.from(pathPrefix), properties);
     }
 
     public SubProperties(CompoundName pathPrefix, Properties properties) {

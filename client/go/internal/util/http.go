@@ -2,9 +2,10 @@
 package util
 
 import (
-	"bytes"
+	"context"
 	"crypto/tls"
 	"fmt"
+	"net"
 	"net/http"
 	"time"
 
@@ -14,6 +15,7 @@ import (
 
 type HTTPClient interface {
 	Do(request *http.Request, timeout time.Duration) (response *http.Response, error error)
+	Clone() HTTPClient
 }
 
 type defaultHTTPClient struct {
@@ -31,50 +33,57 @@ func (c *defaultHTTPClient) Do(request *http.Request, timeout time.Duration) (re
 	return c.client.Do(request)
 }
 
-func SetCertificate(client HTTPClient, certificates []tls.Certificate) {
+func (c *defaultHTTPClient) Clone() HTTPClient { return CreateClient(c.client.Timeout) }
+
+func SetCertificates(client HTTPClient, certificates []tls.Certificate) {
 	c, ok := client.(*defaultHTTPClient)
 	if !ok {
 		return
+	}
+	var tlsConfig *tls.Config = nil
+	if certificates != nil {
+		tlsConfig = &tls.Config{
+			Certificates: certificates,
+			MinVersion:   tls.VersionTLS12,
+		}
+	}
+	if tr, ok := c.client.Transport.(*http.Transport); ok {
+		tr.TLSClientConfig = tlsConfig
+	} else if tr, ok := c.client.Transport.(*http2.Transport); ok {
+		tr.TLSClientConfig = tlsConfig
+	} else {
+		panic(fmt.Sprintf("unknown transport type: %T", c.client.Transport))
+	}
+}
+
+func ForceHTTP2(client HTTPClient, certificates []tls.Certificate) {
+	c, ok := client.(*defaultHTTPClient)
+	if !ok {
+		return
+	}
+	var tlsConfig *tls.Config = nil
+	var dialFunc func(ctx context.Context, network, addr string, cfg *tls.Config) (net.Conn, error)
+	if certificates != nil {
+		tlsConfig = &tls.Config{
+			Certificates: certificates,
+			MinVersion:   tls.VersionTLS12,
+		}
+	} else {
+		// No certificate, so force H2C (HTTP/2 over clear-text) by using a non-TLS Dialer
+		dialer := net.Dialer{}
+		dialFunc = func(ctx context.Context, network, addr string, cfg *tls.Config) (net.Conn, error) {
+			return dialer.DialContext(ctx, network, addr)
+		}
 	}
 	// Use HTTP/2 transport explicitly. Connection reuse does not work properly when using regular http.Transport, even
 	// though it upgrades to HTTP/2 automatically
 	// https://github.com/golang/go/issues/16582
 	// https://github.com/golang/go/issues/22091
-	var transport *http2.Transport
-	if _, ok := c.client.Transport.(*http.Transport); ok {
-		transport = &http2.Transport{}
-		c.client.Transport = transport
-	} else if t, ok := c.client.Transport.(*http2.Transport); ok {
-		transport = t
-	} else {
-		panic(fmt.Sprintf("unknown transport type: %T", c.client.Transport))
+	c.client.Transport = &http2.Transport{
+		AllowHTTP:       true,
+		TLSClientConfig: tlsConfig,
+		DialTLSContext:  dialFunc,
 	}
-	if ok && !c.hasCertificates(transport.TLSClientConfig, certificates) {
-		transport.TLSClientConfig = &tls.Config{
-			Certificates: certificates,
-			MinVersion:   tls.VersionTLS12,
-		}
-	}
-}
-
-func (c *defaultHTTPClient) hasCertificates(tlsConfig *tls.Config, certs []tls.Certificate) bool {
-	if tlsConfig == nil {
-		return false
-	}
-	if len(tlsConfig.Certificates) != len(certs) {
-		return false
-	}
-	for i := 0; i < len(certs); i++ {
-		if len(tlsConfig.Certificates[i].Certificate) != len(certs[i].Certificate) {
-			return false
-		}
-		for j := 0; j < len(certs[i].Certificate); j++ {
-			if !bytes.Equal(tlsConfig.Certificates[i].Certificate[j], certs[i].Certificate[j]) {
-				return false
-			}
-		}
-	}
-	return true
 }
 
 func CreateClient(timeout time.Duration) HTTPClient {

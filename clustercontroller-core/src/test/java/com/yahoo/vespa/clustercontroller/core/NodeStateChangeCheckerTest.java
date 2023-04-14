@@ -507,7 +507,7 @@ public class NodeStateChangeCheckerTest {
     }
 
     private Result transitionToSameState(String oldDescription, String newDescription) {
-        return transitionToSameState(State.MAINTENANCE, oldDescription, newDescription);
+        return transitionToSameState(MAINTENANCE, oldDescription, newDescription);
     }
 
     @Test

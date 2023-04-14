@@ -21,8 +21,8 @@ import com.yahoo.yolean.chain.After;
  */
 @After(MinimalQueryInserter.EXTERNAL_YQL)
 public class WeakAndReplacementSearcher extends Searcher {
-    static final CompoundName WEAKAND_REPLACE = new CompoundName("weakAnd.replace");
-    static final CompoundName WAND_HITS = new CompoundName("wand.hits");
+    static final CompoundName WEAKAND_REPLACE = CompoundName.from("weakAnd.replace");
+    static final CompoundName WAND_HITS = CompoundName.from("wand.hits");
 
     @Override public Result search(Query query, Execution execution) {
         if (!query.properties().getBoolean(WEAKAND_REPLACE)) {

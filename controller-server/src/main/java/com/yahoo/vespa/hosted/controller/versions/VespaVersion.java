@@ -41,8 +41,8 @@ public record VespaVersion(Version version,
                                            .not().upgradingTo(statistics.version());
         InstanceList failingOnThis = all.matching(instance -> statistics.failingUpgrades().stream().anyMatch(run -> run.id().application().equals(instance)));
 
-        // 'broken' if any canary fails
-        if  ( ! failingOnThis.with(UpgradePolicy.canary).isEmpty())
+        // 'broken' if any canary fails, and no non-canary is upgraded
+        if  ( ! failingOnThis.with(UpgradePolicy.canary).isEmpty() && productionOnThis.not().with(UpgradePolicy.canary).isEmpty())
             return Confidence.broken;
 
         // 'broken' if 6 non-canary was broken by this, and that is at least 5% of all

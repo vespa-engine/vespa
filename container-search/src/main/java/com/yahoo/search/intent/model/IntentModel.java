@@ -5,7 +5,12 @@ import com.yahoo.search.Query;
 import com.yahoo.processing.request.CompoundName;
 import com.yahoo.text.interpretation.Interpretation;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * This is the root node of an intent model.
@@ -19,9 +24,9 @@ import java.util.*;
 public class IntentModel extends ParentNode<InterpretationNode> {
 
     /** The name of the property carrying the intent model string: intentModel */
-    public static final CompoundName intentModelStringName=new CompoundName("intentModel");
+    public static final CompoundName intentModelStringName = CompoundName.from("intentModel");
     /** The name of the property carrying the intent model object: IntentModel */
-    public static final CompoundName intentModelObjectName=new CompoundName("IntentModel");
+    public static final CompoundName intentModelObjectName = CompoundName.from("IntentModel");
 
     private static final InterpretationNodeComparator inodeComp = new InterpretationNodeComparator();
 
@@ -45,7 +50,7 @@ public class IntentModel extends ParentNode<InterpretationNode> {
 
     /** Sort interpretations by descending score order */
     public void sortChildren() {
-        Collections.sort(children(), inodeComp);
+        children().sort(inodeComp);
     }
 
     /**

@@ -30,7 +30,6 @@ public:
 
     bool empty() const { return _free_lists.empty(); }
     size_t size() const { return _free_lists.size(); }
-    uint32_t array_size() const { return _free_lists.back()->array_size(); }
     EntryRef pop_entry() {
         return _free_lists.back()->pop_entry();
     }

@@ -56,7 +56,7 @@ import static com.yahoo.container.protect.Error.UNSPECIFIED;
 @Before(PhaseNames.RAW_QUERY)
 public class StatisticsSearcher extends Searcher {
 
-    private static final CompoundName IGNORE_QUERY = new CompoundName("metrics.ignore");
+    private static final CompoundName IGNORE_QUERY = CompoundName.from("metrics.ignore");
     private static final String MAX_QUERY_LATENCY_METRIC = ContainerMetrics.MAX_QUERY_LATENCY.baseName();
     private static final String EMPTY_RESULTS_METRIC = ContainerMetrics.EMPTY_RESULTS.baseName();
     private static final String HITS_PER_QUERY_METRIC = ContainerMetrics.HITS_PER_QUERY.baseName();

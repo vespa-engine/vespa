@@ -1,11 +1,11 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.service.health;
 
+import ai.vespa.http.DomainName;
 import com.yahoo.config.model.api.ApplicationInfo;
 import com.yahoo.config.model.api.HostInfo;
 import com.yahoo.config.model.api.PortInfo;
 import com.yahoo.config.model.api.ServiceInfo;
-import com.yahoo.config.provision.HostName;
 import com.yahoo.vespa.service.executor.RunletExecutor;
 import com.yahoo.vespa.service.model.ApplicationInstanceGenerator;
 import com.yahoo.vespa.service.monitor.ServiceId;
@@ -45,7 +45,7 @@ public class StateV1HealthModel implements AutoCloseable {
         Map<ServiceId, HealthEndpoint> endpoints = new HashMap<>();
 
         for (HostInfo hostInfo : application.getModel().getHosts()) {
-            HostName hostname = HostName.of(hostInfo.getHostname());
+            DomainName hostname = DomainName.of(hostInfo.getHostname());
             for (ServiceInfo serviceInfo : hostInfo.getServices()) {
                 ServiceId serviceId = ApplicationInstanceGenerator.getServiceId(application, serviceInfo);
                 for (PortInfo portInfo : serviceInfo.getPorts()) {

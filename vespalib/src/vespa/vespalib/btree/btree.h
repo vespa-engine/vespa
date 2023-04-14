@@ -61,9 +61,9 @@ public:
     }
 
     void
-    disableElemHoldList()
+    disable_entry_hold_list()
     {
-        _alloc.disableElemHoldList();
+        _alloc.disable_entry_hold_list();
     }
 
     // Inherit doc from BTreeRoot

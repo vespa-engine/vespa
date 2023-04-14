@@ -20,7 +20,7 @@ template <typename ... Args>
 typename Allocator<EntryT, RefT>::HandleType
 Allocator<EntryT, RefT>::alloc(Args && ... args)
 {
-    _store.ensureBufferCapacity(_typeId, 1);
+    _store.ensure_buffer_capacity(_typeId, 1);
     uint32_t buffer_id = _store.primary_buffer_id(_typeId);
     BufferState &state = _store.getBufferState(buffer_id);
     assert(state.isActive());
@@ -36,39 +36,35 @@ template <typename EntryT, typename RefT>
 typename Allocator<EntryT, RefT>::HandleType
 Allocator<EntryT, RefT>::allocArray(ConstArrayRef array)
 {
-    _store.ensureBufferCapacity(_typeId, array.size());
+    _store.ensure_buffer_capacity(_typeId, 1);
     uint32_t buffer_id = _store.primary_buffer_id(_typeId);
     BufferState &state = _store.getBufferState(buffer_id);
     assert(state.isActive());
     assert(state.getArraySize() == array.size());
-    size_t oldBufferSize = state.size();
-    assert((oldBufferSize % array.size()) == 0);
-    RefT ref((oldBufferSize / array.size()), buffer_id);
+    RefT ref(state.size(), buffer_id);
     EntryT *buf = _store.template getEntryArray<EntryT>(ref, array.size());
     for (size_t i = 0; i < array.size(); ++i) {
         new (static_cast<void *>(buf + i)) EntryT(array[i]);
     }
-    state.stats().pushed_back(array.size());
+    state.stats().pushed_back(1);
     return HandleType(ref, buf);
 }
 
 template <typename EntryT, typename RefT>
 typename Allocator<EntryT, RefT>::HandleType
-Allocator<EntryT, RefT>::allocArray(size_t size)
+Allocator<EntryT, RefT>::allocArray()
 {
-    _store.ensureBufferCapacity(_typeId, size);
+    _store.ensure_buffer_capacity(_typeId, 1);
     uint32_t buffer_id = _store.primary_buffer_id(_typeId);
     BufferState &state = _store.getBufferState(buffer_id);
     assert(state.isActive());
-    assert(state.getArraySize() == size);
-    size_t oldBufferSize = state.size();
-    assert((oldBufferSize % size) == 0);
-    RefT ref((oldBufferSize / size), buffer_id);
-    EntryT *buf = _store.template getEntryArray<EntryT>(ref, size);
-    for (size_t i = 0; i < size; ++i) {
+    RefT ref(state.size(), buffer_id);
+    auto array_size = state.getArraySize();
+    EntryT *buf = _store.template getEntryArray<EntryT>(ref, array_size);
+    for (size_t i = 0; i < array_size; ++i) {
         new (static_cast<void *>(buf + i)) EntryT();
     }
-    state.stats().pushed_back(size);
+    state.stats().pushed_back(1);
     return HandleType(ref, buf);
 }
 

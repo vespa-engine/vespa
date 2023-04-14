@@ -6,19 +6,19 @@
 
 namespace vespalib::datastore {
 
-template <typename EntryT>
-SmallArrayBufferType<EntryT>::SmallArrayBufferType(uint32_t array_size, const AllocSpec& spec, std::shared_ptr<alloc::MemoryAllocator> memory_allocator) noexcept
-    : BufferType<EntryT>(array_size, spec.minArraysInBuffer, spec.maxArraysInBuffer, spec.numArraysForNewBuffer, spec.allocGrowFactor),
+template <typename ElemT>
+SmallArrayBufferType<ElemT>::SmallArrayBufferType(uint32_t array_size, const AllocSpec& spec, std::shared_ptr<alloc::MemoryAllocator> memory_allocator) noexcept
+    : BufferType<ElemT>(array_size, spec.min_entries_in_buffer, spec.max_entries_in_buffer, spec.num_entries_for_new_buffer, spec.allocGrowFactor),
       _memory_allocator(std::move(memory_allocator))
 {
 }
 
-template <typename EntryT>
-SmallArrayBufferType<EntryT>::~SmallArrayBufferType() = default;
+template <typename ElemT>
+SmallArrayBufferType<ElemT>::~SmallArrayBufferType() = default;
 
-template <typename EntryT>
+template <typename ElemT>
 const vespalib::alloc::MemoryAllocator*
-SmallArrayBufferType<EntryT>::get_memory_allocator() const
+SmallArrayBufferType<ElemT>::get_memory_allocator() const
 {
     return _memory_allocator.get();
 }

@@ -1,17 +1,16 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.service.duper;
 
+import ai.vespa.http.DomainName;
 import com.yahoo.config.model.api.ApplicationInfo;
 import com.yahoo.config.model.api.SuperModel;
 import com.yahoo.config.model.api.SuperModelListener;
 import com.yahoo.config.model.api.SuperModelProvider;
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.HostName;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 
 import java.util.List;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.yahoo.vespa.service.duper.DuperModelManager.configServerApplication;
@@ -64,7 +63,7 @@ public class DuperModelManagerTest {
         makeManager(false);
 
         ApplicationId id = proxyHostApplication.getApplicationId();
-        List<HostName> proxyHostHosts = Stream.of("proxyhost1", "proxyhost2").map(HostName::of).toList();
+        List<DomainName> proxyHostHosts = Stream.of("proxyhost1", "proxyhost2").map(DomainName::of).toList();
         verify(duperModel, times(0)).add(any());
         manager.infraApplicationActivated(id, proxyHostHosts);
         verify(duperModel, times(1)).add(any());
@@ -91,12 +90,12 @@ public class DuperModelManagerTest {
     }
 
     private void testEnabledConfigServerLikeInfraApplication(ApplicationId firstId, ApplicationId secondId) {
-        List<HostName> hostnames1 = Stream.of("node11", "node12").map(HostName::of).toList();
+        List<DomainName> hostnames1 = Stream.of("node11", "node12").map(DomainName::of).toList();
         manager.infraApplicationActivated(firstId, hostnames1);
         verify(duperModel, times(1)).add(any());
 
         // Adding the second config server like application will be ignored
-        List<HostName> hostnames2 = Stream.of("node21", "node22").map(HostName::of).toList();
+        List<DomainName> hostnames2 = Stream.of("node21", "node22").map(DomainName::of).toList();
         assertThrows(IllegalArgumentException.class, () -> manager.infraApplicationActivated(secondId, hostnames2));
         verify(duperModel, times(1)).add(any());
 

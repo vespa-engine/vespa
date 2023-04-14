@@ -10,7 +10,12 @@ import com.yahoo.search.result.Hit;
 import com.yahoo.search.result.HitGroup;
 import com.yahoo.search.searchchain.Execution;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Groups hits according to document type.
@@ -21,9 +26,9 @@ import java.util.*;
 public class MultipleResultsSearcher extends Searcher {
 
     private final static String propertyPrefix = "multipleresultsets.";
-    private static final CompoundName additionalHitsFactorName=new CompoundName(propertyPrefix + "additionalHitsFactor");
-    private static final CompoundName maxTimesRetrieveHeterogeneousHitsName=new CompoundName(propertyPrefix + "maxTimesRetrieveHeterogeneousHits");
-    private static final CompoundName numHits=new CompoundName(propertyPrefix + "numHits");
+    private static final CompoundName additionalHitsFactorName = CompoundName.from(propertyPrefix + "additionalHitsFactor");
+    private static final CompoundName maxTimesRetrieveHeterogeneousHitsName = CompoundName.from(propertyPrefix + "maxTimesRetrieveHeterogeneousHits");
+    private static final CompoundName numHits = CompoundName.from(propertyPrefix + "numHits");
 
     @Override
     public Result search(Query query, Execution e) {
@@ -162,9 +167,9 @@ public class MultipleResultsSearcher extends Searcher {
     // Assumes that field sddocname is available
     private static class PartitionedResult {
 
-        private Map<String, HitGroup> resultSets = new HashMap<>();
+        private final Map<String, HitGroup> resultSets = new HashMap<>();
 
-        private List<Hit> otherHits = new ArrayList<>();
+        private final List<Hit> otherHits = new ArrayList<>();
 
         PartitionedResult(List<DocumentGroup> documentGroups,Result result) throws ParameterException {
             for (DocumentGroup group : documentGroups)
@@ -174,9 +179,8 @@ public class MultipleResultsSearcher extends Searcher {
         }
 
         void addHits(Result result, boolean addOtherHits) {
-            Iterator<Hit> i = result.hits().iterator();
-            while (i.hasNext()) {
-                add(i.next(), addOtherHits);
+            for (Hit hit : result.hits()) {
+                add(hit, addOtherHits);
             }
         }
 

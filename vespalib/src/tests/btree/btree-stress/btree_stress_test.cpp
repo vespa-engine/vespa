@@ -53,7 +53,7 @@ public:
     ~RealIntStore();
     EntryRef add(uint32_t value) { return _store.addEntry(value); }
     AtomicEntryRef add_relaxed(uint32_t value) { return AtomicEntryRef(add(value)); }
-    void hold(const AtomicEntryRef& ref) { _store.holdElem(ref.load_relaxed(), 1); }
+    void hold(const AtomicEntryRef& ref) { _store.hold_entry(ref.load_relaxed()); }
     EntryRef move(EntryRef ref);
     void assign_generation(generation_t current_gen) { _store.assign_generation(current_gen); }
     void reclaim_memory(generation_t gen) { _store.reclaim_memory(gen); }

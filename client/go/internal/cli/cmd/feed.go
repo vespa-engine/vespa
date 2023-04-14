@@ -9,16 +9,20 @@ import (
 	"time"
 
 	"github.com/spf13/cobra"
+	"github.com/vespa-engine/vespa/client/go/internal/util"
+	"github.com/vespa-engine/vespa/client/go/internal/vespa"
 	"github.com/vespa-engine/vespa/client/go/internal/vespa/document"
 )
 
-func addFeedFlags(cmd *cobra.Command, concurrency *int) {
-	cmd.PersistentFlags().IntVarP(concurrency, "concurrency", "T", 64, "Number of goroutines to use for dispatching")
+func addFeedFlags(cmd *cobra.Command, verbose *bool, connections *int) {
+	cmd.PersistentFlags().IntVarP(connections, "connections", "N", 8, "The number of connections to use")
+	cmd.PersistentFlags().BoolVarP(verbose, "verbose", "v", false, "Verbose mode. Print errors as they happen")
 }
 
 func newFeedCmd(cli *CLI) *cobra.Command {
 	var (
-		concurrency int
+		verbose     bool
+		connections int
 	)
 	cmd := &cobra.Command{
 		Use:   "feed FILE",
@@ -26,39 +30,66 @@ func newFeedCmd(cli *CLI) *cobra.Command {
 		Long: `Feed documents to a Vespa cluster.
 
 A high performance feeding client. This can be used to feed large amounts of
-documents to Vespa cluster efficiently.
+documents to a Vespa cluster efficiently.
 
 The contents of FILE must be either a JSON array or JSON objects separated by
 newline (JSONL).
+
+If FILE is a single dash ('-'), documents will be read from standard input.
 `,
 		Example: `$ vespa feed documents.jsonl
+$ cat documents.jsonl | vespa feed -
 `,
 		Args:              cobra.ExactArgs(1),
 		DisableAutoGenTag: true,
 		SilenceUsage:      true,
 		Hidden:            true, // TODO(mpolden): Remove when ready for public use
 		RunE: func(cmd *cobra.Command, args []string) error {
-			f, err := os.Open(args[0])
-			if err != nil {
-				return err
+			var r io.Reader
+			if args[0] == "-" {
+				r = cli.Stdin
+			} else {
+				f, err := os.Open(args[0])
+				if err != nil {
+					return err
+				}
+				defer f.Close()
+				r = f
 			}
-			defer f.Close()
-			return feed(f, cli, concurrency)
+			return feed(r, cli, verbose, connections)
 		},
 	}
-	addFeedFlags(cmd, &concurrency)
+	addFeedFlags(cmd, &verbose, &connections)
 	return cmd
 }
 
-func feed(r io.Reader, cli *CLI, concurrency int) error {
+func createServiceClients(service *vespa.Service, n int) []util.HTTPClient {
+	clients := make([]util.HTTPClient, 0, n)
+	for i := 0; i < n; i++ {
+		client := service.Client().Clone()
+		util.ForceHTTP2(client, service.TLSOptions.KeyPair) // Feeding should always use HTTP/2
+		clients = append(clients, client)
+	}
+	return clients
+}
+
+func feed(r io.Reader, cli *CLI, verbose bool, connections int) error {
 	service, err := documentService(cli)
 	if err != nil {
 		return err
 	}
+	clients := createServiceClients(service, connections)
 	client := document.NewClient(document.ClientOptions{
 		BaseURL: service.BaseURL,
-	}, service)
-	dispatcher := document.NewDispatcher(client, concurrency)
+	}, clients)
+	throttler := document.NewThrottler(connections)
+	// TODO(mpolden): Make doom duration configurable
+	circuitBreaker := document.NewCircuitBreaker(10*time.Second, 0)
+	errWriter := io.Discard
+	if verbose {
+		errWriter = cli.Stderr
+	}
+	dispatcher := document.NewDispatcher(client, throttler, circuitBreaker, errWriter)
 	dec := document.NewDecoder(r)
 
 	start := cli.now()
@@ -78,7 +109,7 @@ func feed(r io.Reader, cli *CLI, concurrency int) error {
 		return err
 	}
 	elapsed := cli.now().Sub(start)
-	return writeSummaryJSON(cli.Stdout, client.Stats(), elapsed)
+	return writeSummaryJSON(cli.Stdout, dispatcher.Stats(), elapsed)
 }
 
 type number float32

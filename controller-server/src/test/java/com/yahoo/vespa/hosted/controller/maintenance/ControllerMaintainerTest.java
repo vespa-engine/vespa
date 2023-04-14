@@ -38,14 +38,14 @@ public class ControllerMaintainerTest {
     void records_metric() {
         TestControllerMaintainer maintainer = new TestControllerMaintainer(tester.controller(), SystemName.main, new AtomicInteger());
         maintainer.run();
-        assertEquals(1.0, successFactorMetric(), 0.0000001);
+        assertEquals(0.0, successFactorDeviationMetric(), 0.0000001);
         maintainer.success = false;
         maintainer.run();
         maintainer.run();
-        assertEquals(0.0, successFactorMetric(), 0.0000001);
+        assertEquals(1.0, successFactorDeviationMetric(), 0.0000001);
         maintainer.success = true;
         maintainer.run();
-        assertEquals(1.0, successFactorMetric(), 0.0000001);
+        assertEquals(0.0, successFactorDeviationMetric(), 0.0000001);
     }
 
     private long consecutiveFailuresMetric() {
@@ -54,10 +54,10 @@ public class ControllerMaintainerTest {
                                  "maintenance.consecutiveFailures").get().longValue();
     }
 
-    private long successFactorMetric() {
+    private long successFactorDeviationMetric() {
         MetricsMock metrics = (MetricsMock) tester.controller().metric();
         return metrics.getMetric((context) -> "TestControllerMaintainer".equals(context.get("job")),
-                                 "maintenance.successFactor").get().longValue();
+                                 "maintenance.successFactorDeviation").get().longValue();
     }
 
     private static class TestControllerMaintainer extends ControllerMaintainer {
@@ -73,7 +73,7 @@ public class ControllerMaintainerTest {
         @Override
         protected double maintain() {
             executions.incrementAndGet();
-            return success ? 1.0 : 0.0;
+            return success ? 0.0 : 1.0;
         }
 
     }

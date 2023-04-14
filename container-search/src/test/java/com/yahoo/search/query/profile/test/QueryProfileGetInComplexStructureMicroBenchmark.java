@@ -65,8 +65,8 @@ public class QueryProfileGetInComplexStructureMicroBenchmark {
         Map<String,String> dimensionValues=createDimensionValueMap();
         String prefix=generatePrefix();
         final int dotInterval=1000000;
-        final CompoundName found = new CompoundName(prefix + "a");
-        final CompoundName notFound = new CompoundName(prefix + "nonexisting");
+        final CompoundName found = CompoundName.from(prefix + "a");
+        final CompoundName notFound = CompoundName.from(prefix + "nonexisting");
         for (int i=0; i<count; i++) {
             if (count>dotInterval && i%(dotInterval)==0)
                 System.out.print(".");

@@ -161,7 +161,7 @@ func (t *cloudTarget) Service(name string, timeout time.Duration, runID int64, c
 
 	}
 	if service.TLSOptions.KeyPair != nil {
-		util.SetCertificate(service.httpClient, []tls.Certificate{*service.TLSOptions.KeyPair})
+		util.SetCertificates(service.httpClient, service.TLSOptions.KeyPair)
 	}
 	return service, nil
 }
@@ -175,7 +175,7 @@ func (t *cloudTarget) SignRequest(req *http.Request, keyID string) error {
 			return t.addAuth0AccessToken(req)
 		}
 	} else {
-		if t.apiOptions.TLSOptions.KeyPair.Certificate == nil {
+		if t.apiOptions.TLSOptions.KeyPair == nil {
 			return fmt.Errorf("system %s requires a certificate for authentication", t.apiOptions.System.Name)
 		}
 		return nil

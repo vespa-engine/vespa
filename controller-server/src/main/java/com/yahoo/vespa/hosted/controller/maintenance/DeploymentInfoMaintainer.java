@@ -38,7 +38,7 @@ public class DeploymentInfoMaintainer extends ControllerMaintainer {
                 }
             }
         }
-        return asSuccessFactor(attempts, failures);
+        return asSuccessFactorDeviation(attempts, failures);
     }
 
     private Collection<DeploymentId> instanceDeployments(Instance instance) {

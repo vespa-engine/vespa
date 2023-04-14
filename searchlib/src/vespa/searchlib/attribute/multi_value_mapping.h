@@ -12,18 +12,18 @@ namespace search::attribute {
 /**
  * Class for mapping from document id to an array of values.
  */
-template <typename EntryT, typename RefT = vespalib::datastore::EntryRefT<19> >
+template <typename ElemT, typename RefT = vespalib::datastore::EntryRefT<19> >
 class MultiValueMapping : public MultiValueMappingBase
 {
 public:
-    using MultiValueType = EntryT;
+    using MultiValueType = ElemT;
     using RefType = RefT;
-    using ReadView = MultiValueMappingReadView<EntryT, RefT>;
+    using ReadView = MultiValueMappingReadView<ElemT, RefT>;
 private:
-    using ArrayRef = vespalib::ArrayRef<EntryT>;
-    using ArrayStore = vespalib::datastore::ArrayStore<EntryT, RefT>;
+    using ArrayRef = vespalib::ArrayRef<ElemT>;
+    using ArrayStore = vespalib::datastore::ArrayStore<ElemT, RefT>;
     using generation_t = vespalib::GenerationHandler::generation_t;
-    using ConstArrayRef = vespalib::ConstArrayRef<EntryT>;
+    using ConstArrayRef = vespalib::ConstArrayRef<ElemT>;
 
     ArrayStore _store;
 public:
@@ -73,7 +73,7 @@ public:
     static vespalib::datastore::ArrayStoreConfig optimizedConfigForHugePage(size_t maxSmallArraySize,
                                                                   size_t hugePageSize,
                                                                   size_t smallPageSize,
-                                                                  size_t minNumArraysForNewBuffer,
+                                                                  size_t min_num_entries_for_new_buffer,
                                                                   float allocGrowFactor,
                                                                   bool enable_free_lists);
 };

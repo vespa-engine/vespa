@@ -59,7 +59,7 @@ public class AutoscalingMaintainer extends NodeRepositoryMaintainer {
                     failures++;
             }
         }
-        return asSuccessFactor(attempts, failures);
+        return asSuccessFactorDeviation(attempts, failures);
     }
 
     /**

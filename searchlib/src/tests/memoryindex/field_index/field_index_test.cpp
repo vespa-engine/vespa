@@ -1032,14 +1032,14 @@ TEST_F(BasicInverterTest, require_that_inversion_is_working)
 
     auto beforeStats = getFeatureStoreMemStats(_fic);
     LOG(info,
-        "Before feature compaction: allocElems=%zu, usedElems=%zu"
-        ", deadElems=%zu, holdElems=%zu"
+        "Before feature compaction: alloc_entries=%zu, used_entries=%zu"
+        ", dead_entries=%zu, hold_entries=%zu"
         ", freeBuffers=%u, activeBuffers=%u"
         ", holdBuffers=%u",
-        beforeStats._allocElems,
-        beforeStats._usedElems,
-        beforeStats._deadElems,
-        beforeStats._holdElems,
+        beforeStats._alloc_entries,
+        beforeStats._used_entries,
+        beforeStats._dead_entries,
+        beforeStats._hold_entries,
         beforeStats._freeBuffers,
         beforeStats._activeBuffers,
         beforeStats._holdBuffers);
@@ -1052,14 +1052,14 @@ TEST_F(BasicInverterTest, require_that_inversion_is_working)
     myCommit(_fic, *_pushThreads);
     auto duringStats = getFeatureStoreMemStats(_fic);
     LOG(info,
-        "During feature compaction: allocElems=%zu, usedElems=%zu"
-        ", deadElems=%zu, holdElems=%zu"
+        "During feature compaction: alloc_entries=%zu, used_entries=%zu"
+        ", dead_entries=%zu, hold_entries=%zu"
         ", freeBuffers=%u, activeBuffers=%u"
         ", holdBuffers=%u",
-        duringStats._allocElems,
-        duringStats._usedElems,
-        duringStats._deadElems,
-        duringStats._holdElems,
+        duringStats._alloc_entries,
+        duringStats._used_entries,
+        duringStats._dead_entries,
+        duringStats._hold_entries,
         duringStats._freeBuffers,
         duringStats._activeBuffers,
         duringStats._holdBuffers);
@@ -1067,14 +1067,14 @@ TEST_F(BasicInverterTest, require_that_inversion_is_working)
     myCommit(_fic, *_pushThreads);
     auto afterStats = getFeatureStoreMemStats(_fic);
     LOG(info,
-        "After feature compaction: allocElems=%zu, usedElems=%zu"
-        ", deadElems=%zu, holdElems=%zu"
+        "After feature compaction: alloc_entries=%zu, used_entries=%zu"
+        ", dead_entries=%zu, hold_entries=%zu"
         ", freeBuffers=%u, activeBuffers=%u"
         ", holdBuffers=%u",
-        afterStats._allocElems,
-        afterStats._usedElems,
-        afterStats._deadElems,
-        afterStats._holdElems,
+        afterStats._alloc_entries,
+        afterStats._used_entries,
+        afterStats._dead_entries,
+        afterStats._hold_entries,
         afterStats._freeBuffers,
         afterStats._activeBuffers,
         afterStats._holdBuffers);

@@ -12,8 +12,8 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.text.Utf8;
 import com.yahoo.vespa.config.ConfigKey;
-import com.yahoo.vespa.config.server.ConfigServerDB;
 import com.yahoo.vespa.config.server.ConfigActivationListener;
+import com.yahoo.vespa.config.server.ConfigServerDB;
 import com.yahoo.vespa.config.server.ServerCache;
 import com.yahoo.vespa.config.server.deploy.TenantFileSystemDirs;
 import com.yahoo.vespa.config.server.host.HostRegistry;
@@ -26,7 +26,6 @@ import com.yahoo.vespa.config.server.tenant.TestTenantRepository;
 import com.yahoo.vespa.curator.CompletionTimeoutException;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.mock.MockCurator;
-import com.yahoo.vespa.curator.mock.MockCuratorFramework;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.flags.PermanentFlags;
 import com.yahoo.vespa.model.VespaModel;
@@ -37,22 +36,17 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.xml.sax.SAXException;
-
 import java.io.File;
 import java.io.IOException;
 import java.time.Clock;
 import java.time.Duration;
 import java.util.Arrays;
-import java.util.Collection;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.IntStream;
 
-import static com.yahoo.vespa.config.server.application.TenantApplications.RemoveApplicationWaiter;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -195,7 +189,6 @@ public class TenantApplicationsTest {
     public static class MockConfigActivationListener implements ConfigActivationListener {
         public final AtomicInteger activated = new AtomicInteger(0);
         final AtomicInteger removed = new AtomicInteger(0);
-        final Map<String, Collection<String>> tenantHosts = new LinkedHashMap<>();
 
         @Override
         public void configActivated(ApplicationSet application) {
@@ -247,22 +240,22 @@ public class TenantApplicationsTest {
 
     @Test
     public void testRemoveApplication2of3Respond() throws InterruptedException {
-        Curator curator = new MockCurator3ConfigServers();
-        Thread t1 = setupWaiter(curator);
-        notifyCompletion(curator, 2);
+        TenantApplications applications = createZKAppRepo(new InMemoryFlagSource());
+        Thread t1 = setupWaiter(applications);
+        notifyCompletion(applications, 2);
         t1.join();
     }
 
     @Test
     public void testRemoveApplicationAllRespond() throws InterruptedException {
-        Curator curator = new MockCurator3ConfigServers();
-        Thread t1 = setupWaiter(curator);
-        notifyCompletion(curator, 3);
+        TenantApplications applications = createZKAppRepo(new InMemoryFlagSource());
+        Thread t1 = setupWaiter(applications);
+        notifyCompletion(applications, 3);
         t1.join();
     }
 
-    private Thread setupWaiter(Curator curator) {
-        Curator.CompletionWaiter waiter = RemoveApplicationWaiter.createAndInitialize(curator, createApplicationId(), "cfg1", Duration.ofSeconds(1));
+    private Thread setupWaiter(TenantApplications applications) {
+        Curator.CompletionWaiter waiter = applications.getRemoveApplicationWaiter(createApplicationId());
         Thread t1 = new Thread(() -> {
             try {
                 waiter.awaitCompletion(Duration.ofSeconds(120));
@@ -274,10 +267,10 @@ public class TenantApplicationsTest {
         return t1;
     }
 
-    private void notifyCompletion(Curator curator, int respondentCount) {
+    private void notifyCompletion(TenantApplications applications, int respondentCount) {
         IntStream.range(0, respondentCount)
-                 .forEach(i -> RemoveApplicationWaiter.create(curator, createApplicationId(), "cfg" + i, Duration.ofSeconds(1))
-                                                      .notifyCompletion());
+                 .forEach(i -> applications.createRemoveApplicationWaiter(createApplicationId())
+                                           .notifyCompletion());
     }
 
     private TenantApplications createZKAppRepo() {
@@ -330,14 +323,6 @@ public class TenantApplicationsTest {
                                       new TenantFileSystemDirs(new ConfigServerDB(configserverConfig), tenantName),
                                       Clock.systemUTC(),
                                       flagSource);
-    }
-
-    private static class MockCurator3ConfigServers extends Curator {
-
-        public MockCurator3ConfigServers() {
-            super("host1:2181,host2:2181,host3:2181", "host1:2181,host2:2181,host3:2181", (retryPolicy) -> new MockCuratorFramework(true, false));
-        }
-
     }
 
 }

@@ -77,7 +77,7 @@ public class DeploymentIssueReporter extends ControllerMaintainer {
                 fileDeploymentIssueFor(application);
             else
                 store(application.id(), null);
-        return 1.0;
+        return 0.0;
     }
 
     /**
@@ -87,24 +87,24 @@ public class DeploymentIssueReporter extends ControllerMaintainer {
      */
     private double maintainPlatformIssue(List<Application> applications) {
         if (controller().system() == SystemName.cd)
-            return 1.0;
+            return 0.0;
 
         VersionStatus versionStatus = controller().readVersionStatus();
         Version systemVersion = controller().systemVersion(versionStatus);
 
         if (versionStatus.version(systemVersion).confidence() != broken)
-            return 1.0;
+            return 0.0;
 
         DeploymentStatusList statuses = controller().jobController().deploymentStatuses(ApplicationList.from(applications));
         if (statuses.failingUpgradeToVersionSince(systemVersion, controller().clock().instant().minus(upgradeGracePeriod)).isEmpty())
-            return 1.0;
+            return 0.0;
 
         List<ApplicationId> failingApplications = statuses.failingUpgradeToVersionSince(systemVersion, controller().clock().instant())
                                                           .mapToList(status -> status.application().id().defaultInstance());
 
         // TODO jonmv: Send only tenant and application, here and elsewhere in this.
         deploymentIssues.fileUnlessOpen(failingApplications, systemVersion);
-        return 1.0;
+        return 0.0;
     }
 
     private Tenant ownerOf(TenantAndApplicationId applicationId) {
@@ -145,7 +145,7 @@ public class DeploymentIssueReporter extends ControllerMaintainer {
                 log.log(Level.INFO, "Exception caught when attempting to escalate issue with id '" + issueId + "': " + Exceptions.toMessageString(e));
             }
         }));
-        return asSuccessFactor(attempts.get(), failures.get());
+        return asSuccessFactorDeviation(attempts.get(), failures.get());
     }
 
     private void store(TenantAndApplicationId id, IssueId issueId) {

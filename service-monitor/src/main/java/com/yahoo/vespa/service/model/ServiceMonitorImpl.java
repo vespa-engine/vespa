@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.service.model;
 
+import ai.vespa.http.DomainName;
 import com.yahoo.component.annotation.Inject;
 import com.yahoo.config.model.api.ApplicationInfo;
 import com.yahoo.config.provision.ApplicationId;
@@ -68,7 +69,7 @@ public class ServiceMonitorImpl implements ServiceMonitor, AntiServiceMonitor {
 
     @Override
     public Optional<ApplicationInstanceReference> getApplicationInstanceReference(HostName hostname) {
-        return duperModelManager.getApplicationInfo(toConfigProvisionHostName(hostname))
+        return duperModelManager.getApplicationInfo(DomainName.of(hostname.s()))
                 .map(ApplicationInfo::getApplicationId)
                 .map(modelGenerator::toApplicationInstanceReference);
     }
@@ -113,11 +114,7 @@ public class ServiceMonitorImpl implements ServiceMonitor, AntiServiceMonitor {
     }
 
     private Optional<ApplicationInfo> getApplicationInfo(HostName hostname) {
-        return duperModelManager.getApplicationInfo(toConfigProvisionHostName(hostname));
+        return duperModelManager.getApplicationInfo(DomainName.of(hostname.s()));
     }
 
-    /** The duper model uses HostName from config.provision. */
-    private static com.yahoo.config.provision.HostName toConfigProvisionHostName(HostName hostname) {
-        return com.yahoo.config.provision.HostName.of(hostname.s());
-    }
 }

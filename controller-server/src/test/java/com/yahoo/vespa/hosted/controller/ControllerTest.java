@@ -22,6 +22,7 @@ import com.yahoo.path.Path;
 import com.yahoo.vespa.flags.PermanentFlags;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.DeploymentData;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
+import com.yahoo.vespa.hosted.controller.api.integration.billing.PlanRegistryMock;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.Quota;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateMetadata;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ContainerEndpoint;
@@ -54,7 +55,6 @@ import com.yahoo.vespa.hosted.controller.routing.rotation.RotationLock;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion.Confidence;
 import com.yahoo.vespa.hosted.rotation.config.RotationsConfig;
 import org.junit.jupiter.api.Test;
-
 import java.io.InputStream;
 import java.time.Duration;
 import java.time.Instant;
@@ -1429,9 +1429,14 @@ public class ControllerTest {
 
         // Deployment fails because zone is not configured in requested cloud account
         tester.controllerTester().flagSource().withListFlag(PermanentFlags.CLOUD_ACCOUNTS.id(), List.of(cloudAccount), String.class);
-        context.submit(applicationPackage)
-               .runJobExpectingFailure(systemTest, "Zone test.us-east-1 is not configured in requested cloud account '012345678912'")
-               .abortJob(stagingTest);
+        assertEquals("Zone test.us-east-1 is not configured in requested cloud account '012345678912'",
+                     assertThrows(IllegalArgumentException.class,
+                                  () -> context.submit(applicationPackage))
+                             .getMessage());
+        assertEquals("Zone dev.us-east-1 is not configured in requested cloud account '012345678912'",
+                     assertThrows(IllegalArgumentException.class,
+                                  () -> context.runJob(devUsEast1, applicationPackage))
+                             .getMessage());
 
         // Deployment to prod succeeds once all zones are configured in requested account
         tester.controllerTester().zoneRegistry().configureCloudAccount(CloudAccount.from(cloudAccount),
@@ -1506,6 +1511,21 @@ public class ControllerTest {
         assertTrue(tester.configServer().application(deployment.applicationId(), deployment.zoneId()).isPresent());
         tester.controller().applications().deactivate(deployment.applicationId(), deployment.zoneId());
         assertFalse(tester.configServer().application(deployment.applicationId(), deployment.zoneId()).isPresent());
+    }
+
+    @Test
+    void testVerifyPlan() {
+        DeploymentId deployment = tester.newDeploymentContext().deploymentIdIn(ZoneId.from("prod", "us-west-1"));
+        TenantName tenant = deployment.applicationId().tenant();
+
+        tester.controller().serviceRegistry().billingController().setPlan(tenant, PlanRegistryMock.nonePlan.id(), false, false);
+        try {
+            tester.controller().applications().verifyPlan(tenant);
+            fail("should have thrown an exception");
+        } catch (IllegalArgumentException e) {
+            assertEquals("Tenant 'tenant' has a plan 'None Plan - for testing purposes' with zero quota, not allowed to deploy. " +
+                                 "See https://cloud.vespa.ai/support", e.getMessage());
+        }
     }
 
 }

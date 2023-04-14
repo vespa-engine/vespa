@@ -29,7 +29,7 @@ public:
     HandleType alloc(Args && ... args);
 
     HandleType allocArray(ConstArrayRef array);
-    HandleType allocArray(size_t size);
+    HandleType allocArray();
 };
 
 }

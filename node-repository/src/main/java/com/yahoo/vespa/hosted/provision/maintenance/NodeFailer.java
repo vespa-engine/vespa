@@ -97,7 +97,7 @@ public class NodeFailer extends NodeRepositoryMaintainer {
         metric.set(throttlingActiveMetric, throttlingActive, null);
         metric.set(throttledHostFailuresMetric, throttledHostFailures, null);
         metric.set(throttledNodeFailuresMetric, throttledNodeFailures, null);
-        return asSuccessFactor(attempts, failures);
+        return asSuccessFactorDeviation(attempts, failures);
     }
 
     private Collection<FailingNode> findActiveFailingNodes() {

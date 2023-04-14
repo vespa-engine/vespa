@@ -12,7 +12,6 @@ import java.util.EnumSet;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.logging.Logger;
 
 /**
  * A maintainer is some job which runs at a fixed interval to perform some maintenance task in the controller.
@@ -26,13 +25,22 @@ public abstract class ControllerMaintainer extends Maintainer {
     /** The systems in which this maintainer should run */
     private final Set<SystemName> activeSystems;
 
+
     public ControllerMaintainer(Controller controller, Duration interval) {
-        this(controller, interval, null, EnumSet.allOf(SystemName.class));
+        this(controller, interval, null, EnumSet.allOf(SystemName.class), 1.0);
+    }
+
+    public ControllerMaintainer(Controller controller, Duration interval, Double successFactorBaseline) {
+        this(controller, interval, null, EnumSet.allOf(SystemName.class), successFactorBaseline);
     }
 
     public ControllerMaintainer(Controller controller, Duration interval, String name, Set<SystemName> activeSystems) {
+        this(controller, interval, name, activeSystems, 1.0);
+    }
+
+    public ControllerMaintainer(Controller controller, Duration interval, String name, Set<SystemName> activeSystems, Double successFactorBaseline) {
         super(name, interval, controller.clock(), controller.jobControl(),
-              new ControllerJobMetrics(controller.metric()), controller.curator().cluster(), true);
+              new ControllerJobMetrics(controller.metric()), controller.curator().cluster(), true, successFactorBaseline);
         this.controller = controller;
         this.activeSystems = Set.copyOf(Objects.requireNonNull(activeSystems));
     }
@@ -54,8 +62,8 @@ public abstract class ControllerMaintainer extends Maintainer {
         }
 
         @Override
-        public void completed(String job, double successFactor, long durationMs) {
-            metric.set("maintenance.successFactor", successFactor, metric.createContext(Map.of("job", job)));
+        public void completed(String job, double successFactorDeviation, long durationMs) {
+            metric.set("maintenance.successFactorDeviation", successFactorDeviation, metric.createContext(Map.of("job", job)));
             metric.set("maintenance.duration", durationMs, metric.createContext(Map.of("job", job)));
         }
 

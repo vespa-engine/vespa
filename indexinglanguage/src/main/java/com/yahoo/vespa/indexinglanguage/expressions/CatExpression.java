@@ -9,6 +9,7 @@ import com.yahoo.document.datatypes.Array;
 import com.yahoo.document.datatypes.FieldValue;
 import com.yahoo.document.datatypes.StringFieldValue;
 import com.yahoo.document.datatypes.WeightedSet;
+import com.yahoo.vespa.indexinglanguage.ExpressionConverter;
 
 import java.util.*;
 
@@ -23,6 +24,11 @@ public final class CatExpression extends ExpressionList<Expression> {
 
     public CatExpression(Collection<? extends Expression> lst) {
         super(lst, resolveInputType(lst));
+    }
+
+    @Override
+    public CatExpression convertChildren(ExpressionConverter converter) {
+        return new CatExpression(convertChildList(converter));
     }
 
     @Override

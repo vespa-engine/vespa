@@ -16,6 +16,7 @@ import org.mockito.ArgumentCaptor;
 
 import java.nio.file.FileSystem;
 import java.nio.file.Path;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
@@ -40,6 +41,8 @@ class CoresTest {
     private final HostName hostname = HostName.of("foo.com");
     private final String id = "5c987afb-347a-49ee-a0c5-bef56bbddeb0";
     private final CoreDumpMetadata metadata = new CoreDumpMetadata()
+            .setType(CoreDumpMetadata.Type.OOM)
+            .setCreated(Instant.ofEpochMilli(12345678))
             .setKernelVersion("4.18.0-372.26.1.el8_6.x86_64")
             .setCpuMicrocodeVersion("0x1000065")
             .setCoreDumpPath(fileSystem.getPath("/data/vespa/processed-coredumps/h7641a/5c987afb-347a-49ee-a0c5-bef56bbddeb0/dump_java.core.813"))
@@ -83,9 +86,11 @@ class CoresTest {
                        "bin_path": "/usr/bin/java",
                        "coredump_path": "/data/vespa/processed-coredumps/h7641a/5c987afb-347a-49ee-a0c5-bef56bbddeb0/dump_java.core.813",
                        "cpu_microcode_version": "0x1000065",
+                       "created": 12345678,
                        "decryption_token": "987def",
                        "docker_image": "us-central1-docker.pkg.dev/vespa-external-cd/vespa-cloud/vespa/cloud-tenant-rhel8:8.68.8",
                        "kernel_version": "4.18.0-372.26.1.el8_6.x86_64",
+                       "type": "OOM",
                        "vespa_version": "8.68.8"
                      }""",
                      JsonTestHelper.normalize(uncheck(() -> mapper.writeValueAsString(bodyJsonPojoCaptor.getValue()))));
@@ -128,9 +133,11 @@ class CoresTest {
                        "bin_path": "/usr/bin/java",
                        "coredump_path": "/data/vespa/processed-coredumps/h7641a/5c987afb-347a-49ee-a0c5-bef56bbddeb0/dump_java.core.813",
                        "cpu_microcode_version": "0x1000065",
+                       "created": 12345678,
                        "decryption_token": "987def",
                        "docker_image": "us-central1-docker.pkg.dev/vespa-external-cd/vespa-cloud/vespa/cloud-tenant-rhel8:8.68.8",
                        "kernel_version": "4.18.0-372.26.1.el8_6.x86_64",
+                       "type": "OOM",
                        "vespa_version": "8.68.8"
                      }""",
                      JsonTestHelper.normalize(new UnixPath(path).readUtf8File()));

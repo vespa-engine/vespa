@@ -24,7 +24,10 @@ import java.math.BigInteger;
 import java.nio.file.Files;
 import java.security.KeyPair;
 import java.security.cert.X509Certificate;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import static com.yahoo.security.KeyAlgorithm.EC;
@@ -62,12 +65,12 @@ public class ConfiguratorTest {
     }
 
     @Test
-    public void config_is_written_correctly_with_multiple_servers() {
+    public void config_is_written_correctly_with_multiple_servers() throws IOException {
         three_config_servers(false);
     }
 
     @Test
-    public void config_is_written_correctly_with_multiple_servers_on_hosted_vespa() {
+    public void config_is_written_correctly_with_multiple_servers_on_hosted_vespa() throws IOException {
         three_config_servers(true);
     }
 
@@ -117,12 +120,48 @@ public class ConfiguratorTest {
         assertEquals("" + max_buffer, System.getProperty(ZOOKEEPER_JUTE_MAX_BUFFER));
     }
 
-    private void three_config_servers(boolean hosted) {
+    @Test
+    public void test_parsing_config() throws IOException {
         ZookeeperServerConfig.Builder builder = new ZookeeperServerConfig.Builder();
         builder.zooKeeperConfigFile(cfgFile.getAbsolutePath());
         builder.server(newServer(0, "foo", 123, 321, false));
         builder.server(newServer(1, "bar", 234, 432, false));
         builder.server(newServer(2, "baz", 345, 543, true));
+        builder.myidFile(idFile.getAbsolutePath());
+        builder.myid(2);
+        builder.tickTime(1234);
+        builder.dynamicReconfiguration(true);
+        Configurator configurator = new Configurator(builder.build());
+        configurator.writeConfigToDisk(VespaTlsConfig.tlsDisabled());
+        validateIdFile(idFile, "2\n");
+
+        assertEquals(Files.readString(cfgFile.toPath()),
+                     Configurator.transformConfigToString(Configurator.parseConfigFile(cfgFile.toPath())));
+
+        Map<String, String> originalConfig = Configurator.parseConfigFile(cfgFile.toPath());
+        Map<String, String> staticConfig = new LinkedHashMap<>(originalConfig);
+        // Dynamic config says this is not a joiner.
+        Map<String, String> dynamicConfig = Configurator.getServerConfig(builder.build().server(), -1);
+        staticConfig.keySet().removeAll(dynamicConfig.keySet());
+        assertEquals(originalConfig.size(), dynamicConfig.size() + staticConfig.size());
+        File dynFile = folder.newFile();
+        staticConfig.put("dynamicConfigFile", dynFile.getAbsolutePath());
+        Files.write(cfgFile.toPath(), Configurator.transformConfigToString(staticConfig).getBytes());
+        Files.write(dynFile.toPath(), Configurator.transformConfigToString(dynamicConfig).getBytes());
+
+        configurator.writeConfigToDisk(VespaTlsConfig.tlsDisabled());
+        // Next generation of config should not mark this as a joiner either.
+        originalConfig.putAll(Configurator.getServerConfig(builder.build().server().subList(2, 3), -1));
+        assertEquals(Configurator.transformConfigToString(originalConfig),
+                     Files.readString(cfgFile.toPath()));
+    }
+
+    private void three_config_servers(boolean hosted) throws IOException {
+        ZookeeperServerConfig.Builder builder = new ZookeeperServerConfig.Builder();
+        builder.zooKeeperConfigFile(cfgFile.getAbsolutePath());
+        builder.server(newServer(0, "foo", 123, 321, false));
+        builder.server(newServer(1, "bar", 234, 432, true));
+        builder.server(newServer(2, "baz", 345, 543, false));
         builder.myidFile(idFile.getAbsolutePath());
         builder.myid(1);
         builder.tickTime(1234);
@@ -205,8 +244,8 @@ public class ConfiguratorTest {
         String expected =
                 commonConfig(hosted) +
                 "server.0=foo:321:123;2181\n" +
-                "server.1=bar:432:234;2181\n" +
-                "server.2=baz:543:345:observer;2181\n" +
+                "server.1=bar:432:234:observer;2181\n" +
+                "server.2=baz:543:345;2181\n" +
                 "sslQuorum=false\n" +
                 "portUnification=false\n" +
                 "client.portUnification=false\n";

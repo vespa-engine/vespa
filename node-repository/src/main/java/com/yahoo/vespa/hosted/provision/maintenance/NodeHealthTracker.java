@@ -77,7 +77,7 @@ public class NodeHealthTracker extends NodeRepositoryMaintainer {
                 failures.add(1);
             }
         });
-        return asSuccessFactor(attempts.get(), failures.get());
+        return asSuccessFactorDeviation(attempts.get(), failures.get());
     }
 
     /**
