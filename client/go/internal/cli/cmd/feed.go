@@ -19,7 +19,7 @@ func addFeedFlags(cmd *cobra.Command, options *feedOptions) {
 	cmd.PersistentFlags().StringVar(&options.route, "route", "", "Target Vespa route for feed operations")
 	cmd.PersistentFlags().IntVar(&options.traceLevel, "trace", 0, "The trace level of network traffic. 0 to disable")
 	cmd.PersistentFlags().IntVar(&options.timeoutSecs, "timeout", 0, "Feed operation timeout in seconds. 0 to disable")
-	cmd.PersistentFlags().BoolVar(&options.verbose, "verbose", false, "Verbose mode. Print errors as they happen")
+	cmd.PersistentFlags().BoolVar(&options.verbose, "verbose", false, "Verbose mode. Print successful operations in addition to errors")
 }
 
 type feedOptions struct {
@@ -97,11 +97,7 @@ func feed(r io.Reader, cli *CLI, options feedOptions) error {
 	throttler := document.NewThrottler(options.connections)
 	// TODO(mpolden): Make doom duration configurable
 	circuitBreaker := document.NewCircuitBreaker(10*time.Second, 0)
-	errWriter := io.Discard
-	if options.verbose {
-		errWriter = cli.Stderr
-	}
-	dispatcher := document.NewDispatcher(client, throttler, circuitBreaker, errWriter)
+	dispatcher := document.NewDispatcher(client, throttler, circuitBreaker, cli.Stderr, options.verbose)
 	dec := document.NewDecoder(r)
 
 	start := cli.now()
