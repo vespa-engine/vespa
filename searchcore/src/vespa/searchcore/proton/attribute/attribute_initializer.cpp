@@ -200,6 +200,7 @@ AttributeInitializer::loadAttribute(const AttributeVectorSP &attr,
             attr->getBaseFileName().c_str());
         return false;
     } else {
+        attr->set_reserved_doc_values();
         attr->commit(CommitParam(serialNum));
         EventLogger::loadAttributeComplete(_documentSubDbName, attr->getName(), timer.elapsed());
     }
