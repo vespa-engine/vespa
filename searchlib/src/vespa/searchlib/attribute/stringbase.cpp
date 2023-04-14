@@ -223,6 +223,10 @@ StringAttribute::onLoad(vespalib::Executor *)
         return false;
     }
 
+    getEnumStoreBase()->clear_default_value_ref();
+    commit();
+    incGeneration();
+
     setCreateSerialNum(attrReader.getCreateSerialNum());
 
     assert(attrReader.getEnumerated());

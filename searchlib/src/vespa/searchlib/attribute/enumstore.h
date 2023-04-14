@@ -55,6 +55,8 @@ private:
     ComparatorType         _comparator;
     ComparatorType         _foldedComparator;
     enumstore::EnumStoreCompactionSpec _compaction_spec;
+    EntryType              _default_value;
+    Index                  _default_value_ref;
 
     EnumStoreT(const EnumStoreT & rhs) = delete;
     EnumStoreT & operator=(const EnumStoreT & rhs) = delete;
@@ -201,6 +203,8 @@ public:
     bool find_index(EntryType value, Index& idx) const;
     void free_unused_values() override;
     void free_unused_values(IndexList to_remove);
+    void clear_default_value_ref() override;
+    void setup_default_value_ref() override;
     vespalib::MemoryUsage update_stat(const CompactionStrategy& compaction_strategy) override;
     std::unique_ptr<EnumIndexRemapper> consider_compact_values(const CompactionStrategy& compaction_strategy) override;
     std::unique_ptr<EnumIndexRemapper> compact_worst_values(CompactionSpec compaction_spec, const CompactionStrategy& compaction_strategy) override;

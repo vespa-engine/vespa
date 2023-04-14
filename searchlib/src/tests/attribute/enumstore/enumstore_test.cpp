@@ -188,7 +188,7 @@ TEST(EnumStoreTest, test_find_folded_on_string_enum_store)
     for (std::string &str : unique) {
         EnumIndex idx = ses.insert(str.c_str());
         indices.push_back(idx);
-        EXPECT_EQ(1u, ses.get_ref_count(idx));
+        EXPECT_EQ((str == "") ? 2u : 1u, ses.get_ref_count(idx));
     }
     ses.freeze_dictionary();
     for (uint32_t i = 0; i < indices.size(); ++i) {
@@ -239,7 +239,7 @@ StringEnumStoreTest::testInsert(bool hasPostings)
 
     for (const auto & i : unique) {
         EnumIndex idx = ses.insert(i.c_str());
-        EXPECT_EQ(1u, ses.get_ref_count(idx));
+        EXPECT_EQ((i == "") ? 2u : 1u, ses.get_ref_count(idx));
         indices.push_back(idx);
         EXPECT_TRUE(ses.find_index(i.c_str(), idx));
     }
@@ -253,7 +253,7 @@ StringEnumStoreTest::testInsert(bool hasPostings)
         EnumIndex idx;
         EXPECT_TRUE(ses.find_index(unique[i].c_str(), idx));
         EXPECT_TRUE(idx == indices[i]);
-        EXPECT_EQ(1u, ses.get_ref_count(indices[i]));
+        EXPECT_EQ((i == 0) ? 2u : 1u, ses.get_ref_count(indices[i]));
         const char* value = nullptr;
         EXPECT_TRUE(ses.get_value(indices[i], value));
         EXPECT_TRUE(strcmp(unique[i].c_str(), value) == 0);
@@ -354,16 +354,16 @@ TEST(EnumStoreTest, address_space_usage_is_reported)
     NumericEnumStore store(false, DictionaryConfig::Type::BTREE);
 
     using vespalib::AddressSpace;
-    EXPECT_EQ(AddressSpace(1, 1, ADDRESS_LIMIT), store.get_values_address_space_usage());
-    EnumIndex idx1 = store.insert(10);
     EXPECT_EQ(AddressSpace(2, 1, ADDRESS_LIMIT), store.get_values_address_space_usage());
-    EnumIndex idx2 = store.insert(20);
+    EnumIndex idx1 = store.insert(10);
     // Address limit increases because buffer is re-sized.
     EXPECT_EQ(AddressSpace(3, 1, ADDRESS_LIMIT + 2), store.get_values_address_space_usage());
+    EnumIndex idx2 = store.insert(20);
+    EXPECT_EQ(AddressSpace(4, 1, ADDRESS_LIMIT + 2), store.get_values_address_space_usage());
     dec_ref_count(store, idx1);
-    EXPECT_EQ(AddressSpace(3, 2, ADDRESS_LIMIT + 2), store.get_values_address_space_usage());
+    EXPECT_EQ(AddressSpace(4, 2, ADDRESS_LIMIT + 2), store.get_values_address_space_usage());
     dec_ref_count(store, idx2);
-    EXPECT_EQ(AddressSpace(3, 3, ADDRESS_LIMIT + 2), store.get_values_address_space_usage());
+    EXPECT_EQ(AddressSpace(4, 3, ADDRESS_LIMIT + 2), store.get_values_address_space_usage());
 }
 
 TEST(EnumStoreTest, provided_memory_allocator_is_used)
@@ -539,6 +539,7 @@ TYPED_TEST_SUITE(LoaderTest, LoaderTestTypes);
 
 TYPED_TEST(LoaderTest, store_is_instantiated_with_enumerated_loader)
 {
+    this->store.clear_default_value_ref();
     auto loader = this->store.make_enumerated_loader();
     this->load_values(loader);
     loader.allocate_enums_histogram();
@@ -554,6 +555,7 @@ TYPED_TEST(LoaderTest, store_is_instantiated_with_enumerated_loader)
 
 TYPED_TEST(LoaderTest, store_is_instantiated_with_enumerated_postings_loader)
 {
+    this->store.clear_default_value_ref();
     auto loader = this->store.make_enumerated_postings_loader();
     this->load_values(loader);
     this->set_ref_count(0, 1, loader);
@@ -568,6 +570,7 @@ TYPED_TEST(LoaderTest, store_is_instantiated_with_enumerated_postings_loader)
 
 TYPED_TEST(LoaderTest, store_is_instantiated_with_non_enumerated_loader)
 {
+    this->store.clear_default_value_ref();
     auto loader = this->store.make_non_enumerated_loader();
     using MyValues = LoaderTestValues<typename TypeParam::EnumStoreType>;
     loader.insert(MyValues::values[0], 100);
@@ -904,6 +907,7 @@ TYPED_TEST(EnumStoreDictionaryTest, compact_worst_works)
     }
     std::vector<int32_t> exp_values;
     std::vector<int32_t> values;
+    exp_values.push_back(std::numeric_limits<int32_t>::min());
     for (int32_t i = 0; i < 20; ++i) {
         exp_values.push_back(i);
     }

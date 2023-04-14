@@ -42,7 +42,6 @@ MultiValueStringAttributeT<B, M>::freezeEnumDictionary()
     this->getEnumStore().freeze_dictionary();
 }
 
-
 template <typename B, typename M>
 std::unique_ptr<attribute::SearchContext>
 MultiValueStringAttributeT<B, M>::getSearch(QueryTermSimpleUP qTerm,
