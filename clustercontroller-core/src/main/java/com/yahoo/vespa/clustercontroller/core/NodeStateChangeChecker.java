@@ -227,9 +227,19 @@ public class NodeStateChangeChecker {
             return allowSettingOfWantedState();
         }
 
-        var result = otherNodesHaveWantedState(nodeInfo, newDescription);
-        if (result.isPresent())
-            return result.get();
+        if (maxNumberOfGroupsAllowedToBeDown == -1) {
+            var otherGroupCheck = anotherNodeInAnotherGroupHasWantedState(nodeInfo);
+            if (!otherGroupCheck.settingWantedStateIsAllowed()) {
+                return otherGroupCheck;
+            }
+            if (anotherNodeInGroupAlreadyAllowed(nodeInfo, newDescription)) {
+                return allowSettingOfWantedState();
+            }
+        } else {
+            var result = otherNodesHaveWantedState(nodeInfo, newDescription);
+            if (result.isPresent())
+                return result.get();
+        }
 
         Result allNodesAreUpCheck = checkAllNodesAreUp(clusterState);
         if (!allNodesAreUpCheck.settingWantedStateIsAllowed()) {
@@ -244,6 +254,34 @@ public class NodeStateChangeChecker {
         }
 
         return allowSettingOfWantedState();
+    }
+
+    /**
+     * Returns a disallow-result if there is another node (in another group, if hierarchical)
+     * that has a wanted state != UP.  We disallow more than 1 suspended node/group at a time.
+     */
+    private Result anotherNodeInAnotherGroupHasWantedState(StorageNodeInfo nodeInfo) {
+        if (groupVisiting.isHierarchical()) {
+            SettableOptional<Result> anotherNodeHasWantedState = new SettableOptional<>();
+
+            groupVisiting.visit(group -> {
+                if (!groupContainsNode(group, nodeInfo.getNode())) {
+                    Result result = otherNodeInGroupHasWantedState(group);
+                    if (!result.settingWantedStateIsAllowed()) {
+                        anotherNodeHasWantedState.set(result);
+                        // Have found a node that is suspended, halt the visiting
+                        return false;
+                    }
+                }
+
+                return true;
+            });
+
+            return anotherNodeHasWantedState.asOptional().orElseGet(Result::allowSettingOfWantedState);
+        } else {
+            // Return a disallow-result if there is another node with a wanted state
+            return otherNodeHasWantedState(nodeInfo);
+        }
     }
 
     /**
