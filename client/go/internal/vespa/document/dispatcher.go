@@ -74,8 +74,6 @@ func NewDispatcher(feeder Feeder, throttler Throttler, breaker CircuitBreaker, o
 
 func (d *Dispatcher) sendDocumentIn(group *documentGroup) {
 	group.mu.Lock()
-	defer group.mu.Unlock()
-	defer d.releaseSlot()
 	first := group.ops.Front()
 	if first == nil {
 		panic("sending from empty document group, this should not happen")
@@ -84,6 +82,8 @@ func (d *Dispatcher) sendDocumentIn(group *documentGroup) {
 	op.attempts++
 	result := d.feeder.Send(op.document)
 	d.results <- result
+	d.releaseSlot()
+	group.mu.Unlock()
 	if d.shouldRetry(op, result) {
 		d.enqueue(op)
 	}
