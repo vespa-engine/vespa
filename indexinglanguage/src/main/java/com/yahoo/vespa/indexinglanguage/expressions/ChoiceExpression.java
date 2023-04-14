@@ -50,9 +50,9 @@ public class ChoiceExpression extends ExpressionList<Expression> {
     @Override
     protected void doVerify(VerificationContext context) {
         DataType input = context.getValueType();
+        context.setValueType(input);
         for (Expression exp : this)
             context.setValueType(input).execute(exp);
-        context.setValueType(input);
     }
 
     private static DataType resolveInputType(Collection<? extends Expression> list) {
