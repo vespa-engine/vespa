@@ -11,7 +11,7 @@ import java.util.Map;
  */
 public class VerificationContext implements FieldTypeAdapter, Cloneable {
 
-    private final Map<String, DataType> variables = new HashMap<String, DataType>();
+    private final Map<String, DataType> variables = new HashMap<>();
     private final FieldTypeAdapter adapter;
     private DataType value;
     private String outputField;

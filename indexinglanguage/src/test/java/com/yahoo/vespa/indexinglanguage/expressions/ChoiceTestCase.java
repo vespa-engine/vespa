@@ -2,7 +2,9 @@
 package com.yahoo.vespa.indexinglanguage.expressions;
 
 import com.yahoo.document.DataType;
+import com.yahoo.document.Document;
 import com.yahoo.document.Field;
+import com.yahoo.document.datatypes.LongFieldValue;
 import com.yahoo.document.datatypes.StringFieldValue;
 import com.yahoo.language.Linguistics;
 import com.yahoo.language.process.Embedder;
@@ -44,9 +46,32 @@ public class ChoiceTestCase {
             var adapter = new SimpleTestAdapter(new Field("foo", DataType.STRING), new Field("bar", DataType.STRING));
             adapter.setValue("foo", new StringFieldValue("foo1"));
             adapter.setValue("bar", new StringFieldValue("bar1"));
+            choice.verify(adapter);
             ExecutionContext context = new ExecutionContext(adapter);
             choice.execute(context);
             assertEquals("foo1", context.getValue().getWrappedValue());
+        }
+    }
+
+    @Test
+    public void testChoiceWithConstant() throws ParseException {
+        var choice = parse("input timestamp || 99999999L | attribute timestamp");
+
+        { // value is set
+            var adapter = new SimpleTestAdapter(new Field("timestamp", DataType.LONG));
+            choice.verify(adapter);
+            adapter.setValue("timestamp", new LongFieldValue(34));
+            ExecutionContext context = new ExecutionContext(adapter);
+            choice.execute(context);
+            assertEquals(34L, context.getValue().getWrappedValue());
+        }
+
+        { // fallback to default
+            var adapter = new SimpleTestAdapter(new Field("timestamp", DataType.LONG));
+            choice.verify(adapter);
+            ExecutionContext context = new ExecutionContext(adapter);
+            choice.execute(context);
+            assertEquals(99999999L, context.getValue().getWrappedValue());
         }
     }
 
