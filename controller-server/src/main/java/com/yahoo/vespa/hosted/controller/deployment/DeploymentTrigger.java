@@ -41,7 +41,6 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 import static java.util.Comparator.comparing;
-import static java.util.Comparator.comparingDouble;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.toMap;
 
@@ -334,10 +333,10 @@ public class DeploymentTrigger {
             Change change;
             switch (cancellation) {
                 case ALL: change = Change.empty(); break;
-                case VERSIONS: change = Change.empty().withPin(); break;
+                case VERSIONS: change = Change.empty().withPlatformPin(); break;
                 case PLATFORM: change = application.get().require(instanceId.instance()).change().withoutPlatform(); break;
                 case APPLICATION: change = application.get().require(instanceId.instance()).change().withoutApplication(); break;
-                case PIN: change = application.get().require(instanceId.instance()).change().withoutPin(); break;
+                case PIN: change = application.get().require(instanceId.instance()).change().withoutPlatformPin(); break;
                 default: throw new IllegalArgumentException("Unknown cancellation choice '" + cancellation + "'!");
             }
             applications().store(application.with(instanceId.instance(),

@@ -2059,7 +2059,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         if ( ! instance.change().isEmpty()) {
             instance.change().platform().ifPresent(version -> root.setString("platform", version.toString()));
             instance.change().revision().ifPresent(revision -> root.setString("application", revision.toString()));
-            root.setBool("pinned", instance.change().isPinned());
+            root.setBool("pinned", instance.change().isPlatformPinned());
         }
         return new SlimeJsonResponse(slime);
     }
@@ -2172,7 +2172,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
                                                                                       .collect(joining(", ")));
             Change change = Change.of(version);
             if (pin)
-                change = change.withPin();
+                change = change.withPlatformPin();
 
             controller.applications().deploymentTrigger().forceChange(id, change, isOperator(request));
             response.append("Triggered ").append(change).append(" for ").append(id);

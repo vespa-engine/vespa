@@ -297,7 +297,7 @@ public class ApplicationSerializer {
             object.setString(versionField, deploying.platform().get().toString());
         if (deploying.revision().isPresent())
             toSlime(deploying.revision().get(), object);
-        if (deploying.isPinned())
+        if (deploying.isPlatformPinned())
             object.setBool(pinnedField, true);
     }
 
@@ -524,7 +524,7 @@ public class ApplicationSerializer {
         if (object.field(applicationBuildNumberField).valid())
             change = change.with(revisionFromSlime(object, null));
         if (object.field(pinnedField).asBool())
-            change = change.withPin();
+            change = change.withPlatformPin();
         return change;
     }
 

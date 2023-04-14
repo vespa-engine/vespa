@@ -1239,13 +1239,13 @@ public class DeploymentTriggerTest {
         assertEquals(Change.empty(), app.instance().change());
 
         // Application is pinned to previous version, and downgrades to that. Tests are re-run.
-        tester.deploymentTrigger().forceChange(app.instanceId(), Change.of(version0).withPin());
+        tester.deploymentTrigger().forceChange(app.instanceId(), Change.of(version0).withPlatformPin());
         app.runJob(stagingTest).runJob(productionUsEast3);
         tester.clock().advance(Duration.ofMinutes(1));
         app.failDeployment(testUsEast3);
         tester.clock().advance(Duration.ofMinutes(11)); // Job is cooling down after consecutive failures.
         app.runJob(testUsEast3);
-        assertEquals(Change.empty().withPin(), app.instance().change());
+        assertEquals(Change.empty().withPlatformPin(), app.instance().change());
 
         // A new upgrade is attempted, and production tests wait for redeployment.
         tester.controllerTester().upgradeSystem(version2);
@@ -2234,7 +2234,7 @@ public class DeploymentTriggerTest {
                 .majorVersion(7)
                 .compileVersion(version1)
                 .build());
-        tester.deploymentTrigger().forceChange(app.instanceId(), app.instance().change().withPin());
+        tester.deploymentTrigger().forceChange(app.instanceId(), app.instance().change().withPlatformPin());
         app.deploy();
         assertEquals(version1, tester.jobs().last(app.instanceId(), productionUsEast3).get().versions().targetPlatform());
         assertEquals(version1, app.application().revisions().get(tester.jobs().last(app.instanceId(), productionUsEast3).get().versions().targetRevision()).compileVersion().get());
@@ -2251,7 +2251,7 @@ public class DeploymentTriggerTest {
         // The new app enters a platform block window, and is pinned to the old platform;
         // the new submission overrides both those settings, as the new revision should roll out regardless.
         tester.atMondayMorning();
-        tester.deploymentTrigger().forceChange(newApp.instanceId(), Change.empty().withPin());
+        tester.deploymentTrigger().forceChange(newApp.instanceId(), Change.empty().withPlatformPin());
         newApp.submit(new ApplicationPackageBuilder().compileVersion(version2)
                                                      .systemTest()
                                                      .blockChange(false, true, "mon", "0-23", "UTC")
@@ -2280,11 +2280,11 @@ public class DeploymentTriggerTest {
         tester.upgrader().run();
         assertEquals(Change.of(newRevision).with(version1), newApp.instance().change());
 
-        tester.deploymentTrigger().forceChange(newApp.instanceId(), newApp.instance().change().withPin());
+        tester.deploymentTrigger().forceChange(newApp.instanceId(), newApp.instance().change().withPlatformPin());
         tester.outstandingChangeDeployer().run();
-        assertEquals(Change.of(newRevision).with(version1).withPin(), newApp.instance().change());
+        assertEquals(Change.of(newRevision).with(version1).withPlatformPin(), newApp.instance().change());
         tester.upgrader().run();
-        assertEquals(Change.of(newRevision).with(version1).withPin(), newApp.instance().change());
+        assertEquals(Change.of(newRevision).with(version1).withPlatformPin(), newApp.instance().change());
 
         newApp.deploy();
         assertEquals(version1, tester.jobs().last(newApp.instanceId(), productionUsEast3).get().versions().targetPlatform());
@@ -2381,7 +2381,7 @@ public class DeploymentTriggerTest {
                                                                                   .build()))
                              .getMessage());
 
-        tester.deploymentTrigger().forceChange(app.instanceId(), Change.of(oldVersion).with(app.application().revisions().last().get().id()).withPin());
+        tester.deploymentTrigger().forceChange(app.instanceId(), Change.of(oldVersion).with(app.application().revisions().last().get().id()).withPlatformPin());
         app.deploy();
         assertEquals(oldVersion, app.deployment(ZoneId.from("prod", "us-east-3")).version());
 

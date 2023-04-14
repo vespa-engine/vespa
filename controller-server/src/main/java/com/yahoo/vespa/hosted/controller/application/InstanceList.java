@@ -125,7 +125,7 @@ public class InstanceList extends AbstractFilteringList<ApplicationId, InstanceL
 
     /** Returns the subset of instances which are not pinned to a certain Vespa version. */
     public InstanceList unpinned() {
-        return matching(id -> ! instance(id).change().isPinned());
+        return matching(id -> ! instance(id).change().isPlatformPinned());
     }
 
     /** Returns the subset of instances which are currently failing a job. */

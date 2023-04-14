@@ -229,7 +229,7 @@ public class DeploymentStatus {
                           .anyMatch(deployment -> ! compatibleWithCompileVersion.test(deployment.version()))) {
             for (Version platform : targetsForPolicy(versionStatus, systemVersion, application.deploymentSpec().requireInstance(instance).upgradePolicy()))
                 if (compatibleWithCompileVersion.test(platform))
-                    return change.withoutPin().with(platform);
+                    return change.withoutPlatformPin().with(platform);
         }
         return change;
     }
@@ -596,7 +596,7 @@ public class DeploymentStatus {
 
     /** Changes to deploy with the given job, possibly split in two steps. */
     private List<Change> changes(JobId job, StepStatus step, Change change) {
-        if (change.platform().isEmpty() || change.revision().isEmpty() || change.isPinned())
+        if (change.platform().isEmpty() || change.revision().isEmpty() || change.isPlatformPinned())
             return List.of(change);
 
         if (   step.completedAt(change.withoutApplication(), Optional.of(job)).isPresent()
@@ -1090,7 +1090,7 @@ public class DeploymentStatus {
                 /** Complete if deployment is on pinned version, and last successful deployment, or if given versions is strictly a downgrade, and this isn't forced by a pin. */
                 @Override
                 Optional<Instant> completedAt(Change change, Optional<JobId> dependent) {
-                    if (     change.isPinned()
+                    if (     change.isPlatformPinned()
                         &&   change.platform().isPresent()
                         && ! existingDeployment.map(Deployment::version).equals(change.platform()))
                         return Optional.empty();
