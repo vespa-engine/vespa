@@ -72,9 +72,13 @@ func NewClient(options ClientOptions, httpClients []util.HTTPClient) *Client {
 
 func (c *Client) queryParams() url.Values {
 	params := url.Values{}
-	if c.options.Timeout > 0 {
-		params.Set("timeout", strconv.FormatInt(c.options.Timeout.Milliseconds(), 10)+"ms")
+	timeout := c.options.Timeout
+	if timeout == 0 {
+		timeout = 200 * time.Second
+	} else {
+		timeout = timeout*11/10 + 1000
 	}
+	params.Set("timeout", strconv.FormatInt(timeout.Milliseconds(), 10)+"ms")
 	if c.options.Route != "" {
 		params.Set("route", c.options.Route)
 	}
