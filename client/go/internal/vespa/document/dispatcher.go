@@ -184,10 +184,11 @@ func (d *Dispatcher) enqueue(op documentOp) error {
 	if !d.started {
 		return fmt.Errorf("dispatcher is closed")
 	}
-	group, ok := d.inflight[op.document.Id.String()]
+	key := op.document.Id.String()
+	group, ok := d.inflight[key]
 	if !ok {
 		group = &documentGroup{}
-		d.inflight[op.document.Id.String()] = group
+		d.inflight[key] = group
 	}
 	d.mu.Unlock()
 	group.add(op, op.attempts > 0)
