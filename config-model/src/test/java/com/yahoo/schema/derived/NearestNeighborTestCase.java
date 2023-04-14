@@ -35,4 +35,9 @@ public class NearestNeighborTestCase extends AbstractExportingTestCase {
         }
     }
 
+    @Test
+    void test_nearest_neighbor_streaming() throws IOException, ParseException {
+        assertCorrectDeriving("nearestneighbor_streaming");
+    }
+
 }
