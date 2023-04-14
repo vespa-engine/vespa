@@ -307,8 +307,13 @@ class NodeAllocation {
     }
 
     /** Returns true if this allocation was already fulfilled and resulted in no new changes */
-    public boolean fulfilledAndNoChanges() {
+    boolean fulfilledAndNoChanges() {
         return fulfilled() && reservableNodes().isEmpty() && newNodes().isEmpty();
+    }
+
+    /** Returns true if this allocation has retired nodes */
+    boolean hasRetiredJustNow() {
+        return wasRetiredJustNow > 0;
     }
 
     /**
@@ -451,7 +456,7 @@ class NodeAllocation {
                          .toList();
     }
 
-    public String allocationFailureDetails() {
+    String allocationFailureDetails() {
         List<String> reasons = new ArrayList<>();
         if (rejectedDueToExclusivity > 0)
             reasons.add("host exclusivity constraints");

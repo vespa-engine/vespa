@@ -757,6 +757,23 @@ public class ProvisioningTest {
     }
 
     @Test
+    public void ignore_retirement_if_no_capacity() {
+        ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east"))).build();
+        tester.makeReadyHosts(3, defaultResources).activateTenantHosts();
+
+        ApplicationId application = ProvisioningTester.applicationId();
+        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("music")).vespaVersion("4.5.6").build();
+        tester.activate(application, tester.prepare(application, cluster, 3, 1, defaultResources));
+
+        // Mark the nodes as want to retire
+        NodeList nodes = tester.getNodes(application);
+        tester.patchNodes(nodes.asList(), node -> node.withWantToRetire(true, Agent.system, tester.clock().instant()));
+
+        tester.activate(application, tester.prepare(application, cluster, 3, 1, defaultResources));
+        assertEquals(3, tester.getNodes(application).state(Node.State.active).not().retired().size());
+    }
+
+    @Test
     public void highest_node_indexes_are_retired_first() {
         ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east"))).build();
 

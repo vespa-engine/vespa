@@ -34,7 +34,6 @@ import java.util.stream.Stream;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -171,7 +170,7 @@ public class VirtualNodeProvisioningTest {
     @Test
     public void indistinct_distribution_with_known_ready_nodes() {
         ProvisioningTester tester = new ProvisioningTester.Builder().build();
-        tester.makeReadyChildren(3, resources1);
+        tester.makeReadyChildren(4, resources1);
 
         int contentNodeCount = 3;
         int groups = 1;
@@ -191,13 +190,10 @@ public class VirtualNodeProvisioningTest {
         tester.makeReadyChildren(1, resources1, "parentHost1");
         tester.makeReadyChildren(2, resources1, "parentHost2");
 
-        NodeAllocationException expectedException = null;
-        try {
-            tester.prepare(applicationId, contentClusterSpec, contentNodeCount, groups, resources1);
-        } catch (NodeAllocationException e) {
-            expectedException = e;
-        }
-        assertNotNull(expectedException);
+        tester.activate(applicationId, tester.prepare(applicationId, contentClusterSpec, contentNodeCount, groups, resources1));
+        nodes = tester.getNodes(applicationId, Node.State.active);
+        assertEquals(4, nodes.size());
+        assertEquals(1, nodes.retired().size());
     }
 
     @Test
