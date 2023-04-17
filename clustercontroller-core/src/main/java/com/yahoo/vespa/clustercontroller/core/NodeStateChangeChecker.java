@@ -222,11 +222,6 @@ public class NodeStateChangeChecker {
                     oldWantedState.getState() + ": " + oldWantedState.getDescription());
         }
 
-        if (clusterState.getNodeState(nodeInfo.getNode()).getState() == DOWN) {
-            log.log(FINE, "node is DOWN, allow");
-            return allowSettingOfWantedState();
-        }
-
         if (maxNumberOfGroupsAllowedToBeDown == -1) {
             var otherGroupCheck = anotherNodeInAnotherGroupHasWantedState(nodeInfo);
             if (!otherGroupCheck.settingWantedStateIsAllowed()) {
@@ -239,6 +234,11 @@ public class NodeStateChangeChecker {
             var result = otherNodesHaveWantedState(nodeInfo, newDescription);
             if (result.isPresent())
                 return result.get();
+        }
+
+        if (clusterState.getNodeState(nodeInfo.getNode()).getState() == DOWN) {
+            log.log(FINE, "node is DOWN, allow");
+            return allowSettingOfWantedState();
         }
 
         Result allNodesAreUpCheck = checkAllNodesAreUp(clusterState);
@@ -296,39 +296,16 @@ public class NodeStateChangeChecker {
         Node node = nodeInfo.getNode();
 
         if (groupVisiting.isHierarchical()) {
-            if (maxNumberOfGroupsAllowedToBeDown <= 1) {
-                SettableOptional<Result> anotherNodeHasWantedState = new SettableOptional<>();
-                groupVisiting.visit(group -> {
-                    if (!groupContainsNode(group, node)) {
-                        Result result = otherNodeInGroupHasWantedState(group);
-                        if (!result.settingWantedStateIsAllowed()) {
-                            anotherNodeHasWantedState.set(result);
-                            // Have found a node that is suspended, halt the visiting
-                            return false;
-                        }
-                    }
-                    return true;
-                });
-                if (anotherNodeHasWantedState.isPresent()) {
-                    log.log(FINE, "anotherNodeHasWantedState: " + anotherNodeHasWantedState.get());
-                    return Optional.of(anotherNodeHasWantedState.get());
-                }
-                if (anotherNodeInGroupAlreadyAllowed(nodeInfo, newDescription)) {
-                    log.log(FINE, "anotherNodeInGroupAlreadyAllowed, allow");
-                    return Optional.of(allowSettingOfWantedState());
-                }
-            } else {
-                Set<Integer> groupsWithStorageNodesWantedStateNotUp = groupsWithStorageNodesWantedStateNotUp();
-                String disallowMessage = "At most nodes in " + maxNumberOfGroupsAllowedToBeDown + " groups can have wanted state";
-                if (groupsWithStorageNodesWantedStateNotUp.size() < maxNumberOfGroupsAllowedToBeDown)
-                    return Optional.of(allowSettingOfWantedState());
-                if (groupsWithStorageNodesWantedStateNotUp.size() > maxNumberOfGroupsAllowedToBeDown)
-                    return Optional.of(createDisallowed(disallowMessage));
-                if (aGroupContainsNode(groupsWithStorageNodesWantedStateNotUp, node))
-                    return Optional.of(allowSettingOfWantedState());
+            Set<Integer> groupsWithStorageNodesWantedStateNotUp = groupsWithUserWantedStateNotUp();
+            String disallowMessage = "At most nodes in " + maxNumberOfGroupsAllowedToBeDown + " groups can have wanted state";
+            if (groupsWithStorageNodesWantedStateNotUp.size() == 0)
+                return Optional.empty();
+            if (groupsWithStorageNodesWantedStateNotUp.size() < maxNumberOfGroupsAllowedToBeDown)
+                return Optional.of(allowSettingOfWantedState());
+            if (aGroupContainsNode(groupsWithStorageNodesWantedStateNotUp, node))
+                return Optional.of(allowSettingOfWantedState());
 
-                return Optional.of(createDisallowed(disallowMessage));
-            }
+            return Optional.of(createDisallowed(disallowMessage));
         } else {
             // Return a disallow-result if there is another node with a wanted state
             var otherNodeHasWantedState = otherNodeHasWantedState(nodeInfo);
@@ -527,9 +504,9 @@ public class NodeStateChangeChecker {
         return allowSettingOfWantedState();
     }
 
-    private Set<Integer> groupsWithStorageNodesWantedStateNotUp() {
-        return clusterInfo.getStorageNodeInfos().stream()
-                          .filter(sni -> !UP.equals(sni.getWantedState().getState()))
+    private Set<Integer> groupsWithUserWantedStateNotUp() {
+        return clusterInfo.getAllNodeInfos().stream()
+                          .filter(sni -> !UP.equals(sni.getUserWantedState().getState()))
                           .map(NodeInfo::getGroup)
                           .filter(Objects::nonNull)
                           .filter(Group::isLeafGroup)
