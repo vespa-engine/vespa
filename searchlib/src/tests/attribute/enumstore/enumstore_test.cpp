@@ -180,15 +180,35 @@ TYPED_TEST(FloatEnumStoreTest, numbers_can_be_inserted_and_retrieved)
     }
 }
 
+TEST(EnumStoreTest, default_value_is_present)
+{
+    StringEnumStore ses(false, DictionaryConfig::Type::BTREE);
+    using EntryType = StringEnumStore::EntryType;
+    EntryType undefined = attribute::getUndefined<EntryType>();
+    EnumIndex idx;
+    EXPECT_TRUE(ses.find_index(undefined, idx));
+    EXPECT_TRUE(idx.valid());
+    EXPECT_EQ(ses.get_default_value_ref().load_relaxed(), idx);
+    ses.clear_default_value_ref();
+    EXPECT_FALSE(ses.find_index(undefined, idx));
+    EXPECT_FALSE(ses.get_default_value_ref().load_relaxed().valid());
+    ses.setup_default_value_ref();
+    idx = EnumIndex();
+    EXPECT_TRUE(ses.find_index(undefined, idx));
+    EXPECT_TRUE(idx.valid());
+    EXPECT_EQ(ses.get_default_value_ref().load_relaxed(), idx);
+}
+
 TEST(EnumStoreTest, test_find_folded_on_string_enum_store)
 {
     StringEnumStore ses(false, DictionaryConfig::Type::BTREE);
+    using EntryType = StringEnumStore::EntryType;
     std::vector<EnumIndex> indices;
     std::vector<std::string> unique({"", "one", "two", "TWO", "Two", "three"});
     for (std::string &str : unique) {
         EnumIndex idx = ses.insert(str.c_str());
         indices.push_back(idx);
-        EXPECT_EQ((str == "") ? 2u : 1u, ses.get_ref_count(idx));
+        EXPECT_EQ((str == attribute::getUndefined<EntryType>()) ? 2u : 1u, ses.get_ref_count(idx));
     }
     ses.freeze_dictionary();
     for (uint32_t i = 0; i < indices.size(); ++i) {
@@ -233,13 +253,14 @@ void
 StringEnumStoreTest::testInsert(bool hasPostings)
 {
     StringEnumStore ses(hasPostings, DictionaryConfig::Type::BTREE);
+    using EntryType = StringEnumStore::EntryType;
 
     std::vector<EnumIndex> indices;
     std::vector<std::string> unique = {"", "add", "enumstore", "unique"};
 
     for (const auto & i : unique) {
         EnumIndex idx = ses.insert(i.c_str());
-        EXPECT_EQ((i == "") ? 2u : 1u, ses.get_ref_count(idx));
+        EXPECT_EQ((i == attribute::getUndefined<EntryType>()) ? 2u : 1u, ses.get_ref_count(idx));
         indices.push_back(idx);
         EXPECT_TRUE(ses.find_index(i.c_str(), idx));
     }
@@ -613,6 +634,7 @@ public:
     void test_normalize_posting_lists(bool use_filter, bool one_filter);
     void test_foreach_posting_list(bool one_filter);
     static EntryRef fake_pidx() { return EntryRef(42); }
+    EnumIndex check_default_value_ref() const noexcept;
 };
 
 template <typename EnumStoreTypeAndDictionaryType>
@@ -778,6 +800,16 @@ EnumStoreDictionaryTest<EnumStoreTypeAndDictionaryType>::test_foreach_posting_li
     clear_sample_values(large_population);
 }
 
+template <typename EnumStoreTypeAndDictionaryType>
+EnumIndex
+EnumStoreDictionaryTest<EnumStoreTypeAndDictionaryType>::check_default_value_ref() const noexcept
+{
+    EnumIndex default_value_ref = store.get_default_value_ref().load_relaxed();
+    EXPECT_TRUE(default_value_ref.valid());
+    EXPECT_EQ(attribute::getUndefined<EntryType>(), store.get_value(default_value_ref));
+    return default_value_ref;
+}
+
 using EnumStoreDictionaryTestTypes = ::testing::Types<BTreeNumericEnumStore, HybridNumericEnumStore, HashNumericEnumStore>;
 TYPED_TEST_SUITE(EnumStoreDictionaryTest, EnumStoreDictionaryTestTypes);
 
@@ -878,6 +910,7 @@ TYPED_TEST(EnumStoreDictionaryTest, compact_worst_works)
     updater.commit();
     generation_t gen = 3;
     inc_generation(gen, this->store);
+    // Compact dictionary
     auto& dict = this->store.get_dictionary();
     if (dict.get_has_btree_dictionary()) {
         EXPECT_LT(CompactionStrategy::DEAD_BYTES_SLACK, dict.get_btree_memory_usage().deadBytes());
@@ -905,6 +938,28 @@ TYPED_TEST(EnumStoreDictionaryTest, compact_worst_works)
     if (dict.get_has_hash_dictionary()) {
         EXPECT_GT(CompactionStrategy::DEAD_BYTES_SLACK, dict.get_hash_memory_usage().deadBytes());
     }
+    auto old_default_value_ref = this->check_default_value_ref();
+    // Compact values
+    EXPECT_LT(CompactionStrategy::DEAD_BYTES_SLACK, this->store.get_values_memory_usage().deadBytes());
+    compaction_strategy = CompactionStrategy::make_compact_all_active_buffers_strategy();
+    int compact_values_count = 0;
+    for (uint32_t i = 0; i < 2; ++i) {
+        this->store.update_stat(compaction_strategy);
+        auto remapper = this->store.consider_compact_values(compaction_strategy);
+        if (remapper) {
+            remapper->done();
+            ++compact_values_count;
+        } else {
+            break;
+        }
+        EXPECT_FALSE(this->store.consider_compact_values(compaction_strategy));
+        inc_generation(gen, this->store);
+    }
+    EXPECT_EQ(1, compact_values_count);
+    auto new_default_value_ref = this->check_default_value_ref();
+    EXPECT_NE(old_default_value_ref, new_default_value_ref);
+    EXPECT_GT(CompactionStrategy::DEAD_BYTES_SLACK, this->store.get_values_memory_usage().deadBytes());
+
     std::vector<int32_t> exp_values;
     std::vector<int32_t> values;
     exp_values.push_back(std::numeric_limits<int32_t>::min());

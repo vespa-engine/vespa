@@ -83,9 +83,6 @@ EnumStoreT<EntryT>::EnumStoreT(bool has_postings, const DictionaryConfig& dict_c
       _default_value(attribute::getUndefined<EntryT>()),
       _default_value_ref()
 {
-    if constexpr (std::is_same_v<const char *, EntryT>) {
-        _default_value = "";
-    }
     _store.set_dictionary(make_enum_store_dictionary(*this, has_postings, dict_cfg,
                                                      allocate_comparator(),
                                                      allocate_optionally_folded_comparator(is_folded())));
@@ -227,10 +224,11 @@ template <typename EntryT>
 void
 EnumStoreT<EntryT>::clear_default_value_ref()
 {
-    if (_default_value_ref.valid()) {
+    auto ref = _default_value_ref.load_relaxed();
+    if (ref.valid()) {
         auto updater = make_batch_updater();
-        updater.dec_ref_count(_default_value_ref);
-        _default_value_ref = Index();
+        updater.dec_ref_count(ref);
+        _default_value_ref.store_relaxed(Index());
         updater.commit();
     }
 }
@@ -239,10 +237,11 @@ template <typename EntryT>
 void
 EnumStoreT<EntryT>::setup_default_value_ref()
 {
-    if (!_default_value_ref.valid()) {
+    if (!_default_value_ref.load_relaxed().valid()) {
         auto updater = make_batch_updater();
-        _default_value_ref = updater.insert(_default_value);
-        updater.inc_ref_count(_default_value_ref);
+        auto ref = updater.insert(_default_value);
+        updater.inc_ref_count(ref);
+        _default_value_ref.store_relaxed(ref);
         updater.commit();
     }
 }
@@ -269,9 +268,10 @@ std::unique_ptr<IEnumStore::EnumIndexRemapper>
 EnumStoreT<EntryT>::compact_worst_values(CompactionSpec compaction_spec, const CompactionStrategy& compaction_strategy)
 {
     auto remapper = _store.compact_worst(compaction_spec, compaction_strategy);
-    if (remapper && _default_value_ref.valid()) {
-        if (remapper->get_entry_ref_filter().has(_default_value_ref)) {
-            _default_value_ref = remapper->remap(_default_value_ref);
+    if (remapper) {
+        auto ref = _default_value_ref.load_relaxed();
+        if (ref.valid() && remapper->get_entry_ref_filter().has(ref)) {
+            _default_value_ref.store_release(remapper->remap(ref));
         }
     }
     return remapper;
