@@ -80,7 +80,7 @@ private:
     std::unique_ptr<EntryComparator> allocate_optionally_folded_comparator(bool folded) const;
     ComparatorType make_optionally_folded_comparator(bool folded) const;
 public:
-    EnumStoreT(bool has_postings, const search::DictionaryConfig& dict_cfg, std::shared_ptr<vespalib::alloc::MemoryAllocator> memory_allocator);
+    EnumStoreT(bool has_postings, const search::DictionaryConfig& dict_cfg, std::shared_ptr<vespalib::alloc::MemoryAllocator> memory_allocator, EntryType default_value);
     EnumStoreT(bool has_postings, const search::DictionaryConfig & dict_cfg);
     ~EnumStoreT() override;
 

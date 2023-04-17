@@ -15,7 +15,7 @@ EnumAttribute<B>::
 EnumAttribute(const vespalib::string &baseFileName,
               const AttributeVector::Config &cfg)
     : B(baseFileName, cfg),
-      _enumStore(cfg.fastSearch(), cfg.get_dictionary_config(), this->get_memory_allocator())
+      _enumStore(cfg.fastSearch(), cfg.get_dictionary_config(), this->get_memory_allocator(), this->_defaultValue._data.raw())
 {
     this->setEnum(true);
 }
@@ -96,5 +96,3 @@ EnumAttribute<B>::cache_change_data_entry_ref(const Change& c) const
 }
 
 } // namespace search
-
-

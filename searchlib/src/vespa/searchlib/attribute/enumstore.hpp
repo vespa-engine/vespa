@@ -73,14 +73,14 @@ EnumStoreT<EntryT>::load_unique_value(const void* src, size_t available, Index& 
 }
 
 template <typename EntryT>
-EnumStoreT<EntryT>::EnumStoreT(bool has_postings, const DictionaryConfig& dict_cfg, std::shared_ptr<vespalib::alloc::MemoryAllocator> memory_allocator)
+EnumStoreT<EntryT>::EnumStoreT(bool has_postings, const DictionaryConfig& dict_cfg, std::shared_ptr<vespalib::alloc::MemoryAllocator> memory_allocator, EntryType default_value)
     : _store(std::move(memory_allocator)),
       _dict(),
       _is_folded(dict_cfg.getMatch() == DictionaryConfig::Match::UNCASED),
       _comparator(_store.get_data_store()),
       _foldedComparator(make_optionally_folded_comparator(is_folded())),
       _compaction_spec(),
-      _default_value(attribute::getUndefined<EntryT>()),
+      _default_value(default_value),
       _default_value_ref()
 {
     _store.set_dictionary(make_enum_store_dictionary(*this, has_postings, dict_cfg,
@@ -92,7 +92,7 @@ EnumStoreT<EntryT>::EnumStoreT(bool has_postings, const DictionaryConfig& dict_c
 
 template <typename EntryT>
 EnumStoreT<EntryT>::EnumStoreT(bool has_postings, const DictionaryConfig& dict_cfg)
-    : EnumStoreT<EntryT>(has_postings, dict_cfg, {})
+    : EnumStoreT<EntryT>(has_postings, dict_cfg, {}, attribute::getUndefined<EntryType>())
 {
 }
 
