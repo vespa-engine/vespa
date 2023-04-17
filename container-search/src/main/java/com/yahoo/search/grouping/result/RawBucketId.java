@@ -2,6 +2,7 @@
 package com.yahoo.search.grouping.result;
 
 import java.util.Arrays;
+import java.util.Base64;
 
 /**
  * This class is used in {@link Group} instances where the identifying
@@ -18,6 +19,8 @@ public class RawBucketId extends BucketGroupId<byte[]> {
      * @param to   The identifying exclusive-to raw buffer.
      */
     public RawBucketId(byte[] from, byte[] to) {
-        super("raw_bucket", from, Arrays.toString(from), to, Arrays.toString(to));
+        super("raw_bucket",
+                from, Base64.getEncoder().withoutPadding().encodeToString(from),
+                to, Base64.getEncoder().withoutPadding().encodeToString(to));
     }
 }
