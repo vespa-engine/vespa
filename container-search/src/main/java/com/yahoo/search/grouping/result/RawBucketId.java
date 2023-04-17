@@ -19,6 +19,8 @@ public class RawBucketId extends BucketGroupId<byte[]> {
      * @param to   The identifying exclusive-to raw buffer.
      */
     public RawBucketId(byte[] from, byte[] to) {
-        super("raw_bucket", from, Base64.getEncoder().encodeToString(from), to, Base64.getEncoder().encodeToString(to));
+        super("raw_bucket",
+                from, Base64.getEncoder().withoutPadding().encodeToString(from),
+                to, Base64.getEncoder().withoutPadding().encodeToString(to));
     }
 }

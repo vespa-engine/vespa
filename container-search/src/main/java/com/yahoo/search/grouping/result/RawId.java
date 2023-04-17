@@ -16,6 +16,6 @@ public class RawId extends ValueGroupId<byte[]> {
      * @param value The identifying byte array.
      */
     public RawId(byte[] value) {
-        super("raw", value, Base64.getEncoder().encodeToString(value));
+        super("raw", value, Base64.getEncoder().withoutPadding().encodeToString(value));
     }
 }

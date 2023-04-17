@@ -439,13 +439,13 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
 
     private static String getBucketFrom(BucketGroupId<?> id) {
         if (id instanceof RawBucketId rawBucketId)
-            return Base64.getEncoder().encodeToString(rawBucketId.getFrom());
+            return Base64.getEncoder().withoutPadding().encodeToString(rawBucketId.getFrom());
         return id.getFrom().toString();
     }
 
     private static String getBucketTo(BucketGroupId<?> id) {
         if (id instanceof RawBucketId rawBucketId)
-            return Base64.getEncoder().encodeToString(rawBucketId.getTo());
+            return Base64.getEncoder().withoutPadding().encodeToString(rawBucketId.getTo());
         return id.getTo().toString();
     }
 
