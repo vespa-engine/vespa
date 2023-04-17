@@ -465,7 +465,6 @@ func (c *CLI) createDeploymentOptions(pkg vespa.ApplicationPackage, target vespa
 		ApplicationPackage: pkg,
 		Target:             target,
 		Timeout:            timeout,
-		HTTPClient:         c.httpClient,
 	}, nil
 }
 

@@ -138,20 +138,36 @@ func (s *Service) Description() string {
 	return fmt.Sprintf("No description of service %s", s.Name)
 }
 
-func isOK(status int) bool { return status/100 == 2 }
+func isOK(status int) (bool, error) {
+	class := status / 100
+	switch class {
+	case 2: // success
+		return true, nil
+	case 4: // client error
+		return false, fmt.Errorf("request failed with status %d", status)
+	default: // retry
+		return false, nil
+	}
+}
 
 type responseFunc func(status int, response []byte) (bool, error)
 
 type requestFunc func() *http.Request
 
-// waitForOK queries url and returns its status code. If the url returns a non-200 status code, it is repeatedly queried
+// waitForOK queries url and returns its status code. If response status is not 2xx or 4xx, it is repeatedly queried
 // until timeout elapses.
 func waitForOK(service *Service, url string, timeout time.Duration) (int, error) {
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return 0, err
 	}
-	okFunc := func(status int, response []byte) (bool, error) { return isOK(status), nil }
+	okFunc := func(status int, response []byte) (bool, error) {
+		ok, err := isOK(status)
+		if err != nil {
+			return false, fmt.Errorf("failed to query %s at %s: %w", service.Description(), url, err)
+		}
+		return ok, err
+	}
 	return wait(service, okFunc, func() *http.Request { return req }, timeout)
 }
 

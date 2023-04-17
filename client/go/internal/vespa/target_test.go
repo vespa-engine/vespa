@@ -18,10 +18,16 @@ import (
 
 type mockVespaApi struct {
 	deploymentConverged bool
+	authFailure         bool
 	serverURL           string
 }
 
 func (v *mockVespaApi) mockVespaHandler(w http.ResponseWriter, req *http.Request) {
+	if v.authFailure {
+		response := `{"message":"unauthorized"}`
+		w.WriteHeader(401)
+		w.Write([]byte(response))
+	}
 	switch req.URL.Path {
 	case "/cli/v1/":
 		response := `{"minVersion":"8.0.0"}`
@@ -106,6 +112,9 @@ func TestCloudTargetWait(t *testing.T) {
 
 	var logWriter bytes.Buffer
 	target := createCloudTarget(t, srv.URL, &logWriter)
+	vc.authFailure = true
+	assertServiceWaitErr(t, 401, true, target, "deploy")
+	vc.authFailure = false
 	assertServiceWait(t, 200, target, "deploy")
 
 	_, err := target.Service("query", time.Millisecond, 42, "")
@@ -188,11 +197,19 @@ func assertServiceURL(t *testing.T, url string, target Target, service string) {
 }
 
 func assertServiceWait(t *testing.T, expectedStatus int, target Target, service string) {
+	assertServiceWaitErr(t, expectedStatus, false, target, service)
+}
+
+func assertServiceWaitErr(t *testing.T, expectedStatus int, expectErr bool, target Target, service string) {
 	s, err := target.Service(service, 0, 42, "")
 	assert.Nil(t, err)
 
 	status, err := s.Wait(0)
-	assert.Nil(t, err)
+	if expectErr {
+		assert.NotNil(t, err)
+	} else {
+		assert.Nil(t, err)
+	}
 	assert.Equal(t, expectedStatus, status)
 }
 
