@@ -49,6 +49,7 @@ PostingListAttributeBase<P>::handle_load_posting_lists_and_update_enum_store(enu
     PostingChange<P> postings;
     const auto& loaded_enums = loader.get_loaded_enums();
     if (loaded_enums.empty()) {
+        loader.build_empty_dictionary();
         return;
     }
     uint32_t preve = 0;

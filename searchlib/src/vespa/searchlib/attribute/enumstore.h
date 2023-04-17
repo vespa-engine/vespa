@@ -28,6 +28,9 @@ namespace search {
  * It uses an instance of vespalib::datastore::UniqueStore to store the actual values.
  * It also exposes the dictionary used for fast lookups into the set of unique values.
  *
+ * The default value is always present except for a short time window
+ * during attribute vector load.
+ *
  * @tparam EntryType The type of the entries/values stored.
  *                   It has special handling of type 'const char *' for strings.
  */
@@ -55,6 +58,8 @@ private:
     ComparatorType         _comparator;
     ComparatorType         _foldedComparator;
     enumstore::EnumStoreCompactionSpec _compaction_spec;
+    EntryType              _default_value;
+    AtomicIndex            _default_value_ref;
 
     EnumStoreT(const EnumStoreT & rhs) = delete;
     EnumStoreT & operator=(const EnumStoreT & rhs) = delete;
@@ -201,6 +206,9 @@ public:
     bool find_index(EntryType value, Index& idx) const;
     void free_unused_values() override;
     void free_unused_values(IndexList to_remove);
+    void clear_default_value_ref() override;
+    void setup_default_value_ref() override;
+    const AtomicIndex& get_default_value_ref() const noexcept { return _default_value_ref; }
     vespalib::MemoryUsage update_stat(const CompactionStrategy& compaction_strategy) override;
     std::unique_ptr<EnumIndexRemapper> consider_compact_values(const CompactionStrategy& compaction_strategy) override;
     std::unique_ptr<EnumIndexRemapper> compact_worst_values(CompactionSpec compaction_spec, const CompactionStrategy& compaction_strategy) override;

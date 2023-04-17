@@ -17,6 +17,7 @@
 #include <vespa/vespalib/datastore/unique_store.hpp>
 #include <vespa/vespalib/datastore/unique_store_string_allocator.hpp>
 #include <vespa/vespalib/util/array.hpp>
+#include <vespa/searchcommon/common/undefinedvalues.h>
 #include <vespa/searchlib/util/bufferwriter.h>
 #include <vespa/vespalib/datastore/compaction_strategy.h>
 
@@ -78,12 +79,15 @@ EnumStoreT<EntryT>::EnumStoreT(bool has_postings, const DictionaryConfig& dict_c
       _is_folded(dict_cfg.getMatch() == DictionaryConfig::Match::UNCASED),
       _comparator(_store.get_data_store()),
       _foldedComparator(make_optionally_folded_comparator(is_folded())),
-      _compaction_spec()
+      _compaction_spec(),
+      _default_value(attribute::getUndefined<EntryT>()),
+      _default_value_ref()
 {
     _store.set_dictionary(make_enum_store_dictionary(*this, has_postings, dict_cfg,
                                                      allocate_comparator(),
                                                      allocate_optionally_folded_comparator(is_folded())));
     _dict = static_cast<IEnumStoreDictionary*>(&_store.get_dictionary());
+    setup_default_value_ref();
 }
 
 template <typename EntryT>
@@ -215,6 +219,33 @@ EnumStoreT<EntryT>::insert(EntryType value)
     return _store.add(value).ref();
 }
 
+
+template <typename EntryT>
+void
+EnumStoreT<EntryT>::clear_default_value_ref()
+{
+    auto ref = _default_value_ref.load_relaxed();
+    if (ref.valid()) {
+        auto updater = make_batch_updater();
+        updater.dec_ref_count(ref);
+        _default_value_ref.store_relaxed(Index());
+        updater.commit();
+    }
+}
+
+template <typename EntryT>
+void
+EnumStoreT<EntryT>::setup_default_value_ref()
+{
+    if (!_default_value_ref.load_relaxed().valid()) {
+        auto updater = make_batch_updater();
+        auto ref = updater.insert(_default_value);
+        updater.inc_ref_count(ref);
+        _default_value_ref.store_relaxed(ref);
+        updater.commit();
+    }
+}
+
 template <typename EntryT>
 vespalib::MemoryUsage
 EnumStoreT<EntryT>::update_stat(const CompactionStrategy& compaction_strategy)
@@ -236,7 +267,14 @@ template <typename EntryT>
 std::unique_ptr<IEnumStore::EnumIndexRemapper>
 EnumStoreT<EntryT>::compact_worst_values(CompactionSpec compaction_spec, const CompactionStrategy& compaction_strategy)
 {
-    return _store.compact_worst(compaction_spec, compaction_strategy);
+    auto remapper = _store.compact_worst(compaction_spec, compaction_strategy);
+    if (remapper) {
+        auto ref = _default_value_ref.load_relaxed();
+        if (ref.valid() && remapper->get_entry_ref_filter().has(ref)) {
+            _default_value_ref.store_release(remapper->remap(ref));
+        }
+    }
+    return remapper;
 }
 
 template <typename EntryT>

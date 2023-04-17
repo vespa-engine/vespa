@@ -117,6 +117,10 @@ SingleValueNumericEnumAttribute<B>::onLoad(vespalib::Executor *)
         return false;
     }
 
+    this->_enumStore.clear_default_value_ref();
+    this->commit();
+    this->incGeneration();
+
     this->setCreateSerialNum(attrReader.getCreateSerialNum());
 
     if (attrReader.getEnumerated()) {

@@ -50,6 +50,7 @@ void EnumAttribute<B>::load_enum_store(LoadedVector& loaded)
             loader.set_ref_count_for_last_value(prevRefCount);
         }
         loader.build_dictionary();
+        _enumStore.setup_default_value_ref();
     }
 }
 

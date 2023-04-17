@@ -183,7 +183,7 @@ MemAttr::bufEqual(const Buffer &lhs, const Buffer &rhs) const
         return false;
     if (lhs.get() == NULL)
         return true;
-    if (!EXPECT_TRUE(lhs->getDataLen() == rhs->getDataLen()))
+    if (!EXPECT_EQUAL(lhs->getDataLen(), rhs->getDataLen()))
         return false;
     if (!EXPECT_TRUE(vespalib::memcmp_safe(lhs->getData(), rhs->getData(),
                                            lhs->getDataLen()) == 0))
@@ -243,8 +243,9 @@ EnumeratedSaveTest::populate(IntegerAttribute &v, unsigned seed,
     int weight = 1;
     for(size_t i(0), m(v.getNumDocs()); i < m; i++) {
         v.clearDoc(i);
-        if (i == 9)
+        if (i == 9) {
             continue;
+        }
         if (i == 7) {
             if (v.hasMultiValue()) {
                 v.append(i, -42, 27);
@@ -270,7 +271,7 @@ EnumeratedSaveTest::populate(IntegerAttribute &v, unsigned seed,
                             i + 1);
             }
         } else {
-            EXPECT_TRUE( v.update(i, lrand48() & mask) );
+            EXPECT_TRUE( v.update(i, rnd.lrand48() & mask) );
         }
     }
     v.commit();
@@ -288,8 +289,9 @@ EnumeratedSaveTest::populate(FloatingPointAttribute &v, unsigned seed,
     int weight = 1;
     for(size_t i(0), m(v.getNumDocs()); i < m; i++) {
         v.clearDoc(i);
-        if (i == 9)
+        if (i == 9) {
             continue;
+        }
         if (i == 7) {
             if (v.hasMultiValue()) {
                 v.append(i, -42.0, 27);
@@ -315,7 +317,7 @@ EnumeratedSaveTest::populate(FloatingPointAttribute &v, unsigned seed,
                             i + 1);
             }
         } else {
-            EXPECT_TRUE( v.update(i, lrand48()) );
+            EXPECT_TRUE( v.update(i, rnd.lrand48()) );
         }
     }
     v.commit();
@@ -332,8 +334,9 @@ EnumeratedSaveTest::populate(StringAttribute &v, unsigned seed,
     int weight = 1;
     for(size_t i(0), m(v.getNumDocs()); i < m; i++) {
         v.clearDoc(i);
-        if (i == 9)
+        if (i == 9) {
             continue;
+        }
         if (i == 7) {
             if (v.hasMultiValue()) {
                 v.append(i, "foo", 27);
@@ -712,9 +715,9 @@ EnumeratedSaveTest::test(BasicType bt, CollectionType ct,
 
     Config check_cfg(cfg);
     check_cfg.setFastSearch(true);
-    checkLoad<VectorType, BufferType>(check_cfg, pref + "0_ee", v0);
-    checkLoad<VectorType, BufferType>(check_cfg, pref + "1_ee", v1);
-    checkLoad<VectorType, BufferType>(check_cfg, pref + "2_ee", v2);
+    TEST_DO((checkLoad<VectorType, BufferType>(check_cfg, pref + "0_ee", v0)));
+    TEST_DO((checkLoad<VectorType, BufferType>(check_cfg, pref + "1_ee", v1)));
+    TEST_DO((checkLoad<VectorType, BufferType>(check_cfg, pref + "2_ee", v2)));
 
     TEST_DO((testReload<VectorType, BufferType>(v0, v1, v2,
                                                 mv0, mv1, mv2,
