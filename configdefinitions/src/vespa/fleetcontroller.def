@@ -181,7 +181,7 @@ min_merge_completion_ratio double default=1.0
 ## transition logic aims to minimize the window of time where active states diverge.
 enable_two_phase_cluster_state_transitions bool default=false
 
-## Deprecated - not used
+## TODO: Deprecated - not used, remove in Vespa 9
 determine_buckets_from_bucket_space_metric bool default=true
 
 # If enabled, the cluster controller observes reported (categorized) resource usage from content nodes (via host info),
