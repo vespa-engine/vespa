@@ -18,8 +18,8 @@ public class RawResultNode extends SingleResultNode {
 
     // The global class identifier shared with C++.
     public static final int classId = registerClass(0x4000 + 54, RawResultNode.class);
-    private static RawResultNode negativeInfinity = new RawResultNode();
-    private static PositiveInfinityResultNode positiveInfinity = new PositiveInfinityResultNode();
+    private static final RawResultNode negativeInfinity = new RawResultNode();
+    private static final PositiveInfinityResultNode positiveInfinity = new PositiveInfinityResultNode();
 
     // The raw value of this node.
     private RawData value = null;
@@ -147,7 +147,7 @@ public class RawResultNode extends SingleResultNode {
 
     @Override
     public Object getValue() {
-        return getString();
+        return value;
     }
 
     @Override
