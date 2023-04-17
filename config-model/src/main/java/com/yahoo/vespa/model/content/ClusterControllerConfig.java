@@ -14,8 +14,6 @@ import org.w3c.dom.Element;
 
 /**
  * Config generation for common parameters for all fleet controllers.
- *
- * TODO: Author
  */
 public class ClusterControllerConfig extends AnyConfigProducer implements FleetcontrollerConfig.Producer {
 
@@ -23,11 +21,16 @@ public class ClusterControllerConfig extends AnyConfigProducer implements Fleetc
         private final String clusterName;
         private final ModelElement clusterElement;
         private final ResourceLimits resourceLimits;
+        private final boolean allowMoreThanOneContentGroupDown;
 
-        public Builder(String clusterName, ModelElement clusterElement, ResourceLimits resourceLimits) {
+        public Builder(String clusterName,
+                       ModelElement clusterElement,
+                       ResourceLimits resourceLimits,
+                       boolean allowMoreThanOneContentGroupDown) {
             this.clusterName = clusterName;
             this.clusterElement = clusterElement;
             this.resourceLimits = resourceLimits;
+            this.allowMoreThanOneContentGroupDown = allowMoreThanOneContentGroupDown;
         }
 
         @Override
@@ -53,13 +56,15 @@ public class ClusterControllerConfig extends AnyConfigProducer implements Fleetc
                         tuning.childAsDouble("min-storage-up-ratio"),
                         bucketSplittingMinimumBits,
                         minNodeRatioPerGroup,
-                        resourceLimits);
+                        resourceLimits,
+                        allowMoreThanOneContentGroupDown);
             } else {
                 return new ClusterControllerConfig(ancestor, clusterName,
                         null, null, null, null, null, null,
                         bucketSplittingMinimumBits,
                         minNodeRatioPerGroup,
-                        resourceLimits);
+                        resourceLimits,
+                        allowMoreThanOneContentGroupDown);
             }
         }
     }
@@ -74,6 +79,7 @@ public class ClusterControllerConfig extends AnyConfigProducer implements Fleetc
     private final Integer minSplitBits;
     private final Double minNodeRatioPerGroup;
     private final ResourceLimits resourceLimits;
+    private final boolean allowMoreThanOneContentGroupDown;
 
     // TODO refactor; too many args
     private ClusterControllerConfig(TreeConfigProducer<?> parent,
@@ -86,7 +92,8 @@ public class ClusterControllerConfig extends AnyConfigProducer implements Fleetc
                                     Double minStorageUpRatio,
                                     Integer minSplitBits,
                                     Double minNodeRatioPerGroup,
-                                    ResourceLimits resourceLimits) {
+                                    ResourceLimits resourceLimits,
+                                    boolean allowMoreThanOneContentGroupDown) {
         super(parent, "fleetcontroller");
 
         this.clusterName = clusterName;
@@ -99,6 +106,7 @@ public class ClusterControllerConfig extends AnyConfigProducer implements Fleetc
         this.minSplitBits = minSplitBits;
         this.minNodeRatioPerGroup = minNodeRatioPerGroup;
         this.resourceLimits = resourceLimits;
+        this.allowMoreThanOneContentGroupDown = allowMoreThanOneContentGroupDown;
     }
 
     @Override
@@ -141,6 +149,7 @@ public class ClusterControllerConfig extends AnyConfigProducer implements Fleetc
             builder.min_node_ratio_per_group(minNodeRatioPerGroup);
         }
         resourceLimits.getConfig(builder);
+        builder.max_number_of_groups_allowed_to_be_down(allowMoreThanOneContentGroupDown ? 1 : -1);
     }
 
 }

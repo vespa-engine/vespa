@@ -22,10 +22,10 @@ import com.yahoo.config.provision.AthenzDomain;
 import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.DockerImage;
+import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.container.jdisc.secretstore.SecretStore;
-import com.yahoo.config.provision.HostName;
 import com.yahoo.vespa.config.server.tenant.SecretStoreExternalIdRetriever;
 import com.yahoo.vespa.flags.FetchVector;
 import com.yahoo.vespa.flags.FlagSource;
@@ -33,7 +33,6 @@ import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.flags.PermanentFlags;
 import com.yahoo.vespa.flags.StringFlag;
 import com.yahoo.vespa.flags.UnboundFlag;
-
 import java.io.File;
 import java.net.URI;
 import java.security.cert.X509Certificate;
@@ -204,6 +203,7 @@ public class ModelContextImpl implements ModelContext {
         private final int heapPercentage;
         private final boolean enableGlobalPhase;
         private final String summaryDecodePolicy;
+        private final ToIntFunction<ClusterSpec.Id> allowMoreThanOneContentGroupDown;
 
         public FeatureFlags(FlagSource source, ApplicationId appId, Version version) {
             this.defaultTermwiseLimit = flagValue(source, appId, version, Flags.DEFAULT_TERM_WISE_LIMIT);
@@ -250,6 +250,7 @@ public class ModelContextImpl implements ModelContext {
             this.heapPercentage = flagValue(source, appId, version, PermanentFlags.HEAP_SIZE_PERCENTAGE);
             this.enableGlobalPhase = flagValue(source, appId, version, Flags.ENABLE_GLOBAL_PHASE);
             this.summaryDecodePolicy = flagValue(source, appId, version, Flags.SUMMARY_DECODE_POLICY);
+            this.allowMoreThanOneContentGroupDown = clusterId -> flagValueAsInt(source, appId, version, clusterId, Flags.ALLOW_MORE_THAN_ONE_CONTENT_GROUP_DOWN);
         }
 
         @Override public int heapSizePercentage() { return heapPercentage; }
@@ -304,6 +305,7 @@ public class ModelContextImpl implements ModelContext {
         }
         @Override public boolean useRestrictedDataPlaneBindings() { return useRestrictedDataPlaneBindings; }
         @Override public boolean enableGlobalPhase() { return enableGlobalPhase; }
+        @Override public boolean allowMoreThanOneContentGroupDown(ClusterSpec.Id id) { return allowMoreThanOneContentGroupDown.applyAsInt(id) != 0; }
 
         private static <V> V flagValue(FlagSource source, ApplicationId appId, Version vespaVersion, UnboundFlag<? extends V, ?, ?> flag) {
             return flag.bindTo(source)
@@ -331,12 +333,32 @@ public class ModelContextImpl implements ModelContext {
                        .boxedValue();
         }
 
+        private static <V> V flagValue(FlagSource source,
+                                       ApplicationId appId,
+                                       Version vespaVersion,
+                                       ClusterSpec.Id clusterId,
+                                       UnboundFlag<? extends V, ?, ?> flag) {
+            return flag.bindTo(source)
+                       .with(FetchVector.Dimension.APPLICATION_ID, appId.serializedForm())
+                       .with(FetchVector.Dimension.CLUSTER_ID, clusterId.value())
+                       .with(FetchVector.Dimension.VESPA_VERSION, vespaVersion.toFullString())
+                       .boxedValue();
+        }
+
         static int flagValueAsInt(FlagSource source,
                                   ApplicationId appId,
                                   Version version,
                                   ClusterSpec.Type clusterType,
                                   UnboundFlag<? extends Boolean, ?, ?> flag) {
             return flagValue(source, appId, version, clusterType, flag) ? 1 : 0;
+        }
+
+        static int flagValueAsInt(FlagSource source,
+                                  ApplicationId appId,
+                                  Version version,
+                                  ClusterSpec.Id clusterId,
+                                  UnboundFlag<? extends Boolean, ?, ?> flag) {
+            return flagValue(source, appId, version, clusterId, flag) ? 1 : 0;
         }
 
         private String translateJvmOmitStackTraceInFastThrowIntToString(ToIntFunction<ClusterSpec.Type> function,
