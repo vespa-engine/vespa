@@ -40,7 +40,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
-import java.util.function.ToIntFunction;
+import java.util.function.Predicate;
 
 import static com.yahoo.config.provision.NodeResources.Architecture;
 import static com.yahoo.vespa.config.server.ConfigServerSpec.fromConfig;
@@ -173,7 +173,7 @@ public class ModelContextImpl implements ModelContext {
         private final double feedNiceness;
         private final List<String> allowedAthenzProxyIdentities;
         private final int maxActivationInhibitedOutOfSyncGroups;
-        private final ToIntFunction<ClusterSpec.Type> jvmOmitStackTraceInFastThrow;
+        private final Predicate<ClusterSpec.Type> jvmOmitStackTraceInFastThrow;
         private final double resourceLimitDisk;
         private final double resourceLimitMemory;
         private final double minNodeRatioPerGroup;
@@ -203,7 +203,7 @@ public class ModelContextImpl implements ModelContext {
         private final int heapPercentage;
         private final boolean enableGlobalPhase;
         private final String summaryDecodePolicy;
-        private final ToIntFunction<ClusterSpec.Id> allowMoreThanOneContentGroupDown;
+        private final Predicate<ClusterSpec.Id> allowMoreThanOneContentGroupDown;
 
         public FeatureFlags(FlagSource source, ApplicationId appId, Version version) {
             this.defaultTermwiseLimit = flagValue(source, appId, version, Flags.DEFAULT_TERM_WISE_LIMIT);
@@ -219,7 +219,7 @@ public class ModelContextImpl implements ModelContext {
             this.mbus_network_threads = flagValue(source, appId, version, Flags.MBUS_NUM_NETWORK_THREADS);
             this.allowedAthenzProxyIdentities = flagValue(source, appId, version, Flags.ALLOWED_ATHENZ_PROXY_IDENTITIES);
             this.maxActivationInhibitedOutOfSyncGroups = flagValue(source, appId, version, Flags.MAX_ACTIVATION_INHIBITED_OUT_OF_SYNC_GROUPS);
-            this.jvmOmitStackTraceInFastThrow = type -> flagValueAsInt(source, appId, version, type, PermanentFlags.JVM_OMIT_STACK_TRACE_IN_FAST_THROW);
+            this.jvmOmitStackTraceInFastThrow = type -> flagValue(source, appId, version, type, PermanentFlags.JVM_OMIT_STACK_TRACE_IN_FAST_THROW);
             this.resourceLimitDisk = flagValue(source, appId, version, PermanentFlags.RESOURCE_LIMIT_DISK);
             this.resourceLimitMemory = flagValue(source, appId, version, PermanentFlags.RESOURCE_LIMIT_MEMORY);
             this.minNodeRatioPerGroup = flagValue(source, appId, version, Flags.MIN_NODE_RATIO_PER_GROUP);
@@ -250,7 +250,7 @@ public class ModelContextImpl implements ModelContext {
             this.heapPercentage = flagValue(source, appId, version, PermanentFlags.HEAP_SIZE_PERCENTAGE);
             this.enableGlobalPhase = flagValue(source, appId, version, Flags.ENABLE_GLOBAL_PHASE);
             this.summaryDecodePolicy = flagValue(source, appId, version, Flags.SUMMARY_DECODE_POLICY);
-            this.allowMoreThanOneContentGroupDown = clusterId -> flagValueAsInt(source, appId, version, clusterId, Flags.ALLOW_MORE_THAN_ONE_CONTENT_GROUP_DOWN);
+            this.allowMoreThanOneContentGroupDown = clusterId -> flagValue(source, appId, version, clusterId, Flags.ALLOW_MORE_THAN_ONE_CONTENT_GROUP_DOWN);
         }
 
         @Override public int heapSizePercentage() { return heapPercentage; }
@@ -271,7 +271,7 @@ public class ModelContextImpl implements ModelContext {
         @Override public List<String> allowedAthenzProxyIdentities() { return allowedAthenzProxyIdentities; }
         @Override public int maxActivationInhibitedOutOfSyncGroups() { return maxActivationInhibitedOutOfSyncGroups; }
         @Override public String jvmOmitStackTraceInFastThrowOption(ClusterSpec.Type type) {
-            return translateJvmOmitStackTraceInFastThrowIntToString(jvmOmitStackTraceInFastThrow, type);
+            return translateJvmOmitStackTraceInFastThrowToString(jvmOmitStackTraceInFastThrow, type);
         }
         @Override public double resourceLimitDisk() { return resourceLimitDisk; }
         @Override public double resourceLimitMemory() { return resourceLimitMemory; }
@@ -305,7 +305,7 @@ public class ModelContextImpl implements ModelContext {
         }
         @Override public boolean useRestrictedDataPlaneBindings() { return useRestrictedDataPlaneBindings; }
         @Override public boolean enableGlobalPhase() { return enableGlobalPhase; }
-        @Override public boolean allowMoreThanOneContentGroupDown(ClusterSpec.Id id) { return allowMoreThanOneContentGroupDown.applyAsInt(id) != 0; }
+        @Override public boolean allowMoreThanOneContentGroupDown(ClusterSpec.Id id) { return allowMoreThanOneContentGroupDown.test(id); }
 
         private static <V> V flagValue(FlagSource source, ApplicationId appId, Version vespaVersion, UnboundFlag<? extends V, ?, ?> flag) {
             return flag.bindTo(source)
@@ -345,25 +345,9 @@ public class ModelContextImpl implements ModelContext {
                        .boxedValue();
         }
 
-        static int flagValueAsInt(FlagSource source,
-                                  ApplicationId appId,
-                                  Version version,
-                                  ClusterSpec.Type clusterType,
-                                  UnboundFlag<? extends Boolean, ?, ?> flag) {
-            return flagValue(source, appId, version, clusterType, flag) ? 1 : 0;
-        }
-
-        static int flagValueAsInt(FlagSource source,
-                                  ApplicationId appId,
-                                  Version version,
-                                  ClusterSpec.Id clusterId,
-                                  UnboundFlag<? extends Boolean, ?, ?> flag) {
-            return flagValue(source, appId, version, clusterId, flag) ? 1 : 0;
-        }
-
-        private String translateJvmOmitStackTraceInFastThrowIntToString(ToIntFunction<ClusterSpec.Type> function,
-                                                                        ClusterSpec.Type clusterType) {
-            return function.applyAsInt(clusterType) == 1 ? "" : "-XX:-OmitStackTraceInFastThrow";
+        private String translateJvmOmitStackTraceInFastThrowToString(Predicate<ClusterSpec.Type> function,
+                                                                     ClusterSpec.Type clusterType) {
+            return function.test(clusterType) ? "" : "-XX:-OmitStackTraceInFastThrow";
         }
 
     }
