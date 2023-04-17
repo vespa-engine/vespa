@@ -127,7 +127,8 @@ public class ContentCluster extends TreeConfigProducer<AnyConfigProducer> implem
                     .build(contentElement);
             c.clusterControllerConfig = new ClusterControllerConfig.Builder(clusterId,
                                                                             contentElement,
-                                                                            resourceLimits.getClusterControllerLimits())
+                                                                            resourceLimits.getClusterControllerLimits(),
+                                                                            deployState.featureFlags().allowMoreThanOneContentGroupDown(new ClusterSpec.Id(clusterId)))
                     .build(deployState, c, contentElement.getXml());
             c.search = new ContentSearchCluster.Builder(documentDefinitions,
                                                         globallyDistributedDocuments,

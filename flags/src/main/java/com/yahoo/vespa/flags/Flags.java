@@ -398,6 +398,12 @@ public class Flags {
             "Whether to enable CrowdStrike.", "Takes effect on next host admin tick",
             HOSTNAME);
 
+    public static final UnboundBooleanFlag ALLOW_MORE_THAN_ONE_CONTENT_GROUP_DOWN = defineFeatureFlag(
+            "allow-more-than-one-content-group-down", false, List.of("hmusum"), "2023-04-14", "2023-06-14",
+            "Whether to enable possible configuration of letting more than one content group down",
+            "Takes effect at redeployment",
+            HOSTNAME);
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
                                                        String createdAt, String expiresAt, String description,
