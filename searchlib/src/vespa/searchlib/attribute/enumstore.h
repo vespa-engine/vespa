@@ -28,6 +28,9 @@ namespace search {
  * It uses an instance of vespalib::datastore::UniqueStore to store the actual values.
  * It also exposes the dictionary used for fast lookups into the set of unique values.
  *
+ * The default value is always present except for a short time window
+ * during attribute vector load.
+ *
  * @tparam EntryType The type of the entries/values stored.
  *                   It has special handling of type 'const char *' for strings.
  */
