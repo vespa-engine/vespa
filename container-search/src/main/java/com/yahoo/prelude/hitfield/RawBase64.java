@@ -9,8 +9,13 @@ import java.util.Base64;
  */
 public class RawBase64 implements Comparable<RawBase64> {
     private final byte[] content;
+    private final boolean withoutPadding;
     public RawBase64(byte[] content) {
+        this(content, false);
+    }
+    public RawBase64(byte[] content, boolean withoutPadding) {
         this.content = content;
+        this.withoutPadding = withoutPadding;
     }
 
     @Override
@@ -20,6 +25,8 @@ public class RawBase64 implements Comparable<RawBase64> {
 
     @Override
     public String toString() {
-        return Base64.getEncoder().encodeToString(content);
+        return withoutPadding
+                ? Base64.getEncoder().withoutPadding().encodeToString(content)
+                : Base64.getEncoder().encodeToString(content);
     }
 }

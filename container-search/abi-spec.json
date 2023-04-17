@@ -209,6 +209,7 @@
     ],
     "methods" : [
       "public void <init>(byte[])",
+      "public void <init>(byte[], boolean)",
       "public int compareTo(com.yahoo.prelude.hitfield.RawBase64)",
       "public java.lang.String toString()",
       "public bridge synthetic int compareTo(java.lang.Object)"
