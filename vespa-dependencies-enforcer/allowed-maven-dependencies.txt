@@ -182,7 +182,7 @@ org.glassfish.jersey.media:jersey-media-multipart:2.25
 org.hdrhistogram:HdrHistogram:2.1.12
 org.iq80.snappy:snappy:0.4
 org.javassist:javassist:3.20.0-GA
-org.json:json:20220320
+org.json:json:20230227
 org.junit.jupiter:junit-jupiter-api:5.8.1
 org.junit.jupiter:junit-jupiter-engine:5.8.1
 org.junit.platform:junit-platform-commons:1.8.1
