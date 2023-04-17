@@ -18,7 +18,6 @@ public class NodeResourcesTuning implements ProtonConfig.Producer {
     private final static double SUMMARY_CACHE_SIZE_AS_FRACTION_OF_MEMORY = 0.04;
     private final static double MEMORY_GAIN_AS_FRACTION_OF_MEMORY = 0.08;
     private final static double MIN_MEMORY_PER_FLUSH_THREAD_GB = 16.0;
-    private final static double MAX_FLUSH_THREAD_RATIO = 1.0/8;
     private final static double TLS_SIZE_FRACTION = 0.02;
     final static long MB = 1024 * 1024;
     public final static long GB = MB * 1024;
@@ -94,13 +93,12 @@ public class NodeResourcesTuning implements ProtonConfig.Producer {
     }
 
     private void tuneFlushConcurrentThreads(ProtonConfig.Flush.Builder builder) {
+        int max_concurrent = 2; // TODO bring slowly up towards 4
         if (usableMemoryGb() < MIN_MEMORY_PER_FLUSH_THREAD_GB) {
-            builder.maxconcurrent(1);
+            max_concurrent = 1;
         }
-        double min_concurrent_mem = usableMemoryGb() / (2*MIN_MEMORY_PER_FLUSH_THREAD_GB);
-        double min_concurrent_cpu = resources.vcpu() * MAX_FLUSH_THREAD_RATIO;
-        builder.maxconcurrent(Math.min(builder.build().maxconcurrent(),
-                (int)Math.ceil(Math.max(min_concurrent_mem, min_concurrent_cpu))));
+        double min_concurrent_mem = usableMemoryGb() / MIN_MEMORY_PER_FLUSH_THREAD_GB;
+        builder.maxconcurrent(Math.min(max_concurrent, (int)Math.ceil(min_concurrent_mem)));
     }
 
     private void tuneFlushStrategyTlsSize(ProtonConfig.Flush.Memory.Builder builder) {

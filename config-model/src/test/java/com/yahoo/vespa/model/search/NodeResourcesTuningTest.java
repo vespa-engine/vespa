@@ -182,14 +182,12 @@ public class NodeResourcesTuningTest {
     }
     @Test
     public void require_that_concurrent_flush_threads_is_1_with_low_memory() {
-        assertEquals(2, fromMemAndCpu(17, 9).flush().maxconcurrent());
-        assertEquals(2, fromMemAndCpu(17, 64).flush().maxconcurrent()); // still capped by max
+        assertEquals(1, fromMemAndCpu(1, 8).flush().maxconcurrent());
+        assertEquals(1, fromMemAndCpu(15, 8).flush().maxconcurrent());
+        assertEquals(1, fromMemAndCpu(16, 8).flush().maxconcurrent());
+        assertEquals(2, fromMemAndCpu(17, 8).flush().maxconcurrent());
         assertEquals(2, fromMemAndCpu(65, 8).flush().maxconcurrent()); // still capped by max
-        assertEquals(2, fromMemAndCpu(33, 8).flush().maxconcurrent());
-        assertEquals(1, fromMemAndCpu(31, 8).flush().maxconcurrent());
-        assertEquals(1, fromMemAndCpu(15, 8).flush().maxconcurrent());
-        assertEquals(1, fromMemAndCpu(17, 8).flush().maxconcurrent());
-        assertEquals(1, fromMemAndCpu(15, 8).flush().maxconcurrent());
+        assertEquals(2, fromMemAndCpu(65, 65).flush().maxconcurrent()); // still capped by max
     }
 
     private static void assertDocumentStoreMaxFileSize(long expFileSizeBytes, int wantedMemoryGb) {
