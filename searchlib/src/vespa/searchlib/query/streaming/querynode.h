@@ -28,6 +28,7 @@ using ConstQueryTermList = std::vector<const QueryTerm *>;
 */
 class QueryNode
 {
+    static std::unique_ptr<QueryNode> build_nearest_neighbor_query_node(const QueryNodeResultFactory& factory, SimpleQueryStackDumpIterator& queryRep);
  public:
   using UP = std::unique_ptr<QueryNode>;
 
@@ -54,7 +55,7 @@ class QueryNode
   virtual size_t depth() const { return 1; }
   /// Return the width of this tree.
   virtual size_t width() const { return 1; }
-  static UP Build(const QueryNode * parent, const QueryNodeResultFactory & org, SimpleQueryStackDumpIterator & queryRep, bool allowRewrite);
+  static UP Build(const QueryNode * parent, const QueryNodeResultFactory& factory, SimpleQueryStackDumpIterator & queryRep, bool allowRewrite);
 };
 
 /// A list conating the QuerNode objects. With copy/assignment.
