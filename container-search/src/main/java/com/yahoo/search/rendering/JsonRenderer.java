@@ -434,7 +434,9 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
     }
 
     private static String getIdValue(ValueGroupId<?> id) {
-        return (id instanceof RawId ? id : id.getValue()).toString();
+        return (id instanceof RawId raw)
+                ? Base64.getEncoder().withoutPadding().encodeToString(raw.getValue())
+                : id.getValue().toString();
     }
 
     private static String getBucketFrom(BucketGroupId<?> id) {
