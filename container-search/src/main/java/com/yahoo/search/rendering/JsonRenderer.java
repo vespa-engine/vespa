@@ -57,7 +57,7 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayDeque;
-import java.util.Arrays;
+import java.util.Base64;
 import java.util.Deque;
 import java.util.Map;
 import java.util.Optional;
@@ -420,9 +420,9 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
     }
 
     protected void renderGroupMetadata(GroupId id) throws IOException {
-        if (!(id instanceof ValueGroupId || id instanceof BucketGroupId)) return;
+        if (!(id instanceof ValueGroupId<?> || id instanceof BucketGroupId)) return;
 
-        if (id instanceof ValueGroupId valueId) {
+        if (id instanceof ValueGroupId<?> valueId) {
             generator.writeStringField(GROUPING_VALUE, getIdValue(valueId));
         } else {
             BucketGroupId<?> bucketId = (BucketGroupId<?>) id;
@@ -434,15 +434,19 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
     }
 
     private static String getIdValue(ValueGroupId<?> id) {
-        return (id instanceof RawId ? Arrays.toString(((RawId) id).getValue()) : id.getValue()).toString();
+        return (id instanceof RawId ? id : id.getValue()).toString();
     }
 
     private static String getBucketFrom(BucketGroupId<?> id) {
-        return (id instanceof RawBucketId ? Arrays.toString(((RawBucketId) id).getFrom()) : id.getFrom()).toString();
+        if (id instanceof RawBucketId rawBucketId)
+            return Base64.getEncoder().encodeToString(rawBucketId.getFrom());
+        return id.getFrom().toString();
     }
 
     private static String getBucketTo(BucketGroupId<?> id) {
-        return (id instanceof RawBucketId ? Arrays.toString(((RawBucketId) id).getTo()) : id.getTo()).toString();
+        if (id instanceof RawBucketId rawBucketId)
+            return Base64.getEncoder().encodeToString(rawBucketId.getTo());
+        return id.getTo().toString();
     }
 
     protected void renderTotalHitCount(Hit hit) throws IOException {

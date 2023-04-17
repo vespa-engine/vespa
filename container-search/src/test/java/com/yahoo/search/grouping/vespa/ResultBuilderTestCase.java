@@ -33,12 +33,12 @@ public class ResultBuilderTestCase {
         assertGroupId("group:6.9", new FloatResultNode(6.9));
         assertGroupId("group:69", new IntegerResultNode(69));
         assertGroupId("group:null", new NullResultNode());
-        assertGroupId("group:[6, 9]", new RawResultNode(new byte[]{6, 9}));
+        assertGroupId("group:Bgk=", new RawResultNode(new byte[]{6, 9}));
         assertGroupId("group:a", new StringResultNode("a"));
         assertGroupId("group:6.9:9.6", new FloatBucketResultNode(6.9, 9.6));
         assertGroupId("group:6:9", new IntegerBucketResultNode(6, 9));
         assertGroupId("group:a:b", new StringBucketResultNode("a", "b"));
-        assertGroupId("group:[6, 9]:[9, 6]", new RawBucketResultNode(new RawResultNode(new byte[]{6, 9}),
+        assertGroupId("group:Bgk=:CQY=", new RawBucketResultNode(new RawResultNode(new byte[]{6, 9}),
                 new RawResultNode(new byte[]{9, 6})));
     }
 
