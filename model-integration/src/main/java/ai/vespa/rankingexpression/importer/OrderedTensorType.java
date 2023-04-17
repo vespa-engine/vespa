@@ -96,14 +96,14 @@ public class OrderedTensorType {
      * so that they are correctly laid out in memory for Vespa.
      * Used when importing tensors.
      */
-    public int toDirectIndex(int index) {
+    public long toDirectIndex(int index) {
         if (dimensions.size() == 0) {
             return 0;
         }
         if (dimensionMap == null)  {
             throw new IllegalArgumentException("Dimension map is not available");
         }
-        int directIndex = 0;
+        long directIndex = 0;
         long rest = index;
         for (int i = 0; i < dimensions.size(); ++i) {
             long address = rest / innerSizesOriginal[i];

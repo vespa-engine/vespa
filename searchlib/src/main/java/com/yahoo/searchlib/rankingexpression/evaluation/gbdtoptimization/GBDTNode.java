@@ -70,13 +70,13 @@ public final class GBDTNode extends ExpressionNode {
                 int offset = (int)nextValue - MAX_LEAF_VALUE;
                 boolean comparisonIsTrue = false;
                 if (offset < MAX_VARIABLES) {
-                    comparisonIsTrue = context.getDouble(offset)<values[pc++];
+                    comparisonIsTrue = context.getDouble(offset) < values[pc++];
                 }
-                else if (offset < MAX_VARIABLES*2) {
-                    comparisonIsTrue = context.getDouble(offset-MAX_VARIABLES)==values[pc++];
+                else if (offset < MAX_VARIABLES * 2) {
+                    comparisonIsTrue = context.getDouble(offset - MAX_VARIABLES) == values[pc++];
                 }
-                else if (offset<MAX_VARIABLES*3) {
-                    double testValue = context.getDouble(offset-MAX_VARIABLES*2);
+                else if (offset < MAX_VARIABLES * 3) {
+                    double testValue = context.getDouble(offset - MAX_VARIABLES * 2);
                     int setValuesLeft = (int)values[pc++];
                     while (setValuesLeft > 0) { // test each value in the set
                         setValuesLeft--;
@@ -88,13 +88,13 @@ public final class GBDTNode extends ExpressionNode {
                     pc += setValuesLeft; // jump to after the set
                 }
                 else { // offset<MAX_VARIABLES*4
-                    comparisonIsTrue = ! (context.getDouble(offset-MAX_VARIABLES*3)>=values[pc++]);
+                    comparisonIsTrue = ! (context.getDouble(offset - MAX_VARIABLES * 3) >= values[pc++]);
                 }
 
                 if (comparisonIsTrue)
                     pc++; // true branch - skip the jump value
                 else
-                    pc += values[pc]; // false branch - jump
+                    pc += (int)values[pc]; // false branch - jump
             }
             else { // a leaf
                 return nextValue;

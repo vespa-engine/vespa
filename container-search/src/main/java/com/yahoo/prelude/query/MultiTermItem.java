@@ -67,8 +67,8 @@ abstract class MultiTermItem extends SimpleTaggableItem {
 
         super.encodeThis(buffer);
         byte metadata = 0;
-        metadata |= (operatorType().code << 5) & 0b11100000;
-        metadata |= (    termType().code     ) & 0b00011111;
+        metadata |= (byte)((byte)(operatorType().code << 5) & (byte)0b11100000);
+        metadata |= (byte)(termType().code & (byte)0b00011111);
         buffer.put(metadata);
         buffer.putInt(terms());
         encodeBlueprint(buffer);

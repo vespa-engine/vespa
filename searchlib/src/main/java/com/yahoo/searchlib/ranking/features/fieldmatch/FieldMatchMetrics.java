@@ -16,7 +16,7 @@ import static java.lang.Math.*;
 public final class FieldMatchMetrics implements Cloneable {
 
     /** The calculator creating this - given on initialization */
-    private FieldMatchMetricsComputer source;
+    private final FieldMatchMetricsComputer source;
 
     /** The trace accumulated during execution - empty if no tracing */
     private final Trace trace = new Trace();
@@ -75,7 +75,7 @@ public final class FieldMatchMetrics implements Cloneable {
 
         currentSequence=0;
         segmentStarts.clear();
-        queryLength=source.getQuery().getTerms().length;
+        queryLength = source.getQuery().getTerms().length;
     }
 
     /** Are these metrics representing a complete match */
@@ -93,7 +93,7 @@ public final class FieldMatchMetrics implements Cloneable {
      */
     public float get(String name) {
         try {
-            Method getter=getClass().getMethod("get" + name.substring(0,1).toUpperCase() + name.substring(1));
+            Method getter = getClass().getMethod("get" + name.substring(0, 1).toUpperCase() + name.substring(1));
             return ((Number)getter.invoke(this)).floatValue();
         }
         catch (NoSuchMethodException e) {
@@ -140,7 +140,7 @@ public final class FieldMatchMetrics implements Cloneable {
      * segment or out of order
      */
     public float getAbsoluteProximity() {
-        if (pairs <1) return 0.1f;
+        if (pairs < 1) return 0.1f;
 
         return proximity/pairs;
     }
@@ -151,7 +151,7 @@ public final class FieldMatchMetrics implements Cloneable {
      * following each other in sequence, and close to 0 if they are far from each other or out of order
      */
     public float getUnweightedProximity() {
-        if (pairs <1) return 1f;
+        if (pairs < 1) return 1f;
         return unweightedProximity/pairs;
     }
 
@@ -271,33 +271,33 @@ public final class FieldMatchMetrics implements Cloneable {
      * <code>queryCompleteness * ( 1 - fieldCompletenessImportance) + fieldCompletenessImportance * fieldCompleteness</code>
      */
     public float getCompleteness() {
-        float fieldCompletenessImportance=source.getParameters().getFieldCompletenessImportance();
+        float fieldCompletenessImportance = source.getParameters().getFieldCompletenessImportance();
         return getQueryCompleteness() * ( 1 - fieldCompletenessImportance) + fieldCompletenessImportance*getFieldCompleteness();
     }
 
     /** Returns how well the order of the terms agreed in segments: <code>1-outOfOrder/pairs</code> */
     public float getOrderness() {
-        if (pairs ==0) return 1f;
+        if (pairs == 0) return 1f;
         return 1-(float)outOfOrder/pairs;
     }
 
     /** Returns the degree to which different terms are related (occurring in the same segment): <code>1-segments/(matches-1)</code> */
     public float getRelatedness() {
-        if (matches==0) return 0;
-        if (matches==1) return 1;
-        return 1-(float)(segments-1)/(matches-1);
+        if (matches == 0) return 0;
+        if (matches == 1) return 1;
+        return 1 - (float)(segments - 1) / (matches - 1);
     }
 
     /** Returns <code>longestSequence/matches</code> */
     public float getLongestSequenceRatio() {
-        if (matches==0) return 0;
-        return (float)longestSequence/matches;
+        if (matches == 0) return 0;
+        return (float)longestSequence / matches;
     }
 
     /** Returns the closeness of the segments in the field: <code>1-segmentDistance/fieldLength</code> */
     public float getSegmentProximity() {
-        if (matches==0) return 0;
-        return 1-segmentDistance/source.getField().terms().size();
+        if (matches == 0) return 0;
+        return 1 - segmentDistance / source.getField().terms().size();
     }
 
     /**
@@ -306,14 +306,14 @@ public final class FieldMatchMetrics implements Cloneable {
      * This is absoluteProximity/average connectedness.
      */
     public float getProximity() {
-        float totalConnectedness=0;
-        for (int i=1; i<queryLength; i++) {
-            totalConnectedness+=Math.max(0.1,source.getQuery().getTerms()[i].getConnectedness());
+        float totalConnectedness = 0;
+        for (int i = 1; i < queryLength; i++) {
+            totalConnectedness += (float)Math.max(0.1, source.getQuery().getTerms()[i].getConnectedness());
         }
-        float averageConnectedness=0.1f;
-        if (queryLength>1)
-            averageConnectedness=totalConnectedness/(queryLength-1);
-        return getAbsoluteProximity()/averageConnectedness;
+        float averageConnectedness = 0.1f;
+        if (queryLength > 1)
+            averageConnectedness = totalConnectedness / (queryLength - 1);
+        return getAbsoluteProximity() / averageConnectedness;
     }
 
     /**
@@ -378,7 +378,7 @@ public final class FieldMatchMetrics implements Cloneable {
      * not only when the metrics are complete, because this metric is used to choose segments during calculation.</p>
      */
     float getSegmentationScore() {
-        if (segments==0) return 0;
+        if (segments == 0) return 0;
         return getAbsoluteProximity() * getExactness() / (segments * segments);
     }
 
@@ -389,7 +389,7 @@ public final class FieldMatchMetrics implements Cloneable {
 
     /** Called once for every match */
     void onMatch(int i, int j) {
-        if (matches>=source.getField().terms().size()) return;
+        if (matches >= source.getField().terms().size()) return;
         matches++;
         weight += (float)source.getQuery().getTerms()[i].getWeight() / source.getQuery().getTotalTermWeight();
         significance += source.getQuery().getTerms()[i].getSignificance() / source.getQuery().getTotalSignificance();
@@ -418,42 +418,42 @@ public final class FieldMatchMetrics implements Cloneable {
     }
 
     /** Called once when this value is calculated, before onComplete */
-    void setOccurrence(float occurrence) { this.occurrence=occurrence; }
+    void setOccurrence(float occurrence) { this.occurrence = occurrence; }
 
     /** Called once when this value is calculated, before onComplete */
-    void setWeightedOccurrence(float weightedOccurrence) { this.weightedOccurrence=weightedOccurrence; }
+    void setWeightedOccurrence(float weightedOccurrence) { this.weightedOccurrence = weightedOccurrence; }
 
     /** Called once when this value is calculated, before onComplete */
-    void setAbsoluteOccurrence(float absoluteOccurrence) { this.absoluteOccurrence=absoluteOccurrence; }
+    void setAbsoluteOccurrence(float absoluteOccurrence) { this.absoluteOccurrence = absoluteOccurrence; }
 
     /** Called once when this value is calculated, before onComplete */
-    void setWeightedAbsoluteOccurrence(float weightedAbsoluteOccurrence) { this.weightedAbsoluteOccurrence=weightedAbsoluteOccurrence; }
+    void setWeightedAbsoluteOccurrence(float weightedAbsoluteOccurrence) { this.weightedAbsoluteOccurrence = weightedAbsoluteOccurrence; }
 
     /** Called once when this value is calculated, before onComplete */
-    void setSignificantOccurrence(float significantOccurrence) { this.significantOccurrence =significantOccurrence; }
+    void setSignificantOccurrence(float significantOccurrence) { this.significantOccurrence = significantOccurrence; }
 
     /** Called once when matching is complete */
     void onComplete() {
         // segment distance - calculated from sorted segment starts
-        if (segmentStarts.size()<=1) {
-            segmentDistance=0;
+        if (segmentStarts.size() <= 1) {
+            segmentDistance = 0;
         }
         else {
             Collections.sort(segmentStarts);
-            for (int i=1; i<segmentStarts.size(); i++) {
-                segmentDistance+=segmentStarts.get(i)-segmentStarts.get(i-1)+1;
+            for (int i = 1; i < segmentStarts.size(); i++) {
+                segmentDistance += segmentStarts.get(i) - segmentStarts.get(i - 1) + 1;
             }
         }
 
-        if (head==-1) head=0;
-        if (tail==-1) tail=0;
+        if (head == -1) head = 0;
+        if (tail == -1) tail = 0;
     }
 
     // Events on pairs ----------
 
     /** Called when <i>any</i> pair is encountered */
     void onPair(int i, int j, int previousJ) {
-        int distance = j-previousJ-1;
+        int distance = j - previousJ - 1;
         if (distance < 0) distance++; // Discontinuity where the two terms are in the same position
         if (abs(distance) > source.getParameters().getProximityLimit()) return; // Contribution=0
 
@@ -463,7 +463,7 @@ public final class FieldMatchMetrics implements Cloneable {
         unweightedProximity += pairProximity;
 
         float connectedness = source.getQuery().getTerms()[i].getConnectedness();
-        proximity += pow(pairProximity, connectedness/0.1) * max(0.1, connectedness);
+        proximity += (float)pow(pairProximity, connectedness / 0.1) * (float)max(0.1, connectedness);
 
         pairs++;
     }
@@ -498,8 +498,8 @@ public final class FieldMatchMetrics implements Cloneable {
     @Override
     public FieldMatchMetrics clone() {
         try {
-            FieldMatchMetrics clone=(FieldMatchMetrics)super.clone();
-            clone.segmentStarts=new ArrayList<>(segmentStarts);
+            FieldMatchMetrics clone = (FieldMatchMetrics)super.clone();
+            clone.segmentStarts = new ArrayList<>(segmentStarts);
             return clone;
         }
         catch (CloneNotSupportedException e) {
@@ -514,19 +514,19 @@ public final class FieldMatchMetrics implements Cloneable {
 
     public String toStringDump() {
         try {
-            StringBuilder b=new StringBuilder();
+            StringBuilder b = new StringBuilder();
             for (Method m : this.getClass().getDeclaredMethods()) {
                 if ( ! m.getName().startsWith("get")) continue;
-                if (m.getReturnType()!=Integer.TYPE && m.getReturnType()!=Float.TYPE) continue;
-                if ( m.getParameterTypes().length!=0 ) continue;
+                if (m.getReturnType() != Integer.TYPE && m.getReturnType() != Float.TYPE) continue;
+                if ( m.getParameterTypes().length != 0 ) continue;
 
-                Object value=m.invoke(this,new Object[0]);
-                b.append(m.getName().substring(3,4).toLowerCase() + m.getName().substring(4) + ": " + value + "\n");
+                Object value = m.invoke(this, new Object[0]);
+                b.append(m.getName().substring(3, 4).toLowerCase() + m.getName().substring(4) + ": " + value + "\n");
             }
             return b.toString();
         }
         catch (Exception e) {
-            throw new RuntimeException("Programming error",e);
+            throw new RuntimeException("Programming error", e);
         }
     }
 
