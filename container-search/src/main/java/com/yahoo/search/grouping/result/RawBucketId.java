@@ -18,8 +18,6 @@ public class RawBucketId extends BucketGroupId<RawBase64> {
      * @param to   The identifying exclusive-to raw buffer.
      */
     public RawBucketId(byte[] from, byte[] to) {
-        super("raw_bucket",
-                new RawBase64(from, true),
-                new RawBase64(to, true));
+        super("raw_bucket", new RawBase64(from), new RawBase64(to));
     }
 }

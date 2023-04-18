@@ -26,10 +26,10 @@ public class GroupIdTestCase {
         assertEquals(9L, rangeId.getTo());
 
         valueId = new RawId(new byte[]{6, 9});
-        assertEquals(new RawBase64(new byte[]{6, 9}, true), valueId.getValue());
+        assertEquals(new RawBase64(new byte[]{6, 9}), valueId.getValue());
         rangeId = new RawBucketId(new byte[]{6, 9}, new byte[]{9, 6});
-        assertEquals(new RawBase64(new byte[]{6, 9}, true), rangeId.getFrom());
-        assertEquals(new RawBase64(new byte[]{9, 6}, true), rangeId.getTo());
+        assertEquals(new RawBase64(new byte[]{6, 9}), rangeId.getFrom());
+        assertEquals(new RawBase64(new byte[]{9, 6}), rangeId.getTo());
 
         valueId = new StringId("69");
         assertEquals("69", valueId.getValue());
