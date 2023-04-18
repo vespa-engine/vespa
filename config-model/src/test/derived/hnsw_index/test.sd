@@ -4,7 +4,7 @@ schema test {
     field t1 type tensor(x[128]) {
       indexing: attribute | index
       attribute {
-        distance-metric: angular
+        distance-metric: prenormalized-angular
       }
       index {
         hnsw {

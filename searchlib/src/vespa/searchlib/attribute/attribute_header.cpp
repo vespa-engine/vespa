@@ -28,6 +28,8 @@ const vespalib::string euclidean = "euclidean";
 const vespalib::string angular = "angular";
 const vespalib::string geodegrees = "geodegrees";
 const vespalib::string innerproduct = "innerproduct";
+const vespalib::string prenormalized_angular = "prenormalized_angular";
+const vespalib::string maximum_inner_product = "maximum_inner_product";
 const vespalib::string hamming = "hamming";
 const vespalib::string doc_id_limit_tag = "docIdLimit";
 const vespalib::string enumerated_tag = "enumerated";
@@ -101,6 +103,8 @@ to_string(DistanceMetric metric)
         case DistanceMetric::GeoDegrees: return geodegrees;
         case DistanceMetric::InnerProduct: return innerproduct;
         case DistanceMetric::Hamming: return hamming;
+        case DistanceMetric::PrenormalizedAngular: return prenormalized_angular;
+        case DistanceMetric::MaximumInnerProduct: return maximum_inner_product;
     }
     throw vespalib::IllegalArgumentException("Unknown distance metric " + std::to_string(static_cast<int>(metric)));
 }
@@ -116,6 +120,10 @@ to_distance_metric(const vespalib::string& metric)
         return DistanceMetric::GeoDegrees;
     } else if (metric == innerproduct) {
         return DistanceMetric::InnerProduct;
+    } else if (metric == prenormalized_angular) {
+      return DistanceMetric::PrenormalizedAngular;
+    } else if (metric == maximum_inner_product) {
+      return DistanceMetric::MaximumInnerProduct;
     } else if (metric == hamming) {
         return DistanceMetric::Hamming;
     } else {
