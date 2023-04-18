@@ -193,8 +193,8 @@ public class LoadBalancerProvisioner {
         Optional<LoadBalancer> loadBalancer = db.readLoadBalancer(id);
         LoadBalancer newLoadBalancer;
         LoadBalancer.State fromState = loadBalancer.map(LoadBalancer::state).orElse(null);
-        boolean recreateLoadBalancer = loadBalancer.isPresent() && (!inAccount(cloudAccount, loadBalancer.get())
-                                                                    || !hasCorrectVisibility(loadBalancer.get(), zoneEndpoint));
+        boolean recreateLoadBalancer = loadBalancer.isPresent() && (   ! inAccount(cloudAccount, loadBalancer.get())
+                                                                    || ! hasCorrectVisibility(loadBalancer.get(), zoneEndpoint));
         if (recreateLoadBalancer) {
             // We have a load balancer, but with the wrong account or visibility.
             // Load balancer must be removed before we can provision a new one with the wanted visibility
