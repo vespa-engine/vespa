@@ -187,11 +187,11 @@ public class Distribution {
     }
 
     private int getStorageSeed(BucketId bucket, ClusterState state) {
-        int seed = (int) lastNBits(bucket.getRawId(), state.getDistributionBitCount());
+        int seed = (int)lastNBits(bucket.getRawId(), state.getDistributionBitCount());
 
         if (bucket.getUsedBits() > 33) {
             int usedBits = bucket.getUsedBits() - 1;
-            seed ^= lastNBits(bucket.getRawId() >> 32, usedBits - 32) << 6;
+            seed ^= (int)lastNBits(bucket.getRawId() >> 32, usedBits - 32) << 6;
         }
         return seed;
     }

@@ -23,7 +23,7 @@ public class DocumentUpdateFlags {
     }
     public void setCreateIfNonExistent(boolean value) {
         flags &= ~1; // clear flag
-        flags |= value ? 1 : 0; // set flag
+        flags |= value ? (byte)1 : (byte)0; // set flag
     }
     public int injectInto(int value) {
         return extractValue(value) | (flags << 28);

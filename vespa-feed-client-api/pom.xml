@@ -42,6 +42,12 @@
         <configuration>
           <release>${vespaClients.jdk.releaseVersion}</release>
           <showDeprecation>true</showDeprecation>
+          <compilerArgs> <!-- Remove (to use default) when not compiling for 8 -->
+            <arg>-Xlint:all</arg>
+            <arg>-Xlint:-rawtypes</arg>
+            <arg>-Xlint:-unchecked</arg>
+            <arg>-Xlint:-serial</arg>
+          </compilerArgs>
         </configuration>
       </plugin>
       <plugin>

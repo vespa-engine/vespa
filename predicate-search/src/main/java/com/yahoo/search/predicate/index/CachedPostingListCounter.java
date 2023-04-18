@@ -75,7 +75,7 @@ public class CachedPostingListCounter {
 
     private void countUsingBitVector(byte[] nPostingListsForDocument, int postingListBitmap) {
         for (int docId = 0; docId < nDocuments; docId++) {
-            nPostingListsForDocument[docId] += Integer.bitCount(bitVector[docId] & postingListBitmap);
+            nPostingListsForDocument[docId] += (byte)Integer.bitCount(bitVector[docId] & postingListBitmap);
         }
     }
 
@@ -88,8 +88,7 @@ public class CachedPostingListCounter {
     }
 
     public CachedPostingListCounter rebuildCache() {
-        MinMaxPriorityQueue<Entry> mostExpensive = MinMaxPriorityQueue
-                .maximumSize(32).expectedSize(32).create();
+        MinMaxPriorityQueue<Entry> mostExpensive = MinMaxPriorityQueue.maximumSize(32).expectedSize(32).create();
         synchronized (this) {
             for (ObjectLongPair<int[]> p : frequency.keyValuesView()) {
                 mostExpensive.add(new Entry(p.getOne(), p.getTwo()));

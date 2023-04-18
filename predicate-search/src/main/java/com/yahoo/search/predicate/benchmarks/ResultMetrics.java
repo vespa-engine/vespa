@@ -62,8 +62,8 @@ public class ResultMetrics {
     }
 
     private double percentile(double percentile) {
-        int targetCount = (int) Math.round(totalQueries * percentile);
-        int currentCount = 0;
+        long targetCount = Math.round(totalQueries * percentile);
+        long currentCount = 0;
         int index = 0;
         while (currentCount < targetCount && index < SLOTS) {
             currentCount += latencyHistogram[index];

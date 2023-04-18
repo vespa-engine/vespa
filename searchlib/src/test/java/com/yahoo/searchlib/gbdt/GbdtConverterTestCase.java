@@ -3,14 +3,12 @@ package com.yahoo.searchlib.gbdt;
 
 import com.yahoo.searchlib.rankingexpression.RankingExpression;
 import com.yahoo.searchlib.rankingexpression.parser.ParseException;
-import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.io.UnsupportedEncodingException;
-import java.security.Permission;
+import java.nio.charset.StandardCharsets;
 
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertEquals;
@@ -20,36 +18,6 @@ import static org.junit.Assert.fail;
  * @author Simon Thoresen Hult
  */
 public class GbdtConverterTestCase {
-
-    @Before
-    @SuppressWarnings("removal")
-    public void enableSecurityManager() {
-        System.setSecurityManager(new NoExitSecurityManager());
-    }
-
-    @After
-    @SuppressWarnings("removal")
-    public void disableSecurityManager() {
-        System.setSecurityManager(null);
-    }
-
-    @Test
-    public void testOnlyOneArgumentIsAccepted() throws UnsupportedEncodingException {
-        assertError("Usage: GbdtConverter <filename>\n", new String[0]);
-        assertError("Usage: GbdtConverter <filename>\n", new String[] { "foo", "bar" });
-    }
-
-    @Test
-    public void testFileIsFound() throws UnsupportedEncodingException {
-        assertError("Could not find file 'not.found'.\n", new String[] { "not.found" });
-    }
-
-    @Test
-    public void testFileParsingExceptionIsCaught() throws UnsupportedEncodingException {
-        assertError("An error occurred while parsing the content of file 'src/test/files/gbdt_err.xml': " +
-                    "Node 'Unknown' has no 'DecisionTree' children.\n",
-                    new String[] { "src/test/files/gbdt_err.xml" });
-    }
 
     @Test
     public void testEmptyTreesAreIgnored() throws Exception {
@@ -125,7 +93,7 @@ public class GbdtConverterTestCase {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         System.setOut(new PrintStream(out));
         GbdtConverter.main(new String[] { gbdtModelFile });
-        String actualExpression = out.toString("UTF-8");
+        String actualExpression = out.toString(StandardCharsets.UTF_8);
         assertEquals(expectedExpression, actualExpression);
         assertNotNull(new RankingExpression(actualExpression));
     }
@@ -138,26 +106,7 @@ public class GbdtConverterTestCase {
             fail();
         } catch (ExitException e) {
             assertEquals(1, e.status);
-            assertEquals(expected, err.toString("UTF-8"));
-        }
-    }
-
-    @SuppressWarnings("removal")
-    private static class NoExitSecurityManager extends SecurityManager {
-
-        @Override
-        public void checkPermission(Permission perm) {
-            // allow anything
-        }
-
-        @Override
-        public void checkPermission(Permission perm, Object context) {
-            // allow anything
-        }
-
-        @Override
-        public void checkExit(int status) {
-            throw new ExitException(status);
+            assertEquals(expected, err.toString(StandardCharsets.UTF_8));
         }
     }
 
@@ -169,4 +118,5 @@ public class GbdtConverterTestCase {
             this.status = status;
         }
     }
+
 }

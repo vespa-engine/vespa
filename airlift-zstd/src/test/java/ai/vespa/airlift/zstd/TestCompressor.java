@@ -20,6 +20,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static sun.misc.Unsafe.ARRAY_BYTE_BASE_OFFSET;
 
+@SuppressWarnings("proprietary")
 public class TestCompressor
 {
     @Test
