@@ -245,7 +245,7 @@ class ResultBuilder {
 
         private Object convertResult(Object value) {
             if (value instanceof RawData raw) {
-                return new RawBase64(raw.getData(), true);
+                return new RawBase64(raw.getData());
             }
             return value;
         }

@@ -16,6 +16,6 @@ public class RawId extends ValueGroupId<RawBase64> {
      * @param value The identifying byte array.
      */
     public RawId(byte[] value) {
-        super("raw", new RawBase64(value, true));
+        super("raw", new RawBase64(value));
     }
 }
