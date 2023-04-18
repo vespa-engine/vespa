@@ -316,7 +316,7 @@ public class NodeStateChangeChecker {
                                                             sortSetIntoList(groupsWithNodesWantedStateNotUp)));
             }
 
-            Set<Integer> retiredOrNotUpGroups = retiredOrNotUpGroups(clusterState, MAINTENANCE);
+            Set<Integer> retiredOrNotUpGroups = retiredOrNotUpGroups(clusterState);
             int numberOfGroupsToConsider = retiredOrNotUpGroups.size();
             // Subtract one group if node is in a group with nodes already retired or not up, since number of such groups wil
             // not increase if we allow node to go down
@@ -561,10 +561,12 @@ public class NodeStateChangeChecker {
     }
 
     // groups with at least one node with the same state & description
-    private Set<Integer> retiredOrNotUpGroups(ClusterState clusterState, State... states) {
+    private Set<Integer> retiredOrNotUpGroups(ClusterState clusterState) {
         return clusterInfo.getAllNodeInfos().stream()
-                          .filter(nodeInfo -> Set.of(states).contains(nodeInfo.getUserWantedState().getState())
-                                  || Set.of(states).contains(clusterState.getNodeState(nodeInfo.getNode()).getState()))
+                          .filter(nodeInfo -> (nodeInfo.getUserWantedState().getState() == RETIRED
+                                  || nodeInfo.getUserWantedState().getState() != UP
+                                  || clusterState.getNodeState(nodeInfo.getNode()).getState() == RETIRED
+                                  || clusterState.getNodeState(nodeInfo.getNode()).getState() != UP))
                           .map(NodeInfo::getGroup)
                           .filter(Objects::nonNull)
                           .filter(Group::isLeafGroup)

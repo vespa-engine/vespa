@@ -201,7 +201,7 @@ public class NodeStateChangeCheckerTest {
             Result result = nodeStateChangeChecker.evaluateTransition(node, clusterState, SAFE, UP_NODE_STATE, MAINTENANCE_NODE_STATE);
             assertFalse(result.settingWantedStateIsAllowed(), result.toString());
             assertFalse(result.wantedStateAlreadySet());
-            assertEquals("At most 2 groups can have wanted state: [0, 1]", result.getReason());
+            assertEquals("At most 2 groups can have wanted state: [0, 1, 2]", result.getReason());
         }
 
         // Nodes in group 0 and 1 in maintenance, try to set storage node in group 2 to maintenance, should fail
