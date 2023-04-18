@@ -277,11 +277,7 @@ TEST("require that reserved document is reinitialized during load")
     auto read_view = mvav->make_read_view(IMultiValueAttribute::WeightedSetTag<const char*>(), stash);
     ASSERT_TRUE(read_view != nullptr);
     auto reserved_values = read_view->get_values(0u);
-    EXPECT_EQUAL(1u, reserved_values.size());
-    if (reserved_values.size() >= 1) {
-        EXPECT_EQUAL(1, reserved_values[0].weight());
-        EXPECT_EQUAL(vespalib::string(""), vespalib::string(reserved_values[0].value()));
-    }
+    EXPECT_EQUAL(0u, reserved_values.size());
 }
 
 }
