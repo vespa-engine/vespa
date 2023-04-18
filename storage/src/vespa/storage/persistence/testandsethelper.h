@@ -25,9 +25,8 @@ class PersistenceUtil;
 
 class TestAndSetException : public std::runtime_error {
     api::ReturnCode _code;
-
 public:
-    TestAndSetException(api::ReturnCode code)
+    explicit TestAndSetException(api::ReturnCode code)
         : std::runtime_error(code.getMessage()),
         _code(std::move(code))
     {}
@@ -36,11 +35,12 @@ public:
 };
 
 class TestAndSetHelper {
-    const PersistenceUtil                  &_env;
-    const spi::PersistenceProvider         &_spi;
-    const api::TestAndSetCommand           &_cmd;
+    const PersistenceUtil&                  _env;
+    const spi::PersistenceProvider&         _spi;
+    const documentapi::TestAndSetCondition& _condition;
+    const document::Bucket                  _bucket;
     const document::DocumentId              _docId;
-    const document::DocumentType *          _docTypePtr;
+    const document::DocumentType*           _docTypePtr;
     std::unique_ptr<document::select::Node> _docSelectionUp;
     bool                                    _missingDocumentImpliesMatch;
 
@@ -50,10 +50,44 @@ class TestAndSetHelper {
     spi::GetResult retrieveDocument(const document::FieldSet & fieldSet, spi::Context & context);
 
 public:
-    TestAndSetHelper(const PersistenceUtil & env, const spi::PersistenceProvider & _spi,
-                     const document::BucketIdFactory & bucketIdFactory,
-                     const api::TestAndSetCommand & cmd, bool missingDocumentImpliesMatch = false);
+    struct Result {
+        enum class ConditionOutcome {
+            DocNotFound,
+            IsMatch,
+            IsNotMatch,
+            IsTombstone
+        };
+
+        api::Timestamp timestamp = 0;
+        ConditionOutcome condition_outcome = ConditionOutcome::IsNotMatch;
+
+        [[nodiscard]] bool doc_not_found() const noexcept {
+            return condition_outcome == ConditionOutcome::DocNotFound;
+        }
+        [[nodiscard]] bool is_match() const noexcept {
+            return condition_outcome == ConditionOutcome::IsMatch;
+        }
+        [[nodiscard]] bool is_not_match() const noexcept {
+            return condition_outcome == ConditionOutcome::IsNotMatch;
+        }
+        [[nodiscard]] bool is_tombstone() const noexcept {
+            return condition_outcome == ConditionOutcome::IsTombstone;
+        }
+    };
+
+    TestAndSetHelper(const PersistenceUtil& env,
+                     const spi::PersistenceProvider& _spi,
+                     const document::BucketIdFactory& bucket_id_factory,
+                     const documentapi::TestAndSetCondition& condition,
+                     document::Bucket bucket,
+                     document::DocumentId doc_id,
+                     const document::DocumentType* doc_type_ptr,
+                     bool missingDocumentImpliesMatch = false);
     ~TestAndSetHelper();
+
+    Result fetch_and_match_raw(spi::Context& context);
+    api::ReturnCode to_api_return_code(const Result& result) const;
+
     api::ReturnCode retrieveAndMatch(spi::Context & context);
 };
 

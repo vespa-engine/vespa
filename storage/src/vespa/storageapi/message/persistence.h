@@ -185,9 +185,10 @@ public:
  * timestamp.
  */
 class GetCommand : public BucketInfoCommand {
-    document::DocumentId _docId;
-    Timestamp _beforeTimestamp;
-    vespalib::string _fieldSet;
+    document::DocumentId    _docId;
+    Timestamp               _beforeTimestamp;
+    vespalib::string        _fieldSet;
+    TestAndSetCondition     _condition;
     InternalReadConsistency _internal_read_consistency;
 public:
     GetCommand(const document::Bucket &bucket, const document::DocumentId&,
@@ -198,6 +199,9 @@ public:
     Timestamp getBeforeTimestamp() const { return _beforeTimestamp; }
     const vespalib::string& getFieldSet() const { return _fieldSet; }
     void setFieldSet(vespalib::stringref fieldSet) { _fieldSet = fieldSet; }
+    [[nodiscard]] bool has_condition() const noexcept { return _condition.isPresent(); }
+    [[nodiscard]] const TestAndSetCondition& condition() const noexcept { return _condition; }
+    void set_condition(TestAndSetCondition cond) { _condition = std::move(cond); }
     InternalReadConsistency internal_read_consistency() const noexcept {
         return _internal_read_consistency;
     }
@@ -229,12 +233,14 @@ class GetReply : public BucketInfoReply {
     Timestamp _lastModifiedTime;
     bool _had_consistent_replicas;
     bool _is_tombstone;
+    bool _condition_matched;
 public:
     explicit GetReply(const GetCommand& cmd,
                       const DocumentSP& doc = DocumentSP(),
                       Timestamp lastModified = 0,
                       bool had_consistent_replicas = false,
-                      bool is_tombstone = false);
+                      bool is_tombstone = false,
+                      bool condition_matched = false);
 
     ~GetReply() override;
 
@@ -247,6 +253,7 @@ public:
 
     [[nodiscard]] bool had_consistent_replicas() const noexcept { return _had_consistent_replicas; }
     [[nodiscard]] bool is_tombstone() const noexcept { return _is_tombstone; }
+    [[nodiscard]] bool condition_matched() const noexcept { return _condition_matched; }
 
     bool wasFound() const { return (_doc.get() != nullptr); }
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;

@@ -1,16 +1,16 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 // @author Vegard Sjonfjell
-#include <vespa/storage/persistence/persistencehandler.h>
 #include <tests/persistence/persistencetestutils.h>
 #include <vespa/document/test/make_document_bucket.h>
-#include <vespa/documentapi/messagebus/messages/testandsetcondition.h>
 #include <vespa/document/fieldvalue/fieldvalues.h>
 #include <vespa/document/update/documentupdate.h>
 #include <vespa/document/update/assignvalueupdate.h>
 #include <vespa/document/fieldset/fieldsets.h>
+#include <vespa/documentapi/messagebus/messages/testandsetcondition.h>
 #include <vespa/persistence/spi/test.h>
 #include <vespa/persistence/spi/persistenceprovider.h>
 #include <vespa/persistence/spi/docentry.h>
+#include <vespa/storage/persistence/persistencehandler.h>
 #include <functional>
 
 using std::unique_ptr;
@@ -19,6 +19,7 @@ using std::shared_ptr;
 using storage::spi::test::makeSpiBucket;
 using document::test::makeDocumentBucket;
 using document::StringFieldValue;
+using documentapi::TestAndSetCondition;
 using namespace ::testing;
 
 namespace storage {
@@ -34,15 +35,18 @@ struct TestAndSetTest : PersistenceTestUtils {
     const StringFieldValue OLD_CONTENT{"Some old content"};
     const StringFieldValue NEW_CONTENT{"Freshly pressed and squeezed content"};
     const document::Bucket BUCKET = makeDocumentBucket(BUCKET_ID);
+    const TestAndSetCondition MATCHING_CONDITION{"testdoctype1.hstringval=\"*woofy dog*\""};
 
     unique_ptr<PersistenceHandler> persistenceHandler;
     const AsyncHandler * asyncHandler;
+    const SimpleMessageHandler* simple_handler;
     shared_ptr<document::Document> testDoc;
     document::DocumentId testDocId;
 
     TestAndSetTest()
         : persistenceHandler(),
-          asyncHandler(nullptr)
+          asyncHandler(nullptr),
+          simple_handler(nullptr)
     {}
 
     void SetUp() override {
@@ -54,6 +58,7 @@ struct TestAndSetTest : PersistenceTestUtils {
         testDoc = createTestDocument();
         testDocId = testDoc->getId();
         asyncHandler = &_persistenceHandler->asyncHandler();
+        simple_handler = &_persistenceHandler->simpleMessageHandler();
     }
 
     void TearDown() override {
@@ -68,6 +73,8 @@ struct TestAndSetTest : PersistenceTestUtils {
     document::Document::SP retrieveTestDocument();
     void setTestCondition(api::TestAndSetCommand & command);
     void putTestDocument(bool matchingHeader, api::Timestamp timestamp);
+    std::shared_ptr<api::GetReply> invoke_conditional_get();
+    void feed_remove_entry_with_timestamp(api::Timestamp timestamp);
     void assertTestDocumentFoundAndMatchesContent(const document::FieldValue & value);
 
     static std::string expectedDocEntryString(
@@ -247,6 +254,59 @@ TEST_F(TestAndSetTest, conditional_put_to_non_existing_document_should_fail) {
     EXPECT_EQ("", dumpBucket(BUCKET_ID));
 }
 
+TEST_F(TestAndSetTest, conditional_get_returns_doc_metadata_on_match) {
+    const api::Timestamp timestamp = 12345;
+    putTestDocument(true, timestamp);
+    auto reply = invoke_conditional_get();
+
+    ASSERT_EQ(reply->getResult(), api::ReturnCode());
+    EXPECT_EQ(reply->getLastModifiedTimestamp(), timestamp);
+    EXPECT_TRUE(reply->condition_matched());
+    EXPECT_FALSE(reply->is_tombstone());
+    // Checking reply->wasFound() is tempting but doesn't make sense here, as that checks for
+    // the presence of a document object, which metadata-only gets by definition do not return.
+}
+
+TEST_F(TestAndSetTest, conditional_get_returns_doc_metadata_on_mismatch) {
+    const api::Timestamp timestamp = 12345;
+    putTestDocument(false, timestamp);
+    auto reply = invoke_conditional_get();
+
+    ASSERT_EQ(reply->getResult(), api::ReturnCode());
+    EXPECT_EQ(reply->getLastModifiedTimestamp(), timestamp);
+    EXPECT_FALSE(reply->condition_matched());
+    EXPECT_FALSE(reply->is_tombstone());
+}
+
+TEST_F(TestAndSetTest, conditional_get_for_non_existing_document_returns_zero_timestamp) {
+    auto reply = invoke_conditional_get();
+
+    ASSERT_EQ(reply->getResult(), api::ReturnCode());
+    EXPECT_EQ(reply->getLastModifiedTimestamp(), 0);
+    EXPECT_FALSE(reply->condition_matched());
+    EXPECT_FALSE(reply->is_tombstone());
+}
+
+TEST_F(TestAndSetTest, conditional_get_for_non_existing_document_with_explicit_tombstone_returns_tombstone_timestamp) {
+    api::Timestamp timestamp = 56789;
+    feed_remove_entry_with_timestamp(timestamp);
+    auto reply = invoke_conditional_get();
+
+    ASSERT_EQ(reply->getResult(), api::ReturnCode());
+    EXPECT_EQ(reply->getLastModifiedTimestamp(), timestamp);
+    EXPECT_FALSE(reply->condition_matched());
+    EXPECT_TRUE(reply->is_tombstone());
+}
+
+TEST_F(TestAndSetTest, conditional_get_requires_metadata_only_fieldset) {
+    auto get = std::make_shared<api::GetCommand>(BUCKET, testDocId, document::AllFields::NAME);
+    get->set_condition(MATCHING_CONDITION);
+    // Note: uses fetchResult instead of fetch_single_reply due to implicit failure signalling via tracker instance.
+    auto result = fetchResult(simple_handler->handleGet(*get, createTracker(get, BUCKET)));
+    ASSERT_EQ(result, api::ReturnCode(api::ReturnCode::ILLEGAL_PARAMETERS,
+                                      "Conditional Get operations must be metadata-only"));
+}
+
 document::Document::SP
 TestAndSetTest::createTestDocument()
 {
@@ -270,7 +330,7 @@ TestAndSetTest::retrieveTestDocument()
     auto tracker = _persistenceHandler->simpleMessageHandler().handleGet(*get, createTracker(get, BUCKET));
     assert(tracker->getResult() == api::ReturnCode::Result::OK);
 
-    auto & reply = static_cast<api::GetReply &>(tracker->getReply());
+    auto& reply = dynamic_cast<api::GetReply&>(tracker->getReply());
     assert(reply.wasFound());
 
     return reply.getDocument();
@@ -278,7 +338,7 @@ TestAndSetTest::retrieveTestDocument()
 
 void TestAndSetTest::setTestCondition(api::TestAndSetCommand & command)
 {
-    command.setCondition(documentapi::TestAndSetCondition("testdoctype1.hstringval=\"*woofy dog*\""));
+    command.setCondition(MATCHING_CONDITION);
 }
 
 void TestAndSetTest::putTestDocument(bool matchingHeader, api::Timestamp timestamp) {
@@ -288,6 +348,17 @@ void TestAndSetTest::putTestDocument(bool matchingHeader, api::Timestamp timesta
 
     auto put = std::make_shared<api::PutCommand>(BUCKET, testDoc, timestamp);
     fetchResult(asyncHandler->handlePut(*put, createTracker(put, BUCKET)));
+}
+
+std::shared_ptr<api::GetReply> TestAndSetTest::invoke_conditional_get() {
+    auto get = std::make_shared<api::GetCommand>(BUCKET, testDocId, document::NoFields::NAME);
+    get->set_condition(MATCHING_CONDITION);
+    return fetch_single_reply<api::GetReply>(simple_handler->handleGet(*get, createTracker(get, BUCKET)));
+}
+
+void TestAndSetTest::feed_remove_entry_with_timestamp(api::Timestamp timestamp) {
+    auto remove = std::make_shared<api::RemoveCommand>(BUCKET, testDocId, timestamp);
+    (void)fetchResult(asyncHandler->handleRemove(*remove, createTracker(remove, BUCKET)));
 }
 
 void TestAndSetTest::assertTestDocumentFoundAndMatchesContent(const document::FieldValue & value)

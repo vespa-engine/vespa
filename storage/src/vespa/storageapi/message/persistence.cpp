@@ -222,7 +222,8 @@ GetReply::GetReply(const GetCommand& cmd,
                    const DocumentSP& doc,
                    Timestamp lastModified,
                    bool had_consistent_replicas,
-                   bool is_tombstone)
+                   bool is_tombstone,
+                   bool condition_matched)
     : BucketInfoReply(cmd),
       _docId(cmd.getDocumentId()),
       _fieldSet(cmd.getFieldSet()),
@@ -230,7 +231,8 @@ GetReply::GetReply(const GetCommand& cmd,
       _beforeTimestamp(cmd.getBeforeTimestamp()),
       _lastModifiedTime(lastModified),
       _had_consistent_replicas(had_consistent_replicas),
-      _is_tombstone(is_tombstone)
+      _is_tombstone(is_tombstone),
+      _condition_matched(condition_matched)
 {
 }
 

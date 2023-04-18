@@ -848,7 +848,7 @@ TEST_P(StorageProtocolTest, track_memory_footprint_for_some_messages) {
     EXPECT_EQ(144u + sizeof(vespalib::string), sizeof(PutCommand));
     EXPECT_EQ(144u + sizeof(vespalib::string), sizeof(UpdateCommand));
     EXPECT_EQ(224u + sizeof(vespalib::string), sizeof(RemoveCommand));
-    EXPECT_EQ(296u, sizeof(GetCommand));
+    EXPECT_EQ(296u + sizeof(documentapi::TestAndSetCondition), sizeof(GetCommand));
 }
 
 } // storage::api

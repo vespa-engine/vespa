@@ -7,6 +7,8 @@
 #include <vespa/storage/common/bucketmessages.h>
 #include <vespa/storageapi/message/persistence.h>
 
+namespace document { class BucketIdFactory; }
+
 namespace storage {
 
 namespace spi { struct PersistenceProvider; }
@@ -19,7 +21,9 @@ class PersistenceUtil;
  */
 class SimpleMessageHandler : public Types {
 public:
-    SimpleMessageHandler(const PersistenceUtil&, spi::PersistenceProvider&);
+    SimpleMessageHandler(const PersistenceUtil&,
+                         spi::PersistenceProvider&,
+                         const document::BucketIdFactory&);
     MessageTrackerUP handleGet(api::GetCommand& cmd, MessageTrackerUP tracker) const;
     MessageTrackerUP handleRevert(api::RevertCommand& cmd, MessageTrackerUP tracker) const;
     MessageTrackerUP handleCreateIterator(CreateIteratorCommand& cmd, MessageTrackerUP tracker) const;
@@ -27,8 +31,11 @@ public:
     MessageTrackerUP handleReadBucketList(ReadBucketList& cmd, MessageTrackerUP tracker) const;
     MessageTrackerUP handleReadBucketInfo(ReadBucketInfo& cmd, MessageTrackerUP tracker) const;
 private:
-    const PersistenceUtil    & _env;
-    spi::PersistenceProvider & _spi;
+    MessageTrackerUP handle_conditional_get(api::GetCommand& cmd, MessageTrackerUP tracker) const;
+
+    const PersistenceUtil&           _env;
+    spi::PersistenceProvider&        _spi;
+    const document::BucketIdFactory& _bucket_id_factory;
 };
 
 } // storage
