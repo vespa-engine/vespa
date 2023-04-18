@@ -390,7 +390,7 @@ TEST(EnumStoreTest, address_space_usage_is_reported)
 TEST(EnumStoreTest, provided_memory_allocator_is_used)
 {
     AllocStats stats;
-    NumericEnumStore ses(false, DictionaryConfig::Type::BTREE, std::make_unique<MemoryAllocatorObserver>(stats));
+    NumericEnumStore ses(false, DictionaryConfig::Type::BTREE, std::make_unique<MemoryAllocatorObserver>(stats), attribute::getUndefined<NumericEnumStore::EntryType>());
     EXPECT_EQ(AllocStats(1, 0), stats);
 }
 
