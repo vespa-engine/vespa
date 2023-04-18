@@ -30,7 +30,7 @@ type Dispatcher struct {
 	verbose       bool
 
 	mu       sync.RWMutex
-	wg       sync.WaitGroup
+	workerWg sync.WaitGroup
 	resultWg sync.WaitGroup
 }
 
@@ -138,42 +138,20 @@ func (d *Dispatcher) start() {
 	d.results = make(chan Result, 4096)
 	d.msgs = make(chan string, 4096)
 	d.started = true
-	d.wg.Add(1)
-	go func() {
-		defer d.wg.Done()
-		d.readDocuments()
-	}()
 	d.resultWg.Add(2)
-	go func() {
-		defer d.resultWg.Done()
-		d.readResults()
-	}()
-	go func() {
-		defer d.resultWg.Done()
-		d.readMessages()
-	}()
+	go d.sumStats()
+	go d.printMessages()
 }
 
-func (d *Dispatcher) readDocuments() {
-	for id := range d.ready {
-		d.mu.RLock()
-		group := d.inflight[id.String()]
-		d.mu.RUnlock()
-		d.wg.Add(1)
-		go func() {
-			defer d.wg.Done()
-			d.sendDocumentIn(group)
-		}()
-	}
-}
-
-func (d *Dispatcher) readResults() {
+func (d *Dispatcher) sumStats() {
+	defer d.resultWg.Done()
 	for result := range d.results {
 		d.stats.Add(result.Stats)
 	}
 }
 
-func (d *Dispatcher) readMessages() {
+func (d *Dispatcher) printMessages() {
+	defer d.resultWg.Done()
 	for msg := range d.msgs {
 		fmt.Fprintln(d.output, msg)
 	}
@@ -200,6 +178,19 @@ func (d *Dispatcher) enqueueWithSlot(id Id) {
 	d.acquireSlot()
 	d.ready <- id
 	d.throttler.Sent()
+	d.dispatch()
+}
+
+func (d *Dispatcher) dispatch() {
+	d.workerWg.Add(1)
+	go func() {
+		defer d.workerWg.Done()
+		id := <-d.ready
+		d.mu.RLock()
+		group := d.inflight[id.String()]
+		d.mu.RUnlock()
+		d.sendDocumentIn(group)
+	}()
 }
 
 func (d *Dispatcher) acquireSlot() {
@@ -217,13 +208,7 @@ func (d *Dispatcher) Stats() Stats { return d.stats }
 
 // Close closes the dispatcher and waits for all inflight operations to complete.
 func (d *Dispatcher) Close() error {
-	d.mu.Lock()
-	if d.started {
-		close(d.ready)
-	}
-	d.mu.Unlock()
-	d.wg.Wait() // Wait for inflight operations to complete
-
+	d.workerWg.Wait() // Wait for all inflight operations to complete
 	d.mu.Lock()
 	if d.started {
 		close(d.results)
