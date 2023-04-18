@@ -653,15 +653,21 @@ public class DeploymentTriggerTest {
         assertEquals(appVersion1, latestDeployed(app.instance()));
 
         // Downgrading application version.
-        tester.deploymentTrigger().forceChange(app.instanceId(), Change.of(appVersion0));
-        assertEquals(Change.of(appVersion0), app.instance().change());
+        tester.deploymentTrigger().forceChange(app.instanceId(), Change.of(appVersion0).withRevisionPin());
+        assertEquals(Change.of(appVersion0).withRevisionPin(), app.instance().change());
         app.runJob(stagingTest)
-                .runJob(productionUsCentral1)
-                .runJob(productionUsEast3)
-                .runJob(productionUsWest1);
-        assertEquals(Change.empty(), app.instance().change());
+           .runJob(productionUsCentral1)
+           .runJob(productionUsEast3)
+           .runJob(productionUsWest1);
+        assertEquals(Change.empty().withRevisionPin(), app.instance().change());
         assertEquals(appVersion0, app.instance().deployments().get(productionUsEast3.zone()).revision());
         assertEquals(appVersion0, latestDeployed(app.instance()));
+
+        tester.outstandingChangeDeployer().run();
+        assertEquals(Change.empty().withRevisionPin(), app.instance().change());
+        tester.deploymentTrigger().cancelChange(app.instanceId(), ALL);
+        tester.outstandingChangeDeployer().run();
+        assertEquals(Change.of(appVersion1), app.instance().change());
     }
 
     @Test

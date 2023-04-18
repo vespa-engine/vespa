@@ -265,7 +265,7 @@ public class DeploymentStatus {
         for (InstanceName instance : application.deploymentSpec().instanceNames()) {
             Change outstanding = outstandingChange(instance);
             if (outstanding.hasTargets())
-                outstandingChanges.put(instance, outstanding.onTopOf(application.require(instance).change()));
+                outstandingChanges.put(instance, outstanding.onTopOf(application.require(instance).change().withoutRevisionPin()));
         }
         var testJobs = jobsToRun(outstandingChanges, true).entrySet().stream()
                                                           .filter(entry -> ! entry.getKey().type().isProduction());
@@ -596,7 +596,8 @@ public class DeploymentStatus {
 
     /** Changes to deploy with the given job, possibly split in two steps. */
     private List<Change> changes(JobId job, StepStatus step, Change change) {
-        if (change.platform().isEmpty() || change.revision().isEmpty() || change.isPlatformPinned())
+        if (   change.platform().isEmpty() || change.revision().isEmpty()
+            || change.isPlatformPinned() || change.isRevisionPinned())
             return List.of(change);
 
         if (   step.completedAt(change.withoutApplication(), Optional.of(job)).isPresent()
@@ -1096,8 +1097,8 @@ public class DeploymentStatus {
                         return Optional.empty();
 
                     if (     change.revision().isPresent()
-                        && ! existingDeployment.map(Deployment::revision).equals(change.revision())
-                        &&   dependent.equals(job())) // Job should (re-)run in this case, but other dependents need not wait.
+                        &&   change.isRevisionPinned()
+                        && ! existingDeployment.map(Deployment::revision).equals(change.revision()))
                         return Optional.empty();
 
                     Change fullChange = status.application().require(job.id().application().instance()).change();

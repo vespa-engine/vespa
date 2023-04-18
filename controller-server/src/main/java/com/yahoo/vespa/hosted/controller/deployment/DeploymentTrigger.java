@@ -330,15 +330,14 @@ public class DeploymentTrigger {
     /** Cancels the indicated part of the given application's change. */
     public void cancelChange(ApplicationId instanceId, ChangesToCancel cancellation) {
         applications().lockApplicationOrThrow(TenantAndApplicationId.from(instanceId), application -> {
-            Change change;
-            switch (cancellation) {
-                case ALL: change = Change.empty(); break;
-                case VERSIONS: change = Change.empty().withPlatformPin(); break;
-                case PLATFORM: change = application.get().require(instanceId.instance()).change().withoutPlatform(); break;
-                case APPLICATION: change = application.get().require(instanceId.instance()).change().withoutApplication(); break;
-                case PIN: change = application.get().require(instanceId.instance()).change().withoutPlatformPin(); break;
-                default: throw new IllegalArgumentException("Unknown cancellation choice '" + cancellation + "'!");
-            }
+            Change change = switch (cancellation) {
+                case ALL -> Change.empty();
+                case PLATFORM -> application.get().require(instanceId.instance()).change().withoutPlatform();
+                case APPLICATION -> application.get().require(instanceId.instance()).change().withoutApplication();
+                case PIN -> application.get().require(instanceId.instance()).change().withoutPlatformPin();
+                case PLATFORM_PIN -> application.get().require(instanceId.instance()).change().withoutPlatformPin();
+                case APPLICATION_PIN -> application.get().require(instanceId.instance()).change().withoutRevisionPin();
+            };
             applications().store(application.with(instanceId.instance(),
                                                   instance -> withRemainingChange(instance,
                                                                                   change,
@@ -347,7 +346,7 @@ public class DeploymentTrigger {
         });
     }
 
-    public enum ChangesToCancel { ALL, PLATFORM, APPLICATION, VERSIONS, PIN }
+    public enum ChangesToCancel { ALL, PLATFORM, APPLICATION, PIN, PLATFORM_PIN, APPLICATION_PIN }
 
     // ---------- Conveniences ----------
 

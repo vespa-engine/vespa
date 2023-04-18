@@ -135,6 +135,9 @@ public class Versions {
 
     private static RevisionId targetRevision(Application application, Change change,
                                              Optional<RevisionId> existing) {
+        if (change.isRevisionPinned() && change.revision().isPresent())
+            return change.revision().get();
+
         return change.revision()
                      .or(() -> existing)
                      .orElseGet(() -> defaultRevision(application));
