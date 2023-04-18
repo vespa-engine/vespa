@@ -43,21 +43,14 @@ type documentOp struct {
 
 // documentGroup holds document operations which share an ID, and must be dispatched in order.
 type documentGroup struct {
-	ops *list.List
-	mu  sync.Mutex
+	q  *Queue[documentOp]
+	mu sync.Mutex
 }
 
-func (g *documentGroup) add(op documentOp, first bool, listPool *sync.Pool) {
+func (g *documentGroup) add(op documentOp, first bool) {
 	g.mu.Lock()
 	defer g.mu.Unlock()
-	if g.ops == nil {
-		g.ops = listPool.Get().(*list.List)
-	}
-	if first {
-		g.ops.PushFront(op)
-	} else {
-		g.ops.PushBack(op)
-	}
+	g.q.Add(op, first)
 }
 
 func NewDispatcher(feeder Feeder, throttler Throttler, breaker CircuitBreaker, output io.Writer, verbose bool) *Dispatcher {
@@ -75,19 +68,14 @@ func NewDispatcher(feeder Feeder, throttler Throttler, breaker CircuitBreaker, o
 
 func (d *Dispatcher) sendDocumentIn(group *documentGroup) {
 	group.mu.Lock()
-	first := group.ops.Front()
-	if first == nil {
+	op, ok := group.q.Poll()
+	if !ok {
 		panic("sending from empty document group, this should not happen")
 	}
-	op := group.ops.Remove(first).(documentOp)
 	op.attempts++
 	result := d.feeder.Send(op.document)
 	d.results <- result
 	d.releaseSlot()
-	if group.ops.Front() == nil { // Empty list, release it back to the pool
-		d.listPool.Put(group.ops)
-		group.ops = nil
-	}
 	group.mu.Unlock()
 	if d.shouldRetry(op, result) {
 		d.enqueue(op)
@@ -171,11 +159,11 @@ func (d *Dispatcher) enqueue(op documentOp) error {
 	key := op.document.Id.String()
 	group, ok := d.inflight[key]
 	if !ok {
-		group = &documentGroup{}
+		group = &documentGroup{q: NewQueue[documentOp](&d.listPool)}
 		d.inflight[key] = group
 	}
 	d.mu.Unlock()
-	group.add(op, op.attempts > 0, &d.listPool)
+	group.add(op, op.attempts > 0)
 	d.enqueueWithSlot(op.document.Id)
 	return nil
 }
