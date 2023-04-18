@@ -316,21 +316,21 @@ public class NodeStateChangeChecker {
                                                             sortSetIntoList(groupsWithNodesWantedStateNotUp)));
             }
 
-            Set<Integer> retiredOrNotUpGroups = retiredOrNotUpGroups(clusterState);
-            int numberOfGroupsToConsider = retiredOrNotUpGroups.size();
+            Set<Integer> retiredAndNotUpGroups = groupsWithNotRetiredAndNotUp(clusterState);
+            int numberOfGroupsToConsider = retiredAndNotUpGroups.size();
             // Subtract one group if node is in a group with nodes already retired or not up, since number of such groups wil
             // not increase if we allow node to go down
-            if (aGroupContainsNode(retiredOrNotUpGroups, node)) {
-                numberOfGroupsToConsider = retiredOrNotUpGroups.size() - 1;
+            if (aGroupContainsNode(retiredAndNotUpGroups, node)) {
+                numberOfGroupsToConsider = retiredAndNotUpGroups.size() - 1;
             }
             if (numberOfGroupsToConsider < maxNumberOfGroupsAllowedToBeDown) {
-                log.log(FINE, "Allow, retiredOrNotUpGroups=" + retiredOrNotUpGroups);
+                log.log(FINE, "Allow, retiredAndNotUpGroups=" + retiredAndNotUpGroups);
                 return Optional.of(allowSettingOfWantedState());
             }
 
             return Optional.of(createDisallowed(String.format("At most %d groups can have wanted state: %s",
                                                               maxNumberOfGroupsAllowedToBeDown,
-                                                              sortSetIntoList(retiredOrNotUpGroups))));
+                                                              sortSetIntoList(retiredAndNotUpGroups))));
         } else {
             // Return a disallow-result if there is another node with a wanted state
             var otherNodeHasWantedState = otherNodeHasWantedState(nodeInfo);
@@ -560,13 +560,13 @@ public class NodeStateChangeChecker {
                           .collect(Collectors.toSet());
     }
 
-    // groups with at least one node with the same state & description
-    private Set<Integer> retiredOrNotUpGroups(ClusterState clusterState) {
+    // groups with at least one node in state (not retired AND not up)
+    private Set<Integer> groupsWithNotRetiredAndNotUp(ClusterState clusterState) {
         return clusterInfo.getAllNodeInfos().stream()
-                          .filter(nodeInfo -> (nodeInfo.getUserWantedState().getState() == RETIRED
-                                  || nodeInfo.getUserWantedState().getState() != UP
-                                  || clusterState.getNodeState(nodeInfo.getNode()).getState() == RETIRED
-                                  || clusterState.getNodeState(nodeInfo.getNode()).getState() != UP))
+                          .filter(nodeInfo -> (nodeInfo.getUserWantedState().getState() != RETIRED
+                                               && nodeInfo.getUserWantedState().getState() != UP)
+                                  || (clusterState.getNodeState(nodeInfo.getNode()).getState() != RETIRED
+                                      && clusterState.getNodeState(nodeInfo.getNode()).getState() != UP))
                           .map(NodeInfo::getGroup)
                           .filter(Objects::nonNull)
                           .filter(Group::isLeafGroup)
