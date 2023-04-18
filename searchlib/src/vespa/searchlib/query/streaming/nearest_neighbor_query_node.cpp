@@ -6,13 +6,26 @@ namespace search::streaming {
 
 NearestNeighborQueryNode::NearestNeighborQueryNode(std::unique_ptr<QueryNodeResultBase> resultBase, const string& term, const string& index, int32_t id, search::query::Weight weight, double distance_threshold)
     : QueryTerm(std::move(resultBase), term, index, Type::NEAREST_NEIGHBOR),
-      _distance_threshold(distance_threshold)
+      _distance_threshold(distance_threshold),
+      _raw_score()
 {
     setUniqueId(id);
     setWeight(weight);
 }
 
 NearestNeighborQueryNode::~NearestNeighborQueryNode() = default;
+
+bool
+NearestNeighborQueryNode::evaluate() const
+{
+    return _raw_score.has_value();
+}
+
+void
+NearestNeighborQueryNode::reset()
+{
+    _raw_score.reset();
+}
 
 NearestNeighborQueryNode*
 NearestNeighborQueryNode::as_nearest_neighbor_query_node() noexcept
