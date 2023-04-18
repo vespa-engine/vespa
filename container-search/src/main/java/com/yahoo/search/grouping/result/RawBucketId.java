@@ -1,8 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.grouping.result;
 
-import java.util.Arrays;
-import java.util.Base64;
+import com.yahoo.prelude.hitfield.RawBase64;
 
 /**
  * This class is used in {@link Group} instances where the identifying
@@ -10,7 +9,7 @@ import java.util.Base64;
  *
  * @author Ulf Lilleengen
  */
-public class RawBucketId extends BucketGroupId<byte[]> {
+public class RawBucketId extends BucketGroupId<RawBase64> {
 
     /**
      * Constructs a new instance of this class.
@@ -20,7 +19,7 @@ public class RawBucketId extends BucketGroupId<byte[]> {
      */
     public RawBucketId(byte[] from, byte[] to) {
         super("raw_bucket",
-                from, Base64.getEncoder().withoutPadding().encodeToString(from),
-                to, Base64.getEncoder().withoutPadding().encodeToString(to));
+                new RawBase64(from, true),
+                new RawBase64(to, true));
     }
 }

@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.grouping.result;
 
+import com.yahoo.prelude.hitfield.RawBase64;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -25,10 +26,10 @@ public class GroupIdTestCase {
         assertEquals(9L, rangeId.getTo());
 
         valueId = new RawId(new byte[]{6, 9});
-        assertArrayEquals(new byte[]{6, 9}, (byte[]) valueId.getValue());
+        assertEquals(new RawBase64(new byte[]{6, 9}, true), valueId.getValue());
         rangeId = new RawBucketId(new byte[]{6, 9}, new byte[]{9, 6});
-        assertArrayEquals(new byte[]{6, 9}, (byte[]) rangeId.getFrom());
-        assertArrayEquals(new byte[]{9, 6}, (byte[]) rangeId.getTo());
+        assertEquals(new RawBase64(new byte[]{6, 9}, true), rangeId.getFrom());
+        assertEquals(new RawBase64(new byte[]{9, 6}, true), rangeId.getTo());
 
         valueId = new StringId("69");
         assertEquals("69", valueId.getValue());

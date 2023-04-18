@@ -57,7 +57,7 @@ public class HitRendererTestCase {
                         "</group>\n");
         assertRender(newGroup(new RawId(Utf8.toBytes("foo"))),
                 "<group relevance=\"1.0\">\n" +
-                        "<id type=\"raw\">[102, 111, 111]</id>\n" +
+                        "<id type=\"raw\">Zm9v</id>\n" +
                         "</group>\n");
         assertRender(newGroup(new StringId("foo")),
                 "<group relevance=\"1.0\">\n" +
@@ -85,7 +85,7 @@ public class HitRendererTestCase {
                         "</group>\n");
         assertRender(newGroup(new RawBucketId(Utf8.toBytes("bar"), Utf8.toBytes("baz"))),
                 "<group relevance=\"1.0\">\n" +
-                        "<id type=\"raw_bucket\">\n<from>[98, 97, 114]</from>\n<to>[98, 97, 122]</to>\n</id>\n" +
+                        "<id type=\"raw_bucket\">\n<from>YmFy</from>\n<to>YmF6</to>\n</id>\n" +
                         "</group>\n");
     }
 
