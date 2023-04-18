@@ -13,7 +13,9 @@ import com.yahoo.vespa.clustercontroller.core.hostinfo.HostInfo;
 import com.yahoo.vespa.clustercontroller.core.hostinfo.Metrics;
 import com.yahoo.vespa.clustercontroller.core.hostinfo.StorageNode;
 import com.yahoo.vespa.clustercontroller.utils.staterestapi.requests.SetUnitStateRequest;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -24,6 +26,7 @@ import java.util.stream.Collectors;
 
 import static com.yahoo.vdslib.state.NodeType.STORAGE;
 import static com.yahoo.vdslib.state.State.DOWN;
+import static com.yahoo.vdslib.state.State.MAINTENANCE;
 import static com.yahoo.vdslib.state.State.RETIRED;
 import static com.yahoo.vdslib.state.State.UP;
 import static com.yahoo.vespa.clustercontroller.core.NodeStateChangeChecker.Result.allowSettingOfWantedState;
@@ -231,7 +234,7 @@ public class NodeStateChangeChecker {
                 return allowSettingOfWantedState();
             }
         } else {
-            var result = otherNodesHaveWantedState(nodeInfo, newDescription);
+            var result = otherNodesHaveWantedState(nodeInfo, newDescription, clusterState);
             if (result.isPresent())
                 return result.get();
         }
@@ -292,20 +295,42 @@ public class NodeStateChangeChecker {
      *                           if less than maxNumberOfGroupsAllowedToBeDown: return Optional.of(allowed)
      *                           else: if node is in group with nodes already down: return Optional.of(allowed), else Optional.of(disallowed)
      */
-    private Optional<Result> otherNodesHaveWantedState(StorageNodeInfo nodeInfo, String newDescription) {
+    private Optional<Result> otherNodesHaveWantedState(StorageNodeInfo nodeInfo, String newDescription, ClusterState clusterState) {
         Node node = nodeInfo.getNode();
 
         if (groupVisiting.isHierarchical()) {
-            Set<Integer> groupsWithStorageNodesWantedStateNotUp = groupsWithUserWantedStateNotUp();
-            String disallowMessage = "At most nodes in " + maxNumberOfGroupsAllowedToBeDown + " groups can have wanted state";
-            if (groupsWithStorageNodesWantedStateNotUp.size() == 0)
+            Set<Integer> groupsWithNodesWantedStateNotUp = groupsWithUserWantedStateNotUp();
+            if (groupsWithNodesWantedStateNotUp.size() == 0) {
+                log.log(FINE, "groupsWithNodesWantedStateNotUp=0");
                 return Optional.empty();
-            if (groupsWithStorageNodesWantedStateNotUp.size() < maxNumberOfGroupsAllowedToBeDown)
-                return Optional.of(allowSettingOfWantedState());
-            if (aGroupContainsNode(groupsWithStorageNodesWantedStateNotUp, node))
-                return Optional.of(allowSettingOfWantedState());
+            }
 
-            return Optional.of(createDisallowed(disallowMessage));
+            Set<Integer> groupsWithSameStateAndDescription = groupsWithSameStateAndDescription(MAINTENANCE, newDescription);
+            if (aGroupContainsNode(groupsWithSameStateAndDescription, node)) {
+                log.log(FINE, "Node is in group with same state and description, allow");
+                return Optional.of(allowSettingOfWantedState());
+            }
+            // There are groups with nodes not up, but with another description, probably operator set
+            if (groupsWithSameStateAndDescription.size() == 0) {
+                return Optional.of(createDisallowed("Wanted state already set for another node in groups: " +
+                                                            sortSetIntoList(groupsWithNodesWantedStateNotUp)));
+            }
+
+            Set<Integer> retiredOrNotUpGroups = retiredOrNotUpGroups(clusterState, MAINTENANCE);
+            int numberOfGroupsToConsider = retiredOrNotUpGroups.size();
+            // Subtract one group if node is in a group with nodes already retired or not up, since number of such groups wil
+            // not increase if we allow node to go down
+            if (aGroupContainsNode(retiredOrNotUpGroups, node)) {
+                numberOfGroupsToConsider = retiredOrNotUpGroups.size() - 1;
+            }
+            if (numberOfGroupsToConsider < maxNumberOfGroupsAllowedToBeDown) {
+                log.log(FINE, "Allow, retiredOrNotUpGroups=" + retiredOrNotUpGroups);
+                return Optional.of(allowSettingOfWantedState());
+            }
+
+            return Optional.of(createDisallowed(String.format("At most %d groups can have wanted state: %s",
+                                                              maxNumberOfGroupsAllowedToBeDown,
+                                                              sortSetIntoList(retiredOrNotUpGroups))));
         } else {
             // Return a disallow-result if there is another node with a wanted state
             var otherNodeHasWantedState = otherNodeHasWantedState(nodeInfo);
@@ -313,6 +338,12 @@ public class NodeStateChangeChecker {
                 return Optional.of(otherNodeHasWantedState);
         }
         return Optional.empty();
+    }
+
+    private ArrayList<Integer> sortSetIntoList(Set<Integer> retiredOrNotUpGroups) {
+        var groupsWithNodesDown = new ArrayList<>(retiredOrNotUpGroups);
+        Collections.sort(groupsWithNodesDown);
+        return groupsWithNodesDown;
     }
 
     /** Returns a disallow-result, if there is a node in the group with wanted state != UP. */
@@ -507,6 +538,33 @@ public class NodeStateChangeChecker {
     private Set<Integer> groupsWithUserWantedStateNotUp() {
         return clusterInfo.getAllNodeInfos().stream()
                           .filter(sni -> !UP.equals(sni.getUserWantedState().getState()))
+                          .map(NodeInfo::getGroup)
+                          .filter(Objects::nonNull)
+                          .filter(Group::isLeafGroup)
+                          .map(Group::getIndex)
+                          .collect(Collectors.toSet());
+    }
+
+    // groups with at least one node with the same state & description
+    private Set<Integer> groupsWithSameStateAndDescription(State state, String newDescription) {
+        return clusterInfo.getAllNodeInfos().stream()
+                          .filter(nodeInfo -> {
+                              var userWantedState = nodeInfo.getUserWantedState();
+                              return userWantedState.getState() == state &&
+                                      Objects.equals(userWantedState.getDescription(), newDescription);
+                          })
+                          .map(NodeInfo::getGroup)
+                          .filter(Objects::nonNull)
+                          .filter(Group::isLeafGroup)
+                          .map(Group::getIndex)
+                          .collect(Collectors.toSet());
+    }
+
+    // groups with at least one node with the same state & description
+    private Set<Integer> retiredOrNotUpGroups(ClusterState clusterState, State... states) {
+        return clusterInfo.getAllNodeInfos().stream()
+                          .filter(nodeInfo -> Set.of(states).contains(nodeInfo.getUserWantedState().getState())
+                                  || Set.of(states).contains(clusterState.getNodeState(nodeInfo.getNode()).getState()))
                           .map(NodeInfo::getGroup)
                           .filter(Objects::nonNull)
                           .filter(Group::isLeafGroup)
