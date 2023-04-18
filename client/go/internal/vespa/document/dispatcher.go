@@ -29,6 +29,7 @@ type Dispatcher struct {
 	output        io.Writer
 	verbose       bool
 
+	listPool sync.Pool
 	mu       sync.RWMutex
 	workerWg sync.WaitGroup
 	resultWg sync.WaitGroup
@@ -46,11 +47,11 @@ type documentGroup struct {
 	mu  sync.Mutex
 }
 
-func (g *documentGroup) add(op documentOp, first bool) {
+func (g *documentGroup) add(op documentOp, first bool, listPool *sync.Pool) {
 	g.mu.Lock()
 	defer g.mu.Unlock()
 	if g.ops == nil {
-		g.ops = list.New()
+		g.ops = listPool.Get().(*list.List)
 	}
 	if first {
 		g.ops.PushFront(op)
@@ -83,6 +84,10 @@ func (d *Dispatcher) sendDocumentIn(group *documentGroup) {
 	result := d.feeder.Send(op.document)
 	d.results <- result
 	d.releaseSlot()
+	if group.ops.Front() == nil { // Empty list, release it back to the pool
+		d.listPool.Put(group.ops)
+		group.ops = nil
+	}
 	group.mu.Unlock()
 	if d.shouldRetry(op, result) {
 		d.enqueue(op)
@@ -134,6 +139,7 @@ func (d *Dispatcher) start() {
 	if d.started {
 		return
 	}
+	d.listPool.New = func() any { return list.New() }
 	d.ready = make(chan Id, 4096)
 	d.results = make(chan Result, 4096)
 	d.msgs = make(chan string, 4096)
@@ -169,7 +175,7 @@ func (d *Dispatcher) enqueue(op documentOp) error {
 		d.inflight[key] = group
 	}
 	d.mu.Unlock()
-	group.add(op, op.attempts > 0)
+	group.add(op, op.attempts > 0, &d.listPool)
 	d.enqueueWithSlot(op.document.Id)
 	return nil
 }
