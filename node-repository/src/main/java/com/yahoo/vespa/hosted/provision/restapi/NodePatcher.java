@@ -11,8 +11,10 @@ import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.WireguardKey;
+import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.ObjectTraverser;
+import com.yahoo.slime.Slime;
 import com.yahoo.slime.SlimeUtils;
 import com.yahoo.slime.Type;
 import com.yahoo.vespa.hosted.provision.LockedNodeList;
@@ -40,6 +42,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.stream.Stream;
 
 import static com.yahoo.config.provision.NodeResources.DiskSpeed.fast;
 import static com.yahoo.config.provision.NodeResources.DiskSpeed.slow;
@@ -54,9 +57,13 @@ import static com.yahoo.config.provision.NodeResources.StorageType.remote;
  */
 public class NodePatcher {
 
+    // Same as in DropDocumentsReport.java
+    private static final String DROP_DOCUMENTS_REPORT = "dropDocuments";
+
     private static final String WANT_TO_RETIRE = "wantToRetire";
     private static final String WANT_TO_DEPROVISION = "wantToDeprovision";
     private static final String WANT_TO_REBUILD = "wantToRebuild";
+    private static final String REPORTS = "reports";
     private static final Set<String> RECURSIVE_FIELDS = Set.of(WANT_TO_RETIRE, WANT_TO_DEPROVISION);
     private static final Set<String> IP_CONFIG_FIELDS = Set.of("ipAddresses",
                                                                "additionalIpAddresses",
@@ -133,7 +140,29 @@ public class NodePatcher {
                     throw new IllegalArgumentException("Could not set field '" + name + "'", e);
                 }
             }
-            nodeRepository.nodes().write(node, lock);
+            List<Node> nodes = List.of(node);
+            if (node.state() == Node.State.active && isInDocumentsDroppedState(root.field(REPORTS).field(DROP_DOCUMENTS_REPORT))) {
+                NodeList clusterNodes = nodeRepository.nodes()
+                        .list(Node.State.active)
+                        .except(node)
+                        .owner(node.allocation().get().owner())
+                        .cluster(node.allocation().get().membership().cluster().id());
+                boolean allNodesDroppedDocuments = clusterNodes.stream().allMatch(cNode ->
+                        cNode.reports().getReport(DROP_DOCUMENTS_REPORT).map(report -> isInDocumentsDroppedState(report.getInspector())).orElse(false));
+                if (allNodesDroppedDocuments) {
+                    nodes = Stream.concat(nodes.stream(), clusterNodes.stream())
+                            .map(cNode -> {
+                                Cursor reportRoot = new Slime().setObject();
+                                Report report = cNode.reports().getReport(DROP_DOCUMENTS_REPORT).get();
+                                report.toSlime(reportRoot);
+                                reportRoot.setLong("readiedAt", clock.millis());
+
+                                return cNode.with(cNode.reports().withReport(Report.fromSlime(DROP_DOCUMENTS_REPORT, reportRoot)));
+                            })
+                            .toList();
+                }
+            }
+            nodeRepository.nodes().write(nodes, lock);
         }
     }
 
@@ -202,7 +231,7 @@ public class NodePatcher {
                                                      .orElseGet(node.status()::wantToRebuild),
                                              Agent.operator,
                                              clock.instant());
-            case "reports" :
+            case REPORTS:
                 return nodeWithPatchedReports(node, value);
             case "id":
                 return node.withId(asString(value));
@@ -363,6 +392,11 @@ public class NodePatcher {
 
     private Optional<Boolean> asOptionalBoolean(Inspector field) {
         return Optional.of(field).filter(Inspector::valid).map(this::asBoolean);
+    }
+
+    private static boolean isInDocumentsDroppedState(Inspector report) {
+        if (!report.valid()) return false;
+        return report.field("droppedAt").valid() && !report.field("readiedAt").valid();
     }
 
 }
