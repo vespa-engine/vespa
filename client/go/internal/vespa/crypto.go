@@ -111,6 +111,8 @@ func NewRequestSigner(keyID string, pemPrivateKey []byte) *RequestSigner {
 	}
 }
 
+func (rs *RequestSigner) Authenticate(request *http.Request) error { return rs.SignRequest(request) }
+
 // SignRequest signs the given HTTP request using the private key in rs
 func (rs *RequestSigner) SignRequest(request *http.Request) error {
 	timestamp := rs.now().UTC().Format(time.RFC3339)

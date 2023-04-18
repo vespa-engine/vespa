@@ -1,7 +1,6 @@
 package zts
 
 import (
-	"crypto/tls"
 	"testing"
 
 	"github.com/vespa-engine/vespa/client/go/internal/mock"
@@ -9,17 +8,17 @@ import (
 
 func TestAccessToken(t *testing.T) {
 	httpClient := mock.HTTPClient{}
-	client, err := NewClient(&httpClient, "http://example.com")
+	client, err := NewClient(&httpClient, "vespa.vespa", "http://example.com")
 	if err != nil {
 		t.Fatal(err)
 	}
 	httpClient.NextResponseString(400, `{"message": "bad request"}`)
-	_, err = client.AccessToken("vespa.vespa", tls.Certificate{})
+	_, err = client.AccessToken()
 	if err == nil {
 		t.Fatal("want error for non-ok response status")
 	}
 	httpClient.NextResponseString(200, `{"access_token": "foo bar"}`)
-	token, err := client.AccessToken("vespa.vespa", tls.Certificate{})
+	token, err := client.AccessToken()
 	if err != nil {
 		t.Fatal(err)
 	}

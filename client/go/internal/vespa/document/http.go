@@ -29,7 +29,7 @@ type ClientOptions struct {
 	BaseURL    string
 	Timeout    time.Duration
 	Route      string
-	TraceLevel *int
+	TraceLevel int
 }
 
 type countingHTTPClient struct {
@@ -72,14 +72,18 @@ func NewClient(options ClientOptions, httpClients []util.HTTPClient) *Client {
 
 func (c *Client) queryParams() url.Values {
 	params := url.Values{}
-	if c.options.Timeout > 0 {
-		params.Set("timeout", strconv.FormatInt(c.options.Timeout.Milliseconds(), 10)+"ms")
+	timeout := c.options.Timeout
+	if timeout == 0 {
+		timeout = 200 * time.Second
+	} else {
+		timeout = timeout*11/10 + 1000
 	}
+	params.Set("timeout", strconv.FormatInt(timeout.Milliseconds(), 10)+"ms")
 	if c.options.Route != "" {
 		params.Set("route", c.options.Route)
 	}
-	if c.options.TraceLevel != nil {
-		params.Set("tracelevel", strconv.Itoa(*c.options.TraceLevel))
+	if c.options.TraceLevel > 0 {
+		params.Set("tracelevel", strconv.Itoa(c.options.TraceLevel))
 	}
 	return params
 }
@@ -166,7 +170,7 @@ func (c *Client) Send(document Document) Result {
 	}
 	defer resp.Body.Close()
 	elapsed := c.now().Sub(start)
-	return c.resultWithResponse(resp, result, document, elapsed)
+	return resultWithResponse(resp, result, document, elapsed)
 }
 
 func resultWithErr(result Result, err error) Result {
@@ -176,7 +180,7 @@ func resultWithErr(result Result, err error) Result {
 	return result
 }
 
-func (c *Client) resultWithResponse(resp *http.Response, result Result, document Document, elapsed time.Duration) Result {
+func resultWithResponse(resp *http.Response, result Result, document Document, elapsed time.Duration) Result {
 	result.HTTPStatus = resp.StatusCode
 	result.Stats.Responses++
 	result.Stats.ResponsesByCode = map[int]int64{resp.StatusCode: 1}

@@ -3,7 +3,6 @@ package vespa
 
 import (
 	"bytes"
-	"crypto/tls"
 	"fmt"
 	"io"
 	"net/http"
@@ -19,10 +18,16 @@ import (
 
 type mockVespaApi struct {
 	deploymentConverged bool
+	authFailure         bool
 	serverURL           string
 }
 
 func (v *mockVespaApi) mockVespaHandler(w http.ResponseWriter, req *http.Request) {
+	if v.authFailure {
+		response := `{"message":"unauthorized"}`
+		w.WriteHeader(401)
+		w.Write([]byte(response))
+	}
 	switch req.URL.Path {
 	case "/cli/v1/":
 		response := `{"minVersion":"8.0.0"}`
@@ -65,17 +70,17 @@ func (v *mockVespaApi) mockVespaHandler(w http.ResponseWriter, req *http.Request
 }
 
 func TestCustomTarget(t *testing.T) {
-	lt := LocalTarget(&mock.HTTPClient{})
+	lt := LocalTarget(&mock.HTTPClient{}, TLSOptions{})
 	assertServiceURL(t, "http://127.0.0.1:19071", lt, "deploy")
 	assertServiceURL(t, "http://127.0.0.1:8080", lt, "query")
 	assertServiceURL(t, "http://127.0.0.1:8080", lt, "document")
 
-	ct := CustomTarget(&mock.HTTPClient{}, "http://192.0.2.42")
+	ct := CustomTarget(&mock.HTTPClient{}, "http://192.0.2.42", TLSOptions{})
 	assertServiceURL(t, "http://192.0.2.42:19071", ct, "deploy")
 	assertServiceURL(t, "http://192.0.2.42:8080", ct, "query")
 	assertServiceURL(t, "http://192.0.2.42:8080", ct, "document")
 
-	ct2 := CustomTarget(&mock.HTTPClient{}, "http://192.0.2.42:60000")
+	ct2 := CustomTarget(&mock.HTTPClient{}, "http://192.0.2.42:60000", TLSOptions{})
 	assertServiceURL(t, "http://192.0.2.42:60000", ct2, "deploy")
 	assertServiceURL(t, "http://192.0.2.42:60000", ct2, "query")
 	assertServiceURL(t, "http://192.0.2.42:60000", ct2, "document")
@@ -85,7 +90,7 @@ func TestCustomTargetWait(t *testing.T) {
 	vc := mockVespaApi{}
 	srv := httptest.NewServer(http.HandlerFunc(vc.mockVespaHandler))
 	defer srv.Close()
-	target := CustomTarget(util.CreateClient(time.Second*10), srv.URL)
+	target := CustomTarget(util.CreateClient(time.Second*10), srv.URL, TLSOptions{})
 
 	_, err := target.Service("query", time.Millisecond, 42, "")
 	assert.NotNil(t, err)
@@ -107,6 +112,9 @@ func TestCloudTargetWait(t *testing.T) {
 
 	var logWriter bytes.Buffer
 	target := createCloudTarget(t, srv.URL, &logWriter)
+	vc.authFailure = true
+	assertServiceWaitErr(t, 401, true, target, "deploy")
+	vc.authFailure = false
 	assertServiceWait(t, 200, target, "deploy")
 
 	_, err := target.Service("query", time.Millisecond, 42, "")
@@ -157,10 +165,11 @@ func createCloudTarget(t *testing.T, url string, logWriter io.Writer) Target {
 	apiKey, err := CreateAPIKey()
 	assert.Nil(t, err)
 
+	auth := &mockAuthenticator{}
 	target, err := CloudTarget(
 		util.CreateClient(time.Second*10),
-		&mockZTS{},
-		&mockAuth0{},
+		auth,
+		auth,
 		APIOptions{APIKey: apiKey, System: PublicSystem},
 		CloudDeploymentOptions{
 			Deployment: Deployment{
@@ -175,7 +184,6 @@ func createCloudTarget(t *testing.T, url string, logWriter io.Writer) Target {
 	}
 	if ct, ok := target.(*cloudTarget); ok {
 		ct.apiOptions.System.URL = url
-		ct.zts = &mockZTS{token: "foo bar"}
 	} else {
 		t.Fatalf("Wrong target type %T", ct)
 	}
@@ -189,22 +197,22 @@ func assertServiceURL(t *testing.T, url string, target Target, service string) {
 }
 
 func assertServiceWait(t *testing.T, expectedStatus int, target Target, service string) {
+	assertServiceWaitErr(t, expectedStatus, false, target, service)
+}
+
+func assertServiceWaitErr(t *testing.T, expectedStatus int, expectErr bool, target Target, service string) {
 	s, err := target.Service(service, 0, 42, "")
 	assert.Nil(t, err)
 
 	status, err := s.Wait(0)
-	assert.Nil(t, err)
+	if expectErr {
+		assert.NotNil(t, err)
+	} else {
+		assert.Nil(t, err)
+	}
 	assert.Equal(t, expectedStatus, status)
 }
 
-type mockZTS struct{ token string }
+type mockAuthenticator struct{}
 
-func (c *mockZTS) AccessToken(domain string, certificate tls.Certificate) (string, error) {
-	return c.token, nil
-}
-
-type mockAuth0 struct{}
-
-func (a *mockAuth0) AccessToken() (string, error) { return "", nil }
-
-func (a *mockAuth0) HasCredentials() bool { return true }
+func (a *mockAuthenticator) Authenticate(request *http.Request) error { return nil }
