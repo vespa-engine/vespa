@@ -906,13 +906,13 @@ public class NodesV2ApiTest {
 
         // Test patching with overrides
         tester.assertResponse(new Request("http://localhost:8080/nodes/v2/node/" + host,
-                                          "{\"minDiskAvailableGb\":5432,\"minMainMemoryAvailableGb\":2345}".getBytes(StandardCharsets.UTF_8),
+                                          "{\"diskGb\":5432,\"memoryGb\":2345}".getBytes(StandardCharsets.UTF_8),
                                           Request.Method.PATCH),
                               400,
-                              "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Could not set field 'minMainMemoryAvailableGb': Can only override disk GB for configured flavor\"}");
+                              "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Could not set field 'memoryGb': Can only override disk GB for configured flavor\"}");
 
         assertResponse(new Request("http://localhost:8080/nodes/v2/node/" + host,
-                        "{\"minDiskAvailableGb\":5432}".getBytes(StandardCharsets.UTF_8),
+                        "{\"diskGb\":5432}".getBytes(StandardCharsets.UTF_8),
                         Request.Method.PATCH),
                 "{\"message\":\"Updated " + host + "\"}");
         tester.assertResponseContains(new Request("http://localhost:8080/nodes/v2/node/" + host),

@@ -204,16 +204,13 @@ public class NodePatcher {
                                              clock.instant());
             case "reports" :
                 return nodeWithPatchedReports(node, value);
-            case "id" :
+            case "id":
                 return node.withId(asString(value));
             case "diskGb":
-            case "minDiskAvailableGb":
                 return node.with(node.flavor().with(node.flavor().resources().withDiskGb(value.asDouble())), Agent.operator, clock.instant());
             case "memoryGb":
-            case "minMainMemoryAvailableGb":
                 return node.with(node.flavor().with(node.flavor().resources().withMemoryGb(value.asDouble())), Agent.operator, clock.instant());
             case "vcpu":
-            case "minCpuCores":
                 return node.with(node.flavor().with(node.flavor().resources().withVcpu(value.asDouble())), Agent.operator, clock.instant());
             case "fastDisk":
                 return node.with(node.flavor().with(node.flavor().resources().with(value.asBool() ? fast : slow)), Agent.operator, clock.instant());
@@ -244,18 +241,12 @@ public class NodePatcher {
     }
 
     private Node applyIpconfigField(Node node, String name, Inspector value, LockedNodeList nodes) {
-        switch (name) {
-            case "ipAddresses" -> {
-                return IP.Config.verify(node.with(node.ipConfig().withPrimary(asStringSet(value))), nodes);
-            }
-            case "additionalIpAddresses" -> {
-                return IP.Config.verify(node.with(node.ipConfig().withPool(node.ipConfig().pool().withIpAddresses(asStringSet(value)))), nodes);
-            }
-            case "additionalHostnames" -> {
-                return IP.Config.verify(node.with(node.ipConfig().withPool(node.ipConfig().pool().withHostnames(asHostnames(value)))), nodes);
-            }
-        }
-        throw new IllegalArgumentException("Could not apply field '" + name + "' on a node: No such modifiable field");
+        return switch (name) {
+            case "ipAddresses" -> IP.Config.verify(node.with(node.ipConfig().withPrimary(asStringSet(value))), nodes);
+            case "additionalIpAddresses" -> IP.Config.verify(node.with(node.ipConfig().withPool(node.ipConfig().pool().withIpAddresses(asStringSet(value)))), nodes);
+            case "additionalHostnames" -> IP.Config.verify(node.with(node.ipConfig().withPool(node.ipConfig().pool().withHostnames(asHostnames(value)))), nodes);
+            default -> throw new IllegalArgumentException("Could not apply field '" + name + "' on a node: No such modifiable field");
+        };
     }
 
     private Node nodeWithPatchedReports(Node node, Inspector reportsInspector) {
