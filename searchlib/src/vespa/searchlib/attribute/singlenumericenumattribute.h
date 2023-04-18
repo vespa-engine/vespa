@@ -43,7 +43,7 @@ private:
 protected:
 
     // from SingleValueEnumAttribute
-    void considerUpdateAttributeChange(const Change & c) override;
+    void considerUpdateAttributeChange(DocId doc, const Change & c) override;
     void considerArithmeticAttributeChange(const Change & c, EnumStoreBatchUpdater & inserter) override;
     void applyArithmeticValueChange(const Change& c, EnumStoreBatchUpdater& updater) override;
 

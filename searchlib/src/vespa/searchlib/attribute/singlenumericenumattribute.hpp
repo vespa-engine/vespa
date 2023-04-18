@@ -15,9 +15,9 @@ namespace search {
 
 template <typename B>
 void
-SingleValueNumericEnumAttribute<B>::considerUpdateAttributeChange(const Change & c)
+SingleValueNumericEnumAttribute<B>::considerUpdateAttributeChange(DocId doc, const Change & c)
 {
-    _currDocValues[c._doc] = c._data.get();
+    _currDocValues[doc] = c._data.get();
 }
 
 template <typename B>
@@ -53,7 +53,7 @@ SingleValueNumericEnumAttribute<B>::applyArithmeticValueChange(const Change& c, 
     T newValue = this->template applyArithmetic<T, typename Change::DataType>(get(c._doc), c._data.getArithOperand(), c._type);
     this->_enumStore.find_index(newValue, newIdx);
 
-    this->updateEnumRefCounts(c, newIdx, oldIdx, updater);
+    this->updateEnumRefCounts(c._doc, newIdx, oldIdx, updater);
 }
 
 template <typename B>

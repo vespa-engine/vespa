@@ -146,7 +146,7 @@ SingleValueEnumAttribute<B>::considerUpdateAttributeChange(const Change & c, Enu
     } else {
         c.set_entry_ref(idx.ref());
     }
-    considerUpdateAttributeChange(c); // for numeric
+    considerUpdateAttributeChange(c._doc, c); // for numeric
 }
 
 template <typename B>
@@ -158,9 +158,7 @@ SingleValueEnumAttribute<B>::considerAttributeChange(const Change & c, EnumStore
     } else if (c._type >= ChangeBase::ADD && c._type <= ChangeBase::DIV) {
         considerArithmeticAttributeChange(c, inserter); // for numeric
     } else if (c._type == ChangeBase::CLEARDOC) {
-        Change clearDoc(this->_defaultValue);
-        clearDoc._doc = c._doc;
-        considerUpdateAttributeChange(clearDoc, inserter);
+        considerUpdateAttributeChange(c._doc, this->_defaultValue);
     }
 }
 
@@ -175,7 +173,7 @@ SingleValueEnumAttribute<B>::applyUpdateValueChange(const Change& c, EnumStoreBa
     } else {
         this->_enumStore.find_index(c._data.raw(), newIdx);
     }
-    updateEnumRefCounts(c, newIdx, oldIdx, updater);
+    updateEnumRefCounts(c._doc, newIdx, oldIdx, updater);
 }
 
 template <typename B>
@@ -183,30 +181,26 @@ void
 SingleValueEnumAttribute<B>::applyValueChanges(EnumStoreBatchUpdater& updater)
 {
     ValueModifier valueGuard(this->getValueModifier());
-    // This avoids searching for the defaultValue in the enum store for each CLEARDOC in the change vector.
-    this->cache_change_data_entry_ref(this->_defaultValue);
     for (const auto& change : this->_changes.getInsertOrder()) {
         if (change._type == ChangeBase::UPDATE) {
             applyUpdateValueChange(change, updater);
         } else if (change._type >= ChangeBase::ADD && change._type <= ChangeBase::DIV) {
             applyArithmeticValueChange(change, updater);
         } else if (change._type == ChangeBase::CLEARDOC) {
-            Change clearDoc(this->_defaultValue);
-            clearDoc._doc = change._doc;
-            applyUpdateValueChange(clearDoc, updater);
+            EnumIndex oldIdx = _enumIndices[change._doc].load_relaxed();
+            EnumIndex newIdx = this->_enumStore.get_default_value_ref().load_relaxed();
+            updateEnumRefCounts(change._doc, newIdx, oldIdx, updater);
         }
     }
-    // We must clear the cached entry ref as the defaultValue might be located in another data buffer on later invocations.
-    this->_defaultValue.clear_entry_ref();
 }
 
 template <typename B>
 void
-SingleValueEnumAttribute<B>::updateEnumRefCounts(const Change& c, EnumIndex newIdx, EnumIndex oldIdx,
+SingleValueEnumAttribute<B>::updateEnumRefCounts(DocId doc, EnumIndex newIdx, EnumIndex oldIdx,
                                                  EnumStoreBatchUpdater& updater)
 {
     updater.inc_ref_count(newIdx);
-    _enumIndices[c._doc].store_release(newIdx);
+    _enumIndices[doc].store_release(newIdx);
     if (oldIdx.valid()) {
         updater.dec_ref_count(oldIdx);
     }
