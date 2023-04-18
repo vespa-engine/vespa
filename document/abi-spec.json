@@ -387,7 +387,9 @@
       "public void <init>(com.yahoo.document.DocumentPut, com.yahoo.document.Document)",
       "public boolean equals(java.lang.Object)",
       "public int hashCode()",
-      "public java.lang.String toString()"
+      "public java.lang.String toString()",
+      "public void setCreateIfNonExistent(boolean)",
+      "public boolean getCreateIfNonExistent()"
     ],
     "fields" : [ ]
   },

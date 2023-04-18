@@ -532,6 +532,11 @@ RoutableFactories60::PutDocumentMessageFactory::decodeInto(PutDocumentMessage & 
     msg.setDocument(decodeDocument(_repo, buf));
     msg.setTimestamp(static_cast<uint64_t>(decodeLong(buf)));
     decodeTasCondition(msg, buf);
+    if (buf.getRemaining() > 0) {
+        uint8_t value = 0;
+        buf.getByte(value);
+        msg.set_create_if_non_existent(value != 0);
+    }
 }
 
 bool
@@ -544,7 +549,12 @@ RoutableFactories60::PutDocumentMessageFactory::doEncode(const DocumentMessage &
     buf.putBytes(stream.peek(), stream.size());
     buf.putLong(static_cast<int64_t>(msg.getTimestamp()));
     encodeTasCondition(buf, msg);
-
+    if (msg.get_create_if_non_existent()) {
+        buf.putByte(1);
+    } else {
+        buf.putByte(0);
+    }
+    
     return true;
 }
 

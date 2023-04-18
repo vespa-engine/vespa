@@ -129,4 +129,11 @@ public class PutDocumentMessage extends TestAndSetMessage {
         put.setCondition(condition);
     }
 
+    public void setCreateIfNonExistent(boolean value) {
+        put.setCreateIfNonExistent(value);
+    }
+    public boolean getCreateIfNonExistent() {
+        deserialize();
+        return put.getCreateIfNonExistent();
+    }
 }

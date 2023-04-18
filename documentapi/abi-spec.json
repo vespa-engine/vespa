@@ -2458,7 +2458,9 @@
       "public long getSequenceId()",
       "public int getType()",
       "public com.yahoo.document.TestAndSetCondition getCondition()",
-      "public void setCondition(com.yahoo.document.TestAndSetCondition)"
+      "public void setCondition(com.yahoo.document.TestAndSetCondition)",
+      "public boolean getCreateIfNonExistent()",
+      "public void setCreateIfNonExistent(boolean)"
     ],
     "fields" : [ ]
   },

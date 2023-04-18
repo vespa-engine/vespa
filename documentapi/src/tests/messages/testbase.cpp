@@ -76,6 +76,24 @@ TestBase::putTest(uint32_t type, TEST_METHOD_PT test)
     return *this;
 }
 
+mbus::Blob
+TestBase::truncate(mbus::Blob data, size_t bytes)
+{
+    ASSERT_GREATER(data.size(), bytes);
+    mbus::Blob res(data.size() - bytes);
+    memcpy(res.data(), data.data(), res.size());
+    return res;
+}
+
+mbus::Blob
+TestBase::pad(mbus::Blob data, size_t bytes)
+{
+    mbus::Blob res(data.size() + bytes);
+    memset(res.data(), 0, res.size());
+    memcpy(res.data(), data.data(), data.size());
+    return res;
+}
+
 bool
 TestBase::testCoverage(const std::vector<uint32_t> &expected, const std::vector<uint32_t> &actual, bool report) const
 {
@@ -119,13 +137,13 @@ bool TestBase::file_content_is_unchanged(const string& filename, const mbus::Blo
 }
 
 uint32_t
-TestBase::serialize(const string &filename, const mbus::Routable &routable)
+TestBase::serialize(const string &filename, const mbus::Routable &routable, Tamper tamper)
 {
     const vespalib::Version version = getVersion();
     string path = getPath(version.toString() + "-cpp-" + filename + ".dat");
     LOG(info, "Serializing to '%s'..", path.c_str());
 
-    mbus::Blob blob = _protocol.encode(version, routable);
+    mbus::Blob blob = tamper(_protocol.encode(version, routable));
     if (file_content_is_unchanged(path, blob)) {
         LOG(info, "Serialization for '%s' is unchanged; not overwriting it", path.c_str());
     } else if (!EXPECT_TRUE(writeFile(path, blob))) {
@@ -213,5 +231,3 @@ TestBase::readFile(const string &filename) const
 
     return blob;
 }
-
-
