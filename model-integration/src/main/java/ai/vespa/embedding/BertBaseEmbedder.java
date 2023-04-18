@@ -48,7 +48,7 @@ public class BertBaseEmbedder extends AbstractComponent implements Embedder {
     public BertBaseEmbedder(OnnxRuntime onnx, BertBaseEmbedderConfig config) {
         maxTokens = config.transformerMaxTokens();
         startSequenceToken = config.transformerStartSequenceToken();
-        endSequenceToken = config.transformerStartSequenceToken();
+        endSequenceToken = config.transformerEndSequenceToken();
         inputIdsName = config.transformerInputIds();
         attentionMaskName = config.transformerAttentionMask();
         tokenTypeIdsName = config.transformerTokenTypeIds();
