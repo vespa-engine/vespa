@@ -6,6 +6,7 @@ import (
 	"io"
 	"math"
 	"os"
+	"runtime/pprof"
 	"time"
 
 	"github.com/spf13/cobra"
@@ -20,6 +21,13 @@ func addFeedFlags(cmd *cobra.Command, options *feedOptions) {
 	cmd.PersistentFlags().IntVar(&options.traceLevel, "trace", 0, "The trace level of network traffic. 0 to disable")
 	cmd.PersistentFlags().IntVar(&options.timeoutSecs, "timeout", 0, "Feed operation timeout in seconds. 0 to disable")
 	cmd.PersistentFlags().BoolVar(&options.verbose, "verbose", false, "Verbose mode. Print successful operations in addition to errors")
+	memprofile := "memprofile"
+	cpuprofile := "cpuprofile"
+	cmd.PersistentFlags().StringVar(&options.memprofile, memprofile, "", "Write a heap profile to given file")
+	cmd.PersistentFlags().StringVar(&options.cpuprofile, cpuprofile, "", "Write a CPU profile to given file")
+	// Hide these flags as they are intended for internal use
+	cmd.PersistentFlags().MarkHidden(memprofile)
+	cmd.PersistentFlags().MarkHidden(cpuprofile)
 }
 
 type feedOptions struct {
@@ -28,6 +36,8 @@ type feedOptions struct {
 	verbose     bool
 	traceLevel  int
 	timeoutSecs int
+	memprofile  string
+	cpuprofile  string
 }
 
 func newFeedCmd(cli *CLI) *cobra.Command {
@@ -64,7 +74,24 @@ $ cat documents.jsonl | vespa feed -
 				defer f.Close()
 				r = f
 			}
-			return feed(r, cli, options)
+			if options.cpuprofile != "" {
+				f, err := os.Create(options.cpuprofile)
+				if err != nil {
+					return err
+				}
+				pprof.StartCPUProfile(f)
+				defer pprof.StopCPUProfile()
+			}
+			err := feed(r, cli, options)
+			if options.memprofile != "" {
+				f, err := os.Create(options.memprofile)
+				if err != nil {
+					return err
+				}
+				defer f.Close()
+				pprof.WriteHeapProfile(f)
+			}
+			return err
 		},
 	}
 	addFeedFlags(cmd, &options)
