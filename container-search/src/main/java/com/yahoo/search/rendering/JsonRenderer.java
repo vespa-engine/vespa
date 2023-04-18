@@ -32,8 +32,6 @@ import com.yahoo.search.grouping.result.AbstractList;
 import com.yahoo.search.grouping.result.BucketGroupId;
 import com.yahoo.search.grouping.result.Group;
 import com.yahoo.search.grouping.result.GroupId;
-import com.yahoo.search.grouping.result.RawBucketId;
-import com.yahoo.search.grouping.result.RawId;
 import com.yahoo.search.grouping.result.RootGroup;
 import com.yahoo.search.grouping.result.ValueGroupId;
 import com.yahoo.search.result.Coverage;
@@ -57,7 +55,6 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayDeque;
-import java.util.Base64;
 import java.util.Deque;
 import java.util.Map;
 import java.util.Optional;
@@ -423,32 +420,14 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
         if (!(id instanceof ValueGroupId<?> || id instanceof BucketGroupId)) return;
 
         if (id instanceof ValueGroupId<?> valueId) {
-            generator.writeStringField(GROUPING_VALUE, getIdValue(valueId));
+            generator.writeStringField(GROUPING_VALUE, valueId.getValue().toString());
         } else {
             BucketGroupId<?> bucketId = (BucketGroupId<?>) id;
             generator.writeObjectFieldStart(BUCKET_LIMITS);
-            generator.writeStringField(BUCKET_FROM, getBucketFrom(bucketId));
-            generator.writeStringField(BUCKET_TO, getBucketTo(bucketId));
+            generator.writeStringField(BUCKET_FROM, bucketId.getFrom().toString());
+            generator.writeStringField(BUCKET_TO, bucketId.getTo().toString());
             generator.writeEndObject();
         }
-    }
-
-    private static String getIdValue(ValueGroupId<?> id) {
-        return (id instanceof RawId raw)
-                ? Base64.getEncoder().withoutPadding().encodeToString(raw.getValue())
-                : id.getValue().toString();
-    }
-
-    private static String getBucketFrom(BucketGroupId<?> id) {
-        if (id instanceof RawBucketId rawBucketId)
-            return Base64.getEncoder().withoutPadding().encodeToString(rawBucketId.getFrom());
-        return id.getFrom().toString();
-    }
-
-    private static String getBucketTo(BucketGroupId<?> id) {
-        if (id instanceof RawBucketId rawBucketId)
-            return Base64.getEncoder().withoutPadding().encodeToString(rawBucketId.getTo());
-        return id.getTo().toString();
     }
 
     protected void renderTotalHitCount(Hit hit) throws IOException {
