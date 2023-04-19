@@ -5,7 +5,6 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.yahoo.document.DataType;
 import com.yahoo.document.DocumentId;
 import com.yahoo.document.Field;
-import com.yahoo.document.PositionDataType;
 import com.yahoo.document.PrimitiveDataType;
 import com.yahoo.document.datatypes.Array;
 import com.yahoo.document.datatypes.BoolFieldValue;
@@ -41,7 +40,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * @author Steinar Knutsen
@@ -49,7 +47,7 @@ import java.util.Set;
  */
 public class JsonSerializationHelper {
 
-    private final static Base64.Encoder base64Encoder = Base64.getEncoder(); // Important: _basic_ format
+    private final static Base64.Encoder base64Encoder = Base64.getEncoder().withoutPadding(); // Important: _basic_ format
 
     static class JsonSerializationException extends RuntimeException {
         public JsonSerializationException(Exception base) {
@@ -166,8 +164,7 @@ public class JsonSerializationHelper {
 
     public static void serializeStructField(FieldWriter fieldWriter, JsonGenerator generator, FieldBase field, Struct value) {
         DataType dt = value.getDataType();
-        if (dt instanceof GeoPosType) {
-            var gpt = (GeoPosType)dt;
+        if (dt instanceof GeoPosType gpt) {
             if (gpt.renderJsonAsVespa8()) {
                 serializeGeoPos(generator, field, value, gpt);
                 return;
