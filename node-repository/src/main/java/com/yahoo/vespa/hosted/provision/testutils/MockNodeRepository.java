@@ -97,10 +97,10 @@ public class MockNodeRepository extends NodeRepository {
         defaultCloudAccount = zone.cloud().account();
 
         curator.setZooKeeperEnsembleConnectionSpec("cfg1:1234,cfg2:1234,cfg3:1234");
-        populate();
+        populate(zone);
     }
 
-    private void populate() {
+    private void populate(Zone zone) {
         NodeRepositoryProvisioner provisioner = new NodeRepositoryProvisioner(this, Zone.defaultZone(), new MockProvisionServiceProvider());
         List<Node> nodes = new ArrayList<>();
 
@@ -202,16 +202,26 @@ public class MockNodeRepository extends NodeRepository {
                                             .vespaVersion("6.42")
                                             .loadBalancerSettings(new ZoneEndpoint(false, true, List.of(new AllowedUrn(AccessType.awsPrivateLink, "arne"))))
                                             .build();
+        ClusterResources min, max;
+        if (zone.system().isPublic()) { // resources must match one of the flavors used in this mock ("large"), since this is a container cluster
+            min = new ClusterResources(2, 1, new NodeResources(4, 32, 1600, 1));
+            max = new ClusterResources(8, 2, new NodeResources(8, 64, 3200, 1));
+        }
+        else { // resources must fit on actually provisioned hosts
+            min = new ClusterResources(2, 1, new NodeResources(2, 8, 50, 1));
+            max = new ClusterResources(8, 2, new NodeResources(4, 16, 1000, 1));
+        }
+
         activate(provisioner.prepare(app1Id,
                                      cluster1Id,
-                                     Capacity.from(new ClusterResources(2, 1, new NodeResources(2, 8, 50, 1)),
-                                                   new ClusterResources(8, 2, new NodeResources(4, 16, 1000, 1)),
+                                     Capacity.from(min,
+                                                   max,
                                                    IntRange.empty(),
                                                    false,
                                                    true,
                                                    Optional.empty(),
                                                    ClusterInfo.empty()),
-                                null), app1Id, provisioner);
+                                     null), app1Id, provisioner);
         Application app1 = applications().get(app1Id).get();
         Cluster cluster1 = app1.cluster(cluster1Id.id()).get();
         cluster1 = cluster1.withSuggested(new Autoscaling(Autoscaling.Status.unavailable,

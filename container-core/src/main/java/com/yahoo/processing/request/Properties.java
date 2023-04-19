@@ -265,7 +265,7 @@ public class Properties implements Cloneable {
 
     /**
      * Sets all properties having this name as a compound prefix to null.
-     * I.e clearAll("a") will clear the value of "a" and "a.b" but not "ab".
+     * I.e. clearAll("a") will clear the value of "a" and "a.b" but not "ab".
      *
      * @param name    the compound prefix of the properties to clear
      * @throws RuntimeException if no instance in the chain accepted this name-value pair
