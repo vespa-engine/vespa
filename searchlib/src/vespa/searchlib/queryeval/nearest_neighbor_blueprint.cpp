@@ -106,13 +106,13 @@ NearestNeighborBlueprint::set_global_filter(const GlobalFilter &global_filter, d
 void
 NearestNeighborBlueprint::perform_top_k(const search::tensor::NearestNeighborIndex* nns_index)
 {
-    auto lhs = _query_tensor.cells();
     uint32_t k = _adjusted_target_hits;
+    const auto &df = _distance_calc->function();
     if (_global_filter->is_active()) {
-        _found_hits = nns_index->find_top_k_with_filter(k, lhs, *_global_filter, k + _explore_additional_hits, _distance_threshold);
+        _found_hits = nns_index->find_top_k_with_filter(k, df, *_global_filter, k + _explore_additional_hits, _distance_threshold);
         _algorithm = Algorithm::INDEX_TOP_K_WITH_FILTER;
     } else {
-        _found_hits = nns_index->find_top_k(k, lhs, k + _explore_additional_hits, _distance_threshold);
+        _found_hits = nns_index->find_top_k(k, df, k + _explore_additional_hits, _distance_threshold);
         _algorithm = Algorithm::INDEX_TOP_K;
     }
 }

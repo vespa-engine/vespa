@@ -261,9 +261,15 @@ public:
 
     ~Stressor() {}
 
+    auto dff() {
+        return search::tensor::make_distance_function_factory(
+                search::attribute::DistanceMetric::Euclidean,
+                vespalib::eval::CellType::FLOAT);
+    }
+
     void init() {
         uint32_t m = 16;
-        index = std::make_unique<IndexType>(vectors, std::make_unique<FloatSqEuclideanDistance>(),
+        index = std::make_unique<IndexType>(vectors, dff(),
                                             std::make_unique<InvLogLevelGenerator>(m),
                                             HnswIndexConfig(2*m, m, 200, 10, true));
     }

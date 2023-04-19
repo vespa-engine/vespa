@@ -294,30 +294,33 @@ public:
     std::unique_ptr<NearestNeighborIndexLoader> make_loader(FastOS_FileInterface& file) override {
         return std::make_unique<MockIndexLoader>(_index_value, file);
     }
-    std::vector<Neighbor> find_top_k(uint32_t k, vespalib::eval::TypedCells vector, uint32_t explore_k,
+    std::vector<Neighbor> find_top_k(uint32_t k,
+                                     const search::tensor::BoundDistanceFunction &df,
+                                     uint32_t explore_k,
                                      double distance_threshold) const override
     {
         (void) k;
-        (void) vector;
+        (void) df;
         (void) explore_k;
         (void) distance_threshold;
         return std::vector<Neighbor>();
     }
-    std::vector<Neighbor> find_top_k_with_filter(uint32_t k, vespalib::eval::TypedCells vector,
+    std::vector<Neighbor> find_top_k_with_filter(uint32_t k,
+                                                 const search::tensor::BoundDistanceFunction &df,
                                                  const GlobalFilter& filter, uint32_t explore_k,
                                                  double distance_threshold) const override
     {
         (void) k;
-        (void) vector;
+        (void) df;
         (void) explore_k;
         (void) filter;
         (void) distance_threshold;
         return std::vector<Neighbor>();
     }
 
-    const search::tensor::DistanceFunction *distance_function() const override {
-        static search::tensor::SquaredEuclideanDistance my_dist_fun(vespalib::eval::CellType::DOUBLE);
-        return &my_dist_fun;
+    search::tensor::DistanceFunctionFactory &distance_function_factory() const override {
+        static search::tensor::DistanceFunctionFactory::UP my_dist_fun = search::tensor::make_distance_function_factory(search::attribute::DistanceMetric::Euclidean, vespalib::eval::CellType::DOUBLE);
+        return *my_dist_fun;
     }
 };
 

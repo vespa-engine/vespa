@@ -12,6 +12,7 @@ namespace vespalib::slime { struct Inserter; }
 
 namespace search::tensor {
 
+struct DistanceFunctionFactory;
 class NearestNeighborIndex;
 class SerializedTensorRef;
 
@@ -32,6 +33,7 @@ public:
 
     virtual const vespalib::eval::ValueType & getTensorType() const = 0;
 
+    virtual DistanceFunctionFactory& distance_function_factory() const = 0;
     virtual const NearestNeighborIndex* nearest_neighbor_index() const { return nullptr; }
     using DistanceMetric = search::attribute::DistanceMetric;
     virtual DistanceMetric distance_metric() const = 0;
