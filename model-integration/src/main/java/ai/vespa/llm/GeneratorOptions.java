@@ -1,5 +1,8 @@
 package ai.vespa.llm;
 
+import com.yahoo.api.annotations.Beta;
+
+@Beta
 public class GeneratorOptions {
 
     public enum SearchMethod {
