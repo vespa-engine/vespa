@@ -16,6 +16,7 @@ import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeMembers
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeRepository;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeState;
+import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.reports.DropDocumentsReport;
 import com.yahoo.vespa.hosted.node.admin.configserver.orchestrator.Orchestrator;
 import com.yahoo.vespa.hosted.node.admin.configserver.orchestrator.OrchestratorException;
 import com.yahoo.vespa.hosted.node.admin.container.Container;
@@ -29,6 +30,7 @@ import com.yahoo.vespa.hosted.node.admin.maintenance.acl.AclMaintainer;
 import com.yahoo.vespa.hosted.node.admin.maintenance.identity.CredentialsMaintainer;
 import com.yahoo.vespa.hosted.node.admin.maintenance.servicedump.VespaServiceDumper;
 import com.yahoo.vespa.hosted.node.admin.nodeadmin.ConvergenceException;
+import com.yahoo.vespa.hosted.node.admin.task.util.file.FileFinder;
 
 import java.time.Clock;
 import java.time.Duration;
@@ -225,6 +227,12 @@ public class NodeAgentImpl implements NodeAgent {
             currentNodeAttributes.withVespaVersion(context.node().currentVespaVersion().orElse(Version.emptyVersion));
             newNodeAttributes.withDockerImage(newImage);
             newNodeAttributes.withVespaVersion(context.node().wantedVespaVersion().orElse(Version.emptyVersion));
+            changed = true;
+        }
+
+        Optional<DropDocumentsReport> report = context.node().reports().getReport(DropDocumentsReport.reportId(), DropDocumentsReport.class);
+        if (report.isPresent() && report.get().startedAt() == null && report.get().readiedAt() != null) {
+            newNodeAttributes.withReport(DropDocumentsReport.reportId(), report.get().withStartedAt(clock.millis()).toJsonNode());
             changed = true;
         }
 
@@ -433,6 +441,21 @@ public class NodeAgentImpl implements NodeAgent {
                    .orElse(false);
     }
 
+    private void dropDocsIfNeeded(NodeAgentContext context, Optional<Container> container) {
+        Optional<DropDocumentsReport> report = context.node().reports()
+                .getReport(DropDocumentsReport.reportId(), DropDocumentsReport.class);
+        if (report.isEmpty() || report.get().readiedAt() != null) return;
+
+        if (report.get().droppedAt() == null) {
+            container.ifPresent(c -> removeContainer(context, c, List.of("Dropping documents"), true));
+            FileFinder.from(context.paths().underVespaHome("var/db/vespa/search")).deleteRecursively(context);
+            nodeRepository.updateNodeAttributes(context.node().hostname(),
+                    new NodeAttributes().withReport(DropDocumentsReport.reportId(), report.get().withDroppedAt(clock.millis()).toJsonNode()));
+        }
+
+        throw ConvergenceException.ofTransient("Documents already dropped, waiting for signal to start the container");
+    }
+
     public void converge(NodeAgentContext context) {
         try {
             doConverge(context);
@@ -494,6 +517,7 @@ public class NodeAgentImpl implements NodeAgent {
                     context.log(logger, "Waiting for image to download " + context.node().wantedDockerImage().get().asString());
                     return;
                 }
+                dropDocsIfNeeded(context, container);
                 container = removeContainerIfNeededUpdateContainerState(context, container);
                 credentialsMaintainers.forEach(maintainer -> maintainer.converge(context));
                 if (container.isEmpty()) {
