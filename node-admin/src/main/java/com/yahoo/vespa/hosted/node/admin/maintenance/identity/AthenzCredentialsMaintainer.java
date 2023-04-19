@@ -122,7 +122,7 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
                 Files.createDirectories(privateKeyFile.getParent());
                 Files.createDirectories(certificateFile.getParent());
                 Files.createDirectories(identityDocumentFile.getParent());
-                registerIdentity(context, privateKeyFile, certificateFile, identityDocumentFile, identityType);
+                registerIdentity(context, privateKeyFile, certificateFile, identityDocumentFile, identityType, athenzIdentity);
                 return true;
             }
 
@@ -132,11 +132,11 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
             var doc = EntityBindingsMapper.readSignedIdentityDocumentFromFile(identityDocumentFile);
             if (doc.outdated()) {
                 context.log(logger, "Identity document is outdated (version=%d)", doc.documentVersion());
-                registerIdentity(context, privateKeyFile, certificateFile, identityDocumentFile, identityType);
+                registerIdentity(context, privateKeyFile, certificateFile, identityDocumentFile, identityType, athenzIdentity);
                 return true;
             } else if (isCertificateExpired(expiry, now)) {
                 context.log(logger, "Certificate has expired (expiry=%s)", expiry.toString());
-                registerIdentity(context, privateKeyFile, certificateFile, identityDocumentFile, identityType);
+                registerIdentity(context, privateKeyFile, certificateFile, identityDocumentFile, identityType, athenzIdentity);
                 return true;
             }
 
@@ -150,7 +150,7 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
                     return false;
                 } else {
                     lastRefreshAttempt.put(context.containerName(), now);
-                    refreshIdentity(context, privateKeyFile, certificateFile, identityDocumentFile, doc, identityType);
+                    refreshIdentity(context, privateKeyFile, certificateFile, identityDocumentFile, doc, identityType, athenzIdentity);
                     return true;
                 }
             }
@@ -198,12 +198,12 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
                         now)) > 0;
     }
 
-    private void registerIdentity(NodeAgentContext context, ContainerPath privateKeyFile, ContainerPath certificateFile, ContainerPath identityDocumentFile, IdentityType identityType) {
+    private void registerIdentity(NodeAgentContext context, ContainerPath privateKeyFile, ContainerPath certificateFile, ContainerPath identityDocumentFile, IdentityType identityType, AthenzIdentity identity) {
         KeyPair keyPair = KeyUtils.generateKeypair(KeyAlgorithm.RSA);
         SignedIdentityDocument doc = signedIdentityDocument(context, identityType);
         CsrGenerator csrGenerator = new CsrGenerator(certificateDnsSuffix, doc.providerService().getFullName());
         Pkcs10Csr csr = csrGenerator.generateInstanceCsr(
-                context.identity(), doc.providerUniqueId(), doc.ipAddresses(), doc.clusterType(), keyPair);
+                identity, doc.providerUniqueId(), doc.ipAddresses(), doc.clusterType(), keyPair);
 
         // Allow all zts hosts while removing SIS
         HostnameVerifier ztsHostNameVerifier = (hostname, sslSession) -> true;
@@ -211,7 +211,7 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
             InstanceIdentity instanceIdentity =
                     ztsClient.registerInstance(
                             doc.providerService(),
-                            context.identity(),
+                            identity,
                             EntityBindingsMapper.toAttestationData(doc),
                             csr);
             EntityBindingsMapper.writeSignedIdentityDocumentToFile(identityDocumentFile, doc);
@@ -230,11 +230,11 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
                 .orElse(ztsEndpoint);
     }
     private void refreshIdentity(NodeAgentContext context, ContainerPath privateKeyFile, ContainerPath certificateFile,
-                                 ContainerPath identityDocumentFile, SignedIdentityDocument doc, IdentityType identityType) {
+                                 ContainerPath identityDocumentFile, SignedIdentityDocument doc, IdentityType identityType, AthenzIdentity identity) {
         KeyPair keyPair = KeyUtils.generateKeypair(KeyAlgorithm.RSA);
         CsrGenerator csrGenerator = new CsrGenerator(certificateDnsSuffix, doc.providerService().getFullName());
         Pkcs10Csr csr = csrGenerator.generateInstanceCsr(
-                context.identity(), doc.providerUniqueId(), doc.ipAddresses(), doc.clusterType(), keyPair);
+                identity, doc.providerUniqueId(), doc.ipAddresses(), doc.clusterType(), keyPair);
 
         SSLContext containerIdentitySslContext = new SslContextBuilder().withKeyStore(privateKeyFile, certificateFile)
                                                                         .withTrustStore(ztsTrustStorePath)
@@ -247,7 +247,7 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
                 InstanceIdentity instanceIdentity =
                         ztsClient.refreshInstance(
                                 doc.providerService(),
-                                context.identity(),
+                                identity,
                                 doc.providerUniqueId().asDottedString(),
                                 csr);
                 writePrivateKeyAndCertificate(privateKeyFile, keyPair.getPrivate(), certificateFile, instanceIdentity.certificate());
@@ -255,7 +255,7 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
             } catch (ZtsClientException e) {
                 if (e.getErrorCode() == 403 && e.getDescription().startsWith("Certificate revoked")) {
                     context.log(logger, Level.SEVERE, "Certificate cannot be refreshed as it is revoked by ZTS - re-registering the instance now", e);
-                    registerIdentity(context, privateKeyFile, certificateFile, identityDocumentFile, identityType);
+                    registerIdentity(context, privateKeyFile, certificateFile, identityDocumentFile, identityType, identity);
                 } else {
                     throw e;
                 }
