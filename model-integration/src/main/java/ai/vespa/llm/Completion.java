@@ -6,7 +6,7 @@ import com.yahoo.api.annotations.Beta;
 import java.util.Objects;
 
 /**
- * A completion form a language model.
+ * A completion from a language model.
  *
  * @author bratseth
  */
