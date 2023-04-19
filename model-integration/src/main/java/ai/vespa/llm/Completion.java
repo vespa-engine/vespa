@@ -11,7 +11,7 @@ import java.util.Objects;
  * @author bratseth
  */
 @Beta
-public class Completion {
+public record Completion(String text, FinishReason finishReason) {
 
     public enum FinishReason {
 
@@ -22,9 +22,6 @@ public class Completion {
         stop
 
     }
-
-    private final String text;
-    private final FinishReason finishReason;
 
     public Completion(String text, FinishReason finishReason) {
         this.text = Objects.requireNonNull(text);
@@ -39,11 +36,6 @@ public class Completion {
 
     public static Completion from(String text) {
         return new Completion(text, FinishReason.stop);
-    }
-
-    @Override
-    public String toString() {
-        return text;
     }
 
 }
