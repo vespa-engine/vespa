@@ -7,6 +7,9 @@ import ai.onnxruntime.OrtSession;
 
 import java.util.Objects;
 
+import static ai.onnxruntime.OrtSession.SessionOptions.ExecutionMode.PARALLEL;
+import static ai.onnxruntime.OrtSession.SessionOptions.ExecutionMode.SEQUENTIAL;
+
 /**
  * Session options for ONNX Runtime evaluation
  *
@@ -24,9 +27,10 @@ public class OnnxEvaluatorOptions {
     public OnnxEvaluatorOptions() {
         // Defaults:
         optimizationLevel = OrtSession.SessionOptions.OptLevel.ALL_OPT;
-        executionMode = OrtSession.SessionOptions.ExecutionMode.SEQUENTIAL;
-        interOpThreads = 1;
-        intraOpThreads = Math.max(1, (int) Math.ceil(((double) Runtime.getRuntime().availableProcessors()) / 4));
+        executionMode = SEQUENTIAL;
+        int quarterVcpu = Math.max(1, (int) Math.ceil(Runtime.getRuntime().availableProcessors() / 4d));
+        interOpThreads = quarterVcpu;
+        intraOpThreads = quarterVcpu;
         gpuDeviceNumber = -1;
         gpuDeviceRequired = false;
     }
@@ -35,7 +39,7 @@ public class OnnxEvaluatorOptions {
         OrtSession.SessionOptions options = new OrtSession.SessionOptions();
         options.setOptimizationLevel(optimizationLevel);
         options.setExecutionMode(executionMode);
-        options.setInterOpNumThreads(interOpThreads);
+        options.setInterOpNumThreads(executionMode == PARALLEL ? interOpThreads : 1);
         options.setIntraOpNumThreads(intraOpThreads);
         if (loadCuda) {
             options.addCUDA(gpuDeviceNumber);
@@ -47,7 +51,7 @@ public class OnnxEvaluatorOptions {
         if ("parallel".equalsIgnoreCase(mode)) {
             executionMode = OrtSession.SessionOptions.ExecutionMode.PARALLEL;
         } else if ("sequential".equalsIgnoreCase(mode)) {
-            executionMode = OrtSession.SessionOptions.ExecutionMode.SEQUENTIAL;
+            executionMode = SEQUENTIAL;
         }
     }
 
