@@ -318,7 +318,7 @@ public class NodeStateChangeChecker {
 
             Set<Integer> retiredAndNotUpGroups = groupsWithNotRetiredAndNotUp(clusterState);
             int numberOfGroupsToConsider = retiredAndNotUpGroups.size();
-            // Subtract one group if node is in a group with nodes already retired or not up, since number of such groups wil
+            // Subtract one group if node is in a group with nodes already retired or not up, since number of such groups will
             // not increase if we allow node to go down
             if (aGroupContainsNode(retiredAndNotUpGroups, node)) {
                 numberOfGroupsToConsider = retiredAndNotUpGroups.size() - 1;
