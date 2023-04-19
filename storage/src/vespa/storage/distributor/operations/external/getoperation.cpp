@@ -112,6 +112,9 @@ GetOperation::sendForChecksum(DistributorStripeMessageSender& sender, const docu
                                                          _msg->getFieldSet(), _msg->getBeforeTimestamp());
         copyMessageSettings(*_msg, *command);
         command->set_internal_read_consistency(_desired_read_consistency);
+        if (_msg->has_condition()) {
+            command->set_condition(_msg->condition());
+        }
 
         LOG(spam, "Sending %s to node %d", command->toString(true).c_str(), res[best].copy.getNode());
 
@@ -175,9 +178,9 @@ GetOperation::onReceive(DistributorStripeMessageSender& sender, const std::share
                     if (!_newest_replica.has_value() || getreply->getLastModifiedTimestamp() > _newest_replica->timestamp) {
                         _returnCode = getreply->getResult();
                         assert(response.second[i].to_node != UINT16_MAX);
-                        _newest_replica = NewestReplica::of(getreply->getLastModifiedTimestamp(), bucket_id,
-                                                            send_state.to_node, getreply->is_tombstone());
-                        _doc = getreply->getDocument(); // May be empty (tombstones).
+                        _newest_replica = NewestReplica::of(getreply->getLastModifiedTimestamp(), bucket_id, send_state.to_node,
+                                                            getreply->is_tombstone(), getreply->condition_matched());
+                        _doc = getreply->getDocument(); // May be empty (tombstones or metadata-only).
                     }
                 } else {
                     _any_replicas_failed = true;
