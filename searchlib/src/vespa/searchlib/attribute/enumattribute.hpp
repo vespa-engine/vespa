@@ -15,7 +15,7 @@ EnumAttribute<B>::
 EnumAttribute(const vespalib::string &baseFileName,
               const AttributeVector::Config &cfg)
     : B(baseFileName, cfg),
-      _enumStore(cfg.fastSearch(), cfg.get_dictionary_config(), this->get_memory_allocator())
+      _enumStore(cfg.fastSearch(), cfg.get_dictionary_config(), this->get_memory_allocator(), this->_defaultValue._data.raw())
 {
     this->setEnum(true);
 }
@@ -50,6 +50,7 @@ void EnumAttribute<B>::load_enum_store(LoadedVector& loaded)
             loader.set_ref_count_for_last_value(prevRefCount);
         }
         loader.build_dictionary();
+        _enumStore.setup_default_value_ref();
     }
 }
 
@@ -85,15 +86,4 @@ EnumAttribute<B>::populate_address_space_usage(AddressSpaceUsage& usage) const
     usage.set(AddressSpaceComponents::enum_store, _enumStore.get_values_address_space_usage());
 }
 
-template <typename B>
-void
-EnumAttribute<B>::cache_change_data_entry_ref(const Change& c) const
-{
-    EnumIndex new_idx;
-    _enumStore.find_index(c._data.raw(), new_idx);
-    c.set_entry_ref(new_idx.ref());
-}
-
 } // namespace search
-
-

@@ -7,8 +7,8 @@
 
 namespace search::attribute {
 
-template <typename EntryT, typename RefT>
-MultiValueMapping<EntryT,RefT>::MultiValueMapping(const vespalib::datastore::ArrayStoreConfig &storeCfg,
+template <typename ElemT, typename RefT>
+MultiValueMapping<ElemT,RefT>::MultiValueMapping(const vespalib::datastore::ArrayStoreConfig &storeCfg,
                                                   const vespalib::GrowStrategy &gs,
                                                   std::shared_ptr<vespalib::alloc::MemoryAllocator> memory_allocator)
   : MultiValueMappingBase(gs, ArrayStore::getGenerationHolderLocation(_store), memory_allocator),
@@ -16,12 +16,12 @@ MultiValueMapping<EntryT,RefT>::MultiValueMapping(const vespalib::datastore::Arr
 {
 }
 
-template <typename EntryT, typename RefT>
-MultiValueMapping<EntryT,RefT>::~MultiValueMapping() = default;
+template <typename ElemT, typename RefT>
+MultiValueMapping<ElemT,RefT>::~MultiValueMapping() = default;
 
-template <typename EntryT, typename RefT>
+template <typename ElemT, typename RefT>
 void
-MultiValueMapping<EntryT,RefT>::set(uint32_t docId, ConstArrayRef values)
+MultiValueMapping<ElemT,RefT>::set(uint32_t docId, ConstArrayRef values)
 {
     _indices.ensure_size(docId + 1);
     EntryRef oldRef(_indices[docId].load_relaxed());
@@ -31,18 +31,18 @@ MultiValueMapping<EntryT,RefT>::set(uint32_t docId, ConstArrayRef values)
     _store.remove(oldRef);
 }
 
-template <typename EntryT, typename RefT>
+template <typename ElemT, typename RefT>
 vespalib::MemoryUsage
-MultiValueMapping<EntryT,RefT>::update_stat(const CompactionStrategy& compaction_strategy)
+MultiValueMapping<ElemT,RefT>::update_stat(const CompactionStrategy& compaction_strategy)
 {
     auto retval = _store.update_stat(compaction_strategy);
     retval.merge(_indices.getMemoryUsage());
     return retval;
 }
 
-template <typename EntryT, typename RefT>
+template <typename ElemT, typename RefT>
 void
-MultiValueMapping<EntryT,RefT>::compact_worst(const CompactionStrategy& compaction_strategy)
+MultiValueMapping<ElemT,RefT>::compact_worst(const CompactionStrategy& compaction_strategy)
 {
     vespalib::datastore::ICompactionContext::UP compactionContext(_store.compact_worst(compaction_strategy));
     if (compactionContext) {
@@ -50,29 +50,29 @@ MultiValueMapping<EntryT,RefT>::compact_worst(const CompactionStrategy& compacti
     }
 }
 
-template <typename EntryT, typename RefT>
+template <typename ElemT, typename RefT>
 vespalib::MemoryUsage
-MultiValueMapping<EntryT,RefT>::getArrayStoreMemoryUsage() const
+MultiValueMapping<ElemT,RefT>::getArrayStoreMemoryUsage() const
 {
     return _store.getMemoryUsage();
 }
 
-template <typename EntryT, typename RefT>
+template <typename ElemT, typename RefT>
 vespalib::AddressSpace
-MultiValueMapping<EntryT, RefT>::getAddressSpaceUsage() const {
+MultiValueMapping<ElemT, RefT>::getAddressSpaceUsage() const {
     return _store.addressSpaceUsage();
 }
 
-template <typename EntryT, typename RefT>
+template <typename ElemT, typename RefT>
 vespalib::datastore::ArrayStoreConfig
-MultiValueMapping<EntryT, RefT>::optimizedConfigForHugePage(size_t maxSmallArraySize,
+MultiValueMapping<ElemT, RefT>::optimizedConfigForHugePage(size_t maxSmallArraySize,
                                                              size_t hugePageSize,
                                                              size_t smallPageSize,
-                                                             size_t minNumArraysForNewBuffer,
+                                                             size_t min_num_entries_for_new_buffer,
                                                              float allocGrowFactor,
                                                              bool enable_free_lists)
 {
-    auto result = ArrayStore::optimizedConfigForHugePage(maxSmallArraySize, hugePageSize, smallPageSize, minNumArraysForNewBuffer, allocGrowFactor);
+    auto result = ArrayStore::optimizedConfigForHugePage(maxSmallArraySize, hugePageSize, smallPageSize, min_num_entries_for_new_buffer, allocGrowFactor);
     result.enable_free_lists(enable_free_lists);
     return result;
 }

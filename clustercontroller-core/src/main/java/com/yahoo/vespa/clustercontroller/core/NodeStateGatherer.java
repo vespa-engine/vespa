@@ -4,13 +4,15 @@ package com.yahoo.vespa.clustercontroller.core;
 import com.yahoo.jrt.ErrorCode;
 import com.yahoo.jrt.Target;
 import com.yahoo.vdslib.state.NodeState;
-import com.yahoo.vdslib.state.State;
 import com.yahoo.vespa.clustercontroller.core.hostinfo.HostInfo;
 import com.yahoo.vespa.clustercontroller.core.listeners.NodeListener;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static com.yahoo.vdslib.state.State.DOWN;
+import static com.yahoo.vdslib.state.State.STOPPING;
 
 /**
  * Collects the state of all nodes by making remote requests and handling the replies.
@@ -65,20 +67,20 @@ public class NodeStateGatherer {
             if (info.getRpcAddress() == null || info.isNotInSlobrok()) { // Cannot query state of node without RPC address or not in slobrok
                 log.log(Level.FINE, () -> "Not sending getNodeState request to node " + info.getNode() + ": Not in slobrok");
                 NodeState reportedState = info.getReportedState().clone();
-                if (( ! reportedState.getState().equals(State.DOWN) && currentTime - info.lastSeenInSlobrok() > maxSlobrokDisconnectGracePeriod)
-                    || reportedState.getState().equals(State.STOPPING)) // Don't wait for grace period if we expect node to be stopping
+                if (( ! reportedState.getState().equals(DOWN) && currentTime - info.lastSeenInSlobrok() > maxSlobrokDisconnectGracePeriod)
+                    || reportedState.getState().equals(STOPPING)) // Don't wait for grace period if we expect node to be stopping
                 {
                     log.log(Level.FINE, () -> "Setting reported state to DOWN "
-                            + (reportedState.getState().equals(State.STOPPING)
+                            + (reportedState.getState().equals(STOPPING)
                                 ? "as node completed stopping."
-                                : "as node has been out of slobrok longer than " + maxSlobrokDisconnectGracePeriod + "."));
+                                : "as node has been out of slobrok longer than " + maxSlobrokDisconnectGracePeriod + " ms."));
                     if (reportedState.getState().oneOf("iur") || ! reportedState.hasDescription()) {
-                        StringBuilder sb = new StringBuilder().append("Set node down as it has been out of slobrok for ")
-                                                              .append(currentTime - info.lastSeenInSlobrok()).append(" ms which is more than the max limit of ")
-                                                              .append(maxSlobrokDisconnectGracePeriod).append(" ms.");
-                        reportedState.setDescription(sb.toString());
+                        reportedState.setDescription("Set node down as it has been out of slobrok for " +
+                                                             (currentTime - info.lastSeenInSlobrok()) +
+                                                             " ms which is more than the max limit of " +
+                                                             maxSlobrokDisconnectGracePeriod + " ms.");
                     }
-                    reportedState.setState(State.DOWN);
+                    reportedState.setState(DOWN);
                     listener.handleNewNodeState(info, reportedState.clone());
                 }
                 info.setReportedState(reportedState, currentTime); // Must reset it to null to get connection attempts counted
@@ -135,7 +137,7 @@ public class NodeStateGatherer {
                     info.setReportedState(state, currentTime);
                 } catch (Exception e) {
                     log.log(Level.WARNING, "Failed to process get node state response", e);
-                    info.setReportedState(new NodeState(info.getNode().getType(), State.DOWN), currentTime);
+                    info.setReportedState(new NodeState(info.getNode().getType(), DOWN), currentTime);
                 }
 
                 // Important: The old host info should be accessible in info.getHostInfo(), see interface.
@@ -152,7 +154,7 @@ public class NodeStateGatherer {
 
     private NodeState handleError(GetNodeStateRequest req, NodeInfo info, long currentTime) {
         String prefix = "Failed get node state request: ";
-        NodeState newState = new NodeState(info.getNode().getType(), State.DOWN);
+        NodeState newState = new NodeState(info.getNode().getType(), DOWN);
         if (req.getReply().getReturnCode() == ErrorCode.TIMEOUT) {
             String msg = "RPC timeout";
             if (info.getReportedState().getState().oneOf("ui")) {
@@ -177,7 +179,7 @@ public class NodeStateGatherer {
                             log.log(Level.FINE, "Failed to talk to node " + info + ": " + req.getReply().getReturnCode()
                                                 + " " + req.getReply().getReturnMessage() + ": " + msg);
                     }
-                    newState.setState(State.DOWN);
+                    newState.setState(DOWN);
                 } else if (msg.equals("jrt: Connection closed by peer") || msg.equals("Connection reset by peer")) {
                     msg = "Connection error: Closed at other end. (Node or switch likely shut down)";
                     if (info.isNotInSlobrok()) {
@@ -189,7 +191,7 @@ public class NodeStateGatherer {
                         if (log.isLoggable(Level.FINE))
                             log.log(Level.FINE, "Failed to talk to node " + info + ": " + req.getReply().getReturnCode() + " " + req.getReply().getReturnMessage() + ": " + msg);
                     }
-                    newState.setState(State.DOWN).setDescription(msg);
+                    newState.setState(DOWN).setDescription(msg);
                 } else if (msg.equals("Connection timed out")) {
                     if (info.getReportedState().getState().oneOf("ui")) {
                         msg = "Connection error: Timeout";
@@ -228,11 +230,11 @@ public class NodeStateGatherer {
             } else if (!info.getReportedState().hasDescription() || !info.getReportedState().getDescription().equals(msg)) {
                 log.log(Level.FINE, () -> "Failed to talk to node " + info + ": " + req.getReply().getReturnCode() + " " + req.getReply().getReturnMessage() + ": " + msg);
             }
-            newState.setState(State.DOWN).setDescription(msg + ": get node state");
+            newState.setState(DOWN).setDescription(msg + ": get node state");
         } else if (req.getReply().getReturnCode() == 75004) {
             String msg = "Node refused to answer RPC request and is likely stopping: " + req.getReply().getReturnMessage();
                 // The node is shutting down and is not accepting requests from anyone
-            if (info.getReportedState().getState().equals(State.STOPPING)) {
+            if (info.getReportedState().getState().equals(STOPPING)) {
                 log.log(Level.FINE, () -> "Failed to get node state from " + info + " because it is still shutting down.");
             } else {
                 if (info.getReportedState().getState().oneOf("ui")) {
@@ -241,7 +243,7 @@ public class NodeStateGatherer {
                     log.log(Level.FINE, () -> "Failed to talk to node " + info + ": " + req.getReply().getReturnCode() + " " + req.getReply().getReturnMessage() + ": " + msg);
                 }
             }
-            newState.setState(State.STOPPING).setDescription(msg);
+            newState.setState(STOPPING).setDescription(msg);
         } else {
             String msg = "Got unexpected error, assumed to be node issue " + req.getReply().getReturnCode() + ": " + req.getReply().getReturnMessage();
             if (info.getReportedState().getState().oneOf("ui")) {
@@ -249,7 +251,7 @@ public class NodeStateGatherer {
             } else if (!info.getReportedState().hasDescription() || !info.getReportedState().getDescription().equals(msg)) {
                 log.log(Level.FINE, () -> "Failed to talk to node " + info + ": " + req.getReply().getReturnCode() + " " + req.getReply().getReturnMessage() + ": " + msg);
             }
-            newState.setState(State.DOWN).setDescription(msg);
+            newState.setState(DOWN).setDescription(msg);
         }
         return newState;
     }

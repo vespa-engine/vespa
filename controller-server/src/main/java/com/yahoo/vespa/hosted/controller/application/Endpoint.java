@@ -31,7 +31,8 @@ import static java.util.Comparator.comparing;
  */
 public class Endpoint {
 
-    private static final String OATH_DNS_SUFFIX = ".vespa.oath.cloud";
+    private static final String MAIN_OATH_DNS_SUFFIX = ".vespa.oath.cloud";
+    private static final String CD_OATH_DNS_SUFFIX = ".cd.vespa.oath.cloud";
     private static final String PUBLIC_DNS_SUFFIX = ".vespa-app.cloud";
     private static final String PUBLIC_CD_DNS_SUFFIX = ".cd.vespa-app.cloud";
 
@@ -243,18 +244,13 @@ public class Endpoint {
 
     /** Returns the DNS suffix used for endpoints in given system */
     private static String dnsSuffix(SystemName system) {
-        switch (system) {
-            case cd, main -> {
-                return OATH_DNS_SUFFIX;
-            }
-            case Public -> {
-                return PUBLIC_DNS_SUFFIX;
-            }
-            case PublicCd -> {
-                return PUBLIC_CD_DNS_SUFFIX;
-            }
+        return switch (system) {
+            case cd -> CD_OATH_DNS_SUFFIX;
+            case main -> MAIN_OATH_DNS_SUFFIX;
+            case Public -> PUBLIC_DNS_SUFFIX;
+            case PublicCd -> PUBLIC_CD_DNS_SUFFIX;
             default -> throw new IllegalArgumentException("No DNS suffix declared for system " + system);
-        }
+        };
     }
 
     /** Returns the DNS suffix used for internal names (i.e. names not exposed to tenants) in given system */

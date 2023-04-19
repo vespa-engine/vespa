@@ -72,14 +72,13 @@ public class SetNodeStateRequest extends Request<SetResponse> {
     static NodeState getRequestedNodeState(Map<String, UnitState> newStates, Node n) throws StateRestApiException {
         UnitState newState = newStates.get("user");
         if (newState == null) throw new InvalidContentException("No new user state given in request");
-        State state;
-        switch (newState.getId().toLowerCase()) {
-            case "up": state = State.UP; break;
-            case "retired": state = State.RETIRED; break;
-            case "maintenance": state = State.MAINTENANCE; break;
-            case "down": state = State.DOWN; break;
-            default: throw new InvalidContentException("Invalid user state '" + newState.getId() + "' given.");
-        }
+        State state = switch (newState.getId().toLowerCase()) {
+            case "up" -> State.UP;
+            case "retired" -> State.RETIRED;
+            case "maintenance" -> State.MAINTENANCE;
+            case "down" -> State.DOWN;
+            default -> throw new InvalidContentException("Invalid user state '" + newState.getId() + "' given.");
+        };
         return new NodeState(n.getType(), state).setDescription(newState.getReason());
     }
 
@@ -191,25 +190,18 @@ public class SetNodeStateRequest extends Request<SetResponse> {
                                                   boolean probe) {
         Node distributorNode = new Node(NodeType.DISTRIBUTOR, index);
         NodeInfo nodeInfo = cluster.getNodeInfo(distributorNode);
-        if (nodeInfo == null) {
-            throw new IllegalStateException("Missing distributor at index " +
-                    distributorNode.getIndex());
-        }
+        if (nodeInfo == null)
+            throw new IllegalStateException("Missing distributor at index " + distributorNode.getIndex());
 
         State newState;
         switch (newStorageWantedState.getState()) {
-            case MAINTENANCE:
-                newState = State.DOWN;
-                break;
-            case RETIRED:
-                newState = State.UP;
-                break;
-            default:
+            case MAINTENANCE -> newState = State.DOWN;
+            case RETIRED -> newState = State.UP;
+            default -> {
                 newState = newStorageWantedState.getState();
-                if (!newState.validWantedNodeState(distributorNode.getType())) {
-                    throw new IllegalStateException("Distributor cannot be set to wanted state " +
-                            newState);
-                }
+                if (!newState.validWantedNodeState(distributorNode.getType()))
+                    throw new IllegalStateException("Distributor cannot be set to wanted state " + newState);
+            }
         }
 
         NodeState newWantedState = new NodeState(distributorNode.getType(), newState);

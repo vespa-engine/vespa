@@ -41,7 +41,7 @@ SimpleIndex<Posting, Key, DocId>::insertIntoVectorPosting(vespalib::datastore::E
 template <typename Posting, typename Key, typename DocId>
 SimpleIndex<Posting, Key, DocId>::~SimpleIndex() {
     _btree_posting_lists.disableFreeLists();
-    _btree_posting_lists.disableElemHoldList();
+    _btree_posting_lists.disable_entry_hold_list();
 
     for (auto it = _dictionary.begin(); it.valid(); ++it) {
         vespalib::datastore::EntryRef ref(it.getData());
@@ -51,13 +51,13 @@ SimpleIndex<Posting, Key, DocId>::~SimpleIndex() {
     }
 
     _vector_posting_lists.disableFreeLists();
-    _vector_posting_lists.disableElemHoldList();
+    _vector_posting_lists.disable_entry_hold_list();
     _vector_posting_lists.clear();
     _vector_posting_lists.getAllocator().freeze();
     _vector_posting_lists.getAllocator().reclaim_all_memory();
 
     _dictionary.disableFreeLists();
-    _dictionary.disableElemHoldList();
+    _dictionary.disable_entry_hold_list();
     _dictionary.clear();
     _dictionary.getAllocator().freeze();
     _dictionary.getAllocator().reclaim_all_memory();

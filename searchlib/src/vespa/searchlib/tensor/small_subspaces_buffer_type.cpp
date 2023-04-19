@@ -10,7 +10,7 @@ using vespalib::alloc::MemoryAllocator;
 namespace search::tensor {
 
 SmallSubspacesBufferType::SmallSubspacesBufferType(uint32_t array_size, const AllocSpec& spec, std::shared_ptr<MemoryAllocator> memory_allocator, TensorBufferTypeMapper& type_mapper) noexcept
-    : ParentType(array_size, spec.minArraysInBuffer, spec.maxArraysInBuffer, spec.numArraysForNewBuffer, spec.allocGrowFactor),
+    : ParentType(array_size, spec.min_entries_in_buffer, spec.max_entries_in_buffer, spec.num_entries_for_new_buffer, spec.allocGrowFactor),
       _memory_allocator(std::move(memory_allocator)),
       _ops(type_mapper.get_tensor_buffer_operations())
 {
@@ -19,45 +19,45 @@ SmallSubspacesBufferType::SmallSubspacesBufferType(uint32_t array_size, const Al
 SmallSubspacesBufferType::~SmallSubspacesBufferType() = default;
 
 void
-SmallSubspacesBufferType::cleanHold(void* buffer, size_t offset, ElemCount numElems, CleanContext)
+SmallSubspacesBufferType::clean_hold(void* buffer, size_t offset, EntryCount num_entries, CleanContext)
 {
-    char* elem = static_cast<char *>(buffer) + offset;
-    while (numElems >= getArraySize()) {
+    char* elem = static_cast<char *>(buffer) + offset * getArraySize();
+    while (num_entries >= 1) {
         _ops.reclaim_labels(vespalib::ArrayRef<char>(elem, getArraySize()));
         elem += getArraySize();
-        numElems -= getArraySize();
+        --num_entries;
     }
 }
 
 void
-SmallSubspacesBufferType::destroyElements(void *buffer, ElemCount numElems)
+SmallSubspacesBufferType::destroy_entries(void *buffer, EntryCount num_entries)
 {
     char* elem = static_cast<char *>(buffer);
-    while (numElems >= getArraySize()) {
+    while (num_entries >= 1) {
         _ops.reclaim_labels(vespalib::ArrayRef<char>(elem, getArraySize()));
         elem += getArraySize();
-        numElems -= getArraySize();
+        --num_entries;
     }
 }
 
 void
-SmallSubspacesBufferType::fallbackCopy(void *newBuffer, const void *oldBuffer, ElemCount numElems)
+SmallSubspacesBufferType::fallback_copy(void *newBuffer, const void *oldBuffer, EntryCount num_entries)
 {
-    if (numElems > 0) {
-        memcpy(newBuffer, oldBuffer, numElems);
+    if (num_entries > 0) {
+        memcpy(newBuffer, oldBuffer, num_entries * getArraySize());
     }
     const char *elem = static_cast<const char *>(oldBuffer);
-    while (numElems >= getArraySize()) {
+    while (num_entries >= 1) {
         _ops.copied_labels(unconstify(vespalib::ConstArrayRef<char>(elem, getArraySize())));
         elem += getArraySize();
-        numElems -= getArraySize();
+        --num_entries;
     }
 }
 
 void
-SmallSubspacesBufferType::initializeReservedElements(void *buffer, ElemCount reservedElements)
+SmallSubspacesBufferType::initialize_reserved_entries(void *buffer, EntryCount reserved_entries)
 {
-    memset(buffer, 0, reservedElements);
+    memset(buffer, 0, reserved_entries * getArraySize());
 }
 
 const vespalib::alloc::MemoryAllocator*

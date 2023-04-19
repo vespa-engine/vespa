@@ -45,7 +45,7 @@ public class BcpGroupUpdaterTest {
         tester.controllerTester().upgradeSystem(Version.fromString("7.1"));
         var context = tester.newDeploymentContext();
         var deploymentMetricsMaintainer = new DeploymentMetricsMaintainer(tester.controller(), Duration.ofDays(1));
-        var updater = new BcpGroupUpdater(tester.controller(), Duration.ofDays(1));
+        var updater = new BcpGroupUpdater(tester.controller(), Duration.ofDays(1), 1.0);
         ZoneId prod1 = ZoneId.from("prod", "ap-northeast-1");
         ZoneId prod2 = ZoneId.from("prod", "us-east-3");
         ZoneId prod3 = ZoneId.from("prod", "us-west-1");
@@ -57,7 +57,7 @@ public class BcpGroupUpdaterTest {
         setQpsMetric(50.0, context.application().id().defaultInstance(), prod1, tester);
         setBcpMetrics(1.5, 0.1, 0.45, context.instanceId(), prod1, "cluster1", tester);
         deploymentMetricsMaintainer.maintain();
-        assertEquals(1.0, updater.maintain(), 0.0000001);
+        assertEquals(0.0, updater.maintain(), 0.0000001);
         assertTrafficFraction(1.0, 1.0, context.instanceId(), prod1, tester);
         assertNoBcpGroupInfo(context.instanceId(), prod1, "cluster1", tester, "No other regions in group");
 
@@ -67,7 +67,7 @@ public class BcpGroupUpdaterTest {
         setQpsMetric(20.0, context.application().id().defaultInstance(), prod2, tester);
         setBcpMetrics(100.0, 0.1, 0.45, context.instanceId(), prod1, "cluster1", tester);
         deploymentMetricsMaintainer.maintain();
-        assertEquals(1.0, updater.maintain(), 0.0000001);
+        assertEquals(0.0, updater.maintain(), 0.0000001);
         assertTrafficFraction(0.75, 1.0, context.instanceId(), prod1, tester);
         assertTrafficFraction(0.25, 1.0, context.instanceId(), prod2, tester);
         assertNoBcpGroupInfo(context.instanceId(), prod1, "cluster1", tester,
@@ -75,7 +75,7 @@ public class BcpGroupUpdaterTest {
         assertBcpGroupInfo(100.0, 0.1, 0.45,
                            context.instanceId(), prod2, "cluster1", tester);
         setBcpMetrics(50.0, 0.2, 0.5, context.instanceId(), prod2, "cluster1", tester);
-        assertEquals(1.0, updater.maintain(), 0.0000001);
+        assertEquals(0.0, updater.maintain(), 0.0000001);
         assertBcpGroupInfo(50.0, 0.2, 0.5,
                            context.instanceId(), prod1, "cluster1", tester);
 
@@ -85,7 +85,7 @@ public class BcpGroupUpdaterTest {
         setQpsMetric(45.0, context.application().id().defaultInstance(), prod2, tester);
         setQpsMetric(02.0, context.application().id().defaultInstance(), prod3, tester);
         deploymentMetricsMaintainer.maintain();
-        assertEquals(1.0, updater.maintain(), 0.0000001);
+        assertEquals(0.0, updater.maintain(), 0.0000001);
         assertTrafficFraction(0.53, 0.53 + (double)45/2 / 100, context.instanceId(), prod1, tester);
         assertTrafficFraction(0.45, 0.45 + (double)53/2 / 100, context.instanceId(), prod2, tester);
         assertTrafficFraction(0.02, 0.02 + (double)53/2 / 100, context.instanceId(), prod3, tester);
@@ -129,7 +129,7 @@ public class BcpGroupUpdaterTest {
                                       locked -> tester.controller().applications().store(locked.with(deploymentSpec)));
 
         var deploymentMetricsMaintainer = new DeploymentMetricsMaintainer(tester.controller(), Duration.ofDays(1));
-        var updater = new BcpGroupUpdater(tester.controller(), Duration.ofDays(1));
+        var updater = new BcpGroupUpdater(tester.controller(), Duration.ofDays(1), 1.0);
 
         ZoneId ap1 = ZoneId.from("prod", "ap-northeast-1");
         ZoneId ap2 = ZoneId.from("prod", "ap-southeast-1");
@@ -150,7 +150,7 @@ public class BcpGroupUpdaterTest {
         setQpsMetric(40.0, context.application().id().defaultInstance(), eu1, tester);
 
         deploymentMetricsMaintainer.maintain();
-        assertEquals(1.0, updater.maintain(), 0.0000001);
+        assertEquals(0.0, updater.maintain(), 0.0000001);
         assertTrafficFraction(0.5, 0.5, context.instanceId(), ap1, tester);
         assertTrafficFraction(0.0, 0.5, context.instanceId(), ap2, tester);
         assertTrafficFraction(0.1, 0.1, context.instanceId(), us1, tester);
@@ -197,7 +197,7 @@ public class BcpGroupUpdaterTest {
                                           locked -> tester.controller().applications().store(locked.with(deploymentSpec)));
 
         var deploymentMetricsMaintainer = new DeploymentMetricsMaintainer(tester.controller(), Duration.ofDays(1));
-        var updater = new BcpGroupUpdater(tester.controller(), Duration.ofDays(1));
+        var updater = new BcpGroupUpdater(tester.controller(), Duration.ofDays(1), 1.0);
 
         ZoneId ap1 = ZoneId.from("prod", "ap-northeast-1");
         ZoneId ap2 = ZoneId.from("prod", "ap-southeast-1");
@@ -221,7 +221,7 @@ public class BcpGroupUpdaterTest {
         setQpsMetric(60.0, context.application().id().defaultInstance(), eu1, tester);
 
         deploymentMetricsMaintainer.maintain();
-        assertEquals(1.0, updater.maintain(), 0.0000001);
+        assertEquals(0.0, updater.maintain(), 0.0000001);
         assertTrafficFraction(0.10, 0.10 + 50 / 200.0 / 1.5, context.instanceId(), ap1, tester);
         assertTrafficFraction(0.25, 0.25 + 30 / 200.0 / 1.5, context.instanceId(), ap2, tester);
         assertTrafficFraction(0.00, 0.00 + 40 / 200.0 / 2.5, context.instanceId(), us1, tester);
@@ -242,7 +242,7 @@ public class BcpGroupUpdaterTest {
         setBcpMetrics(300, 0.3, 0.3, context.instanceId(), us3, "cluster2", tester);
         setBcpMetrics(100, 0.1, 0.1, context.instanceId(), eu1, "cluster2", tester);
 
-        assertEquals(1.0, updater.maintain(), 0.0000001);
+        assertEquals(0.0, updater.maintain(), 0.0000001);
 
         assertNoBcpGroupInfo(context.instanceId(), ap1, "cluster1", tester, "No info in ap");
         assertNoBcpGroupInfo(context.instanceId(), ap2, "cluster1", tester, "No info in ap");

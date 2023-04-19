@@ -35,6 +35,12 @@
         <artifactId>maven-compiler-plugin</artifactId>
         <configuration>
           <release>${vespaClients.jdk.releaseVersion}</release>
+          <compilerArgs> <!-- Remove (to use default) when not compiling for 8 -->
+            <arg>-Xlint:all</arg>
+            <arg>-Xlint:-rawtypes</arg>
+            <arg>-Xlint:-unchecked</arg>
+            <arg>-Xlint:-serial</arg>
+          </compilerArgs>
         </configuration>
       </plugin>
       <plugin>

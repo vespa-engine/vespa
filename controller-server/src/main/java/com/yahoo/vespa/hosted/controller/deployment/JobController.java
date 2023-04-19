@@ -111,6 +111,7 @@ import static java.util.logging.Level.WARNING;
 public class JobController {
 
     public static final Duration maxHistoryAge = Duration.ofDays(60);
+    public static final Duration obsoletePackageExpiry = Duration.ofDays(7);
 
     private static final Logger log = Logger.getLogger(JobController.class.getName());
 
@@ -165,8 +166,8 @@ public class JobController {
                 return Optional.empty();
 
             return active(id).isPresent()
-                    ? Optional.of(logs.readActive(id.application(), id.type(), after))
-                    : logs.readFinished(id, after);
+                   ? Optional.of(logs.readActive(id.application(), id.type(), after))
+                   : logs.readFinished(id, after);
         }
     }
 
@@ -284,10 +285,10 @@ public class JobController {
 
     private Optional<InputStream> getVespaLogsFromLogserver(Run run, long fromMillis, boolean tester) {
         return deploymentCompletedAt(run, tester).map(at ->
-            controller.serviceRegistry().configServer().getLogs(new DeploymentId(tester ? run.id().tester().id() : run.id().application(),
-                                                                                 run.id().type().zone()),
-                                                                Map.of("from", Long.toString(Math.max(fromMillis, at.toEpochMilli())),
-                                                                       "to", Long.toString(run.end().orElse(controller.clock().instant()).toEpochMilli()))));
+                                                              controller.serviceRegistry().configServer().getLogs(new DeploymentId(tester ? run.id().tester().id() : run.id().application(),
+                                                                                                                                   run.id().type().zone()),
+                                                                                                                  Map.of("from", Long.toString(Math.max(fromMillis, at.toEpochMilli())),
+                                                                                                                         "to", Long.toString(run.end().orElse(controller.clock().instant()).toEpochMilli()))));
     }
 
     /** Fetches any new test log entries, and records the id of the last of these, for continuation. */
@@ -509,14 +510,14 @@ public class JobController {
                     long successes = runs.values().stream().filter(Run::hasSucceeded).count();
                     var oldEntries = runs.entrySet().iterator();
                     for (var old = oldEntries.next();
-                            old.getKey().number() <= last - historyLength
+                         old.getKey().number() <= last - historyLength
                          || old.getValue().start().isBefore(controller.clock().instant().minus(maxHistoryAge));
                          old = oldEntries.next()) {
 
                         // Make sure we keep the last success and the first failing
                         if (     successes == 1
-                            &&   old.getValue().hasSucceeded()
-                            && ! old.getValue().start().isBefore(controller.clock().instant().minus(maxHistoryAge))) {
+                                 &&   old.getValue().hasSucceeded()
+                                 && ! old.getValue().start().isBefore(controller.clock().instant().minus(maxHistoryAge))) {
                             oldEntries.next();
                             continue;
                         }
@@ -624,7 +625,7 @@ public class JobController {
         });
     }
 
-    private LockedApplication withPrunedPackages(LockedApplication application, RevisionId latest){
+    private LockedApplication withPrunedPackages(LockedApplication application, RevisionId latest) {
         TenantAndApplicationId id = application.get().id();
         Application wrapped = application.get();
         RevisionId oldestDeployed = application.get().oldestDeployedRevision()
@@ -632,11 +633,28 @@ public class JobController {
                                                                 .flatMap(instance -> instance.change().revision().stream())
                                                                 .min(naturalOrder()))
                                                .orElse(latest);
-        controller.applications().applicationStore().prune(id.tenant(), id.application(), oldestDeployed);
+        RevisionId oldestToKeep = null;
+        Instant now = controller.clock().instant();
+        for (ApplicationVersion version : application.get().revisions().withPackage()) {
+            if (version.id().compareTo(oldestDeployed) < 0) {
+                if (version.obsoleteAt().isEmpty()) {
+                    application = application.withRevisions(revisions -> revisions.with(version.obsoleteAt(now)));
+                    if (oldestToKeep == null)
+                        oldestToKeep = version.id();
+                }
+                else {
+                    if (oldestToKeep == null && !version.obsoleteAt().get().isBefore(now.minus(obsoletePackageExpiry)))
+                        oldestToKeep = version.id();
+                }
+            }
+        }
 
-        for (ApplicationVersion version : application.get().revisions().withPackage())
-            if (version.id().compareTo(oldestDeployed) < 0)
-                application = application.withRevisions(revisions -> revisions.with(version.withoutPackage()));
+        if (oldestToKeep != null) {
+            controller.applications().applicationStore().prune(id.tenant(), id.application(), oldestToKeep);
+            for (ApplicationVersion version : application.get().revisions().withPackage())
+                if (version.id().compareTo(oldestToKeep) < 0)
+                    application = application.withRevisions(revisions -> revisions.with(version.withoutPackage()));
+        }
         return application;
     }
 
@@ -703,8 +721,8 @@ public class JobController {
 
         VersionStatus versionStatus = controller.readVersionStatus();
         if (   ! controller.system().isCd()
-            &&   platform.isPresent()
-            &&   versionStatus.deployableVersions().stream().map(VespaVersion::versionNumber).noneMatch(platform.get()::equals))
+               &&   platform.isPresent()
+               &&   versionStatus.deployableVersions().stream().map(VespaVersion::versionNumber).noneMatch(platform.get()::equals))
             throw new IllegalArgumentException("platform version " + platform.get() + " is not present in this system");
 
         controller.applications().lockApplicationOrThrow(TenantAndApplicationId.from(id), application -> {
@@ -713,6 +731,7 @@ public class JobController {
             // TODO(mpolden): Enable for public CD once all tests have been updated
             if (controller.system() != SystemName.PublicCd) {
                 controller.applications().validatePackage(applicationPackage, application.get());
+                controller.applications().decideCloudAccountOf(new DeploymentId(id, type.zone()), applicationPackage.deploymentSpec());
             }
             controller.applications().store(application);
         });
@@ -730,8 +749,8 @@ public class JobController {
         controller.applications().lockApplicationOrThrow(TenantAndApplicationId.from(id), application -> {
             Version targetPlatform = platform.orElseGet(() -> findTargetPlatform(applicationPackage, deploymentId, application.get().get(id.instance()), versionStatus));
             if (   ! allowOutdatedPlatform
-                && ! controller.readVersionStatus().isOnCurrentMajor(targetPlatform)
-                &&   runs(id, type).values().stream().noneMatch(run -> run.versions().targetPlatform().getMajor() == targetPlatform.getMajor()))
+                   && ! controller.readVersionStatus().isOnCurrentMajor(targetPlatform)
+                   &&   runs(id, type).values().stream().noneMatch(run -> run.versions().targetPlatform().getMajor() == targetPlatform.getMajor()))
                 throw new IllegalArgumentException("platform version " + targetPlatform + " is not on a current major version in this system");
 
             controller.applications().applicationStore().putDev(deploymentId, version.id(), applicationPackage.zippedContent(), diff);
@@ -871,7 +890,7 @@ public class JobController {
 
     /** Locks all runs and modifies the list of historic runs for the given application and job type. */
     private void locked(ApplicationId id, JobType type, Consumer<SortedMap<RunId, Run>> modifications) {
-      try (Mutex __ = curator.lock(id, type)) {
+        try (Mutex __ = curator.lock(id, type)) {
             SortedMap<RunId, Run> runs = new TreeMap<>(curator.readHistoricRuns(id, type));
             modifications.accept(runs);
             curator.writeHistoricRuns(id, type, runs.values());

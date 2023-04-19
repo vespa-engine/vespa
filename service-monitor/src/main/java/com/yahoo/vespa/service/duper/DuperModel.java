@@ -1,10 +1,10 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.service.duper;
 
+import ai.vespa.http.DomainName;
 import com.yahoo.config.model.api.ApplicationInfo;
 import com.yahoo.config.model.api.HostInfo;
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.HostName;
 import java.util.logging.Level;
 import com.yahoo.vespa.service.monitor.DuperModelListener;
 
@@ -26,8 +26,8 @@ public class DuperModel {
     private static Logger logger = Logger.getLogger(DuperModel.class.getName());
 
     private final Map<ApplicationId, ApplicationInfo> applicationsById = new HashMap<>();
-    private final Map<HostName, ApplicationId> idsByHostname = new HashMap<>();
-    private final Map<ApplicationId, HashSet<HostName>> hostnamesById = new HashMap<>();
+    private final Map<DomainName, ApplicationId> idsByHostname = new HashMap<>();
+    private final Map<ApplicationId, HashSet<DomainName>> hostnamesById = new HashMap<>();
 
     private final List<DuperModelListener> listeners = new ArrayList<>();
     private boolean isComplete = false;
@@ -67,7 +67,7 @@ public class DuperModel {
         return Optional.ofNullable(applicationsById.get(applicationId));
     }
 
-    public Optional<ApplicationInfo> getApplicationInfo(HostName hostName) {
+    public Optional<ApplicationInfo> getApplicationInfo(DomainName hostName) {
         return Optional.ofNullable(idsByHostname.get(hostName)).map(applicationsById::get);
     }
 
@@ -76,12 +76,12 @@ public class DuperModel {
     }
 
     /** Note: Returns an empty set for unknown application. */
-    public Set<HostName> getHostnames(ApplicationId applicationId) {
-        HashSet<HostName> set = hostnamesById.get(applicationId);
+    public Set<DomainName> getHostnames(ApplicationId applicationId) {
+        HashSet<DomainName> set = hostnamesById.get(applicationId);
         return set == null ? Set.of() : Set.copyOf(set);
     }
 
-    public Optional<ApplicationId> getApplicationId(HostName hostname) {
+    public Optional<ApplicationId> getApplicationId(DomainName hostname) {
         return Optional.ofNullable(idsByHostname.get(hostname));
     }
 
@@ -103,7 +103,7 @@ public class DuperModel {
     }
 
     public void remove(ApplicationId applicationId) {
-        Set<HostName> hostnames = hostnamesById.remove(applicationId);
+        Set<DomainName> hostnames = hostnamesById.remove(applicationId);
         if (hostnames != null) {
             hostnames.forEach(idsByHostname::remove);
         }
@@ -117,11 +117,11 @@ public class DuperModel {
 
     /** Update hostnamesById and idsByHostname based on a new applicationInfo. */
     private void updateHostnameVsIdMaps(ApplicationInfo applicationInfo, ApplicationId id) {
-        Set<HostName> removedHosts = new HashSet<>(hostnamesById.computeIfAbsent(id, k -> new HashSet<>()));
+        Set<DomainName> removedHosts = new HashSet<>(hostnamesById.computeIfAbsent(id, k -> new HashSet<>()));
 
         applicationInfo.getModel().getHosts().stream()
                 .map(HostInfo::getHostname)
-                .map(HostName::of)
+                .map(DomainName::of)
                 .forEach(hostname -> {
                     if (!removedHosts.remove(hostname)) {
                         // hostname has been added
@@ -135,7 +135,7 @@ public class DuperModel {
                             logger.log(Level.WARNING, hostname + " has been reassigned from " +
                                     previousId.toFullString() + " to " + id.toFullString());
 
-                            Set<HostName> previousHostnames = hostnamesById.get(previousId);
+                            Set<DomainName> previousHostnames = hostnamesById.get(previousId);
                             if (previousHostnames != null) {
                                 previousHostnames.remove(hostname);
                             }

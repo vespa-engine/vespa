@@ -263,7 +263,7 @@ func verify(step step, defaultCluster string, defaultParameters map[string]strin
 
 	var response *http.Response
 	if externalEndpoint {
-		util.SetCertificate(context.cli.httpClient, []tls.Certificate{})
+		util.ConfigureTLS(context.cli.httpClient, []tls.Certificate{}, nil, false)
 		response, err = context.cli.httpClient.Do(request, 60*time.Second)
 	} else {
 		response, err = service.Do(request, 600*time.Second) // Vespa should provide a response within the given request timeout

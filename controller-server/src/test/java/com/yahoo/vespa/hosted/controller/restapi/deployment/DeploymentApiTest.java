@@ -18,6 +18,7 @@ import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
 import org.junit.jupiter.api.Test;
 
 import java.io.File;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -76,7 +77,7 @@ public class DeploymentApiTest extends ControllerContainerTest {
         deploymentTester.upgrader().maintain();
         deploymentTester.triggerJobs();
         productionApp.runJob(DeploymentContext.systemTest).runJob(DeploymentContext.stagingTest).runJob(DeploymentContext.productionUsWest1);
-        failingApp.failDeployment(DeploymentContext.systemTest).failDeployment(DeploymentContext.stagingTest);
+        failingApp.failDeployment(DeploymentContext.systemTest).failDeployment(DeploymentContext.stagingTest).timeOutConvergence(DeploymentContext.stagingTest);
         deploymentTester.upgrader().maintain();
         deploymentTester.triggerJobs();
 

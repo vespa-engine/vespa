@@ -40,7 +40,6 @@ SingleValueStringAttributeT<B>::freezeEnumDictionary()
     this->getEnumStore().freeze_dictionary();
 }
 
-
 template <typename B>
 std::unique_ptr<attribute::SearchContext>
 SingleValueStringAttributeT<B>::getSearch(QueryTermSimpleUP qTerm,

@@ -37,16 +37,17 @@
           "instance": "default",
           "upgrading": false,
           "pinned": false,
+          "platformPinned": false,
+          "revisionPinned": false,
           "upgradePolicy": "default",
           "compileVersion": "6.1.0",
           "jobs": [
             {
-              "name": "system-test",
-              "coolingDownUntil": 1600000000000
+              "name": "system-test"
             },
             {
               "name": "staging-test",
-              "coolingDownUntil": 1600000000000
+              "coolingDownUntil": 1600022201500
             },
             {
               "name": "production-us-west-1"
@@ -79,6 +80,8 @@
           "instance": "i2",
           "upgrading": false,
           "pinned": false,
+          "platformPinned": false,
+          "revisionPinned": false,
           "upgradePolicy": "default",
           "compileVersion": "6.1.0",
           "jobs": [
@@ -141,7 +144,7 @@
           "url": "http://localhost:8080/application/v4/tenant/tenant1/application/application1",
           "upgradePolicy": "default",
           "failing": "staging-test",
-          "status": "error"
+          "status": "installationFailed"
         }
       ],
       "productionApplications": [
@@ -165,14 +168,6 @@
           "running": "system-test"
         },
         {
-          "tenant": "tenant1",
-          "application": "application1",
-          "instance": "default",
-          "url": "http://localhost:8080/application/v4/tenant/tenant1/application/application1",
-          "upgradePolicy": "default",
-          "running": "staging-test"
-        },
-        {
           "tenant": "tenant2",
           "application": "application2",
           "instance": "i2",
@@ -188,17 +183,18 @@
           "instance": "default",
           "upgrading": true,
           "pinned": false,
+          "platformPinned": false,
+          "revisionPinned": false,
           "upgradePolicy": "default",
           "compileVersion": "6.1.0",
           "jobs": [
             {
               "name": "system-test",
-              "coolingDownUntil": 1600000000000,
               "pending": "application"
             },
             {
               "name": "staging-test",
-              "coolingDownUntil": 1600000000000,
+              "coolingDownUntil": 1600022201500,
               "pending": "platform"
             },
             {
@@ -222,15 +218,10 @@
             },
             "staging-test": {
               "failing": {
-                "number": 2,
-                "start": 1600000000000,
-                "end": 1600000000000,
-                "status": "error"
-              },
-              "running": {
                 "number": 3,
                 "start": 1600000000000,
-                "status": "running"
+                "end": 1600014401000,
+                "status": "installationFailed"
               }
             }
           },
@@ -250,15 +241,10 @@
             },
             "staging-test": {
               "failing": {
-                "number": 2,
-                "start": 1600000000000,
-                "end": 1600000000000,
-                "status": "error"
-              },
-              "running": {
                 "number": 3,
                 "start": 1600000000000,
-                "status": "running"
+                "end": 1600014401000,
+                "status": "installationFailed"
               }
             }
           }
@@ -269,6 +255,8 @@
           "instance": "i1",
           "upgrading": false,
           "pinned": false,
+          "platformPinned": false,
+          "revisionPinned": false,
           "upgradePolicy": "default",
           "compileVersion": "6.1.0",
           "jobs": [
@@ -289,15 +277,15 @@
             "system-test": {
               "failing": {
                 "number": 3,
-                "start": 1600000000000,
-                "end": 1600000000000,
+                "start": 1600014401000,
+                "end": 1600014401000,
                 "status": "error"
               }
             },
             "staging-test": {
               "running": {
                 "number": 3,
-                "start": 1600000000000,
+                "start": 1600014401000,
                 "status": "running"
               }
             },
@@ -329,6 +317,8 @@
           "instance": "i2",
           "upgrading": true,
           "pinned": false,
+          "platformPinned": false,
+          "revisionPinned": false,
           "upgradePolicy": "default",
           "compileVersion": "6.1.0",
           "jobs": [
@@ -341,7 +331,7 @@
             "production-us-west-1": {
               "running": {
                 "number": 2,
-                "start": 1600000000000,
+                "start": 1600014401000,
                 "status": "running"
               }
             }
@@ -350,7 +340,7 @@
             "production-us-west-1": {
               "running": {
                 "number": 2,
-                "start": 1600000000000,
+                "start": 1600014401000,
                 "status": "running"
               }
             }

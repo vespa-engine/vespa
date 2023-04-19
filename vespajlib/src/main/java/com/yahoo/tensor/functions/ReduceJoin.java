@@ -333,7 +333,7 @@ public class ReduceJoin<NAMETYPE extends Name> extends CompositeTensorFunction<N
 
         private final long[] bounds;
         private final long[] iterator;
-        private int remaining;
+        private long remaining;
 
         MultiDimensionIterator(TensorType type) {
             bounds = new long[type.dimensions().size()];

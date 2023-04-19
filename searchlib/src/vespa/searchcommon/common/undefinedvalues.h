@@ -24,6 +24,10 @@ inline constexpr double getUndefined<double>() {
     return -std::numeric_limits<double>::quiet_NaN();
 }
 
+template <>
+inline constexpr const char* getUndefined<const char*>() {
+    return "";
+}
 
 // for all signed integers
 template <typename T>

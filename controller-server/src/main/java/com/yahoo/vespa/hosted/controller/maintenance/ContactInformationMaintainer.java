@@ -64,7 +64,7 @@ public class ContactInformationMaintainer extends ControllerMaintainer {
                                        interval());
             }
         }
-        return asSuccessFactor(attempts, failures);
+        return asSuccessFactorDeviation(attempts, failures);
     }
 
 }

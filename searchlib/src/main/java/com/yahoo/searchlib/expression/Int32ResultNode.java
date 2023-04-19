@@ -80,7 +80,7 @@ public class Int32ResultNode extends NumericResultNode {
 
     @Override
     public void add(ResultNode rhs) {
-        value += rhs.getInteger();
+        value += (int)rhs.getInteger();
     }
 
     @Override
@@ -90,7 +90,7 @@ public class Int32ResultNode extends NumericResultNode {
 
     @Override
     public void multiply(ResultNode rhs) {
-        value *= rhs.getInteger();
+        value *= (int)rhs.getInteger();
     }
 
     @Override
@@ -101,7 +101,7 @@ public class Int32ResultNode extends NumericResultNode {
 
     @Override
     public void modulo(ResultNode rhs) {
-        value %= rhs.getInteger();
+        value %= (int)rhs.getInteger();
     }
 
     @Override
@@ -122,7 +122,7 @@ public class Int32ResultNode extends NumericResultNode {
 
     @Override
     public Object getNumber() {
-        return Integer.valueOf(value);
+        return value;
     }
 
     @Override

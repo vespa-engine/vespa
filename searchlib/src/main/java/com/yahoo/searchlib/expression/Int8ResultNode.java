@@ -78,7 +78,7 @@ public class Int8ResultNode extends NumericResultNode {
 
     @Override
     public void add(ResultNode rhs) {
-        value += rhs.getInteger();
+        value += (byte)rhs.getInteger();
     }
 
     @Override
@@ -88,7 +88,7 @@ public class Int8ResultNode extends NumericResultNode {
 
     @Override
     public void multiply(ResultNode rhs) {
-        value *= rhs.getInteger();
+        value *= (byte)rhs.getInteger();
     }
 
     @Override
@@ -99,7 +99,7 @@ public class Int8ResultNode extends NumericResultNode {
 
     @Override
     public void modulo(ResultNode rhs) {
-        value %= rhs.getInteger();
+        value %= (byte)rhs.getInteger();
     }
 
     @Override

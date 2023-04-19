@@ -10,12 +10,39 @@ import com.yahoo.search.grouping.result.GroupList;
 import com.yahoo.search.grouping.result.HitList;
 import com.yahoo.search.result.HitGroup;
 import com.yahoo.search.result.Relevance;
-import com.yahoo.searchlib.aggregation.*;
+import com.yahoo.searchlib.aggregation.AggregationResult;
+import com.yahoo.searchlib.aggregation.AverageAggregationResult;
+import com.yahoo.searchlib.aggregation.CountAggregationResult;
+import com.yahoo.searchlib.aggregation.ExpressionCountAggregationResult;
+import com.yahoo.searchlib.aggregation.FS4Hit;
+import com.yahoo.searchlib.aggregation.Group;
+import com.yahoo.searchlib.aggregation.Grouping;
+import com.yahoo.searchlib.aggregation.HitsAggregationResult;
+import com.yahoo.searchlib.aggregation.MaxAggregationResult;
+import com.yahoo.searchlib.aggregation.MinAggregationResult;
+import com.yahoo.searchlib.aggregation.SumAggregationResult;
+import com.yahoo.searchlib.aggregation.XorAggregationResult;
 import com.yahoo.searchlib.aggregation.hll.SparseSketch;
-import com.yahoo.searchlib.expression.*;
+import com.yahoo.searchlib.expression.FloatBucketResultNode;
+import com.yahoo.searchlib.expression.FloatResultNode;
+import com.yahoo.searchlib.expression.IntegerBucketResultNode;
+import com.yahoo.searchlib.expression.IntegerResultNode;
+import com.yahoo.searchlib.expression.NullResultNode;
+import com.yahoo.searchlib.expression.RawBucketResultNode;
+import com.yahoo.searchlib.expression.RawResultNode;
+import com.yahoo.searchlib.expression.ResultNode;
+import com.yahoo.searchlib.expression.StringBucketResultNode;
+import com.yahoo.searchlib.expression.StringResultNode;
 import org.junit.jupiter.api.Test;
 
-import java.util.*;
+
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -33,19 +60,19 @@ public class ResultBuilderTestCase {
         assertGroupId("group:6.9", new FloatResultNode(6.9));
         assertGroupId("group:69", new IntegerResultNode(69));
         assertGroupId("group:null", new NullResultNode());
-        assertGroupId("group:[6, 9]", new RawResultNode(new byte[]{6, 9}));
+        assertGroupId("group:Bgk", new RawResultNode(new byte[]{6, 9}));
         assertGroupId("group:a", new StringResultNode("a"));
         assertGroupId("group:6.9:9.6", new FloatBucketResultNode(6.9, 9.6));
         assertGroupId("group:6:9", new IntegerBucketResultNode(6, 9));
         assertGroupId("group:a:b", new StringBucketResultNode("a", "b"));
-        assertGroupId("group:[6, 9]:[9, 6]", new RawBucketResultNode(new RawResultNode(new byte[]{6, 9}),
+        assertGroupId("group:Bgk:CQY", new RawBucketResultNode(new RawResultNode(new byte[]{6, 9}),
                 new RawResultNode(new byte[]{9, 6})));
     }
 
     @Test
     void requireThatUnknownGroupIdThrows() {
         assertBuildFail("all(group(a) each(output(count())))",
-                Arrays.asList(newGrouping(new Group().setTag(2).setId(new MyResultNode()))),
+                List.of(newGrouping(new Group().setTag(2).setId(new MyResultNode()))),
                 "com.yahoo.search.grouping.vespa.ResultBuilderTestCase$MyResultNode");
     }
 
@@ -61,9 +88,17 @@ public class ResultBuilderTestCase {
     }
 
     @Test
+    void requireThatAllBasicResultsCanBeConverted() {
+        assertResult("69", new MinAggregationResult(new IntegerResultNode(69)));
+        assertResult("69.3", new MinAggregationResult(new FloatResultNode(69.3)));
+        assertResult("69.6", new MinAggregationResult(new StringResultNode("69.6")));
+        assertResult("Bgk", new MinAggregationResult(new RawResultNode(new byte[]{6,9})));
+    }
+
+    @Test
     void requireThatUnknownExpressionNodeThrows() {
         assertBuildFail("all(group(a) each(output(count())))",
-                Arrays.asList(newGrouping(newGroup(2, 2, new MyAggregationResult().setTag(3)))),
+                List.of(newGrouping(newGroup(2, 2, new MyAggregationResult().setTag(3)))),
                 "com.yahoo.search.grouping.vespa.ResultBuilderTestCase$MyAggregationResult");
     }
 
@@ -127,10 +162,10 @@ public class ResultBuilderTestCase {
     @Test
     void requireThatParallelResultsAreTransformed() {
         assertBuild("all(group(foo) each(output(count())) as(bar) each(output(count())) as(baz))",
-                Arrays.asList(new Grouping().setRoot(newGroup(1, 0)),
+                List.of(new Grouping().setRoot(newGroup(1, 0)),
                         new Grouping().setRoot(newGroup(1, 0))));
         assertBuildFail("all(group(foo) each(output(count())) as(bar) each(output(count())) as(baz))",
-                Arrays.asList(new Grouping().setRoot(newGroup(2)),
+                List.of(new Grouping().setRoot(newGroup(2)),
                         new Grouping().setRoot(newGroup(3))),
                 "Expected 1 group, got 2.");
     }
@@ -138,15 +173,15 @@ public class ResultBuilderTestCase {
     @Test
     void requireThatTagsAreHandledCorrectly() {
         assertBuild("all(group(a) each(output(count())))",
-                Arrays.asList(newGrouping(
+                List.of(newGrouping(
                         newGroup(7, new CountAggregationResult(0)))));
     }
 
     @Test
     void requireThatEmptyBranchesArePruned() {
-        assertBuildFail("all()", Collections.<Grouping>emptyList(), "Expected 1 group, got 0.");
-        assertBuildFail("all(group(a))", Collections.<Grouping>emptyList(), "Expected 1 group, got 0.");
-        assertBuildFail("all(group(a) each())", Collections.<Grouping>emptyList(), "Expected 1 group, got 0.");
+        assertBuildFail("all()", List.of(), "Expected 1 group, got 0.");
+        assertBuildFail("all(group(a))", List.of(), "Expected 1 group, got 0.");
+        assertBuildFail("all(group(a) each())", List.of(), "Expected 1 group, got 0.");
 
         Grouping grouping = newGrouping(newGroup(2, new CountAggregationResult(69).setTag(3)));
         String expectedOutput = "RootGroup{id=group:root}[GroupList{label=a}[Group{id=group:2, count()=69}[]]]";
@@ -189,14 +224,14 @@ public class ResultBuilderTestCase {
                         "HitList{label=bar}[Hit{id=hit:1}, Hit{id=hit:2}]]]]");
         assertLayout("all(group(foo) each(each(output(summary())) as(bar)" +
                 "                    each(output(summary())) as(baz)))",
-                Arrays.asList(newGrouping(newGroup(2, newHitList(3, 2))),
+                List.of(newGrouping(newGroup(2, newHitList(3, 2))),
                         newGrouping(newGroup(2, newHitList(4, 2)))),
                 "RootGroup{id=group:root}[GroupList{label=foo}[Group{id=group:2}[" +
                         "HitList{label=bar}[Hit{id=hit:1}, Hit{id=hit:2}], " +
                         "HitList{label=baz}[Hit{id=hit:1}, Hit{id=hit:2}]]]]");
         assertLayout("all(group(foo) each(each(output(summary())))" +
                 "               each(each(output(summary()))) as(bar))",
-                Arrays.asList(newGrouping(newGroup(2, newHitList(3, 2))),
+                List.of(newGrouping(newGroup(2, newHitList(3, 2))),
                         newGrouping(newGroup(4, newHitList(5, 2)))),
                 "RootGroup{id=group:root}[" +
                         "GroupList{label=foo}[Group{id=group:2}[HitList{label=hits}[Hit{id=hit:1}, Hit{id=hit:2}]]], " +
@@ -273,18 +308,18 @@ public class ResultBuilderTestCase {
 
         assertResultCont("all(group(a) max(2) each(output(count())) as(foo)" +
                 "                    each(output(count())) as(bar))",
-                Arrays.asList(newGrouping(newGroup(2, 1, new CountAggregationResult(1))),
+                List.of(newGrouping(newGroup(2, 1, new CountAggregationResult(1))),
                         newGrouping(newGroup(4, 2, new CountAggregationResult(4)))),
                 "[]");
         assertResultCont("all(group(a) max(2) each(output(count())) as(foo)" +
                 "                    each(output(count())) as(bar))",
-                Arrays.asList(newGrouping(newGroup(2, 1, new CountAggregationResult(1))),
+                List.of(newGrouping(newGroup(2, 1, new CountAggregationResult(1))),
                         newGrouping(newGroup(4, 2, new CountAggregationResult(4)))),
                 newOffset(newResultId(0), 2, 1),
                 "[0=1]");
         assertResultCont("all(group(a) max(2) each(output(count())) as(foo)" +
                 "                    each(output(count())) as(bar))",
-                Arrays.asList(newGrouping(newGroup(2, 1, new CountAggregationResult(1))),
+                List.of(newGrouping(newGroup(2, 1, new CountAggregationResult(1))),
                         newGrouping(newGroup(4, 2, new CountAggregationResult(4)))),
                 newComposite(newOffset(newResultId(0), 2, 2),
                         newOffset(newResultId(1), 4, 1)),
@@ -299,18 +334,18 @@ public class ResultBuilderTestCase {
 
         assertResultCont("all(group(a) each(max(2) each(output(summary()))) as(foo)" +
                 "             each(max(2) each(output(summary()))) as(bar))",
-                Arrays.asList(newGrouping(newGroup(2, newHitList(3, 4))),
+                List.of(newGrouping(newGroup(2, newHitList(3, 4))),
                         newGrouping(newGroup(4, newHitList(5, 4)))),
                 "[]");
         assertResultCont("all(group(a) each(max(2) each(output(summary()))) as(foo)" +
                 "             each(max(2) each(output(summary()))) as(bar))",
-                Arrays.asList(newGrouping(newGroup(2, newHitList(3, 4))),
+                List.of(newGrouping(newGroup(2, newHitList(3, 4))),
                         newGrouping(newGroup(4, newHitList(5, 4)))),
                 newOffset(newResultId(0, 0, 0), 3, 1),
                 "[0.0.0=1]");
         assertResultCont("all(group(a) each(max(2) each(output(summary()))) as(foo)" +
                 "             each(max(2) each(output(summary()))) as(bar))",
-                Arrays.asList(newGrouping(newGroup(2, newHitList(3, 4))),
+                List.of(newGrouping(newGroup(2, newHitList(3, 4))),
                         newGrouping(newGroup(4, newHitList(5, 4)))),
                 newComposite(newOffset(newResultId(0, 0, 0), 3, 2),
                         newOffset(newResultId(1, 0, 0), 5, 1)),
@@ -404,7 +439,7 @@ public class ResultBuilderTestCase {
     void requireThatGroupListContinuationsCanBeSetInSiblingGroupLists() {
         String request = "all(group(a) max(2) each(output(count())) as(foo)" +
                 "                    each(output(count())) as(bar))";
-        List<Grouping> result = Arrays.asList(newGrouping(newGroup(2, 1, new CountAggregationResult(1)),
+        List<Grouping> result = List.of(newGrouping(newGroup(2, 1, new CountAggregationResult(1)),
                 newGroup(2, 2, new CountAggregationResult(2)),
                 newGroup(2, 3, new CountAggregationResult(3)),
                 newGroup(2, 4, new CountAggregationResult(4))),
@@ -646,7 +681,7 @@ public class ResultBuilderTestCase {
     void requireThatHitListContinuationsCanBeSetInSiblingHitLists() {
         String request = "all(group(a) each(max(2) each(output(summary()))) as(foo)" +
                 "             each(max(2) each(output(summary()))) as(bar))";
-        List<Grouping> result = Arrays.asList(newGrouping(newGroup(2, newHitList(3, 4))),
+        List<Grouping> result = List.of(newGrouping(newGroup(2, newHitList(3, 4))),
                 newGrouping(newGroup(4, newHitList(5, 4))));
         assertContinuation(request, result, newComposite(newOffset(newResultId(0, 0, 0), 3, 0),
                 newOffset(newResultId(1, 0, 0), 5, 5)),
@@ -839,7 +874,7 @@ public class ResultBuilderTestCase {
     }
 
     private static void assertResultCont(String request, Grouping result, Continuation cont, String expected) {
-        assertOutput(request, Arrays.asList(result), cont, new ResultContWriter(), expected);
+        assertOutput(request, List.of(result), cont, new ResultContWriter(), expected);
     }
 
     private static void assertResultCont(String request, List<Grouping> result, String expected) {
@@ -851,11 +886,11 @@ public class ResultBuilderTestCase {
     }
 
     private static void assertContinuation(String request, Grouping result, String expected) {
-        assertOutput(request, Arrays.asList(result), null, new ContinuationWriter(), expected);
+        assertOutput(request, List.of(result), null, new ContinuationWriter(), expected);
     }
 
     private static void assertContinuation(String request, Grouping result, Continuation cont, String expected) {
-        assertOutput(request, Arrays.asList(result), cont, new ContinuationWriter(), expected);
+        assertOutput(request, List.of(result), cont, new ContinuationWriter(), expected);
     }
 
     private static void assertContinuation(String request, List<Grouping> result, Continuation cont, String expected) {
@@ -863,7 +898,7 @@ public class ResultBuilderTestCase {
     }
 
     private static void assertLayout(String request, Grouping result, String expected) {
-        assertOutput(request, Arrays.asList(result), null, new LayoutWriter(), expected);
+        assertOutput(request, List.of(result), null, new LayoutWriter(), expected);
     }
 
     private static void assertLayout(String request, List<Grouping> result, String expected) {
@@ -953,8 +988,7 @@ public class ResultBuilderTestCase {
         }
 
         String toString(Continuation cnt) {
-            if (cnt instanceof OffsetContinuation) {
-                OffsetContinuation off = (OffsetContinuation)cnt;
+            if (cnt instanceof OffsetContinuation off) {
                 String id = off.getResultId().toString().replace(", ", ".");
                 return id.substring(5, id.length() - 1) + "=" + off.getOffset();
             } else if (cnt instanceof CompositeContinuation) {

@@ -150,6 +150,18 @@ public:
                                                 _replySender, MockBucketLock::make(bucket, _mock_bucket_locks), std::move(cmd));
     }
 
+    template <typename T>
+    requires std::is_base_of_v<api::StorageReply, T>
+    [[nodiscard]] std::shared_ptr<T>
+    fetch_single_reply(MessageTracker::UP tracker) {
+        if (tracker && tracker->hasReply()) {
+            tracker->sendReply(); // Forward to queue so we can fetch it below
+        }
+        std::shared_ptr<api::StorageMessage> msg;
+        _replySender.queue.getNext(msg, 60s);
+        return std::dynamic_pointer_cast<T>(msg);
+    }
+
     api::ReturnCode
     fetchResult(const MessageTracker::UP & tracker) {
         if (tracker) {

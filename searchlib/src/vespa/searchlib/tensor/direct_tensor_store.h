@@ -20,7 +20,7 @@ namespace search::tensor {
  */
 class DirectTensorStore : public TensorStore {
 private:
-    // Note: Must use SP (instead of UP) because of fallbackCopy() and initializeReservedElements() in BufferType,
+    // Note: Must use SP (instead of UP) because of fallback_copy() and initialize_reserved_entries() in BufferType,
     //       and implementation of move().
     using TensorSP = std::shared_ptr<vespalib::eval::Value>;
     using TensorStoreType = vespalib::datastore::DataStore<TensorSP>;
@@ -32,7 +32,7 @@ private:
         using CleanContext = typename ParentType::CleanContext;
     public:
         TensorBufferType();
-        void cleanHold(void* buffer, size_t offset, ElemCount num_elems, CleanContext clean_ctx) override;
+        void clean_hold(void* buffer, size_t offset, EntryCount num_entries, CleanContext clean_ctx) override;
     };
 
     TensorStoreType _tensor_store;

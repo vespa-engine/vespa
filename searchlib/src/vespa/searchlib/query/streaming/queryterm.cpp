@@ -92,4 +92,10 @@ void QueryTerm::add(unsigned pos, unsigned context, uint32_t elemId, int32_t wei
     _hitList.emplace_back(pos, context, elemId, weight_);
 }
 
+NearestNeighborQueryNode*
+QueryTerm::as_nearest_neighbor_query_node() noexcept
+{
+    return nullptr;
+}
+
 }

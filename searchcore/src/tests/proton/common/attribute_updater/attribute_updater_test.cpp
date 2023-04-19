@@ -6,6 +6,7 @@
 #include <vespa/searchlib/attribute/single_raw_attribute.h>
 #include <vespa/searchlib/tensor/dense_tensor_attribute.h>
 #include <vespa/searchlib/tensor/serialized_fast_value_attribute.h>
+#include <vespa/searchlib/test/attribute_builder.h>
 #include <vespa/searchlib/test/weighted_type_test_utils.h>
 #include <vespa/searchcommon/attribute/config.h>
 #include <vespa/document/base/testdocrepo.h>
@@ -53,6 +54,7 @@ using search::attribute::Config;
 using search::attribute::Reference;
 using search::attribute::ReferenceAttribute;
 using search::attribute::SingleRawAttribute;
+using search::attribute::test::AttributeBuilder;
 using search::tensor::ITensorAttribute;
 using search::tensor::DenseTensorAttribute;
 using search::tensor::SerializedFastValueAttribute;
@@ -124,54 +126,25 @@ struct Fixture {
 
     void applyArrayUpdates(AttributeVector & vec, std::unique_ptr<FieldValue> assign,
                            std::unique_ptr<FieldValue> first, std::unique_ptr<FieldValue> second) {
-        applyValueUpdate(vec, 0, std::make_unique<AssignValueUpdate>(std::move(assign)));
-        applyValueUpdate(vec, 1, std::make_unique<AddValueUpdate>(std::move(second)));
-        applyValueUpdate(vec, 2, std::make_unique<RemoveValueUpdate>(std::move(first)));
-        applyValueUpdate(vec, 3, std::make_unique<ClearValueUpdate>());
+        applyValueUpdate(vec, 1, std::make_unique<AssignValueUpdate>(std::move(assign)));
+        applyValueUpdate(vec, 2, std::make_unique<AddValueUpdate>(std::move(second)));
+        applyValueUpdate(vec, 3, std::make_unique<RemoveValueUpdate>(std::move(first)));
+        applyValueUpdate(vec, 4, std::make_unique<ClearValueUpdate>());
     }
 
     void applyWeightedSetUpdates(AttributeVector & vec, std::unique_ptr<FieldValue> assign,
                                  std::unique_ptr<FieldValue> first, std::unique_ptr<FieldValue> copyOfFirst, std::unique_ptr<FieldValue> second) {
-        applyValueUpdate(vec, 0, std::make_unique<AssignValueUpdate>(std::move(assign)));
-        applyValueUpdate(vec, 1, std::make_unique<AddValueUpdate>(std::move(second), 20));
-        applyValueUpdate(vec, 2, std::make_unique<RemoveValueUpdate>(std::move(first)));
-        applyValueUpdate(vec, 3, std::make_unique<ClearValueUpdate>());
-        applyValueUpdate(vec, 4, std::make_unique<MapValueUpdate>(std::move(copyOfFirst), std::make_unique<ArithmeticValueUpdate>(ArithmeticValueUpdate::Add, 10)));
+        applyValueUpdate(vec, 1, std::make_unique<AssignValueUpdate>(std::move(assign)));
+        applyValueUpdate(vec, 2, std::make_unique<AddValueUpdate>(std::move(second), 20));
+        applyValueUpdate(vec, 3, std::make_unique<RemoveValueUpdate>(std::move(first)));
+        applyValueUpdate(vec, 4, std::make_unique<ClearValueUpdate>());
+        applyValueUpdate(vec, 5, std::make_unique<MapValueUpdate>(std::move(copyOfFirst), std::make_unique<ArithmeticValueUpdate>(ArithmeticValueUpdate::Add, 10)));
     }
 
     void applyValue(AttributeVector& vec, uint32_t docid, std::unique_ptr<FieldValue> value) {
         search::AttributeUpdater::handleValue(vec, docid, *value);
     }
 };
-
-template <typename T, typename VectorType>
-AttributePtr
-create(uint32_t numDocs, T val, int32_t weight,
-       const std::string & baseName,
-       const Config &info)
-{
-    LOG(info, "create attribute vector: %s", baseName.c_str());
-    AttributePtr vec = AttributeFactory::createAttribute(baseName, info);
-    VectorType * api = static_cast<VectorType *>(vec.get());
-    for (uint32_t i = 0; i < numDocs; ++i) {
-        if (!api->addDoc(i)) {
-            LOG(info, "failed adding doc: %u", i);
-            return AttributePtr();
-        }
-        if (api->hasMultiValue()) {
-            if (!api->append(i, val, weight)) {
-                LOG(info, "failed append to doc: %u", i);
-            }
-        } else {
-            if (!api->update(i, val)) {
-                LOG(info, "failed update doc: %u", i);
-                return AttributePtr();
-            }
-        }
-    }
-    api->commit();
-    return vec;
-}
 
 template <typename T>
 bool
@@ -223,70 +196,67 @@ TEST_F("require that single attributes are updated", Fixture)
     using search::attribute::getUndefined;
     CollectionType ct(CollectionType::SINGLE);
     {
-        BasicType bt(BasicType::INT32);
-        AttributePtr vec = create<int32_t, IntegerAttribute>(3, 32, 0, "in1/int", Config(bt, ct));
-        f.applyValueUpdate(*vec, 0, std::make_unique<AssignValueUpdate>(std::make_unique<IntFieldValue>(64)));
-        f.applyValueUpdate(*vec, 1, std::make_unique<ArithmeticValueUpdate>(ArithmeticValueUpdate::Add, 10));
-        f.applyValueUpdate(*vec, 2, std::make_unique<ClearValueUpdate>());
-        EXPECT_EQUAL(3u, vec->getNumDocs());
-        EXPECT_TRUE(check(vec, 0, std::vector<WeightedInt>{WeightedInt(64)}));
-        EXPECT_TRUE(check(vec, 1, std::vector<WeightedInt>{WeightedInt(42)}));
-        EXPECT_TRUE(check(vec, 2, std::vector<WeightedInt>{WeightedInt(getUndefined<int32_t>())}));
+        auto vec = AttributeBuilder("in1/int", Config(BasicType::INT32)).fill({ 32, 32, 32}).get();
+        f.applyValueUpdate(*vec, 1, std::make_unique<AssignValueUpdate>(std::make_unique<IntFieldValue>(64)));
+        f.applyValueUpdate(*vec, 2, std::make_unique<ArithmeticValueUpdate>(ArithmeticValueUpdate::Add, 10));
+        f.applyValueUpdate(*vec, 3, std::make_unique<ClearValueUpdate>());
+        EXPECT_EQUAL(4u, vec->getNumDocs());
+        EXPECT_TRUE(check(vec, 1, std::vector<WeightedInt>{WeightedInt(64)}));
+        EXPECT_TRUE(check(vec, 2, std::vector<WeightedInt>{WeightedInt(42)}));
+        EXPECT_TRUE(check(vec, 3, std::vector<WeightedInt>{WeightedInt(getUndefined<int32_t>())}));
     }
     {
-        BasicType bt(BasicType::FLOAT);
-        AttributePtr vec = create<float, FloatingPointAttribute>(3, 55.5f, 0, "in1/float",Config(bt, ct));
-        f.applyValueUpdate(*vec, 0, std::make_unique<AssignValueUpdate>(std::make_unique<FloatFieldValue>(77.7f)));
-        f.applyValueUpdate(*vec, 1, std::make_unique<ArithmeticValueUpdate>(ArithmeticValueUpdate::Add, 10));
-        f.applyValueUpdate(*vec, 2, std::make_unique<ClearValueUpdate>());
-        EXPECT_EQUAL(3u, vec->getNumDocs());
-        EXPECT_TRUE(check(vec, 0, std::vector<WeightedFloat>{WeightedFloat(77.7f)}));
-        EXPECT_TRUE(check(vec, 1, std::vector<WeightedFloat>{WeightedFloat(65.5f)}));
-        EXPECT_TRUE(std::isnan(vec->getFloat(2)));
+        auto vec = AttributeBuilder("in1/float", Config(BasicType::FLOAT)).fill({55.5, 55.5, 55.5}).get();
+        f.applyValueUpdate(*vec, 1, std::make_unique<AssignValueUpdate>(std::make_unique<FloatFieldValue>(77.7f)));
+        f.applyValueUpdate(*vec, 2, std::make_unique<ArithmeticValueUpdate>(ArithmeticValueUpdate::Add, 10));
+        f.applyValueUpdate(*vec, 3, std::make_unique<ClearValueUpdate>());
+        EXPECT_EQUAL(4u, vec->getNumDocs());
+        EXPECT_TRUE(check(vec, 1, std::vector<WeightedFloat>{WeightedFloat(77.7f)}));
+        EXPECT_TRUE(check(vec, 2, std::vector<WeightedFloat>{WeightedFloat(65.5f)}));
+        EXPECT_TRUE(std::isnan(vec->getFloat(3)));
     }
     {
-        BasicType bt(BasicType::STRING);
-        AttributePtr vec = create<std::string, StringAttribute>(3, "first", 0, "in1/string",Config(bt, ct));
-        f.applyValueUpdate(*vec, 0, std::make_unique<AssignValueUpdate>(StringFieldValue::make("second")));
-        f.applyValueUpdate(*vec, 2, std::make_unique<ClearValueUpdate>());
-        EXPECT_EQUAL(3u, vec->getNumDocs());
-        EXPECT_TRUE(check(vec, 0, std::vector<WeightedString>{WeightedString("second")}));
-        EXPECT_TRUE(check(vec, 1, std::vector<WeightedString>{WeightedString("first")}));
-        EXPECT_TRUE(check(vec, 2, std::vector<WeightedString>{WeightedString("")}));
+        auto vec = AttributeBuilder("in1/string", Config(BasicType::STRING)).fill({"first", "first", "first"}).get();
+        f.applyValueUpdate(*vec, 1, std::make_unique<AssignValueUpdate>(StringFieldValue::make("second")));
+        f.applyValueUpdate(*vec, 3, std::make_unique<ClearValueUpdate>());
+        EXPECT_EQUAL(4u, vec->getNumDocs());
+        EXPECT_TRUE(check(vec, 1, std::vector<WeightedString>{WeightedString("second")}));
+        EXPECT_TRUE(check(vec, 2, std::vector<WeightedString>{WeightedString("first")}));
+        EXPECT_TRUE(check(vec, 3, std::vector<WeightedString>{WeightedString("")}));
     }
     {
         BasicType bt(BasicType::REFERENCE);
         Config cfg(bt, ct);
         AttributePtr vec = AttributeFactory::createAttribute("in1/ref", cfg);
+        vec->addReservedDoc();
         uint32_t startDoc = 0;
         uint32_t endDoc = 0;
         EXPECT_TRUE(vec->addDocs(startDoc, endDoc, 3));
-        EXPECT_EQUAL(0u, startDoc);
-        EXPECT_EQUAL(2u, endDoc);
-        for (uint32_t docId = 0; docId < 3; ++docId) {
+        EXPECT_EQUAL(1u, startDoc);
+        EXPECT_EQUAL(3u, endDoc);
+        for (uint32_t docId = 1; docId < 4; ++docId) {
             asReferenceAttribute(*vec).update(docId, toGid(doc1));
         }
         vec->commit();
-        f.applyValueUpdate(*vec, 0, std::make_unique<AssignValueUpdate>(std::make_unique<ReferenceFieldValue>(dynamic_cast<const ReferenceDataType &>(f.docType->getField("ref").getDataType()), DocumentId(doc2))));
-        f.applyValueUpdate(*vec, 2, std::make_unique<ClearValueUpdate>());
-        EXPECT_EQUAL(3u, vec->getNumDocs());
-        TEST_DO(assertRef(*vec, doc2, 0));
-        TEST_DO(assertRef(*vec, doc1, 1));
-        TEST_DO(assertNoRef(*vec, 2));
+        f.applyValueUpdate(*vec, 1, std::make_unique<AssignValueUpdate>(std::make_unique<ReferenceFieldValue>(dynamic_cast<const ReferenceDataType &>(f.docType->getField("ref").getDataType()), DocumentId(doc2))));
+        f.applyValueUpdate(*vec, 3, std::make_unique<ClearValueUpdate>());
+        EXPECT_EQUAL(4u, vec->getNumDocs());
+        TEST_DO(assertRef(*vec, doc2, 1));
+        TEST_DO(assertRef(*vec, doc1, 2));
+        TEST_DO(assertNoRef(*vec, 3));
     }
     {
-        BasicType bt(BasicType::RAW);
         vespalib::string first_backing("first");
         vespalib::ConstArrayRef<char> first(first_backing.data(), first_backing.size());
-        AttributePtr vec = create<vespalib::ConstArrayRef<char>, SingleRawAttribute>(4, first, 0, "in1/raw", Config(bt, ct));
-        f.applyValueUpdate(*vec, 0, std::make_unique<AssignValueUpdate>(std::make_unique<RawFieldValue>("second")));
-        f.applyValueUpdate(*vec, 2, std::make_unique<ClearValueUpdate>());
-        f.applyValue(*vec, 3, std::make_unique<RawFieldValue>("third"));
-        EXPECT_EQUAL(4u, vec->getNumDocs());
-        EXPECT_EQUAL(as_vector("second"), as_vector(vec->get_raw(0)));
-        EXPECT_EQUAL(as_vector("first"), as_vector(vec->get_raw(1)));
-        EXPECT_EQUAL(as_vector(""), as_vector(vec->get_raw(2)));
-        EXPECT_EQUAL(as_vector("third"), as_vector(vec->get_raw(3)));
+        auto vec = AttributeBuilder("in1/raw", Config(BasicType::RAW)).fill({first, first, first, first}).get();
+        f.applyValueUpdate(*vec, 1, std::make_unique<AssignValueUpdate>(std::make_unique<RawFieldValue>("second")));
+        f.applyValueUpdate(*vec, 3, std::make_unique<ClearValueUpdate>());
+        f.applyValue(*vec, 4, std::make_unique<RawFieldValue>("third"));
+        EXPECT_EQUAL(5u, vec->getNumDocs());
+        EXPECT_EQUAL(as_vector("second"), as_vector(vec->get_raw(1)));
+        EXPECT_EQUAL(as_vector("first"), as_vector(vec->get_raw(2)));
+        EXPECT_EQUAL(as_vector(""), as_vector(vec->get_raw(3)));
+        EXPECT_EQUAL(as_vector("third"), as_vector(vec->get_raw(4)));
     }
 }
 
@@ -294,52 +264,51 @@ TEST_F("require that array attributes are updated", Fixture)
 {
     CollectionType ct(CollectionType::ARRAY);
     {
-        BasicType bt(BasicType::INT32);
-        AttributePtr vec = create<int32_t, IntegerAttribute>(5, 32, 1, "in1/aint", Config(bt, ct));
+        using IL = AttributeBuilder::IntList;
+        auto vec = AttributeBuilder("in1/aint", Config(BasicType::INT32, ct)).fill_array({IL{32}, {32}, {32}, {32}, {32}}).get();
         auto first = std::make_unique<IntFieldValue>(32);
         auto second = std::make_unique<IntFieldValue>(64);
         auto assign = std::make_unique<ArrayFieldValue>(f.docType->getField("aint").getDataType());
         assign->add(*second);
         f.applyArrayUpdates(*vec, std::move(assign), std::move(first), std::move(second));
 
-        EXPECT_EQUAL(5u, vec->getNumDocs());
-        EXPECT_TRUE(check(vec, 0, std::vector<WeightedInt>{WeightedInt(64)}));
-        EXPECT_TRUE(check(vec, 1, std::vector<WeightedInt>{WeightedInt(32), WeightedInt(64)}));
-        EXPECT_TRUE(check(vec, 2, std::vector<WeightedInt>{}));
+        EXPECT_EQUAL(6u, vec->getNumDocs());
+        EXPECT_TRUE(check(vec, 1, std::vector<WeightedInt>{WeightedInt(64)}));
+        EXPECT_TRUE(check(vec, 2, std::vector<WeightedInt>{WeightedInt(32), WeightedInt(64)}));
         EXPECT_TRUE(check(vec, 3, std::vector<WeightedInt>{}));
-        EXPECT_TRUE(check(vec, 4, std::vector<WeightedInt>{WeightedInt(32)}));
+        EXPECT_TRUE(check(vec, 4, std::vector<WeightedInt>{}));
+        EXPECT_TRUE(check(vec, 5, std::vector<WeightedInt>{WeightedInt(32)}));
     }
     {
-        BasicType bt(BasicType::FLOAT);
-        AttributePtr vec = create<float, FloatingPointAttribute>(5, 55.5f, 1, "in1/afloat", Config(bt, ct));
+        using DL = AttributeBuilder::DoubleList;
+        auto vec = AttributeBuilder("in1/afloat", Config(BasicType::FLOAT, ct)).fill_array({DL{55.5}, {55.5}, {55.5}, {55.5}, {55.5}}).get();
         auto first = std::make_unique<FloatFieldValue>(55.5f);
         auto second = std::make_unique<FloatFieldValue>(77.7f);
         auto assign = std::make_unique<ArrayFieldValue>(f.docType->getField("afloat").getDataType());
         assign->add(*second);
         f.applyArrayUpdates(*vec, std::move(assign), std::move(first), std::move(second));
 
-        EXPECT_EQUAL(5u, vec->getNumDocs());
-        EXPECT_TRUE(check(vec, 0, std::vector<WeightedFloat>{WeightedFloat(77.7f)}));
-        EXPECT_TRUE(check(vec, 1, std::vector<WeightedFloat>{WeightedFloat(55.5f), WeightedFloat(77.7f)}));
-        EXPECT_TRUE(check(vec, 2, std::vector<WeightedFloat>{}));
+        EXPECT_EQUAL(6u, vec->getNumDocs());
+        EXPECT_TRUE(check(vec, 1, std::vector<WeightedFloat>{WeightedFloat(77.7f)}));
+        EXPECT_TRUE(check(vec, 2, std::vector<WeightedFloat>{WeightedFloat(55.5f), WeightedFloat(77.7f)}));
         EXPECT_TRUE(check(vec, 3, std::vector<WeightedFloat>{}));
-        EXPECT_TRUE(check(vec, 4, std::vector<WeightedFloat>{WeightedFloat(55.5f)}));
+        EXPECT_TRUE(check(vec, 4, std::vector<WeightedFloat>{}));
+        EXPECT_TRUE(check(vec, 5, std::vector<WeightedFloat>{WeightedFloat(55.5f)}));
     }
     {
-        BasicType bt(BasicType::STRING);
-        AttributePtr vec = create<std::string, StringAttribute>(5, "first", 1, "in1/astring", Config(bt, ct));
+        auto vec = AttributeBuilder("in1/astring", Config(BasicType::STRING, ct)).fill_array({{"first"}, {"first"}, {"first"}, {"first"}, {"first"}}).get();
         auto first = StringFieldValue::make("first");
         auto second = StringFieldValue::make("second");
         auto assign = std::make_unique<ArrayFieldValue>(f.docType->getField("astring").getDataType());
         assign->add(*second);
         f.applyArrayUpdates(*vec, std::move(assign), std::move(first), std::move(second));
 
-        EXPECT_EQUAL(5u, vec->getNumDocs());
-        EXPECT_TRUE(check(vec, 0, std::vector<WeightedString>{WeightedString("second")}));
-        EXPECT_TRUE(check(vec, 1, std::vector<WeightedString>{WeightedString("first"), WeightedString("second")}));
-        EXPECT_TRUE(check(vec, 2, std::vector<WeightedString>{}));
+        EXPECT_EQUAL(6u, vec->getNumDocs());
+        EXPECT_TRUE(check(vec, 1, std::vector<WeightedString>{WeightedString("second")}));
+        EXPECT_TRUE(check(vec, 2, std::vector<WeightedString>{WeightedString("first"), WeightedString("second")}));
         EXPECT_TRUE(check(vec, 3, std::vector<WeightedString>{}));
-        EXPECT_TRUE(check(vec, 4, std::vector<WeightedString>{WeightedString("first")}));
+        EXPECT_TRUE(check(vec, 4, std::vector<WeightedString>{}));
+        EXPECT_TRUE(check(vec, 5, std::vector<WeightedString>{WeightedString("first")}));
     }
 }
 
@@ -347,8 +316,8 @@ TEST_F("require that weighted set attributes are updated", Fixture)
 {
     CollectionType ct(CollectionType::WSET);
     {
-        BasicType bt(BasicType::INT32);
-        AttributePtr vec = create<int32_t, IntegerAttribute>(5, 32, 100, "in1/wsint", Config(bt, ct));
+        using WIL = AttributeBuilder::WeightedIntList;
+        auto vec = AttributeBuilder("in1/wsint", Config(BasicType::INT32, ct)).fill_wset({WIL{{32, 100}}, {{32, 100}}, {{32, 100}}, {{32, 100}}, {{32, 100}}}).get();
         auto first = std::make_unique<IntFieldValue>(32);
         auto copyOfFirst = std::make_unique<IntFieldValue>(32);
         auto second = std::make_unique<IntFieldValue>(64);
@@ -356,16 +325,16 @@ TEST_F("require that weighted set attributes are updated", Fixture)
         assign->add(*second, 20);
         f.applyWeightedSetUpdates(*vec, std::move(assign), std::move(first), std::move(copyOfFirst), std::move(second));
 
-        EXPECT_EQUAL(5u, vec->getNumDocs());
-        EXPECT_TRUE(check(vec, 0, std::vector<WeightedInt>{WeightedInt(64, 20)}));
-        EXPECT_TRUE(check(vec, 1, std::vector<WeightedInt>{WeightedInt(32, 100), WeightedInt(64, 20)}));
-        EXPECT_TRUE(check(vec, 2, std::vector<WeightedInt>{}));
+        EXPECT_EQUAL(6u, vec->getNumDocs());
+        EXPECT_TRUE(check(vec, 1, std::vector<WeightedInt>{WeightedInt(64, 20)}));
+        EXPECT_TRUE(check(vec, 2, std::vector<WeightedInt>{WeightedInt(32, 100), WeightedInt(64, 20)}));
         EXPECT_TRUE(check(vec, 3, std::vector<WeightedInt>{}));
-        EXPECT_TRUE(check(vec, 4, std::vector<WeightedInt>{WeightedInt(32, 110)}));
+        EXPECT_TRUE(check(vec, 4, std::vector<WeightedInt>{}));
+        EXPECT_TRUE(check(vec, 5, std::vector<WeightedInt>{WeightedInt(32, 110)}));
     }
     {
-        BasicType bt(BasicType::FLOAT);
-        AttributePtr vec = create<float, FloatingPointAttribute>(5, 55.5f, 100, "in1/wsfloat", Config(bt, ct));
+        using WDL = AttributeBuilder::WeightedDoubleList;
+        auto vec = AttributeBuilder("in1/wsfloat", Config(BasicType::FLOAT, ct)).fill_wset({WDL{{55.5, 100}}, {{55.5, 100}}, {{55.5, 100}}, {{55.5, 100}}, {{55.5, 100}}}).get();
         auto first = std::make_unique<FloatFieldValue>(55.5f);
         auto copyOfFirst = std::make_unique<FloatFieldValue>(55.5f);
         auto second = std::make_unique<FloatFieldValue>(77.7f);
@@ -373,16 +342,15 @@ TEST_F("require that weighted set attributes are updated", Fixture)
         assign->add(*second, 20);
         f.applyWeightedSetUpdates(*vec, std::move(assign), std::move(first), std::move(copyOfFirst), std::move(second));
 
-        EXPECT_EQUAL(5u, vec->getNumDocs());
-        EXPECT_TRUE(check(vec, 0, std::vector<WeightedFloat>{WeightedFloat(77.7f, 20)}));
-        EXPECT_TRUE(check(vec, 1, std::vector<WeightedFloat>{WeightedFloat(55.5f, 100), WeightedFloat(77.7f, 20)}));
-        EXPECT_TRUE(check(vec, 2, std::vector<WeightedFloat>{}));
+        EXPECT_EQUAL(6u, vec->getNumDocs());
+        EXPECT_TRUE(check(vec, 1, std::vector<WeightedFloat>{WeightedFloat(77.7f, 20)}));
+        EXPECT_TRUE(check(vec, 2, std::vector<WeightedFloat>{WeightedFloat(55.5f, 100), WeightedFloat(77.7f, 20)}));
         EXPECT_TRUE(check(vec, 3, std::vector<WeightedFloat>{}));
-        EXPECT_TRUE(check(vec, 4, std::vector<WeightedFloat>{WeightedFloat(55.5f, 110)}));
+        EXPECT_TRUE(check(vec, 4, std::vector<WeightedFloat>{}));
+        EXPECT_TRUE(check(vec, 5, std::vector<WeightedFloat>{WeightedFloat(55.5f, 110)}));
     }
     {
-        BasicType bt(BasicType::STRING);
-        AttributePtr vec = create<std::string, StringAttribute>(5, "first", 100, "in1/wsstring", Config(bt, ct));
+        auto vec = AttributeBuilder("in1/wsstring", Config(BasicType::STRING, ct)).fill_wset({{{"first", 100}}, {{"first", 100}}, {{"first", 100}}, {{"first", 100}}, {{"first", 100}}}).get();
         auto first = StringFieldValue::make("first");
         auto copyOfFirst = StringFieldValue::make("first");
         auto second = StringFieldValue::make("second");
@@ -390,12 +358,12 @@ TEST_F("require that weighted set attributes are updated", Fixture)
         assign->add(*second, 20);
         f.applyWeightedSetUpdates(*vec, std::move(assign), std::move(first), std::move(copyOfFirst), std::move(second));
 
-        EXPECT_EQUAL(5u, vec->getNumDocs());
-        EXPECT_TRUE(check(vec, 0, std::vector<WeightedString>{WeightedString("second", 20)}));
-        EXPECT_TRUE(check(vec, 1, std::vector<WeightedString>{WeightedString("first", 100), WeightedString("second", 20)}));
-        EXPECT_TRUE(check(vec, 2, std::vector<WeightedString>{}));
+        EXPECT_EQUAL(6u, vec->getNumDocs());
+        EXPECT_TRUE(check(vec, 1, std::vector<WeightedString>{WeightedString("second", 20)}));
+        EXPECT_TRUE(check(vec, 2, std::vector<WeightedString>{WeightedString("first", 100), WeightedString("second", 20)}));
         EXPECT_TRUE(check(vec, 3, std::vector<WeightedString>{}));
-        EXPECT_TRUE(check(vec, 4, std::vector<WeightedString>{WeightedString("first", 110)}));
+        EXPECT_TRUE(check(vec, 4, std::vector<WeightedString>{}));
+        EXPECT_TRUE(check(vec, 5, std::vector<WeightedString>{WeightedString("first", 110)}));
     }
 }
 

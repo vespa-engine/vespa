@@ -668,7 +668,7 @@ public class JsonReaderTestCase {
     @Test
     public void testRaw() throws IOException {
         String base64 = new String(new JsonStringEncoder().quoteAsString(
-                Base64.getEncoder().encodeToString(Utf8.toBytes("smoketest"))));
+                Base64.getEncoder().withoutPadding().encodeToString(Utf8.toBytes("smoketest"))));
         String s = fieldStringFromBase64RawContent(base64);
         assertEquals("smoketest", s);
     }

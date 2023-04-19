@@ -11,11 +11,11 @@ namespace vespalib::btree {
 
 template <typename EntryType>
 void
-BTreeNodeBufferType<EntryType>::initializeReservedElements(void *buffer, ElemCount reservedElements)
+BTreeNodeBufferType<EntryType>::initialize_reserved_entries(void *buffer, EntryCount reserved_entries)
 {
-    ParentType::initializeReservedElements(buffer, reservedElements);
+    ParentType::initialize_reserved_entries(buffer, reserved_entries);
     EntryType *e = static_cast<EntryType *>(buffer);
-    for (size_t j = reservedElements; j != 0; --j) {
+    for (size_t j = reserved_entries; j != 0; --j) {
         e->freeze();
         ++e;
     }
@@ -24,10 +24,10 @@ BTreeNodeBufferType<EntryType>::initializeReservedElements(void *buffer, ElemCou
 
 template <typename EntryType>
 void
-BTreeNodeBufferType<EntryType>::cleanHold(void *buffer, size_t offset, ElemCount numElems, CleanContext)
+BTreeNodeBufferType<EntryType>::clean_hold(void *buffer, size_t offset, EntryCount num_entries, CleanContext)
 {
     EntryType *e = static_cast<EntryType *>(buffer) + offset;
-    for (size_t j = numElems; j != 0; --j) {
+    for (size_t j = num_entries; j != 0; --j) {
         e->cleanFrozen();
         ++e;
     }

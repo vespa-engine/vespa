@@ -23,6 +23,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 /**
@@ -36,19 +37,24 @@ import java.util.stream.Collectors;
  */
 public class OnnxModelInfo {
 
+    private static final Logger log = Logger.getLogger(OnnxModelInfo.class.getName());
+
     private final ApplicationPackage app;
     private final String modelPath;
     private final String defaultOutput;
     private final Map<String, OnnxTypeInfo> inputs;
     private final Map<String, OnnxTypeInfo> outputs;
     private final Map<String, TensorType> vespaTypes = new HashMap<>();
+    private final Set<String> initializers;
 
-    private OnnxModelInfo(ApplicationPackage app, String path, Map<String, OnnxTypeInfo> inputs, Map<String, OnnxTypeInfo> outputs, String defaultOutput) {
+    private OnnxModelInfo(ApplicationPackage app, String path, Map<String, OnnxTypeInfo> inputs,
+                          Map<String, OnnxTypeInfo> outputs, Set<String> initializers, String defaultOutput) {
         this.app = app;
         this.modelPath = path;
         this.inputs = Collections.unmodifiableMap(inputs);
         this.outputs = Collections.unmodifiableMap(outputs);
         this.defaultOutput = defaultOutput;
+        this.initializers = Set.copyOf(initializers);
     }
 
     public String getModelPath() {
@@ -62,6 +68,8 @@ public class OnnxModelInfo {
     public Set<String> getOutputs() {
         return outputs.keySet();
     }
+
+    public Set<String> getInitializers() { return initializers; }
 
     public String getDefaultOutput() {
         return defaultOutput;
@@ -191,20 +199,40 @@ public class OnnxModelInfo {
     }
 
     static private String onnxModelToJson(Onnx.ModelProto model, Path path) throws IOException {
+        var initializerNames = model.getGraph().getInitializerList().stream()
+                .map(Onnx.TensorProto::getName).collect(Collectors.toSet());
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         JsonGenerator g = new JsonFactory().createGenerator(out, JsonEncoding.UTF8);
         g.writeStartObject();
 
         g.writeStringField("path", path.toString());
         g.writeArrayFieldStart("inputs");
+        int skippedInput = 0;
         for (Onnx.ValueInfoProto valueInfo : model.getGraph().getInputList()) {
+            if (initializerNames.contains(valueInfo.getName())) {
+                log.fine(() -> "For '%s': skipping name '%s' as it's an initializer"
+                        .formatted(path.getName(), valueInfo.getName()));
+                ++skippedInput;
+                continue;
+            }
             onnxTypeToJson(g, valueInfo);
         }
+        if (skippedInput > 0)
+            log.info("For '%s': skipped %d inputs that were also listed in initializers"
+                             .formatted(path.getName(), skippedInput));
         g.writeEndArray();
 
         g.writeArrayFieldStart("outputs");
         for (Onnx.ValueInfoProto valueInfo : model.getGraph().getOutputList()) {
             onnxTypeToJson(g, valueInfo);
+        }
+        g.writeEndArray();
+
+        g.writeArrayFieldStart("initializers");
+        for (Onnx.TensorProto initializers : model.getGraph().getInitializerList()) {
+            g.writeStartObject();
+            g.writeStringField("name", initializers.getName());
+            g.writeEndObject();
         }
         g.writeEndArray();
 
@@ -218,6 +246,7 @@ public class OnnxModelInfo {
         JsonNode root = m.readTree(json);
         Map<String, OnnxTypeInfo> inputs = new HashMap<>();
         Map<String, OnnxTypeInfo> outputs = new HashMap<>();
+        Set<String> initializers = new HashSet<>();
         String defaultOutput = "";
 
         String path = null;
@@ -233,7 +262,13 @@ public class OnnxModelInfo {
         if (root.get("outputs").has(0)) {
             defaultOutput = root.get("outputs").get(0).get("name").textValue();
         }
-        return new OnnxModelInfo(app, path, inputs, outputs, defaultOutput);
+        var initializerRoot = root.get("initializers");
+        if (initializerRoot != null) {
+            for (JsonNode initializer : initializerRoot) {
+                initializers.add(initializer.get("name").textValue());
+            }
+        }
+        return new OnnxModelInfo(app, path, inputs, outputs, initializers, defaultOutput);
     }
 
     static private void onnxTypeToJson(JsonGenerator g, Onnx.ValueInfoProto valueInfo) throws IOException {

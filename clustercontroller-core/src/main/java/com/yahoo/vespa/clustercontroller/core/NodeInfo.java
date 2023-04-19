@@ -55,7 +55,10 @@ abstract public class NodeInfo implements Comparable<NodeInfo> {
     private long nextAttemptTime;
     /** Cached connection to this node. */
     private Target connection;
-    /** We cache last connection we did request info on, as we want to report appropriate error for node regardless of whether other commands have created new connection. */
+    /**
+     * We cache last connection we did request info on, as we want to report appropriate error for
+     * node regardless of whether other commands have created new connection.
+     */
     public Target lastRequestInfoConnection;
     /**
      * Counts the number of attempts we have tried since last time we had
@@ -163,7 +166,7 @@ abstract public class NodeInfo implements Comparable<NodeInfo> {
         }
         if (prematureCrashCount != count) {
             prematureCrashCount = count;
-            log.log(Level.FINE, () -> "Premature crash count on " + toString() + " set to " + count);
+            log.log(Level.FINE, () -> "Premature crash count on " + this + " set to " + count);
         }
     }
     public int getPrematureCrashCount() { return prematureCrashCount; }
@@ -311,13 +314,13 @@ abstract public class NodeInfo implements Comparable<NodeInfo> {
         }
         if (state.getState().equals(State.DOWN) && !reportedState.getState().oneOf("d")) {
             downStableStateTime = time;
-            log.log(Level.FINE, () -> "Down stable state on " + toString() + " altered to " + time);
+            log.log(Level.FINE, () -> "Down stable state on " + this + " altered to " + time);
             if (reportedState.getState() == State.INITIALIZING) {
                 recentlyObservedUnstableDuringInit = true;
             }
         } else if (state.getState().equals(State.UP) && !reportedState.getState().oneOf("u")) {
             upStableStateTime = time;
-            log.log(Level.FINE, () -> "Up stable state on " + toString() + " altered to " + time);
+            log.log(Level.FINE, () -> "Up stable state on " + this + " altered to " + time);
         }
         if (!state.getState().validReportedNodeState(node.getType())) {
             throw new IllegalStateException("Trying to set illegal reported node state: " + state);
@@ -340,14 +343,14 @@ abstract public class NodeInfo implements Comparable<NodeInfo> {
             } else {
                 nextAttemptTime = time + 5000;
             }
-            log.log(Level.FINEST, () -> "Failed to get state from node " + toString() + ", scheduling next attempt in " + (nextAttemptTime - time) + " ms.");
+            log.log(Level.FINEST, () -> "Failed to get state from node " + this + ", scheduling next attempt in " + (nextAttemptTime - time) + " ms.");
         } else {
             connectionAttemptCount = 0;
             timeOfFirstFailingConnectionAttempt = 0;
             reportedState = state;
             if (version == 0 || state.getState().equals(State.STOPPING)) {
                 nextAttemptTime = time + cluster.getPollingFrequency();
-                log.log(Level.FINEST, () -> "Scheduling next attempt to get state from " + toString() + " in " + (nextAttemptTime - time) + " ms (polling freq).");
+                log.log(Level.FINEST, () -> "Scheduling next attempt to get state from " + this + " in " + (nextAttemptTime - time) + " ms (polling freq).");
             } else {
                 nextAttemptTime = time;
             }
@@ -368,7 +371,7 @@ abstract public class NodeInfo implements Comparable<NodeInfo> {
             } catch (Exception e) {
                 StringWriter sw = new StringWriter();
                 e.printStackTrace(new PrintWriter(sw));
-                log.warning("Attempted to set wanted state with more than just a main state. Extra data stripped. Original data '" + state.serialize(true) + ":\n" + sw.toString());
+                log.warning("Attempted to set wanted state with more than just a main state. Extra data stripped. Original data '" + state.serialize(true) + ":\n" + sw);
             }
         }
         wantedState = newWanted;

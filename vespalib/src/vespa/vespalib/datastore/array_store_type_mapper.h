@@ -12,7 +12,7 @@ namespace vespalib::datastore {
  * This class provides mapping between type ids and array sizes needed for
  * storing a value with size smaller than or equal to the array size.
  *
- * The array sizes vector is a monotic increasing sequence that might end
+ * The array sizes vector is a monotonic strictly increasing sequence that might end
  * with exponential growth.
  */
 class ArrayStoreTypeMapper

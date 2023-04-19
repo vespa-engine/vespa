@@ -8,20 +8,18 @@
 using namespace vespalib::datastore;
 
 using MyEntryRef = EntryRefT<8, 4>;
-constexpr uint32_t array_size = 6;
 
 struct FreeListTest : public testing::Test
 {
     FreeList list;
-    std::atomic<ElemCount> dead_elems;
+    std::atomic<EntryCount> dead_entries;
     std::vector<BufferFreeList> bufs;
     FreeListTest()
         : list(),
           bufs()
     {
         for (size_t i = 0; i < 3; ++i) {
-            bufs.emplace_back(dead_elems);
-            bufs.back().set_array_size(array_size);
+            bufs.emplace_back(dead_entries);
         }
     }
     void TearDown() override {
@@ -126,13 +124,13 @@ TEST_F(FreeListTest, buffer_free_list_can_be_disabled_and_detached_when_not_curr
     EXPECT_TRUE(list.empty());
 }
 
-TEST_F(FreeListTest, dead_elems_count_is_updated_when_popping_an_entry)
+TEST_F(FreeListTest, dead_entries_count_is_updated_when_popping_an_entry)
 {
     enable(0);
     push_entry({10, 0});
-    dead_elems.store(18, std::memory_order_relaxed);
+    dead_entries.store(18, std::memory_order_relaxed);
     pop_entry();
-    EXPECT_EQ(18 - array_size, dead_elems.load(std::memory_order_relaxed));
+    EXPECT_EQ(17, dead_entries.load(std::memory_order_relaxed));
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()

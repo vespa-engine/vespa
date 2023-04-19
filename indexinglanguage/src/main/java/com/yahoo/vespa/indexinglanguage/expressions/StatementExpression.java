@@ -5,6 +5,7 @@ import com.yahoo.document.DataType;
 import com.yahoo.language.Linguistics;
 import com.yahoo.language.process.Embedder;
 import com.yahoo.language.simple.SimpleLinguistics;
+import com.yahoo.vespa.indexinglanguage.ExpressionConverter;
 import com.yahoo.vespa.indexinglanguage.ScriptParser;
 import com.yahoo.vespa.indexinglanguage.ScriptParserContext;
 import com.yahoo.vespa.indexinglanguage.parser.IndexingInput;
@@ -15,6 +16,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
@@ -43,6 +45,14 @@ public final class StatementExpression extends ExpressionList<Expression> {
 
     /** Returns the input fields which are (perhaps optionally) consumed by some expression in this statement. */
     public List<String> getInputFields() { return inputFields; }
+
+    @Override
+    public StatementExpression convertChildren(ExpressionConverter converter) {
+        return new StatementExpression(asList().stream()
+                                               .map(child -> converter.convert(child))
+                                               .filter(Objects::nonNull)
+                                               .toList());
+    }
 
     @Override
     protected void doExecute(ExecutionContext context) {

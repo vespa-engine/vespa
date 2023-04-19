@@ -22,6 +22,7 @@ import com.yahoo.path.Path;
 import com.yahoo.vespa.flags.PermanentFlags;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.DeploymentData;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
+import com.yahoo.vespa.hosted.controller.api.integration.billing.PlanRegistryMock;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.Quota;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateMetadata;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ContainerEndpoint;
@@ -40,6 +41,7 @@ import com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentContext;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
+import com.yahoo.vespa.hosted.controller.deployment.JobController;
 import com.yahoo.vespa.hosted.controller.deployment.Submission;
 import com.yahoo.vespa.hosted.controller.integration.ZoneApiMock;
 import com.yahoo.vespa.hosted.controller.notification.Notification;
@@ -54,7 +56,6 @@ import com.yahoo.vespa.hosted.controller.routing.rotation.RotationLock;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion.Confidence;
 import com.yahoo.vespa.hosted.rotation.config.RotationsConfig;
 import org.junit.jupiter.api.Test;
-
 import java.io.InputStream;
 import java.time.Duration;
 import java.time.Instant;
@@ -106,9 +107,11 @@ public class ControllerTest {
         Version version1 = tester.configServer().initialVersion();
         var context = tester.newDeploymentContext();
         context.submit(applicationPackage);
-        assertEquals(ApplicationVersion.from(RevisionId.forProduction(1), DeploymentContext.defaultSourceRevision, "a@b", new Version("6.1"), Instant.ofEpochSecond(1)),
-                context.application().revisions().get(context.instance().change().revision().get()),
-                "Application version is known from completion of initial job");
+        RevisionId id = RevisionId.forProduction(1);
+        Version compileVersion = new Version("6.1");
+        assertEquals(new ApplicationVersion(id, Optional.of(DeploymentContext.defaultSourceRevision), Optional.of("a@b"), Optional.of(compileVersion), Optional.empty(), Optional.of(Instant.ofEpochSecond(1)), Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(), true, false, Optional.empty(), 0),
+                     context.application().revisions().get(context.instance().change().revision().get()),
+                     "Application version is known from completion of initial job");
         context.runJob(systemTest);
         context.runJob(stagingTest);
 
@@ -217,6 +220,59 @@ public class ControllerTest {
 
         assertNull(tester.controllerTester().serviceRegistry().applicationStore()
                 .getMeta(context.deploymentIdIn(productionUsWest1.zone())));
+    }
+
+    @Test
+    void testPackagePruning() {
+        DeploymentContext app = tester.newDeploymentContext().submit().deploy();
+        RevisionId revision1 = app.lastSubmission().get();
+        assertTrue(tester.controllerTester().serviceRegistry().applicationStore()
+                         .hasBuild(app.instanceId().tenant(), app.instanceId().application(), revision1.number()));
+
+        app.submit().deploy();
+        RevisionId revision2 = app.lastSubmission().get();
+        assertTrue(tester.controllerTester().serviceRegistry().applicationStore()
+                         .hasBuild(app.instanceId().tenant(), app.instanceId().application(), revision1.number()));
+        assertTrue(tester.controllerTester().serviceRegistry().applicationStore()
+                         .hasBuild(app.instanceId().tenant(), app.instanceId().application(), revision2.number()));
+
+        // Revision 1 is marked as obsolete now
+        app.submit().deploy();
+        RevisionId revision3 = app.lastSubmission().get();
+        assertTrue(tester.controllerTester().serviceRegistry().applicationStore()
+                         .hasBuild(app.instanceId().tenant(), app.instanceId().application(), revision1.number()));
+        assertTrue(tester.controllerTester().serviceRegistry().applicationStore()
+                         .hasBuild(app.instanceId().tenant(), app.instanceId().application(), revision2.number()));
+        assertTrue(tester.controllerTester().serviceRegistry().applicationStore()
+                         .hasBuild(app.instanceId().tenant(), app.instanceId().application(), revision3.number()));
+
+        // Time advances, and revision 2 is marked as obsolete now
+        tester.clock().advance(JobController.obsoletePackageExpiry);
+        app.submit().deploy();
+        RevisionId revision4 = app.lastSubmission().get();
+        assertTrue(tester.controllerTester().serviceRegistry().applicationStore()
+                         .hasBuild(app.instanceId().tenant(), app.instanceId().application(), revision1.number()));
+        assertTrue(tester.controllerTester().serviceRegistry().applicationStore()
+                         .hasBuild(app.instanceId().tenant(), app.instanceId().application(), revision2.number()));
+        assertTrue(tester.controllerTester().serviceRegistry().applicationStore()
+                         .hasBuild(app.instanceId().tenant(), app.instanceId().application(), revision3.number()));
+        assertTrue(tester.controllerTester().serviceRegistry().applicationStore()
+                         .hasBuild(app.instanceId().tenant(), app.instanceId().application(), revision4.number()));
+
+        // Time advances, and revision is now old enough to be pruned
+        tester.clock().advance(Duration.ofMillis(1));
+        app.submit().deploy();
+        RevisionId revision5 = app.lastSubmission().get();
+        assertFalse(tester.controllerTester().serviceRegistry().applicationStore()
+                         .hasBuild(app.instanceId().tenant(), app.instanceId().application(), revision1.number()));
+        assertTrue(tester.controllerTester().serviceRegistry().applicationStore()
+                         .hasBuild(app.instanceId().tenant(), app.instanceId().application(), revision2.number()));
+        assertTrue(tester.controllerTester().serviceRegistry().applicationStore()
+                         .hasBuild(app.instanceId().tenant(), app.instanceId().application(), revision3.number()));
+        assertTrue(tester.controllerTester().serviceRegistry().applicationStore()
+                         .hasBuild(app.instanceId().tenant(), app.instanceId().application(), revision4.number()));
+        assertTrue(tester.controllerTester().serviceRegistry().applicationStore()
+                         .hasBuild(app.instanceId().tenant(), app.instanceId().application(), revision5.number()));
     }
 
     @Test
@@ -1429,9 +1485,14 @@ public class ControllerTest {
 
         // Deployment fails because zone is not configured in requested cloud account
         tester.controllerTester().flagSource().withListFlag(PermanentFlags.CLOUD_ACCOUNTS.id(), List.of(cloudAccount), String.class);
-        context.submit(applicationPackage)
-               .runJobExpectingFailure(systemTest, "Zone test.us-east-1 is not configured in requested cloud account '012345678912'")
-               .abortJob(stagingTest);
+        assertEquals("Zone test.us-east-1 is not configured in requested cloud account '012345678912'",
+                     assertThrows(IllegalArgumentException.class,
+                                  () -> context.submit(applicationPackage))
+                             .getMessage());
+        assertEquals("Zone dev.us-east-1 is not configured in requested cloud account '012345678912'",
+                     assertThrows(IllegalArgumentException.class,
+                                  () -> context.runJob(devUsEast1, applicationPackage))
+                             .getMessage());
 
         // Deployment to prod succeeds once all zones are configured in requested account
         tester.controllerTester().zoneRegistry().configureCloudAccount(CloudAccount.from(cloudAccount),
@@ -1506,6 +1567,21 @@ public class ControllerTest {
         assertTrue(tester.configServer().application(deployment.applicationId(), deployment.zoneId()).isPresent());
         tester.controller().applications().deactivate(deployment.applicationId(), deployment.zoneId());
         assertFalse(tester.configServer().application(deployment.applicationId(), deployment.zoneId()).isPresent());
+    }
+
+    @Test
+    void testVerifyPlan() {
+        DeploymentId deployment = tester.newDeploymentContext().deploymentIdIn(ZoneId.from("prod", "us-west-1"));
+        TenantName tenant = deployment.applicationId().tenant();
+
+        tester.controller().serviceRegistry().billingController().setPlan(tenant, PlanRegistryMock.nonePlan.id(), false, false);
+        try {
+            tester.controller().applications().verifyPlan(tenant);
+            fail("should have thrown an exception");
+        } catch (IllegalArgumentException e) {
+            assertEquals("Tenant 'tenant' has a plan 'None Plan - for testing purposes' with zero quota, not allowed to deploy. " +
+                                 "See https://cloud.vespa.ai/support", e.getMessage());
+        }
     }
 
 }

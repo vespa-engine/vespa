@@ -126,7 +126,7 @@ public class Versions {
 
     private static Version targetPlatform(Application application, Change change, Optional<Version> existing,
                                           Supplier<Version> defaultVersion) {
-        if (change.isPinned() && change.platform().isPresent())
+        if (change.isPlatformPinned() && change.platform().isPresent())
             return change.platform().get();
 
         return max(change.platform(), existing)
@@ -135,6 +135,9 @@ public class Versions {
 
     private static RevisionId targetRevision(Application application, Change change,
                                              Optional<RevisionId> existing) {
+        if (change.isRevisionPinned() && change.revision().isPresent())
+            return change.revision().get();
+
         return change.revision()
                      .or(() -> existing)
                      .orElseGet(() -> defaultRevision(application));

@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.orchestrator;
 
+import ai.vespa.http.DomainName;
 import com.yahoo.config.model.api.SuperModel;
 import com.yahoo.config.model.api.SuperModelListener;
 import com.yahoo.config.model.api.SuperModelProvider;
@@ -87,9 +88,9 @@ public class OrchestratorTest {
 
         // There is one config server application with 3 nodes
         ApplicationId applicationId = new ConfigServerApplication().getApplicationId();
-        var cfg1 = com.yahoo.config.provision.HostName.of("cfg1");
-        var cfg2 = com.yahoo.config.provision.HostName.of("cfg2");
-        var cfg3 = com.yahoo.config.provision.HostName.of("cfg3");
+        var cfg1 = DomainName.of("cfg1");
+        var cfg2 = DomainName.of("cfg2");
+        var cfg3 = DomainName.of("cfg3");
         duperModelManager.infraApplicationActivated(applicationId, List.of(cfg1, cfg2, cfg3));
         duperModelManager.infraApplicationsIsNowComplete();
 
@@ -135,7 +136,7 @@ public class OrchestratorTest {
         // etc (should be the same as for cfg1)
     }
 
-    private HostName toApplicationModelHostName(com.yahoo.config.provision.HostName hostname) {
+    private HostName toApplicationModelHostName(DomainName hostname) {
         return new HostName(hostname.value());
     }
 

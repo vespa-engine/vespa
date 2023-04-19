@@ -2,6 +2,7 @@
 
 #include "simplemessagehandler.h"
 #include "persistenceutil.h"
+#include "testandsethelper.h"
 #include <vespa/persistence/spi/persistenceprovider.h>
 #include <vespa/persistence/spi/docentry.h>
 #include <vespa/storageapi/message/bucket.h>
@@ -45,10 +46,28 @@ getFieldSet(const document::FieldSetRepo & repo, vespalib::stringref name, Messa
 }
 
 }
-SimpleMessageHandler::SimpleMessageHandler(const PersistenceUtil& env, spi::PersistenceProvider& spi)
+SimpleMessageHandler::SimpleMessageHandler(const PersistenceUtil& env,
+                                           spi::PersistenceProvider& spi,
+                                           const document::BucketIdFactory& bucket_id_factory)
     : _env(env),
-      _spi(spi)
+      _spi(spi),
+      _bucket_id_factory(bucket_id_factory)
 {
+}
+
+MessageTracker::UP
+SimpleMessageHandler::handle_conditional_get(api::GetCommand& cmd, MessageTracker::UP tracker) const
+{
+    if (cmd.getFieldSet() == document::NoFields::NAME) {
+        TestAndSetHelper tas_helper(_env, _spi, _bucket_id_factory, cmd.condition(),
+                                    cmd.getBucket(), cmd.getDocumentId(), nullptr);
+        auto result = tas_helper.fetch_and_match_raw(tracker->context());
+        tracker->setReply(std::make_shared<api::GetReply>(cmd, nullptr, result.timestamp, false,
+                                                          result.is_tombstone(), result.is_match()));
+    } else {
+        tracker->fail(api::ReturnCode::ILLEGAL_PARAMETERS, "Conditional Get operations must be metadata-only");
+    }
+    return tracker;
 }
 
 MessageTracker::UP
@@ -58,8 +77,14 @@ SimpleMessageHandler::handleGet(api::GetCommand& cmd, MessageTracker::UP tracker
     tracker->setMetric(metrics);
     metrics.request_size.addValue(cmd.getApproxByteSize());
 
+    if (cmd.has_condition()) {
+        return handle_conditional_get(cmd, std::move(tracker));
+    }
+
     auto fieldSet = getFieldSet(_env.getFieldSetRepo(), cmd.getFieldSet(), *tracker);
-    if ( ! fieldSet) { return tracker; }
+    if (!fieldSet) {
+        return tracker;
+    }
 
     tracker->context().setReadConsistency(api_read_consistency_to_spi(cmd.internal_read_consistency()));
     spi::GetResult result = _spi.get(_env.getBucket(cmd.getDocumentId(), cmd.getBucket()),
@@ -70,7 +95,7 @@ SimpleMessageHandler::handleGet(api::GetCommand& cmd, MessageTracker::UP tracker
             metrics.notFound.inc();
         }
         tracker->setReply(std::make_shared<api::GetReply>(cmd, result.getDocumentPtr(), result.getTimestamp(),
-                                                          false, result.is_tombstone()));
+                                                          false, result.is_tombstone(), false));
     }
 
     return tracker;

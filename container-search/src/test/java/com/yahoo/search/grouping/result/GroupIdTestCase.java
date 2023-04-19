@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.grouping.result;
 
+import com.yahoo.prelude.hitfield.RawBase64;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -25,10 +26,10 @@ public class GroupIdTestCase {
         assertEquals(9L, rangeId.getTo());
 
         valueId = new RawId(new byte[]{6, 9});
-        assertArrayEquals(new byte[]{6, 9}, (byte[]) valueId.getValue());
+        assertEquals(new RawBase64(new byte[]{6, 9}), valueId.getValue());
         rangeId = new RawBucketId(new byte[]{6, 9}, new byte[]{9, 6});
-        assertArrayEquals(new byte[]{6, 9}, (byte[]) rangeId.getFrom());
-        assertArrayEquals(new byte[]{9, 6}, (byte[]) rangeId.getTo());
+        assertEquals(new RawBase64(new byte[]{6, 9}), rangeId.getFrom());
+        assertEquals(new RawBase64(new byte[]{9, 6}), rangeId.getTo());
 
         valueId = new StringId("69");
         assertEquals("69", valueId.getValue());
@@ -47,8 +48,8 @@ public class GroupIdTestCase {
         assertEquals("group:long:69", new LongId(69L).toString());
         assertEquals("group:long_bucket:6:9", new LongBucketId(6L, 9L).toString());
         assertEquals("group:null", new NullId().toString());
-        assertEquals("group:raw:[6, 9]", new RawId(new byte[]{6, 9}).toString());
-        assertEquals("group:raw_bucket:[6, 9]:[9, 6]", new RawBucketId(new byte[]{6, 9}, new byte[]{9, 6}).toString());
+        assertEquals("group:raw:Bgk", new RawId(new byte[]{6, 9}).toString());
+        assertEquals("group:raw_bucket:Bgk:CQY", new RawBucketId(new byte[]{6, 9}, new byte[]{9, 6}).toString());
         assertTrue(new RootId(0).toString().startsWith("group:root:"));
         assertEquals("group:string:69", new StringId("69").toString());
         assertEquals("group:string_bucket:6:9", new StringBucketId("6", "9").toString());

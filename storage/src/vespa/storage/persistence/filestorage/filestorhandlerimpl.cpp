@@ -1054,7 +1054,7 @@ FileStorHandlerImpl::Stripe::waitUntilNoLocks() const
 {
     std::unique_lock guard(*_lock);
     while (!_lockedBuckets.empty()) {
-        _cond->wait(guard);
+        _cond->wait_for(guard, 100ms);
     }
 }
 
@@ -1062,7 +1062,7 @@ void
 FileStorHandlerImpl::Stripe::waitInactive(const AbortBucketOperationsCommand& cmd) const {
     std::unique_lock guard(*_lock);
     while (hasActive(guard, cmd)) {
-        _cond->wait(guard);
+        _cond->wait_for(guard, 100ms);
     }
 }
 

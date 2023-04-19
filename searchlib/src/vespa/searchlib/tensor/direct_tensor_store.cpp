@@ -30,11 +30,11 @@ DirectTensorStore::TensorBufferType::TensorBufferType()
 }
 
 void
-DirectTensorStore::TensorBufferType::cleanHold(void* buffer, size_t offset, ElemCount num_elems, CleanContext clean_ctx)
+DirectTensorStore::TensorBufferType::clean_hold(void* buffer, size_t offset, EntryCount num_entries, CleanContext clean_ctx)
 {
     TensorSP* elem = static_cast<TensorSP*>(buffer) + offset;
     const auto& empty = empty_entry();
-    for (size_t i = 0; i < num_elems; ++i) {
+    for (size_t i = 0; i < num_entries; ++i) {
         clean_ctx.extraBytesCleaned((*elem)->get_memory_usage().allocatedBytes());
         *elem = empty;
         ++elem;
@@ -69,7 +69,7 @@ DirectTensorStore::holdTensor(EntryRef ref)
     }
     const auto& tensor = _tensor_store.getEntry(ref);
     assert(tensor);
-    _tensor_store.holdElem(ref, 1, tensor->get_memory_usage().allocatedBytes());
+    _tensor_store.hold_entry(ref, tensor->get_memory_usage().allocatedBytes());
 }
 
 EntryRef

@@ -67,6 +67,7 @@ public class HostAction {
         OUT_OF_SYNC,
         NONE,
         RETIRING,
+        READY,
         RETIRED,
         COMPLETE
     }

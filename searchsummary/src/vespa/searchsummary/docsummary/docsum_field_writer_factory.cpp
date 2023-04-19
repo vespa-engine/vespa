@@ -23,8 +23,7 @@ namespace search::docsummary {
 DocsumFieldWriterFactory::DocsumFieldWriterFactory(bool use_v8_geo_positions, const IDocsumEnvironment& env, const IQueryTermFilterFactory& query_term_filter_factory)
     : _use_v8_geo_positions(use_v8_geo_positions),
       _env(env),
-      _query_term_filter_factory(query_term_filter_factory),
-      _matching_elems_fields(std::make_shared<MatchingElementsFields>())
+      _query_term_filter_factory(query_term_filter_factory)
 {
 }
 
@@ -58,7 +57,8 @@ throw_missing_source(const vespalib::string& command)
 std::unique_ptr<DocsumFieldWriter>
 DocsumFieldWriterFactory::create_docsum_field_writer(const vespalib::string& field_name,
                                                      const vespalib::string& command,
-                                                     const vespalib::string& source)
+                                                     const vespalib::string& source,
+                                                     std::shared_ptr<MatchingElementsFields> matching_elems_fields)
 {
     std::unique_ptr<DocsumFieldWriter> fieldWriter;
     if (command == command::dynamic_teaser) {
@@ -116,9 +116,9 @@ DocsumFieldWriterFactory::create_docsum_field_writer(const vespalib::string& fie
         if (has_attribute_manager()) {
             auto attr_ctx = getEnvironment().getAttributeManager()->createContext();
             if (attr_ctx->getAttribute(source_field) != nullptr) {
-                fieldWriter = AttributeDFWFactory::create(*getEnvironment().getAttributeManager(), source_field, true, _matching_elems_fields);
+                fieldWriter = AttributeDFWFactory::create(*getEnvironment().getAttributeManager(), source_field, true, matching_elems_fields);
             } else {
-                fieldWriter = AttributeCombinerDFW::create(source_field, *attr_ctx, true, _matching_elems_fields);
+                fieldWriter = AttributeCombinerDFW::create(source_field, *attr_ctx, true, matching_elems_fields);
             }
             throw_if_nullptr(fieldWriter, command);
         }
@@ -126,7 +126,7 @@ DocsumFieldWriterFactory::create_docsum_field_writer(const vespalib::string& fie
         const vespalib::string& source_field = source.empty() ? field_name : source;
         if (has_attribute_manager()) {
             auto attr_ctx = getEnvironment().getAttributeManager()->createContext();
-            fieldWriter = MatchedElementsFilterDFW::create(source_field,*attr_ctx, _matching_elems_fields);
+            fieldWriter = MatchedElementsFilterDFW::create(source_field,*attr_ctx, matching_elems_fields);
             throw_if_nullptr(fieldWriter, command);
         }
     } else if (command == command::documentid) {

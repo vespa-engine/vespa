@@ -4,6 +4,7 @@ package com.yahoo.vespa.indexinglanguage.expressions;
 import com.yahoo.document.DataType;
 import com.yahoo.document.DocumentType;
 import com.yahoo.document.Field;
+import com.yahoo.vespa.indexinglanguage.ExpressionConverter;
 import com.yahoo.vespa.objects.ObjectOperation;
 import com.yahoo.vespa.objects.ObjectPredicate;
 
@@ -21,6 +22,11 @@ public class ParenthesisExpression extends CompositeExpression {
 
     public Expression getInnerExpression() {
         return innerExp;
+    }
+
+    @Override
+    public ParenthesisExpression convertChildren(ExpressionConverter converter) {
+        return new ParenthesisExpression(converter.convert(innerExp));
     }
 
     @Override

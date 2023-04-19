@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"sync"
 	"time"
 
 	"github.com/vespa-engine/vespa/client/go/internal/util"
@@ -17,7 +18,7 @@ const (
 	// A target for a local Vespa service
 	TargetLocal = "local"
 
-	// A target for a custom URL
+	// A target for a Vespa service at a custom URL
 	TargetCustom = "custom"
 
 	// A Vespa Cloud target
@@ -38,13 +39,19 @@ const (
 	retryInterval = 2 * time.Second
 )
 
+// Authenticator authenticates the given HTTP request.
+type Authenticator interface {
+	Authenticate(request *http.Request) error
+}
+
 // Service represents a Vespa service.
 type Service struct {
 	BaseURL    string
 	Name       string
 	TLSOptions TLSOptions
 
-	zts        zts
+	once       sync.Once
+	auth       Authenticator
 	httpClient util.HTTPClient
 }
 
@@ -65,19 +72,19 @@ type Target interface {
 	// PrintLog writes the logs of this deployment using given options to control output.
 	PrintLog(options LogOptions) error
 
-	// SignRequest signs request with given keyID as required by the implementation of this target.
-	SignRequest(request *http.Request, keyID string) error
-
 	// CheckVersion verifies whether clientVersion is compatible with this target.
 	CheckVersion(clientVersion version.Version) error
 }
 
-// TLSOptions configures the client certificate to use for cloud API or service requests.
+// TLSOptions holds the client certificate to use for cloud API or service requests.
 type TLSOptions struct {
-	KeyPair         *tls.Certificate
-	CertificateFile string
-	PrivateKeyFile  string
-	AthenzDomain    string
+	CACertificate []byte
+	KeyPair       []tls.Certificate
+	TrustAll      bool
+
+	CACertificateFile string
+	CertificateFile   string
+	PrivateKeyFile    string
 }
 
 // LogOptions configures the log output to produce when writing log messages.
@@ -90,20 +97,20 @@ type LogOptions struct {
 	Level   int
 }
 
-// Do sends request to this service. Any required authentication happens automatically.
+// Do sends request to this service. Authentication of the request happens automatically.
 func (s *Service) Do(request *http.Request, timeout time.Duration) (*http.Response, error) {
-	if s.TLSOptions.AthenzDomain != "" && s.TLSOptions.KeyPair != nil {
-		accessToken, err := s.zts.AccessToken(s.TLSOptions.AthenzDomain, *s.TLSOptions.KeyPair)
-		if err != nil {
+	s.once.Do(func() {
+		util.ConfigureTLS(s.httpClient, s.TLSOptions.KeyPair, s.TLSOptions.CACertificate, s.TLSOptions.TrustAll)
+	})
+	if s.auth != nil {
+		if err := s.auth.Authenticate(request); err != nil {
 			return nil, err
 		}
-		if request.Header == nil {
-			request.Header = make(http.Header)
-		}
-		request.Header.Add("Authorization", "Bearer "+accessToken)
 	}
 	return s.httpClient.Do(request, timeout)
 }
+
+func (s *Service) Client() util.HTTPClient { return s.httpClient }
 
 // Wait polls the health check of this service until it succeeds or timeout passes.
 func (s *Service) Wait(timeout time.Duration) (int, error) {
@@ -116,7 +123,7 @@ func (s *Service) Wait(timeout time.Duration) (int, error) {
 	default:
 		return 0, fmt.Errorf("invalid service: %s", s.Name)
 	}
-	return waitForOK(s.httpClient, url, s.TLSOptions.KeyPair, timeout)
+	return waitForOK(s, url, timeout)
 }
 
 func (s *Service) Description() string {
@@ -131,27 +138,40 @@ func (s *Service) Description() string {
 	return fmt.Sprintf("No description of service %s", s.Name)
 }
 
-func isOK(status int) bool { return status/100 == 2 }
+func isOK(status int) (bool, error) {
+	class := status / 100
+	switch class {
+	case 2: // success
+		return true, nil
+	case 4: // client error
+		return false, fmt.Errorf("request failed with status %d", status)
+	default: // retry
+		return false, nil
+	}
+}
 
 type responseFunc func(status int, response []byte) (bool, error)
 
 type requestFunc func() *http.Request
 
-// waitForOK queries url and returns its status code. If the url returns a non-200 status code, it is repeatedly queried
+// waitForOK queries url and returns its status code. If response status is not 2xx or 4xx, it is repeatedly queried
 // until timeout elapses.
-func waitForOK(client util.HTTPClient, url string, certificate *tls.Certificate, timeout time.Duration) (int, error) {
+func waitForOK(service *Service, url string, timeout time.Duration) (int, error) {
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return 0, err
 	}
-	okFunc := func(status int, response []byte) (bool, error) { return isOK(status), nil }
-	return wait(client, okFunc, func() *http.Request { return req }, certificate, timeout)
+	okFunc := func(status int, response []byte) (bool, error) {
+		ok, err := isOK(status)
+		if err != nil {
+			return false, fmt.Errorf("failed to query %s at %s: %w", service.Description(), url, err)
+		}
+		return ok, err
+	}
+	return wait(service, okFunc, func() *http.Request { return req }, timeout)
 }
 
-func wait(client util.HTTPClient, fn responseFunc, reqFn requestFunc, certificate *tls.Certificate, timeout time.Duration) (int, error) {
-	if certificate != nil {
-		util.SetCertificate(client, []tls.Certificate{*certificate})
-	}
+func wait(service *Service, fn responseFunc, reqFn requestFunc, timeout time.Duration) (int, error) {
 	var (
 		httpErr    error
 		response   *http.Response
@@ -161,7 +181,7 @@ func wait(client util.HTTPClient, fn responseFunc, reqFn requestFunc, certificat
 	loopOnce := timeout == 0
 	for time.Now().Before(deadline) || loopOnce {
 		req := reqFn()
-		response, httpErr = client.Do(req, 10*time.Second)
+		response, httpErr = service.Do(req, 10*time.Second)
 		if httpErr == nil {
 			statusCode = response.StatusCode
 			body, err := io.ReadAll(response.Body)

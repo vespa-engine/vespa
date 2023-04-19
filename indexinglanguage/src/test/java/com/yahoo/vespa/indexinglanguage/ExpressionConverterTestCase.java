@@ -2,7 +2,6 @@
 package com.yahoo.vespa.indexinglanguage;
 
 import com.yahoo.collections.Pair;
-import com.yahoo.document.DataType;
 import com.yahoo.document.datatypes.IntegerFieldValue;
 import com.yahoo.language.simple.SimpleLinguistics;
 import com.yahoo.vespa.indexinglanguage.expressions.ArithmeticExpression;
@@ -11,9 +10,7 @@ import com.yahoo.vespa.indexinglanguage.expressions.Base64DecodeExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.Base64EncodeExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.CatExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.ClearStateExpression;
-import com.yahoo.vespa.indexinglanguage.expressions.CompositeExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.EchoExpression;
-import com.yahoo.vespa.indexinglanguage.expressions.ExecutionContext;
 import com.yahoo.vespa.indexinglanguage.expressions.Expression;
 import com.yahoo.vespa.indexinglanguage.expressions.ForEachExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.GetFieldExpression;
@@ -54,7 +51,6 @@ import com.yahoo.vespa.indexinglanguage.expressions.ToStringExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.ToWsetExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.TokenizeExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.TrimExpression;
-import com.yahoo.vespa.indexinglanguage.expressions.VerificationContext;
 import com.yahoo.vespa.indexinglanguage.expressions.ZCurveExpression;
 import com.yahoo.vespa.indexinglanguage.linguistics.AnnotatorConfig;
 import org.junit.Test;
@@ -73,7 +69,6 @@ import static org.junit.Assert.fail;
  */
 public class ExpressionConverterTestCase {
 
-    @SuppressWarnings("unchecked")
     @Test
     public void requireThatAllExpressionTypesCanBeTraversed() {
         assertConvertable(new ArithmeticExpression(new InputExpression("foo"), ArithmeticExpression.Operator.ADD,
@@ -167,16 +162,6 @@ public class ExpressionConverterTestCase {
     }
 
     @Test
-    public void requireThatUnknownCompositeThrows() {
-        try {
-            new MyTraverser().convert(new MyComposite());
-            fail();
-        } catch (UnsupportedOperationException e) {
-            assertEquals(NoSuchMethodException.class, e.getCause().getClass());
-        }
-    }
-
-    @Test
     public void requireThatConversionExceptionCanBeThrown() {
         final RuntimeException expectedCause = new RuntimeException();
         try {
@@ -254,24 +239,4 @@ public class ExpressionConverterTestCase {
         }
     }
 
-    private static class MyComposite extends CompositeExpression {
-
-        MyComposite() {
-            super(null);
-        }
-        @Override
-        protected void doExecute(ExecutionContext context) {
-
-        }
-
-        @Override
-        protected void doVerify(VerificationContext context) {
-
-        }
-
-        @Override
-        public DataType createdOutputType() {
-            return null;
-        }
-    }
 }

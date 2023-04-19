@@ -9,6 +9,7 @@ import com.yahoo.schema.Schema;
 import com.yahoo.schema.document.HnswIndexParams;
 import com.yahoo.schema.document.ImmutableSDField;
 import com.yahoo.schema.document.SDField;
+import com.yahoo.tensor.TensorType;
 import com.yahoo.vespa.model.container.search.QueryProfiles;
 
 /**
@@ -50,6 +51,14 @@ public class TensorFieldProcessor extends Processor {
 
     private boolean isTensorTypeThatSupportsHnswIndex(ImmutableSDField field) {
         var type = ((TensorDataType)field.getDataType()).getTensorType();
+        return isTensorTypeThatSupportsHnswIndex(type);
+    }
+
+    /**
+     * Returns whether the given tensor type supports using HNSW index and
+     * nearest neighbor search.
+     */
+    public static boolean isTensorTypeThatSupportsHnswIndex(TensorType type) {
         // Tensors with 1 indexed dimension support hnsw index (used for approximate nearest neighbor search).
         if ((type.dimensions().size() == 1) &&
                 type.dimensions().get(0).isIndexed()) {

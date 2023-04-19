@@ -912,8 +912,8 @@ AttributeTest::testSingle()
             cfg.setFastSearch(true);
             AttributePtr ptr = createAttribute("sv-post-int32", cfg);
             ptr->updateStat(true);
-            EXPECT_EQ(339020u, ptr->getStatus().getAllocated());
-            EXPECT_EQ(101852u, ptr->getStatus().getUsed());
+            EXPECT_EQ(338972u, ptr->getStatus().getAllocated());
+            EXPECT_EQ(101632u, ptr->getStatus().getUsed());
             addDocs(ptr, numDocs);
             testSingle<IntegerAttribute, AttributeVector::largeint_t, int32_t>(ptr, values);
         }
@@ -934,8 +934,8 @@ AttributeTest::testSingle()
             cfg.setFastSearch(true);
             AttributePtr ptr = createAttribute("sv-post-float", cfg);
             ptr->updateStat(true);
-            EXPECT_EQ(339020, ptr->getStatus().getAllocated());
-            EXPECT_EQ(101852u, ptr->getStatus().getUsed());
+            EXPECT_EQ(338972u, ptr->getStatus().getAllocated());
+            EXPECT_EQ(101632u, ptr->getStatus().getUsed());
             addDocs(ptr, numDocs);
             testSingle<FloatingPointAttribute, double, float>(ptr, values);
         }
@@ -947,8 +947,8 @@ AttributeTest::testSingle()
         {
             AttributePtr ptr = createAttribute("sv-string", Config(BasicType::STRING, CollectionType::SINGLE));
             ptr->updateStat(true);
-            EXPECT_EQ(117256u + sizeof_large_string_entry, ptr->getStatus().getAllocated());
-            EXPECT_EQ(53240u + sizeof_large_string_entry, ptr->getStatus().getUsed());
+            EXPECT_EQ(116528u + sizeof_large_string_entry, ptr->getStatus().getAllocated());
+            EXPECT_EQ(52844u + sizeof_large_string_entry, ptr->getStatus().getUsed());
             addDocs(ptr, numDocs);
             testSingle<StringAttribute, string, string>(ptr, values);
         }
@@ -957,8 +957,8 @@ AttributeTest::testSingle()
             cfg.setFastSearch(true);
             AttributePtr ptr = createAttribute("sv-fs-string", cfg);
             ptr->updateStat(true);
-            EXPECT_EQ(345624u + sizeof_large_string_entry, ptr->getStatus().getAllocated());
-            EXPECT_EQ(105176u + sizeof_large_string_entry, ptr->getStatus().getUsed());
+            EXPECT_EQ(344848u + sizeof_large_string_entry, ptr->getStatus().getAllocated());
+            EXPECT_EQ(104556u + sizeof_large_string_entry, ptr->getStatus().getUsed());
             addDocs(ptr, numDocs);
             testSingle<StringAttribute, string, string>(ptr, values);
         }
@@ -1089,8 +1089,8 @@ AttributeTest::testArray()
         {
             AttributePtr ptr = createAttribute("a-int32", Config(BasicType::INT32, CollectionType::ARRAY));
             ptr->updateStat(true);
-            EXPECT_EQ(512056u, ptr->getStatus().getAllocated());
-            EXPECT_EQ(504392u, ptr->getStatus().getUsed());
+            EXPECT_EQ(487480u, ptr->getStatus().getAllocated());
+            EXPECT_EQ(479720u, ptr->getStatus().getUsed());
             addDocs(ptr, numDocs);
             testArray<IntegerAttribute, AttributeVector::largeint_t>(ptr, values);
         }
@@ -1099,8 +1099,8 @@ AttributeTest::testArray()
             cfg.setFastSearch(true);
             AttributePtr ptr = createAttribute("flags", cfg);
             ptr->updateStat(true);
-            EXPECT_EQ(512056u, ptr->getStatus().getAllocated());
-            EXPECT_EQ(504392u, ptr->getStatus().getUsed());
+            EXPECT_EQ(487480u, ptr->getStatus().getAllocated());
+            EXPECT_EQ(479720u, ptr->getStatus().getUsed());
             addDocs(ptr, numDocs);
             testArray<IntegerAttribute, AttributeVector::largeint_t>(ptr, values);
         }
@@ -1109,8 +1109,8 @@ AttributeTest::testArray()
             cfg.setFastSearch(true);
             AttributePtr ptr = createAttribute("a-fs-int32", cfg);
             ptr->updateStat(true);
-            EXPECT_EQ(868788u, ptr->getStatus().getAllocated());
-            EXPECT_EQ(606264u, ptr->getStatus().getUsed());
+            EXPECT_EQ(844116u, ptr->getStatus().getAllocated());
+            EXPECT_EQ(581372u, ptr->getStatus().getUsed());
             addDocs(ptr, numDocs);
             testArray<IntegerAttribute, AttributeVector::largeint_t>(ptr, values);
         }
@@ -1128,8 +1128,8 @@ AttributeTest::testArray()
             cfg.setFastSearch(true);
             AttributePtr ptr = createAttribute("a-fs-float", cfg);
             ptr->updateStat(true);
-            EXPECT_EQ(868788u, ptr->getStatus().getAllocated());
-            EXPECT_EQ(606264u, ptr->getStatus().getUsed());
+            EXPECT_EQ(844116u, ptr->getStatus().getAllocated());
+            EXPECT_EQ(581372u, ptr->getStatus().getUsed());
             addDocs(ptr, numDocs);
             testArray<FloatingPointAttribute, double>(ptr, values);
         }
@@ -1140,8 +1140,8 @@ AttributeTest::testArray()
         {
             AttributePtr ptr = createAttribute("a-string", Config(BasicType::STRING, CollectionType::ARRAY));
             ptr->updateStat(true);
-            EXPECT_EQ(625088u + sizeof_large_string_entry, ptr->getStatus().getAllocated());
-            EXPECT_EQ(557632u + sizeof_large_string_entry, ptr->getStatus().getUsed());
+            EXPECT_EQ(599784u + sizeof_large_string_entry, ptr->getStatus().getAllocated());
+            EXPECT_EQ(532564u + sizeof_large_string_entry, ptr->getStatus().getUsed());
             addDocs(ptr, numDocs);
             testArray<StringAttribute, string>(ptr, values);
         }
@@ -1150,8 +1150,8 @@ AttributeTest::testArray()
             cfg.setFastSearch(true);
             AttributePtr ptr = createAttribute("afs-string", cfg);
             ptr->updateStat(true);
-            EXPECT_EQ(875392u + sizeof_large_string_entry, ptr->getStatus().getAllocated());
-            EXPECT_EQ(609588u + sizeof_large_string_entry, ptr->getStatus().getUsed());
+            EXPECT_EQ(849992u + sizeof_large_string_entry, ptr->getStatus().getAllocated());
+            EXPECT_EQ(584296u + sizeof_large_string_entry, ptr->getStatus().getUsed());
             addDocs(ptr, numDocs);
             testArray<StringAttribute, string>(ptr, values);
         }
@@ -1718,7 +1718,7 @@ AttributeTest::testStatus()
         ptr->commit(true);
         EXPECT_EQ(ptr->getStatus().getNumDocs(), 100u);
         EXPECT_EQ(ptr->getStatus().getNumValues(), 100u);
-        EXPECT_EQ(ptr->getStatus().getNumUniqueValues(), 1u);
+        EXPECT_EQ(ptr->getStatus().getNumUniqueValues(), 2u);
         size_t expUsed = 0;
         expUsed += 1 * InternalNodeSize + 1 * LeafNodeSize; // enum store tree
         expUsed += 1 * 32; // enum store (uniquevalues * bytes per entry)
@@ -1741,7 +1741,7 @@ AttributeTest::testStatus()
         ptr->commit(true);
         EXPECT_EQ(ptr->getStatus().getNumDocs(), numDocs);
         EXPECT_EQ(ptr->getStatus().getNumValues(), numDocs*numValuesPerDoc);
-        EXPECT_EQ(ptr->getStatus().getNumUniqueValues(), numUniq);
+        EXPECT_EQ(ptr->getStatus().getNumUniqueValues(), numUniq + 1);
         size_t expUsed = 0;
         expUsed += 1 * InternalNodeSize + 1 * LeafNodeSize; // Approximate enum store tree
         expUsed += 272; // TODO Approximate... enum store (16 unique values, 17 bytes per entry)
@@ -2145,12 +2145,12 @@ AttributeTest::test_default_value_ref_count_is_updated_after_shrink_lid_space()
     const auto & iattr = dynamic_cast<const search::IntegerAttributeTemplate<int32_t> &>(*attr);
     attr->addReservedDoc();
     attr->addDocs(10);
-    EXPECT_EQ(11u, get_default_value_ref_count(*attr, iattr.defaultValue()));
+    EXPECT_EQ(12u, get_default_value_ref_count(*attr, iattr.defaultValue()));
     attr->compactLidSpace(6);
-    EXPECT_EQ(11u, get_default_value_ref_count(*attr, iattr.defaultValue()));
+    EXPECT_EQ(12u, get_default_value_ref_count(*attr, iattr.defaultValue()));
     attr->shrinkLidSpace();
     EXPECT_EQ(6u, attr->getNumDocs());
-    EXPECT_EQ(6u, get_default_value_ref_count(*attr, iattr.defaultValue()));
+    EXPECT_EQ(7u, get_default_value_ref_count(*attr, iattr.defaultValue()));
 }
 
 template <typename AttributeType>
@@ -2170,7 +2170,7 @@ AttributeTest::requireThatAddressSpaceUsageIsReported(const Config &config, bool
     AddressSpaceUsage after = attrPtr->getAddressSpaceUsage();
     if (attrPtr->hasEnum()) {
         LOG(info, "requireThatAddressSpaceUsageIsReported(%s): Has enum", attrName.c_str());
-        EXPECT_EQ(before.enum_store_usage().used(), 1u);
+        EXPECT_EQ(before.enum_store_usage().used(), 2u);
         EXPECT_EQ(before.enum_store_usage().dead(), 1u);
         EXPECT_GT(after.enum_store_usage().used(), before.enum_store_usage().used());
         EXPECT_GE(after.enum_store_usage().limit(), before.enum_store_usage().limit());
@@ -2334,6 +2334,10 @@ AttributeTest::test_paged_attribute(const vespalib::string& name, const vespalib
     size_t rounded_size = vespalib::round_up_to_page_size(1);
     size_t lid_mapping_size = 1200;
     size_t sv_maxlid = 1200;
+    if (rounded_size == 16_Ki) {
+        lid_mapping_size = 4200;
+        sv_maxlid = 1300;
+    }
     if (rounded_size == 64_Ki) {
         lid_mapping_size = 17000;
         sv_maxlid = 1500;

@@ -1,11 +1,11 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.service.duper;
 
+import ai.vespa.http.DomainName;
 import com.yahoo.config.model.api.ApplicationInfo;
 import com.yahoo.config.model.api.HostInfo;
 import com.yahoo.config.model.api.Model;
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.HostName;
 import com.yahoo.vespa.service.monitor.DuperModelListener;
 import org.junit.Before;
 import org.junit.Test;
@@ -14,7 +14,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.junit.Assert.assertEquals;
@@ -34,12 +33,12 @@ public class DuperModelTest {
 
     private final ApplicationId id1 = ApplicationId.fromSerializedForm("tenant:app1:default");
     private final ApplicationInfo application1 = mock(ApplicationInfo.class);
-    private final HostName hostname1_1 = HostName.of("hostname1-1");
-    private final HostName hostname1_2 = HostName.of("hostname1-2");
+    private final DomainName hostname1_1 = DomainName.of("hostname1-1");
+    private final DomainName hostname1_2 = DomainName.of("hostname1-2");
 
     private final ApplicationId id2 = ApplicationId.fromSerializedForm("tenant:app2:default");
     private final ApplicationInfo application2 = mock(ApplicationInfo.class);
-    private final HostName hostname2_1 = HostName.of("hostname2-1");
+    private final DomainName hostname2_1 = DomainName.of("hostname2-1");
 
     private final DuperModelListener listener1 = mock(DuperModelListener.class);
 
@@ -49,7 +48,7 @@ public class DuperModelTest {
         setUpApplication(id2, application2, hostname2_1);
     }
 
-    private void setUpApplication(ApplicationId id, ApplicationInfo info, HostName... hostnames) {
+    private void setUpApplication(ApplicationId id, ApplicationInfo info, DomainName... hostnames) {
         when(info.getApplicationId()).thenReturn(id);
 
         Model model = mock(Model.class);
@@ -129,7 +128,7 @@ public class DuperModelTest {
         addAndVerifyApplication1("host1");
         addAndVerifyApplication1("host1", "host2");
         addAndVerifyApplication1("host2", "host3");
-        assertEquals(Optional.empty(), duperModel.getApplicationId(HostName.of("host1")));
+        assertEquals(Optional.empty(), duperModel.getApplicationId(DomainName.of("host1")));
 
         duperModel.remove(id1);
         assertEquals(0, duperModel.numberOfApplications());
@@ -138,7 +137,7 @@ public class DuperModelTest {
     }
 
     private void addAndVerifyApplication1(String... hostnameStrings) {
-        HostName[] hostnameArray = Stream.of(hostnameStrings).map(HostName::of).toArray(HostName[]::new);
+        DomainName[] hostnameArray = Stream.of(hostnameStrings).map(DomainName::of).toArray(DomainName[]::new);
         setUpApplication(id1, application1, hostnameArray);
         duperModel.add(application1);
 

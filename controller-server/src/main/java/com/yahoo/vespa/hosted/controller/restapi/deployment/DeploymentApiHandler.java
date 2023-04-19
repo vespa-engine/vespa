@@ -22,6 +22,8 @@ import com.yahoo.vespa.hosted.controller.application.ApplicationList;
 import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentStatus;
+import com.yahoo.vespa.hosted.controller.deployment.DeploymentStatus.DelayCause;
+import com.yahoo.vespa.hosted.controller.deployment.DeploymentStatus.Readiness;
 import com.yahoo.vespa.hosted.controller.deployment.Run;
 import com.yahoo.vespa.hosted.controller.deployment.RunStatus;
 import com.yahoo.vespa.hosted.controller.deployment.Versions;
@@ -169,11 +171,14 @@ public class DeploymentApiHandler extends ThreadedHttpRequestHandler {
                       instanceObject.setString("application", instance.application().value());
                       instanceObject.setString("instance", instance.instance().value());
                       instanceObject.setBool("upgrading", status.application().require(instance.instance()).change().platform().equals(Optional.of(statistics.version())));
-                      instanceObject.setBool("pinned", status.application().require(instance.instance()).change().isPinned());
+                      instanceObject.setBool("pinned", status.application().require(instance.instance()).change().isPlatformPinned());
+                      instanceObject.setBool("platformPinned", status.application().require(instance.instance()).change().isPlatformPinned());
+                      instanceObject.setBool("revisionPinned", status.application().require(instance.instance()).change().isRevisionPinned());
                       DeploymentStatus.StepStatus stepStatus = status.instanceSteps().get(instance.instance());
                       if (stepStatus != null) { // Instance may not have any steps, i.e. an empty deployment spec has been submitted
-                          stepStatus.blockedUntil(Change.of(statistics.version()))
-                                    .ifPresent(until -> instanceObject.setLong("blockedUntil", until.toEpochMilli()));
+                          Readiness platformReadiness = stepStatus.blockedUntil(Change.of(statistics.version()));
+                          if (platformReadiness.cause() == DelayCause.changeBlocked)
+                                     instanceObject.setLong("blockedUntil", platformReadiness.at().toEpochMilli());
                       }
                       instanceObject.setString("upgradePolicy", toString(status.application().deploymentSpec().instance(instance.instance())
                                                                                .map(DeploymentInstanceSpec::upgradePolicy)
@@ -185,10 +190,12 @@ public class DeploymentApiHandler extends ThreadedHttpRequestHandler {
                           if ( ! job.application().equals(instance)) return;
                           Cursor jobObject = jobsArray.addObject();
                           jobObject.setString("name", job.type().jobName());
-                          jobStatus.pausedUntil().ifPresent(until -> jobObject.setLong("pausedUntil", until.toEpochMilli()));
-                          jobStatus.coolingDownUntil(status.application().require(instance.instance()).change(), Optional.empty())
-                                   .ifPresent(until -> jobObject.setLong("coolingDownUntil", until.toEpochMilli()));
                           if (jobsToRun.containsKey(job)) {
+                              Readiness readiness = jobsToRun.get(job).get(0).readiness();
+                              switch (readiness.cause()) {
+                                  case paused -> jobObject.setLong("pausedUntil", readiness.at().toEpochMilli());
+                                  case coolingDown -> jobObject.setLong("coolingDownUntil", readiness.at().toEpochMilli());
+                              }
                               List<Versions> versionsOnThisPlatform = jobsToRun.get(job).stream()
                                                                                .map(DeploymentStatus.Job::versions)
                                                                                .filter(versions -> versions.targetPlatform().equals(statistics.version()))

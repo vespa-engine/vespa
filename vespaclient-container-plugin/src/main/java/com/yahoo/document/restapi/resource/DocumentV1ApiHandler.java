@@ -526,23 +526,18 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
         parameters = getProperty(request, TIMEOUT, timeoutMillisParser).map(clock.instant()::plusMillis)
                                                                        .map(parameters::withDeadline)
                                                                        .orElse(parameters);
-        for (String name : names) switch (name) {
-            case CLUSTER:
-                parameters = getProperty(request, CLUSTER).map(cluster -> resolveCluster(Optional.of(cluster), clusters).name())
-                                                          .map(parameters::withRoute)
-                                                          .orElse(parameters);
-                break;
-            case FIELD_SET:
-                parameters = getProperty(request, FIELD_SET).map(parameters::withFieldSet)
-                                                            .orElse(parameters);
-                break;
-            case ROUTE:
-                parameters = getProperty(request, ROUTE).map(parameters::withRoute)
-                                                        .orElse(parameters);
-                break;
-            default:
-                throw new IllegalArgumentException("Unrecognized document operation parameter name '" + name + "'");
-        }
+        for (String name : names)
+            parameters = switch (name) {
+                case CLUSTER ->
+                        getProperty(request, CLUSTER)
+                                .map(cluster -> resolveCluster(Optional.of(cluster), clusters).name())
+                                .map(parameters::withRoute)
+                                .orElse(parameters);
+                case FIELD_SET -> getProperty(request, FIELD_SET).map(parameters::withFieldSet).orElse(parameters);
+                case ROUTE -> getProperty(request, ROUTE).map(parameters::withRoute).orElse(parameters);
+                default ->
+                        throw new IllegalArgumentException("Unrecognized document operation parameter name '" + name + "'");
+            };
         return parameters;
     }
 
@@ -630,20 +625,11 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
         private boolean first = true;
         private ContentChannel channel;
 
-        private JsonResponse(ResponseHandler handler) throws IOException {
-            this(handler, null);
-        }
-
         private JsonResponse(ResponseHandler handler, HttpRequest request) throws IOException {
             this.handler = handler;
             this.request = request;
             json = jsonFactory.createGenerator(out);
             json.writeStartObject();
-        }
-
-        /** Creates a new JsonResponse with path and id fields written. */
-        static JsonResponse create(DocumentPath path, ResponseHandler handler) throws IOException {
-            return create(path, handler, null);
         }
 
         /** Creates a new JsonResponse with path and id fields written. */
@@ -749,23 +735,17 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
         }
 
         private boolean tensorShortForm() {
-            if (request != null &&
-                request.parameters().containsKey("format.tensors") &&
-                ( request.parameters().get("format.tensors").contains("long")
-                  || request.parameters().get("format.tensors").contains("long-value"))) {
-                return false;
-            }
-            return true;  // default
+            return request == null ||
+                    !request.parameters().containsKey("format.tensors") ||
+                    (!request.parameters().get("format.tensors").contains("long")
+                            && !request.parameters().get("format.tensors").contains("long-value"));// default
         }
 
         private boolean tensorDirectValues() {
-            if (request != null &&
-                request.parameters().containsKey("format.tensors") &&
-                ( request.parameters().get("format.tensors").contains("short-value")
-                  || request.parameters().get("format.tensors").contains("long-value"))) {
-                return true;
-            }
-            return false;  // TODO: Flip default on Vespa 9
+            return request != null &&
+                    request.parameters().containsKey("format.tensors") &&
+                    (request.parameters().get("format.tensors").contains("short-value")
+                            || request.parameters().get("format.tensors").contains("long-value"));// TODO: Flip default on Vespa 9
         }
 
         synchronized void writeSingleDocument(Document document) throws IOException {
@@ -1168,9 +1148,8 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
     // ------------------------------------------------- Visits ------------------------------------------------
 
     private VisitorParameters parseGetParameters(HttpRequest request, DocumentPath path, boolean streamed) {
-        int wantedDocumentCount = Math.min(streamed ? Integer.MAX_VALUE : 1 << 10,
-                                           getProperty(request, WANTED_DOCUMENT_COUNT, integerParser)
-                                                   .orElse(streamed ? Integer.MAX_VALUE : 1));
+        int wantedDocumentCount = getProperty(request, WANTED_DOCUMENT_COUNT, integerParser)
+                .orElse(streamed ? Integer.MAX_VALUE : 1);
         if (wantedDocumentCount <= 0)
             throw new IllegalArgumentException("wantedDocumentCount must be positive");
 
@@ -1226,7 +1205,7 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
 
         getProperty(request, TRACELEVEL, integerParser).ifPresent(parameters::setTraceLevel);
 
-        getProperty(request, CONTINUATION).map(ProgressToken::fromSerializedString).ifPresent(parameters::setResumeToken);
+        getProperty(request, CONTINUATION, ProgressToken::fromSerializedString).ifPresent(parameters::setResumeToken);
         parameters.setPriority(DocumentProtocol.Priority.NORMAL_4);
 
         getProperty(request, FROM_TIMESTAMP, unsignedLongParser).ifPresent(parameters::setFromTimestamp);
@@ -1546,11 +1525,11 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
 
     private static Map<String, StorageCluster> parseClusters(ClusterListConfig clusters, AllClustersBucketSpacesConfig buckets) {
         return clusters.storage().stream()
-                       .collect(toUnmodifiableMap(storage -> storage.name(),
+                       .collect(toUnmodifiableMap(ClusterListConfig.Storage::name,
                                                   storage -> new StorageCluster(storage.name(),
                                                                                 buckets.cluster(storage.name())
                                                                                        .documentType().entrySet().stream()
-                                                                                       .collect(toMap(entry -> entry.getKey(),
+                                                                                       .collect(toMap(Map.Entry::getKey,
                                                                                                       entry -> entry.getValue().bucketSpace())))));
     }
 

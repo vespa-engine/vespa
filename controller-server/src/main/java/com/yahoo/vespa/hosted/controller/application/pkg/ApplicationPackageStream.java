@@ -5,6 +5,7 @@ import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
+import java.nio.file.attribute.FileTime;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
@@ -32,6 +33,7 @@ public class ApplicationPackageStream {
     private final Supplier<Predicate<String>> filter;
     private final Supplier<InputStream> in;
     private final AtomicReference<ApplicationPackage> truncatedPackage = new AtomicReference<>();
+    private final FileTime createdAt = FileTime.fromMillis(System.currentTimeMillis());
 
     /** Stream that effectively copies the input stream to its {@link #truncatedPackage()} when exhausted. */
     public ApplicationPackageStream(Supplier<InputStream> in) {
@@ -60,7 +62,7 @@ public class ApplicationPackageStream {
      * and the first to be exhausted will populate the truncated application package.
      */
     public InputStream zipStream() {
-        return new Stream(in.get(), replacer.get(), filter.get(), truncatedPackage);
+        return new Stream(in.get(), replacer.get(), filter.get(), createdAt, truncatedPackage);
     }
 
     /**
@@ -85,6 +87,7 @@ public class ApplicationPackageStream {
         private final ZipInputStream inZip;
         private final Replacer replacer;
         private final Predicate<String> filter;
+        private final FileTime createdAt;
         private byte[] currentOut = new byte[0];
         private InputStream currentIn = InputStream.nullInputStream();
         private boolean includeCurrent = false;
@@ -92,11 +95,12 @@ public class ApplicationPackageStream {
         private boolean closed = false;
         private boolean done = false;
 
-        private Stream(InputStream in, Replacer replacer, Predicate<String> filter, AtomicReference<ApplicationPackage> truncatedPackage) {
+        private Stream(InputStream in, Replacer replacer, Predicate<String> filter, FileTime createdAt, AtomicReference<ApplicationPackage> truncatedPackage) {
             this.in = in;
             this.inZip = new ZipInputStream(in);
             this.replacer = replacer;
             this.filter = filter;
+            this.createdAt = createdAt;
             this.truncatedPackage = truncatedPackage;
         }
 
@@ -129,10 +133,12 @@ public class ApplicationPackageStream {
 
             ZipEntry next = inZip.getNextEntry();
             String name;
+            FileTime modifiedAt;
             InputStream content = null;
             if (next == null) {
                 // We may still have replacements to fill in, but if we don't, we're done filling, forever!
                 name = replacer.next();
+                modifiedAt = createdAt;
                 if (name == null) {
                     outZip.close(); // This typically makes new output available, so must check for that after this.
                     teeZip.close();
@@ -144,6 +150,7 @@ public class ApplicationPackageStream {
             }
             else {
                 name = next.getName();
+                modifiedAt = next.getLastModifiedTime();
                 content = new FilterInputStream(inZip) { @Override public void close() { } }; // Protect inZip from replacements closing it.
             }
 
@@ -153,8 +160,8 @@ public class ApplicationPackageStream {
                 currentIn = InputStream.nullInputStream();
             }
             else {
-                if (includeCurrent) teeZip.putNextEntry(new ZipEntry(name));
-                outZip.putNextEntry(new ZipEntry(name));
+                if (includeCurrent) teeZip.putNextEntry(new ZipEntry(name) {{ setLastModifiedTime(modifiedAt); }});
+                outZip.putNextEntry(new ZipEntry(name) {{ setLastModifiedTime(modifiedAt); }});
             }
         }
 

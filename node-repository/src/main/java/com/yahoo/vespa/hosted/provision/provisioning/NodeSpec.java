@@ -3,8 +3,6 @@ package com.yahoo.vespa.hosted.provision.provisioning;
 
 import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.ClusterSpec;
-import com.yahoo.config.provision.Flavor;
-import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.hosted.provision.Node;
@@ -79,7 +77,7 @@ public interface NodeSpec {
     }
 
     static NodeSpec from(int nodeCount, NodeResources resources, boolean exclusive, boolean canFail, CloudAccount cloudAccount) {
-        return new CountNodeSpec(nodeCount, resources, exclusive, canFail, cloudAccount);
+        return new CountNodeSpec(nodeCount, resources, exclusive, canFail, canFail, cloudAccount);
     }
 
     static NodeSpec from(NodeType type, CloudAccount cloudAccount) {
@@ -93,14 +91,19 @@ public interface NodeSpec {
         private final NodeResources requestedNodeResources;
         private final boolean exclusive;
         private final boolean canFail;
+        private final boolean considerRetiring;
         private final CloudAccount cloudAccount;
 
-        private CountNodeSpec(int count, NodeResources resources, boolean exclusive, boolean canFail, CloudAccount cloudAccount) {
+        private CountNodeSpec(int count, NodeResources resources, boolean exclusive, boolean canFail, boolean considerRetiring, CloudAccount cloudAccount) {
             this.count = count;
             this.requestedNodeResources = Objects.requireNonNull(resources, "Resources must be specified");
             this.exclusive = exclusive;
             this.canFail = canFail;
+            this.considerRetiring = considerRetiring;
             this.cloudAccount = Objects.requireNonNull(cloudAccount);
+
+            if (!canFail && considerRetiring)
+                throw new IllegalArgumentException("Cannot consider retiring nodes if we cannot fail");
         }
 
         @Override
@@ -127,8 +130,7 @@ public interface NodeSpec {
 
         @Override
         public boolean considerRetiring() {
-            // If we cannot fail we cannot retire as we may end up without sufficient replacement capacity
-            return canFail();
+            return considerRetiring;
         }
 
         @Override
@@ -143,7 +145,11 @@ public interface NodeSpec {
 
         @Override
         public NodeSpec fraction(int divisor) {
-            return new CountNodeSpec(count/divisor, requestedNodeResources, exclusive, canFail, cloudAccount);
+            return new CountNodeSpec(count/divisor, requestedNodeResources, exclusive, canFail, considerRetiring, cloudAccount);
+        }
+
+        public NodeSpec withoutRetiring() {
+            return new CountNodeSpec(count, requestedNodeResources, exclusive, canFail, false, cloudAccount);
         }
 
         @Override
@@ -185,7 +191,7 @@ public interface NodeSpec {
 
     }
 
-    /** A node spec specifying a node type. This will accept all nodes of this type. */
+    /** A node spec specifying a node type. */
     class TypeNodeSpec implements NodeSpec {
 
         private static final Map<NodeType, Integer> WANTED_NODE_COUNT = Map.of(NodeType.config, 3,
@@ -256,7 +262,7 @@ public interface NodeSpec {
         }
 
         @Override
-        public String toString() { return "request for all nodes of type '" + type + "'"; }
+        public String toString() { return "request for nodes of type '" + type + "'"; }
 
     }
 

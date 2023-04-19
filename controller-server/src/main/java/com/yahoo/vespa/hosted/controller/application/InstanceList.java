@@ -21,7 +21,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.OptionalInt;
 import java.util.function.Function;
 
 import static java.util.Comparator.comparing;
@@ -81,8 +80,7 @@ public class InstanceList extends AbstractFilteringList<ApplicationId, InstanceL
     /** Returns the subset of instances that are allowed to upgrade to the given version at the given time */
     public InstanceList canUpgradeAt(Version version, Instant instant) {
         return matching(id -> instances.get(id).instanceSteps().get(id.instance())
-                                       .readyAt(Change.of(version))
-                                       .map(readyAt -> ! readyAt.isAfter(instant)).orElse(false));
+                                       .readiness(Change.of(version)).okAt(instant));
     }
 
     /** Returns the subset of instances which have at least one production deployment */
@@ -127,7 +125,7 @@ public class InstanceList extends AbstractFilteringList<ApplicationId, InstanceL
 
     /** Returns the subset of instances which are not pinned to a certain Vespa version. */
     public InstanceList unpinned() {
-        return matching(id -> ! instance(id).change().isPinned());
+        return matching(id -> ! instance(id).change().isPlatformPinned());
     }
 
     /** Returns the subset of instances which are currently failing a job. */

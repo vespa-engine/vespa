@@ -1,11 +1,11 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.provisioning;
 
+import ai.vespa.http.DomainName;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationTransaction;
 import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.ClusterSpec;
-import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.Provisioner;
@@ -133,7 +133,7 @@ public class InfraDeployerImplTest {
     @SuppressWarnings("unchecked")
     private void verifyActivated(String... hostnames) {
         verify(duperModelInfraApi).infraApplicationActivated(
-                eq(application.getApplicationId()), eq(Stream.of(hostnames).map(HostName::of).toList()));
+                eq(application.getApplicationId()), eq(Stream.of(hostnames).map(DomainName::of).toList()));
         ArgumentMatcher<ApplicationTransaction> transactionMatcher = t -> {
             assertEquals(application.getApplicationId(), t.application());
             return true;

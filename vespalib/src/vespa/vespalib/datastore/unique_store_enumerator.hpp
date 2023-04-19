@@ -44,7 +44,7 @@ UniqueStoreEnumerator<RefT>::allocate_enum_values(DataStoreBase & store)
 {
     _enumValues.resize(store.get_bufferid_limit_relaxed());
     store.for_each_active_buffer([this](uint32_t buffer_id, const BufferState & state) {
-        _enumValues[buffer_id].resize(state.get_used_arrays());
+        _enumValues[buffer_id].resize(state.size());
     });
 }
 

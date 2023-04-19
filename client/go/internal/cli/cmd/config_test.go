@@ -2,15 +2,21 @@
 package cmd
 
 import (
+	"crypto/rand"
+	"crypto/rsa"
+	"crypto/tls"
+	"crypto/x509"
+	"crypto/x509/pkix"
+	"encoding/pem"
+	"math/big"
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/vespa-engine/vespa/client/go/internal/cli/auth/auth0"
 	"github.com/vespa-engine/vespa/client/go/internal/mock"
-	"github.com/vespa-engine/vespa/client/go/internal/util"
 	"github.com/vespa-engine/vespa/client/go/internal/vespa"
 )
 
@@ -28,6 +34,7 @@ func TestConfig(t *testing.T) {
 	assertConfigCommand(t, configHome, "", "config", "set", "target", "http://127.0.0.1:8080")
 	assertConfigCommand(t, configHome, "", "config", "set", "target", "https://127.0.0.1")
 	assertConfigCommand(t, configHome, "target = https://127.0.0.1\n", "config", "get", "target")
+	assertConfigCommand(t, configHome, "target = local\n", "config", "get", "-t", "local", "target")
 
 	// application
 	assertConfigCommandErr(t, configHome, "Error: invalid application: \"foo\"\n", "config", "set", "application", "foo")
@@ -165,7 +172,7 @@ func TestReadAPIKey(t *testing.T) {
 	require.Nil(t, err)
 	assert.Equal(t, []byte("foo"), key)
 
-	// Cloud CI does not read key from disk as it's not expected to have any
+	// Cloud CI never reads key from disk as it's not expected to have any
 	cli, _, _ = newTestCLI(t, "VESPA_CLI_CLOUD_CI=true")
 	key, err = cli.config.readAPIKey(cli, vespa.PublicSystem, "t1")
 	require.Nil(t, err)
@@ -185,12 +192,111 @@ func TestReadAPIKey(t *testing.T) {
 	require.Nil(t, err)
 	assert.Equal(t, []byte("baz"), key)
 
-	// Auth0 is preferred when configured
+	// Prefer Auth0 if we have auth config
 	cli, _, _ = newTestCLI(t)
-	cli.auth0Factory = func(httpClient util.HTTPClient, options auth0.Options) (auth0Client, error) {
-		return &mockAuth0{hasCredentials: true}, nil
-	}
+	require.Nil(t, os.WriteFile(filepath.Join(cli.config.homeDir, "auth.json"), []byte("foo"), 0600))
 	key, err = cli.config.readAPIKey(cli, vespa.PublicSystem, "t1")
 	require.Nil(t, err)
 	assert.Nil(t, key)
+}
+
+func TestConfigReadTLSOptions(t *testing.T) {
+	app := vespa.ApplicationID{Tenant: "t1", Application: "a1", Instance: "i1"}
+	homeDir := t.TempDir()
+
+	// No environment variables, and no files on disk
+	assertTLSOptions(t, homeDir, app, vespa.TargetLocal, vespa.TLSOptions{})
+
+	// A single environment variable is set
+	assertTLSOptions(t, homeDir, app, vespa.TargetLocal, vespa.TLSOptions{TrustAll: true}, "VESPA_CLI_DATA_PLANE_TRUST_ALL=true")
+
+	// Key pair is provided in-line in environment variables
+	pemCert, pemKey, keyPair := createKeyPair(t)
+	assertTLSOptions(t, homeDir, app,
+		vespa.TargetLocal,
+		vespa.TLSOptions{
+			TrustAll:      true,
+			CACertificate: []byte("cacert"),
+			KeyPair:       []tls.Certificate{keyPair},
+		},
+		"VESPA_CLI_DATA_PLANE_TRUST_ALL=true",
+		"VESPA_CLI_DATA_PLANE_CA_CERT=cacert",
+		"VESPA_CLI_DATA_PLANE_CERT="+string(pemCert),
+		"VESPA_CLI_DATA_PLANE_KEY="+string(pemKey),
+	)
+
+	// Key pair is provided as file paths through environment variables
+	certFile := filepath.Join(homeDir, "cert")
+	keyFile := filepath.Join(homeDir, "key")
+	caCertFile := filepath.Join(homeDir, "cacert")
+	require.Nil(t, os.WriteFile(certFile, pemCert, 0600))
+	require.Nil(t, os.WriteFile(keyFile, pemKey, 0600))
+	require.Nil(t, os.WriteFile(caCertFile, []byte("cacert"), 0600))
+	assertTLSOptions(t, homeDir, app,
+		vespa.TargetLocal,
+		vespa.TLSOptions{
+			KeyPair:           []tls.Certificate{keyPair},
+			CACertificate:     []byte("cacert"),
+			CACertificateFile: caCertFile,
+			CertificateFile:   certFile,
+			PrivateKeyFile:    keyFile,
+		},
+		"VESPA_CLI_DATA_PLANE_CERT_FILE="+certFile,
+		"VESPA_CLI_DATA_PLANE_KEY_FILE="+keyFile,
+		"VESPA_CLI_DATA_PLANE_CA_CERT_FILE="+caCertFile,
+	)
+
+	// Key pair resides in default paths
+	defaultCertFile := filepath.Join(homeDir, app.String(), "data-plane-public-cert.pem")
+	defaultKeyFile := filepath.Join(homeDir, app.String(), "data-plane-private-key.pem")
+	require.Nil(t, os.WriteFile(defaultCertFile, pemCert, 0600))
+	require.Nil(t, os.WriteFile(defaultKeyFile, pemKey, 0600))
+	assertTLSOptions(t, homeDir, app,
+		vespa.TargetLocal,
+		vespa.TLSOptions{
+			KeyPair:         []tls.Certificate{keyPair},
+			CertificateFile: defaultCertFile,
+			PrivateKeyFile:  defaultKeyFile,
+		},
+	)
+}
+
+func assertTLSOptions(t *testing.T, homeDir string, app vespa.ApplicationID, target string, want vespa.TLSOptions, envVars ...string) {
+	t.Helper()
+	envVars = append(envVars, "VESPA_CLI_HOME="+homeDir)
+	cli, _, _ := newTestCLI(t, envVars...)
+	require.Nil(t, cli.Run("config", "set", "application", app.String()))
+	config, err := cli.config.readTLSOptions(app, vespa.TargetLocal)
+	require.Nil(t, err)
+	assert.Equal(t, want, config)
+}
+
+func createKeyPair(t *testing.T) ([]byte, []byte, tls.Certificate) {
+	privateKey, err := rsa.GenerateKey(rand.Reader, 2048)
+	if err != nil {
+		t.Fatal(err)
+	}
+	notBefore := time.Now()
+	notAfter := notBefore.Add(24 * time.Hour)
+	template := x509.Certificate{
+		SerialNumber: big.NewInt(1),
+		Subject:      pkix.Name{CommonName: "example.com"},
+		NotBefore:    notBefore,
+		NotAfter:     notAfter,
+	}
+	certificateDER, err := x509.CreateCertificate(rand.Reader, &template, &template, &privateKey.PublicKey, privateKey)
+	if err != nil {
+		t.Fatal(err)
+	}
+	privateKeyDER, err := x509.MarshalPKCS8PrivateKey(privateKey)
+	if err != nil {
+		t.Fatal(err)
+	}
+	pemCert := pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: certificateDER})
+	pemKey := pem.EncodeToMemory(&pem.Block{Type: "PRIVATE KEY", Bytes: privateKeyDER})
+	kp, err := tls.X509KeyPair(pemCert, pemKey)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return pemCert, pemKey, kp
 }

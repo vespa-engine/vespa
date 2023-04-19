@@ -11,12 +11,12 @@ namespace search::attribute {
 /**
  * Class for mapping from document id to an array of values as reader.
  */
-template <typename EntryT, typename RefT = vespalib::datastore::EntryRefT<19> >
+template <typename ElemT, typename RefT = vespalib::datastore::EntryRefT<19> >
 class MultiValueMappingReadView
 {
     using AtomicEntryRef = vespalib::datastore::AtomicEntryRef;
     using Indices = vespalib::ConstArrayRef<AtomicEntryRef>;
-    using ArrayStore = vespalib::datastore::ArrayStore<EntryT, RefT>;
+    using ArrayStore = vespalib::datastore::ArrayStore<ElemT, RefT>;
 
     Indices           _indices;
     const ArrayStore* _store;
@@ -31,7 +31,7 @@ public:
           _store(store)
     {
     }
-    vespalib::ConstArrayRef<EntryT> get(uint32_t doc_id) const { return _store->get(_indices[doc_id].load_acquire()); }
+    vespalib::ConstArrayRef<ElemT> get(uint32_t doc_id) const { return _store->get(_indices[doc_id].load_acquire()); }
     bool valid() const noexcept { return _store != nullptr; }
 };
 

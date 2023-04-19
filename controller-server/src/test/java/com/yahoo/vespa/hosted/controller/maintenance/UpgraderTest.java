@@ -5,7 +5,6 @@ import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.test.ManualClock;
-import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RevisionId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
 import com.yahoo.vespa.hosted.controller.application.Change;
@@ -27,7 +26,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.OptionalInt;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -856,10 +854,10 @@ public class UpgraderTest {
 
         // Create an application with pinned platform version.
         var context = tester.newDeploymentContext().submit().deploy();
-        tester.deploymentTrigger().forceChange(context.instanceId(), Change.empty().withPin());
+        tester.deploymentTrigger().forceChange(context.instanceId(), Change.empty().withPlatformPin());
 
         assertFalse(context.instance().change().hasTargets());
-        assertTrue(context.instance().change().isPinned());
+        assertTrue(context.instance().change().isPlatformPinned());
         assertEquals(3, context.instance().deployments().size());
 
         // Application does not upgrade.
@@ -867,21 +865,21 @@ public class UpgraderTest {
         tester.controllerTester().upgradeSystem(version1);
         tester.upgrader().maintain();
         assertFalse(context.instance().change().hasTargets());
-        assertTrue(context.instance().change().isPinned());
+        assertTrue(context.instance().change().isPlatformPinned());
 
         // New application package is deployed.
         context.submit().deploy();
         assertFalse(context.instance().change().hasTargets());
-        assertTrue(context.instance().change().isPinned());
+        assertTrue(context.instance().change().isPlatformPinned());
 
         // Application upgrades to new version when pin is removed.
         tester.deploymentTrigger().cancelChange(context.instanceId(), PIN);
         tester.upgrader().maintain();
         assertTrue(context.instance().change().hasTargets());
-        assertFalse(context.instance().change().isPinned());
+        assertFalse(context.instance().change().isPlatformPinned());
 
         // Application is pinned to new version, and upgrade is therefore not cancelled, even though confidence is broken.
-        tester.deploymentTrigger().forceChange(context.instanceId(), Change.empty().withPin());
+        tester.deploymentTrigger().forceChange(context.instanceId(), Change.empty().withPlatformPin());
         tester.upgrader().maintain();
         tester.triggerJobs();
         assertEquals(version1, context.instance().change().platform().get());
@@ -890,7 +888,7 @@ public class UpgraderTest {
         context.runJob(systemTest).runJob(stagingTest).runJob(productionUsCentral1)
                 .timeOutUpgrade(productionUsWest1);
         tester.deploymentTrigger().cancelChange(context.instanceId(), ALL);
-        tester.deploymentTrigger().forceChange(context.instanceId(), Change.of(version0).withPin());
+        tester.deploymentTrigger().forceChange(context.instanceId(), Change.of(version0).withPlatformPin());
         assertEquals(version0, context.instance().change().platform().get());
 
         // Application downgrades to pinned version.
@@ -913,7 +911,7 @@ public class UpgraderTest {
         // Keep app 1 on current version
         tester.controller().applications().lockApplicationIfPresent(app1.application().id(), app ->
                 tester.controller().applications().store(app.with(app1.instance().name(),
-                        instance -> instance.withChange(instance.change().withPin()))));
+                        instance -> instance.withChange(instance.change().withPlatformPin()))));
 
         // New version is released
         Version version1 = Version.fromString("6.2");
@@ -935,7 +933,7 @@ public class UpgraderTest {
         // App 1 is unpinned and upgrades to latest 6
         tester.controller().applications().lockApplicationIfPresent(app1.application().id(), app ->
                 tester.controller().applications().store(app.with(app1.instance().name(),
-                        instance -> instance.withChange(instance.change().withoutPin()))));
+                        instance -> instance.withChange(instance.change().withoutPlatformPin()))));
         tester.upgrader().maintain();
         assertEquals(version1,
                      app1.instance().change().platform().orElseThrow(),

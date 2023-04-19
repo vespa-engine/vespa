@@ -271,7 +271,7 @@ public class MultiRangeItem<Type extends Number> extends MultiTermItem {
         if (endInclusive)   metadata |= 0b00000100;
 
         encoder = type.encoderFor(sortedRanges());
-        metadata |= encoder.id << 3;
+        metadata |= (byte)(encoder.id << 3);
 
         buffer.put(metadata);
         putString(startIndex, buffer);

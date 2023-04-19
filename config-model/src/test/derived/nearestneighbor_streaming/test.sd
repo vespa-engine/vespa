@@ -1,0 +1,24 @@
+# Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+schema test {
+  document test {
+    field vec_a type tensor<float>(x[16]) {
+      indexing: attribute
+    }
+    field vec_b type tensor<float>(x[16]) {
+      indexing: attribute
+      attribute {
+        distance-metric: angular
+      }
+    }
+    field vec_c type tensor<float>(m{},x[16]) {
+      indexing: attribute
+      attribute {
+        distance-metric: innerproduct
+      }
+    }
+    # This tensor field can not be used with nearest neighbor search.
+    field vec_d type tensor<float>(x{}) {
+      indexing: attribute
+    }
+  }
+}

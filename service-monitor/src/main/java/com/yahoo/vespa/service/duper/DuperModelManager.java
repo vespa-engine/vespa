@@ -1,14 +1,14 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.service.duper;
 
-import com.yahoo.component.annotation.Inject;
+import ai.vespa.http.DomainName;
 import com.yahoo.cloud.config.ConfigserverConfig;
+import com.yahoo.component.annotation.Inject;
 import com.yahoo.config.model.api.ApplicationInfo;
 import com.yahoo.config.model.api.SuperModel;
 import com.yahoo.config.model.api.SuperModelListener;
 import com.yahoo.config.model.api.SuperModelProvider;
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.HostName;
 import com.yahoo.vespa.service.monitor.CriticalRegion;
 import com.yahoo.vespa.service.monitor.DuperModelInfraApi;
 import com.yahoo.vespa.service.monitor.DuperModelListener;
@@ -133,7 +133,7 @@ public class DuperModelManager implements DuperModelProvider, DuperModelInfraApi
     }
 
     @Override
-    public void infraApplicationActivated(ApplicationId applicationId, List<HostName> hostnames) {
+    public void infraApplicationActivated(ApplicationId applicationId, List<DomainName> hostnames) {
         InfraApplication application = supportedInfraApplications.get(applicationId);
         if (application == null) {
             throw new IllegalArgumentException("There is no infrastructure application with ID '" + applicationId + "'");
@@ -172,7 +172,7 @@ public class DuperModelManager implements DuperModelProvider, DuperModelInfraApi
         return lockedSupplier(() -> duperModel.getApplicationInfo(applicationId));
     }
 
-    public Optional<ApplicationInfo> getApplicationInfo(HostName hostname) {
+    public Optional<ApplicationInfo> getApplicationInfo(DomainName hostname) {
         return lockedSupplier(() -> duperModel.getApplicationInfo(hostname));
     }
 

@@ -20,7 +20,7 @@ import java.util.List;
  * Class converting a collection of schemas from the intermediate format.
  *
  * @author arnej27959
- **/
+ */
 public class ConvertSchemaCollection {
 
     private final IntermediateCollection input;

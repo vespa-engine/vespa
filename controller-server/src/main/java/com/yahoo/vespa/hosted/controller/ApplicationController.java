@@ -30,6 +30,7 @@ import com.yahoo.vespa.hosted.controller.api.application.v4.model.DeploymentData
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.InstanceId;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.BillingController;
+import com.yahoo.vespa.hosted.controller.api.integration.billing.Plan;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.Quota;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateMetadata;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ApplicationReindexing;
@@ -47,6 +48,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.deployment.RevisionId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterId;
 import com.yahoo.vespa.hosted.controller.api.integration.noderepository.RestartFilter;
 import com.yahoo.vespa.hosted.controller.api.integration.secrets.TenantSecretStore;
+import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
 import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics.Warning;
@@ -60,6 +62,7 @@ import com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackageValid
 import com.yahoo.vespa.hosted.controller.athenz.impl.AthenzFacade;
 import com.yahoo.vespa.hosted.controller.certificate.EndpointCertificates;
 import com.yahoo.vespa.hosted.controller.concurrent.Once;
+import com.yahoo.vespa.hosted.controller.deployment.DeploymentStatus;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTrigger;
 import com.yahoo.vespa.hosted.controller.deployment.JobStatus;
 import com.yahoo.vespa.hosted.controller.deployment.Run;
@@ -76,7 +79,6 @@ import com.yahoo.vespa.hosted.controller.versions.VersionStatus;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion.Confidence;
 import com.yahoo.yolean.Exceptions;
-
 import java.io.ByteArrayInputStream;
 import java.security.Principal;
 import java.security.cert.X509Certificate;
@@ -586,7 +588,16 @@ public class ApplicationController {
         }
 
         // Validate new deployment spec thoroughly before storing it.
-        controller.jobController().deploymentStatus(application.get());
+        DeploymentStatus status = controller.jobController().deploymentStatus(application.get());
+        Change dummyChange = Change.of(RevisionId.forProduction(Long.MAX_VALUE)); // Should always run everywhere.
+        for (var jobs : status.jobsToRun(applicationPackage.deploymentSpec().instanceNames().stream()
+                                                           .collect(toMap(name -> name, __ -> dummyChange)))
+                              .entrySet()) {
+            for (var job : jobs.getValue()) {
+                decideCloudAccountOf(new DeploymentId(jobs.getKey().application(), job.type().zone()),
+                                     applicationPackage.deploymentSpec());
+            }
+        }
 
         for (Notification notification : controller.notificationsDb().listNotifications(NotificationSource.from(application.get().id()), true)) {
             if (   notification.source().instance().isPresent()
@@ -696,7 +707,7 @@ public class ApplicationController {
             throw new IllegalArgumentException("Requested cloud account '" + requestedAccount.get().value() +
                                                "' is not valid for tenant '" + tenant + "'");
         }
-        if (!controller.zoneRegistry().hasZone(zoneId, requestedAccount.get())) {
+        if ( ! controller.zoneRegistry().hasZone(zoneId, requestedAccount.get())) {
             throw new IllegalArgumentException("Zone " + zoneId + " is not configured in requested cloud account '" +
                                                requestedAccount.get().value() + "'");
         }
@@ -1047,6 +1058,16 @@ public class ApplicationController {
                   //  category and typed log level
                   .collect(groupingBy(__ -> Warning.all,
                                       collectingAndThen(counting(), Long::intValue)));
+    }
+
+    public void verifyPlan(TenantName tenantName) {
+        var planId = controller.serviceRegistry().billingController().getPlan(tenantName);
+        Optional<Plan> plan = controller.serviceRegistry().planRegistry().plan(planId);
+        if (plan.isEmpty())
+            throw new IllegalArgumentException("Tenant '" + tenantName.value() + "' has no plan, not allowed to deploy. See https://cloud.vespa.ai/support");
+        if (plan.get().quota().calculate().equals(Quota.zero()))
+            throw new IllegalArgumentException("Tenant '" + tenantName.value() + "' has a plan '" +
+                                                       plan.get().displayName() + "' with zero quota, not allowed to deploy. See https://cloud.vespa.ai/support");
     }
 
 }

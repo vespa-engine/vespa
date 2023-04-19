@@ -47,7 +47,7 @@ func TestQuoteFunc(t *testing.T) {
 		res := quoteArgForUrl(s)
 		if i < 32 || i > 127 {
 			assert.Equal(t, "a+z", res)
-		} else {
+		} else if testing.Verbose() { // go test -v
 			fmt.Printf("res %3d => '%s'\n", i, res)
 		}
 	}

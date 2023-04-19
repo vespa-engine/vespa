@@ -353,6 +353,8 @@ AttributeVector::load(vespalib::Executor * executor) {
     bool loaded = onLoad(executor);
     if (loaded) {
         commit();
+        incGeneration();
+        updateStat(true);
     }
     _loaded = loaded;
     return _loaded;
@@ -440,21 +442,18 @@ AttributeVector::addReservedDoc()
     addDoc(docId);      // Reserved
     assert(docId == 0u);
     assert(docId < getNumDocs());
+    set_reserved_doc_values();
+}
+
+void
+AttributeVector::set_reserved_doc_values()
+{
+    uint32_t docId = 0;
+    if (docId >= getNumDocs()) {
+        return;
+    }
     clearDoc(docId);
     commit();
-    FloatingPointAttribute * vec = dynamic_cast<FloatingPointAttribute *>(this);
-    if (vec) {
-        if (hasMultiValue()) {
-            bool appendedUndefined = vec->append(0, attribute::getUndefined<double>(), 1);
-            assert(appendedUndefined);
-            (void) appendedUndefined;
-        } else {
-            bool updatedUndefined = vec->update(0, attribute::getUndefined<double>());
-            assert(updatedUndefined);
-            (void) updatedUndefined;
-        }
-        commit();
-    }
 }
 
 attribute::IPostingListAttributeBase *AttributeVector::getIPostingListAttributeBase() { return nullptr; }

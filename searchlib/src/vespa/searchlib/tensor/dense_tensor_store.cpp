@@ -62,10 +62,10 @@ DenseTensorStore::BufferType::BufferType(const TensorSizeCalc &tensorSizeCalc, s
 DenseTensorStore::BufferType::~BufferType() = default;
 
 void
-DenseTensorStore::BufferType::cleanHold(void *buffer, size_t offset,
-                                        ElemCount numElems, CleanContext)
+DenseTensorStore::BufferType::clean_hold(void *buffer, size_t offset, EntryCount num_entries, CleanContext)
 {
-    memset(static_cast<char *>(buffer) + offset, 0, numElems);
+    auto num_elems = num_entries * getArraySize();
+    memset(static_cast<char *>(buffer) + offset * getArraySize(), 0, num_elems);
 }
 
 const vespalib::alloc::MemoryAllocator*
@@ -107,7 +107,7 @@ DenseTensorStore::allocRawBuffer()
 {
     size_t bufSize = getBufSize();
     size_t alignedBufSize = _tensorSizeCalc.alignedSize();
-    auto result = _concreteStore.freeListRawAllocator<char>(0u).alloc(alignedBufSize);
+    auto result = _concreteStore.freeListRawAllocator<char>(0u).alloc(1);
     clearPadAreaAfterBuffer(result.data, bufSize, alignedBufSize);
     return result;
 }
@@ -118,7 +118,7 @@ DenseTensorStore::holdTensor(EntryRef ref)
     if (!ref.valid()) {
         return;
     }
-    _concreteStore.holdElem(ref, _tensorSizeCalc.alignedSize());
+    _concreteStore.hold_entry(ref);
 }
 
 TensorStore::EntryRef

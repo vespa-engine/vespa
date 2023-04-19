@@ -2,7 +2,6 @@
 package cmd
 
 import (
-	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -88,18 +87,9 @@ func (c *execSubprocess) Run(name string, args ...string) ([]byte, error) {
 	return exec.Command(name, args...).Output()
 }
 
-type ztsClient interface {
-	AccessToken(domain string, certficiate tls.Certificate) (string, error)
-}
+type auth0Factory func(httpClient util.HTTPClient, options auth0.Options) (vespa.Authenticator, error)
 
-type auth0Client interface {
-	AccessToken() (string, error)
-	HasCredentials() bool
-}
-
-type auth0Factory func(httpClient util.HTTPClient, options auth0.Options) (auth0Client, error)
-
-type ztsFactory func(httpClient util.HTTPClient, url string) (ztsClient, error)
+type ztsFactory func(httpClient util.HTTPClient, domain, url string) (vespa.Authenticator, error)
 
 // New creates the Vespa CLI, writing output to stdout and stderr, and reading environment variables from environment.
 func New(stdout, stderr io.Writer, environment []string) (*CLI, error) {
@@ -143,11 +133,11 @@ For detailed description of flags and configuration, see 'vespa help config'.
 		httpClient: util.CreateClient(time.Second * 10),
 		exec:       &execSubprocess{},
 		now:        time.Now,
-		auth0Factory: func(httpClient util.HTTPClient, options auth0.Options) (auth0Client, error) {
+		auth0Factory: func(httpClient util.HTTPClient, options auth0.Options) (vespa.Authenticator, error) {
 			return auth0.NewClient(httpClient, options)
 		},
-		ztsFactory: func(httpClient util.HTTPClient, url string) (ztsClient, error) {
-			return zts.NewClient(httpClient, url)
+		ztsFactory: func(httpClient util.HTTPClient, domain, url string) (vespa.Authenticator, error) {
+			return zts.NewClient(httpClient, domain, url)
 		},
 	}
 	cli.isTerminal = func() bool { return isTerminal(cli.Stdout) && isTerminal(cli.Stderr) }
@@ -321,16 +311,34 @@ func (c *CLI) createTarget(opts targetOptions) (vespa.Target, error) {
 	if err != nil {
 		return nil, err
 	}
+	customURL := ""
 	if strings.HasPrefix(targetType, "http") {
-		return vespa.CustomTarget(c.httpClient, targetType), nil
+		customURL = targetType
+		targetType = vespa.TargetCustom
+	}
+	switch targetType {
+	case vespa.TargetLocal, vespa.TargetCustom:
+		return c.createCustomTarget(targetType, customURL)
+	case vespa.TargetCloud, vespa.TargetHosted:
+		return c.createCloudTarget(targetType, opts)
+	default:
+		return nil, errHint(fmt.Errorf("invalid target: %s", targetType), "Valid targets are 'local', 'cloud', 'hosted' or an URL")
+	}
+}
+
+func (c *CLI) createCustomTarget(targetType, customURL string) (vespa.Target, error) {
+	tlsOptions, err := c.config.readTLSOptions(vespa.DefaultApplication, targetType)
+	if err != nil {
+		return nil, err
 	}
 	switch targetType {
 	case vespa.TargetLocal:
-		return vespa.LocalTarget(c.httpClient), nil
-	case vespa.TargetCloud, vespa.TargetHosted:
-		return c.createCloudTarget(targetType, opts)
+		return vespa.LocalTarget(c.httpClient, tlsOptions), nil
+	case vespa.TargetCustom:
+		return vespa.CustomTarget(c.httpClient, customURL, tlsOptions), nil
+	default:
+		return nil, fmt.Errorf("invalid custom target: %s", targetType)
 	}
-	return nil, errHint(fmt.Errorf("invalid target: %s", targetType), "Valid targets are 'local', 'cloud', 'hosted' or an URL")
 }
 
 func (c *CLI) createCloudTarget(targetType string, opts targetOptions) (vespa.Target, error) {
@@ -347,48 +355,53 @@ func (c *CLI) createCloudTarget(targetType string, opts targetOptions) (vespa.Ta
 		return nil, err
 	}
 	var (
-		apiKey               []byte
-		authConfigPath       string
+		apiAuth              vespa.Authenticator
+		deploymentAuth       vespa.Authenticator
 		apiTLSOptions        vespa.TLSOptions
 		deploymentTLSOptions vespa.TLSOptions
 	)
 	switch targetType {
 	case vespa.TargetCloud:
-		apiKey, err = c.config.readAPIKey(c, system, deployment.Application.Tenant)
+		apiKey, err := c.config.readAPIKey(c, system, deployment.Application.Tenant)
 		if err != nil {
 			return nil, err
 		}
-		authConfigPath = c.config.authConfigPath()
+		if apiKey == nil {
+			authConfigPath := c.config.authConfigPath()
+			auth0, err := c.auth0Factory(c.httpClient, auth0.Options{ConfigPath: authConfigPath, SystemName: system.Name, SystemURL: system.URL})
+			if err != nil {
+				return nil, err
+			}
+			apiAuth = auth0
+		} else {
+			apiAuth = vespa.NewRequestSigner(deployment.Application.SerializedForm(), apiKey)
+		}
 		deploymentTLSOptions = vespa.TLSOptions{}
 		if !opts.noCertificate {
-			kp, err := c.config.x509KeyPair(deployment.Application, targetType)
+			kp, err := c.config.readTLSOptions(deployment.Application, targetType)
 			if err != nil {
-				return nil, errHint(err, "Deployment to cloud requires a certificate. Try 'vespa auth cert'")
+				return nil, errHint(err, "Deployment to cloud requires a certificate", "Try 'vespa auth cert' to create a self-signed certificate")
 			}
-			deploymentTLSOptions = vespa.TLSOptions{
-				KeyPair:         &kp.KeyPair,
-				CertificateFile: kp.CertificateFile,
-				PrivateKeyFile:  kp.PrivateKeyFile,
-			}
+			deploymentTLSOptions = kp
 		}
 	case vespa.TargetHosted:
-		kp, err := c.config.x509KeyPair(deployment.Application, targetType)
+		kp, err := c.config.readTLSOptions(deployment.Application, targetType)
 		if err != nil {
 			return nil, errHint(err, "Deployment to hosted requires an Athenz certificate", "Try renewing certificate with 'athenz-user-cert'")
 		}
-		apiTLSOptions = vespa.TLSOptions{
-			KeyPair:         &kp.KeyPair,
-			CertificateFile: kp.CertificateFile,
-			PrivateKeyFile:  kp.PrivateKeyFile,
+		zts, err := c.ztsFactory(c.httpClient, system.AthenzDomain, zts.DefaultURL)
+		if err != nil {
+			return nil, err
 		}
-		deploymentTLSOptions = apiTLSOptions
+		deploymentAuth = zts
+		apiTLSOptions = kp
+		deploymentTLSOptions = kp
 	default:
 		return nil, fmt.Errorf("invalid cloud target: %s", targetType)
 	}
 	apiOptions := vespa.APIOptions{
 		System:     system,
 		TLSOptions: apiTLSOptions,
-		APIKey:     apiKey,
 	}
 	deploymentOptions := vespa.CloudDeploymentOptions{
 		Deployment:  deployment,
@@ -403,15 +416,7 @@ func (c *CLI) createCloudTarget(targetType string, opts targetOptions) (vespa.Ta
 		Writer: c.Stdout,
 		Level:  vespa.LogLevel(logLevel),
 	}
-	auth0, err := c.auth0Factory(c.httpClient, auth0.Options{ConfigPath: authConfigPath, SystemName: apiOptions.System.Name, SystemURL: apiOptions.System.URL})
-	if err != nil {
-		return nil, err
-	}
-	zts, err := c.ztsFactory(c.httpClient, zts.DefaultURL)
-	if err != nil {
-		return nil, err
-	}
-	return vespa.CloudTarget(c.httpClient, zts, auth0, apiOptions, deploymentOptions, logOptions)
+	return vespa.CloudTarget(c.httpClient, apiAuth, deploymentAuth, apiOptions, deploymentOptions, logOptions)
 }
 
 // system returns the appropiate system for the target configured in this CLI.
@@ -460,7 +465,6 @@ func (c *CLI) createDeploymentOptions(pkg vespa.ApplicationPackage, target vespa
 		ApplicationPackage: pkg,
 		Target:             target,
 		Timeout:            timeout,
-		HTTPClient:         c.httpClient,
 	}, nil
 }
 

@@ -5,6 +5,7 @@ import com.yahoo.vespa.hosted.node.admin.configserver.cores.CoreDumpMetadata;
 import com.yahoo.vespa.hosted.node.admin.container.ContainerOperations;
 import com.yahoo.vespa.hosted.node.admin.nodeadmin.ConvergenceException;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContext;
+import com.yahoo.vespa.hosted.node.admin.task.util.file.UnixPath;
 import com.yahoo.vespa.hosted.node.admin.task.util.fs.ContainerPath;
 import com.yahoo.vespa.hosted.node.admin.task.util.process.CommandResult;
 
@@ -96,17 +97,19 @@ public class CoreCollector {
     }
 
     CoreDumpMetadata collect(NodeAgentContext context, ContainerPath coredumpPath) {
-        var metadata = new CoreDumpMetadata();
+        var metadata = new CoreDumpMetadata()
+                .setCreated(new UnixPath(coredumpPath).getLastModifiedTime());
 
         if (JAVA_HEAP_DUMP_PATTERN.matcher(coredumpPath.getFileName().toString()).find()) {
-            metadata.setBinPath("java")
+            metadata.setType(CoreDumpMetadata.Type.JVM_HEAP)
+                    .setBinPath("java")
                     .setBacktrace(List.of("Heap dump, no backtrace available"));
             return metadata;
         }
 
         try {
             String binPath = readBinPath(context, coredumpPath);
-            metadata.setBinPath(binPath);
+            metadata.setType(CoreDumpMetadata.Type.CORE_DUMP).setBinPath(binPath);
 
             if (Path.of(binPath).getFileName().toString().equals("java")) {
                 metadata.setBacktraceAllThreads(readJstack(context, coredumpPath, binPath));

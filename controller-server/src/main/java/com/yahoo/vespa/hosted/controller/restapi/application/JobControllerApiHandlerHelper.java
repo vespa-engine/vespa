@@ -15,7 +15,6 @@ import com.yahoo.text.Text;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.NotExistsException;
-import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.LogEntry;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobId;
@@ -26,6 +25,8 @@ import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.deployment.ConvergenceSummary;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentStatus;
+import com.yahoo.vespa.hosted.controller.deployment.DeploymentStatus.DelayCause;
+import com.yahoo.vespa.hosted.controller.deployment.DeploymentStatus.Readiness;
 import com.yahoo.vespa.hosted.controller.deployment.JobController;
 import com.yahoo.vespa.hosted.controller.deployment.JobStatus;
 import com.yahoo.vespa.hosted.controller.deployment.Run;
@@ -269,17 +270,39 @@ class JobControllerApiHandlerHelper {
             stepObject.setString("instance", stepStatus.instance().value());
 
             // TODO: recursively search dependents for what is the relevant partial change when this is a delay step ...
-            Optional<Instant> readyAt = stepStatus.job().map(jobsToRun::get).map(jobs -> jobs.get(0).readyAt())
-                                                  .orElse(stepStatus.readyAt(change));
-            readyAt.ifPresent(ready -> stepObject.setLong("readyAt", ready.toEpochMilli()));
-            readyAt.filter(controller.clock().instant()::isBefore)
-                   .ifPresent(until -> stepObject.setLong("delayedUntil", until.toEpochMilli()));
-            stepStatus.pausedUntil().ifPresent(until -> stepObject.setLong("pausedUntil", until.toEpochMilli()));
-            stepStatus.coolingDownUntil(change, Optional.empty()).ifPresent(until -> stepObject.setLong("coolingDownUntil", until.toEpochMilli()));
-            stepStatus.blockedUntil(Change.of(controller.systemVersion(versionStatus))) // Dummy version — just anything with a platform.
-                      .ifPresent(until -> stepObject.setLong("platformBlockedUntil", until.toEpochMilli()));
-            stepStatus.blockedUntil(Change.of(RevisionId.forProduction(1))) // Dummy version — just anything with an application.
-                      .ifPresent(until -> stepObject.setLong("applicationBlockedUntil", until.toEpochMilli()));
+            Readiness readiness = stepStatus.job().map(jobsToRun::get).map(job -> job.get(0).readiness())
+                                            .orElse(stepStatus.readiness(change));
+            if (readiness.ok()) {
+                stepObject.setLong("readyAt", readiness.at().toEpochMilli());
+                if ( ! readiness.okAt(controller.clock().instant())) {
+                    Instant until = readiness.at();
+                    stepObject.setLong("delayedUntil", readiness.at().toEpochMilli());
+                    switch (readiness.cause()) {
+                        case paused -> stepObject.setLong("pausedUntil", until.toEpochMilli());
+                        case coolingDown -> stepObject.setLong("coolingDownUntil", until.toEpochMilli());
+                        case changeBlocked -> {
+                            Readiness platformReadiness = stepStatus.readiness(Change.of(controller.systemVersion(versionStatus))); // Dummy version — just anything with a platform.
+                            if (platformReadiness.cause() == DelayCause.changeBlocked)
+                                stepObject.setLong("platformBlockedUntil", platformReadiness.at().toEpochMilli());
+                            Readiness applicationReadiness = stepStatus.readiness(Change.of(RevisionId.forProduction(1))); // Dummy version — just anything with an application.
+                            if (applicationReadiness.cause() == DelayCause.changeBlocked)
+                                stepObject.setLong("applicationBlockedUntil", applicationReadiness.at().toEpochMilli());
+                        }
+                    }
+                }
+            }
+            stepObject.setString("delayCause",
+                                 switch (readiness.cause()) {
+                                     case none -> null;
+                                     case invalidPackage -> "invalidPackage";
+                                     case paused -> "paused";
+                                     case coolingDown -> "coolingDown";
+                                     case changeBlocked -> "changeBlocked";
+                                     case blocked -> "blocked";
+                                     case running -> "running";
+                                     case notReady -> "notReady";
+                                     case unverified -> "unverified";
+                                 });
 
             if (stepStatus.type() == DeploymentStatus.StepType.delay)
                 stepStatus.completedAt(change).ifPresent(completed -> stepObject.setLong("completedAt", completed.toEpochMilli()));
@@ -289,7 +312,9 @@ class JobControllerApiHandlerHelper {
                 if ( ! change.isEmpty()) {
                     change.platform().ifPresent(version -> deployingObject.setString("platform", version.toFullString()));
                     change.revision().ifPresent(revision -> toSlime(deployingObject.setObject("application"), application.revisions().get(revision)));
-                    if (change.isPinned()) deployingObject.setBool("pinned", true);
+                    if (change.isPlatformPinned()) deployingObject.setBool("pinned", true);
+                    if (change.isPlatformPinned()) deployingObject.setBool("platformPinned", true);
+                    if (change.isRevisionPinned()) deployingObject.setBool("revisionPinned", true);
                 }
 
                 Cursor latestVersionsObject = stepObject.setObject("latestVersions");

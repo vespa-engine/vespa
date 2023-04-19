@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.service.model;
 
+import ai.vespa.http.DomainName;
 import com.yahoo.config.model.api.ApplicationInfo;
 import com.yahoo.config.model.api.HostInfo;
 import com.yahoo.config.model.api.Model;
@@ -100,7 +101,7 @@ public class ServiceHostListenerAdapterTest {
     }
 
     private Optional<ApplicationInfo> getDuperModelApplicationInfo(String hostname) {
-        return duperModel.getApplicationInfo(com.yahoo.config.provision.HostName.of(hostname));
+        return duperModel.getApplicationInfo(DomainName.of(hostname));
     }
 
     private void removeAndVerify(ApplicationId id, boolean listenerInvoked) {

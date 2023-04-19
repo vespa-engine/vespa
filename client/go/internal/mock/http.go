@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"strconv"
 	"time"
+
+	"github.com/vespa-engine/vespa/client/go/internal/util"
 )
 
 type HTTPClient struct {
@@ -58,3 +60,5 @@ func (c *HTTPClient) Do(request *http.Request, timeout time.Duration) (*http.Res
 		},
 		nil
 }
+
+func (c *HTTPClient) Clone() util.HTTPClient { return c }

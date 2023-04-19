@@ -6,6 +6,7 @@ import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
+import com.yahoo.slime.SlimeUtils;
 import com.yahoo.vespa.applicationmodel.ServiceInstance;
 import com.yahoo.vespa.applicationmodel.ServiceStatus;
 import com.yahoo.vespa.hosted.provision.Node;
@@ -625,6 +626,49 @@ public class NodeFailerTest {
         assertFalse(badNode(1, 0, 1, 2));
         assertFalse(badNode(1, 3, 1, 0));
         assertFalse(badNode(1, 3, 1, 2));
+    }
+
+    @Test
+    public void nodes_undergoing_cmr_are_not_failed() {
+        var tester = NodeFailTester.withTwoApplications(6);
+        var clock = tester.clock;
+        var slime = SlimeUtils.jsonToSlime(
+                String.format("""
+                        {
+                            "upcoming":[{
+                                "id": "id-42",
+                                "status": "some-status",
+                                "plannedStartTime": %d,
+                                "plannedEndTime": %d
+                            }]
+                        }
+                """, clock.instant().getEpochSecond(), clock.instant().plus(Duration.ofMinutes(90)).getEpochSecond())
+        );
+        var cmrReport = Report.fromSlime("vcmr", slime.get());
+        var downHost = tester.nodeRepository.nodes().list(Node.State.active).owner(NodeFailTester.app1).asList().get(1).hostname();
+
+        var node = tester.nodeRepository.nodes().node(downHost).get();
+        tester.nodeRepository.nodes().write(node.with(node.reports().withReport(cmrReport)), () -> {});
+
+        tester.serviceMonitor.setHostDown(downHost);
+        tester.runMaintainers();
+        node = tester.nodeRepository.nodes().node(downHost).get();
+        assertTrue(node.isDown());
+        assertEquals(Node.State.active, node.state());
+
+        // CMR still ongoing, don't fail yet
+        clock.advance(Duration.ofHours(1));
+        tester.runMaintainers();
+        node = tester.nodeRepository.nodes().node(downHost).get();
+        assertTrue(node.isDown());
+        assertEquals(Node.State.active, node.state());
+
+        // No ongoing CMR anymore, host should be failed
+        clock.advance(Duration.ofHours(1));
+        tester.runMaintainers();
+        node = tester.nodeRepository.nodes().node(downHost).get();
+        assertTrue(node.isDown());
+        assertEquals(Node.State.failed, node.state());
     }
 
     private void addServiceInstances(List<ServiceInstance> list, ServiceStatus status, int num) {

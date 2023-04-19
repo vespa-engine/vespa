@@ -1,7 +1,10 @@
 package document
 
 import (
+	"container/list"
 	"fmt"
+	"io"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -16,79 +19,109 @@ type Dispatcher struct {
 	circuitBreaker CircuitBreaker
 	stats          Stats
 
-	closed        bool
-	ready         chan Id
-	results       chan Result
+	started bool
+	ready   chan Id
+	results chan Result
+	msgs    chan string
+
 	inflight      map[string]*documentGroup
 	inflightCount int64
+	output        io.Writer
+	verbose       bool
 
 	mu       sync.RWMutex
 	wg       sync.WaitGroup
 	resultWg sync.WaitGroup
 }
 
-// documentGroup holds document operations which share their ID, and must be dispatched in order.
-type documentGroup struct {
-	id         Id
-	operations []documentOp
-	mu         sync.Mutex
-}
-
+// documentOp represents a document operation and the number of times it has been attempted.
 type documentOp struct {
 	document Document
 	attempts int
 }
 
-func (g *documentGroup) append(op documentOp) {
-	g.mu.Lock()
-	defer g.mu.Unlock()
-	g.operations = append(g.operations, op)
+// documentGroup holds document operations which share an ID, and must be dispatched in order.
+type documentGroup struct {
+	ops *list.List
+	mu  sync.Mutex
 }
 
-func NewDispatcher(feeder Feeder, throttler Throttler, breaker CircuitBreaker) *Dispatcher {
+func (g *documentGroup) add(op documentOp, first bool) {
+	g.mu.Lock()
+	defer g.mu.Unlock()
+	if g.ops == nil {
+		g.ops = list.New()
+	}
+	if first {
+		g.ops.PushFront(op)
+	} else {
+		g.ops.PushBack(op)
+	}
+}
+
+func NewDispatcher(feeder Feeder, throttler Throttler, breaker CircuitBreaker, output io.Writer, verbose bool) *Dispatcher {
 	d := &Dispatcher{
 		feeder:         feeder,
 		throttler:      throttler,
 		circuitBreaker: breaker,
 		inflight:       make(map[string]*documentGroup),
+		output:         output,
+		verbose:        verbose,
 	}
 	d.start()
 	return d
 }
 
-func (d *Dispatcher) dispatchAll(g *documentGroup) {
-	g.mu.Lock()
-	defer g.mu.Unlock()
-	for i := 0; i < len(g.operations); i++ {
-		op := g.operations[i]
-		ok := false
-		for !ok {
-			op.attempts++
-			result := d.feeder.Send(op.document)
-			d.results <- result
-			ok = result.Status.Success()
-			if !d.shouldRetry(op, result) {
-				break
-			}
-		}
-		d.releaseSlot()
+func (d *Dispatcher) sendDocumentIn(group *documentGroup) {
+	group.mu.Lock()
+	first := group.ops.Front()
+	if first == nil {
+		panic("sending from empty document group, this should not happen")
 	}
-	g.operations = nil
+	op := group.ops.Remove(first).(documentOp)
+	op.attempts++
+	result := d.feeder.Send(op.document)
+	d.results <- result
+	d.releaseSlot()
+	group.mu.Unlock()
+	if d.shouldRetry(op, result) {
+		d.enqueue(op)
+	}
 }
 
 func (d *Dispatcher) shouldRetry(op documentOp, result Result) bool {
 	if result.HTTPStatus/100 == 2 || result.HTTPStatus == 404 || result.HTTPStatus == 412 {
+		if d.verbose {
+			d.msgs <- fmt.Sprintf("feed: successfully fed %s with status %d", op.document.Id, result.HTTPStatus)
+		}
 		d.throttler.Success()
 		d.circuitBreaker.Success()
 		return false
 	}
 	if result.HTTPStatus == 429 || result.HTTPStatus == 503 {
+		d.msgs <- fmt.Sprintf("feed: %s was throttled with status %d: retrying\n", op.document, result.HTTPStatus)
 		d.throttler.Throttled(atomic.LoadInt64(&d.inflightCount))
 		return true
 	}
-	if result.HTTPStatus == 500 || result.HTTPStatus == 502 || result.HTTPStatus == 504 {
+	if result.Err != nil || result.HTTPStatus == 500 || result.HTTPStatus == 502 || result.HTTPStatus == 504 {
+		retry := op.attempts <= maxAttempts
+		var msg strings.Builder
+		msg.WriteString("feed: ")
+		msg.WriteString(op.document.String())
+		if result.Err != nil {
+			msg.WriteString("error ")
+			msg.WriteString(result.Err.Error())
+		} else {
+			msg.WriteString(fmt.Sprintf("status %d", result.HTTPStatus))
+		}
+		if retry {
+			msg.WriteString(": retrying")
+		} else {
+			msg.WriteString(fmt.Sprintf(": giving up after %d attempts", maxAttempts))
+		}
+		d.msgs <- msg.String()
 		d.circuitBreaker.Error(fmt.Errorf("request failed with status %d", result.HTTPStatus))
-		if op.attempts <= maxAttempts {
+		if retry {
 			return true
 		}
 	}
@@ -98,18 +131,26 @@ func (d *Dispatcher) shouldRetry(op documentOp, result Result) bool {
 func (d *Dispatcher) start() {
 	d.mu.Lock()
 	defer d.mu.Unlock()
+	if d.started {
+		return
+	}
 	d.ready = make(chan Id, 4096)
 	d.results = make(chan Result, 4096)
-	d.closed = false
+	d.msgs = make(chan string, 4096)
+	d.started = true
 	d.wg.Add(1)
 	go func() {
 		defer d.wg.Done()
 		d.readDocuments()
 	}()
-	d.resultWg.Add(1)
+	d.resultWg.Add(2)
 	go func() {
 		defer d.resultWg.Done()
 		d.readResults()
+	}()
+	go func() {
+		defer d.resultWg.Done()
+		d.readMessages()
 	}()
 }
 
@@ -118,13 +159,11 @@ func (d *Dispatcher) readDocuments() {
 		d.mu.RLock()
 		group := d.inflight[id.String()]
 		d.mu.RUnlock()
-		if group != nil {
-			d.wg.Add(1)
-			go func() {
-				defer d.wg.Done()
-				d.dispatchAll(group)
-			}()
-		}
+		d.wg.Add(1)
+		go func() {
+			defer d.wg.Done()
+			d.sendDocumentIn(group)
+		}()
 	}
 }
 
@@ -134,27 +173,28 @@ func (d *Dispatcher) readResults() {
 	}
 }
 
-func (d *Dispatcher) Enqueue(doc Document) error {
-	d.mu.Lock()
-	if d.closed {
-		return fmt.Errorf("dispatcher is closed")
+func (d *Dispatcher) readMessages() {
+	for msg := range d.msgs {
+		fmt.Fprintln(d.output, msg)
 	}
-	group, ok := d.inflight[doc.Id.String()]
-	if ok {
-		group.append(documentOp{document: doc})
-	} else {
-		group = &documentGroup{
-			id:         doc.Id,
-			operations: []documentOp{{document: doc}},
-		}
-		d.inflight[doc.Id.String()] = group
-	}
-	d.mu.Unlock()
-	d.enqueueWithSlot(doc.Id)
-	return nil
 }
 
-func (d *Dispatcher) Stats() Stats { return d.stats }
+func (d *Dispatcher) enqueue(op documentOp) error {
+	d.mu.Lock()
+	if !d.started {
+		return fmt.Errorf("dispatcher is closed")
+	}
+	key := op.document.Id.String()
+	group, ok := d.inflight[key]
+	if !ok {
+		group = &documentGroup{}
+		d.inflight[key] = group
+	}
+	d.mu.Unlock()
+	group.add(op, op.attempts > 0)
+	d.enqueueWithSlot(op.document.Id)
+	return nil
+}
 
 func (d *Dispatcher) enqueueWithSlot(id Id) {
 	d.acquireSlot()
@@ -171,21 +211,26 @@ func (d *Dispatcher) acquireSlot() {
 
 func (d *Dispatcher) releaseSlot() { atomic.AddInt64(&d.inflightCount, -1) }
 
-func closeAndWait[T any](ch chan T, wg *sync.WaitGroup, d *Dispatcher, markClosed bool) {
-	d.mu.Lock()
-	if !d.closed {
-		close(ch)
-		if markClosed {
-			d.closed = true
-		}
-	}
-	d.mu.Unlock()
-	wg.Wait()
-}
+func (d *Dispatcher) Enqueue(doc Document) error { return d.enqueue(documentOp{document: doc}) }
+
+func (d *Dispatcher) Stats() Stats { return d.stats }
 
 // Close closes the dispatcher and waits for all inflight operations to complete.
 func (d *Dispatcher) Close() error {
-	closeAndWait(d.ready, &d.wg, d, false)
-	closeAndWait(d.results, &d.resultWg, d, true)
+	d.mu.Lock()
+	if d.started {
+		close(d.ready)
+	}
+	d.mu.Unlock()
+	d.wg.Wait() // Wait for inflight operations to complete
+
+	d.mu.Lock()
+	if d.started {
+		close(d.results)
+		close(d.msgs)
+		d.started = false
+	}
+	d.mu.Unlock()
+	d.resultWg.Wait() // Wait for results
 	return nil
 }

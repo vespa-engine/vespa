@@ -34,7 +34,7 @@ public class CostReportMaintainer extends ControllerMaintainer {
     protected double maintain() {
         var csv = CostCalculator.resourceShareByPropertyToCsv(nodeRepository, controller(), clock, consumer.fixedAllocations());
         consumer.consume(csv);
-        return 1.0;
+        return 0.0;
     }
 
 }

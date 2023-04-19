@@ -46,7 +46,7 @@
         <jaxb.version>2.3.0</jaxb.version>
         <jetty.version>11.0.14</jetty.version>
         <org.lz4.version>1.8.0</org.lz4.version>
-        <org.json.version>20220320</org.json.version> <!-- TODO: Remove on Vespa 9 -->
+        <org.json.version>20230227</org.json.version> <!-- TODO: Remove on Vespa 9 -->
         <slf4j.version>1.7.32</slf4j.version> <!-- WARNING: when updated, also update c.y.v.tenant:base pom -->
         <xml-apis.version>1.4.01</xml-apis.version>
     </properties>

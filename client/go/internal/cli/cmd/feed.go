@@ -9,60 +9,95 @@ import (
 	"time"
 
 	"github.com/spf13/cobra"
+	"github.com/vespa-engine/vespa/client/go/internal/util"
+	"github.com/vespa-engine/vespa/client/go/internal/vespa"
 	"github.com/vespa-engine/vespa/client/go/internal/vespa/document"
 )
 
-func addFeedFlags(cmd *cobra.Command, concurrency *int) {
-	// TOOD(mpolden): Remove this flag
-	cmd.PersistentFlags().IntVarP(concurrency, "concurrency", "T", 64, "Number of goroutines to use for dispatching")
+func addFeedFlags(cmd *cobra.Command, options *feedOptions) {
+	cmd.PersistentFlags().IntVar(&options.connections, "connections", 8, "The number of connections to use")
+	cmd.PersistentFlags().StringVar(&options.route, "route", "", "Target Vespa route for feed operations")
+	cmd.PersistentFlags().IntVar(&options.traceLevel, "trace", 0, "The trace level of network traffic. 0 to disable")
+	cmd.PersistentFlags().IntVar(&options.timeoutSecs, "timeout", 0, "Feed operation timeout in seconds. 0 to disable")
+	cmd.PersistentFlags().BoolVar(&options.verbose, "verbose", false, "Verbose mode. Print successful operations in addition to errors")
+}
+
+type feedOptions struct {
+	connections int
+	route       string
+	verbose     bool
+	traceLevel  int
+	timeoutSecs int
 }
 
 func newFeedCmd(cli *CLI) *cobra.Command {
-	var (
-		concurrency int
-	)
+	var options feedOptions
 	cmd := &cobra.Command{
 		Use:   "feed FILE",
 		Short: "Feed documents to a Vespa cluster",
 		Long: `Feed documents to a Vespa cluster.
 
 A high performance feeding client. This can be used to feed large amounts of
-documents to Vespa cluster efficiently.
+documents to a Vespa cluster efficiently.
 
 The contents of FILE must be either a JSON array or JSON objects separated by
 newline (JSONL).
+
+If FILE is a single dash ('-'), documents will be read from standard input.
 `,
 		Example: `$ vespa feed documents.jsonl
+$ cat documents.jsonl | vespa feed -
 `,
 		Args:              cobra.ExactArgs(1),
 		DisableAutoGenTag: true,
 		SilenceUsage:      true,
 		Hidden:            true, // TODO(mpolden): Remove when ready for public use
 		RunE: func(cmd *cobra.Command, args []string) error {
-			f, err := os.Open(args[0])
-			if err != nil {
-				return err
+			var r io.Reader
+			if args[0] == "-" {
+				r = cli.Stdin
+			} else {
+				f, err := os.Open(args[0])
+				if err != nil {
+					return err
+				}
+				defer f.Close()
+				r = f
 			}
-			defer f.Close()
-			return feed(f, cli, concurrency)
+			return feed(r, cli, options)
 		},
 	}
-	addFeedFlags(cmd, &concurrency)
+	addFeedFlags(cmd, &options)
 	return cmd
 }
 
-func feed(r io.Reader, cli *CLI, concurrency int) error {
+func createServiceClients(service *vespa.Service, n int) []util.HTTPClient {
+	clients := make([]util.HTTPClient, 0, n)
+	for i := 0; i < n; i++ {
+		client := service.Client().Clone()
+		// Feeding should always use HTTP/2
+		util.ForceHTTP2(client, service.TLSOptions.KeyPair, service.TLSOptions.CACertificate, service.TLSOptions.TrustAll)
+		clients = append(clients, client)
+	}
+	return clients
+}
+
+func feed(r io.Reader, cli *CLI, options feedOptions) error {
 	service, err := documentService(cli)
 	if err != nil {
 		return err
 	}
+	clients := createServiceClients(service, options.connections)
 	client := document.NewClient(document.ClientOptions{
-		BaseURL: service.BaseURL,
-	}, service)
-	throttler := document.NewThrottler()
+		Timeout:    time.Duration(options.timeoutSecs) * time.Second,
+		Route:      options.route,
+		TraceLevel: options.traceLevel,
+		BaseURL:    service.BaseURL,
+	}, clients)
+	throttler := document.NewThrottler(options.connections)
 	// TODO(mpolden): Make doom duration configurable
 	circuitBreaker := document.NewCircuitBreaker(10*time.Second, 0)
-	dispatcher := document.NewDispatcher(client, throttler, circuitBreaker)
+	dispatcher := document.NewDispatcher(client, throttler, circuitBreaker, cli.Stderr, options.verbose)
 	dec := document.NewDecoder(r)
 
 	start := cli.now()

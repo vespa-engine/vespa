@@ -9,6 +9,7 @@
       "declared": true,
       "instance": "instance1",
       "readyAt": 0,
+      "delayCause": null,
       "deploying": {
         "application": {
           "build": 4,
@@ -47,6 +48,14 @@
                 "sourceUrl": "repository1/tree/commit1",
                 "commit": "commit1"
               }
+            },
+            {
+              "application": {
+                "build": 1,
+                "compileVersion": "6.1.0",
+                "sourceUrl": "repository1/tree/commit1",
+                "commit": "commit1"
+              }
             }
           ],
           "blockers": [ ]
@@ -59,6 +68,8 @@
       "declared": false,
       "instance": "instance1",
       "readyAt": 0,
+      "delayedUntil": 0,
+      "delayCause": "running",
       "jobName": "system-test",
       "url": "http://localhost:8080/application/v4/tenant/tenant1/application/application1/instance/instance1/job/system-test",
       "environment": "test",
@@ -187,6 +198,8 @@
       "declared": false,
       "instance": "instance1",
       "readyAt": 0,
+      "delayedUntil": 0,
+      "delayCause": "running",
       "jobName": "staging-test",
       "url": "http://localhost:8080/application/v4/tenant/tenant1/application/application1/instance/instance1/job/staging-test",
       "environment": "staging",
@@ -348,6 +361,7 @@
       ],
       "declared": true,
       "instance": "instance1",
+      "delayCause": "unverified",
       "jobName": "production-us-central-1",
       "url": "http://localhost:8080/application/v4/tenant/tenant1/application/application1/instance/instance1/job/production-us-central-1",
       "environment": "prod",
@@ -405,6 +419,7 @@
       ],
       "declared": true,
       "instance": "instance1",
+      "delayCause": "notReady",
       "jobName": "production-us-west-1",
       "url": "http://localhost:8080/application/v4/tenant/tenant1/application/application1/instance/instance1/job/production-us-west-1",
       "environment": "prod",
@@ -462,6 +477,7 @@
       ],
       "declared": true,
       "instance": "instance1",
+      "delayCause": "notReady",
       "jobName": "production-us-east-3",
       "url": "http://localhost:8080/application/v4/tenant/tenant1/application/application1/instance/instance1/job/production-us-east-3",
       "environment": "prod",
@@ -547,6 +563,7 @@
       ],
       "declared": true,
       "instance": "instance2",
+      "delayCause": "notReady",
       "deploying": {
         "application": {
           "build": 4,
@@ -585,6 +602,14 @@
                 "sourceUrl": "repository1/tree/commit1",
                 "commit": "commit1"
               }
+            },
+            {
+              "application": {
+                "build": 1,
+                "compileVersion": "6.1.0",
+                "sourceUrl": "repository1/tree/commit1",
+                "commit": "commit1"
+              }
             }
           ],
           "blockers": [ ]
@@ -598,6 +623,7 @@
       ],
       "declared": true,
       "instance": "instance2",
+      "delayCause": "unverified",
       "jobName": "production-us-central-1",
       "url": "http://localhost:8080/application/v4/tenant/tenant1/application/application1/instance/instance2/job/production-us-central-1",
       "environment": "prod",
@@ -624,6 +650,7 @@
       ],
       "declared": true,
       "instance": "instance2",
+      "delayCause": "notReady",
       "jobName": "production-us-west-1",
       "url": "http://localhost:8080/application/v4/tenant/tenant1/application/application1/instance/instance2/job/production-us-west-1",
       "environment": "prod",
@@ -650,6 +677,7 @@
       ],
       "declared": true,
       "instance": "instance2",
+      "delayCause": "notReady",
       "jobName": "production-us-east-3",
       "url": "http://localhost:8080/application/v4/tenant/tenant1/application/application1/instance/instance2/job/production-us-east-3",
       "environment": "prod",
@@ -697,6 +725,15 @@
       "description": "my best commit yet",
       "risk": 9001,
       "deployable": false
+    },
+    {
+      "build": 1,
+      "compileVersion": "6.1.0",
+      "sourceUrl": "repository1/tree/commit1",
+      "commit": "commit1",
+      "description": "my best commit yet",
+      "risk": 9001,
+      "deployable": true
     }
   ]
 }

@@ -12,6 +12,8 @@
 
 namespace search::streaming {
 
+class NearestNeighborQueryNode;
+
 /**
    This is a leaf in the Query tree. All terms are leafs.
    A QueryTerm has the index for where to find the term. The term is a string,
@@ -57,7 +59,7 @@ public:
     QueryTerm & operator = (const QueryTerm &) = delete;
     QueryTerm(QueryTerm &&) = delete;
     QueryTerm & operator = (QueryTerm &&) = delete;
-    ~QueryTerm();
+    ~QueryTerm() override;
     bool evaluate() const override;
     const HitList & evaluateHits(HitList & hl) const override;
     void reset() override;
@@ -87,6 +89,7 @@ public:
     const string & getIndex() const override { return _index; }
     void setFuzzyMaxEditDistance(uint32_t fuzzyMaxEditDistance) { _fuzzyMaxEditDistance = fuzzyMaxEditDistance; }
     void setFuzzyPrefixLength(uint32_t fuzzyPrefixLength) { _fuzzyPrefixLength = fuzzyPrefixLength; }
+    virtual NearestNeighborQueryNode* as_nearest_neighbor_query_node() noexcept;
 protected:
     using QueryNodeResultBaseContainer = std::unique_ptr<QueryNodeResultBase>;
     string                       _index;

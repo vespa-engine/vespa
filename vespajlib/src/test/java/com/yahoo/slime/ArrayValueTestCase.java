@@ -2,11 +2,11 @@
 package com.yahoo.slime;
 
 import org.junit.Test;
-
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.not;
-import static org.hamcrest.CoreMatchers.sameInstance;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertNotSame;
 
 import java.util.List;
 import java.util.ArrayList;
@@ -20,17 +20,17 @@ public class ArrayValueTestCase {
     @Test
     public void testSymbolTableForwarding() {
         SymbolTable names = new SymbolTable();
-        assertThat(names.symbols(), is(0));
+        assertEquals(0, names.symbols());
         new ArrayValue(names).addArray().addObject().setLong("foo", 3);
-        assertThat(names.symbols(), is(1));
+        assertEquals(1, names.symbols());
     }
 
     @Test
     public void testOutOfBoundsAccess() {
         var array = makeArray();
         array.addBool(true);
-        assertThat(array.entry(-1).valid(), is(false));
-        assertThat(array.entry(1).valid(), is(false));
+        assertFalse(array.entry(-1).valid());
+        assertFalse(array.entry(1).valid());
     }
 
     @Test
@@ -44,8 +44,8 @@ public class ArrayValueTestCase {
             var e1 = array.entry(i);
             var e2 = array.entry(i);
             var e3 = added.get(i);
-            assertThat(e1, sameInstance(e2));
-            assertThat(e1, sameInstance(e3));
+            assertSame(e2, e1);
+            assertSame(e3, e1);
         }
     }
 
@@ -61,12 +61,12 @@ public class ArrayValueTestCase {
             var e1 = array.entry(i);
             var e2 = array.entry(i);
             var e3 = added.get(i);
-            assertThat(e1, not(sameInstance(e2)));
-            assertThat(e1, not(sameInstance(e3)));
-            assertThat(e1.equalTo(e2), is(true));
-            assertThat(e1.equalTo(e3), is(true));
-            assertThat(e1.type(), is(Type.LONG));
-            assertThat(e1.asLong(), is(expect));
+            assertNotSame(e2, e1);
+            assertNotSame(e3, e1);
+            assertTrue(e1.equalTo(e2));
+            assertTrue(e1.equalTo(e3));
+            assertEquals(Type.LONG, e1.type());
+            assertEquals(expect, e1.asLong());
         }
     }
 
@@ -82,12 +82,12 @@ public class ArrayValueTestCase {
             var e1 = array.entry(i);
             var e2 = array.entry(i);
             var e3 = added.get(i);
-            assertThat(e1, not(sameInstance(e2)));
-            assertThat(e1, not(sameInstance(e3)));
-            assertThat(e1.equalTo(e2), is(true));
-            assertThat(e1.equalTo(e3), is(true));
-            assertThat(e1.type(), is(Type.DOUBLE));
-            assertThat(e1.asDouble(), is(expect));
+            assertNotSame(e2, e1);
+            assertNotSame(e3, e1);
+            assertTrue(e1.equalTo(e2));
+            assertTrue(e1.equalTo(e3));
+            assertEquals(Type.DOUBLE, e1.type());
+            assertEquals(expect, e1.asDouble(), 0.0);
         }
     }
 
@@ -109,20 +109,20 @@ public class ArrayValueTestCase {
                 case ARRAY: added.add(array.addArray()); break;
                 case OBJECT: added.add(array.addObject()); break;
                 }
-                assertThat(array.entries(), is(65));
-                assertThat(array.entry(64).type(), is(type));
-                assertThat(added.get(64), sameInstance(array.entry(64)));
+                assertEquals(65, array.entries());
+                assertEquals(type, array.entry(64).type());
+                assertSame(array.entry(64), added.get(64));
                 for (int i = 0; i < 64; ++i) {
                     var e1 = array.entry(i);
                     var e2 = array.entry(i);
                     var e3 = added.get(i);
                     long expect = i;
-                    assertThat(e1, sameInstance(e2));
-                    assertThat(e1, not(sameInstance(e3)));
-                    assertThat(e1.equalTo(e2), is(true));
-                    assertThat(e1.equalTo(e3), is(true));
-                    assertThat(e1.type(), is(Type.LONG));
-                    assertThat(e1.asLong(), is(expect));
+                    assertSame(e2, e1);
+                    assertNotSame(e3, e1);
+                    assertTrue(e1.equalTo(e2));
+                    assertTrue(e1.equalTo(e3));
+                    assertEquals(Type.LONG, e1.type());
+                    assertEquals(expect, e1.asLong());
                 }
             }
         }
@@ -146,20 +146,20 @@ public class ArrayValueTestCase {
                 case ARRAY: added.add(array.addArray()); break;
                 case OBJECT: added.add(array.addObject()); break;
                 }
-                assertThat(array.entries(), is(65));
-                assertThat(array.entry(64).type(), is(type));
-                assertThat(added.get(64), sameInstance(array.entry(64)));
+                assertEquals(65, array.entries());
+                assertEquals(type, array.entry(64).type());
+                assertSame(array.entry(64), added.get(64));
                 for (int i = 0; i < 64; ++i) {
                     var e1 = array.entry(i);
                     var e2 = array.entry(i);
                     var e3 = added.get(i);
                     double expect = i;
-                    assertThat(e1, sameInstance(e2));
-                    assertThat(e1, not(sameInstance(e3)));
-                    assertThat(e1.equalTo(e2), is(true));
-                    assertThat(e1.equalTo(e3), is(true));
-                    assertThat(e1.type(), is(Type.DOUBLE));
-                    assertThat(e1.asDouble(), is(expect));
+                    assertSame(e2, e1);
+                    assertNotSame(e3, e1);
+                    assertTrue(e1.equalTo(e2));
+                    assertTrue(e1.equalTo(e3));
+                    assertEquals(Type.DOUBLE, e1.type());
+                    assertEquals(expect, e1.asDouble(), 0.0);
                 }
             }
         }
@@ -179,9 +179,9 @@ public class ArrayValueTestCase {
                 case ARRAY: added = array.addArray(); break;
                 case OBJECT: added = array.addObject(); break;
                 }
-                assertThat(array.entries(), is(1));
-                assertThat(array.entry(0).type(), is(type));
-                assertThat(added, sameInstance(array.entry(0)));
+                assertEquals(1, array.entries());
+                assertEquals(type, array.entry(0).type());
+                assertSame(array.entry(0), added);
             }
         }
     }

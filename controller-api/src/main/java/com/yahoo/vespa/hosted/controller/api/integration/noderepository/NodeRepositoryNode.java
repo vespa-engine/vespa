@@ -113,6 +113,8 @@ public class NodeRepositoryNode {
     private String cloudAccount;
     @JsonProperty("wireguardPubKey")
     private String wireguardPubKey;
+    @JsonProperty("archiveUri")
+    private String archiveUri;
 
     public String getUrl() {
         return url;
@@ -460,6 +462,10 @@ public class NodeRepositoryNode {
 
     public void setWireguardPubKey(String wireguardPubKey) { this.wireguardPubKey = wireguardPubKey; }
 
+    public String getArchiveUri() { return archiveUri; }
+
+    public void setArchiveUri(String archiveUri) { this.archiveUri = archiveUri; }
+
     // --- Helper methods for code that (wrongly) consume this directly
 
     public boolean hasType(NodeType type) {
@@ -521,6 +527,7 @@ public class NodeRepositoryNode {
                ", switchHostname='" + switchHostname + '\'' +
                ", cloudAccount='" + cloudAccount + '\'' +
                ", wireguardPubKey='" + wireguardPubKey + '\'' +
+               ", archiveUri='" + archiveUri + '\'' +
                '}';
     }
 

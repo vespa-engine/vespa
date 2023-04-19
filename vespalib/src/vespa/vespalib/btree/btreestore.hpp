@@ -74,7 +74,7 @@ allocNewKeyData(uint32_t clusterSize)
 {
     assert(clusterSize >= 1 && clusterSize <= clusterLimit);
     uint32_t typeId = clusterSize - 1;
-    return _store.allocator<KeyDataType>(typeId).allocArray(clusterSize);
+    return _store.allocator<KeyDataType>(typeId).allocArray();
 }
 
 
@@ -87,7 +87,7 @@ allocKeyData(uint32_t clusterSize)
 {
     assert(clusterSize >= 1 && clusterSize <= clusterLimit);
     uint32_t typeId = clusterSize - 1;
-    return _store.freeListAllocator<KeyDataType, datastore::DefaultReclaimer<KeyDataType>>(typeId).allocArray(clusterSize);
+    return _store.freeListAllocator<KeyDataType, datastore::DefaultReclaimer<KeyDataType>>(typeId).allocArray();
 }
 
 
@@ -156,7 +156,7 @@ makeTree(EntryRef &ref,
     lNode->freeze();
     BTreeTypeRefPair tPair(allocBTree());
     tPair.data->setRoots(lPair.ref);
-    _store.holdElem(ref, clusterSize);
+    _store.hold_entry(ref);
     ref = tPair.ref;
 }
 
@@ -176,7 +176,7 @@ makeArray(EntryRef &ref, EntryRef root, LeafNodeType *leafNode)
         kd->setData(leafNode->getData(idx));
     }
     assert(kd == kPair.data + clusterSize);
-    _store.holdElem(ref, 1);
+    _store.hold_entry(ref);
     if (!leafNode->getFrozen()) {
         leafNode->freeze();
     }
@@ -255,7 +255,7 @@ insert(EntryRef &ref,
             kd->setData(i->getData());
         }
         assert(kd == kPair.data + clusterSize + 1);
-        _store.holdElem(ref, clusterSize);
+        _store.hold_entry(ref);
         ref = kPair.ref;
         return true;
     }
@@ -284,7 +284,7 @@ insert(EntryRef &ref,
     lNode->freeze();
     BTreeTypeRefPair tPair(allocBTree());
     tPair.data->setRoots(lPair.ref); // allow immediate access to readers
-    _store.holdElem(ref, clusterSize);
+    _store.hold_entry(ref);
     ref = tPair.ref;
     return true;
 #endif
@@ -339,7 +339,7 @@ remove(EntryRef &ref,
         if (oldi == olde || comp(key, oldi->_key))
             return false;   // not found
         if (clusterSize == 1) {
-            _store.holdElem(ref, 1);
+            _store.hold_entry(ref);
             ref = EntryRef();
             return true;
         }
@@ -357,7 +357,7 @@ remove(EntryRef &ref,
             kd->setData(i->getData());
         }
         assert(kd == kPair.data + clusterSize - 1);
-        _store.holdElem(ref, clusterSize);
+        _store.hold_entry(ref);
         ref = kPair.ref;
         return true;
     }
@@ -670,7 +670,7 @@ applyCluster(EntryRef &ref,
     if (newSizeMin <= clusterLimit) {
         uint32_t newSize = getNewClusterSize(ob, oe, a, ae, r, re, comp);
         if (newSize == 0) {
-            _store.holdElem(ref, clusterSize);
+            _store.hold_entry(ref);
             ref = EntryRef();
             return true;
         }
@@ -678,7 +678,7 @@ applyCluster(EntryRef &ref,
             KeyDataTypeRefPair kPair(allocKeyData(newSize));
             applyCluster(ob, oe, kPair.data, kPair.data + newSize,
                          a, ae, r, re, comp);
-            _store.holdElem(ref, clusterSize);
+            _store.hold_entry(ref);
             ref = kPair.ref;
             return true;
         }
@@ -735,7 +735,7 @@ normalizeTree(EntryRef &ref,
 {
     EntryRef root = tree->getRoot();
     if (!NodeAllocatorType::isValidRef(root)) {
-        _store.holdElem(ref, 1);
+        _store.hold_entry(ref);
         ref = EntryRef();
         return;
     }
@@ -798,10 +798,8 @@ clear(const EntryRef ref)
     if (clusterSize == 0) {
         BTreeType *tree = getWTreeEntry(iRef);
         tree->clear(_allocator);
-        _store.holdElem(ref, 1);
-    } else {
-        _store.holdElem(ref, clusterSize);
     }
+    _store.hold_entry(ref);
 }
 
 

@@ -26,7 +26,7 @@ public class EnclaveAccessMaintainer extends ControllerMaintainer {
             return controller().serviceRegistry().enclaveAccessService().allowAccessFor(externalAccounts());
         } catch (RuntimeException e) {
             logger.log(WARNING, "Failed sharing resources with enclave", e);
-            return 0;
+            return 1.0;
         }
     }
 

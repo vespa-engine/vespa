@@ -41,9 +41,6 @@ public class MetricsConsumer {
     private final String id;
     private final MetricSet metricSet;
 
-    // TODO: This shouldn't be here
-    private final List<CloudWatch> cloudWatches = new ArrayList<>();
-
     /**
      * @param id the consumer
      * @param metricSet the metrics for this consumer
@@ -64,14 +61,6 @@ public class MetricsConsumer {
      */
     public Map<String, Metric> metrics() {
         return metricSet.getMetrics();
-    }
-
-    public void addCloudWatch(CloudWatch cloudWatch) {
-        cloudWatches.add(cloudWatch);
-    }
-
-    public List<CloudWatch> cloudWatches() {
-        return unmodifiableList(cloudWatches);
     }
 
     private static MetricsConsumer consumer(String id, MetricSet ... metricSets) {

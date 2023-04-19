@@ -2,7 +2,6 @@
 package com.yahoo.vespa.hosted.controller.application;
 
 import com.yahoo.component.Version;
-import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RevisionId;
 
 import java.util.Objects;
@@ -23,7 +22,7 @@ import static java.util.Objects.requireNonNull;
  */
 public final class Change {
 
-    private static final Change empty = new Change(Optional.empty(), Optional.empty(), false);
+    private static final Change empty = new Change(Optional.empty(), Optional.empty(), false, false);
 
     /** The platform version we are upgrading to, or empty if none */
     private final Optional<Version> platform;
@@ -32,23 +31,27 @@ public final class Change {
     private final Optional<RevisionId> revision;
 
     /** Whether this change is a pin to its contained Vespa version, or to the application's current. */
-    private final boolean pinned;
+    private final boolean platformPinned;
 
-    private Change(Optional<Version> platform, Optional<RevisionId> revision, boolean pinned) {
+    /** Whether this change is a pin to its contained application revision, or to the application's current. */
+    private final boolean revisionPinned;
+
+    private Change(Optional<Version> platform, Optional<RevisionId> revision, boolean platformPinned, boolean revisionPinned) {
         this.platform = requireNonNull(platform, "platform cannot be null");
         this.revision = requireNonNull(revision, "revision cannot be null");
         if (revision.isPresent() && ( ! revision.get().isProduction())) {
             throw new IllegalArgumentException("Application version to deploy must be a known version");
         }
-        this.pinned = pinned;
+        this.platformPinned = platformPinned;
+        this.revisionPinned = revisionPinned;
     }
 
     public Change withoutPlatform() {
-        return new Change(Optional.empty(), revision, pinned);
+        return new Change(Optional.empty(), revision, platformPinned, revisionPinned);
     }
 
     public Change withoutApplication() {
-        return new Change(platform, Optional.empty(), pinned);
+        return new Change(platform, Optional.empty(), platformPinned, revisionPinned);
     }
 
     /** Returns whether a change should currently be deployed */
@@ -58,7 +61,7 @@ public final class Change {
 
     /** Returns whether this is the empty change. */
     public boolean isEmpty() {
-        return ! hasTargets() && ! pinned;
+        return ! hasTargets() && ! platformPinned && ! revisionPinned;
     }
 
     /** Returns the platform version carried by this. */
@@ -67,42 +70,55 @@ public final class Change {
     /** Returns the application version carried by this. */
     public Optional<RevisionId> revision() { return revision; }
 
-    public boolean isPinned() { return pinned; }
+    public boolean isPlatformPinned() { return platformPinned; }
+
+    public boolean isRevisionPinned() { return revisionPinned; }
 
     /** Returns an instance representing no change */
     public static Change empty() { return empty; }
 
     /** Returns a version of this change which replaces or adds this platform change */
     public Change with(Version platformVersion) {
-        if (pinned)
+        if (platformPinned)
             throw new IllegalArgumentException("Not allowed to set a platform version when pinned.");
 
-        return new Change(Optional.of(platformVersion), revision, pinned);
+        return new Change(Optional.of(platformVersion), revision, platformPinned, revisionPinned);
     }
 
     /** Returns a version of this change which replaces or adds this revision change */
     public Change with(RevisionId revision) {
-        return new Change(platform, Optional.of(revision), pinned);
+        if (revisionPinned)
+            throw new IllegalArgumentException("Not allowed to set a revision when pinned.");
+
+        return new Change(platform, Optional.of(revision), platformPinned, revisionPinned);
     }
 
     /** Returns a change with the versions of this, and with the platform version pinned. */
-    public Change withPin() {
-        return new Change(platform, revision, true);
+    public Change withPlatformPin() {
+        return new Change(platform, revision, true, revisionPinned);
     }
 
     /** Returns a change with the versions of this, and with the platform version unpinned. */
-    public Change withoutPin() {
-        return new Change(platform, revision, false);
+    public Change withoutPlatformPin() {
+        return new Change(platform, revision, false, revisionPinned);
+    }
+
+    /** Returns a change with the versions of this, and with the platform version pinned. */
+    public Change withRevisionPin() {
+        return new Change(platform, revision, platformPinned, true);
+    }
+
+    /** Returns a change with the versions of this, and with the platform version unpinned. */
+    public Change withoutRevisionPin() {
+        return new Change(platform, revision, platformPinned, false);
     }
 
     /** Returns the change obtained when overwriting elements of the given change with any present in this */
     public Change onTopOf(Change other) {
-        if (platform.isPresent())
-            other = other.with(platform.get());
-        if (revision.isPresent())
-            other = other.with(revision.get());
-        if (pinned)
-            other = other.withPin();
+        if (platform.isPresent()) other = other.with(platform.get());
+        if (revision.isPresent()) other = other.with(revision.get());
+        if (platformPinned) other = other.withPlatformPin();
+        if (revisionPinned) other = other.withRevisionPin();
         return other;
     }
 
@@ -111,34 +127,38 @@ public final class Change {
         if (this == o) return true;
         if (!(o instanceof Change)) return false;
         Change change = (Change) o;
-        return pinned == change.pinned &&
+        return platformPinned == change.platformPinned &&
+               revisionPinned == change.revisionPinned &&
                Objects.equals(platform, change.platform) &&
                Objects.equals(revision, change.revision);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(platform, revision, pinned);
+        return Objects.hash(platform, revision, platformPinned, revisionPinned);
     }
 
     @Override
     public String toString() {
         StringJoiner changes = new StringJoiner(" and ");
-        if (pinned)
+        if (platformPinned)
             changes.add("pin to " + platform.map(Version::toString).orElse("current platform"));
         else
             platform.ifPresent(version -> changes.add("upgrade to " + version));
-        revision.ifPresent(revision -> changes.add("revision change to " + revision));
+        if (revisionPinned)
+            changes.add("pin to " + revision.map(RevisionId::toString).orElse("current revision"));
+        else
+            revision.ifPresent(revision -> changes.add("revision change to " + revision));
         changes.setEmptyValue("no change");
         return changes.toString();
     }
 
     public static Change of(RevisionId revision) {
-        return new Change(Optional.empty(), Optional.of(revision), false);
+        return new Change(Optional.empty(), Optional.of(revision), false, false);
     }
 
     public static Change of(Version platformChange) {
-        return new Change(Optional.of(platformChange), Optional.empty(), false);
+        return new Change(Optional.of(platformChange), Optional.empty(), false, false);
     }
 
     /** Returns whether this change carries a revision downgrade relative to the given revision. */

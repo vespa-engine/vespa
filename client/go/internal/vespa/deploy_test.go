@@ -19,12 +19,11 @@ import (
 
 func TestDeploy(t *testing.T) {
 	httpClient := mock.HTTPClient{}
-	target := LocalTarget(&httpClient)
+	target := LocalTarget(&httpClient, TLSOptions{})
 	appDir, _ := mock.ApplicationPackageDir(t, false, false)
 	opts := DeploymentOptions{
 		Target:             target,
 		ApplicationPackage: ApplicationPackage{Path: appDir},
-		HTTPClient:         &httpClient,
 	}
 	_, err := Deploy(opts)
 	assert.Nil(t, err)
@@ -47,7 +46,6 @@ func TestDeployCloud(t *testing.T) {
 	opts := DeploymentOptions{
 		Target:             target,
 		ApplicationPackage: ApplicationPackage{Path: appDir},
-		HTTPClient:         &httpClient,
 	}
 	_, err := Deploy(opts)
 	require.Nil(t, err)

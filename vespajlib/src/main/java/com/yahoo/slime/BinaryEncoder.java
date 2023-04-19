@@ -28,7 +28,7 @@ final class BinaryEncoder implements ArrayTraverser, ObjectSymbolTraverser {
         byte next = (byte)(value & 0x7f);
         value >>>= 7; // unsigned shift
         while (value != 0) {
-            next |= 0x80;
+            next |= (byte)0x80;
             out.put(next);
             next = (byte)(value & 0x7f);
             value >>>= 7;

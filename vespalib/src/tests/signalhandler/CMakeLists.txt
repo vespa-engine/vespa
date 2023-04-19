@@ -5,6 +5,11 @@ vespa_add_library(vespalib_signalhandler_test_my_shared_library TEST
     DEPENDS
     vespalib
 )
+
+# Don't convert call to jump when returning a value from a function with
+# a compatible stack.
+set_source_files_properties(my_shared_library.cpp PROPERTIES COMPILE_OPTIONS "-fno-optimize-sibling-calls")
+
 vespa_add_executable(vespalib_signalhandler_test_app TEST
     SOURCES
     signalhandler_test.cpp

@@ -14,16 +14,18 @@ FreeListRawAllocator<EntryT, RefT>::FreeListRawAllocator(DataStoreBase &store, u
 
 template <typename EntryT, typename RefT>
 typename FreeListRawAllocator<EntryT, RefT>::HandleType
-FreeListRawAllocator<EntryT, RefT>::alloc(size_t numElems)
+FreeListRawAllocator<EntryT, RefT>::alloc(size_t num_entries)
 {
     auto& free_list = _store.getFreeList(_typeId);
     if (free_list.empty()) {
-        return ParentType::alloc(numElems);
+        return ParentType::alloc(num_entries);
     }
-    assert(free_list.array_size() == numElems);
+    assert(num_entries == 1);
     RefT ref = free_list.pop_entry();
+    auto& state = _store.getBufferState(ref.bufferId());
+    auto array_size = state.getArraySize();
     // We must scale the offset according to array size as it was divided when the entry ref was created.
-    EntryT *entry = _store.template getEntryArray<EntryT>(ref, numElems);
+    EntryT *entry = _store.template getEntryArray<EntryT>(ref, array_size);
     return HandleType(ref, entry);
 }
 

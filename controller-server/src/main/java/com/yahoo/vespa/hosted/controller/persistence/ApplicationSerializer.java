@@ -82,7 +82,8 @@ public class ApplicationSerializer {
     private static final String versionsField = "versions";
     private static final String prodVersionsField = "prodVersions";
     private static final String devVersionsField = "devVersions";
-    private static final String pinnedField = "pinned";
+    private static final String platformPinnedField = "pinned";
+    private static final String revisionPinnedField = "revisionPinned";
     private static final String deploymentIssueField = "deploymentIssueId";
     private static final String ownershipIssueIdField = "ownershipIssueId";
     private static final String ownerField = "confirmedOwner";
@@ -118,6 +119,7 @@ public class ApplicationSerializer {
     private static final String riskField = "risk";
     private static final String authorEmailField = "authorEmailField";
     private static final String deployedDirectlyField = "deployedDirectly";
+    private static final String obsoleteAtField = "obsoleteAt";
     private static final String hasPackageField = "hasPackage";
     private static final String shouldSkipField = "shouldSkip";
     private static final String compileVersionField = "compileVersion";
@@ -265,6 +267,7 @@ public class ApplicationSerializer {
         applicationVersion.sourceUrl().ifPresent(url -> object.setString(sourceUrlField, url));
         applicationVersion.commit().ifPresent(commit -> object.setString(commitField, commit));
         object.setBool(deployedDirectlyField, applicationVersion.isDeployedDirectly());
+        applicationVersion.obsoleteAt().ifPresent(at -> object.setLong(obsoleteAtField, at.toEpochMilli()));
         object.setBool(hasPackageField, applicationVersion.hasPackage());
         object.setBool(shouldSkipField, applicationVersion.shouldSkip());
         applicationVersion.description().ifPresent(description -> object.setString(descriptionField, description));
@@ -295,8 +298,10 @@ public class ApplicationSerializer {
             object.setString(versionField, deploying.platform().get().toString());
         if (deploying.revision().isPresent())
             toSlime(deploying.revision().get(), object);
-        if (deploying.isPinned())
-            object.setBool(pinnedField, true);
+        if (deploying.isPlatformPinned())
+            object.setBool(platformPinnedField, true);
+        if (deploying.isRevisionPinned())
+            object.setBool(revisionPinnedField, true);
     }
 
     private void toSlime(RotationStatus status, Cursor array) {
@@ -487,6 +492,7 @@ public class ApplicationSerializer {
         Optional<Instant> buildTime = SlimeUtils.optionalInstant(object.field(buildTimeField));
         Optional<String> sourceUrl = SlimeUtils.optionalString(object.field(sourceUrlField));
         Optional<String> commit = SlimeUtils.optionalString(object.field(commitField));
+        Optional<Instant> obsoleteAt = SlimeUtils.optionalInstant(object.field(obsoleteAtField));
         boolean hasPackage = object.field(hasPackageField).asBool();
         boolean shouldSkip = object.field(shouldSkipField).asBool();
         Optional<String> description = SlimeUtils.optionalString(object.field(descriptionField));
@@ -494,7 +500,7 @@ public class ApplicationSerializer {
         Optional<String> bundleHash = SlimeUtils.optionalString(object.field(bundleHashField));
 
         return new ApplicationVersion(id, sourceRevision, authorEmail, compileVersion, allowedMajor, buildTime,
-                                      sourceUrl, commit, bundleHash, hasPackage, shouldSkip, description, risk);
+                                      sourceUrl, commit, bundleHash, obsoleteAt, hasPackage, shouldSkip, description, risk);
     }
 
     private Optional<SourceRevision> sourceRevisionFromSlime(Inspector object) {
@@ -520,8 +526,10 @@ public class ApplicationSerializer {
             change = Change.of(Version.fromString(versionFieldValue.asString()));
         if (object.field(applicationBuildNumberField).valid())
             change = change.with(revisionFromSlime(object, null));
-        if (object.field(pinnedField).asBool())
-            change = change.withPin();
+        if (object.field(platformPinnedField).asBool())
+            change = change.withPlatformPin();
+        if (object.field(revisionPinnedField).asBool())
+            change = change.withRevisionPin();
         return change;
     }
 

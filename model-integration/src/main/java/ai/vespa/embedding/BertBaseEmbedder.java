@@ -32,10 +32,9 @@ import java.util.Map;
  */
 public class BertBaseEmbedder extends AbstractComponent implements Embedder {
 
-    private final static int TOKEN_CLS = 101;  // [CLS]
-    private final static int TOKEN_SEP = 102;  // [SEP]
-
     private final int    maxTokens;
+    private final int    startSequenceToken;
+    private final int    endSequenceToken;
     private final String inputIdsName;
     private final String attentionMaskName;
     private final String tokenTypeIdsName;
@@ -48,6 +47,8 @@ public class BertBaseEmbedder extends AbstractComponent implements Embedder {
     @Inject
     public BertBaseEmbedder(OnnxRuntime onnx, BertBaseEmbedderConfig config) {
         maxTokens = config.transformerMaxTokens();
+        startSequenceToken = config.transformerStartSequenceToken();
+        endSequenceToken = config.transformerEndSequenceToken();
         inputIdsName = config.transformerInputIds();
         attentionMaskName = config.transformerAttentionMask();
         tokenTypeIdsName = config.transformerTokenTypeIds();
@@ -98,7 +99,7 @@ public class BertBaseEmbedder extends AbstractComponent implements Embedder {
         if (!type.dimensions().get(0).isIndexed()) {
             throw new IllegalArgumentException("Error in embedding to type '" + type + "': dimension should be indexed.");
         }
-        List<Integer> tokens = embedWithSeperatorTokens(text, context, maxTokens);
+        List<Integer> tokens = embedWithSeparatorTokens(text, context, maxTokens);
         return embedTokens(tokens, type);
     }
 
@@ -108,6 +109,7 @@ public class BertBaseEmbedder extends AbstractComponent implements Embedder {
         Tensor inputSequence = createTensorRepresentation(tokens, "d1");
         Tensor attentionMask = createAttentionMask(inputSequence);
         Tensor tokenTypeIds = createTokenTypeIds(inputSequence);
+
 
         Map<String, Tensor> inputs;
         if (!"".equals(tokenTypeIdsName)) {
@@ -138,14 +140,14 @@ public class BertBaseEmbedder extends AbstractComponent implements Embedder {
         return builder.build();
     }
 
-    private List<Integer> embedWithSeperatorTokens(String text, Context context, int maxLength) {
+    private List<Integer> embedWithSeparatorTokens(String text, Context context, int maxLength) {
         List<Integer> tokens = new ArrayList<>();
-        tokens.add(TOKEN_CLS);
+        tokens.add(startSequenceToken);
         tokens.addAll(embed(text, context));
-        tokens.add(TOKEN_SEP);
+        tokens.add(endSequenceToken);
         if (tokens.size() > maxLength) {
             tokens = tokens.subList(0, maxLength-1);
-            tokens.add(TOKEN_SEP);
+            tokens.add(endSequenceToken);
         }
         return tokens;
     }

@@ -7,7 +7,6 @@ import com.yahoo.text.Utf8String;
 import com.yahoo.text.XMLWriter;
 
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.Map;
 
 /**
@@ -63,26 +62,13 @@ public abstract class HitRenderer {
 
     private static void renderGroupId(GroupId id, XMLWriter writer) {
         writer.openTag(TAG_GROUP_ID).attribute(ATR_TYPE, id.getTypeName());
-        if (id instanceof ValueGroupId) {
-            writer.content(getIdValue((ValueGroupId)id), false);
-        } else if (id instanceof BucketGroupId) {
-            BucketGroupId bucketId = (BucketGroupId)id;
-            writer.openTag(TAG_BUCKET_FROM).content(getBucketFrom(bucketId), false).closeTag();
-            writer.openTag(TAG_BUCKET_TO).content(getBucketTo(bucketId), false).closeTag();
+        if (id instanceof ValueGroupId<?> valueGroupId) {
+            writer.content(valueGroupId.getValue(), false);
+        } else if (id instanceof BucketGroupId bucketId) {
+            writer.openTag(TAG_BUCKET_FROM).content(bucketId.getFrom(), false).closeTag();
+            writer.openTag(TAG_BUCKET_TO).content(bucketId.getTo(), false).closeTag();
         }
         writer.closeTag();
-    }
-
-    private static Object getIdValue(ValueGroupId id) {
-        return id instanceof RawId ? Arrays.toString(((RawId)id).getValue()) : id.getValue();
-    }
-
-    private static Object getBucketFrom(BucketGroupId id) {
-        return id instanceof RawBucketId ? Arrays.toString(((RawBucketId)id).getFrom()) : id.getFrom();
-    }
-
-    private static Object getBucketTo(BucketGroupId id) {
-        return id instanceof RawBucketId ? Arrays.toString(((RawBucketId)id).getTo()) : id.getTo();
     }
 
     private static void renderContinuations(Map<String, Continuation> continuations, XMLWriter writer) {

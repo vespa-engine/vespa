@@ -37,15 +37,17 @@ public abstract class Maintainer implements Runnable {
     private final AtomicBoolean shutDown = new AtomicBoolean();
     private final boolean ignoreCollision;
     private final Clock clock;
+    private final Double successFactorBaseline;
 
     public Maintainer(String name, Duration interval, Clock clock, JobControl jobControl,
-                      JobMetrics jobMetrics, List<String> clusterHostnames, boolean ignoreCollision) {
+                      JobMetrics jobMetrics, List<String> clusterHostnames, boolean ignoreCollision, Double successFactorBaseline) {
         this.name = name;
         this.interval = requireInterval(interval);
         this.jobControl = Objects.requireNonNull(jobControl);
         this.jobMetrics = Objects.requireNonNull(jobMetrics);
         this.ignoreCollision = ignoreCollision;
         this.clock = clock;
+        this.successFactorBaseline = successFactorBaseline;
         var startedAt = clock.instant();
         Objects.requireNonNull(clusterHostnames);
         Duration initialDelay = staggeredDelay(interval, startedAt, HostName.getLocalhost(), clusterHostnames)
@@ -55,6 +57,10 @@ public abstract class Maintainer implements Runnable {
         jobControl.started(name(), this);
     }
 
+    public Maintainer(String name, Duration interval, Clock clock, JobControl jobControl,
+                      JobMetrics jobMetrics, List<String> clusterHostnames, boolean ignoreCollision) {
+        this(name, interval, clock, jobControl, jobMetrics, clusterHostnames, ignoreCollision, 1.0);
+    }
     @Override
     public void run() {
         lockAndMaintain(false);
@@ -91,16 +97,16 @@ public abstract class Maintainer implements Runnable {
     /**
      * Called once each time this maintenance job should run.
      *
-     * @return the degree to which the run was successful - a number between 0 (no success), to 1 (complete success).
+     * @return the degree to which the run was deviated from the successFactorBaseline - a number between -1 (no success), to 0 (complete success).
      *         Note that this indicates whether something is wrong, so e.g if the call did nothing because it should do
-     *         nothing, 1.0 should be returned.
+     *         nothing, 0.0 should be returned.
      */
     protected abstract double maintain();
 
-    /** Convenience methods to convert attempts and failures into a success factor */
-    protected final double asSuccessFactor(int attempts, int failures) {
+    /** Convenience methods to convert attempts and failures into a success factor, and return   */
+    protected final double asSuccessFactorDeviation(int attempts, int failures) {
         double factor = attempts == 0 ? 1.0 : 1 - (double)failures / attempts;
-        return new BigDecimal(factor).setScale(2, RoundingMode.HALF_UP).doubleValue();
+        return new BigDecimal(factor - successFactorBaseline).setScale(2, RoundingMode.HALF_UP).doubleValue();
     }
 
     /** Returns the interval at which this job is set to run */
@@ -111,14 +117,14 @@ public abstract class Maintainer implements Runnable {
         if (!force && !jobControl.isActive(name())) return;
         log.log(Level.FINE, () -> "Running " + this.getClass().getSimpleName());
 
-        double successFactor = 0;
+        double successFactorDeviation = 0;
         long startTime = clock.millis();
         try (var lock = jobControl.lockJob(name())) {
-            successFactor = maintain();
+            successFactorDeviation = maintain();
         }
         catch (UncheckedTimeoutException e) {
             if (ignoreCollision)
-                successFactor = 1;
+                successFactorDeviation = 0;
             else
                 log.log(Level.WARNING, this + " collided with another run. Will retry in " + interval);
         }
@@ -127,7 +133,7 @@ public abstract class Maintainer implements Runnable {
         }
         finally {
             long endTime = clock.millis();
-            jobMetrics.completed(name(), successFactor, endTime - startTime);
+            jobMetrics.completed(name(), successFactorDeviation, endTime - startTime);
         }
         log.log(Level.FINE, () -> "Finished " + this.getClass().getSimpleName());
     }

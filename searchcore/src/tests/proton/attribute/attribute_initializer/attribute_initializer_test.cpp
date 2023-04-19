@@ -7,8 +7,11 @@
 #include <vespa/searchcore/proton/test/attribute_utils.h>
 #include <vespa/searchlib/attribute/attributefactory.h>
 #include <vespa/searchlib/attribute/integerbase.h>
+#include <vespa/searchlib/attribute/stringbase.h>
 #include <vespa/searchlib/test/directory_handler.h>
 #include <vespa/searchcommon/attribute/config.h>
+#include <vespa/searchcommon/attribute/i_multi_value_attribute.h>
+#include <vespa/vespalib/util/stash.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
 #include <vespa/vespalib/testkit/testapp.h>
 
@@ -18,8 +21,10 @@ LOG_SETUP("attribute_initializer_test");
 using search::attribute::Config;
 using search::attribute::BasicType;
 using search::attribute::CollectionType;
+using search::attribute::IMultiValueAttribute;
 using search::SerialNum;
 using search::test::DirectoryHandler;
+using vespalib::Stash;
 
 const vespalib::string test_dir = "test_output";
 
@@ -60,7 +65,7 @@ Config get_int32_wset_fs()
 }
 
 void
-saveAttr(const vespalib::string &name, const Config &cfg, SerialNum serialNum, SerialNum createSerialNum)
+saveAttr(const vespalib::string &name, const Config &cfg, SerialNum serialNum, SerialNum createSerialNum, bool mutate_reserved_doc = false)
 {
     auto diskLayout = AttributeDiskLayout::create(test_dir);
     auto dir = diskLayout->createAttributeDir(name);
@@ -80,6 +85,15 @@ saveAttr(const vespalib::string &name, const Config &cfg, SerialNum serialNum, S
         auto &iav = dynamic_cast<search::IntegerAttribute &>(*av);
         iav.append(docId, 10, 1);
         iav.append(docId, 11, 1);
+    }
+    if (mutate_reserved_doc) {
+        av->clearDoc(0u);
+        if (cfg.basicType().type() == BasicType::Type::STRING &&
+            cfg.collectionType().type() == CollectionType::Type::WSET) {
+            auto &sav = dynamic_cast<search::StringAttribute &>(*av);
+            sav.append(0u, "badly", 15);
+            sav.append(0u, "broken", 20);
+        }
     }
     av->save();
     writer->markValidSnapshot(serialNum);
@@ -248,6 +262,22 @@ TEST("require that saved attribute is ignored when serial num is not set")
     auto av = f.createInitializer({"a", int32_sv}, std::nullopt)->init().getAttribute();
     EXPECT_EQUAL(0u, av->getCreateSerialNum());
     EXPECT_EQUAL(1u, av->getNumDocs());
+}
+
+TEST("require that reserved document is reinitialized during load")
+{
+    saveAttr("a", string_wset, 10, 2, true);
+    Fixture f;
+    auto av = f.createInitializer({"a", string_wset}, 5)->init().getAttribute();
+    EXPECT_EQUAL(2u, av->getCreateSerialNum());
+    EXPECT_EQUAL(2u, av->getNumDocs());
+    auto mvav = av->as_multi_value_attribute();
+    ASSERT_TRUE(mvav != nullptr);
+    Stash stash;
+    auto read_view = mvav->make_read_view(IMultiValueAttribute::WeightedSetTag<const char*>(), stash);
+    ASSERT_TRUE(read_view != nullptr);
+    auto reserved_values = read_view->get_values(0u);
+    EXPECT_EQUAL(0u, reserved_values.size());
 }
 
 }

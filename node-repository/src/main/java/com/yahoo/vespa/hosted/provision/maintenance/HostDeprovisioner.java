@@ -53,7 +53,7 @@ public class HostDeprovisioner extends NodeRepositoryMaintainer {
                 log.log(Level.WARNING, "Failed to deprovision " + host.hostname() + ", will retry in " + interval(), e);
             }
         }
-        return asSuccessFactor(hosts.size(), failures);
+        return asSuccessFactorDeviation(hosts.size(), failures);
     }
 
 }

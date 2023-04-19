@@ -64,7 +64,7 @@ public class Upgrader extends ControllerMaintainer {
         for (UpgradePolicy policy : UpgradePolicy.values())
             updateTargets(versionStatus, deploymentStatuses, policy);
 
-        return 1.0;
+        return 0.0;
     }
 
     private DeploymentStatusList deploymentStatuses(VersionStatus versionStatus) {

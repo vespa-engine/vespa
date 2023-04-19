@@ -64,11 +64,6 @@ init_progress_time int default=0
 ## we dont change the state too often.
 min_time_between_new_systemstates int default=10000
 
-## Sets how many milliseconds to wait between each state poll for old nodes
-## requiring state polling. (4.1 or older)
-## TODO: Not used, remove in Vespa 9
-state_polling_frequency int default=5000
-
 ## The maximum amount of premature crashes a node is allowed to have in a row
 ## before the fleetcontroller disables that node.
 max_premature_crashes int default=100000
@@ -180,9 +175,6 @@ min_merge_completion_ratio double default=1.0
 ## activation may happen at wildly different times throughout the cluster. The 2 phase
 ## transition logic aims to minimize the window of time where active states diverge.
 enable_two_phase_cluster_state_transitions bool default=false
-
-## Deprecated - not used
-determine_buckets_from_bucket_space_metric bool default=true
 
 # If enabled, the cluster controller observes reported (categorized) resource usage from content nodes (via host info),
 # and decides whether external feed should be blocked (or unblocked) in the entire cluster.

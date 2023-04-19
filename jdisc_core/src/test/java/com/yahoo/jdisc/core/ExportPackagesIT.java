@@ -62,8 +62,8 @@ public class ExportPackagesIT {
         String expectedValue = expectedProperties.getProperty(ExportPackages.EXPORT_PACKAGES);
         assertNotNull(expectedValue, "Missing exportPackages property in file.");
 
-        Set<String> actualPackages = getPackages(actualValue);
-        Set<String> expectedPackages = getPackages(expectedValue);
+        Set<String> actualPackages = removeNewPackageOnJava20(removeJavaVersion(getPackages(actualValue)));
+        Set<String> expectedPackages = removeNewPackageOnJava20(removeJavaVersion(getPackages(expectedValue)));
         if (!actualPackages.equals(expectedPackages)) {
             StringBuilder message = getDiff(actualPackages, expectedPackages);
             message.append("\n\nIf this test fails due to an intentional change in exported packages, run the following command:\n")
@@ -71,6 +71,14 @@ public class ExportPackagesIT {
                     .append("\n\nNote that removing exported packages usually requires a new major version of Vespa.\n");
             fail(message.toString());
         }
+    }
+
+    private static Set<String> removeJavaVersion(Set<String> packages) {
+        return packages.stream().map(p -> p.replaceAll(".JavaSE_\\d+", "")).collect(Collectors.toSet());
+    }
+
+    private static Set<String> removeNewPackageOnJava20(Set<String> packages) {
+        return packages.stream().filter(p -> ! p.contains("java.lang.foreign")).collect(Collectors.toSet());
     }
 
     private static StringBuilder getDiff(Set<String> actual, Set<String> expected) {

@@ -5,6 +5,8 @@
 #include <memory>
 #include <vespa/vespalib/stllike/string.h>
 
+namespace search { class MatchingElementsFields; }
+
 namespace search::docsummary {
 
 class DocsumFieldWriter;
@@ -21,7 +23,8 @@ public:
      */
     virtual std::unique_ptr<DocsumFieldWriter> create_docsum_field_writer(const vespalib::string& field_name,
                                                                           const vespalib::string& command,
-                                                                          const vespalib::string& source) = 0;
+                                                                          const vespalib::string& source,
+                                                                          std::shared_ptr<MatchingElementsFields> matching_elems_fields) = 0;
 };
 
 }

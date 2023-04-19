@@ -6,6 +6,7 @@ import com.yahoo.document.datatypes.FieldValue;
 import com.yahoo.language.Linguistics;
 import com.yahoo.language.process.Embedder;
 import com.yahoo.language.simple.SimpleLinguistics;
+import com.yahoo.vespa.indexinglanguage.ExpressionConverter;
 import com.yahoo.vespa.indexinglanguage.ScriptParser;
 import com.yahoo.vespa.indexinglanguage.ScriptParserContext;
 import com.yahoo.vespa.indexinglanguage.parser.IndexingInput;
@@ -17,6 +18,7 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * @author Simon Thoresen Hult
@@ -33,6 +35,14 @@ public final class ScriptExpression extends ExpressionList<StatementExpression> 
 
     public ScriptExpression(Collection<? extends StatementExpression> lst) {
         super(lst, resolveInputType(lst));
+    }
+
+    @Override
+    public ScriptExpression convertChildren(ExpressionConverter converter) {
+        return new ScriptExpression(asList().stream()
+                                            .map(child -> (StatementExpression)converter.branch().convert(child))
+                                            .filter(Objects::nonNull)
+                                            .toList());
     }
 
     @Override

@@ -279,7 +279,7 @@ public class InternalStepRunner implements StepRunner {
             switch (e.type()) {
                 case CERT_NOT_AVAILABLE:
                     // Same as CERTIFICATE_NOT_READY above, only from the controller
-                    logger.log("Creating a CA signed certificate for the application. " +
+                    logger.log("Retrieving CA signed certificate for the application. " +
                                "This may take up to " + timeouts.endpointCertificate() + " on first deployment.");
                     if (startTime.plus(timeouts.endpointCertificate()).isBefore(controller.clock().instant())) {
                         logger.log(WARNING, "CA signed certificate for app not available within " +
@@ -437,7 +437,7 @@ public class InternalStepRunner implements StepRunner {
         Version targetPlatform = controller.jobController().run(id).versions().targetPlatform();
         Version systemVersion = controller.readSystemVersion();
         boolean incompatible = controller.applications().versionCompatibility(id.application()).refuse(targetPlatform, systemVersion);
-        return incompatible || application(id.application()).change().isPinned() ? targetPlatform : systemVersion;
+        return incompatible || application(id.application()).change().isPlatformPinned() ? targetPlatform : systemVersion;
     }
 
     private Optional<RunStatus> installTester(RunId id, DualLogger logger) {

@@ -75,10 +75,10 @@ public class EndpointCertificateMaintainer extends ControllerMaintainer {
             deleteOrReportUnmanagedCertificates();
         } catch (Exception e) {
             log.log(Level.SEVERE, "Exception caught while maintaining endpoint certificates", e);
-            return 0.0;
+            return 1.0;
         }
 
-        return 1.0;
+        return 0.0;
     }
 
     private void updateRefreshedCertificates() {

@@ -52,6 +52,11 @@ func TestValgrindDetection(t *testing.T) {
 	assert.Equal(t, false, spec.shouldUseValgrind)
 	assert.Equal(t, false, spec.shouldUseCallgrind)
 
+	t.Setenv("VESPA_USE_VALGRIND", "all")
+	spec.configureValgrind()
+	assert.Equal(t, true, spec.shouldUseValgrind)
+	assert.Equal(t, false, spec.shouldUseCallgrind)
+
 	t.Setenv("VESPA_USE_VALGRIND", "foo bar")
 	spec.configureValgrind()
 	assert.Equal(t, false, spec.shouldUseValgrind)

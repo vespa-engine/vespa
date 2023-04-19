@@ -50,13 +50,12 @@ protected:
 
     /*
      * Iterate through the change vector and find new unique values.
-     * Perform compaction if necessary and insert the new unique values into the EnumStore.
+     * Insert the new unique values into the EnumStore.
      */
     void insertNewUniqueValues(EnumStoreBatchUpdater& updater);
     virtual void considerAttributeChange(const Change & c, EnumStoreBatchUpdater & inserter) = 0;
     vespalib::MemoryUsage getEnumStoreValuesMemoryUsage() const override;
     void populate_address_space_usage(AddressSpaceUsage& usage) const override;
-    void cache_change_data_entry_ref(const Change& c) const;
 public:
     EnumAttribute(const vespalib::string & baseFileName, const AttributeVector::Config & cfg);
     ~EnumAttribute();
