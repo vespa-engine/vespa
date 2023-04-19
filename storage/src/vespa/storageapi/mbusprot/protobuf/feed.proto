@@ -66,6 +66,7 @@ message GetRequest {
         Weak = 1;
     }
     InternalReadConsistency internal_read_consistency = 5;
+    TestAndSetCondition condition = 6;
 }
 
 message GetResponse {
@@ -76,6 +77,7 @@ message GetResponse {
     // Note: last_modified_timestamp and tombstone_timestamp are mutually exclusive.
     // Tracked separately (rather than being a flag bool) to avoid issues during rolling upgrades.
     uint64     tombstone_timestamp     = 5;
+    bool       condition_matched       = 6;
 }
 
 message RevertRequest {
