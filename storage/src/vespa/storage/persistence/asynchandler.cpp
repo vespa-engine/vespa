@@ -358,7 +358,11 @@ bool
 AsyncHandler::tasConditionMatches(const api::TestAndSetCommand & cmd, MessageTracker & tracker,
                                   spi::Context & context, bool missingDocumentImpliesMatch) const {
     try {
-        TestAndSetHelper helper(_env, _spi, _bucketIdFactory, cmd, missingDocumentImpliesMatch);
+        TestAndSetHelper helper(_env, _spi, _bucketIdFactory,
+                                cmd.getCondition(),
+                                cmd.getBucket(), cmd.getDocumentId(),
+                                cmd.getDocumentType(),
+                                missingDocumentImpliesMatch);
 
         auto code = helper.retrieveAndMatch(context);
         if (code.failed()) {
