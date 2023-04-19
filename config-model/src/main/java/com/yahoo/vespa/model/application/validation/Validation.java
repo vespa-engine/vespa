@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.application.validation;
 
-import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.application.api.ValidationId;
 import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.config.model.api.ConfigChangeAction;
@@ -27,7 +26,6 @@ import com.yahoo.vespa.model.application.validation.change.StartupCommandChangeV
 import com.yahoo.vespa.model.application.validation.change.StreamingSearchClusterChangeValidator;
 import com.yahoo.vespa.model.application.validation.first.RedundancyValidator;
 
-import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -76,7 +74,7 @@ public class Validation {
         new StreamingValidator().validate(model, deployState);
         new RankSetupValidator(validationParameters.ignoreValidationErrors()).validate(model, deployState);
         new NoPrefixForIndexes().validate(model, deployState);
-        new ContainerInCloudValidator().validate(model, deployState);
+        new RequireContainerValidator().validate(model, deployState);
         new DeploymentSpecValidator().validate(model, deployState);
         new ValidationOverridesValidator().validate(model, deployState);
         new ConstantValidator().validate(model, deployState);

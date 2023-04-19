@@ -8,7 +8,7 @@ import com.yahoo.vespa.model.VespaModel;
  *
  * @author jonmv
  */
-public class ContainerInCloudValidator extends Validator {
+public class RequireContainerValidator extends Validator {
 
     @Override
     public void validate(VespaModel model, DeployState deployState) {

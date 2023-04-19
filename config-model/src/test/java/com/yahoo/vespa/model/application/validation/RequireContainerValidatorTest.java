@@ -15,10 +15,10 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-public class ContainerInCloudValidatorTest {
+public class RequireContainerValidatorTest {
 
     @Test
-    void failsWhenNoContainerInCloud() throws IOException, SAXException {
+    void failsWhenNoContainerInApplication() throws IOException, SAXException {
         runValidatorOnApp("""
                            <container id='default' version='1.0'>
                              <nodes count='2' />
@@ -50,7 +50,7 @@ public class ContainerInCloudValidatorTest {
                 .properties(new TestProperties().setAllowUserFilters(false))
                 .build();
         VespaModel model = new VespaModel(new NullConfigModelRegistry(), deployState);
-        new ContainerInCloudValidator().validate(model, deployState);
+        new RequireContainerValidator().validate(model, deployState);
     }
 
 }
