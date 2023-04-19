@@ -1,7 +1,6 @@
 package ai.vespa.llm;
 
-import ai.vespa.llm.testing.MockLanguageModel;
-import org.junit.jupiter.api.Assertions;
+import ai.vespa.llm.test.MockLanguageModel;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
