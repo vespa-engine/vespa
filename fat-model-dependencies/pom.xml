@@ -96,6 +96,10 @@
           <groupId>ai.djl.huggingface</groupId>
           <artifactId>tokenizers</artifactId>
         </exclusion>
+        <exclusion>
+          <groupId>com.theokanning.openai-gpt3-java</groupId>
+          <artifactId>service</artifactId>
+        </exclusion>
       </exclusions>
     </dependency>
     <dependency>

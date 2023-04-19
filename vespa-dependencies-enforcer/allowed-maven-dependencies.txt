@@ -34,12 +34,20 @@ com.google.protobuf:protobuf-java:3.21.7
 com.ibm.icu:icu4j:70.1
 com.intellij:annotations:9.0.4
 com.microsoft.onnxruntime:onnxruntime:1.13.1
+com.squareup.okhttp3:okhttp:3.14.9
+com.squareup.okio:okio:1.17.2
+com.squareup.retrofit2:adapter-rxjava2:2.9.0
+com.squareup.retrofit2:converter-jackson:2.9.0
+com.squareup.retrofit2:retrofit:2.9.0
 com.sun.activation:javax.activation:1.2.0
 com.sun.istack:istack-commons-runtime:3.0.8
 com.sun.xml.bind:jaxb-core:2.3.0
 com.sun.xml.bind:jaxb-impl:2.3.0
 com.sun.xml.fastinfoset:FastInfoset:1.2.16
 com.thaiopensource:jing:20091111
+com.theokanning.openai-gpt3-java:api:0.12.0
+com.theokanning.openai-gpt3-java:client:0.12.0
+com.theokanning.openai-gpt3-java:service:0.12.0
 com.yahoo.athenz:athenz-auth-core:1.10.54
 com.yahoo.athenz:athenz-client-common:1.10.54
 com.yahoo.athenz:athenz-zms-core:1.10.54
@@ -69,6 +77,7 @@ io.netty:netty-transport-native-epoll:4.1.86.Final
 io.netty:netty-transport-native-unix-common:4.1.86.Final
 io.prometheus:simpleclient:0.6.0
 io.prometheus:simpleclient_common:0.6.0
+io.reactivex.rxjava2:rxjava:2.0.0
 javax.annotation:javax.annotation-api:1.2
 javax.inject:javax.inject:1
 javax.servlet:javax.servlet-api:3.1.0
@@ -201,6 +210,7 @@ org.ow2.asm:asm-commons:9.3
 org.ow2.asm:asm-tree:9.3
 org.ow2.asm:asm-util:9.3
 org.questdb:questdb:6.2
+org.reactivestreams:reactive-streams:1.0.3
 org.slf4j:jcl-over-slf4j:1.7.32
 org.slf4j:log4j-over-slf4j:1.7.32
 org.slf4j:slf4j-api:1.7.32
