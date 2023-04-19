@@ -12,8 +12,8 @@ public class ContainerInCloudValidator extends Validator {
 
     @Override
     public void validate(VespaModel model, DeployState deployState) {
-        if (deployState.isHosted() && model.getContainerClusters().isEmpty())
-            throw new IllegalArgumentException("Vespa Cloud applications must have at least one container cluster");
+        if (model.getContainerClusters().isEmpty())
+            throw new IllegalArgumentException("Applications must have at least one container cluster");
     }
 
 }

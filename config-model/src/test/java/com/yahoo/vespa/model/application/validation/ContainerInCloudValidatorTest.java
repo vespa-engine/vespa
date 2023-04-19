@@ -19,22 +19,18 @@ public class ContainerInCloudValidatorTest {
 
     @Test
     void failsWhenNoContainerInCloud() throws IOException, SAXException {
-        String noContainer = "";
-        String container = """
+        runValidatorOnApp("""
                            <container id='default' version='1.0'>
                              <nodes count='2' />
                            </container>
-                           """;
-        runValidatorOnApp(false, container);
-        runValidatorOnApp(false, noContainer);
-        runValidatorOnApp(true, container);
-        assertEquals("Vespa Cloud applications must have at least one container cluster",
+                           """);
+        assertEquals("Applications must have at least one container cluster",
                      assertThrows(IllegalArgumentException.class,
-                                  () -> runValidatorOnApp(true, noContainer))
+                                  () -> runValidatorOnApp(""))
                              .getMessage());
     }
 
-    private static void runValidatorOnApp(boolean isHosted, String container) throws IOException, SAXException {
+    private static void runValidatorOnApp(String container) throws IOException, SAXException {
         String servicesXml = """
                         <services version='1.0'>
                           %s
@@ -51,7 +47,7 @@ public class ContainerInCloudValidatorTest {
                 .build();
         DeployState deployState = new DeployState.Builder()
                 .applicationPackage(app)
-                .properties(new TestProperties().setHostedVespa(isHosted).setAllowUserFilters(false))
+                .properties(new TestProperties().setAllowUserFilters(false))
                 .build();
         VespaModel model = new VespaModel(new NullConfigModelRegistry(), deployState);
         new ContainerInCloudValidator().validate(model, deployState);
