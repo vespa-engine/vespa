@@ -278,7 +278,7 @@ double
 HnswIndex<type>::calc_distance(uint32_t lhs_nodeid, uint32_t rhs_nodeid) const
 {
     auto lhs = get_vector(lhs_nodeid);
-    auto df = _distance_ff->forInsertionVector(lhs);
+    auto df = _distance_ff->for_insertion_vector(lhs);
     auto rhs = get_vector(rhs_nodeid);
     return df->calc(rhs);
 }
@@ -491,7 +491,7 @@ HnswIndex<type>::internal_prepare_add_node(PreparedAddDoc& op, TypedCells input_
         return;
     }
     int search_level = entry.level;
-    auto df = _distance_ff->forInsertionVector(input_vector);
+    auto df = _distance_ff->for_insertion_vector(input_vector);
     double entry_dist = calc_distance(*df, entry.nodeid);
     uint32_t entry_docid = get_docid(entry.nodeid);
     // TODO: check if entry nodeid/levels_ref is still valid here

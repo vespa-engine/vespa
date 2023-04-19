@@ -171,7 +171,7 @@ public:
         uint32_t explore_k = 100;
         vespalib::ArrayRef qv_ref(qv);
         vespalib::eval::TypedCells qv_cells(qv_ref);
-        auto df = index->distance_function_factory().forQueryVector(qv_cells);
+        auto df = index->distance_function_factory().for_query_vector(qv_cells);
         auto got_by_docid = (global_filter->is_active()) ?
                             index->find_top_k_with_filter(k, *df, *global_filter, explore_k, 10000.0) :
                             index->find_top_k(k, *df, explore_k, 10000.0);
@@ -185,7 +185,7 @@ public:
     void expect_top_3(uint32_t docid, std::vector<uint32_t> exp_hits) {
         uint32_t k = 3;
         auto qv = vectors.get_vector(docid, 0);
-        auto df = index->distance_function_factory().forQueryVector(qv);
+        auto df = index->distance_function_factory().for_query_vector(qv);
         auto rv = index->top_k_candidates(*df, k, global_filter->ptr_if_active()).peek();
         std::sort(rv.begin(), rv.end(), LesserDistance());
         size_t idx = 0;
@@ -206,7 +206,7 @@ public:
     }
     void check_with_distance_threshold(uint32_t docid) {
         auto qv = vectors.get_vector(docid, 0);
-        auto df = index->distance_function_factory().forQueryVector(qv);
+        auto df = index->distance_function_factory().for_query_vector(qv);
         uint32_t k = 3;
         auto rv = index->top_k_candidates(*df, k, global_filter->ptr_if_active()).peek();
         std::sort(rv.begin(), rv.end(), LesserDistance());

@@ -50,26 +50,26 @@ make_distance_function(DistanceMetric variant, CellType cell_type)
 
 class SimpleBoundDistanceFunction : public BoundDistanceFunction {
     const vespalib::eval::TypedCells _lhs;
-    const DistanceFunction *_df;
+    const DistanceFunction &_df;
 public:
     SimpleBoundDistanceFunction(const vespalib::eval::TypedCells& lhs,
-                                const DistanceFunction *df)
+                                const DistanceFunction &df)
         : BoundDistanceFunction(lhs.type),
           _lhs(lhs),
           _df(df)
         {}
 
     double calc(const vespalib::eval::TypedCells& rhs) const override {
-        return _df->calc(_lhs, rhs);
+        return _df.calc(_lhs, rhs);
     }
     double convert_threshold(double threshold) const override {
-        return _df->convert_threshold(threshold);
+        return _df.convert_threshold(threshold);
     }
     double to_rawscore(double distance) const override {
-        return _df->to_rawscore(distance);
+        return _df.to_rawscore(distance);
     }
     double calc_with_limit(const vespalib::eval::TypedCells& rhs, double limit) const override {
-        return _df->calc_with_limit(_lhs, rhs, limit);
+        return _df.calc_with_limit(_lhs, rhs, limit);
     }
 };
 
@@ -81,11 +81,11 @@ public:
           _df(std::move(df))
         {}
 
-    BoundDistanceFunction::UP forQueryVector(const vespalib::eval::TypedCells& lhs) override {
-        return std::make_unique<SimpleBoundDistanceFunction>(lhs, _df.get());
+    BoundDistanceFunction::UP for_query_vector(const vespalib::eval::TypedCells& lhs) override {
+        return std::make_unique<SimpleBoundDistanceFunction>(lhs, *_df);
     }
-    BoundDistanceFunction::UP forInsertionVector(const vespalib::eval::TypedCells& lhs) override {
-        return std::make_unique<SimpleBoundDistanceFunction>(lhs, _df.get());
+    BoundDistanceFunction::UP for_insertion_vector(const vespalib::eval::TypedCells& lhs) override {
+        return std::make_unique<SimpleBoundDistanceFunction>(lhs, *_df);
     }
 };
 

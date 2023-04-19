@@ -136,7 +136,7 @@ SimpleResult find_matches(Fixture &env, const Value &qtv, double threshold = std
     auto &attr = *(env._attr);
 
     auto dff = search::tensor::make_distance_function_factory(DistanceMetric::Euclidean, qtv.cells().type);
-    DistanceCalculator dist_calc(attr, dff->forQueryVector(qtv.cells()));
+    DistanceCalculator dist_calc(attr, dff->for_query_vector(qtv.cells()));
     NearestNeighborDistanceHeap dh(2);
     dh.set_distance_threshold(env.dist_fun().convert_threshold(threshold));
     const GlobalFilter &filter = *env._global_filter;
@@ -263,7 +263,7 @@ std::vector<feature_t> get_rawscores(Fixture &env, const Value &qtv) {
     auto &tfmd = *(md->resolveTermField(0));
     auto &attr = *(env._attr);
     auto dff = search::tensor::make_distance_function_factory(DistanceMetric::Euclidean, qtv.cells().type);
-    DistanceCalculator dist_calc(attr, dff->forQueryVector(qtv.cells()));
+    DistanceCalculator dist_calc(attr, dff->for_query_vector(qtv.cells()));
     NearestNeighborDistanceHeap dh(2);
     auto dummy_filter = GlobalFilter::create();
     auto search = NearestNeighborIterator::create(strict, tfmd, dist_calc, dh, *dummy_filter);
@@ -338,7 +338,7 @@ TEST(NnsIndexIteratorTest, require_that_iterator_works_as_expected) {
     auto &tfmd = *(md->resolveTermField(0));
     auto dff = search::tensor::make_distance_function_factory(DistanceMetric::Euclidean, CellType::DOUBLE);
     vespalib::eval::TypedCells dummy;
-    auto df = dff->forQueryVector(dummy);
+    auto df = dff->for_query_vector(dummy);
     auto search = NnsIndexIterator::create(tfmd, hits, *df);
     search->initFullRange();
     expect_not_match(*search, 1, 2);

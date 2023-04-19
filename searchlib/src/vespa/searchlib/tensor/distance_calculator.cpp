@@ -67,7 +67,7 @@ DistanceCalculator::DistanceCalculator(const tensor::ITensorAttribute& attr_tens
         _query_tensor_uptr = converter(query_ct, required_ct, *_query_tensor);
         _query_tensor = _query_tensor_uptr.get();
     }
-    _dist_fun = dff.forQueryVector(_query_tensor->cells());
+    _dist_fun = dff.for_query_vector(_query_tensor->cells());
     assert(_dist_fun);
 }
 

@@ -9,12 +9,17 @@
 
 namespace search::tensor {
 
+/**
+ * API for binding the LHS of a distance calculation
+ * This allows keeping global state in the factory itself, and state
+ * for one particular vector in the distance function object.
+ */
 struct DistanceFunctionFactory {
     const vespalib::eval::CellType expected_cell_type;
     DistanceFunctionFactory(vespalib::eval::CellType ct) : expected_cell_type(ct) {}
     virtual ~DistanceFunctionFactory() {}
-    virtual BoundDistanceFunction::UP forQueryVector(const vespalib::eval::TypedCells& lhs) = 0;
-    virtual BoundDistanceFunction::UP forInsertionVector(const vespalib::eval::TypedCells& lhs) = 0;
+    virtual BoundDistanceFunction::UP for_query_vector(const vespalib::eval::TypedCells& lhs) = 0;
+    virtual BoundDistanceFunction::UP for_insertion_vector(const vespalib::eval::TypedCells& lhs) = 0;
     using UP = std::unique_ptr<DistanceFunctionFactory>;
 };
 
