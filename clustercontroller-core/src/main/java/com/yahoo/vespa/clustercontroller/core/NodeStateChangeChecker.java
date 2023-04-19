@@ -340,10 +340,10 @@ public class NodeStateChangeChecker {
         return Optional.empty();
     }
 
-    private ArrayList<Integer> sortSetIntoList(Set<Integer> retiredOrNotUpGroups) {
-        var groupsWithNodesDown = new ArrayList<>(retiredOrNotUpGroups);
-        Collections.sort(groupsWithNodesDown);
-        return groupsWithNodesDown;
+    private ArrayList<Integer> sortSetIntoList(Set<Integer> set) {
+        var sortedList = new ArrayList<>(set);
+        Collections.sort(sortedList);
+        return sortedList;
     }
 
     /** Returns a disallow-result, if there is a node in the group with wanted state != UP. */
