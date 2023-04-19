@@ -14,13 +14,15 @@ var asciiSpace = [256]uint8{'\t': 1, '\n': 1, '\v': 1, '\f': 1, '\r': 1, ' ': 1}
 type Operation int
 
 const (
-	OperationPut = iota
+	OperationPut Operation = iota
 	OperationUpdate
 	OperationRemove
 )
 
 // Id represents a Vespa document ID.
 type Id struct {
+	id string
+
 	Type         string
 	Namespace    string
 	Number       *int64
@@ -36,24 +38,7 @@ func (d Id) Equal(o Id) bool {
 		d.UserSpecific == o.UserSpecific
 }
 
-func (d Id) String() string {
-	var sb strings.Builder
-	sb.WriteString("id:")
-	sb.WriteString(d.Namespace)
-	sb.WriteString(":")
-	sb.WriteString(d.Type)
-	sb.WriteString(":")
-	if d.Number != nil {
-		sb.WriteString("n=")
-		sb.WriteString(strconv.FormatInt(*d.Number, 10))
-	} else if d.Group != "" {
-		sb.WriteString("g=")
-		sb.WriteString(d.Group)
-	}
-	sb.WriteString(":")
-	sb.WriteString(d.UserSpecific)
-	return sb.String()
-}
+func (d Id) String() string { return d.id }
 
 // ParseId parses a serialized document ID string.
 func ParseId(serialized string) (Id, error) {
@@ -95,6 +80,7 @@ func ParseId(serialized string) (Id, error) {
 		return Id{}, parseError(serialized)
 	}
 	return Id{
+		id:           serialized,
 		Namespace:    namespace,
 		Type:         docType,
 		Number:       number,

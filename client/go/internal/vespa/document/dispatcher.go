@@ -29,8 +29,9 @@ type Dispatcher struct {
 	output        io.Writer
 	verbose       bool
 
+	listPool sync.Pool
 	mu       sync.RWMutex
-	wg       sync.WaitGroup
+	workerWg sync.WaitGroup
 	resultWg sync.WaitGroup
 }
 
@@ -42,21 +43,14 @@ type documentOp struct {
 
 // documentGroup holds document operations which share an ID, and must be dispatched in order.
 type documentGroup struct {
-	ops *list.List
-	mu  sync.Mutex
+	q  *Queue[documentOp]
+	mu sync.Mutex
 }
 
 func (g *documentGroup) add(op documentOp, first bool) {
 	g.mu.Lock()
 	defer g.mu.Unlock()
-	if g.ops == nil {
-		g.ops = list.New()
-	}
-	if first {
-		g.ops.PushFront(op)
-	} else {
-		g.ops.PushBack(op)
-	}
+	g.q.Add(op, first)
 }
 
 func NewDispatcher(feeder Feeder, throttler Throttler, breaker CircuitBreaker, output io.Writer, verbose bool) *Dispatcher {
@@ -74,11 +68,10 @@ func NewDispatcher(feeder Feeder, throttler Throttler, breaker CircuitBreaker, o
 
 func (d *Dispatcher) sendDocumentIn(group *documentGroup) {
 	group.mu.Lock()
-	first := group.ops.Front()
-	if first == nil {
+	op, ok := group.q.Poll()
+	if !ok {
 		panic("sending from empty document group, this should not happen")
 	}
-	op := group.ops.Remove(first).(documentOp)
 	op.attempts++
 	result := d.feeder.Send(op.document)
 	d.results <- result
@@ -134,46 +127,25 @@ func (d *Dispatcher) start() {
 	if d.started {
 		return
 	}
+	d.listPool.New = func() any { return list.New() }
 	d.ready = make(chan Id, 4096)
 	d.results = make(chan Result, 4096)
 	d.msgs = make(chan string, 4096)
 	d.started = true
-	d.wg.Add(1)
-	go func() {
-		defer d.wg.Done()
-		d.readDocuments()
-	}()
 	d.resultWg.Add(2)
-	go func() {
-		defer d.resultWg.Done()
-		d.readResults()
-	}()
-	go func() {
-		defer d.resultWg.Done()
-		d.readMessages()
-	}()
+	go d.sumStats()
+	go d.printMessages()
 }
 
-func (d *Dispatcher) readDocuments() {
-	for id := range d.ready {
-		d.mu.RLock()
-		group := d.inflight[id.String()]
-		d.mu.RUnlock()
-		d.wg.Add(1)
-		go func() {
-			defer d.wg.Done()
-			d.sendDocumentIn(group)
-		}()
-	}
-}
-
-func (d *Dispatcher) readResults() {
+func (d *Dispatcher) sumStats() {
+	defer d.resultWg.Done()
 	for result := range d.results {
 		d.stats.Add(result.Stats)
 	}
 }
 
-func (d *Dispatcher) readMessages() {
+func (d *Dispatcher) printMessages() {
+	defer d.resultWg.Done()
 	for msg := range d.msgs {
 		fmt.Fprintln(d.output, msg)
 	}
@@ -187,7 +159,7 @@ func (d *Dispatcher) enqueue(op documentOp) error {
 	key := op.document.Id.String()
 	group, ok := d.inflight[key]
 	if !ok {
-		group = &documentGroup{}
+		group = &documentGroup{q: NewQueue[documentOp](&d.listPool)}
 		d.inflight[key] = group
 	}
 	d.mu.Unlock()
@@ -200,6 +172,19 @@ func (d *Dispatcher) enqueueWithSlot(id Id) {
 	d.acquireSlot()
 	d.ready <- id
 	d.throttler.Sent()
+	d.dispatch()
+}
+
+func (d *Dispatcher) dispatch() {
+	d.workerWg.Add(1)
+	go func() {
+		defer d.workerWg.Done()
+		id := <-d.ready
+		d.mu.RLock()
+		group := d.inflight[id.String()]
+		d.mu.RUnlock()
+		d.sendDocumentIn(group)
+	}()
 }
 
 func (d *Dispatcher) acquireSlot() {
@@ -217,13 +202,7 @@ func (d *Dispatcher) Stats() Stats { return d.stats }
 
 // Close closes the dispatcher and waits for all inflight operations to complete.
 func (d *Dispatcher) Close() error {
-	d.mu.Lock()
-	if d.started {
-		close(d.ready)
-	}
-	d.mu.Unlock()
-	d.wg.Wait() // Wait for inflight operations to complete
-
+	d.workerWg.Wait() // Wait for all inflight operations to complete
 	d.mu.Lock()
 	if d.started {
 		close(d.results)

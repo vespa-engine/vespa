@@ -2,6 +2,7 @@ package document
 
 import (
 	"bytes"
+	"compress/gzip"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -16,6 +17,14 @@ import (
 	"github.com/vespa-engine/vespa/client/go/internal/util"
 )
 
+type Compression int
+
+const (
+	CompressionAuto Compression = iota
+	CompressionNone
+	CompressionGzip
+)
+
 // Client represents a HTTP client for the /document/v1/ API.
 type Client struct {
 	options     ClientOptions
@@ -26,10 +35,11 @@ type Client struct {
 
 // ClientOptions specifices the configuration options of a feed client.
 type ClientOptions struct {
-	BaseURL    string
-	Timeout    time.Duration
-	Route      string
-	TraceLevel int
+	BaseURL     string
+	Timeout     time.Duration
+	Route       string
+	TraceLevel  int
+	Compression Compression
 }
 
 type countingHTTPClient struct {
@@ -152,6 +162,33 @@ func (c *Client) leastBusyClient() *countingHTTPClient {
 	return &leastBusy
 }
 
+func (c *Client) createRequest(method, url string, body []byte) (*http.Request, error) {
+	var r io.Reader
+	useGzip := c.options.Compression == CompressionGzip || (c.options.Compression == CompressionAuto && len(body) > 512)
+	if useGzip {
+		var buf bytes.Buffer
+		w := gzip.NewWriter(&buf)
+		if _, err := w.Write(body); err != nil {
+			return nil, err
+		}
+		if err := w.Close(); err != nil {
+			return nil, err
+		}
+		r = &buf
+	} else {
+		r = bytes.NewReader(body)
+	}
+	req, err := http.NewRequest(method, url, r)
+	if err != nil {
+		return nil, err
+	}
+	if useGzip {
+		req.Header.Set("Content-Encoding", "gzip")
+	}
+	req.Header.Set("Content-Type", "application/json; charset=utf-8")
+	return req, nil
+}
+
 // Send given document to the endpoint configured in this client.
 func (c *Client) Send(document Document) Result {
 	start := c.now()
@@ -160,7 +197,7 @@ func (c *Client) Send(document Document) Result {
 	if err != nil {
 		return resultWithErr(result, err)
 	}
-	req, err := http.NewRequest(method, url.String(), bytes.NewReader(document.Body))
+	req, err := c.createRequest(method, url.String(), document.Body)
 	if err != nil {
 		return resultWithErr(result, err)
 	}
