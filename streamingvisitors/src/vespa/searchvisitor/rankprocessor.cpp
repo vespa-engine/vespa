@@ -4,6 +4,7 @@
 #include "rankprocessor.h"
 #include <vespa/searchlib/fef/handle.h>
 #include <vespa/searchlib/fef/simpletermfielddata.h>
+#include <vespa/searchlib/query/streaming/nearest_neighbor_query_node.h>
 #include <vespa/vsm/vsm/fieldsearchspec.h>
 #include <cmath>
 #include <vespa/log/log.h>
@@ -227,14 +228,27 @@ void
 RankProcessor::unpackMatchData(uint32_t docId)
 {
     _docId = docId;
-    unpackMatchData(*_match_data);
+    unpack_match_data(docId, *_match_data, _query);
 }
 
 void
-RankProcessor::unpackMatchData(MatchData &matchData)
+RankProcessor::unpack_match_data(uint32_t docid, MatchData &matchData, QueryWrapper& query)
 {
-    for (QueryWrapper::Term & term: _query.getTermList()) {
-        if (!term.isPhraseTerm() || term.isFirstPhraseTerm()) { // consider 1 term data per phrase
+    for (QueryWrapper::Term & term: query.getTermList()) {
+        auto nn_node = term.getTerm()->as_nearest_neighbor_query_node();
+        if (nn_node != nullptr) {
+            auto& raw_score = nn_node->get_raw_score();
+            if (raw_score.has_value()) {
+                auto& qtd = static_cast<QueryTermData &>(term.getTerm()->getQueryItem());
+                auto& td = qtd.getTermData();
+                if (td.numFields() == 1u) {
+                    auto tfd = td.field(0u);
+                    auto tmd = matchData.resolveTermField(tfd.getHandle());
+                    assert(tmd != nullptr);
+                    tmd->setRawScore(docid, raw_score.value());
+                }
+            }
+        } else if (!term.isPhraseTerm() || term.isFirstPhraseTerm()) { // consider 1 term data per phrase
             bool isPhrase = term.isFirstPhraseTerm();
             QueryTermData & qtd = static_cast<QueryTermData &>(term.getTerm()->getQueryItem());
             const ITermData &td = qtd.getTermData();
@@ -266,8 +280,8 @@ RankProcessor::unpackMatchData(MatchData &matchData)
                             tmd = matchData.resolveTermField(tfd->getHandle());
                             tmd->setFieldId(fieldId);
                             // reset field match data, but only once per docId
-                            if (tmd->getDocId() != _docId) {
-                                tmd->reset(_docId);
+                            if (tmd->getDocId() != docid) {
+                                tmd->reset(docid);
                             }
                         }
                         // find fieldLen for new field
