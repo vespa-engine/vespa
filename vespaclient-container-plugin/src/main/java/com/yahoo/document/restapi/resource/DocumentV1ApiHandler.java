@@ -1149,7 +1149,7 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
 
     private VisitorParameters parseGetParameters(HttpRequest request, DocumentPath path, boolean streamed) {
         int wantedDocumentCount = getProperty(request, WANTED_DOCUMENT_COUNT, integerParser)
-                .orElse(streamed ? Integer.MAX_VALUE : 1 << 10);
+                .orElse(streamed ? Integer.MAX_VALUE : 1);
         if (wantedDocumentCount <= 0)
             throw new IllegalArgumentException("wantedDocumentCount must be positive");
 
