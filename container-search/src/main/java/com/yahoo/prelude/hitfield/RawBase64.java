@@ -10,6 +10,7 @@ import java.util.Objects;
  * @author baldersheim
  */
 public class RawBase64 implements Comparable<RawBase64> {
+    private final static Base64.Encoder encoder = Base64.getEncoder().withoutPadding();
     private final byte[] content;
     public RawBase64(byte[] content) {
         Objects.requireNonNull(content);
@@ -25,7 +26,7 @@ public class RawBase64 implements Comparable<RawBase64> {
 
     @Override
     public String toString() {
-        return Base64.getEncoder().withoutPadding().encodeToString(content);
+        return encoder.encodeToString(content);
     }
 
     @Override

@@ -52,7 +52,7 @@ public class DocumentTestCase extends DocumentTestCaseBase {
             " <mailid>emailfromalicetobob&amp;someone</mailid>\n" +
             " <date>-2013512400</date>\n" +
             " <attachmentcount>2</attachmentcount>\n" +
-            " <rawfield binaryencoding=\"base64\">AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8gISIjJCUmJygpKissLS4vMDEyMzQ1Njc4OTo7PD0+P0BBQkNERUZHSElKS0xNTk9QUVJTVFVWV1hZWltcXV5fYGFiYw==</rawfield>\n";
+            " <rawfield binaryencoding=\"base64\">AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8gISIjJCUmJygpKissLS4vMDEyMzQ1Njc4OTo7PD0+P0BBQkNERUZHSElKS0xNTk9QUVJTVFVWV1hZWltcXV5fYGFiYw</rawfield>\n";
 
     private static final String SERTEST_DOC_AS_XML_WEIGHT1 =
             " <weightedfield>\n" +

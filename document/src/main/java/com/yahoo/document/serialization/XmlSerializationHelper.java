@@ -34,6 +34,8 @@ import java.util.Map;
 @SuppressWarnings("removal")
 public class XmlSerializationHelper {
 
+    private final static Base64.Encoder base64Encoder = Base64.getEncoder().withoutPadding();
+
     public static void printArrayXml(Array array, XmlStream xml) {
         List<FieldValue> lst = array.getValues();
         for (FieldValue value : lst) {
@@ -98,7 +100,7 @@ public class XmlSerializationHelper {
 
     public static void printRawXml(Raw r, XmlStream xml) {
         xml.addAttribute("binaryencoding", "base64");
-        xml.addContent(Base64.getEncoder().encodeToString(r.getByteBuffer().array()));
+        xml.addContent(base64Encoder.encodeToString(r.getByteBuffer().array()));
     }
 
     public static void printStringXml(StringFieldValue s, XmlStream xml) {
@@ -106,7 +108,7 @@ public class XmlSerializationHelper {
         if (containsNonPrintableCharactersString(content)) {
             byte[] bytecontent = Utf8.toBytes(content);
             xml.addAttribute("binaryencoding", "base64");
-            xml.addContent(Base64.getEncoder().encodeToString(bytecontent));
+            xml.addContent(base64Encoder.encodeToString(bytecontent));
         } else {
             xml.addContent(content);
         }
