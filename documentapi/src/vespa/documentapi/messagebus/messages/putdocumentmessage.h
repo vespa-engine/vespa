@@ -67,8 +67,8 @@ public:
     uint32_t getType() const override;
     string toString() const override { return "putdocumentmessage"; }
 
-    void set_create_if_non_existent(bool value) { _create_if_non_existent = value; }
-    bool get_create_if_non_existent() const { return _create_if_non_existent; }
+    void set_create_if_non_existent(bool value) noexcept { _create_if_non_existent = value; }
+    bool get_create_if_non_existent() const noexcept { return _create_if_non_existent; }
 };
 
 }

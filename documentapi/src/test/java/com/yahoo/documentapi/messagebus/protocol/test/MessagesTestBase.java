@@ -94,6 +94,7 @@ public abstract class MessagesTestBase {
         return Arrays.equals(existingData, dataToWrite);
     }
 
+    @FunctionalInterface
     public interface DataTamper {
         byte[] tamperWith(byte[] data);
         static byte[] truncate(byte[] data, int bytes) {

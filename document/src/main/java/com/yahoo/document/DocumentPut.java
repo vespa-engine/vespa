@@ -2,6 +2,7 @@
 package com.yahoo.document;
 
 import java.util.Objects;
+import com.yahoo.api.annotations.Beta;
 
 /**
  * @author Vegard Sjonfjell
@@ -71,9 +72,12 @@ public class DocumentPut extends DocumentOperation {
         return "put of document " + getId();
     }
 
+    @Beta
     public void setCreateIfNonExistent(boolean value) {
         createIfNonExistent = value;
     }
+
+    @Beta
     public boolean getCreateIfNonExistent() {
         return createIfNonExistent;
     }
