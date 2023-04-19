@@ -18,15 +18,16 @@ vespa_define_module(
     src/vespa/vsm/vsm
 
     TESTS
-    src/tests/hitcollector
-    src/tests/matching_elements_filler
-    src/tests/querywrapper
-    src/tests/searchvisitor
     src/tests/charbuffer
     src/tests/docsum
     src/tests/document
+    src/tests/hitcollector
+    src/tests/matching_elements_filler
+    src/tests/nearest_neighbor_field_searcher
     src/tests/query_term_filter_factory
+    src/tests/querywrapper
     src/tests/rank_processor
     src/tests/searcher
+    src/tests/searchvisitor
     src/tests/textutil
 )
