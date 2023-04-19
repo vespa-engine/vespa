@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.documentapi.messagebus.protocol;
 
+import com.yahoo.api.annotations.Beta;
 import com.yahoo.document.DocumentPut;
 import com.yahoo.document.TestAndSetCondition;
 import com.yahoo.document.serialization.DocumentDeserializer;
@@ -129,4 +130,14 @@ public class PutDocumentMessage extends TestAndSetMessage {
         put.setCondition(condition);
     }
 
+    @Beta
+    public void setCreateIfNonExistent(boolean value) {
+        put.setCreateIfNonExistent(value);
+    }
+
+    @Beta
+    public boolean getCreateIfNonExistent() {
+        deserialize();
+        return put.getCreateIfNonExistent();
+    }
 }

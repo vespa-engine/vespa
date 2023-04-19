@@ -2,6 +2,7 @@
 package com.yahoo.document;
 
 import java.util.Objects;
+import com.yahoo.api.annotations.Beta;
 
 /**
  * @author Vegard Sjonfjell
@@ -9,6 +10,7 @@ import java.util.Objects;
 public class DocumentPut extends DocumentOperation {
 
     private final Document document;
+    private boolean createIfNonExistent;
 
     public DocumentPut(Document document) {
         this.document = document;
@@ -38,6 +40,7 @@ public class DocumentPut extends DocumentOperation {
     public DocumentPut(DocumentPut other) {
         super(other);
         this.document = new Document(other.getDocument());
+        createIfNonExistent = other.createIfNonExistent;
     }
 
     /**
@@ -46,6 +49,7 @@ public class DocumentPut extends DocumentOperation {
     public DocumentPut(DocumentPut other, Document newDocument) {
         super(other);
         this.document = newDocument;
+        createIfNonExistent = other.createIfNonExistent;
     }
 
     @Override
@@ -54,6 +58,7 @@ public class DocumentPut extends DocumentOperation {
         if (o == null || getClass() != o.getClass()) return false;
         DocumentPut that = (DocumentPut) o;
         return document.equals(that.document) &&
+               (createIfNonExistent == that.createIfNonExistent) &&
                Objects.equals(getCondition(), that.getCondition());
     }
 
@@ -67,4 +72,13 @@ public class DocumentPut extends DocumentOperation {
         return "put of document " + getId();
     }
 
+    @Beta
+    public void setCreateIfNonExistent(boolean value) {
+        createIfNonExistent = value;
+    }
+
+    @Beta
+    public boolean getCreateIfNonExistent() {
+        return createIfNonExistent;
+    }
 }

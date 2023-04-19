@@ -607,6 +607,10 @@ public abstract class RoutableFactories60 {
             msg.setDocumentPut(new DocumentPut(Document.createDocument(buf)));
             msg.setTimestamp(buf.getLong(null));
             decodeTasCondition(msg, buf);
+            if (buf.getBuf().hasRemaining()) {
+                byte value = buf.getBuf().get();
+                msg.setCreateIfNonExistent(value != 0);
+            }
         }
 
         @Override
@@ -627,6 +631,11 @@ public abstract class RoutableFactories60 {
                 msg.getDocumentPut().getDocument().serialize(buf);
                 buf.putLong(null, msg.getTimestamp());
                 encodeTasCondition(buf, (TestAndSetMessage) obj);
+                if (msg.getCreateIfNonExistent()) {
+                    buf.getBuf().put((byte)1);
+                } else {
+                    buf.getBuf().put((byte)0);
+                }
             }
             return true;
         }

@@ -597,6 +597,26 @@ public class Messages60TestCase extends MessagesTestBase {
 
     public class testPutDocumentMessage implements RunnableTest {
 
+        void verifyCreateIfNonExistentFlag() {
+            var msg = new PutDocumentMessage(new DocumentPut(new Document(protocol.getDocumentTypeManager().getDocumentType("testdoc"), "id:ns:testdoc::")));
+            msg.setCreateIfNonExistent(true);
+            int size_of_create_if_non_existent_flag = 1;
+            int expected_serialized_size = BASE_MESSAGE_LENGTH + 45 + serializedLength(msg.getCondition().getSelection()) + size_of_create_if_non_existent_flag;
+            assertEquals(expected_serialized_size, serialize("PutDocumentMessage-create", msg));
+            assertEquals(expected_serialized_size - 1, serialize("PutDocumentMessage-create-truncate", msg, data -> DataTamper.truncate(data, 1)));
+            assertEquals(expected_serialized_size + 1, serialize("PutDocumentMessage-create-pad", msg, data -> DataTamper.pad(data, 1)));
+            for (Language lang: LANGUAGES) {
+                var decoded = (PutDocumentMessage)deserialize("PutDocumentMessage-create", DocumentProtocol.MESSAGE_PUTDOCUMENT, lang);
+                var decoded_trunc = (PutDocumentMessage)deserialize("PutDocumentMessage-create-truncate", DocumentProtocol.MESSAGE_PUTDOCUMENT, lang);
+                var decoded_pad = (PutDocumentMessage)deserialize("PutDocumentMessage-create-pad", DocumentProtocol.MESSAGE_PUTDOCUMENT, lang);
+                assertEquals(true, decoded.getCreateIfNonExistent());
+                assertEquals(false, decoded_trunc.getCreateIfNonExistent());
+                assertEquals(true, decoded_pad.getCreateIfNonExistent());
+                assertTrue(decoded.getDocumentPut().equals(decoded_pad.getDocumentPut()));
+                assertFalse(decoded.getDocumentPut().equals(decoded_trunc.getDocumentPut()));
+            }
+        }
+
         @Override
         public void run() {
             PutDocumentMessage msg = new PutDocumentMessage(new DocumentPut(new Document(protocol.getDocumentTypeManager().getDocumentType("testdoc"), "id:ns:testdoc::")));
@@ -604,7 +624,9 @@ public class Messages60TestCase extends MessagesTestBase {
             msg.setTimestamp(666);
             msg.setCondition(new TestAndSetCondition(CONDITION_STRING));
 
-            assertEquals(BASE_MESSAGE_LENGTH + 45 + serializedLength(msg.getCondition().getSelection()), serialize("PutDocumentMessage", msg));
+            int size_of_create_if_non_existent_flag = 1;
+            int expected_serialized_size = BASE_MESSAGE_LENGTH + 45 + serializedLength(msg.getCondition().getSelection()) + size_of_create_if_non_existent_flag;
+            assertEquals(expected_serialized_size, serialize("PutDocumentMessage", msg));
 
             for (Language lang : LANGUAGES) {
                 final PutDocumentMessage deserializedMsg = (PutDocumentMessage)deserialize("PutDocumentMessage", DocumentProtocol.MESSAGE_PUTDOCUMENT, lang);
@@ -612,7 +634,9 @@ public class Messages60TestCase extends MessagesTestBase {
                 assertEquals(msg.getDocumentPut().getDocument().getId().toString(), deserializedMsg.getDocumentPut().getDocument().getId().toString());
                 assertEquals(msg.getTimestamp(), deserializedMsg.getTimestamp());
                 assertEquals(msg.getCondition().getSelection(), deserializedMsg.getCondition().getSelection());
+                assertEquals(false, deserializedMsg.getCreateIfNonExistent());
             }
+            verifyCreateIfNonExistentFlag();
         }
     }
 

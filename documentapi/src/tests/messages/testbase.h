@@ -43,13 +43,20 @@ protected:
     int Main() override;
 
 public:
+    using Tamper = std::function<mbus::Blob(mbus::Blob)>;
+    static mbus::Blob truncate(mbus::Blob data, size_t bytes);
+    static mbus::Blob pad(mbus::Blob data, size_t bytes);
+
     const document::DocumentTypeRepo &getTypeRepo() { return *_repo; }
     std::shared_ptr<const document::DocumentTypeRepo> &getTypeRepoSp() { return _repo; }
 
     bool testCoverage(const std::vector<uint32_t> &expected, const std::vector<uint32_t> &actual, bool report = false) const;
     bool writeFile(const string &filename, const mbus::Blob& blob) const;
     mbus::Blob readFile(const string &filename) const;
-    uint32_t serialize(const string &filename, const mbus::Routable &routable);
+    uint32_t serialize(const string &filename, const mbus::Routable &routable, Tamper tamper);
+    uint32_t serialize(const string &filename, const mbus::Routable &routable) {
+        return serialize(filename, routable, [](auto x)noexcept{ return x; });
+    }
     mbus::Routable::UP deserialize(const string &filename, uint32_t classId, uint32_t lang);
     void dump(const mbus::Blob &blob) const;
 

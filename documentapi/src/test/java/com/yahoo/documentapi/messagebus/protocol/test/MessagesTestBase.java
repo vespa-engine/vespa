@@ -94,17 +94,37 @@ public abstract class MessagesTestBase {
         return Arrays.equals(existingData, dataToWrite);
     }
 
+    @FunctionalInterface
+    public interface DataTamper {
+        byte[] tamperWith(byte[] data);
+        static byte[] truncate(byte[] data, int bytes) {
+            int newLength = data.length - bytes;
+            assertTrue(newLength > 0);
+            byte[] res = new byte[newLength];
+            System.arraycopy(data, 0, res, 0, newLength);
+            return res;
+        }
+        static byte[] pad(byte[] data, int bytes) {
+            int newLength = data.length + bytes;
+            byte[] res = new byte[newLength];
+            System.arraycopy(data, 0, res, 0, data.length);
+            return res;
+        }
+    }
+
     /**
      * Writes the content of the given routable to the given file.
      *
      * @param filename The name of the file to write to.
      * @param routable The routable to serialize.
+     * @param tamper allows tampering with serialized data
      * @return The size of the written file.
      */
-    public int serialize(String filename, Routable routable) {
+    public int serialize(String filename, Routable routable, DataTamper tamper) {
         Version version = version();
         String path = getPath(version + "-java-" + filename + ".dat");
         byte[] data = protocol.encode(version, routable);
+        data = tamper.tamperWith(data);
         assertNotNull(data);
         assertTrue(data.length > 0);
         try {
@@ -121,6 +141,9 @@ public abstract class MessagesTestBase {
         }
         assertEquals(routable.getType(), protocol.decode(version, data).getType());
         return data.length;
+    }
+    public int serialize(String filename, Routable routable) {
+        return serialize(filename, routable, data -> data);
     }
 
     /**
