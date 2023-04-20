@@ -81,7 +81,8 @@ ClusterControllerTuning = element cluster-controller {
     element max-premature-crashes { xsd:nonNegativeInteger }? &
     element stable-state-period {  xsd:string { pattern = "([0-9\.]+)\s*([a-z]+)?" }  }? &
     element min-distributor-up-ratio { xsd:double }? &
-    element min-storage-up-ratio { xsd:double }?
+    element min-storage-up-ratio { xsd:double }? &
+    element max-groups-allowed-down { xsd:nonNegativeInteger }?
 }
 
 DispatchTuning = element dispatch {

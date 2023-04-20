@@ -1,10 +1,10 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.content;
 
-import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.config.model.test.MockRoot;
+import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.text.XML;
 import com.yahoo.vespa.config.content.FleetcontrollerConfig;
 import com.yahoo.vespa.model.builder.xml.dom.ModelElement;
@@ -21,14 +21,13 @@ public class FleetControllerClusterTest {
         var deployState = new DeployState.Builder().properties(props).build();
         MockRoot root = new MockRoot("", deployState);
         var clusterElement = new ModelElement(doc.getDocumentElement());
-        ModelContext.FeatureFlags featureFlags = new TestProperties();
         return new ClusterControllerConfig.Builder("storage",
                                                    clusterElement,
                                                    new ClusterResourceLimits.Builder(false,
-                                                                                     featureFlags.resourceLimitDisk(),
-                                                                                     featureFlags.resourceLimitMemory())
+                                                                                     props.resourceLimitDisk(),
+                                                                                     props.resourceLimitMemory())
                                                            .build(clusterElement).getClusterControllerLimits(),
-                                                   false)
+                                                   props.allowMoreThanOneContentGroupDown(new ClusterSpec.Id("default")))
                 .build(root.getDeployState(), root, clusterElement.getXml());
     }
 
@@ -39,20 +38,21 @@ public class FleetControllerClusterTest {
     @Test
     void testParameters() {
         FleetcontrollerConfig.Builder builder = new FleetcontrollerConfig.Builder();
-        parse("<cluster id=\"storage\">\n" +
-                "  <documents/>" +
-                "  <tuning>\n" +
-                "    <bucket-splitting minimum-bits=\"7\" />" +
-                "    <cluster-controller>\n" +
-                "      <init-progress-time>13</init-progress-time>\n" +
-                "      <transition-time>27</transition-time>\n" +
-                "      <max-premature-crashes>4</max-premature-crashes>\n" +
-                "      <stable-state-period>72</stable-state-period>\n" +
-                "      <min-distributor-up-ratio>0.7</min-distributor-up-ratio>\n" +
-                "      <min-storage-up-ratio>0.3</min-storage-up-ratio>\n" +
-                "    </cluster-controller>\n" +
-                "  </tuning>\n" +
-                "</cluster>").
+        parse("""
+                      <cluster id="storage">
+                        <documents/>  <tuning>
+                          <bucket-splitting minimum-bits="7" />    <cluster-controller>
+                            <init-progress-time>13</init-progress-time>
+                            <transition-time>27</transition-time>
+                            <max-premature-crashes>4</max-premature-crashes>
+                            <stable-state-period>72</stable-state-period>
+                            <min-distributor-up-ratio>0.7</min-distributor-up-ratio>
+                            <min-storage-up-ratio>0.3</min-storage-up-ratio>
+                            <max-groups-allowed-down>2</max-groups-allowed-down>
+                          </cluster-controller>
+                        </tuning>
+                      </cluster>""",
+              new TestProperties().setAllowMoreThanOneContentGroupDown(true)).
                 getConfig(builder);
 
         FleetcontrollerConfig config = new FleetcontrollerConfig(builder);
@@ -63,6 +63,7 @@ public class FleetControllerClusterTest {
         assertEquals(0.7, config.min_distributor_up_ratio(), 0.01);
         assertEquals(0.3, config.min_storage_up_ratio(), 0.01);
         assertEquals(7, config.ideal_distribution_bits());
+        assertEquals(2, config.max_number_of_groups_allowed_to_be_down());
     }
 
     @Test

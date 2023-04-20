@@ -94,12 +94,14 @@ public class ClusterControllerConfig extends AnyConfigProducer implements Fleetc
         tuning.minStorageUpRatio.ifPresent(builder::min_storage_up_ratio);
         tuning.minSplitBits.ifPresent(builder::ideal_distribution_bits);
         tuning.minNodeRatioPerGroup.ifPresent(builder::min_node_ratio_per_group);
+        tuning.maxGroupsAllowedDown.ifPresent(max -> builder.max_number_of_groups_allowed_to_be_down(allowMoreThanOneContentGroupDown ? max : -1));
 
         resourceLimits.getConfig(builder);
-        builder.max_number_of_groups_allowed_to_be_down(allowMoreThanOneContentGroupDown ? 1 : -1);
     }
 
-    private static class ClusterControllerTuning {
+    public ClusterControllerTuning tuning() { return tuning; }
+
+    public static class ClusterControllerTuning {
 
         private final Optional<Double> minNodeRatioPerGroup;
         private final Optional<Duration> initProgressTime;
@@ -109,6 +111,7 @@ public class ClusterControllerConfig extends AnyConfigProducer implements Fleetc
         private final Optional<Double> minDistributorUpRatio;
         private final Optional<Double> minStorageUpRatio;
         private final Optional<Integer> minSplitBits;
+        final Optional<Integer> maxGroupsAllowedDown;
 
         ClusterControllerTuning(ModelElement tuning,
                                 Optional<Double> minNodeRatioPerGroup,
@@ -122,6 +125,7 @@ public class ClusterControllerConfig extends AnyConfigProducer implements Fleetc
                 this.stableStateTimePeriod = Optional.empty();
                 this.minDistributorUpRatio = Optional.empty();
                 this.minStorageUpRatio = Optional.empty();
+                this.maxGroupsAllowedDown = Optional.empty();
             } else {
                 this.initProgressTime = Optional.ofNullable(tuning.childAsDuration("init-progress-time"));
                 this.transitionTime = Optional.ofNullable(tuning.childAsDuration("transition-time"));
@@ -129,8 +133,11 @@ public class ClusterControllerConfig extends AnyConfigProducer implements Fleetc
                 this.stableStateTimePeriod = Optional.ofNullable(tuning.childAsDuration("stable-state-period"));
                 this.minDistributorUpRatio = Optional.ofNullable(tuning.childAsDouble("min-distributor-up-ratio"));
                 this.minStorageUpRatio = Optional.ofNullable(tuning.childAsDouble("min-storage-up-ratio"));
+                this.maxGroupsAllowedDown = Optional.ofNullable(tuning.childAsInteger("max-groups-allowed-down"));
             }
         }
+
+        public Optional<Integer> maxGroupsAllowedDown() { return maxGroupsAllowedDown; }
     }
 
 }
