@@ -82,8 +82,8 @@ public class ResourceDatabaseClientMock implements ResourceDatabaseClient {
                             a.getMajorVersion(),
                             BigDecimal.valueOf(a.resources().vcpu()).multiply(d),
                             BigDecimal.valueOf(a.resources().memoryGb()).multiply(d),
-                            BigDecimal.valueOf(a.resources().diskGb()).multiply(d)
-                    );
+                            BigDecimal.valueOf(a.resources().diskGb()).multiply(d),
+                            BigDecimal.valueOf(a.resources().gpuResources().count() * a.resources().gpuResources().memoryGb()).multiply(d));
                 })
                 .toList();
     }
@@ -101,8 +101,8 @@ public class ResourceDatabaseClientMock implements ResourceDatabaseClient {
                 a.getMajorVersion(),
                 a.getCpuMillis().add(b.getCpuMillis()),
                 a.getMemoryMillis().add(b.getMemoryMillis()),
-                a.getDiskMillis().add(b.getDiskMillis())
-        );
+                a.getDiskMillis().add(b.getDiskMillis()),
+                a.getGpuMillis().add(b.getGpuMillis()));
     }
 
     @Override
