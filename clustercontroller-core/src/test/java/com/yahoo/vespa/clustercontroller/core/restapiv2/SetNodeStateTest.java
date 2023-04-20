@@ -72,6 +72,9 @@ public class SetNodeStateTest extends StateRestApiTest {
                 public String getReason() {
                     return reason;
                 }
+
+                @Override
+                public String toString() { return getId() +": " + getReason(); }
             });
             return this;
         }

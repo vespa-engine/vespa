@@ -48,6 +48,8 @@ public class Response {
         public String getId() { return id; }
         @Override
         public String getReason() { return reason; }
+        @Override
+        public String toString() { return getId() +": " + getReason(); }
     }
     public static class Link implements SubUnitList {
         private final Map<String, String> links = new LinkedHashMap<>();
