@@ -198,7 +198,7 @@ public class ControllerMaintenance extends AbstractComponent {
         public SuccessFactorBaseline(SystemName system) {
             Objects.requireNonNull(system);
             this.defaultSuccessFactorBaseline = 1.0;
-            this.trafficFractionUpdater = system.isCd() ? 0.5 : 0.7;
+            this.trafficFractionUpdater = system.isCd() ? 0.5 : 0.65;
         }
     }
 }
