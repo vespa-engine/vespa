@@ -12,9 +12,7 @@ import (
 )
 
 func maybeStartLogd() {
-	v1 := os.Getenv(envvars.CLOUDCONFIG_SERVER_MULTITENANT)
-	v2 := os.Getenv(envvars.VESPA_CONFIGSERVER_MULTITENANT)
-	if v1 == "true" || v2 == "true" {
+	if os.Getenv(envvars.VESPA_CONFIGSERVER_MULTITENANT) == "true" {
 		backticks := util.BackTicksForwardStderr
 		out, err := backticks.Run("libexec/vespa/start-logd")
 		if err != nil {

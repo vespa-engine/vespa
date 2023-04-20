@@ -7,7 +7,6 @@ package envvars
 
 const (
 	ADDR_CONFIGSERVER                      = "addr_configserver"
-	CLOUDCONFIG_SERVER_MULTITENANT         = "cloudconfig_server__multitenant"
 	CONFIGPROXY_RPC_PORT                   = "port_configproxy_rpc"
 	CONFIGSERVER_RPC_PORT                  = "port_configserver_rpc"
 	DEBUG_JVM_STARTUP                      = "DEBUG_JVM_STARTUP"
