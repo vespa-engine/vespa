@@ -5,12 +5,11 @@
 #include <vespa/vdslib/state/clusterstate.h>
 
 #include <vespa/log/log.h>
-LOG_SETUP(".distributor.operation.external.remove");
+LOG_SETUP(".distributor.operations.external.remove");
 
-
-using namespace storage::distributor;
-using namespace storage;
 using document::BucketSpace;
+
+namespace storage::distributor {
 
 RemoveOperation::RemoveOperation(const DistributorNodeContext& node_ctx,
                                  DistributorStripeOperationContext& op_ctx,
@@ -99,4 +98,6 @@ void
 RemoveOperation::onClose(DistributorStripeMessageSender& sender)
 {
     _tracker.fail(sender, api::ReturnCode(api::ReturnCode::ABORTED, "Process is shutting down"));
+}
+
 }
