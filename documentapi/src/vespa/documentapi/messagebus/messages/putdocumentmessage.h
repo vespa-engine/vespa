@@ -11,6 +11,7 @@ private:
     using DocumentSP = std::shared_ptr<document::Document>;
     DocumentSP _document;
     uint64_t   _time;
+    bool _create_if_non_existent = false;
 
 protected:
     DocumentReply::UP doCreateReply() const override;
@@ -65,7 +66,9 @@ public:
     uint64_t getSequenceId() const override;
     uint32_t getType() const override;
     string toString() const override { return "putdocumentmessage"; }
+
+    void set_create_if_non_existent(bool value) noexcept { _create_if_non_existent = value; }
+    bool get_create_if_non_existent() const noexcept { return _create_if_non_existent; }
 };
 
 }
-

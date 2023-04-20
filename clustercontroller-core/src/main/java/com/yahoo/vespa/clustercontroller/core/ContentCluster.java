@@ -32,7 +32,7 @@ public class ContentCluster {
     private final int maxNumberOfGroupsAllowedToBeDown;
 
     public ContentCluster(String clusterName, Collection<ConfiguredNode> configuredNodes, Distribution distribution) {
-        this(clusterName, configuredNodes, distribution, 1);
+        this(clusterName, configuredNodes, distribution, -1);
     }
 
     public ContentCluster(FleetControllerOptions options) {
@@ -40,9 +40,9 @@ public class ContentCluster {
     }
 
     ContentCluster(String clusterName,
-                          Collection<ConfiguredNode> configuredNodes,
-                          Distribution distribution,
-                          int maxNumberOfGroupsAllowedToBeDown) {
+                   Collection<ConfiguredNode> configuredNodes,
+                   Distribution distribution,
+                   int maxNumberOfGroupsAllowedToBeDown) {
         if (configuredNodes == null) throw new IllegalArgumentException("Nodes must be set");
         this.clusterName = clusterName;
         this.distribution = distribution;

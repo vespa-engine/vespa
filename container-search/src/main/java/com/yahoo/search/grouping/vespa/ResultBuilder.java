@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.grouping.vespa;
 
+import com.yahoo.prelude.hitfield.RawBase64;
 import com.yahoo.search.grouping.Continuation;
 import com.yahoo.search.grouping.GroupingRequest;
 import com.yahoo.search.grouping.result.BoolId;
@@ -28,6 +29,7 @@ import com.yahoo.searchlib.aggregation.Hit;
 import com.yahoo.searchlib.aggregation.HitsAggregationResult;
 import com.yahoo.searchlib.aggregation.MaxAggregationResult;
 import com.yahoo.searchlib.aggregation.MinAggregationResult;
+import com.yahoo.searchlib.aggregation.RawData;
 import com.yahoo.searchlib.aggregation.StandardDeviationAggregationResult;
 import com.yahoo.searchlib.aggregation.SumAggregationResult;
 import com.yahoo.searchlib.aggregation.XorAggregationResult;
@@ -169,7 +171,7 @@ class ResultBuilder {
                 } else {
                     String label = transform.getLabel(result.getTag());
                     if (label != null) {
-                        group.setField(label, newResult(result, tag));
+                        group.setField(label, convertResult(newResult(result, tag)));
                     }
                 }
             }
@@ -228,24 +230,27 @@ class ResultBuilder {
                 return new RawId(res.getRaw());
             } else if (res instanceof StringResultNode) {
                 return new StringId(res.getString());
-            } else if (res instanceof FloatBucketResultNode) {
-                FloatBucketResultNode bucketId = (FloatBucketResultNode)res;
+            } else if (res instanceof FloatBucketResultNode bucketId) {
                 return new DoubleBucketId(bucketId.getFrom(), bucketId.getTo());
-            } else if (res instanceof IntegerBucketResultNode) {
-                IntegerBucketResultNode bucketId = (IntegerBucketResultNode)res;
+            } else if (res instanceof IntegerBucketResultNode bucketId) {
                 return new LongBucketId(bucketId.getFrom(), bucketId.getTo());
-            } else if (res instanceof StringBucketResultNode) {
-                StringBucketResultNode bucketId = (StringBucketResultNode)res;
+            } else if (res instanceof StringBucketResultNode bucketId) {
                 return new StringBucketId(bucketId.getFrom(), bucketId.getTo());
-            } else if (res instanceof RawBucketResultNode) {
-                RawBucketResultNode bucketId = (RawBucketResultNode)res;
+            } else if (res instanceof RawBucketResultNode bucketId) {
                 return new RawBucketId(bucketId.getFrom(), bucketId.getTo());
             } else {
                 throw new UnsupportedOperationException(res.getClass().getName());
             }
         }
 
-        Object newResult(ExpressionNode execResult, int tag) {
+        private Object convertResult(Object value) {
+            if (value instanceof RawData raw) {
+                return new RawBase64(raw.getData());
+            }
+            return value;
+        }
+
+        private Object newResult(ExpressionNode execResult, int tag) {
             if (execResult instanceof AverageAggregationResult) {
                 return ((AverageAggregationResult)execResult).getAverage().getNumber();
             } else if (execResult instanceof CountAggregationResult) {

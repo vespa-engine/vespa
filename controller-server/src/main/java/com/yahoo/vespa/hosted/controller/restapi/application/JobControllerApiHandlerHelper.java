@@ -312,7 +312,9 @@ class JobControllerApiHandlerHelper {
                 if ( ! change.isEmpty()) {
                     change.platform().ifPresent(version -> deployingObject.setString("platform", version.toFullString()));
                     change.revision().ifPresent(revision -> toSlime(deployingObject.setObject("application"), application.revisions().get(revision)));
-                    if (change.isPinned()) deployingObject.setBool("pinned", true);
+                    if (change.isPlatformPinned()) deployingObject.setBool("pinned", true);
+                    if (change.isPlatformPinned()) deployingObject.setBool("platformPinned", true);
+                    if (change.isRevisionPinned()) deployingObject.setBool("revisionPinned", true);
                 }
 
                 Cursor latestVersionsObject = stepObject.setObject("latestVersions");

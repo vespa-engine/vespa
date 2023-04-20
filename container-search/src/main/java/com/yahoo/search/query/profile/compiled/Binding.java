@@ -48,7 +48,7 @@ public class Binding implements Comparable<Binding> {
             for (int i = 0; i <= maxDimensions; i++) {
                 String value = i < dimensionBinding.getDimensions().size() ? dimensionBinding.getValues().get(i) : null;
                 if (value == null)
-                    generality += Math.pow(2, maxDimensions - i-1);
+                    generality += (int)Math.pow(2, maxDimensions - i - 1);
                 else
                     context.put(dimensionBinding.getDimensions().get(i), value);
             }

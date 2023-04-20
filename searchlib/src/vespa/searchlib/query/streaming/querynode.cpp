@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "query.h"
+#include "nearest_neighbor_query_node.h"
 #include <vespa/searchlib/parsequery/stackdumpiterator.h>
 #include <charconv>
 #include <vespa/log/log.h>
@@ -76,6 +77,9 @@ QueryNode::Build(const QueryNode * parent, const QueryNodeResultFactory & factor
                                          queryRep.getTerm(),
                                          queryRep.getIndexName(),
                                          QueryTerm::Type::GEO_LOCATION);
+        break;
+    case ParseItem::ITEM_NEAREST_NEIGHBOR:
+        qn = build_nearest_neighbor_query_node(factory, queryRep);
         break;
     case ParseItem::ITEM_NUMTERM:
     case ParseItem::ITEM_TERM:
@@ -189,6 +193,22 @@ QueryNode::Build(const QueryNode * parent, const QueryNodeResultFactory & factor
 const HitList & QueryNode::evaluateHits(HitList & hl) const
 {
     return hl;
+}
+
+std::unique_ptr<QueryNode>
+QueryNode::build_nearest_neighbor_query_node(const QueryNodeResultFactory& factory, SimpleQueryStackDumpIterator& query_rep)
+{
+    vespalib::stringref query_tensor_name = query_rep.getTerm();
+    vespalib::stringref field_name = query_rep.getIndexName();
+    int32_t id = query_rep.getUniqueId();
+    search::query::Weight weight = query_rep.GetWeight();
+    double distance_threshold = query_rep.getDistanceThreshold();
+    return std::make_unique<NearestNeighborQueryNode>(factory.create(),
+                                                      query_tensor_name,
+                                                      field_name,
+                                                      id,
+                                                      weight,
+                                                      distance_threshold);
 }
 
 }

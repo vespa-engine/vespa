@@ -50,8 +50,6 @@ private:
      **/
     void init(bool forRanking, size_t wantedHitCount);
 
-    void unpackMatchData(search::fef::MatchData &matchData);
-
 public:
     using UP = std::unique_ptr<RankProcessor>;
 
@@ -65,6 +63,7 @@ public:
     void initForRanking(size_t wantedHitCount);
     void initForDumping(size_t wantedHitCount);
     void unpackMatchData(uint32_t docId);
+    static void unpack_match_data(uint32_t docid, search::fef::MatchData& matchData, QueryWrapper& query);
     void runRankProgram(uint32_t docId);
     search::FeatureSet::SP calculateFeatureSet();
     void fillSearchResult(vdslib::SearchResult & searchResult);

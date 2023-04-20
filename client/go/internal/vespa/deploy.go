@@ -45,7 +45,6 @@ type DeploymentOptions struct {
 	ApplicationPackage ApplicationPackage
 	Timeout            time.Duration
 	Version            version.Version
-	HTTPClient         util.HTTPClient
 }
 
 type LogLinePrepareResponse struct {
@@ -130,7 +129,7 @@ func Prepare(deployment DeploymentOptions) (PrepareResult, error) {
 		return PrepareResult{}, err
 	}
 	serviceDescription := "Deploy service"
-	response, err := deployment.HTTPClient.Do(req, time.Second*30)
+	response, err := deployServiceDo(req, time.Second*30, deployment)
 	if err != nil {
 		return PrepareResult{}, err
 	}
@@ -171,7 +170,7 @@ func Activate(sessionID int64, deployment DeploymentOptions) error {
 		return err
 	}
 	serviceDescription := "Deploy service"
-	response, err := deployment.HTTPClient.Do(req, time.Second*30)
+	response, err := deployServiceDo(req, time.Second*30, deployment)
 	if err != nil {
 		return err
 	}
@@ -263,16 +262,20 @@ func Submit(opts DeploymentOptions) error {
 	}
 	request.Header.Set("Content-Type", writer.FormDataContentType())
 	serviceDescription := "Submit service"
-	sigKeyId := opts.Target.Deployment().Application.SerializedForm()
-	if err := opts.Target.SignRequest(request, sigKeyId); err != nil {
-		return fmt.Errorf("failed to sign api request: %w", err)
-	}
-	response, err := opts.HTTPClient.Do(request, time.Minute*10)
+	response, err := deployServiceDo(request, time.Minute*10, opts)
 	if err != nil {
 		return err
 	}
 	defer response.Body.Close()
 	return checkResponse(request, response, serviceDescription)
+}
+
+func deployServiceDo(request *http.Request, timeout time.Duration, opts DeploymentOptions) (*http.Response, error) {
+	s, err := opts.Target.Service(DeployService, 0, 0, "")
+	if err != nil {
+		return nil, err
+	}
+	return s.Do(request, timeout)
 }
 
 func checkDeploymentOpts(opts DeploymentOptions) error {
@@ -332,11 +335,6 @@ func uploadApplicationPackage(url *url.URL, opts DeploymentOptions) (PrepareResu
 	}
 	service, err := opts.Target.Service(DeployService, opts.Timeout, 0, "")
 	if err != nil {
-		return PrepareResult{}, err
-	}
-
-	keyID := opts.Target.Deployment().Application.SerializedForm()
-	if err := opts.Target.SignRequest(request, keyID); err != nil {
 		return PrepareResult{}, err
 	}
 	response, err := service.Do(request, time.Minute*10)

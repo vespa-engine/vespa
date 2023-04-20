@@ -3,13 +3,14 @@ package cmd
 
 import (
 	"bytes"
-	"crypto/tls"
+	"net/http"
 	"path/filepath"
 	"testing"
 
 	"github.com/vespa-engine/vespa/client/go/internal/cli/auth/auth0"
 	"github.com/vespa-engine/vespa/client/go/internal/mock"
 	"github.com/vespa-engine/vespa/client/go/internal/util"
+	"github.com/vespa-engine/vespa/client/go/internal/vespa"
 )
 
 func newTestCLI(t *testing.T, envVars ...string) (*CLI, *bytes.Buffer, *bytes.Buffer) {
@@ -29,21 +30,15 @@ func newTestCLI(t *testing.T, envVars ...string) (*CLI, *bytes.Buffer, *bytes.Bu
 	httpClient := &mock.HTTPClient{}
 	cli.httpClient = httpClient
 	cli.exec = &mock.Exec{}
-	cli.auth0Factory = func(httpClient util.HTTPClient, options auth0.Options) (auth0Client, error) {
-		return &mockAuth0{}, nil
+	cli.auth0Factory = func(httpClient util.HTTPClient, options auth0.Options) (vespa.Authenticator, error) {
+		return &mockAuthenticator{}, nil
 	}
-	cli.ztsFactory = func(httpClient util.HTTPClient, url string) (ztsClient, error) {
-		return &mockZTS{}, nil
+	cli.ztsFactory = func(httpClient util.HTTPClient, domain, url string) (vespa.Authenticator, error) {
+		return &mockAuthenticator{}, nil
 	}
 	return cli, &stdout, &stderr
 }
 
-type mockZTS struct{}
+type mockAuthenticator struct{}
 
-func (z *mockZTS) AccessToken(domain string, cert tls.Certificate) (string, error) { return "", nil }
-
-type mockAuth0 struct{ hasCredentials bool }
-
-func (a *mockAuth0) AccessToken() (string, error) { return "", nil }
-
-func (a *mockAuth0) HasCredentials() bool { return a.hasCredentials }
+func (a *mockAuthenticator) Authenticate(request *http.Request) error { return nil }

@@ -14,6 +14,7 @@ import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeReposit
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeState;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.OrchestratorStatus;
+import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.reports.DropDocumentsReport;
 import com.yahoo.vespa.hosted.node.admin.configserver.orchestrator.Orchestrator;
 import com.yahoo.vespa.hosted.node.admin.configserver.orchestrator.OrchestratorException;
 import com.yahoo.vespa.hosted.node.admin.container.Container;
@@ -27,6 +28,7 @@ import com.yahoo.vespa.hosted.node.admin.maintenance.acl.AclMaintainer;
 import com.yahoo.vespa.hosted.node.admin.maintenance.identity.CredentialsMaintainer;
 import com.yahoo.vespa.hosted.node.admin.maintenance.servicedump.VespaServiceDumper;
 import com.yahoo.vespa.hosted.node.admin.nodeadmin.ConvergenceException;
+import com.yahoo.vespa.hosted.node.admin.task.util.file.UnixPath;
 import com.yahoo.vespa.test.file.TestFileSystem;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -38,8 +40,11 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.BiFunction;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -737,6 +742,56 @@ public class NodeAgentImplTest {
         clock.advance(Duration.ofSeconds(31));
         nodeAgent.doConverge(context);
         inOrder.verify(orchestrator, times(1)).resume(eq(hostName));
+    }
+
+    @Test
+    void drop_all_documents() {
+        InOrder inOrder = inOrder(orchestrator, nodeRepository);
+        BiFunction<NodeState, DropDocumentsReport, NodeSpec> specBuilder = (state, report) -> (report == null ?
+                nodeBuilder(state) : nodeBuilder(state).report(DropDocumentsReport.reportId(), report.toJsonNode()))
+                .wantedDockerImage(dockerImage).currentDockerImage(dockerImage)
+                .build();
+        NodeAgentImpl nodeAgent = makeNodeAgent(dockerImage, true, Duration.ofSeconds(30));
+
+        NodeAgentContext context = createContext(specBuilder.apply(NodeState.active, null));
+        UnixPath indexPath = new UnixPath(context.paths().underVespaHome("var/db/vespa/search/cluster.foo/0/doc")).createParents().createNewFile();
+        mockGetContainer(dockerImage, ContainerResources.from(2, 2, 16), true);
+        assertTrue(indexPath.exists());
+
+        // Initially no changes, index is not dropped
+        nodeAgent.converge(context);
+        assertTrue(indexPath.exists());
+        inOrder.verifyNoMoreInteractions();
+
+        context = createContext(specBuilder.apply(NodeState.active, new DropDocumentsReport(1L, null, null, null)));
+        nodeAgent.converge(context);
+        verify(containerOperations).removeContainer(eq(context), any());
+        assertFalse(indexPath.exists());
+        inOrder.verify(nodeRepository).updateNodeAttributes(eq(hostName), eq(new NodeAttributes().withReport(DropDocumentsReport.reportId(), new DropDocumentsReport(1L, clock.millis(), null, null).toJsonNode())));
+        inOrder.verifyNoMoreInteractions();
+
+        // After droppedAt and before readiedAt are set, we cannot proceed
+        mockGetContainer(null, false);
+        context = createContext(specBuilder.apply(NodeState.active, new DropDocumentsReport(1L, 2L, null, null)));
+        nodeAgent.converge(context);
+        verify(containerOperations, never()).removeContainer(eq(context), any());
+        verify(containerOperations, never()).startContainer(eq(context));
+        inOrder.verifyNoMoreInteractions();
+
+        context = createContext(specBuilder.apply(NodeState.active, new DropDocumentsReport(1L, 2L, 3L, null)));
+        nodeAgent.converge(context);
+        verify(containerOperations).startContainer(eq(context));
+        inOrder.verifyNoMoreInteractions();
+
+        mockGetContainer(dockerImage, ContainerResources.from(0, 2, 16), true);
+        clock.advance(Duration.ofSeconds(31));
+        nodeAgent.converge(context);
+        verify(containerOperations, times(1)).startContainer(eq(context));
+        verify(containerOperations, never()).removeContainer(eq(context), any());
+        inOrder.verify(nodeRepository).updateNodeAttributes(eq(hostName), eq(new NodeAttributes()
+                .withRebootGeneration(0)
+                .withReport(DropDocumentsReport.reportId(), new DropDocumentsReport(1L, 2L, 3L, clock.millis()).toJsonNode())));
+        inOrder.verifyNoMoreInteractions();
     }
 
     private void verifyThatContainerIsStopped(NodeState nodeState, Optional<ApplicationId> owner) {

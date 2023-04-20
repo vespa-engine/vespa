@@ -2,6 +2,7 @@ package document
 
 import (
 	"bytes"
+	"compress/gzip"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -16,6 +17,14 @@ import (
 	"github.com/vespa-engine/vespa/client/go/internal/util"
 )
 
+type Compression int
+
+const (
+	CompressionAuto Compression = iota
+	CompressionNone
+	CompressionGzip
+)
+
 // Client represents a HTTP client for the /document/v1/ API.
 type Client struct {
 	options     ClientOptions
@@ -26,10 +35,11 @@ type Client struct {
 
 // ClientOptions specifices the configuration options of a feed client.
 type ClientOptions struct {
-	BaseURL    string
-	Timeout    time.Duration
-	Route      string
-	TraceLevel *int
+	BaseURL     string
+	Timeout     time.Duration
+	Route       string
+	TraceLevel  int
+	Compression Compression
 }
 
 type countingHTTPClient struct {
@@ -72,14 +82,18 @@ func NewClient(options ClientOptions, httpClients []util.HTTPClient) *Client {
 
 func (c *Client) queryParams() url.Values {
 	params := url.Values{}
-	if c.options.Timeout > 0 {
-		params.Set("timeout", strconv.FormatInt(c.options.Timeout.Milliseconds(), 10)+"ms")
+	timeout := c.options.Timeout
+	if timeout == 0 {
+		timeout = 200 * time.Second
+	} else {
+		timeout = timeout*11/10 + 1000
 	}
+	params.Set("timeout", strconv.FormatInt(timeout.Milliseconds(), 10)+"ms")
 	if c.options.Route != "" {
 		params.Set("route", c.options.Route)
 	}
-	if c.options.TraceLevel != nil {
-		params.Set("tracelevel", strconv.Itoa(*c.options.TraceLevel))
+	if c.options.TraceLevel > 0 {
+		params.Set("tracelevel", strconv.Itoa(c.options.TraceLevel))
 	}
 	return params
 }
@@ -148,6 +162,33 @@ func (c *Client) leastBusyClient() *countingHTTPClient {
 	return &leastBusy
 }
 
+func (c *Client) createRequest(method, url string, body []byte) (*http.Request, error) {
+	var r io.Reader
+	useGzip := c.options.Compression == CompressionGzip || (c.options.Compression == CompressionAuto && len(body) > 512)
+	if useGzip {
+		var buf bytes.Buffer
+		w := gzip.NewWriter(&buf)
+		if _, err := w.Write(body); err != nil {
+			return nil, err
+		}
+		if err := w.Close(); err != nil {
+			return nil, err
+		}
+		r = &buf
+	} else {
+		r = bytes.NewReader(body)
+	}
+	req, err := http.NewRequest(method, url, r)
+	if err != nil {
+		return nil, err
+	}
+	if useGzip {
+		req.Header.Set("Content-Encoding", "gzip")
+	}
+	req.Header.Set("Content-Type", "application/json; charset=utf-8")
+	return req, nil
+}
+
 // Send given document to the endpoint configured in this client.
 func (c *Client) Send(document Document) Result {
 	start := c.now()
@@ -156,7 +197,7 @@ func (c *Client) Send(document Document) Result {
 	if err != nil {
 		return resultWithErr(result, err)
 	}
-	req, err := http.NewRequest(method, url.String(), bytes.NewReader(document.Body))
+	req, err := c.createRequest(method, url.String(), document.Body)
 	if err != nil {
 		return resultWithErr(result, err)
 	}
@@ -166,7 +207,7 @@ func (c *Client) Send(document Document) Result {
 	}
 	defer resp.Body.Close()
 	elapsed := c.now().Sub(start)
-	return c.resultWithResponse(resp, result, document, elapsed)
+	return resultWithResponse(resp, result, document, elapsed)
 }
 
 func resultWithErr(result Result, err error) Result {
@@ -176,7 +217,7 @@ func resultWithErr(result Result, err error) Result {
 	return result
 }
 
-func (c *Client) resultWithResponse(resp *http.Response, result Result, document Document, elapsed time.Duration) Result {
+func resultWithResponse(resp *http.Response, result Result, document Document, elapsed time.Duration) Result {
 	result.HTTPStatus = resp.StatusCode
 	result.Stats.Responses++
 	result.Stats.ResponsesByCode = map[int]int64{resp.StatusCode: 1}

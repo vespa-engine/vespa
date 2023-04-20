@@ -15,6 +15,17 @@
 using document::DataType;
 using document::DocumentTypeRepo;
 
+template <typename T>
+struct Unwrap {
+    mbus::Routable::UP value;
+    const T *ptr = nullptr;
+    explicit Unwrap(mbus::Routable::UP value_in) : value(std::move(value_in)) {
+        ptr = dynamic_cast<T*>(value.get());
+        ASSERT_TRUE(ptr != nullptr);
+    }
+    const T *operator->() const noexcept { return ptr; }
+};
+
 ///////////////////////////////////////////////////////////////////////////////
 //
 // Setup
@@ -399,10 +410,12 @@ Messages60Test::testPutDocumentMessage()
     EXPECT_EQUAL(sizeof(vespalib::string), sizeof(TestAndSetCondition));
     EXPECT_EQUAL(112u, sizeof(DocumentMessage));
     EXPECT_EQUAL(sizeof(TestAndSetCondition) + sizeof(DocumentMessage), sizeof(TestAndSetMessage));
-    EXPECT_EQUAL(sizeof(TestAndSetMessage) + 24, sizeof(PutDocumentMessage));
+    EXPECT_EQUAL(sizeof(TestAndSetMessage) + 32, sizeof(PutDocumentMessage));
+    int size_of_create_if_non_existent_flag = 1;
     EXPECT_EQUAL(MESSAGE_BASE_LENGTH +
                  45u +
-                 serializedLength(msg.getCondition().getSelection()),
+                 serializedLength(msg.getCondition().getSelection()) +
+                 size_of_create_if_non_existent_flag,
                  serialize("PutDocumentMessage", msg));
 
     for (uint32_t lang = 0; lang < NUM_LANGUAGES; ++lang) {
@@ -413,9 +426,32 @@ Messages60Test::testPutDocumentMessage()
             EXPECT_EQUAL(msg.getDocument().getType().getName(), deserializedMsg.getDocument().getType().getName());
             EXPECT_EQUAL(msg.getDocument().getId().toString(), deserializedMsg.getDocument().getId().toString());
             EXPECT_EQUAL(msg.getTimestamp(), deserializedMsg.getTimestamp());
-            EXPECT_EQUAL(71u, deserializedMsg.getApproxSize());
+            EXPECT_EQUAL(72u, deserializedMsg.getApproxSize());
             EXPECT_EQUAL(msg.getCondition().getSelection(), deserializedMsg.getCondition().getSelection());
+            EXPECT_EQUAL(false, deserializedMsg.get_create_if_non_existent());
         }
+    }
+
+    //-------------------------------------------------------------------------
+
+    PutDocumentMessage msg2(createDoc(getTypeRepo(), "testdoc", "id:ns:testdoc::"));
+    msg2.set_create_if_non_existent(true);
+    uint32_t expected_message_size = MESSAGE_BASE_LENGTH + 45u +
+        serializedLength(msg2.getCondition().getSelection()) +
+        size_of_create_if_non_existent_flag;
+    auto trunc1 = [](mbus::Blob x) noexcept { return truncate(std::move(x), 1); };
+    auto pad1 = [](mbus::Blob x) noexcept { return pad(std::move(x), 1); };
+    EXPECT_EQUAL(expected_message_size, serialize("PutDocumentMessage-create", msg2));
+    EXPECT_EQUAL(expected_message_size - 1, serialize("PutDocumentMessage-create-truncate", msg2, trunc1));
+    EXPECT_EQUAL(expected_message_size + 1, serialize("PutDocumentMessage-create-pad", msg2, pad1));
+
+    for (uint32_t lang = 0; lang < NUM_LANGUAGES; ++lang) {
+        auto decoded = Unwrap<PutDocumentMessage>(deserialize("PutDocumentMessage-create", DocumentProtocol::MESSAGE_PUTDOCUMENT, lang));
+        auto decoded_trunc = Unwrap<PutDocumentMessage>(deserialize("PutDocumentMessage-create-truncate", DocumentProtocol::MESSAGE_PUTDOCUMENT, lang));
+        auto decoded_pad = Unwrap<PutDocumentMessage>(deserialize("PutDocumentMessage-create-pad", DocumentProtocol::MESSAGE_PUTDOCUMENT, lang));
+        EXPECT_EQUAL(true, decoded->get_create_if_non_existent());
+        EXPECT_EQUAL(false, decoded_trunc->get_create_if_non_existent());
+        EXPECT_EQUAL(true, decoded_pad->get_create_if_non_existent());
     }
 
     return true;

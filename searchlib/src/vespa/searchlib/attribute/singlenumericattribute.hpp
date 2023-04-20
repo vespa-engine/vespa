@@ -134,8 +134,9 @@ SingleValueNumericAttribute<B>::onLoad(vespalib::Executor *)
     PrimitiveReader<T> attrReader(*this);
     bool ok(attrReader.getHasLoadData());
 
-    if (!ok)
+    if (!ok) {
         return false;
+    }
 
     this->setCreateSerialNum(attrReader.getCreateSerialNum());
 

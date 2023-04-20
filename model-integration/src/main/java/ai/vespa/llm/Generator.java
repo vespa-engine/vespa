@@ -13,6 +13,7 @@ import com.yahoo.tensor.IndexedTensor;
 import com.yahoo.tensor.PartialAddress;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
+import com.yahoo.api.annotations.Beta;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -27,6 +28,7 @@ import java.util.Map;
  *
  * @author lesters
  */
+@Beta
 public class Generator extends AbstractComponent {
 
     private final static int TOKEN_EOS = 1;  // end of sequence

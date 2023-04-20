@@ -285,12 +285,12 @@ public class SharedKeyTest {
         String plaintext = "...hello world?";
         byte[] encrypted = streamEncryptString(plaintext, myShared);
         // Corrupt MAC tag in ciphertext
-        encrypted[encrypted.length - 1] ^= 0x80;
+        encrypted[encrypted.length - 1] ^= (byte)0x80;
         // We don't necessarily know _which_ exception is thrown, but one _should_ be thrown!
         assertThrows(Exception.class, () -> doOutputStreamCipherDecrypt(myShared, encrypted));
         // Also try with corrupted ciphertext (pre MAC tag)
-        encrypted[encrypted.length - 1] ^= 0x80; // Flip MAC bit back to correct state
-        encrypted[encrypted.length - 17] ^= 0x80; // Pre 128-bit MAC tag
+        encrypted[encrypted.length - 1] ^= (byte)0x80; // Flip MAC bit back to correct state
+        encrypted[encrypted.length - 17] ^= (byte)0x80; // Pre 128-bit MAC tag
         assertThrows(Exception.class, () -> doOutputStreamCipherDecrypt(myShared, encrypted));
     }
 

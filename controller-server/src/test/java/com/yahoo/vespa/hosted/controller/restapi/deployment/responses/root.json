@@ -37,6 +37,8 @@
           "instance": "default",
           "upgrading": false,
           "pinned": false,
+          "platformPinned": false,
+          "revisionPinned": false,
           "upgradePolicy": "default",
           "compileVersion": "6.1.0",
           "jobs": [
@@ -78,6 +80,8 @@
           "instance": "i2",
           "upgrading": false,
           "pinned": false,
+          "platformPinned": false,
+          "revisionPinned": false,
           "upgradePolicy": "default",
           "compileVersion": "6.1.0",
           "jobs": [
@@ -179,6 +183,8 @@
           "instance": "default",
           "upgrading": true,
           "pinned": false,
+          "platformPinned": false,
+          "revisionPinned": false,
           "upgradePolicy": "default",
           "compileVersion": "6.1.0",
           "jobs": [
@@ -249,6 +255,8 @@
           "instance": "i1",
           "upgrading": false,
           "pinned": false,
+          "platformPinned": false,
+          "revisionPinned": false,
           "upgradePolicy": "default",
           "compileVersion": "6.1.0",
           "jobs": [
@@ -309,6 +317,8 @@
           "instance": "i2",
           "upgrading": true,
           "pinned": false,
+          "platformPinned": false,
+          "revisionPinned": false,
           "upgradePolicy": "default",
           "compileVersion": "6.1.0",
           "jobs": [

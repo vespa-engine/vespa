@@ -647,6 +647,22 @@ public class NodesV2ApiTest {
                         Request.Method.PATCH),
                 "{\"message\":\"Updated dockerhost1.yahoo.com\"}");
         assertFile(new Request("http://localhost:8080/nodes/v2/node/dockerhost1.yahoo.com"), "docker-node1-reports-4.json");
+
+        assertResponse(new Request("http://localhost:8080/nodes/v2/node/host1.yahoo.com",
+                        Utf8.toBytes("{\"reports\": {\"dropDocuments\":{\"createdMillis\":25,\"droppedAt\":36}}}"),
+                        Request.Method.PATCH),
+                "{\"message\":\"Updated host1.yahoo.com\"}");
+        tester.assertResponseContains(new Request("http://localhost:8080/nodes/v2/node/host1.yahoo.com"),
+                "{\"dropDocuments\":{\"createdMillis\":25,\"droppedAt\":36}}");
+
+        assertResponse(new Request("http://localhost:8080/nodes/v2/node/host10.yahoo.com",
+                        Utf8.toBytes("{\"reports\": {\"dropDocuments\":{\"createdMillis\":49,\"droppedAt\":456}}}"),
+                        Request.Method.PATCH),
+                "{\"message\":\"Updated host10.yahoo.com\"}");
+        tester.assertResponseContains(new Request("http://localhost:8080/nodes/v2/node/host10.yahoo.com"),
+                "{\"dropDocuments\":{\"createdMillis\":49,\"droppedAt\":456,\"readiedAt\":123}}");
+        tester.assertResponseContains(new Request("http://localhost:8080/nodes/v2/node/host1.yahoo.com"),
+                "{\"dropDocuments\":{\"createdMillis\":25,\"droppedAt\":36,\"readiedAt\":123}}");
     }
 
     @Test
@@ -906,13 +922,13 @@ public class NodesV2ApiTest {
 
         // Test patching with overrides
         tester.assertResponse(new Request("http://localhost:8080/nodes/v2/node/" + host,
-                                          "{\"minDiskAvailableGb\":5432,\"minMainMemoryAvailableGb\":2345}".getBytes(StandardCharsets.UTF_8),
+                                          "{\"diskGb\":5432,\"memoryGb\":2345}".getBytes(StandardCharsets.UTF_8),
                                           Request.Method.PATCH),
                               400,
-                              "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Could not set field 'minMainMemoryAvailableGb': Can only override disk GB for configured flavor\"}");
+                              "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Could not set field 'memoryGb': Can only override disk GB for configured flavor\"}");
 
         assertResponse(new Request("http://localhost:8080/nodes/v2/node/" + host,
-                        "{\"minDiskAvailableGb\":5432}".getBytes(StandardCharsets.UTF_8),
+                        "{\"diskGb\":5432}".getBytes(StandardCharsets.UTF_8),
                         Request.Method.PATCH),
                 "{\"message\":\"Updated " + host + "\"}");
         tester.assertResponseContains(new Request("http://localhost:8080/nodes/v2/node/" + host),

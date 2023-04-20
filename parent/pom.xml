@@ -565,6 +565,17 @@
                 <version>${onnxruntime.version}</version>
             </dependency>
             <dependency>
+                <groupId>com.theokanning.openai-gpt3-java</groupId>
+                <artifactId>service</artifactId>
+                <version>${openai-gpt3.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>com.fasterxml.jackson.core</groupId>
+                        <artifactId>jackson-databind</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
                 <groupId>com.yahoo.athenz</groupId>
                 <artifactId>athenz-cert-refresher</artifactId>
                 <version>${athenz.version}</version>
@@ -1009,6 +1020,11 @@
                 <version>${junit.version}</version>
             </dependency>
             <dependency>
+                <groupId>org.junit.jupiter</groupId>
+                <artifactId>junit-jupiter-params</artifactId>
+                <version>${junit.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>org.junit.vintage</groupId>
                 <artifactId>junit-vintage-engine</artifactId>
                 <version>${junit.version}</version>
@@ -1166,6 +1182,7 @@
         <netty.version>4.1.86.Final</netty.version>
         <netty-tcnative.version>2.0.54.Final</netty-tcnative.version>
         <onnxruntime.version>1.13.1</onnxruntime.version> <!-- WARNING: sync cloud-tenant-base-dependencies-enforcer/pom.xml -->
+        <openai-gpt3.version>0.12.0</openai-gpt3.version>
         <org.json.version>20230227</org.json.version>
         <org.lz4.version>1.8.0</org.lz4.version>
         <prometheus.client.version>0.6.0</prometheus.client.version>

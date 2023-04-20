@@ -4,6 +4,7 @@ package util
 import (
 	"context"
 	"crypto/tls"
+	"crypto/x509"
 	"fmt"
 	"net"
 	"net/http"
@@ -35,7 +36,7 @@ func (c *defaultHTTPClient) Do(request *http.Request, timeout time.Duration) (re
 
 func (c *defaultHTTPClient) Clone() HTTPClient { return CreateClient(c.client.Timeout) }
 
-func SetCertificates(client HTTPClient, certificates []tls.Certificate) {
+func ConfigureTLS(client HTTPClient, certificates []tls.Certificate, caCertificate []byte, trustAll bool) {
 	c, ok := client.(*defaultHTTPClient)
 	if !ok {
 		return
@@ -43,8 +44,14 @@ func SetCertificates(client HTTPClient, certificates []tls.Certificate) {
 	var tlsConfig *tls.Config = nil
 	if certificates != nil {
 		tlsConfig = &tls.Config{
-			Certificates: certificates,
-			MinVersion:   tls.VersionTLS12,
+			Certificates:       certificates,
+			MinVersion:         tls.VersionTLS12,
+			InsecureSkipVerify: trustAll,
+		}
+		if caCertificate != nil {
+			certs := x509.NewCertPool()
+			certs.AppendCertsFromPEM(caCertificate)
+			tlsConfig.RootCAs = certs
 		}
 	}
 	if tr, ok := c.client.Transport.(*http.Transport); ok {
@@ -56,19 +63,13 @@ func SetCertificates(client HTTPClient, certificates []tls.Certificate) {
 	}
 }
 
-func ForceHTTP2(client HTTPClient, certificates []tls.Certificate) {
+func ForceHTTP2(client HTTPClient, certificates []tls.Certificate, caCertificate []byte, trustAll bool) {
 	c, ok := client.(*defaultHTTPClient)
 	if !ok {
 		return
 	}
-	var tlsConfig *tls.Config = nil
 	var dialFunc func(ctx context.Context, network, addr string, cfg *tls.Config) (net.Conn, error)
-	if certificates != nil {
-		tlsConfig = &tls.Config{
-			Certificates: certificates,
-			MinVersion:   tls.VersionTLS12,
-		}
-	} else {
+	if certificates == nil {
 		// No certificate, so force H2C (HTTP/2 over clear-text) by using a non-TLS Dialer
 		dialer := net.Dialer{}
 		dialFunc = func(ctx context.Context, network, addr string, cfg *tls.Config) (net.Conn, error) {
@@ -80,10 +81,10 @@ func ForceHTTP2(client HTTPClient, certificates []tls.Certificate) {
 	// https://github.com/golang/go/issues/16582
 	// https://github.com/golang/go/issues/22091
 	c.client.Transport = &http2.Transport{
-		AllowHTTP:       true,
-		TLSClientConfig: tlsConfig,
-		DialTLSContext:  dialFunc,
+		AllowHTTP:      true,
+		DialTLSContext: dialFunc,
 	}
+	ConfigureTLS(client, certificates, caCertificate, trustAll)
 }
 
 func CreateClient(timeout time.Duration) HTTPClient {

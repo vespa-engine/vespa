@@ -41,7 +41,6 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 import static java.util.Comparator.comparing;
-import static java.util.Comparator.comparingDouble;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.toMap;
 
@@ -331,15 +330,14 @@ public class DeploymentTrigger {
     /** Cancels the indicated part of the given application's change. */
     public void cancelChange(ApplicationId instanceId, ChangesToCancel cancellation) {
         applications().lockApplicationOrThrow(TenantAndApplicationId.from(instanceId), application -> {
-            Change change;
-            switch (cancellation) {
-                case ALL: change = Change.empty(); break;
-                case VERSIONS: change = Change.empty().withPin(); break;
-                case PLATFORM: change = application.get().require(instanceId.instance()).change().withoutPlatform(); break;
-                case APPLICATION: change = application.get().require(instanceId.instance()).change().withoutApplication(); break;
-                case PIN: change = application.get().require(instanceId.instance()).change().withoutPin(); break;
-                default: throw new IllegalArgumentException("Unknown cancellation choice '" + cancellation + "'!");
-            }
+            Change change = switch (cancellation) {
+                case ALL -> Change.empty();
+                case PLATFORM -> application.get().require(instanceId.instance()).change().withoutPlatform();
+                case APPLICATION -> application.get().require(instanceId.instance()).change().withoutApplication();
+                case PIN -> application.get().require(instanceId.instance()).change().withoutPlatformPin();
+                case PLATFORM_PIN -> application.get().require(instanceId.instance()).change().withoutPlatformPin();
+                case APPLICATION_PIN -> application.get().require(instanceId.instance()).change().withoutRevisionPin();
+            };
             applications().store(application.with(instanceId.instance(),
                                                   instance -> withRemainingChange(instance,
                                                                                   change,
@@ -348,7 +346,7 @@ public class DeploymentTrigger {
         });
     }
 
-    public enum ChangesToCancel { ALL, PLATFORM, APPLICATION, VERSIONS, PIN }
+    public enum ChangesToCancel { ALL, PLATFORM, APPLICATION, PIN, PLATFORM_PIN, APPLICATION_PIN }
 
     // ---------- Conveniences ----------
 

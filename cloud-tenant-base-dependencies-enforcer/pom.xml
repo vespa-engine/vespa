@@ -30,11 +30,12 @@
         <httpcore.version>4.4.16</httpcore.version>
         <junit5.version>5.8.1</junit5.version>  <!-- TODO: in parent this is named 'junit.version' -->
         <onnxruntime.version>1.13.1</onnxruntime.version>
+        <openai-gpt3.version>0.12.0</openai-gpt3.version>
         <!-- END parent/pom.xml -->
 
 
         <!-- ALL BELOW MUST BE KEPT IN SYNC WITH container-dependency-versions pom
-             Copied here because vz-tenant-base does not have a parent. -->
+             Copied here because cloud-tenant-base does not have a parent. -->
         <aopalliance.version>1.0</aopalliance.version>
         <guava.version>27.1-jre</guava.version>
         <guice.version>4.2.3</guice.version>
@@ -234,6 +235,18 @@
                                         <include>org.osgi:org.osgi.compendium:4.1.0:test</include>
                                         <include>org.osgi:org.osgi.core:4.1.0:test</include>
                                         <include>xerces:xercesImpl:2.12.2:test</include>
+
+                                        <include>com.squareup.okhttp3:okhttp:3.14.9:test</include>
+                                        <include>com.squareup.okio:okio:1.17.2:test</include>
+                                        <include>com.squareup.retrofit2:adapter-rxjava2:2.9.0:test</include>
+                                        <include>com.squareup.retrofit2:converter-jackson:2.9.0:test</include>
+                                        <include>com.squareup.retrofit2:retrofit:2.9.0:test</include>
+                                        <include>com.theokanning.openai-gpt3-java:api:${openai-gpt3.version}:test</include>
+                                        <include>com.theokanning.openai-gpt3-java:client:${openai-gpt3.version}:test</include>
+                                        <include>com.theokanning.openai-gpt3-java:service:${openai-gpt3.version}:test</include>
+                                        <include>io.reactivex.rxjava2:rxjava:2.0.0:test</include>
+                                        <include>org.reactivestreams:reactive-streams:1.0.3:test</include>
+
                                     </allowed>
                                 </enforceDependencies>
                             </rules>

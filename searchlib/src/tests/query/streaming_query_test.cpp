@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/searchlib/query/streaming/query.h>
+#include <vespa/searchlib/query/streaming/nearest_neighbor_query_node.h>
 #include <vespa/searchlib/query/tree/querybuilder.h>
 #include <vespa/searchlib/query/tree/simplequery.h>
 #include <vespa/searchlib/query/tree/stackdumpcreator.h>
@@ -802,6 +803,42 @@ TEST("testSameElementEvaluate") {
     EXPECT_EQUAL(5u, hits[3].elemId());
     EXPECT_EQUAL(160,  hits[3].weight());
     EXPECT_TRUE(sameElem->evaluate());
+}
+
+TEST("test_nearest_neighbor_query_node")
+{
+    QueryBuilder<SimpleQueryNodeTypes> builder;
+    constexpr double distance_threshold = 35.5;
+    constexpr int32_t id = 42;
+    constexpr int32_t weight = 1;
+    constexpr uint32_t target_num_hits = 100;
+    constexpr bool allow_approximate = false;
+    constexpr uint32_t explore_additional_hits = 800;
+    constexpr double raw_score = 0.5;
+    builder.add_nearest_neighbor_term("qtensor", "field", id, Weight(weight), target_num_hits, allow_approximate, explore_additional_hits, distance_threshold);
+    auto build_node = builder.build();
+    auto stack_dump = StackDumpCreator::create(*build_node);
+    QueryNodeResultFactory empty;
+    Query q(empty, stack_dump);
+    auto* qterm = dynamic_cast<QueryTerm *>(&q.getRoot());
+    EXPECT_TRUE(qterm != nullptr);
+    auto* node = dynamic_cast<NearestNeighborQueryNode *>(&q.getRoot());
+    EXPECT_TRUE(node != nullptr);
+    EXPECT_EQUAL(node, qterm->as_nearest_neighbor_query_node());
+    EXPECT_EQUAL("qtensor", node->get_query_tensor_name());
+    EXPECT_EQUAL("field", node->getIndex());
+    EXPECT_EQUAL(id, static_cast<int32_t>(node->uniqueId()));
+    EXPECT_EQUAL(weight, node->weight().percent());
+    EXPECT_EQUAL(distance_threshold, node->get_distance_threshold());
+    EXPECT_FALSE(node->get_raw_score().has_value());
+    EXPECT_FALSE(node->evaluate());
+    node->set_raw_score(raw_score);
+    EXPECT_TRUE(node->get_raw_score().has_value());
+    EXPECT_EQUAL(raw_score, node->get_raw_score().value());
+    EXPECT_TRUE(node->evaluate());
+    node->reset();
+    EXPECT_FALSE(node->get_raw_score().has_value());
+    EXPECT_FALSE(node->evaluate());
 }
 
 TEST("Control the size of query terms") {

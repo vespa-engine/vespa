@@ -89,8 +89,6 @@ SingleValueNumericPostingAttribute<B>::applyValueChanges(EnumStoreBatchUpdater& 
     // used to make sure several arithmetic operations on the same document in a single commit works
     std::map<DocId, EnumIndex> currEnumIndices;
 
-    // This avoids searching for the defaultValue in the enum store for each CLEARDOC in the change vector.
-    this->cache_change_data_entry_ref(this->_defaultValue);
     for (const auto& change : this->_changes.getInsertOrder()) {
         auto enumIter = currEnumIndices.find(change._doc);
         EnumIndex oldIdx;
@@ -111,13 +109,9 @@ SingleValueNumericPostingAttribute<B>::applyValueChanges(EnumStoreBatchUpdater& 
                 currEnumIndices[change._doc] = newIdx;
             }
         } else if(change._type == ChangeBase::CLEARDOC) {
-            Change clearDoc(this->_defaultValue);
-            clearDoc._doc = change._doc;
-            applyUpdateValueChange(clearDoc, enumStore, currEnumIndices);
+            currEnumIndices[change._doc] = enumStore.get_default_value_ref().load_relaxed();
         }
     }
-    // We must clear the cached entry ref as the defaultValue might be located in another data buffer on later invocations.
-    this->_defaultValue.clear_entry_ref();
 
     makePostingChange(enumStore.get_comparator(), currEnumIndices, changePost);
 

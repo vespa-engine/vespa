@@ -74,6 +74,8 @@ public:
 
     virtual std::unique_ptr<Enumerator> make_enumerator() = 0;
     virtual std::unique_ptr<vespalib::datastore::EntryComparator> allocate_comparator() const = 0;
+    virtual void clear_default_value_ref() = 0;
+    virtual void setup_default_value_ref() = 0;
 };
 
 }

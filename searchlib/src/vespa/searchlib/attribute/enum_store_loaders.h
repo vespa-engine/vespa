@@ -85,6 +85,7 @@ public:
     void set_ref_count(Index idx, uint32_t ref_count);
     vespalib::ArrayRef<EntryRef> initialize_empty_posting_indexes();
     void build_dictionary();
+    void build_empty_dictionary();
 };
 
 }

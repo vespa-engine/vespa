@@ -93,6 +93,7 @@ EnumeratedLoader::build_dictionary()
 {
     _store.get_dictionary().build(_indexes);
     release_enum_indexes();
+    _store.setup_default_value_ref();
 }
 
 EnumeratedPostingsLoader::EnumeratedPostingsLoader(IEnumStore& store)
@@ -131,6 +132,13 @@ EnumeratedPostingsLoader::build_dictionary()
     _store.get_dictionary().build_with_payload(_indexes, _posting_indexes);
     release_enum_indexes();
     EntryRefVector().swap(_posting_indexes);
+    _store.setup_default_value_ref();
+}
+
+void
+EnumeratedPostingsLoader::build_empty_dictionary()
+{
+    _store.setup_default_value_ref();
 }
 
 }

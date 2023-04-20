@@ -26,6 +26,7 @@ vespa_define_module(
     src/tests/docsum
     src/tests/document
     src/tests/query_term_filter_factory
+    src/tests/rank_processor
     src/tests/searcher
     src/tests/textutil
 )

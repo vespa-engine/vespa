@@ -46,7 +46,7 @@ public class SideChannelSafe {
         // differed in any byte compared between the two arrays.
         byte accu = 0;
         for (int i = 0; i < lhs.length; ++i) {
-            accu |= (lhs[i] ^ rhs[i]);
+            accu |= (byte)(lhs[i] ^ rhs[i]);
         }
         return (accu == 0);
     }

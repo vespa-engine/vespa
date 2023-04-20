@@ -93,7 +93,7 @@ public class RevisionHistory {
 
     // Fallback for when an application version isn't known for the given key.
     private static ApplicationVersion revisionOf(RevisionId id) {
-        return new ApplicationVersion(id, Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(), false, false, Optional.empty(), 0);
+        return new ApplicationVersion(id, Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(), false, false, Optional.empty(), 0);
     }
 
     /** Returns the production {@link ApplicationVersion} with this revision ID. */

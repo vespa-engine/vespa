@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/url"
 	"reflect"
+	"strings"
 	"testing"
 	"time"
 
@@ -108,7 +109,7 @@ func TestClientSend(t *testing.T) {
 		if r.Method != http.MethodPut {
 			t.Errorf("got r.Method = %q, want %q", r.Method, http.MethodPut)
 		}
-		wantURL := fmt.Sprintf("https://example.com:1337/document/v1/ns/type/docid/%s?create=true&timeout=5000ms", doc.Id.UserSpecific)
+		wantURL := fmt.Sprintf("https://example.com:1337/document/v1/ns/type/docid/%s?create=true&timeout=5500ms", doc.Id.UserSpecific)
 		if r.URL.String() != wantURL {
 			t.Errorf("got r.URL = %q, want %q", r.URL, wantURL)
 		}
@@ -138,6 +139,55 @@ func TestClientSend(t *testing.T) {
 	}
 	if !reflect.DeepEqual(want, stats) {
 		t.Errorf("got %+v, want %+v", stats, want)
+	}
+}
+
+func TestClientSendCompressed(t *testing.T) {
+	httpClient := mock.HTTPClient{}
+	client := NewClient(ClientOptions{
+		BaseURL: "https://example.com:1337",
+		Timeout: time.Duration(5 * time.Second),
+	}, []util.HTTPClient{&httpClient})
+
+	bigBody := fmt.Sprintf(`{"fields":{"foo": "%s"}}`, strings.Repeat("s", 512+1))
+	bigDoc := Document{Create: true, Id: mustParseId("id:ns:type::doc1"), Operation: OperationUpdate, Body: []byte(bigBody)}
+	smallDoc := Document{Create: true, Id: mustParseId("id:ns:type::doc2"), Operation: OperationUpdate, Body: []byte(`{"fields":{"foo": "s"}}`)}
+
+	client.options.Compression = CompressionNone
+	_ = client.Send(bigDoc)
+	assertCompressedRequest(t, false, httpClient.LastRequest)
+	_ = client.Send(smallDoc)
+	assertCompressedRequest(t, false, httpClient.LastRequest)
+
+	client.options.Compression = CompressionAuto
+	_ = client.Send(bigDoc)
+	assertCompressedRequest(t, true, httpClient.LastRequest)
+	_ = client.Send(smallDoc)
+	assertCompressedRequest(t, false, httpClient.LastRequest)
+
+	client.options.Compression = CompressionGzip
+	_ = client.Send(bigDoc)
+	assertCompressedRequest(t, true, httpClient.LastRequest)
+	_ = client.Send(smallDoc)
+	assertCompressedRequest(t, true, httpClient.LastRequest)
+}
+
+func assertCompressedRequest(t *testing.T, want bool, request *http.Request) {
+	wantEnc := ""
+	if want {
+		wantEnc = "gzip"
+	}
+	gotEnc := request.Header.Get("Content-Encoding")
+	if gotEnc != wantEnc {
+		t.Errorf("got Content-Encoding=%q, want %q", gotEnc, wantEnc)
+	}
+	body, err := io.ReadAll(request.Body)
+	if err != nil {
+		t.Fatal(err)
+	}
+	compressed := bytes.HasPrefix(body, []byte{0x1f, 0x8b})
+	if compressed != want {
+		t.Errorf("got compressed=%t, want %t", compressed, want)
 	}
 }
 
