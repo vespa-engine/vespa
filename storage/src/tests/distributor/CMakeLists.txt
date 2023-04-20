@@ -19,7 +19,6 @@ vespa_add_executable(storage_distributor_gtest_runner_app TEST
     externaloperationhandlertest.cpp
     garbagecollectiontest.cpp
     getoperationtest.cpp
-    gtest_runner.cpp
     idealstatemanagertest.cpp
     joinbuckettest.cpp
     maintenancemocks.cpp
@@ -27,6 +26,7 @@ vespa_add_executable(storage_distributor_gtest_runner_app TEST
     mergelimitertest.cpp
     mergeoperationtest.cpp
     multi_thread_stripe_access_guard_test.cpp
+    newest_replica_test.cpp
     node_supported_features_repo_test.cpp
     nodeinfotest.cpp
     nodemaintenancestatstrackertest.cpp
@@ -57,7 +57,7 @@ vespa_add_executable(storage_distributor_gtest_runner_app TEST
     storage_testcommon
     storage_testhostreporter
     storage
-    GTest::GTest
+    GTest::gmock_main
 )
 
 vespa_add_test(
