@@ -257,6 +257,63 @@ TEST(DistanceFunctionsTest, angular_gives_expected_score)
     EXPECT_DOUBLE_EQ(a66, computeAngularChecked(t(iv6), t(iv6)));
 }
 
+double computePrenormalizedAngularChecked(TypedCells a, TypedCells b) {
+    static PrenormalizedAngularDistanceFunctionFactory<float> flt_dff;
+    static PrenormalizedAngularDistanceFunctionFactory<double> dbl_dff;
+    auto d_n = dbl_dff.for_query_vector(a);
+    auto d_f = flt_dff.for_query_vector(a);
+    auto d_i = dbl_dff.for_insertion_vector(a);
+    // normal:
+    double result = d_n->calc(b);
+     // insert is exactly same:
+    EXPECT_EQ(d_i->calc(b), result);
+    // float factory:
+    EXPECT_FLOAT_EQ(d_f->calc(b), result);
+    return result;
+}
+
+TEST(DistanceFunctionsTest, prenormalized_angular_gives_expected_score)
+{
+    std::vector<double> p0{0.0, 0.0, 0.0};
+    std::vector<double> p1{1.0, 0.0, 0.0};
+    std::vector<double> p2{0.0, 1.0, 0.0};
+    std::vector<double> p3{0.0, 0.0, 1.0};
+    std::vector<double> p4{0.5, 0.5, 0.707107};
+    std::vector<double> p5{0.0,-1.0, 0.0};
+    std::vector<double> p6{1.0, 2.0, 2.0};
+
+    PrenormalizedAngularDistanceFunctionFactory<double> dff;
+    auto pnad = dff.for_query_vector(t(p0));
+
+    double i12 = computePrenormalizedAngularChecked(t(p1), t(p2));
+    double i13 = computePrenormalizedAngularChecked(t(p1), t(p3));
+    double i23 = computePrenormalizedAngularChecked(t(p2), t(p3));
+    EXPECT_DOUBLE_EQ(i12, 1.0);
+    EXPECT_DOUBLE_EQ(i13, 1.0);
+    EXPECT_DOUBLE_EQ(i23, 1.0);
+
+    double i14 = computePrenormalizedAngularChecked(t(p1), t(p4));
+    double i24 = computePrenormalizedAngularChecked(t(p2), t(p4));
+    EXPECT_DOUBLE_EQ(i14, 0.5);
+    EXPECT_DOUBLE_EQ(i24, 0.5);
+    double i34 = computePrenormalizedAngularChecked(t(p3), t(p4));
+    EXPECT_FLOAT_EQ(i34, 1.0 - 0.707107);
+
+    double i25 = computePrenormalizedAngularChecked(t(p2), t(p5));
+    EXPECT_DOUBLE_EQ(i25, 2.0);
+
+    double i44 = computePrenormalizedAngularChecked(t(p4), t(p4));
+    EXPECT_GE(i44, 0.0);
+    EXPECT_LT(i44, 0.000001);
+
+    double threshold = pnad->convert_threshold(0.25);
+    EXPECT_DOUBLE_EQ(threshold, 0.25);
+    threshold = pnad->convert_threshold(0.5);
+    EXPECT_DOUBLE_EQ(threshold, 0.5);
+    threshold = pnad->convert_threshold(1.0);
+    EXPECT_DOUBLE_EQ(threshold, 1.0);
+}
+
 TEST(DistanceFunctionsTest, innerproduct_gives_expected_score)
 {
     auto ct = vespalib::eval::CellType::DOUBLE;
@@ -291,6 +348,10 @@ TEST(DistanceFunctionsTest, innerproduct_gives_expected_score)
     double i44 = innerproduct->calc(t(p4), t(p4));
     EXPECT_GE(i44, 0.0);
     EXPECT_LT(i44, 0.000001);
+
+    double i66 = innerproduct->calc(t(p6), t(p6));
+    EXPECT_GE(i66, 0.0);
+    EXPECT_LT(i66, 0.000001);
 
     double threshold = innerproduct->convert_threshold(0.25);
     EXPECT_DOUBLE_EQ(threshold, 0.25);
