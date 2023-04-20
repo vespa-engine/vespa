@@ -33,7 +33,10 @@ enum Policy {
 
     /** Full access to everything. */
     supporter(Privilege.grant(Action.read)
-                       .on(PathGroup.all())
+                       .on(PathGroup.allExcept(PathGroup.classifiedOperator))
+                       .in(SystemName.all()),
+              Privilege.grant(Action.all())
+                       .on(PathGroup.classifiedOperator)
                        .in(SystemName.all())),
 
     /** Full access to user management for a tenant in select systems. */
