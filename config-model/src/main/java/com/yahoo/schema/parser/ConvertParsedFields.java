@@ -95,6 +95,7 @@ public class ConvertParsedFields {
         var distanceMetric = parsed.getDistanceMetric();
         if (distanceMetric.isPresent()) {
             String upper = distanceMetric.get().toUpperCase(Locale.ENGLISH);
+            upper = upper.replace('-', '_');
             attribute.setDistanceMetric(Attribute.DistanceMetric.valueOf(upper));
         }
         var sorting = parsed.getSorting();

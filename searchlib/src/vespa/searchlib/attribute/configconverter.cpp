@@ -134,6 +134,9 @@ ConfigConverter::convert(const AttributesConfig::Attribute & cfg)
         case CfgDm::HAMMING:
             dm = DistanceMetric::Hamming;
             break;
+        case CfgDm::PRENORMALIZED_ANGULAR:
+            dm = DistanceMetric::PrenormalizedAngular;
+            break;
     }
     retval.set_distance_metric(dm);
     if (cfg.index.hnsw.enabled) {

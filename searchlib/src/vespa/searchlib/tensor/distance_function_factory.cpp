@@ -34,6 +34,7 @@ make_distance_function(DistanceMetric variant, CellType cell_type)
         }
     case DistanceMetric::GeoDegrees:
         return std::make_unique<GeoDegreesDistance>(CellType::DOUBLE);
+    case DistanceMetric::PrenormalizedAngular:
     case DistanceMetric::InnerProduct:
         switch (cell_type) {
         case CellType::FLOAT:  return std::make_unique<InnerProductDistanceHW<float>>();
