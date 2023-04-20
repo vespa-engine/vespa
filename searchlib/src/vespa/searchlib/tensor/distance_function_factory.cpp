@@ -93,6 +93,12 @@ std::unique_ptr<DistanceFunctionFactory>
 make_distance_function_factory(search::attribute::DistanceMetric variant,
                                vespalib::eval::CellType cell_type)
 {
+    if (variant == DistanceMetric::Angular) {
+        if (cell_type == CellType::DOUBLE) {
+            return std::make_unique<AngularDistanceFunctionFactory<double>>();
+        }
+        return std::make_unique<AngularDistanceFunctionFactory<float>>();
+    }
     auto df = make_distance_function(variant, cell_type);
     return std::make_unique<SimpleDistanceFunctionFactory>(std::move(df));
 }
