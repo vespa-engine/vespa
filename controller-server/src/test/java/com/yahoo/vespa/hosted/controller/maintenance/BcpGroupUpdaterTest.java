@@ -45,7 +45,7 @@ public class BcpGroupUpdaterTest {
         tester.controllerTester().upgradeSystem(Version.fromString("7.1"));
         var context = tester.newDeploymentContext();
         var deploymentMetricsMaintainer = new DeploymentMetricsMaintainer(tester.controller(), Duration.ofDays(1));
-        var updater = new BcpGroupUpdater(tester.controller(), Duration.ofDays(1), 1.0);
+        var updater = new BcpGroupUpdater(tester.controller(), Duration.ofDays(1));
         ZoneId prod1 = ZoneId.from("prod", "ap-northeast-1");
         ZoneId prod2 = ZoneId.from("prod", "us-east-3");
         ZoneId prod3 = ZoneId.from("prod", "us-west-1");
@@ -129,7 +129,7 @@ public class BcpGroupUpdaterTest {
                                       locked -> tester.controller().applications().store(locked.with(deploymentSpec)));
 
         var deploymentMetricsMaintainer = new DeploymentMetricsMaintainer(tester.controller(), Duration.ofDays(1));
-        var updater = new BcpGroupUpdater(tester.controller(), Duration.ofDays(1), 1.0);
+        var updater = new BcpGroupUpdater(tester.controller(), Duration.ofDays(1));
 
         ZoneId ap1 = ZoneId.from("prod", "ap-northeast-1");
         ZoneId ap2 = ZoneId.from("prod", "ap-southeast-1");
@@ -197,7 +197,7 @@ public class BcpGroupUpdaterTest {
                                           locked -> tester.controller().applications().store(locked.with(deploymentSpec)));
 
         var deploymentMetricsMaintainer = new DeploymentMetricsMaintainer(tester.controller(), Duration.ofDays(1));
-        var updater = new BcpGroupUpdater(tester.controller(), Duration.ofDays(1), 1.0);
+        var updater = new BcpGroupUpdater(tester.controller(), Duration.ofDays(1));
 
         ZoneId ap1 = ZoneId.from("prod", "ap-northeast-1");
         ZoneId ap2 = ZoneId.from("prod", "ap-southeast-1");

@@ -54,7 +54,7 @@ public class ControllerMaintenance extends AbstractComponent {
         maintainers.add(new OutstandingChangeDeployer(controller, intervals.outstandingChangeDeployer));
         maintainers.add(new VersionStatusUpdater(controller, intervals.versionStatusUpdater));
         maintainers.add(new ReadyJobsTrigger(controller, intervals.readyJobsTrigger));
-        maintainers.add(new DeploymentMetricsMaintainer(controller, intervals.deploymentMetricsMaintainer));
+        maintainers.add(new DeploymentMetricsMaintainer(controller, intervals.deploymentMetricsMaintainer, successFactorBaseline.deploymentMetricsMaintainerBaseline));
         maintainers.add(new ApplicationOwnershipConfirmer(controller, intervals.applicationOwnershipConfirmer, controller.serviceRegistry().ownershipIssues()));
         maintainers.add(new SystemUpgrader(controller, intervals.systemUpgrader));
         maintainers.add(new JobRunner(controller, intervals.jobRunner));
@@ -193,11 +193,13 @@ public class ControllerMaintenance extends AbstractComponent {
     private static class SuccessFactorBaseline {
 
         private final Double defaultSuccessFactorBaseline;
+        private final Double deploymentMetricsMaintainerBaseline;
         private final Double trafficFractionUpdater;
 
         public SuccessFactorBaseline(SystemName system) {
             Objects.requireNonNull(system);
             this.defaultSuccessFactorBaseline = 1.0;
+            this.deploymentMetricsMaintainerBaseline = 0.95;
             this.trafficFractionUpdater = system.isCd() ? 0.5 : 0.65;
         }
     }
