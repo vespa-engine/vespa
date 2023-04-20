@@ -21,6 +21,7 @@
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vsm/searcher/fieldsearcher.h>
 #include <vespa/vsm/searcher/intfieldsearcher.h>
+#include <vespa/vsm/searcher/mock_field_searcher_env.h>
 #include <vespa/vsm/searcher/utf8strchrfieldsearcher.h>
 #include <iostream>
 
@@ -273,13 +274,12 @@ MatchingElementsFields make_matching_elements_fields() {
 class MatchingElementsFillerTest : public ::testing::Test {
     const MyDocType                         _doc_type;
     MatchingElementsFields                  _matching_elems_fields;
-    vsm::SharedFieldPathMap                 _field_path_map;
+    vsm::test::MockFieldSearcherEnv         _env;
     vsm::FieldIdTSearcherMap                _field_searcher_map;
     vsm::DocumentTypeIndexFieldMapT         _index_to_field_ids;
     HitCollector                            _hit_collector;
     SearchResult                            _search_result;
     Query                                   _query;
-    vsm::SharedSearcherBuf                  _shared_searcher_buf;
     std::unique_ptr<MatchingElementsFiller> _matching_elements_filler;
     std::unique_ptr<MatchingElements>       _matching_elements;
     std::unique_ptr<StorageDocument>        _sdoc;
@@ -296,19 +296,19 @@ MatchingElementsFillerTest::MatchingElementsFillerTest()
     : ::testing::Test(),
       _doc_type(),
       _matching_elems_fields(make_matching_elements_fields()),
-      _field_path_map(make_field_path_map(_doc_type)),
+      _env(),
       _field_searcher_map(make_field_searcher_map()),
       _index_to_field_ids(make_index_to_field_ids()),
       _hit_collector(10),
       _search_result(),
       _query(),
-      _shared_searcher_buf(std::make_shared<vsm::SearcherBuf>()),
       _matching_elements_filler(),
       _matching_elements(),
       _sdoc()
 {
+    _env.field_paths = make_field_path_map(_doc_type);
     _search_result.addHit(1, "id::test::1", 0.0, nullptr, 0);
-    _sdoc = std::make_unique<StorageDocument>(_doc_type.make_test_doc(), _field_path_map, _field_path_map->size());
+    _sdoc = std::make_unique<StorageDocument>(_doc_type.make_test_doc(), _env.field_paths, _env.field_paths->size());
     EXPECT_TRUE(_sdoc->valid());
     MatchData md(MatchData::params());
     _hit_collector.addHit(_sdoc.get(), 1, md, 0.0, nullptr, 0);
@@ -322,7 +322,7 @@ MatchingElementsFillerTest::fill_matching_elements(Query &&query)
     _matching_elements_filler.reset();
     _matching_elements.reset();
     _query = std::move(query);
-    _field_searcher_map.prepare(_index_to_field_ids, _shared_searcher_buf, _query);
+    _env.prepare(_field_searcher_map, _index_to_field_ids, _query);
     _matching_elements_filler = std::make_unique<MatchingElementsFiller>(_field_searcher_map, _query, _hit_collector, _search_result);
     _matching_elements = _matching_elements_filler->fill_matching_elements(_matching_elems_fields);
 }

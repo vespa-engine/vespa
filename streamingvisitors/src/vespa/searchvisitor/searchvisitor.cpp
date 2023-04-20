@@ -387,7 +387,6 @@ void SearchVisitor::init(const Parameters & params)
             StringFieldIdTMap fieldsInQuery;
             setupFieldSearchers(additionalFields, fieldsInQuery);
 
-            setupSnippetModifiers();
 
             setupScratchDocument(fieldsInQuery);
 
@@ -400,8 +399,17 @@ void SearchVisitor::init(const Parameters & params)
             const RankManager * rm = _env.getRankManager(searchCluster);
             _rankController.setRankManagerSnapshot(rm->getSnapshot());
             _rankController.setupRankProcessors(_query, location, wantedSummaryCount, _attrMan, _attributeFields);
-            // Depends on hitCollector setup.
+
+            // This depends on _fieldPathMap (from setupScratchDocument),
+            // and IQueryEnvironment (from setupRankProcessors).
+            setupSnippetModifiers();
+
+            // Depends on hitCollector setup and _snippetModifierManager
             setupDocsumObjects();
+
+            // This depends on _fieldPathMap (from setupScratchDocument),
+            // and IQueryEnvironment (from setupRankProcessors).
+            prepare_field_searchers();
 
         } else {
             LOG(warning, "No query received");
@@ -732,9 +740,14 @@ SearchVisitor::setupFieldSearchers(const std::vector<vespalib::string> & additio
     _fieldSearchSpecMap.buildFieldsInQuery(_query, fieldsInQuery);
     // Connect field names in the query to field searchers
     _fieldSearchSpecMap.buildSearcherMap(fieldsInQuery.map(), _fieldSearcherMap);
+}
 
+void
+SearchVisitor::prepare_field_searchers()
+{
     // prepare the field searchers
-    _fieldSearcherMap.prepare(_fieldSearchSpecMap.documentTypeMap(), _searchBuffer, _query);
+    _fieldSearcherMap.prepare(_fieldSearchSpecMap.documentTypeMap(), _searchBuffer, _query,
+                              *_fieldPathMap, _rankController.getRankProcessor()->get_query_env());
 }
 
 void
@@ -742,7 +755,8 @@ SearchVisitor::setupSnippetModifiers()
 {
     QueryTermList qtl;
     _query.getLeafs(qtl);
-    _snippetModifierManager.setup(qtl, _fieldSearchSpecMap.specMap(), _fieldSearchSpecMap.documentTypeMap().begin()->second);
+    _snippetModifierManager.setup(qtl, _fieldSearchSpecMap.specMap(), _fieldSearchSpecMap.documentTypeMap().begin()->second,
+                                  *_fieldPathMap, _rankController.getRankProcessor()->get_query_env());
 }
 
 void

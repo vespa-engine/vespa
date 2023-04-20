@@ -1,5 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/document/base/fieldpath.h>
 #include <vespa/document/datatype/tensor_data_type.h>
 #include <vespa/document/fieldvalue/tensorfieldvalue.h>
 #include <vespa/eval/eval/simple_value.h>
@@ -7,14 +8,10 @@
 #include <vespa/eval/eval/value_codec.h>
 #include <vespa/eval/eval/value_type.h>
 #include <vespa/searchlib/fef/indexproperties.h>
-#include <vespa/searchlib/fef/properties.h>
-#include <vespa/searchlib/fef/tablemanager.h>
 #include <vespa/searchlib/query/streaming/nearest_neighbor_query_node.h>
 #include <vespa/searchlib/tensor/euclidean_distance.h>
-#include <vespa/searchlib/test/mock_attribute_manager.h>
-#include <vespa/searchvisitor/indexenvironment.h>
-#include <vespa/searchvisitor/queryenvironment.h>
 #include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vsm/searcher/mock_field_searcher_env.h>
 #include <vespa/vsm/searcher/nearest_neighbor_field_searcher.h>
 
 using namespace search::attribute::test;
@@ -25,8 +22,10 @@ using namespace search::tensor;
 using namespace vespalib::eval;
 using namespace vsm;
 
-using document::TensorFieldValue;
+using document::FieldPath;
+using document::FieldPathEntry;
 using document::TensorDataType;
+using document::TensorFieldValue;
 
 struct MockQuery {
     std::vector<std::unique_ptr<NearestNeighborQueryNode>> nodes;
@@ -53,41 +52,36 @@ struct MockQuery {
 
 class NearestNeighborSearcherTest : public testing::Test {
 public:
-    TableManager table_mgr;
-    streaming::IndexEnvironment index_env;
-    MockAttributeManager attr_mgr;
-    Properties query_props;
-    streaming::QueryEnvironment query_env;
+    vsm::test::MockFieldSearcherEnv env;
     ValueType tensor_type;
     TensorDataType data_type;
     SquaredEuclideanDistance dist_func;
+    vsm::FieldIdT field_id;
     NearestNeighborFieldSearcher searcher;
     MockQuery query;
 
     NearestNeighborSearcherTest()
-        : table_mgr(),
-          index_env(table_mgr),
-          attr_mgr(),
-          query_props(),
-          query_env("", index_env, query_props, &attr_mgr),
+        : env(),
           tensor_type(ValueType::from_spec("tensor(x[2])")),
           data_type(tensor_type),
           dist_func(CellType::DOUBLE),
-          searcher(7, DistanceMetric::Euclidean),
+          field_id(2),
+          searcher(field_id, DistanceMetric::Euclidean),
           query()
     {
+        env.field_paths->resize(field_id + 1);
+        (*env.field_paths)[field_id].push_back(std::make_unique<FieldPathEntry>(data_type, "my_tensor_field"));
     }
     void set_query_tensor(const vespalib::string& query_tensor_name,
                           const vespalib::string& spec_expr) {
-        search::fef::indexproperties::type::QueryFeature::set(index_env.getProperties(), query_tensor_name, tensor_type.to_spec());
+        search::fef::indexproperties::type::QueryFeature::set(env.index_env.getProperties(), query_tensor_name, tensor_type.to_spec());
         auto tensor = SimpleValue::from_spec(TensorSpec::from_expr(spec_expr));
         vespalib::nbostream stream;
         vespalib::eval::encode_value(*tensor, stream);
-        query_props.add(query_tensor_name, vespalib::stringref(stream.peek(), stream.size()));
+        env.query_props.add(query_tensor_name, vespalib::stringref(stream.peek(), stream.size()));
     }
     void prepare() {
-        auto searcher_buf = std::make_shared<SearcherBuf>();
-        searcher.prepare_new(query.term_list, searcher_buf, tensor_type, query_env);
+        env.prepare(searcher, query.term_list);
     }
     void match(const vespalib::string& spec_expr) {
         TensorFieldValue fv(data_type);

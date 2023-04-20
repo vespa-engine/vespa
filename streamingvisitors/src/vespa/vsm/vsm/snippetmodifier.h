@@ -99,9 +99,14 @@ public:
      * @param queryTerms the query terms to take into consideration.
      * @param specMap mapping from field id to search spec objects.
      * @param fieldMap mapping from index (used in the query) to a list of field ids.
+     * @param field_paths mapping from field id to document::FieldPath.
+     * @param query_env query environment containg e.g. query tensors.
      **/
-    void setup(const search::streaming::QueryTermList & queryTerms,
-               const FieldSearchSpecMapT & specMap, const IndexFieldMapT & fieldMap);
+    void setup(const search::streaming::QueryTermList& queryTerms,
+               const FieldSearchSpecMapT& specMap,
+               const IndexFieldMapT& fieldMap,
+               const vsm::FieldPathMapT& field_paths,
+               search::fef::IQueryEnvironment& query_env);
 
     const FieldModifierMap & getModifiers() const { return _modifiers; }
 };

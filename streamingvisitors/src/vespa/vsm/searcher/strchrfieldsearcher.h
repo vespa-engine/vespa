@@ -11,7 +11,10 @@ public:
     StrChrFieldSearcher() : FieldSearcher(0) { }
     StrChrFieldSearcher(FieldIdT fId) : FieldSearcher(fId) { }
     void onValue(const document::FieldValue & fv) override;
-    void prepare(search::streaming::QueryTermList & qtl, const SharedSearcherBuf & buf) override;
+    void prepare(search::streaming::QueryTermList& qtl,
+                 const SharedSearcherBuf& buf,
+                 const vsm::FieldPathMapT& field_paths,
+                 search::fef::IQueryEnvironment& query_env) override;
 private:
     size_t shortestTerm() const;
     bool matchDoc(const FieldRef & field);

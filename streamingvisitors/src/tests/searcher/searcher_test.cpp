@@ -2,19 +2,20 @@
 
 #include <vespa/vespalib/testkit/testapp.h>
 
+#include <vespa/document/fieldvalue/fieldvalues.h>
+#include <vespa/searchlib/query/streaming/queryterm.h>
+#include <vespa/vsm/searcher/boolfieldsearcher.h>
 #include <vespa/vsm/searcher/fieldsearcher.h>
 #include <vespa/vsm/searcher/floatfieldsearcher.h>
 #include <vespa/vsm/searcher/futf8strchrfieldsearcher.h>
 #include <vespa/vsm/searcher/intfieldsearcher.h>
-#include <vespa/vsm/searcher/boolfieldsearcher.h>
-#include <vespa/vsm/searcher/utf8flexiblestringfieldsearcher.h>
+#include <vespa/vsm/searcher/mock_field_searcher_env.h>
 #include <vespa/vsm/searcher/utf8exactstringfieldsearcher.h>
+#include <vespa/vsm/searcher/utf8flexiblestringfieldsearcher.h>
 #include <vespa/vsm/searcher/utf8substringsearcher.h>
 #include <vespa/vsm/searcher/utf8substringsnippetmodifier.h>
 #include <vespa/vsm/searcher/utf8suffixstringfieldsearcher.h>
 #include <vespa/vsm/vsm/snippetmodifier.h>
-#include <vespa/searchlib/query/streaming/queryterm.h>
-#include <vespa/document/fieldvalue/fieldvalues.h>
 
 using namespace document;
 using search::streaming::HitList;
@@ -102,7 +103,7 @@ struct SnippetModifierSetup
 {
     Query                            query;
     UTF8SubstringSnippetModifier::SP searcher;
-    SharedSearcherBuf                buf;
+    test::MockFieldSearcherEnv       env;
     SnippetModifier                  modifier;
     explicit SnippetModifierSetup(const StringList & terms);
     ~SnippetModifierSetup();
@@ -111,10 +112,10 @@ struct SnippetModifierSetup
 SnippetModifierSetup::SnippetModifierSetup(const StringList & terms)
     : query(terms),
       searcher(new UTF8SubstringSnippetModifier()),
-      buf(new SearcherBuf(8)),
+      env(),
       modifier(searcher)
 {
-    searcher->prepare(query.qtl, buf);
+    env.prepare(*searcher, query.qtl);
 }
 SnippetModifierSetup::~SnippetModifierSetup() = default;
 
@@ -310,8 +311,8 @@ performSearch(FieldSearcher & fs, const StringList & query, const FieldValue & f
     Query q(query);
 
     // prepare field searcher
-    SharedSearcherBuf ssb = SharedSearcherBuf(new SearcherBuf());
-    fs.prepare(q.qtl, ssb);
+    test::MockFieldSearcherEnv env;
+    env.prepare(fs, q.qtl);
 
     // setup document
     SharedFieldPathMap sfim(new FieldPathMapT());
@@ -786,39 +787,40 @@ TEST("snippet modifier manager") {
     indexMap["i1"].push_back(1);
     indexMap["i2"].push_back(0);
     indexMap["i2"].push_back(1);
+    test::MockFieldSearcherEnv env;
 
     {
         SnippetModifierManager man;
         Query query(StringList().add("i0:foo"));
-        man.setup(query.qtl, specMap, indexMap);
+        man.setup(query.qtl, specMap, indexMap, *env.field_paths, env.query_env);
         assertQueryTerms(man, 0, StringList().add("foo"));
         assertQueryTerms(man, 1, StringList());
     }
     {
         SnippetModifierManager man;
         Query query(StringList().add("i1:foo"));
-        man.setup(query.qtl, specMap, indexMap);
+        man.setup(query.qtl, specMap, indexMap, *env.field_paths, env.query_env);
         assertQueryTerms(man, 0, StringList());
         assertQueryTerms(man, 1, StringList());
     }
     {
         SnippetModifierManager man;
         Query query(StringList().add("i1:*foo*"));
-        man.setup(query.qtl, specMap, indexMap);
+        man.setup(query.qtl, specMap, indexMap, *env.field_paths, env.query_env);
         assertQueryTerms(man, 0, StringList());
         assertQueryTerms(man, 1, StringList().add("foo"));
     }
     {
         SnippetModifierManager man;
         Query query(StringList().add("i2:foo").add("i2:*bar*"));
-        man.setup(query.qtl, specMap, indexMap);
+        man.setup(query.qtl, specMap, indexMap, *env.field_paths, env.query_env);
         assertQueryTerms(man, 0, StringList().add("foo").add("bar"));
         assertQueryTerms(man, 1, StringList().add("bar"));
     }
     { // check buffer sizes
         SnippetModifierManager man;
         Query query(StringList().add("i2:foo").add("i2:*bar*"));
-        man.setup(query.qtl, specMap, indexMap);
+        man.setup(query.qtl, specMap, indexMap, *env.field_paths, env.query_env);
         {
             SnippetModifier * sm = static_cast<SnippetModifier *>(man.getModifiers().getModifier(0));
             UTF8SubstringSnippetModifier * searcher = sm->getSearcher().get();
