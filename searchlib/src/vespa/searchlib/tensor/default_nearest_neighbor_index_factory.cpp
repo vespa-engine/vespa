@@ -41,12 +41,12 @@ DefaultNearestNeighborIndexFactory::make(const DocVectorAccess& vectors,
                         true);
     if (multi_vector_index) {
         return std::make_unique<HnswIndex<HnswIndexType::MULTI>>(vectors,
-                                                                  make_distance_function(params.distance_metric(), cell_type),
+                                                                  make_distance_function_factory(params.distance_metric(), cell_type),
                                                                   make_random_level_generator(m),
                                                                   cfg);
     } else {
         return std::make_unique<HnswIndex<HnswIndexType::SINGLE>>(vectors,
-                                                                  make_distance_function(params.distance_metric(), cell_type),
+                                                                  make_distance_function_factory(params.distance_metric(), cell_type),
                                                                   make_random_level_generator(m),
                                                                   cfg);
     }

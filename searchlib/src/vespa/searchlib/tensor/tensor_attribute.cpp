@@ -58,6 +58,7 @@ TensorAttribute::TensorAttribute(vespalib::stringref name, const Config &cfg, Te
     : NotImplementedAttribute(name, cfg),
       _refVector(cfg.getGrowStrategy(), getGenerationHolder()),
       _tensorStore(tensorStore),
+      _distance_function_factory(make_distance_function_factory(cfg.distance_metric(), cfg.tensorType().cell_type())),
       _index(),
       _is_dense(cfg.tensorType().is_dense()),
       _emptyTensor(createEmptyTensor(cfg.tensorType())),
@@ -278,6 +279,13 @@ const vespalib::eval::ValueType &
 TensorAttribute::getTensorType() const
 {
     return getConfig().tensorType();
+}
+
+DistanceFunctionFactory&
+TensorAttribute::distance_function_factory() const
+{
+    return *_distance_function_factory;
+
 }
 
 const NearestNeighborIndex*

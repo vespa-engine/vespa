@@ -47,8 +47,6 @@ struct ConvertCellsSelector
     }
 };
 
-
-
 }
 
 namespace search::tensor {
@@ -58,36 +56,27 @@ DistanceCalculator::DistanceCalculator(const tensor::ITensorAttribute& attr_tens
     : _attr_tensor(attr_tensor),
       _query_tensor_uptr(),
       _query_tensor(&query_tensor_in),
-      _query_tensor_cells(),
-      _dist_fun_uptr(make_distance_function(_attr_tensor.distance_metric(),
-                                           _attr_tensor.getTensorType().cell_type())),
-      _dist_fun(_dist_fun_uptr.get())
+      _dist_fun()
 {
-    assert(_dist_fun);
-    auto nns_index = _attr_tensor.nearest_neighbor_index();
-    if (nns_index) {
-        _dist_fun = nns_index->distance_function();
-        assert(_dist_fun);
-    }
+    auto * nns_index = _attr_tensor.nearest_neighbor_index();
+    auto & dff = nns_index ? nns_index->distance_function_factory() : attr_tensor.distance_function_factory();
     auto query_ct = _query_tensor->cells().type;
-    CellType required_ct = _dist_fun->expected_cell_type();
+    CellType required_ct = dff.expected_cell_type;
     if (query_ct != required_ct) {
         ConvertCellsSelector converter;
         _query_tensor_uptr = converter(query_ct, required_ct, *_query_tensor);
         _query_tensor = _query_tensor_uptr.get();
     }
-    _query_tensor_cells = _query_tensor->cells();
+    _dist_fun = dff.for_query_vector(_query_tensor->cells());
+    assert(_dist_fun);
 }
 
 DistanceCalculator::DistanceCalculator(const tensor::ITensorAttribute& attr_tensor,
-                                       const vespalib::eval::Value& query_tensor_in,
-                                       const DistanceFunction& function_in)
+                                       BoundDistanceFunction::UP function_in)
     : _attr_tensor(attr_tensor),
       _query_tensor_uptr(),
-      _query_tensor(&query_tensor_in),
-      _query_tensor_cells(_query_tensor->cells()),
-      _dist_fun_uptr(),
-      _dist_fun(&function_in)
+      _query_tensor(nullptr),
+      _dist_fun(std::move(function_in))
 {
 }
 

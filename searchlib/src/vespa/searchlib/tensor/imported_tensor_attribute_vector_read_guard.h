@@ -38,6 +38,9 @@ public:
     SerializedTensorRef get_serialized_tensor_ref(uint32_t docid) const override;
     bool supports_extract_cells_ref() const override { return _target_tensor_attribute.supports_extract_cells_ref(); }
     bool supports_get_tensor_ref() const override { return _target_tensor_attribute.supports_get_tensor_ref(); }
+    DistanceFunctionFactory& distance_function_factory() const override {
+        return _target_tensor_attribute.distance_function_factory();
+    }
     DistanceMetric distance_metric() const override { return _target_tensor_attribute.distance_metric(); }
     bool supports_get_serialized_tensor_ref() const override;
     uint32_t get_num_docs() const override { return getNumDocs(); }

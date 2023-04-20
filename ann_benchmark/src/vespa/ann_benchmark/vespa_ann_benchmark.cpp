@@ -207,7 +207,8 @@ HnswIndex::find_top_k(uint32_t k, const std::vector<float>& value, uint32_t expl
     TopKResult result;
     std::vector<float> normalized_value;
     auto typed_cells = get_typed_cells(value, normalized_value);
-    auto raw_result = _nearest_neighbor_index->find_top_k(k, typed_cells, explore_k, std::numeric_limits<double>::max());
+    auto df = _nearest_neighbor_index->distance_function_factory().for_query_vector(typed_cells);
+    auto raw_result = _nearest_neighbor_index->find_top_k(k, *df, explore_k, std::numeric_limits<double>::max());
     result.reserve(raw_result.size());
     switch (_hnsw_index_params.distance_metric()) {
     case DistanceMetric::Euclidean:

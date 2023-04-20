@@ -4,6 +4,7 @@
 
 #include "hnsw_index_config.h"
 #include "distance_function.h"
+#include "distance_function_factory.h"
 #include "doc_vector_access.h"
 #include "hnsw_identity_mapping.h"
 #include "hnsw_index_utils.h"
@@ -104,7 +105,7 @@ protected:
 
     GraphType _graph;
     const DocVectorAccess& _vectors;
-    DistanceFunction::UP _distance_func;
+    std::unique_ptr<DistanceFunctionFactory> _distance_ff;
     RandomLevelGenerator::UP _level_generator;
     IdMapping _id_mapping; // mapping from docid to nodeid vector
     HnswIndexConfig _cfg;
@@ -158,23 +159,23 @@ protected:
     }
 
     double calc_distance(uint32_t lhs_nodeid, uint32_t rhs_nodeid) const;
-    double calc_distance(const TypedCells& lhs, uint32_t rhs_nodeid) const;
-    double calc_distance(const TypedCells& lhs, uint32_t rhs_docid, uint32_t rhs_subspace) const;
+    double calc_distance(const BoundDistanceFunction &df, uint32_t rhs_nodeid) const;
+    double calc_distance(const BoundDistanceFunction &df, uint32_t rhs_docid, uint32_t rhs_subspace) const;
     uint32_t estimate_visited_nodes(uint32_t level, uint32_t nodeid_limit, uint32_t neighbors_to_find, const GlobalFilter* filter) const;
 
     /**
      * Performs a greedy search in the given layer to find the candidate that is nearest the input vector.
      */
-    HnswCandidate find_nearest_in_layer(const TypedCells& input, const HnswCandidate& entry_point, uint32_t level) const;
+    HnswCandidate find_nearest_in_layer(const BoundDistanceFunction &df, const HnswCandidate& entry_point, uint32_t level) const;
     template <class VisitedTracker, class BestNeighbors>
-    void search_layer_helper(const TypedCells& input, uint32_t neighbors_to_find, BestNeighbors& best_neighbors,
+    void search_layer_helper(const BoundDistanceFunction &df, uint32_t neighbors_to_find, BestNeighbors& best_neighbors,
                              uint32_t level, const GlobalFilter *filter,
                              uint32_t nodeid_limit,
                              uint32_t estimated_visited_nodes) const;
     template <class BestNeighbors>
-    void search_layer(const TypedCells& input, uint32_t neighbors_to_find, BestNeighbors& best_neighbors,
+    void search_layer(const BoundDistanceFunction &df, uint32_t neighbors_to_find, BestNeighbors& best_neighbors,
                       uint32_t level, const GlobalFilter *filter = nullptr) const;
-    std::vector<Neighbor> top_k_by_docid(uint32_t k, TypedCells vector,
+    std::vector<Neighbor> top_k_by_docid(uint32_t k, const BoundDistanceFunction &df,
                                          const GlobalFilter *filter, uint32_t explore_k,
                                          double distance_threshold) const;
 
@@ -185,7 +186,7 @@ protected:
     void internal_complete_add(uint32_t docid, internal::PreparedAddDoc &op);
     void internal_complete_add_node(uint32_t nodeid, uint32_t docid, uint32_t subspace, internal::PreparedAddNode &prepared_node);
 public:
-    HnswIndex(const DocVectorAccess& vectors, DistanceFunction::UP distance_func,
+    HnswIndex(const DocVectorAccess& vectors, DistanceFunctionFactory::UP distance_ff,
               RandomLevelGenerator::UP level_generator, const HnswIndexConfig& cfg);
     ~HnswIndex() override;
 
@@ -213,14 +214,23 @@ public:
     std::unique_ptr<NearestNeighborIndexSaver> make_saver() const override;
     std::unique_ptr<NearestNeighborIndexLoader> make_loader(FastOS_FileInterface& file) override;
 
-    std::vector<Neighbor> find_top_k(uint32_t k, TypedCells vector, uint32_t explore_k,
-                                     double distance_threshold) const override;
-    std::vector<Neighbor> find_top_k_with_filter(uint32_t k, TypedCells vector,
-                                                 const GlobalFilter &filter, uint32_t explore_k,
-                                                 double distance_threshold) const override;
-    const DistanceFunction *distance_function() const override { return _distance_func.get(); }
+    std::vector<Neighbor> find_top_k(
+            uint32_t k,
+            const BoundDistanceFunction &df,
+            uint32_t explore_k,
+            double distance_threshold) const override;
 
-    SearchBestNeighbors top_k_candidates(const TypedCells &vector, uint32_t k, const GlobalFilter *filter) const;
+    std::vector<Neighbor> find_top_k_with_filter(
+            uint32_t k,
+            const BoundDistanceFunction &df,
+            const GlobalFilter &filter, uint32_t explore_k,
+            double distance_threshold) const override;
+
+    DistanceFunctionFactory &distance_function_factory() const override { return *_distance_ff; }
+
+    SearchBestNeighbors top_k_candidates(
+            const BoundDistanceFunction &df,
+            uint32_t k, const GlobalFilter *filter) const;
 
     uint32_t get_entry_nodeid() const { return _graph.get_entry_node().nodeid; }
     int32_t get_entry_level() const { return _graph.get_entry_node().level; }

@@ -36,6 +36,7 @@ TensorExtAttribute::TensorExtAttribute(const vespalib::string& name, const Confi
     : NotImplementedAttribute(name, cfg),
       ITensorAttribute(),
       IExtendAttribute(),
+      _distance_function_factory(make_distance_function_factory(cfg.distance_metric(), cfg.tensorType().cell_type())),
       _subspace_type(cfg.tensorType()),
       _empty(_subspace_type),
       _empty_tensor(create_empty_tensor(cfg.tensorType()))

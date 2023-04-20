@@ -3,6 +3,7 @@
 #pragma once
 
 #include "distance_function.h"
+#include "distance_function_factory.h"
 #include "prepare_result.h"
 #include "vector_bundle.h"
 #include <vespa/vespalib/util/generationhandler.h>
@@ -97,18 +98,18 @@ public:
     virtual std::unique_ptr<NearestNeighborIndexLoader> make_loader(FastOS_FileInterface& file) = 0;
 
     virtual std::vector<Neighbor> find_top_k(uint32_t k,
-                                             vespalib::eval::TypedCells vector,
+                                             const BoundDistanceFunction &df,
                                              uint32_t explore_k,
                                              double distance_threshold) const = 0;
 
     // only return neighbors where the corresponding filter bit is set
     virtual std::vector<Neighbor> find_top_k_with_filter(uint32_t k,
-                                                         vespalib::eval::TypedCells vector,
+                                                         const BoundDistanceFunction &df,
                                                          const GlobalFilter &filter,
                                                          uint32_t explore_k,
                                                          double distance_threshold) const = 0;
 
-    virtual const DistanceFunction *distance_function() const = 0;
+    virtual DistanceFunctionFactory &distance_function_factory() const = 0;
 };
 
 }

@@ -2,6 +2,7 @@
 #pragma once
 
 #include "distance_function.h"
+#include "distance_function_factory.h"
 #include "i_tensor_attribute.h"
 #include "vector_bundle.h"
 #include <optional>
@@ -23,9 +24,7 @@ private:
     const tensor::ITensorAttribute& _attr_tensor;
     std::unique_ptr<vespalib::eval::Value> _query_tensor_uptr;
     const vespalib::eval::Value* _query_tensor;
-    vespalib::eval::TypedCells _query_tensor_cells;
-    std::unique_ptr<DistanceFunction> _dist_fun_uptr;
-    const DistanceFunction* _dist_fun;
+    std::unique_ptr<BoundDistanceFunction> _dist_fun;
 
 public:
     DistanceCalculator(const tensor::ITensorAttribute& attr_tensor,
@@ -35,20 +34,22 @@ public:
      * Only used by unit tests where ownership of query tensor and distance function is handled outside.
      */
     DistanceCalculator(const tensor::ITensorAttribute& attr_tensor,
-                       const vespalib::eval::Value& query_tensor_in,
-                       const DistanceFunction& function_in);
+                       BoundDistanceFunction::UP function_in);
 
     ~DistanceCalculator();
 
     const tensor::ITensorAttribute& attribute_tensor() const { return _attr_tensor; }
-    const vespalib::eval::Value& query_tensor() const { return *_query_tensor; }
-    const DistanceFunction& function() const { return *_dist_fun; }
+    const vespalib::eval::Value& query_tensor() const {
+        assert(_query_tensor != nullptr);
+        return *_query_tensor;
+    }
+    const BoundDistanceFunction& function() const { return *_dist_fun; }
 
     double calc_raw_score(uint32_t docid) const {
         auto vectors = _attr_tensor.get_vectors(docid);
         double result = 0.0;
         for (uint32_t i = 0; i < vectors.subspaces(); ++i) {
-            double distance = _dist_fun->calc(_query_tensor_cells, vectors.cells(i));
+            double distance = _dist_fun->calc(vectors.cells(i));
             double score = _dist_fun->to_rawscore(distance);
             result = std::max(result, score);
         }
@@ -59,7 +60,7 @@ public:
         auto vectors = _attr_tensor.get_vectors(docid);
         double result = std::numeric_limits<double>::max();
         for (uint32_t i = 0; i < vectors.subspaces(); ++i) {
-            double distance = _dist_fun->calc_with_limit(_query_tensor_cells, vectors.cells(i), limit);
+            double distance = _dist_fun->calc_with_limit(vectors.cells(i), limit);
             result = std::min(result, distance);
         }
         return result;
@@ -67,7 +68,7 @@ public:
 
     void calc_closest_subspace(VectorBundle vectors, std::optional<uint32_t>& closest_subspace, double& best_distance) {
         for (uint32_t i = 0; i < vectors.subspaces(); ++i) {
-            double distance = _dist_fun->calc(_query_tensor_cells, vectors.cells(i));
+            double distance = _dist_fun->calc(vectors.cells(i));
             if (!closest_subspace.has_value() || distance < best_distance) {
                 best_distance = distance;
                 closest_subspace = i;

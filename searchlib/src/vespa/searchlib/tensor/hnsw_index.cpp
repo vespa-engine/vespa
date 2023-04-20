@@ -278,23 +278,25 @@ double
 HnswIndex<type>::calc_distance(uint32_t lhs_nodeid, uint32_t rhs_nodeid) const
 {
     auto lhs = get_vector(lhs_nodeid);
-    return calc_distance(lhs, rhs_nodeid);
+    auto df = _distance_ff->for_insertion_vector(lhs);
+    auto rhs = get_vector(rhs_nodeid);
+    return df->calc(rhs);
 }
 
 template <HnswIndexType type>
 double
-HnswIndex<type>::calc_distance(const TypedCells& lhs, uint32_t rhs_nodeid) const
+HnswIndex<type>::calc_distance(const BoundDistanceFunction &df, uint32_t rhs_nodeid) const
 {
     auto rhs = get_vector(rhs_nodeid);
-    return _distance_func->calc(lhs, rhs);
+    return df.calc(rhs);
 }
 
 template <HnswIndexType type>
 double
-HnswIndex<type>::calc_distance(const TypedCells& lhs, uint32_t rhs_docid, uint32_t rhs_subspace) const
+HnswIndex<type>::calc_distance(const BoundDistanceFunction &df, uint32_t rhs_docid, uint32_t rhs_subspace) const
 {
     auto rhs = get_vector(rhs_docid, rhs_subspace);
-    return _distance_func->calc(lhs, rhs);
+    return df.calc(rhs);
 }
 
 template <HnswIndexType type>
@@ -323,7 +325,9 @@ HnswIndex<type>::estimate_visited_nodes(uint32_t level, uint32_t nodeid_limit, u
 
 template <HnswIndexType type>
 HnswCandidate
-HnswIndex<type>::find_nearest_in_layer(const TypedCells& input, const HnswCandidate& entry_point, uint32_t level) const
+HnswIndex<type>::find_nearest_in_layer(
+        const BoundDistanceFunction &df,
+        const HnswCandidate& entry_point, uint32_t level) const
 {
     HnswCandidate nearest = entry_point;
     bool keep_searching = true;
@@ -334,7 +338,7 @@ HnswIndex<type>::find_nearest_in_layer(const TypedCells& input, const HnswCandid
             auto neighbor_ref = neighbor_node.levels_ref().load_acquire();
             uint32_t neighbor_docid = acquire_docid(neighbor_node, neighbor_nodeid);
             uint32_t neighbor_subspace = neighbor_node.acquire_subspace();
-            double dist = calc_distance(input, neighbor_docid, neighbor_subspace);
+            double dist = calc_distance(df, neighbor_docid, neighbor_subspace);
             if (_graph.still_valid(neighbor_nodeid, neighbor_ref)
                 && dist < nearest.distance)
             {
@@ -349,9 +353,11 @@ HnswIndex<type>::find_nearest_in_layer(const TypedCells& input, const HnswCandid
 template <HnswIndexType type>
 template <class VisitedTracker, class BestNeighbors>
 void
-HnswIndex<type>::search_layer_helper(const TypedCells& input, uint32_t neighbors_to_find,
-                               BestNeighbors& best_neighbors, uint32_t level, const GlobalFilter *filter,
-                               uint32_t nodeid_limit, uint32_t estimated_visited_nodes) const
+HnswIndex<type>::search_layer_helper(
+        const BoundDistanceFunction &df,
+        uint32_t neighbors_to_find,
+        BestNeighbors& best_neighbors, uint32_t level, const GlobalFilter *filter,
+        uint32_t nodeid_limit, uint32_t estimated_visited_nodes) const
 {
     NearestPriQ candidates;
     GlobalFilterWrapper<type> filter_wrapper(filter);
@@ -389,7 +395,7 @@ HnswIndex<type>::search_layer_helper(const TypedCells& input, uint32_t neighbors
             }
             uint32_t neighbor_docid = acquire_docid(neighbor_node, neighbor_nodeid);
             uint32_t neighbor_subspace = neighbor_node.acquire_subspace();
-            double dist_to_input = calc_distance(input, neighbor_docid, neighbor_subspace);
+            double dist_to_input = calc_distance(df, neighbor_docid, neighbor_subspace);
             if (dist_to_input < limit_dist) {
                 candidates.emplace(neighbor_nodeid, neighbor_ref, dist_to_input);
                 if (filter_wrapper.check(neighbor_docid)) {
@@ -407,29 +413,31 @@ HnswIndex<type>::search_layer_helper(const TypedCells& input, uint32_t neighbors
 template <HnswIndexType type>
 template <class BestNeighbors>
 void
-HnswIndex<type>::search_layer(const TypedCells& input, uint32_t neighbors_to_find,
-                        BestNeighbors& best_neighbors, uint32_t level, const GlobalFilter *filter) const
+HnswIndex<type>::search_layer(
+        const BoundDistanceFunction &df,
+        uint32_t neighbors_to_find,
+        BestNeighbors& best_neighbors, uint32_t level, const GlobalFilter *filter) const
 {
     uint32_t nodeid_limit = _graph.nodes_size.load(std::memory_order_acquire);
     uint32_t estimated_visited_nodes = estimate_visited_nodes(level, nodeid_limit, neighbors_to_find, filter);
     if (estimated_visited_nodes >= nodeid_limit / 128) {
-        search_layer_helper<BitVectorVisitedTracker>(input, neighbors_to_find, best_neighbors, level, filter, nodeid_limit, estimated_visited_nodes);
+        search_layer_helper<BitVectorVisitedTracker>(df, neighbors_to_find, best_neighbors, level, filter, nodeid_limit, estimated_visited_nodes);
     } else {
-        search_layer_helper<HashSetVisitedTracker>(input, neighbors_to_find, best_neighbors, level, filter, nodeid_limit, estimated_visited_nodes);
+        search_layer_helper<HashSetVisitedTracker>(df, neighbors_to_find, best_neighbors, level, filter, nodeid_limit, estimated_visited_nodes);
     }
 }
 
 template <HnswIndexType type>
-HnswIndex<type>::HnswIndex(const DocVectorAccess& vectors, DistanceFunction::UP distance_func,
+HnswIndex<type>::HnswIndex(const DocVectorAccess& vectors, DistanceFunctionFactory::UP distance_ff,
                      RandomLevelGenerator::UP level_generator, const HnswIndexConfig& cfg)
     : _graph(),
       _vectors(vectors),
-      _distance_func(std::move(distance_func)),
+      _distance_ff(std::move(distance_ff)),
       _level_generator(std::move(level_generator)),
       _id_mapping(),
       _cfg(cfg)
 {
-    assert(_distance_func);
+    assert(_distance_ff);
 }
 
 template <HnswIndexType type>
@@ -483,12 +491,13 @@ HnswIndex<type>::internal_prepare_add_node(PreparedAddDoc& op, TypedCells input_
         return;
     }
     int search_level = entry.level;
-    double entry_dist = calc_distance(input_vector, entry.nodeid);
+    auto df = _distance_ff->for_insertion_vector(input_vector);
+    double entry_dist = calc_distance(*df, entry.nodeid);
     uint32_t entry_docid = get_docid(entry.nodeid);
     // TODO: check if entry nodeid/levels_ref is still valid here
     HnswCandidate entry_point(entry.nodeid, entry_docid, entry.levels_ref, entry_dist);
     while (search_level > node_max_level) {
-        entry_point = find_nearest_in_layer(input_vector, entry_point, search_level);
+        entry_point = find_nearest_in_layer(*df, entry_point, search_level);
         --search_level;
     }
 
@@ -497,7 +506,7 @@ HnswIndex<type>::internal_prepare_add_node(PreparedAddDoc& op, TypedCells input_
     search_level = std::min(node_max_level, search_level);
     // Find neighbors of the added document in each level it should exist in.
     while (search_level >= 0) {
-        search_layer(input_vector, _cfg.neighbors_to_explore_at_construction(), best_neighbors, search_level);
+        search_layer(*df, _cfg.neighbors_to_explore_at_construction(), best_neighbors, search_level);
         auto neighbors = select_neighbors(best_neighbors.peek(), _cfg.max_links_on_inserts());
         auto& links = connections[search_level];
         links.reserve(neighbors.used.size());
@@ -850,11 +859,13 @@ struct NeighborsByDocId {
 
 template <HnswIndexType type>
 std::vector<NearestNeighborIndex::Neighbor>
-HnswIndex<type>::top_k_by_docid(uint32_t k, TypedCells vector,
-                          const GlobalFilter *filter, uint32_t explore_k,
-                          double distance_threshold) const
+HnswIndex<type>::top_k_by_docid(
+        uint32_t k,
+        const BoundDistanceFunction &df,
+        const GlobalFilter *filter, uint32_t explore_k,
+        double distance_threshold) const
 {
-    SearchBestNeighbors candidates = top_k_candidates(vector, std::max(k, explore_k), filter);
+    SearchBestNeighbors candidates = top_k_candidates(df, std::max(k, explore_k), filter);
     auto result = candidates.get_neighbors(k, distance_threshold);
     std::sort(result.begin(), result.end(), NeighborsByDocId());
     return result;
@@ -862,24 +873,31 @@ HnswIndex<type>::top_k_by_docid(uint32_t k, TypedCells vector,
 
 template <HnswIndexType type>
 std::vector<NearestNeighborIndex::Neighbor>
-HnswIndex<type>::find_top_k(uint32_t k, TypedCells vector, uint32_t explore_k,
-                      double distance_threshold) const
+HnswIndex<type>::find_top_k(
+        uint32_t k,
+        const BoundDistanceFunction &df,
+        uint32_t explore_k,
+        double distance_threshold) const
 {
-    return top_k_by_docid(k, vector, nullptr, explore_k, distance_threshold);
+    return top_k_by_docid(k, df, nullptr, explore_k, distance_threshold);
 }
 
 template <HnswIndexType type>
 std::vector<NearestNeighborIndex::Neighbor>
-HnswIndex<type>::find_top_k_with_filter(uint32_t k, TypedCells vector,
-                                  const GlobalFilter &filter, uint32_t explore_k,
-                                  double distance_threshold) const
+HnswIndex<type>::find_top_k_with_filter(
+        uint32_t k,
+        const BoundDistanceFunction &df,
+        const GlobalFilter &filter, uint32_t explore_k,
+        double distance_threshold) const
 {
-    return top_k_by_docid(k, vector, &filter, explore_k, distance_threshold);
+    return top_k_by_docid(k, df, &filter, explore_k, distance_threshold);
 }
 
 template <HnswIndexType type>
 typename HnswIndex<type>::SearchBestNeighbors
-HnswIndex<type>::top_k_candidates(const TypedCells &vector, uint32_t k, const GlobalFilter *filter) const
+HnswIndex<type>::top_k_candidates(
+        const BoundDistanceFunction &df,
+        uint32_t k, const GlobalFilter *filter) const
 {
     SearchBestNeighbors best_neighbors;
     auto entry = _graph.get_entry_node();
@@ -888,16 +906,16 @@ HnswIndex<type>::top_k_candidates(const TypedCells &vector, uint32_t k, const Gl
         return best_neighbors;
     }
     int search_level = entry.level;
-    double entry_dist = calc_distance(vector, entry.nodeid);
+    double entry_dist = calc_distance(df, entry.nodeid);
     uint32_t entry_docid = get_docid(entry.nodeid);
     // TODO: check if entry docid/levels_ref is still valid here
     HnswCandidate entry_point(entry.nodeid, entry_docid, entry.levels_ref, entry_dist);
     while (search_level > 0) {
-        entry_point = find_nearest_in_layer(vector, entry_point, search_level);
+        entry_point = find_nearest_in_layer(df, entry_point, search_level);
         --search_level;
     }
     best_neighbors.push(entry_point);
-    search_layer(vector, k, best_neighbors, 0, filter);
+    search_layer(df, k, best_neighbors, 0, filter);
     return best_neighbors;
 }
 
