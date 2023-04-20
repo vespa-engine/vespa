@@ -24,7 +24,7 @@ public:
     }
     double to_rawscore(double distance) const override {
         double cosine_similarity = 1.0 - distance;
-        // should be in in range [-1,1] but roundoff may cause problems:
+        // should be in the range [-1,1] but roundoff may cause problems:
         cosine_similarity = std::min(1.0, cosine_similarity);
         cosine_similarity = std::max(-1.0, cosine_similarity);
         double angle_distance = acos(cosine_similarity); // in range [0,pi]

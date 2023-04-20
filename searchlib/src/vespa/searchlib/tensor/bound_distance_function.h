@@ -16,7 +16,9 @@ namespace search::tensor {
 /**
  * Interface used to calculate the distance from a prebound n-dimensional vector.
  *
- * The actual implementation must know which type the vectors are.
+ * Use from a single thread only - not required to be thread safe.
+ * The actual implementation may keep state about the prebound vector and
+ * mutable temporary storage.
  */
 class BoundDistanceFunction : public DistanceConverter {
 private:
