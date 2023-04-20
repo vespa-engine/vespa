@@ -19,11 +19,11 @@
 #include <vespa/vespalib/gtest/gtest.h>
 #include <iomanip>
 
-using std::shared_ptr;
 using config::ConfigGetter;
 using config::FileSpec;
 using document::test::makeDocumentBucket;
 using document::BucketId;
+using documentapi::TestAndSetCondition;
 using namespace ::testing;
 
 namespace storage::distributor {
@@ -54,14 +54,18 @@ struct GetOperationTest : Test, DistributorStripeTestUtil {
         op.reset();
     }
 
-    void sendGet(api::InternalReadConsistency consistency = api::InternalReadConsistency::Strong) {
-        auto msg = std::make_shared<api::GetCommand>(makeDocumentBucket(BucketId(0)), docId, document::AllFields::NAME);
+    void start_operation(std::shared_ptr<api::GetCommand> cmd, api::InternalReadConsistency consistency) {
         op = std::make_unique<GetOperation>(
                 node_context(), getDistributorBucketSpace(),
                 getDistributorBucketSpace().getBucketDatabase().acquire_read_guard(),
-                msg, metrics().gets,
+                std::move(cmd), metrics().gets,
                 consistency);
         op->start(_sender);
+    }
+
+    void sendGet(api::InternalReadConsistency consistency = api::InternalReadConsistency::Strong) {
+        auto msg = std::make_shared<api::GetCommand>(makeDocumentBucket(BucketId(0)), docId, document::AllFields::NAME);
+        start_operation(std::move(msg), consistency);
     }
 
     static constexpr uint32_t LastCommand = UINT32_MAX;
@@ -70,7 +74,8 @@ struct GetOperationTest : Test, DistributorStripeTestUtil {
                api::ReturnCode::Result result,
                std::string authorVal,
                uint32_t timestamp,
-               bool is_tombstone = false)
+               bool is_tombstone = false,
+               bool condition_matched = false)
     {
         if (idx == LastCommand) {
             idx = _sender.commands().size() - 1;
@@ -91,7 +96,7 @@ struct GetOperationTest : Test, DistributorStripeTestUtil {
                           document::StringFieldValue(authorVal));
         }
 
-        auto reply = std::make_shared<api::GetReply>(*tmp, doc, timestamp, false, is_tombstone);
+        auto reply = std::make_shared<api::GetReply>(*tmp, doc, timestamp, false, is_tombstone, condition_matched);
         reply->setResult(result);
 
         op->receive(_sender, reply);
@@ -99,6 +104,10 @@ struct GetOperationTest : Test, DistributorStripeTestUtil {
 
     void reply_with_tombstone(uint32_t idx, uint32_t tombstone_ts) {
         sendReply(idx, api::ReturnCode::OK, "", tombstone_ts, true);
+    }
+
+    void reply_with_condition_match(uint32_t idx, uint32_t timestamp, bool condition_match) {
+        sendReply(idx, api::ReturnCode::OK, "", timestamp, false, condition_match);
     }
 
     void replyWithFailure() {
@@ -147,6 +156,7 @@ struct GetOperationTest : Test, DistributorStripeTestUtil {
     }
 
     void do_test_read_consistency_is_propagated(api::InternalReadConsistency consistency);
+    void set_up_condition_match_get_operation();
 };
 
 GetOperationTest::GetOperationTest() = default;
@@ -154,8 +164,10 @@ GetOperationTest::~GetOperationTest() = default;
 
 namespace {
 
-NewestReplica replica_of(api::Timestamp ts, const document::BucketId& bucket_id, uint16_t node, bool is_tombstone) {
-    return NewestReplica::of(ts, bucket_id, node, is_tombstone);
+NewestReplica replica_of(api::Timestamp ts, const document::BucketId& bucket_id, uint16_t node,
+                         bool is_tombstone, bool condition_matched)
+{
+    return NewestReplica::of(ts, bucket_id, node, is_tombstone, condition_matched);
 }
 
 }
@@ -177,7 +189,7 @@ TEST_F(GetOperationTest, simple) {
     EXPECT_FALSE(op->any_replicas_failed());
     EXPECT_TRUE(last_reply_had_consistent_replicas());
     ASSERT_TRUE(op->newest_replica().has_value());
-    EXPECT_EQ(replica_of(api::Timestamp(100), bucketId, 0, false), *op->newest_replica());
+    EXPECT_EQ(replica_of(api::Timestamp(100), bucketId, 0, false, false), *op->newest_replica());
 }
 
 TEST_F(GetOperationTest, ask_all_checksum_groups_if_inconsistent_even_if_trusted_replica_available) {
@@ -198,7 +210,7 @@ TEST_F(GetOperationTest, ask_all_checksum_groups_if_inconsistent_even_if_trusted
     EXPECT_FALSE(op->any_replicas_failed());
     EXPECT_FALSE(last_reply_had_consistent_replicas());
     ASSERT_TRUE(op->newest_replica().has_value());
-    EXPECT_EQ(replica_of(api::Timestamp(2), bucketId, 0, false), *op->newest_replica());
+    EXPECT_EQ(replica_of(api::Timestamp(2), bucketId, 0, false, false), *op->newest_replica());
 }
 
 TEST_F(GetOperationTest, ask_all_nodes_if_bucket_is_inconsistent) {
@@ -221,7 +233,7 @@ TEST_F(GetOperationTest, ask_all_nodes_if_bucket_is_inconsistent) {
     EXPECT_FALSE(op->any_replicas_failed());
     EXPECT_FALSE(last_reply_had_consistent_replicas());
     ASSERT_TRUE(op->newest_replica().has_value());
-    EXPECT_EQ(replica_of(api::Timestamp(2), bucketId, 1, false), *op->newest_replica());
+    EXPECT_EQ(replica_of(api::Timestamp(2), bucketId, 1, false, false), *op->newest_replica());
 }
 
 TEST_F(GetOperationTest, send_to_all_invalid_copies) {
@@ -289,7 +301,7 @@ TEST_F(GetOperationTest, inconsistent_split) {
     EXPECT_FALSE(last_reply_had_consistent_replicas());
     // Bucket with highest timestamp should be returned. In this case it's the one on node 0.
     ASSERT_TRUE(op->newest_replica().has_value());
-    EXPECT_EQ(replica_of(api::Timestamp(2), BucketId(16, 0x0593), 0, false), *op->newest_replica());
+    EXPECT_EQ(replica_of(api::Timestamp(2), BucketId(16, 0x0593), 0, false, false), *op->newest_replica());
 }
 
 TEST_F(GetOperationTest, multi_inconsistent_bucket_not_found) {
@@ -333,7 +345,7 @@ TEST_F(GetOperationTest, multi_inconsistent_bucket_not_found_deleted) {
     EXPECT_FALSE(op->any_replicas_failed());
     EXPECT_FALSE(last_reply_had_consistent_replicas());
     ASSERT_TRUE(op->newest_replica().has_value());
-    EXPECT_EQ(replica_of(api::Timestamp(3), bucketId, 1, false), *op->newest_replica());
+    EXPECT_EQ(replica_of(api::Timestamp(3), bucketId, 1, false, false), *op->newest_replica());
 }
 
 TEST_F(GetOperationTest, multi_inconsistent_bucket) {
@@ -383,7 +395,7 @@ TEST_F(GetOperationTest, multi_inconsistent_bucket_fail) {
     EXPECT_FALSE(last_reply_had_consistent_replicas());
     ASSERT_TRUE(op->newest_replica().has_value());
     // First send to node 2 fails, second is to node 3 which returned the highest timestamp
-    EXPECT_EQ(replica_of(api::Timestamp(100), bucketId, 3, false), *op->newest_replica());
+    EXPECT_EQ(replica_of(api::Timestamp(100), bucketId, 3, false, false), *op->newest_replica());
 }
 
 TEST_F(GetOperationTest, return_not_found_when_bucket_not_in_db) {
@@ -423,7 +435,7 @@ TEST_F(GetOperationTest, not_found) {
     // the caller may want to perform special logic if all replicas are in sync
     // but are missing the document.
     // FIXME make sure all callers are aware of this!
-    EXPECT_EQ(replica_of(api::Timestamp(0), bucketId, 0, false), *op->newest_replica());
+    EXPECT_EQ(replica_of(api::Timestamp(0), bucketId, 0, false, false), *op->newest_replica());
 }
 
 TEST_F(GetOperationTest, not_found_on_subset_of_replicas_marks_get_as_inconsistent) {
@@ -468,7 +480,7 @@ TEST_F(GetOperationTest, resend_on_storage_failure) {
     // Replica had read failure, but they're still in sync. An immutable Get won't change that fact.
     EXPECT_TRUE(last_reply_had_consistent_replicas());
     ASSERT_TRUE(op->newest_replica().has_value());
-    EXPECT_EQ(replica_of(api::Timestamp(100), bucketId, 2, false), *op->newest_replica());
+    EXPECT_EQ(replica_of(api::Timestamp(100), bucketId, 2, false, false), *op->newest_replica());
 }
 
 TEST_F(GetOperationTest, storage_failure_of_out_of_sync_replica_is_tracked_as_inconsistent) {
@@ -485,7 +497,7 @@ TEST_F(GetOperationTest, storage_failure_of_out_of_sync_replica_is_tracked_as_in
     EXPECT_TRUE(op->any_replicas_failed());
     EXPECT_FALSE(last_reply_had_consistent_replicas());
     ASSERT_TRUE(op->newest_replica().has_value());
-    EXPECT_EQ(replica_of(api::Timestamp(3), bucketId, 2, false), *op->newest_replica());
+    EXPECT_EQ(replica_of(api::Timestamp(3), bucketId, 2, false, false), *op->newest_replica());
 }
 
 TEST_F(GetOperationTest, resend_on_storage_failure_all_fail) {
@@ -534,7 +546,7 @@ TEST_F(GetOperationTest, send_to_ideal_copy_if_bucket_in_sync) {
               _sender.getLastReply());
     EXPECT_TRUE(last_reply_had_consistent_replicas());
     ASSERT_TRUE(op->newest_replica().has_value());
-    EXPECT_EQ(replica_of(api::Timestamp(100), bucketId, 1, false), *op->newest_replica());
+    EXPECT_EQ(replica_of(api::Timestamp(100), bucketId, 1, false, false), *op->newest_replica());
 }
 
 TEST_F(GetOperationTest, multiple_copies_with_failure_on_local_node) {
@@ -565,7 +577,7 @@ TEST_F(GetOperationTest, multiple_copies_with_failure_on_local_node) {
     EXPECT_TRUE(op->any_replicas_failed());
     EXPECT_TRUE(last_reply_had_consistent_replicas());
     ASSERT_TRUE(op->newest_replica().has_value());
-    EXPECT_EQ(replica_of(api::Timestamp(3), BucketId(16, 0x0593), 2, false), *op->newest_replica());
+    EXPECT_EQ(replica_of(api::Timestamp(3), BucketId(16, 0x0593), 2, false, false), *op->newest_replica());
 }
 
 TEST_F(GetOperationTest, can_get_documents_when_all_replica_nodes_retired) {
@@ -610,7 +622,7 @@ TEST_F(GetOperationTest, replicas_considered_consistent_if_all_equal_tombstone_t
     EXPECT_FALSE(op->any_replicas_failed());
     EXPECT_TRUE(last_reply_had_consistent_replicas());
     EXPECT_FALSE(last_reply_has_document());
-    EXPECT_EQ(replica_of(api::Timestamp(100), bucketId, 0, true), *op->newest_replica());
+    EXPECT_EQ(replica_of(api::Timestamp(100), bucketId, 0, true, false), *op->newest_replica());
 }
 
 TEST_F(GetOperationTest, newer_tombstone_hides_older_document) {
@@ -628,7 +640,7 @@ TEST_F(GetOperationTest, newer_tombstone_hides_older_document) {
     EXPECT_FALSE(op->any_replicas_failed());
     EXPECT_FALSE(last_reply_had_consistent_replicas());
     EXPECT_FALSE(last_reply_has_document());
-    EXPECT_EQ(replica_of(api::Timestamp(200), bucketId, 1, true), *op->newest_replica());
+    EXPECT_EQ(replica_of(api::Timestamp(200), bucketId, 1, true, false), *op->newest_replica());
 }
 
 TEST_F(GetOperationTest, older_tombstone_does_not_hide_newer_document) {
@@ -646,7 +658,88 @@ TEST_F(GetOperationTest, older_tombstone_does_not_hide_newer_document) {
     EXPECT_FALSE(op->any_replicas_failed());
     EXPECT_FALSE(last_reply_had_consistent_replicas());
     EXPECT_TRUE(last_reply_has_document());
-    EXPECT_EQ(replica_of(api::Timestamp(200), bucketId, 0, false), *op->newest_replica());
+    EXPECT_EQ(replica_of(api::Timestamp(200), bucketId, 0, false, false), *op->newest_replica());
+}
+
+TEST_F(GetOperationTest, provided_condition_is_propagated_to_sent_gets) {
+    setClusterState("distributor:1 storage:1");
+    addNodesToBucketDB(bucketId, "0=123");
+
+    TestAndSetCondition my_cond("my_cool_condition");
+    auto msg = std::make_shared<api::GetCommand>(makeDocumentBucket(BucketId(0)), docId, document::NoFields::NAME);
+    msg->set_condition(my_cond);
+
+    start_operation(std::move(msg), api::InternalReadConsistency::Strong);
+    ASSERT_EQ("Get => 0", _sender.getCommands(true));
+    auto& cmd = dynamic_cast<const api::GetCommand&>(*_sender.command(0));
+    EXPECT_EQ(cmd.condition().getSelection(), my_cond.getSelection());
+}
+
+void GetOperationTest::set_up_condition_match_get_operation() {
+    setClusterState("distributor:1 storage:3");
+    addNodesToBucketDB(bucketId, "0=100,2=200,1=300");
+
+    TestAndSetCondition my_cond("my_cool_condition");
+    auto msg = std::make_shared<api::GetCommand>(makeDocumentBucket(BucketId(0)), docId, document::NoFields::NAME);
+    msg->set_condition(my_cond);
+    start_operation(std::move(msg), api::InternalReadConsistency::Strong);
+
+    ASSERT_EQ("Get => 0,Get => 2,Get => 1", _sender.getCommands(true));
+}
+
+TEST_F(GetOperationTest, condition_match_result_is_aggregated_for_newest_replica_mismatch_case) {
+    ASSERT_NO_FATAL_FAILURE(set_up_condition_match_get_operation());
+    // node 0 (send index 0) has an old doc without a match
+    // node 2 (send index 1) has an old tombstone without match
+    // node 1 (send index 2) has a new doc without a match
+    // Newest replica should reflect node 1's results
+    ASSERT_NO_FATAL_FAILURE(reply_with_condition_match(0, 200, false));
+    ASSERT_NO_FATAL_FAILURE(reply_with_tombstone(1, 100));
+    ASSERT_NO_FATAL_FAILURE(reply_with_condition_match(2, 300, false));
+
+    ASSERT_EQ("GetReply(BucketId(0x0000000000000000), id:ns:text/html::uri, timestamp 300) ReturnCode(NONE)",
+              _sender.getLastReply());
+    EXPECT_FALSE(op->any_replicas_failed());
+    EXPECT_FALSE(last_reply_had_consistent_replicas());
+    EXPECT_FALSE(last_reply_has_document());
+    EXPECT_EQ(replica_of(api::Timestamp(300), bucketId, 1, false, false), *op->newest_replica());
+}
+
+TEST_F(GetOperationTest, condition_match_result_is_aggregated_for_newest_replica_match_case) {
+    ASSERT_NO_FATAL_FAILURE(set_up_condition_match_get_operation());
+    // node 0 (send index 0) has a new doc with a match
+    // node 2 (send index 1) has an old tombstone without match
+    // node 1 (send index 2) has an old doc without a match
+    // Newest replica should reflect node 0's results
+    ASSERT_NO_FATAL_FAILURE(reply_with_condition_match(0, 400, true));
+    ASSERT_NO_FATAL_FAILURE(reply_with_tombstone(1, 300));
+    ASSERT_NO_FATAL_FAILURE(reply_with_condition_match(2, 200, false));
+
+    ASSERT_EQ("GetReply(BucketId(0x0000000000000000), id:ns:text/html::uri, timestamp 400) ReturnCode(NONE)",
+              _sender.getLastReply());
+    EXPECT_FALSE(op->any_replicas_failed());
+    EXPECT_FALSE(last_reply_had_consistent_replicas());
+    EXPECT_FALSE(last_reply_has_document());
+    EXPECT_EQ(replica_of(api::Timestamp(400), bucketId, 0, false, true), *op->newest_replica());
+}
+
+TEST_F(GetOperationTest, condition_match_result_is_aggregated_for_newest_replica_tombstone_case) {
+    ASSERT_NO_FATAL_FAILURE(set_up_condition_match_get_operation());
+    // node 0 (send index 0) has an old doc with a match
+    // node 2 (send index 1) has a new tombstone without match
+    // node 1 (send index 2) has an old doc without a match
+    // Newest replica should reflect node 2's results
+    ASSERT_NO_FATAL_FAILURE(reply_with_condition_match(0, 400, true));
+    ASSERT_NO_FATAL_FAILURE(reply_with_tombstone(1, 500));
+    ASSERT_NO_FATAL_FAILURE(reply_with_condition_match(2, 300, false));
+
+    // Timestamp 0 in reply signals "not found" to clients
+    ASSERT_EQ("GetReply(BucketId(0x0000000000000000), id:ns:text/html::uri, timestamp 0) ReturnCode(NONE)",
+              _sender.getLastReply());
+    EXPECT_FALSE(op->any_replicas_failed());
+    EXPECT_FALSE(last_reply_had_consistent_replicas());
+    EXPECT_FALSE(last_reply_has_document());
+    EXPECT_EQ(replica_of(api::Timestamp(500), bucketId, 2, true, false), *op->newest_replica());
 }
 
 }

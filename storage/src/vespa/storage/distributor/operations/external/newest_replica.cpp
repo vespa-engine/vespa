@@ -9,6 +9,7 @@ std::ostream& operator<<(std::ostream& os, const NewestReplica& nr) {
        << ", bucket_id " << nr.bucket_id
        << ", node " << nr.node
        << ", is_tombstone " << nr.is_tombstone
+       << ", condition_matched " << nr.condition_matched
        << ')';
     return os;
 }

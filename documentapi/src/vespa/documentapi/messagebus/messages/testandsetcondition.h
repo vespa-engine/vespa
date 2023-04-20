@@ -27,6 +27,10 @@ public:
 
     const vespalib::string & getSelection() const { return _selection; }
     bool isPresent() const noexcept { return !_selection.empty(); }
+
+    bool operator==(const TestAndSetCondition& rhs) const noexcept {
+        return (_selection == rhs._selection);
+    }
 };
 
 }

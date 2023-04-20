@@ -202,7 +202,11 @@ GetCommand::getSummary() const
 {
     vespalib::asciistream stream;
     stream << "Get(BucketId(" << vespalib::hex << getBucketId().getId() << "), " << _docId.toString()
-           << ", beforetimestamp " << vespalib::dec << _beforeTimestamp << ')';
+           << ", beforetimestamp " << vespalib::dec << _beforeTimestamp;
+    if (has_condition()) {
+        stream << ", condition " << condition().getSelection();
+    }
+    stream << ')';
 
     return stream.str();
 }
@@ -211,7 +215,11 @@ GetCommand::getSummary() const
 void
 GetCommand::print(std::ostream& out, bool verbose, const std::string& indent) const
 {
-    out << "Get(" << getBucketId() << ", " << _docId << ")";
+    out << "Get(" << getBucketId() << ", " << _docId;
+    if (has_condition()) {
+        out << ", condition " << condition().getSelection();
+    }
+    out << ")";
     if (verbose) {
         out << " : ";
         BucketCommand::print(out, verbose, indent);
