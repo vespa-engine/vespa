@@ -137,9 +137,6 @@ ConfigConverter::convert(const AttributesConfig::Attribute & cfg)
         case CfgDm::PRENORMALIZED_ANGULAR:
             dm = DistanceMetric::PrenormalizedAngular;
             break;
-        case CfgDm::MAXIMUM_INNER_PRODUCT:
-            dm = DistanceMetric::MaximumInnerProduct;
-            break;
     }
     retval.set_distance_metric(dm);
     if (cfg.index.hnsw.enabled) {
