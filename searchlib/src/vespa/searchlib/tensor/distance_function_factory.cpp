@@ -100,6 +100,13 @@ make_distance_function_factory(search::attribute::DistanceMetric variant,
         }
         return std::make_unique<AngularDistanceFunctionFactory<float>>();
     }
+    if (variant == DistanceMetric::Euclidean) {
+        switch (cell_type) {
+        case CellType::DOUBLE: return std::make_unique<EuclideanDistanceFunctionFactory<double>>();
+        case CellType::INT8:   return std::make_unique<EuclideanDistanceFunctionFactory<vespalib::eval::Int8Float>>();
+        default:               return std::make_unique<EuclideanDistanceFunctionFactory<float>>();
+        }
+    }
     auto df = make_distance_function(variant, cell_type);
     return std::make_unique<SimpleDistanceFunctionFactory>(std::move(df));
 }

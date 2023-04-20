@@ -5,7 +5,6 @@
 #include <memory>
 #include <vespa/eval/eval/cell_type.h>
 #include <vespa/eval/eval/typed_cells.h>
-#include <vespa/vespalib/util/array.h>
 #include <vespa/vespalib/util/arrayref.h>
 #include "distance_function.h"
 
@@ -48,7 +47,7 @@ public:
 template <typename FloatType>
 class TemporaryVectorStore {
 private:
-    vespalib::Array<FloatType> _tmpSpace;
+    std::vector<FloatType> _tmpSpace;
     vespalib::ConstArrayRef<FloatType> internal_convert(vespalib::eval::TypedCells cells, size_t offset);
 public:
     TemporaryVectorStore(size_t vectorSize) : _tmpSpace(vectorSize * 2) {}
