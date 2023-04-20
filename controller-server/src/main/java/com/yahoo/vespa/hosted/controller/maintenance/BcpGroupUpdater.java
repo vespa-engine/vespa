@@ -51,6 +51,10 @@ public class BcpGroupUpdater extends ControllerMaintainer {
         this.successFactorBaseline = successFactorBaseline;
     }
 
+    public BcpGroupUpdater(Controller controller, Duration duration) {
+        this(controller, duration, 1.0);
+    }
+
     @Override
     protected double maintain() {
         Exception lastException = null;
