@@ -37,6 +37,9 @@ public class JsonReader {
             return reason;
         }
 
+        @Override
+        public String toString() { return getId() +": " + getReason(); }
+
     }
 
     static class SetRequestData {

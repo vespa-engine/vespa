@@ -127,6 +127,8 @@ public class DummyStateApi implements StateRestAPI {
                             public String getId() { return node.state; }
                             @Override
                             public String getReason() { return node.reason; }
+                            @Override
+                            public String toString() { return getId() +": " + getReason(); }
                         });
                         return m;
                     }
