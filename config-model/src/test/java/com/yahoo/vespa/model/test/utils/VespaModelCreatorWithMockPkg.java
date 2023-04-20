@@ -66,7 +66,7 @@ public class VespaModelCreatorWithMockPkg {
         try {
             this.deployState = deployState;
             VespaModel model = new VespaModel(configModelRegistry, deployState);
-            Version vespaVersion = new Version(6);
+            Version vespaVersion = new Version(8);
             if (validate) {
                 SchemaValidators validators = new SchemaValidators(vespaVersion);
                 try {

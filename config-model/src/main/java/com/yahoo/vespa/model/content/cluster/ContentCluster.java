@@ -125,11 +125,6 @@ public class ContentCluster extends TreeConfigProducer<AnyConfigProducer> implem
                                                                    deployState.featureFlags().resourceLimitDisk(),
                                                                    deployState.featureFlags().resourceLimitMemory())
                     .build(contentElement);
-            c.clusterControllerConfig = new ClusterControllerConfig.Builder(clusterId,
-                                                                            contentElement,
-                                                                            resourceLimits.getClusterControllerLimits(),
-                                                                            deployState.featureFlags().allowMoreThanOneContentGroupDown(new ClusterSpec.Id(clusterId)))
-                    .build(deployState, c, contentElement.getXml());
             c.search = new ContentSearchCluster.Builder(documentDefinitions,
                                                         globallyDistributedDocuments,
                                                         fractionOfMemoryReserved(clusterId, containers),
@@ -139,6 +134,7 @@ public class ContentCluster extends TreeConfigProducer<AnyConfigProducer> implem
             c.storageNodes = new StorageCluster.Builder().build(deployState, c, w3cContentElement);
             c.distributorNodes = new DistributorCluster.Builder(c).build(deployState, c, w3cContentElement);
             c.rootGroup = new StorageGroup.Builder(contentElement, context).buildRootGroup(deployState, redundancyBuilder, c);
+            c.clusterControllerConfig = createClusterControllerConfig(contentElement, deployState, c, resourceLimits);
             validateThatGroupSiblingsAreUnique(c.clusterId, c.rootGroup);
             c.search.handleRedundancy(c.redundancy);
             setupSearchCluster(c.search, contentElement, deployState.getDeployLogger());
@@ -162,6 +158,24 @@ public class ContentCluster extends TreeConfigProducer<AnyConfigProducer> implem
 
             addClusterControllers(context, contentElement, c, deployState);
             return c;
+        }
+
+        private ClusterControllerConfig createClusterControllerConfig(ModelElement contentElement,
+                                                                      DeployState deployState,
+                                                                      ContentCluster c,
+                                                                      ClusterResourceLimits resourceLimits) {
+            var config = new ClusterControllerConfig.Builder(c.clusterId,
+                                                             contentElement,
+                                                             resourceLimits.getClusterControllerLimits(),
+                                                             deployState.featureFlags()
+                                                                        .allowMoreThanOneContentGroupDown(new ClusterSpec.Id(c.clusterId)))
+                    .build(deployState, c, contentElement.getXml());
+            config.tuning().maxGroupsAllowedDown().ifPresent(m -> {
+                int numberOfLeafGroups = c.getRootGroup().getNumberOfLeafGroups();
+                if (m > numberOfLeafGroups)
+                    throw new IllegalArgumentException("Cannot set max-groups-allowed-down (" + m + ") larger than number of groups (" + numberOfLeafGroups + ")");
+            });
+            return config;
         }
 
         private void setupSearchCluster(ContentSearchCluster csc, ModelElement element, DeployLogger logger) {
@@ -435,6 +449,7 @@ public class ContentCluster extends TreeConfigProducer<AnyConfigProducer> implem
     public final ContentSearchCluster getSearch() { return search; }
 
     public Redundancy redundancy() { return redundancy; }
+
     public ContentCluster setRedundancy(Redundancy redundancy) {
         this.redundancy = redundancy;
         return this;

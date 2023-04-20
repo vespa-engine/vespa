@@ -60,7 +60,7 @@ public class ContentClusterUtils {
         Admin admin = new Admin(root,
                                 new DefaultMonitoring(),
                                 new Metrics(),
-                                false,
+                                root.getDeployState().getProperties().multitenant(),
                                 root.getDeployState().isHosted(),
                                 applicationType);
         Document doc = XML.getDocument(clusterXml);

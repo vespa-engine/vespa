@@ -16,16 +16,16 @@ public class ClusterControllerConfigurer extends SimpleComponent implements Stor
         FleetcontrollerConfig.Producer
 {
     private final ContentCluster cluster;
-    private final int index;
+    private final int clusterControllerIndex;
     private final int nodeCount;
 
-    public ClusterControllerConfigurer(ContentCluster cluster, int index, int nodeCount) {
+    public ClusterControllerConfigurer(ContentCluster cluster, int clusterControllerIndex, int nodeCount) {
         super(new ComponentModel(new BundleInstantiationSpecification(
                 new ComponentSpecification("clustercontroller" + "-" + cluster.getName() + "-configurer"),
                 new ComponentSpecification("com.yahoo.vespa.clustercontroller.apps.clustercontroller.ClusterControllerClusterConfigurer"),
                 new ComponentSpecification("clustercontroller-apps"))));
         this.cluster = cluster;
-        this.index = index;
+        this.clusterControllerIndex = clusterControllerIndex;
         this.nodeCount = nodeCount;
     }
 
@@ -38,7 +38,7 @@ public class ClusterControllerConfigurer extends SimpleComponent implements Stor
     public void getConfig(FleetcontrollerConfig.Builder builder) {
         cluster.getConfig(builder);
         cluster.getClusterControllerConfig().getConfig(builder);
-        builder.index(index);
+        builder.index(clusterControllerIndex);
         builder.fleet_controller_count(nodeCount);
         builder.http_port(0);
         builder.rpc_port(0);
