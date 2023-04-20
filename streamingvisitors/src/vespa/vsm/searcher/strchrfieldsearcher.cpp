@@ -7,9 +7,12 @@ using search::streaming::QueryTermList;
 
 namespace vsm {
 
-void StrChrFieldSearcher::prepare(QueryTermList & qtl, const SharedSearcherBuf & buf)
+void StrChrFieldSearcher::prepare(search::streaming::QueryTermList& qtl,
+                                  const SharedSearcherBuf& buf,
+                                  const vsm::FieldPathMapT& field_paths,
+                                  search::fef::IQueryEnvironment& query_env)
 {
-  FieldSearcher::prepare(qtl, buf);
+    FieldSearcher::prepare(qtl, buf, field_paths, query_env);
 }
 
 void StrChrFieldSearcher::onValue(const document::FieldValue & fv)

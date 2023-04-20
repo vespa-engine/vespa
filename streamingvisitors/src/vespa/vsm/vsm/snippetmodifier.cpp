@@ -99,9 +99,11 @@ SnippetModifierManager::SnippetModifierManager() :
 SnippetModifierManager::~SnippetModifierManager() {}
 
 void
-SnippetModifierManager::setup(const QueryTermList & queryTerms,
-                              const FieldSearchSpecMapT & specMap,
-                              const IndexFieldMapT & indexMap)
+SnippetModifierManager::setup(const QueryTermList& queryTerms,
+                              const FieldSearchSpecMapT& specMap,
+                              const IndexFieldMapT& indexMap,
+                              const vsm::FieldPathMapT& field_paths,
+                              search::fef::IQueryEnvironment& query_env)
 {
     FieldQueryTermMap fqtm;
 
@@ -130,7 +132,7 @@ SnippetModifierManager::setup(const QueryTermList & queryTerms,
     for (auto & entry : _modifiers.map()) {
         FieldIdT fId = entry.first;
         SnippetModifier & smod = static_cast<SnippetModifier &>(*entry.second);
-        smod.getSearcher()->prepare(fqtm[fId], _searchBuf);
+        smod.getSearcher()->prepare(fqtm[fId], _searchBuf, field_paths, query_env);
     }
 }
 

@@ -40,11 +40,13 @@ private:
 public:
     NearestNeighborFieldSearcher(const FieldIdT& fid,
                                  search::attribute::DistanceMetric metric);
+    ~NearestNeighborFieldSearcher();
 
     std::unique_ptr<FieldSearcher> duplicate() const override;
-    // TODO: change FieldSearcher::prepare() to provide the necessary objects.
-    void prepare_new(search::streaming::QueryTermList& qtl, const SharedSearcherBuf& buf,
-                     const vespalib::eval::ValueType& tensor_type, search::fef::IQueryEnvironment& query_env);
+    void prepare(search::streaming::QueryTermList& qtl,
+                 const SharedSearcherBuf& buf,
+                 const vsm::FieldPathMapT& field_paths,
+                 search::fef::IQueryEnvironment& query_env) override;
     void onValue(const document::FieldValue& fv) override;
 
     static search::attribute::DistanceMetric distance_metric_from_string(const vespalib::string& value);

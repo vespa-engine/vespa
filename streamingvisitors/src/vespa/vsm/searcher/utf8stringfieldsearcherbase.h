@@ -107,7 +107,10 @@ public:
     UTF8StringFieldSearcherBase();
     UTF8StringFieldSearcherBase(FieldIdT fId);
     ~UTF8StringFieldSearcherBase();
-    void prepare(search::streaming::QueryTermList & qtl, const SharedSearcherBuf & buf) override;
+    void prepare(search::streaming::QueryTermList& qtl,
+                 const SharedSearcherBuf& buf,
+                 const vsm::FieldPathMapT& field_paths,
+                 search::fef::IQueryEnvironment& query_env) override;
     /**
      * Matches the given query term against the given word using suffix match strategy.
      *

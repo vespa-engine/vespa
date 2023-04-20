@@ -236,9 +236,12 @@ UTF8StringFieldSearcherBase::UTF8StringFieldSearcherBase(FieldIdT fId) :
 UTF8StringFieldSearcherBase::~UTF8StringFieldSearcherBase() {}
 
 void
-UTF8StringFieldSearcherBase::prepare(QueryTermList & qtl, const SharedSearcherBuf & buf)
+UTF8StringFieldSearcherBase::prepare(search::streaming::QueryTermList& qtl,
+                                     const SharedSearcherBuf& buf,
+                                     const vsm::FieldPathMapT& field_paths,
+                                     search::fef::IQueryEnvironment& query_env)
 {
-    StrChrFieldSearcher::prepare(qtl, buf);
+    StrChrFieldSearcher::prepare(qtl, buf, field_paths, query_env);
     _buf = buf;
 }
 

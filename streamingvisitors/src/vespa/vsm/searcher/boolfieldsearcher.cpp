@@ -25,10 +25,13 @@ BoolFieldSearcher::BoolFieldSearcher(FieldIdT fId) :
 
 BoolFieldSearcher::~BoolFieldSearcher() = default;
 
-void BoolFieldSearcher::prepare(QueryTermList & qtl, const SharedSearcherBuf & buf)
+void BoolFieldSearcher::prepare(search::streaming::QueryTermList& qtl,
+                                const SharedSearcherBuf& buf,
+                                const vsm::FieldPathMapT& field_paths,
+                                search::fef::IQueryEnvironment& query_env)
 {
     _terms.clear();
-    FieldSearcher::prepare(qtl, buf);
+    FieldSearcher::prepare(qtl, buf, field_paths, query_env);
     for (const QueryTerm * qt : qtl) {
         if (TRUE == qt->getTerm()) {
             _terms.push_back(true);

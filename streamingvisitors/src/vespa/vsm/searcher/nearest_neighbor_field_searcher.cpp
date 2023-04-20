@@ -1,6 +1,8 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "nearest_neighbor_field_searcher.h"
+#include <vespa/document/datatype/datatype.h>
+#include <vespa/document/datatype/tensor_data_type.h>
 #include <vespa/document/fieldvalue/tensorfieldvalue.h>
 #include <vespa/searchcommon/attribute/config.h>
 #include <vespa/searchlib/fef/iqueryenvironment.h>
@@ -59,6 +61,8 @@ NearestNeighborFieldSearcher::NearestNeighborFieldSearcher(const FieldIdT& fid,
 {
 }
 
+NearestNeighborFieldSearcher::~NearestNeighborFieldSearcher() = default;
+
 std::unique_ptr<FieldSearcher>
 NearestNeighborFieldSearcher::duplicate() const
 {
@@ -66,10 +70,18 @@ NearestNeighborFieldSearcher::duplicate() const
 }
 
 void
-NearestNeighborFieldSearcher::prepare_new(search::streaming::QueryTermList& qtl, const SharedSearcherBuf&,
-                                          const vespalib::eval::ValueType& tensor_type, search::fef::IQueryEnvironment& query_env)
+NearestNeighborFieldSearcher::prepare(search::streaming::QueryTermList& qtl,
+                                      const SharedSearcherBuf& buf,
+                                      const vsm::FieldPathMapT& field_paths,
+                                      search::fef::IQueryEnvironment& query_env)
 {
-    _attr = make_attribute(tensor_type);
+    FieldSearcher::prepare(qtl, buf, field_paths, query_env);
+    const auto* tensor_type = field_paths[field()].back().getDataType().cast_tensor();
+    if (tensor_type == nullptr) {
+        vespalib::Issue::report("Data type for field %u is '%s', but expected it to be a tensor type",
+                                field(), field_paths[field()].back().getDataType().toString().c_str());
+    }
+    _attr = make_attribute(tensor_type->getTensorType());
     _calcs.clear();
     for (auto term : qtl) {
         auto* nn_term = term->as_nearest_neighbor_query_node();

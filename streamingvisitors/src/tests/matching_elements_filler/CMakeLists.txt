@@ -3,6 +3,7 @@ vespa_add_executable(streamingvisitors_matching_elements_filler_test_app TEST
     SOURCES
     matching_elements_filler_test.cpp
     DEPENDS
+    searchlib_test
     streamingvisitors
     GTest::GTest
 )

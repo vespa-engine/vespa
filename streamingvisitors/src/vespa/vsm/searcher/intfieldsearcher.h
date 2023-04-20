@@ -11,7 +11,10 @@ public:
     std::unique_ptr<FieldSearcher> duplicate() const override;
     IntFieldSearcher(FieldIdT fId=0);
     ~IntFieldSearcher();
-    void prepare(search::streaming::QueryTermList & qtl, const SharedSearcherBuf & buf) override;
+    void prepare(search::streaming::QueryTermList& qtl,
+                 const SharedSearcherBuf& buf,
+                 const vsm::FieldPathMapT& field_paths,
+                 search::fef::IQueryEnvironment& query_env) override;
     void onValue(const document::FieldValue & fv) override;
 protected:
     class IntInfo

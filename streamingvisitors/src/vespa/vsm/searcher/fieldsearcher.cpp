@@ -105,7 +105,10 @@ bool FieldSearcher::search(const StorageDocument & doc)
     return true;
 }
 
-void FieldSearcher::prepare(QueryTermList & qtl, const SharedSearcherBuf &)
+void FieldSearcher::prepare(QueryTermList& qtl,
+                            const SharedSearcherBuf&,
+                            const vsm::FieldPathMapT&,
+                            search::fef::IQueryEnvironment&)
 {
     FieldSearcherBase::prepare(qtl);
     prepareFieldId();
@@ -220,7 +223,11 @@ void FieldSearcher::init()
     }
 }
 
-void FieldIdTSearcherMap::prepare(const DocumentTypeIndexFieldMapT & difm, const SharedSearcherBuf & searcherBuf, Query & query)
+void FieldIdTSearcherMap::prepare(const DocumentTypeIndexFieldMapT& difm,
+                                  const SharedSearcherBuf& searcherBuf,
+                                  Query& query,
+                                  const vsm::FieldPathMapT& field_paths,
+                                  search::fef::IQueryEnvironment& query_env)
 {
     QueryTermList qtl;
     query.getLeafs(qtl);
@@ -244,7 +251,7 @@ void FieldIdTSearcherMap::prepare(const DocumentTypeIndexFieldMapT & difm, const
             }
         }
         /// Should perhaps do a unique on onlyInIndex
-        (*it)->prepare(onlyInIndex, searcherBuf);
+        (*it)->prepare(onlyInIndex, searcherBuf, field_paths, query_env);
         if (LOG_WOULD_LOG(spam)) {
             char tmpBuf[16];
             snprintf(tmpBuf, sizeof(tmpBuf), "%d", fid);

@@ -7,6 +7,8 @@
 #include <vespa/vsm/common/storagedocument.h>
 #include <vespa/vespalib/util/array.h>
 
+namespace search::fef { class IQueryEnvironment; }
+
 namespace vsm {
 
 using termcount_t = size_t;
@@ -54,7 +56,11 @@ public:
     ~FieldSearcher() override;
     virtual std::unique_ptr<FieldSearcher> duplicate() const = 0;
     bool search(const StorageDocument & doc);
-    virtual void prepare(search::streaming::QueryTermList & qtl, const SharedSearcherBuf & buf);
+    virtual void prepare(search::streaming::QueryTermList& qtl,
+                         const SharedSearcherBuf& buf,
+                         const vsm::FieldPathMapT& field_paths,
+                         search::fef::IQueryEnvironment& query_env);
+
     const FieldIdT & field()         const { return _field; }
     void field(const FieldIdT & v)         { _field = v; prepareFieldId(); }
     bool prefix()                    const { return _matchType == PREFIX; }
@@ -142,7 +148,11 @@ using FieldIdTSearcherMapT = std::vector<FieldSearcherContainer>;
 class FieldIdTSearcherMap : public FieldIdTSearcherMapT
 {
 public:
-    void prepare(const DocumentTypeIndexFieldMapT & difm, const SharedSearcherBuf & searcherBuf, search::streaming::Query & query);
+    void prepare(const DocumentTypeIndexFieldMapT& difm,
+                 const SharedSearcherBuf& searcherBuf,
+                 search::streaming::Query& query,
+                 const vsm::FieldPathMapT& field_paths,
+                 search::fef::IQueryEnvironment& query_env);
 };
 
 }
