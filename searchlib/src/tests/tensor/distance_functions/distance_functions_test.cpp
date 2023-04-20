@@ -91,12 +91,26 @@ TEST(DistanceFunctionsTest, euclidean_int8_smoketest)
 
 }
 
+double computeAngularChecked(TypedCells a, TypedCells b) {
+    static AngularDistanceFunctionFactory<float> flt_dff;
+    static AngularDistanceFunctionFactory<double> dbl_dff;
+    auto d_n = dbl_dff.for_query_vector(a);
+    auto d_f = flt_dff.for_query_vector(a);
+    auto d_r = dbl_dff.for_query_vector(b);
+    auto d_i = dbl_dff.for_insertion_vector(a);
+    // normal:
+    double result = d_n->calc(b);
+     // insert is exactly same:
+    EXPECT_EQ(d_i->calc(b), result);
+    // reverse:
+    EXPECT_DOUBLE_EQ(d_r->calc(a), result);
+    // float factory:
+    EXPECT_FLOAT_EQ(d_f->calc(b), result);
+    return result;
+}
+
 TEST(DistanceFunctionsTest, angular_gives_expected_score)
 {
-    auto ct = vespalib::eval::CellType::DOUBLE;
-
-    auto angular = make_distance_function(DistanceMetric::Angular, ct);
-
     std::vector<double> p0{0.0, 0.0, 0.0};
     std::vector<double> p1{1.0, 0.0, 0.0};
     std::vector<double> p2{0.0, 1.0, 0.0};
@@ -105,10 +119,13 @@ TEST(DistanceFunctionsTest, angular_gives_expected_score)
     std::vector<double> p5{0.0,-1.0, 0.0};
     std::vector<double> p6{1.0, 2.0, 2.0};
 
+    AngularDistanceFunctionFactory<double> dff;
+    auto angular = dff.for_query_vector(t(p0));
+
     constexpr double pi = 3.14159265358979323846;
-    double a12 = angular->calc(t(p1), t(p2));
-    double a13 = angular->calc(t(p1), t(p3));
-    double a23 = angular->calc(t(p2), t(p3));
+    double a12 = computeAngularChecked(t(p1), t(p2));
+    double a13 = computeAngularChecked(t(p1), t(p3));
+    double a23 = computeAngularChecked(t(p2), t(p3));
     EXPECT_DOUBLE_EQ(a12, 1.0);
     EXPECT_DOUBLE_EQ(a13, 1.0);
     EXPECT_DOUBLE_EQ(a23, 1.0);
@@ -117,44 +134,63 @@ TEST(DistanceFunctionsTest, angular_gives_expected_score)
     double threshold = angular->convert_threshold(pi/2);
     EXPECT_DOUBLE_EQ(threshold, 1.0);
 
-    double a14 = angular->calc(t(p1), t(p4));
-    double a24 = angular->calc(t(p2), t(p4));
+    double a14 = computeAngularChecked(t(p1), t(p4));
+    double a24 = computeAngularChecked(t(p2), t(p4));
     EXPECT_FLOAT_EQ(a14, 0.5);
     EXPECT_FLOAT_EQ(a24, 0.5);
     EXPECT_FLOAT_EQ(angular->to_rawscore(a14), 1.0/(1.0 + pi/3));
     threshold = angular->convert_threshold(pi/3);
     EXPECT_DOUBLE_EQ(threshold, 0.5);
 
-    double a34 = angular->calc(t(p3), t(p4));
+    double a34 = computeAngularChecked(t(p3), t(p4));
     EXPECT_FLOAT_EQ(a34, (1.0 - 0.707107));
     EXPECT_FLOAT_EQ(angular->to_rawscore(a34), 1.0/(1.0 + pi/4));
     threshold = angular->convert_threshold(pi/4);
     EXPECT_FLOAT_EQ(threshold, a34);
 
-    double a25 = angular->calc(t(p2), t(p5));
+    double a25 = computeAngularChecked(t(p2), t(p5));
     EXPECT_DOUBLE_EQ(a25, 2.0);
     EXPECT_FLOAT_EQ(angular->to_rawscore(a25), 1.0/(1.0 + pi));
     threshold = angular->convert_threshold(pi);
     EXPECT_FLOAT_EQ(threshold, 2.0);
 
-    double a44 = angular->calc(t(p4), t(p4));
+    double a44 = computeAngularChecked(t(p4), t(p4));
     EXPECT_GE(a44, 0.0);
     EXPECT_LT(a44, 0.000001);
     EXPECT_FLOAT_EQ(angular->to_rawscore(a44), 1.0);
 
-    double a66 = angular->calc(t(p6), t(p6));
+    double a66 = computeAngularChecked(t(p6), t(p6));
     EXPECT_GE(a66, 0.0);
     EXPECT_LT(a66, 0.000001);
     EXPECT_FLOAT_EQ(angular->to_rawscore(a66), 1.0);
     threshold = angular->convert_threshold(0.0);
     EXPECT_FLOAT_EQ(threshold, 0.0);
 
-    double a16 = angular->calc(t(p1), t(p6));
-    double a26 = angular->calc(t(p2), t(p6));
-    double a36 = angular->calc(t(p3), t(p6));
+    double a16 = computeAngularChecked(t(p1), t(p6));
+    double a26 = computeAngularChecked(t(p2), t(p6));
+    double a36 = computeAngularChecked(t(p3), t(p6));
     EXPECT_FLOAT_EQ(a16, 1.0 - (1.0/3.0));
     EXPECT_FLOAT_EQ(a26, 1.0 - (2.0/3.0));
     EXPECT_FLOAT_EQ(a36, 1.0 - (2.0/3.0));
+
+    // check also that cell type conversion works:
+    std::vector<Int8Float> iv0{0.0, 0.0, 0.0};
+    std::vector<Int8Float> iv1{1.0, 0.0, 0.0};
+    std::vector<Int8Float> iv2{0.0, 1.0, 0.0};
+    std::vector<Int8Float> iv3{0.0, 0.0, 1.0};
+    std::vector<Int8Float> iv5{0.0,-1.0, 0.0};
+    std::vector<Int8Float> iv6{1.0, 2.0, 2.0};
+
+    EXPECT_DOUBLE_EQ(a12, computeAngularChecked(t(iv1), t(iv2)));
+    EXPECT_DOUBLE_EQ(a13, computeAngularChecked(t(iv1), t(iv3)));
+    EXPECT_DOUBLE_EQ(a14, computeAngularChecked(t(iv1), t(p4)));
+    EXPECT_DOUBLE_EQ(a24, computeAngularChecked(t(iv2), t(p4)));
+    EXPECT_DOUBLE_EQ(a34, computeAngularChecked(t(iv3), t(p4)));
+    EXPECT_DOUBLE_EQ(a25, computeAngularChecked(t(iv2), t(iv5)));
+    EXPECT_DOUBLE_EQ(a16, computeAngularChecked(t(iv1), t(iv6)));
+    EXPECT_DOUBLE_EQ(a26, computeAngularChecked(t(iv2), t(iv6)));
+    EXPECT_DOUBLE_EQ(a36, computeAngularChecked(t(iv3), t(iv6)));
+    EXPECT_DOUBLE_EQ(a66, computeAngularChecked(t(iv6), t(iv6)));
 }
 
 TEST(DistanceFunctionsTest, innerproduct_gives_expected_score)
@@ -177,7 +213,7 @@ TEST(DistanceFunctionsTest, innerproduct_gives_expected_score)
     EXPECT_DOUBLE_EQ(i12, 1.0);
     EXPECT_DOUBLE_EQ(i13, 1.0);
     EXPECT_DOUBLE_EQ(i23, 1.0);
-    
+
     double i14 = innerproduct->calc(t(p1), t(p4));
     double i24 = innerproduct->calc(t(p2), t(p4));
     EXPECT_DOUBLE_EQ(i14, 0.5);
@@ -238,7 +274,7 @@ TEST(DistanceFunctionsTest, hamming_gives_expected_score)
     double d25 = hamming->calc(t(points[2]), t(points[5]));
     EXPECT_EQ(d25, 1.0);
     EXPECT_DOUBLE_EQ(hamming->to_rawscore(d25), 1.0/(1.0 + 1.0));
- 
+
     double threshold = hamming->convert_threshold(0.25);
     EXPECT_DOUBLE_EQ(threshold, 0.25);
     threshold = hamming->convert_threshold(0.5);
