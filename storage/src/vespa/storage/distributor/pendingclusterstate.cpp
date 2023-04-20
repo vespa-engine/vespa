@@ -333,6 +333,7 @@ PendingClusterState::update_node_supported_features_from_reply(uint16_t node, co
     dest_feat.unordered_merge_chaining               = src_feat.unordered_merge_chaining;
     dest_feat.two_phase_remove_location              = src_feat.two_phase_remove_location;
     dest_feat.no_implicit_indexing_of_active_buckets = src_feat.no_implicit_indexing_of_active_buckets;
+    dest_feat.document_condition_probe               = src_feat.document_condition_probe;
     // This will overwrite per bucket-space reply, but does not matter since it's independent of bucket space.
     _node_features.insert(std::make_pair(node, dest_feat));
 }

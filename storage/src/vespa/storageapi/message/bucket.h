@@ -396,6 +396,7 @@ public:
         bool unordered_merge_chaining               = false;
         bool two_phase_remove_location              = false;
         bool no_implicit_indexing_of_active_buckets = false;
+        bool document_condition_probe               = false;
     };
     using EntryVector = std::vector<Entry, vespalib::allocator_large<Entry>>;
 private:

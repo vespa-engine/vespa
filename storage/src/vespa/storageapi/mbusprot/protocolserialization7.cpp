@@ -555,6 +555,9 @@ void ProtocolSerialization7::onEncode(GBBuf& buf, const api::GetCommand& msg) co
             req.set_field_set(msg.getFieldSet().data(), msg.getFieldSet().size());
         }
         req.set_internal_read_consistency(read_consistency_to_protobuf(msg.internal_read_consistency()));
+        if (msg.has_condition()) {
+            set_tas_condition(*req.mutable_condition(), msg.condition());
+        }
     });
 }
 
@@ -574,6 +577,7 @@ void ProtocolSerialization7::onEncode(GBBuf& buf, const api::GetReply& msg) cons
             // found document for older versions.
             res.set_last_modified_timestamp(0);
         }
+        res.set_condition_matched(msg.condition_matched());
     });
 }
 
@@ -583,6 +587,9 @@ api::StorageCommand::UP ProtocolSerialization7::onDecodeGetCommand(BBuf& buf) co
         auto op = std::make_unique<api::GetCommand>(bucket, std::move(doc_id),
                                                     req.field_set(), req.before_timestamp());
         op->set_internal_read_consistency(read_consistency_from_protobuf(req.internal_read_consistency()));
+        if (req.has_condition()) {
+            op->set_condition(get_tas_condition(req.condition()));
+        }
         return op;
     });
 }
@@ -596,7 +603,7 @@ api::StorageReply::UP ProtocolSerialization7::onDecodeGetReply(const SCmd& cmd, 
                                                            : res.last_modified_timestamp());
             return std::make_unique<api::GetReply>(static_cast<const api::GetCommand&>(cmd),
                                                    std::move(document), effective_timestamp,
-                                                   false, is_tombstone);
+                                                   false, is_tombstone, res.condition_matched());
         } catch (std::exception& e) {
             auto reply = std::make_unique<api::GetReply>(static_cast<const api::GetCommand&>(cmd),
                                                          std::shared_ptr<document::Document>(), 0u);
@@ -1063,6 +1070,7 @@ void ProtocolSerialization7::onEncode(GBBuf& buf, const api::RequestBucketInfoRe
             res.mutable_supported_node_features()->set_unordered_merge_chaining(true);
             res.mutable_supported_node_features()->set_two_phase_remove_location(true);
             res.mutable_supported_node_features()->set_no_implicit_indexing_of_active_buckets(true);
+            res.mutable_supported_node_features()->set_document_condition_probe(true);
         }
     });
 }
@@ -1106,6 +1114,7 @@ api::StorageReply::UP ProtocolSerialization7::onDecodeRequestBucketInfoReply(con
             dest_features.unordered_merge_chaining               = src_features.unordered_merge_chaining();
             dest_features.two_phase_remove_location              = src_features.two_phase_remove_location();
             dest_features.no_implicit_indexing_of_active_buckets = src_features.no_implicit_indexing_of_active_buckets();
+            dest_features.document_condition_probe               = src_features.document_condition_probe();
         }
         return reply;
     });

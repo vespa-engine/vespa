@@ -289,6 +289,7 @@ TEST_P(StorageProtocolTest, get) {
     EXPECT_EQ(Timestamp(123), reply2->getBeforeTimestamp());
     EXPECT_EQ(Timestamp(100), reply2->getLastModifiedTimestamp());
     EXPECT_FALSE(reply2->is_tombstone());
+    EXPECT_FALSE(reply2->condition_matched());
     EXPECT_NO_FATAL_FAILURE(assert_bucket_info_reply_fields_propagated(*reply2));
 }
 
@@ -310,6 +311,13 @@ TEST_P(StorageProtocolTest, can_set_internal_read_consistency_on_get_commands) {
     EXPECT_EQ(cmd2->internal_read_consistency(), InternalReadConsistency::Strong);
 }
 
+TEST_P(StorageProtocolTest, get_command_with_condition) {
+    auto cmd = std::make_shared<GetCommand>(_bucket, _testDocId, "foo,bar,vekterli", 123);
+    cmd->set_condition(TestAndSetCondition(CONDITION_STRING));
+    auto cmd2 = copyCommand(cmd);
+    EXPECT_EQ(cmd->condition().getSelection(), cmd2->condition().getSelection());
+}
+
 TEST_P(StorageProtocolTest, tombstones_propagated_for_gets) {
     auto cmd = std::make_shared<GetCommand>(_bucket, _testDocId, "foo,bar", 123);
     auto reply = std::make_shared<GetReply>(*cmd, std::shared_ptr<Document>(), 100, false, true);
@@ -321,6 +329,14 @@ TEST_P(StorageProtocolTest, tombstones_propagated_for_gets) {
     EXPECT_EQ(Timestamp(123), reply2->getBeforeTimestamp());
     EXPECT_EQ(Timestamp(100), reply2->getLastModifiedTimestamp()); // In this case, the tombstone timestamp.
     EXPECT_TRUE(reply2->is_tombstone());
+}
+
+TEST_P(StorageProtocolTest, condition_matched_propagated_for_get_result) {
+    auto cmd = std::make_shared<GetCommand>(_bucket, _testDocId, "foo,bar", 123);
+    auto reply = std::make_shared<GetReply>(*cmd, std::shared_ptr<Document>(), 100, false, false, true);
+    set_dummy_bucket_info_reply_fields(*reply);
+    auto reply2 = copyReply(reply);
+    EXPECT_TRUE(reply2->condition_matched());
 }
 
 TEST_P(StorageProtocolTest, remove) {
@@ -390,6 +406,7 @@ TEST_P(StorageProtocolTest, request_bucket_info) {
         EXPECT_TRUE(reply2->supported_node_features().unordered_merge_chaining);
         EXPECT_TRUE(reply2->supported_node_features().two_phase_remove_location);
         EXPECT_TRUE(reply2->supported_node_features().no_implicit_indexing_of_active_buckets);
+        EXPECT_TRUE(reply2->supported_node_features().document_condition_probe);
     }
 }
 
