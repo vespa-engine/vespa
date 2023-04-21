@@ -41,7 +41,8 @@ public class FleetControllerClusterTest {
         parse("""
                       <cluster id="storage">
                         <documents/>  <tuning>
-                          <bucket-splitting minimum-bits="7" />    <cluster-controller>
+                          <bucket-splitting minimum-bits="7" />
+                          <cluster-controller>
                             <init-progress-time>13</init-progress-time>
                             <transition-time>27</transition-time>
                             <max-premature-crashes>4</max-premature-crashes>
