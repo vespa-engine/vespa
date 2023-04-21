@@ -1075,15 +1075,16 @@ void attributeSetting(ParsedAttribute attribute) :
 void summaryInDocument(ParsedDocumentSummary docsum) :
 {
     String name;
-    ParsedType type;
+    ParsedType type = null;
     ParsedSummaryField psf;
 }
 {
     <SUMMARY> name = identifierWithDash() { }
-    <TYPE>    type = dataType()   {
+    (<TYPE>   type = dataType())?
+    lbrace() {
         psf = new ParsedSummaryField(name, type);
     }
-    lbrace() (summaryItem(psf) (<NL>)*)* <RBRACE>
+    (summaryItem(psf) (<NL>)*)* <RBRACE>
     {
         var old = docsum.addField(psf);
         if (old != null) {
