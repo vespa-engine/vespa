@@ -13,6 +13,7 @@ import com.yahoo.vespa.athenz.client.zts.ZtsClient;
 import com.yahoo.vespa.athenz.client.zts.ZtsClientException;
 import com.yahoo.vespa.athenz.identity.ServiceIdentityProvider;
 import com.yahoo.vespa.athenz.identityprovider.api.EntityBindingsMapper;
+import com.yahoo.vespa.athenz.identityprovider.api.IdentityDocument;
 import com.yahoo.vespa.athenz.identityprovider.api.IdentityDocumentClient;
 import com.yahoo.vespa.athenz.identityprovider.api.SignedIdentityDocument;
 import com.yahoo.vespa.athenz.identityprovider.client.CsrGenerator;
@@ -150,7 +151,7 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
                     return false;
                 } else {
                     lastRefreshAttempt.put(context.containerName(), now);
-                    refreshIdentity(context, privateKeyFile, certificateFile, identityDocumentFile, doc, identityType, athenzIdentity);
+                    refreshIdentity(context, privateKeyFile, certificateFile, identityDocumentFile, doc.identityDocument(), identityType, athenzIdentity);
                     return true;
                 }
             }
@@ -200,7 +201,8 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
 
     private void registerIdentity(NodeAgentContext context, ContainerPath privateKeyFile, ContainerPath certificateFile, ContainerPath identityDocumentFile, IdentityType identityType, AthenzIdentity identity) {
         KeyPair keyPair = KeyUtils.generateKeypair(KeyAlgorithm.RSA);
-        SignedIdentityDocument doc = signedIdentityDocument(context, identityType);
+        SignedIdentityDocument signedDoc = signedIdentityDocument(context, identityType);
+        IdentityDocument doc = signedDoc.identityDocument();
         CsrGenerator csrGenerator = new CsrGenerator(certificateDnsSuffix, doc.providerService().getFullName());
         Pkcs10Csr csr = csrGenerator.generateInstanceCsr(
                 identity, doc.providerUniqueId(), doc.ipAddresses(), doc.clusterType(), keyPair);
@@ -212,9 +214,9 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
                     ztsClient.registerInstance(
                             doc.providerService(),
                             identity,
-                            EntityBindingsMapper.toAttestationData(doc),
+                            EntityBindingsMapper.toAttestationData(signedDoc),
                             csr);
-            EntityBindingsMapper.writeSignedIdentityDocumentToFile(identityDocumentFile, doc);
+            EntityBindingsMapper.writeSignedIdentityDocumentToFile(identityDocumentFile, signedDoc);
             writePrivateKeyAndCertificate(privateKeyFile, keyPair.getPrivate(), certificateFile, instanceIdentity.certificate());
             context.log(logger, "Instance successfully registered and credentials written to file");
         }
@@ -223,14 +225,14 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
     /**
      * Return zts url from identity document, fallback to ztsEndpoint
      */
-    private URI ztsEndpoint(SignedIdentityDocument doc) {
+    private URI ztsEndpoint(IdentityDocument doc) {
         return Optional.ofNullable(doc.ztsUrl())
                 .filter(s -> !s.isBlank())
                 .map(URI::create)
                 .orElse(ztsEndpoint);
     }
     private void refreshIdentity(NodeAgentContext context, ContainerPath privateKeyFile, ContainerPath certificateFile,
-                                 ContainerPath identityDocumentFile, SignedIdentityDocument doc, IdentityType identityType, AthenzIdentity identity) {
+                                 ContainerPath identityDocumentFile, IdentityDocument doc, IdentityType identityType, AthenzIdentity identity) {
         KeyPair keyPair = KeyUtils.generateKeypair(KeyAlgorithm.RSA);
         CsrGenerator csrGenerator = new CsrGenerator(certificateDnsSuffix, doc.providerService().getFullName());
         Pkcs10Csr csr = csrGenerator.generateInstanceCsr(
@@ -305,9 +307,9 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
 
     private AthenzIdentity getTenantIdentity(NodeAgentContext context, ContainerPath identityDocumentFile) {
         if (Files.exists(identityDocumentFile)) {
-            return EntityBindingsMapper.readSignedIdentityDocumentFromFile(identityDocumentFile).serviceIdentity();
+            return EntityBindingsMapper.readSignedIdentityDocumentFromFile(identityDocumentFile).identityDocument().serviceIdentity();
         } else {
-            return identityDocumentClient.getTenantIdentityDocument(context.hostname().value()).serviceIdentity();
+            return identityDocumentClient.getTenantIdentityDocument(context.hostname().value()).identityDocument().serviceIdentity();
         }
     }
 
