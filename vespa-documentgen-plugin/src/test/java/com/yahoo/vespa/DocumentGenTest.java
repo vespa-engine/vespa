@@ -24,6 +24,8 @@ public class DocumentGenTest {
         assertEquals(searches.size(), 1);
         assertEquals(searches.get("music").getDocument("music").getField("title").getDataType(), DataType.STRING);
         assertEquals(searches.get("music").getDocument("music").getField("eitheror").getDataType(), DataType.BOOL);
+        assertEquals(searches.get("music").getDocument("music").getField("tags").getDataType(),
+                     searches.get("music").getSummaries().get("tags").getSummaryField("tags").getDataType());
     }
 
     @Test
