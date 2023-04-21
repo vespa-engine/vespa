@@ -49,7 +49,6 @@ public class FleetControllerClusterTest {
                             <stable-state-period>72</stable-state-period>
                             <min-distributor-up-ratio>0.7</min-distributor-up-ratio>
                             <min-storage-up-ratio>0.3</min-storage-up-ratio>
-                            <max-groups-allowed-down>2</max-groups-allowed-down>
                           </cluster-controller>
                         </tuning>
                       </cluster>""",
@@ -64,7 +63,6 @@ public class FleetControllerClusterTest {
         assertEquals(0.7, config.min_distributor_up_ratio(), 0.01);
         assertEquals(0.3, config.min_storage_up_ratio(), 0.01);
         assertEquals(7, config.ideal_distribution_bits());
-        assertEquals(2, config.max_number_of_groups_allowed_to_be_down());
     }
 
     @Test
