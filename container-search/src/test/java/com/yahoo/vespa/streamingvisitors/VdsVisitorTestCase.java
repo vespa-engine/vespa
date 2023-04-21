@@ -5,9 +5,7 @@ import com.yahoo.document.fieldset.AllFields;
 import com.yahoo.document.select.parser.ParseException;
 import com.yahoo.documentapi.*;
 import com.yahoo.documentapi.messagebus.protocol.DocumentProtocol;
-import com.yahoo.documentapi.messagebus.protocol.DocumentSummaryMessage;
 import com.yahoo.documentapi.messagebus.protocol.QueryResultMessage;
-import com.yahoo.documentapi.messagebus.protocol.SearchResultMessage;
 import com.yahoo.messagebus.Message;
 import com.yahoo.messagebus.Trace;
 import com.yahoo.messagebus.routing.Route;
@@ -61,18 +59,6 @@ public class VdsVisitorTestCase {
         qrm.setSearchResult(createSR(docId, rank));
         qrm.setSummary(createDS(docId));
         return qrm;
-    }
-
-    private SearchResultMessage createSRM(String docId, double rank) {
-        SearchResultMessage srm = new SearchResultMessage();
-        srm.setSearchResult(createSR(docId, rank));
-        return srm;
-    }
-
-    private DocumentSummaryMessage createDSM(String docId) {
-        DocumentSummaryMessage dsm = new DocumentSummaryMessage();
-        dsm.setDocumentSummary(createDS(docId));
-        return dsm;
     }
 
     private Message createM() {
@@ -357,15 +343,13 @@ public class VdsVisitorTestCase {
     private void supplyResults(VdsVisitor visitor) {
         AckToken ackToken = null;
         visitor.onMessage(createQRM("id:ns:type::0", 0.3), ackToken);
-        visitor.onMessage(createSRM("id:ns:type::1", 1.0), ackToken);
-        visitor.onMessage(createSRM("id:ns:type::2", 0.5), ackToken);
-        visitor.onMessage(createDSM("id:ns:type::1"), ackToken);
-        visitor.onMessage(createDSM("id:ns:type::2"), ackToken);
+        visitor.onMessage(createQRM("id:ns:type::1", 1.0), ackToken);
+        visitor.onMessage(createQRM("id:ns:type::2", 0.5), ackToken);
         try {
             visitor.onMessage(createM(), ackToken);
             assertTrue(false, "Unsupported message did not cause exception");
         } catch (UnsupportedOperationException uoe) {
-            assertTrue(uoe.getMessage().contains("VdsVisitor can only accept query result, search result, and documentsummary messages"));
+            assertTrue(uoe.getMessage().contains("VdsVisitor can only accept query result messages"));
         }
     }
 

@@ -8,11 +8,9 @@
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/storage/common/bucket_resolver.h>
 #include <vespa/storageapi/message/datagram.h>
-#include <vespa/storageapi/message/documentsummary.h>
 #include <vespa/storageapi/message/persistence.h>
 #include <vespa/storageapi/message/queryresult.h>
 #include <vespa/storageapi/message/removelocation.h>
-#include <vespa/storageapi/message/searchresult.h>
 #include <vespa/storageapi/message/stat.h>
 #include <vespa/storageapi/message/visitor.h>
 #include <vespa/messagebus/error.h>
@@ -237,22 +235,10 @@ DocumentApiConverter::toDocumentAPI(api::StorageCommand& fromMsg)
         toMsg = std::move(to);
         break;
     }
-    case api::MessageType::SEARCHRESULT_ID:
-    {
-        auto & from(static_cast<api::SearchResultCommand&>(fromMsg));
-        toMsg = std::make_unique<documentapi::SearchResultMessage>(std::move(from));
-        break;
-    }
     case api::MessageType::QUERYRESULT_ID:
     {
         auto & from(static_cast<api::QueryResultCommand&>(fromMsg));
         toMsg = std::make_unique<documentapi::QueryResultMessage>(std::move(from.getSearchResult()), from.getDocumentSummary());
-        break;
-    }
-    case api::MessageType::DOCUMENTSUMMARY_ID:
-    {
-        auto & from(static_cast<api::DocumentSummaryCommand&>(fromMsg));
-        toMsg = std::make_unique<documentapi::DocumentSummaryMessage>(from);
         break;
     }
     case api::MessageType::MAPVISITOR_ID:
