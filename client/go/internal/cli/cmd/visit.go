@@ -23,6 +23,7 @@ import (
 type visitArgs struct {
 	contentCluster string
 	fieldSet       string
+	bucketSpace    string
 	selection      string
 	makeFeed       bool
 	jsonLines      bool
@@ -122,6 +123,7 @@ $ vespa visit --field-set "[id]" # list document IDs
 	}
 	cmd.Flags().StringVar(&vArgs.contentCluster, "content-cluster", "*", `Which content cluster to visit documents from`)
 	cmd.Flags().StringVar(&vArgs.fieldSet, "field-set", "", `Which fieldset to ask for`)
+	cmd.Flags().StringVar(&vArgs.bucketSpace, "bucket-space", "default", `Which bucket space to visit documents from. Specify "global" to visit global documents`)
 	cmd.Flags().StringVar(&vArgs.selection, "selection", "", `select subset of cluster`)
 	cmd.Flags().BoolVar(&vArgs.debugMode, "debug-mode", false, `print debugging output`)
 	cmd.Flags().BoolVar(&vArgs.jsonLines, "json-lines", true, `output documents as JSON lines`)
@@ -309,6 +311,9 @@ func runOneVisit(vArgs *visitArgs, service *vespa.Service, contToken string) (*V
 	urlPath := service.BaseURL + "/document/v1/?cluster=" + quoteArgForUrl(vArgs.contentCluster)
 	if vArgs.fieldSet != "" {
 		urlPath = urlPath + "&fieldSet=" + quoteArgForUrl(vArgs.fieldSet)
+	}
+	if vArgs.bucketSpace != "" {
+		urlPath = urlPath + "&bucketSpace=" + quoteArgForUrl(vArgs.bucketSpace)
 	}
 	if vArgs.selection != "" {
 		urlPath = urlPath + "&selection=" + quoteArgForUrl(vArgs.selection)
