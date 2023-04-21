@@ -58,7 +58,7 @@ import static com.yahoo.config.provision.NodeResources.StorageType.remote;
 public class NodePatcher {
 
     // Same as in DropDocumentsReport.java
-    private static final String DROP_DOCUMENTS_REPORT = "dropDocuments";
+    public static final String DROP_DOCUMENTS_REPORT = "dropDocuments";
 
     private static final String WANT_TO_RETIRE = "wantToRetire";
     private static final String WANT_TO_DEPROVISION = "wantToDeprovision";
