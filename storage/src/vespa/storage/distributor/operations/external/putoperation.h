@@ -47,9 +47,10 @@ private:
     void sendPutToBucketOnNode(document::BucketSpace bucketSpace, const document::BucketId& bucketId,
                                const uint16_t node, std::vector<PersistenceMessageTracker::ToSend>& putBatch);
 
-    bool shouldImplicitlyActivateReplica(const OperationTargetList& targets) const;
+    [[nodiscard]] bool shouldImplicitlyActivateReplica(const OperationTargetList& targets) const;
 
-    bool has_unavailable_targets_in_pending_state(const OperationTargetList& targets) const;
+    [[nodiscard]] bool has_unavailable_targets_in_pending_state(const OperationTargetList& targets) const;
+    [[nodiscard]] bool at_least_one_storage_node_is_available() const;
 
     std::shared_ptr<api::PutCommand> _msg;
     DistributorStripeOperationContext& _op_ctx;
