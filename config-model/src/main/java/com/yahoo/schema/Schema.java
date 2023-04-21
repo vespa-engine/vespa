@@ -709,8 +709,17 @@ public class Schema implements ImmutableSchema {
 
     public FieldSets fieldSets() {  return fieldSets; }
 
+    private Schema inheritedSchema = null;
+
+    public void setInheritedSchema(Schema value) {
+        inheritedSchema = value;
+    }
+
     /** Returns the schema inherited by this, or throws if none */
-    private Schema requireInherited() { return owner.schemas().get(inherited.get()); }
+    private Schema requireInherited() {
+        if (inheritedSchema != null) return inheritedSchema;
+        return owner.schemas().get(inherited.get());
+    }
 
     /**
      * For adding structs defined in document scope
