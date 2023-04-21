@@ -404,6 +404,12 @@ public class Flags {
             "Takes effect at redeployment",
             HOSTNAME);
 
+    public static final UnboundBooleanFlag FAIL_DEPLOYMENT_ON_MISSING_CERTIFICATE_FILE = defineFeatureFlag(
+            "fail-on-missing-certificate-file", false, List.of("hmusum"), "2023-04-21", "2023-05-21",
+            "Whether to fail in controller when a submitted application package has no certificate files",
+            "Takes effect at redeployment",
+            ZONE_ID);
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
                                                        String createdAt, String expiresAt, String description,
