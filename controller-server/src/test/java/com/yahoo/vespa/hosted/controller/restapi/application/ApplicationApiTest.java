@@ -541,7 +541,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
 
         nodeRepository.putNodes(zone, List.of(nodeBuilder.apply(1, "{}"), nodeBuilder.apply(2, null)));
         tester.assertResponse(request("/application/v4/tenant/tenant2/application/application1/instance/default/environment/dev/region/us-east-1/drop-documents", GET).userIdentity(USER_ID),
-                "{\"error-code\":\"CONFLICT\",\"message\":\"Inconsistent state, try restarting drop documents again\"}", 409);
+                "{\"error-code\":\"CONFLICT\",\"message\":\"Last dropping of documents may have failed to clear all documents due to concurrent topology changes, consider retrying\"}", 409);
 
         nodeRepository.putNodes(zone, List.of(nodeBuilder.apply(1, "{}"), nodeBuilder.apply(2, "{\"droppedAt\":1}")));
         tester.assertResponse(request("/application/v4/tenant/tenant2/application/application1/instance/default/environment/dev/region/us-east-1/drop-documents", GET).userIdentity(USER_ID),

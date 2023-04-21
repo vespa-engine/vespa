@@ -2050,10 +2050,9 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
             else numInitial++;
         }
 
-        if ((numInitial > 0 && numNoReport > 0) ||
-            (numReadied > 0 && (numNoReport > 0 || numInitial > 0 || numDropped > 0)) ||
-            (numStarted > 0 && (numInitial > 0 || numDropped > 0)))
-            return ErrorResponse.conflict("Inconsistent state, try restarting drop documents again");
+        if (numInitial + numDropped > 0 && numNoReport + numReadied + numStarted > 0)
+            return ErrorResponse.conflict("Last dropping of documents may have failed to clear all documents due " +
+                    "to concurrent topology changes, consider retrying");
 
         Slime slime = new Slime();
         Cursor root = slime.setObject();
