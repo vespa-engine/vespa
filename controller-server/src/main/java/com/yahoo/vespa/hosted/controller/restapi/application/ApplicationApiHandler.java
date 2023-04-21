@@ -2061,7 +2061,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         } else {
             Cursor progress = root.setObject("progress");
             progress.setLong("total", nodes.size());
-            progress.setLong("dropped", numDropped);
+            progress.setLong("dropped", numDropped + numReadied + numStarted);
             progress.setLong("started", numStarted + numNoReport);
         }
 
