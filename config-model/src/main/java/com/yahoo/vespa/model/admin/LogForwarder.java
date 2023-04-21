@@ -14,24 +14,30 @@ public class LogForwarder extends AbstractService implements LogforwarderConfig.
         public final String clientName;
         public final String splunkHome;
         public final Integer phoneHomeInterval;
+        public final String role;
 
-        private Config(String ds, String cn, String sh, Integer phi) {
+        private Config(String ds, String cn, String sh, Integer phi, String role) {
             this.deploymentServer = ds;
             this.clientName = cn;
             this.splunkHome = sh;
             this.phoneHomeInterval = phi;
+            this.role = role;
         }
         public Config withDeploymentServer(String ds) {
-            return new Config(ds, clientName, splunkHome, phoneHomeInterval);
+            return new Config(ds, clientName, splunkHome, phoneHomeInterval, role);
         }
         public Config withClientName(String cn) {
-            return new Config(deploymentServer, cn, splunkHome, phoneHomeInterval);
+            return new Config(deploymentServer, cn, splunkHome, phoneHomeInterval, role);
         }
         public Config withSplunkHome(String sh) {
-            return new Config(deploymentServer, clientName, sh, phoneHomeInterval);
+            return new Config(deploymentServer, clientName, sh, phoneHomeInterval, role);
         }
         public Config withPhoneHomeInterval(Integer phi) {
-            return new Config(deploymentServer, clientName, splunkHome, phi);
+            return new Config(deploymentServer, clientName, splunkHome, phi, role);
+        }
+
+        public Config withRole(String role) {
+            return new Config(deploymentServer, clientName, splunkHome, phoneHomeInterval, role);
         }
     }
 
@@ -49,7 +55,7 @@ public class LogForwarder extends AbstractService implements LogforwarderConfig.
     }
 
     public static Config cfg() {
-        return new Config(null, null, null, null);
+        return new Config(null, null, null, null, null);
     }
 
     // LogForwarder does not need any ports.
@@ -78,6 +84,9 @@ public class LogForwarder extends AbstractService implements LogforwarderConfig.
         }
         if (config.phoneHomeInterval != null) {
             builder.phoneHomeInterval(config.phoneHomeInterval);
+        }
+        if (config.role != null) {
+            builder.role(config.role);
         }
     }
 

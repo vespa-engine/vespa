@@ -21,6 +21,9 @@ import com.yahoo.vespa.model.admin.monitoring.builder.Metrics;
 import com.yahoo.vespa.model.admin.monitoring.builder.PredefinedMetricSets;
 import com.yahoo.vespa.model.admin.monitoring.builder.xml.MetricsBuilder;
 import org.w3c.dom.Element;
+
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -98,7 +101,7 @@ public abstract class DomAdminBuilderBase extends VespaDomBuilder.DomConfigProdu
         return Optional.empty();
     }
 
-    void addLogForwarders(ModelElement logForwardingElement, Admin admin) {
+    void addLogForwarders(ModelElement logForwardingElement, Admin admin, DeployState deployState) {
         if (logForwardingElement == null) return;
         boolean alsoForAdminCluster = logForwardingElement.booleanAttribute("include-admin");
         for (ModelElement e : logForwardingElement.children("splunk")) {
@@ -106,7 +109,8 @@ public abstract class DomAdminBuilderBase extends VespaDomBuilder.DomConfigProdu
 		    .withSplunkHome(e.stringAttribute("splunk-home"))
 		    .withDeploymentServer(e.stringAttribute("deployment-server"))
 		    .withClientName(e.stringAttribute("client-name"))
-            .withPhoneHomeInterval(e.integerAttribute("phone-home-interval"));
+            .withPhoneHomeInterval(e.integerAttribute("phone-home-interval"))
+            .withRole(parseLogforwarderRole(e.stringAttribute("role"), deployState));
             admin.setLogForwarderConfig(cfg, alsoForAdminCluster);
         }
     }
@@ -127,6 +131,28 @@ public abstract class DomAdminBuilderBase extends VespaDomBuilder.DomConfigProdu
         }
         for (ModelElement e : loggingElement.children("package")) {
             addLoggingSpec(e, admin);
+        }
+    }
+
+    private String parseLogforwarderRole(String role, DeployState deployState) {
+        if (role == null)
+            return null;
+        if (deployState.zone().system().isPublic())
+            throw new IllegalArgumentException("Logforwarder role not supported in public systems");
+
+        try {
+            // Currently only support athenz roles on format athenz://<domain>/role/<role>
+            var roleUri = new URI(role);
+            if (!"athenz".equals(roleUri.getScheme()))
+                throw new IllegalArgumentException("Unsupported role type: " + roleUri.getScheme());
+            var domain = roleUri.getAuthority();
+            var path = roleUri.getPath().split("/");
+            if (path.length != 3)
+                throw new IllegalArgumentException("Invalid role path: " + roleUri.getPath());
+            var roleName = path[2];
+            return domain + ":role." + roleName;
+        } catch (URISyntaxException e) {
+            throw new IllegalArgumentException("Invalid logforwarder role format: " + role);
         }
     }
 
