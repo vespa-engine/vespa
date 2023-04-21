@@ -79,6 +79,9 @@ public class IndexingModeChangeValidatorTest {
 
     private static String getServices(String indexingMode) {
         return "<services version='1.0'>" +
+               "  <container id='default-container' version='1.0'>" +
+               "    <nodes count='1'/>" +
+               "  </container>" +
                "  <content id='default' version='1.0'>" +
                "    <redundancy>1</redundancy>" +
                "    <documents>" +
