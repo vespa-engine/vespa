@@ -1,17 +1,18 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "fieldsearchspec.h"
+#include <vespa/vespalib/stllike/asciistream.h>
+#include <vespa/vsm/searcher/boolfieldsearcher.h>
+#include <vespa/vsm/searcher/floatfieldsearcher.h>
+#include <vespa/vsm/searcher/futf8strchrfieldsearcher.h>
+#include <vespa/vsm/searcher/geo_pos_field_searcher.h>
+#include <vespa/vsm/searcher/intfieldsearcher.h>
+#include <vespa/vsm/searcher/nearest_neighbor_field_searcher.h>
+#include <vespa/vsm/searcher/utf8exactstringfieldsearcher.h>
 #include <vespa/vsm/searcher/utf8flexiblestringfieldsearcher.h>
 #include <vespa/vsm/searcher/utf8strchrfieldsearcher.h>
 #include <vespa/vsm/searcher/utf8substringsearcher.h>
 #include <vespa/vsm/searcher/utf8suffixstringfieldsearcher.h>
-#include <vespa/vsm/searcher/utf8exactstringfieldsearcher.h>
-#include <vespa/vsm/searcher/futf8strchrfieldsearcher.h>
-#include <vespa/vsm/searcher/intfieldsearcher.h>
-#include <vespa/vsm/searcher/boolfieldsearcher.h>
-#include <vespa/vsm/searcher/floatfieldsearcher.h>
-#include <vespa/vsm/searcher/geo_pos_field_searcher.h>
-#include <vespa/vespalib/stllike/asciistream.h>
 #include <regex>
 
 #include <vespa/log/log.h>
@@ -108,6 +109,10 @@ FieldSearchSpec::FieldSearchSpec(const FieldIdT & fid, const vespalib::string & 
         break;
     case VsmfieldsConfig::Fieldspec::Searchmethod::GEOPOS:
         _searcher = std::make_unique<GeoPosFieldSearcher>(fid);
+        break;
+    case VsmfieldsConfig::Fieldspec::Searchmethod::NEAREST_NEIGHBOR:
+        auto dm = NearestNeighborFieldSearcher::distance_metric_from_string(arg1);
+        _searcher = std::make_unique<NearestNeighborFieldSearcher>(fid, dm);
         break;
     }
     if (_searcher) {
