@@ -173,6 +173,10 @@ enum PathGroup {
                 Matcher.application,
                 "/application/v4/tenant/{tenant}/application/{application}/instance/{ignored}/environment/{environment}/region/{region}/node/{node}/service-dump"),
 
+    dropDocuments(Matcher.tenant,
+                  Matcher.application,
+                  "/application/v4/tenant/{tenant}/application/{application}/instance/{ignored}/environment/{environment}/region/{region}/drop-documents"),
+
     /** Paths used for development deployments. */
     developmentDeployment(Matcher.tenant,
                           Matcher.application,

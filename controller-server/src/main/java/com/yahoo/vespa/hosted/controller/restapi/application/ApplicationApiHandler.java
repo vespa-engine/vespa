@@ -131,6 +131,7 @@ import com.yahoo.vespa.hosted.controller.tenant.TenantInfo;
 import com.yahoo.vespa.hosted.controller.versions.VersionStatus;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
 import com.yahoo.yolean.Exceptions;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -281,6 +282,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/environment/{environment}/region/{region}/content/{*}")) return content(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), path.getRest(), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/environment/{environment}/region/{region}/logs")) return logs(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), request.propertyMap());
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/environment/{environment}/region/{region}/private-services")) return getPrivateServiceInfo(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"));
+        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/environment/{environment}/region/{region}/drop-documents")) return dropDocumentsStatus(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), Optional.ofNullable(request.getProperty("clusterId")).map(ClusterSpec.Id::from));
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/environment/{environment}/region/{region}/access/support")) return supportAccess(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), request.propertyMap());
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/environment/{environment}/region/{region}/node/{node}/service-dump")) return getServiceDump(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), path.get("node"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/environment/{environment}/region/{region}/scaling")) return scaling(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), request);
@@ -346,6 +348,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/environment/{environment}/region/{region}/reindexing")) return enableReindexing(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/environment/{environment}/region/{region}/restart")) return restart(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/environment/{environment}/region/{region}/suspend")) return suspend(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), true);
+        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/environment/{environment}/region/{region}/drop-documents")) return dropDocuments(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), Optional.ofNullable(request.getProperty("clusterId")).map(ClusterSpec.Id::from));
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/environment/{environment}/region/{region}/access/support")) return allowSupportAccess(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/environment/{environment}/region/{region}/node/{node}/service-dump")) return requestServiceDump(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), path.get("node"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/instance/{instance}")) return deploySystemApplication(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), request);
@@ -2015,6 +2018,66 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
             });
         }
         return new SlimeJsonResponse(slime);
+    }
+
+    private HttpResponse dropDocumentsStatus(String tenant, String application, String instance, String environment, String region, Optional<ClusterSpec.Id> clusterId) {
+        ZoneId zone = ZoneId.from(environment, region);
+        if (!zone.environment().isManuallyDeployed())
+            throw new IllegalArgumentException("Drop documents status is only available for manually deployed environments");
+
+        ApplicationId applicationId = ApplicationId.from(tenant, application, instance);
+        NodeFilter filters = NodeFilter.all()
+                .states(Node.State.active)
+                .applications(applicationId)
+                .clusterTypes(Node.ClusterType.content, Node.ClusterType.combined);
+        List<Node> nodes = controller.serviceRegistry().configServer().nodeRepository().list(zone, clusterId.map(filters::clusterIds).orElse(filters));
+        if (nodes.isEmpty()) {
+            throw new NotExistsException("No content nodes found for %s%s in %s".formatted(
+                    applicationId.toFullString(), clusterId.map(id -> " cluster " + id).orElse(""), zone));
+        }
+
+        Instant readiedAt = null;
+        int numNoReport = 0, numInitial = 0, numDropped = 0, numReadied = 0, numStarted = 0;
+        for (Node node : nodes) {
+            Inspector report = Optional.ofNullable(node.reports().get("dropDocuments"))
+                    .map(json -> SlimeUtils.jsonToSlime(json).get()).orElse(null);
+            if (report == null) numNoReport++;
+            else if (report.field("startedAt").valid()) {
+                numStarted++;
+                readiedAt = SlimeUtils.instant(report.field("readiedAt"));
+            } else if (report.field("readiedAt").valid()) numReadied++;
+            else if (report.field("droppedAt").valid()) numDropped++;
+            else numInitial++;
+        }
+
+        if ((numInitial > 0 && numNoReport > 0) ||
+            (numReadied > 0 && (numNoReport > 0 || numInitial > 0 || numDropped > 0)) ||
+            (numStarted > 0 && (numInitial > 0 || numDropped > 0)))
+            return ErrorResponse.conflict("Inconsistent state, try restarting drop documents again");
+
+        Slime slime = new Slime();
+        Cursor root = slime.setObject();
+        if (numStarted + numNoReport == nodes.size()) {
+            if (readiedAt != null) root.setLong("lastDropped", readiedAt.toEpochMilli());
+        } else {
+            Cursor progress = root.setObject("progress");
+            progress.setLong("total", nodes.size());
+            progress.setLong("dropped", numDropped);
+            progress.setLong("started", numStarted + numNoReport);
+        }
+
+        return new SlimeJsonResponse(slime);
+    }
+
+    private HttpResponse dropDocuments(String tenant, String application, String instance, String environment, String region, Optional<ClusterSpec.Id> clusterId) {
+        ZoneId zone = ZoneId.from(environment, region);
+        if (!zone.environment().isManuallyDeployed())
+            throw new IllegalArgumentException("Drop documents status is only available for manually deployed environments");
+
+        ApplicationId applicationId = ApplicationId.from(tenant, application, instance);
+        controller.serviceRegistry().configServer().nodeRepository().dropDocuments(zone, applicationId, clusterId);
+        return new MessageResponse("Triggered drop documents for " + applicationId.toFullString() +
+                                   clusterId.map(id -> " and cluster " + id).orElse("") + " in " + zone);
     }
 
     private HttpResponse getGlobalRotationOverride(String tenantName, String applicationName, String instanceName, String environment, String region) {
