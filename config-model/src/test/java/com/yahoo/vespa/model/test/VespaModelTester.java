@@ -21,7 +21,6 @@ import com.yahoo.config.provision.ProvisionLogger;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.test.utils.VespaModelCreatorWithMockPkg;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -50,6 +49,7 @@ public class VespaModelTester {
     private final ConfigModelRegistry configModelRegistry;
 
     private boolean hosted = true;
+    private TestProperties modelProperties = new TestProperties();
     private final Map<NodeResources, Collection<Host>> hostsByResources = new HashMap<>();
     private ApplicationId applicationId = ApplicationId.defaultId();
     private boolean useDedicatedNodeForLogserver = false;
@@ -100,6 +100,9 @@ public class VespaModelTester {
 
     /** Sets whether this sets up a model for a hosted system. Default: true */
     public void setHosted(boolean hosted) { this.hosted = hosted; }
+
+    /** Sets whether this sets up a model for a hosted system. Default: true */
+    public void setModelProperties(TestProperties testProperties) { this.modelProperties = testProperties; }
 
     /** Sets architecture to use for admin clusters. Default: x86_64 */
     public void setAdminClusterArchitecture(Architecture architecture) {
@@ -206,7 +209,7 @@ public class VespaModelTester {
             provisioner = new SingleNodeProvisioner();
         }
 
-        TestProperties properties = new TestProperties()
+        TestProperties properties = modelProperties
                 .setMultitenant(hosted) // Note: system tests are multitenant but not hosted
                 .setHostedVespa(hosted)
                 .setApplicationId(applicationId)
