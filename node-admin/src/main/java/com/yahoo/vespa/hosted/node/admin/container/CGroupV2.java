@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.nio.file.FileSystem;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -17,15 +18,16 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 /**
- * Read and write interface to the CGroup V2 of a Podman container.
+ * Read and write interface to the cgroup v2 of a Podman container.
  *
  * @see <a href="https://www.kernel.org/doc/html/latest/admin-guide/cgroup-v2.html">CGroups V2</a>
  * @author freva
  */
-public class CGroupV2 implements CGroup {
+public class CGroupV2 {
 
     private static final Logger logger = Logger.getLogger(CGroupV2.class.getName());
     private static final String MAX = "max";
+    public static final String VESPA_CGEXEC_PATH = "/opt/vespa/bin/vespa-cgexec";
 
     private final FileSystem fileSystem;
 
@@ -33,7 +35,13 @@ public class CGroupV2 implements CGroup {
         this.fileSystem = fileSystem;
     }
 
-    @Override
+    /**
+     * Returns quota and period values used for CPU scheduling. This serves as hard cap on CPU usage by allowing
+     * the CGroupV2 to use up to {@code quota} each {@code period}. If uncapped, quota will be negative.
+     *
+     * @param containerId full container ID.
+     * @return CPU quota and period for the given container. Empty if CGroupV2 for this container is not found.
+     */
     public Optional<Pair<Integer, Integer>> cpuQuotaPeriod(ContainerId containerId) {
         return cpuMaxPath(containerId).readUtf8FileIfExists()
                 .map(s -> {
@@ -42,45 +50,68 @@ public class CGroupV2 implements CGroup {
                 });
     }
 
-    @Override
+    /** @return number of shares allocated to this CGroupV2 for purposes of CPU time scheduling, empty if CGroupV2 not found */
     public OptionalInt cpuShares(ContainerId containerId) {
         return cpuWeightPath(containerId).readUtf8FileIfExists()
                 .map(s -> OptionalInt.of(weightToShares(Integer.parseInt(s.strip()))))
                 .orElseGet(OptionalInt::empty);
     }
 
-    @Override
+    /** Update CPU quota and period for the given container ID, set quota to -1 value for unlimited */
     public boolean updateCpuQuotaPeriod(NodeAgentContext context, ContainerId containerId, int cpuQuotaUs, int periodUs) {
         String wanted = String.format("%s %d", cpuQuotaUs < 0 ? MAX : cpuQuotaUs, periodUs);
         return writeCGroupsValue(context, cpuMaxPath(containerId), wanted);
     }
 
-    @Override
     public boolean updateCpuShares(NodeAgentContext context, ContainerId containerId, int shares) {
         return writeCGroupsValue(context, cpuWeightPath(containerId), Integer.toString(sharesToWeight(shares)));
     }
 
-    @Override
+    enum CpuStatField {
+        TOTAL_USAGE_USEC("usage_usec"),
+        USER_USAGE_USEC("user_usec"),
+        SYSTEM_USAGE_USEC("system_usec"),
+        TOTAL_PERIODS("nr_periods"),
+        THROTTLED_PERIODS("nr_throttled"),
+        THROTTLED_TIME_USEC("throttled_usec");
+
+        private final String name;
+
+        CpuStatField(String name) {
+            this.name = name;
+        }
+
+        long parseValue(String value) {
+            return Long.parseLong(value);
+        }
+
+        static Optional<CpuStatField> fromField(String fieldName) {
+            return Arrays.stream(values())
+                         .filter(field -> fieldName.equals(field.name))
+                         .findFirst();
+        }
+    }
+
     public Map<CpuStatField, Long> cpuStats(ContainerId containerId) throws IOException {
         return Files.readAllLines(cgroupRoot(containerId).resolve("cpu.stat")).stream()
                 .map(line -> line.split("\\s+"))
                 .filter(parts -> parts.length == 2)
-                .flatMap(parts -> CpuStatField.fromV2Field(parts[0]).stream().map(field -> new Pair<>(field, field.parseValueV2(parts[1]))))
+                .flatMap(parts -> CpuStatField.fromField(parts[0]).stream().map(field -> new Pair<>(field, field.parseValue(parts[1]))))
                 .collect(Collectors.toMap(Pair::getFirst, Pair::getSecond));
     }
 
-    @Override
+    /** @return Maximum amount of memory that can be used by the cgroup and its descendants. */
     public long memoryLimitInBytes(ContainerId containerId) throws IOException {
         String limit = Files.readString(cgroupRoot(containerId).resolve("memory.max")).strip();
         return MAX.equals(limit) ? -1L : Long.parseLong(limit);
     }
 
-    @Override
+    /** @return The total amount of memory currently being used by the cgroup and its descendants. */
     public long memoryUsageInBytes(ContainerId containerId) throws IOException {
         return parseLong(cgroupRoot(containerId).resolve("memory.current"));
     }
 
-    @Override
+    /** @return Number of bytes used to cache filesystem data, including tmpfs and shared memory. */
     public long memoryCacheInBytes(ContainerId containerId) throws IOException {
         return parseLong(cgroupRoot(containerId).resolve("memory.stat"), "file");
     }

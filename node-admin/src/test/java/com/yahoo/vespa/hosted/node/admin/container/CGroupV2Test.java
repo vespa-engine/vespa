@@ -14,12 +14,12 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalInt;
 
-import static com.yahoo.vespa.hosted.node.admin.container.CGroup.CpuStatField.SYSTEM_USAGE_USEC;
-import static com.yahoo.vespa.hosted.node.admin.container.CGroup.CpuStatField.THROTTLED_PERIODS;
-import static com.yahoo.vespa.hosted.node.admin.container.CGroup.CpuStatField.THROTTLED_TIME_USEC;
-import static com.yahoo.vespa.hosted.node.admin.container.CGroup.CpuStatField.TOTAL_PERIODS;
-import static com.yahoo.vespa.hosted.node.admin.container.CGroup.CpuStatField.TOTAL_USAGE_USEC;
-import static com.yahoo.vespa.hosted.node.admin.container.CGroup.CpuStatField.USER_USAGE_USEC;
+import static com.yahoo.vespa.hosted.node.admin.container.CGroupV2.CpuStatField.SYSTEM_USAGE_USEC;
+import static com.yahoo.vespa.hosted.node.admin.container.CGroupV2.CpuStatField.THROTTLED_PERIODS;
+import static com.yahoo.vespa.hosted.node.admin.container.CGroupV2.CpuStatField.THROTTLED_TIME_USEC;
+import static com.yahoo.vespa.hosted.node.admin.container.CGroupV2.CpuStatField.TOTAL_PERIODS;
+import static com.yahoo.vespa.hosted.node.admin.container.CGroupV2.CpuStatField.TOTAL_USAGE_USEC;
+import static com.yahoo.vespa.hosted.node.admin.container.CGroupV2.CpuStatField.USER_USAGE_USEC;
 import static com.yahoo.vespa.hosted.node.admin.container.CGroupV2.sharesToWeight;
 import static com.yahoo.vespa.hosted.node.admin.container.CGroupV2.weightToShares;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -34,7 +34,7 @@ public class CGroupV2Test {
     private static final ContainerId containerId = new ContainerId("4aec78cc");
 
     private final FileSystem fileSystem = TestFileSystem.create();
-    private final CGroup cgroup = new CGroupV2(fileSystem);
+    private final CGroupV2 cgroup = new CGroupV2(fileSystem);
     private final NodeAgentContext context = NodeAgentContextImpl.builder("node123.yahoo.com").fileSystem(fileSystem).build();
     private final UnixPath cgroupRoot = new UnixPath(fileSystem.getPath("/sys/fs/cgroup/machine.slice/libpod-4aec78cc.scope/container")).createDirectories();
 
