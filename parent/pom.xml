@@ -212,6 +212,7 @@
                             <java.io.tmpdir>${project.build.directory}</java.io.tmpdir>
                         </systemPropertyVariables>
                         <trimStackTrace>false</trimStackTrace>
+                        <argLine>-Djava.io.tmpdir=${project.build.directory}</argLine>
                     </configuration>
                 </plugin>
                 <plugin>
