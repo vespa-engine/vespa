@@ -76,7 +76,6 @@ public class Validation {
         new StreamingValidator().validate(model, deployState);
         new RankSetupValidator(validationParameters.ignoreValidationErrors()).validate(model, deployState);
         new NoPrefixForIndexes().validate(model, deployState);
-        new ContainerInCloudValidator().validate(model, deployState);
         new DeploymentSpecValidator().validate(model, deployState);
         new ValidationOverridesValidator().validate(model, deployState);
         new ConstantValidator().validate(model, deployState);
