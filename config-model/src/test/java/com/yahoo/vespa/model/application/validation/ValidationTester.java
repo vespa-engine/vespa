@@ -35,7 +35,7 @@ public class ValidationTester {
 
     /** Creates a validation tester with 1 node available (in addition to cluster controllers) */
     public ValidationTester() {
-        this(4);
+        this(5);
     }
 
     /** Creates a validation tester with number of nodes available and the given test properties */
