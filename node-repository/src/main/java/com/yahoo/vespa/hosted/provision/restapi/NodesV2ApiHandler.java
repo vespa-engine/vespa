@@ -5,6 +5,7 @@ import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationLockException;
 import com.yahoo.config.provision.CloudAccount;
+import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.HostFilter;
 import com.yahoo.config.provision.HostName;
@@ -222,6 +223,11 @@ public class NodesV2ApiHandler extends ThreadedHttpRequestHandler {
         }
         if (path.matches("/nodes/v2/maintenance/run/{job}")) return runJob(path.get("job"));
         if (path.matches("/nodes/v2/upgrade/firmware")) return requestFirmwareCheckResponse();
+        if (path.matches("/nodes/v2/application/{applicationId}/drop-documents")) {
+            int count = nodeRepository.nodes().dropDocuments(ApplicationId.fromFullString(path.get("applicationId")),
+                    Optional.ofNullable(request.getProperty("clusterId")).map(ClusterSpec.Id::from)).size();
+            return new MessageResponse("Triggered dropping of documents on " + count + " nodes");
+        }
 
         throw new NotFoundException("Nothing at path '" + request.getUri().getPath() + "'");
     }
@@ -482,14 +488,14 @@ public class NodesV2ApiHandler extends ThreadedHttpRequestHandler {
         return new SlimeJsonResponse(slime);
     }
 
-    private void toSlime(Load load, Cursor object) {
+    private static void toSlime(Load load, Cursor object) {
         object.setDouble("cpu", load.cpu());
         object.setDouble("memory", load.memory());
         object.setDouble("disk", load.disk());
     }
 
     /** Returns a copy of the given URI with the host and port from the given URI and the path set to the given path */
-    private URI withPath(String newPath, URI uri) {
+    private static URI withPath(String newPath, URI uri) {
         try {
             return new URI(uri.getScheme(), uri.getUserInfo(), uri.getHost(), uri.getPort(), newPath, null, null);
         }

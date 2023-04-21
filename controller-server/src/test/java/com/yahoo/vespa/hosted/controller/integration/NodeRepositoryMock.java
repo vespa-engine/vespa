@@ -88,6 +88,8 @@ public class NodeRepositoryMock implements NodeRepository {
                                              (node.owner().isPresent() && filter.applications().contains(node.owner().get())))
                              .filter(node -> filter.hostnames().isEmpty() || filter.hostnames().contains(node.hostname()))
                              .filter(node -> filter.states().isEmpty() || filter.states().contains(node.state()))
+                             .filter(node -> filter.clusterIds().isEmpty() || filter.clusterIds().contains(ClusterSpec.Id.from(node.clusterId())))
+                             .filter(node -> filter.clusterTypes().isEmpty() || filter.clusterTypes().contains(node.clusterType()))
                              .toList();
     }
 
@@ -198,6 +200,10 @@ public class NodeRepositoryMock implements NodeRepository {
     @Override
     public void retire(ZoneId zone, String hostname, boolean wantToRetire, boolean wantToDeprovision) {
         patchNodes(zone, hostname, (node) -> Node.builder(node).wantToRetire(wantToRetire).wantToDeprovision(wantToDeprovision).build());
+    }
+
+    @Override
+    public void dropDocuments(ZoneId zoneId, ApplicationId applicationId, Optional<ClusterSpec.Id> clusterId) {
     }
 
     @Override

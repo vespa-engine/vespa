@@ -647,22 +647,43 @@ public class NodesV2ApiTest {
                         Request.Method.PATCH),
                 "{\"message\":\"Updated dockerhost1.yahoo.com\"}");
         assertFile(new Request("http://localhost:8080/nodes/v2/node/dockerhost1.yahoo.com"), "docker-node1-reports-4.json");
+    }
 
-        assertResponse(new Request("http://localhost:8080/nodes/v2/node/host1.yahoo.com",
+    @Test
+    public void drop_documents() throws IOException {
+        // Initially no reports
+        tester.assertPartialResponse(new Request("http://localhost:8080/nodes/v2/node/test-node-pool-102-2"), "reports", false);
+        tester.assertPartialResponse(new Request("http://localhost:8080/nodes/v2/node/host4.yahoo.com"), "reports", false);
+
+        // Initiating drop documents will set the report on all nodes
+        assertResponse(new Request("http://localhost:8080/nodes/v2/application/tenant3.application3.instance3/drop-documents?clusterId=id3", new byte[0], Request.Method.POST),
+                "{\"message\":\"Triggered dropping of documents on 2 nodes\"}");
+        tester.assertResponseContains(new Request("http://localhost:8080/nodes/v2/node/test-node-pool-102-2"),
+                "{\"dropDocuments\":{\"createdMillis\":123}}");
+        tester.assertResponseContains(new Request("http://localhost:8080/nodes/v2/node/host4.yahoo.com"),
+                "{\"dropDocuments\":{\"createdMillis\":123}}");
+
+        // Host admin of the first node finishes dropping
+        assertResponse(new Request("http://localhost:8080/nodes/v2/node/host4.yahoo.com",
                         Utf8.toBytes("{\"reports\": {\"dropDocuments\":{\"createdMillis\":25,\"droppedAt\":36}}}"),
                         Request.Method.PATCH),
-                "{\"message\":\"Updated host1.yahoo.com\"}");
-        tester.assertResponseContains(new Request("http://localhost:8080/nodes/v2/node/host1.yahoo.com"),
+                "{\"message\":\"Updated host4.yahoo.com\"}");
+        tester.assertResponseContains(new Request("http://localhost:8080/nodes/v2/node/host4.yahoo.com"),
                 "{\"dropDocuments\":{\"createdMillis\":25,\"droppedAt\":36}}");
 
-        assertResponse(new Request("http://localhost:8080/nodes/v2/node/host10.yahoo.com",
+        // Host admin of the second node finishes dropping, node-repo will update report on both nodes to start phase 2
+        assertResponse(new Request("http://localhost:8080/nodes/v2/node/test-node-pool-102-2",
                         Utf8.toBytes("{\"reports\": {\"dropDocuments\":{\"createdMillis\":49,\"droppedAt\":456}}}"),
                         Request.Method.PATCH),
-                "{\"message\":\"Updated host10.yahoo.com\"}");
-        tester.assertResponseContains(new Request("http://localhost:8080/nodes/v2/node/host10.yahoo.com"),
+                "{\"message\":\"Updated test-node-pool-102-2\"}");
+        tester.assertResponseContains(new Request("http://localhost:8080/nodes/v2/node/test-node-pool-102-2"),
                 "{\"dropDocuments\":{\"createdMillis\":49,\"droppedAt\":456,\"readiedAt\":123}}");
-        tester.assertResponseContains(new Request("http://localhost:8080/nodes/v2/node/host1.yahoo.com"),
+        tester.assertResponseContains(new Request("http://localhost:8080/nodes/v2/node/host4.yahoo.com"),
                 "{\"dropDocuments\":{\"createdMillis\":25,\"droppedAt\":36,\"readiedAt\":123}}");
+
+        tester.assertResponse(new Request("http://localhost:8080/nodes/v2/application/does.not.exist/drop-documents", new byte[0], Request.Method.POST),
+                404,
+                "{\"error-code\":\"NOT_FOUND\",\"message\":\"No content nodes found for does.not.exist\"}");
     }
 
     @Test

@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.controller.api.integration.configserver;
 
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.zone.ZoneId;
@@ -11,6 +12,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.noderepository.Applicat
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * Node repository interface intended for use by the controller.
@@ -66,6 +68,9 @@ public interface NodeRepository {
 
     /** Retire given node */
     void retire(ZoneId zone, String hostname, boolean wantToRetire, boolean wantToDeprovision);
+
+    /** Drop all documents on content nodes in the given zone, application and cluster */
+    void dropDocuments(ZoneId zoneId, ApplicationId applicationId, Optional<ClusterSpec.Id> clusterId);
 
     /** Update reports for given node. A key with null value clears that report */
     void updateReports(ZoneId zone, String hostname, Map<String, String> reports);

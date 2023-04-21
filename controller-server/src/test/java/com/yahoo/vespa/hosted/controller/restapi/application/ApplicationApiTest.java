@@ -11,6 +11,7 @@ import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.AthenzService;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.InstanceName;
+import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.zone.RoutingMethod;
@@ -40,6 +41,7 @@ import com.yahoo.vespa.hosted.controller.api.identifiers.UserId;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.ApplicationAction;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzDbMock;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException;
+import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.Contact;
@@ -55,6 +57,7 @@ import com.yahoo.vespa.hosted.controller.deployment.DeploymentContext;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTrigger;
 import com.yahoo.vespa.hosted.controller.integration.ConfigServerMock;
+import com.yahoo.vespa.hosted.controller.integration.NodeRepositoryMock;
 import com.yahoo.vespa.hosted.controller.integration.ZoneApiMock;
 import com.yahoo.vespa.hosted.controller.metric.ApplicationMetrics;
 import com.yahoo.vespa.hosted.controller.notification.Notification;
@@ -90,6 +93,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.BiFunction;
 import java.util.function.Supplier;
 
 import static com.yahoo.application.container.handler.Request.Method.DELETE;
@@ -510,6 +514,42 @@ public class ApplicationApiTest extends ControllerContainerTest {
         tester.assertResponse(request("/application/v4/tenant/tenant2/application/application1/instance/default/environment/dev/region/us-east-1/content/bar/file.json?query=param", GET).userIdentity(USER_ID),
                 "{\"path\":\"/bar/file.json\"}");
 
+        // Drop documents
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1/environment/prod/region/us-central-1/drop-documents", POST)
+                        .userIdentity(USER_ID),
+                "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Drop documents status is only available for manually deployed environments\"}", 400);
+        tester.assertResponse(request("/application/v4/tenant/tenant2/application/application1/instance/default/environment/dev/region/us-east-1/drop-documents", POST)
+                        .userIdentity(USER_ID),
+                "{\"message\":\"Triggered drop documents for tenant2.application1.default in dev.us-east-1\"}");
+
+        ZoneId zone = ZoneId.from("dev", "us-east-1");
+        ApplicationId application = ApplicationId.from("tenant2", "application1", "default");
+        BiFunction<Integer, String, Node> nodeBuilder = (index, dropDocumentsReport) -> Node.builder().hostname("node" + index + ".dev.us-east-1.test")
+                .state(Node.State.active).type(NodeType.tenant).owner(application).clusterId("c1").clusterType(Node.ClusterType.content)
+                .reports(dropDocumentsReport == null ? Map.of() : Map.of("dropDocuments", dropDocumentsReport)).build();
+        NodeRepositoryMock nodeRepository = deploymentTester.controllerTester().serviceRegistry().configServer().nodeRepository();
+
+        // 2 nodes, neither ever dropped any documents
+        nodeRepository.putNodes(zone, List.of(nodeBuilder.apply(1, null), nodeBuilder.apply(2, null)));
+        tester.assertResponse(request("/application/v4/tenant/tenant2/application/application1/instance/default/environment/dev/region/us-east-1/drop-documents", GET).userIdentity(USER_ID),
+                "{}");
+
+        // 1 node previously dropped documents, 1 node without any report
+        nodeRepository.putNodes(zone, List.of(nodeBuilder.apply(1, "{\"droppedAt\":1,\"readiedAt\":2,\"startedAt\":3}"), nodeBuilder.apply(2, null)));
+        tester.assertResponse(request("/application/v4/tenant/tenant2/application/application1/instance/default/environment/dev/region/us-east-1/drop-documents", GET).userIdentity(USER_ID),
+                "{\"lastDropped\":2}");
+
+        nodeRepository.putNodes(zone, List.of(nodeBuilder.apply(1, "{}"), nodeBuilder.apply(2, null)));
+        tester.assertResponse(request("/application/v4/tenant/tenant2/application/application1/instance/default/environment/dev/region/us-east-1/drop-documents", GET).userIdentity(USER_ID),
+                "{\"error-code\":\"CONFLICT\",\"message\":\"Last dropping of documents may have failed to clear all documents due to concurrent topology changes, consider retrying\"}", 409);
+
+        nodeRepository.putNodes(zone, List.of(nodeBuilder.apply(1, "{}"), nodeBuilder.apply(2, "{\"droppedAt\":1}")));
+        tester.assertResponse(request("/application/v4/tenant/tenant2/application/application1/instance/default/environment/dev/region/us-east-1/drop-documents", GET).userIdentity(USER_ID),
+                "{\"progress\":{\"total\":2,\"dropped\":1,\"started\":0}}");
+
+        nodeRepository.putNodes(zone, List.of(nodeBuilder.apply(1, "{\"startedAt\":3}"), nodeBuilder.apply(2, "{\"readiedAt\":1}")));
+        tester.assertResponse(request("/application/v4/tenant/tenant2/application/application1/instance/default/environment/dev/region/us-east-1/drop-documents", GET).userIdentity(USER_ID),
+                "{\"progress\":{\"total\":2,\"dropped\":0,\"started\":1}}");
 
         updateMetrics();
 
