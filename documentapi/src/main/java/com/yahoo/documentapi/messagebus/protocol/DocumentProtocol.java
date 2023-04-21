@@ -50,6 +50,7 @@ public class DocumentProtocol implements Protocol {
     public static final int MESSAGE_CREATEVISITOR = DOCUMENT_MESSAGE + 7;
     public static final int MESSAGE_DESTROYVISITOR = DOCUMENT_MESSAGE + 8;
     public static final int MESSAGE_VISITORINFO = DOCUMENT_MESSAGE + 9;
+    // SearchResult and DocumentSummary messages were replaced by QueryResult message in 2010.
     // public static final int MESSAGE_SEARCHRESULT = DOCUMENT_MESSAGE + 11;
     // public static final int MESSAGE_DOCUMENTSUMMARY = DOCUMENT_MESSAGE + 14;
     public static final int MESSAGE_MAPVISITOR = DOCUMENT_MESSAGE + 15;
@@ -70,6 +71,7 @@ public class DocumentProtocol implements Protocol {
     public static final int REPLY_CREATEVISITOR = DOCUMENT_REPLY + 7;
     public static final int REPLY_DESTROYVISITOR = DOCUMENT_REPLY + 8;
     public static final int REPLY_VISITORINFO = DOCUMENT_REPLY + 9;
+    // SearchResult and DocumentSummary replies were replaced by QueryResult reply in 2010.
     // public static final int REPLY_SEARCHRESULT = DOCUMENT_REPLY + 11;
     // public static final int REPLY_DOCUMENTSUMMARY = DOCUMENT_REPLY + 14;
     public static final int REPLY_MAPVISITOR = DOCUMENT_REPLY + 15;

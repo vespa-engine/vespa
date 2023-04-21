@@ -55,6 +55,7 @@ public:
         MESSAGE_CREATEVISITOR       = DOCUMENT_MESSAGE + 7,
         MESSAGE_DESTROYVISITOR      = DOCUMENT_MESSAGE + 8,
         MESSAGE_VISITORINFO         = DOCUMENT_MESSAGE + 9,
+        // SearchResult and DocumentSummary messages were replaced by QueryResult message in 2010.
         // MESSAGE_SEARCHRESULT       = DOCUMENT_MESSAGE + 11,
         //MESSAGE_MULTIOPERATION      = DOCUMENT_MESSAGE + 13,
         // MESSAGE_DOCUMENTSUMMARY    = DOCUMENT_MESSAGE + 14,
@@ -78,6 +79,7 @@ public:
         REPLY_CREATEVISITOR         = DOCUMENT_REPLY + 7,
         REPLY_DESTROYVISITOR        = DOCUMENT_REPLY + 8,
         REPLY_VISITORINFO           = DOCUMENT_REPLY + 9,
+        // SearchResult and DocumentSummary replies were replaced by QueryResult reply in 2010.
         // REPLY_SEARCHRESULT         = DOCUMENT_REPLY + 11,
         //REPLY_MULTIOPERATION        = DOCUMENT_REPLY + 13,
         // REPLY_DOCUMENTSUMMARY      = DOCUMENT_REPLY + 14,
