@@ -17,12 +17,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import static com.yahoo.vespa.hosted.node.admin.container.CGroup.CpuStatField.SYSTEM_USAGE_USEC;
-import static com.yahoo.vespa.hosted.node.admin.container.CGroup.CpuStatField.THROTTLED_PERIODS;
-import static com.yahoo.vespa.hosted.node.admin.container.CGroup.CpuStatField.THROTTLED_TIME_USEC;
-import static com.yahoo.vespa.hosted.node.admin.container.CGroup.CpuStatField.TOTAL_PERIODS;
-import static com.yahoo.vespa.hosted.node.admin.container.CGroup.CpuStatField.TOTAL_USAGE_USEC;
-import static com.yahoo.vespa.hosted.node.admin.container.CGroup.CpuStatField.USER_USAGE_USEC;
+import static com.yahoo.vespa.hosted.node.admin.container.CGroupV2.CpuStatField.SYSTEM_USAGE_USEC;
+import static com.yahoo.vespa.hosted.node.admin.container.CGroupV2.CpuStatField.THROTTLED_PERIODS;
+import static com.yahoo.vespa.hosted.node.admin.container.CGroupV2.CpuStatField.THROTTLED_TIME_USEC;
+import static com.yahoo.vespa.hosted.node.admin.container.CGroupV2.CpuStatField.TOTAL_PERIODS;
+import static com.yahoo.vespa.hosted.node.admin.container.CGroupV2.CpuStatField.TOTAL_USAGE_USEC;
+import static com.yahoo.vespa.hosted.node.admin.container.CGroupV2.CpuStatField.USER_USAGE_USEC;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.eq;
@@ -37,7 +37,7 @@ public class ContainerStatsCollectorTest {
     private final TestTerminal testTerminal = new TestTerminal();
     private final ContainerEngineMock containerEngine = new ContainerEngineMock(testTerminal);
     private final FileSystem fileSystem = TestFileSystem.create();
-    private final CGroup cgroup = mock(CGroup.class);
+    private final CGroupV2 cgroup = mock(CGroupV2.class);
     private final NodeAgentContext context = NodeAgentContextImpl.builder(NodeSpec.Builder.testSpec("c1").build())
                                                                  .fileSystem(TestFileSystem.create())
                                                                  .build();

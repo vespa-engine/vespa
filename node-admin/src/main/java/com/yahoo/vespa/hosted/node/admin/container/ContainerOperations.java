@@ -33,7 +33,7 @@ public class ContainerOperations {
     private final ContainerImagePruner imagePruner;
     private final ContainerStatsCollector containerStatsCollector;
 
-    public ContainerOperations(ContainerEngine containerEngine, CGroup cgroup, FileSystem fileSystem) {
+    public ContainerOperations(ContainerEngine containerEngine, CGroupV2 cgroup, FileSystem fileSystem) {
         this.containerEngine = Objects.requireNonNull(containerEngine);
         this.imageDownloader = new ContainerImageDownloader(containerEngine);
         this.imagePruner = new ContainerImagePruner(containerEngine, Clock.systemUTC());
