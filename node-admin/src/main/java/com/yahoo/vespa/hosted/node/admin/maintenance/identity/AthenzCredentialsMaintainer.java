@@ -1,6 +1,8 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.maintenance.identity;
 
+import com.yahoo.component.Version;
+import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.security.KeyAlgorithm;
 import com.yahoo.security.KeyUtils;
 import com.yahoo.security.Pkcs10Csr;
@@ -68,6 +70,7 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
     private static final Duration REFRESH_BACKOFF = Duration.ofHours(1); // Backoff when refresh fails to ensure ZTS is not DDoS'ed.
 
     private static final String CONTAINER_SIA_DIRECTORY = "/var/lib/sia";
+    private static final String VESPA_SIA_DIRECTORY = "/opt/vespa/var/vespa/sia";
 
     private final URI ztsEndpoint;
     private final Path ztsTrustStorePath;
@@ -112,7 +115,7 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
 
         try {
             context.log(logger, Level.FINE, "Checking certificate");
-            ContainerPath siaDirectory = context.paths().of(CONTAINER_SIA_DIRECTORY, context.users().vespa());
+            ContainerPath siaDirectory = context.paths().of(identityType.getSiaDirectory(), context.users().vespa());
             ContainerPath identityDocumentFile = siaDirectory.resolve(identityType.getIdentityDocument());
             AthenzIdentity athenzIdentity = getAthenzIdentity(context, identityType, identityDocumentFile);
             ContainerPath privateKeyFile = (ContainerPath) SiaUtils.getPrivateKeyFile(siaDirectory, athenzIdentity);
@@ -163,6 +166,8 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
 
     public void clearCredentials(NodeAgentContext context) {
         FileFinder.files(context.paths().of(CONTAINER_SIA_DIRECTORY))
+                .deleteRecursively(context);
+        FileFinder.files(context.paths().of(VESPA_SIA_DIRECTORY))
                 .deleteRecursively(context);
         lastRefreshAttempt.remove(context.containerName());
     }
@@ -312,18 +317,28 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
     }
 
     private boolean shouldWriteTenantServiceIdentity(NodeAgentContext context) {
+        var version = context.node().currentVespaVersion()
+                .orElse(context.node().wantedVespaVersion().orElse(Version.emptyVersion));
+        var appId = context.node().owner().orElse(ApplicationId.defaultId());
         return tenantServiceIdentityFlag
-                .with(FetchVector.Dimension.HOSTNAME, context.hostname().value())
+                .with(FetchVector.Dimension.VESPA_VERSION, version.toFullString())
+                .with(FetchVector.Dimension.APPLICATION_ID, appId.serializedForm())
                 .value();
     }
 
     enum IdentityType {
-        NODE("vespa-node-identity-document.json"),
-        TENANT("vespa-tenant-identity-document.json");
+        NODE(CONTAINER_SIA_DIRECTORY, "vespa-node-identity-document.json"),
+        TENANT(VESPA_SIA_DIRECTORY, "vespa-tenant-identity-document.json");
 
+        private String siaDirectory;
         private String identityDocument;
-        IdentityType(String identityDocument) {
+        IdentityType(String siaDirectory, String identityDocument) {
+            this.siaDirectory = siaDirectory;
             this.identityDocument = identityDocument;
+        }
+
+        public String getSiaDirectory() {
+            return siaDirectory;
         }
 
         public String getIdentityDocument() {
