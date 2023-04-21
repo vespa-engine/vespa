@@ -22,11 +22,10 @@ import com.yahoo.vespa.model.admin.monitoring.builder.PredefinedMetricSets;
 import com.yahoo.vespa.model.admin.monitoring.builder.xml.MetricsBuilder;
 import org.w3c.dom.Element;
 
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.regex.Pattern;
 
 /**
  * A base class for admin model builders, to support common functionality across versions.
@@ -140,20 +139,16 @@ public abstract class DomAdminBuilderBase extends VespaDomBuilder.DomConfigProdu
         if (deployState.zone().system().isPublic())
             throw new IllegalArgumentException("Logforwarder role not supported in public systems");
 
-        try {
-            // Currently only support athenz roles on format athenz://<domain>/role/<role>
-            var roleUri = new URI(role);
-            if (!"athenz".equals(roleUri.getScheme()))
-                throw new IllegalArgumentException("Unsupported role type: " + roleUri.getScheme());
-            var domain = roleUri.getAuthority();
-            var path = roleUri.getPath().split("/");
-            if (path.length != 3)
-                throw new IllegalArgumentException("Invalid role path: " + roleUri.getPath());
-            var roleName = path[2];
-            return domain + ":role." + roleName;
-        } catch (URISyntaxException e) {
-            throw new IllegalArgumentException("Invalid logforwarder role format: " + role);
+        // Currently only support athenz roles on format athenz://<domain>/role/<role>
+        var rolePattern = Pattern.compile("(?<scheme>athenz)://" +
+                "(?<domain>[a-zA-Z0-9_][a-zA-Z0-9_.-]*[a-zA-Z0-9_])" +
+                "/role/" +
+                "(?<role>[a-zA-Z0-9_][a-zA-Z0-9_.-]*[a-zA-Z0-9_])");
+        var matcher = rolePattern.matcher(role);
+        if (!matcher.matches()) {
+            throw new IllegalArgumentException("Invalid role path " + role);
         }
+        return matcher.group("domain") + ":role." + matcher.group("role");
     }
 
 }
