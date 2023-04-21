@@ -343,7 +343,7 @@ public class BinaryViewTest {
     }
 
     @Test public void testDecodeIndexOverflowArray() {
-        byte[] data = { 0, encode_type_and_meta(Type.ARRAY.ID, 20) };
+        byte[] data = { 0, encode_type_and_meta(Type.ARRAY.ID, 4) };
         var input = new BufferedInput(data);
         var view = BinaryView.inspectImpl(input);
         assertFalse(view.valid());
@@ -352,7 +352,7 @@ public class BinaryViewTest {
     }
 
     @Test public void testDecodeIndexOverflowObject() {
-        byte[] data = { 0, encode_type_and_meta(Type.OBJECT.ID, 20) };
+        byte[] data = { 0, encode_type_and_meta(Type.OBJECT.ID, 4) };
         var input = new BufferedInput(data);
         var view = BinaryView.inspectImpl(input);
         assertFalse(view.valid());
