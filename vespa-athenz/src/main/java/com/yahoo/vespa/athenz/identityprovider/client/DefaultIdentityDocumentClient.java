@@ -7,7 +7,6 @@ import com.yahoo.vespa.athenz.identity.ServiceIdentityProvider;
 import com.yahoo.vespa.athenz.identityprovider.api.EntityBindingsMapper;
 import com.yahoo.vespa.athenz.identityprovider.api.IdentityDocumentClient;
 import com.yahoo.vespa.athenz.identityprovider.api.SignedIdentityDocument;
-import com.yahoo.vespa.athenz.identityprovider.api.bindings.LegacySignedIdentityDocumentEntity;
 import com.yahoo.vespa.athenz.identityprovider.api.bindings.SignedIdentityDocumentEntity;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -77,12 +76,13 @@ public class DefaultIdentityDocumentClient implements IdentityDocumentClient {
                     .setUri(uri)
                     .addHeader("Connection", "close")
                     .addHeader("Accept", "application/json")
+                    .addParameter("documentVersion", Integer.toString(SignedIdentityDocument.DEFAULT_DOCUMENT_VERSION))
                     .build();
             try (CloseableHttpResponse response = client.execute(request)) {
                 String responseContent = EntityUtils.toString(response.getEntity());
                 int statusCode = response.getStatusLine().getStatusCode();
                 if (statusCode >= 200 && statusCode <= 299) {
-                    LegacySignedIdentityDocumentEntity entity = objectMapper.readValue(responseContent, LegacySignedIdentityDocumentEntity.class);
+                    SignedIdentityDocumentEntity entity = objectMapper.readValue(responseContent, SignedIdentityDocumentEntity.class);
                     return EntityBindingsMapper.toSignedIdentityDocument(entity);
                 } else {
                     throw new RuntimeException(
