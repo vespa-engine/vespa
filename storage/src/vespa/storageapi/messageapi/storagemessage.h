@@ -122,14 +122,14 @@ public:
         DOCBLOCK_REPLY_ID = 59,
         VISITOR_INFO_ID = 60,
         VISITOR_INFO_REPLY_ID = 61,
-        SEARCHRESULT_ID = 64,
-        SEARCHRESULT_REPLY_ID = 65,
+        // SEARCHRESULT_ID = 64,
+        // SEARCHRESULT_REPLY_ID = 65,
         SPLITBUCKET_ID = 66,
         SPLITBUCKET_REPLY_ID = 67,
         JOINBUCKETS_ID = 68,
         JOINBUCKETS_REPLY_ID = 69,
-        DOCUMENTSUMMARY_ID = 72,
-        DOCUMENTSUMMARY_REPLY_ID = 73,
+        // DOCUMENTSUMMARY_ID = 72,
+        // DOCUMENTSUMMARY_REPLY_ID = 73,
         MAPVISITOR_ID = 74,
         MAPVISITOR_REPLY_ID = 75,
         STATBUCKET_ID = 76,
@@ -208,14 +208,10 @@ public:
     static const MessageType APPLYBUCKETDIFF_REPLY;
     static const MessageType VISITOR_INFO;
     static const MessageType VISITOR_INFO_REPLY;
-    static const MessageType SEARCHRESULT;
-    static const MessageType SEARCHRESULT_REPLY;
     static const MessageType SPLITBUCKET;
     static const MessageType SPLITBUCKET_REPLY;
     static const MessageType JOINBUCKETS;
     static const MessageType JOINBUCKETS_REPLY;
-    static const MessageType DOCUMENTSUMMARY;
-    static const MessageType DOCUMENTSUMMARY_REPLY;
     static const MessageType MAPVISITOR;
     static const MessageType MAPVISITOR_REPLY;
     static const MessageType STATBUCKET;

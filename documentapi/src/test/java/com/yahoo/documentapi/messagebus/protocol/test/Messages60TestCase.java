@@ -20,7 +20,6 @@ import com.yahoo.documentapi.messagebus.protocol.DocumentListMessage;
 import com.yahoo.documentapi.messagebus.protocol.DocumentProtocol;
 import com.yahoo.documentapi.messagebus.protocol.DocumentReply;
 import com.yahoo.documentapi.messagebus.protocol.DocumentState;
-import com.yahoo.documentapi.messagebus.protocol.DocumentSummaryMessage;
 import com.yahoo.documentapi.messagebus.protocol.EmptyBucketsMessage;
 import com.yahoo.documentapi.messagebus.protocol.GetBucketListMessage;
 import com.yahoo.documentapi.messagebus.protocol.GetBucketListReply;
@@ -34,7 +33,6 @@ import com.yahoo.documentapi.messagebus.protocol.QueryResultMessage;
 import com.yahoo.documentapi.messagebus.protocol.RemoveDocumentMessage;
 import com.yahoo.documentapi.messagebus.protocol.RemoveDocumentReply;
 import com.yahoo.documentapi.messagebus.protocol.RemoveLocationMessage;
-import com.yahoo.documentapi.messagebus.protocol.SearchResultMessage;
 import com.yahoo.documentapi.messagebus.protocol.StatBucketMessage;
 import com.yahoo.documentapi.messagebus.protocol.StatBucketReply;
 import com.yahoo.documentapi.messagebus.protocol.UpdateDocumentMessage;
@@ -69,7 +67,6 @@ public class Messages60TestCase extends MessagesTestBase {
         out.put(DocumentProtocol.MESSAGE_CREATEVISITOR, new testCreateVisitorMessage());
         out.put(DocumentProtocol.MESSAGE_DESTROYVISITOR, new testDestroyVisitorMessage());
         out.put(DocumentProtocol.MESSAGE_DOCUMENTLIST, new testDocumentListMessage());
-        out.put(DocumentProtocol.MESSAGE_DOCUMENTSUMMARY, new testDocumentSummaryMessage());
         out.put(DocumentProtocol.MESSAGE_EMPTYBUCKETS, new testEmptyBucketsMessage());
         out.put(DocumentProtocol.MESSAGE_GETBUCKETLIST, new testGetBucketListMessage());
         out.put(DocumentProtocol.MESSAGE_GETBUCKETSTATE, new testGetBucketStateMessage());
@@ -79,7 +76,6 @@ public class Messages60TestCase extends MessagesTestBase {
         out.put(DocumentProtocol.MESSAGE_QUERYRESULT, new testQueryResultMessage());
         out.put(DocumentProtocol.MESSAGE_REMOVEDOCUMENT, new testRemoveDocumentMessage());
         out.put(DocumentProtocol.MESSAGE_REMOVELOCATION, new testRemoveLocationMessage());
-        out.put(DocumentProtocol.MESSAGE_SEARCHRESULT, new testSearchResultMessage());
         out.put(DocumentProtocol.MESSAGE_STATBUCKET, new testStatBucketMessage());
         out.put(DocumentProtocol.MESSAGE_UPDATEDOCUMENT, new testUpdateDocumentMessage());
         out.put(DocumentProtocol.MESSAGE_VISITORINFO, new testVisitorInfoMessage());
@@ -87,7 +83,6 @@ public class Messages60TestCase extends MessagesTestBase {
         out.put(DocumentProtocol.REPLY_DESTROYVISITOR, new testDestroyVisitorReply());
         out.put(DocumentProtocol.REPLY_DOCUMENTIGNORED, new testDocumentIgnoredReply());
         out.put(DocumentProtocol.REPLY_DOCUMENTLIST, new testDocumentListReply());
-        out.put(DocumentProtocol.REPLY_DOCUMENTSUMMARY, new testDocumentSummaryReply());
         out.put(DocumentProtocol.REPLY_EMPTYBUCKETS, new testEmptyBucketsReply());
         out.put(DocumentProtocol.REPLY_GETBUCKETLIST, new testGetBucketListReply());
         out.put(DocumentProtocol.REPLY_GETBUCKETSTATE, new testGetBucketStateReply());
@@ -97,7 +92,6 @@ public class Messages60TestCase extends MessagesTestBase {
         out.put(DocumentProtocol.REPLY_QUERYRESULT, new testQueryResultReply());
         out.put(DocumentProtocol.REPLY_REMOVEDOCUMENT, new testRemoveDocumentReply());
         out.put(DocumentProtocol.REPLY_REMOVELOCATION, new testRemoveLocationReply());
-        out.put(DocumentProtocol.REPLY_SEARCHRESULT, new testSearchResultReply());
         out.put(DocumentProtocol.REPLY_STATBUCKET, new testStatBucketReply());
         out.put(DocumentProtocol.REPLY_UPDATEDOCUMENT, new testUpdateDocumentReply());
         out.put(DocumentProtocol.REPLY_VISITORINFO, new testVisitorInfoReply());
@@ -324,14 +318,6 @@ public class Messages60TestCase extends MessagesTestBase {
         }
     }
 
-    public class testDocumentSummaryReply implements RunnableTest {
-
-        @Override
-        public void run() {
-            testVisitorReply("DocumentSummaryReply", DocumentProtocol.REPLY_DOCUMENTSUMMARY);
-        }
-    }
-
     public class testEmptyBucketsReply implements RunnableTest {
 
         @Override
@@ -391,65 +377,6 @@ public class Messages60TestCase extends MessagesTestBase {
             }
         }
     }
-
-    public class testDocumentSummaryMessage implements RunnableTest {
-
-        @Override
-        public void run() {
-            Routable routable = deserialize("DocumentSummaryMessage-1", DocumentProtocol.MESSAGE_DOCUMENTSUMMARY, Language.CPP);
-            assertTrue(routable instanceof DocumentSummaryMessage);
-
-            DocumentSummaryMessage msg = (DocumentSummaryMessage) routable;
-            assertEquals(0, msg.getResult().getSummaryCount());
-
-            routable = deserialize("DocumentSummaryMessage-2", DocumentProtocol.MESSAGE_DOCUMENTSUMMARY, Language.CPP);
-            assertTrue(routable instanceof DocumentSummaryMessage);
-
-            msg = (DocumentSummaryMessage) routable;
-            assertEquals(2, msg.getResult().getSummaryCount());
-            com.yahoo.vdslib.DocumentSummary.Summary s = msg.getResult().getSummary(0);
-            assertEquals("doc1", s.getDocId());
-            byte[] b = s.getSummary();
-            assertEquals(8, b.length);
-            byte[] c = {'s', 'u', 'm', 'm', 'a', 'r', 'y', '1'};
-            for (int i = 0; i < b.length; i++) {
-                assertEquals(c[i], b[i]);
-            }
-
-            s = msg.getResult().getSummary(1);
-            assertEquals("aoc17", s.getDocId());
-            b = s.getSummary();
-            assertEquals(9, b.length);
-            byte[] d = {'s', 'u', 'm', 'm', 'a', 'r', 'y', '4', '5'};
-            for (int i = 0; i < b.length; i++) {
-                assertEquals(d[i], b[i]);
-            }
-            routable = deserialize("DocumentSummaryMessage-3", DocumentProtocol.MESSAGE_DOCUMENTSUMMARY, Language.CPP);
-            assertTrue(routable instanceof DocumentSummaryMessage);
-
-            msg = (DocumentSummaryMessage) routable;
-            assertEquals(2, msg.getResult().getSummaryCount());
-
-            s = msg.getResult().getSummary(0);
-            assertEquals("aoc17", s.getDocId());
-            b = s.getSummary();
-            assertEquals(9, b.length);
-            byte[] e = {'s', 'u', 'm', 'm', 'a', 'r', 'y', '4', '5'};
-            for (int i = 0; i < b.length; i++) {
-                assertEquals(e[i], b[i]);
-            }
-
-            s = msg.getResult().getSummary(1);
-            assertEquals("doc1", s.getDocId());
-            b = s.getSummary();
-            assertEquals(8, b.length);
-            byte[] f = {'s', 'u', 'm', 'm', 'a', 'r', 'y', '1'};
-            for (int i = 0; i < b.length; i++) {
-                assertEquals(f[i], b[i]);
-            }
-        }
-    }
-
 
     public class testGetDocumentMessage implements RunnableTest {
 
@@ -517,78 +444,6 @@ public class Messages60TestCase extends MessagesTestBase {
                 assertTrue(msg.getFinishedBuckets().contains(new BucketId(16, 2)));
                 assertTrue(msg.getFinishedBuckets().contains(new BucketId(16, 4)));
                 assertEquals("error message: \u00e6\u00c6\u00f8\u00d8\u00e5\u00c5\u00f6\u00d6", msg.getErrorMessage());
-            }
-        }
-    }
-
-    public class testSearchResultMessage implements RunnableTest {
-
-        @Override
-        public void run() throws Exception {
-            Routable routable = deserialize("SearchResultMessage-1", DocumentProtocol.MESSAGE_SEARCHRESULT, Language.CPP);
-            assertTrue(routable instanceof SearchResultMessage);
-
-            SearchResultMessage msg = (SearchResultMessage)routable;
-            assertEquals(0, msg.getResult().getHitCount());
-
-            routable = deserialize("SearchResultMessage-2", DocumentProtocol.MESSAGE_SEARCHRESULT, Language.CPP);
-            assertTrue(routable instanceof SearchResultMessage);
-
-            msg = (SearchResultMessage)routable;
-            assertEquals(2, msg.getResult().getHitCount());
-            com.yahoo.vdslib.SearchResult.Hit h = msg.getResult().getHit(0);
-            assertEquals(89.0, h.getRank(), 1E-6);
-            assertEquals("doc1", h.getDocId());
-            h = msg.getResult().getHit(1);
-            assertEquals(109.0, h.getRank(), 1E-6);
-            assertEquals("doc17", h.getDocId());
-
-            routable = deserialize("SearchResultMessage-3", DocumentProtocol.MESSAGE_SEARCHRESULT, Language.CPP);
-            assertTrue(routable instanceof SearchResultMessage);
-
-            msg = (SearchResultMessage)routable;
-            assertEquals(2, msg.getResult().getHitCount());
-            h = msg.getResult().getHit(0);
-            assertEquals(109.0, h.getRank(), 1E-6);
-            assertEquals("doc17", h.getDocId());
-            h = msg.getResult().getHit(1);
-            assertEquals(89.0, h.getRank(), 1E-6);
-            assertEquals("doc1", h.getDocId());
-
-            routable = deserialize("SearchResultMessage-4", DocumentProtocol.MESSAGE_SEARCHRESULT, Language.CPP);
-            assertTrue(routable instanceof SearchResultMessage);
-
-            msg = (SearchResultMessage)routable;
-            assertEquals(3, msg.getResult().getHitCount());
-            h = msg.getResult().getHit(0);
-            assertTrue(h instanceof SearchResult.HitWithSortBlob);
-            assertEquals(89.0, h.getRank(), 1E-6);
-            assertEquals("doc1", h.getDocId());
-            byte[] b = ((SearchResult.HitWithSortBlob)h).getSortBlob();
-            assertEquals(9, b.length);
-            byte[] e = { 's', 'o', 'r', 't', 'd', 'a', 't', 'a', '2' };
-            for (int i = 0; i < b.length; i++) {
-                assertEquals(e[i], b[i]);
-            }
-            h = msg.getResult().getHit(1);
-            assertTrue(h instanceof SearchResult.HitWithSortBlob);
-            assertEquals(109.0, h.getRank(), 1E-6);
-            assertEquals("doc17", h.getDocId());
-            b = ((SearchResult.HitWithSortBlob)h).getSortBlob();
-            assertEquals(9, b.length);
-            byte[] d = { 's', 'o', 'r', 't', 'd', 'a', 't', 'a', '1' };
-            for (int i = 0; i < b.length; i++) {
-                assertEquals(d[i], b[i]);
-            }
-            h = msg.getResult().getHit(2);
-            assertTrue(h instanceof SearchResult.HitWithSortBlob);
-            assertEquals(90.0, h.getRank(), 1E-6);
-            assertEquals("doc18", h.getDocId());
-            b = ((SearchResult.HitWithSortBlob)h).getSortBlob();
-            assertEquals(9, b.length);
-            byte[] c = { 's', 'o', 'r', 't', 'd', 'a', 't', 'a', '3' };
-            for (int i = 0; i < b.length; i++) {
-                assertEquals(c[i], b[i]);
             }
         }
     }
@@ -747,14 +602,6 @@ public class Messages60TestCase extends MessagesTestBase {
         @Override
         public void run() {
             testDocumentReply("RemoveLocationReply", DocumentProtocol.REPLY_REMOVELOCATION);
-        }
-    }
-
-    public class testSearchResultReply implements RunnableTest {
-
-        @Override
-        public void run() {
-            testVisitorReply("SearchResultReply", DocumentProtocol.REPLY_SEARCHRESULT);
         }
     }
 

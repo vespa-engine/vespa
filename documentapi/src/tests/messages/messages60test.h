@@ -24,7 +24,6 @@ public:
     bool testDocumentListMessage();
     bool testDocumentListReply();
     bool testDocumentSummaryMessage();
-    bool testDocumentSummaryReply();
     bool testEmptyBucketsMessage();
     bool testEmptyBucketsReply();
     bool testGetBucketListMessage();
@@ -44,7 +43,6 @@ public:
     bool testRemoveLocationMessage();
     bool testRemoveLocationReply();
     bool testSearchResultMessage();
-    bool testSearchResultReply();
     bool testStatBucketMessage();
     bool testStatBucketReply();
     bool testUpdateDocumentMessage();

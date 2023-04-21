@@ -76,10 +76,6 @@ const MessageType MessageType::APPLYBUCKETDIFF("ApplyBucketDiff", APPLYBUCKETDIF
 const MessageType MessageType::APPLYBUCKETDIFF_REPLY("ApplyBucketDiff reply", APPLYBUCKETDIFF_REPLY_ID, &MessageType::APPLYBUCKETDIFF);
 const MessageType MessageType::VISITOR_INFO("VisitorInfo", VISITOR_INFO_ID);
 const MessageType MessageType::VISITOR_INFO_REPLY("VisitorInfo reply", VISITOR_INFO_REPLY_ID, &MessageType::VISITOR_INFO);
-const MessageType MessageType::SEARCHRESULT("SearchResult", SEARCHRESULT_ID);
-const MessageType MessageType::SEARCHRESULT_REPLY("SearchResult reply", SEARCHRESULT_REPLY_ID, &MessageType::SEARCHRESULT);
-const MessageType MessageType::DOCUMENTSUMMARY("DocumentSummary", DOCUMENTSUMMARY_ID);
-const MessageType MessageType::DOCUMENTSUMMARY_REPLY("DocumentSummary reply", DOCUMENTSUMMARY_REPLY_ID, &MessageType::DOCUMENTSUMMARY);
 const MessageType MessageType::MAPVISITOR("Mapvisitor", MAPVISITOR_ID);
 const MessageType MessageType::MAPVISITOR_REPLY("Mapvisitor reply", MAPVISITOR_REPLY_ID, &MessageType::MAPVISITOR);
 const MessageType MessageType::SPLITBUCKET("SplitBucket", SPLITBUCKET_ID);

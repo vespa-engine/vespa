@@ -6,9 +6,7 @@ vespa_add_library(storageapi_message OBJECT
     bucket.cpp
     visitor.cpp
     state.cpp
-    searchresult.cpp
     bucketsplitting.cpp
-    documentsummary.cpp
     stat.cpp
     removelocation.cpp
     queryresult.cpp

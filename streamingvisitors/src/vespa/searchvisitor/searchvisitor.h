@@ -38,7 +38,7 @@ namespace streaming {
  * @class storage::SearchVisitor
  *
  * @brief Visitor that applies a search query to visitor data and
- * converts them to a SearchResultCommand and a DocumentSummaryCommand.
+ * converts them to a QueryResultCommand.
  **/
 class SearchVisitor : public storage::Visitor {
 public:
