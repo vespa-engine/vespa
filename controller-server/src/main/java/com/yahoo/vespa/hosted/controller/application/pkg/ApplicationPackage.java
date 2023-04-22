@@ -1,15 +1,10 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.application.pkg;
 
-import com.google.common.hash.Funnel;
-import com.google.common.hash.HashFunction;
 import com.google.common.hash.Hasher;
 import com.google.common.hash.Hashing;
 import com.google.common.hash.HashingOutputStream;
 import com.yahoo.component.Version;
-import com.yahoo.vespa.archive.ArchiveStreamReader;
-import com.yahoo.vespa.archive.ArchiveStreamReader.ArchiveFile;
-import com.yahoo.vespa.archive.ArchiveStreamReader.Options;
 import com.yahoo.config.application.FileSystemWrapper;
 import com.yahoo.config.application.FileSystemWrapper.FileWrapper;
 import com.yahoo.config.application.XmlPreProcessor;
@@ -23,10 +18,12 @@ import com.yahoo.config.provision.Tags;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.Slime;
 import com.yahoo.slime.SlimeUtils;
+import com.yahoo.vespa.archive.ArchiveStreamReader;
+import com.yahoo.vespa.archive.ArchiveStreamReader.ArchiveFile;
+import com.yahoo.vespa.archive.ArchiveStreamReader.Options;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.deployment.ZipBuilder;
 import com.yahoo.yolean.Exceptions;
-
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -44,10 +41,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Random;
 import java.util.Set;
-import java.util.SortedMap;
-import java.util.TreeMap;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -66,7 +60,8 @@ import static java.util.stream.Collectors.toMap;
  */
 public class ApplicationPackage {
 
-    static final String trustedCertificatesFile = "security/clients.pem";
+    static final String trustedCertificatesDir = "security/";
+    static final String trustedCertificatesFile = trustedCertificatesDir + "clients.pem";
     static final String buildMetaFile = "build-meta.json";
     static final String deploymentFile = "deployment.xml";
     static final String validationOverridesFile = "validation-overrides.xml";
@@ -90,7 +85,7 @@ public class ApplicationPackage {
      * it must not be further changed by the caller.
      */
     public ApplicationPackage(byte[] zippedContent) {
-        this(zippedContent, false);
+        this(zippedContent, false, false);
     }
 
     /**
@@ -99,9 +94,9 @@ public class ApplicationPackage {
      * it must not be further changed by the caller.
      * If 'requireFiles' is true, files needed by deployment orchestration must be present.
      */
-    public ApplicationPackage(byte[] zippedContent, boolean requireFiles) {
+    public ApplicationPackage(byte[] zippedContent, boolean requireFiles, boolean checkCertificateFile) {
         this.zippedContent = Objects.requireNonNull(zippedContent, "The application package content cannot be null");
-        this.files = new ZipArchiveCache(zippedContent, prePopulated);
+        this.files = new ZipArchiveCache(zippedContent, prePopulated, checkCertificateFile);
 
         Optional<DeploymentSpec> deploymentSpec = files.get(deploymentFile).map(bytes -> new String(bytes, UTF_8)).map(DeploymentSpec::fromXml);
         if (requireFiles && deploymentSpec.isEmpty())
@@ -253,10 +248,12 @@ public class ApplicationPackage {
         private final byte[] zip;
         private final Map<Path, Optional<byte[]>> cache;
 
-        public ZipArchiveCache(byte[] zip, Collection<String> prePopulated) {
+        public ZipArchiveCache(byte[] zip, Collection<String> prePopulated, boolean checkCertificateFile) {
             this.zip = zip;
             this.cache = new ConcurrentSkipListMap<>();
             this.cache.putAll(read(prePopulated));
+            if (checkCertificateFile)
+                verifyThatTrustedCertificateExists();
         }
 
         public Optional<byte[]> get(String path) {
@@ -274,17 +271,26 @@ public class ApplicationPackage {
         }
 
         private Map<Path, Optional<byte[]>> read(Collection<String> names) {
-            var entries = ZipEntries.from(zip,
-                                          names::contains,
-                                          maxSize,
-                                          true)
-                                    .asList().stream()
-                                    .collect(toMap(entry -> Paths.get(entry.name()).normalize(),
-                                                   ZipEntries.ZipEntryWithContent::content));
+            var entries = findZipFileEntries(names::contains);
             names.stream().map(Paths::get).forEach(path -> entries.putIfAbsent(path.normalize(), Optional.empty()));
             return entries;
         }
 
+
+        private void verifyThatTrustedCertificateExists() {
+            // Any name is valid for certificate files
+            var entries = findZipFileEntries((entry) -> entry.contains(trustedCertificatesDir) && entry.endsWith(".pem"));
+            if (entries.size() == 0)
+                throw new IllegalArgumentException("No client certificate found in " + trustedCertificatesDir + " in application package" +
+                                                           ", see https://cloud.vespa.ai/en/security/guide");
+        }
+
+        private Map<Path, Optional<byte[]>> findZipFileEntries(Predicate<String> names) {
+            return ZipEntries.from(zip, names, maxSize, true)
+                             .asList().stream()
+                             .collect(toMap(entry -> Paths.get(entry.name()).normalize(),
+                                            ZipEntries.ZipEntryWithContent::content));
+        }
     }
 
 }
