@@ -22,13 +22,16 @@ IndexEnvironment::IndexEnvironment(IndexEnvironment &&) noexcept = default;
 IndexEnvironment::~IndexEnvironment() = default;
 
 bool
-IndexEnvironment::addField(const vespalib::string & name, bool isAttribute)
+IndexEnvironment::addField(const vespalib::string& name,
+                           bool isAttribute,
+                           search::fef::FieldInfo::DataType data_type)
 {
     if (getFieldByName(name) != nullptr) {
         return false;
     }
     FieldInfo info(isAttribute ? FieldType::ATTRIBUTE : FieldType::INDEX,
                    FieldInfo::CollectionType::SINGLE, name, _fields.size());
+    info.set_data_type(data_type);
     info.addAttribute(); // we are able to produce needed attributes at query time
     _fields.push_back(info);
     _fieldNames[info.name()] = info.id();
