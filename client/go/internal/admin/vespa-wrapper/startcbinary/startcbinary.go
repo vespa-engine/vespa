@@ -7,41 +7,23 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/vespa-engine/vespa/client/go/internal/admin/envvars"
-	"github.com/vespa-engine/vespa/client/go/internal/util"
+	"github.com/vespa-engine/vespa/client/go/internal/admin/prog"
 )
 
-func startCbinary(spec *ProgSpec) int {
-	spec.configureCommonEnv()
-	spec.configurePath()
-	spec.configureTuning()
-	spec.configureValgrind()
-	spec.configureNumaCtl()
-	spec.configureHugePages()
-	spec.configureUseMadvise()
-	spec.configureVespaMalloc()
-	err := spec.run()
+func startCbinary(spec *prog.Spec) int {
+	configureCommonEnv(spec)
+	configurePath(spec)
+	configureTuning()
+	spec.ConfigureValgrind()
+	spec.ConfigureNumaCtl()
+	spec.ConfigureHugePages()
+	spec.ConfigureUseMadvise()
+	spec.ConfigureVespaMalloc()
+	err := spec.Run()
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		return 1
 	} else {
 		return 0
 	}
-}
-
-func (spec *ProgSpec) run() error {
-	prog := spec.Program
-	args := spec.Args
-	if spec.shouldUseValgrind {
-		args = spec.prependValgrind(args)
-		prog = spec.valgrindBinary()
-	} else if spec.shouldUseNumaCtl {
-		args = spec.prependNumaCtl(args)
-		prog = spec.numaCtlBinary()
-	}
-	if spec.shouldUseVespaMalloc {
-		spec.setenv(envvars.LD_PRELOAD, spec.vespaMallocPreload)
-	}
-	envv := spec.effectiveEnv()
-	return util.Execvpe(prog, args, envv)
 }
