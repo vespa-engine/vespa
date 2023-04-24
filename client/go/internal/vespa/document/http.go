@@ -11,6 +11,7 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
+	"sync"
 	"sync/atomic"
 	"time"
 
@@ -31,6 +32,7 @@ type Client struct {
 	httpClients []countingHTTPClient
 	now         func() time.Time
 	sendCount   int32
+	gzippers    sync.Pool
 }
 
 // ClientOptions specifices the configuration options of a feed client.
@@ -78,11 +80,13 @@ func NewClient(options ClientOptions, httpClients []util.HTTPClient) *Client {
 	if nowFunc == nil {
 		nowFunc = time.Now
 	}
-	return &Client{
+	c := &Client{
 		options:     options,
 		httpClients: countingClients,
 		now:         nowFunc,
 	}
+	c.gzippers.New = func() any { return gzip.NewWriter(io.Discard) }
+	return c
 }
 
 func (c *Client) queryParams() url.Values {
@@ -167,18 +171,25 @@ func (c *Client) leastBusyClient() *countingHTTPClient {
 	return &leastBusy
 }
 
+func (c *Client) gzipWriter(w io.Writer) *gzip.Writer {
+	gzipWriter := c.gzippers.Get().(*gzip.Writer)
+	gzipWriter.Reset(w)
+	return gzipWriter
+}
+
 func (c *Client) createRequest(method, url string, body []byte) (*http.Request, error) {
 	var r io.Reader
 	useGzip := c.options.Compression == CompressionGzip || (c.options.Compression == CompressionAuto && len(body) > 512)
 	if useGzip {
 		var buf bytes.Buffer
-		w := gzip.NewWriter(&buf)
+		w := c.gzipWriter(&buf)
 		if _, err := w.Write(body); err != nil {
 			return nil, err
 		}
 		if err := w.Close(); err != nil {
 			return nil, err
 		}
+		c.gzippers.Put(w)
 		r = &buf
 	} else {
 		r = bytes.NewReader(body)

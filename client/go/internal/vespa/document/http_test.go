@@ -293,3 +293,26 @@ func TestClientFeedURL(t *testing.T) {
 		}
 	}
 }
+
+func benchmarkClientSend(b *testing.B, compression Compression, document Document) {
+	httpClient := mock.HTTPClient{}
+	client := NewClient(ClientOptions{
+		Compression: compression,
+		BaseURL:     "https://example.com:1337",
+		Timeout:     time.Duration(5 * time.Second),
+	}, []util.HTTPClient{&httpClient})
+	b.ResetTimer() // ignore setup
+	for n := 0; n < b.N; n++ {
+		client.Send(document)
+	}
+}
+
+func BenchmarkClientSend(b *testing.B) {
+	doc := Document{Create: true, Id: mustParseId("id:ns:type::doc1"), Operation: OperationUpdate, Body: []byte(`{"fields":{"foo": "my document"}}`)}
+	benchmarkClientSend(b, CompressionNone, doc)
+}
+
+func BenchmarkClientSendCompressed(b *testing.B) {
+	doc := Document{Create: true, Id: mustParseId("id:ns:type::doc1"), Operation: OperationUpdate, Body: []byte(`{"fields":{"foo": "my document"}}`)}
+	benchmarkClientSend(b, CompressionGzip, doc)
+}
