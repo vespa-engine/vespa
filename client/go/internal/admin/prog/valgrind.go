@@ -21,25 +21,18 @@ const (
 func (p *Spec) ConfigureValgrind() {
 	p.shouldUseValgrind = false
 	p.shouldUseCallgrind = false
-	env := p.Getenv(envvars.VESPA_USE_VALGRIND)
-	allValgrind := env == "all"
-	parts := strings.Split(env, " ")
-	for _, part := range parts {
-		if p.BaseName == part || allValgrind {
-			trace.Trace("using valgrind as", p.Program, "has basename in", envvars.VESPA_USE_VALGRIND, "=>", env)
-			backticks := util.BackTicksWithStderr
-			out, err := backticks.Run(VALGRIND_PROG, "--help")
-			if err != nil {
-				trace.Trace("trial run of valgrind fails:", err, "=>", out)
-				return
-			}
-			if opts := p.Getenv(envvars.VESPA_VALGRIND_OPT); strings.Contains(opts, "callgrind") {
-				p.shouldUseCallgrind = true
-			}
-			p.shouldUseValgrind = true
+	if p.MatchesListEnv(envvars.VESPA_USE_VALGRIND) {
+		trace.Trace("using valgrind as", p.Program, "has basename in", envvars.VESPA_USE_VALGRIND)
+		backticks := util.BackTicksWithStderr
+		out, err := backticks.Run(VALGRIND_PROG, "--help")
+		if err != nil {
+			trace.Trace("trial run of valgrind fails:", err, "=>", out)
 			return
 		}
-		trace.Debug("checking", envvars.VESPA_USE_VALGRIND, ":", p.BaseName, "!=", part)
+		if opts := p.Getenv(envvars.VESPA_VALGRIND_OPT); strings.Contains(opts, "callgrind") {
+			p.shouldUseCallgrind = true
+		}
+		p.shouldUseValgrind = true
 	}
 }
 

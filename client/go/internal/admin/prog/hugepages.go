@@ -9,7 +9,7 @@ import (
 )
 
 func (spec *Spec) ConfigureHugePages() {
-	if spec.matchesListEnv(envvars.VESPA_USE_HUGEPAGES_LIST) {
+	if spec.MatchesListEnv(envvars.VESPA_USE_HUGEPAGES_LIST) {
 		trace.Debug("setting", envvars.VESPA_USE_HUGEPAGES, "= 'yes'")
 		spec.Setenv(envvars.VESPA_USE_HUGEPAGES, "yes")
 	}
