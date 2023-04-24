@@ -66,15 +66,15 @@ public:
           _tmpSpace(lhs.size),
           _lhs(_tmpSpace.storeLhs(lhs))
     {
-        auto a = &_lhs[0];
+        auto a = _lhs.data();
         _lhs_norm_sq = _computer.dotProduct(a, a, lhs.size);
     }
     double calc(const vespalib::eval::TypedCells& rhs) const override {
         size_t sz = _lhs.size();
         vespalib::ConstArrayRef<FloatType> rhs_vector = _tmpSpace.convertRhs(rhs);
         assert(sz == rhs_vector.size());
-        auto a = &_lhs[0];
-        auto b = &rhs_vector[0];
+        auto a = _lhs.data();
+        auto b = rhs_vector.data();
         double b_norm_sq = _computer.dotProduct(b, b, sz);
         double squared_norms = _lhs_norm_sq * b_norm_sq;
         double dot_product = _computer.dotProduct(a, b, sz);
