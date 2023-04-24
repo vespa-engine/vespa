@@ -1430,9 +1430,9 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
     // ------------------------------------------------ Helpers ------------------------------------------------
 
     private static long doomMillis(HttpRequest request) {
-        long connectedAtMillis = request.getConnectedAt(MILLISECONDS);
+        long createdAtMillis = request.creationTime(MILLISECONDS);
         long requestTimeoutMillis = getProperty(request, TIMEOUT, timeoutMillisParser).orElse(defaultTimeout.toMillis());
-        return connectedAtMillis + requestTimeoutMillis;
+        return createdAtMillis + requestTimeoutMillis;
     }
 
     private static String requireProperty(HttpRequest request, String name) {
