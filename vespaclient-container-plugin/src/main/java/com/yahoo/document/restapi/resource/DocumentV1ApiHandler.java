@@ -132,6 +132,7 @@ import static java.util.stream.Collectors.toUnmodifiableMap;
 public class DocumentV1ApiHandler extends AbstractRequestHandler {
 
     private static final Duration defaultTimeout = Duration.ofSeconds(180); // Match document API default timeout.
+    private static final Duration handlerTimeout = Duration.ofMillis(100); // Extra time to allow for handler, JDisc and jetty to complete.
 
     private static final Logger log = Logger.getLogger(DocumentV1ApiHandler.class.getName());
     private static final Parser<Integer> integerParser = Integer::parseInt;
@@ -175,7 +176,7 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
     private static final String TO_TIMESTAMP = "toTimestamp";
 
     private final Clock clock;
-    private final Duration handlerTimeout;
+    private final Duration visitTimeout;
     private final Metric metric;
     private final DocumentApiMetrics metrics;
     private final DocumentOperationParser parser;
@@ -200,15 +201,15 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
                                 ClusterListConfig clusterListConfig,
                                 AllClustersBucketSpacesConfig bucketSpacesConfig,
                                 DocumentOperationExecutorConfig executorConfig) {
-        this(Clock.systemUTC(), Duration.ofMillis(500), metric, metricReceiver, documentAccess,
+        this(Clock.systemUTC(), Duration.ofSeconds(5), metric, metricReceiver, documentAccess,
              documentManagerConfig, executorConfig, clusterListConfig, bucketSpacesConfig);
     }
 
-    DocumentV1ApiHandler(Clock clock, Duration handlerTimeout, Metric metric, MetricReceiver metricReceiver, DocumentAccess access,
+    DocumentV1ApiHandler(Clock clock, Duration visitTimeout, Metric metric, MetricReceiver metricReceiver, DocumentAccess access,
                          DocumentmanagerConfig documentmanagerConfig, DocumentOperationExecutorConfig executorConfig,
                          ClusterListConfig clusterListConfig, AllClustersBucketSpacesConfig bucketSpacesConfig) {
         this.clock = clock;
-        this.handlerTimeout = handlerTimeout;
+        this.visitTimeout = visitTimeout;
         this.parser = new DocumentOperationParser(documentmanagerConfig);
         this.metric = metric;
         this.metrics = new DocumentApiMetrics(metricReceiver, "documentV1");
@@ -237,7 +238,7 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
         HttpRequest request = (HttpRequest) rawRequest;
         try {
             // Set a higher HTTP layer timeout than the document API timeout, to prefer triggering the latter.
-            request.setTimeout(doomMillis(request) - clock.millis() + handlerTimeout.toMillis(), MILLISECONDS);
+            request.setTimeout(doomMillis(request) - clock.millis(), MILLISECONDS);
 
             Path requestPath = Path.withoutValidation(request.getUri()); // No segment validation here, as document IDs can be anything.
             for (String path : handlers.keySet()) {
@@ -522,7 +523,7 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
     private DocumentOperationParameters parametersFromRequest(HttpRequest request, String... names) {
         DocumentOperationParameters parameters = getProperty(request, TRACELEVEL, integerParser).map(parameters()::withTraceLevel)
                                                                                                 .orElse(parameters());
-        parameters = parameters.withDeadline(Instant.ofEpochMilli(doomMillis(request)));
+        parameters = parameters.withDeadline(Instant.ofEpochMilli(doomMillis(request)).minus(handlerTimeout));
         for (String name : names)
             parameters = switch (name) {
                 case CLUSTER ->
@@ -1165,16 +1166,15 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
         parameters.setFieldSet(getProperty(request, FIELD_SET).orElse(path.documentType().map(type -> type + ":[document]").orElse(DocumentOnly.NAME)));
         parameters.setMaxTotalHits(wantedDocumentCount);
         parameters.visitInconsistentBuckets(true);
-        long timeoutMs = Math.max(1, doomMillis(request) - clock.millis());
         if (streamed) {
             StaticThrottlePolicy throttlePolicy = new DynamicThrottlePolicy().setMinWindowSize(1).setWindowSizeIncrement(1);
             concurrency.ifPresent(throttlePolicy::setMaxPendingCount);
             parameters.setThrottlePolicy(throttlePolicy);
-            parameters.setTimeoutMs(timeoutMs); // Ensure visitor eventually completes.
+            parameters.setTimeoutMs(visitTimeout(request)); // Ensure visitor eventually completes.
         }
         else {
             parameters.setThrottlePolicy(new StaticThrottlePolicy().setMaxPendingCount(Math.min(100, concurrency.orElse(1))));
-            parameters.setSessionTimeoutMs(timeoutMs);
+            parameters.setSessionTimeoutMs(visitTimeout(request));
         }
         return parameters;
     }
@@ -1185,8 +1185,14 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
         VisitorParameters parameters = parseCommonParameters(request, path, Optional.of(requireProperty(request, CLUSTER)));
         parameters.setThrottlePolicy(new DynamicThrottlePolicy().setMinWindowSize(1).setWindowSizeIncrement(1));
         long timeChunk = getProperty(request, TIME_CHUNK, timeoutMillisParser).orElse(60_000L);
-        parameters.setSessionTimeoutMs(Math.max(1, Math.min(timeChunk, doomMillis(request) - clock.millis())));
+        parameters.setSessionTimeoutMs(Math.min(timeChunk, visitTimeout(request)));
         return parameters;
+    }
+
+    private long visitTimeout(HttpRequest request) {
+        return Math.max(1,
+                        Math.max(doomMillis(request) - clock.millis() - visitTimeout.toMillis(),
+                                 9 * (doomMillis(request) - clock.millis()) / 10 - handlerTimeout.toMillis()));
     }
 
     private VisitorParameters parseCommonParameters(HttpRequest request, DocumentPath path, Optional<String> cluster) {
@@ -1342,7 +1348,7 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
             AtomicReference<String> error = new AtomicReference<>(); // Set if error occurs during processing of visited documents.
             callback.onStart(response, fullyApplied);
             VisitorControlHandler controller = new VisitorControlHandler() {
-                final ScheduledFuture<?> abort = streaming ? visitDispatcher.schedule(this::abort, doomMillis(request) - clock.millis(), MILLISECONDS) : null;
+                final ScheduledFuture<?> abort = streaming ? visitDispatcher.schedule(this::abort, visitTimeout(request), MILLISECONDS) : null;
                 final AtomicReference<VisitorSession> session = new AtomicReference<>();
                 @Override public void setSession(VisitorControlSession session) { // Workaround for broken session API ಠ_ಠ
                     super.setSession(session);
