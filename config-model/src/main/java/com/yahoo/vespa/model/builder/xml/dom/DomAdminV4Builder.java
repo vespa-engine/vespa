@@ -55,7 +55,7 @@ public class DomAdminV4Builder extends DomAdminBuilderBase {
         assignSlobroks(deployState, requestedSlobroks.orElse(NodesSpecification.nonDedicated(3, context)), admin);
         assignLogserver(deployState, requestedLogservers.orElse(createNodesSpecificationForLogserver()), admin);
 
-        addLogForwarders(adminElement.child("logforwarding"), admin);
+        addLogForwarders(adminElement.child("logforwarding"), admin, deployState);
         addLoggingSpecs(adminElement.child("logging"), admin);
     }
 

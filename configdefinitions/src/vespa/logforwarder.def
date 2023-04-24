@@ -7,3 +7,4 @@ deploymentServer string default=""
 clientName string default=""
 splunkHome string default="/opt/splunkforwarder"
 phoneHomeInterval int default=60
+role string default=""
