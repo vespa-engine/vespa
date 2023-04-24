@@ -48,21 +48,20 @@ type feedOptions struct {
 func newFeedCmd(cli *CLI) *cobra.Command {
 	var options feedOptions
 	cmd := &cobra.Command{
-		Use:   "feed FILE",
+		Use:   "feed FILE [FILE]...",
 		Short: "Feed documents to a Vespa cluster",
 		Long: `Feed documents to a Vespa cluster.
 
-A high performance feeding client. This can be used to feed large amounts of
-documents to a Vespa cluster efficiently.
+This command can be used to feed large amounts of documents to a Vespa cluster
+efficiently.
 
 The contents of FILE must be either a JSON array or JSON objects separated by
 newline (JSONL).
 
 If FILE is a single dash ('-'), documents will be read from standard input.
 `,
-		Example: `$ vespa feed documents.jsonl
-$ cat documents.jsonl | vespa feed -
-`,
+		Example: `$ vespa feed docs.jsonl moredocs.json
+$ cat docs.jsonl | vespa feed -`,
 		Args:              cobra.MinimumNArgs(1),
 		DisableAutoGenTag: true,
 		SilenceUsage:      true,
