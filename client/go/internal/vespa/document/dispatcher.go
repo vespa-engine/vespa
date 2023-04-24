@@ -128,7 +128,6 @@ func (d *Dispatcher) start() {
 		return
 	}
 	d.listPool.New = func() any { return list.New() }
-	d.ready = make(chan Id, 4096)
 	d.results = make(chan Result, 4096)
 	d.msgs = make(chan string, 4096)
 	d.started = true
@@ -164,27 +163,18 @@ func (d *Dispatcher) enqueue(op documentOp) error {
 	}
 	d.mu.Unlock()
 	group.add(op, op.attempts > 0)
-	d.enqueueWithSlot(op.document.Id)
+	d.enqueueWithSlot(group)
 	return nil
 }
 
-func (d *Dispatcher) enqueueWithSlot(id Id) {
+func (d *Dispatcher) enqueueWithSlot(group *documentGroup) {
 	d.acquireSlot()
-	d.ready <- id
-	d.throttler.Sent()
-	d.dispatch()
-}
-
-func (d *Dispatcher) dispatch() {
 	d.workerWg.Add(1)
 	go func() {
 		defer d.workerWg.Done()
-		id := <-d.ready
-		d.mu.RLock()
-		group := d.inflight[id.String()]
-		d.mu.RUnlock()
 		d.sendDocumentIn(group)
 	}()
+	d.throttler.Sent()
 }
 
 func (d *Dispatcher) acquireSlot() {

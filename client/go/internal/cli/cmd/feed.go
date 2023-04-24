@@ -139,6 +139,7 @@ func feed(r io.Reader, cli *CLI, options feedOptions) error {
 		Route:       options.route,
 		TraceLevel:  options.traceLevel,
 		BaseURL:     service.BaseURL,
+		NowFunc:     cli.now,
 	}, clients)
 	throttler := document.NewThrottler(options.connections)
 	// TODO(mpolden): Make doom duration configurable

@@ -130,3 +130,18 @@ func TestDispatcherOrderingWithFailures(t *testing.T) {
 	assert.Equal(t, int64(2), dispatcher.Stats().Errors)
 	assert.Equal(t, 6, len(feeder.documents))
 }
+
+func BenchmarkDocumentDispatching(b *testing.B) {
+	feeder := &mockFeeder{}
+	clock := &manualClock{tick: time.Second}
+	throttler := newThrottler(8, clock.now)
+	breaker := NewCircuitBreaker(time.Second, 0)
+	dispatcher := NewDispatcher(feeder, throttler, breaker, io.Discard, false)
+	doc := Document{Id: mustParseId("id:ns:type::doc1"), Operation: OperationPut, Body: []byte(`{"fields":{"foo": "123"}}`)}
+	b.ResetTimer() // ignore setup time
+
+	for n := 0; n < b.N; n++ {
+		dispatcher.enqueue(documentOp{document: doc})
+		dispatcher.workerWg.Wait()
+	}
+}
