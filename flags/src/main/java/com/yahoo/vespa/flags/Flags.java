@@ -380,7 +380,7 @@ public class Flags {
 
     public static final UnboundLongFlag ZOOKEEPER_BARRIER_WAIT_FOR_ALL_TIMEOUT = defineLongFlag(
             "zookeeper-barrier-wait-for-all-timeout", 1,
-            List.of("hmusum"), "2023-03-28", "2023-04-28",
+            List.of("hmusum"), "2023-03-28", "2023-05-28",
             "Time to wait for all barrier members after getting response from quorum number of member",
             "Takes effect on next config server container start",
             ZONE_ID);
