@@ -18,10 +18,11 @@ import (
 func addFeedFlags(cmd *cobra.Command, options *feedOptions) {
 	cmd.PersistentFlags().IntVar(&options.connections, "connections", 8, "The number of connections to use")
 	cmd.PersistentFlags().StringVar(&options.compression, "compression", "auto", `Compression mode to use. Default is "auto" which compresses large documents. Must be "auto", "gzip" or "none"`)
+	cmd.PersistentFlags().IntVar(&options.timeoutSecs, "timeout", 0, "Invididual feed operation timeout in seconds. 0 to disable")
+	cmd.PersistentFlags().IntVar(&options.doomSecs, "max-failure-seconds", 0, "Exit if given number of seconds elapse without any successful operations. 0 to disable")
+	cmd.PersistentFlags().BoolVar(&options.verbose, "verbose", false, "Verbose mode. Print successful operations in addition to errors")
 	cmd.PersistentFlags().StringVar(&options.route, "route", "", "Target Vespa route for feed operations")
 	cmd.PersistentFlags().IntVar(&options.traceLevel, "trace", 0, "The trace level of network traffic. 0 to disable")
-	cmd.PersistentFlags().IntVar(&options.timeoutSecs, "timeout", 0, "Feed operation timeout in seconds. 0 to disable")
-	cmd.PersistentFlags().BoolVar(&options.verbose, "verbose", false, "Verbose mode. Print successful operations in addition to errors")
 	memprofile := "memprofile"
 	cpuprofile := "cpuprofile"
 	cmd.PersistentFlags().StringVar(&options.memprofile, memprofile, "", "Write a heap profile to given file")
@@ -38,8 +39,10 @@ type feedOptions struct {
 	verbose     bool
 	traceLevel  int
 	timeoutSecs int
-	memprofile  string
-	cpuprofile  string
+	doomSecs    int
+
+	memprofile string
+	cpuprofile string
 }
 
 func newFeedCmd(cli *CLI) *cobra.Command {
@@ -131,8 +134,7 @@ func feed(files []string, options feedOptions, cli *CLI) error {
 		NowFunc:     cli.now,
 	}, clients)
 	throttler := document.NewThrottler(options.connections)
-	// TODO(mpolden): Make doom duration configurable
-	circuitBreaker := document.NewCircuitBreaker(10*time.Second, 0)
+	circuitBreaker := document.NewCircuitBreaker(10*time.Second, time.Duration(options.doomSecs)*time.Second)
 	dispatcher := document.NewDispatcher(client, throttler, circuitBreaker, cli.Stderr, options.verbose)
 	start := cli.now()
 	for _, name := range files {
