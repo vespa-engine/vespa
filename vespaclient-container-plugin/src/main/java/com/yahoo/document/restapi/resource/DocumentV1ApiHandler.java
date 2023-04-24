@@ -200,7 +200,7 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
                                 ClusterListConfig clusterListConfig,
                                 AllClustersBucketSpacesConfig bucketSpacesConfig,
                                 DocumentOperationExecutorConfig executorConfig) {
-        this(Clock.systemUTC(), Duration.ofSeconds(5), metric, metricReceiver, documentAccess,
+        this(Clock.systemUTC(), Duration.ofMillis(500), metric, metricReceiver, documentAccess,
              documentManagerConfig, executorConfig, clusterListConfig, bucketSpacesConfig);
     }
 
@@ -237,9 +237,7 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
         HttpRequest request = (HttpRequest) rawRequest;
         try {
             // Set a higher HTTP layer timeout than the document API timeout, to prefer triggering the latter.
-            request.setTimeout(  getProperty(request, TIMEOUT, timeoutMillisParser).orElse(defaultTimeout.toMillis())
-                               + handlerTimeout.toMillis(),
-                               MILLISECONDS);
+            request.setTimeout(doomMillis(request) - clock.millis() + handlerTimeout.toMillis(), MILLISECONDS);
 
             Path requestPath = Path.withoutValidation(request.getUri()); // No segment validation here, as document IDs can be anything.
             for (String path : handlers.keySet()) {
@@ -267,7 +265,8 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
 
     @Override
     public void handleTimeout(Request request, ResponseHandler responseHandler) {
-        timeout((HttpRequest) request, "Timeout after " + (request.getTimeout(MILLISECONDS) - handlerTimeout.toMillis()) + "ms", responseHandler);
+        HttpRequest httpRequest = (HttpRequest) request;
+        timeout(httpRequest, "Timeout after " + (getProperty(httpRequest, TIMEOUT, timeoutMillisParser).orElse(defaultTimeout.toMillis())) + "ms", responseHandler);
     }
 
     @Override
@@ -523,9 +522,7 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
     private DocumentOperationParameters parametersFromRequest(HttpRequest request, String... names) {
         DocumentOperationParameters parameters = getProperty(request, TRACELEVEL, integerParser).map(parameters()::withTraceLevel)
                                                                                                 .orElse(parameters());
-        parameters = getProperty(request, TIMEOUT, timeoutMillisParser).map(clock.instant()::plusMillis)
-                                                                       .map(parameters::withDeadline)
-                                                                       .orElse(parameters);
+        parameters = parameters.withDeadline(Instant.ofEpochMilli(doomMillis(request)));
         for (String name : names)
             parameters = switch (name) {
                 case CLUSTER ->
@@ -1168,7 +1165,7 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
         parameters.setFieldSet(getProperty(request, FIELD_SET).orElse(path.documentType().map(type -> type + ":[document]").orElse(DocumentOnly.NAME)));
         parameters.setMaxTotalHits(wantedDocumentCount);
         parameters.visitInconsistentBuckets(true);
-        long timeoutMs = Math.max(1, request.getTimeout(MILLISECONDS) - handlerTimeout.toMillis());
+        long timeoutMs = Math.max(1, doomMillis(request) - clock.millis());
         if (streamed) {
             StaticThrottlePolicy throttlePolicy = new DynamicThrottlePolicy().setMinWindowSize(1).setWindowSizeIncrement(1);
             concurrency.ifPresent(throttlePolicy::setMaxPendingCount);
@@ -1188,7 +1185,7 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
         VisitorParameters parameters = parseCommonParameters(request, path, Optional.of(requireProperty(request, CLUSTER)));
         parameters.setThrottlePolicy(new DynamicThrottlePolicy().setMinWindowSize(1).setWindowSizeIncrement(1));
         long timeChunk = getProperty(request, TIME_CHUNK, timeoutMillisParser).orElse(60_000L);
-        parameters.setSessionTimeoutMs(Math.max(1, Math.min(timeChunk, request.getTimeout(MILLISECONDS) - handlerTimeout.toMillis())));
+        parameters.setSessionTimeoutMs(Math.max(1, Math.min(timeChunk, doomMillis(request) - clock.millis())));
         return parameters;
     }
 
@@ -1345,7 +1342,7 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
             AtomicReference<String> error = new AtomicReference<>(); // Set if error occurs during processing of visited documents.
             callback.onStart(response, fullyApplied);
             VisitorControlHandler controller = new VisitorControlHandler() {
-                final ScheduledFuture<?> abort = streaming ? visitDispatcher.schedule(this::abort, request.getTimeout(MILLISECONDS), MILLISECONDS) : null;
+                final ScheduledFuture<?> abort = streaming ? visitDispatcher.schedule(this::abort, doomMillis(request) - clock.millis(), MILLISECONDS) : null;
                 final AtomicReference<VisitorSession> session = new AtomicReference<>();
                 @Override public void setSession(VisitorControlSession session) { // Workaround for broken session API ಠ_ಠ
                     super.setSession(session);
@@ -1425,6 +1422,12 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
     }
 
     // ------------------------------------------------ Helpers ------------------------------------------------
+
+    private static long doomMillis(HttpRequest request) {
+        long connectedAtMillis = request.getConnectedAt(MILLISECONDS);
+        long requestTimeoutMillis = getProperty(request, TIMEOUT, timeoutMillisParser).orElse(defaultTimeout.toMillis());
+        return connectedAtMillis + requestTimeoutMillis;
+    }
 
     private static String requireProperty(HttpRequest request, String name) {
         return getProperty(request, name)
