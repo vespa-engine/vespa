@@ -40,31 +40,18 @@ public class CGroupV2 {
      *
      * <p>WARNING: This method must be called only after vespa-cgexec has been installed.</p>
      *
-     * @param cgroup  The cgroup to execute the command in, e.g. system.slice/wireguard.scope.
+     * @param cgroup  The cgroup to execute the command in, e.g. /sys/fs/cgroup/system.slice/wireguard.scope.
      * @param command The command to execute in the cgroup.
-     * @see #cgroupOf(ContainerId)
+     * @see #cgroupRootPath()
+     * @see #cgroupPath(ContainerId)
      */
-    public String[] wrapForExecutionIn(String cgroup, String... command) {
-        UnixPath path = new UnixPath(rootCgroupPath.resolve(cgroup).normalize());
-        if (!path.toString().startsWith(rootCgroupPath + "/"))
-            throw new IllegalArgumentException("Invalid cgroup: " + cgroup);
-        // If more than one parent directory needs to be created, subtree_control needs to be fixed, somehow.
-        path.createDirectory();  // No-op if already exists
-
+    public String[] wrapForExecutionIn(Path cgroup, String... command) {
         String[] fullCommand = new String[3 + command.length];
         fullCommand[0] = Defaults.getDefaults().vespaHome() + "/bin/vespa-cgexec";
         fullCommand[1] = "-g";
-        fullCommand[2] = cgroup;
+        fullCommand[2] = cgroup.toString();
         System.arraycopy(command, 0, fullCommand, 3, command.length);
         return fullCommand;
-    }
-
-    /**
-     * Returns the cgroup directory of the Podman container relative the cgroup file system mount point,
-     * and which appears as the root cgroup within the container.
-     */
-    public String cgroupOf(ContainerId containerId) {
-        return "machine.slice/libpod-" + containerId + ".scope/container";
     }
 
     /**
@@ -125,7 +112,7 @@ public class CGroupV2 {
     }
 
     public Map<CpuStatField, Long> cpuStats(ContainerId containerId) throws IOException {
-        return Files.readAllLines(cgroupRootPath(containerId).resolve("cpu.stat")).stream()
+        return Files.readAllLines(cgroupPath(containerId).resolve("cpu.stat")).stream()
                     .map(line -> line.split("\\s+"))
                     .filter(parts -> parts.length == 2)
                     .flatMap(parts -> CpuStatField.fromField(parts[0]).stream().map(field -> new Pair<>(field, field.parseValue(parts[1]))))
@@ -134,31 +121,37 @@ public class CGroupV2 {
 
     /** @return Maximum amount of memory that can be used by the cgroup and its descendants. */
     public long memoryLimitInBytes(ContainerId containerId) throws IOException {
-        String limit = Files.readString(cgroupRootPath(containerId).resolve("memory.max")).strip();
+        String limit = Files.readString(cgroupPath(containerId).resolve("memory.max")).strip();
         return MAX.equals(limit) ? -1L : Long.parseLong(limit);
     }
 
     /** @return The total amount of memory currently being used by the cgroup and its descendants. */
     public long memoryUsageInBytes(ContainerId containerId) throws IOException {
-        return parseLong(cgroupRootPath(containerId).resolve("memory.current"));
+        return parseLong(cgroupPath(containerId).resolve("memory.current"));
     }
 
     /** @return Number of bytes used to cache filesystem data, including tmpfs and shared memory. */
     public long memoryCacheInBytes(ContainerId containerId) throws IOException {
-        return parseLong(cgroupRootPath(containerId).resolve("memory.stat"), "file");
+        return parseLong(cgroupPath(containerId).resolve("memory.stat"), "file");
     }
 
-    private Path cgroupRootPath(ContainerId containerId) {
+    /** Returns the cgroup v2 mount point path (/sys/fs/cgroup). */
+    public Path cgroupRootPath() {
+        return rootCgroupPath;
+    }
+
+    /** Returns the cgroup directory of the Podman container, and which appears as the root cgroup within the container. */
+    public Path cgroupPath(ContainerId containerId) {
         // crun path, runc path is without the 'container' directory
-        return rootCgroupPath.resolve(cgroupOf(containerId));
+        return rootCgroupPath.resolve("machine.slice/libpod-" + containerId + ".scope/container");
     }
 
     private UnixPath cpuMaxPath(ContainerId containerId) {
-        return new UnixPath(cgroupRootPath(containerId).resolve("cpu.max"));
+        return new UnixPath(cgroupPath(containerId).resolve("cpu.max"));
     }
 
     private UnixPath cpuWeightPath(ContainerId containerId) {
-        return new UnixPath(cgroupRootPath(containerId).resolve("cpu.weight"));
+        return new UnixPath(cgroupPath(containerId).resolve("cpu.weight"));
     }
 
     private static boolean writeCGroupsValue(NodeAgentContext context, UnixPath unixPath, String value) {
