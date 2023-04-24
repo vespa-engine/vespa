@@ -163,11 +163,15 @@ func (d *Dispatcher) enqueue(op documentOp) error {
 	}
 	d.mu.Unlock()
 	group.add(op, op.attempts > 0)
-	d.enqueueWithSlot(group)
+	d.dispatch(op.document.Id, group)
 	return nil
 }
 
-func (d *Dispatcher) enqueueWithSlot(group *documentGroup) {
+func (d *Dispatcher) dispatch(id Id, group *documentGroup) {
+	if !d.canDispatch() {
+		d.msgs <- fmt.Sprintf("refusing to dispatch document %s: too many errors", id)
+		return
+	}
 	d.acquireSlot()
 	d.workerWg.Add(1)
 	go func() {
@@ -175,6 +179,19 @@ func (d *Dispatcher) enqueueWithSlot(group *documentGroup) {
 		d.sendDocumentIn(group)
 	}()
 	d.throttler.Sent()
+}
+
+func (d *Dispatcher) canDispatch() bool {
+	switch d.circuitBreaker.State() {
+	case CircuitClosed:
+		return true
+	case CircuitHalfOpen:
+		time.Sleep(time.Second)
+		return true
+	case CircuitOpen:
+		return false
+	}
+	panic("invalid circuit state")
 }
 
 func (d *Dispatcher) acquireSlot() {
