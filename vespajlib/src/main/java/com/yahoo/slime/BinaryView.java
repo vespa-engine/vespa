@@ -14,14 +14,23 @@ public final class BinaryView implements Inspector {
 
     private final byte[] data;
     private final SymbolTable names;
-    private final DecodeIndex index;
+    private final long[] index;
     private final int self;
 
-    private BinaryView(byte[] data, SymbolTable names, DecodeIndex index, int self) {
+    private BinaryView(byte[] data, SymbolTable names, long[] index, int self) {
         this.data = data;
         this.names = names;
         this.index = index;
         this.self = self;
+    }
+    private int byte_offset(int idx) {
+        return (int)(index[idx] >> 33) & 0x7fff_ffff;
+    }
+    private int first_child(int idx) {
+        return (int)(index[idx] >> 2) & 0x7fff_ffff;
+    }
+    private int ext_bits(int idx) {
+        return (int)index[idx] & 0x3;
     }
     private int peek_cmpr_int(int idx) {
         long next = data[idx++];
@@ -92,8 +101,8 @@ public final class BinaryView implements Inspector {
     }
     private Inspector find_field(int pos, int len, int sym) {
         for (int i = 0; i < len; ++i) {
-            int idx = index.getByteOffset(pos + i);
-            if (peek_cmpr_int(idx - (index.getExtBits(pos + i) + 1)) == sym) {
+            int idx = byte_offset(pos + i);
+            if (peek_cmpr_int(idx - (ext_bits(pos + i) + 1)) == sym) {
                 return new BinaryView(data, names, index, pos + i);
             }
         }
@@ -102,110 +111,110 @@ public final class BinaryView implements Inspector {
 
     @Override public boolean valid() { return true; }
     @Override public void ifValid(Consumer<Inspector> consumer) { consumer.accept(this); }
-    @Override public Type type() { return decode_type(data[index.getByteOffset(self)]); }
+    @Override public Type type() { return decode_type(data[byte_offset(self)]); }
     @Override public int children() {
         return switch (type()) {
-            case OBJECT, ARRAY -> extract_children(index.getByteOffset(self));
+            case OBJECT, ARRAY -> extract_children(byte_offset(self));
             default -> 0;
         };
     }
     @Override public int entries() {
         return switch (type()) {
-            case ARRAY -> extract_children(index.getByteOffset(self));
+            case ARRAY -> extract_children(byte_offset(self));
             default -> 0;
         };
     }
     @Override public int fields() {
         return switch (type()) {
-            case OBJECT -> extract_children(index.getByteOffset(self));
+            case OBJECT -> extract_children(byte_offset(self));
             default -> 0;
         };
     }
     @Override public boolean asBool() {
         return switch (type()) {
-            case BOOL -> (decode_meta(data[index.getByteOffset(self)]) != 0);
+            case BOOL -> (decode_meta(data[byte_offset(self)]) != 0);
             default -> false;
         };
     }
     @Override public long asLong() {
         return switch (type()) {
-            case LONG -> extract_long(index.getByteOffset(self));
-            case DOUBLE -> (long)extract_double(index.getByteOffset(self));
+            case LONG -> extract_long(byte_offset(self));
+            case DOUBLE -> (long)extract_double(byte_offset(self));
             default -> 0;
         };
     }
     @Override public double asDouble() {
         return switch (type()) {
-            case LONG -> extract_long(index.getByteOffset(self));
-            case DOUBLE -> extract_double(index.getByteOffset(self));
+            case LONG -> extract_long(byte_offset(self));
+            case DOUBLE -> extract_double(byte_offset(self));
             default -> 0.0;
         };
     }
     @Override public String asString() {
         return switch (type()) {
-            case STRING -> extract_string(index.getByteOffset(self));
+            case STRING -> extract_string(byte_offset(self));
             default -> Value.emptyString;
         };
     }
     @Override public byte[] asUtf8() {
         return switch (type()) {
-            case STRING -> extract_bytes(index.getByteOffset(self));
+            case STRING -> extract_bytes(byte_offset(self));
             default -> Value.emptyData;
         };
     }
     @Override public byte[] asData() {
         return switch (type()) {
-            case DATA -> extract_bytes(index.getByteOffset(self));
+            case DATA -> extract_bytes(byte_offset(self));
             default -> Value.emptyData;
         };
     }
     @Override public void accept(Visitor v) {
         switch (type()) {
             case NIX:    v.visitNix(); break;
-            case BOOL:   v.visitBool(decode_meta(data[index.getByteOffset(self)]) != 0); break;
-            case LONG:   v.visitLong(extract_long(index.getByteOffset(self))); break;
-            case DOUBLE: v.visitDouble(extract_double(index.getByteOffset(self))); break;
-            case STRING: v.visitString(extract_bytes(index.getByteOffset(self))); break;
-            case DATA:   v.visitData(extract_bytes(index.getByteOffset(self))); break;
+            case BOOL:   v.visitBool(decode_meta(data[byte_offset(self)]) != 0); break;
+            case LONG:   v.visitLong(extract_long(byte_offset(self))); break;
+            case DOUBLE: v.visitDouble(extract_double(byte_offset(self))); break;
+            case STRING: v.visitString(extract_bytes(byte_offset(self))); break;
+            case DATA:   v.visitData(extract_bytes(byte_offset(self))); break;
             case ARRAY:  v.visitArray(this); break;
             case OBJECT: v.visitObject(this); break;
             default: throw new RuntimeException("should not be reached");
         }
     }
     @Override public void traverse(ArrayTraverser at) {
-        int pos = index.getFirstChild(self);
+        int pos = first_child(self);
         int len = entries();
         for (int i = 0; i < len; ++i) {
             at.entry(i, new BinaryView(data, names, index, pos + i));
         }
     }
     @Override public void traverse(ObjectSymbolTraverser ot) {
-        int pos = index.getFirstChild(self);
+        int pos = first_child(self);
         int len = fields();
         for (int i = 0; i < len; ++i) {
-            int sym = peek_cmpr_int(index.getByteOffset(pos + i) - (index.getExtBits(pos + i) + 1));
+            int sym = peek_cmpr_int(byte_offset(pos + i) - (ext_bits(pos + i) + 1));
             ot.field(sym, new BinaryView(data, names, index, pos + i));
         }
     }
     @Override public void traverse(ObjectTraverser ot) {
-        int pos = index.getFirstChild(self);
+        int pos = first_child(self);
         int len = fields();
         for (int i = 0; i < len; ++i) {
-            int sym = peek_cmpr_int(index.getByteOffset(pos + i) - (index.getExtBits(pos + i) + 1));
+            int sym = peek_cmpr_int(byte_offset(pos + i) - (ext_bits(pos + i) + 1));
             ot.field(names.inspect(sym), new BinaryView(data, names, index, pos + i));
         }
     }
     @Override public Inspector entry(int idx) {
         int limit = entries();
         if (idx >= 0 && idx < limit) {
-            return new BinaryView(data, names, index, index.getFirstChild(self) + idx);
+            return new BinaryView(data, names, index, first_child(self) + idx);
         }
         return NixValue.invalid();
     }
     @Override public Inspector field(int sym) {
         int limit = fields();
         if (limit > 0 && sym != SymbolTable.INVALID) {
-            return find_field(index.getFirstChild(self), limit, sym);
+            return find_field(first_child(self), limit, sym);
         }
         return NixValue.invalid();
     }
@@ -214,7 +223,7 @@ public final class BinaryView implements Inspector {
         if (limit > 0) {
             int sym = names.lookup(name);
             if (sym != SymbolTable.INVALID) {
-                return find_field(index.getFirstChild(self), limit, sym);
+                return find_field(first_child(self), limit, sym);
             }
         }
         return NixValue.invalid();
@@ -243,11 +252,11 @@ public final class BinaryView implements Inspector {
                 break; }
             case ARRAY: {
                 int size = input.read_size(meta);
-                if (size > input.getBacking().length - index.size()) {
+                int firstChild = index.tryReserveChildren(size, index.used() + 1, input.getPosition());
+                if (firstChild < 0) {
                     input.fail("decode index too big");
                     return;
                 }
-                int firstChild = index.reserve(size);
                 index.set(self, pos, firstChild, extBits);
                 for (int i = 0; i < size; ++i) {
                     buildIndex(input, index, firstChild + i, 0);
@@ -255,11 +264,11 @@ public final class BinaryView implements Inspector {
                 break; }
             case OBJECT: {
                 int size = input.read_size(meta);
-                if (size > input.getBacking().length - index.size()) {
+                int firstChild = index.tryReserveChildren(size, index.used() + 1, input.getPosition());
+                if (firstChild < 0) {
                     input.fail("decode index too big");
                     return;
                 }
-                int firstChild = index.reserve(size);
                 index.set(self, pos, firstChild, extBits);
                 for (int i = 0; i < size; ++i) {
                     int childExtBits = input.skip_cmpr_int();
@@ -274,19 +283,16 @@ public final class BinaryView implements Inspector {
         }
     }
 
-    static Inspector inspectImpl(BufferedInput input) {
-        var names = new SymbolTable();
-        var index = new DecodeIndex();
-        BinaryDecoder.decodeSymbolTable(input, names);
-        buildIndex(input, index, index.reserve(1), 0);
-        if (input.failed()) {
-            return NixValue.invalid();
-        }
-        return new BinaryView(input.getBacking(), names, index, 0);
-    }
-
     public static Inspector inspect(byte[] data) {
-        return inspectImpl(new BufferedInput(data));
+        var input = new BufferedInput(data);
+        var names = new SymbolTable();
+        BinaryDecoder.decodeSymbolTable(input, names);
+        var index = new DecodeIndex(input.getBacking().length, input.getPosition());
+        buildIndex(input, index, 0, 0);
+        if (input.failed()) {
+            throw new IllegalArgumentException("bad input: " + input.getErrorMessage());
+        }
+        return new BinaryView(input.getBacking(), names, index.getBacking(), 0);
     }
 
     static int peek_cmpr_int_for_testing(byte[] data, int idx) {
@@ -303,5 +309,14 @@ public final class BinaryView implements Inspector {
     }
     static double extract_double_for_testing(byte[] data, int idx) {
         return new BinaryView(data, null, null, -1).extract_double(idx);
+    }
+    static int byte_offset_for_testing(DecodeIndex index, int idx) {
+        return new BinaryView(null, null, index.getBacking(), -1).byte_offset(idx);
+    }
+    static int first_child_for_testing(DecodeIndex index, int idx) {
+        return new BinaryView(null, null, index.getBacking(), -1).first_child(idx);
+    }
+    static int ext_bits_for_testing(DecodeIndex index, int idx) {
+        return new BinaryView(null, null, index.getBacking(), -1).ext_bits(idx);
     }
 }

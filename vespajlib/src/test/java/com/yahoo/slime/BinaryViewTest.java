@@ -100,7 +100,15 @@ public class BinaryViewTest {
         assertEquals(300, arr.entries());
         return arr;
     }
-    static final int numShapes = numLeafs + 6;
+    static Cursor insert10SimpleHits(Inserter dst) {
+        var arr = dst.insertARRAY();
+        for (int i = 0; i < 10; ++i) {
+            var obj = arr.addObject();
+            obj.setLong("id", 123456);
+        }
+        return arr;
+    }
+    static final int numShapes = numLeafs + 7;
     static Cursor insertRoot(Slime dst, int shape) {
         var root = new SlimeInserter(dst);
         if (shape < numLeafs) {
@@ -113,6 +121,7 @@ public class BinaryViewTest {
         case (numLeafs + 3) -> insertOuterArray(root); 
         case (numLeafs + 4) -> insertManySymbols(root);
         case (numLeafs + 5) -> insertLargeArray(root);
+        case (numLeafs + 6) -> insert10SimpleHits(root);
         default -> NixValue.invalid();
         };
     }
@@ -297,66 +306,49 @@ public class BinaryViewTest {
         }
     }
 
+    void assertFail(byte[] data, String reason) {
+        try {
+            var view = BinaryView.inspect(data);
+            fail("expected exception");
+        } catch (IllegalArgumentException e) {
+            assertEquals("bad input: " + reason, e.getMessage());
+        }
+    }
+
     @Test public void testTrivialView() {
         byte[] data = {0, 0};
-        var input = new BufferedInput(data);
-        var view = BinaryView.inspectImpl(input);
+        var view = BinaryView.inspect(data);
         assertTrue(view.valid());
         assertEquals(Type.NIX, view.type());
-        assertFalse(input.failed());
     }
 
     @Test public void testUnderflow() {
         byte[] data = {};
-        var input = new BufferedInput(data);
-        var view = BinaryView.inspectImpl(input);
-        assertFalse(view.valid());
-        assertTrue(input.failed());
-        assertEquals("underflow", input.getErrorMessage());
+        assertFail(data, "underflow");
     }
 
     @Test public void testMultiByteUnderflow() {
         byte[] data = { 0, encode_type_and_meta(Type.STRING.ID, 3), 65 };
-        var input = new BufferedInput(data);
-        var view = BinaryView.inspectImpl(input);
-        assertFalse(view.valid());
-        assertTrue(input.failed());
-        assertEquals("underflow", input.getErrorMessage());
+        assertFail(data, "underflow");
     }
 
     @Test public void testCompressedIntOverflow() {
         byte[] data = { -1, -1, -1, -1, 8 };
-        var input = new BufferedInput(data);
-        var view = BinaryView.inspectImpl(input);
-        assertFalse(view.valid());
-        assertTrue(input.failed());
-        assertEquals("compressed int overflow", input.getErrorMessage());
+        assertFail(data, "compressed int overflow");
     }
 
     @Test public void testExtBitsOverflow() {
         byte[] data = { 0, encode_type_and_meta(Type.OBJECT.ID, 2), -1, -1, -1, -1, 1 };
-        var input = new BufferedInput(data);
-        var view = BinaryView.inspectImpl(input);
-        assertFalse(view.valid());
-        assertTrue(input.failed());
-        assertEquals("symbol id too big", input.getErrorMessage());
+        assertFail(data, "symbol id too big");
     }
 
     @Test public void testDecodeIndexOverflowArray() {
-        byte[] data = { 0, encode_type_and_meta(Type.ARRAY.ID, 4) };
-        var input = new BufferedInput(data);
-        var view = BinaryView.inspectImpl(input);
-        assertFalse(view.valid());
-        assertTrue(input.failed());
-        assertEquals("decode index too big", input.getErrorMessage());
+        byte[] data = { 0, encode_type_and_meta(Type.ARRAY.ID, 20) };
+        assertFail(data, "decode index too big");
     }
 
     @Test public void testDecodeIndexOverflowObject() {
-        byte[] data = { 0, encode_type_and_meta(Type.OBJECT.ID, 4) };
-        var input = new BufferedInput(data);
-        var view = BinaryView.inspectImpl(input);
-        assertFalse(view.valid());
-        assertTrue(input.failed());
-        assertEquals("decode index too big", input.getErrorMessage());
+        byte[] data = { 0, encode_type_and_meta(Type.OBJECT.ID, 20) };
+        assertFail(data, "decode index too big");
     }
 }
