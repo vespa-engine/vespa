@@ -67,7 +67,7 @@ void FieldSearcherBase::prepare(const QueryTermList & qtl)
     }
 }
 
-FieldSearcher::FieldSearcher(const FieldIdT & fId, bool defaultPrefix) :
+FieldSearcher::FieldSearcher(FieldIdT fId, bool defaultPrefix) :
     FieldSearcherBase(),
     _field(fId),
     _matchType(defaultPrefix ? PREFIX : REGULAR),

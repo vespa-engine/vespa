@@ -38,7 +38,7 @@ private:
     std::vector<NodeAndCalc> _calcs;
 
 public:
-    NearestNeighborFieldSearcher(const FieldIdT& fid,
+    NearestNeighborFieldSearcher(FieldIdT fid,
                                  search::attribute::DistanceMetric metric);
     ~NearestNeighborFieldSearcher();
 
