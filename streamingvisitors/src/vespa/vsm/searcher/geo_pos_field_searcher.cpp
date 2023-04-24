@@ -35,7 +35,7 @@ void GeoPosFieldSearcher::prepare(search::streaming::QueryTermList& qtl,
 {
     _geoPosTerm.clear();
     FieldSearcher::prepare(qtl, buf, field_paths, query_env);
-    for (const QueryTerm * qt : qtl) {
+    for (auto qt : qtl) {
         const vespalib::string & str = qt->getTermString();
         GeoLocationParser parser;
         bool valid = parser.parseNoField(str);

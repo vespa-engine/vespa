@@ -61,9 +61,8 @@ void FieldSearcherBase::prepare(const QueryTermList & qtl)
     _qtlFastBuffer.resize(sizeof(*_qtlFast)*(_qtl.size()+1), 0x13);
     _qtlFast = reinterpret_cast<v16qi *>(reinterpret_cast<unsigned long>(&_qtlFastBuffer[0]+15) & ~0xf);
     _qtlFastSize = 0;
-    for(QueryTermList::iterator it=_qtl.begin(), mt=_qtl.end(); it != mt; it++) {
-        const QueryTerm & qt = **it;
-        memcpy(&_qtlFast[_qtlFastSize++], qt.getTerm(), std::min(size_t(16), qt.termLen()));
+    for (auto qt : _qtl) {
+        memcpy(&_qtlFast[_qtlFastSize++], qt->getTerm(), std::min(size_t(16), qt->termLen()));
     }
 }
 
@@ -89,16 +88,14 @@ FieldSearcher::~FieldSearcher() = default;
 
 bool FieldSearcher::search(const StorageDocument & doc)
 {
-    for(QueryTermList::iterator it=_qtl.begin(), mt=_qtl.end(); it != mt; it++) {
-        QueryTerm & qt = **it;
-        QueryTerm::FieldInfo & fInfo = qt.getFieldInfo(field());
-        fInfo.setHitOffset(qt.getHitList().size());
+    for (auto qt : _qtl) {
+        QueryTerm::FieldInfo & fInfo = qt->getFieldInfo(field());
+        fInfo.setHitOffset(qt->getHitList().size());
     }
     onSearch(doc);
-    for(QueryTermList::iterator it=_qtl.begin(), mt=_qtl.end(); it != mt; it++) {
-        QueryTerm & qt = **it;
-        QueryTerm::FieldInfo & fInfo = qt.getFieldInfo(field());
-        fInfo.setHitCount(qt.getHitList().size() - fInfo.getHitOffset());
+    for(auto qt : _qtl) {
+        QueryTerm::FieldInfo & fInfo = qt->getFieldInfo(field());
+        fInfo.setHitCount(qt->getHitList().size() - fInfo.getHitOffset());
         fInfo.setFieldLength(_words);
     }
     _words = 0;
@@ -132,9 +129,8 @@ size_t FieldSearcher::countWords(const FieldRef & f)
 
 void FieldSearcher::prepareFieldId()
 {
-    for(QueryTermList::iterator it=_qtl.begin(), mt=_qtl.end(); it != mt; it++) {
-        QueryTerm & qt = **it;
-        qt.resizeFieldId(field());
+    for(auto qt : _qtl) {
+        qt->resizeFieldId(field());
     }
 }
 
@@ -232,26 +228,26 @@ void FieldIdTSearcherMap::prepare(const DocumentTypeIndexFieldMapT& difm,
     QueryTermList qtl;
     query.getLeafs(qtl);
     vespalib::string tmp;
-    for (FieldIdTSearcherMap::iterator it = begin(), mt = end(); it != mt; it++) {
+    for (auto& searcher : *this) {
         QueryTermList onlyInIndex;
-        FieldIdT fid = (*it)->field();
-        for (QueryTermList::iterator qt = qtl.begin(), mqt = qtl.end(); qt != mqt; qt++) {
-            QueryTerm * q = *qt;
-            for (DocumentTypeIndexFieldMapT::const_iterator dt(difm.begin()), dmt(difm.end()); dt != dmt; dt++) {
-                const IndexFieldMapT & fim = dt->second;
-                IndexFieldMapT::const_iterator found = fim.find(FieldSearchSpecMap::stripNonFields(q->index()));
+        FieldIdT fid = searcher->field();
+        for (auto qt : qtl) {
+            for (const auto& doc_type_elem : difm) {
+                const IndexFieldMapT & fim = doc_type_elem.second;
+                auto found = fim.find(FieldSearchSpecMap::stripNonFields(qt->index()));
                 if (found != fim.end()) {
                     const FieldIdTList & index = found->second;
-                    if ((find(index.begin(), index.end(), fid) != index.end()) && (find(onlyInIndex.begin(), onlyInIndex.end(), q) == onlyInIndex.end())) {
-                        onlyInIndex.push_back(q);
+                    if ((find(index.begin(), index.end(), fid) != index.end()) && (find(onlyInIndex.begin(), onlyInIndex.end(), qt) == onlyInIndex.end())) {
+                        onlyInIndex.push_back(qt);
                     }
                 } else {
-                    LOG(debug, "Could not find the requested index=%s in the index config map. Query does not fit search definition.", q->index().c_str());
+                    LOG(debug, "Could not find the requested index=%s in the index config map. Query does not fit search definition.",
+                        qt->index().c_str());
                 }
             }
         }
         /// Should perhaps do a unique on onlyInIndex
-        (*it)->prepare(onlyInIndex, searcherBuf, field_paths, query_env);
+        searcher->prepare(onlyInIndex, searcherBuf, field_paths, query_env);
         if (LOG_WOULD_LOG(spam)) {
             char tmpBuf[16];
             snprintf(tmpBuf, sizeof(tmpBuf), "%d", fid);

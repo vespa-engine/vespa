@@ -34,10 +34,9 @@ bool StrChrFieldSearcher::matchDoc(const FieldRef & fieldRef)
       _words += countWords(fieldRef);
     }
   } else {
-    for(QueryTermList::iterator it=_qtl.begin(), mt=_qtl.end(); it != mt; it++) {
-      QueryTerm & qt = **it;
-      if (fieldRef.size() >= qt.termLen()) {
-        _words += matchTerm(fieldRef, qt);
+    for (auto qt : _qtl) {
+      if (fieldRef.size() >= qt->termLen()) {
+        _words += matchTerm(fieldRef, *qt);
       } else {
         _words += countWords(fieldRef);
       }
@@ -49,7 +48,7 @@ bool StrChrFieldSearcher::matchDoc(const FieldRef & fieldRef)
 size_t StrChrFieldSearcher::shortestTerm() const
 {
   size_t mintsz(_qtl.front()->termLen());
-  for(QueryTermList::const_iterator it=_qtl.begin()+1, mt=_qtl.end(); it != mt; it++) {
+  for (auto it=_qtl.begin()+1, mt=_qtl.end(); it != mt; it++) {
     const QueryTerm & qt = **it;
     mintsz = std::min(mintsz, qt.termLen());
   }

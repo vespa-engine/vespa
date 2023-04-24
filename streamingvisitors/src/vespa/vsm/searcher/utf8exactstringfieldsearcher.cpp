@@ -17,9 +17,8 @@ size_t
 UTF8ExactStringFieldSearcher::matchTerms(const FieldRef & f, const size_t mintsz)
 {
     (void) mintsz;
-    for (QueryTermList::iterator it = _qtl.begin(), mt = _qtl.end(); it != mt; ++it) {
-        QueryTerm & qt = **it;
-        matchTermExact(f, qt);
+    for (auto qt : _qtl) {
+        matchTermExact(f, *qt);
     }
     return 1;
 }
