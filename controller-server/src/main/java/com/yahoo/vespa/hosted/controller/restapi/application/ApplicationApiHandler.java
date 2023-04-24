@@ -52,6 +52,8 @@ import com.yahoo.slime.SlimeUtils;
 import com.yahoo.text.Text;
 import com.yahoo.vespa.athenz.api.OAuthCredentials;
 import com.yahoo.vespa.athenz.client.zms.ZmsClientException;
+import com.yahoo.vespa.flags.BooleanFlag;
+import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.Instance;
@@ -131,7 +133,6 @@ import com.yahoo.vespa.hosted.controller.tenant.TenantInfo;
 import com.yahoo.vespa.hosted.controller.versions.VersionStatus;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
 import com.yahoo.yolean.Exceptions;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -166,6 +167,7 @@ import java.util.stream.Stream;
 
 import static com.yahoo.jdisc.Response.Status.BAD_REQUEST;
 import static com.yahoo.jdisc.Response.Status.CONFLICT;
+import static com.yahoo.vespa.flags.FetchVector.Dimension.APPLICATION_ID;
 import static com.yahoo.yolean.Exceptions.uncheck;
 import static java.util.Comparator.comparingInt;
 import static java.util.Map.Entry.comparingByKey;
@@ -187,6 +189,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
     private final Controller controller;
     private final AccessControlRequests accessControlRequests;
     private final TestConfigSerializer testConfigSerializer;
+    private final BooleanFlag failDeploymentOnMissingCertificateFile;
 
     @Inject
     public ApplicationApiHandler(ThreadedHttpRequestHandler.Context parentCtx,
@@ -196,6 +199,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         this.controller = controller;
         this.accessControlRequests = accessControlRequests;
         this.testConfigSerializer = new TestConfigSerializer(controller.system());
+        this.failDeploymentOnMissingCertificateFile = Flags.FAIL_DEPLOYMENT_ON_MISSING_CERTIFICATE_FILE.bindTo(controller.flagSource());
     }
 
     @Override
@@ -3066,7 +3070,12 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
                 throw new IllegalArgumentException("Source URL must include scheme and host");
         });
 
-        ApplicationPackage applicationPackage = new ApplicationPackage(dataParts.get(EnvironmentResource.APPLICATION_ZIP), true);
+        ApplicationPackage applicationPackage =
+                new ApplicationPackage(dataParts.get(EnvironmentResource.APPLICATION_ZIP),
+                                       true,
+                                       failDeploymentOnMissingCertificateFile
+                                               .with(APPLICATION_ID, ApplicationId.from(tenant, application, "default").serializedForm())
+                                               .value());
 
         byte[] testPackage = dataParts.getOrDefault(EnvironmentResource.APPLICATION_TEST_ZIP, new byte[0]);
         Submission submission = new Submission(applicationPackage, testPackage, sourceUrl, sourceRevision, authorEmail, description, risk);
