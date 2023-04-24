@@ -187,7 +187,7 @@ public class FileDirectory extends AbstractComponent {
 
             // Move to destination dir
             Path destinationDir = destinationDir(reference).toPath();
-            log.log(Level.INFO, () -> "Moving " + tempDestinationDir + " to " + destinationDir);
+            log.log(Level.FINE, () -> "Moving " + tempDestinationDir + " to " + destinationDir);
             Files.move(tempDestinationDir, destinationDir);
             return reference;
         } catch (IOException e) {
