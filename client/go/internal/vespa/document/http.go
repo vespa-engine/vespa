@@ -40,6 +40,7 @@ type ClientOptions struct {
 	Route       string
 	TraceLevel  int
 	Compression Compression
+	NowFunc     func() time.Time
 }
 
 type countingHTTPClient struct {
@@ -73,10 +74,14 @@ func NewClient(options ClientOptions, httpClients []util.HTTPClient) *Client {
 	for _, client := range httpClients {
 		countingClients = append(countingClients, countingHTTPClient{client: client})
 	}
+	nowFunc := options.NowFunc
+	if nowFunc == nil {
+		nowFunc = time.Now
+	}
 	return &Client{
 		options:     options,
 		httpClients: countingClients,
-		now:         time.Now,
+		now:         nowFunc,
 	}
 }
 

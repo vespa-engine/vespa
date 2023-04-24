@@ -44,9 +44,9 @@ func TestFeed(t *testing.T) {
 
 	assert.Equal(t, "", stderr.String())
 	want := `{
-  "feeder.seconds": 1.000,
+  "feeder.seconds": 3.000,
   "feeder.ok.count": 1,
-  "feeder.ok.rate": 1.000,
+  "feeder.ok.rate": 0.333,
   "feeder.error.count": 0,
   "feeder.inflight.count": 0,
   "http.request.count": 1,
@@ -57,9 +57,9 @@ func TestFeed(t *testing.T) {
   "http.response.bytes": 16,
   "http.response.MBps": 0.000,
   "http.response.error.count": 0,
-  "http.response.latency.millis.min": 0,
-  "http.response.latency.millis.avg": 0,
-  "http.response.latency.millis.max": 0,
+  "http.response.latency.millis.min": 1000,
+  "http.response.latency.millis.avg": 1000,
+  "http.response.latency.millis.max": 1000,
   "http.response.code.counts": {
     "200": 1
   }
