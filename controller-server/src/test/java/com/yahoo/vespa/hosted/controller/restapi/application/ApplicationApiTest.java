@@ -549,7 +549,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
 
         nodeRepository.putNodes(zone, List.of(nodeBuilder.apply(1, "{\"startedAt\":3}"), nodeBuilder.apply(2, "{\"readiedAt\":1}")));
         tester.assertResponse(request("/application/v4/tenant/tenant2/application/application1/instance/default/environment/dev/region/us-east-1/drop-documents", GET).userIdentity(USER_ID),
-                "{\"progress\":{\"total\":2,\"dropped\":0,\"started\":1}}");
+                "{\"progress\":{\"total\":2,\"dropped\":2,\"started\":1}}");
 
         updateMetrics();
 
