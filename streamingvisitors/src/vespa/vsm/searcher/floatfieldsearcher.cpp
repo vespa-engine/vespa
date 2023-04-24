@@ -36,8 +36,7 @@ void FloatFieldSearcherT<T>::prepare(search::streaming::QueryTermList& qtl,
 {
     _floatTerm.clear();
     FieldSearcher::prepare(qtl, buf, field_paths, query_env);
-    for (QueryTermList::const_iterator it=qtl.begin(); it < qtl.end(); it++) {
-    const QueryTerm * qt = *it;
+    for (auto qt : qtl) {
     size_t sz(qt->termLen());
         if (sz) {
             double low;

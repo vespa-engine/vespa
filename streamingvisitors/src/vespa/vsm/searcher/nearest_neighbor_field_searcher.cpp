@@ -52,7 +52,7 @@ NearestNeighborFieldSearcher::NodeAndCalc::NodeAndCalc(search::streaming::Neares
 {
 }
 
-NearestNeighborFieldSearcher::NearestNeighborFieldSearcher(const FieldIdT& fid,
+NearestNeighborFieldSearcher::NearestNeighborFieldSearcher(FieldIdT fid,
                                                            search::attribute::DistanceMetric metric)
     : FieldSearcher(fid),
       _metric(metric),

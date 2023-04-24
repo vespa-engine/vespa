@@ -41,10 +41,9 @@ UTF8SubstringSnippetModifier::matchTerms(const FieldRef & f, const size_t mintsz
     const cmptype_t * drend = dend - mintsz;
     termcount_t words = 0;
     for(; ditr <= drend; ) {
-        for (QueryTermList::iterator itr = _qtl.begin(); itr != _qtl.end(); ++itr) {
-            QueryTerm & qt = **itr;
+        for (auto qt : _qtl) {
             const cmptype_t * term;
-            termsize_t tsz = qt.term(term);
+            termsize_t tsz = qt->term(term);
 
             const cmptype_t * titr = term;
             const cmptype_t * tend = term + tsz;
@@ -58,7 +57,7 @@ UTF8SubstringSnippetModifier::matchTerms(const FieldRef & f, const size_t mintsz
                     // If we have overlapping matches only the first one will be considered.
                     insertSeparators(mbegin, mend);
                 }
-                addHit(qt, words);
+                addHit(*qt, words);
             }
         }
         if ( ! Fast_UnicodeUtil::IsWordChar(*ditr++) ) {
