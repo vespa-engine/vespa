@@ -20,7 +20,6 @@ type Dispatcher struct {
 	stats          Stats
 
 	started bool
-	ready   chan Id
 	results chan Result
 	msgs    chan string
 
