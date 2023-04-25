@@ -130,7 +130,7 @@ public class FileReceiver {
                     moveFileToDestination(inprogressFile, file);
                 } else {
                     decompressedDir = Files.createTempDirectory(tmpDir.toPath(), "archive").toFile();
-                    log.log(Level.FINE, () -> "compression type to use=" + compressionType);
+                    log.log(Level.FINEST, () -> "compression type to use=" + compressionType);
                     new FileReferenceCompressor(fileType, compressionType).decompress(inprogressFile, decompressedDir);
                     moveFileToDestination(decompressedDir, fileReferenceDir);
                 }
@@ -230,7 +230,7 @@ public class FileReceiver {
     }
 
     private void receiveFileMeta(Request req) {
-        log.log(Level.FINE, () -> "Received method call '" + req.methodName() + "' with parameters : " + req.parameters());
+        log.log(Level.FINEST, () -> "Received method call '" + req.methodName() + "' with parameters : " + req.parameters());
         FileReference reference = new FileReference(req.parameters().get(0).asString());
         String fileName = req.parameters().get(1).asString();
         Type type = FileReferenceData.Type.valueOf(req.parameters().get(2).asString());
@@ -281,7 +281,7 @@ public class FileReceiver {
     }
 
     private void receiveFileEof(Request req) {
-        log.log(Level.FINE, () -> "Received method call '" + req.methodName() + "' with parameters : " + req.parameters());
+        log.log(Level.FINEST, () -> "Received method call '" + req.methodName() + "' with parameters : " + req.parameters());
         FileReference reference = new FileReference(req.parameters().get(0).asString());
         int sessionId = req.parameters().get(1).asInt32();
         long xxhash = req.parameters().get(2).asInt64();
