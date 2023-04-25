@@ -136,7 +136,14 @@ public class ZmsClientMock implements ZmsClient {
 
     public List<AthenzDomain> getDomainListByAccount(String id) {
         log("getDomainListById()");
-        return new ArrayList<>();
+        return athenz.domains.entrySet()
+                .stream()
+                .filter(entry -> {
+                    var attributes = entry.getValue().attributes;
+                    return attributes.containsKey("account") && id.equals(attributes.get("account"));
+                })
+                .map(Map.Entry::getKey)
+                .toList();
     }
 
     @Override
