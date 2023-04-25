@@ -10,8 +10,8 @@
 #include <vespa/log/log.h>
 LOG_SETUP(".searchvisitor.hitcollector");
 
-using search::FeatureSet;
 using search::fef::MatchData;
+using vespalib::FeatureSet;
 using vdslib::SearchResult;
 
 namespace streaming {

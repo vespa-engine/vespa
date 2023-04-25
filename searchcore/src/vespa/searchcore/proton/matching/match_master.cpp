@@ -18,7 +18,7 @@ namespace proton::matching {
 
 using namespace search::fef;
 using search::queryeval::SearchIterator;
-using search::FeatureSet;
+using vespalib::FeatureSet;
 using vespalib::ThreadBundle;
 using vespalib::Issue;
 

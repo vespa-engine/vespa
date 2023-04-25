@@ -2,8 +2,8 @@
 
 #pragma once
 
-#include <vespa/searchlib/common/featureset.h>
 #include <vespa/searchlib/common/stringmap.h>
+#include <vespa/vespalib/util/featureset.h>
 #include <vector>
 
 namespace vespalib { class Doom; };
@@ -16,8 +16,8 @@ namespace proton::matching {
 class MatchToolsFactory;
 
 struct ExtractFeatures {
-    using FeatureSet = search::FeatureSet;
-    using FeatureValues = search::FeatureValues;
+    using FeatureSet = vespalib::FeatureSet;
+    using FeatureValues = vespalib::FeatureValues;
     using ThreadBundle = vespalib::ThreadBundle;
     using SearchIterator = search::queryeval::SearchIterator;
     using RankProgram = search::fef::RankProgram;

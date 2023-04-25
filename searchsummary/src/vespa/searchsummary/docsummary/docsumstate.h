@@ -3,9 +3,9 @@
 #pragma once
 
 #include "getdocsumargs.h"
-#include <vespa/searchlib/common/featureset.h>
 #include <vespa/searchlib/common/geo_location_spec.h>
 #include <vespa/vespalib/stllike/hash_map.h>
+#include <vespa/vespalib/util/featureset.h>
 #include <vespa/vespalib/util/stash.h>
 
 namespace juniper {
@@ -48,6 +48,7 @@ protected:
 class GetDocsumsState
 {
 public:
+    using FeatureSet = vespalib::FeatureSet;
     const search::attribute::IAttributeVector * getAttribute(size_t index) const { return _attributes[index]; }
 
     GetDocsumArgs               _args;      // from getdocsums request

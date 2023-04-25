@@ -5,8 +5,7 @@
 #include <vespa/vespalib/data/slime/cursor.h>
 #include <vespa/vespalib/data/slime/inserter.h>
 
-#include <vespa/log/log.h>
-LOG_SETUP(".searchlib.docsummary.summaryfeaturesdfw");
+using vespalib::FeatureSet;
 
 namespace search::docsummary {
 
