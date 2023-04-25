@@ -3,6 +3,7 @@
 #pragma once
 
 #include "distance_function.h"
+#include "distance_function_factory.h"
 #include <vespa/eval/eval/typed_cells.h>
 #include <vespa/vespalib/util/typify.h>
 #include <cmath>
@@ -27,6 +28,16 @@ public:
         return score;
     }
     double calc_with_limit(const vespalib::eval::TypedCells& lhs, const vespalib::eval::TypedCells& rhs, double) const override;
+};
+
+template <typename FloatType>
+class HammingDistanceFunctionFactory : public DistanceFunctionFactory {
+public:
+    HammingDistanceFunctionFactory()
+        : DistanceFunctionFactory(vespalib::eval::get_cell_type<FloatType>())
+        {}
+    BoundDistanceFunction::UP for_query_vector(const vespalib::eval::TypedCells& lhs) override;
+    BoundDistanceFunction::UP for_insertion_vector(const vespalib::eval::TypedCells& lhs) override;
 };
 
 }

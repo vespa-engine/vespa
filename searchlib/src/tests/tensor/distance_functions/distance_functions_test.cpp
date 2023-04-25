@@ -394,6 +394,7 @@ TEST(DistanceFunctionsTest, innerproduct_gives_expected_score)
 
 TEST(DistanceFunctionsTest, hamming_gives_expected_score)
 {
+    static HammingDistanceFunctionFactory<Int8Float> dff;
     auto ct = vespalib::eval::CellType::DOUBLE;
 
     auto hamming = make_distance_function(DistanceMetric::Hamming, ct);
@@ -410,6 +411,9 @@ TEST(DistanceFunctionsTest, hamming_gives_expected_score)
         double h0 = hamming->calc(t(p), t(p));
         EXPECT_EQ(h0, 0.0);
         EXPECT_EQ(hamming->to_rawscore(h0), 1.0);
+        auto dist_fun = dff.for_query_vector(t(p));
+        EXPECT_EQ(dist_fun->calc(t(p)), 0.0);
+        EXPECT_EQ(dist_fun->to_rawscore(h0), 1.0);
     }
     double d12 = hamming->calc(t(points[1]), t(points[2]));
     EXPECT_EQ(d12, 3.0);
@@ -442,6 +446,8 @@ TEST(DistanceFunctionsTest, hamming_gives_expected_score)
     std::vector<Int8Float> bytes_b = { 1, 2, 2, 4, 8, 16, 32, 65, -128,  0, 1, 0, 4, 8, 16, 32, 64, -128, 0, 1, -1 };
     // expect diff:                    1  2                    1               1                                7
     EXPECT_EQ(hamming->calc(TypedCells(bytes_a), TypedCells(bytes_b)), 12.0);
+    auto dist_fun = dff.for_query_vector(TypedCells(bytes_a));
+    EXPECT_EQ(dist_fun->calc(TypedCells(bytes_b)), 12.0);
 }
 
 TEST(GeoDegreesTest, gives_expected_score)

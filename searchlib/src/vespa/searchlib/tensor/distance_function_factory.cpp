@@ -115,11 +115,13 @@ make_distance_function_factory(search::attribute::DistanceMetric variant,
     if (variant == DistanceMetric::GeoDegrees) {
         return std::make_unique<GeoDistanceFunctionFactory>();
     }
-    /*
     if (variant == DistanceMetric::Hamming) {
-        return std::make_unique<HammingDistanceFunctionFactory>();
+        switch (cell_type) {
+        case CellType::DOUBLE: return std::make_unique<HammingDistanceFunctionFactory<double>>();
+        case CellType::INT8:   return std::make_unique<HammingDistanceFunctionFactory<vespalib::eval::Int8Float>>();
+        default:               return std::make_unique<HammingDistanceFunctionFactory<float>>();
+        }
     }
-    */
     auto df = make_distance_function(variant, cell_type);
     return std::make_unique<SimpleDistanceFunctionFactory>(std::move(df));
 }
