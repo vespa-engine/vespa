@@ -410,6 +410,12 @@ public class Flags {
             "Takes effect at redeployment",
             ZONE_ID);
 
+    public static final UnboundBooleanFlag NEW_IDDOC_LAYOUT = defineFeatureFlag(
+            "new_iddoc_layout", false, List.of("tokle", "bjorncs", "olaa"), "2023-04-24", "2023-05-31",
+            "Whether to use new identity document lauoyt",
+            "Takes effect on node reboot",
+            HOSTNAME);
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
                                                        String createdAt, String expiresAt, String description,
