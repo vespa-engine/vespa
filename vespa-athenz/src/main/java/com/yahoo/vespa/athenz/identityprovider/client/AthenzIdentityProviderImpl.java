@@ -298,7 +298,7 @@ public final class AthenzIdentityProviderImpl extends AbstractComponent implemen
     }
 
     private X509Certificate requestRoleCertificate(AthenzRole role) {
-        var doc = credentials.getIdentityDocument().identityDocument();
+        var doc = credentials.getIdentityDocument();
         Pkcs10Csr csr = csrGenerator.generateRoleCsr(
                 identity, role, doc.providerUniqueId(), doc.clusterType(), credentials.getKeyPair());
         try (ZtsClient client = createZtsClient()) {
