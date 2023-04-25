@@ -2,7 +2,7 @@
 
 #include "featureset.h"
 
-namespace search {
+namespace vespalib {
 
 FeatureSet::FeatureSet()
     : _names(),
@@ -87,4 +87,4 @@ FeatureSet::getFeaturesByDocId(uint32_t docId) const
     return 0;
 }
 
-} // namespace search
+}

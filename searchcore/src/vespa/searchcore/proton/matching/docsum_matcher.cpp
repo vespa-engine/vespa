@@ -18,7 +18,6 @@
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.matching.docsum_matcher");
 
-using search::FeatureSet;
 using search::MatchingElements;
 using search::MatchingElementsFields;
 using search::fef::FeatureResolver;
@@ -29,6 +28,7 @@ using search::queryeval::IntermediateBlueprint;
 using search::queryeval::MatchingElementsSearch;
 using search::queryeval::SameElementBlueprint;
 using search::queryeval::SearchIterator;
+using vespalib::FeatureSet;
 
 using AttrSearchCtx = search::attribute::ISearchContext;
 

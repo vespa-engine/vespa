@@ -9,7 +9,6 @@ vespa_add_library(searchlib_common OBJECT
     condensedbitvectors.cpp
     documentlocations.cpp
     documentsummary.cpp
-    featureset.cpp
     fileheadercontext.cpp
     flush_token.cpp
     geo_gcd.cpp

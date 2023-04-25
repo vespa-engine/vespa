@@ -2,9 +2,9 @@
 #include <vespa/log/log.h>
 LOG_SETUP("summaryfeatures_test");
 #include <vespa/vespalib/testkit/testapp.h>
-#include <vespa/searchlib/common/featureset.h>
+#include <vespa/vespalib/util/featureset.h>
 
-using namespace search;
+using vespalib::FeatureSet;
 using vespalib::Memory;
 
 TEST_SETUP(Test);

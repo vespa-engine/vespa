@@ -10,7 +10,7 @@
 #include <vespa/log/log.h>
 LOG_SETUP(".searchvisitor.rankprocessor");
 
-using search::FeatureSet;
+using vespalib::FeatureSet;
 using search::fef::FeatureHandle;
 using search::fef::ITermData;
 using search::fef::ITermFieldData;
