@@ -28,10 +28,10 @@ namespace {
 uint32_t
 derive_shared_threads(const ProtonConfig& cfg, const HwInfo::Cpu& cpu_info)
 {
-    uint32_t scaled_cores = (uint32_t)std::ceil(cpu_info.cores() * cfg.feeding.concurrency);
+    uint32_t scaled_cores = uint32_t(std::ceil(cpu_info.cores() * cfg.feeding.concurrency));
 
     // We need at least 1 guaranteed free worker in order to ensure progress.
-    return std::max(scaled_cores, (uint32_t)cfg.documentdb.size() + cfg.flush.maxconcurrent + 1);
+    return std::max(scaled_cores, uint32_t(cfg.flush.maxconcurrent + 1u));
 }
 
 uint32_t
@@ -42,8 +42,8 @@ derive_warmup_threads(const HwInfo::Cpu& cpu_info) {
 uint32_t
 derive_field_writer_threads(const ProtonConfig& cfg, const HwInfo::Cpu& cpu_info)
 {
-    uint32_t scaled_cores = (size_t)std::ceil(cpu_info.cores() * cfg.feeding.concurrency);
-    uint32_t field_writer_threads = std::max(scaled_cores, (uint32_t)cfg.indexing.threads);
+    uint32_t scaled_cores = size_t(std::ceil(cpu_info.cores() * cfg.feeding.concurrency));
+    uint32_t field_writer_threads = std::max(scaled_cores, uint32_t(cfg.indexing.threads));
     // Originally we used at least 3 threads for writing fields:
     //   - index field inverter
     //   - index field writer
