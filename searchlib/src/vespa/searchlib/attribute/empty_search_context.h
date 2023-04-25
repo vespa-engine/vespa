@@ -19,6 +19,7 @@ class EmptySearchContext : public SearchContext
 public:
     EmptySearchContext(const AttributeVector& attr) noexcept;
     ~EmptySearchContext();
+    uint32_t get_committed_docid_limit() const noexcept override;
 };
 
 }

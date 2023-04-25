@@ -22,6 +22,7 @@ private:
     uint32_t _valueShiftShift;
     uint32_t _valueShiftMask;
     uint32_t _wordShift;
+    uint32_t _docid_limit;
 
     int32_t onFind(DocId docId, int32_t elementId, int32_t & weight) const override {
         return find(docId, elementId, weight);
@@ -32,7 +33,7 @@ private:
     }
 
 public:
-    SingleSmallNumericSearchContext(std::unique_ptr<QueryTermSimple> qTerm, const AttributeVector& toBeSearched, const Word* word_data, Word value_mask, uint32_t value_shift_shift, uint32_t value_shift_mask, uint32_t word_shift);
+    SingleSmallNumericSearchContext(std::unique_ptr<QueryTermSimple> qTerm, const AttributeVector& toBeSearched, const Word* word_data, Word value_mask, uint32_t value_shift_shift, uint32_t value_shift_mask, uint32_t word_shift, uint32_t docid_limit);
 
     int32_t find(DocId docId, int32_t elemId, int32_t & weight) const {
         if ( elemId != 0) return -1;
@@ -53,6 +54,7 @@ public:
 
     std::unique_ptr<queryeval::SearchIterator>
     createFilterIterator(fef::TermFieldMatchData* matchData, bool strict) override;
+    uint32_t get_committed_docid_limit() const noexcept override;
 };
 
 }

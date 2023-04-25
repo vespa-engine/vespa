@@ -164,7 +164,7 @@ SingleValueNumericAttribute<B>::getSearch(QueryTermSimple::UP qTerm,
 {
     (void) params;
     QueryTermSimple::RangeResult<T> res = qTerm->getRange<T>();
-    const T* data = &_data.acquire_elem_ref(0);
+    auto data = _data.make_read_view(this->getCommittedDocIdLimit());
     if (res.isEqual()) {
         return std::make_unique<attribute::SingleNumericSearchContext<T, attribute::NumericMatcher<T>>>(std::move(qTerm), *this, data);
     } else {

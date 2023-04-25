@@ -240,6 +240,22 @@ TEST_F("original lid range is used by read guard", Fixture)
     EXPECT_EQUAL(getUndefined<int>(), first_guard->getInt(DocId(10)));
 }
 
+TEST_F("Original target lid range is used by read guard", Fixture)
+{
+    reset_with_single_value_reference_mappings<IntegerAttribute, int32_t>(
+            f, BasicType::INT32,
+            {});
+    auto first_guard = f.get_imported_attr();
+    add_n_docs_with_undefined_values(*f.target_attr, 1);
+    auto typed_target_attr = f.template target_attr_as<IntegerAttribute>();
+    ASSERT_TRUE(typed_target_attr->update(11, 2345));
+    f.target_attr->commit();
+    f.map_reference(DocId(8), dummy_gid(11), DocId(11));
+    auto second_guard = f.get_imported_attr();
+    EXPECT_EQUAL(2345, second_guard->getInt(DocId(8)));
+    EXPECT_NOT_EQUAL(2345, first_guard->getInt(DocId(8)));
+}
+
 struct SingleStringAttrFixture : Fixture {
     SingleStringAttrFixture() : Fixture() {
         setup();

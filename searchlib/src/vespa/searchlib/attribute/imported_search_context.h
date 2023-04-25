@@ -39,6 +39,7 @@ class ImportedSearchContext : public ISearchContext {
     const IAttributeVector                         &_target_attribute;
     std::unique_ptr<ISearchContext>                 _target_search_context;
     TargetLids                                      _targetLids;
+    uint32_t                                        _target_docid_limit;
     PostingListMerger<int32_t>                      _merger;
     SearchContextParams                             _params;
     mutable std::atomic<bool>                       _zero_hits;
@@ -47,7 +48,9 @@ class ImportedSearchContext : public ISearchContext {
 
     uint32_t getTargetLid(uint32_t lid) const {
         // Check range to avoid reading memory beyond end of mapping array
-        return lid < _targetLids.size() ? _targetLids[lid].load_acquire() : 0u;
+        uint32_t target_lid = lid < _targetLids.size() ? _targetLids[lid].load_acquire() : 0u;
+        // Check target range
+        return target_lid < _target_docid_limit ? target_lid : 0u;
     }
 
     void makeMergedPostings(bool isFilter);
@@ -90,6 +93,7 @@ public:
     const ISearchContext &target_search_context() const noexcept {
         return *_target_search_context;
     }
+    uint32_t get_committed_docid_limit() const noexcept override;
 };
 
 }

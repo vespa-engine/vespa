@@ -33,4 +33,11 @@ MultiNumericSearchContext<T, M>::createFilterIterator(fef::TermFieldMatchData* m
         : std::make_unique<AttributeIteratorT<MultiNumericSearchContext<T, M>>>(*this, matchData);
 }
 
+template <typename T, typename M>
+uint32_t
+MultiNumericSearchContext<T, M>::get_committed_docid_limit() const noexcept
+{
+    return _mv_mapping_read_view.get_committed_docid_limit();
+}
+
 }

@@ -70,6 +70,11 @@ public:
     bool matches(DocId docId, int32_t &weight) const { return matches(*this, docId, weight); }
     bool matches(DocId doc) const { return find(doc, 0) >= 0; }
 
+    /*
+     * Committed docid limit on attribute vector when search context was
+     * created.
+     */
+    virtual uint32_t get_committed_docid_limit() const noexcept = 0;
 };
 
 }

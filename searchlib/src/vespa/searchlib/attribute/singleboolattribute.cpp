@@ -132,6 +132,7 @@ public:
     void fetchPostings(const queryeval::ExecuteInfo &execInfo) override;
     std::unique_ptr<queryeval::SearchIterator> createPostingIterator(fef::TermFieldMatchData *matchData, bool strict) override;
     unsigned int approximateHits() const override;
+    uint32_t get_committed_docid_limit() const noexcept override;
 };
 
 BitVectorSearchContext::BitVectorSearchContext(std::unique_ptr<QueryTermSimple> qTerm, const SingleBoolAttribute & attr)
@@ -175,6 +176,12 @@ BitVectorSearchContext::approximateHits() const {
             ? (_bv.size() - _bv.countTrueBits())
             : _bv.countTrueBits()
         : 0;
+}
+
+uint32_t
+BitVectorSearchContext::get_committed_docid_limit() const noexcept
+{
+    return _doc_id_limit;
 }
 
 }
