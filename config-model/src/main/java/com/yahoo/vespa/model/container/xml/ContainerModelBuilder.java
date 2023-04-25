@@ -1156,7 +1156,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                                      Zone zone,
                                      DeploymentSpec spec) {
         spec.athenzDomain()
-            .ifPresent(domain -> {
+            .ifPresentOrElse(domain -> {
                 AthenzService service = spec.instance(app.getApplicationId().instance())
                                             .flatMap(instanceSpec -> instanceSpec.athenzService(zone.environment(), zone.region()))
                                             .or(spec::athenzService)
@@ -1175,7 +1175,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                 container.setProp("identity.domain", domain.value());
                 container.setProp("identity.service", service.value());
             });
-        });
+        }, () -> cluster.addComponent(new SimpleComponent("com.yahoo.container.jdisc.AthenzIdentityProviderProvider")));
     }
 
     private HostName getLoadBalancerName(HostName loadbalancerName, List<ConfigServerSpec> configServerSpecs) {

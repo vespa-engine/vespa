@@ -89,6 +89,9 @@ public class AthenzIdentityProviderProvider implements Provider<AthenzIdentityPr
         public Path trustStorePath() {
             throw new UnsupportedOperationException(message);
         }
+
+        @Override
+        public void deconstruct() {}
     }
 
 }
