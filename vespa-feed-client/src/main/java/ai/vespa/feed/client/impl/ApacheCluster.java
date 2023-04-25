@@ -24,11 +24,9 @@ import javax.net.ssl.SSLContext;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.URI;
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -40,7 +38,6 @@ import java.util.zip.GZIPOutputStream;
 
 import static ai.vespa.feed.client.FeedClientBuilder.Compression.auto;
 import static ai.vespa.feed.client.FeedClientBuilder.Compression.gzip;
-import static java.util.Objects.requireNonNullElse;
 import static org.apache.hc.core5.http.ssl.TlsCiphers.excludeH2Blacklisted;
 import static org.apache.hc.core5.http.ssl.TlsCiphers.excludeWeak;
 
