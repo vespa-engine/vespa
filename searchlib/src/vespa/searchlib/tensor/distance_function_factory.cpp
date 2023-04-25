@@ -113,10 +113,10 @@ make_distance_function_factory(search::attribute::DistanceMetric variant,
         }
         return std::make_unique<PrenormalizedAngularDistanceFunctionFactory<float>>();
     }
-    /*
     if (variant == DistanceMetric::GeoDegrees) {
         return std::make_unique<GeoDistanceFunctionFactory>();
     }
+    /*
     if (variant == DistanceMetric::Hamming) {
         return std::make_unique<HammingDistanceFunctionFactory>();
     }
