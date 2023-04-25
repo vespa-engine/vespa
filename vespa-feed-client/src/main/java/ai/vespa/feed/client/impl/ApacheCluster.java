@@ -53,7 +53,7 @@ class ApacheCluster implements Cluster {
     private final List<BasicHeader> defaultHeaders = Arrays.asList(new BasicHeader(HttpHeaders.USER_AGENT, String.format("vespa-feed-client/%s", Vespa.VERSION)),
                                                                    new BasicHeader("Vespa-Client-Version", Vespa.VERSION));
     private final Header gzipEncodingHeader = new BasicHeader(HttpHeaders.CONTENT_ENCODING, "gzip");
-    private final RequestConfig.Builder requestConfig;
+    private final RequestConfig requestConfig;
     private final Compression compression;
     private int someNumber = 0;
 
@@ -90,7 +90,7 @@ class ApacheCluster implements Cluster {
                 request.setScheme(endpoint.url.getScheme());
                 request.setAuthority(new URIAuthority(endpoint.url.getHost(), portOf(endpoint.url)));
                 long timeoutMillis = wrapped.timeout() == null ? 190_000 : wrapped.timeout().toMillis() * 11 / 10 + 1_000;
-                request.setConfig(requestConfig.setResponseTimeout(Timeout.ofMilliseconds(timeoutMillis)).build());
+                request.setConfig(RequestConfig.copy(requestConfig).setResponseTimeout(Timeout.ofMilliseconds(timeoutMillis)).build());
                 defaultHeaders.forEach(request::setHeader);
                 wrapped.headers().forEach((name, value) -> request.setHeader(name, value.get()));
                 if (wrapped.body() != null) {
@@ -108,10 +108,11 @@ class ApacheCluster implements Cluster {
                                                                @Override public void failed(Exception ex) { vessel.completeExceptionally(ex); }
                                                                @Override public void cancelled() { vessel.cancel(false); }
                                                            });
-                Future<?> cancellation = timeoutExecutor.schedule(() -> {
-                    future.cancel(true);
-                    vessel.cancel(true);
-                    }, timeoutMillis + 10_000, TimeUnit.MILLISECONDS);
+                // We've seen some requests time out, even with a response timeout,
+                // so we schedule this to be absolutely sure we don't hang (for ever).
+                Future<?> cancellation = timeoutExecutor.schedule(() -> { future.cancel(true); vessel.cancel(true); },
+                                                                  timeoutMillis + 10_000,
+                                                                  TimeUnit.MILLISECONDS);
                 vessel.whenComplete((__, ___) -> cancellation.cancel(true));
             }
             catch (Throwable thrown) {
@@ -196,12 +197,12 @@ class ApacheCluster implements Cluster {
     }
 
     @SuppressWarnings("deprecation")
-    private static RequestConfig.Builder createRequestConfig(FeedClientBuilderImpl b) {
+    private static RequestConfig createRequestConfig(FeedClientBuilderImpl b) {
         RequestConfig.Builder builder = RequestConfig.custom()
                 .setConnectTimeout(Timeout.ofSeconds(10))
                 .setConnectionRequestTimeout(Timeout.DISABLED);
         if (b.proxy != null) builder.setProxy(new HttpHost(b.proxy.getScheme(), b.proxy.getHost(), b.proxy.getPort()));
-        return builder;
+        return builder.build();
     }
 
     private static class ApacheHttpResponse implements HttpResponse {
