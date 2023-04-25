@@ -1,4 +1,4 @@
-package ai.vespa.llm;
+package ai.vespa.llm.generation;
 
 import ai.vespa.modelintegration.evaluator.OnnxEvaluator;
 import ai.vespa.modelintegration.evaluator.OnnxEvaluatorOptions;

@@ -1,0 +1,29 @@
+{
+  "ai.vespa.llm.client.openai.OpenAiClient$Builder" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public"
+    ],
+    "methods" : [
+      "public void <init>(java.lang.String)",
+      "public ai.vespa.llm.client.openai.OpenAiClient$Builder model(java.lang.String)",
+      "public ai.vespa.llm.client.openai.OpenAiClient$Builder echo(boolean)",
+      "public ai.vespa.llm.client.openai.OpenAiClient build()"
+    ],
+    "fields" : [ ]
+  },
+  "ai.vespa.llm.client.openai.OpenAiClient" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
+      "ai.vespa.llm.LanguageModel"
+    ],
+    "attributes" : [
+      "public"
+    ],
+    "methods" : [
+      "public java.util.List complete(ai.vespa.llm.completion.Prompt)"
+    ],
+    "fields" : [ ]
+  }
+}
