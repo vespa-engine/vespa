@@ -4,8 +4,7 @@
 #include <vespa/storage/distributor/maintenance/maintenanceoperationgenerator.h>
 #include <sstream>
 
-namespace storage {
-namespace distributor {
+namespace storage::distributor {
 
 StatBucketListOperation::StatBucketListOperation(
         const BucketDatabase& bucketDb,
@@ -60,5 +59,4 @@ StatBucketListOperation::onStart(DistributorStripeMessageSender& sender)
     sender.sendReply(reply);
 }
 
-}
 }

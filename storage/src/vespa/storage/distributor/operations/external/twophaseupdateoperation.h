@@ -135,26 +135,28 @@ private:
     // Precondition: reply has not yet been sent.
     vespalib::string update_doc_id() const;
 
-    UpdateMetricSet& _updateMetric;
-    PersistenceOperationMetricSet& _putMetric;
-    PersistenceOperationMetricSet& _getMetric;
-    PersistenceOperationMetricSet& _metadata_get_metrics;
+    using ReplicaState = std::vector<std::pair<document::BucketId, uint16_t>>;
+
+    UpdateMetricSet&                    _updateMetric;
+    PersistenceOperationMetricSet&      _putMetric;
+    PersistenceOperationMetricSet&      _getMetric;
+    PersistenceOperationMetricSet&      _metadata_get_metrics;
     std::shared_ptr<api::UpdateCommand> _updateCmd;
-    std::shared_ptr<api::UpdateReply> _updateReply;
-    const DistributorNodeContext& _node_ctx;
-    DistributorStripeOperationContext& _op_ctx;
-    const DocumentSelectionParser& _parser;
-    DistributorBucketSpace &_bucketSpace;
-    SentMessageMap _sentMessageMap;
-    SendState _sendState;
-    Mode _mode;
-    mbus::Trace _trace;
-    document::BucketId _updateDocBucketId;
-    std::vector<std::pair<document::BucketId, uint16_t>> _replicas_at_get_send_time;
+    std::shared_ptr<api::UpdateReply>   _updateReply;
+    const DistributorNodeContext&       _node_ctx;
+    DistributorStripeOperationContext&  _op_ctx;
+    const DocumentSelectionParser&      _parser;
+    DistributorBucketSpace&             _bucketSpace;
+    SentMessageMap                      _sentMessageMap;
+    SendState                           _sendState;
+    Mode                                _mode;
+    mbus::Trace                         _trace;
+    document::BucketId                  _updateDocBucketId;
+    ReplicaState                        _replicas_at_get_send_time;
     std::optional<framework::MilliSecTimer> _single_get_latency_timer;
-    uint16_t _fast_path_repair_source_node;
-    bool _use_initial_cheap_metadata_fetch_phase;
-    bool _replySent;
+    uint16_t                            _fast_path_repair_source_node;
+    bool                                _use_initial_cheap_metadata_fetch_phase;
+    bool                                _replySent;
 };
 
 }

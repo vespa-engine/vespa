@@ -40,7 +40,7 @@ class DistributorStripeTestUtil : public DoneInitializeHandler,
                                   public StripeHostInfoNotifier {
 public:
     DistributorStripeTestUtil();
-    ~DistributorStripeTestUtil();
+    ~DistributorStripeTestUtil() override;
 
     /**
      * Sets up the storage link chain.
@@ -210,6 +210,18 @@ public:
 
     void simulate_set_pending_cluster_state(const vespalib::string& state_str);
     void clear_pending_cluster_state_bundle();
+
+    template <typename CmdType>
+    requires std::is_base_of_v<api::StorageCommand, CmdType>
+    [[nodiscard]] std::shared_ptr<CmdType> sent_command(size_t idx) {
+        assert(idx < _sender.commands().size());
+        auto cmd = std::dynamic_pointer_cast<CmdType>(_sender.command(idx));
+        assert(cmd != nullptr);
+        return cmd;
+    }
+
+    void config_enable_condition_probing(bool enable);
+    void tag_content_node_supports_condition_probing(uint16_t index, bool supported);
 
 protected:
     vdstestlib::DirConfig _config;

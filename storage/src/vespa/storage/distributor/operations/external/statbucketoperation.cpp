@@ -6,7 +6,7 @@
 #include <vespa/storage/distributor/distributor_bucket_space.h>
 
 #include <vespa/log/log.h>
-LOG_SETUP(".distributor.callback.statbucket");
+LOG_SETUP(".distributor.operations.external.stat_bucket");
 
 namespace storage::distributor {
 

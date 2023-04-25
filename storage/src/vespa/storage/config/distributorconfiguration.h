@@ -287,6 +287,12 @@ public:
     [[nodiscard]] bool enable_two_phase_garbage_collection() const noexcept {
         return _enable_two_phase_garbage_collection;
     }
+    void set_enable_condition_probing(bool enable) noexcept {
+        _enable_condition_probing = enable;
+    }
+    [[nodiscard]] bool enable_condition_probing() const noexcept {
+        return _enable_condition_probing;
+    }
 
     uint32_t num_distributor_stripes() const noexcept { return _num_distributor_stripes; }
 
@@ -347,6 +353,7 @@ private:
     bool _use_unordered_merge_chaining;
     bool _inhibit_default_merges_when_global_merges_pending;
     bool _enable_two_phase_garbage_collection;
+    bool _enable_condition_probing;
 
     DistrConfig::MinimumReplicaCountingMode _minimumReplicaCountingMode;
 

@@ -15,7 +15,7 @@
 #include <optional>
 
 #include <vespa/log/log.h>
-LOG_SETUP(".visitoroperation");
+LOG_SETUP(".distributor.operations.external.visitor");
 
 namespace storage::distributor {
 

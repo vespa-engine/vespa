@@ -24,8 +24,8 @@ class GetOperation  : public Operation
 {
 public:
     GetOperation(const DistributorNodeContext& node_ctx,
-                 const DistributorBucketSpace &bucketSpace,
-                 const std::shared_ptr<BucketDatabase::ReadGuard> & read_guard,
+                 const DistributorBucketSpace& bucketSpace,
+                 const std::shared_ptr<BucketDatabase::ReadGuard>& read_guard,
                  std::shared_ptr<api::GetCommand> msg,
                  PersistenceOperationMetricSet& metric,
                  api::InternalReadConsistency desired_read_consistency = api::InternalReadConsistency::Strong);

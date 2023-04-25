@@ -12,7 +12,7 @@
 #include <cassert>
 
 #include <vespa/log/log.h>
-LOG_SETUP(".distributor.callback.doc.get");
+LOG_SETUP(".distributor.operations.external.get");
 
 using document::BucketSpace;
 
