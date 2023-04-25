@@ -55,8 +55,7 @@ class SimpleBoundDistanceFunction : public BoundDistanceFunction {
 public:
     SimpleBoundDistanceFunction(const vespalib::eval::TypedCells& lhs,
                                 const DistanceFunction &df)
-        : BoundDistanceFunction(lhs.type),
-          _lhs(lhs),
+        : _lhs(lhs),
           _df(df)
         {}
 

@@ -57,8 +57,7 @@ private:
     static GeoDegreesDistance _g_d_helper;
 public:
     BoundGeoDistance(const vespalib::eval::TypedCells& lhs)
-        : BoundDistanceFunction(vespalib::eval::CellType::DOUBLE),
-          _tmpSpace(lhs.size),
+        : _tmpSpace(lhs.size),
           _lh_vector(_tmpSpace.storeLhs(lhs))
     {}
     double calc(const vespalib::eval::TypedCells& rhs) const override {
