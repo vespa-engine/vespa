@@ -44,7 +44,7 @@ import static org.mockito.Mockito.when;
  * @author mortent
  * @author bjorncs
  */
-public class AthenzIdentityProviderImplTest {
+public class LegacyAthenzIdentityProviderImplTest {
 
     @TempDir
     public File tempDir;
@@ -91,7 +91,7 @@ public class AthenzIdentityProviderImplTest {
             when(credentialService.registerInstance())
                     .thenThrow(new RuntimeException("athenz unavailable"));
 
-            new AthenzIdentityProviderImpl(IDENTITY_CONFIG, mock(Metric.class), trustStoreFile, credentialService, mock(ScheduledExecutorService.class), new ManualClock(Instant.EPOCH));
+            new LegacyAthenzIdentityProviderImpl(IDENTITY_CONFIG, mock(Metric.class), trustStoreFile, credentialService, mock(ScheduledExecutorService.class), new ManualClock(Instant.EPOCH));
         });
     }
 
@@ -113,29 +113,29 @@ public class AthenzIdentityProviderImplTest {
                 .thenThrow(new RuntimeException("#2"))
                 .thenReturn(new AthenzCredentials(certificate, keyPair, null));
 
-        AthenzIdentityProviderImpl identityProvider =
-                new AthenzIdentityProviderImpl(IDENTITY_CONFIG, metric, trustStoreFile, athenzCredentialsService, mock(ScheduledExecutorService.class), clock);
+        LegacyAthenzIdentityProviderImpl identityProvider =
+                new LegacyAthenzIdentityProviderImpl(IDENTITY_CONFIG, metric, trustStoreFile, athenzCredentialsService, mock(ScheduledExecutorService.class), clock);
 
         identityProvider.reportMetrics();
-        verify(metric).set(eq(AthenzIdentityProviderImpl.CERTIFICATE_EXPIRY_METRIC_NAME), eq(certificateValidity.getSeconds()), any());
+        verify(metric).set(eq(LegacyAthenzIdentityProviderImpl.CERTIFICATE_EXPIRY_METRIC_NAME), eq(certificateValidity.getSeconds()), any());
 
         // Advance 1 day, refresh fails, cert is 1 day old
         clock.advance(Duration.ofDays(1));
         identityProvider.refreshCertificate();
         identityProvider.reportMetrics();
-        verify(metric).set(eq(AthenzIdentityProviderImpl.CERTIFICATE_EXPIRY_METRIC_NAME), eq(certificateValidity.minus(Duration.ofDays(1)).getSeconds()), any());
+        verify(metric).set(eq(LegacyAthenzIdentityProviderImpl.CERTIFICATE_EXPIRY_METRIC_NAME), eq(certificateValidity.minus(Duration.ofDays(1)).getSeconds()), any());
 
         // Advance 1 more day, refresh fails, cert is 2 days old
         clock.advance(Duration.ofDays(1));
         identityProvider.refreshCertificate();
         identityProvider.reportMetrics();
-        verify(metric).set(eq(AthenzIdentityProviderImpl.CERTIFICATE_EXPIRY_METRIC_NAME), eq(certificateValidity.minus(Duration.ofDays(2)).getSeconds()), any());
+        verify(metric).set(eq(LegacyAthenzIdentityProviderImpl.CERTIFICATE_EXPIRY_METRIC_NAME), eq(certificateValidity.minus(Duration.ofDays(2)).getSeconds()), any());
 
         // Advance 1 more day, refresh succeds, cert is new
         clock.advance(Duration.ofDays(1));
         identityProvider.refreshCertificate();
         identityProvider.reportMetrics();
-        verify(metric).set(eq(AthenzIdentityProviderImpl.CERTIFICATE_EXPIRY_METRIC_NAME), eq(certificateValidity.getSeconds()), any());
+        verify(metric).set(eq(LegacyAthenzIdentityProviderImpl.CERTIFICATE_EXPIRY_METRIC_NAME), eq(certificateValidity.getSeconds()), any());
 
     }
 

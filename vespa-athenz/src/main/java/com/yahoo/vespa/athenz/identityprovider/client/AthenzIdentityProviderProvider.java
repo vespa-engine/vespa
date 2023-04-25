@@ -21,9 +21,9 @@ public class AthenzIdentityProviderProvider implements Provider<AthenzIdentityPr
     @Inject
     public AthenzIdentityProviderProvider(IdentityConfig config, Metric metric) {
         if (Files.exists(NODE_ADMIN_MANAGED_IDENTITY_DOCUMENT))
-            athenzIdentityProvider = new AthenzIdentityProviderImplV2(config, metric);
-        else
             athenzIdentityProvider = new AthenzIdentityProviderImpl(config, metric);
+        else
+            athenzIdentityProvider = new LegacyAthenzIdentityProviderImpl(config, metric);
     }
 
     @Override
