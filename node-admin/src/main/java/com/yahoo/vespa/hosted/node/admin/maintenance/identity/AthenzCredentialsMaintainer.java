@@ -77,6 +77,7 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
     private final ServiceIdentityProvider hostIdentityProvider;
     private final IdentityDocumentClient identityDocumentClient;
     private final BooleanFlag tenantServiceIdentityFlag;
+    private final BooleanFlag useNewIdentityDocumentLayout;
 
     // Used as an optimization to ensure ZTS is not DDoS'ed on continuously failing refresh attempts
     private final Map<ContainerName, Instant> lastRefreshAttempt = new ConcurrentHashMap<>();
@@ -98,6 +99,7 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
                 new AthenzIdentityVerifier(Set.of(configServerInfo.getConfigServerIdentity())));
         this.clock = clock;
         this.tenantServiceIdentityFlag = Flags.NODE_ADMIN_TENANT_SERVICE_REGISTRY.bindTo(flagSource);
+        this.useNewIdentityDocumentLayout = Flags.NEW_IDDOC_LAYOUT.bindTo(flagSource);
     }
 
     public boolean converge(NodeAgentContext context) {
@@ -131,7 +133,7 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
             Instant now = clock.instant();
             Instant expiry = certificate.getNotAfter().toInstant();
             var doc = EntityBindingsMapper.readSignedIdentityDocumentFromFile(identityDocumentFile);
-            if (doc.outdated()) {
+            if (refreshIdentityDocument(doc, context)) {
                 context.log(logger, "Identity document is outdated (version=%d)", doc.documentVersion());
                 registerIdentity(context, privateKeyFile, certificateFile, identityDocumentFile, identityType, athenzIdentity);
                 return true;
@@ -160,6 +162,11 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
+    }
+
+    private boolean refreshIdentityDocument(SignedIdentityDocument signedIdentityDocument, NodeAgentContext context) {
+        int expectedVersion = documentVersion(context);
+        return signedIdentityDocument.outdated() || signedIdentityDocument.documentVersion() != expectedVersion;
     }
 
     public void clearCredentials(NodeAgentContext context) {
@@ -293,8 +300,8 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
 
     private SignedIdentityDocument signedIdentityDocument(NodeAgentContext context, IdentityType identityType) {
         return switch (identityType) {
-            case NODE -> identityDocumentClient.getNodeIdentityDocument(context.hostname().value());
-            case TENANT -> identityDocumentClient.getTenantIdentityDocument(context.hostname().value());
+            case NODE -> identityDocumentClient.getNodeIdentityDocument(context.hostname().value(), documentVersion(context));
+            case TENANT -> identityDocumentClient.getTenantIdentityDocument(context.hostname().value(), documentVersion(context));
         };
     }
 
@@ -309,7 +316,7 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
         if (Files.exists(identityDocumentFile)) {
             return EntityBindingsMapper.readSignedIdentityDocumentFromFile(identityDocumentFile).identityDocument().serviceIdentity();
         } else {
-            return identityDocumentClient.getTenantIdentityDocument(context.hostname().value()).identityDocument().serviceIdentity();
+            return identityDocumentClient.getTenantIdentityDocument(context.hostname().value(), documentVersion(context)).identityDocument().serviceIdentity();
         }
     }
 
@@ -317,6 +324,17 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
         return tenantServiceIdentityFlag
                 .with(FetchVector.Dimension.HOSTNAME, context.hostname().value())
                 .value();
+    }
+
+    /*
+    Get the document version to ask for
+     */
+    private int documentVersion(NodeAgentContext context) {
+        return useNewIdentityDocumentLayout
+                .with(FetchVector.Dimension.HOSTNAME, context.hostname().value())
+                .value()
+                ? SignedIdentityDocument.DEFAULT_DOCUMENT_VERSION
+                : SignedIdentityDocument.LEGACY_DEFAULT_DOCUMENT_VERSION;
     }
 
     enum IdentityType {
