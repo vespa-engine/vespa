@@ -16,7 +16,9 @@ public:
 void
 expect_successful_init(uint32_t exp_threads)
 {
-    InitializeThreadsCalculator i("tmp", 9);
+    constexpr uint32_t cfg_threads = 9;
+    HwInfo hw_info(HwInfo::Disk(1,false, false), HwInfo::Memory(1), HwInfo::Cpu(cfg_threads));
+    InitializeThreadsCalculator i(hw_info, "tmp", cfg_threads);
     EXPECT_EQ(exp_threads, i.num_threads());
     EXPECT_TRUE(i.threads().get() != nullptr);
     EXPECT_EQ(exp_threads, dynamic_cast<const ThreadStackExecutor&>(*i.threads()).getNumThreads());
@@ -27,7 +29,8 @@ expect_successful_init(uint32_t exp_threads)
 void
 expect_aborted_init(uint32_t exp_threads, uint32_t cfg_threads = 9)
 {
-    InitializeThreadsCalculator i("tmp", cfg_threads);
+    HwInfo hw_info(HwInfo::Disk(1,false, false), HwInfo::Memory(1), HwInfo::Cpu(cfg_threads));
+    InitializeThreadsCalculator i(hw_info, "tmp", cfg_threads);
     EXPECT_EQ(exp_threads, i.num_threads());
     EXPECT_TRUE(i.threads().get() != nullptr);
     EXPECT_EQ(exp_threads, dynamic_cast<const ThreadStackExecutor&>(*i.threads()).getNumThreads());
@@ -53,12 +56,30 @@ TEST_F(InitializeThreadsCalculatorTest, initialize_threads_cut_in_half_when_init
 TEST_F(InitializeThreadsCalculatorTest, zero_initialize_threads_is_special)
 {
     {
-        InitializeThreadsCalculator i("tmp", 0);
+        HwInfo hw_info(HwInfo::Disk(1,false, false), HwInfo::Memory(1), HwInfo::Cpu(10));
+        InitializeThreadsCalculator i(hw_info, "tmp", 0);
         EXPECT_EQ(0, i.num_threads());
         EXPECT_TRUE(i.threads().get() == nullptr);
     }
     expect_aborted_init(1, 0);
     expect_aborted_init(1, 0);
+}
+
+void
+expect_lower(uint32_t cores, uint32_t configured) {
+    HwInfo hw_info(HwInfo::Disk(1,false, false), HwInfo::Memory(1), HwInfo::Cpu(cores));
+    InitializeThreadsCalculator i(hw_info, "tmp", configured);
+    EXPECT_EQ(std::min(cores, configured), i.num_threads());
+    i.init_done();
+}
+
+TEST_F(InitializeThreadsCalculatorTest, lower_of_wanted_and_cores)
+{
+    expect_lower(1, 7);
+    expect_lower(6, 7);
+    expect_lower(7, 7);
+    expect_lower(7, 6);
+    expect_lower(7, 1);
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()
