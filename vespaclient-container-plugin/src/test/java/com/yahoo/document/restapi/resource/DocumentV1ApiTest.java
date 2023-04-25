@@ -89,6 +89,7 @@ import static com.yahoo.jdisc.http.HttpRequest.Method.POST;
 import static com.yahoo.jdisc.http.HttpRequest.Method.PUT;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -221,7 +222,7 @@ public class DocumentV1ApiTest {
             assertEquals(100, ((StaticThrottlePolicy) parameters.getThrottlePolicy()).getMaxPendingCount());
             assertEquals("[id]", parameters.getFieldSet());
             assertEquals("(all the things)", parameters.getDocumentSelection());
-            assertEquals(6000, parameters.getSessionTimeoutMs());
+            assertTrue(6000 <= parameters.getSessionTimeoutMs()); // Static clock in handler < connected time for request, test artefact.
             assertEquals(9, parameters.getTraceLevel());
             assertEquals(1_000_000, parameters.getFromTimestamp());
             assertEquals(2_000_000, parameters.getToTimestamp());
@@ -283,7 +284,7 @@ public class DocumentV1ApiTest {
             assertEquals(1, ((StaticThrottlePolicy) parameters.getThrottlePolicy()).getMaxPendingCount());
             assertEquals("[id]", parameters.getFieldSet());
             assertEquals("(all the things)", parameters.getDocumentSelection());
-            assertEquals(6000, parameters.getTimeoutMs());
+            assertTrue(6000 <= parameters.getTimeoutMs()); // Static clock in handler < connected time for request, test artefact.
             assertEquals(4, parameters.getSlices());
             assertEquals(1, parameters.getSliceId());
             assertEquals(0, parameters.getFromTimestamp()); // not set; 0 is default
@@ -812,7 +813,7 @@ public class DocumentV1ApiTest {
 
         // TIMEOUT is a 504
         access.session.expect((id, parameters) -> {
-            assertEquals(clock.instant().plusSeconds(1000), parameters.deadline().get());
+            assertFalse(clock.instant().plusSeconds(1000).isAfter(parameters.deadline().get())); // Static clock in handler vs real clock in Request.
             parameters.responseHandler().get().handleResponse(new Response(0, "timeout", Response.Outcome.TIMEOUT));
             return new Result();
         });
