@@ -95,7 +95,7 @@ public final class AthenzIdentityProviderImpl extends AbstractComponent implemen
 
     @Inject
     public AthenzIdentityProviderImpl(IdentityConfig config, Metric metric) {
-        this(config, metric, CLIENT_TRUST_STORE, new ScheduledThreadPoolExecutor(1), Clock.systemUTC());
+        this(config, metric, CLIENT_TRUST_STORE, new ScheduledThreadPoolExecutor(1), Clock.systemUTC(), createAutoReloadingX509KeyManager(config));
     }
 
     // Test only
@@ -103,7 +103,8 @@ public final class AthenzIdentityProviderImpl extends AbstractComponent implemen
                                Metric metric,
                                Path trustStore,
                                ScheduledExecutorService scheduler,
-                               Clock clock) {
+                               Clock clock,
+                               AutoReloadingX509KeyManager autoReloadingX509KeyManager) {
         this.metric = metric;
         this.trustStore = trustStore;
         this.scheduler = scheduler;
@@ -117,7 +118,7 @@ public final class AthenzIdentityProviderImpl extends AbstractComponent implemen
         this.domainSpecificAccessTokenCache = createCache(ROLE_TOKEN_EXPIRY, this::createAccessToken);
         this.roleSpecificAccessTokenCache = createCache(ROLE_TOKEN_EXPIRY, this::createAccessToken);
         this.csrGenerator = new CsrGenerator(config.athenzDnsSuffix(), config.configserverIdentityName());
-        this.autoReloadingX509KeyManager = AutoReloadingX509KeyManager.fromPemFiles(privateKeyPath(),certificatePath());
+        this.autoReloadingX509KeyManager = autoReloadingX509KeyManager;
         this.identitySslContext = createIdentitySslContext(autoReloadingX509KeyManager, trustStore);
         this.scheduler.scheduleAtFixedRate(this::reportMetrics, 0, 5, TimeUnit.MINUTES);
     }
@@ -318,6 +319,11 @@ public final class AthenzIdentityProviderImpl extends AbstractComponent implemen
 
     private DefaultZtsClient createZtsClient() {
         return new DefaultZtsClient.Builder(ztsEndpoint).withSslContext(getIdentitySslContext()).build();
+    }
+
+    private static AutoReloadingX509KeyManager createAutoReloadingX509KeyManager(IdentityConfig config) {
+        var tenantIdentity = new AthenzService(config.domain(), config.service());
+        return AutoReloadingX509KeyManager.fromPemFiles(SiaUtils.getPrivateKeyFile(tenantIdentity), SiaUtils.getCertificateFile(tenantIdentity));
     }
 
     @Override
