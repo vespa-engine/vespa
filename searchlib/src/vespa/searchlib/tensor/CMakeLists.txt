@@ -30,6 +30,7 @@ vespa_add_library(searchlib_tensor OBJECT
     large_subspaces_buffer_type.cpp
     nearest_neighbor_index.cpp
     nearest_neighbor_index_saver.cpp
+    prenormalized_angular_distance.cpp
     serialized_fast_value_attribute.cpp
     serialized_tensor_ref.cpp
     small_subspaces_buffer_type.cpp

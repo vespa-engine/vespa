@@ -60,8 +60,8 @@ public:
         auto rhs_vector = rhs.typify<FloatType>();
         size_t sz = lhs_vector.size();
         assert(sz == rhs_vector.size());
-        auto a = &lhs_vector[0];
-        auto b = &rhs_vector[0];
+        auto a = lhs_vector.data();
+        auto b = rhs_vector.data();
         double a_norm_sq = _computer.dotProduct(a, a, sz);
         double b_norm_sq = _computer.dotProduct(b, b, sz);
         double squared_norms = a_norm_sq * b_norm_sq;

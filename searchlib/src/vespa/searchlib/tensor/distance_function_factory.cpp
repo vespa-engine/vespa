@@ -107,6 +107,20 @@ make_distance_function_factory(search::attribute::DistanceMetric variant,
         default:               return std::make_unique<EuclideanDistanceFunctionFactory<float>>();
         }
     }
+    if (variant == DistanceMetric::PrenormalizedAngular) {
+        if (cell_type == CellType::DOUBLE) {
+            return std::make_unique<PrenormalizedAngularDistanceFunctionFactory<double>>();
+        }
+        return std::make_unique<PrenormalizedAngularDistanceFunctionFactory<float>>();
+    }
+    /*
+    if (variant == DistanceMetric::GeoDegrees) {
+        return std::make_unique<GeoDistanceFunctionFactory>();
+    }
+    if (variant == DistanceMetric::Hamming) {
+        return std::make_unique<HammingDistanceFunctionFactory>();
+    }
+    */
     auto df = make_distance_function(variant, cell_type);
     return std::make_unique<SimpleDistanceFunctionFactory>(std::move(df));
 }

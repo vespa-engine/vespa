@@ -71,8 +71,8 @@ public:
         size_t sz = _lhs_vector.size();
         vespalib::ConstArrayRef<FloatType> rhs_vector = _tmpSpace.convertRhs(rhs);
         assert(sz == rhs_vector.size());
-        auto a = &_lhs_vector[0];
-        auto b = &rhs_vector[0];
+        auto a = _lhs_vector.data();
+        auto b = rhs_vector.data();
         return _computer.squaredEuclideanDistance(cast(a), cast(b), sz);
     }
     double convert_threshold(double threshold) const override {
