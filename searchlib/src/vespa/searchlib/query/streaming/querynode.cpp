@@ -200,15 +200,17 @@ QueryNode::build_nearest_neighbor_query_node(const QueryNodeResultFactory& facto
 {
     vespalib::stringref query_tensor_name = query_rep.getTerm();
     vespalib::stringref field_name = query_rep.getIndexName();
-    int32_t id = query_rep.getUniqueId();
-    search::query::Weight weight = query_rep.GetWeight();
+    int32_t unique_id = query_rep.getUniqueId();
+    auto weight = query_rep.GetWeight();
+    uint32_t target_hits = query_rep.getTargetHits();
     double distance_threshold = query_rep.getDistanceThreshold();
     return std::make_unique<NearestNeighborQueryNode>(factory.create(),
                                                       query_tensor_name,
                                                       field_name,
-                                                      id,
-                                                      weight,
-                                                      distance_threshold);
+                                                      target_hits,
+                                                      distance_threshold,
+                                                      unique_id,
+                                                      weight);
 }
 
 }

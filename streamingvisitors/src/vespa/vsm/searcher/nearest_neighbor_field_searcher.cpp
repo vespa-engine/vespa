@@ -48,8 +48,17 @@ NearestNeighborFieldSearcher::NodeAndCalc::NodeAndCalc(search::streaming::Neares
                                                        std::unique_ptr<search::tensor::DistanceCalculator> calc_in)
     : node(node_in),
       calc(std::move(calc_in)),
-      distance_threshold(calc->function().convert_threshold(node->get_distance_threshold()))
+      heap(node->get_target_hits())
 {
+    node->set_raw_score_calc(this);
+    heap.set_distance_threshold(calc->function().convert_threshold(node->get_distance_threshold()));
+}
+
+double
+NearestNeighborFieldSearcher::NodeAndCalc::to_raw_score(double distance)
+{
+    heap.used(distance);
+    return calc->function().to_rawscore(distance);
 }
 
 NearestNeighborFieldSearcher::NearestNeighborFieldSearcher(FieldIdT fid,
@@ -100,7 +109,7 @@ NearestNeighborFieldSearcher::prepare(search::streaming::QueryTermList& qtl,
         }
         try {
             auto calc = DistanceCalculator::make_with_validation(*_attr, *tensor_value);
-            _calcs.emplace_back(nn_term, std::move(calc));
+            _calcs.push_back(std::make_unique<NodeAndCalc>(nn_term, std::move(calc)));
         } catch (const vespalib::IllegalArgumentException& ex) {
             vespalib::Issue::report("Could not create DistanceCalculator for NearestNeighborQueryNode(%s, %s): %s",
                                     nn_term->index().c_str(), nn_term->get_query_tensor_name().c_str(), ex.what());
@@ -116,10 +125,10 @@ NearestNeighborFieldSearcher::onValue(const document::FieldValue& fv)
         if (tfv && tfv->getAsTensorPtr()) {
             _attr->add(*tfv->getAsTensorPtr(), 1);
             for (auto& elem : _calcs) {
-                double distance = elem.calc->calc_with_limit(scratch_docid, elem.distance_threshold);
-                if (distance <= elem.distance_threshold) {
-                    double score = elem.calc->function().to_rawscore(distance);
-                    elem.node->set_raw_score(score);
+                double distance_limit = elem->heap.distanceLimit();
+                double distance = elem->calc->calc_with_limit(scratch_docid, distance_limit);
+                if (distance <= distance_limit) {
+                    elem->node->set_distance(distance);
                 }
             }
         }
