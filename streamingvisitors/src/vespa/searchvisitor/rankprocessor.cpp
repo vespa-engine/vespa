@@ -241,7 +241,7 @@ RankProcessor::unpack_match_data(uint32_t docid, MatchData &matchData, QueryWrap
     for (QueryWrapper::Term & term: query.getTermList()) {
         auto nn_node = term.getTerm()->as_nearest_neighbor_query_node();
         if (nn_node != nullptr) {
-            auto& raw_score = nn_node->get_raw_score();
+            auto raw_score = nn_node->get_raw_score();
             if (raw_score.has_value()) {
                 auto& qtd = static_cast<QueryTermData &>(term.getTerm()->getQueryItem());
                 auto& td = qtd.getTermData();

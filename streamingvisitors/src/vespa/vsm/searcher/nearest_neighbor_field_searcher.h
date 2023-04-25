@@ -5,6 +5,8 @@
 #include "fieldsearcher.h"
 #include <vespa/eval/eval/value_type.h>
 #include <vespa/searchcommon/attribute/distance_metric.h>
+#include <vespa/searchlib/query/streaming/nearest_neighbor_query_node.h>
+#include <vespa/searchlib/queryeval/nearest_neighbor_distance_heap.h>
 #include <vespa/searchlib/tensor/distance_calculator.h>
 #include <vespa/searchlib/tensor/tensor_ext_attribute.h>
 
@@ -13,8 +15,6 @@ namespace search::fef { class IQueryEnvironment; }
 namespace search::tensor {
 class TensorExtAttribute;
 }
-
-namespace search::streaming { class NearestNeighborQueryNode; }
 
 namespace vsm {
 
@@ -26,16 +26,19 @@ namespace vsm {
  */
 class NearestNeighborFieldSearcher : public FieldSearcher {
 private:
-    struct NodeAndCalc {
+    class NodeAndCalc : search::streaming::NearestNeighborQueryNode::RawScoreCalculator {
+    public:
         search::streaming::NearestNeighborQueryNode* node;
         std::unique_ptr<search::tensor::DistanceCalculator> calc;
-        double distance_threshold;
+        search::queryeval::NearestNeighborDistanceHeap heap;
         NodeAndCalc(search::streaming::NearestNeighborQueryNode* node_in,
                     std::unique_ptr<search::tensor::DistanceCalculator> calc_in);
+
+        double to_raw_score(double distance) override;
     };
     search::attribute::DistanceMetric _metric;
     std::unique_ptr<search::tensor::TensorExtAttribute> _attr;
-    std::vector<NodeAndCalc> _calcs;
+    std::vector<std::unique_ptr<NodeAndCalc>> _calcs;
 
 public:
     NearestNeighborFieldSearcher(FieldIdT fid,

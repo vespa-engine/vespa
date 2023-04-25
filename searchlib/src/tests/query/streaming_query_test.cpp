@@ -814,7 +814,7 @@ TEST("test_nearest_neighbor_query_node")
     constexpr uint32_t target_num_hits = 100;
     constexpr bool allow_approximate = false;
     constexpr uint32_t explore_additional_hits = 800;
-    constexpr double raw_score = 0.5;
+    constexpr double distance = 0.5;
     builder.add_nearest_neighbor_term("qtensor", "field", id, Weight(weight), target_num_hits, allow_approximate, explore_additional_hits, distance_threshold);
     auto build_node = builder.build();
     auto stack_dump = StackDumpCreator::create(*build_node);
@@ -830,14 +830,14 @@ TEST("test_nearest_neighbor_query_node")
     EXPECT_EQUAL(id, static_cast<int32_t>(node->uniqueId()));
     EXPECT_EQUAL(weight, node->weight().percent());
     EXPECT_EQUAL(distance_threshold, node->get_distance_threshold());
-    EXPECT_FALSE(node->get_raw_score().has_value());
+    EXPECT_FALSE(node->get_distance().has_value());
     EXPECT_FALSE(node->evaluate());
-    node->set_raw_score(raw_score);
-    EXPECT_TRUE(node->get_raw_score().has_value());
-    EXPECT_EQUAL(raw_score, node->get_raw_score().value());
+    node->set_distance(distance);
+    EXPECT_TRUE(node->get_distance().has_value());
+    EXPECT_EQUAL(distance, node->get_distance().value());
     EXPECT_TRUE(node->evaluate());
     node->reset();
-    EXPECT_FALSE(node->get_raw_score().has_value());
+    EXPECT_FALSE(node->get_distance().has_value());
     EXPECT_FALSE(node->evaluate());
 }
 
