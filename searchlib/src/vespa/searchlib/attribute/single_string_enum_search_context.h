@@ -14,7 +14,7 @@ namespace search::attribute {
 class SingleStringEnumSearchContext : public SingleEnumSearchContext<const char*, StringSearchContext>
 {
 public:
-    SingleStringEnumSearchContext(std::unique_ptr<QueryTermSimple> qTerm, bool cased, const AttributeVector& toBeSearched, const vespalib::datastore::AtomicEntryRef* enum_indices, const EnumStoreT<const char*>& enum_store);
+    SingleStringEnumSearchContext(std::unique_ptr<QueryTermSimple> qTerm, bool cased, const AttributeVector& toBeSearched, EnumIndices enum_indices, const EnumStoreT<const char*>& enum_store);
     SingleStringEnumSearchContext(SingleStringEnumSearchContext&&) noexcept;
     ~SingleStringEnumSearchContext() override;
 };

@@ -3,6 +3,7 @@
 #pragma once
 
 #include "numeric_search_context.h"
+#include <vespa/vespalib/util/arrayref.h>
 #include <vespa/vespalib/util/atomic.h>
 
 namespace search::attribute {
@@ -16,7 +17,7 @@ class SingleNumericSearchContext final : public NumericSearchContext<M>
 {
 private:
     using DocId = ISearchContext::DocId;
-    const T* _data;
+    vespalib::ConstArrayRef<T> _data;
 
     int32_t onFind(DocId docId, int32_t elemId, int32_t& weight) const override {
         return find(docId, elemId, weight);
@@ -27,7 +28,7 @@ private:
     }
 
 public:
-    SingleNumericSearchContext(std::unique_ptr<QueryTermSimple> qTerm, const AttributeVector& toBeSearched, const T* data);
+    SingleNumericSearchContext(std::unique_ptr<QueryTermSimple> qTerm, const AttributeVector& toBeSearched, vespalib::ConstArrayRef<T> data);
     int32_t find(DocId docId, int32_t elemId, int32_t& weight) const {
         if ( elemId != 0) return -1;
         const T v = vespalib::atomic::load_ref_relaxed(_data[docId]);
@@ -43,6 +44,7 @@ public:
 
     std::unique_ptr<queryeval::SearchIterator>
     createFilterIterator(fef::TermFieldMatchData* matchData, bool strict) override;
+    uint32_t get_committed_docid_limit() const noexcept override;
 };
 
 }

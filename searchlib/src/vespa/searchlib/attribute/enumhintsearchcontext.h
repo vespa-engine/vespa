@@ -41,6 +41,7 @@ protected:
 
     void fetchPostings(const queryeval::ExecuteInfo & execInfo) override;
     unsigned int approximateHits() const override;
+    uint32_t get_committed_docid_limit() const noexcept { return _docIdLimit; }
 };
 
 }

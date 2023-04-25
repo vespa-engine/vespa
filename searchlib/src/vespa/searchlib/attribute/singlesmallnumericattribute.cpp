@@ -170,7 +170,8 @@ std::unique_ptr<attribute::SearchContext>
 SingleValueSmallNumericAttribute::getSearch(std::unique_ptr<QueryTermSimple> qTerm,
                                             const attribute::SearchContextParams &) const
 {
-    return std::make_unique<attribute::SingleSmallNumericSearchContext>(std::move(qTerm), *this, &_wordData.acquire_elem_ref(0), _valueMask, _valueShiftShift, _valueShiftMask, _wordShift);
+    auto docid_limit = getCommittedDocIdLimit();
+    return std::make_unique<attribute::SingleSmallNumericSearchContext>(std::move(qTerm), *this, &_wordData.acquire_elem_ref(0), _valueMask, _valueShiftShift, _valueShiftMask, _wordShift, docid_limit);
 }
 
 void

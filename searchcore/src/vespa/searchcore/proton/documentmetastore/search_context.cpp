@@ -137,8 +137,15 @@ SearchContext::getStore() const
 
 SearchContext::SearchContext(QueryTermSimple::UP qTerm, const DocumentMetaStore &toBeSearched)
     : search::attribute::SearchContext(toBeSearched),
-      _isWord(qTerm->isWord())
+      _isWord(qTerm->isWord()),
+      _docid_limit(toBeSearched.getCommittedDocIdLimit())
 {
+}
+
+uint32_t
+SearchContext::get_committed_docid_limit() const noexcept
+{
+    return _docid_limit;
 }
 
 }

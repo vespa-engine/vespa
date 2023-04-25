@@ -18,6 +18,7 @@ private:
 
     bool _isWord;
     document::GlobalId _gid;
+    uint32_t _docid_limit;
 
     unsigned int approximateHits() const override;
     int32_t onFind(DocId docId, int32_t elemId, int32_t &weight) const override;
@@ -30,6 +31,7 @@ private:
 
 public:
     SearchContext(std::unique_ptr<search::QueryTermSimple> qTerm, const DocumentMetaStore &toBeSearched);
+    uint32_t get_committed_docid_limit() const noexcept override;
 };
 
 }

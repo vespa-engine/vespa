@@ -16,7 +16,7 @@ class SingleStringEnumHintSearchContext : public SingleStringEnumSearchContext,
                                           public EnumHintSearchContext
 {
 public:
-    SingleStringEnumHintSearchContext(std::unique_ptr<QueryTermSimple> qTerm, bool cased, const AttributeVector& toBeSearched, const vespalib::datastore::AtomicEntryRef* enum_indices, const EnumStoreT<const char*>& enum_store, uint32_t doc_id_limit, uint64_t num_values);
+    SingleStringEnumHintSearchContext(std::unique_ptr<QueryTermSimple> qTerm, bool cased, const AttributeVector& toBeSearched, EnumIndices enum_indices, const EnumStoreT<const char*>& enum_store, uint64_t num_values);
     ~SingleStringEnumHintSearchContext() override;
 };
 

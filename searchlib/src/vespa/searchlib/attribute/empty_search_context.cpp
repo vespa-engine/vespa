@@ -30,6 +30,12 @@ EmptySearchContext::approximateHits() const
     return 0u;
 }
 
+uint32_t
+EmptySearchContext::get_committed_docid_limit() const noexcept
+{
+    return 0u;
+}
+
 std::unique_ptr<queryeval::SearchIterator>
 EmptySearchContext::createIterator(fef::TermFieldMatchData*, bool)
 {

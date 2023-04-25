@@ -143,7 +143,8 @@ SingleValueNumericPostingAttribute<B>::getSearch(QueryTermSimple::UP qTerm,
 {
     using BaseSC = attribute::SingleNumericEnumSearchContext<T>;
     using SC = attribute::NumericPostingSearchContext<BaseSC, SelfType, vespalib::btree::BTreeNoLeafData>;
-    BaseSC base_sc(std::move(qTerm), *this, &this->_enumIndices.acquire_elem_ref(0), this->_enumStore);
+    auto docid_limit = this->getCommittedDocIdLimit();
+    BaseSC base_sc(std::move(qTerm), *this, this->_enumIndices.make_read_view(docid_limit), this->_enumStore);
     return std::make_unique<SC>(std::move(base_sc), params, *this);
 }
 
