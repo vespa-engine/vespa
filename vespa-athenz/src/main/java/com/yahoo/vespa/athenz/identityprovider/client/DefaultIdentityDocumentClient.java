@@ -56,16 +56,16 @@ public class DefaultIdentityDocumentClient implements IdentityDocumentClient {
     }
 
     @Override
-    public SignedIdentityDocument getNodeIdentityDocument(String host, int documentVersion) {
-        return getIdentityDocument(host, "node", documentVersion);
+    public SignedIdentityDocument getNodeIdentityDocument(String host) {
+        return getIdentityDocument(host, "node");
     }
 
     @Override
-    public SignedIdentityDocument getTenantIdentityDocument(String host, int documentVersion) {
-        return getIdentityDocument(host, "tenant", documentVersion);
+    public SignedIdentityDocument getTenantIdentityDocument(String host) {
+        return getIdentityDocument(host, "tenant");
     }
 
-    private SignedIdentityDocument getIdentityDocument(String host, String type, int documentVersion) {
+    private SignedIdentityDocument getIdentityDocument(String host, String type) {
 
         try (CloseableHttpClient client = createHttpClient(sslContextSupplier.get(), hostnameVerifier)) {
             URI uri = configserverUri
@@ -76,7 +76,6 @@ public class DefaultIdentityDocumentClient implements IdentityDocumentClient {
                     .setUri(uri)
                     .addHeader("Connection", "close")
                     .addHeader("Accept", "application/json")
-                    .addParameter("documentVersion", Integer.toString(documentVersion))
                     .build();
             try (CloseableHttpResponse response = client.execute(request)) {
                 String responseContent = EntityUtils.toString(response.getEntity());

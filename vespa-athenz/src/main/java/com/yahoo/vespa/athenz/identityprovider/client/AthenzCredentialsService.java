@@ -11,7 +11,6 @@ import com.yahoo.vespa.athenz.client.zts.InstanceIdentity;
 import com.yahoo.vespa.athenz.client.zts.ZtsClient;
 import com.yahoo.vespa.athenz.identity.ServiceIdentityProvider;
 import com.yahoo.vespa.athenz.identityprovider.api.EntityBindingsMapper;
-import com.yahoo.vespa.athenz.identityprovider.api.IdentityDocument;
 import com.yahoo.vespa.athenz.identityprovider.api.IdentityDocumentClient;
 import com.yahoo.vespa.athenz.identityprovider.api.SignedIdentityDocument;
 import com.yahoo.vespa.athenz.tls.AthenzIdentityVerifier;
@@ -75,9 +74,7 @@ class AthenzCredentialsService {
         }
         KeyPair keyPair = KeyUtils.generateKeypair(KeyAlgorithm.RSA);
         IdentityDocumentClient identityDocumentClient = createIdentityDocumentClient();
-        // Use legacy version for now.
-        SignedIdentityDocument signedDocument = identityDocumentClient.getTenantIdentityDocument(hostname, SignedIdentityDocument.LEGACY_DEFAULT_DOCUMENT_VERSION);
-        IdentityDocument document = signedDocument.identityDocument();
+        SignedIdentityDocument document = identityDocumentClient.getTenantIdentityDocument(hostname);
         Pkcs10Csr csr = csrGenerator.generateInstanceCsr(
                 tenantIdentity,
                 document.providerUniqueId(),
@@ -90,17 +87,16 @@ class AthenzCredentialsService {
                     ztsClient.registerInstance(
                             configserverIdentity,
                             tenantIdentity,
-                            EntityBindingsMapper.toAttestationData(signedDocument),
+                            EntityBindingsMapper.toAttestationData(document),
                             csr);
             X509Certificate certificate = instanceIdentity.certificate();
-            writeCredentialsToDisk(keyPair.getPrivate(), certificate, signedDocument);
-            return new AthenzCredentials(certificate, keyPair, signedDocument);
+            writeCredentialsToDisk(keyPair.getPrivate(), certificate, document);
+            return new AthenzCredentials(certificate, keyPair, document);
         }
     }
 
-    AthenzCredentials updateCredentials(SignedIdentityDocument signedDocument, SSLContext sslContext) {
+    AthenzCredentials updateCredentials(SignedIdentityDocument document, SSLContext sslContext) {
         KeyPair newKeyPair = KeyUtils.generateKeypair(KeyAlgorithm.RSA);
-        IdentityDocument document = signedDocument.identityDocument();
         Pkcs10Csr csr = csrGenerator.generateInstanceCsr(
                 tenantIdentity,
                 document.providerUniqueId(),
@@ -116,8 +112,8 @@ class AthenzCredentialsService {
                             document.providerUniqueId().asDottedString(),
                             csr);
             X509Certificate certificate = instanceIdentity.certificate();
-            writeCredentialsToDisk(newKeyPair.getPrivate(), certificate, signedDocument);
-            return new AthenzCredentials(certificate, newKeyPair, signedDocument);
+            writeCredentialsToDisk(newKeyPair.getPrivate(), certificate, document);
+            return new AthenzCredentials(certificate, newKeyPair, document);
         }
     }
 
