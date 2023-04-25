@@ -12,8 +12,12 @@ fi
 readonly VESPA_RELEASE="$1"
 export JAVA_HOME=$(dirname $(dirname $(readlink -f /usr/bin/java)))
 
+BUILD_DIR=$(mktemp -d)
+trap "rm -rf $BUILD_DIR" EXIT
+cd $BUILD_DIR
+
 function is_published {
-    local TMP_MVN_REPO=/tmp/maven-repo
+    local TMP_MVN_REPO=$BUILD_DIR/maven-repo
     echo $TMP_MVN_REPO
     mkdir -p $TMP_MVN_REPO
     rm -rf $TMP_MVN_REPO/com/yahoo/vespa
