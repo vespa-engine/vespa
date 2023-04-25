@@ -31,7 +31,7 @@ derive_shared_threads(const ProtonConfig& cfg, const HwInfo::Cpu& cpu_info)
     uint32_t scaled_cores = (uint32_t)std::ceil(cpu_info.cores() * cfg.feeding.concurrency);
 
     // We need at least 1 guaranteed free worker in order to ensure progress.
-    return std::max(scaled_cores, (uint32_t)cfg.documentdb.size() + cfg.flush.maxconcurrent + 1);
+    return std::max(scaled_cores, uint32_t(cfg.flush.maxconcurrent + 1u));
 }
 
 uint32_t

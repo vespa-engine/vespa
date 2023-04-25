@@ -20,7 +20,6 @@ ProtonConfig
 make_proton_config(double concurrency, uint32_t indexing_threads = 1)
 {
     ProtonConfigBuilder builder;
-    // This setup requires a minimum of 4 shared threads.
     builder.documentdb.push_back(ProtonConfig::Documentdb());
     builder.documentdb.push_back(ProtonConfig::Documentdb());
     builder.flush.maxconcurrent = 1;
@@ -48,8 +47,10 @@ expect_field_writer_threads(uint32_t exp_threads, uint32_t cpu_cores, uint32_t i
 
 TEST(SharedThreadingServiceConfigTest, shared_threads_are_derived_from_cpu_cores_and_feeding_concurrency)
 {
-    expect_shared_threads(4, 1);
-    expect_shared_threads(4, 6);
+    expect_shared_threads(2, 1);
+    expect_shared_threads(2, 4);
+    expect_shared_threads(3, 5);
+    expect_shared_threads(3, 6);
     expect_shared_threads(4, 8);
     expect_shared_threads(5, 9);
     expect_shared_threads(5, 10);
