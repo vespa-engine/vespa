@@ -70,7 +70,6 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
     private static final Duration REFRESH_BACKOFF = Duration.ofHours(1); // Backoff when refresh fails to ensure ZTS is not DDoS'ed.
 
     private static final String CONTAINER_SIA_DIRECTORY = "/var/lib/sia";
-    private static final String VESPA_SIA_DIRECTORY = "/opt/vespa/var/vespa/sia";
 
     private final URI ztsEndpoint;
     private final Path ztsTrustStorePath;
@@ -107,6 +106,8 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
         modified |= maintain(context, NODE);
         if (shouldWriteTenantServiceIdentity(context))
             modified |= maintain(context, TENANT);
+        else
+            modified |= deleteTenantCredentials(context);
         return modified;
     }
 
@@ -115,7 +116,7 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
 
         try {
             context.log(logger, Level.FINE, "Checking certificate");
-            ContainerPath siaDirectory = context.paths().of(identityType.getSiaDirectory(), context.users().vespa());
+            ContainerPath siaDirectory = context.paths().of(CONTAINER_SIA_DIRECTORY, context.users().vespa());
             ContainerPath identityDocumentFile = siaDirectory.resolve(identityType.getIdentityDocument());
             AthenzIdentity athenzIdentity = getAthenzIdentity(context, identityType, identityDocumentFile);
             ContainerPath privateKeyFile = (ContainerPath) SiaUtils.getPrivateKeyFile(siaDirectory, athenzIdentity);
@@ -167,8 +168,6 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
     public void clearCredentials(NodeAgentContext context) {
         FileFinder.files(context.paths().of(CONTAINER_SIA_DIRECTORY))
                 .deleteRecursively(context);
-        FileFinder.files(context.paths().of(VESPA_SIA_DIRECTORY))
-                .deleteRecursively(context);
         lastRefreshAttempt.remove(context.containerName());
     }
 
@@ -190,6 +189,21 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
     @Override
     public String name() {
         return "node-certificate";
+    }
+
+    private boolean deleteTenantCredentials(NodeAgentContext context) {
+        var siaDirectory = context.paths().of(CONTAINER_SIA_DIRECTORY, context.users().vespa());
+        var identityDocumentFile = siaDirectory.resolve(TENANT.getIdentityDocument());
+        var athenzIdentity = getAthenzIdentity(context, TENANT, identityDocumentFile);
+        var privateKeyFile = (ContainerPath) SiaUtils.getPrivateKeyFile(siaDirectory, athenzIdentity);
+        var certificateFile = (ContainerPath) SiaUtils.getCertificateFile(siaDirectory, athenzIdentity);
+        try {
+            return Files.deleteIfExists(identityDocumentFile) ||
+                    Files.deleteIfExists(privateKeyFile) ||
+                    Files.deleteIfExists(certificateFile);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 
     private boolean shouldRefreshCredentials(Duration age) {
@@ -327,18 +341,12 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
     }
 
     enum IdentityType {
-        NODE(CONTAINER_SIA_DIRECTORY, "vespa-node-identity-document.json"),
-        TENANT(VESPA_SIA_DIRECTORY, "vespa-tenant-identity-document.json");
+        NODE("vespa-node-identity-document.json"),
+        TENANT("vespa-tenant-identity-document.json");
 
-        private String siaDirectory;
         private String identityDocument;
-        IdentityType(String siaDirectory, String identityDocument) {
-            this.siaDirectory = siaDirectory;
+        IdentityType(String identityDocument) {
             this.identityDocument = identityDocument;
-        }
-
-        public String getSiaDirectory() {
-            return siaDirectory;
         }
 
         public String getIdentityDocument() {
