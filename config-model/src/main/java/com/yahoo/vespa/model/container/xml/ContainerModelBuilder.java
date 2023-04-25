@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.container.xml;
 
+import com.yahoo.component.ComponentId;
 import com.yahoo.config.provision.ClusterInfo;
 import com.yahoo.config.provision.IntRange;
 import com.yahoo.component.ComponentSpecification;
@@ -1156,7 +1157,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                                      Zone zone,
                                      DeploymentSpec spec) {
         spec.athenzDomain()
-            .ifPresentOrElse(domain -> {
+            .ifPresent(domain -> {
                 AthenzService service = spec.instance(app.getApplicationId().instance())
                                             .flatMap(instanceSpec -> instanceSpec.athenzService(zone.environment(), zone.region()))
                                             .or(spec::athenzService)
@@ -1169,13 +1170,16 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                                                                      ztsUrl,
                                                                      zoneDnsSuffix,
                                                                      zone);
+
+            // Replace AthenzIdentityProviderProvider
+            cluster.removeComponent(ComponentId.fromString("com.yahoo.container.jdisc.AthenzIdentityProviderProvider"));
             cluster.addComponent(identityProvider);
 
             cluster.getContainers().forEach(container -> {
                 container.setProp("identity.domain", domain.value());
                 container.setProp("identity.service", service.value());
             });
-        }, () -> cluster.addComponent(new SimpleComponent("com.yahoo.container.jdisc.AthenzIdentityProviderProvider")));
+        });
     }
 
     private HostName getLoadBalancerName(HostName loadbalancerName, List<ConfigServerSpec> configServerSpecs) {
