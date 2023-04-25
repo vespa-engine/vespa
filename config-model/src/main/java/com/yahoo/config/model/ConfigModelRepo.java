@@ -213,7 +213,7 @@ public class ConfigModelRepo implements ConfigModelRepoAdder, Serializable, Iter
     public <T extends ConfigModel> List<T> getModels(Class<T> modelClass) {
         List<T> modelsOfModelClass = new ArrayList<>();
 
-        for (ConfigModel model : asMap().values()) {
+        for (ConfigModel model : configModels) {
             if (modelClass.isInstance(model))
                 modelsOfModelClass.add((T)model);
         }
