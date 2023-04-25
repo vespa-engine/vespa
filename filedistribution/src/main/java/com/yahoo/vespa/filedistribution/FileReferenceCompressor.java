@@ -61,7 +61,7 @@ public class FileReferenceCompressor {
     }
 
     public void decompress(File inputFile, File outputDir) throws IOException {
-        log.log(Level.FINE, () -> "Decompressing '" + inputFile + "' into '" + outputDir + "'");
+        log.log(Level.FINEST, () -> "Decompressing '" + inputFile + "' into '" + outputDir + "'");
         try (ArchiveInputStream ais = new TarArchiveInputStream(decompressedInputStream(inputFile))) {
             decompress(ais, outputDir);
         } catch (IllegalArgumentException e) {
@@ -121,7 +121,7 @@ public class FileReferenceCompressor {
     private OutputStream compressedOutputStream(File outputFile) throws IOException {
         switch (type) {
             case compressed:
-                log.log(Level.FINE, () -> "Compressing with compression type " + compressionType);
+                log.log(Level.FINEST, () -> "Compressing with compression type " + compressionType);
                 return switch (compressionType) {
                     case gzip -> new GZIPOutputStream(new FileOutputStream(outputFile));
                     case lz4 -> new LZ4BlockOutputStream(new FileOutputStream(outputFile));
@@ -137,7 +137,7 @@ public class FileReferenceCompressor {
     private InputStream decompressedInputStream(File inputFile) throws IOException {
         switch (type) {
             case compressed:
-                log.log(Level.FINE, () -> "Decompressing with compression type " + compressionType);
+                log.log(Level.FINEST, () -> "Decompressing with compression type " + compressionType);
                 return switch (compressionType) {
                     case gzip -> new GZIPInputStream(new FileInputStream(inputFile));
                     case lz4 -> new LZ4BlockInputStream(new FileInputStream(inputFile));
