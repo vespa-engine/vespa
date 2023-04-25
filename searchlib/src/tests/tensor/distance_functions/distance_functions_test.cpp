@@ -69,6 +69,8 @@ double computeEuclideanChecked(TypedCells a, TypedCells b) {
     return result;
 }
 
+namespace { constexpr double sq_root_half = std::sqrt(0.5); }
+
 TEST(DistanceFunctionsTest, euclidean_gives_expected_score)
 {
     auto ct = vespalib::eval::CellType::DOUBLE;
@@ -79,7 +81,7 @@ TEST(DistanceFunctionsTest, euclidean_gives_expected_score)
     std::vector<double> p1{1.0, 0.0, 0.0};
     std::vector<double> p2{0.0, 1.0, 0.0};
     std::vector<double> p3{0.0, 0.0, 1.0};
-    std::vector<double> p4{0.5, 0.5, 0.707107};
+    std::vector<double> p4{0.5, 0.5, sq_root_half};
     std::vector<double> p5{0.0,-1.0, 0.0};
     std::vector<double> p6{1.0, 2.0, 2.0};
 
@@ -179,7 +181,7 @@ TEST(DistanceFunctionsTest, angular_gives_expected_score)
     std::vector<double> p1{1.0, 0.0, 0.0};
     std::vector<double> p2{0.0, 1.0, 0.0};
     std::vector<double> p3{0.0, 0.0, 1.0};
-    std::vector<double> p4{0.5, 0.5, 0.707107};
+    std::vector<double> p4{0.5, 0.5, sq_root_half};
     std::vector<double> p5{0.0,-1.0, 0.0};
     std::vector<double> p6{1.0, 2.0, 2.0};
 
@@ -207,7 +209,7 @@ TEST(DistanceFunctionsTest, angular_gives_expected_score)
     EXPECT_DOUBLE_EQ(threshold, 0.5);
 
     double a34 = computeAngularChecked(t(p3), t(p4));
-    EXPECT_FLOAT_EQ(a34, (1.0 - 0.707107));
+    EXPECT_FLOAT_EQ(a34, (1.0 - sq_root_half));
     EXPECT_FLOAT_EQ(angular->to_rawscore(a34), 1.0/(1.0 + pi/4));
     threshold = angular->convert_threshold(pi/4);
     EXPECT_FLOAT_EQ(threshold, a34);
@@ -262,13 +264,26 @@ double computePrenormalizedAngularChecked(TypedCells a, TypedCells b) {
     static PrenormalizedAngularDistanceFunctionFactory<double> dbl_dff;
     auto d_n = dbl_dff.for_query_vector(a);
     auto d_f = flt_dff.for_query_vector(a);
+    auto d_r = dbl_dff.for_query_vector(b);
     auto d_i = dbl_dff.for_insertion_vector(a);
     // normal:
     double result = d_n->calc(b);
      // insert is exactly same:
     EXPECT_EQ(d_i->calc(b), result);
+    // note: for this distance, reverse is not necessarily equal,
+    // since we normalize based on length of LHS only
+    EXPECT_FLOAT_EQ(d_r->calc(a), result);
     // float factory:
     EXPECT_FLOAT_EQ(d_f->calc(b), result);
+    double closeness_n = d_n->to_rawscore(result);
+    double closeness_f = d_f->to_rawscore(result);
+    double closeness_r = d_r->to_rawscore(result);
+    double closeness_i = d_i->to_rawscore(result);
+    EXPECT_DOUBLE_EQ(closeness_n, closeness_f);
+    EXPECT_DOUBLE_EQ(closeness_n, closeness_r);
+    EXPECT_DOUBLE_EQ(closeness_n, closeness_i);
+    EXPECT_GT(closeness_n, 0.0);
+    EXPECT_LE(closeness_n, 1.0);
     return result;
 }
 
@@ -278,9 +293,11 @@ TEST(DistanceFunctionsTest, prenormalized_angular_gives_expected_score)
     std::vector<double> p1{1.0, 0.0, 0.0};
     std::vector<double> p2{0.0, 1.0, 0.0};
     std::vector<double> p3{0.0, 0.0, 1.0};
-    std::vector<double> p4{0.5, 0.5, 0.707107};
+    std::vector<double> p4{0.5, 0.5, sq_root_half};
     std::vector<double> p5{0.0,-1.0, 0.0};
     std::vector<double> p6{1.0, 2.0, 2.0};
+    std::vector<double> p7{2.0, -1.0, -2.0};
+    std::vector<double> p8{3.0, 0.0, 0.0};
 
     PrenormalizedAngularDistanceFunctionFactory<double> dff;
     auto pnad = dff.for_query_vector(t(p0));
@@ -297,7 +314,7 @@ TEST(DistanceFunctionsTest, prenormalized_angular_gives_expected_score)
     EXPECT_DOUBLE_EQ(i14, 0.5);
     EXPECT_DOUBLE_EQ(i24, 0.5);
     double i34 = computePrenormalizedAngularChecked(t(p3), t(p4));
-    EXPECT_FLOAT_EQ(i34, 1.0 - 0.707107);
+    EXPECT_FLOAT_EQ(i34, 1.0 - sq_root_half);
 
     double i25 = computePrenormalizedAngularChecked(t(p2), t(p5));
     EXPECT_DOUBLE_EQ(i25, 2.0);
@@ -305,6 +322,17 @@ TEST(DistanceFunctionsTest, prenormalized_angular_gives_expected_score)
     double i44 = computePrenormalizedAngularChecked(t(p4), t(p4));
     EXPECT_GE(i44, 0.0);
     EXPECT_LT(i44, 0.000001);
+
+    double i66 = computePrenormalizedAngularChecked(t(p6), t(p6));
+    EXPECT_GE(i66, 0.0);
+    EXPECT_LT(i66, 0.000001);
+
+    double i67 = computePrenormalizedAngularChecked(t(p6), t(p7));
+    EXPECT_DOUBLE_EQ(i67, 13.0);
+    double i68 = computePrenormalizedAngularChecked(t(p6), t(p8));
+    EXPECT_DOUBLE_EQ(i68, 6.0);
+    double i78 = computePrenormalizedAngularChecked(t(p7), t(p8));
+    EXPECT_DOUBLE_EQ(i78, 3.0);
 
     double threshold = pnad->convert_threshold(0.25);
     EXPECT_DOUBLE_EQ(threshold, 0.25);
@@ -324,7 +352,7 @@ TEST(DistanceFunctionsTest, innerproduct_gives_expected_score)
     std::vector<double> p1{1.0, 0.0, 0.0};
     std::vector<double> p2{0.0, 1.0, 0.0};
     std::vector<double> p3{0.0, 0.0, 1.0};
-    std::vector<double> p4{0.5, 0.5, 0.707107};
+    std::vector<double> p4{0.5, 0.5, sq_root_half};
     std::vector<double> p5{0.0,-1.0, 0.0};
     std::vector<double> p6{1.0, 2.0, 2.0};
 
@@ -340,7 +368,7 @@ TEST(DistanceFunctionsTest, innerproduct_gives_expected_score)
     EXPECT_DOUBLE_EQ(i14, 0.5);
     EXPECT_DOUBLE_EQ(i24, 0.5);
     double i34 = innerproduct->calc(t(p3), t(p4));
-    EXPECT_FLOAT_EQ(i34, 1.0 - 0.707107);
+    EXPECT_FLOAT_EQ(i34, 1.0 - sq_root_half);
 
     double i25 = innerproduct->calc(t(p2), t(p5));
     EXPECT_DOUBLE_EQ(i25, 2.0);
