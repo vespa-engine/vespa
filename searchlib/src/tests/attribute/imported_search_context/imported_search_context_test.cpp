@@ -431,8 +431,10 @@ TEST_F("original lid range is used by search context", SingleValueFixture)
 
 TEST_F("Original target lid range is used by search context", SingleValueFixture)
 {
+    EXPECT_EQUAL(11u, f.target_attr->getNumDocs());
     auto first_ctx = f.create_context(word_term("2345"));
     add_n_docs_with_undefined_values(*f.target_attr, 1);
+    EXPECT_EQUAL(12u, f.target_attr->getNumDocs());
     auto typed_target_attr = f.template target_attr_as<IntegerAttribute>();
     ASSERT_TRUE(typed_target_attr->update(11, 2345));
     f.target_attr->commit();

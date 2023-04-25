@@ -245,8 +245,10 @@ TEST_F("Original target lid range is used by read guard", Fixture)
     reset_with_single_value_reference_mappings<IntegerAttribute, int32_t>(
             f, BasicType::INT32,
             {});
+    EXPECT_EQUAL(11u, f.target_attr->getNumDocs());
     auto first_guard = f.get_imported_attr();
     add_n_docs_with_undefined_values(*f.target_attr, 1);
+    EXPECT_EQUAL(12u, f.target_attr->getNumDocs());
     auto typed_target_attr = f.template target_attr_as<IntegerAttribute>();
     ASSERT_TRUE(typed_target_attr->update(11, 2345));
     f.target_attr->commit();
