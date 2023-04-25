@@ -24,9 +24,11 @@ import javax.net.ssl.SSLContext;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.URI;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -38,6 +40,7 @@ import java.util.zip.GZIPOutputStream;
 
 import static ai.vespa.feed.client.FeedClientBuilder.Compression.auto;
 import static ai.vespa.feed.client.FeedClientBuilder.Compression.gzip;
+import static java.util.Objects.requireNonNullElse;
 import static org.apache.hc.core5.http.ssl.TlsCiphers.excludeH2Blacklisted;
 import static org.apache.hc.core5.http.ssl.TlsCiphers.excludeWeak;
 
@@ -50,7 +53,7 @@ class ApacheCluster implements Cluster {
     private final List<BasicHeader> defaultHeaders = Arrays.asList(new BasicHeader(HttpHeaders.USER_AGENT, String.format("vespa-feed-client/%s", Vespa.VERSION)),
                                                                    new BasicHeader("Vespa-Client-Version", Vespa.VERSION));
     private final Header gzipEncodingHeader = new BasicHeader(HttpHeaders.CONTENT_ENCODING, "gzip");
-    private final RequestConfig requestConfig;
+    private final RequestConfig.Builder requestConfig;
     private final Compression compression;
     private int someNumber = 0;
 
@@ -86,7 +89,8 @@ class ApacheCluster implements Cluster {
                 SimpleHttpRequest request = new SimpleHttpRequest(wrapped.method(), wrapped.path());
                 request.setScheme(endpoint.url.getScheme());
                 request.setAuthority(new URIAuthority(endpoint.url.getHost(), portOf(endpoint.url)));
-                request.setConfig(requestConfig);
+                long timeoutMillis = wrapped.timeout() == null ? 190_000 : wrapped.timeout().toMillis() * 11 / 10 + 1_000;
+                request.setConfig(requestConfig.setResponseTimeout(Timeout.ofMilliseconds(timeoutMillis)).build());
                 defaultHeaders.forEach(request::setHeader);
                 wrapped.headers().forEach((name, value) -> request.setHeader(name, value.get()));
                 if (wrapped.body() != null) {
@@ -104,11 +108,10 @@ class ApacheCluster implements Cluster {
                                                                @Override public void failed(Exception ex) { vessel.completeExceptionally(ex); }
                                                                @Override public void cancelled() { vessel.cancel(false); }
                                                            });
-                long timeoutMillis = wrapped.timeout() == null ? 200_000 : wrapped.timeout().toMillis() * 11 / 10 + 1_000;
                 Future<?> cancellation = timeoutExecutor.schedule(() -> {
                     future.cancel(true);
                     vessel.cancel(true);
-                    }, timeoutMillis, TimeUnit.MILLISECONDS);
+                    }, timeoutMillis + 10_000, TimeUnit.MILLISECONDS);
                 vessel.whenComplete((__, ___) -> cancellation.cancel(true));
             }
             catch (Throwable thrown) {
@@ -193,13 +196,12 @@ class ApacheCluster implements Cluster {
     }
 
     @SuppressWarnings("deprecation")
-    private static RequestConfig createRequestConfig(FeedClientBuilderImpl b) {
+    private static RequestConfig.Builder createRequestConfig(FeedClientBuilderImpl b) {
         RequestConfig.Builder builder = RequestConfig.custom()
                 .setConnectTimeout(Timeout.ofSeconds(10))
-                .setConnectionRequestTimeout(Timeout.DISABLED)
-                .setResponseTimeout(Timeout.ofSeconds(190));
+                .setConnectionRequestTimeout(Timeout.DISABLED);
         if (b.proxy != null) builder.setProxy(new HttpHost(b.proxy.getScheme(), b.proxy.getHost(), b.proxy.getPort()));
-        return builder.build();
+        return builder;
     }
 
     private static class ApacheHttpResponse implements HttpResponse {
