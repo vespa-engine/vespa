@@ -1,57 +1,77 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.athenz.identityprovider.api.bindings;
 
-import com.fasterxml.jackson.annotation.JsonAnyGetter;
-import com.fasterxml.jackson.annotation.JsonAnySetter;
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonProperty;
 
-import java.time.Instant;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import com.fasterxml.jackson.databind.DatabindContext;
+import com.fasterxml.jackson.databind.JavaType;
+import com.fasterxml.jackson.databind.annotation.JsonTypeIdResolver;
+import com.fasterxml.jackson.databind.jsontype.TypeIdResolver;
+import com.fasterxml.jackson.databind.type.TypeFactory;
+import com.yahoo.vespa.athenz.identityprovider.api.SignedIdentityDocument;
 
-/**
- * @author bjorncs
- */
-@JsonInclude(JsonInclude.Include.NON_NULL)
-public record SignedIdentityDocumentEntity(
-        String signature, int signingKeyVersion, String providerUniqueId, String providerService, int documentVersion,
-        String configServerHostname, String instanceHostname, Instant createdAt, Set<String> ipAddresses,
-        String identityType, String clusterType, String ztsUrl, String serviceIdentity, Map<String, Object> unknownAttributes) {
+import java.io.IOException;
+import java.util.Objects;
 
-    @JsonCreator
-    public SignedIdentityDocumentEntity(@JsonProperty("signature") String signature,
-                                        @JsonProperty("signing-key-version") int signingKeyVersion,
-                                        @JsonProperty("provider-unique-id") String providerUniqueId,
-                                        @JsonProperty("provider-service") String providerService,
-                                        @JsonProperty("document-version") int documentVersion,
-                                        @JsonProperty("configserver-hostname") String configServerHostname,
-                                        @JsonProperty("instance-hostname") String instanceHostname,
-                                        @JsonProperty("created-at") Instant createdAt,
-                                        @JsonProperty("ip-addresses") Set<String> ipAddresses,
-                                        @JsonProperty("identity-type") String identityType,
-                                        @JsonProperty("cluster-type") String clusterType,
-                                        @JsonProperty("zts-url") String ztsUrl,
-                                        @JsonProperty("service-identity") String serviceIdentity) {
-        this(signature, signingKeyVersion, providerUniqueId, providerService, documentVersion, configServerHostname,
-             instanceHostname, createdAt, ipAddresses, identityType, clusterType, ztsUrl, serviceIdentity, new HashMap<>());
+@JsonIgnoreProperties(ignoreUnknown = true)
+@JsonTypeInfo(use = JsonTypeInfo.Id.CUSTOM, property = "document-version", visible = true)
+@JsonTypeIdResolver(SignedIdentityDocumentEntityTypeResolver.class)
+public interface SignedIdentityDocumentEntity {
+    int documentVersion();
+}
+
+class SignedIdentityDocumentEntityTypeResolver implements TypeIdResolver {
+    JavaType javaType;
+
+    @Override
+    public void init(JavaType javaType) {
+        this.javaType = javaType;
     }
 
-    @JsonProperty("signature") @Override public String signature() { return signature; }
-    @JsonProperty("signing-key-version") @Override public int signingKeyVersion() { return signingKeyVersion; }
-    @JsonProperty("provider-unique-id") @Override public String providerUniqueId() { return providerUniqueId; }
-    @JsonProperty("provider-service") @Override public String providerService() { return providerService; }
-    @JsonProperty("document-version") @Override public int documentVersion() { return documentVersion; }
-    @JsonProperty("configserver-hostname") @Override public String configServerHostname() { return configServerHostname; }
-    @JsonProperty("instance-hostname") @Override public String instanceHostname() { return instanceHostname; }
-    @JsonProperty("created-at") @Override public Instant createdAt() { return createdAt; }
-    @JsonProperty("ip-addresses") @Override public Set<String> ipAddresses() { return ipAddresses; }
-    @JsonProperty("identity-type") @Override public String identityType() { return identityType; }
-    @JsonProperty("cluster-type") @Override public String clusterType() { return clusterType; }
-    @JsonProperty("zts-url") @Override public String ztsUrl() { return ztsUrl; }
-    @JsonProperty("service-identity") @Override public String serviceIdentity() { return serviceIdentity; }
-    @JsonAnyGetter @Override public Map<String, Object> unknownAttributes() { return unknownAttributes; }
-    @JsonAnySetter public void set(String name, Object value) { unknownAttributes.put(name, value); }
+    @Override
+    public String idFromValue(Object o) {
+        return idFromValueAndType(o, o.getClass());
+    }
+
+    @Override
+    public String idFromValueAndType(Object o, Class<?> aClass) {
+        if (Objects.isNull(o)) {
+            throw new IllegalArgumentException("Cannot serialize null oject");
+        } else {
+            if (o instanceof SignedIdentityDocumentEntity s) {
+                return Integer.toString(s.documentVersion());
+            } else {
+                throw new IllegalArgumentException("Cannot serialize class: " + o.getClass());
+            }
+        }
+    }
+
+    @Override
+    public String idFromBaseType() {
+        return idFromValueAndType(null, javaType.getRawClass());
+    }
+
+    @Override
+    public JavaType typeFromId(DatabindContext databindContext, String s) throws IOException {
+        try {
+            int version = Integer.parseInt(s);
+            Class<? extends SignedIdentityDocumentEntity> cls = version <= SignedIdentityDocument.LEGACY_DEFAULT_DOCUMENT_VERSION
+                    ? LegacySignedIdentityDocumentEntity.class
+                    : DefaultSignedIdentityDocumentEntity.class;
+            return TypeFactory.defaultInstance().constructSpecializedType(javaType,cls);
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException("Unable to deserialize document with version: \"%s\"".formatted(s));
+        }
+    }
+
+    @Override
+    public String getDescForKnownTypeIds() {
+        return "Type resolver for SignedIdentityDocumentEntity";
+    }
+
+    @Override
+    public JsonTypeInfo.Id getMechanism() {
+        return JsonTypeInfo.Id.CUSTOM;
+    }
 }

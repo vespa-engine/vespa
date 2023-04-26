@@ -13,6 +13,7 @@ import com.yahoo.vespa.athenz.client.zts.ZtsClient;
 import com.yahoo.vespa.athenz.client.zts.ZtsClientException;
 import com.yahoo.vespa.athenz.identity.ServiceIdentityProvider;
 import com.yahoo.vespa.athenz.identityprovider.api.EntityBindingsMapper;
+import com.yahoo.vespa.athenz.identityprovider.api.IdentityDocument;
 import com.yahoo.vespa.athenz.identityprovider.api.IdentityDocumentClient;
 import com.yahoo.vespa.athenz.identityprovider.api.SignedIdentityDocument;
 import com.yahoo.vespa.athenz.identityprovider.client.CsrGenerator;
@@ -76,6 +77,7 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
     private final ServiceIdentityProvider hostIdentityProvider;
     private final IdentityDocumentClient identityDocumentClient;
     private final BooleanFlag tenantServiceIdentityFlag;
+    private final BooleanFlag useNewIdentityDocumentLayout;
 
     // Used as an optimization to ensure ZTS is not DDoS'ed on continuously failing refresh attempts
     private final Map<ContainerName, Instant> lastRefreshAttempt = new ConcurrentHashMap<>();
@@ -97,6 +99,7 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
                 new AthenzIdentityVerifier(Set.of(configServerInfo.getConfigServerIdentity())));
         this.clock = clock;
         this.tenantServiceIdentityFlag = Flags.NODE_ADMIN_TENANT_SERVICE_REGISTRY.bindTo(flagSource);
+        this.useNewIdentityDocumentLayout = Flags.NEW_IDDOC_LAYOUT.bindTo(flagSource);
     }
 
     public boolean converge(NodeAgentContext context) {
@@ -130,7 +133,7 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
             Instant now = clock.instant();
             Instant expiry = certificate.getNotAfter().toInstant();
             var doc = EntityBindingsMapper.readSignedIdentityDocumentFromFile(identityDocumentFile);
-            if (doc.outdated()) {
+            if (refreshIdentityDocument(doc, context)) {
                 context.log(logger, "Identity document is outdated (version=%d)", doc.documentVersion());
                 registerIdentity(context, privateKeyFile, certificateFile, identityDocumentFile, identityType, athenzIdentity);
                 return true;
@@ -150,7 +153,7 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
                     return false;
                 } else {
                     lastRefreshAttempt.put(context.containerName(), now);
-                    refreshIdentity(context, privateKeyFile, certificateFile, identityDocumentFile, doc, identityType, athenzIdentity);
+                    refreshIdentity(context, privateKeyFile, certificateFile, identityDocumentFile, doc.identityDocument(), identityType, athenzIdentity);
                     return true;
                 }
             }
@@ -159,6 +162,11 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
+    }
+
+    private boolean refreshIdentityDocument(SignedIdentityDocument signedIdentityDocument, NodeAgentContext context) {
+        int expectedVersion = documentVersion(context);
+        return signedIdentityDocument.outdated() || signedIdentityDocument.documentVersion() != expectedVersion;
     }
 
     public void clearCredentials(NodeAgentContext context) {
@@ -200,7 +208,8 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
 
     private void registerIdentity(NodeAgentContext context, ContainerPath privateKeyFile, ContainerPath certificateFile, ContainerPath identityDocumentFile, IdentityType identityType, AthenzIdentity identity) {
         KeyPair keyPair = KeyUtils.generateKeypair(KeyAlgorithm.RSA);
-        SignedIdentityDocument doc = signedIdentityDocument(context, identityType);
+        SignedIdentityDocument signedDoc = signedIdentityDocument(context, identityType);
+        IdentityDocument doc = signedDoc.identityDocument();
         CsrGenerator csrGenerator = new CsrGenerator(certificateDnsSuffix, doc.providerService().getFullName());
         Pkcs10Csr csr = csrGenerator.generateInstanceCsr(
                 identity, doc.providerUniqueId(), doc.ipAddresses(), doc.clusterType(), keyPair);
@@ -212,9 +221,9 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
                     ztsClient.registerInstance(
                             doc.providerService(),
                             identity,
-                            EntityBindingsMapper.toAttestationData(doc),
+                            EntityBindingsMapper.toAttestationData(signedDoc),
                             csr);
-            EntityBindingsMapper.writeSignedIdentityDocumentToFile(identityDocumentFile, doc);
+            EntityBindingsMapper.writeSignedIdentityDocumentToFile(identityDocumentFile, signedDoc);
             writePrivateKeyAndCertificate(privateKeyFile, keyPair.getPrivate(), certificateFile, instanceIdentity.certificate());
             context.log(logger, "Instance successfully registered and credentials written to file");
         }
@@ -223,14 +232,14 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
     /**
      * Return zts url from identity document, fallback to ztsEndpoint
      */
-    private URI ztsEndpoint(SignedIdentityDocument doc) {
+    private URI ztsEndpoint(IdentityDocument doc) {
         return Optional.ofNullable(doc.ztsUrl())
                 .filter(s -> !s.isBlank())
                 .map(URI::create)
                 .orElse(ztsEndpoint);
     }
     private void refreshIdentity(NodeAgentContext context, ContainerPath privateKeyFile, ContainerPath certificateFile,
-                                 ContainerPath identityDocumentFile, SignedIdentityDocument doc, IdentityType identityType, AthenzIdentity identity) {
+                                 ContainerPath identityDocumentFile, IdentityDocument doc, IdentityType identityType, AthenzIdentity identity) {
         KeyPair keyPair = KeyUtils.generateKeypair(KeyAlgorithm.RSA);
         CsrGenerator csrGenerator = new CsrGenerator(certificateDnsSuffix, doc.providerService().getFullName());
         Pkcs10Csr csr = csrGenerator.generateInstanceCsr(
@@ -291,8 +300,8 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
 
     private SignedIdentityDocument signedIdentityDocument(NodeAgentContext context, IdentityType identityType) {
         return switch (identityType) {
-            case NODE -> identityDocumentClient.getNodeIdentityDocument(context.hostname().value());
-            case TENANT -> identityDocumentClient.getTenantIdentityDocument(context.hostname().value());
+            case NODE -> identityDocumentClient.getNodeIdentityDocument(context.hostname().value(), documentVersion(context));
+            case TENANT -> identityDocumentClient.getTenantIdentityDocument(context.hostname().value(), documentVersion(context));
         };
     }
 
@@ -305,9 +314,9 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
 
     private AthenzIdentity getTenantIdentity(NodeAgentContext context, ContainerPath identityDocumentFile) {
         if (Files.exists(identityDocumentFile)) {
-            return EntityBindingsMapper.readSignedIdentityDocumentFromFile(identityDocumentFile).serviceIdentity();
+            return EntityBindingsMapper.readSignedIdentityDocumentFromFile(identityDocumentFile).identityDocument().serviceIdentity();
         } else {
-            return identityDocumentClient.getTenantIdentityDocument(context.hostname().value()).serviceIdentity();
+            return identityDocumentClient.getTenantIdentityDocument(context.hostname().value(), documentVersion(context)).identityDocument().serviceIdentity();
         }
     }
 
@@ -315,6 +324,17 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
         return tenantServiceIdentityFlag
                 .with(FetchVector.Dimension.HOSTNAME, context.hostname().value())
                 .value();
+    }
+
+    /*
+    Get the document version to ask for
+     */
+    private int documentVersion(NodeAgentContext context) {
+        return useNewIdentityDocumentLayout
+                .with(FetchVector.Dimension.HOSTNAME, context.hostname().value())
+                .value()
+                ? SignedIdentityDocument.DEFAULT_DOCUMENT_VERSION
+                : SignedIdentityDocument.LEGACY_DEFAULT_DOCUMENT_VERSION;
     }
 
     enum IdentityType {
