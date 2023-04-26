@@ -1,8 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.maintenance.identity;
 
-import com.yahoo.component.Version;
-import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.security.KeyAlgorithm;
 import com.yahoo.security.KeyUtils;
 import com.yahoo.security.Pkcs10Csr;
@@ -109,8 +107,6 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
         modified |= maintain(context, NODE);
         if (shouldWriteTenantServiceIdentity(context))
             modified |= maintain(context, TENANT);
-        else
-            modified |= deleteTenantCredentials(context);
         return modified;
     }
 
@@ -197,21 +193,6 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
     @Override
     public String name() {
         return "node-certificate";
-    }
-
-    private boolean deleteTenantCredentials(NodeAgentContext context) {
-        var siaDirectory = context.paths().of(CONTAINER_SIA_DIRECTORY, context.users().vespa());
-        var identityDocumentFile = siaDirectory.resolve(TENANT.getIdentityDocument());
-        var athenzIdentity = getAthenzIdentity(context, TENANT, identityDocumentFile);
-        var privateKeyFile = (ContainerPath) SiaUtils.getPrivateKeyFile(siaDirectory, athenzIdentity);
-        var certificateFile = (ContainerPath) SiaUtils.getCertificateFile(siaDirectory, athenzIdentity);
-        try {
-            return Files.deleteIfExists(identityDocumentFile) ||
-                    Files.deleteIfExists(privateKeyFile) ||
-                    Files.deleteIfExists(certificateFile);
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
     }
 
     private boolean shouldRefreshCredentials(Duration age) {
@@ -340,12 +321,8 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
     }
 
     private boolean shouldWriteTenantServiceIdentity(NodeAgentContext context) {
-        var version = context.node().currentVespaVersion()
-                .orElse(context.node().wantedVespaVersion().orElse(Version.emptyVersion));
-        var appId = context.node().owner().orElse(ApplicationId.defaultId());
         return tenantServiceIdentityFlag
-                .with(FetchVector.Dimension.VESPA_VERSION, version.toFullString())
-                .with(FetchVector.Dimension.APPLICATION_ID, appId.serializedForm())
+                .with(FetchVector.Dimension.HOSTNAME, context.hostname().value())
                 .value();
     }
 
