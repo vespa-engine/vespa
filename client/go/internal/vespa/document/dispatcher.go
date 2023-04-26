@@ -10,6 +10,7 @@ import (
 	"time"
 )
 
+// maxAttempts controls the maximum number of times a document operation is attempted before giving up.
 const maxAttempts = 10
 
 // Dispatcher dispatches documents from a queue to a Feeder.
@@ -31,6 +32,7 @@ type Dispatcher struct {
 
 	listPool   sync.Pool
 	mu         sync.Mutex
+	statsMu    sync.Mutex
 	wg         sync.WaitGroup
 	inflightWg sync.WaitGroup
 }
@@ -47,7 +49,7 @@ func (op documentOp) resetResult() documentOp {
 	return op
 }
 
-func (op documentOp) complete() bool { return op.result.Success() || op.attempts > maxAttempts }
+func (op documentOp) complete() bool { return op.result.Success() || op.attempts == maxAttempts }
 
 func NewDispatcher(feeder Feeder, throttler Throttler, breaker CircuitBreaker, output io.Writer, verbose bool) *Dispatcher {
 	d := &Dispatcher{
@@ -63,9 +65,12 @@ func NewDispatcher(feeder Feeder, throttler Throttler, breaker CircuitBreaker, o
 }
 
 func (d *Dispatcher) shouldRetry(op documentOp, result Result) bool {
+	if result.Trace != "" {
+		d.msgs <- fmt.Sprintf("feed: trace for %s:\n%s", op.document, result.Trace)
+	}
 	if result.Success() {
 		if d.verbose {
-			d.msgs <- fmt.Sprintf("feed: successfully fed %s with status %d", op.document.Id, result.HTTPStatus)
+			d.msgs <- fmt.Sprintf("feed: %s succeeded with status %d", op.document, result.HTTPStatus)
 		}
 		d.throttler.Success()
 		d.circuitBreaker.Success()
@@ -77,7 +82,7 @@ func (d *Dispatcher) shouldRetry(op documentOp, result Result) bool {
 		return true
 	}
 	if result.Err != nil || result.HTTPStatus == 500 || result.HTTPStatus == 502 || result.HTTPStatus == 504 {
-		retry := op.attempts <= maxAttempts
+		retry := op.attempts < maxAttempts
 		var msg strings.Builder
 		msg.WriteString("feed: ")
 		msg.WriteString(op.document.String())
@@ -141,9 +146,10 @@ func (d *Dispatcher) dispatch(op documentOp) {
 func (d *Dispatcher) processResults() {
 	defer d.wg.Done()
 	for op := range d.results {
+		d.statsMu.Lock()
 		d.stats.Add(op.result.Stats)
-		retry := d.shouldRetry(op, op.result)
-		if retry {
+		d.statsMu.Unlock()
+		if d.shouldRetry(op, op.result) {
 			d.enqueue(op.resetResult(), true)
 		} else if op.complete() {
 			d.inflightWg.Done()
@@ -232,7 +238,12 @@ func (d *Dispatcher) releaseSlot() { atomic.AddInt64(&d.inflightCount, -1) }
 
 func (d *Dispatcher) Enqueue(doc Document) error { return d.enqueue(documentOp{document: doc}, false) }
 
-func (d *Dispatcher) Stats() Stats { return d.stats }
+func (d *Dispatcher) Stats() Stats {
+	d.statsMu.Lock()
+	defer d.statsMu.Unlock()
+	d.stats.Inflight = atomic.LoadInt64(&d.inflightCount)
+	return d.stats
+}
 
 // Close waits for all inflight operations to complete and closes the dispatcher.
 func (d *Dispatcher) Close() error {
