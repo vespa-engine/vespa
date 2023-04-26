@@ -22,6 +22,11 @@ public:
         std::vector<char> _data;
         double _value;
     public:
+        Value() noexcept
+            : _data(),
+              _value(0.0)
+        {
+        }
         bool operator==(const Value &rhs) const {
             return ((_data == rhs._data) && (_value == rhs._value));
         }
