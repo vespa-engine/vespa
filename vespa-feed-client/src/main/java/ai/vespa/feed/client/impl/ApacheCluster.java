@@ -86,7 +86,8 @@ class ApacheCluster implements Cluster {
                 SimpleHttpRequest request = new SimpleHttpRequest(wrapped.method(), wrapped.path());
                 request.setScheme(endpoint.url.getScheme());
                 request.setAuthority(new URIAuthority(endpoint.url.getHost(), portOf(endpoint.url)));
-                request.setConfig(requestConfig);
+                long timeoutMillis = wrapped.timeout() == null ? 190_000 : wrapped.timeout().toMillis() * 11 / 10 + 1_000;
+                request.setConfig(RequestConfig.copy(requestConfig).setResponseTimeout(Timeout.ofMilliseconds(timeoutMillis)).build());
                 defaultHeaders.forEach(request::setHeader);
                 wrapped.headers().forEach((name, value) -> request.setHeader(name, value.get()));
                 if (wrapped.body() != null) {
@@ -104,11 +105,11 @@ class ApacheCluster implements Cluster {
                                                                @Override public void failed(Exception ex) { vessel.completeExceptionally(ex); }
                                                                @Override public void cancelled() { vessel.cancel(false); }
                                                            });
-                long timeoutMillis = wrapped.timeout() == null ? 200_000 : wrapped.timeout().toMillis() * 11 / 10 + 1_000;
-                Future<?> cancellation = timeoutExecutor.schedule(() -> {
-                    future.cancel(true);
-                    vessel.cancel(true);
-                    }, timeoutMillis, TimeUnit.MILLISECONDS);
+                // We've seen some requests time out, even with a response timeout,
+                // so we schedule this to be absolutely sure we don't hang (for ever).
+                Future<?> cancellation = timeoutExecutor.schedule(() -> { future.cancel(true); vessel.cancel(true); },
+                                                                  timeoutMillis + 10_000,
+                                                                  TimeUnit.MILLISECONDS);
                 vessel.whenComplete((__, ___) -> cancellation.cancel(true));
             }
             catch (Throwable thrown) {
@@ -196,8 +197,7 @@ class ApacheCluster implements Cluster {
     private static RequestConfig createRequestConfig(FeedClientBuilderImpl b) {
         RequestConfig.Builder builder = RequestConfig.custom()
                 .setConnectTimeout(Timeout.ofSeconds(10))
-                .setConnectionRequestTimeout(Timeout.DISABLED)
-                .setResponseTimeout(Timeout.ofSeconds(190));
+                .setConnectionRequestTimeout(Timeout.DISABLED);
         if (b.proxy != null) builder.setProxy(new HttpHost(b.proxy.getScheme(), b.proxy.getHost(), b.proxy.getPort()));
         return builder.build();
     }
