@@ -1,7 +1,9 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.vespa.hosted.node.admin.container;
 
-import com.yahoo.collections.Pair;
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+package com.yahoo.vespa.hosted.node.admin.cgroup;
+
+import com.yahoo.vespa.hosted.node.admin.container.ContainerId;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContext;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContextImpl;
 import com.yahoo.vespa.hosted.node.admin.task.util.file.UnixPath;
@@ -12,16 +14,15 @@ import java.io.IOException;
 import java.nio.file.FileSystem;
 import java.util.Map;
 import java.util.Optional;
-import java.util.OptionalInt;
 
-import static com.yahoo.vespa.hosted.node.admin.container.CGroupV2.CpuStatField.SYSTEM_USAGE_USEC;
-import static com.yahoo.vespa.hosted.node.admin.container.CGroupV2.CpuStatField.THROTTLED_PERIODS;
-import static com.yahoo.vespa.hosted.node.admin.container.CGroupV2.CpuStatField.THROTTLED_TIME_USEC;
-import static com.yahoo.vespa.hosted.node.admin.container.CGroupV2.CpuStatField.TOTAL_PERIODS;
-import static com.yahoo.vespa.hosted.node.admin.container.CGroupV2.CpuStatField.TOTAL_USAGE_USEC;
-import static com.yahoo.vespa.hosted.node.admin.container.CGroupV2.CpuStatField.USER_USAGE_USEC;
-import static com.yahoo.vespa.hosted.node.admin.container.CGroupV2.sharesToWeight;
-import static com.yahoo.vespa.hosted.node.admin.container.CGroupV2.weightToShares;
+import static com.yahoo.vespa.hosted.node.admin.cgroup.CpuController.StatField.SYSTEM_USAGE_USEC;
+import static com.yahoo.vespa.hosted.node.admin.cgroup.CpuController.StatField.THROTTLED_PERIODS;
+import static com.yahoo.vespa.hosted.node.admin.cgroup.CpuController.StatField.THROTTLED_TIME_USEC;
+import static com.yahoo.vespa.hosted.node.admin.cgroup.CpuController.StatField.TOTAL_PERIODS;
+import static com.yahoo.vespa.hosted.node.admin.cgroup.CpuController.StatField.TOTAL_USAGE_USEC;
+import static com.yahoo.vespa.hosted.node.admin.cgroup.CpuController.StatField.USER_USAGE_USEC;
+import static com.yahoo.vespa.hosted.node.admin.cgroup.CpuController.sharesToWeight;
+import static com.yahoo.vespa.hosted.node.admin.cgroup.CpuController.weightToShares;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -29,47 +30,48 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /**
  * @author freva
  */
-public class CGroupV2Test {
+public class ControlGroupTest {
 
     private static final ContainerId containerId = new ContainerId("4aec78cc");
 
     private final FileSystem fileSystem = TestFileSystem.create();
-    private final CGroupV2 cgroup = new CGroupV2(fileSystem);
+    private final ControlGroup containerCgroup = ControlGroup.root(fileSystem).resolveContainer(containerId);
+    private final CpuController containerCpu = containerCgroup.cpu();
     private final NodeAgentContext context = NodeAgentContextImpl.builder("node123.yahoo.com").fileSystem(fileSystem).build();
     private final UnixPath cgroupRoot = new UnixPath(fileSystem.getPath("/sys/fs/cgroup/machine.slice/libpod-4aec78cc.scope/container")).createDirectories();
 
     @Test
     public void updates_cpu_quota_and_period() {
-        assertEquals(Optional.empty(), cgroup.cpuQuotaPeriod(containerId));
+        assertEquals(Optional.empty(), containerCgroup.cpu().readMax());
 
         cgroupRoot.resolve("cpu.max").writeUtf8File("max 100000\n");
-        assertEquals(Optional.of(new Pair<>(-1, 100000)), cgroup.cpuQuotaPeriod(containerId));
+        assertEquals(Optional.of(new CpuController.Max(Size.max(), 100000)), containerCpu.readMax());
 
         cgroupRoot.resolve("cpu.max").writeUtf8File("456 123456\n");
-        assertEquals(Optional.of(new Pair<>(456, 123456)), cgroup.cpuQuotaPeriod(containerId));
+        assertEquals(Optional.of(new CpuController.Max(Size.from(456), 123456)), containerCpu.readMax());
 
-        assertFalse(cgroup.updateCpuQuotaPeriod(context, containerId, 456, 123456));
+        containerCgroup.cpu().updateMax(context, 456, 123456);
 
-        assertTrue(cgroup.updateCpuQuotaPeriod(context, containerId, 654, 123456));
-        assertEquals(Optional.of(new Pair<>(654, 123456)), cgroup.cpuQuotaPeriod(containerId));
+        assertTrue(containerCgroup.cpu().updateMax(context, 654, 123456));
+        assertEquals(Optional.of(new CpuController.Max(Size.from(654), 123456)), containerCpu.readMax());
         assertEquals("654 123456", cgroupRoot.resolve("cpu.max").readUtf8File());
 
-        assertTrue(cgroup.updateCpuQuotaPeriod(context, containerId, -1, 123456));
-        assertEquals(Optional.of(new Pair<>(-1, 123456)), cgroup.cpuQuotaPeriod(containerId));
+        assertTrue(containerCgroup.cpu().updateMax(context, -1, 123456));
+        assertEquals(Optional.of(new CpuController.Max(Size.max(), 123456)), containerCpu.readMax());
         assertEquals("max 123456", cgroupRoot.resolve("cpu.max").readUtf8File());
     }
 
     @Test
     public void updates_cpu_shares() {
-        assertEquals(OptionalInt.empty(), cgroup.cpuShares(containerId));
+        assertEquals(Optional.empty(), containerCgroup.cpu().readShares());
 
         cgroupRoot.resolve("cpu.weight").writeUtf8File("1\n");
-        assertEquals(OptionalInt.of(2), cgroup.cpuShares(containerId));
+        assertEquals(Optional.of(2), containerCgroup.cpu().readShares());
 
-        assertFalse(cgroup.updateCpuShares(context, containerId, 2));
+        assertFalse(containerCgroup.cpu().updateShares(context, 2));
 
-        assertTrue(cgroup.updateCpuShares(context, containerId, 12345));
-        assertEquals(OptionalInt.of(12323), cgroup.cpuShares(containerId));
+        assertTrue(containerCgroup.cpu().updateShares(context, 12345));
+        assertEquals(Optional.of(12323), containerCgroup.cpu().readShares());
     }
 
     @Test
@@ -82,16 +84,16 @@ public class CGroupV2Test {
                 "throttled_usec 14256\n");
 
         assertEquals(Map.of(TOTAL_USAGE_USEC, 17794243L, USER_USAGE_USEC, 16099205L, SYSTEM_USAGE_USEC, 1695038L,
-                TOTAL_PERIODS, 12465L, THROTTLED_PERIODS, 25L, THROTTLED_TIME_USEC, 14256L), cgroup.cpuStats(containerId));
+                TOTAL_PERIODS, 12465L, THROTTLED_PERIODS, 25L, THROTTLED_TIME_USEC, 14256L), containerCgroup.cpu().readStats());
     }
 
     @Test
     public void reads_memory_metrics() throws IOException {
         cgroupRoot.resolve("memory.current").writeUtf8File("2525093888\n");
-        assertEquals(2525093888L, cgroup.memoryUsageInBytes(containerId));
+        assertEquals(2525093888L, containerCgroup.memory().readCurrent().value());
 
         cgroupRoot.resolve("memory.max").writeUtf8File("4322885632\n");
-        assertEquals(4322885632L, cgroup.memoryLimitInBytes(containerId));
+        assertEquals(4322885632L, containerCgroup.memory().readMax().value());
 
         cgroupRoot.resolve("memory.stat").writeUtf8File("anon 3481600\n" +
                 "file 69206016\n" +
@@ -102,7 +104,7 @@ public class CGroupV2Test {
                 "shmem 8380416\n" +
                 "file_mapped 1081344\n" +
                 "file_dirty 135168\n");
-        assertEquals(69206016L, cgroup.memoryCacheInBytes(containerId));
+        assertEquals(69206016L, containerCgroup.memory().readFileSystemCache().value());
     }
 
     @Test

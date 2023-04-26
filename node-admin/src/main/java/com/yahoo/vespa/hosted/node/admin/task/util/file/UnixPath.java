@@ -23,6 +23,7 @@ import java.nio.file.attribute.PosixFilePermissions;
 import java.nio.file.attribute.UserPrincipal;
 import java.nio.file.attribute.UserPrincipalLookupService;
 import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
@@ -97,6 +98,10 @@ public class UnixPath {
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
+    }
+
+    public List<String> readAllLines() {
+        return uncheck(() -> Files.readAllLines(path));
     }
 
     public UnixPath writeUtf8File(String content, OpenOption... options) {
