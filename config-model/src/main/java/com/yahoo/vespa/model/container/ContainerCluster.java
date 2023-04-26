@@ -25,6 +25,7 @@ import com.yahoo.container.jdisc.config.HealthMonitorConfig;
 import com.yahoo.container.jdisc.state.StateHandler;
 import com.yahoo.container.usability.BindingsOverviewHandler;
 import com.yahoo.document.config.DocumentmanagerConfig;
+import com.yahoo.jdisc.http.server.jetty.VoidRequestLog;
 import com.yahoo.osgi.provider.model.ComponentModel;
 import com.yahoo.prelude.semantics.SemanticRulesConfig;
 import com.yahoo.search.config.IndexInfoConfig;
@@ -179,6 +180,7 @@ public abstract class ContainerCluster<CONTAINER extends Container>
         componentGroup = new ComponentGroup<>(this, "component");
 
         addCommonVespaBundles();
+        addSimpleComponent(VoidRequestLog.class);
         addComponent(new DefaultThreadpoolProvider(this, defaultPoolNumThreads));
         addComponent(defaultHandlerThreadpool);
         addSimpleComponent(com.yahoo.concurrent.classlock.ClassLocking.class);
