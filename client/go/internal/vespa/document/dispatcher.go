@@ -32,6 +32,7 @@ type Dispatcher struct {
 
 	listPool   sync.Pool
 	mu         sync.Mutex
+	statsMu    sync.Mutex
 	wg         sync.WaitGroup
 	inflightWg sync.WaitGroup
 }
@@ -145,7 +146,9 @@ func (d *Dispatcher) dispatch(op documentOp) {
 func (d *Dispatcher) processResults() {
 	defer d.wg.Done()
 	for op := range d.results {
+		d.statsMu.Lock()
 		d.stats.Add(op.result.Stats)
+		d.statsMu.Unlock()
 		if d.shouldRetry(op, op.result) {
 			d.enqueue(op.resetResult(), true)
 		} else if op.complete() {
@@ -235,7 +238,12 @@ func (d *Dispatcher) releaseSlot() { atomic.AddInt64(&d.inflightCount, -1) }
 
 func (d *Dispatcher) Enqueue(doc Document) error { return d.enqueue(documentOp{document: doc}, false) }
 
-func (d *Dispatcher) Stats() Stats { return d.stats }
+func (d *Dispatcher) Stats() Stats {
+	d.statsMu.Lock()
+	defer d.statsMu.Unlock()
+	d.stats.Inflight = atomic.LoadInt64(&d.inflightCount)
+	return d.stats
+}
 
 // Close waits for all inflight operations to complete and closes the dispatcher.
 func (d *Dispatcher) Close() error {
