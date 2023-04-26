@@ -103,6 +103,7 @@ make_distance_function_factory(search::attribute::DistanceMetric variant,
             switch (cell_type) {
                 case CellType::DOUBLE: return std::make_unique<EuclideanDistanceFunctionFactory<double>>();
                 case CellType::INT8:   return std::make_unique<EuclideanDistanceFunctionFactory<vespalib::eval::Int8Float>>();
+                case CellType::BFLOAT16: return std::make_unique<EuclideanDistanceFunctionFactory<vespalib::BFloat16>>();
                 default:               return std::make_unique<EuclideanDistanceFunctionFactory<float>>();
             }
         case DistanceMetric::InnerProduct:

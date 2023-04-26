@@ -50,9 +50,11 @@ template class SquaredEuclideanDistanceHW<float>;
 template class SquaredEuclideanDistanceHW<double>;
 
 using vespalib::eval::Int8Float;
+using vespalib::BFloat16;
 
-template<typename FloatType>
+template<typename AttributeCellType>
 class BoundEuclideanDistance : public BoundDistanceFunction {
+    using FloatType = std::conditional<std::is_same<AttributeCellType,BFloat16>::value,float,AttributeCellType>::type;
 private:
     const vespalib::hwaccelrated::IAccelrated & _computer;
     mutable TemporaryVectorStore<FloatType> _tmpSpace;
@@ -83,7 +85,7 @@ public:
         return score;
     }
     double calc_with_limit(const vespalib::eval::TypedCells& rhs, double limit) const override {
-        vespalib::ConstArrayRef<FloatType> rhs_vector = _tmpSpace.convertRhs(rhs);
+        vespalib::ConstArrayRef<AttributeCellType> rhs_vector = rhs.typify<AttributeCellType>();
         double sum = 0.0;
         size_t sz = _lhs_vector.size();
         assert(sz == rhs_vector.size());
@@ -96,6 +98,7 @@ public:
 };
 
 template class BoundEuclideanDistance<Int8Float>;
+template class BoundEuclideanDistance<BFloat16>;
 template class BoundEuclideanDistance<float>;
 template class BoundEuclideanDistance<double>;
 
@@ -114,6 +117,7 @@ EuclideanDistanceFunctionFactory<FloatType>::for_insertion_vector(const vespalib
 }
 
 template class EuclideanDistanceFunctionFactory<Int8Float>;
+template class EuclideanDistanceFunctionFactory<BFloat16>;
 template class EuclideanDistanceFunctionFactory<float>;
 template class EuclideanDistanceFunctionFactory<double>;
 
