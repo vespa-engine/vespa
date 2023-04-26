@@ -3073,6 +3073,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         ApplicationPackage applicationPackage =
                 new ApplicationPackage(dataParts.get(EnvironmentResource.APPLICATION_ZIP),
                                        true,
+                                       controller.system().isPublic() &&
                                        failDeploymentOnMissingCertificateFile
                                                .with(APPLICATION_ID, ApplicationId.from(tenant, application, "default").serializedForm())
                                                .value());
