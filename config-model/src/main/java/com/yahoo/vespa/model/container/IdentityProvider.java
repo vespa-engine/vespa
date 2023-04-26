@@ -17,7 +17,7 @@ import java.net.URI;
  * @author mortent
  */
 public class IdentityProvider extends SimpleComponent implements IdentityConfig.Producer {
-    public static final String CLASS = "com.yahoo.vespa.athenz.identityprovider.client.AthenzIdentityProviderImpl";
+    public static final String CLASS = "com.yahoo.vespa.athenz.identityprovider.client.AthenzIdentityProviderProvider";
     public static final String BUNDLE = "vespa-athenz";
 
     private final AthenzDomain domain;

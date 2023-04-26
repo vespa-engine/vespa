@@ -2,8 +2,8 @@
 package com.yahoo.vespa.athenz.identityprovider.client;
 
 import com.yahoo.container.core.identity.IdentityConfig;
+import com.yahoo.container.jdisc.athenz.AthenzIdentityProviderException;
 import com.yahoo.jdisc.Metric;
-import com.yahoo.security.AutoReloadingX509KeyManager;
 import com.yahoo.security.KeyAlgorithm;
 import com.yahoo.security.KeyStoreBuilder;
 import com.yahoo.security.KeyStoreType;
@@ -13,13 +13,13 @@ import com.yahoo.security.Pkcs10Csr;
 import com.yahoo.security.Pkcs10CsrBuilder;
 import com.yahoo.security.SignatureAlgorithm;
 import com.yahoo.security.X509CertificateBuilder;
-import com.yahoo.security.X509CertificateWithKey;
 import com.yahoo.test.ManualClock;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import javax.security.auth.x500.X500Principal;
+
 import java.io.File;
 import java.io.IOException;
 import java.math.BigInteger;
@@ -33,13 +33,18 @@ import java.util.Date;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.Supplier;
 
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-public class AthenzIdentityProviderImplTest {
+/**
+ * @author mortent
+ * @author bjorncs
+ */
+public class LegacyAthenzIdentityProviderImplTest {
 
     @TempDir
     public File tempDir;
@@ -80,25 +85,58 @@ public class AthenzIdentityProviderImplTest {
     }
 
     @Test
-    void certificate_expiry_metric_is_reported() {
+    void component_creation_fails_when_credentials_not_found() {
+        assertThrows(AthenzIdentityProviderException.class, () -> {
+            AthenzCredentialsService credentialService = mock(AthenzCredentialsService.class);
+            when(credentialService.registerInstance())
+                    .thenThrow(new RuntimeException("athenz unavailable"));
+
+            new LegacyAthenzIdentityProviderImpl(IDENTITY_CONFIG, mock(Metric.class), trustStoreFile, credentialService, mock(ScheduledExecutorService.class), new ManualClock(Instant.EPOCH));
+        });
+    }
+
+    @Test
+    void metrics_updated_on_refresh() {
         ManualClock clock = new ManualClock(Instant.EPOCH);
         Metric metric = mock(Metric.class);
-        AutoReloadingX509KeyManager keyManager = mock(AutoReloadingX509KeyManager.class);
+
+        AthenzCredentialsService athenzCredentialsService = mock(AthenzCredentialsService.class);
+
         KeyPair keyPair = KeyUtils.generateKeypair(KeyAlgorithm.EC);
         X509Certificate certificate = getCertificate(keyPair, getExpirationSupplier(clock));
-        when(keyManager.getCurrentCertificateWithKey()).thenReturn(new X509CertificateWithKey(certificate, keyPair.getPrivate()));
 
-        AthenzIdentityProviderImpl identityProvider = new AthenzIdentityProviderImpl(IDENTITY_CONFIG, metric, trustStoreFile, mock(ScheduledExecutorService.class), clock, keyManager);
+        when(athenzCredentialsService.registerInstance())
+                .thenReturn(new AthenzCredentials(certificate, keyPair, null));
+
+        when(athenzCredentialsService.updateCredentials(any(), any()))
+                .thenThrow(new RuntimeException("#1"))
+                .thenThrow(new RuntimeException("#2"))
+                .thenReturn(new AthenzCredentials(certificate, keyPair, null));
+
+        LegacyAthenzIdentityProviderImpl identityProvider =
+                new LegacyAthenzIdentityProviderImpl(IDENTITY_CONFIG, metric, trustStoreFile, athenzCredentialsService, mock(ScheduledExecutorService.class), clock);
+
         identityProvider.reportMetrics();
-        verify(metric).set(eq(AthenzIdentityProviderImpl.CERTIFICATE_EXPIRY_METRIC_NAME), eq(certificateValidity.getSeconds()), any());
+        verify(metric).set(eq(LegacyAthenzIdentityProviderImpl.CERTIFICATE_EXPIRY_METRIC_NAME), eq(certificateValidity.getSeconds()), any());
 
+        // Advance 1 day, refresh fails, cert is 1 day old
         clock.advance(Duration.ofDays(1));
+        identityProvider.refreshCertificate();
         identityProvider.reportMetrics();
-        verify(metric).set(eq(AthenzIdentityProviderImpl.CERTIFICATE_EXPIRY_METRIC_NAME), eq(certificateValidity.minus(Duration.ofDays(1)).getSeconds()), any());
+        verify(metric).set(eq(LegacyAthenzIdentityProviderImpl.CERTIFICATE_EXPIRY_METRIC_NAME), eq(certificateValidity.minus(Duration.ofDays(1)).getSeconds()), any());
 
+        // Advance 1 more day, refresh fails, cert is 2 days old
         clock.advance(Duration.ofDays(1));
+        identityProvider.refreshCertificate();
         identityProvider.reportMetrics();
-        verify(metric).set(eq(AthenzIdentityProviderImpl.CERTIFICATE_EXPIRY_METRIC_NAME), eq(certificateValidity.minus(Duration.ofDays(2)).getSeconds()), any());
+        verify(metric).set(eq(LegacyAthenzIdentityProviderImpl.CERTIFICATE_EXPIRY_METRIC_NAME), eq(certificateValidity.minus(Duration.ofDays(2)).getSeconds()), any());
+
+        // Advance 1 more day, refresh succeds, cert is new
+        clock.advance(Duration.ofDays(1));
+        identityProvider.refreshCertificate();
+        identityProvider.reportMetrics();
+        verify(metric).set(eq(LegacyAthenzIdentityProviderImpl.CERTIFICATE_EXPIRY_METRIC_NAME), eq(certificateValidity.getSeconds()), any());
+
     }
 
     private Supplier<Date> getExpirationSupplier(ManualClock clock) {
