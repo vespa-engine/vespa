@@ -16,65 +16,23 @@ using vespalib::eval::Value;
 using vespalib::eval::ValueType;
 using vespalib::make_string;
 
-namespace {
-
-template<typename LCT, typename RCT>
-std::unique_ptr<Value>
-convert_cells(const ValueType& new_type, const Value& old_value)
-{
-    auto old_cells = old_value.cells().typify<LCT>();
-    auto builder = FastValueBuilderFactory::get().create_value_builder<RCT>(new_type);
-    auto new_cells = builder->add_subspace();
-    assert(old_cells.size() == new_cells.size());
-    auto p = new_cells.begin();
-    for (LCT value : old_cells) {
-        RCT conv(value);
-        *p++ = conv;
-    }
-    return builder->build(std::move(builder));
-}
-
-struct ConvertCellsSelector
-{
-    template <typename LCT, typename RCT>
-    static auto invoke(const ValueType& new_type, const Value& old_value) {
-        return convert_cells<LCT, RCT>(new_type, old_value);
-    }
-    auto operator() (CellType from, CellType to, const Value& old_value) const {
-        using MyTypify = vespalib::eval::TypifyCellType;
-        ValueType new_type = old_value.type().cell_cast(to);
-        return vespalib::typify_invoke<2,MyTypify,ConvertCellsSelector>(from, to, new_type, old_value);
-    }
-};
-
-}
-
 namespace search::tensor {
 
 DistanceCalculator::DistanceCalculator(const tensor::ITensorAttribute& attr_tensor,
                                        const vespalib::eval::Value& query_tensor_in)
     : _attr_tensor(attr_tensor),
-      _query_tensor_uptr(),
       _query_tensor(&query_tensor_in),
       _dist_fun()
 {
     auto * nns_index = _attr_tensor.nearest_neighbor_index();
     auto & dff = nns_index ? nns_index->distance_function_factory() : attr_tensor.distance_function_factory();
-    auto query_ct = _query_tensor->cells().type;
-    CellType required_ct = dff.expected_cell_type;
-    if (query_ct != required_ct) {
-        ConvertCellsSelector converter;
-        _query_tensor_uptr = converter(query_ct, required_ct, *_query_tensor);
-        _query_tensor = _query_tensor_uptr.get();
-    }
-    _dist_fun = dff.for_query_vector(_query_tensor->cells());
+    _dist_fun = dff.for_query_vector(query_tensor_in.cells());
     assert(_dist_fun);
 }
 
 DistanceCalculator::DistanceCalculator(const tensor::ITensorAttribute& attr_tensor,
                                        BoundDistanceFunction::UP function_in)
     : _attr_tensor(attr_tensor),
-      _query_tensor_uptr(),
       _query_tensor(nullptr),
       _dist_fun(std::move(function_in))
 {
