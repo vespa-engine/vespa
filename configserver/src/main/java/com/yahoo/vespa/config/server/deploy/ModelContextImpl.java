@@ -36,6 +36,7 @@ import com.yahoo.vespa.flags.UnboundFlag;
 import java.io.File;
 import java.net.URI;
 import java.security.cert.X509Certificate;
+import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -379,6 +380,7 @@ public class ModelContextImpl implements ModelContext {
         private final List<String> environmentVariables;
         private final Optional<CloudAccount> cloudAccount;
         private final boolean allowUserFilters;
+        private final Duration endpointConnectionTtl;
 
         public Properties(ApplicationId applicationId,
                           Version modelVersion,
@@ -425,6 +427,9 @@ public class ModelContextImpl implements ModelContext {
             this.cloudAccount = cloudAccount;
             this.allowUserFilters = PermanentFlags.ALLOW_USER_FILTERS.bindTo(flagSource)
                     .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
+            this.endpointConnectionTtl = Duration.ofSeconds(
+                    PermanentFlags.ENDPOINT_CONNECTION_TTL.bindTo(flagSource)
+                            .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value());
         }
 
         @Override public ModelContext.FeatureFlags featureFlags() { return featureFlags; }
@@ -516,6 +521,7 @@ public class ModelContextImpl implements ModelContext {
 
         @Override public boolean allowUserFilters() { return allowUserFilters; }
 
+        @Override public Duration endpointConnectionTtl() { return endpointConnectionTtl; }
     }
 
 }

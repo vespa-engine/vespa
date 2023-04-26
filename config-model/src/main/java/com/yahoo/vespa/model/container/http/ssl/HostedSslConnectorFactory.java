@@ -10,7 +10,6 @@ import com.yahoo.vespa.model.container.http.ConnectorFactory;
 import java.time.Duration;
 import java.util.Collection;
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * Component specification for {@link com.yahoo.jdisc.http.server.jetty.ConnectorFactory} with hosted specific configuration.
@@ -26,16 +25,19 @@ public class HostedSslConnectorFactory extends ConnectorFactory {
     private final boolean enforceHandshakeClientAuth;
     private final Collection<String> tlsCiphersOverride;
     private final boolean enableProxyProtocolMixedMode;
+    private final Duration endpointConnectionTtl;
 
     /**
      * Create connector factory that uses a certificate provided by the config-model / configserver and default hosted Vespa truststore.
      */
     public static HostedSslConnectorFactory withProvidedCertificate(
             String serverName, EndpointCertificateSecrets endpointCertificateSecrets, boolean enforceHandshakeClientAuth,
-            Collection<String> tlsCiphersOverride, boolean enableProxyProtocolMixedMode, int port) {
+            Collection<String> tlsCiphersOverride, boolean enableProxyProtocolMixedMode, int port,
+            Duration endpointConnectionTtl) {
         ConfiguredDirectSslProvider sslProvider = createConfiguredDirectSslProvider(
                 serverName, endpointCertificateSecrets, DEFAULT_HOSTED_TRUSTSTORE, /*tlsCaCertificates*/null, enforceHandshakeClientAuth);
-        return new HostedSslConnectorFactory(sslProvider, false, enforceHandshakeClientAuth, tlsCiphersOverride, enableProxyProtocolMixedMode, port);
+        return new HostedSslConnectorFactory(sslProvider, false, enforceHandshakeClientAuth, tlsCiphersOverride,
+                                             enableProxyProtocolMixedMode, port, endpointConnectionTtl);
     }
 
     /**
@@ -43,28 +45,33 @@ public class HostedSslConnectorFactory extends ConnectorFactory {
      */
     public static HostedSslConnectorFactory withProvidedCertificateAndTruststore(
             String serverName, EndpointCertificateSecrets endpointCertificateSecrets, String tlsCaCertificates,
-            Collection<String> tlsCiphersOverride, boolean enableProxyProtocolMixedMode, int port) {
+            Collection<String> tlsCiphersOverride, boolean enableProxyProtocolMixedMode, int port,
+            Duration endpointConnectionTtl) {
         ConfiguredDirectSslProvider sslProvider = createConfiguredDirectSslProvider(
                 serverName, endpointCertificateSecrets, /*tlsCaCertificatesPath*/null, tlsCaCertificates, false);
-        return new HostedSslConnectorFactory(sslProvider, true, false, tlsCiphersOverride, enableProxyProtocolMixedMode, port);
+        return new HostedSslConnectorFactory(sslProvider, true, false, tlsCiphersOverride, enableProxyProtocolMixedMode,
+                                             port, endpointConnectionTtl);
     }
 
     /**
      * Create connector factory that uses the default certificate and truststore provided by Vespa (through Vespa-global TLS configuration).
      */
     public static HostedSslConnectorFactory withDefaultCertificateAndTruststore(String serverName, Collection<String> tlsCiphersOverride,
-                                                                                boolean enableProxyProtocolMixedMode, int port) {
-        return new HostedSslConnectorFactory(new DefaultSslProvider(serverName), true, false, tlsCiphersOverride, enableProxyProtocolMixedMode, port);
+                                                                                boolean enableProxyProtocolMixedMode, int port,
+                                                                                Duration endpointConnectionTtl) {
+        return new HostedSslConnectorFactory(new DefaultSslProvider(serverName), true, false, tlsCiphersOverride,
+                                             enableProxyProtocolMixedMode, port, endpointConnectionTtl);
     }
 
     private HostedSslConnectorFactory(SslProvider sslProvider, boolean enforceClientAuth,
                                       boolean enforceHandshakeClientAuth, Collection<String> tlsCiphersOverride,
-                                      boolean enableProxyProtocolMixedMode, int port) {
+                                      boolean enableProxyProtocolMixedMode, int port, Duration endpointConnectionTtl) {
         super(new Builder("tls"+port, port).sslProvider(sslProvider));
         this.enforceClientAuth = enforceClientAuth;
         this.enforceHandshakeClientAuth = enforceHandshakeClientAuth;
         this.tlsCiphersOverride = tlsCiphersOverride;
         this.enableProxyProtocolMixedMode = enableProxyProtocolMixedMode;
+        this.endpointConnectionTtl = endpointConnectionTtl;
     }
 
     private static ConfiguredDirectSslProvider createConfiguredDirectSslProvider(
@@ -100,6 +107,6 @@ public class HostedSslConnectorFactory extends ConnectorFactory {
         connectorBuilder
                 .proxyProtocol(new ConnectorConfig.ProxyProtocol.Builder().enabled(true).mixedMode(enableProxyProtocolMixedMode))
                 .idleTimeout(Duration.ofSeconds(30).toSeconds())
-                .maxConnectionLife(Duration.ofSeconds(45).toSeconds());
+                .maxConnectionLife(endpointConnectionTtl != null ? endpointConnectionTtl.toSeconds() : 0);
     }
 }
