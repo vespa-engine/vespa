@@ -5,6 +5,8 @@
 #include <vespa/vespalib/data/slime/cursor.h>
 #include <vespa/vespalib/data/slime/inserter.h>
 
+using vespalib::FeatureSet;
+
 namespace search::docsummary {
 
 RankFeaturesDFW::RankFeaturesDFW() = default;

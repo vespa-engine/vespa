@@ -98,6 +98,13 @@ public class ConvertParsedSchemas {
             Schema schema = parsed.getDocumentWithoutSchema()
                 ? new DocumentOnlySchema(applicationPackage, fileRegistry, deployLogger, properties)
                 : new Schema(parsed.name(), applicationPackage, inherited, fileRegistry, deployLogger, properties);
+            inherited.ifPresent(parentName -> {
+                    for (var possibleParent : resultList) {
+                        if (possibleParent.getName().equals(parentName)) {
+                            schema.setInheritedSchema(possibleParent);
+                        }
+                    }
+                });
             convertSchema(schema, parsed);
             resultList.add(schema);
         }
@@ -145,7 +152,23 @@ public class ConvertParsedSchemas {
             docsum.setOmitSummaryFeatures(true);
         }
         for (var parsedField : parsed.getSummaryFields()) {
-            DataType dataType = typeContext.resolveType(parsedField.getType());
+            var parsedType = parsedField.getType();
+            DataType dataType = (parsedType != null) ? typeContext.resolveType(parsedType) : null;
+            var existingField = schema.getField(parsedField.name());
+            if (existingField != null) {
+                var existingType = existingField.getDataType();
+                if (dataType == null) {
+                    dataType = existingType;
+                } else if (!dataType.equals(existingType)) {
+                    if (dataType.getValueClass().equals(com.yahoo.document.datatypes.WeightedSet.class)) {
+                        // "adjusting type for field " + parsedField.name() + " in document-summary " + parsed.name() + " field already has: " + existingType + " but declared type was: " + dataType
+                        dataType = existingType;
+                    }
+                }
+            }
+            if (dataType == null) {
+                throw new IllegalArgumentException("Missing data-type for summary field " + parsedField.name() + " in document-summary " + parsed.name());
+            }
             var summaryField = new SummaryField(parsedField.name(), dataType);
             // XXX does not belong here:
             summaryField.setVsmCommand(SummaryField.VsmCommand.FLATTENSPACE);

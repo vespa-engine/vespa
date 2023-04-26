@@ -5,7 +5,6 @@
 #include <memory>
 #include <vespa/eval/eval/cell_type.h>
 #include <vespa/eval/eval/typed_cells.h>
-#include <vespa/vespalib/util/array.h>
 #include <vespa/vespalib/util/arrayref.h>
 #include "distance_function.h"
 
@@ -41,53 +40,6 @@ public:
     // calculate internal distance, early return allowed if > limit
     virtual double calc_with_limit(const vespalib::eval::TypedCells& rhs,
                                    double limit) const = 0;
-};
-
-
-/** helper class - temporary storage of possibly-converted vector cells */
-template <typename FloatType>
-class TemporaryVectorStore {
-private:
-    vespalib::Array<FloatType> _tmpSpace;
-    vespalib::ConstArrayRef<FloatType> internal_convert(vespalib::eval::TypedCells cells, size_t offset);
-public:
-    TemporaryVectorStore(size_t vectorSize) : _tmpSpace(vectorSize * 2) {}
-    vespalib::ConstArrayRef<FloatType> storeLhs(vespalib::eval::TypedCells cells) {
-        return internal_convert(cells, 0);
-    }
-    vespalib::ConstArrayRef<FloatType> convertRhs(vespalib::eval::TypedCells cells) {
-        if (vespalib::eval::get_cell_type<FloatType>() == cells.type) [[likely]] {
-            return cells.unsafe_typify<FloatType>();
-        } else {
-            return internal_convert(cells, cells.size);
-        }
-    }
-};
-
-template<typename FloatType>
-class ConvertingBoundDistance : public BoundDistanceFunction {
-    mutable TemporaryVectorStore<FloatType> _tmpSpace;
-    const vespalib::eval::TypedCells _lhs;
-    const DistanceFunction &_df;
-public:
-    ConvertingBoundDistance(const vespalib::eval::TypedCells& lhs, const DistanceFunction &df)
-        : BoundDistanceFunction(vespalib::eval::get_cell_type<FloatType>()),
-          _tmpSpace(lhs.size),
-          _lhs(_tmpSpace.storeLhs(lhs)),
-          _df(df)
-    {}
-    double calc(const vespalib::eval::TypedCells& rhs) const override {
-        return _df.calc(_lhs, vespalib::eval::TypedCells(_tmpSpace.convertRhs(rhs)));
-    }
-    double convert_threshold(double threshold) const override {
-        return _df.convert_threshold(threshold);
-    }
-    double to_rawscore(double distance) const override {
-        return _df.to_rawscore(distance);
-    }
-    double calc_with_limit(const vespalib::eval::TypedCells& rhs, double limit) const override {
-        return _df.calc_with_limit(_lhs, vespalib::eval::TypedCells(_tmpSpace.convertRhs(rhs)), limit);
-    }
 };
 
 }

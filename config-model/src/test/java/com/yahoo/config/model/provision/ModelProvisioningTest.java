@@ -15,6 +15,7 @@ import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.container.core.ApplicationMetadataConfig;
 import com.yahoo.search.config.QrStartConfig;
+import com.yahoo.vespa.config.content.FleetcontrollerConfig;
 import com.yahoo.vespa.config.content.core.StorCommunicationmanagerConfig;
 import com.yahoo.vespa.config.content.core.StorStatusConfig;
 import com.yahoo.vespa.config.search.core.ProtonConfig;
@@ -2349,6 +2350,38 @@ public class ModelProvisioningTest {
                          hosts.stream().allMatch(h -> h.spec().membership().get().cluster().isStateful()),
                          "Hosts in cluster '" + clusterId + "' are " + (stateful ? "" : "not ") + "stateful");
         });
+    }
+
+    @Test
+    public void testAllow2ContentGroupsDown() {
+        String servicesXml =
+                "<?xml version='1.0' encoding='utf-8' ?>" +
+                        "<services>" +
+                        "  <container version='1.0' id='qrs'>" +
+                        "     <nodes count='1'/>" +
+                        "  </container>" +
+                        "  <content version='1.0' id='content'>" +
+                        "     <redundancy>1</redundancy>" +
+                        "     <documents>" +
+                        "       <document type='type1' mode='index'/>" +
+                        "     </documents>" +
+                        "    <nodes count='4' groups='4'/>" +
+                        "    <tuning>" +
+                        "      <cluster-controller>" +
+                        "        <max-groups-allowed-down>2</max-groups-allowed-down>" +
+                        "      </cluster-controller>" +
+                        "    </tuning>" +
+                        "  </content>" +
+                        "</services>";
+        VespaModelTester tester = new VespaModelTester();
+        tester.setModelProperties(new TestProperties().setAllowMoreThanOneContentGroupDown(true));
+        tester.addHosts(9);
+        VespaModel model = tester.createModel(servicesXml, true, new DeployState.Builder()
+                .properties(new TestProperties().setAllowMoreThanOneContentGroupDown(true)));
+
+        var fleetControllerConfigBuilder = new FleetcontrollerConfig.Builder();
+        model.getConfig(fleetControllerConfigBuilder, "admin/standalone/cluster-controllers/0/components/clustercontroller-content-configurer");
+        assertEquals(2, fleetControllerConfigBuilder.build().max_number_of_groups_allowed_to_be_down());
     }
 
     @Test

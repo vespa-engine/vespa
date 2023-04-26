@@ -31,47 +31,50 @@ func TestFeed(t *testing.T) {
 	cli.now = clock.now
 
 	td := t.TempDir()
-	jsonFile := filepath.Join(td, "docs.jsonl")
-	err := os.WriteFile(jsonFile, []byte(`{
+	doc := []byte(`{
   "put": "id:ns:type::doc1",
   "fields": {"foo": "123"}
-}`), 0644)
-
-	require.Nil(t, err)
+}`)
+	jsonFile1 := filepath.Join(td, "docs1.jsonl")
+	jsonFile2 := filepath.Join(td, "docs2.jsonl")
+	require.Nil(t, os.WriteFile(jsonFile1, doc, 0644))
+	require.Nil(t, os.WriteFile(jsonFile2, doc, 0644))
 
 	httpClient.NextResponseString(200, `{"message":"OK"}`)
-	require.Nil(t, cli.Run("feed", jsonFile))
+	httpClient.NextResponseString(200, `{"message":"OK"}`)
+	require.Nil(t, cli.Run("feed", jsonFile1, jsonFile2))
 
 	assert.Equal(t, "", stderr.String())
 	want := `{
-  "feeder.seconds": 1.000,
-  "feeder.ok.count": 1,
-  "feeder.ok.rate": 1.000,
+  "feeder.seconds": 5.000,
+  "feeder.ok.count": 2,
+  "feeder.ok.rate": 0.400,
   "feeder.error.count": 0,
   "feeder.inflight.count": 0,
-  "http.request.count": 1,
-  "http.request.bytes": 25,
+  "http.request.count": 2,
+  "http.request.bytes": 50,
   "http.request.MBps": 0.000,
   "http.exception.count": 0,
-  "http.response.count": 1,
-  "http.response.bytes": 16,
+  "http.response.count": 2,
+  "http.response.bytes": 32,
   "http.response.MBps": 0.000,
   "http.response.error.count": 0,
-  "http.response.latency.millis.min": 0,
-  "http.response.latency.millis.avg": 0,
-  "http.response.latency.millis.max": 0,
+  "http.response.latency.millis.min": 1000,
+  "http.response.latency.millis.avg": 1000,
+  "http.response.latency.millis.max": 1000,
   "http.response.code.counts": {
-    "200": 1
+    "200": 2
   }
 }
 `
 	assert.Equal(t, want, stdout.String())
 
 	stdout.Reset()
-	cli.Stdin = bytes.NewBuffer([]byte(`{
-  "put": "id:ns:type::doc1",
-  "fields": {"foo": "123"}
-}`))
+	var stdinBuf bytes.Buffer
+	stdinBuf.Write(doc)
+	stdinBuf.Write(doc)
+	cli.Stdin = &stdinBuf
+	httpClient.NextResponseString(200, `{"message":"OK"}`)
 	httpClient.NextResponseString(200, `{"message":"OK"}`)
 	require.Nil(t, cli.Run("feed", "-"))
 	assert.Equal(t, want, stdout.String())

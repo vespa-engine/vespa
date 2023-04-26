@@ -52,7 +52,7 @@ public:
         EXACT
     };
 
-    FieldSearcher(const FieldIdT & fId, bool defaultPrefix=false);
+    FieldSearcher(FieldIdT fId, bool defaultPrefix=false);
     ~FieldSearcher() override;
     virtual std::unique_ptr<FieldSearcher> duplicate() const = 0;
     bool search(const StorageDocument & doc);
@@ -61,8 +61,8 @@ public:
                          const vsm::FieldPathMapT& field_paths,
                          search::fef::IQueryEnvironment& query_env);
 
-    const FieldIdT & field()         const { return _field; }
-    void field(const FieldIdT & v)         { _field = v; prepareFieldId(); }
+    FieldIdT field()                 const { return _field; }
+    void field(FieldIdT v)                 { _field = v; prepareFieldId(); }
     bool prefix()                    const { return _matchType == PREFIX; }
     bool substring()                 const { return _matchType == SUBSTRING; }
     bool suffix()                    const { return _matchType == SUFFIX; }

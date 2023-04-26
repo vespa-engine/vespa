@@ -18,10 +18,11 @@ import (
 func addFeedFlags(cmd *cobra.Command, options *feedOptions) {
 	cmd.PersistentFlags().IntVar(&options.connections, "connections", 8, "The number of connections to use")
 	cmd.PersistentFlags().StringVar(&options.compression, "compression", "auto", `Compression mode to use. Default is "auto" which compresses large documents. Must be "auto", "gzip" or "none"`)
+	cmd.PersistentFlags().IntVar(&options.timeoutSecs, "timeout", 0, "Invididual feed operation timeout in seconds. 0 to disable")
+	cmd.PersistentFlags().IntVar(&options.doomSecs, "max-failure-seconds", 0, "Exit if given number of seconds elapse without any successful operations. 0 to disable")
+	cmd.PersistentFlags().BoolVar(&options.verbose, "verbose", false, "Verbose mode. Print successful operations in addition to errors")
 	cmd.PersistentFlags().StringVar(&options.route, "route", "", "Target Vespa route for feed operations")
 	cmd.PersistentFlags().IntVar(&options.traceLevel, "trace", 0, "The trace level of network traffic. 0 to disable")
-	cmd.PersistentFlags().IntVar(&options.timeoutSecs, "timeout", 0, "Feed operation timeout in seconds. 0 to disable")
-	cmd.PersistentFlags().BoolVar(&options.verbose, "verbose", false, "Verbose mode. Print successful operations in addition to errors")
 	memprofile := "memprofile"
 	cpuprofile := "cpuprofile"
 	cmd.PersistentFlags().StringVar(&options.memprofile, memprofile, "", "Write a heap profile to given file")
@@ -38,44 +39,34 @@ type feedOptions struct {
 	verbose     bool
 	traceLevel  int
 	timeoutSecs int
-	memprofile  string
-	cpuprofile  string
+	doomSecs    int
+
+	memprofile string
+	cpuprofile string
 }
 
 func newFeedCmd(cli *CLI) *cobra.Command {
 	var options feedOptions
 	cmd := &cobra.Command{
-		Use:   "feed FILE",
+		Use:   "feed FILE [FILE]...",
 		Short: "Feed documents to a Vespa cluster",
 		Long: `Feed documents to a Vespa cluster.
 
-A high performance feeding client. This can be used to feed large amounts of
-documents to a Vespa cluster efficiently.
+This command can be used to feed large amounts of documents to a Vespa cluster
+efficiently.
 
 The contents of FILE must be either a JSON array or JSON objects separated by
 newline (JSONL).
 
 If FILE is a single dash ('-'), documents will be read from standard input.
 `,
-		Example: `$ vespa feed documents.jsonl
-$ cat documents.jsonl | vespa feed -
-`,
-		Args:              cobra.ExactArgs(1),
+		Example: `$ vespa feed docs.jsonl moredocs.json
+$ cat docs.jsonl | vespa feed -`,
+		Args:              cobra.MinimumNArgs(1),
 		DisableAutoGenTag: true,
 		SilenceUsage:      true,
 		Hidden:            true, // TODO(mpolden): Remove when ready for public use
 		RunE: func(cmd *cobra.Command, args []string) error {
-			var r io.Reader
-			if args[0] == "-" {
-				r = cli.Stdin
-			} else {
-				f, err := os.Open(args[0])
-				if err != nil {
-					return err
-				}
-				defer f.Close()
-				r = f
-			}
 			if options.cpuprofile != "" {
 				f, err := os.Create(options.cpuprofile)
 				if err != nil {
@@ -84,7 +75,7 @@ $ cat documents.jsonl | vespa feed -
 				pprof.StartCPUProfile(f)
 				defer pprof.StopCPUProfile()
 			}
-			err := feed(r, cli, options)
+			err := feed(args, options, cli)
 			if options.memprofile != "" {
 				f, err := os.Create(options.memprofile)
 				if err != nil {
@@ -123,7 +114,7 @@ func (opts feedOptions) compressionMode() (document.Compression, error) {
 	return 0, errHint(fmt.Errorf("invalid compression mode: %s", opts.compression), `Must be "auto", "gzip" or "none"`)
 }
 
-func feed(r io.Reader, cli *CLI, options feedOptions) error {
+func feed(files []string, options feedOptions, cli *CLI) error {
 	service, err := documentService(cli)
 	if err != nil {
 		return err
@@ -139,25 +130,37 @@ func feed(r io.Reader, cli *CLI, options feedOptions) error {
 		Route:       options.route,
 		TraceLevel:  options.traceLevel,
 		BaseURL:     service.BaseURL,
+		NowFunc:     cli.now,
 	}, clients)
 	throttler := document.NewThrottler(options.connections)
-	// TODO(mpolden): Make doom duration configurable
-	circuitBreaker := document.NewCircuitBreaker(10*time.Second, 0)
+	circuitBreaker := document.NewCircuitBreaker(10*time.Second, time.Duration(options.doomSecs)*time.Second)
 	dispatcher := document.NewDispatcher(client, throttler, circuitBreaker, cli.Stderr, options.verbose)
-	dec := document.NewDecoder(r)
-
 	start := cli.now()
-	for {
-		doc, err := dec.Decode()
-		if err == io.EOF {
-			break
+	for _, name := range files {
+		var r io.ReadCloser
+		if len(files) == 1 && name == "-" {
+			r = io.NopCloser(cli.Stdin)
+		} else {
+			f, err := os.Open(name)
+			if err != nil {
+				return err
+			}
+			r = f
 		}
-		if err != nil {
-			cli.printErr(fmt.Errorf("failed to decode document: %w", err))
+		dec := document.NewDecoder(r)
+		for {
+			doc, err := dec.Decode()
+			if err == io.EOF {
+				break
+			}
+			if err != nil {
+				cli.printErr(fmt.Errorf("failed to decode document: %w", err))
+			}
+			if err := dispatcher.Enqueue(doc); err != nil {
+				cli.printErr(err)
+			}
 		}
-		if err := dispatcher.Enqueue(doc); err != nil {
-			cli.printErr(err)
-		}
+		r.Close()
 	}
 	if err := dispatcher.Close(); err != nil {
 		return err

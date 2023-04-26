@@ -16,7 +16,9 @@ template <typename T>
 class SingleNumericEnumSearchContext : public SingleEnumSearchContext<T, NumericSearchContext<NumericRangeMatcher<T>>>
 {
 public:
-    SingleNumericEnumSearchContext(std::unique_ptr<QueryTermSimple> qTerm, const AttributeVector& toBeSearched, const vespalib::datastore::AtomicEntryRef* enum_indices, const EnumStoreT<T>& enum_store);
+    using AtomicEntryRef = vespalib::datastore::AtomicEntryRef;
+    using EnumIndices = vespalib::ConstArrayRef<AtomicEntryRef>;
+    SingleNumericEnumSearchContext(std::unique_ptr<QueryTermSimple> qTerm, const AttributeVector& toBeSearched, EnumIndices enum_indices, const EnumStoreT<T>& enum_store);
 };
 
 }

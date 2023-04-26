@@ -6,13 +6,14 @@
 
 namespace search::attribute {
 
-SingleSmallNumericSearchContext::SingleSmallNumericSearchContext(std::unique_ptr<QueryTermSimple> qTerm, const AttributeVector& toBeSearched, const Word* word_data, Word value_mask, uint32_t value_shift_shift, uint32_t value_shift_mask, uint32_t word_shift)
+SingleSmallNumericSearchContext::SingleSmallNumericSearchContext(std::unique_ptr<QueryTermSimple> qTerm, const AttributeVector& toBeSearched, const Word* word_data, Word value_mask, uint32_t value_shift_shift, uint32_t value_shift_mask, uint32_t word_shift, uint32_t docid_limit)
     : NumericSearchContext<NumericRangeMatcher<T>>(toBeSearched, *qTerm, false),
       _wordData(word_data),
       _valueMask(value_mask),
       _valueShiftShift(value_shift_shift),
       _valueShiftMask(value_shift_mask),
-      _wordShift(word_shift)
+      _wordShift(word_shift),
+      _docid_limit(docid_limit)
 {
 }
 
@@ -30,6 +31,12 @@ SingleSmallNumericSearchContext::createFilterIterator(fef::TermFieldMatchData* m
     return strict
         ? std::make_unique<AttributeIteratorStrict<SingleSmallNumericSearchContext>>(*this, matchData)
         : std::make_unique<AttributeIteratorT<SingleSmallNumericSearchContext>>(*this, matchData);
+}
+
+uint32_t
+SingleSmallNumericSearchContext::get_committed_docid_limit() const noexcept
+{
+    return _docid_limit;
 }
 
 }

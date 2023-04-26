@@ -29,15 +29,14 @@ UTF8StrChrFieldSearcher::matchTerms(const FieldRef & f, const size_t mintsz)
     for( ; n < e; ) {
         if (!*n) { _zeroCount++; n++; }
         n = tokenize(n, _buf->capacity(), fn, fl);
-        for(QueryTermList::iterator it=_qtl.begin(), mt=_qtl.end(); it != mt; it++) {
-            QueryTerm & qt = **it;
+        for (auto qt : _qtl) {
             const cmptype_t * term;
-            termsize_t tsz = qt.term(term);
-            if ((tsz <= fl) && (prefix() || qt.isPrefix() || (tsz == fl))) {
+            termsize_t tsz = qt->term(term);
+            if ((tsz <= fl) && (prefix() || qt->isPrefix() || (tsz == fl))) {
                 const cmptype_t *tt=term, *et=term+tsz;
                 for (const cmptype_t *fnt=fn; (tt < et) && (*tt == *fnt); tt++, fnt++);
                 if (tt == et) {
-                    addHit(qt, words);
+                    addHit(*qt, words);
                 }
             }
         }

@@ -43,6 +43,7 @@ ImportedSearchContext::ImportedSearchContext(
       _target_attribute(target_attribute),
       _target_search_context(_target_attribute.createSearchContext(std::move(term), params)),
       _targetLids(_reference_attribute.getTargetLids()),
+      _target_docid_limit(_target_search_context->get_committed_docid_limit()),
       _merger(_reference_attribute.getCommittedDocIdLimit()),
       _params(params),
       _zero_hits(false)
@@ -325,6 +326,12 @@ const QueryTermUCS4 * ImportedSearchContext::queryTerm() const {
 
 const vespalib::string& ImportedSearchContext::attributeName() const {
     return _imported_attribute.getName();
+}
+
+uint32_t
+ImportedSearchContext::get_committed_docid_limit() const noexcept
+{
+    return _targetLids.size();
 }
 
 }

@@ -27,7 +27,6 @@ using namespace search::engine;
 using namespace search::grouping;
 using search::DocumentMetaData;
 using search::LidUsageStats;
-using search::FeatureSet;
 using search::MatchingElementsFields;
 using search::MatchingElements;
 using search::attribute::IAttributeContext;
@@ -39,6 +38,7 @@ using search::fef::indexproperties::hitcollector::ArraySize;
 using search::queryeval::Blueprint;
 using search::queryeval::SearchIterator;
 using vespalib::Doom;
+using vespalib::FeatureSet;
 using vespalib::make_string_short::fmt;
 
 namespace proton::matching {

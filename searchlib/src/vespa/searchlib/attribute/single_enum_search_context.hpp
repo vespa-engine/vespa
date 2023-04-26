@@ -9,7 +9,7 @@
 namespace search::attribute {
 
 template <typename T, typename BaseSC>
-SingleEnumSearchContext<T, BaseSC>::SingleEnumSearchContext(typename BaseSC::MatcherType&& matcher, const AttributeVector& toBeSearched, const vespalib::datastore::AtomicEntryRef* enum_indices, const EnumStoreT<T>& enum_store)
+SingleEnumSearchContext<T, BaseSC>::SingleEnumSearchContext(typename BaseSC::MatcherType&& matcher, const AttributeVector& toBeSearched, EnumIndices enum_indices, const EnumStoreT<T>& enum_store)
     : BaseSC(toBeSearched, std::move(matcher)),
       _enum_indices(enum_indices),
       _enum_store(enum_store)
@@ -31,6 +31,13 @@ SingleEnumSearchContext<T, BaseSC>::createFilterIterator(fef::TermFieldMatchData
     return strict
         ? std::make_unique<AttributeIteratorStrict<SingleEnumSearchContext>>(*this, matchData)
         : std::make_unique<AttributeIteratorT<SingleEnumSearchContext>>(*this, matchData);
+}
+
+template <typename T, typename BaseSC>
+uint32_t
+SingleEnumSearchContext<T, BaseSC>::get_committed_docid_limit() const noexcept
+{
+    return _enum_indices.size();
 }
 
 }

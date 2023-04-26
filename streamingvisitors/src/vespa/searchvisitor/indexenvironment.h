@@ -83,7 +83,9 @@ public:
         return nullptr;
     }
 
-    bool addField(const vespalib::string & name, bool isAttribute);
+    bool addField(const vespalib::string& name,
+                  bool isAttribute,
+                  search::fef::FieldInfo::DataType data_type);
 
     search::fef::Properties & getProperties() { return _properties; }
 

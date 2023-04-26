@@ -33,4 +33,11 @@ MultiEnumSearchContext<T, BaseSC, M>::createFilterIterator(fef::TermFieldMatchDa
         : std::make_unique<AttributeIteratorT<MultiEnumSearchContext>>(*this, matchData);
 }
 
+template <typename T, typename BaseSC, typename M>
+uint32_t
+MultiEnumSearchContext<T, BaseSC, M>::get_committed_docid_limit() const noexcept
+{
+    return _mv_mapping_read_view.get_committed_docid_limit();
+}
+
 }

@@ -32,6 +32,14 @@ search music {
       indexing: summary | index
     }
 
+    field tags type weightedset<string> {
+        indexing: attribute | summary
+        attribute: fast-search
+        weightedset {
+            create-if-nonexistent
+        }
+    }
+
   }
 
   rank-profile default inherits default {
@@ -48,6 +56,11 @@ search music {
 
   }
 
+  document-summary tags {
+      summary tags type weightedset<string> {
+          full
+      }
+  }
 
 
 }

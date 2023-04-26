@@ -51,6 +51,16 @@ public class Container extends PartialContainer {
     }
 
     @Override
+    public String toString() {
+        return "Container{" +
+               "hostname='" + hostname + '\'' +
+               ", resources=" + resources +
+               ", conmonPid=" + conmonPid +
+               ", networks=" + networks +
+               '}';
+    }
+
+    @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;

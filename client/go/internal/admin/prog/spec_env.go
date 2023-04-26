@@ -50,17 +50,17 @@ func (spec *Spec) EffectiveEnv() []string {
 	return envVec
 }
 
-func (spec *Spec) considerFallback(varName, varValue string) {
+func (spec *Spec) ConsiderFallback(varName, varValue string) {
 	if spec.Getenv(varName) == "" && varValue != "" {
 		spec.Setenv(varName, varValue)
 	}
 }
 
-func (spec *Spec) considerEnvFallback(targetVar, fallbackVar string) {
-	spec.considerFallback(targetVar, spec.Getenv(fallbackVar))
+func (spec *Spec) ConsiderEnvFallback(targetVar, fallbackVar string) {
+	spec.ConsiderFallback(targetVar, spec.Getenv(fallbackVar))
 }
 
-func (p *Spec) matchesListEnv(envVarName string) bool {
+func (p *Spec) MatchesListEnv(envVarName string) bool {
 	return p.matchesListString(p.Getenv(envVarName))
 }
 
@@ -80,7 +80,7 @@ func (p *Spec) matchesListString(env string) bool {
 	return false
 }
 
-func (p *Spec) valueFromListEnv(envVarName string) string {
+func (p *Spec) ValueFromListEnv(envVarName string) string {
 	return p.valueFromListString(p.Getenv(envVarName))
 }
 

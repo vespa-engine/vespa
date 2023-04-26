@@ -21,9 +21,11 @@ import com.yahoo.vespa.model.admin.monitoring.builder.Metrics;
 import com.yahoo.vespa.model.admin.monitoring.builder.PredefinedMetricSets;
 import com.yahoo.vespa.model.admin.monitoring.builder.xml.MetricsBuilder;
 import org.w3c.dom.Element;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.regex.Pattern;
 
 /**
  * A base class for admin model builders, to support common functionality across versions.
@@ -98,7 +100,7 @@ public abstract class DomAdminBuilderBase extends VespaDomBuilder.DomConfigProdu
         return Optional.empty();
     }
 
-    void addLogForwarders(ModelElement logForwardingElement, Admin admin) {
+    void addLogForwarders(ModelElement logForwardingElement, Admin admin, DeployState deployState) {
         if (logForwardingElement == null) return;
         boolean alsoForAdminCluster = logForwardingElement.booleanAttribute("include-admin");
         for (ModelElement e : logForwardingElement.children("splunk")) {
@@ -106,7 +108,8 @@ public abstract class DomAdminBuilderBase extends VespaDomBuilder.DomConfigProdu
 		    .withSplunkHome(e.stringAttribute("splunk-home"))
 		    .withDeploymentServer(e.stringAttribute("deployment-server"))
 		    .withClientName(e.stringAttribute("client-name"))
-            .withPhoneHomeInterval(e.integerAttribute("phone-home-interval"));
+            .withPhoneHomeInterval(e.integerAttribute("phone-home-interval"))
+            .withRole(parseLogforwarderRole(e.stringAttribute("role"), deployState));
             admin.setLogForwarderConfig(cfg, alsoForAdminCluster);
         }
     }
@@ -128,6 +131,24 @@ public abstract class DomAdminBuilderBase extends VespaDomBuilder.DomConfigProdu
         for (ModelElement e : loggingElement.children("package")) {
             addLoggingSpec(e, admin);
         }
+    }
+
+    private String parseLogforwarderRole(String role, DeployState deployState) {
+        if (role == null)
+            return null;
+        if (deployState.zone().system().isPublic())
+            throw new IllegalArgumentException("Logforwarder role not supported in public systems");
+
+        // Currently only support athenz roles on format athenz://<domain>/role/<role>
+        var rolePattern = Pattern.compile("(?<scheme>athenz)://" +
+                "(?<domain>[a-zA-Z0-9_][a-zA-Z0-9_.-]*[a-zA-Z0-9_])" +
+                "/role/" +
+                "(?<role>[a-zA-Z0-9_][a-zA-Z0-9_.-]*[a-zA-Z0-9_])");
+        var matcher = rolePattern.matcher(role);
+        if (!matcher.matches()) {
+            throw new IllegalArgumentException("Invalid role path " + role);
+        }
+        return matcher.group("domain") + ":role." + matcher.group("role");
     }
 
 }

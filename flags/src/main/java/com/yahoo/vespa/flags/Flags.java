@@ -380,7 +380,7 @@ public class Flags {
 
     public static final UnboundLongFlag ZOOKEEPER_BARRIER_WAIT_FOR_ALL_TIMEOUT = defineLongFlag(
             "zookeeper-barrier-wait-for-all-timeout", 1,
-            List.of("hmusum"), "2023-03-28", "2023-04-28",
+            List.of("hmusum"), "2023-03-28", "2023-05-28",
             "Time to wait for all barrier members after getting response from quorum number of member",
             "Takes effect on next config server container start",
             ZONE_ID);
@@ -402,6 +402,18 @@ public class Flags {
             "allow-more-than-one-content-group-down", false, List.of("hmusum"), "2023-04-14", "2023-06-14",
             "Whether to enable possible configuration of letting more than one content group down",
             "Takes effect at redeployment",
+            ZONE_ID, APPLICATION_ID);
+
+    public static final UnboundBooleanFlag FAIL_DEPLOYMENT_ON_MISSING_CERTIFICATE_FILE = defineFeatureFlag(
+            "fail-on-missing-certificate-file", false, List.of("hmusum"), "2023-04-21", "2023-05-21",
+            "Whether to fail in controller when a submitted application package has no certificate files",
+            "Takes effect at redeployment",
+            ZONE_ID);
+
+    public static final UnboundBooleanFlag NEW_IDDOC_LAYOUT = defineFeatureFlag(
+            "new_iddoc_layout", false, List.of("tokle", "bjorncs", "olaa"), "2023-04-24", "2023-05-31",
+            "Whether to use new identity document lauoyt",
+            "Takes effect on node reboot",
             HOSTNAME);
 
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */

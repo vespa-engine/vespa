@@ -146,7 +146,7 @@ public class DedicatedAdminV4Test {
                 "    <slobroks><nodes count='2' dedicated='true'/></slobroks>" +
                 "    <logservers><nodes count='1' dedicated='true'/></logservers>" +
                 "    <logforwarding include-admin='true'>" +
-                "      <splunk deployment-server='foo:123' client-name='foocli' phone-home-interval='900'/>" +
+                "      <splunk deployment-server='foo:123' client-name='foocli' phone-home-interval='900' role='athenz://some-domain/role/role-name'/>" +
                 "    </logforwarding>" +
                 "  </admin>" +
                 "</services>";
@@ -176,6 +176,7 @@ public class DedicatedAdminV4Test {
             assertEquals("foocli", config.clientName());
             assertEquals("/opt/splunkforwarder", config.splunkHome());
             assertEquals(900, config.phoneHomeInterval());
+            assertEquals("some-domain:role.role-name", config.role());
         }
 
         // Other host's forwarder
@@ -188,6 +189,7 @@ public class DedicatedAdminV4Test {
             assertEquals("foocli", config.clientName());
             assertEquals("/opt/splunkforwarder", config.splunkHome());
             assertEquals(900, config.phoneHomeInterval());
+            assertEquals("some-domain:role.role-name", config.role());
         }
     }
 

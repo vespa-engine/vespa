@@ -29,15 +29,14 @@ UTF8SubStringFieldSearcher::matchTerms(const FieldRef & f, const size_t mintsz)
     const cmptype_t * fre = fe - mintsz;
     termcount_t words(0);
     for(words = 0; fn <= fre; ) {
-        for(QueryTermList::iterator it=_qtl.begin(), mt=_qtl.end(); it != mt; it++) {
-            QueryTerm & qt = **it;
+        for (auto qt : _qtl) {
             const cmptype_t * term;
-            termsize_t tsz = qt.term(term);
+            termsize_t tsz = qt->term(term);
 
             const cmptype_t *tt=term, *et=term+tsz, *fnt=fn;
             for (; (tt < et) && (*tt == *fnt); tt++, fnt++);
             if (tt == et) {
-                addHit(qt, words);
+                addHit(*qt, words);
             }
         }
         if ( ! Fast_UnicodeUtil::IsWordChar(*fn++) ) {

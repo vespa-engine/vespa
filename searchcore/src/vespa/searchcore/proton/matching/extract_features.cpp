@@ -12,10 +12,10 @@
 #include <vespa/searchlib/queryeval/searchiterator.h>
 
 using vespalib::Doom;
+using vespalib::FeatureSet;
+using vespalib::FeatureValues;
 using vespalib::Runnable;
 using vespalib::ThreadBundle;
-using search::FeatureSet;
-using search::FeatureValues;
 using search::fef::FeatureResolver;
 using search::fef::RankProgram;
 using search::queryeval::SearchIterator;

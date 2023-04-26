@@ -20,8 +20,8 @@ UTF8FlexibleStringFieldSearcher::matchTerms(const FieldRef & f, const size_t min
 {
     (void) mintsz;
     size_t words = 0;
-    for (QueryTermList::iterator it = _qtl.begin(); it != _qtl.end(); ++it) {
-        words = matchTerm(f, **it);
+    for (auto qt : _qtl) {
+        words = matchTerm(f, *qt);
     }
     return words;
 }

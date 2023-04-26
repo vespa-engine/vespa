@@ -6,8 +6,8 @@
 #include <vespa/document/base/globalid.h>
 #include <vespa/searchlib/common/hitrank.h>
 #include <vespa/searchlib/common/unique_issues.h>
-#include <vespa/searchlib/common/featureset.h>
 #include <vespa/vespalib/util/array.h>
+#include <vespa/vespalib/util/featureset.h>
 #include <vector>
 
 namespace search::engine {
@@ -15,6 +15,7 @@ namespace search::engine {
 class SearchReply
 {
 public:
+    using FeatureValues = vespalib::FeatureValues;
     using UP = std::unique_ptr<SearchReply>;
 
     class Hit

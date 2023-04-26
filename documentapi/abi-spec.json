@@ -1828,8 +1828,6 @@
       "public static final int MESSAGE_CREATEVISITOR",
       "public static final int MESSAGE_DESTROYVISITOR",
       "public static final int MESSAGE_VISITORINFO",
-      "public static final int MESSAGE_SEARCHRESULT",
-      "public static final int MESSAGE_DOCUMENTSUMMARY",
       "public static final int MESSAGE_MAPVISITOR",
       "public static final int MESSAGE_GETBUCKETSTATE",
       "public static final int MESSAGE_STATBUCKET",
@@ -1846,8 +1844,6 @@
       "public static final int REPLY_CREATEVISITOR",
       "public static final int REPLY_DESTROYVISITOR",
       "public static final int REPLY_VISITORINFO",
-      "public static final int REPLY_SEARCHRESULT",
-      "public static final int REPLY_DOCUMENTSUMMARY",
       "public static final int REPLY_MAPVISITOR",
       "public static final int REPLY_GETBUCKETSTATE",
       "public static final int REPLY_STATBUCKET",
@@ -2090,21 +2086,6 @@
       "public int hashCode()",
       "public java.lang.String toString()",
       "public bridge synthetic int compareTo(java.lang.Object)"
-    ],
-    "fields" : [ ]
-  },
-  "com.yahoo.documentapi.messagebus.protocol.DocumentSummaryMessage" : {
-    "superClass" : "com.yahoo.documentapi.messagebus.protocol.VisitorMessage",
-    "interfaces" : [ ],
-    "attributes" : [
-      "public"
-    ],
-    "methods" : [
-      "public void <init>()",
-      "public void setDocumentSummary(com.yahoo.vdslib.DocumentSummary)",
-      "public com.yahoo.vdslib.DocumentSummary getResult()",
-      "public com.yahoo.documentapi.messagebus.protocol.DocumentReply createReply()",
-      "public int getType()"
     ],
     "fields" : [ ]
   },
@@ -2459,8 +2440,8 @@
       "public int getType()",
       "public com.yahoo.document.TestAndSetCondition getCondition()",
       "public void setCondition(com.yahoo.document.TestAndSetCondition)",
-      "public boolean getCreateIfNonExistent()",
-      "public void setCreateIfNonExistent(boolean)"
+      "public void setCreateIfNonExistent(boolean)",
+      "public boolean getCreateIfNonExistent()"
     ],
     "fields" : [ ]
   },
@@ -2669,32 +2650,6 @@
       "protected abstract com.yahoo.documentapi.messagebus.protocol.DocumentReply doDecode(com.yahoo.document.serialization.DocumentDeserializer)",
       "public boolean encode(com.yahoo.messagebus.Routable, com.yahoo.document.serialization.DocumentSerializer)",
       "public com.yahoo.messagebus.Routable decode(com.yahoo.document.serialization.DocumentDeserializer)"
-    ],
-    "fields" : [ ]
-  },
-  "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$DocumentSummaryMessageFactory" : {
-    "superClass" : "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$DocumentMessageFactory",
-    "interfaces" : [ ],
-    "attributes" : [
-      "public"
-    ],
-    "methods" : [
-      "public void <init>()",
-      "protected com.yahoo.documentapi.messagebus.protocol.DocumentMessage doDecode(com.yahoo.document.serialization.DocumentDeserializer)",
-      "protected boolean doEncode(com.yahoo.documentapi.messagebus.protocol.DocumentMessage, com.yahoo.document.serialization.DocumentSerializer)"
-    ],
-    "fields" : [ ]
-  },
-  "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$DocumentSummaryReplyFactory" : {
-    "superClass" : "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$DocumentReplyFactory",
-    "interfaces" : [ ],
-    "attributes" : [
-      "public"
-    ],
-    "methods" : [
-      "public void <init>()",
-      "protected com.yahoo.documentapi.messagebus.protocol.DocumentReply doDecode(com.yahoo.document.serialization.DocumentDeserializer)",
-      "protected boolean doEncode(com.yahoo.documentapi.messagebus.protocol.DocumentReply, com.yahoo.document.serialization.DocumentSerializer)"
     ],
     "fields" : [ ]
   },
@@ -2936,32 +2891,6 @@
     ],
     "fields" : [ ]
   },
-  "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$SearchResultMessageFactory" : {
-    "superClass" : "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$DocumentMessageFactory",
-    "interfaces" : [ ],
-    "attributes" : [
-      "public"
-    ],
-    "methods" : [
-      "public void <init>()",
-      "protected com.yahoo.documentapi.messagebus.protocol.DocumentMessage doDecode(com.yahoo.document.serialization.DocumentDeserializer)",
-      "protected boolean doEncode(com.yahoo.documentapi.messagebus.protocol.DocumentMessage, com.yahoo.document.serialization.DocumentSerializer)"
-    ],
-    "fields" : [ ]
-  },
-  "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$SearchResultReplyFactory" : {
-    "superClass" : "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$DocumentReplyFactory",
-    "interfaces" : [ ],
-    "attributes" : [
-      "public"
-    ],
-    "methods" : [
-      "public void <init>()",
-      "protected com.yahoo.documentapi.messagebus.protocol.DocumentReply doDecode(com.yahoo.document.serialization.DocumentDeserializer)",
-      "protected boolean doEncode(com.yahoo.documentapi.messagebus.protocol.DocumentReply, com.yahoo.document.serialization.DocumentSerializer)"
-    ],
-    "fields" : [ ]
-  },
   "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$StatBucketMessageFactory" : {
     "superClass" : "com.yahoo.documentapi.messagebus.protocol.RoutableFactories60$DocumentMessageFactory",
     "interfaces" : [ ],
@@ -3092,21 +3021,6 @@
     ],
     "methods" : [
       "public abstract com.yahoo.documentapi.messagebus.protocol.DocumentProtocolRoutingPolicy createPolicy(java.lang.String)"
-    ],
-    "fields" : [ ]
-  },
-  "com.yahoo.documentapi.messagebus.protocol.SearchResultMessage" : {
-    "superClass" : "com.yahoo.documentapi.messagebus.protocol.VisitorMessage",
-    "interfaces" : [ ],
-    "attributes" : [
-      "public"
-    ],
-    "methods" : [
-      "public void <init>()",
-      "public com.yahoo.vdslib.SearchResult getResult()",
-      "public void setSearchResult(com.yahoo.vdslib.SearchResult)",
-      "public com.yahoo.documentapi.messagebus.protocol.DocumentReply createReply()",
-      "public int getType()"
     ],
     "fields" : [ ]
   },

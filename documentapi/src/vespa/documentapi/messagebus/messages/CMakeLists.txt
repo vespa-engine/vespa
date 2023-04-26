@@ -5,7 +5,6 @@ vespa_add_library(documentapi_documentapimessages OBJECT
     documentmessage.cpp
     documentreply.cpp
     documentstate.cpp
-    documentsummarymessage.cpp
     emptybucketsmessage.cpp
     feedanswer.cpp
     feedmessage.cpp
@@ -21,7 +20,6 @@ vespa_add_library(documentapi_documentapimessages OBJECT
     removedocumentmessage.cpp
     removedocumentreply.cpp
     removelocationmessage.cpp
-    searchresultmessage.cpp
     statbucketmessage.cpp
     statbucketreply.cpp
     testandsetmessage.cpp

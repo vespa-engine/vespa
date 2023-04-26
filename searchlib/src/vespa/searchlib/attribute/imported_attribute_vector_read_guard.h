@@ -95,6 +95,7 @@ private:
     std::shared_ptr<MetaStoreReadGuard>  _target_document_meta_store_read_guard;
     const ImportedAttributeVector       &_imported_attribute;
     TargetLids                           _targetLids;
+    uint32_t                             _target_docid_limit;
     AttributeGuard                       _reference_attribute_guard;
     std::unique_ptr<attribute::AttributeReadGuard> _target_attribute_guard;
     const ReferenceAttribute            &_reference_attribute;
@@ -103,7 +104,9 @@ protected:
 
     uint32_t getTargetLid(uint32_t lid) const {
         // Check range to avoid reading memory beyond end of mapping array
-        return lid < _targetLids.size() ? _targetLids[lid].load_acquire() : 0u;
+        uint32_t target_lid = lid < _targetLids.size() ? _targetLids[lid].load_acquire() : 0u;
+        // Check target range
+        return target_lid < _target_docid_limit ? target_lid : 0u;
     }
 
     long onSerializeForAscendingSort(DocId doc, void * serTo, long available,

@@ -2,13 +2,13 @@
 
 #pragma once
 
-#include <vespa/searchlib/common/featureset.h>
 #include <vespa/searchlib/common/stringmap.h>
 #include <vespa/searchlib/fef/matchdata.h>
 #include <vespa/vdslib/container/searchresult.h>
 #include <vespa/vsm/common/docsum.h>
 #include <vespa/vsm/common/storagedocument.h>
 #include <vespa/vespalib/stllike/string.h>
+#include <vespa/vespalib/util/featureset.h>
 
 namespace search { namespace fef { class FeatureResolver; } }
 
@@ -132,9 +132,9 @@ public:
      * @param rankProgram the rank program used to calculate all features.
      * @param resolver   feature resolver, gives feature names and values
      **/
-    search::FeatureSet::SP getFeatureSet(IRankProgram &rankProgram,
-                                         const search::fef::FeatureResolver &resolver,
-                                         const search::StringStringMap &feature_rename_map);
+    vespalib::FeatureSet::SP getFeatureSet(IRankProgram &rankProgram,
+                                           const search::fef::FeatureResolver &resolver,
+                                           const search::StringStringMap &feature_rename_map);
 
 };
 

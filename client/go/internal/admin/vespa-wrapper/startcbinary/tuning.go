@@ -7,7 +7,7 @@ import (
 	"github.com/vespa-engine/vespa/client/go/internal/util"
 )
 
-func (spec *ProgSpec) configureTuning() {
+func configureTuning() {
 	util.OptionallyReduceTimerFrequency()
 	util.TuneResourceLimits()
 }

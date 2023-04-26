@@ -13,7 +13,7 @@ namespace vespalib {
 namespace vsm {
 
 /// Type to identify fields in documents.
-using FieldIdT = unsigned int;
+using FieldIdT = uint32_t;
 /// A type to represent a list of FieldIds.
 using FieldIdTList = std::vector<FieldIdT>;
 /// A type to represent all the fields contained in all the indexs.

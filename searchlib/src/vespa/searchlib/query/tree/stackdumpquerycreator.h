@@ -89,7 +89,7 @@ private:
             pureTermView = view;
         } else if (type == ParseItem::ITEM_WEAK_AND) {
             vespalib::stringref view = queryStack.getIndexName();
-            uint32_t targetNumHits = queryStack.getTargetNumHits();
+            uint32_t targetNumHits = queryStack.getTargetHits();
             builder.addWeakAnd(arity, targetNumHits, view);
             pureTermView = view;
         } else if (type == ParseItem::ITEM_EQUIV) {
@@ -134,7 +134,7 @@ private:
             vespalib::stringref view = queryStack.getIndexName();
             int32_t id = queryStack.getUniqueId();
             Weight weight = queryStack.GetWeight();
-            uint32_t targetNumHits = queryStack.getTargetNumHits();
+            uint32_t targetNumHits = queryStack.getTargetHits();
             double scoreThreshold = queryStack.getScoreThreshold();
             double thresholdBoostFactor = queryStack.getThresholdBoostFactor();
             auto & wand = builder.addWandTerm(arity, view, id, weight, targetNumHits, scoreThreshold, thresholdBoostFactor);
@@ -146,7 +146,7 @@ private:
         } else if (type == ParseItem::ITEM_NEAREST_NEIGHBOR) {
             vespalib::stringref query_tensor_name = queryStack.getTerm();
             vespalib::stringref field_name = queryStack.getIndexName();
-            uint32_t target_num_hits = queryStack.getTargetNumHits();
+            uint32_t target_num_hits = queryStack.getTargetHits();
             int32_t id = queryStack.getUniqueId();
             Weight weight = queryStack.GetWeight();
             bool allow_approximate = queryStack.getAllowApproximate();

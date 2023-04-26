@@ -87,7 +87,7 @@ enum Policy {
 
     /** Read access to application information and settings. */
     applicationRead(Privilege.grant(Action.read)
-                             .on(PathGroup.application, PathGroup.applicationInfo, PathGroup.reindexing, PathGroup.serviceDump)
+                             .on(PathGroup.application, PathGroup.applicationInfo, PathGroup.reindexing, PathGroup.serviceDump, PathGroup.dropDocuments)
                              .in(SystemName.all())),
 
     /** Update access to application information and settings. */
@@ -102,7 +102,7 @@ enum Policy {
 
     /** Full access to application information and settings. */
     applicationOperations(Privilege.grant(Action.write())
-                                   .on(PathGroup.applicationInfo, PathGroup.productionRestart, PathGroup.reindexing, PathGroup.serviceDump)
+                                   .on(PathGroup.applicationInfo, PathGroup.productionRestart, PathGroup.reindexing, PathGroup.serviceDump, PathGroup.dropDocuments)
                                    .in(SystemName.all())),
 
     /** Access to create and delete developer and deploy keys under a tenant. */

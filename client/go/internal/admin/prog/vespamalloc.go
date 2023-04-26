@@ -27,7 +27,7 @@ func vespaMallocLib(suf string) string {
 
 func (p *Spec) ConfigureVespaMalloc() {
 	p.shouldUseVespaMalloc = false
-	if p.matchesListEnv(envvars.VESPA_USE_NO_VESPAMALLOC) {
+	if p.MatchesListEnv(envvars.VESPA_USE_NO_VESPAMALLOC) {
 		trace.Trace("use no vespamalloc:", p.BaseName)
 		return
 	}
@@ -36,11 +36,11 @@ func (p *Spec) ConfigureVespaMalloc() {
 		return
 	}
 	var useFile string
-	if p.matchesListEnv(envvars.VESPA_USE_VESPAMALLOC_DST) {
+	if p.MatchesListEnv(envvars.VESPA_USE_VESPAMALLOC_DST) {
 		useFile = vespaMallocLib("libvespamallocdst16.so")
-	} else if p.matchesListEnv(envvars.VESPA_USE_VESPAMALLOC_D) {
+	} else if p.MatchesListEnv(envvars.VESPA_USE_VESPAMALLOC_D) {
 		useFile = vespaMallocLib("libvespamallocd.so")
-	} else if p.matchesListEnv(envvars.VESPA_USE_VESPAMALLOC) {
+	} else if p.MatchesListEnv(envvars.VESPA_USE_VESPAMALLOC) {
 		useFile = vespaMallocLib("libvespamalloc.so")
 	}
 	trace.Trace("use file:", useFile)
@@ -51,7 +51,7 @@ func (p *Spec) ConfigureVespaMalloc() {
 		otherFile := vespaMallocLib("libvespa_load_as_huge.so")
 		useFile = fmt.Sprintf("%s:%s", useFile, otherFile)
 	}
-	p.considerEnvFallback(envvars.VESPA_MALLOC_HUGEPAGES, envvars.VESPA_USE_HUGEPAGES)
+	p.ConsiderEnvFallback(envvars.VESPA_MALLOC_HUGEPAGES, envvars.VESPA_USE_HUGEPAGES)
 	p.vespaMallocPreload = useFile
 	p.shouldUseVespaMalloc = true
 }

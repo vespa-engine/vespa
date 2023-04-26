@@ -1331,14 +1331,10 @@ public class ContentClusterTest extends ContentBaseTest {
                 "    </engine>" +
                 "  </content>" +
                 " </services>";
-        VespaModel model = createEnd2EndOneNode(new TestProperties()
-                                                        .setHostedVespa(false)
-                                                        .setMultitenant(true)
-                                                        .setAllowMoreThanOneContentGroupDown(true),
-                                                services);
+        VespaModel model = createEnd2EndOneNode(new TestProperties().setAllowMoreThanOneContentGroupDown(true), services);
 
         var fleetControllerConfigBuilder = new FleetcontrollerConfig.Builder();
-        model.getConfig(fleetControllerConfigBuilder, "admin/standalone/cluster-controllers/0/components/clustercontroller-storage-configurer");
+        model.getConfig(fleetControllerConfigBuilder, "admin/cluster-controllers/0/components/clustercontroller-storage-configurer");
         assertEquals(2, fleetControllerConfigBuilder.build().max_number_of_groups_allowed_to_be_down());
     }
 

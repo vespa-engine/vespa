@@ -109,7 +109,7 @@ public:
     uint32_t getArity() const { return _currArity; }
 
     uint32_t getNearDistance() const { return _extraIntArg1; }
-    uint32_t getTargetNumHits() const { return _extraIntArg1; }
+    uint32_t getTargetHits() const { return _extraIntArg1; }
     double getDistanceThreshold() const { return _extraDoubleArg4; }
     double getScoreThreshold() const { return _extraDoubleArg4; }
     double getThresholdBoostFactor() const { return _extraDoubleArg5; }

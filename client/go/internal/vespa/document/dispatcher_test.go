@@ -36,6 +36,12 @@ func (f *mockFeeder) Send(doc Document) Result {
 	return result
 }
 
+type mockCircuitBreaker struct{ state CircuitState }
+
+func (c *mockCircuitBreaker) Success()            {}
+func (c *mockCircuitBreaker) Error(err error)     {}
+func (c *mockCircuitBreaker) State() CircuitState { return c.state }
+
 func TestDispatcher(t *testing.T) {
 	feeder := &mockFeeder{}
 	clock := &manualClock{tick: time.Second}
@@ -129,4 +135,33 @@ func TestDispatcherOrderingWithFailures(t *testing.T) {
 	dispatcher.Close()
 	assert.Equal(t, int64(2), dispatcher.Stats().Errors)
 	assert.Equal(t, 6, len(feeder.documents))
+}
+
+func TestDispatcherOpenCircuit(t *testing.T) {
+	feeder := &mockFeeder{}
+	doc := Document{Id: mustParseId("id:ns:type::doc1"), Operation: OperationPut}
+	clock := &manualClock{tick: time.Second}
+	throttler := newThrottler(8, clock.now)
+	breaker := &mockCircuitBreaker{}
+	dispatcher := NewDispatcher(feeder, throttler, breaker, io.Discard, false)
+	dispatcher.Enqueue(doc)
+	breaker.state = CircuitOpen
+	dispatcher.Enqueue(doc)
+	dispatcher.Close()
+	assert.Equal(t, 1, len(feeder.documents))
+}
+
+func BenchmarkDocumentDispatching(b *testing.B) {
+	feeder := &mockFeeder{}
+	clock := &manualClock{tick: time.Second}
+	throttler := newThrottler(8, clock.now)
+	breaker := NewCircuitBreaker(time.Second, 0)
+	dispatcher := NewDispatcher(feeder, throttler, breaker, io.Discard, false)
+	doc := Document{Id: mustParseId("id:ns:type::doc1"), Operation: OperationPut, Body: []byte(`{"fields":{"foo": "123"}}`)}
+	b.ResetTimer() // ignore setup time
+
+	for n := 0; n < b.N; n++ {
+		dispatcher.enqueue(documentOp{document: doc})
+		dispatcher.workerWg.Wait()
+	}
 }

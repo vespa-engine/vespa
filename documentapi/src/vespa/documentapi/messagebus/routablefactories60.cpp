@@ -258,37 +258,6 @@ RoutableFactories60::DocumentListReplyFactory::doEncode(const DocumentReply &, v
 }
 
 DocumentMessage::UP
-RoutableFactories60::DocumentSummaryMessageFactory::doDecode(document::ByteBuffer &buf) const
-{
-    auto msg = std::make_unique<DocumentSummaryMessage>();
-
-    msg->deserialize(buf);
-
-    return msg;
-}
-
-bool
-RoutableFactories60::DocumentSummaryMessageFactory::doEncode(const DocumentMessage &obj, vespalib::GrowableByteBuffer &buf) const
-{
-    const DocumentSummaryMessage &msg = static_cast<const DocumentSummaryMessage&>(obj);
-    msg.serialize(buf);
-
-    return true;
-}
-
-DocumentReply::UP
-RoutableFactories60::DocumentSummaryReplyFactory::doDecode(document::ByteBuffer &) const
-{
-    return std::make_unique<VisitorReply>(DocumentProtocol::REPLY_DOCUMENTSUMMARY);
-}
-
-bool
-RoutableFactories60::DocumentSummaryReplyFactory::doEncode(const DocumentReply &, vespalib::GrowableByteBuffer &) const
-{
-    return true;
-}
-
-DocumentMessage::UP
 RoutableFactories60::EmptyBucketsMessageFactory::doDecode(document::ByteBuffer &buf) const
 {
     auto msg = std::make_unique<EmptyBucketsMessage>();
@@ -642,23 +611,6 @@ RoutableFactories60::RemoveLocationReplyFactory::doEncode(const DocumentReply &,
 }
 
 DocumentMessage::UP
-RoutableFactories60::SearchResultMessageFactory::doDecode(document::ByteBuffer &buf) const
-{
-    auto msg = std::make_unique<SearchResultMessage>();
-    msg->deserialize(buf);
-    return msg;
-}
-
-bool
-RoutableFactories60::SearchResultMessageFactory::doEncode(const DocumentMessage &obj, vespalib::GrowableByteBuffer &buf) const
-{
-    const auto & msg = static_cast<const SearchResultMessage&>(obj);
-    msg.serialize(buf);
-
-    return true;
-}
-
-DocumentMessage::UP
 RoutableFactories60::QueryResultMessageFactory::doDecode(document::ByteBuffer &buf) const
 {
     auto msg = std::make_unique<QueryResultMessage>();
@@ -676,18 +628,6 @@ RoutableFactories60::QueryResultMessageFactory::doEncode(const DocumentMessage &
     msg.getSearchResult().serialize(buf);
     msg.getDocumentSummary().serialize(buf);
 
-    return true;
-}
-
-DocumentReply::UP
-RoutableFactories60::SearchResultReplyFactory::doDecode(document::ByteBuffer &) const
-{
-    return std::make_unique<VisitorReply>(DocumentProtocol::REPLY_SEARCHRESULT);
-}
-
-bool
-RoutableFactories60::SearchResultReplyFactory::doEncode(const DocumentReply &, vespalib::GrowableByteBuffer &) const
-{
     return true;
 }
 

@@ -36,16 +36,8 @@ public class ApplicationFilter {
 
     public static Predicate<Node> from(String applicationIds) {
         return makePredicate(StringUtilities.split(applicationIds).stream()
-                .map(ApplicationFilter::toApplicationId)
+                .map(ApplicationId::fromFullString)
                 .collect(Collectors.toUnmodifiableSet()));
-    }
-
-    public static ApplicationId toApplicationId(String applicationIdString) {
-        String[] parts = applicationIdString.split("\\.");
-        if (parts.length != 3)
-            throw new IllegalArgumentException("Application id must be on the form tenant.application.instance, got '" +
-                                               applicationIdString + "'");
-        return ApplicationId.from(parts[0], parts[1], parts[2]);
     }
 
 }

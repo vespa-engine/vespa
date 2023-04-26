@@ -27,15 +27,15 @@ import java.util.stream.Stream;
 class ContainerStatsCollector {
 
     private final ContainerEngine containerEngine;
-    private final CGroup cgroup;
+    private final CGroupV2 cgroup;
     private final FileSystem fileSystem;
     private final int onlineCpus;
 
-    ContainerStatsCollector(ContainerEngine containerEngine, CGroup cgroup, FileSystem fileSystem) {
+    ContainerStatsCollector(ContainerEngine containerEngine, CGroupV2 cgroup, FileSystem fileSystem) {
         this(containerEngine, cgroup, fileSystem, Runtime.getRuntime().availableProcessors());
     }
 
-    ContainerStatsCollector(ContainerEngine containerEngine, CGroup cgroup, FileSystem fileSystem, int onlineCpus) {
+    ContainerStatsCollector(ContainerEngine containerEngine, CGroupV2 cgroup, FileSystem fileSystem, int onlineCpus) {
         this.containerEngine = Objects.requireNonNull(containerEngine);
         this.cgroup = Objects.requireNonNull(cgroup);
         this.fileSystem = Objects.requireNonNull(fileSystem);
@@ -83,14 +83,14 @@ class ContainerStatsCollector {
     }
 
     private ContainerStats.CpuStats collectCpuStats(ContainerId containerId) throws IOException {
-        Map<CGroup.CpuStatField, Long> cpuStats = cgroup.cpuStats(containerId);
+        Map<CGroupV2.CpuStatField, Long> cpuStats = cgroup.cpuStats(containerId);
         return new ContainerStats.CpuStats(onlineCpus,
                                            systemCpuUsage(),
-                                           cpuStats.get(CGroup.CpuStatField.TOTAL_USAGE_USEC),
-                                           cpuStats.get(CGroup.CpuStatField.SYSTEM_USAGE_USEC),
-                                           cpuStats.get(CGroup.CpuStatField.THROTTLED_TIME_USEC),
-                                           cpuStats.get(CGroup.CpuStatField.TOTAL_PERIODS),
-                                           cpuStats.get(CGroup.CpuStatField.THROTTLED_PERIODS));
+                                           cpuStats.get(CGroupV2.CpuStatField.TOTAL_USAGE_USEC),
+                                           cpuStats.get(CGroupV2.CpuStatField.SYSTEM_USAGE_USEC),
+                                           cpuStats.get(CGroupV2.CpuStatField.THROTTLED_TIME_USEC),
+                                           cpuStats.get(CGroupV2.CpuStatField.TOTAL_PERIODS),
+                                           cpuStats.get(CGroupV2.CpuStatField.THROTTLED_PERIODS));
     }
 
     private ContainerStats.MemoryStats collectMemoryStats(ContainerId containerId) throws IOException {

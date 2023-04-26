@@ -175,25 +175,20 @@ public class FileDirectory extends AbstractComponent {
         ensureRootExist();
         Path tempDestinationDir = uncheck(() -> Files.createTempDirectory(root.toPath(), "writing"));
         try {
-            // Prepare and verify
             logfileInfo(source);
-            File destinationDir = destinationDir(reference);
-            File tempDestination = new File(tempDestinationDir.toFile(), source.getName());
-            if ( ! destinationDir.mkdir())
-                log.log(Level.WARNING, () -> "destination dir " + destinationDir + " already exists");
 
-            // Copy files
+            // Copy files to temp dir
+            File tempDestination = new File(tempDestinationDir.toFile(), source.getName());
             log.log(Level.FINE, () -> "Copying " + source.getAbsolutePath() + " to " + tempDestination.getAbsolutePath());
             if (source.isDirectory())
                 IOUtils.copyDirectory(source, tempDestination, -1);
             else
                 copyFile(source, tempDestination);
 
-            // Move to final destination
-            log.log(Level.FINE, () -> "Moving " + tempDestinationDir + " to " + destinationDir.getAbsolutePath());
-            if ( ! tempDestinationDir.toFile().renameTo(destinationDir))
-                log.log(Level.WARNING, "Failed moving '" + tempDestinationDir.toFile().getAbsolutePath() +
-                        "' to '" + tempDestination.getAbsolutePath() + "'.");
+            // Move to destination dir
+            Path destinationDir = destinationDir(reference).toPath();
+            log.log(Level.FINE, () -> "Moving " + tempDestinationDir + " to " + destinationDir);
+            Files.move(tempDestinationDir, destinationDir);
             return reference;
         } catch (IOException e) {
             throw new UncheckedIOException(e);

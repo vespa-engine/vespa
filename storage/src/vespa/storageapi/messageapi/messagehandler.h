@@ -29,8 +29,6 @@ class CreateVisitorCommand; // Create a new visitor
 class DestroyVisitorCommand; // Destroy a running visitor
 class VisitorInfoCommand; // Sends visitor info to visitor controller
 class MapVisitorCommand;
-class SearchResultCommand;
-class DocumentSummaryCommand;
 class QueryResultCommand;
 
 class InternalCommand;
@@ -67,8 +65,6 @@ class CreateVisitorReply;
 class DestroyVisitorReply;
 class VisitorInfoReply;
 class MapVisitorReply;
-class SearchResultReply;
-class DocumentSummaryReply;
 class QueryResultReply;
 
 class InternalReply;
@@ -137,12 +133,8 @@ public:
     virtual bool onVisitorInfoReply(const std::shared_ptr<api::VisitorInfoReply>&) { return false; }
     virtual bool onMapVisitor(const std::shared_ptr<api::MapVisitorCommand>&) { return false; }
     virtual bool onMapVisitorReply(const std::shared_ptr<api::MapVisitorReply>&) { return false; }
-    virtual bool onSearchResult(const std::shared_ptr<api::SearchResultCommand>&) { return false; }
-    virtual bool onSearchResultReply(const std::shared_ptr<api::SearchResultReply>&) { return false; }
     virtual bool onQueryResult(const std::shared_ptr<api::QueryResultCommand>&) { return false; }
     virtual bool onQueryResultReply(const std::shared_ptr<api::QueryResultReply>&) { return false; }
-    virtual bool onDocumentSummary(const std::shared_ptr<api::DocumentSummaryCommand>&) { return false; }
-    virtual bool onDocumentSummaryReply(const std::shared_ptr<api::DocumentSummaryReply>&) { return false; }
     virtual bool onEmptyBuckets(const std::shared_ptr<api::EmptyBucketsCommand>&) { return false; }
     virtual bool onEmptyBucketsReply(const std::shared_ptr<api::EmptyBucketsReply>&) { return false; }
     virtual bool onInternal(const std::shared_ptr<api::InternalCommand>&) { return false; }

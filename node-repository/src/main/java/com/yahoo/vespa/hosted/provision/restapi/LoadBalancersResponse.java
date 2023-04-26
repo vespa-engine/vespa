@@ -10,7 +10,6 @@ import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancer;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancerInstance;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancerList;
-import com.yahoo.vespa.hosted.provision.node.filter.ApplicationFilter;
 
 import java.util.List;
 import java.util.Optional;
@@ -32,7 +31,7 @@ public class LoadBalancersResponse extends SlimeJsonResponse {
 
     private Optional<ApplicationId> application() {
         return Optional.ofNullable(request.getProperty("application"))
-                       .map(ApplicationFilter::toApplicationId);
+                       .map(ApplicationId::fromFullString);
     }
 
     private List<LoadBalancer> loadBalancers() {

@@ -5,6 +5,7 @@ import com.yahoo.collections.ListMap;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationTransaction;
+import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.Zone;
@@ -41,6 +42,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import static com.yahoo.vespa.hosted.provision.restapi.NodePatcher.DROP_DOCUMENTS_REPORT;
 
 /**
  * The nodes in the node repo and their state transitions
@@ -725,6 +728,23 @@ public class Nodes {
             }
         }
         return resultingNodes;
+    }
+
+    public List<Node> dropDocuments(ApplicationId applicationId, Optional<ClusterSpec.Id> clusterId) {
+        try (Mutex lock = applications.lock(applicationId)) {
+            Instant now = clock.instant();
+            List<Node> nodes = list(Node.State.active, Node.State.reserved)
+                    .owner(applicationId)
+                    .matching(node -> {
+                        ClusterSpec cluster = node.allocation().get().membership().cluster();
+                        if (!cluster.type().isContent()) return false;
+                        return clusterId.isEmpty() || clusterId.get().equals(cluster.id());
+                    })
+                    .mapToList(node -> node.with(node.reports().withReport(Report.basicReport(DROP_DOCUMENTS_REPORT, Report.Type.UNSPECIFIED, now, ""))));
+            if (nodes.isEmpty())
+                throw new NoSuchNodeException("No content nodes found for " + applicationId + clusterId.map(id -> " and cluster " + id).orElse(""));
+            return db.writeTo(nodes, Agent.operator, Optional.empty());
+        }
     }
 
     public boolean canAllocateTenantNodeTo(Node host) {

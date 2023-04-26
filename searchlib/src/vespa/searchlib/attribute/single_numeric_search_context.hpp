@@ -9,7 +9,7 @@
 namespace search::attribute {
 
 template <typename T, typename M>
-SingleNumericSearchContext<T, M>::SingleNumericSearchContext(std::unique_ptr<QueryTermSimple> qTerm, const AttributeVector& toBeSearched, const T* data)
+SingleNumericSearchContext<T, M>::SingleNumericSearchContext(std::unique_ptr<QueryTermSimple> qTerm, const AttributeVector& toBeSearched, vespalib::ConstArrayRef<T> data)
     : NumericSearchContext<M>(toBeSearched, *qTerm, true),
       _data(data)
 {
@@ -30,6 +30,13 @@ SingleNumericSearchContext<T, M>::createFilterIterator(fef::TermFieldMatchData* 
     return strict
         ? std::make_unique<AttributeIteratorStrict<SingleNumericSearchContext<T, M>>>(*this, matchData)
         : std::make_unique<AttributeIteratorT<SingleNumericSearchContext<T, M>>>(*this, matchData);
+}
+
+template <typename T, typename M>
+uint32_t
+SingleNumericSearchContext<T, M>::get_committed_docid_limit() const noexcept
+{
+    return _data.size();
 }
 
 }

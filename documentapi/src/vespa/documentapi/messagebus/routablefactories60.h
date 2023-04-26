@@ -172,16 +172,6 @@ public:
         DocumentReply::UP doDecode(document::ByteBuffer &buf) const override;
         bool doEncode(const DocumentReply &reply, vespalib::GrowableByteBuffer &buf) const override;
     };
-    class DocumentSummaryMessageFactory : public DocumentMessageFactory {
-    protected:
-        DocumentMessage::UP doDecode(document::ByteBuffer &buf) const override;
-        bool doEncode(const DocumentMessage &msg, vespalib::GrowableByteBuffer &buf) const override;
-    };
-    class DocumentSummaryReplyFactory : public DocumentReplyFactory {
-    protected:
-        DocumentReply::UP doDecode(document::ByteBuffer &buf) const override;
-        bool doEncode(const DocumentReply &reply, vespalib::GrowableByteBuffer &buf) const override;
-    };
     class EmptyBucketsMessageFactory : public DocumentMessageFactory {
     protected:
         DocumentMessage::UP doDecode(document::ByteBuffer &buf) const override;
@@ -278,16 +268,6 @@ public:
         RemoveLocationMessageFactory(const document::DocumentTypeRepo &r) noexcept : _repo(r) {}
     };
     class RemoveLocationReplyFactory : public DocumentReplyFactory {
-    protected:
-        DocumentReply::UP doDecode(document::ByteBuffer &buf) const override;
-        bool doEncode(const DocumentReply &reply, vespalib::GrowableByteBuffer &buf) const override;
-    };
-    class SearchResultMessageFactory : public DocumentMessageFactory {
-    protected:
-        DocumentMessage::UP doDecode(document::ByteBuffer &buf) const override;
-        bool doEncode(const DocumentMessage &msg, vespalib::GrowableByteBuffer &buf) const override;
-    };
-    class SearchResultReplyFactory : public DocumentReplyFactory {
     protected:
         DocumentReply::UP doDecode(document::ByteBuffer &buf) const override;
         bool doEncode(const DocumentReply &reply, vespalib::GrowableByteBuffer &buf) const override;

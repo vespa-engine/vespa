@@ -2,7 +2,7 @@
 /**
  * @class search::SearchVisitor
  *
- * @brief Visitor that applies a search query to visitor data and converts them to a SearchResultCommand
+ * @brief Visitor that applies a search query to visitor data and converts them to a QueryResultCommand
  */
 #pragma once
 

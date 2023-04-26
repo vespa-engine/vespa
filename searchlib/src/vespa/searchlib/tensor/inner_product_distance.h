@@ -54,7 +54,7 @@ public:
         auto rhs_vector = rhs.typify<FloatType>();
         size_t sz = lhs_vector.size();
         assert(sz == rhs_vector.size());
-        double score = 1.0 - _computer.dotProduct(&lhs_vector[0], &rhs_vector[0], sz);
+        double score = 1.0 - _computer.dotProduct(lhs_vector.data(), rhs_vector.data(), sz);
         return std::max(0.0, score);
     }
 private:

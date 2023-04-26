@@ -21,9 +21,11 @@ public class DocumentGenTest {
         DocumentGenMojo mojo = new DocumentGenMojo();
         mojo.execute(new File("etc/music/"), new File("target/generated-test-sources/vespa-documentgen-plugin/"), "com.yahoo.vespa.document");
         Map<String, Schema> searches = mojo.getSearches();
-        assertEquals(searches.size(),1);
+        assertEquals(searches.size(), 1);
         assertEquals(searches.get("music").getDocument("music").getField("title").getDataType(), DataType.STRING);
         assertEquals(searches.get("music").getDocument("music").getField("eitheror").getDataType(), DataType.BOOL);
+        assertEquals(searches.get("music").getDocument("music").getField("tags").getDataType(),
+                     searches.get("music").getSummaries().get("tags").getSummaryField("tags").getDataType());
     }
 
     @Test

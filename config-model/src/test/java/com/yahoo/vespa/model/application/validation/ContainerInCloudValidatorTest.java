@@ -21,7 +21,7 @@ public class ContainerInCloudValidatorTest {
     void failsWhenNoContainerInCloud() throws IOException, SAXException {
         String noContainer = "";
         String container = """
-                           <container id='default' version='1.0'>
+                           <container id='routing' version='1.0'>
                              <nodes count='2' />
                            </container>
                            """;
@@ -38,7 +38,7 @@ public class ContainerInCloudValidatorTest {
         String servicesXml = """
                         <services version='1.0'>
                           %s
-                          <content version='1.0'>
+                          <content id='foo' version='1.0'>
                             <redundancy>2</redundancy>
                             <documents>
                             </documents>

@@ -112,7 +112,8 @@ LogForwarding = element logforwarding {
         attribute splunk-home { xsd:string }? &
         attribute deployment-server { xsd:string } &
         attribute client-name { xsd:string } &
-        attribute phone-home-interval { xsd:positiveInteger }?
+        attribute phone-home-interval { xsd:positiveInteger }? &
+        attribute role { xsd:string }?
     }
 }
 

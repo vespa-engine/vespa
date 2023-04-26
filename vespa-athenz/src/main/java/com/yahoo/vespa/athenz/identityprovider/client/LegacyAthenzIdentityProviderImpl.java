@@ -298,7 +298,7 @@ public final class LegacyAthenzIdentityProviderImpl extends AbstractComponent im
     }
 
     private X509Certificate requestRoleCertificate(AthenzRole role) {
-        var doc = credentials.getIdentityDocument();
+        var doc = credentials.getIdentityDocument().identityDocument();
         Pkcs10Csr csr = csrGenerator.generateRoleCsr(
                 identity, role, doc.providerUniqueId(), doc.clusterType(), credentials.getKeyPair());
         try (ZtsClient client = createZtsClient()) {

@@ -5,7 +5,6 @@ import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.application.api.ValidationId;
 import com.yahoo.io.LazyInputStream;
 import org.junit.jupiter.api.Test;
-
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -97,7 +96,7 @@ public class ApplicationPackageTest {
                             "jdisc.xml", jdiscXml,
                             "content/content.xml", contentXml,
                             "content/nodes.xml", nodesXml),
-                     unzip(new ApplicationPackage(zip, false).metaDataZip()));
+                     unzip(new ApplicationPackage(zip).metaDataZip()));
     }
 
     @Test
@@ -105,7 +104,7 @@ public class ApplicationPackageTest {
         byte[] zip = filesZip(Map.of("services.xml", servicesXml.getBytes(UTF_8)));
 
         try {
-            new ApplicationPackage(zip, false).metaDataZip();
+            new ApplicationPackage(zip).metaDataZip();
             fail("Should fail on missing include file");
         }
         catch (RuntimeException e) {
@@ -152,6 +151,21 @@ public class ApplicationPackageTest {
         assertEquals(originalPackage.bundleHash(), similarDeploymentXml.bundleHash());
     }
 
+    @Test
+    void testCertificateFileExists() throws Exception {
+        getApplicationZip("with-certificate.zip", true);
+    }
+
+    @Test
+    void testCertificateFileMissing() throws Exception {
+        try {
+            getApplicationZip("original.zip", true);
+            fail("Should fail on missing certificate file file");
+        } catch (RuntimeException e) {
+            assertEquals("No client certificate found in security/ in application package, see https://cloud.vespa.ai/en/security/guide", e.getMessage());
+        }
+    }
+
     static Map<String, String> unzip(byte[] zip) {
         return ZipEntries.from(zip, __ -> true, 1 << 24, true)
                          .asList().stream()
@@ -160,7 +174,11 @@ public class ApplicationPackageTest {
     }
 
     private ApplicationPackage getApplicationZip(String path) throws IOException {
-        return new ApplicationPackage(Files.readAllBytes(Path.of("src/test/resources/application-packages/" + path)), true);
+        return getApplicationZip(path, false);
+    }
+
+    private ApplicationPackage getApplicationZip(String path, boolean checkCertificateFile) throws IOException {
+        return new ApplicationPackage(Files.readAllBytes(Path.of("src/test/resources/application-packages/" + path)), true, checkCertificateFile);
     }
 
     static byte[] zip(Map<String, String> content) {

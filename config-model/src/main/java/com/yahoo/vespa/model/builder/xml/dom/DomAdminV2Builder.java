@@ -47,7 +47,7 @@ public class DomAdminV2Builder extends DomAdminBuilderBase {
         if ( ! admin.multitenant())
             admin.setClusterControllers(addConfiguredClusterControllers(deployState, admin, adminE), deployState);
 
-        addLogForwarders(new ModelElement(adminE).child("logforwarding"), admin);
+        addLogForwarders(new ModelElement(adminE).child("logforwarding"), admin, deployState);
         addLoggingSpecs(new ModelElement(adminE).child("logging"), admin);
     }
 

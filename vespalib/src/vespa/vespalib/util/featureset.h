@@ -2,14 +2,13 @@
 
 #pragma once
 
-#include "feature.h"
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/data/memory.h>
 #include <map>
 #include <vector>
 #include <memory>
 
-namespace search {
+namespace vespalib {
 
 /**
  * This class holds information about a set of features for a set of
@@ -153,4 +152,4 @@ struct FeatureValues {
     std::vector<Value> values; // values.size() == names.size() * N
 };
 
-} // namespace search
+}

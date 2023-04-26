@@ -2,6 +2,7 @@
 
 #include "rankmanager.h"
 #include <vespa/searchlib/features/setup.h>
+#include <vespa/searchlib/fef/fieldinfo.h>
 #include <vespa/searchlib/fef/functiontablefactory.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/exception.h>
@@ -40,6 +41,16 @@ RankManager::Snapshot::addProperties(const vespa::config::search::RankProfilesCo
     }
 }
 
+FieldInfo::DataType
+to_data_type(VsmfieldsConfig::Fieldspec::Searchmethod search_method)
+{
+    if (search_method == VsmfieldsConfig::Fieldspec::Searchmethod::NEAREST_NEIGHBOR) {
+        return FieldInfo::DataType::TENSOR;
+    }
+    // This is the default FieldInfo data type if not specified.
+    return FieldInfo::DataType::DOUBLE;
+}
+
 void
 RankManager::Snapshot::detectFields(const VsmfieldsHandle & fields)
 {
@@ -49,7 +60,7 @@ RankManager::Snapshot::detectFields(const VsmfieldsHandle & fields)
         LOG(debug, "Adding field of type '%s' and name '%s' with id '%u' the index environment.",
                    isAttribute ? "ATTRIBUTE" : "INDEX", fs.name.c_str(), i);
         // This id must match the vsm specific field id
-        _protoEnv.addField(fs.name, isAttribute);
+        _protoEnv.addField(fs.name, isAttribute, to_data_type(fs.searchmethod));
     }
 }
 

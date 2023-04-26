@@ -6,23 +6,47 @@ package com.yahoo.slime;
  * encoded in binary format.
  **/
 final class DecodeIndex {
-    static final int initial_capacity = 16;
-    private long[] data = new long[initial_capacity];
-    private int reserved = 0;
+    private long[] data;
+    private int reserved;
+    private int used = 0;
+    private final int totalSize;
+    private final int rootOffset;
 
-    private int adjustSize(int minSize) {
-        int capacity = initial_capacity;
-        while (capacity < minSize) {
-            capacity = capacity << 1;
+    private int binarySize() { return totalSize - rootOffset; }
+
+    private int adjustSize(int minSize, int maxSize, int cnt, int byteOffset) {
+        double density = (double)cnt / (double)(byteOffset - rootOffset);
+        double estSize = 1.1 * density * binarySize();
+        double expSize = 1.25 * data.length;
+        double wantedSize = (estSize > expSize) ? estSize : expSize;
+        if (wantedSize < minSize) {
+            return minSize;
         }
-        return capacity;
+        if (wantedSize > maxSize) {
+            return maxSize;
+        }
+        return (int)wantedSize;
     }
 
-    int reserve(int n) {
+    DecodeIndex(int totalSize, int rootOffset) {
+        this.totalSize = totalSize;
+        this.rootOffset = rootOffset;
+        int initialCapacity = Math.max(16, binarySize() / 24);
+        data = new long[initialCapacity];
+        reserved = 1;
+    }
+
+    long[] getBacking() { return data; }
+
+    int tryReserveChildren(int n, int cnt, int byteOffset) {
         int offset = reserved;
-        if (reserved + n > data.length) {
+        if (n > data.length - reserved) {
+            final int maxSize = (totalSize - byteOffset) + cnt;
+            if (n > maxSize - reserved) {
+                return -1; // error; too much space requested
+            }
             long[] old = data;
-            data = new long[adjustSize(reserved + n)];
+            data = new long[adjustSize(reserved + n, maxSize, cnt, byteOffset)];
             System.arraycopy(old, 0, data, 0, reserved);
         }
         reserved += n;
@@ -30,22 +54,13 @@ final class DecodeIndex {
     }
 
     int size() { return reserved; }
+    int used() { return used; }
+    int capacity() { return data.length; }
 
     void set(int idx, int byteOffset, int firstChild, int extBits) {
         data[idx] = (long)(byteOffset & 0x7fff_ffff) << 33 |
             (long)(firstChild & 0x7fff_ffff) << 2 |
             extBits & 0x3;
-    }
-
-    int getByteOffset(int idx) {
-        return (int)(data[idx] >> 33) & 0x7fff_ffff;
-    }
-
-    int getFirstChild(int idx) {
-        return (int)(data[idx] >> 2) & 0x7fff_ffff;
-    }
-
-    int getExtBits(int idx) {
-        return (int)data[idx] & 0x3;
+        ++used;
     }
 }

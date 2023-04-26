@@ -2,9 +2,9 @@
 
 #pragma once
 
-#include <vespa/searchlib/common/featureset.h>
 #include <vespa/searchlib/common/matching_elements.h>
 #include <vespa/searchlib/common/matching_elements_fields.h>
+#include <vespa/vespalib/util/featureset.h>
 #include <vector>
 #include <memory>
 
@@ -21,7 +21,7 @@ class SearchSession;
 class DocsumMatcher
 {
 private:
-    using FeatureSet = search::FeatureSet;
+    using FeatureSet = vespalib::FeatureSet;
     using MatchingElementsFields = search::MatchingElementsFields;
     using MatchingElements = search::MatchingElements;
 

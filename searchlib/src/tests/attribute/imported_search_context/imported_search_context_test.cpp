@@ -429,6 +429,21 @@ TEST_F("original lid range is used by search context", SingleValueFixture)
     EXPECT_TRUE(second_ctx->matches(DocId(10)));
 } 
 
+TEST_F("Original target lid range is used by search context", SingleValueFixture)
+{
+    EXPECT_EQUAL(11u, f.target_attr->getNumDocs());
+    auto first_ctx = f.create_context(word_term("2345"));
+    add_n_docs_with_undefined_values(*f.target_attr, 1);
+    EXPECT_EQUAL(12u, f.target_attr->getNumDocs());
+    auto typed_target_attr = f.template target_attr_as<IntegerAttribute>();
+    ASSERT_TRUE(typed_target_attr->update(11, 2345));
+    f.target_attr->commit();
+    f.map_reference(DocId(8), dummy_gid(11), DocId(11));
+    auto second_ctx = f.create_context(word_term("2345"));
+    EXPECT_FALSE(first_ctx->matches(DocId(8)));
+    EXPECT_TRUE(second_ctx->matches(DocId(8)));
+}
+
 // Note: this uses an underlying string attribute, as queryTerm() does not seem to
 // implemented at all for (single) numeric attributes. Intentional?
 TEST_F("queryTerm() returns term context was created with", WsetValueFixture) {

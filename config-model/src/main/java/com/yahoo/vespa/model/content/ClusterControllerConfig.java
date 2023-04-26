@@ -9,6 +9,7 @@ import com.yahoo.vespa.config.content.FleetcontrollerConfig;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.builder.xml.dom.ModelElement;
 import com.yahoo.vespa.model.builder.xml.dom.VespaDomBuilder;
+import com.yahoo.vespa.model.content.cluster.ContentCluster;
 import com.yahoo.vespa.model.utils.Duration;
 import org.w3c.dom.Element;
 import java.util.Optional;
@@ -47,9 +48,29 @@ public class ClusterControllerConfig extends AnyConfigProducer implements Fleetc
                 clusterControllerTuning = tuning.child("cluster-controller");
             }
 
+            var tuningConfig = new ClusterControllerTuningBuilder(clusterControllerTuning,
+                                                            minNodeRatioPerGroup,
+                                                            bucketSplittingMinimumBits)
+                    .build();
+            if (ancestor instanceof ContentCluster) {
+                int numberOfLeafGroups = ((ContentCluster) ancestor).getRootGroup().getNumberOfLeafGroups();
+                if (tuningConfig.maxGroupsAllowedDown().isPresent()) {
+                    Integer maxGroupsAllowedDown = tuningConfig.maxGroupsAllowedDown().get();
+                    if (deployState.zone().environment().isProduction() && (maxGroupsAllowedDown > numberOfLeafGroups))
+                        throw new IllegalArgumentException("Cannot set max-groups-allowed-down (" + maxGroupsAllowedDown +
+                                                                   ") larger than number of groups (" + numberOfLeafGroups + ")");
+                } else {
+                    // Reduce to numberOfLeafGroups for tests or in environments where number of groups are reduced by policy (dev, test, staging, perf)
+                    tuningConfig = tuningConfig.withMaxGroupsAllowedDown(numberOfLeafGroups);
+                }
+            } else {
+                // Reduce to 1 for tests (ancestor is a mock class)
+                tuningConfig = tuningConfig.withMaxGroupsAllowedDown(1);
+            }
+
             return new ClusterControllerConfig(ancestor,
                                                clusterName,
-                                               new ClusterControllerTuning(clusterControllerTuning, minNodeRatioPerGroup, bucketSplittingMinimumBits),
+                                               tuningConfig,
                                                resourceLimits,
                                                allowMoreThanOneContentGroupDown);
         }
@@ -99,45 +120,81 @@ public class ClusterControllerConfig extends AnyConfigProducer implements Fleetc
         resourceLimits.getConfig(builder);
     }
 
-    public ClusterControllerTuning tuning() { return tuning; }
+    public ClusterControllerTuning tuning() {return tuning;}
 
-    public static class ClusterControllerTuning {
+private static class ClusterControllerTuningBuilder {
 
-        private final Optional<Double> minNodeRatioPerGroup;
-        private final Optional<Duration> initProgressTime;
-        private final Optional<Duration> transitionTime;
-        private final Optional<Long> maxPrematureCrashes;
-        private final Optional<Duration> stableStateTimePeriod;
-        private final Optional<Double> minDistributorUpRatio;
-        private final Optional<Double> minStorageUpRatio;
-        private final Optional<Integer> minSplitBits;
-        final Optional<Integer> maxGroupsAllowedDown;
+    private final Optional<Double> minNodeRatioPerGroup;
+    private final Optional<Duration> initProgressTime;
+    private final Optional<Duration> transitionTime;
+    private final Optional<Long> maxPrematureCrashes;
+    private final Optional<Duration> stableStateTimePeriod;
+    private final Optional<Double> minDistributorUpRatio;
+    private final Optional<Double> minStorageUpRatio;
+    private final Optional<Integer> minSplitBits;
+    final Optional<Integer> maxGroupsAllowedDown;
 
-        ClusterControllerTuning(ModelElement tuning,
-                                Optional<Double> minNodeRatioPerGroup,
-                                Optional<Integer> bucketSplittingMinimumBits) {
-            this.minSplitBits = bucketSplittingMinimumBits;
-            this.minNodeRatioPerGroup = minNodeRatioPerGroup;
-            if (tuning == null) {
-                this.initProgressTime = Optional.empty();
-                this.transitionTime = Optional.empty();
-                this.maxPrematureCrashes = Optional.empty();
-                this.stableStateTimePeriod = Optional.empty();
-                this.minDistributorUpRatio = Optional.empty();
-                this.minStorageUpRatio = Optional.empty();
-                this.maxGroupsAllowedDown = Optional.empty();
-            } else {
-                this.initProgressTime = Optional.ofNullable(tuning.childAsDuration("init-progress-time"));
-                this.transitionTime = Optional.ofNullable(tuning.childAsDuration("transition-time"));
-                this.maxPrematureCrashes = Optional.ofNullable(tuning.childAsLong("max-premature-crashes"));
-                this.stableStateTimePeriod = Optional.ofNullable(tuning.childAsDuration("stable-state-period"));
-                this.minDistributorUpRatio = Optional.ofNullable(tuning.childAsDouble("min-distributor-up-ratio"));
-                this.minStorageUpRatio = Optional.ofNullable(tuning.childAsDouble("min-storage-up-ratio"));
-                this.maxGroupsAllowedDown = Optional.ofNullable(tuning.childAsInteger("max-groups-allowed-down"));
-            }
+    ClusterControllerTuningBuilder(ModelElement tuning,
+                                   Optional<Double> minNodeRatioPerGroup,
+                                   Optional<Integer> bucketSplittingMinimumBits) {
+        this.minSplitBits = bucketSplittingMinimumBits;
+        this.minNodeRatioPerGroup = minNodeRatioPerGroup;
+        if (tuning == null) {
+            this.initProgressTime = Optional.empty();
+            this.transitionTime = Optional.empty();
+            this.maxPrematureCrashes = Optional.empty();
+            this.stableStateTimePeriod = Optional.empty();
+            this.minDistributorUpRatio = Optional.empty();
+            this.minStorageUpRatio = Optional.empty();
+            this.maxGroupsAllowedDown = Optional.empty();
+        } else {
+            this.initProgressTime = Optional.ofNullable(tuning.childAsDuration("init-progress-time"));
+            this.transitionTime = Optional.ofNullable(tuning.childAsDuration("transition-time"));
+            this.maxPrematureCrashes = Optional.ofNullable(tuning.childAsLong("max-premature-crashes"));
+            this.stableStateTimePeriod = Optional.ofNullable(tuning.childAsDuration("stable-state-period"));
+            this.minDistributorUpRatio = Optional.ofNullable(tuning.childAsDouble("min-distributor-up-ratio"));
+            this.minStorageUpRatio = Optional.ofNullable(tuning.childAsDouble("min-storage-up-ratio"));
+            this.maxGroupsAllowedDown = Optional.ofNullable(tuning.childAsInteger("max-groups-allowed-down"));
         }
-
-        public Optional<Integer> maxGroupsAllowedDown() { return maxGroupsAllowedDown; }
     }
+
+    private ClusterControllerTuning build() {
+        return new ClusterControllerTuning(initProgressTime,
+                                           transitionTime,
+                                           maxPrematureCrashes,
+                                           stableStateTimePeriod,
+                                           minDistributorUpRatio,
+                                           minStorageUpRatio,
+                                           maxGroupsAllowedDown,
+                                           minNodeRatioPerGroup,
+                                           minSplitBits);
+    }
+
+}
+
+private record ClusterControllerTuning(Optional<Duration> initProgressTime,
+                                       Optional<Duration> transitionTime,
+                                       Optional<Long> maxPrematureCrashes,
+                                       Optional<Duration> stableStateTimePeriod,
+                                       Optional<Double> minDistributorUpRatio,
+                                       Optional<Double> minStorageUpRatio,
+                                       Optional<Integer> maxGroupsAllowedDown,
+                                       Optional<Double> minNodeRatioPerGroup,
+                                       Optional<Integer> minSplitBits) {
+
+    public ClusterControllerTuning withMaxGroupsAllowedDown(int maxGroupsAllowedDown) {
+        return new ClusterControllerConfig.ClusterControllerTuning(
+                initProgressTime,
+                transitionTime,
+                maxPrematureCrashes,
+                stableStateTimePeriod,
+                minDistributorUpRatio,
+                minStorageUpRatio,
+                Optional.of(maxGroupsAllowedDown),
+                minNodeRatioPerGroup,
+                minSplitBits);
+    }
+
+}
 
 }

@@ -9,7 +9,7 @@ import (
 )
 
 func (spec *Spec) ConfigureUseMadvise() {
-	limit := spec.valueFromListEnv(envvars.VESPA_USE_MADVISE_LIST)
+	limit := spec.ValueFromListEnv(envvars.VESPA_USE_MADVISE_LIST)
 	if limit != "" {
 		trace.Trace("shall use madvise with limit", limit, "as set in", envvars.VESPA_USE_MADVISE_LIST)
 		spec.Setenv(envvars.VESPA_MALLOC_MADVISE_LIMIT, limit)

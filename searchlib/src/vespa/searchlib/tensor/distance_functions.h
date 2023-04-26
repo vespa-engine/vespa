@@ -8,3 +8,4 @@
 #include "geo_degrees_distance.h"
 #include "hamming_distance.h"
 #include "inner_product_distance.h"
+#include "prenormalized_angular_distance.h"

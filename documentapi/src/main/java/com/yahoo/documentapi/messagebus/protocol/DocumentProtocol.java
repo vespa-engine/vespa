@@ -50,8 +50,9 @@ public class DocumentProtocol implements Protocol {
     public static final int MESSAGE_CREATEVISITOR = DOCUMENT_MESSAGE + 7;
     public static final int MESSAGE_DESTROYVISITOR = DOCUMENT_MESSAGE + 8;
     public static final int MESSAGE_VISITORINFO = DOCUMENT_MESSAGE + 9;
-    public static final int MESSAGE_SEARCHRESULT = DOCUMENT_MESSAGE + 11;
-    public static final int MESSAGE_DOCUMENTSUMMARY = DOCUMENT_MESSAGE + 14;
+    // SearchResult and DocumentSummary messages were replaced by QueryResult message in 2010.
+    // public static final int MESSAGE_SEARCHRESULT = DOCUMENT_MESSAGE + 11;
+    // public static final int MESSAGE_DOCUMENTSUMMARY = DOCUMENT_MESSAGE + 14;
     public static final int MESSAGE_MAPVISITOR = DOCUMENT_MESSAGE + 15;
     public static final int MESSAGE_GETBUCKETSTATE = DOCUMENT_MESSAGE + 18;
     public static final int MESSAGE_STATBUCKET = DOCUMENT_MESSAGE + 19;
@@ -70,8 +71,9 @@ public class DocumentProtocol implements Protocol {
     public static final int REPLY_CREATEVISITOR = DOCUMENT_REPLY + 7;
     public static final int REPLY_DESTROYVISITOR = DOCUMENT_REPLY + 8;
     public static final int REPLY_VISITORINFO = DOCUMENT_REPLY + 9;
-    public static final int REPLY_SEARCHRESULT = DOCUMENT_REPLY + 11;
-    public static final int REPLY_DOCUMENTSUMMARY = DOCUMENT_REPLY + 14;
+    // SearchResult and DocumentSummary replies were replaced by QueryResult reply in 2010.
+    // public static final int REPLY_SEARCHRESULT = DOCUMENT_REPLY + 11;
+    // public static final int REPLY_DOCUMENTSUMMARY = DOCUMENT_REPLY + 14;
     public static final int REPLY_MAPVISITOR = DOCUMENT_REPLY + 15;
     public static final int REPLY_GETBUCKETSTATE = DOCUMENT_REPLY + 18;
     public static final int REPLY_STATBUCKET = DOCUMENT_REPLY + 19;
@@ -282,7 +284,6 @@ public class DocumentProtocol implements Protocol {
         putRoutableFactory(MESSAGE_CREATEVISITOR, new RoutableFactories60.CreateVisitorMessageFactory(), from6);
         putRoutableFactory(MESSAGE_DESTROYVISITOR, new RoutableFactories60.DestroyVisitorMessageFactory(), from6);
         putRoutableFactory(MESSAGE_DOCUMENTLIST, new RoutableFactories60.DocumentListMessageFactory(), from6);
-        putRoutableFactory(MESSAGE_DOCUMENTSUMMARY, new RoutableFactories60.DocumentSummaryMessageFactory(), from6);
         putRoutableFactory(MESSAGE_EMPTYBUCKETS, new RoutableFactories60.EmptyBucketsMessageFactory(), from6);
         putRoutableFactory(MESSAGE_GETBUCKETLIST, new RoutableFactories60.GetBucketListMessageFactory(), from6);
         putRoutableFactory(MESSAGE_GETBUCKETSTATE, new RoutableFactories60.GetBucketStateMessageFactory(), from6);
@@ -292,7 +293,6 @@ public class DocumentProtocol implements Protocol {
         putRoutableFactory(MESSAGE_QUERYRESULT, new RoutableFactories60.QueryResultMessageFactory(), from6);
         putRoutableFactory(MESSAGE_REMOVEDOCUMENT, new RoutableFactories60.RemoveDocumentMessageFactory(), from6);
         putRoutableFactory(MESSAGE_REMOVELOCATION, new RoutableFactories60.RemoveLocationMessageFactory(), from6);
-        putRoutableFactory(MESSAGE_SEARCHRESULT, new RoutableFactories60.SearchResultMessageFactory(), from6);
         putRoutableFactory(MESSAGE_STATBUCKET, new RoutableFactories60.StatBucketMessageFactory(), from6);
         putRoutableFactory(MESSAGE_UPDATEDOCUMENT, new RoutableFactories60.UpdateDocumentMessageFactory(), from6);
         putRoutableFactory(MESSAGE_VISITORINFO, new RoutableFactories60.VisitorInfoMessageFactory(), from6);
@@ -300,7 +300,6 @@ public class DocumentProtocol implements Protocol {
         putRoutableFactory(REPLY_DESTROYVISITOR, new RoutableFactories60.DestroyVisitorReplyFactory(), from6);
         putRoutableFactory(REPLY_DOCUMENTIGNORED, new RoutableFactories60.DocumentIgnoredReplyFactory(), from6);
         putRoutableFactory(REPLY_DOCUMENTLIST, new RoutableFactories60.DocumentListReplyFactory(), from6);
-        putRoutableFactory(REPLY_DOCUMENTSUMMARY, new RoutableFactories60.DocumentSummaryReplyFactory(), from6);
         putRoutableFactory(REPLY_EMPTYBUCKETS, new RoutableFactories60.EmptyBucketsReplyFactory(), from6);
         putRoutableFactory(REPLY_GETBUCKETLIST, new RoutableFactories60.GetBucketListReplyFactory(), from6);
         putRoutableFactory(REPLY_GETBUCKETSTATE, new RoutableFactories60.GetBucketStateReplyFactory(), from6);
@@ -310,7 +309,6 @@ public class DocumentProtocol implements Protocol {
         putRoutableFactory(REPLY_QUERYRESULT, new RoutableFactories60.QueryResultReplyFactory(), from6);
         putRoutableFactory(REPLY_REMOVEDOCUMENT, new RoutableFactories60.RemoveDocumentReplyFactory(), from6);
         putRoutableFactory(REPLY_REMOVELOCATION, new RoutableFactories60.RemoveLocationReplyFactory(), from6);
-        putRoutableFactory(REPLY_SEARCHRESULT, new RoutableFactories60.SearchResultReplyFactory(), from6);
         putRoutableFactory(REPLY_STATBUCKET, new RoutableFactories60.StatBucketReplyFactory(), from6);
         putRoutableFactory(REPLY_UPDATEDOCUMENT, new RoutableFactories60.UpdateDocumentReplyFactory(), from6);
         putRoutableFactory(REPLY_UPDATEDOCUMENT, new RoutableFactories60.UpdateDocumentReplyFactory(), from6);

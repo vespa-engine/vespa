@@ -285,7 +285,7 @@ HitCollectorTest::testFeatureSet()
     FeatureResolver resolver(rankProgram.get_resolver());
     search::StringStringMap renames;
     renames["bar"] = "qux";
-    search::FeatureSet::SP sf = hc.getFeatureSet(rankProgram, resolver, renames);
+    vespalib::FeatureSet::SP sf = hc.getFeatureSet(rankProgram, resolver, renames);
 
     EXPECT_EQUAL(sf->getNames().size(), 3u);
     EXPECT_EQUAL(sf->getNames()[0], "foo");
