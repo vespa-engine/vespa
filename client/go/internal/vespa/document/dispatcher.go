@@ -143,8 +143,7 @@ func (d *Dispatcher) processResults() {
 	defer d.wg.Done()
 	for op := range d.results {
 		d.stats.Add(op.result.Stats)
-		retry := d.shouldRetry(op, op.result)
-		if retry {
+		if d.shouldRetry(op, op.result) {
 			d.enqueue(op.resetResult(), true)
 		} else if op.complete() {
 			d.inflightWg.Done()
