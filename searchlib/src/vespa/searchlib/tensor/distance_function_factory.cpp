@@ -77,8 +77,7 @@ class SimpleDistanceFunctionFactory : public DistanceFunctionFactory {
     DistanceFunction::UP _df;
 public:
     SimpleDistanceFunctionFactory(DistanceFunction::UP df)
-        : DistanceFunctionFactory(df->expected_cell_type()),
-          _df(std::move(df))
+        : _df(std::move(df))
         {}
 
     BoundDistanceFunction::UP for_query_vector(const vespalib::eval::TypedCells& lhs) override {

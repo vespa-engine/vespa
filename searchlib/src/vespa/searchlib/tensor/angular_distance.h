@@ -78,10 +78,7 @@ private:
 template <typename FloatType>
 class AngularDistanceFunctionFactory : public DistanceFunctionFactory {
 public:
-    AngularDistanceFunctionFactory()
-        : DistanceFunctionFactory(vespalib::eval::get_cell_type<FloatType>())
-        {}
-
+    AngularDistanceFunctionFactory() = default;
     BoundDistanceFunction::UP for_query_vector(const vespalib::eval::TypedCells& lhs) override;
     BoundDistanceFunction::UP for_insertion_vector(const vespalib::eval::TypedCells& lhs) override;
 };

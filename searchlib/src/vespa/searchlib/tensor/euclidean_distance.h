@@ -83,9 +83,7 @@ private:
 template <typename FloatType>
 class EuclideanDistanceFunctionFactory : public DistanceFunctionFactory {
 public:
-    EuclideanDistanceFunctionFactory()
-        : DistanceFunctionFactory(vespalib::eval::get_cell_type<FloatType>())
-        {}
+    EuclideanDistanceFunctionFactory() = default;
     BoundDistanceFunction::UP for_query_vector(const vespalib::eval::TypedCells& lhs) override;
     BoundDistanceFunction::UP for_insertion_vector(const vespalib::eval::TypedCells& lhs) override;
 };

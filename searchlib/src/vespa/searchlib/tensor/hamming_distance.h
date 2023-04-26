@@ -33,9 +33,7 @@ public:
 template <typename FloatType>
 class HammingDistanceFunctionFactory : public DistanceFunctionFactory {
 public:
-    HammingDistanceFunctionFactory()
-        : DistanceFunctionFactory(vespalib::eval::get_cell_type<FloatType>())
-        {}
+    HammingDistanceFunctionFactory() = default;
     BoundDistanceFunction::UP for_query_vector(const vespalib::eval::TypedCells& lhs) override;
     BoundDistanceFunction::UP for_insertion_vector(const vespalib::eval::TypedCells& lhs) override;
 };
