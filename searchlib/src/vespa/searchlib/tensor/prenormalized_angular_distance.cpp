@@ -17,8 +17,7 @@ private:
     double _lhs_norm_sq;
 public:
     BoundPrenormalizedAngularDistance(const vespalib::eval::TypedCells& lhs)
-        : BoundDistanceFunction(vespalib::eval::get_cell_type<FloatType>()),
-          _computer(vespalib::hwaccelrated::IAccelrated::getAccelerator()),
+        : _computer(vespalib::hwaccelrated::IAccelrated::getAccelerator()),
           _tmpSpace(lhs.size),
           _lhs(_tmpSpace.storeLhs(lhs))
     {
