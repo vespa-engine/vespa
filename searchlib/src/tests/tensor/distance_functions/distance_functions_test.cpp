@@ -69,7 +69,7 @@ double computeEuclideanChecked(TypedCells a, TypedCells b) {
     return result;
 }
 
-namespace { constexpr double sq_root_half = std::sqrt(0.5); }
+namespace { const double sq_root_half = std::sqrt(0.5); }
 
 TEST(DistanceFunctionsTest, euclidean_gives_expected_score)
 {
