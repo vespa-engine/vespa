@@ -1,8 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.container.xml;
 
-import com.yahoo.config.provision.ClusterInfo;
-import com.yahoo.config.provision.IntRange;
 import com.yahoo.component.ComponentSpecification;
 import com.yahoo.component.Version;
 import com.yahoo.component.chain.dependencies.Dependencies;
@@ -14,7 +12,6 @@ import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.application.api.DeploymentInstanceSpec;
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.provision.ZoneEndpoint;
-import com.yahoo.config.application.api.xml.DeploymentSpecXmlReader;
 import com.yahoo.config.model.ConfigModelContext;
 import com.yahoo.config.model.api.ApplicationClusterEndpoint;
 import com.yahoo.config.model.api.ConfigServerSpec;
@@ -31,11 +28,9 @@ import com.yahoo.config.provision.AthenzDomain;
 import com.yahoo.config.provision.AthenzService;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterMembership;
-import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.InstanceName;
-import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.config.provision.zone.ZoneId;
@@ -431,7 +426,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         }
 
         if (accessLogElements.isEmpty() && deployState.getAccessLoggingEnabledByDefault())
-            cluster.addDefaultSearchAccessLog();
+            cluster.addAccessLog();
 
         // Add connection log if access log is configured
         if (cluster.getAllComponents().stream().anyMatch(component -> component instanceof AccessLogComponent)) {
@@ -447,7 +442,6 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     private List<Element> getAccessLogElements(Element spec) {
         return XML.getChildren(spec, "accesslog");
     }
-
 
     protected void addHttp(DeployState deployState, Element spec, ApplicationContainerCluster cluster, ConfigModelContext context) {
         Element httpElement = XML.getChild(spec, "http");
@@ -1215,7 +1209,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
         private static final Pattern validPattern = Pattern.compile("-[a-zA-z0-9=:./,+*-]+");
         // debug port will not be available in hosted, don't allow
-        private static final Pattern invalidInHostedatttern = Pattern.compile("-Xrunjdwp:transport=.*");
+        private static final Pattern invalidInHostedPattern = Pattern.compile("-Xrunjdwp:transport=.*");
 
         private final Element nodesElement;
         private final DeployLogger logger;
@@ -1268,7 +1262,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
             if (isHosted)
                 invalidOptions.addAll(Arrays.stream(optionList)
                         .filter(option -> !option.isEmpty())
-                        .filter(option -> Pattern.matches(invalidInHostedatttern.pattern(), option))
+                        .filter(option -> Pattern.matches(invalidInHostedPattern.pattern(), option))
                         .sorted().toList());
 
             if (invalidOptions.isEmpty()) return;
