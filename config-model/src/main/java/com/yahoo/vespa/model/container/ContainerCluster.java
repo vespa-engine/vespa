@@ -23,7 +23,6 @@ import com.yahoo.container.di.config.PlatformBundlesConfig;
 import com.yahoo.container.jdisc.JdiscBindingsConfig;
 import com.yahoo.container.jdisc.config.HealthMonitorConfig;
 import com.yahoo.container.jdisc.state.StateHandler;
-import com.yahoo.container.logging.AccessLog;
 import com.yahoo.container.usability.BindingsOverviewHandler;
 import com.yahoo.document.config.DocumentmanagerConfig;
 import com.yahoo.osgi.provider.model.ComponentModel;
@@ -40,7 +39,6 @@ import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.admin.Admin;
 import com.yahoo.vespa.model.admin.monitoring.Monitoring;
 import com.yahoo.vespa.model.clients.ContainerDocumentApi;
-import com.yahoo.vespa.model.container.component.AccessLogComponent;
 import com.yahoo.vespa.model.container.component.BindingPattern;
 import com.yahoo.vespa.model.container.component.Component;
 import com.yahoo.vespa.model.container.component.ComponentGroup;
@@ -61,6 +59,7 @@ import com.yahoo.vespa.model.container.search.ContainerSearch;
 import com.yahoo.vespa.model.container.search.searchchain.SearchChains;
 import com.yahoo.vespa.model.content.Content;
 import com.yahoo.vespa.model.search.SearchCluster;
+
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -73,7 +72,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
 
-import static com.yahoo.vespa.model.container.component.AccessLogComponent.AccessLogType.jsonAccessLog;
 import static com.yahoo.vespa.model.container.component.chain.ProcessingHandler.PROCESSING_HANDLER_CLASS;
 
 /**
@@ -593,13 +591,7 @@ public abstract class ContainerCluster<CONTAINER extends Container>
         if (containerSearch != null) containerSearch.connectSearchClusters(clusterMap);
     }
 
-    //protected void addAccessLog() { /* No access logging by default */ }
-
-    protected void addAccessLog() {
-        // In hosted there is one application container per node, so we do not use the container name to distinguish log files
-        //Optional<String> clusterName = isHostedVespa ? Optional.empty() : Optional.of(getName());
-        //addComponent(new AccessLogComponent(this, jsonAccessLog, compressionType, clusterName, isHostedVespa));
-    }
+    protected void addAccessLog() { /* No access logging by default */ }
 
     @Override
     public void getConfig(IlscriptsConfig.Builder builder) {
