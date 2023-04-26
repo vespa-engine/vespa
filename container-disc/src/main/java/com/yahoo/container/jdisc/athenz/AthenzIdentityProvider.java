@@ -24,5 +24,5 @@ public interface AthenzIdentityProvider {
     X509Certificate getRoleCertificate(String domain, String role);
     PrivateKey getPrivateKey();
     Path trustStorePath();
-
+    void deconstruct();
 }
