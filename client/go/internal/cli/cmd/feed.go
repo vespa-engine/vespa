@@ -23,6 +23,7 @@ func addFeedFlags(cmd *cobra.Command, options *feedOptions) {
 	cmd.PersistentFlags().BoolVar(&options.verbose, "verbose", false, "Verbose mode. Print successful operations in addition to errors")
 	cmd.PersistentFlags().StringVar(&options.route, "route", "", `Target Vespa route for feed operations (default "default")`)
 	cmd.PersistentFlags().IntVar(&options.traceLevel, "trace", 0, "Network traffic trace level in the range [0,9]. 0 to disable (default 0)")
+	cmd.PersistentFlags().IntVar(&options.summarySecs, "progress", 0, "Print stats summary at given interval, in seconds. 0 to disable (default 0)")
 	memprofile := "memprofile"
 	cpuprofile := "cpuprofile"
 	cmd.PersistentFlags().StringVar(&options.memprofile, memprofile, "", "Write a heap profile to given file")
@@ -40,6 +41,7 @@ type feedOptions struct {
 	traceLevel  int
 	timeoutSecs int
 	doomSecs    int
+	summarySecs int
 
 	memprofile string
 	cpuprofile string
@@ -102,6 +104,19 @@ func createServiceClients(service *vespa.Service, n int) []util.HTTPClient {
 	return clients
 }
 
+func summaryTicker(secs int, cli *CLI, start time.Time, statsFunc func() document.Stats) *time.Ticker {
+	if secs < 1 {
+		return nil
+	}
+	ticker := time.NewTicker(time.Duration(secs) * time.Second)
+	go func() {
+		for range ticker.C {
+			writeSummaryJSON(cli.Stdout, statsFunc(), cli.now().Sub(start))
+		}
+	}()
+	return ticker
+}
+
 func (opts feedOptions) compressionMode() (document.Compression, error) {
 	switch opts.compression {
 	case "auto":
@@ -136,6 +151,7 @@ func feed(files []string, options feedOptions, cli *CLI) error {
 	circuitBreaker := document.NewCircuitBreaker(10*time.Second, time.Duration(options.doomSecs)*time.Second)
 	dispatcher := document.NewDispatcher(client, throttler, circuitBreaker, cli.Stderr, options.verbose)
 	start := cli.now()
+	summaryTicker := summaryTicker(options.summarySecs, cli, start, dispatcher.Stats)
 	for _, name := range files {
 		var r io.ReadCloser
 		if len(files) == 1 && name == "-" {
@@ -164,6 +180,9 @@ func feed(files []string, options feedOptions, cli *CLI) error {
 	}
 	if err := dispatcher.Close(); err != nil {
 		return err
+	}
+	if summaryTicker != nil {
+		summaryTicker.Stop()
 	}
 	elapsed := cli.now().Sub(start)
 	return writeSummaryJSON(cli.Stdout, dispatcher.Stats(), elapsed)
