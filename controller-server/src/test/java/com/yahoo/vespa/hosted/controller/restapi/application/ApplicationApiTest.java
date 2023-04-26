@@ -75,7 +75,6 @@ import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
 import com.yahoo.yolean.Exceptions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-
 import javax.security.auth.x500.X500Principal;
 import java.io.File;
 import java.math.BigInteger;
@@ -146,6 +145,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
             .region("us-west-1")
             .blockChange(false, true, "mon-fri", "0-8", "UTC")
             .applicationEndpoint("a0", "foo", "us-central-1", Map.of(InstanceName.from("instance1"), 1))
+            .trustDefaultCertificate()
             .build();
 
     private static final AthenzDomain ATHENZ_TENANT_DOMAIN = new AthenzDomain("domain1");
@@ -347,6 +347,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
                 .region("us-west-1")
                 .region("us-east-3")
                 .allow(ValidationId.globalEndpointChange)
+                .trustDefaultCertificate()
                 .build();
 
         // POST (create) another application
@@ -838,6 +839,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
                 .instances("instance1")
                 .athenzIdentity(com.yahoo.config.provision.AthenzDomain.from(ATHENZ_TENANT_DOMAIN_2.getName()), AthenzService.from("service"))
                 .region("us-west-1")
+                .trustDefaultCertificate()
                 .build();
         allowLaunchOfService(new com.yahoo.vespa.athenz.api.AthenzService(ATHENZ_TENANT_DOMAIN_2, "service"));
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1/submit", POST)
@@ -852,6 +854,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
                 .athenzIdentity(com.yahoo.config.provision.AthenzDomain.from(ATHENZ_TENANT_DOMAIN.getName()), AthenzService.from("service"))
                 .region("us-central-1")
                 .parallel("us-west-1", "us-east-3")
+                .trustDefaultCertificate()
                 .build();
         allowLaunchOfService(new com.yahoo.vespa.athenz.api.AthenzService(ATHENZ_TENANT_DOMAIN, "service"));
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1/submit", POST)
@@ -911,6 +914,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
                 .region("us-central-1")
                 .parallel("us-west-1", "us-east-3")
                 .endpoint("default", "foo", "us-central-1", "us-west-1", "us-east-3")
+                .trustDefaultCertificate()
                 .build();
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1/submit", POST)
                         .screwdriverIdentity(SCREWDRIVER_ID)
@@ -1469,6 +1473,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
                 .upgradePolicy("default")
                 .athenzIdentity(com.yahoo.config.provision.AthenzDomain.from("another.domain"), com.yahoo.config.provision.AthenzService.from("service"))
                 .region("us-west-1")
+                .trustDefaultCertificate()
                 .build();
         createAthenzDomainWithAdmin(ATHENZ_TENANT_DOMAIN, USER_ID);
 
@@ -1490,6 +1495,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
                 .upgradePolicy("default")
                 .athenzIdentity(com.yahoo.config.provision.AthenzDomain.from("domain1"), com.yahoo.config.provision.AthenzService.from("service"))
                 .region("us-west-1")
+                .trustDefaultCertificate()
                 .build();
 
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/submit", POST)
