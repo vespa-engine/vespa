@@ -41,17 +41,6 @@ struct CalcAngular {
 
 }
 
-double
-AngularDistance::calc(const vespalib::eval::TypedCells& lhs,
-                      const vespalib::eval::TypedCells& rhs) const
-{
-    return typify_invoke<2,TypifyCellType,CalcAngular>(lhs.type, rhs.type, lhs, rhs);
-}
-
-template class AngularDistanceHW<float>;
-template class AngularDistanceHW<double>;
-
-
 template<typename FloatType>
 class BoundAngularDistance : public BoundDistanceFunction {
 private:

@@ -21,7 +21,6 @@ using search::attribute::Config;
 using search::fef::QueryValue;
 using search::tensor::DistanceCalculator;
 using search::tensor::TensorExtAttribute;
-using search::tensor::make_distance_function;
 using vespalib::eval::ValueType;
 
 namespace {

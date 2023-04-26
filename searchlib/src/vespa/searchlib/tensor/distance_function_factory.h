@@ -23,13 +23,9 @@ struct DistanceFunctionFactory {
 };
 
 /**
- * Create a distance function object customized for the given metric
+ * Create a distance function factory customized for the given metric
  * variant and (attribute) cell type.
  **/
-DistanceFunction::UP
-make_distance_function(search::attribute::DistanceMetric variant,
-                       vespalib::eval::CellType cell_type);
-
 DistanceFunctionFactory::UP
 make_distance_function_factory(search::attribute::DistanceMetric variant,
                                vespalib::eval::CellType cell_type);

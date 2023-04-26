@@ -30,29 +30,6 @@ struct CalcHamming {
 
 }
 
-double
-HammingDistance::calc(const vespalib::eval::TypedCells& lhs,
-                      const vespalib::eval::TypedCells& rhs) const
-{
-    constexpr auto expected = vespalib::eval::CellType::INT8;
-    if (__builtin_expect((lhs.type == expected && rhs.type == expected), true)) {
-        size_t sz = lhs.size;
-        assert(sz == rhs.size);
-        return (double) vespalib::binary_hamming_distance(lhs.data, rhs.data, sz);
-    } else {
-        return typify_invoke<2,TypifyCellType,CalcHamming>(lhs.type, rhs.type, lhs, rhs);
-    }
-}
-
-double
-HammingDistance::calc_with_limit(const vespalib::eval::TypedCells& lhs,
-                                 const vespalib::eval::TypedCells& rhs,
-                                 double) const
-{
-    // consider optimizing:
-    return calc(lhs, rhs);
-}
-
 using vespalib::eval::Int8Float;
 
 template<typename FloatType>

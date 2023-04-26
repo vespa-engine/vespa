@@ -20,34 +20,4 @@ public:
     virtual double to_rawscore(double distance) const = 0;
 };
 
-/**
- * Interface used to calculate the distance between two n-dimensional vectors.
- *
- * The vectors must be of same size and same cell type (float or double).
- * The actual implementation must know which type the vectors are.
- */
-class DistanceFunction : public DistanceConverter {
-private:
-    vespalib::eval::CellType _expect_cell_type;
-public:
-    using UP = std::unique_ptr<DistanceFunction>;
-
-    DistanceFunction(vespalib::eval::CellType expected) : _expect_cell_type(expected) {}
-
-    virtual ~DistanceFunction() = default;
-
-    // input (query) vectors must be converted to this cell type:
-    vespalib::eval::CellType expected_cell_type() const {
-        return _expect_cell_type;
-    }
-
-    // calculate internal distance (comparable)
-    virtual double calc(const vespalib::eval::TypedCells& lhs, const vespalib::eval::TypedCells& rhs) const = 0;
-
-    // calculate internal distance, early return allowed if > limit
-    virtual double calc_with_limit(const vespalib::eval::TypedCells& lhs,
-                                   const vespalib::eval::TypedCells& rhs,
-                                   double limit) const = 0;
-};
-
 }
