@@ -31,11 +31,19 @@ bool isExecutable(const char *path) {
     }
     return ((statbuf.st_mode & S_IXOTH) != 0);
 }
+
+time_t lastModTime(const vespalib::string &fn) {
+    if (fn.empty()) return 0;
+    struct stat info;
+    if (stat(fn.c_str(), &info) != 0) return 0;
+    return info.st_mtime;
 }
 
+} // namespace
+
 void CfHandler::doConfigure() {
-    std::unique_ptr<LogforwarderConfig> cfg(_handle->getConfig());
-    const LogforwarderConfig& config(*cfg);
+    _lastConfig = _handle->getConfig();
+    const LogforwarderConfig& config(*_lastConfig);
     LOG(debug, "validating splunk home '%s'", config.splunkHome.c_str());
     auto program = config.splunkHome + "/bin/splunk";
     if (isExecutable(program.c_str())) {
@@ -45,10 +53,27 @@ void CfHandler::doConfigure() {
     }
 }
 
+vespalib::string CfHandler::clientCertFile() const {
+    static const vespalib::string certDir = "/var/lib/sia/certs/";
+    if (_lastConfig && !_lastConfig->role.empty()) {
+        return certDir + _lastConfig->role + ".pem";
+    }
+    return "";
+}
+
+bool CfHandler::certFileChanged() {
+    time_t modTime = lastModTime(clientCertFile());
+    if (modTime != _lastCertFileChange) {
+        _lastCertFileChange = modTime;
+        return true;
+    }
+    return false;
+}
+
 void
 CfHandler::check()
 {
-    if (_subscriber.nextConfigNow()) {
+    if (_subscriber.nextConfigNow() || certFileChanged()) {
         doConfigure();
     }
 }
