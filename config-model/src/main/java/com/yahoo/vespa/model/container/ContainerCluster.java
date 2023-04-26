@@ -180,7 +180,6 @@ public abstract class ContainerCluster<CONTAINER extends Container>
         componentGroup = new ComponentGroup<>(this, "component");
 
         addCommonVespaBundles();
-        addSimpleComponent(VoidRequestLog.class);
         addComponent(new DefaultThreadpoolProvider(this, defaultPoolNumThreads));
         addComponent(defaultHandlerThreadpool);
         addSimpleComponent(com.yahoo.concurrent.classlock.ClassLocking.class);

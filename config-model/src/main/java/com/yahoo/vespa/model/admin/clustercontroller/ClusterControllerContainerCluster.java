@@ -5,6 +5,7 @@ import com.yahoo.config.model.api.Reindexing;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.TreeConfigProducer;
 import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.jdisc.http.server.jetty.VoidRequestLog;
 import com.yahoo.search.config.QrStartConfig;
 import com.yahoo.vespa.model.container.ContainerCluster;
 import com.yahoo.vespa.model.container.PlatformBundles;
@@ -29,7 +30,8 @@ public class ClusterControllerContainerCluster extends ContainerCluster<ClusterC
     public ClusterControllerContainerCluster(
             TreeConfigProducer<?> parent, String subId, String name, DeployState deployState) {
         super(parent, subId, name, deployState, false);
-        addDefaultHandlersWithVip();
+        addDefaultHandlersWithVip()
+        addSimpleComponent(VoidRequestLog.class);;
         this.reindexingContext = createReindexingContext(deployState);
         setJvmGCOptions(deployState.getProperties().jvmGCOptions(Optional.of(ClusterSpec.Type.admin)));
     }
