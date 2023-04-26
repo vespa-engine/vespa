@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.container.xml;
 
+import com.yahoo.component.ComponentId;
 import com.yahoo.config.provision.ClusterInfo;
 import com.yahoo.config.provision.IntRange;
 import com.yahoo.component.ComponentSpecification;
@@ -1169,6 +1170,9 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                                                                      ztsUrl,
                                                                      zoneDnsSuffix,
                                                                      zone);
+
+            // Replace AthenzIdentityProviderProvider
+            cluster.removeComponent(ComponentId.fromString("com.yahoo.container.jdisc.AthenzIdentityProviderProvider"));
             cluster.addComponent(identityProvider);
 
             cluster.getContainers().forEach(container -> {
