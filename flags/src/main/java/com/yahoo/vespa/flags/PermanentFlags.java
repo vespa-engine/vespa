@@ -354,6 +354,12 @@ public class PermanentFlags {
             ZONE_ID, APPLICATION_ID
     );
 
+    public static final UnboundIntFlag ENDPOINT_CONNECTION_TTL = defineIntFlag(
+            "endpoint-connection-ttl", 45,
+            "Time to live for connections to endpoints in seconds",
+            "Takes effect on next redeployment",
+            APPLICATION_ID);
+
     private PermanentFlags() {}
 
     private static UnboundBooleanFlag defineFeatureFlag(
