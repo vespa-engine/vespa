@@ -10,6 +10,7 @@ import (
 	"time"
 )
 
+// maxAttempts controls the maximum number of times a document operation is attempted before giving up.
 const maxAttempts = 10
 
 // Dispatcher dispatches documents from a queue to a Feeder.
@@ -47,7 +48,7 @@ func (op documentOp) resetResult() documentOp {
 	return op
 }
 
-func (op documentOp) complete() bool { return op.result.Success() || op.attempts > maxAttempts }
+func (op documentOp) complete() bool { return op.result.Success() || op.attempts == maxAttempts }
 
 func NewDispatcher(feeder Feeder, throttler Throttler, breaker CircuitBreaker, output io.Writer, verbose bool) *Dispatcher {
 	d := &Dispatcher{
@@ -77,7 +78,7 @@ func (d *Dispatcher) shouldRetry(op documentOp, result Result) bool {
 		return true
 	}
 	if result.Err != nil || result.HTTPStatus == 500 || result.HTTPStatus == 502 || result.HTTPStatus == 504 {
-		retry := op.attempts <= maxAttempts
+		retry := op.attempts < maxAttempts
 		var msg strings.Builder
 		msg.WriteString("feed: ")
 		msg.WriteString(op.document.String())
