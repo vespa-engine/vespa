@@ -1,9 +1,9 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package ai.vespa.llm.client;
+package ai.vespa.llm.client.openai;
 
-import ai.vespa.llm.Completion;
+import ai.vespa.llm.completion.Completion;
 import ai.vespa.llm.LanguageModel;
-import ai.vespa.llm.Prompt;
+import ai.vespa.llm.completion.Prompt;
 import com.theokanning.openai.OpenAiHttpException;
 import com.theokanning.openai.completion.CompletionRequest;
 import com.theokanning.openai.service.OpenAiService;

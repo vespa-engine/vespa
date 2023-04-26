@@ -1,5 +1,7 @@
-package ai.vespa.llm;
+package ai.vespa.llm.generation;
 
+import ai.vespa.llm.generation.Generator;
+import ai.vespa.llm.generation.GeneratorOptions;
 import ai.vespa.modelintegration.evaluator.OnnxRuntime;
 import com.yahoo.config.ModelReference;
 import com.yahoo.llm.GeneratorConfig;

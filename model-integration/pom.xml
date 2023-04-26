@@ -111,11 +111,6 @@
     </dependency>
 
     <dependency>
-      <groupId>com.theokanning.openai-gpt3-java</groupId>
-      <artifactId>service</artifactId>
-    </dependency>
-
-    <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
       <scope>test</scope>
@@ -151,18 +146,6 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>
-        <configuration>
-          <!--
-          openai-gpt3-java depends on a different Jackson version than the one we provide,
-          which leads to warnings, so we must disable error on warnings.
-          -->
-          <compilerArgs>
-            <arg>-Xlint:all</arg>
-            <arg>-Xlint:-rawtypes</arg>
-            <arg>-Xlint:-unchecked</arg>
-            <arg>-Xlint:-serial</arg>
-          </compilerArgs>
-        </configuration>
       </plugin>
       <plugin>
         <groupId>com.github.os72</groupId>

@@ -91,7 +91,6 @@
         <module>jdisc_core_test</module>
         <module>jrt</module>
         <module>linguistics</module>
-        <module>opennlp-linguistics</module>
         <module>linguistics-components</module>
         <module>logd</module>
         <module>logserver</module>
@@ -102,6 +101,8 @@
         <module>model-integration</module>
         <module>node-repository</module>
         <module>node-admin</module>
+        <module>openai-client</module>
+        <module>opennlp-linguistics</module>
         <module>orchestrator-restapi</module>
         <module>orchestrator</module>
         <module>parent</module>

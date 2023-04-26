@@ -1,41 +1,5 @@
 {
-  "ai.vespa.llm.Completion$FinishReason" : {
-    "superClass" : "java.lang.Enum",
-    "interfaces" : [ ],
-    "attributes" : [
-      "public",
-      "final",
-      "enum"
-    ],
-    "methods" : [
-      "public static ai.vespa.llm.Completion$FinishReason[] values()",
-      "public static ai.vespa.llm.Completion$FinishReason valueOf(java.lang.String)"
-    ],
-    "fields" : [
-      "public static final enum ai.vespa.llm.Completion$FinishReason length",
-      "public static final enum ai.vespa.llm.Completion$FinishReason stop"
-    ]
-  },
-  "ai.vespa.llm.Completion" : {
-    "superClass" : "java.lang.Record",
-    "interfaces" : [ ],
-    "attributes" : [
-      "public",
-      "final",
-      "record"
-    ],
-    "methods" : [
-      "public void <init>(java.lang.String, ai.vespa.llm.Completion$FinishReason)",
-      "public java.lang.String text()",
-      "public ai.vespa.llm.Completion$FinishReason finishReason()",
-      "public static ai.vespa.llm.Completion from(java.lang.String)",
-      "public final java.lang.String toString()",
-      "public final int hashCode()",
-      "public final boolean equals(java.lang.Object)"
-    ],
-    "fields" : [ ]
-  },
-  "ai.vespa.llm.Generator" : {
+  "ai.vespa.llm.generation.Generator" : {
     "superClass" : "com.yahoo.component.AbstractComponent",
     "interfaces" : [ ],
     "attributes" : [
@@ -43,13 +7,13 @@
     ],
     "methods" : [
       "public void <init>(ai.vespa.modelintegration.evaluator.OnnxRuntime, com.yahoo.llm.GeneratorConfig)",
-      "public java.lang.String generate(java.lang.String, ai.vespa.llm.GeneratorOptions)",
+      "public java.lang.String generate(java.lang.String, ai.vespa.llm.generation.GeneratorOptions)",
       "public java.lang.String generate(java.lang.String)",
       "public void deconstruct()"
     ],
     "fields" : [ ]
   },
-  "ai.vespa.llm.GeneratorOptions$SearchMethod" : {
+  "ai.vespa.llm.generation.GeneratorOptions$SearchMethod" : {
     "superClass" : "java.lang.Enum",
     "interfaces" : [ ],
     "attributes" : [
@@ -58,17 +22,17 @@
       "enum"
     ],
     "methods" : [
-      "public static ai.vespa.llm.GeneratorOptions$SearchMethod[] values()",
-      "public static ai.vespa.llm.GeneratorOptions$SearchMethod valueOf(java.lang.String)"
+      "public static ai.vespa.llm.generation.GeneratorOptions$SearchMethod[] values()",
+      "public static ai.vespa.llm.generation.GeneratorOptions$SearchMethod valueOf(java.lang.String)"
     ],
     "fields" : [
-      "public static final enum ai.vespa.llm.GeneratorOptions$SearchMethod GREEDY",
-      "public static final enum ai.vespa.llm.GeneratorOptions$SearchMethod CONTRASTIVE",
-      "public static final enum ai.vespa.llm.GeneratorOptions$SearchMethod BEAM",
-      "public static final enum ai.vespa.llm.GeneratorOptions$SearchMethod SAMPLE"
+      "public static final enum ai.vespa.llm.generation.GeneratorOptions$SearchMethod GREEDY",
+      "public static final enum ai.vespa.llm.generation.GeneratorOptions$SearchMethod CONTRASTIVE",
+      "public static final enum ai.vespa.llm.generation.GeneratorOptions$SearchMethod BEAM",
+      "public static final enum ai.vespa.llm.generation.GeneratorOptions$SearchMethod SAMPLE"
     ]
   },
-  "ai.vespa.llm.GeneratorOptions" : {
+  "ai.vespa.llm.generation.GeneratorOptions" : {
     "superClass" : "java.lang.Object",
     "interfaces" : [ ],
     "attributes" : [
@@ -76,109 +40,10 @@
     ],
     "methods" : [
       "public void <init>()",
-      "public ai.vespa.llm.GeneratorOptions$SearchMethod getSearchMethod()",
-      "public ai.vespa.llm.GeneratorOptions setSearchMethod(ai.vespa.llm.GeneratorOptions$SearchMethod)",
+      "public ai.vespa.llm.generation.GeneratorOptions$SearchMethod getSearchMethod()",
+      "public ai.vespa.llm.generation.GeneratorOptions setSearchMethod(ai.vespa.llm.generation.GeneratorOptions$SearchMethod)",
       "public int getMaxLength()",
-      "public ai.vespa.llm.GeneratorOptions setMaxLength(int)"
-    ],
-    "fields" : [ ]
-  },
-  "ai.vespa.llm.LanguageModel" : {
-    "superClass" : "java.lang.Object",
-    "interfaces" : [ ],
-    "attributes" : [
-      "public",
-      "interface",
-      "abstract"
-    ],
-    "methods" : [
-      "public abstract java.util.List complete(ai.vespa.llm.Prompt)"
-    ],
-    "fields" : [ ]
-  },
-  "ai.vespa.llm.Prompt" : {
-    "superClass" : "java.lang.Object",
-    "interfaces" : [ ],
-    "attributes" : [
-      "public",
-      "abstract"
-    ],
-    "methods" : [
-      "public void <init>()",
-      "public abstract java.lang.String asString()",
-      "public ai.vespa.llm.Prompt append(ai.vespa.llm.Completion)",
-      "public abstract ai.vespa.llm.Prompt append(java.lang.String)"
-    ],
-    "fields" : [ ]
-  },
-  "ai.vespa.llm.StringPrompt" : {
-    "superClass" : "ai.vespa.llm.Prompt",
-    "interfaces" : [ ],
-    "attributes" : [
-      "public"
-    ],
-    "methods" : [
-      "public java.lang.String asString()",
-      "public ai.vespa.llm.StringPrompt append(java.lang.String)",
-      "public ai.vespa.llm.StringPrompt append(ai.vespa.llm.Completion)",
-      "public java.lang.String toString()",
-      "public static ai.vespa.llm.StringPrompt from(java.lang.String)",
-      "public bridge synthetic ai.vespa.llm.Prompt append(java.lang.String)",
-      "public bridge synthetic ai.vespa.llm.Prompt append(ai.vespa.llm.Completion)"
-    ],
-    "fields" : [ ]
-  },
-  "ai.vespa.llm.client.OpenAiClient$Builder" : {
-    "superClass" : "java.lang.Object",
-    "interfaces" : [ ],
-    "attributes" : [
-      "public"
-    ],
-    "methods" : [
-      "public void <init>(java.lang.String)",
-      "public ai.vespa.llm.client.OpenAiClient$Builder model(java.lang.String)",
-      "public ai.vespa.llm.client.OpenAiClient$Builder echo(boolean)",
-      "public ai.vespa.llm.client.OpenAiClient build()"
-    ],
-    "fields" : [ ]
-  },
-  "ai.vespa.llm.client.OpenAiClient" : {
-    "superClass" : "java.lang.Object",
-    "interfaces" : [
-      "ai.vespa.llm.LanguageModel"
-    ],
-    "attributes" : [
-      "public"
-    ],
-    "methods" : [
-      "public java.util.List complete(ai.vespa.llm.Prompt)"
-    ],
-    "fields" : [ ]
-  },
-  "ai.vespa.llm.test.MockLanguageModel$Builder" : {
-    "superClass" : "java.lang.Object",
-    "interfaces" : [ ],
-    "attributes" : [
-      "public"
-    ],
-    "methods" : [
-      "public ai.vespa.llm.test.MockLanguageModel$Builder completer(java.util.function.Function)",
-      "public void <init>()",
-      "public ai.vespa.llm.test.MockLanguageModel build()"
-    ],
-    "fields" : [ ]
-  },
-  "ai.vespa.llm.test.MockLanguageModel" : {
-    "superClass" : "java.lang.Object",
-    "interfaces" : [
-      "ai.vespa.llm.LanguageModel"
-    ],
-    "attributes" : [
-      "public"
-    ],
-    "methods" : [
-      "public void <init>(ai.vespa.llm.test.MockLanguageModel$Builder)",
-      "public java.util.List complete(ai.vespa.llm.Prompt)"
+      "public ai.vespa.llm.generation.GeneratorOptions setMaxLength(int)"
     ],
     "fields" : [ ]
   }
