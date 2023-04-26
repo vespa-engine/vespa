@@ -31,7 +31,7 @@ type Result struct {
 }
 
 func (r Result) Success() bool {
-	return r.Err == nil && (r.Status == StatusSuccess || r.Status == StatusConditionNotMet)
+	return r.HTTPStatus/100 == 2 || r.HTTPStatus == 404 || r.HTTPStatus == 412
 }
 
 // Stats represents feeding operation statistics.

@@ -55,8 +55,7 @@ class SimpleBoundDistanceFunction : public BoundDistanceFunction {
 public:
     SimpleBoundDistanceFunction(const vespalib::eval::TypedCells& lhs,
                                 const DistanceFunction &df)
-        : BoundDistanceFunction(lhs.type),
-          _lhs(lhs),
+        : _lhs(lhs),
           _df(df)
         {}
 
@@ -94,35 +93,35 @@ std::unique_ptr<DistanceFunctionFactory>
 make_distance_function_factory(search::attribute::DistanceMetric variant,
                                vespalib::eval::CellType cell_type)
 {
-    if (variant == DistanceMetric::Angular) {
-        if (cell_type == CellType::DOUBLE) {
-            return std::make_unique<AngularDistanceFunctionFactory<double>>();
-        }
-        return std::make_unique<AngularDistanceFunctionFactory<float>>();
+    switch (variant) {
+        case DistanceMetric::Angular:
+            switch (cell_type) {
+                case CellType::DOUBLE: return std::make_unique<AngularDistanceFunctionFactory<double>>();
+                default:               return std::make_unique<AngularDistanceFunctionFactory<float>>();
+            }
+        case DistanceMetric::Euclidean:
+            switch (cell_type) {
+                case CellType::DOUBLE: return std::make_unique<EuclideanDistanceFunctionFactory<double>>();
+                case CellType::INT8:   return std::make_unique<EuclideanDistanceFunctionFactory<vespalib::eval::Int8Float>>();
+                default:               return std::make_unique<EuclideanDistanceFunctionFactory<float>>();
+            }
+        case DistanceMetric::InnerProduct:
+        case DistanceMetric::PrenormalizedAngular:
+            switch (cell_type) {
+                case CellType::DOUBLE: return std::make_unique<PrenormalizedAngularDistanceFunctionFactory<double>>();
+                default:               return std::make_unique<PrenormalizedAngularDistanceFunctionFactory<float>>();
+            }
+        case DistanceMetric::GeoDegrees:
+            return std::make_unique<GeoDistanceFunctionFactory>();
+        case DistanceMetric::Hamming:
+            switch (cell_type) {
+                case CellType::DOUBLE: return std::make_unique<HammingDistanceFunctionFactory<double>>();
+                case CellType::INT8:   return std::make_unique<HammingDistanceFunctionFactory<vespalib::eval::Int8Float>>();
+                default:               return std::make_unique<HammingDistanceFunctionFactory<float>>();
+            }
     }
-    if (variant == DistanceMetric::Euclidean) {
-        switch (cell_type) {
-        case CellType::DOUBLE: return std::make_unique<EuclideanDistanceFunctionFactory<double>>();
-        case CellType::INT8:   return std::make_unique<EuclideanDistanceFunctionFactory<vespalib::eval::Int8Float>>();
-        default:               return std::make_unique<EuclideanDistanceFunctionFactory<float>>();
-        }
-    }
-    if (variant == DistanceMetric::PrenormalizedAngular) {
-        if (cell_type == CellType::DOUBLE) {
-            return std::make_unique<PrenormalizedAngularDistanceFunctionFactory<double>>();
-        }
-        return std::make_unique<PrenormalizedAngularDistanceFunctionFactory<float>>();
-    }
-    /*
-    if (variant == DistanceMetric::GeoDegrees) {
-        return std::make_unique<GeoDistanceFunctionFactory>();
-    }
-    if (variant == DistanceMetric::Hamming) {
-        return std::make_unique<HammingDistanceFunctionFactory>();
-    }
-    */
-    auto df = make_distance_function(variant, cell_type);
-    return std::make_unique<SimpleDistanceFunctionFactory>(std::move(df));
+    // not reached:
+    return {};
 }
 
 }

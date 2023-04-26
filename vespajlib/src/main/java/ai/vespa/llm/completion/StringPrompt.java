@@ -1,4 +1,4 @@
-package ai.vespa.llm;
+package ai.vespa.llm.completion;
 
 import com.yahoo.api.annotations.Beta;
 

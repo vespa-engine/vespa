@@ -3995,5 +3995,113 @@
       "public void leaving(com.yahoo.yolean.trace.TraceNode)"
     ],
     "fields" : [ ]
+  },
+  "ai.vespa.llm.LanguageModel" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public",
+      "interface",
+      "abstract"
+    ],
+    "methods" : [
+      "public abstract java.util.List complete(ai.vespa.llm.completion.Prompt)"
+    ],
+    "fields" : [ ]
+  },
+  "ai.vespa.llm.completion.Completion$FinishReason" : {
+    "superClass" : "java.lang.Enum",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public",
+      "final",
+      "enum"
+    ],
+    "methods" : [
+      "public static ai.vespa.llm.completion.Completion$FinishReason[] values()",
+      "public static ai.vespa.llm.completion.Completion$FinishReason valueOf(java.lang.String)"
+    ],
+    "fields" : [
+      "public static final enum ai.vespa.llm.completion.Completion$FinishReason length",
+      "public static final enum ai.vespa.llm.completion.Completion$FinishReason stop"
+    ]
+  },
+  "ai.vespa.llm.completion.Completion" : {
+    "superClass" : "java.lang.Record",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public",
+      "final",
+      "record"
+    ],
+    "methods" : [
+      "public void <init>(java.lang.String, ai.vespa.llm.completion.Completion$FinishReason)",
+      "public java.lang.String text()",
+      "public ai.vespa.llm.completion.Completion$FinishReason finishReason()",
+      "public static ai.vespa.llm.completion.Completion from(java.lang.String)",
+      "public final java.lang.String toString()",
+      "public final int hashCode()",
+      "public final boolean equals(java.lang.Object)"
+    ],
+    "fields" : [ ]
+  },
+  "ai.vespa.llm.completion.Prompt" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public",
+      "abstract"
+    ],
+    "methods" : [
+      "public void <init>()",
+      "public abstract java.lang.String asString()",
+      "public ai.vespa.llm.completion.Prompt append(ai.vespa.llm.completion.Completion)",
+      "public abstract ai.vespa.llm.completion.Prompt append(java.lang.String)"
+    ],
+    "fields" : [ ]
+  },
+  "ai.vespa.llm.completion.StringPrompt" : {
+    "superClass" : "ai.vespa.llm.completion.Prompt",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public"
+    ],
+    "methods" : [
+      "public java.lang.String asString()",
+      "public ai.vespa.llm.completion.StringPrompt append(java.lang.String)",
+      "public ai.vespa.llm.completion.StringPrompt append(ai.vespa.llm.completion.Completion)",
+      "public java.lang.String toString()",
+      "public static ai.vespa.llm.completion.StringPrompt from(java.lang.String)",
+      "public bridge synthetic ai.vespa.llm.completion.Prompt append(java.lang.String)",
+      "public bridge synthetic ai.vespa.llm.completion.Prompt append(ai.vespa.llm.completion.Completion)"
+    ],
+    "fields" : [ ]
+  },
+  "ai.vespa.llm.test.MockLanguageModel$Builder" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public"
+    ],
+    "methods" : [
+      "public ai.vespa.llm.test.MockLanguageModel$Builder completer(java.util.function.Function)",
+      "public void <init>()",
+      "public ai.vespa.llm.test.MockLanguageModel build()"
+    ],
+    "fields" : [ ]
+  },
+  "ai.vespa.llm.test.MockLanguageModel" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
+      "ai.vespa.llm.LanguageModel"
+    ],
+    "attributes" : [
+      "public"
+    ],
+    "methods" : [
+      "public void <init>(ai.vespa.llm.test.MockLanguageModel$Builder)",
+      "public java.util.List complete(ai.vespa.llm.completion.Prompt)"
+    ],
+    "fields" : [ ]
   }
 }

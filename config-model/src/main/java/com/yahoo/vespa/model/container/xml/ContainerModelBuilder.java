@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.container.xml;
 
+import com.yahoo.component.ComponentId;
 import com.yahoo.component.ComponentSpecification;
 import com.yahoo.component.Version;
 import com.yahoo.component.chain.dependencies.Dependencies;
@@ -33,6 +34,7 @@ import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.Zone;
+import com.yahoo.config.provision.ZoneEndpoint;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.container.bundle.BundleInstantiationSpecification;
 import com.yahoo.container.logging.FileConnectionLog;
@@ -85,10 +87,10 @@ import com.yahoo.vespa.model.container.http.Filter;
 import com.yahoo.vespa.model.container.http.FilterBinding;
 import com.yahoo.vespa.model.container.http.FilterChains;
 import com.yahoo.vespa.model.container.http.Http;
+import com.yahoo.vespa.model.container.http.HttpFilterChain;
 import com.yahoo.vespa.model.container.http.JettyHttpServer;
 import com.yahoo.vespa.model.container.http.ssl.HostedSslConnectorFactory;
 import com.yahoo.vespa.model.container.http.xml.HttpBuilder;
-import com.yahoo.vespa.model.container.http.HttpFilterChain;
 import com.yahoo.vespa.model.container.processing.ProcessingChains;
 import com.yahoo.vespa.model.container.search.ContainerSearch;
 import com.yahoo.vespa.model.container.search.PageTemplates;
@@ -102,6 +104,7 @@ import java.io.IOException;
 import java.io.Reader;
 import java.net.URI;
 import java.security.cert.X509Certificate;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -560,6 +563,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         HostedSslConnectorFactory connectorFactory;
         Collection<String> tlsCiphersOverride = deployState.getProperties().tlsCiphersOverride();
         boolean proxyProtocolMixedMode = deployState.getProperties().featureFlags().enableProxyProtocolMixedMode();
+        Duration endpointConnectionTtl = deployState.getProperties().endpointConnectionTtl();
         if (deployState.endpointCertificateSecrets().isPresent()) {
             boolean authorizeClient = deployState.zone().system().isPublic();
             List<X509Certificate> clientCertificates = getClientCertificates(cluster);
@@ -576,11 +580,15 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
             connectorFactory = authorizeClient
                     ? HostedSslConnectorFactory.withProvidedCertificateAndTruststore(
-                    serverName, endpointCertificateSecrets, X509CertificateUtils.toPem(clientCertificates), tlsCiphersOverride, proxyProtocolMixedMode, HOSTED_VESPA_DATAPLANE_PORT)
+                    serverName, endpointCertificateSecrets, X509CertificateUtils.toPem(clientCertificates),
+                    tlsCiphersOverride, proxyProtocolMixedMode, HOSTED_VESPA_DATAPLANE_PORT, endpointConnectionTtl)
                     : HostedSslConnectorFactory.withProvidedCertificate(
-                    serverName, endpointCertificateSecrets, enforceHandshakeClientAuth, tlsCiphersOverride, proxyProtocolMixedMode, HOSTED_VESPA_DATAPLANE_PORT);
+                    serverName, endpointCertificateSecrets, enforceHandshakeClientAuth, tlsCiphersOverride,
+                    proxyProtocolMixedMode, HOSTED_VESPA_DATAPLANE_PORT, endpointConnectionTtl);
         } else {
-            connectorFactory = HostedSslConnectorFactory.withDefaultCertificateAndTruststore(serverName, tlsCiphersOverride, proxyProtocolMixedMode, HOSTED_VESPA_DATAPLANE_PORT);
+            connectorFactory = HostedSslConnectorFactory.withDefaultCertificateAndTruststore(
+                    serverName, tlsCiphersOverride, proxyProtocolMixedMode, HOSTED_VESPA_DATAPLANE_PORT,
+                    endpointConnectionTtl);
         }
         cluster.getHttp().getAccessControl().ifPresent(accessControl -> accessControl.configureHostedConnector(connectorFactory));
         server.addConnector(connectorFactory);
@@ -1163,6 +1171,9 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                                                                      ztsUrl,
                                                                      zoneDnsSuffix,
                                                                      zone);
+
+            // Replace AthenzIdentityProviderProvider
+            cluster.removeComponent(ComponentId.fromString("com.yahoo.container.jdisc.AthenzIdentityProviderProvider"));
             cluster.addComponent(identityProvider);
 
             cluster.getContainers().forEach(container -> {
