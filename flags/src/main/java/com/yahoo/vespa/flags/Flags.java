@@ -410,7 +410,7 @@ public class Flags {
             HOSTNAME);
 
     public static final UnboundBooleanFlag RANDOMIZED_ENDPOINT_NAMES = defineFeatureFlag(
-            "randomized-endpoint-names", false, List.of("andreer"), "2023-04-26", "2023-06-31",
+            "randomized-endpoint-names", false, List.of("andreer"), "2023-04-26", "2023-06-30",
             "Whether to use randomized endpoint names",
             "Takes effect on application deployment",
             APPLICATION_ID);
