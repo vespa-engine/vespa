@@ -23,6 +23,11 @@
             <artifactId>service</artifactId>
             <version>${openai-gpt3.version}</version>
         </dependency>
+        <dependency> <!-- Missing dependency of openai-gpt3 -->
+            <groupId>com.squareup.retrofit2</groupId>
+            <artifactId>converter-jackson</artifactId>
+            <version>2.9.0</version>
+        </dependency>
         <dependency>
             <groupId>com.yahoo.vespa</groupId>
             <artifactId>annotations</artifactId>
