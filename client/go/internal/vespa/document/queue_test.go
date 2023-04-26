@@ -1,12 +1,11 @@
 package document
 
 import (
-	"sync"
 	"testing"
 )
 
 func TestQueue(t *testing.T) {
-	q := NewQueue[int](&sync.Pool{})
+	q := NewQueue[int]()
 	assertPoll(t, q, 0, false)
 	q.Add(1, false)
 	q.Add(2, false)

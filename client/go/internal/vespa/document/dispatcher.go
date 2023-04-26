@@ -1,7 +1,6 @@
 package document
 
 import (
-	"container/list"
 	"fmt"
 	"io"
 	"strings"
@@ -30,7 +29,7 @@ type Dispatcher struct {
 	output        io.Writer
 	verbose       bool
 
-	listPool   sync.Pool
+	queuePool  sync.Pool
 	mu         sync.Mutex
 	statsMu    sync.Mutex
 	wg         sync.WaitGroup
@@ -60,6 +59,7 @@ func NewDispatcher(feeder Feeder, throttler Throttler, breaker CircuitBreaker, o
 		output:         output,
 		verbose:        verbose,
 	}
+	d.queuePool.New = func() any { return NewQueue[documentOp]() }
 	d.start()
 	return d
 }
@@ -112,7 +112,6 @@ func (d *Dispatcher) start() {
 	if d.started {
 		return
 	}
-	d.listPool.New = func() any { return list.New() }
 	d.ready = make(chan documentOp, 4096)
 	d.results = make(chan documentOp, 4096)
 	d.msgs = make(chan string, 4096)
@@ -172,6 +171,7 @@ func (d *Dispatcher) dispatchNext(id Id) {
 	} else {
 		// no more operations with this ID: release slot
 		delete(d.inflight, k)
+		d.queuePool.Put(q)
 		d.releaseSlot()
 	}
 }
@@ -196,7 +196,7 @@ func (d *Dispatcher) enqueue(op documentOp, isRetry bool) error {
 	key := op.document.Id.String()
 	q, ok := d.inflight[key]
 	if !ok {
-		q = NewQueue[documentOp](&d.listPool)
+		q = d.queuePool.Get().(*Queue[documentOp])
 		d.inflight[key] = q
 	} else {
 		q.Add(op, isRetry)
