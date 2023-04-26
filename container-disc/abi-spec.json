@@ -19,8 +19,7 @@
       "public abstract java.util.List getIdentityCertificate()",
       "public abstract java.security.cert.X509Certificate getRoleCertificate(java.lang.String, java.lang.String)",
       "public abstract java.security.PrivateKey getPrivateKey()",
-      "public abstract java.nio.file.Path trustStorePath()",
-      "public abstract void deconstruct()"
+      "public abstract java.nio.file.Path trustStorePath()"
     ],
     "fields" : [ ]
   },
