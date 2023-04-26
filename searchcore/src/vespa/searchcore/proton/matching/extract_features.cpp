@@ -9,6 +9,7 @@
 #include <vespa/vespalib/util/thread_bundle.h>
 #include <vespa/searchlib/fef/feature_resolver.h>
 #include <vespa/searchlib/fef/rank_program.h>
+#include <vespa/searchlib/fef/utils.h>
 #include <vespa/searchlib/queryeval/searchiterator.h>
 
 using vespalib::Doom;
@@ -25,38 +26,9 @@ namespace proton::matching {
 using OrderedDocs = ExtractFeatures::OrderedDocs;
 using search::StringStringMap;
 
+using FefUtils = search::fef::Utils;
+
 namespace {
-
-auto extract_names(const FeatureResolver &resolver, const StringStringMap &renames) {
-    std::vector<vespalib::string> result;
-    result.reserve(resolver.num_features());
-    for (size_t i = 0; i < resolver.num_features(); ++i) {
-        vespalib::string name = resolver.name_of(i);
-        auto iter = renames.find(name);
-        if (iter != renames.end()) {
-            name = iter->second;
-        }
-        result.emplace_back(name);
-    }
-    return result;
-}
-
-void extract_values(const FeatureResolver &resolver, uint32_t docid, FeatureSet::Value *dst) {
-    for (uint32_t i = 0; i < resolver.num_features(); ++i) {
-        if (resolver.is_object(i)) {
-            auto obj = resolver.resolve(i).as_object(docid);
-            if (!obj.get().type().is_double()) {
-                vespalib::nbostream buf;
-                encode_value(obj.get(), buf);
-                dst[i].set_data(vespalib::Memory(buf.peek(), buf.size()));
-            } else {
-                dst[i].set_double(obj.get().as_double());
-            }
-        } else {
-            dst[i].set_double(resolver.resolve(i).as_number(docid));
-        }
-    }
-}
 
 struct MyChunk : Runnable {
     const std::pair<uint32_t,uint32_t> *begin;
@@ -77,7 +49,7 @@ struct MyChunk : Runnable {
             }
             search.unpack(pos->first);
             auto *dst = &result.values[pos->second * resolver.num_features()];
-            extract_values(resolver, pos->first, dst);
+            FefUtils::extract_feature_values(resolver, pos->first, dst);
         }
     }
 };
@@ -121,7 +93,7 @@ ExtractFeatures::get_feature_set(SearchIterator &search, RankProgram &rank_progr
                                  const Doom &doom, const StringStringMap &renames)
 {
     FeatureResolver resolver(rank_program.get_seeds(false));
-    auto result = std::make_unique<FeatureSet>(extract_names(resolver, renames), docs.size());
+    auto result = std::make_unique<FeatureSet>(FefUtils::extract_feature_names(resolver, renames), docs.size());
     if (!docs.empty()) {
         search.initRange(docs.front(), docs.back()+1);
         for (uint32_t docid: docs) {
@@ -130,7 +102,7 @@ ExtractFeatures::get_feature_set(SearchIterator &search, RankProgram &rank_progr
             }
             search.unpack(docid);
             auto *dst = result->getFeaturesByIndex(result->addDocId(docid));
-            extract_values(resolver, docid, dst);
+            FefUtils::extract_feature_values(resolver, docid, dst);
         }
     }
     return result;
@@ -143,7 +115,7 @@ ExtractFeatures::get_match_features(const MatchToolsFactory &mtf, const OrderedD
     auto tools = mtf.createMatchTools();
     tools->setup_match_features();
     FeatureResolver resolver(tools->rank_program().get_seeds(false));
-    result.names = extract_names(resolver, mtf.get_feature_rename_map());
+    result.names = FefUtils::extract_feature_names(resolver, mtf.get_feature_rename_map());
     result.values.resize(result.names.size() * docs.size());
     size_t num_threads = thread_bundle.size();
     std::vector<Runnable::UP> chunks;
