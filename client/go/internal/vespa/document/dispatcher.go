@@ -64,9 +64,12 @@ func NewDispatcher(feeder Feeder, throttler Throttler, breaker CircuitBreaker, o
 }
 
 func (d *Dispatcher) shouldRetry(op documentOp, result Result) bool {
+	if result.Trace != "" {
+		d.msgs <- fmt.Sprintf("feed: trace for %s:\n%s", op.document, result.Trace)
+	}
 	if result.Success() {
 		if d.verbose {
-			d.msgs <- fmt.Sprintf("feed: successfully fed %s with status %d", op.document.Id, result.HTTPStatus)
+			d.msgs <- fmt.Sprintf("feed: %s succeeded with status %d", op.document, result.HTTPStatus)
 		}
 		d.throttler.Success()
 		d.circuitBreaker.Success()
