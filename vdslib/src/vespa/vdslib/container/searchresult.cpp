@@ -116,7 +116,8 @@ SearchResult::SearchResult(document::ByteBuffer & buf) :
     _numDocIdBytes(0),
     _aggregatorList(),
     _groupingList(),
-    _sortBlob()
+    _sortBlob(),
+    _match_features()
 {
     deserialize(buf);
 }
@@ -192,18 +193,18 @@ uint32_t SearchResult::getSerializedSize() const
 
 void SearchResult::addHit(uint32_t lid, const char * docId, RankType rank, const void * sortData, size_t sz)
 {
-    addHit(lid, docId, rank, _sortBlob.getCount());
+    addHit(lid, docId, rank);
     _sortBlob.append(sortData, sz);
 }
 
-void SearchResult::addHit(uint32_t lid, const char * docId, RankType rank, size_t index)
+void SearchResult::addHit(uint32_t lid, const char * docId, RankType rank)
 {
     const size_t sz(strlen(docId));
     size_t start = 0;
     if ( ! _hits.empty() ) {
         start = getBufCount();
     }
-    Hit h(lid, rank, start, index);
+    Hit h(lid, rank, start, _hits.size());
     _hits.push_back(h);
     _totalHits++;
     _numDocIdBytes += sz + 1;
@@ -220,6 +221,12 @@ void SearchResult::sort()
     } else {
         std::sort(_hits.begin(), _hits.end(), SortDataCompare(_sortBlob));
     }
+}
+
+void
+SearchResult::set_match_features(FeatureValues&& match_features)
+{
+    _match_features = std::move(match_features);
 }
 
 }

@@ -1,6 +1,8 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
+#include <vespa/vespalib/util/arrayref.h>
+#include <vespa/vespalib/util/featureset.h>
 #include <vespa/vespalib/util/memory.h>
 #include <vector>
 #include <map>
@@ -43,6 +45,8 @@ private:
 class SearchResult {
 public:
     using RankType = double;
+    using FeatureValue = vespalib::FeatureSet::Value;
+    using FeatureValues = vespalib::FeatureValues;
 public:
     SearchResult();
 
@@ -60,6 +64,11 @@ public:
     AggregatorList       & getAggregatorList()             { return _aggregatorList; }
     const AggregatorList & getAggregatorList()       const { return _aggregatorList; }
     void getSortBlob(size_t index, const void * & blob, size_t & sz) const { _sortBlob.getBlob(_hits[index].getIndex(), blob, sz); }
+    const FeatureValues& get_match_features() const noexcept { return _match_features; }
+    vespalib::ConstArrayRef<FeatureValue> get_match_feature_values(uint32_t index) const noexcept {
+        uint32_t num_features = _match_features.names.size();
+        return { _match_features.values.data() + _hits[index].getIndex() * num_features, num_features };
+    }
     void                   setWantedHitCount(size_t s)     { _wantedHits = s; }
     size_t                 getWantedHitCount()       const { return _wantedHits; }
     void                   setTotalHitCount(uint64_t s)    { _totalHits = s; }
@@ -73,8 +82,9 @@ public:
     void setRank(size_t hitNo, RankType rank) {
         _hits[hitNo].setRank(rank);
     }
-    void addHit(uint32_t lid, const char * docId, RankType rank, size_t index=0);
+    void addHit(uint32_t lid, const char * docId, RankType rank);
     void addHit(uint32_t lid, const char * docId, RankType rank, const void * sortData, size_t sz);
+    void set_match_features(FeatureValues&& match_features);
     void sort();
 
     void deserialize(document::ByteBuffer & buf);
@@ -98,7 +108,7 @@ private:
         uint32_t _lid;
         RankType _rank;
         uint32_t _docIdOffset;
-        uint32_t _index;  // refers to sortBlob
+        uint32_t _index;  // refers to _match_features and _sortBlob
     };
     class SortDataCompare {
     private:
@@ -131,6 +141,7 @@ private:
     AggregatorList               _aggregatorList;
     AggregatorList               _groupingList;
     BlobContainer                _sortBlob;
+    FeatureValues                _match_features;
 };
 
 }
