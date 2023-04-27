@@ -355,7 +355,7 @@ public class InternalStepRunner implements StepRunner {
         }
         if (summary.converged()) {
             controller.jobController().locked(id, lockedRun -> lockedRun.withSummary(null));
-            Availability availability = endpointsAvailable(id.application(), id.type().zone(), logger);
+            Availability availability = endpointsAvailable(id.application(), id.type().zone(), deployment.get(), logger);
             if (availability.status() == Status.available) {
                 if (controller.routing().policies().processDnsChallenges(new DeploymentId(id.application(), id.type().zone()))) {
                     logger.log("Installation succeeded!");
@@ -495,24 +495,26 @@ public class InternalStepRunner implements StepRunner {
         }
     }
 
-    private Availability endpointsAvailable(ApplicationId id, ZoneId zone, DualLogger logger) {
-        DeploymentId deployment = new DeploymentId(id, zone);
-        Map<ZoneId, List<Endpoint>> endpoints = controller.routing().readTestRunnerEndpointsOf(Set.of(deployment));
+    private Availability endpointsAvailable(ApplicationId id, ZoneId zone, Deployment deployment, DualLogger logger) {
+        DeploymentId deploymentId = new DeploymentId(id, zone);
+        Map<ZoneId, List<Endpoint>> endpoints = controller.routing().readTestRunnerEndpointsOf(Set.of(deploymentId));
         logEndpoints(endpoints, logger);
-        DeploymentRoutingContext context = controller.routing().of(deployment);
+        DeploymentRoutingContext context = controller.routing().of(deploymentId);
         boolean resolveEndpoints = context.routingMethod() == RoutingMethod.exclusive;
         return controller.serviceRegistry().testerCloud().verifyEndpoints(
-                deployment,
+                deploymentId,
                 endpoints.getOrDefault(zone, List.of())
                          .stream()
                          .map(endpoint -> {
                              ClusterSpec.Id cluster = ClusterSpec.Id.from(endpoint.name());
                              RoutingPolicy policy = context.routingPolicy(cluster).get();
-                             return new EndpointsChecker.Endpoint(cluster,
+                             return new EndpointsChecker.Endpoint(id,
+                                                                  cluster,
                                                                   HttpURL.from(endpoint.url()),
                                                                   policy.ipAddress().filter(__ -> resolveEndpoints).map(uncheck(InetAddress::getByName)),
                                                                   policy.canonicalName().filter(__ -> resolveEndpoints),
-                                                                  policy.isPublic());
+                                                                  policy.isPublic(),
+                                                                  deployment.cloudAccount());
                          }).toList());
     }
 

@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.provision.lb;
 
 import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.config.provision.EndpointsChecker.HealthChecker;
 import com.yahoo.config.provision.NodeType;
 
 /**
@@ -9,7 +10,7 @@ import com.yahoo.config.provision.NodeType;
  *
  * @author mpolden
  */
-public interface LoadBalancerService {
+public interface LoadBalancerService extends HealthChecker {
 
     /**
      * Provisions load balancers from the given specification. Implementations are expected to be idempotent

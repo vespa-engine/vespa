@@ -10,6 +10,7 @@ import com.yahoo.config.model.api.PortInfo;
 import com.yahoo.config.model.api.ServiceInfo;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
+import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.EndpointsChecker;
 import com.yahoo.config.provision.EndpointsChecker.Availability;
@@ -511,11 +512,13 @@ public class ApplicationHandlerTest {
 
     @Test
     public void testVerifyEndpoints() {
-        expectedEndpoints = List.of(new Endpoint(ClusterSpec.Id.from("bluster"),
+        expectedEndpoints = List.of(new Endpoint(ApplicationId.defaultId(),
+                                                 ClusterSpec.Id.from("bluster"),
                                                  HttpURL.from(URI.create("https://bluster.tld:1234")),
                                                  Optional.of(uncheck(() -> InetAddress.getByName("4.3.2.1"))),
                                                  Optional.of(DomainName.of("fluster.tld")),
-                                                 false));
+                                                 false,
+                                                 CloudAccount.empty));
         availability = new Availability(EndpointsChecker.Status.available, "Endpoints are ready");
         ApplicationHandler handler = createApplicationHandler();
         HttpRequest request = createTestRequest(toUrlPath(applicationId, Zone.defaultZone(), true) + "/verify-endpoints",

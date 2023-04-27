@@ -26,7 +26,7 @@ import static com.yahoo.vespa.hosted.controller.api.integration.deployment.Teste
 public class MockTesterCloud implements TesterCloud {
 
     private final NameService nameService;
-    private final EndpointsChecker endpointsChecker = EndpointsChecker.mock(this::resolveHostName, this::resolveCname, __ -> true);
+    private final EndpointsChecker endpointsChecker = EndpointsChecker.mock(this::resolveHostName, this::resolveCname, __ -> Availability.ready);
 
     private List<LogEntry> log = new ArrayList<>();
     private Status status = NOT_STARTED;
