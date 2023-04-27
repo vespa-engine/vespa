@@ -17,14 +17,11 @@ import jakarta.servlet.AsyncEvent;
 import jakarta.servlet.AsyncListener;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import org.eclipse.jetty.http2.HTTP2Session;
-import org.eclipse.jetty.http2.frames.GoAwayFrame;
 import org.eclipse.jetty.http2.server.HTTP2ServerConnection;
 import org.eclipse.jetty.io.Connection;
 import org.eclipse.jetty.io.EofException;
 import org.eclipse.jetty.server.HttpConnection;
 import org.eclipse.jetty.server.Request;
-import org.eclipse.jetty.util.Callback;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -182,7 +179,7 @@ class HttpRequestDispatch {
             // Graceful shutdown implies a GOAWAY frame with 'Error Code' = 'NO_ERROR' and 'Last-Stream-ID' = 2^31-1.
             // In-flight requests will be allowed to complete before connection is terminated.
             // See https://datatracker.ietf.org/doc/html/rfc9113#name-goaway for details
-            ((HTTP2Session)http2.getSession()).goAway(GoAwayFrame.GRACEFUL, Callback.NOOP);
+            http2.getSession().shutdown();
         }
     }
 
