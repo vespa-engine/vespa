@@ -26,7 +26,6 @@ public class ServiceIdentityProviderProvider implements Provider<ServiceIdentity
     }
 
     @Override
-    public void deconstruct() {
-        athenzIdentityProvider.deconstruct();
-    }
+    public void deconstruct() {}
+
 }
