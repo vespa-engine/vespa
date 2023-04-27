@@ -202,7 +202,6 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
     private boolean deleteTenantCredentials(NodeAgentContext context) {
         var siaDirectory = context.paths().of(CONTAINER_SIA_DIRECTORY, context.users().vespa());
         var identityDocumentFile = siaDirectory.resolve(TENANT.getIdentityDocument());
-        if (!Files.exists(identityDocumentFile)) return false;
         var athenzIdentity = getAthenzIdentity(context, TENANT, identityDocumentFile);
         var privateKeyFile = (ContainerPath) SiaUtils.getPrivateKeyFile(siaDirectory, athenzIdentity);
         var certificateFile = (ContainerPath) SiaUtils.getCertificateFile(siaDirectory, athenzIdentity);
