@@ -193,17 +193,18 @@ public class DocumentV1ApiTest {
         List<AckToken> tokens = List.of(new AckToken(null), new AckToken(null), new AckToken(null));
         // GET at non-existent path returns 404 with available paths
         var response = driver.sendRequest("http://localhost/document/v1/not-found");
-        assertSameJson("{" +
-                       "  \"pathId\": \"/document/v1/not-found\"," +
-                       "  \"message\": \"Nothing at '/document/v1/not-found'. Available paths are:\\n" +
-                       "/document/v1/\\n" +
-                       "/document/v1/{namespace}/{documentType}/docid/\\n" +
-                       "/document/v1/{namespace}/{documentType}/group/{group}/\\n" +
-                       "/document/v1/{namespace}/{documentType}/number/{number}/\\n" +
-                       "/document/v1/{namespace}/{documentType}/docid/{*}\\n" +
-                       "/document/v1/{namespace}/{documentType}/group/{group}/{*}\\n" +
-                       "/document/v1/{namespace}/{documentType}/number/{number}/{*}\"" +
-                       "}", response.readAll());
+        assertSameJson("""
+                       {
+                         "pathId": "/document/v1/not-found",
+                         "message": "Nothing at '/document/v1/not-found'. Available paths are:
+                       /document/v1/
+                       /document/v1/{namespace}/{documentType}/docid/
+                       /document/v1/{namespace}/{documentType}/group/{group}/
+                       /document/v1/{namespace}/{documentType}/number/{number}/
+                       /document/v1/{namespace}/{documentType}/docid/{*}
+                       /document/v1/{namespace}/{documentType}/group/{group}/{*}
+                       /document/v1/{namespace}/{documentType}/number/{number}/{*}"
+                       }""", response.readAll());
         assertEquals("application/json; charset=UTF-8", response.getResponse().headers().getFirst("Content-Type"));
         assertEquals(404, response.getStatus());
 
@@ -302,26 +303,27 @@ public class DocumentV1ApiTest {
         });
         response = driver.sendRequest("http://localhost/document/v1?cluster=content&bucketSpace=default&wantedDocumentCount=1025&concurrency=123" +
                                       "&selection=all%20the%20things&fieldSet=[id]&timeout=6&stream=true&slices=4&sliceId=1");
-        assertSameJson("{" +
-                       "  \"pathId\": \"/document/v1\"," +
-                       "  \"documents\": [" +
-                       "    {" +
-                       "      \"id\": \"id:space:music::one\"," +
-                       "      \"fields\": {" +
-                       "        \"artist\": \"Tom Waits\"," +
-                       "        \"embedding\": { \"type\": \"tensor(x[3])\", \"values\": [1.0,2.0,3.0] } " +
-                       "      }" +
-                       "    }," +
-                       "    {" +
-                       "      \"id\": \"id:space:music:n=1:two\"," +
-                       "      \"fields\": {" +
-                       "        \"artist\": \"Asa-Chan & Jun-Ray\"," +
-                       "        \"embedding\": { \"type\": \"tensor(x[3])\", \"values\": [4.0,5.0,6.0] } " +
-                       "      }" +
-                       "    }" +
-                       "  ]," +
-                       "  \"documentCount\": 2" +
-                       "}", response.readAll());
+        assertSameJson("""
+                       {
+                         "pathId": "/document/v1",
+                         "documents": [
+                           {
+                             "id": "id:space:music::one",
+                             "fields": {
+                               "artist": "Tom Waits",
+                               "embedding": { "type": "tensor(x[3])", "values": [1.0,2.0,3.0] }
+                             }
+                           },
+                           {
+                             "id": "id:space:music:n=1:two",
+                             "fields": {
+                               "artist": "Asa-Chan & Jun-Ray",
+                               "embedding": { "type": "tensor(x[3])", "values": [4.0,5.0,6.0] }
+                             }
+                           }
+                         ],
+                         "documentCount": 2
+                       }""", response.readAll());
         assertEquals(200, response.getStatus());
 
         // GET with namespace and document type is a restricted visit.
@@ -334,10 +336,12 @@ public class DocumentV1ApiTest {
             throw new IllegalArgumentException("parse failure");
         });
         response = driver.sendRequest("http://localhost/document/v1/space/music/docid?continuation=" + progress.serializeToString());
-        assertSameJson("{" +
-                       "  \"pathId\": \"/document/v1/space/music/docid\"," +
-                       "  \"message\": \"parse failure\"" +
-                       "}", response.readAll());
+        assertSameJson("""
+                       {
+                         "pathId": "/document/v1/space/music/docid",
+                         "message": "parse failure"
+                       }""",
+                       response.readAll());
         assertEquals(400, response.getStatus());
 
         // GET when a streamed visit returns status code 200 also when errors occur.
@@ -347,12 +351,12 @@ public class DocumentV1ApiTest {
             parameters.getControlHandler().onDone(VisitorControlHandler.CompletionCode.FAILURE, "failure?");
         });
         response = driver.sendRequest("http://localhost/document/v1/space/music/docid?stream=true");
-        assertSameJson("{" +
-                       "  \"pathId\": \"/document/v1/space/music/docid\"," +
-                       "  \"documents\": []," +
-                       //"  \"continuation\": \"" + progress.serializeToString() + "\"," +
-                       "  \"message\": \"failure?\"" +
-                       "}", response.readAll());
+        assertSameJson("""
+                       {
+                         "pathId": "/document/v1/space/music/docid",
+                         "documents": [],
+                         "message": "failure?"
+                       }""", response.readAll());
         assertEquals(200, response.getStatus());
         assertNull(response.getResponse().headers().get("X-Vespa-Ignored-Fields"));
 
@@ -361,10 +365,12 @@ public class DocumentV1ApiTest {
             fail("Not supposed to run");
         });
         response = driver.sendRequest("http://localhost/document/v1/space/music/docid", POST);
-        assertSameJson("{" +
-                       "  \"pathId\": \"/document/v1/space/music/docid\"," +
-                       "  \"message\": \"Must specify 'destinationCluster' at '/document/v1/space/music/docid'\"" +
-                       "}", response.readAll());
+        assertSameJson("""
+                       {
+                         "pathId": "/document/v1/space/music/docid",
+                         "message": "Must specify 'destinationCluster' at '/document/v1/space/music/docid'"
+                       }""",
+                       response.readAll());
         assertEquals(400, response.getStatus());
 
         // POST with namespace and document type is a restricted visit with a required destination cluster ("destinationCluster")
@@ -375,9 +381,11 @@ public class DocumentV1ApiTest {
             parameters.getControlHandler().onDone(VisitorControlHandler.CompletionCode.SUCCESS, "We made it!");
         });
         response = driver.sendRequest("http://localhost/document/v1/space/music/docid?destinationCluster=content&selection=true&cluster=content&timeout=60", POST);
-        assertSameJson("{" +
-                       "  \"pathId\": \"/document/v1/space/music/docid\"" +
-                       "}", response.readAll());
+        assertSameJson("""
+                       {
+                         "pathId": "/document/v1/space/music/docid"
+                       }""",
+                       response.readAll());
         assertEquals(200, response.getStatus());
 
         // PUT with namespace and document type is a restricted visit with a required partial update to apply to visited documents.
@@ -399,15 +407,18 @@ public class DocumentV1ApiTest {
             return new Result();
         });
         response = driver.sendRequest("http://localhost/document/v1/space/music/docid?selection=true&cluster=content&timeChunk=10", PUT,
-                                      "{" +
-                                      "  \"fields\": {" +
-                                      "    \"artist\": { \"assign\": \"Lisa Ekdahl\" }, " +
-                                      "    \"nonexisting\": { \"assign\": \"Ignored\" }" +
-                                      "  }" +
-                                      "}");
-        assertSameJson("{" +
-                       "  \"pathId\": \"/document/v1/space/music/docid\"" +
-                       "}", response.readAll());
+                                      """
+                                      {
+                                        "fields": {
+                                          "artist": { "assign": "Lisa Ekdahl" },
+                                          "nonexisting": { "assign": "Ignored" }
+                                        }
+                                      }""");
+        assertSameJson("""
+                       {
+                         "pathId": "/document/v1/space/music/docid"
+                       }""",
+                       response.readAll());
         assertEquals(200, response.getStatus());
         assertEquals("true", response.getResponse().headers().get("X-Vespa-Ignored-Fields").get(0).toString());
 
@@ -416,10 +427,12 @@ public class DocumentV1ApiTest {
             fail("Not supposed to run");
         });
         response = driver.sendRequest("http://localhost/document/v1/space/music/group/troupe?selection=false", PUT);
-        assertSameJson("{" +
-                       "  \"pathId\": \"/document/v1/space/music/group/troupe\"," +
-                       "  \"message\": \"Must specify 'cluster' at '/document/v1/space/music/group/troupe'\"" +
-                       "}", response.readAll());
+        assertSameJson("""
+                       {
+                         "pathId": "/document/v1/space/music/group/troupe",
+                         "message": "Must specify 'cluster' at '/document/v1/space/music/group/troupe'"
+                       }""",
+                       response.readAll());
         assertEquals(400, response.getStatus());
 
         // PUT with namespace, document type and group is also a restricted visit which requires a selection.
@@ -427,10 +440,12 @@ public class DocumentV1ApiTest {
             fail("Not supposed to run");
         });
         response = driver.sendRequest("http://localhost/document/v1/space/music/group/troupe?cluster=content", PUT);
-        assertSameJson("{" +
-                       "  \"pathId\": \"/document/v1/space/music/group/troupe\"," +
-                       "  \"message\": \"Must specify 'selection' at '/document/v1/space/music/group/troupe'\"" +
-                       "}", response.readAll());
+        assertSameJson("""
+                       {
+                         "pathId": "/document/v1/space/music/group/troupe",
+                         "message": "Must specify 'selection' at '/document/v1/space/music/group/troupe'"
+                       }""",
+                       response.readAll());
         assertEquals(400, response.getStatus());
 
         // DELETE with namespace and document type is a restricted visit which deletes visited documents.
@@ -452,10 +467,12 @@ public class DocumentV1ApiTest {
             return new Result();
         });
         response = driver.sendRequest("http://localhost/document/v1/space/music/docid?selection=false&cluster=content", DELETE);
-        assertSameJson("{" +
-                       "  \"pathId\": \"/document/v1/space/music/docid\"," +
-                       "  \"message\": \"boom\"" +
-                       "}", response.readAll());
+        assertSameJson("""
+                       {
+                         "pathId": "/document/v1/space/music/docid",
+                         "message": "boom"
+                       }""",
+                       response.readAll());
         assertEquals(502, response.getStatus());
 
         // DELETE at the root is also a deletion visit. These also require a selection.
@@ -463,10 +480,12 @@ public class DocumentV1ApiTest {
             fail("Not supposed to run");
         });
         response = driver.sendRequest("http://localhost/document/v1/", DELETE);
-        assertSameJson("{" +
-                       "  \"pathId\": \"/document/v1/\"," +
-                       "  \"message\": \"Must specify 'selection' at '/document/v1/'\"" +
-                       "}", response.readAll());
+        assertSameJson("""
+                       {
+                         "pathId": "/document/v1/",
+                         "message": "Must specify 'selection' at '/document/v1/'"
+                       }""",
+                       response.readAll());
         assertEquals(400, response.getStatus());
 
         // DELETE at the root is also a deletion visit. These also require a cluster.
@@ -474,10 +493,12 @@ public class DocumentV1ApiTest {
             fail("Not supposed to run");
         });
         response = driver.sendRequest("http://localhost/document/v1/?selection=true", DELETE);
-        assertSameJson("{" +
-                       "  \"pathId\": \"/document/v1/\"," +
-                       "  \"message\": \"Must specify 'cluster' at '/document/v1/'\"" +
-                       "}", response.readAll());
+        assertSameJson("""
+                       {
+                         "pathId": "/document/v1/",
+                         "message": "Must specify 'cluster' at '/document/v1/'"
+                       }""",
+                       response.readAll());
         assertEquals(400, response.getStatus());
 
         // GET with namespace, document type and group is a restricted visit.
@@ -486,32 +507,43 @@ public class DocumentV1ApiTest {
             parameters.getControlHandler().onDone(VisitorControlHandler.CompletionCode.FAILURE, "error");
         });
         response = driver.sendRequest("http://localhost/document/v1/space/music/group/best%27");
-        assertSameJson("{" +
-                       "  \"pathId\": \"/document/v1/space/music/group/best%27\"," +
-                       "  \"documents\": []," +
-                       "  \"message\": \"error\"" +
-                       "}", response.readAll());
+        assertSameJson("""
+                       {
+                         "pathId": "/document/v1/space/music/group/best%27",
+                         "documents": [],
+                         "message": "error"
+                       }""",
+                       response.readAll());
         assertEquals(502, response.getStatus());
 
         // GET with namespace, document type and number is a restricted visit.
         access.expect(parameters -> {
             assertEquals("(music) and (id.namespace=='space') and (id.user==123)", parameters.getDocumentSelection());
+            VisitorStatistics statistics = new VisitorStatistics();
+            statistics.setBucketsVisited(1);
+            statistics.setDocumentsVisited(0);
+            parameters.getControlHandler().onVisitorStatistics(statistics);
             parameters.getControlHandler().onDone(VisitorControlHandler.CompletionCode.ABORTED, "aborted");
         });
         response = driver.sendRequest("http://localhost/document/v1/space/music/number/123");
-        assertSameJson("{" +
-                       "  \"pathId\": \"/document/v1/space/music/number/123\"," +
-                       "  \"documents\": []" +
-                       "}", response.readAll());
+        assertSameJson("""
+                       {
+                         "pathId": "/document/v1/space/music/number/123",
+                         "documents": [ ],
+                         "documentCount": 0
+                       }""",
+                       response.readAll());
         assertEquals(200, response.getStatus());
 
         // GET with from timestamp > to timestamp is an error
         access.expect(parameters -> { fail("unreachable"); });
         response = driver.sendRequest("http://localhost/document/v1/?cluster=content&fromTimestamp=100&toTimestamp=99");
-        assertSameJson("{" +
-                "  \"pathId\": \"/document/v1/\"," +
-                "  \"message\": \"toTimestamp must be greater than, or equal to, fromTimestamp\"" +
-                "}", response.readAll());
+        assertSameJson("""
+                       {
+                         "pathId": "/document/v1/",
+                         "message": "toTimestamp must be greater than, or equal to, fromTimestamp"
+                       }""",
+                       response.readAll());
         assertEquals(400, response.getStatus());
 
         // GET with full document ID is a document get operation which returns 404 when no document is found
@@ -522,10 +554,12 @@ public class DocumentV1ApiTest {
             return new Result();
         });
         response = driver.sendRequest("http://localhost/document/v1/space/music/docid/one?cluster=content&fieldSet=go&timeout=123");
-        assertSameJson("{" +
-                       "  \"pathId\": \"/document/v1/space/music/docid/one\"," +
-                       "  \"id\": \"id:space:music::one\"" +
-                       "}", response.readAll());
+        assertSameJson("""
+                       {
+                         "pathId": "/document/v1/space/music/docid/one",
+                         "id": "id:space:music::one"
+                       }""",
+                       response.readAll());
         assertEquals(404, response.getStatus());
 
         // GET with full document ID is a document get operation.
