@@ -87,4 +87,11 @@ FeatureSet::getFeaturesByDocId(uint32_t docId) const
     return 0;
 }
 
+FeatureValues::FeatureValues() noexcept = default;
+FeatureValues::FeatureValues(const FeatureValues& rhs) = default;
+FeatureValues::FeatureValues(FeatureValues&& rhs) noexcept = default;
+FeatureValues::~FeatureValues() noexcept = default;
+FeatureValues& FeatureValues::operator=(const FeatureValues& rhs) = default;;
+FeatureValues& FeatureValues::operator=(FeatureValues&& rhs) noexcept = default;
+
 }
