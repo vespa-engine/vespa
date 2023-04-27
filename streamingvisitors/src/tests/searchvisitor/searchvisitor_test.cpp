@@ -2,7 +2,7 @@
 
 #include <vespa/document/base/testdocrepo.h>
 #include <vespa/document/repo/documenttyperepo.h>
-#include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/persistence/spi/docentry.h>
 #include <vespa/searchlib/query/tree/querybuilder.h>
 #include <vespa/searchlib/query/tree/simplequery.h>
 #include <vespa/searchlib/query/tree/stackdumpcreator.h>
@@ -10,8 +10,7 @@
 #include <vespa/searchvisitor/searchvisitor.h>
 #include <vespa/storage/frameworkimpl/component/storagecomponentregisterimpl.h>
 #include <vespa/storageframework/defaultimplementation/clock/fakeclock.h>
-#include <vespa/persistence/spi/docentry.h>
-
+#include <vespa/vespalib/gtest/gtest.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP("searchvisitor_test");
@@ -23,37 +22,34 @@ using namespace storage;
 
 namespace streaming {
 
-class SearchVisitorTest : public vespalib::TestApp
+class SearchVisitorTest : public testing::Test
 {
-private:
+public:
     framework::defaultimplementation::FakeClock _clock;
     StorageComponentRegisterImpl      _componentRegister;
     std::unique_ptr<StorageComponent> _component;
     SearchEnvironment                 _env;
-    void testSearchVisitor();
-    void testSearchEnvironment();
     void testCreateSearchVisitor(const vespalib::string & dir, const vdslib::Parameters & parameters);
-    void testOnlyRequireWeakReadConsistency();
 
-public:
     SearchVisitorTest();
     ~SearchVisitorTest() override;
-    int Main() override;
 };
 
 SearchVisitorTest::SearchVisitorTest() :
-    vespalib::TestApp(),
     _componentRegister(),
-    _env(::config::ConfigUri("dir:" + TEST_PATH("cfg")))
+    _env(::config::ConfigUri("dir:cfg"))
 {
     _componentRegister.setNodeInfo("mycluster", lib::NodeType::STORAGE, 1);
     _componentRegister.setClock(_clock);
-    auto repo = std::make_shared<DocumentTypeRepo>(readDocumenttypesConfig(TEST_PATH("cfg/documenttypes.cfg")));
+    auto repo = std::make_shared<DocumentTypeRepo>(readDocumenttypesConfig("cfg/documenttypes.cfg"));
     _componentRegister.setDocumentTypeRepo(repo);
     _component = std::make_unique<StorageComponent>(_componentRegister, "storage");
 }
 
-SearchVisitorTest::~SearchVisitorTest() = default;
+SearchVisitorTest::~SearchVisitorTest()
+{
+    _env.clear_thread_local_env_map();
+}
 
 Visitor::DocEntryList
 createDocuments(const vespalib::string & dir)
@@ -79,15 +75,13 @@ SearchVisitorTest::testCreateSearchVisitor(const vespalib::string & dir, const v
     sv->handleDocuments(bucketId, documents, hitCounter);
 }
 
-void
-SearchVisitorTest::testSearchEnvironment()
+TEST_F(SearchVisitorTest, test_search_environment)
 {
     EXPECT_TRUE(_env.getVSMAdapter("simple") != nullptr);
     EXPECT_TRUE(_env.getRankManager("simple") != nullptr);
 }
 
-void
-SearchVisitorTest::testSearchVisitor()
+TEST_F(SearchVisitorTest, test_search_visitor)
 {
     vdslib::Parameters params;
     params.set("searchcluster", "aaa");
@@ -102,31 +96,18 @@ SearchVisitorTest::testSearchVisitor()
     vespalib::string stackDump = StackDumpCreator::create(*node);
 
     params.set("query", stackDump);
-    testCreateSearchVisitor("dir:" + TEST_PATH("cfg"), params);
+    testCreateSearchVisitor("dir:cfg", params);
 }
 
-void
-SearchVisitorTest::testOnlyRequireWeakReadConsistency()
+TEST_F(SearchVisitorTest, test_only_require_weak_read_consistency)
 {
-    SearchVisitorFactory factory(::config::ConfigUri("dir:" + TEST_PATH("cfg")));
+    SearchVisitorFactory factory(::config::ConfigUri("dir:cfg"));
     VisitorFactory& factoryBase(factory);
     vdslib::Parameters params;
     std::unique_ptr<Visitor> sv(factoryBase.makeVisitor(*_component, _env, params));
     EXPECT_TRUE(sv->getRequiredReadConsistency() == spi::ReadConsistency::WEAK);
 }
 
-int
-SearchVisitorTest::Main()
-{
-    TEST_INIT("searchvisitor_test");
-
-    testSearchVisitor(); TEST_FLUSH();
-    testSearchEnvironment(); TEST_FLUSH();
-    testOnlyRequireWeakReadConsistency(); TEST_FLUSH();
-
-    TEST_DONE();
 }
 
-} // namespace streaming
-
-TEST_APPHOOK(::streaming::SearchVisitorTest)
+GTEST_MAIN_RUN_ALL_TESTS()

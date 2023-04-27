@@ -53,7 +53,9 @@ SearchEnvironment::SearchEnvironment(const config::ConfigUri & configUri) :
     VisitorEnvironment(),
     _envMap(),
     _configUri(configUri)
-{ }
+{
+}
+
 
 SearchEnvironment::~SearchEnvironment()
 {
@@ -85,6 +87,12 @@ SearchEnvironment::getEnv(const vespalib::string & searchCluster)
         localFound = _localEnvMap->find(searchCluster);
     }
     return *localFound->second;
+}
+
+void
+SearchEnvironment::clear_thread_local_env_map()
+{
+    _localEnvMap = nullptr;
 }
 
 }
