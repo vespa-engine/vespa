@@ -238,7 +238,7 @@ void SearchVisitor::GroupingEntry::aggregate(const document::Document & doc, sea
 }
 
 SearchVisitor::~SearchVisitor() {
-    if (! isCompletedCalled()) {
+    if (!isCompletedCalled() && _queryResult) {
         HitCounter hc;
         completedVisitingInternal(hc);
     }
@@ -1124,6 +1124,13 @@ SearchVisitor::fillSortBuffer()
 void SearchVisitor::completedBucket(const document::BucketId&, HitCounter&)
 {
     LOG(debug, "Completed bucket");
+}
+
+std::unique_ptr<documentapi::QueryResultMessage>
+SearchVisitor::generate_query_result(HitCounter& counter)
+{
+    completedVisitingInternal(counter);
+    return std::move(_queryResult);
 }
 
 void SearchVisitor::completedVisitingInternal(HitCounter& hitCounter)

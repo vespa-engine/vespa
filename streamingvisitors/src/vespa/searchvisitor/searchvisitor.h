@@ -46,6 +46,10 @@ public:
                   const vdslib::Parameters & params);
 
     ~SearchVisitor() override;
+
+    // This should only be used by unit tests.
+    std::unique_ptr<documentapi::QueryResultMessage> generate_query_result(HitCounter& counter);
+
 private:
     /**
      * This struct wraps an attribute vector.
