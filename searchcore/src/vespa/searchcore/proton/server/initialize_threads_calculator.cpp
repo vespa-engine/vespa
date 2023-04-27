@@ -39,10 +39,11 @@ const vespalib::string file_name = "initialize-threads.txt";
 
 namespace proton {
 
-InitializeThreadsCalculator::InitializeThreadsCalculator(const vespalib::string& base_dir,
+InitializeThreadsCalculator::InitializeThreadsCalculator(const HwInfo::Cpu & cpu_info,
+                                                         const vespalib::string& base_dir,
                                                          uint32_t configured_num_threads)
     : _path(base_dir + "/" + file_name),
-      _num_threads(configured_num_threads),
+      _num_threads(std::min(cpu_info.cores(), configured_num_threads)),
       _threads()
 {
     if (std::filesystem::exists(_path)) {
