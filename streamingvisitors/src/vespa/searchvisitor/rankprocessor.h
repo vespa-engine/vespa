@@ -23,6 +23,9 @@ namespace streaming {
 class RankProcessor
 {
 private:
+    using RankProgram = search::fef::RankProgram;
+    using FeatureSet = vespalib::FeatureSet;
+    using FeatureValues = vespalib::FeatureValues;
     RankManager::Snapshot::SP      _rankManagerSnapshot;
     const search::fef::RankSetup & _rankSetup;
     QueryWrapper                   _query;
@@ -37,10 +40,12 @@ private:
     search::fef::NumberOrObject          _zeroScore;
     search::fef::LazyValue               _rankScore;
     HitCollector::UP                     _hitCollector;
+    std::unique_ptr<RankProgram>         _match_features_program;
 
     void initQueryEnvironment();
     void initHitCollector(size_t wantedHitCount);
     void setupRankProgram(search::fef::RankProgram &program);
+    FeatureValues calculate_match_features();
 
     /**
      * Initializes this rank processor.
