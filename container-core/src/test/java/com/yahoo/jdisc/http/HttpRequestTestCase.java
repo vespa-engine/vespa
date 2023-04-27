@@ -74,7 +74,7 @@ public class HttpRequestTestCase {
         URI uri = URI.create("http://localhost/path?foo=bar&foo=baz&cox=69");
         InetSocketAddress address = new InetSocketAddress("remotehost", 69);
         final HttpRequest request = HttpRequest.newServerRequest(mockContainer(), uri, HttpRequest.Method.GET,
-                HttpRequest.Version.HTTP_1_1, address, 1L);
+                HttpRequest.Version.HTTP_1_1, address, 1L, 1);
         assertEquals(uri, request.getUri());
 
         assertEquals(HttpRequest.Method.GET, request.getMethod());

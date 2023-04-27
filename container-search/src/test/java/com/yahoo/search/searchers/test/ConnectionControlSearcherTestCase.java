@@ -1,18 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.searchers.test;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-
-import java.io.ByteArrayInputStream;
-import java.net.SocketAddress;
-import java.net.URI;
-import java.net.URISyntaxException;
-
-import org.junit.jupiter.api.Test;
 import com.yahoo.component.chain.Chain;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.jdisc.Container;
@@ -24,6 +12,18 @@ import com.yahoo.search.Result;
 import com.yahoo.search.Searcher;
 import com.yahoo.search.searchchain.Execution;
 import com.yahoo.search.searchers.ConnectionControlSearcher;
+import org.junit.jupiter.api.Test;
+
+import java.io.ByteArrayInputStream;
+import java.net.SocketAddress;
+import java.net.URI;
+import java.net.URISyntaxException;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
  * Functionality tests for
@@ -88,7 +88,7 @@ public class ConnectionControlSearcherTestCase {
         when(container.newReference(any())).thenReturn(mock(Container.class));
         when(container.newReference(any(URI.class), any(Object.class))).thenReturn(mock(Container.class));
         final com.yahoo.jdisc.http.HttpRequest serverRequest = com.yahoo.jdisc.http.HttpRequest
-                .newServerRequest(container, uri, method, version, remoteAddress, connectedAtMillis);
+                .newServerRequest(container, uri, method, version, remoteAddress, connectedAtMillis, connectedAtMillis);
         HttpRequest incoming = new HttpRequest(serverRequest, new ByteArrayInputStream(new byte[0]));
         Query query = new Query(incoming);
         Execution e = new Execution(new Chain<Searcher>(ConnectionControlSearcher.createTestInstance(() -> nowMillis)),
