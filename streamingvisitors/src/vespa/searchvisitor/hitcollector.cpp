@@ -13,6 +13,7 @@ LOG_SETUP(".searchvisitor.hitcollector");
 
 using search::fef::MatchData;
 using vespalib::FeatureSet;
+using vespalib::FeatureValues;
 using vdslib::SearchResult;
 
 using FefUtils = search::fef::Utils;
@@ -126,7 +127,7 @@ HitCollector::addHit(Hit && hit)
 }
 
 void
-HitCollector::fillSearchResult(vdslib::SearchResult & searchResult)
+HitCollector::fillSearchResult(vdslib::SearchResult & searchResult, FeatureValues&& match_features)
 {
     sortByDocId();
     for (const Hit & hit : _hits) {
@@ -142,6 +143,13 @@ HitCollector::fillSearchResult(vdslib::SearchResult & searchResult)
             searchResult.addHit(docId, documentId.c_str(), rank, hit.getSortBlob().c_str(), hit.getSortBlob().size());
         }
     }
+    searchResult.set_match_features(std::move(match_features));
+}
+
+void
+HitCollector::fillSearchResult(vdslib::SearchResult & searchResult)
+{
+    fillSearchResult(searchResult, FeatureValues());
 }
 
 FeatureSet::SP
@@ -162,6 +170,29 @@ HitCollector::getFeatureSet(IRankProgram &rankProgram,
         FefUtils::extract_feature_values(resolver, docId, f);
     }
     return retval;
+}
+
+FeatureValues
+HitCollector::get_match_features(IRankProgram& rank_program,
+                                 const search::fef::FeatureResolver& resolver,
+                                 const search::StringStringMap& feature_rename_map)
+{
+    FeatureValues match_features;
+    if (resolver.num_features() == 0 || _hits.empty()) {
+        return match_features;
+    }
+    sortByDocId();
+    match_features.names = FefUtils::extract_feature_names(resolver, feature_rename_map);
+    match_features.values.resize(resolver.num_features() * _hits.size());
+    auto f = match_features.values.data();
+    for (const Hit & hit : _hits) {
+        auto docid = hit.getDocId();
+        rank_program.run(docid, hit.getMatchData());
+        FefUtils::extract_feature_values(resolver, docid, f);
+        f += resolver.num_features();
+    }
+    assert(f == match_features.values.data() + match_features.values.size());
+    return match_features;
 }
 
 } // namespace streaming

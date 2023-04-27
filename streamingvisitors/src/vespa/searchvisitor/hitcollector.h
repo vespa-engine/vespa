@@ -121,6 +121,7 @@ public:
      * Fills the given search result with the m best hits from the hit heap.
      * Invoking this method will destroy the heap property of the hit heap.
      **/
+    void fillSearchResult(vdslib::SearchResult & searchResult, vespalib::FeatureValues&& match_features);
     void fillSearchResult(vdslib::SearchResult & searchResult);
 
     /**
@@ -136,6 +137,9 @@ public:
                                            const search::fef::FeatureResolver &resolver,
                                            const search::StringStringMap &feature_rename_map);
 
+    vespalib::FeatureValues get_match_features(IRankProgram& rank_program,
+                                               const search::fef::FeatureResolver& resolver,
+                                               const search::StringStringMap& feature_rename_map);
 };
 
 } // namespace streaming
