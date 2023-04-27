@@ -35,7 +35,6 @@ import com.yahoo.messagebus.SourceSessionParams;
 import com.yahoo.messagebus.StaticThrottlePolicy;
 import com.yahoo.messagebus.network.rpc.RPCNetworkParams;
 import com.yahoo.messagebus.routing.Route;
-import com.yahoo.vespaxmlparser.ConditionalFeedOperation;
 import com.yahoo.vespaxmlparser.FeedReader;
 import com.yahoo.vespaxmlparser.FeedOperation;
 import com.yahoo.vespaxmlparser.RemoveFeedOperation;
@@ -285,32 +284,44 @@ public class SimpleFeeder implements ReplyHandler {
             }
         }
 
-        static class LazyDocumentOperation extends ConditionalFeedOperation {
+        static class LazyDocumentOperation extends FeedOperation {
             private final DocumentDeserializer deserializer;
+            private final TestAndSetCondition condition;
             LazyDocumentOperation(DocumentDeserializer deserializer, TestAndSetCondition condition) {
-                super(Type.DOCUMENT, condition);
+                super(Type.DOCUMENT);
                 this.deserializer = deserializer;
+                this.condition = condition;
             }
 
             @Override
             public DocumentPut getDocumentPut() {
                 DocumentPut put = new DocumentPut(new Document(deserializer));
-                put.setCondition(getCondition());
+                put.setCondition(condition);
                 return put;
             }
+            @Override
+            public TestAndSetCondition getCondition() {
+                return condition;
+            }
         }
-        static class LazyUpdateOperation extends ConditionalFeedOperation {
+        static class LazyUpdateOperation extends FeedOperation {
             private final DocumentDeserializer deserializer;
+            private final TestAndSetCondition condition;
             LazyUpdateOperation(DocumentDeserializer deserializer, TestAndSetCondition condition) {
-                super(Type.UPDATE, condition);
+                super(Type.UPDATE);
                 this.deserializer = deserializer;
+                this.condition = condition;
             }
 
             @Override
             public DocumentUpdate getDocumentUpdate() {
                 DocumentUpdate update = new DocumentUpdate(deserializer);
-                update.setCondition(getCondition());
+                update.setCondition(condition);
                 return update;
+            }
+            @Override
+            public TestAndSetCondition getCondition() {
+                return condition;
             }
         }
 
