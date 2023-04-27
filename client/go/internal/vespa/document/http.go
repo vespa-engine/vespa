@@ -166,6 +166,7 @@ func (c *Client) createRequest(method, url string, body []byte) (*http.Request, 
 	useGzip := c.options.Compression == CompressionGzip || (c.options.Compression == CompressionAuto && len(body) > 512)
 	if useGzip {
 		var buf bytes.Buffer
+		buf.Grow(1024)
 		w := c.gzipWriter(&buf)
 		if _, err := w.Write(body); err != nil {
 			return nil, err
