@@ -139,7 +139,7 @@ func feed(files []string, options feedOptions, cli *CLI) error {
 	if err != nil {
 		return err
 	}
-	client := document.NewClient(document.ClientOptions{
+	client, err := document.NewClient(document.ClientOptions{
 		Compression: compression,
 		Timeout:     time.Duration(options.timeoutSecs) * time.Second,
 		Route:       options.route,
@@ -147,6 +147,9 @@ func feed(files []string, options feedOptions, cli *CLI) error {
 		BaseURL:     service.BaseURL,
 		NowFunc:     cli.now,
 	}, clients)
+	if err != nil {
+		return err
+	}
 	throttler := document.NewThrottler(options.connections)
 	circuitBreaker := document.NewCircuitBreaker(10*time.Second, time.Duration(options.doomSecs)*time.Second)
 	dispatcher := document.NewDispatcher(client, throttler, circuitBreaker, cli.Stderr, options.verbose)

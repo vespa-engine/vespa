@@ -28,6 +28,7 @@ const (
 
 // Client represents a HTTP client for the /document/v1/ API.
 type Client struct {
+	baseURL     *url.URL
 	options     ClientOptions
 	httpClients []countingHTTPClient
 	now         func() time.Time
@@ -57,9 +58,13 @@ func (c *countingHTTPClient) Do(req *http.Request, timeout time.Duration) (*http
 	return c.client.Do(req, timeout)
 }
 
-func NewClient(options ClientOptions, httpClients []util.HTTPClient) *Client {
+func NewClient(options ClientOptions, httpClients []util.HTTPClient) (*Client, error) {
 	if len(httpClients) < 1 {
-		panic("need at least one HTTP client")
+		return nil, fmt.Errorf("need at least one HTTP client")
+	}
+	u, err := url.Parse(options.BaseURL)
+	if err != nil {
+		return nil, fmt.Errorf("invalid base url: %w", err)
 	}
 	countingClients := make([]countingHTTPClient, 0, len(httpClients))
 	for _, client := range httpClients {
@@ -70,12 +75,13 @@ func NewClient(options ClientOptions, httpClients []util.HTTPClient) *Client {
 		nowFunc = time.Now
 	}
 	c := &Client{
+		baseURL:     u,
 		options:     options,
 		httpClients: countingClients,
 		now:         nowFunc,
 	}
 	c.gzippers.New = func() any { return gzip.NewWriter(io.Discard) }
-	return c
+	return c, nil
 }
 
 func (c *Client) queryParams() url.Values {
@@ -112,11 +118,7 @@ func urlPath(id Id) string {
 	return sb.String()
 }
 
-func (c *Client) feedURL(d Document, queryParams url.Values) (string, *url.URL, error) {
-	u, err := url.Parse(c.options.BaseURL)
-	if err != nil {
-		return "", nil, fmt.Errorf("invalid base url: %w", err)
-	}
+func (c *Client) feedURL(d Document, queryParams url.Values) (string, *url.URL) {
 	httpMethod := ""
 	switch d.Operation {
 	case OperationPut:
@@ -132,9 +134,10 @@ func (c *Client) feedURL(d Document, queryParams url.Values) (string, *url.URL, 
 	if d.Create {
 		queryParams.Set("create", "true")
 	}
+	u := *c.baseURL
 	u.Path = urlPath(d.Id)
 	u.RawQuery = queryParams.Encode()
-	return httpMethod, u, nil
+	return httpMethod, &u
 }
 
 func (c *Client) leastBusyClient() *countingHTTPClient {
@@ -194,10 +197,7 @@ func (c *Client) createRequest(method, url string, body []byte) (*http.Request, 
 func (c *Client) Send(document Document) Result {
 	start := c.now()
 	result := Result{Id: document.Id, Stats: Stats{Requests: 1}}
-	method, url, err := c.feedURL(document, c.queryParams())
-	if err != nil {
-		return resultWithErr(result, err)
-	}
+	method, url := c.feedURL(document, c.queryParams())
 	req, err := c.createRequest(method, url.String(), document.Body)
 	if err != nil {
 		return resultWithErr(result, err)
