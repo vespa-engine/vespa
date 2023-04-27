@@ -161,6 +161,54 @@ public class ContentClusterTest extends ContentBaseTest {
     }
 
     @Test
+    void testImplicitSearchableCopies() {
+        ContentCluster cc = parse("" +
+                                  "<content version=\"1.0\" id=\"storage\">\n" +
+                                  "  <documents/>" +
+                                  "  <redundancy>3</redundancy>\n" +
+                                  "  <group name='root'>" +
+                                  "    <distribution partitions='1|1|*'/>" +
+                                  "    <group name='g-1' distribution-key='0'>" +
+                                  "      <node hostalias='mockhost' distribution-key='0'/>" +
+                                  "      <node hostalias='mockhost' distribution-key='1'/>" +
+                                  "      <node hostalias='mockhost' distribution-key='2'/>" +
+                                  "      <node hostalias='mockhost' distribution-key='3'/>" +
+                                  "      <node hostalias='mockhost' distribution-key='4'/>" +
+                                  "    </group>" +
+                                  "    <group name='g-2' distribution-key='1'>" +
+                                  "      <node hostalias='mockhost' distribution-key='5'/>" +
+                                  "      <node hostalias='mockhost' distribution-key='6'/>" +
+                                  "      <node hostalias='mockhost' distribution-key='7'/>" +
+                                  "      <node hostalias='mockhost' distribution-key='8'/>" +
+                                  "      <node hostalias='mockhost' distribution-key='9'/>" +
+                                  "    </group>" +
+                                  "    <group name='g-3' distribution-key='1'>" +
+                                  "      <node hostalias='mockhost' distribution-key='10'/>" +
+                                  "      <node hostalias='mockhost' distribution-key='11'/>" +
+                                  "      <node hostalias='mockhost' distribution-key='12'/>" +
+                                  "      <node hostalias='mockhost' distribution-key='13'/>" +
+                                  "      <node hostalias='mockhost' distribution-key='14'/>" +
+                                  "    </group>" +
+                                  "  </group>" +
+                                  "</content>"
+                                 );
+        DistributionConfig.Builder distributionBuilder = new DistributionConfig.Builder();
+        cc.getConfig(distributionBuilder);
+        DistributionConfig distributionConfig = distributionBuilder.build();
+        assertEquals(3, distributionConfig.cluster("storage").ready_copies());
+
+        StorDistributionConfig.Builder storBuilder = new StorDistributionConfig.Builder();
+        cc.getConfig(storBuilder);
+        StorDistributionConfig storConfig = new StorDistributionConfig(storBuilder);
+        assertEquals(3, storConfig.ready_copies());
+
+        ProtonConfig.Builder protonBuilder = new ProtonConfig.Builder();
+        cc.getSearch().getConfig(protonBuilder);
+        ProtonConfig protonConfig = new ProtonConfig(protonBuilder);
+        assertEquals(1, protonConfig.distribution().searchablecopies());
+    }
+
+    @Test
     void testMinRedundancy() {
         {   // Groups ensures redundancy
             ContentCluster cc = parse("""
