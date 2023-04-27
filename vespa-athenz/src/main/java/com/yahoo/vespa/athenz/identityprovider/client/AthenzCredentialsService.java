@@ -76,7 +76,7 @@ class AthenzCredentialsService {
         KeyPair keyPair = KeyUtils.generateKeypair(KeyAlgorithm.RSA);
         IdentityDocumentClient identityDocumentClient = createIdentityDocumentClient();
         // Use legacy version for now.
-        SignedIdentityDocument signedDocument = identityDocumentClient.getTenantIdentityDocument(hostname, SignedIdentityDocument.LEGACY_DEFAULT_DOCUMENT_VERSION);
+        SignedIdentityDocument signedDocument = identityDocumentClient.getTenantIdentityDocument(hostname, SignedIdentityDocument.LEGACY_DEFAULT_DOCUMENT_VERSION).orElseThrow();
         IdentityDocument document = signedDocument.identityDocument();
         Pkcs10Csr csr = csrGenerator.generateInstanceCsr(
                 tenantIdentity,
