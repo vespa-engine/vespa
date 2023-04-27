@@ -36,7 +36,7 @@ public:
             _max_sq_norm = sq_norm_store.get_max(lhs_sq_norm);
             _lhs_extra_dim = std::sqrt(_max_sq_norm - lhs_sq_norm);
         } else {
-            _max_sq_norm = sq_norm_store.get_max();            
+            _max_sq_norm = sq_norm_store.get_max();
         }
     }
 
