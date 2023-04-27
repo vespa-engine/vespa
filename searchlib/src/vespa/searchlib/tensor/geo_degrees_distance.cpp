@@ -10,7 +10,7 @@ namespace search::tensor {
 
 /**
  * Calculates great-circle distance between Latitude/Longitude pairs,
- * measured in degrees.  Output distance is measured in meters.
+ * measured in degrees.  Output distance is measured in kilometers.
  * Uses the haversine formula directly from:
  * https://en.wikipedia.org/wiki/Haversine_formula
  **/

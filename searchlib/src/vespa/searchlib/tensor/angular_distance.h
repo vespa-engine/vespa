@@ -14,7 +14,7 @@ namespace search::tensor {
 /**
  * Calculates angular distance between vectors
  * Will use instruction optimal for the cpu it is running on
- * after converting both vectors an expected cell type.
+ * after converting both vectors to an optimal cell type.
  */
 template <typename FloatType>
 class AngularDistanceFunctionFactory : public DistanceFunctionFactory {

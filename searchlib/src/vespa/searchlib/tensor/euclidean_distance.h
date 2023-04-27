@@ -12,6 +12,8 @@ namespace search::tensor {
 
 /**
  * Calculates the square of the standard Euclidean distance.
+ * Will use instruction optimal for the cpu it is running on
+ * after converting both vectors to an optimal cell type.
  */
 template <typename FloatType>
 class EuclideanDistanceFunctionFactory : public DistanceFunctionFactory {

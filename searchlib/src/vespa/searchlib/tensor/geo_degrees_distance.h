@@ -11,6 +11,11 @@
 
 namespace search::tensor {
 
+/**
+ * Calculates great-circle distance between Latitude/Longitude pairs,
+ * where input is given as degrees.
+ * Output distance is measured in kilometers.
+ **/
 class GeoDistanceFunctionFactory : public DistanceFunctionFactory {
 public:
     GeoDistanceFunctionFactory() = default;
