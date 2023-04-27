@@ -57,7 +57,6 @@ public:
     vsm::test::MockFieldSearcherEnv env;
     ValueType tensor_type;
     TensorDataType data_type;
-    SquaredEuclideanDistance dist_func;
     vsm::FieldIdT field_id;
     NearestNeighborFieldSearcher searcher;
     MockQuery query;
@@ -66,7 +65,6 @@ public:
         : env(),
           tensor_type(ValueType::from_spec("tensor(x[2])")),
           data_type(tensor_type),
-          dist_func(CellType::DOUBLE),
           field_id(2),
           searcher(field_id, DistanceMetric::Euclidean),
           query()
@@ -97,7 +95,7 @@ public:
         expect_match(exp_square_distance, node);
     }
     void expect_match(double exp_square_distance, const NearestNeighborQueryNode& node) {
-        double exp_raw_score = dist_func.to_rawscore(exp_square_distance);
+        double exp_raw_score = 1.0 / (1.0 + std::sqrt(exp_square_distance));
         EXPECT_TRUE(node.evaluate());
         EXPECT_DOUBLE_EQ(exp_square_distance, node.get_distance().value());
         EXPECT_DOUBLE_EQ(exp_raw_score, node.get_raw_score().value());

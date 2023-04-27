@@ -30,25 +30,6 @@ struct CalcEuclidean {
 
 }
 
-double
-SquaredEuclideanDistance::calc(const vespalib::eval::TypedCells& lhs,
-                               const vespalib::eval::TypedCells& rhs) const
-{
-    return typify_invoke<2,TypifyCellType,CalcEuclidean>(lhs.type, rhs.type, lhs, rhs);
-}
-
-double
-SquaredEuclideanDistance::calc_with_limit(const vespalib::eval::TypedCells& lhs,
-                                          const vespalib::eval::TypedCells& rhs,
-                                          double) const
-{
-    // maybe optimize this:
-    return typify_invoke<2,TypifyCellType,CalcEuclidean>(lhs.type, rhs.type, lhs, rhs);
-}
-
-template class SquaredEuclideanDistanceHW<float>;
-template class SquaredEuclideanDistanceHW<double>;
-
 using vespalib::eval::Int8Float;
 using vespalib::BFloat16;
 

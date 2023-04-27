@@ -11,7 +11,7 @@
 namespace search::tensor {
 
 /**
- * Calculates inner-product "distance" between vectors with assumed norm 1.
+ * Calculates inner-product "distance" between vectors assuming a common norm.
  * Should give same ordering as Angular distance, but is less expensive.
  */
 template <typename FloatType>

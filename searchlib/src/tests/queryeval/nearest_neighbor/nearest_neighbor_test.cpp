@@ -29,7 +29,6 @@ using search::attribute::DistanceMetric;
 using search::feature_t;
 using search::tensor::DenseTensorAttribute;
 using search::tensor::DistanceCalculator;
-using search::tensor::DistanceFunction;
 using search::tensor::SerializedFastValueAttribute;
 using search::tensor::TensorAttribute;
 using vespalib::eval::CellType;
@@ -48,9 +47,6 @@ using Config = search::attribute::Config;
 vespalib::string denseSpecDouble("tensor(x[2])");
 vespalib::string denseSpecFloat("tensor<float>(x[2])");
 vespalib::string mixed_spec("tensor(m{},x[2])");
-
-DistanceFunction::UP euclid_d = search::tensor::make_distance_function(DistanceMetric::Euclidean, CellType::DOUBLE);
-DistanceFunction::UP euclid_f = search::tensor::make_distance_function(DistanceMetric::Euclidean, CellType::FLOAT);
 
 std::unique_ptr<Value> createTensor(const TensorSpec &spec) {
     return SimpleValue::from_spec(spec);
@@ -119,14 +115,6 @@ struct Fixture {
         auto t = createTensor(_typeSpec, v1, v2);
         setTensor(docId, *t);
     }
-
-    const DistanceFunction &dist_fun() const {
-        if (_cfg.tensorType().cell_type() == CellType::FLOAT) {
-            return *euclid_f;
-        } else {
-            return *euclid_d;
-        }
-    }
 };
 
 template <bool strict>
@@ -136,9 +124,11 @@ SimpleResult find_matches(Fixture &env, const Value &qtv, double threshold = std
     auto &attr = *(env._attr);
 
     auto dff = search::tensor::make_distance_function_factory(DistanceMetric::Euclidean, qtv.cells().type);
-    DistanceCalculator dist_calc(attr, dff->for_query_vector(qtv.cells()));
+    auto df = dff->for_query_vector(qtv.cells());
+    threshold = df->convert_threshold(threshold);
+    DistanceCalculator dist_calc(attr, std::move(df));
     NearestNeighborDistanceHeap dh(2);
-    dh.set_distance_threshold(env.dist_fun().convert_threshold(threshold));
+    dh.set_distance_threshold(threshold);
     const GlobalFilter &filter = *env._global_filter;
     auto search = NearestNeighborIterator::create(strict, tfmd, dist_calc, dh, filter);
     if (strict) {
