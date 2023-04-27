@@ -352,7 +352,7 @@ Proton::init(const BootstrapConfig::SP & configSnapshot)
     vespalib::string fileConfigId;
     _compile_cache_executor_binding = vespalib::eval::CompileCache::bind(_shared_service->shared_raw());
 
-    InitializeThreadsCalculator calc(hwInfo, protonConfig.basedir, protonConfig.initialize.threads);
+    InitializeThreadsCalculator calc(hwInfo.cpu(), protonConfig.basedir, protonConfig.initialize.threads);
     LOG(info, "Start initializing components: threads=%u, configured=%u",
         calc.num_threads(), protonConfig.initialize.threads);
     _initDocumentDbsInSequence = (calc.num_threads() == 1);

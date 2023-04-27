@@ -26,7 +26,7 @@ namespace proton {
      InitializeThreads _threads;
 
  public:
-     InitializeThreadsCalculator(const HwInfo & hwInfo, const vespalib::string& base_dir, uint32_t configured_num_threads);
+     InitializeThreadsCalculator(const HwInfo::Cpu & cpu_info, const vespalib::string& base_dir, uint32_t configured_num_threads);
      ~InitializeThreadsCalculator();
      uint32_t num_threads() const { return _num_threads; }
      InitializeThreads threads() const { return _threads; }
