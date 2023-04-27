@@ -155,6 +155,12 @@ struct FeatureValues {
     using Value = FeatureSet::Value;
     std::vector<vespalib::string> names;
     std::vector<Value> values; // values.size() == names.size() * N
+    FeatureValues() noexcept;
+    FeatureValues(const FeatureValues& rhs);
+    FeatureValues(FeatureValues&& rhs) noexcept;
+    ~FeatureValues() noexcept;
+    FeatureValues& operator=(const FeatureValues& rhs);
+    FeatureValues& operator=(FeatureValues&& rhs) noexcept;
 };
 
 }
