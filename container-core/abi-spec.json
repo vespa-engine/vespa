@@ -1683,7 +1683,7 @@
       "public"
     ],
     "methods" : [
-      "protected void <init>(com.yahoo.jdisc.service.CurrentContainer, java.net.URI, com.yahoo.jdisc.http.HttpRequest$Method, com.yahoo.jdisc.http.HttpRequest$Version, java.net.SocketAddress, java.lang.Long)",
+      "protected void <init>(com.yahoo.jdisc.service.CurrentContainer, java.net.URI, com.yahoo.jdisc.http.HttpRequest$Method, com.yahoo.jdisc.http.HttpRequest$Version, java.net.SocketAddress, java.lang.Long, long)",
       "public com.yahoo.jdisc.http.HttpRequest$Method getMethod()",
       "public void setMethod(com.yahoo.jdisc.http.HttpRequest$Method)",
       "public com.yahoo.jdisc.http.HttpRequest$Version getVersion()",
@@ -1713,7 +1713,7 @@
       "public static com.yahoo.jdisc.http.HttpRequest newServerRequest(com.yahoo.jdisc.service.CurrentContainer, java.net.URI, com.yahoo.jdisc.http.HttpRequest$Method)",
       "public static com.yahoo.jdisc.http.HttpRequest newServerRequest(com.yahoo.jdisc.service.CurrentContainer, java.net.URI, com.yahoo.jdisc.http.HttpRequest$Method, com.yahoo.jdisc.http.HttpRequest$Version)",
       "public static com.yahoo.jdisc.http.HttpRequest newServerRequest(com.yahoo.jdisc.service.CurrentContainer, java.net.URI, com.yahoo.jdisc.http.HttpRequest$Method, com.yahoo.jdisc.http.HttpRequest$Version, java.net.SocketAddress)",
-      "public static com.yahoo.jdisc.http.HttpRequest newServerRequest(com.yahoo.jdisc.service.CurrentContainer, java.net.URI, com.yahoo.jdisc.http.HttpRequest$Method, com.yahoo.jdisc.http.HttpRequest$Version, java.net.SocketAddress, long)",
+      "public static com.yahoo.jdisc.http.HttpRequest newServerRequest(com.yahoo.jdisc.service.CurrentContainer, java.net.URI, com.yahoo.jdisc.http.HttpRequest$Method, com.yahoo.jdisc.http.HttpRequest$Version, java.net.SocketAddress, long, long)",
       "public static com.yahoo.jdisc.http.HttpRequest newClientRequest(com.yahoo.jdisc.Request, java.net.URI)",
       "public static com.yahoo.jdisc.http.HttpRequest newClientRequest(com.yahoo.jdisc.Request, java.net.URI, com.yahoo.jdisc.http.HttpRequest$Method)",
       "public static com.yahoo.jdisc.http.HttpRequest newClientRequest(com.yahoo.jdisc.Request, java.net.URI, com.yahoo.jdisc.http.HttpRequest$Method, com.yahoo.jdisc.http.HttpRequest$Version)"

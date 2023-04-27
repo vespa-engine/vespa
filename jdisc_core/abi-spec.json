@@ -175,6 +175,7 @@
     "methods" : [
       "public void <init>(com.yahoo.jdisc.service.CurrentContainer, java.net.URI)",
       "public void <init>(com.yahoo.jdisc.service.CurrentContainer, java.net.URI, boolean)",
+      "public void <init>(com.yahoo.jdisc.service.CurrentContainer, java.net.URI, boolean, long)",
       "public void <init>(com.yahoo.jdisc.Request, java.net.URI)",
       "public com.yahoo.jdisc.Container container()",
       "public java.net.URI getUri()",

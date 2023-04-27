@@ -76,7 +76,7 @@ public class FilterTestUtils {
 
         public DiscFilterRequest build() {
             var httpReq = HttpRequest.newServerRequest(
-                    new DummyContainer(clock), uri, method, version, remoteAddress, clock.millis());
+                    new DummyContainer(clock), uri, method, version, remoteAddress, clock.millis(), clock.millis());
             var filterReq = new DiscFilterRequest(httpReq);
             filterReq.setUserPrincipal(principal);
             attributes.forEach(filterReq::setAttribute);

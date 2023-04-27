@@ -81,9 +81,9 @@ public class HttpRequest extends Request {
     private Long connectionTimeout;
 
     protected HttpRequest(CurrentContainer container, URI uri, Method method, Version version,
-                          SocketAddress remoteAddress, Long connectedAtMillis)
+                          SocketAddress remoteAddress, Long connectedAtMillis, long creationTime)
     {
-        super(container, uri);
+        super(container, uri, true, creationTime);
         try {
             this.method = method;
             this.version = version;
@@ -313,13 +313,13 @@ public class HttpRequest extends Request {
 
     public static HttpRequest newServerRequest(CurrentContainer container, URI uri, Method method, Version version,
                                                SocketAddress remoteAddress) {
-        return new HttpRequest(container, uri, method, version, remoteAddress, null);
+        return new HttpRequest(container, uri, method, version, remoteAddress, null, -1);
     }
 
     public static HttpRequest newServerRequest(CurrentContainer container, URI uri, Method method, Version version,
-                                               SocketAddress remoteAddress, long connectedAtMillis)
+                                               SocketAddress remoteAddress, long connectedAtMillis, long creationTime)
     {
-        return new HttpRequest(container, uri, method, version, remoteAddress, connectedAtMillis);
+        return new HttpRequest(container, uri, method, version, remoteAddress, connectedAtMillis, creationTime);
     }
 
     public static HttpRequest newClientRequest(Request parent, URI uri) {

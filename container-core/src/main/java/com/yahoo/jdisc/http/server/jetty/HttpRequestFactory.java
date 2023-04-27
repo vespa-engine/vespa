@@ -26,19 +26,21 @@ class HttpRequestFactory {
 
     public static HttpRequest newJDiscRequest(CurrentContainer container, HttpServletRequest servletRequest) {
         try {
-            HttpRequest httpRequest = HttpRequest.newServerRequest(
+            var jettyRequest = (Request) servletRequest;
+            var jdiscHttpReq = HttpRequest.newServerRequest(
                     container,
                     getUri(servletRequest),
                     getMethod(servletRequest),
                     HttpRequest.Version.fromString(servletRequest.getProtocol()),
                     new InetSocketAddress(servletRequest.getRemoteAddr(), servletRequest.getRemotePort()),
-                    getConnection((Request) servletRequest).getCreatedTimeStamp());
-            httpRequest.context().put(RequestUtils.JDISC_REQUEST_X509CERT, getCertChain(servletRequest));
-            httpRequest.context().put(RequestUtils.JDICS_REQUEST_PORT, servletRequest.getLocalPort());
+                    getConnection(jettyRequest).getCreatedTimeStamp(),
+                    jettyRequest.getTimeStamp());
+            jdiscHttpReq.context().put(RequestUtils.JDISC_REQUEST_X509CERT, getCertChain(servletRequest));
+            jdiscHttpReq.context().put(RequestUtils.JDICS_REQUEST_PORT, servletRequest.getLocalPort());
             SSLSession sslSession = (SSLSession) servletRequest.getAttribute(RequestUtils.JETTY_REQUEST_SSLSESSION);
-            httpRequest.context().put(RequestUtils.JDISC_REQUEST_SSLSESSION, sslSession);
-            servletRequest.setAttribute(HttpRequest.class.getName(), httpRequest);
-            return httpRequest;
+            jdiscHttpReq.context().put(RequestUtils.JDISC_REQUEST_SSLSESSION, sslSession);
+            servletRequest.setAttribute(HttpRequest.class.getName(), jdiscHttpReq);
+            return jdiscHttpReq;
         } catch (Utf8Appendable.NotUtf8Exception e) {
             throw createBadQueryException(e);
         }
