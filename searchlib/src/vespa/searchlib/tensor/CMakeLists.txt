@@ -2,6 +2,7 @@
 vespa_add_library(searchlib_tensor OBJECT
     SOURCES
     angular_distance.cpp
+    mips_distance_transform.cpp
     bitvector_visited_tracker.cpp
     bound_distance_function.cpp
     default_nearest_neighbor_index_factory.cpp
