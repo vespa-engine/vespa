@@ -41,7 +41,7 @@ public class PositionParserTestCase {
     private static void assertDocument(Struct expected, FeedOperation operation) {
         assertNotNull(operation);
         assertEquals(FeedOperation.Type.DOCUMENT, operation.getType());
-        Document doc = operation.getDocument();
+        Document doc = operation.getDocumentPut().getDocument();
         assertNotNull(doc);
         assertEquals(expected, doc.getFieldValue("my_pos"));
     }

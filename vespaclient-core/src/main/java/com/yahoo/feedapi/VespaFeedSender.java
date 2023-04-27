@@ -21,13 +21,13 @@ public class VespaFeedSender {
     public void sendOperation(FeedOperation op) {
         switch (op.getType()) {
             case DOCUMENT:
-                sender.put(op.getDocument(), op.getCondition());
+                sender.put(op.getDocumentPut());
                 break;
             case REMOVE:
-                sender.remove(op.getRemove(), op.getCondition());
+                sender.remove(op.getDocumentRemove());
                 break;
             case UPDATE:
-                sender.update(op.getDocumentUpdate(), op.getCondition());
+                sender.update(op.getDocumentUpdate());
                 break;
         }
     }

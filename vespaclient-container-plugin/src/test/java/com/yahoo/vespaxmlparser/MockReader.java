@@ -3,6 +3,8 @@ package com.yahoo.vespaxmlparser;
 
 import com.yahoo.document.Document;
 import com.yahoo.document.DocumentId;
+import com.yahoo.document.DocumentPut;
+import com.yahoo.document.DocumentRemove;
 import com.yahoo.document.DocumentType;
 import com.yahoo.document.DocumentUpdate;
 import com.yahoo.vespa.http.server.MetaStream;
@@ -52,18 +54,13 @@ public class MockReader implements FeedReader {
         byte whatToDo = stream.getNextOperation();
         DocumentId id = new DocumentId("id:banana:banana::doc1");
         DocumentType docType = new DocumentType("banana");
-        switch (whatToDo) {
-        case 0:
-            return FeedOperation.INVALID;
-        case 1:
-            return new DocumentFeedOperation(new Document(docType, id));
-        case 2:
-            return new RemoveFeedOperation(id);
-        case 3:
-            return new DocumentUpdateFeedOperation(new DocumentUpdate(docType, id));
-        default:
-            throw new RuntimeException("boom");
-        }
+        return switch (whatToDo) {
+            case 0 -> FeedOperation.INVALID;
+            case 1 -> new DocumentFeedOperation(new DocumentPut(new Document(docType, id)));
+            case 2 -> new RemoveFeedOperation(new DocumentRemove(id));
+            case 3 -> new DocumentUpdateFeedOperation(new DocumentUpdate(docType, id));
+            default -> throw new RuntimeException("boom");
+        };
     }
 
 }
