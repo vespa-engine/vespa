@@ -49,6 +49,8 @@ public:
     ~SearchEnvironment();
     const vsm::VSMAdapter * getVSMAdapter(const vespalib::string & searchcluster) { return getEnv(searchcluster).getVSMAdapter(); }
     const RankManager * getRankManager(const vespalib::string & searchcluster)    { return getEnv(searchcluster).getRankManager(); }
+    // Should only be used by unit tests to simulate that the calling thread is finished.
+    void clear_thread_local_env_map();
 };
 
 }

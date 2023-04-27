@@ -4,5 +4,6 @@ vespa_add_executable(streamingvisitors_searchvisitor_test_app TEST
     searchvisitor_test.cpp
     DEPENDS
     streamingvisitors
+    GTest::GTest
 )
 vespa_add_test(NAME streamingvisitors_searchvisitor_test_app COMMAND streamingvisitors_searchvisitor_test_app)
