@@ -1176,6 +1176,9 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
             cluster.removeComponent(ComponentId.fromString("com.yahoo.container.jdisc.AthenzIdentityProviderProvider"));
             cluster.addComponent(identityProvider);
 
+            var serviceIdentityProviderProvider = "com.yahoo.vespa.athenz.identityprovider.client.ServiceIdentityProviderProvider";
+            cluster.addComponent(new SimpleComponent(new ComponentModel(serviceIdentityProviderProvider, serviceIdentityProviderProvider, "vespa-athenz")));
+
             cluster.getContainers().forEach(container -> {
                 container.setProp("identity.domain", domain.value());
                 container.setProp("identity.service", service.value());
