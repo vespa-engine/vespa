@@ -1,5 +1,5 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.search.dispatch.rpc;
+package com.yahoo.data.access.helpers;
 
 import com.yahoo.collections.Hashlet;
 
@@ -20,11 +20,11 @@ import java.util.Map;
  * for the field names.
  * @author arnej
  */
-class MatchFeatureData {
+public class MatchFeatureData {
 
     private final Hashlet<String,Integer> hashlet;
 
-    MatchFeatureData(List<String> keys) {
+    public MatchFeatureData(List<String> keys) {
         this.hashlet = new Hashlet<>();
         hashlet.reserve(keys.size());
         int i = 0;
@@ -33,7 +33,7 @@ class MatchFeatureData {
         }
     }
 
-    static class HitValue extends Value {
+    public static class HitValue extends Value {
         private final Hashlet<String,Integer> hashlet;
         private final byte[][] dataValues;
         private final double[] doubleValues;
@@ -72,10 +72,10 @@ class MatchFeatureData {
             this.doubleValues = new double[hashlet.size()];
         }
 
-        void set(int index, byte[] data) {
+        public void set(int index, byte[] data) {
             dataValues[index] = data;
         }
-        void set(int index, double value) {
+        public void set(int index, double value) {
             doubleValues[index] = value;
         }
 
@@ -87,7 +87,7 @@ class MatchFeatureData {
         }
     }
 
-    HitValue addHit() {
+    public HitValue addHit() {
         return new HitValue(hashlet);
     }
     
