@@ -1,0 +1,16 @@
+schema test {
+  document test {
+    field id type int {
+      indexing: attribute | summary 
+    }
+  }
+  document-summary mysum {
+    summary id type int {}
+  }
+  rank-profile myrank {
+    first-phase {
+      expression: attribute(id) + 10
+    }
+  }
+}
+
