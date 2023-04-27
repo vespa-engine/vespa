@@ -86,10 +86,12 @@ public class MetricsProxyContainerCluster extends ContainerCluster<MetricsProxyC
         static final String LEGACY_APPLICATION = "app";        // app.instance
     }
 
+    private final TreeConfigProducer<?> parent;
     private final ApplicationId applicationId;
 
     public MetricsProxyContainerCluster(TreeConfigProducer<?> parent, String name, DeployState deployState) {
         super(parent, name, name, deployState, true);
+        this.parent = parent;
         applicationId = deployState.getProperties().applicationId();
 
         setRpcServerEnabled(true);
@@ -97,7 +99,6 @@ public class MetricsProxyContainerCluster extends ContainerCluster<MetricsProxyC
 
         addPlatformBundle(METRICS_PROXY_BUNDLE_FILE);
         addClusterComponents();
-        addAccessLog();
     }
 
     @Override
