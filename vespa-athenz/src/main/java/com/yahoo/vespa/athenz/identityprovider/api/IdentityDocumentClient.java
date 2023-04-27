@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.athenz.identityprovider.api;
 
-import java.util.Optional;
 import java.util.OptionalInt;
 
 /**
@@ -11,5 +10,5 @@ import java.util.OptionalInt;
  */
 public interface IdentityDocumentClient {
     SignedIdentityDocument getNodeIdentityDocument(String host, int documentVersion);
-    Optional<SignedIdentityDocument> getTenantIdentityDocument(String host, int documentVersion);
+    SignedIdentityDocument getTenantIdentityDocument(String host, int documentVersion);
 }
