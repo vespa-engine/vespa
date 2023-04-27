@@ -27,7 +27,7 @@ func newProdCmd() *cobra.Command {
 
 Configure and deploy your application package to production in Vespa Cloud.`,
 		Example: `$ vespa prod init
-$ vespa prod submit`,
+$ vespa prod deploy`,
 		DisableAutoGenTag: true,
 		SilenceUsage:      false,
 		Args:              cobra.MinimumNArgs(1),
@@ -102,11 +102,12 @@ https://cloud.vespa.ai/en/reference/deployment`,
 	}
 }
 
-func newProdSubmitCmd(cli *CLI) *cobra.Command {
+func newProdDeployCmd(cli *CLI) *cobra.Command {
 	return &cobra.Command{
-		Use:   "submit",
-		Short: "Submit an application for production deployment",
-		Long: `Submit an application for production deployment.
+		Use:     "deploy",
+		Aliases: []string{"submit"}, // TODO: Remove in Vespa 9
+		Short:   "Deploy an application to production",
+		Long: `Deploy an application to production.
 
 This commands uploads an application package to Vespa Cloud and deploys it to
 the production zones specified in deployment.xml.
@@ -120,7 +121,7 @@ https://cloud.vespa.ai/en/automated-deployments`,
 		DisableAutoGenTag: true,
 		SilenceUsage:      true,
 		Example: `$ mvn package # when adding custom Java components
-$ vespa prod submit`,
+$ vespa prod deploy`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			target, err := cli.target(targetOptions{noCertificate: true})
 			if err != nil {
@@ -128,7 +129,7 @@ $ vespa prod submit`,
 			}
 			if target.Type() != vespa.TargetCloud {
 				// TODO: Add support for hosted
-				return fmt.Errorf("prod submit does not support %s target", target.Type())
+				return fmt.Errorf("prod deploy does not support %s target", target.Type())
 			}
 			pkg, err := cli.applicationPackageFrom(args, true)
 			if err != nil {

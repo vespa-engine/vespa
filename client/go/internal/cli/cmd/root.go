@@ -257,7 +257,7 @@ func (c *CLI) configureCommands() {
 	rootCmd.AddCommand(newLogCmd(c))                // log
 	rootCmd.AddCommand(newManCmd(c))                // man
 	prodCmd.AddCommand(newProdInitCmd(c))           // prod init
-	prodCmd.AddCommand(newProdSubmitCmd(c))         // prod submit
+	prodCmd.AddCommand(newProdDeployCmd(c))         // prod deploy
 	rootCmd.AddCommand(prodCmd)                     // prod
 	rootCmd.AddCommand(newQueryCmd(c))              // query
 	statusCmd.AddCommand(newStatusQueryCmd(c))      // status query

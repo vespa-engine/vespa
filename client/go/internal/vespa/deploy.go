@@ -261,7 +261,7 @@ func Submit(opts DeploymentOptions) error {
 		Header: make(http.Header),
 	}
 	request.Header.Set("Content-Type", writer.FormDataContentType())
-	serviceDescription := "Submit service"
+	serviceDescription := "Deploy service"
 	response, err := deployServiceDo(request, time.Minute*10, opts)
 	if err != nil {
 		return err
