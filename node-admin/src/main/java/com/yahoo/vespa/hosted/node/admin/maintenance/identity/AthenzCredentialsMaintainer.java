@@ -107,10 +107,6 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
     public boolean converge(NodeAgentContext context) {
         var modified = false;
         modified |= maintain(context, NODE);
-
-        if (context.zone().getSystemName().isPublic())
-            return modified;
-
         if (shouldWriteTenantServiceIdentity(context))
             modified |= maintain(context, TENANT);
         else
@@ -125,10 +121,7 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
             context.log(logger, Level.FINE, "Checking certificate");
             ContainerPath siaDirectory = context.paths().of(CONTAINER_SIA_DIRECTORY, context.users().vespa());
             ContainerPath identityDocumentFile = siaDirectory.resolve(identityType.getIdentityDocument());
-            Optional<AthenzIdentity> optionalAthenzIdentity = getAthenzIdentity(context, identityType, identityDocumentFile);
-            if (optionalAthenzIdentity.isEmpty())
-                return false;
-            AthenzIdentity athenzIdentity = optionalAthenzIdentity.get();
+            AthenzIdentity athenzIdentity = getAthenzIdentity(context, identityType, identityDocumentFile);
             ContainerPath privateKeyFile = (ContainerPath) SiaUtils.getPrivateKeyFile(siaDirectory, athenzIdentity);
             ContainerPath certificateFile = (ContainerPath) SiaUtils.getCertificateFile(siaDirectory, athenzIdentity);
             if (!Files.exists(privateKeyFile) || !Files.exists(certificateFile) || !Files.exists(identityDocumentFile)) {
@@ -210,17 +203,16 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
         var siaDirectory = context.paths().of(CONTAINER_SIA_DIRECTORY, context.users().vespa());
         var identityDocumentFile = siaDirectory.resolve(TENANT.getIdentityDocument());
         if (!Files.exists(identityDocumentFile)) return false;
-        return getAthenzIdentity(context, TENANT, identityDocumentFile).map(athenzIdentity -> {
-            var privateKeyFile = (ContainerPath) SiaUtils.getPrivateKeyFile(siaDirectory, athenzIdentity);
-            var certificateFile = (ContainerPath) SiaUtils.getCertificateFile(siaDirectory, athenzIdentity);
-            try {
-                return Files.deleteIfExists(identityDocumentFile) ||
-                        Files.deleteIfExists(privateKeyFile) ||
-                        Files.deleteIfExists(certificateFile);
-            } catch (IOException e) {
-                throw new UncheckedIOException(e);
-            }
-        }).orElse(false);
+        var athenzIdentity = getAthenzIdentity(context, TENANT, identityDocumentFile);
+        var privateKeyFile = (ContainerPath) SiaUtils.getPrivateKeyFile(siaDirectory, athenzIdentity);
+        var certificateFile = (ContainerPath) SiaUtils.getCertificateFile(siaDirectory, athenzIdentity);
+        try {
+            return Files.deleteIfExists(identityDocumentFile) ||
+                    Files.deleteIfExists(privateKeyFile) ||
+                    Files.deleteIfExists(certificateFile);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 
     private boolean shouldRefreshCredentials(Duration age) {
@@ -329,23 +321,22 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
     private SignedIdentityDocument signedIdentityDocument(NodeAgentContext context, IdentityType identityType) {
         return switch (identityType) {
             case NODE -> identityDocumentClient.getNodeIdentityDocument(context.hostname().value(), documentVersion(context));
-            case TENANT -> identityDocumentClient.getTenantIdentityDocument(context.hostname().value(), documentVersion(context)).get();
+            case TENANT -> identityDocumentClient.getTenantIdentityDocument(context.hostname().value(), documentVersion(context));
         };
     }
 
-    private Optional<AthenzIdentity> getAthenzIdentity(NodeAgentContext context, IdentityType identityType, ContainerPath identityDocumentFile) {
+    private AthenzIdentity getAthenzIdentity(NodeAgentContext context, IdentityType identityType, ContainerPath identityDocumentFile) {
         return switch (identityType) {
-            case NODE -> Optional.of(context.identity());
+            case NODE -> context.identity();
             case TENANT -> getTenantIdentity(context, identityDocumentFile);
         };
     }
 
-    private Optional<AthenzIdentity> getTenantIdentity(NodeAgentContext context, ContainerPath identityDocumentFile) {
+    private AthenzIdentity getTenantIdentity(NodeAgentContext context, ContainerPath identityDocumentFile) {
         if (Files.exists(identityDocumentFile)) {
-            return Optional.of(EntityBindingsMapper.readSignedIdentityDocumentFromFile(identityDocumentFile).identityDocument().serviceIdentity());
+            return EntityBindingsMapper.readSignedIdentityDocumentFromFile(identityDocumentFile).identityDocument().serviceIdentity();
         } else {
-            return identityDocumentClient.getTenantIdentityDocument(context.hostname().value(), documentVersion(context))
-                    .map(doc -> doc.identityDocument().serviceIdentity());
+            return identityDocumentClient.getTenantIdentityDocument(context.hostname().value(), documentVersion(context)).identityDocument().serviceIdentity();
         }
     }
 

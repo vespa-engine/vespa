@@ -23,7 +23,6 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.URI;
 import java.time.Duration;
-import java.util.Optional;
 import java.util.function.Supplier;
 
 /**
@@ -58,15 +57,15 @@ public class DefaultIdentityDocumentClient implements IdentityDocumentClient {
 
     @Override
     public SignedIdentityDocument getNodeIdentityDocument(String host, int documentVersion) {
-        return getIdentityDocument(host, "node", documentVersion).orElseThrow();
+        return getIdentityDocument(host, "node", documentVersion);
     }
 
     @Override
-    public Optional<SignedIdentityDocument> getTenantIdentityDocument(String host, int documentVersion) {
+    public SignedIdentityDocument getTenantIdentityDocument(String host, int documentVersion) {
         return getIdentityDocument(host, "tenant", documentVersion);
     }
 
-    private Optional<SignedIdentityDocument> getIdentityDocument(String host, String type, int documentVersion) {
+    private SignedIdentityDocument getIdentityDocument(String host, String type, int documentVersion) {
 
         try (CloseableHttpClient client = createHttpClient(sslContextSupplier.get(), hostnameVerifier)) {
             URI uri = configserverUri
@@ -84,9 +83,7 @@ public class DefaultIdentityDocumentClient implements IdentityDocumentClient {
                 int statusCode = response.getStatusLine().getStatusCode();
                 if (statusCode >= 200 && statusCode <= 299) {
                     SignedIdentityDocumentEntity entity = objectMapper.readValue(responseContent, SignedIdentityDocumentEntity.class);
-                    return Optional.of(EntityBindingsMapper.toSignedIdentityDocument(entity));
-                } else if (statusCode == 404) {
-                    return Optional.empty();
+                    return EntityBindingsMapper.toSignedIdentityDocument(entity);
                 } else {
                     throw new RuntimeException(
                             String.format(
