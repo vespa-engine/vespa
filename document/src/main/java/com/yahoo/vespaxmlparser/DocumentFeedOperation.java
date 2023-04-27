@@ -1,26 +1,20 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespaxmlparser;
 
-import com.yahoo.document.Document;
-import com.yahoo.document.TestAndSetCondition;
+import com.yahoo.document.DocumentPut;
 
 public class DocumentFeedOperation extends ConditionalFeedOperation {
 
-    private final Document document;
+    private final DocumentPut put;
 
-    public DocumentFeedOperation(Document document) {
-        super(Type.DOCUMENT);
-        this.document = document;
-    }
-
-    public DocumentFeedOperation(Document document, TestAndSetCondition condition) {
-        super(Type.DOCUMENT, condition);
-        this.document = document;
+    public DocumentFeedOperation(DocumentPut put) {
+        super(Type.DOCUMENT, put.getCondition());
+        this.put = put;
     }
 
     @Override
-    public Document getDocument() {
-        return document;
+    public DocumentPut getDocumentPut() {
+        return put;
     }
 
 }

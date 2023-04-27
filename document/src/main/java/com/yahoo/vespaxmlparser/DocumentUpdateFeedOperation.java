@@ -2,16 +2,11 @@
 package com.yahoo.vespaxmlparser;
 
 import com.yahoo.document.DocumentUpdate;
-import com.yahoo.document.TestAndSetCondition;
 
 public class DocumentUpdateFeedOperation extends ConditionalFeedOperation {
     private final DocumentUpdate update;
     public DocumentUpdateFeedOperation(DocumentUpdate update) {
-        super(Type.UPDATE);
-        this.update = update;
-    }
-    public DocumentUpdateFeedOperation(DocumentUpdate update, TestAndSetCondition condition) {
-        super(Type.UPDATE, condition);
+        super(Type.UPDATE, update.getCondition());
         this.update = update;
     }
 

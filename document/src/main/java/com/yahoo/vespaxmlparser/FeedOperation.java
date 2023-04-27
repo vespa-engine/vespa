@@ -1,8 +1,8 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespaxmlparser;
 
-import com.yahoo.document.Document;
-import com.yahoo.document.DocumentId;
+import com.yahoo.document.DocumentRemove;
+import com.yahoo.document.DocumentPut;
 import com.yahoo.document.DocumentUpdate;
 import com.yahoo.document.TestAndSetCondition;
 
@@ -21,9 +21,9 @@ public class FeedOperation {
         this.type = type;
     }
 
-    public Document getDocument() { return null; }
+    public DocumentPut getDocumentPut() { return null; }
     public DocumentUpdate getDocumentUpdate() { return null; }
-    public DocumentId getRemove() { return null; }
+    public DocumentRemove getDocumentRemove() { return null; }
 
     public TestAndSetCondition getCondition() {
         return TestAndSetCondition.NOT_PRESENT_CONDITION;
@@ -32,8 +32,8 @@ public class FeedOperation {
     public String toString() {
         return "Operation{" +
                 "type=" + getType() +
-                ", doc=" + getDocument() +
-                ", remove=" + getRemove() +
+                ", doc=" + getDocumentPut() +
+                ", remove=" + getDocumentRemove() +
                 ", docUpdate=" + getDocumentUpdate() +
                 " testandset=" + getCondition() +
                 '}';

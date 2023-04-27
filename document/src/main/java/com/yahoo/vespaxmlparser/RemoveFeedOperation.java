@@ -2,21 +2,18 @@
 package com.yahoo.vespaxmlparser;
 
 import com.yahoo.document.DocumentId;
+import com.yahoo.document.DocumentRemove;
 import com.yahoo.document.TestAndSetCondition;
 
 public class RemoveFeedOperation extends ConditionalFeedOperation {
-    private final DocumentId documentId;
-    public RemoveFeedOperation(DocumentId documentId) {
-        super(Type.REMOVE);
-        this.documentId = documentId;
-    }
-    public RemoveFeedOperation(DocumentId documentId, TestAndSetCondition condition) {
-        super(Type.REMOVE, condition);
-        this.documentId = documentId;
+    private final DocumentRemove remove;
+    public RemoveFeedOperation(DocumentRemove remove) {
+        super(Type.REMOVE, remove.getCondition());
+        this.remove = remove;
     }
 
     @Override
-    public DocumentId getRemove() {
-        return documentId;
+    public DocumentRemove getDocumentRemove() {
+        return remove;
     }
 }

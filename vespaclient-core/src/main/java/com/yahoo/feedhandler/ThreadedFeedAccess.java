@@ -2,10 +2,9 @@
 package com.yahoo.feedhandler;
 
 import com.yahoo.concurrent.ThreadFactoryFactory;
-import com.yahoo.document.Document;
-import com.yahoo.document.DocumentId;
+import com.yahoo.document.DocumentPut;
+import com.yahoo.document.DocumentRemove;
 import com.yahoo.document.DocumentUpdate;
-import com.yahoo.document.TestAndSetCondition;
 import com.yahoo.feedapi.SimpleFeedAccess;
 
 import java.util.concurrent.Executor;
@@ -40,34 +39,20 @@ final class ThreadedFeedAccess implements SimpleFeedAccess {
             };
         }
     }
+
     @Override
-    public void put(Document doc) {
+    public void put(DocumentPut doc) {
         executor.execute(() -> simpleFeedAccess.put(doc));
     }
 
     @Override
-    public void remove(DocumentId docId) {
-        executor.execute(() -> simpleFeedAccess.remove(docId));
+    public void remove(DocumentRemove remove) {
+        executor.execute(() -> simpleFeedAccess.remove(remove));
     }
 
     @Override
     public void update(DocumentUpdate update) {
         executor.execute(() -> simpleFeedAccess.update(update));
-    }
-
-    @Override
-    public void put(Document doc, TestAndSetCondition condition) {
-        executor.execute(() -> simpleFeedAccess.put(doc, condition));
-    }
-
-    @Override
-    public void remove(DocumentId docId, TestAndSetCondition condition) {
-        executor.execute(() -> simpleFeedAccess.remove(docId, condition));
-    }
-
-    @Override
-    public void update(DocumentUpdate update, TestAndSetCondition condition) {
-        executor.execute(() -> simpleFeedAccess.update(update, condition));
     }
 
     @Override

@@ -3,6 +3,8 @@ package com.yahoo.vespaxmlparser;
 
 import com.yahoo.document.Document;
 import com.yahoo.document.DocumentId;
+import com.yahoo.document.DocumentPut;
+import com.yahoo.document.DocumentRemove;
 import com.yahoo.document.DocumentTypeManager;
 import com.yahoo.document.DocumentUpdate;
 import com.yahoo.document.TestAndSetCondition;
@@ -99,12 +101,14 @@ public class VespaXMLFeedReader extends VespaXMLReader implements FeedReader {
 
                     if ("document".equals(startTag)) {
                         VespaXMLDocumentReader documentReader = new VespaXMLDocumentReader(reader, docTypeManager);
-                        Document document = new Document(documentReader);
-                        return new DocumentFeedOperation(document, TestAndSetCondition.fromConditionString(documentReader.getCondition()));
+                        DocumentPut put = new DocumentPut(new Document(documentReader));
+                        put.setCondition(TestAndSetCondition.fromConditionString(documentReader.getCondition()));
+                        return new DocumentFeedOperation(put);
                     } else if ("update".equals(startTag)) {
                         VespaXMLUpdateReader updateReader = new VespaXMLUpdateReader(reader, docTypeManager);
                         DocumentUpdate update = new DocumentUpdate(updateReader);
-                        return new DocumentUpdateFeedOperation(update, TestAndSetCondition.fromConditionString(updateReader.getCondition()));
+                        update.setCondition(TestAndSetCondition.fromConditionString(updateReader.getCondition()));
+                        return new DocumentUpdateFeedOperation(update);
                     } else if ("remove".equals(startTag)) {
                         DocumentId documentId = null;
 
@@ -121,7 +125,9 @@ public class VespaXMLFeedReader extends VespaXMLReader implements FeedReader {
                         if (documentId == null) {
                             throw newDeserializeException("Missing \"documentid\" attribute for remove operation");
                         }
-                        return new RemoveFeedOperation(documentId, TestAndSetCondition.fromConditionString(condition));
+                        DocumentRemove remove = new DocumentRemove(documentId);
+                        remove.setCondition(TestAndSetCondition.fromConditionString(condition));
+                        return new RemoveFeedOperation(remove);
                     } else {
                         throw newDeserializeException("Element \"" + startTag + "\" not allowed in this context");
                     }

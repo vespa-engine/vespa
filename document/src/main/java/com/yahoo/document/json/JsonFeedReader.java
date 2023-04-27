@@ -45,11 +45,11 @@ public class JsonFeedReader implements FeedReader {
         }
 
         if (documentOperation instanceof DocumentUpdate) {
-            return new DocumentUpdateFeedOperation((DocumentUpdate) documentOperation, documentOperation.getCondition());
+            return new DocumentUpdateFeedOperation((DocumentUpdate) documentOperation);
         } else if (documentOperation instanceof DocumentRemove) {
-            return new RemoveFeedOperation(documentOperation.getId(), documentOperation.getCondition());
+            return new RemoveFeedOperation((DocumentRemove)documentOperation);
         } else if (documentOperation instanceof DocumentPut) {
-            return new DocumentFeedOperation(((DocumentPut) documentOperation).getDocument(), documentOperation.getCondition());
+            return new DocumentFeedOperation((DocumentPut) documentOperation);
         } else {
             throw new IllegalArgumentException("Got unknown class from JSON reader: " + documentOperation.getClass().getName());
         }

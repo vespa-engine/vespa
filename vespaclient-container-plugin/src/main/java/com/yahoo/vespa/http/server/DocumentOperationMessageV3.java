@@ -1,9 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.http.server;
 
-import com.yahoo.document.DocumentPut;
-import com.yahoo.document.DocumentRemove;
-import com.yahoo.document.DocumentUpdate;
 import com.yahoo.documentapi.messagebus.protocol.PutDocumentMessage;
 import com.yahoo.documentapi.messagebus.protocol.RemoveDocumentMessage;
 import com.yahoo.documentapi.messagebus.protocol.UpdateDocumentMessage;
@@ -35,46 +32,44 @@ class DocumentOperationMessageV3 {
     }
 
     private static DocumentOperationMessageV3 newUpdateMessage(FeedOperation op, String operationId) {
-        DocumentUpdate update = op.getDocumentUpdate();
-        update.setCondition(op.getCondition());
-        Message msg = new UpdateDocumentMessage(update);
+        var msg = new UpdateDocumentMessage(op.getDocumentUpdate());
 
-        String id = (operationId == null) ? update.getId().toString() : operationId;
+        String id = (operationId == null) ? msg.getDocumentUpdate().getId().toString() : operationId;
         return new DocumentOperationMessageV3(id, msg);
     }
 
     static DocumentOperationMessageV3 newRemoveMessage(FeedOperation op, String operationId) {
-        DocumentRemove remove = new DocumentRemove(op.getRemove());
-        remove.setCondition(op.getCondition());
-        Message msg = new RemoveDocumentMessage(remove);
+        var msg = new RemoveDocumentMessage(op.getDocumentRemove());
 
-        String id = (operationId == null) ? remove.getId().toString() : operationId;
+        String id = (operationId == null) ? msg.getDocumentId().toString() : operationId;
         return new DocumentOperationMessageV3(id, msg);
     }
 
     private static DocumentOperationMessageV3 newPutMessage(FeedOperation op, String operationId) {
-        DocumentPut put = new DocumentPut(op.getDocument());
-        put.setCondition(op.getCondition());
-        Message msg = new PutDocumentMessage(put);
+        var msg = new PutDocumentMessage(op.getDocumentPut());
 
-        String id = (operationId == null) ? put.getId().toString() : operationId;
+        String id = (operationId == null) ? msg.getDocumentPut().getId().toString() : operationId;
         return new DocumentOperationMessageV3(id, msg);
     }
 
     static DocumentOperationMessageV3 create(FeedOperation operation, String operationId, Metric metric) {
         switch (operation.getType()) {
-            case DOCUMENT:
+            case DOCUMENT -> {
                 metric.add(MetricNames.NUM_PUTS, 1, null);
                 return newPutMessage(operation, operationId);
-            case REMOVE:
+            }
+            case REMOVE -> {
                 metric.add(MetricNames.NUM_REMOVES, 1, null);
                 return newRemoveMessage(operation, operationId);
-            case UPDATE:
+            }
+            case UPDATE -> {
                 metric.add(MetricNames.NUM_UPDATES, 1, null);
                 return newUpdateMessage(operation, operationId);
-            default:
+            }
+            default -> {
                 // typical end of feed
                 return null;
+            }
         }
     }
 

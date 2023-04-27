@@ -68,7 +68,7 @@ public class VespaXMLReaderTestCase {
         FeedOperation op = parser.read();
 
         assertTrue(FeedOperation.Type.INVALID != op.getType());
-        Document doc = op.getDocument();
+        Document doc = op.getDocumentPut().getDocument();
         assertEquals(new StringFieldValue("testUrl"), doc.getFieldValue("url"));
         assertEquals(new StringFieldValue("testTitle"), doc.getFieldValue("title"));
         assertEquals(new IntegerFieldValue(1), doc.getFieldValue("last_downloaded"));
@@ -339,7 +339,7 @@ public class VespaXMLReaderTestCase {
 
         // empty string
         FeedOperation op = parser.read();
-        assertEquals("id:ns:news::http://news6b", op.getDocument().getId().toString());
+        assertEquals("id:ns:news::http://news6b", op.getDocumentPut().getDocument().getId().toString());
 
         // int array with text
         try {
@@ -398,7 +398,7 @@ public class VespaXMLReaderTestCase {
         }
 
         op = parser.read();
-        assertEquals("id:ns:news::http://news6j", op.getDocument().getId().toString());
+        assertEquals("id:ns:news::http://news6j", op.getDocumentPut().getDocument().getId().toString());
 
         op = parser.read();
         assertEquals(FeedOperation.Type.INVALID, op.getType());
@@ -515,13 +515,13 @@ public class VespaXMLReaderTestCase {
             FeedOperation op = parser.read();
 
             assertEquals(FeedOperation.Type.REMOVE, op.getType());
-            assertEquals("id:ns:news::http://news9a", op.getRemove().toString());
+            assertEquals("id:ns:news::http://news9a", op.getDocumentRemove().getId().toString());
         }
         {
             FeedOperation op = parser.read();
 
             assertEquals(FeedOperation.Type.REMOVE, op.getType());
-            assertEquals("id:ns:news::http://news9b", op.getRemove().toString());
+            assertEquals("id:ns:news::http://news9b", op.getDocumentRemove().getId().toString());
         }
         {
             // Remove without documentid. Not supported.
@@ -539,7 +539,7 @@ public class VespaXMLReaderTestCase {
         VespaXMLFeedReader parser = new VespaXMLFeedReader("src/test/vespaxmlparser/test10.xml", manager);
         {
             FeedOperation op = parser.read();
-            Document doc = op.getDocument();
+            Document doc = op.getDocumentPut().getDocument();
 
             assertEquals(new StringFieldValue("testUrl"), doc.getFieldValue("url"));
             assertEquals(new StringFieldValue("testTitle"), doc.getFieldValue("title"));
@@ -576,7 +576,7 @@ public class VespaXMLReaderTestCase {
         }
         {
             FeedOperation op = parser.read();
-            Document doc = op.getDocument();
+            Document doc = op.getDocumentPut().getDocument();
             assertNotNull(doc);
             assertEquals(new StringFieldValue("testUrl2"), doc.getFieldValue("url"));
         }
@@ -649,7 +649,7 @@ public class VespaXMLReaderTestCase {
         }
         {
             FeedOperation op = parser.read();
-            assertEquals("id:ns:news::http://news10e", op.getRemove().toString());
+            assertEquals("id:ns:news::http://news10e", op.getDocumentRemove().getId().toString());
         }
         {
             // Illegal remove without documentid attribute
@@ -792,11 +792,11 @@ public class VespaXMLReaderTestCase {
         System.err.println(op);
 
         assertEquals(FeedOperation.Type.DOCUMENT, op.getType());
-        assertNull(op.getRemove());
+        assertNull(op.getDocumentRemove());
         assertNull(op.getDocumentUpdate());
-        assertNotNull(op.getDocument());
+        assertNotNull(op.getDocumentPut().getDocument());
 
-        Document doc = op.getDocument();
+        Document doc = op.getDocumentPut().getDocument();
 
         assertEquals("outerdoc", doc.getDataType().getName());
         assertEquals("id:outer:outerdoc::this:is:outer:doc", doc.getId().toString());
