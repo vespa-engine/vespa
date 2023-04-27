@@ -86,8 +86,9 @@ func NewClient(options ClientOptions, httpClients []util.HTTPClient) (*Client, e
 
 func (c *Client) queryParams() url.Values {
 	params := url.Values{}
-	timeout := c.options.Timeout*11/10 + 1000
-	params.Set("timeout", strconv.FormatInt(timeout.Milliseconds(), 10)+"ms")
+	if c.options.Timeout > 0 {
+		params.Set("timeout", strconv.FormatInt(c.options.Timeout.Milliseconds(), 10)+"ms")
+	}
 	if c.options.Route != "" {
 		params.Set("route", c.options.Route)
 	}
@@ -193,6 +194,13 @@ func (c *Client) createRequest(method, url string, body []byte) (*http.Request, 
 	return req, nil
 }
 
+func (c *Client) clientTimeout() time.Duration {
+	if c.options.Timeout < 1 {
+		return 190 * time.Second
+	}
+	return c.options.Timeout*11/10 + 1000 // slightly higher than the server-side timeout
+}
+
 // Send given document to the endpoint configured in this client.
 func (c *Client) Send(document Document) Result {
 	start := c.now()
@@ -202,7 +210,7 @@ func (c *Client) Send(document Document) Result {
 	if err != nil {
 		return resultWithErr(result, err)
 	}
-	resp, err := c.leastBusyClient().Do(req, 190*time.Second)
+	resp, err := c.leastBusyClient().Do(req, c.clientTimeout())
 	if err != nil {
 		return resultWithErr(result, err)
 	}

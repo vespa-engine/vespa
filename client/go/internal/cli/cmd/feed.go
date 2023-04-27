@@ -18,7 +18,7 @@ import (
 func addFeedFlags(cmd *cobra.Command, options *feedOptions) {
 	cmd.PersistentFlags().IntVar(&options.connections, "connections", 8, "The number of connections to use")
 	cmd.PersistentFlags().StringVar(&options.compression, "compression", "auto", `Compression mode to use. Default is "auto" which compresses large documents. Must be "auto", "gzip" or "none"`)
-	cmd.PersistentFlags().IntVar(&options.timeoutSecs, "timeout", 200, "Individual feed operation timeout in seconds")
+	cmd.PersistentFlags().IntVar(&options.timeoutSecs, "timeout", 0, "Individual feed operation timeout in seconds. 0 to disable (default 0)")
 	cmd.PersistentFlags().IntVar(&options.doomSecs, "deadline", 0, "Exit if this number of seconds elapse without any successful operations. 0 to disable (default 0)")
 	cmd.PersistentFlags().BoolVar(&options.verbose, "verbose", false, "Verbose mode. Print successful operations in addition to errors")
 	cmd.PersistentFlags().StringVar(&options.route, "route", "", `Target Vespa route for feed operations (default "default")`)

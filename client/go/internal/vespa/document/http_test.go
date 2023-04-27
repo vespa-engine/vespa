@@ -109,7 +109,7 @@ func TestClientSend(t *testing.T) {
 		if r.Method != http.MethodPut {
 			t.Errorf("got r.Method = %q, want %q", r.Method, http.MethodPut)
 		}
-		wantURL := fmt.Sprintf("https://example.com:1337/document/v1/ns/type/docid/%s?create=true&timeout=5500ms", doc.Id.UserSpecific)
+		wantURL := fmt.Sprintf("https://example.com:1337/document/v1/ns/type/docid/%s?create=true&timeout=5000ms", doc.Id.UserSpecific)
 		if r.URL.String() != wantURL {
 			t.Errorf("got r.URL = %q, want %q", r.URL, wantURL)
 		}
