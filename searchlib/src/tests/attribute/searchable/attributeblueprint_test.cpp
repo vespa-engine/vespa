@@ -373,9 +373,9 @@ TEST(AttributeBlueprintTest, nearest_neighbor_blueprint_is_created_by_attribute_
     // same cell type:
     expect_nearest_neighbor_blueprint("tensor(x[2])", x_2_double, x_2_double);
     expect_nearest_neighbor_blueprint("tensor<float>(x[2])", x_2_float, x_2_float);
-    // convert cell type:
-    expect_nearest_neighbor_blueprint("tensor(x[2])", x_2_float, x_2_double);
-    expect_nearest_neighbor_blueprint("tensor<float>(x[2])", x_2_double, x_2_float);
+    // converts cell type internally:
+    expect_nearest_neighbor_blueprint("tensor(x[2])", x_2_float, x_2_float);
+    expect_nearest_neighbor_blueprint("tensor<float>(x[2])", x_2_double, x_2_double);
 }
 
 void

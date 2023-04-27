@@ -17,9 +17,7 @@ namespace search::tensor {
 template <typename FloatType>
 class PrenormalizedAngularDistanceFunctionFactory : public DistanceFunctionFactory {
 public:
-    PrenormalizedAngularDistanceFunctionFactory()
-        : DistanceFunctionFactory(vespalib::eval::get_cell_type<FloatType>())
-        {}
+    PrenormalizedAngularDistanceFunctionFactory() = default;
     BoundDistanceFunction::UP for_query_vector(const vespalib::eval::TypedCells& lhs) override;
     BoundDistanceFunction::UP for_insertion_vector(const vespalib::eval::TypedCells& lhs) override;
 };

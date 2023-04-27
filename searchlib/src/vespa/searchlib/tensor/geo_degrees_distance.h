@@ -53,7 +53,7 @@ public:
 
 class GeoDistanceFunctionFactory : public DistanceFunctionFactory {
 public:
-    GeoDistanceFunctionFactory() : DistanceFunctionFactory(vespalib::eval::CellType::DOUBLE) {}
+    GeoDistanceFunctionFactory() = default;
     BoundDistanceFunction::UP for_query_vector(const vespalib::eval::TypedCells& lhs) override;
     BoundDistanceFunction::UP for_insertion_vector(const vespalib::eval::TypedCells& lhs) override;
 };
