@@ -57,17 +57,6 @@ func (c *countingHTTPClient) Do(req *http.Request, timeout time.Duration) (*http
 	return c.client.Do(req, timeout)
 }
 
-type countingReader struct {
-	reader    io.Reader
-	bytesRead int64
-}
-
-func (r *countingReader) Read(p []byte) (int, error) {
-	n, err := r.reader.Read(p)
-	r.bytesRead += int64(n)
-	return n, err
-}
-
 func NewClient(options ClientOptions, httpClients []util.HTTPClient) *Client {
 	if len(httpClients) < 1 {
 		panic("need at least one HTTP client")
@@ -246,16 +235,20 @@ func resultWithResponse(resp *http.Response, result Result, document Document, e
 		Message string          `json:"message"`
 		Trace   json.RawMessage `json:"trace"`
 	}
-	cr := countingReader{reader: resp.Body}
-	jsonDec := json.NewDecoder(&cr)
-	if err := jsonDec.Decode(&body); err != nil {
+	b, err := io.ReadAll(resp.Body)
+	if err != nil {
 		result.Status = StatusVespaFailure
-		result.Err = fmt.Errorf("failed to decode json response: %w", err)
+		result.Err = err
+	} else {
+		if err := json.Unmarshal(b, &body); err != nil {
+			result.Status = StatusVespaFailure
+			result.Err = fmt.Errorf("failed to decode json response: %w", err)
+		}
 	}
 	result.Message = body.Message
 	result.Trace = string(body.Trace)
 	result.Stats.BytesSent = int64(len(document.Body))
-	result.Stats.BytesRecv = cr.bytesRead
+	result.Stats.BytesRecv = int64(len(b))
 	if !result.Success() {
 		result.Stats.Errors++
 	}
