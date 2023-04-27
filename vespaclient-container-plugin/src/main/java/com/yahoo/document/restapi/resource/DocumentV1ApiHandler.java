@@ -1368,15 +1368,15 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
 
                             int status = Response.Status.BAD_GATEWAY;
                             switch (code) {
-                                case TIMEOUT:
-                                    if ( ! hasVisitedAnyBuckets() && parameters.getVisitInconsistentBuckets()) {
+                                case TIMEOUT: // Intentional fallthrough.
+                                case ABORTED:
+                                    if (error.get() == null && ! hasVisitedAnyBuckets() && parameters.getVisitInconsistentBuckets()) {
                                         response.writeMessage("No buckets visited within timeout of " +
                                                               parameters.getSessionTimeoutMs() + "ms (request timeout -5s)");
                                         status = Response.Status.GATEWAY_TIMEOUT;
                                         break;
                                     }
-                                case SUCCESS: // Intentional fallthrough.
-                                case ABORTED: // Intentional fallthrough.
+                                case SUCCESS:
                                     if (error.get() == null) {
                                         ProgressToken progress = getProgress() != null ? getProgress() : parameters.getResumeToken();
                                         if (progress != null && ! progress.isFinished())
