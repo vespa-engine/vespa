@@ -31,7 +31,7 @@ public class ClusterControllerContainerCluster extends ContainerCluster<ClusterC
             TreeConfigProducer<?> parent, String subId, String name, DeployState deployState) {
         super(parent, subId, name, deployState, false);
         addDefaultHandlersWithVip();
-        addSimpleComponent(VoidRequestLog.class);;
+        addAccessLog();
         this.reindexingContext = createReindexingContext(deployState);
         setJvmGCOptions(deployState.getProperties().jvmGCOptions(Optional.of(ClusterSpec.Type.admin)));
     }

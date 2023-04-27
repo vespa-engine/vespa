@@ -38,6 +38,7 @@ import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.container.bundle.BundleInstantiationSpecification;
 import com.yahoo.container.logging.FileConnectionLog;
 import com.yahoo.io.IOUtils;
+import com.yahoo.jdisc.http.server.jetty.VoidRequestLog;
 import com.yahoo.osgi.provider.model.ComponentModel;
 import com.yahoo.path.Path;
 import com.yahoo.schema.OnnxModel;
@@ -429,6 +430,8 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
         if (accessLogElements.isEmpty() && deployState.getAccessLoggingEnabledByDefault())
             cluster.addAccessLog();
+        else
+            cluster.addVoidAccessLog();
 
         // Add connection log if access log is configured
         if (cluster.getAllComponents().stream().anyMatch(component -> component instanceof AccessLogComponent)) {

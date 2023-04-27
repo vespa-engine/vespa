@@ -17,7 +17,6 @@ import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyContainerCluster.AppDimensionNames;
 import com.yahoo.vespa.model.container.Container;
 import com.yahoo.vespa.model.container.ContainerCluster;
-import com.yahoo.vespa.model.container.IdentityProvider;
 import com.yahoo.vespa.model.container.PlatformBundles;
 import com.yahoo.vespa.model.container.component.AccessLogComponent;
 import com.yahoo.vespa.model.container.component.Component;
@@ -42,7 +41,9 @@ import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.g
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.getModel;
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.servicesWithAdminOnly;
 import static java.util.stream.Collectors.toSet;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author gjoranv
@@ -116,9 +117,15 @@ public class MetricsProxyContainerClusterTest {
     }
 
     @Test
-    void no_access_logging() {
-        VespaModel hostedModel = getModel(servicesWithTwoNodes(), hosted);
+    void no_access_logging_self_hosted() {
+        VespaModel hostedModel = getModel(servicesWithTwoNodes(), self_hosted);
         assertFalse(hasAccessLogComponent(hostedModel.getAdmin().getMetricsProxyCluster()));
+    }
+
+    @Test
+    void access_logging_hosted() {
+        VespaModel hostedModel = getModel(servicesWithTwoNodes(), hosted);
+        assertTrue(hasAccessLogComponent(hostedModel.getAdmin().getMetricsProxyCluster()));
     }
 
     private boolean hasAccessLogComponent(ContainerCluster<? extends Container> cluster) {

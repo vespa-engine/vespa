@@ -25,6 +25,7 @@ import com.yahoo.container.handler.metrics.PrometheusV1Handler;
 import com.yahoo.container.jdisc.ContainerMbusConfig;
 import com.yahoo.container.jdisc.messagebus.MbusServerProvider;
 import com.yahoo.container.logging.AccessLog;
+import com.yahoo.jdisc.http.server.jetty.VoidRequestLog;
 import com.yahoo.osgi.provider.model.ComponentModel;
 import com.yahoo.search.config.QrStartConfig;
 import com.yahoo.vespa.config.search.RankProfilesConfig;
@@ -110,7 +111,6 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
                                                                .map(HostSpec::hostname)
                                                                .collect(Collectors.toCollection(() -> new LinkedHashSet<>())));
 
-        addSimpleComponent(AccessLog.class);
         addSimpleComponent("com.yahoo.language.provider.DefaultLinguisticsProvider");
         addSimpleComponent("com.yahoo.language.provider.DefaultEmbedderProvider");
         addSimpleComponent("com.yahoo.container.jdisc.SecretStoreProvider");
@@ -341,9 +341,14 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
     protected boolean messageBusEnabled() { return messageBusEnabled; }
 
     public void addAccessLog() {
+        addSimpleComponent(AccessLog.class);
         // In hosted there is one application container per node, so we do not use the container name to distinguish log files
         Optional<String> clusterName = isHostedVespa ? Optional.empty() : Optional.of(getName());
         addComponent(new AccessLogComponent(this, jsonAccessLog, compressionType, clusterName, isHostedVespa));
+    }
+
+    public void addVoidAccessLog() {
+        addSimpleComponent(VoidRequestLog.class);
     }
 
     public void addMbusServer(ComponentId chainId) {

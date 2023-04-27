@@ -25,7 +25,6 @@ import com.yahoo.config.model.producer.TreeConfigProducer;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.container.jdisc.ThreadedHttpRequestHandler;
-import com.yahoo.jdisc.http.server.jetty.VoidRequestLog;
 import com.yahoo.osgi.provider.model.ComponentModel;
 import com.yahoo.vespa.model.admin.Admin;
 import com.yahoo.vespa.model.admin.monitoring.MetricSet;
@@ -87,12 +86,10 @@ public class MetricsProxyContainerCluster extends ContainerCluster<MetricsProxyC
         static final String LEGACY_APPLICATION = "app";        // app.instance
     }
 
-    private final TreeConfigProducer<?> parent;
     private final ApplicationId applicationId;
 
     public MetricsProxyContainerCluster(TreeConfigProducer<?> parent, String name, DeployState deployState) {
         super(parent, name, name, deployState, true);
-        this.parent = parent;
         applicationId = deployState.getProperties().applicationId();
 
         setRpcServerEnabled(true);
@@ -100,7 +97,7 @@ public class MetricsProxyContainerCluster extends ContainerCluster<MetricsProxyC
 
         addPlatformBundle(METRICS_PROXY_BUNDLE_FILE);
         addClusterComponents();
-        addSimpleComponent(VoidRequestLog.class);
+        addAccessLog();
     }
 
     @Override
