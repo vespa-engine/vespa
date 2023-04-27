@@ -24,6 +24,7 @@ import com.yahoo.container.handler.metrics.MetricsV2Handler;
 import com.yahoo.container.handler.metrics.PrometheusV1Handler;
 import com.yahoo.container.jdisc.ContainerMbusConfig;
 import com.yahoo.container.jdisc.messagebus.MbusServerProvider;
+import com.yahoo.container.logging.AccessLog;
 import com.yahoo.osgi.provider.model.ComponentModel;
 import com.yahoo.search.config.QrStartConfig;
 import com.yahoo.vespa.config.search.RankProfilesConfig;
@@ -32,6 +33,7 @@ import com.yahoo.vespa.config.search.core.RankingConstantsConfig;
 import com.yahoo.vespa.config.search.core.RankingExpressionsConfig;
 import com.yahoo.vespa.model.AbstractService;
 import com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyContainer;
+import com.yahoo.vespa.model.container.component.AccessLogComponent;
 import com.yahoo.vespa.model.container.component.BindingPattern;
 import com.yahoo.vespa.model.container.component.Component;
 import com.yahoo.vespa.model.container.component.Handler;
@@ -48,6 +50,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import static com.yahoo.config.model.api.ApplicationClusterEndpoint.RoutingMethod.sharedLayer4;
+import static com.yahoo.vespa.model.container.component.AccessLogComponent.AccessLogType.jsonAccessLog;
 import static com.yahoo.vespa.model.container.docproc.DocprocChains.DOCUMENT_TYPE_MANAGER_CLASS;
 
 /**
@@ -107,6 +110,7 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
                                                                .map(HostSpec::hostname)
                                                                .collect(Collectors.toCollection(() -> new LinkedHashSet<>())));
 
+        addSimpleComponent(AccessLog.class);
         addSimpleComponent("com.yahoo.language.provider.DefaultLinguisticsProvider");
         addSimpleComponent("com.yahoo.language.provider.DefaultEmbedderProvider");
         addSimpleComponent("com.yahoo.container.jdisc.SecretStoreProvider");
@@ -335,6 +339,12 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
     }
 
     protected boolean messageBusEnabled() { return messageBusEnabled; }
+
+    public void addAccessLog() {
+        // In hosted there is one application container per node, so we do not use the container name to distinguish log files
+        Optional<String> clusterName = isHostedVespa ? Optional.empty() : Optional.of(getName());
+        addComponent(new AccessLogComponent(this, jsonAccessLog, compressionType, clusterName, isHostedVespa));
+    }
 
     public void addMbusServer(ComponentId chainId) {
         ComponentId serviceId = chainId.nestInNamespace(ComponentId.fromString("MbusServer"));
