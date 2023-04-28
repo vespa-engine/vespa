@@ -28,7 +28,6 @@ const (
 
 // Client represents a HTTP client for the /document/v1/ API.
 type Client struct {
-	baseURL     *url.URL
 	options     ClientOptions
 	httpClients []countingHTTPClient
 	now         func() time.Time
@@ -63,7 +62,7 @@ func NewClient(options ClientOptions, httpClients []util.HTTPClient) (*Client, e
 	if len(httpClients) < 1 {
 		return nil, fmt.Errorf("need at least one HTTP client")
 	}
-	u, err := url.Parse(options.BaseURL)
+	_, err := url.Parse(options.BaseURL)
 	if err != nil {
 		return nil, fmt.Errorf("invalid base url: %w", err)
 	}
@@ -76,7 +75,6 @@ func NewClient(options ClientOptions, httpClients []util.HTTPClient) (*Client, e
 		nowFunc = time.Now
 	}
 	c := &Client{
-		baseURL:     u,
 		options:     options,
 		httpClients: countingClients,
 		now:         nowFunc,
@@ -86,42 +84,18 @@ func NewClient(options ClientOptions, httpClients []util.HTTPClient) (*Client, e
 	return c, nil
 }
 
-func (c *Client) queryParams() url.Values {
-	params := url.Values{}
-	if c.options.Timeout > 0 {
-		params.Set("timeout", strconv.FormatInt(c.options.Timeout.Milliseconds(), 10)+"ms")
-	}
-	if c.options.Route != "" {
-		params.Set("route", c.options.Route)
-	}
-	if c.options.TraceLevel > 0 {
-		params.Set("tracelevel", strconv.Itoa(c.options.TraceLevel))
-	}
-	return params
-}
-
-func urlPath(id Id) string {
-	var sb strings.Builder
-	sb.WriteString("/document/v1/")
-	sb.WriteString(url.PathEscape(id.Namespace))
-	sb.WriteString("/")
-	sb.WriteString(url.PathEscape(id.Type))
-	if id.Number != nil {
-		sb.WriteString("/number/")
-		n := uint64(*id.Number)
-		sb.WriteString(strconv.FormatUint(n, 10))
-	} else if id.Group != "" {
-		sb.WriteString("/group/")
-		sb.WriteString(url.PathEscape(id.Group))
+func writeQueryParam(sb *strings.Builder, start int, k, v string) {
+	if sb.Len() == start {
+		sb.WriteString("?")
 	} else {
-		sb.WriteString("/docid")
+		sb.WriteString("&")
 	}
-	sb.WriteString("/")
-	sb.WriteString(url.PathEscape(id.UserSpecific))
-	return sb.String()
+	sb.WriteString(k)
+	sb.WriteString("=")
+	sb.WriteString(url.QueryEscape(v))
 }
 
-func (c *Client) feedURL(d Document, queryParams url.Values) (string, *url.URL) {
+func (c *Client) methodAndURL(d Document) (string, string) {
 	httpMethod := ""
 	switch d.Operation {
 	case OperationPut:
@@ -131,16 +105,46 @@ func (c *Client) feedURL(d Document, queryParams url.Values) (string, *url.URL) 
 	case OperationRemove:
 		httpMethod = "DELETE"
 	}
+	var sb strings.Builder
+	// Base URL and path
+	sb.WriteString(c.options.BaseURL)
+	if !strings.HasSuffix(c.options.BaseURL, "/") {
+		sb.WriteString("/")
+	}
+	sb.WriteString("document/v1/")
+	sb.WriteString(url.PathEscape(d.Id.Namespace))
+	sb.WriteString("/")
+	sb.WriteString(url.PathEscape(d.Id.Type))
+	if d.Id.Number != nil {
+		sb.WriteString("/number/")
+		n := uint64(*d.Id.Number)
+		sb.WriteString(strconv.FormatUint(n, 10))
+	} else if d.Id.Group != "" {
+		sb.WriteString("/group/")
+		sb.WriteString(url.PathEscape(d.Id.Group))
+	} else {
+		sb.WriteString("/docid")
+	}
+	sb.WriteString("/")
+	sb.WriteString(url.PathEscape(d.Id.UserSpecific))
+	// Query part
+	queryStart := sb.Len()
+	if c.options.Timeout > 0 {
+		writeQueryParam(&sb, queryStart, "timeout", strconv.FormatInt(c.options.Timeout.Milliseconds(), 10)+"ms")
+	}
+	if c.options.Route != "" {
+		writeQueryParam(&sb, queryStart, "route", c.options.Route)
+	}
+	if c.options.TraceLevel > 0 {
+		writeQueryParam(&sb, queryStart, "tracelevel", strconv.Itoa(c.options.TraceLevel))
+	}
 	if d.Condition != "" {
-		queryParams.Set("condition", d.Condition)
+		writeQueryParam(&sb, queryStart, "condition", d.Condition)
 	}
 	if d.Create {
-		queryParams.Set("create", "true")
+		writeQueryParam(&sb, queryStart, "create", "true")
 	}
-	u := *c.baseURL
-	u.Path = urlPath(d.Id)
-	u.RawQuery = queryParams.Encode()
-	return httpMethod, &u
+	return httpMethod, sb.String()
 }
 
 func (c *Client) leastBusyClient() *countingHTTPClient {
@@ -213,8 +217,8 @@ func (c *Client) clientTimeout() time.Duration {
 func (c *Client) Send(document Document) Result {
 	start := c.now()
 	result := Result{Id: document.Id, Stats: Stats{Requests: 1}}
-	method, url := c.feedURL(document, c.queryParams())
-	req, err := c.createRequest(method, url.String(), document.Body)
+	method, url := c.methodAndURL(document)
+	req, err := c.createRequest(method, url, document.Body)
 	if err != nil {
 		return resultWithErr(result, err)
 	}
