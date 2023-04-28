@@ -48,6 +48,7 @@ import java.security.cert.X509Certificate;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -177,10 +178,15 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
         }
     }
 
-    private boolean maintainRoleCertificates(NodeAgentContext context, ContainerPath siaDirectory, ContainerPath privateKeyFile, ContainerPath certificateFile, AthenzIdentity identity, IdentityDocument identityDocument) {
+    private boolean maintainRoleCertificates(NodeAgentContext context,
+                                             ContainerPath siaDirectory,
+                                             ContainerPath privateKeyFile,
+                                             ContainerPath certificateFile,
+                                             AthenzIdentity identity,
+                                             IdentityDocument identityDocument) {
         var modified = false;
 
-        for (var role : identityDocumentClient.getNodeRoles(context.hostname().value())) {
+        for (var role : getRoleList(context)) {
                 try {
                     var roleCertificatePath = siaDirectory.resolve("certs")
                             .resolve(String.format("%s.cert.pem", role));
@@ -429,6 +435,15 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
                 .value()
                 ? SignedIdentityDocument.DEFAULT_DOCUMENT_VERSION
                 : SignedIdentityDocument.LEGACY_DEFAULT_DOCUMENT_VERSION;
+    }
+
+    private List<String> getRoleList(NodeAgentContext context) {
+        try {
+            return identityDocumentClient.getNodeRoles(context.hostname().value());
+        } catch (Exception e) {
+            context.log(logger, Level.WARNING, "Failed to retrieve role list", e);
+            return List.of();
+        }
     }
 
     enum IdentityType {
