@@ -16,7 +16,7 @@ import java.util.function.Consumer;
 import java.util.logging.Logger;
 
 /**
- * Represents a cgroup directory in the control group v2 hierarchy, see
+ * Represents a cgroup in the control group v2 hierarchy, see
  * <a href="https://www.kernel.org/doc/html/latest/admin-guide/cgroup-v2.html">Control Group v2</a>.
  *
  * @author hakonhall
@@ -87,7 +87,7 @@ public class Cgroup {
     /** Returns the absolute path to this cgroup. */
     public Path path() { return root.resolve(relativePath); }
 
-    /** Returns the absolute UnixPath to this cgroup. */
+    /** Returns the UnixPath of {@link #path()}. */
     public UnixPath unixPath() { return new UnixPath(path()); }
 
     public String read(String filename) {
@@ -129,10 +129,10 @@ public class Cgroup {
     /** Returns an instance representing core interface files (cgroup.* files). */
     public CgroupCore core() { return new CgroupCore(this); }
 
-    /** Returns the CPU controller of this Cgroup (cpu.* files). */
+    /** Returns the CPU controller of this cgroup (cpu.* files). */
     public CpuController cpu() { return new CpuController(this); }
 
-    /** Returns the memory controller of this Cgroup (memory.* files). */
+    /** Returns the memory controller of this cgroup (memory.* files). */
     public MemoryController memory() { return new MemoryController(this); }
 
     /**

@@ -100,7 +100,7 @@ public class UnixPath {
         }
     }
 
-    public List<String> readAllLines() {
+    public List<String> readLines() {
         return uncheck(() -> Files.readAllLines(path));
     }
 
