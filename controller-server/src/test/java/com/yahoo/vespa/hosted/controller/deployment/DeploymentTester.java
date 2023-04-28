@@ -135,7 +135,7 @@ public class DeploymentTester {
     public void abortAll() {
         triggerJobs();
         for (Run run : jobs.active()) {
-            jobs.abort(run.id(), "DeploymentTester.abortAll");
+            jobs.abort(run.id(), "DeploymentTester.abortAll", false);
             runner.advance(jobs.run(run.id()));
             assertTrue(jobs.run(run.id()).hasEnded());
         }

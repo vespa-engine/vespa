@@ -53,11 +53,11 @@ public class Badges {
         return switch (run.status()) {
             case running -> switch (previous.orElse(RunStatus.success)) {
                 case success -> "url(#run-on-success)";
-                case aborted, noTests -> "url(#run-on-warning)";
+                case cancelled, aborted, noTests -> "url(#run-on-warning)";
                 default -> "url(#run-on-failure)";
             };
             case success -> success;
-            case aborted, noTests -> warning;
+            case cancelled, aborted, noTests -> warning;
             default -> failure;
         };
     }

@@ -443,18 +443,17 @@ public class VersionStatusTest {
         Version version2 = new Version("6.4");
         tester.controllerTester().upgradeSystem(version2);
         tester.upgrader().maintain();
-        assertEquals(
-                     Confidence.broken, confidence(tester.controller(), version1), "Confidence remains unchanged for version1 until app overrides old tests: Broken");
-        assertEquals(
-                     Confidence.low, confidence(tester.controller(), version2), "Confidence defaults to low for version with no applications");
+        assertEquals(Confidence.broken, confidence(tester.controller(), version1),
+                     "Confidence remains unchanged for version1 until app overrides old tests: Broken");
+        assertEquals(Confidence.low, confidence(tester.controller(), version2),
+                     "Confidence defaults to low for version with no applications");
         assertEquals(version2, canary0.instance().change().platform().orElseThrow());
 
         canary0.failDeployment(systemTest);
         canary0.abortJob(stagingTest);
         tester.controllerTester().computeVersionStatus();
-        assertFalse(
-                    tester.controller().readVersionStatus().versions().stream().anyMatch(version -> version.versionNumber().equals(version1)),
-                "Previous version should be forgotten, as canary only had test jobs run on it");
+        assertFalse(tester.controller().readVersionStatus().versions().stream().anyMatch(version -> version.versionNumber().equals(version1)),
+                    "Previous version should be forgotten, as canary only had test jobs run on it");
 
         // App succeeds with tests, but fails production deployment
         canary0.runJob(systemTest)
@@ -468,29 +467,28 @@ public class VersionStatusTest {
         Version version3 = new Version("6.5");
         tester.controllerTester().upgradeSystem(version3);
         tester.upgrader().maintain();
-        assertEquals(
-                     Confidence.broken, confidence(tester.controller(), version2), "Confidence remains unchanged for version2: Broken");
-        assertEquals(
-                     Confidence.low, confidence(tester.controller(), version3), "Confidence defaults to low for version with no applications");
+        assertEquals(Confidence.broken, confidence(tester.controller(), version2),
+                     "Confidence remains unchanged for version2: Broken");
+        assertEquals(Confidence.low, confidence(tester.controller(), version3),
+                     "Confidence defaults to low for version with no applications");
         assertEquals(version3, canary0.instance().change().platform().orElseThrow());
 
         canary0.runJob(systemTest)
                .runJob(stagingTest)
                .failDeployment(productionUsWest1);
         tester.controllerTester().computeVersionStatus();
-        assertEquals(
-                     Confidence.broken, confidence(tester.controller(), version2), "Confidence remains unchanged for version2: Broken");
-        assertEquals(
-                     Confidence.broken, confidence(tester.controller(), version3), "Canary broken, so confidence for version3: Broken");
+        assertEquals(Confidence.broken, confidence(tester.controller(), version2),
+                     "Confidence remains unchanged for version2: Broken");
+        assertEquals(Confidence.broken, confidence(tester.controller(), version3),
+                     "Canary broken, so confidence for version3: Broken");
 
         // App succeeds production deployment, clearing failure on version2
         canary0.runJob(productionUsWest1);
         tester.controllerTester().computeVersionStatus();
-        assertFalse(
-                    tester.controller().readVersionStatus().versions().stream().anyMatch(version -> version.versionNumber().equals(version2)),
-                "Previous version should be forgotten, as canary only had test jobs run on it");
-        assertEquals(
-                     Confidence.low, confidence(tester.controller(), version3), "Canary OK, but not done upgrading, so confidence for version3: Low");
+        assertFalse(tester.controller().readVersionStatus().versions().stream().anyMatch(version -> version.versionNumber().equals(version2)),
+                    "Previous version should be forgotten, as canary only had test jobs run on it");
+        assertEquals(Confidence.low, confidence(tester.controller(), version3),
+                     "Canary OK, but not done upgrading, so confidence for version3: Low");
     }
 
     @Test

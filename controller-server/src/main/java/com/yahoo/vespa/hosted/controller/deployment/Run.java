@@ -13,6 +13,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.aborted;
+import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.cancelled;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.noTests;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.reset;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.running;
@@ -110,10 +111,12 @@ public class Run {
                        lastTestRecord, lastVespaLogTimestamp, noNodesDownSince, convergenceSummary, Optional.empty(), dryRun, reason);
     }
 
-    public Run aborted() {
+    public Run aborted(boolean cancelledByHumans) {
         requireActive();
-        return new Run(id, steps, versions, isRedeployment, start, end, sleepUntil, aborted, lastTestRecord, lastVespaLogTimestamp,
-                       noNodesDownSince, convergenceSummary, testerCertificate, dryRun, reason);
+        return new Run(id, steps, versions, isRedeployment, start, end, sleepUntil,
+                       cancelledByHumans ? cancelled : aborted,
+                       lastTestRecord, lastVespaLogTimestamp, noNodesDownSince,
+                       convergenceSummary, testerCertificate, dryRun, reason);
     }
 
     public Run reset() {

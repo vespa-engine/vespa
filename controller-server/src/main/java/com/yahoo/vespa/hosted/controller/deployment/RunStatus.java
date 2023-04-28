@@ -38,8 +38,11 @@ public enum RunStatus {
     /** Everything completed with great success! */
     success,
 
-    /** Run was abandoned, due to user intervention or job timeout. */
+    /** Run was abandoned, due to job timeout or blocking a newer target for the same job. */
     aborted,
+
+    /** Cancelled by a human being. */
+    cancelled,
 
     /** Run should be reset to its starting state. Used for production tests. */
     reset

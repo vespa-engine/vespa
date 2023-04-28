@@ -76,6 +76,7 @@ import java.util.stream.Stream;
 
 import static com.yahoo.collections.Iterables.reversed;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.aborted;
+import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.cancelled;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.reset;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.running;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.succeeded;
@@ -547,15 +548,15 @@ public class JobController {
     }
 
     /** Marks the given run as aborted; no further normal steps will run, but run-always steps will try to succeed. */
-    public void abort(RunId id, String reason) {
+    public void abort(RunId id, String reason, boolean cancelledByHumans) {
         locked(id, run -> {
-            if (run.status() == aborted)
+            if (run.status() == aborted || run.status() == cancelled)
                 return run;
 
             run.stepStatuses().entrySet().stream()
                .filter(entry -> entry.getValue() == unfinished)
                .forEach(entry -> log(id, entry.getKey(), INFO, "Aborting run: " + reason));
-            return run.aborted();
+            return run.aborted(cancelledByHumans);
         });
     }
 
@@ -837,7 +838,7 @@ public class JobController {
 
     /** Aborts a run and waits for it complete. */
     private void abortAndWait(RunId id, Duration timeout) {
-        abort(id, "replaced by new deployment");
+        abort(id, "replaced by new deployment", true);
         runner.get().accept(last(id.application(), id.type()).get());
 
         Instant doom = controller.clock().instant().plus(timeout);

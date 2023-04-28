@@ -219,7 +219,7 @@ class JobControllerApiHandlerHelper {
         Cursor responseObject = slime.setObject();
         Optional<Run> run = jobs.last(id, type).flatMap(last -> jobs.active(last.id()));
         if (run.isPresent()) {
-            jobs.abort(run.get().id(), "aborted by " + request.getJDiscRequest().getUserPrincipal().getName());
+            jobs.abort(run.get().id(), "aborted by " + request.getJDiscRequest().getUserPrincipal().getName(), true);
             responseObject.setString("message", "Aborting " + run.get().id());
         }
         else
@@ -230,7 +230,7 @@ class JobControllerApiHandlerHelper {
     private static String nameOf(RunStatus status) {
         return switch (status) {
             case reset, running                       -> "running";
-            case aborted                              -> "aborted";
+            case cancelled, aborted                   -> "aborted";
             case error                                -> "error";
             case testFailure                          -> "testFailure";
             case noTests                              -> "noTests";
