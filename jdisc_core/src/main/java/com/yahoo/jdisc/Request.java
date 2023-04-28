@@ -36,6 +36,7 @@ import java.util.concurrent.TimeUnit;
  */
 public class Request extends AbstractResource {
 
+    private final Object monitor = new Object();
     private final Map<String, Object> context = Collections.synchronizedMap(new HashMap<>());
     private final HeaderFields headers = new HeaderFields();
     private final Container container;
@@ -44,8 +45,8 @@ public class Request extends AbstractResource {
     private final long creationTime;
     private final boolean serverRequest;
     private final URI uri;
-    private volatile boolean cancel = false;
-    private BindingMatch<RequestHandler> bindingMatch;
+    private boolean cancel = false;
+    private volatile BindingMatch<RequestHandler> bindingMatch;
     private TimeoutManager timeoutManager;
     private Long timeout;
 
@@ -217,12 +218,14 @@ public class Request extends AbstractResource {
      */
     public void setTimeoutManager(TimeoutManager timeoutManager) {
         Objects.requireNonNull(timeoutManager, "timeoutManager");
-        if (this.timeoutManager != null) {
-            throw new IllegalStateException("Timeout manager already set.");
-        }
-        this.timeoutManager = timeoutManager;
-        if (timeout != null) {
-            timeoutManager.scheduleTimeout(this);
+        synchronized (monitor) {
+            if (this.timeoutManager != null) {
+                throw new IllegalStateException("Timeout manager already set.");
+            }
+            this.timeoutManager = timeoutManager;
+            if (timeout != null) {
+                timeoutManager.scheduleTimeout(this);
+            }
         }
     }
 
@@ -233,7 +236,7 @@ public class Request extends AbstractResource {
      * @see #setTimeoutManager(TimeoutManager)
      */
     public TimeoutManager getTimeoutManager() {
-        return timeoutManager;
+        synchronized (monitor) { return timeoutManager; }
     }
 
     /**
@@ -252,9 +255,11 @@ public class Request extends AbstractResource {
      * @see #timeRemaining(TimeUnit)
      */
     public void setTimeout(long timeout, TimeUnit unit) {
-        this.timeout = unit.toMillis(timeout);
-        if (timeoutManager != null) {
-            timeoutManager.scheduleTimeout(this);
+        synchronized (monitor) {
+            this.timeout = unit.toMillis(timeout);
+            if (timeoutManager != null) {
+                timeoutManager.scheduleTimeout(this);
+            }
         }
     }
 
@@ -267,10 +272,12 @@ public class Request extends AbstractResource {
      * @see #setTimeout(long, TimeUnit)
      */
     public Long getTimeout(TimeUnit unit) {
-        if (timeout == null) {
-            return null;
+        synchronized (monitor) {
+            if (timeout == null) {
+                return null;
+            }
+            return unit.convert(timeout, TimeUnit.MILLISECONDS);
         }
-        return unit.convert(timeout, TimeUnit.MILLISECONDS);
     }
 
     /**
@@ -281,10 +288,12 @@ public class Request extends AbstractResource {
      * @return The number of time units left until this Request times out, or <em>null</em>.
      */
     public Long timeRemaining(TimeUnit unit) {
-        if (timeout == null) {
-            return null;
+        synchronized (monitor) {
+            if (timeout == null) {
+                return null;
+            }
+            return unit.convert(timeout - (container().currentTimeMillis() - creationTime), TimeUnit.MILLISECONDS);
         }
-        return unit.convert(timeout - (container().currentTimeMillis() - creationTime), TimeUnit.MILLISECONDS);
     }
 
     /**
@@ -324,11 +333,13 @@ public class Request extends AbstractResource {
      * @see #setTimeout(long, TimeUnit)
      */
     public boolean isCancelled() {
-        if (cancel) {
-            return true;
-        }
-        if (timeout != null && timeRemaining(TimeUnit.MILLISECONDS) <= 0) {
-            return true;
+        synchronized (monitor) {
+            if (cancel) {
+                return true;
+            }
+            if (timeout != null && timeRemaining(TimeUnit.MILLISECONDS) <= 0) {
+                return true;
+            }
         }
         if (parent != null && parent.isCancelled()) {
             return true;
@@ -343,11 +354,13 @@ public class Request extends AbstractResource {
      * @see #isCancelled()
      */
     public void cancel() {
-        if (cancel) return;
+        synchronized (monitor) {
+            if (cancel) return;
 
-        if (timeoutManager != null && timeout != null)
-            timeoutManager.unscheduleTimeout(this);
-        cancel = true;
+            if (timeoutManager != null && timeout != null)
+                timeoutManager.unscheduleTimeout(this);
+            cancel = true;
+        }
     }
 
     /**
