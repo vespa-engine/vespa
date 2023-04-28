@@ -20,7 +20,7 @@ import java.util.Set;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public record IdentityDocumentEntity(String providerUniqueId, String providerService,
         String configServerHostname, String instanceHostname, Instant createdAt, Set<String> ipAddresses,
-        String identityType, String clusterType, String ztsUrl, String serviceIdentity, List<String> roles, Map<String, Object> unknownAttributes) {
+        String identityType, String clusterType, String ztsUrl, String serviceIdentity, Map<String, Object> unknownAttributes) {
 
     @JsonCreator
     public IdentityDocumentEntity(@JsonProperty("provider-unique-id") String providerUniqueId,
@@ -32,10 +32,9 @@ public record IdentityDocumentEntity(String providerUniqueId, String providerSer
                                   @JsonProperty("identity-type") String identityType,
                                   @JsonProperty("cluster-type") String clusterType,
                                   @JsonProperty("zts-url") String ztsUrl,
-                                  @JsonProperty("service-identity") String serviceIdentity,
-                                  @JsonProperty("roles") List<String> roles) {
+                                  @JsonProperty("service-identity") String serviceIdentity) {
         this(providerUniqueId, providerService, configServerHostname,
-             instanceHostname, createdAt, ipAddresses, identityType, clusterType, ztsUrl, serviceIdentity, roles, new HashMap<>());
+             instanceHostname, createdAt, ipAddresses, identityType, clusterType, ztsUrl, serviceIdentity, new HashMap<>());
     }
 
     @JsonProperty("provider-unique-id") @Override public String providerUniqueId() { return providerUniqueId; }
@@ -48,7 +47,6 @@ public record IdentityDocumentEntity(String providerUniqueId, String providerSer
     @JsonProperty("cluster-type") @Override public String clusterType() { return clusterType; }
     @JsonProperty("zts-url") @Override public String ztsUrl() { return ztsUrl; }
     @JsonProperty("service-identity") @Override public String serviceIdentity() { return serviceIdentity; }
-    @JsonProperty("roles") @Override public List<String> roles() { return roles; }
     @JsonAnyGetter @Override public Map<String, Object> unknownAttributes() { return unknownAttributes; }
     @JsonAnySetter public void set(String name, Object value) { unknownAttributes.put(name, value); }
 }

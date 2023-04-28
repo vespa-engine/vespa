@@ -45,14 +45,13 @@ public class IdentityDocumentSignerTest {
     private static final ClusterType clusterType = ClusterType.CONTAINER;
     private static final String ztsUrl = "https://foo";
     private static final AthenzIdentity serviceIdentity = new AthenzService("vespa", "node");
-    private static final List<String> roles = List.of();
 
     @Test
     void legacy_generates_and_validates_signature() {
         IdentityDocumentSigner signer = new IdentityDocumentSigner();
         IdentityDocument identityDocument = new IdentityDocument(
                 id, providerService, configserverHostname,
-                instanceHostname, createdAt, ipAddresses, identityType, clusterType, ztsUrl, serviceIdentity, roles);
+                instanceHostname, createdAt, ipAddresses, identityType, clusterType, ztsUrl, serviceIdentity);
         String signature =
                 signer.generateLegacySignature(identityDocument, keyPair.getPrivate());
 
@@ -67,7 +66,7 @@ public class IdentityDocumentSignerTest {
         IdentityDocumentSigner signer = new IdentityDocumentSigner();
         IdentityDocument identityDocument = new IdentityDocument(
                 id, providerService, configserverHostname,
-                instanceHostname, createdAt, ipAddresses, identityType, clusterType, ztsUrl, serviceIdentity, roles);
+                instanceHostname, createdAt, ipAddresses, identityType, clusterType, ztsUrl, serviceIdentity);
         String data = EntityBindingsMapper.toIdentityDocmentData(identityDocument);
         String signature =
         signer.generateSignature(data, keyPair.getPrivate());
@@ -83,10 +82,10 @@ public class IdentityDocumentSignerTest {
         IdentityDocumentSigner signer = new IdentityDocumentSigner();
         IdentityDocument identityDocument = new IdentityDocument(
                 id, providerService, configserverHostname,
-                instanceHostname, createdAt, ipAddresses, identityType, clusterType, ztsUrl, serviceIdentity, roles);
+                instanceHostname, createdAt, ipAddresses, identityType, clusterType, ztsUrl, serviceIdentity);
         IdentityDocument withoutIgnoredFields = new IdentityDocument(
                 id, providerService, configserverHostname,
-                instanceHostname, createdAt, ipAddresses, identityType, null, null, serviceIdentity, roles);
+                instanceHostname, createdAt, ipAddresses, identityType, null, null, serviceIdentity);
 
         String signature =
                 signer.generateLegacySignature(identityDocument, keyPair.getPrivate());
@@ -105,7 +104,7 @@ public class IdentityDocumentSignerTest {
         IdentityDocumentSigner signer = new IdentityDocumentSigner();
         IdentityDocument identityDocument = new IdentityDocument(
                 id, providerService, configserverHostname,
-                instanceHostname, createdAt, ipAddresses, identityType, clusterType, ztsUrl, serviceIdentity, roles);
+                instanceHostname, createdAt, ipAddresses, identityType, clusterType, ztsUrl, serviceIdentity);
         String signature =
                 signer.generateLegacySignature(identityDocument, keyPair.getPrivate());
 
