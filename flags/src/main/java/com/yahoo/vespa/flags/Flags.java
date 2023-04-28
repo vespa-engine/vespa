@@ -407,7 +407,7 @@ public class Flags {
             "new_iddoc_layout", false, List.of("tokle", "bjorncs", "olaa"), "2023-04-24", "2023-05-31",
             "Whether to use new identity document layout",
             "Takes effect on node reboot",
-            HOSTNAME);
+            HOSTNAME, APPLICATION_ID, VESPA_VERSION);
 
     public static final UnboundBooleanFlag RANDOMIZED_ENDPOINT_NAMES = defineFeatureFlag(
             "randomized-endpoint-names", false, List.of("andreer"), "2023-04-26", "2023-06-30",

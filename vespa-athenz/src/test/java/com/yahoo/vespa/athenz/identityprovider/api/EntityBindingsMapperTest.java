@@ -7,9 +7,11 @@ import org.junit.jupiter.api.Test;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -47,6 +49,7 @@ class EntityBindingsMapperTest {
         assertTrue(json.contains(expectedMemberInJson),
                    () -> "Expected JSON to contain '%s', but got \n'%s'".formatted(expectedMemberInJson, json));
         assertEquals(EntityBindingsMapper.mapper.readTree(originalJson), EntityBindingsMapper.mapper.readTree(json));
+        assertEquals(List.of(), entity.identityDocument().roles());
     }
 
     @Test
@@ -83,5 +86,7 @@ class EntityBindingsMapperTest {
         // i.e the signed identity document should be unchanged
         assertEquals(EntityBindingsMapper.mapper.readTree(originalJson), EntityBindingsMapper.mapper.readTree(json));
     }
+
+
 
 }

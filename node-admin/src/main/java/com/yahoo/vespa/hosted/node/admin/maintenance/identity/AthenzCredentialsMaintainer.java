@@ -363,8 +363,13 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
     Get the document version to ask for
      */
     private int documentVersion(NodeAgentContext context) {
+        var version = context.node().currentVespaVersion()
+                .orElse(context.node().wantedVespaVersion().orElse(Version.emptyVersion));
+        var appId = context.node().owner().orElse(ApplicationId.defaultId());
         return useNewIdentityDocumentLayout
                 .with(FetchVector.Dimension.HOSTNAME, context.hostname().value())
+                .with(FetchVector.Dimension.VESPA_VERSION, version.toFullString())
+                .with(FetchVector.Dimension.APPLICATION_ID, appId.serializedForm())
                 .value()
                 ? SignedIdentityDocument.DEFAULT_DOCUMENT_VERSION
                 : SignedIdentityDocument.LEGACY_DEFAULT_DOCUMENT_VERSION;

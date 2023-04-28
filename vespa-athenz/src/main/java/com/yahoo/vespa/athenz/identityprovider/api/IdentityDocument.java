@@ -6,7 +6,9 @@ import com.yahoo.vespa.athenz.api.AthenzService;
 
 import java.time.Instant;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -16,7 +18,7 @@ import java.util.Set;
 public record IdentityDocument(VespaUniqueInstanceId providerUniqueId, AthenzService providerService, String configServerHostname,
                                String instanceHostname, Instant createdAt, Set<String> ipAddresses,
                                IdentityType identityType, ClusterType clusterType, String ztsUrl,
-                               AthenzIdentity serviceIdentity, Map<String, Object> unknownAttributes) {
+                               AthenzIdentity serviceIdentity, List<String> roles, Map<String, Object> unknownAttributes) {
 
     public IdentityDocument {
         ipAddresses = Set.copyOf(ipAddresses);
@@ -27,13 +29,14 @@ public record IdentityDocument(VespaUniqueInstanceId providerUniqueId, AthenzSer
         });
         // Map.copyOf() does not allow null values
         unknownAttributes = Map.copyOf(nonNull);
+        roles = Optional.ofNullable(roles).orElse(List.of());
     }
 
     public IdentityDocument(VespaUniqueInstanceId providerUniqueId, AthenzService providerService, String configServerHostname,
                             String instanceHostname, Instant createdAt, Set<String> ipAddresses,
                             IdentityType identityType, ClusterType clusterType, String ztsUrl,
-                            AthenzIdentity serviceIdentity) {
-        this(providerUniqueId, providerService, configServerHostname, instanceHostname, createdAt, ipAddresses, identityType, clusterType, ztsUrl, serviceIdentity, Map.of());
+                            AthenzIdentity serviceIdentity, List<String> roles) {
+        this(providerUniqueId, providerService, configServerHostname, instanceHostname, createdAt, ipAddresses, identityType, clusterType, ztsUrl, serviceIdentity, roles, Map.of());
     }
 
 
@@ -49,6 +52,7 @@ public record IdentityDocument(VespaUniqueInstanceId providerUniqueId, AthenzSer
                 this.clusterType,
                 this.ztsUrl,
                 athenzService,
+                roles,
                 this.unknownAttributes);
     }
 }
