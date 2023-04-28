@@ -7,6 +7,7 @@ import com.yahoo.vespa.athenz.identity.ServiceIdentityProvider;
 import com.yahoo.vespa.athenz.identityprovider.api.EntityBindingsMapper;
 import com.yahoo.vespa.athenz.identityprovider.api.IdentityDocumentClient;
 import com.yahoo.vespa.athenz.identityprovider.api.SignedIdentityDocument;
+import com.yahoo.vespa.athenz.identityprovider.api.bindings.RolesEntity;
 import com.yahoo.vespa.athenz.identityprovider.api.bindings.SignedIdentityDocumentEntity;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -23,6 +24,7 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.URI;
 import java.time.Duration;
+import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
 
@@ -64,6 +66,39 @@ public class DefaultIdentityDocumentClient implements IdentityDocumentClient {
     @Override
     public Optional<SignedIdentityDocument> getTenantIdentityDocument(String host, int documentVersion) {
         return getIdentityDocument(host, "tenant", documentVersion);
+    }
+
+    @Override
+    public List<String> getNodeRoles(String hostname) {
+        try (var client = createHttpClient(sslContextSupplier.get(), hostnameVerifier)) {
+            var uri = configserverUri
+                    .resolve(IDENTITY_DOCUMENT_API)
+                    .resolve("roles/")
+                    .resolve(hostname);
+
+            var request = RequestBuilder.get()
+                    .setUri(uri)
+                    .addHeader("Connection", "close")
+                    .addHeader("Accept", "application/json")
+                    .build();
+            try (var response = client.execute(request)) {
+                String responseContent = EntityUtils.toString(response.getEntity());
+                int statusCode = response.getStatusLine().getStatusCode();
+                if (statusCode >= 200 && statusCode <= 299) {
+                    var rolesEntity = objectMapper.readValue(responseContent, RolesEntity.class);
+                    return rolesEntity.roles();
+                } else {
+                    throw new RuntimeException(
+                            String.format(
+                                    "Failed to retrieve roles for host %s: %d - %s",
+                                    hostname,
+                                    statusCode,
+                                    responseContent));
+                }
+            }
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 
     private Optional<SignedIdentityDocument> getIdentityDocument(String host, String type, int documentVersion) {
