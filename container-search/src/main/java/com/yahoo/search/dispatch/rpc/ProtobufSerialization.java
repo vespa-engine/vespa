@@ -6,6 +6,7 @@ import ai.vespa.searchlib.searchprotocol.protobuf.SearchProtocol.StringProperty;
 import ai.vespa.searchlib.searchprotocol.protobuf.SearchProtocol.TensorProperty;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.InvalidProtocolBufferException;
+import com.yahoo.data.access.helpers.MatchFeatureData;
 import com.yahoo.data.access.simple.Value;
 import com.yahoo.data.access.slime.SlimeAdapter;
 import com.yahoo.fs4.GetDocSumsPacket;
