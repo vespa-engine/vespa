@@ -41,8 +41,16 @@ public class Size {
         return value;
     }
 
+    public String toFileContent() { return toString() + '\n'; }
+
     @Override
     public String toString() { return max ? MAX : Long.toString(value); }
+
+    public boolean isGreaterThan(Size that) {
+        if (that.max) return false;
+        if (this.max) return true;
+        return this.value > that.value;
+    }
 
     @Override
     public boolean equals(Object o) {

@@ -104,6 +104,18 @@ public class UnixPath {
         return uncheck(() -> Files.readAllLines(path));
     }
 
+    /** Create an empty file and return true, or false if the file already exists (the file may not be regular). */
+    public boolean touch() {
+        try {
+            Files.createFile(path);
+            return true;
+        } catch (FileAlreadyExistsException ignored) {
+            return false;
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
     public UnixPath writeUtf8File(String content, OpenOption... options) {
         return writeBytes(content.getBytes(StandardCharsets.UTF_8), options);
     }
@@ -214,15 +226,16 @@ public class UnixPath {
         return this;
     }
 
-    /** Create directory with given permissions, unless it already exists, and return this. */
-    public UnixPath createDirectory(String... permissions) {
+    /** Create directory with given permissions and return true, or false if it already exists. */
+    public boolean createDirectory(String... permissions) {
         try {
             Files.createDirectory(path, permissionsAsFileAttributes(permissions));
         } catch (FileAlreadyExistsException ignore) {
+            return false;
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
-        return this;
+        return true;
     }
 
     public UnixPath createDirectories(String... permissions) {

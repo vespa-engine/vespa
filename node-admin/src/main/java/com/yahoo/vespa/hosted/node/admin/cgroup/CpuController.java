@@ -2,28 +2,24 @@
 package com.yahoo.vespa.hosted.node.admin.cgroup;
 
 import com.yahoo.collections.Pair;
-import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContext;
-import com.yahoo.vespa.hosted.node.admin.task.util.file.UnixPath;
+import com.yahoo.vespa.hosted.node.admin.component.TaskContext;
 
 import java.util.Arrays;
 import java.util.Map;
 import java.util.Optional;
-import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 import static java.lang.Integer.parseInt;
 
 /**
- * Represents a cgroup v2 CPU controller, i.e. all files named cpu.*
+ * Represents a cgroup v2 CPU controller, i.e. all cpu.* files.
  *
  * @author hakonhall
  */
 public class CpuController {
-    private static final Logger logger = Logger.getLogger(CpuController.class.getName());
+    private final Cgroup cgroup;
 
-    private final ControlGroup cgroup;
-
-    CpuController(ControlGroup cgroup) {
+    CpuController(Cgroup cgroup) {
         this.cgroup = cgroup;
     }
 
@@ -32,7 +28,7 @@ public class CpuController {
      * up to QUOTA in each PERIOD duration. A quota of "max" indicates no limit.
      */
     public record Max(Size quota, int period) {
-        public String toFileContent() { return quota + " " + period; }
+        public String toFileContent() { return quota + " " + period + '\n'; }
     }
 
     /**
@@ -41,9 +37,7 @@ public class CpuController {
      * @see Max
      */
     public Optional<Max> readMax() {
-        return cgroup.unixPath()
-                     .resolve("cpu.max")
-                     .readUtf8FileIfExists()
+        return cgroup.readIfExists("cpu.max")
                      .map(content -> {
                          String[] parts = content.strip().split(" ");
                          return new Max(Size.from(parts[0]), parseInt(parts[1]));
@@ -56,17 +50,14 @@ public class CpuController {
      * @see #readMax()
      * @see Max
      */
-    public boolean updateMax(NodeAgentContext context, int quota, int period) {
+    public boolean updateMax(TaskContext context, int quota, int period) {
         Max max = new Max(quota < 0 ? Size.max() : Size.from(quota), period);
-        return convergeFileContent(context, "cpu.max", max.toFileContent());
+        return cgroup.convergeFileContent(context, "cpu.max", max.toFileContent(), true);
     }
 
     /** @return The weight in the range [1, 10000], or empty if not found. */
     private Optional<Integer> readWeight() {
-        return cgroup.unixPath()
-                     .resolve("cpu.weight")
-                     .readUtf8FileIfExists()
-                     .map(content -> parseInt(content.strip()));
+        return cgroup.readIntIfExists("cpu.weight");
     }
 
     /** @return The number of shares allocated to this cgroup for purposes of CPU time scheduling, or empty if not found. */
@@ -74,24 +65,14 @@ public class CpuController {
         return readWeight().map(CpuController::weightToShares);
     }
 
-    public boolean updateShares(NodeAgentContext context, int shares) {
-        return convergeFileContent(context, "cpu.weight", Integer.toString(sharesToWeight(shares)));
+    public boolean updateShares(TaskContext context, int shares) {
+        return cgroup.convergeFileContent(context, "cpu.weight", sharesToWeight(shares) + "\n", true);
     }
 
     // Must be same as in crun: https://github.com/containers/crun/blob/72c6e60ade0e4716fe2d8353f0d97d72cc8d1510/src/libcrun/cgroup.c#L3061
     // TODO: Migrate to weights
     public static int sharesToWeight(int shares) { return (int) (1 + ((shares - 2L) * 9999) / 262142); }
     public static int weightToShares(int weight) { return (int) (2 + ((weight - 1L) * 262142) / 9999); }
-
-    private boolean convergeFileContent(NodeAgentContext context, String filename, String content) {
-        UnixPath path = cgroup.unixPath().resolve(filename);
-        String currentContent = path.readUtf8File().strip();
-        if (currentContent.equals(content)) return false;
-
-        context.recordSystemModification(logger, "Updating " + path + " from " + currentContent + " to " + content);
-        path.writeUtf8File(content);
-        return true;
-    }
 
     public enum StatField {
         TOTAL_USAGE_USEC("usage_usec"),
@@ -119,9 +100,7 @@ public class CpuController {
     }
 
     public Map<StatField, Long> readStats() {
-        return cgroup.unixPath()
-                     .resolve("cpu.stat")
-                     .readAllLines()
+        return cgroup.readLines("cpu.stat")
                      .stream()
                      .map(line -> line.split("\\s+"))
                      .filter(parts -> parts.length == 2)

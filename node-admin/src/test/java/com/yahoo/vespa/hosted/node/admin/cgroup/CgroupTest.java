@@ -30,12 +30,12 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /**
  * @author freva
  */
-public class ControlGroupTest {
+public class CgroupTest {
 
     private static final ContainerId containerId = new ContainerId("4aec78cc");
 
     private final FileSystem fileSystem = TestFileSystem.create();
-    private final ControlGroup containerCgroup = ControlGroup.root(fileSystem).resolveContainer(containerId);
+    private final Cgroup containerCgroup = Cgroup.root(fileSystem).resolveContainer(containerId);
     private final CpuController containerCpu = containerCgroup.cpu();
     private final NodeAgentContext context = NodeAgentContextImpl.builder("node123.yahoo.com").fileSystem(fileSystem).build();
     private final UnixPath cgroupRoot = new UnixPath(fileSystem.getPath("/sys/fs/cgroup/machine.slice/libpod-4aec78cc.scope/container")).createDirectories();
@@ -54,11 +54,11 @@ public class ControlGroupTest {
 
         assertTrue(containerCgroup.cpu().updateMax(context, 654, 123456));
         assertEquals(Optional.of(new CpuController.Max(Size.from(654), 123456)), containerCpu.readMax());
-        assertEquals("654 123456", cgroupRoot.resolve("cpu.max").readUtf8File());
+        assertEquals("654 123456\n", cgroupRoot.resolve("cpu.max").readUtf8File());
 
         assertTrue(containerCgroup.cpu().updateMax(context, -1, 123456));
         assertEquals(Optional.of(new CpuController.Max(Size.max(), 123456)), containerCpu.readMax());
-        assertEquals("max 123456", cgroupRoot.resolve("cpu.max").readUtf8File());
+        assertEquals("max 123456\n", cgroupRoot.resolve("cpu.max").readUtf8File());
     }
 
     @Test

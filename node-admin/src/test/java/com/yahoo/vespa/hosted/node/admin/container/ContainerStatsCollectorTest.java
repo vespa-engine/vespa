@@ -1,7 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.container;
 
-import com.yahoo.vespa.hosted.node.admin.cgroup.ControlGroup;
+import com.yahoo.vespa.hosted.node.admin.cgroup.Cgroup;
 import com.yahoo.vespa.hosted.node.admin.cgroup.Size;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContext;
@@ -40,7 +40,7 @@ public class ContainerStatsCollectorTest {
     private final TestTerminal testTerminal = new TestTerminal();
     private final ContainerEngineMock containerEngine = new ContainerEngineMock(testTerminal);
     private final FileSystem fileSystem = TestFileSystem.create();
-    private final ControlGroup cgroup = mock(ControlGroup.class, Answers.RETURNS_DEEP_STUBS);
+    private final Cgroup cgroup = mock(Cgroup.class, Answers.RETURNS_DEEP_STUBS);
     private final NodeAgentContext context = NodeAgentContextImpl.builder(NodeSpec.Builder.testSpec("c1").build())
                                                                  .fileSystem(TestFileSystem.create())
                                                                  .build();

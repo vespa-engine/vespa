@@ -1,7 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.container;
 
-import com.yahoo.vespa.hosted.node.admin.cgroup.ControlGroup;
+import com.yahoo.vespa.hosted.node.admin.cgroup.Cgroup;
 import com.yahoo.vespa.hosted.node.admin.cgroup.CpuController;
 import com.yahoo.vespa.hosted.node.admin.cgroup.Size;
 import com.yahoo.vespa.hosted.node.admin.cgroup.MemoryController;
@@ -32,14 +32,14 @@ class ContainerStatsCollector {
 
     private final ContainerEngine containerEngine;
     private final FileSystem fileSystem;
-    private final ControlGroup rootCgroup;
+    private final Cgroup rootCgroup;
     private final int onlineCpus;
 
-    ContainerStatsCollector(ContainerEngine containerEngine, ControlGroup rootCgroup, FileSystem fileSystem) {
+    ContainerStatsCollector(ContainerEngine containerEngine, Cgroup rootCgroup, FileSystem fileSystem) {
         this(containerEngine, rootCgroup, fileSystem, Runtime.getRuntime().availableProcessors());
     }
 
-    ContainerStatsCollector(ContainerEngine containerEngine, ControlGroup rootCgroup, FileSystem fileSystem, int onlineCpus) {
+    ContainerStatsCollector(ContainerEngine containerEngine, Cgroup rootCgroup, FileSystem fileSystem, int onlineCpus) {
         this.containerEngine = Objects.requireNonNull(containerEngine);
         this.fileSystem = Objects.requireNonNull(fileSystem);
         this.rootCgroup = Objects.requireNonNull(rootCgroup);

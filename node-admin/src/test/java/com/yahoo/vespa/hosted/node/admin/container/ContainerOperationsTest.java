@@ -2,7 +2,7 @@
 package com.yahoo.vespa.hosted.node.admin.container;
 
 import com.yahoo.config.provision.DockerImage;
-import com.yahoo.vespa.hosted.node.admin.cgroup.ControlGroup;
+import com.yahoo.vespa.hosted.node.admin.cgroup.Cgroup;
 import com.yahoo.vespa.hosted.node.admin.component.TestTaskContext;
 import com.yahoo.vespa.test.file.TestFileSystem;
 import org.junit.jupiter.api.Test;
@@ -26,7 +26,7 @@ public class ContainerOperationsTest {
     private final TestTaskContext context = new TestTaskContext();
     private final ContainerEngineMock containerEngine = new ContainerEngineMock();
     private final FileSystem fileSystem = TestFileSystem.create();
-    private final ContainerOperations containerOperations = new ContainerOperations(containerEngine, mock(ControlGroup.class), fileSystem);
+    private final ContainerOperations containerOperations = new ContainerOperations(containerEngine, mock(Cgroup.class), fileSystem);
 
     @Test
     void no_managed_containers_running() {
