@@ -171,7 +171,9 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
                 }
             }
 
-            modified |= maintainRoleCertificates(context, siaDirectory, privateKeyFile, certificateFile, athenzIdentity, doc.identityDocument());
+            if (identityType == TENANT) {
+                modified |= maintainRoleCertificates(context, siaDirectory, privateKeyFile, certificateFile, athenzIdentity, doc.identityDocument());
+            }
             return modified;
         } catch (IOException e) {
             throw new UncheckedIOException(e);
