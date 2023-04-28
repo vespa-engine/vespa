@@ -289,7 +289,7 @@ public abstract class ContainerCluster<CONTAINER extends Container>
         return componentGroup.removeComponent(componentId);
     }
 
-    protected void addSimpleComponent(Class<?> clazz) {
+    public void addSimpleComponent(Class<?> clazz) {
         addSimpleComponent(clazz.getName());
     }
 
