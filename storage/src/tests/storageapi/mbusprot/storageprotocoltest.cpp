@@ -29,6 +29,8 @@ using namespace ::testing;
 
 using std::shared_ptr;
 using document::BucketSpace;
+using document::Bucket;
+using document::BucketId;
 using document::ByteBuffer;
 using document::Document;
 using document::DocumentId;
@@ -127,7 +129,8 @@ TEST_F(StorageProtocolTest, testAddress50) {
                          address.to_mbus_route().toString());
 }
 
-template<typename Command> std::shared_ptr<Command>
+template <typename Command>
+std::shared_ptr<Command>
 StorageProtocolTest::copyCommand(const std::shared_ptr<Command>& m)
 {
     auto mbusMessage = std::make_unique<mbusprot::StorageCommand>(m);
@@ -145,7 +148,8 @@ StorageProtocolTest::copyCommand(const std::shared_ptr<Command>& m)
     return std::dynamic_pointer_cast<Command>(internalMessage);
 }
 
-template<typename Reply> std::shared_ptr<Reply>
+template <typename Reply>
+std::shared_ptr<Reply>
 StorageProtocolTest::copyReply(const std::shared_ptr<Reply>& m)
 {
     auto mbusMessage = std::make_unique<mbusprot::StorageReply>(m);
@@ -222,28 +226,36 @@ TEST_P(StorageProtocolTest, all_zero_bucket_info_is_propagated) {
 
 TEST_P(StorageProtocolTest, request_metadata_is_propagated) {
     auto cmd = std::make_shared<PutCommand>(_bucket, _testDoc, 14);
-    cmd->forceMsgId(12345);
+    const auto sender_internal_msg_id = cmd->getMsgId();
     cmd->setPriority(50);
     cmd->setSourceIndex(321);
     auto cmd2 = copyCommand(cmd);
-    EXPECT_EQ(12345, cmd2->getMsgId());
+    EXPECT_EQ(cmd2->originator_msg_id(), sender_internal_msg_id);
     EXPECT_EQ(50, cmd2->getPriority());
     EXPECT_EQ(321, cmd2->getSourceIndex());
+    // The new message should get new _internal_ message ID
+    EXPECT_NE(cmd2->getMsgId(), sender_internal_msg_id);
 }
 
 TEST_P(StorageProtocolTest, response_metadata_is_propagated) {
     auto cmd = std::make_shared<PutCommand>(_bucket, _testDoc, 14);
+    const auto cmd_internal_msg_id = cmd->getMsgId();
     auto cmd2 = copyCommand(cmd);
-    auto reply = std::make_shared<PutReply>(*cmd2);
-    reply->forceMsgId(1234);
+    auto reply = std::make_shared<PutReply>(*cmd2); // Transitively inherits originator message ID from cmd
     reply->setPriority(101);
     ReturnCode result(ReturnCode::TEST_AND_SET_CONDITION_FAILED, "foo is not bar");
     reply->setResult(result);
 
     auto reply2 = copyReply(reply);
     EXPECT_EQ(result, reply2->getResult());
-    EXPECT_EQ(1234, reply->getMsgId());
-    EXPECT_EQ(101, reply->getPriority());
+    // Replies inherit the message ID from the command they are created for. In the current protocol
+    // implementation we implicitly set the reply's message ID directly from the command associated
+    // with the send-state, but older versions set it from what arrives over the wire.
+    // The originator ID is thus not actually used by us, but we set and check it here just to ensure we
+    // still propagate it back correctly over the wire (in the glorious name of backwards compatibility).
+    EXPECT_EQ(reply2->getMsgId(), cmd_internal_msg_id);
+    EXPECT_EQ(reply2->originator_msg_id(), cmd_internal_msg_id);
+    EXPECT_EQ(reply2->getPriority(), 101);
 }
 
 TEST_P(StorageProtocolTest, update) {
@@ -847,25 +859,28 @@ TEST_P(StorageProtocolTest, serialized_size_is_used_to_set_approx_size_of_storag
 }
 
 TEST_P(StorageProtocolTest, track_memory_footprint_for_some_messages) {
-    EXPECT_EQ(72u, sizeof(StorageMessage));
-    EXPECT_EQ(88u, sizeof(StorageReply));
-    EXPECT_EQ(112u, sizeof(BucketReply));
-    EXPECT_EQ(8u, sizeof(document::BucketId));
-    EXPECT_EQ(16u, sizeof(document::Bucket));
-    EXPECT_EQ(32u, sizeof(BucketInfo));
-    EXPECT_EQ(144u, sizeof(BucketInfoReply));
-    EXPECT_EQ(288u, sizeof(PutReply));
-    EXPECT_EQ(272u, sizeof(UpdateReply));
-    EXPECT_EQ(264u, sizeof(RemoveReply));
-    EXPECT_EQ(352u, sizeof(GetReply));
-    EXPECT_EQ(88u, sizeof(StorageCommand));
-    EXPECT_EQ(112u, sizeof(BucketCommand));
-    EXPECT_EQ(112u, sizeof(BucketInfoCommand));
-    EXPECT_EQ(112u + sizeof(vespalib::string), sizeof(TestAndSetCommand));
-    EXPECT_EQ(144u + sizeof(vespalib::string), sizeof(PutCommand));
-    EXPECT_EQ(144u + sizeof(vespalib::string), sizeof(UpdateCommand));
-    EXPECT_EQ(224u + sizeof(vespalib::string), sizeof(RemoveCommand));
-    EXPECT_EQ(296u + sizeof(documentapi::TestAndSetCondition), sizeof(GetCommand));
+    constexpr size_t msg_baseline   = 80u;
+    constexpr size_t reply_baseline = 96;
+
+    EXPECT_EQ(sizeof(StorageMessage),    msg_baseline);
+    EXPECT_EQ(sizeof(StorageReply),      reply_baseline);
+    EXPECT_EQ(sizeof(BucketReply),       reply_baseline + 24);
+    EXPECT_EQ(sizeof(BucketId),          8);
+    EXPECT_EQ(sizeof(Bucket),            16);
+    EXPECT_EQ(sizeof(BucketInfo),        32);
+    EXPECT_EQ(sizeof(BucketInfoReply),   reply_baseline + 56);
+    EXPECT_EQ(sizeof(PutReply),          reply_baseline + 200);
+    EXPECT_EQ(sizeof(UpdateReply),       reply_baseline + 184);
+    EXPECT_EQ(sizeof(RemoveReply),       reply_baseline + 176);
+    EXPECT_EQ(sizeof(GetReply),          reply_baseline + 264);
+    EXPECT_EQ(sizeof(StorageCommand),    msg_baseline   + 16);
+    EXPECT_EQ(sizeof(BucketCommand),     sizeof(StorageCommand) + 24);
+    EXPECT_EQ(sizeof(BucketInfoCommand), sizeof(BucketCommand));
+    EXPECT_EQ(sizeof(TestAndSetCommand), sizeof(BucketInfoCommand) + sizeof(vespalib::string));
+    EXPECT_EQ(sizeof(PutCommand),        sizeof(TestAndSetCommand) + 32);
+    EXPECT_EQ(sizeof(UpdateCommand),     sizeof(TestAndSetCommand) + 32);
+    EXPECT_EQ(sizeof(RemoveCommand),     sizeof(TestAndSetCommand) + 112);
+    EXPECT_EQ(sizeof(GetCommand),        sizeof(BucketInfoCommand) + sizeof(TestAndSetCondition) + 184);
 }
 
 } // storage::api

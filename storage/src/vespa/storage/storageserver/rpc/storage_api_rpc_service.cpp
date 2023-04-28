@@ -290,6 +290,7 @@ void StorageApiRpcService::RequestDone(FRT_RPCRequest* raw_req) {
     // TODO the reply wrapper does lazy deserialization. Can we/should we ever defer?
     auto reply = wrapped_reply->getInternalMessage(); // TODO message stealing
     assert(reply);
+    assert(reply->getMsgId() == cmd.getMsgId());
 
     if (!hdr.trace_payload().empty()) {
         cmd.getTrace().addChild(mbus::TraceNode::decode(hdr.trace_payload()));

@@ -236,9 +236,10 @@ StorageMessage::generateMsgId() noexcept
     return _G_lastMsgId.fetch_add(1, std::memory_order_relaxed);
 }
 
-StorageMessage::StorageMessage(const MessageType& type, Id id) noexcept
+StorageMessage::StorageMessage(const MessageType& type, Id internal_id, Id originator_id) noexcept
     : _type(type),
-      _msgId(id),
+      _internal_msg_id(internal_id),
+      _originator_msg_id(originator_id),
       _address(),
       _trace(),
       _approxByteSize(50),
@@ -246,9 +247,10 @@ StorageMessage::StorageMessage(const MessageType& type, Id id) noexcept
 {
 }
 
-StorageMessage::StorageMessage(const StorageMessage& other, Id id) noexcept
+StorageMessage::StorageMessage(const StorageMessage& other, Id internal_id, Id originator_id) noexcept
     : _type(other._type),
-      _msgId(id),
+      _internal_msg_id(internal_id),
+      _originator_msg_id(originator_id),
       _address(),
       _trace(other.getTrace().getLevel()),
       _approxByteSize(other._approxByteSize),

@@ -88,7 +88,7 @@ std::shared_ptr<document::Document> get_document(const protobuf::Document& src_d
         vespalib::nbostream doc_buf(src_doc.payload().data(), src_doc.payload().size());
         return std::make_shared<document::Document>(type_repo, doc_buf);
     }
-    return std::shared_ptr<document::Document>();
+    return {};
 }
 
 void set_update(protobuf::Update& dest, const document::DocumentUpdate& src) {
@@ -104,12 +104,17 @@ std::shared_ptr<document::DocumentUpdate> get_update(const protobuf::Update& src
         return document::DocumentUpdate::createHEAD(
                 type_repo, vespalib::nbostream(src.payload().data(), src.payload().size()));
     }
-    return std::shared_ptr<document::DocumentUpdate>();
+    return {};
 }
 
 void write_request_header(vespalib::GrowableByteBuffer& buf, const api::StorageCommand& cmd) {
     protobuf::RequestHeader hdr; // Arena alloc not needed since there are no nested messages
-    hdr.set_message_id(cmd.getMsgId());
+    // TODO deprecate this field entirely; we already match replies with their originating command
+    //   on the sender and set the reply's message ID from that command directly. There's therefore
+    //   no need to redundantly carry this on the wire as well.
+    //   Important: cannot be deprecated until there are no nodes using this value verbatim as the
+    //              internal message ID!
+    hdr.set_message_id(cmd.getMsgId()); // This is _our_ process-internal message ID
     hdr.set_priority(cmd.getPriority());
     hdr.set_source_index(cmd.getSourceIndex());
 
@@ -129,7 +134,8 @@ void write_response_header(vespalib::GrowableByteBuffer& buf, const api::Storage
     if (!result.getMessage().empty()) {
         hdr.set_return_code_message(result.getMessage().data(), result.getMessage().size());
     }
-    hdr.set_message_id(reply.getMsgId());
+    // TODO deprecate this field entirely
+    hdr.set_message_id(reply.originator_msg_id()); // This is the _peer's_ process-internal message ID
     hdr.set_priority(reply.getPriority());
 
     const auto header_size = hdr.ByteSizeLong();
@@ -227,11 +233,11 @@ public:
 
 template <typename ProtobufType>
 class RequestDecoder {
-    protobuf::RequestHeader         _hdr;
-    ::google::protobuf::Arena       _arena;
-    ProtobufType*                   _proto_obj;
+    protobuf::RequestHeader   _hdr;
+    ::google::protobuf::Arena _arena;
+    ProtobufType*             _proto_obj;
 public:
-    RequestDecoder(document::ByteBuffer& in_buf)
+    explicit RequestDecoder(document::ByteBuffer& in_buf)
         : _arena(),
           _proto_obj(::google::protobuf::Arena::Create<ProtobufType>(&_arena))
     {
@@ -246,7 +252,7 @@ public:
     }
 
     void transfer_meta_information_to(api::StorageCommand& dest) {
-        dest.forceMsgId(_hdr.message_id());
+        dest.force_originator_msg_id(_hdr.message_id()); // TODO deprecate
         dest.setPriority(static_cast<uint8_t>(_hdr.priority()));
         dest.setSourceIndex(static_cast<uint16_t>(_hdr.source_index()));
     }
@@ -276,7 +282,9 @@ public:
     }
 
     void transfer_meta_information_to(api::StorageReply& dest) {
-        dest.forceMsgId(_hdr.message_id());
+        // TODO deprecate this; not currently used internally (message ID is explicitly set
+        //  from the originator command instance)
+        dest.force_originator_msg_id(_hdr.message_id());
         dest.setPriority(static_cast<uint8_t>(_hdr.priority()));
         dest.setResult(api::ReturnCode(static_cast<api::ReturnCode::Result>(_hdr.return_code_id()),
                                        _hdr.return_code_message()));
