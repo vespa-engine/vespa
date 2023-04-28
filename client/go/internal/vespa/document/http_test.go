@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"net/url"
 	"reflect"
 	"strings"
 	"testing"
@@ -109,7 +108,7 @@ func TestClientSend(t *testing.T) {
 		if r.Method != http.MethodPut {
 			t.Errorf("got r.Method = %q, want %q", r.Method, http.MethodPut)
 		}
-		wantURL := fmt.Sprintf("https://example.com:1337/document/v1/ns/type/docid/%s?create=true&timeout=5000ms", doc.Id.UserSpecific)
+		wantURL := fmt.Sprintf("https://example.com:1337/document/v1/ns/type/docid/%s?timeout=5000ms&create=true", doc.Id.UserSpecific)
 		if r.URL.String() != wantURL {
 			t.Errorf("got r.URL = %q, want %q", r.URL, wantURL)
 		}
@@ -191,72 +190,53 @@ func assertCompressedRequest(t *testing.T, want bool, request *http.Request) {
 	}
 }
 
-func TestURLPath(t *testing.T) {
+func TestClientMethodAndURL(t *testing.T) {
 	tests := []struct {
-		in  Id
-		out string
+		in      Document
+		options ClientOptions
+		method  string
+		url     string
 	}{
 		{
-			Id{
-				Namespace:    "ns-with-/",
-				Type:         "type-with-/",
-				UserSpecific: "user",
+			Document{
+				Id: mustParseId("id:ns:type:n=123:user"),
 			},
-			"/document/v1/ns-with-%2F/type-with-%2F/docid/user",
-		},
-		{
-			Id{
-				Namespace:    "ns",
-				Type:         "type",
-				Number:       ptr(int64(123)),
-				UserSpecific: "user",
-			},
-			"/document/v1/ns/type/number/123/user",
-		},
-		{
-			Id{
-				Namespace:    "ns",
-				Type:         "type",
-				Group:        "foo",
-				UserSpecific: "user",
-			},
-			"/document/v1/ns/type/group/foo/user",
-		},
-		{
-			Id{
-				Namespace:    "ns",
-				Type:         "type",
-				UserSpecific: "user::specific",
-			},
-			"/document/v1/ns/type/docid/user::specific",
-		},
-		{
-			Id{
-				Namespace:    "ns",
-				Type:         "type",
-				UserSpecific: ":",
-			},
-			"/document/v1/ns/type/docid/:",
-		},
-	}
-	for i, tt := range tests {
-		path := urlPath(tt.in)
-		if path != tt.out {
-			t.Errorf("#%d: documentPath(%q) = %s, want %s", i, tt.in, path, tt.out)
-		}
-	}
-}
-
-func TestClientFeedURL(t *testing.T) {
-	tests := []struct {
-		in     Document
-		method string
-		url    string
-	}{
-		{
-			Document{Id: mustParseId("id:ns:type::user")},
+			ClientOptions{},
 			"POST",
-			"https://example.com/document/v1/ns/type/docid/user?foo=ba%2Fr",
+			"https://example.com/document/v1/ns/type/number/123/user",
+		},
+		{
+			Document{
+				Id: mustParseId("id:ns:type:g=foo:user"),
+			},
+			ClientOptions{},
+			"POST",
+			"https://example.com/document/v1/ns/type/group/foo/user",
+		},
+		{
+			Document{
+				Id: mustParseId("id:ns:type::user::specific"),
+			},
+			ClientOptions{},
+			"POST",
+			"https://example.com/document/v1/ns/type/docid/user::specific",
+		},
+		{
+			Document{
+				Id: mustParseId("id:ns:type:::"),
+			},
+			ClientOptions{Route: "elsewhere"},
+			"POST",
+			"https://example.com/document/v1/ns/type/docid/:?route=elsewhere",
+		},
+		{
+			Document{
+				Id:        mustParseId("id:ns:type-with-/::user"),
+				Condition: "foo/bar",
+			},
+			ClientOptions{},
+			"POST",
+			"https://example.com/document/v1/ns/type-with-%2F/docid/user?condition=foo%2Fbar",
 		},
 		{
 			Document{
@@ -265,28 +245,31 @@ func TestClientFeedURL(t *testing.T) {
 				Create:    true,
 				Condition: "false",
 			},
+			ClientOptions{Timeout: 10 * time.Second, TraceLevel: 5},
 			"PUT",
-			"https://example.com/document/v1/ns/type/docid/user?condition=false&create=true&foo=ba%2Fr",
+			"https://example.com/document/v1/ns/type/docid/user?timeout=10000ms&tracelevel=5&condition=false&create=true",
 		},
 		{
 			Document{
 				Id:        mustParseId("id:ns:type::user"),
 				Operation: OperationRemove,
 			},
+			ClientOptions{},
 			"DELETE",
-			"https://example.com/document/v1/ns/type/docid/user?foo=ba%2Fr",
+			"https://example.com/document/v1/ns/type/docid/user",
 		},
 	}
 	httpClient := mock.HTTPClient{}
 	client, _ := NewClient(ClientOptions{
-		BaseURL: "https://example.com",
+		BaseURL: "https://example.com/",
 	}, []util.HTTPClient{&httpClient})
 	for i, tt := range tests {
-		moreParams := url.Values{}
-		moreParams.Set("foo", "ba/r")
-		method, u := client.feedURL(tt.in, moreParams)
-		if u.String() != tt.url || method != tt.method {
-			t.Errorf("#%d: URL() = (%s, %s), want (%s, %s)", i, method, u.String(), tt.method, tt.url)
+		client.options.Timeout = tt.options.Timeout
+		client.options.Route = tt.options.Route
+		client.options.TraceLevel = tt.options.TraceLevel
+		method, url := client.methodAndURL(tt.in)
+		if url != tt.url || method != tt.method {
+			t.Errorf("#%d: methodAndURL(doc) = (%s, %s), want (%s, %s)", i, method, url, tt.method, tt.url)
 		}
 	}
 }

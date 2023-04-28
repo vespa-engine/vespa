@@ -86,8 +86,8 @@ func (d *Dispatcher) shouldRetry(op documentOp, result Result) bool {
 		var msg strings.Builder
 		msg.WriteString("feed: ")
 		msg.WriteString(op.document.String())
+		msg.WriteString(" failed: ")
 		if result.Err != nil {
-			msg.WriteString("error ")
 			msg.WriteString(result.Err.Error())
 		} else {
 			msg.WriteString(fmt.Sprintf("status %d", result.HTTPStatus))
