@@ -78,7 +78,7 @@ public class TimeoutManagerImpl {
     private void invokeTimeout(RequestHandler requestHandler, Request request, ResponseHandler responseHandler) {
         try {
             requestHandler.handleTimeout(request, responseHandler);
-        } catch (RuntimeException e) {
+        } catch (Exception e) {
             log.log(Level.WARNING, "Ignoring exception thrown by " + requestHandler.getClass().getName() +
                                    " in timeout manager.", e);
         }
