@@ -4,13 +4,16 @@ schema test {
       indexing: attribute | summary 
     }
   }
-  document-summary mysum {
-    summary id type int {}
-  }
-  rank-profile myrank {
+  rank-profile default {
     first-phase {
       expression: attribute(id) + 10
     }
+  }
+  rank-profile match_features inherits default {
+    function myfunc() {
+      expression: attribute(id) + 20
+    }
+    match-features: attribute(id) myfunc()
   }
 }
 

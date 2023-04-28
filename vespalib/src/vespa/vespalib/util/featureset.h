@@ -27,6 +27,11 @@ public:
               _value(0.0)
         {
         }
+        Value(double value_in) noexcept
+            : _data(),
+              _value(value_in)
+        {
+        }
         bool operator==(const Value &rhs) const {
             return ((_data == rhs._data) && (_value == rhs._value));
         }
