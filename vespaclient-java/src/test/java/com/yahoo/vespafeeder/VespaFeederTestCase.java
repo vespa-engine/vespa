@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 
 import com.yahoo.clientmetrics.RouteMetricSet;
+import com.yahoo.document.DocumentPut;
 import com.yahoo.document.DocumentTypeManager;
 import com.yahoo.document.DocumentTypeManagerConfigurer;
 import com.yahoo.document.DocumentUpdate;
@@ -190,6 +191,8 @@ public class VespaFeederTestCase {
         new VespaFeeder(arguments, f.typeManager).parseFiles(System.in, f.printStream);
 
         assertEquals(3, f.sessionFactory.messages.size());
+        DocumentPut put = ((PutDocumentMessage) f.sessionFactory.messages.get(0)).getDocumentPut();
+        assertTrue(put.getCreateIfNonExistent());
         DocumentUpdate update = ((UpdateDocumentMessage) f.sessionFactory.messages.get(1)).getDocumentUpdate();
         assertTrue(update.getCreateIfNonExistent());
     }
