@@ -11,14 +11,14 @@ namespace {
 }
 
 StorageCommand::StorageCommand(const StorageCommand& other)
-    : StorageMessage(other, generateMsgId()),
+    : StorageMessage(other, generateMsgId(), 0),
       _timeout(other._timeout),
       _sourceIndex(other._sourceIndex)
 {
 }
 
 StorageCommand::StorageCommand(const MessageType& type, Priority p)
-    : StorageMessage(type, generateMsgId()),
+    : StorageMessage(type, generateMsgId(), 0),
       _timeout(MAX_TIMEOUT),
       _sourceIndex(0xFFFF)
 {
@@ -30,8 +30,8 @@ StorageCommand::~StorageCommand() = default;
 void
 StorageCommand::print(std::ostream& out, bool, const std::string&) const
 {
-    out << "StorageCommand(" << _type.getName();
-    if (_priority != NORMAL) out << ", priority = " << static_cast<int>(_priority);
+    out << "StorageCommand(" << getType().getName();
+    if (getPriority() != NORMAL) out << ", priority = " << static_cast<int>(getPriority());
     if (_sourceIndex != 0xFFFF) out << ", source = " << _sourceIndex;
     out << ", timeout = " << vespalib::count_ms(_timeout) << " ms";
     out << ")";

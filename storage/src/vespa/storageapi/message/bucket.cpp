@@ -240,7 +240,7 @@ GetBucketDiffCommand::print(std::ostream& out, bool verbose,
         }
     } else {
         out << ", " << _diff.size() << " entries";
-        out << ", id " << _msgId;
+        out << ", id " << getMsgId();
     }
     out << ")";
     if (verbose) {
@@ -278,7 +278,7 @@ GetBucketDiffReply::print(std::ostream& out, bool verbose,
         }
     } else {
         out << ", " << _diff.size() << " entries";
-        out << ", id " << _msgId;
+        out << ", id " << getMsgId();
     }
     out << ")";
     if (verbose) {
@@ -385,7 +385,7 @@ ApplyBucketDiffCommand::print(std::ostream& out, bool verbose,
         }
     } else {
         out << ", " << _diff.size() << " entries";
-        out << ", id " << _msgId;
+        out << ", id " << getMsgId();
     }
     out << ")";
     if (verbose) {
@@ -430,7 +430,7 @@ ApplyBucketDiffReply::print(std::ostream& out, bool verbose,
         }
     } else {
         out << ", " << _diff.size() << " entries";
-        out << ", id " << _msgId;
+        out << ", id " << getMsgId();
     }
     out << ")";
     if (verbose) {

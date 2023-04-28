@@ -11,7 +11,7 @@ StorageReply::StorageReply(const StorageCommand& cmd)
 {}
 
 StorageReply::StorageReply(const StorageCommand& cmd, ReturnCode code)
-    : StorageMessage(cmd.getType().getReplyType(), cmd.getMsgId()),
+    : StorageMessage(cmd.getType().getReplyType(), cmd.getMsgId(), cmd.originator_msg_id()),
       _result(std::move(code))
 {
     setPriority(cmd.getPriority());
@@ -32,7 +32,7 @@ StorageReply::~StorageReply() = default;
 void
 StorageReply::print(std::ostream& out, bool , const std::string& ) const
 {
-    out << "StorageReply(" << _type.getName() << ", " << _result << ")";
+    out << "StorageReply(" << getType().getName() << ", " << _result << ")";
 }
 
 }

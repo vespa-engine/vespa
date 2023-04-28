@@ -1,13 +1,8 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 /**
- * @class storage::api::StorageCommand
- * @ingroup messageapi
- *
- * @brief Superclass for all storage commands.
+ * Superclass for all storage commands.
  *
  * A storage command is a storage message you will get a storage reply for.
- *
- * @version $Id$
  */
 
 #pragma once
@@ -24,7 +19,7 @@ class StorageCommand : public StorageMessage {
     uint16_t _sourceIndex;
 
 protected:
-    explicit StorageCommand(const StorageCommand& other);
+    StorageCommand(const StorageCommand& other);
     explicit StorageCommand(const MessageType& type, Priority p = NORMAL);
 
 public:
