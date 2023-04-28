@@ -687,6 +687,7 @@ public class DocumentV1ApiTest {
         access.session.expect((put, parameters) -> {
             DocumentPut expectedPut = new DocumentPut(doc2);
             expectedPut.setCondition(new TestAndSetCondition("test it"));
+            expectedPut.setCreateIfNonExistent(true);
             assertEquals(expectedPut, put);
             assertEquals(parameters().withTraceLevel(9), parameters);
             Trace trace = new Trace(9);
@@ -697,7 +698,7 @@ public class DocumentV1ApiTest {
             parameters.responseHandler().get().handleResponse(new DocumentResponse(0, doc2, trace));
             return new Result();
         });
-        response = driver.sendRequest("http://localhost/document/v1/space/music/number/1/two?condition=test%20it&tracelevel=9", POST,
+        response = driver.sendRequest("http://localhost/document/v1/space/music/number/1/two?create=true&condition=test%20it&tracelevel=9", POST,
                                       "{" +
                                       "  \"fields\": {" +
                                       "    \"artist\": \"Asa-Chan & Jun-Ray\"," +

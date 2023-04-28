@@ -460,15 +460,17 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
 
         return new ForwardingContentChannel(in -> {
             enqueueAndDispatch(request, handler, () -> {
-                ParsedDocumentOperation put = parser.parsePut(in, path.id().toString());
-                getProperty(request, CONDITION).map(TestAndSetCondition::new).ifPresent(c -> put.operation().setCondition(c));
+                ParsedDocumentOperation parsed = parser.parsePut(in, path.id().toString());
+                DocumentPut put = (DocumentPut)parsed.operation();
+                getProperty(request, CONDITION).map(TestAndSetCondition::new).ifPresent(c -> put.setCondition(c));
+                getProperty(request, CREATE, booleanParser).ifPresent(put::setCreateIfNonExistent);
                 DocumentOperationParameters parameters = parametersFromRequest(request, ROUTE)
                         .withResponseHandler(response -> {
                             outstanding.decrementAndGet();
-                            updatePutMetrics(response.outcome(), latencyOf(request));
-                            handleFeedOperation(path, put.fullyApplied(), handler, response);
+                            updatePutMetrics(response.outcome(), latencyOf(request), put.getCreateIfNonExistent());
+                            handleFeedOperation(path, parsed.fullyApplied(), handler, response);
                         });
-                return () -> dispatchOperation(() -> asyncSession.put((DocumentPut)put.operation(), parameters));
+                return () -> dispatchOperation(() -> asyncSession.put(put, parameters));
             });
         });
     }
@@ -1091,7 +1093,8 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
 
     private static double latencyOf(HttpRequest r) { return (System.nanoTime() - r.relativeCreatedAtNanoTime()) / 1e+9d; }
 
-    private void updatePutMetrics(Outcome outcome, double latency) {
+    private void updatePutMetrics(Outcome outcome, double latency, boolean create) {
+        if (create && outcome == Outcome.NOT_FOUND) outcome = Outcome.SUCCESS; // >_<
         incrementMetricNumOperations(); incrementMetricNumPuts(); sampleLatency(latency);
         switch (outcome) {
             case SUCCESS -> incrementMetricSucceeded();

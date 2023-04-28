@@ -73,10 +73,13 @@ public class VespaJsonDocumentReader {
             throw JsonReaderException.addDocId(e, documentParseInfo.documentId);
         }
         if (documentParseInfo.create.isPresent()) {
-            if (! (documentOperation instanceof DocumentUpdate update)) {
-                throw new IllegalArgumentException("Could not set create flag on non update operation.");
+            if (documentOperation instanceof DocumentUpdate update) {
+                update.setCreateIfNonExistent(documentParseInfo.create.get());
+            } else if (documentOperation instanceof DocumentPut put) {
+                put.setCreateIfNonExistent(documentParseInfo.create.get());
+            } else {
+                throw new IllegalArgumentException("Could not set create flag on operation.");
             }
-            update.setCreateIfNonExistent(documentParseInfo.create.get());
         }
         return new ParsedDocumentOperation(documentOperation, fullyApplied);
     }

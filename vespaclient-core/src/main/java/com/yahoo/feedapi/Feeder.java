@@ -80,8 +80,13 @@ public abstract class Feeder {
         while (!sender.isAborted()) {
             try {
                 FeedOperation op = reader.read();
-                if (createIfNonExistent && op.getDocumentUpdate() != null) {
-                    op.getDocumentUpdate().setCreateIfNonExistent(true);
+                if (createIfNonExistent) {
+                    if (op.getDocumentUpdate() != null) {
+                        op.getDocumentUpdate().setCreateIfNonExistent(true);
+                    }
+                    if (op.getDocumentPut() != null) {
+                        op.getDocumentPut().setCreateIfNonExistent(true);
+                    }
                 }
                 if (op.getType() == FeedOperation.Type.INVALID) break; // Done feeding
                 sender.sendOperation(op);
