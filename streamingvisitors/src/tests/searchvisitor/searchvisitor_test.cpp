@@ -72,8 +72,8 @@ public:
     RequestBuilder() : _params(), _builder(), _term_id(1)
     {
         search_cluster("mycl");
-        rank_profile("myrank");
-        summary_class("mysum");
+        rank_profile("default");
+        summary_class("default");
         summary_count(10);
     }
     RequestBuilder& set_param(const vespalib::string& key, const vespalib::string& value) {
@@ -222,13 +222,36 @@ expect_summary(const HitVector& exp_summary, documentapi::QueryResultMessage& re
     EXPECT_EQ(exp_summary, to_hit_vector(res.getDocumentSummary()));
 }
 
+void
+expect_match_features(const std::vector<vespalib::string>& exp_names,
+                      const std::vector<vespalib::FeatureSet::Value>& exp_values,
+                      documentapi::QueryResultMessage& res)
+{
+    const auto& mf = res.getSearchResult().get_match_features();
+    EXPECT_EQ(exp_names, mf.names);
+    EXPECT_EQ(exp_values, mf.values);
+}
+
+
 TEST_F(SearchVisitorTest, basic_query_execution_in_search_visitor)
 {
-    auto res = execute_query(RequestBuilder().
-            number_term("[5;10]", "id").build(),
-                        {{3},{7},{4},{5},{9}});
+    auto res = execute_query(RequestBuilder().number_term("[5;10]", "id").build(),
+                             {{3},{7},{4},{5},{9}});
     expect_hits({{9,19.0}, {7,17.0}, {5,15.0}}, *res);
+    // Document summaries are ordered in document id order:
     expect_summary({{5}, {7}, {9}}, *res);
+    expect_match_features({}, {}, *res);
+}
+
+TEST_F(SearchVisitorTest, match_features_returned_in_search_result)
+{
+    auto res = execute_query(RequestBuilder().
+                                     rank_profile("match_features").
+                                     number_term("[5;10]", "id").build(),
+                             {{5},{4},{7}});
+    expect_hits({{7,17.0}, {5,15.0}}, *res);
+    // Raw match features are ordered in matching order.
+    expect_match_features({"attribute(id)", "myfunc"}, {{5.0}, {25.0}, {7.0}, {27.0}}, *res);
 }
 
 TEST_F(SearchVisitorTest, visitor_only_require_weak_read_consistency)

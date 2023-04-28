@@ -23,3 +23,6 @@ mv rank-profiles.cfg rank-profiles.mycl.cfg
 mv summary.cfg summary.mycl.cfg
 mv vsmfields.cfg vsmfields.mycl.cfg
 mv vsmsummary.cfg vsmsummary.mycl.cfg
+
+# Add newline at eof
+for file in *.cfg; do echo >> $file; done
