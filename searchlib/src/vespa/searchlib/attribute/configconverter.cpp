@@ -137,7 +137,7 @@ ConfigConverter::convert(const AttributesConfig::Attribute & cfg)
         case CfgDm::PRENORMALIZED_ANGULAR:
             dm = DistanceMetric::PrenormalizedAngular;
             /*
-        case CfgDm::TRANFORMED_MIPS:
+        case CfgDm::TRANSFORMED_MIPS:
             dm = DistanceMetric::TransformedMips;
             */
             break;
