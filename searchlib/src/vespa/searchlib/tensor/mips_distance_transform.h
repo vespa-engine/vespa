@@ -15,7 +15,7 @@ private:
     std::mutex _lock;
     double _max_sq_norm;
 public:
-    MaximumSquaredNormStore() noexcept : _lock(), _max_sq_norm(0.0) {}
+    MaximumSquaredNormStore() noexcept : _lock(), _max_sq_norm(1.0) {}
     double get_max(double value = 0.0) {
         std::lock_guard<std::mutex> guard(_lock);
         if (value > _max_sq_norm) [[unlikely]] {

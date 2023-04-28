@@ -51,7 +51,9 @@ public:
         double dp = _computer.dotProduct(cast(a), cast(b), rhs.size);
         if constexpr (extra_dim) {
             double rhs_sq_norm = _computer.dotProduct(cast(b), cast(b), rhs.size);
-            double rhs_extra_dim = std::sqrt(_max_sq_norm - rhs_sq_norm);
+	    // avoid sqrt(negative) for robustness:
+            double diff = std::max(0.0, _max_sq_norm - rhs_sq_norm);
+            double rhs_extra_dim = std::sqrt(diff);
             dp += _lhs_extra_dim * rhs_extra_dim;
         }
         return -dp;
