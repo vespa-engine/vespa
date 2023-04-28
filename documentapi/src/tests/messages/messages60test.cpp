@@ -11,9 +11,19 @@
 #include <vespa/documentapi/documentapi.h>
 #include <vespa/document/bucket/fixed_bucket_spaces.h>
 #include <vespa/document/fieldvalue/document.h>
+#include <vespa/vespalib/util/featureset.h>
+#include <vespa/vespalib/test/insertion_operators.h>
 
 using document::DataType;
 using document::DocumentTypeRepo;
+using vespalib::FeatureValues;
+
+namespace {
+
+std::vector<char> doc1_mf_data{'H', 'i'};
+std::vector<char> doc2_mf_data{'T', 'h', 'e', 'r', 'e'};
+
+}
 
 template <typename T>
 struct Unwrap {
@@ -661,6 +671,44 @@ Messages60Test::testQueryResultMessage()
     EXPECT_EQUAL(memcmp("sortdata3", buf, sz), 0);
     EXPECT_EQUAL(rank, vdslib::SearchResult::RankType(90));
     EXPECT_EQUAL(strcmp("doc18", docId), 0);
+
+    QueryResultMessage qrm3;
+    auto& sr3(qrm3.getSearchResult());
+    sr3.addHit(0, "doc1", 5);
+    sr3.addHit(1, "doc2", 7);
+    FeatureValues mf;
+    mf.names.push_back("foo");
+    mf.names.push_back("bar");
+    mf.values.resize(4);
+    mf.values[0].set_double(1.0);
+    mf.values[1].set_data({ doc1_mf_data.data(), doc1_mf_data.size()});
+    mf.values[2].set_double(12.0);
+    mf.values[3].set_data({ doc2_mf_data.data(), doc2_mf_data.size()});
+    sr3.set_match_features(FeatureValues(mf));
+    sr3.sort();
+
+    EXPECT_EQUAL(MESSAGE_BASE_LENGTH + 123u, serialize("QueryResultMessage-6", qrm3));
+    routable = deserialize("QueryResultMessage-6", DocumentProtocol::MESSAGE_QUERYRESULT, LANG_CPP);
+    if (!EXPECT_TRUE(routable)) {
+        return false;
+    }
+    dm = static_cast<QueryResultMessage *>(routable.get());
+    dr = &dm->getSearchResult();
+    EXPECT_EQUAL(size_t(2), dr->getHitCount());
+    dr->getHit(0, docId, rank);
+    EXPECT_EQUAL(vdslib::SearchResult::RankType(7), rank);
+    EXPECT_EQUAL(strcmp("doc2", docId), 0);
+    dr->getHit(1, docId, rank);
+    EXPECT_EQUAL(vdslib::SearchResult::RankType(5), rank);
+    EXPECT_EQUAL(strcmp("doc1", docId), 0);
+    auto mfv = dr->get_match_feature_values(0);
+    EXPECT_EQUAL(2u, mfv.size());
+    EXPECT_EQUAL(12.0, mfv[0].as_double());
+    EXPECT_EQUAL("There", mfv[1].as_data().make_string());
+    mfv = dr->get_match_feature_values(1);
+    EXPECT_EQUAL(2u, mfv.size());
+    EXPECT_EQUAL(1.0, mfv[0].as_double());
+    EXPECT_EQUAL("Hi", mfv[1].as_data().make_string());
     return true;
 }
 
