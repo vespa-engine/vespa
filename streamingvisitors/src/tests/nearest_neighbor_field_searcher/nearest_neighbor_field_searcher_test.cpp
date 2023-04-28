@@ -31,9 +31,11 @@ struct MockQuery {
     std::vector<std::unique_ptr<NearestNeighborQueryNode>> nodes;
     QueryTermList term_list;
     MockQuery& add(const vespalib::string& query_tensor_name,
+                   uint32_t target_hits,
                    double distance_threshold) {
         std::unique_ptr<QueryNodeResultBase> base;
-        auto node = std::make_unique<NearestNeighborQueryNode>(std::move(base), query_tensor_name, "my_tensor_field", 7, search::query::Weight(11), distance_threshold);
+        auto node = std::make_unique<NearestNeighborQueryNode>(std::move(base), query_tensor_name, "my_tensor_field",
+                                                               target_hits, distance_threshold, 7, search::query::Weight(100));
         nodes.push_back(std::move(node));
         term_list.push_back(nodes.back().get());
         return *this;
@@ -55,7 +57,6 @@ public:
     vsm::test::MockFieldSearcherEnv env;
     ValueType tensor_type;
     TensorDataType data_type;
-    SquaredEuclideanDistance dist_func;
     vsm::FieldIdT field_id;
     NearestNeighborFieldSearcher searcher;
     MockQuery query;
@@ -64,7 +65,6 @@ public:
         : env(),
           tensor_type(ValueType::from_spec("tensor(x[2])")),
           data_type(tensor_type),
-          dist_func(CellType::DOUBLE),
           field_id(2),
           searcher(field_id, DistanceMetric::Euclidean),
           query()
@@ -90,34 +90,71 @@ public:
         query.reset();
         searcher.onValue(fv);
     }
+    void expect_match(const vespalib::string& spec_expr, double exp_square_distance, const NearestNeighborQueryNode& node) {
+        match(spec_expr);
+        expect_match(exp_square_distance, node);
+    }
     void expect_match(double exp_square_distance, const NearestNeighborQueryNode& node) {
-        double exp_raw_score = dist_func.to_rawscore(exp_square_distance);
+        double exp_raw_score = 1.0 / (1.0 + std::sqrt(exp_square_distance));
         EXPECT_TRUE(node.evaluate());
+        EXPECT_DOUBLE_EQ(exp_square_distance, node.get_distance().value());
         EXPECT_DOUBLE_EQ(exp_raw_score, node.get_raw_score().value());
+    }
+    void expect_not_match(const vespalib::string& spec_expr, const NearestNeighborQueryNode& node) {
+        match(spec_expr);
+        EXPECT_FALSE(node.evaluate());
     }
 };
 
-TEST_F(NearestNeighborSearcherTest, raw_score_calculated_with_distance_threshold)
+TEST_F(NearestNeighborSearcherTest, distance_heap_keeps_the_best_target_hits)
 {
-    query.add("qt1", 3);
+    query.add("qt1", 2, 100.0);
+    const auto& node = query.get(0);
     set_query_tensor("qt1", "tensor(x[2]):[1,3]");
     prepare();
 
-    match("tensor(x[2]):[1,5]");
-    expect_match((5-3)*(5-3), query.get(0));
+    expect_match("tensor(x[2]):[1,7]", (7-3)*(7-3), node);
+    expect_match("tensor(x[2]):[1,9]", (9-3)*(9-3), node);
 
-    match("tensor(x[2]):[1,6]");
-    expect_match((6-3)*(6-3), query.get(0));
+    // The distance limit is now (9-3)*(9-3) = 36, so this is not good enough.
+    expect_not_match("tensor(x[2]):[1,10]", node);
 
-    match("tensor(x[2]):[1,7]");
+    expect_match("tensor(x[2]):[1,5]", (5-3)*(5-3), node);
+
+    // The distance limit is now (7-3)*(7-3) = 16, so this is not good enough.
+    expect_not_match("tensor(x[2]):[1,8]", node);
+
+    // This is not considered a document match as get_raw_score() is not called,
+    // and the distance heap is not updated.
+    match("tensor(x[2]):[1,4]");
+    EXPECT_EQ(1, node.get_distance().value());
+    EXPECT_TRUE(node.evaluate());
+
+    // The distance limit is still (7-3)*(7-3) = 16, so this is in fact good enough.
+    expect_match("tensor(x[2]):[1,6]", (6-3)*(6-3), node);
+
+    // The distance limit is (6-3)*(6-3) = 4, and a similar distance is a match.
+    expect_match("tensor(x[2]):[1,6]", (6-3)*(6-3), node);
+}
+
+TEST_F(NearestNeighborSearcherTest, raw_score_calculated_with_distance_threshold)
+{
+    query.add("qt1", 10, 3.0);
+    const auto& node = query.get(0);
+    set_query_tensor("qt1", "tensor(x[2]):[1,3]");
+    prepare();
+
+    expect_match("tensor(x[2]):[1,5]", (5-3)*(5-3), node);
+    expect_match("tensor(x[2]):[1,6]", (6-3)*(6-3), node);
+
     // This is not a match since ((7-3)*(7-3) = 16) is larger than the internal distance threshold of (3*3 = 9).
-    EXPECT_FALSE(query.get(0).evaluate());
+    expect_not_match("tensor(x[2]):[1,7]", node);
 }
 
 TEST_F(NearestNeighborSearcherTest, raw_score_calculated_for_two_query_operators)
 {
-    query.add("qt1", 3);
-    query.add("qt2", 4);
+    query.add("qt1", 10, 3.0);
+    query.add("qt2", 10, 4.0);
     set_query_tensor("qt1", "tensor(x[2]):[1,3]");
     set_query_tensor("qt2", "tensor(x[2]):[1,4]");
     prepare();

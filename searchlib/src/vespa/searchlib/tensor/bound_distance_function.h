@@ -20,19 +20,12 @@ namespace search::tensor {
  * mutable temporary storage.
  */
 class BoundDistanceFunction : public DistanceConverter {
-private:
-    vespalib::eval::CellType _expect_cell_type;
 public:
     using UP = std::unique_ptr<BoundDistanceFunction>;
 
-    BoundDistanceFunction(vespalib::eval::CellType expected) : _expect_cell_type(expected) {}
+    BoundDistanceFunction() = default;
 
     virtual ~BoundDistanceFunction() = default;
-
-    // input vectors will be converted to this cell type:
-    vespalib::eval::CellType expected_cell_type() const {
-        return _expect_cell_type;
-    }
 
     // calculate internal distance (comparable)
     virtual double calc(const vespalib::eval::TypedCells& rhs) const = 0;

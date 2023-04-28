@@ -28,6 +28,7 @@ const (
 
 // Client represents a HTTP client for the /document/v1/ API.
 type Client struct {
+	baseURL     *url.URL
 	options     ClientOptions
 	httpClients []countingHTTPClient
 	now         func() time.Time
@@ -57,20 +58,13 @@ func (c *countingHTTPClient) Do(req *http.Request, timeout time.Duration) (*http
 	return c.client.Do(req, timeout)
 }
 
-type countingReader struct {
-	reader    io.Reader
-	bytesRead int64
-}
-
-func (r *countingReader) Read(p []byte) (int, error) {
-	n, err := r.reader.Read(p)
-	r.bytesRead += int64(n)
-	return n, err
-}
-
-func NewClient(options ClientOptions, httpClients []util.HTTPClient) *Client {
+func NewClient(options ClientOptions, httpClients []util.HTTPClient) (*Client, error) {
 	if len(httpClients) < 1 {
-		panic("need at least one HTTP client")
+		return nil, fmt.Errorf("need at least one HTTP client")
+	}
+	u, err := url.Parse(options.BaseURL)
+	if err != nil {
+		return nil, fmt.Errorf("invalid base url: %w", err)
 	}
 	countingClients := make([]countingHTTPClient, 0, len(httpClients))
 	for _, client := range httpClients {
@@ -81,23 +75,20 @@ func NewClient(options ClientOptions, httpClients []util.HTTPClient) *Client {
 		nowFunc = time.Now
 	}
 	c := &Client{
+		baseURL:     u,
 		options:     options,
 		httpClients: countingClients,
 		now:         nowFunc,
 	}
 	c.gzippers.New = func() any { return gzip.NewWriter(io.Discard) }
-	return c
+	return c, nil
 }
 
 func (c *Client) queryParams() url.Values {
 	params := url.Values{}
-	timeout := c.options.Timeout
-	if timeout == 0 {
-		timeout = 200 * time.Second
-	} else {
-		timeout = timeout*11/10 + 1000
+	if c.options.Timeout > 0 {
+		params.Set("timeout", strconv.FormatInt(c.options.Timeout.Milliseconds(), 10)+"ms")
 	}
-	params.Set("timeout", strconv.FormatInt(timeout.Milliseconds(), 10)+"ms")
 	if c.options.Route != "" {
 		params.Set("route", c.options.Route)
 	}
@@ -128,11 +119,7 @@ func urlPath(id Id) string {
 	return sb.String()
 }
 
-func (c *Client) feedURL(d Document, queryParams url.Values) (string, *url.URL, error) {
-	u, err := url.Parse(c.options.BaseURL)
-	if err != nil {
-		return "", nil, fmt.Errorf("invalid base url: %w", err)
-	}
+func (c *Client) feedURL(d Document, queryParams url.Values) (string, *url.URL) {
 	httpMethod := ""
 	switch d.Operation {
 	case OperationPut:
@@ -148,9 +135,10 @@ func (c *Client) feedURL(d Document, queryParams url.Values) (string, *url.URL, 
 	if d.Create {
 		queryParams.Set("create", "true")
 	}
+	u := *c.baseURL
 	u.Path = urlPath(d.Id)
 	u.RawQuery = queryParams.Encode()
-	return httpMethod, u, nil
+	return httpMethod, &u
 }
 
 func (c *Client) leastBusyClient() *countingHTTPClient {
@@ -182,6 +170,7 @@ func (c *Client) createRequest(method, url string, body []byte) (*http.Request, 
 	useGzip := c.options.Compression == CompressionGzip || (c.options.Compression == CompressionAuto && len(body) > 512)
 	if useGzip {
 		var buf bytes.Buffer
+		buf.Grow(1024)
 		w := c.gzipWriter(&buf)
 		if _, err := w.Write(body); err != nil {
 			return nil, err
@@ -205,19 +194,23 @@ func (c *Client) createRequest(method, url string, body []byte) (*http.Request, 
 	return req, nil
 }
 
+func (c *Client) clientTimeout() time.Duration {
+	if c.options.Timeout < 1 {
+		return 190 * time.Second
+	}
+	return c.options.Timeout*11/10 + 1000 // slightly higher than the server-side timeout
+}
+
 // Send given document to the endpoint configured in this client.
 func (c *Client) Send(document Document) Result {
 	start := c.now()
 	result := Result{Id: document.Id, Stats: Stats{Requests: 1}}
-	method, url, err := c.feedURL(document, c.queryParams())
-	if err != nil {
-		return resultWithErr(result, err)
-	}
+	method, url := c.feedURL(document, c.queryParams())
 	req, err := c.createRequest(method, url.String(), document.Body)
 	if err != nil {
 		return resultWithErr(result, err)
 	}
-	resp, err := c.leastBusyClient().Do(req, 190*time.Second)
+	resp, err := c.leastBusyClient().Do(req, c.clientTimeout())
 	if err != nil {
 		return resultWithErr(result, err)
 	}
@@ -251,16 +244,20 @@ func resultWithResponse(resp *http.Response, result Result, document Document, e
 		Message string          `json:"message"`
 		Trace   json.RawMessage `json:"trace"`
 	}
-	cr := countingReader{reader: resp.Body}
-	jsonDec := json.NewDecoder(&cr)
-	if err := jsonDec.Decode(&body); err != nil {
+	b, err := io.ReadAll(resp.Body)
+	if err != nil {
 		result.Status = StatusVespaFailure
-		result.Err = fmt.Errorf("failed to decode json response: %w", err)
+		result.Err = err
+	} else {
+		if err := json.Unmarshal(b, &body); err != nil {
+			result.Status = StatusVespaFailure
+			result.Err = fmt.Errorf("failed to decode json response: %w", err)
+		}
 	}
 	result.Message = body.Message
 	result.Trace = string(body.Trace)
 	result.Stats.BytesSent = int64(len(document.Body))
-	result.Stats.BytesRecv = cr.bytesRead
+	result.Stats.BytesRecv = int64(len(b))
 	if !result.Success() {
 		result.Stats.Errors++
 	}

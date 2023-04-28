@@ -12,6 +12,7 @@ import com.yahoo.vespa.config.ConfigPayloadBuilder;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.container.ApplicationContainerCluster;
 import com.yahoo.vespa.model.container.component.Component;
+import com.yahoo.yolean.Exceptions;
 import org.junit.jupiter.api.Test;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -146,6 +147,19 @@ public class EmbedderTestCase {
         assertEquals("minilm-l6-v2 https://data.vespa.oath.cloud/onnx_models/sentence_all_MiniLM_L6_v2.onnx \"\"",
                      config.getObject("model").getValue());
         assertEquals("\"\" \"\" files/vocab.txt", config.getObject("vocab").getValue());
+    }
+
+    @Test
+    void testApplicationPackageWithApplicationEmbedder_selfhosted_cloud_only() throws Exception  {
+        try {
+            Path applicationDir = Path.fromString("src/test/cfg/application/embed_cloud_only/");
+            VespaModel model = loadModel(applicationDir, false);
+            fail("Expected failure");
+        }
+        catch (IllegalArgumentException e) {
+            assertEquals("transformerModel is configured with only a 'model-id'. Add a 'path' or 'url' to deploy this outside Vespa Cloud",
+                         Exceptions.toMessageString(e));
+        }
     }
 
     private VespaModel loadModel(Path path, boolean hosted) throws Exception {

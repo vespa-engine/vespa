@@ -11,13 +11,13 @@
 #include "viewresolver.h"
 #include <vespa/searchcommon/attribute/i_attribute_functor.h>
 #include <vespa/searchlib/fef/blueprintfactory.h>
-#include <vespa/searchlib/common/featureset.h>
 #include <vespa/searchlib/common/matching_elements_fields.h>
 #include <vespa/searchlib/common/matching_elements.h>
 #include <vespa/searchlib/common/resultset.h>
 #include <vespa/searchlib/queryeval/blueprint.h>
 #include <vespa/searchlib/query/base.h>
 #include <vespa/vespalib/util/clock.h>
+#include <vespa/vespalib/util/featureset.h>
 #include <vespa/vespalib/util/thread_bundle.h>
 #include <mutex>
 
@@ -135,7 +135,7 @@ public:
      * @param attrCtx abstract view of attribute data
      * @return calculated summary features.
      **/
-    search::FeatureSet::SP
+    vespalib::FeatureSet::SP
     getSummaryFeatures(const DocsumRequest & req, ISearchContext & searchCtx,
                        IAttributeContext & attrCtx, SessionManager &sessionManager) const;
 
@@ -149,7 +149,7 @@ public:
      * @param attrCtx abstract view of attribute data
      * @return calculated rank features.
      **/
-    search::FeatureSet::SP
+    vespalib::FeatureSet::SP
     getRankFeatures(const DocsumRequest & req, ISearchContext & searchCtx,
                     IAttributeContext & attrCtx, SessionManager &sessionManager) const;
 

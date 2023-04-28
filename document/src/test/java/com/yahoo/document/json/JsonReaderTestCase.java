@@ -893,7 +893,7 @@ public class JsonReaderTestCase {
     }
 
 
-    @Test(expected=RuntimeException.class)
+    @Test
     public void testCreateIfNonExistentInPut() {
         JsonReader r = createReader(inputJson("[{",
                 "  'create':true,",
@@ -902,7 +902,9 @@ public class JsonReaderTestCase {
                 "    'nalle': 'bamse' },",
                 "  'put': 'id:unittest:smoke::whee'",
                 "}]"));
-        r.next();
+        var op = r.next();
+        var put = (DocumentPut) op;
+        assertTrue(put.getCreateIfNonExistent());
     }
 
     @Test

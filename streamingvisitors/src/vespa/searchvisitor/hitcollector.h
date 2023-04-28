@@ -2,13 +2,13 @@
 
 #pragma once
 
-#include <vespa/searchlib/common/featureset.h>
 #include <vespa/searchlib/common/stringmap.h>
 #include <vespa/searchlib/fef/matchdata.h>
 #include <vespa/vdslib/container/searchresult.h>
 #include <vespa/vsm/common/docsum.h>
 #include <vespa/vsm/common/storagedocument.h>
 #include <vespa/vespalib/stllike/string.h>
+#include <vespa/vespalib/util/featureset.h>
 
 namespace search { namespace fef { class FeatureResolver; } }
 
@@ -121,6 +121,7 @@ public:
      * Fills the given search result with the m best hits from the hit heap.
      * Invoking this method will destroy the heap property of the hit heap.
      **/
+    void fillSearchResult(vdslib::SearchResult & searchResult, vespalib::FeatureValues&& match_features);
     void fillSearchResult(vdslib::SearchResult & searchResult);
 
     /**
@@ -132,10 +133,13 @@ public:
      * @param rankProgram the rank program used to calculate all features.
      * @param resolver   feature resolver, gives feature names and values
      **/
-    search::FeatureSet::SP getFeatureSet(IRankProgram &rankProgram,
-                                         const search::fef::FeatureResolver &resolver,
-                                         const search::StringStringMap &feature_rename_map);
+    vespalib::FeatureSet::SP getFeatureSet(IRankProgram &rankProgram,
+                                           const search::fef::FeatureResolver &resolver,
+                                           const search::StringStringMap &feature_rename_map);
 
+    vespalib::FeatureValues get_match_features(IRankProgram& rank_program,
+                                               const search::fef::FeatureResolver& resolver,
+                                               const search::StringStringMap& feature_rename_map);
 };
 
 } // namespace streaming

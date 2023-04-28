@@ -20,13 +20,6 @@ public class UpdateDocumentMessage extends TestAndSetMessage {
     private LazyDecoder decoder = null;
 
     /**
-     * Constructs a new message for deserialization.
-     */
-    UpdateDocumentMessage() {
-        // empty
-    }
-
-    /**
      * Constructs a new message from a byte buffer.
      *  @param decoder The decoder to use for deserialization.
      * @param buffer  A byte buffer that contains a serialized message.

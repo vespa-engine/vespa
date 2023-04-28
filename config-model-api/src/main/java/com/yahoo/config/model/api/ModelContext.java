@@ -20,6 +20,7 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 import java.net.URI;
 import java.security.cert.X509Certificate;
+import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -184,6 +185,8 @@ public interface ModelContext {
         default Optional<CloudAccount> cloudAccount() { return Optional.empty(); }
 
         default boolean allowUserFilters() { return true; }
+
+        default Duration endpointConnectionTtl() { return Duration.ZERO; }
 
     }
 

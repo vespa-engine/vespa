@@ -11,6 +11,7 @@ import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.container.core.AccessLogConfig;
+import com.yahoo.container.logging.AccessLog;
 import com.yahoo.container.logging.ConnectionLogConfig;
 import com.yahoo.container.logging.FileConnectionLog;
 import com.yahoo.container.logging.JSONAccessLog;
@@ -70,6 +71,11 @@ public class AccessLogTest extends ContainerModelBuilderTestBase {
         return cluster.getComponentsMap().get(ComponentId.fromString((JSONAccessLog.class.getName())));
     }
 
+    private Component<?, ?> getAccessLog(String clusterName) {
+        ApplicationContainerCluster cluster = (ApplicationContainerCluster) root.getChildren().get(clusterName);
+        return cluster.getComponentsMap().get(ComponentId.fromString((AccessLog.class.getName())));
+    }
+
     @Test
     void access_log_can_be_configured() {
         Element clusterElem = DomBuilderTest.parse(
@@ -84,6 +90,7 @@ public class AccessLogTest extends ContainerModelBuilderTestBase {
         createModel(root, clusterElem);
         assertNotNull(getJsonAccessLog("default"));
         assertNotNull(getVespaAccessLog("default"));
+        assertNotNull(getAccessLog("default"));
 
         { // vespa
             Component<?, ?> accessLogComponent = getComponent("default", VespaAccessLog.class.getName());

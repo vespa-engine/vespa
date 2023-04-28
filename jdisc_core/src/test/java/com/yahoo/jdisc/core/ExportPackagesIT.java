@@ -78,7 +78,10 @@ public class ExportPackagesIT {
     }
 
     private static Set<String> removeNewPackageOnJava20(Set<String> packages) {
-        return packages.stream().filter(p -> ! p.contains("java.lang.foreign")).collect(Collectors.toSet());
+        return packages.stream()
+                       .filter(p -> ! p.contains("java.lang.foreign"))
+                       .filter(p -> ! p.contains("com.sun.jna"))
+                       .collect(Collectors.toSet());
     }
 
     private static StringBuilder getDiff(Set<String> actual, Set<String> expected) {

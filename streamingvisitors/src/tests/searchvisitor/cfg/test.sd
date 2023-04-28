@@ -1,0 +1,19 @@
+schema test {
+  document test {
+    field id type int {
+      indexing: attribute | summary 
+    }
+  }
+  rank-profile default {
+    first-phase {
+      expression: attribute(id) + 10
+    }
+  }
+  rank-profile match_features inherits default {
+    function myfunc() {
+      expression: attribute(id) + 20
+    }
+    match-features: attribute(id) myfunc()
+  }
+}
+

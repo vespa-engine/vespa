@@ -238,7 +238,7 @@ void SearchVisitor::GroupingEntry::aggregate(const document::Document & doc, sea
 }
 
 SearchVisitor::~SearchVisitor() {
-    if (! isCompletedCalled()) {
+    if (!isCompletedCalled() && _queryResult) {
         HitCounter hc;
         completedVisitingInternal(hc);
     }
@@ -664,14 +664,14 @@ SearchVisitor::RankController::onCompletedVisiting(vsm::GetDocsumsStateCallback 
         // calculate summary features and set them on the callback object
         if (!_rankSetup->getSummaryFeatures().empty()) {
             LOG(debug, "Calculate summary features");
-            search::FeatureSet::SP sf = _rankProcessor->calculateFeatureSet();
+            vespalib::FeatureSet::SP sf = _rankProcessor->calculateFeatureSet();
             docsumsStateCallback.setSummaryFeatures(sf);
         }
 
         // calculate rank features and set them on the callback object
         if (_dumpFeatures) {
             LOG(debug, "Calculate rank features");
-            search::FeatureSet::SP rf = _dumpProcessor->calculateFeatureSet();
+            vespalib::FeatureSet::SP rf = _dumpProcessor->calculateFeatureSet();
             docsumsStateCallback.setRankFeatures(rf);
         }
     }
@@ -1124,6 +1124,13 @@ SearchVisitor::fillSortBuffer()
 void SearchVisitor::completedBucket(const document::BucketId&, HitCounter&)
 {
     LOG(debug, "Completed bucket");
+}
+
+std::unique_ptr<documentapi::QueryResultMessage>
+SearchVisitor::generate_query_result(HitCounter& counter)
+{
+    completedVisitingInternal(counter);
+    return std::move(_queryResult);
 }
 
 void SearchVisitor::completedVisitingInternal(HitCounter& hitCounter)

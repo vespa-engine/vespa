@@ -133,8 +133,6 @@ public:
     }
 };
 
-using FloatSqEuclideanDistance = SquaredEuclideanDistanceHW<float>;
-
 template <typename IndexType>
 class Stressor : public ::testing::Test {
 private:

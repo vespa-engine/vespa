@@ -454,12 +454,14 @@ class ReferenceSearchContext : public attribute::SearchContext {
 private:
     const ReferenceAttribute& _ref_attr;
     GlobalId _term;
+    uint32_t _docid_limit;
 
 public:
     ReferenceSearchContext(const ReferenceAttribute& ref_attr, const GlobalId& term)
         : attribute::SearchContext(ref_attr),
           _ref_attr(ref_attr),
-          _term(term)
+          _term(term),
+          _docid_limit(ref_attr.getCommittedDocIdLimit())
     {
     }
     bool valid() const override {
@@ -480,7 +482,14 @@ public:
         int32_t weight;
         return onFind(docId, elementId, weight);
     }
+    uint32_t get_committed_docid_limit() const noexcept override;
 };
+
+uint32_t
+ReferenceSearchContext::get_committed_docid_limit() const noexcept
+{
+    return _docid_limit;
+}
 
 }
 

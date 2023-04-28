@@ -6,6 +6,7 @@ import com.yahoo.config.subscription.ConfigSubscriber;
 import com.yahoo.document.Document;
 import com.yahoo.document.DocumentId;
 import com.yahoo.document.DocumentPut;
+import com.yahoo.document.DocumentRemove;
 import com.yahoo.document.DocumentTypeManager;
 import com.yahoo.document.DocumentTypeManagerConfigurer;
 import com.yahoo.document.DocumentUpdate;
@@ -34,7 +35,6 @@ import com.yahoo.messagebus.SourceSessionParams;
 import com.yahoo.messagebus.StaticThrottlePolicy;
 import com.yahoo.messagebus.network.rpc.RPCNetworkParams;
 import com.yahoo.messagebus.routing.Route;
-import com.yahoo.vespaxmlparser.ConditionalFeedOperation;
 import com.yahoo.vespaxmlparser.FeedReader;
 import com.yahoo.vespaxmlparser.FeedOperation;
 import com.yahoo.vespaxmlparser.RemoveFeedOperation;
@@ -196,7 +196,7 @@ public class SimpleFeeder implements ReplyHandler {
                 } else {
                     isFirst = false;
                 }
-                writer.write(op.getDocument());
+                writer.write(op.getDocumentPut().getDocument());
             }
             numReplies.incrementAndGet();
         }
@@ -234,13 +234,13 @@ public class SimpleFeeder implements ReplyHandler {
             DocumentSerializer writer = DocumentSerializerFactory.createHead(buffer);
             int type = NONE;
             if (op.getType() == FeedOperation.Type.DOCUMENT) {
-                writer.write(op.getDocument());
+                writer.write(op.getDocumentPut().getDocument());
                 type = DOCUMENT;
             } else if (op.getType() == FeedOperation.Type.UPDATE) {
                 writer.write(op.getDocumentUpdate());
                 type = UPDATE;
             } else if (op.getType() == FeedOperation.Type.REMOVE) {
-                writer.write(op.getRemove());
+                writer.write(op.getDocumentRemove().getId());
                 type = REMOVE;
             }
             int sz = buffer.position();
@@ -284,28 +284,44 @@ public class SimpleFeeder implements ReplyHandler {
             }
         }
 
-        static class LazyDocumentOperation extends ConditionalFeedOperation {
+        static class LazyDocumentOperation extends FeedOperation {
             private final DocumentDeserializer deserializer;
+            private final TestAndSetCondition condition;
             LazyDocumentOperation(DocumentDeserializer deserializer, TestAndSetCondition condition) {
-                super(Type.DOCUMENT, condition);
+                super(Type.DOCUMENT);
                 this.deserializer = deserializer;
+                this.condition = condition;
             }
 
             @Override
-            public Document getDocument() {
-                return new Document(deserializer);
+            public DocumentPut getDocumentPut() {
+                DocumentPut put = new DocumentPut(new Document(deserializer));
+                put.setCondition(condition);
+                return put;
+            }
+            @Override
+            public TestAndSetCondition getCondition() {
+                return condition;
             }
         }
-        static class LazyUpdateOperation extends ConditionalFeedOperation {
+        static class LazyUpdateOperation extends FeedOperation {
             private final DocumentDeserializer deserializer;
+            private final TestAndSetCondition condition;
             LazyUpdateOperation(DocumentDeserializer deserializer, TestAndSetCondition condition) {
-                super(Type.UPDATE, condition);
+                super(Type.UPDATE);
                 this.deserializer = deserializer;
+                this.condition = condition;
             }
 
             @Override
             public DocumentUpdate getDocumentUpdate() {
-                return new DocumentUpdate(deserializer);
+                DocumentUpdate update = new DocumentUpdate(deserializer);
+                update.setCondition(condition);
+                return update;
+            }
+            @Override
+            public TestAndSetCondition getCondition() {
+                return condition;
             }
         }
 
@@ -339,7 +355,9 @@ public class SimpleFeeder implements ReplyHandler {
             } else if (type == UPDATE) {
                 return new LazyUpdateOperation(deser, testAndSetCondition);
             } else if (type == REMOVE) {
-                return new RemoveFeedOperation(new DocumentId(deser), testAndSetCondition);
+                var remove = new DocumentRemove(new DocumentId(deser));
+                remove.setCondition(testAndSetCondition);
+                return new RemoveFeedOperation(remove);
             } else {
                 throw new IllegalArgumentException("Unknown operation " + type);
             }
@@ -426,21 +444,9 @@ public class SimpleFeeder implements ReplyHandler {
 
     private static Message newMessage(FeedOperation op) {
         return switch (op.getType()) {
-            case DOCUMENT -> {
-                PutDocumentMessage message = new PutDocumentMessage(new DocumentPut(op.getDocument()));
-                message.setCondition(op.getCondition());
-                yield message;
-            }
-            case REMOVE -> {
-                RemoveDocumentMessage message = new RemoveDocumentMessage(op.getRemove());
-                message.setCondition(op.getCondition());
-                yield message;
-            }
-            case UPDATE -> {
-                UpdateDocumentMessage message = new UpdateDocumentMessage(op.getDocumentUpdate());
-                message.setCondition(op.getCondition());
-                yield message;
-            }
+            case DOCUMENT -> new PutDocumentMessage(op.getDocumentPut());
+            case REMOVE -> new RemoveDocumentMessage(op.getDocumentRemove());
+            case UPDATE -> new UpdateDocumentMessage(op.getDocumentUpdate());
             default -> null;
         };
     }

@@ -48,13 +48,6 @@ public class Flags {
 
     private static volatile TreeMap<FlagId, FlagDefinition> flags = new TreeMap<>();
 
-    public static final UnboundBooleanFlag RECONFIGURE_ALB_TARGETS = defineFeatureFlag(
-            "reconfigure-alb-targets", false,
-            List.of("bjormel"), "2023-03-24", "2023-04-30",
-            "Reconfigure ALB targets",
-            "Takes effect on next config server container start",
-            ZONE_ID);
-
     public static final UnboundBooleanFlag DROP_CACHES = defineFeatureFlag(
             "drop-caches", false,
             List.of("hakonhall", "baldersheim"), "2023-03-06", "2023-06-05",
@@ -379,7 +372,7 @@ public class Flags {
             ZONE_ID);
 
     public static final UnboundLongFlag ZOOKEEPER_BARRIER_WAIT_FOR_ALL_TIMEOUT = defineLongFlag(
-            "zookeeper-barrier-wait-for-all-timeout", 1,
+            "zookeeper-barrier-wait-for-all-timeout", 5,
             List.of("hmusum"), "2023-03-28", "2023-05-28",
             "Time to wait for all barrier members after getting response from quorum number of member",
             "Takes effect on next config server container start",
@@ -390,7 +383,7 @@ public class Flags {
             List.of("olaa"), "2023-04-12", "2023-06-12",
             "Whether AthenzCredentialsMaintainer in node-admin should create tenant service identity certificate",
             "Takes effect on next tick",
-            ZONE_ID, HOSTNAME
+            ZONE_ID, HOSTNAME, VESPA_VERSION, APPLICATION_ID
     );
 
     public static final UnboundBooleanFlag ENABLE_CROWDSTRIKE = defineFeatureFlag(
@@ -412,9 +405,15 @@ public class Flags {
 
     public static final UnboundBooleanFlag NEW_IDDOC_LAYOUT = defineFeatureFlag(
             "new_iddoc_layout", false, List.of("tokle", "bjorncs", "olaa"), "2023-04-24", "2023-05-31",
-            "Whether to use new identity document lauoyt",
+            "Whether to use new identity document layout",
             "Takes effect on node reboot",
-            HOSTNAME);
+            HOSTNAME, APPLICATION_ID, VESPA_VERSION);
+
+    public static final UnboundBooleanFlag RANDOMIZED_ENDPOINT_NAMES = defineFeatureFlag(
+            "randomized-endpoint-names", false, List.of("andreer"), "2023-04-26", "2023-06-30",
+            "Whether to use randomized endpoint names",
+            "Takes effect on application deployment",
+            APPLICATION_ID);
 
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,

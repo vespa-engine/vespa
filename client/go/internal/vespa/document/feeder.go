@@ -31,7 +31,7 @@ type Result struct {
 }
 
 func (r Result) Success() bool {
-	return r.Err == nil && (r.Status == StatusSuccess || r.Status == StatusConditionNotMet)
+	return r.HTTPStatus/100 == 2 || r.HTTPStatus == 404 || r.HTTPStatus == 412
 }
 
 // Stats represents feeding operation statistics.
@@ -80,7 +80,6 @@ func (s *Stats) Add(other Stats) {
 		}
 	}
 	s.Errors += other.Errors
-	s.Inflight += other.Inflight
 	s.TotalLatency += other.TotalLatency
 	if s.MinLatency == 0 || (other.MinLatency > 0 && other.MinLatency < s.MinLatency) {
 		s.MinLatency = other.MinLatency

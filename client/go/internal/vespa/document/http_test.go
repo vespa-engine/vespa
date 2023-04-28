@@ -38,7 +38,7 @@ func TestLeastBusyClient(t *testing.T) {
 	for i := 0; i < 4; i++ {
 		httpClients = append(httpClients, &mockHTTPClient{i, &httpClient})
 	}
-	client := NewClient(ClientOptions{}, httpClients)
+	client, _ := NewClient(ClientOptions{}, httpClients)
 	client.httpClients[0].addInflight(1)
 	client.httpClients[1].addInflight(1)
 	assertLeastBusy(t, 2, client)
@@ -65,7 +65,7 @@ func TestClientSend(t *testing.T) {
 		{Create: true, Id: mustParseId("id:ns:type::doc3"), Operation: OperationUpdate, Body: []byte(`{"fields":{"baz": "789"}}`)},
 	}
 	httpClient := mock.HTTPClient{}
-	client := NewClient(ClientOptions{
+	client, _ := NewClient(ClientOptions{
 		BaseURL: "https://example.com:1337",
 		Timeout: time.Duration(5 * time.Second),
 	}, []util.HTTPClient{&httpClient})
@@ -109,7 +109,7 @@ func TestClientSend(t *testing.T) {
 		if r.Method != http.MethodPut {
 			t.Errorf("got r.Method = %q, want %q", r.Method, http.MethodPut)
 		}
-		wantURL := fmt.Sprintf("https://example.com:1337/document/v1/ns/type/docid/%s?create=true&timeout=5500ms", doc.Id.UserSpecific)
+		wantURL := fmt.Sprintf("https://example.com:1337/document/v1/ns/type/docid/%s?create=true&timeout=5000ms", doc.Id.UserSpecific)
 		if r.URL.String() != wantURL {
 			t.Errorf("got r.URL = %q, want %q", r.URL, wantURL)
 		}
@@ -144,7 +144,7 @@ func TestClientSend(t *testing.T) {
 
 func TestClientSendCompressed(t *testing.T) {
 	httpClient := mock.HTTPClient{}
-	client := NewClient(ClientOptions{
+	client, _ := NewClient(ClientOptions{
 		BaseURL: "https://example.com:1337",
 		Timeout: time.Duration(5 * time.Second),
 	}, []util.HTTPClient{&httpClient})
@@ -278,16 +278,13 @@ func TestClientFeedURL(t *testing.T) {
 		},
 	}
 	httpClient := mock.HTTPClient{}
-	client := NewClient(ClientOptions{
+	client, _ := NewClient(ClientOptions{
 		BaseURL: "https://example.com",
 	}, []util.HTTPClient{&httpClient})
 	for i, tt := range tests {
 		moreParams := url.Values{}
 		moreParams.Set("foo", "ba/r")
-		method, u, err := client.feedURL(tt.in, moreParams)
-		if err != nil {
-			t.Errorf("#%d: got unexpected error = %s, want none", i, err)
-		}
+		method, u := client.feedURL(tt.in, moreParams)
 		if u.String() != tt.url || method != tt.method {
 			t.Errorf("#%d: URL() = (%s, %s), want (%s, %s)", i, method, u.String(), tt.method, tt.url)
 		}
@@ -296,7 +293,7 @@ func TestClientFeedURL(t *testing.T) {
 
 func benchmarkClientSend(b *testing.B, compression Compression, document Document) {
 	httpClient := mock.HTTPClient{}
-	client := NewClient(ClientOptions{
+	client, _ := NewClient(ClientOptions{
 		Compression: compression,
 		BaseURL:     "https://example.com:1337",
 		Timeout:     time.Duration(5 * time.Second),

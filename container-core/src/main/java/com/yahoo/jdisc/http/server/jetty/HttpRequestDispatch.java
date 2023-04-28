@@ -17,13 +17,11 @@ import jakarta.servlet.AsyncEvent;
 import jakarta.servlet.AsyncListener;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import org.eclipse.jetty.http2.ErrorCode;
 import org.eclipse.jetty.http2.server.HTTP2ServerConnection;
 import org.eclipse.jetty.io.Connection;
 import org.eclipse.jetty.io.EofException;
 import org.eclipse.jetty.server.HttpConnection;
 import org.eclipse.jetty.server.Request;
-import org.eclipse.jetty.util.Callback;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -159,7 +157,7 @@ class HttpRequestDispatch {
         Connection connection = RequestUtils.getConnection(request);
         if (maxRequestsPerConnection > 0) {
             if (connection.getMessagesIn() >= maxRequestsPerConnection) {
-                gracefulShutdown(connection, "max-req-per-conn-exceeded");
+                gracefulShutdown(connection);
             }
         }
         double maxConnectionLifeInSeconds = connectorConfig.maxConnectionLife();
@@ -168,19 +166,20 @@ class HttpRequestDispatch {
             Instant expiredAt = Instant.ofEpochMilli((long) (createdAt + maxConnectionLifeInSeconds * 1000));
             boolean isExpired = Instant.now().isAfter(expiredAt);
             if (isExpired) {
-                gracefulShutdown(connection, "max-conn-life-exceeded");
+                gracefulShutdown(connection);
             }
         }
     }
 
-    private static void gracefulShutdown(Connection connection, String reason) {
-        if (connection instanceof HttpConnection) {
-            HttpConnection http1 = (HttpConnection) connection;
+    private static void gracefulShutdown(Connection connection) {
+        if (connection instanceof HttpConnection http1) {
             http1.getGenerator().setPersistent(false);
-        } else if (connection instanceof HTTP2ServerConnection) {
-            HTTP2ServerConnection http2 = (HTTP2ServerConnection) connection;
-            // Signal Jetty to do a graceful connection shutdown with GOAWAY frame
-            http2.getSession().close(ErrorCode.NO_ERROR.code, reason, Callback.NOOP);
+        } else if (connection instanceof HTTP2ServerConnection http2) {
+            // Signal Jetty to do a graceful shutdown of HTTP/2 connection.
+            // Graceful shutdown implies a GOAWAY frame with 'Error Code' = 'NO_ERROR' and 'Last-Stream-ID' = 2^31-1.
+            // In-flight requests will be allowed to complete before connection is terminated.
+            // See https://datatracker.ietf.org/doc/html/rfc9113#name-goaway for details
+            http2.getSession().shutdown();
         }
     }
 

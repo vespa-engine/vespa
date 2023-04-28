@@ -81,6 +81,18 @@ void SplunkStarter::gotConfig(const LogforwarderConfig& config) {
             rename(tmpPath.c_str(), path.c_str());
         }
     }
+    vespalib::string clientCert = clientCertFile();
+    if (! clientCert.empty()) {
+        path = cfFilePath(config.splunkHome, "outputs.conf");
+        tmpPath = path + ".new";
+        fp = fopen(tmpPath.c_str(), "w");
+        if (fp != NULL) {
+            fprintf(fp, "[tcpout]\n");
+            fprintf(fp, "clientCert = %s\n", clientCert.c_str());
+            fclose(fp);
+            rename(tmpPath.c_str(), path.c_str());
+        }
+    }
     if (config.clientName.size() == 0 ||
         config.deploymentServer.size() == 0)
     {

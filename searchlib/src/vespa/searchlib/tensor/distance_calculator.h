@@ -22,7 +22,6 @@ namespace search::tensor {
 class DistanceCalculator {
 private:
     const tensor::ITensorAttribute& _attr_tensor;
-    std::unique_ptr<vespalib::eval::Value> _query_tensor_uptr;
     const vespalib::eval::Value* _query_tensor;
     std::unique_ptr<BoundDistanceFunction> _dist_fun;
 

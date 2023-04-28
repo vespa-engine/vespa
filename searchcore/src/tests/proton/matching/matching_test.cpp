@@ -16,7 +16,6 @@
 #include <vespa/searchlib/aggregation/grouping.h>
 #include <vespa/searchlib/aggregation/perdocexpression.h>
 #include <vespa/searchlib/attribute/extendableattributes.h>
-#include <vespa/searchlib/common/featureset.h>
 #include <vespa/searchlib/engine/docsumreply.h>
 #include <vespa/searchlib/engine/docsumrequest.h>
 #include <vespa/searchlib/engine/searchreply.h>
@@ -36,6 +35,7 @@
 #include <vespa/eval/eval/value_codec.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/vespalib/util/featureset.h>
 #include <vespa/vespalib/util/simple_thread_bundle.h>
 #include <vespa/vespalib/util/testclock.h>
 #include <vespa/vespalib/stllike/asciistream.h>
@@ -64,6 +64,7 @@ using search::index::schema::DataType;
 using storage::spi::Timestamp;
 using vespalib::eval::SimpleValue;
 using vespalib::eval::TensorSpec;
+using vespalib::FeatureSet;
 using vespalib::nbostream;
 
 vespalib::ThreadBundle &ttb() { return vespalib::ThreadBundle::trivial(); }

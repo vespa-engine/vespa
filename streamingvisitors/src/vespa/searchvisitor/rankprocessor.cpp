@@ -10,7 +10,8 @@
 #include <vespa/log/log.h>
 LOG_SETUP(".searchvisitor.rankprocessor");
 
-using search::FeatureSet;
+using vespalib::FeatureSet;
+using vespalib::FeatureValues;
 using search::fef::FeatureHandle;
 using search::fef::ITermData;
 using search::fef::ITermFieldData;
@@ -131,6 +132,10 @@ RankProcessor::init(bool forRanking, size_t wantedHitCount)
         _rankScore = getFeature(*_rankProgram);
         _summaryProgram = _rankSetup.create_summary_program();
         setupRankProgram(*_summaryProgram);
+        if (_rankSetup.has_match_features()) {
+            _match_features_program = _rankSetup.create_match_program();
+            setupRankProgram(*_match_features_program);
+        }
     } else {
         _rankProgram = _rankSetup.create_dump_program();
         setupRankProgram(*_rankProgram);
@@ -157,7 +162,8 @@ RankProcessor::RankProcessor(RankManager::Snapshot::SP snapshot,
     _summaryProgram(),
     _zeroScore(),
     _rankScore(&_zeroScore),
-    _hitCollector()
+    _hitCollector(),
+    _match_features_program()
 {
 }
 
@@ -222,10 +228,21 @@ RankProcessor::calculateFeatureSet()
     return sf;
 }
 
+FeatureValues
+RankProcessor::calculate_match_features()
+{
+    if (!_match_features_program) {
+        return FeatureValues();
+    }
+    RankProgramWrapper wrapper(*_match_data);
+    search::fef::FeatureResolver resolver(_match_features_program->get_seeds(false));
+    return _hitCollector->get_match_features(wrapper, resolver, _rankSetup.get_feature_rename_map());
+}
+
 void
 RankProcessor::fillSearchResult(vdslib::SearchResult & searchResult)
 {
-    _hitCollector->fillSearchResult(searchResult);
+    _hitCollector->fillSearchResult(searchResult, calculate_match_features());
 }
 
 void
@@ -241,7 +258,7 @@ RankProcessor::unpack_match_data(uint32_t docid, MatchData &matchData, QueryWrap
     for (QueryWrapper::Term & term: query.getTermList()) {
         auto nn_node = term.getTerm()->as_nearest_neighbor_query_node();
         if (nn_node != nullptr) {
-            auto& raw_score = nn_node->get_raw_score();
+            auto raw_score = nn_node->get_raw_score();
             if (raw_score.has_value()) {
                 auto& qtd = static_cast<QueryTermData &>(term.getTerm()->getQueryItem());
                 auto& td = qtd.getTermData();

@@ -160,7 +160,8 @@ SingleValueNumericEnumAttribute<B>::getSearch(QueryTermSimple::UP qTerm,
                                               const attribute::SearchContextParams & params) const
 {
     (void) params;
-    return std::make_unique<attribute::SingleNumericEnumSearchContext<T>>(std::move(qTerm), *this, &this->_enumIndices.acquire_elem_ref(0), this->_enumStore);
+    auto docid_limit = this->getCommittedDocIdLimit();
+    return std::make_unique<attribute::SingleNumericEnumSearchContext<T>>(std::move(qTerm), *this, this->_enumIndices.make_read_view(docid_limit), this->_enumStore);
 }
 
 }

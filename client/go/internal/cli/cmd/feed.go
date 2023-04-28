@@ -18,11 +18,12 @@ import (
 func addFeedFlags(cmd *cobra.Command, options *feedOptions) {
 	cmd.PersistentFlags().IntVar(&options.connections, "connections", 8, "The number of connections to use")
 	cmd.PersistentFlags().StringVar(&options.compression, "compression", "auto", `Compression mode to use. Default is "auto" which compresses large documents. Must be "auto", "gzip" or "none"`)
-	cmd.PersistentFlags().IntVar(&options.timeoutSecs, "timeout", 0, "Invididual feed operation timeout in seconds. 0 to disable")
-	cmd.PersistentFlags().IntVar(&options.doomSecs, "max-failure-seconds", 0, "Exit if given number of seconds elapse without any successful operations. 0 to disable")
+	cmd.PersistentFlags().IntVar(&options.timeoutSecs, "timeout", 0, "Individual feed operation timeout in seconds. 0 to disable (default 0)")
+	cmd.PersistentFlags().IntVar(&options.doomSecs, "deadline", 0, "Exit if this number of seconds elapse without any successful operations. 0 to disable (default 0)")
 	cmd.PersistentFlags().BoolVar(&options.verbose, "verbose", false, "Verbose mode. Print successful operations in addition to errors")
-	cmd.PersistentFlags().StringVar(&options.route, "route", "", "Target Vespa route for feed operations")
-	cmd.PersistentFlags().IntVar(&options.traceLevel, "trace", 0, "The trace level of network traffic. 0 to disable")
+	cmd.PersistentFlags().StringVar(&options.route, "route", "", `Target Vespa route for feed operations (default "default")`)
+	cmd.PersistentFlags().IntVar(&options.traceLevel, "trace", 0, "Network traffic trace level in the range [0,9]. 0 to disable (default 0)")
+	cmd.PersistentFlags().IntVar(&options.summarySecs, "progress", 0, "Print stats summary at given interval, in seconds. 0 to disable (default 0)")
 	memprofile := "memprofile"
 	cpuprofile := "cpuprofile"
 	cmd.PersistentFlags().StringVar(&options.memprofile, memprofile, "", "Write a heap profile to given file")
@@ -40,6 +41,7 @@ type feedOptions struct {
 	traceLevel  int
 	timeoutSecs int
 	doomSecs    int
+	summarySecs int
 
 	memprofile string
 	cpuprofile string
@@ -102,6 +104,19 @@ func createServiceClients(service *vespa.Service, n int) []util.HTTPClient {
 	return clients
 }
 
+func summaryTicker(secs int, cli *CLI, start time.Time, statsFunc func() document.Stats) *time.Ticker {
+	if secs < 1 {
+		return nil
+	}
+	ticker := time.NewTicker(time.Duration(secs) * time.Second)
+	go func() {
+		for range ticker.C {
+			writeSummaryJSON(cli.Stdout, statsFunc(), cli.now().Sub(start))
+		}
+	}()
+	return ticker
+}
+
 func (opts feedOptions) compressionMode() (document.Compression, error) {
 	switch opts.compression {
 	case "auto":
@@ -124,7 +139,7 @@ func feed(files []string, options feedOptions, cli *CLI) error {
 	if err != nil {
 		return err
 	}
-	client := document.NewClient(document.ClientOptions{
+	client, err := document.NewClient(document.ClientOptions{
 		Compression: compression,
 		Timeout:     time.Duration(options.timeoutSecs) * time.Second,
 		Route:       options.route,
@@ -132,10 +147,14 @@ func feed(files []string, options feedOptions, cli *CLI) error {
 		BaseURL:     service.BaseURL,
 		NowFunc:     cli.now,
 	}, clients)
+	if err != nil {
+		return err
+	}
 	throttler := document.NewThrottler(options.connections)
 	circuitBreaker := document.NewCircuitBreaker(10*time.Second, time.Duration(options.doomSecs)*time.Second)
 	dispatcher := document.NewDispatcher(client, throttler, circuitBreaker, cli.Stderr, options.verbose)
 	start := cli.now()
+	summaryTicker := summaryTicker(options.summarySecs, cli, start, dispatcher.Stats)
 	for _, name := range files {
 		var r io.ReadCloser
 		if len(files) == 1 && name == "-" {
@@ -164,6 +183,9 @@ func feed(files []string, options feedOptions, cli *CLI) error {
 	}
 	if err := dispatcher.Close(); err != nil {
 		return err
+	}
+	if summaryTicker != nil {
+		summaryTicker.Stop()
 	}
 	elapsed := cli.now().Sub(start)
 	return writeSummaryJSON(cli.Stdout, dispatcher.Stats(), elapsed)

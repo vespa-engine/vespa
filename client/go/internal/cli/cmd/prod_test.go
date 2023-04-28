@@ -149,19 +149,19 @@ func writeTest(path string, content []byte, t *testing.T) {
 	}
 }
 
-func TestProdSubmit(t *testing.T) {
+func TestProdDeploy(t *testing.T) {
 	pkgDir := filepath.Join(t.TempDir(), "app")
 	createApplication(t, pkgDir, false, false)
-	prodSubmit(pkgDir, t)
+	prodDeploy(pkgDir, t)
 }
 
-func TestProdSubmitWithoutTests(t *testing.T) {
+func TestProdDeployWithoutTests(t *testing.T) {
 	pkgDir := filepath.Join(t.TempDir(), "app")
 	createApplication(t, pkgDir, false, true)
-	prodSubmit(pkgDir, t)
+	prodDeploy(pkgDir, t)
 }
 
-func prodSubmit(pkgDir string, t *testing.T) {
+func prodDeploy(pkgDir string, t *testing.T) {
 	t.Helper()
 	httpClient := &mock.HTTPClient{}
 	httpClient.NextResponseString(200, `ok`)
@@ -198,12 +198,16 @@ func prodSubmit(pkgDir string, t *testing.T) {
 
 	stdout.Reset()
 	cli.Environment["VESPA_CLI_API_KEY_FILE"] = filepath.Join(cli.config.homeDir, "t1.api-key.pem")
-	assert.Nil(t, cli.Run("prod", "submit"))
+	assert.Nil(t, cli.Run("prod", "deploy"))
+	assert.Contains(t, stdout.String(), "Success: Submitted")
+	assert.Contains(t, stdout.String(), "See https://console.vespa-cloud.com/tenant/t1/application/a1/prod/deployment for deployment progress")
+	stdout.Reset()
+	assert.Nil(t, cli.Run("prod", "submit")) // old variant also works
 	assert.Contains(t, stdout.String(), "Success: Submitted")
 	assert.Contains(t, stdout.String(), "See https://console.vespa-cloud.com/tenant/t1/application/a1/prod/deployment for deployment progress")
 }
 
-func TestProdSubmitWithJava(t *testing.T) {
+func TestProdDeployWithJava(t *testing.T) {
 	pkgDir := filepath.Join(t.TempDir(), "app")
 	createApplication(t, pkgDir, true, false)
 
@@ -230,7 +234,7 @@ func TestProdSubmitWithJava(t *testing.T) {
 	assert.Contains(t, stdout.String(), "See https://console.vespa-cloud.com/tenant/t1/application/a1/prod/deployment for deployment progress")
 }
 
-func TestProdSubmitInvalidZip(t *testing.T) {
+func TestProdDeployInvalidZip(t *testing.T) {
 	pkgDir := filepath.Join(t.TempDir(), "app")
 	createApplication(t, pkgDir, true, false)
 

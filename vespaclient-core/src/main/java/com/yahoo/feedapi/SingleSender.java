@@ -1,11 +1,9 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.feedapi;
 
-import com.yahoo.document.Document;
-import com.yahoo.document.DocumentId;
 import com.yahoo.document.DocumentPut;
+import com.yahoo.document.DocumentRemove;
 import com.yahoo.document.DocumentUpdate;
-import com.yahoo.document.TestAndSetCondition;
 import com.yahoo.documentapi.messagebus.protocol.PutDocumentMessage;
 import com.yahoo.documentapi.messagebus.protocol.RemoveDocumentMessage;
 import com.yahoo.documentapi.messagebus.protocol.UpdateDocumentMessage;
@@ -26,39 +24,18 @@ public class SingleSender implements SimpleFeedAccess {
     }
 
     @Override
-    public void put(Document doc) {
-        send(new PutDocumentMessage(new DocumentPut(doc)));
+    public void put(DocumentPut put) {
+        send(new PutDocumentMessage(put));
     }
 
     @Override
-    public void remove(DocumentId docId) {
-        send(new RemoveDocumentMessage(docId));
+    public void remove(DocumentRemove remove) {
+        send(new RemoveDocumentMessage(remove));
     }
 
     @Override
     public void update(DocumentUpdate update) {
         send(new UpdateDocumentMessage(update));
-    }
-
-    @Override
-    public void put(Document doc, TestAndSetCondition condition) {
-        PutDocumentMessage message = new PutDocumentMessage(new DocumentPut(doc));
-        message.setCondition(condition);
-        send(message);
-    }
-
-    @Override
-    public void remove(DocumentId docId, TestAndSetCondition condition) {
-        RemoveDocumentMessage message = new RemoveDocumentMessage(docId);
-        message.setCondition(condition);
-        send(message);
-    }
-
-    @Override
-    public void update(DocumentUpdate update, TestAndSetCondition condition) {
-        UpdateDocumentMessage message = new UpdateDocumentMessage(update);
-        message.setCondition(condition);
-        send(message);
     }
 
     @Override

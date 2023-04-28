@@ -64,7 +64,7 @@ public class UriParserTestCase {
         FeedOperation op = it.next();
         assertNotNull(op);
         assertEquals(FeedOperation.Type.DOCUMENT, op.getType());
-        Document doc = op.getDocument();
+        Document doc = op.getDocumentPut().getDocument();
         assertNotNull(doc);
         return doc;
     }

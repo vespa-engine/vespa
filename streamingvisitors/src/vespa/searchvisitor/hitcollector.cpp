@@ -2,6 +2,7 @@
 
 #include "hitcollector.h"
 #include <vespa/searchlib/fef/feature_resolver.h>
+#include <vespa/searchlib/fef/utils.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <algorithm>
 #include <vespa/eval/eval/value_codec.h>
@@ -10,9 +11,12 @@
 #include <vespa/log/log.h>
 LOG_SETUP(".searchvisitor.hitcollector");
 
-using search::FeatureSet;
 using search::fef::MatchData;
+using vespalib::FeatureSet;
+using vespalib::FeatureValues;
 using vdslib::SearchResult;
+
+using FefUtils = search::fef::Utils;
 
 namespace streaming {
 
@@ -123,7 +127,7 @@ HitCollector::addHit(Hit && hit)
 }
 
 void
-HitCollector::fillSearchResult(vdslib::SearchResult & searchResult)
+HitCollector::fillSearchResult(vdslib::SearchResult & searchResult, FeatureValues&& match_features)
 {
     sortByDocId();
     for (const Hit & hit : _hits) {
@@ -139,6 +143,13 @@ HitCollector::fillSearchResult(vdslib::SearchResult & searchResult)
             searchResult.addHit(docId, documentId.c_str(), rank, hit.getSortBlob().c_str(), hit.getSortBlob().size());
         }
     }
+    searchResult.set_match_features(std::move(match_features));
+}
+
+void
+HitCollector::fillSearchResult(vdslib::SearchResult & searchResult)
+{
+    fillSearchResult(searchResult, FeatureValues());
 }
 
 FeatureSet::SP
@@ -147,42 +158,41 @@ HitCollector::getFeatureSet(IRankProgram &rankProgram,
                             const search::StringStringMap &feature_rename_map)
 {
     if (resolver.num_features() == 0 || _hits.empty()) {
-        return FeatureSet::SP(new FeatureSet());
+        return std::make_shared<FeatureSet>();
     }
     sortByDocId();
-    std::vector<vespalib::string> names;
-    names.reserve(resolver.num_features());
-    for (size_t i = 0; i < resolver.num_features(); ++i) {
-        vespalib::string name = resolver.name_of(i);
-        auto iter = feature_rename_map.find(name);
-        if (iter != feature_rename_map.end()) {
-            name = iter->second;
-        }
-        names.emplace_back(name);
-    }
-    FeatureSet::SP retval = FeatureSet::SP(new FeatureSet(names, _hits.size()));
+    auto names = FefUtils::extract_feature_names(resolver, feature_rename_map);
+    FeatureSet::SP retval = std::make_shared<FeatureSet>(names, _hits.size());
     for (const Hit & hit : _hits) {
         rankProgram.run(hit.getDocId(), hit.getMatchData());
         uint32_t docId = hit.getDocId();
         auto * f = retval->getFeaturesByIndex(retval->addDocId(docId));
-        for (uint32_t j = 0; j < names.size(); ++j) {
-            if (resolver.is_object(j)) {
-                auto obj = resolver.resolve(j).as_object(docId);
-                if (! obj.get().type().is_double()) {
-                    vespalib::nbostream buf;
-                    encode_value(obj.get(), buf);
-                    f[j].set_data(vespalib::Memory(buf.peek(), buf.size()));
-                } else {
-                    f[j].set_double(obj.get().as_double());
-                }
-            } else {
-                f[j].set_double(resolver.resolve(j).as_number(docId));
-            }
-            LOG(debug, "getFeatureSet: lDocId(%u), '%s': %f %s", docId, names[j].c_str(), f[j].as_double(),
-                f[j].is_data() ? "[tensor]" : "");
-        }
+        FefUtils::extract_feature_values(resolver, docId, f);
     }
     return retval;
+}
+
+FeatureValues
+HitCollector::get_match_features(IRankProgram& rank_program,
+                                 const search::fef::FeatureResolver& resolver,
+                                 const search::StringStringMap& feature_rename_map)
+{
+    FeatureValues match_features;
+    if (resolver.num_features() == 0 || _hits.empty()) {
+        return match_features;
+    }
+    sortByDocId();
+    match_features.names = FefUtils::extract_feature_names(resolver, feature_rename_map);
+    match_features.values.resize(resolver.num_features() * _hits.size());
+    auto f = match_features.values.data();
+    for (const Hit & hit : _hits) {
+        auto docid = hit.getDocId();
+        rank_program.run(docid, hit.getMatchData());
+        FefUtils::extract_feature_values(resolver, docid, f);
+        f += resolver.num_features();
+    }
+    assert(f == match_features.values.data() + match_features.values.size());
+    return match_features;
 }
 
 } // namespace streaming

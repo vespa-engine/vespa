@@ -25,11 +25,11 @@ vespa_add_library(searchlib_tensor OBJECT
     hnsw_single_best_neighbors.cpp
     imported_tensor_attribute_vector.cpp
     imported_tensor_attribute_vector_read_guard.cpp
-    inner_product_distance.cpp
     inv_log_level_generator.cpp
     large_subspaces_buffer_type.cpp
     nearest_neighbor_index.cpp
     nearest_neighbor_index_saver.cpp
+    prenormalized_angular_distance.cpp
     serialized_fast_value_attribute.cpp
     serialized_tensor_ref.cpp
     small_subspaces_buffer_type.cpp

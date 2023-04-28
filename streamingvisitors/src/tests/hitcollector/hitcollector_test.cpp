@@ -1,5 +1,4 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/vespalib/testkit/testapp.h>
 
 #include <vespa/document/fieldvalue/fieldvalues.h>
 #include <vespa/document/datatype/documenttype.h>
@@ -10,7 +9,9 @@
 #include <vespa/eval/eval/tensor_spec.h>
 #include <vespa/eval/eval/value.h>
 #include <vespa/eval/eval/value_codec.h>
+#include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/objects/nbostream.h>
+#include <vespa/vespalib/util/stringfmt.h>
 
 using namespace document;
 using namespace search::fef;
@@ -22,13 +23,45 @@ using vespalib::eval::DoubleValue;
 using vespalib::eval::SimpleValue;
 using vespalib::eval::TensorSpec;
 using vespalib::eval::Value;
+using vespalib::make_string_short::fmt;
 
+using FeatureValue = FeatureSet::Value;
+
+namespace {
+
+double as_double(const FeatureValue& v) {
+    EXPECT_TRUE(v.is_double());
+    return v.as_double();
+}
+
+TensorSpec as_spec(const FeatureValue& v) {
+    EXPECT_TRUE(v.is_data());
+    auto mem = v.as_data();
+    nbostream buf(mem.data, mem.size);
+    return spec_from_value(*SimpleValue::from_stream(buf));
+}
+
+ConstArrayRef<FeatureValue> as_value_slice(FeatureValues& mf, uint32_t index, uint32_t num_features)
+{
+    return { mf.values.data() + index * num_features, num_features };
+}
+
+void check_match_features(ConstArrayRef<FeatureValue> v, uint32_t docid)
+{
+    SCOPED_TRACE(fmt("Checking docid %u for expected match features", docid));
+    // The following values should have been set by MyRankProgram::run()
+    EXPECT_EQ(10 + docid, as_double(v[0]));
+    EXPECT_EQ(30 + docid, as_double(v[1]));
+    EXPECT_EQ(TensorSpec("tensor(x{})").add({{"x", "a"}}, 20 + docid), as_spec(v[2]));
+}
+
+}
 
 namespace streaming {
 
-class HitCollectorTest : public vespalib::TestApp
+class HitCollectorTest : public ::testing::Test
 {
-private:
+protected:
     void assertHit(SearchResult::RankType expRank, uint32_t hitNo, SearchResult & rs);
     void assertHit(SearchResult::RankType expRank, uint32_t expDocId, uint32_t hitNo, SearchResult & rs);
     void addHit(HitCollector &hc, uint32_t docId, double score,
@@ -43,10 +76,8 @@ private:
     DocumentType _docType;
     std::vector<vsm::StorageDocument::UP> _backedHits;
 
-public:
     HitCollectorTest();
-    ~HitCollectorTest();
-    int Main() override;
+    ~HitCollectorTest() override;
 };
 
 HitCollectorTest::HitCollectorTest()
@@ -70,8 +101,8 @@ HitCollectorTest::assertHit(SearchResult::RankType expRank, uint32_t expDocId, u
     const char * gDocId;
     SearchResult::RankType rank;
     lDocId = rs.getHit(hitNo, gDocId, rank);
-    EXPECT_EQUAL(rank, expRank);
-    EXPECT_EQUAL(lDocId, expDocId);
+    EXPECT_EQ(rank, expRank);
+    EXPECT_EQ(lDocId, expDocId);
 }
 
 void
@@ -85,8 +116,7 @@ HitCollectorTest::addHit(HitCollector &hc, uint32_t docId, double score, const c
     _backedHits.push_back(std::move(sdoc));
 }
 
-void
-HitCollectorTest::testSimple()
+TEST_F(HitCollectorTest, simple)
 {
     HitCollector hc(5);
 
@@ -107,8 +137,7 @@ HitCollectorTest::testSimple()
     }
 }
 
-void
-HitCollectorTest::testGapsInDocId()
+TEST_F(HitCollectorTest, gaps_in_docid)
 {
     HitCollector hc(5);
 
@@ -129,8 +158,7 @@ HitCollectorTest::testGapsInDocId()
     assertHit(18, 8, 4, sr);
 }
 
-void
-HitCollectorTest::testHeapProperty()
+TEST_F(HitCollectorTest, heap_property)
 {
     {
         HitCollector hc(3);
@@ -173,8 +201,7 @@ HitCollectorTest::testHeapProperty()
     }
 }
 
-void
-HitCollectorTest::testHeapPropertyWithSorting()
+TEST_F(HitCollectorTest, heap_property_with_sorting)
 {
     std::vector<char> sortData;
     sortData.push_back('a');
@@ -224,8 +251,7 @@ HitCollectorTest::testHeapPropertyWithSorting()
     }
 }
 
-void
-HitCollectorTest::testEmpty()
+TEST_F(HitCollectorTest, empty)
 {
     HitCollector hc(0);
     addHit(hc, 0, 0);
@@ -270,8 +296,7 @@ public:
 };
 MyRankProgram::~MyRankProgram() = default;
 
-void
-HitCollectorTest::testFeatureSet()
+TEST_F(HitCollectorTest, feature_set)
 {
     HitCollector hc(3);
 
@@ -285,43 +310,43 @@ HitCollectorTest::testFeatureSet()
     FeatureResolver resolver(rankProgram.get_resolver());
     search::StringStringMap renames;
     renames["bar"] = "qux";
-    search::FeatureSet::SP sf = hc.getFeatureSet(rankProgram, resolver, renames);
+    vespalib::FeatureSet::SP sf = hc.getFeatureSet(rankProgram, resolver, renames);
 
-    EXPECT_EQUAL(sf->getNames().size(), 3u);
-    EXPECT_EQUAL(sf->getNames()[0], "foo");
-    EXPECT_EQUAL(sf->getNames()[1], "qux");
-    EXPECT_EQUAL(sf->getNames()[2], "baz");
-    EXPECT_EQUAL(sf->numFeatures(), 3u);
-    EXPECT_EQUAL(sf->numDocs(), 3u);
+    EXPECT_EQ(sf->getNames().size(), 3u);
+    EXPECT_EQ(sf->getNames()[0], "foo");
+    EXPECT_EQ(sf->getNames()[1], "qux");
+    EXPECT_EQ(sf->getNames()[2], "baz");
+    EXPECT_EQ(sf->numFeatures(), 3u);
+    EXPECT_EQ(sf->numDocs(), 3u);
     {
         const auto * f = sf->getFeaturesByDocId(1);
         ASSERT_TRUE(f != NULL);
-        EXPECT_EQUAL(f[0].as_double(), 11); // 10 + docId
-        EXPECT_EQUAL(f[1].as_double(), 31); // 30 + docId
+        EXPECT_EQ(f[0].as_double(), 11); // 10 + docId
+        EXPECT_EQ(f[1].as_double(), 31); // 30 + docId
     }
     {
         const auto * f = sf->getFeaturesByDocId(3);
         ASSERT_TRUE(f != NULL);
         EXPECT_TRUE(f[0].is_double());
         EXPECT_TRUE(!f[0].is_data());
-        EXPECT_EQUAL(f[0].as_double(), 13);
+        EXPECT_EQ(f[0].as_double(), 13);
         EXPECT_TRUE(f[1].is_double());
         EXPECT_TRUE(!f[1].is_data());
-        EXPECT_EQUAL(f[1].as_double(), 33);
+        EXPECT_EQ(f[1].as_double(), 33);
         EXPECT_TRUE(!f[2].is_double());
         EXPECT_TRUE(f[2].is_data());
         {
             nbostream buf(f[2].as_data().data, f[2].as_data().size);
             auto actual = spec_from_value(*SimpleValue::from_stream(buf));
             auto expect = TensorSpec("tensor(x{})").add({{"x", "a"}}, 23);
-            EXPECT_EQUAL(actual, expect);
+            EXPECT_EQ(actual, expect);
         }
     }
     {
         const auto * f = sf->getFeaturesByDocId(4);
         ASSERT_TRUE(f != NULL);
-        EXPECT_EQUAL(f[0].as_double(), 14);
-        EXPECT_EQUAL(f[1].as_double(), 34);
+        EXPECT_EQ(f[0].as_double(), 14);
+        EXPECT_EQ(f[1].as_double(), 34);
     }
     ASSERT_TRUE(sf->getFeaturesByDocId(0) == NULL);
     ASSERT_TRUE(sf->getFeaturesByDocId(2) == NULL);
@@ -334,21 +359,33 @@ HitCollectorTest::testFeatureSet()
     assertHit(30, 4, 2, sr);
 }
 
-int
-HitCollectorTest::Main()
+TEST_F(HitCollectorTest, match_features)
 {
-    TEST_INIT("hitcollector_test");
+    HitCollector hc(3);
 
-    testSimple();
-    testGapsInDocId();
-    testHeapProperty();
-    testHeapPropertyWithSorting();
-    testEmpty();
-    testFeatureSet();
+    addHit(hc, 0, 10);
+    addHit(hc, 1, 50); // on heap
+    addHit(hc, 2, 20);
+    addHit(hc, 3, 40); // on heap
+    addHit(hc, 4, 30); // on heap
 
-    TEST_DONE();
+    MyRankProgram rankProgram;
+    FeatureResolver resolver(rankProgram.get_resolver());
+    search::StringStringMap renames;
+    renames["bar"] = "qux";
+    auto mf = hc.get_match_features(rankProgram, resolver, renames);
+    auto num_features = resolver.num_features();
+
+    EXPECT_EQ(num_features, mf.names.size());
+    EXPECT_EQ("foo", mf.names[0]);
+    EXPECT_EQ("qux", mf.names[1]);
+    EXPECT_EQ("baz", mf.names[2]);
+    EXPECT_EQ(num_features * 3, mf.values.size());
+    check_match_features(as_value_slice(mf, 0, num_features), 1);
+    check_match_features(as_value_slice(mf, 1, num_features), 3);
+    check_match_features(as_value_slice(mf, 2, num_features), 4);
 }
 
 } // namespace streaming
 
-TEST_APPHOOK(streaming::HitCollectorTest)
+GTEST_MAIN_RUN_ALL_TESTS()

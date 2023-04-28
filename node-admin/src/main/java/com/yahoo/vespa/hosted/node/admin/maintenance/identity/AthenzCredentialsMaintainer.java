@@ -1,12 +1,15 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.maintenance.identity;
 
+import com.yahoo.component.Version;
+import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.security.KeyAlgorithm;
 import com.yahoo.security.KeyUtils;
 import com.yahoo.security.Pkcs10Csr;
 import com.yahoo.security.SslContextBuilder;
 import com.yahoo.security.X509CertificateUtils;
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
+import com.yahoo.vespa.athenz.api.AthenzRole;
 import com.yahoo.vespa.athenz.client.zts.DefaultZtsClient;
 import com.yahoo.vespa.athenz.client.zts.InstanceIdentity;
 import com.yahoo.vespa.athenz.client.zts.ZtsClient;
@@ -45,6 +48,7 @@ import java.security.cert.X509Certificate;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -105,8 +109,14 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
     public boolean converge(NodeAgentContext context) {
         var modified = false;
         modified |= maintain(context, NODE);
+
+        if (context.zone().getSystemName().isPublic())
+            return modified;
+
         if (shouldWriteTenantServiceIdentity(context))
             modified |= maintain(context, TENANT);
+        else
+            modified |= deleteTenantCredentials(context);
         return modified;
     }
 
@@ -114,10 +124,14 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
         if (context.isDisabled(NodeAgentTask.CredentialsMaintainer)) return false;
 
         try {
+            var modified = false;
             context.log(logger, Level.FINE, "Checking certificate");
             ContainerPath siaDirectory = context.paths().of(CONTAINER_SIA_DIRECTORY, context.users().vespa());
             ContainerPath identityDocumentFile = siaDirectory.resolve(identityType.getIdentityDocument());
-            AthenzIdentity athenzIdentity = getAthenzIdentity(context, identityType, identityDocumentFile);
+            Optional<AthenzIdentity> optionalAthenzIdentity = getAthenzIdentity(context, identityType, identityDocumentFile);
+            if (optionalAthenzIdentity.isEmpty())
+                return false;
+            AthenzIdentity athenzIdentity = optionalAthenzIdentity.get();
             ContainerPath privateKeyFile = (ContainerPath) SiaUtils.getPrivateKeyFile(siaDirectory, athenzIdentity);
             ContainerPath certificateFile = (ContainerPath) SiaUtils.getCertificateFile(siaDirectory, athenzIdentity);
             if (!Files.exists(privateKeyFile) || !Files.exists(certificateFile) || !Files.exists(identityDocumentFile)) {
@@ -126,7 +140,7 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
                 Files.createDirectories(certificateFile.getParent());
                 Files.createDirectories(identityDocumentFile.getParent());
                 registerIdentity(context, privateKeyFile, certificateFile, identityDocumentFile, identityType, athenzIdentity);
-                return true;
+                modified = true;
             }
 
             X509Certificate certificate = readCertificateFromFile(certificateFile);
@@ -136,11 +150,11 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
             if (refreshIdentityDocument(doc, context)) {
                 context.log(logger, "Identity document is outdated (version=%d)", doc.documentVersion());
                 registerIdentity(context, privateKeyFile, certificateFile, identityDocumentFile, identityType, athenzIdentity);
-                return true;
+                modified = true;
             } else if (isCertificateExpired(expiry, now)) {
                 context.log(logger, "Certificate has expired (expiry=%s)", expiry.toString());
                 registerIdentity(context, privateKeyFile, certificateFile, identityDocumentFile, identityType, athenzIdentity);
-                return true;
+                modified = true;
             }
 
             Duration age = Duration.between(certificate.getNotBefore().toInstant(), now);
@@ -150,17 +164,76 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
                     context.log(logger, Level.WARNING, String.format(
                             "Skipping refresh attempt as last refresh was on %s (less than %s ago)",
                             lastRefreshAttempt.get(context.containerName()).toString(), REFRESH_BACKOFF.toString()));
-                    return false;
                 } else {
                     lastRefreshAttempt.put(context.containerName(), now);
                     refreshIdentity(context, privateKeyFile, certificateFile, identityDocumentFile, doc.identityDocument(), identityType, athenzIdentity);
-                    return true;
+                    modified = true;
                 }
             }
-            context.log(logger, Level.FINE, "Certificate is still valid");
-            return false;
+
+            modified |= maintainRoleCertificates(context, siaDirectory, privateKeyFile, certificateFile, athenzIdentity, doc.identityDocument());
+            return modified;
         } catch (IOException e) {
             throw new UncheckedIOException(e);
+        }
+    }
+
+    private boolean maintainRoleCertificates(NodeAgentContext context,
+                                             ContainerPath siaDirectory,
+                                             ContainerPath privateKeyFile,
+                                             ContainerPath certificateFile,
+                                             AthenzIdentity identity,
+                                             IdentityDocument identityDocument) {
+        var modified = false;
+
+        for (var role : getRoleList(context)) {
+                try {
+                    var roleCertificatePath = siaDirectory.resolve("certs")
+                            .resolve(String.format("%s.cert.pem", role));
+                    if (!Files.exists(roleCertificatePath)) {
+                        writeRoleCertificate(context, privateKeyFile, certificateFile, roleCertificatePath, identity, identityDocument, role);
+                        modified = true;
+                    } else if (shouldRefreshCertificate(context, roleCertificatePath)) {
+                        writeRoleCertificate(context, privateKeyFile, certificateFile, roleCertificatePath, identity, identityDocument, role);
+                        modified = true;
+                    }
+                } catch (IOException e) {
+                    context.log(logger, Level.WARNING, "Failed to maintain role certificate " + role, e);
+                }
+        }
+        return modified;
+    }
+
+    private boolean shouldRefreshCertificate(NodeAgentContext context, ContainerPath certificatePath) throws IOException {
+        var certificate = readCertificateFromFile(certificatePath);
+        var now = clock.instant();
+        var shouldRefresh = now.isAfter(certificate.getNotAfter().toInstant()) ||
+                now.isBefore(certificate.getNotBefore().toInstant().plus(REFRESH_PERIOD));
+        return !shouldThrottleRefreshAttempts(context.containerName(), now) &&
+                shouldRefresh;
+    }
+
+    private void writeRoleCertificate(NodeAgentContext context,
+                                      ContainerPath privateKeyFile,
+                                      ContainerPath certificateFile,
+                                      ContainerPath roleCertificatePath,
+                                      AthenzIdentity identity,
+                                      IdentityDocument identityDocument,
+                                      String role) throws IOException {
+        HostnameVerifier ztsHostNameVerifier = (hostname, sslSession) -> true;
+        var athenzRole = AthenzRole.fromResourceNameString(role);
+        var privateKey = KeyUtils.fromPemEncodedPrivateKey(new String(Files.readAllBytes(privateKeyFile)));
+
+        var containerIdentitySslContext = new SslContextBuilder().withKeyStore(privateKeyFile, certificateFile)
+                .withTrustStore(ztsTrustStorePath)
+                .build();
+        try (ZtsClient ztsClient = new DefaultZtsClient.Builder(ztsEndpoint(identityDocument)).withSslContext(containerIdentitySslContext).withHostnameVerifier(ztsHostNameVerifier).build()) {
+            var csrGenerator = new CsrGenerator(certificateDnsSuffix, identityDocument.providerService().getFullName());
+            var csr = csrGenerator.generateRoleCsr(
+                    identity, athenzRole, identityDocument.providerUniqueId(), identityDocument.clusterType(), KeyUtils.toKeyPair(privateKey));
+            var roleCertificate = ztsClient.getRoleCertificate(athenzRole, csr);
+            writeFile(roleCertificatePath, X509CertificateUtils.toPem(roleCertificate));
+            context.log(logger, "Role certificate successfully retrieved written to file " + roleCertificatePath.pathInContainer());
         }
     }
 
@@ -193,6 +266,23 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
     @Override
     public String name() {
         return "node-certificate";
+    }
+
+    private boolean deleteTenantCredentials(NodeAgentContext context) {
+        var siaDirectory = context.paths().of(CONTAINER_SIA_DIRECTORY, context.users().vespa());
+        var identityDocumentFile = siaDirectory.resolve(TENANT.getIdentityDocument());
+        if (!Files.exists(identityDocumentFile)) return false;
+        return getAthenzIdentity(context, TENANT, identityDocumentFile).map(athenzIdentity -> {
+            var privateKeyFile = (ContainerPath) SiaUtils.getPrivateKeyFile(siaDirectory, athenzIdentity);
+            var certificateFile = (ContainerPath) SiaUtils.getCertificateFile(siaDirectory, athenzIdentity);
+            try {
+                return Files.deleteIfExists(identityDocumentFile) ||
+                        Files.deleteIfExists(privateKeyFile) ||
+                        Files.deleteIfExists(certificateFile);
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
+        }).orElse(false);
     }
 
     private boolean shouldRefreshCredentials(Duration age) {
@@ -301,28 +391,33 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
     private SignedIdentityDocument signedIdentityDocument(NodeAgentContext context, IdentityType identityType) {
         return switch (identityType) {
             case NODE -> identityDocumentClient.getNodeIdentityDocument(context.hostname().value(), documentVersion(context));
-            case TENANT -> identityDocumentClient.getTenantIdentityDocument(context.hostname().value(), documentVersion(context));
+            case TENANT -> identityDocumentClient.getTenantIdentityDocument(context.hostname().value(), documentVersion(context)).get();
         };
     }
 
-    private AthenzIdentity getAthenzIdentity(NodeAgentContext context, IdentityType identityType, ContainerPath identityDocumentFile) {
+    private Optional<AthenzIdentity> getAthenzIdentity(NodeAgentContext context, IdentityType identityType, ContainerPath identityDocumentFile) {
         return switch (identityType) {
-            case NODE -> context.identity();
+            case NODE -> Optional.of(context.identity());
             case TENANT -> getTenantIdentity(context, identityDocumentFile);
         };
     }
 
-    private AthenzIdentity getTenantIdentity(NodeAgentContext context, ContainerPath identityDocumentFile) {
+    private Optional<AthenzIdentity> getTenantIdentity(NodeAgentContext context, ContainerPath identityDocumentFile) {
         if (Files.exists(identityDocumentFile)) {
-            return EntityBindingsMapper.readSignedIdentityDocumentFromFile(identityDocumentFile).identityDocument().serviceIdentity();
+            return Optional.of(EntityBindingsMapper.readSignedIdentityDocumentFromFile(identityDocumentFile).identityDocument().serviceIdentity());
         } else {
-            return identityDocumentClient.getTenantIdentityDocument(context.hostname().value(), documentVersion(context)).identityDocument().serviceIdentity();
+            return identityDocumentClient.getTenantIdentityDocument(context.hostname().value(), documentVersion(context))
+                    .map(doc -> doc.identityDocument().serviceIdentity());
         }
     }
 
     private boolean shouldWriteTenantServiceIdentity(NodeAgentContext context) {
+        var version = context.node().currentVespaVersion()
+                .orElse(context.node().wantedVespaVersion().orElse(Version.emptyVersion));
+        var appId = context.node().owner().orElse(ApplicationId.defaultId());
         return tenantServiceIdentityFlag
-                .with(FetchVector.Dimension.HOSTNAME, context.hostname().value())
+                .with(FetchVector.Dimension.VESPA_VERSION, version.toFullString())
+                .with(FetchVector.Dimension.APPLICATION_ID, appId.serializedForm())
                 .value();
     }
 
@@ -330,11 +425,25 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
     Get the document version to ask for
      */
     private int documentVersion(NodeAgentContext context) {
+        var version = context.node().currentVespaVersion()
+                .orElse(context.node().wantedVespaVersion().orElse(Version.emptyVersion));
+        var appId = context.node().owner().orElse(ApplicationId.defaultId());
         return useNewIdentityDocumentLayout
                 .with(FetchVector.Dimension.HOSTNAME, context.hostname().value())
+                .with(FetchVector.Dimension.VESPA_VERSION, version.toFullString())
+                .with(FetchVector.Dimension.APPLICATION_ID, appId.serializedForm())
                 .value()
                 ? SignedIdentityDocument.DEFAULT_DOCUMENT_VERSION
                 : SignedIdentityDocument.LEGACY_DEFAULT_DOCUMENT_VERSION;
+    }
+
+    private List<String> getRoleList(NodeAgentContext context) {
+        try {
+            return identityDocumentClient.getNodeRoles(context.hostname().value());
+        } catch (Exception e) {
+            context.log(logger, Level.WARNING, "Failed to retrieve role list", e);
+            return List.of();
+        }
     }
 
     enum IdentityType {

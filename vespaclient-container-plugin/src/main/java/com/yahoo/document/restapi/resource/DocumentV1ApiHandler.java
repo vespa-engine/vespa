@@ -460,15 +460,17 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
 
         return new ForwardingContentChannel(in -> {
             enqueueAndDispatch(request, handler, () -> {
-                ParsedDocumentOperation put = parser.parsePut(in, path.id().toString());
-                getProperty(request, CONDITION).map(TestAndSetCondition::new).ifPresent(c -> put.operation().setCondition(c));
+                ParsedDocumentOperation parsed = parser.parsePut(in, path.id().toString());
+                DocumentPut put = (DocumentPut)parsed.operation();
+                getProperty(request, CONDITION).map(TestAndSetCondition::new).ifPresent(c -> put.setCondition(c));
+                getProperty(request, CREATE, booleanParser).ifPresent(put::setCreateIfNonExistent);
                 DocumentOperationParameters parameters = parametersFromRequest(request, ROUTE)
                         .withResponseHandler(response -> {
                             outstanding.decrementAndGet();
-                            updatePutMetrics(response.outcome(), latencyOf(request));
-                            handleFeedOperation(path, put.fullyApplied(), handler, response);
+                            updatePutMetrics(response.outcome(), latencyOf(request), put.getCreateIfNonExistent());
+                            handleFeedOperation(path, parsed.fullyApplied(), handler, response);
                         });
-                return () -> dispatchOperation(() -> asyncSession.put((DocumentPut)put.operation(), parameters));
+                return () -> dispatchOperation(() -> asyncSession.put(put, parameters));
             });
         });
     }
@@ -1091,7 +1093,8 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
 
     private static double latencyOf(HttpRequest r) { return (System.nanoTime() - r.relativeCreatedAtNanoTime()) / 1e+9d; }
 
-    private void updatePutMetrics(Outcome outcome, double latency) {
+    private void updatePutMetrics(Outcome outcome, double latency, boolean create) {
+        if (create && outcome == Outcome.NOT_FOUND) outcome = Outcome.SUCCESS; // >_<
         incrementMetricNumOperations(); incrementMetricNumPuts(); sampleLatency(latency);
         switch (outcome) {
             case SUCCESS -> incrementMetricSucceeded();
@@ -1368,15 +1371,15 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
 
                             int status = Response.Status.BAD_GATEWAY;
                             switch (code) {
-                                case TIMEOUT:
-                                    if ( ! hasVisitedAnyBuckets() && parameters.getVisitInconsistentBuckets()) {
+                                case TIMEOUT: // Intentional fallthrough.
+                                case ABORTED:
+                                    if (error.get() == null && ! hasVisitedAnyBuckets() && parameters.getVisitInconsistentBuckets()) {
                                         response.writeMessage("No buckets visited within timeout of " +
                                                               parameters.getSessionTimeoutMs() + "ms (request timeout -5s)");
                                         status = Response.Status.GATEWAY_TIMEOUT;
                                         break;
                                     }
-                                case SUCCESS: // Intentional fallthrough.
-                                case ABORTED: // Intentional fallthrough.
+                                case SUCCESS:
                                     if (error.get() == null) {
                                         ProgressToken progress = getProgress() != null ? getProgress() : parameters.getResumeToken();
                                         if (progress != null && ! progress.isFinished())

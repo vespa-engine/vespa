@@ -82,14 +82,17 @@ public class Request extends AbstractResource {
         this(current, uri, true);
     }
 
-    public Request(CurrentContainer current, URI uri, boolean isServerRequest) {
+    public Request(CurrentContainer current, URI uri, boolean isServerRequest) { this(current, uri, isServerRequest, -1); }
+
+    public Request(CurrentContainer current, URI uri, boolean isServerRequest, long creationTime) {
         parent = null;
         parentReference = null;
         serverRequest = isServerRequest;
         this.uri = uri.normalize();
         container = current.newReference(uri, this);
-        creationTime = container.currentTimeMillis();
+        this.creationTime = creationTime >= 0 ? creationTime : container.currentTimeMillis();
     }
+
 
     /**
      * <p>Creates a new instance of this class. As a {@link RequestHandler} you should use this method to spawn child

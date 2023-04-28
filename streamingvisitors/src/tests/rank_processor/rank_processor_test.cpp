@@ -55,6 +55,10 @@ RankProcessorTest::build_query(QueryBuilder<SimpleQueryNodeTypes> &builder)
     _query_wrapper = std::make_unique<QueryWrapper>(*_query);
 }
 
+class MockRawScoreCalculator : public search::streaming::NearestNeighborQueryNode::RawScoreCalculator {
+public:
+    double to_raw_score(double distance) override { return distance * 2; }
+};
 
 TEST_F(RankProcessorTest, unpack_match_data_for_nearest_neighbor_query_node)
 {
@@ -71,6 +75,8 @@ TEST_F(RankProcessorTest, unpack_match_data_for_nearest_neighbor_query_node)
     EXPECT_EQ(1u, term_list.size());
     auto node = dynamic_cast<NearestNeighborQueryNode*>(term_list.front().getTerm());
     EXPECT_NE(nullptr, node);
+    MockRawScoreCalculator calc;
+    node->set_raw_score_calc(&calc);
     auto& qtd = static_cast<QueryTermData &>(node->getQueryItem());
     auto& td = qtd.getTermData();
     constexpr TermFieldHandle handle = 27;
@@ -82,11 +88,11 @@ TEST_F(RankProcessorTest, unpack_match_data_for_nearest_neighbor_query_node)
     EXPECT_EQ(invalid_id, tfmd->getDocId());
     RankProcessor::unpack_match_data(1, *md, *_query_wrapper);
     EXPECT_EQ(invalid_id, tfmd->getDocId());
-    constexpr double raw_score = 1.5;
-    node->set_raw_score(raw_score);
+    constexpr double distance = 1.5;
+    node->set_distance(distance);
     RankProcessor::unpack_match_data(2, *md, *_query_wrapper);
     EXPECT_EQ(2, tfmd->getDocId());
-    EXPECT_EQ(raw_score, tfmd->getRawScore());
+    EXPECT_EQ(distance * 2, tfmd->getRawScore());
     node->reset();
     RankProcessor::unpack_match_data(3, *md, *_query_wrapper);
     EXPECT_EQ(2, tfmd->getDocId());

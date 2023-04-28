@@ -54,6 +54,7 @@ public:
 
     std::unique_ptr<queryeval::SearchIterator>
     createFilterIterator(fef::TermFieldMatchData* matchData, bool strict) override;
+    uint32_t get_committed_docid_limit() const noexcept override;
 };
 
 }

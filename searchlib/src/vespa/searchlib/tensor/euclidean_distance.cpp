@@ -30,29 +30,12 @@ struct CalcEuclidean {
 
 }
 
-double
-SquaredEuclideanDistance::calc(const vespalib::eval::TypedCells& lhs,
-                               const vespalib::eval::TypedCells& rhs) const
-{
-    return typify_invoke<2,TypifyCellType,CalcEuclidean>(lhs.type, rhs.type, lhs, rhs);
-}
-
-double
-SquaredEuclideanDistance::calc_with_limit(const vespalib::eval::TypedCells& lhs,
-                                          const vespalib::eval::TypedCells& rhs,
-                                          double) const
-{
-    // maybe optimize this:
-    return typify_invoke<2,TypifyCellType,CalcEuclidean>(lhs.type, rhs.type, lhs, rhs);
-}
-
-template class SquaredEuclideanDistanceHW<float>;
-template class SquaredEuclideanDistanceHW<double>;
-
 using vespalib::eval::Int8Float;
+using vespalib::BFloat16;
 
-template<typename FloatType>
+template<typename AttributeCellType>
 class BoundEuclideanDistance : public BoundDistanceFunction {
+    using FloatType = std::conditional<std::is_same<AttributeCellType,BFloat16>::value,float,AttributeCellType>::type;
 private:
     const vespalib::hwaccelrated::IAccelrated & _computer;
     mutable TemporaryVectorStore<FloatType> _tmpSpace;
@@ -62,8 +45,7 @@ private:
     static const int8_t *cast(const Int8Float * p) { return reinterpret_cast<const int8_t *>(p); }
 public:
     BoundEuclideanDistance(const vespalib::eval::TypedCells& lhs)
-        : BoundDistanceFunction(vespalib::eval::get_cell_type<FloatType>()),
-          _computer(vespalib::hwaccelrated::IAccelrated::getAccelerator()),
+        : _computer(vespalib::hwaccelrated::IAccelrated::getAccelerator()),
           _tmpSpace(lhs.size),
           _lhs_vector(_tmpSpace.storeLhs(lhs))
     {}
@@ -71,8 +53,8 @@ public:
         size_t sz = _lhs_vector.size();
         vespalib::ConstArrayRef<FloatType> rhs_vector = _tmpSpace.convertRhs(rhs);
         assert(sz == rhs_vector.size());
-        auto a = &_lhs_vector[0];
-        auto b = &rhs_vector[0];
+        auto a = _lhs_vector.data();
+        auto b = rhs_vector.data();
         return _computer.squaredEuclideanDistance(cast(a), cast(b), sz);
     }
     double convert_threshold(double threshold) const override {
@@ -84,7 +66,7 @@ public:
         return score;
     }
     double calc_with_limit(const vespalib::eval::TypedCells& rhs, double limit) const override {
-        vespalib::ConstArrayRef<FloatType> rhs_vector = _tmpSpace.convertRhs(rhs);
+        vespalib::ConstArrayRef<AttributeCellType> rhs_vector = rhs.typify<AttributeCellType>();
         double sum = 0.0;
         size_t sz = _lhs_vector.size();
         assert(sz == rhs_vector.size());
@@ -97,6 +79,7 @@ public:
 };
 
 template class BoundEuclideanDistance<Int8Float>;
+template class BoundEuclideanDistance<BFloat16>;
 template class BoundEuclideanDistance<float>;
 template class BoundEuclideanDistance<double>;
 
@@ -115,6 +98,7 @@ EuclideanDistanceFunctionFactory<FloatType>::for_insertion_vector(const vespalib
 }
 
 template class EuclideanDistanceFunctionFactory<Int8Float>;
+template class EuclideanDistanceFunctionFactory<BFloat16>;
 template class EuclideanDistanceFunctionFactory<float>;
 template class EuclideanDistanceFunctionFactory<double>;
 

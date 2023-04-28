@@ -62,7 +62,7 @@ public class RedundancyBuilder {
             if (globalMinRedundancy != null && ( finalRedundancy == null || finalRedundancy < globalMinRedundancy))
                 initialRedundancy = finalRedundancy = globalMinRedundancy;
             if (readyCopies == null)
-                readyCopies = finalRedundancy > 1 ? 2 : 1;
+                readyCopies = finalRedundancy > 1 ? Math.max(subGroups, 2) : 1;
             subGroups = Math.max(1, subGroups);
             IndexedHierarchicDistributionValidator.validateThatLeafGroupsCountIsAFactorOfRedundancy(finalRedundancy, subGroups);
             IndexedHierarchicDistributionValidator.validateThatReadyCopiesIsCompatibleWithRedundancy(finalRedundancy, readyCopies, subGroups);

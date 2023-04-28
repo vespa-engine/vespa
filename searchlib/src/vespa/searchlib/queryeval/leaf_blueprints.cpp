@@ -129,7 +129,15 @@ struct FakeContext : attribute::ISearchContext {
     DoubleRange getAsDoubleTerm() const override { abort(); }
     const QueryTermUCS4 * queryTerm() const override { abort(); }
     const vespalib::string &attributeName() const override { return name; }
+    uint32_t get_committed_docid_limit() const noexcept override;
 };
+
+uint32_t
+FakeContext::get_committed_docid_limit() const noexcept
+{
+    auto& documents = result.inspect();
+    return documents.empty() ? 0 : (documents.back().docId + 1);
+}
 
 }
 

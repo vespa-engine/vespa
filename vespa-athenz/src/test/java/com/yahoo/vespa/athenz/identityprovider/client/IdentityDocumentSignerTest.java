@@ -19,6 +19,7 @@ import java.security.KeyPair;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.List;
 
 import static com.yahoo.vespa.athenz.identityprovider.api.IdentityType.TENANT;
 import static com.yahoo.vespa.athenz.identityprovider.api.SignedIdentityDocument.LEGACY_DEFAULT_DOCUMENT_VERSION;

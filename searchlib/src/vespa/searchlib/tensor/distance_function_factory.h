@@ -15,8 +15,7 @@ namespace search::tensor {
  * for one particular vector in the distance function object.
  */
 struct DistanceFunctionFactory {
-    const vespalib::eval::CellType expected_cell_type;
-    DistanceFunctionFactory(vespalib::eval::CellType ct) : expected_cell_type(ct) {}
+    DistanceFunctionFactory() = default;
     virtual ~DistanceFunctionFactory() {}
     virtual BoundDistanceFunction::UP for_query_vector(const vespalib::eval::TypedCells& lhs) = 0;
     virtual BoundDistanceFunction::UP for_insertion_vector(const vespalib::eval::TypedCells& lhs) = 0;
@@ -24,13 +23,9 @@ struct DistanceFunctionFactory {
 };
 
 /**
- * Create a distance function object customized for the given metric
- * variant and cell type.
+ * Create a distance function factory customized for the given metric
+ * variant and (attribute) cell type.
  **/
-DistanceFunction::UP
-make_distance_function(search::attribute::DistanceMetric variant,
-                       vespalib::eval::CellType cell_type);
-
 DistanceFunctionFactory::UP
 make_distance_function_factory(search::attribute::DistanceMetric variant,
                                vespalib::eval::CellType cell_type);
