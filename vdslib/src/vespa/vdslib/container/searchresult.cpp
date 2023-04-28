@@ -8,6 +8,28 @@
 
 namespace vdslib {
 
+namespace {
+
+// Magic value for hit count to enable extension flags
+constexpr uint32_t enable_extension_flags_magic = 0xffffffffu;
+
+// Extension flag values
+constexpr uint32_t match_features_present = 1;
+
+// Selector values for feature value
+constexpr uint8_t feature_value_is_double = 0;
+constexpr uint8_t feature_value_is_data = 1;
+
+inline bool has_match_features(uint32_t extension_flags) {
+    return ((extension_flags & match_features_present) != 0);
+}
+
+inline bool must_serialize_extension_flags(uint32_t extension_flags, uint32_t hit_count) {
+    return ((extension_flags != 0) || (hit_count == enable_extension_flags_magic));
+}
+
+}
+
 void AggregatorList::add(size_t id, const vespalib::MallocPtr & aggrBlob)
 {
     insert(value_type(id, aggrBlob));
@@ -132,6 +154,13 @@ SearchResult::deserialize(document::ByteBuffer & buf)
     buf.getIntNetwork(tmp); _totalHits = tmp;
     uint32_t numResults(0), bufSize(0);
     buf.getIntNetwork(tmp); numResults = tmp;
+    uint32_t extension_flags = 0u;
+    if (numResults == enable_extension_flags_magic) {
+        buf.getIntNetwork(tmp);
+        extension_flags = tmp;
+        buf.getIntNetwork(tmp);
+        numResults = tmp;
+    }
     if (numResults > 0) {
         buf.getIntNetwork(tmp); bufSize = tmp;
         _docIdBuffer.reset(new vespalib::MallocPtr(bufSize));
@@ -149,12 +178,20 @@ SearchResult::deserialize(document::ByteBuffer & buf)
     _sortBlob.deserialize(buf);
     _aggregatorList.deserialize(buf);
     _groupingList.deserialize(buf);
+    if (has_match_features(extension_flags)) {
+        deserialize_match_features(buf);
+    }
 }
 
 void SearchResult::serialize(vespalib::GrowableByteBuffer & buf) const
 {
     buf.putInt(_totalHits);
     uint32_t hitCount = std::min(_hits.size(), _wantedHits);
+    uint32_t extension_flags = calc_extension_flags(hitCount);
+    if (must_serialize_extension_flags(extension_flags, hitCount)) {
+        buf.putInt(enable_extension_flags_magic);
+        buf.putInt(extension_flags);
+    }
     buf.putInt(hitCount);
     if (hitCount > 0) {
         uint32_t sz = getBufCount();
@@ -180,15 +217,114 @@ void SearchResult::serialize(vespalib::GrowableByteBuffer & buf) const
     }
     _aggregatorList.serialize(buf);
     _groupingList.serialize(buf);
+    if (has_match_features(extension_flags)) {
+        serialize_match_features(buf, hitCount);
+    }
 }
 
 uint32_t SearchResult::getSerializedSize() const
 {
     uint32_t hitCount = std::min(_hits.size(), _wantedHits);
+    uint32_t extension_flags = calc_extension_flags(hitCount);
+    uint32_t extension_flags_overhead = must_serialize_extension_flags(extension_flags, hitCount) ? (2 * sizeof(uint32_t)) : 0;
+    uint32_t match_features_size = has_match_features(extension_flags) ? get_match_features_serialized_size(hitCount) : 0;
     return _aggregatorList.getSerializedSize() +
            _groupingList.getSerializedSize() +
            _sortBlob.getSerializedSize() +
+           extension_flags_overhead +
+           match_features_size +
            ((hitCount > 0) ? ((4 * 3) + getBufCount() + sizeof(RankType)*hitCount) : 8);
+}
+
+uint32_t
+SearchResult::calc_extension_flags(uint32_t hit_count) const noexcept
+{
+    uint32_t extension_flags = 0u;
+    if (!_match_features.names.empty() && hit_count != 0) {
+        extension_flags |= match_features_present;
+    }
+    return extension_flags;
+}
+
+uint32_t
+SearchResult::get_match_features_serialized_size(uint32_t hit_count) const noexcept
+{
+    uint32_t size = sizeof(uint32_t);
+    for (auto& name : _match_features.names) {
+        size += sizeof(uint32_t) + name.size();
+    }
+    for (uint32_t i = 0; i < hit_count; ++i) {
+        auto mfv = get_match_feature_values(i);
+        for (auto& value : mfv) {
+            if (value.is_data()) {
+                size += sizeof(uint8_t) + sizeof(uint32_t) + value.as_data().size;
+            } else {
+                size += sizeof(uint8_t) + sizeof(double);
+            }
+        }
+    }
+    return size;
+}
+
+void
+SearchResult::serialize_match_features(vespalib::GrowableByteBuffer& buf, uint32_t hit_count) const
+{
+    buf.putInt(_match_features.names.size());
+    for (auto& name : _match_features.names) {
+        buf.putString(name);
+    }
+    for (uint32_t i = 0; i < hit_count; ++i) {
+        auto mfv = get_match_feature_values(i);
+        for (auto& value : mfv) {
+            if (value.is_data()) {
+                buf.putByte(feature_value_is_data);
+                auto mem = value.as_data();
+                buf.putInt(mem.size);
+                buf.putBytes(mem.data, mem.size);
+            } else {
+                buf.putByte(feature_value_is_double);
+                buf.putDouble(value.as_double());
+            }
+        }
+    }
+}
+
+void
+SearchResult::deserialize_match_features(document::ByteBuffer& buf)
+{
+    int32_t tmp(0);
+    double dtmp(0.0);
+    uint8_t selector(0);
+    std::vector<char> scratch;
+    buf.getIntNetwork(tmp);
+    uint32_t num_features = tmp;
+    _match_features.names.resize(num_features);
+    for (auto& name : _match_features.names) {
+        buf.getIntNetwork(tmp);
+        name.resize(tmp);
+        if (tmp != 0) {
+            buf.getBytes(&name[0], tmp);
+        }
+    }
+    uint32_t hit_count = _hits.size();
+    uint32_t num_values = num_features * hit_count;
+    _match_features.values.resize(num_values);
+    for (auto& value : _match_features.values) {
+        buf.getByte(selector);
+        if (selector == feature_value_is_data) {
+            buf.getIntNetwork(tmp);
+            scratch.resize(tmp);
+            if (!scratch.empty()) {
+                buf.getBytes(scratch.data(), scratch.size());
+            }
+            value.set_data({ scratch.data(), scratch.size() });
+        } else if (selector == feature_value_is_double) {
+            buf.getDoubleNetwork(dtmp);
+            value.set_double(dtmp);
+        } else {
+            abort();
+        }
+    }
 }
 
 void SearchResult::addHit(uint32_t lid, const char * docId, RankType rank, const void * sortData, size_t sz)

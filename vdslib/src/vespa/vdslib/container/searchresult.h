@@ -132,6 +132,12 @@ private:
         }
     };
     size_t getBufCount() const { return _numDocIdBytes; }
+
+    uint32_t calc_extension_flags(uint32_t hit_count) const noexcept;
+    uint32_t get_match_features_serialized_size(uint32_t hit_count) const noexcept;
+    void serialize_match_features(vespalib::GrowableByteBuffer& buf, uint32_t hit_count) const;
+    void deserialize_match_features(document::ByteBuffer& buf);
+
     using DocIdBuffer = std::shared_ptr<vespalib::MallocPtr>;
     uint32_t                     _totalHits;
     size_t                       _wantedHits;
