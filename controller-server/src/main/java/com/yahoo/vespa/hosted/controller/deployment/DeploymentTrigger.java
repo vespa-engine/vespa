@@ -246,7 +246,7 @@ public class DeploymentTrigger {
                                                                 .collect(toMap(Map.Entry::getKey, Map.Entry::getValue));
 
         jobs.forEach((jobId, versionsList) -> {
-            trigger(deploymentJob(application.require(job.application().instance()),
+            trigger(deploymentJob(application.require(jobId.application().instance()),
                                   versionsList.get(0).versions(),
                                   jobId.type(),
                                   status.jobs().get(jobId).get().isNodeAllocationFailure(),
