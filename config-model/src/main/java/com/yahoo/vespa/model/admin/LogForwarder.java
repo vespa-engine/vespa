@@ -52,6 +52,8 @@ public class LogForwarder extends AbstractService implements LogforwarderConfig.
         this.config = config;
         setProp("clustertype", "hosts");
         setProp("clustername", "admin");
+        // Make role information available in supermodel
+        setProp("identity.role", config.role);
     }
 
     public static Config cfg() {

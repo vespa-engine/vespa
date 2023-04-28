@@ -19,6 +19,7 @@ import java.security.KeyPair;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.List;
 
 import static com.yahoo.vespa.athenz.identityprovider.api.IdentityType.TENANT;
 import static com.yahoo.vespa.athenz.identityprovider.api.SignedIdentityDocument.LEGACY_DEFAULT_DOCUMENT_VERSION;
@@ -44,13 +45,14 @@ public class IdentityDocumentSignerTest {
     private static final ClusterType clusterType = ClusterType.CONTAINER;
     private static final String ztsUrl = "https://foo";
     private static final AthenzIdentity serviceIdentity = new AthenzService("vespa", "node");
+    private static final List<String> roles = List.of();
 
     @Test
     void legacy_generates_and_validates_signature() {
         IdentityDocumentSigner signer = new IdentityDocumentSigner();
         IdentityDocument identityDocument = new IdentityDocument(
                 id, providerService, configserverHostname,
-                instanceHostname, createdAt, ipAddresses, identityType, clusterType, ztsUrl, serviceIdentity);
+                instanceHostname, createdAt, ipAddresses, identityType, clusterType, ztsUrl, serviceIdentity, roles);
         String signature =
                 signer.generateLegacySignature(identityDocument, keyPair.getPrivate());
 
@@ -65,7 +67,7 @@ public class IdentityDocumentSignerTest {
         IdentityDocumentSigner signer = new IdentityDocumentSigner();
         IdentityDocument identityDocument = new IdentityDocument(
                 id, providerService, configserverHostname,
-                instanceHostname, createdAt, ipAddresses, identityType, clusterType, ztsUrl, serviceIdentity);
+                instanceHostname, createdAt, ipAddresses, identityType, clusterType, ztsUrl, serviceIdentity, roles);
         String data = EntityBindingsMapper.toIdentityDocmentData(identityDocument);
         String signature =
         signer.generateSignature(data, keyPair.getPrivate());
@@ -81,10 +83,10 @@ public class IdentityDocumentSignerTest {
         IdentityDocumentSigner signer = new IdentityDocumentSigner();
         IdentityDocument identityDocument = new IdentityDocument(
                 id, providerService, configserverHostname,
-                instanceHostname, createdAt, ipAddresses, identityType, clusterType, ztsUrl, serviceIdentity);
+                instanceHostname, createdAt, ipAddresses, identityType, clusterType, ztsUrl, serviceIdentity, roles);
         IdentityDocument withoutIgnoredFields = new IdentityDocument(
                 id, providerService, configserverHostname,
-                instanceHostname, createdAt, ipAddresses, identityType, null, null, serviceIdentity);
+                instanceHostname, createdAt, ipAddresses, identityType, null, null, serviceIdentity, roles);
 
         String signature =
                 signer.generateLegacySignature(identityDocument, keyPair.getPrivate());
@@ -103,7 +105,7 @@ public class IdentityDocumentSignerTest {
         IdentityDocumentSigner signer = new IdentityDocumentSigner();
         IdentityDocument identityDocument = new IdentityDocument(
                 id, providerService, configserverHostname,
-                instanceHostname, createdAt, ipAddresses, identityType, clusterType, ztsUrl, serviceIdentity);
+                instanceHostname, createdAt, ipAddresses, identityType, clusterType, ztsUrl, serviceIdentity, roles);
         String signature =
                 signer.generateLegacySignature(identityDocument, keyPair.getPrivate());
 
