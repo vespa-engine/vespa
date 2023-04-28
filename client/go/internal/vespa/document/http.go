@@ -34,6 +34,7 @@ type Client struct {
 	now         func() time.Time
 	sendCount   int32
 	gzippers    sync.Pool
+	buffers     sync.Pool
 }
 
 // ClientOptions specifices the configuration options of a feed client.
@@ -81,6 +82,7 @@ func NewClient(options ClientOptions, httpClients []util.HTTPClient) (*Client, e
 		now:         nowFunc,
 	}
 	c.gzippers.New = func() any { return gzip.NewWriter(io.Discard) }
+	c.buffers.New = func() any { return &bytes.Buffer{} }
 	return c, nil
 }
 
@@ -165,6 +167,12 @@ func (c *Client) gzipWriter(w io.Writer) *gzip.Writer {
 	return gzipWriter
 }
 
+func (c *Client) buffer() *bytes.Buffer {
+	buf := c.buffers.Get().(*bytes.Buffer)
+	buf.Reset()
+	return buf
+}
+
 func (c *Client) createRequest(method, url string, body []byte) (*http.Request, error) {
 	var r io.Reader
 	useGzip := c.options.Compression == CompressionGzip || (c.options.Compression == CompressionAuto && len(body) > 512)
@@ -216,7 +224,7 @@ func (c *Client) Send(document Document) Result {
 	}
 	defer resp.Body.Close()
 	elapsed := c.now().Sub(start)
-	return resultWithResponse(resp, result, document, elapsed)
+	return c.resultWithResponse(resp, result, document, elapsed)
 }
 
 func resultWithErr(result Result, err error) Result {
@@ -226,7 +234,7 @@ func resultWithErr(result Result, err error) Result {
 	return result
 }
 
-func resultWithResponse(resp *http.Response, result Result, document Document, elapsed time.Duration) Result {
+func (c *Client) resultWithResponse(resp *http.Response, result Result, document Document, elapsed time.Duration) Result {
 	result.HTTPStatus = resp.StatusCode
 	result.Stats.Responses++
 	result.Stats.ResponsesByCode = map[int]int64{resp.StatusCode: 1}
@@ -244,12 +252,14 @@ func resultWithResponse(resp *http.Response, result Result, document Document, e
 		Message string          `json:"message"`
 		Trace   json.RawMessage `json:"trace"`
 	}
-	b, err := io.ReadAll(resp.Body)
+	buf := c.buffer()
+	defer c.buffers.Put(buf)
+	written, err := io.Copy(buf, resp.Body)
 	if err != nil {
 		result.Status = StatusVespaFailure
 		result.Err = err
 	} else {
-		if err := json.Unmarshal(b, &body); err != nil {
+		if err := json.Unmarshal(buf.Bytes(), &body); err != nil {
 			result.Status = StatusVespaFailure
 			result.Err = fmt.Errorf("failed to decode json response: %w", err)
 		}
@@ -257,7 +267,7 @@ func resultWithResponse(resp *http.Response, result Result, document Document, e
 	result.Message = body.Message
 	result.Trace = string(body.Trace)
 	result.Stats.BytesSent = int64(len(document.Body))
-	result.Stats.BytesRecv = int64(len(b))
+	result.Stats.BytesRecv = int64(written)
 	if !result.Success() {
 		result.Stats.Errors++
 	}
