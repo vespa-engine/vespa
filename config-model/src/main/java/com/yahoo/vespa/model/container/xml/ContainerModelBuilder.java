@@ -437,14 +437,8 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         }
 
         // Add connection log if access log is configured
-        if (cluster.getAllComponents().stream().anyMatch(component -> component instanceof AccessLogComponent)) {
-            // TODO: Vespa > 8: Clean up
-            if (cluster.isHostedVespa() || deployState.getVespaVersion().getMajor() == 8) {
-                cluster.addComponent(new ConnectionLogComponent(cluster, FileConnectionLog.class, "access"));
-            } else {
-                cluster.addComponent(new ConnectionLogComponent(cluster, FileConnectionLog.class, "qrs"));
-            }
-        }
+        if (cluster.getAllComponents().stream().anyMatch(component -> component instanceof AccessLogComponent))
+            cluster.addComponent(new ConnectionLogComponent(cluster, FileConnectionLog.class, "access"));
     }
 
     private List<Element> getAccessLogElements(Element spec) {
