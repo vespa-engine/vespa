@@ -36,10 +36,8 @@ import com.yahoo.config.provision.Zone;
 import com.yahoo.config.provision.ZoneEndpoint;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.container.bundle.BundleInstantiationSpecification;
-import com.yahoo.container.logging.AccessLog;
 import com.yahoo.container.logging.FileConnectionLog;
 import com.yahoo.io.IOUtils;
-import com.yahoo.jdisc.http.server.jetty.VoidRequestLog;
 import com.yahoo.osgi.provider.model.ComponentModel;
 import com.yahoo.path.Path;
 import com.yahoo.schema.OnnxModel;
@@ -419,22 +417,18 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     protected void addAccessLogs(DeployState deployState, ApplicationContainerCluster cluster, Element spec) {
         List<Element> accessLogElements = getAccessLogElements(spec);
 
-        if (accessLogElements.isEmpty()) {
-            if (deployState.getAccessLoggingEnabledByDefault())
-                cluster.addAccessLog();
-            else
-                cluster.addVoidAccessLog();
-        }
-        else {
-            if (cluster.isHostedVespa()) {
-                log.logApplicationPackage(WARNING, "Applications are not allowed to override the 'accesslog' element");
-            } else {
-                cluster.addSimpleComponent(AccessLog.class);
-                for (Element accessLog : accessLogElements) {
-                    AccessLogBuilder.buildIfNotDisabled(deployState, cluster, accessLog).ifPresent(cluster::addComponent);
-                }
+        if (cluster.isHostedVespa() && !accessLogElements.isEmpty()) {
+            accessLogElements.clear();
+            log.logApplicationPackage(
+                    Level.WARNING, "Applications are not allowed to override the 'accesslog' element");
+        } else {
+            for (Element accessLog : accessLogElements) {
+                AccessLogBuilder.buildIfNotDisabled(deployState, cluster, accessLog).ifPresent(cluster::addComponent);
             }
         }
+
+        if (accessLogElements.isEmpty() && deployState.getAccessLoggingEnabledByDefault())
+            cluster.addDefaultSearchAccessLog();
 
         // Add connection log if access log is configured
         if (cluster.getAllComponents().stream().anyMatch(component -> component instanceof AccessLogComponent))
@@ -444,6 +438,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     private List<Element> getAccessLogElements(Element spec) {
         return XML.getChildren(spec, "accesslog");
     }
+
 
     protected void addHttp(DeployState deployState, Element spec, ApplicationContainerCluster cluster, ConfigModelContext context) {
         Element httpElement = XML.getChild(spec, "http");
@@ -1222,7 +1217,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
         private static final Pattern validPattern = Pattern.compile("-[a-zA-z0-9=:./,+*-]+");
         // debug port will not be available in hosted, don't allow
-        private static final Pattern invalidInHostedPattern = Pattern.compile("-Xrunjdwp:transport=.*");
+        private static final Pattern invalidInHostedatttern = Pattern.compile("-Xrunjdwp:transport=.*");
 
         private final Element nodesElement;
         private final DeployLogger logger;
@@ -1275,7 +1270,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
             if (isHosted)
                 invalidOptions.addAll(Arrays.stream(optionList)
                         .filter(option -> !option.isEmpty())
-                        .filter(option -> Pattern.matches(invalidInHostedPattern.pattern(), option))
+                        .filter(option -> Pattern.matches(invalidInHostedatttern.pattern(), option))
                         .sorted().toList());
 
             if (invalidOptions.isEmpty()) return;
