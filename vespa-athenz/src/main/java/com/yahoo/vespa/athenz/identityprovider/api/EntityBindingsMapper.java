@@ -68,7 +68,6 @@ public class EntityBindingsMapper {
                     Optional.ofNullable(docEntity.clusterType()).map(ClusterType::from).orElse(null),
                     docEntity.ztsUrl(),
                     Optional.ofNullable(docEntity.serviceIdentity()).map(AthenzIdentities::from).orElse(null),
-                    List.of(),
                     docEntity.unknownAttributes());
             return new LegacySignedIdentityDocument(
                     docEntity.signature(),
@@ -148,7 +147,6 @@ public class EntityBindingsMapper {
                 Optional.ofNullable(docEntity.clusterType()).map(ClusterType::from).orElse(null),
                 docEntity.ztsUrl(),
                 Optional.ofNullable(docEntity.serviceIdentity()).map(AthenzIdentities::from).orElse(null),
-                docEntity.roles(),
                 docEntity.unknownAttributes());
     }
 
@@ -163,8 +161,7 @@ public class EntityBindingsMapper {
                 identityDocument.identityType().id(),
                 Optional.ofNullable(identityDocument.clusterType()).map(ClusterType::toConfigValue).orElse(null),
                 identityDocument.ztsUrl(),
-                identityDocument.serviceIdentity().getFullName(),
-                identityDocument.roles());
+                identityDocument.serviceIdentity().getFullName());
         try {
             byte[] bytes = mapper.writeValueAsBytes(documentEntity);
             return Base64.getEncoder().encodeToString(bytes);

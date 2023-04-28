@@ -49,7 +49,6 @@ class EntityBindingsMapperTest {
         assertTrue(json.contains(expectedMemberInJson),
                    () -> "Expected JSON to contain '%s', but got \n'%s'".formatted(expectedMemberInJson, json));
         assertEquals(EntityBindingsMapper.mapper.readTree(originalJson), EntityBindingsMapper.mapper.readTree(json));
-        assertEquals(List.of(), entity.identityDocument().roles());
     }
 
     @Test
