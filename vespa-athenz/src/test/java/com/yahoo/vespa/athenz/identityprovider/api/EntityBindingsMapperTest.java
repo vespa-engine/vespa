@@ -87,6 +87,6 @@ class EntityBindingsMapperTest {
         assertEquals(EntityBindingsMapper.mapper.readTree(originalJson), EntityBindingsMapper.mapper.readTree(json));
     }
 
-    
+
 
 }
