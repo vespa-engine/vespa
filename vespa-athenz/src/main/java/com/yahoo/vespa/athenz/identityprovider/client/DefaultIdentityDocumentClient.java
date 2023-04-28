@@ -7,7 +7,7 @@ import com.yahoo.vespa.athenz.identity.ServiceIdentityProvider;
 import com.yahoo.vespa.athenz.identityprovider.api.EntityBindingsMapper;
 import com.yahoo.vespa.athenz.identityprovider.api.IdentityDocumentClient;
 import com.yahoo.vespa.athenz.identityprovider.api.SignedIdentityDocument;
-import com.yahoo.vespa.athenz.identityprovider.api.bindings.RolesEntity;
+import com.yahoo.vespa.athenz.identityprovider.api.bindings.RoleListEntity;
 import com.yahoo.vespa.athenz.identityprovider.api.bindings.SignedIdentityDocumentEntity;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -85,7 +85,7 @@ public class DefaultIdentityDocumentClient implements IdentityDocumentClient {
                 String responseContent = EntityUtils.toString(response.getEntity());
                 int statusCode = response.getStatusLine().getStatusCode();
                 if (statusCode >= 200 && statusCode <= 299) {
-                    var rolesEntity = objectMapper.readValue(responseContent, RolesEntity.class);
+                    var rolesEntity = objectMapper.readValue(responseContent, RoleListEntity.class);
                     return rolesEntity.roles();
                 } else {
                     throw new RuntimeException(
