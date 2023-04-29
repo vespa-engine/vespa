@@ -4,6 +4,7 @@
 #include <vespa/searchlib/common/geo_gcd.h>
 #include <vespa/searchlib/tensor/distance_functions.h>
 #include <vespa/searchlib/tensor/distance_function_factory.h>
+#include <vespa/searchlib/tensor/mips_distance_transform.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vector>
 
@@ -507,6 +508,167 @@ TEST(GeoDegreesTest, gives_expected_score)
     verify_geo_miles(g9_jfk, g8_lax, 2475);
     verify_geo_miles(g9_jfk, g9_jfk, 0);
 }
+
+
+double computeTransformedMipsChecked(TypedCells a, TypedCells b, bool check_insert = true) {
+    MipsDistanceFunctionFactory<float> flt_dff;
+    MipsDistanceFunctionFactory<double> dbl_dff;
+
+    auto d_n = dbl_dff.for_query_vector(a);
+    auto d_f = flt_dff.for_query_vector(a);
+    auto d_r = dbl_dff.for_query_vector(b);
+    // normal:
+    double result = d_n->calc(b);
+    // reverse:
+    EXPECT_DOUBLE_EQ(d_r->calc(a), result);
+    // float factory:
+    EXPECT_FLOAT_EQ(d_f->calc(b), result);
+    double closeness_n = d_n->to_rawscore(result);
+    double closeness_f = d_f->to_rawscore(result);
+    double closeness_r = d_r->to_rawscore(result);
+    EXPECT_DOUBLE_EQ(closeness_n, closeness_f);
+    EXPECT_DOUBLE_EQ(closeness_n, closeness_r);
+    EXPECT_GT(closeness_n, 0.0);
+    EXPECT_LE(closeness_n, 1.0);
+    if (check_insert) {
+        auto d_i = dbl_dff.for_insertion_vector(a);
+        EXPECT_DOUBLE_EQ(d_i->calc(b), result);
+    }
+    return result;
+}
+
+TEST(DistanceFunctionsTest, transformed_mips_basic_scores)
+{
+    std::vector<double> p1{1.0, 0.0, 0.0};
+    std::vector<double> p2{0.0, 1.0, 0.0};
+    std::vector<double> p3{0.0, 0.0, 1.0};
+    std::vector<double> p4{0.5, 0.5, sq_root_half};
+    std::vector<double> p5{0.0,-1.0, 0.0};
+
+    double i12 = computeTransformedMipsChecked(t(p1), t(p2));
+    double i13 = computeTransformedMipsChecked(t(p1), t(p3));
+    double i23 = computeTransformedMipsChecked(t(p2), t(p3));
+    EXPECT_DOUBLE_EQ(i12, 0.0);
+    EXPECT_DOUBLE_EQ(i13, 0.0);
+    EXPECT_DOUBLE_EQ(i23, 0.0);
+
+    double i14 = computeTransformedMipsChecked(t(p1), t(p4));
+    double i24 = computeTransformedMipsChecked(t(p2), t(p4));
+    EXPECT_DOUBLE_EQ(i14, -0.5);
+    EXPECT_DOUBLE_EQ(i24, -0.5);
+
+    double i34 = computeTransformedMipsChecked(t(p3), t(p4));
+    EXPECT_FLOAT_EQ(i34, -sq_root_half);
+
+    double i25 = computeTransformedMipsChecked(t(p2), t(p5));
+    EXPECT_DOUBLE_EQ(i25, 1.0);
+
+    double i44 = computeTransformedMipsChecked(t(p4), t(p4));
+    EXPECT_DOUBLE_EQ(i44, -1.0);
+
+    std::vector<double> p6{ 0.0,  4.0, -4.0};
+    std::vector<double> p7{-4.0,  0.0,  4.0};
+    std::vector<double> p8{ 4.0, -4.0,  0.0};
+
+    double i66 = computeTransformedMipsChecked(t(p6), t(p6));
+    EXPECT_DOUBLE_EQ(i66, -32.0);
+
+    double i67 = computeTransformedMipsChecked(t(p6), t(p7));
+    EXPECT_DOUBLE_EQ(i67, 16.0);
+
+    double i68 = computeTransformedMipsChecked(t(p6), t(p8));
+    EXPECT_DOUBLE_EQ(i68, 16.0);
+
+    double i78 = computeTransformedMipsChecked(t(p7), t(p8));
+    EXPECT_DOUBLE_EQ(i78, 16.0);
+}
+
+TEST(DistanceFunctionsTest, transformed_mips_growing_norm)
+{
+    std::vector<double> p1{1.0, 0.0, 0.0};
+    std::vector<double> p2{0.0, 1.0, 0.0};
+    std::vector<double> p3{0.0, 0.0, 1.0};
+    std::vector<double> p6{ 0.0,  4.0, -4.0};
+    std::vector<double> p7{-4.0,  0.0,  4.0};
+    std::vector<double> p8{ 4.0, -4.0,  0.0};
+
+    MipsDistanceFunctionFactory<double> dff;
+    auto f = dff.for_insertion_vector(t(p1));
+    EXPECT_DOUBLE_EQ(-1.0, f->calc(t(p1)));
+    EXPECT_DOUBLE_EQ(0.0, f->calc(t(p2)));
+    EXPECT_DOUBLE_EQ(0.0, f->calc(t(p3)));
+    EXPECT_DOUBLE_EQ(0.0, f->calc(t(p6)));
+    EXPECT_DOUBLE_EQ(4.0, f->calc(t(p7)));
+    EXPECT_DOUBLE_EQ(-4.0, f->calc(t(p8)));
+
+    // closeness
+    EXPECT_DOUBLE_EQ(0.25, f->to_rawscore(1.0));
+    EXPECT_DOUBLE_EQ(0.50, f->to_rawscore(0.0));
+    EXPECT_DOUBLE_EQ(0.75, f->to_rawscore(-1.0));
+
+    // now "insert" a bigger vector
+    f = dff.for_insertion_vector(t(p6));
+    EXPECT_DOUBLE_EQ(0.0, f->calc(t(p1)));
+    EXPECT_DOUBLE_EQ(-4.0, f->calc(t(p2)));
+    EXPECT_DOUBLE_EQ(4.0, f->calc(t(p3)));
+    EXPECT_DOUBLE_EQ(-32.0, f->calc(t(p6)));
+    EXPECT_DOUBLE_EQ(16.0, f->calc(t(p7)));
+    EXPECT_DOUBLE_EQ(16.0, f->calc(t(p8)));
+
+    // now max squared norm is 32, so p1 is "closer" to itself
+    f = dff.for_insertion_vector(t(p1));
+    EXPECT_DOUBLE_EQ(-32.0, f->calc(t(p1)));
+    // closeness (rawscore) is also different:
+    EXPECT_DOUBLE_EQ(0.25, f->to_rawscore(32.0));
+    EXPECT_DOUBLE_EQ(1/3., f->to_rawscore(16.0));
+    EXPECT_DOUBLE_EQ(0.50, f->to_rawscore(0.0));
+    EXPECT_DOUBLE_EQ(2/3., f->to_rawscore(-16.0));
+    EXPECT_DOUBLE_EQ(0.75, f->to_rawscore(-32.0));
+
+    // also closer to other small vectors
+    EXPECT_DOUBLE_EQ(-31.0, f->calc(t(p2)));
+    EXPECT_DOUBLE_EQ(-31.0, f->calc(t(p3)));
+    std::vector<double> p9a{-5.0, 0.0, 0.0};
+    // 32 - (-5)^2 = 32 - 25 = 7
+    EXPECT_DOUBLE_EQ(5.0 - std::sqrt(31.0 * 7), f->calc(t(p9a)));
+    std::vector<double> p9b{-3.0, 4.0, 0.0};
+    std::vector<double> p9c{0.0, -3.0, 4.0};
+    std::vector<double> p9d{-4.0, 0.0, 3.0};
+    EXPECT_DOUBLE_EQ(3.0 - std::sqrt(31.0 * 7), f->calc(t(p9b)));
+    EXPECT_DOUBLE_EQ(0.0 - std::sqrt(31.0 * 7), f->calc(t(p9c)));
+    EXPECT_DOUBLE_EQ(4.0 - std::sqrt(31.0 * 7), f->calc(t(p9d)));
+
+    // but only for insert:
+    f = dff.for_query_vector(t(p1));
+    EXPECT_DOUBLE_EQ(-1.0, f->calc(t(p1)));
+
+    std::vector<double> big{-100, 100, -100};
+    f = dff.for_insertion_vector(t(big));
+    EXPECT_DOUBLE_EQ(100.0, f->calc(t(p1)));
+
+    // much bigger numbers expected:
+    f = dff.for_insertion_vector(t(p1));
+    EXPECT_DOUBLE_EQ(-30000.0, f->calc(t(p1)));
+    EXPECT_DOUBLE_EQ(-29999.0, f->calc(t(p2)));
+    EXPECT_DOUBLE_EQ(-29999.0, f->calc(t(p3)));
+    // all these have larger distance:
+    EXPECT_LT(-29999.0, f->calc(t(p6)));
+    EXPECT_LT(-29999.0, f->calc(t(p7)));
+    EXPECT_LT(-29999.0, f->calc(t(p8)));
+    EXPECT_LT(-29999.0, f->calc(t(p9a)));
+    EXPECT_LT(-29999.0, f->calc(t(p9b)));
+    EXPECT_LT(-29999.0, f->calc(t(p9c)));
+    EXPECT_LT(-29999.0, f->calc(t(p9d)));
+    // but not by much:
+    EXPECT_GT(-29900.0, f->calc(t(p6)));
+    EXPECT_GT(-29900.0, f->calc(t(p7)));
+    EXPECT_GT(-29900.0, f->calc(t(p8)));
+    EXPECT_GT(-29900.0, f->calc(t(p9a)));
+    EXPECT_GT(-29900.0, f->calc(t(p9b)));
+    EXPECT_GT(-29900.0, f->calc(t(p9c)));
+    EXPECT_GT(-29900.0, f->calc(t(p9d)));
+}
+
 
 GTEST_MAIN_RUN_ALL_TESTS()
 

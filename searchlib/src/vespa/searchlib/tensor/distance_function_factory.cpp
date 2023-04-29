@@ -2,6 +2,7 @@
 
 #include "distance_function_factory.h"
 #include "distance_functions.h"
+#include "mips_distance_transform.h"
 #include <vespa/vespalib/util/typify.h>
 #include <vespa/vespalib/util/array.h>
 #include <vespa/vespalib/util/arrayref.h>
@@ -37,6 +38,12 @@ make_distance_function_factory(search::attribute::DistanceMetric variant,
             switch (cell_type) {
                 case CellType::DOUBLE: return std::make_unique<PrenormalizedAngularDistanceFunctionFactory<double>>();
                 default:               return std::make_unique<PrenormalizedAngularDistanceFunctionFactory<float>>();
+            }
+        case DistanceMetric::TransformedMips:
+            switch (cell_type) {
+                case CellType::DOUBLE: return std::make_unique<MipsDistanceFunctionFactory<double>>();
+                case CellType::INT8:   return std::make_unique<MipsDistanceFunctionFactory<vespalib::eval::Int8Float>>();
+                default:               return std::make_unique<MipsDistanceFunctionFactory<float>>();
             }
         case DistanceMetric::GeoDegrees:
             return std::make_unique<GeoDistanceFunctionFactory>();
