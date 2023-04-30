@@ -51,11 +51,15 @@ public class ModelIdResolver {
     /** Expands a model config value into regular config values. */
     private static void transformModelValue(Element value, boolean hosted) {
         if ( ! value.hasAttribute("model-id")) return;
-        if (hosted)
+
+        if (hosted) {
             value.setAttribute("url", modelIdToUrl(value.getTagName(), value.getAttribute("model-id")));
-        else if ( ! value.hasAttribute("url") && ! value.hasAttribute("path"))
+            value.removeAttribute("path");
+        }
+        else if ( ! value.hasAttribute("url") && ! value.hasAttribute("path")) {
             throw new IllegalArgumentException(value.getTagName() + " is configured with only a 'model-id'. " +
                                                "Add a 'path' or 'url' to deploy this outside Vespa Cloud");
+        }
     }
 
     private static String modelIdToUrl(String valueName, String modelId) {

@@ -55,7 +55,7 @@ public class EmbedderTestCase {
         String input = "<component id='test' class='" + BUNDLED_EMBEDDER_CLASS + "' bundle='model-integration'>" +
                        "  <config name='" + BUNDLED_EMBEDDER_CONFIG + "'>" +
                        "    <transformerModel model-id='minilm-l6-v2' />" +
-                       "    <tokenizerVocab model-id='bert-base-uncased' />" +
+                       "    <tokenizerVocab model-id='bert-base-uncased' path='ignored.txt'/>" +
                        "  </config>" +
                        "</component>";
         String component = "<component id='test' class='" + BUNDLED_EMBEDDER_CLASS + "' bundle='model-integration'>" +
