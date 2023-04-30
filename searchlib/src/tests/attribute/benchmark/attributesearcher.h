@@ -67,7 +67,7 @@ protected:
     vespalib::Timer         _timer;
     AttributeSearcherStatus _status;
     std::thread             _thread;
-    
+
 public:
     AttributeSearcher(const AttributePtr & attrPtr)
       : _attrPtr(attrPtr), _timer(), _status(), _thread()

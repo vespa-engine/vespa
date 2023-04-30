@@ -81,7 +81,7 @@ public:
      *                          The caller must keep it alive for the semantic
      *                          lifetime of the log data store.
      * @param tlSyncer          Helper to sync transaction log to avoid
-     *                          it being behind the document store after a 
+     *                          it being behind the document store after a
      *                          crash.
      *                          The caller must keep it alive for the semantic
      *                          lifetime of the log data store.

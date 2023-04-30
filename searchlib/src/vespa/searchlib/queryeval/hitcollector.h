@@ -119,7 +119,7 @@ private:
         BitVectorCollector(HitCollector &hc) : CollectorBase(hc) { }
         virtual void collect(uint32_t docId, feature_t score) override;
     };
-    
+
     HitRank getReScore(feature_t score) const {
         return ((score * _scale) - _adjust);
     }

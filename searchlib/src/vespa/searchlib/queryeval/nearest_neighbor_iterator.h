@@ -42,7 +42,7 @@ public:
     NearestNeighborIterator(Params params_in)
         : _params(params_in)
     {}
-    
+
     static std::unique_ptr<NearestNeighborIterator> create(
             bool strict,
             fef::TermFieldMatchData &tfmd,

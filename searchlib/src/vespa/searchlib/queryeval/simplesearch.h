@@ -18,7 +18,7 @@ private:
     SimpleResult     _result;
     uint32_t         _index;
     bool             _strict;
-    
+
     SimpleSearch(const SimpleSearch &);
     SimpleSearch &operator=(const SimpleSearch &);
 

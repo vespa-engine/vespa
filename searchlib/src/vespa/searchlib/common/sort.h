@@ -281,7 +281,7 @@ void ShiftBasedRadixSorterBase<GR, T, SHIFT>::radix_sort_core(GR R, size_t ptr[2
  * @param SHIFT is the number of significant bits in the radix - 8. Must a multiple of 8.
  * @param continueAfterRadixEnds indicates if the radix only represents a prefix of the objects. If it is true we
  *        will continue using std::sort to order objects that have equal radix representation.
- */ 
+ */
 template<typename T, typename GR, typename GE, int SHIFT, bool continueAfterRadixEnds=false>
 class ShiftBasedRadixSorter : private ShiftBasedRadixSorterBase<GR, T, SHIFT>
 {

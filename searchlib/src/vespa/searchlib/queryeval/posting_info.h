@@ -4,7 +4,7 @@
 #include <cstdint>
 
 namespace search::queryeval {
-    
+
 /**
  * Interface for getting global information stored in underlying posting list
  * used by a search iterator.

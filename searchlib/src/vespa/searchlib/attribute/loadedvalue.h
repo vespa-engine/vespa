@@ -96,7 +96,7 @@ public:
     {
         return _value._value < rhs._value._value;
     }
-    
+
     union Value {
         T        _value;
         uint32_t _eidx;

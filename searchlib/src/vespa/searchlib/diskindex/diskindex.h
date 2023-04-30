@@ -151,9 +151,9 @@ public:
 
     /**
      * Needed for the Cache::BackingStore interface.
-     */ 
+     */
     bool read(const Key & key, LookupResultVector & result);
-    
+
     index::FieldLengthInfo get_field_length_info(const vespalib::string& field_name) const;
 };
 

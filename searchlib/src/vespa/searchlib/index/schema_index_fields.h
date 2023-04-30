@@ -15,7 +15,7 @@ public:
     using UriFieldIdVector = std::vector<UriField>;
     FieldIdVector _textFields;
     UriFieldIdVector _uriFields;
-    
+
     SchemaIndexFields();
     ~SchemaIndexFields();
     void setup(const Schema &schema);

@@ -40,7 +40,7 @@ private:
     SimpleResult _result;
 
 protected:
-    SearchIterator::UP 
+    SearchIterator::UP
     createLeafSearch(const search::fef::TermFieldMatchDataArray &tfmda, bool strict) const override;
 public:
     SimpleBlueprint(const SimpleResult &result);

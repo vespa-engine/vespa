@@ -45,7 +45,7 @@ private:
     DocumentWeightAttributeAdapter _document_weight_attribute_adapter;
 
     friend class PostingListAttributeTest;
-    template <typename, typename, typename> 
+    template <typename, typename, typename>
     friend class attribute::PostingSearchContext; // getEnumStore()
 
     using SelfType = MultiValueNumericPostingAttribute<B, M>;
@@ -91,7 +91,7 @@ public:
     bool onAddDoc(DocId doc) override {
         return forwardedOnAddDoc(doc, this->_mvMapping.getNumKeys(), this->_mvMapping.getCapacityKeys());
     }
-    
+
     void load_posting_lists(LoadedVector& loaded) override {
         handle_load_posting_lists(loaded);
     }

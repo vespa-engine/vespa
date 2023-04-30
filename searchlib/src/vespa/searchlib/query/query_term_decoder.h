@@ -9,7 +9,7 @@ namespace search {
 
 /**
  * Class used to decode a single term.
- */ 
+ */
 struct QueryTermDecoder {
     using QueryPacketT = vespalib::stringref;
 

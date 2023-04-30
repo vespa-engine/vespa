@@ -18,7 +18,7 @@ struct PredicateHash {
         int offset;  // Current offset into the entire key.
 
         const uint8_t *aKey = static_cast<const uint8_t *>(data);
-    
+
         // Set up the internal state
         int anInitval = 0;
         a = b = anInitval;  // the previous hash value
@@ -36,7 +36,7 @@ struct PredicateHash {
                   ((0xffLL & aKey[offset+5])<<40) +
                   ((0xffLL & aKey[offset+6])<<48) +
                   ((0xffLL & aKey[offset+7])<<56));
-            b += ((0xffLL & aKey[offset+8]) + 
+            b += ((0xffLL & aKey[offset+8]) +
                   ((0xffLL & aKey[offset+9])<<8) +
                   ((0xffLL & aKey[offset+10])<<16) +
                   ((0xffLL & aKey[offset+11])<<24) +
@@ -52,7 +52,7 @@ struct PredicateHash {
                   ((0xffLL & aKey[offset+21])<<40) +
                   ((0xffLL & aKey[offset+22])<<48) +
                   ((0xffLL & aKey[offset+23])<<56));
-    
+
             // Mix.  This arithmetic must match the mix below.
             a -= b; a -= c; a ^= (c>>43);
             b -= c; b -= a; b ^= (a<<9);
@@ -72,7 +72,7 @@ struct PredicateHash {
         }
 
         // handle the last 23 bytes
-        c += origLen;  
+        c += origLen;
         switch(len) {  // all the case statements fall through
         case 23: c+=((0xffLL & aKey[offset+22])<<56); [[fallthrough]];
         case 22: c+=((0xffLL & aKey[offset+21])<<48); [[fallthrough]];

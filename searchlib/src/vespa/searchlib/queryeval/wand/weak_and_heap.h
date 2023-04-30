@@ -7,7 +7,7 @@
 #include <mutex>
 
 namespace search::queryeval {
-    
+
 /**
  * An interface used to insert scores into an underlying heap (or similar data structure)
  * that can be shared between multiple search iterators.

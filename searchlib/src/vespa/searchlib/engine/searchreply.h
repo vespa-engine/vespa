@@ -73,7 +73,7 @@ public:
     SearchReply();
     ~SearchReply();
     SearchReply(const SearchReply &rhs); // for test only
-    
+
     void setDistributionKey(uint32_t key) { _distributionKey = key; }
     uint32_t getDistributionKey() const { return _distributionKey; }
 };

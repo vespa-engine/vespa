@@ -29,7 +29,7 @@ public:
         operator()(const LoadedEnumAttribute &v)
         {
             return (static_cast<uint64_t>(v._enum) << 32) | v.getDocId();
-        } 
+        }
     };
 
     class EnumCompare
@@ -60,12 +60,12 @@ public:
           _weight(weight)
     {
     }
-        
+
     uint32_t getEnum() const  { return _enum; }
     uint32_t getDocId() const { return _docId; }
     int32_t getWeight() const { return _weight; }
 };
-    
+
 using LoadedEnumAttributeVector = std::vector<LoadedEnumAttribute, vespalib::allocator_large<LoadedEnumAttribute>>;
 
 
@@ -79,22 +79,22 @@ class SaveLoadedEnum
 {
 private:
     LoadedEnumAttributeVector &_loaded;
-        
+
 public:
     SaveLoadedEnum(LoadedEnumAttributeVector &loaded)
         : _loaded(loaded)
     {
     }
-        
+
     void
     save(uint32_t e, uint32_t docId, int32_t weight)
     {
         _loaded.push_back(LoadedEnumAttribute(e, docId, weight));
     }
 };
-    
+
 /**
- * Helper class used when loading non-enumerated attribute from 
+ * Helper class used when loading non-enumerated attribute from
  * enumerated save file.
  */
 

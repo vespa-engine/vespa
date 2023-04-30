@@ -15,7 +15,7 @@ namespace search::diskindex {
  * features. If "cheap" features are enabled then they are interleaved
  * with docid deltas for quick access during sequential scan while the
  * full features still remains separate.
- * 
+ *
  * Rare words do not have skip info, and docid deltas and features are
  * interleaved.
  */

@@ -9,19 +9,19 @@ namespace search::common {
 
 /**
  * Interface for a component that has a lid space that can be compacted and shrunk.
- */     
+ */
 struct ICompactableLidSpace {
     virtual ~ICompactableLidSpace() = default;
 
     /**
      * Compacts the lid space down to the wanted given doc id limit.
      * After this, the remaining lid space is a candidate for shrinking (freeing of memory resources).
-     */  
+     */
     virtual void compactLidSpace(uint32_t wantedDocLidLimit) = 0;
 
     /**
      * Returns whether this lid space can be shrunk down to the wanted doc id limit.
-     */ 
+     */
     virtual bool canShrinkLidSpace() const = 0;
 
     /*
