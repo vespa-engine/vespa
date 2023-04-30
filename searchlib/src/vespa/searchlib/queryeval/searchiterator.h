@@ -117,7 +117,7 @@ public:
      *
      * @param beginId This is the first valid docId and the lowest that will be given to doSeek.
      * @param endId This is the first docid after the valid range.
-     */ 
+     */
     virtual void initRange(uint32_t begin_id, uint32_t end_id) {
         _docid = begin_id - 1;
         _endid = end_id;
@@ -200,7 +200,7 @@ public:
      * @return true if the iterator has reached its end.
      **/
     bool isAtEnd() const { return isAtEnd(_docid); }
-    bool isAtEnd(uint32_t docid) const { 
+    bool isAtEnd(uint32_t docid) const {
         if (__builtin_expect(docid >= _endid, false)) {
             return true;
         }
@@ -241,7 +241,7 @@ public:
      *
      * @return the first matching docid
      * @param docid hit candidate
-     **/ 
+     **/
     uint32_t seekFirst(uint32_t docid) {
         if (__builtin_expect(docid > _docid, true)) {
             doSeek(docid);
@@ -256,7 +256,7 @@ public:
      *
      * @return the first matching docid
      * @param docid hit candidate
-     **/ 
+     **/
     uint32_t seekNext(uint32_t docid) {
         doSeek(docid);
         return _docid;

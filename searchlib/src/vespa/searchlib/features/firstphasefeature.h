@@ -14,7 +14,7 @@ public:
     bool isPure() override { return true; }
     void execute(uint32_t docId) override;
 };
-    
+
 /**
  * Implements the blueprint for the first phase feature.
  */

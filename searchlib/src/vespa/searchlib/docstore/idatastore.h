@@ -148,7 +148,7 @@ public:
      * Visit all data found in data store.
      */
     virtual void accept(IDataStoreVisitor &visitor, IDataStoreVisitorProgress &visitorProgress, bool prune) = 0;
-    
+
     /**
      * Return cost of visiting all data found in data store.
      */

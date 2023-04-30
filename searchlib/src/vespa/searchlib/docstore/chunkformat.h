@@ -96,7 +96,7 @@ private:
      * @param buf Buffer to write into.
      */
     virtual void writeHeader(vespalib::DataBuffer & buf) const = 0;
-    
+
     static void verifyCompression(uint8_t type);
 
     vespalib::nbostream _dataBuf;

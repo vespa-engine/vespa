@@ -88,7 +88,7 @@ public:
     bool onAddDoc(DocId doc) override {
         return forwardedOnAddDoc(doc, this->_mvMapping.getNumKeys(), this->_mvMapping.getCapacityKeys());
     }
-    
+
     void load_posting_lists(LoadedVector& loaded) override {
         handle_load_posting_lists(loaded);
     }

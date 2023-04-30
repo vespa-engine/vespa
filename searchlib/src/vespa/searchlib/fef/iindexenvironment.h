@@ -81,7 +81,7 @@ public:
      * motivation is typically that we want to set up features for
      * ranking or dumping. In some cases we are also setting things up
      * just to verify that it is possible.
-     * 
+     *
      * @return current feature motivation
      **/
     virtual FeatureMotivation getFeatureMotivation() const = 0;

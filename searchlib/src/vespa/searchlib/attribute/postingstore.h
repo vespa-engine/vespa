@@ -104,7 +104,7 @@ public:
     using Parent::_aggrCalc;
     using Parent::BUFFERTYPE_BTREE;
     using BitVectorRefPair = vespalib::datastore::Handle<BitVectorEntry>;
-    
+
 
     PostingStore(IEnumStoreDictionary& dictionary, Status &status, const Config &config);
     ~PostingStore();

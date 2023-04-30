@@ -30,7 +30,7 @@ public:
 
 private:
     friend class PostingListAttributeTest;
-    template <typename, typename, typename> 
+    template <typename, typename, typename>
     friend class attribute::PostingSearchContext; // getEnumStore()
 
     using LoadedVector = typename B::LoadedVector;
@@ -81,7 +81,7 @@ public:
     void onAddDocs(DocId docIdLimit) override {
         forwardedOnAddDoc(docIdLimit, this->_enumIndices.size(), this->_enumIndices.capacity());
     }
-    
+
     void load_posting_lists(LoadedVector& loaded) override { handle_load_posting_lists(loaded); }
     attribute::IPostingListAttributeBase *getIPostingListAttributeBase() override { return this; }
     const attribute::IPostingListAttributeBase *getIPostingListAttributeBase() const override { return this; }

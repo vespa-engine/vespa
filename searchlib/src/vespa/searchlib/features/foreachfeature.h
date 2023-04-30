@@ -22,7 +22,7 @@ public:
     ForeachExecutor(const CO & condition, uint32_t numInputs);
     void execute(uint32_t docId) override;
 };
-    
+
 /**
  * Base class for condition template class.
  **/

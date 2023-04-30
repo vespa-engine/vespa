@@ -70,7 +70,7 @@ public:
         feature_t *get_number_ptr(size_t idx) {
             return &_outputs[idx].as_number;
         }
-        vespalib::eval::Value::CREF *get_object_ptr(size_t idx) { 
+        vespalib::eval::Value::CREF *get_object_ptr(size_t idx) {
             return &_outputs[idx].as_object;
         }
         feature_t get_number(size_t idx) const {

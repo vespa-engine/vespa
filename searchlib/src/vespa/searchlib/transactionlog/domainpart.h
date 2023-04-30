@@ -34,9 +34,9 @@ public:
 
     SerialNum getSynced() const {
         std::lock_guard guard(_writeLock);
-        return _syncedSerial; 
+        return _syncedSerial;
     }
-    
+
     size_t          size() const noexcept { return _sz.load(std::memory_order_relaxed); }
     size_t      byteSize() const {
         return _byteSize.load(std::memory_order_acquire);

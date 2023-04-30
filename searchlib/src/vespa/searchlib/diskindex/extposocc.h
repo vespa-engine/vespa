@@ -5,12 +5,12 @@
 #include <vespa/vespalib/stllike/string.h>
 #include <memory>
 
-namespace search { 
+namespace search {
     class TuneFileSeqRead;
     class TuneFileSeqWrite;
 }
 
-namespace search::index { 
+namespace search::index {
     class FieldLengthInfo;
     class PostingListParams;
     class PostingListCountFileSeqWrite;

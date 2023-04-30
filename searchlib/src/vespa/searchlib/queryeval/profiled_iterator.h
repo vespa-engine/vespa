@@ -11,7 +11,7 @@ namespace search::queryeval {
  * Wraps a search iterator to profile its operations. Each iterator
  * has 4 distinct operations that will be profiled separately:
  *
- * 'init' -> initRange 
+ * 'init' -> initRange
  * 'seek' -> doSeek
  * 'unpack' -> doUnpack
  * 'termwise' -> get_hits, or_hits_into, and_hits_into

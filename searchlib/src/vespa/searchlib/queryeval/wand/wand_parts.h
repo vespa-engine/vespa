@@ -89,7 +89,7 @@ struct TermInput {
     int32_t get_weight(ref_t ref) const { return terms[ref].weight; }
     uint32_t get_est_hits(ref_t ref) const { return terms[ref].estHits; }
     int32_t get_max_weight(ref_t ref) const { return ::search::queryeval::wand::get_max_weight(*(terms[ref].search)); }
-    docid_t get_initial_docid(ref_t ref) const { return terms[ref].search->getDocId(); } 
+    docid_t get_initial_docid(ref_t ref) const { return terms[ref].search->getDocId(); }
 };
 
 struct AttrInput {
@@ -102,7 +102,7 @@ struct AttrInput {
     int32_t get_weight(ref_t ref) const { return weights[ref]; }
     uint32_t get_est_hits(ref_t ref) const { return dict_entries[ref].posting_size; }
     int32_t get_max_weight(ref_t ref) const { return dict_entries[ref].max_weight; }
-    docid_t get_initial_docid(ref_t) const { return SearchIterator::beginId(); } 
+    docid_t get_initial_docid(ref_t) const { return SearchIterator::beginId(); }
 };
 
 template <typename Input>
@@ -179,7 +179,7 @@ public:
 
     uint32_t seek(uint16_t ref, uint32_t docid) { return _iteratorPack.seek(ref, docid); }
     int32_t get_weight(uint16_t ref, uint32_t docid) { return _iteratorPack.get_weight(ref, docid); }
-    
+
     vespalib::string stringify_docid() const;
 };
 
@@ -294,7 +294,7 @@ struct DocIdOrder {
     const docid_t *termPos;
     DocIdOrder(docid_t *pos) : termPos(pos) {}
     bool at_end(ref_t ref) const { return termPos[ref] == search::endDocId; }
-    docid_t get_pos(ref_t ref) const { return termPos[ref]; } 
+    docid_t get_pos(ref_t ref) const { return termPos[ref]; }
     bool operator()(ref_t a, ref_t b) const {
         return (termPos[a] < termPos[b]);
     }

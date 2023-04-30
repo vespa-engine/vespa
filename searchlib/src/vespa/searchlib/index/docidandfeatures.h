@@ -49,9 +49,9 @@ public:
           _elementLen(elementLen)
     {}
 
-    uint32_t getElementId() const { return _elementId; } 
-    uint32_t getNumOccs() const { return _numOccs; } 
-    int32_t getWeight() const { return _weight; } 
+    uint32_t getElementId() const { return _elementId; }
+    uint32_t getNumOccs() const { return _numOccs; }
+    int32_t getWeight() const { return _weight; }
     uint32_t getElementLen() const { return _elementLen; }
 
     void setElementId(uint32_t elementId) { _elementId = elementId; }

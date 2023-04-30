@@ -53,7 +53,7 @@ protected:
     using EnumEntryType = T;
     using LoadedNumericValueT = attribute::LoadedNumericValue<T>;
 
-public:    
+public:
     using BaseType = T;
     using LoadedValueType = T;
     using LoadedVector = SequentialReadModifyWriteInterface<LoadedNumericValueT>;

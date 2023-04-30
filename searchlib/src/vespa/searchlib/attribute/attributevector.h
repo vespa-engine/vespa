@@ -89,7 +89,7 @@ public:
     virtual bool add(const char *, int32_t = 1) { return false; }
     virtual bool add(vespalib::ConstArrayRef<char>, int32_t = 1) { return false; }
     virtual bool add(const vespalib::eval::Value&, int32_t = 1) { return false; }
-    
+
     virtual ~IExtendAttribute() = default;
 };
 
@@ -157,7 +157,7 @@ protected:
             _uncommittedDocIdLimit = 0;
         }
     }
-    
+
 public:
     void incGeneration();
     void reclaim_unused_memory();

@@ -218,7 +218,7 @@ public:
     virtual const State &getState() const = 0;
     const Blueprint &root() const;
 
-    double hit_ratio() const { return getState().hit_ratio(_docid_limit); }        
+    double hit_ratio() const { return getState().hit_ratio(_docid_limit); }
 
     virtual void fetchPostings(const ExecuteInfo &execInfo) = 0;
     virtual void freeze() = 0;

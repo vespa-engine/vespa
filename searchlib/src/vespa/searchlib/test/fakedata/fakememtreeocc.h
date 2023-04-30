@@ -80,9 +80,9 @@ public:
             if (_docId != rhs.getDocId())
                 return _docId < rhs.getDocId();
             return _seq < rhs._seq;
-        } 
+        }
     };
- 
+
     std::vector<std::shared_ptr<PostingIdx> > _postingIdxs;
     std::vector<const FakeWord *> _fakeWords;
     std::vector<uint64_t> _featureSizes;

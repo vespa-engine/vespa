@@ -17,7 +17,7 @@ class FieldLengthScanner;
 /*
  * FieldReader is used to read a dictionary and posting list file
  * together, and get a sequential view of the stored data.
- * 
+ *
  * It can use mappings for word numbers and document ids to skip
  * documents that are logically removed and use shared word numbers
  * with other field readers.

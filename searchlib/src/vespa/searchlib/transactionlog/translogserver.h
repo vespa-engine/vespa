@@ -64,7 +64,7 @@ private:
     using WriteGuard = std::unique_lock<std::shared_mutex>;
 
     bool running() const { return !_closed.load(std::memory_order_relaxed); }
-    
+
     vespalib::string                    _name;
     vespalib::string                    _baseDir;
     DomainConfig                        _domainConfig;

@@ -96,7 +96,7 @@ public:
     fef::ParameterDescriptions getDescriptions() const override;
     bool setup(const fef::IIndexEnvironment & env, const fef::ParameterList & params) override;
     fef::FeatureExecutor &createExecutor(const fef::IQueryEnvironment &env, vespalib::Stash &stash) const override;
-    
+
     const NativeAttributeMatchParams & getParams() const { return _params; }
 };
 
