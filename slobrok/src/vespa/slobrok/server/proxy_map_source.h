@@ -17,7 +17,7 @@ class ProxyMapSource : public MapSource, public MapListener {
 public:
     ProxyMapSource();
      ~ProxyMapSource();
-    
+
     void add(const ServiceMapping &mapping) override;
     void remove(const ServiceMapping &mapping) override;
     void update(const ServiceMapping &old_mapping,
