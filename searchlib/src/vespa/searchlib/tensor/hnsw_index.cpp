@@ -824,12 +824,14 @@ void
 HnswIndex<type>::shrink_lid_space(uint32_t doc_id_limit)
 {
     assert(doc_id_limit >= 1u);
-    assert(doc_id_limit >= _graph.nodes_size.load(std::memory_order_relaxed));
-    uint32_t old_doc_id_limit = _graph.nodes.size();
-    if (doc_id_limit >= old_doc_id_limit) {
-        return;
+    if constexpr (std::is_same_v<IdMapping, HnswIdentityMapping>) {
+        assert(doc_id_limit >= _graph.nodes_size.load(std::memory_order_relaxed));
+        uint32_t old_doc_id_limit = _graph.nodes.size();
+        if (doc_id_limit >= old_doc_id_limit) {
+            return;
+        }
+        _graph.nodes.shrink(doc_id_limit);
     }
-    _graph.nodes.shrink(doc_id_limit);
 }
 
 template <HnswIndexType type>
