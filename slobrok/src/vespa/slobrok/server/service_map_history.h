@@ -56,7 +56,7 @@ private:
     UpdateLog  _log;
 
     void notify_updated();
- 
+
     const Generation &myGen() const { return _log.currentGeneration; }
 
 public:

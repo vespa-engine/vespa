@@ -15,7 +15,7 @@ struct MapDiff {
     /** construct incremental diff */
     MapDiff(const vespalib::GenCnt &from,
             std::vector<vespalib::string> remove,
-            ServiceMappingList update,            
+            ServiceMappingList update,
             const vespalib::GenCnt &to)
       : fromGen(from),
         removed(std::move(remove)),
@@ -31,7 +31,7 @@ struct MapDiff {
 
     MapDiff(MapDiff &&) noexcept;
     ~MapDiff();
-    
+
     // is this a diff from the empty map:
     bool is_full_dump() const { return fromGen == vespalib::GenCnt(0); }
 

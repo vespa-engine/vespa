@@ -87,7 +87,7 @@ private:
 
     static PerService globalService(const ServiceMapping &mapping) {
         return {false, false, {}, mapping.spec};
-    }        
+    }
 
     using Map = std::map<vespalib::string, PerService>;
 
@@ -96,7 +96,7 @@ private:
     ServiceMapHistory _history;
     MappingMonitor::UP _mappingMonitor;
     std::unique_ptr<MapSubscription> _subscription;
-    
+
     void doAdd(const ServiceMapping &mapping);
     void doRemove(const ServiceMapping &mapping);
 
