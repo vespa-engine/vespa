@@ -30,6 +30,7 @@ import java.util.Optional;
 import java.util.TreeMap;
 
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.aborted;
+import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.cancelled;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.deploymentFailed;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.endpointCertificateTimeout;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.error;
@@ -342,6 +343,7 @@ class RunSerializer {
             case error                      -> "error";
             case success                    -> "success";
             case aborted                    -> "aborted";
+            case cancelled                  -> "cancelled";
             case reset                      -> "reset";
         };
     }
@@ -359,6 +361,7 @@ class RunSerializer {
             case "error"                      -> error;
             case "success"                    -> success;
             case "aborted"                    -> aborted;
+            case "cancelled"                  -> cancelled;
             case "reset"                      -> reset;
             default -> throw new IllegalArgumentException("No run status defined by '" + status + "'!");
         };

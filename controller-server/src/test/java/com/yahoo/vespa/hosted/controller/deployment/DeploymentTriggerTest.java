@@ -119,6 +119,15 @@ public class DeploymentTriggerTest {
         tester.triggerJobs();
         app.assertRunning(productionUsWest1);
 
+        tester.jobs().abort(tester.jobs().last(app.instanceId(), productionUsWest1).get().id(), "cancelled", true);
+        tester.runner().run();
+        assertEquals(RunStatus.cancelled, tester.jobs().last(app.instanceId(), productionUsWest1).get().status());
+        tester.triggerJobs();
+        app.assertNotRunning(productionUsWest1);
+        tester.deploymentTrigger().reTrigger(app.instanceId(), productionUsWest1, "retry");
+        app.assertRunning(productionUsWest1);
+
+        // invalid application is not retried
         tester.configServer().throwOnNextPrepare(new ConfigServerException(ErrorCode.INVALID_APPLICATION_PACKAGE, "nope", "bah"));
         tester.runner().run();
         assertEquals(RunStatus.invalidApplication, tester.jobs().last(app.instanceId(), productionUsWest1).get().status());

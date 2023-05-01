@@ -120,7 +120,7 @@ public class RunSerializerTest {
         run = run.with(1L << 50)
                 .with(Instant.now().truncatedTo(MILLIS))
                 .noNodesDownSince(Instant.now().truncatedTo(MILLIS))
-                .aborted()
+                .aborted(false)
                 .finished(Instant.now().truncatedTo(MILLIS));
         assertEquals(aborted, run.status());
         assertTrue(run.hasEnded());

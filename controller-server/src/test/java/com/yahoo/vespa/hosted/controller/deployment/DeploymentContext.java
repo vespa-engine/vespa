@@ -477,7 +477,7 @@ public class DeploymentContext {
     public DeploymentContext abortJob(JobType type) {
         var job = jobId(type);
         assertNotSame(RunStatus.aborted, currentRun(job).status());
-        jobs.abort(currentRun(job).id(), "DeploymentContext.abortJob");
+        jobs.abort(currentRun(job).id(), "DeploymentContext.abortJob", false);
         jobAborted(type);
         return this;
     }

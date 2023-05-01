@@ -23,6 +23,7 @@ public class JobMetrics {
     public static final String noTests = "deployment.noTests";
     public static final String error = "deployment.error";
     public static final String abort = "deployment.abort";
+    public static final String cancel = "deployment.cancel";
     public static final String success = "deployment.success";
 
     private final Metric metric;
@@ -57,6 +58,7 @@ public class JobMetrics {
             case testFailure -> testFailure;
             case noTests -> noTests;
             case error -> error;
+            case cancelled -> cancel;
             case aborted -> abort;
             case success -> success;
             default -> throw new IllegalArgumentException("Unexpected run status '" + status + "'");

@@ -58,6 +58,7 @@ import static com.yahoo.config.application.api.DeploymentSpec.RevisionTarget.nex
 import static com.yahoo.config.provision.Environment.prod;
 import static com.yahoo.config.provision.Environment.staging;
 import static com.yahoo.config.provision.Environment.test;
+import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.cancelled;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.invalidApplication;
 import static java.util.Comparator.comparing;
 import static java.util.Comparator.naturalOrder;
@@ -1062,6 +1063,7 @@ public class DeploymentStatus {
                 &&   job.isNodeAllocationFailure()) return Readiness.empty;
 
             if (job.lastStatus().get() == invalidApplication) return new Readiness(status.now.plus(Duration.ofSeconds(1 << 30)), DelayCause.invalidPackage);
+            if (job.lastStatus().get() == cancelled) return new Readiness(status.now.plus(Duration.ofSeconds(1 << 30)), DelayCause.coolingDown);
             Instant firstFailing = job.firstFailing().get().end().get();
             Instant lastCompleted = job.lastCompleted().get().end().get();
 

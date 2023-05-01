@@ -17,6 +17,7 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.aborted;
+import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.cancelled;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.nodeAllocationFailure;
 
 /**
@@ -57,7 +58,7 @@ public class JobList extends AbstractFilteringList<JobStatus, JobList> {
 
     /** Returns the subset of jobs which are currently failing, not out of test capacity, and not aborted. */
     public JobList failingHard() {
-        return failing().not().outOfTestCapacity().not().withStatus(aborted);
+        return failing().not().outOfTestCapacity().not().withStatus(aborted).not().withStatus(cancelled);
     }
 
     public JobList outOfTestCapacity() {

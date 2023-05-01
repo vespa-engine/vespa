@@ -2552,7 +2552,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         controller.applications().deactivate(id.applicationId(), id.zoneId());
         controller.jobController().last(id.applicationId(), JobType.deploymentTo(id.zoneId()))
                   .filter(run -> ! run.hasEnded())
-                  .ifPresent(last -> controller.jobController().abort(last.id(), "deployment deactivated by " + request.getJDiscRequest().getUserPrincipal().getName()));
+                  .ifPresent(last -> controller.jobController().abort(last.id(), "deployment deactivated by " + request.getJDiscRequest().getUserPrincipal().getName(), true));
         return new MessageResponse("Deactivated " + id);
     }
 
