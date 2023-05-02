@@ -1,28 +1,40 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vdslib;
+import com.yahoo.data.access.helpers.MatchFeatureData;
 import com.yahoo.vespa.objects.BufferSerializer;
 import com.yahoo.vespa.objects.Deserializer;
 
 import java.io.UnsupportedEncodingException;
 import java.nio.ByteOrder;
+import java.util.ArrayList;
 import java.util.Map;
+import java.util.Optional;
 import java.util.TreeMap;
 
 public class SearchResult {
     public static class Hit implements Comparable<Hit> {
         private String docId;
-        private double    rank;
+        private double rank;
+        private MatchFeatureData.HitValue matchFeatures;
         public Hit(Hit h) {
             docId = h.docId;
             rank = h.rank;
+            matchFeatures = h.matchFeatures;
         }
         public Hit(String docId, double rank) {
             this.rank = rank;
             this.docId = docId;
+            this.matchFeatures = null;
         }
-        final public String getDocId()      { return docId; }
-        final public double getRank()          { return rank; }
+        final public String getDocId() { return docId; }
+        final public double getRank() { return rank; }
+        final public Optional<MatchFeatureData.HitValue> getMatchFeatures() {
+            return Optional.ofNullable(matchFeatures);
+        }
         final public void setRank(double rank) { this.rank = rank; }
+        final public void setMatchFeatures(MatchFeatureData.HitValue matchFeatures) {
+            this.matchFeatures = matchFeatures;
+        }
         public int compareTo(Hit h) {
             return (h.rank < rank) ? -1 : (h.rank > rank) ? 1 : 0; // Sort order: descending
         }
@@ -49,12 +61,19 @@ public class SearchResult {
     private Hit[]  hits;
     private TreeMap<Integer, byte []> aggregatorList;
     private TreeMap<Integer, byte []> groupingList;
+    private static int EXTENSION_FLAGS_PRESENT = -1;
+    private static int MATCH_FEATURES_PRESENT_MASK = 1;
 
     public SearchResult(Deserializer buf) {
         BufferSerializer bser = (BufferSerializer) buf; // TODO: dirty cast. must do this differently
         bser.order(ByteOrder.BIG_ENDIAN);
         this.totalHits = buf.getInt(null);
         int numHits = buf.getInt(null);
+        int extensionFlags = 0;
+        if (hasExtensionFlags(numHits)) {
+            extensionFlags = buf.getInt(null);
+            numHits = buf.getInt(null);
+        }
         hits = new Hit[numHits];
         if (numHits != 0) {
             int docIdBufferLength = buf.getInt(null);
@@ -101,7 +120,45 @@ public class SearchResult {
             groupingList.put(aggrId, buf.getBytes(null, aggrLength));
         }
 
+        if (hasMatchFeatures(extensionFlags)) {
+            deserializeMatchFeatures(buf, numHits);
+        }
     }
+
+    private void deserializeMatchFeatures(Deserializer buf, int numHits) {
+        var featureNames = new ArrayList<String>();
+        int numFeatures = buf.getInt(null);
+        for (int i = 0; i < numFeatures; ++i) {
+            featureNames.add(buf.getString(null));
+        }
+        var factory = new MatchFeatureData(featureNames);
+        for (int i = 0; i < numHits; ++i) {
+            var matchFeatures = factory.addHit();
+            for (int j = 0; j < numFeatures; ++j) {
+                byte featureType = buf.getByte(null);
+                if (isDoubleFeature(featureType)) {
+                    matchFeatures.set(j, buf.getDouble(null));
+                } else {
+                    int bufLength = buf.getInt(null);
+                    matchFeatures.set(j, buf.getBytes(null, bufLength));
+                }
+            }
+            hits[i].setMatchFeatures(matchFeatures);
+        }
+    }
+
+    private static boolean hasExtensionFlags(int numHits) {
+        return numHits == EXTENSION_FLAGS_PRESENT;
+    }
+
+    private static boolean hasMatchFeatures(int extensionFlags) {
+        return (extensionFlags & MATCH_FEATURES_PRESENT_MASK) != 0;
+    }
+
+    private static boolean isDoubleFeature(byte featureType) {
+        return featureType == 0;
+    }
+
     /**
      * Constructs a new message from a byte buffer.
      *

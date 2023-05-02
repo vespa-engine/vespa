@@ -633,6 +633,8 @@ public class Messages60TestCase extends MessagesTestBase {
 
         @Override
         public void run() throws Exception {
+            test_result_with_match_features();
+
             Routable routable = deserialize("QueryResultMessage-1", DocumentProtocol.MESSAGE_QUERYRESULT, Language.CPP);
             assertTrue(routable instanceof QueryResultMessage);
 
@@ -647,9 +649,11 @@ public class Messages60TestCase extends MessagesTestBase {
             com.yahoo.vdslib.SearchResult.Hit h = msg.getResult().getHit(0);
             assertEquals(89.0, h.getRank(), 1E-6);
             assertEquals("doc1", h.getDocId());
+            assertFalse(h.getMatchFeatures().isPresent());
             h = msg.getResult().getHit(1);
             assertEquals(109.0, h.getRank(), 1E-6);
             assertEquals("doc17", h.getDocId());
+            assertFalse(h.getMatchFeatures().isPresent());
 
             routable = deserialize("QueryResultMessage-3", DocumentProtocol.MESSAGE_QUERYRESULT, Language.CPP);
             assertTrue(routable instanceof QueryResultMessage);
@@ -659,9 +663,11 @@ public class Messages60TestCase extends MessagesTestBase {
             h = msg.getResult().getHit(0);
             assertEquals(109.0, h.getRank(), 1E-6);
             assertEquals("doc17", h.getDocId());
+            assertFalse(h.getMatchFeatures().isPresent());
             h = msg.getResult().getHit(1);
             assertEquals(89.0, h.getRank(), 1E-6);
             assertEquals("doc1", h.getDocId());
+            assertFalse(h.getMatchFeatures().isPresent());
 
             routable = deserialize("QueryResultMessage-4", DocumentProtocol.MESSAGE_QUERYRESULT, Language.CPP);
             assertTrue(routable instanceof QueryResultMessage);
@@ -673,31 +679,54 @@ public class Messages60TestCase extends MessagesTestBase {
             assertEquals(89.0, h.getRank(), 1E-6);
             assertEquals("doc1", h.getDocId());
             byte[] b = ((SearchResult.HitWithSortBlob)h).getSortBlob();
-            assertEquals(9, b.length);
-            byte[] e = { 's', 'o', 'r', 't', 'd', 'a', 't', 'a', '2' };
-            for (int i = 0; i < b.length; i++) {
-                assertEquals(e[i], b[i]);
-            }
+            assertEqualsData(new byte[] { 's', 'o', 'r', 't', 'd', 'a', 't', 'a', '2' }, b);
+
             h = msg.getResult().getHit(1);
             assertTrue(h instanceof SearchResult.HitWithSortBlob);
             assertEquals(109.0, h.getRank(), 1E-6);
             assertEquals("doc17", h.getDocId());
             b = ((SearchResult.HitWithSortBlob)h).getSortBlob();
-            assertEquals(9, b.length);
-            byte[] d = { 's', 'o', 'r', 't', 'd', 'a', 't', 'a', '1' };
-            for (int i = 0; i < b.length; i++) {
-                assertEquals(d[i], b[i]);
-            }
+            assertEqualsData(new byte[] { 's', 'o', 'r', 't', 'd', 'a', 't', 'a', '1' }, b);
+
             h = msg.getResult().getHit(2);
             assertTrue(h instanceof SearchResult.HitWithSortBlob);
             assertEquals(90.0, h.getRank(), 1E-6);
             assertEquals("doc18", h.getDocId());
             b = ((SearchResult.HitWithSortBlob)h).getSortBlob();
-            assertEquals(9, b.length);
-            byte[] c = { 's', 'o', 'r', 't', 'd', 'a', 't', 'a', '3' };
-            for (int i = 0; i < b.length; i++) {
-                assertEquals(c[i], b[i]);
+            assertEqualsData(new byte[] { 's', 'o', 'r', 't', 'd', 'a', 't', 'a', '3' }, b);
+        }
+
+        void assertEqualsData(byte[] exp, byte[] act) {
+            assertEquals(exp.length, act.length);
+            for (int i = 0; i < exp.length; ++i) {
+                assertEquals(exp[i], act[i]);
             }
+        }
+
+        void test_result_with_match_features() {
+            Routable routable = deserialize("QueryResultMessage-6", DocumentProtocol.MESSAGE_QUERYRESULT, Language.CPP);
+            assertTrue(routable instanceof QueryResultMessage);
+
+            var msg = (QueryResultMessage)routable;
+            assertEquals(2, msg.getResult().getHitCount());
+
+            var h = msg.getResult().getHit(0);
+            assertTrue(h instanceof SearchResult.Hit);
+            assertEquals(7.0, h.getRank(), 1E-6);
+            assertEquals("doc2", h.getDocId());
+            assertTrue(h.getMatchFeatures().isPresent());
+            var mf = h.getMatchFeatures().get();
+            assertEquals(12.0, mf.field("foo").asDouble(), 1E-6);
+            assertEqualsData(new byte[] { 'T', 'h', 'e', 'r', 'e' }, mf.field("bar").asData());
+
+            h = msg.getResult().getHit(1);
+            assertTrue(h instanceof SearchResult.Hit);
+            assertEquals(5.0, h.getRank(), 1E-6);
+            assertEquals("doc1", h.getDocId());
+            assertTrue(h.getMatchFeatures().isPresent());
+            mf = h.getMatchFeatures().get();
+            assertEquals(1.0, mf.field("foo").asDouble(), 1E-6);
+            assertEqualsData(new byte[] { 'H', 'i' }, mf.field("bar").asData());
         }
     }
 
