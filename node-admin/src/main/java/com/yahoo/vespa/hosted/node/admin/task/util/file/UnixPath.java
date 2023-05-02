@@ -105,7 +105,7 @@ public class UnixPath {
     }
 
     /** Create an empty file and return true, or false if the file already exists (the file may not be regular). */
-    public boolean touch() {
+    public boolean create() {
         try {
             Files.createFile(path);
             return true;

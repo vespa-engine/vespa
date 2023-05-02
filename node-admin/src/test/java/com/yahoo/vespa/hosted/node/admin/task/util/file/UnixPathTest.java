@@ -50,9 +50,9 @@ public class UnixPathTest {
     @Test
     void touch() {
         UnixPath path = new UnixPath(fs.getPath("example.txt"));
-        assertTrue(path.touch());
+        assertTrue(path.create());
         assertEquals("", path.readUtf8File());
-        assertFalse(path.touch());
+        assertFalse(path.create());
     }
 
     @Test
