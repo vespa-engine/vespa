@@ -10,10 +10,10 @@ import java.util.Queue;
  */
 class ScheduledQueue {
 
-    public static final int MILLIS_PER_SLOT = 100;
-    public static final int NUM_SLOTS = 512;
-    public static final int SLOT_MASK = 511; // bitmask to modulo NUM_SLOTS
-    public static final int ITER_SHIFT = 9; // number of bits to shift off SLOT_MASK
+    public static final int MILLIS_PER_SLOT = 10;
+    public static final int NUM_SLOTS = 1024;
+    public static final int SLOT_MASK = NUM_SLOTS - 1; // bitmask to modulo NUM_SLOTS
+    public static final int ITER_SHIFT = Integer.numberOfTrailingZeros(NUM_SLOTS); // number of bits to shift off SLOT_MASK
 
     private final Entry[] slots = new Entry[NUM_SLOTS + 1];
     private final int[] counts = new int[NUM_SLOTS + 1];

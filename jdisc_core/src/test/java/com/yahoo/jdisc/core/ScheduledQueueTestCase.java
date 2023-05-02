@@ -93,7 +93,7 @@ public class ScheduledQueueTestCase {
     @Test
     void requireThatEntriesDoNotExpireMoreThanOnce() {
         ScheduledQueue queue = new ScheduledQueue(0);
-        Object foo = scheduleAt(queue, NUM_SLOTS * MILLIS_PER_SLOT + 50);
+        Object foo = scheduleAt(queue, NUM_SLOTS * MILLIS_PER_SLOT + MILLIS_PER_SLOT/2);
 
         long now = 0;
         for (int i = 0; i < NUM_SLOTS; ++i, now += MILLIS_PER_SLOT) {
