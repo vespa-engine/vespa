@@ -12,7 +12,6 @@ class ScheduledQueue {
 
     public static final int MILLIS_PER_SLOT = 100;
     public static final int NUM_SLOTS = 512;
-    public static final int NUM_SLOTS_UNDILATED = 3;
     public static final int SLOT_MASK = 511; // bitmask to modulo NUM_SLOTS
     public static final int ITER_SHIFT = 9; // number of bits to shift off SLOT_MASK
 
@@ -38,13 +37,11 @@ class ScheduledQueue {
         int queueSize = queueSize() + out.size();
         drainTo(NUM_SLOTS, 0, out);
         for (int i = 0; currentTimeMillis >= nextTick && (queueSize > out.size()); i++, nextTick += MILLIS_PER_SLOT) {
-            if (i < NUM_SLOTS_UNDILATED) {
-                if (++currSlot >= NUM_SLOTS) {
-                    currSlot = 0;
-                    currIter++;
-                }
-                drainTo(currSlot, currIter, out);
+            if (++currSlot >= NUM_SLOTS) {
+                currSlot = 0;
+                currIter++;
             }
+            drainTo(currSlot, currIter, out);
         }
     }
 

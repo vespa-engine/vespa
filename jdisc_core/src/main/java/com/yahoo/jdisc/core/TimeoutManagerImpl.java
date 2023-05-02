@@ -60,7 +60,7 @@ public class TimeoutManagerImpl {
         return new ManagedRequestHandler(handler);
     }
 
-    synchronized int queueSize() { return scheduler.queueSize(); }
+    int queueSize() { return scheduler.queueSize(); }
 
     Timer timer() {
         return timer;
