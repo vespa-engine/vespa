@@ -15,7 +15,7 @@ zookeeper.barrierTimeout long default=360
 zookeeperLocalhostAffinity bool default=true
 sessionLifetime long default=3600 # in seconds
 # How long to wait for all ZooKeeper servers to reach barrier after quorum has reached barrier. In seconds
-barrierWaitForAllTimeout long default=1
+barrierWaitForAllTimeout long default=5
 
 # Directories
 configModelPluginDir[] string
