@@ -398,7 +398,7 @@ public class Flags {
             ZONE_ID, APPLICATION_ID);
 
     public static final UnboundBooleanFlag FAIL_DEPLOYMENT_ON_MISSING_CERTIFICATE_FILE = defineFeatureFlag(
-            "fail-on-missing-certificate-file", false, List.of("hmusum"), "2023-04-21", "2023-05-21",
+            "fail-on-missing-certificate-file", true, List.of("hmusum"), "2023-04-21", "2023-05-21",
             "Whether to fail in controller when a submitted application package has no certificate files",
             "Takes effect at redeployment",
             ZONE_ID);
