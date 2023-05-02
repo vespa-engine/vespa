@@ -481,7 +481,7 @@ public class HostedDeployTest {
 
         System.out.println(SlimeUtils.toJson(deployLogger.slime().get()));
         assertLogContainsMessage(deployLogger, "Wait for all services to use new config generation before restarting");
-        assertLogContainsMessage(deployLogger, "Services that did not converge on new config generation 2: hostName:serviceName on generation 1,hostName2:serviceName2 on generation 1. Will retry");
+        assertLogContainsMessage(deployLogger, "Services that did not converge on new config generation 2: hostName:serviceName on generation 1, hostName2:serviceName2 on generation 1. Will retry");
         assertLogContainsMessage(deployLogger, "Services converged on new config generation 2");
     }
 
