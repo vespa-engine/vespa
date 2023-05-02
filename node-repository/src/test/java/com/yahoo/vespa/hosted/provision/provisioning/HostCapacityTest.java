@@ -98,11 +98,14 @@ public class HostCapacityTest {
 
     @Test
     public void unusedCapacityOf() {
-        assertEquals(new NodeResources(5, 40, 80, 2, NodeResources.DiskSpeed.fast, NodeResources.StorageType.remote),
+        assertEquals(new NodeResources(5, 40, 80, 2,
+                                       NodeResources.DiskSpeed.fast, NodeResources.StorageType.remote, NodeResources.Architecture.x86_64),
                      capacity.unusedCapacityOf(host1));
-        assertEquals(new NodeResources(5, 60, 80, 4.5, NodeResources.DiskSpeed.fast, NodeResources.StorageType.remote),
+        assertEquals(new NodeResources(5, 60, 80, 4.5,
+                                       NodeResources.DiskSpeed.fast, NodeResources.StorageType.remote, NodeResources.Architecture.x86_64),
                      capacity.unusedCapacityOf(host3));
-        assertEquals(new NodeResources(7, 100, 120, 5, NodeResources.DiskSpeed.fast, NodeResources.StorageType.remote),
+        assertEquals(new NodeResources(7, 100, 120, 5,
+                                       NodeResources.DiskSpeed.fast, NodeResources.StorageType.remote, NodeResources.Architecture.x86_64),
                      capacity.unusedCapacityOf(host4));
 
         doAnswer(invocation -> {
@@ -110,17 +113,19 @@ public class HostCapacityTest {
             return totalHostResources.subtract(new NodeResources(1, 2, 3, 0.5, NodeResources.DiskSpeed.any));
         }).when(hostResourcesCalculator).advertisedResourcesOf(any());
 
-        assertEquals(new NodeResources(4, 38, 77, 1.5, NodeResources.DiskSpeed.fast, NodeResources.StorageType.remote),
+        assertEquals(new NodeResources(4, 38, 77, 1.5, NodeResources.DiskSpeed.fast, NodeResources.StorageType.remote, NodeResources.Architecture.x86_64),
                      capacity.unusedCapacityOf(host1));
-        assertEquals(new NodeResources(4, 58, 77, 4, NodeResources.DiskSpeed.fast, NodeResources.StorageType.remote),
+        assertEquals(new NodeResources(4, 58, 77, 4, NodeResources.DiskSpeed.fast, NodeResources.StorageType.remote, NodeResources.Architecture.x86_64),
                      capacity.unusedCapacityOf(host3));
     }
 
     @Test
     public void availableCapacityOf() {
-        assertEquals(new NodeResources(5, 40, 80, 2, NodeResources.DiskSpeed.fast, NodeResources.StorageType.remote),
+        assertEquals(new NodeResources(5, 40, 80, 2,
+                                       NodeResources.DiskSpeed.fast, NodeResources.StorageType.remote, NodeResources.Architecture.x86_64),
                      capacity.availableCapacityOf(host1));
-        assertEquals(new NodeResources(5, 60, 80, 4.5, NodeResources.DiskSpeed.fast, NodeResources.StorageType.remote),
+        assertEquals(new NodeResources(5, 60, 80, 4.5,
+                                       NodeResources.DiskSpeed.fast, NodeResources.StorageType.remote, NodeResources.Architecture.x86_64),
                      capacity.availableCapacityOf(host3));
         assertEquals(NodeResources.zero(),
                      capacity.availableCapacityOf(host4));
