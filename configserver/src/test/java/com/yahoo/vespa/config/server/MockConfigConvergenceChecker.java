@@ -8,8 +8,7 @@ import java.time.Duration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Function;
-import java.util.stream.Collectors;
+import java.util.Set;
 
 public class MockConfigConvergenceChecker extends ConfigConvergenceChecker {
 
@@ -43,7 +42,7 @@ public class MockConfigConvergenceChecker extends ConfigConvergenceChecker {
     }
 
     @Override
-    public ServiceListResponse checkConvergenceUnlessDeferringChangesUntilRestart(Application application) {
+    public ServiceListResponse checkConvergenceUnlessDeferringChangesUntilRestart(Application application, Set<String> hostnames) {
         iteration++;
         if (servicesThatFailFirstIteration.isEmpty() || iteration > 1)
             return new ServiceListResponse(Map.of(), wantedGeneration, wantedGeneration);
