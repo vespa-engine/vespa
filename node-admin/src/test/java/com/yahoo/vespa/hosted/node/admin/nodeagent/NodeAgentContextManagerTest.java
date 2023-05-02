@@ -1,11 +1,11 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.nodeagent;
 
+import com.yahoo.jdisc.core.SystemTimer;
 import com.yahoo.vespa.test.file.TestFileSystem;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 
-import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Optional;
@@ -13,7 +13,10 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 
 import static com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContextSupplier.ContextSupplierInterruptedException;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author freva
@@ -22,15 +25,15 @@ public class NodeAgentContextManagerTest {
 
     private static final int TIMEOUT = 10_000;
 
-    private final Clock clock = Clock.systemUTC();
+    private final SystemTimer timer = new SystemTimer();
     private final NodeAgentContext initialContext = generateContext();
-    private final NodeAgentContextManager manager = new NodeAgentContextManager(clock, initialContext);
+    private final NodeAgentContextManager manager = new NodeAgentContextManager(timer, initialContext);
 
     @Test
     @Timeout(TIMEOUT)
     void context_is_ignored_unless_scheduled_while_waiting() {
         NodeAgentContext context1 = generateContext();
-        manager.scheduleTickWith(context1, clock.instant());
+        manager.scheduleTickWith(context1, timer.currentTime());
         assertSame(initialContext, manager.currentContext());
 
         AsyncExecutor<NodeAgentContext> async = new AsyncExecutor<>(manager::nextContext);
@@ -38,7 +41,7 @@ public class NodeAgentContextManagerTest {
         assertFalse(async.isCompleted());
 
         NodeAgentContext context2 = generateContext();
-        manager.scheduleTickWith(context2, clock.instant());
+        manager.scheduleTickWith(context2, timer.currentTime());
 
         assertSame(context2, async.awaitResult().response.get());
         assertSame(context2, manager.currentContext());
@@ -51,13 +54,13 @@ public class NodeAgentContextManagerTest {
         manager.waitUntilWaitingForNextContext();
 
         NodeAgentContext context1 = generateContext();
-        Instant returnAt = clock.instant().plusMillis(500);
+        Instant returnAt = timer.currentTime().plusMillis(500);
         manager.scheduleTickWith(context1, returnAt);
 
         assertSame(context1, async.awaitResult().response.get());
         assertSame(context1, manager.currentContext());
         // Is accurate to a millisecond
-        assertFalse(clock.instant().plusMillis(1).isBefore(returnAt));
+        assertFalse(timer.currentTime().plusMillis(1).isBefore(returnAt));
     }
 
     @Test
@@ -68,7 +71,7 @@ public class NodeAgentContextManagerTest {
         assertFalse(async.isCompleted());
 
         NodeAgentContext context1 = generateContext();
-        manager.scheduleTickWith(context1, clock.instant());
+        manager.scheduleTickWith(context1, timer.currentTime());
 
         async.awaitResult();
         assertEquals(Optional.of(context1), async.response);
@@ -98,7 +101,7 @@ public class NodeAgentContextManagerTest {
         NodeAgentContext context1 = generateContext();
         AsyncExecutor<NodeAgentContext> async = new AsyncExecutor<>(manager::nextContext);
         manager.waitUntilWaitingForNextContext();
-        manager.scheduleTickWith(context1, clock.instant());
+        manager.scheduleTickWith(context1, timer.currentTime());
         assertSame(context1, async.awaitResult().response.get());
 
         assertTrue(manager.setFrozen(false, Duration.ZERO));
@@ -108,9 +111,9 @@ public class NodeAgentContextManagerTest {
     @Timeout(TIMEOUT)
     void setFrozen_blocks_at_least_for_duration_of_timeout() {
         long wantedDurationMillis = 100;
-        long start = clock.millis();
+        long start = timer.currentTimeMillis();
         assertFalse(manager.setFrozen(false, Duration.ofMillis(wantedDurationMillis)));
-        long actualDurationMillis = clock.millis() - start;
+        long actualDurationMillis = timer.currentTimeMillis() - start;
 
         assertTrue(actualDurationMillis >= wantedDurationMillis);
     }

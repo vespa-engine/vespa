@@ -2,10 +2,10 @@
 package com.yahoo.vespa.hosted.node.admin.maintenance.coredump;
 
 import com.yahoo.config.provision.DockerImage;
+import com.yahoo.jdisc.test.TestTimer;
 import com.yahoo.security.KeyId;
 import com.yahoo.security.SealedSharedKey;
 import com.yahoo.security.SecretSharedKey;
-import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.hosted.node.admin.configserver.cores.CoreDumpMetadata;
@@ -63,14 +63,14 @@ public class CoredumpHandlerTest {
     private final CoreCollector coreCollector = mock(CoreCollector.class);
     private final Cores cores = mock(Cores.class);
     private final Metrics metrics = new Metrics();
-    private final ManualClock clock = new ManualClock();
+    private final TestTimer timer = new TestTimer();
     @SuppressWarnings("unchecked")
     private final Supplier<String> coredumpIdSupplier = mock(Supplier.class);
     private final SecretSharedKeySupplier secretSharedKeySupplier = mock(SecretSharedKeySupplier.class);
     private final InMemoryFlagSource flagSource = new InMemoryFlagSource();
     private final CoredumpHandler coredumpHandler =
             new CoredumpHandler(coreCollector, cores, containerCrashPath.pathInContainer(),
-                                doneCoredumpsPath, metrics, clock, coredumpIdSupplier, secretSharedKeySupplier,
+                                doneCoredumpsPath, metrics, timer, coredumpIdSupplier, secretSharedKeySupplier,
                                 flagSource);
 
     @Test
@@ -86,7 +86,7 @@ public class CoredumpHandlerTest {
         assertEquals(Optional.empty(), enqueuedPath);
 
         // bash.core.431 finished writing... and 2 more have since been written
-        clock.advance(Duration.ofMinutes(3));
+        timer.advance(Duration.ofMinutes(3));
         createFileAged(crashPath.resolve("vespa-proton.core.119"), Duration.ofMinutes(10));
         createFileAged(crashPath.resolve("vespa-slobrok.core.673"), Duration.ofMinutes(5));
 
@@ -280,7 +280,7 @@ public class CoredumpHandlerTest {
     private Path createFileAged(Path path, Duration age) {
         return uncheck(() -> Files.setLastModifiedTime(
                 Files.createFile(path),
-                FileTime.from(clock.instant().minus(age))));
+                FileTime.from(timer.currentTime().minus(age))));
     }
 
     private static byte[] bytesOf(String str) {

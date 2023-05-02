@@ -6,7 +6,7 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
-import com.yahoo.test.ManualClock;
+import com.yahoo.jdisc.test.TestTimer;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.flags.PermanentFlags;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeAttributes;
@@ -78,7 +78,7 @@ public class NodeAgentImplTest {
     private final HealthChecker healthChecker = mock(HealthChecker.class);
     private final CredentialsMaintainer credentialsMaintainer = mock(CredentialsMaintainer.class);
     private final InMemoryFlagSource flagSource = new InMemoryFlagSource();
-    private final ManualClock clock = new ManualClock(Instant.now());
+    private final TestTimer timer = new TestTimer(Instant.now());
     private final FileSystem fileSystem = TestFileSystem.create();
 
     @BeforeEach
@@ -654,7 +654,7 @@ public class NodeAgentImplTest {
             } catch (ConvergenceException e) {
                 assertEquals(healthCheckException, e);
             }
-            clock.advance(Duration.ofSeconds(30));
+            timer.advance(Duration.ofSeconds(30));
         }
 
         doNothing().when(healthChecker).verifyHealth(any());
@@ -669,7 +669,7 @@ public class NodeAgentImplTest {
         inOrder.verify(containerOperations, never()).updateContainer(any(), any(), any());
 
 
-        clock.advance(Duration.ofSeconds(31));
+        timer.advance(Duration.ofSeconds(31));
         nodeAgent.doConverge(context);
 
         inOrder.verify(orchestrator, never()).suspend(any());
@@ -739,7 +739,7 @@ public class NodeAgentImplTest {
         inOrder.verify(containerOperations, never()).updateContainer(any(), any(), any());
 
 
-        clock.advance(Duration.ofSeconds(31));
+        timer.advance(Duration.ofSeconds(31));
         nodeAgent.doConverge(context);
         inOrder.verify(orchestrator, times(1)).resume(eq(hostName));
     }
@@ -767,7 +767,7 @@ public class NodeAgentImplTest {
         nodeAgent.converge(context);
         verify(containerOperations).removeContainer(eq(context), any());
         assertFalse(indexPath.exists());
-        inOrder.verify(nodeRepository).updateNodeAttributes(eq(hostName), eq(new NodeAttributes().withReport(DropDocumentsReport.reportId(), new DropDocumentsReport(1L, clock.millis(), null, null).toJsonNode())));
+        inOrder.verify(nodeRepository).updateNodeAttributes(eq(hostName), eq(new NodeAttributes().withReport(DropDocumentsReport.reportId(), new DropDocumentsReport(1L, timer.currentTimeMillis(), null, null).toJsonNode())));
         inOrder.verifyNoMoreInteractions();
 
         // After droppedAt and before readiedAt are set, we cannot proceed
@@ -784,13 +784,13 @@ public class NodeAgentImplTest {
         inOrder.verifyNoMoreInteractions();
 
         mockGetContainer(dockerImage, ContainerResources.from(0, 2, 16), true);
-        clock.advance(Duration.ofSeconds(31));
+        timer.advance(Duration.ofSeconds(31));
         nodeAgent.converge(context);
         verify(containerOperations, times(1)).startContainer(eq(context));
         verify(containerOperations, never()).removeContainer(eq(context), any());
         inOrder.verify(nodeRepository).updateNodeAttributes(eq(hostName), eq(new NodeAttributes()
                 .withRebootGeneration(0)
-                .withReport(DropDocumentsReport.reportId(), new DropDocumentsReport(1L, 2L, 3L, clock.millis()).toJsonNode())));
+                .withReport(DropDocumentsReport.reportId(), new DropDocumentsReport(1L, 2L, 3L, timer.currentTimeMillis()).toJsonNode())));
         inOrder.verifyNoMoreInteractions();
     }
 
@@ -844,7 +844,7 @@ public class NodeAgentImplTest {
         return new NodeAgentImpl(contextSupplier, nodeRepository, orchestrator, containerOperations,
                                  () -> RegistryCredentials.none, storageMaintainer, flagSource,
                                  List.of(credentialsMaintainer), Optional.of(aclMaintainer), Optional.of(healthChecker),
-                                 clock, warmUpDuration, VespaServiceDumper.DUMMY_INSTANCE, List.of());
+                timer, warmUpDuration, VespaServiceDumper.DUMMY_INSTANCE, List.of());
     }
 
     private void mockGetContainer(DockerImage dockerImage, boolean isRunning) {
@@ -860,7 +860,7 @@ public class NodeAgentImplTest {
                     Optional.of(new Container(
                             containerId,
                             ContainerName.fromHostname(hostName),
-                            clock.instant(),
+                            timer.currentTime(),
                             isRunning ? Container.State.running : Container.State.exited,
                             "image-id-1",
                             dockerImage,
