@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.node.admin.maintenance.identity;
 
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.jdisc.Timer;
 import com.yahoo.security.KeyAlgorithm;
 import com.yahoo.security.KeyUtils;
 import com.yahoo.security.Pkcs10Csr;
@@ -45,7 +46,6 @@ import java.nio.file.Path;
 import java.security.KeyPair;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
-import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
@@ -76,7 +76,7 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
 
     private final URI ztsEndpoint;
     private final Path ztsTrustStorePath;
-    private final Clock clock;
+    private final Timer timer;
     private final String certificateDnsSuffix;
     private final ServiceIdentityProvider hostIdentityProvider;
     private final IdentityDocumentClient identityDocumentClient;
@@ -92,7 +92,7 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
                                        String certificateDnsSuffix,
                                        ServiceIdentityProvider hostIdentityProvider,
                                        FlagSource flagSource,
-                                       Clock clock) {
+                                       Timer timer) {
         this.ztsEndpoint = ztsEndpoint;
         this.ztsTrustStorePath = ztsTrustStorePath;
         this.certificateDnsSuffix = certificateDnsSuffix;
@@ -101,7 +101,7 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
                 configServerInfo.getLoadBalancerEndpoint(),
                 hostIdentityProvider,
                 new AthenzIdentityVerifier(Set.of(configServerInfo.getConfigServerIdentity())));
-        this.clock = clock;
+        this.timer = timer;
         this.tenantServiceIdentityFlag = Flags.NODE_ADMIN_TENANT_SERVICE_REGISTRY.bindTo(flagSource);
         this.useNewIdentityDocumentLayout = Flags.NEW_IDDOC_LAYOUT.bindTo(flagSource);
     }
@@ -144,7 +144,7 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
             }
 
             X509Certificate certificate = readCertificateFromFile(certificateFile);
-            Instant now = clock.instant();
+            Instant now = timer.currentTime();
             Instant expiry = certificate.getNotAfter().toInstant();
             var doc = EntityBindingsMapper.readSignedIdentityDocumentFromFile(identityDocumentFile);
             if (refreshIdentityDocument(doc, context)) {
@@ -208,7 +208,7 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
 
     private boolean shouldRefreshCertificate(NodeAgentContext context, ContainerPath certificatePath) throws IOException {
         var certificate = readCertificateFromFile(certificatePath);
-        var now = clock.instant();
+        var now = timer.currentTime();
         var shouldRefresh = now.isAfter(certificate.getNotAfter().toInstant()) ||
                 now.isBefore(certificate.getNotBefore().toInstant().plus(REFRESH_PERIOD));
         return !shouldThrottleRefreshAttempts(context.containerName(), now) &&
@@ -256,7 +256,7 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
         ContainerPath certificateFile = (ContainerPath) SiaUtils.getCertificateFile(containerSiaDirectory, context.identity());
         try {
             X509Certificate certificate = readCertificateFromFile(certificateFile);
-            Instant now = clock.instant();
+            Instant now = timer.currentTime();
             Instant expiry = certificate.getNotAfter().toInstant();
             return Duration.between(now, expiry);
         } catch (IOException e) {

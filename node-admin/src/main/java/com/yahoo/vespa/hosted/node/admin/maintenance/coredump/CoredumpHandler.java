@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.node.admin.maintenance.coredump;
 
 import com.yahoo.config.provision.DockerImage;
+import com.yahoo.jdisc.Timer;
 import com.yahoo.security.KeyId;
 import com.yahoo.security.SecretSharedKey;
 import com.yahoo.vespa.flags.FetchVector;
@@ -28,7 +29,6 @@ import java.io.OutputStream;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.time.Clock;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
@@ -65,7 +65,7 @@ public class CoredumpHandler {
     private final String crashPatchInContainer;
     private final Path doneCoredumpsPath;
     private final Metrics metrics;
-    private final Clock clock;
+    private final Timer timer;
     private final Supplier<String> coredumpIdSupplier;
     private final SecretSharedKeySupplier secretSharedKeySupplier;
     private final StringFlag coreEncryptionPublicKeyIdFlag;
@@ -75,23 +75,23 @@ public class CoredumpHandler {
      * @param doneCoredumpsPath    path on host where processed core dumps are stored
      */
     public CoredumpHandler(CoreCollector coreCollector, Cores cores,
-                           String crashPathInContainer, Path doneCoredumpsPath, Metrics metrics,
+                           String crashPathInContainer, Path doneCoredumpsPath, Metrics metrics, Timer timer,
                            SecretSharedKeySupplier secretSharedKeySupplier, FlagSource flagSource) {
         this(coreCollector, cores, crashPathInContainer, doneCoredumpsPath,
-                metrics, Clock.systemUTC(), () -> UUID.randomUUID().toString(), secretSharedKeySupplier,
+                metrics, timer, () -> UUID.randomUUID().toString(), secretSharedKeySupplier,
                 flagSource);
     }
 
     CoredumpHandler(CoreCollector coreCollector, Cores cores,
                     String crashPathInContainer, Path doneCoredumpsPath, Metrics metrics,
-                    Clock clock, Supplier<String> coredumpIdSupplier,
+                    Timer timer, Supplier<String> coredumpIdSupplier,
                     SecretSharedKeySupplier secretSharedKeySupplier, FlagSource flagSource) {
         this.coreCollector = coreCollector;
         this.cores = cores;
         this.crashPatchInContainer = crashPathInContainer;
         this.doneCoredumpsPath = doneCoredumpsPath;
         this.metrics = metrics;
-        this.clock = clock;
+        this.timer = timer;
         this.coredumpIdSupplier = coredumpIdSupplier;
         this.secretSharedKeySupplier = secretSharedKeySupplier;
         this.coreEncryptionPublicKeyIdFlag = Flags.CORE_ENCRYPTION_PUBLIC_KEY_ID.bindTo(flagSource);
@@ -276,7 +276,7 @@ public class CoredumpHandler {
     private boolean isReadyForProcessing(FileFinder.FileAttributes fileAttributes) {
         // Wait at least a minute until we start processing a core/heap dump to ensure that
         // kernel/JVM has finished writing it
-        return clock.instant().minusSeconds(60).isAfter(fileAttributes.lastModifiedTime());
+        return timer.currentTime().minusSeconds(60).isAfter(fileAttributes.lastModifiedTime());
     }
 
     void processAndReportSingleCoreDump(NodeAgentContext context, ContainerPath coreDumpDirectory,

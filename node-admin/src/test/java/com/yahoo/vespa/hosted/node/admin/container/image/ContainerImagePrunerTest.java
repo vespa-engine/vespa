@@ -2,7 +2,7 @@
 package com.yahoo.vespa.hosted.node.admin.container.image;
 
 import com.yahoo.config.provision.DockerImage;
-import com.yahoo.test.ManualClock;
+import com.yahoo.jdisc.test.TestTimer;
 import com.yahoo.vespa.hosted.node.admin.component.TaskContext;
 import com.yahoo.vespa.hosted.node.admin.component.TestTaskContext;
 import com.yahoo.vespa.hosted.node.admin.container.Container;
@@ -130,8 +130,8 @@ public class ContainerImagePrunerTest {
 
         private final ContainerEngineMock containerEngine = new ContainerEngineMock();
         private final TaskContext context = new TestTaskContext();
-        private final ManualClock clock = new ManualClock();
-        private final ContainerImagePruner pruner = new ContainerImagePruner(containerEngine, clock);
+        private final TestTimer timer = new TestTimer();
+        private final ContainerImagePruner pruner = new ContainerImagePruner(containerEngine, timer);
         private final Map<String, Integer> removalCountByImageId = new HashMap<>();
 
         private boolean initialized = false;
@@ -165,7 +165,7 @@ public class ContainerImagePrunerTest {
                 initialized = true;
             }
 
-            clock.advance(Duration.ofMinutes(minutesAfter));
+            timer.advance(Duration.ofMinutes(minutesAfter));
 
             pruner.removeUnusedImages(context, excludedRefs, Duration.ofHours(1).minusSeconds(1));
 

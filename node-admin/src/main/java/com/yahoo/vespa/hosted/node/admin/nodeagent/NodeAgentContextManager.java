@@ -1,7 +1,8 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.nodeagent;
 
-import java.time.Clock;
+import com.yahoo.jdisc.Timer;
+
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Objects;
@@ -14,7 +15,7 @@ import java.util.Objects;
 public class NodeAgentContextManager implements NodeAgentContextSupplier, NodeAgentScheduler {
 
     private final Object monitor = new Object();
-    private final Clock clock;
+    private final Timer timer;
 
     private NodeAgentContext currentContext;
     private NodeAgentContext nextContext;
@@ -24,8 +25,8 @@ public class NodeAgentContextManager implements NodeAgentContextSupplier, NodeAg
     private boolean interrupted = false;
     private boolean isWaitingForNextContext = false;
 
-    public NodeAgentContextManager(Clock clock, NodeAgentContext context) {
-        this.clock = clock;
+    public NodeAgentContextManager(Timer timer, NodeAgentContext context) {
+        this.timer = timer;
         this.currentContext = context;
     }
 
@@ -48,8 +49,8 @@ public class NodeAgentContextManager implements NodeAgentContextSupplier, NodeAg
 
             boolean successful;
             long remainder;
-            long end = clock.instant().plus(timeout).toEpochMilli();
-            while (!(successful = isFrozen == frozen) && (remainder = end - clock.millis()) > 0) {
+            long end = timer.currentTime().plus(timeout).toEpochMilli();
+            while (!(successful = isFrozen == frozen) && (remainder = end - timer.currentTimeMillis()) > 0) {
                 try {
                     monitor.wait(remainder); // Wait with timeout until the supplier is has reached wanted frozen state
                 } catch (InterruptedException ignored) { }

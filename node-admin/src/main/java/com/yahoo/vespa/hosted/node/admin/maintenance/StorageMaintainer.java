@@ -5,6 +5,7 @@ import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.NodeType;
+import com.yahoo.jdisc.Timer;
 import com.yahoo.vespa.hosted.node.admin.component.TaskContext;
 import com.yahoo.vespa.hosted.node.admin.container.Container;
 import com.yahoo.vespa.hosted.node.admin.container.ContainerName;
@@ -27,7 +28,6 @@ import com.yahoo.vespa.hosted.node.admin.task.util.process.Terminal;
 import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneOffset;
@@ -55,7 +55,7 @@ public class StorageMaintainer {
     private final CoredumpHandler coredumpHandler;
     private final DiskCleanup diskCleanup;
     private final SyncClient syncClient;
-    private final Clock clock;
+    private final Timer timer;
     private final Path archiveContainerStoragePath;
 
     // We cache disk usage to avoid doing expensive disk operations so often
@@ -65,12 +65,12 @@ public class StorageMaintainer {
             .build();
 
     public StorageMaintainer(Terminal terminal, CoredumpHandler coredumpHandler, DiskCleanup diskCleanup,
-                             SyncClient syncClient, Clock clock, Path archiveContainerStoragePath) {
+                             SyncClient syncClient, Timer timer, Path archiveContainerStoragePath) {
         this.terminal = terminal;
         this.coredumpHandler = coredumpHandler;
         this.diskCleanup = diskCleanup;
         this.syncClient = syncClient;
-        this.clock = clock;
+        this.timer = timer;
         this.archiveContainerStoragePath = archiveContainerStoragePath;
     }
 
@@ -138,7 +138,7 @@ public class StorageMaintainer {
     }
 
     private List<DiskCleanupRule> createCleanupRules(NodeAgentContext context) {
-        Instant start = clock.instant();
+        Instant start = timer.currentTime();
         double oneMonthSeconds = Duration.ofDays(30).getSeconds();
         Function<Instant, Double> monthNormalizer = instant -> Duration.between(instant, start).getSeconds() / oneMonthSeconds;
         List<DiskCleanupRule> rules = new ArrayList<>();
@@ -176,7 +176,7 @@ public class StorageMaintainer {
     public void archiveNodeStorage(NodeAgentContext context) {
         ContainerPath logsDirInContainer = context.paths().underVespaHome("logs");
         Path containerLogsInArchiveDir = archiveContainerStoragePath
-                .resolve(context.containerName().asString() + "_" + DATE_TIME_FORMATTER.format(clock.instant()) + logsDirInContainer.pathInContainer());
+                .resolve(context.containerName().asString() + "_" + DATE_TIME_FORMATTER.format(timer.currentTime()) + logsDirInContainer.pathInContainer());
 
         // Files.move() does not support moving non-empty directories across providers, move using host paths
         UnixPath containerLogsOnHost = new UnixPath(logsDirInContainer.pathOnHost());
