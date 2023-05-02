@@ -192,11 +192,13 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
                 try {
                     var roleCertificatePath = siaDirectory.resolve("certs")
                             .resolve(String.format("%s.cert.pem", role));
+                    var roleKeyPath = siaDirectory.resolve("keys")
+                            .resolve(String.format("%s.key.pem", role));
                     if (!Files.exists(roleCertificatePath)) {
-                        writeRoleCertificate(context, privateKeyFile, certificateFile, roleCertificatePath, identity, identityDocument, role);
+                        writeRoleCredentials(context, privateKeyFile, certificateFile, roleCertificatePath, roleKeyPath, identity, identityDocument, role);
                         modified = true;
                     } else if (shouldRefreshCertificate(context, roleCertificatePath)) {
-                        writeRoleCertificate(context, privateKeyFile, certificateFile, roleCertificatePath, identity, identityDocument, role);
+                        writeRoleCredentials(context, privateKeyFile, certificateFile, roleCertificatePath, roleKeyPath, identity, identityDocument, role);
                         modified = true;
                     }
                 } catch (IOException e) {
@@ -215,26 +217,31 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
                 shouldRefresh;
     }
 
-    private void writeRoleCertificate(NodeAgentContext context,
+    private void writeRoleCredentials(NodeAgentContext context,
                                       ContainerPath privateKeyFile,
                                       ContainerPath certificateFile,
                                       ContainerPath roleCertificatePath,
+                                      ContainerPath roleKeyPath,
                                       AthenzIdentity identity,
                                       IdentityDocument identityDocument,
                                       String role) throws IOException {
         HostnameVerifier ztsHostNameVerifier = (hostname, sslSession) -> true;
+        var keyPair = KeyUtils.generateKeypair(KeyAlgorithm.RSA);
         var athenzRole = AthenzRole.fromResourceNameString(role);
-        var privateKey = KeyUtils.fromPemEncodedPrivateKey(new String(Files.readAllBytes(privateKeyFile)));
 
-        var containerIdentitySslContext = new SslContextBuilder().withKeyStore(privateKeyFile, certificateFile)
+        var containerIdentitySslContext = new SslContextBuilder()
+                .withKeyStore(privateKeyFile, certificateFile)
                 .withTrustStore(ztsTrustStorePath)
                 .build();
-        try (ZtsClient ztsClient = new DefaultZtsClient.Builder(ztsEndpoint(identityDocument)).withSslContext(containerIdentitySslContext).withHostnameVerifier(ztsHostNameVerifier).build()) {
+        try (ZtsClient ztsClient = new DefaultZtsClient.Builder(ztsEndpoint(identityDocument))
+                .withSslContext(containerIdentitySslContext)
+                .withHostnameVerifier(ztsHostNameVerifier)
+                .build()) {
             var csrGenerator = new CsrGenerator(certificateDnsSuffix, identityDocument.providerService().getFullName());
             var csr = csrGenerator.generateRoleCsr(
-                    identity, athenzRole, identityDocument.providerUniqueId(), identityDocument.clusterType(), KeyUtils.toKeyPair(privateKey));
+                    identity, athenzRole, identityDocument.providerUniqueId(), identityDocument.clusterType(), keyPair);
             var roleCertificate = ztsClient.getRoleCertificate(athenzRole, csr);
-            writeFile(roleCertificatePath, X509CertificateUtils.toPem(roleCertificate));
+            writePrivateKeyAndCertificate(roleKeyPath, keyPair.getPrivate(), roleCertificatePath, roleCertificate);
             context.log(logger, "Role certificate successfully retrieved written to file " + roleCertificatePath.pathInContainer());
         }
     }
