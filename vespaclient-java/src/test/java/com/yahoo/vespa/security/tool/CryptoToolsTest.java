@@ -64,6 +64,12 @@ public class CryptoToolsTest {
         Files.writeString(keyPath, contents);
     }
 
+    private static void assertOnlyFileOwnerHasAccessRights(Path file) throws IOException {
+        var actualFilePerms = Files.getPosixFilePermissions(file);
+        var expectedPerms   = PosixFilePermissions.fromString("rw-------");
+        assertEquals(expectedPerms, actualFilePerms);
+    }
+
     @Test
     void top_level_help_page_printed_if_help_option_given() throws IOException {
         verifyStdoutMatchesFile(List.of("--help"), "expected-help-output.txt");
@@ -180,9 +186,7 @@ public class CryptoToolsTest {
                                       "--private-out-file", absPathOf(privKeyFile),
                                       "--public-out-file",  absPathOf(pubKeyFile)));
         assertEquals(0, procOut.exitCode());
-        var privKeyPerms  = Files.getPosixFilePermissions(privKeyFile);
-        var expectedPerms = PosixFilePermissions.fromString("rw-------");
-        assertEquals(expectedPerms, privKeyPerms);
+        assertOnlyFileOwnerHasAccessRights(privKeyFile);
     }
 
     private static final String TEST_PRIV_KEY     = "GFg54SaGNCmcSGufZCx68SKLGuAFrASoDeMk3t5AjU6L";
@@ -381,6 +385,7 @@ public class CryptoToolsTest {
         assertEquals("", procOut.stdErr());
 
         assertEquals(greatSecret, Files.readString(decryptedPath));
+        assertOnlyFileOwnerHasAccessRights(decryptedPath);
     }
 
     @Test
