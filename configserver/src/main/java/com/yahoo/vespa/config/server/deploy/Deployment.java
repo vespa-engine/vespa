@@ -18,8 +18,6 @@ import com.yahoo.vespa.config.server.ApplicationRepository;
 import com.yahoo.vespa.config.server.ApplicationRepository.ActionTimer;
 import com.yahoo.vespa.config.server.ApplicationRepository.Activation;
 import com.yahoo.vespa.config.server.TimeoutBudget;
-import com.yahoo.vespa.config.server.application.Application;
-import com.yahoo.vespa.config.server.application.ConfigConvergenceChecker;
 import com.yahoo.vespa.config.server.application.ConfigNotConvergedException;
 import com.yahoo.vespa.config.server.configchange.ConfigChangeActions;
 import com.yahoo.vespa.config.server.configchange.ReindexActions;
@@ -188,26 +186,42 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
 
     private void waitForConfigToConverge(ApplicationId applicationId) {
         deployLogger.log(Level.INFO, "Wait for all services to use new config generation before restarting");
-        while (true) {
-            try {
-                params.get().getTimeoutBudget().assertNotTimedOut(
-                        () -> "Timeout exceeded while waiting for config convergence for " + applicationId);
-            } catch (UncheckedTimeoutException e) {
-                throw new ConfigNotConvergedException(e);
-            }
+        var convergenceChecker = applicationRepository.configConvergenceChecker();
+        var app = applicationRepository.getActiveApplication(applicationId);
 
-            ConfigConvergenceChecker convergenceChecker = applicationRepository.configConvergenceChecker();
-            Application app = applicationRepository.getActiveApplication(applicationId);
-            ServiceListResponse response = convergenceChecker.checkConvergenceUnlessDeferringChangesUntilRestart(app);
+        ServiceListResponse response = null;
+        while (timeLeft(applicationId, response)) {
+            response = convergenceChecker.checkConvergenceUnlessDeferringChangesUntilRestart(app);
             if (response.converged) {
                 deployLogger.log(Level.INFO, "Services converged on new config generation " + response.currentGeneration);
                 return;
             } else {
-                deployLogger.log(Level.INFO, "Services did not converge on new config generation " +
-                        response.wantedGeneration + ", current generation: " + response.currentGeneration + ", will retry");
+                deployLogger.log(Level.INFO, "Services that did not converge on new config generation " +
+                        response.wantedGeneration + ": " +
+                        servicesNotConvergedFormatted(response) + ". Will retry");
                 try { Thread.sleep(5_000); } catch (InterruptedException e) { /* ignore */ }
             }
         }
+    }
+
+    private boolean timeLeft(ApplicationId applicationId, ServiceListResponse response) {
+        try {
+            params.get().getTimeoutBudget().assertNotTimedOut(
+                    () -> "Timeout exceeded while waiting for config convergence for " + applicationId +
+                            ", wanted generation " + response.wantedGeneration + ", these services had another generation: " +
+                            servicesNotConvergedFormatted(response));
+        } catch (UncheckedTimeoutException e) {
+            throw new ConfigNotConvergedException(e);
+        }
+        return true;
+    }
+
+    private String servicesNotConvergedFormatted(ServiceListResponse response) {
+        return response.services().stream()
+                .filter(service -> service.currentGeneration != response.wantedGeneration)
+                .map(service -> service.serviceInfo.getHostName() + ":" + service.serviceInfo.getServiceName() +
+                        " on generation " + service.currentGeneration)
+                .collect(Collectors.joining(", "));
     }
 
     private void storeReindexing(ApplicationId applicationId, long requiredSession) {
