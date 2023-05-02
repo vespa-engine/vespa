@@ -4,6 +4,8 @@ package com.yahoo.vespa.hosted.provision.lb;
 import ai.vespa.http.DomainName;
 import com.google.common.collect.ImmutableSet;
 import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.config.provision.EndpointsChecker.Availability;
+import com.yahoo.config.provision.EndpointsChecker.Endpoint;
 import com.yahoo.config.provision.NodeType;
 
 import java.util.Collections;
@@ -83,6 +85,11 @@ public class LoadBalancerServiceMock implements LoadBalancerService {
     @Override
     public void remove(LoadBalancer loadBalancer) {
         instances.remove(loadBalancer.id());
+    }
+
+    @Override
+    public Availability healthy(Endpoint endpoint) {
+        return Availability.ready;
     }
 
 }

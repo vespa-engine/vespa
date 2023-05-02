@@ -21,7 +21,10 @@ import com.yahoo.config.provision.ApplicationTransaction;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.EndpointsChecker;
 import com.yahoo.config.provision.EndpointsChecker.Availability;
+import com.yahoo.config.provision.EndpointsChecker.HealthCheckerProvider;
+import com.yahoo.config.provision.EndpointsChecker.HealthChecker;
 import com.yahoo.config.provision.EndpointsChecker.Endpoint;
+import com.yahoo.config.provision.EndpointsChecker.Status;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.HostFilter;
 import com.yahoo.config.provision.InfraDeployer;
@@ -172,6 +175,8 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
                                  ConfigserverConfig configserverConfig,
                                  Orchestrator orchestrator,
                                  TesterClient testerClient,
+                                 Zone zone,
+                                 HealthCheckerProvider healthCheckers,
                                  Metric metric,
                                  SecretStore secretStore,
                                  FlagSource flagSource) {
@@ -180,7 +185,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
              infraDeployerProvider.getInfraDeployer(),
              configConvergenceChecker,
              httpProxy,
-             createEndpointsChecker(configserverConfig),
+             createEndpointsChecker(configserverConfig, zone, healthCheckers.getHealthChecker()),
              configserverConfig,
              orchestrator,
              new LogRetriever(),
@@ -1222,28 +1227,36 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
 
     }
 
-    private static EndpointsChecker createEndpointsChecker(ConfigserverConfig config) {
+    private static EndpointsChecker createEndpointsChecker(ConfigserverConfig config, Zone zone, HealthChecker healthChecker) {
         CloseableHttpClient client = (SystemName.from(config.system()).isPublic()
                                       ? DefaultHttpClientBuilder.create(() -> null, "hosted-vespa-convergence-health-checker")
                                       : VespaHttpClientBuilder.custom().apacheBuilder().setUserAgent("hosted-vespa-convergence-health-checker"))
                 .setDefaultHeaders(List.of(new BasicHeader(HttpHeaders.CONNECTION, "close")))
                 .build();
         return EndpointsChecker.of(endpoint -> {
+            Availability health = healthChecker.healthy(endpoint);
+            if (   health.status() != Status.available // Unhealthy targets is the root cause, so return those details.
+                || endpoint.isPublic()                 // Controller checks /status.html on its own.
+                || endpoint.account().isEnclave(zone)) // Private endpoints in enclave are not reachable by us.
+                return health;
+
             int remainingFailures = 3;
-            int remainingSuccesses = 100;
+            int remainingSuccesses = 10;
             while (remainingSuccesses > 0 && remainingFailures > 0) {
                 try {
                     if (client.execute(new HttpGet(endpoint.url().withPath(parse("/status.html")).asURI()),
                                        response -> response.getCode() == 200))
                         remainingSuccesses--;
-                    else remainingFailures--;
+                    else
+                        throw new IOException("got non-200 status code");
                 }
                 catch (Exception e) {
                     log.log(Level.FINE, e, () -> "Failed to check " + endpoint + "status.html: " + e.getMessage());
-                    remainingFailures--;
+                    if (--remainingFailures == 0)
+                        return new Availability(Status.containersUnhealthy, "Failed to get enough healthy responses from " + endpoint.url());
                 }
             }
-            return remainingSuccesses == 0;
+            return Availability.ready;
         });
     }
 
