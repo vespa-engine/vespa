@@ -221,7 +221,7 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
                 .filter(service -> service.currentGeneration != response.wantedGeneration)
                 .map(service -> service.serviceInfo.getHostName() + ":" + service.serviceInfo.getServiceName() +
                         " on generation " + service.currentGeneration)
-                .collect(Collectors.joining(","));
+                .collect(Collectors.joining(", "));
     }
 
     private void storeReindexing(ApplicationId applicationId, long requiredSession) {
