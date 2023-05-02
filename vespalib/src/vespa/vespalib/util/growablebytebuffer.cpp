@@ -76,6 +76,14 @@ GrowableByteBuffer::putString(vespalib::stringref v)
 }
 
 void
+GrowableByteBuffer::put_c_string(vespalib::stringref v)
+{
+    putInt(v.size() + 1);
+    putBytes(v.data(), v.size());
+    putByte(0);
+}
+
+void
 GrowableByteBuffer::putByte(uint8_t v)
 {
     putBytes(reinterpret_cast<const char*>(&v), sizeof(v));
