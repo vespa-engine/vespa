@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.node.admin.container;
 
 import com.yahoo.config.provision.DockerImage;
+import com.yahoo.vespa.hosted.node.admin.cgroup.Cgroup;
 import com.yahoo.vespa.hosted.node.admin.component.TaskContext;
 import com.yahoo.vespa.hosted.node.admin.container.image.ContainerImageDownloader;
 import com.yahoo.vespa.hosted.node.admin.container.image.ContainerImagePruner;
@@ -33,7 +34,7 @@ public class ContainerOperations {
     private final ContainerImagePruner imagePruner;
     private final ContainerStatsCollector containerStatsCollector;
 
-    public ContainerOperations(ContainerEngine containerEngine, CGroupV2 cgroup, FileSystem fileSystem) {
+    public ContainerOperations(ContainerEngine containerEngine, Cgroup cgroup, FileSystem fileSystem) {
         this.containerEngine = Objects.requireNonNull(containerEngine);
         this.imageDownloader = new ContainerImageDownloader(containerEngine);
         this.imagePruner = new ContainerImagePruner(containerEngine, Clock.systemUTC());

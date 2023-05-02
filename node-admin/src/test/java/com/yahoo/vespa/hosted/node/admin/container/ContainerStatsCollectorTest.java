@@ -1,6 +1,8 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.container;
 
+import com.yahoo.vespa.hosted.node.admin.cgroup.Cgroup;
+import com.yahoo.vespa.hosted.node.admin.cgroup.Size;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContext;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContextImpl;
@@ -8,6 +10,7 @@ import com.yahoo.vespa.hosted.node.admin.task.util.file.UnixPath;
 import com.yahoo.vespa.hosted.node.admin.task.util.process.TestTerminal;
 import com.yahoo.vespa.test.file.TestFileSystem;
 import org.junit.jupiter.api.Test;
+import org.mockito.Answers;
 
 import java.io.IOException;
 import java.nio.file.FileSystem;
@@ -17,12 +20,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import static com.yahoo.vespa.hosted.node.admin.container.CGroupV2.CpuStatField.SYSTEM_USAGE_USEC;
-import static com.yahoo.vespa.hosted.node.admin.container.CGroupV2.CpuStatField.THROTTLED_PERIODS;
-import static com.yahoo.vespa.hosted.node.admin.container.CGroupV2.CpuStatField.THROTTLED_TIME_USEC;
-import static com.yahoo.vespa.hosted.node.admin.container.CGroupV2.CpuStatField.TOTAL_PERIODS;
-import static com.yahoo.vespa.hosted.node.admin.container.CGroupV2.CpuStatField.TOTAL_USAGE_USEC;
-import static com.yahoo.vespa.hosted.node.admin.container.CGroupV2.CpuStatField.USER_USAGE_USEC;
+import static com.yahoo.vespa.hosted.node.admin.cgroup.CpuController.StatField.SYSTEM_USAGE_USEC;
+import static com.yahoo.vespa.hosted.node.admin.cgroup.CpuController.StatField.THROTTLED_PERIODS;
+import static com.yahoo.vespa.hosted.node.admin.cgroup.CpuController.StatField.THROTTLED_TIME_USEC;
+import static com.yahoo.vespa.hosted.node.admin.cgroup.CpuController.StatField.TOTAL_PERIODS;
+import static com.yahoo.vespa.hosted.node.admin.cgroup.CpuController.StatField.TOTAL_USAGE_USEC;
+import static com.yahoo.vespa.hosted.node.admin.cgroup.CpuController.StatField.USER_USAGE_USEC;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.eq;
@@ -37,11 +40,10 @@ public class ContainerStatsCollectorTest {
     private final TestTerminal testTerminal = new TestTerminal();
     private final ContainerEngineMock containerEngine = new ContainerEngineMock(testTerminal);
     private final FileSystem fileSystem = TestFileSystem.create();
-    private final CGroupV2 cgroup = mock(CGroupV2.class);
+    private final Cgroup cgroup = mock(Cgroup.class, Answers.RETURNS_DEEP_STUBS);
     private final NodeAgentContext context = NodeAgentContextImpl.builder(NodeSpec.Builder.testSpec("c1").build())
                                                                  .fileSystem(TestFileSystem.create())
                                                                  .build();
-
     @Test
     void collect() throws Exception {
         ContainerStatsCollector collector = new ContainerStatsCollector(containerEngine, cgroup, fileSystem, 24);
@@ -92,17 +94,17 @@ public class ContainerStatsCollectorTest {
                                "  eth0: 22280813  118083    3    4    0     0          0         0 19859383  115415    5    6    0     0       0          0\n");
     }
 
-    private void mockMemoryStats(ContainerId containerId) throws IOException {
-        when(cgroup.memoryUsageInBytes(eq(containerId))).thenReturn(1228017664L);
-        when(cgroup.memoryLimitInBytes(eq(containerId))).thenReturn(2147483648L);
-        when(cgroup.memoryCacheInBytes(eq(containerId))).thenReturn(470790144L);
+    private void mockMemoryStats(ContainerId containerId) {
+        when(cgroup.resolveContainer(eq(containerId)).memory().readCurrent()).thenReturn(Size.from(1228017664L));
+        when(cgroup.resolveContainer(eq(containerId)).memory().readMax()).thenReturn(Size.from(2147483648L));
+        when(cgroup.resolveContainer(eq(containerId)).memory().readFileSystemCache()).thenReturn(Size.from(470790144L));
     }
 
     private void mockCpuStats(ContainerId containerId) throws IOException {
         UnixPath proc = new UnixPath(fileSystem.getPath("/proc"));
         proc.createDirectories();
 
-        when(cgroup.cpuStats(eq(containerId))).thenReturn(Map.of(
+        when(cgroup.resolveContainer(eq(containerId)).cpu().readStats()).thenReturn(Map.of(
                 TOTAL_USAGE_USEC, 691675615472L, SYSTEM_USAGE_USEC, 262190000000L, USER_USAGE_USEC, 40900L,
                 TOTAL_PERIODS, 1L, THROTTLED_PERIODS, 2L, THROTTLED_TIME_USEC, 3L));
 
