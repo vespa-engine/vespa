@@ -1,10 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.container;
 
-import com.yahoo.vespa.hosted.node.admin.cgroup.Cgroup;
-import com.yahoo.vespa.hosted.node.admin.cgroup.CpuController;
-import com.yahoo.vespa.hosted.node.admin.cgroup.Size;
-import com.yahoo.vespa.hosted.node.admin.cgroup.MemoryController;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContext;
 import com.yahoo.vespa.hosted.node.admin.task.util.file.UnixUser;
 
@@ -31,18 +27,18 @@ import java.util.stream.Stream;
 class ContainerStatsCollector {
 
     private final ContainerEngine containerEngine;
+    private final CGroupV2 cgroup;
     private final FileSystem fileSystem;
-    private final Cgroup rootCgroup;
     private final int onlineCpus;
 
-    ContainerStatsCollector(ContainerEngine containerEngine, Cgroup rootCgroup, FileSystem fileSystem) {
-        this(containerEngine, rootCgroup, fileSystem, Runtime.getRuntime().availableProcessors());
+    ContainerStatsCollector(ContainerEngine containerEngine, CGroupV2 cgroup, FileSystem fileSystem) {
+        this(containerEngine, cgroup, fileSystem, Runtime.getRuntime().availableProcessors());
     }
 
-    ContainerStatsCollector(ContainerEngine containerEngine, Cgroup rootCgroup, FileSystem fileSystem, int onlineCpus) {
+    ContainerStatsCollector(ContainerEngine containerEngine, CGroupV2 cgroup, FileSystem fileSystem, int onlineCpus) {
         this.containerEngine = Objects.requireNonNull(containerEngine);
+        this.cgroup = Objects.requireNonNull(cgroup);
         this.fileSystem = Objects.requireNonNull(fileSystem);
-        this.rootCgroup = Objects.requireNonNull(rootCgroup);
         this.onlineCpus = onlineCpus;
     }
 
@@ -56,10 +52,6 @@ class ContainerStatsCollector {
             return Optional.of(new ContainerStats(networkStats, memoryStats, cpuStats, gpuStats));
         } catch (NoSuchFileException ignored) {
             return Optional.empty(); // Container disappeared while we collected stats
-        } catch (UncheckedIOException e) {
-            if (e.getCause() != null && e.getCause() instanceof  NoSuchFileException)
-                return Optional.empty();
-            throw e;
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
@@ -91,22 +83,21 @@ class ContainerStatsCollector {
     }
 
     private ContainerStats.CpuStats collectCpuStats(ContainerId containerId) throws IOException {
-        Map<CpuController.StatField, Long> cpuStats = rootCgroup.resolveContainer(containerId).cpu().readStats();
+        Map<CGroupV2.CpuStatField, Long> cpuStats = cgroup.cpuStats(containerId);
         return new ContainerStats.CpuStats(onlineCpus,
                                            systemCpuUsage(),
-                                           cpuStats.get(CpuController.StatField.TOTAL_USAGE_USEC),
-                                           cpuStats.get(CpuController.StatField.SYSTEM_USAGE_USEC),
-                                           cpuStats.get(CpuController.StatField.THROTTLED_TIME_USEC),
-                                           cpuStats.get(CpuController.StatField.TOTAL_PERIODS),
-                                           cpuStats.get(CpuController.StatField.THROTTLED_PERIODS));
+                                           cpuStats.get(CGroupV2.CpuStatField.TOTAL_USAGE_USEC),
+                                           cpuStats.get(CGroupV2.CpuStatField.SYSTEM_USAGE_USEC),
+                                           cpuStats.get(CGroupV2.CpuStatField.THROTTLED_TIME_USEC),
+                                           cpuStats.get(CGroupV2.CpuStatField.TOTAL_PERIODS),
+                                           cpuStats.get(CGroupV2.CpuStatField.THROTTLED_PERIODS));
     }
 
     private ContainerStats.MemoryStats collectMemoryStats(ContainerId containerId) throws IOException {
-        MemoryController memoryController = rootCgroup.resolveContainer(containerId).memory();
-        Size max = memoryController.readMax();
-        long memoryUsageInBytes = memoryController.readCurrent().value();
-        long cachedInBytes = memoryController.readFileSystemCache().value();
-        return new ContainerStats.MemoryStats(cachedInBytes, memoryUsageInBytes, max.isMax() ? -1 : max.value());
+        long memoryLimitInBytes = cgroup.memoryLimitInBytes(containerId);
+        long memoryUsageInBytes = cgroup.memoryUsageInBytes(containerId);
+        long cachedInBytes = cgroup.memoryCacheInBytes(containerId);
+        return new ContainerStats.MemoryStats(cachedInBytes, memoryUsageInBytes, memoryLimitInBytes);
     }
 
     private ContainerStats.NetworkStats collectNetworkStats(String iface, int containerPid) throws IOException {

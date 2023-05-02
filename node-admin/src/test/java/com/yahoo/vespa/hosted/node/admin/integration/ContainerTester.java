@@ -5,9 +5,9 @@ import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
-import com.yahoo.vespa.hosted.node.admin.cgroup.Cgroup;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
 import com.yahoo.vespa.hosted.node.admin.configserver.orchestrator.Orchestrator;
+import com.yahoo.vespa.hosted.node.admin.container.CGroupV2;
 import com.yahoo.vespa.hosted.node.admin.container.ContainerEngineMock;
 import com.yahoo.vespa.hosted.node.admin.container.ContainerName;
 import com.yahoo.vespa.hosted.node.admin.container.ContainerOperations;
@@ -60,7 +60,7 @@ public class ContainerTester implements AutoCloseable {
 
     private final ContainerEngineMock containerEngine = new ContainerEngineMock();
     private final FileSystem fileSystem = TestFileSystem.create();
-    final ContainerOperations containerOperations = spy(new ContainerOperations(containerEngine, mock(Cgroup.class), fileSystem));
+    final ContainerOperations containerOperations = spy(new ContainerOperations(containerEngine, new CGroupV2(fileSystem), fileSystem));
     final NodeRepoMock nodeRepository = spy(new NodeRepoMock());
     final Orchestrator orchestrator = mock(Orchestrator.class);
     final StorageMaintainer storageMaintainer = mock(StorageMaintainer.class);

@@ -23,7 +23,6 @@ import java.nio.file.attribute.PosixFilePermissions;
 import java.nio.file.attribute.UserPrincipal;
 import java.nio.file.attribute.UserPrincipalLookupService;
 import java.time.Instant;
-import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
@@ -95,22 +94,6 @@ public class UnixPath {
             return Optional.of(Files.readAllBytes(path));
         } catch (NoSuchFileException ignored) {
             return Optional.empty();
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
-    }
-
-    public List<String> readLines() {
-        return uncheck(() -> Files.readAllLines(path));
-    }
-
-    /** Create an empty file and return true, or false if the file already exists (the file may not be regular). */
-    public boolean create() {
-        try {
-            Files.createFile(path);
-            return true;
-        } catch (FileAlreadyExistsException ignored) {
-            return false;
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
@@ -226,16 +209,15 @@ public class UnixPath {
         return this;
     }
 
-    /** Create directory with given permissions and return true, or false if it already exists. */
-    public boolean createDirectory(String... permissions) {
+    /** Create directory with given permissions, unless it already exists, and return this. */
+    public UnixPath createDirectory(String... permissions) {
         try {
             Files.createDirectory(path, permissionsAsFileAttributes(permissions));
         } catch (FileAlreadyExistsException ignore) {
-            return false;
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
-        return true;
+        return this;
     }
 
     public UnixPath createDirectories(String... permissions) {
