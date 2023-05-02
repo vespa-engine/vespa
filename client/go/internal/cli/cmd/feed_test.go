@@ -24,10 +24,9 @@ func (c *manualClock) now() time.Time {
 }
 
 func TestFeed(t *testing.T) {
-	httpClient := &mock.HTTPClient{}
 	clock := &manualClock{tick: time.Second}
 	cli, stdout, stderr := newTestCLI(t)
-	cli.httpClient = httpClient
+	httpClient := cli.httpClient.(*mock.HTTPClient)
 	cli.now = clock.now
 
 	td := t.TempDir()

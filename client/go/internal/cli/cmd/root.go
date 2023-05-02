@@ -47,13 +47,14 @@ type CLI struct {
 	config  *Config
 	version version.Version
 
-	httpClient   util.HTTPClient
-	auth0Factory auth0Factory
-	ztsFactory   ztsFactory
-	exec         executor
-	isTerminal   func() bool
-	spinner      func(w io.Writer, message string, fn func() error) error
-	now          func() time.Time
+	httpClient        util.HTTPClient
+	httpClientFactory func(timeout time.Duration) util.HTTPClient
+	auth0Factory      auth0Factory
+	ztsFactory        ztsFactory
+	exec              executor
+	isTerminal        func() bool
+	spinner           func(w io.Writer, message string, fn func() error) error
+	now               func() time.Time
 }
 
 // ErrCLI is an error returned to the user. It wraps an exit status, a regular error and optional hints for resolving
@@ -122,17 +123,19 @@ For detailed description of flags and configuration, see 'vespa help config'.
 	if err != nil {
 		return nil, err
 	}
+	httpClientFactory := util.CreateClient
 	cli := CLI{
 		Environment: env,
 		Stdin:       os.Stdin,
 		Stdout:      stdout,
 		Stderr:      stderr,
 
-		version:    version,
-		cmd:        cmd,
-		httpClient: util.CreateClient(time.Second * 10),
-		exec:       &execSubprocess{},
-		now:        time.Now,
+		version:           version,
+		cmd:               cmd,
+		httpClient:        httpClientFactory(time.Second * 10),
+		httpClientFactory: httpClientFactory,
+		exec:              &execSubprocess{},
+		now:               time.Now,
 		auth0Factory: func(httpClient util.HTTPClient, options auth0.Options) (vespa.Authenticator, error) {
 			return auth0.NewClient(httpClient, options)
 		},

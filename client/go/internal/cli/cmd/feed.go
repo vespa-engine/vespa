@@ -93,15 +93,30 @@ $ cat docs.jsonl | vespa feed -`,
 	return cmd
 }
 
-func createServiceClients(service *vespa.Service, n int) []util.HTTPClient {
-	clients := make([]util.HTTPClient, 0, n)
+func createServices(n int, timeout time.Duration, cli *CLI) ([]util.HTTPClient, string, error) {
+	if n < 1 {
+		return nil, "", fmt.Errorf("need at least one client")
+	}
+	target, err := cli.target(targetOptions{})
+	if err != nil {
+		return nil, "", err
+	}
+	services := make([]util.HTTPClient, 0, n)
+	baseURL := ""
 	for i := 0; i < n; i++ {
-		client := service.Client().Clone()
+		service, err := cli.service(target, vespa.DocumentService, 0, cli.config.cluster())
+		if err != nil {
+			return nil, "", err
+		}
+		baseURL = service.BaseURL
+		// Create a separate HTTP client for each service
+		client := cli.httpClientFactory(timeout)
 		// Feeding should always use HTTP/2
 		util.ForceHTTP2(client, service.TLSOptions.KeyPair, service.TLSOptions.CACertificate, service.TLSOptions.TrustAll)
-		clients = append(clients, client)
+		service.SetClient(client)
+		services = append(services, service)
 	}
-	return clients
+	return services, baseURL, nil
 }
 
 func summaryTicker(secs int, cli *CLI, start time.Time, statsFunc func() document.Stats) *time.Ticker {
@@ -130,21 +145,21 @@ func (opts feedOptions) compressionMode() (document.Compression, error) {
 }
 
 func feed(files []string, options feedOptions, cli *CLI) error {
-	service, err := documentService(cli)
+	timeout := time.Duration(options.timeoutSecs) * time.Second
+	clients, baseURL, err := createServices(options.connections, timeout, cli)
 	if err != nil {
 		return err
 	}
-	clients := createServiceClients(service, options.connections)
 	compression, err := options.compressionMode()
 	if err != nil {
 		return err
 	}
 	client, err := document.NewClient(document.ClientOptions{
 		Compression: compression,
-		Timeout:     time.Duration(options.timeoutSecs) * time.Second,
+		Timeout:     timeout,
 		Route:       options.route,
 		TraceLevel:  options.traceLevel,
-		BaseURL:     service.BaseURL,
+		BaseURL:     baseURL,
 		NowFunc:     cli.now,
 	}, clients)
 	if err != nil {
