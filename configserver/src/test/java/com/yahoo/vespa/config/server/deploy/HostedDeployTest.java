@@ -22,9 +22,11 @@ import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.Zone;
+import com.yahoo.slime.SlimeUtils;
 import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.config.server.MockConfigConvergenceChecker;
 import com.yahoo.vespa.config.server.application.ApplicationReindexing;
+import com.yahoo.vespa.config.server.application.ConfigConvergenceChecker;
 import com.yahoo.vespa.config.server.http.InternalServerException;
 import com.yahoo.vespa.config.server.http.InvalidApplicationException;
 import com.yahoo.vespa.config.server.http.UnknownVespaVersionException;
@@ -42,7 +44,6 @@ import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -445,8 +446,7 @@ public class HostedDeployTest {
     @Test
     public void testThatConfigChangeActionsAreCollectedFromAllModels() {
         List<Host> hosts = createHosts(9, "6.1.0", "6.2.0");
-        List<ServiceInfo> services = List.of(
-                new ServiceInfo("serviceName", "serviceType", null, new HashMap<>(), "configId", "hostName"));
+        List<ServiceInfo> services = createServices();
 
         List<ModelFactory> modelFactories = List.of(
                 new ConfigChangeActionsModelFactory(Version.fromString("6.1.0"),
@@ -461,10 +461,41 @@ public class HostedDeployTest {
     }
 
     @Test
+    public void testConfigConvergenceBeforeRestart() {
+        List<Host> hosts = createHosts(9, "6.1.0", "6.2.0");
+        List<ServiceInfo> services = createServices();
+
+        List<ModelFactory> modelFactories = List.of(
+                new ConfigChangeActionsModelFactory(Version.fromString("6.1.0"),
+                        new VespaRestartAction(ClusterSpec.Id.from("test"), "change", services)),
+                new ConfigChangeActionsModelFactory(Version.fromString("6.2.0"),
+                        new VespaRestartAction(ClusterSpec.Id.from("test"), "other change", services)));
+
+        DeployTester tester = createTester(hosts,
+                                           modelFactories,
+                                           prodZone,
+                                           Clock.systemUTC(),
+                                           new MockConfigConvergenceChecker(2L, services));
+        var result = tester.deployApp("src/test/apps/hosted/", "6.2.0");
+        DeployHandlerLogger deployLogger = result.deployLogger();
+
+        System.out.println(SlimeUtils.toJson(deployLogger.slime().get()));
+        assertLogContainsMessage(deployLogger, "Wait for all services to use new config generation before restarting");
+        assertLogContainsMessage(deployLogger, "Services that did not converge on new config generation 2: hostName:serviceName on generation 1,hostName2:serviceName2 on generation 1. Will retry");
+        assertLogContainsMessage(deployLogger, "Services converged on new config generation 2");
+    }
+
+    private void assertLogContainsMessage(DeployHandlerLogger log, String message) {
+        assertEquals(1, SlimeUtils.entriesStream(log.slime().get().field("log"))
+                .map(entry -> entry.field("message").asString())
+                .filter(m -> m.contains(message))
+                .count());
+    }
+
+    @Test
     public void testThatAllowedConfigChangeActionsAreActedUpon() {
         List<Host> hosts = createHosts(9, "6.1.0");
-        List<ServiceInfo> services = List.of(
-                new ServiceInfo("serviceName", "serviceType", null, Map.of("clustername", "cluster"), "configId", "hostName"));
+        List<ServiceInfo> services = createServices();
 
         ManualClock clock = new ManualClock(Instant.EPOCH);
         List<ModelFactory> modelFactories = List.of(
@@ -539,16 +570,38 @@ public class HostedDeployTest {
         return createTester(hosts, modelFactories, zone, Clock.systemUTC());
     }
 
-    private DeployTester createTester(List<Host> hosts, List<ModelFactory> modelFactories,
-                                      Zone prodZone, Clock clock) {
+    private DeployTester createTester(List<Host> hosts, List<ModelFactory> modelFactories, Zone zone, Clock clock) {
+        return createTester(hosts, modelFactories, zone, clock, new MockConfigConvergenceChecker(2));
+    }
+
+    private DeployTester createTester(List<Host> hosts,
+                                      List<ModelFactory> modelFactories,
+                                      Zone zone,
+                                      Clock clock,
+                                      ConfigConvergenceChecker configConvergenceChecker) {
         return new DeployTester.Builder(temporaryFolder)
                 .modelFactories(modelFactories)
                 .clock(clock)
-                .zone(prodZone)
+                .zone(zone)
                 .hostProvisioner(new InMemoryProvisioner(new Hosts(hosts), true, false))
-                .configConvergenceChecker(new MockConfigConvergenceChecker(2))
-                .hostedConfigserverConfig(prodZone)
+                .configConvergenceChecker(configConvergenceChecker)
+                .hostedConfigserverConfig(zone)
                 .build();
+    }
+
+    private static List<ServiceInfo> createServices() {
+        return List.of(new ServiceInfo("serviceName",
+                                       "serviceType",
+                                       null,
+                                       Map.of("clustername", "cluster"),
+                                       "configId",
+                                       "hostName"),
+                       new ServiceInfo("serviceName2",
+                                       "serviceType2",
+                                       null,
+                                       Map.of("clustername", "cluster"),
+                                       "configId",
+                                       "hostName2"));
     }
 
     private static class ConfigChangeActionsModelFactory extends TestModelFactory {
