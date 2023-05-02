@@ -715,9 +715,10 @@ TYPED_TEST(HnswIndexTest, hnsw_graph_is_compacted)
         }
     }
     uint32_t doc_id_end = doc_id;
-    for (doc_id = 1; doc_id < doc_id_end; ++doc_id) {
+    for (doc_id = 2; doc_id < doc_id_end; ++doc_id) {
         this->add_document(doc_id);
     }
+    this->add_document(1);
     for (doc_id = 10; doc_id < doc_id_end; ++doc_id) {
         this->remove_document(doc_id);
     }
@@ -754,7 +755,11 @@ TYPED_TEST(HnswIndexTest, hnsw_graph_is_compacted)
     EXPECT_NE(level_array_refs_1, level_array_refs_2);
     this->index->shrink_lid_space(10);
     auto mem_3 = this->commit_and_update_stat();
-    EXPECT_LT(mem_3.usedBytes(), mem_2.usedBytes());
+    if constexpr (std::is_same_v<typename TypeParam::IdMapping, HnswIdentityMapping>) {
+        EXPECT_LT(mem_3.usedBytes(), mem_2.usedBytes());
+    } else {
+        EXPECT_EQ(mem_3.usedBytes(), mem_2.usedBytes());
+    }
 }
 
 TYPED_TEST(HnswIndexTest, hnsw_graph_can_be_saved_and_loaded)
