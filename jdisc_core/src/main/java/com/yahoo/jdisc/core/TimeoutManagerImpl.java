@@ -109,7 +109,7 @@ public class TimeoutManagerImpl {
         @Override
         public void run() {
             Duration desiredTimeout = Duration.ofMillis(ScheduledQueue.MILLIS_PER_SLOT);
-            Duration actualTimeout = SystemTimer.adjustTimeoutByDetectedHz(SystemTimer.adjustTimeoutByDetectedHz(desiredTimeout));
+            Duration actualTimeout = SystemTimer.adjustTimeoutByDetectedHz(desiredTimeout);
             while (oneMoreCheck(actualTimeout.toMillis())) {
                 checkTasks(timer.currentTimeMillis());
             }
