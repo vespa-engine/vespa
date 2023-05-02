@@ -278,9 +278,10 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
             var privateKeyFile = (ContainerPath) SiaUtils.getPrivateKeyFile(siaDirectory, athenzIdentity);
             var certificateFile = (ContainerPath) SiaUtils.getCertificateFile(siaDirectory, athenzIdentity);
             try {
-                return Files.deleteIfExists(identityDocumentFile) ||
-                        Files.deleteIfExists(privateKeyFile) ||
-                        Files.deleteIfExists(certificateFile);
+                var modified = Files.deleteIfExists(identityDocumentFile);
+                modified |= Files.deleteIfExists(privateKeyFile);
+                modified |= Files.deleteIfExists(certificateFile);
+                return modified;
             } catch (IOException e) {
                 throw new UncheckedIOException(e);
             }
