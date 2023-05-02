@@ -224,7 +224,7 @@ public class Flags {
     // TODO: Move to a permanent flag
     public static final UnboundListFlag<String> ALLOWED_ATHENZ_PROXY_IDENTITIES = defineListFlag(
             "allowed-athenz-proxy-identities", List.of(), String.class,
-            List.of("bjorncs", "tokle"), "2021-02-10", "2023-05-01",
+            List.of("bjorncs", "tokle"), "2021-02-10", "2023-08-01",
             "Allowed Athenz proxy identities",
             "takes effect at redeployment");
 
@@ -302,7 +302,7 @@ public class Flags {
 
     public static final UnboundBooleanFlag ENABLE_PROXY_PROTOCOL_MIXED_MODE = defineFeatureFlag(
             "enable-proxy-protocol-mixed-mode", true,
-            List.of("tokle"), "2022-05-09", "2023-04-30",
+            List.of("tokle"), "2022-05-09", "2023-08-01",
             "Enable or disable proxy protocol mixed mode",
             "Takes effect on redeployment",
             APPLICATION_ID);
@@ -331,7 +331,7 @@ public class Flags {
 
     public static final UnboundBooleanFlag RESTRICT_DATA_PLANE_BINDINGS = defineFeatureFlag(
             "restrict-data-plane-bindings", false,
-            List.of("mortent"), "2022-09-08", "2023-05-01",
+            List.of("mortent"), "2022-09-08", "2023-08-01",
             "Use restricted data plane bindings",
             "Takes effect at redeployment",
             APPLICATION_ID);
@@ -366,7 +366,7 @@ public class Flags {
 
     public static final UnboundBooleanFlag VESPA_ATHENZ_PROVIDER = defineFeatureFlag(
             "vespa-athenz-provider", false,
-            List.of("mortent"), "2023-02-22", "2023-05-01",
+            List.of("mortent"), "2023-02-22", "2023-08-01",
             "Enable athenz provider in public systems",
             "Takes effect on next config server container start",
             ZONE_ID);
