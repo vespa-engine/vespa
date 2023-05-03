@@ -273,25 +273,19 @@ class JobControllerApiHandlerHelper {
             // TODO: recursively search dependents for what is the relevant partial change when this is a delay step ...
             Readiness readiness = stepStatus.job().map(jobsToRun::get).map(job -> job.get(0).readiness())
                                             .orElse(stepStatus.readiness(change));
+            Instant now = controller.clock().instant();
             if (readiness.ok()) {
                 stepObject.setLong("readyAt", readiness.at().toEpochMilli());
-                if ( ! readiness.okAt(controller.clock().instant())) {
-                    Instant until = readiness.at();
-                    stepObject.setLong("delayedUntil", readiness.at().toEpochMilli());
-                    switch (readiness.cause()) {
-                        case paused -> stepObject.setLong("pausedUntil", until.toEpochMilli());
-                        case coolingDown -> stepObject.setLong("coolingDownUntil", until.toEpochMilli());
-                        case changeBlocked -> {
-                            Readiness platformReadiness = stepStatus.readiness(Change.of(controller.systemVersion(versionStatus))); // Dummy version — just anything with a platform.
-                            if (platformReadiness.cause() == DelayCause.changeBlocked)
-                                stepObject.setLong("platformBlockedUntil", platformReadiness.at().toEpochMilli());
-                            Readiness applicationReadiness = stepStatus.readiness(Change.of(RevisionId.forProduction(1))); // Dummy version — just anything with an application.
-                            if (applicationReadiness.cause() == DelayCause.changeBlocked)
-                                stepObject.setLong("applicationBlockedUntil", applicationReadiness.at().toEpochMilli());
-                        }
-                    }
-                }
+                if ( ! readiness.okAt(now)) stepObject.setLong("delayedUntil", readiness.at().toEpochMilli());
             }
+            if (readiness.cause() == DelayCause.coolingDown) stepObject.setLong("coolingDownUntil", readiness.at().toEpochMilli());
+            if ( ! stepStatus.pausedUntil().okAt(now)) stepObject.setLong("pausedUntil", stepStatus.pausedUntil().at().toEpochMilli());
+            Readiness platformReadiness = stepStatus.blockedUntil(Change.of(controller.systemVersion(versionStatus))); // Dummy version — just anything with a platform.
+            if ( ! platformReadiness.okAt(now))
+                stepObject.setLong("platformBlockedUntil", platformReadiness.at().toEpochMilli());
+            Readiness applicationReadiness = stepStatus.blockedUntil(Change.of(RevisionId.forProduction(1))); // Dummy version — just anything with an application.
+            if ( ! applicationReadiness.okAt(now))
+                stepObject.setLong("applicationBlockedUntil", applicationReadiness.at().toEpochMilli());
 
             if (stepStatus.type() == DeploymentStatus.StepType.delay)
                 stepStatus.completedAt(change).ifPresent(completed -> stepObject.setLong("completedAt", completed.toEpochMilli()));
