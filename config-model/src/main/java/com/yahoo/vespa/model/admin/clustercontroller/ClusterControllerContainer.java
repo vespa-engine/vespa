@@ -16,15 +16,13 @@ import com.yahoo.vespa.config.content.FleetcontrollerConfig;
 import com.yahoo.vespa.config.content.reindexing.ReindexingConfig;
 import com.yahoo.vespa.model.application.validation.RestartConfigs;
 import com.yahoo.vespa.model.container.Container;
-import com.yahoo.vespa.model.container.component.AccessLogComponent;
+import com.yahoo.vespa.model.container.PlatformBundles;
 import com.yahoo.vespa.model.container.component.Component;
 import com.yahoo.vespa.model.container.component.Handler;
 import com.yahoo.vespa.model.container.component.SimpleComponent;
 import com.yahoo.vespa.model.container.component.SystemBindingPattern;
 import com.yahoo.vespa.model.container.xml.ContainerModelBuilder;
-import com.yahoo.vespa.model.container.PlatformBundles;
 
-import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
 
@@ -64,11 +62,6 @@ public class ClusterControllerContainer extends Container implements
                    "com.yahoo.vespa.clustercontroller.apps.clustercontroller.StateRestApiV2Handler",
                    "/cluster/v2/*",
                    CLUSTERCONTROLLER_BUNDLE);
-        addComponent(new AccessLogComponent(containerCluster().orElse(null),
-                                            AccessLogComponent.AccessLogType.jsonAccessLog,
-                                            deployState.featureFlags().logFileCompressionAlgorithm("zstd"),
-                                            Optional.of("controller"),
-                                            deployState.isHosted()));
 
         // TODO: Why are bundles added here instead of in the cluster?
         addFileBundle("clustercontroller-apps");
