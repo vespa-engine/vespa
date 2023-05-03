@@ -75,7 +75,7 @@ jobs:
     steps:
       - inspect: |
           set -x
-          env | grep -v TOKEN
+          env
           cat /proc/cpuinfo
           cat /proc/meminfo
           df -h
