@@ -20,11 +20,11 @@ public class NodeResourcesTest {
 
     @Test
     void testToString() {
-        assertEquals("[vcpu: 1.0, memory: 10.0 Gb, disk 100.0 Gb, architecture: any]",
+        assertEquals("[vcpu: 1.0, memory: 10.0 Gb, disk 100.0 Gb, architecture: x86_64]",
                                new NodeResources(1., 10., 100., 0).toString());
-        assertEquals("[vcpu: 0.3, memory: 3.3 Gb, disk 33.3 Gb, bandwidth: 0.3 Gbps, architecture: any]",
+        assertEquals("[vcpu: 0.3, memory: 3.3 Gb, disk 33.3 Gb, bandwidth: 0.3 Gbps, architecture: x86_64]",
                                new NodeResources(1 / 3., 10 / 3., 100 / 3., 0.3).toString());
-        assertEquals("[vcpu: 0.7, memory: 9.0 Gb, disk 66.7 Gb, bandwidth: 0.7 Gbps, architecture: any]",
+        assertEquals("[vcpu: 0.7, memory: 9.0 Gb, disk 66.7 Gb, bandwidth: 0.7 Gbps, architecture: x86_64]",
                                new NodeResources(2 / 3., 8.97, 200 / 3., 0.67).toString());
     }
 

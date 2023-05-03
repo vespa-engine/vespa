@@ -117,7 +117,7 @@ public class NodeResources {
         }
 
         public boolean isDefault() { return this == getDefault(); }
-        public static Architecture getDefault() { return any; }
+        public static Architecture getDefault() { return x86_64; }
 
     }
 
@@ -498,7 +498,7 @@ public class NodeResources {
         if (cpu == 0) cpu = 0.5;
         if (cpu == 2 && mem == 8 ) cpu = 1.5;
         if (cpu == 2 && mem == 12 ) cpu = 2.3;
-        return new NodeResources(cpu, mem, dsk, 0.3, DiskSpeed.getDefault(), StorageType.getDefault(), Architecture.any);
+        return new NodeResources(cpu, mem, dsk, 0.3, DiskSpeed.getDefault(), StorageType.getDefault(), Architecture.x86_64);
     }
 
     private static double validate(double value, String valueName) {
