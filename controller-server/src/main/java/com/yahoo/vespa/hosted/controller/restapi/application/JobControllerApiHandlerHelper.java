@@ -27,6 +27,7 @@ import com.yahoo.vespa.hosted.controller.deployment.ConvergenceSummary;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentStatus;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentStatus.DelayCause;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentStatus.Readiness;
+import com.yahoo.vespa.hosted.controller.deployment.DeploymentStatus.StepType;
 import com.yahoo.vespa.hosted.controller.deployment.JobController;
 import com.yahoo.vespa.hosted.controller.deployment.JobStatus;
 import com.yahoo.vespa.hosted.controller.deployment.Run;
@@ -292,7 +293,9 @@ class JobControllerApiHandlerHelper {
                 }
             }
             stepObject.setString("delayCause",
-                                 switch (readiness.cause()) {
+                                 stepStatus.job().isPresent() && ! jobsToRun.containsKey(stepStatus.job().get())
+                                 ? (String) null
+                                 : switch (readiness.cause()) {
                                      case none -> null;
                                      case invalidPackage -> "invalidPackage";
                                      case paused -> "paused";
