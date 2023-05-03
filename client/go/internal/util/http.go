@@ -78,8 +78,9 @@ func ForceHTTP2(client HTTPClient, certificates []tls.Certificate, caCertificate
 	// https://github.com/golang/go/issues/16582
 	// https://github.com/golang/go/issues/22091
 	c.client.Transport = &http2.Transport{
-		AllowHTTP:      true,
-		DialTLSContext: dialFunc,
+		DisableCompression: true,
+		AllowHTTP:          true,
+		DialTLSContext:     dialFunc,
 	}
 	ConfigureTLS(client, certificates, caCertificate, trustAll)
 }
