@@ -14,7 +14,7 @@ namespace streaming {
 
 __thread SearchEnvironment::EnvMap * SearchEnvironment::_localEnvMap = nullptr;
 
-SearchEnvironment::Env::Env(const config::ConfigUri& configUri, Fast_NormalizeWordFolder& wf)
+SearchEnvironment::Env::Env(const config::ConfigUri& configUri, const Fast_NormalizeWordFolder& wf)
     : _configId(configUri.getConfigId()),
       _configurer(std::make_unique<config::SimpleConfigRetriever>(createKeySet(configUri.getConfigId()), configUri.getContext()), this),
       _vsmAdapter(std::make_unique<VSMAdapter>(_configId, wf)),
