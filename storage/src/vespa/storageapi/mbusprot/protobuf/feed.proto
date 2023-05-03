@@ -17,6 +17,7 @@ message PutRequest {
     uint64   new_timestamp          = 3;
     uint64   expected_old_timestamp = 4; // If zero; no expectation.
     TestAndSetCondition condition   = 5;
+    bool     create_if_non_existent = 6;
 }
 
 message PutResponse {
