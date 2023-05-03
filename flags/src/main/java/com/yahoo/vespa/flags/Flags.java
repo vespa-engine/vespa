@@ -371,13 +371,6 @@ public class Flags {
             "Takes effect on next config server container start",
             ZONE_ID);
 
-    public static final UnboundLongFlag ZOOKEEPER_BARRIER_WAIT_FOR_ALL_TIMEOUT = defineLongFlag(
-            "zookeeper-barrier-wait-for-all-timeout", 5,
-            List.of("hmusum"), "2023-03-28", "2023-05-28",
-            "Time to wait for all barrier members after getting response from quorum number of member",
-            "Takes effect on next config server container start",
-            ZONE_ID);
-
     public static final UnboundBooleanFlag NODE_ADMIN_TENANT_SERVICE_REGISTRY = defineFeatureFlag(
             "node-admin-tenant-service-registry", false,
             List.of("olaa"), "2023-04-12", "2023-06-12",
