@@ -48,7 +48,7 @@ class PutCommand : public TestAndSetCommand {
     DocumentSP _doc;
     Timestamp  _timestamp;
     Timestamp  _updateTimestamp;
-
+    bool _create_if_non_existent = false;
 public:
     PutCommand(const document::Bucket &bucket, const DocumentSP&, Timestamp);
     ~PutCommand() override;
@@ -67,6 +67,8 @@ public:
     const document::DocumentId& getDocumentId() const override;
     Timestamp getTimestamp() const { return _timestamp; }
     const document::DocumentType * getDocumentType() const override;
+    void set_create_if_non_existent(bool value) noexcept { _create_if_non_existent = value; }
+    bool get_create_if_non_existent() const noexcept { return _create_if_non_existent; }
 
     vespalib::string getSummary() const override;
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;

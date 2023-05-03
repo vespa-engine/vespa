@@ -421,6 +421,7 @@ void ProtocolSerialization7::onEncode(GBBuf& buf, const api::PutCommand& msg) co
         if (msg.getDocument()) {
             set_document(*req.mutable_document(), *msg.getDocument());
         }
+        req.set_create_if_non_existent(msg.get_create_if_non_existent());
     });
 }
 
@@ -438,6 +439,7 @@ api::StorageCommand::UP ProtocolSerialization7::onDecodePutCommand(BBuf& buf) co
         if (req.has_condition()) {
             cmd->setCondition(get_tas_condition(req.condition()));
         }
+        cmd->set_create_if_non_existent(req.create_if_non_existent());
         return cmd;
     });
 }
