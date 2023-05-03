@@ -14,7 +14,7 @@
           "bandwidthGbps" : 1.0,
           "diskSpeed" : "fast",
           "storageType" : "any",
-          "architecture":"x86_64"
+          "architecture":"any"
         }
       },
       "max" : {
@@ -27,7 +27,7 @@
           "bandwidthGbps" : 1.0,
           "diskSpeed" : "fast",
           "storageType" : "any",
-          "architecture":"x86_64"
+          "architecture":"any"
         }
       },
       "current" : {
@@ -56,7 +56,7 @@
             "bandwidthGbps": 1.0,
             "diskSpeed": "fast",
             "storageType": "any",
-            "architecture": "x86_64"
+            "architecture": "any"
           }
         },
         "at" : 123,
@@ -89,7 +89,7 @@
             "bandwidthGbps": 1.0,
             "diskSpeed": "fast",
             "storageType": "any",
-            "architecture": "x86_64"
+            "architecture": "any"
           }
         },
         "at" : 123,
@@ -121,7 +121,7 @@
               "bandwidthGbps": 0.0,
               "diskSpeed": "fast",
               "storageType": "any",
-              "architecture":"x86_64"
+              "architecture":"any"
             }
           },
           "to": {
