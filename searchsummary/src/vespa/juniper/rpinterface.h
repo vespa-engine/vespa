@@ -89,7 +89,7 @@ public:
      *     compatibility between versions.
      */
     Juniper(IJuniperProperties* props,
-          Fast_WordFolder* wordfolder, int api_version = JUNIPER_RP_ABI_VERSION);
+          const Fast_WordFolder* wordfolder, int api_version = JUNIPER_RP_ABI_VERSION);
     /** Deinitialize the Juniper subsystem. Release all remaining resources
      *  associated with Juniper - reverse the effect of the Init function.
      *  Assumes that all Result objects have been released.
@@ -137,7 +137,7 @@ public:
 
 private:
     IJuniperProperties * _props;
-    Fast_WordFolder    * _wordfolder;
+    const Fast_WordFolder  * _wordfolder;
     std::unique_ptr<QueryModifier>      _modifier;
 };
 
