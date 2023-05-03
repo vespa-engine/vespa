@@ -140,9 +140,9 @@ org.apache.zookeeper:zookeeper:3.8.1
 org.apache.zookeeper:zookeeper-jute:3.8.0
 org.apache.zookeeper:zookeeper-jute:3.8.1
 org.apiguardian:apiguardian-api:1.1.2
-org.bouncycastle:bcpkix-jdk18on:1.72
-org.bouncycastle:bcprov-jdk18on:1.72
-org.bouncycastle:bcutil-jdk18on:1.72
+org.bouncycastle:bcpkix-jdk18on:1.73
+org.bouncycastle:bcprov-jdk18on:1.73
+org.bouncycastle:bcutil-jdk18on:1.73
 org.codehaus.plexus:plexus-archiver:4.2.1
 org.codehaus.plexus:plexus-cipher:2.0
 org.codehaus.plexus:plexus-classworlds:2.6.0
