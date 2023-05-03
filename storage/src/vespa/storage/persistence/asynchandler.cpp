@@ -159,7 +159,7 @@ AsyncHandler::handlePut(api::PutCommand& cmd, MessageTracker::UP trackerUP) cons
     tracker.setMetric(metrics);
     metrics.request_size.addValue(cmd.getApproxByteSize());
 
-    if (tasConditionExists(cmd) && !tasConditionMatches(cmd, tracker, tracker.context())) {
+    if (tasConditionExists(cmd) && !tasConditionMatches(cmd, tracker, tracker.context(), cmd.get_create_if_non_existent())) {
         // Will also count condition parse failures etc as TaS failures, but
         // those results _will_ increase the error metrics as well.
         metrics.test_and_set_failed.inc();
