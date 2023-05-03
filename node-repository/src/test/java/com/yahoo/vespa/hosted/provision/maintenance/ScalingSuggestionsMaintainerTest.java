@@ -73,9 +73,9 @@ public class ScalingSuggestionsMaintainerTest {
                                                                                    new TestMetric());
         maintainer.maintain();
 
-        assertEquals("8 nodes with [vcpu: 3.2, memory: 4.5 Gb, disk 10.0 Gb, bandwidth: 0.1 Gbps, architecture: x86_64]",
+        assertEquals("8 nodes with [vcpu: 3.2, memory: 4.5 Gb, disk 10.0 Gb, bandwidth: 0.1 Gbps, architecture: any]",
                      suggestionOf(app1, cluster1, tester).resources().get().toString());
-        assertEquals("8 nodes with [vcpu: 3.6, memory: 4.4 Gb, disk 11.8 Gb, bandwidth: 0.1 Gbps, architecture: x86_64]",
+        assertEquals("8 nodes with [vcpu: 3.6, memory: 4.4 Gb, disk 11.8 Gb, bandwidth: 0.1 Gbps, architecture: any]",
                      suggestionOf(app2, cluster2, tester).resources().get().toString());
 
         // Utilization goes way down
@@ -83,14 +83,14 @@ public class ScalingSuggestionsMaintainerTest {
         addMeasurements(0.10f, 0.10f, 0.10f, 0, 500, app1, tester.nodeRepository());
         maintainer.maintain();
         assertEquals("Suggestion stays at the peak value observed",
-                     "8 nodes with [vcpu: 3.2, memory: 4.5 Gb, disk 10.0 Gb, bandwidth: 0.1 Gbps, architecture: x86_64]",
+                     "8 nodes with [vcpu: 3.2, memory: 4.5 Gb, disk 10.0 Gb, bandwidth: 0.1 Gbps, architecture: any]",
                      suggestionOf(app1, cluster1, tester).resources().get().toString());
         // Utilization is still way down and a week has passed
         tester.clock().advance(Duration.ofDays(7));
         addMeasurements(0.10f, 0.10f, 0.10f, 0, 500, app1, tester.nodeRepository());
         maintainer.maintain();
         assertEquals("Peak suggestion has been  outdated",
-                     "3 nodes with [vcpu: 1.2, memory: 4.0 Gb, disk 10.0 Gb, bandwidth: 0.1 Gbps, architecture: x86_64]",
+                     "3 nodes with [vcpu: 1.2, memory: 4.0 Gb, disk 10.0 Gb, bandwidth: 0.1 Gbps, architecture: any]",
                      suggestionOf(app1, cluster1, tester).resources().get().toString());
         assertTrue(shouldSuggest(app1, cluster1, tester));
 
