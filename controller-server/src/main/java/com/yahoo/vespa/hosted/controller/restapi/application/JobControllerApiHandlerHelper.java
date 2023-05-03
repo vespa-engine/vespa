@@ -292,20 +292,6 @@ class JobControllerApiHandlerHelper {
                     }
                 }
             }
-            stepObject.setString("delayCause",
-                                 stepStatus.job().isPresent() && ! jobsToRun.containsKey(stepStatus.job().get())
-                                 ? (String) null
-                                 : switch (readiness.cause()) {
-                                     case none -> null;
-                                     case invalidPackage -> "invalidPackage";
-                                     case paused -> "paused";
-                                     case coolingDown -> "coolingDown";
-                                     case changeBlocked -> "changeBlocked";
-                                     case blocked -> "blocked";
-                                     case running -> "running";
-                                     case notReady -> "notReady";
-                                     case unverified -> "unverified";
-                                 });
 
             if (stepStatus.type() == DeploymentStatus.StepType.delay)
                 stepStatus.completedAt(change).ifPresent(completed -> stepObject.setLong("completedAt", completed.toEpochMilli()));
@@ -365,7 +351,9 @@ class JobControllerApiHandlerHelper {
                 }
             }
 
-            stepStatus.job().ifPresent(job -> {
+            boolean showDelayCause = true;
+            if (stepStatus.job().isPresent()) {
+                JobId job = stepStatus.job().get();
                 stepObject.setString("jobName", job.type().jobName());
                 URI baseUriForJob = baseUriForDeployments.resolve(baseUriForDeployments.getPath() +
                                                                      "/../instance/" + job.application().instance().value() +
@@ -383,6 +371,7 @@ class JobControllerApiHandlerHelper {
 
                 JobStatus jobStatus = status.jobs().get(job).get();
                 Cursor toRunArray = stepObject.setArray("toRun");
+                showDelayCause = false;
                 for (DeploymentStatus.Job versions : jobsToRun.getOrDefault(job, List.of())) {
                     boolean running = jobStatus.lastTriggered()
                                                .map(run ->    jobStatus.isRunning()
@@ -392,12 +381,27 @@ class JobControllerApiHandlerHelper {
                     if (running)
                         continue; // Run will be contained in the "runs" array.
 
+                    showDelayCause = true;
                     Cursor runObject = toRunArray.addObject();
                     toSlime(runObject.setObject("versions"), versions.versions(), application);
                 }
 
                 toSlime(stepObject.setArray("runs"), jobStatus.runs().descendingMap().values(), application, 10, baseUriForJob);
-            });
+            }
+            stepObject.setString("delayCause",
+                                 ! showDelayCause
+                                 ? (String) null
+                                 : switch (readiness.cause()) {
+                                       case none -> null;
+                                       case invalidPackage -> "invalidPackage";
+                                       case paused -> "paused";
+                                       case coolingDown -> "coolingDown";
+                                       case changeBlocked -> "changeBlocked";
+                                       case blocked -> "blocked";
+                                       case running -> "running";
+                                       case notReady -> "notReady";
+                                       case unverified -> "unverified";
+                                   });
         }
 
         Cursor buildsArray = responseObject.setArray("builds");
