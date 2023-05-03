@@ -26,7 +26,6 @@ import com.yahoo.container.jdisc.state.StateHandler;
 import com.yahoo.container.logging.AccessLog;
 import com.yahoo.container.usability.BindingsOverviewHandler;
 import com.yahoo.document.config.DocumentmanagerConfig;
-import com.yahoo.jdisc.http.server.jetty.VoidRequestLog;
 import com.yahoo.osgi.provider.model.ComponentModel;
 import com.yahoo.prelude.semantics.SemanticRulesConfig;
 import com.yahoo.search.config.IndexInfoConfig;
@@ -62,7 +61,6 @@ import com.yahoo.vespa.model.container.search.ContainerSearch;
 import com.yahoo.vespa.model.container.search.searchchain.SearchChains;
 import com.yahoo.vespa.model.content.Content;
 import com.yahoo.vespa.model.search.SearchCluster;
-
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -75,7 +73,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
 
-import static com.yahoo.vespa.model.container.component.AccessLogComponent.AccessLogType.jsonAccessLog;
 import static com.yahoo.vespa.model.container.component.chain.ProcessingHandler.PROCESSING_HANDLER_CLASS;
 
 /**
@@ -151,9 +148,9 @@ public abstract class ContainerCluster<CONTAINER extends Container>
     private final Set<Path> platformBundles = new TreeSet<>(); // Ensure stable ordering
 
     private final ComponentGroup<Component<?, ?>> componentGroup;
-    protected final boolean isHostedVespa;
+    private final boolean isHostedVespa;
     private final boolean zooKeeperLocalhostAffinity;
-    protected final String compressionType;
+    private final String compressionType;
 
     private final Map<String, String> concreteDocumentTypes = new LinkedHashMap<>();
 
@@ -183,6 +180,7 @@ public abstract class ContainerCluster<CONTAINER extends Container>
         componentGroup = new ComponentGroup<>(this, "component");
 
         addCommonVespaBundles();
+        addSimpleComponent(AccessLog.class);
         addComponent(new DefaultThreadpoolProvider(this, defaultPoolNumThreads));
         addComponent(defaultHandlerThreadpool);
         addSimpleComponent(com.yahoo.concurrent.classlock.ClassLocking.class);
@@ -289,7 +287,7 @@ public abstract class ContainerCluster<CONTAINER extends Container>
         return componentGroup.removeComponent(componentId);
     }
 
-    public void addSimpleComponent(Class<?> clazz) {
+    private void addSimpleComponent(Class<?> clazz) {
         addSimpleComponent(clazz.getName());
     }
 
@@ -595,14 +593,10 @@ public abstract class ContainerCluster<CONTAINER extends Container>
         if (containerSearch != null) containerSearch.connectSearchClusters(clusterMap);
     }
 
-    protected void addAccessLog() { /* No access logging by default */
-        if (isHostedVespa) {
-            addSimpleComponent(AccessLog.class);
-            // In hosted there is one application container per node, so we do not use the container name to distinguish log files
-            Optional<String> clusterName = isHostedVespa ? Optional.empty() : Optional.of(getName());
-            addComponent(new AccessLogComponent(this, jsonAccessLog, compressionType, clusterName, isHostedVespa));
-        } else
-            addSimpleComponent(VoidRequestLog.class);
+    public void addDefaultSearchAccessLog() {
+        // In hosted Vespa with one application container per node we do not use the container name to distinguish log files
+        Optional<String> clusterName = isHostedVespa ? Optional.empty() : Optional.of(getName());
+        addComponent(new AccessLogComponent(this, AccessLogComponent.AccessLogType.jsonAccessLog, compressionType, clusterName, isHostedVespa));
     }
 
     @Override
