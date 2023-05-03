@@ -110,7 +110,8 @@ func (s *Service) Do(request *http.Request, timeout time.Duration) (*http.Respon
 	return s.httpClient.Do(request, timeout)
 }
 
-func (s *Service) Client() util.HTTPClient { return s.httpClient }
+// SetClient sets the HTTP client that this service should use.
+func (s *Service) SetClient(client util.HTTPClient) { s.httpClient = client }
 
 // Wait polls the health check of this service until it succeeds or timeout passes.
 func (s *Service) Wait(timeout time.Duration) (int, error) {

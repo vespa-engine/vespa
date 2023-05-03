@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"path/filepath"
 	"testing"
+	"time"
 
 	"github.com/vespa-engine/vespa/client/go/internal/cli/auth/auth0"
 	"github.com/vespa-engine/vespa/client/go/internal/mock"
@@ -28,6 +29,7 @@ func newTestCLI(t *testing.T, envVars ...string) (*CLI, *bytes.Buffer, *bytes.Bu
 		t.Fatal(err)
 	}
 	httpClient := &mock.HTTPClient{}
+	cli.httpClientFactory = func(timeout time.Duration) util.HTTPClient { return httpClient }
 	cli.httpClient = httpClient
 	cli.exec = &mock.Exec{}
 	cli.auth0Factory = func(httpClient util.HTTPClient, options auth0.Options) (vespa.Authenticator, error) {
