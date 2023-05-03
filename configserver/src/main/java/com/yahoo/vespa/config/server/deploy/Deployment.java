@@ -173,9 +173,9 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
         RestartActions restartActions = configChangeActions.getRestartActions().useForInternalRestart(internalRedeploy);
         if (restartActions.isEmpty()) return;
 
-        waitForConfigToConverge(applicationId);
-
         Set<String> hostnames = restartActions.hostnames();
+        waitForConfigToConverge(applicationId, hostnames);
+
         provisioner.get().restart(applicationId, HostFilter.from(hostnames));
         deployLogger.log(Level.INFO, String.format("Scheduled service restart of %d nodes: %s",
                                                    hostnames.size(), hostnames.stream().sorted().collect(Collectors.joining(", "))));
@@ -184,14 +184,14 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
         this.configChangeActions = configChangeActions.withRestartActions(new RestartActions());
     }
 
-    private void waitForConfigToConverge(ApplicationId applicationId) {
+    private void waitForConfigToConverge(ApplicationId applicationId, Set<String> hostnames) {
         deployLogger.log(Level.INFO, "Wait for all services to use new config generation before restarting");
         var convergenceChecker = applicationRepository.configConvergenceChecker();
         var app = applicationRepository.getActiveApplication(applicationId);
 
         ServiceListResponse response = null;
         while (timeLeft(applicationId, response)) {
-            response = convergenceChecker.checkConvergenceUnlessDeferringChangesUntilRestart(app);
+            response = convergenceChecker.checkConvergenceUnlessDeferringChangesUntilRestart(app, hostnames);
             if (response.converged) {
                 deployLogger.log(Level.INFO, "Services converged on new config generation " + response.currentGeneration);
                 return;
