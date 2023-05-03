@@ -9,7 +9,6 @@
       "declared": true,
       "instance": "default",
       "readyAt": 0,
-      "delayCause": null,
       "deploying": {
         "application": {
           "build": 3,
@@ -148,7 +147,8 @@
             }
           ]
         }
-      }
+      },
+      "delayCause": null
     },
     {
       "type": "test",
@@ -156,7 +156,6 @@
       "declared": false,
       "instance": "default",
       "readyAt": 0,
-      "delayCause": null,
       "jobName": "system-test",
       "url": "https://some.url:43/instance/default/job/system-test",
       "environment": "test",
@@ -336,7 +335,8 @@
             }
           ]
         }
-      ]
+      ],
+      "delayCause": null
     },
     {
       "type": "test",
@@ -346,7 +346,6 @@
       "readyAt": 15153000,
       "delayedUntil": 15153000,
       "coolingDownUntil": 15153000,
-      "delayCause": "coolingDown",
       "jobName": "staging-test",
       "url": "https://some.url:43/instance/default/job/staging-test",
       "environment": "staging",
@@ -769,7 +768,8 @@
             }
           ]
         }
-      ]
+      ],
+      "delayCause": "coolingDown"
     },
     {
       "type": "deployment",
@@ -781,7 +781,6 @@
       "instance": "default",
       "readyAt": 14403000,
       "delayedUntil": 14403000,
-      "delayCause": "running",
       "jobName": "production-us-central-1",
       "url": "https://some.url:43/instance/default/job/production-us-central-1",
       "environment": "prod",
@@ -898,7 +897,8 @@
             }
           ]
         }
-      ]
+      ],
+      "delayCause": null
     },
     {
       "type": "test",
@@ -907,7 +907,6 @@
       ],
       "declared": true,
       "instance": "default",
-      "delayCause": "notReady",
       "jobName": "test-us-central-1",
       "url": "https://some.url:43/instance/default/job/test-us-central-1",
       "environment": "prod",
@@ -1039,7 +1038,8 @@
             }
           ]
         }
-      ]
+      ],
+      "delayCause": "notReady"
     },
     {
       "type": "deployment",
@@ -1048,7 +1048,6 @@
       ],
       "declared": true,
       "instance": "default",
-      "delayCause": "notReady",
       "jobName": "production-us-west-1",
       "url": "https://some.url:43/instance/default/job/production-us-west-1",
       "environment": "prod",
@@ -1148,7 +1147,8 @@
             }
           ]
         }
-      ]
+      ],
+      "delayCause": "notReady"
     },
     {
       "type": "deployment",
@@ -1157,7 +1157,6 @@
       ],
       "declared": true,
       "instance": "default",
-      "delayCause": "notReady",
       "jobName": "production-us-east-3",
       "url": "https://some.url:43/instance/default/job/production-us-east-3",
       "environment": "prod",
@@ -1257,7 +1256,8 @@
             }
           ]
         }
-      ]
+      ],
+      "delayCause": "notReady"
     }
   ],
   "builds": [

@@ -9,7 +9,6 @@
       "declared": true,
       "instance": "instance1",
       "readyAt": 0,
-      "delayCause": null,
       "deploying": {
         "application": {
           "build": 4,
@@ -60,7 +59,8 @@
           ],
           "blockers": [ ]
         }
-      }
+      },
+      "delayCause": null
     },
     {
       "type": "test",
@@ -69,7 +69,6 @@
       "instance": "instance1",
       "readyAt": 0,
       "delayedUntil": 0,
-      "delayCause": "running",
       "jobName": "system-test",
       "url": "http://localhost:8080/application/v4/tenant/tenant1/application/application1/instance/instance1/job/system-test",
       "environment": "test",
@@ -190,7 +189,8 @@
             }
           ]
         }
-      ]
+      ],
+      "delayCause": null
     },
     {
       "type": "test",
@@ -199,7 +199,6 @@
       "instance": "instance1",
       "readyAt": 0,
       "delayedUntil": 0,
-      "delayCause": "running",
       "jobName": "staging-test",
       "url": "http://localhost:8080/application/v4/tenant/tenant1/application/application1/instance/instance1/job/staging-test",
       "environment": "staging",
@@ -352,7 +351,8 @@
             }
           ]
         }
-      ]
+      ],
+      "delayCause": null
     },
     {
       "type": "deployment",
@@ -361,7 +361,6 @@
       ],
       "declared": true,
       "instance": "instance1",
-      "delayCause": "unverified",
       "jobName": "production-us-central-1",
       "url": "http://localhost:8080/application/v4/tenant/tenant1/application/application1/instance/instance1/job/production-us-central-1",
       "environment": "prod",
@@ -410,7 +409,8 @@
             }
           ]
         }
-      ]
+      ],
+      "delayCause": "unverified"
     },
     {
       "type": "deployment",
@@ -419,7 +419,6 @@
       ],
       "declared": true,
       "instance": "instance1",
-      "delayCause": "notReady",
       "jobName": "production-us-west-1",
       "url": "http://localhost:8080/application/v4/tenant/tenant1/application/application1/instance/instance1/job/production-us-west-1",
       "environment": "prod",
@@ -468,7 +467,8 @@
             }
           ]
         }
-      ]
+      ],
+      "delayCause": "notReady"
     },
     {
       "type": "deployment",
@@ -477,7 +477,6 @@
       ],
       "declared": true,
       "instance": "instance1",
-      "delayCause": "notReady",
       "jobName": "production-us-east-3",
       "url": "http://localhost:8080/application/v4/tenant/tenant1/application/application1/instance/instance1/job/production-us-east-3",
       "environment": "prod",
@@ -553,7 +552,8 @@
             }
           ]
         }
-      ]
+      ],
+      "delayCause": "notReady"
     },
     {
       "type": "instance",
@@ -563,7 +563,6 @@
       ],
       "declared": true,
       "instance": "instance2",
-      "delayCause": "notReady",
       "deploying": {
         "application": {
           "build": 4,
@@ -614,7 +613,8 @@
           ],
           "blockers": [ ]
         }
-      }
+      },
+      "delayCause": "notReady"
     },
     {
       "type": "deployment",
@@ -623,7 +623,6 @@
       ],
       "declared": true,
       "instance": "instance2",
-      "delayCause": "unverified",
       "jobName": "production-us-central-1",
       "url": "http://localhost:8080/application/v4/tenant/tenant1/application/application1/instance/instance2/job/production-us-central-1",
       "environment": "prod",
@@ -641,7 +640,8 @@
           }
         }
       ],
-      "runs": [ ]
+      "runs": [ ],
+      "delayCause": "unverified"
     },
     {
       "type": "deployment",
@@ -650,7 +650,6 @@
       ],
       "declared": true,
       "instance": "instance2",
-      "delayCause": "notReady",
       "jobName": "production-us-west-1",
       "url": "http://localhost:8080/application/v4/tenant/tenant1/application/application1/instance/instance2/job/production-us-west-1",
       "environment": "prod",
@@ -668,7 +667,8 @@
           }
         }
       ],
-      "runs": [ ]
+      "runs": [ ],
+      "delayCause": "notReady"
     },
     {
       "type": "deployment",
@@ -677,7 +677,6 @@
       ],
       "declared": true,
       "instance": "instance2",
-      "delayCause": "notReady",
       "jobName": "production-us-east-3",
       "url": "http://localhost:8080/application/v4/tenant/tenant1/application/application1/instance/instance2/job/production-us-east-3",
       "environment": "prod",
@@ -695,7 +694,8 @@
           }
         }
       ],
-      "runs": [ ]
+      "runs": [ ],
+      "delayCause": "notReady"
     }
   ],
   "builds": [
