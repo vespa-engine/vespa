@@ -47,7 +47,7 @@ import java.util.Map;
  */
 public class JsonSerializationHelper {
 
-    private final static Base64.Encoder base64Encoder = Base64.getEncoder().withoutPadding(); // Important: _basic_ format
+    private final static Base64.Encoder base64Encoder = Base64.getEncoder(); // Important: _basic_ format
 
     static class JsonSerializationException extends RuntimeException {
         public JsonSerializationException(Exception base) {
