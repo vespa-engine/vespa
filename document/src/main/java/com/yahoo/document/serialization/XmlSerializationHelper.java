@@ -31,10 +31,9 @@ import java.util.Map;
  * @author <a href="mailto:humbe@yahoo-inc.com">H&aring;kon Humberset</a>
  */
 @Deprecated
-@SuppressWarnings("removal")
 public class XmlSerializationHelper {
 
-    private final static Base64.Encoder base64Encoder = Base64.getEncoder().withoutPadding();
+    private final static Base64.Encoder base64Encoder = Base64.getEncoder();
 
     public static void printArrayXml(Array array, XmlStream xml) {
         List<FieldValue> lst = array.getValues();
