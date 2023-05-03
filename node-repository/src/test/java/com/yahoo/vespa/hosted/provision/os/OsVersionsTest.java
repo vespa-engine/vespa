@@ -326,7 +326,7 @@ public class OsVersionsTest {
                                                                     .account(CloudAccount.from("000000000000"))
                                                                     .build());
 
-        provisionInfraApplication(hostCount, infraApplication, NodeType.host, NodeResources.StorageType.remote);
+        provisionInfraApplication(hostCount, infraApplication, NodeType.host, NodeResources.StorageType.remote, NodeResources.Architecture.x86_64);
         Supplier<NodeList> hostNodes = () -> tester.nodeRepository().nodes().list().nodeType(NodeType.host);
 
         // New target is set
@@ -535,13 +535,20 @@ public class OsVersionsTest {
         return provisionInfraApplication(nodeCount, infraApplication, NodeType.host);
     }
 
-    private List<Node> provisionInfraApplication(int nodeCount, ApplicationId application, NodeType nodeType) {
+    private List<Node> provisionInfraApplication(int nodeCount, ApplicationId application,
+                                                 NodeType nodeType) {
         return provisionInfraApplication(nodeCount, application, nodeType, NodeResources.StorageType.local);
     }
 
-    private List<Node> provisionInfraApplication(int nodeCount, ApplicationId application, NodeType nodeType, NodeResources.StorageType storageType) {
+    private List<Node> provisionInfraApplication(int nodeCount, ApplicationId application,
+                                                 NodeType nodeType, NodeResources.StorageType storageType) {
+        return provisionInfraApplication(nodeCount, application, nodeType, storageType, NodeResources.Architecture.x86_64);
+    }
+
+    private List<Node> provisionInfraApplication(int nodeCount, ApplicationId application, NodeType nodeType,
+                                                 NodeResources.StorageType storageType, NodeResources.Architecture architecture) {
         var nodes = tester.makeReadyNodes(nodeCount, new NodeResources(48, 128, 2000, 10,
-                                                                       NodeResources.DiskSpeed.fast, storageType),
+                                                                       NodeResources.DiskSpeed.fast, storageType, architecture),
                                           nodeType, 10);
         tester.prepareAndActivateInfraApplication(application, nodeType);
         tester.clock().advance(Duration.ofDays(1).plusSeconds(1)); // Let grace period pass
