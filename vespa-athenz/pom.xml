@@ -64,6 +64,11 @@
             <scope>provided</scope>
         </dependency>
         <dependency>
+            <groupId>com.fasterxml.jackson.dataformat</groupId>
+            <artifactId>jackson-dataformat-cbor</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
             <groupId>com.yahoo.vespa</groupId>
             <artifactId>vespajlib</artifactId>
             <version>${project.version}</version>
@@ -185,6 +190,11 @@
         <dependency> <!-- needed by auth-core -->
             <groupId>io.jsonwebtoken</groupId>
             <artifactId>jjwt-impl</artifactId>
+            <scope>compile</scope>
+        </dependency>
+        <dependency> <!-- needed by auth-core -->
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-api</artifactId>
             <scope>compile</scope>
         </dependency>
         <dependency> <!-- needed by auth-core -->

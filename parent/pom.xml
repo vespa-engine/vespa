@@ -1125,7 +1125,7 @@
 
         <!-- Athenz dependencies. Make sure these dependencies match those in Vespa's internal repositories -->
         <athenz.version>1.10.54</athenz.version> <!-- WARNING: sync cloud-tenant-base-dependencies-enforcer/pom.xml -->
-        <aws-sdk.version>1.12.331</aws-sdk.version>
+        <aws-sdk.version>1.12.460</aws-sdk.version>
         <!-- Athenz END -->
 
         <!-- WARNING: If you change curator version, you also need to update
@@ -1146,7 +1146,7 @@
         <hdrhistogram.version>2.1.12</hdrhistogram.version>
         <jetty.version>11.0.15</jetty.version>
         <jetty-servlet-api.version>5.0.2</jetty-servlet-api.version>
-        <jjwt.version>0.11.2</jjwt.version>
+        <jjwt.version>0.11.5</jjwt.version>
         <jna.version>5.11.0</jna.version>
         <junit.version>5.8.1</junit.version>
         <maven-archiver.version>3.6.0</maven-archiver.version>
