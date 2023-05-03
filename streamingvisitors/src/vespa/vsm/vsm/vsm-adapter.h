@@ -103,14 +103,13 @@ public:
 class VSMAdapter
 {
 public:
-    VSMAdapter(const vespalib::string & highlightindexes, const vespalib::string & configId, Fast_WordFolder & wordFolder);
+    VSMAdapter(const vespalib::string & configId, Fast_WordFolder & wordFolder);
     virtual ~VSMAdapter();
 
     VsmfieldsHandle getFieldsConfig() const { return _fieldsCfg.get(); }
     DocsumToolsPtr getDocsumTools()   const { return _docsumTools.get(); }
     void configure(const VSMConfigSnapshot & snapshot);
 private:
-    vespalib::string                          _highlightindexes;
     const vespalib::string                    _configId;
     Fast_WordFolder                         & _wordFolder;
     vespalib::PtrHolder<VsmfieldsConfig>      _fieldsCfg;

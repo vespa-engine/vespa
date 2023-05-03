@@ -18,7 +18,7 @@ private:
     class Env : public config::SimpleConfigurable {
     public:
         using SP = std::shared_ptr<Env>;
-        Env(const vespalib::string & muffens, const config::ConfigUri & configUri, Fast_NormalizeWordFolder & wf);
+        Env(const config::ConfigUri& configUri, Fast_NormalizeWordFolder& wf);
         ~Env() override;
         const vsm::VSMAdapter * getVSMAdapter() const { return _vsmAdapter.get(); }
         const RankManager * getRankManager() const { return _rankManager.get(); }
