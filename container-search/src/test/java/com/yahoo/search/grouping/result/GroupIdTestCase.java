@@ -48,8 +48,8 @@ public class GroupIdTestCase {
         assertEquals("group:long:69", new LongId(69L).toString());
         assertEquals("group:long_bucket:6:9", new LongBucketId(6L, 9L).toString());
         assertEquals("group:null", new NullId().toString());
-        assertEquals("group:raw:Bgk", new RawId(new byte[]{6, 9}).toString());
-        assertEquals("group:raw_bucket:Bgk:CQY", new RawBucketId(new byte[]{6, 9}, new byte[]{9, 6}).toString());
+        assertEquals("group:raw:Bgk=", new RawId(new byte[]{6, 9}).toString());
+        assertEquals("group:raw_bucket:Bgk=:CQY=", new RawBucketId(new byte[]{6, 9}, new byte[]{9, 6}).toString());
         assertTrue(new RootId(0).toString().startsWith("group:root:"));
         assertEquals("group:string:69", new StringId("69").toString());
         assertEquals("group:string_bucket:6:9", new StringBucketId("6", "9").toString());

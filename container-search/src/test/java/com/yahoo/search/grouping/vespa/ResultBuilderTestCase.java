@@ -60,12 +60,12 @@ public class ResultBuilderTestCase {
         assertGroupId("group:6.9", new FloatResultNode(6.9));
         assertGroupId("group:69", new IntegerResultNode(69));
         assertGroupId("group:null", new NullResultNode());
-        assertGroupId("group:Bgk", new RawResultNode(new byte[]{6, 9}));
+        assertGroupId("group:Bgk=", new RawResultNode(new byte[]{6, 9}));
         assertGroupId("group:a", new StringResultNode("a"));
         assertGroupId("group:6.9:9.6", new FloatBucketResultNode(6.9, 9.6));
         assertGroupId("group:6:9", new IntegerBucketResultNode(6, 9));
         assertGroupId("group:a:b", new StringBucketResultNode("a", "b"));
-        assertGroupId("group:Bgk:CQY", new RawBucketResultNode(new RawResultNode(new byte[]{6, 9}),
+        assertGroupId("group:Bgk=:CQY=", new RawBucketResultNode(new RawResultNode(new byte[]{6, 9}),
                 new RawResultNode(new byte[]{9, 6})));
     }
 
@@ -92,7 +92,7 @@ public class ResultBuilderTestCase {
         assertResult("69", new MinAggregationResult(new IntegerResultNode(69)));
         assertResult("69.3", new MinAggregationResult(new FloatResultNode(69.3)));
         assertResult("69.6", new MinAggregationResult(new StringResultNode("69.6")));
-        assertResult("Bgk", new MinAggregationResult(new RawResultNode(new byte[]{6,9})));
+        assertResult("Bgk=", new MinAggregationResult(new RawResultNode(new byte[]{6,9})));
     }
 
     @Test
