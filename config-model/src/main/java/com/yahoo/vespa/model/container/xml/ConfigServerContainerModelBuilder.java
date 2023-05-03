@@ -3,6 +3,7 @@ package com.yahoo.vespa.model.container.xml;
 
 import com.yahoo.config.model.ConfigModelContext;
 import com.yahoo.config.model.deploy.DeployState;
+import com.yahoo.container.logging.AccessLog;
 import com.yahoo.container.logging.FileConnectionLog;
 import com.yahoo.vespa.model.container.ApplicationContainerCluster;
 import com.yahoo.vespa.model.container.ContainerModel;
@@ -44,7 +45,8 @@ public class ConfigServerContainerModelBuilder extends ContainerModelBuilder {
     // Override access log configuration for hosted configserver/controller
     @Override
     protected void addAccessLogs(DeployState deployState, ApplicationContainerCluster cluster, Element spec) {
-        if (isHosted()){
+        if (isHosted()) {
+            cluster.addSimpleComponent(AccessLog.class);
             cluster.addComponent(
                     new AccessLogComponent(
                             AccessLogComponent.AccessLogType.jsonAccessLog, "zstd",

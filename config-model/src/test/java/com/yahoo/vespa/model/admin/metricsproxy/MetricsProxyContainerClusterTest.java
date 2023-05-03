@@ -15,7 +15,10 @@ import com.yahoo.container.core.ApplicationMetadataConfig;
 import com.yahoo.container.di.config.PlatformBundlesConfig;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyContainerCluster.AppDimensionNames;
+import com.yahoo.vespa.model.container.Container;
+import com.yahoo.vespa.model.container.ContainerCluster;
 import com.yahoo.vespa.model.container.PlatformBundles;
+import com.yahoo.vespa.model.container.component.AccessLogComponent;
 import com.yahoo.vespa.model.container.component.Component;
 import com.yahoo.vespa.model.container.component.Handler;
 import org.junit.jupiter.api.Test;
@@ -39,6 +42,7 @@ import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.g
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.servicesWithAdminOnly;
 import static java.util.stream.Collectors.toSet;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -110,6 +114,25 @@ public class MetricsProxyContainerClusterTest {
         assertEquals(2, config.node().size());
         assertNodeConfig(config.node(0));
         assertNodeConfig(config.node(1));
+    }
+
+    @Test
+    void no_access_logging_self_hosted() {
+        VespaModel hostedModel = getModel(servicesWithTwoNodes(), self_hosted);
+        assertFalse(hasAccessLogComponent(hostedModel.getAdmin().getMetricsProxyCluster()));
+    }
+
+    @Test
+    void access_logging_hosted() {
+        VespaModel hostedModel = getModel(servicesWithTwoNodes(), hosted);
+        assertTrue(hasAccessLogComponent(hostedModel.getAdmin().getMetricsProxyCluster()));
+    }
+
+    private boolean hasAccessLogComponent(ContainerCluster<? extends Container> cluster) {
+        for (Component<?, ?> component : cluster.getAllComponents()) {
+            if (component instanceof AccessLogComponent) return true;
+        }
+        return false;
     }
 
     private void assertNodeConfig(MetricsNodesConfig.Node node) {
