@@ -9,7 +9,6 @@ import ai.vespa.feed.client.FeedException;
 import ai.vespa.feed.client.HttpResponse ;
 import ai.vespa.feed.client.OperationStats;
 
-import javax.net.ssl.SSLException;
 import java.io.IOException;
 import java.nio.channels.CancelledKeyException;
 import java.util.Map;
@@ -139,9 +138,9 @@ class HttpRequestStrategy implements RequestStrategy {
      */
     private boolean retry(HttpRequest request, Throwable thrown, int attempt) {
         breaker.failure(thrown);
-        if (   (thrown instanceof IOException && ! (thrown instanceof SSLException)) // General IO problems, but not SSL, which is irrecoverable.
-            || (thrown instanceof CancellationException)                             // TLS session disconnect.
-            || (thrown instanceof CancelledKeyException)) {                          // Selection cancelled.
+        if (   (thrown instanceof IOException)               // General IO problems.
+            || (thrown instanceof CancellationException)     // TLS session disconnect.
+            || (thrown instanceof CancelledKeyException)) {  // Selection cancelled.
             log.log(FINER, thrown, () -> "Failed attempt " + attempt + " at " + request);
             return retry(request, attempt);
         }
