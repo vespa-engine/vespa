@@ -304,7 +304,6 @@ public class Content extends ConfigModel {
             String indexerName = cluster.getIndexingClusterName();
             TreeConfigProducer<AnyConfigProducer> parent = getDocProc(root);
             ApplicationContainerCluster indexingCluster = new ApplicationContainerCluster(parent, "cluster." + indexerName, indexerName, modelContext.getDeployState());
-            indexingCluster.addAccessLog();
             ContainerModel indexingClusterModel = new ContainerModel(modelContext.withParent(parent).withId(indexingCluster.getSubId()));
             indexingClusterModel.setCluster(indexingCluster);
             modelContext.getConfigModelRepoAdder().add(indexingClusterModel);
