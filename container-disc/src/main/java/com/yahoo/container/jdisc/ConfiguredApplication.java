@@ -51,6 +51,8 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
 import java.security.Provider;
 import java.security.Security;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.IdentityHashMap;
@@ -332,11 +334,15 @@ public final class ConfiguredApplication implements Application {
     private void doReconfigurationLoop() {
         while (!shutdownReconfiguration) {
             try {
+                var start = Instant.now();
                 ContainerBuilder builder = createBuilderWithGuiceBindings();
 
                 // Block until new config arrives, and it should be applied
                 Runnable cleanupTask = configurer.waitForNextGraphGeneration(builder.guiceModules().activate(), false);
                 initializeAndActivateContainer(builder, cleanupTask);
+                var metric = configurer.getComponent(Metric.class);
+                metric.set("jdisc.application.component_graph.creation_time_millis", Duration.between(start, Instant.now()).toMillis(), null);
+                metric.add("jdisc.application.component_graph.reconfigurations", 1L, null);
             } catch (UncheckedInterruptedException | SubscriberClosedException | ConfigInterruptedException e) {
                 break;
             } catch (Exception | LinkageError e) { // LinkageError: OSGi problems
