@@ -29,6 +29,7 @@ public:
     Time    getLastFlushTime() const override;
 
     bool needUrgentFlush() const override;
+    Priority getPriority() const override { return Priority::HIGH; }
 
     Task::UP initFlush(SerialNum currentSerial, std::shared_ptr<search::IFlushToken> flush_token) override;
     FlushStats getLastFlushStats() const override { return _lastStats; }

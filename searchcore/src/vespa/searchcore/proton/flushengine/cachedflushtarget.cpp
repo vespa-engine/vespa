@@ -11,11 +11,10 @@ CachedFlushTarget::CachedFlushTarget(const IFlushTarget::SP &target)
       _lastFlushTime(target->getLastFlushTime()),
       _memoryGain(target->getApproxMemoryGain()),
       _diskGain(target->getApproxDiskGain()),
+      _approxBytesToWriteToDisk(target->getApproxBytesToWriteToDisk()),
       _needUrgentFlush(target->needUrgentFlush()),
-      _approxBytesToWriteToDisk(target->getApproxBytesToWriteToDisk())
-{
-    // empty
-}
+      _priority(target->getPriority())
+{ }
 
 
 uint64_t
@@ -23,6 +22,5 @@ CachedFlushTarget::getApproxBytesToWriteToDisk() const
 {
     return _approxBytesToWriteToDisk;
 }
-
 
 } // namespace proton

@@ -40,6 +40,7 @@ public:
     bool needUrgentFlush() const override {
         return _target->needUrgentFlush();
     }
+    Priority getPriority() const override { return _target->getPriority(); }
     searchcorespi::FlushTask::UP initFlush(SerialNum currentSerial, std::shared_ptr<search::IFlushToken> flush_token) override;
     searchcorespi::FlushStats getLastFlushStats() const override {
         return _target->getLastFlushStats();

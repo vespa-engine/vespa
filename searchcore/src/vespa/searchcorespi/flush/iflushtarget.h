@@ -38,6 +38,11 @@ public:
         OTHER
     };
 
+    enum class Priority {
+        NORMAL,
+        HIGH
+    };
+
 private:
     vespalib::string _name;
     Type      _type;
@@ -157,6 +162,8 @@ public:
      * @return true if an urgent flush is needed
      */
     virtual bool needUrgentFlush() const { return false; }
+
+    virtual Priority getPriority() const { return Priority::NORMAL; }
 
     /**
      * Initiates the flushing of temporary memory. This method must perform
