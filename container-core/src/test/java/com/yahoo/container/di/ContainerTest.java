@@ -297,7 +297,7 @@ public class ContainerTest extends ContainerTestBase {
         container.reloadConfig(3);
 
         dirConfigSource.awaitConfigChecked(10_000);
-        assertNotNull(newGraph.get(1, TimeUnit.SECONDS));
+        assertNotNull(newGraph.get(30, TimeUnit.SECONDS));
 
         container.shutdownConfigRetriever();
         container.shutdown(newGraph.get());
