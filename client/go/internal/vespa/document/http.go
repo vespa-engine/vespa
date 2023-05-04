@@ -2,7 +2,6 @@ package document
 
 import (
 	"bytes"
-	"compress/gzip"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -14,6 +13,8 @@ import (
 	"sync"
 	"sync/atomic"
 	"time"
+
+	"github.com/klauspost/compress/gzip"
 
 	"github.com/vespa-engine/vespa/client/go/internal/util"
 )
