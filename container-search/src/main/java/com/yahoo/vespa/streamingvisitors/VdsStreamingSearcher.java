@@ -20,6 +20,7 @@ import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.result.Coverage;
 import com.yahoo.search.result.ErrorMessage;
+import com.yahoo.search.result.FeatureData;
 import com.yahoo.search.result.Relevance;
 import com.yahoo.search.searchchain.Execution;
 import com.yahoo.searchlib.aggregation.Grouping;
@@ -304,6 +305,9 @@ public class VdsStreamingSearcher extends VespaBackEndSearcher {
         fastHit.setRelevance(new Relevance(hit.getRank()));
         if (hit instanceof SearchResult.HitWithSortBlob sortedHit) {
             fastHit.setSortData(sortedHit.getSortBlob(), query.getRanking().getSorting());
+        }
+        if (hit.getMatchFeatures().isPresent()) {
+            fastHit.setField("matchfeatures", new FeatureData(hit.getMatchFeatures().get()));
         }
 
         fastHit.setFillable();
