@@ -1,6 +1,7 @@
 package document
 
 import (
+	"fmt"
 	"io"
 	"reflect"
 	"strings"
@@ -178,3 +179,23 @@ func TestDocumentDecoder(t *testing.T) {
 		t.Errorf("want error %q, got %q", wantErr, err.Error())
 	}
 }
+
+func benchmarkDocumentDecoder(b *testing.B, size int) {
+	b.Helper()
+	input := fmt.Sprintf(`{"put": "id:ns:type::doc1", "fields": {"foo": "%s"}}`, strings.Repeat("s", size))
+	r := strings.NewReader(input)
+	dec := NewDecoder(r)
+	b.ResetTimer() // ignore setup time
+
+	for n := 0; n < b.N; n++ {
+		_, err := dec.Decode()
+		if err != nil {
+			b.Fatal(err)
+		}
+		r.Seek(0, 0)
+	}
+}
+
+func BenchmarkDocumentDecoderSmall(b *testing.B) { benchmarkDocumentDecoder(b, 10) }
+
+func BenchmarkDocumentDecoderLarge(b *testing.B) { benchmarkDocumentDecoder(b, 10000) }
