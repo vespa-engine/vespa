@@ -62,7 +62,7 @@ public class ConfigServerContainerModelBuilder extends ContainerModelBuilder {
     }
 
     @Override
-    protected void addModelEvaluationBundles(ApplicationContainerCluster cluster) {
+    protected void addModelEvaluationRuntime(ApplicationContainerCluster cluster) {
         // Model evaluation bundles are pre-installed in the standalone container.
     }
 

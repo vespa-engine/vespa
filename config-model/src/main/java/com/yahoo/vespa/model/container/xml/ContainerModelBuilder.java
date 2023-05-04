@@ -221,8 +221,8 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         addAccessLogs(deployState, cluster, spec);
         addNodes(cluster, spec, context);
 
+        addModelEvaluationRuntime(cluster);
         addModelEvaluation(spec, cluster, context); // NOTE: Must be done after addNodes
-        addModelEvaluationBundles(cluster);
 
         addServerProviders(deployState, spec, cluster);
 
@@ -705,13 +705,16 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         return (child != null) ? Integer.parseInt(child.getTextContent()) : defaultValue;
     }
 
-    protected void addModelEvaluationBundles(ApplicationContainerCluster cluster) {
+    protected void addModelEvaluationRuntime(ApplicationContainerCluster cluster) {
         /* These bundles are added to all application container clusters, even if they haven't
          * declared 'model-evaluation' in services.xml, because there are many public API packages
          * in the model-evaluation bundle that could be used by customer code. */
         cluster.addPlatformBundle(ContainerModelEvaluation.MODEL_EVALUATION_BUNDLE_FILE);
         cluster.addPlatformBundle(ContainerModelEvaluation.MODEL_INTEGRATION_BUNDLE_FILE);
         cluster.addPlatformBundle(ContainerModelEvaluation.ONNXRUNTIME_BUNDLE_FILE);
+        /* The ONNX runtime is always available for injection to any component */
+        cluster.addSimpleComponent(
+                ContainerModelEvaluation.ONNX_RUNTIME_CLASS, null, ContainerModelEvaluation.INTEGRATION_BUNDLE_NAME);
     }
 
     private void addProcessing(DeployState deployState, Element spec, ApplicationContainerCluster cluster, ConfigModelContext context) {
