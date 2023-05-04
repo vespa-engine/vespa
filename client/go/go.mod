@@ -3,10 +3,10 @@ module github.com/vespa-engine/vespa/client/go
 go 1.18
 
 require (
+	github.com/alessio/shellescape v1.4.1
 	github.com/briandowns/spinner v1.23.0
 	github.com/fatih/color v1.15.0
 	github.com/goccy/go-json v0.10.2
-	github.com/kballard/go-shellquote v0.0.0-20180428030007-95032a82bc51
 	github.com/klauspost/compress v1.16.5
 	github.com/mattn/go-colorable v0.1.13
 	github.com/mattn/go-isatty v0.0.18
@@ -21,7 +21,6 @@ require (
 )
 
 require (
-	github.com/alessio/shellescape v1.4.1 // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.2 // indirect
 	github.com/danieljoos/wincred v1.1.2 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect

@@ -5,13 +5,12 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestPost(t *testing.T) {
 	c, err := Post("https://example.com")
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.Nil(t, err)
 	c.PrivateKey = "key.pem"
 	c.Certificate = "cert.pem"
 	c.WithBodyFile("file.json")
@@ -22,22 +21,18 @@ func TestPost(t *testing.T) {
 
 func TestGet(t *testing.T) {
 	c, err := Get("https://example.com")
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.Nil(t, err)
 	c.PrivateKey = "key.pem"
 	c.Certificate = "cert.pem"
 	c.Param("yql", "select * from sources * where title contains 'foo';")
 	c.Param("hits", "5")
 
-	assert.Equal(t, `curl --key key.pem --cert cert.pem https://example.com\?hits=5\&yql=select+%2A+from+sources+%2A+where+title+contains+%27foo%27%3B`, c.String())
+	assert.Equal(t, `curl --key key.pem --cert cert.pem 'https://example.com?hits=5&yql=select+%2A+from+sources+%2A+where+title+contains+%27foo%27%3B'`, c.String())
 }
 
 func TestRawArgs(t *testing.T) {
 	c, err := RawArgs("https://example.com/search", "-v", "-m", "10", "-H", "foo: bar")
-	if err != nil {
-		t.Fatal(err)
-	}
+	assert.Nil(t, err)
 	c.PrivateKey = "key.pem"
 	c.Certificate = "cert.pem"
 
