@@ -49,6 +49,7 @@ public:
     Priority getPriority() const override { return _target->getPriority(); }
     uint64_t getApproxBytesToWriteToDisk() const override { return _target->getApproxBytesToWriteToDisk(); }
     searchcorespi::FlushStats getLastFlushStats() const override { return _target->getLastFlushStats(); }
+    double get_replay_operation_cost() const override { return _target->get_replay_operation_cost(); }
     Task::UP initFlush(SerialNum currentSerial, std::shared_ptr<search::IFlushToken> flush_token) override;
 };
 

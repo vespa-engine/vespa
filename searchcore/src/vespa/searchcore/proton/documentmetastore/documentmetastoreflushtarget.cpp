@@ -150,7 +150,7 @@ DocumentMetaStoreFlushTarget::
 DocumentMetaStoreFlushTarget(const DocumentMetaStore::SP dms, ITlsSyncer &tlsSyncer,
                              const vespalib::string & baseDir, const TuneFileAttributes &tuneFileAttributes,
                              const FileHeaderContext &fileHeaderContext, const HwInfo &hwInfo)
-    : IFlushTarget("documentmetastore.flush", Type::SYNC, Component::ATTRIBUTE),
+    : LeafFlushTarget("documentmetastore.flush", Type::SYNC, Component::ATTRIBUTE),
       _dms(dms),
       _tlsSyncer(tlsSyncer),
       _baseDir(baseDir),

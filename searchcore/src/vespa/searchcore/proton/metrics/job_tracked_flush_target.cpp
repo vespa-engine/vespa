@@ -30,10 +30,4 @@ JobTrackedFlushTarget::initFlush(SerialNum currentSerial, std::shared_ptr<search
     return FlushTask::UP();
 }
 
-uint64_t
-JobTrackedFlushTarget::getApproxBytesToWriteToDisk() const
-{
-    return _target->getApproxBytesToWriteToDisk();
-}
-
 } // namespace proton

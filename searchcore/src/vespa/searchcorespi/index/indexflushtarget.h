@@ -9,7 +9,7 @@ namespace searchcorespi::index {
 /**
  * Flush target for flushing a memory index in an IndexMaintainer.
  **/
-class IndexFlushTarget : public IFlushTarget {
+class IndexFlushTarget : public LeafFlushTarget {
 private:
     IndexMaintainer                   &_indexMaintainer;
     const IndexMaintainer::FlushStats  _flushStats;
