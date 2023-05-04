@@ -408,6 +408,12 @@ public class Flags {
             "Takes effect on application deployment",
             APPLICATION_ID);
 
+    public static final UnboundBooleanFlag USE_VESPA_ALMA_LINUX_X86_64_AMI = defineFeatureFlag(
+            "use-vespa-alma-linux-x86_64-ami", false, List.of("hmusum"), "2023-05-04", "2023-07-01",
+            "Whether to use VESPA-ALMALINUX-8-* AMI for x86_64 architecture",
+            "Takes effect when provisioning new AWS hosts",
+            APPLICATION_ID);
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
                                                        String createdAt, String expiresAt, String description,
