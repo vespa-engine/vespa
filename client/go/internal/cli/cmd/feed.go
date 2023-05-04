@@ -24,6 +24,8 @@ func addFeedFlags(cmd *cobra.Command, options *feedOptions) {
 	cmd.PersistentFlags().StringVar(&options.route, "route", "", `Target Vespa route for feed operations (default "default")`)
 	cmd.PersistentFlags().IntVar(&options.traceLevel, "trace", 0, "Network traffic trace level in the range [0,9]. 0 to disable (default 0)")
 	cmd.PersistentFlags().IntVar(&options.summarySecs, "progress", 0, "Print stats summary at given interval, in seconds. 0 to disable (default 0)")
+	cmd.PersistentFlags().IntVar(&options.speedtestBytes, "speedtest", 0, "Perform a network speed test using given payload, in bytes. 0 to disable (default 0)")
+	cmd.PersistentFlags().IntVar(&options.speedtestSecs, "speedtest-duration", 60, "Duration of speedtest, in seconds")
 	memprofile := "memprofile"
 	cpuprofile := "cpuprofile"
 	cmd.PersistentFlags().StringVar(&options.memprofile, memprofile, "", "Write a heap profile to given file")
@@ -34,14 +36,16 @@ func addFeedFlags(cmd *cobra.Command, options *feedOptions) {
 }
 
 type feedOptions struct {
-	connections int
-	compression string
-	route       string
-	verbose     bool
-	traceLevel  int
-	timeoutSecs int
-	doomSecs    int
-	summarySecs int
+	connections    int
+	compression    string
+	route          string
+	verbose        bool
+	traceLevel     int
+	timeoutSecs    int
+	doomSecs       int
+	summarySecs    int
+	speedtestBytes int
+	speedtestSecs  int
 
 	memprofile string
 	cpuprofile string
@@ -64,7 +68,6 @@ If FILE is a single dash ('-'), documents will be read from standard input.
 `,
 		Example: `$ vespa feed docs.jsonl moredocs.json
 $ cat docs.jsonl | vespa feed -`,
-		Args:              cobra.MinimumNArgs(1),
 		DisableAutoGenTag: true,
 		SilenceUsage:      true,
 		Hidden:            true, // TODO(mpolden): Remove when ready for public use
@@ -144,6 +147,40 @@ func (opts feedOptions) compressionMode() (document.Compression, error) {
 	return 0, errHint(fmt.Errorf("invalid compression mode: %s", opts.compression), `Must be "auto", "gzip" or "none"`)
 }
 
+func feedFiles(files []string, dispatcher *document.Dispatcher, cli *CLI) {
+	for _, name := range files {
+		var r io.ReadCloser
+		if len(files) == 1 && name == "-" {
+			r = io.NopCloser(cli.Stdin)
+		} else {
+			f, err := os.Open(name)
+			if err != nil {
+				cli.printErr(err)
+				continue
+			}
+			r = f
+		}
+		dispatchFrom(r, dispatcher, cli)
+	}
+}
+
+func dispatchFrom(r io.ReadCloser, dispatcher *document.Dispatcher, cli *CLI) {
+	dec := document.NewDecoder(r)
+	defer r.Close()
+	for {
+		doc, err := dec.Decode()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			cli.printErr(fmt.Errorf("failed to decode document: %w", err))
+		}
+		if err := dispatcher.Enqueue(doc); err != nil {
+			cli.printErr(err)
+		}
+	}
+}
+
 func feed(files []string, options feedOptions, cli *CLI) error {
 	timeout := time.Duration(options.timeoutSecs) * time.Second
 	clients, baseURL, err := createServices(options.connections, timeout, cli)
@@ -154,12 +191,14 @@ func feed(files []string, options feedOptions, cli *CLI) error {
 	if err != nil {
 		return err
 	}
+	speedtest := options.speedtestBytes > 0
 	client, err := document.NewClient(document.ClientOptions{
 		Compression: compression,
 		Timeout:     timeout,
 		Route:       options.route,
 		TraceLevel:  options.traceLevel,
 		BaseURL:     baseURL,
+		Speedtest:   speedtest,
 		NowFunc:     cli.now,
 	}, clients)
 	if err != nil {
@@ -170,31 +209,17 @@ func feed(files []string, options feedOptions, cli *CLI) error {
 	dispatcher := document.NewDispatcher(client, throttler, circuitBreaker, cli.Stderr, options.verbose)
 	start := cli.now()
 	summaryTicker := summaryTicker(options.summarySecs, cli, start, dispatcher.Stats)
-	for _, name := range files {
-		var r io.ReadCloser
-		if len(files) == 1 && name == "-" {
-			r = io.NopCloser(cli.Stdin)
-		} else {
-			f, err := os.Open(name)
-			if err != nil {
-				return err
-			}
-			r = f
+	if speedtest {
+		if len(files) > 0 {
+			return fmt.Errorf("option --speedtest cannot be combined with feed files")
 		}
-		dec := document.NewDecoder(r)
-		for {
-			doc, err := dec.Decode()
-			if err == io.EOF {
-				break
-			}
-			if err != nil {
-				cli.printErr(fmt.Errorf("failed to decode document: %w", err))
-			}
-			if err := dispatcher.Enqueue(doc); err != nil {
-				cli.printErr(err)
-			}
-		}
-		r.Close()
+		gen := document.NewGenerator(options.speedtestBytes, cli.now().Add(time.Duration(options.speedtestSecs)*time.Second))
+		dispatchFrom(io.NopCloser(gen), dispatcher, cli)
+	} else if len(files) > 0 {
+		feedFiles(files, dispatcher, cli)
+	} else {
+		dispatcher.Close()
+		return fmt.Errorf("at least one file to feed from must specified")
 	}
 	if err := dispatcher.Close(); err != nil {
 		return err

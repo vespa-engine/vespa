@@ -6,6 +6,7 @@ import (
 	"reflect"
 	"strings"
 	"testing"
+	"time"
 )
 
 func ptr[T any](v T) *T { return &v }
@@ -199,3 +200,29 @@ func benchmarkDocumentDecoder(b *testing.B, size int) {
 func BenchmarkDocumentDecoderSmall(b *testing.B) { benchmarkDocumentDecoder(b, 10) }
 
 func BenchmarkDocumentDecoderLarge(b *testing.B) { benchmarkDocumentDecoder(b, 10000) }
+
+func TestGenerator(t *testing.T) {
+	now := time.Now()
+	steps := 10
+	step := time.Second
+	gen := Generator{
+		Size:     10,
+		Deadline: now.Add(time.Duration(steps) * step),
+		nowFunc:  func() time.Time { return now },
+	}
+	dec := NewDecoder(&gen)
+	var docs []Document
+	for {
+		doc, err := dec.Decode()
+		if err == io.EOF {
+			break
+		} else if err != nil {
+			t.Fatal(err)
+		}
+		docs = append(docs, doc)
+		now = now.Add(step)
+	}
+	if got := len(docs); got != steps {
+		t.Errorf("got %d docs, want %d", got, steps)
+	}
+}

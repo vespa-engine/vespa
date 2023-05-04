@@ -254,9 +254,9 @@ func TestClientMethodAndURL(t *testing.T) {
 				Create:    true,
 				Condition: "false",
 			},
-			ClientOptions{Timeout: 10 * time.Second, TraceLevel: 5},
+			ClientOptions{Timeout: 10 * time.Second, TraceLevel: 5, Speedtest: true},
 			"PUT",
-			"https://example.com/document/v1/ns/type/docid/user?timeout=10000ms&tracelevel=5&condition=false&create=true",
+			"https://example.com/document/v1/ns/type/docid/user?timeout=10000ms&tracelevel=5&dryRun=true&condition=false&create=true",
 		},
 		{
 			Document{
@@ -276,6 +276,7 @@ func TestClientMethodAndURL(t *testing.T) {
 		client.options.Timeout = tt.options.Timeout
 		client.options.Route = tt.options.Route
 		client.options.TraceLevel = tt.options.TraceLevel
+		client.options.Speedtest = tt.options.Speedtest
 		method, url := client.methodAndURL(tt.in)
 		if url != tt.url || method != tt.method {
 			t.Errorf("#%d: methodAndURL(doc) = (%s, %s), want (%s, %s)", i, method, url, tt.method, tt.url)
