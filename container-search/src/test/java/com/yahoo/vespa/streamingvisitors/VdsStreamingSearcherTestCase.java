@@ -1,6 +1,8 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.streamingvisitors;
 
+import com.yahoo.data.access.Inspectable;
+import com.yahoo.data.access.helpers.MatchFeatureData;
 import com.yahoo.document.select.parser.TokenMgrException;
 import com.yahoo.messagebus.Trace;
 import com.yahoo.messagebus.routing.Route;
@@ -26,6 +28,7 @@ import com.yahoo.vespa.streamingvisitors.tracing.TraceExporter;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -93,8 +96,12 @@ public class VdsStreamingSearcherTestCase {
                 addResults(USERDOC_ID_PREFIX, 1, false);
             } else if (queryString.compareTo("onegroupinghit") == 0) {
                 groupings.add(new Grouping());
+            } else if (queryString.compareTo("match_features") == 0) {
+                addResults(USERDOC_ID_PREFIX, 1, false);
+                var matchFeatures = new MatchFeatureData(Arrays.asList("my_feature")).addHit();
+                matchFeatures.set(0, 7.0);
+                hits.get(0).setMatchFeatures(matchFeatures);
             }
-
         }
 
         private void addResults(String idPrefix, int hitCount, boolean emptyDocsum) {
@@ -212,6 +219,16 @@ public class VdsStreamingSearcherTestCase {
         checkSearch(searcher, queryString, hitCount, null);
     }
 
+    private static void checkMatchFeatures(VdsStreamingSearcher searcher) {
+        String queryString = "/?streaming.selection=true&query=match_features";
+        Result result = executeQuery(searcher, new Query(queryString));
+        assertNull(result.hits().getError());
+        assertEquals(result.hits().size(), 1);
+        Hit hit = result.hits().get(0);
+        var mf = hit.getField("matchfeatures");
+        assertEquals(7.0, ((Inspectable) mf).inspect().field("my_feature").asDouble());
+    }
+
     @Test
     void testBasics() {
         MockVisitorFactory factory = new MockVisitorFactory();
@@ -249,6 +266,8 @@ public class VdsStreamingSearcherTestCase {
         checkSearch(searcher, "/?streaming.groupname=group1&query=twogrouphitsandoneuserhit", 2, GROUPDOC_ID_PREFIX);
 
         checkGrouping(searcher, "/?streaming.selection=true&query=onegroupinghit", 1);
+
+        checkMatchFeatures(searcher);
     }
 
     @Test
