@@ -34,6 +34,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.zip.GZIPOutputStream;
 
@@ -85,12 +86,7 @@ class ApacheCluster implements Cluster {
                 SimpleHttpRequest request = new SimpleHttpRequest(wrapped.method(), wrapped.path());
                 request.setScheme(endpoint.url.getScheme());
                 request.setAuthority(new URIAuthority(endpoint.url.getHost(), portOf(endpoint.url)));
-                long timeoutMillis = wrapped.timeout() == null ? 190_000 : wrapped.timeout().toMillis() * 11 / 10 + 1_000;
-                RequestConfig reqCfg = RequestConfig.custom()
-                        .setConnectionRequestTimeout(Timeout.DISABLED)
-                        .setResponseTimeout(Timeout.ofMilliseconds(timeoutMillis))
-                        .build();
-                request.setConfig(reqCfg);
+                request.setConfig(RequestConfig.custom().setConnectionRequestTimeout(Timeout.DISABLED).build());
                 defaultHeaders.forEach(request::setHeader);
                 wrapped.headers().forEach((name, value) -> request.setHeader(name, value.get()));
                 if (wrapped.body() != null) {
@@ -108,11 +104,15 @@ class ApacheCluster implements Cluster {
                                                                @Override public void failed(Exception ex) { vessel.completeExceptionally(ex); }
                                                                @Override public void cancelled() { vessel.cancel(false); }
                                                            });
-                // We've seen some requests time out, even with a response timeout,
-                // so we schedule this to be absolutely sure we don't hang (for ever).
-                Future<?> cancellation = timeoutExecutor.schedule(() -> { future.cancel(true); vessel.cancel(true); },
-                                                                  timeoutMillis + 10_000,
-                                                                  TimeUnit.MILLISECONDS);
+                // Manually schedule response timeout as the Apache HTTP/2 multiplexing client does not support response timeouts
+                long timeoutMillis = wrapped.timeout() == null ? 190_000 : wrapped.timeout().toMillis();
+                Future<?> cancellation = timeoutExecutor.schedule(
+                        () -> {
+                            vessel.completeExceptionally(
+                                    new TimeoutException(String.format("Request timed out after %dms", timeoutMillis)));
+                            future.cancel(true);
+                        },
+                        timeoutMillis * 11 / 10 + 1_000, TimeUnit.MILLISECONDS);
                 vessel.whenComplete((__, ___) -> cancellation.cancel(true));
             }
             catch (Throwable thrown) {
