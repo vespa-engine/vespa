@@ -1,7 +1,5 @@
 package ai.vespa.embedding.huggingface;
 
-import ai.djl.huggingface.tokenizers.Encoding;
-import ai.djl.huggingface.tokenizers.HuggingFaceTokenizer;
 import ai.vespa.modelintegration.evaluator.OnnxEvaluator;
 import ai.vespa.modelintegration.evaluator.OnnxRuntime;
 import com.yahoo.component.AbstractComponent;
@@ -17,7 +15,6 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.nio.file.Paths;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -38,19 +35,7 @@ public class HuggingFaceEmbedder extends AbstractComponent implements Embedder {
         inputIdsName = config.transformerInputIds();
         attentionMaskName = config.transformerAttentionMask();
         outputName = config.transformerOutput();
-
-        try {
-            ClassLoader tccl = Thread.currentThread().getContextClassLoader();
-            try {
-                Thread.currentThread().setContextClassLoader(getClass().getClassLoader());
-                tokenizer = HuggingFaceTokenizer.newInstance(Paths.get(config.tokenizerPath().toString()));
-            } finally {
-                Thread.currentThread().setContextClassLoader(tccl);
-            }
-        } catch (IOException e){
-            LOG.info("Could not initialize the tokenizer");
-	    throw new IOException("Could not initialize the tokenizer.");
-        }
+        tokenizer = new HuggingFaceTokenizer(Paths.get(config.tokenizerPath().toString()));
         evaluator = onnx.evaluatorOf(config.transformerModel().toString());
         validateModel();
     }
@@ -74,7 +59,7 @@ public class HuggingFaceEmbedder extends AbstractComponent implements Embedder {
     @Override
     public List<Integer> embed(String s, Context context) {
         Encoding encoding = tokenizer.encode(s);
-        List<Integer> tokenIds = longToInteger(encoding.getIds());
+        List<Integer> tokenIds = encoding.ids().stream().map(Long::intValue).toList();
 
         int tokensSize = tokenIds.size();
 
@@ -86,12 +71,10 @@ public class HuggingFaceEmbedder extends AbstractComponent implements Embedder {
         return tokenIds;
     }
 
-    @Override public void deconstruct() { evaluator.close(); }
-
-    public List<Integer> longToInteger(long[] values) {
-        return Arrays.stream(values)
-                .boxed().map(Long::intValue)
-                .toList();
+    @Override
+    public void deconstruct() {
+        evaluator.close();
+        tokenizer.close();
     }
 
     @Override
