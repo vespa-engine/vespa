@@ -5,6 +5,7 @@ go 1.18
 require (
 	github.com/briandowns/spinner v1.16.0
 	github.com/fatih/color v1.10.0
+	github.com/goccy/go-json v0.10.2
 	github.com/kballard/go-shellquote v0.0.0-20180428030007-95032a82bc51
 	github.com/klauspost/compress v1.16.5
 	github.com/mattn/go-colorable v0.1.8
