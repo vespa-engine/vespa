@@ -16,8 +16,4 @@ IFlushTarget::IFlushTarget(const vespalib::string &name, const Type &type, const
 
 IFlushTarget::~IFlushTarget() = default;
 
-LeafFlushTarget::LeafFlushTarget(const vespalib::string &name, const Type &type, const Component &component) noexcept
-    : IFlushTarget(name, type, component)
-{}
-
 }

@@ -9,7 +9,7 @@ namespace searchcorespi::index {
 /**
  * Flush target for doing fusion on disk indexes in an IndexMaintainer.
  **/
-class IndexFusionTarget : public LeafFlushTarget {
+class IndexFusionTarget : public IFlushTarget {
 private:
     IndexMaintainer &_indexMaintainer;
     IndexMaintainer::FusionStats _fusionStats;

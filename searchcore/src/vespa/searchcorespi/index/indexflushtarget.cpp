@@ -10,7 +10,7 @@ LOG_SETUP(".searchcorespi.index.indexflushtarget");
 namespace searchcorespi::index {
 
 IndexFlushTarget::IndexFlushTarget(IndexMaintainer &indexMaintainer, IndexMaintainer::FlushStats flushStats)
-    : LeafFlushTarget("memoryindex.flush", Type::FLUSH, Component::INDEX),
+    : IFlushTarget("memoryindex.flush", Type::FLUSH, Component::INDEX),
       _indexMaintainer(indexMaintainer),
       _flushStats(flushStats),
       _numFrozenMemoryIndexes(indexMaintainer.getNumFrozenMemoryIndexes()),

@@ -450,17 +450,6 @@ struct Fixture
     }
 };
 
-TEST("require that leaf defaults are sane") {
-    test::DummyFlushTarget leaf("dummy");
-    EXPECT_FALSE(leaf.needUrgentFlush());
-    EXPECT_EQUAL(0.0, leaf.get_replay_operation_cost());
-    EXPECT_TRUE(IFlushTarget::Priority::NORMAL == leaf.getPriority());
-    EXPECT_TRUE(50 == static_cast<int>(IFlushTarget::Priority::NORMAL));
-    EXPECT_TRUE(100 == static_cast<int>(IFlushTarget::Priority::HIGH));
-    EXPECT_TRUE(IFlushTarget::Priority::NORMAL < IFlushTarget::Priority::HIGH);
-    EXPECT_TRUE(IFlushTarget::Priority::HIGH > IFlushTarget::Priority::NORMAL);
-}
-
 TEST_F("require that strategy controls flush target", Fixture(1, IINTERVAL))
 {
     vespalib::Gate fooG, barG;

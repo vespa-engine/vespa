@@ -128,7 +128,8 @@ FlushEngine::close()
     if (_thread.joinable()) {
         _thread.join();
     }
-    _executor.shutdown().sync();
+    _executor.shutdown();
+    _executor.sync();
     return *this;
 }
 
@@ -157,61 +158,36 @@ bool
 FlushEngine::wait(vespalib::duration minimumWaitTimeIfReady, bool ignorePendingPrune)
 {
     std::unique_lock<std::mutex> guard(_lock);
-    if (canFlushMore(guard) && _pendingPrune.empty()) {
+    if ( (minimumWaitTimeIfReady != vespalib::duration::zero()) && canFlushMore(guard) && _pendingPrune.empty()) {
         _cond.wait_for(guard, minimumWaitTimeIfReady);
     }
     while ( ! canFlushMore(guard) && ( ignorePendingPrune || _pendingPrune.empty())) {
         _cond.wait_for(guard, 1s); // broadcast when flush done
     }
-    return !_closed.load(std::memory_order_relaxed);
-}
-
-void
-FlushEngine::wait_for_slot(IFlushTarget::Priority priority)
-{
-    (void) priority;
-    std::unique_lock<std::mutex> guard(_lock);
-    while ( ! canFlushMore(guard) && _pendingPrune.empty()) {
-        _cond.wait_for(guard, 1s); // broadcast when flush done
-    }
-}
-
-std::pair<bool, vespalib::string>
-FlushEngine::checkAndFlush(vespalib::string prev) {
-    std::pair<FlushContext::List, bool> lst = getSortedTargetList();
-    if (lst.second) {
-        // Everything returned from a priority strategy should be flushed
-        flushAll(lst.first);
-    } else if ( ! lst.first.empty()) {
-        wait_for_slot(lst.first[0]->getTarget()->getPriority());
-        prev = flushNextTarget(prev, lst.first);
-        if (!prev.empty()) {
-            // Sleep 1 ms after a successful flush in order to avoid busy loop in case
-            // of strategy or target error.
-            std::this_thread::sleep_for(1ms);
-            return {false, prev};
-        }
-    }
-    return {true, ""};
+    return !_closed;
 }
 
 void
 FlushEngine::run()
 {
     _has_thread = true;
+    bool shouldIdle = false;
     vespalib::string prevFlushName;
-    for (vespalib::duration idleInterval=vespalib::duration::zero(); !_closed.load(std::memory_order_relaxed); idleInterval = _idleInterval) {
-        LOG(debug, "Making another check for something to flush, last was '%s'", prevFlushName.c_str());
+    while (wait(shouldIdle ? _idleInterval : vespalib::duration::zero(), false)) {
+        shouldIdle = false;
         if (prune()) {
-            // Prune attempted on one or more handlers
-            wait_for_slot(IFlushTarget::Priority::NORMAL);
-        } else {
-            auto [needWait, name] = checkAndFlush(prevFlushName);
-            prevFlushName = name;
-            if (needWait) {
-                wait(idleInterval);
-            }
+            continue; // Prune attempted on one or more handlers
         }
+        prevFlushName = flushNextTarget(prevFlushName);
+        if ( ! prevFlushName.empty()) {
+            // Sleep 1 ms after a successful flush in order to avoid busy loop in case
+            // of strategy or target error.
+            std::this_thread::sleep_for(1ms);
+        } else {
+            shouldIdle = true;
+        }
+        LOG(debug, "Making another wait(idle=%s, timeS=%1.3f) last was '%s'",
+            shouldIdle ? "true" : "false", shouldIdle ? vespalib::to_s(_idleInterval) : 0, prevFlushName.c_str());
     }
     _executor.sync();
     prune();
@@ -361,21 +337,27 @@ FlushEngine::flushAll(const FlushContext::List &lst)
             }
         }
     }
-    _executor.sync();
-    prune();
-    std::lock_guard<std::mutex> strategyGuard(_strategyLock);
-    _priorityStrategy.reset();
-    _strategyCond.notify_all();
 }
 
 vespalib::string
-FlushEngine::flushNextTarget(const vespalib::string & name, const FlushContext::List & contexts)
+FlushEngine::flushNextTarget(const vespalib::string & name)
 {
-    if (contexts.empty()) {
+    std::pair<FlushContext::List,bool> lst = getSortedTargetList();
+    if (lst.second) {
+        // Everything returned from a priority strategy should be flushed
+        flushAll(lst.first);
+        _executor.sync();
+        prune();
+        std::lock_guard<std::mutex> strategyGuard(_strategyLock);
+        _priorityStrategy.reset();
+        _strategyCond.notify_all();
+        return "";
+    }
+    if (lst.first.empty()) {
         LOG(debug, "No target to flush.");
         return "";
     }
-    FlushContext::SP ctx = initNextFlush(contexts);
+    FlushContext::SP ctx = initNextFlush(lst.first);
     if ( ! ctx) {
         LOG(debug, "All targets refused to flush.");
         return "";
@@ -383,7 +365,7 @@ FlushEngine::flushNextTarget(const vespalib::string & name, const FlushContext::
     if ( name == ctx->getName()) {
         LOG(info, "The same target %s out of %ld has been asked to flush again. "
                   "This might indicate flush logic flaw so I will wait 100 ms before doing it.",
-                  name.c_str(), contexts.size());
+                  name.c_str(), lst.first.size());
         std::this_thread::sleep_for(100ms);
     }
     _executor.execute(std::make_unique<FlushTask>(initFlush(*ctx), *this, ctx));
@@ -463,6 +445,7 @@ FlushEngine::initFlush(const IFlushHandler::SP &handler, const IFlushTarget::SP 
     {
         std::lock_guard<std::mutex> guard(_lock);
         taskId = _taskId++;
+        vespalib::string name(FlushContext::createName(*handler, *target));
         FlushInfo flush(taskId, handler->getName(), target);
         _flushing[taskId] = flush;
     }
@@ -476,7 +459,7 @@ FlushEngine::setStrategy(IFlushStrategy::SP strategy)
 {
     std::lock_guard<std::mutex> setStrategyGuard(_setStrategyLock);
     std::unique_lock<std::mutex> strategyGuard(_strategyLock);
-    if (_closed.load(std::memory_order_relaxed)) {
+    if (_closed) {
         return;
     }
     assert(!_priorityStrategy);
