@@ -20,3 +20,6 @@ transformerOutput string default=last_hidden_state
 # GPU configuration
 transformerGpuDevice int default=-1
 transformerGpuRequired bool default=false
+
+# Normalize tensors from tokenizer
+normalize bool default=false

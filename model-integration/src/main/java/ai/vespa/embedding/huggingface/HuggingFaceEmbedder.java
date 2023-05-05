@@ -26,6 +26,7 @@ public class HuggingFaceEmbedder extends AbstractComponent implements Embedder {
     private final String attentionMaskName;
     private final String outputName;
     private final int maxTokens;
+    private final boolean normalize;
     private final HuggingFaceTokenizer tokenizer;
     private final OnnxEvaluator evaluator;
 
@@ -35,6 +36,7 @@ public class HuggingFaceEmbedder extends AbstractComponent implements Embedder {
         inputIdsName = config.transformerInputIds();
         attentionMaskName = config.transformerAttentionMask();
         outputName = config.transformerOutput();
+        normalize = config.normalize();
         tokenizer = new HuggingFaceTokenizer(Paths.get(config.tokenizerPath().toString()));
         var onnxOpts = new OnnxEvaluatorOptions();
         if (config.transformerGpuDevice() >= 0)
@@ -107,7 +109,8 @@ public class HuggingFaceEmbedder extends AbstractComponent implements Embedder {
             builder.cell(averaged.get(TensorAddress.of(0,i)), i);
         }
 
-        return normalize(builder.build(), tensorType);
+        Tensor result = builder.build();
+        return normalize ? normalize(result, tensorType) : result;
     }
 
     Tensor normalize(Tensor embedding, TensorType tensorType) {
