@@ -1,19 +1,20 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.maintenance;
 
-import com.yahoo.config.provision.ClusterInfo;
-import com.yahoo.config.provision.IntRange;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.Cloud;
 import com.yahoo.config.provision.CloudAccount;
+import com.yahoo.config.provision.CloudName;
+import com.yahoo.config.provision.ClusterInfo;
 import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.HostSpec;
+import com.yahoo.config.provision.IntRange;
 import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
@@ -46,6 +47,7 @@ import com.yahoo.vespa.service.duper.ControllerHostApplication;
 import com.yahoo.vespa.service.duper.InfraApplication;
 import com.yahoo.vespa.service.duper.TenantHostApplication;
 import org.junit.Test;
+
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Collections;
@@ -458,7 +460,7 @@ public class HostCapacityMaintainerTest {
 
     @Test
     public void custom_cloud_account() {
-        DynamicProvisioningTester tester = new DynamicProvisioningTester(Cloud.builder().dynamicProvisioning(true).build(),
+        DynamicProvisioningTester tester = new DynamicProvisioningTester(Cloud.builder().name(CloudName.AWS).dynamicProvisioning(true).account(CloudAccount.from("001122334455")).build(),
                                                                          new MockNameResolver().mockAnyLookup());
         ProvisioningTester provisioningTester = tester.provisioningTester;
         ApplicationId applicationId = ApplicationId.from("t1", "a1", "i1");
