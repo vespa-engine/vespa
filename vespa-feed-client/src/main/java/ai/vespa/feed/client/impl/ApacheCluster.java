@@ -187,7 +187,7 @@ class ApacheCluster implements Cluster {
                         .setInitialWindowSize(Integer.MAX_VALUE)
                         .build(),
                 IOReactorConfig.custom()
-                        .setIoThreadCount(2)
+                        .setIoThreadCount(Math.max(Math.min(Runtime.getRuntime().availableProcessors(), 8), 2))
                         .setTcpNoDelay(true)
                         .setSoTimeout(socketTimeout)
                         .build(),
