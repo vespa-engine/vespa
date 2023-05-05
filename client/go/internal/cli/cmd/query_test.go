@@ -27,7 +27,7 @@ func TestQueryVerbose(t *testing.T) {
 	cli.httpClient = client
 
 	assert.Nil(t, cli.Run("query", "-v", "select from sources * where title contains 'foo'"))
-	assert.Equal(t, "curl http://127.0.0.1:8080/search/\\?timeout=10s\\&yql=select+from+sources+%2A+where+title+contains+%27foo%27\n", stderr.String())
+	assert.Equal(t, "curl 'http://127.0.0.1:8080/search/?timeout=10s&yql=select+from+sources+%2A+where+title+contains+%27foo%27'\n", stderr.String())
 	assert.Equal(t, "{\n    \"query\": \"result\"\n}\n", stdout.String())
 }
 
