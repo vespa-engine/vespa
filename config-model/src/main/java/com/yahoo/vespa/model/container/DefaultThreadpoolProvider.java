@@ -31,7 +31,7 @@ class DefaultThreadpoolProvider extends SimpleComponent implements ThreadpoolCon
     public void getConfig(ThreadpoolConfig.Builder builder) {
         if (cluster instanceof ApplicationContainerCluster) {
             // Core pool size of 2xcores, and max of 100xcores and using a synchronous Q
-            // This is the deafault pool used by both federation and generally when you ask for an Executor.
+            // This is the default pool used by both federation and generally when you ask for an Executor.
             builder.corePoolSize(-2).maxthreads(-100).queueSize(0);
         } else {
             // Container clusters such as logserver, metricsproxy and clustercontroller

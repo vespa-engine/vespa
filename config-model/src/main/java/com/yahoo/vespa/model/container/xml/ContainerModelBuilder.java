@@ -1220,7 +1220,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
         private static final Pattern validPattern = Pattern.compile("-[a-zA-z0-9=:./,+*-]+");
         // debug port will not be available in hosted, don't allow
-        private static final Pattern invalidInHostedatttern = Pattern.compile("-Xrunjdwp:transport=.*");
+        private static final Pattern invalidInHostedPattern = Pattern.compile("-Xrunjdwp:transport=.*");
 
         private final Element nodesElement;
         private final DeployLogger logger;
@@ -1273,7 +1273,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
             if (isHosted)
                 invalidOptions.addAll(Arrays.stream(optionList)
                         .filter(option -> !option.isEmpty())
-                        .filter(option -> Pattern.matches(invalidInHostedatttern.pattern(), option))
+                        .filter(option -> Pattern.matches(invalidInHostedPattern.pattern(), option))
                         .sorted().toList());
 
             if (invalidOptions.isEmpty()) return;
