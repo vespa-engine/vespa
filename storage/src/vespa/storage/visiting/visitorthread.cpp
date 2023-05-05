@@ -351,8 +351,7 @@ VisitorThread::createVisitor(vespalib::stringref libName,
 
     auto libIter = _libs.find(str);
     if (libIter == _libs.end()) {
-        _libs[str] = std::shared_ptr<VisitorEnvironment>(
-                it->second->makeVisitorEnvironment(_component).release());
+        _libs[str] = it->second->makeVisitorEnvironment(_component);
         libIter = _libs.find(str);
     }
 
