@@ -31,6 +31,8 @@ public enum ContainerMetrics implements VespaMetrics {
     JDISC_DEACTIVATED_CONTAINERS("jdisc.deactivated_containers.total", Unit.ITEM, "JDISC Deactivated container instances"),
     JDISC_DEACTIVATED_CONTAINERS_WITH_RETAINED_REFS("jdisc.deactivated_containers.with_retained_refs.last", Unit.ITEM, "JDISC Deactivated container nodes with retained refs"),
     JDISC_APPLICATION_FAILED_COMPONENT_GRAPHS("jdisc.application.failed_component_graphs", Unit.ITEM, "JDISC Application failed component graphs"),
+    JDISC_APPLICATION_COMPONENT_GRAPH_CREATION_TIME_MILLIS("jdisc.application.component_graph.creation_time_millis", Unit.MILLISECOND, "JDISC Application component graph creation time"),
+    JDISC_APPLICATION_COMPONENT_GRAPH_RECONFIGURATIONS("jdisc.application.component_graph.reconfigurations", Unit.ITEM, "JDISC Application component graph reconfigurations"),
 
     JDISC_SINGLETON_IS_ACTIVE("jdisc.singleton.is_active", Unit.ITEM, "JDISC Singleton is active"),
     JDISC_SINGLETON_ACTIVATION_COUNT("jdisc.singleton.activation.count", Unit.OPERATION, "JDISC Singleton activations"),

@@ -6,12 +6,12 @@ import com.yahoo.metrics.ConfigServerMetrics;
 import com.yahoo.metrics.ContainerMetrics;
 import com.yahoo.metrics.DistributorMetrics;
 import com.yahoo.metrics.LogdMetrics;
+import com.yahoo.metrics.NodeAdminMetrics;
 import com.yahoo.metrics.RoutingLayerMetrics;
 import com.yahoo.metrics.SearchNodeMetrics;
 import com.yahoo.metrics.SentinelMetrics;
 import com.yahoo.metrics.SlobrokMetrics;
 import com.yahoo.metrics.StorageMetrics;
-import com.yahoo.metrics.NodeAdminMetrics;
 import com.yahoo.metrics.Suffix;
 import com.yahoo.metrics.VespaMetrics;
 
@@ -239,6 +239,8 @@ public class VespaMetricSet {
         addMetric(metrics, ContainerMetrics.JDISC_HTTP_HANDLER_UNHANDLED_EXCEPTIONS.rate());
 
         addMetric(metrics, ContainerMetrics.JDISC_APPLICATION_FAILED_COMPONENT_GRAPHS.rate());
+        addMetric(metrics, ContainerMetrics.JDISC_APPLICATION_COMPONENT_GRAPH_CREATION_TIME_MILLIS.last());
+        addMetric(metrics, ContainerMetrics.JDISC_APPLICATION_COMPONENT_GRAPH_RECONFIGURATIONS.rate());
 
         addMetric(metrics, ContainerMetrics.JDISC_JVM.last());
 
