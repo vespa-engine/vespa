@@ -24,6 +24,7 @@ vespa_use_default_vespa_user()
 vespa_use_default_vespa_group()
 vespa_use_default_vespa_deps_prefix()
 vespa_use_default_cmake_prefix_path()
+vespa_detect_clion()
 
 SET(CMAKE_FIND_PACKAGE_SORT_ORDER NATURAL)
 SET(CMAKE_FIND_PACKAGE_SORT_DIRECTION DEC)
