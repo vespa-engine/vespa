@@ -159,22 +159,25 @@ func (d *Decoder) guessMode() error {
 		if err := d.buf.UnreadByte(); err != nil {
 			return err
 		}
-		if d.array {
-			// prepare for decoding objects inside array
-			if _, err := d.dec.Token(); err != nil {
-				return err
-			}
+		if err := d.readArrayToken(true); err != nil {
+			return err
 		}
 	}
 	return nil
 }
 
-func (d *Decoder) readCloseToken() error {
+func (d *Decoder) readArrayToken(open bool) error {
 	if !d.array {
 		return nil
 	}
-	_, err := d.dec.Token()
-	return err
+	t, err := d.dec.Token()
+	if err != nil {
+		return err
+	}
+	if (open && t == json.Delim('[')) || (!open && t == json.Delim(']')) {
+		return nil
+	}
+	return fmt.Errorf("invalid array token: %q", t)
 }
 
 func (d *Decoder) Decode() (Document, error) {
@@ -190,11 +193,10 @@ func (d *Decoder) decode() (Document, error) {
 		return Document{}, err
 	}
 	if !d.dec.More() {
-		err := io.EOF
-		if tokenErr := d.readCloseToken(); tokenErr != nil {
-			err = tokenErr
+		if err := d.readArrayToken(false); err != nil {
+			return Document{}, err
 		}
-		return Document{}, err
+		return Document{}, io.EOF
 	}
 	doc := jsonDocument{}
 	if err := d.dec.Decode(&doc); err != nil {
