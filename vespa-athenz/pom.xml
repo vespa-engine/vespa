@@ -34,6 +34,13 @@
             <groupId>com.yahoo.vespa</groupId>
             <artifactId>container-disc</artifactId>
             <version>${project.version}</version>
+            <exclusions>
+                <exclusion>
+                    <!-- Stop bundle-plugin from generating Import-Package on jakarta.servlet.http. Caused by Athenz libs -->
+                    <groupId>org.eclipse.jetty.toolchain</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
             <scope>provided</scope>
         </dependency>
         <dependency>

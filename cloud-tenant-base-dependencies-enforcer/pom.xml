@@ -20,7 +20,8 @@
         <junit5.platform.version>1.8.1</junit5.platform.version>
 
         <!-- MUST BE KEPT IN SYNC WITH parent/pom.xml -->
-        <athenz.version>1.10.54</athenz.version>
+        <athenz.version>1.11.28</athenz.version>
+
         <bouncycastle.version>1.73</bouncycastle.version>
         <commons-codec.version>1.15</commons-codec.version>
         <felix.version>7.0.1</felix.version>

@@ -48,11 +48,11 @@ com.thaiopensource:jing:20091111
 com.theokanning.openai-gpt3-java:api:0.12.0
 com.theokanning.openai-gpt3-java:client:0.12.0
 com.theokanning.openai-gpt3-java:service:0.12.0
-com.yahoo.athenz:athenz-auth-core:1.10.54
-com.yahoo.athenz:athenz-client-common:1.10.54
-com.yahoo.athenz:athenz-zms-core:1.10.54
-com.yahoo.athenz:athenz-zpe-java-client:1.10.54
-com.yahoo.athenz:athenz-zts-core:1.10.54
+com.yahoo.athenz:athenz-auth-core:1.11.28
+com.yahoo.athenz:athenz-client-common:1.11.28
+com.yahoo.athenz:athenz-zms-core:1.11.28
+com.yahoo.athenz:athenz-zpe-java-client:1.11.28
+com.yahoo.athenz:athenz-zts-core:1.11.28
 com.yahoo.rdl:rdl-java:1.5.4
 commons-cli:commons-cli:1.5.0
 commons-codec:commons-codec:1.15
