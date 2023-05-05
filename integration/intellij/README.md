@@ -13,16 +13,15 @@ Download it from JetBrains Marketplace.
 Build (see below) and load it in IntelliJ by choosing 
 Preferences -> Plugins -> Press the gear icon -> Install Plugin from Disk.
 
+## Prerequisites
+
+    brew install gradle
+
 ## Building the plugin
 
     gradle
 
 This produces an installable plugin .zip in the directory build/distributions
-
-*Prerequisite*: gradle 7.
-
-Why gradle? Because it's what JetBrains supports for building plugins.
-However, gradle is configured with a maven directory layout.
 
 ## Optional IntelliJ plugins for working with plugin development
 
