@@ -206,7 +206,7 @@ func (d *Decoder) decode() (Document, error) {
 }
 
 func NewDecoder(r io.Reader) *Decoder {
-	buf := bufio.NewReader(r)
+	buf := bufio.NewReaderSize(r, 1<<26)
 	return &Decoder{
 		buf: buf,
 		dec: json.NewDecoder(buf),
