@@ -19,6 +19,7 @@ public:
     CfHandler();
     virtual ~CfHandler();
     vespalib::string clientCertFile() const;
+    vespalib::string clientKeyFile() const;
     void start(const char *configId);
     void check();
 

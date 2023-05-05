@@ -56,7 +56,15 @@ void CfHandler::doConfigure() {
 vespalib::string CfHandler::clientCertFile() const {
     static const vespalib::string certDir = "/var/lib/sia/certs/";
     if (_lastConfig && !_lastConfig->role.empty()) {
-        return certDir + _lastConfig->role + ".pem";
+        return certDir + _lastConfig->role + ".cert.pem";
+    }
+    return "";
+}
+
+vespalib::string CfHandler::clientKeyFile() const {
+    static const vespalib::string certDir = "/var/lib/sia/keys/";
+    if (_lastConfig && !_lastConfig->role.empty()) {
+        return certDir + _lastConfig->role + ".key.pem";
     }
     return "";
 }
