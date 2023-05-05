@@ -65,6 +65,9 @@ import java.util.logging.Logger;
 
 import static com.yahoo.collections.CollectionUtil.first;
 import static com.yahoo.metrics.ContainerMetrics.APPLICATION_GENERATION;
+import static com.yahoo.metrics.ContainerMetrics.JDISC_APPLICATION_COMPONENT_GRAPH_CREATION_TIME_MILLIS;
+import static com.yahoo.metrics.ContainerMetrics.JDISC_APPLICATION_COMPONENT_GRAPH_RECONFIGURATIONS;
+import static com.yahoo.metrics.ContainerMetrics.JDISC_APPLICATION_FAILED_COMPONENT_GRAPHS;
 
 /**
  * @author Tony Vaagenes
@@ -341,8 +344,8 @@ public final class ConfiguredApplication implements Application {
                 Runnable cleanupTask = configurer.waitForNextGraphGeneration(builder.guiceModules().activate(), false);
                 initializeAndActivateContainer(builder, cleanupTask);
                 var metric = configurer.getComponent(Metric.class);
-                metric.set("jdisc.application.component_graph.creation_time_millis", Duration.between(start, Instant.now()).toMillis(), null);
-                metric.add("jdisc.application.component_graph.reconfigurations", 1L, null);
+                metric.set(JDISC_APPLICATION_COMPONENT_GRAPH_CREATION_TIME_MILLIS.baseName(), Duration.between(start, Instant.now()).toMillis(), null);
+                metric.add(JDISC_APPLICATION_COMPONENT_GRAPH_RECONFIGURATIONS.baseName(), 1L, null);
             } catch (UncheckedInterruptedException | SubscriberClosedException | ConfigInterruptedException e) {
                 break;
             } catch (Exception | LinkageError e) { // LinkageError: OSGi problems
@@ -364,7 +367,7 @@ public final class ConfiguredApplication implements Application {
             // Metric may not be available if this is the initial component graph (since metric wiring is done through the config model)
             Metric metric = configurer.getComponent(Metric.class);
             Metric.Context metricContext = metric.createContext(Map.of("exception", error.getClass().getSimpleName()));
-            metric.add("jdisc.application.failed_component_graphs", 1L, metricContext);
+            metric.add(JDISC_APPLICATION_FAILED_COMPONENT_GRAPHS.baseName(), 1L, metricContext);
         } catch (Exception e) {
             log.log(Level.WARNING, "Failed to report metric for failed component graph: " + e.getMessage(), e);
         }
