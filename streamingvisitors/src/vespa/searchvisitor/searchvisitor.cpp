@@ -464,10 +464,10 @@ SearchVisitorFactory::SearchVisitorFactory(const config::ConfigUri & configUri)
       _configUri(configUri)
 {}
 
-VisitorEnvironment::UP
+std::shared_ptr<VisitorEnvironment>
 SearchVisitorFactory::makeVisitorEnvironment(StorageComponent&)
 {
-    return std::make_unique<SearchEnvironment>(_configUri);
+    return std::make_shared<SearchEnvironment>(_configUri);
 }
 
 storage::Visitor*

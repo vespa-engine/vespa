@@ -40,9 +40,9 @@ private:
 
 struct TestVisitorFactory : public VisitorFactory {
 
-    VisitorEnvironment::UP
+    std::shared_ptr<VisitorEnvironment>
     makeVisitorEnvironment(StorageComponent&) override {
-        return VisitorEnvironment::UP(new VisitorEnvironment);
+        return std::make_shared<VisitorEnvironment>();
     };
 
     Visitor*

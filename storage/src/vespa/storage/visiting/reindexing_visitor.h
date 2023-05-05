@@ -26,8 +26,8 @@ private:
 };
 
 struct ReindexingVisitorFactory : public VisitorFactory {
-    VisitorEnvironment::UP makeVisitorEnvironment(StorageComponent&) override {
-        return std::make_unique<VisitorEnvironment>();
+    std::shared_ptr<VisitorEnvironment> makeVisitorEnvironment(StorageComponent&) override {
+        return std::make_shared<VisitorEnvironment>();
     };
 
     Visitor* makeVisitor(StorageComponent& c, VisitorEnvironment&, const vdslib::Parameters&) override {

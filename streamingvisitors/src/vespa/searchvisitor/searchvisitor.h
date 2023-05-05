@@ -490,7 +490,7 @@ private:
 
 class SearchVisitorFactory : public storage::VisitorFactory {
     config::ConfigUri _configUri;
-    storage::VisitorEnvironment::UP makeVisitorEnvironment(storage::StorageComponent&) override;
+    std::shared_ptr<storage::VisitorEnvironment> makeVisitorEnvironment(storage::StorageComponent&) override;
 
     storage::Visitor* makeVisitor(storage::StorageComponent&, storage::VisitorEnvironment&env,
                          const vdslib::Parameters& params) override;

@@ -38,9 +38,9 @@ private:
 
 struct RecoveryVisitorFactory : public VisitorFactory {
 
-    VisitorEnvironment::UP
+    std::shared_ptr<VisitorEnvironment>
     makeVisitorEnvironment(StorageComponent&) override {
-        return std::make_unique<VisitorEnvironment>();
+        return std::make_shared<VisitorEnvironment>();
     };
 
     Visitor*

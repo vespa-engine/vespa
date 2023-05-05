@@ -16,7 +16,6 @@ class Visitor;
 
 class VisitorEnvironment {
 public:
-    using UP = std::unique_ptr<VisitorEnvironment>;
     VisitorEnvironment() = default;
     virtual ~VisitorEnvironment() = default;
 };
@@ -28,7 +27,7 @@ public:
 
     virtual ~VisitorFactory() = default;
 
-    virtual VisitorEnvironment::UP makeVisitorEnvironment(StorageComponent&) = 0;
+    virtual std::shared_ptr<VisitorEnvironment> makeVisitorEnvironment(StorageComponent&) = 0;
 
     virtual storage::Visitor *makeVisitor(
             StorageComponent&, VisitorEnvironment& env,
