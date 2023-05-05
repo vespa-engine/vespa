@@ -341,6 +341,13 @@ public final class Node implements Nodelike {
                         trustStoreItems, cloudAccount, wireguardPubKey);
     }
 
+    /** Returns a node with the cloud account assigned to the given value */
+    public Node with(CloudAccount cloudAccount) {
+        return new Node(id, ipConfig, hostname, parentHostname, flavor, status, state, allocation, history, type,
+                reports, modelName, reservedTo, exclusiveToApplicationId, exclusiveToClusterType, switchHostname,
+                trustStoreItems, cloudAccount, wireguardPubKey);
+    }
+
     /** Returns a node with the flavor assigned to the given value */
     public Node with(Flavor flavor, Agent agent, Instant instant) {
         if (flavor.equals(this.flavor)) return this;
