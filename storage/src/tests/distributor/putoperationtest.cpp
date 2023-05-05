@@ -703,6 +703,8 @@ TEST_F(PutOperationTest, matching_condition_probe_sends_unconditional_puts_to_al
     auto put_n0 = sent_put_command(3);
     EXPECT_FALSE(put_n0->hasTestAndSetCondition());
 
+    EXPECT_EQ("", _sender.getReplies(true)); // No reply yet; content node Puts must be replied to first.
+
     // Ensure replies are no longer routed to condition checker
     ASSERT_TRUE(_sender.replies().empty());
     sendReply(2); // put to node 1

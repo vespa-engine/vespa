@@ -137,6 +137,8 @@ TEST_F(CheckConditionTest, starting_sends_condition_probe_gets) {
     auto cond = create_check_condition();
     ASSERT_TRUE(cond);
     EXPECT_FALSE(cond->maybe_outcome());
+    // Nothing should be sent prior to start_and_send()
+    ASSERT_EQ("", _sender.getCommands(true));
     // We don't test too much of the Get functionality, as that's already covered by GetOperation tests.
     // But we test the main binding glue between the two components.
     cond->start_and_send(_sender);
@@ -153,6 +155,17 @@ TEST_F(CheckConditionTest, condition_matching_completes_check_with_match_outcome
     test_cond_with_2_gets_sent([&](auto& cond) {
         cond.handle_reply(_sender, make_matched_reply(0));
         cond.handle_reply(_sender, make_matched_reply(1));
+    }, [&](auto& outcome) {
+        EXPECT_TRUE(outcome.matched_condition());
+        EXPECT_FALSE(outcome.not_found());
+        EXPECT_FALSE(outcome.failed());
+    });
+}
+
+TEST_F(CheckConditionTest, newest_document_version_is_authoritative_for_condition_match) {
+    test_cond_with_2_gets_sent([&](auto& cond) {
+        cond.handle_reply(_sender, make_matched_reply(0, 1001));
+        cond.handle_reply(_sender, make_mismatched_reply(1, 1000));
     }, [&](auto& outcome) {
         EXPECT_TRUE(outcome.matched_condition());
         EXPECT_FALSE(outcome.not_found());

@@ -159,9 +159,9 @@ void PutOperation::start_conditional_put(DistributorStripeMessageSender& sender)
     if (!_check_condition) {
         start_direct_put_dispatch(sender);
     } else {
-        // Inconsistent or non-existent replicas; might need write repair
+        // Inconsistent replicas; need write repair
         _check_condition->start_and_send(sender);
-        const auto& outcome = _check_condition->maybe_outcome(); // Might be done immediately ("no replicas"-case)
+        const auto& outcome = _check_condition->maybe_outcome(); // Might be done immediately
         if (outcome) {
             on_completed_check_condition(*outcome, sender);
         }
