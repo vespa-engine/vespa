@@ -7,7 +7,7 @@
 namespace streaming {
 
 /*
- * Snapshot of searchEnvironment used by SearchVisitor. The snapshot
+ * Snapshot of SearchEnvironment used by SearchVisitor. The snapshot
  * is created as part of applying config to the search environment and
  * references classes based on the same config snapshot.
  */
