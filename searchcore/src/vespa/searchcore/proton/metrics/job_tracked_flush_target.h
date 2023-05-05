@@ -19,7 +19,7 @@ private:
 public:
     JobTrackedFlushTarget(std::shared_ptr<IJobTracker> tracker,
                           std::shared_ptr<searchcorespi::IFlushTarget> target);
-    ~JobTrackedFlushTarget();
+    ~JobTrackedFlushTarget() override;
 
     const IJobTracker &getTracker() const { return *_tracker; }
     const searchcorespi::IFlushTarget &getTarget() const { return *_target; }
@@ -40,13 +40,18 @@ public:
     bool needUrgentFlush() const override {
         return _target->needUrgentFlush();
     }
+    double get_replay_operation_cost() const override {
+        return _target->get_replay_operation_cost();
+    }
+    Priority getPriority() const override { return _target->getPriority(); }
     searchcorespi::FlushTask::UP initFlush(SerialNum currentSerial, std::shared_ptr<search::IFlushToken> flush_token) override;
     searchcorespi::FlushStats getLastFlushStats() const override {
         return _target->getLastFlushStats();
     }
 
-    uint64_t getApproxBytesToWriteToDisk() const override;
+    uint64_t getApproxBytesToWriteToDisk() const override {
+        return _target->getApproxBytesToWriteToDisk();
+    }
 };
 
 } // namespace proton
-

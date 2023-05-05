@@ -66,7 +66,7 @@ private:
 }
 
 SummaryGCTarget::SummaryGCTarget(const vespalib::string & name, vespalib::Executor & summaryService, IDocumentStore & docStore)
-    : IFlushTarget(name, Type::GC, Component::DOCUMENT_STORE),
+    : LeafFlushTarget(name, Type::GC, Component::DOCUMENT_STORE),
       _summaryService(summaryService),
       _docStore(docStore),
       _lastStats()

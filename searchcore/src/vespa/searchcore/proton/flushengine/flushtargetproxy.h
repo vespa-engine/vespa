@@ -41,14 +41,16 @@ public:
      */
     const IFlushTarget::SP & getFlushTarget() const { return _target; }
     // Implements IFlushTarget.
-    MemoryGain getApproxMemoryGain() const override;
-    DiskGain getApproxDiskGain() const override;
-    SerialNum getFlushedSerialNum() const override;
-    Time getLastFlushTime() const override;
-    bool needUrgentFlush() const override;
+    MemoryGain getApproxMemoryGain() const override { return _target->getApproxMemoryGain(); }
+    DiskGain getApproxDiskGain() const override { return _target->getApproxDiskGain(); }
+    SerialNum getFlushedSerialNum() const override { return _target->getFlushedSerialNum(); }
+    Time getLastFlushTime() const override { return _target->getLastFlushTime(); }
+    bool needUrgentFlush() const override { return _target->needUrgentFlush(); }
+    Priority getPriority() const override { return _target->getPriority(); }
+    uint64_t getApproxBytesToWriteToDisk() const override { return _target->getApproxBytesToWriteToDisk(); }
+    searchcorespi::FlushStats getLastFlushStats() const override { return _target->getLastFlushStats(); }
+    double get_replay_operation_cost() const override { return _target->get_replay_operation_cost(); }
     Task::UP initFlush(SerialNum currentSerial, std::shared_ptr<search::IFlushToken> flush_token) override;
-    searchcorespi::FlushStats getLastFlushStats() const override;
-    uint64_t getApproxBytesToWriteToDisk() const override;
 };
 
 } // namespace proton

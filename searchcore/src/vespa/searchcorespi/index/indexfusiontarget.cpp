@@ -38,7 +38,7 @@ public:
 
 }
 IndexFusionTarget::IndexFusionTarget(IndexMaintainer &indexMaintainer)
-    : IFlushTarget("memoryindex.fusion", Type::GC, Component::INDEX),
+    : LeafFlushTarget("memoryindex.fusion", Type::GC, Component::INDEX),
       _indexMaintainer(indexMaintainer),
       _fusionStats(indexMaintainer.getFusionStats()),
       _lastStats()
