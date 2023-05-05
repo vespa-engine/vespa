@@ -62,8 +62,7 @@ public class Generator extends AbstractComponent {
 
         OnnxEvaluatorOptions encoderOptions = new OnnxEvaluatorOptions();
         encoderOptions.setExecutionMode(config.encoderOnnxExecutionMode().toString());
-        encoderOptions.setInterOpThreads(modifyThreadCount(config.encoderOnnxInterOpThreads()));
-        encoderOptions.setIntraOpThreads(modifyThreadCount(config.encoderOnnxIntraOpThreads()));
+        encoderOptions.setThreads(config.encoderOnnxInterOpThreads(), config.encoderOnnxIntraOpThreads());
 
         encoder = onnx.evaluatorOf(config.encoderModel().toString(), encoderOptions);
 
@@ -75,8 +74,7 @@ public class Generator extends AbstractComponent {
 
         OnnxEvaluatorOptions decoderOptions = new OnnxEvaluatorOptions();
         decoderOptions.setExecutionMode(config.decoderOnnxExecutionMode().toString());
-        decoderOptions.setInterOpThreads(modifyThreadCount(config.decoderOnnxInterOpThreads()));
-        decoderOptions.setIntraOpThreads(modifyThreadCount(config.decoderOnnxIntraOpThreads()));
+        decoderOptions.setThreads(config.decoderOnnxInterOpThreads(), config.decoderOnnxIntraOpThreads());
 
         decoder = onnx.evaluatorOf(config.decoderModel().toString(), decoderOptions);
 
@@ -224,9 +222,4 @@ public class Generator extends AbstractComponent {
         }
     }
 
-    private int modifyThreadCount(int numThreads) {
-        if (numThreads >= 0)
-            return numThreads;
-        return Math.max(1, (int) Math.ceil(((double) Runtime.getRuntime().availableProcessors()) / (-1 * numThreads)));
-    }
 }
