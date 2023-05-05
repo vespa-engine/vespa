@@ -204,7 +204,7 @@ FlushEngine::run()
         LOG(debug, "Making another check for something to flush, last was '%s'", prevFlushName.c_str());
         if (prune()) {
             // Prune attempted on one or more handlers
-            wait(idleInterval);
+            wait_for_slot(IFlushTarget::Priority::NORMAL);
         } else {
             auto [needWait, name] = checkAndFlush(prevFlushName);
             prevFlushName = name;
