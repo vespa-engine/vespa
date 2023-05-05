@@ -9,6 +9,7 @@ vespa_add_library(streamingvisitors
     querywrapper.cpp
     rankmanager.cpp
     rankprocessor.cpp
+    search_environment_snapshot.cpp
     searchenvironment.cpp
     searchvisitor.cpp
     $<TARGET_OBJECTS:vsm_vconfig>

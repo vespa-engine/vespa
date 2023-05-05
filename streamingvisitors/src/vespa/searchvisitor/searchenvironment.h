@@ -9,8 +9,11 @@
 #include <vespa/config/subscription/configuri.h>
 #include <vespa/vsm/vsm/vsm-adapter.h>
 #include <vespa/fastlib/text/normwordfolder.h>
+#include <mutex>
 
 namespace streaming {
+
+class SearchEnvironmentSnapshot;
 
 class SearchEnvironment : public storage::VisitorEnvironment
 {
@@ -20,16 +23,17 @@ private:
         using SP = std::shared_ptr<Env>;
         Env(const config::ConfigUri& configUri, const Fast_NormalizeWordFolder& wf);
         ~Env() override;
-        const vsm::VSMAdapter * getVSMAdapter() const { return _vsmAdapter.get(); }
-        const RankManager * getRankManager() const { return _rankManager.get(); }
         void configure(const config::ConfigSnapshot & snapshot) override;
 
         static config::ConfigKeySet createKeySet(const vespalib::string & configId);
+        std::shared_ptr<const SearchEnvironmentSnapshot> get_snapshot();
     private:
         const vespalib::string           _configId;
         config::SimpleConfigurer         _configurer;
         std::unique_ptr<vsm::VSMAdapter> _vsmAdapter;
         std::unique_ptr<RankManager>     _rankManager;
+        std::shared_ptr<const SearchEnvironmentSnapshot> _snapshot;
+        std::mutex _lock;
     };
     using EnvMap = vespalib::hash_map<vespalib::string, Env::SP>;
     using EnvMapUP = std::unique_ptr<EnvMap>;
@@ -47,8 +51,7 @@ private:
 public:
     SearchEnvironment(const config::ConfigUri & configUri);
     ~SearchEnvironment();
-    const vsm::VSMAdapter * getVSMAdapter(const vespalib::string & searchcluster) { return getEnv(searchcluster).getVSMAdapter(); }
-    const RankManager * getRankManager(const vespalib::string & searchcluster)    { return getEnv(searchcluster).getRankManager(); }
+    std::shared_ptr<const SearchEnvironmentSnapshot> get_snapshot(const vespalib::string& search_cluster);
     // Should only be used by unit tests to simulate that the calling thread is finished.
     void clear_thread_local_env_map();
 };

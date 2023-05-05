@@ -2,6 +2,7 @@
 
 #include "querytermdata.h"
 #include "searchenvironment.h"
+#include "search_environment_snapshot.h"
 #include "searchvisitor.h"
 #include "matching_elements_filler.h"
 #include <vespa/persistence/spi/docentry.h>
@@ -56,9 +57,21 @@ extract_search_cluster(const vdslib::Parameters& params)
 {
     Parameters::ValueRef searchClusterBlob;
     if (params.lookup("searchcluster", searchClusterBlob)) {
+        LOG(spam, "Received searchcluster blob of %zd bytes", searchClusterBlob.size());
         return {{searchClusterBlob.data(), searchClusterBlob.size()}};
     }
     return std::nullopt;
+}
+
+std::shared_ptr<const SearchEnvironmentSnapshot>
+get_search_environment_snapshot(VisitorEnvironment& v_env, const Parameters& params)
+{
+    auto& env = dynamic_cast<SearchEnvironment&>(v_env);
+    auto search_cluster = extract_search_cluster(params);
+    if (search_cluster.has_value()) {
+        return env.get_snapshot(search_cluster.value());
+    }
+    return {};
 }
 
 }
@@ -263,9 +276,9 @@ SearchVisitor::SearchVisitor(StorageComponent& component,
                              VisitorEnvironment& vEnv,
                              const Parameters& params) :
     Visitor(component),
-    _env(dynamic_cast<SearchEnvironment &>(vEnv)),
+    _env(get_search_environment_snapshot(vEnv, params)),
     _params(params),
-    _vsmAdapter(nullptr),
+    _init_called(false),
     _docSearchedCount(0),
     _hitCount(0),
     _hitsRejectedCount(0),
@@ -369,10 +382,8 @@ void SearchVisitor::init(const Parameters & params)
         _summaryGenerator.set_location(valueRef);
     }
 
-    auto search_cluster = extract_search_cluster(params);
-    if (search_cluster.has_value()) {
-        LOG(spam, "Received searchcluster blob of %zd bytes", search_cluster.value().size());
-        _vsmAdapter = _env.getVSMAdapter(search_cluster.value());
+    if (_env) {
+        _init_called = true;
 
         if ( params.lookup("sort", valueRef) ) {
             search::uca::UcaConverterFactory ucaFactory;
@@ -396,7 +407,7 @@ void SearchVisitor::init(const Parameters & params)
             }
 
             std::vector<vespalib::string> additionalFields;
-            registerAdditionalFields(_vsmAdapter->getDocsumTools()->getFieldSpecs(), additionalFields);
+            registerAdditionalFields(_env->get_docsum_tools()->getFieldSpecs(), additionalFields);
 
             StringFieldIdTMap fieldsInQuery;
             setupFieldSearchers(additionalFields, fieldsInQuery);
@@ -410,8 +421,7 @@ void SearchVisitor::init(const Parameters & params)
 
             setupAttributeVectorsForSorting(_sortSpec);
 
-            const RankManager * rm = _env.getRankManager(search_cluster.value());
-            _rankController.setRankManagerSnapshot(rm->getSnapshot());
+            _rankController.setRankManagerSnapshot(_env->get_rank_manager_snapshot());
             _rankController.setupRankProcessors(_query, location, wantedSummaryCount, _attrMan, _attributeFields);
 
             // This depends on _fieldPathMap (from setupScratchDocument),
@@ -743,7 +753,7 @@ SearchVisitor::setupFieldSearchers(const std::vector<vespalib::string> & additio
 {
     // Create mapping from field name to field id, from field id to search spec,
     // and from index name to list of field ids
-    _fieldSearchSpecMap.buildFromConfig(_vsmAdapter->getFieldsConfig());
+    _fieldSearchSpecMap.buildFromConfig(_env->get_vsm_fields_config());
     // Add extra elements to mapping from field name to field id
     _fieldSearchSpecMap.buildFromConfig(additionalFields);
 
@@ -800,13 +810,14 @@ SearchVisitor::setupScratchDocument(const StringFieldIdTMap & fieldsInQuery)
 void
 SearchVisitor::setupDocsumObjects()
 {
-    auto docsumFilter = std::make_unique<DocsumFilter>(_vsmAdapter->getDocsumTools(),
+    auto docsumFilter = std::make_unique<DocsumFilter>(_env->get_docsum_tools(),
                                                        _rankController.getRankProcessor()->getHitCollector());
     docsumFilter->init(_fieldSearchSpecMap.nameIdMap(), *_fieldPathMap);
     docsumFilter->setSnippetModifiers(_snippetModifierManager.getModifiers());
     _summaryGenerator.setFilter(std::move(docsumFilter));
-    if (_vsmAdapter->getDocsumTools().get()) {
-        _summaryGenerator.setDocsumWriter(*_vsmAdapter->getDocsumTools()->getDocsumWriter());
+    auto& docsum_tools = _env->get_docsum_tools();
+    if (docsum_tools) {
+        _summaryGenerator.setDocsumWriter(*docsum_tools->getDocsumWriter());
     } else {
         LOG(warning, "No docsum tools available");
     }
@@ -962,7 +973,7 @@ SearchVisitor::handleDocuments(const document::BucketId&,
                                HitCounter& hitCounter)
 {
     (void) hitCounter;
-    if (_vsmAdapter == nullptr) {
+    if (!_init_called) {
         init(_params);
     }
     if ( ! _rankController.valid() ) {
@@ -1149,7 +1160,7 @@ SearchVisitor::generate_query_result(HitCounter& counter)
 
 void SearchVisitor::completedVisitingInternal(HitCounter& hitCounter)
 {
-    if (_vsmAdapter == nullptr) {
+    if (!_init_called) {
         init(_params);
     }
     LOG(debug, "Completed visiting");

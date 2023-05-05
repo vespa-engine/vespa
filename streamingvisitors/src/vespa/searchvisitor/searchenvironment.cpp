@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "searchenvironment.h"
+#include "search_environment_snapshot.h"
 #include <vespa/vespalib/stllike/hash_map.hpp>
 #include <vespa/searchsummary/config/config-juniperrc.h>
 
@@ -18,7 +19,8 @@ SearchEnvironment::Env::Env(const config::ConfigUri& configUri, const Fast_Norma
     : _configId(configUri.getConfigId()),
       _configurer(std::make_unique<config::SimpleConfigRetriever>(createKeySet(configUri.getConfigId()), configUri.getContext()), this),
       _vsmAdapter(std::make_unique<VSMAdapter>(_configId, wf)),
-      _rankManager(std::make_unique<RankManager>(_vsmAdapter.get()))
+      _rankManager(std::make_unique<RankManager>(_vsmAdapter.get())),
+      _snapshot()
 {
     
     _configurer.start();
@@ -42,6 +44,16 @@ SearchEnvironment::Env::configure(const config::ConfigSnapshot & snapshot)
     vsm::VSMConfigSnapshot snap(_configId, snapshot);
     _vsmAdapter->configure(snap);
     _rankManager->configure(snap);
+    auto se_snapshot = std::make_shared<const SearchEnvironmentSnapshot>(*_rankManager, *_vsmAdapter);
+    std::lock_guard guard(_lock);
+    std::swap(se_snapshot, _snapshot);
+}
+
+std::shared_ptr<const SearchEnvironmentSnapshot>
+SearchEnvironment::Env::get_snapshot()
+{
+    std::lock_guard guard(_lock);
+    return _snapshot;
 }
 
 SearchEnvironment::Env::~Env()
@@ -93,6 +105,12 @@ void
 SearchEnvironment::clear_thread_local_env_map()
 {
     _localEnvMap = nullptr;
+}
+
+std::shared_ptr<const SearchEnvironmentSnapshot>
+SearchEnvironment::get_snapshot(const vespalib::string& search_cluster)
+{
+    return getEnv(search_cluster).get_snapshot();
 }
 
 }

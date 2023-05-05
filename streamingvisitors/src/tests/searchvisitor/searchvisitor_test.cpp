@@ -9,6 +9,7 @@
 #include <vespa/searchlib/query/tree/simplequery.h>
 #include <vespa/searchlib/query/tree/stackdumpcreator.h>
 #include <vespa/searchvisitor/searchenvironment.h>
+#include <vespa/searchvisitor/search_environment_snapshot.h>
 #include <vespa/searchvisitor/searchvisitor.h>
 #include <vespa/storage/frameworkimpl/component/storagecomponentregisterimpl.h>
 #include <vespa/storageframework/defaultimplementation/clock/fakeclock.h>
@@ -177,8 +178,11 @@ SearchVisitorTest::~SearchVisitorTest()
 
 TEST_F(SearchVisitorTest, search_environment_is_configured)
 {
-    EXPECT_TRUE(_env.getVSMAdapter("mycl") != nullptr);
-    EXPECT_TRUE(_env.getRankManager("mycl") != nullptr);
+    auto env = _env.get_snapshot("mycl");
+    ASSERT_TRUE(env);
+    EXPECT_TRUE(env->get_rank_manager_snapshot());
+    EXPECT_TRUE(env->get_vsm_fields_config());
+    EXPECT_TRUE(env->get_docsum_tools());
 }
 
 HitVector

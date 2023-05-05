@@ -34,6 +34,8 @@ using namespace search::aggregation;
 
 namespace streaming {
 
+class SearchEnvironmentSnapshot;
+
 /**
  * @class storage::SearchVisitor
  *
@@ -122,7 +124,7 @@ private:
     class RankController {
     private:
         vespalib::string               _rankProfile;
-        RankManager::Snapshot::SP      _rankManagerSnapshot;
+        std::shared_ptr<const RankManager::Snapshot>  _rankManagerSnapshot;
         const search::fef::RankSetup * _rankSetup;
         search::fef::Properties        _queryProperties;
         bool                           _hasRanking;
@@ -143,7 +145,7 @@ private:
         bool valid() const { return _rankProcessor.get() != nullptr; }
         void setRankProfile(const vespalib::string &rankProfile) { _rankProfile = rankProfile; }
         const vespalib::string &getRankProfile() const { return _rankProfile; }
-        void setRankManagerSnapshot(const RankManager::Snapshot::SP & snapshot) { _rankManagerSnapshot = snapshot; }
+        void setRankManagerSnapshot(const std::shared_ptr<const RankManager::Snapshot>& snapshot) { _rankManagerSnapshot = snapshot; }
         search::fef::Properties & getQueryProperties() { return _queryProperties; }
         RankProcessor * getRankProcessor() { return _rankProcessor.get(); }
         void setDumpFeatures(bool dumpFeatures) { _dumpFeatures = dumpFeatures; }
@@ -450,9 +452,9 @@ private:
     };
 
     void init(const vdslib::Parameters & params);
-    SearchEnvironment                     & _env;
+    std::shared_ptr<const SearchEnvironmentSnapshot> _env;
     vdslib::Parameters                      _params;
-    const vsm::VSMAdapter                 * _vsmAdapter;
+    bool                                    _init_called;
     size_t                                  _docSearchedCount;
     size_t                                  _hitCount;
     size_t                                  _hitsRejectedCount;
