@@ -42,7 +42,7 @@ namespace proton {
 
 namespace {
 
-class ShrinkSummaryLidSpaceFlushTarget : public  ShrinkLidSpaceFlushTarget
+class ShrinkSummaryLidSpaceFlushTarget : public ShrinkLidSpaceFlushTarget
 {
     using ICompactableLidSpace = search::common::ICompactableLidSpace;
     vespalib::Executor & _summaryService;

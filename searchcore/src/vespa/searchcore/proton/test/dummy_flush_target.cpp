@@ -5,10 +5,10 @@
 namespace proton::test {
 
 DummyFlushTarget::DummyFlushTarget(const vespalib::string &name) noexcept
-    : searchcorespi::IFlushTarget(name)
+    : searchcorespi::LeafFlushTarget(name, Type::OTHER, Component::OTHER)
 {}
 DummyFlushTarget::DummyFlushTarget(const vespalib::string &name, const Type &type, const Component &component) noexcept
-    : searchcorespi::IFlushTarget(name, type, component)
+    : searchcorespi::LeafFlushTarget(name, type, component)
 {}
 DummyFlushTarget::~DummyFlushTarget() = default;
 

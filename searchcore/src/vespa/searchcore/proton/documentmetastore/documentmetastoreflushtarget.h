@@ -19,7 +19,7 @@ class TransientResourceUsage;
 /**
  * Implementation of IFlushTarget interface for document meta store.
  **/
-class DocumentMetaStoreFlushTarget : public searchcorespi::IFlushTarget
+class DocumentMetaStoreFlushTarget : public searchcorespi::LeafFlushTarget
 {
 private:
     /**
@@ -29,16 +29,16 @@ private:
     using DocumentMetaStoreSP = std::shared_ptr<DocumentMetaStore>;
     using FlushStats = searchcorespi::FlushStats;
 
-    DocumentMetaStoreSP         _dms;
-    ITlsSyncer                 &_tlsSyncer;
-    vespalib::string            _baseDir;
-    bool                        _cleanUpAfterFlush;
-    FlushStats                  _lastStats;
-    const search::TuneFileAttributes _tuneFileAttributes;
+    DocumentMetaStoreSP                      _dms;
+    ITlsSyncer                              &_tlsSyncer;
+    vespalib::string                         _baseDir;
+    bool                                     _cleanUpAfterFlush;
+    FlushStats                               _lastStats;
+    const search::TuneFileAttributes         _tuneFileAttributes;
     const search::common::FileHeaderContext &_fileHeaderContext;
-    HwInfo                      _hwInfo;
-    std::shared_ptr<AttributeDiskLayout> _diskLayout;
-    std::shared_ptr<AttributeDirectory> _dmsDir;
+    HwInfo                                   _hwInfo;
+    std::shared_ptr<AttributeDiskLayout>     _diskLayout;
+    std::shared_ptr<AttributeDirectory>      _dmsDir;
 
 public:
     using SP = std::shared_ptr<DocumentMetaStoreFlushTarget>;

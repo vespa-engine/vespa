@@ -22,61 +22,10 @@ FlushTargetProxy::FlushTargetProxy(const IFlushTarget::SP &target,
 {
 }
 
-
-IFlushTarget::MemoryGain
-FlushTargetProxy::getApproxMemoryGain() const
-{
-    return _target->getApproxMemoryGain();
-}
-
-
-IFlushTarget::DiskGain
-FlushTargetProxy::getApproxDiskGain() const
-{
-    return _target->getApproxDiskGain();
-}
-
-
-IFlushTarget::SerialNum
-FlushTargetProxy::getFlushedSerialNum() const
-{
-    return _target->getFlushedSerialNum();
-}
-
-
-IFlushTarget::Time
-FlushTargetProxy::getLastFlushTime() const
-{
-    return _target->getLastFlushTime();
-}
-
-
-bool
-FlushTargetProxy::needUrgentFlush() const
-{
-    return _target->needUrgentFlush();
-}
-
-
 IFlushTarget::Task::UP
 FlushTargetProxy::initFlush(SerialNum currentSerial, std::shared_ptr<search::IFlushToken> flush_token)
 {
     return _target->initFlush(currentSerial, std::move(flush_token));
 }
-
-
-FlushStats
-FlushTargetProxy::getLastFlushStats() const
-{
-    return _target->getLastFlushStats();
-}
-
-
-uint64_t
-FlushTargetProxy::getApproxBytesToWriteToDisk() const
-{
-    return _target->getApproxBytesToWriteToDisk();
-}
-
 
 } // namespace proton

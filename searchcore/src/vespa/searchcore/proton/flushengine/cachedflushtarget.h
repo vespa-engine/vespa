@@ -19,8 +19,10 @@ private:
     Time              _lastFlushTime;
     MemoryGain        _memoryGain;
     DiskGain          _diskGain;
-    bool              _needUrgentFlush;
     uint64_t          _approxBytesToWriteToDisk;
+    double            _replay_operation_cost;
+    bool              _needUrgentFlush;
+    Priority          _priority;
 
 public:
     /**
@@ -47,13 +49,15 @@ public:
     SerialNum getFlushedSerialNum() const override { return _flushedSerialNum; }
     Time    getLastFlushTime() const override { return _lastFlushTime; }
     bool     needUrgentFlush() const override { return _needUrgentFlush; }
+    Priority getPriority() const override { return _priority; }
+    double get_replay_operation_cost() const override { return _replay_operation_cost; }
 
     Task::UP initFlush(SerialNum currentSerial, std::shared_ptr<search::IFlushToken> flush_token) override {
         return _target->initFlush(currentSerial, std::move(flush_token));
     }
     FlushStats getLastFlushStats() const override { return _target->getLastFlushStats(); }
 
-    uint64_t getApproxBytesToWriteToDisk() const override;
+    uint64_t getApproxBytesToWriteToDisk() const override { return _approxBytesToWriteToDisk; }
 };
 
 } // namespace proton

@@ -344,6 +344,10 @@ TEST_F(IndexManagerTest, require_that_large_memory_footprint_triggers_urgent_flu
     EXPECT_TRUE(IndexFlushTarget(_index_manager->getMaintainer(), FlushStats(17_Gi)).needUrgentFlush());
 }
 
+TEST_F(IndexManagerTest, require_that_flush_priority_is_high) {
+    EXPECT_EQ(IFlushTarget::Priority::HIGH, IndexFlushTarget(_index_manager->getMaintainer()).getPriority());
+}
+
 TEST_F(IndexManagerTest, require_that_multiple_flushes_gives_multiple_indexes)
 {
     size_t flush_count = 10;
