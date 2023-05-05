@@ -286,7 +286,7 @@ public class ContainerTest extends ContainerTestBase {
         Future<ComponentGraph> newGraph = exec.submit(() -> getNewComponentGraph(container, currentGraph));
         dirConfigSource.awaitConfigChecked(10_000);
         try {
-            newGraph.get(1, TimeUnit.SECONDS);
+            newGraph.get(1000, TimeUnit.MILLISECONDS);
             fail("Expected waiting for new config.");
         } catch (TimeoutException ignored) {
             // expect to time out
@@ -294,10 +294,10 @@ public class ContainerTest extends ContainerTestBase {
 
         dirConfigSource.clearCheckedConfigs();
         writeBootstrapConfigs("myId2", ComponentTakingConfig.class);
+        dirConfigSource.awaitConfigChecked(10_000);
         container.reloadConfig(3);
 
-        dirConfigSource.awaitConfigChecked(10_000);
-        assertNotNull(newGraph.get(30, TimeUnit.SECONDS));
+        assertNotNull(newGraph.get(1000, TimeUnit.MILLISECONDS));
 
         container.shutdownConfigRetriever();
         container.shutdown(newGraph.get());

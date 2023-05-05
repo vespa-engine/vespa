@@ -117,7 +117,12 @@ public class Container {
             snapshot = retriever.getConfigs(graph.configKeys(), leastGeneration, isInitializing);
 
             if (log.isLoggable(FINE))
-                log.log(FINE, String.format("getConfigAndCreateGraph:\n" + "graph.configKeys = %s\n" + "graph.generation = %s\n" + "snapshot = %s\n",
+                log.log(FINE, String.format("""
+                                            getConfigAndCreateGraph:
+                                            graph.configKeys = %s
+                                            graph.generation = %s
+                                            snapshot = %s
+                                            """,
                                             graph.configKeys(), graph.generation(), snapshot));
 
             if (snapshot instanceof BootstrapConfigs) {
