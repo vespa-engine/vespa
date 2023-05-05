@@ -17,3 +17,6 @@ transformerAttentionMask string default=attention_mask
 # Output name
 transformerOutput string default=last_hidden_state
 
+# GPU configuration
+transformerGpuDevice int default=-1
+transformerGpuRequired bool default=false

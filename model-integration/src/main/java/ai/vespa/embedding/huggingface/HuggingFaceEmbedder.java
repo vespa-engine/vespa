@@ -1,6 +1,7 @@
 package ai.vespa.embedding.huggingface;
 
 import ai.vespa.modelintegration.evaluator.OnnxEvaluator;
+import ai.vespa.modelintegration.evaluator.OnnxEvaluatorOptions;
 import ai.vespa.modelintegration.evaluator.OnnxRuntime;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.component.annotation.Inject;
@@ -35,7 +36,10 @@ public class HuggingFaceEmbedder extends AbstractComponent implements Embedder {
         attentionMaskName = config.transformerAttentionMask();
         outputName = config.transformerOutput();
         tokenizer = new HuggingFaceTokenizer(Paths.get(config.tokenizerPath().toString()));
-        evaluator = onnx.evaluatorOf(config.transformerModel().toString());
+        var onnxOpts = new OnnxEvaluatorOptions();
+        if (config.transformerGpuDevice() >= 0)
+            onnxOpts.setGpuDevice(config.transformerGpuDevice(), config.transformerGpuRequired());
+        evaluator = onnx.evaluatorOf(config.transformerModel().toString(), onnxOpts);
         validateModel();
     }
 
