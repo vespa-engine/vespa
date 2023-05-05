@@ -6,7 +6,6 @@
 namespace proton {
 
 using searchcorespi::IFlushTarget;
-using searchcorespi::LeafFlushTarget;
 using searchcorespi::FlushStats;
 using searchcorespi::FlushTask;
 
@@ -47,7 +46,7 @@ ShrinkLidSpaceFlushTarget::ShrinkLidSpaceFlushTarget(const vespalib::string &nam
                                                      SerialNum flushedSerialNum,
                                                      Time lastFlushTime,
                                                      std::shared_ptr<ICompactableLidSpace> target)
-    : LeafFlushTarget(name, type, component),
+    : IFlushTarget(name, type, component),
 
       _target(std::move(target)),
       _flushedSerialNum(flushedSerialNum),
@@ -79,6 +78,12 @@ IFlushTarget::Time
 ShrinkLidSpaceFlushTarget::getLastFlushTime() const
 {
     return _lastFlushTime;
+}
+
+bool
+ShrinkLidSpaceFlushTarget::needUrgentFlush() const
+{
+    return false;
 }
 
 IFlushTarget::Task::UP

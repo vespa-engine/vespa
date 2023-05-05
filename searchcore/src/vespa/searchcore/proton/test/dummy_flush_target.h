@@ -5,7 +5,7 @@
 
 namespace proton::test {
 
-struct DummyFlushTarget : public searchcorespi::LeafFlushTarget
+struct DummyFlushTarget : public searchcorespi::IFlushTarget
 {
     DummyFlushTarget(const vespalib::string &name) noexcept;
     DummyFlushTarget(const vespalib::string &name, const Type &type, const Component &component) noexcept;
@@ -14,6 +14,7 @@ struct DummyFlushTarget : public searchcorespi::LeafFlushTarget
     DiskGain getApproxDiskGain() const override { return DiskGain(0, 0); }
     SerialNum getFlushedSerialNum() const override { return 0; }
     Time getLastFlushTime() const override { return Time(); }
+    bool needUrgentFlush() const override { return false; }
     searchcorespi::FlushTask::UP initFlush(SerialNum, std::shared_ptr<search::IFlushToken>) override {
         return searchcorespi::FlushTask::UP();
     }

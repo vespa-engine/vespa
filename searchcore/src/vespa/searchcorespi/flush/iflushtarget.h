@@ -38,11 +38,6 @@ public:
         OTHER
     };
 
-    enum class Priority {
-        NORMAL = 50,
-        HIGH = 100
-    };
-
 private:
     vespalib::string _name;
     Type      _type;
@@ -138,7 +133,7 @@ public:
     /**
      * Return cost of replaying a feed operation relative to cost of reading a feed operation from tls.
      */
-    virtual double get_replay_operation_cost() const = 0;
+    virtual double get_replay_operation_cost() const { return 0.0; }
 
     /**
      * Returns the last serial number for the transaction applied to
@@ -161,10 +156,7 @@ public:
      *
      * @return true if an urgent flush is needed
      */
-    virtual bool needUrgentFlush() const = 0;
-
-    /// Returns a priority for this target
-    virtual Priority getPriority() const = 0;
+    virtual bool needUrgentFlush() const { return false; }
 
     /**
      * Initiates the flushing of temporary memory. This method must perform
@@ -183,14 +175,7 @@ public:
      * @return The stats for the last flush.
      */
     virtual FlushStats getLastFlushStats() const = 0;
-};
 
-class LeafFlushTarget : public IFlushTarget {
-public:
-    LeafFlushTarget(const vespalib::string &name, const Type &type, const Component &component) noexcept;
-    bool needUrgentFlush() const override { return false; }
-    Priority getPriority() const override { return Priority::NORMAL; }
-    double get_replay_operation_cost() const override { return 0.0; }
 };
 
 } // namespace searchcorespi
