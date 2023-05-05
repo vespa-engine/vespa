@@ -87,7 +87,7 @@ public:
     const juniper::Juniper * getJuniper() const override { return _juniper.get(); }
 };
 
-using DocsumToolsPtr = std::shared_ptr<DocsumTools>;
+using DocsumToolsPtr = std::shared_ptr<const DocsumTools>;
 
 class VSMConfigSnapshot {
 private:

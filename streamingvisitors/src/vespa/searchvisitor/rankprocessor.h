@@ -26,7 +26,7 @@ private:
     using RankProgram = search::fef::RankProgram;
     using FeatureSet = vespalib::FeatureSet;
     using FeatureValues = vespalib::FeatureValues;
-    RankManager::Snapshot::SP      _rankManagerSnapshot;
+    std::shared_ptr<const RankManager::Snapshot> _rankManagerSnapshot;
     const search::fef::RankSetup & _rankSetup;
     QueryWrapper                   _query;
 
@@ -58,7 +58,7 @@ private:
 public:
     using UP = std::unique_ptr<RankProcessor>;
 
-    RankProcessor(RankManager::Snapshot::SP snapshot,
+    RankProcessor(std::shared_ptr<const RankManager::Snapshot> snapshot,
                   const vespalib::string &rankProfile,
                   search::streaming::Query & query,
                   const vespalib::string & location,

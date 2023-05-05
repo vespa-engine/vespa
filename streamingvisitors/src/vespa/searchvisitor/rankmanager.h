@@ -33,7 +33,7 @@ public:
         IndexEnvironment                          _protoEnv;
         std::vector<NamedPropertySet>             _properties; // property set per rank profile
         std::vector<IndexEnvironment>             _indexEnv;   // index environment per rank profile
-        std::vector<search::fef::RankSetup::SP>   _rankSetup;  // rank setup per rank profile
+        std::vector<std::shared_ptr<const search::fef::RankSetup>> _rankSetup;  // rank setup per rank profile
         Map                                       _rpmap;
         ViewMap                                   _views;
 
@@ -48,7 +48,6 @@ public:
         }
 
     public:
-        using SP = std::shared_ptr<Snapshot>;
         Snapshot();
         ~Snapshot();
         const std::vector<NamedPropertySet> & getProperties() const { return _properties; }
@@ -71,7 +70,7 @@ public:
 
 private:
     search::fef::BlueprintFactory _blueprintFactory;
-    vespalib::PtrHolder<Snapshot> _snapshot;
+    vespalib::PtrHolder<const Snapshot> _snapshot;
     const vsm::VSMAdapter       * _vsmAdapter;
 
     void configureRankProfiles(const vespa::config::search::RankProfilesConfig & cfg);
@@ -86,7 +85,7 @@ public:
     /**
      * Retrieves the current snapshot of the rank-profiles config.
      **/
-    Snapshot::SP getSnapshot() const { return _snapshot.get(); }
+    std::shared_ptr<const Snapshot> getSnapshot() const { return _snapshot.get(); }
 };
 
 } // namespace streaming
