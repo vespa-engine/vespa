@@ -17,7 +17,7 @@ public class NodeResourcesTuning implements ProtonConfig.Producer {
     private final static double SUMMARY_FILE_SIZE_AS_FRACTION_OF_MEMORY = 0.02;
     private final static double SUMMARY_CACHE_SIZE_AS_FRACTION_OF_MEMORY = 0.04;
     private final static double MEMORY_GAIN_AS_FRACTION_OF_MEMORY = 0.08;
-    private final static double MIN_MEMORY_PER_FLUSH_THREAD_GB = 16.0;
+    private final static double MIN_MEMORY_PER_FLUSH_THREAD_GB = 11.0;
     private final static double TLS_SIZE_FRACTION = 0.02;
     final static long MB = 1024 * 1024;
     public final static long GB = MB * 1024;
