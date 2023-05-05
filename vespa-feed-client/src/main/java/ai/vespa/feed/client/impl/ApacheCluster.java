@@ -5,15 +5,16 @@ import ai.vespa.feed.client.FeedClientBuilder.Compression;
 import ai.vespa.feed.client.HttpResponse;
 import org.apache.hc.client5.http.async.methods.SimpleHttpRequest;
 import org.apache.hc.client5.http.async.methods.SimpleHttpResponse;
+import org.apache.hc.client5.http.config.ConnectionConfig;
 import org.apache.hc.client5.http.config.RequestConfig;
 import org.apache.hc.client5.http.impl.async.CloseableHttpAsyncClient;
 import org.apache.hc.client5.http.impl.async.HttpAsyncClients;
+import org.apache.hc.client5.http.impl.async.MinimalH2AsyncClient;
 import org.apache.hc.client5.http.ssl.ClientTlsStrategyBuilder;
 import org.apache.hc.core5.concurrent.FutureCallback;
 import org.apache.hc.core5.http.ContentType;
 import org.apache.hc.core5.http.Header;
 import org.apache.hc.core5.http.HttpHeaders;
-import org.apache.hc.core5.http.HttpHost;
 import org.apache.hc.core5.http.message.BasicHeader;
 import org.apache.hc.core5.http2.config.H2Config;
 import org.apache.hc.core5.net.URIAuthority;
@@ -33,6 +34,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.zip.GZIPOutputStream;
 
@@ -50,7 +52,6 @@ class ApacheCluster implements Cluster {
     private final List<BasicHeader> defaultHeaders = Arrays.asList(new BasicHeader(HttpHeaders.USER_AGENT, String.format("vespa-feed-client/%s", Vespa.VERSION)),
                                                                    new BasicHeader("Vespa-Client-Version", Vespa.VERSION));
     private final Header gzipEncodingHeader = new BasicHeader(HttpHeaders.CONTENT_ENCODING, "gzip");
-    private final RequestConfig requestConfig;
     private final Compression compression;
     private int someNumber = 0;
 
@@ -61,7 +62,6 @@ class ApacheCluster implements Cluster {
         for (int i = 0; i < builder.connectionsPerEndpoint; i++)
             for (URI endpoint : builder.endpoints)
                 endpoints.add(new Endpoint(createHttpClient(builder), endpoint));
-        this.requestConfig = createRequestConfig(builder);
         this.compression = builder.compression;
     }
 
@@ -86,8 +86,7 @@ class ApacheCluster implements Cluster {
                 SimpleHttpRequest request = new SimpleHttpRequest(wrapped.method(), wrapped.path());
                 request.setScheme(endpoint.url.getScheme());
                 request.setAuthority(new URIAuthority(endpoint.url.getHost(), portOf(endpoint.url)));
-                long timeoutMillis = wrapped.timeout() == null ? 190_000 : wrapped.timeout().toMillis() * 11 / 10 + 1_000;
-                request.setConfig(RequestConfig.copy(requestConfig).setResponseTimeout(Timeout.ofMilliseconds(timeoutMillis)).build());
+                request.setConfig(RequestConfig.custom().setConnectionRequestTimeout(Timeout.DISABLED).build());
                 defaultHeaders.forEach(request::setHeader);
                 wrapped.headers().forEach((name, value) -> request.setHeader(name, value.get()));
                 if (wrapped.body() != null) {
@@ -105,11 +104,15 @@ class ApacheCluster implements Cluster {
                                                                @Override public void failed(Exception ex) { vessel.completeExceptionally(ex); }
                                                                @Override public void cancelled() { vessel.cancel(false); }
                                                            });
-                // We've seen some requests time out, even with a response timeout,
-                // so we schedule this to be absolutely sure we don't hang (for ever).
-                Future<?> cancellation = timeoutExecutor.schedule(() -> { future.cancel(true); vessel.cancel(true); },
-                                                                  timeoutMillis + 10_000,
-                                                                  TimeUnit.MILLISECONDS);
+                // Manually schedule response timeout as the Apache HTTP/2 multiplexing client does not support response timeouts
+                long timeoutMillis = wrapped.timeout() == null ? 190_000 : wrapped.timeout().toMillis();
+                Future<?> cancellation = timeoutExecutor.schedule(
+                        () -> {
+                            vessel.completeExceptionally(
+                                    new TimeoutException(String.format("Request timed out after %dms", timeoutMillis)));
+                            future.cancel(true);
+                        },
+                        timeoutMillis * 11 / 10 + 1_000, TimeUnit.MILLISECONDS);
                 vessel.whenComplete((__, ___) -> cancellation.cancel(true));
             }
             catch (Throwable thrown) {
@@ -160,7 +163,6 @@ class ApacheCluster implements Cluster {
 
     }
 
-    @SuppressWarnings("deprecation")
     private static CloseableHttpAsyncClient createHttpClient(FeedClientBuilderImpl builder) throws IOException {
         SSLContext sslContext = builder.constructSslContext();
         String[] allowedCiphers = excludeH2Blacklisted(excludeWeak(sslContext.getSupportedSSLParameters().getCipherSuites()));
@@ -168,38 +170,39 @@ class ApacheCluster implements Cluster {
             throw new IllegalStateException("No adequate SSL cipher suites supported by the JVM");
 
         ClientTlsStrategyBuilder tlsStrategyBuilder = ClientTlsStrategyBuilder.create()
-                .setTlsDetailsFactory(TlsDetailsFactory::create)
                 .setCiphers(allowedCiphers)
                 .setSslContext(sslContext);
         if (builder.hostnameVerifier != null)
             tlsStrategyBuilder.setHostnameVerifier(builder.hostnameVerifier);
 
-        return HttpAsyncClients.createHttp2Minimal(H2Config.custom()
-                                                           .setMaxConcurrentStreams(builder.maxStreamsPerConnection)
-                                                           .setCompressionEnabled(true)
-                                                           .setPushEnabled(false)
-                                                           .setInitialWindowSize(Integer.MAX_VALUE)
-                                                           .build(),
-                                                   IOReactorConfig.custom()
-                                                                  .setIoThreadCount(2)
-                                                                  .setTcpNoDelay(true)
-                                                                  .setSoTimeout(Timeout.ofSeconds(10))
-                                                                  .build(),
-                                                   tlsStrategyBuilder.build());
+        // Socket timeout must be longer than the longest feasible response timeout
+        Timeout socketTimeout = Timeout.ofMinutes(15);
+
+        // Note: MinimalH2AsyncClient does not support proxying or automatic retries
+        MinimalH2AsyncClient client = HttpAsyncClients.createHttp2Minimal(
+                H2Config.custom()
+                        .setMaxConcurrentStreams(builder.maxStreamsPerConnection)
+                        .setCompressionEnabled(true)
+                        .setPushEnabled(false)
+                        .setInitialWindowSize(Integer.MAX_VALUE)
+                        .build(),
+                IOReactorConfig.custom()
+                        .setIoThreadCount(Math.max(Math.min(Runtime.getRuntime().availableProcessors(), 8), 2))
+                        .setTcpNoDelay(true)
+                        .setSoTimeout(socketTimeout)
+                        .build(),
+                tlsStrategyBuilder.build());
+        ConnectionConfig connCfg = ConnectionConfig.custom()
+                .setSocketTimeout(socketTimeout)
+                .setConnectTimeout(Timeout.ofSeconds(10))
+                .build();
+        client.setConnectionConfigResolver(__ -> connCfg);
+        return client;
     }
 
     private static int portOf(URI url) {
         return url.getPort() == -1 ? url.getScheme().equals("http") ? 80 : 443
                                    : url.getPort();
-    }
-
-    @SuppressWarnings("deprecation")
-    private static RequestConfig createRequestConfig(FeedClientBuilderImpl b) {
-        RequestConfig.Builder builder = RequestConfig.custom()
-                .setConnectTimeout(Timeout.ofSeconds(10))
-                .setConnectionRequestTimeout(Timeout.DISABLED);
-        if (b.proxy != null) builder.setProxy(new HttpHost(b.proxy.getScheme(), b.proxy.getHost(), b.proxy.getPort()));
-        return builder.build();
     }
 
     private static class ApacheHttpResponse implements HttpResponse {
