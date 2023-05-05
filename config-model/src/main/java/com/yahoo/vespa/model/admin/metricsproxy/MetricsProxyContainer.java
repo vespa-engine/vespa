@@ -1,5 +1,4 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-
 package com.yahoo.vespa.model.admin.metricsproxy;
 
 import ai.vespa.metricsproxy.http.metrics.MetricsV2Handler;
@@ -22,7 +21,6 @@ import com.yahoo.search.config.QrStartConfig;
 import com.yahoo.vespa.model.HostResource;
 import com.yahoo.vespa.model.PortAllocBridge;
 import com.yahoo.vespa.model.container.Container;
-import com.yahoo.vespa.model.container.component.AccessLogComponent;
 
 import java.time.Duration;
 import java.util.LinkedHashMap;
@@ -65,10 +63,6 @@ public class MetricsProxyContainer extends Container implements
         setProp("clustertype", "admin");
         setProp("index", String.valueOf(index));
         addNodeSpecificComponents();
-        addComponent(new AccessLogComponent(containerCluster().orElse(null), AccessLogComponent.AccessLogType.jsonAccessLog,
-                "zstd",
-                Optional.of("metrics-proxy"),
-                deployState.isHosted()));
     }
 
     private void addNodeSpecificComponents() {
