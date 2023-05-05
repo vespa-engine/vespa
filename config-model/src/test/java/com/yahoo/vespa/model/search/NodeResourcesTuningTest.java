@@ -183,9 +183,9 @@ public class NodeResourcesTuningTest {
     @Test
     public void require_that_concurrent_flush_threads_is_1_with_low_memory() {
         assertEquals(1, fromMemAndCpu(1, 8).flush().maxconcurrent());
-        assertEquals(1, fromMemAndCpu(15, 8).flush().maxconcurrent());
-        assertEquals(1, fromMemAndCpu(16, 8).flush().maxconcurrent());
-        assertEquals(2, fromMemAndCpu(17, 8).flush().maxconcurrent());
+        assertEquals(1, fromMemAndCpu(10, 8).flush().maxconcurrent());
+        assertEquals(1, fromMemAndCpu(11, 8).flush().maxconcurrent());
+        assertEquals(2, fromMemAndCpu(12, 8).flush().maxconcurrent());
         assertEquals(2, fromMemAndCpu(65, 8).flush().maxconcurrent()); // still capped by max
         assertEquals(2, fromMemAndCpu(65, 65).flush().maxconcurrent()); // still capped by max
     }
