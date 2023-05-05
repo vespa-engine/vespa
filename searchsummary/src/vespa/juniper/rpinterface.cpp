@@ -37,7 +37,7 @@ void SetDebug(unsigned int mask)
 }
 
 
-Juniper::Juniper(IJuniperProperties* props, Fast_WordFolder* wordfolder, int api_version) :
+Juniper::Juniper(IJuniperProperties* props, const Fast_WordFolder* wordfolder, int api_version) :
     _props(props),
     _wordfolder(wordfolder),
     _modifier(new QueryModifier())

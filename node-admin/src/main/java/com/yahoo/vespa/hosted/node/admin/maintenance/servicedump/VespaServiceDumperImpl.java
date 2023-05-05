@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.node.admin.maintenance.servicedump;
 
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.CloudName;
+import com.yahoo.jdisc.Timer;
 import com.yahoo.text.Lowercase;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeAttributes;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeRepository;
@@ -19,7 +20,6 @@ import com.yahoo.yolean.concurrent.Sleeper;
 
 import java.io.UncheckedIOException;
 import java.net.URI;
-import java.time.Clock;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
@@ -44,20 +44,20 @@ public class VespaServiceDumperImpl implements VespaServiceDumper {
     private final ContainerOperations container;
     private final SyncClient syncClient;
     private final NodeRepository nodeRepository;
-    private final Clock clock;
+    private final Timer timer;
     private final ArtifactProducers artifactProducers;
 
-    public VespaServiceDumperImpl(ContainerOperations container, SyncClient syncClient, NodeRepository nodeRepository) {
-        this(ArtifactProducers.createDefault(Sleeper.DEFAULT), container, syncClient, nodeRepository, Clock.systemUTC());
+    public VespaServiceDumperImpl(ContainerOperations container, SyncClient syncClient, NodeRepository nodeRepository, Timer timer) {
+        this(ArtifactProducers.createDefault(Sleeper.DEFAULT), container, syncClient, nodeRepository, timer);
     }
 
     // For unit testing
     VespaServiceDumperImpl(ArtifactProducers producers, ContainerOperations container, SyncClient syncClient,
-                           NodeRepository nodeRepository, Clock clock) {
+                           NodeRepository nodeRepository, Timer timer) {
         this.container = container;
         this.syncClient = syncClient;
         this.nodeRepository = nodeRepository;
-        this.clock = clock;
+        this.timer = timer;
         this.artifactProducers = producers;
     }
 
@@ -65,7 +65,7 @@ public class VespaServiceDumperImpl implements VespaServiceDumper {
     public void processServiceDumpRequest(NodeAgentContext context) {
         if (context.zone().getCloudName().equals(CloudName.GCP)) return;
 
-        Instant startedAt = clock.instant();
+        Instant startedAt = timer.currentTime();
         NodeSpec nodeSpec = context.node();
         ServiceDumpReport request;
         try {
@@ -119,7 +119,7 @@ public class VespaServiceDumperImpl implements VespaServiceDumper {
                 producedArtifacts.addAll(producer.produceArtifacts(producerCtx));
             }
             uploadArtifacts(context, destination, producedArtifacts);
-            storeReport(context, ServiceDumpReport.createSuccessReport(request, startedAt, clock.instant(), destination));
+            storeReport(context, ServiceDumpReport.createSuccessReport(request, startedAt, timer.currentTime(), destination));
         } catch (Exception e) {
             handleFailure(context, request, startedAt, e, e.getMessage());
         } finally {
@@ -157,13 +157,13 @@ public class VespaServiceDumperImpl implements VespaServiceDumper {
     private void handleFailure(NodeAgentContext context, ServiceDumpReport requestOrNull, Instant startedAt,
                                Exception failure, String message) {
         context.log(log, Level.WARNING, failure.toString(), failure);
-        ServiceDumpReport report = ServiceDumpReport.createErrorReport(requestOrNull, startedAt, clock.instant(), message);
+        ServiceDumpReport report = ServiceDumpReport.createErrorReport(requestOrNull, startedAt, timer.currentTime(), message);
         storeReport(context, report);
     }
 
     private void handleFailure(NodeAgentContext context, ServiceDumpReport requestOrNull, Instant startedAt, String message) {
         context.log(log, Level.WARNING, message);
-        ServiceDumpReport report = ServiceDumpReport.createErrorReport(requestOrNull, startedAt, clock.instant(), message);
+        ServiceDumpReport report = ServiceDumpReport.createErrorReport(requestOrNull, startedAt, timer.currentTime(), message);
         storeReport(context, report);
     }
 

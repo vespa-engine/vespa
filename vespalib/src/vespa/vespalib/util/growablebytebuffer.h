@@ -68,9 +68,15 @@ public:
     void putDouble(double v);
 
     /**
-       Adds a string to the buffer.
+       Adds a string to the buffer (without nul-termination).
     */
     void putString(vespalib::stringref v);
+
+    /**
+     * Adds a string to the buffer (including nul-termination).
+     * This matches com.yahoo.vespa.objects.Deserializer.getString.
+     */
+    void put_c_string(vespalib::stringref v);
 
     /**
        Adds a single byte to the buffer.

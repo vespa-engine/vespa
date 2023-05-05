@@ -275,6 +275,7 @@ func TestClientMethodAndURL(t *testing.T) {
 }
 
 func benchmarkClientSend(b *testing.B, compression Compression, document Document) {
+	b.Helper()
 	httpClient := mock.HTTPClient{}
 	client, _ := NewClient(ClientOptions{
 		Compression: compression,
@@ -293,6 +294,7 @@ func BenchmarkClientSend(b *testing.B) {
 }
 
 func BenchmarkClientSendCompressed(b *testing.B) {
-	doc := Document{Create: true, Id: mustParseId("id:ns:type::doc1"), Operation: OperationUpdate, Body: []byte(`{"fields":{"foo": "my document"}}`)}
+	body := fmt.Sprintf(`{"fields":{"foo": "%s"}}`, strings.Repeat("my document", 100))
+	doc := Document{Create: true, Id: mustParseId("id:ns:type::doc1"), Operation: OperationUpdate, Body: []byte(body)}
 	benchmarkClientSend(b, CompressionGzip, doc)
 }

@@ -2,7 +2,7 @@
 package com.yahoo.vespa.hosted.node.admin.maintenance;
 
 import com.yahoo.config.provision.NodeResources;
-import com.yahoo.test.ManualClock;
+import com.yahoo.jdisc.test.TestTimer;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
 import com.yahoo.vespa.hosted.node.admin.maintenance.coredump.CoredumpHandler;
 import com.yahoo.vespa.hosted.node.admin.maintenance.disk.DiskCleanup;
@@ -44,9 +44,9 @@ public class StorageMaintainerTest {
     private final CoredumpHandler coredumpHandler = mock(CoredumpHandler.class);
     private final DiskCleanup diskCleanup = mock(DiskCleanup.class);
     private final SyncClient syncClient = mock(SyncClient.class);
-    private final ManualClock clock = new ManualClock(Instant.ofEpochSecond(1234567890));
+    private final TestTimer timer = new TestTimer(Instant.ofEpochSecond(1234567890));
     private final FileSystem fileSystem = TestFileSystem.create();
-    private final StorageMaintainer storageMaintainer = new StorageMaintainer(terminal, coredumpHandler, diskCleanup, syncClient, clock,
+    private final StorageMaintainer storageMaintainer = new StorageMaintainer(terminal, coredumpHandler, diskCleanup, syncClient, timer,
             fileSystem.getPath("/data/vespa/storage/container-archive"));
 
     @Test
@@ -87,7 +87,7 @@ public class StorageMaintainerTest {
         // Archive container-1
         storageMaintainer.archiveNodeStorage(context1);
 
-        clock.advance(Duration.ofSeconds(3));
+        timer.advance(Duration.ofSeconds(3));
         storageMaintainer.archiveNodeStorage(context1);
 
         // container-1 should be gone from container-storage

@@ -10,8 +10,14 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.FileSystem;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * @author hakonhall
@@ -38,6 +44,15 @@ public class UnixPathTest {
         path.writeUtf8File(original);
         String fromFile = path.readUtf8File();
         assertEquals(original, fromFile);
+        assertEquals(List.of("foo", "bar"), path.readLines());
+    }
+
+    @Test
+    void touch() {
+        UnixPath path = new UnixPath(fs.getPath("example.txt"));
+        assertTrue(path.create());
+        assertEquals("", path.readUtf8File());
+        assertFalse(path.create());
     }
 
     @Test
@@ -74,9 +89,10 @@ public class UnixPathTest {
         Path path = fs.getPath("dir");
         UnixPath unixPath = new UnixPath(path);
         String permissions = "rwxr-xr--";
-        unixPath.createDirectory(permissions);
+        assertTrue(unixPath.createDirectory(permissions));
         assertTrue(unixPath.isDirectory());
         assertEquals(permissions, unixPath.getPermissions());
+        assertFalse(unixPath.createDirectory(permissions));
     }
 
     @Test

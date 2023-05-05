@@ -1,7 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.nodeadmin;
 
-import com.yahoo.test.ManualClock;
+import com.yahoo.jdisc.test.TestTimer;
 import com.yahoo.vespa.hosted.node.admin.container.metrics.Metrics;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContext;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContextImpl;
@@ -17,7 +17,9 @@ import java.util.Set;
 
 import static com.yahoo.vespa.hosted.node.admin.nodeadmin.NodeAdminImpl.NodeAgentWithScheduler;
 import static com.yahoo.vespa.hosted.node.admin.nodeadmin.NodeAdminImpl.NodeAgentWithSchedulerFactory;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.eq;
@@ -34,10 +36,10 @@ import static org.mockito.Mockito.when;
 public class NodeAdminImplTest {
 
     private final NodeAgentWithSchedulerFactory nodeAgentWithSchedulerFactory = mock(NodeAgentWithSchedulerFactory.class);
-    private final ManualClock clock = new ManualClock();
+    private final TestTimer timer = new TestTimer();
     private final ProcMeminfoReader procMeminfoReader = mock(ProcMeminfoReader.class);
     private final NodeAdminImpl nodeAdmin = new NodeAdminImpl(nodeAgentWithSchedulerFactory,
-            new Metrics(), clock, Duration.ZERO, Duration.ZERO, procMeminfoReader);
+            new Metrics(), timer, Duration.ZERO, Duration.ZERO, procMeminfoReader);
 
     @Test
     void nodeAgentsAreProperlyLifeCycleManaged() {
@@ -129,19 +131,19 @@ public class NodeAdminImplTest {
         // Initially everything is frozen to force convergence
         assertTrue(nodeAdmin.isFrozen());
         assertTrue(nodeAdmin.subsystemFreezeDuration().isZero());
-        clock.advance(Duration.ofSeconds(1));
+        timer.advance(Duration.ofSeconds(1));
         assertEquals(Duration.ofSeconds(1), nodeAdmin.subsystemFreezeDuration());
 
         // Unfreezing floors freeze duration
         assertTrue(nodeAdmin.setFrozen(false)); // Unfreeze everything
         assertTrue(nodeAdmin.subsystemFreezeDuration().isZero());
-        clock.advance(Duration.ofSeconds(1));
+        timer.advance(Duration.ofSeconds(1));
         assertTrue(nodeAdmin.subsystemFreezeDuration().isZero());
 
         // Advancing time now will make freeze duration proceed according to clock
         assertTrue(nodeAdmin.setFrozen(true));
         assertTrue(nodeAdmin.subsystemFreezeDuration().isZero());
-        clock.advance(Duration.ofSeconds(1));
+        timer.advance(Duration.ofSeconds(1));
         assertEquals(Duration.ofSeconds(1), nodeAdmin.subsystemFreezeDuration());
     }
 

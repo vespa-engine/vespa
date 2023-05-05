@@ -10,6 +10,7 @@ import com.yahoo.config.application.api.ApplicationFile;
 import com.yahoo.config.model.api.Model;
 import com.yahoo.config.model.api.ServiceInfo;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.EndpointsChecker.Availability;
 import com.yahoo.config.provision.EndpointsChecker.Endpoint;
@@ -113,7 +114,7 @@ public class ApplicationHandler extends HttpHandler {
     public HttpResponse handlePOST(HttpRequest request) {
         Path path = new Path(request.getUri());
 
-        if (path.matches("/application/v2/tenant/{tenant}/application/{application}/environment/{ignore}/region/{ignore}/instance/{instance}/verify-endpoints")) return verifyEndpoints(request);
+        if (path.matches("/application/v2/tenant/{tenant}/application/{application}/environment/{ignore}/region/{ignore}/instance/{instance}/verify-endpoints")) return verifyEndpoints(applicationId(path), request);
         if (path.matches("/application/v2/tenant/{tenant}/application/{application}/environment/{ignore}/region/{ignore}/instance/{instance}/reindex")) return triggerReindexing(applicationId(path), request);
         if (path.matches("/application/v2/tenant/{tenant}/application/{application}/environment/{ignore}/region/{ignore}/instance/{instance}/reindexing")) return enableReindexing(applicationId(path));
         if (path.matches("/application/v2/tenant/{tenant}/application/{application}/environment/{ignore}/region/{ignore}/instance/{instance}/restart")) return restart(applicationId(path), request);
@@ -332,17 +333,19 @@ public class ApplicationHandler extends HttpHandler {
         return new MessageResponse("Success");
     }
 
-    private HttpResponse verifyEndpoints(HttpRequest request) {
+    private HttpResponse verifyEndpoints(ApplicationId applicationId, HttpRequest request) {
         byte[] data = uncheck(() -> request.getData().readAllBytes());
         List<Endpoint> endpoints = new ArrayList<>();
         SlimeUtils.jsonToSlime(data).get()
                   .field("endpoints")
                   .traverse((ArrayTraverser) (__, endpointObject) -> {
-                      endpoints.add(new Endpoint(ClusterSpec.Id.from(endpointObject.field("clusterName").asString()),
+                      endpoints.add(new Endpoint(applicationId,
+                                                 ClusterSpec.Id.from(endpointObject.field("clusterName").asString()),
                                                  HttpURL.from(URI.create(endpointObject.field("url").asString())),
                                                  SlimeUtils.optionalString(endpointObject.field("ipAddress")).map(uncheck(InetAddress::getByName)),
                                                  SlimeUtils.optionalString(endpointObject.field("canonicalName")).map(DomainName::of),
-                                                 endpointObject.field("public").asBool()));
+                                                 endpointObject.field("public").asBool(),
+                                                 CloudAccount.from(endpointObject.field("account").asString())));
                   });
         if (endpoints.isEmpty()) throw new IllegalArgumentException("No endpoints in request " + request);
 

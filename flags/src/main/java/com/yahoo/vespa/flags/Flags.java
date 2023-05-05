@@ -216,7 +216,7 @@ public class Flags {
 
     public static final UnboundDoubleFlag CONTAINER_SHUTDOWN_TIMEOUT = defineDoubleFlag(
             "container-shutdown-timeout", 50.0,
-            List.of("baldersheim"), "2021-09-25", "2023-05-01",
+            List.of("baldersheim"), "2021-09-25", "2023-12-31",
             "Timeout for shutdown of a jdisc container",
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
@@ -224,13 +224,13 @@ public class Flags {
     // TODO: Move to a permanent flag
     public static final UnboundListFlag<String> ALLOWED_ATHENZ_PROXY_IDENTITIES = defineListFlag(
             "allowed-athenz-proxy-identities", List.of(), String.class,
-            List.of("bjorncs", "tokle"), "2021-02-10", "2023-05-01",
+            List.of("bjorncs", "tokle"), "2021-02-10", "2023-08-01",
             "Allowed Athenz proxy identities",
             "takes effect at redeployment");
 
     public static final UnboundIntFlag MAX_ACTIVATION_INHIBITED_OUT_OF_SYNC_GROUPS = defineIntFlag(
             "max-activation-inhibited-out-of-sync-groups", 0,
-            List.of("vekterli"), "2021-02-19", "2023-05-01",
+            List.of("vekterli"), "2021-02-19", "2023-09-01",
             "Allows replicas in up to N content groups to not be activated " +
             "for query visibility if they are out of sync with a majority of other replicas",
             "Takes effect at redeployment",
@@ -238,7 +238,7 @@ public class Flags {
 
     public static final UnboundDoubleFlag MIN_NODE_RATIO_PER_GROUP = defineDoubleFlag(
             "min-node-ratio-per-group", 0.0,
-            List.of("geirst", "vekterli"), "2021-07-16", "2023-05-01",
+            List.of("geirst", "vekterli"), "2021-07-16", "2023-09-01",
             "Minimum ratio of nodes that have to be available (i.e. not Down) in any hierarchic content cluster group for the group to be Up",
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
@@ -302,7 +302,7 @@ public class Flags {
 
     public static final UnboundBooleanFlag ENABLE_PROXY_PROTOCOL_MIXED_MODE = defineFeatureFlag(
             "enable-proxy-protocol-mixed-mode", true,
-            List.of("tokle"), "2022-05-09", "2023-04-30",
+            List.of("tokle"), "2022-05-09", "2023-08-01",
             "Enable or disable proxy protocol mixed mode",
             "Takes effect on redeployment",
             APPLICATION_ID);
@@ -331,7 +331,7 @@ public class Flags {
 
     public static final UnboundBooleanFlag RESTRICT_DATA_PLANE_BINDINGS = defineFeatureFlag(
             "restrict-data-plane-bindings", false,
-            List.of("mortent"), "2022-09-08", "2023-05-01",
+            List.of("mortent"), "2022-09-08", "2023-08-01",
             "Use restricted data plane bindings",
             "Takes effect at redeployment",
             APPLICATION_ID);
@@ -352,7 +352,7 @@ public class Flags {
 
     public static final UnboundStringFlag CORE_ENCRYPTION_PUBLIC_KEY_ID = defineStringFlag(
             "core-encryption-public-key-id", "",
-            List.of("vekterli"), "2022-11-03", "2023-05-01",
+            List.of("vekterli"), "2022-11-03", "2023-10-01",
             "Specifies which public key to use for core dump encryption.",
             "Takes effect on the next tick.",
             ZONE_ID, NODE_TYPE, HOSTNAME);
@@ -366,15 +366,8 @@ public class Flags {
 
     public static final UnboundBooleanFlag VESPA_ATHENZ_PROVIDER = defineFeatureFlag(
             "vespa-athenz-provider", false,
-            List.of("mortent"), "2023-02-22", "2023-05-01",
+            List.of("mortent"), "2023-02-22", "2023-08-01",
             "Enable athenz provider in public systems",
-            "Takes effect on next config server container start",
-            ZONE_ID);
-
-    public static final UnboundLongFlag ZOOKEEPER_BARRIER_WAIT_FOR_ALL_TIMEOUT = defineLongFlag(
-            "zookeeper-barrier-wait-for-all-timeout", 5,
-            List.of("hmusum"), "2023-03-28", "2023-05-28",
-            "Time to wait for all barrier members after getting response from quorum number of member",
             "Takes effect on next config server container start",
             ZONE_ID);
 
@@ -398,7 +391,7 @@ public class Flags {
             ZONE_ID, APPLICATION_ID);
 
     public static final UnboundBooleanFlag FAIL_DEPLOYMENT_ON_MISSING_CERTIFICATE_FILE = defineFeatureFlag(
-            "fail-on-missing-certificate-file", false, List.of("hmusum"), "2023-04-21", "2023-05-21",
+            "fail-on-missing-certificate-file", true, List.of("hmusum"), "2023-04-21", "2023-05-21",
             "Whether to fail in controller when a submitted application package has no certificate files",
             "Takes effect at redeployment",
             ZONE_ID);
@@ -413,6 +406,12 @@ public class Flags {
             "randomized-endpoint-names", false, List.of("andreer"), "2023-04-26", "2023-06-30",
             "Whether to use randomized endpoint names",
             "Takes effect on application deployment",
+            APPLICATION_ID);
+
+    public static final UnboundBooleanFlag USE_VESPA_ALMA_LINUX_X86_64_AMI = defineFeatureFlag(
+            "use-vespa-alma-linux-x86_64-ami", false, List.of("hmusum"), "2023-05-04", "2023-07-01",
+            "Whether to use VESPA-ALMALINUX-8-* AMI for x86_64 architecture",
+            "Takes effect when provisioning new AWS hosts",
             APPLICATION_ID);
 
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */

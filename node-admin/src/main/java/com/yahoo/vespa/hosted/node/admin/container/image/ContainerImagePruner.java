@@ -2,11 +2,11 @@
 package com.yahoo.vespa.hosted.node.admin.container.image;
 
 import com.yahoo.collections.Pair;
+import com.yahoo.jdisc.Timer;
 import com.yahoo.vespa.hosted.node.admin.component.TaskContext;
 import com.yahoo.vespa.hosted.node.admin.container.ContainerEngine;
 import com.yahoo.vespa.hosted.node.admin.container.PartialContainer;
 
-import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -51,14 +51,14 @@ public class ContainerImagePruner {
 
     private static final Logger LOG = Logger.getLogger(ContainerImagePruner.class.getName());
 
-    private final Clock clock;
+    private final Timer timer;
     private final ContainerEngine containerEngine;
 
     private final Map<String, Instant> lastTimeUsedByImageId = new ConcurrentHashMap<>();
 
-    public ContainerImagePruner(ContainerEngine containerEngine, Clock clock) {
+    public ContainerImagePruner(ContainerEngine containerEngine, Timer timer) {
         this.containerEngine = Objects.requireNonNull(containerEngine);
-        this.clock = Objects.requireNonNull(clock);
+        this.timer = Objects.requireNonNull(timer);
     }
 
     /**
@@ -112,7 +112,7 @@ public class ContainerImagePruner {
     }
 
     private Set<String> updateRecentlyUsedImageIds(List<Image> images, List<PartialContainer> containers, Duration minImageAgeToDelete) {
-        final Instant now = clock.instant();
+        final Instant now = timer.currentTime();
 
         // Add any already downloaded image to the list once
         images.forEach(image -> lastTimeUsedByImageId.putIfAbsent(image.id(), now));

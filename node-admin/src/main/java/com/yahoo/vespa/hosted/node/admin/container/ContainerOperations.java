@@ -2,6 +2,8 @@
 package com.yahoo.vespa.hosted.node.admin.container;
 
 import com.yahoo.config.provision.DockerImage;
+import com.yahoo.jdisc.Timer;
+import com.yahoo.vespa.hosted.node.admin.cgroup.Cgroup;
 import com.yahoo.vespa.hosted.node.admin.component.TaskContext;
 import com.yahoo.vespa.hosted.node.admin.container.image.ContainerImageDownloader;
 import com.yahoo.vespa.hosted.node.admin.container.image.ContainerImagePruner;
@@ -12,7 +14,6 @@ import com.yahoo.vespa.hosted.node.admin.task.util.process.CommandLine;
 import com.yahoo.vespa.hosted.node.admin.task.util.process.CommandResult;
 
 import java.nio.file.FileSystem;
-import java.time.Clock;
 import java.time.Duration;
 import java.util.List;
 import java.util.Objects;
@@ -33,10 +34,10 @@ public class ContainerOperations {
     private final ContainerImagePruner imagePruner;
     private final ContainerStatsCollector containerStatsCollector;
 
-    public ContainerOperations(ContainerEngine containerEngine, CGroupV2 cgroup, FileSystem fileSystem) {
+    public ContainerOperations(ContainerEngine containerEngine, Cgroup cgroup, FileSystem fileSystem, Timer timer) {
         this.containerEngine = Objects.requireNonNull(containerEngine);
         this.imageDownloader = new ContainerImageDownloader(containerEngine);
-        this.imagePruner = new ContainerImagePruner(containerEngine, Clock.systemUTC());
+        this.imagePruner = new ContainerImagePruner(containerEngine, timer);
         this.containerStatsCollector = new ContainerStatsCollector(containerEngine, cgroup, fileSystem);
     }
 

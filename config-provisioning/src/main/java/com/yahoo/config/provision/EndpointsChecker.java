@@ -19,29 +19,37 @@ import java.util.Optional;
  */
 public interface EndpointsChecker {
 
-    record Endpoint(ClusterSpec.Id clusterName,
+    record Endpoint(ApplicationId applicationId,
+                    ClusterSpec.Id clusterName,
                     HttpURL url,
                     Optional<InetAddress> ipAddress,
                     Optional<DomainName> canonicalName,
-                    boolean isPublic) { }
+                    boolean isPublic,
+                    CloudAccount account) { }
 
     /** Status sorted by increasing readiness. */
     enum Status { endpointsUnavailable, containersUnhealthy, available }
 
-    record Availability(Status status, String message) { }
+    record Availability(Status status, String message) {
+        public static final Availability ready = new Availability(Status.available, "Endpoints are ready.");
+    }
 
     interface HostNameResolver { Optional<InetAddress> resolve(DomainName hostName); }
 
     interface CNameResolver { Optional<DomainName> resolve(DomainName hostName); }
 
-    interface ContainerHealthChecker { boolean healthy(Endpoint endpoint); }
+    interface HealthChecker { Availability healthy(Endpoint endpoint); }
 
-    static EndpointsChecker of(ContainerHealthChecker containerHealthChecker) {
-        return zoneEndpoints -> endpointsAvailable(zoneEndpoints, EndpointsChecker::resolveHostName, EndpointsChecker::resolveCname, containerHealthChecker);
+    interface HealthCheckerProvider {
+        default HealthChecker getHealthChecker() { return __ -> Availability.ready; }
     }
 
-    static EndpointsChecker mock(HostNameResolver hostNameResolver, CNameResolver cNameResolver, ContainerHealthChecker containerHealthChecker) {
-        return zoneEndpoints -> endpointsAvailable(zoneEndpoints, hostNameResolver, cNameResolver, containerHealthChecker);
+    static EndpointsChecker of(HealthChecker healthChecker) {
+        return zoneEndpoints -> endpointsAvailable(zoneEndpoints, EndpointsChecker::resolveHostName, EndpointsChecker::resolveCname, healthChecker);
+    }
+
+    static EndpointsChecker mock(HostNameResolver hostNameResolver, CNameResolver cNameResolver, HealthChecker healthChecker) {
+        return zoneEndpoints -> endpointsAvailable(zoneEndpoints, hostNameResolver, cNameResolver, healthChecker);
     }
 
     Availability endpointsAvailable(List<Endpoint> zoneEndpoints);
@@ -49,7 +57,7 @@ public interface EndpointsChecker {
     private static Availability endpointsAvailable(List<Endpoint> zoneEndpoints,
                                                    HostNameResolver hostNameResolver,
                                                    CNameResolver cNameResolver,
-                                                   ContainerHealthChecker containerHealthChecker) {
+                                                   HealthChecker healthChecker) {
         if (zoneEndpoints.isEmpty())
             return new Availability(Status.endpointsUnavailable, "Endpoints not yet ready.");
 
@@ -89,11 +97,13 @@ public interface EndpointsChecker {
             }
         }
 
-        for (Endpoint endpoint : zoneEndpoints)
-            if ( ! containerHealthChecker.healthy(endpoint))
-                return new Availability(Status.containersUnhealthy, "Failed to get enough healthy responses from " + endpoint.url());
-
-        return new Availability(Status.available, "Endpoints are ready");
+        Availability availability = Availability.ready;
+        for (Endpoint endpoint : zoneEndpoints) {
+            Availability candidate = healthChecker.healthy(endpoint);
+            if (candidate.status.compareTo(availability.status) < 0)
+                availability = candidate;
+        }
+        return availability;
     }
 
     /** Returns the IP address of the given host name, if any. */

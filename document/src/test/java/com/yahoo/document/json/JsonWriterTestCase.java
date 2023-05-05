@@ -291,7 +291,7 @@ public class JsonWriterTestCase {
         String payload = new String(
                 new JsonStringEncoder().quoteAsString(
                         "c3RyaW5nIGxvbmcgZW5vdWdoIHRvIGVtaXQgbW9yZSB0aGFuIDc2IGJhc2U2NCBjaGFyYWN0ZXJzIGFuZC" +
-                              "B3aGljaCBzaG91bGQgY2VydGFpbmx5IG5vdCBiZSBuZXdsaW5lLWRlbGltaXRlZCE"));
+                              "B3aGljaCBzaG91bGQgY2VydGFpbmx5IG5vdCBiZSBuZXdsaW5lLWRlbGltaXRlZCE="));
 
         String docId = "id:unittest:testraw::whee";
 

@@ -7,9 +7,6 @@ import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.TreeConfigProducer;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.vespa.model.container.Container;
-import com.yahoo.vespa.model.container.component.AccessLogComponent;
-import com.yahoo.vespa.model.container.component.AccessLogComponent.AccessLogType;
-import java.util.Optional;
 
 /**
  * Container that should be running on same host as the logserver. Sets up a handler for getting logs from logserver.
@@ -19,11 +16,8 @@ public class LogserverContainer extends Container {
 
     public LogserverContainer(TreeConfigProducer<?> parent, DeployState deployState) {
         super(parent, "" + 0, 0, deployState);
-        if (deployState.isHosted() && deployState.getProperties().applicationId().instance().isTester()) useDynamicPorts();
-        LogserverContainerCluster cluster = (LogserverContainerCluster) parent;
-        addComponent(new AccessLogComponent(cluster, AccessLogType.jsonAccessLog,
-                                            deployState.featureFlags().logFileCompressionAlgorithm("zstd"),
-                                            Optional.of(cluster.getName()), true));
+        if (deployState.isHosted() && deployState.getProperties().applicationId().instance().isTester())
+            useDynamicPorts();
     }
 
     @Override

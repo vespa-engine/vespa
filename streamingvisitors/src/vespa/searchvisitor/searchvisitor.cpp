@@ -25,6 +25,7 @@
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/text/stringtokenizer.h>
 #include <vespa/fnet/databuffer.h>
+#include <optional>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".visitor.instance.searchvisitor");
@@ -47,6 +48,20 @@ using vsm::DocsumFilter;
 using vsm::FieldPath;
 using vsm::StorageDocument;
 using vsm::StringFieldIdTMap;
+
+namespace {
+
+std::optional<vespalib::string>
+extract_search_cluster(const vdslib::Parameters& params)
+{
+    Parameters::ValueRef searchClusterBlob;
+    if (params.lookup("searchcluster", searchClusterBlob)) {
+        return {{searchClusterBlob.data(), searchClusterBlob.size()}};
+    }
+    return std::nullopt;
+}
+
+}
 
 class ForceWordfolderInit
 {
@@ -354,11 +369,10 @@ void SearchVisitor::init(const Parameters & params)
         _summaryGenerator.set_location(valueRef);
     }
 
-    Parameters::ValueRef searchClusterBlob;
-    if (params.lookup("searchcluster", searchClusterBlob)) {
-        LOG(spam, "Received searchcluster blob of %zd bytes", searchClusterBlob.size());
-        vespalib::string searchCluster(searchClusterBlob.data(), searchClusterBlob.size());
-        _vsmAdapter = _env.getVSMAdapter(searchCluster);
+    auto search_cluster = extract_search_cluster(params);
+    if (search_cluster.has_value()) {
+        LOG(spam, "Received searchcluster blob of %zd bytes", search_cluster.value().size());
+        _vsmAdapter = _env.getVSMAdapter(search_cluster.value());
 
         if ( params.lookup("sort", valueRef) ) {
             search::uca::UcaConverterFactory ucaFactory;
@@ -396,7 +410,7 @@ void SearchVisitor::init(const Parameters & params)
 
             setupAttributeVectorsForSorting(_sortSpec);
 
-            const RankManager * rm = _env.getRankManager(searchCluster);
+            const RankManager * rm = _env.getRankManager(search_cluster.value());
             _rankController.setRankManagerSnapshot(rm->getSnapshot());
             _rankController.setupRankProcessors(_query, location, wantedSummaryCount, _attrMan, _attributeFields);
 

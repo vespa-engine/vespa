@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.node.admin.maintenance.identity;
 
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.jdisc.Timer;
 import com.yahoo.security.KeyAlgorithm;
 import com.yahoo.security.KeyUtils;
 import com.yahoo.security.Pkcs10Csr;
@@ -45,7 +46,6 @@ import java.nio.file.Path;
 import java.security.KeyPair;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
-import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
@@ -76,7 +76,7 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
 
     private final URI ztsEndpoint;
     private final Path ztsTrustStorePath;
-    private final Clock clock;
+    private final Timer timer;
     private final String certificateDnsSuffix;
     private final ServiceIdentityProvider hostIdentityProvider;
     private final IdentityDocumentClient identityDocumentClient;
@@ -92,7 +92,7 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
                                        String certificateDnsSuffix,
                                        ServiceIdentityProvider hostIdentityProvider,
                                        FlagSource flagSource,
-                                       Clock clock) {
+                                       Timer timer) {
         this.ztsEndpoint = ztsEndpoint;
         this.ztsTrustStorePath = ztsTrustStorePath;
         this.certificateDnsSuffix = certificateDnsSuffix;
@@ -101,7 +101,7 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
                 configServerInfo.getLoadBalancerEndpoint(),
                 hostIdentityProvider,
                 new AthenzIdentityVerifier(Set.of(configServerInfo.getConfigServerIdentity())));
-        this.clock = clock;
+        this.timer = timer;
         this.tenantServiceIdentityFlag = Flags.NODE_ADMIN_TENANT_SERVICE_REGISTRY.bindTo(flagSource);
         this.useNewIdentityDocumentLayout = Flags.NEW_IDDOC_LAYOUT.bindTo(flagSource);
     }
@@ -144,7 +144,7 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
             }
 
             X509Certificate certificate = readCertificateFromFile(certificateFile);
-            Instant now = clock.instant();
+            Instant now = timer.currentTime();
             Instant expiry = certificate.getNotAfter().toInstant();
             var doc = EntityBindingsMapper.readSignedIdentityDocumentFromFile(identityDocumentFile);
             if (refreshIdentityDocument(doc, context)) {
@@ -192,11 +192,13 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
                 try {
                     var roleCertificatePath = siaDirectory.resolve("certs")
                             .resolve(String.format("%s.cert.pem", role));
+                    var roleKeyPath = siaDirectory.resolve("keys")
+                            .resolve(String.format("%s.key.pem", role));
                     if (!Files.exists(roleCertificatePath)) {
-                        writeRoleCertificate(context, privateKeyFile, certificateFile, roleCertificatePath, identity, identityDocument, role);
+                        writeRoleCredentials(context, privateKeyFile, certificateFile, roleCertificatePath, roleKeyPath, identity, identityDocument, role);
                         modified = true;
                     } else if (shouldRefreshCertificate(context, roleCertificatePath)) {
-                        writeRoleCertificate(context, privateKeyFile, certificateFile, roleCertificatePath, identity, identityDocument, role);
+                        writeRoleCredentials(context, privateKeyFile, certificateFile, roleCertificatePath, roleKeyPath, identity, identityDocument, role);
                         modified = true;
                     }
                 } catch (IOException e) {
@@ -208,33 +210,38 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
 
     private boolean shouldRefreshCertificate(NodeAgentContext context, ContainerPath certificatePath) throws IOException {
         var certificate = readCertificateFromFile(certificatePath);
-        var now = clock.instant();
+        var now = timer.currentTime();
         var shouldRefresh = now.isAfter(certificate.getNotAfter().toInstant()) ||
                 now.isBefore(certificate.getNotBefore().toInstant().plus(REFRESH_PERIOD));
         return !shouldThrottleRefreshAttempts(context.containerName(), now) &&
                 shouldRefresh;
     }
 
-    private void writeRoleCertificate(NodeAgentContext context,
+    private void writeRoleCredentials(NodeAgentContext context,
                                       ContainerPath privateKeyFile,
                                       ContainerPath certificateFile,
                                       ContainerPath roleCertificatePath,
+                                      ContainerPath roleKeyPath,
                                       AthenzIdentity identity,
                                       IdentityDocument identityDocument,
                                       String role) throws IOException {
         HostnameVerifier ztsHostNameVerifier = (hostname, sslSession) -> true;
+        var keyPair = KeyUtils.generateKeypair(KeyAlgorithm.RSA);
         var athenzRole = AthenzRole.fromResourceNameString(role);
-        var privateKey = KeyUtils.fromPemEncodedPrivateKey(new String(Files.readAllBytes(privateKeyFile)));
 
-        var containerIdentitySslContext = new SslContextBuilder().withKeyStore(privateKeyFile, certificateFile)
+        var containerIdentitySslContext = new SslContextBuilder()
+                .withKeyStore(privateKeyFile, certificateFile)
                 .withTrustStore(ztsTrustStorePath)
                 .build();
-        try (ZtsClient ztsClient = new DefaultZtsClient.Builder(ztsEndpoint(identityDocument)).withSslContext(containerIdentitySslContext).withHostnameVerifier(ztsHostNameVerifier).build()) {
+        try (ZtsClient ztsClient = new DefaultZtsClient.Builder(ztsEndpoint(identityDocument))
+                .withSslContext(containerIdentitySslContext)
+                .withHostnameVerifier(ztsHostNameVerifier)
+                .build()) {
             var csrGenerator = new CsrGenerator(certificateDnsSuffix, identityDocument.providerService().getFullName());
             var csr = csrGenerator.generateRoleCsr(
-                    identity, athenzRole, identityDocument.providerUniqueId(), identityDocument.clusterType(), KeyUtils.toKeyPair(privateKey));
+                    identity, athenzRole, identityDocument.providerUniqueId(), identityDocument.clusterType(), keyPair);
             var roleCertificate = ztsClient.getRoleCertificate(athenzRole, csr);
-            writeFile(roleCertificatePath, X509CertificateUtils.toPem(roleCertificate));
+            writePrivateKeyAndCertificate(roleKeyPath, keyPair.getPrivate(), roleCertificatePath, roleCertificate);
             context.log(logger, "Role certificate successfully retrieved written to file " + roleCertificatePath.pathInContainer());
         }
     }
@@ -256,7 +263,7 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
         ContainerPath certificateFile = (ContainerPath) SiaUtils.getCertificateFile(containerSiaDirectory, context.identity());
         try {
             X509Certificate certificate = readCertificateFromFile(certificateFile);
-            Instant now = clock.instant();
+            Instant now = timer.currentTime();
             Instant expiry = certificate.getNotAfter().toInstant();
             return Duration.between(now, expiry);
         } catch (IOException e) {
@@ -278,9 +285,10 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
             var privateKeyFile = (ContainerPath) SiaUtils.getPrivateKeyFile(siaDirectory, athenzIdentity);
             var certificateFile = (ContainerPath) SiaUtils.getCertificateFile(siaDirectory, athenzIdentity);
             try {
-                return Files.deleteIfExists(identityDocumentFile) ||
-                        Files.deleteIfExists(privateKeyFile) ||
-                        Files.deleteIfExists(certificateFile);
+                var modified = Files.deleteIfExists(identityDocumentFile);
+                modified |= Files.deleteIfExists(privateKeyFile);
+                modified |= Files.deleteIfExists(certificateFile);
+                return modified;
             } catch (IOException e) {
                 throw new UncheckedIOException(e);
             }

@@ -36,6 +36,17 @@ cfFilePath(const vespalib::string &parent, const vespalib::string &filename) {
     return path + "/" + filename;
 }
 
+void appendFile(FILE *target, const vespalib::string &filename) {
+    FILE *fp = fopen(filename.c_str(), "r");
+    if (fp != NULL) {
+        int c;
+        while (EOF != (c = fgetc(fp))) {
+            fputc(c, target);
+        }
+        fclose(fp);
+    }
+}
+
 } // namespace <unnamed>
 
 void SplunkStarter::gotConfig(const LogforwarderConfig& config) {
@@ -82,13 +93,23 @@ void SplunkStarter::gotConfig(const LogforwarderConfig& config) {
         }
     }
     vespalib::string clientCert = clientCertFile();
-    if (! clientCert.empty()) {
+    vespalib::string clientKey = clientKeyFile();
+    if (!clientCert.empty() && !clientKey.empty()) {
+        vespalib::string certPath = cfFilePath(config.splunkHome, "clientcert.pem");
+        tmpPath = certPath + ".new";
+        fp = fopen(tmpPath.c_str(), "w");
+        appendFile(fp, clientCert);
+        appendFile(fp, clientKey);
+        appendFile(fp, "/etc/ssl/certs/ca-bundle.crt");
+        fclose(fp);
+        rename(tmpPath.c_str(), certPath.c_str());
+
         path = cfFilePath(config.splunkHome, "outputs.conf");
         tmpPath = path + ".new";
         fp = fopen(tmpPath.c_str(), "w");
         if (fp != NULL) {
             fprintf(fp, "[tcpout]\n");
-            fprintf(fp, "clientCert = %s\n", clientCert.c_str());
+            fprintf(fp, "clientCert = %s\n", certPath.c_str());
             fclose(fp);
             rename(tmpPath.c_str(), path.c_str());
         }

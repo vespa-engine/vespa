@@ -2,6 +2,7 @@
 package com.yahoo.jdisc.core;
 
 import com.google.inject.Inject;
+import com.yahoo.concurrent.SystemTimer;
 import com.yahoo.jdisc.Request;
 import com.yahoo.jdisc.ResourceReference;
 import com.yahoo.jdisc.Response;
@@ -14,6 +15,7 @@ import com.yahoo.jdisc.handler.RequestHandler;
 import com.yahoo.jdisc.handler.ResponseHandler;
 
 import java.nio.ByteBuffer;
+import java.time.Duration;
 import java.util.LinkedList;
 import java.util.Queue;
 import java.util.concurrent.ThreadFactory;
@@ -60,7 +62,7 @@ public class TimeoutManagerImpl {
         return new ManagedRequestHandler(handler);
     }
 
-    synchronized int queueSize() { return scheduler.queueSize(); }
+    int queueSize() { return scheduler.queueSize(); }
 
     Timer timer() {
         return timer;
@@ -91,7 +93,7 @@ public class TimeoutManagerImpl {
 
     private class ManagerTask implements Runnable {
 
-        boolean oneMoreCheck(int timeoutMS) {
+        boolean oneMoreCheck(long timeoutMS) {
             synchronized (done) {
                 if (!done.get()) {
                     try {
@@ -106,7 +108,9 @@ public class TimeoutManagerImpl {
 
         @Override
         public void run() {
-            while (oneMoreCheck(ScheduledQueue.MILLIS_PER_SLOT)) {
+            Duration desiredTimeout = Duration.ofMillis(ScheduledQueue.MILLIS_PER_SLOT);
+            Duration actualTimeout = SystemTimer.adjustTimeoutByDetectedHz(desiredTimeout);
+            while (oneMoreCheck(actualTimeout.toMillis())) {
                 checkTasks(timer.currentTimeMillis());
             }
         }

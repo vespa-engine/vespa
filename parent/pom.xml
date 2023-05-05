@@ -1125,7 +1125,7 @@
 
         <!-- Athenz dependencies. Make sure these dependencies match those in Vespa's internal repositories -->
         <athenz.version>1.11.28</athenz.version> <!-- WARNING: sync cloud-tenant-base-dependencies-enforcer/pom.xml -->
-        <aws-sdk.version>1.12.331</aws-sdk.version>
+        <aws-sdk.version>1.12.460</aws-sdk.version>
         <!-- Athenz END -->
 
         <!-- WARNING: If you change curator version, you also need to update
@@ -1134,7 +1134,7 @@
                  find zkfacade/src/main/java/org/apache/curator -name package-info.java | \
                      xargs perl -pi -e 's/major = [0-9]+, minor = [0-9]+, micro = [0-9]+/major = 5, minor = 3, micro = 0/g'
         -->
-        <bouncycastle.version>1.72</bouncycastle.version>
+        <bouncycastle.version>1.73</bouncycastle.version>
         <curator.version>5.4.0</curator.version>
         <commons-codec.version>1.15</commons-codec.version>
         <commons-io.version>2.11.0</commons-io.version>

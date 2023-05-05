@@ -26,6 +26,7 @@
     <component id="com.yahoo.vespa.config.server.tenant.TenantRepository" bundle="configserver" />
     <component id="com.yahoo.vespa.config.server.host.HostRegistry" bundle="configserver" />
     <component id="com.yahoo.vespa.config.server.ApplicationRepository" bundle="configserver" />
+    <component id="com.yahoo.vespa.config.server.HealthCheckerProviderProvider" bundle="configserver" />
     <component id="com.yahoo.vespa.config.server.version.VersionState" bundle="configserver" />
     <component id="com.yahoo.config.provision.Zone" bundle="config-provisioning" />
     <component id="com.yahoo.vespa.config.server.application.ConfigConvergenceChecker" bundle="configserver" />

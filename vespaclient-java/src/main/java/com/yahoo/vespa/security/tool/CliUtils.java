@@ -8,6 +8,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.nio.file.attribute.PosixFilePermissions;
 
 /**
  * @author vekterli
@@ -43,7 +44,10 @@ public class CliUtils {
             return stdOut;
         } else {
             // TODO fail if file already exists?
-            return Files.newOutputStream(Paths.get(pathOrDash));
+            var privFilePerms = PosixFilePermissions.fromString("rw-------");
+            var outPath = Paths.get(pathOrDash);
+            Files.createFile(outPath, PosixFilePermissions.asFileAttribute(privFilePerms));
+            return Files.newOutputStream(outPath);
         }
     }
 

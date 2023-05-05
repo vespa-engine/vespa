@@ -5,12 +5,10 @@ import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
 import java.util.LinkedList;
-import java.util.List;
 import java.util.Queue;
 
 import static com.yahoo.jdisc.core.ScheduledQueue.MILLIS_PER_SLOT;
 import static com.yahoo.jdisc.core.ScheduledQueue.NUM_SLOTS;
-import static com.yahoo.jdisc.core.ScheduledQueue.NUM_SLOTS_UNDILATED;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -95,7 +93,7 @@ public class ScheduledQueueTestCase {
     @Test
     void requireThatEntriesDoNotExpireMoreThanOnce() {
         ScheduledQueue queue = new ScheduledQueue(0);
-        Object foo = scheduleAt(queue, NUM_SLOTS * MILLIS_PER_SLOT + 50);
+        Object foo = scheduleAt(queue, NUM_SLOTS * MILLIS_PER_SLOT + MILLIS_PER_SLOT/2);
 
         long now = 0;
         for (int i = 0; i < NUM_SLOTS; ++i, now += MILLIS_PER_SLOT) {
@@ -113,25 +111,6 @@ public class ScheduledQueueTestCase {
         Object foo = scheduleAt(queue, -100);
 
         assertDrainTo(queue, 0, foo);
-    }
-
-    @Test
-    void requireThatDrainToPerformsTimeDilationWhenOverloaded() {
-        ScheduledQueue queue = new ScheduledQueue(0);
-        List<Object> payloads = new LinkedList<>();
-        for (int i = 1; i <= NUM_SLOTS_UNDILATED + 1; ++i) {
-            payloads.add(scheduleAt(queue, i * MILLIS_PER_SLOT));
-        }
-
-        Queue<Object> expired = new LinkedList<>();
-        long currentTimeMillis = payloads.size() * MILLIS_PER_SLOT;
-        queue.drainTo(currentTimeMillis, expired);
-        assertEquals(NUM_SLOTS_UNDILATED, expired.size());
-
-        expired = new LinkedList<>();
-        currentTimeMillis += MILLIS_PER_SLOT;
-        queue.drainTo(currentTimeMillis, expired);
-        assertEquals(1, expired.size());
     }
 
     private static Object scheduleAt(ScheduledQueue queue, long expireAtMillis) {

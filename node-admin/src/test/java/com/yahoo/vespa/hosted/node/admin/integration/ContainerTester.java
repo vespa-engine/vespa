@@ -4,10 +4,11 @@ package com.yahoo.vespa.hosted.node.admin.integration;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.NodeType;
+import com.yahoo.jdisc.test.TestTimer;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
+import com.yahoo.vespa.hosted.node.admin.cgroup.Cgroup;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
 import com.yahoo.vespa.hosted.node.admin.configserver.orchestrator.Orchestrator;
-import com.yahoo.vespa.hosted.node.admin.container.CGroupV2;
 import com.yahoo.vespa.hosted.node.admin.container.ContainerEngineMock;
 import com.yahoo.vespa.hosted.node.admin.container.ContainerName;
 import com.yahoo.vespa.hosted.node.admin.container.ContainerOperations;
@@ -30,9 +31,7 @@ import org.mockito.InOrder;
 import org.mockito.Mockito;
 
 import java.nio.file.FileSystem;
-import java.time.Clock;
 import java.time.Duration;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.Phaser;
@@ -60,7 +59,8 @@ public class ContainerTester implements AutoCloseable {
 
     private final ContainerEngineMock containerEngine = new ContainerEngineMock();
     private final FileSystem fileSystem = TestFileSystem.create();
-    final ContainerOperations containerOperations = spy(new ContainerOperations(containerEngine, new CGroupV2(fileSystem), fileSystem));
+    private final TestTimer timer = new TestTimer();
+    final ContainerOperations containerOperations = spy(new ContainerOperations(containerEngine, mock(Cgroup.class), fileSystem, timer));
     final NodeRepoMock nodeRepository = spy(new NodeRepoMock());
     final Orchestrator orchestrator = mock(Orchestrator.class);
     final StorageMaintainer storageMaintainer = mock(StorageMaintainer.class);
@@ -85,7 +85,6 @@ public class ContainerTester implements AutoCloseable {
         NodeSpec hostSpec = NodeSpec.Builder.testSpec(HOST_HOSTNAME.value()).type(NodeType.host).build();
         nodeRepository.updateNodeSpec(hostSpec);
 
-        Clock clock = Clock.systemUTC();
         Metrics metrics = new Metrics();
         FileSystem fileSystem = TestFileSystem.create();
         ProcMeminfoReader procMeminfoReader = mock(ProcMeminfoReader.class);
@@ -94,7 +93,7 @@ public class ContainerTester implements AutoCloseable {
         NodeAgentFactory nodeAgentFactory = (contextSupplier, nodeContext) ->
                 new NodeAgentImpl(contextSupplier, nodeRepository, orchestrator, containerOperations, () -> RegistryCredentials.none,
                                   storageMaintainer, flagSource,
-                                  Collections.emptyList(), Optional.empty(), Optional.empty(), clock, Duration.ofSeconds(-1),
+                                  List.of(), Optional.empty(), Optional.empty(), timer, Duration.ofSeconds(-1),
                                   VespaServiceDumper.DUMMY_INSTANCE, List.of()) {
                     @Override public void converge(NodeAgentContext context) {
                         super.converge(context);
@@ -109,7 +108,7 @@ public class ContainerTester implements AutoCloseable {
                         phaser.arriveAndDeregister();
                     }
              };
-        nodeAdmin = new NodeAdminImpl(nodeAgentFactory, metrics, clock, Duration.ofMillis(10), Duration.ZERO, procMeminfoReader);
+        nodeAdmin = new NodeAdminImpl(nodeAgentFactory, metrics, timer, Duration.ofMillis(10), Duration.ZERO, procMeminfoReader);
         NodeAgentContextFactory nodeAgentContextFactory = (nodeSpec, acl) ->
                 NodeAgentContextImpl.builder(nodeSpec).acl(acl).fileSystem(fileSystem).build();
         nodeAdminStateUpdater = new NodeAdminStateUpdater(nodeAgentContextFactory, nodeRepository, orchestrator,

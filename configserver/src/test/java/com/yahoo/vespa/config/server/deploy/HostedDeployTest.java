@@ -22,9 +22,11 @@ import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.Zone;
+import com.yahoo.slime.SlimeUtils;
 import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.config.server.MockConfigConvergenceChecker;
 import com.yahoo.vespa.config.server.application.ApplicationReindexing;
+import com.yahoo.vespa.config.server.application.ConfigConvergenceChecker;
 import com.yahoo.vespa.config.server.http.InternalServerException;
 import com.yahoo.vespa.config.server.http.InvalidApplicationException;
 import com.yahoo.vespa.config.server.http.UnknownVespaVersionException;
@@ -41,8 +43,8 @@ import java.nio.file.Files;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -51,6 +53,7 @@ import java.util.stream.IntStream;
 import static com.yahoo.vespa.config.server.deploy.DeployTester.CountingModelFactory;
 import static com.yahoo.vespa.config.server.deploy.DeployTester.createFailingModelFactory;
 import static com.yahoo.vespa.config.server.deploy.DeployTester.createHostedModelFactory;
+import static com.yahoo.yolean.Exceptions.findCause;
 import static com.yahoo.yolean.Exceptions.uncheck;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -445,8 +448,7 @@ public class HostedDeployTest {
     @Test
     public void testThatConfigChangeActionsAreCollectedFromAllModels() {
         List<Host> hosts = createHosts(9, "6.1.0", "6.2.0");
-        List<ServiceInfo> services = List.of(
-                new ServiceInfo("serviceName", "serviceType", null, new HashMap<>(), "configId", "hostName"));
+        List<ServiceInfo> services = createServices(1);
 
         List<ModelFactory> modelFactories = List.of(
                 new ConfigChangeActionsModelFactory(Version.fromString("6.1.0"),
@@ -461,10 +463,41 @@ public class HostedDeployTest {
     }
 
     @Test
+    public void testConfigConvergenceBeforeRestart() {
+        List<Host> hosts = createHosts(9, "6.1.0", "6.2.0");
+        List<ServiceInfo> services = createServices(1);
+        List<ServiceInfo> twoServices = createServices(2);
+
+        List<ModelFactory> modelFactories = List.of(
+                new ConfigChangeActionsModelFactory(Version.fromString("6.2.0"),
+                        new VespaRestartAction(ClusterSpec.Id.from("test"), "change", services)));
+
+        DeployTester tester = createTester(hosts,
+                                           modelFactories,
+                                           prodZone,
+                                           Clock.systemUTC(),
+                                           new MockConfigConvergenceChecker(2L, services));
+        var result = tester.deployApp("src/test/apps/hosted/", "6.2.0");
+        DeployHandlerLogger deployLogger = result.deployLogger();
+
+        assertLogContainsMessage(deployLogger, "Scheduled service restart of 1 nodes: hostName0");
+        assertLogContainsMessage(deployLogger, "Wait for all services to use new config generation before restarting");
+        // Should only check convergence on 1 of the nodes
+        assertLogContainsMessage(deployLogger, "Services that did not converge on new config generation 2: hostName0:serviceName0 on generation 1. Will retry");
+        assertLogContainsMessage(deployLogger, "Services converged on new config generation 2");
+    }
+
+    private void assertLogContainsMessage(DeployHandlerLogger log, String message) {
+        assertEquals(1, SlimeUtils.entriesStream(log.slime().get().field("log"))
+                .map(entry -> entry.field("message").asString())
+                .filter(m -> m.contains(message))
+                .count());
+    }
+
+    @Test
     public void testThatAllowedConfigChangeActionsAreActedUpon() {
         List<Host> hosts = createHosts(9, "6.1.0");
-        List<ServiceInfo> services = List.of(
-                new ServiceInfo("serviceName", "serviceType", null, Map.of("clustername", "cluster"), "configId", "hostName"));
+        List<ServiceInfo> services = createServices(1);
 
         ManualClock clock = new ManualClock(Instant.EPOCH);
         List<ModelFactory> modelFactories = List.of(
@@ -486,7 +519,7 @@ public class HostedDeployTest {
         assertEquals(9, tester.getAllocatedHostsOf(tester.applicationId()).getHosts().size());
         assertTrue(prepareResult.configChangeActions().getRestartActions().isEmpty()); // Handled by deployment.
         assertEquals(Optional.of(ApplicationReindexing.empty()
-                                                      .withPending("cluster", "music", prepareResult.sessionId())),
+                                                      .withPending("cluster0", "music", prepareResult.sessionId())),
                      tester.tenant().getApplicationRepo().database().readReindexingStatus(tester.applicationId()));
     }
 
@@ -539,16 +572,37 @@ public class HostedDeployTest {
         return createTester(hosts, modelFactories, zone, Clock.systemUTC());
     }
 
-    private DeployTester createTester(List<Host> hosts, List<ModelFactory> modelFactories,
-                                      Zone prodZone, Clock clock) {
+    private DeployTester createTester(List<Host> hosts, List<ModelFactory> modelFactories, Zone zone, Clock clock) {
+        return createTester(hosts, modelFactories, zone, clock, new MockConfigConvergenceChecker(2));
+    }
+
+    private DeployTester createTester(List<Host> hosts,
+                                      List<ModelFactory> modelFactories,
+                                      Zone zone,
+                                      Clock clock,
+                                      ConfigConvergenceChecker configConvergenceChecker) {
         return new DeployTester.Builder(temporaryFolder)
                 .modelFactories(modelFactories)
                 .clock(clock)
-                .zone(prodZone)
+                .zone(zone)
                 .hostProvisioner(new InMemoryProvisioner(new Hosts(hosts), true, false))
-                .configConvergenceChecker(new MockConfigConvergenceChecker(2))
-                .hostedConfigserverConfig(prodZone)
+                .configConvergenceChecker(configConvergenceChecker)
+                .hostedConfigserverConfig(zone)
                 .build();
+    }
+
+    private static List<ServiceInfo> createServices(int serviceCount) {
+        List<ServiceInfo> services = new ArrayList<>();
+
+        IntStream.range(0, serviceCount)
+                .forEach(i -> services.add(new ServiceInfo("serviceName" + i,
+                                                           i == 0 ? "searchnode" : "container",
+                                                           null,
+                                                           Map.of("clustername", "cluster" + i),
+                                                           "configId" + i,
+                                                           "hostName" + i)));
+
+        return services;
     }
 
     private static class ConfigChangeActionsModelFactory extends TestModelFactory {

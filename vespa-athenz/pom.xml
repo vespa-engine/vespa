@@ -196,6 +196,11 @@
         </dependency>
         <dependency> <!-- needed by auth-core -->
             <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-api</artifactId>
+            <scope>compile</scope>
+        </dependency>
+        <dependency> <!-- needed by auth-core -->
+            <groupId>io.jsonwebtoken</groupId>
             <artifactId>jjwt-jackson</artifactId>
             <scope>compile</scope>
             <exclusions>

@@ -176,6 +176,7 @@ TEST_P(StorageProtocolTest, put) {
     EXPECT_EQ(*_testDoc, *cmd2->getDocument());
     EXPECT_EQ(Timestamp(14), cmd2->getTimestamp());
     EXPECT_EQ(Timestamp(13), cmd2->getUpdateTimestamp());
+    EXPECT_EQ(false, cmd2->get_create_if_non_existent());
 
     auto reply = std::make_shared<PutReply>(*cmd2);
     ASSERT_TRUE(reply->hasDocument());
@@ -803,6 +804,15 @@ TEST_P(StorageProtocolTest, put_command_with_condition) {
     EXPECT_EQ(cmd->getCondition().getSelection(), cmd2->getCondition().getSelection());
 }
 
+TEST_P(StorageProtocolTest, put_command_with_create_flag) {
+    auto cmd = std::make_shared<PutCommand>(_bucket, _testDoc, 14);
+    EXPECT_EQ(false, cmd->get_create_if_non_existent());
+    cmd->set_create_if_non_existent(true);
+    EXPECT_EQ(true, cmd->get_create_if_non_existent());
+    auto cmd2 = copyCommand(cmd);
+    EXPECT_EQ(cmd->get_create_if_non_existent(), cmd2->get_create_if_non_existent());
+}
+
 TEST_P(StorageProtocolTest, update_command_with_condition) {
     auto update = std::make_shared<document::DocumentUpdate>(
             _docMan.getTypeRepo(), *_testDoc->getDataType(), _testDoc->getId());
@@ -877,7 +887,7 @@ TEST_P(StorageProtocolTest, track_memory_footprint_for_some_messages) {
     EXPECT_EQ(sizeof(BucketCommand),     sizeof(StorageCommand) + 24);
     EXPECT_EQ(sizeof(BucketInfoCommand), sizeof(BucketCommand));
     EXPECT_EQ(sizeof(TestAndSetCommand), sizeof(BucketInfoCommand) + sizeof(vespalib::string));
-    EXPECT_EQ(sizeof(PutCommand),        sizeof(TestAndSetCommand) + 32);
+    EXPECT_EQ(sizeof(PutCommand),        sizeof(TestAndSetCommand) + 40);
     EXPECT_EQ(sizeof(UpdateCommand),     sizeof(TestAndSetCommand) + 32);
     EXPECT_EQ(sizeof(RemoveCommand),     sizeof(TestAndSetCommand) + 112);
     EXPECT_EQ(sizeof(GetCommand),        sizeof(BucketInfoCommand) + sizeof(TestAndSetCondition) + 184);

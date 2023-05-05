@@ -11,21 +11,21 @@ namespace vdslib {
 namespace {
 
 // Magic value for hit count to enable extension flags
-constexpr uint32_t enable_extension_flags_magic = 0xffffffffu;
+constexpr uint32_t extension_flags_present = 0xffffffffu;
 
 // Extension flag values
-constexpr uint32_t match_features_present = 1;
+constexpr uint32_t match_features_present_mask = 1;
 
 // Selector values for feature value
 constexpr uint8_t feature_value_is_double = 0;
 constexpr uint8_t feature_value_is_data = 1;
 
 inline bool has_match_features(uint32_t extension_flags) {
-    return ((extension_flags & match_features_present) != 0);
+    return ((extension_flags & match_features_present_mask) != 0);
 }
 
 inline bool must_serialize_extension_flags(uint32_t extension_flags, uint32_t hit_count) {
-    return ((extension_flags != 0) || (hit_count == enable_extension_flags_magic));
+    return ((extension_flags != 0) || (hit_count == extension_flags_present));
 }
 
 }
@@ -155,7 +155,7 @@ SearchResult::deserialize(document::ByteBuffer & buf)
     uint32_t numResults(0), bufSize(0);
     buf.getIntNetwork(tmp); numResults = tmp;
     uint32_t extension_flags = 0u;
-    if (numResults == enable_extension_flags_magic) {
+    if (numResults == extension_flags_present) {
         buf.getIntNetwork(tmp);
         extension_flags = tmp;
         buf.getIntNetwork(tmp);
@@ -189,7 +189,7 @@ void SearchResult::serialize(vespalib::GrowableByteBuffer & buf) const
     uint32_t hitCount = std::min(_hits.size(), _wantedHits);
     uint32_t extension_flags = calc_extension_flags(hitCount);
     if (must_serialize_extension_flags(extension_flags, hitCount)) {
-        buf.putInt(enable_extension_flags_magic);
+        buf.putInt(extension_flags_present);
         buf.putInt(extension_flags);
     }
     buf.putInt(hitCount);
@@ -241,7 +241,7 @@ SearchResult::calc_extension_flags(uint32_t hit_count) const noexcept
 {
     uint32_t extension_flags = 0u;
     if (!_match_features.names.empty() && hit_count != 0) {
-        extension_flags |= match_features_present;
+        extension_flags |= match_features_present_mask;
     }
     return extension_flags;
 }
@@ -251,7 +251,7 @@ SearchResult::get_match_features_serialized_size(uint32_t hit_count) const noexc
 {
     uint32_t size = sizeof(uint32_t);
     for (auto& name : _match_features.names) {
-        size += sizeof(uint32_t) + name.size();
+        size += sizeof(uint32_t) + name.size() + 1;
     }
     for (uint32_t i = 0; i < hit_count; ++i) {
         auto mfv = get_match_feature_values(i);
@@ -271,7 +271,7 @@ SearchResult::serialize_match_features(vespalib::GrowableByteBuffer& buf, uint32
 {
     buf.putInt(_match_features.names.size());
     for (auto& name : _match_features.names) {
-        buf.putString(name);
+        buf.put_c_string(name);
     }
     for (uint32_t i = 0; i < hit_count; ++i) {
         auto mfv = get_match_feature_values(i);
@@ -301,10 +301,11 @@ SearchResult::deserialize_match_features(document::ByteBuffer& buf)
     _match_features.names.resize(num_features);
     for (auto& name : _match_features.names) {
         buf.getIntNetwork(tmp);
-        name.resize(tmp);
-        if (tmp != 0) {
-            buf.getBytes(&name[0], tmp);
+        if (tmp > 1) {
+            name.resize(tmp - 1);
+            buf.getBytes(&name[0], tmp - 1);
         }
+        buf.getByte(selector); // Read and ignore the nul-termination.
     }
     uint32_t hit_count = _hits.size();
     uint32_t num_values = num_features * hit_count;

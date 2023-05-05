@@ -10,11 +10,10 @@ import java.util.Queue;
  */
 class ScheduledQueue {
 
-    public static final int MILLIS_PER_SLOT = 100;
-    public static final int NUM_SLOTS = 512;
-    public static final int NUM_SLOTS_UNDILATED = 3;
-    public static final int SLOT_MASK = 511; // bitmask to modulo NUM_SLOTS
-    public static final int ITER_SHIFT = 9; // number of bits to shift off SLOT_MASK
+    public static final int MILLIS_PER_SLOT = 2;
+    public static final int NUM_SLOTS = 1024;
+    public static final int SLOT_MASK = NUM_SLOTS - 1; // bitmask to modulo NUM_SLOTS
+    public static final int ITER_SHIFT = Integer.numberOfTrailingZeros(NUM_SLOTS); // number of bits to shift off SLOT_MASK
 
     private final Entry[] slots = new Entry[NUM_SLOTS + 1];
     private final int[] counts = new int[NUM_SLOTS + 1];
@@ -35,17 +34,16 @@ class ScheduledQueue {
         if (slots[NUM_SLOTS] == null && currentTimeMillis < nextTick) {
             return;
         }
-        int queueSize = queueSize() + out.size();
         drainTo(NUM_SLOTS, 0, out);
-        for (int i = 0; currentTimeMillis >= nextTick && (queueSize > out.size()); i++, nextTick += MILLIS_PER_SLOT) {
-            if (i < NUM_SLOTS_UNDILATED) {
-                if (++currSlot >= NUM_SLOTS) {
-                    currSlot = 0;
-                    currIter++;
-                }
-                drainTo(currSlot, currIter, out);
+        while (currentTimeMillis >= nextTick) {
+            if (++currSlot >= NUM_SLOTS) {
+                currSlot = 0;
+                currIter++;
             }
+            drainTo(currSlot, currIter, out);
+            nextTick += MILLIS_PER_SLOT;
         }
+
     }
 
     private void drainTo(int slot, int iter, Queue<Object> out) {

@@ -123,6 +123,28 @@ TEST_F(TestAndSetTest, conditional_put_executed_on_condition_match) {
     assertTestDocumentFoundAndMatchesContent(NEW_CONTENT);
 }
 
+TEST_F(TestAndSetTest, conditional_put_not_executed_when_no_document_and_no_create) {
+    api::Timestamp putTimestamp = 200;
+    testDoc->setValue(testDoc->getField("content"), NEW_CONTENT);
+    auto putUp = std::make_shared<api::PutCommand>(BUCKET, testDoc, putTimestamp);
+    setTestCondition(*putUp);
+
+    ASSERT_EQ(fetchResult(asyncHandler->handlePut(*putUp, createTracker(putUp, BUCKET))).getResult(), api::ReturnCode::Result::TEST_AND_SET_CONDITION_FAILED);
+    EXPECT_EQ("", dumpBucket(BUCKET_ID));
+}
+
+TEST_F(TestAndSetTest, conditional_put_executed_when_no_document_but_create_is_enabled) {
+    api::Timestamp putTimestamp = 200;
+    testDoc->setValue(testDoc->getField("content"), NEW_CONTENT);
+    auto putUp = std::make_shared<api::PutCommand>(BUCKET, testDoc, putTimestamp);
+    setTestCondition(*putUp);
+    putUp->set_create_if_non_existent(true);
+
+    ASSERT_EQ(fetchResult(asyncHandler->handlePut(*putUp, createTracker(putUp, BUCKET))).getResult(), api::ReturnCode::Result::OK);
+    EXPECT_EQ(expectedDocEntryString(putTimestamp, testDocId), dumpBucket(BUCKET_ID));
+    assertTestDocumentFoundAndMatchesContent(NEW_CONTENT);
+}
+
 TEST_F(TestAndSetTest, conditional_remove_not_executed_on_condition_mismatch) {
     // Put document with mismatching header
     api::Timestamp timestampOne = 0;

@@ -14,11 +14,11 @@ namespace streaming {
 
 __thread SearchEnvironment::EnvMap * SearchEnvironment::_localEnvMap = nullptr;
 
-SearchEnvironment::Env::Env(const vespalib::string & muffens, const config::ConfigUri & configUri, Fast_NormalizeWordFolder & wf) :
-    _configId(configUri.getConfigId()),
-    _configurer(std::make_unique<config::SimpleConfigRetriever>(createKeySet(configUri.getConfigId()), configUri.getContext()), this),
-    _vsmAdapter(std::make_unique<VSMAdapter>(muffens, _configId, wf)),
-    _rankManager(std::make_unique<RankManager>(_vsmAdapter.get()))
+SearchEnvironment::Env::Env(const config::ConfigUri& configUri, const Fast_NormalizeWordFolder& wf)
+    : _configId(configUri.getConfigId()),
+      _configurer(std::make_unique<config::SimpleConfigRetriever>(createKeySet(configUri.getConfigId()), configUri.getContext()), this),
+      _vsmAdapter(std::make_unique<VSMAdapter>(_configId, wf)),
+      _rankManager(std::make_unique<RankManager>(_vsmAdapter.get()))
 {
     
     _configurer.start();
@@ -79,7 +79,7 @@ SearchEnvironment::getEnv(const vespalib::string & searchCluster)
         EnvMap::iterator found = _envMap.find(searchCluster);
         if (found == _envMap.end()) {
             LOG(debug, "Init VSMAdapter with config id = '%s'", searchCluster.c_str());
-            Env::SP env = std::make_shared<Env>("*", searchClusterUri, _wordFolder);
+            Env::SP env = std::make_shared<Env>(searchClusterUri, _wordFolder);
             _envMap[searchCluster] = std::move(env);
             found = _envMap.find(searchCluster);
         }

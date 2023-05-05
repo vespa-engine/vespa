@@ -40,6 +40,7 @@ import com.yahoo.yolean.concurrent.Sleeper;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -49,6 +50,9 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
+
+import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toSet;
 
 /**
  * API to the controller. This contains the object model of everything the controller cares about, mainly tenants and
@@ -179,13 +183,23 @@ public class Controller extends AbstractComponent {
             log.info("Changing system version from " + printableVersion(currentStatus.systemVersion()) +
                      " to " + printableVersion(newStatus.systemVersion()));
         }
+        Set<Version> obsoleteVersions = currentStatus.versions().stream().map(VespaVersion::versionNumber).collect(toSet());
+        for (VespaVersion version : newStatus.versions()) {
+            obsoleteVersions.remove(version.versionNumber());
+            VespaVersion current = currentStatus.version(version.versionNumber());
+            if (current == null)
+                log.info("New version " + version.versionNumber().toFullString() + " added");
+            else if ( ! current.confidence().equals(version.confidence()))
+                log.info("Confidence for version " + version.versionNumber().toFullString() +
+                         " changed from " + current.confidence() + " to " + version.confidence());
+        }
+        for (Version version : obsoleteVersions)
+            log.info("Version " + version.toFullString() + " is obsolete, and will be forgotten");
+
         curator.writeVersionStatus(newStatus);
-        // Removes confidence overrides for versions that no longer exist in the system
-        removeConfidenceOverride(version -> newStatus.versions().stream()
-                                                     .noneMatch(vespaVersion -> vespaVersion.versionNumber()
-                                                                                            .equals(version)));
+        removeConfidenceOverride(obsoleteVersions::contains);
     }
-    
+
     /** Returns the latest known version status. Calling this is free but the status may be slightly out of date. */
     public VersionStatus readVersionStatus() { return curator.readVersionStatus(); }
 

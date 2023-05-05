@@ -86,19 +86,21 @@ public class ConfigConvergenceChecker extends AbstractComponent {
 
     /** Fetches the active config generation for all services in the given application. */
     public Map<ServiceInfo, Long> getServiceConfigGenerations(Application application, Duration timeoutPerService) {
-        return getServiceConfigGenerations(application, timeoutPerService, true);
+        return getServiceConfigGenerations(application, timeoutPerService, new HostsToCheck(Set.of()));
     }
 
     /**
      * Fetches the active config generation for all services in the given application. Will not check services
-     * which defer config changes until restart if checkAll is false.
+     * which defer config changes until restart if checkAll is false. hostsToCheck are names to check, or empty to check all.
      */
-    private Map<ServiceInfo, Long> getServiceConfigGenerations(Application application, Duration timeoutPerService, boolean checkAll) {
+    private Map<ServiceInfo, Long> getServiceConfigGenerations(Application application,
+                                                               Duration timeoutPerService,
+                                                               HostsToCheck hostsToCheck) {
         List<ServiceInfo> servicesToCheck = new ArrayList<>();
         application.getModel().getHosts()
                    .forEach(host -> host.getServices().stream()
                                         .filter(service -> serviceTypesToCheck.contains(service.getServiceType()))
-                                        .filter(serviceInfo -> shouldCheckService(checkAll, application, serviceInfo))
+                                        .filter(serviceInfo -> shouldCheckService(hostsToCheck, application, serviceInfo))
                                         .forEach(service -> getStatePort(service).ifPresent(port -> servicesToCheck.add(service))));
 
         log.log(Level.FINE, "Services to check for config convergence: " + servicesToCheck);
@@ -107,20 +109,20 @@ public class ConfigConvergenceChecker extends AbstractComponent {
 
     /** Checks all services in given application. Returns the minimum current generation of all services */
     public ServiceListResponse checkConvergenceForAllServices(Application application, Duration timeoutPerService) {
-        return checkConvergence(application, timeoutPerService, true);
+        return checkConvergence(application, timeoutPerService, new HostsToCheck(Set.of()));
     }
 
     /**
      * Checks services except those which defer config changes until restart in the given application.
      * Returns the minimum current generation of those services.
      */
-    public ServiceListResponse checkConvergenceUnlessDeferringChangesUntilRestart(Application application) {
+    public ServiceListResponse checkConvergenceUnlessDeferringChangesUntilRestart(Application application, Set<String> hostnames) {
         Duration timeoutPerService = Duration.ofSeconds(10);
-        return checkConvergence(application, timeoutPerService, false);
+        return checkConvergence(application, timeoutPerService, new HostsToCheck(hostnames));
     }
 
-    private ServiceListResponse checkConvergence(Application application, Duration timeoutPerService, boolean checkAll) {
-        Map<ServiceInfo, Long> currentGenerations = getServiceConfigGenerations(application, timeoutPerService, checkAll);
+    private ServiceListResponse checkConvergence(Application application, Duration timeoutPerService, HostsToCheck hostsToCheck) {
+        Map<ServiceInfo, Long> currentGenerations = getServiceConfigGenerations(application, timeoutPerService, hostsToCheck);
         long currentGeneration = currentGenerations.values().stream().mapToLong(Long::longValue).min().orElse(-1);
         return new ServiceListResponse(currentGenerations, application.getApplicationGeneration(), currentGeneration);
     }
@@ -142,8 +144,9 @@ public class ConfigConvergenceChecker extends AbstractComponent {
         }
     }
 
-    private boolean shouldCheckService(boolean checkServicesWithDeferChangesUntilRestart, Application application, ServiceInfo serviceInfo) {
-        if (checkServicesWithDeferChangesUntilRestart) return true;
+    private boolean shouldCheckService(HostsToCheck hostsToCheck, Application application, ServiceInfo serviceInfo) {
+        if (hostsToCheck.checkAll()) return true;
+        if ( ! hostsToCheck.check(serviceInfo.getHostName())) return false;
         if (isNotContainer(serviceInfo)) return true;
         return serviceIsInClusterWhichShouldBeChecked(application, serviceInfo);
     }
@@ -305,6 +308,14 @@ public class ConfigConvergenceChecker extends AbstractComponent {
                         .build())
                 .setUserAgent("config-convergence-checker")
                 .build();
+    }
+
+    private record HostsToCheck(Set<String> hostnames) {
+
+        public boolean checkAll() { return hostnames.isEmpty(); }
+
+        public boolean check(String hostname) { return checkAll() || hostnames.contains(hostname); }
+
     }
 
     public static class ServiceResponse {

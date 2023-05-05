@@ -4,7 +4,7 @@ package com.yahoo.vespa.hosted.node.admin.maintenance.servicedump;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.yahoo.test.ManualClock;
+import com.yahoo.jdisc.test.TestTimer;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeState;
 import com.yahoo.vespa.hosted.node.admin.container.ContainerOperations;
@@ -26,7 +26,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
@@ -71,11 +70,11 @@ class VespaServiceDumperImplTest {
                 .thenReturn(new CommandResult(null, 0, ""));
         SyncClient syncClient = createSyncClientMock();
         NodeRepoMock nodeRepository = new NodeRepoMock();
-        ManualClock clock = new ManualClock(Instant.ofEpochMilli(1600001000000L));
+        TestTimer timer = new TestTimer(Instant.ofEpochMilli(1600001000000L));
         NodeSpec nodeSpec = createNodeSpecWithDumpRequest(nodeRepository, List.of("perf-report"), new ServiceDumpReport.DumpOptions(true, 45.0, null));
 
         VespaServiceDumper reporter = new VespaServiceDumperImpl(
-                ArtifactProducers.createDefault(Sleeper.NOOP), operations, syncClient, nodeRepository, clock);
+                ArtifactProducers.createDefault(Sleeper.NOOP), operations, syncClient, nodeRepository, timer);
         NodeAgentContextImpl context = NodeAgentContextImpl.builder(nodeSpec)
                 .fileSystem(fileSystem)
                 .build();
@@ -112,12 +111,12 @@ class VespaServiceDumperImplTest {
                 .thenReturn(new CommandResult(null, 0, "name=host-admin success"));
         SyncClient syncClient = createSyncClientMock();
         NodeRepoMock nodeRepository = new NodeRepoMock();
-        ManualClock clock = new ManualClock(Instant.ofEpochMilli(1600001000000L));
+        TestTimer timer = new TestTimer(Instant.ofEpochMilli(1600001000000L));
         NodeSpec nodeSpec = createNodeSpecWithDumpRequest(
                 nodeRepository, List.of("jvm-jfr"), new ServiceDumpReport.DumpOptions(null, null, null));
 
         VespaServiceDumper reporter = new VespaServiceDumperImpl(
-                ArtifactProducers.createDefault(Sleeper.NOOP), operations, syncClient, nodeRepository, clock);
+                ArtifactProducers.createDefault(Sleeper.NOOP), operations, syncClient, nodeRepository, timer);
         NodeAgentContextImpl context = NodeAgentContextImpl.builder(nodeSpec)
                 .fileSystem(fileSystem)
                 .build();
@@ -156,11 +155,11 @@ class VespaServiceDumperImplTest {
                 .thenReturn(new CommandResult(null, 0, "name=host-admin success"));
         SyncClient syncClient = createSyncClientMock();
         NodeRepoMock nodeRepository = new NodeRepoMock();
-        ManualClock clock = new ManualClock(Instant.ofEpochMilli(1600001000000L));
+        TestTimer timer = new TestTimer(Instant.ofEpochMilli(1600001000000L));
         NodeSpec nodeSpec = createNodeSpecWithDumpRequest(nodeRepository, List.of("perf-report", "jvm-jfr"),
                 new ServiceDumpReport.DumpOptions(true, 20.0, null));
         VespaServiceDumper reporter = new VespaServiceDumperImpl(
-                ArtifactProducers.createDefault(Sleeper.NOOP), operations, syncClient, nodeRepository, clock);
+                ArtifactProducers.createDefault(Sleeper.NOOP), operations, syncClient, nodeRepository, timer);
         NodeAgentContextImpl context = NodeAgentContextImpl.builder(nodeSpec)
                 .fileSystem(fileSystem)
                 .build();
@@ -179,7 +178,7 @@ class VespaServiceDumperImplTest {
         ContainerOperations operations = mock(ContainerOperations.class);
         SyncClient syncClient = createSyncClientMock();
         NodeRepoMock nodeRepository = new NodeRepoMock();
-        ManualClock clock = new ManualClock(Instant.ofEpochMilli(1600001000000L));
+        TestTimer timer = new TestTimer(Instant.ofEpochMilli(1600001000000L));
         JsonNodeFactory fac = new ObjectMapper().getNodeFactory();
         ObjectNode invalidRequest = new ObjectNode(fac)
                 .set("dumpOptions", new ObjectNode(fac).put("duration", "invalidDurationDataType"));
@@ -189,7 +188,7 @@ class VespaServiceDumperImplTest {
                 .build();
         nodeRepository.updateNodeSpec(spec);
         VespaServiceDumper reporter = new VespaServiceDumperImpl(
-                ArtifactProducers.createDefault(Sleeper.NOOP), operations, syncClient, nodeRepository, clock);
+                ArtifactProducers.createDefault(Sleeper.NOOP), operations, syncClient, nodeRepository, timer);
         NodeAgentContextImpl context = NodeAgentContextImpl.builder(spec)
                 .fileSystem(fileSystem)
                 .build();

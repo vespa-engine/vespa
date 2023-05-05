@@ -174,9 +174,8 @@ VSMConfigSnapshot::VSMConfigSnapshot(const vespalib::string & configId, const co
 { }
 VSMConfigSnapshot::~VSMConfigSnapshot() = default;
 
-VSMAdapter::VSMAdapter(const vespalib::string & highlightindexes, const vespalib::string & configId, Fast_WordFolder & wordFolder)
-    : _highlightindexes(highlightindexes),
-      _configId(configId),
+VSMAdapter::VSMAdapter(const vespalib::string & configId, const Fast_WordFolder& wordFolder)
+    : _configId(configId),
       _wordFolder(wordFolder),
       _fieldsCfg(),
       _docsumTools(),

@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.nodeadmin;
 
+import com.yahoo.jdisc.Timer;
 import com.yahoo.vespa.hosted.node.admin.container.ContainerStats;
 import com.yahoo.vespa.hosted.node.admin.container.metrics.Counter;
 import com.yahoo.vespa.hosted.node.admin.container.metrics.Dimensions;
@@ -13,7 +14,6 @@ import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentFactory;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentScheduler;
 
 import java.nio.file.FileSystem;
-import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.HashSet;
@@ -37,7 +37,7 @@ public class NodeAdminImpl implements NodeAdmin {
 
     private final NodeAgentWithSchedulerFactory nodeAgentWithSchedulerFactory;
 
-    private final Clock clock;
+    private final Timer timer;
     private final Duration freezeTimeout;
     private final Duration spread;
     private boolean previousWantFrozen;
@@ -54,27 +54,27 @@ public class NodeAdminImpl implements NodeAdmin {
     private final Metrics metrics;
     private Dimensions previousMemoryOverheadDimensions = null;
 
-    public NodeAdminImpl(NodeAgentFactory nodeAgentFactory, Metrics metrics, Clock clock, FileSystem fileSystem) {
-        this(nodeAgentContext -> create(clock, nodeAgentFactory, nodeAgentContext),
-                metrics, clock, NODE_AGENT_FREEZE_TIMEOUT, NODE_AGENT_SPREAD, new ProcMeminfoReader(fileSystem));
+    public NodeAdminImpl(NodeAgentFactory nodeAgentFactory, Metrics metrics, Timer timer, FileSystem fileSystem) {
+        this(nodeAgentContext -> create(timer, nodeAgentFactory, nodeAgentContext),
+                metrics, timer, NODE_AGENT_FREEZE_TIMEOUT, NODE_AGENT_SPREAD, new ProcMeminfoReader(fileSystem));
     }
 
     public NodeAdminImpl(NodeAgentFactory nodeAgentFactory, Metrics metrics,
-                         Clock clock, Duration freezeTimeout, Duration spread, ProcMeminfoReader procMeminfoReader) {
-        this(nodeAgentContext -> create(clock, nodeAgentFactory, nodeAgentContext),
-                metrics, clock, freezeTimeout, spread, procMeminfoReader);
+                         Timer timer, Duration freezeTimeout, Duration spread, ProcMeminfoReader procMeminfoReader) {
+        this(nodeAgentContext -> create(timer, nodeAgentFactory, nodeAgentContext),
+                metrics, timer, freezeTimeout, spread, procMeminfoReader);
     }
 
     NodeAdminImpl(NodeAgentWithSchedulerFactory nodeAgentWithSchedulerFactory,
-                  Metrics metrics, Clock clock, Duration freezeTimeout, Duration spread,
+                  Metrics metrics, Timer timer, Duration freezeTimeout, Duration spread,
                   ProcMeminfoReader procMeminfoReader) {
         this.nodeAgentWithSchedulerFactory = nodeAgentWithSchedulerFactory;
-        this.clock = clock;
+        this.timer = timer;
         this.freezeTimeout = freezeTimeout;
         this.spread = spread;
         this.previousWantFrozen = true;
         this.isFrozen = true;
-        this.startOfFreezeConvergence = clock.instant();
+        this.startOfFreezeConvergence = timer.currentTime();
 
         this.numberOfUnhandledExceptions = metrics.declareCounter("unhandled_exceptions",
                 new Dimensions(Map.of("src", "node-agents")));
@@ -104,7 +104,7 @@ public class NodeAdminImpl implements NodeAdmin {
         });
 
         Duration timeBetweenNodeAgents = spread.dividedBy(Math.max(nodeAgentContextsByHostname.size() - 1, 1));
-        Instant nextAgentStart = clock.instant();
+        Instant nextAgentStart = timer.currentTime();
         // At this point, nodeAgentContextsByHostname and nodeAgentWithSchedulerByHostname should have the same keys
         for (Map.Entry<String, NodeAgentContext> entry : nodeAgentContextsByHostname.entrySet()) {
             nodeAgentWithSchedulerByHostname.get(entry.getKey()).scheduleTickWith(entry.getValue(), nextAgentStart);
@@ -158,7 +158,7 @@ public class NodeAdminImpl implements NodeAdmin {
     public boolean setFrozen(boolean wantFrozen) {
         if (wantFrozen != previousWantFrozen) {
             if (wantFrozen) {
-                this.startOfFreezeConvergence = clock.instant();
+                this.startOfFreezeConvergence = timer.currentTime();
             } else {
                 this.startOfFreezeConvergence = null;
             }
@@ -188,7 +188,7 @@ public class NodeAdminImpl implements NodeAdmin {
         if (startOfFreezeConvergence == null) {
             return Duration.ZERO;
         } else {
-            return Duration.between(startOfFreezeConvergence, clock.instant());
+            return Duration.between(startOfFreezeConvergence, timer.currentTime());
         }
     }
 
@@ -252,8 +252,8 @@ public class NodeAdminImpl implements NodeAdmin {
         NodeAgentWithScheduler create(NodeAgentContext context);
     }
 
-    private static NodeAgentWithScheduler create(Clock clock, NodeAgentFactory nodeAgentFactory, NodeAgentContext context) {
-        NodeAgentContextManager contextManager = new NodeAgentContextManager(clock, context);
+    private static NodeAgentWithScheduler create(Timer timer, NodeAgentFactory nodeAgentFactory, NodeAgentContext context) {
+        NodeAgentContextManager contextManager = new NodeAgentContextManager(timer, context);
         NodeAgent nodeAgent = nodeAgentFactory.create(contextManager, context);
         return new NodeAgentWithScheduler(nodeAgent, contextManager);
     }

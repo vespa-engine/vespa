@@ -687,7 +687,7 @@ Messages60Test::testQueryResultMessage()
     sr3.set_match_features(FeatureValues(mf));
     sr3.sort();
 
-    EXPECT_EQUAL(MESSAGE_BASE_LENGTH + 123u, serialize("QueryResultMessage-6", qrm3));
+    EXPECT_EQUAL(MESSAGE_BASE_LENGTH + 125u, serialize("QueryResultMessage-6", qrm3));
     routable = deserialize("QueryResultMessage-6", DocumentProtocol::MESSAGE_QUERYRESULT, LANG_CPP);
     if (!EXPECT_TRUE(routable)) {
         return false;
@@ -709,6 +709,10 @@ Messages60Test::testQueryResultMessage()
     EXPECT_EQUAL(2u, mfv.size());
     EXPECT_EQUAL(1.0, mfv[0].as_double());
     EXPECT_EQUAL("Hi", mfv[1].as_data().make_string());
+    const auto& mf_names = dr->get_match_features().names;
+    EXPECT_EQUAL(2u, mf_names.size());
+    EXPECT_EQUAL("foo", mf_names[0]);
+    EXPECT_EQUAL("bar", mf_names[1]);
     return true;
 }
 
