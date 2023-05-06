@@ -311,6 +311,7 @@ public class Content extends ConfigModel {
 
             indexingCluster.addDefaultHandlersWithVip();
             indexingCluster.addAllPlatformBundles();
+            indexingCluster.addAccessLog();
             addDocproc(indexingCluster);
 
             List<ApplicationContainer> nodes = new ArrayList<>();

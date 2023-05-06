@@ -32,7 +32,6 @@ import com.yahoo.vespa.model.admin.monitoring.MetricsConsumer;
 import com.yahoo.vespa.model.admin.monitoring.Monitoring;
 import com.yahoo.vespa.model.container.ContainerCluster;
 import com.yahoo.vespa.model.container.PlatformBundles;
-import com.yahoo.vespa.model.container.component.AccessLogComponent;
 import com.yahoo.vespa.model.container.component.Handler;
 import com.yahoo.vespa.model.container.component.SystemBindingPattern;
 
@@ -87,12 +86,10 @@ public class MetricsProxyContainerCluster extends ContainerCluster<MetricsProxyC
         static final String LEGACY_APPLICATION = "app";        // app.instance
     }
 
-    private final TreeConfigProducer<?> parent;
     private final ApplicationId applicationId;
 
     public MetricsProxyContainerCluster(TreeConfigProducer<?> parent, String name, DeployState deployState) {
         super(parent, name, name, deployState, true);
-        this.parent = parent;
         applicationId = deployState.getProperties().applicationId();
 
         setRpcServerEnabled(true);
@@ -101,11 +98,7 @@ public class MetricsProxyContainerCluster extends ContainerCluster<MetricsProxyC
         addPlatformBundle(METRICS_PROXY_BUNDLE_FILE);
         addClusterComponents();
         if (isHostedVespa())
-            addComponent(new AccessLogComponent(this,
-                                                AccessLogComponent.AccessLogType.jsonAccessLog,
-                                                "zstd",
-                                                Optional.of("metrics-proxy"),
-                                                isHostedVespa()));
+            addAccessLog("metrics-proxy");
     }
 
     @Override
