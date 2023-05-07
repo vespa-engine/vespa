@@ -262,7 +262,7 @@ function(vespa_add_executable TARGET)
 
     __check_target_parameters()
     __split_sources_list()
-    if(TARGET ${TARGET}_object OR NOT NON_TARGET_SOURCE_FILES)
+    if(TARGET ${TARGET}_object OR NOT NON_TARGET_SOURCE_FILES OR ARG_TEST)
         unset(VESPA_ADD_IMPLICIT_OBJECT_LIBRARY)
         add_executable(${TARGET} ${ARG_SOURCES})
     else()
