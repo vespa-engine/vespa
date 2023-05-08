@@ -238,7 +238,7 @@ func (c *Client) Send(document Document) Result {
 	}
 	defer resp.Body.Close()
 	elapsed := c.now().Sub(start)
-	return c.resultWithResponse(resp, req.ContentLength, result, document, elapsed)
+	return c.resultWithResponse(resp, req.ContentLength, result, elapsed)
 }
 
 func resultWithErr(result Result, err error) Result {
@@ -248,7 +248,7 @@ func resultWithErr(result Result, err error) Result {
 	return result
 }
 
-func (c *Client) resultWithResponse(resp *http.Response, sentBytes int64, result Result, document Document, elapsed time.Duration) Result {
+func (c *Client) resultWithResponse(resp *http.Response, sentBytes int64, result Result, elapsed time.Duration) Result {
 	result.HTTPStatus = resp.StatusCode
 	result.Stats.Responses++
 	result.Stats.ResponsesByCode = map[int]int64{resp.StatusCode: 1}
