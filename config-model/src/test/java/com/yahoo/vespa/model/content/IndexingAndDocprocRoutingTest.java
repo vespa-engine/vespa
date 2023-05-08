@@ -1,6 +1,9 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.content;
 
+import com.yahoo.component.ComponentId;
+import com.yahoo.container.logging.AccessLog;
+import com.yahoo.container.logging.JSONAccessLog;
 import com.yahoo.messagebus.routing.Hop;
 import com.yahoo.messagebus.routing.HopBlueprint;
 import com.yahoo.messagebus.routing.PolicyDirective;
@@ -243,6 +246,9 @@ public class IndexingAndDocprocRoutingTest extends ContentBaseTest {
             }
 
             assertTrue(actualDocprocChains.containsAll(expectedDocprocChainStrings));
+
+            assertNotNull(docprocCluster.getComponentsMap().get(ComponentId.fromString(AccessLog.class.getName())));
+            assertNotNull(docprocCluster.getComponentsMap().get(ComponentId.fromString(JSONAccessLog.class.getName())));
         }
     }
 

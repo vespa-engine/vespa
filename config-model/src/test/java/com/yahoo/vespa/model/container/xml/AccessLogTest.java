@@ -11,6 +11,7 @@ import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.container.core.AccessLogConfig;
+import com.yahoo.container.logging.AccessLog;
 import com.yahoo.container.logging.ConnectionLogConfig;
 import com.yahoo.container.logging.FileConnectionLog;
 import com.yahoo.container.logging.JSONAccessLog;
@@ -84,6 +85,7 @@ public class AccessLogTest extends ContainerModelBuilderTestBase {
         createModel(root, clusterElem);
         assertNotNull(getJsonAccessLog("default"));
         assertNotNull(getVespaAccessLog("default"));
+        assertNotNull(getAccessLog("default"));
 
         { // vespa
             Component<?, ?> accessLogComponent = getComponent("default", VespaAccessLog.class.getName());
@@ -172,6 +174,11 @@ public class AccessLogTest extends ContainerModelBuilderTestBase {
         assertEquals(Level.WARNING, logger.msgs.get(0).getFirst());
         assertEquals("Applications are not allowed to override the 'accesslog' element",
                 logger.msgs.get(0).getSecond());
+    }
+
+    private Component<?, ?> getAccessLog(String clusterName) {
+        ApplicationContainerCluster cluster = (ApplicationContainerCluster) root.getChildren().get(clusterName);
+        return cluster.getComponentsMap().get(ComponentId.fromString((AccessLog.class.getName())));
     }
 
 }
