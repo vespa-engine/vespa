@@ -5,6 +5,7 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.ApplicationTransaction;
 import com.yahoo.config.provision.CloudAccount;
+import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.NodeType;
@@ -75,8 +76,10 @@ public class LoadBalancerProvisioner {
             try (var lock = db.lock(id.application())) {
                 var loadBalancer = db.readLoadBalancer(id);
                 loadBalancer.ifPresent(lb -> {
-                    if (!zoneAccount.isUnspecified() && lb.instance().isPresent() && lb.instance().get().cloudAccount().isUnspecified())
-                        lb = lb.with(Optional.of(lb.instance().get().with(zoneAccount)));
+//                    if (!zoneAccount.isUnspecified() && lb.instance().isPresent() && lb.instance().get().cloudAccount().isUnspecified())
+//                        lb = lb.with(Optional.of(lb.instance().get().with(zoneAccount)));
+                    if (nodeRepository.zone().getCloud().name().equals(CloudName.GCP))
+                        lb = lb.with(lb.instance().map(i -> i.with(CloudAccount.empty)));
                     db.writeLoadBalancer(lb, lb.state());
                 });
             }
