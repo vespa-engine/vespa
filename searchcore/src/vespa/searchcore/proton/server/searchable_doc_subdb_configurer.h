@@ -5,15 +5,16 @@
 #include <vespa/searchcore/proton/docsummary/summarymanager.h>
 #include <vespa/vespalib/util/varholder.h>
 
-namespace searchcorespi { class IndexSearchable; }
-
-namespace proton::matching {
+namespace search::fef {
 
 class RankingExpressions;
 class OnnxModels;
-class QueryLimiter;
 
 }
+
+namespace searchcorespi { class IndexSearchable; }
+
+namespace proton::matching { class QueryLimiter; }
 
 namespace vespalib::eval { struct ConstantValueFactory; }
 namespace vespalib { class Clock; }

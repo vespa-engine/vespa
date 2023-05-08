@@ -3,7 +3,7 @@
 #pragma once
 
 #include <vespa/searchcore/proton/matching/matching_stats.h>
-#include <vespa/searchcore/proton/matching/ranking_assets_repo.h>
+#include <vespa/searchlib/fef/ranking_assets_repo.h>
 #include <vespa/vespalib/stllike/hash_map.h>
 
 namespace vespalib { class Clock; }
@@ -18,15 +18,15 @@ namespace matching {
 class Matchers {
 private:
     using Map = vespalib::hash_map<vespalib::string, std::shared_ptr<matching::Matcher>>;
-    Map                                _rpmap;
-    const matching::RankingAssetsRepo  _ranking_assets_repo;
-    std::shared_ptr<matching::Matcher> _fallback;
-    std::shared_ptr<matching::Matcher> _default;
+    Map                                  _rpmap;
+    const search::fef::RankingAssetsRepo _ranking_assets_repo;
+    std::shared_ptr<matching::Matcher>   _fallback;
+    std::shared_ptr<matching::Matcher>   _default;
 public:
     using SP = std::shared_ptr<Matchers>;
     Matchers(const vespalib::Clock &clock,
              matching::QueryLimiter &queryLimiter,
-             const matching::RankingAssetsRepo &rankingAssetsRepo);
+             const search::fef::RankingAssetsRepo &rankingAssetsRepo);
     Matchers(const Matchers &) = delete;
     Matchers & operator =(const Matchers &) = delete;
     ~Matchers();
@@ -34,7 +34,7 @@ public:
     matching::MatchingStats getStats() const;
     matching::MatchingStats getStats(const vespalib::string &name) const;
     std::shared_ptr<matching::Matcher> lookup(const vespalib::string &name) const;
-    const matching::RankingAssetsRepo& get_ranking_assets_repo() const noexcept { return _ranking_assets_repo; }
+    const search::fef::RankingAssetsRepo& get_ranking_assets_repo() const noexcept { return _ranking_assets_repo; }
 };
 
 } // namespace proton

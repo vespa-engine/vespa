@@ -20,6 +20,7 @@ vespa_add_library(searchlib_fef OBJECT
     matchdatalayout.cpp
     objectstore.cpp
     onnx_model.cpp
+    onnx_models.cpp
     parameter.cpp
     parameterdescriptions.cpp
     parametervalidator.cpp
@@ -29,6 +30,9 @@ vespa_add_library(searchlib_fef OBJECT
     query_value.cpp
     queryproperties.cpp
     rank_program.cpp
+    ranking_assets_repo.cpp
+    ranking_constants.cpp
+    ranking_expressions.cpp
     ranksetup.cpp
     simpletermdata.cpp
     simpletermfielddata.cpp
