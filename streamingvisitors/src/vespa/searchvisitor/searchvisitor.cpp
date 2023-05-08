@@ -461,13 +461,16 @@ void SearchVisitor::init(const Parameters & params)
 
 SearchVisitorFactory::SearchVisitorFactory(const config::ConfigUri & configUri)
     : VisitorFactory(),
-      _configUri(configUri)
+      _configUri(configUri),
+      _env(std::make_shared<SearchEnvironment>(_configUri))
 {}
+
+SearchVisitorFactory::~SearchVisitorFactory() = default;
 
 std::shared_ptr<VisitorEnvironment>
 SearchVisitorFactory::makeVisitorEnvironment(StorageComponent&)
 {
-    return std::make_shared<SearchEnvironment>(_configUri);
+    return _env;
 }
 
 storage::Visitor*
