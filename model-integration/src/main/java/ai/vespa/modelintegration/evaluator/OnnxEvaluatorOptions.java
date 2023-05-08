@@ -86,6 +86,8 @@ public class OnnxEvaluatorOptions {
         this.gpuDeviceRequired = required;
     }
 
+    public void setGpuDevice(int deviceNumber) { gpuDeviceNumber = deviceNumber; }
+
     public boolean requestingGpu() {
         return gpuDeviceNumber > -1;
     }

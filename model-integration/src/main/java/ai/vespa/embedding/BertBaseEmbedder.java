@@ -58,6 +58,7 @@ public class BertBaseEmbedder extends AbstractComponent implements Embedder {
         OnnxEvaluatorOptions options = new OnnxEvaluatorOptions();
         options.setExecutionMode(config.onnxExecutionMode().toString());
         options.setThreads(config.onnxInterOpThreads(), config.onnxIntraOpThreads());
+        options.setGpuDevice(config.onnxGpuDevice());
 
         tokenizer = new WordPieceEmbedder.Builder(config.tokenizerVocab().toString()).build();
         this.evaluator = onnx.evaluatorOf(config.transformerModel().toString(), options);
