@@ -82,7 +82,7 @@ private:
     uint32_t initFlush(const IFlushHandler::SP &handler, const IFlushTarget::SP &target);
     void flushDone(const FlushContext &ctx, uint32_t taskId);
     bool canFlushMore(const std::unique_lock<std::mutex> &guard) const;
-    void wait_for_slot(IFlushTarget::Priority priority);
+    void wait_for_slot_or_pending_prune(IFlushTarget::Priority priority);
     bool wait(vespalib::duration minimumWaitTimeIfReady, bool ignorePendingPrune);
     void wait(vespalib::duration minimumWaitTimeIfReady) {
         wait(minimumWaitTimeIfReady, false);

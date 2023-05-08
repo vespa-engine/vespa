@@ -167,7 +167,7 @@ FlushEngine::wait(vespalib::duration minimumWaitTimeIfReady, bool ignorePendingP
 }
 
 void
-FlushEngine::wait_for_slot(IFlushTarget::Priority priority)
+FlushEngine::wait_for_slot_or_pending_prune(IFlushTarget::Priority priority)
 {
     (void) priority;
     std::unique_lock<std::mutex> guard(_lock);
@@ -183,7 +183,7 @@ FlushEngine::checkAndFlush(vespalib::string prev) {
         // Everything returned from a priority strategy should be flushed
         flushAll(lst.first);
     } else if ( ! lst.first.empty()) {
-        wait_for_slot(lst.first[0]->getTarget()->getPriority());
+        wait_for_slot_or_pending_prune(lst.first[0]->getTarget()->getPriority());
         prev = flushNextTarget(prev, lst.first);
         if (!prev.empty()) {
             // Sleep 1 ms after a successful flush in order to avoid busy loop in case
@@ -202,9 +202,9 @@ FlushEngine::run()
     vespalib::string prevFlushName;
     for (vespalib::duration idleInterval=vespalib::duration::zero(); !_closed.load(std::memory_order_relaxed); idleInterval = _idleInterval) {
         LOG(debug, "Making another check for something to flush, last was '%s'", prevFlushName.c_str());
+        wait_for_slot_or_pending_prune(IFlushTarget::Priority::HIGH);
         if (prune()) {
             // Prune attempted on one or more handlers
-            wait_for_slot(IFlushTarget::Priority::NORMAL);
         } else {
             auto [needWait, name] = checkAndFlush(prevFlushName);
             prevFlushName = name;
