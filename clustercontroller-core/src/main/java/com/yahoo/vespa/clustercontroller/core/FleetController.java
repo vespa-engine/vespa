@@ -402,7 +402,7 @@ public class FleetController implements NodeListener, SlobrokListener, SystemSta
      * The keys in the given map are indices of fleet controllers.
      * The values are what fleetcontroller that fleetcontroller wants to
      * become master.
-     * <p
+     * <p>
      * If more than half the fleetcontrollers want a node to be master and
      * that node also wants itself as master, that node is the single master.
      * If this condition is not met, there is currently no master.
